@@ -15,6 +15,7 @@ namespace ly
 		void BeginPlayInternal();
 		void TickInternal(float deltaTime);
 		void Render(sf::RenderWindow& window);
+		sf::Vector2u GetWindowSize();
 
 		virtual ~World();
 

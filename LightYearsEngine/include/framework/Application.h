@@ -12,6 +12,11 @@ namespace ly
 		Application(sf::Vector2u Position,unsigned int bit, std::string& Title,uint32_t Style);
 		void Run();
 
+		sf::Vector2u GetWindowSize() const
+		{
+			return mWindow.getSize();
+		}
+
 		template<typename WorldType>
 		weak_ptr<WorldType> LoadWorld();
 

@@ -11,6 +11,7 @@ namespace ly
 		static AssetManager& GetAssetManager();
 		shared_ptr<sf::Texture> LoadTexture(const std::string& texturePath);
 		void CleanCycle();
+		void SetAssetRootDirectory(const std::string& rootDirectory) { mAssetRootDirectory = rootDirectory; }
 
 	protected:
 		AssetManager();
@@ -18,5 +19,6 @@ namespace ly
 	private:
 		static unique_ptr<AssetManager> assetManager;
 		Dictionary<std::string,shared_ptr<sf::Texture>> mLoadedTextureMap;
+		std::string mAssetRootDirectory;
 	};
 }

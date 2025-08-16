@@ -4,7 +4,8 @@ namespace ly
 {
 	unique_ptr<AssetManager> AssetManager::assetManager = nullptr;
 
-	AssetManager::AssetManager()
+	AssetManager::AssetManager():
+	mAssetRootDirectory{}
 	{
 	}
 
@@ -25,7 +26,7 @@ namespace ly
 		}
 
 		shared_ptr<sf::Texture> newTexture{ new sf::Texture };
-		if (newTexture->loadFromFile(texturePath))
+		if (newTexture->loadFromFile(mAssetRootDirectory+texturePath))
 		{
 			mLoadedTextureMap.insert({ texturePath, newTexture });
 			return newTexture;

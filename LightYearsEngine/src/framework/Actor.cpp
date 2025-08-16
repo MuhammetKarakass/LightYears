@@ -62,6 +62,12 @@ namespace ly
 		mSprite.value().setTextureRect(sf::IntRect{ sf::Vector2i{},sf::Vector2i{width,height} });
 		CenterPivot();
 	}
+
+	sf::Vector2u Actor::GetWindowSize() const
+	{
+		return mOwningWorld->GetWindowSize();
+	}
+
 	void Actor::SetActorLocation(const sf::Vector2f& newLoc)
 	{
 		mSprite.value().setPosition(newLoc);

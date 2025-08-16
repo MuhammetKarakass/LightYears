@@ -1,7 +1,9 @@
 #include "gameFramework/GameApplication.h"
 #include <framework/World.h>
 #include <framework/Actor.h>
+#include <framework/AssetManager.h>
 #include <Config.h>
+#include "player/PlayerSpaceShip.h"
 
 ly::Application* GetApplication()
 {
@@ -13,22 +15,20 @@ namespace ly
 	GameApplication::GameApplication()
 		:Application({ 600, 980 }, 32, std::string("Game Application"), sf::Style::Close|sf::Style::Titlebar)
 	{
+		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
 		weak_ptr<World> NewWorld=LoadWorld<World>();
-		NewWorld.lock()->SpawnActor<Actor>();
-		actorToDestroy = NewWorld.lock()->SpawnActor<Actor>();
-		actorToDestroy.lock()->SetTexture(getResourceDir()+ "SpaceShooterRedux/PNG/playerShip1_blue.png");
-		actorToDestroy.lock()->SetActorLocation({ 300.f, 490.f });
-		actorToDestroy.lock()->SetActorRotation(45.f);
-	}
+		testActor = NewWorld.lock()->SpawnActor<PlayerSpaceShip>();
+		testActor.lock()->SetActorLocation({ 300.f, 490.f });
+		testActor.lock()->SetActorRotation(0.f);	}
 	void GameApplication::Tick(float deltaTime)
 	{
-		counter += deltaTime;
-		if (counter > 2.f)
+		/*counter += deltaTime;
+		if (counter > 5.f)
 		{
-			if (!actorToDestroy.expired())
+			if (!testActor.expired())
 			{
-				actorToDestroy.lock()->Destroy();
+				testActor.lock()->Destroy();
 			}
-		}
+		}*/
 	}
 }

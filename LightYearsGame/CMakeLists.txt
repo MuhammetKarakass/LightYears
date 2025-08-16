@@ -2,6 +2,11 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/include/gameFramework/GameApplication.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/spaceShip/SpaceShip.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/spaceShip/SpaceShip.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerSpaceShip.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceShip.cpp
 
 )
 
