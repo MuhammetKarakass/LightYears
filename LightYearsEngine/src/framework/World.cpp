@@ -38,13 +38,21 @@ namespace ly{
 		mPendingActors.clear();
 		for (auto iter= mActors.begin();iter!=mActors.end();)
 		{
+			iter->get()->TickInternal(deltaTime);
+			iter++;
+		}
+	}
+
+	void World::CleanCycle()
+	{
+		for (auto iter = mActors.begin(); iter != mActors.end();)
+		{
 			if (iter->get()->GetIsPendingDestroy())
 			{
 				iter = mActors.erase(iter);
 			}
 			else
 			{
-				iter->get()->TickInternal(deltaTime);
 				iter++;
 			}
 		}

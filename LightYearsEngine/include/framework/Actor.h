@@ -2,6 +2,7 @@
 #include "framework/Object.h"
 #include "framework/Core.h"
 #include <SFML/Graphics.hpp>
+#include <box2d/box2d.h> 
 #include <optional>
 
 namespace ly
@@ -17,7 +18,27 @@ namespace ly
 		virtual void BeginPlay();
 		void TickInternal(float deltaTime);
 		virtual void Tick(float deltaTime);
+
 		void Render(sf::RenderWindow& window);
+
+		World* GetWorld() const { return mOwningWorld; }
+		bool IsActorOutOfWindow() const;
+
+		void SetEnablePhysics(bool enable);
+		void InitializePhysics();
+		void UnInitializePhysics();
+		void UpdatePhysicsTransform();
+
+		void OnActorBeginOverlap(Actor* otherActor);
+		void OnActorEndOverlap(Actor* otherActor);
+		virtual void Destroy() override;
+
+		CollisionLayer GetCollisionLayer() const { return mCollisionLayer; }
+		CollisionLayer GetCollisionMask() const { return mCollisionMask; }
+		void SetCollisionLayer(CollisionLayer layer) { mCollisionLayer = layer; }
+		void SetCollisionMask(CollisionLayer mask) { mCollisionMask = mask; }
+
+		sf::FloatRect GetActorGlobalBounds() const;
 		void SetTexture(const std::string& texturePath);
 		void SetActorLocation(const sf::Vector2f& newLoc);
 		void SetActorRotation(float newRotation);
@@ -34,8 +55,14 @@ namespace ly
 	private:
 		World* mOwningWorld;
 		bool mBeganPlay;
+
 		std::optional<sf::Sprite> mSprite;
 		shared_ptr<sf::Texture> mTexture;
 
-	};
+		bool mPhysicsEnabled;
+		std::optional<b2BodyId> mPhysicsBodyId;
+
+		CollisionLayer mCollisionLayer;
+		CollisionLayer mCollisionMask;
+	}
 }

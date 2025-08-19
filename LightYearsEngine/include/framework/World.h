@@ -15,12 +15,14 @@ namespace ly
 		void BeginPlayInternal();
 		void TickInternal(float deltaTime);
 		void Render(sf::RenderWindow& window);
+		void CleanCycle();
+
 		sf::Vector2u GetWindowSize();
 
 		virtual ~World();
 
-		template<typename ActorType>
-		weak_ptr<ActorType> SpawnActor();
+		template<typename ActorType, typename ...Args>
+		weak_ptr<ActorType> SpawnActor(Args... args);
 
 	private:
 
@@ -33,10 +35,10 @@ namespace ly
 		List<shared_ptr<Actor>> mPendingActors;
 	};
 
-	template<typename ActorType>
-	weak_ptr<ActorType> World::SpawnActor()
+	template<typename ActorType, typename ...Args>
+	weak_ptr<ActorType> World::SpawnActor(Args... args)
 	{
-			shared_ptr<ActorType> newActor{ new ActorType(this) };
+			shared_ptr<ActorType> newActor{ new ActorType(this,args...) };
 			mPendingActors.push_back(newActor);
 		
 		return newActor;

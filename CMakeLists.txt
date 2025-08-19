@@ -13,17 +13,5 @@ SET(CMAKE_CXX_EXTENSIONS       OFF)
 set(LIGHT_YEARS_ENGINE_TARGET_NAME LightYearsEngine)
 set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
-include(FetchContent)
-set(SFML_LIB_NAME SFML)
-
-FetchContent_Declare(
-    ${SFML_LIB_NAME}
-    GIT_REPOSITORY https://github.com/SFML/SFML
-    GIT_TAG 3.0.1
-    GIT_SHALLOW FALSE
-)
-
-FetchContent_MakeAvailable(${SFML_LIB_NAME})
-
 add_subdirectory(LightYearsEngine)
 add_subdirectory(LightYearsGame)

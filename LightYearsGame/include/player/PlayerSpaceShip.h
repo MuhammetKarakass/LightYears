@@ -4,6 +4,7 @@
 namespace ly
 {
 	class World;
+	class BulletShooter;
 	class PlayerSpaceShip : public SpaceShip
 	{
 	public:
@@ -19,9 +20,12 @@ namespace ly
 		void ConsumeInput();
 		void NormalizeInput();
 		void ClampInputOnEdge();
+		virtual void Shoot() override;
 
 
 		float mSpeed;
 		sf::Vector2f mMoveInput;
+
+		unique_ptr<BulletShooter> mShooter;
 	};
 }
