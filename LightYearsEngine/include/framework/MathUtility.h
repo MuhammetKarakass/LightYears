@@ -1,5 +1,8 @@
+#pragma once
 #include <SFML/graphics.hpp>
 #include "framework/Core.h"
+#include <random>
+#include <type_traits>
 
 namespace ly
 {
@@ -36,4 +39,28 @@ namespace ly
 		ScaleVector(vector, 1.0f / vectorLength);
 		return vector;
 	}
+
+	float LerpFloat(float a, float b, float alpha);
+	sf::Color LerpColor(const sf::Color& a, const sf::Color& b, float alpha);
+	sf::Vector2f LerpVector(const sf::Vector2f a, const sf::Vector2f& b, float alpha);
+	sf::Vector2f RandomUnitVector();
+
+	template<typename T>
+	T RandRange(T min, T max)	
+	{
+		static thread_local std::mt19937 gen{ std::random_device{}() };
+		if constexpr (std::is_integral_v<T>)
+		{
+			std::uniform_int_distribution<T> distribution{ min, max };
+			return distribution(gen);
+		}
+		else
+		{
+			std::uniform_real_distribution<T> distribution{ min, max };
+			return distribution(gen);
+		}
+	}
+
+	//int RandRange(int Max, int Min);
+
 }

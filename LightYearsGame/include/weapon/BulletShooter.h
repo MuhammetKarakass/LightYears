@@ -9,7 +9,7 @@ namespace ly
 	class BulletShooter: public Shooter
 	{
 	public:
-		BulletShooter(Actor * owner, float cooldownTime = 0.5f);
+		BulletShooter(Actor * owner,const std::string& texturePath,float cooldownTime = 0.5f);
 
 		virtual bool IsOnCooldown() const override;
 
@@ -17,5 +17,6 @@ namespace ly
 		virtual void ShootImp() override;
 		sf::Clock mCooldownClock;
 		float mCooldownTime;
+		std::string mTexturePath;  // Mermi texture yolu
 	};
 }

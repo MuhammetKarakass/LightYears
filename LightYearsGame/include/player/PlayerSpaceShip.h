@@ -1,5 +1,6 @@
 #pragma once 
 #include "spaceShip/SpaceShip.h"
+#include "framework/Core.h"
 
 namespace ly
 {
@@ -14,6 +15,12 @@ namespace ly
 		virtual void Tick(float deltaTime) override;
 		void SetSpeed(float speed) { mSpeed = speed; }
 		float GetSpeed()const { return mSpeed; }
+
+		// Player gemisi için katman/mask ayarý
+		virtual void SetupCollisionLayers() override;
+		
+		// Çarpýþma olayýný yakala
+		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 
 	private:
 		void SetInput();

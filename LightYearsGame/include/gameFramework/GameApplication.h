@@ -5,6 +5,7 @@
 
 namespace ly
 {
+	class Vanguard;
 	class Actor;
 	class PlayerSpaceShip;
 	class SpaceShip;
@@ -14,11 +15,11 @@ namespace ly
 
 		GameApplication();
 		float counter{ 0.f };
-		weak_ptr<PlayerSpaceShip> testActor;
+		
 
 		virtual void Tick(float deltaTime) override;
 
 		void SpaceShipMove(shared_ptr<SpaceShip> spaceShip);
-		weak_ptr<SpaceShip> ActorSpaceShip;
+		
 	};
 }

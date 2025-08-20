@@ -22,21 +22,29 @@ namespace ly
 		void Render(sf::RenderWindow& window);
 
 		World* GetWorld() const { return mOwningWorld; }
-		bool IsActorOutOfWindow() const;
+		bool IsActorOutOfWindow(float allowance=10.f) const;
 
 		void SetEnablePhysics(bool enable);
 		void InitializePhysics();
 		void UnInitializePhysics();
 		void UpdatePhysicsTransform();
 
-		void OnActorBeginOverlap(Actor* otherActor);
-		void OnActorEndOverlap(Actor* otherActor);
+		// Collision filtering helper (optional to use by game code)
+		bool CanCollideWith(const Actor* other) const;
+
+		// Overlap events called by PhysicsSystem
+		virtual	void OnActorEndOverlap(Actor* otherActor);
+		virtual void OnActorBeginOverlap(Actor* otherActor);
 		virtual void Destroy() override;
 
 		CollisionLayer GetCollisionLayer() const { return mCollisionLayer; }
 		CollisionLayer GetCollisionMask() const { return mCollisionMask; }
 		void SetCollisionLayer(CollisionLayer layer) { mCollisionLayer = layer; }
 		void SetCollisionMask(CollisionLayer mask) { mCollisionMask = mask; }
+
+		virtual void ApplyDamage(float amt);
+
+		sf::Sprite& GetSprite() { return mSprite.value(); }
 
 		sf::FloatRect GetActorGlobalBounds() const;
 		void SetTexture(const std::string& texturePath);
@@ -47,14 +55,23 @@ namespace ly
 		void CenterPivot();
 		sf::Vector2f GetActorLocation() const;
 		float GetActorRotation() const;
-		sf::Vector2f GetActorForwardDirection();
-		sf::Vector2f GetActorRightDirection();
+		sf::Vector2f GetActorForwardDirection() const;
+		sf::Vector2f GetActorRightDirection() const;
 		sf::Vector2u GetWindowSize() const;
+		
+		// Local space transformations - sprite'ýn kendi koordinat sisteminde
+		sf::Vector2f TransformLocalToWorld(const sf::Vector2f& localOffset) const;
+		void AddActorLocalLocationOffset(const sf::Vector2f& localOffset);
+		sf::Vector2f GetActorLocalLocation(const sf::Vector2f& worldLocation) const;
 
+	protected:
+		bool& GetCanCollide() { return mCanCollide; } 
 
 	private:
 		World* mOwningWorld;
 		bool mBeganPlay;
+
+		bool mCanCollide;
 
 		std::optional<sf::Sprite> mSprite;
 		shared_ptr<sf::Texture> mTexture;
@@ -64,5 +81,5 @@ namespace ly
 
 		CollisionLayer mCollisionLayer;
 		CollisionLayer mCollisionMask;
-	}
+	};
 }

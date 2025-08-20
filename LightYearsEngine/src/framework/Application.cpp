@@ -7,21 +7,24 @@
 namespace ly
 {
 	Application::Application(sf::Vector2u Position, unsigned int bit, std::string& Title, uint32_t Style)
-		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
-		mTargetFrameRate{ 60.f },
-		mTickClock{},
-		currentWorld{ nullptr },
-		mCleanCycleClock{},
-		mCleanCycleTime{2.f}
+		:mWindow{ sf::VideoMode(Position, bit), Title, Style },  // SFML penceresi oluþtur
+		mTargetFrameRate{ 60.f },     
+		mTickClock{},                 
+		currentWorld{ nullptr },      
+		mCleanCycleClock{},           
+		mCleanCycleTime{2.f}          
 	{
 
 	}
+	
+	// Ana oyun döngüsü - program çalýþtýðý sürece devam eder
 	void Application::Run()
 	{
-		mTickClock.restart();
-		float accumulatedTime = 0.f;
-		float targetDeltaTime = 1.f / mTargetFrameRate;
-		while (mWindow.isOpen())
+		mTickClock.restart();              
+		float accumulatedTime = 0.f;       
+		float targetDeltaTime = 1.f / mTargetFrameRate;  // Frame baþýna hedef süre (1/60 = 0.0167s)
+		
+		while (mWindow.isOpen())  
 		{
 			while (const std::optional event = mWindow.pollEvent())
 			{
@@ -29,50 +32,58 @@ namespace ly
 				{
 					mWindow.close();
 				}
-
 			}
+			
+			// Geçen zamaný biriktir
 			accumulatedTime += mTickClock.restart().asSeconds();
+			
+			// Sabit frame rate için fixed timestep döngüsü
 			while (accumulatedTime >= targetDeltaTime)
 			{
-				// Update game logic here
-				accumulatedTime -= targetDeltaTime;
-				TickInternal(targetDeltaTime);
-				RenderInternal();
+				accumulatedTime -= targetDeltaTime;  // Kullanýlan zamaný çýkar
+				TickInternal(targetDeltaTime);       // Oyun mantýðýný güncelle
+				RenderInternal();                    // Ekraný yeniden çiz
 			}
 		}
 	}
+	
 	void Application::TickInternal(float deltaTime)
 	{
-		Tick(deltaTime);
+		Tick(deltaTime);  // Virtual - türetilen sýnýflar override eder
 		
 		if(currentWorld)
 		{
 			currentWorld->TickInternal(deltaTime);
 		}
 
+		// Fizik simülasyonunu ilerlet
 		PhysicsSystem::Get().Step(deltaTime);
 
+		// Belirli aralýklarla temizlik döngüsü çalýþtýr
 		if (mCleanCycleClock.getElapsedTime().asSeconds() > mCleanCycleTime)
 		{
-			mCleanCycleClock.restart();
-			AssetManager::GetAssetManager().CleanCycle();
-			currentWorld->CleanCycle();
+			mCleanCycleClock.restart();                    // Sayacý sýfýrla
+			AssetManager::GetAssetManager().CleanCycle();  // Unused asset'leri temizle
+			currentWorld->CleanCycle();                    // Ölü actor'larý temizle
 		}
 	}
+	
 	void Application::Tick(float deltaTime)
 	{
 
 	}
+	
 	void Application::RenderInternal()
 	{
-		mWindow.clear();
-
-		Render();
-
+		mWindow.clear();  
+		Render();         
 		mWindow.display();
 	}
+	
+
 	void Application::Render()
 	{
+
 		if(currentWorld)
 		{
 			currentWorld->Render(mWindow);

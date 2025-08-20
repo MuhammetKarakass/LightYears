@@ -19,6 +19,18 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/HealthComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/VFX/Explosion.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/EnemySpaceShip.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemySpaceShip.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/Vanguard.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/Vanguard.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/LevelOne.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/level/LevelOne.cpp
 )
 
 target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC 
@@ -52,6 +64,10 @@ add_custom_command(
 )
 
 configure_file(
-	"config.h.in"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/config.h" ESCAPE_QUOTES
+    "config.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/config.h" ESCAPE_QUOTES
+)
+
+target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
+    ${CMAKE_CURRENT_BINARY_DIR}
 )

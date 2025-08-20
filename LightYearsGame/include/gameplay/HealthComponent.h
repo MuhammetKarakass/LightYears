@@ -16,6 +16,8 @@ namespace ly
 		void ChangeHealth(float amount);
 
 		Delegate<float,float,float> onHealthChanged;
+		Delegate<float, float, float> onTakenDamage;
+		Delegate<> onHealthEmpty;
 
 	private:
 

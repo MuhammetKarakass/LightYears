@@ -149,12 +149,12 @@ namespace ly
 			// Her iki actor da geçerliyse overlap event'lerini çaðýr
 			if (actorA && !actorA->GetIsPendingDestroy())
 			{
-				actorA->OnOverlap(actorB);
+				actorA->OnActorBeginOverlap(actorB);
 			}
 
 			if (actorB && !actorB->GetIsPendingDestroy())
 			{
-				actorB->OnOverlap(actorA);
+				actorB->OnActorBeginOverlap(actorA);
 			}
 		}
 		
@@ -196,12 +196,12 @@ namespace ly
 			
 			if (actorA && !actorA->GetIsPendingDestroy())
 			{
-				actorA->EndOverlap(actorB);
+				actorA->OnActorEndOverlap(actorB);
 			}
 
 			if (actorB && !actorB->GetIsPendingDestroy())
 			{
-				actorB->EndOverlap(actorA);
+				actorB->OnActorEndOverlap(actorA);
 			}
 		}
 	}
@@ -233,7 +233,6 @@ namespace ly
 			{
 				// Body'yi world'den kaldýr
 				b2DestroyBody(bodyId);
-				LOG("Removed listener with bodyId: " , std::to_string(bodyId.index1));
 			}
 		}
 		mPendingRemoveListeners.clear();
