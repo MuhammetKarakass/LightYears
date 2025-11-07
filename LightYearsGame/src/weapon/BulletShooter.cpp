@@ -5,11 +5,14 @@
 
 namespace ly
 {
-	BulletShooter::BulletShooter(Actor* owner, const std::string& texturePath, float cooldownTime)
+	BulletShooter::BulletShooter(Actor* owner, const std::string& texturePath, float cooldownTime,const sf::Vector2f& localPositionOffset, float localRotationOffset)
 		: Shooter{ owner },
 		mCooldownClock{},
 		mCooldownTime{ cooldownTime },
-		mTexturePath{ texturePath }
+		mTexturePath{ texturePath },
+		mLocalPositionOffset{ localPositionOffset },
+		mLocalRotationOffset{ localRotationOffset },
+		mBulletSpeed{600.f}
 	{
 
 	}
@@ -22,17 +25,26 @@ namespace ly
 
 		return true;
 	}
+	
+	void BulletShooter::SetBulletSpeed(float speed)
+	{
+		mBulletSpeed = speed;
+	}
 	void BulletShooter::ShootImp()
 	{
+		if (!GetOwner()) return;
+
 		mCooldownClock.restart();
+
 		weak_ptr<Bullet> newBullet = GetOwner()->GetWorld()->SpawnActor<Bullet>(GetOwner(), mTexturePath);
-		
-		// Sprite'ýn local coordinate'inde {0, -40} offset (sprite'ýn önünden çýksýn)
-		sf::Vector2f localMuzzleOffset{0.f, +40.f}; // y = forward direction (sprite'ýn önü)
-		sf::Vector2f worldMuzzlePos = GetOwner()->GetActorLocation() + GetOwner()->TransformLocalToWorld(localMuzzleOffset);
-		
+
+		newBullet.lock()->SetSpeed(mBulletSpeed);
+
+		sf::Vector2f worldMuzzlePos = GetOwner()->GetActorLocation() + GetOwner()->TransformLocalToWorld(mLocalPositionOffset);
+
+		// Mermiyi konumlandýr
 		newBullet.lock()->SetActorLocation(worldMuzzlePos);
-		newBullet.lock()->SetActorRotation(GetOwner()->GetActorRotation());
+		newBullet.lock()->SetActorRotation(GetOwner()->GetActorRotation() + mLocalRotationOffset);
 
 	}
 }

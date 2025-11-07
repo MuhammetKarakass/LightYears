@@ -29,7 +29,7 @@ namespace ly
 		ExplosionType GetExplosionType() const { return mExplosionType; }
 
 		// Derived types override to set faction/layers
-		virtual void SetupCollisionLayers(){}
+		virtual void SetupCollisionLayers();
 
 
 	private:
@@ -40,7 +40,7 @@ namespace ly
 		float mBlinkTime;
 		float mBlinkDuration;
 
-		ExplosionType mExplosionType = ExplosionType::Medium; // Default explosion type
+		ExplosionType mExplosionType;
 
 		void Blink();
 		void UpdateBlink(float deltaTime);

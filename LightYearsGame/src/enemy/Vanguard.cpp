@@ -6,11 +6,11 @@ namespace ly
 {
 	Vanguard::Vanguard(World* ownningWorld, const std::string& texturePath, const sf::Vector2f& velocity):
 		EnemySpaceShip(ownningWorld, texturePath),
-		mShooter{ new BulletShooter(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",0.5f) }  // Vanguard için özel mermi atýcý
+		mShooter{ new BulletShooter (this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",1.f,{0.f,40.f}) }  // Vanguard için özel mermi atýcý
 	{
 		SetVelocity(velocity);
 		SetActorRotation(180.f);
-		SetExplosionType(ExplosionType::Boss);
+		SetExplosionType(ExplosionType::Medium);
 	}
 
 	Vanguard::~Vanguard()

@@ -11,7 +11,7 @@ namespace ly
 	{
 		SpaceShip::Tick(deltaTime);  // Base class tick'i çaðýr
 
-		if (IsActorOutOfWindow(GetActorGlobalBounds().size.x))
+		if (IsActorOutOfWindow(GetActorGlobalBounds().size.x*2.f))
 		{
 			Destroy();
 		}

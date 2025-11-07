@@ -79,5 +79,6 @@ namespace ly
     template<typename T>
     using Set = std::unordered_set<T>;
 
+	// LOG isim , M mesaj , ... argümanlar; M mesaj, ## virgül silme duruma göre __VA_ARGS__ argümanlar ...  
     #define LOG(M, ...) printf(M "\n", ##__VA_ARGS__)
 }

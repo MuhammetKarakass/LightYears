@@ -1,7 +1,7 @@
 #include "spaceShip/SpaceShip.h"
 #include <framework/World.h>
 #include <framework/MathUtility.h>
-#include "VFX/Explosion.h"  // ? Eksik include eklendi
+#include "VFX/Explosion.h" 
 
 namespace ly
 {
@@ -39,8 +39,6 @@ namespace ly
 		Actor::Tick(deltaTime);                           
 		AddActorLocationOffset(mVelocity * deltaTime);    
 		UpdateBlink(deltaTime);      
-
-
 	}
 
 	void SpaceShip::SetVelocity(const sf::Vector2f& velocity)
@@ -51,9 +49,12 @@ namespace ly
 	// Ateþ etme iþlemi (türetilen sýnýflar override eder)
 	void SpaceShip::Shoot()
 	{
-		// Base class'ta boþ - PlayerSpaceShip, EnemySpaceShip override eder
 	}
-	
+
+	void SpaceShip::SetupCollisionLayers()
+	{
+	}
+
 	void SpaceShip::Blink()
 	{
 		mBlinkTime = mBlinkDuration; 

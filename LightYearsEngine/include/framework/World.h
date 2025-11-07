@@ -1,12 +1,14 @@
 #pragma once
 #include "framework/Core.h"
 #include <SFML/Graphics.hpp>
+#include "framework/Object.h"
 
 namespace ly
 {
 	class Actor;
 	class Application;
-	class World
+	class GameStage;
+	class World: public Object
 	{
 	public:
 
@@ -21,18 +23,30 @@ namespace ly
 
 		virtual ~World();
 
+		void AddGameStage(shared_ptr<GameStage> newStage);
+
 		template<typename ActorType, typename ...Args>
 		weak_ptr<ActorType> SpawnActor(Args... args);
 
-	private:
+	protected:
 
-		void BeginPlay();
-		void Tick(float deltaTime);
+		virtual void BeginPlay();
+		virtual void Tick(float deltaTime);
+
+	private:
 		Application* mOwningApp;
 		bool mBeganPlay;
 
 		List<shared_ptr<Actor>> mActors;
 		List<shared_ptr<Actor>> mPendingActors;
+		List<shared_ptr<GameStage>> mGameStages;
+		List<shared_ptr<GameStage>>::iterator mCurrentStage;
+
+		virtual void InitGameStages();
+		virtual void AllGameStagesFinished();
+		void NextGameStage();
+		void BeginStages();
+
 	};
 
 	template<typename ActorType, typename ...Args>

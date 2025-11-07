@@ -8,11 +8,12 @@ namespace ly
 	// PlayerSpaceShip constructor - Oyuncu kontrollü uzay gemisi
 	PlayerSpaceShip::PlayerSpaceShip(World* owningWorld,const std::string& texturePath)
 		:SpaceShip(owningWorld, texturePath),  
-		mSpeed(200.f),                         
+		mSpeed(300.f),                         
 		mMoveInput{ 0.f, 0.f },               
-		mShooter{new BulletShooter(this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png", 0.2f)}
+		mShooter{new BulletShooter(this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png", 0.15f)}
 	{
 		SetActorRotation(0.f);
+		SetExplosionType(ExplosionType::Medium);
 	}
 
 	void PlayerSpaceShip::SetupCollisionLayers()
@@ -73,6 +74,7 @@ namespace ly
 	// Ekran kenarýnda hareket sýnýrlamasý ve ateþ etme
 	void PlayerSpaceShip::ClampInputOnEdge()
 	{
+		//Sol kenar kontrolü
 		if(GetActorLocation().x-40.f<=0.f && mMoveInput.x==-1.f)
 		{
 			mMoveInput.x = 0.f; 

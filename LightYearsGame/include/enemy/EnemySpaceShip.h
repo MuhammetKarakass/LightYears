@@ -11,6 +11,8 @@ namespace ly
 
 		virtual void Tick(float deltaTime) override;
 		virtual void SetupCollisionLayers() override;
+		
+		float GetCollisionDamage() const { return mCollisionDamage; }
 
 	private:
 		virtual void OnActorBeginOverlap(Actor* other) override;

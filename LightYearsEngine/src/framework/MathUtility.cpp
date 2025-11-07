@@ -45,11 +45,13 @@ namespace ly
 
 		return randVec;
 	}
-	/*int RandRange(int Max, int Min)
+	sf::Vector2f RandomVector(const sf::Vector2f& a, const sf::Vector2f& b)
 	{
-		std::random
-		return 0;
-	}*/
+		float randX = RandRange(a.x, b.x);
+		float randY = RandRange(a.y, b.y);
+		return sf::Vector2f(randX, randY);
+	}
+
 	sf::Vector2f LerpVector(const sf::Vector2f a, const sf::Vector2f& b, float alpha)
 	{
 		float LerpX = LerpFloat(a.x,b.x,alpha);

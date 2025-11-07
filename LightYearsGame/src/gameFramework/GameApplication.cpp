@@ -10,7 +10,7 @@ ly::Application* GetApplication()
 
 namespace ly
 {
-	GameApplication::GameApplication()<
+	GameApplication::GameApplication()
 		:Application({ 600, 980 }, 64, std::string("Game Application"), sf::Style::Close|sf::Style::Titlebar)
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());

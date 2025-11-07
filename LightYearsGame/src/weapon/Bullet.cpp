@@ -51,19 +51,18 @@ namespace ly
 	{
 		if (mOwner)
 		{
-			
 			AddActorLocationOffset(GetActorForwardDirection() * mSpeed * deltaTime);
 		}
 	}
 
 	void Bullet::SetupCollisionFromOwner()
 	{
-		if (!mOwner)
+		/*if (!mOwner)
 		{
 			SetCollisionLayer(CollisionLayer::None);
 			SetCollisionMask(CollisionLayer::None);
 			return;
-		}
+		}*/
 
 		// OWNER'IN LAYER'INA GÖRE BULLET'IN COLLISION SETUP'I
 		switch (mOwner->GetCollisionLayer())

@@ -9,14 +9,19 @@ namespace ly
 	class BulletShooter: public Shooter
 	{
 	public:
-		BulletShooter(Actor * owner,const std::string& texturePath,float cooldownTime = 0.5f);
+		BulletShooter(Actor* owner,const std::string& texturePath, float cooldownTime = 0.5f, const sf::Vector2f& localPositionOffset = {0.f,0.f}, float localRotationOffset= 0.f);
 
 		virtual bool IsOnCooldown() const override;
+
+		void SetBulletSpeed(float speed);
 
 	private:
 		virtual void ShootImp() override;
 		sf::Clock mCooldownClock;
 		float mCooldownTime;
-		std::string mTexturePath;  // Mermi texture yolu
+		std::string mTexturePath;
+		sf::Vector2f mLocalPositionOffset;
+		float mBulletSpeed;
+		float mLocalRotationOffset;
 	};
 }

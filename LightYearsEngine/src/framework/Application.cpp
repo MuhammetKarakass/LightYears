@@ -3,6 +3,7 @@
 #include "framework/World.h"
 #include "framework/AssetManager.h"
 #include "framework/PhysicsSystem.h"
+#include "framework/TimerManager.h"
 
 namespace ly
 {
@@ -56,6 +57,8 @@ namespace ly
 			currentWorld->TickInternal(deltaTime);
 		}
 
+		TimerManager::GetTimerManager().UpdateTimer(deltaTime);
+
 		// Fizik simülasyonunu ilerlet
 		PhysicsSystem::Get().Step(deltaTime);
 
@@ -64,7 +67,8 @@ namespace ly
 		{
 			mCleanCycleClock.restart();                    // Sayacý sýfýrla
 			AssetManager::GetAssetManager().CleanCycle();  // Unused asset'leri temizle
-			currentWorld->CleanCycle();                    // Ölü actor'larý temizle
+			if (currentWorld)
+				currentWorld->CleanCycle();                    // Ölü actor'larý temizle
 		}
 	}
 	
