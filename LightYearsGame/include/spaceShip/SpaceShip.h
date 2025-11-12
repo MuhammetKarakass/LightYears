@@ -21,8 +21,9 @@ namespace ly
 		void SetVelocity(const sf::Vector2f& velocity);
 		sf::Vector2f GetVelocity() { return mVelocity; }
 
-		virtual void Shoot();
+		HealthComponent& GetHealthComponent() { return mHealthComponent; }
 
+		virtual void Shoot();
 		virtual void ApplyDamage(float amt) override;
 
 		virtual void SetExplosionType(ExplosionType type) { mExplosionType = type; }
@@ -47,6 +48,7 @@ namespace ly
 
 		virtual void OnHealthChanged(float amt, float health, float maxHealth);
 		virtual void OnTakenDamage(float amt, float health, float maxHealth);
-		virtual void Blow();
+		void Blow();
+		virtual void Blew();
 	};
 }

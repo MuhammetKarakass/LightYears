@@ -90,7 +90,12 @@ namespace ly
 	void SpaceShip::Blow()
 	{
 		Explosion::SpawnExplosion(GetWorld(), GetActorLocation(), Explosion::GetPreset(GetExplosionType()));
+		Blew();
 		Destroy();
+	}
+
+	void SpaceShip::Blew()
+	{
 	}
 	
 	// Bu gemiye hasar verme iþlemi

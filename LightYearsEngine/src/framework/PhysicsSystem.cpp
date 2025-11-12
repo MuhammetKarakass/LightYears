@@ -216,6 +216,56 @@ namespace ly
 		return mPhysicsWorld.index1 != 0;
 	}
 
+	void PhysicsSystem::SetCollisionRadius(b2BodyId bodyId, float radius)
+	{
+		if (!b2Body_IsValid(bodyId))
+		{
+			LOG("SetBodyRadius: Invalid body ID!");
+			return;
+		}
+
+		// ? Box2D v3.x: Tüm shape'leri array ile al ve sil
+		int shapeCount = b2Body_GetShapeCount(bodyId);
+		
+		if (shapeCount > 0)
+		{
+			// Shape ID'lerini tutacak array oluþtur
+			b2ShapeId* shapes = new b2ShapeId[shapeCount];
+			
+			// Tüm shape ID'lerini array'e al
+			b2Body_GetShapes(bodyId, shapes, shapeCount);
+			
+			// Tüm shape'leri sil
+			for (int i = 0; i < shapeCount; ++i)
+			{
+				if (b2Shape_IsValid(shapes[i]))
+				{
+					b2DestroyShape(shapes[i], true);  // ? v3.x: 2. parametre = resetMass
+				}
+			}
+			
+			// Array'i temizle
+			delete[] shapes;
+		}
+
+		// Yeni circle shape oluþtur
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		shapeDef.density = 1.0f;
+		shapeDef.material.friction = 0.3f;
+		shapeDef.material.restitution = 0.1f;
+		
+		// ? Contact events'i aktif et (UFO çarpýþmalarý için)
+		shapeDef.enableContactEvents = true;
+		shapeDef.invokeContactCreation = true;  // Ýlk frame'de contact oluþtur
+		shapeDef.isSensor = false;  // Solid shape - fiziksel çarpýþma için
+
+		b2Circle circle;
+		circle.center = {0.0f, 0.0f};
+		circle.radius = radius * mPhysicsRate;  // Physics scale'e çevir
+
+		b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	}
+
 	PhysicsSystem::PhysicsSystem():
 		mPhysicsWorld{0, 0},  // Null WorldId ile baþlat
 		mPhysicsRate{0.01f},

@@ -2,6 +2,9 @@
 #include <framework/World.h>
 #include <framework/MathUtility.h>
 #include "weapon/BulletShooter.h"
+#include "weapon/ThreeWayShooter.h"
+#include "weapon/FrontalWiper.h"
+#include "weapon/Shooter.h"
 
 namespace ly
 {
@@ -10,10 +13,20 @@ namespace ly
 		:SpaceShip(owningWorld, texturePath),  
 		mSpeed(300.f),                         
 		mMoveInput{ 0.f, 0.f },               
-		mShooter{new BulletShooter(this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png", 0.15f)}
+		mShooter{ new BulletShooter{this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png",0.2f, sf::Vector2f{0.f,50.f}} }
 	{
 		SetActorRotation(0.f);
 		SetExplosionType(ExplosionType::Medium);
+	}
+
+	void PlayerSpaceShip::SetShooter(unique_ptr<Shooter>&& shooter)
+	{
+		if (mShooter && typeid(*mShooter) == typeid(*shooter))
+		{
+			mShooter->IncrementLevel();
+			return;
+		}
+		mShooter = std::move(shooter);
 	}
 
 	void PlayerSpaceShip::SetupCollisionLayers()

@@ -8,20 +8,41 @@
 #include "enemy/HexagonStage.h"
 #include "enemy/UFOStage.h"
 #include <gameplay/WaitStage.h>
+#include "player/PlayerManager.h"
 
 
 namespace ly
 {
 	LevelOne::LevelOne(Application* owningApp)
-		:World(owningApp)
+		:World(owningApp),
+		mPlayerSpaceShip{}
 	{
-		testActor = SpawnActor<PlayerSpaceShip>();
-		testActor.lock()->SetActorLocation({ 300.f, 490.f });
+	
 	}
 
 	void LevelOne::BeginPlay()
 	{
-		
+		Player& newPlayer = PlayerManager::GetPlayerManager().CreateNewPlayer();
+		mPlayerSpaceShip=newPlayer.SpawnSpaceShip(this);
+		mPlayerSpaceShip.lock()->onActorDestroyed.BindAction(GetWeakPtr(), &LevelOne::PlayerShipDestroyed);
+	}
+
+	void LevelOne::PlayerShipDestroyed(Actor* destroyedActor)
+	{
+		mPlayerSpaceShip = PlayerManager::GetPlayerManager().GetPlayer()->SpawnSpaceShip(this);
+		if(!mPlayerSpaceShip.expired())
+		{
+			mPlayerSpaceShip.lock()->onActorDestroyed.BindAction(GetWeakPtr(), &LevelOne::PlayerShipDestroyed);
+		}
+		else 
+		{
+			GameOver();
+		}
+	}
+
+	void LevelOne::GameOver()
+	{
+		LOG("GAME OVER*****************************************");
 	}
 
 	void LevelOne::Tick(float deltaTime)
@@ -39,4 +60,5 @@ namespace ly
 		AddGameStage(shared_ptr<HexagonStage>{new HexagonStage(this)});
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 	}
+
 }

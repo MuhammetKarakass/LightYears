@@ -64,8 +64,11 @@ namespace ly
 		void AddActorLocalLocationOffset(const sf::Vector2f& localOffset);
 		sf::Vector2f GetActorLocalLocation(const sf::Vector2f& worldLocation) const;
 
+		Delegate<Actor*> onActorDestroyed;
+
 	protected:
 		bool& GetCanCollide() { return mCanCollide; } 
+		void SetCollisionRadius(float radius);
 
 	private:
 		World* mOwningWorld;

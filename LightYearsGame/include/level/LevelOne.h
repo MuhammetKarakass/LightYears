@@ -13,7 +13,7 @@ namespace ly
 	public:
 		LevelOne(Application* owningApp);
 
-		weak_ptr<PlayerSpaceShip> testActor;
+		weak_ptr<PlayerSpaceShip> mPlayerSpaceShip;
 
 	protected:
 		virtual void BeginPlay() override;
@@ -21,5 +21,7 @@ namespace ly
 
 	private:
 		virtual void InitGameStages() override;
+		void PlayerShipDestroyed(Actor* destroyedActor);
+		void GameOver();
 	};
 }

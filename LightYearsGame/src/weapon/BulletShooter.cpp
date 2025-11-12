@@ -18,7 +18,7 @@ namespace ly
 	}
 	bool BulletShooter::IsOnCooldown() const
 	{
-		if (mCooldownClock.getElapsedTime().asSeconds() > mCooldownTime)
+		if (mCooldownClock.getElapsedTime().asSeconds() > mCooldownTime/ GetCooldownMultiplier() /*GetCurrentLevel()*/)
 		{
 			return false;
 		}
@@ -29,6 +29,11 @@ namespace ly
 	void BulletShooter::SetBulletSpeed(float speed)
 	{
 		mBulletSpeed = speed;
+	}
+	void BulletShooter::IncrementLevel(int amt)
+	{
+		Shooter::IncrementLevel(amt);
+
 	}
 	void BulletShooter::ShootImp()
 	{

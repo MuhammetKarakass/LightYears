@@ -2,9 +2,10 @@
 
 namespace ly
 {
-	EnemySpaceShip::EnemySpaceShip(World* owningWorld, const std::string& texturePath, float collisionDamage):
-		SpaceShip(owningWorld, texturePath),
-		mCollisionDamage(collisionDamage)
+	EnemySpaceShip::EnemySpaceShip(World* owningWorld, const std::string& texturePath, float collisionDamage, const List<RewardFactoryFunc>& rewardFactories) :
+		SpaceShip{owningWorld, texturePath},
+		mCollisionDamage{collisionDamage},
+		mRewardFactories{rewardFactories}
 	{
 	}
 	void EnemySpaceShip::Tick(float deltaTime)
@@ -32,5 +33,24 @@ namespace ly
 		{
 			other->ApplyDamage(mCollisionDamage);
 		}
+	}
+	void EnemySpaceShip::SpawnReward()
+	{
+		if (mRewardFactories.size() == 0) return;
+		int randIndex = RandRange(0, int(mRewardFactories.size() - 1));
+
+		if(randIndex >=0 && randIndex < mRewardFactories.size())
+		{
+			
+			weak_ptr<Reward> reward = mRewardFactories[randIndex](GetWorld());
+			if (auto rewardPtr = reward.lock())
+			{
+				rewardPtr->SetActorLocation(GetActorLocation());
+			}
+		}
+	}
+	void EnemySpaceShip::Blew()
+	{
+		SpawnReward();
 	}
 }

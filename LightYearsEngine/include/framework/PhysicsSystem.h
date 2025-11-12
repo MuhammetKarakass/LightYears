@@ -24,6 +24,8 @@ namespace ly
 		void RemoveListener(b2BodyId bodyId);
 
 		bool IsInitialized() const;
+
+		void SetCollisionRadius(b2BodyId bodyId, float radius);
 		
 		~PhysicsSystem();  // Public destructor for unique_ptr
 

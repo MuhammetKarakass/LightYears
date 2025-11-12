@@ -9,7 +9,7 @@ namespace ly
 {
 	Application::Application(sf::Vector2u Position, unsigned int bit, std::string& Title, uint32_t Style)
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },  // SFML penceresi oluþtur
-		mTargetFrameRate{ 60.f },     
+		mTargetFrameRate{ 75.f },     
 		mTickClock{},                 
 		currentWorld{ nullptr },      
 		mCleanCycleClock{},           

@@ -1,5 +1,4 @@
 ﻿#include "framework/Actor.h"
-#include "framework/Core.h"
 #include "framework/AssetManager.h"
 #include "framework/World.h"
 #include "framework/MathUtility.h"
@@ -73,6 +72,7 @@ namespace ly
 	void Actor::Destroy()
 	{
 		UnInitializePhysics();  // Önce fizik sisteminden çıkar
+		onActorDestroyed.Broadcast(this); // Yıkılma olayı yayınla
 		Object::Destroy();    // Sonra base class destruction (mPendingDestroy = true)
 	}
 	
@@ -353,5 +353,10 @@ namespace ly
 			deltaWorld.x * cosR - deltaWorld.y * sinR,  // Local X (sprite'ın sağ/sol ekseni)
 			deltaWorld.x * sinR + deltaWorld.y * cosR   // Local Y (sprite'ın ileri/geri ekseni)  
 		};
+	}
+	void Actor::SetCollisionRadius(float radius)
+	{
+		if (!mPhysicsBodyId) return;
+		PhysicsSystem::Get().SetCollisionRadius(*mPhysicsBodyId, radius);
 	}
 }

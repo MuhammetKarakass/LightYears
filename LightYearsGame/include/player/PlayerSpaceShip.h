@@ -5,7 +5,7 @@
 namespace ly
 {
 	class World;
-	class BulletShooter;
+	class Shooter;
 	class PlayerSpaceShip : public SpaceShip
 	{
 	public:
@@ -15,6 +15,8 @@ namespace ly
 		virtual void Tick(float deltaTime) override;
 		void SetSpeed(float speed) { mSpeed = speed; }
 		float GetSpeed()const { return mSpeed; }
+
+		void SetShooter(unique_ptr<Shooter>&& shooter);
 
 		// Player gemisi için katman/mask ayarý
 		virtual void SetupCollisionLayers() override;
@@ -33,6 +35,6 @@ namespace ly
 		float mSpeed;
 		sf::Vector2f mMoveInput;
 
-		unique_ptr<BulletShooter> mShooter;
+		unique_ptr<Shooter> mShooter;
 	};
 }
