@@ -40,7 +40,7 @@ namespace ly
 	{
 	public:
 		// ====================================================================
-		// BINDACTION - Üye Fonksiyonu Event'e Baðlama
+		// BINDACTION - Üye Fonksiyonu Event'e Baðlama (weak_ptr versiyonu)
 		// ====================================================================
 		//
 		// TEMPLATE FUNCTION SYNTAX:
@@ -200,6 +200,27 @@ namespace ly
 			// Lambda'yý (std::function'a otomatik dönüþtürülmüþ halde) listeye ekler
 			// push_back: Container'ýn sonuna yeni eleman ekler
 			// Lambda'nýn copy constructor'ý çaðrýlýr (capture edilen deðerler kopyalanýr)
+			mCallbacks.push_back(callBackFunc);
+		}
+
+		// ====================================================================
+		// BINDACTION - Üye Fonksiyonu Event'e Baðlama (raw pointer versiyonu)
+		// ====================================================================
+		// Player gibi shared_ptr ile yönetilmeyen ama yaþam süresi garanti
+		// edilen nesneler için kullanýlýr. Lifetime kontrolü YAPILMAZ!
+		template<typename ClassName>
+		void BindAction(ClassName* obj, void(ClassName::* callback)(Args...))
+		{
+			std::function<bool(Args...)> callBackFunc = [obj, callback](Args... args)->bool
+			{
+				if (obj != nullptr)
+				{
+					(obj->*callback)(args...);
+					return true;
+				}
+				return false;
+			};
+			
 			mCallbacks.push_back(callBackFunc);
 		}
 

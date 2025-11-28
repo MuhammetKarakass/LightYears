@@ -15,7 +15,7 @@ namespace ly
 	}
 	void HexagonStage::BeginStage()
 	{
-		mSpawnTimerHandle = TimerManager::GetTimerManager().SetTimer(GetWeakPtr(),&HexagonStage::SpawnHexagon, mSpawnInterval, true);
+		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&HexagonStage::SpawnHexagon, mSpawnInterval, true);
 	}
 	void HexagonStage::TickStage(float deltaTime)
 	{
@@ -23,7 +23,7 @@ namespace ly
 
 	void HexagonStage::StageFinished()
 	{
-		TimerManager::GetTimerManager().ClearTimer(mSpawnTimerHandle);
+		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
 	}
 	void HexagonStage::SpawnHexagon()
 	{

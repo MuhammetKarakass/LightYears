@@ -25,7 +25,6 @@ namespace ly
 		void FinishStage();
 
 
-
 	private:
 		World* mWorld;
 		bool mStageFinished;

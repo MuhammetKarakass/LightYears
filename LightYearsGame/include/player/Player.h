@@ -26,11 +26,13 @@ namespace ly
 		Delegate <int> onScoreChange;
 		Delegate<> onLifeExhausted;
 
+		void OnScoreAwarded(unsigned int scoreAmount);
+
 	private:
 		weak_ptr<PlayerSpaceShip> mCurrentSpaceShip;
 		unsigned int mLifeCount;
 		unsigned int mScore;
 
-		
+
 	};
 }

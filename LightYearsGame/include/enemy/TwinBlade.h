@@ -16,6 +16,9 @@ namespace ly
 
 		virtual void Shoot() override;
 
+	protected:
+		static List<WeightedReward> GetDefaultRewards();
+
 	private:
 		unique_ptr<BulletShooter> mShooterLeft;
 		unique_ptr<BulletShooter> mShooterRight;

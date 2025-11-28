@@ -11,6 +11,6 @@ namespace ly
 	void WaitStage::BeginStage()
 	{
 		GameStage::BeginStage();
-		TimerManager::GetTimerManager().SetTimer(GetWeakPtr(), &WaitStage::FinishStage, mWaitDuration);
+		TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(), &WaitStage::FinishStage, mWaitDuration);
 	}
 }

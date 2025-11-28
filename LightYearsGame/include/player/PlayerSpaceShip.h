@@ -1,6 +1,7 @@
 #pragma once 
 #include "spaceShip/SpaceShip.h"
 #include "framework/Core.h"
+#include "framework/TimerManager.h"
 
 namespace ly
 {
@@ -12,6 +13,8 @@ namespace ly
 
 		PlayerSpaceShip(World* owningWorld,const std::string& texturePath = "SpaceShooterRedux/PNG/playerShip1_blue.png");
 
+		virtual void BeginPlay() override;
+		virtual void ApplyDamage(float amt) override;
 		virtual void Tick(float deltaTime) override;
 		void SetSpeed(float speed) { mSpeed = speed; }
 		float GetSpeed()const { return mSpeed; }
@@ -30,11 +33,21 @@ namespace ly
 		void NormalizeInput();
 		void ClampInputOnEdge();
 		virtual void Shoot() override;
-
+		void StopInvulnerability();
+		void UpdateInvulnerability(float deltaTime);
 
 		float mSpeed;
 		sf::Vector2f mMoveInput;
 
 		unique_ptr<Shooter> mShooter;
+
+		float mInvulnerabilityTime;
+		TimerHandle mInvulnerabilityTimerHandle;
+		bool mInvulnerable{ false };
+
+		float mInvulnerabilityBlinkInterval;
+		float mInvulnerabilityBlinkTimer;
+		float mInvulnerabilityDir;
+
 	};
 }

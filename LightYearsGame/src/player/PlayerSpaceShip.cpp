@@ -13,7 +13,12 @@ namespace ly
 		:SpaceShip(owningWorld, texturePath),  
 		mSpeed(300.f),                         
 		mMoveInput{ 0.f, 0.f },               
-		mShooter{ new BulletShooter{this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png",0.2f, sf::Vector2f{0.f,50.f}} }
+		mShooter{ new BulletShooter{this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png",0.2f, sf::Vector2f{0.f,50.f}} },
+		mInvulnerabilityTime{ 2.5f },
+		mInvulnerable{true},
+		mInvulnerabilityBlinkInterval{ 0.4f },
+		mInvulnerabilityBlinkTimer{ 0.f },
+		mInvulnerabilityDir{ 1.f }
 	{
 		SetActorRotation(0.f);
 		SetExplosionType(ExplosionType::Medium);
@@ -38,11 +43,35 @@ namespace ly
 	
 	}
 
+	void PlayerSpaceShip::BeginPlay()
+	{
+		SpaceShip::BeginPlay();  
+		TimerManager::GetGameTimerManager().SetTimer(
+			GetWeakPtr(),
+			&PlayerSpaceShip::StopInvulnerability,
+			mInvulnerabilityTime,
+			false
+		);
+	}
+
+	void PlayerSpaceShip::ApplyDamage(float amt)
+	{
+		if (mInvulnerable)  
+		{
+			return;  
+		}
+		SpaceShip::ApplyDamage(amt);  
+	}
+
 	void PlayerSpaceShip::Tick(float deltaTime)
 	{
 		SpaceShip::Tick(deltaTime);  
 		SetInput();                  
 		ConsumeInput();    
+		if(mInvulnerable)            
+		{
+			UpdateInvulnerability(deltaTime); 
+		}
 
 	}
 	
@@ -124,13 +153,30 @@ namespace ly
 		}
 	}
 
+	void PlayerSpaceShip::StopInvulnerability()
+	{
+		GetSprite().setColor({255,255,255,255});
+		mInvulnerable = false;
+	}
+
+	void PlayerSpaceShip::UpdateInvulnerability(float deltaTime)
+	{
+		mInvulnerabilityBlinkTimer += deltaTime * mInvulnerabilityDir;
+		if (mInvulnerabilityBlinkTimer < 0 || mInvulnerabilityBlinkTimer > mInvulnerabilityBlinkInterval)
+		{
+			mInvulnerabilityDir *= -1;
+		}
+
+		GetSprite().setColor(LerpColor({ 255,255, 255, 96 }, { 255, 255, 255, 160 }, mInvulnerabilityBlinkTimer / mInvulnerabilityBlinkInterval));
+	}
+
 	void PlayerSpaceShip::OnActorBeginOverlap(Actor* otherActor)
 	{
 		SpaceShip::OnActorBeginOverlap(otherActor);
-		
-		if (otherActor && GetCanCollide())
+
+		if (otherActor && GetCanCollide() && !mInvulnerable)
 		{
-			otherActor->ApplyDamage(25.f); // Düþmana hasar ver
+			otherActor->ApplyDamage(25.f);
 		}
 	}
 }

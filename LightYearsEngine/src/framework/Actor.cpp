@@ -26,7 +26,7 @@ namespace ly
 	// Açıklama: Actor bellekten silinirken çalışır. Log mesajı yazdırır.
 	Actor::~Actor()
 	{
-		LOG("Actor destroyed");  
+	
 	}
 	
 	// Çağrıldığı Yer: World::TickInternal() - yeni oluşturulan Actor'lar için (mPendingActors'tan mActors'a taşınırken).

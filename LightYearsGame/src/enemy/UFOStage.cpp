@@ -25,8 +25,8 @@ namespace ly
 
 	void UFOStage::StageFinished()
 	{
-		TimerManager::GetTimerManager().ClearTimer(mSpawnTimerHandlePair);
-		TimerManager::GetTimerManager().ClearTimer(mSpawnTimerHandleSecond);
+		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandlePair);
+		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandleSecond);
 	}
 
 	sf::Vector2f UFOStage::RandomSpawnLoc()
@@ -54,7 +54,7 @@ namespace ly
 	{
 		SpawnUFO();
 		
-		mSpawnTimerHandleSecond = TimerManager::GetTimerManager().SetTimer(
+		mSpawnTimerHandleSecond = TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
 			&UFOStage::SpawnUFO,
 			1.f,
@@ -69,7 +69,7 @@ namespace ly
 			return;
 		}
 
-		mSpawnTimerHandlePair = TimerManager::GetTimerManager().SetTimer(
+		mSpawnTimerHandlePair = TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
 			&UFOStage::SpawnUFOPair,
 			RandRange(mSpawnInterval[0], mSpawnInterval[1]),

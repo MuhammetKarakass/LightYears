@@ -1,26 +1,28 @@
-#include "framework/World.h"
+ï»¿#include "framework/World.h"
 #include "framework/Actor.h"
 #include "framework/Application.h"
 #include "gameplay/GameStage.h"
+#include "widget/HUD.h"
 
 namespace ly{
 
-	// Çağrıldığı Yer: Application::LoadWorld() içinde make_shared<WorldType>(this) ile.
-	// Açıklama: World nesnesi oluşturulduğunda çalışır. Üye değişkenleri başlangıç değerlerine ayarlar.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: Application::LoadWorld() iÃ§inde make_shared<WorldType>(this) ile.
+	// AÃ§Ä±klama: World nesnesi oluÅŸturulduÄŸunda Ã§alÄ±ÅŸÄ±r. Ãœye deÄŸiÅŸkenleri baÅŸlangÄ±Ã§ deÄŸerlerine ayarlar.
 	World::World(Application* owningApp):
 		mOwningApp{ owningApp },
 		mBeganPlay{ false },   
 		mPendingActors{},      
 		mActors{},
 		mCurrentStage{mGameStages.end()},
-		mGameStages{}
+		mGameStages{},
+		mIsPaused{ false }
 	{
 
 	}
 
-	// Çağrıldığı Yer: Application::LoadWorld() - yeni dünya yüklendikten hemen sonra.
-	// Açıklama: BeginPlay'in sadece bir kez çağrılmasını garanti eden bir sarmalayıcı (wrapper).
-	// Ayrıca oyun aşamalarını başlatır.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: Application::LoadWorld() - yeni dÃ¼nya yÃ¼klendikten hemen sonra.
+	// AÃ§Ä±klama: BeginPlay'in sadece bir kez Ã§aÄŸrÄ±lmasÄ±nÄ± garanti eden bir sarmalayÄ±cÄ± (wrapper).
+	// AyrÄ±ca oyun aÅŸamalarÄ±nÄ± baÅŸlatÄ±r.
 	void World::BeginPlayInternal()
 	{
 		if (!mBeganPlay)
@@ -32,49 +34,64 @@ namespace ly{
 		}
 	}
 
-	// Çağrıldığı Yer: Application::TickInternal() - her frame.
-	// Açıklama: Dünyanın ana güncelleme döngüsü. Yeni oluşturulan (bekleyen) Actor'ları oyuna dahil eder,
-	// mevcut tüm Actor'ları ve aktif oyun aşamasını günceller.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: Application::TickInternal() - her frame.
+	// AÃ§Ä±klama: DÃ¼nyanÄ±n ana gÃ¼ncelleme dÃ¶ngÃ¼sÃ¼. Yeni oluÅŸturulan (bekleyen) Actor'larÄ± oyuna dahil eder,
+	// mevcut tÃ¼m Actor'larÄ± ve aktif oyun aÅŸamasÄ±nÄ± gÃ¼nceller.
 	void World::TickInternal(float deltaTime)
 	{
+		if (!mIsPaused) {
 
-        // Bekleyen actor'ları aktif listeye ekle ve başlat
-        for (std::shared_ptr<Actor> actor : mPendingActors) 
-		{
-              mActors.push_back(actor);           // Aktif listeye ekle
-              actor->BeginPlayInternal();         // Actor'ı başlat
-        }
+			for (std::shared_ptr<Actor> actor : mPendingActors)
+			{
+				mActors.push_back(actor);
+				actor->BeginPlayInternal();
 
-		mPendingActors.clear();  // Bekleyen listeyi temizle
+				OnActorSpawned(actor.get());
+			}
 
-		// Tüm aktif actor'ları güncelle
-		for (auto iter = mActors.begin(); iter != mActors.end();)
-		{
-			iter->get()->TickInternal(deltaTime);  // Her actor'ı güncelle
-			iter++;
+			mPendingActors.clear();
+
+			for (auto iter = mActors.begin(); iter != mActors.end();)
+			{
+				iter->get()->TickInternal(deltaTime);
+				iter++;
+			}
+
+			if (mCurrentStage != mGameStages.end())
+			{
+				mCurrentStage->get()->TickStage(deltaTime);
+			}
+
+			if (mBeganPlay)
+			{
+				Tick(deltaTime);  // Virtual - tÃ¼retilen sÄ±nÄ±flar override eder
+			}
 		}
 
-		if(mCurrentStage!=mGameStages.end())
+		if(mHUD)
 		{
-			mCurrentStage->get()->TickStage(deltaTime);
+			if(!mHUD->HasInit())
+				mHUD->NativeInit(mOwningApp->GetRenderWindow());
+			mHUD->Tick(deltaTime);
 		}
-
-		if (mBeganPlay)
+		if(mOverlayHUD)
 		{
-			Tick(deltaTime);  // Virtual - türetilen sınıflar override eder
+			if(!mOverlayHUD->HasInit())
+				mOverlayHUD->NativeInit(mOwningApp->GetRenderWindow());
+			mOverlayHUD->Tick(deltaTime);
 		}
 	}
 
-	// Çağrıldığı Yer: Application::TickInternal() - periyodik olarak (örn: her 2 saniyede bir).
-	// Açıklama: "Çöp toplama" işlevi görür. Yok edilmek üzere işaretlenmiş Actor'ları ve
-	// bitmiş oyun aşamalarını bellekten temizler.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: Application::TickInternal() - periyodik olarak (Ã¶rn: her 2 saniyede bir).
+	// AÃ§Ä±klama: "Ã‡Ã¶p toplama" iÅŸlevi gÃ¶rÃ¼r. Yok edilmek Ã¼zere iÅŸaretlenmiÅŸ Actor'larÄ± ve
+	// bitmiÅŸ oyun aÅŸamalarÄ±nÄ± bellekten temizler.
 	void World::CleanCycle()
 	{
 		for (auto iter = mActors.begin(); iter != mActors.end();)
 		{
 			if (iter->get()->GetIsPendingDestroy())
 			{
-				iter = mActors.erase(iter);  // Listeden kaldır ve (shared_ptr sayesinde) belleği serbest bırak
+				iter = mActors.erase(iter);  // Listeden kaldÄ±r ve (shared_ptr sayesinde) belleÄŸi serbest bÄ±rak
 			}
 			else
 			{
@@ -83,72 +100,101 @@ namespace ly{
 		}
 	}
 
-	// Çağrıldığı Yer: Application::Render() - her frame.
-	// Açıklama: Sahnedeki tüm aktif Actor'ları ekrana çizer.
+	void World::SetPaused(bool paused)
+	{
+		mIsPaused = paused;
+	}
+
+	void World::RemoveOverlayHUD()
+	{
+		mOverlayHUD.reset();
+	}
+
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: Application::Render() - her frame.
+	// AÃ§Ä±klama: Sahnedeki tÃ¼m aktif Actor'larÄ± ekrana Ã§izer.
 	void World::Render(sf::RenderWindow& window)
 	{
 		for (const std::shared_ptr<Actor>& actor : mActors)
 		{
 			actor->Render(window);
 		}
+		RenderHUD(window);
 	}
 
-	// Çağrıldığı Yer: Actor sınıfları tarafından (örn: Actor::IsActorOutOfWindow).
-	// Açıklama: Sahip olan Application üzerinden pencere boyutunu alır.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: Actor sÄ±nÄ±flarÄ± tarafÄ±ndan (Ã¶rn: Actor::IsActorOutOfWindow).
+	// AÃ§Ä±klama: Sahip olan Application Ã¼zerinden pencere boyutunu alÄ±r.
 	sf::Vector2u World::GetWindowSize()
 	{
 		return mOwningApp->GetWindowSize();
 	}
 
 
-	// Çağrıldığı Yer: C++ tarafından, World'ü tutan son shared_ptr yok olduğunda.
-	// Açıklama: World nesnesi yok edilirken çalışır. mActors listesindeki shared_ptr'ler
-	// otomatik olarak temizlenir, bu da içerdikleri Actor'ların yok olmasını tetikler.
+	bool World::DispatchEvent(const sf::Event& event)
+	{
+		if (mOverlayHUD)
+		{
+			return mOverlayHUD->HandleEvent(event);
+		}
+
+		if (mHUD)
+		{
+			return mHUD->HandleEvent(event);
+		}
+		return false;
+	}
+
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: C++ tarafÄ±ndan, World'Ã¼ tutan son shared_ptr yok olduÄŸunda.
+	// AÃ§Ä±klama: World nesnesi yok edilirken Ã§alÄ±ÅŸÄ±r. mActors listesindeki shared_ptr'ler
+	// otomatik olarak temizlenir, bu da iÃ§erdikleri Actor'larÄ±n yok olmasÄ±nÄ± tetikler.
 	World::~World()
 	{
 		// Shared_ptr'ler otomatik temizlenecek
 	}
 
-	// Çağrıldığı Yer: Genellikle türetilmiş World sınıflarının (örn: LevelOne) InitGameStages fonksiyonunda.
-	// Açıklama: Seviyeye yeni bir oyun aşaması ekler.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: Genellikle tÃ¼retilmiÅŸ World sÄ±nÄ±flarÄ±nÄ±n (Ã¶rn: LevelOne) InitGameStages fonksiyonunda.
+	// AÃ§Ä±klama: Seviyeye yeni bir oyun aÅŸamasÄ± ekler.
 	void World::AddGameStage(shared_ptr<GameStage> newStage)
 	{
 		mGameStages.push_back(newStage);
 	}
 
-	// Çağrıldığı Yer: World::BeginPlayInternal() içinde.
-	// Açıklama: Türetilmiş sınıfların (örn: LevelOne) seviye başlangıcında kendi özel mantıklarını
-	// çalıştırması için override edebileceği sanal (virtual) bir fonksiyondur.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: World::BeginPlayInternal() iÃ§inde.
+	// AÃ§Ä±klama: TÃ¼retilmiÅŸ sÄ±nÄ±flarÄ±n (Ã¶rn: LevelOne) seviye baÅŸlangÄ±cÄ±nda kendi Ã¶zel mantÄ±klarÄ±nÄ±
+	// Ã§alÄ±ÅŸtÄ±rmasÄ± iÃ§in override edebileceÄŸi sanal (virtual) bir fonksiyondur.
 	void World::BeginPlay()
 	{
 		
 	}
 
-	// Çağrıldığı Yer: World::TickInternal() içinde.
-	// Açıklama: Türetilmiş sınıfların her frame'de kendi özel dünya mantıklarını
-	// çalıştırması için override edebileceği sanal (virtual) bir fonksiyondur.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: World::TickInternal() iÃ§inde.
+	// AÃ§Ä±klama: TÃ¼retilmiÅŸ sÄ±nÄ±flarÄ±n her frame'de kendi Ã¶zel dÃ¼nya mantÄ±klarÄ±nÄ±
+	// Ã§alÄ±ÅŸtÄ±rmasÄ± iÃ§in override edebileceÄŸi sanal (virtual) bir fonksiyondur.
 	void World::Tick(float deltaTime)
 	{
 
 	}
 
-	// Çağrıldığı Yer: World::BeginPlayInternal() içinde.
-	// Açıklama: Türetilmiş sınıfların seviyeye ait oyun aşamalarını (GameStage)
-	// eklemesi için override edebileceği sanal (virtual) bir fonksiyondur.
+	void World::OnActorSpawned(Actor* actor)
+	{
+	}
+
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: World::BeginPlayInternal() iÃ§inde.
+	// AÃ§Ä±klama: TÃ¼retilmiÅŸ sÄ±nÄ±flarÄ±n seviyeye ait oyun aÅŸamalarÄ±nÄ± (GameStage)
+	// eklemesi iÃ§in override edebileceÄŸi sanal (virtual) bir fonksiyondur.
 	void World::InitGameStages()
 	{
 	}
 
-	// Çağrıldığı Yer: World::NextGameStage() - tüm aşamalar bittiğinde.
-	// Açıklama: Türetilmiş sınıfların, seviyedeki tüm aşamalar tamamlandığında ne olacağını
-	// (örn: "Level Bitti" ekranı göstermek) tanımlaması için override edebileceği sanal bir fonksiyondur.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: World::NextGameStage() - tÃ¼m aÅŸamalar bittiÄŸinde.
+	// AÃ§Ä±klama: TÃ¼retilmiÅŸ sÄ±nÄ±flarÄ±n, seviyedeki tÃ¼m aÅŸamalar tamamlandÄ±ÄŸÄ±nda ne olacaÄŸÄ±nÄ±
+	// (Ã¶rn: "Level Bitti" ekranÄ± gÃ¶stermek) tanÄ±mlamasÄ± iÃ§in override edebileceÄŸi sanal bir fonksiyondur.
 	void World::AllGameStagesFinished()
 	{
 	}
 
-	// Çağrıldığı Yer: Başlangıçta BeginPlayInternal() tarafından, sonra her aşama bittiğinde kendisini tekrar tetikler.
-	// Açıklama: Bir sonraki oyun aşamasına geçer. Mevcut aşamanın "bitti" event'ine bağlanarak
-	// zincirleme bir şekilde aşamaların sırayla ilerlemesini sağlar.
+	// Ã‡aÄŸrÄ±ldÄ±ÄŸÄ± Yer: BaÅŸlangÄ±Ã§ta BeginPlayInternal() tarafÄ±ndan, sonra her aÅŸama bittiÄŸinde kendisini tekrar tetikler.
+	// AÃ§Ä±klama: Bir sonraki oyun aÅŸamasÄ±na geÃ§er. Mevcut aÅŸamanÄ±n "bitti" event'ine baÄŸlanarak
+	// zincirleme bir ÅŸekilde aÅŸamalarÄ±n sÄ±rayla ilerlemesini saÄŸlar.
 	void World::NextGameStage()
 	{
 		mCurrentStage = mGameStages.erase(mCurrentStage);
@@ -165,7 +211,27 @@ namespace ly{
 	void World::BeginStages()
 	{
 		mCurrentStage = mGameStages.begin();
-		mCurrentStage->get()->BeginStage();
-		mCurrentStage->get()->onStageFinished.BindAction(GetWeakPtr(), &World::NextGameStage);
+		if(mCurrentStage != mGameStages.end())
+		{
+			mCurrentStage->get()->BeginStage();
+			mCurrentStage->get()->onStageFinished.BindAction(GetWeakPtr(), &World::NextGameStage);
+		}
+	}
+	void World::RenderHUD(sf::RenderWindow& window)
+	{
+		if(mHUD)
+		{
+			if (mHUD->HasInit())
+			{
+				mHUD->Draw(window);
+			}
+		}
+		if(mOverlayHUD)
+		{
+			if (mOverlayHUD->HasInit())
+			{
+				mOverlayHUD->Draw(window);
+			}
+		}
 	}
 }

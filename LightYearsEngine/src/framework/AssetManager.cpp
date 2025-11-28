@@ -57,6 +57,26 @@ namespace ly
 		return shared_ptr<sf::Texture> {nullptr};
 	}
 
+	shared_ptr<sf::Font> AssetManager::LoadFont(const std::string& fontPath)
+	{
+
+		auto found = mLoadedFontMap.find(fontPath);
+
+		if (found != mLoadedFontMap.end())
+		{
+			return found->second;
+		}
+
+		shared_ptr<sf::Font> newFont{ new sf::Font };
+
+		if (newFont->openFromFile(mAssetRootDirectory + fontPath))
+		{
+			mLoadedFontMap.insert({ fontPath, newFont });
+			return newFont;
+		}
+		return shared_ptr<sf::Font>{nullptr};
+	}
+
 	// Artýk kullanýlmayan texture'larý bellekten temizleyen fonksiyon.
 	void AssetManager::CleanCycle()
 	{
@@ -70,13 +90,24 @@ namespace ly
             if (iter->second.unique())
 			{
 				// Kullanýlmayan texture'ý konsola yazdýr.
-				LOG("Removed unused texture: %s", iter->first.c_str());
 				// Haritadan bu texture'ý sil. erase(), silinen elemanýn bir sonrakini döndürür.
 				iter = mLoadedTextureMap.erase(iter);
 			}
 			else
 			{
 				// Eðer texture hala kullanýlýyorsa, bir sonraki elemana geç.
+				++iter;
+			}
+		}
+
+		for(auto iter =mLoadedFontMap.begin(); iter != mLoadedFontMap.end();)
+		{
+			if (iter->second.unique())
+			{
+				iter = mLoadedFontMap.erase(iter);
+			}
+			else
+			{
 				++iter;
 			}
 		}

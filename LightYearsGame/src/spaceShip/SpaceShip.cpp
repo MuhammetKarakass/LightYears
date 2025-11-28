@@ -77,7 +77,6 @@ namespace ly
 	// Health deðiþtiðinde çaðrýlan callback (delegate)
 	void SpaceShip::OnHealthChanged(float amt, float health, float maxHealth)
 	{
-		LOG("amt:%f health percentage %f/%f", amt, health, maxHealth);
 	}
 	
 	// Hasar alýndýðýnda çaðrýlan callback (delegate)
@@ -100,8 +99,7 @@ namespace ly
 	
 	// Bu gemiye hasar verme iþlemi
 	void SpaceShip::ApplyDamage(float amt)
-	{
-		LOG("%f", amt);                          
+	{                        
 		mHealthComponent.ChangeHealth(-amt);     
 	}
 }

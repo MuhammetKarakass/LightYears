@@ -65,7 +65,7 @@ namespace ly
 		mSpawnLocIndex[1] = mSpawnLoc.x;
 		mSpawnLocIndex[2] = mSpawnLoc.x +60.f;
 
-		mSpawnTimerHandle = TimerManager::GetTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SpawnVanguard,mMaxSpawnInterval,true);
+		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SpawnVanguard,mMaxSpawnInterval,true);
 		++mRowSpawnCount;
 	}
 
@@ -78,8 +78,8 @@ namespace ly
 
 		if (mVanguardPerRow == mCurrentRowVanguardCount)
 		{
-			TimerManager::GetTimerManager().ClearTimer(mSpawnTimerHandle);
-			mSwitchTimerHandle = TimerManager::GetTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SwitchRow, mSwitchInterval,false);
+			TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
+			mSwitchTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SwitchRow, mSwitchInterval,false);
 			mCurrentRowVanguardCount = 0;
 		}
 	}
@@ -114,9 +114,8 @@ namespace ly
 	}
 	void VanguardStage::StageFinished()
 	{
-		TimerManager::GetTimerManager().ClearTimer(mSwitchTimerHandle);
-		TimerManager::GetTimerManager().ClearTimer(mSpawnTimerHandle);
-		LOG("Vanguard Stage Finished");
+		TimerManager::GetGameTimerManager().ClearTimer(mSwitchTimerHandle);
+		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
 	}
 
 }

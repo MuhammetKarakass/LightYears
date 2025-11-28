@@ -11,7 +11,7 @@ namespace ly
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },  // SFML penceresi oluþtur
 		mTargetFrameRate{ 75.f },     
 		mTickClock{},                 
-		currentWorld{ nullptr },      
+		mCurrentWorld{ nullptr },      
 		mCleanCycleClock{},           
 		mCleanCycleTime{2.f}          
 	{
@@ -31,7 +31,12 @@ namespace ly
 			{
 				if (event->is<sf::Event::Closed>())
 				{
-					mWindow.close();
+					QuitApplication();
+				}
+
+				else 
+				{
+					DispatchEvent(event);
 				}
 			}
 			
@@ -47,28 +52,53 @@ namespace ly
 			}
 		}
 	}
+
+	void Application::QuitApplication()
+	{
+		mWindow.close();
+	}
 	
 	void Application::TickInternal(float deltaTime)
 	{
 		Tick(deltaTime);  // Virtual - türetilen sýnýflar override eder
 		
-		if(currentWorld)
+		if(mCurrentWorld)
 		{
-			currentWorld->TickInternal(deltaTime);
+			mCurrentWorld->TickInternal(deltaTime);
 		}
 
-		TimerManager::GetTimerManager().UpdateTimer(deltaTime);
+		TimerManager::GetGlobalTimerManager().UpdateTimer(deltaTime);
 
-		// Fizik simülasyonunu ilerlet
-		PhysicsSystem::Get().Step(deltaTime);
+		bool isPaused = mCurrentWorld && mCurrentWorld->IsPaused();
+
+		if (!isPaused)
+		{
+			TimerManager::GetGameTimerManager().UpdateTimer(deltaTime);
+			PhysicsSystem::Get().Step(deltaTime);
+
+		}
 
 		// Belirli aralýklarla temizlik döngüsü çalýþtýr
 		if (mCleanCycleClock.getElapsedTime().asSeconds() > mCleanCycleTime)
 		{
-			mCleanCycleClock.restart();                    // Sayacý sýfýrla
-			AssetManager::GetAssetManager().CleanCycle();  // Unused asset'leri temizle
-			if (currentWorld)
-				currentWorld->CleanCycle();                    // Ölü actor'larý temizle
+			mCleanCycleClock.restart();
+			AssetManager::GetAssetManager().CleanCycle();
+			if (mCurrentWorld)
+				mCurrentWorld->CleanCycle();
+		}
+
+		if(mPendingWorld && mPendingWorld!=mCurrentWorld)
+		{
+			mCurrentWorld = nullptr;
+
+			TimerManager::GetGameTimerManager().ClearAllTimers();
+			TimerManager::GetGlobalTimerManager().ClearAllTimers();
+
+			PhysicsSystem::Get().Cleanup();
+			PhysicsSystem::Get().InitializeWorld({ 0.f,0.f });
+
+			mCurrentWorld = mPendingWorld;
+			mCurrentWorld->BeginPlayInternal();
 		}
 	}
 	
@@ -88,13 +118,21 @@ namespace ly
 	void Application::Render()
 	{
 
-		if(currentWorld)
+		if(mCurrentWorld)
 		{
-			currentWorld->Render(mWindow);
+			mCurrentWorld->Render(mWindow);
 		}
 		else
 		{
 			mWindow.clear(sf::Color::Black);
 		}
+	}
+	bool Application::DispatchEvent(const std::optional<sf::Event>& event)
+	{
+		if (mCurrentWorld && event.has_value())
+		{
+			return mCurrentWorld->DispatchEvent(event.value());
+		}
+		return false;
 	}
 }

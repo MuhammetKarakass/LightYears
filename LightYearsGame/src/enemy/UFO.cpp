@@ -8,7 +8,7 @@
 namespace ly
 {
 	UFO::UFO(World* owningWorld, const sf::Vector2f& velocity, const std::string& texturePath, float rotationSpeed) :
-		EnemySpaceShip{ owningWorld, texturePath }, // <-- Doku burada yükleniyor
+		EnemySpaceShip{ owningWorld, texturePath, 75.f, GetDefaultRewards() },
 		mShooter1{ new BulletShooter{this, "SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, sf::Vector2{ 35.f, 20.f},60.f} },
 		mShooter2{ new BulletShooter{this, "SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, sf::Vector2{ -35.f, 20.f},-60.f} },
 		mShooter3{ new BulletShooter{this, "SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, sf::Vector2{ 0.f, -40.f},180.f} },
@@ -17,15 +17,15 @@ namespace ly
 		SetVelocity(velocity);
 		SetActorRotation(180.f);
 		SetExplosionType(ExplosionType::Plasma);
+		SetScoreAmt(50);  // UFO = 50 points (boss!)
 
 		float visualRadius = std::min(GetActorGlobalBounds().size.x, GetActorGlobalBounds().size.y) / 2.f;
-		float collisionRadius = visualRadius * 0.4f;  // %40 küçült
+		float collisionRadius = visualRadius * 0.4f;
 		SetCollisionRadius(collisionRadius);
 	}
 
 	UFO::~UFO()
 	{
-		LOG("UFO destroyed");
 	}
 
 	void UFO::Tick(float deltaTime)
@@ -62,8 +62,6 @@ namespace ly
 			// Constructor'da SetCollisionRadius ayarlandığı için,
 			// bu fonksiyon zaten UFO'lar iç içe geçtiğinde çağrılır.
 			// Artık karmaşık yarıçap hesaplarına gerek yok.
-
-			LOG("UFO-UFO collision (Kucuk Radius ile) detected!");
 
 			// ──────────────────────────────────────────────────────────────────
 			// ADIM 1: ÇARPIŞMA GEOMETRİSİNİ BELİRLE (Basitleştirildi)
@@ -171,5 +169,16 @@ namespace ly
 		mShooter1->Shoot();
 		mShooter2->Shoot();
 		mShooter3->Shoot();
+	}
+
+	List<WeightedReward> UFO::GetDefaultRewards()
+	{
+		return {
+			{CreateRewardHealth, 0.25f},
+			{CreateRewardThreeWayShooter, 0.2f},
+			{CreateRewardFrontalWiper, 0.15f},
+			{CreateRewardLife, 0.1f}
+			
+		};
 	}
 }

@@ -8,6 +8,11 @@ namespace ly
 	{
 	}
 
+	void PlayerManager::Reset()
+	{
+		mPlayers.clear();
+	}
+
 	PlayerManager& PlayerManager::GetPlayerManager()
 	{
 		if (!playerManager)

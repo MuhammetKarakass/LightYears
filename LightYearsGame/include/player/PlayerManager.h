@@ -15,6 +15,8 @@ namespace ly
 		const Player* GetPlayer(int playerIndex = 0) const;
 		const List<Player>& GetPlayers() const { return mPlayers; };
 
+		void Reset();
+
 		static PlayerManager& GetPlayerManager();
 	protected:
 		PlayerManager();

@@ -42,7 +42,6 @@ namespace ly
 		if(GetCanCollide())
 		{
 			otherActor->ApplyDamage(GetDamage());
-			LOG("Bullet overlap");
 			Destroy(); // Çarpýþma sonrasý mermi yok olur
 		}
 	}

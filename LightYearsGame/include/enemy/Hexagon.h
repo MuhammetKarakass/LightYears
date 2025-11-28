@@ -14,6 +14,9 @@ namespace ly
 
 		virtual void Tick(float deltaTime) override;
 
+	protected:
+		static List<WeightedReward> GetDefaultRewards();
+
 	private:
 		virtual void Shoot() override;
 		void SetupShooters();

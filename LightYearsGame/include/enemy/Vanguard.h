@@ -15,6 +15,9 @@ namespace ly
 
 		virtual void Shoot() override;
 
+	protected:
+		// Vanguard-specific reward table
+		static List<WeightedReward> GetDefaultRewards();
 
 	private:
 		unique_ptr<BulletShooter> mShooter;

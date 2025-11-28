@@ -18,8 +18,14 @@ namespace ly
 		Delegate<Object*> onDestory;
 		weak_ptr<Object> GetWeakPtr();
 		weak_ptr<const Object> GetWeakPtr() const;
+		unsigned int GetUniqueID() { return mUniqueID; };
 
 	private:
 		bool mPendingDestroy;
+
+		unsigned int mUniqueID;
+		static unsigned int uniqueIDCounter;
+
+		static unsigned int GetNextAvailableID();
 	};
 }

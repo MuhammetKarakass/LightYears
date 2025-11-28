@@ -58,7 +58,7 @@ namespace ly {
 			
 			float nextSpawnInterval = RandRange(mSpawnInterval[0], mSpawnInterval[1]);
 			
-			mSpawnTimerHandle = TimerManager::GetTimerManager().SetTimer(
+			mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(), 
 				&TwinBladeStage::SpawnTwinBlade, 
 				nextSpawnInterval, 
@@ -68,7 +68,7 @@ namespace ly {
 	}
 	void TwinBladeStage::StageFinished()
 	{
-		TimerManager::GetTimerManager().ClearTimer(mSpawnTimerHandle);
+		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
 	}
 
 	void TwinBladeStage::AddSpawnLocations()

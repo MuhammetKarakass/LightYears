@@ -1,6 +1,7 @@
 #pragma once
 #include "framework/Core.h"
 #include <SFML/Graphics.hpp>
+#include "framework/TimerManager.h"
 
 namespace ly
 {
@@ -12,9 +13,21 @@ namespace ly
 		Application(sf::Vector2u Position,unsigned int bit, std::string& Title,uint32_t Style);
 		void Run();
 
+		void QuitApplication();
+
 		sf::Vector2u GetWindowSize() const
 		{
 			return mWindow.getSize();
+		}
+
+		sf::RenderWindow& GetRenderWindow()
+		{
+			return mWindow;
+		}
+
+		const sf::RenderWindow& GetRenderWindow() const
+		{
+			return mWindow;
 		}
 
 		template<typename WorldType>
@@ -28,13 +41,17 @@ namespace ly
 		sf::Clock mCleanCycleClock;
 		float mCleanCycleTime;
 
-		shared_ptr<World> currentWorld;
+		shared_ptr<World> mCurrentWorld;
+		shared_ptr<World> mPendingWorld;
 
 		void TickInternal(float deltaTime);
 		virtual void Tick(float deltaTime);
 
 		void RenderInternal();
 		virtual void Render(); 
+
+		bool DispatchEvent(const std::optional<sf::Event>& event);
+
 
 	};
 
@@ -43,8 +60,7 @@ namespace ly
 	{
 
         auto newWorld = std::make_shared<WorldType>(this);
-        currentWorld = newWorld;
-        currentWorld->BeginPlayInternal();
+        mPendingWorld = newWorld;
         return newWorld;
            
 	}

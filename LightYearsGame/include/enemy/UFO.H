@@ -12,11 +12,14 @@ namespace ly
 
 		virtual void Tick(float deltaTime) override;
 		
-		// ?? UFO'lar özel collision setup'ý kullanýr
+		// UFO'lar özel collision setup'ý kullanýr
 		virtual void SetupCollisionLayers() override;
 		
-		// ?? UFO'lar birbirleriyle çarpýþabilir ve sekebilir
+		// UFO'lar birbirleriyle çarpýþabilir ve sekebilir
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
+
+	protected:
+		static List<WeightedReward> GetDefaultRewards();
 
 	private:
 		virtual void Shoot() override;

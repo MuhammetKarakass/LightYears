@@ -25,6 +25,7 @@ namespace ly
 
 		else 
 		{
+			mCurrentSpaceShip = weak_ptr<PlayerSpaceShip>{};
 			onLifeExhausted.Broadcast();
 			return weak_ptr<PlayerSpaceShip>{};
 		}
@@ -44,5 +45,12 @@ namespace ly
 			return;
 		mScore += amt;
 		onScoreChange.Broadcast(mScore);
+	}
+	
+	void Player::OnScoreAwarded(unsigned int scoreAmount)
+	{
+		LOG("===== PLAYER::OnScoreAwarded CALLED =====");
+		LOG("Score Amount Received: %u", scoreAmount);
+		AddScore(scoreAmount);
 	}
 }

@@ -220,7 +220,6 @@ namespace ly
 	{
 		if (!b2Body_IsValid(bodyId))
 		{
-			LOG("SetBodyRadius: Invalid body ID!");
 			return;
 		}
 

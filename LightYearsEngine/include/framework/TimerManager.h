@@ -27,20 +27,16 @@ namespace ly
 
 	bool operator==(const TimerHandle& lhs, const TimerHandle& rhs);
 
-	// Tek bir timer'ýn bilgilerini tutan yapý
 	struct Timer
 	{
 	public:
 		// Timer oluþturucu - nesne, callback, süre ve tekrar bilgisi alýr
 		Timer(weak_ptr<Object> weakRef, std::function<void()> callBack, float duration, bool repeat = false);
 
-		// Her frame çaðrýlýr - zamaný kontrol eder ve callback'i tetikler
 		void TickTimer(float deltaTime);
 		
-		// Timer'ýn süresi doldu mu veya sahibi ölü mü kontrol eder
 		bool IsExpired() const;
 		
-		// Timer'ý manuel olarak bitir
 		void SetExpired();
 		
 	private:
@@ -51,17 +47,21 @@ namespace ly
 		bool mIsExpired;      // Manuel olarak sonlandýrýldý mý?
 	};
 
-	// Tüm timer'larý yöneten singleton sýnýf (Unity'deki Invoke sistemi benzeri)
 	class TimerManager
 	{
 	public:
-		// Singleton instance'ýný döndürür
 		static TimerManager& GetTimerManager();
+
+		static TimerManager& GetGlobalTimerManager();
+
+		static TimerManager& GetGameTimerManager();
 
 		// Her frame tüm timer'larý günceller
 		void UpdateTimer(float deltaTime);
 
 		void ClearTimer(TimerHandle timerIndex);
+
+		void ClearAllTimers();
 
 		// Yeni timer kurar - template ile tip güvenli callback baðlama
 		template<typename ClassName>
@@ -72,14 +72,23 @@ namespace ly
 			mTimers.insert({ newHandle, Timer(weakRef, [=] {(static_cast<ClassName*>(weakRef.lock().get())->*callback)(); }, duration, repeat) });
 			return newHandle;
 		}
-		
+
+		TimerHandle SetTimer(weak_ptr<Object> weakRef, std::function<void()> callback, float duration, bool repeat = false)
+		{
+			TimerHandle newHandle{};
+			mTimers.insert({ newHandle, Timer(weakRef, callback, duration, repeat) });
+			return newHandle;
+		}	
+
 	protected:
 		// Protected constructor - sadece singleton eriþimi
 		TimerManager();
-		
+
 	private:
 
-		static unique_ptr<TimerManager> timerManager;  // Singleton instance
-		Dictionary<TimerHandle,Timer,TimerHandleHashFunction> mTimers;  // Aktif timer'larýn listesi
+		static unique_ptr<TimerManager> timerManager;
+		static unique_ptr<TimerManager> globalTimerManager;
+		static unique_ptr<TimerManager> gameTimerManager;
+		Dictionary<TimerHandle, Timer, TimerHandleHashFunction> mTimers;
 	};
 }

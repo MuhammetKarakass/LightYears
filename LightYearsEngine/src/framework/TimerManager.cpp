@@ -4,7 +4,9 @@ namespace ly
 {
 	unsigned int TimerHandle::mTimerKeyCounter = 0;
 	unique_ptr<TimerManager> TimerManager::timerManager{ nullptr };
-	
+	unique_ptr<TimerManager> TimerManager::globalTimerManager{ nullptr };
+	unique_ptr<TimerManager> TimerManager::gameTimerManager{ nullptr };
+
 	TimerHandle::TimerHandle()
 		: mTimerKey{ GetNextTimerKey() }
 	{
@@ -18,6 +20,24 @@ namespace ly
 			timerManager = unique_ptr<TimerManager>(new TimerManager({}));
 		}
 		return *timerManager;
+	}
+
+	TimerManager& TimerManager::GetGlobalTimerManager()
+	{
+		if(globalTimerManager == nullptr)
+		{
+			globalTimerManager = unique_ptr<TimerManager>(new TimerManager({}));
+		}
+		return *globalTimerManager;
+	}
+
+	TimerManager& TimerManager::GetGameTimerManager()
+	{
+		if(gameTimerManager == nullptr)
+		{
+			gameTimerManager = unique_ptr<TimerManager>(new TimerManager({}));
+		}
+		return *gameTimerManager;
 	}
 
 	bool operator==(const TimerHandle& lhs, const TimerHandle& rhs)
@@ -48,6 +68,11 @@ namespace ly
 		{
 			iter->second.SetExpired();
 		}
+	}
+
+	void TimerManager::ClearAllTimers()
+	{
+		mTimers.clear();
 	}
 
 	TimerManager::TimerManager():

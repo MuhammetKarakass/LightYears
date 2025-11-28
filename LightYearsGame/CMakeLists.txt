@@ -38,6 +38,12 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/level/LevelOne.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/level/LevelOne.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/MainMenuLevel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/level/MainMenuLevel.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/GameLevel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/level/GameLevel.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/VanguardStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
 
@@ -59,6 +65,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/UFOStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/UFOStage.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/ChaosStage.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Reward.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
 	
@@ -67,6 +76,15 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerManager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/GameHUD.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameHUD.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/MainMenuHUD.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/MainMenuHUD.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/PauseMenuHUD.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/PauseMenuHUD.cpp
 )
 
 target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC 
