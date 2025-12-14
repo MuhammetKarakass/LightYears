@@ -10,13 +10,17 @@ namespace ly
 	class Application;
 	class GameHUD;
 	class PauseMenuHUD;
+	class GameOverHUD;
 	class GameLevel : public World
 	{
 		public:
 			GameLevel(Application* owningApp);
 
+			void GameFinished(bool playerWon);
+
 			weak_ptr<GameHUD> GetGameHUD()const { return mGameHUD; };
 			weak_ptr<PauseMenuHUD> GetPauseMenuHUD()const { return mPauseMenuHUD; };
+			weak_ptr<GameOverHUD> GetGameOverHUD()const { return mGameOverHUD; };
 
 	protected:
 		virtual void BeginPlay() override;
@@ -31,14 +35,19 @@ namespace ly
 		virtual void OnRestartLevel();
 		virtual void OnQuitGame();
 
+		virtual void GameOver();
+
 
 	private:
 		void TogglePause();
 		void ShowPauseMenu();
 		void HidePauseMenu();
 
+		virtual void AllGameStagesFinished() override;
+
 		weak_ptr<GameHUD> mGameHUD;
 		weak_ptr<PauseMenuHUD> mPauseMenuHUD;
+		weak_ptr<GameOverHUD> mGameOverHUD;
 
 		bool mIsGamePausedToggle = false;
 

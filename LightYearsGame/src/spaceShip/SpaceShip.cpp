@@ -13,6 +13,7 @@ namespace ly
 		mBlinkColor{ 255,0,0,255 },     
 		mBlinkTime{0.f},                
 		mBlinkDuration{.25f},
+		mInvulnerability{ false },
 		mExplosionType{ExplosionType::Medium}  // ? Default explosion type
 	{
 		SetCollisionLayer(CollisionLayer::None);

@@ -9,11 +9,20 @@ namespace ly
 
 	}
 
+	void HealthComponent::SetInitialHealth(float health, float maxHealth)
+	{
+		mHealth = health;
+		mMaxHealth = maxHealth;
+		if(health>maxHealth)
+		{
+			mHealth = maxHealth;
+		}
+	}
+
 	void HealthComponent::ChangeHealth(float amount)
 	{
 		if (amount == 0) return;  
 		if (mHealth == 0) return; 
-
 		mHealth += amount; 
 
 		if (mHealth < 0)

@@ -46,6 +46,11 @@ namespace ly
 
 		sf::Sprite& GetSprite() { return mSprite.value(); }
 
+		template<typename ActorType>
+		ActorType* GetActor() { return dynamic_cast<ActorType*>(this); }
+
+		void SetVisibility(bool visible) { if (mSprite) mSprite->setColor(visible ? sf::Color::White : sf::Color::Transparent); }
+
 		sf::FloatRect GetActorGlobalBounds() const;
 		void SetTexture(const std::string& texturePath);
 		void SetActorLocation(const sf::Vector2f& newLoc);

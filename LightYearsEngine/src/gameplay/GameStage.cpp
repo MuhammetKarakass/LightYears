@@ -10,6 +10,7 @@ namespace ly
 
 	void GameStage::BeginStage()
 	{
+		onStageStarted.Broadcast();
 	}
 
 	void GameStage::TickStage(float deltaTime)

@@ -1,5 +1,6 @@
 #pragma once
 #include <framework/Core.h>
+#include <SFML/Graphics.hpp>
 
 namespace ly
 {
@@ -17,8 +18,15 @@ namespace ly
 		int GetCurrentLevel() const { return mCurrentLevel; }
 		int GetMaxLevel() const { return mMaxLevel; }
 		float GetCooldownMultiplier() const { return mCooldownMultiplier; }
+		void SetCooldownMultiplier(float mult);
 
 		virtual void IncrementLevel(int amt = 1);
+		virtual void SetCurrentLevel(int level);
+
+		void SetLocalPositionOffset(const sf::Vector2f& offset);
+		sf::Vector2f GetLocalPositionOffset() const { return mLocalPositionOffset; };
+		void SetLocalRotationOffset(float rotation);
+		float GetLocalRotationOffset() const { return mLocalRotationOffset; };
 
 	protected:
 		Shooter(Actor* owner);
@@ -30,5 +38,7 @@ namespace ly
 		int mCurrentLevel;
 		int mMaxLevel;
 		float mCooldownMultiplier;
+		sf::Vector2f mLocalPositionOffset;
+		float mLocalRotationOffset;
 	};
 }

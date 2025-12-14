@@ -78,6 +78,7 @@ namespace ly
 	{
 		onResumeButtonClicked.Broadcast();
 	}
+
 	void PauseMenuHUD::RestartButtonClicked()
 	{
 		onRestartButtonClicked.Broadcast();

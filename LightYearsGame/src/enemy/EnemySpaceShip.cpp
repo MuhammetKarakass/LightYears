@@ -47,13 +47,10 @@ namespace ly
 			totalWeight += reward.weight;
 		}
 
-		// ? FIX: Random 0.0 to 1.0, NOT 0.0 to totalWeight!
 		float randValue = RandRange(0.0f, 1.0f);
 
-		// If random exceeds total weight, no reward spawns
 		if (randValue > totalWeight)
 		{
-			return;  // Nothing spawns (e.g., if totalWeight=0.8, 20% chance to spawn nothing)
 		}
 
 		// Select reward based on weight

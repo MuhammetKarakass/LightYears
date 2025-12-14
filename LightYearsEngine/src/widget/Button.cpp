@@ -22,6 +22,8 @@ namespace ly
 
 	bool Button::HandleEvent(const sf::Event& event)
 	{
+		if(!GetVisibility())
+			return false;
 		bool handled = false;
 
 		if (const auto* mouseReleased = event.getIf<sf::Event::MouseButtonReleased>())

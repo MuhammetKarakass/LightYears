@@ -29,8 +29,15 @@ namespace ly
 		void StopAnimation();
 		bool IsAnimating() const { return mAnimState !=AnimState::Idle; }
 
+		bool IsExpired() const;
+
 		void CenterOrigin();
 		void SetOriginNormalized(float x, float y);
+
+		void SetLifeTime(float lifeTime) { mLifeTime = lifeTime; };
+		void SetTag(const std::string& tag) { mTag = tag; };
+		const std::string& GetTag() const { return mTag; };
+		void DestroyWidget() { mMarkedForRemoval = true; };
 
 	protected:
 		Widget();
@@ -40,6 +47,11 @@ namespace ly
 		virtual void ApplyAlpha(float alpha);
 
 		virtual void Tick(float deltaTime);
+
+		float mLifeTime;
+		float mCurrentTime;
+		bool mMarkedForRemoval;
+		std::string mTag;
 
 	private:
 		virtual void Draw(sf::RenderWindow &windowRef);

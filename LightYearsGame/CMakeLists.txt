@@ -23,6 +23,11 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/Bullet.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/Bullet.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/bulletShooter/MultiShooter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/bulletShooter/MultiShooter.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/bulletShooter/ShooterPresets.h
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/HealthComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
 
@@ -68,6 +73,12 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/ChaosStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/LevelOneBoss.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/LevelOneBoss.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/LevelOneBossStage.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/LevelOneBossStage.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Reward.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
 	
@@ -85,6 +96,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/PauseMenuHUD.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/PauseMenuHUD.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/GameOverHUD.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameOverHUD.cpp
 )
 
 target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC 

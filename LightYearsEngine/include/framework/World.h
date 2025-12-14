@@ -43,6 +43,39 @@ namespace ly
 		template<typename HUDType, typename ...Args>
 		weak_ptr<HUDType> SpawnOverlayHUD(Args... args);
 
+		template<typename HUDType>
+		weak_ptr<HUDType> GetHUD() const
+		{
+			return dynamic_pointer_cast<HUDType>(mHUD);
+		}
+
+		template<typename ActorType>
+		weak_ptr<ActorType> GetActorByType() const
+		{
+			for (const auto& actor: mActors)
+			{
+				if (auto castedActor = dynamic_cast<ActorType*>(actor.get()))
+				{
+					return weak_ptr<ActorType>(std::static_pointer_cast<ActorType>(actor));
+				}
+			}
+			return weak_ptr<ActorType>();
+		}
+
+		template<typename ActorType>
+		List<weak_ptr<ActorType>> GetActorsByType() const
+		{
+			List<weak_ptr<ActorType>> result;
+			for (const auto& actor : mActors)
+			{
+				if (auto castedActor = dynamic_cast<ActorType*>(actor.get()))
+				{
+					result.push_back(weak_ptr<ActorType>(std::static_pointer_cast<ActorType>(actor)));
+				}
+			}
+			return result;
+		}
+
 	protected:
 
 		virtual void BeginPlay();

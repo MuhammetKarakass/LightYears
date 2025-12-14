@@ -143,24 +143,18 @@ namespace ly{
 		return false;
 	}
 
-	// Çağrıldığı Yer: C++ tarafından, World'ü tutan son shared_ptr yok olduğunda.
-	// Açıklama: World nesnesi yok edilirken çalışır. mActors listesindeki shared_ptr'ler
-	// otomatik olarak temizlenir, bu da içerdikleri Actor'ların yok olmasını tetikler.
 	World::~World()
 	{
 		// Shared_ptr'ler otomatik temizlenecek
 	}
 
-	// Çağrıldığı Yer: Genellikle türetilmiş World sınıflarının (örn: LevelOne) InitGameStages fonksiyonunda.
-	// Açıklama: Seviyeye yeni bir oyun aşaması ekler.
+
 	void World::AddGameStage(shared_ptr<GameStage> newStage)
 	{
 		mGameStages.push_back(newStage);
 	}
 
-	// Çağrıldığı Yer: World::BeginPlayInternal() içinde.
-	// Açıklama: Türetilmiş sınıfların (örn: LevelOne) seviye başlangıcında kendi özel mantıklarını
-	// çalıştırması için override edebileceği sanal (virtual) bir fonksiyondur.
+
 	void World::BeginPlay()
 	{
 		
@@ -235,3 +229,4 @@ namespace ly{
 		}
 	}
 }
+

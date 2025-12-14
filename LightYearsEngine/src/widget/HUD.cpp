@@ -1,7 +1,23 @@
 #include "widget/HUD.h"
+#include "widget/Widget.h"
 
 namespace ly
 {
+	void HUD::RemoveWidgetByTag(const std::string& tagToRemove)
+	{
+		for (auto& widget : mWidgets)
+		{
+			if(widget->GetTag() == tagToRemove)
+			{
+				widget->DestroyWidget();
+			}
+		}
+	}
+	void HUD::RemoveWidget(const weak_ptr<Widget>& widgetToRemove)
+	{
+		auto it = std::remove(mWidgets.begin(), mWidgets.end(), widgetToRemove.lock());
+		mWidgets.erase(it, mWidgets.end());
+	}
 	HUD::HUD():
 		mHasInit{false}
 	{
@@ -22,11 +38,35 @@ namespace ly
 
 	void HUD::Tick(float deltaTime)
 	{
-		// Default implementation does nothing
+		/*for(auto& widget : mWidgets)
+		{
+			widget->NativeTick(deltaTime);
+		}*/
+
+		auto it = std::remove_if(mWidgets.begin(), mWidgets.end(),
+			[](const shared_ptr<Widget>& widget)
+			{
+				return widget->IsExpired();
+			});
+		if(it != mWidgets.end())
+		{
+			mWidgets.erase(it, mWidgets.end());
+		}
 	}
 
 	void HUD::Init(sf::RenderWindow& windowRef)
 	{
-		// Default implementation does nothing
+		/*for(auto& widget : mWidgets)
+		{
+			widget->SetVisibility(true);
+		}*/
+	}
+
+	void HUD::Draw(sf::RenderWindow& windowRef)
+	{
+		/*for (auto& widget : mWidgets)
+		{
+			widget->NativeDraw(windowRef);
+		}*/
 	}
 }

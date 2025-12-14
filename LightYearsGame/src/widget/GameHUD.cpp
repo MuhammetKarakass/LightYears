@@ -12,30 +12,32 @@ namespace ly
 		mPlayerLifeIcon{ std::in_place, "SpaceShooterRedux/PNG/pickups/playerLife1_blue.png" },
 		mPlayerLifeText{ std::in_place, " " },
 		mPlayerScoreIcon{ std::in_place, "SpaceShooterRedux/PNG/Power-ups/star_gold.png" },
-		mPlayerScoreText{ std::in_place, " "},
-		mChaosTimerText{ std::in_place, "", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf" },
-		mSurviveText{ std::in_place, "SURVIVE!","SpaceShooterRedux/Bonus/OrbitronBlack.ttf" },
-		mWidgetSpacingX{10.f},
-		mChaosTimerTextIsVisible{ false }
+		mPlayerScoreText{ std::in_place, " " },
+		mTopCenterText{ std::in_place, "", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf" },
+		//mCenterNotificationText{ std::in_place, "SURVIVE!","SpaceShooterRedux/Bonus/OrbitronBlack.ttf" },
+		mWidgetSpacingX{ 10.f }
 	{
 		mFrameRateText->SetTextSize(20);
 		mPlayerLifeText->SetTextSize(20);
 		mPlayerScoreText->SetTextSize(20);
-		mChaosTimerText->SetTextSize(20);
-		mChaosTimerText->SetVisibility(false); // Baþlangýçta gizli
-		mChaosTimerText->SetFillColor(sf::Color::Red);
+		mTopCenterText->SetTextSize(20);
+		mTopCenterText->SetVisibility(false); // Baþlangýçta gizli
+		mTopCenterText->SetFillColor(sf::Color::Red);
 
-		mSurviveText->SetTextSize(90);
-		mSurviveText->SetFillColor(sf::Color::Red);
-		mSurviveText->CenterOrigin();
-		mSurviveText->SetAlpha(0.f);
+		/*mCenterNotificationText->SetTextSize(90);
+		mCenterNotificationText->SetFillColor(sf::Color::Red);
+		mCenterNotificationText->CenterOrigin();
+		mCenterNotificationText->SetVisibility(false);
+		mCenterNotificationText->SetAlpha(0.f);*/
 	}
 
 	void GameHUD::Draw(sf::RenderWindow& windowRef)
 	{
+		mWindowRef = &windowRef;
+
 		if (mFrameRateText.has_value())
 			mFrameRateText->NativeDraw(windowRef);
-		
+
 		if (mPlayerHealthBar.has_value())
 			mPlayerHealthBar->NativeDraw(windowRef);
 
@@ -51,11 +53,22 @@ namespace ly
 		if (mPlayerScoreText.has_value())
 			mPlayerScoreText->NativeDraw(windowRef);
 
-		if (mChaosTimerText.has_value())
-			mChaosTimerText->NativeDraw(windowRef);
+		if (mTopCenterText.has_value())
+			mTopCenterText->NativeDraw(windowRef);
 
-		if (mSurviveText.has_value())
-			mSurviveText->NativeDraw(windowRef);
+		if (!mCenterNotificationText.expired())
+			mCenterNotificationText.lock()->NativeDraw(windowRef);
+
+		if(!mTimerText.expired())
+			mTimerText.lock()->NativeDraw(windowRef);
+
+		if(!mBossHealthBar.expired())
+			mBossHealthBar.lock()->NativeDraw(windowRef);
+
+		if(!mBossNameText.expired())
+			mBossNameText.lock()->NativeDraw(windowRef);
+
+		HUD::Draw(windowRef);
 	}
 
 	void GameHUD::Tick(float deltaTime)
@@ -72,11 +85,20 @@ namespace ly
 			mFrameRateText->SetString(buffer);
 		}
 
-		if (mSurviveText.has_value() && mSurviveText->IsAnimating())
-			mSurviveText->NativeTick(deltaTime);
+		if (!mCenterNotificationText.expired() && mCenterNotificationText.lock()->IsAnimating())
+			mCenterNotificationText.lock()->NativeTick(deltaTime);
 
-		if (mChaosTimerText.has_value() && mChaosTimerText->IsAnimating())
-			mChaosTimerText->NativeTick(deltaTime);
+		if (!mTimerText.expired() && mTimerText.lock()->IsAnimating())
+			mTimerText.lock()->NativeTick(deltaTime);
+
+		if(!mBossHealthBar.expired() && mBossHealthBar.lock()->IsAnimating())
+			mBossHealthBar.lock()->NativeTick(deltaTime);
+
+		if(mBossNameText.expired() == false && mBossNameText.lock()->IsAnimating())
+			mBossNameText.lock()->NativeTick(deltaTime);
+
+
+		//HUD::Tick(deltaTime);
 	}
 
 	bool GameHUD::HandleEvent(const sf::Event& event)
@@ -84,9 +106,26 @@ namespace ly
 		return HUD::HandleEvent(event);
 	}
 
+	void GameHUD::ShowDynamicNotification(const std::string& newText, float fadeIn, float hold, float fadeOut,const sf::Vector2f& location, float size, sf::Color color)
+	{
+		LOG("GameHUD::ShowDynamicNotification called with text: %s", newText.c_str());
+		mCenterNotificationText = AddWidget<TextWidget>(newText, "SpaceShooterRedux/Bonus/OrbitronBlack.ttf");
+		if (auto t = mCenterNotificationText.lock())
+		{
+			t->SetTextSize(size);
+			t->SetFillColor(color);
+			t->CenterOrigin();
+			t->SetWidgetLocation(location);
+			t->SetVisibility(true);
+			t->StartFadeAnimation(fadeIn, hold, fadeOut);
+			t->SetLifeTime(fadeIn + hold + fadeOut+1.f);
+		}
+	}
+
 	void GameHUD::Init(sf::RenderWindow& windowRef)
 	{
 		auto windowSize = windowRef.getSize();
+		mWindowSize = windowSize;
 		mPlayerHealthBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 50.f });
 
 		sf::Vector2f nextWidgetPos = mPlayerHealthBar->GetWidgetLocation();
@@ -96,26 +135,37 @@ namespace ly
 		nextWidgetPos += sf::Vector2f{ mPlayerLifeIcon->GetBound().size.x + mWidgetSpacingX,0.f };
 		mPlayerLifeText->SetWidgetLocation(nextWidgetPos);
 
-		nextWidgetPos += sf::Vector2f{ mPlayerLifeText->GetBound().size.x + mWidgetSpacingX * 2.f,-2.f};
+		nextWidgetPos += sf::Vector2f{ mPlayerLifeText->GetBound().size.x + mWidgetSpacingX * 2.f,-2.f };
 		mPlayerScoreIcon->SetWidgetLocation(nextWidgetPos);
 
 		nextWidgetPos += sf::Vector2f{ mPlayerScoreIcon->GetBound().size.x + mWidgetSpacingX,+2.f };
 		mPlayerScoreText->SetWidgetLocation(nextWidgetPos);
 
 		// Chaos Timer'ý ekranýn ortasýnda, üstte konumlandýr
-		mChaosTimerText->SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, 0.f });
+		mTopCenterText->SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, 0.f });
 
-		mSurviveText->SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f-50.f });
+		//mCenterNotificationText->SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f - 50.f });
 
 
 		RefreshHealthBar();
 		ConnectStatus();
 	}
 
+
+	void GameHUD::ShowNotification(const std::string& newText, float fadeIn, float hold, float fadeOut)
+	{
+		/*if (mCenterNotificationText.has_value())
+		{
+			mCenterNotificationText->SetString(newText);
+			mCenterNotificationText->SetVisibility(true);
+			mCenterNotificationText->StartFadeAnimation(fadeIn, hold, fadeOut);
+		}*/
+	}
+
 	void GameHUD::RefreshHealthBar()
 	{
 		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
-		
+
 		if (player && !player->GetCurrentSpaceShip().expired())
 		{
 			weak_ptr<PlayerSpaceShip> playerSpaceShip = player->GetCurrentSpaceShip();
@@ -125,15 +175,15 @@ namespace ly
 				lockedSpaceShip->onActorDestroyed.BindAction(GetWeakPtr(), &GameHUD::PlayerSpaceShipDestroyed);
 				HealthComponent& healthComponent = lockedSpaceShip->GetHealthComponent();
 				healthComponent.onHealthChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerHealthUpdated);
-				PlayerHealthUpdated(0,healthComponent.GetHealth(),healthComponent.GetMaxHealth());
+				PlayerHealthUpdated(0, healthComponent.GetHealth(), healthComponent.GetMaxHealth());
 			}
 		}
 	}
-	
+
 	void GameHUD::PlayerHealthUpdated(float amt, float currentHealth, float maxHealth)
 	{
-		mPlayerHealthBar->UpdateValue(currentHealth,maxHealth);
-		
+		mPlayerHealthBar->UpdateValue(currentHealth, maxHealth);
+
 		float healthPercent = currentHealth / maxHealth;
 		std::uint8_t r, g;
 
@@ -152,12 +202,12 @@ namespace ly
 
 		mPlayerHealthBar->SetForegroundColor(sf::Color{ r, g, 0, 255 });
 	}
-	
+
 	void GameHUD::PlayerSpaceShipDestroyed(Actor* actor)
 	{
 		RefreshHealthBar();
 	}
-	
+
 	void GameHUD::ConnectStatus()
 	{
 		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
@@ -170,57 +220,85 @@ namespace ly
 		mPlayerScoreText->SetString(std::to_string(scoreCount));
 		player->onScoreChange.BindAction(GetWeakPtr(), &GameHUD::PlayerScoreUpdated);
 	}
-	
+
 	void GameHUD::PlayerLifeUpdated(int amt)
 	{
 		mPlayerLifeText->SetString(std::to_string(amt));
 	}
-	
+
 	void GameHUD::PlayerScoreUpdated(int amt)
 	{
 		mPlayerScoreText->SetString(std::to_string(amt));
 	}
 
-	void GameHUD::TotalChaosStarted()
+	void GameHUD::ShowTimer(float fadeIn, float hold, float fadeOut)
 	{
-		LOG("*** TOTAL CHAOS STARTED - HUD ACTIVATED ***");
-		mChaosTimerText->SetVisibility(true);
-		TimerManager::GetGameTimerManager().SetTimer(
-			GetWeakPtr(),
-			[this]() {
-				mSurviveText->StartFadeAnimation(1.0f, 1.5f, 1.0f);
-			},
-			5.0f,
-			false
-		);
-		
+		if (!mTimerText.expired()) return;
+		mTimerText = AddWidget<TextWidget>("", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf", 20);
 
-	}
-
-	void GameHUD::OnChaosTimerUpdated(float remainingTime)
-	{
-		if (!mChaosTimerTextIsVisible)
+		if (auto timerTextLocked = mTimerText.lock())
 		{
-			mChaosTimerTextIsVisible = true;
-			mChaosTimerText->SetAlpha(0.f);
-			mChaosTimerText->StartFadeAnimation(.5f, 0.f, 0.f);
+			timerTextLocked->SetVisibility(true);
+			timerTextLocked->SetWidgetLocation(sf::Vector2f{ mWindowSize.x / 2.f, 0.f });
+			timerTextLocked->SetFillColor(sf::Color::Red);
+			timerTextLocked->CenterOrigin();
+			timerTextLocked->SetAlpha(0.f);
+			timerTextLocked->StartFadeAnimation(fadeIn, hold, fadeOut);
 		}
-		
-		int seconds = static_cast<int>(remainingTime);
-		mChaosTimerText->SetString("Survive: " + std::to_string(seconds));
-
 	}
 
-	void GameHUD::TotalChaosEnded()
+	void GameHUD::UpdateTimer(float timeLeft)
 	{
-		mChaosTimerText->StartFadeAnimation(0.f, 0.f, 0.5f);
-		TimerManager::GetGameTimerManager().SetTimer(
-			GetWeakPtr(),
-			[this]() {
-				mChaosTimerText->SetVisibility(false);
-			},
-			0.5f,
-			false
-		);
+		if (auto timerTextLocked = mTimerText.lock())
+		{
+			int timeInt = static_cast<int>(std::ceil(timeLeft));
+			timerTextLocked->SetString("TIME LEFT: " + std::to_string(timeInt));
+		}
 	}
+
+	void GameHUD::TimerFinished()
+	{
+		RemoveWidget(mTimerText);
+	}
+
+	void GameHUD::CreateBossHealthBar(const std::string& bossName, float health, float maxHealth)
+	{
+		mBossNameText = AddWidget<TextWidget>(bossName, "SpaceShooterRedux/Bonus/OrbitronBlack.ttf", 20);
+		mBossHealthBar = AddWidget<ValueGauge>(sf::Vector2f{450.f,30.f},1.f, sf::Color::Red, sf::Color{50,50,50,200});
+		if (auto bossHealthBarLocked = mBossHealthBar.lock() )
+		{
+			if(auto bossNameTextLocked = mBossNameText.lock())
+			{
+				bossNameTextLocked->SetWidgetLocation(sf::Vector2f{ mWindowSize.x / 2.f, 30.f });
+				bossNameTextLocked->CenterOrigin();
+				bossNameTextLocked->SetFillColor(sf::Color{181,60,0});
+				bossNameTextLocked->SetVisibility(true);
+				bossNameTextLocked->SetAlpha(0.f);
+				bossNameTextLocked->StartFadeAnimation(2.f, 0.f, 0.f);
+				auto textLocation = bossNameTextLocked->GetWidgetLocation();
+				bossHealthBarLocked->SetWidgetLocation(sf::Vector2f{ mWindowSize.x / 2.f, textLocation.y+35.f });
+				bossHealthBarLocked->CenterOrigin();
+				bossHealthBarLocked->SetVisibility(true);
+				bossHealthBarLocked->SetAlpha(0.f);
+				bossHealthBarLocked->StartFadeAnimation(2.f, 0.f, 0.f);
+				bossHealthBarLocked->UpdateValue(health, maxHealth);
+			}
+		}
+	}
+
+	void GameHUD::BossHealthUpdated(float amt, float currentHealth, float maxHealth)
+	{
+		if (auto bossHealthBarLocked = mBossHealthBar.lock())
+		{
+			bossHealthBarLocked->UpdateValue(currentHealth, maxHealth);
+		}
+	}
+
+	void GameHUD::RemoveBossHealthBar(Actor* actor)
+	{
+		RemoveWidget(mBossHealthBar);
+	}
+
 }
+
+

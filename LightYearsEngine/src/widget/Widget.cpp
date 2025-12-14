@@ -9,7 +9,11 @@ namespace ly
 		mAnimTimer{ 0.0f },
 		mFadeInDuration{ 0.0f },
 		mHoldDuration{ 0.0f },
-		mFadeOutDuration{ 0.0f }
+		mFadeOutDuration{ 0.0f },
+		mLifeTime{-1},
+		mCurrentTime{ 0.0f },
+		mMarkedForRemoval{ false },
+		mTag{}
 	{
 
 	}
@@ -25,12 +29,25 @@ namespace ly
 	void Widget::NativeTick(float deltaTime)
 	{
 		UpdateAnimation(deltaTime);
+		if (mLifeTime > 0)
+		{
+			mCurrentTime += deltaTime;
+		}
 		Tick(deltaTime);
 	}
 
 	void Widget::Tick(float deltaTime)
 	{
 
+	}
+
+	bool Widget::IsExpired() const
+	{
+		if(mMarkedForRemoval)
+			return true;
+		if(mLifeTime > 0 && mCurrentTime >= mLifeTime)
+			return true;
+		return false;
 	}
 
 	void Widget::SetAlpha(float alpha)

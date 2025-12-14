@@ -19,6 +19,7 @@ namespace ly
 
 	protected:
 		virtual void UpdateOrigin(const sf::Vector2f& origin) override;
+		void ApplyAlpha(float alpha) override;
 		
 	private:
 		virtual void Draw(sf::RenderWindow& windowRef) override;

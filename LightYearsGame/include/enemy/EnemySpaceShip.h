@@ -24,6 +24,7 @@ namespace ly
 	protected:
 		// Derived classes override this to provide custom reward tables
 		static List<WeightedReward> GetDefaultRewards();
+		void SetCollisionDamage(float damage) { mCollisionDamage = damage; }
 
 	private:
 		virtual void OnActorBeginOverlap(Actor* other) override;

@@ -20,6 +20,7 @@ namespace ly
 	}
 	void ChaosStage::BeginStage()
 	{
+		GameStage::BeginStage();
 		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
 			&ChaosStage::SpawnVanguard,
@@ -36,9 +37,7 @@ namespace ly
 			
 			if (mChaosTimer <= 0.f && !IsStageFinished())
 			{
-				LOG("*** CHAOS TIMER FINISHED - PREPARING TO END STAGE ***");
-				mIsTotalChaosActive = false;
-				
+				mIsTotalChaosActive = false;				
 				onTotalChaosEnded.Broadcast();
 				
 				TimerManager::GetGameTimerManager().SetTimer(
@@ -53,7 +52,6 @@ namespace ly
 
 	void ChaosStage::StageFinished()
 	{
-		LOG("ChaosStage::StageFinished - Clearing all timers");
 		TimerManager::GetGameTimerManager().ClearTimer(mSpawnTimerHandle);
 		TimerManager::GetGameTimerManager().ClearTimer(mTotalChaosTimerHandle);
 	}
@@ -173,10 +171,11 @@ namespace ly
 
 	void ChaosStage::TotalChaos()
 	{
+		if (!mTotalChaosTimerActive)
+			onTotalChaosStarted.Broadcast(.5f, mChaosTimer, .5f);
 		mTotalChaosTimerActive = true;
 		if (IsStageFinished() || !mIsTotalChaosActive)
 		{
-			LOG("TotalChaos stopped - stage finished or chaos inactive");
 			return;
 		}
 
@@ -250,10 +249,11 @@ namespace ly
 
 		if (mDifficultyLevel == 2 && !mIsTotalChaosActive)
 		{
-			LOG("*** TOTAL CHAOS ACTIVATING ***");
 			mIsTotalChaosActive = true;
-			onTotalChaosStarted.Broadcast();
-			LOG("onTotalChaosStarted broadcast sent");
+			onNotification.Broadcast(std::string{ "SURVIVE!" },
+				.5f, 1.5f, .5f,
+				sf::Vector2f{ GetWorld()->GetWindowSize().x/2.f, GetWorld()->GetWindowSize().y / 2.f },
+				50.f, sf::Color::Red);
 			
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),

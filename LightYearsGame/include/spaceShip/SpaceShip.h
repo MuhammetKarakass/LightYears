@@ -29,6 +29,9 @@ namespace ly
 		virtual void SetExplosionType(ExplosionType type) { mExplosionType = type; }
 		ExplosionType GetExplosionType() const { return mExplosionType; }
 
+		bool IsInvulnerable() const { return mInvulnerability; }
+		void SetInvulnerability(bool invuln) { mInvulnerability = invuln; }
+
 		// Derived types override to set faction/layers
 		virtual void SetupCollisionLayers();
 
@@ -40,6 +43,8 @@ namespace ly
 		sf::Color mBlinkColor;
 		float mBlinkTime;
 		float mBlinkDuration;
+
+		bool mInvulnerability;
 
 		ExplosionType mExplosionType;
 

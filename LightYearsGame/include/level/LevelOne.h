@@ -10,7 +10,8 @@ namespace ly
 	class Vanguard;
 	class PlayerSpaceShip;
 	class ChaosStage;
-	
+	class LevelOneBossStage;
+	class LevelOneBoss;
 	class LevelOne : public GameLevel
 	{
 
@@ -25,13 +26,16 @@ namespace ly
 		virtual void OnActorSpawned(Actor* actor) override;
 
 		virtual void OnRestartLevel() override;
+		virtual void GameOver() override;
 
 	private:
 		virtual void InitGameStages() override;
 		void PlayerShipDestroyed(Actor* destroyedActor);
-		void GameOver();
 		void ConnectChaosStageToHUD();
+		void ConnectTheBossStageToHUD();
+		void OnBossSpawned(LevelOneBoss* boss);
 
 		weak_ptr<ChaosStage> mChaosStage;
+		weak_ptr<LevelOneBossStage> mBossStage;
 	};
 }

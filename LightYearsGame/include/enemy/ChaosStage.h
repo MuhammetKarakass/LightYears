@@ -15,8 +15,9 @@ namespace ly
 		virtual void BeginStage() override;
 		virtual void TickStage(float deltaTime) override;
 
+		
 		Delegate<float> onChaosTimerUpdated;
-		Delegate<> onTotalChaosStarted;
+		Delegate<float,float,float> onTotalChaosStarted;
 		Delegate<> onTotalChaosEnded;
 
 
@@ -55,6 +56,7 @@ namespace ly
 
 		bool mIsTotalChaosActive{ false };
 		bool mTotalChaosTimerActive{ false };
+		bool mShowedSurviveMessage{ false };
 
 		TimerHandle mSpawnTimerHandle;
 		TimerHandle mTotalChaosTimerHandle;  // Total Chaos'un kendini çaðýrmasý için

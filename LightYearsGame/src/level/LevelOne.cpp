@@ -1,4 +1,4 @@
-#include "level/LevelOne.h"
+ï»¿#include "level/LevelOne.h"
 #include "player/PlayerSpaceShip.h"
 #include "spaceShip/SpaceShip.h"
 #include "enemy/Vanguard.h"
@@ -13,6 +13,8 @@
 #include "enemy/EnemySpaceShip.h"
 #include "framework/Application.h"
 #include "enemy/ChaosStage.h"
+#include "enemy/LevelOneBossStage.h"
+#include "enemy/LevelOneBoss.h"
 
 
 
@@ -45,26 +47,29 @@ namespace ly
 		}
 		else 
 		{
-			GameOver();
+			TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), &LevelOne::GameOver, 3.f, false);
 		}
 	}
 
 	void LevelOne::GameOver()
 	{
-		LOG("GAME OVER*****************************************");
-
-		//TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), &LevelOne::OnRestartLevel, 3.f, false);
+		GameLevel::GameOver();
 	}
 
 	void LevelOne::InitGameStages()
 	{
-		LOG("LevelOne::InitGameStages called");
-		
-		// ChaosStage'i oluþtur ve referansýný tut
-		shared_ptr<ChaosStage> chaosStage = shared_ptr<ChaosStage>{new ChaosStage(this)};
+
+		shared_ptr<LevelOneBossStage> bossStage = shared_ptr<LevelOneBossStage>{ new LevelOneBossStage(this) };
+		mBossStage = bossStage;
+		AddGameStage(bossStage);
+		bossStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectTheBossStageToHUD);
+
+
+		shared_ptr<ChaosStage> chaosStage = shared_ptr<ChaosStage>{ new ChaosStage(this) };
 		mChaosStage = chaosStage;
 		AddGameStage(chaosStage);
-		
+		chaosStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectChaosStageToHUD);
+
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 		AddGameStage(shared_ptr<UFOStage>{new UFOStage(this)});
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
@@ -72,47 +77,82 @@ namespace ly
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this,5.f)});
 		AddGameStage(shared_ptr<TwinBladeStage>{new TwinBladeStage(this)});
 		AddGameStage(shared_ptr<HexagonStage>{new HexagonStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		
-		LOG("ChaosStage created, weak_ptr expired: %d", mChaosStage.expired());
-		
-		// Baðlantýyý burada yap - InitGameStages'den sonra GameHUD zaten oluþmuþ olacak
-		ConnectChaosStageToHUD();
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});		
 	}
 
 	void LevelOne::ConnectChaosStageToHUD()
 	{
-		LOG("ConnectChaosStageToHUD called");
-		LOG("mChaosStage.expired(): %d", mChaosStage.expired());
 		
 		if (auto chaosStage = mChaosStage.lock())
-		{
-			LOG("ChaosStage locked successfully");
-			
+		{			
 			if (auto hud = GetGameHUD().lock())
 			{
-				LOG("GameHUD locked successfully - Connecting delegates");
-				// hud zaten bir shared_ptr<GameHUD>, doðrudan GetWeakPtr() çaðrýlabilir
-				chaosStage->onTotalChaosStarted.BindAction(hud->GetWeakPtr(), &GameHUD::TotalChaosStarted);
-				chaosStage->onChaosTimerUpdated.BindAction(hud->GetWeakPtr(), &GameHUD::OnChaosTimerUpdated);
-				chaosStage->onTotalChaosEnded.BindAction(hud->GetWeakPtr(), &GameHUD::TotalChaosEnded);
-				LOG("Delegates connected successfully!");
+				chaosStage->onNotification.BindAction(hud->GetWeakPtr(), &GameHUD::ShowDynamicNotification);
+				chaosStage->onTotalChaosStarted.BindAction(hud->GetWeakPtr(), &GameHUD::ShowTimer);
+				chaosStage->onChaosTimerUpdated.BindAction(hud->GetWeakPtr(), &GameHUD::UpdateTimer);
+				chaosStage->onTotalChaosEnded.BindAction(hud->GetWeakPtr(), &GameHUD::TimerFinished);
 			}
-			else
-			{
-				LOG("ERROR: GameHUD not found or expired!");
-			}
-		}
-		else
-		{
-			LOG("ERROR: ChaosStage not found or expired!");
 		}
 	}
 
+	void LevelOne::ConnectTheBossStageToHUD()
+	{
+		if (auto bossStage = mBossStage.lock())
+		{
+			if (auto hud = GetGameHUD().lock())
+			{
+				// Stage-level delegates
+				bossStage->onNotification.BindAction(
+					hud->GetWeakPtr(),
+					&GameHUD::ShowDynamicNotification
+				);
+
+				bossStage->onBossHealthBarCreated.BindAction(
+					hud->GetWeakPtr(),
+					&GameHUD::CreateBossHealthBar
+				);
+
+				// âœ… Boss spawn olduÄŸunda baÄŸlantÄ±larÄ± yap
+				bossStage->onBossSpawned.BindAction(GetWeakPtr(), &LevelOne::OnBossSpawned);
+			}
+		}
+	}
+
+	void LevelOne::OnBossSpawned(LevelOneBoss* boss)
+	{
+		if (!boss)
+		{
+			return;
+		}
+
+		auto hud = GetGameHUD().lock();
+		if (!hud)
+		{
+			return;
+		}
+		boss->GetHealthComponent().onHealthChanged.BindAction(
+			hud->GetWeakPtr(),
+			&GameHUD::BossHealthUpdated
+		);
+
+		if (auto bossStage = mBossStage.lock())
+		{
+			bossStage->onArrivedLocation.BindAction(
+				boss->GetWeakPtr(),
+				&LevelOneBoss::BossArrivedLocation
+			);
+		}
+
+		boss->onActorDestroyed.BindAction(
+			hud->GetWeakPtr(),
+			&GameHUD::RemoveBossHealthBar
+		);
+	}
+
+
 	void LevelOne::Tick(float deltaTime)
 	{
-		// ? Her frame tüm yeni spawn edilmiþ actor'larý kontrol et
-		// Eðer EnemySpaceShip ise event'e abone ol
+
 		World::Tick(deltaTime);
 	}
 

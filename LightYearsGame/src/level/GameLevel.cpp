@@ -1,6 +1,7 @@
 ﻿#include "level/GameLevel.h"
 #include "widget/GameHUD.h"
 #include "widget/PauseMenuHUD.h"
+#include "widget/GameOverHUD.h"
 #include "framework/Application.h"
 #include "level/MainMenuLevel.h"
 #include "level/LevelOne.h"
@@ -25,6 +26,9 @@ namespace ly
 		{
 			if (keyPressed->code == sf::Keyboard::Key::Escape)
 			{
+				if(!mGameOverHUD.expired())
+					return true;
+
 				TogglePause();
 				return true;
 			}
@@ -104,5 +108,36 @@ namespace ly
 	{
 		RemoveOverlayHUD();
 		mPauseMenuHUD.reset();
+	}
+
+	void GameLevel::AllGameStagesFinished()
+	{
+		GameFinished(true);
+	}
+
+	void GameLevel::GameFinished(bool playerWon)
+	{
+		if(mGameOverHUD.lock())
+		{
+			return;
+		}
+
+		mGameOverHUD = SpawnOverlayHUD<GameOverHUD>();
+
+		if(auto hud= mGameOverHUD.lock())
+		{
+			hud->SetTitleText(playerWon ? "You Win!" : "Game Over");
+			hud->SetScoreText(PlayerManager::GetPlayerManager().GetPlayer()->GetScore());
+
+			hud->onMainMenuButtonClicked.BindAction(GetWeakPtr(), &GameLevel::OnQuitToMenu);
+			hud->onQuitButtonClicked.BindAction(GetWeakPtr(), &GameLevel::OnQuitGame);
+			hud->onRestartButtonClicked.BindAction(GetWeakPtr(), &GameLevel::OnRestartLevel);
+		}
+		SetPaused(true);
+	}
+
+	void GameLevel::GameOver()
+	{
+		GameFinished(false);
 	}
 }
