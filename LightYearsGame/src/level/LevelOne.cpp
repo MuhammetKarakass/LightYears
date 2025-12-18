@@ -15,6 +15,8 @@
 #include "enemy/ChaosStage.h"
 #include "enemy/LevelOneBossStage.h"
 #include "enemy/LevelOneBoss.h"
+#include "framework/BackGroundActor.h"
+#include "framework/BackgroundLayer.h"
 
 
 
@@ -23,15 +25,19 @@ namespace ly
 	LevelOne::LevelOne(Application* owningApp)
 		:GameLevel(owningApp),
 		mPlayerSpaceShip{},
-		mChaosStage{}
+		mChaosStage{},
+		mBackgroundActor{},
+		mPlanetsLayer{},
+		mMeteorsLayer{},
+		mBossStage{}
 	{
 	
 	}
 
 	void LevelOne::OnGameStart()
 	{
-		LOG("LevelOne::OnGameStart called");
-		
+		SpawnCosmetics();
+
 		Player& newPlayer = PlayerManager::GetPlayerManager().CreateNewPlayer();
 		mPlayerSpaceShip=newPlayer.SpawnSpaceShip(this);
 		if (!mPlayerSpaceShip.lock()) return;
@@ -54,6 +60,40 @@ namespace ly
 	void LevelOne::GameOver()
 	{
 		GameLevel::GameOver();
+	}
+
+	void LevelOne::OnGamePaused()
+	{
+		if (auto bgActor = mBackgroundActor.lock())
+		{
+			bgActor->SetPaused(true);
+		}
+		if (auto bgLayer = mPlanetsLayer.lock())
+		{
+			bgLayer->SetPaused(true);
+		}
+
+		if(auto meteorsLayer = mMeteorsLayer.lock())
+		{
+			meteorsLayer->SetPaused(true);
+		}
+	}
+
+	void LevelOne::OnGameResumed()
+	{
+		if (auto bgActor = mBackgroundActor.lock())
+		{
+			bgActor->SetPaused(false);
+		}
+		if (auto bgLayer = mPlanetsLayer.lock())
+		{
+			bgLayer->SetPaused(false);
+		}
+
+		if(auto meteorsLayer = mMeteorsLayer.lock())
+		{
+			meteorsLayer->SetPaused(false);
+		}
 	}
 
 	void LevelOne::InitGameStages()
@@ -149,10 +189,69 @@ namespace ly
 		);
 	}
 
+	void LevelOne::SpawnCosmetics()
+	{
+		mBackgroundActor = SpawnActor<BackGroundActor>("SpaceShooterRedux/Backgrounds/darkPurple.png");
+		mPlanetsLayer = SpawnActor<BackgroundLayer>();
+		mPlanetsLayer.lock()->SetRandomVisibility(true);
+		mPlanetsLayer.lock()->SetPaths({
+			"SpaceShooterRedux/PNG/Planets/Planet1.png",
+			"SpaceShooterRedux/PNG/Planets/Planet2.png",
+			"SpaceShooterRedux/PNG/Planets/Planet3.png",
+			"SpaceShooterRedux/PNG/Planets/Planet4.png",
+			"SpaceShooterRedux/PNG/Planets/Planet5.png",
+			"SpaceShooterRedux/PNG/Planets/Planet6.png",
+			"SpaceShooterRedux/PNG/Planets/Planet7.png",
+			});
+
+		mPlanetsLayer.lock()->SetSpriteCount(2);
+		mPlanetsLayer.lock()->SetUseDepthColor(true);
+		mPlanetsLayer.lock()->SetSizeRange(0.65f, 1.f);
+		mPlanetsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,30.f }, sf::Vector2f{ 0.f,80.f });
+
+		mMeteorsLayer = SpawnActor<BackgroundLayer>();
+		mMeteorsLayer.lock()->SetPaths({
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_tiny1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_tiny2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big3.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big4.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_med1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_med3.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_small1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_small2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_tiny1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_tiny2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_big1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_big2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_big3.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_big4.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_med1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_med2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_small1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_small2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_tiny1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_tiny2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_small1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorGrey_small2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_small1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_small2.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_tiny1.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_tiny2.png"
+
+			});
+
+		mMeteorsLayer.lock()->SetSpriteCount(40);
+		mMeteorsLayer.lock()->SetUseDepthColor(true);
+		mMeteorsLayer.lock()->SetRandomVisibility(false);
+		mMeteorsLayer.lock()->SetSizeRange(0.5f, 0.7f);
+		mMeteorsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,50.f }, sf::Vector2f{ 0.f,100.f });
+	}
+
 
 	void LevelOne::Tick(float deltaTime)
 	{
-
 		World::Tick(deltaTime);
 	}
 

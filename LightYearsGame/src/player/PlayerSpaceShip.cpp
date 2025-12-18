@@ -14,7 +14,7 @@ namespace ly
 		mSpeed(300.f),                         
 		mMoveInput{ 0.f, 0.f },               
 		mShooter{ new BulletShooter{this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png",0.2f, sf::Vector2f{0.f,50.f}} },
-		mInvulnerabilityTime{ 1.f },
+		mInvulnerabilityTime{ 111.f },
 		mInvulnerable{true},
 		mInvulnerabilityBlinkInterval{ 0.4f },
 		mInvulnerabilityBlinkTimer{ 0.f },

@@ -17,7 +17,8 @@ namespace ly
 		mPhysicsEnabled{ false },       // Fizik sistemi kapalı başlıyor
 		mCollisionLayer{ CollisionLayer::None },  // Hangi katmanda çarpışır
 		mCollisionMask{ CollisionLayer::None },   // Hangi katmanları algılar
-		mCanCollide{ false }            // Şu an çarpışma durumu
+		mCanCollide{ false },
+		mTickWhenPaused{ false }
 	{
 		SetTexture(TexturePath);  // Verilen texture'ı yükle ve sprite'a ata
 	}
@@ -255,6 +256,14 @@ namespace ly
 	{
 		mSprite.value().setRotation(sf::degrees(newRotation));  
 		UpdatePhysicsTransform();  
+	}
+
+	void Actor::SetTextureRepeated(bool repeated)
+	{
+		if (mTexture)
+		{
+			mTexture->setRepeated(repeated);
+		}
 	}
 	
 	// Çağrıldığı Yer: Türetilmiş Actor sınıflarının Tick() fonksiyonlarında (hareket için).

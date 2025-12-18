@@ -12,6 +12,8 @@ namespace ly
 	class ChaosStage;
 	class LevelOneBossStage;
 	class LevelOneBoss;
+	class BackGroundActor;
+	class BackgroundLayer;
 	class LevelOne : public GameLevel
 	{
 
@@ -28,14 +30,21 @@ namespace ly
 		virtual void OnRestartLevel() override;
 		virtual void GameOver() override;
 
+		virtual void OnGamePaused() override;
+		virtual void OnGameResumed() override;
+
 	private:
 		virtual void InitGameStages() override;
 		void PlayerShipDestroyed(Actor* destroyedActor);
 		void ConnectChaosStageToHUD();
 		void ConnectTheBossStageToHUD();
 		void OnBossSpawned(LevelOneBoss* boss);
+		void SpawnCosmetics();
 
 		weak_ptr<ChaosStage> mChaosStage;
 		weak_ptr<LevelOneBossStage> mBossStage;
+		weak_ptr<BackGroundActor> mBackgroundActor;
+		weak_ptr<BackgroundLayer> mPlanetsLayer;
+		weak_ptr<BackgroundLayer> mMeteorsLayer;
 	};
 }

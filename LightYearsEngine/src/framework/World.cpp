@@ -68,6 +68,17 @@ namespace ly{
 			}
 		}
 
+		else
+		{
+			for(auto iter = mActors.begin(); iter != mActors.end(); iter++)
+			{
+				if(iter->get()->GetTickWhenPaused())
+				{
+					iter->get()->TickInternal(deltaTime);
+				}
+			}
+		}
+
 		if(mHUD)
 		{
 			if(!mHUD->HasInit())

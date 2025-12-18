@@ -21,7 +21,6 @@ namespace ly
 
 	bool GameLevel::DispatchEvent(const sf::Event& event)
 	{
-		// ✅ ESC tuşu kontrolü
 		if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>())
 		{
 			if (keyPressed->code == sf::Keyboard::Key::Escape)
@@ -127,13 +126,22 @@ namespace ly
 		if(auto hud= mGameOverHUD.lock())
 		{
 			hud->SetTitleText(playerWon ? "You Win!" : "Game Over");
-			hud->SetScoreText(PlayerManager::GetPlayerManager().GetPlayer()->GetScore());
+
+			if (auto player = PlayerManager::GetPlayerManager().GetPlayer())
+			{
+				hud->SetScoreText(player->GetScore());
+			}
+			else
+			{
+				hud->SetScoreText(0);
+			}
 
 			hud->onMainMenuButtonClicked.BindAction(GetWeakPtr(), &GameLevel::OnQuitToMenu);
 			hud->onQuitButtonClicked.BindAction(GetWeakPtr(), &GameLevel::OnQuitGame);
 			hud->onRestartButtonClicked.BindAction(GetWeakPtr(), &GameLevel::OnRestartLevel);
 		}
 		SetPaused(true);
+		OnGamePaused();
 	}
 
 	void GameLevel::GameOver()

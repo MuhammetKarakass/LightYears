@@ -5,6 +5,11 @@
 #include <box2d/box2d.h> 
 #include <optional>
 
+//TODO: : Actor sýnýfýnýn destructor'ýna (~Actor) UnInitializePhysics() eklemen.  
+// World sýnýfýnýn yýkýcý metodunda (~World) o dünyaya ait tüm timerlarýn temizlendiðinden emin olmak daha güvenli olurdu, ama weak_ptr ve BindAction yapýn þu an bunu güvenli kýlýyor.
+//Çözüm: World yýkýcý metodunda (Destructor) veya LoadWorld ile yeni dünya yüklenirken eski dünyanýn temizlendiðinden emin olunmalý. Þu anki C++ shared_ptr yapýsý bunu büyük 
+// oranda hallediyor, ancak mPendingActors içindekiler hiç sahneye çýkmadan silinecek. Bu genellikle sorun yaratmaz ama aklýnda bulunsun.
+
 namespace ly
 {
 	class World;
@@ -19,7 +24,7 @@ namespace ly
 		void TickInternal(float deltaTime);
 		virtual void Tick(float deltaTime);
 
-		void Render(sf::RenderWindow& window);
+		virtual void Render(sf::RenderWindow& window);
 
 		World* GetWorld() const { return mOwningWorld; }
 		bool IsActorOutOfWindow(float allowance=10.f) const;
@@ -41,6 +46,9 @@ namespace ly
 		CollisionLayer GetCollisionMask() const { return mCollisionMask; }
 		void SetCollisionLayer(CollisionLayer layer) { mCollisionLayer = layer; }
 		void SetCollisionMask(CollisionLayer mask) { mCollisionMask = mask; }
+		
+		void SetTickWhenPaused(bool tickWhenPaused) { mTickWhenPaused = tickWhenPaused; }
+		bool GetTickWhenPaused() const { return mTickWhenPaused; }
 
 		virtual void ApplyDamage(float amt);
 
@@ -55,6 +63,7 @@ namespace ly
 		void SetTexture(const std::string& texturePath);
 		void SetActorLocation(const sf::Vector2f& newLoc);
 		void SetActorRotation(float newRotation);
+		void SetTextureRepeated(bool repeated);
 		void AddActorLocationOffset(const sf::Vector2f& offset);
 		void AddActorRotationOffset(float offset);
 		void CenterPivot();
@@ -80,6 +89,7 @@ namespace ly
 		bool mBeganPlay;
 
 		bool mCanCollide;
+		bool mTickWhenPaused;
 
 		std::optional<sf::Sprite> mSprite;
 		shared_ptr<sf::Texture> mTexture;
