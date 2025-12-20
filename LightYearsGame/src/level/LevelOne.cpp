@@ -18,8 +18,6 @@
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
 
-
-
 namespace ly
 {
 	LevelOne::LevelOne(Application* owningApp)
@@ -36,6 +34,8 @@ namespace ly
 
 	void LevelOne::OnGameStart()
 	{
+		GameLevel::OnGameStart();
+
 		SpawnCosmetics();
 
 		Player& newPlayer = PlayerManager::GetPlayerManager().CreateNewPlayer();
@@ -64,6 +64,10 @@ namespace ly
 
 	void LevelOne::OnGamePaused()
 	{
+		// Base class'ı çağır (müzik kontrolü için)
+		GameLevel::OnGamePaused();
+
+		// Background layer'ları pause et
 		if (auto bgActor = mBackgroundActor.lock())
 		{
 			bgActor->SetPaused(true);
@@ -72,7 +76,6 @@ namespace ly
 		{
 			bgLayer->SetPaused(true);
 		}
-
 		if(auto meteorsLayer = mMeteorsLayer.lock())
 		{
 			meteorsLayer->SetPaused(true);
@@ -81,6 +84,10 @@ namespace ly
 
 	void LevelOne::OnGameResumed()
 	{
+		// Base class'ı çağır (müzik kontrolü için)
+		GameLevel::OnGameResumed();
+
+		// Background layer'ları resume et
 		if (auto bgActor = mBackgroundActor.lock())
 		{
 			bgActor->SetPaused(false);
@@ -89,7 +96,6 @@ namespace ly
 		{
 			bgLayer->SetPaused(false);
 		}
-
 		if(auto meteorsLayer = mMeteorsLayer.lock())
 		{
 			meteorsLayer->SetPaused(false);
@@ -98,12 +104,10 @@ namespace ly
 
 	void LevelOne::InitGameStages()
 	{
-
 		shared_ptr<LevelOneBossStage> bossStage = shared_ptr<LevelOneBossStage>{ new LevelOneBossStage(this) };
 		mBossStage = bossStage;
 		AddGameStage(bossStage);
 		bossStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectTheBossStageToHUD);
-
 
 		shared_ptr<ChaosStage> chaosStage = shared_ptr<ChaosStage>{ new ChaosStage(this) };
 		mChaosStage = chaosStage;
@@ -122,7 +126,6 @@ namespace ly
 
 	void LevelOne::ConnectChaosStageToHUD()
 	{
-		
 		if (auto chaosStage = mChaosStage.lock())
 		{			
 			if (auto hud = GetGameHUD().lock())
@@ -141,7 +144,6 @@ namespace ly
 		{
 			if (auto hud = GetGameHUD().lock())
 			{
-				// Stage-level delegates
 				bossStage->onNotification.BindAction(
 					hud->GetWeakPtr(),
 					&GameHUD::ShowDynamicNotification
@@ -152,7 +154,6 @@ namespace ly
 					&GameHUD::CreateBossHealthBar
 				);
 
-				// ✅ Boss spawn olduğunda bağlantıları yap
 				bossStage->onBossSpawned.BindAction(GetWeakPtr(), &LevelOne::OnBossSpawned);
 			}
 		}
@@ -239,7 +240,6 @@ namespace ly
 			"SpaceShooterRedux/PNG/Meteors/meteorBrown_small2.png",
 			"SpaceShooterRedux/PNG/Meteors/meteorBrown_tiny1.png",
 			"SpaceShooterRedux/PNG/Meteors/meteorBrown_tiny2.png"
-
 			});
 
 		mMeteorsLayer.lock()->SetSpriteCount(40);
@@ -248,7 +248,6 @@ namespace ly
 		mMeteorsLayer.lock()->SetSizeRange(0.5f, 0.7f);
 		mMeteorsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,50.f }, sf::Vector2f{ 0.f,100.f });
 	}
-
 
 	void LevelOne::Tick(float deltaTime)
 	{
@@ -281,5 +280,4 @@ namespace ly
 		GameLevel::OnRestartLevel();
 		GetApplication()->LoadWorld<LevelOne>();
 	}
-
 }

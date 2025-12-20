@@ -41,6 +41,12 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/TimerManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/TimerManager.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/AudioManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/AudioManager.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SoundComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/SoundComponent.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameStage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/GameStage.cpp
 

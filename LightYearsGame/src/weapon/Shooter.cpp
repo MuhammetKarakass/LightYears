@@ -1,4 +1,6 @@
 #include "weapon/Shooter.h"
+#include "framework/AudioManager.h"
+#include "framework/Actor.h"
 
 namespace ly
 {
@@ -39,10 +41,22 @@ namespace ly
 		mLocalRotationOffset{ 0.f }
 	{
 	}
+	void Shooter::PlayShootSound()
+	{
+		AudioManager::GetAudioManager().PlaySound(mShootSoundPath, AudioType::SFX_World, mShootSoundVolume, mShootSoundPitch);
+	}
+	void Shooter::SetShootSoundProps(const std::string& soundPath, float volume, float pitch)
+	{
+		mShootSoundPath = soundPath;
+		mShootSoundVolume = volume;
+		mShootSoundPitch = pitch;
+	}
 	void Shooter::Shoot()
 	{
 		if (CanShoot() && !IsOnCooldown())
 		{
+			if(GetOwner()->GetCollisionLayer() == CollisionLayer::Player)
+				PlayShootSound();
 			ShootImp();
 		}
 	}

@@ -90,15 +90,15 @@ namespace ly
 	void ValueGauge::ApplyAlpha(float alpha)
 	{
 		sf::Color currentFrontColor = mBarFront.getFillColor();
-		//sf::Color currentBackColor = mBarBack.getFillColor();
+		sf::Color currentBackColor = mBarBack.getFillColor();
 		sf::Color currentTextColor = mBarText.getFillColor();
 
 		currentFrontColor.a = static_cast<std::uint8_t>(alpha * 255.f);
-		//currentBackColor.a = static_cast<std::uint8_t>(alpha * 255.f );
+		currentBackColor.a = static_cast<std::uint8_t>(alpha * 255.f);
 		currentTextColor.a = static_cast<std::uint8_t>(alpha * 255.f);
 
 		mBarFront.setFillColor(currentFrontColor);
-		//mBarBack.setFillColor(currentBackColor);
+		mBarBack.setFillColor(currentBackColor);
 		mBarText.setFillColor(currentTextColor);
 
 	}

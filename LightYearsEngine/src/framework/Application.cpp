@@ -2,17 +2,18 @@
 #include "framework/Core.h"
 #include "framework/World.h"
 #include "framework/AssetManager.h"
+#include "framework/AudioManager.h"
 #include "framework/PhysicsSystem.h"
 #include "framework/TimerManager.h"
 
 namespace ly
 {
 	Application::Application(sf::Vector2u Position, unsigned int bit, std::string& Title, uint32_t Style)
-		:mWindow{ sf::VideoMode(Position, bit), Title, Style },  // SFML penceresi oluþtur
+		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
 		mTargetFrameRate{ 75.f },     
-		mTickClock{},                 
-		mCurrentWorld{ nullptr },      
-		mCleanCycleClock{},           
+		mTickClock{},   
+		mCurrentWorld{ nullptr },
+		mCleanCycleClock{},    
 		mCleanCycleTime{2.f}          
 	{
 
@@ -83,6 +84,7 @@ namespace ly
 		{
 			mCleanCycleClock.restart();
 			AssetManager::GetAssetManager().CleanCycle();
+			AudioManager::GetAudioManager().CleanCycle();  // Bitmiþ sesleri temizle
 			if (mCurrentWorld)
 				mCurrentWorld->CleanCycle();
 		}

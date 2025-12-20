@@ -31,6 +31,9 @@ namespace ly
 	protected:
 		Shooter(Actor* owner);
 
+		void PlayShootSound();
+		void SetShootSoundProps(const std::string& soundPath, float volume, float pitch);
+
 	private:
 		Actor* mOwner;
 		virtual void ShootImp() = 0;
@@ -40,5 +43,10 @@ namespace ly
 		float mCooldownMultiplier;
 		sf::Vector2f mLocalPositionOffset;
 		float mLocalRotationOffset;
+
+		std::string mShootSoundPath;
+		float mShootSoundVolume;
+		float mShootSoundPitch;
+
 	};
 }

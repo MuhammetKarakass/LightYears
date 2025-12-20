@@ -39,6 +39,7 @@ namespace ly
 	}
 	void ThreeWayShooter::ShootImp()
 	{
+
 		mLeftShooter->Shoot();
 		mMidShooter->Shoot();
 		mRightShooter->Shoot();

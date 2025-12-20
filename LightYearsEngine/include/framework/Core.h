@@ -11,6 +11,13 @@
 // COLLISION LAYER SYSTEM - Çarpýþma Katman Sistemi (Bit mask)
 // =====================================================
 
+enum class AudioType
+{
+    Music,
+	SFX_World,
+	SFX_UI
+};
+
 enum class CollisionLayer : uint8_t
 {
     None = 0,            // 0000 0000

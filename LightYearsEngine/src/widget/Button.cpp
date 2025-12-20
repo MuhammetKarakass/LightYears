@@ -1,4 +1,5 @@
 #include "widget/Button.h"
+#include "framework/AudioManager.h"
 
 namespace ly
 {
@@ -106,6 +107,12 @@ namespace ly
 
 	void Button::ButtonClicked()
 	{
+		AudioManager::GetAudioManager().PlaySound(
+			"SpaceShooterRedux/Bonus/sfx_zap.ogg",
+			AudioType::SFX_UI,
+			60.0f,  // Volume
+			1.5f   // Pitch
+		);
 		mButtonClicked = true;
 		mButtonSprite.setColor(mButtonClickedColor);
 	}

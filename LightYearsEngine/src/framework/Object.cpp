@@ -28,6 +28,7 @@ namespace ly
 	{
 		return weak_from_this();
 	}
+
 	unsigned int Object::GetNextAvailableID()
 	{
 		return uniqueIDCounter++;

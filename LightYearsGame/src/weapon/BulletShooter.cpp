@@ -1,5 +1,6 @@
 #include "weapon/BulletShooter.h"
 #include "framework/Core.h"
+#include "framework/AudioManager.h"
 #include <framework/World.h>
 #include "weapon/Bullet.h"
 
@@ -19,12 +20,14 @@ namespace ly
 		mBulletSpeed{ bulletSpeed },
 		mBulletDamage{ bulletDamage }
 	{
+		SetShootSoundProps("SpaceShooterRedux/Bonus/sfx_laser1.ogg", 20.0f, 1.f);
 		SetLocalPositionOffset(localPositionOffset);
 		SetLocalRotationOffset(localRotationOffset);
 	}
+
 	bool BulletShooter::IsOnCooldown() const
 	{
-		if (mCooldownClock.getElapsedTime().asSeconds() > mCooldownTime/ GetCooldownMultiplier() /*GetCurrentLevel()*/)
+		if (mCooldownClock.getElapsedTime().asSeconds() > mCooldownTime / GetCooldownMultiplier())
 		{
 			return false;
 		}
@@ -36,6 +39,7 @@ namespace ly
 	{
 		mBulletSpeed = speed;
 	}
+
 	void BulletShooter::SetBulletDamage(float damage)
 	{
 		mBulletDamage = damage;
@@ -49,7 +53,6 @@ namespace ly
 	void BulletShooter::IncrementLevel(int amt)
 	{
 		Shooter::IncrementLevel(amt);
-
 	}
 
 	void BulletShooter::RestartCooldown()
@@ -62,7 +65,7 @@ namespace ly
 		if (!GetOwner()) return;
 
 		mCooldownClock.restart();
-
+		 
 		weak_ptr<Bullet> newBullet = GetOwner()->GetWorld()->SpawnActor<Bullet>(GetOwner(), mTexturePath);
 
 		if (auto bullet = newBullet.lock())

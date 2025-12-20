@@ -3,6 +3,7 @@
 #include "widget/PauseMenuHUD.h"
 #include "widget/GameOverHUD.h"
 #include "framework/Application.h"
+#include "framework/AudioManager.h"
 #include "level/MainMenuLevel.h"
 #include "level/LevelOne.h"
 #include "player/PlayerManager.h"
@@ -13,10 +14,15 @@ namespace ly
 		World(owningApp)
 	{
 	}
+
 	void GameLevel::BeginPlay()
 	{
+		World::BeginPlay();
+
 		mGameHUD = SpawnHUD<GameHUD>();
 		OnGameStart();
+
+		
 	}
 
 	bool GameLevel::DispatchEvent(const sf::Event& event)
@@ -33,45 +39,77 @@ namespace ly
 			}
 		}
 		
-		// ✅ Diğer event'leri base class'a ilet
 		return World::DispatchEvent(event);
 	}
 	
 	void GameLevel::OnGameStart()
 	{
+		AudioManager::GetAudioManager().PlayMusic(
+			"SpaceShooterRedux/Musics/confetti1.ogg",
+			AudioType::SFX_World,
+			80.0f,  // Volume
+			1.0f,   // Pitch
+			true// Loop
+		);
 	}
+
 	void GameLevel::OnGamePaused()
 	{
+		AudioManager::GetAudioManager().SetMenuMode(true);
 	}
+
 	void GameLevel::OnGameResumed()
 	{
+		AudioManager::GetAudioManager().SetMenuMode(false);
 	}
+
 	void GameLevel::OnResumeGame()
 	{
 		mTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), &GameLevel::TogglePause, 0.1f, false);
 	}
+
 	void GameLevel::OnQuitToMenu()
 	{
-		TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
+		mTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), [this]()
+			{
+				AudioManager::GetAudioManager().SetMenuMode(false);
+				TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
 
-		if(IsPaused())
-			SetPaused(false);
+				if (IsPaused())
+					SetPaused(false);
 
-		PlayerManager::GetPlayerManager().Reset();
-		GetApplication()->LoadWorld<MainMenuLevel>();
+				// Oyun müziğini durdur
+				AudioManager::GetAudioManager().StopMusic();
+
+				PlayerManager::GetPlayerManager().Reset();
+				GetApplication()->LoadWorld<MainMenuLevel>();
+			}, 0.1f, false);
 	}
+
 	void GameLevel::OnRestartLevel()
 	{
-		TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
+		AudioManager::GetAudioManager().SetMenuMode(false);
+		mTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), [this]()
+			{
+				TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
 
-		if(IsPaused())
-			SetPaused(false);
+				if (IsPaused())
+					SetPaused(false);
 
-		PlayerManager::GetPlayerManager().Reset();
+				PlayerManager::GetPlayerManager().Reset();
+			}, 0.1f, false);
 	}
+
 	void GameLevel::OnQuitGame()
 	{
-		GetApplication()->QuitApplication();
+		mTimerHandle= TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), [this]()
+		{
+			AudioManager::GetAudioManager().SetMenuMode(false);
+			TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
+			if (IsPaused())
+				SetPaused(false);
+			GetApplication()->QuitApplication();
+			}, 0.1f, false);
 	}
 
 	void GameLevel::TogglePause()
@@ -82,7 +120,6 @@ namespace ly
 			SetPaused(false);
 			HidePauseMenu();
 			OnGameResumed();
-
 		}
 		else
 		{
@@ -91,6 +128,7 @@ namespace ly
 			OnGamePaused();
 		}
 	}
+
 	void GameLevel::ShowPauseMenu()
 	{
 		mPauseMenuHUD = SpawnOverlayHUD<PauseMenuHUD>();
@@ -103,6 +141,7 @@ namespace ly
 			pauseMenu->onRestartButtonClicked.BindAction(GetWeakPtr(), &GameLevel::OnRestartLevel);
 		}
 	}
+
 	void GameLevel::HidePauseMenu()
 	{
 		RemoveOverlayHUD();

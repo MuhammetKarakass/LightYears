@@ -77,6 +77,24 @@ namespace ly
 		return shared_ptr<sf::Font>{nullptr};
 	}
 
+	shared_ptr<sf::SoundBuffer> AssetManager::LoadSoundBuffer(const std::string& soundPath)
+	{
+		auto found = mLoadedSoundBufferMap.find(soundPath);
+		if (found != mLoadedSoundBufferMap.end())
+		{
+			return found->second;
+		}
+
+		shared_ptr<sf::SoundBuffer> newSoundBuffer{ new sf::SoundBuffer };
+
+		if (newSoundBuffer->loadFromFile(mAssetRootDirectory + soundPath))
+		{
+			mLoadedSoundBufferMap.insert({ soundPath, newSoundBuffer });
+			return newSoundBuffer;
+		}
+		return shared_ptr<sf::SoundBuffer>{nullptr};
+	}
+
 	// Artýk kullanýlmayan texture'larý bellekten temizleyen fonksiyon.
 	void AssetManager::CleanCycle()
 	{
@@ -105,6 +123,18 @@ namespace ly
 			if (iter->second.unique())
 			{
 				iter = mLoadedFontMap.erase(iter);
+			}
+			else
+			{
+				++iter;
+			}
+		}
+
+		for(auto iter = mLoadedSoundBufferMap.begin(); iter != mLoadedSoundBufferMap.end();)
+		{
+			if (iter->second.unique())
+			{
+				iter = mLoadedSoundBufferMap.erase(iter);
 			}
 			else
 			{
