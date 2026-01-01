@@ -7,18 +7,15 @@
 namespace ly
 {
 	BulletShooter::BulletShooter(Actor* owner,
-		const std::string& texturePath,
+		const BulletDefinition& bulletDef,
 		float cooldownTime,
 		const sf::Vector2f& localPositionOffset,
-		float localRotationOffset,
-		float bulletDamage,
-		float bulletSpeed)
+		float localRotationOffset
+		)
 		: Shooter{ owner },
 		mCooldownClock{},
 		mCooldownTime{ cooldownTime },
-		mTexturePath{ texturePath },
-		mBulletSpeed{ bulletSpeed },
-		mBulletDamage{ bulletDamage }
+		mBulletDef{ bulletDef }
 	{
 		SetShootSoundProps("SpaceShooterRedux/Bonus/sfx_laser1.ogg", 20.0f, 1.f);
 		SetLocalPositionOffset(localPositionOffset);
@@ -37,12 +34,12 @@ namespace ly
 	
 	void BulletShooter::SetBulletSpeed(float speed)
 	{
-		mBulletSpeed = speed;
+		mBulletDef.speed = speed;
 	}
 
 	void BulletShooter::SetBulletDamage(float damage)
 	{
-		mBulletDamage = damage;
+		mBulletDef.damage = damage;
 	}
 
 	void BulletShooter::SetCooldownTime(float cooldownTime)
@@ -66,12 +63,12 @@ namespace ly
 
 		mCooldownClock.restart();
 		 
-		weak_ptr<Bullet> newBullet = GetOwner()->GetWorld()->SpawnActor<Bullet>(GetOwner(), mTexturePath);
+		weak_ptr<Bullet> newBullet = GetOwner()->GetWorld()->SpawnActor<Bullet>(GetOwner(), mBulletDef);
 
 		if (auto bullet = newBullet.lock())
 		{
-			bullet->SetSpeed(mBulletSpeed);
-			bullet->SetDamage(mBulletDamage);
+			bullet->SetSpeed(mBulletDef.speed);
+			bullet->SetDamage(mBulletDef.damage);
 
 			sf::Vector2f worldMuzzlePos = GetOwner()->GetActorLocation() +
 				GetOwner()->TransformLocalToWorld(GetLocalPositionOffset());

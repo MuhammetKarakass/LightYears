@@ -8,8 +8,7 @@ namespace ly
 		GameStage{world},
 		mSpawnInterval{{2.5f,3.5f}},
 		mSpawnAmt{16},
-		mCurrentSpawnCount{0},
-		mUFOSpeed{200.f}
+		mCurrentSpawnCount{0}
 	{
 	}
 
@@ -79,23 +78,16 @@ namespace ly
 
 	void UFOStage::SpawnUFO()
 	{
-		auto [spawnLoc, spawnVelocity] = GetSpawnProperties();
-		
-		weak_ptr<UFO> newUFO = GetWorld()->SpawnActor<UFO>(spawnVelocity);
-		newUFO.lock()->SetActorLocation(spawnLoc);
-	}
-
-	std::pair<sf::Vector2f, sf::Vector2f> UFOStage::GetSpawnProperties()
-	{
+		ShipDefinition ufoDef = GameData::Ship_Enemy_UFO;
 		sf::Vector2f spawnLoc = RandomSpawnLoc();
-
 		auto windowSize = GetWorld()->GetWindowSize();
 		sf::Vector2f center{ windowSize.x / 2.f, windowSize.y / 2.f };
 		sf::Vector2f spawnLocToCenter{ center.x - spawnLoc.x, center.y - spawnLoc.y };
 		NormalizeVector(spawnLocToCenter);
 
-		sf::Vector2f spawnVelocity = spawnLocToCenter * mUFOSpeed;
-
-		return { spawnLoc, spawnVelocity };
+		float speed = ufoDef.speed.y;
+		sf::Vector2f spawnVelocity = spawnLocToCenter * speed;
+		weak_ptr<UFO> newUFO = GetWorld()->SpawnActor<UFO>(ufoDef, spawnVelocity);
+		newUFO.lock()->SetActorLocation(spawnLoc);
 	}
 }

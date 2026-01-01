@@ -8,12 +8,11 @@ namespace ly
 	class FrontalWiper : public Shooter
 	{
 	public:
-		FrontalWiper(Actor* owner, const std::string& texturePath,
+		FrontalWiper(Actor* owner,
+			const BulletDefinition& bulletDef,
 			float cooldownTime = 0.25f,
 			const sf::Vector2f& localPositionOffset = { 0.f,0.f },
 			float localRotationOffset=0.f,
-			float damage = 10.f,
-			float speed = 600.f,
 			float width= 20.f);
 
 		virtual void IncrementLevel(int amt = 1) override;

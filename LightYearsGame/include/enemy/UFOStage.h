@@ -20,15 +20,12 @@ namespace ly
 		
 		sf::Vector2f RandomSpawnLoc();
 		void SpawnUFO();
-		void SpawnUFOPair(); // Ýki UFO spawn eder (biri hemen, diðeri 1 saniye sonra)
+		void SpawnUFOPair();
 		
-		// Spawn location ve velocity'yi pair olarak döndürür
-		std::pair<sf::Vector2f, sf::Vector2f> GetSpawnProperties();
 
 		List<float> mSpawnInterval;
 		int mSpawnAmt;
 		int mCurrentSpawnCount;
-		float mUFOSpeed;
 
 		TimerHandle mSpawnTimerHandlePair;   // Çift spawn için timer
 		TimerHandle mSpawnTimerHandleSecond; // Ýkinci UFO için timer

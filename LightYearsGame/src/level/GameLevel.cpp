@@ -44,13 +44,13 @@ namespace ly
 	
 	void GameLevel::OnGameStart()
 	{
-		AudioManager::GetAudioManager().PlayMusic(
-			"SpaceShooterRedux/Musics/confetti1.ogg",
-			AudioType::SFX_World,
-			80.0f,  // Volume
-			1.0f,   // Pitch
-			true// Loop
-		);
+		//AudioManager::GetAudioManager().PlayMusic(
+		//	"SpaceShooterRedux/Musics/confetti1.ogg",
+		//	AudioType::SFX_World,
+		//	80.0f,  // Volume
+		//	1.0f,   // Pitch
+		//	true// Loop
+		//);
 	}
 
 	void GameLevel::OnGamePaused()
@@ -89,6 +89,7 @@ namespace ly
 	void GameLevel::OnRestartLevel()
 	{
 		AudioManager::GetAudioManager().SetMenuMode(false);
+		PlayerManager::GetPlayerManager().Reset();
 		mTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(GetWeakPtr(), [this]()
 			{
 				TimerManager::GetGlobalTimerManager().ClearTimer(mTimerHandle);
@@ -96,7 +97,6 @@ namespace ly
 				if (IsPaused())
 					SetPaused(false);
 
-				PlayerManager::GetPlayerManager().Reset();
 			}, 0.1f, false);
 	}
 

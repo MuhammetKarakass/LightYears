@@ -46,6 +46,12 @@ namespace ly
 	sf::Vector2f RandomUnitVector();
 	sf::Vector2f RandomVector(const sf::Vector2f& a, const sf::Vector2f& b);
 
+	template <typename T>
+	T Lerp(const T&a , const T& b, float alpha)
+	{
+		return a + (b - a) * alpha;
+	}
+
 	template<typename T>
 	T RandRange(T min, T max)	
 	{

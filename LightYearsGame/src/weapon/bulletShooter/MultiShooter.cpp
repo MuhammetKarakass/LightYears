@@ -116,9 +116,9 @@ namespace ly
 		for (auto& shooter : mShooters) shooter->SetBulletSpeed(speed);
 	}
 
-	void MultiShooter::SetAllTexture(const std::string& texturePath)
+	void MultiShooter::SetAllBulletDefinitions(const BulletDefinition& bulletDef)
 	{
-		for (auto& shooter : mShooters) shooter->SetTexturePath(texturePath);
+		for (auto& shooter : mShooters) shooter->SetBulletDefinition(bulletDef);
 	}
 
 	void MultiShooter::ShootImp()

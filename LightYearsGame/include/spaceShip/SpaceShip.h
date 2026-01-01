@@ -4,6 +4,8 @@
 #include <framework/Delegate.h>	
 #include "VFX/Explosion.h"
 #include "gameplay/HealthComponent.h"
+#include "gameConfigs/GameplayConfig.h"
+#include "gameConfigs/GameplayStructs.h"
 
 namespace ly
 {
@@ -13,13 +15,10 @@ namespace ly
 	public:
 		virtual void BeginPlay() override;
 
-		SpaceShip(World* owningWorld, std::string texturePath = "");
+		SpaceShip(World* owningWorld, const ShipDefinition& shipDef);
 
 		virtual void Tick(float deltaTime) override;
 
-		sf::Vector2f GetVelocity() const { return mVelocity; }
-		void SetVelocity(const sf::Vector2f& velocity);
-		sf::Vector2f GetVelocity() { return mVelocity; }
 
 		HealthComponent& GetHealthComponent() { return mHealthComponent; }
 
@@ -35,9 +34,8 @@ namespace ly
 		// Derived types override to set faction/layers
 		virtual void SetupCollisionLayers();
 
-
+		List<GameplayTag> mGameplayTags;
 	private:
-		sf::Vector2f mVelocity;
 		HealthComponent mHealthComponent;
 
 		sf::Color mBlinkColor;
@@ -50,6 +48,7 @@ namespace ly
 
 		void Blink();
 		void UpdateBlink(float deltaTime);
+
 
 		virtual void OnHealthChanged(float amt, float health, float maxHealth);
 		virtual void OnTakenDamage(float amt, float health, float maxHealth);

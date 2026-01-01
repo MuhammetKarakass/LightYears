@@ -6,20 +6,16 @@
 namespace ly
 {
 	// SpaceShip constructor - Uzay gemisi nesnesini oluþturur
-	SpaceShip::SpaceShip(World* owningWorld, std::string texturePath):
-		Actor(owningWorld, texturePath),
-		mVelocity(0.0f, 0.0f),          
-		mHealthComponent{100.f,100.f},  
-		mBlinkColor{ 255,0,0,255 },     
-		mBlinkTime{0.f},                
+	SpaceShip::SpaceShip(World* owningWorld, const ShipDefinition& shipDef):
+		Actor(owningWorld, shipDef.texturePath),
+		mHealthComponent{shipDef.health, shipDef.health},
+		mExplosionType{ (ExplosionType)shipDef.explosionType },
+		mBlinkColor{255, 0, 0, 255},
+		mBlinkTime{0.f},
 		mBlinkDuration{.25f},
-		mInvulnerability{ false },
-		mExplosionType{ExplosionType::Medium}  // ? Default explosion type
+		mInvulnerability{ false }
 	{
 		SetCollisionLayer(CollisionLayer::None);
-		// Türetilen sýnýflar kendi collision ayarlarýný yapacak:
-		// Player: SetCollisionLayer(Player); SetCollisionMask(Enemy | EnemyBullet | Powerup);
-		// Enemy:  SetCollisionLayer(Enemy);  SetCollisionMask(Player | PlayerBullet);
 	}
 
 	void SpaceShip::BeginPlay()
@@ -42,10 +38,7 @@ namespace ly
 		UpdateBlink(deltaTime);      
 	}
 
-	void SpaceShip::SetVelocity(const sf::Vector2f& velocity)
-	{
-		mVelocity = velocity; 
-	}
+
 
 	// Ateþ etme iþlemi (türetilen sýnýflar override eder)
 	void SpaceShip::Shoot()
@@ -71,7 +64,7 @@ namespace ly
 			mBlinkTime = mBlinkTime > 0 ? mBlinkTime : 0.f;
 			
 			// Beyazdan kýrmýzýya geçiþ efekti (mBlinkTime azaldýkça kýrmýzýlaþýr)
-			GetSprite().setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime));
+			GetSprite().value().setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime));
 		}
 	}
 

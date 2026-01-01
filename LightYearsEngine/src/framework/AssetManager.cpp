@@ -95,7 +95,52 @@ namespace ly
 		return shared_ptr<sf::SoundBuffer>{nullptr};
 	}
 
-	// Artýk kullanýlmayan texture'larý bellekten temizleyen fonksiyon.
+	shared_ptr<sf::Shader> AssetManager::LoadShader(const std::string& fragmentPath, const std::string& vertexPath)
+	{
+		if(!sf::Shader::isAvailable())
+			return shared_ptr<sf::Shader>{ nullptr };
+
+		std::string shaderKey = fragmentPath + "|" + vertexPath;
+		auto found = mLoadedShaderMap.find(shaderKey);
+		if (found != mLoadedShaderMap.end())
+		{
+			return found->second;
+		}
+
+		shared_ptr<sf::Shader> newShader{ new sf::Shader };
+		bool success = false;
+
+		if (vertexPath.empty())
+		{
+			success = newShader->loadFromFile(mAssetRootDirectory + fragmentPath, sf::Shader::Type::Fragment);
+		}
+		else
+		{
+			success = newShader->loadFromFile(mAssetRootDirectory + vertexPath, mAssetRootDirectory + fragmentPath);
+		}
+
+		if (success)
+		{
+			mLoadedShaderMap.insert({ shaderKey, newShader });
+			return newShader;
+		}
+		return shared_ptr<sf::Shader>{ nullptr};
+	}
+
+	shared_ptr<sf::Texture> AssetManager::GetDefaultTexture()
+	{
+
+		if (!mDefaultTexture)
+		{
+			mDefaultTexture = std::make_shared<sf::Texture>();
+			mDefaultTexture->resize(sf::Vector2u(1, 1));
+			std::uint8_t pixelData[4] = { 255, 255, 255, 255 };
+			mDefaultTexture->update(pixelData);
+
+		}
+		return mDefaultTexture;
+	}
+
 	void AssetManager::CleanCycle()
 	{
 		// Yüklenmiþ tüm texture'lar üzerinde döngüye gir.
@@ -135,6 +180,18 @@ namespace ly
 			if (iter->second.unique())
 			{
 				iter = mLoadedSoundBufferMap.erase(iter);
+			}
+			else
+			{
+				++iter;
+			}
+		}
+
+		for(auto iter = mLoadedShaderMap.begin(); iter != mLoadedShaderMap.end();)
+		{
+			if (iter->second.unique())
+			{
+				iter = mLoadedShaderMap.erase(iter);
 			}
 			else
 			{

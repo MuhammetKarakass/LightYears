@@ -4,6 +4,7 @@
 #include "weapon/FrontalWiper.h"
 #include <framework/World.h>
 #include "player/PlayerManager.h"
+#include "gameConfigs/GameplayConfig.h"
 
 
 namespace ly
@@ -83,14 +84,14 @@ namespace ly
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			player->SetShooter(std::make_unique<ThreeWayShooter>(player, "SpaceShooterRedux/PNG/Lasers/laserBlue01.png", 0.4f, sf::Vector2f{ 0.f,50.f }));
+			player->SetShooter(std::make_unique<ThreeWayShooter>(player, GameData::Laser_Blue_BulletDef, 0.4f, sf::Vector2f{ 0.f,50.f }));
 		}
 	}
 	void RewardFrontalWiper(PlayerSpaceShip* player)
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			player->SetShooter(std::make_unique<FrontalWiper>(player, "SpaceShooterRedux/PNG/Lasers/laserBlue01.png", 0.5f, sf::Vector2f{ 0.f,50.f }));
+			player->SetShooter(std::make_unique<FrontalWiper>(player, GameData::Laser_Blue_BulletDef, 0.5f, sf::Vector2f{ 0.f,50.f }));
 		}
 	}
 	void RewardLife(PlayerSpaceShip* player)

@@ -7,7 +7,7 @@ namespace ly
 	class Vanguard : public EnemySpaceShip
 	{
 	public:
-		Vanguard(World* ownningWorld, const std::string& texturePath = "SpaceShooterRedux/PNG/Enemies/enemyBlack1.png",const sf::Vector2f& velocity={0.f,150.f});
+		Vanguard(World* ownningWorld, const ShipDefinition& shipDef);
 
         ~Vanguard();
 
@@ -16,12 +16,9 @@ namespace ly
 		virtual void Shoot() override;
 
 	protected:
-		// Vanguard-specific reward table
-		static List<WeightedReward> GetDefaultRewards();
+
 
 	private:
 		unique_ptr<BulletShooter> mShooter;
-
-		
 	};
 }

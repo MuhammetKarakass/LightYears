@@ -1,13 +1,15 @@
 #pragma once
 
 #include "framework/Actor.h"
+#include "gameConfigs/GameplayStructs.h"
+
 
 namespace ly
 {
 	class Bullet : public Actor
 	{
 	public:
-		Bullet(World* world, Actor* owner, const std::string& texturePath, float speed=600.f, float damage=10.f);
+		Bullet(World* world, Actor* owner, const BulletDefinition& def);
 
 		void SetSpeed(float speed);
 		void SetDamage(float damage);

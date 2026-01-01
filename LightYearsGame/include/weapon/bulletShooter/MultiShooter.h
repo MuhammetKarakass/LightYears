@@ -38,7 +38,7 @@ namespace ly
 		void RemoveShooter(int index);
 		void ClearShooters();
 
-		void SetAllTexture(const std::string& texturePath);
+		void SetAllBulletDefinitions(const BulletDefinition& bulletDef);
 		void SetAllBulletDamage(float damage);
 		void SetAllBulletSpeed(float speed);
 

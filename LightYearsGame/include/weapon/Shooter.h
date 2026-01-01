@@ -1,6 +1,9 @@
 #pragma once
 #include <framework/Core.h>
 #include <SFML/Graphics.hpp>
+#include "gameConfigs/GameplayConfig.h"
+#include "gameConfigs/GameplayStructs.h"
+#include "engineConfigs/EngineStructs.h"
 
 namespace ly
 {

@@ -60,7 +60,7 @@ namespace ly
 	{
 		mReservedTopSpawnLocs.clear();
 
-		weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>();
+		weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
 		vanguard.lock()->SetActorLocation(GetRandomSpawnLocationTop());
 
 		for(unsigned int i=2; i <= mSpawnAmt; ++i)
@@ -72,7 +72,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
-					weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>();
+					weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
 					vanguard.lock()->SetActorLocation(nextSpawnLoc);
 				},
 				delay,
@@ -91,7 +91,7 @@ namespace ly
 	{
 		mReservedTopSpawnLocs.clear();
 
-		weak_ptr<TwinBlade> twinBlade= GetWorld()->SpawnActor<TwinBlade>();
+		weak_ptr<TwinBlade> twinBlade= GetWorld()->SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
 		twinBlade.lock()->SetActorLocation(GetRandomSpawnLocationTop());
 
 		for (unsigned int i=2; i <= mSpawnAmt; ++i)
@@ -101,7 +101,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
-					weak_ptr<TwinBlade> twinBlade = GetWorld()->SpawnActor<TwinBlade>();
+					weak_ptr<TwinBlade> twinBlade = GetWorld()->SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
 					twinBlade.lock()->SetActorLocation(nextSpawnLoc);
 				},
 				delay,
@@ -120,7 +120,7 @@ namespace ly
 	{
 		mReservedTopSpawnLocs.clear();
 
-		weak_ptr<Hexagon> hexagon= GetWorld()->SpawnActor<Hexagon>();
+		weak_ptr<Hexagon> hexagon= GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 		hexagon.lock()->SetActorLocation(GetRandomSpawnLocationTop());
 
 		for (unsigned int i = 2; i <= mSpawnAmt; ++i)
@@ -130,7 +130,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
-					weak_ptr<Hexagon> hexagon = GetWorld()->SpawnActor<Hexagon>();
+					weak_ptr<Hexagon> hexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 					hexagon.lock()->SetActorLocation(nextSpawnLoc);
 				},
 				delay,
@@ -148,7 +148,7 @@ namespace ly
 	void ChaosStage::SpawnUFO()
 	{
 		auto[spawnLoc, velocity] = GetSpawnPropertiesUFO();
-		weak_ptr<UFO> ufo=GetWorld()->SpawnActor<UFO>(velocity);
+		weak_ptr<UFO> ufo=GetWorld()->SpawnActor<UFO>(GameData::Ship_Enemy_UFO,velocity);
 		ufo.lock()->SetActorLocation(spawnLoc);
 
 		for(unsigned int i=2; i <= mSpawnAmt; ++i)
@@ -158,7 +158,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, spawnLoc, velocity]() {
-					weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(velocity);
+					weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(GameData::Ship_Enemy_UFO,velocity);
 					ufo.lock()->SetActorLocation(spawnLoc);
 				},
 				delay,
@@ -211,7 +211,7 @@ namespace ly
 		if (enemyType == 4)
 		{
 			auto [spawnLoc, velocity] = GetSpawnPropertiesUFO();
-			weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(velocity);
+			weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(GameData::Ship_Enemy_UFO,velocity);
 			ufo.lock()->SetActorLocation(spawnLoc);
 		}
 
@@ -219,17 +219,17 @@ namespace ly
 		{
 			if(enemyType==1)
 			{
-				weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>();
+				weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
 				vanguard.lock()->SetActorLocation(GetRandomSpawnLocationTop());
 			}
 			else if(enemyType==2)
 			{
-				weak_ptr<TwinBlade> twinBlade = GetWorld()->SpawnActor<TwinBlade>();
+				weak_ptr<TwinBlade> twinBlade = GetWorld()->SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
 				twinBlade.lock()->SetActorLocation(GetRandomSpawnLocationTop());
 			}
 			else if(enemyType==3)
 			{
-				weak_ptr<Hexagon> hexagon = GetWorld()->SpawnActor<Hexagon>();
+				weak_ptr<Hexagon> hexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 				hexagon.lock()->SetActorLocation(GetRandomSpawnLocationTop());
 			}
 		}

@@ -2,11 +2,11 @@
 
 namespace ly
 {
-	EnemySpaceShip::EnemySpaceShip(World* owningWorld, const std::string& texturePath, float collisionDamage, const List<WeightedReward>& weightedRewards) :
-		SpaceShip{ owningWorld, texturePath },
-		mCollisionDamage{ collisionDamage },
-		mWeightedRewards{ weightedRewards.empty() ? GetDefaultRewards() : weightedRewards },
-		mScoreAmt{ 10 }
+	EnemySpaceShip::EnemySpaceShip(World* owningWorld, const ShipDefinition& shipDef) :
+		SpaceShip{ owningWorld, shipDef },
+		mCollisionDamage{ shipDef.collisionDamage },
+		mWeightedRewards{ shipDef.rewards},
+		mScoreAmt{ shipDef.scoreAmt }
 	{
 	}
 	
@@ -26,13 +26,13 @@ namespace ly
 		SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
 	}
 
-	void EnemySpaceShip::OnActorBeginOverlap(Actor* other)
+	void EnemySpaceShip::OnActorBeginOverlap(Actor* otherActor)
 	{
-		SpaceShip::OnActorBeginOverlap(other);
-		if (other == nullptr) return;
-		if (GetCanCollide())
+		SpaceShip::OnActorBeginOverlap(otherActor);
+		if (otherActor == nullptr) return;
+		if (otherActor->GetCollisionLayer() == CollisionLayer::Player)
 		{
-			other->ApplyDamage(mCollisionDamage);
+			otherActor->ApplyDamage(mCollisionDamage);
 		}
 	}
 	
@@ -75,17 +75,5 @@ namespace ly
 	{
 		SpawnReward();
 		onScoreAwarded.Broadcast(mScoreAmt);
-	}
-
-	// Default generic rewards (fallback)
-	List<WeightedReward> EnemySpaceShip::GetDefaultRewards()
-	{
-		return {
-			{CreateRewardHealth, 0.2f},   // 20% - Health
-			{CreateRewardThreeWayShooter, 0.1f},  // 10% - Three Way
-			{CreateRewardFrontalWiper, 0.1f},     // 10% - Frontal Wiper
-			{CreateRewardLife, 0.05f}   // 5% - Extra Life
-			// 55% - Nothing spawns
-		};
 	}
 }

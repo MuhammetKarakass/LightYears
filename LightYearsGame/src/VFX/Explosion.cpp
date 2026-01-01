@@ -154,8 +154,8 @@ namespace ly
 				particle->SetActorLocation(location);
 				particle->RandomSize(params.sizeMin, params.sizeMax);
 				particle->RandomVelocity(params.speedMin, params.speedMax);
-				
-				particle->GetSprite().setColor(params.GenerateRandomColor());
+
+				particle->GetSprite().value().setColor(params.GenerateRandomColor());
 			}
 		}
 	}

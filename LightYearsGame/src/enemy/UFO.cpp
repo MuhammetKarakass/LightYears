@@ -7,21 +7,22 @@
 
 namespace ly
 {
-	UFO::UFO(World* owningWorld, const sf::Vector2f& velocity, const std::string& texturePath, float rotationSpeed) :
-		EnemySpaceShip{ owningWorld, texturePath, 75.f, GetDefaultRewards() },
-		mShooter1{ new BulletShooter{this, "SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, sf::Vector2{ 35.f, 20.f},60.f} },
-		mShooter2{ new BulletShooter{this, "SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, sf::Vector2{ -35.f, 20.f},-60.f} },
-		mShooter3{ new BulletShooter{this, "SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, sf::Vector2{ 0.f, -40.f},180.f} },
+	UFO::UFO(World* owningWorld, const ShipDefinition& shipDef, const sf::Vector2f& velocity, float rotationSpeed) :
+		EnemySpaceShip{ owningWorld, shipDef },
+		mShooter1{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, { 35.f, 20.f}, 60.f }},
+		mShooter2{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, { -35.f, 20.f}, -60.f} },
+		mShooter3{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, { 0.f, -40.f}, 180.f }},
 		mRotationSpeed{ rotationSpeed }
 	{
 		SetVelocity(velocity);
 		SetActorRotation(180.f);
-		SetExplosionType(ExplosionType::Plasma);
-		SetScoreAmt(50);  // UFO = 50 points (boss!)
+		SetScoreAmt(shipDef.scoreAmt);
 
 		float visualRadius = std::min(GetActorGlobalBounds().size.x, GetActorGlobalBounds().size.y) / 2.f;
 		float collisionRadius = visualRadius * 0.4f;
 		SetCollisionRadius(collisionRadius);
+
+		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Main, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
 	}
 
 	UFO::~UFO()
@@ -169,16 +170,5 @@ namespace ly
 		mShooter1->Shoot();
 		mShooter2->Shoot();
 		mShooter3->Shoot();
-	}
-
-	List<WeightedReward> UFO::GetDefaultRewards()
-	{
-		return {
-			{CreateRewardHealth, 0.25f},
-			{CreateRewardThreeWayShooter, 0.2f},
-			{CreateRewardFrontalWiper, 0.15f},
-			{CreateRewardLife, 0.1f}
-			
-		};
 	}
 }

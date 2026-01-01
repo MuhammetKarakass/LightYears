@@ -4,14 +4,23 @@
 
 namespace ly
 {
-	Vanguard::Vanguard(World* ownningWorld, const std::string& texturePath, const sf::Vector2f& velocity):
-		EnemySpaceShip(ownningWorld, texturePath, 75.f, GetDefaultRewards()),
-		mShooter{ new BulletShooter (this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",1.f,{0.f,40.f}) }  // Vanguard için özel mermi atýcý
+	Vanguard::Vanguard(World* ownningWorld, const ShipDefinition& shipDef):
+		EnemySpaceShip(ownningWorld, shipDef),
+		mShooter{nullptr}
 	{
-		SetVelocity(velocity);
+		SetVelocity(shipDef.speed);
 		SetActorRotation(180.f);
-		SetExplosionType(ExplosionType::Medium);
-		SetScoreAmt(10);  // Vanguard = 10 points
+		if(shipDef.hasWeapon)
+		{
+			mShooter = std::make_unique<BulletShooter>(
+				this,
+				shipDef.bulletDefinition,
+				shipDef.weaponCooldown,
+				shipDef.weaponOffset,
+				0.f
+			);
+		}
+		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Main, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
 	}
 
 	Vanguard::~Vanguard()
@@ -36,17 +45,5 @@ namespace ly
 		{
 			LOG("Vanguard mShooter is not initialized!");  // Hata mesajý
 		}
-	}
-
-	// Vanguard reward table: Weak enemy, frequent health drops
-	List<WeightedReward> Vanguard::GetDefaultRewards()
-	{
-		return {
-			{CreateRewardHealth, 0.15f},        
-			{CreateRewardThreeWayShooter, 0.1f}, 
-			{CreateRewardFrontalWiper, 0.05f},     
-			{CreateRewardLife, 0.02f}
-
-		};
 	}
 }

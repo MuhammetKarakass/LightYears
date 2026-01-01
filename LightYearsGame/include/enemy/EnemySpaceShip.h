@@ -7,8 +7,7 @@ namespace ly
 	class EnemySpaceShip : public SpaceShip
 	{
 	public:
-		EnemySpaceShip(World* owningWorld, const std::string& texturePath, float collisionDamage=75.f, 
-			const List<WeightedReward>& weightedRewards = {});
+		EnemySpaceShip(World* owningWorld, const ShipDefinition& shipDef);
 
 		virtual void Tick(float deltaTime) override;
 		virtual void SetupCollisionLayers() override;
@@ -23,11 +22,10 @@ namespace ly
 
 	protected:
 		// Derived classes override this to provide custom reward tables
-		static List<WeightedReward> GetDefaultRewards();
 		void SetCollisionDamage(float damage) { mCollisionDamage = damage; }
 
 	private:
-		virtual void OnActorBeginOverlap(Actor* other) override;
+		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 		void SpawnReward();
 		virtual void Blew() override;
 		

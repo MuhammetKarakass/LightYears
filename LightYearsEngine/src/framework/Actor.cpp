@@ -6,88 +6,359 @@
 
 namespace ly
 {
-	// Çağrıldığı Yer: World::SpawnActor<ActorType>() içinde new ActorType(this, args...) ile.
-	// Açıklama: Actor nesnesi oluşturulduğunda çalışır. Üye değişkenleri başlatır ve texture yükler.
 	Actor::Actor(World* OwningWorld, const std::string& TexturePath)
-		: mOwningWorld{ OwningWorld },  // Bu actor'ın sahibi olan dünya
-		mBeganPlay{ false },            // Henüz BeginPlay çağrılmadı
-		mSprite{},                      // Grafik sprite (boş başlıyor)
-		mTexture{},                     // Texture dosyası referansı
-		mPhysicsBodyId{},               // Box2D fizik body'si (boş başlıyor)
-		mPhysicsEnabled{ false },       // Fizik sistemi kapalı başlıyor
-		mCollisionLayer{ CollisionLayer::None },  // Hangi katmanda çarpışır
-		mCollisionMask{ CollisionLayer::None },   // Hangi katmanları algılar
+		: mOwningWorld{ OwningWorld },
+		mBeganPlay{ false },
+		mSprite{},
+		mTexture{},
+		mVelocity{},
+		mPhysicsBodyId{},
+		mPhysicsEnabled{ false },
+		mCollisionLayer{ CollisionLayer::None },
+		mCollisionMask{ CollisionLayer::None },
 		mCanCollide{ false },
 		mTickWhenPaused{ false }
 	{
-		SetTexture(TexturePath);  // Verilen texture'ı yükle ve sprite'a ata
+		SetTexture(TexturePath);
 	}
 	
-	// Çağrıldığı Yer: C++ tarafından, Actor'ü tutan son shared_ptr yok olduğunda (World::CleanCycle sonrası).
-	// Açıklama: Actor bellekten silinirken çalışır. Log mesajı yazdırır.
 	Actor::~Actor()
 	{
 	
 	}
 	
-	// Çağrıldığı Yer: World::TickInternal() - yeni oluşturulan Actor'lar için (mPendingActors'tan mActors'a taşınırken).
-	// Açıklama: BeginPlay'in sadece bir kez çağrılmasını garanti eden wrapper fonksiyon.
 	void Actor::BeginPlayInternal()
 	{
 		if (!mBeganPlay)  
 		{
 			mBeganPlay = true;    
-			BeginPlay();          
+			BeginPlay();      
 		}
 	}
 	
-	// Çağrıldığı Yer: Actor::BeginPlayInternal() içinde.
-	// Açıklama: Türetilmiş sınıfların (Spaceship, Bullet vb.) Actor ilk kez oyuna girdiğinde
-	// yapılacak özel işlemleri (event'lere abone olma, fizik başlatma vb.) tanımlaması için override edilir.
 	void Actor::BeginPlay()
 	{
 		
 	}
 
-	// Çağrıldığı Yer: World::TickInternal() - her frame, tüm aktif Actor'lar için.
-	// Açıklama: Actor'ün güncellenmesini yöneten ana fonksiyon. BeginPlay çağrılmışsa ve
-	// Actor silinmek üzere işaretlenmemişse Tick() fonksiyonunu çağırır.
 	void Actor::TickInternal(float deltaTime)
 	{
 		if (mBeganPlay && !GetIsPendingDestroy())
 		{
-			Tick(deltaTime);  // Gerçek Tick'i çağır (virtual)
+			Tick(deltaTime);
 		}
 	}
 
-	// Çağrıldığı Yer: Actor::TickInternal() içinde.
-	// Açıklama: Türetilmiş sınıfların her frame'de yapılacak özel mantıklarını
-	// (hareket, ateş etme, AI vb.) tanımlaması için override edilir.
 	void Actor::Tick(float deltaTime)
 	{
-		// Base class'ta boş - türetilen sınıflar kendi mantığını ekler
+		for (auto& pair : mLightShaders)
+		{
+			LightData& light = pair.second;
+			if (!light.isEnabled || !light.shouldStretch) continue;
+
+			sf::Vector2f velocity = GetVelocity();
+
+			sf::Vector2f forwardDir = GetActorForwardDirection();
+			float forwardSpeed = (velocity.x * forwardDir.x) + (velocity.y * forwardDir.y);
+
+			float targetStretch = 1.f + (forwardSpeed / 300.f);
+			if (targetStretch > 4.0f) targetStretch = 4.0f;
+
+			light.currentStretchFactor = Lerp(light.currentStretchFactor, targetStretch, deltaTime * 2.f);
+
+			sf::Vector2f rightDir = GetActorRightDirection();
+			float sideSpeed = (velocity.x * rightDir.x) + (velocity.y * rightDir.y);
+
+			float targetRotation = sideSpeed * 0.1f;
+			if (targetRotation > 30.f) targetRotation = 30.f;
+			if (targetRotation < -30.f) targetRotation = -30.f;
+
+			light.currentRotationOffset = Lerp(light.currentRotationOffset, targetRotation, deltaTime * 5.f);
+
+			float flicker = 1.0f + ((rand() % 5) - 3) / 100.0f;
+			light.currentStretchFactor *= flicker;
+		}
 	}
 	
-	// Çağrıldığı Yer: Genellikle türetilmiş Actor sınıfları tarafından (örn: can bittiğinde, ekran dışına çıktığında).
-	// Açıklama: Actor'ü yok etme sürecini başlatır. Önce fizik sisteminden çıkarır, sonra Object::Destroy() çağırır.
 	void Actor::Destroy()
 	{
-		UnInitializePhysics();  // Önce fizik sisteminden çıkar
-		onActorDestroyed.Broadcast(this); // Yıkılma olayı yayınla
-		Object::Destroy();    // Sonra base class destruction (mPendingDestroy = true)
+		UnInitializePhysics();
+		onActorDestroyed.Broadcast(this);
+		Object::Destroy();
 	}
-	
-	// Çağrıldığı Yer: World::Render() - her frame, tüm aktif Actor'lar için.
-	// Açıklama: Actor'ün sprite'ını ekrana çizer. Sprite yoksa veya Actor silinecekse çizmez.
+
+	// =====================================================
+	// LIGHT SYSTEM - GameplayTag Based (Auto-Indexed)
+	// =====================================================
+
+	int Actor::GetNextLightIndex(const GameplayTag& baseTag) const
+	{
+		int maxIndex = -1;
+		
+		for (const auto& pair : mLightShaders)
+		{
+			if (pair.first.MatchesBase(baseTag))
+			{
+				const std::string& tagName = pair.first.ToString();
+				size_t pos = tagName.rfind('_');
+				if (pos != std::string::npos)
+				{
+					std::string suffix = tagName.substr(pos + 1);
+					bool isNumber = !suffix.empty();
+					for (char c : suffix)
+					{
+						if (!std::isdigit(static_cast<unsigned char>(c)))
+						{
+							isNumber = false;
+							break;
+						}
+					}
+					if (isNumber)
+					{
+						int index = std::stoi(suffix);
+						if (index > maxIndex) maxIndex = index;
+					}
+				}
+			}
+		}
+		
+		return maxIndex + 1;
+	}
+
+	void Actor::SetLightEnabled(const GameplayTag& tag, bool enabled)
+	{
+		if (LightData* light = GetLightData(tag))
+		{
+			light->isEnabled = enabled;
+		}
+	}
+
+	void Actor::SetLightColor(const GameplayTag& tag, const sf::Color& color)
+	{
+		if (LightData* light = GetLightData(tag))
+		{
+			light->color = color;
+		}
+	}
+
+	void Actor::SetLightIntensity(const GameplayTag& tag, float intensity)
+	{
+		if (LightData* light = GetLightData(tag))
+		{
+			light->intensity = intensity;
+		}
+	}
+
+	void Actor::SetLightSize(const GameplayTag& tag, const sf::Vector2f& size)
+	{
+		if (LightData* light = GetLightData(tag))
+		{
+			light->size = size;
+		}
+	}
+
+	void Actor::SetLightOffset(const GameplayTag& tag, const sf::Vector2f& offset)
+	{
+		if (LightData* light = GetLightData(tag))
+		{
+			if (light->lightSpace == LightSpace::Local)
+			light->offset = offset;
+		}
+	}
+
+	void Actor::SetLightWorldPosition(const GameplayTag& tag, const sf::Vector2f& worldPosition)
+	{
+		if (LightData* light = GetLightData(tag))
+		{
+			if (light->lightSpace == LightSpace::World)
+			{
+				light->offset = worldPosition;
+			}
+		}
+	}
+
+	GameplayTag Actor::AddLight(const GameplayTag& tag, const std::string& lightPath, sf::Color color, 
+		float intensity, sf::Vector2f size, sf::Vector2f offset, bool shouldStretch,
+		bool useComplexTrail, float taperAmount, float edgeSoftness, float shapeRoundness, LightSpace lightSpace)
+	{
+		// Otomatik index ekle
+		GameplayTag finalTag = tag.WithIndex(GetNextLightIndex(tag));
+		
+		LightData lightData;
+		lightData.tag = finalTag;
+		lightData.lightSpace = lightSpace;
+		lightData.shader = AssetManager::GetAssetManager().LoadShader(lightPath);
+		lightData.color = color;
+		lightData.intensity = intensity;
+		lightData.size = size;
+		lightData.offset = offset;
+		lightData.shouldStretch = shouldStretch;
+		lightData.isEnabled = true;
+		lightData.useComplexTrail = useComplexTrail;
+		lightData.taperAmount = taperAmount;
+		lightData.edgeSoftness = edgeSoftness;
+		lightData.shapeRoundness = shapeRoundness;
+
+		mLightShaders[finalTag] = lightData;		
+		return finalTag;
+	}
+
+	GameplayTag Actor::AddLight(const GameplayTag& tag, const PointLightDefinition& def, const sf::Vector2f& offset, LightSpace lightSpace)
+	{
+		return AddLight(tag, def.shaderPath, def.color, def.intensity, def.size, offset,
+			def.shouldStretch, def.complexTrail, def.taperAmount, def.edgeSoftness, def.shapeRoundness,lightSpace);
+	}
+
+	LightData* Actor::GetLightData(const GameplayTag& tag)
+	{
+		auto it = mLightShaders.find(tag);
+		if (it != mLightShaders.end())
+		{
+			return &it->second;
+		}
+		return nullptr;
+	}
+
+	bool Actor::HasLight(const GameplayTag& tag) const
+	{
+		return mLightShaders.find(tag) != mLightShaders.end();
+	}
+
+	void Actor::RemoveLight(const GameplayTag& tag)
+	{
+		mLightShaders.erase(tag);
+	}
+
+	List<GameplayTag> Actor::GetLightsByBaseTag(const GameplayTag& baseTag) const
+	{
+		List<GameplayTag> result;
+		for (const auto& pair : mLightShaders)
+		{
+			if (pair.first.MatchesBase(baseTag))
+			{
+				result.push_back(pair.first);
+			}
+		}
+		return result;
+	}
+
+	void Actor::SetAllLightsEnabled(const GameplayTag& baseTag, bool enabled)
+	{
+		for (auto& pair : mLightShaders)
+		{
+			if (pair.first.MatchesBase(baseTag))
+			{
+				pair.second.isEnabled = enabled;
+			}
+		}
+	}
+
+	void Actor::SetAllLightsColor(const GameplayTag& baseTag, const sf::Color& color)
+	{
+		for (auto& pair : mLightShaders)
+		{
+			if (pair.first.MatchesBase(baseTag))
+			{
+				pair.second.color = color;
+			}
+		}
+	}
+
+	void Actor::SetAllLightsIntensity(const GameplayTag& baseTag, float intensity)
+	{
+		for (auto& pair : mLightShaders)
+		{
+			if (pair.first.MatchesBase(baseTag))
+			{
+				pair.second.intensity = intensity;
+			}
+		}
+	}
+
 	void Actor::Render(sf::RenderWindow& window)
 	{
-		if (!mSprite.has_value() || GetIsPendingDestroy()) return;
-		window.draw(mSprite.value());  
+		if (GetIsPendingDestroy()) return;
+		RenderLights(window);
+
+		if(mSprite.has_value())
+			window.draw(mSprite.value());
+	}
+
+	void Actor::RenderLights(sf::RenderWindow& window)
+	{
+		for (auto& pair : mLightShaders)
+		{
+			LightData& light = pair.second;
+
+			if (!light.isEnabled || !light.shader) continue;
+
+			sf::RenderStates lightStates;
+			lightStates.shader = light.shader.get();
+			lightStates.blendMode = sf::BlendAdd;
+
+			sf::Vector2f finalSize = light.size;
+
+			if (light.shouldStretch)
+			{
+				finalSize.y *= light.currentStretchFactor;
+			}
+
+
+			sf::RectangleShape lightShape(finalSize);
+			if(light.lightSpace == LightSpace::Local)
+			{
+				lightShape.setOrigin({ finalSize.x / 2.f, 0.f });
+			}
+			if(light.lightSpace == LightSpace::World)
+			{
+				lightShape.setOrigin({ finalSize.x / 2.f, finalSize.y / 2.f });
+			}
+
+			if(light.lightSpace == LightSpace::World)
+			{
+				lightShape.setPosition(light.offset);  
+			}
+
+			else 
+			{
+				sf::Vector2f worldOffset = TransformLocalToWorld(light.offset);
+				lightShape.setPosition(worldOffset + GetActorLocation());
+			}
+
+			float finalRotation = GetActorRotation();
+
+			if (light.shouldStretch)
+			{
+				finalRotation += light.currentRotationOffset;
+			}
+
+			if (light.lightSpace == LightSpace::Local)
+			{
+				lightShape.setRotation(sf::degrees(finalRotation));
+			}
+
+			if (mTexture)
+			{
+				lightShape.setTexture(mTexture.get());
+			}
+
+			else
+			{
+				lightShape.setTexture(AssetManager::GetAssetManager().GetDefaultTexture().get());
+			}
+
+			light.shader->setUniform("lightColor", sf::Glsl::Vec3{ light.color.r / 255.f, light.color.g / 255.f, light.color.b / 255.f });
+			light.shader->setUniform("lightIntensity", light.intensity);
+			light.shader->setUniform("u_stretch", light.currentStretchFactor);
+			light.shader->setUniform("u_is_trail", light.useComplexTrail ? 1.f : 0.f);
+			light.shader->setUniform("u_taper", light.taperAmount);
+			light.shader->setUniform("u_edge_softness", light.edgeSoftness);
+			light.shader->setUniform("u_roundness", light.shapeRoundness);
+
+			window.draw(lightShape, lightStates);
+		}
 	}
 	
-	// Çağrıldığı Yer: Genellikle türetilmiş Actor sınıflarının Tick() fonksiyonlarında (örn: Bullet, Enemy).
-	// Açıklama: Actor'ün oyun penceresinin dışına çıkıp çıkmadığını kontrol eder.
-	// allowance parametresi, ekran kenarlarından ne kadar dışarı çıkmasına izin verildiğini belirtir.
 	bool Actor::IsActorOutOfWindow(float allowance) const
 	{
 		float windowWidth = GetWindowSize().x;   
@@ -113,8 +384,6 @@ namespace ly
 		return false;  
 	}
 	
-	// Çağrıldığı Yer: Genellikle türetilmiş Actor sınıflarının constructor'ında veya BeginPlay'inde.
-	// Açıklama: Actor'ün fizik sistemini açar veya kapatır.
 	void Actor::SetEnablePhysics(bool enable)
 	{
 		mPhysicsEnabled = enable;
@@ -129,8 +398,6 @@ namespace ly
 		}
 	}
 	
-	// Çağrıldığı Yer: Actor::SetEnablePhysics(true) içinde.
-	// Açıklama: Actor'ü Box2D fizik sistemine ekler ve bir fizik body'si (b2BodyId) oluşturur.
 	void Actor::InitializePhysics()
 	{
 		if (!mPhysicsBodyId)  
@@ -139,8 +406,6 @@ namespace ly
 		}
 	}
 	
-	// Çağrıldığı Yer: Actor::SetEnablePhysics(false) veya Actor::Destroy() içinde.
-	// Açıklama: Actor'ün fizik body'sini Box2D dünyasından kaldırır.
 	void Actor::UnInitializePhysics()
 	{
 		if(mPhysicsBodyId)
@@ -150,40 +415,31 @@ namespace ly
 		}
 	}
 
-	// Çağrıldığı Yer: Actor::SetActorLocation() ve Actor::SetActorRotation() içinde.
-	// Açıklama: SFML sprite'ının pozisyonunu ve rotasyonunu Box2D fizik body'sine senkronize eder.
 	void Actor::UpdatePhysicsTransform()
 	{
-		if (mPhysicsBodyId)  // Fizik body'si varsa
+		if (mPhysicsBodyId)
 		{
-			float physicsRate = PhysicsSystem::Get().GetPhysicsRate();  // Ölçek faktörü
-			sf::Vector2f actorLocation = GetActorLocation();            // Sprite pozisyonu
-			float actorRotation = GetActorRotation();     // Sprite rotasyonu
+			float physicsRate = PhysicsSystem::Get().GetPhysicsRate();
+			sf::Vector2f actorLocation = GetActorLocation();
+			float actorRotation = GetActorRotation();
 			
 			b2Vec2 position{ actorLocation.x * physicsRate, actorLocation.y * physicsRate };
-			b2Rot rotation = b2MakeRot(DegreesToRadians(actorRotation));  // Derece → Radian
+			b2Rot rotation = b2MakeRot(DegreesToRadians(actorRotation));
 			
 			b2Body_SetTransform(*mPhysicsBodyId, position, rotation);
 		}
 	}
 
-	// Çağrıldığı Yer: Actor::OnActorBeginOverlap() ve Actor::OnActorEndOverlap() içinde.
-	// Açıklama: Bu Actor'ün belirtilen diğer Actor ile çarpışıp çarpışamayacağını kontrol eder.
-	// Collision mask sistemi: Bu Actor'ün maskesi, diğer Actor'ün katmanını içermeli.
 	bool Actor::CanCollideWith(const Actor* other) const
 	{
 		if (other == nullptr) return false;
 		return HasCollisionLayer(mCollisionMask, other->GetCollisionLayer());
 	}
 
-	// Çağrıldığı Yer: PhysicsSystem::ProcessContactEvents() - iki Actor'ün fizik body'leri çarpıştığında.
-	// Açıklama: Çarpışma başladığında çağrılır. Collision layer/mask sistemi ile filtreleme yapar.
-	// Türetilmiş sınıflar bu fonksiyonu override ederek çarpışma olaylarına tepki verebilir (örn: hasar verme).
 	void Actor::OnActorBeginOverlap(Actor* otherActor)
 	{
 		if (!otherActor) return;
 		
-		// Her iki taraf da birbirini maskelemeli (çift yönlü filtre)
 		if (!CanCollideWith(otherActor) || !otherActor->CanCollideWith(this))
 		{
 			return; 
@@ -192,8 +448,6 @@ namespace ly
 		mCanCollide = (CanCollideWith(otherActor) || otherActor->CanCollideWith(this));
 	}
 
-	// Çağrıldığı Yer: PhysicsSystem::ProcessContactEvents() - iki Actor'ün fizik body'leri ayrıldığında.
-	// Açıklama: Çarpışma bittiğinde çağrılır. Collision layer/mask sistemi ile filtreleme yapar.
 	void Actor::OnActorEndOverlap(Actor* otherActor)
 	{
 		if (!otherActor) return;
@@ -204,25 +458,19 @@ namespace ly
 		}
 	}
 
-	// Çağrıldığı Yer: Genellikle Bullet::OnActorBeginOverlap() gibi çarpışma callback'lerinde.
-	// Açıklama: Bu Actor'a hasar vermek için çağrılır. Türetilmiş sınıflar (Spaceship vb.)
-	// override ederek hasar mantığını (HealthComponent'e iletme vb.) tanımlar.
 	void Actor::ApplyDamage(float amt)
 	{
 		
 	}
 
-	// Çağrıldığı Yer: Actor::IsActorOutOfWindow() ve çarpışma kontrollerinde.
-	// Açıklama: Sprite'ın ekrandaki sınırlayıcı kutusunu (bounding box) döndürür.
 	sf::FloatRect Actor::GetActorGlobalBounds() const
 	{
-		return mSprite.value().getGlobalBounds(); 
+		return mSprite.value().getGlobalBounds();
 	}
 	
-	// Çağrıldığı Yer: Actor constructor'ında.
-	// Açıklama: AssetManager'dan texture yükler, sprite'a atar ve merkez pivot noktasını ayarlar.
 	void Actor::SetTexture(const std::string& texturePath)
 	{
+		if (texturePath.empty()) return;
 		mTexture = AssetManager::GetAssetManager().LoadTexture(texturePath);
 		if (!mTexture) return;  
 
@@ -235,23 +483,17 @@ namespace ly
 		CenterPivot();  
 	}
 
-	// Çağrıldığı Yer: Actor::IsActorOutOfWindow() ve türetilmiş sınıflarda.
-	// Açıklama: Oyun penceresinin boyutunu döndürür. World üzerinden Application'a erişir.
 	sf::Vector2u Actor::GetWindowSize() const
 	{
 		return mOwningWorld->GetWindowSize();
 	}
 
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarının Tick() fonksiyonlarında (hareket için).
-	// Açıklama: Actor'ün dünya koordinatlarındaki pozisyonunu ayarlar ve fizik body'sini günceller.
 	void Actor::SetActorLocation(const sf::Vector2f& newLoc)
 	{
 		mSprite.value().setPosition(newLoc); 
 		UpdatePhysicsTransform(); 
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarında (döndürme için).
-	// Açıklama: Actor'ün rotasyonunu (derece cinsinden) ayarlar ve fizik body'sini günceller.
 	void Actor::SetActorRotation(float newRotation)
 	{
 		mSprite.value().setRotation(sf::degrees(newRotation));  
@@ -266,106 +508,90 @@ namespace ly
 		}
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarının Tick() fonksiyonlarında (hareket için).
-	// Açıklama: Actor'ün mevcut pozisyonuna bir offset (kayma) ekler.
 	void Actor::AddActorLocationOffset(const sf::Vector2f& offset)
 	{
 		SetActorLocation(GetActorLocation() + offset);  
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarında (döndürme animasyonları için).
-	// Açıklama: Actor'ün mevcut rotasyonuna bir offset ekler.
 	void Actor::AddActorRotationOffset(float offset)
 	{
 		SetActorRotation(GetActorRotation() + offset);  
 	}
 	
-	// Çağrıldığı Yer: Actor::SetTexture() içinde.
-	// Açıklama: Sprite'ın merkez noktasını (origin) sprite'ın geometrik merkezine ayarlar.
-	// Bu, rotasyon ve ölçeklendirme işlemlerinin sprite'ın merkezinden yapılmasını sağlar.
 	void Actor::CenterPivot()
 	{
 		sf::FloatRect rectBounds = mSprite.value().getGlobalBounds();  
 		mSprite.value().setOrigin(sf::Vector2f{rectBounds.size.x/2.f, rectBounds.size.y/2.f});
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarında ve Actor içinde (pozisyon hesaplamaları için).
-	// Açıklama: Actor'ün dünya koordinatlarındaki mevcut pozisyonunu döndürür.
 	sf::Vector2f Actor::GetActorLocation() const
 	{
+		if(mSprite.has_value())
 		return mSprite.value().getPosition();  
+
+		return sf::Vector2f{GetWindowSize().x/2.f, GetWindowSize().y/2.f};
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarında (rotasyon hesaplamaları için).
-	// Açıklama: Actor'ün mevcut rotasyonunu derece cinsinden döndürür.
 	float Actor::GetActorRotation() const
 	{
+		if(mSprite.has_value())
 		return mSprite.value().getRotation().asDegrees(); 
+
+		return 0.f;
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarında (ileri hareket, mermi ateşleme vb.).
-	// Açıklama: Actor'ün "ileri" yönünü birim vektör olarak döndürür.
-	// SFML'de sprite'lar varsayılan olarak sağa bakar, bu yüzden 90 derece çıkarılır.
 	sf::Vector2f Actor::GetActorForwardDirection() const
 	{
 		return RotationToVector(GetActorRotation() - 90.f); 
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarında (yan hareket, yatay hizalama vb.).
-	// Açıklama: Actor'ün "sağ" yönünü birim vektör olarak döndürür.
 	sf::Vector2f Actor::GetActorRightDirection() const
 	{
 		return RotationToVector(GetActorRotation());  
 	}
 	
-	// ========================================================================
-	// LOCAL SPACE TRANSFORMATION SYSTEM - SPRITE'IN KENDİ KOORDİNAT SİSTEMİ
-	// ========================================================================
-	
-	// Çağrıldığı Yer: Actor::AddActorLocalLocationOffset() içinde.
-	// Açıklama: Actor'ün lokal koordinat sistemindeki bir offset'i (örn: "2 birim ileri, 1 birim sağa")
-	// dünya koordinat sistemine dönüştürür. Bu, Actor döndürülmüş olsa bile doğru yönde hareket etmesini sağlar.
 	sf::Vector2f Actor::TransformLocalToWorld(const sf::Vector2f& localOffset) const
 	{
-
-		sf::Vector2f right = GetActorRightDirection();        // Sağ = direkt rotasyon 
-		sf::Vector2f forward = GetActorForwardDirection();    // İleri = rotasyon - 90°
+		sf::Vector2f right = GetActorRightDirection();
+		sf::Vector2f forward = GetActorForwardDirection();
 		
-		// Linear combination ile local offset'i world'e çevir
 		return localOffset.x * right + localOffset.y * forward;
 	}
 	
-	// Çağrıldığı Yer: Türetilmiş Actor sınıflarında (lokal koordinatlarda hareket için, örn: yan yana kayma).
-	// Açıklama: Actor'ün kendi koordinat sisteminde bir hareket yapar.
-	// Örneğin localOffset = (0, 10) demek "10 birim ileri git" demektir, Actor'ün rotasyonu ne olursa olsun.
 	void Actor::AddActorLocalLocationOffset(const sf::Vector2f& localOffset)
 	{
-		sf::Vector2f worldOffset = TransformLocalToWorld(localOffset);  // Local → World dönüşümü
-		AddActorLocationOffset(worldOffset);        // World space'de hareket ettir
+		sf::Vector2f worldOffset = TransformLocalToWorld(localOffset);
+		AddActorLocationOffset(worldOffset);
 	}
 	
-	// Çağrıldığı Yer: Genellikle AI veya hedef takip sistemlerinde.
-	// Açıklama: Dünya koordinatlarındaki bir noktanın, Actor'ün lokal koordinat sisteminde nerede olduğunu hesaplar.
-	// Örneğin, bir düşmanın oyuncuya göre "önünde mi, arkasında mı, sağında mı" olduğunu anlamak için kullanılır.
 	sf::Vector2f Actor::GetActorLocalLocation(const sf::Vector2f& worldLocation) const
 	{
-		// INVERSE TRANSFORMATION
-		sf::Vector2f deltaWorld = worldLocation - GetActorLocation();  // Dünya'da sprite'dan target'a vektör
+		sf::Vector2f deltaWorld = worldLocation - GetActorLocation();
 		float rotation = GetActorRotation();
-		float radians = DegreesToRadians(rotation - 90.f);            // MathUtility hazır fonksiyonunu kullan
+		float radians = DegreesToRadians(rotation - 90.f);
 		
-		// INVERSE ROTATION MATRIX UYGULA
-		float cosR = std::cos(-radians);  // Inverse rotation cosine
-		float sinR = std::sin(-radians);  // Inverse rotation sine
+		float cosR = std::cos(-radians);
+		float sinR = std::sin(-radians);
 		
 		return sf::Vector2f{
-			deltaWorld.x * cosR - deltaWorld.y * sinR,  // Local X (sprite'ın sağ/sol ekseni)
-			deltaWorld.x * sinR + deltaWorld.y * cosR   // Local Y (sprite'ın ileri/geri ekseni)  
+			deltaWorld.x * cosR - deltaWorld.y * sinR,
+			deltaWorld.x * sinR + deltaWorld.y * cosR
 		};
 	}
+
 	void Actor::SetCollisionRadius(float radius)
 	{
 		if (!mPhysicsBodyId) return;
 		PhysicsSystem::Get().SetCollisionRadius(*mPhysicsBodyId, radius);
+	}
+
+	sf::Vector2f Actor::GetVelocity() const
+	{
+		return mVelocity;
+	}
+
+	void Actor::SetVelocity(const sf::Vector2f& velocity)
+	{
+		mVelocity = velocity;
 	}
 }

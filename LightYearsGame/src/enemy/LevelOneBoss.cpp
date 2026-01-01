@@ -4,29 +4,27 @@
 namespace ly
 {
 	LevelOneBoss::LevelOneBoss(World* world)
-		: EnemySpaceShip(world,"SpaceShooterRedux/PNG/Enemies/boss.png"),
-		mSpeed(100.f),
+		: EnemySpaceShip(world,mBossShipDef),
+		mSpeed(mBossShipDef.speed.y),
 		mSwitchDistanceToEdge(100.f),
 		mStage{1},
 		mCanShoot{ false },
-		mBaseShooterLeft{ std::make_unique<BulletShooter>(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",0.5f,sf::Vector2f{-50.f,50.f}) },
-		mBaseShooterRight{ std::make_unique<BulletShooter>(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",0.5f,sf::Vector2f{50.f,50.f}) },
-		mThreeWayShooter{ std::make_unique<ThreeWayShooter>(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",2.f,sf::Vector2f{0.f,100.f}) },
-		mFrontalWiperLeft{ std::make_unique<FrontalWiper>(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",3.f,sf::Vector2f{-100.f,80.f}) },
-		mFrontalWiperRight{ std::make_unique<FrontalWiper>(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",3.f,sf::Vector2f{100.f,80.f}) },
-		mLastStageShooterLeft{ std::make_unique<BulletShooter>(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",0.5f,sf::Vector2f{-150.f,50.f}) },
-		mLastStageShooterRight{ std::make_unique<BulletShooter>(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png",0.5f,sf::Vector2f{150.f,50.f}) },
+		mBaseShooterLeft{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{-50.f,50.f}) },
+		mBaseShooterRight{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{50.f,50.f}) },
+		mThreeWayShooter{ std::make_unique<ThreeWayShooter>(this,GameData::Laser_Red_BulletDef,2.f,sf::Vector2f{0.f,100.f}) },
+		mFrontalWiperLeft{ std::make_unique<FrontalWiper>(this,GameData::Laser_Red_BulletDef,3.f,sf::Vector2f{-100.f,80.f}) },
+		mFrontalWiperRight{ std::make_unique<FrontalWiper>(this,GameData::Laser_Red_BulletDef,3.f,sf::Vector2f{100.f,80.f}) },
+		mLastStageShooterLeft{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{-150.f,50.f}) },
+		mLastStageShooterRight{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{150.f,50.f}) },
 		mDual{
 		std::make_unique<MultiShooter>(
 			this,
 			std::pair<float, float>{1.f,1.f},
 			ShooterPresets::Dual(
-				"SpaceShooterRedux/PNG/Lasers/laserRed01.png",
+				GameData::Laser_Red_BulletDef,
 				sf::Vector2f{0.f,0.f},
 				0.f,
-				30.f,
-				5.f,
-				600.f
+				30.f
 			),
 			FireMode::Simultaneous,
 			0.1f
@@ -37,12 +35,10 @@ namespace ly
 			this,
 			std::pair<float, float>{3.f,6.f},
 			ShooterPresets::Fan(
-				"SpaceShooterRedux/PNG/Lasers/laserRed01.png",
+				GameData::Laser_Red_BulletDef,
 				sf::Vector2f{0.f,0.f},
 				5.f,
-				30.f,
-				5.f,
-				600.f
+				30.f
 			),
 			FireMode::Alternating,
 			0.1f

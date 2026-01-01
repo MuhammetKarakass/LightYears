@@ -1,18 +1,20 @@
 #include "weapon/Bullet.h"
-#include "framework/Core.h"  // CollisionLayer için
+#include "framework/Core.h"
 
 namespace ly
 {
-	Bullet::Bullet(World* world, Actor* owner, const std::string& texturePath, float speed, float damage)
-		: Actor(world, texturePath), mOwner(owner), mSpeed(speed), mDamage(damage)
+	Bullet::Bullet(World* world, Actor* owner, const BulletDefinition& def)
+		: Actor(world, def.texturePath), mOwner(owner), mSpeed(def.speed), mDamage(def.damage)
 	{
-		// AUTOMATIC COLLISION SETUP - Owner'a göre collision layer/mask belirle
 		SetupCollisionFromOwner();
+		AddLight(GameTags::Bullet::Laser_Red, def.pointLightDef, def.lightOffset);
+
 	}
 
 	void Bullet::SetSpeed(float speed)
 	{
 		mSpeed = speed;
+		SetVelocity(GetActorForwardDirection() * mSpeed);
 	}
 
 	void Bullet::SetDamage(float damage)
@@ -34,6 +36,7 @@ namespace ly
 		{
 			Destroy();
 		}
+		Actor::Tick(deltaTime);
 	}
 
 	void Bullet::OnActorBeginOverlap(Actor* otherActor)
@@ -42,6 +45,7 @@ namespace ly
 		if(GetCanCollide())
 		{
 			otherActor->ApplyDamage(GetDamage());
+			LOG("damage: %f", GetDamage());
 			Destroy(); // Çarpýþma sonrasý mermi yok olur
 		}
 	}
@@ -50,6 +54,7 @@ namespace ly
 	{
 		if (mOwner)
 		{
+			SetVelocity(GetActorForwardDirection() * mSpeed);
 			AddActorLocationOffset(GetActorForwardDirection() * mSpeed * deltaTime);
 		}
 	}
@@ -83,4 +88,4 @@ namespace ly
 		}
 	}
 
-} // namespace ly
+}

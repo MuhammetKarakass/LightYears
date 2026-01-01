@@ -17,6 +17,11 @@
 #include "enemy/LevelOneBoss.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
+#include "enemy/Hexagon.h"
+#include "enemy/TwinBlade.h"
+#include "enemy/UFO.h"
+#include "enemy/Vanguard.h"
+#include "gameConfigs/GameplayConfig.h"
 
 namespace ly
 {
@@ -42,6 +47,31 @@ namespace ly
 		mPlayerSpaceShip=newPlayer.SpawnSpaceShip(this);
 		if (!mPlayerSpaceShip.lock()) return;
 		mPlayerSpaceShip.lock()->onActorDestroyed.BindAction(GetWeakPtr(), &LevelOne::PlayerShipDestroyed);
+
+		weak_ptr<Vanguard> vanguardEnemy = SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
+		if (auto vanguard = vanguardEnemy.lock())
+		{
+			vanguard->SetActorLocation(sf::Vector2f{ 100, 100.f });
+			vanguard->SetVelocity(sf::Vector2f{ 0.f, 0.f });
+		}
+		weak_ptr<TwinBlade> twinBladeEnemy = SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
+		if (auto twinBlade = twinBladeEnemy.lock())
+		{
+			twinBlade->SetActorLocation(sf::Vector2f{ 200.f, 100.f });
+			twinBlade->SetVelocity(sf::Vector2f{ 0.f, 0.f });
+		}
+		weak_ptr<Hexagon> hexagonEnemy = SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
+		if (auto hexagon = hexagonEnemy.lock())
+		{
+			hexagon->SetActorLocation(sf::Vector2f{ 300.f, 100.f });
+			hexagon->SetVelocity(sf::Vector2f{ 0.f, 0.f });
+		}
+		weak_ptr<UFO> ufoEnemy = SpawnActor<UFO>(GameData::Ship_Enemy_UFO,sf::Vector2f{ 0.f, 0.f });
+		if (auto ufo = ufoEnemy.lock())
+		{
+			ufo->SetActorLocation(sf::Vector2f{ 400.f, 100.f });
+			ufo->SetVelocity(sf::Vector2f{ 0.f, 0.f });
+		}
 	}
 
 	void LevelOne::PlayerShipDestroyed(Actor* destroyedActor)
@@ -104,24 +134,29 @@ namespace ly
 
 	void LevelOne::InitGameStages()
 	{
-		shared_ptr<LevelOneBossStage> bossStage = shared_ptr<LevelOneBossStage>{ new LevelOneBossStage(this) };
-		mBossStage = bossStage;
-		AddGameStage(bossStage);
-		bossStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectTheBossStageToHUD);
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
+
+		AddGameStage(shared_ptr<VanguardStage>{new VanguardStage(this)});
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
+		AddGameStage(shared_ptr<HexagonStage>{new HexagonStage(this)});
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
+		AddGameStage(shared_ptr<TwinBladeStage>{new TwinBladeStage(this)});
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 10.f)});
+		AddGameStage(shared_ptr<UFOStage>{new UFOStage(this)});
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 15.f)});
 
 		shared_ptr<ChaosStage> chaosStage = shared_ptr<ChaosStage>{ new ChaosStage(this) };
 		mChaosStage = chaosStage;
 		AddGameStage(chaosStage);
 		chaosStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectChaosStageToHUD);
 
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		AddGameStage(shared_ptr<UFOStage>{new UFOStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		AddGameStage(shared_ptr<VanguardStage>{new VanguardStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this,5.f)});
-		AddGameStage(shared_ptr<TwinBladeStage>{new TwinBladeStage(this)});
-		AddGameStage(shared_ptr<HexagonStage>{new HexagonStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});		
+		shared_ptr<LevelOneBossStage> bossStage = shared_ptr<LevelOneBossStage>{ new LevelOneBossStage(this) };
+		mBossStage = bossStage;
+		AddGameStage(bossStage);
+		bossStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectTheBossStageToHUD);
+
+
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 15.f)});
 	}
 
 	void LevelOne::ConnectChaosStageToHUD()
@@ -193,23 +228,44 @@ namespace ly
 	void LevelOne::SpawnCosmetics()
 	{
 		mBackgroundActor = SpawnActor<BackGroundActor>("SpaceShooterRedux/Backgrounds/darkPurple.png");
-		mPlanetsLayer = SpawnActor<BackgroundLayer>();
-		mPlanetsLayer.lock()->SetRandomVisibility(true);
-		mPlanetsLayer.lock()->SetPaths({
-			"SpaceShooterRedux/PNG/Planets/Planet1.png",
-			"SpaceShooterRedux/PNG/Planets/Planet2.png",
-			"SpaceShooterRedux/PNG/Planets/Planet3.png",
-			"SpaceShooterRedux/PNG/Planets/Planet4.png",
-			"SpaceShooterRedux/PNG/Planets/Planet5.png",
-			"SpaceShooterRedux/PNG/Planets/Planet6.png",
-			"SpaceShooterRedux/PNG/Planets/Planet7.png",
-			});
 
-		mPlanetsLayer.lock()->SetSpriteCount(2);
-		mPlanetsLayer.lock()->SetUseDepthColor(true);
-		mPlanetsLayer.lock()->SetSizeRange(0.65f, 1.f);
-		mPlanetsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,30.f }, sf::Vector2f{ 0.f,80.f });
+		// ---- PLANETS (with optional light) ----
+		
+			// Gezegen ışığı preset'i
+			PointLightDefinition planetLightDef(
+				"SpaceShooterRedux/Shaders/point_light.frag",   // shaderPath
+				sf::Color{ 180, 200, 255, 255 },               // color (soğuk beyaz-mavi)
+				1.15f,                                         // intensity
+				sf::Vector2f{ 200.f, 200.f },                  // size (base, scale ile büyüyecek)
+				false,                                         // shouldStretch
+				false,                                         // complexTrail
+				0.15f,                                         // taperAmount
+				0.9f,                                          // edgeSoftness
+				1.0f                                           // shapeRoundness
+			);
 
+			// Işıklı/ışıksız karışık gezegen listesi
+			List<BackgroundLayerDefinition> planetDefs =
+			{
+				GameData::Environment::Meteor1,
+				GameData::Environment::Meteor2,
+				GameData::Environment::Planet_Blue,
+				GameData::Environment::Planet_Earth_Blue,
+				GameData::Environment::Planet_Green,
+				GameData::Environment::Star_Orange,
+				GameData::Environment::Planet_Orange
+			};
+
+			mPlanetsLayer = SpawnActor<BackgroundLayer>(planetDefs);
+			mPlanetsLayer.lock()->SetRandomVisibility(true);
+
+			mPlanetsLayer.lock()->SetUseDepthColor(true);
+			mPlanetsLayer.lock()->SetSizeRange(0.65f, 1.f);
+			mPlanetsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,30.f }, sf::Vector2f{ 0.f,80.f });
+		
+			mPlanetsLayer.lock()->SetSpriteCount(2);
+
+		// ---- METEORS (no light) ----
 		mMeteorsLayer = SpawnActor<BackgroundLayer>();
 		mMeteorsLayer.lock()->SetPaths({
 			"SpaceShooterRedux/PNG/Meteors/meteorGrey_tiny1.png",

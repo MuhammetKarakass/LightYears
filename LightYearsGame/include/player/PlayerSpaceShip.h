@@ -2,6 +2,7 @@
 #include "spaceShip/SpaceShip.h"
 #include "framework/Core.h"
 #include "framework/TimerManager.h"
+#include "gameConfigs/GameplayConfig.h"
 
 namespace ly
 {
@@ -11,7 +12,7 @@ namespace ly
 	{
 	public:
 
-		PlayerSpaceShip(World* owningWorld,const std::string& texturePath = "SpaceShooterRedux/PNG/playerShip1_blue.png");
+		PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef = GameData::Ship_Player_Fighter);
 
 		virtual void BeginPlay() override;
 		virtual void ApplyDamage(float amt) override;
@@ -26,6 +27,7 @@ namespace ly
 		
 		// Çarpýþma olayýný yakala
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
+
 
 	private:
 		void SetInput();
@@ -48,6 +50,7 @@ namespace ly
 		float mInvulnerabilityBlinkInterval;
 		float mInvulnerabilityBlinkTimer;
 		float mInvulnerabilityDir;
-
+		float mShaderTime{ 0.f };
+		float mCollisionDamage;
 	};
 }

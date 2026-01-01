@@ -8,12 +8,11 @@ namespace ly
 	class ThreeWayShooter : public Shooter
 	{
 	public:
-		ThreeWayShooter(Actor* owner, const std::string& texturePath,
+		ThreeWayShooter(Actor* owner,
+			const BulletDefinition& bulletDef,
 			float cooldownTime = 0.5f,
 			const sf::Vector2f& localPositionOffset = { 0.f,0.f },
-			float localRotationOffset = 0.f,
-			float damage = 10.f,
-			float speed = 600.f);
+			float localRotationOffset = 0.f);
 
 		virtual void IncrementLevel(int amt = 1) override;
 		virtual void SetCurrentLevel(int level) override;

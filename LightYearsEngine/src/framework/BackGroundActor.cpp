@@ -5,7 +5,6 @@ namespace ly
 {
 	BackGroundActor::BackGroundActor(World* owningWorld, const std::string& texturePath, const sf::Vector2f& velocity):
 		Actor(owningWorld, texturePath),
-		mVelocity{ velocity },
 		mOriginalVelocity{ velocity },
 		mLeftShift{ 0.f },
 		mTopShift{ 0.f },
@@ -14,10 +13,11 @@ namespace ly
 	{
 		SetEnablePhysics(false);
 		auto windowSize = owningWorld->GetWindowSize();
-		GetSprite().setOrigin({0.f,0.f});
-		GetSprite().setTextureRect(sf::IntRect{ sf::Vector2i{0,0},sf::Vector2i{(int)windowSize.x,(int)windowSize.y}});
+		GetSprite().value().setOrigin({0.f,0.f});
+		GetSprite().value().setTextureRect(sf::IntRect{ sf::Vector2i{0,0},sf::Vector2i{(int)windowSize.x,(int)windowSize.y}});
 		SetTextureRepeated(true);
 		SetTickWhenPaused(true);
+		SetVelocity(velocity);
 	}
 	void BackGroundActor::Tick(float deltaTime)
 	{
@@ -27,15 +27,11 @@ namespace ly
 		mLeftShift += mVelocity.x * deltaTime;
 		mTopShift += mVelocity.y * deltaTime;
 
-
-		LOG("BG Shift: %.2f, %.2f | Velocity: %.2f, %.2f",
-			mLeftShift, mTopShift, mVelocity.x, mVelocity.y);
-
-		sf::IntRect currentRect = GetSprite().getTextureRect();
+		sf::IntRect currentRect = GetSprite().value().getTextureRect();
 		currentRect.position.x = mLeftShift;
 		currentRect.position.y = mTopShift;
 
-		GetSprite().setTextureRect(currentRect);
+		GetSprite().value().setTextureRect(currentRect);
 	}
 
 	void BackGroundActor::SetPaused(bool paused)

@@ -79,6 +79,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/LevelOneBossStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/LevelOneBossStage.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/environment/Asteroid.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/environment/Asteroid.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Reward.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
 	
@@ -99,6 +102,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/GameOverHUD.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameOverHUD.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/GameplayConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/GameplayStructs.h
 )
 
 target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC 
@@ -129,6 +135,19 @@ add_custom_command(
 	${CMAKE_COMMAND} -E copy_directory
 	${RESOURCE_SRC_DIR}
 	$<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>/${RESOURCE_FOLDER_NAME}
+)
+
+set(SHADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${RESOURCE_FOLDER_NAME}/SpaceShooterRedux/Shaders")
+set(SHADER_DST_DIR "$<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>/${RESOURCE_FOLDER_NAME}/SpaceShooterRedux/Shaders")
+
+add_custom_command(
+	TARGET ${LIGHT_YEARS_GAME_TARGET_NAME}
+	POST_BUILD
+	COMMAND
+	${CMAKE_COMMAND} -E copy_directory
+	${SHADER_SRC_DIR}
+	${SHADER_DST_DIR}
+	COMMENT "Copying shader files to output directory..."
 )
 
 configure_file(

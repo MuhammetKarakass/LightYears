@@ -1,93 +1,74 @@
-﻿#include "framework/BackgroundLayer.h"
-#include "framework/AssetManager.h"
+﻿#include "framework/AssetManager.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
+#include "framework/BackgroundLayer.h"
 
 namespace ly
 {
-	BackgroundLayer::BackgroundLayer(World* owningWorld, const List<std::string>& texturePaths, const sf::Vector2f& minVelocity, const sf::Vector2f& maxVelocity, float sizeMin, float sizeMax, int spriteCount, sf::Color colorTint) :
+	BackgroundLayer::BackgroundLayer(World* owningWorld, const sf::Vector2f& minVelocity, const sf::Vector2f& maxVelocity, float sizeMin, float sizeMax, int spriteCount, sf::Color colorTint) :
 		Actor(owningWorld),
 		mMinVelocity(minVelocity),
 		mMaxVelocity(maxVelocity),
 		mSizeMin(sizeMin),
 		mSizeMax(sizeMax),
 		mSpriteCount(spriteCount),
-		mColorTint(colorTint),  // Referans renk (180, 180, 200)
+		mColorTint(colorTint),
 		mSlowMotionScale(1.f),
-		mVelocities{},
 		mPaused(false),
 		mRandomVisibility(false),
 		mUseDepthColor(false)
 	{
-		SetPaths(texturePaths);
-		SetEnablePhysics(false);
-		SetTickWhenPaused(true);
+	}
+
+	BackgroundLayer::BackgroundLayer(World* owningWorld, const List<BackgroundLayerDefinition>& defs, const sf::Vector2f& minVelocity, const sf::Vector2f& maxVelocity, float sizeMin, float sizeMax, int spriteCount, sf::Color colorTint) :
+		Actor(owningWorld),
+		mMinVelocity(minVelocity),
+		mMaxVelocity(maxVelocity),
+		mSizeMin(sizeMin),
+		mSizeMax(sizeMax),
+		mSpriteCount(spriteCount),
+		mColorTint(colorTint),
+		mSlowMotionScale(1.f),
+		mPaused(false),
+		mRandomVisibility(false),
+		mUseDepthColor(false),
+		mDefinitions(defs)
+	{
+		InitializeSprites();
+	}
+
+	void BackgroundLayer::SetDefinitions(const List<BackgroundLayerDefinition>& defs)
+	{
+		mDefinitions = defs;
+		InitializeSprites();
 	}
 
 	void BackgroundLayer::Tick(float deltaTime)
 	{
 		Actor::Tick(deltaTime);
 
-		for (size_t i = 0; i < mSprites.size(); ++i)
+		for (auto& element : mElements)
 		{
-			sf::Sprite& sprite = mSprites[i];
-			sf::Vector2f& velocity = mVelocities[i];
+			if (!element.sprite.has_value())
+				continue;
+
+			sf::Sprite& sprite = element.sprite.value();
+			sf::Vector2f& velocity = element.velocity;
+
+			if (IsSpriteOutScreen(sprite, velocity))
+			{
+				SpawnRandomElement(element);
+				if(element.sprite.has_value())
+				{
+					RandomSpritePosition(sprite, false);
+				}
+			}
 
 			sprite.setPosition(sprite.getPosition() + velocity * deltaTime * mSlowMotionScale);
 
-			if (IsSpriteOutScreen(sprite , velocity))
+			if(element.hasLight)
 			{
-				auto newSprite = CreateRandomSprite();
-
-				if (newSprite)
-				{
-					// ✅ 1. Önce yeni sprite'ı listeye ekle
-					mSprites[i] = *newSprite;
-
-					// ✅ 2. Transform uygula
-					RandomSpriteTransform(mSprites[i], false);
-
-					// ✅ 3. Yeni velocity
-					float velX = RandRange(mMinVelocity.x, mMaxVelocity.x);
-					float velY = RandRange(mMinVelocity.y, mMaxVelocity.y);
-					mVelocities[i] = sf::Vector2f{ velX, velY };
-
-					// ✅ 4. Renk ataması (random visibility durumuna göre)
-					if (mRandomVisibility)
-					{
-						float randVisibility = RandRange(0.f, 1.f);
-
-						if (randVisibility < 0.33f)
-						{
-							mSprites[i].setColor(sf::Color::Transparent);
-						}
-						else
-						{
-							if (mUseDepthColor)
-							{
-								float speed = std::abs(velY);
-								mSprites[i].setColor(CalculateDepthColor(speed));
-							}
-							else
-							{
-								mSprites[i].setColor(mColorTint);
-							}
-						}
-					}
-					else
-					{
-						// ✅ Random visibility kapalı: HER ZAMAN görünür
-						if (mUseDepthColor)
-						{
-							float speed = std::abs(velY);
-							mSprites[i].setColor(CalculateDepthColor(speed));
-						}
-						else
-						{
-							mSprites[i].setColor(mColorTint);
-						}
-					}
-				}
+				SetLightWorldPosition(element.lightTag, sprite.getPosition());
 			}
 		}
 	}
@@ -95,65 +76,73 @@ namespace ly
 	void BackgroundLayer::Render(sf::RenderWindow& window)
 	{
 
-		if(GetIsPendingDestroy())
+		if (GetIsPendingDestroy())
 			return;
+
+		RenderLights(window);
 
 		if (mUseDepthColor)
 		{
-			List<std::pair<size_t, float>> spriteOrder;
-
-			for(size_t i = 0; i < mSprites.size(); ++i)
+			List<BackgroundElement*> sortedElements;
+			for(auto& element : mElements)
 			{
-				float speed = std::abs(mVelocities[i].y);
-				spriteOrder.push_back({ i, speed });
+				// ✅ Only add elements with valid sprites
+				if (element.sprite.has_value())
+				{
+					sortedElements.push_back(&element);
+				}
 			}
-			std::sort(spriteOrder.begin(), spriteOrder.end(), [](const auto& a, const auto& b) {
-				return a.second < b.second;
-			});
 
-			for (const auto& [index, speed] : spriteOrder)
+			std::sort(sortedElements.begin(), sortedElements.end(), [](const BackgroundElement* a, const BackgroundElement* b) {
+				return std::abs(a->velocity.y) < std::abs(b->velocity.y);
+				});
+
+			for(const auto& element : sortedElements)
 			{
-				window.draw(mSprites[index]);
+				window.draw(element->sprite.value());
 			}
 		}
 		else
 		{
-			for (sf::Sprite& sprite : mSprites)
+			for (const auto& element : mElements)
 			{
-				window.draw(sprite);
+				// ✅ Only draw elements with valid sprites
+				if (element.sprite.has_value())
+				{
+					window.draw(element.sprite.value());
+				}
 			}
 		}
 	}
 
 	void BackgroundLayer::SetPaths(const List<std::string>& texturePaths)
 	{
+		List<BackgroundLayerDefinition> defs;
+
 		for (const std::string& path : texturePaths)
 		{
-			auto texture = AssetManager::GetAssetManager().LoadTexture(path);
-			if (texture)
-			{
-				mTextures.push_back(texture);
-			}
+			defs.push_back(BackgroundLayerDefinition(path));
 		}
-		InitializeSprites();
+		SetDefinitions(defs);
 	}
 
 	void BackgroundLayer::SetColorTint(const sf::Color& colorTint)
 	{
 		mColorTint = colorTint;
 
-		for (size_t i = 0; i < mSprites.size(); ++i)
+		for (auto& element : mElements)
 		{
-			if (mSprites[i].getColor().a > 0)
+			// ✅ Check if sprite exists before accessing
+			if (element.sprite.has_value() && element.sprite.value().getColor().a > 0)
 			{
 				if (mUseDepthColor)
 				{
-					float speed = std::abs(mVelocities[i].y);
-					mSprites[i].setColor(CalculateDepthColor(speed));
+					float speed = std::abs(element.velocity.y);
+					element.sprite.value().setColor(CalculateDepthColor(speed));
 				}
 				else
 				{
-					mSprites[i].setColor(mColorTint);
+					element.sprite.value().setColor(mColorTint);
 				}
 			}
 		}
@@ -170,16 +159,16 @@ namespace ly
 		mMinVelocity = minVelocity;
 		mMaxVelocity = maxVelocity;
 
-		for (size_t i = 0; i < mSprites.size(); i++)
+		for (auto& element : mElements)
 		{
 			float velX = RandRange(mMinVelocity.x, mMaxVelocity.x);
 			float velY = RandRange(mMinVelocity.y, mMaxVelocity.y);
-			mVelocities[i] = sf::Vector2f{ velX, velY };
+			element.velocity = sf::Vector2f{ velX, velY };
 
-			if (mUseDepthColor && mSprites[i].getColor().a > 0)
+			if (mUseDepthColor && element.sprite.has_value() && element.sprite.value().getColor().a > 0)
 			{
 				float speed = std::abs(velY);
-				mSprites[i].setColor(CalculateDepthColor(speed));
+				element.sprite.value().setColor(CalculateDepthColor(speed));
 			}
 		}
 	}
@@ -188,67 +177,58 @@ namespace ly
 	{
 		mSizeMin = sizeMin;
 		mSizeMax = sizeMax;
-		for (size_t i = 0; i < mSprites.size(); i++)
+		for (auto& element : mElements)
 		{
-			RandomSpriteSize(mSprites[i]);
+			// ✅ Check if sprite exists before accessing
+			if (element.sprite.has_value())
+			{
+				float scale = RandRange(mSizeMin, mSizeMax);
+				element.sprite.value().setScale({ scale, scale });
+			}
+
+			if(element.hasLight)
+			{
+				sf::FloatRect globalBounds = element.sprite.value().getGlobalBounds();
+				sf::Vector2f newLightSize = sf::Vector2f{ globalBounds.size.x, globalBounds.size.y } *element.lightScaleRatio;
+				SetLightSize(element.lightTag, newLightSize);
+			}
+
+			if(mUseDepthColor && element.sprite.has_value() && element.sprite.value().getColor().a > 0)
+			{
+				float speed = std::abs(element.velocity.y);
+				element.sprite.value().setColor(CalculateDepthColor(speed));
+			}
 		}
 	}
 
 	void BackgroundLayer::InitializeSprites()
 	{
-		if (mTextures.empty())
+		for (auto& element : mElements)
+		{
+			if (element.hasLight)
+			{
+				RemoveLight(element.lightTag);
+				element.hasLight = false;
+			}
+		}
+
+		mElements.clear();
+
+		if (mDefinitions.empty())
 			return;
 
-		mSprites.clear();
-		mVelocities.clear();
+		mElements.resize(mSpriteCount);
 
-		for (int i = 0; i < mSpriteCount; i++)
+		for (auto& element : mElements)
 		{
-			auto newSprite = CreateRandomSprite();
-
-			if (newSprite)
+			SpawnRandomElement(element);
+			if (element.sprite)
 			{
-				RandomSpriteTransform(*newSprite, true);
-
-				float velX = RandRange(mMinVelocity.x, mMaxVelocity.x);
-				float velY = RandRange(mMinVelocity.y, mMaxVelocity.y);
-				mVelocities.push_back(sf::Vector2f{ velX, velY });
-
-				if (mRandomVisibility)
+				RandomSpritePosition(*element.sprite, true);
+				if (element.hasLight)
 				{
-					float randVisibility = RandRange(0.f, 1.f);
-
-					if (randVisibility < 0.33f)
-					{
-						newSprite->setColor(sf::Color::Transparent);
-					}
-					else
-					{
-						if (mUseDepthColor)
-						{
-							float speed = std::abs(velY);
-							newSprite->setColor(CalculateDepthColor(speed));
-						}
-						else
-						{
-							newSprite->setColor(mColorTint);
-						}
-					}
+					SetLightWorldPosition(element.lightTag, element.sprite->getPosition());
 				}
-				else
-				{
-					if (mUseDepthColor)
-					{
-						float speed = std::abs(velY);
-						newSprite->setColor(CalculateDepthColor(speed));
-					}
-					else
-					{
-						newSprite->setColor(mColorTint);
-					}
-				}
-
-				mSprites.push_back(*newSprite);
 			}
 		}
 	}
@@ -269,30 +249,6 @@ namespace ly
 		return LerpColor(farColor, nearColor, normalizedSpeed);
 	}
 
-	std::optional<sf::Sprite> BackgroundLayer::CreateRandomSprite()
-	{
-		auto texture = GetRandomTexture();
-
-		if (texture)
-		{
-			sf::Sprite sprite(*texture);
-
-			sprite.setTextureRect(sf::IntRect{ sf::Vector2i{0,0}, (sf::Vector2i)texture->getSize() });
-			sf::FloatRect bound = sprite.getGlobalBounds();
-			sprite.setOrigin(sf::Vector2f{ bound.size.x / 2.f, bound.size.y / 2.f });
-
-			return sprite;
-		}
-
-		return std::nullopt;
-	}
-
-	void BackgroundLayer::RandomSpriteTransform(sf::Sprite& sprite, bool randomY)
-	{
-		RandomSpriteSize(sprite);
-		RandomSpritePosition(sprite, randomY);
-		RandomSpriteRotation(sprite);
-	}
 
 	void BackgroundLayer::RandomSpritePosition(sf::Sprite& sprite, bool randomY)
 	{
@@ -303,17 +259,6 @@ namespace ly
 		float posY = randomY ? RandRange(0.f, (float)windowsSize.y) : -(bounds.size.y * 0.5f) - 20.f;
 
 		sprite.setPosition(sf::Vector2f{ posX, posY });
-	}
-
-	void BackgroundLayer::RandomSpriteRotation(sf::Sprite& sprite)
-	{
-		sprite.setRotation(sf::degrees(RandRange(0.f, 360.f)));
-	}
-
-	void BackgroundLayer::RandomSpriteSize(sf::Sprite& sprite)
-	{
-		float scale = RandRange(mSizeMin, mSizeMax);
-		sprite.setScale({scale, scale});
 	}
 
 	bool BackgroundLayer::IsSpriteOutScreen(const sf::Sprite& sprite, sf::Vector2f& velocity) const
@@ -334,7 +279,7 @@ namespace ly
 				return true;
 		}
 
-		if(velocity.x > 0.f)
+		if (velocity.x > 0.f)
 		{
 			if (position.x > windowSize.x + bounds.size.x)
 				return true;
@@ -348,13 +293,109 @@ namespace ly
 		return false;
 	}
 
-	std::shared_ptr<sf::Texture> BackgroundLayer::GetRandomTexture() const
+	const BackgroundLayerDefinition* BackgroundLayer::GetRandomDefinition() const
 	{
-		if (mTextures.empty()) return nullptr;
+		if(mDefinitions.empty())
+			return nullptr;
 
-		int randIndex = RandRange(0, (int)mTextures.size() - 1);
-		return mTextures[randIndex];
+		int randIndex = RandRange(0, (int)mDefinitions.size() - 1);
+		return &mDefinitions[randIndex];
 	}
+
+	void BackgroundLayer::SpawnRandomElement(BackgroundElement& element)
+	{
+		if(element.hasLight)
+		{
+			RemoveLight(element.lightTag);
+			element.hasLight = false;
+		}
+
+		const BackgroundLayerDefinition* def = GetRandomDefinition();
+		if(!def)
+			return;
+
+		if (def->texturePath.empty())
+		{
+			LOG("BackgroundLayer::SpawnRandomElement - Empty texture path in definition!");
+			return;
+		}
+
+		element.texture = AssetManager::GetAssetManager().LoadTexture(def->texturePath);
+		
+		if(element.texture == nullptr)
+		{
+			LOG("BackgroundLayer::SpawnRandomElement - Failed to load texture: %s", def->texturePath.c_str());
+			return;
+		}
+
+		element.sprite.emplace(*element.texture);
+		element.sprite.value().setTextureRect(sf::IntRect{ sf::Vector2i{0,0}, (sf::Vector2i)element.texture->getSize() });
+		sf::FloatRect bound = element.sprite.value().getLocalBounds();
+		element.sprite.value().setOrigin(sf::Vector2f{ bound.size.x / 2.f, bound.size.y / 2.f });
+
+		element.sprite.value().setRotation(sf::degrees(RandRange(0.f, 360.f)));
+
+		float scale = RandRange(mSizeMin, mSizeMax);
+		element.sprite.value().setScale({ scale, scale });
+		float velX = RandRange(mMinVelocity.x, mMaxVelocity.x);
+		float velY = RandRange(mMinVelocity.y, mMaxVelocity.y);
+		element.velocity = sf::Vector2f{ velX, velY };
+
+		if (mUseDepthColor)
+		{
+			float speed = std::abs(velY);
+			element.sprite.value().setColor(CalculateDepthColor(speed));
+		}
+		else
+		{
+			element.sprite.value().setColor(mColorTint);
+		}
+		if(mRandomVisibility)
+		{
+			float randVisibility = RandRange(0.f, 1.f);
+			if (randVisibility < 0.1f)
+			{
+				element.sprite.value().setColor(sf::Color::Transparent);
+			}
+		}
+		if (element.hasLight)
+		{
+			RemoveLight(element.lightTag);
+			element.hasLight = false;
+		}
+		if (def->hasLight && element.sprite.value().getColor().a > 0)
+		{
+			sf::FloatRect globalBounds = element.sprite.value().getGlobalBounds();
+
+			sf::Vector2f scaledSize = { globalBounds.size.x, globalBounds.size.y };
+			sf::Vector2f finalLightSize = scaledSize * def->lightScaleRatio;
+
+			element.lightScaleRatio = def->lightScaleRatio;
+
+			sf::Vector2f spritePos = element.sprite.value().getPosition();
+	
+			LOG("Sprite scale set to: %f,%f", element.sprite.value().getGlobalBounds().size.x, element.sprite.value().getGlobalBounds().size.y);
+			LOG("light size: x=%f, y=%f", finalLightSize.x, finalLightSize.y);
+
+			element.lightTag = AddLight(
+				GameTags::Environment::Planet,
+				def->lightDef.shaderPath,
+				def->lightDef.color,
+				def->lightDef.intensity,
+				finalLightSize, 
+				sf::Vector2f{ spritePos },
+				def->lightDef.shouldStretch,
+				def->lightDef.complexTrail,
+				def->lightDef.taperAmount,
+				def->lightDef.edgeSoftness,
+				def->lightDef.shapeRoundness,
+				LightSpace::World
+			);
+		element.hasLight = true;
+		}
+	}
+
+
 
 	void BackgroundLayer::SetPaused(bool paused)
 	{

@@ -1,6 +1,7 @@
 #include "enemy/VanguardStage.h"
 #include "enemy/Vanguard.h"
 #include <framework/World.h>
+#include "environment/Asteroid.h"
 
 namespace ly
 {
@@ -71,9 +72,11 @@ namespace ly
 
 	void VanguardStage::SpawnVanguard()
 	{
-		weak_ptr<Vanguard> newVanguard = GetWorld()->SpawnActor<Vanguard>();
+		weak_ptr<Vanguard> newVanguard = GetWorld()->SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
+		weak_ptr<Asteroid> asteroid = GetWorld()->SpawnActor<Asteroid>();
 		//newVanguard.lock()->SetActorLocation(RandomVector(sf::Vector2f{mSpawnLoc.x-100,mSpawnLoc.y}, sf::Vector2f{ mSpawnLoc.x + 100,mSpawnLoc.y }));
 		newVanguard.lock()->SetActorLocation(sf::Vector2f {mSpawnLocIndex[RandomizeSpawnLoc()],mSpawnLoc.y });
+		asteroid.lock()->SetActorLocation(sf::Vector2f{ mSpawnLocIndex[RandomizeSpawnLoc()],mSpawnLoc.y - 50.f });
 		++mCurrentRowVanguardCount;
 
 		if (mVanguardPerRow == mCurrentRowVanguardCount)

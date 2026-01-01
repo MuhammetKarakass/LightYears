@@ -10,104 +10,91 @@ namespace ly
 	namespace ShooterPresets
 	{
 		inline ShooterInitializer MakeBulletShooter(
-			const std::string& texturePath,
+			const BulletDefinition& bulletDef,
 			const sf::Vector2f& offset,
-			float rotation = 0.f,
-			float damage = 10.f,
-			float speed = 600.f)
+			float rotation = 0.f)
 		{
 			return [=](Actor* owner) -> unique_ptr<BulletShooter> {
 				return std::make_unique<BulletShooter>(
 					owner,
-					texturePath,
+					bulletDef,
 					0.f,
 					offset,
-					rotation,
-					damage,
-					speed
+					rotation
 				);
 				};
 		}
 
 
 		inline List<ShooterInitializer> Dual(
-			const std::string& texturePath,
+			const BulletDefinition& bulletDef,
 			sf::Vector2f offset,
 			float rotation = 0.f,
-			float spacing = 20.f,
-			float damage = 10.f,
-			float speed = 600.f)
+			float spacing = 20.f
+		)
 		{
 			return {
 				MakeBulletShooter(
-					texturePath,
+					bulletDef,
 					offset + sf::Vector2f{-spacing / 2.f, 0.f},
-					rotation,
-					damage,
-					speed),
+					rotation
+				),
 				MakeBulletShooter(
-					texturePath,
+					bulletDef,
 					offset + sf::Vector2f{spacing / 2.f, 0.f},
-					rotation,
-					damage,
-					speed)
+					rotation
+				)
 			};
 		}
 
 		inline List<ShooterInitializer> VShape(
-			const std::string& texturePath,
+			const BulletDefinition& bulletDef,
 			const sf::Vector2f& baseOffset,
-			float angle = 30.f,
-			float damage = 10.f,
-			float speed = 600.f)
+			float angle = 30.f)
 		{
 			return {
-				MakeBulletShooter(texturePath,
-					baseOffset + sf::Vector2f{-10.f, -10.f}, -angle, damage, speed),
-				MakeBulletShooter(texturePath,
-					baseOffset, 0.f, damage, speed),
-				MakeBulletShooter(texturePath,
-					baseOffset + sf::Vector2f{10.f, -10.f}, angle, damage, speed)
+				MakeBulletShooter(bulletDef,
+					baseOffset + sf::Vector2f{-10.f, -10.f}, -angle),
+				MakeBulletShooter(bulletDef,
+					baseOffset, 0.f),
+				MakeBulletShooter(bulletDef,
+					baseOffset + sf::Vector2f{10.f, -10.f}, angle)
 			};
 		}
 		inline List<ShooterInitializer> XShape(
-			const std::string& texturePath,
+			const BulletDefinition& bulletDef,
 			float cooldownTime,
 			const sf::Vector2f& baseOffset,
 			float damage = 10.f,
 			float speed = 450.f)
 		{
 			return {
-				MakeBulletShooter(texturePath, baseOffset, -45.f, damage, speed),
-				MakeBulletShooter(texturePath, baseOffset, 45.f, damage, speed),
-				MakeBulletShooter(texturePath, baseOffset, -135.f, damage, speed),
-				MakeBulletShooter(texturePath, baseOffset, 135.f, damage, speed)
+				MakeBulletShooter(bulletDef, baseOffset, -45.f),
+				MakeBulletShooter(bulletDef, baseOffset, 45.f),
+				MakeBulletShooter(bulletDef, baseOffset, -135.f),
+				MakeBulletShooter(bulletDef, baseOffset, 135.f)
 			};
 		}
 
 		inline List<ShooterInitializer> PlusShape(
-			const std::string& texturePath,
+			const BulletDefinition& bulletDef,
 			float cooldownTime,
-			const sf::Vector2f& baseOffset,
-			float damage = 10.f,
-			float speed = 450.f)
+			const sf::Vector2f& baseOffset)
 		{
 			return {
-				MakeBulletShooter(texturePath, baseOffset, 0.f, damage, speed),
-				MakeBulletShooter(texturePath,  baseOffset, 90.f, damage, speed), 
-				MakeBulletShooter(texturePath, baseOffset, 180.f, damage, speed),
-				MakeBulletShooter(texturePath, baseOffset, -90.f, damage, speed) 
+				MakeBulletShooter(bulletDef, baseOffset, 0.f),
+				MakeBulletShooter(bulletDef,  baseOffset, 90.f), 
+				MakeBulletShooter(bulletDef, baseOffset, 180.f),
+				MakeBulletShooter(bulletDef, baseOffset, -90.f) 
 			};
 		}
 
 
 		inline List<ShooterInitializer> Circular(
-			const std::string& texturePath,
+			const BulletDefinition& bulletDef,
 			const sf::Vector2f& baseOffset = {0.f, -50.f},
 			int bulletCount = 8,
-			float damage = 7.5f,
 			float radius = 0.f,
-			float speed = 300.f,
 			float startAngle = 0.f)
 		{
 			List<ShooterInitializer> shooters;
@@ -127,18 +114,16 @@ namespace ly
 				}
 
 				// Each bullet shooter has NO cooldown - MultiShooter will handle timing
-				shooters.push_back(MakeBulletShooter(texturePath, offset, angle+90.f, damage, speed));
+				shooters.push_back(MakeBulletShooter(bulletDef, offset, angle+90.f));
 			}
 			return shooters;
 		}
 
 		inline List<ShooterInitializer> Fan(
-			const std::string& texturePath,
+			const BulletDefinition& bulletDef,
 			const sf::Vector2f& baseOffset,
 			int bulletCount = 5,
-			float totalAngle = 90.f,
-			float damage = 10.f,
-			float speed = 600.f)
+			float totalAngle = 90.f)
 		{
 			List<ShooterInitializer> shooters;
 			float angleStep = totalAngle / (bulletCount - 1);
@@ -148,7 +133,7 @@ namespace ly
 			{
 				float angle = startAngle + (angleStep * i);
 				shooters.push_back(
-					MakeBulletShooter(texturePath, baseOffset, angle, damage, speed)
+					MakeBulletShooter(bulletDef, baseOffset, angle)
 				);
 			}
 
@@ -156,23 +141,18 @@ namespace ly
 		}
 
 		inline List<ShooterInitializer> BossCenterPower(
-			const std::string& sideTexturePath,
-			const std::string& centerTexturePath,
+			const BulletDefinition& centerBulletDef,
+			const BulletDefinition& sideBulletDef,
 			const sf::Vector2f& centerOffset,
-			const sf::Vector2f& sideOffset,
-			int bulletCount = 3,
-			float centerDamage = 30.f,
-			float sideDamage = 10.f,
-			float centerSpeed = 900.f,
-			float sideSpeed= 600.f)
+			const sf::Vector2f& sideOffset)
 		{
 			return {
-				MakeBulletShooter(sideTexturePath, 
-					sideOffset + sf::Vector2f{-40.f, 0.f}, -15.f, sideDamage, sideSpeed),   // Zayýf
-				MakeBulletShooter(centerTexturePath,
-					centerOffset, 0.f, centerDamage, centerSpeed),                              // GÜÇLÜ!
-				MakeBulletShooter(sideTexturePath,
-					sideOffset + sf::Vector2f{40.f, 0.f}, 15.f, sideDamage, sideSpeed)      // Zayýf
+				MakeBulletShooter(sideBulletDef,
+					sideOffset + sf::Vector2f{-40.f, 0.f}, -15.f),   // Zayýf
+				MakeBulletShooter(centerBulletDef,
+					centerOffset, 0.f),                              // GÜÇLÜ!
+				MakeBulletShooter(sideBulletDef,
+					sideOffset + sf::Vector2f{40.f, 0.f}, 15.f)      // Zayýf
 			};
 		}
 	}

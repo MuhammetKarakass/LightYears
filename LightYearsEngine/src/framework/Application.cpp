@@ -5,6 +5,7 @@
 #include "framework/AudioManager.h"
 #include "framework/PhysicsSystem.h"
 #include "framework/TimerManager.h"
+#include "framework/ShaderManager.h"
 
 namespace ly
 {
@@ -19,12 +20,11 @@ namespace ly
 
 	}
 	
-	// Ana oyun döngüsü - program çalýþtýðý sürece devam eder
 	void Application::Run()
 	{
 		mTickClock.restart();              
 		float accumulatedTime = 0.f;       
-		float targetDeltaTime = 1.f / mTargetFrameRate;  // Frame baþýna hedef süre (1/60 = 0.0167s)
+		float targetDeltaTime = 1.f / mTargetFrameRate;
 		
 		while (mWindow.isOpen())  
 		{
@@ -41,10 +41,8 @@ namespace ly
 				}
 			}
 			
-			// Geçen zamaný biriktir
 			accumulatedTime += mTickClock.restart().asSeconds();
 			
-			// Sabit frame rate için fixed timestep döngüsü
 			while (accumulatedTime >= targetDeltaTime)
 			{
 				accumulatedTime -= targetDeltaTime;  // Kullanýlan zamaný çýkar
@@ -61,7 +59,7 @@ namespace ly
 	
 	void Application::TickInternal(float deltaTime)
 	{
-		Tick(deltaTime);  // Virtual - türetilen sýnýflar override eder
+		Tick(deltaTime);
 		
 		if(mCurrentWorld)
 		{
@@ -79,12 +77,11 @@ namespace ly
 
 		}
 
-		// Belirli aralýklarla temizlik döngüsü çalýþtýr
 		if (mCleanCycleClock.getElapsedTime().asSeconds() > mCleanCycleTime)
 		{
 			mCleanCycleClock.restart();
 			AssetManager::GetAssetManager().CleanCycle();
-			AudioManager::GetAudioManager().CleanCycle();  // Bitmiþ sesleri temizle
+			AudioManager::GetAudioManager().CleanCycle();
 			if (mCurrentWorld)
 				mCurrentWorld->CleanCycle();
 		}

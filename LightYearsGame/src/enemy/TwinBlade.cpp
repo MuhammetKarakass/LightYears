@@ -4,17 +4,17 @@
 
 namespace ly
 {
-	TwinBlade::TwinBlade(World* owningWorld, const std::string& texturePath,const sf::Vector2f& velocity)
-		: EnemySpaceShip(owningWorld, texturePath, 75.f, GetDefaultRewards()),
-		mShooterLeft( new BulletShooter(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, {-20.f, 40.f}) ),
-		mShooterRight( new BulletShooter(this,"SpaceShooterRedux/PNG/Lasers/laserRed01.png", 1.f, {20.f, 40.f}) )
+	TwinBlade::TwinBlade(World* owningWorld, const ShipDefinition& shipDef,float weaponSpreadWidth)
+		: EnemySpaceShip(owningWorld, shipDef),
+		mShooterLeft( new BulletShooter(this, shipDef.bulletDefinition, shipDef.weaponCooldown, sf::Vector2f{shipDef.weaponOffset.x - weaponSpreadWidth / 2, shipDef.weaponOffset.y} )),
+		mShooterRight( new BulletShooter(this, shipDef.bulletDefinition, shipDef.weaponCooldown, sf::Vector2f{shipDef.weaponOffset.x + weaponSpreadWidth / 2, shipDef.weaponOffset.y} ))
 	{
-		SetVelocity(velocity);
+		SetVelocity(shipDef.speed);
 		SetActorRotation(180.f);
-		SetExplosionType(ExplosionType::Heavy);
-		SetScoreAmt(20);  // TwinBlade = 20 points (stronger)
+		SetScoreAmt(shipDef.scoreAmt);
 		mShooterLeft->SetBulletSpeed(400.f);
 		mShooterRight->SetBulletSpeed(400.f);
+		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Main, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
 	}
 	
 	TwinBlade::~TwinBlade()
@@ -34,16 +34,5 @@ namespace ly
 			mShooterLeft->Shoot();
 			mShooterRight->Shoot();
 		}
-	}
-
-	// TwinBlade reward table: Medium enemy, balanced drops
-	List<WeightedReward> TwinBlade::GetDefaultRewards()
-	{
-		return {
-			{CreateRewardHealth, 0.20f},
-			{CreateRewardThreeWayShooter, 0.1f},
-			{CreateRewardFrontalWiper, 0.75f},
-			{CreateRewardLife, 0.03f}
-		};
 	}
 }

@@ -2,6 +2,7 @@
 
 #include "weapon/Shooter.h"
 #include <SFML/System.hpp>
+#include "../gameConfigs/GameplayStructs.h"
 
 class Actor;
 namespace ly
@@ -9,24 +10,23 @@ namespace ly
 	class BulletShooter: public Shooter
 	{
 	public:
-		BulletShooter(Actor* owner,const std::string& texturePath,
+		BulletShooter(Actor* owner,
+			const BulletDefinition& bulletDef,
 			float cooldownTime = 0.5f,
 			const sf::Vector2f& localPositionOffset = {0.f,0.f},
-			float localRotationOffset= 0.f,
-			float bulletDamage = 10.f,
-			float bulletSpeed = 600.f
+			float localRotationOffset= 0.f
 		);
 
 		virtual bool IsOnCooldown() const override;
 
 		void SetBulletSpeed(float speed);
-		float GetBulletSpeed() const { return mBulletSpeed; };
+		float GetBulletSpeed() const { return mBulletDef.speed; };
 		void SetBulletDamage(float damage);
-		float GetBulletDamage() const { return mBulletDamage; };
-		void SetTexturePath(const std::string& texturePath) { mTexturePath = texturePath; }
+		float GetBulletDamage() const { return mBulletDef.damage; };
 		void SetCooldownTime(float cooldownTime);
 		float GetCooldownTime() const { return mCooldownTime; };
 
+		void SetBulletDefinition(const BulletDefinition& bulletDef) { mBulletDef = bulletDef; }
 		virtual void IncrementLevel(int amt = 1) override;
 
 	protected:
@@ -37,9 +37,8 @@ namespace ly
 		virtual void ShootImp() override;
 		sf::Clock mCooldownClock;
 		float mCooldownTime;
-		std::string mTexturePath;
-		
-		float mBulletSpeed;
-		float mBulletDamage;
+
+		BulletDefinition mBulletDef;
+
 	};
 }

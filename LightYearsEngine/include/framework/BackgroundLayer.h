@@ -4,18 +4,39 @@
 
 namespace ly
 {
+	struct BackgroundElement
+	{
+		std::shared_ptr<sf::Texture> texture;
+		std::optional<sf::Sprite> sprite;
+
+		sf::Vector2f velocity;
+
+		bool hasLight = false;
+		GameplayTag lightTag;
+		float lightScaleRatio = 1.f;
+
+	};
+
 	class BackgroundLayer : public Actor
 	{
 	public:
 		BackgroundLayer(World* owningWorld,
-			const List<std::string>& texturePaths = {},
 			const sf::Vector2f& minVelocity = sf::Vector2f{ 0.f,30.f },
 			const sf::Vector2f& maxVelocity = sf::Vector2f{ 0.f , 100.f },
 			float sizeMin = 1.f,
 			float sizeMax = 2.f,
 			int spriteCount = 20,
-			sf::Color colorTint = sf::Color{ 180, 180, 220, 245 }  // ✅ Referans renk (normal/orta)
+			sf::Color colorTint = sf::Color{ 180, 180, 220, 245 }
 		);
+
+		BackgroundLayer(World* owningWorld,
+			const List<BackgroundLayerDefinition>& defs,
+			const sf::Vector2f& minVelocity = sf::Vector2f{ 0.f,30.f },
+			const sf::Vector2f& maxVelocity = sf::Vector2f{ 0.f , 100.f },
+			float sizeMin = 1.f,
+			float sizeMax = 2.f,
+			int spriteCount = 20,
+			sf::Color colorTint = sf::Color{ 180, 180, 220, 245 });
 
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderWindow& window) override;
@@ -36,16 +57,14 @@ namespace ly
 
 	private:
 		void InitializeSprites();
-		std::optional<sf::Sprite> CreateRandomSprite();
-		void RandomSpriteTransform(sf::Sprite& sprite, bool randomY = false);
+		void SetDefinitions(const List<BackgroundLayerDefinition>& defs);
 		void RandomSpritePosition(sf::Sprite& sprite, bool randomY);
-		void RandomSpriteRotation(sf::Sprite& sprite);
-		void RandomSpriteSize(sf::Sprite& sprite);
 		bool IsSpriteOutScreen(const sf::Sprite& sprite, sf::Vector2f& velocity) const;
+		const BackgroundLayerDefinition* GetRandomDefinition() const;
+		void SpawnRandomElement(BackgroundElement& element);
 
 		sf::Color CalculateDepthColor(float speed) const;
 
-		std::shared_ptr<sf::Texture> GetRandomTexture() const;
 
 		sf::Vector2f mMinVelocity;
 		sf::Vector2f mMaxVelocity;
@@ -54,9 +73,8 @@ namespace ly
 		int mSpriteCount;
 		sf::Color mColorTint;
 
-		List<std::shared_ptr<sf::Texture>> mTextures;
-		List<sf::Sprite> mSprites;
-		List<sf::Vector2f> mVelocities;
+		List<BackgroundElement> mElements;
+		List<BackgroundLayerDefinition> mDefinitions;
 
 		float mSlowMotionScale;
 		bool mPaused;

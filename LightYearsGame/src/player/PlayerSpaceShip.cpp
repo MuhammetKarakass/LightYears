@@ -5,23 +5,26 @@
 #include "weapon/ThreeWayShooter.h"
 #include "weapon/FrontalWiper.h"
 #include "weapon/Shooter.h"
+#include "framework/AssetManager.h"
+#include "gameConfigs/GameplayConfig.h"
 
 namespace ly
 {
-	// PlayerSpaceShip constructor - Oyuncu kontrollü uzay gemisi
-	PlayerSpaceShip::PlayerSpaceShip(World* owningWorld,const std::string& texturePath)
-		:SpaceShip(owningWorld, texturePath),  
-		mSpeed(300.f),                         
-		mMoveInput{ 0.f, 0.f },               
-		mShooter{ new BulletShooter{this,"SpaceShooterRedux/PNG/Lasers/laserBlue01.png",0.2f, sf::Vector2f{0.f,50.f}} },
+	PlayerSpaceShip::PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef)
+		:SpaceShip(owningWorld, shipDef),
+		mSpeed(shipDef.speed.x),
+		mMoveInput{ 0.f, 0.f },
+		mShooter{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, shipDef.weaponOffset} },
 		mInvulnerabilityTime{ 111.f },
-		mInvulnerable{true},
+		mInvulnerable{ true },
 		mInvulnerabilityBlinkInterval{ 0.4f },
 		mInvulnerabilityBlinkTimer{ 0.f },
-		mInvulnerabilityDir{ 1.f }
+		mInvulnerabilityDir{ 1.f },
+		mCollisionDamage{ shipDef.collisionDamage }
 	{
 		SetActorRotation(0.f);
-		SetExplosionType(ExplosionType::Medium);
+		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
+		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
 	}
 
 	void PlayerSpaceShip::SetShooter(unique_ptr<Shooter>&& shooter)
@@ -40,12 +43,14 @@ namespace ly
 		SetCollisionLayer(CollisionLayer::Player);
 		// Düþmanlar, düþman mermileri ve powerup'larla çarpýþabilir
 		SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet | CollisionLayer::Powerup);
-	
+
 	}
 
 	void PlayerSpaceShip::BeginPlay()
 	{
-		SpaceShip::BeginPlay();  
+		SpaceShip::BeginPlay();
+		
+
 		TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
 			&PlayerSpaceShip::StopInvulnerability,
@@ -56,107 +61,111 @@ namespace ly
 
 	void PlayerSpaceShip::ApplyDamage(float amt)
 	{
-		if (mInvulnerable)  
+		if (mInvulnerable)
 		{
-			return;  
+			return;
 		}
-		SpaceShip::ApplyDamage(amt);  
+		SpaceShip::ApplyDamage(amt);
 	}
 
 	void PlayerSpaceShip::Tick(float deltaTime)
 	{
-		SpaceShip::Tick(deltaTime);  
-		SetInput();                  
-		ConsumeInput();    
-		if(mInvulnerable)            
+		SpaceShip::Tick(deltaTime);
+		mShaderTime += deltaTime;
+		SetInput();
+		ConsumeInput();
+		if (mInvulnerable)
 		{
-			UpdateInvulnerability(deltaTime); 
+			UpdateInvulnerability(deltaTime);
 		}
 
 	}
-	
+
 	void PlayerSpaceShip::SetInput()
 	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)|| sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
 		{
-			mMoveInput.y = -1.f;  
+			mMoveInput.y = -1.f;
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
 		{
-			mMoveInput.y = 1.f;   
+			mMoveInput.y = 1.f;
 		}
 
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
 		{
-			mMoveInput.x = -1.f;  
+			mMoveInput.x = -1.f;
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
 		{
-			mMoveInput.x = 1.f;   
+			mMoveInput.x = 1.f;
 		}
-		
+
 		ClampInputOnEdge();  // Ekran kenarýnda sýnýrla
 		NormalizeInput();    // Input vektörünü normalize et
 	}
-	
+
 	// Input vektörünü gerçek harekete çevir
 	void PlayerSpaceShip::ConsumeInput()
 	{
-		SetVelocity(mMoveInput * mSpeed); 
-		mMoveInput.x = 0.f;               
+		SetVelocity(mMoveInput * mSpeed);
+		mMoveInput.x = 0.f;
 		mMoveInput.y = 0.f;
 	}
-	
+
 	// Input vektörünü normalize et (diagonal movement fix)
 	void PlayerSpaceShip::NormalizeInput()
 	{
-		NormalizeVector(mMoveInput); 
+		NormalizeVector(mMoveInput);
 	}
 
 	// Ekran kenarýnda hareket sýnýrlamasý ve ateþ etme
 	void PlayerSpaceShip::ClampInputOnEdge()
 	{
 		//Sol kenar kontrolü
-		if(GetActorLocation().x-40.f<=0.f && mMoveInput.x==-1.f)
+		if (GetActorLocation().x - 40.f <= 0.f && mMoveInput.x == -1.f)
 		{
-			mMoveInput.x = 0.f; 
+			mMoveInput.x = 0.f;
 		}
 		// Sað kenar kontrolü
 		else if (GetActorLocation().x + 40.f >= GetWindowSize().x && mMoveInput.x == 1.f)
 		{
-			mMoveInput.x = 0.f;  
+			mMoveInput.x = 0.f;
 		}
 
 		// Üst kenar kontrolü
 		if (GetActorLocation().y - 40.f <= 0.f && mMoveInput.y == -1.f)
 		{
-			mMoveInput.y = 0.f;  
+			mMoveInput.y = 0.f;
 		}
 		// Alt kenar kontrolü
 		else if (GetActorLocation().y + 40.f >= GetWindowSize().y && mMoveInput.y == 1.f)
 		{
-			mMoveInput.y = 0.f; 
+			mMoveInput.y = 0.f;
 		}
 
 		// Ateþ etme (Space tuþu)
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
 		{
-			Shoot();  
+			Shoot();
 		}
 	}
 
 	void PlayerSpaceShip::Shoot()
 	{
-		if(mShooter)  
+		if (mShooter)
 		{
-			mShooter->Shoot();  
+			mShooter->Shoot();
 		}
 	}
 
 	void PlayerSpaceShip::StopInvulnerability()
 	{
-		GetSprite().setColor({255,255,255,255});
+		GetSprite().value().setColor({255,255,255,255});
 		mInvulnerable = false;
+
+		SetAllLightsIntensity(GameTags::Ship::Engine_Left, 1.5f);
+		SetAllLightsIntensity(GameTags::Ship::Engine_Right, 1.5f);
 	}
 
 	void PlayerSpaceShip::UpdateInvulnerability(float deltaTime)
@@ -167,7 +176,11 @@ namespace ly
 			mInvulnerabilityDir *= -1;
 		}
 
-		GetSprite().setColor(LerpColor({ 255,255, 255, 96 }, { 255, 255, 255, 160 }, mInvulnerabilityBlinkTimer / mInvulnerabilityBlinkInterval));
+		float blinkAlpha = mInvulnerabilityBlinkTimer / mInvulnerabilityBlinkInterval;
+		GetSprite().value().setColor(LerpColor({ 255,255, 255, 96 }, { 255, 255, 255, 160 }, blinkAlpha));
+		float lightIntensity = 0.3f + (blinkAlpha * 5.f);
+		SetAllLightsIntensity(GameTags::Ship::Engine_Left, lightIntensity);
+		SetAllLightsIntensity(GameTags::Ship::Engine_Right, lightIntensity);
 	}
 
 	void PlayerSpaceShip::OnActorBeginOverlap(Actor* otherActor)
@@ -176,7 +189,8 @@ namespace ly
 
 		if (otherActor && GetCanCollide() && !mInvulnerable)
 		{
-			otherActor->ApplyDamage(25.f);
+			otherActor->ApplyDamage(mCollisionDamage);
 		}
 	}
+
 }

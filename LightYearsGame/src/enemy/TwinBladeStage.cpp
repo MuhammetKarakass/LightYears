@@ -26,7 +26,7 @@ namespace ly {
 	}
 	void TwinBladeStage::SpawnTwinBlade()
 	{
-		weak_ptr<TwinBlade> newTwinBlade = GetWorld()->SpawnActor<TwinBlade>();
+		weak_ptr<TwinBlade> newTwinBlade = GetWorld()->SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
 		
 		newTwinBlade.lock()->SetActorLocation(
 			[this]() ->sf::Vector2f 

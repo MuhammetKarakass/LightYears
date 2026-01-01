@@ -32,22 +32,22 @@ namespace ly
        //TODO: hafif bir randomize ekle
 		if(mCurrentSpawnCount % 6 == 0)
 		{
-			newHexagon = GetWorld()->SpawnActor<Hexagon>();
+			newHexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 			newHexagon.lock()->SetActorLocation(mMidSpawnLoc);
-			newHexagon = GetWorld()->SpawnActor<Hexagon>();
+			newHexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x - 150.f, mMidSpawnLoc.y - 150.f });
-			newHexagon = GetWorld()->SpawnActor<Hexagon>();
+			newHexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x + 150.f, mMidSpawnLoc.y - 150.f });
 			mCurrentSpawnCount += 3;
 		}
 
 		else
 		{
-			newHexagon = GetWorld()->SpawnActor<Hexagon>();
+			newHexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x , mMidSpawnLoc.y - 150.f });
-			newHexagon = GetWorld()->SpawnActor<Hexagon>();
+			newHexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x - 150.f, mMidSpawnLoc.y });
-			newHexagon = GetWorld()->SpawnActor<Hexagon>();
+			newHexagon = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
 			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x + 150.f, mMidSpawnLoc.y });
 			mCurrentSpawnCount += 3;
 		}

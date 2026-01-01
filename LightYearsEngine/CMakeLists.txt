@@ -8,6 +8,8 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Core.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Core.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/engineConfigs/EngineStructs.h
+
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/World.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/World.cpp
 
@@ -46,6 +48,9 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SoundComponent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/SoundComponent.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/ShaderManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/ShaderManager.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameStage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/GameStage.cpp

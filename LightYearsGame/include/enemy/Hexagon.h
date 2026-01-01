@@ -10,16 +10,15 @@ namespace ly
 	{
 	public:
 
-		Hexagon(World* owningWorld, const std::string& texturePath = "SpaceShooterRedux/PNG/Enemies/enemyBlack4.png", const sf::Vector2f& velocity = sf::Vector2{ 0.f,100.f });
+		Hexagon(World* owningWorld, const ShipDefinition& shipDef);
 
 		virtual void Tick(float deltaTime) override;
 
 	protected:
-		static List<WeightedReward> GetDefaultRewards();
 
 	private:
 		virtual void Shoot() override;
-		void SetupShooters();
+		void SetupShooters(const ShipDefinition& shipDef);
 
 		List<unique_ptr<BulletShooter>> mShooters;
 	};

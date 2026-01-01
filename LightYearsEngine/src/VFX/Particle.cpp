@@ -4,7 +4,8 @@
 namespace ly
 {
 	Particle::Particle(World* owningWorld, const std::string& texturePath)
-		: Actor{ owningWorld, texturePath }, mVelocity{}, mLifeTime{ 4.f }, mTimer{}
+		: Actor{ owningWorld, texturePath }, 
+		mLifeTime{ 4.f }, mTimer{}
 	{
 
 	}
@@ -30,7 +31,7 @@ namespace ly
 	void Particle::RandomSize(float min, float max)
 	{
 		float randScale = RandRange(min, max);
-		GetSprite().setScale({ randScale, randScale });
+		GetSprite().value().setScale({ randScale, randScale });
 	}
 
 	void Particle::RandomLifeTime(float min, float max)
@@ -46,8 +47,8 @@ namespace ly
 	void Particle::Fade(float deltaTime)
 	{
 		float elapsedTime = mTimer.getElapsedTime().asSeconds();
-		GetSprite().setColor(LerpColor(GetSprite().getColor(), sf::Color{255, 255, 255, 0}, elapsedTime / mLifeTime));
-		GetSprite().setScale(LerpVector(GetSprite().getScale(), sf::Vector2f{ 0.f,0.f}, elapsedTime / mLifeTime));
+		GetSprite().value().setColor(LerpColor(GetSprite().value().getColor(), sf::Color{255, 255, 255, 0}, elapsedTime / mLifeTime));
+		GetSprite().value().setScale(LerpVector(GetSprite().value().getScale(), sf::Vector2f{ 0.f,0.f}, elapsedTime / mLifeTime));
 	}
 
 }

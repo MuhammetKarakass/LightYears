@@ -46,5 +46,23 @@ namespace ly
 		unique_ptr<BulletShooter> mLastStageShooterRight;
 		unique_ptr<MultiShooter> mFan;
 		unique_ptr<MultiShooter> mDual;
+
+		ShipDefinition mBossShipDef = ShipDefinition(
+			"SpaceShooterRedux/PNG/Enemies/boss.png",
+			3000.f,
+			{ 100.f,0.f },
+			200.f,
+			300,
+			(int)ly::ExplosionType::Boss,
+			{
+				EngineMount{ {-80.f,30.f},GameData::Engine_Red_PointLightDef },
+				EngineMount{ {80.f,30.f},GameData::Engine_Red_PointLightDef }
+			},
+			GameData::Laser_Red_BulletDef,
+			true,
+			{ 0.f,100.f },
+			0.5f,
+			LevelOneBoss::GetDefaultRewards()
+		);
 	};
 }

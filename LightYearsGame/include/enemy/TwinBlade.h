@@ -8,7 +8,7 @@ namespace ly
 	class TwinBlade : public EnemySpaceShip
 	{
 	public:
-		TwinBlade(World* owningWorld, const std::string& texturePath = "SpaceShooterRedux/PNG/Enemies/enemyBlack3.png", const sf::Vector2f& velocity= {0.f,80.f});
+		TwinBlade(World* owningWorld, const ShipDefinition& shipDef,float weaponSpreadWidth=40.f);
 
 		~TwinBlade();
 
@@ -16,8 +16,6 @@ namespace ly
 
 		virtual void Shoot() override;
 
-	protected:
-		static List<WeightedReward> GetDefaultRewards();
 
 	private:
 		unique_ptr<BulletShooter> mShooterLeft;
