@@ -23,7 +23,7 @@ namespace ly
 		AudioManager::GetAudioManager().PlayMusic(
 			"SpaceShooterRedux/Musics/menu_theme.ogg",
 			AudioType::Music,
-			70.0f,
+			30.0f,
 			1.0f,
 			true
 		);

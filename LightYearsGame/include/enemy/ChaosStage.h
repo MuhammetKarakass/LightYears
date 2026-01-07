@@ -7,6 +7,7 @@
 
 namespace ly
 {
+	class AsteroidSpawner;
 	class ChaosStage : public GameStage
 	{
 	public:
@@ -58,7 +59,11 @@ namespace ly
 		bool mTotalChaosTimerActive{ false };
 		bool mShowedSurviveMessage{ false };
 
+		shared_ptr<AsteroidSpawner> mAsteroidSpawner;
+		int mMaxAsteroidSpawnCount;
+		bool mAsteroidSpawningActive;
+
 		TimerHandle mSpawnTimerHandle;
-		TimerHandle mTotalChaosTimerHandle;  // Total Chaos'un kendini çaðýrmasý için
+		TimerHandle mTotalChaosTimerHandle;
 	};
 }

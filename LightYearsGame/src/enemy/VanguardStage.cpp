@@ -7,17 +7,17 @@ namespace ly
 {
 	VanguardStage::VanguardStage(World* world) :
 		GameStage(world),
-		mMinSpawnInterval{ 0.5f },
+		mMinSpawnInterval{ 1.25f },
 		mMaxSpawnInterval{ 2.f },
 		mSpawnDistanceToEdge{ 100.f },
-		mSwitchInterval{ 5.f },
+		mSwitchInterval{ 2.5f },
 		mRightSpawnLoc{ 0.f,0.f },
 		mLeftSpawnLoc{ 0.f,0.f },
 		mMidSpawnLoc{ 0.f,0.f },
 		mSpawnLoc{ 0.f,0.f },
 		mSpawnTimerHandle{},
 		mSwitchTimerHandle{},
-		mRowsToSpawn{ 1 },
+		mRowsToSpawn{ 5 },
 		mRowSpawnCount{ 0 },
 		mVanguardPerRow{ 5 },
 		mCurrentRowVanguardCount{ 0 },
@@ -66,17 +66,15 @@ namespace ly
 		mSpawnLocIndex[1] = mSpawnLoc.x;
 		mSpawnLocIndex[2] = mSpawnLoc.x +60.f;
 
-		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SpawnVanguard,mMaxSpawnInterval,true);
+		float spawnInterval = RandRange(mMinSpawnInterval, mMaxSpawnInterval);
+		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(),&VanguardStage::SpawnVanguard,spawnInterval,true);
 		++mRowSpawnCount;
 	}
 
 	void VanguardStage::SpawnVanguard()
 	{
 		weak_ptr<Vanguard> newVanguard = GetWorld()->SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
-		weak_ptr<Asteroid> asteroid = GetWorld()->SpawnActor<Asteroid>();
-		//newVanguard.lock()->SetActorLocation(RandomVector(sf::Vector2f{mSpawnLoc.x-100,mSpawnLoc.y}, sf::Vector2f{ mSpawnLoc.x + 100,mSpawnLoc.y }));
 		newVanguard.lock()->SetActorLocation(sf::Vector2f {mSpawnLocIndex[RandomizeSpawnLoc()],mSpawnLoc.y });
-		asteroid.lock()->SetActorLocation(sf::Vector2f{ mSpawnLocIndex[RandomizeSpawnLoc()],mSpawnLoc.y - 50.f });
 		++mCurrentRowVanguardCount;
 
 		if (mVanguardPerRow == mCurrentRowVanguardCount)

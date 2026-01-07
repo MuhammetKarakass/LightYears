@@ -40,7 +40,6 @@ namespace ly
 	{
 		if (mWeightedRewards.size() == 0) return;
 
-		// Calculate total weight
 		float totalWeight = 0.0f;
 		for (const auto& reward : mWeightedRewards)
 		{
@@ -53,14 +52,12 @@ namespace ly
 		{
 		}
 
-		// Select reward based on weight
 		float currentWeight = 0.0f;
 		for (const auto& reward : mWeightedRewards)
 		{
 			currentWeight += reward.weight;
 			if (randValue <= currentWeight)
 			{
-				// Spawn this reward
 				weak_ptr<Reward> spawnedReward = reward.factory(GetWorld());
 				if (auto rewardPtr = spawnedReward.lock())
 				{

@@ -24,6 +24,8 @@ namespace ly
 		bool IsPaused() const { return mIsPaused; }
 		void RemoveOverlayHUD();
 
+		weak_ptr<Actor> GetActorByLayer(CollisionLayer layer) const;
+
 		sf::Vector2u GetWindowSize();
 
 		virtual ~World();

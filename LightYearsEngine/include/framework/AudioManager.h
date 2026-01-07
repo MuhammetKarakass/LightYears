@@ -18,6 +18,11 @@ namespace ly
 		void PauseMusic();
 		void ResumeMusic();
 
+		void PlayMusicWithIntro(const std::string& introPath, const std::string& loopPath, AudioType type, float volume = 100.0f, float pitch = 1.0f);
+		void FadeToMusicWithIntro(const std::string& introPath, const std::string& loopPath, AudioType type, float volume = 100.0f, float pitch = 1.0f, float fadeDuration = 3.0f);
+		void FadeToMusic(const std::string& path, AudioType type, float volume = 100.0f, float pitch = 1.0f, bool loop = true, float fadeDuration = 3.0f);
+		void Update(float deltaTime);
+
 		void SetWorldTimeScale(float timeScale);
 		float GetWorldTimeScale() const { return mCurrentTimeScale; }
 
@@ -28,10 +33,8 @@ namespace ly
 		float GetMusicVolume() const { return mMusicVolume; }
 		float GetSFXVolume() const { return mSFXVolume; }
 
-		// Menü modu (ses kýsma/yavaþlatma)
 		void SetMenuMode(bool isMenuOpen);
 
-		// Temizlik
 		void CleanCycle();
 
 		Delegate<float> onWorldTimeScaleChanged;
@@ -42,11 +45,10 @@ namespace ly
 		sf::Sound* AcquireSoundFromPool();
 		void ReturnSoundToPool(sf::Sound* sound);
 
-		// Aktif sesler (çalan sesler)
 		struct ActiveSound
 		{
 			sf::Sound* sound;
-			shared_ptr<sf::SoundBuffer> buffer;  // Buffer'ý tutuyoruz ki silinmesin
+			shared_ptr<sf::SoundBuffer> buffer;
 			AudioType type;
 			float basePitch;
 			float baseVolume;
@@ -58,21 +60,46 @@ namespace ly
 		static constexpr size_t MAX_POOL_SIZE = 32;
 		static constexpr size_t INITIAL_POOL_SIZE = 8;
 
-		// Müzik
 		shared_ptr<sf::Music> mMusic;
 		AudioType mMusicType;
 		float mMusicBasePitch;
 		float mMusicBaseVolume;
 
-		// Global ayarlar
 		float mMasterVolume;
 		float mMusicVolume;
 		float mSFXVolume;
 		float mCurrentTimeScale;
 
+		enum class FadeState
+		{
+			None,
+			FadingOut,
+			FadingIn
+		};
+
+		FadeState mFadeState;
+		float mFadeTimer;
+		float mFadeDuration;
+		float mTargetVolume;
+
+		std::string mNextMusicPath;
+		AudioType mNextMusicType;
+		float mNextMusicPitch;
+		float mNextMusicVolume;
+		bool mNextMusicLoop;
+
+		std::string mCurrentMusicPath;
+		bool mLoopCrossfadeEnabled;
+		float mLoopCrossfadeDuration;
+		bool mIsLoopCrossfading;
+		shared_ptr<sf::Music> mCrossfadeMusic;
+
+		std::string mPendingLoopPath;
+		std::string mNextPendingLoopPath;
+		bool mIsPlayingIntro;
+
 		static unique_ptr<AudioManager> audioManager;
 
-		// Volume hesaplama yardýmcýlarý
 		float CalculateEffectiveVolume(float baseVolume, AudioType type) const;
 		void UpdateAllVolumes();
 	};

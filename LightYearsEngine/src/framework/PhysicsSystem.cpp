@@ -17,29 +17,24 @@ namespace ly
 
 	void PhysicsSystem::Step(float deltaTime)
 	{
-		// Box2D v3.0 C-style API kullanýyor
-		if (mPhysicsWorld.index1 != 0)  // Null check
+		if (mPhysicsWorld.index1 != 0)
 		{
 			ProcessPendingRemoveListeners();
 			b2World_Step(mPhysicsWorld, deltaTime, 4);
-			
-			// Step sonrasý contact event'leri iþle
+
 			ProcessContactEvents();
 		}
 	}
 
 	void PhysicsSystem::InitializeWorld(b2Vec2 gravity)
 	{
-		// Eski world'ü temizle (eðer varsa)
 		Cleanup();
 
-		// Yeni world oluþtur
 		b2WorldDef worldDef = b2DefaultWorldDef();
 		worldDef.gravity = gravity;
-		
+
 		mPhysicsWorld = b2CreateWorld(&worldDef);
 
-		// Uyku nedeniyle event'lerin gecikmesini engelle
 		b2World_EnableSleeping(mPhysicsWorld, false);
 	}
 
@@ -48,77 +43,62 @@ namespace ly
 		if (mPhysicsWorld.index1 != 0)
 		{
 			b2DestroyWorld(mPhysicsWorld);
-			mPhysicsWorld = b2WorldId{0, 0};  // Null ID
+			mPhysicsWorld = b2WorldId{ 0, 0 };
 		}
 	}
 
 	b2BodyId PhysicsSystem::AddListener(Actor* listener)
 	{
-		if (listener->GetIsPendingDestroy()) return b2BodyId{0,0,0};
+		if (listener->GetIsPendingDestroy()) return b2BodyId{ 0,0,0 };
 
-		// Box2D v3.x API kullanýr
 		b2BodyDef bodyDef = b2DefaultBodyDef();
-		bodyDef.type = b2_dynamicBody;                  // Dynamic body - contact events yaratýr
-		
-		// userData artýk doðrudan void* pointer
+		bodyDef.type = b2_dynamicBody;
+
 		bodyDef.userData = listener;
-		
-		// position ve rotation ayrý ayrý ayarlanýr
+
 		sf::Vector2f actorLocation = listener->GetActorLocation();
-		bodyDef.position = {actorLocation.x * GetPhysicsRate(), actorLocation.y * GetPhysicsRate()};
+		bodyDef.position = { actorLocation.x * GetPhysicsRate(), actorLocation.y * GetPhysicsRate() };
 		bodyDef.rotation = b2MakeRot(DegreesToRadians(listener->GetActorRotation()));
 
-		// Body oluþtur
 		b2BodyId bodyId = b2CreateBody(mPhysicsWorld, &bodyDef);
-		
-		// Shape oluþtur - Box2D v3.x API
+
 		sf::FloatRect bounds = listener->GetActorGlobalBounds();
 		float halfWidth = bounds.size.x / 2.0f * GetPhysicsRate();
 		float halfHeight = bounds.size.y / 2.0f * GetPhysicsRate();
-		
-		// Polygon (kutu) oluþtur
-		b2Polygon box = b2MakeBox(halfWidth, halfHeight);
-		
-		// Shape definition - Box2D v3.x'te b2FixtureDef yerine b2ShapeDef kullanýlýr
-		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		
-		// Fiziksel özellikler (eski b2FixtureDef özelliklerinin karþýlýðý)
-		shapeDef.density = 1.0f;                        // eski: fixtureDef.density
-		shapeDef.material.friction = 0.3f;              // eski: fixtureDef.friction
-		shapeDef.material.restitution = 0.6f;           // eski: fixtureDef.restitution
-		
-		// Contact events için dynamic body kullan - overlap detection için
-		shapeDef.isSensor = false;                      // Solid shape - contact events için
 
-		// Event'lerin etkinleþtirilmesi
-		shapeDef.enableContactEvents = true;            // Contact event'leri aktif et
-		shapeDef.enableSensorEvents = false;            // Sensor event'leri kapalý
-		
-		// Kritik: Ýlk frame'de temas çiftlerini oluþtur (initial overlap ve uyku problemleri için)
+		b2Polygon box = b2MakeBox(halfWidth, halfHeight);
+
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+
+		shapeDef.density = 1.0f;
+		shapeDef.material.friction = 0.3f;
+		shapeDef.material.restitution = 0.6f;
+
+		shapeDef.isSensor = false;
+
+		shapeDef.enableContactEvents = true;
+		shapeDef.enableSensorEvents = false;
+
 		shapeDef.invokeContactCreation = true;
-		
-		// Shape'i body'ye ekle
+
 		b2ShapeId shapeId = b2CreatePolygonShape(bodyId, &shapeDef, &box);
-		
+
 		return bodyId;
 	}
 
 	void PhysicsSystem::ProcessContactEvents()
 	{
-		if (mPhysicsWorld.index1 == 0) return;  // World yok ise çýk
-		
-		// Box2D v3.x event-based contact system
+		if (mPhysicsWorld.index1 == 0) return;
+
 		b2ContactEvents contactEvents = b2World_GetContactEvents(mPhysicsWorld);
-		
-		// Begin touch events - solid body'ler için contact detection
+
 		for (int i = 0; i < contactEvents.beginCount; ++i)
 		{
 			b2ContactBeginTouchEvent beginEvent = contactEvents.beginEvents[i];
-			
+
 			Actor* actorA = nullptr;
 			Actor* actorB = nullptr;
-			
-			// Shape A'dan Actor'ü al
+
 			if (b2Shape_IsValid(beginEvent.shapeIdA))
 			{
 				b2BodyId bodyIdA = b2Shape_GetBody(beginEvent.shapeIdA);
@@ -131,8 +111,7 @@ namespace ly
 					}
 				}
 			}
-			
-			// Shape B'den Actor'ü al
+
 			if (b2Shape_IsValid(beginEvent.shapeIdB))
 			{
 				b2BodyId bodyIdB = b2Shape_GetBody(beginEvent.shapeIdB);
@@ -145,28 +124,28 @@ namespace ly
 					}
 				}
 			}
-			
-			// Her iki actor da geçerliyse overlap event'lerini çaðýr
-			if (actorA && !actorA->GetIsPendingDestroy())
+
+			bool aValidAtStart = actorA && !actorA->GetIsPendingDestroy();
+			bool bValidAtStart = actorB && !actorB->GetIsPendingDestroy();
+
+			if (aValidAtStart)
 			{
 				actorA->OnActorBeginOverlap(actorB);
 			}
 
-			if (actorB && !actorB->GetIsPendingDestroy())
+			if (bValidAtStart)
 			{
 				actorB->OnActorBeginOverlap(actorA);
 			}
 		}
-		
-		// End touch events - solid body'ler için contact detection
+
 		for (int i = 0; i < contactEvents.endCount; ++i)
 		{
 			b2ContactEndTouchEvent endEvent = contactEvents.endEvents[i];
-			
+
 			Actor* actorA = nullptr;
 			Actor* actorB = nullptr;
-			
-			// Shape A'dan Actor'ü al
+
 			if (b2Shape_IsValid(endEvent.shapeIdA))
 			{
 				b2BodyId bodyIdA = b2Shape_GetBody(endEvent.shapeIdA);
@@ -179,8 +158,7 @@ namespace ly
 					}
 				}
 			}
-			
-			// Shape B'den Actor'ü al
+
 			if (b2Shape_IsValid(endEvent.shapeIdB))
 			{
 				b2BodyId bodyIdB = b2Shape_GetBody(endEvent.shapeIdB);
@@ -193,13 +171,16 @@ namespace ly
 					}
 				}
 			}
-			
-			if (actorA && !actorA->GetIsPendingDestroy())
+
+			bool aValidAtStart = actorA && !actorA->GetIsPendingDestroy();
+			bool bValidAtStart = actorB && !actorB->GetIsPendingDestroy();
+
+			if (aValidAtStart)
 			{
 				actorA->OnActorEndOverlap(actorB);
 			}
 
-			if (actorB && !actorB->GetIsPendingDestroy())
+			if (bValidAtStart)
 			{
 				actorB->OnActorEndOverlap(actorA);
 			}
@@ -223,64 +204,55 @@ namespace ly
 			return;
 		}
 
-		// ? Box2D v3.x: Tüm shape'leri array ile al ve sil
 		int shapeCount = b2Body_GetShapeCount(bodyId);
-		
+
 		if (shapeCount > 0)
 		{
-			// Shape ID'lerini tutacak array oluþtur
 			b2ShapeId* shapes = new b2ShapeId[shapeCount];
-			
-			// Tüm shape ID'lerini array'e al
+
 			b2Body_GetShapes(bodyId, shapes, shapeCount);
-			
-			// Tüm shape'leri sil
+
 			for (int i = 0; i < shapeCount; ++i)
 			{
 				if (b2Shape_IsValid(shapes[i]))
 				{
-					b2DestroyShape(shapes[i], true);  // ? v3.x: 2. parametre = resetMass
+					b2DestroyShape(shapes[i], true);
 				}
 			}
-			
-			// Array'i temizle
+
 			delete[] shapes;
 		}
 
-		// Yeni circle shape oluþtur
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		shapeDef.density = 1.0f;
 		shapeDef.material.friction = 0.3f;
 		shapeDef.material.restitution = 0.1f;
-		
-		// ? Contact events'i aktif et (UFO çarpýþmalarý için)
+
 		shapeDef.enableContactEvents = true;
-		shapeDef.invokeContactCreation = true;  // Ýlk frame'de contact oluþtur
-		shapeDef.isSensor = false;  // Solid shape - fiziksel çarpýþma için
+		shapeDef.invokeContactCreation = true;
+		shapeDef.isSensor = false;
 
 		b2Circle circle;
-		circle.center = {0.0f, 0.0f};
-		circle.radius = radius * mPhysicsRate;  // Physics scale'e çevir
+		circle.center = { 0.0f, 0.0f };
+		circle.radius = radius * mPhysicsRate;
 
 		b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	}
 
-	PhysicsSystem::PhysicsSystem():
-		mPhysicsWorld{0, 0},  // Null WorldId ile baþlat
-		mPhysicsRate{0.01f},
+	PhysicsSystem::PhysicsSystem() :
+		mPhysicsWorld{ 0, 0 },
+		mPhysicsRate{ 0.01f },
 		mPendingRemoveListeners{}
 	{
-		// Varsayýlan gravity ile world'ü initialize et
-		InitializeWorld({0.0f, 0.0f});
+		InitializeWorld({ 0.0f, 0.0f });
 	}
 
 	void PhysicsSystem::ProcessPendingRemoveListeners()
 	{
-		for(auto bodyId : mPendingRemoveListeners)
+		for (auto bodyId : mPendingRemoveListeners)
 		{
 			if (b2Body_IsValid(bodyId))
 			{
-				// Body'yi world'den kaldýr
 				b2DestroyBody(bodyId);
 			}
 		}

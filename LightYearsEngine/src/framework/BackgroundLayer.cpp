@@ -30,7 +30,7 @@ namespace ly
 		mColorTint(colorTint),
 		mSlowMotionScale(1.f),
 		mPaused(false),
-		mRandomVisibility(false),
+		mRandomVisibility(true),
 		mUseDepthColor(false),
 		mDefinitions(defs)
 	{
@@ -52,23 +52,22 @@ namespace ly
 			if (!element.sprite.has_value())
 				continue;
 
-			sf::Sprite& sprite = element.sprite.value();
 			sf::Vector2f& velocity = element.velocity;
 
-			if (IsSpriteOutScreen(sprite, velocity))
+			if (IsSpriteOutScreen(element.sprite.value(), velocity))
 			{
 				SpawnRandomElement(element);
 				if(element.sprite.has_value())
 				{
-					RandomSpritePosition(sprite, false);
+					RandomSpritePosition(element.sprite.value(), false);
 				}
 			}
 
-			sprite.setPosition(sprite.getPosition() + velocity * deltaTime * mSlowMotionScale);
+			element.sprite.value().setPosition(element.sprite.value().getPosition() + velocity * deltaTime * mSlowMotionScale);
 
 			if(element.hasLight)
 			{
-				SetLightWorldPosition(element.lightTag, sprite.getPosition());
+				SetLightWorldPosition(element.lightTag, element.sprite.value().getPosition());
 			}
 		}
 	}
@@ -86,7 +85,6 @@ namespace ly
 			List<BackgroundElement*> sortedElements;
 			for(auto& element : mElements)
 			{
-				// ✅ Only add elements with valid sprites
 				if (element.sprite.has_value())
 				{
 					sortedElements.push_back(&element);
@@ -106,7 +104,6 @@ namespace ly
 		{
 			for (const auto& element : mElements)
 			{
-				// ✅ Only draw elements with valid sprites
 				if (element.sprite.has_value())
 				{
 					window.draw(element.sprite.value());
@@ -132,7 +129,6 @@ namespace ly
 
 		for (auto& element : mElements)
 		{
-			// ✅ Check if sprite exists before accessing
 			if (element.sprite.has_value() && element.sprite.value().getColor().a > 0)
 			{
 				if (mUseDepthColor)
@@ -179,14 +175,13 @@ namespace ly
 		mSizeMax = sizeMax;
 		for (auto& element : mElements)
 		{
-			// ✅ Check if sprite exists before accessing
 			if (element.sprite.has_value())
 			{
 				float scale = RandRange(mSizeMin, mSizeMax);
 				element.sprite.value().setScale({ scale, scale });
 			}
 
-			if(element.hasLight)
+			if(element.hasLight && element.sprite.has_value())
 			{
 				sf::FloatRect globalBounds = element.sprite.value().getGlobalBounds();
 				sf::Vector2f newLightSize = sf::Vector2f{ globalBounds.size.x, globalBounds.size.y } *element.lightScaleRatio;
@@ -235,7 +230,6 @@ namespace ly
 
 	sf::Color BackgroundLayer::CalculateDepthColor(float speed) const
 	{
-		// ✅ Velocity range'ini normalize et
 		float minSpeed = std::abs(mMinVelocity.y);
 		float maxSpeed = std::abs(mMaxVelocity.y);
 
@@ -245,7 +239,6 @@ namespace ly
 		sf::Color farColor{ 120, 130, 220, 230 };
 		sf::Color nearColor = mColorTint;
 
-		// ✅ Linear interpolation
 		return LerpColor(farColor, nearColor, normalizedSpeed);
 	}
 
@@ -353,7 +346,7 @@ namespace ly
 		if(mRandomVisibility)
 		{
 			float randVisibility = RandRange(0.f, 1.f);
-			if (randVisibility < 0.1f)
+			if (randVisibility < 0.66f)
 			{
 				element.sprite.value().setColor(sf::Color::Transparent);
 			}

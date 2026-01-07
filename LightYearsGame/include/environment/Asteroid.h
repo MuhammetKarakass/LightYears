@@ -19,6 +19,8 @@ namespace ly
 		void SetExplosionType(ExplosionType type) { mExplosionType = type; }
 		ExplosionType GetExplosionType() const { return mExplosionType; }
 		void SetupCollisionLayers();
+		void SetAsteroidVelocity(const sf::Vector2f& velocity) { mVelocity = velocity; }
+		void SetAsteroidScale(float scale);
 	private:
 		virtual void Tick(float deltaTime) override;
 		virtual	void OnActorBeginOverlap(Actor* otherActor) override;

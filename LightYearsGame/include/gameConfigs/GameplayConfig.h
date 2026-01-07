@@ -8,6 +8,7 @@
 namespace GameData
 {
 
+
 #pragma region Point Light Definitions
 
 
@@ -125,25 +126,25 @@ namespace GameData
 	static const ShipDefinition Ship_Player_Fighter(
 		"SpaceShooterRedux/PNG/playerShip1_blue.png",
 		100.f,   // health
-		sf::Vector2f{ 300.f, 300.f },   // speed
+		sf::Vector2f{ 350.f, 350.f },   // speed
 		25.f,           // collisionDamage
 		0.f,// scoreAmt
 		(int)ly::ExplosionType::Medium,
 		{
-			EngineMount{ {-22.f, -15.f}, Engine_Cyan_PointLightDef },
-			EngineMount{ {+22.f, -15.f}, Engine_Cyan_PointLightDef }
+			EngineMount{ {-22.f, -12.f}, Engine_Cyan_PointLightDef },
+			EngineMount{ {+22.f, -12.f}, Engine_Cyan_PointLightDef }
 		},
 		Laser_Blue_BulletDef,
 		true,
 		sf::Vector2f{ 0.f, 50.f },      // weaponOffset
-		0.2f,      // weaponCooldown
+		0.25f,      // weaponCooldown
 		{}        // rewards (player için boş)
 	);
 
 	static const ShipDefinition Ship_Enemy_Vanguard(
 		"SpaceShooterRedux/PNG/Enemies/enemyBlack1.png",
-		100.f,
-		sf::Vector2f{ 0.f,150.f },
+		60.f,
+		sf::Vector2f{ 0.f,200.f },
 		50.f,
 		10.f,
 		(int)ly::ExplosionType::Medium,
@@ -153,11 +154,12 @@ namespace GameData
 		Laser_Red_BulletDef,
 		true,
 		sf::Vector2f{ 0.f,40.f },
-		1.f,
+		.9f,
 		{
-			{ ly::CreateRewardHealth, 0.1f },
-			{ ly::CreateRewardThreeWayShooter, 0.05f },
-			{ ly::CreateRewardFrontalWiper, 0.02f }
+			{ ly::CreateRewardHealth, 0.2f },
+			{ ly::CreateRewardThreeWayShooter, 0.12f },
+			{ ly::CreateRewardFrontalWiper, 0.08f },
+			{ ly::CreateRewardLife, 0.05f}
 		}
 	);
 
@@ -179,17 +181,18 @@ namespace GameData
 		{
 			{ ly::CreateRewardHealth, 0.2f },
 			{ ly::CreateRewardThreeWayShooter, 0.1f },
-			{ ly::CreateRewardFrontalWiper, 0.05f }
+			{ ly::CreateRewardFrontalWiper, 0.06f },
+			{ ly::CreateRewardLife, 0.01f}
 		}
 	);
 
 	static const ShipDefinition Ship_Enemy_TwinBlade
 	(
 		"SpaceShooterRedux/PNG/Enemies/enemyBlack3.png",
-		100.f,
-		sf::Vector2f{ 0.f,80.f },
+		60.f,
+		sf::Vector2f{ 0.f,175.f },
 		50.f,
-		15.f,
+		20.f,
 		(int)ly::ExplosionType::Medium,
 		{
 			EngineMount{ {0.f,-30.f},PointLightDefinition("SpaceShooterRedux/Shaders/point_light.frag",
@@ -198,7 +201,7 @@ namespace GameData
 		sf::Vector2f{ 45.f,60.f },
 		true,
 		true,
-		.75f,
+		1.f,
 		1.f,
 		0.2f)
 			}
@@ -208,17 +211,18 @@ namespace GameData
 		sf::Vector2f{ 0.f,40.f },
 		1.f,
 		{
-			{ ly::CreateRewardHealth, 0.2f },
-			{ ly::CreateRewardThreeWayShooter, 0.1f },
-			{ ly::CreateRewardFrontalWiper, 0.05f }
+			{ ly::CreateRewardHealth, 0.25f },
+			{ ly::CreateRewardThreeWayShooter, 0.15f },
+			{ ly::CreateRewardFrontalWiper, 0.10f },
+			{ ly::CreateRewardLife, 0.05f}
 		}
 	);
 
 	static const ShipDefinition Ship_Enemy_Hexagon
 	(
 		"SpaceShooterRedux/PNG/Enemies/enemyBlack4.png",
-		150.f,
-		sf::Vector2f{ 0.f,100.f },
+		100.f,
+		sf::Vector2f{ 0.f,125.f },
 		60.f,
 		30.f,
 		(int)ly::ExplosionType::Heavy,
@@ -229,7 +233,7 @@ namespace GameData
 		sf::Vector2f{ 20.f,75.f },
 		true,
 		true,
-		.75f,
+		1.f,
 		1.f,
 		0.2f)
 			}
@@ -237,25 +241,26 @@ namespace GameData
 		Laser_Red_BulletDef,
 		true,
 		sf::Vector2f{ 0.f,0.f },
-		1.f,
+		.75f,
 		{
 			{ ly::CreateRewardHealth, 0.3f },
-			{ ly::CreateRewardThreeWayShooter, 0.15f },
-			{ ly::CreateRewardFrontalWiper, 0.1f }
+			{ ly::CreateRewardThreeWayShooter, 0.2f },
+			{ ly::CreateRewardFrontalWiper, 0.15f },
+			{ ly::CreateRewardLife, 0.05f}
 		}
 	);
 
 	static const ShipDefinition Ship_Enemy_UFO
 	(
 		"SpaceShooterRedux/PNG/Enemies/ufoBlack.png",
-		100.f,
-		sf::Vector2f{ 0.f,120.f },
+		80.f,
+		sf::Vector2f{ 0.f,300.f },
 		80.f,
 		40.f,
 		(int)ly::ExplosionType::Heavy,
 		{
 			EngineMount{
-				{0.f, 70.f},  // ← UFO'nun altına yerleştir (pozitif değer)
+				{0.f, 70.f},
 				PointLightDefinition(
 					"SpaceShooterRedux/Shaders/point_light.frag",
 					sf::Color{ 255, 255, 0, 200},
@@ -271,12 +276,13 @@ namespace GameData
 		},
 		Laser_Red_BulletDef,
 		true,
-		sf::Vector2f{ 0.f, 200.f },
-		1.5f,
+		sf::Vector2f{ 0.f, 100.f },
+		.9f,
 		{
 			{ ly::CreateRewardHealth, 0.3f },
-			{ ly::CreateRewardThreeWayShooter, 0.15f },
-			{ ly::CreateRewardFrontalWiper, 0.1f }
+			{ ly::CreateRewardThreeWayShooter, 0.25f },
+			{ ly::CreateRewardFrontalWiper, 0.15f },
+			{ ly::CreateRewardLife, 0.08f }
 		}
 	);
 #pragma endregion

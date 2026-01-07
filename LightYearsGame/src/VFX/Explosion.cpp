@@ -138,7 +138,6 @@ namespace ly
 
 		for (int i = 0; i < params.particleCount; ++i)
 		{
-			// Safe array indexing
 			if (params.particleTextures.empty()) continue;
 			
 			int maxIndex = static_cast<int>(params.particleTextures.size()) - 1;
@@ -147,7 +146,6 @@ namespace ly
 			
 			weak_ptr<Particle> newParticle = world->SpawnActor<Particle>(particleTexture);
 
-			// Safety check for weak_ptr
 			if (auto particle = newParticle.lock())
 			{
 				particle->RandomLifeTime(params.lifeTimeMin, params.lifeTimeMax);

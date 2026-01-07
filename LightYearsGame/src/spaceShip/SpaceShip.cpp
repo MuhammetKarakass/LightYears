@@ -5,7 +5,6 @@
 
 namespace ly
 {
-	// SpaceShip constructor - Uzay gemisi nesnesini oluþturur
 	SpaceShip::SpaceShip(World* owningWorld, const ShipDefinition& shipDef):
 		Actor(owningWorld, shipDef.texturePath),
 		mHealthComponent{shipDef.health, shipDef.health},
@@ -25,7 +24,6 @@ namespace ly
 		
 		SetupCollisionLayers();
 		
-		// Health component event'lerine abone ol (delegate pattern)
 		mHealthComponent.onHealthChanged.BindAction(GetWeakPtr(), &SpaceShip::OnHealthChanged);
 		mHealthComponent.onTakenDamage.BindAction(GetWeakPtr(), &SpaceShip::OnTakenDamage);
 		mHealthComponent.onHealthEmpty.BindAction(GetWeakPtr(), &SpaceShip::Blow);
@@ -40,7 +38,6 @@ namespace ly
 
 
 
-	// Ateþ etme iþlemi (türetilen sýnýflar override eder)
 	void SpaceShip::Shoot()
 	{
 	}
@@ -58,28 +55,23 @@ namespace ly
 	{
 		if (mBlinkTime > 0) 
 		{
-			mBlinkTime -= deltaTime;  // Kalan süreyi azalt
+			mBlinkTime -= deltaTime;
 
-			// Süre bittiðinde sýfýrla
 			mBlinkTime = mBlinkTime > 0 ? mBlinkTime : 0.f;
 			
-			// Beyazdan kýrmýzýya geçiþ efekti (mBlinkTime azaldýkça kýrmýzýlaþýr)
 			GetSprite().value().setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime));
 		}
 	}
 
-	// Health deðiþtiðinde çaðrýlan callback (delegate)
 	void SpaceShip::OnHealthChanged(float amt, float health, float maxHealth)
 	{
 	}
 	
-	// Hasar alýndýðýnda çaðrýlan callback (delegate)
 	void SpaceShip::OnTakenDamage(float amt, float health, float maxHealth)
 	{
 		Blink();
 	}
 	
-	// Can bittiðinde çaðrýlan callback (delegate)
 	void SpaceShip::Blow()
 	{
 		Explosion::SpawnExplosion(GetWorld(), GetActorLocation(), Explosion::GetPreset(GetExplosionType()));
@@ -91,7 +83,6 @@ namespace ly
 	{
 	}
 	
-	// Bu gemiye hasar verme iþlemi
 	void SpaceShip::ApplyDamage(float amt)
 	{                        
 		mHealthComponent.ChangeHealth(-amt);     

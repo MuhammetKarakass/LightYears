@@ -33,7 +33,6 @@ namespace ly
 
 	void Hexagon::SetupShooters(const ShipDefinition& shipDef)
 	{
-		// 6 yönlü ateþ sistemi - Altýgen þeklinde (60 derece aralýklarla)
 		mShooters.push_back(std::make_unique<BulletShooter>(this, shipDef.bulletDefinition, shipDef.weaponCooldown, sf::Vector2f{0.f, 50.f}, 0.f));
 		mShooters.push_back(std::make_unique<BulletShooter>(this, shipDef.bulletDefinition, shipDef.weaponCooldown, sf::Vector2f{ 0.f, -50.f }, 180.f));
 

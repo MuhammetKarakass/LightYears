@@ -23,9 +23,9 @@ namespace ly
 		mMusic{ nullptr },
 		mMusicType{ AudioType::Music },
 		mMusicBasePitch{ 1.0f },
-		mMusicBaseVolume{ 100.0f }
+		mMusicBaseVolume{ 100.0f },
+		mIsPlayingIntro{ false }
 	{
-		// SFML 3.x'te sf::Sound default constructor yok, pool'u lazy olarak dolduracaðýz
 		mSoundPool.reserve(MAX_POOL_SIZE);
 	}
 
@@ -38,7 +38,6 @@ namespace ly
 			return sound;
 		}
 
-		// Pool boþsa nullptr dön - PlaySound'da buffer ile oluþturulacak
 		return nullptr;
 	}
 
@@ -46,10 +45,8 @@ namespace ly
 	{
 		if (!sound) return;
 
-		// Sesi durdur
 		sound->stop();
 
-		// Pool doluysa sil, deðilse pool'a ekle
 		if (mSoundPool.size() < MAX_POOL_SIZE)
 		{
 			mSoundPool.push_back(unique_ptr<sf::Sound>(sound));
@@ -74,7 +71,6 @@ namespace ly
 			activeSound.sound->setVolume(effectiveVolume);
 		}
 
-		// Müziðin volume'ýný güncelle
 		if (mMusic && mMusic->getStatus() != sf::Music::Status::Stopped)
 		{
 			float effectiveVolume = CalculateEffectiveVolume(mMusicBaseVolume, mMusicType);
@@ -87,46 +83,43 @@ namespace ly
 		shared_ptr<sf::SoundBuffer> buffer = AssetManager::GetAssetManager().LoadSoundBuffer(path);
 		if (!buffer) return;
 
-		// Pool'dan ses al veya yeni oluþtur
 		sf::Sound* sound = AcquireSoundFromPool();
 		if (sound)
 		{
-			// Pool'dan gelen sese yeni buffer ata
 			sound->setBuffer(*buffer);
 		}
 		else
 		{
-			// SFML 3.x: sf::Sound(const sf::SoundBuffer&) constructor kullan
 			sound = new sf::Sound(*buffer);
 		}
 
-		// Pitch hesapla (SFX_World ise TimeScale'den etkilenir)
 		float finalPitch = pitch;
 		if (type == AudioType::SFX_World)
 		{
 			finalPitch *= mCurrentTimeScale;
 		}
 
-		// Volume hesapla (Master ve tip bazlý volume)
 		float effectiveVolume = CalculateEffectiveVolume(volume, type);
 
 		sound->setPitch(finalPitch);
 		sound->setVolume(effectiveVolume);
 		sound->play();
 
-		// Buffer'ý da saklýyoruz ki AssetManager temizlese bile silinmesin
 		mActiveSounds.push_back({ sound, buffer, type, pitch, volume });
 	}
 
 	void AudioManager::PlayMusic(const std::string& path, AudioType type, float volume, float pitch, bool loop)
 	{
+		std::string copyOfPath = path;
+		mPendingLoopPath = "";
+		mIsPlayingIntro = false;
 		if (mMusic)
 		{
 			mMusic->stop();
 		}
 
 		mMusic = std::make_shared<sf::Music>();
-		std::string fullPath = AssetManager::GetAssetManager().GetAssetRootDirectory() + path;
+		std::string fullPath = AssetManager::GetAssetManager().GetAssetRootDirectory() + copyOfPath;
 		
 		if (mMusic->openFromFile(fullPath))
 		{
@@ -134,14 +127,12 @@ namespace ly
 			mMusicBasePitch = pitch;
 			mMusicBaseVolume = volume;
 
-			// Pitch hesapla
 			float finalPitch = pitch;
 			if (type == AudioType::SFX_World)
 			{
 				finalPitch *= mCurrentTimeScale;
 			}
 
-			// Volume hesapla
 			float effectiveVolume = CalculateEffectiveVolume(volume, type);
 
 			mMusic->setVolume(effectiveVolume);
@@ -175,11 +166,114 @@ namespace ly
 		}
 	}
 
+	void AudioManager::PlayMusicWithIntro(const std::string& introPath, const std::string& loopPath, AudioType type, float volume, float pitch)
+	{
+		PlayMusic(introPath, type, volume, pitch, false);
+		mPendingLoopPath = loopPath;
+		mIsPlayingIntro = true;
+	}
+
+	void AudioManager::FadeToMusicWithIntro(const std::string& introPath, const std::string& loopPath, AudioType type, float volume, float pitch, float fadeDuration)
+	{
+		mNextPendingLoopPath = loopPath;
+		FadeToMusic(introPath, type, volume, pitch, false, fadeDuration);
+	}
+
+	void AudioManager::FadeToMusic(const std::string& path, AudioType type, float volume, float pitch, bool loop, float fadeDuration)
+	{
+		if (mMusic && mMusic->getStatus() != sf::Music::Status::Stopped)
+		{
+			std::string currentPath = mNextMusicPath.empty() ? "" : mNextMusicPath;
+			if(path == currentPath)
+			{
+				return;
+			}
+		}
+
+		mNextMusicPath = path;
+		mNextMusicType = type;
+		mNextMusicPitch = pitch;
+		mNextMusicVolume = volume;
+		mNextMusicLoop = loop;
+
+		mFadeDuration = fadeDuration;
+		mTargetVolume = volume;
+
+		if(!mMusic || mMusic->getStatus() == sf::Music::Status::Stopped)
+		{
+			PlayMusic(path, type, 0.0f, pitch, loop);
+			if(!mNextPendingLoopPath.empty())
+			{
+				mPendingLoopPath = mNextPendingLoopPath;
+				mIsPlayingIntro = true;
+				mNextPendingLoopPath = "";
+			}
+			mFadeState = FadeState::FadingIn;
+			mFadeTimer = 0.0f;
+		}
+		else
+		{
+			mFadeState = FadeState::FadingOut;
+			mFadeTimer = 0.0f;
+		}
+	}
+
+	void AudioManager::Update(float deltaTime)
+	{
+		mFadeTimer += deltaTime;
+
+		float progress = std::min(mFadeTimer / mFadeDuration, 1.0f);
+		if(mFadeState == FadeState::FadingOut)
+		{
+			float newVolume = mMusicBaseVolume * (1.0f - progress);
+			float effectiveVolume = CalculateEffectiveVolume(newVolume, mMusicType);
+			mMusic->setVolume(effectiveVolume);
+			if(progress >= 1.0f)
+			{
+				mMusic->stop();
+				if(!mNextMusicPath.empty())
+				{
+					PlayMusic(mNextMusicPath, mNextMusicType, 0.0f, mNextMusicPitch, mNextMusicLoop);
+					if(!mNextPendingLoopPath.empty())
+					{
+						mPendingLoopPath = mNextPendingLoopPath;
+						mIsPlayingIntro = true;
+						mNextPendingLoopPath = "";
+					}
+					mFadeState = FadeState::FadingIn;
+					mFadeTimer = 0.0f;
+					mNextMusicPath = "";
+				}
+				else
+				{
+					mFadeState = FadeState::None;
+				}
+			}
+		}
+		else if(mFadeState == FadeState::FadingIn)
+		{
+			float newVolume = mTargetVolume * progress;
+			mMusicVolume = mTargetVolume;
+			float effectiveVolume = CalculateEffectiveVolume(newVolume, mMusicType);
+			mMusic->setVolume(effectiveVolume);
+			if(progress >= 1.0f)
+			{
+				mMusicBaseVolume = mTargetVolume;
+				mFadeState = FadeState::None;
+			}
+		}
+		if(mMusic && mIsPlayingIntro && mMusic->getStatus() == sf::Music::Status::Stopped)
+		{
+			PlayMusic(mPendingLoopPath, mMusicType, mMusicBaseVolume, mMusicBasePitch, true);
+			mIsPlayingIntro = false;
+			mPendingLoopPath = "";
+		}
+	}
+
 	void AudioManager::SetWorldTimeScale(float timeScale)
 	{
 		mCurrentTimeScale = timeScale;
 
-		// Müziði güncelle (eðer SFX_World tipindeyse)
 		if (mMusic && mMusic->getStatus() == sf::Music::Status::Playing)
 		{
 			if (mMusicType == AudioType::SFX_World)
@@ -188,7 +282,6 @@ namespace ly
 			}
 		}
 
-		// Aktif sesleri güncelle
 		for (auto& activeSound : mActiveSounds)
 		{
 			if (activeSound.type == AudioType::SFX_World)
@@ -197,7 +290,6 @@ namespace ly
 			}
 		}
 
-		// SoundComponent'lere haber ver
 		onWorldTimeScaleChanged.Broadcast(mCurrentTimeScale);
 	}
 
@@ -224,7 +316,6 @@ namespace ly
 		if (isMenuOpen)
 		{
 			SetWorldTimeScale(0.7f);
-			// Müzik sesini geçici olarak kýs
 			if (mMusic)
 			{
 				mMusic->setVolume(CalculateEffectiveVolume(mMusicBaseVolume, mMusicType) * 0.3f);
@@ -233,7 +324,6 @@ namespace ly
 		else
 		{
 			SetWorldTimeScale(1.0f);
-			// Müzik sesini normale döndür
 			if (mMusic)
 			{
 				mMusic->setVolume(CalculateEffectiveVolume(mMusicBaseVolume, mMusicType));
@@ -243,7 +333,6 @@ namespace ly
 
 	void AudioManager::CleanCycle()
 	{
-		// Bitmiþ sesleri temizle ve pool'a geri ver
 		for (auto iter = mActiveSounds.begin(); iter != mActiveSounds.end();)
 		{
 			if (iter->sound->getStatus() == sf::Sound::Status::Stopped)

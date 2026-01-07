@@ -6,8 +6,8 @@ namespace ly
 {
 	HexagonStage::HexagonStage(World* world):
 		GameStage{world},
-		mSpawnInterval{7.5f},
-		mSpawnGroupAmt{5},
+		mSpawnInterval{5.f},
+		mSpawnGroupAmt{7},
 		mCurrentSpawnCount{0},
 		mMidSpawnLoc{world->GetWindowSize().x/2.f, -100.f}
 	{

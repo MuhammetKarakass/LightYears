@@ -7,13 +7,13 @@ namespace ly
 		float cooldownTime,
 		const sf::Vector2f& localPositionOffset,
 		float localRotationOffset) :
-		Shooter{owner},
-		mLeftShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset + sf::Vector2f{-20.f,-5.f},localRotationOffset-30.f}},
-		mMidShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset,localRotationOffset} },
-		mRightShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset + sf::Vector2f{20.f,-5.f},localRotationOffset+30.f}},
-		mLeftTopLevelShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset + sf::Vector2f{-10.f,-5.f},localRotationOffset-15.f}},
-		mRightTopLevelShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset + sf::Vector2f{+10.f,-5.f},localRotationOffset+15.f}}
+		Shooter{owner, ShootSoundMode::Composite},
+		mLeftShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset + sf::Vector2f{-20.f,-5.f},localRotationOffset-30.f, ShootSoundMode::None}},
+		mMidShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset,localRotationOffset, ShootSoundMode::None} },
+		mRightShooter{ new BulletShooter{owner, bulletDef,cooldownTime ,localPositionOffset + sf::Vector2f{20.f,-5.f},localRotationOffset+30.f, ShootSoundMode::None}}
 	{
+		SetShootSoundProps("SpaceShooterRedux/Bonus/sfx_laser1.ogg", 30.0f, 0.9f);
+		UpdateSoundInterval();
 	}
 
 	void ThreeWayShooter::IncrementLevel(int amt)
@@ -23,30 +23,33 @@ namespace ly
 		mLeftShooter->IncrementLevel(amt);
 		mMidShooter->IncrementLevel(amt);
 		mRightShooter->IncrementLevel(amt);
-		mLeftTopLevelShooter->IncrementLevel(amt);
-		mRightTopLevelShooter->IncrementLevel(amt);
-
+		UpdateSoundInterval();
 	}
+
 	void ThreeWayShooter::SetCurrentLevel(int level)
 	{
 		Shooter::SetCurrentLevel(level);
+		
 		mLeftShooter->SetCurrentLevel(level);
 		mMidShooter->SetCurrentLevel(level);
 		mRightShooter->SetCurrentLevel(level);
-		mLeftTopLevelShooter->SetCurrentLevel(level);
-		mRightTopLevelShooter->SetCurrentLevel(level);
+
+		UpdateSoundInterval();
 	}
+
+	void ThreeWayShooter::UpdateSoundInterval()
+	{
+		float effectiveCooldown = mMidShooter->GetCooldownTime() / GetCooldownMultiplier();
+		SetMinSoundInterval(effectiveCooldown);
+	}
+
 	void ThreeWayShooter::ShootImp()
 	{
-
 		mLeftShooter->Shoot();
 		mMidShooter->Shoot();
 		mRightShooter->Shoot();
 
-		if(GetCurrentLevel()==GetMaxLevel())
-		{
-			mLeftTopLevelShooter->Shoot();
-			mRightTopLevelShooter->Shoot();
-		}
+		if (GetOwner()->GetCollisionLayer() == CollisionLayer::Player)
+		PlayShootSound();
 	}
 }

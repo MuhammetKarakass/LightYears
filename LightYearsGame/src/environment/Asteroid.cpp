@@ -14,27 +14,19 @@ namespace ly
 	{
 		mTexturePaths = { "SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png",
 			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big2.png",
-			"SpaceShooterRedux/PNG/Meteors/meteorBrown_med1.png",
-			"SpaceShooterRedux/PNG/Meteors/meteorGrey_big1.png",
-			"SpaceShooterRedux/PNG/Meteors/meteorGrey_med1.png" };
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big3.png",
+			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big4.png" };
 
 		if (!mTexturePaths.empty())
 		{
 			auto randIndex = RandRange(0, (int)mTexturePaths.size() - 1);
 			SetTexture(mTexturePaths[randIndex]);
-		}
-		float randomScale = RandRange(0.7f, 1.3f);
-		if (auto& sprite = GetSprite())
-		{
-			sprite->setScale({ randomScale,randomScale });
-		}
-
+		}	
 		mRewards = 
 		{
-			{CreateRewardHealth, 0.35f},
-			{CreateRewardThreeWayShooter, 0.2f},
-			{CreateRewardFrontalWiper, 0.15f},
-			{CreateRewardLife, 0.1f}
+			{CreateRewardHealth, 0.4f},
+			{CreateRewardThreeWayShooter, 0.25f},
+			{CreateRewardFrontalWiper, 0.2f}
 		};
 	}
 	void Asteroid::BeginPlay()
@@ -59,6 +51,13 @@ namespace ly
 	{
 		SetCollisionLayer(CollisionLayer::Enemy);
 		SetCollisionMask(CollisionLayer::PlayerBullet | CollisionLayer::Player);
+	}
+	void Asteroid::SetAsteroidScale(float scale)
+	{
+		if (auto& sprite = GetSprite())
+		{
+			sprite->setScale({ scale, scale });
+		}
 	}
 	void Asteroid::Tick(float deltaTime)
 	{
@@ -135,7 +134,6 @@ namespace ly
 			currentWeight += reward.weight;
 			if (randValue <= currentWeight)
 			{
-				// Spawn this reward
 				weak_ptr<Reward> spawnedReward = reward.factory(GetWorld());
 				if (auto rewardPtr = spawnedReward.lock())
 				{

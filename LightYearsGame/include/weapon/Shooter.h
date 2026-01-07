@@ -7,6 +7,13 @@
 
 namespace ly
 {
+	enum class ShootSoundMode
+	{
+		None,
+		Single,
+		Composite
+	};
+
 	class Actor;
 	class Shooter
 	{
@@ -32,10 +39,13 @@ namespace ly
 		float GetLocalRotationOffset() const { return mLocalRotationOffset; };
 
 	protected:
-		Shooter(Actor* owner);
+		Shooter(Actor* owner, ShootSoundMode soundMode = ShootSoundMode::Single);
 
 		void PlayShootSound();
 		void SetShootSoundProps(const std::string& soundPath, float volume, float pitch);
+		void SetMinSoundInterval(float interval) { mMinSoundInterval = interval; }
+
+		ShootSoundMode mSoundMode;
 
 	private:
 		Actor* mOwner;
@@ -51,5 +61,7 @@ namespace ly
 		float mShootSoundVolume;
 		float mShootSoundPitch;
 
+		sf::Clock mSoundClock;
+		float mMinSoundInterval;
 	};
 }

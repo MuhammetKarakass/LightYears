@@ -7,7 +7,7 @@ namespace ly
 	UFOStage::UFOStage(World* world):
 		GameStage{world},
 		mSpawnInterval{{2.5f,3.5f}},
-		mSpawnAmt{16},
+		mSpawnAmt{24},
 		mCurrentSpawnCount{0}
 	{
 	}

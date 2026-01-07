@@ -53,7 +53,7 @@ namespace ly
 	}
 	void LevelOneBossStage::BossDestroyed(Actor* bossActor)
 	{
-		StageFinished();
+		FinishStage();
 	}
 
 	void LevelOneBossStage::ArrivedLocation()

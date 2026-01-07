@@ -79,8 +79,14 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/LevelOneBossStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/LevelOneBossStage.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/InfiniteStage.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/InfiniteStage.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/environment/Asteroid.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/environment/Asteroid.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/environment/AsteroidSpawner.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/environment/AsteroidSpawner.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Reward.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp

@@ -7,21 +7,18 @@
 namespace ly
 {
 	GameHUD::GameHUD() :
-		mFrameRateText{ std::in_place, "Frame Rate:" },
 		mPlayerHealthBar{ std::in_place },
 		mPlayerLifeIcon{ std::in_place, "SpaceShooterRedux/PNG/pickups/playerLife1_blue.png" },
 		mPlayerLifeText{ std::in_place, " " },
 		mPlayerScoreIcon{ std::in_place, "SpaceShooterRedux/PNG/Power-ups/star_gold.png" },
 		mPlayerScoreText{ std::in_place, " " },
 		mTopCenterText{ std::in_place, "", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf" },
-		//mCenterNotificationText{ std::in_place, "SURVIVE!","SpaceShooterRedux/Bonus/OrbitronBlack.ttf" },
 		mWidgetSpacingX{ 10.f }
 	{
-		mFrameRateText->SetTextSize(20);
 		mPlayerLifeText->SetTextSize(20);
 		mPlayerScoreText->SetTextSize(20);
 		mTopCenterText->SetTextSize(20);
-		mTopCenterText->SetVisibility(false); // Baþlangýçta gizli
+		mTopCenterText->SetVisibility(false);
 		mTopCenterText->SetFillColor(sf::Color::Red);
 
 		/*mCenterNotificationText->SetTextSize(90);
@@ -34,9 +31,6 @@ namespace ly
 	void GameHUD::Draw(sf::RenderWindow& windowRef)
 	{
 		mWindowRef = &windowRef;
-
-		if (mFrameRateText.has_value())
-			mFrameRateText->NativeDraw(windowRef);
 
 		if (mPlayerHealthBar.has_value())
 			mPlayerHealthBar->NativeDraw(windowRef);
@@ -76,14 +70,6 @@ namespace ly
 		static int lastFrameRate = 0;
 		int frameRate = int(1.f / deltaTime);
 
-		if (mFrameRateText.has_value() && frameRate != lastFrameRate)
-		{
-			lastFrameRate = frameRate;
-
-			static char buffer[32];
-			snprintf(buffer, sizeof(buffer), "Frame Rate: %d", frameRate);
-			mFrameRateText->SetString(buffer);
-		}
 
 		if (!mCenterNotificationText.expired() && mCenterNotificationText.lock()->IsAnimating())
 			mCenterNotificationText.lock()->NativeTick(deltaTime);
@@ -97,8 +83,6 @@ namespace ly
 		if(mBossNameText.expired() == false && mBossNameText.lock()->IsAnimating())
 			mBossNameText.lock()->NativeTick(deltaTime);
 
-
-		//HUD::Tick(deltaTime);
 	}
 
 	bool GameHUD::HandleEvent(const sf::Event& event)
@@ -141,26 +125,14 @@ namespace ly
 		nextWidgetPos += sf::Vector2f{ mPlayerScoreIcon->GetBound().size.x + mWidgetSpacingX,+2.f };
 		mPlayerScoreText->SetWidgetLocation(nextWidgetPos);
 
-		// Chaos Timer'ý ekranýn ortasýnda, üstte konumlandýr
 		mTopCenterText->SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, 0.f });
 
-		//mCenterNotificationText->SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f - 50.f });
 
 
 		RefreshHealthBar();
 		ConnectStatus();
 	}
 
-
-	void GameHUD::ShowNotification(const std::string& newText, float fadeIn, float hold, float fadeOut)
-	{
-		/*if (mCenterNotificationText.has_value())
-		{
-			mCenterNotificationText->SetString(newText);
-			mCenterNotificationText->SetVisibility(true);
-			mCenterNotificationText->StartFadeAnimation(fadeIn, hold, fadeOut);
-		}*/
-	}
 
 	void GameHUD::RefreshHealthBar()
 	{
@@ -296,7 +268,10 @@ namespace ly
 
 	void GameHUD::RemoveBossHealthBar(Actor* actor)
 	{
-		RemoveWidget(mBossHealthBar);
+		mBossHealthBar.lock()->StartFadeAnimation(0.f, 0.f, 2.f);
+		mBossNameText.lock()->StartFadeAnimation(0.f, 0.f, 2.f);
+		mBossHealthBar.lock()->SetLifeTime(2.5f);
+		mBossNameText.lock()->SetLifeTime(2.5f);
 	}
 
 }

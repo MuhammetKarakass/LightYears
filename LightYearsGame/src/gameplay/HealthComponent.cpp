@@ -60,7 +60,6 @@ namespace ly
 	
 	void HealthComponent::HealthEmpty()
 	{
-		// Ölüm event'ini tetikle (genelde Destroy() çaðrýlýr)
 		onHealthEmpty.Broadcast();
 	}
 }

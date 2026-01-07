@@ -181,7 +181,6 @@ namespace ly
 		float intensity, sf::Vector2f size, sf::Vector2f offset, bool shouldStretch,
 		bool useComplexTrail, float taperAmount, float edgeSoftness, float shapeRoundness, LightSpace lightSpace)
 	{
-		// Otomatik index ekle
 		GameplayTag finalTag = tag.WithIndex(GetNextLightIndex(tag));
 		
 		LightData lightData;

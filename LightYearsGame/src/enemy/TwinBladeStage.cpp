@@ -5,10 +5,10 @@
 namespace ly {
 	TwinBladeStage::TwinBladeStage(World* world):
 		GameStage(world),
-		mSpawnInterval{ {1.f,3.f} },
+		mSpawnInterval{ {.75f,1.5f} },
 		mSpawnLocations{},
 		mSpawnTimerHandle{},
-		mSpawnCount{ 10 },
+		mSpawnCount{ 30 },
 		mCurrentSpawnCount{ 0 },
 		mLastSpawnLoc{0.f, 0.f}
 	{
@@ -17,7 +17,6 @@ namespace ly {
 	void TwinBladeStage::BeginStage()
 	{
 		AddSpawnLocations();
-		// Ýlk spawn için rastgele interval
 		SpawnTwinBlade();
 	}
 	void TwinBladeStage::TickStage(float deltaTime)

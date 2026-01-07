@@ -39,11 +39,11 @@ namespace ly
 	{
 		if(mShooter)
 		{
-			mShooter->Shoot();  // Mermi atma iþlemi
+			mShooter->Shoot();
 		}
 		else
 		{
-			LOG("Vanguard mShooter is not initialized!");  // Hata mesajý
+			LOG("Vanguard mShooter is not initialized!");
 		}
 	}
 }

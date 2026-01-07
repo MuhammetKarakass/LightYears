@@ -46,7 +46,7 @@ namespace ly
 		{
 			otherActor->ApplyDamage(GetDamage());
 			LOG("damage: %f", GetDamage());
-			Destroy(); // Çarpýþma sonrasý mermi yok olur
+			Destroy();
 		}
 	}
 
@@ -68,16 +68,13 @@ namespace ly
 			return;
 		}*/
 
-		// OWNER'IN LAYER'INA GÖRE BULLET'IN COLLISION SETUP'I
 		switch (mOwner->GetCollisionLayer())
 		{
 		case CollisionLayer::Player:
-			// Player bullet: düþmanlarla çarpýþýr
 			SetCollisionLayer(CollisionLayer::PlayerBullet);
 			SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet);
 			break;
 		case CollisionLayer::Enemy:
-			// Enemy bullet: player ile çarpýþýr
 			SetCollisionLayer(CollisionLayer::EnemyBullet);
 			SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
 			break;

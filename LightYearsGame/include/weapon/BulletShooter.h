@@ -14,7 +14,8 @@ namespace ly
 			const BulletDefinition& bulletDef,
 			float cooldownTime = 0.5f,
 			const sf::Vector2f& localPositionOffset = {0.f,0.f},
-			float localRotationOffset= 0.f
+			float localRotationOffset= 0.f,
+			ShootSoundMode soundMode = ShootSoundMode::Single
 		);
 
 		virtual bool IsOnCooldown() const override;
@@ -30,8 +31,8 @@ namespace ly
 		virtual void IncrementLevel(int amt = 1) override;
 
 	protected:
-		// Allow derived classes to restart cooldown
 		void RestartCooldown();
+		void UpdateSoundInterval();
 
 	private:
 		virtual void ShootImp() override;
@@ -39,6 +40,5 @@ namespace ly
 		float mCooldownTime;
 
 		BulletDefinition mBulletDef;
-
 	};
 }

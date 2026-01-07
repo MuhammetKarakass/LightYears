@@ -3,7 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <framework/TimerManager.h>
 #include <gameplay/GameStage.h>
-#include <utility> // for std::pair
+#include <utility> 
 
 namespace ly
 {
@@ -27,7 +27,7 @@ namespace ly
 		int mSpawnAmt;
 		int mCurrentSpawnCount;
 
-		TimerHandle mSpawnTimerHandlePair;   // Çift spawn için timer
-		TimerHandle mSpawnTimerHandleSecond; // Ýkinci UFO için timer
+		TimerHandle mSpawnTimerHandlePair;
+		TimerHandle mSpawnTimerHandleSecond;
 	};
 }

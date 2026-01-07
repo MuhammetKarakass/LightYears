@@ -7,7 +7,18 @@
 #include "engineConfigs/EngineStructs.h"
 #include "player/Reward.h"
 
+enum class WeaponType
+{
+	Default,
+	ThreeWay,
+	FrontalWhiper,
+};
 
+struct WeaponState
+{
+	WeaponType type = WeaponType::Default;
+	int level = 1;
+};
 
 struct BulletDefinition
 {

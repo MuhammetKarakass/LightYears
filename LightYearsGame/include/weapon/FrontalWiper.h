@@ -17,14 +17,15 @@ namespace ly
 
 		virtual void IncrementLevel(int amt = 1) override;
 		virtual void SetCurrentLevel(int level) override;
+
 	private:
 		float mWidth;
 		unique_ptr<BulletShooter> mShooter1;
 		unique_ptr<BulletShooter> mShooter2;
 		unique_ptr<BulletShooter> mShooter3;
 		unique_ptr<BulletShooter> mShooter4;
-		unique_ptr<BulletShooter> mShooter5;
-		unique_ptr<BulletShooter> mShooter6;
+		
+		void UpdateSoundInterval();
 		virtual void ShootImp() override;
 	};
 }

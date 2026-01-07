@@ -11,7 +11,7 @@
 #include <functional>
 
 // =====================================================
-// COLLISION LAYER SYSTEM - Çarpýþma Katman Sistemi (Bit mask)
+// COLLISION LAYER SYSTEM
 // =====================================================
 
 enum class AudioType
@@ -97,14 +97,12 @@ namespace ly
             return *this;
         }
 
-        // Bu tag'in base'i verilen tag ile eþleþiyor mu?
         bool MatchesBase(const GameplayTag& baseTag) const
         {
             return GetBaseTag() == baseTag;
         }
     };
 
-    // Hash specialization - unordered_map'te key olarak kullanmak için
     struct GameplayTagHash
     {
         size_t operator()(const GameplayTag& tag) const

@@ -4,17 +4,31 @@
 #include "enemy/Hexagon.h"
 #include "enemy/UFO.h"
 #include <framework/World.h>
+#include "environment/AsteroidSpawner.h"
 
 namespace ly
 {
 	ChaosStage::ChaosStage(World* world) :
 		GameStage{ world },
-		mSpawnInterval{ 3.5f },
-		mSpawnIntervalDecrement{ 0.125f },
+		mSpawnInterval{ 3.f },
+		mSpawnIntervalDecrement{ 0.05f },
 		mChaosTimer{ 60.f},
 		mDifficultyLevel{ 1 },
 		mSpawnAmt{1},
 		mSpawnMinDistanceTop{75.f},
+		mMaxAsteroidSpawnCount{ 1 },
+		mAsteroidSpawningActive{false},
+		mAsteroidSpawner{std::make_shared<AsteroidSpawner>(world,
+			AsteroidSpawnerConfig
+			{
+				{7.5f,15.f},
+				{150.f,250.f},
+				{.8f,1.f},
+				{20.f,50.f},
+				{5.f,15.f},
+				0.5f,
+				true,
+				mMaxAsteroidSpawnCount }) },
 		mReservedTopSpawnLocs{}
 	{
 	}
@@ -172,21 +186,23 @@ namespace ly
 	void ChaosStage::TotalChaos()
 	{
 		if (!mTotalChaosTimerActive)
+		{
 			onTotalChaosStarted.Broadcast(.5f, mChaosTimer, .5f);
+			mAsteroidSpawner->SetAsteroidCount(RandRange(2, mMaxAsteroidSpawnCount));
+		}
 		mTotalChaosTimerActive = true;
 		if (IsStageFinished() || !mIsTotalChaosActive)
 		{
 			return;
 		}
-
 		mReservedTopSpawnLocs.clear();
 
 		int batchSize = RandRange(1, 2);
 
 		for (int i = 0; i < batchSize; ++i)
 		{
-			int enemyType = RandRange(1, 4); // 1: Vanguard, 2: TwinBlade, 3: Hexagon, 4: UFO
-			float microDelay = RandRange(0.1f, 0.4f);
+			int enemyType = RandRange(1, 4);
+			float microDelay = RandRange(0.4f, 0.8f);
 
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
@@ -197,7 +213,7 @@ namespace ly
 				false
 			);
 		}
-		float nextBatchDelay = RandRange(1.f, 1.75f);
+		float nextBatchDelay = RandRange(1.f, 1.3f);
 		mTotalChaosTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
 			&ChaosStage::TotalChaos,
@@ -238,16 +254,25 @@ namespace ly
 	void ChaosStage::IncreaseDifficulty()
 	{
 		++mDifficultyLevel;
-		LOG("ChaosStage difficulty increased to: %d", mDifficultyLevel);
 		
 		if(mDifficultyLevel % 3 == 0)
 		{
 			++mSpawnAmt;
+			if (mAsteroidSpawningActive)
+			{
+				++mMaxAsteroidSpawnCount;
+				mAsteroidSpawner->SetAsteroidCount(RandRange(1, mMaxAsteroidSpawnCount));
+			}
+			if (!mAsteroidSpawningActive)
+			{
+				mAsteroidSpawner->StartSpawning();
+				mAsteroidSpawningActive = true;
+			}
 		}
 		
 		mSpawnInterval -= mSpawnIntervalDecrement;
 
-		if (mDifficultyLevel == 2 && !mIsTotalChaosActive)
+		if (mDifficultyLevel == 12 && !mIsTotalChaosActive)
 		{
 			mIsTotalChaosActive = true;
 			onNotification.Broadcast(std::string{ "SURVIVE!" },
@@ -258,7 +283,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				&ChaosStage::TotalChaos,
-				15.f,
+				10.f,
 				false
 			);
 		}
@@ -291,7 +316,6 @@ namespace ly
 		{
 			candidateX = RandRange(edgePadding, static_cast<float>(windowSize.x) - edgePadding);
 
-			// 2. ADIM: Sadece mesafe kontrolü yap
 			isSafe = true;
 			for (float reservedX : mReservedTopSpawnLocs)
 			{

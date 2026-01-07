@@ -77,6 +77,7 @@ namespace ly
 
 		}
 
+		AudioManager::GetAudioManager().Update(deltaTime);
 		if (mCleanCycleClock.getElapsedTime().asSeconds() > mCleanCycleTime)
 		{
 			mCleanCycleClock.restart();

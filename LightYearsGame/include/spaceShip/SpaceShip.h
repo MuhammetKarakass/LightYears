@@ -31,7 +31,6 @@ namespace ly
 		bool IsInvulnerable() const { return mInvulnerability; }
 		void SetInvulnerability(bool invuln) { mInvulnerability = invuln; }
 
-		// Derived types override to set faction/layers
 		virtual void SetupCollisionLayers();
 
 		List<GameplayTag> mGameplayTags;

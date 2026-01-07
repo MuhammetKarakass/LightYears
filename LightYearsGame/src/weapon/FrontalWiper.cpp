@@ -8,17 +8,15 @@ namespace ly
 		const sf::Vector2f& localPositionOffset,
 		float localRotationOffset,
 		float width)
-		: Shooter{ owner },
+		: Shooter{ owner, ShootSoundMode::Composite },
 		mWidth{ width },
-		mShooter1{new BulletShooter {owner,bulletDef,cooldownTime,{localPositionOffset.x+width, localPositionOffset.y-15.f}, 4.5f}},
-		mShooter2{new BulletShooter {owner,bulletDef,cooldownTime,{localPositionOffset.x+width/1.5f, localPositionOffset.y-5.f}, 3.f}},
-		mShooter3{new BulletShooter {owner,bulletDef,cooldownTime,{localPositionOffset.x-width/1.5f, localPositionOffset.y-5.f}, -3.f}},
-		mShooter4{new BulletShooter {owner,bulletDef,cooldownTime,{localPositionOffset.x-width, localPositionOffset.y-15.f}, -4.5f}},
-		mShooter5{new BulletShooter {owner,bulletDef,cooldownTime,{localPositionOffset.x+width/2.f, localPositionOffset.y}, 1.5f}},
-		mShooter6{new BulletShooter {owner,bulletDef,cooldownTime,{localPositionOffset.x-width/2.f, localPositionOffset.y}, -1.5f}}
-
+		mShooter1{new BulletShooter {owner, bulletDef, cooldownTime, {localPositionOffset.x+width, localPositionOffset.y-15.f}, 4.5f, ShootSoundMode::None}},
+		mShooter2{new BulletShooter {owner, bulletDef, cooldownTime, {localPositionOffset.x+width/1.5f, localPositionOffset.y-5.f}, 3.f, ShootSoundMode::None}},
+		mShooter3{new BulletShooter {owner, bulletDef, cooldownTime, {localPositionOffset.x-width/1.5f, localPositionOffset.y-5.f}, -3.f, ShootSoundMode::None}},
+		mShooter4{new BulletShooter {owner, bulletDef, cooldownTime, {localPositionOffset.x-width, localPositionOffset.y-15.f}, -4.5f, ShootSoundMode::None}}
 	{
-
+		SetShootSoundProps("SpaceShooterRedux/Bonus/sfx_laser1.ogg", 40.0f, 0.8f);
+		UpdateSoundInterval();
 	}
 
 	void FrontalWiper::IncrementLevel(int amt)
@@ -29,19 +27,26 @@ namespace ly
 		mShooter2->IncrementLevel(amt);
 		mShooter3->IncrementLevel(amt);
 		mShooter4->IncrementLevel(amt);
-		mShooter5->IncrementLevel(amt);
-		mShooter6->IncrementLevel(amt);
+
+		UpdateSoundInterval();
 	}
 
 	void FrontalWiper::SetCurrentLevel(int level)
 	{
 		Shooter::SetCurrentLevel(level);
+
 		mShooter1->SetCurrentLevel(level);
 		mShooter2->SetCurrentLevel(level);
 		mShooter3->SetCurrentLevel(level);
 		mShooter4->SetCurrentLevel(level);
-		mShooter5->SetCurrentLevel(level);
-		mShooter6->SetCurrentLevel(level);
+
+		UpdateSoundInterval();
+	}
+
+	void FrontalWiper::UpdateSoundInterval()
+	{
+		float effectiveCooldown = mShooter1->GetCooldownTime() / GetCooldownMultiplier();
+		SetMinSoundInterval(effectiveCooldown);
 	}
 
 	void FrontalWiper::ShootImp()
@@ -51,10 +56,6 @@ namespace ly
 		mShooter3->Shoot();
 		mShooter4->Shoot();
 
-		if(GetCurrentLevel()==GetMaxLevel())
-		{
-			mShooter5->Shoot();
-			mShooter6->Shoot();
-		}
+		PlayShootSound();
 	}
 }

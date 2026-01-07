@@ -17,11 +17,9 @@ namespace ly
 		
 		float GetCollisionDamage() const { return mCollisionDamage; }
 
-		// Event: Enemy defeated, score awarded
 		Delegate<unsigned int> onScoreAwarded;
 
 	protected:
-		// Derived classes override this to provide custom reward tables
 		void SetCollisionDamage(float damage) { mCollisionDamage = damage; }
 
 	private:

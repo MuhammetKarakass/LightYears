@@ -3,12 +3,42 @@
 
 namespace ly
 {
+	const ShipDefinition LevelOneBoss::mBossShipDef(
+		"SpaceShooterRedux/PNG/Enemies/boss.png",
+		4000.f,
+		{ 100.f,0.f },
+		200.f,
+		300,
+		(int)ly::ExplosionType::Boss,
+		{
+			EngineMount{ {0.f,-110.f},GameData::Engine_Red_PointLightDef },
+
+		},
+		GameData::Laser_Red_BulletDef,
+		true,
+		{ 0.f,100.f },
+		0.5f,
+		LevelOneBoss::GetDefaultRewards()
+	);
+
 	LevelOneBoss::LevelOneBoss(World* world)
 		: EnemySpaceShip(world,mBossShipDef),
-		mSpeed(mBossShipDef.speed.y),
+		mSpeed(mBossShipDef.speed.x),
 		mSwitchDistanceToEdge(100.f),
 		mStage{1},
 		mCanShoot{ false },
+		mAsteroidSpawner{ shared_ptr<AsteroidSpawner>(new AsteroidSpawner(world,
+			AsteroidSpawnerConfig
+			{
+				{7.5f,15.f},
+				{250.f,350.f},
+				{.85f,1.15f},
+				{30.f,50.f},
+				{40.f,60.f},
+				.75f,
+				true,
+				1
+			})) },
 		mBaseShooterLeft{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{-50.f,50.f}) },
 		mBaseShooterRight{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{50.f,50.f}) },
 		mThreeWayShooter{ std::make_unique<ThreeWayShooter>(this,GameData::Laser_Red_BulletDef,2.f,sf::Vector2f{0.f,100.f}) },
@@ -48,6 +78,10 @@ namespace ly
 		SetExplosionType(ExplosionType::Boss);
 		SetScoreAmt(1000);
 		SetCollisionDamage(200.f);
+		for (const auto& mount : mBossShipDef.engineMounts)
+		{
+			AddLight(GameTags::Ship::Engine_Main, mount.pointLightDef, mount.offset);
+		}
 		
 	}
 	void LevelOneBoss::Tick(float deltaTime)
@@ -60,7 +94,7 @@ namespace ly
 	{
 		EnemySpaceShip::BeginPlay();
 		HealthComponent& healthComp = GetHealthComponent();
-		healthComp.SetInitialHealth(3000.f, 3000.f);
+		healthComp.SetInitialHealth(mBossShipDef.health,mBossShipDef.health);
 		healthComp.onHealthChanged.BindAction(GetWeakPtr(), &LevelOneBoss::BossHealthChanged);
 	}
 	void LevelOneBoss::ApplyDamage(float amt)
@@ -95,6 +129,10 @@ namespace ly
 
 		ShootBaseShooters();
 		ShootThreeWayShooter();
+		if(mStage>=2)
+		{
+			
+		}
 		if(mStage>=3)
 		{
 			ShootFrontalWipers();
@@ -123,7 +161,6 @@ namespace ly
 		{
 			mBaseShooterRight->Shoot();
 		}
-		mFan->Shoot();
 	}
 
 	void LevelOneBoss::ShootThreeWayShooter()
@@ -162,15 +199,31 @@ namespace ly
 
 		if(healthPercent <0.75f && healthPercent >=0.5f)
 		{
-			SetStage(2);
+			if(flag==false){
+				SetStage(2);
+				mAsteroidSpawner->StartSpawning();
+				mSpeed = mSpeed * 1.5f;
+				flag = true;
+			}
 		}
 		else if (healthPercent < 0.5f && healthPercent >= 0.25f)
 		{
-			SetStage(3);
+			if(flag)
+			{
+				SetStage(3);
+				mSpeed = mSpeed * 1.5f;
+				mAsteroidSpawner->SetSpawnTimerRange(2.5f, 7.5f);
+				flag = false;
+			}
+
 		}
 		else if (healthPercent < 0.25f)
 		{
-			SetStage(4);
+			if(flag==false){
+				SetStage(4);
+				mSpeed = mSpeed * 1.5f;
+				flag = true;
+			}
 		}
 	}
 

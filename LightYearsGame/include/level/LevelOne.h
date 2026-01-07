@@ -14,6 +14,7 @@ namespace ly
 	class LevelOneBoss;
 	class BackGroundActor;
 	class BackgroundLayer;
+	class InfiniteStage;
 	class LevelOne : public GameLevel
 	{
 
@@ -38,11 +39,16 @@ namespace ly
 		void PlayerShipDestroyed(Actor* destroyedActor);
 		void ConnectChaosStageToHUD();
 		void ConnectTheBossStageToHUD();
+		void ConnectInfiniteStageToHUD();
 		void OnBossSpawned(LevelOneBoss* boss);
 		void SpawnCosmetics();
 
+		void OnBossStageStarted();
+		void OnBossDefeated(Actor* actor);
+
 		weak_ptr<ChaosStage> mChaosStage;
 		weak_ptr<LevelOneBossStage> mBossStage;
+		weak_ptr<InfiniteStage> mInfStage;
 		weak_ptr<BackGroundActor> mBackgroundActor;
 		weak_ptr<BackgroundLayer> mPlanetsLayer;
 		weak_ptr<BackgroundLayer> mMeteorsLayer;

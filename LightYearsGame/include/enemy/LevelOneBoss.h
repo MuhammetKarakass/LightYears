@@ -6,9 +6,11 @@
 #include "weapon/FrontalWiper.h"
 #include "weapon/bulletShooter/MultiShooter.h"
 #include "weapon/bulletShooter/ShooterPresets.h"
+#include "environment/AsteroidSpawner.h"
 
 namespace ly
 {
+
 	class LevelOneBoss : public EnemySpaceShip
 	{
 	public:
@@ -36,6 +38,7 @@ namespace ly
 		float mSwitchDistanceToEdge;
 		int mStage;
 		bool mCanShoot;
+		bool flag = false;
 
 		unique_ptr<BulletShooter> mBaseShooterLeft;
 		unique_ptr<BulletShooter> mBaseShooterRight;
@@ -47,22 +50,8 @@ namespace ly
 		unique_ptr<MultiShooter> mFan;
 		unique_ptr<MultiShooter> mDual;
 
-		ShipDefinition mBossShipDef = ShipDefinition(
-			"SpaceShooterRedux/PNG/Enemies/boss.png",
-			3000.f,
-			{ 100.f,0.f },
-			200.f,
-			300,
-			(int)ly::ExplosionType::Boss,
-			{
-				EngineMount{ {-80.f,30.f},GameData::Engine_Red_PointLightDef },
-				EngineMount{ {80.f,30.f},GameData::Engine_Red_PointLightDef }
-			},
-			GameData::Laser_Red_BulletDef,
-			true,
-			{ 0.f,100.f },
-			0.5f,
-			LevelOneBoss::GetDefaultRewards()
-		);
+		static const ShipDefinition mBossShipDef;
+
+		shared_ptr<AsteroidSpawner> mAsteroidSpawner;
 	};
 }

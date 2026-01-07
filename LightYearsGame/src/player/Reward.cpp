@@ -5,6 +5,7 @@
 #include <framework/World.h>
 #include "player/PlayerManager.h"
 #include "gameConfigs/GameplayConfig.h"
+#include "gameConfigs/GameplayStructs.h"
 
 
 namespace ly
@@ -84,14 +85,20 @@ namespace ly
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			player->SetShooter(std::make_unique<ThreeWayShooter>(player, GameData::Laser_Blue_BulletDef, 0.4f, sf::Vector2f{ 0.f,50.f }));
+			player->SetShooter(
+				std::make_unique<ThreeWayShooter>(player, GameData::Laser_Blue_BulletDef, 0.4f, sf::Vector2f{ 0.f, 50.f }),
+				WeaponType::ThreeWay
+			);
 		}
 	}
 	void RewardFrontalWiper(PlayerSpaceShip* player)
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			player->SetShooter(std::make_unique<FrontalWiper>(player, GameData::Laser_Blue_BulletDef, 0.5f, sf::Vector2f{ 0.f,50.f }));
+			player->SetShooter(
+				std::make_unique<FrontalWiper>(player, GameData::Laser_Blue_BulletDef, 0.5f, sf::Vector2f{ 0.f, 50.f }),
+				WeaponType::FrontalWhiper
+			);
 		}
 	}
 	void RewardLife(PlayerSpaceShip* player)

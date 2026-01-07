@@ -10,14 +10,20 @@ namespace ly
 		const BulletDefinition& bulletDef,
 		float cooldownTime,
 		const sf::Vector2f& localPositionOffset,
-		float localRotationOffset
+		float localRotationOffset,
+		ShootSoundMode soundMode
 		)
-		: Shooter{ owner },
+		: Shooter{ owner, soundMode },
 		mCooldownClock{},
 		mCooldownTime{ cooldownTime },
 		mBulletDef{ bulletDef }
 	{
-		SetShootSoundProps("SpaceShooterRedux/Bonus/sfx_laser1.ogg", 20.0f, 1.f);
+		if (soundMode == ShootSoundMode::Single)
+		{
+			SetShootSoundProps("SpaceShooterRedux/Bonus/sfx_laser1.ogg", 20.0f, 1.f);
+			UpdateSoundInterval();
+		}
+		
 		SetLocalPositionOffset(localPositionOffset);
 		SetLocalRotationOffset(localRotationOffset);
 	}
@@ -45,16 +51,24 @@ namespace ly
 	void BulletShooter::SetCooldownTime(float cooldownTime)
 	{
 		mCooldownTime = cooldownTime;
+		UpdateSoundInterval();
 	}
 
 	void BulletShooter::IncrementLevel(int amt)
 	{
 		Shooter::IncrementLevel(amt);
+		UpdateSoundInterval();
 	}
 
 	void BulletShooter::RestartCooldown()
 	{
 		mCooldownClock.restart();
+	}
+
+	void BulletShooter::UpdateSoundInterval()
+	{
+		float effectiveCooldown = mCooldownTime / GetCooldownMultiplier();
+		SetMinSoundInterval(effectiveCooldown);
 	}
 	
 	void BulletShooter::ShootImp()
@@ -75,6 +89,14 @@ namespace ly
 
 			bullet->SetActorLocation(worldMuzzlePos);
 			bullet->SetActorRotation(GetOwner()->GetActorRotation() + GetLocalRotationOffset());
+
+			if (mSoundMode == ShootSoundMode::Single)
+			{
+				if (GetOwner()->GetCollisionLayer() == CollisionLayer::Player)
+				{
+					PlayShootSound();
+				}
+			}
 		}
 	}
 }

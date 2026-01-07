@@ -50,8 +50,8 @@ struct BackgroundLayerDefinition
 {
 	std::string texturePath;
 	bool hasLight;
-	PointLightDefinition lightDef; // Iþýk ayarlarýný buradan alacaðýz
-	float lightScaleRatio;         // Gezegen boyutuna göre ýþýk oraný
+	PointLightDefinition lightDef;
+	float lightScaleRatio;
 
 	BackgroundLayerDefinition(const std::string& path, const PointLightDefinition& def, float scaleRatio = 1.3f, bool hasLight = true)
 		: texturePath(path), hasLight(hasLight), lightDef(def), lightScaleRatio(scaleRatio)

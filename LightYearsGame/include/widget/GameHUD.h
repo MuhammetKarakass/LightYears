@@ -20,8 +20,6 @@ namespace ly
 
 		void ShowDynamicNotification(const std::string& newText, float fadeIn, float hold, float fadeOut,const sf::Vector2f& location, float size, sf::Color color = sf::Color::Red);
 
-		void ShowNotification(const std::string& newText, float fadeIn, float hold, float fadeOut);
-
 		void ShowTimer(float fadeIn, float hold, float fadeOut);
 		void UpdateTimer(float timeLeft);
 		void TimerFinished();
@@ -39,7 +37,6 @@ namespace ly
 		void PlayerLifeUpdated(int amt);
 		void PlayerScoreUpdated(int amt);
 
-		std::optional<TextWidget> mFrameRateText;
 		std::optional<ValueGauge> mPlayerHealthBar;
 
 		std::optional<ImageWidget> mPlayerLifeIcon;

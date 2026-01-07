@@ -10,18 +10,15 @@
 #include <gameplay/WaitStage.h>
 #include "player/PlayerManager.h"
 #include "widget/GameHUD.h"
-#include "enemy/EnemySpaceShip.h"
 #include "framework/Application.h"
 #include "enemy/ChaosStage.h"
 #include "enemy/LevelOneBossStage.h"
-#include "enemy/LevelOneBoss.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
-#include "enemy/Hexagon.h"
-#include "enemy/TwinBlade.h"
-#include "enemy/UFO.h"
-#include "enemy/Vanguard.h"
 #include "gameConfigs/GameplayConfig.h"
+#include "enemy/InfiniteStage.h"
+#include "framework/AudioManager.h"
+#include "enemy/LevelOneBoss.h"
 
 namespace ly
 {
@@ -48,7 +45,7 @@ namespace ly
 		if (!mPlayerSpaceShip.lock()) return;
 		mPlayerSpaceShip.lock()->onActorDestroyed.BindAction(GetWeakPtr(), &LevelOne::PlayerShipDestroyed);
 
-		weak_ptr<Vanguard> vanguardEnemy = SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
+		/*weak_ptr<Vanguard> vanguardEnemy = SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
 		if (auto vanguard = vanguardEnemy.lock())
 		{
 			vanguard->SetActorLocation(sf::Vector2f{ 100, 100.f });
@@ -71,7 +68,7 @@ namespace ly
 		{
 			ufo->SetActorLocation(sf::Vector2f{ 400.f, 100.f });
 			ufo->SetVelocity(sf::Vector2f{ 0.f, 0.f });
-		}
+		}*/
 	}
 
 	void LevelOne::PlayerShipDestroyed(Actor* destroyedActor)
@@ -94,10 +91,8 @@ namespace ly
 
 	void LevelOne::OnGamePaused()
 	{
-		// Base class'ı çağır (müzik kontrolü için)
 		GameLevel::OnGamePaused();
 
-		// Background layer'ları pause et
 		if (auto bgActor = mBackgroundActor.lock())
 		{
 			bgActor->SetPaused(true);
@@ -114,10 +109,8 @@ namespace ly
 
 	void LevelOne::OnGameResumed()
 	{
-		// Base class'ı çağır (müzik kontrolü için)
 		GameLevel::OnGameResumed();
 
-		// Background layer'ları resume et
 		if (auto bgActor = mBackgroundActor.lock())
 		{
 			bgActor->SetPaused(false);
@@ -135,28 +128,32 @@ namespace ly
 	void LevelOne::InitGameStages()
 	{
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-
 		AddGameStage(shared_ptr<VanguardStage>{new VanguardStage(this)});
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
+		AddGameStage(shared_ptr<TwinBladeStage>{new TwinBladeStage(this)});
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 		AddGameStage(shared_ptr<HexagonStage>{new HexagonStage(this)});
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		AddGameStage(shared_ptr<TwinBladeStage>{new TwinBladeStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 10.f)});
 		AddGameStage(shared_ptr<UFOStage>{new UFOStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 15.f)});
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 
 		shared_ptr<ChaosStage> chaosStage = shared_ptr<ChaosStage>{ new ChaosStage(this) };
 		mChaosStage = chaosStage;
 		AddGameStage(chaosStage);
 		chaosStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectChaosStageToHUD);
 
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 10.f)});
+
 		shared_ptr<LevelOneBossStage> bossStage = shared_ptr<LevelOneBossStage>{ new LevelOneBossStage(this) };
 		mBossStage = bossStage;
 		AddGameStage(bossStage);
 		bossStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectTheBossStageToHUD);
+		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 
-
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 15.f)});
+		shared_ptr<InfiniteStage> infStage = shared_ptr<InfiniteStage>{ new InfiniteStage(this) };
+		mInfStage = infStage;
+		AddGameStage(infStage);
+		infStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectInfiniteStageToHUD);
 	}
 
 	void LevelOne::ConnectChaosStageToHUD()
@@ -175,8 +172,10 @@ namespace ly
 
 	void LevelOne::ConnectTheBossStageToHUD()
 	{
+
 		if (auto bossStage = mBossStage.lock())
 		{
+			OnBossStageStarted();
 			if (auto hud = GetGameHUD().lock())
 			{
 				bossStage->onNotification.BindAction(
@@ -190,6 +189,17 @@ namespace ly
 				);
 
 				bossStage->onBossSpawned.BindAction(GetWeakPtr(), &LevelOne::OnBossSpawned);
+			}
+		}
+	}
+
+	void LevelOne::ConnectInfiniteStageToHUD()
+	{
+		if (auto infStage = mInfStage.lock())
+		{
+			if (auto hud = GetGameHUD().lock())
+			{
+				infStage->onNotification.BindAction(hud->GetWeakPtr(), &GameHUD::ShowDynamicNotification);
 			}
 		}
 	}
@@ -223,28 +233,29 @@ namespace ly
 			hud->GetWeakPtr(),
 			&GameHUD::RemoveBossHealthBar
 		);
+
+		boss->onActorDestroyed.BindAction(
+			GetWeakPtr(),
+			&LevelOne::OnBossDefeated
+		);
 	}
 
 	void LevelOne::SpawnCosmetics()
 	{
 		mBackgroundActor = SpawnActor<BackGroundActor>("SpaceShooterRedux/Backgrounds/darkPurple.png");
 
-		// ---- PLANETS (with optional light) ----
 		
-			// Gezegen ışığı preset'i
 			PointLightDefinition planetLightDef(
-				"SpaceShooterRedux/Shaders/point_light.frag",   // shaderPath
-				sf::Color{ 180, 200, 255, 255 },               // color (soğuk beyaz-mavi)
-				1.15f,                                         // intensity
-				sf::Vector2f{ 200.f, 200.f },                  // size (base, scale ile büyüyecek)
-				false,                                         // shouldStretch
-				false,                                         // complexTrail
-				0.15f,                                         // taperAmount
-				0.9f,                                          // edgeSoftness
-				1.0f                                           // shapeRoundness
-			);
+				"SpaceShooterRedux/Shaders/point_light.frag",
+				sf::Color{ 180, 200, 255, 255 },
+				1.15f,
+				sf::Vector2f{ 200.f, 200.f },
+				false,                                       
+				false,
+				0.15f,                                       
+				0.9f,
+				1.0f			);
 
-			// Işıklı/ışıksız karışık gezegen listesi
 			List<BackgroundLayerDefinition> planetDefs =
 			{
 				GameData::Environment::Meteor1,
@@ -261,19 +272,14 @@ namespace ly
 
 			mPlanetsLayer.lock()->SetUseDepthColor(true);
 			mPlanetsLayer.lock()->SetSizeRange(0.65f, 1.f);
-			mPlanetsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,30.f }, sf::Vector2f{ 0.f,80.f });
+			mPlanetsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,30.f }, sf::Vector2f{ 0.f,50.f });
 		
 			mPlanetsLayer.lock()->SetSpriteCount(2);
 
-		// ---- METEORS (no light) ----
 		mMeteorsLayer = SpawnActor<BackgroundLayer>();
 		mMeteorsLayer.lock()->SetPaths({
 			"SpaceShooterRedux/PNG/Meteors/meteorGrey_tiny1.png",
 			"SpaceShooterRedux/PNG/Meteors/meteorGrey_tiny2.png",
-			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png",
-			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big2.png",
-			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big3.png",
-			"SpaceShooterRedux/PNG/Meteors/meteorBrown_big4.png",
 			"SpaceShooterRedux/PNG/Meteors/meteorBrown_med1.png",
 			"SpaceShooterRedux/PNG/Meteors/meteorBrown_med3.png",
 			"SpaceShooterRedux/PNG/Meteors/meteorBrown_small1.png",
@@ -303,6 +309,40 @@ namespace ly
 		mMeteorsLayer.lock()->SetRandomVisibility(false);
 		mMeteorsLayer.lock()->SetSizeRange(0.5f, 0.7f);
 		mMeteorsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,50.f }, sf::Vector2f{ 0.f,100.f });
+	}
+
+	void LevelOne::OnBossStageStarted()
+	{
+		if (GetIsPendingDestroy())
+			return;
+
+		AudioManager::GetAudioManager().StopMusic();
+
+		TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(), [this]() {
+			AudioManager::GetAudioManager().FadeToMusicWithIntro(
+				"SpaceShooterRedux/Musics/boss_theme_intro.ogg",
+				"SpaceShooterRedux/Musics/boss_theme_loop.ogg",
+				AudioType::Music,
+				60.0f,
+				1.0f,
+				3.f
+			);
+		}, 8.f, false);
+	}
+
+	void LevelOne::OnBossDefeated(Actor* actor)
+	{
+		if (GetIsPendingDestroy())
+			return;
+
+		AudioManager::GetAudioManager().FadeToMusic(
+			"SpaceShooterRedux/Musics/cosmic_reverie.ogg",
+			AudioType::Music,
+			50.0f,
+			1.0f,
+			true,
+			3.f
+		);
 	}
 
 	void LevelOne::Tick(float deltaTime)
