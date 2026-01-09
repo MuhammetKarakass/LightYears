@@ -11,49 +11,46 @@ namespace ly
 {
 	Application::Application(sf::Vector2u Position, unsigned int bit, std::string& Title, uint32_t Style)
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
-		mTargetFrameRate{ 75.f },     
+		mTargetFrameRate{ 60.f },     
 		mTickClock{},   
 		mCurrentWorld{ nullptr },
 		mCleanCycleClock{},    
 		mCleanCycleTime{2.f}          
-	{
-
+	{		
+		mWindow.setFramerateLimit(60);
+		mWindow.setVerticalSyncEnabled(false);
 	}
 	
 	void Application::Run()
 	{
-		mTickClock.restart();              
-		float accumulatedTime = 0.f;       
-		float targetDeltaTime = 1.f / mTargetFrameRate;
+		mTickClock.restart();
 		
 		while (mWindow.isOpen())  
 		{
+			sf::Time deltaTime = mTickClock.restart();
+			float dt = deltaTime.asSeconds();
+			
 			while (const std::optional event = mWindow.pollEvent())
 			{
 				if (event->is<sf::Event::Closed>())
 				{
 					QuitApplication();
 				}
-
 				else 
 				{
 					DispatchEvent(event);
 				}
 			}
 			
-			accumulatedTime += mTickClock.restart().asSeconds();
-			
-			while (accumulatedTime >= targetDeltaTime)
-			{
-				accumulatedTime -= targetDeltaTime;  // Kullanýlan zamaný çýkar
-				TickInternal(targetDeltaTime);       // Oyun mantýðýný güncelle
-				RenderInternal();                    // Ekraný yeniden çiz
-			}
+			TickInternal(dt);
+			RenderInternal();
 		}
 	}
 
 	void Application::QuitApplication()
 	{
+		AudioManager::GetAudioManager().StopMusic();
+		AudioManager::GetAudioManager().CleanCycle();
 		mWindow.close();
 	}
 	
@@ -74,10 +71,10 @@ namespace ly
 		{
 			TimerManager::GetGameTimerManager().UpdateTimer(deltaTime);
 			PhysicsSystem::Get().Step(deltaTime);
-
 		}
 
 		AudioManager::GetAudioManager().Update(deltaTime);
+		
 		if (mCleanCycleClock.getElapsedTime().asSeconds() > mCleanCycleTime)
 		{
 			mCleanCycleClock.restart();
@@ -117,7 +114,6 @@ namespace ly
 
 	void Application::Render()
 	{
-
 		if(mCurrentWorld)
 		{
 			mCurrentWorld->Render(mWindow);
@@ -127,6 +123,7 @@ namespace ly
 			mWindow.clear(sf::Color::Black);
 		}
 	}
+	
 	bool Application::DispatchEvent(const std::optional<sf::Event>& event)
 	{
 		if (mCurrentWorld && event.has_value())

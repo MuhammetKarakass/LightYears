@@ -8,6 +8,7 @@ namespace ly
 	public:
 		Particle(World* owningWorld, const std::string& texturePath);
 		virtual void Tick(float deltaTime) override;
+		virtual void Destroy() override;
 
 		void RandomVelocity(float minSpeed, float maxSpeed);
 		void RandomSize(float min, float max);

@@ -1,5 +1,6 @@
 #include "weapon/Bullet.h"
 #include "framework/Core.h"
+#include "framework/PerfMonitor.h"
 
 namespace ly
 {
@@ -7,7 +8,7 @@ namespace ly
 		: Actor(world, def.texturePath), mOwner(owner), mSpeed(def.speed), mDamage(def.damage)
 	{
 		SetupCollisionFromOwner();
-		AddLight(GameTags::Bullet::Laser_Red, def.pointLightDef, def.lightOffset);
+		ly::perf::IncBullets();
 
 	}
 
@@ -83,6 +84,12 @@ namespace ly
 			SetCollisionMask(CollisionLayer::None);
 			break;
 		}
+	}
+
+	void Bullet::Destroy()
+	{
+		ly::perf::DecBullets();
+		Actor::Destroy();
 	}
 
 }

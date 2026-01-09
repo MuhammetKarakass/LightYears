@@ -7,6 +7,7 @@
 namespace ly
 {
 	GameHUD::GameHUD() :
+		mFrameRateText{ std::in_place, "Frame Rate:" },
 		mPlayerHealthBar{ std::in_place },
 		mPlayerLifeIcon{ std::in_place, "SpaceShooterRedux/PNG/pickups/playerLife1_blue.png" },
 		mPlayerLifeText{ std::in_place, " " },
@@ -15,6 +16,7 @@ namespace ly
 		mTopCenterText{ std::in_place, "", "SpaceShooterRedux/Bonus/OrbitronBlack.ttf" },
 		mWidgetSpacingX{ 10.f }
 	{
+		mFrameRateText->SetTextSize(20);
 		mPlayerLifeText->SetTextSize(20);
 		mPlayerScoreText->SetTextSize(20);
 		mTopCenterText->SetTextSize(20);
@@ -31,6 +33,9 @@ namespace ly
 	void GameHUD::Draw(sf::RenderWindow& windowRef)
 	{
 		mWindowRef = &windowRef;
+
+		if (mFrameRateText.has_value())
+			mFrameRateText->NativeDraw(windowRef);
 
 		if (mPlayerHealthBar.has_value())
 			mPlayerHealthBar->NativeDraw(windowRef);
@@ -69,6 +74,15 @@ namespace ly
 	{
 		static int lastFrameRate = 0;
 		int frameRate = int(1.f / deltaTime);
+
+		if (mFrameRateText.has_value() && frameRate != lastFrameRate)
+		{
+			lastFrameRate = frameRate;
+
+			static char buffer[32];
+			snprintf(buffer, sizeof(buffer), "Frame Rate: %d", frameRate);
+			mFrameRateText->SetString(buffer);
+		}
 
 
 		if (!mCenterNotificationText.expired() && mCenterNotificationText.lock()->IsAnimating())

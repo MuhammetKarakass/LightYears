@@ -3,6 +3,7 @@
 #include "framework/Application.h"
 #include "gameplay/GameStage.h"
 #include "widget/HUD.h"
+#include "framework/PerfMonitor.h"
 
 namespace ly{
 
@@ -60,12 +61,27 @@ namespace ly{
 
 		else
 		{
-			for(auto iter = mActors.begin(); iter != mActors.end(); iter++)
+			for (std::shared_ptr<Actor> actor : mPendingActors)
 			{
-				if(iter->get()->GetTickWhenPaused())
+				mActors.push_back(actor);
+				actor->BeginPlayInternal();
+
+				OnActorSpawned(actor.get());
+			}
+
+			mPendingActors.clear();
+
+			for(auto& actor : mActors)
+			{
+				if (actor->GetTickWhenPaused())
 				{
-					iter->get()->TickInternal(deltaTime);
+					actor->TickInternal(deltaTime);
 				}
+			}
+
+			if (mCurrentStage != mGameStages.end())
+			{
+				mCurrentStage->get()->TickStage(deltaTime);
 			}
 		}
 
@@ -81,6 +97,12 @@ namespace ly{
 				mOverlayHUD->NativeInit(mOwningApp->GetRenderWindow());
 			mOverlayHUD->Tick(deltaTime);
 		}
+
+		// Ensure destroyed actors are removed promptly to avoid large accumulation
+		CleanCycle();
+
+		// Perf monitoring
+		ly::perf::TickAndReport(deltaTime);
 	}
 
 	void World::CleanCycle()
@@ -89,6 +111,8 @@ namespace ly{
 		{
 			if (iter->get()->GetIsPendingDestroy())
 			{
+				// Decrement global active actor count for monitoring
+				ly::perf::DecActiveActors();
 				iter = mActors.erase(iter);
 			}
 			else
@@ -122,9 +146,14 @@ namespace ly{
 
 	void World::Render(sf::RenderWindow& window)
 	{
+		// Batch render all actors
 		for (const std::shared_ptr<Actor>& actor : mActors)
 		{
-			actor->Render(window);
+			// Skip destroyed actors
+			if (!actor->GetIsPendingDestroy())
+			{
+				actor->Render(window);
+			}
 		}
 		RenderHUD(window);
 	}

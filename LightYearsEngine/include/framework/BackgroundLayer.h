@@ -80,5 +80,7 @@ namespace ly
 		bool mPaused;
 		bool mRandomVisibility;
 		bool mUseDepthColor;
+		bool mNeedsSorting;
+		List<BackgroundElement*> mSortedElements;
 	};
 }

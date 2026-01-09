@@ -119,6 +119,16 @@ target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
 
 target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
+if(WIN32)
+	if(CMAKE_BUILD_TYPE STREQUAL "Release")
+		set_target_properties(${LIGHT_YEARS_GAME_TARGET_NAME} PROPERTIES
+			WIN32_EXECUTABLE TRUE
+		)
+	endif()
+	
+	target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE sfml-main)
+endif()
+
 function(CopyLibDirToTarget LIB_NAME TARGET_NAME)
 	add_custom_command(TARGET ${TARGET_NAME}
 	POST_BUILD
@@ -157,10 +167,10 @@ add_custom_command(
 )
 
 configure_file(
-    "config.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/config.h" ESCAPE_QUOTES
+	"config.h.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/config.h" ESCAPE_QUOTES
 )
 
 target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
-    ${CMAKE_CURRENT_BINARY_DIR}
+	${CMAKE_CURRENT_BINARY_DIR}
 )

@@ -22,6 +22,7 @@ namespace ly
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 
 		float GetDamage() { return mDamage; };
+		virtual void Destroy() override;
 	private:
 		void Move(float deltaTime);
 		void SetupCollisionFromOwner();

@@ -38,6 +38,7 @@ namespace ly
 		void PlayerScoreUpdated(int amt);
 
 		std::optional<ValueGauge> mPlayerHealthBar;
+		std::optional<TextWidget> mFrameRateText;
 
 		std::optional<ImageWidget> mPlayerLifeIcon;
 		std::optional<TextWidget> mPlayerLifeText;

@@ -16,7 +16,8 @@ namespace ly
 		mSlowMotionScale(1.f),
 		mPaused(false),
 		mRandomVisibility(false),
-		mUseDepthColor(false)
+		mUseDepthColor(false),
+		mNeedsSorting(true)
 	{
 	}
 
@@ -32,7 +33,8 @@ namespace ly
 		mPaused(false),
 		mRandomVisibility(true),
 		mUseDepthColor(false),
-		mDefinitions(defs)
+		mDefinitions(defs),
+		mNeedsSorting(true)
 	{
 		InitializeSprites();
 	}
@@ -61,6 +63,7 @@ namespace ly
 				{
 					RandomSpritePosition(element.sprite.value(), false);
 				}
+				mNeedsSorting = true;
 			}
 
 			element.sprite.value().setPosition(element.sprite.value().getPosition() + velocity * deltaTime * mSlowMotionScale);
@@ -74,7 +77,6 @@ namespace ly
 
 	void BackgroundLayer::Render(sf::RenderWindow& window)
 	{
-
 		if (GetIsPendingDestroy())
 			return;
 
@@ -82,20 +84,27 @@ namespace ly
 
 		if (mUseDepthColor)
 		{
-			List<BackgroundElement*> sortedElements;
-			for(auto& element : mElements)
+			if (mNeedsSorting)
 			{
-				if (element.sprite.has_value())
+				mSortedElements.clear();
+				mSortedElements.reserve(mElements.size());
+				
+				for(auto& element : mElements)
 				{
-					sortedElements.push_back(&element);
+					if (element.sprite.has_value())
+					{
+						mSortedElements.push_back(&element);
+					}
 				}
+
+				std::sort(mSortedElements.begin(), mSortedElements.end(), [](const BackgroundElement* a, const BackgroundElement* b) {
+					return std::abs(a->velocity.y) < std::abs(b->velocity.y);
+				});
+				
+				mNeedsSorting = false;
 			}
 
-			std::sort(sortedElements.begin(), sortedElements.end(), [](const BackgroundElement* a, const BackgroundElement* b) {
-				return std::abs(a->velocity.y) < std::abs(b->velocity.y);
-				});
-
-			for(const auto& element : sortedElements)
+			for(const auto& element : mSortedElements)
 			{
 				window.draw(element->sprite.value());
 			}
@@ -167,6 +176,8 @@ namespace ly
 				element.sprite.value().setColor(CalculateDepthColor(speed));
 			}
 		}
+		
+		mNeedsSorting = true;
 	}
 
 	void BackgroundLayer::SetSizeRange(float sizeMin, float sizeMax)
@@ -226,6 +237,8 @@ namespace ly
 				}
 			}
 		}
+		
+		mNeedsSorting = true;
 	}
 
 	sf::Color BackgroundLayer::CalculateDepthColor(float speed) const
@@ -309,7 +322,6 @@ namespace ly
 
 		if (def->texturePath.empty())
 		{
-			LOG("BackgroundLayer::SpawnRandomElement - Empty texture path in definition!");
 			return;
 		}
 
@@ -317,7 +329,6 @@ namespace ly
 		
 		if(element.texture == nullptr)
 		{
-			LOG("BackgroundLayer::SpawnRandomElement - Failed to load texture: %s", def->texturePath.c_str());
 			return;
 		}
 
@@ -366,9 +377,6 @@ namespace ly
 			element.lightScaleRatio = def->lightScaleRatio;
 
 			sf::Vector2f spritePos = element.sprite.value().getPosition();
-	
-			LOG("Sprite scale set to: %f,%f", element.sprite.value().getGlobalBounds().size.x, element.sprite.value().getGlobalBounds().size.y);
-			LOG("light size: x=%f, y=%f", finalLightSize.x, finalLightSize.y);
 
 			element.lightTag = AddLight(
 				GameTags::Environment::Planet,

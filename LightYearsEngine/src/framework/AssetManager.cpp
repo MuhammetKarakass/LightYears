@@ -27,33 +27,36 @@ namespace ly
 		return *assetManager;
 	}
 
-	// Verilen yoldan bir texture yükleyen veya önbellekten (cache) getiren fonksiyon.
+	// Verilen yoldan bir texture y?kleyen veya ?nbellekten (cache) getiren fonksiyon.
 	shared_ptr<sf::Texture> AssetManager::LoadTexture(const std::string& texturePath)
 	{
-		// 1. Texture'ýn daha önce yüklenip yüklenmediðini kontrol et.
-		// mLoadedTextureMap, yüklenmiþ texture'larý ve yollarýný tutan bir haritadýr.
+		// 1. Texture'?n daha ?nce y?klenip y?klenmedi?ini kontrol et.
+		// mLoadedTextureMap, y?klenmi? texture'lar? ve yollar?n? tutan bir haritad?r.
 		auto found = mLoadedTextureMap.find(texturePath);
 		
-		// 2. Eðer haritada bulunduysa...
+		// 2. E?er haritada bulunduysa...
 		if (found!=mLoadedTextureMap.end())
 		{
-			// ...diskten tekrar yüklemek yerine haritadaki kopyayý (shared_ptr) döndür.
+			// ...diskten tekrar y?klemek yerine haritadaki kopyay? (shared_ptr) d?nd?r.
 			return found->second;
 		}
 
-		// 3. Eðer haritada bulunamadýysa, yeni bir texture oluþtur.
+		// 3. E?er haritada bulunamad?ysa, yeni bir texture olu?tur.
 		shared_ptr<sf::Texture> newTexture{ new sf::Texture };
 		
-		// 4. Texture'ý diskten yüklemeyi dene. Kök dizin + verilen yolu birleþtir.
-		if (newTexture->loadFromFile(mAssetRootDirectory+texturePath))
+		// 4. Texture'? diskten y?klemeyi dene. K?k dizin + verilen yolu birle?tir.
+		std::string fullPath = mAssetRootDirectory + texturePath;
+		if (newTexture->loadFromFile(fullPath))
 		{
-			// 5. Yükleme baþarýlýysa, yeni texture'ý haritaya ekle.
+			// 5. Y?kleme ba?ar?l?ysa, yeni texture'? haritaya ekle.
 			mLoadedTextureMap.insert({ texturePath, newTexture });
-			// Ve yeni oluþturulan shared_ptr'ý döndür.
+			// Ve yeni olu?turulan shared_ptr'? d?nd?r.
 			return newTexture;
 		}
 
-		// 6. Yükleme baþarýsýz olursa, boþ bir shared_ptr (nullptr) döndür.
+		// 6. Y?kleme ba?ar?s?z olursa, hata mesaj? g?ster ve bo? bir shared_ptr d?nd?r.
+		LOG("Failed to load image\n    Provided path: %s\n    Absolute path: %s\nReason: No such file or directory", 
+			texturePath.c_str(), fullPath.c_str());
 		return shared_ptr<sf::Texture> {nullptr};
 	}
 
@@ -69,11 +72,14 @@ namespace ly
 
 		shared_ptr<sf::Font> newFont{ new sf::Font };
 
-		if (newFont->openFromFile(mAssetRootDirectory + fontPath))
+		std::string fullPath = mAssetRootDirectory + fontPath;
+		if (newFont->openFromFile(fullPath))
 		{
 			mLoadedFontMap.insert({ fontPath, newFont });
 			return newFont;
 		}
+		LOG("Failed to load font (failed to open file): No such file or directory\n  Provided path: %s\n    Absolute path: %s", 
+			fontPath.c_str(), fullPath.c_str());
 		return shared_ptr<sf::Font>{nullptr};
 	}
 

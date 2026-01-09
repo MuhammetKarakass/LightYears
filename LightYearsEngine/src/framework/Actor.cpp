@@ -3,6 +3,7 @@
 #include "framework/World.h"
 #include "framework/MathUtility.h"
 #include <framework/PhysicsSystem.h>
+#include "framework/PerfMonitor.h"
 
 namespace ly
 {
@@ -285,6 +286,15 @@ namespace ly
 
 	void Actor::RenderLights(sf::RenderWindow& window)
 	{
+		// Allow disabling lights for debugging GPU/driver stalls
+		if (ly::perf::g_disableLights.load(std::memory_order_relaxed))
+		{
+			return;
+		}
+
+		// Early exit if no lights
+		if (mLightShaders.empty()) return;
+
 		for (auto& pair : mLightShaders)
 		{
 			LightData& light = pair.second;
@@ -302,20 +312,19 @@ namespace ly
 				finalSize.y *= light.currentStretchFactor;
 			}
 
-
 			sf::RectangleShape lightShape(finalSize);
 			if(light.lightSpace == LightSpace::Local)
 			{
-				lightShape.setOrigin({ finalSize.x / 2.f, 0.f });
+				lightShape.setOrigin({ finalSize.x /2.f,0.f });
 			}
 			if(light.lightSpace == LightSpace::World)
 			{
-				lightShape.setOrigin({ finalSize.x / 2.f, finalSize.y / 2.f });
+				lightShape.setOrigin({ finalSize.x /2.f, finalSize.y /2.f });
 			}
 
 			if(light.lightSpace == LightSpace::World)
 			{
-				lightShape.setPosition(light.offset);  
+				lightShape.setPosition(light.offset); 
 			}
 
 			else 
@@ -336,20 +345,21 @@ namespace ly
 				lightShape.setRotation(sf::degrees(finalRotation));
 			}
 
+			// Use texture if available, otherwise use default texture
 			if (mTexture)
 			{
 				lightShape.setTexture(mTexture.get());
 			}
-
 			else
 			{
 				lightShape.setTexture(AssetManager::GetAssetManager().GetDefaultTexture().get());
 			}
 
-			light.shader->setUniform("lightColor", sf::Glsl::Vec3{ light.color.r / 255.f, light.color.g / 255.f, light.color.b / 255.f });
+			// Set shader uniforms
+			light.shader->setUniform("lightColor", sf::Glsl::Vec3{ light.color.r /255.f, light.color.g /255.f, light.color.b /255.f });
 			light.shader->setUniform("lightIntensity", light.intensity);
 			light.shader->setUniform("u_stretch", light.currentStretchFactor);
-			light.shader->setUniform("u_is_trail", light.useComplexTrail ? 1.f : 0.f);
+			light.shader->setUniform("u_is_trail", light.useComplexTrail ?1.f :0.f);
 			light.shader->setUniform("u_taper", light.taperAmount);
 			light.shader->setUniform("u_edge_softness", light.edgeSoftness);
 			light.shader->setUniform("u_roundness", light.shapeRoundness);

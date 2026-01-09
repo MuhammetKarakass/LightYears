@@ -2,6 +2,7 @@
 #include "framework/Core.h"
 #include <SFML/Graphics.hpp>
 #include "framework/Object.h"
+#include "framework/PerfMonitor.h"
 
 namespace ly
 {
@@ -109,7 +110,7 @@ namespace ly
 	{
 			shared_ptr<ActorType> newActor{ new ActorType(this,args...) };
 			mPendingActors.push_back(newActor);
-		
+		ly::perf::IncActiveActors();
 		return newActor;
 	}
 
