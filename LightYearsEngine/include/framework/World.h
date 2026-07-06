@@ -25,6 +25,9 @@ namespace ly
 		bool IsPaused() const { return mIsPaused; }
 		void RemoveOverlayHUD();
 
+		void SetViewTarget(weak_ptr<Actor> target);
+		void ClearViewTarget();
+
 		weak_ptr<Actor> GetActorByLayer(CollisionLayer layer) const;
 
 		sf::Vector2u GetWindowSize();
@@ -103,6 +106,7 @@ namespace ly
 		void BeginStages();
 		void RenderHUD(sf::RenderWindow& window);
 
+		weak_ptr<Actor> mViewTarget;
 	};
 
 	template<typename ActorType, typename ...Args>

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "player/Reward.h"
 #include "gameConfigs/GameplayStructs.h"
@@ -159,7 +159,8 @@ namespace GameData
 			{ ly::CreateRewardHealth, 0.2f },
 			{ ly::CreateRewardThreeWayShooter, 0.12f },
 			{ ly::CreateRewardFrontalWiper, 0.08f },
-			{ ly::CreateRewardLife, 0.05f}
+			{ ly::CreateRewardLife, 0.05f},
+			{ ly::CreateRewardShield, 0.08f }
 		}
 	);
 
@@ -182,7 +183,8 @@ namespace GameData
 			{ ly::CreateRewardHealth, 0.2f },
 			{ ly::CreateRewardThreeWayShooter, 0.1f },
 			{ ly::CreateRewardFrontalWiper, 0.06f },
-			{ ly::CreateRewardLife, 0.01f}
+			{ ly::CreateRewardLife, 0.01f},
+			{ ly::CreateRewardShield, 0.08f }
 		}
 	);
 
@@ -214,7 +216,8 @@ namespace GameData
 			{ ly::CreateRewardHealth, 0.25f },
 			{ ly::CreateRewardThreeWayShooter, 0.15f },
 			{ ly::CreateRewardFrontalWiper, 0.10f },
-			{ ly::CreateRewardLife, 0.05f}
+			{ ly::CreateRewardLife, 0.05f},
+			{ ly::CreateRewardShield, 0.08f }
 		}
 	);
 
@@ -246,7 +249,8 @@ namespace GameData
 			{ ly::CreateRewardHealth, 0.3f },
 			{ ly::CreateRewardThreeWayShooter, 0.2f },
 			{ ly::CreateRewardFrontalWiper, 0.15f },
-			{ ly::CreateRewardLife, 0.05f}
+			{ ly::CreateRewardLife, 0.05f},
+			{ ly::CreateRewardShield, 0.10f }
 		}
 	);
 
@@ -282,7 +286,8 @@ namespace GameData
 			{ ly::CreateRewardHealth, 0.3f },
 			{ ly::CreateRewardThreeWayShooter, 0.25f },
 			{ ly::CreateRewardFrontalWiper, 0.15f },
-			{ ly::CreateRewardLife, 0.08f }
+			{ ly::CreateRewardLife, 0.08f },
+			{ ly::CreateRewardShield, 0.10f }
 		}
 	);
 #pragma endregion

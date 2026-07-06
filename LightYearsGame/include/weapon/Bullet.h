@@ -30,5 +30,9 @@ namespace ly
 		Actor* mOwner;
 		float mSpeed;
 		float mDamage;
+		float mLifeTime;
+		float mAge;
+		float mMaxTravelDistance;
+		float mTravelDistance;
 	};
 }

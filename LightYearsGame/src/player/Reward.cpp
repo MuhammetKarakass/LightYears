@@ -107,4 +107,15 @@ namespace ly
 			return;
 		PlayerManager::GetPlayerManager().GetPlayer()->AddLifeCount(1);
 	}
+	weak_ptr<Reward> CreateRewardShield(World* world)
+	{
+		return CreateReward(world, "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png", RewardShield);
+	}
+	void RewardShield(PlayerSpaceShip* player)
+	{
+		if (player && !player->GetIsPendingDestroy())
+		{
+			player->ActivateShield(50.f, 5.f);
+		}
+	}
 }

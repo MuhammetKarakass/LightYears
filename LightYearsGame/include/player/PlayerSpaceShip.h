@@ -4,6 +4,7 @@
 #include "framework/TimerManager.h"
 #include "gameConfigs/GameplayConfig.h"
 #include "gameConfigs/GameplayStructs.h"
+#include "player/Shield.h"
 
 namespace ly
 {
@@ -21,6 +22,9 @@ namespace ly
 		void SetSpeed(float speed) { mSpeed = speed; }
 		float GetSpeed()const { return mSpeed; }
 
+		void SetUseScreenClamp(bool useClamp) { mUseScreenClamp = useClamp; }
+		bool GetUseScreenClamp() const { return mUseScreenClamp; }
+
 		void SetShooter(unique_ptr<Shooter>&& shooter, WeaponType type);
 		Shooter* GetShooter() const { return mShooter.get(); }
 
@@ -34,7 +38,12 @@ namespace ly
 
 		void ApplyWeaponState(const WeaponState& state);
 
+		void ActivateShield(float bonusHP, float duration);
+
 		Delegate<WeaponType, int> onWeaponStateBeforeDeath;
+		Delegate<bool> onShieldStateChanged;
+
+		Shield& GetShield() { return mShield; }
 
 	private:
 		void SetInput();
@@ -60,5 +69,12 @@ namespace ly
 		float mInvulnerabilityDir;
 		float mShaderTime{ 0.f };
 		float mCollisionDamage;
+
+		bool mUseScreenClamp{ true };
+
+		void DeactivateShield();
+		Shield mShield;
+		TimerHandle mShieldTimerHandle;
+		void OnShieldStateChanged(bool active);
 	};
 }

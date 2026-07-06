@@ -7,11 +7,13 @@
 #include "level/MainMenuLevel.h"
 #include "level/LevelOne.h"
 #include "player/PlayerManager.h"
+#include "presentation/hud/GameplayWarningHUDController.h"
 
 namespace ly
 {
 	GameLevel::GameLevel(Application* owningApp):
-		World(owningApp)
+		World(owningApp),
+		mHUDControllers{}
 	{
 	}
 
@@ -19,7 +21,9 @@ namespace ly
 	{
 		World::BeginPlay();
 
-		mGameHUD = SpawnHUD<GameHUD>();
+		InitializeLevelSystems();
+		CreateGameHUD();
+		CreateHUDControllers();
 		OnGameStart();
 
 		
@@ -61,6 +65,43 @@ namespace ly
 	void GameLevel::OnGameResumed()
 	{
 		AudioManager::GetAudioManager().SetMenuMode(false);
+	}
+
+	void GameLevel::InitializeLevelSystems()
+	{
+	}
+
+	void GameLevel::CreateGameHUD()
+	{
+		mGameHUD = SpawnHUD<GameHUD>();
+	}
+
+	void GameLevel::CreateHUDControllers()
+	{
+		shared_ptr<GameplayWarningHUDController> warningHUDController{ new GameplayWarningHUDController{ mGameHUD } };
+		mHUDControllers.push_back(warningHUDController);
+	}
+
+	void GameLevel::BroadcastGameplayWarning(const GameplayWarning& warning)
+	{
+		for (const shared_ptr<HUDController>& controller : mHUDControllers)
+		{
+			if (controller)
+			{
+				controller->ShowGameplayWarning(warning);
+			}
+		}
+	}
+
+	void GameLevel::ClearGameplayWarning(GameplayWarningType warningType)
+	{
+		for (const shared_ptr<HUDController>& controller : mHUDControllers)
+		{
+			if (controller)
+			{
+				controller->HideGameplayWarning(warningType);
+			}
+		}
 	}
 
 	void GameLevel::OnResumeGame()

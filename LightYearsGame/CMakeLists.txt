@@ -31,6 +31,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/HealthComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayWarning.h
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/VFX/Explosion.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
 
@@ -48,6 +50,20 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/level/GameLevel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/level/GameLevel.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaDefinition.h
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaLevel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaLevel.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaBoundaryIndicator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundaryIndicator.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaBoundarySystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundarySystem.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaTestLevel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaTestLevel.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/VanguardStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
@@ -91,6 +107,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Reward.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
 	
+	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Shield.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Shield.cpp
+	
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Player.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Player.cpp
 
@@ -108,6 +127,10 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/GameOverHUD.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameOverHUD.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/GameplayWarningHUDController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/GameplayWarningHUDController.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/HUDController.h
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/GameplayConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/GameplayStructs.h

@@ -1,4 +1,4 @@
-# Light Years 
+# Light Years
 
 ![Language](https://img.shields.io/badge/language-C%2B%2B17-blue)
 ![SFML](https://img.shields.io/badge/SFML-3.0.1-green)
@@ -6,25 +6,18 @@
 ![CMake](https://img.shields.io/badge/CMake-3.31.6-red)
 ![License](https://img.shields.io/badge/license-Educational-lightgrey)
 
-A high-performance 2D space shooter with custom engine architecture, featuring dynamic lighting, advanced physics, and procedurally managed enemy waves.
+A high-performance 2D space shooter built from scratch with a custom engine architecture, featuring dynamic lighting, advanced physics, and procedurally managed enemy waves.
 
 ---
 
 ## Introduction
 
-**Light Years** is a modern C++17 space shooter game built from the ground up with a custom game engine. The player commands a hero spaceship against waves of enemy space ships through procedurally managed stages, culminating in boss battle and lastly infinite stage.
-**Project Origin & Evolution:**
-This project initially started as part of the **[Learn C++ and Make a Game from Scratch](https://www.udemy.com/course/complete-game-development-series-04-making-a-game-with-c/learn/lecture/40817092#overview)** on Udemy. Then I added such as shaders, sound system, parallax system ect.
- 
-You can download the game from this repository folder named "LightYears.7z" or from
-[itch.io](https://parsik4.itch.io/light-years).
+**Light Years** is a modern C++17 space shooter game built from the ground up with a custom game engine. The player commands a hero spaceship against waves of enemy ships through procedurally managed stages, culminating in a boss battle and an infinite survival mode.
 
-The project demonstrates professional game development practices including:
-- **Custom Engine Architecture** (Entity-Component System)
-- **Advanced Memory Management** (Smart Pointers, Object Pooling)
-- **Real-time Physics** (Box2D 3.x Integration)
-- **Dynamic Lighting System** (GLSL Shader Pipeline)
-- **Optimized Rendering** (Lazy Sorting, Batch Drawing)
+**Project Origin & Evolution:**
+This project initially started as part of the **[Learn C++ and Make a Game from Scratch](https://www.udemy.com/course/complete-game-development-series-04-making-a-game-with-c/learn/lecture/40817092#overview)** course on Udemy. It has since been significantly expanded with custom systems including shaders, sound system, parallax scrolling, multi-phase boss AI, and more.
+
+You can download the game from this repository (see `LightYears.7z`) or from [itch.io](https://parsik4.itch.io/light-years).
 
 ---
 
@@ -40,30 +33,69 @@ The project demonstrates professional game development practices including:
 
 ---
 
-## Key Features
-
-### Gameplay
-- **5 Enemy Types** with unique AI behaviors (Vanguard, TwinBlade, Hexagon, UFO, Boss)
-- **3 Weapon Systems** (Single Shot, Three-Way, Frontal Wiper)
-- **Infinite Survival Mode** with escalating difficulty
-- **Dynamic Explosion Effects** with particle systems
-- **Power-up System** (Health, Weapons, Extra Lives)
-
-### Technical
-- **Real-time Dynamic Lighting** (Engine glow, projectile trails)
-- **Parallax Scrolling** backgrounds with depth perception
-- **Advanced Audio System** (Music fading, spatial sound, pooling)
-- **Optimized Rendering** (60 FPS stable, lazy sorting)
-- **Collision System** (Box2D 3.x with circle/polygon shapes)
-
----
-
 ## Screenshots
 
 <p align="center">
   <img src="LightYearsGame/assets/screenshot1.png" width="45%" alt="Gameplay"/>
   <img src="LightYearsGame/assets/screenshot2.png" width="45%" alt="Gameplay"/>
 </p>
+
+---
+
+## Key Features
+
+### Gameplay
+- **5 Enemy Types** with unique AI behaviors:
+  - **Vanguard** — Straight dive attack with single shooter
+  - **TwinBlade** — Dual-weapon dive attack
+  - **Hexagon** — Multi-directional fire
+  - **UFO** — Bouncing movement with screen-edge reflection
+  - **Boss** — Multi-phase fight with escalating weapons
+- **Elite Variants** — Stronger versions of standard enemies (higher HP, damage, score)
+- **3 Weapon Systems** — Single Shot, Three-Way Spread, Frontal Wiper
+- **Weapon Upgrade System** — 6 levels with cooldown scaling
+- **Weapon Persistence** — Weapons carry across deaths (with 2-level degradation penalty)
+- **Infinite Survival Mode** — Endless waves with escalating difficulty and formation patterns
+- **Power-up System** — Health (+25 HP), Weapon Upgrades, Extra Lives
+- **Weighted Loot Drops** — Each enemy type has unique reward probabilities
+- **Scoring System** — Points per enemy type (Vanguard: 10, TwinBlade: 20, Hexagon: 30, UFO: 40, Boss: 500)
+
+### Technical
+- **Dynamic Lighting** — GLSL point light shaders with radial falloff, engine glow, projectile trails
+- **Parallax Scrolling** — Multi-layer backgrounds with planets and meteors at different depth speeds
+- **Advanced Audio System** — Music cross-fading, intro+loop pattern (boss theme), sound pooling, time scaling
+- **Performance-Aware VFX** — Explosion particles auto-throttle based on active actor count
+- **Optimized Rendering** — Lazy sorting (97% fewer sort calls), depth-sorted actors
+- **Box2D 3.x Physics** — Circle/polygon collision shapes with team-based filtering
+
+---
+
+## Project Structure
+
+```
+LightYears/
+├── LightYearsEngine/              # Core engine (reusable framework)
+│   ├── framework/                 # Application, World, Actor, Physics, Audio, Assets
+│   ├── gameplay/                  # Game stage management (wave system)
+│   ├── widget/                    # UI framework (HUD, Buttons, Gauges, Text)
+│   └── VFX/                      # Particle system
+│
+├── LightYearsGame/                # Game-specific logic
+│   ├── player/                    # Player ship, input handling, rewards, lives
+│   ├── enemy/                     # Enemy AI, wave stages, boss
+│   ├── weapon/                    # Weapon systems, bullets, shooter presets
+│   ├── level/                     # Level management, main menu
+│   ├── environment/               # Asteroids
+│   ├── VFX/                       # Explosions
+│   ├── widget/                    # Game HUD, menus
+│   ├── gameConfigs/               # Data-driven game definitions
+│   └── assets/                    # Textures, audio, shaders
+│       └── SpaceShooterRedux/     # Kenney.nl asset pack (CC0)
+│           ├── PNG/               # Ship, laser, planet, meteor textures
+│           ├── Musics/            # 5 OGG music tracks
+│           ├── Shaders/           # 3 GLSL fragment shaders
+│           └── Bonus/             # Fonts and SFX
+```
 
 ---
 
@@ -79,302 +111,116 @@ The project demonstrates professional game development practices including:
 | **Windows** | 10/11 | Primary platform |
 
 ### Dependencies (Auto-Fetched by CMake)
-- **SFML** 3.0.1 (Graphics, Audio, Window, System)
-- **Box2D** 3.1.1 (Physics Engine)
-- **FreeType** (Font Rendering)
-- **FLAC/Vorbis/Ogg** (Audio Codecs)
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| **SFML** | 3.0.1 | Graphics, Audio, Window, System |
+| **Box2D** | 3.1.1 | Physics Engine |
+| **FreeType** | (via SFML) | Font Rendering |
+| **FLAC/Vorbis/Ogg** | (via SFML) | Audio Codecs |
+
+> **Note:** All dependencies are automatically downloaded and built via CMake `FetchContent`. No manual installation required.
 
 ### Build Steps
 
 1. **Clone the repository:**
-```bash
-git clone https://github.com/MuhammetKarakass/LightYears.git
-cd LightYears
-```
+   ```bash
+   git clone https://github.com/MuhammetKarakass/LightYears.git
+   cd LightYears
+   ```
 
 2. **Configure with CMake:**
-```bash
-cmake -S . -B build -G "Visual Studio 17 2022"
-```
+   ```bash
+   cmake -S . -B build -G "Visual Studio 17 2022"
+   ```
 
 3. **Build (Release recommended for performance):**
-```bash
-cmake --build build --config Release
-```
+   ```bash
+   cmake --build build --config Release
+   ```
 
 4. **Run the game:**
-```bash
-cd build\LightYearsGame\Release
-.\LightYearsGame.exe
-```
+   ```bash
+   cd build\LightYearsGame\Release
+   .\LightYearsGame.exe
+   ```
 
 ### CMake Options
+
 ```cmake
-# Compiler optimizations (already configured)
-/O2 /Ob2 /Oi /Ot /GL /fp:fast  # MSVC Release flags
+# MSVC Release optimizations (already configured)
+/O2    # Maximize speed
+/Ob2   # Aggressive inline
+/Oi    # Intrinsic functions
+/Ot    # Favor fast code
+/GL    # Whole program optimization
+/LTCG  # Link-time code generation
+
+# GCC/Clang Release optimizations
+-O3 -march=native
 ```
 
 ---
 
-## Technical Architecture
+## Controls
 
-### Project Structure
-```
-LightYears/
-LightYearsEngine/        # Core engine (reusable framework)
-    framework/           # Application, World, Actor systems
-    VFX/        # Particle & explosion systems
-    widget/     # UI framework (HUD, Buttons)
-    gameplay/        # Game stage management
-LightYearsGame/          # Game-specific logic
-    player/              # Player ship, input, rewards
-    enemy/ # Enemy AI, stages, boss
-    weapon/          # Weapon systems, bullets
-    level/               # Level management
-    gameConfigs/       # Game data definitions
- assets/         # Textures, audio, shaders
-```
-
-### Engine Architecture
-
-#### Core Systems
-
-**Application & World**
-- **Game Loop:** Fixed timestep physics (60 FPS target), variable rendering
-- **World Management:** Level loading, actor lifecycle, stage progression
-- **Event System:** SFML event polling with custom dispatching
-
-**Actor System**
-```
-Actor (Base Class)
- Physics Integration (Box2D body, collision callbacks)
- Rendering (Sprite, lights, shaders)
- Lifecycle (BeginPlay, Tick, Destroy)
- Derived Classes
-     SpaceShip (Player, Enemies)
-     Bullet (Projectiles)
-     Reward (Power-ups)
-     Asteroid (Obstacles)
-```
-
-**Memory Management**
-- **Smart Pointers:** `std::shared_ptr`, `std::weak_ptr`, `std::unique_ptr`
-- **Object Pooling:** Bullet recycling (performance optimization)
-- **Garbage Collection:** Periodic cleanup every 2 seconds
-
-####  Rendering Pipeline
-
-**Dynamic Lighting System**
-```glsl
-// Point Light Shader (GLSL)
-- Per-pixel radial falloff
-- Color blending (additive)
-- Trail effects (velocity-based stretching)
-- Flicker simulation
-```
-
-**Optimization Techniques**
-- **Lazy Sorting:** BackgroundLayer sorts only when sprites spawn (99% reduction)
-- **Batch Drawing:** Group draw calls by texture
-- **Frustum Culling:** Off-screen actor skipping
-
-**Performance Metrics**
-- Gameplay: **60 FPS** (100+ actors, physics, particles)
-- Frame Time: **~13ms** average
-
-####  Audio System
-
-**AudioManager Features**
-- **Music Streaming:** Cross-fading, intro/loop support
-- **Sound Pooling:** Reuse `sf::Sound` instances (memory efficient)
-- **Spatial Audio:** Volume/pitch based on distance
-- **Time Scaling:** Slow-motion effects during pause
-
-**Supported Formats:** OGG, FLAC, WAV
-
-####  Physics System
-
-**Box2D 3.x Integration**
-```cpp
-// Collision Layers (Bitmasking)
-Player | PlayerBullet | Enemy | EnemyBullet
-
-// Shapes
-- Circles: Ships, asteroids (rotation-independent)
-- Polygons: Bullets (precise collision)
-
-// Contact Events
-- OnActorBeginOverlap ? Damage application
-- OnActorEndOverlap ? Cleanup
-```
-
-**Optimizations**
-- Sleep disabled (ensures responsive collisions)
-- Fixed substep count: 4 (balance between accuracy/performance)
-- Collision radius scaling: Visual size * 0.4 (tighter hitboxes)
-
-#### Gameplay Systems
-
-**Weapon System (Strategy Pattern)**
-```
-Shooter (Interface)
- BulletShooter (Single shot)
- ThreeWayShooter (Spread fire)
- FrontalWiper (Wide arc)
-
-// Upgrade System
-Level 1 ? Level 2 ? Level 3 (Fire rate, damage, count)
-```
-
-**Enemy AI**
-- **Vanguard:** Straight dive attack
-- **TwinBlade:** Straight dive attack with two weapon
-- **Hexagon:** Six side shoot
-- **UFO:** Bouncing, screen-wrap
-- **Boss:** Multi-phase (movement, attack patterns)
-
-**Stage Management**
-```
-GameStage (Base)
- VanguardStage, TwinBladeStage, HexagonStage, UFOStage
- ChaosStage (Mixed enemies)
- BossStage (LevelOneBoss)
- InfiniteStage (Endless survival)
-```
-
-##  Gameplay Mechanics
-
-### Controls
 | Key | Action |
 |-----|--------|
-| **W/A/S/D** | Move Ship |
+| **W / ↑** | Move Up |
+| **A / ←** | Move Left |
+| **S / ↓** | Move Down |
+| **D / →** | Move Right |
 | **Space** | Shoot |
 | **ESC** | Pause Menu |
 
-### Power-Ups
--  **Health Pack:** Restore 25 HP
--  **Weapon Upgrade:** Advance weapon level
--  **Extra Life:** +1 life
+---
 
-### Scoring System
-- Vanguard: **10 points**
-- TwinBlade: **20 points**
-- Hexagon: **30 points**
-- UFO: **40 points**
-- Boss: **500 points**
-- Asteroids: **No score**
+## Current Features
+
+- ✅ Custom game engine with actor lifecycle management
+- ✅ 5 enemy types + elite variants with unique AI behaviors
+- ✅ Multi-phase boss fight with health-based stage transitions
+- ✅ 3 upgradeable weapon systems (6 levels each)
+- ✅ Infinite survival mode with escalating difficulty
+- ✅ Dynamic GLSL lighting (engine glow, projectile trails, flicker)
+- ✅ Multi-layer parallax scrolling with planets and meteors
+- ✅ Advanced audio (cross-fading, intro+loop, sound pooling, time scaling)
+- ✅ Data-driven game design (all stats defined in configuration headers)
+- ✅ Box2D 3.x physics with team-based collision filtering
+- ✅ Performance-aware particle throttling
+- ✅ Full UI system (main menu, pause, game over, in-game HUD)
+- ✅ Power-up system with weighted loot tables
+- ✅ Weapon persistence across deaths with degradation penalty
+- ✅ Asteroid obstacles with recursive splitting
+
+## Planned Features
+
+<!-- Add your planned features here -->
 
 ---
 
-##  Performance Optimizations
+## System Requirements
 
-### Implemented Optimizations
+| Component | Requirement |
+|-----------|------------|
+| **OS** | Windows 10/11 (64-bit) |
+| **CPU** | Dual-core 2.0 GHz+ |
+| **RAM** | 2 GB |
+| **GPU** | OpenGL 3.3+ support |
+| **Storage** | 500 MB |
 
-| Technique | Impact | Details |
-|-----------|--------|---------|
-| **Lazy Sorting** | **-97%** sort calls | BackgroundLayer caches sorted sprites |
-| **Simple Game Loop** | **+150%** FPS | Removed accumulated time complexity |
-| **Inline Expansion** | **5-10x** faster | `/Ob2` aggressive inlining |
-| **Fast Math** | **2-3x** faster | `/fp:fast` for physics/rendering |
-| **LTCG** | **+10-20%** | Cross-module optimization |
-| **Object Pooling** | Memory stable | Bullet recycling prevents allocations |
-
-### Compiler Flags (MSVC Release)
-```cmake
-/O2   # Maximize speed
-/Ob2     # Aggressive inline
-/Oi      # Intrinsic functions (cos, sin, sqrt)
-/Ot      # Favor fast code
-/GL      # Whole program optimization
-/fp:fast # Fast floating-point
-/GS-     # No buffer security checks
-/LTCG    # Link-time code generation
-```
-
-3. **Contents:**
-```
-LightYears_Demo_v1.0/
- LightYearsGame.exe    # No console window (WIN32_EXECUTABLE)
- sfml-audio-3.dll
- sfml-graphics-3.dll
- sfml-system-3.dll
- sfml-window-3.dll
- openal32.dll
- assets/
-     SpaceShooterRedux/# Textures, audio, shaders
-```
-
-### System Requirements
-- **OS:** Windows 10/11 (64-bit)
-- **CPU:** Dual-core 2.0 GHz+
-- **RAM:** 2 GB
-- **GPU:** OpenGL 3.3+ support
-- **Storage:** 500 MB
-
-### Redistributables
 Users may need: [Visual C++ Redistributable 2022](https://aka.ms/vs/17/release/vc_redist.x64.exe)
 
 ---
 
-##  Known Issues & Roadmap
+## Known Issues
 
-### Known Issues
--  **Console Window:** Appears in Debug mode (intentional for logging)
-
-### Future Plans
--  **Linux/macOS Support** (SFML is cross-platform)
--  **Gamepad Input** (SFML joystick API)
--  **Achievements System**
--  **More Playable Ships**
--  **More Enemy Types**
--  **More Rewards**
--  **And More!**
+- 🐛 **Console Window** appears in Debug mode (intentional for logging)
+- 🐛 **No gamepad support** — keyboard only
 
 ---
 
-##  Code Examples
-
-### Adding a New Enemy Type
-
-```cpp
-// 1. Define in GameplayConfig.h
-static const ShipDefinition Ship_Enemy_NewEnemy(
-    "path/to/texture.png",
-    100.f,  // health
-    sf::Vector2f{0.f, 200.f},  // velocity
-    50.f,   // collision damage
-    20.f, // score
-    (int)ExplosionType::Medium,
-    { /* engine mounts */ },
-    Laser_Red_BulletDef,
-    true,
-    sf::Vector2f{0.f, 40.f},  // weapon offset
-    1.0f,   // weapon cooldown
-    { /* rewards */ }
-);
-
-// 2. Create class in enemy/NewEnemy.h
-class NewEnemy : public EnemySpaceShip {
-public:
-    NewEnemy(World* world, const ShipDefinition& def);
-    void Tick(float deltaTime) override;
-};
-
-// 3. Implement AI logic in enemy/NewEnemy.cpp
-void NewEnemy::Tick(float deltaTime) {
-    EnemySpaceShip::Tick(deltaTime);
-    // Custom movement pattern
-    AddActorLocationOffset(GetVelocity() * deltaTime);
-    Shoot();
-}
-
-// 4. Spawn in stage
-auto enemy = GetWorld()->SpawnActor<NewEnemy>(Ship_Enemy_NewEnemy);
-```
-
----
-
-##  Contributing
+## Contributing
 
 This is a **portfolio project** not accepting external contributions. However, feel free to:
 - Fork for learning purposes
@@ -382,7 +228,7 @@ This is a **portfolio project** not accepting external contributions. However, f
 
 ---
 
-##  License
+## License
 
 **Educational & Portfolio Use Only**
 
@@ -390,16 +236,16 @@ This project is for demonstration purposes. Game assets (SpaceShooterRedux pack)
 
 ---
 
-##  Developer
+## Developer
 
 **Muhammet Ali Karakaş**
--  Email: m.karakas.buisness@gmail.com
--  LinkedIn: [Muhammet Ali Karakaş](https://www.linkedin.com/in/muhammet-ali-karakas/)
+- 📧 Email: m.karakas.buisness@gmail.com
+- 💼 LinkedIn: [Muhammet Ali Karakaş](https://www.linkedin.com/in/muhammet-ali-karakas/)
 
 ---
 
-##  Acknowledgments
+## Acknowledgments
 
-- **SFML Team** - Multimedia library foundation
-- **Box2D** (Erin Catto) - Physics engine
-- **Kenney.nl** - Space shooter art pack
+- **SFML Team** — Multimedia library foundation
+- **Box2D** (Erin Catto) — Physics engine
+- **Kenney.nl** — Space shooter art pack (CC0)

@@ -88,9 +88,7 @@ set(SFML_LIB_NAME SFML)
 
 FetchContent_Declare(
     ${SFML_LIB_NAME}
-    GIT_REPOSITORY https://github.com/SFML/SFML
-    GIT_TAG 3.0.1
-    GIT_SHALLOW FALSE
+    URL https://github.com/SFML/SFML/archive/refs/tags/3.0.1.zip
 )
 
 FetchContent_MakeAvailable(${SFML_LIB_NAME})
@@ -103,9 +101,7 @@ target_link_libraries(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC sfml-window)
 set(BOX2D_LIB_NAME Box2D)
 FetchContent_Declare(
     ${BOX2D_LIB_NAME}
-    GIT_REPOSITORY https://github.com/erincatto/box2d.git
-    GIT_TAG v3.1.1
-    GIT_SHALLOW FALSE
+    URL https://github.com/erincatto/box2d/archive/refs/tags/v3.1.1.zip
 )
 
 FetchContent_MakeAvailable(${BOX2D_LIB_NAME})

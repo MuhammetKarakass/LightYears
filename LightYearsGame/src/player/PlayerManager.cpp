@@ -24,18 +24,18 @@ namespace ly
 
 	Player& PlayerManager::CreateNewPlayer()
 	{
-		mPlayers.emplace(mPlayers.begin(), Player());
+		mPlayers.emplace_back(Player());
 		return mPlayers.back();
 	}
 	Player* PlayerManager::GetPlayer(int playerIndex)
 	{
-		if (playerIndex < 0 || playerIndex >= mPlayers.size())
+		if (playerIndex < 0 || static_cast<size_t>(playerIndex) >= mPlayers.size())
 			return nullptr;
 		return &mPlayers[playerIndex];
 	}
 	const Player* PlayerManager::GetPlayer(int playerIndex) const
 	{
-		if (playerIndex < 0 || playerIndex >= mPlayers.size())
+		if (playerIndex < 0 || static_cast<size_t>(playerIndex) >= mPlayers.size())
 			return nullptr;
 		return &mPlayers[playerIndex];
 	}

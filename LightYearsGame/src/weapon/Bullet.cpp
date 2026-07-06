@@ -5,7 +5,14 @@
 namespace ly
 {
 	Bullet::Bullet(World* world, Actor* owner, const BulletDefinition& def)
-		: Actor(world, def.texturePath), mOwner(owner), mSpeed(def.speed), mDamage(def.damage)
+		: Actor(world, def.texturePath),
+		mOwner(owner),
+		mSpeed(def.speed),
+		mDamage(def.damage),
+		mLifeTime(def.lifeTime),
+		mAge(0.f),
+		mMaxTravelDistance(def.maxTravelDistance),
+		mTravelDistance(0.f)
 	{
 		SetupCollisionFromOwner();
 		ly::perf::IncBullets();
@@ -33,7 +40,10 @@ namespace ly
 	void Bullet::Tick(float deltaTime)
 	{
 		Move(deltaTime);
-		if (IsActorOutOfWindow())
+		mAge += deltaTime;
+		mTravelDistance += mSpeed * deltaTime;
+
+		if (mAge >= mLifeTime || mTravelDistance >= mMaxTravelDistance)
 		{
 			Destroy();
 		}
@@ -88,6 +98,11 @@ namespace ly
 
 	void Bullet::Destroy()
 	{
+		if (GetIsPendingDestroy())
+		{
+			return;
+		}
+
 		ly::perf::DecBullets();
 		Actor::Destroy();
 	}

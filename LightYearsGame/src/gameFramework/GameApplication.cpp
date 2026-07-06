@@ -1,6 +1,7 @@
 #include "gameFramework/GameApplication.h"
-#include "level/LevelOne.h"
-#include "level/MainMenuLevel.h"
+
+#include "level/ArenaTestLevel.h"
+
 #include <framework/AssetManager.h>
 #include <Config.h>
 #include "framework/PerfMonitor.h"
@@ -13,31 +14,16 @@ ly::Application* GetApplication()
 namespace ly
 {
 	GameApplication::GameApplication()
-		:Application({600,980 },64, std::string("LightYears"), sf::Style::Close|sf::Style::Titlebar)
+		: Application({ 1280, 720 }, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
-		// Disable lights/shaders for testing GPU-related freezes
+
 		ly::perf::g_disableLights.store(false);
-		weak_ptr<MainMenuLevel> NewWorld=LoadWorld<MainMenuLevel>();
-		
-		counter =0.f;
+
+		LoadWorld<ArenaTestLevel>();
 	}
 
-	void GameApplication::Tick(float deltaTime)
+	void GameApplication::Tick(float)
 	{
-		/*counter += deltaTime;
-		if (counter >10.f)
-		{
-			if (!ActorSpaceShip.expired())
-			{
-				ActorSpaceShip.lock()->Destroy();
-			}
-		}*/
-
 	}
-	/*void GameApplication::SpaceShipMove(shared_ptr<SpaceShip> spaceShip)
-	{
-		spaceShip->AddActorLocationOffset(spaceShip->GetActorForwardDirection() *1.f);
-
-	}*/
 }

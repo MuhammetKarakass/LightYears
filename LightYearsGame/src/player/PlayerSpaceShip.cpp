@@ -66,6 +66,7 @@ namespace ly
 	{
 		SpaceShip::BeginPlay();
 		
+		mShield.onShieldStateChanged.BindAction(GetWeakPtr(), &PlayerSpaceShip::OnShieldStateChanged);
 
 		TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
@@ -80,6 +81,18 @@ namespace ly
 		if (mInvulnerable)
 		{
 			return;
+		}
+
+		if (mShield.IsActive())
+		{
+			amt = mShield.TakeDamage(amt);
+			// Force HUD update for shield health
+			GetHealthComponent().onHealthChanged.Broadcast(0.f, GetHealthComponent().GetHealth(), GetHealthComponent().GetMaxHealth());
+
+			if (amt <= 0.f)
+			{
+				return; // Shield absorbed all damage
+			}
 		}
 
 		float currentHealth = GetHealthComponent().GetHealth();
@@ -136,7 +149,16 @@ namespace ly
 			mMoveInput.x = 1.f;
 		}
 
-		ClampInputOnEdge();
+		if (mUseScreenClamp)
+		{
+			ClampInputOnEdge();
+		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
+		{
+			Shoot();
+		}
+
 		NormalizeInput();  
 	}
 
@@ -172,10 +194,7 @@ namespace ly
 			mMoveInput.y = 0.f;
 		}
 
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
-		{
-			Shoot();
-		}
+		
 	}
 
 	void PlayerSpaceShip::Shoot()
@@ -269,5 +288,38 @@ namespace ly
 		{
 			mShooter->SetCurrentLevel(state.level);
 		}
+	}
+
+	void PlayerSpaceShip::ActivateShield(float bonusHP, float duration)
+	{
+		mShield.Activate(bonusHP);
+
+		// Force HUD update display
+		GetHealthComponent().onHealthChanged.Broadcast(0.f, GetHealthComponent().GetHealth(), GetHealthComponent().GetMaxHealth());
+
+		// Set timer to deactivate shield
+		TimerManager::GetGameTimerManager().ClearTimer(mShieldTimerHandle);
+		mShieldTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
+			GetWeakPtr(),
+			&PlayerSpaceShip::DeactivateShield,
+			duration,
+			false
+		);
+	}
+
+	void PlayerSpaceShip::DeactivateShield()
+	{
+		if (!mShield.IsActive()) return;
+
+		mShield.Deactivate();
+
+		// Force HUD update
+		GetHealthComponent().onHealthChanged.Broadcast(0.f, GetHealthComponent().GetHealth(), GetHealthComponent().GetMaxHealth());
+	}
+
+	void PlayerSpaceShip::OnShieldStateChanged(bool active)
+	{
+		// Forward the event
+		onShieldStateChanged.Broadcast(active);
 	}
 }

@@ -25,6 +25,8 @@ struct BulletDefinition
 	std::string texturePath;
 	float speed;
 	float damage;
+	float lifeTime;
+	float maxTravelDistance;
 
 	PointLightDefinition pointLightDef;
 	sf::Vector2f lightOffset;
@@ -34,11 +36,15 @@ struct BulletDefinition
 		float inSpeed = 500.f,
 		float inDamage = 10.f,
 		const PointLightDefinition& inPointLightDef = PointLightDefinition(),
-		const sf::Vector2f& inOffset = { 0.f, 0.f }
+		const sf::Vector2f& inOffset = { 0.f, 0.f },
+		float inLifeTime = 3.f,
+		float inMaxTravelDistance = 1600.f
 	)
 		: texturePath(inTexturePath)
 		, speed(inSpeed)
 		, damage(inDamage)
+		, lifeTime(inLifeTime)
+		, maxTravelDistance(inMaxTravelDistance)
 		, pointLightDef(inPointLightDef)
 		, lightOffset(inOffset)
 	{

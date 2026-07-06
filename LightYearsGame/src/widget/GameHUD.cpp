@@ -3,6 +3,8 @@
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
 #include "framework/TimerManager.h"
+#include <cmath>
+#include <cstdio>
 
 namespace ly
 {
@@ -97,6 +99,8 @@ namespace ly
 		if(mBossNameText.expired() == false && mBossNameText.lock()->IsAnimating())
 			mBossNameText.lock()->NativeTick(deltaTime);
 
+		UpdateGameplayWarningVisuals(deltaTime);
+
 	}
 
 	bool GameHUD::HandleEvent(const sf::Event& event)
@@ -156,11 +160,17 @@ namespace ly
 		{
 			weak_ptr<PlayerSpaceShip> playerSpaceShip = player->GetCurrentSpaceShip();
 			shared_ptr<PlayerSpaceShip> lockedSpaceShip = playerSpaceShip.lock();
-			if (lockedSpaceShip)
+			if (lockedSpaceShip && !lockedSpaceShip->GetIsPendingDestroy())
 			{
-				lockedSpaceShip->onActorDestroyed.BindAction(GetWeakPtr(), &GameHUD::PlayerSpaceShipDestroyed);
+				if (mObservedPlayerSpaceShip.lock() != lockedSpaceShip)
+				{
+					mObservedPlayerSpaceShip = lockedSpaceShip;
+					lockedSpaceShip->onActorDestroyed.BindAction(GetWeakPtr(), &GameHUD::PlayerSpaceShipDestroyed);
+					lockedSpaceShip->GetHealthComponent().onHealthChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerHealthUpdated);
+					lockedSpaceShip->onShieldStateChanged.BindAction(GetWeakPtr(), &GameHUD::OnShieldStateChanged);
+				}
 				HealthComponent& healthComponent = lockedSpaceShip->GetHealthComponent();
-				healthComponent.onHealthChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerHealthUpdated);
+				mShieldActive = false;
 				PlayerHealthUpdated(0, healthComponent.GetHealth(), healthComponent.GetMaxHealth());
 			}
 		}
@@ -168,7 +178,30 @@ namespace ly
 
 	void GameHUD::PlayerHealthUpdated(float amt, float currentHealth, float maxHealth)
 	{
-		mPlayerHealthBar->UpdateValue(currentHealth, maxHealth);
+		float totalHealth = currentHealth;
+		float totalMax = maxHealth;
+
+		if (mShieldActive)
+		{
+			Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+			if (player && !player->GetCurrentSpaceShip().expired())
+			{
+				auto ship = player->GetCurrentSpaceShip().lock();
+				if (ship)
+				{
+					totalHealth += ship->GetShield().GetHealth();
+					totalMax += ship->GetShield().GetMaxHealth();
+				}
+			}
+		}
+
+		mPlayerHealthBar->UpdateValue(totalHealth, totalMax);
+
+		if (mShieldActive)
+		{
+			mPlayerHealthBar->SetForegroundColor(sf::Color{ 80, 160, 255, 255 });
+			return;
+		}
 
 		float healthPercent = currentHealth / maxHealth;
 		std::uint8_t r, g;
@@ -190,6 +223,18 @@ namespace ly
 	}
 
 	void GameHUD::PlayerSpaceShipDestroyed(Actor* actor)
+	{
+		mObservedPlayerSpaceShip.reset();
+		TimerManager::GetGlobalTimerManager().ClearTimer(mRefreshHealthBarTimerHandle);
+		mRefreshHealthBarTimerHandle = TimerManager::GetGlobalTimerManager().SetTimer(
+			GetWeakPtr(),
+			&GameHUD::RefreshHealthBarDeferred,
+			0.01f,
+			false
+		);
+	}
+
+	void GameHUD::RefreshHealthBarDeferred()
 	{
 		RefreshHealthBar();
 	}
@@ -215,6 +260,23 @@ namespace ly
 	void GameHUD::PlayerScoreUpdated(int amt)
 	{
 		mPlayerScoreText->SetString(std::to_string(amt));
+	}
+
+	void GameHUD::OnShieldStateChanged(bool active)
+	{
+		mShieldActive = active;
+
+		// Force a health bar color refresh
+		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+		if (player && !player->GetCurrentSpaceShip().expired())
+		{
+			auto ship = player->GetCurrentSpaceShip().lock();
+			if (ship)
+			{
+				HealthComponent& health = ship->GetHealthComponent();
+				PlayerHealthUpdated(0.f, health.GetHealth(), health.GetMaxHealth());
+			}
+		}
 	}
 
 	void GameHUD::ShowTimer(float fadeIn, float hold, float fadeOut)
@@ -286,6 +348,93 @@ namespace ly
 		mBossNameText.lock()->StartFadeAnimation(0.f, 0.f, 2.f);
 		mBossHealthBar.lock()->SetLifeTime(2.5f);
 		mBossNameText.lock()->SetLifeTime(2.5f);
+	}
+
+	void GameHUD::ShowGameplayWarning(const GameplayWarning& warning)
+	{
+		if (!mTopCenterText.has_value())
+		{
+			return;
+		}
+
+		char warningText[128];
+		if (warning.hasCountdown)
+		{
+			snprintf(
+				warningText,
+				sizeof(warningText),
+				"%s\n%s %.2f",
+				warning.title.c_str(),
+				warning.message.c_str(),
+				warning.remainingTime
+			);
+		}
+		else
+		{
+			snprintf(
+				warningText,
+				sizeof(warningText),
+				"%s\n%s",
+				warning.title.c_str(),
+				warning.message.c_str()
+			);
+		}
+
+		const bool isNewWarning = !mHasActiveGameplayWarning || mActiveGameplayWarningType != warning.type;
+		mHasActiveGameplayWarning = true;
+		mActiveGameplayWarningType = warning.type;
+
+		if (isNewWarning)
+		{
+			mGameplayWarningAnimTime = 0.f;
+		}
+
+		mTopCenterText->SetString(warningText);
+		mTopCenterText->SetTextSize(24);
+		mTopCenterText->SetFillColor(sf::Color{ 255, 45, 45, 245 });
+		mTopCenterText->CenterOrigin();
+		mGameplayWarningBaseLocation = sf::Vector2f{ mWindowSize.x * 0.5f, 54.f };
+		mTopCenterText->SetWidgetLocation(mGameplayWarningBaseLocation);
+		mTopCenterText->SetVisibility(true);
+	}
+
+	void GameHUD::HideGameplayWarning(GameplayWarningType warningType)
+	{
+		if (!mTopCenterText.has_value() || !mHasActiveGameplayWarning)
+		{
+			return;
+		}
+
+		if (mActiveGameplayWarningType != warningType)
+		{
+			return;
+		}
+
+		mHasActiveGameplayWarning = false;
+		mTopCenterText->SetVisibility(false);
+	}
+
+	void GameHUD::UpdateGameplayWarningVisuals(float deltaTime)
+	{
+		if (!mHasActiveGameplayWarning || !mTopCenterText.has_value())
+		{
+			return;
+		}
+
+		mGameplayWarningAnimTime += deltaTime;
+
+		const float pulse = (std::sin(mGameplayWarningAnimTime * 9.5f) + 1.f) * 0.5f;
+		const float flicker = (std::sin(mGameplayWarningAnimTime * 37.f) + 1.f) * 0.5f;
+		const float threat = std::max(pulse, flicker * 0.65f);
+
+		const std::uint8_t greenBlue = static_cast<std::uint8_t>(35.f + threat * 45.f);
+		const std::uint8_t alpha = static_cast<std::uint8_t>(205.f + threat * 50.f);
+
+		const float shakeX = std::sin(mGameplayWarningAnimTime * 51.f) * 1.8f * threat;
+		const float shakeY = std::sin(mGameplayWarningAnimTime * 29.f) * 1.2f * threat;
+
+		mTopCenterText->SetFillColor(sf::Color{ 255, greenBlue, greenBlue, alpha });
+		mTopCenterText->SetWidgetLocation(mGameplayWarningBaseLocation + sf::Vector2f{ shakeX, shakeY });
 	}
 
 }

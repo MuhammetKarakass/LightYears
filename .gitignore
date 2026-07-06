@@ -2,3 +2,7 @@
 build/
 out/
 documentation.md
+docs/*.md
+run_stdout.log
+run_stderr.log
+*.md

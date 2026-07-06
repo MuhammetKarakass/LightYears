@@ -39,6 +39,7 @@ namespace ly
 	weak_ptr<Reward> CreateRewardThreeWayShooter(World* world);
 	weak_ptr<Reward> CreateRewardFrontalWiper(World* world);
 	weak_ptr<Reward> CreateRewardLife(World* world);
+	weak_ptr<Reward> CreateRewardShield(World* world);
 
 	weak_ptr<Reward> CreateReward(World* world, const std::string& texturePath, RewardFunc rewardFunc, float speed=200.f);
 
@@ -46,4 +47,5 @@ namespace ly
 	void RewardThreeWayShooter(PlayerSpaceShip* player);
 	void RewardFrontalWiper(PlayerSpaceShip* player);
 	void RewardLife(PlayerSpaceShip* player);
+	void RewardShield(PlayerSpaceShip* player);
 }

@@ -26,7 +26,8 @@ namespace ly
 		{
 			{CreateRewardHealth, 0.4f},
 			{CreateRewardThreeWayShooter, 0.25f},
-			{CreateRewardFrontalWiper, 0.2f}
+			{CreateRewardFrontalWiper, 0.2f},
+			{CreateRewardShield, 0.15f}
 		};
 	}
 	void Asteroid::BeginPlay()

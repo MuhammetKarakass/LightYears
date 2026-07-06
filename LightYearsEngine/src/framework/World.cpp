@@ -132,6 +132,16 @@ namespace ly{
 		mOverlayHUD.reset();
 	}
 
+	void World::SetViewTarget(weak_ptr<Actor> target)
+	{
+		mViewTarget = target;
+	}
+
+	void World::ClearViewTarget()
+	{
+		mViewTarget.reset();
+	}
+
 	weak_ptr<Actor> World::GetActorByLayer(CollisionLayer layer) const
 	{
 		for (auto& actor : mActors)
@@ -146,6 +156,16 @@ namespace ly{
 
 	void World::Render(sf::RenderWindow& window)
 	{
+		sf::View previousView = window.getView();
+		sf::View worldView = window.getDefaultView();
+
+		if (auto target = mViewTarget.lock())
+		{
+			worldView.setCenter(target->GetActorLocation());
+		}
+
+		window.setView(worldView);
+
 		// Batch render all actors
 		for (const std::shared_ptr<Actor>& actor : mActors)
 		{
@@ -155,7 +175,11 @@ namespace ly{
 				actor->Render(window);
 			}
 		}
+
+		window.setView(window.getDefaultView());
 		RenderHUD(window);
+
+		window.setView(previousView);
 	}
 
 	sf::Vector2u World::GetWindowSize()

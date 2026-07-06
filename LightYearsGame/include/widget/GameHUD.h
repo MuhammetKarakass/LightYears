@@ -5,10 +5,13 @@
 #include <widget/ValueGauge.h>
 #include <widget/ImageWidget.h>
 #include <widget/Button.h>
+#include "framework/TimerManager.h"
+#include "gameplay/GameplayWarning.h"
 
 namespace ly
 {
 	class Actor;
+	class PlayerSpaceShip;
 
 	class GameHUD : public HUD
 	{
@@ -27,15 +30,20 @@ namespace ly
 		void CreateBossHealthBar(const std::string& bossName,float health, float maxHealth);
 		void BossHealthUpdated(float amt, float currentHealth, float maxHealth);
 		void RemoveBossHealthBar(Actor* actor);
+		void ShowGameplayWarning(const GameplayWarning& warning);
+		void HideGameplayWarning(GameplayWarningType warningType);
 
 	private:
 		virtual void Init(sf::RenderWindow& windowRef) override;
 		void RefreshHealthBar();
 		void PlayerHealthUpdated(float amt, float currentHealth, float maxHealth);
 		void PlayerSpaceShipDestroyed(Actor* actor);
+		void RefreshHealthBarDeferred();
 		void ConnectStatus();
 		void PlayerLifeUpdated(int amt);
 		void PlayerScoreUpdated(int amt);
+		void OnShieldStateChanged(bool active);
+		void UpdateGameplayWarningVisuals(float deltaTime);
 
 		std::optional<ValueGauge> mPlayerHealthBar;
 		std::optional<TextWidget> mFrameRateText;
@@ -57,5 +65,12 @@ namespace ly
 		sf::RenderWindow* mWindowRef{ nullptr };
 
 		float mWidgetSpacingX;
+		bool mShieldActive{ false };
+		weak_ptr<PlayerSpaceShip> mObservedPlayerSpaceShip;
+		TimerHandle mRefreshHealthBarTimerHandle;
+		bool mHasActiveGameplayWarning{ false };
+		GameplayWarningType mActiveGameplayWarningType{ GameplayWarningType::ArenaBoundary };
+		float mGameplayWarningAnimTime{ 0.f };
+		sf::Vector2f mGameplayWarningBaseLocation{ 0.f, 0.f };
 	};
 }
