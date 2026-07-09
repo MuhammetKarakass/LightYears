@@ -1,7 +1,5 @@
 #include "player/Reward.h"
 #include "player/PlayerSpaceShip.h"
-#include "weapon/ThreeWayShooter.h"
-#include "weapon/FrontalWiper.h"
 #include <framework/World.h>
 #include "player/PlayerManager.h"
 #include "gameConfigs/GameplayConfig.h"
@@ -55,14 +53,6 @@ namespace ly
 	{
 		return CreateReward(world, "SpaceShooterRedux/PNG/pickups/pill_green.png", RewardHealth);
 	}
-	weak_ptr<Reward> CreateRewardThreeWayShooter(World* world)
-	{
-		return CreateReward(world, "SpaceShooterRedux/PNG/pickups/three_shooter_pickup.png", RewardThreeWayShooter);
-	}
-	weak_ptr<Reward> CreateRewardFrontalWiper(World* world)
-	{
-		return CreateReward(world, "SpaceShooterRedux/PNG/pickups/front_row_shooter_pickup.png", RewardFrontalWiper);
-	}
 	weak_ptr<Reward> CreateRewardLife(World* world)
 	{
 		return CreateReward(world, "SpaceShooterRedux/PNG/pickups/playerLife1_blue.png", RewardLife);
@@ -79,26 +69,6 @@ namespace ly
 		if (player && !player->GetIsPendingDestroy())
 		{
 			player->GetHealthComponent().ChangeHealth(healAmount);
-		}
-	}
-	void RewardThreeWayShooter(PlayerSpaceShip* player)
-	{
-		if (player && !player->GetIsPendingDestroy())
-		{
-			player->SetShooter(
-				std::make_unique<ThreeWayShooter>(player, GameData::Laser_Blue_BulletDef, 0.4f, sf::Vector2f{ 0.f, 50.f }),
-				WeaponType::ThreeWay
-			);
-		}
-	}
-	void RewardFrontalWiper(PlayerSpaceShip* player)
-	{
-		if (player && !player->GetIsPendingDestroy())
-		{
-			player->SetShooter(
-				std::make_unique<FrontalWiper>(player, GameData::Laser_Blue_BulletDef, 0.5f, sf::Vector2f{ 0.f, 50.f }),
-				WeaponType::FrontalWhiper
-			);
 		}
 	}
 	void RewardLife(PlayerSpaceShip* player)

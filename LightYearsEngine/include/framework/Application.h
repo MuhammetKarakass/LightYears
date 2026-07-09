@@ -37,6 +37,8 @@ namespace ly
 	private:
 		sf::RenderWindow mWindow;
 		float mTargetFrameRate;
+		bool mShouldQuit;
+		bool mQuitRequested;
 		sf::Clock mTickClock;
 
 		sf::Clock mCleanCycleClock;
@@ -52,6 +54,7 @@ namespace ly
 		virtual void Render(); 
 
 		bool DispatchEvent(const std::optional<sf::Event>& event);
+		void ShutdownApplication();
 
 
 	};

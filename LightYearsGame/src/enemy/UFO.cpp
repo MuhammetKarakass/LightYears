@@ -1,6 +1,6 @@
 ﻿#include "enemy/UFO.h"
-#include "weapon/BulletShooter.h"
 #include <framework/World.h>
+#include "gameplay/ability/controllers/PrimaryWeaponController.h"
 #include <cmath> 
 #include <algorithm> 
 #include <framework/MathUtility.h>
@@ -9,11 +9,14 @@ namespace ly
 {
 	UFO::UFO(World* owningWorld, const ShipDefinition& shipDef, const sf::Vector2f& velocity, float rotationSpeed) :
 		EnemySpaceShip{ owningWorld, shipDef },
-		mShooter1{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, { 35.f, 20.f}, 60.f }},
-		mShooter2{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, { -35.f, 20.f}, -60.f} },
-		mShooter3{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, { 0.f, -40.f}, 180.f }},
+		mAbilitySystem{ this },
 		mRotationSpeed{ rotationSpeed }
 	{
+		mAbilitySystem.AddController(
+			AbilitySlot::PrimaryFire,
+			std::make_unique<PrimaryWeaponController>(this, shipDef.primaryWeaponDefinition)
+		);
+
 		SetVelocity(velocity);
 		SetActorRotation(180.f);
 		SetScoreAmt(shipDef.scoreAmt);
@@ -33,6 +36,7 @@ namespace ly
 	{
 		EnemySpaceShip::Tick(deltaTime);
 		Shoot();
+		mAbilitySystem.Tick(deltaTime);
 		AddActorRotationOffset(deltaTime * mRotationSpeed);
 
 		CheckBounce();
@@ -126,8 +130,6 @@ namespace ly
 
 	void UFO::Shoot()
 	{
-		mShooter1->Shoot();
-		mShooter2->Shoot();
-		mShooter3->Shoot();
+		mAbilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, true);
 	}
 }

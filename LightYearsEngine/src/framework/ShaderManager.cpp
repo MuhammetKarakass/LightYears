@@ -13,6 +13,15 @@ namespace ly
 		return *mShaderManager;
 	}
 
+	void ShaderManager::ShutdownShaderManager()
+	{
+		if (mShaderManager)
+		{
+			mShaderManager->CleanUp();
+			mShaderManager.reset();
+		}
+	}
+
 	bool ShaderManager::LoadShader(const std::string& name, const std::string& fragmentPath)
 	{
 		if(!sf::Shader::isAvailable())

@@ -4,9 +4,6 @@
 
 namespace ly
 {
-	class Player;
-	class Actor;
-	class PlayerSpaceShip;
 	class ArenaTestLevel : public ArenaLevel
 	{
 	public:
@@ -14,16 +11,7 @@ namespace ly
 
 	protected:
 		virtual ArenaDefinition CreateArenaDefinition() const override;
+		virtual PlayerRespawnDefinition CreatePlayerRespawnDefinition() const override;
 		virtual void OnGameStart() override;
-		virtual void Tick(float deltaTime) override;
-
-	private:
-		void SpawnPlayer();
-
-		void SpawnPlayerShip(Player& player);
-		void ConfigurePlayerShip(weak_ptr<PlayerSpaceShip> playerShip);
-		void PlayerShipDestroyed(Actor* playerShip);
-
-		weak_ptr<PlayerSpaceShip> mPlayerSpaceShip;
 	};
 }

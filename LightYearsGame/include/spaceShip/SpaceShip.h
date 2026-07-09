@@ -10,6 +10,12 @@
 namespace ly
 {
 	class World;
+	enum class ShipMovementMode
+	{
+		LegacyVelocity,
+		ThrustDrift
+	};
+
 	class SpaceShip : public Actor
 	{
 	public:
@@ -31,6 +37,15 @@ namespace ly
 		bool IsInvulnerable() const { return mInvulnerability; }
 		void SetInvulnerability(bool invuln) { mInvulnerability = invuln; }
 
+		void SetMovementMode(ShipMovementMode movementMode) { mMovementMode = movementMode; }
+		ShipMovementMode GetMovementMode() const { return mMovementMode; }
+
+		const ShipMovementAttributes& GetMovementAttributes() const { return mMovementAttributes; }
+		ShipMovementAttributes& GetMovementAttributes() { return mMovementAttributes; }
+
+		void AddShipRelativeThrust(const sf::Vector2f& localThrustInput, float deltaTime);
+		void RotateTowardWorldLocation(const sf::Vector2f& worldLocation, float deltaTime);
+
 		virtual void SetupCollisionLayers();
 
 		List<GameplayTag> mGameplayTags;
@@ -44,9 +59,15 @@ namespace ly
 		bool mInvulnerability;
 
 		ExplosionType mExplosionType;
+		ShipMovementMode mMovementMode;
+		ShipMovementAttributes mMovementAttributes;
+		float mAngularVelocity;
 
 		void Blink();
 		void UpdateBlink(float deltaTime);
+		void ApplyThrustDriftDamping(float deltaTime);
+		void ClampThrustDriftVelocity();
+		float GetShortestAngleDelta(float targetAngle, float currentAngle) const;
 
 
 		virtual void OnHealthChanged(float amt, float health, float maxHealth);

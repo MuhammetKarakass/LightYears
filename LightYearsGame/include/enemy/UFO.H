@@ -1,9 +1,9 @@
 #pragma once
 #include "enemy/EnemySpaceShip.h"
+#include "gameplay/ability/AbilitySystem.h"
 
 namespace ly
 {
-	class BulletShooter;
 	class UFO : public EnemySpaceShip
 	{
 	public:
@@ -11,11 +11,11 @@ namespace ly
 		virtual ~UFO();
 
 		virtual void Tick(float deltaTime) override;
-		
-		// UFO'lar özel collision setup'ý kullanýr
+
+		// UFOs use custom collision setup.
 		virtual void SetupCollisionLayers() override;
-		
-		// UFO'lar birbirleriyle çarpýþabilir ve sekebilir
+
+		// UFOs can collide with each other and bounce.
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 
 	protected:
@@ -23,11 +23,9 @@ namespace ly
 
 	private:
 		virtual void Shoot() override;
-		void CheckBounce(); // X ekseninde sekme kontrolü
+		void CheckBounce(); // Checks bounce on the X axis.
 
-		unique_ptr<BulletShooter> mShooter1;
-		unique_ptr<BulletShooter> mShooter2;
-		unique_ptr<BulletShooter> mShooter3;
+		AbilitySystem mAbilitySystem;
 
 		float mRotationSpeed;
 	};

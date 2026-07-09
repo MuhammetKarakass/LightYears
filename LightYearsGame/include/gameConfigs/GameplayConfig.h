@@ -92,31 +92,152 @@ namespace GameData
 
 #pragma endregion
 
-#pragma region Ammo Definitions
+#pragma region Weapon Definitions
 
-	static const BulletDefinition Laser_Blue_BulletDef(
+	static const WeaponPresentationDefinition Laser_Blue_PresentationDef(
 		"SpaceShooterRedux/PNG/Lasers/laserBlue01.png",
-		500.f,
-		10.f,
 		Laser_Blue_PointLightDef,
-		{ 0.f,38.f }
-		
+		{ 0.f,38.f },
+		1.f
 	);
 
-	static const BulletDefinition Laser_Red_BulletDef(
+	static const WeaponPresentationDefinition Laser_Red_PresentationDef(
 		"SpaceShooterRedux/PNG/Lasers/laserRed01.png",
-		500.f,
-		10.f,
 		Laser_Red_PointLightDef,
-		{ 0.f,38.f }
+		{ 0.f,38.f },
+		1.f
 	);
 
-	static const BulletDefinition Laser_Green_BulletDef(
+	static const WeaponPresentationDefinition Laser_Green_PresentationDef(
 		"SpaceShooterRedux/PNG/Lasers/laserGreen11.png",
-		500.f,
-		10.f,
 		Laser_Green_PointLightDef,
-		{ 0.f,38.f }
+		{ 0.f,38.f },
+		1.f
+	);
+
+	static const PrimaryWeaponDefinition Fighter_PrimaryWeaponDef(
+		"FighterPulseCannon",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Blue_PresentationDef,
+		PrimaryWeaponAttributes{
+			10.f,    // damage: current default blue laser damage.
+			6.5f,    // shotsPerSecond: continuous primary fire, not player-facing cooldown.
+			500.f,   // projectileSpeed: current default blue laser speed.
+			4.2f,    // projectileLifeTime: matches current arena-safe bullet lifetime.
+			2200.f,  // projectileMaxTravelDistance: matches current arena-safe bullet range.
+			8.f,     // projectileCollisionRadius: placeholder until projectile collision shape is data-driven.
+			0.f,     // projectileAreaRadius: zero means no area damage.
+			0.f,     // spreadAngle: single focused shot.
+			1.f,     // projectilesPerShot: single projectile stream.
+			0.f,     // pierceCount: no piercing by default.
+			0.f,     // beamRange: unused for projectile delivery.
+			0.f      // beamWidth: unused for projectile delivery.
+		},
+		{ WeaponMuzzleDefinition{ sf::Vector2f{ 0.f, 50.f }, 0.f } },
+		PrimaryWeaponFirePattern::Single,
+		true
+	);
+
+	static const PrimaryWeaponDefinition Enemy_Vanguard_PrimaryWeaponDef(
+		"EnemyVanguardBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 1.1f, 500.f, 3.6f, 1900.f, 8.f },
+		{ WeaponMuzzleDefinition{ sf::Vector2f{ 0.f, 40.f }, 0.f } }
+	);
+
+	static const PrimaryWeaponDefinition Enemy_Vanguard_Elite_PrimaryWeaponDef(
+		"EnemyVanguardEliteBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 1.35f, 500.f, 3.6f, 1900.f, 8.f },
+		{ WeaponMuzzleDefinition{ sf::Vector2f{ 0.f, 40.f }, 0.f } }
+	);
+
+	static const PrimaryWeaponDefinition Enemy_TwinBlade_PrimaryWeaponDef(
+		"EnemyTwinBladeDualBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 1.f, 400.f, 3.6f, 1900.f, 8.f },
+		{
+			WeaponMuzzleDefinition{ sf::Vector2f{ -20.f, 40.f }, 0.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 20.f, 40.f }, 0.f }
+		}
+	);
+
+	static const PrimaryWeaponDefinition Enemy_Hexagon_PrimaryWeaponDef(
+		"EnemyHexagonRadialBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 1.35f, 400.f, 3.6f, 1900.f, 8.f },
+		{
+			WeaponMuzzleDefinition{ sf::Vector2f{ 0.f, 50.f }, 0.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 0.f, -50.f }, 180.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 50.f, 50.f }, 45.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ -50.f, 50.f }, -45.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ -50.f, -50.f }, -135.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 50.f, -50.f }, 135.f }
+		}
+	);
+
+	static const PrimaryWeaponDefinition Enemy_UFO_PrimaryWeaponDef(
+		"EnemyUFOTriBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 1.1f, 500.f, 3.6f, 1900.f, 8.f },
+		{
+			WeaponMuzzleDefinition{ sf::Vector2f{ 35.f, 20.f }, 60.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ -35.f, 20.f }, -60.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 0.f, -40.f }, 180.f }
+		}
+	);
+
+	static const PrimaryWeaponDefinition Boss_Base_PrimaryWeaponDef(
+		"BossBaseDualBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 2.f, 500.f, 3.6f, 1900.f, 8.f },
+		{
+			WeaponMuzzleDefinition{ sf::Vector2f{ -50.f, 50.f }, 0.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 50.f, 50.f }, 0.f }
+		}
+	);
+
+	static const PrimaryWeaponDefinition Boss_ThreeWay_PrimaryWeaponDef(
+		"BossThreeWayBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 0.5f, 500.f, 3.6f, 1900.f, 8.f, 0.f, 60.f, 3.f },
+		{ WeaponMuzzleDefinition{ sf::Vector2f{ 0.f, 100.f }, 0.f } },
+		PrimaryWeaponFirePattern::Spread
+	);
+
+	static const PrimaryWeaponDefinition Boss_FrontalSweep_PrimaryWeaponDef(
+		"BossFrontalSweep",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 0.33f, 500.f, 3.6f, 1900.f, 8.f },
+		{
+			WeaponMuzzleDefinition{ sf::Vector2f{ -80.f, 65.f }, 4.5f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ -86.7f, 75.f }, 3.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ -113.3f, 75.f }, -3.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ -120.f, 65.f }, -4.5f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 120.f, 65.f }, 4.5f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 113.3f, 75.f }, 3.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 86.7f, 75.f }, -3.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 80.f, 65.f }, -4.5f }
+		}
+	);
+
+	static const PrimaryWeaponDefinition Boss_LastStage_PrimaryWeaponDef(
+		"BossLastStageSideBlaster",
+		PrimaryWeaponDeliveryType::Projectile,
+		Laser_Red_PresentationDef,
+		PrimaryWeaponAttributes{ 10.f, 2.f, 500.f, 3.6f, 1900.f, 8.f },
+		{
+			WeaponMuzzleDefinition{ sf::Vector2f{ -150.f, 50.f }, 0.f },
+			WeaponMuzzleDefinition{ sf::Vector2f{ 150.f, 50.f }, 0.f }
+		}
 	);
 
 #pragma endregion
@@ -134,11 +255,19 @@ namespace GameData
 			EngineMount{ {-22.f, -12.f}, Engine_Cyan_PointLightDef },
 			EngineMount{ {+22.f, -12.f}, Engine_Cyan_PointLightDef }
 		},
-		Laser_Blue_BulletDef,
-		true,
-		sf::Vector2f{ 0.f, 50.f },      // weaponOffset
-		0.25f,      // weaponCooldown
-		{}        // rewards (player için boş)
+		{},
+		Fighter_PrimaryWeaponDef,
+		ShipMovementAttributes{
+			650.f,   // forwardThrust: reduced so arena speed does not run away too quickly
+			190.f,   // reverseThrust: intentionally weaker than forward
+			270.f,   // strafeThrust: side thrust remains lower than forward
+			400.f,   // angularTurnSpeed: maximum degrees per second
+			5.f,    // angularTurnResponsiveness: lower is smoother, higher is snappier
+			0.36f,   // linearDamping: shorter drift than 0.45, but still keeps some glide
+			520.f,    // maxSpeed: terminal velocity for thrust/drift movement
+			12.f,     // inputResponsiveness: smooths thrust input without making controls feel delayed
+			32.f      // mouseAimDeadZone: prevents close-cursor rotation jitter around the ship
+		}
 	);
 
 	static const ShipDefinition Ship_Enemy_Vanguard(
@@ -151,17 +280,12 @@ namespace GameData
 		{
 			EngineMount{ {0.f,-10.f},Engine_Yellow_PointLightDef },
 		},
-		Laser_Red_BulletDef,
-		true,
-		sf::Vector2f{ 0.f,40.f },
-		.9f,
 		{
 			{ ly::CreateRewardHealth, 0.2f },
-			{ ly::CreateRewardThreeWayShooter, 0.12f },
-			{ ly::CreateRewardFrontalWiper, 0.08f },
 			{ ly::CreateRewardLife, 0.05f},
 			{ ly::CreateRewardShield, 0.08f }
-		}
+		},
+		Enemy_Vanguard_PrimaryWeaponDef
 	);
 
 	static const ShipDefinition Ship_Enemy_Vanguard_Elite
@@ -175,17 +299,12 @@ namespace GameData
 		{
 			EngineMount{ {0.f,20.f},Engine_Orange_PointLightDef },
 		},
-		Laser_Red_BulletDef,
-		true,
-		sf::Vector2f{ 0.f,40.f },
-		0.75f,
 		{
 			{ ly::CreateRewardHealth, 0.2f },
-			{ ly::CreateRewardThreeWayShooter, 0.1f },
-			{ ly::CreateRewardFrontalWiper, 0.06f },
 			{ ly::CreateRewardLife, 0.01f},
 			{ ly::CreateRewardShield, 0.08f }
-		}
+		},
+		Enemy_Vanguard_Elite_PrimaryWeaponDef
 	);
 
 	static const ShipDefinition Ship_Enemy_TwinBlade
@@ -208,17 +327,12 @@ namespace GameData
 		0.2f)
 			}
 		},
-		Laser_Red_BulletDef,
-		true,
-		sf::Vector2f{ 0.f,40.f },
-		1.f,
 		{
 			{ ly::CreateRewardHealth, 0.25f },
-			{ ly::CreateRewardThreeWayShooter, 0.15f },
-			{ ly::CreateRewardFrontalWiper, 0.10f },
 			{ ly::CreateRewardLife, 0.05f},
 			{ ly::CreateRewardShield, 0.08f }
-		}
+		},
+		Enemy_TwinBlade_PrimaryWeaponDef
 	);
 
 	static const ShipDefinition Ship_Enemy_Hexagon
@@ -241,17 +355,12 @@ namespace GameData
 		0.2f)
 			}
 		},
-		Laser_Red_BulletDef,
-		true,
-		sf::Vector2f{ 0.f,0.f },
-		.75f,
 		{
 			{ ly::CreateRewardHealth, 0.3f },
-			{ ly::CreateRewardThreeWayShooter, 0.2f },
-			{ ly::CreateRewardFrontalWiper, 0.15f },
 			{ ly::CreateRewardLife, 0.05f},
 			{ ly::CreateRewardShield, 0.10f }
-		}
+		},
+		Enemy_Hexagon_PrimaryWeaponDef
 	);
 
 	static const ShipDefinition Ship_Enemy_UFO
@@ -278,17 +387,12 @@ namespace GameData
 				)
 			}
 		},
-		Laser_Red_BulletDef,
-		true,
-		sf::Vector2f{ 0.f, 100.f },
-		.9f,
 		{
 			{ ly::CreateRewardHealth, 0.3f },
-			{ ly::CreateRewardThreeWayShooter, 0.25f },
-			{ ly::CreateRewardFrontalWiper, 0.15f },
 			{ ly::CreateRewardLife, 0.08f },
 			{ ly::CreateRewardShield, 0.10f }
-		}
+		},
+		Enemy_UFO_PrimaryWeaponDef
 	);
 #pragma endregion
 

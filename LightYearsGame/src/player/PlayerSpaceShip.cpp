@@ -1,12 +1,11 @@
 #include "player/PlayerSpaceShip.h"
 #include <framework/World.h>
 #include <framework/MathUtility.h>
-#include "weapon/BulletShooter.h"
-#include "weapon/ThreeWayShooter.h"
-#include "weapon/FrontalWiper.h"
-#include "weapon/Shooter.h"
 #include "framework/AssetManager.h"
 #include "gameConfigs/GameplayConfig.h"
+#include "gameplay/ability/controllers/PrimaryWeaponController.h"
+#include <algorithm>
+#include <cmath>
 
 namespace ly
 {
@@ -14,8 +13,8 @@ namespace ly
 		:SpaceShip(owningWorld, shipDef),
 		mSpeed(shipDef.speed.x),
 		mMoveInput{ 0.f, 0.f },
-		mShooter{ new BulletShooter{this, shipDef.bulletDefinition, shipDef.weaponCooldown, shipDef.weaponOffset} },
-		mWeaponType{ WeaponType::Default },
+		mSmoothedMoveInput{ 0.f, 0.f },
+		mAbilitySystem{ this },
 		mInvulnerabilityTime{ 2.f },
 		mInvulnerable{ true },
 		mInvulnerabilityBlinkInterval{ 0.4f },
@@ -23,36 +22,14 @@ namespace ly
 		mInvulnerabilityDir{ 1.f },
 		mCollisionDamage{ shipDef.collisionDamage }
 	{
+		mAbilitySystem.AddController(
+			AbilitySlot::PrimaryFire,
+			std::make_unique<PrimaryWeaponController>(this, shipDef.primaryWeaponDefinition)
+		);
+
 		SetActorRotation(0.f);
 		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
 		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
-	}
-
-	void PlayerSpaceShip::SetShooter(unique_ptr<Shooter>&& shooter, WeaponType type)
-	{
-		if (!shooter)
-		{
-			return;
-		}
-		if (type == mWeaponType && mShooter)
-		{
-			int oldLevel = mShooter->GetCurrentLevel();
-			mShooter->IncrementLevel();
-			int newLevel = mShooter->GetCurrentLevel();
-			return;
-		}
-
-		int oldLevel = mShooter ? mShooter->GetCurrentLevel() : 1;
-		mShooter = std::move(shooter);
-		mWeaponType = type;
-
-		if (mShooter && oldLevel > 1)
-		{
-			mShooter->SetCurrentLevel(oldLevel);
-		}
-		else
-		{
-		}
 	}
 
 	void PlayerSpaceShip::SetupCollisionLayers()
@@ -100,37 +77,40 @@ namespace ly
 
 		if (currentHealth - amt <= 0.f)
 		{
-			LOG("===== PLAYER SHIP DYING - Broadcasting weapon state =====");
-			LOG("WeaponType: %d, Level: %d", (int)mWeaponType, mShooter ? mShooter->GetCurrentLevel() : 0);
-
-			if (mShooter)
-			{
-				onWeaponStateBeforeDeath.Broadcast(mWeaponType, mShooter->GetCurrentLevel());
-			}
-			else
-			{
-				LOG("ERROR: mShooter is null!");
-				onWeaponStateBeforeDeath.Broadcast(WeaponType::Default, 1);
-			}
+			LOG("===== PLAYER SHIP DYING =====");
 		}
 		SpaceShip::ApplyDamage(amt);
 	}
 
 	void PlayerSpaceShip::Tick(float deltaTime)
 	{
-		SpaceShip::Tick(deltaTime);
 		mShaderTime += deltaTime;
-		SetInput();
-		ConsumeInput();
+
+		if (GetMovementMode() == ShipMovementMode::ThrustDrift)
+		{
+			SetInput();
+			ConsumeInput(deltaTime);
+			SpaceShip::Tick(deltaTime);
+		}
+		else
+		{
+			SpaceShip::Tick(deltaTime);
+			SetInput();
+			ConsumeInput(deltaTime);
+		}
+
 		if (mInvulnerable)
 		{
 			UpdateInvulnerability(deltaTime);
 		}
 
+		mAbilitySystem.Tick(deltaTime);
 	}
 
 	void PlayerSpaceShip::SetInput()
 	{
+		mMoveInput = sf::Vector2f{ 0.f, 0.f };
+
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
 		{
 			mMoveInput.y = -1.f;
@@ -154,19 +134,80 @@ namespace ly
 			ClampInputOnEdge();
 		}
 
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
-		{
-			Shoot();
-		}
+		const bool wantsToFire = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
 
-		NormalizeInput();  
+		mAbilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, wantsToFire);
+
+		if (GetMovementMode() == ShipMovementMode::LegacyVelocity)
+		{
+			NormalizeInput();
+		}
 	}
 
-	void PlayerSpaceShip::ConsumeInput()
+	void PlayerSpaceShip::ConsumeInput(float deltaTime)
 	{
-		SetVelocity(mMoveInput * mSpeed);
+		if (GetMovementMode() == ShipMovementMode::ThrustDrift)
+		{
+			const ShipMovementAttributes& movementAttributes = GetMovementAttributes();
+			const float inputResponsiveness = std::max(0.f, movementAttributes.inputResponsiveness.currentValue);
+			const float inputResponseAlpha = inputResponsiveness > 0.f
+				? 1.f - std::exp(-inputResponsiveness * deltaTime)
+				: 1.f;
+
+			mSmoothedMoveInput = LerpVector(mSmoothedMoveInput, mMoveInput, inputResponseAlpha);
+
+			const float forwardInput = std::clamp(-mSmoothedMoveInput.y, -1.f, 1.f);
+			const float strafeInput = std::clamp(mSmoothedMoveInput.x, -1.f, 1.f);
+
+			const float forwardThrust = forwardInput >= 0.f
+				? movementAttributes.forwardThrust.currentValue
+				: movementAttributes.reverseThrust.currentValue;
+			const float strafeThrust = movementAttributes.strafeThrust.currentValue;
+
+			const sf::Vector2f strafeDirection = GetAdaptiveScreenStrafeDirection();
+			sf::Vector2f worldAcceleration =
+				GetActorForwardDirection() * forwardInput * forwardThrust +
+				strafeDirection * strafeInput * strafeThrust;
+
+			const float dominantAxisMagnitude = std::max(
+				std::abs(forwardInput) * forwardThrust,
+				std::abs(strafeInput) * strafeThrust
+			);
+			const float accelerationLength = GetVectorLength(worldAcceleration);
+
+			if (accelerationLength > dominantAxisMagnitude && dominantAxisMagnitude > 0.f)
+			{
+				worldAcceleration *= dominantAxisMagnitude / accelerationLength;
+			}
+
+			mVelocity += worldAcceleration * deltaTime;
+			RotateTowardMouseCursor(deltaTime);
+		}
+		else
+		{
+			mSmoothedMoveInput = sf::Vector2f{ 0.f, 0.f };
+			SetVelocity(mMoveInput * mSpeed);
+		}
+
 		mMoveInput.x = 0.f;
 		mMoveInput.y = 0.f;
+	}
+
+	sf::Vector2f PlayerSpaceShip::GetAdaptiveScreenStrafeDirection() const
+	{
+		const sf::Vector2f screenRight{ 1.f, 0.f };
+		const sf::Vector2f horizontalFacingStrafe{ 0.f, -1.f };
+		const sf::Vector2f shipForward = GetActorForwardDirection();
+
+		const float horizontalFacingAmount = std::abs(shipForward.x);
+		const float blendStart = 0.25f;
+		const float blendEnd = 0.85f;
+		float blendAlpha = std::clamp((horizontalFacingAmount - blendStart) / (blendEnd - blendStart), 0.f, 1.f);
+		blendAlpha = blendAlpha * blendAlpha * (3.f - 2.f * blendAlpha);
+
+		sf::Vector2f strafeDirection = screenRight * (1.f - blendAlpha) + horizontalFacingStrafe * blendAlpha;
+		NormalizeVector(strafeDirection);
+		return strafeDirection;
 	}
 
 	void PlayerSpaceShip::NormalizeInput()
@@ -197,12 +238,16 @@ namespace ly
 		
 	}
 
+	void PlayerSpaceShip::RotateTowardMouseCursor(float deltaTime)
+	{
+		if (World* world = GetWorld())
+		{
+			RotateTowardWorldLocation(world->GetMouseWorldPosition(), deltaTime);
+		}
+	}
+
 	void PlayerSpaceShip::Shoot()
 	{
-		if (mShooter)
-		{
-			mShooter->Shoot();
-		}
 	}
 
 	void PlayerSpaceShip::StopInvulnerability()
@@ -236,57 +281,6 @@ namespace ly
 		if (otherActor && GetCanCollide() && !mInvulnerable)
 		{
 			otherActor->ApplyDamage(mCollisionDamage);
-		}
-	}
-
-	int PlayerSpaceShip::GetWeaponLevel() const
-	{
-		return mShooter ? mShooter->GetCurrentLevel() : 0;
-	}
-
-	void PlayerSpaceShip::ApplyWeaponState(const WeaponState& state)
-	{
-		if (state.type == WeaponType::Default || state.level < 1)
-		{
-			mShooter = std::make_unique<BulletShooter>(
-				this,
-				GameData::Laser_Blue_BulletDef,
-				0.2f,
-				sf::Vector2f{ 0.f, 50.f }
-			);
-			mWeaponType = WeaponType::Default;
-			return;
-		}
-
-		switch (state.type)
-		{
-		case WeaponType::ThreeWay:
-			mShooter = std::make_unique<ThreeWayShooter>(
-				this,
-				GameData::Laser_Blue_BulletDef,
-				0.4f,
-				sf::Vector2f{ 0.f, 50.f }
-			);
-			mWeaponType = WeaponType::ThreeWay;
-			break;
-
-		case WeaponType::FrontalWhiper:
-			mShooter = std::make_unique<FrontalWiper>(
-				this,
-				GameData::Laser_Blue_BulletDef,
-				0.5f,
-				sf::Vector2f{ 0.f, 50.f }
-			);
-			mWeaponType = WeaponType::FrontalWhiper;
-			break;
-
-		default:
-			return;
-		}
-
-		if (mShooter)
-		{
-			mShooter->SetCurrentLevel(state.level);
 		}
 	}
 

@@ -15,6 +15,15 @@ namespace ly
 		return *audioManager;
 	}
 
+	void AudioManager::ShutdownAudioManager()
+	{
+		if (audioManager)
+		{
+			audioManager->Shutdown();
+			audioManager.reset();
+		}
+	}
+
 	AudioManager::AudioManager() :
 		mCurrentTimeScale{ 1.0f },
 		mMasterVolume{ 100.0f },
@@ -24,6 +33,17 @@ namespace ly
 		mMusicType{ AudioType::Music },
 		mMusicBasePitch{ 1.0f },
 		mMusicBaseVolume{ 100.0f },
+		mFadeState{ FadeState::None },
+		mFadeTimer{ 0.f },
+		mFadeDuration{ 0.f },
+		mTargetVolume{ 0.f },
+		mNextMusicPitch{ 1.f },
+		mNextMusicVolume{ 100.f },
+		mNextMusicLoop{ true },
+		mLoopCrossfadeEnabled{ false },
+		mLoopCrossfadeDuration{ 0.f },
+		mIsLoopCrossfading{ false },
+		mCrossfadeMusic{ nullptr },
 		mIsPlayingIntro{ false }
 	{
 		mSoundPool.reserve(MAX_POOL_SIZE);
@@ -345,5 +365,39 @@ namespace ly
 				++iter;
 			}
 		}
+	}
+
+	void AudioManager::Shutdown()
+	{
+		if (mMusic)
+		{
+			mMusic->stop();
+			mMusic.reset();
+		}
+
+		if (mCrossfadeMusic)
+		{
+			mCrossfadeMusic->stop();
+			mCrossfadeMusic.reset();
+		}
+
+		for (ActiveSound& activeSound : mActiveSounds)
+		{
+			if (activeSound.sound)
+			{
+				activeSound.sound->stop();
+				delete activeSound.sound;
+				activeSound.sound = nullptr;
+			}
+		}
+		mActiveSounds.clear();
+		mSoundPool.clear();
+
+		mFadeState = FadeState::None;
+		mPendingLoopPath.clear();
+		mNextPendingLoopPath.clear();
+		mNextMusicPath.clear();
+		mIsPlayingIntro = false;
+		mIsLoopCrossfading = false;
 	}
 }

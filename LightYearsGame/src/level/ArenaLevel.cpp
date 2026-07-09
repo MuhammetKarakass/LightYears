@@ -5,12 +5,15 @@
 
 namespace ly
 { 
-     ArenaLevel::ArenaLevel(Application* owningApp):
-         GameLevel(owningApp),
+	     ArenaLevel::ArenaLevel(Application* owningApp):
+	         GameLevel(owningApp),
 		 mArenaDefinition{},
 		 mHasArenaDefinition{ false },
-		 mArenaBoundaryIndicator{},
-         mArenaBoundarySystem{}
+         mArenaBoundaryIndicator{},
+         mArenaBoundarySystem{},
+         mPlayerRespawnDefinition{},
+         mPlayerRespawnSystem{},
+         mCameraFollowShip{}
      {
      }
      
@@ -18,6 +21,8 @@ namespace ly
      {
 		 GameLevel::InitializeLevelSystems();
 		 InitializeArena();
+         InitializeArenaCamera();
+         InitializePlayerRespawnSystem();
      }
 
      void ArenaLevel::Tick(float deltaTime)
@@ -26,6 +31,37 @@ namespace ly
 
 		 mArenaBoundarySystem.Tick(deltaTime);
 		 UpdateArenaBoundaryVisuals();
+         UpdateArenaCameraInputs();
+     }
+
+     void ArenaLevel::OnGameStart()
+     {
+         GameLevel::OnGameStart();
+
+         StartPlayerRespawn();
+     }
+
+     PlayerRespawnDefinition ArenaLevel::CreatePlayerRespawnDefinition() const
+     {
+         PlayerRespawnDefinition respawnDefinition;
+
+         respawnDefinition.useScreenClamp = false;
+
+         if (mHasArenaDefinition)
+         {
+             const sf::FloatRect& legalBounds = mArenaDefinition.legalBounds;
+
+             respawnDefinition.spawnLocation = sf::Vector2f{
+                 legalBounds.position.x + legalBounds.size.x * 0.5f,
+                 legalBounds.position.y + legalBounds.size.y * 0.5f
+             };
+         }
+         return respawnDefinition;
+     }
+
+     CameraSettings ArenaLevel::CreateCameraSettings() const
+     {
+         return CameraSettings{};
      }
      
      ArenaDefinition ArenaLevel::CreateArenaDefinition() const
@@ -60,6 +96,30 @@ namespace ly
          {
              SpawnArenaBoundaryIndicator();
          }
+     }
+
+     void ArenaLevel::InitializeArenaCamera()
+     {
+         SetCameraSettings(CreateCameraSettings());
+
+         if (mHasArenaDefinition)
+         {
+             SetCameraWorldBounds(mArenaDefinition.legalBounds);
+         }
+     }
+
+     void ArenaLevel::UpdateArenaCameraInputs()
+     {
+         auto ship = mCameraFollowShip.lock();
+         if (!ship || ship->GetIsPendingDestroy())
+         {
+             ClearCameraExternalVelocity();
+             ClearCameraLookAheadWorldPosition();
+             return;
+         }
+
+         SetCameraExternalVelocity(ship->GetVelocity());
+         SetCameraLookAheadWorldPosition(GetMouseWorldPosition());
      }
      
      void ArenaLevel::SpawnArenaBoundaryIndicator()
@@ -122,6 +182,50 @@ namespace ly
          }
 
          actor->ApplyDamage(9999999.f);
+     }
+     void ArenaLevel::InitializePlayerRespawnSystem()
+     {
+         mPlayerRespawnDefinition = CreatePlayerRespawnDefinition();
+
+         mPlayerRespawnSystem.Initialize(this, GetWeakPtr(),mPlayerRespawnDefinition);
+         mPlayerRespawnSystem.onPlayerShipSpawned.BindAction
+         (GetWeakPtr(), &ArenaLevel::OnPlayerShipSpawned);
+         mPlayerRespawnSystem.onPlayerShipDestroyed.BindAction
+         (GetWeakPtr(), &ArenaLevel::OnPlayerShipDestroyed);
+         mPlayerRespawnSystem.onRespawnFailed.BindAction
+         (GetWeakPtr(), &ArenaLevel::OnPlayerRespawnFailed);
+     }
+     void ArenaLevel::StartPlayerRespawn()
+     {
+         mPlayerRespawnSystem.SpawnInitialPlayerShip();
+     }
+     void ArenaLevel::OnPlayerShipSpawned(weak_ptr<PlayerSpaceShip> playerShip)
+     {
+         mCameraFollowShip = playerShip;
+
+         if (auto ship = playerShip.lock())
+         {
+             ship->SetMovementMode(ShipMovementMode::ThrustDrift);
+         }
+
+         SetViewTarget(playerShip);
+         SetArenaTrackedActor(playerShip);
+     }
+     void ArenaLevel::OnPlayerShipDestroyed(Actor* destroyedActor)
+     {
+         mCameraFollowShip.reset();
+         ClearViewTarget();
+         ClearCameraExternalVelocity();
+         ClearCameraLookAheadWorldPosition();
+         SetArenaTrackedActor(weak_ptr<Actor>());
+         OnArenaBoundaryWarningCleared();
+     }
+     void ArenaLevel::OnPlayerRespawnFailed()
+     {
+         if (mPlayerRespawnDefinition.gameOverWhenRespawnFails)
+         {
+             GameOver();
+         }
      }
      void ArenaLevel::OnArenaBoundaryWarningUpdated(float remainingTime, float totalTime)
      {

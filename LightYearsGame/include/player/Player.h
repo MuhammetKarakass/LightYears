@@ -2,7 +2,6 @@
 
 #include <framework/Object.h>
 #include <framework/Delegate.h>
-#include "gameConfigs/GameplayStructs.h"
 
 namespace ly
 {
@@ -28,16 +27,10 @@ namespace ly
 		Delegate<> onLifeExhausted;
 
 		void OnScoreAwarded(unsigned int scoreAmount);
-		void OnWeaponStateReceived(WeaponType type, int level);
 
 	private:
-		WeaponState GetDegradedWeaponState() const;
-		void ClearWeaponState();
-
 		weak_ptr<PlayerSpaceShip> mCurrentSpaceShip;
 		unsigned int mLifeCount;
 		unsigned int mScore;
-
-		WeaponState mSavedWeaponState;
 	};
 }

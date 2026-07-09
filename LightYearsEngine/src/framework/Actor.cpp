@@ -25,7 +25,7 @@ namespace ly
 	
 	Actor::~Actor()
 	{
-	
+		UnInitializePhysics();
 	}
 	
 	void Actor::BeginPlayInternal()
@@ -83,6 +83,11 @@ namespace ly
 	
 	void Actor::Destroy()
 	{
+		if (GetIsPendingDestroy())
+		{
+			return;
+		}
+
 		UnInitializePhysics();
 		onActorDestroyed.Broadcast(this);
 		Object::Destroy();

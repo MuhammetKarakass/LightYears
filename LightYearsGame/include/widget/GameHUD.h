@@ -40,6 +40,7 @@ namespace ly
 		void PlayerSpaceShipDestroyed(Actor* actor);
 		void RefreshHealthBarDeferred();
 		void ConnectStatus();
+		void RefreshPlayerHUDState();
 		void PlayerLifeUpdated(int amt);
 		void PlayerScoreUpdated(int amt);
 		void OnShieldStateChanged(bool active);
@@ -66,6 +67,7 @@ namespace ly
 
 		float mWidgetSpacingX;
 		bool mShieldActive{ false };
+		bool mIsStatusConnected{ false };
 		weak_ptr<PlayerSpaceShip> mObservedPlayerSpaceShip;
 		TimerHandle mRefreshHealthBarTimerHandle;
 		bool mHasActiveGameplayWarning{ false };

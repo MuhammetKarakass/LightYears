@@ -1,10 +1,10 @@
 #pragma once
 
 #include "enemy/EnemySpaceShip.h"
+#include "gameplay/ability/AbilitySystem.h"
 
 namespace ly
 {
-	class BulletShooter;
 	class TwinBlade : public EnemySpaceShip
 	{
 	public:
@@ -18,7 +18,6 @@ namespace ly
 
 
 	private:
-		unique_ptr<BulletShooter> mShooterLeft;
-		unique_ptr<BulletShooter> mShooterRight;
+		AbilitySystem mAbilitySystem;
 	};
 }

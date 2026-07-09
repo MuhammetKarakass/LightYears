@@ -12,6 +12,8 @@ namespace ly
 	Application::Application(sf::Vector2u Position, unsigned int bit, std::string& Title, uint32_t Style)
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
 		mTargetFrameRate{ 60.f },     
+		mShouldQuit{ false },
+		mQuitRequested{ false },
 		mTickClock{},   
 		mCurrentWorld{ nullptr },
 		mCleanCycleClock{},    
@@ -25,7 +27,7 @@ namespace ly
 	{
 		mTickClock.restart();
 		
-		while (mWindow.isOpen())  
+		while (mWindow.isOpen() && !mShouldQuit)
 		{
 			sf::Time deltaTime = mTickClock.restart();
 			float dt = deltaTime.asSeconds();
@@ -40,18 +42,51 @@ namespace ly
 				{
 					DispatchEvent(event);
 				}
+
+				if (mQuitRequested)
+				{
+					break;
+				}
+			}
+
+			if (mQuitRequested)
+			{
+				ShutdownApplication();
+			}
+
+			if (!mWindow.isOpen() || mShouldQuit)
+			{
+				break;
 			}
 			
 			TickInternal(dt);
+			if (mQuitRequested)
+			{
+				ShutdownApplication();
+				break;
+			}
+
 			RenderInternal();
 		}
 	}
 
 	void Application::QuitApplication()
 	{
-		AudioManager::GetAudioManager().StopMusic();
-		AudioManager::GetAudioManager().CleanCycle();
+		mQuitRequested = true;
+	}
+
+	void Application::ShutdownApplication()
+	{
+		AudioManager::ShutdownAudioManager();
+		TimerManager::ShutdownTimerManagers();
+		mPendingWorld.reset();
+		mCurrentWorld.reset();
+		PhysicsSystem::ShutdownPhysicsSystem();
+		ShaderManager::ShutdownShaderManager();
+		AssetManager::ShutdownAssetManager();
 		mWindow.close();
+		mQuitRequested = false;
+		mShouldQuit = true;
 	}
 	
 	void Application::TickInternal(float deltaTime)

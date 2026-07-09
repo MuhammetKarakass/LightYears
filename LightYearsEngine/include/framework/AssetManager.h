@@ -10,6 +10,7 @@ namespace ly
 
 	public:
 		static AssetManager& GetAssetManager();
+		static void ShutdownAssetManager();
 		shared_ptr<sf::Texture> LoadTexture(const std::string& texturePath);
 		shared_ptr<sf::Font> LoadFont(const std::string& fontPath);
 		shared_ptr<sf::SoundBuffer> LoadSoundBuffer(const std::string& soundPath);
@@ -17,6 +18,7 @@ namespace ly
 		shared_ptr<sf::Texture> GetDefaultTexture() ;
 
 		void CleanCycle();
+		void Shutdown();
 		void SetAssetRootDirectory(const std::string& rootDirectory) { mAssetRootDirectory = rootDirectory; }
 		std::string GetAssetRootDirectory() const { return mAssetRootDirectory; }
 	protected:

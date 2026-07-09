@@ -1,15 +1,12 @@
 #pragma once
 
 #include "enemy/EnemySpaceShip.h"
-#include "weapon/BulletShooter.h"
-#include "weapon/ThreeWayShooter.h"
-#include "weapon/FrontalWiper.h"
-#include "weapon/bulletShooter/MultiShooter.h"
-#include "weapon/bulletShooter/ShooterPresets.h"
+#include "gameplay/ability/AbilitySystem.h"
 #include "environment/AsteroidSpawner.h"
 
 namespace ly
 {
+	class PrimaryWeaponController;
 
 	class LevelOneBoss : public EnemySpaceShip
 	{
@@ -26,12 +23,11 @@ namespace ly
 
 	private:
 		void CheckMove();
-		void Shoot();
-		void ShootBaseShooters();
-		void ShootThreeWayShooter();
-		void ShootFrontalWipers();
+		void UpdateWeaponFireIntent();
+		void TickAbilities(float deltaTime);
 		void SetStage(int stage);
 		void BossHealthChanged(float amt,float currentHealth, float maxHealth);
+		PrimaryWeaponController* GetPrimaryWeaponController(AbilitySlot slot);
 
 		float mSpeed;
 		float mBaseSpeed;
@@ -40,15 +36,7 @@ namespace ly
 		bool mCanShoot;
 		bool flag = false;
 
-		unique_ptr<BulletShooter> mBaseShooterLeft;
-		unique_ptr<BulletShooter> mBaseShooterRight;
-		unique_ptr<ThreeWayShooter> mThreeWayShooter;
-		unique_ptr<FrontalWiper> mFrontalWiperLeft;
-		unique_ptr<FrontalWiper> mFrontalWiperRight;
-		unique_ptr<BulletShooter> mLastStageShooterLeft;
-		unique_ptr<BulletShooter> mLastStageShooterRight;
-		unique_ptr<MultiShooter> mFan;
-		unique_ptr<MultiShooter> mDual;
+		AbilitySystem mAbilitySystem;
 
 		static const ShipDefinition mBossShipDef;
 

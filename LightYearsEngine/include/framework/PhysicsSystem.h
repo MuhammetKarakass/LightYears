@@ -11,6 +11,7 @@ namespace ly
 	{
 	public:
 		static PhysicsSystem& Get();
+		static void ShutdownPhysicsSystem();
 		void Step(float deltaTime);
 		void InitializeWorld(b2Vec2 gravity = {0.0f, 0.0f});
 		void Cleanup();

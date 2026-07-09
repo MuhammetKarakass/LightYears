@@ -3,6 +3,8 @@
 #include <SFML/Graphics.hpp>
 #include "framework/Object.h"
 #include "framework/PerfMonitor.h"
+#include "framework/camera/CameraManager.h"
+#include <optional>
 
 namespace ly
 {
@@ -27,10 +29,19 @@ namespace ly
 
 		void SetViewTarget(weak_ptr<Actor> target);
 		void ClearViewTarget();
+		void SetCameraSettings(const CameraSettings& settings);
+		void SetCameraExternalVelocity(const sf::Vector2f& velocity);
+		void ClearCameraExternalVelocity();
+		void SetCameraLookAheadWorldPosition(const std::optional<sf::Vector2f>& worldPosition);
+		void ClearCameraLookAheadWorldPosition();
+		void SetCameraWorldBounds(const sf::FloatRect& bounds);
+		void ClearCameraWorldBounds();
 
 		weak_ptr<Actor> GetActorByLayer(CollisionLayer layer) const;
 
 		sf::Vector2u GetWindowSize();
+		sf::View GetWorldView() const;
+		sf::Vector2f GetMouseWorldPosition() const;
 
 		virtual ~World();
 
@@ -104,16 +115,18 @@ namespace ly
 		virtual void AllGameStagesFinished();
 		void NextGameStage();
 		void BeginStages();
+		void UpdateCamera(float deltaTime);
 		void RenderHUD(sf::RenderWindow& window);
 
 		weak_ptr<Actor> mViewTarget;
+		CameraManager mCameraManager;
 	};
 
 	template<typename ActorType, typename ...Args>
 	weak_ptr<ActorType> World::SpawnActor(Args... args)
 	{
-			shared_ptr<ActorType> newActor{ new ActorType(this,args...) };
-			mPendingActors.push_back(newActor);
+		shared_ptr<ActorType> newActor = std::make_shared<ActorType>(this, args...);
+		mPendingActors.push_back(newActor);
 		ly::perf::IncActiveActors();
 		return newActor;
 	}
@@ -121,7 +134,7 @@ namespace ly
 	template<typename HUDType, typename ...Args>
 	weak_ptr<HUDType> World::SpawnHUD(Args... args)
 	{
-		shared_ptr<HUDType> newHUD{ new HUDType(args...) };
+		shared_ptr<HUDType> newHUD = std::make_shared<HUDType>(args...);
 		mHUD = newHUD;
 		return newHUD;
 	}
@@ -129,7 +142,7 @@ namespace ly
 	template<typename HUDType, typename ...Args>
 	weak_ptr<HUDType> World::SpawnOverlayHUD(Args... args)
 	{
-		shared_ptr<HUDType> newHUD{ new HUDType(args...) };
+		shared_ptr<HUDType> newHUD = std::make_shared<HUDType>(args...);
 		mOverlayHUD = newHUD;
 		return newHUD;
 	}

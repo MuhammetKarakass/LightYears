@@ -9,6 +9,14 @@ SET(CMAKE_CXX_STANDARD          17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS       OFF)
 
+if(MSVC)
+    # Turkish MSVC localizes /showIncludes output as "Not: eklenen dosya:".
+    # Ninja needs the exact prefix to track header dependencies such as GameplayConfig.h.
+    set(CMAKE_CL_SHOWINCLUDES_PREFIX "Not: eklenen dosya:")
+    set(CMAKE_C_CL_SHOWINCLUDES_PREFIX "Not: eklenen dosya:")
+    set(CMAKE_CXX_CL_SHOWINCLUDES_PREFIX "Not: eklenen dosya:")
+endif()
+
 # Add optimization flags for Release builds
 if(MSVC)
     # Enable optimizations for MSVC

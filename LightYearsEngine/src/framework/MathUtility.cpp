@@ -1,4 +1,5 @@
 #include "framework/MathUtility.h"
+#include <algorithm>
 #include <random>
 
 namespace ly
@@ -58,5 +59,18 @@ namespace ly
 		float LerpY = LerpFloat(a.y,b.y,alpha);
 
 		return sf::Vector2f(LerpX,LerpY);
+	}
+
+	sf::Vector2f ClampVectorLength(const sf::Vector2f& vector, float maxLength)
+	{
+		const float allowedLength = std::max(0.f, maxLength);
+		const float currentLength = GetVectorLength(vector);
+
+		if (currentLength <= allowedLength || currentLength <= 0.001f)
+		{
+			return vector;
+		}
+
+		return vector * (allowedLength / currentLength);
 	}
 }

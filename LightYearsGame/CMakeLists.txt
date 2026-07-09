@@ -8,30 +8,22 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerSpaceship.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceship.cpp
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/Shooter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/Shooter.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/BulletShooter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/BulletShooter.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/ThreeWayShooter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/ThreeWayShooter.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/FrontalWiper.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/FrontalWiper.cpp
-
 	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/Bullet.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/Bullet.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/bulletShooter/MultiShooter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/bulletShooter/MultiShooter.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/bulletShooter/ShooterPresets.h
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/HealthComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayAttribute.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayWarning.h
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityController.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilitySystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilitySystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/controllers/PrimaryWeaponController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/controllers/PrimaryWeaponController.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/VFX/Explosion.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
@@ -64,6 +56,10 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaTestLevel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaTestLevel.cpp
+
+	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerRespawnDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerRespawnSystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerRespawnSystem.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/VanguardStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
@@ -131,6 +127,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/GameplayWarningHUDController.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/GameplayWarningHUDController.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/HUDController.h
+
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/GameplayConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/GameplayStructs.h

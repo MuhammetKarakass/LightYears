@@ -40,6 +40,27 @@ namespace ly
 		return *gameTimerManager;
 	}
 
+	void TimerManager::ShutdownTimerManagers()
+	{
+		if (timerManager)
+		{
+			timerManager->ClearAllTimers();
+			timerManager.reset();
+		}
+
+		if (globalTimerManager)
+		{
+			globalTimerManager->ClearAllTimers();
+			globalTimerManager.reset();
+		}
+
+		if (gameTimerManager)
+		{
+			gameTimerManager->ClearAllTimers();
+			gameTimerManager.reset();
+		}
+	}
+
 	bool operator==(const TimerHandle& lhs, const TimerHandle& rhs)
 	{
 		return lhs.GetTimerKey() == rhs.GetTimerKey();

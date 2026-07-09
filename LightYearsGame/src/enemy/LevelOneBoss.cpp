@@ -1,5 +1,6 @@
 #include "enemy/LevelOneBoss.h"
 #include "gameplay/HealthComponent.h"
+#include "gameplay/ability/controllers/PrimaryWeaponController.h"
 
 namespace ly
 {
@@ -14,11 +15,8 @@ namespace ly
 			EngineMount{ {0.f,-110.f},GameData::Engine_Red_PointLightDef },
 
 		},
-		GameData::Laser_Red_BulletDef,
-		true,
-		{ 0.f,100.f },
-		0.5f,
-		LevelOneBoss::GetDefaultRewards()
+		LevelOneBoss::GetDefaultRewards(),
+		GameData::Boss_Base_PrimaryWeaponDef
 	);
 
 	LevelOneBoss::LevelOneBoss(World* world)
@@ -27,6 +25,7 @@ namespace ly
 		mSwitchDistanceToEdge(100.f),
 		mStage{1},
 		mCanShoot{ false },
+		mAbilitySystem{ this },
 		mAsteroidSpawner{ shared_ptr<AsteroidSpawner>(new AsteroidSpawner(world,
 			AsteroidSpawnerConfig
 			{
@@ -38,42 +37,25 @@ namespace ly
 				.75f,
 				true,
 				1
-			})) },
-		mBaseShooterLeft{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{-50.f,50.f}) },
-		mBaseShooterRight{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{50.f,50.f}) },
-		mThreeWayShooter{ std::make_unique<ThreeWayShooter>(this,GameData::Laser_Red_BulletDef,2.f,sf::Vector2f{0.f,100.f}) },
-		mFrontalWiperLeft{ std::make_unique<FrontalWiper>(this,GameData::Laser_Red_BulletDef,3.f,sf::Vector2f{-100.f,80.f}) },
-		mFrontalWiperRight{ std::make_unique<FrontalWiper>(this,GameData::Laser_Red_BulletDef,3.f,sf::Vector2f{100.f,80.f}) },
-		mLastStageShooterLeft{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{-150.f,50.f}) },
-		mLastStageShooterRight{ std::make_unique<BulletShooter>(this,GameData::Laser_Red_BulletDef,0.5f,sf::Vector2f{150.f,50.f}) },
-		mDual{
-		std::make_unique<MultiShooter>(
-			this,
-			std::pair<float, float>{1.f,1.f},
-			ShooterPresets::Dual(
-				GameData::Laser_Red_BulletDef,
-				sf::Vector2f{0.f,0.f},
-				0.f,
-				30.f
-			),
-			FireMode::Simultaneous,
-			0.1f
-)
-		},
-
-		mFan{ std::make_unique<MultiShooter>(
-			this,
-			std::pair<float, float>{3.f,6.f},
-			ShooterPresets::Fan(
-				GameData::Laser_Red_BulletDef,
-				sf::Vector2f{0.f,0.f},
-				5.f,
-				30.f
-			),
-			FireMode::Alternating,
-			0.1f
-		) }
+			})) }
 	{
+		mAbilitySystem.AddController(
+			AbilitySlot::PrimaryFire,
+			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_Base_PrimaryWeaponDef)
+		);
+		mAbilitySystem.AddController(
+			AbilitySlot::Skill1,
+			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_ThreeWay_PrimaryWeaponDef)
+		);
+		mAbilitySystem.AddController(
+			AbilitySlot::Skill2,
+			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_FrontalSweep_PrimaryWeaponDef)
+		);
+		mAbilitySystem.AddController(
+			AbilitySlot::Skill3,
+			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_LastStage_PrimaryWeaponDef)
+		);
+
 		SetActorRotation(180.f);
 		SetExplosionType(ExplosionType::Boss);
 		SetScoreAmt(1000);
@@ -88,7 +70,8 @@ namespace ly
 	{
 		EnemySpaceShip::Tick(deltaTime);
 		CheckMove();
-		Shoot();
+		UpdateWeaponFireIntent();
+		TickAbilities(deltaTime);
 	}
 	void LevelOneBoss::BeginPlay()
 	{
@@ -122,75 +105,47 @@ namespace ly
 		}
 	}
 
-	void LevelOneBoss::Shoot()
+	void LevelOneBoss::UpdateWeaponFireIntent()
 	{
-		if(!mCanShoot)
-			return;
-
-		ShootBaseShooters();
-		ShootThreeWayShooter();
-		if(mStage>=2)
-		{
-			
-		}
-		if(mStage>=3)
-		{
-			ShootFrontalWipers();
-		}
-		if(mStage==4)
-		{
-			if (mLastStageShooterLeft)
-			{
-				mLastStageShooterLeft->Shoot();
-			}
-			if (mLastStageShooterRight)
-			{
-				mLastStageShooterRight->Shoot();
-			}
-		}
+		mAbilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, mCanShoot);
+		mAbilitySystem.SetSlotInput(AbilitySlot::Skill1, mCanShoot);
+		mAbilitySystem.SetSlotInput(AbilitySlot::Skill2, mCanShoot && mStage >= 3);
+		mAbilitySystem.SetSlotInput(AbilitySlot::Skill3, mCanShoot && mStage == 4);
 	}
 
-	void LevelOneBoss::ShootBaseShooters()
+	void LevelOneBoss::TickAbilities(float deltaTime)
 	{
-
-		if (mBaseShooterLeft)
-		{
-			mBaseShooterLeft->Shoot();
-		}
-		if (mBaseShooterRight)
-		{
-			mBaseShooterRight->Shoot();
-		}
-	}
-
-	void LevelOneBoss::ShootThreeWayShooter()
-	{
-		if (mThreeWayShooter)
-		{
-			mThreeWayShooter->Shoot();
-		}
-	}	
-
-	void LevelOneBoss::ShootFrontalWipers()
-	{
-		if (mFrontalWiperLeft)
-		{
-			mFrontalWiperLeft->Shoot();
-		}
-		if (mFrontalWiperRight)
-		{
-			mFrontalWiperRight->Shoot();
-		}
+		mAbilitySystem.Tick(deltaTime);
 	}
 
 	void LevelOneBoss::SetStage(int stage)
 	{
 		mStage = stage;
-		mBaseShooterLeft.get()->SetCurrentLevel(stage);
-		mBaseShooterRight.get()->SetCurrentLevel(stage);
-		mThreeWayShooter.get()->SetCurrentLevel(stage);
-		mFrontalWiperLeft.get()->SetCurrentLevel(stage);
-		mFrontalWiperRight.get()->SetCurrentLevel(stage);
+
+		if (PrimaryWeaponController* baseWeapon = GetPrimaryWeaponController(AbilitySlot::PrimaryFire))
+		{
+			baseWeapon->GetAttributes().shotsPerSecond.currentValue = 2.f + static_cast<float>(stage) * 0.35f;
+		}
+
+		if (PrimaryWeaponController* threeWayWeapon = GetPrimaryWeaponController(AbilitySlot::Skill1))
+		{
+			threeWayWeapon->GetAttributes().shotsPerSecond.currentValue = 0.5f + static_cast<float>(stage) * 0.1f;
+		}
+
+		if (PrimaryWeaponController* frontalPatternWeapon = GetPrimaryWeaponController(AbilitySlot::Skill2))
+		{
+			frontalPatternWeapon->GetAttributes().shotsPerSecond.currentValue = 0.33f + static_cast<float>(stage) * 0.08f;
+		}
+
+		if (PrimaryWeaponController* lastStageWeapon = GetPrimaryWeaponController(AbilitySlot::Skill3))
+		{
+			lastStageWeapon->GetAttributes().shotsPerSecond.currentValue = 2.f + static_cast<float>(stage) * 0.25f;
+		}
+	}
+
+	PrimaryWeaponController* LevelOneBoss::GetPrimaryWeaponController(AbilitySlot slot)
+	{
+		return dynamic_cast<PrimaryWeaponController*>(mAbilitySystem.GetController(slot));
 	}
 
 	void LevelOneBoss::BossHealthChanged(float amt, float currentHealth, float maxHealth)

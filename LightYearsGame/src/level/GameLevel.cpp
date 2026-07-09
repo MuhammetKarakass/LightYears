@@ -78,7 +78,7 @@ namespace ly
 
 	void GameLevel::CreateHUDControllers()
 	{
-		shared_ptr<GameplayWarningHUDController> warningHUDController{ new GameplayWarningHUDController{ mGameHUD } };
+		shared_ptr<GameplayWarningHUDController> warningHUDController = std::make_shared<GameplayWarningHUDController>(mGameHUD);
 		mHUDControllers.push_back(warningHUDController);
 	}
 

@@ -43,6 +43,7 @@ namespace ly
 	float LerpFloat(float a, float b, float alpha);
 	sf::Color LerpColor(const sf::Color& a, const sf::Color& b, float alpha);
 	sf::Vector2f LerpVector(const sf::Vector2f a, const sf::Vector2f& b, float alpha);
+	sf::Vector2f ClampVectorLength(const sf::Vector2f& vector, float maxLength);
 	sf::Vector2f RandomUnitVector();
 	sf::Vector2f RandomVector(const sf::Vector2f& a, const sf::Vector2f& b);
 

@@ -56,6 +56,8 @@ namespace ly
 
 		static TimerManager& GetGameTimerManager();
 
+		static void ShutdownTimerManagers();
+
 		// Her frame tüm timer'larý günceller
 		void UpdateTimer(float deltaTime);
 

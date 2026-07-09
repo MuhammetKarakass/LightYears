@@ -14,7 +14,8 @@ namespace ly{
 		mActors{},
 		mCurrentStage{mGameStages.end()},
 		mGameStages{},
-		mIsPaused{ false }
+		mIsPaused{ false },
+		mCameraManager{}
 	{
 
 	}
@@ -103,6 +104,9 @@ namespace ly{
 
 		// Perf monitoring
 		ly::perf::TickAndReport(deltaTime);
+
+		// Camera updates last so render uses the latest actor/stage/world state without a frame-order snap.
+		UpdateCamera(deltaTime);
 	}
 
 	void World::CleanCycle()
@@ -135,11 +139,48 @@ namespace ly{
 	void World::SetViewTarget(weak_ptr<Actor> target)
 	{
 		mViewTarget = target;
+		mCameraManager.SetFollowTarget(target);
 	}
 
 	void World::ClearViewTarget()
 	{
 		mViewTarget.reset();
+		mCameraManager.ClearFollowTarget();
+	}
+
+	void World::SetCameraSettings(const CameraSettings& settings)
+	{
+		mCameraManager.SetSettings(settings);
+	}
+
+	void World::SetCameraExternalVelocity(const sf::Vector2f& velocity)
+	{
+		mCameraManager.SetExternalVelocity(velocity);
+	}
+
+	void World::ClearCameraExternalVelocity()
+	{
+		mCameraManager.ClearExternalVelocity();
+	}
+
+	void World::SetCameraLookAheadWorldPosition(const std::optional<sf::Vector2f>& worldPosition)
+	{
+		mCameraManager.SetLookAheadWorldPosition(worldPosition);
+	}
+
+	void World::ClearCameraLookAheadWorldPosition()
+	{
+		mCameraManager.ClearLookAheadWorldPosition();
+	}
+
+	void World::SetCameraWorldBounds(const sf::FloatRect& bounds)
+	{
+		mCameraManager.SetWorldBounds(bounds);
+	}
+
+	void World::ClearCameraWorldBounds()
+	{
+		mCameraManager.ClearWorldBounds();
 	}
 
 	weak_ptr<Actor> World::GetActorByLayer(CollisionLayer layer) const
@@ -157,13 +198,7 @@ namespace ly{
 	void World::Render(sf::RenderWindow& window)
 	{
 		sf::View previousView = window.getView();
-		sf::View worldView = window.getDefaultView();
-
-		if (auto target = mViewTarget.lock())
-		{
-			worldView.setCenter(target->GetActorLocation());
-		}
-
+		sf::View worldView = GetWorldView();
 		window.setView(worldView);
 
 		// Batch render all actors
@@ -185,6 +220,17 @@ namespace ly{
 	sf::Vector2u World::GetWindowSize()
 	{
 		return mOwningApp->GetWindowSize();
+	}
+
+	sf::View World::GetWorldView() const
+	{
+		return mCameraManager.GetView(mOwningApp->GetRenderWindow().getDefaultView());
+	}
+
+	sf::Vector2f World::GetMouseWorldPosition() const
+	{
+		const sf::RenderWindow& window = mOwningApp->GetRenderWindow();
+		return window.mapPixelToCoords(sf::Mouse::getPosition(window), GetWorldView());
 	}
 
 
@@ -258,6 +304,10 @@ namespace ly{
 			mCurrentStage->get()->BeginStage();
 			mCurrentStage->get()->onStageFinished.BindAction(GetWeakPtr(), &World::NextGameStage);
 		}
+	}
+	void World::UpdateCamera(float deltaTime)
+	{
+		mCameraManager.Update(deltaTime, mOwningApp->GetRenderWindow().getDefaultView());
 	}
 	void World::RenderHUD(sf::RenderWindow& window)
 	{

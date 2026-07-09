@@ -14,7 +14,7 @@ ly::Application* GetApplication()
 namespace ly
 {
 	GameApplication::GameApplication()
-		: Application({ 1280, 720 }, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
+		: Application({ 1920, 1080}, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
 

@@ -1,9 +1,9 @@
 #pragma once
 #include "enemy/EnemySpaceShip.h"
+#include "gameplay/ability/AbilitySystem.h"
 
 namespace ly
 {
-	class BulletShooter;
 	class Vanguard : public EnemySpaceShip
 	{
 	public:
@@ -19,6 +19,6 @@ namespace ly
 
 
 	private:
-		unique_ptr<BulletShooter> mShooter;
+		AbilitySystem mAbilitySystem;
 	};
 }

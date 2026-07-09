@@ -25,8 +25,6 @@ namespace ly
 		mRewards = 
 		{
 			{CreateRewardHealth, 0.4f},
-			{CreateRewardThreeWayShooter, 0.25f},
-			{CreateRewardFrontalWiper, 0.2f},
 			{CreateRewardShield, 0.15f}
 		};
 	}

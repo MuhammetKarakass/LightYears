@@ -1,11 +1,10 @@
 #pragma once
 
 #include "enemy/EnemySpaceShip.h"
+#include "gameplay/ability/AbilitySystem.h"
 
 namespace ly 
 {
-	class BulletShooter;
-
 	class Hexagon : public EnemySpaceShip
 	{
 	public:
@@ -18,9 +17,8 @@ namespace ly
 
 	private:
 		virtual void Shoot() override;
-		void SetupShooters(const ShipDefinition& shipDef);
 
-		List<unique_ptr<BulletShooter>> mShooters;
+		AbilitySystem mAbilitySystem;
 	};
 
 }

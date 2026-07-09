@@ -9,10 +9,13 @@ namespace ly
 	class Bullet : public Actor
 	{
 	public:
-		Bullet(World* world, Actor* owner, const BulletDefinition& def);
+		Bullet(World* world, Actor* owner, const WeaponPresentationDefinition& presentation, const PrimaryWeaponAttributes& attributes);
 
 		void SetSpeed(float speed);
 		void SetDamage(float damage);
+		void SetVisualScale(float scale);
+		void SetProjectileCollisionRadius(float radius);
+		void SetProjectileAreaRadius(float radius);
 
 		Actor* GetOwner() const { return mOwner; }
 
@@ -26,6 +29,9 @@ namespace ly
 	private:
 		void Move(float deltaTime);
 		void SetupCollisionFromOwner();
+		void ApplyImpactDamage(Actor* directHitActor);
+		void ApplyAreaDamage();
+		bool IsValidAreaDamageTarget(const Actor* actor) const;
 
 		Actor* mOwner;
 		float mSpeed;
@@ -34,5 +40,9 @@ namespace ly
 		float mAge;
 		float mMaxTravelDistance;
 		float mTravelDistance;
+		float mAreaDamageRadius;
+		float mCollisionRadius;
+		float mVisualScale;
+		int mRemainingPierces;
 	};
 }

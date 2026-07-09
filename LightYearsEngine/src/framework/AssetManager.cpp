@@ -27,6 +27,14 @@ namespace ly
 		return *assetManager;
 	}
 
+	void AssetManager::ShutdownAssetManager()
+	{
+		if (assetManager)
+		{
+			assetManager->Shutdown();
+			assetManager.reset();
+		}
+	}
 	// Verilen yoldan bir texture y?kleyen veya ?nbellekten (cache) getiren fonksiyon.
 	shared_ptr<sf::Texture> AssetManager::LoadTexture(const std::string& texturePath)
 	{
@@ -139,7 +147,11 @@ namespace ly
 		if (!mDefaultTexture)
 		{
 			mDefaultTexture = std::make_shared<sf::Texture>();
-			mDefaultTexture->resize(sf::Vector2u(1, 1));
+			if (!mDefaultTexture->resize(sf::Vector2u(1, 1)))
+			{
+				 mDefaultTexture.reset();
+				return nullptr;
+			}
 			std::uint8_t pixelData[4] = { 255, 255, 255, 255 };
 			mDefaultTexture->update(pixelData);
 
@@ -204,5 +216,13 @@ namespace ly
 				++iter;
 			}
 		}
+	}
+	void AssetManager::Shutdown()
+	{
+		mLoadedShaderMap.clear();
+		mLoadedTextureMap.clear();
+		mLoadedFontMap.clear();
+		mLoadedSoundBufferMap.clear();
+		mDefaultTexture.reset();
 	}
 }

@@ -57,17 +57,17 @@ namespace ly
 		if (mTopCenterText.has_value())
 			mTopCenterText->NativeDraw(windowRef);
 
-		if (!mCenterNotificationText.expired())
-			mCenterNotificationText.lock()->NativeDraw(windowRef);
+		if (auto centerNotificationText = mCenterNotificationText.lock())
+			centerNotificationText->NativeDraw(windowRef);
 
-		if(!mTimerText.expired())
-			mTimerText.lock()->NativeDraw(windowRef);
+		if(auto timerText = mTimerText.lock())
+			timerText->NativeDraw(windowRef);
 
-		if(!mBossHealthBar.expired())
-			mBossHealthBar.lock()->NativeDraw(windowRef);
+		if(auto bossHealthBar = mBossHealthBar.lock())
+			bossHealthBar->NativeDraw(windowRef);
 
-		if(!mBossNameText.expired())
-			mBossNameText.lock()->NativeDraw(windowRef);
+		if(auto bossNameText = mBossNameText.lock())
+			bossNameText->NativeDraw(windowRef);
 
 		HUD::Draw(windowRef);
 	}
@@ -75,7 +75,7 @@ namespace ly
 	void GameHUD::Tick(float deltaTime)
 	{
 		static int lastFrameRate = 0;
-		int frameRate = int(1.f / deltaTime);
+		int frameRate = deltaTime > 0.f ? int(1.f / deltaTime) : 0;
 
 		if (mFrameRateText.has_value() && frameRate != lastFrameRate)
 		{
@@ -87,18 +87,31 @@ namespace ly
 		}
 
 
-		if (!mCenterNotificationText.expired() && mCenterNotificationText.lock()->IsAnimating())
-			mCenterNotificationText.lock()->NativeTick(deltaTime);
+		if (auto centerNotificationText = mCenterNotificationText.lock())
+		{
+			if (centerNotificationText->IsAnimating())
+				centerNotificationText->NativeTick(deltaTime);
+		}
 
-		if (!mTimerText.expired() && mTimerText.lock()->IsAnimating())
-			mTimerText.lock()->NativeTick(deltaTime);
+		if (auto timerText = mTimerText.lock())
+		{
+			if (timerText->IsAnimating())
+				timerText->NativeTick(deltaTime);
+		}
 
-		if(!mBossHealthBar.expired() && mBossHealthBar.lock()->IsAnimating())
-			mBossHealthBar.lock()->NativeTick(deltaTime);
+		if(auto bossHealthBar = mBossHealthBar.lock())
+		{
+			if (bossHealthBar->IsAnimating())
+				bossHealthBar->NativeTick(deltaTime);
+		}
 
-		if(mBossNameText.expired() == false && mBossNameText.lock()->IsAnimating())
-			mBossNameText.lock()->NativeTick(deltaTime);
+		if(auto bossNameText = mBossNameText.lock())
+		{
+			if (bossNameText->IsAnimating())
+				bossNameText->NativeTick(deltaTime);
+		}
 
+		RefreshPlayerHUDState();
 		UpdateGameplayWarningVisuals(deltaTime);
 
 	}
@@ -156,28 +169,46 @@ namespace ly
 	{
 		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
 
-		if (player && !player->GetCurrentSpaceShip().expired())
+		if (!player || player->GetCurrentSpaceShip().expired())
 		{
-			weak_ptr<PlayerSpaceShip> playerSpaceShip = player->GetCurrentSpaceShip();
-			shared_ptr<PlayerSpaceShip> lockedSpaceShip = playerSpaceShip.lock();
-			if (lockedSpaceShip && !lockedSpaceShip->GetIsPendingDestroy())
-			{
-				if (mObservedPlayerSpaceShip.lock() != lockedSpaceShip)
-				{
-					mObservedPlayerSpaceShip = lockedSpaceShip;
-					lockedSpaceShip->onActorDestroyed.BindAction(GetWeakPtr(), &GameHUD::PlayerSpaceShipDestroyed);
-					lockedSpaceShip->GetHealthComponent().onHealthChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerHealthUpdated);
-					lockedSpaceShip->onShieldStateChanged.BindAction(GetWeakPtr(), &GameHUD::OnShieldStateChanged);
-				}
-				HealthComponent& healthComponent = lockedSpaceShip->GetHealthComponent();
-				mShieldActive = false;
-				PlayerHealthUpdated(0, healthComponent.GetHealth(), healthComponent.GetMaxHealth());
-			}
+			mObservedPlayerSpaceShip.reset();
+			mShieldActive = false;
+			mPlayerHealthBar->UpdateValue(0.f, 1.f);
+			return;
 		}
+
+		weak_ptr<PlayerSpaceShip> playerSpaceShip = player->GetCurrentSpaceShip();
+		shared_ptr<PlayerSpaceShip> lockedSpaceShip = playerSpaceShip.lock();
+		if (!lockedSpaceShip || lockedSpaceShip->GetIsPendingDestroy())
+		{
+			mObservedPlayerSpaceShip.reset();
+			mShieldActive = false;
+			mPlayerHealthBar->UpdateValue(0.f, 1.f);
+			return;
+		}
+
+		if (mObservedPlayerSpaceShip.lock() != lockedSpaceShip)
+		{
+			mObservedPlayerSpaceShip = lockedSpaceShip;
+			lockedSpaceShip->onActorDestroyed.BindAction(GetWeakPtr(), &GameHUD::PlayerSpaceShipDestroyed);
+			lockedSpaceShip->GetHealthComponent().onHealthChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerHealthUpdated);
+			lockedSpaceShip->onShieldStateChanged.BindAction(GetWeakPtr(), &GameHUD::OnShieldStateChanged);
+		}
+
+		HealthComponent& healthComponent = lockedSpaceShip->GetHealthComponent();
+		mShieldActive = false;
+		PlayerHealthUpdated(0, healthComponent.GetHealth(), healthComponent.GetMaxHealth());
 	}
 
 	void GameHUD::PlayerHealthUpdated(float amt, float currentHealth, float maxHealth)
 	{
+		if (maxHealth <= 0.f)
+		{
+			mPlayerHealthBar->UpdateValue(0.f, 1.f);
+			mPlayerHealthBar->SetForegroundColor(sf::Color{ 255, 0, 0, 255 });
+			return;
+		}
+
 		float totalHealth = currentHealth;
 		float totalMax = maxHealth;
 
@@ -241,15 +272,53 @@ namespace ly
 
 	void GameHUD::ConnectStatus()
 	{
+		if (mIsStatusConnected)
+		{
+			return;
+		}
+
 		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
 		if (!player)
 			return;
+
+		mIsStatusConnected = true;
+
 		int lifeCount = player->GetLifeCount();
 		mPlayerLifeText->SetString(std::to_string(lifeCount));
 		player->onLifeChange.BindAction(GetWeakPtr(), &GameHUD::PlayerLifeUpdated);
 		int scoreCount = player->GetScore();
 		mPlayerScoreText->SetString(std::to_string(scoreCount));
 		player->onScoreChange.BindAction(GetWeakPtr(), &GameHUD::PlayerScoreUpdated);
+	}
+
+	void GameHUD::RefreshPlayerHUDState()
+	{
+		ConnectStatus();
+
+		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+		if (!player)
+		{
+			return;
+		}
+
+		weak_ptr<PlayerSpaceShip> currentPlayerShip = player->GetCurrentSpaceShip();
+		shared_ptr<PlayerSpaceShip> currentShip = currentPlayerShip.lock();
+		shared_ptr<PlayerSpaceShip> observedShip = mObservedPlayerSpaceShip.lock();
+
+		if (!currentShip)
+		{
+			return;
+		}
+
+		if (currentShip->GetIsPendingDestroy())
+		{
+			return;
+		}
+
+		if (currentShip != observedShip)
+		{
+			RefreshHealthBar();
+		}
 	}
 
 	void GameHUD::PlayerLifeUpdated(int amt)
@@ -344,10 +413,17 @@ namespace ly
 
 	void GameHUD::RemoveBossHealthBar(Actor* actor)
 	{
-		mBossHealthBar.lock()->StartFadeAnimation(0.f, 0.f, 2.f);
-		mBossNameText.lock()->StartFadeAnimation(0.f, 0.f, 2.f);
-		mBossHealthBar.lock()->SetLifeTime(2.5f);
-		mBossNameText.lock()->SetLifeTime(2.5f);
+		if (auto bossHealthBar = mBossHealthBar.lock())
+		{
+			bossHealthBar->StartFadeAnimation(0.f, 0.f, 2.f);
+			bossHealthBar->SetLifeTime(2.5f);
+		}
+
+		if (auto bossNameText = mBossNameText.lock())
+		{
+			bossNameText->StartFadeAnimation(0.f, 0.f, 2.f);
+			bossNameText->SetLifeTime(2.5f);
+		}
 	}
 
 	void GameHUD::ShowGameplayWarning(const GameplayWarning& warning)

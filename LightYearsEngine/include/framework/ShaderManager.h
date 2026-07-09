@@ -9,6 +9,7 @@ namespace ly
 	{
 	public:
 		static ShaderManager& GetShaderManager();
+		static void ShutdownShaderManager();
 
 		bool LoadShader(const std::string& name, const std::string& fragmentPath);
 		bool LoadShader(const std::string& name, const std::string& fragmentPath, const std::string& vertexPath);

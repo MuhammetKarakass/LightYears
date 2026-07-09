@@ -15,6 +15,15 @@ namespace ly
 		return *physicsSystem;
 	}
 
+	void PhysicsSystem::ShutdownPhysicsSystem()
+	{
+		if (physicsSystem)
+		{
+			physicsSystem->Cleanup();
+			physicsSystem.reset();
+		}
+	}
+
 	void PhysicsSystem::Step(float deltaTime)
 	{
 		if (mPhysicsWorld.index1 != 0)
@@ -40,6 +49,8 @@ namespace ly
 
 	void PhysicsSystem::Cleanup()
 	{
+		mPendingRemoveListeners.clear();
+
 		if (mPhysicsWorld.index1 != 0)
 		{
 			b2DestroyWorld(mPhysicsWorld);
