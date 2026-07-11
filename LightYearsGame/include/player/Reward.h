@@ -45,3 +45,5 @@ namespace ly
 	void RewardLife(PlayerSpaceShip* player);
 	void RewardShield(PlayerSpaceShip* player);
 }
+
+

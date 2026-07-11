@@ -5,7 +5,7 @@
 #include "enemy/TwinBlade.h"
 #include "enemy/Hexagon.h"
 #include "enemy/UFO.h"
-#include "gameConfigs/GameplayConfig.h"
+#include "gameConfigs/ShipConfig.h"
 #include "gameplay/HealthComponent.h"
 #include "framework/Actor.h"
 
@@ -108,13 +108,13 @@ namespace ly
 		switch (enemyType)
 		{
 			case 0:
-				enemy = GetWorld()->SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
+				enemy = GetWorld()->SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
 				break;
 			case 1:
-				enemy = GetWorld()->SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
+				enemy = GetWorld()->SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
 				break;
 			case 2:
-				enemy = GetWorld()->SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
+				enemy = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
 				break;
 			case 3:
 				enemy = SpawnUFOWithDynamicPath();
@@ -190,7 +190,7 @@ namespace ly
 		}
 		
 		weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(
-			GameData::Ship_Enemy_UFO,
+			ShipData::Ship_Enemy_UFO,
 			velocity
 		);
 		
@@ -454,3 +454,4 @@ namespace ly
 		TimerManager::GetGameTimerManager().ClearTimer(mWaveTimerHandle);
 	}
 }
+

@@ -1,6 +1,5 @@
 #pragma once
 #include "enemy/EnemySpaceShip.h"
-#include "gameplay/ability/AbilitySystem.h"
 
 namespace ly
 {
@@ -25,8 +24,8 @@ namespace ly
 		virtual void Shoot() override;
 		void CheckBounce(); // Checks bounce on the X axis.
 
-		AbilitySystem mAbilitySystem;
-
 		float mRotationSpeed;
 	};
 }
+
+

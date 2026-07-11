@@ -42,3 +42,4 @@ namespace ly
 		GetApplication()->QuitApplication();
 	}
 }
+

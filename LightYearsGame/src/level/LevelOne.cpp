@@ -1,4 +1,4 @@
-﻿#include "level/LevelOne.h"
+#include "level/LevelOne.h"
 #include "player/PlayerSpaceShip.h"
 #include "spaceShip/SpaceShip.h"
 #include "enemy/Vanguard.h"
@@ -10,6 +10,7 @@
 #include <gameplay/WaitStage.h>
 #include "player/PlayerManager.h"
 #include "widget/GameHUD.h"
+#include "gameConfigs/ShipConfig.h"
 #include "framework/Application.h"
 #include "enemy/ChaosStage.h"
 #include "enemy/LevelOneBossStage.h"
@@ -45,25 +46,25 @@ namespace ly
 		if (!mPlayerSpaceShip.lock()) return;
 		mPlayerSpaceShip.lock()->onActorDestroyed.BindAction(GetWeakPtr(), &LevelOne::PlayerShipDestroyed);
 
-		/*weak_ptr<Vanguard> vanguardEnemy = SpawnActor<Vanguard>(GameData::Ship_Enemy_Vanguard);
+		/*weak_ptr<Vanguard> vanguardEnemy = SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
 		if (auto vanguard = vanguardEnemy.lock())
 		{
 			vanguard->SetActorLocation(sf::Vector2f{ 100, 100.f });
 			vanguard->SetVelocity(sf::Vector2f{ 0.f, 0.f });
 		}
-		weak_ptr<TwinBlade> twinBladeEnemy = SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
+		weak_ptr<TwinBlade> twinBladeEnemy = SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
 		if (auto twinBlade = twinBladeEnemy.lock())
 		{
 			twinBlade->SetActorLocation(sf::Vector2f{ 200.f, 100.f });
 			twinBlade->SetVelocity(sf::Vector2f{ 0.f, 0.f });
 		}
-		weak_ptr<Hexagon> hexagonEnemy = SpawnActor<Hexagon>(GameData::Ship_Enemy_Hexagon);
+		weak_ptr<Hexagon> hexagonEnemy = SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
 		if (auto hexagon = hexagonEnemy.lock())
 		{
 			hexagon->SetActorLocation(sf::Vector2f{ 300.f, 100.f });
 			hexagon->SetVelocity(sf::Vector2f{ 0.f, 0.f });
 		}
-		weak_ptr<UFO> ufoEnemy = SpawnActor<UFO>(GameData::Ship_Enemy_UFO,sf::Vector2f{ 0.f, 0.f });
+		weak_ptr<UFO> ufoEnemy = SpawnActor<UFO>(ShipData::Ship_Enemy_UFO,sf::Vector2f{ 0.f, 0.f });
 		if (auto ufo = ufoEnemy.lock())
 		{
 			ufo->SetActorLocation(sf::Vector2f{ 400.f, 100.f });
@@ -258,13 +259,13 @@ namespace ly
 
 			List<BackgroundLayerDefinition> planetDefs =
 			{
-				GameData::Environment::Meteor1,
-				GameData::Environment::Meteor2,
-				GameData::Environment::Planet_Blue,
-				GameData::Environment::Planet_Earth_Blue,
-				GameData::Environment::Planet_Green,
-				GameData::Environment::Star_Orange,
-				GameData::Environment::Planet_Orange
+				EnvironmentData::Meteor1,
+				EnvironmentData::Meteor2,
+				EnvironmentData::Planet_Blue,
+				EnvironmentData::Planet_Earth_Blue,
+				EnvironmentData::Planet_Green,
+				EnvironmentData::Star_Orange,
+				EnvironmentData::Planet_Orange
 			};
 
 			mPlanetsLayer = SpawnActor<BackgroundLayer>(planetDefs);
@@ -377,3 +378,4 @@ namespace ly
 		GetApplication()->LoadWorld<LevelOne>();
 	}
 }
+

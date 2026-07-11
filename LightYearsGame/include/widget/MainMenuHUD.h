@@ -27,3 +27,4 @@ namespace ly
 		Button mQuitButton;
 	};
 }
+

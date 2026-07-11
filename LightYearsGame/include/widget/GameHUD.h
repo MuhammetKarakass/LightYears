@@ -30,6 +30,8 @@ namespace ly
 		void CreateBossHealthBar(const std::string& bossName,float health, float maxHealth);
 		void BossHealthUpdated(float amt, float currentHealth, float maxHealth);
 		void RemoveBossHealthBar(Actor* actor);
+		sf::Vector2u GetWindowSize() const { return mWindowSize; }
+
 		void ShowGameplayWarning(const GameplayWarning& warning);
 		void HideGameplayWarning(GameplayWarningType warningType);
 
@@ -43,7 +45,6 @@ namespace ly
 		void RefreshPlayerHUDState();
 		void PlayerLifeUpdated(int amt);
 		void PlayerScoreUpdated(int amt);
-		void OnShieldStateChanged(bool active);
 		void UpdateGameplayWarningVisuals(float deltaTime);
 
 		std::optional<ValueGauge> mPlayerHealthBar;
@@ -66,7 +67,6 @@ namespace ly
 		sf::RenderWindow* mWindowRef{ nullptr };
 
 		float mWidgetSpacingX;
-		bool mShieldActive{ false };
 		bool mIsStatusConnected{ false };
 		weak_ptr<PlayerSpaceShip> mObservedPlayerSpaceShip;
 		TimerHandle mRefreshHealthBarTimerHandle;
@@ -76,3 +76,5 @@ namespace ly
 		sf::Vector2f mGameplayWarningBaseLocation{ 0.f, 0.f };
 	};
 }
+
+

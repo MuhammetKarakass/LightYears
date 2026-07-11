@@ -2,8 +2,8 @@
 #include "player/PlayerSpaceShip.h"
 #include <framework/World.h>
 #include "player/PlayerManager.h"
-#include "gameConfigs/GameplayConfig.h"
-#include "gameConfigs/GameplayStructs.h"
+#include "gameConfigs/EffectConfig.h"
+#include "gameplay/effects/GameplayEffectSystem.h"
 
 
 namespace ly
@@ -85,7 +85,12 @@ namespace ly
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			player->ActivateShield(50.f, 5.f);
+			if (const GameplayEffectDefinition* effect = EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic"))
+			{
+				player->GetCombatRuntime().GetEffects().ApplyEffect(*effect);
+			}
 		}
 	}
 }
+
+

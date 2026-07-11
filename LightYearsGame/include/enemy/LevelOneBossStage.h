@@ -32,3 +32,5 @@ namespace ly
 		weak_ptr<LevelOneBoss> mBoss;
 	};
 }
+
+

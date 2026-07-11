@@ -5,6 +5,8 @@ project(LightYears
     LANGUAGES CXX
 )
 
+include(CTest)
+
 SET(CMAKE_CXX_STANDARD          17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS       OFF)
@@ -33,3 +35,7 @@ set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
 add_subdirectory(LightYearsEngine)
 add_subdirectory(LightYearsGame)
+
+if(BUILD_TESTING)
+    add_test(NAME LightYearsGasLiteCore COMMAND LightYearsGasLiteTests)
+endif()

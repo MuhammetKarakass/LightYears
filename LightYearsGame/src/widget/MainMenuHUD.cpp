@@ -1,4 +1,4 @@
-﻿#include "widget/MainMenuHUD.h"
+#include "widget/MainMenuHUD.h"
 
 namespace ly
 {
@@ -31,12 +31,12 @@ namespace ly
 	{
 		auto windowSize = windowRef.getSize();
 		
-		// ✅ Origin'leri merkeze al
+		// ? Origin'leri merkeze al
 		mTitleText.CenterOrigin();
 		mStartButton.CenterOrigin();
 		mQuitButton.CenterOrigin();
 		
-		// Widget pozisyonları (artık merkezden konumlanacaklar)
+		// Widget pozisyonlar� (art�k merkezden konumlanacaklar)
 		mTitleText.SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, 100.f });
 		mStartButton.SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f });
 		mQuitButton.SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f + 100.f });
@@ -57,3 +57,4 @@ namespace ly
 	}
 
 }
+

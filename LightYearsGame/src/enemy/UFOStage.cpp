@@ -1,6 +1,7 @@
-﻿#include "enemy/UFO.h"
+#include "enemy/UFO.h"
 #include "enemy/UFOStage.h"
 #include <framework/World.h>
+#include "gameConfigs/ShipConfig.h"
 
 namespace ly
 {
@@ -78,7 +79,7 @@ namespace ly
 
 	void UFOStage::SpawnUFO()
 	{
-		ShipDefinition ufoDef = GameData::Ship_Enemy_UFO;
+		ShipDefinition ufoDef = ShipData::Ship_Enemy_UFO;
 		sf::Vector2f spawnLoc = RandomSpawnLoc();
 		auto windowSize = GetWorld()->GetWindowSize();
 		sf::Vector2f center{ windowSize.x / 2.f, windowSize.y / 2.f };
@@ -91,3 +92,4 @@ namespace ly
 		newUFO.lock()->SetActorLocation(spawnLoc);
 	}
 }
+

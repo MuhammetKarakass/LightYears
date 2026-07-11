@@ -4,8 +4,9 @@
 #include <framework/Delegate.h>	
 #include "VFX/Explosion.h"
 #include "gameplay/HealthComponent.h"
-#include "gameConfigs/GameplayConfig.h"
-#include "gameConfigs/GameplayStructs.h"
+#include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/combat/Combatant.h"
+#include "gameConfigs/ShipStructs.h"
 
 namespace ly
 {
@@ -16,7 +17,7 @@ namespace ly
 		ThrustDrift
 	};
 
-	class SpaceShip : public Actor
+	class SpaceShip : public Actor, public Combatant
 	{
 	public:
 		virtual void BeginPlay() override;
@@ -27,9 +28,13 @@ namespace ly
 
 
 		HealthComponent& GetHealthComponent() { return mHealthComponent; }
+		const HealthComponent& GetHealthComponent() const { return mHealthComponent; }
+		CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
+		const CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
 
 		virtual void Shoot();
 		virtual void ApplyDamage(float amt) override;
+		virtual void ReceiveDamage(DamageContext context) override;
 
 		virtual void SetExplosionType(ExplosionType type) { mExplosionType = type; }
 		ExplosionType GetExplosionType() const { return mExplosionType; }
@@ -45,12 +50,14 @@ namespace ly
 
 		void AddShipRelativeThrust(const sf::Vector2f& localThrustInput, float deltaTime);
 		void RotateTowardWorldLocation(const sf::Vector2f& worldLocation, float deltaTime);
+		void RefreshMovementAttributesFromRuntime();
 
 		virtual void SetupCollisionLayers();
 
-		List<GameplayTag> mGameplayTags;
+		List<GameplayTag> mAttachedLightTags;
 	private:
 		HealthComponent mHealthComponent;
+		CombatRuntime mCombatRuntime;
 
 		sf::Color mBlinkColor;
 		float mBlinkTime;
@@ -60,6 +67,7 @@ namespace ly
 
 		ExplosionType mExplosionType;
 		ShipMovementMode mMovementMode;
+		ShipMovementAttributes mBaseMovementAttributes;
 		ShipMovementAttributes mMovementAttributes;
 		float mAngularVelocity;
 
@@ -68,6 +76,7 @@ namespace ly
 		void ApplyThrustDriftDamping(float deltaTime);
 		void ClampThrustDriftVelocity();
 		float GetShortestAngleDelta(float targetAngle, float currentAngle) const;
+		void OnRuntimeAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue);
 
 
 		virtual void OnHealthChanged(float amt, float health, float maxHealth);
@@ -76,3 +85,5 @@ namespace ly
 		virtual void Blew();
 	};
 }
+
+

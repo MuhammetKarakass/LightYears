@@ -38,10 +38,10 @@ namespace ly
 
 	void HUD::Tick(float deltaTime)
 	{
-		/*for(auto& widget : mWidgets)
+		for(auto& widget : mWidgets)
 		{
 			widget->NativeTick(deltaTime);
-		}*/
+		}
 
 		auto it = std::remove_if(mWidgets.begin(), mWidgets.end(),
 			[](const shared_ptr<Widget>& widget)
@@ -64,9 +64,9 @@ namespace ly
 
 	void HUD::Draw(sf::RenderWindow& windowRef)
 	{
-		/*for (auto& widget : mWidgets)
+		for (auto& widget : mWidgets)
 		{
 			widget->NativeDraw(windowRef);
-		}*/
+		}
 	}
 }

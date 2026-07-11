@@ -2,8 +2,8 @@
 #include <framework/World.h>
 #include <framework/MathUtility.h>
 #include "framework/AssetManager.h"
-#include "gameConfigs/GameplayConfig.h"
-#include "gameplay/ability/controllers/PrimaryWeaponController.h"
+#include "gameConfigs/AbilityConfig.h"
+#include "gameplay/combat/Combatant.h"
 #include <algorithm>
 #include <cmath>
 
@@ -14,22 +14,19 @@ namespace ly
 		mSpeed(shipDef.speed.x),
 		mMoveInput{ 0.f, 0.f },
 		mSmoothedMoveInput{ 0.f, 0.f },
-		mAbilitySystem{ this },
 		mInvulnerabilityTime{ 2.f },
-		mInvulnerable{ true },
 		mInvulnerabilityBlinkInterval{ 0.4f },
 		mInvulnerabilityBlinkTimer{ 0.f },
 		mInvulnerabilityDir{ 1.f },
 		mCollisionDamage{ shipDef.collisionDamage }
 	{
-		mAbilitySystem.AddController(
-			AbilitySlot::PrimaryFire,
-			std::make_unique<PrimaryWeaponController>(this, shipDef.primaryWeaponDefinition)
-		);
+		SetInvulnerability(true);
+		GetCombatRuntime().GetAbilities().GrantAbility(AbilityData::Definitions::Shield_Basic);
+		GetCombatRuntime().GetAbilities().GrantAbility(AbilityData::Definitions::SunBeam_Strike_Basic);
 
 		SetActorRotation(0.f);
-		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
-		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
+		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
+		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
 	}
 
 	void PlayerSpaceShip::SetupCollisionLayers()
@@ -42,8 +39,6 @@ namespace ly
 	void PlayerSpaceShip::BeginPlay()
 	{
 		SpaceShip::BeginPlay();
-		
-		mShield.onShieldStateChanged.BindAction(GetWeakPtr(), &PlayerSpaceShip::OnShieldStateChanged);
 
 		TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
@@ -55,56 +50,43 @@ namespace ly
 
 	void PlayerSpaceShip::ApplyDamage(float amt)
 	{
-		if (mInvulnerable)
+		DamageContext context;
+		context.target = this;
+		context.originalDamage = amt;
+		context.remainingDamage = amt;
+		ReceiveDamage(context);
+	}
+
+	void PlayerSpaceShip::ReceiveDamage(DamageContext context)
+	{
+		if (IsInvulnerable())
 		{
 			return;
 		}
 
-		if (mShield.IsActive())
-		{
-			amt = mShield.TakeDamage(amt);
-			// Force HUD update for shield health
-			GetHealthComponent().onHealthChanged.Broadcast(0.f, GetHealthComponent().GetHealth(), GetHealthComponent().GetMaxHealth());
+		const float currentHealth = GetHealthComponent().GetHealth();
+		LOG("PlayerSpaceShip::ReceiveDamage - Current Health: %.1f, Damage: %.1f", currentHealth, context.remainingDamage);
 
-			if (amt <= 0.f)
-			{
-				return; // Shield absorbed all damage
-			}
-		}
-
-		float currentHealth = GetHealthComponent().GetHealth();
-		LOG("PlayerSpaceShip::ApplyDamage - Current Health: %.1f, Damage: %.1f", currentHealth, amt);
-
-		if (currentHealth - amt <= 0.f)
+		if (currentHealth - context.remainingDamage <= 0.f)
 		{
 			LOG("===== PLAYER SHIP DYING =====");
 		}
-		SpaceShip::ApplyDamage(amt);
+		SpaceShip::ReceiveDamage(context);
 	}
 
 	void PlayerSpaceShip::Tick(float deltaTime)
 	{
 		mShaderTime += deltaTime;
 
-		if (GetMovementMode() == ShipMovementMode::ThrustDrift)
-		{
-			SetInput();
-			ConsumeInput(deltaTime);
-			SpaceShip::Tick(deltaTime);
-		}
-		else
-		{
-			SpaceShip::Tick(deltaTime);
-			SetInput();
-			ConsumeInput(deltaTime);
-		}
+		SetInput();
+		ConsumeInput(deltaTime);
+		SpaceShip::Tick(deltaTime);
 
-		if (mInvulnerable)
+		if (IsInvulnerable())
 		{
 			UpdateInvulnerability(deltaTime);
 		}
 
-		mAbilitySystem.Tick(deltaTime);
 	}
 
 	void PlayerSpaceShip::SetInput()
@@ -135,8 +117,12 @@ namespace ly
 		}
 
 		const bool wantsToFire = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
+		const bool wantsShield = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q);
+		const bool wantsSunBeam = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E);
 
-		mAbilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, wantsToFire);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::PrimaryFire, wantsToFire);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability1, wantsShield);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability2, wantsSunBeam);
 
 		if (GetMovementMode() == ShipMovementMode::LegacyVelocity)
 		{
@@ -253,7 +239,7 @@ namespace ly
 	void PlayerSpaceShip::StopInvulnerability()
 	{
 		GetSprite().value().setColor({255,255,255,255});
-		mInvulnerable = false;
+		SetInvulnerability(false);
 
 		SetAllLightsIntensity(GameTags::Ship::Engine_Left, 1.5f);
 		SetAllLightsIntensity(GameTags::Ship::Engine_Right, 1.5f);
@@ -278,42 +264,12 @@ namespace ly
 	{
 		SpaceShip::OnActorBeginOverlap(otherActor);
 
-		if (otherActor && GetCanCollide() && !mInvulnerable)
+		if (otherActor && GetCanCollide() && !IsInvulnerable())
 		{
-			otherActor->ApplyDamage(mCollisionDamage);
+			ApplyCombatDamage(*otherActor, mCollisionDamage, this);
 		}
 	}
 
-	void PlayerSpaceShip::ActivateShield(float bonusHP, float duration)
-	{
-		mShield.Activate(bonusHP);
-
-		// Force HUD update display
-		GetHealthComponent().onHealthChanged.Broadcast(0.f, GetHealthComponent().GetHealth(), GetHealthComponent().GetMaxHealth());
-
-		// Set timer to deactivate shield
-		TimerManager::GetGameTimerManager().ClearTimer(mShieldTimerHandle);
-		mShieldTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
-			GetWeakPtr(),
-			&PlayerSpaceShip::DeactivateShield,
-			duration,
-			false
-		);
-	}
-
-	void PlayerSpaceShip::DeactivateShield()
-	{
-		if (!mShield.IsActive()) return;
-
-		mShield.Deactivate();
-
-		// Force HUD update
-		GetHealthComponent().onHealthChanged.Broadcast(0.f, GetHealthComponent().GetHealth(), GetHealthComponent().GetMaxHealth());
-	}
-
-	void PlayerSpaceShip::OnShieldStateChanged(bool active)
-	{
-		// Forward the event
-		onShieldStateChanged.Broadcast(active);
-	}
 }
+
+

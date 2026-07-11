@@ -1,4 +1,4 @@
-﻿#include "level/GameLevel.h"
+#include "level/GameLevel.h"
 #include "widget/GameHUD.h"
 #include "widget/PauseMenuHUD.h"
 #include "widget/GameOverHUD.h"
@@ -8,6 +8,7 @@
 #include "level/LevelOne.h"
 #include "player/PlayerManager.h"
 #include "presentation/hud/GameplayWarningHUDController.h"
+#include "presentation/hud/ability/AbilityUIController.h"
 
 namespace ly
 {
@@ -27,6 +28,18 @@ namespace ly
 		OnGameStart();
 
 		
+	}
+
+	void GameLevel::Tick(float deltaTime)
+	{
+		for (const shared_ptr<HUDController>& controller : mHUDControllers)
+		{
+			if (controller)
+			{
+				controller->Tick(deltaTime);
+			}
+		}
+		World::Tick(deltaTime);
 	}
 
 	bool GameLevel::DispatchEvent(const sf::Event& event)
@@ -80,6 +93,9 @@ namespace ly
 	{
 		shared_ptr<GameplayWarningHUDController> warningHUDController = std::make_shared<GameplayWarningHUDController>(mGameHUD);
 		mHUDControllers.push_back(warningHUDController);
+
+		shared_ptr<AbilityUIController> abilityUIController = std::make_shared<AbilityUIController>(mGameHUD);
+		mHUDControllers.push_back(abilityUIController);
 	}
 
 	void GameLevel::BroadcastGameplayWarning(const GameplayWarning& warning)
@@ -228,3 +244,5 @@ namespace ly
 		GameFinished(false);
 	}
 }
+
+

@@ -8,7 +8,10 @@ namespace ly
 	{
 	public:
 		virtual ~HUDController() = default;
+		virtual void Tick(float deltaTime) {}
 		virtual void ShowGameplayWarning(const GameplayWarning& warning) {}
 		virtual void HideGameplayWarning(GameplayWarningType warningType) {}
 	};
 }
+
+

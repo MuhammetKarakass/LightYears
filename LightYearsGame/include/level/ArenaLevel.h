@@ -69,3 +69,5 @@ namespace ly
 		weak_ptr<PlayerSpaceShip> mCameraFollowShip;
 	};
 }
+
+

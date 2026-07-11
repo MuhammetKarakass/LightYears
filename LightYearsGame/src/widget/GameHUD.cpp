@@ -57,18 +57,6 @@ namespace ly
 		if (mTopCenterText.has_value())
 			mTopCenterText->NativeDraw(windowRef);
 
-		if (auto centerNotificationText = mCenterNotificationText.lock())
-			centerNotificationText->NativeDraw(windowRef);
-
-		if(auto timerText = mTimerText.lock())
-			timerText->NativeDraw(windowRef);
-
-		if(auto bossHealthBar = mBossHealthBar.lock())
-			bossHealthBar->NativeDraw(windowRef);
-
-		if(auto bossNameText = mBossNameText.lock())
-			bossNameText->NativeDraw(windowRef);
-
 		HUD::Draw(windowRef);
 	}
 
@@ -87,32 +75,9 @@ namespace ly
 		}
 
 
-		if (auto centerNotificationText = mCenterNotificationText.lock())
-		{
-			if (centerNotificationText->IsAnimating())
-				centerNotificationText->NativeTick(deltaTime);
-		}
-
-		if (auto timerText = mTimerText.lock())
-		{
-			if (timerText->IsAnimating())
-				timerText->NativeTick(deltaTime);
-		}
-
-		if(auto bossHealthBar = mBossHealthBar.lock())
-		{
-			if (bossHealthBar->IsAnimating())
-				bossHealthBar->NativeTick(deltaTime);
-		}
-
-		if(auto bossNameText = mBossNameText.lock())
-		{
-			if (bossNameText->IsAnimating())
-				bossNameText->NativeTick(deltaTime);
-		}
-
 		RefreshPlayerHUDState();
 		UpdateGameplayWarningVisuals(deltaTime);
+		HUD::Tick(deltaTime);
 
 	}
 
@@ -172,7 +137,6 @@ namespace ly
 		if (!player || player->GetCurrentSpaceShip().expired())
 		{
 			mObservedPlayerSpaceShip.reset();
-			mShieldActive = false;
 			mPlayerHealthBar->UpdateValue(0.f, 1.f);
 			return;
 		}
@@ -182,7 +146,6 @@ namespace ly
 		if (!lockedSpaceShip || lockedSpaceShip->GetIsPendingDestroy())
 		{
 			mObservedPlayerSpaceShip.reset();
-			mShieldActive = false;
 			mPlayerHealthBar->UpdateValue(0.f, 1.f);
 			return;
 		}
@@ -192,11 +155,9 @@ namespace ly
 			mObservedPlayerSpaceShip = lockedSpaceShip;
 			lockedSpaceShip->onActorDestroyed.BindAction(GetWeakPtr(), &GameHUD::PlayerSpaceShipDestroyed);
 			lockedSpaceShip->GetHealthComponent().onHealthChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerHealthUpdated);
-			lockedSpaceShip->onShieldStateChanged.BindAction(GetWeakPtr(), &GameHUD::OnShieldStateChanged);
 		}
 
 		HealthComponent& healthComponent = lockedSpaceShip->GetHealthComponent();
-		mShieldActive = false;
 		PlayerHealthUpdated(0, healthComponent.GetHealth(), healthComponent.GetMaxHealth());
 	}
 
@@ -212,23 +173,30 @@ namespace ly
 		float totalHealth = currentHealth;
 		float totalMax = maxHealth;
 
-		if (mShieldActive)
+		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+		if (player && !player->GetCurrentSpaceShip().expired())
 		{
-			Player* player = PlayerManager::GetPlayerManager().GetPlayer();
-			if (player && !player->GetCurrentSpaceShip().expired())
+			auto ship = player->GetCurrentSpaceShip().lock();
+			if (ship)
 			{
-				auto ship = player->GetCurrentSpaceShip().lock();
-				if (ship)
+				for (const GameplayEffectSnapshot& effectSnapshot : ship->GetCombatRuntime().GetEffects().BuildSnapshots())
 				{
-					totalHealth += ship->GetShield().GetHealth();
-					totalMax += ship->GetShield().GetMaxHealth();
+					const GameplayAttribute* capacity = FindGameplayAttribute(
+						effectSnapshot.runtimeAttributes,
+						BarrierEffectSchema::Capacity
+					);
+					if (capacity && capacity->baseValue > 0.f)
+					{
+						totalHealth += capacity->currentValue;
+						totalMax += capacity->baseValue;
+					}
 				}
 			}
 		}
 
 		mPlayerHealthBar->UpdateValue(totalHealth, totalMax);
 
-		if (mShieldActive)
+		if (totalMax > maxHealth)
 		{
 			mPlayerHealthBar->SetForegroundColor(sf::Color{ 80, 160, 255, 255 });
 			return;
@@ -318,7 +286,10 @@ namespace ly
 		if (currentShip != observedShip)
 		{
 			RefreshHealthBar();
+			return;
 		}
+
+		RefreshHealthBar();
 	}
 
 	void GameHUD::PlayerLifeUpdated(int amt)
@@ -329,23 +300,6 @@ namespace ly
 	void GameHUD::PlayerScoreUpdated(int amt)
 	{
 		mPlayerScoreText->SetString(std::to_string(amt));
-	}
-
-	void GameHUD::OnShieldStateChanged(bool active)
-	{
-		mShieldActive = active;
-
-		// Force a health bar color refresh
-		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
-		if (player && !player->GetCurrentSpaceShip().expired())
-		{
-			auto ship = player->GetCurrentSpaceShip().lock();
-			if (ship)
-			{
-				HealthComponent& health = ship->GetHealthComponent();
-				PlayerHealthUpdated(0.f, health.GetHealth(), health.GetMaxHealth());
-			}
-		}
 	}
 
 	void GameHUD::ShowTimer(float fadeIn, float hold, float fadeOut)
@@ -514,5 +468,7 @@ namespace ly
 	}
 
 }
+
+
 
 

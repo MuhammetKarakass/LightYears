@@ -6,10 +6,10 @@
 #include <optional>
 #include "engineConfigs/EngineStructs.h"
 
-//TODO: : Actor sınıfının destructor'ına (~Actor) UnInitializePhysics() eklemen.  
-// World sınıfının yıkıcı metodunda (~World) o dünyaya ait tüm timerların temizlendiğinden emin olmak daha güvenli olurdu, ama weak_ptr ve BindAction yapın şu an bunu güvenli kılıyor.
-//Çözüm: World yıkıcı metodunda (Destructor) veya LoadWorld ile yeni dünya yüklenirken eski dünyanın temizlendiğinden emin olunmalı. Şu anki C++ shared_ptr yapısı bunu büyük 
-// oranda hallediyor, ancak mPendingActors içindekiler hiç sahneye çıkmadan silinecek. Bu genellikle sorun yaratmaz ama aklında bulunsun.
+//TODO: : Actor sÄ±nÄ±fÄ±nÄ±n destructor'Ä±na (~Actor) UnInitializePhysics() eklemen.  
+// World sÄ±nÄ±fÄ±nÄ±n yÄ±kÄ±cÄ± metodunda (~World) o dÃ¼nyaya ait tÃ¼m timerlarÄ±n temizlendiÄŸinden emin olmak daha gÃ¼venli olurdu, ama weak_ptr ve BindAction yapÄ±n ÅŸu an bunu gÃ¼venli kÄ±lÄ±yor.
+//Ã‡Ã¶zÃ¼m: World yÄ±kÄ±cÄ± metodunda (Destructor) veya LoadWorld ile yeni dÃ¼nya yÃ¼klenirken eski dÃ¼nyanÄ±n temizlendiÄŸinden emin olunmalÄ±. Åu anki C++ shared_ptr yapÄ±sÄ± bunu bÃ¼yÃ¼k 
+// oranda hallediyor, ancak mPendingActors iÃ§indekiler hiÃ§ sahneye Ã§Ä±kmadan silinecek. Bu genellikle sorun yaratmaz ama aklÄ±nda bulunsun.
 
 
 
@@ -157,6 +157,8 @@ namespace ly
 
 		std::optional<sf::Sprite> mSprite;
 		shared_ptr<sf::Texture> mTexture;
+		sf::Vector2f mActorLocation{ 0.f, 0.f };
+		float mActorRotation = 0.f;
 
 		bool mPhysicsEnabled;
 		std::optional<b2BodyId> mPhysicsBodyId;

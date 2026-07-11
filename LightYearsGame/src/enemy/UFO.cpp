@@ -1,6 +1,6 @@
-﻿#include "enemy/UFO.h"
+#include "enemy/UFO.h"
+#include "gameplay/combat/Combatant.h"
 #include <framework/World.h>
-#include "gameplay/ability/controllers/PrimaryWeaponController.h"
 #include <cmath> 
 #include <algorithm> 
 #include <framework/MathUtility.h>
@@ -9,14 +9,8 @@ namespace ly
 {
 	UFO::UFO(World* owningWorld, const ShipDefinition& shipDef, const sf::Vector2f& velocity, float rotationSpeed) :
 		EnemySpaceShip{ owningWorld, shipDef },
-		mAbilitySystem{ this },
 		mRotationSpeed{ rotationSpeed }
 	{
-		mAbilitySystem.AddController(
-			AbilitySlot::PrimaryFire,
-			std::make_unique<PrimaryWeaponController>(this, shipDef.primaryWeaponDefinition)
-		);
-
 		SetVelocity(velocity);
 		SetActorRotation(180.f);
 		SetScoreAmt(shipDef.scoreAmt);
@@ -25,7 +19,7 @@ namespace ly
 		float collisionRadius = visualRadius * 0.4f;
 		SetCollisionRadius(collisionRadius);
 
-		mGameplayTags.push_back(AddLight(GameTags::Ship::Engine_Main, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
+		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Main, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
 	}
 
 	UFO::~UFO()
@@ -36,7 +30,6 @@ namespace ly
 	{
 		EnemySpaceShip::Tick(deltaTime);
 		Shoot();
-		mAbilitySystem.Tick(deltaTime);
 		AddActorRotationOffset(deltaTime * mRotationSpeed);
 
 		CheckBounce();
@@ -91,7 +84,7 @@ namespace ly
 			return;
 		}
 
-		otherActor->ApplyDamage(GetCollisionDamage());
+			ApplyCombatDamage(*otherActor, GetCollisionDamage(), this);
 	}
 
 	void UFO::CheckBounce()
@@ -130,6 +123,8 @@ namespace ly
 
 	void UFO::Shoot()
 	{
-		mAbilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, true);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::PrimaryFire, true);
 	}
 }
+
+

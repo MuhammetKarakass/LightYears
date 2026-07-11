@@ -1,48 +1,38 @@
 #pragma once
 
-#include "framework/Actor.h"
-#include "gameConfigs/GameplayStructs.h"
+#include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameConfigs/WeaponStructs.h"
 
 
 namespace ly
 {
-	class Bullet : public Actor
+	class Bullet : public AbilityWorldActor
 	{
 	public:
-		Bullet(World* world, Actor* owner, const WeaponPresentationDefinition& presentation, const PrimaryWeaponAttributes& attributes);
+		Bullet(World* world, Actor* owner, const WeaponPresentationDefinition& presentation, const GameplayAttributeList& values);
 
-		void SetSpeed(float speed);
-		void SetDamage(float damage);
-		void SetVisualScale(float scale);
-		void SetProjectileCollisionRadius(float radius);
-		void SetProjectileAreaRadius(float radius);
-
-		Actor* GetOwner() const { return mOwner; }
+		Actor* GetOwner() const { return GetOwnerActor(); }
 
 		virtual void BeginPlay() override;
 		virtual void Tick(float deltaTime) override;
 
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 
-		float GetDamage() { return mDamage; };
+		float GetDamage() const { return AbilityWorldActor::GetDamage(); };
 		virtual void Destroy() override;
 	private:
+		void SetVisualScale(float scale);
 		void Move(float deltaTime);
-		void SetupCollisionFromOwner();
 		void ApplyImpactDamage(Actor* directHitActor);
 		void ApplyAreaDamage();
-		bool IsValidAreaDamageTarget(const Actor* actor) const;
 
-		Actor* mOwner;
 		float mSpeed;
-		float mDamage;
-		float mLifeTime;
-		float mAge;
 		float mMaxTravelDistance;
 		float mTravelDistance;
 		float mAreaDamageRadius;
-		float mCollisionRadius;
 		float mVisualScale;
 		int mRemainingPierces;
 	};
 }
+
+

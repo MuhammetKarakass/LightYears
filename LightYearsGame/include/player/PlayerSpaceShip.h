@@ -2,10 +2,7 @@
 #include "spaceShip/SpaceShip.h"
 #include "framework/Core.h"
 #include "framework/TimerManager.h"
-#include "gameConfigs/GameplayConfig.h"
-#include "gameConfigs/GameplayStructs.h"
-#include "gameplay/ability/AbilitySystem.h"
-#include "player/Shield.h"
+#include "gameConfigs/ShipConfig.h"
 
 namespace ly
 {
@@ -14,10 +11,11 @@ namespace ly
 	{
 	public:
 
-		PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef = GameData::Ship_Player_Fighter);
+		PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef = ShipData::Ship_Player_Fighter);
 
 		virtual void BeginPlay() override;
 		virtual void ApplyDamage(float amt) override;
+		virtual void ReceiveDamage(DamageContext context) override;
 		virtual void Tick(float deltaTime) override;
 		void SetSpeed(float speed) { mSpeed = speed; }
 		float GetSpeed()const { return mSpeed; }
@@ -28,12 +26,6 @@ namespace ly
 		virtual void SetupCollisionLayers() override;
 		
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
-
-		void ActivateShield(float bonusHP, float duration);
-
-		Delegate<bool> onShieldStateChanged;
-
-		Shield& GetShield() { return mShield; }
 
 	private:
 		void SetInput();
@@ -50,12 +42,8 @@ namespace ly
 		sf::Vector2f mMoveInput;
 		sf::Vector2f mSmoothedMoveInput;
 
-		AbilitySystem mAbilitySystem;
-
 		float mInvulnerabilityTime;
 		TimerHandle mInvulnerabilityTimerHandle;
-		bool mInvulnerable{ false };
-
 		float mInvulnerabilityBlinkInterval;
 		float mInvulnerabilityBlinkTimer;
 		float mInvulnerabilityDir;
@@ -63,10 +51,7 @@ namespace ly
 		float mCollisionDamage;
 
 		bool mUseScreenClamp{ true };
-
-		void DeactivateShield();
-		Shield mShield;
-		TimerHandle mShieldTimerHandle;
-		void OnShieldStateChanged(bool active);
 	};
 }
+
+

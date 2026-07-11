@@ -19,10 +19,33 @@ namespace ly
 		}
 	}
 
+	void HealthComponent::SetMaxHealth(float maxHealth, bool preserveHealthPercent)
+	{
+		if (maxHealth <= 0.f || maxHealth == mMaxHealth)
+		{
+			return;
+		}
+
+		const float previousHealth = mHealth;
+		const float previousMaxHealth = mMaxHealth;
+		mMaxHealth = maxHealth;
+		if (preserveHealthPercent && previousMaxHealth > 0.f)
+		{
+			mHealth = mMaxHealth * (previousHealth / previousMaxHealth);
+		}
+		if (mHealth > mMaxHealth)
+		{
+			mHealth = mMaxHealth;
+		}
+
+		onHealthChanged.Broadcast(mHealth - previousHealth, mHealth, mMaxHealth);
+	}
+
 	void HealthComponent::ChangeHealth(float amount)
 	{
 		if (amount == 0) return;  
 		if (mHealth == 0) return; 
+		const float previousHealth = mHealth;
 		mHealth += amount; 
 
 		if (mHealth < 0)
@@ -35,11 +58,12 @@ namespace ly
 			mHealth = mMaxHealth; 
 		}
 
-		onHealthChanged.Broadcast(amount, mHealth, mMaxHealth);
+		const float actualDelta = mHealth - previousHealth;
+		onHealthChanged.Broadcast(actualDelta, mHealth, mMaxHealth);
 
-		if (amount < 0)
+		if (actualDelta < 0)
 		{
-			TakenDamage(-amount);  
+			TakenDamage(-actualDelta);  
 			if (mHealth <= 0)
 			{
 				HealthEmpty();  
@@ -63,3 +87,5 @@ namespace ly
 		onHealthEmpty.Broadcast();
 	}
 }
+
+

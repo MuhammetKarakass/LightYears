@@ -35,3 +35,4 @@ namespace ly
 		sf::RectangleShape mOverlay;
 	};
 }
+

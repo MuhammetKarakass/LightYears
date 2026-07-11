@@ -19,3 +19,5 @@ namespace ly
 		weak_ptr<GameHUD> mGameHUD;
 	};
 }
+
+

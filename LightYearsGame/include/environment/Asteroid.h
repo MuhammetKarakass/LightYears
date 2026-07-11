@@ -43,3 +43,4 @@ namespace ly
 		List<std::string> mTexturePaths;
 	};
 }
+

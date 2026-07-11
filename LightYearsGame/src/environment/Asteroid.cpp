@@ -1,4 +1,5 @@
 #include "environment/Asteroid.h"
+#include "gameplay/combat/Combatant.h"
 
 namespace ly
 {
@@ -81,7 +82,7 @@ namespace ly
 		if (!otherActor) return;
 		if (otherActor->GetCollisionLayer() == CollisionLayer::Player)
 		{
-			otherActor->ApplyDamage(mDamage);
+			ApplyCombatDamage(*otherActor, mDamage, this);
 		}
 	}
 
@@ -143,3 +144,5 @@ namespace ly
 		}
 	}
 }
+
+

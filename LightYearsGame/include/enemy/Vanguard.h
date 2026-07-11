@@ -1,6 +1,5 @@
 #pragma once
 #include "enemy/EnemySpaceShip.h"
-#include "gameplay/ability/AbilitySystem.h"
 
 namespace ly
 {
@@ -18,7 +17,7 @@ namespace ly
 	protected:
 
 
-	private:
-		AbilitySystem mAbilitySystem;
 	};
 }
+
+

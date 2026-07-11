@@ -1,4 +1,5 @@
 #include "enemy/EnemySpaceShip.h"
+#include "gameplay/combat/Combatant.h"
 
 namespace ly
 {
@@ -32,7 +33,7 @@ namespace ly
 		if (otherActor == nullptr) return;
 		if (otherActor->GetCollisionLayer() == CollisionLayer::Player)
 		{
-			otherActor->ApplyDamage(mCollisionDamage);
+			ApplyCombatDamage(*otherActor, mCollisionDamage, this);
 		}
 	}
 	
@@ -74,3 +75,4 @@ namespace ly
 		onScoreAwarded.Broadcast(mScoreAmt);
 	}
 }
+

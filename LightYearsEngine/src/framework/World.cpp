@@ -31,17 +31,21 @@ namespace ly{
 	}
 	void World::TickInternal(float deltaTime)
 	{
-		if (!mIsPaused) {
+		auto promotePendingActors = [this]()
+		{
+			List<shared_ptr<Actor>> actorsToSpawn;
+			actorsToSpawn.swap(mPendingActors);
 
-			for (std::shared_ptr<Actor> actor : mPendingActors)
+			for (const shared_ptr<Actor>& actor : actorsToSpawn)
 			{
 				mActors.push_back(actor);
 				actor->BeginPlayInternal();
-
 				OnActorSpawned(actor.get());
 			}
+		};
 
-			mPendingActors.clear();
+		if (!mIsPaused) {
+			promotePendingActors();
 
 			for (auto iter = mActors.begin(); iter != mActors.end();)
 			{
@@ -62,15 +66,7 @@ namespace ly{
 
 		else
 		{
-			for (std::shared_ptr<Actor> actor : mPendingActors)
-			{
-				mActors.push_back(actor);
-				actor->BeginPlayInternal();
-
-				OnActorSpawned(actor.get());
-			}
-
-			mPendingActors.clear();
+			promotePendingActors();
 
 			for(auto& actor : mActors)
 			{

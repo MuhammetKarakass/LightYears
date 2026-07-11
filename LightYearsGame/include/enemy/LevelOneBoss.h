@@ -1,13 +1,10 @@
 #pragma once
 
 #include "enemy/EnemySpaceShip.h"
-#include "gameplay/ability/AbilitySystem.h"
 #include "environment/AsteroidSpawner.h"
 
 namespace ly
 {
-	class PrimaryWeaponController;
-
 	class LevelOneBoss : public EnemySpaceShip
 	{
 	public:
@@ -24,10 +21,8 @@ namespace ly
 	private:
 		void CheckMove();
 		void UpdateWeaponFireIntent();
-		void TickAbilities(float deltaTime);
 		void SetStage(int stage);
 		void BossHealthChanged(float amt,float currentHealth, float maxHealth);
-		PrimaryWeaponController* GetPrimaryWeaponController(AbilitySlot slot);
 
 		float mSpeed;
 		float mBaseSpeed;
@@ -36,10 +31,10 @@ namespace ly
 		bool mCanShoot;
 		bool flag = false;
 
-		AbilitySystem mAbilitySystem;
-
 		static const ShipDefinition mBossShipDef;
 
 		shared_ptr<AsteroidSpawner> mAsteroidSpawner;
 	};
 }
+
+

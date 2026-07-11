@@ -44,3 +44,4 @@ namespace ly
 		bool mHasPendingRespawn = false;
 	};
 }
+

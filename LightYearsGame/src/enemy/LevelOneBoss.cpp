@@ -1,6 +1,7 @@
 #include "enemy/LevelOneBoss.h"
 #include "gameplay/HealthComponent.h"
-#include "gameplay/ability/controllers/PrimaryWeaponController.h"
+#include "gameConfigs/PointLightConfig.h"
+#include "gameConfigs/WeaponConfig.h"
 
 namespace ly
 {
@@ -12,11 +13,11 @@ namespace ly
 		300,
 		(int)ly::ExplosionType::Boss,
 		{
-			EngineMount{ {0.f,-110.f},GameData::Engine_Red_PointLightDef },
+			EngineMount{ {0.f,-110.f},LightingData::Engine_Red_PointLightDef },
 
 		},
 		LevelOneBoss::GetDefaultRewards(),
-		GameData::Boss_Base_PrimaryWeaponDef
+		WeaponData::Boss_Base_PrimaryWeaponDef
 	);
 
 	LevelOneBoss::LevelOneBoss(World* world)
@@ -25,7 +26,6 @@ namespace ly
 		mSwitchDistanceToEdge(100.f),
 		mStage{1},
 		mCanShoot{ false },
-		mAbilitySystem{ this },
 		mAsteroidSpawner{ shared_ptr<AsteroidSpawner>(new AsteroidSpawner(world,
 			AsteroidSpawnerConfig
 			{
@@ -39,22 +39,19 @@ namespace ly
 				1
 			})) }
 	{
-		mAbilitySystem.AddController(
-			AbilitySlot::PrimaryFire,
-			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_Base_PrimaryWeaponDef)
-		);
-		mAbilitySystem.AddController(
-			AbilitySlot::Skill1,
-			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_ThreeWay_PrimaryWeaponDef)
-		);
-		mAbilitySystem.AddController(
-			AbilitySlot::Skill2,
-			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_FrontalSweep_PrimaryWeaponDef)
-		);
-		mAbilitySystem.AddController(
-			AbilitySlot::Skill3,
-			std::make_unique<PrimaryWeaponController>(this, GameData::Boss_LastStage_PrimaryWeaponDef)
-		);
+		ly::AbilityDefinition threeWay = AbilityData::MakePrimaryFireAbilityDefinition(WeaponData::Boss_ThreeWay_PrimaryWeaponDef);
+		threeWay.slot = AbilitySlot::Ability1;
+		threeWay.inputLabel = "";
+		GetCombatRuntime().GetAbilities().GrantAbility(threeWay);
+		ly::AbilityDefinition frontalSweep = AbilityData::MakePrimaryFireAbilityDefinition(WeaponData::Boss_FrontalSweep_PrimaryWeaponDef);
+		frontalSweep.slot = AbilitySlot::Ability2;
+		frontalSweep.inputLabel = "";
+		GetCombatRuntime().GetAbilities().GrantAbility(frontalSweep);
+
+		ly::AbilityDefinition lastStage = AbilityData::MakePrimaryFireAbilityDefinition(WeaponData::Boss_LastStage_PrimaryWeaponDef);
+		lastStage.slot = AbilitySlot::Ability3;
+		lastStage.inputLabel = "";
+		GetCombatRuntime().GetAbilities().GrantAbility(lastStage);
 
 		SetActorRotation(180.f);
 		SetExplosionType(ExplosionType::Boss);
@@ -71,7 +68,6 @@ namespace ly
 		EnemySpaceShip::Tick(deltaTime);
 		CheckMove();
 		UpdateWeaponFireIntent();
-		TickAbilities(deltaTime);
 	}
 	void LevelOneBoss::BeginPlay()
 	{
@@ -107,45 +103,15 @@ namespace ly
 
 	void LevelOneBoss::UpdateWeaponFireIntent()
 	{
-		mAbilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, mCanShoot);
-		mAbilitySystem.SetSlotInput(AbilitySlot::Skill1, mCanShoot);
-		mAbilitySystem.SetSlotInput(AbilitySlot::Skill2, mCanShoot && mStage >= 3);
-		mAbilitySystem.SetSlotInput(AbilitySlot::Skill3, mCanShoot && mStage == 4);
-	}
-
-	void LevelOneBoss::TickAbilities(float deltaTime)
-	{
-		mAbilitySystem.Tick(deltaTime);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::PrimaryFire, mCanShoot);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability1, mCanShoot);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability2, mCanShoot && mStage >= 3);
+		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability3, mCanShoot && mStage == 4);
 	}
 
 	void LevelOneBoss::SetStage(int stage)
 	{
 		mStage = stage;
-
-		if (PrimaryWeaponController* baseWeapon = GetPrimaryWeaponController(AbilitySlot::PrimaryFire))
-		{
-			baseWeapon->GetAttributes().shotsPerSecond.currentValue = 2.f + static_cast<float>(stage) * 0.35f;
-		}
-
-		if (PrimaryWeaponController* threeWayWeapon = GetPrimaryWeaponController(AbilitySlot::Skill1))
-		{
-			threeWayWeapon->GetAttributes().shotsPerSecond.currentValue = 0.5f + static_cast<float>(stage) * 0.1f;
-		}
-
-		if (PrimaryWeaponController* frontalPatternWeapon = GetPrimaryWeaponController(AbilitySlot::Skill2))
-		{
-			frontalPatternWeapon->GetAttributes().shotsPerSecond.currentValue = 0.33f + static_cast<float>(stage) * 0.08f;
-		}
-
-		if (PrimaryWeaponController* lastStageWeapon = GetPrimaryWeaponController(AbilitySlot::Skill3))
-		{
-			lastStageWeapon->GetAttributes().shotsPerSecond.currentValue = 2.f + static_cast<float>(stage) * 0.25f;
-		}
-	}
-
-	PrimaryWeaponController* LevelOneBoss::GetPrimaryWeaponController(AbilitySlot slot)
-	{
-		return dynamic_cast<PrimaryWeaponController*>(mAbilitySystem.GetController(slot));
 	}
 
 	void LevelOneBoss::BossHealthChanged(float amt, float currentHealth, float maxHealth)
@@ -187,3 +153,5 @@ namespace ly
 		return {};
 	}
 }
+
+

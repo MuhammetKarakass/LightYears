@@ -89,3 +89,4 @@ namespace ly
 		shared_ptr<AsteroidSpawner> mAsteroidSpawner;
 	};
 }
+

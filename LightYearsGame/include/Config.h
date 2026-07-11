@@ -35,3 +35,5 @@ inline std::string getResourceDir()
  return "assets/";
 #endif
 }
+
+

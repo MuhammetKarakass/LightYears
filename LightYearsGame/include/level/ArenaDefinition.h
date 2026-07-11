@@ -31,3 +31,5 @@ namespace ly
 		ArenaBoundaryVisualDefinition boundaryVisual;
 	};
 }
+
+

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "enemy/EnemySpaceShip.h"
-#include "gameplay/ability/AbilitySystem.h"
 
 namespace ly 
 {
@@ -17,8 +16,8 @@ namespace ly
 
 	private:
 		virtual void Shoot() override;
-
-		AbilitySystem mAbilitySystem;
 	};
 
 }
+
+

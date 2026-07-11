@@ -20,3 +20,5 @@ namespace ly
 		std::string playerShipId = "Default";
 	};
 }
+
+

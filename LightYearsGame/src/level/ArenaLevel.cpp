@@ -173,8 +173,16 @@ namespace ly
 
          if (auto playerSpaceShip = dynamic_cast<PlayerSpaceShip*>(actor.get()))
          {
-             const float shieldHealth = playerSpaceShip->GetShield().IsActive() ? playerSpaceShip->GetShield().GetHealth() : 0.f;
-             const float lethalDamage = playerSpaceShip->GetHealthComponent().GetHealth() + shieldHealth + 1.f;
+             float bonusHealth = 0.f;
+             for (const GameplayEffectSnapshot& effectSnapshot : playerSpaceShip->GetCombatRuntime().GetEffects().BuildSnapshots())
+             {
+                 bonusHealth += FindGameplayAttributeValue(
+                     effectSnapshot.runtimeAttributes,
+                     BarrierEffectSchema::Capacity,
+                     0.f
+                 );
+             }
+             const float lethalDamage = playerSpaceShip->GetHealthComponent().GetHealth() + bonusHealth + 1.f;
 
              playerSpaceShip->SetInvulnerability(false);
              playerSpaceShip->ApplyDamage(lethalDamage);
@@ -244,3 +252,5 @@ namespace ly
          ClearGameplayWarning(GameplayWarningType::ArenaBoundary);
      }
 }
+
+

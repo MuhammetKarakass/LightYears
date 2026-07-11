@@ -47,3 +47,4 @@ namespace ly
 		weak_ptr<Actor> mTargetActor;
 	};
 }
+

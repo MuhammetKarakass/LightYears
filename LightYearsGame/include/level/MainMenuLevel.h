@@ -20,3 +20,4 @@ namespace ly
 		void QuitGame();
 	};
 }
+

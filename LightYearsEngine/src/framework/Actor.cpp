@@ -12,6 +12,8 @@ namespace ly
 		mBeganPlay{ false },
 		mSprite{},
 		mTexture{},
+		mActorLocation{ 0.f, 0.f },
+		mActorRotation{ 0.f },
 		mVelocity{},
 		mPhysicsBodyId{},
 		mPhysicsEnabled{ false },
@@ -479,7 +481,9 @@ namespace ly
 
 	sf::FloatRect Actor::GetActorGlobalBounds() const
 	{
-		return mSprite.value().getGlobalBounds();
+		return mSprite
+			? mSprite->getGlobalBounds()
+			: sf::FloatRect{ mActorLocation, { 0.f, 0.f } };
 	}
 	
 	void Actor::SetTexture(const std::string& texturePath)
@@ -489,10 +493,12 @@ namespace ly
 		if (!mTexture) return;  
 
 		mSprite.emplace(*mTexture);
+		mSprite->setPosition(mActorLocation);
+		mSprite->setRotation(sf::degrees(mActorRotation));
 
 		int width = mTexture->getSize().x;
 		int height = mTexture->getSize().y;
-		mSprite.value().setTextureRect(sf::IntRect{ sf::Vector2i{}, sf::Vector2i{width,height} });
+		mSprite->setTextureRect(sf::IntRect{ sf::Vector2i{}, sf::Vector2i{width,height} });
 		
 		CenterPivot();  
 	}
@@ -504,13 +510,21 @@ namespace ly
 
 	void Actor::SetActorLocation(const sf::Vector2f& newLoc)
 	{
-		mSprite.value().setPosition(newLoc); 
+		mActorLocation = newLoc;
+		if (mSprite)
+		{
+			mSprite->setPosition(newLoc);
+		}
 		UpdatePhysicsTransform(); 
 	}
 	
 	void Actor::SetActorRotation(float newRotation)
 	{
-		mSprite.value().setRotation(sf::degrees(newRotation));  
+		mActorRotation = newRotation;
+		if (mSprite)
+		{
+			mSprite->setRotation(sf::degrees(newRotation));
+		}
 		UpdatePhysicsTransform();  
 	}
 
@@ -534,24 +548,23 @@ namespace ly
 	
 	void Actor::CenterPivot()
 	{
-		sf::FloatRect rectBounds = mSprite.value().getGlobalBounds();  
-		mSprite.value().setOrigin(sf::Vector2f{rectBounds.size.x/2.f, rectBounds.size.y/2.f});
+		if (!mSprite)
+		{
+			return;
+		}
+
+		const sf::FloatRect rectBounds = mSprite->getGlobalBounds();
+		mSprite->setOrigin(sf::Vector2f{ rectBounds.size.x / 2.f, rectBounds.size.y / 2.f });
 	}
 	
 	sf::Vector2f Actor::GetActorLocation() const
 	{
-		if(mSprite.has_value())
-		return mSprite.value().getPosition();  
-
-		return sf::Vector2f{GetWindowSize().x/2.f, GetWindowSize().y/2.f};
+		return mActorLocation;
 	}
 	
 	float Actor::GetActorRotation() const
 	{
-		if(mSprite.has_value())
-		return mSprite.value().getRotation().asDegrees(); 
-
-		return 0.f;
+		return mActorRotation;
 	}
 	
 	sf::Vector2f Actor::GetActorForwardDirection() const

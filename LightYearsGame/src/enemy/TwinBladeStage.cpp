@@ -1,6 +1,7 @@
 #include "enemy/TwinBladeStage.h"
 #include "enemy/TwinBlade.h"
 #include <framework/World.h>
+#include "gameConfigs/ShipConfig.h"
 
 namespace ly {
 	TwinBladeStage::TwinBladeStage(World* world):
@@ -25,7 +26,7 @@ namespace ly {
 	}
 	void TwinBladeStage::SpawnTwinBlade()
 	{
-		weak_ptr<TwinBlade> newTwinBlade = GetWorld()->SpawnActor<TwinBlade>(GameData::Ship_Enemy_TwinBlade);
+		weak_ptr<TwinBlade> newTwinBlade = GetWorld()->SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
 		
 		newTwinBlade.lock()->SetActorLocation(
 			[this]() ->sf::Vector2f 
@@ -80,3 +81,4 @@ namespace ly {
 		}
 	}
 }
+

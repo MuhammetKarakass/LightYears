@@ -1,42 +1,29 @@
 #include "weapon/Bullet.h"
+#include "gameplay/combat/Combatant.h"
 #include "framework/Core.h"
 #include "framework/PerfMonitor.h"
-#include "framework/World.h"
 #include "framework/MathUtility.h"
 #include <algorithm>
 #include <cmath>
 
 namespace ly
 {
-	Bullet::Bullet(World* world, Actor* owner, const WeaponPresentationDefinition& presentation, const PrimaryWeaponAttributes& attributes)
-		: Actor(world, presentation.texturePath),
-		mOwner(owner),
-		mSpeed(attributes.projectileSpeed.currentValue),
-		mDamage(attributes.damage.currentValue),
-		mLifeTime(attributes.projectileLifeTime.currentValue),
-		mAge(0.f),
-		mMaxTravelDistance(attributes.projectileMaxTravelDistance.currentValue),
+	Bullet::Bullet(World* world, Actor* owner, const WeaponPresentationDefinition& presentation, const GameplayAttributeList& values)
+		: AbilityWorldActor(world, owner, presentation.texturePath),
+		mSpeed(FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f)),
+		mMaxTravelDistance(FindGameplayAttributeValue(values, CommonAttributeIds::Range, 1600.f)),
 		mTravelDistance(0.f),
-		mAreaDamageRadius(std::max(0.f, attributes.projectileAreaRadius.currentValue)),
-		mCollisionRadius(std::max(0.1f, attributes.projectileCollisionRadius.currentValue)),
+		mAreaDamageRadius(std::max(0.f, FindGameplayAttributeValue(values, CommonAttributeIds::AreaRadius, 0.f))),
 		mVisualScale(std::max(0.01f, presentation.visualScale)),
-		mRemainingPierces(std::max(0, static_cast<int>(std::round(attributes.pierceCount.currentValue))))
+		mRemainingPierces(std::max(0, static_cast<int>(std::round(FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 0.f)))))
 	{
-		SetupCollisionFromOwner();
+		SetDamage(FindGameplayAttributeValue(values, CommonAttributeIds::Damage, 0.f));
+		SetLifeTime(FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f));
+		SetAbilityCollisionRadius(std::max(0.1f, FindGameplayAttributeValue(values, CommonAttributeIds::CollisionRadius, 8.f)));
+		ConfigureCollisionFromOwner();
 		SetVisualScale(mVisualScale);
 		ly::perf::IncBullets();
 
-	}
-
-	void Bullet::SetSpeed(float speed)
-	{
-		mSpeed = speed;
-		SetVelocity(GetActorForwardDirection() * mSpeed);
-	}
-
-	void Bullet::SetDamage(float damage)
-	{
-		mDamage = damage;
 	}
 
 	void Bullet::SetVisualScale(float scale)
@@ -47,43 +34,28 @@ namespace ly
 		}
 	}
 
-	void Bullet::SetProjectileCollisionRadius(float radius)
-	{
-		SetCollisionRadius(radius);
-	}
-
-	void Bullet::SetProjectileAreaRadius(float radius)
-	{
-		mAreaDamageRadius = std::max(0.f, radius);
-	}
-
 	void Bullet::BeginPlay()
 	{
-		Actor::BeginPlay();
-		SetEnablePhysics(true);
-		SetProjectileCollisionRadius(mCollisionRadius);
-		
+		AbilityWorldActor::BeginPlay();
 	}
 
 	void Bullet::Tick(float deltaTime)
 	{
 		Move(deltaTime);
-		mAge += deltaTime;
 		mTravelDistance += std::abs(mSpeed) * deltaTime;
 
-		const bool exceededLifeTime = mLifeTime > 0.f && mAge >= mLifeTime;
 		const bool exceededTravelDistance = mMaxTravelDistance > 0.f && mTravelDistance >= mMaxTravelDistance;
 
-		if (exceededLifeTime || exceededTravelDistance)
+		if (exceededTravelDistance)
 		{
 			Destroy();
 		}
-		Actor::Tick(deltaTime);
+		AbilityWorldActor::Tick(deltaTime);
 	}
 
 	void Bullet::OnActorBeginOverlap(Actor* otherActor)
 	{
-		Actor::OnActorBeginOverlap(otherActor);
+		AbilityWorldActor::OnActorBeginOverlap(otherActor);
 		if(GetCanCollide())
 		{
 			ApplyImpactDamage(otherActor);
@@ -106,37 +78,8 @@ namespace ly
 
 	void Bullet::Move(float deltaTime)
 	{
-		if (mOwner)
-		{
-			SetVelocity(GetActorForwardDirection() * mSpeed);
-			AddActorLocationOffset(GetActorForwardDirection() * mSpeed * deltaTime);
-		}
-	}
-
-	void Bullet::SetupCollisionFromOwner()
-	{
-		/*if (!mOwner)
-		{
-			SetCollisionLayer(CollisionLayer::None);
-			SetCollisionMask(CollisionLayer::None);
-			return;
-		}*/
-
-		switch (mOwner->GetCollisionLayer())
-		{
-		case CollisionLayer::Player:
-			SetCollisionLayer(CollisionLayer::PlayerBullet);
-			SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet);
-			break;
-		case CollisionLayer::Enemy:
-			SetCollisionLayer(CollisionLayer::EnemyBullet);
-			SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
-			break;
-		default:
-			SetCollisionLayer(CollisionLayer::None);
-			SetCollisionMask(CollisionLayer::None);
-			break;
-		}
+		SetVelocity(GetActorForwardDirection() * mSpeed);
+		AddActorLocationOffset(GetActorForwardDirection() * mSpeed * deltaTime);
 	}
 
 	void Bullet::ApplyImpactDamage(Actor* directHitActor)
@@ -147,49 +90,16 @@ namespace ly
 			return;
 		}
 
-		if (directHitActor)
+		if (IsValidAbilityTarget(directHitActor))
 		{
-			directHitActor->ApplyDamage(GetDamage());
+			ApplyCombatDamage(*directHitActor, GetDamage(), GetOwner(), GetDamageTags());
 			LOG("damage: %f", GetDamage());
 		}
 	}
 
 	void Bullet::ApplyAreaDamage()
 	{
-		if (!GetWorld())
-		{
-			return;
-		}
-
-		const sf::Vector2f impactLocation = GetActorLocation();
-		const float areaRadiusSquared = mAreaDamageRadius * mAreaDamageRadius;
-
-		for (const weak_ptr<Actor>& weakActor : GetWorld()->GetActorsByType<Actor>())
-		{
-			auto actor = weakActor.lock();
-			if (!actor || actor.get() == this || actor.get() == mOwner || actor->GetIsPendingDestroy())
-			{
-				continue;
-			}
-
-			if (!IsValidAreaDamageTarget(actor.get()))
-			{
-				continue;
-			}
-
-			const sf::Vector2f delta = actor->GetActorLocation() - impactLocation;
-			const float distanceSquared = delta.x * delta.x + delta.y * delta.y;
-			if (distanceSquared <= areaRadiusSquared)
-			{
-				actor->ApplyDamage(GetDamage());
-				LOG("area damage: %f", GetDamage());
-			}
-		}
-	}
-
-	bool Bullet::IsValidAreaDamageTarget(const Actor* actor) const
-	{
-		return actor && CanCollideWith(actor) && actor->CanCollideWith(this);
+		ApplyCombatDamageInRadius(GetActorLocation(), mAreaDamageRadius);
 	}
 
 	void Bullet::Destroy()

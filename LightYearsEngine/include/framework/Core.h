@@ -66,14 +66,12 @@ namespace ly
         // Utility methods
         const std::string& ToString() const { return name; }
         bool IsValid() const { return !name.empty(); }
-        
-        // Index ekleyerek yeni tag oluþtur: "Ship.Engine.Left" -> "Ship.Engine.Left_0"
+        // Append an index to create a unique runtime tag.
         GameplayTag WithIndex(int index) const
         {
             return GameplayTag{ name + "_" + std::to_string(index) };
         }
-   
-        // Base tag'i al (index'i çýkar): "Ship.Engine.Left_2" -> "Ship.Engine.Left"
+        // Remove a numeric runtime index from the tag.
         GameplayTag GetBaseTag() const
         {
             size_t pos = name.rfind('_');
@@ -101,6 +99,23 @@ namespace ly
         {
             return GetBaseTag() == baseTag;
         }
+
+        bool MatchesTagExact(const GameplayTag& other) const
+        {
+            return GetBaseTag() == other.GetBaseTag();
+        }
+
+        bool MatchesTag(const GameplayTag& parentTag) const
+        {
+            const std::string child = GetBaseTag().name;
+            const std::string parent = parentTag.GetBaseTag().name;
+            if (child == parent)
+            {
+                return true;
+            }
+            return !parent.empty() && child.size() > parent.size() &&
+                child.compare(0, parent.size(), parent) == 0 && child[parent.size()] == '.';
+        }
     };
 
     struct GameplayTagHash
@@ -109,6 +124,73 @@ namespace ly
         {
             return std::hash<std::string>{}(tag.name);
         }
+    };
+
+    class GameplayTagContainer
+    {
+    public:
+        void AddTag(const GameplayTag& tag)
+        {
+            if (tag.IsValid())
+            {
+                ++mTagCounts[tag];
+            }
+        }
+
+        void RemoveTag(const GameplayTag& tag)
+        {
+            auto found = mTagCounts.find(tag);
+            if (found == mTagCounts.end())
+            {
+                return;
+            }
+            if (--found->second <= 0)
+            {
+                mTagCounts.erase(found);
+            }
+        }
+
+        bool HasTag(const GameplayTag& tag, bool exactMatch = false) const
+        {
+            for (const auto& pair : mTagCounts)
+            {
+                if (exactMatch ? pair.first.MatchesTagExact(tag) : pair.first.MatchesTag(tag))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool HasAll(const std::vector<GameplayTag>& tags) const
+        {
+            for (const GameplayTag& tag : tags)
+            {
+                if (!HasTag(tag))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        bool HasAny(const std::vector<GameplayTag>& tags) const
+        {
+            for (const GameplayTag& tag : tags)
+            {
+                if (HasTag(tag))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void Clear() { mTagCounts.clear(); }
+        bool IsEmpty() const { return mTagCounts.empty(); }
+
+    private:
+        std::unordered_map<GameplayTag, int, GameplayTagHash> mTagCounts;
     };
 
     // =====================================================
@@ -192,6 +274,6 @@ namespace ly
     template<typename T>
     using Set = std::unordered_set<T>;
 
-    // LOG isim , M mesaj , ... argümanlar; M mesaj, ## virgül silme duruma göre __VA_ARGS__ argümanlar ...  
+    // LOG isim, M mesaj, ... argumanlar; M mesaj, ## virgulu duruma gore siler.
     #define LOG(M, ...) printf(M "\n", ##__VA_ARGS__)
 }

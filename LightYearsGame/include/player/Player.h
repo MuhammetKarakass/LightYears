@@ -34,3 +34,5 @@ namespace ly
 		unsigned int mScore;
 	};
 }
+
+

@@ -46,17 +46,17 @@ You can download the game from this repository (see `LightYears.7z`) or from [it
 
 ### Gameplay
 - **5 Enemy Types** with unique AI behaviors:
-  - **Vanguard** — Straight dive attack with single shooter
+  - **Vanguard** — Straight dive attack
   - **TwinBlade** — Dual-weapon dive attack
   - **Hexagon** — Multi-directional fire
   - **UFO** — Bouncing movement with screen-edge reflection
   - **Boss** — Multi-phase fight with escalating weapons
 - **Elite Variants** — Stronger versions of standard enemies (higher HP, damage, score)
-- **3 Weapon Systems** — Single Shot, Three-Way Spread, Frontal Wiper
-- **Weapon Upgrade System** — 6 levels with cooldown scaling
-- **Weapon Persistence** — Weapons carry across deaths (with 2-level degradation penalty)
+- **Ability-Based Combat** — Slot-based ability system (PrimaryWeapon + active skills via AbilityController)
+- **Shield System** — Activatable shield with HP absorption, cooldown, and HUD integration
+- **Arena Combat Mode** — Free 2D thrust/drift movement with camera follow (ThrustDrift mode)
 - **Infinite Survival Mode** — Endless waves with escalating difficulty and formation patterns
-- **Power-up System** — Health (+25 HP), Weapon Upgrades, Extra Lives
+- **Power-up System** — Health (+25 HP), Shield, Extra Lives
 - **Weighted Loot Drops** — Each enemy type has unique reward probabilities
 - **Scoring System** — Points per enemy type (Vanguard: 10, TwinBlade: 20, Hexagon: 30, UFO: 40, Boss: 500)
 
@@ -81,14 +81,17 @@ LightYears/
 │   └── VFX/                      # Particle system
 │
 ├── LightYearsGame/                # Game-specific logic
-│   ├── player/                    # Player ship, input handling, rewards, lives
+│   ├── player/                    # Player ship, input, rewards, lives, shield, respawn
 │   ├── enemy/                     # Enemy AI, wave stages, boss
-│   ├── weapon/                    # Weapon systems, bullets, shooter presets
-│   ├── level/                     # Level management, main menu
+│   ├── weapon/                    # Bullet actor (projectile runtime)
+│   ├── gameplay/                  # Ability controllers, health, attributes (logic layer)
+│   │   └── ability/               # AbilitySystem, AbilityController + controllers/
+│   ├── level/                     # Level management, arena, main menu
 │   ├── environment/               # Asteroids
 │   ├── VFX/                       # Explosions
 │   ├── widget/                    # Game HUD, menus
-│   ├── gameConfigs/               # Data-driven game definitions
+│   ├── presentation/hud/         # HUD controllers + view models (MVC layer)
+│   ├── gameConfigs/               # Pure-data schemas + static config catalog
 │   └── assets/                    # Textures, audio, shaders
 │       └── SpaceShooterRedux/     # Kenney.nl asset pack (CC0)
 │           ├── PNG/               # Ship, laser, planet, meteor textures
@@ -180,17 +183,19 @@ LightYears/
 - ✅ Custom game engine with actor lifecycle management
 - ✅ 5 enemy types + elite variants with unique AI behaviors
 - ✅ Multi-phase boss fight with health-based stage transitions
-- ✅ 3 upgradeable weapon systems (6 levels each)
+- ✅ Slot-based ability system (PrimaryWeapon + Shield controllers)
+- ✅ Arena combat mode with free 2D thrust/drift movement
+- ✅ Shield ability with HP absorption, cooldown, and HUD integration
 - ✅ Infinite survival mode with escalating difficulty
 - ✅ Dynamic GLSL lighting (engine glow, projectile trails, flicker)
 - ✅ Multi-layer parallax scrolling with planets and meteors
 - ✅ Advanced audio (cross-fading, intro+loop, sound pooling, time scaling)
-- ✅ Data-driven game design (all stats defined in configuration headers)
+- ✅ Data-driven game design (pure-data configs in gameConfigs/, logic in gameplay/)
 - ✅ Box2D 3.x physics with team-based collision filtering
 - ✅ Performance-aware particle throttling
 - ✅ Full UI system (main menu, pause, game over, in-game HUD)
+- ✅ MVC HUD architecture (HUDController → SkillUIController / GameplayWarningHUDController)
 - ✅ Power-up system with weighted loot tables
-- ✅ Weapon persistence across deaths with degradation penalty
 - ✅ Asteroid obstacles with recursive splitting
 
 ## Planned Features

@@ -1,4 +1,5 @@
 #include "spaceShip/SpaceShip.h"
+#include "gameConfigs/AbilityConfig.h"
 #include <framework/World.h>
 #include <framework/MathUtility.h>
 #include "VFX/Explosion.h" 
@@ -10,16 +11,28 @@ namespace ly
 	SpaceShip::SpaceShip(World* owningWorld, const ShipDefinition& shipDef):
 		Actor(owningWorld, shipDef.texturePath),
 		mHealthComponent{shipDef.health, shipDef.health},
+		mCombatRuntime{ *this },
 		mBlinkColor{255, 0, 0, 255},
 		mBlinkTime{0.f},
 		mBlinkDuration{.25f},
 		mInvulnerability{ false },
 		mExplosionType{ (ExplosionType)shipDef.explosionType },
 		mMovementMode{ ShipMovementMode::LegacyVelocity },
+		mBaseMovementAttributes{ shipDef.movementAttributes },
 		mMovementAttributes{ shipDef.movementAttributes },
 		mAngularVelocity{ 0.f }
 	{
 		SetCollisionLayer(CollisionLayer::None);
+		mCombatRuntime.InitializeFromShipDefinition(shipDef);
+		std::string primaryWeaponFailureReason;
+		const AbilityHandle primaryWeaponHandle = mCombatRuntime.GetAbilities().GrantAbility(
+			AbilityData::MakePrimaryFireAbilityDefinition(shipDef.primaryWeaponDefinition),
+			&primaryWeaponFailureReason
+		);
+		if (!primaryWeaponHandle.IsValid())
+		{
+			LOG("Invalid primary weapon '%s': %s", shipDef.primaryWeaponDefinition.weaponId.c_str(), primaryWeaponFailureReason.c_str());
+		}
 	}
 
 	void SpaceShip::BeginPlay()
@@ -32,6 +45,8 @@ namespace ly
 		mHealthComponent.onHealthChanged.BindAction(GetWeakPtr(), &SpaceShip::OnHealthChanged);
 		mHealthComponent.onTakenDamage.BindAction(GetWeakPtr(), &SpaceShip::OnTakenDamage);
 		mHealthComponent.onHealthEmpty.BindAction(GetWeakPtr(), &SpaceShip::Blow);
+		mCombatRuntime.GetAttributes().onAttributeChanged.BindAction(GetWeakPtr(), &SpaceShip::OnRuntimeAttributeChanged);
+		RefreshMovementAttributesFromRuntime();
 	}
 
 	void SpaceShip::Tick(float deltaTime)
@@ -44,6 +59,44 @@ namespace ly
 		}
 		AddActorLocationOffset(mVelocity * deltaTime);    
 		UpdateBlink(deltaTime);      
+		mCombatRuntime.Tick(deltaTime);
+	}
+
+	void SpaceShip::RefreshMovementAttributesFromRuntime()
+	{
+		const AttributeSystem& attributes = mCombatRuntime.GetAttributes();
+		if (attributes.HasAttribute(OwnerAttributeIds::MaxHealth))
+		{
+			mHealthComponent.SetMaxHealth(std::max(1.f, attributes.GetCurrentValue(OwnerAttributeIds::MaxHealth)));
+		}
+
+		mMovementAttributes = mBaseMovementAttributes;
+		const float horizontalSpeed = attributes.HasAttribute(OwnerAttributeIds::MoveSpeedHorizontal)
+			? attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal)
+			: 0.f;
+		const float verticalSpeed = attributes.HasAttribute(OwnerAttributeIds::MoveSpeedVertical)
+			? attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical)
+			: 0.f;
+
+		const float horizontalMultiplier = std::max(0.f, 1.f + horizontalSpeed);
+		const float verticalMultiplier = std::max(0.f, 1.f + verticalSpeed);
+		mMovementAttributes.strafeThrust.currentValue = mBaseMovementAttributes.strafeThrust.currentValue * horizontalMultiplier;
+		mMovementAttributes.forwardThrust.currentValue = mBaseMovementAttributes.forwardThrust.currentValue * verticalMultiplier;
+		mMovementAttributes.reverseThrust.currentValue = mBaseMovementAttributes.reverseThrust.currentValue * verticalMultiplier;
+		mMovementAttributes.maxSpeed.currentValue =
+			mBaseMovementAttributes.maxSpeed.currentValue * std::max(horizontalMultiplier, verticalMultiplier);
+	}
+
+	void SpaceShip::OnRuntimeAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue)
+	{
+		(void)previousValue;
+		(void)currentValue;
+		if (attributeId == OwnerAttributeIds::MaxHealth ||
+			attributeId == OwnerAttributeIds::MoveSpeedHorizontal ||
+			attributeId == OwnerAttributeIds::MoveSpeedVertical)
+		{
+			RefreshMovementAttributesFromRuntime();
+		}
 	}
 
 	void SpaceShip::AddShipRelativeThrust(const sf::Vector2f& localThrustInput, float deltaTime)
@@ -214,6 +267,7 @@ namespace ly
 	{
 		Explosion::SpawnExplosion(GetWorld(), GetActorLocation(), Explosion::GetPreset(GetExplosionType()));
 		Blew();
+		mCombatRuntime.Clear();
 		Destroy();
 	}
 
@@ -222,7 +276,31 @@ namespace ly
 	}
 	
 	void SpaceShip::ApplyDamage(float amt)
-	{                        
-		mHealthComponent.ChangeHealth(-amt);     
+	{
+		DamageContext context;
+		context.target = this;
+		context.originalDamage = amt;
+		context.remainingDamage = amt;
+		ReceiveDamage(context);
+	}
+
+	void SpaceShip::ReceiveDamage(DamageContext context)
+	{
+		if (IsInvulnerable() || context.remainingDamage <= 0.f)
+		{
+			return;
+		}
+
+		context.target = this;
+
+		mCombatRuntime.ProcessIncomingDamage(context);
+		if (context.remainingDamage > 0.f)
+		{
+			const float healthBeforeDamage = mHealthComponent.GetHealth();
+			mHealthComponent.ChangeHealth(-context.remainingDamage);
+			context.appliedDamage = std::max(0.f, healthBeforeDamage - mHealthComponent.GetHealth());
+		}
+
+		mCombatRuntime.NotifyDamageResolved(context);
 	}
 }

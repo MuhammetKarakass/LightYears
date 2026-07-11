@@ -26,6 +26,7 @@ namespace ly
 
 	protected:
 		virtual void BeginPlay() override;
+		virtual void Tick(float deltaTime) override;
 		virtual bool DispatchEvent(const sf::Event& event) override;
 
 		virtual void OnGameStart();
@@ -64,3 +65,5 @@ namespace ly
 		TimerHandle mTimerHandle;
 	};
 }
+
+

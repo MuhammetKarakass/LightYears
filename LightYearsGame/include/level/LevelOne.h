@@ -54,3 +54,4 @@ namespace ly
 		weak_ptr<BackgroundLayer> mMeteorsLayer;
 	};
 }
+
