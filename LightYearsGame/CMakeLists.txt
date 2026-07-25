@@ -7,31 +7,51 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerSpaceship.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceship.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/weapon/Bullet.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/Bullet.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerMovementComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/HealthComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ShieldComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/EnergyComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/MovementComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementMath.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementController.h
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayAttribute.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayWarning.h
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/AbilityStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/AbilityActorStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/AbilityConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/AbilityVisualStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/VisualConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/EffectStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/EffectConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/EnvironmentConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/PointLightConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ShipConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/WeaponConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityStructs.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityActorStructs.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityCatalog.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/DashConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/RocketConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/ShieldConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/SunBeamConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/AttachmentConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectStructs.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/world/EnvironmentConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/presentation/PointLightConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ship/ShipConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponProgressionConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/GameplayAttribute.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeMath.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeSystem.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attributes/AttributeSystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/progression/ShipProgression.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentLoadout.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageContext.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageTypeSystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectHandle.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/ActiveGameplayEffect.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectBehavior.h
@@ -40,14 +60,49 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/BarrierEffectBehavior.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectSystem.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectSystem.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponHandler.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponHandlerRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandlerRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponExecutionSystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponBuiltIns.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponBuiltIns.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ShotgunWeaponHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ElectricArcWeaponHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/HeatWeaponFeatureHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/wave/ExpandingWaveWeaponActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/wave/ExpandingWaveWeaponActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/impact/ProjectileImpactBehavior.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/impact/ShotgunVolleyImpactGroup.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/impact/ShotgunVolleyImpactGroup.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/visuals/ContinuousBeamVisualActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ContinuousBeamVisualActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/visuals/ElectricArcVisualActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/CombatRuntime.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ship/ShipRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/Combatant.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityEvent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityExecution.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityBehavior.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehavior.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityBehaviorRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityBehaviorRegistration.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistration.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityInstance.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityInstance.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityExecutor.h
@@ -60,17 +115,43 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorRegistry.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AreaTelegraphActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/sunBeam/SunBeamActorBase.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/sunBeam/SunBeamActorBase.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/sunBeam/SunBeamVisual.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/sunBeam/SunBeamVisual.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/sunBeam/SunBeamStrikeActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/sunBeam/SunBeamStrikeActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketProjectileActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketProjectileActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketVisualActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketVisualActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shield/ShieldAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shield/ShieldAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamActorBase.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamActorBase.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamVisual.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamVisual.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamStrikeActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamStrikeActor.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/AbilityPresentationContent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/AbilityPresentationContent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/PresentationProfileRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/common/AreaTelegraphVisualDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisual.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisualRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualContent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisualContent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisual.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisual.cpp
 
@@ -178,9 +259,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityUIController.cpp
 
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/GameplayConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/WeaponStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ShipStructs.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/gameplay/GameplayConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponStructs.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ship/ShipStructs.h
 )
 
 target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC 
@@ -192,27 +273,63 @@ target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC ${LIGHT_YEARS_ENGIN
 if(BUILD_TESTING)
 	add_executable(LightYearsGasLiteTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attributes/AttributeSystem.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/BarrierEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectSystem.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehavior.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistry.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistration.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityInstance.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilitySystem.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityExecutor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketProjectileActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketVisualActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shield/ShieldAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityWorldActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorRegistry.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/sunBeam/SunBeamActorBase.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/sunBeam/SunBeamVisual.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/sunBeam/SunBeamStrikeActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamActorBase.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamVisual.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamStrikeActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/AbilityPresentationContent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisualContent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisual.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponRegistry.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/weapon/Bullet.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandlerRegistry.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponBuiltIns.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ShotgunWeaponHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ElectricArcWeaponHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/HeatWeaponFeatureHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/wave/ExpandingWaveWeaponActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/impact/ShotgunVolleyImpactGroup.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ContinuousBeamVisualActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
 	)
 	target_include_directories(LightYearsGasLiteTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include

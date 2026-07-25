@@ -2,7 +2,7 @@
 
 #include "framework/Core.h"
 #include "framework/Delegate.h"
-#include "gameConfigs/AbilityStructs.h"
+#include "gameConfigs/ability/AbilityStructs.h"
 #include <string>
 
 namespace ly

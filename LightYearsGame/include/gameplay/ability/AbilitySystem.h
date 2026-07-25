@@ -23,8 +23,31 @@ namespace ly
 			GameplayTagContainer& ownedTags
 		);
 
+		static bool ValidateDefinition(const AbilityDefinition& definition, std::string* failureReason = nullptr);
+		static bool ValidateCatalog(
+			const List<const AbilityDefinition*>& definitions,
+			std::string* failureReason = nullptr
+		);
+
 		AbilityHandle GrantAbility(const AbilityDefinition& definition, std::string* failureReason = nullptr);
 		bool RemoveAbility(AbilityHandle handle, AbilityEndReason reason = AbilityEndReason::Cancelled);
+		bool TrySetAbilityLevel(AbilityHandle handle, int level);
+		bool TrySetAbilityLevel(AbilitySlot slot, int level);
+		bool TryLevelUpAbility(AbilityHandle handle);
+		bool TryLevelUpAbility(AbilitySlot slot);
+		bool TryEquipAttachment(
+			AbilityHandle handle,
+			const AttachmentDefinition& definition,
+			AttachmentHostKind hostKind,
+			std::string* failureReason = nullptr
+		);
+		bool TryEquipAttachment(
+			AbilitySlot slot,
+			const AttachmentDefinition& definition,
+			AttachmentHostKind hostKind,
+			std::string* failureReason = nullptr
+		);
+		bool RemoveAttachment(AbilityHandle handle, const GameplayTag& attachmentId, AttachmentHostKind hostKind);
 		void ClearSlot(AbilitySlot slot);
 		void SetSlotInput(AbilitySlot slot, bool inputHeld);
 		void Tick(float deltaTime);
@@ -46,6 +69,8 @@ namespace ly
 		AttributeSystem& GetAttributes() { return *mAttributes; }
 		GameplayEffectSystem& GetEffects() { return *mEffects; }
 		const GameplayTagContainer& GetOwnedTags() const { return *mOwnedTags; }
+		void AddOwnerTag(const GameplayTag& tag);
+		void RemoveOwnerTag(const GameplayTag& tag);
 		bool HasAllOwnerTags(const List<GameplayTag>& tags) const;
 		bool HasAnyOwnerTags(const List<GameplayTag>& tags) const;
 
@@ -53,6 +78,7 @@ namespace ly
 		void NotifyAbilityActivated(AbilityHandle handle);
 		void NotifyAbilityEnded(AbilityHandle handle, AbilityEndReason reason);
 		void NotifyAbilityLevelChanged(AbilityHandle handle, int level);
+		void ReduceCooldowns(float amount, bool includePrimaryFire);
 
 		Delegate<AbilityHandle> onAbilityGranted;
 		Delegate<AbilityHandle> onAbilityRemoved;
@@ -61,6 +87,7 @@ namespace ly
 		Delegate<AbilityHandle, AbilityEndReason> onAbilityEnded;
 		Delegate<AbilityHandle, int> onAbilityLevelChanged;
 		Delegate<> onAbilitiesCleared;
+		Delegate<const AbilityEvent&> onGameplayEvent;
 
 	private:
 		bool IsPassiveDefinition(const AbilityDefinition& definition) const;

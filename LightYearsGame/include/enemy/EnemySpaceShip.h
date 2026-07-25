@@ -14,10 +14,13 @@ namespace ly
 
 		virtual void SetScoreAmt(unsigned int scoreAmt) { mScoreAmt = scoreAmt; };
 		unsigned int GetScoreAmt() const { return mScoreAmt; };
+		virtual void SetShipXPReward(float amount) { mShipXPReward = amount; }
+		float GetShipXPReward() const { return mShipXPReward; }
 		
 		float GetCollisionDamage() const { return mCollisionDamage; }
 
 		Delegate<unsigned int> onScoreAwarded;
+		Delegate<float> onShipXPAwarded;
 
 	protected:
 		void SetCollisionDamage(float damage) { mCollisionDamage = damage; }
@@ -30,6 +33,7 @@ namespace ly
 		float mCollisionDamage;
 		List<WeightedReward> mWeightedRewards;
 		unsigned int mScoreAmt;
+		float mShipXPReward;
 	};
 }
 

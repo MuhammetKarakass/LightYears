@@ -2,6 +2,6 @@
 
 #include "gameplay/attributes/GameplayAttribute.h"
 #include "gameplay/attributes/AttributeSystem.h"
-#include "gameConfigs/EffectStructs.h"
+#include "gameConfigs/combat/EffectStructs.h"
 
 

@@ -10,6 +10,7 @@ namespace ly
 		: Actor(world, texturePath),
 		mOwner(owner)
 	{
+		SetRenderLayer(RenderLayer::WorldVfx);
 		SetCollisionLayer(CollisionLayer::None);
 		SetCollisionMask(CollisionLayer::None);
 	}

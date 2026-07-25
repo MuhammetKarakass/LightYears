@@ -1,7 +1,7 @@
 #include "enemy/LevelOneBoss.h"
 #include "gameplay/HealthComponent.h"
-#include "gameConfigs/PointLightConfig.h"
-#include "gameConfigs/WeaponConfig.h"
+#include "gameConfigs/presentation/PointLightConfig.h"
+#include "gameConfigs/combat/WeaponConfig.h"
 
 namespace ly
 {
@@ -17,7 +17,7 @@ namespace ly
 
 		},
 		LevelOneBoss::GetDefaultRewards(),
-		WeaponData::Boss_Base_PrimaryWeaponDef
+		WeaponData::PrimaryWeapons::BossBaseDualBlaster
 	);
 
 	LevelOneBoss::LevelOneBoss(World* world)
@@ -39,16 +39,22 @@ namespace ly
 				1
 			})) }
 	{
-		ly::AbilityDefinition threeWay = AbilityData::MakePrimaryFireAbilityDefinition(WeaponData::Boss_ThreeWay_PrimaryWeaponDef);
+		ly::AbilityDefinition threeWay = AbilityData::MakePrimaryFireAbilityDefinition(
+			WeaponData::PrimaryWeapons::BossThreeWayBlaster
+		);
 		threeWay.slot = AbilitySlot::Ability1;
 		threeWay.inputLabel = "";
 		GetCombatRuntime().GetAbilities().GrantAbility(threeWay);
-		ly::AbilityDefinition frontalSweep = AbilityData::MakePrimaryFireAbilityDefinition(WeaponData::Boss_FrontalSweep_PrimaryWeaponDef);
+		ly::AbilityDefinition frontalSweep = AbilityData::MakePrimaryFireAbilityDefinition(
+			WeaponData::PrimaryWeapons::BossFrontalSweep
+		);
 		frontalSweep.slot = AbilitySlot::Ability2;
 		frontalSweep.inputLabel = "";
 		GetCombatRuntime().GetAbilities().GrantAbility(frontalSweep);
 
-		ly::AbilityDefinition lastStage = AbilityData::MakePrimaryFireAbilityDefinition(WeaponData::Boss_LastStage_PrimaryWeaponDef);
+		ly::AbilityDefinition lastStage = AbilityData::MakePrimaryFireAbilityDefinition(
+			WeaponData::PrimaryWeapons::BossLastStageSideBlaster
+		);
 		lastStage.slot = AbilitySlot::Ability3;
 		lastStage.inputLabel = "";
 		GetCombatRuntime().GetAbilities().GrantAbility(lastStage);
@@ -56,6 +62,7 @@ namespace ly
 		SetActorRotation(180.f);
 		SetExplosionType(ExplosionType::Boss);
 		SetScoreAmt(1000);
+		SetShipXPReward(1000.f);
 		SetCollisionDamage(200.f);
 		for (const auto& mount : mBossShipDef.engineMounts)
 		{

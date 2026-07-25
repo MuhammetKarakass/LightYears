@@ -1,9 +1,6 @@
 #include "presentation/effects/shield/ShieldVisual.h"
 
-#include "framework/World.h"
-#include "gameConfigs/EffectStructs.h"
-#include "gameConfigs/VisualConfig.h"
-#include "presentation/effects/GameplayEffectVisualRegistry.h"
+#include "gameConfigs/combat/EffectStructs.h"
 
 #include <algorithm>
 #include <cmath>
@@ -85,18 +82,4 @@ namespace ly
 		GetSprite()->setColor(color);
 	}
 
-	bool RegisterShieldVisuals()
-	{
-		static const bool registered = GameplayEffectVisualRegistry::RegisterFactory(
-			VisualData::Shield_Basic.visualId,
-			[](Actor& owner) -> weak_ptr<GameplayEffectVisual>
-			{
-				World* world = owner.GetWorld();
-				return world
-					? world->SpawnActor<ShieldVisual>(&owner, VisualData::Shield_Basic)
-					: weak_ptr<GameplayEffectVisual>{};
-			}
-		);
-		return registered;
-	}
 }

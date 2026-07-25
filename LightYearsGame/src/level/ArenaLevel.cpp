@@ -1,10 +1,29 @@
 #include "level/ArenaLevel.h"
 #include "level/ArenaBoundaryIndicator.h"
 #include "player/PlayerSpaceShip.h"
+#include "gameConfigs/ability/DashConfig.h"
+#include "gameplay/ability/AbilityInstance.h"
 #include "framework/TimerManager.h"
 
 namespace ly
-{ 
+{
+	namespace
+	{
+		float ResolveDashCameraZoomOutRatio(const PlayerSpaceShip& ship)
+		{
+			const AbilityInstance* dashAbility =
+				ship.GetCombatRuntime().GetAbilities().GetAbility(AbilitySlot::Ability3);
+			if (!dashAbility)
+			{
+				return 0.f;
+			}
+
+			const AbilityData::Dash::Settings* dashSettings =
+				AbilityData::Dash::FindSettings(dashAbility->GetDefinition().abilityId);
+			return dashSettings ? dashSettings->cameraZoomOutRatio : 0.f;
+		}
+	}
+
 	     ArenaLevel::ArenaLevel(Application* owningApp):
 	         GameLevel(owningApp),
 		 mArenaDefinition{},
@@ -13,7 +32,8 @@ namespace ly
          mArenaBoundarySystem{},
          mPlayerRespawnDefinition{},
          mPlayerRespawnSystem{},
-         mCameraFollowShip{}
+         mCameraFollowShip{},
+		 mWasCameraFollowShipDashing{ false }
      {
      }
      
@@ -111,15 +131,35 @@ namespace ly
      void ArenaLevel::UpdateArenaCameraInputs()
      {
          auto ship = mCameraFollowShip.lock();
-         if (!ship || ship->GetIsPendingDestroy())
-         {
-             ClearCameraExternalVelocity();
-             ClearCameraLookAheadWorldPosition();
+		if (!ship || ship->GetIsPendingDestroy())
+		{
+			ClearCameraExternalVelocity();
+			SetCameraPreserveFollowTargetOffset(false);
+			SetCameraAdditionalZoomOut(0.f);
+			SetCameraRelativeAdditionalZoomOut(0.f);
+			ClearCameraLookAheadWorldPosition();
+			mWasCameraFollowShipDashing = false;
              return;
          }
 
-         SetCameraExternalVelocity(ship->GetVelocity());
-         SetCameraLookAheadWorldPosition(GetMouseWorldPosition());
+		const bool isDashing = ship->GetMovementComponent().IsDashing();
+		SetCameraPreserveFollowTargetOffset(isDashing || mWasCameraFollowShipDashing);
+
+		// Dash velocity is a short displacement impulse, not sustained travel speed.
+		// Preserve the last normal velocity so speed zoom and movement look-ahead do
+		// not pulse out and back during the dash.
+		if (!isDashing)
+		{
+			SetCameraExternalVelocity(ship->GetVelocity());
+		}
+		SetCameraAdditionalZoomOut(ship->GetAfterburnerCameraZoomOut());
+		SetCameraRelativeAdditionalZoomOut(
+			(isDashing || mWasCameraFollowShipDashing)
+				? ResolveDashCameraZoomOutRatio(*ship)
+				: 0.f
+		);
+		SetCameraLookAheadWorldPosition(GetMouseWorldPosition());
+		mWasCameraFollowShipDashing = isDashing;
      }
      
      void ArenaLevel::SpawnArenaBoundaryIndicator()
@@ -210,6 +250,9 @@ namespace ly
      void ArenaLevel::OnPlayerShipSpawned(weak_ptr<PlayerSpaceShip> playerShip)
      {
          mCameraFollowShip = playerShip;
+		 mWasCameraFollowShipDashing = false;
+		 SetCameraPreserveFollowTargetOffset(false);
+		 SetCameraRelativeAdditionalZoomOut(0.f);
 
          if (auto ship = playerShip.lock())
          {
@@ -222,8 +265,12 @@ namespace ly
      void ArenaLevel::OnPlayerShipDestroyed(Actor* destroyedActor)
      {
          mCameraFollowShip.reset();
+		 mWasCameraFollowShipDashing = false;
          ClearViewTarget();
-         ClearCameraExternalVelocity();
+		 ClearCameraExternalVelocity();
+		 SetCameraPreserveFollowTargetOffset(false);
+		 SetCameraAdditionalZoomOut(0.f);
+		 SetCameraRelativeAdditionalZoomOut(0.f);
          ClearCameraLookAheadWorldPosition();
          SetArenaTrackedActor(weak_ptr<Actor>());
          OnArenaBoundaryWarningCleared();

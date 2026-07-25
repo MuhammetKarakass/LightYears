@@ -28,6 +28,7 @@ namespace ly
 		virtual void BeginPlay() override;
 		virtual void Tick(float deltaTime) override;
 		virtual bool DispatchEvent(const sf::Event& event) override;
+		virtual void OnActorSpawned(Actor* actor) override;
 
 		virtual void OnGameStart();
 		virtual void OnGamePaused();

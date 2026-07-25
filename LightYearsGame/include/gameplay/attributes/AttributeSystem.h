@@ -101,6 +101,7 @@ namespace ly
 		float GetBaseValue(const GameplayTag& id) const;
 		float GetCurrentValue(const GameplayTag& id, float fallback = 0.f) const;
 		float GetSequentialReductionMultiplier(const GameplayTag& id, float minimumMultiplier = 0.05f) const;
+		void SetBaseValue(const GameplayTag& id, float baseValue);
 		void ApplyBaseModifier(const AttributeModifier& modifier);
 		AttributeModifierHandle AddModifier(const AttributeModifier& modifier);
 		void RemoveModifier(AttributeModifierHandle handle);

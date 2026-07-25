@@ -167,12 +167,19 @@ namespace ly
 
 			if (auto particle = newParticle.lock())
 			{
+				std::optional<sf::Sprite>& sprite = particle->GetSprite();
+				if (!sprite)
+				{
+					particle->Destroy();
+					continue;
+				}
+
 				particle->RandomLifeTime(params.lifeTimeMin, params.lifeTimeMax);
 				particle->SetActorLocation(location);
 				particle->RandomSize(params.sizeMin, params.sizeMax);
 				particle->RandomVelocity(params.speedMin, params.speedMax);
 
-				particle->GetSprite().value().setColor(params.GenerateRandomColor());
+				sprite->setColor(params.GenerateRandomColor());
 			}
 		}
 	}

@@ -418,7 +418,14 @@ namespace ly
 	{
 		if (!mPhysicsBodyId)  
 		{
-			mPhysicsBodyId = PhysicsSystem::Get().AddListener(this);
+			const b2BodyId bodyId = PhysicsSystem::Get().AddListener(this);
+			// AddListener returns the zero-initialized id when an actor has no
+			// physical shape. Do not pass that sentinel back into Box2D: its
+			// debug validation intentionally asserts on an invalid world id.
+			if (bodyId.index1 != 0)
+			{
+				mPhysicsBodyId = bodyId;
+			}
 		}
 	}
 	

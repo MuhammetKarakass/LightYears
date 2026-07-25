@@ -18,11 +18,19 @@ namespace ly
 		List<GameplayEffectBehaviorEvent> events;
 	};
 
+	enum class IncomingDamagePhase
+	{
+		PreMitigation,
+		Standard
+	};
+
 	namespace GameplayEffectBehavior
 	{
 		void Initialize(ActiveGameplayEffect& effect);
 		void Refresh(ActiveGameplayEffect& effect);
 		void AddStack(ActiveGameplayEffect& effect);
+		GameplayEffectBehaviorResult Tick(ActiveGameplayEffect& effect, float deltaTime);
+		IncomingDamagePhase GetIncomingDamagePhase(const ActiveGameplayEffect& effect);
 		GameplayEffectBehaviorResult ProcessIncomingDamage(ActiveGameplayEffect& effect, DamageContext& context);
 	}
 }

@@ -1,7 +1,7 @@
 #include "gameFramework/GameApplication.h"
 
-#include "gameplay/ability/actors/sunBeam/SunBeamStrikeActor.h"
-#include "presentation/effects/shield/ShieldVisual.h"
+#include "gameplay/ability/AbilityBehaviorRegistration.h"
+#include "presentation/effects/shield/ShieldVisualContent.h"
 #include "level/ArenaTestLevel.h"
 
 #include <framework/AssetManager.h>
@@ -19,7 +19,10 @@ namespace ly
 		: Application({ 1920, 1080}, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
-		RegisterSunBeamStrikeActorType();
+		if (!RegisterGameAbilityContent())
+		{
+			LOG("Failed to register game ability content");
+		}
 		RegisterShieldVisuals();
 
 		ly::perf::g_disableLights.store(false);

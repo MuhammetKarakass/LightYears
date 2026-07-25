@@ -1,7 +1,7 @@
 #include "enemy/TwinBladeStage.h"
 #include "enemy/TwinBlade.h"
 #include <framework/World.h>
-#include "gameConfigs/ShipConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly {
 	TwinBladeStage::TwinBladeStage(World* world):

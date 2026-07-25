@@ -8,6 +8,7 @@ namespace ly
 		: Actor{ owningWorld, texturePath }, 
 		mLifeTime{4.f }, mTimer{}
 	{
+		SetRenderLayer(RenderLayer::WorldVfx);
 		ly::perf::IncParticles();
 	}
 

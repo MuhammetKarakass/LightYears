@@ -1,7 +1,8 @@
 #pragma once
 
 #include "framework/Actor.h"
-#include "gameConfigs/AbilityActorStructs.h"
+#include "gameConfigs/ability/AbilityActorStructs.h"
+#include "gameplay/damage/DamageContext.h"
 
 namespace ly
 {
@@ -18,15 +19,27 @@ namespace ly
 
 		void SetDamage(float damage) { mDamage = damage; }
 		float GetDamage() const { return mDamage; }
-		void SetDamageTags(const List<GameplayTag>& damageTags) { mDamageTags = damageTags; }
+		void SetDamageTags(const List<GameplayTag>& damageTags);
 		const List<GameplayTag>& GetDamageTags() const { return mDamageTags; }
+		void SetDamageAttributes(const GameplayAttributeList& attributes);
+		const DamagePayload& GetDamagePayload() const { return mDamagePayload; }
+		void SetAbilityUpgradeIds(const List<GameplayTag>& upgradeIds) { mAbilityUpgradeIds = upgradeIds; }
+		const List<GameplayTag>& GetAbilityUpgradeIds() const { return mAbilityUpgradeIds; }
+		bool HasAbilityUpgrade(const GameplayTag& upgradeId) const;
 
 		void SetLifeTime(float lifeTime) { mLifeTime = lifeTime; }
 		float GetLifeTime() const { return mLifeTime; }
 		float GetAge() const { return mAge; }
 
 		void SetAbilityCollisionRadius(float radius);
-		void SetAbilityPhysicsEnabled(bool enabled) { mEnablePhysicsOnBeginPlay = enabled; }
+		void SetAbilityPhysicsEnabled(bool enabled)
+		{
+			mEnablePhysicsOnBeginPlay = enabled;
+			if (!enabled)
+			{
+				SetEnablePhysics(false);
+			}
+		}
 		void ConfigureCollisionFromOwner();
 
 		virtual void ConfigureFromAttributes(const GameplayAttributeList& attributes);
@@ -40,9 +53,14 @@ namespace ly
 		);
 
 	private:
+		void RebuildDamagePayload();
+
 		Actor* mOwner;
 		float mDamage;
 		List<GameplayTag> mDamageTags;
+		GameplayAttributeList mDamageAttributes;
+		DamagePayload mDamagePayload;
+		List<GameplayTag> mAbilityUpgradeIds;
 		float mLifeTime;
 		float mAge;
 		float mCollisionRadius;

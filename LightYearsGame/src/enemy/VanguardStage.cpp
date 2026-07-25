@@ -2,7 +2,7 @@
 #include "enemy/Vanguard.h"
 #include <framework/World.h>
 #include "environment/Asteroid.h"
-#include "gameConfigs/ShipConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly
 {

@@ -7,6 +7,7 @@
 #include "level/MainMenuLevel.h"
 #include "level/LevelOne.h"
 #include "player/PlayerManager.h"
+#include "enemy/EnemySpaceShip.h"
 #include "presentation/hud/GameplayWarningHUDController.h"
 #include "presentation/hud/ability/AbilityUIController.h"
 
@@ -57,6 +58,19 @@ namespace ly
 		}
 		
 		return World::DispatchEvent(event);
+	}
+
+	void GameLevel::OnActorSpawned(Actor* actor)
+	{
+		EnemySpaceShip* enemy = dynamic_cast<EnemySpaceShip*>(actor);
+		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+		if (!enemy || !player)
+		{
+			return;
+		}
+
+		enemy->onScoreAwarded.BindAction(player, &Player::OnScoreAwarded);
+		enemy->onShipXPAwarded.BindAction(player, &Player::AwardShipXP);
 	}
 	
 	void GameLevel::OnGameStart()

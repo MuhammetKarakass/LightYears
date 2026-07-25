@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gameConfigs/AbilityVisualStructs.h"
 #include "presentation/effects/GameplayEffectVisual.h"
+#include "presentation/effects/shield/ShieldVisualDefinition.h"
 
 namespace ly
 {
@@ -23,5 +23,4 @@ namespace ly
 		float mRemainingDurationRatio = 1.f;
 	};
 
-	bool RegisterShieldVisuals();
 }

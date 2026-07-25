@@ -62,6 +62,15 @@ namespace ly
 	{
 		if (listener->GetIsPendingDestroy()) return b2BodyId{ 0,0,0 };
 
+		// Actors without a visual bounds cannot form a valid Box2D polygon.  Such
+		// actors use gameplay queries (or have physics explicitly disabled), so
+		// leave them without a physics body instead of creating a zero-sized box.
+		sf::FloatRect bounds = listener->GetActorGlobalBounds();
+		if (bounds.size.x <= 0.0f || bounds.size.y <= 0.0f)
+		{
+			return b2BodyId{ 0,0,0 };
+		}
+
 		b2BodyDef bodyDef = b2DefaultBodyDef();
 		bodyDef.type = b2_dynamicBody;
 
@@ -73,7 +82,6 @@ namespace ly
 
 		b2BodyId bodyId = b2CreateBody(mPhysicsWorld, &bodyDef);
 
-		sf::FloatRect bounds = listener->GetActorGlobalBounds();
 		float halfWidth = bounds.size.x / 2.0f * GetPhysicsRate();
 		float halfHeight = bounds.size.y / 2.0f * GetPhysicsRate();
 

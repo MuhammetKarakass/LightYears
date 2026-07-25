@@ -1,7 +1,7 @@
 #include "enemy/UFO.h"
 #include "enemy/UFOStage.h"
 #include <framework/World.h>
-#include "gameConfigs/ShipConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly
 {

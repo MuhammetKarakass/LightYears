@@ -7,13 +7,35 @@ namespace ly
 {
 	struct OwnerAttributeIds
 	{
+		//gemilere özel seviye atlanılacak, bu attributelerden bazıları otomatik olarak artacak
 		inline static const GameplayTag MaxHealth{ "Attribute.Owner.MaxHealth" };
+		inline static const GameplayTag HealthRegen{ "Attribute.Owner.HealthRegen" };
+		inline static const GameplayTag EnergyMax{ "Attribute.Owner.Energy.Max" };
+		inline static const GameplayTag EnergyRegen{ "Attribute.Owner.Energy.Regen" };
 		inline static const GameplayTag AttackPower{ "Attribute.Owner.AttackPower" };
+		inline static const GameplayTag AttackSpeed{ "Attribute.Owner.AttackSpeed" };
 		inline static const GameplayTag AbilityHaste{ "Attribute.Owner.AbilityHaste" };
 		inline static const GameplayTag MoveSpeedHorizontal{ "Attribute.Owner.MoveSpeedHorizontal" };
 		inline static const GameplayTag MoveSpeedVertical{ "Attribute.Owner.MoveSpeedVertical" };
 		inline static const GameplayTag Armor{ "Attribute.Owner.Armor" };
 		inline static const GameplayTag Luck{ "Attribute.Owner.Luck" };
+		inline static const GameplayTag CriticalChance{ "Attribute.Owner.CriticalChance" };
+	};
+
+	struct ShipAttributeIds
+	{
+		inline static const GameplayTag MaxShield{ "Attribute.Ship.Shield.Max" };
+		inline static const GameplayTag ShieldRegen{ "Attribute.Ship.Shield.Regen" };
+		inline static const GameplayTag ShieldRechargeDelay{ "Attribute.Ship.Shield.RechargeDelay" };
+		inline static const GameplayTag AfterburnerCapacity{ "Attribute.Ship.Afterburner.Capacity" };
+		inline static const GameplayTag AfterburnerRegen{ "Attribute.Ship.Afterburner.Regen" };
+		inline static const GameplayTag AfterburnerRechargeDelay{ "Attribute.Ship.Afterburner.RechargeDelay" };
+		inline static const GameplayTag AfterburnerEnergyDrainPerSecond{ "Attribute.Ship.Afterburner.EnergyDrainPerSecond" };
+		inline static const GameplayTag AfterburnerSpeedMultiplier{ "Attribute.Ship.Afterburner.SpeedMultiplier" };
+		inline static const GameplayTag AfterburnerAccelerationMultiplier{ "Attribute.Ship.Afterburner.AccelerationMultiplier" };
+		inline static const GameplayTag AfterburnerRampUpDuration{ "Attribute.Ship.Afterburner.RampUpDuration" };
+		inline static const GameplayTag AfterburnerRampDownDuration{ "Attribute.Ship.Afterburner.RampDownDuration" };
+		inline static const GameplayTag AfterburnerManeuverabilityMultiplier{ "Attribute.Ship.Afterburner.ManeuverabilityMultiplier" };
 	};
 
 	// Reusable local attributes declared by ability, weapon, actor, and effect definitions.

@@ -1,6 +1,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "framework/World.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/damage/DamageTypeSystem.h"
 
 #include <algorithm>
 
@@ -52,6 +53,35 @@ namespace ly
 	{
 		mCollisionRadius = std::max(0.f, radius);
 		SetCollisionRadius(mCollisionRadius);
+	}
+
+	void AbilityWorldActor::SetDamageTags(const List<GameplayTag>& damageTags)
+	{
+		mDamageTags = damageTags;
+		RebuildDamagePayload();
+	}
+
+	void AbilityWorldActor::SetDamageAttributes(const GameplayAttributeList& attributes)
+	{
+		mDamageAttributes = attributes;
+		RebuildDamagePayload();
+	}
+
+	void AbilityWorldActor::RebuildDamagePayload()
+	{
+		mDamagePayload = DamageTypeSystem::BuildPayload(mDamageTags, mDamageAttributes);
+	}
+
+	bool AbilityWorldActor::HasAbilityUpgrade(const GameplayTag& upgradeId) const
+	{
+		return std::any_of(
+			mAbilityUpgradeIds.begin(),
+			mAbilityUpgradeIds.end(),
+			[&](const GameplayTag& unlockedUpgradeId)
+			{
+				return unlockedUpgradeId.MatchesTag(upgradeId);
+			}
+		);
 	}
 
 	void AbilityWorldActor::ConfigureCollisionFromOwner()
@@ -113,14 +143,18 @@ namespace ly
 			const float distanceSquared = delta.x * delta.x + delta.y * delta.y;
 			if (distanceSquared <= radiusSquared)
 			{
-				ApplyCombatDamage(*target, damage, mOwner, mDamageTags);
+				ApplyCombatDamage(*target, damage, mOwner, mDamageTags, mDamagePayload);
 			}
 		}
 	}
 
 	void AbilityWorldActor::ConfigureFromAttributes(const GameplayAttributeList& attributes)
 	{
-		(void)attributes;
+		mDamage = std::max(
+			0.f,
+			FindGameplayAttributeValue(attributes, CommonAttributeIds::Damage, mDamage)
+		);
+		SetDamageAttributes(attributes);
 	}
 }
 

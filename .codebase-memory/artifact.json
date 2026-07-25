@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "0bfc943cdb06c48299f62d2165d8dc019ef8556e",
+    "indexed_at": "2026-07-14T22:25:21Z",
+    "project": "D-LightYears",
+    "nodes": 2964,
+    "edges": 9181,
+    "original_size": 8912896,
+    "compressed_size": 1707251,
+    "compression_level": 3
+}

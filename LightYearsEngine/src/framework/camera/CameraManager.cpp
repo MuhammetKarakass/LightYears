@@ -6,6 +6,48 @@
 
 namespace ly
 {
+	namespace
+	{
+		float SmoothDampScalar(
+			float current,
+			float target,
+			float& currentVelocity,
+			float smoothTime,
+			float deltaTime)
+		{
+			if (deltaTime <= 0.f)
+			{
+				return current;
+			}
+
+			const float safeSmoothTime = std::max(0.0001f, smoothTime);
+			const float angularFrequency = 2.f / safeSmoothTime;
+			const float scaledDelta = angularFrequency * deltaTime;
+			const float decay = 1.f / (
+				1.f +
+				scaledDelta +
+				0.48f * scaledDelta * scaledDelta +
+				0.235f * scaledDelta * scaledDelta * scaledDelta
+			);
+
+			const float originalTarget = target;
+			const float displacement = current - target;
+			const float velocityStep =
+				(currentVelocity + angularFrequency * displacement) * deltaTime;
+			currentVelocity =
+				(currentVelocity - angularFrequency * velocityStep) * decay;
+			float result = target + (displacement + velocityStep) * decay;
+
+			// Numerical protection only; a critically damped response should not cross its target.
+			if ((originalTarget - current) * (result - originalTarget) > 0.f)
+			{
+				result = originalTarget;
+				currentVelocity = 0.f;
+			}
+			return result;
+		}
+	}
+
 	void CameraManager::SetSettings(const CameraSettings& settings)
 	{
 		mSettings = settings;
@@ -14,12 +56,19 @@ namespace ly
 	void CameraManager::SetFollowTarget(weak_ptr<Actor> target)
 	{
 		mFollowTarget = target;
+		mPreviousFollowTargetLocation.reset();
+		mCurrentZoomVelocity = 0.f;
 	}
 
 	void CameraManager::ClearFollowTarget()
 	{
 		mFollowTarget.reset();
+		mPreviousFollowTargetLocation.reset();
+		mPreserveFollowTargetOffset = false;
+		mCurrentZoomVelocity = 0.f;
 		ClearExternalVelocity();
+		SetAdditionalZoomOut(0.f);
+		SetRelativeAdditionalZoomOut(0.f);
 		ClearLookAheadWorldPosition();
 	}
 
@@ -31,6 +80,16 @@ namespace ly
 	void CameraManager::ClearExternalVelocity()
 	{
 		mExternalVelocity = sf::Vector2f{};
+	}
+
+	void CameraManager::SetAdditionalZoomOut(float zoomOut)
+	{
+		mAdditionalZoomOut = std::max(0.f, zoomOut);
+	}
+
+	void CameraManager::SetRelativeAdditionalZoomOut(float zoomOutRatio)
+	{
+		mRelativeAdditionalZoomOut = std::max(0.f, zoomOutRatio);
 	}
 
 	void CameraManager::SetLookAheadWorldPosition(const std::optional<sf::Vector2f>& worldPosition)
@@ -53,53 +112,125 @@ namespace ly
 		mWorldBounds.reset();
 	}
 
+	void CameraManager::PlayShake(float amplitude, float duration, float frequency)
+	{
+		const float clampedAmplitude = std::max(0.f, amplitude);
+		const float clampedDuration = std::max(0.f, duration);
+		if (clampedAmplitude <= 0.f || clampedDuration <= 0.f)
+		{
+			return;
+		}
+
+		const float remainingDuration = std::max(0.f, mShakeDuration - mShakeElapsed);
+		mShakeAmplitude = std::max(mShakeAmplitude, clampedAmplitude);
+		mShakeDuration = std::max(remainingDuration, clampedDuration);
+		mShakeFrequency = std::max(mShakeFrequency, std::max(0.f, frequency));
+		mShakeElapsed = 0.f;
+	}
+
 	void CameraManager::Update(float deltaTime, const sf::View& defaultView)
 	{
+		if (mShakeDuration > 0.f)
+		{
+			mShakeElapsed = std::min(mShakeDuration, mShakeElapsed + std::max(0.f, deltaTime));
+			if (mShakeElapsed >= mShakeDuration)
+			{
+				mShakeAmplitude = 0.f;
+				mShakeDuration = 0.f;
+				mShakeElapsed = 0.f;
+				mShakeFrequency = 0.f;
+			}
+		}
+
 		auto followTarget = mFollowTarget.lock();
 		if (!followTarget || followTarget->GetIsPendingDestroy())
 		{
+			mPreviousFollowTargetLocation.reset();
 			if (!mHasState)
 			{
 				mCurrentCenter = defaultView.getCenter();
 				mCurrentZoom = 1.f;
+				mCurrentZoomVelocity = 0.f;
 				mHasState = true;
 			}
 			return;
 		}
 
 		const float desiredZoom = GetDesiredZoom();
-		const sf::Vector2f desiredViewSize = defaultView.getSize() * desiredZoom;
-		const sf::Vector2f desiredCenter = ClampCenterToWorldBounds(
-			GetDesiredCenter(*followTarget, deltaTime),
-			desiredViewSize
-		);
+		const sf::Vector2f followTargetLocation = followTarget->GetActorLocation();
 
 		if (!mHasState)
 		{
-			mCurrentCenter = desiredCenter;
 			mCurrentZoom = desiredZoom;
+			mCurrentZoomVelocity = 0.f;
+			mCurrentCenter = ClampCenterToWorldBounds(
+				GetDesiredCenter(*followTarget, deltaTime),
+				defaultView.getSize() * mCurrentZoom
+			);
 			mHasState = true;
+			mPreviousFollowTargetLocation = followTargetLocation;
 			return;
 		}
 
 		const float positionAlpha = 1.f - std::exp(-std::max(0.f, mSettings.positionSmoothingSpeed) * deltaTime);
-		const float zoomAlpha = 1.f - std::exp(-std::max(0.f, mSettings.zoomSmoothingSpeed) * deltaTime);
+		const float zoomSmoothingSpeed = std::max(0.f, mSettings.zoomSmoothingSpeed);
+		if (zoomSmoothingSpeed > 0.f)
+		{
+			mCurrentZoom = SmoothDampScalar(
+				mCurrentZoom,
+				desiredZoom,
+				mCurrentZoomVelocity,
+				1.f / zoomSmoothingSpeed,
+				deltaTime
+			);
+		}
+		else
+		{
+			mCurrentZoomVelocity = 0.f;
+		}
+		const sf::Vector2f currentViewSize = defaultView.getSize() * mCurrentZoom;
 
-		mCurrentCenter = LerpVector(mCurrentCenter, desiredCenter, positionAlpha);
-		mCurrentZoom = Lerp(mCurrentZoom, desiredZoom, zoomAlpha);
+		if (mPreserveFollowTargetOffset && mPreviousFollowTargetLocation)
+		{
+			mCurrentCenter += followTargetLocation - *mPreviousFollowTargetLocation;
+		}
+		const sf::Vector2f desiredCenter = ClampCenterToWorldBounds(
+			GetDesiredCenter(*followTarget, deltaTime),
+			currentViewSize
+		);
+		mCurrentCenter = ClampCenterToWorldBounds(
+			LerpVector(mCurrentCenter, desiredCenter, positionAlpha),
+			currentViewSize
+		);
+		mPreviousFollowTargetLocation = followTargetLocation;
 	}
 
 	sf::View CameraManager::GetView(const sf::View& defaultView) const
 	{
-		if (!mHasState)
+		sf::View view = defaultView;
+		if (mHasState)
 		{
-			return defaultView;
+			view.setCenter(mCurrentCenter);
+			view.setSize(defaultView.getSize() * mCurrentZoom);
+		}
+		view.setCenter(view.getCenter() + GetShakeOffset());
+		return view;
+	}
+
+	sf::Vector2f CameraManager::GetShakeOffset() const
+	{
+		if (mShakeDuration <= 0.f || mShakeElapsed >= mShakeDuration)
+		{
+			return {};
 		}
 
-		sf::View view = defaultView;
-		view.setCenter(mCurrentCenter);
-		view.setSize(defaultView.getSize() * mCurrentZoom);
-		return view;
+		const float remaining = 1.f - std::clamp(mShakeElapsed / mShakeDuration, 0.f, 1.f);
+		const float envelope = remaining * remaining;
+		const float phase = mShakeElapsed * mShakeFrequency;
+		return {
+			std::sin(phase) * mShakeAmplitude * envelope,
+			std::sin(phase * 1.37f + 1.1f) * mShakeAmplitude * 0.65f * envelope
+		};
 	}
 
 	sf::Vector2f CameraManager::GetDesiredCenter(const Actor& followTarget, float deltaTime)
@@ -203,6 +334,10 @@ namespace ly
 			? speedAlphaRaw * speedAlphaRaw * (3.f - 2.f * speedAlphaRaw)
 			: speedAlphaRaw;
 
-		return baseZoom + speedAlpha * std::max(0.f, mSettings.maxSpeedZoomOut);
+		const float composedZoom =
+			baseZoom +
+			speedAlpha * std::max(0.f, mSettings.maxSpeedZoomOut) +
+			mAdditionalZoomOut;
+		return composedZoom + composedZoom * mRelativeAdditionalZoomOut;
 	}
 }

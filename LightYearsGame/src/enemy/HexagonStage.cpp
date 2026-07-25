@@ -1,7 +1,7 @@
 #include "enemy/HexagonStage.h"
 #include <framework/World.h>
 #include "enemy/Hexagon.h"
-#include "gameConfigs/ShipConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly
 {

@@ -19,6 +19,7 @@ namespace ly
 		mUseDepthColor(false),
 		mNeedsSorting(true)
 	{
+		SetRenderLayer(RenderLayer::Background);
 	}
 
 	BackgroundLayer::BackgroundLayer(World* owningWorld, const List<BackgroundLayerDefinition>& defs, const sf::Vector2f& minVelocity, const sf::Vector2f& maxVelocity, float sizeMin, float sizeMax, int spriteCount, sf::Color colorTint) :
@@ -36,6 +37,7 @@ namespace ly
 		mDefinitions(defs),
 		mNeedsSorting(true)
 	{
+		SetRenderLayer(RenderLayer::Background);
 		InitializeSprites();
 	}
 

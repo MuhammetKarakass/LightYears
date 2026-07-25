@@ -32,10 +32,14 @@ namespace ly
 		void SetCameraSettings(const CameraSettings& settings);
 		void SetCameraExternalVelocity(const sf::Vector2f& velocity);
 		void ClearCameraExternalVelocity();
+		void SetCameraPreserveFollowTargetOffset(bool preserve);
+		void SetCameraAdditionalZoomOut(float zoomOut);
+		void SetCameraRelativeAdditionalZoomOut(float zoomOutRatio);
 		void SetCameraLookAheadWorldPosition(const std::optional<sf::Vector2f>& worldPosition);
 		void ClearCameraLookAheadWorldPosition();
 		void SetCameraWorldBounds(const sf::FloatRect& bounds);
 		void ClearCameraWorldBounds();
+		void PlayCameraShake(float amplitude, float duration, float frequency);
 
 		weak_ptr<Actor> GetActorByLayer(CollisionLayer layer) const;
 

@@ -72,16 +72,19 @@ namespace ly
 
 	}
 
+	void HealthComponent::Regenerate(float amount)
+	{
+		if (amount > 0.f)
+		{
+			ChangeHealth(amount);
+		}
+	}
+
 	void HealthComponent::TakenDamage(float amount)
 	{
 		onTakenDamage.Broadcast(amount, mHealth, mMaxHealth);
 	}
 
-	void HealthComponent::HealthRegen(float amount)
-	{
-
-	}
-	
 	void HealthComponent::HealthEmpty()
 	{
 		onHealthEmpty.Broadcast();

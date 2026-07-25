@@ -2,7 +2,7 @@
 #include "player/PlayerSpaceShip.h"
 #include <framework/World.h>
 #include "player/PlayerManager.h"
-#include "gameConfigs/EffectConfig.h"
+#include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/effects/GameplayEffectSystem.h"
 
 

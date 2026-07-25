@@ -38,6 +38,7 @@ namespace ly
 	private:
 		virtual void Init(sf::RenderWindow& windowRef) override;
 		void RefreshHealthBar();
+		void RefreshEnergyBar(float energy, float maxEnergy);
 		void PlayerHealthUpdated(float amt, float currentHealth, float maxHealth);
 		void PlayerSpaceShipDestroyed(Actor* actor);
 		void RefreshHealthBarDeferred();
@@ -48,6 +49,7 @@ namespace ly
 		void UpdateGameplayWarningVisuals(float deltaTime);
 
 		std::optional<ValueGauge> mPlayerHealthBar;
+		std::optional<ValueGauge> mPlayerEnergyBar;
 		std::optional<TextWidget> mFrameRateText;
 
 		std::optional<ImageWidget> mPlayerLifeIcon;

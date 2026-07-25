@@ -26,7 +26,6 @@ namespace ly
 	protected:
 		virtual void OnGameStart() override;
 		virtual void Tick(float deltaTime) override;
-		virtual void OnActorSpawned(Actor* actor) override;
 
 		virtual void OnRestartLevel() override;
 		virtual void GameOver() override;

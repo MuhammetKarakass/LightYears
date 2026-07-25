@@ -4,7 +4,6 @@
 #include "gameplay/effects/GameplayEffectSystem.h"
 #include "gameplay/ability/AbilitySystem.h"
 #include "gameplay/damage/DamageContext.h"
-#include "gameConfigs/ShipStructs.h"
 #include "framework/Delegate.h"
 
 namespace ly
@@ -16,7 +15,9 @@ namespace ly
 	public:
 		explicit CombatRuntime(Actor& owner);
 
-		void InitializeFromShipDefinition(const ShipDefinition& shipDefinition);
+		void InitializeOwnerAttributes(float maxHealth);
+		float GetCriticalChance() const;
+		float GetCombatLuckFactor() const;
 		void Tick(float deltaTime);
 		void Clear();
 

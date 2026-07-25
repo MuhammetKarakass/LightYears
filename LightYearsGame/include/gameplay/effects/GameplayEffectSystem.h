@@ -21,6 +21,7 @@ namespace ly
 		void ProcessIncomingDamage(DamageContext& context);
 		List<AbilityEvent> DrainPendingEvents();
 		const ActiveGameplayEffect* FindEffect(GameplayEffectHandle handle) const;
+		const ActiveGameplayEffect* FindEffectById(const std::string& effectId) const;
 		List<GameplayEffectSnapshot> BuildSnapshots() const;
 		bool CanApplyEffect(const GameplayEffectDefinition& definition) const;
 

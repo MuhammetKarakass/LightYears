@@ -10,6 +10,20 @@ A high-performance 2D space shooter built from scratch with a custom engine arch
 
 ---
 
+## Documentation
+
+- [System Reference](docs/PROJECT_DOCUMENTATION.md) — current runtime behavior,
+  data definitions, and game rules.
+- [Implementation Catalog](docs/CURRENT_IMPLEMENTATION_CATALOG.md) — current
+  content and its source locations.
+- [Balance & Roadmap Notebook](docs/BALANCE_AND_ROADMAP_NOTEBOOK.md) — proposed
+  work, design decisions, and playtest records.
+- [Roguelite Design](docs/Designs.md) — long-term product direction.
+- [Visual Production Plan](docs/VisualProductionPlan.md) — rendering and VFX
+  roadmap.
+
+---
+
 ## Introduction
 
 **Light Years** is a modern C++17 space shooter game built from the ground up with a custom game engine. The player commands a hero spaceship against waves of enemy ships through procedurally managed stages, culminating in a boss battle and an infinite survival mode.

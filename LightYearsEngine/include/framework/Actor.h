@@ -15,6 +15,17 @@
 
 namespace ly
 {
+	enum class RenderLayer : uint8_t
+	{
+		Background,
+		GroundDecal,
+		World,
+		Projectile,
+		WorldVfx,
+		Foreground,
+		Count
+	};
+
 	enum class LightSpace : uint8_t
 	{
 		Local =0,
@@ -106,6 +117,8 @@ namespace ly
 		//TICK WHEN PAUSED
 		void SetTickWhenPaused(bool tickWhenPaused) { mTickWhenPaused = tickWhenPaused; }
 		bool GetTickWhenPaused() const { return mTickWhenPaused; }
+		void SetRenderLayer(RenderLayer renderLayer) { mRenderLayer = renderLayer; }
+		RenderLayer GetRenderLayer() const { return mRenderLayer; }
 
 		//DAMAGE
 		virtual void ApplyDamage(float amt);
@@ -165,6 +178,7 @@ namespace ly
 
 		CollisionLayer mCollisionLayer;
 		CollisionLayer mCollisionMask;
+		RenderLayer mRenderLayer = RenderLayer::World;
 
 		Dictionary<GameplayTag, LightData, GameplayTagHash> mLightShaders;
 	};

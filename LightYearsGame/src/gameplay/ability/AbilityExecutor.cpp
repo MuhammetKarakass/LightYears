@@ -1,4 +1,6 @@
 #include "gameplay/ability/AbilityExecutor.h"
+#include "gameplay/attributes/AttributeMath.h"
+#include "gameplay/ability/AbilityInstance.h"
 #include "gameplay/ability/AbilitySystem.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
@@ -6,13 +8,14 @@
 #include "gameplay/effects/GameplayEffectSystem.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
-#include "gameplay/weapon/PrimaryWeaponRegistry.h"
+#include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "framework/Actor.h"
 #include "framework/World.h"
-#include "gameConfigs/AbilityActorStructs.h"
-#include "gameConfigs/EffectStructs.h"
-#include "gameConfigs/AbilityConfig.h"
+#include "gameConfigs/ability/AbilityActorStructs.h"
+#include "gameConfigs/combat/EffectConfig.h"
 #include <algorithm>
+#include <cmath>
+#include <optional>
 
 namespace ly
 {
@@ -21,16 +24,31 @@ namespace ly
 		float CalculateDefinitionAttributeValue(
 			const GameplayAttribute& attribute,
 			const AbilityDefinition& abilityDefinition,
-			const PrimaryWeaponDefinition* weaponDefinition
+			const PrimaryWeaponDefinition* weaponDefinition,
+			const AbilityInstance* instance
 		)
 		{
 			float value = CalculateModifiedAttributeValue(attribute, abilityDefinition.attributeModifiers);
+			if (instance)
+			{
+				value = instance->ApplyAttachmentModifiers(
+					AttachmentHostKind::Ability,
+					GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue }
+				).currentValue;
+			}
 			if (weaponDefinition)
 			{
 				value = CalculateModifiedAttributeValue(
 					GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue },
 					weaponDefinition->attributeModifiers
 				);
+				if (instance)
+				{
+					value = instance->ApplyAttachmentModifiers(
+						AttachmentHostKind::PrimaryWeapon,
+						GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue }
+					).currentValue;
+				}
 			}
 			return value;
 		}
@@ -87,16 +105,16 @@ namespace ly
 			AbilitySystem& abilitySystem,
 			const AbilityDefinition& abilityDefinition,
 			const PrimaryWeaponDefinition* weaponDefinition,
-			const GameplayAttribute& attribute
+			const GameplayAttribute& attribute,
+			const AbilityInstance* instance = nullptr
 		)
 		{
-			float leveledValue = CalculateDefinitionAttributeValue(attribute, abilityDefinition, weaponDefinition);
-
-			if (attribute.id == CommonAttributeIds::Damage)
-			{
-				const float attackPower = abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower);
-				leveledValue = std::max(attribute.minValue, leveledValue * (1.f + attackPower));
-			}
+			float leveledValue = CalculateDefinitionAttributeValue(
+				attribute,
+				abilityDefinition,
+				weaponDefinition,
+				instance
+			);
 
 			float scaledValue = ApplyAllStatScalings(
 				leveledValue,
@@ -106,9 +124,11 @@ namespace ly
 				abilitySystem
 			);
 
-			if (attribute.id == CommonAttributeIds::Interval && scaledValue > 0.f)
+			if (attribute.id == CommonAttributeIds::Interval && scaledValue > 0.f && !weaponDefinition)
 			{
-				const float hasteMultiplier = abilitySystem.GetAttributes().GetSequentialReductionMultiplier(OwnerAttributeIds::AbilityHaste);
+				const float hasteMultiplier = AttributeMath::GetAbilityCooldownMultiplier(
+					abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::AbilityHaste)
+				);
 				scaledValue *= hasteMultiplier;
 			}
 
@@ -119,18 +139,52 @@ namespace ly
 			AbilitySystem& abilitySystem,
 			const AbilityDefinition& abilityDefinition,
 			const PrimaryWeaponDefinition* weaponDefinition,
-			const GameplayAttributeList& attributes
+			const GameplayAttributeList& attributes,
+			const AbilityInstance* instance = nullptr,
+			const List<GameplayTag>& originalDamageTags = {}
 		)
 		{
+			GameplayAttributeList sourceAttributes = attributes;
+			if (instance)
+			{
+				sourceAttributes = instance->MergeAttachmentAttributes(
+					AttachmentHostKind::Ability,
+					sourceAttributes
+				);
+				if (weaponDefinition)
+				{
+					sourceAttributes = instance->MergeAttachmentAttributes(
+						AttachmentHostKind::PrimaryWeapon,
+						sourceAttributes
+					);
+				}
+			}
+
 			GameplayAttributeList values;
-			for (const GameplayAttribute& attribute : attributes)
+			for (const GameplayAttribute& attribute : sourceAttributes)
 			{
 				values.push_back(GameplayAttribute{
 					attribute.id,
-					ResolveAttributeValue(abilitySystem, abilityDefinition, weaponDefinition, attribute),
+					ResolveAttributeValue(abilitySystem, abilityDefinition, weaponDefinition, attribute, instance),
 					attribute.minValue,
 					attribute.maxValue
 				});
+			}
+			if (instance)
+			{
+				values = instance->ApplyAttachmentConditions(
+					AttachmentHostKind::Ability,
+					values,
+					originalDamageTags
+				);
+				if (weaponDefinition)
+				{
+					values = instance->ApplyAttachmentConditions(
+						AttachmentHostKind::PrimaryWeapon,
+						values,
+						originalDamageTags
+					);
+				}
 			}
 
 			return values;
@@ -175,7 +229,8 @@ namespace ly
 			AbilitySystem& abilitySystem,
 			const AbilityDefinition& definition,
 			float baseInterval,
-			const PrimaryWeaponDefinition* weaponDefinition = nullptr
+			const PrimaryWeaponDefinition* weaponDefinition = nullptr,
+			const AbilityInstance* instance = nullptr
 		)
 		{
 			if (baseInterval <= 0.f)
@@ -187,7 +242,8 @@ namespace ly
 				abilitySystem,
 				definition,
 				weaponDefinition,
-				GameplayAttribute{ CommonAttributeIds::Interval, baseInterval, 0.001f }
+				GameplayAttribute{ CommonAttributeIds::Interval, baseInterval, 0.001f },
+				instance
 			);
 		}
 
@@ -209,7 +265,7 @@ namespace ly
 				break;
 			}
 			case AbilityDirectionPolicy::MouseWorld:
-				if (const World* world = owner.GetWorld())
+				if (const World* world = owner.GetWorld(); world && world->GetApplication())
 				{
 					sf::Vector2f mouseDirection = world->GetMouseWorldPosition() - owner.GetActorLocation();
 					if (GetVectorLength(mouseDirection) > 0.f)
@@ -227,11 +283,25 @@ namespace ly
 			return owner.GetActorForwardDirection();
 		}
 
+		float ResolveActionRotation(
+			const sf::Vector2f& direction,
+			float fallbackRotation)
+		{
+			if (GetVectorLength(direction) <= 0.001f)
+			{
+				return fallbackRotation;
+			}
+
+			constexpr float DegreesPerRadian = 57.2957795131f;
+			return std::atan2(direction.y, direction.x) * DegreesPerRadian + 90.f;
+		}
+
 		sf::Vector2f ResolveAbilityActorSpawnLocation(
 			const Actor& owner,
 			const SpawnActorAction& actionData,
 			const AbilityActorDefinition& actorDefinition,
-			const AbilityExecutionContext& context
+			const AbilityExecutionContext& context,
+			const sf::Vector2f& direction
 		)
 		{
 			switch (actionData.spawnPolicy)
@@ -249,7 +319,7 @@ namespace ly
 				}
 				break;
 			case AbilitySpawnPolicy::OwnerForward:
-				return owner.GetActorLocation() + owner.GetActorForwardDirection() * actorDefinition.spawnDistance;
+				return owner.GetActorLocation() + direction * actorDefinition.spawnDistance;
 			case AbilitySpawnPolicy::AtOwner:
 			default:
 				break;
@@ -258,18 +328,48 @@ namespace ly
 			return owner.GetActorLocation();
 		}
 
+		std::optional<sf::Vector2f> ResolveAbilityActorTargetLocation(
+			const Actor& owner,
+			const SpawnActorAction& actionData,
+			const AbilityExecutionContext& context
+		)
+		{
+			if (actionData.directionPolicy == AbilityDirectionPolicy::MouseWorld
+				|| actionData.spawnPolicy == AbilitySpawnPolicy::MouseWorld)
+			{
+				if (const World* world = owner.GetWorld(); world && world->GetApplication())
+				{
+					return world->GetMouseWorldPosition();
+				}
+			}
+
+			if (actionData.spawnPolicy == AbilitySpawnPolicy::AtEventTarget
+				&& context.event
+				&& context.event->target)
+			{
+				return context.event->target->GetActorLocation();
+			}
+
+			return std::nullopt;
+		}
+
 		GameplayEffectDefinition BuildEffectiveEffectDefinition(
 			AbilitySystem& abilitySystem,
 			const AbilityDefinition& abilityDefinition,
-			const GameplayEffectDefinition& effectDefinition
+			const GameplayEffectDefinition& effectDefinition,
+			const AbilityInstance* instance,
+			const List<GameplayTag>& originalDamageTags
 		)
 		{
 			GameplayEffectDefinition effectiveDefinition = effectDefinition;
+			effectiveDefinition.sourceAbilityUpgradeIds = abilityDefinition.unlockedUpgradeIds;
 			effectiveDefinition.attributes = ResolveAttributes(
 				abilitySystem,
 				abilityDefinition,
 				nullptr,
-				effectDefinition.attributes
+				effectDefinition.attributes,
+				instance,
+				originalDamageTags
 			);
 			return effectiveDefinition;
 		}
@@ -296,7 +396,26 @@ namespace ly
 			return combatant ? &combatant->GetCombatRuntime().GetEffects() : nullptr;
 		}
 
-		const List<GameplayTag> EmptyDamageTags{};
+		List<GameplayTag> BuildBaseDamageTags(const AbilityDefinition* definition)
+		{
+			if (definition && !definition->damageTags.empty())
+			{
+				return definition->damageTags;
+			}
+			return { DamageTypeSchema::Photonic };
+		}
+
+		List<GameplayTag> ResolveDamageTags(
+			const AbilityExecutionContext& context,
+			AttachmentHostKind hostKind
+		)
+		{
+			if (context.instance)
+			{
+				return context.instance->GetResolvedDamageTags(hostKind);
+			}
+			return BuildBaseDamageTags(context.definition);
+		}
 
 		const GameplayAttributeList& ResolveFireWeaponAttributes(
 			AbilityExecutionContext& context,
@@ -307,12 +426,24 @@ namespace ly
 			const uint64_t attributeRevision = context.abilitySystem
 				? context.abilitySystem->GetAttributes().GetRevision()
 				: 0;
-			if (!state.hasResolvedAttributes || state.resolvedAttributeRevision != attributeRevision)
+			const uint64_t attachmentRevision = context.instance
+				? context.instance->GetAttachments().GetRevision()
+				: 0;
+			if (!state.hasResolvedAttributes || state.resolvedAttributeRevision != attributeRevision ||
+				state.resolvedAttachmentRevision != attachmentRevision)
 			{
 				state.resolvedAttributes = context.definition
-					? ResolveAttributes(*context.abilitySystem, *context.definition, &fireAction.weaponDefinition, state.runtimeAttributes)
+					? ResolveAttributes(
+						*context.abilitySystem,
+						*context.definition,
+						&fireAction.weaponDefinition,
+						state.runtimeAttributes,
+						context.instance,
+						ResolveDamageTags(context, AttachmentHostKind::PrimaryWeapon)
+					)
 					: ResolveBaseAttributes(state.runtimeAttributes);
 				state.resolvedAttributeRevision = attributeRevision;
+				state.resolvedAttachmentRevision = attachmentRevision;
 				state.hasResolvedAttributes = true;
 			}
 			return state.resolvedAttributes;
@@ -329,7 +460,8 @@ namespace ly
 				owner,
 				fireAction.weaponDefinition,
 				attributes,
-				context.definition ? context.definition->abilityTags : EmptyDamageTags
+				ResolveDamageTags(context, AttachmentHostKind::PrimaryWeapon),
+				context.definition ? &context.definition->unlockedUpgradeIds : nullptr
 			};
 		}
 
@@ -346,25 +478,58 @@ namespace ly
 				state.runtimeAttributes = fireAction.weaponDefinition.attributes;
 				state.initialized = true;
 			}
+			if (context.instance)
+			{
+				context.instance->UpdatePrimaryWeaponRuntimeContext(
+					fireAction.weaponDefinition,
+					attributes,
+					ResolveDamageTags(context, AttachmentHostKind::PrimaryWeapon)
+				);
+				state.persistentWeaponRuntime = &context.instance->GetPrimaryWeaponRuntime();
+			}
+			PrimaryWeaponRuntimeState& weaponRuntime = state.GetWeaponRuntime();
 			if (state.lifecycleStarted)
 			{
 				return true;
 			}
 
-			const PrimaryWeaponValidationResult validation = PrimaryWeaponRegistry::InitializeRuntime(
-				fireAction.weaponDefinition,
-				state.weaponRuntime
-			);
+			const PrimaryWeaponValidationResult validation =
+				PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured(
+					fireAction.weaponDefinition,
+					weaponRuntime,
+					context.definition
+						? &context.definition->unlockedUpgradeIds
+						: nullptr
+				);
 			if (!validation.isValid)
 			{
 				return false;
 			}
-			PrimaryWeaponRegistry::BeginFire(
+			PrimaryWeaponExecutionSystem::BeginFire(
 				MakePrimaryWeaponExecutionContext(owner, context, fireAction, attributes),
-				state.weaponRuntime
+				weaponRuntime
 			);
 			state.lifecycleStarted = true;
 			return true;
+		}
+
+		float BuildWeaponFireInterval(
+			const AbilityExecutionContext& context,
+			const FireWeaponAction& fireAction,
+			const AbilityActionSpec& actionSpec,
+			const GameplayAttributeList& attributes
+		)
+		{
+			const float baseInterval = PrimaryWeaponExecutionSystem::BuildBaseFireInterval(attributes, actionSpec.interval);
+			return context.definition
+				? BuildEffectiveActionInterval(
+					*context.abilitySystem,
+					*context.definition,
+					baseInterval,
+					&fireAction.weaponDefinition,
+					context.instance
+				)
+				: baseInterval;
 		}
 	}
 
@@ -414,9 +579,9 @@ namespace ly
 					continue;
 				}
 				const GameplayAttributeList& values = ResolveFireWeaponAttributes(context, fireAction, state);
-				PrimaryWeaponRegistry::EndFire(
+				PrimaryWeaponExecutionSystem::EndFire(
 					MakePrimaryWeaponExecutionContext(owner, context, fireAction, values),
-					state.weaponRuntime
+					state.GetWeaponRuntime()
 				);
 				state.lifecycleStarted = false;
 			}
@@ -458,7 +623,9 @@ namespace ly
 			{
 				FireWeaponRuntimeState state;
 				state.runtimeAttributes = fireAction.weaponDefinition.attributes;
-				state.intervalRemaining = 0.f;
+				state.intervalRemaining = context.instance
+					? context.instance->GetWeaponFireIntervalRemaining()
+					: 0.f;
 				state.initialized = true;
 				action.runtimeState = std::move(state);
 			}
@@ -466,36 +633,69 @@ namespace ly
 			FireWeaponRuntimeState& state = std::get<FireWeaponRuntimeState>(action.runtimeState);
 			const GameplayAttributeList& values = ResolveFireWeaponAttributes(context, fireAction, state);
 			Actor& owner = context.abilitySystem->GetOwner();
+			state.intervalRemaining = std::max(0.f, state.intervalRemaining - deltaTime);
+			if (!state.lifecycleStarted && state.intervalRemaining > 0.f)
+			{
+				if (context.instance)
+				{
+					context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
+				}
+				return;
+			}
 			if (!EnsureFireWeaponLifecycle(owner, context, fireAction, state, values))
 			{
 				return;
 			}
 			PrimaryWeaponExecutionContext weaponContext = MakePrimaryWeaponExecutionContext(owner, context, fireAction, values);
-			PrimaryWeaponRegistry::TickFire(weaponContext, state.weaponRuntime, deltaTime);
+			const auto applyRequestedWeaponCooldown = [&]()
+			{
+				const float requestedCooldown = PrimaryWeaponExecutionSystem::ConsumeRequestedCooldown(state.GetWeaponRuntime());
+				if (requestedCooldown <= 0.f)
+				{
+					return false;
+				}
 
-			if (!PrimaryWeaponRegistry::UsesIntervalFire(state.weaponRuntime))
+				PrimaryWeaponExecutionSystem::EndFire(weaponContext, state.GetWeaponRuntime());
+				state.lifecycleStarted = false;
+				state.intervalRemaining = std::max(state.intervalRemaining, requestedCooldown);
+				if (context.instance)
+				{
+					context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
+				}
+				return true;
+			};
+			PrimaryWeaponExecutionSystem::TickFire(weaponContext, state.GetWeaponRuntime(), deltaTime);
+			if (applyRequestedWeaponCooldown())
 			{
 				return;
 			}
 
-			state.intervalRemaining -= deltaTime;
+			if (!PrimaryWeaponExecutionSystem::UsesIntervalFire(state.GetWeaponRuntime()))
+			{
+				return;
+			}
+
 			while (state.intervalRemaining <= 0.f &&
 				(action.spec->maxExecutions <= 0 || state.executionCount < action.spec->maxExecutions))
 			{
-				const bool fired = PrimaryWeaponRegistry::FireOnce(weaponContext, state.weaponRuntime);
+				const bool fired = PrimaryWeaponExecutionSystem::FireOnce(weaponContext, state.GetWeaponRuntime());
 				if (fired)
 				{
 					++state.executionCount;
 				}
-				const float baseInterval = PrimaryWeaponRegistry::BuildBaseFireInterval(values, action.spec->interval);
-				const float interval = context.definition
-					? BuildEffectiveActionInterval(*context.abilitySystem, *context.definition, baseInterval, &fireAction.weaponDefinition)
-					: baseInterval;
-				state.intervalRemaining += interval;
+				state.intervalRemaining += BuildWeaponFireInterval(context, fireAction, *action.spec, values);
 				if (!fired)
 				{
 					break;
 				}
+			}
+			if (applyRequestedWeaponCooldown())
+			{
+				return;
+			}
+			if (context.instance)
+			{
+				context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
 			}
 			return;
 		}
@@ -514,7 +714,13 @@ namespace ly
 			ExecuteAction(action, context);
 			++repeated->executionCount;
 			repeated->intervalAccumulator = context.definition
-				? BuildEffectiveActionInterval(*context.abilitySystem, *context.definition, action.spec->interval)
+				? BuildEffectiveActionInterval(
+					*context.abilitySystem,
+					*context.definition,
+					action.spec->interval,
+					nullptr,
+					context.instance
+				)
 				: action.spec->interval;
 		}
 	}
@@ -537,7 +743,13 @@ namespace ly
 				{
 					const AbilityDefinition* abilityDefinition = context.definition;
 					const GameplayEffectDefinition effectiveDefinition = abilityDefinition
-						? BuildEffectiveEffectDefinition(*context.abilitySystem, *abilityDefinition, *effectDefinition)
+						? BuildEffectiveEffectDefinition(
+							*context.abilitySystem,
+							*abilityDefinition,
+							*effectDefinition,
+							context.instance,
+							BuildBaseDamageTags(abilityDefinition)
+						)
 						: *effectDefinition;
 					if (GameplayEffectSystem* targetEffects = ResolveEffectTarget(
 						*context.abilitySystem,
@@ -555,16 +767,26 @@ namespace ly
 				{
 					FireWeaponRuntimeState state;
 					state.runtimeAttributes = actionData.weaponDefinition.attributes;
+					state.intervalRemaining = context.instance
+						? context.instance->GetWeaponFireIntervalRemaining()
+						: 0.f;
 					action.runtimeState = std::move(state);
 				}
 				FireWeaponRuntimeState& state = std::get<FireWeaponRuntimeState>(action.runtimeState);
 				const GameplayAttributeList& values = ResolveFireWeaponAttributes(context, actionData, state);
-				if (EnsureFireWeaponLifecycle(owner, context, actionData, state, values))
+				if (state.intervalRemaining <= 0.f && EnsureFireWeaponLifecycle(owner, context, actionData, state, values))
 				{
-					PrimaryWeaponRegistry::FireOnce(
+					if (PrimaryWeaponExecutionSystem::FireOnce(
 						MakePrimaryWeaponExecutionContext(owner, context, actionData, values),
-						state.weaponRuntime
-					);
+						state.GetWeaponRuntime()
+					))
+					{
+						state.intervalRemaining = BuildWeaponFireInterval(context, actionData, *action.spec, values);
+						if (context.instance)
+						{
+							context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
+						}
+					}
 				}
 			}
 			else if constexpr (std::is_same_v<T, ApplyImpulseAction>)
@@ -598,10 +820,26 @@ namespace ly
 					*context.abilitySystem,
 					*context.definition,
 					nullptr,
-					attributes
+					attributes,
+					context.instance,
+					ResolveDamageTags(context, AttachmentHostKind::Ability)
+				);
+				const sf::Vector2f direction =
+					ResolveActionDirection(owner, actionData.directionPolicy);
+				const sf::Vector2f spawnLocation = ResolveAbilityActorSpawnLocation(
+					owner,
+					actionData,
+					*actorDefinition,
+					context,
+					direction
 				);
 				weak_ptr<AbilityWorldActor> spawnedActor = AbilityActorRegistry::Spawn(
-					AbilityActorSpawnContext{ owner, *actorDefinition, values }
+					AbilityActorSpawnContext{
+						owner,
+						*actorDefinition,
+						values,
+						ResolveAbilityActorTargetLocation(owner, actionData, context)
+					}
 				);
 
 				if (auto actor = spawnedActor.lock())
@@ -614,11 +852,12 @@ namespace ly
 						FindGameplayAttributeValue(values, CommonAttributeIds::Radius, 0.f)
 					);
 
-					actor->SetActorLocation(ResolveAbilityActorSpawnLocation(owner, actionData, *actorDefinition, context));
-					actor->SetActorRotation(owner.GetActorRotation());
+					actor->SetActorLocation(spawnLocation);
+					actor->SetActorRotation(ResolveActionRotation(direction, owner.GetActorRotation()));
 					actor->SetLifeTime(duration);
 					actor->SetDamage(damage);
-					actor->SetDamageTags(context.definition->abilityTags);
+					actor->SetDamageTags(ResolveDamageTags(context, AttachmentHostKind::Ability));
+					actor->SetAbilityUpgradeIds(context.definition->unlockedUpgradeIds);
 					actor->SetAbilityCollisionRadius(collisionRadius);
 					actor->ConfigureCollisionFromOwner();
 					actor->ConfigureFromAttributes(values);

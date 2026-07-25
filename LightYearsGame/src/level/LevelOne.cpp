@@ -10,13 +10,13 @@
 #include <gameplay/WaitStage.h>
 #include "player/PlayerManager.h"
 #include "widget/GameHUD.h"
-#include "gameConfigs/ShipConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
 #include "framework/Application.h"
 #include "enemy/ChaosStage.h"
 #include "enemy/LevelOneBossStage.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
-#include "gameConfigs/GameplayConfig.h"
+#include "gameConfigs/gameplay/GameplayConfig.h"
 #include "enemy/InfiniteStage.h"
 #include "framework/AudioManager.h"
 #include "enemy/LevelOneBoss.h"
@@ -349,27 +349,6 @@ namespace ly
 	void LevelOne::Tick(float deltaTime)
 	{
 		World::Tick(deltaTime);
-	}
-
-	void LevelOne::OnActorSpawned(Actor* actor)
-	{
-		if(!actor)
-			return;
-		if (EnemySpaceShip* enemy = dynamic_cast<EnemySpaceShip*>(actor))
-		{
-
-			if (Player* player = PlayerManager::GetPlayerManager().GetPlayer())
-			{
-				enemy->onScoreAwarded.BindAction(
-					player,
-					&Player::OnScoreAwarded
-				);
-			}
-			else
-			{
-
-			}
-		}
 	}
 
 	void LevelOne::OnRestartLevel()

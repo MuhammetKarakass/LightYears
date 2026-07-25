@@ -67,6 +67,7 @@ namespace ly
 		PlayerRespawnDefinition mPlayerRespawnDefinition;
 		PlayerRespawnSystem mPlayerRespawnSystem;
 		weak_ptr<PlayerSpaceShip> mCameraFollowShip;
+		bool mWasCameraFollowShipDashing = false;
 	};
 }
 

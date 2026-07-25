@@ -1,8 +1,15 @@
 .vs/
 build/
+build-asan/
 out/
 documentation.md
 docs/*.md
 run_stdout.log
 run_stderr.log
 *.md
+!AGENTS.md
+!docs/PROJECT_DOCUMENTATION.md
+!docs/BALANCE_AND_ROADMAP_NOTEBOOK.md
+!docs/CURRENT_IMPLEMENTATION_CATALOG.md
+!docs/Designs.md
+!docs/VisualProductionPlan.md

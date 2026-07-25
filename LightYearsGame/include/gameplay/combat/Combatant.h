@@ -22,4 +22,12 @@ namespace ly
 		Actor* source = nullptr,
 		const List<GameplayTag>& damageTags = {}
 	);
+
+	void ApplyCombatDamage(
+		Actor& target,
+		float damage,
+		Actor* source,
+		const List<GameplayTag>& damageTags,
+		const DamagePayload& payload
+	);
 }

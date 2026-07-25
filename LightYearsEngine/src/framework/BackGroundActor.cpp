@@ -11,6 +11,7 @@ namespace ly
 		mSlowMotionScale{ 0.5f },
 		mPaused{ false }
 	{
+		SetRenderLayer(RenderLayer::Background);
 		SetEnablePhysics(false);
 		auto windowSize = owningWorld->GetWindowSize();
 		GetSprite().value().setOrigin({0.f,0.f});

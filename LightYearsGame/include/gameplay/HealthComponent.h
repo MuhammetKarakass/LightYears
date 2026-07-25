@@ -16,6 +16,7 @@ namespace ly
 		void SetMaxHealth(float maxHealth, bool preserveHealthPercent = false);
 
 		void ChangeHealth(float amount);
+		void Regenerate(float amount);
 
 		Delegate<float,float,float> onHealthChanged;
 		Delegate<float, float, float> onTakenDamage;
@@ -24,7 +25,6 @@ namespace ly
 	private:
 
 		void TakenDamage(float amount);
-		void HealthRegen(float amount);
 		void HealthEmpty();
 
 		float mHealth;

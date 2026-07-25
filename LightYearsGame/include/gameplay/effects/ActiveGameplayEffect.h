@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gameConfigs/EffectStructs.h"
+#include "gameConfigs/combat/EffectStructs.h"
 #include "gameplay/effects/GameplayEffectHandle.h"
 #include "framework/Core.h"
 

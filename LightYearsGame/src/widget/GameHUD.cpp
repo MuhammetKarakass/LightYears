@@ -3,6 +3,7 @@
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
 #include "framework/TimerManager.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -11,6 +12,7 @@ namespace ly
 	GameHUD::GameHUD() :
 		mFrameRateText{ std::in_place, "Frame Rate:" },
 		mPlayerHealthBar{ std::in_place },
+		mPlayerEnergyBar{ std::in_place, sf::Vector2f{ 220.f, 18.f }, 1.f, sf::Color{ 70, 205, 255, 255 }, sf::Color{ 35, 70, 95, 255 } },
 		mPlayerLifeIcon{ std::in_place, "SpaceShooterRedux/PNG/pickups/playerLife1_blue.png" },
 		mPlayerLifeText{ std::in_place, " " },
 		mPlayerScoreIcon{ std::in_place, "SpaceShooterRedux/PNG/Power-ups/star_gold.png" },
@@ -41,6 +43,9 @@ namespace ly
 
 		if (mPlayerHealthBar.has_value())
 			mPlayerHealthBar->NativeDraw(windowRef);
+
+		if (mPlayerEnergyBar.has_value())
+			mPlayerEnergyBar->NativeDraw(windowRef);
 
 		if (mPlayerLifeIcon.has_value())
 			mPlayerLifeIcon->NativeDraw(windowRef);
@@ -107,6 +112,7 @@ namespace ly
 		auto windowSize = windowRef.getSize();
 		mWindowSize = windowSize;
 		mPlayerHealthBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 50.f });
+		mPlayerEnergyBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 74.f });
 
 		sf::Vector2f nextWidgetPos = mPlayerHealthBar->GetWidgetLocation();
 		nextWidgetPos += sf::Vector2f{ mPlayerHealthBar->GetBound().size.x + mWidgetSpacingX, 0.f };
@@ -221,6 +227,19 @@ namespace ly
 		mPlayerHealthBar->SetForegroundColor(sf::Color{ r, g, 0, 255 });
 	}
 
+	void GameHUD::RefreshEnergyBar(float energy, float maxEnergy)
+	{
+		if (!mPlayerEnergyBar.has_value())
+		{
+			return;
+		}
+
+		mPlayerEnergyBar->UpdateValue(
+			std::max(0.f, energy),
+			maxEnergy > 0.f ? maxEnergy : 1.f
+		);
+	}
+
 	void GameHUD::PlayerSpaceShipDestroyed(Actor* actor)
 	{
 		mObservedPlayerSpaceShip.reset();
@@ -266,6 +285,7 @@ namespace ly
 		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
 		if (!player)
 		{
+			RefreshEnergyBar(0.f, 1.f);
 			return;
 		}
 
@@ -275,21 +295,31 @@ namespace ly
 
 		if (!currentShip)
 		{
+			RefreshEnergyBar(0.f, 1.f);
 			return;
 		}
 
 		if (currentShip->GetIsPendingDestroy())
 		{
+			RefreshEnergyBar(0.f, 1.f);
 			return;
 		}
 
 		if (currentShip != observedShip)
 		{
 			RefreshHealthBar();
+			RefreshEnergyBar(
+				currentShip->GetEnergyComponent().GetEnergy(),
+				currentShip->GetEnergyComponent().GetMaxEnergy()
+			);
 			return;
 		}
 
 		RefreshHealthBar();
+		RefreshEnergyBar(
+			currentShip->GetEnergyComponent().GetEnergy(),
+			currentShip->GetEnergyComponent().GetMaxEnergy()
+		);
 	}
 
 	void GameHUD::PlayerLifeUpdated(int amt)

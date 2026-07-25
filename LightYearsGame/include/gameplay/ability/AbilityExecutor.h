@@ -7,12 +7,14 @@
 namespace ly
 {
 	class AbilitySystem;
+	class AbilityInstance;
 
 	struct AbilityExecutionContext
 	{
 		AbilitySystem* abilitySystem = nullptr;
 		const AbilityDefinition* definition = nullptr;
 		const AbilityEvent* event = nullptr;
+		AbilityInstance* instance = nullptr;
 	};
 
 	class AbilityExecutor

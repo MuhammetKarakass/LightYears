@@ -159,6 +159,21 @@ namespace ly{
 		mCameraManager.ClearExternalVelocity();
 	}
 
+	void World::SetCameraPreserveFollowTargetOffset(bool preserve)
+	{
+		mCameraManager.SetPreserveFollowTargetOffset(preserve);
+	}
+
+	void World::SetCameraAdditionalZoomOut(float zoomOut)
+	{
+		mCameraManager.SetAdditionalZoomOut(zoomOut);
+	}
+
+	void World::SetCameraRelativeAdditionalZoomOut(float zoomOutRatio)
+	{
+		mCameraManager.SetRelativeAdditionalZoomOut(zoomOutRatio);
+	}
+
 	void World::SetCameraLookAheadWorldPosition(const std::optional<sf::Vector2f>& worldPosition)
 	{
 		mCameraManager.SetLookAheadWorldPosition(worldPosition);
@@ -179,6 +194,11 @@ namespace ly{
 		mCameraManager.ClearWorldBounds();
 	}
 
+	void World::PlayCameraShake(float amplitude, float duration, float frequency)
+	{
+		mCameraManager.PlayShake(amplitude, duration, frequency);
+	}
+
 	weak_ptr<Actor> World::GetActorByLayer(CollisionLayer layer) const
 	{
 		for (auto& actor : mActors)
@@ -197,13 +217,17 @@ namespace ly{
 		sf::View worldView = GetWorldView();
 		window.setView(worldView);
 
-		// Batch render all actors
-		for (const std::shared_ptr<Actor>& actor : mActors)
+		for (std::uint8_t layerIndex = 0;
+			layerIndex < static_cast<std::uint8_t>(RenderLayer::Count);
+			++layerIndex)
 		{
-			// Skip destroyed actors
-			if (!actor->GetIsPendingDestroy())
+			const RenderLayer layer = static_cast<RenderLayer>(layerIndex);
+			for (const std::shared_ptr<Actor>& actor : mActors)
 			{
-				actor->Render(window);
+				if (!actor->GetIsPendingDestroy() && actor->GetRenderLayer() == layer)
+				{
+					actor->Render(window);
+				}
 			}
 		}
 
@@ -303,7 +327,10 @@ namespace ly{
 	}
 	void World::UpdateCamera(float deltaTime)
 	{
-		mCameraManager.Update(deltaTime, mOwningApp->GetRenderWindow().getDefaultView());
+		if (mOwningApp)
+		{
+			mCameraManager.Update(deltaTime, mOwningApp->GetRenderWindow().getDefaultView());
+		}
 	}
 	void World::RenderHUD(sf::RenderWindow& window)
 	{

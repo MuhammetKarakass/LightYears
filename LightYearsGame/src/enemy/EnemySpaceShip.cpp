@@ -7,7 +7,8 @@ namespace ly
 		SpaceShip{ owningWorld, shipDef },
 		mCollisionDamage{ shipDef.collisionDamage },
 		mWeightedRewards{ shipDef.rewards},
-		mScoreAmt{ shipDef.scoreAmt }
+		mScoreAmt{ shipDef.scoreAmt },
+		mShipXPReward{ shipDef.shipXPReward }
 	{
 	}
 	
@@ -73,6 +74,7 @@ namespace ly
 	{
 		SpawnReward();
 		onScoreAwarded.Broadcast(mScoreAmt);
+		onShipXPAwarded.Broadcast(mShipXPReward);
 	}
 }
 

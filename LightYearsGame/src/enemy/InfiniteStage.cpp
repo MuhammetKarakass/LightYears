@@ -5,7 +5,7 @@
 #include "enemy/TwinBlade.h"
 #include "enemy/Hexagon.h"
 #include "enemy/UFO.h"
-#include "gameConfigs/ShipConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
 #include "gameplay/HealthComponent.h"
 #include "framework/Actor.h"
 

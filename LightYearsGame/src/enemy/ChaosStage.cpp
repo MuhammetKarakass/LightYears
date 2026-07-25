@@ -5,7 +5,7 @@
 #include "enemy/UFO.h"
 #include <framework/World.h>
 #include "environment/AsteroidSpawner.h"
-#include "gameConfigs/ShipConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly
 {

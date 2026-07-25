@@ -1,7 +1,10 @@
 #pragma once
 
 #include "framework/Core.h"
-#include "gameConfigs/AbilityActorStructs.h"
+#include "gameConfigs/ability/AbilityActorStructs.h"
+
+#include <SFML/System/Vector2.hpp>
+#include <optional>
 
 namespace ly
 {
@@ -19,6 +22,7 @@ namespace ly
 		Actor& owner;
 		const AbilityActorDefinition& definition;
 		const GameplayAttributeList& attributes;
+		std::optional<sf::Vector2f> targetLocation;
 	};
 
 	class AbilityActorTypeHandler

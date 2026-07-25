@@ -1,6 +1,9 @@
 #include "gameplay/effects/GameplayEffectSystem.h"
 #include "gameplay/effects/GameplayEffectBehavior.h"
 #include "gameplay/attributes/AttributeSystem.h"
+#include "gameplay/attachment/AttachmentDefinition.h"
+#include "gameplay/combat/Combatant.h"
+#include "gameplay/damage/DamageTypeSystem.h"
 #include "framework/Actor.h"
 #include "presentation/effects/GameplayEffectVisual.h"
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
@@ -118,6 +121,42 @@ namespace ly
 		for (size_t i = 0; i < mActiveEffects.size();)
 		{
 			ActiveGameplayEffect& effect = mActiveEffects[i];
+			const GameplayEffectBehaviorResult behaviorTick = GameplayEffectBehavior::Tick(effect, deltaTime);
+			if (behaviorTick.changed)
+			{
+				SynchronizeVisual(effect);
+				onEffectChanged.Broadcast(effect.handle);
+				onEffectsChanged.Broadcast();
+			}
+			if (behaviorTick.removeEffect)
+			{
+				RemoveEffectAt(i);
+				continue;
+			}
+			if (effect.definition.behaviorTag == DamageStatusSchema::IgniteBehavior && mOwner && deltaTime > 0.f)
+			{
+				const float damagePerSecond = std::max(
+					0.f,
+					FindGameplayAttributeValue(
+						effect.runtimeAttributes,
+						DamageAttributeIds::BurnDamagePerSecond,
+						0.f
+					)
+				);
+				if (damagePerSecond > 0.f &&
+					effect.stackCount >= std::max(1, effect.definition.maxStacks))
+				{
+					// Ignite builds visibly but starts damaging only at its full
+					// four-hit threshold. The default payload prevents a burn tick
+					// from recursively refreshing or stacking its own status effect.
+					ApplyCombatDamage(
+						*mOwner,
+						damagePerSecond * static_cast<float>(effect.stackCount) * deltaTime,
+						effect.source,
+						{ DamageTypeSchema::Thermal }
+					);
+				}
+			}
 			if (effect.definition.durationPolicy == GameplayEffectDurationPolicy::Duration)
 			{
 				effect.remainingDuration -= deltaTime;
@@ -144,27 +183,39 @@ namespace ly
 
 	void GameplayEffectSystem::ProcessIncomingDamage(DamageContext& context)
 	{
-		for (size_t i = 0; i < mActiveEffects.size() && context.remainingDamage > 0.f;)
+		const auto processPhase = [&](IncomingDamagePhase phase)
 		{
-			ActiveGameplayEffect& effect = mActiveEffects[i];
-			const GameplayEffectBehaviorResult result = GameplayEffectBehavior::ProcessIncomingDamage(effect, context);
-			if (result.changed)
+			for (size_t i = 0; i < mActiveEffects.size() && context.remainingDamage > 0.f;)
 			{
-				SynchronizeVisual(effect);
-				onEffectChanged.Broadcast(effect.handle);
-				onEffectsChanged.Broadcast();
+				ActiveGameplayEffect& effect = mActiveEffects[i];
+				if (GameplayEffectBehavior::GetIncomingDamagePhase(effect) != phase)
+				{
+					++i;
+					continue;
+				}
+
+				const GameplayEffectBehaviorResult result = GameplayEffectBehavior::ProcessIncomingDamage(effect, context);
+				if (result.changed)
+				{
+					SynchronizeVisual(effect);
+					onEffectChanged.Broadcast(effect.handle);
+					onEffectsChanged.Broadcast();
+				}
+				for (const GameplayEffectBehaviorEvent& event : result.events)
+				{
+					QueueOwnerEvent(event.eventTag, &context, event.magnitude);
+				}
+				if (result.removeEffect)
+				{
+					RemoveEffectAt(i);
+					continue;
+				}
+				++i;
 			}
-			for (const GameplayEffectBehaviorEvent& event : result.events)
-			{
-				QueueOwnerEvent(event.eventTag, &context, event.magnitude);
-			}
-			if (result.removeEffect)
-			{
-				RemoveEffectAt(i);
-				continue;
-			}
-			++i;
-		}
+		};
+
+		processPhase(IncomingDamagePhase::PreMitigation);
+		processPhase(IncomingDamagePhase::Standard);
 	}
 
 	List<AbilityEvent> GameplayEffectSystem::DrainPendingEvents()
@@ -179,6 +230,20 @@ namespace ly
 		for (const ActiveGameplayEffect& effect : mActiveEffects)
 		{
 			if (effect.handle == handle)
+			{
+				return &effect;
+			}
+		}
+		return nullptr;
+	}
+
+	const ActiveGameplayEffect* GameplayEffectSystem::FindEffectById(
+		const std::string& effectId
+	) const
+	{
+		for (const ActiveGameplayEffect& effect : mActiveEffects)
+		{
+			if (effect.definition.effectId == effectId)
 			{
 				return &effect;
 			}

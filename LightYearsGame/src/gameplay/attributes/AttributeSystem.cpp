@@ -87,6 +87,24 @@ namespace ly
 		return std::max(minimumMultiplier, multiplier);
 	}
 
+	void AttributeSystem::SetBaseValue(const GameplayTag& id, float baseValue)
+	{
+		if (!id.IsValid())
+		{
+			return;
+		}
+
+		if (!HasAttribute(id))
+		{
+			RegisterAttribute(id, baseValue);
+			return;
+		}
+
+		GameplayAttribute& attribute = mAttributes[id].attribute;
+		attribute.baseValue = std::clamp(baseValue, attribute.minValue, attribute.maxValue);
+		Recalculate(id);
+	}
+
 	void AttributeSystem::ApplyBaseModifier(const AttributeModifier& modifier)
 	{
 		if (!modifier.attributeId.IsValid())
