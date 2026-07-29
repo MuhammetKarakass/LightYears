@@ -18,7 +18,7 @@ namespace ly
 			return;
 		mIsSpawning = true;
 		SpawnAsteroidInternal();
-		LOG("Asteroid Spawner Started");
+		LY_GAME_DEBUG("Asteroid Spawner Started");
 	}
 	
 	void AsteroidSpawner::StopSpawning()

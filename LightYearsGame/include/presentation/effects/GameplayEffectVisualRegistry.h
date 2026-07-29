@@ -15,6 +15,7 @@ namespace ly
 	{
 	public:
 		static bool RegisterFactory(const std::string& visualId, GameplayEffectVisualFactory factory);
+		static bool IsRegistered(const std::string& visualId);
 		static weak_ptr<GameplayEffectVisual> Spawn(const std::string& visualId, Actor& owner);
 	};
 }

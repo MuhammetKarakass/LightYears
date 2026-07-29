@@ -85,10 +85,9 @@ namespace ly
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			if (const GameplayEffectDefinition* effect = EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic"))
-			{
-				player->GetCombatRuntime().GetEffects().ApplyEffect(*effect);
-			}
+			player->GetCombatRuntime().GetEffects().ApplyEffect(
+				MakeGameplayEffectSpec(EffectData::BasicBarrierEffect)
+			);
 		}
 	}
 }

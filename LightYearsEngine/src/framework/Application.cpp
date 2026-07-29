@@ -29,6 +29,7 @@ namespace ly
 		
 		while (mWindow.isOpen() && !mShouldQuit)
 		{
+			LY_PROFILE_FRAME();
 			sf::Time deltaTime = mTickClock.restart();
 			float dt = deltaTime.asSeconds();
 			
@@ -77,10 +78,11 @@ namespace ly
 
 	void Application::ShutdownApplication()
 	{
-		AudioManager::ShutdownAudioManager();
-		TimerManager::ShutdownTimerManagers();
+		LY_PROFILE_FUNCTION();
 		mPendingWorld.reset();
 		mCurrentWorld.reset();
+		AudioManager::ShutdownAudioManager();
+		TimerManager::ShutdownTimerManagers();
 		PhysicsSystem::ShutdownPhysicsSystem();
 		ShaderManager::ShutdownShaderManager();
 		AssetManager::ShutdownAssetManager();
@@ -91,6 +93,7 @@ namespace ly
 	
 	void Application::TickInternal(float deltaTime)
 	{
+		LY_PROFILE_FUNCTION();
 		Tick(deltaTime);
 		
 		if(mCurrentWorld)
@@ -141,6 +144,7 @@ namespace ly
 	
 	void Application::RenderInternal()
 	{
+		LY_PROFILE_FUNCTION();
 		mWindow.clear();  
 		Render();         
 		mWindow.display();

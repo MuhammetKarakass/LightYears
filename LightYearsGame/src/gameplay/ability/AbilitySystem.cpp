@@ -2,6 +2,8 @@
 #include "gameplay/ability/AbilityBehaviorRegistry.h"
 #include "gameplay/ability/AbilityExecutor.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
+#include "gameConfigs/combat/EffectConfig.h"
+#include "gameplay/effects/GameplayEffectValidation.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include <algorithm>
 
@@ -68,10 +70,43 @@ namespace ly
 			return true;
 		}
 
+		bool ValidateEffectActions(
+			const List<AbilityActionSpec>& actions,
+			std::string* failureReason
+		)
+		{
+			for (const AbilityActionSpec& action : actions)
+			{
+				if (!std::holds_alternative<ApplyEffectAction>(action.action))
+				{
+					continue;
+				}
+				const ApplyEffectAction& effectAction =
+					std::get<ApplyEffectAction>(action.action);
+				const GameplayEffectDefinition* definition =
+					EffectData::FindGameplayEffectDefinition(effectAction.effectId);
+				if (!definition)
+				{
+					if (failureReason)
+					{
+						*failureReason =
+							"Apply effect action references an unknown gameplay effect definition.";
+					}
+					return false;
+				}
+				if (!ValidateGameplayEffectDefinition(*definition, failureReason))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
 		bool ValidateActions(const List<AbilityActionSpec>& actions, std::string* failureReason)
 		{
 			return ValidateWeaponActions(actions, failureReason) &&
-				ValidateActorActions(actions, failureReason);
+				ValidateActorActions(actions, failureReason) &&
+				ValidateEffectActions(actions, failureReason);
 		}
 
 		bool ValidateLevelProgression(const AbilityDefinition& definition, std::string* failureReason)
@@ -502,6 +537,7 @@ namespace ly
 
 	void AbilitySystem::Tick(float deltaTime)
 	{
+		LY_PROFILE_FUNCTION();
 		UpdateTriggerCooldowns(deltaTime);
 
 		for (auto& entry : mAbilities)

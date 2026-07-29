@@ -22,10 +22,10 @@ namespace ly
 		virtual void SynchronizeState(const GameplayEffectVisualStateView& state) = 0;
 
 	protected:
-		Actor* GetVisualOwner() const { return mOwner; }
+		shared_ptr<Actor> GetVisualOwner() const { return mOwner.lock(); }
 		virtual void TickVisual(float deltaTime) = 0;
 
 	private:
-		Actor* mOwner = nullptr;
+		weak_ptr<Actor> mOwner;
 	};
 }

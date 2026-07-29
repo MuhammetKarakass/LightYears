@@ -1,15 +1,28 @@
 #include "gameplay/effects/GameplayEffectBehavior.h"
-#include "gameplay/effects/BarrierEffectBehavior.h"
-#include "gameplay/damage/DamageTypeSystem.h"
-#include <algorithm>
 
 namespace ly
 {
 	namespace
 	{
+		using BehaviorHookMap = Dictionary<
+			GameplayTag,
+			GameplayEffectBehavior::Hooks,
+			GameplayTagHash
+		>;
+
+		BehaviorHookMap& GetBehaviorHooks()
+		{
+			static BehaviorHookMap handlers;
+			return handlers;
+		}
+
 		void ResetRuntimeAttributes(ActiveGameplayEffect& effect)
 		{
-			effect.runtimeAttributes = effect.definition.attributes;
+			effect.runtimeAttributes = effect.spec.attributes;
+			if (effect.runtimeAttributes.empty())
+			{
+				return;
+			}
 			for (GameplayAttribute& attribute : effect.runtimeAttributes)
 			{
 				attribute.currentValue = attribute.baseValue;
@@ -20,6 +33,32 @@ namespace ly
 
 	namespace GameplayEffectBehavior
 	{
+		bool RegisterBehavior(const GameplayTag& behaviorTag, const Hooks& hooks)
+		{
+			if (!behaviorTag.IsValid() ||
+				(!hooks.addStack && !hooks.tick && !hooks.processIncomingDamage))
+			{
+				return false;
+			}
+			return GetBehaviorHooks().emplace(behaviorTag, hooks).second;
+		}
+
+		bool IsBehaviorRegistered(const GameplayTag& behaviorTag)
+		{
+			return GetBehaviorHooks().find(behaviorTag) != GetBehaviorHooks().end();
+		}
+
+		bool RegisterTickHandler(const GameplayTag& behaviorTag, TickHandler handler)
+		{
+			if (!behaviorTag.IsValid() || handler == nullptr)
+			{
+				return false;
+			}
+			Hooks hooks;
+			hooks.tick = handler;
+			return RegisterBehavior(behaviorTag, hooks);
+		}
+
 		void Initialize(ActiveGameplayEffect& effect)
 		{
 			ResetRuntimeAttributes(effect);
@@ -32,47 +71,41 @@ namespace ly
 
 		void AddStack(ActiveGameplayEffect& effect)
 		{
-			if (effect.definition.behaviorTag == BarrierEffectSchema::BehaviorId)
+			const auto behavior = GetBehaviorHooks().find(effect.spec.definition.behaviorTag);
+			if (behavior != GetBehaviorHooks().end() && behavior->second.addStack)
 			{
-				BarrierEffectBehavior::AddStack(effect);
+				behavior->second.addStack(effect);
 			}
 		}
 
-		GameplayEffectBehaviorResult Tick(ActiveGameplayEffect& effect, float deltaTime)
+		GameplayEffectBehaviorResult Tick(
+			ActiveGameplayEffect& effect,
+			Actor& owner,
+			float deltaTime
+		)
 		{
-			if (effect.definition.behaviorTag == BarrierEffectSchema::BehaviorId)
+			const auto behavior = GetBehaviorHooks().find(effect.spec.definition.behaviorTag);
+			if (behavior != GetBehaviorHooks().end() && behavior->second.tick)
 			{
-				return BarrierEffectBehavior::Tick(effect, deltaTime);
+				return behavior->second.tick(effect, owner, deltaTime);
 			}
 			return {};
 		}
 
 		IncomingDamagePhase GetIncomingDamagePhase(const ActiveGameplayEffect& effect)
 		{
-			return effect.definition.behaviorTag == DamageStatusSchema::ElectricBehavior
-				? IncomingDamagePhase::PreMitigation
+			const auto behavior = GetBehaviorHooks().find(effect.spec.definition.behaviorTag);
+			return behavior != GetBehaviorHooks().end()
+				? behavior->second.incomingDamagePhase
 				: IncomingDamagePhase::Standard;
 		}
 
 		GameplayEffectBehaviorResult ProcessIncomingDamage(ActiveGameplayEffect& effect, DamageContext& context)
 		{
-			if (effect.definition.behaviorTag == DamageStatusSchema::ElectricBehavior)
+			const auto behavior = GetBehaviorHooks().find(effect.spec.definition.behaviorTag);
+			if (behavior != GetBehaviorHooks().end() && behavior->second.processIncomingDamage)
 			{
-				if (effect.stackCount < std::max(1, effect.definition.maxStacks))
-				{
-					return {};
-				}
-				const float multiplierPerStack = std::max(0.f, FindGameplayAttributeValue(
-					effect.runtimeAttributes,
-					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-					0.f
-				));
-				context.remainingDamage *= 1.f + multiplierPerStack * static_cast<float>(effect.stackCount);
-				return {};
-			}
-			if (effect.definition.behaviorTag == BarrierEffectSchema::BehaviorId)
-			{
-				return BarrierEffectBehavior::ProcessIncomingDamage(effect, context);
+				return behavior->second.processIncomingDamage(effect, context);
 			}
 			return {};
 		}

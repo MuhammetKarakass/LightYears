@@ -93,7 +93,7 @@ namespace ly
 
 	void GameHUD::ShowDynamicNotification(const std::string& newText, float fadeIn, float hold, float fadeOut,const sf::Vector2f& location, float size, sf::Color color)
 	{
-		LOG("GameHUD::ShowDynamicNotification called with text: %s", newText.c_str());
+		LY_GAME_DEBUG("GameHUD::ShowDynamicNotification called with text: %s", newText.c_str());
 		mCenterNotificationText = AddWidget<TextWidget>(newText, "SpaceShooterRedux/Bonus/OrbitronBlack.ttf");
 		if (auto t = mCenterNotificationText.lock())
 		{

@@ -40,6 +40,7 @@ namespace ly
 		static unique_ptr<PhysicsSystem> physicsSystem;
 		b2WorldId mPhysicsWorld;
 		List<b2BodyId> mPendingRemoveListeners;
+		List<b2ShapeId> mShapeScratchBuffer;
 		float mPhysicsRate;
 	};
 }

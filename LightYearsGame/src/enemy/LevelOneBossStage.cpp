@@ -49,7 +49,7 @@ namespace ly
 	}
 	void LevelOneBossStage::StageFinished()
 	{
-		LOG("LevelOneBossStage::StageFinished - Boss defeated!");
+		LY_GAME_INFO("LevelOneBossStage::StageFinished - Boss defeated");
 	}
 	void LevelOneBossStage::BossDestroyed(Actor* bossActor)
 	{

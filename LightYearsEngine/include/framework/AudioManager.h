@@ -10,6 +10,7 @@ namespace ly
 	{
 	public:
 		static AudioManager& GetAudioManager();
+		static bool IsInitialized();
 		static void ShutdownAudioManager();
 
 		void PlaySound(const std::string& path, AudioType type, float volume = 100.0f, float pitch = 1.0f);

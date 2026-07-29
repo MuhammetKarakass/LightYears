@@ -27,6 +27,11 @@ namespace ly
 		return GetFactories().emplace(visualId, std::move(factory)).second;
 	}
 
+	bool GameplayEffectVisualRegistry::IsRegistered(const std::string& visualId)
+	{
+		return GetFactories().find(visualId) != GetFactories().end();
+	}
+
 	weak_ptr<GameplayEffectVisual> GameplayEffectVisualRegistry::Spawn(
 		const std::string& visualId,
 		Actor& owner

@@ -32,19 +32,10 @@ namespace ly
 		std::string activeVisualId;
 		List<GameplayTag> applicationRequiredTags;
 		List<GameplayTag> applicationBlockedTags;
-		List<GameplayTag> sourceAbilityUpgradeIds;
-
-		bool HasSourceAbilityUpgrade(const GameplayTag& upgradeId) const
-		{
-			for (const GameplayTag& sourceUpgradeId : sourceAbilityUpgradeIds)
-			{
-				if (sourceUpgradeId.MatchesTag(upgradeId))
-				{
-					return true;
-				}
-			}
-			return false;
-		}
+		// Most effects intentionally coalesce by effect ID. Area effects can opt
+		// into source-scoped applications so separate world sources own and clean
+		// up their own instance without disturbing one another.
+		bool sourceScopedApplication = false;
 	};
 }
 

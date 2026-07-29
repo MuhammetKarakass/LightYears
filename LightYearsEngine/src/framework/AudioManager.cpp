@@ -15,6 +15,11 @@ namespace ly
 		return *audioManager;
 	}
 
+	bool AudioManager::IsInitialized()
+	{
+		return audioManager != nullptr;
+	}
+
 	void AudioManager::ShutdownAudioManager()
 	{
 		if (audioManager)

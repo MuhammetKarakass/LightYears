@@ -68,18 +68,26 @@ namespace ly
 
 	void TimerManager::UpdateTimer(float deltaTime)
 	{
-		for(auto iter=mTimers.begin(); iter!=mTimers.end();)
+		mIsUpdating = true;
+		try
 		{
-			if (iter->second.IsExpired())
+			for (auto& timerEntry : mTimers)
 			{
-				iter = mTimers.erase(iter);
-			}
-			else
-			{
-				iter->second.TickTimer(deltaTime);
-				iter++;
+				if (!timerEntry.second.IsExpired())
+				{
+					timerEntry.second.TickTimer(deltaTime);
+				}
 			}
 		}
+		catch (...)
+		{
+			mIsUpdating = false;
+			FlushExpiredAndPendingTimers();
+			throw;
+		}
+
+		mIsUpdating = false;
+		FlushExpiredAndPendingTimers();
 	}
 
 	void TimerManager::ClearTimer(TimerHandle timerHandle)
@@ -89,16 +97,65 @@ namespace ly
 		{
 			iter->second.SetExpired();
 		}
+
+		mPendingTimers.erase(timerHandle);
 	}
 
 	void TimerManager::ClearAllTimers()
 	{
+		mPendingTimers.clear();
+		if (mIsUpdating)
+		{
+			for (auto& timerEntry : mTimers)
+			{
+				timerEntry.second.SetExpired();
+			}
+			return;
+		}
+
 		mTimers.clear();
 	}
 
 	TimerManager::TimerManager():
-		mTimers{}
+		mTimers{},
+		mPendingTimers{},
+		mIsUpdating{ false }
 	{
+	}
+
+	TimerHandle TimerManager::AddTimer(Timer timer)
+	{
+		TimerHandle newHandle{};
+		auto& destination = mIsUpdating ? mPendingTimers : mTimers;
+		destination.emplace(newHandle, std::move(timer));
+		return newHandle;
+	}
+
+	void TimerManager::FlushExpiredAndPendingTimers()
+	{
+		for (auto iter = mTimers.begin(); iter != mTimers.end();)
+		{
+			if (iter->second.IsExpired())
+			{
+				iter = mTimers.erase(iter);
+			}
+			else
+			{
+				++iter;
+			}
+		}
+
+		if (mPendingTimers.empty())
+		{
+			return;
+		}
+
+		mTimers.reserve(mTimers.size() + mPendingTimers.size());
+		for (auto& pendingTimer : mPendingTimers)
+		{
+			mTimers.emplace(pendingTimer.first, std::move(pendingTimer.second));
+		}
+		mPendingTimers.clear();
 	}
 
 	Timer::Timer(weak_ptr<Object> weakRef, std::function<void()> callBack, float duration, bool repeat):
@@ -131,7 +188,13 @@ namespace ly
 
 	bool Timer::IsExpired() const
 	{
-		return mIsExpired || mListener.first.expired() || mListener.first.lock()->GetIsPendingDestroy();
+		if (mIsExpired)
+		{
+			return true;
+		}
+
+		const shared_ptr<Object> listener = mListener.first.lock();
+		return !listener || listener->GetIsPendingDestroy();
 	}
 
 	void Timer::SetExpired()

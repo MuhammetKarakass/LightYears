@@ -25,14 +25,14 @@ namespace ly
 			);
 			if (!handle.IsValid())
 			{
-				LOG(
+				LY_GAME_ERROR(
 					"Invalid player ability '%s': %s",
 					definition.abilityId.c_str(),
 					failureReason.c_str()
 				);
 			}
 		};
-		grantPlayerAbility(AbilityData::Definitions::Shield_Basic);
+		grantPlayerAbility(AbilityData::Definitions::GravityAnomaly_Basic);
 		grantPlayerAbility(AbilityData::Definitions::SunBeam_Strike_Basic);
 		grantPlayerAbility(AbilityData::Definitions::Dash_Basic);
 		grantPlayerAbility(AbilityData::Definitions::Rocket_Basic);
@@ -76,10 +76,10 @@ namespace ly
 		}
 
 		const float currentHealth = GetHealthComponent().GetHealth();
-		LOG("PlayerSpaceShip::ReceiveDamage - Current Health: %.1f, Damage: %.1f", currentHealth, context.remainingDamage);
+		LY_GAME_DEBUG("PlayerSpaceShip::ReceiveDamage - Current Health: %.1f, Damage: %.1f", currentHealth, context.remainingDamage);
 		if (currentHealth - context.remainingDamage <= 0.f)
 		{
-			LOG("===== PLAYER SHIP DYING =====");
+			LY_GAME_INFO("Player ship dying");
 		}
 		SpaceShip::ReceiveDamage(context);
 	}

@@ -7,6 +7,12 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Core.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Core.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/debug/Assert.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/debug/Assert.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/debug/Log.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/debug/Log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/debug/Profiler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/debug/Profiler.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/engineConfigs/EngineStructs.h
 
@@ -86,12 +92,20 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 target_include_directories(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+target_compile_definitions(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
+    LY_ENABLE_LOGGING=1
+    $<$<CONFIG:Debug>:LY_ENABLE_ASSERTS=1>
+    $<$<NOT:$<CONFIG:Debug>>:LY_ENABLE_ASSERTS=0>
+    $<$<CONFIG:Debug>:LY_ENABLE_PROFILING=1>
+    $<$<NOT:$<CONFIG:Debug>>:LY_ENABLE_PROFILING=0>
+)
+
 include(FetchContent)
 set(SFML_LIB_NAME SFML)
 
 FetchContent_Declare(
     ${SFML_LIB_NAME}
-    URL https://github.com/SFML/SFML/archive/refs/tags/3.0.1.zip
+    URL https://github.com/SFML/SFML/archive/refs/tags/3.1.0.zip
 )
 
 FetchContent_MakeAvailable(${SFML_LIB_NAME})
@@ -125,3 +139,13 @@ CopyLibtoTarget(sfml-window ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(sfml-system ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+
+if(BUILD_TESTING)
+    add_executable(LightYearsEngineLifetimeTests
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/EngineLifetimeTests.cpp
+    )
+    target_link_libraries(LightYearsEngineLifetimeTests PRIVATE
+        ${LIGHT_YEARS_ENGINE_TARGET_NAME}
+    )
+    add_test(NAME LightYearsEngineLifetime COMMAND LightYearsEngineLifetimeTests)
+endif()

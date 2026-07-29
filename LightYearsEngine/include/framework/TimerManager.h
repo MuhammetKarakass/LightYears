@@ -2,6 +2,7 @@
 #include "framework/Core.h"
 #include "framework/Object.h"
 #include <functional>
+#include <utility>
 
 namespace ly
 {
@@ -69,17 +70,25 @@ namespace ly
 		template<typename ClassName>
 		TimerHandle SetTimer(weak_ptr<Object> weakRef, void(ClassName::* callback)(), float duration, bool repeat = false)
 		{
-			// Lambda ile member function pointer'ý std::function'a dönüþtür ve timer listesine ekle
-			TimerHandle newHandle{};
-			mTimers.insert({ newHandle, Timer(weakRef, [=] {(static_cast<ClassName*>(weakRef.lock().get())->*callback)(); }, duration, repeat) });
-			return newHandle;
+			return AddTimer(
+				Timer(
+					weakRef,
+					[weakRef, callback]
+					{
+						if (shared_ptr<Object> strongRef = weakRef.lock())
+						{
+							(static_cast<ClassName*>(strongRef.get())->*callback)();
+						}
+					},
+					duration,
+					repeat
+				)
+			);
 		}
 
 		TimerHandle SetTimer(weak_ptr<Object> weakRef, std::function<void()> callback, float duration, bool repeat = false)
 		{
-			TimerHandle newHandle{};
-			mTimers.insert({ newHandle, Timer(weakRef, callback, duration, repeat) });
-			return newHandle;
+			return AddTimer(Timer(weakRef, std::move(callback), duration, repeat));
 		}	
 
 	protected:
@@ -87,10 +96,14 @@ namespace ly
 		TimerManager();
 
 	private:
+		TimerHandle AddTimer(Timer timer);
+		void FlushExpiredAndPendingTimers();
 
 		static unique_ptr<TimerManager> timerManager;
 		static unique_ptr<TimerManager> globalTimerManager;
 		static unique_ptr<TimerManager> gameTimerManager;
 		Dictionary<TimerHandle, Timer, TimerHandleHashFunction> mTimers;
+		Dictionary<TimerHandle, Timer, TimerHandleHashFunction> mPendingTimers;
+		bool mIsUpdating;
 	};
 }

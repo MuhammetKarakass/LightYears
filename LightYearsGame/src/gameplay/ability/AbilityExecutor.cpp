@@ -353,7 +353,7 @@ namespace ly
 			return std::nullopt;
 		}
 
-		GameplayEffectDefinition BuildEffectiveEffectDefinition(
+		GameplayEffectSpec BuildEffectiveEffectSpec(
 			AbilitySystem& abilitySystem,
 			const AbilityDefinition& abilityDefinition,
 			const GameplayEffectDefinition& effectDefinition,
@@ -361,9 +361,9 @@ namespace ly
 			const List<GameplayTag>& originalDamageTags
 		)
 		{
-			GameplayEffectDefinition effectiveDefinition = effectDefinition;
-			effectiveDefinition.sourceAbilityUpgradeIds = abilityDefinition.unlockedUpgradeIds;
-			effectiveDefinition.attributes = ResolveAttributes(
+			GameplayEffectSpec spec = MakeGameplayEffectSpec(effectDefinition);
+			spec.sourceAbilityUpgradeIds = abilityDefinition.unlockedUpgradeIds;
+			spec.attributes = ResolveAttributes(
 				abilitySystem,
 				abilityDefinition,
 				nullptr,
@@ -371,7 +371,7 @@ namespace ly
 				instance,
 				originalDamageTags
 			);
-			return effectiveDefinition;
+			return spec;
 		}
 
 		GameplayEffectSystem* ResolveEffectTarget(
@@ -742,22 +742,22 @@ namespace ly
 				if (const GameplayEffectDefinition* effectDefinition = EffectData::FindGameplayEffectDefinition(actionData.effectId))
 				{
 					const AbilityDefinition* abilityDefinition = context.definition;
-					const GameplayEffectDefinition effectiveDefinition = abilityDefinition
-						? BuildEffectiveEffectDefinition(
+					const GameplayEffectSpec effectSpec = abilityDefinition
+						? BuildEffectiveEffectSpec(
 							*context.abilitySystem,
 							*abilityDefinition,
 							*effectDefinition,
 							context.instance,
 							BuildBaseDamageTags(abilityDefinition)
 						)
-						: *effectDefinition;
+						: MakeGameplayEffectSpec(*effectDefinition);
 					if (GameplayEffectSystem* targetEffects = ResolveEffectTarget(
 						*context.abilitySystem,
 						actionData.targetPolicy,
 						context
 					))
 					{
-						targetEffects->ApplyEffect(effectiveDefinition, &owner);
+						targetEffects->ApplyEffect(effectSpec, &owner);
 					}
 				}
 			}

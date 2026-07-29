@@ -35,5 +35,6 @@ private:
 	AudioType mAudioType;
 	float mBasePitch;
 	bool mBoundToAudioManager;
+	DelegateHandle mTimeScaleChangedHandle;
 };
 }

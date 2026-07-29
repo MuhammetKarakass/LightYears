@@ -33,7 +33,9 @@ namespace ly
 			ClampThrustDriftVelocity(speedCapMultiplier);
 		}
 
-		mOwner.AddActorLocationOffset(mOwner.GetVelocity() * deltaTime);
+		const float movementMultiplier = mOwner.GetCombatRuntime().GetAttributes()
+			.GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, 0.05f);
+		mOwner.AddActorLocationOffset(mOwner.GetVelocity() * movementMultiplier * deltaTime);
 	}
 
 	void MovementComponent::RefreshAttributes()

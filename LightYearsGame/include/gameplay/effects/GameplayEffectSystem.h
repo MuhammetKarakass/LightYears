@@ -15,6 +15,21 @@ namespace ly
 		GameplayEffectSystem(Actor& owner, AttributeSystem& attributes, GameplayTagContainer& ownedTags);
 
 		GameplayEffectHandle ApplyEffect(const GameplayEffectDefinition& definition, Actor* source = nullptr);
+		GameplayEffectHandle ApplyEffect(
+			const GameplayEffectDefinition& definition,
+			const GameplayEffectApplicationContext& context
+		);
+		GameplayEffectHandle ApplyEffect(
+			const GameplayEffectSpec& spec,
+			Actor* source = nullptr
+		);
+		GameplayEffectHandle ApplyEffect(
+			const GameplayEffectSpec& spec,
+			const GameplayEffectApplicationContext& context
+		);
+		// Extends an existing duration effect without rebuilding its modifiers,
+		// granted tags, or presentation actor.
+		bool RefreshEffectDuration(GameplayEffectHandle handle);
 		void RemoveEffect(GameplayEffectHandle handle);
 		void Tick(float deltaTime);
 		void Clear();

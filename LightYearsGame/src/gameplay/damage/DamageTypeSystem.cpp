@@ -1,7 +1,9 @@
 #include "gameplay/damage/DamageTypeSystem.h"
 
+#include "gameConfigs/combat/EffectConfig.h"
+#include "gameplay/combat/Combatant.h"
+#include "gameplay/effects/GameplayEffectBehavior.h"
 #include "gameplay/effects/GameplayEffectSystem.h"
-#include "gameConfigs/combat/EffectStructs.h"
 #include <algorithm>
 
 namespace ly
@@ -44,48 +46,16 @@ namespace ly
 			}
 		}
 
-		GameplayEffectDefinition MakeIgniteEffect(const DamagePayload& payload)
+		GameplayEffectSpec MakeStatusEffectSpec(
+			const GameplayEffectDefinition& definition,
+			float duration,
+			int maxStacks
+		)
 		{
-			GameplayEffectDefinition definition;
-			definition.effectId = "Effect.Status.Damage.Ignite";
-			definition.behaviorTag = DamageStatusSchema::IgniteBehavior;
-			definition.durationPolicy = GameplayEffectDurationPolicy::Duration;
-			definition.stackingPolicy = GameplayEffectStackingPolicy::Stack;
-			definition.duration = payload.burnDuration;
-			definition.maxStacks = std::max(1, payload.burnMaxStacks);
-			definition.grantedTags = { DamageStatusSchema::Ignite };
-			definition.attributes = {
-				GameplayAttribute{ DamageAttributeIds::BurnDamagePerSecond, payload.burnDamagePerSecond, 0.f }
-			};
-			return definition;
-		}
-
-		GameplayEffectDefinition MakeCryoBuildupEffect(const DamagePayload& payload)
-		{
-			GameplayEffectDefinition definition;
-			definition.effectId = DamageStatusEffectIds::CryoBuildup;
-			definition.durationPolicy = GameplayEffectDurationPolicy::Duration;
-			definition.stackingPolicy = GameplayEffectStackingPolicy::Stack;
-			definition.duration = payload.cryoBuildupDuration;
-			definition.maxStacks = std::max(1, payload.cryoBuildupRequired);
-			definition.grantedTags = { DamageStatusSchema::CryoBuildup };
-			return definition;
-		}
-
-		GameplayEffectDefinition MakeCryoSlowEffect(const DamagePayload& payload)
-		{
-			GameplayEffectDefinition definition;
-			definition.effectId = DamageStatusEffectIds::CryoSlowed;
-			definition.durationPolicy = GameplayEffectDurationPolicy::Duration;
-			definition.stackingPolicy = GameplayEffectStackingPolicy::RefreshDuration;
-			definition.duration = payload.cryoSlowDuration;
-			definition.maxStacks = 1;
-			definition.grantedTags = { DamageStatusSchema::CryoSlowed };
-			definition.modifiers = {
-				AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, AttributeModifierOperation::Add, -payload.cryoSlowPercent },
-				AttributeModifier{ OwnerAttributeIds::MoveSpeedVertical, AttributeModifierOperation::Add, -payload.cryoSlowPercent }
-			};
-			return definition;
+			GameplayEffectSpec spec = MakeGameplayEffectSpec(definition);
+			spec.duration = std::max(0.f, duration);
+			spec.maxStacks = std::max(1, maxStacks);
+			return spec;
 		}
 
 		bool TryApplyCryoSlow(
@@ -97,16 +67,28 @@ namespace ly
 			{
 				// Once the four-hit threshold has been met, continued Cryo hits
 				// sustain the existing slow without increasing its magnitude.
-				return targetEffects.ApplyEffect(
-					MakeCryoSlowEffect(context.payload),
-					context.source
-				).IsValid();
+				GameplayEffectSpec slowSpec = MakeStatusEffectSpec(
+					EffectData::CryoSlowEffect,
+					context.payload.cryoSlowDuration,
+					1
+				);
+				SetGameplayEffectModifierMagnitude(
+					slowSpec,
+					OwnerAttributeIds::MovementSlow,
+					context.payload.cryoSlowPercent
+				);
+				return targetEffects.ApplyEffect(slowSpec, context.source).IsValid();
 			}
 
 			for (int stack = 0; stack < context.payload.cryoBuildupPerHit; ++stack)
 			{
+				const GameplayEffectSpec buildupSpec = MakeStatusEffectSpec(
+					EffectData::CryoBuildupEffect,
+					context.payload.cryoBuildupDuration,
+					context.payload.cryoBuildupRequired
+				);
 				const GameplayEffectHandle buildupHandle = targetEffects.ApplyEffect(
-					MakeCryoBuildupEffect(context.payload),
+					buildupSpec,
 					context.source
 				);
 				const ActiveGameplayEffect* buildup =
@@ -118,32 +100,72 @@ namespace ly
 				}
 
 				targetEffects.RemoveEffect(buildupHandle);
-				return targetEffects.ApplyEffect(
-					MakeCryoSlowEffect(context.payload),
-					context.source
-				).IsValid();
+				GameplayEffectSpec slowSpec = MakeStatusEffectSpec(
+					EffectData::CryoSlowEffect,
+					context.payload.cryoSlowDuration,
+					1
+				);
+				SetGameplayEffectModifierMagnitude(
+					slowSpec,
+					OwnerAttributeIds::MovementSlow,
+					context.payload.cryoSlowPercent
+				);
+				return targetEffects.ApplyEffect(slowSpec, context.source).IsValid();
 			}
 			return false;
 		}
 
-		GameplayEffectDefinition MakeElectricEffect(const DamagePayload& payload)
+		GameplayEffectBehaviorResult TickIgnite(
+			ActiveGameplayEffect& effect,
+			Actor& owner,
+			float deltaTime
+		)
 		{
-			GameplayEffectDefinition definition;
-			definition.effectId = "Effect.Status.Damage.Electric";
-			definition.behaviorTag = DamageStatusSchema::ElectricBehavior;
-			definition.durationPolicy = GameplayEffectDurationPolicy::Duration;
-			definition.stackingPolicy = GameplayEffectStackingPolicy::Stack;
-			definition.duration = payload.electricDuration;
-			definition.maxStacks = std::max(1, payload.electricMaxStacks);
-			definition.grantedTags = { DamageStatusSchema::Electric };
-			definition.attributes = {
-				GameplayAttribute{
-					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-					payload.electricDamageTakenMultiplierPerStack,
+			if (deltaTime <= 0.f ||
+				effect.stackCount < std::max(1, effect.spec.maxStacks))
+			{
+				return {};
+			}
+			const float damagePerSecond = std::max(
+				0.f,
+				FindGameplayAttributeValue(
+					effect.runtimeAttributes,
+					DamageAttributeIds::BurnDamagePerSecond,
 					0.f
-				}
-			};
-			return definition;
+				)
+			);
+			if (damagePerSecond > 0.f)
+			{
+				ApplyCombatDamage(
+					owner,
+					damagePerSecond * static_cast<float>(effect.stackCount) * deltaTime,
+					effect.source,
+					{ DamageTypeSchema::Thermal }
+				);
+			}
+			return {};
+		}
+
+		GameplayEffectBehaviorResult ProcessElectricIncomingDamage(
+			ActiveGameplayEffect& effect,
+			DamageContext& context
+		)
+		{
+			if (effect.stackCount < std::max(1, effect.spec.maxStacks))
+			{
+				return {};
+			}
+			const float multiplierPerStack = std::max(
+				0.f,
+				FindGameplayAttributeValue(
+					effect.runtimeAttributes,
+					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
+					0.f
+				)
+			);
+			context.remainingDamage *=
+				1.f + multiplierPerStack * static_cast<float>(effect.stackCount);
+			return {};
 		}
 	}
 
@@ -244,11 +266,21 @@ namespace ly
 
 		if (context.payload.igniteStacks > 0 && context.payload.burnDamagePerSecond > 0.f && context.payload.burnDuration > 0.f)
 		{
+			GameplayEffectSpec igniteSpec = MakeStatusEffectSpec(
+				EffectData::IgniteEffect,
+				context.payload.burnDuration,
+				context.payload.burnMaxStacks
+			);
+			SetGameplayEffectAttributeBaseValue(
+				igniteSpec,
+				DamageAttributeIds::BurnDamagePerSecond,
+				context.payload.burnDamagePerSecond
+			);
 			bool igniteApplied = false;
 			for (int stack = 0; stack < context.payload.igniteStacks; ++stack)
 			{
 				igniteApplied = targetEffects.ApplyEffect(
-					MakeIgniteEffect(context.payload),
+					igniteSpec,
 					context.source
 				).IsValid() || igniteApplied;
 			}
@@ -272,11 +304,21 @@ namespace ly
 			context.payload.electricDamageTakenMultiplierPerStack > 0.f &&
 			context.payload.electricDuration > 0.f)
 		{
+			GameplayEffectSpec electricSpec = MakeStatusEffectSpec(
+				EffectData::ElectricEffect,
+				context.payload.electricDuration,
+				context.payload.electricMaxStacks
+			);
+			SetGameplayEffectAttributeBaseValue(
+				electricSpec,
+				DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
+				context.payload.electricDamageTakenMultiplierPerStack
+			);
 			bool electricApplied = false;
 			for (int stack = 0; stack < context.payload.electricStacks; ++stack)
 			{
 				electricApplied = targetEffects.ApplyEffect(
-					MakeElectricEffect(context.payload),
+					electricSpec,
 					context.source
 				).IsValid() || electricApplied;
 			}
@@ -286,5 +328,28 @@ namespace ly
 			}
 		}
 		return applied;
+	}
+
+	bool DamageTypeSystem::RegisterDamageEffectBehaviors()
+	{
+		static const bool registered = []
+		{
+			GameplayEffectBehavior::Hooks igniteHooks;
+			igniteHooks.tick = &TickIgnite;
+			const bool igniteRegistered = GameplayEffectBehavior::RegisterBehavior(
+				DamageStatusSchema::IgniteBehavior,
+				igniteHooks
+			);
+
+			GameplayEffectBehavior::Hooks electricHooks;
+			electricHooks.incomingDamagePhase = IncomingDamagePhase::PreMitigation;
+			electricHooks.processIncomingDamage = &ProcessElectricIncomingDamage;
+			const bool electricRegistered = GameplayEffectBehavior::RegisterBehavior(
+				DamageStatusSchema::ElectricBehavior,
+				electricHooks
+			);
+			return igniteRegistered && electricRegistered;
+		}();
+		return registered;
 	}
 }

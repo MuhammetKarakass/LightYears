@@ -74,7 +74,7 @@ namespace ly
 	void Asteroid::ApplyDamage(float amt)
 	{
 		mHealthComponent.ChangeHealth(-amt);
-		LOG("Health: %f", mHealthComponent.GetHealth());
+		LY_GAME_TRACE("Asteroid health: %f", mHealthComponent.GetHealth());
 	}
 	void Asteroid::OnActorBeginOverlap(Actor* otherActor)
 	{

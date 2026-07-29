@@ -110,6 +110,7 @@ namespace ly
 
 		List<shared_ptr<Actor>> mActors;
 		List<shared_ptr<Actor>> mPendingActors;
+		List<List<Actor*>> mRenderBuckets;
 		List<shared_ptr<GameStage>> mGameStages;
 		List<shared_ptr<GameStage>>::iterator mCurrentStage;
 		shared_ptr<HUD> mHUD;

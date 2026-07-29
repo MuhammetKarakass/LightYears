@@ -119,6 +119,48 @@ Application
 - ArenaLevel, GameLevel üstüne serbest hareket, kamera girdileri, arena sınırı
   ve respawn sistemini ekler.
 
+### 1.1 Engine diagnostics: assert, logging ve profiling
+
+Engine seviyesindeki ortak tanılama API'si
+`LightYearsEngine/include/framework/debug/` altında üç parçadan oluşur:
+
+| Parça | Kullanım | Debug | Release |
+| --- | --- | --- | --- |
+| Assert | `LY_ASSERT`, `LY_CORE_ASSERT`, `LY_DEBUG_BREAK` | Başarısız koşulu `FATAL` olarak loglar; debugger bağlıysa break, değilse abort üretir | Derleme dışıdır; koşul değerlendirilmez |
+| Verify | `LY_VERIFY` | Assert gibi durur | Koşulu her zaman değerlendirir; başarısızlıkta `ERROR` loglayıp devam eder |
+| Logging | `LY_CORE_*`, `LY_GAME_*` | TRACE ve üstü | Varsayılan WARNING ve üstü |
+| Profiling | `LY_PROFILE_SCOPE`, `LY_PROFILE_FUNCTION`, `LY_PROFILE_FRAME`, `LY_PROFILE_COUNTER` | Süre ve sayaç aggregate'leri toplar | Derleme dışıdır |
+
+Logging satırı saat, `CORE`/`GAME` kanalı, seviye, mesaj ve kaynak
+dosya/satırını taşır. `EntryPoint.cpp` logger'ı `LightYears.log` hedefiyle,
+profiler'ı da uygulama oluşturulmadan önce başlatır; normal kapanışta ve
+yakalanan exception yollarında profiler/logger açıkça kapatılır. Kritik hata
+mesajları kapanmadan önce flush edilir. `LY_*_FATAL` yalnız log seviyesidir;
+tek başına programı durdurmaz. Programı durdurması gereken invariant için
+`LY_ASSERT` kullanılır.
+
+Profiler isim bazında çağrı sayısı, toplam/minimum/maksimum mikrosaniye
+değerlerini aggregate eder ve kapanışta en pahalı scope'ların özetini logging
+kanalına gönderir. Şu kritik yollar başlangıç kapsamına alınmıştır:
+
+- Application frame/tick/render ve shutdown
+- World tick/clean/render
+- AbilitySystem ve GameplayEffectSystem tick/uygulama/damage yolları
+- Gravity Anomaly hedef keşfi
+- Mevcut actor/bullet/particle sayaçları (`PerfMonitor`) profiler counter'ları
+
+Makrolar `framework/Core.h` üzerinden engine/game koduna açılır. Assert
+ifadesinde side effect bulunmamalıdır; Release'te de çalışması gereken kontrol
+`LY_VERIFY` veya normal hata yönetimi olmalıdır. Kullanıcı girdisi, dosya veya
+network gibi beklenen runtime hataları assert değil, doğrulama ve log ile ele
+alınır.
+
+Derleme politikası `LightYearsEngine/CMakeLists.txt` içinde
+`LY_ENABLE_LOGGING`, `LY_ENABLE_ASSERTS` ve `LY_ENABLE_PROFILING` tanımlarıyla
+merkezidir. Engine lifetime testleri structured log kaydını, seviye filtresini,
+`LY_VERIFY` değerlendirmesini, Debug profiler aggregate/counter üretimini ve
+Release no-op kontratını kapsar.
+
 ## 2. Hasar ve savunma matematiği
 
 İlgili kaynaklar:
@@ -296,6 +338,10 @@ gameplay/ability/
 |   |-- DashAbility
 |   |-- DashMovementController
 |   `-- DashMovementMath
+|-- gravityAnomaly/
+|   |-- GravityAnomalyAbility
+|   |-- GravityAnomalyProjectileActor
+|   `-- GravityAnomalyFieldActor
 |-- rocket/
 |   |-- RocketAbility
 |   `-- RocketProjectileActor
@@ -353,6 +399,13 @@ evolve geliştirmeleri bu kontrata uymalıdır.
 - Shipped presentation content, actor validation ve spawn'dan önce
   `RegisterGameAbilityPresentationContent()` üzerinden kaydedilir.
 
+Gravity Anomaly, aynı aile altında ayrı
+`GravityAnomalyProjectilePresentationProfile` ve
+`GravityAnomalyFieldPresentationProfile` kayıtları kullanır. Bu iki profil
+`RegisterGameAbilityPresentationContent()` içinde actor validation/spawn'dan
+önce kaydedilir. Field world presentation'ı ile hedefe bağlı
+`GravityAnomalyEffectVisual` ayrı registry/content yoludur.
+
 ### 3.1 AbilityDefinition
 
 Temel şema:
@@ -407,10 +460,11 @@ sınıfını include etmez.
 
 | Ability | Slot | Çalışma | Başlangıç / scale | Level |
 | --- | --- | --- | --- | --- |
-| Shield_Basic | Ability1 (Q) | 8 sn cooldown, 5 sn duration; Basic Barrier uygular | Barrier kapasitesi +0.20 × MaxHealth ve +50 × Armor | Progression tanımlı değil |
+| Shield_Basic | Ability1 (Q), varsayılan player grant yok | 8 sn cooldown, 5 sn duration; Basic Barrier uygular | Barrier kapasitesi +0.20 × MaxHealth ve +50 × Armor | Progression tanımlı değil |
 | SunBeam_Strike_Basic | Ability2 (E) | MouseWorld konumunda SunBeam strike actor spawn eder | Başlangıç damage 40, radius 96, width 72, length 720 | 2–5: her level +8 Damage, +8 Radius; scrap: 40/50/65/80 |
 | Dash_Basic | Ability3 (F) | 2 sn cooldown, 0.24 sn duration; input veya mouse yönünde hareket | Base 260 mesafe; movement rating ile en fazla +%50; mevcut kamera hedefinin üzerine +%15 zoom-out | 2–5: cooldown 1.88/1.76/1.64/1.52 sn |
 | Rocket_Basic | Ability4 (R) | 7 sn cooldown; mouse aim yönünde tek projectile, fare konumunda veya daha önce çarpışırsa Kinetic alan patlaması | Base damage 55 + AttackPower×1.25; radius 55; speed 1000; range 1100 üst sınırdır ve level ile değişmez | 2–15: her level +4 Damage, -0.12 sn cooldown, +1 Radius; L6/L15 evolve seçimi ertelendi |
+| GravityAnomaly_Basic | Ability1 (Q), varsayılan player grant | 8 sn cooldown; cursor hedefi 900 menzile clamp edilir, projectile yalnız hedefe ulaştığında sabit field üretir | Damage yok. Field: 2.5 sn, radius 220, pull 500, %20 MovementSlow; MaxHealth yalnız radius (+0.20) ve duration'ı (+0.0025) scale eder | 2–15: her level -0.10 cooldown, +0.03 duration, +2 radius, +10 pull, +0.005 slow, +25 speed, +5 range |
 | Primary fire | PrimaryFire (Space) | Weapon definition’dan otomatik üretilir | Silahın progression ve scaling rule’ları kullanılır | Silah profiline bağlı |
 
 SunBeam strike zamanları: telegraph 0.5 sn, arrival 0.2 sn, impact delay
@@ -435,12 +489,52 @@ durumuna göre uygulanır.
 
 ### 3.4 Effect, event, UI ve cleanup kontratı
 
+Effect verisi üç ayrı yaşam katmanına sahiptir:
+
+```text
+GameplayEffectDefinition (immutable shipped content)
+    -> GameplayEffectSpec (kaynağa göre çözümlenmiş uygulama payload'u)
+        -> ActiveGameplayEffect (hedefe ait mutable runtime state)
+```
+
+`GameplayEffectDefinition`; ID, duration/stack politikası, tag, varsayılan
+modifier/attribute, behavior ve visual referansını taşır. Silah, ability, enemy,
+reward veya alan üreticisi bu tanımı değiştirmez; `GameplayEffectSpec` kopyası
+üretip duration, stack limiti, modifier, runtime attribute ve source-upgrade
+değerlerini kendi uygulaması için çözer. `ActiveGameplayEffect` ise handle,
+remaining duration, stack count, uygulanmış modifier handle'ları, runtime
+attribute'lar, visual ve typed runtime context'i sahiplenir. Böylece aynı Cryo
+veya hareket hızı effect tanımı farklı kaynak magnitudelarıyla eşzamanlı
+kullanıldığında global content mutasyona uğramaz.
+
 `GameplayEffectSystem`; instant, duration ve infinite yaşam politikalarını;
 no-stack, refresh-duration ve stack davranışlarını; modifier/tag ekleme ve
-temizliğini; Barrier runtime state’ini; incoming damage interception’ını ve
-effect visual yaşam döngüsünü sahiplenir. Hatalı ID, süre, stack limiti,
-attribute/modifier, behavior tag veya Barrier verisi içeren tanımlar runtime’a
-girmeden doğrulamada reddedilir.
+temizliğini; incoming damage hook dispatch'ini ve effect visual yaşam döngüsünü
+sahiplenir. Ignite, Electric, Barrier veya Gravity Anomaly ID'lerine branch
+etmez. Add-stack, tick ve incoming-damage davranışları
+`GameplayEffectBehavior::Hooks` ile kaydedilir. Shipped katalog
+`EffectData::GetShippedGameplayEffectDefinitions()` üzerinden bulunur;
+`RegisterGameGameplayEffectContent()` behavior ve visual içeriklerini kaydettikten
+sonra ID, süre, stack, attribute/modifier ve kayıt referanslarını doğrular.
+Ability `ApplyEffectAction` da bilinmeyen veya geçersiz effect ID'si içerirse
+grant/catalog doğrulamasında reddedilir.
+
+Bir effect tanımı `sourceScopedApplication` isterse uygulama context'i source
+actor, source scope ve typed runtime context taşır. Refresh/stack eşleşmesi bu
+scope içinde yapılır; böylece iki Gravity Anomaly field'i aynı hedefte bağımsız
+effect handle'ları korur. Ability ailesine özgü per-tick davranış, generic core'a
+ID branch eklemek yerine `GameplayEffectBehavior` tick-handler kaydıyla ve
+feature-local typed context ile sağlanır. `MovementSlow`, `MovementComponent`
+içindeki gerçek displacement çarpanıdır; Cryo ve Gravity Anomaly aynı mekanizmayı
+kullanır.
+
+Alan actor'ları şekil ve hedef keşfini kendi feature sınırında tutar;
+`AreaGameplayEffectApplicator` hedef başına handle/context takibi, içerideyken
+duration refresh, alandan çıkışta grace süresinin devamı ve source-scope
+izolasyonunu ortaklaştırır. Gravity Anomaly içeride olduğu her güncellemede slow
+süresini tam 2 saniyeye yeniler. Hedef alanı terk ettiğinde veya field bittiğinde
+pull anında kapanır; slow ve hedef visual'ı kalan 2 saniye boyunca yaşar, sonra
+normal `GameplayEffectSystem` cleanup yoluyla kaldırılır.
 
 Barrier kırılması, owner-local event ile tetiklenen reaction örneğidir:
 
@@ -468,7 +562,10 @@ Her shipped ability, effect, ability actor ve primary weapon tanımı katalog
 üzerinden doğrulanır. `LightYearsGasLiteCore` CTest’i (`LightYearsGasLiteTests`
 executable’ı) cooldown/charge, effect stack ve cleanup, Barrier event zinciri,
 attribute sırası, weapon handler/feature, actor validation, Sun Beam spawn,
-damage overflow ve aggregate catalog validation’ı kapsar. Yeni shipped content
+Gravity Anomaly typed profile/target clamp/field lifecycle/source cleanup/pull/
+iki saniyelik exit tail/movement slow/scale/effect visual, effect catalog
+lookup, Definition/Spec izolasyonu, geçersiz behavior/visual/ability-effect
+reddi, damage overflow ve aggregate catalog validation’ı kapsar. Yeni shipped content
 ilgili catalog enumerator’ına eklenmeli; aggregate validation hatası ertelenmiş
 runtime davranışı değil, geçersiz game data kabul edilmelidir.
 

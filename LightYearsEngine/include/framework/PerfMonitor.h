@@ -1,7 +1,8 @@
 #pragma once
+#include "framework/debug/Log.h"
+#include "framework/debug/Profiler.h"
+
 #include <atomic>
-#include <string>
-#include <iostream>
 
 namespace ly { namespace perf {
 
@@ -27,11 +28,18 @@ inline void TickAndReport(float deltaTime)
  if (g_reportTimer >=5.0f)
  {
  g_reportTimer =0.0f;
-#ifdef LOG
- LOG("PerfReport: Actors=%d Bullets=%d Particles=%d", g_activeActors.load(), g_bullets.load(), g_particles.load());
-#else
- std::cout << "PerfReport: Actors=" << g_activeActors.load() << " Bullets=" << g_bullets.load() << " Particles=" << g_particles.load() << std::endl;
-#endif
+ const int activeActors = g_activeActors.load();
+ const int bullets = g_bullets.load();
+ const int particles = g_particles.load();
+ LY_PROFILE_COUNTER("Actors", activeActors);
+ LY_PROFILE_COUNTER("Bullets", bullets);
+ LY_PROFILE_COUNTER("Particles", particles);
+ LY_CORE_INFO(
+  "PerfReport: Actors=%d Bullets=%d Particles=%d",
+  activeActors,
+  bullets,
+  particles
+ );
  }
 }
 

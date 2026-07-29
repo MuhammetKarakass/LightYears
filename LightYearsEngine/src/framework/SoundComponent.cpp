@@ -18,8 +18,9 @@ namespace ly
 
             if (mAudioType == AudioType::SFX_World)
    {
-              AudioManager::GetAudioManager().onWorldTimeScaleChanged.BindAction(this, &SoundComponent::OnTimeScaleChanged);
-                mBoundToAudioManager = true;
+              mTimeScaleChangedHandle = AudioManager::GetAudioManager()
+                  .onWorldTimeScaleChanged.BindAction(this, &SoundComponent::OnTimeScaleChanged);
+              mBoundToAudioManager = mTimeScaleChangedHandle.IsValid();
         }
         }
     }
@@ -32,10 +33,13 @@ namespace ly
             mSound->stop();
         }
 
-        // AudioManager'dan unbind yap
-        // NOT: Delegate þu an UnbindAction desteklemiyorsa bu satýr çalýþmaz
-     // Ama mBoundToAudioManager flag'i en azýndan debug için iþe yarar
-        // Delegate'e UnbindAction eklenene kadar bu güvenli - nesne zaten silinecek
+        if (mBoundToAudioManager && AudioManager::IsInitialized())
+        {
+            AudioManager::GetAudioManager()
+                .onWorldTimeScaleChanged.UnbindAction(mTimeScaleChangedHandle);
+        }
+        mTimeScaleChangedHandle.Reset();
+        mBoundToAudioManager = false;
     }
 
  void SoundComponent::OnTimeScaleChanged(float newTimeScale)

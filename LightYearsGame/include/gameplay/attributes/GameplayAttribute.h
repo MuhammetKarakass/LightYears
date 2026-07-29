@@ -17,6 +17,9 @@ namespace ly
 		inline static const GameplayTag AbilityHaste{ "Attribute.Owner.AbilityHaste" };
 		inline static const GameplayTag MoveSpeedHorizontal{ "Attribute.Owner.MoveSpeedHorizontal" };
 		inline static const GameplayTag MoveSpeedVertical{ "Attribute.Owner.MoveSpeedVertical" };
+		// Independent, composable movement reduction used by runtime effects.
+		// A value of 0.20 resolves to an 80% movement multiplier.
+		inline static const GameplayTag MovementSlow{ "Attribute.Owner.MovementSlow" };
 		inline static const GameplayTag Armor{ "Attribute.Owner.Armor" };
 		inline static const GameplayTag Luck{ "Attribute.Owner.Luck" };
 		inline static const GameplayTag CriticalChance{ "Attribute.Owner.CriticalChance" };

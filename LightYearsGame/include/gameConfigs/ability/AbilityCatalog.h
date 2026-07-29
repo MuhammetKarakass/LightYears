@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gameConfigs/ability/DashConfig.h"
+#include "gameConfigs/ability/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/RocketConfig.h"
 #include "gameConfigs/ability/ShieldConfig.h"
 #include "gameConfigs/ability/SunBeamConfig.h"
@@ -86,6 +87,7 @@ namespace AbilityData
 			&Definitions::Shield_Basic,
 			&Definitions::SunBeam_Strike_Basic,
 			&Definitions::Dash_Basic,
+			&Definitions::GravityAnomaly_Basic,
 			&Definitions::Rocket_Basic
 		};
 		return definitions;

@@ -32,7 +32,7 @@ namespace ly
 		);
 		if (!primaryWeaponHandle.IsValid())
 		{
-			LOG("Invalid primary weapon '%s': %s", shipDef.primaryWeaponDefinition.weaponId.c_str(), primaryWeaponFailureReason.c_str());
+			LY_GAME_ERROR("Invalid primary weapon '%s': %s", shipDef.primaryWeaponDefinition.weaponId.c_str(), primaryWeaponFailureReason.c_str());
 		}
 	}
 

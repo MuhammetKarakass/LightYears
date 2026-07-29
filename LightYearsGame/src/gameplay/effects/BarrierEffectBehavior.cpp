@@ -10,7 +10,7 @@ namespace ly::BarrierEffectBehavior
 			BarrierEffectSchema::Capacity
 		);
 		const GameplayAttribute* stackCapacity = FindGameplayAttribute(
-			effect.definition.attributes,
+			effect.spec.attributes,
 			BarrierEffectSchema::Capacity
 		);
 		if (!runtimeCapacity || !stackCapacity)
@@ -24,8 +24,9 @@ namespace ly::BarrierEffectBehavior
 		);
 	}
 
-	GameplayEffectBehaviorResult Tick(ActiveGameplayEffect& effect, float deltaTime)
+	GameplayEffectBehaviorResult Tick(ActiveGameplayEffect& effect, Actor& owner, float deltaTime)
 	{
+		(void)owner;
 		GameplayEffectBehaviorResult result;
 		if (deltaTime <= 0.f)
 		{
@@ -153,5 +154,21 @@ namespace ly::BarrierEffectBehavior
 			});
 		}
 		return result;
+	}
+
+	bool RegisterBarrierEffectBehavior()
+	{
+		static const bool registered = []
+		{
+			GameplayEffectBehavior::Hooks hooks;
+			hooks.addStack = &AddStack;
+			hooks.tick = &Tick;
+			hooks.processIncomingDamage = &ProcessIncomingDamage;
+			return GameplayEffectBehavior::RegisterBehavior(
+				BarrierEffectSchema::BehaviorId,
+				hooks
+			);
+		}();
+		return registered;
 	}
 }

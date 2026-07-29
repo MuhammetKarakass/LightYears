@@ -4,6 +4,9 @@
 #include "gameplay/GameStage.h"
 #include "widget/HUD.h"
 #include "framework/PerfMonitor.h"
+#include <algorithm>
+#include <iterator>
+#include <utility>
 
 namespace ly{
 
@@ -12,6 +15,7 @@ namespace ly{
 		mBeganPlay{ false },   
 		mPendingActors{},      
 		mActors{},
+		mRenderBuckets(static_cast<std::size_t>(RenderLayer::Count)),
 		mCurrentStage{mGameStages.end()},
 		mGameStages{},
 		mIsPaused{ false },
@@ -31,14 +35,26 @@ namespace ly{
 	}
 	void World::TickInternal(float deltaTime)
 	{
+		LY_PROFILE_FUNCTION();
 		auto promotePendingActors = [this]()
 		{
-			List<shared_ptr<Actor>> actorsToSpawn;
-			actorsToSpawn.swap(mPendingActors);
-
-			for (const shared_ptr<Actor>& actor : actorsToSpawn)
+			if (mPendingActors.empty())
 			{
-				mActors.push_back(actor);
+				return;
+			}
+
+			const std::size_t firstSpawnedActorIndex = mActors.size();
+			mActors.reserve(mActors.size() + mPendingActors.size());
+			std::move(
+				mPendingActors.begin(),
+				mPendingActors.end(),
+				std::back_inserter(mActors)
+			);
+			mPendingActors.clear();
+
+			for (std::size_t index = firstSpawnedActorIndex; index < mActors.size(); ++index)
+			{
+				const shared_ptr<Actor>& actor = mActors[index];
 				actor->BeginPlayInternal();
 				OnActorSpawned(actor.get());
 			}
@@ -107,19 +123,22 @@ namespace ly{
 
 	void World::CleanCycle()
 	{
-		for (auto iter = mActors.begin(); iter != mActors.end();)
-		{
-			if (iter->get()->GetIsPendingDestroy())
+		LY_PROFILE_FUNCTION();
+		const auto firstDestroyedActor = std::remove_if(
+			mActors.begin(),
+			mActors.end(),
+			[](const shared_ptr<Actor>& actor)
 			{
-				// Decrement global active actor count for monitoring
+				if (!actor->GetIsPendingDestroy())
+				{
+					return false;
+				}
+
 				ly::perf::DecActiveActors();
-				iter = mActors.erase(iter);
+				return true;
 			}
-			else
-			{
-				iter++;
-			}
-		}
+		);
+		mActors.erase(firstDestroyedActor, mActors.end());
 	}
 
 	void World::SetPaused(bool paused)
@@ -213,21 +232,35 @@ namespace ly{
 
 	void World::Render(sf::RenderWindow& window)
 	{
+		LY_PROFILE_FUNCTION();
 		sf::View previousView = window.getView();
 		sf::View worldView = GetWorldView();
 		window.setView(worldView);
 
-		for (std::uint8_t layerIndex = 0;
-			layerIndex < static_cast<std::uint8_t>(RenderLayer::Count);
-			++layerIndex)
+		for (List<Actor*>& bucket : mRenderBuckets)
 		{
-			const RenderLayer layer = static_cast<RenderLayer>(layerIndex);
-			for (const std::shared_ptr<Actor>& actor : mActors)
+			bucket.clear();
+		}
+
+		for (const shared_ptr<Actor>& actor : mActors)
+		{
+			if (actor->GetIsPendingDestroy())
 			{
-				if (!actor->GetIsPendingDestroy() && actor->GetRenderLayer() == layer)
-				{
-					actor->Render(window);
-				}
+				continue;
+			}
+
+			const std::size_t layerIndex = static_cast<std::size_t>(actor->GetRenderLayer());
+			if (layerIndex < mRenderBuckets.size())
+			{
+				mRenderBuckets[layerIndex].push_back(actor.get());
+			}
+		}
+
+		for (const List<Actor*>& bucket : mRenderBuckets)
+		{
+			for (Actor* actor : bucket)
+			{
+				actor->Render(window);
 			}
 		}
 

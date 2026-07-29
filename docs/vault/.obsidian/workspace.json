@@ -1,0 +1,224 @@
+{
+  "main": {
+    "id": "b7443e67b4fa89c9",
+    "type": "split",
+    "children": [
+      {
+        "id": "ce4b5bfd31124b11",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4e08fb1e347da931",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "01 - Architecture/Game Loop.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Game Loop"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f2de96a7d415d387",
+    "type": "split",
+    "children": [
+      {
+        "id": "2bdf1189630d6f30",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ad2bf7107c43f3a1",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Dosya Gezgini"
+            }
+          },
+          {
+            "id": "c85f51cf17c843fe",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Ara"
+            }
+          },
+          {
+            "id": "2bc5a2dd56e133fd",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Yer İmleri"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "0e1e8bd5b5c94a94",
+    "type": "split",
+    "children": [
+      {
+        "id": "bd8ff0f61810c240",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f6dca7c880e3e732",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Hoş geldiniz.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Hoş geldiniz için geri bağlantılar"
+            }
+          },
+          {
+            "id": "7e292746932af7a5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Hoş geldiniz.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Hoş geldiniz'dan giden bağlantılar"
+            }
+          },
+          {
+            "id": "605bd03c472d5612",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiketler"
+            }
+          },
+          {
+            "id": "39296e14163f73dd",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Tüm özellikler"
+            }
+          },
+          {
+            "id": "1e374b189b9b7bf0",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Hoş geldiniz.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Hoş geldiniz ana hatları"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Hızlı geçişi aç": false,
+      "graph:Grafik görünümünü aç": false,
+      "canvas:Yeni tuval oluşturun": false,
+      "daily-notes:Bugünün Notunu Aç": false,
+      "templates:Şablon ekle": false,
+      "command-palette:Komut paletini aç": false,
+      "bases:Yeni taban oluştur": false
+    }
+  },
+  "active": "4e08fb1e347da931",
+  "lastOpenFiles": [
+    "01 - Architecture/Directory Map.md",
+    "02 - Systems/Attribute System.md",
+    "01 - Architecture/Project Overview.md",
+    "01 - Architecture/Ownership and Lifetime.md",
+    "01 - Architecture/Object Lifecycle.md",
+    "01 - Architecture/Game Loop.md",
+    "02 - Systems/Ability System.md",
+    "06 - Status and Plans/Current Implementation.md",
+    "04 - Important Classes/AbilityBehavior.md",
+    "04 - Important Classes/World.md",
+    "04 - Important Classes/TimerManager.md",
+    "04 - Important Classes/PrimaryWeaponProjectileActor.md",
+    "03 - Code Walkthroughs/Ability Action Execution Flow.md",
+    "02 - Systems/Ability Skill Progression System.md",
+    "02 - Systems/Ability Execution System.md",
+    "02 - Systems/Ability Behavior System.md",
+    "02 - Systems/Shield System.md",
+    "02 - Systems/Projectile System.md",
+    "00 - Light Years Dashboard.md",
+    "03 - Code Walkthroughs/Physics Step and Contact Flow.md",
+    "02 - Systems/Performance Monitoring.md",
+    "02 - Systems/Math Utility.md",
+    "02 - Systems/Physics System.md",
+    "04 - Important Classes/CameraManager.md",
+    "04 - Important Classes/Delegate.md",
+    "03 - Code Walkthroughs/Timer, Delegate and Camera Frame Flow.md",
+    "05 - Balance",
+    "05 - Balance and Data",
+    "04 - Important Classes",
+    "03 - Code Walkthroughs",
+    "02 - Systems",
+    "10 - Existing Documentation",
+    "06 - Status and Plans",
+    "09 - Index",
+    "01 - Architecture"
+  ]
+}

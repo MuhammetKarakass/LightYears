@@ -3,22 +3,31 @@
 #include "gameplay/attributes/AttributeSystem.h"
 #include "gameplay/progression/ShipProgression.h"
 #include "gameplay/effects/GameplayEffectBehavior.h"
+#include "gameplay/effects/GameplayEffectContent.h"
+#include "gameplay/effects/GameplayEffectSpec.h"
 #include "gameplay/effects/GameplayEffectSystem.h"
+#include "gameplay/effects/GameplayEffectValidation.h"
 #include "gameplay/ability/AbilitySystem.h"
 #include "gameplay/ability/AbilityBehaviorRegistration.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/dash/DashMovementController.h"
+#include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
+#include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
 #include "gameplay/ability/sunBeam/SunBeamStrikeActor.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
+#include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationIds.h"
+#include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h"
 #include "presentation/ability/rocket/RocketPresentationIds.h"
 #include "presentation/ability/rocket/RocketPresentationProfile.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationIds.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
+#include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.h"
 #include "gameplay/ship/ShipRuntime.h"
 #include "gameplay/HealthComponent.h"
 #include "gameplay/ShieldComponent.h"
@@ -29,7 +38,12 @@
 #include "framework/camera/CameraManager.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameConfigs/combat/WeaponConfig.h"
+#include "gameConfigs/combat/EffectConfig.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
+#include "gameConfigs/ability/GravityAnomalyConfig.h"
+#include "gameConfigs/ship/ShipConfig.h"
+#include "player/PlayerSpaceShip.h"
+#include "spaceShip/SpaceShip.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/weapon/PrimaryWeaponHandlerRegistry.h"
 #include "gameplay/weapon/impact/ShotgunVolleyImpactGroup.h"
@@ -610,10 +624,76 @@ int main()
 {
 	using namespace ly;
 
+	if (!RegisterGameGameplayEffectContent())
+	{
+		return Fail("Game gameplay-effect content registration failed");
+	}
 	if (!RegisterGameAbilityContent())
 	{
 		return Fail("Game ability content could not be registered");
 	}
+	std::string effectValidationFailure;
+	const List<const GameplayEffectDefinition*>& shippedEffects =
+		EffectData::GetShippedGameplayEffectDefinitions();
+	if (shippedEffects.size() != 7 ||
+		!ValidateShippedGameplayEffectDefinitions(&effectValidationFailure) ||
+		EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic") !=
+			&EffectData::BasicBarrierEffect ||
+		EffectData::FindGameplayEffectDefinition(
+			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+		) != &EffectData::GravityAnomalyInsideEffect ||
+		EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist") != nullptr)
+	{
+		return Fail("Central gameplay-effect catalog lookup or validation failed");
+	}
+
+	GameplayEffectSpec firstSlowSpec =
+		MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
+	GameplayEffectSpec secondSlowSpec =
+		MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
+	SetGameplayEffectModifierMagnitude(
+		firstSlowSpec,
+		OwnerAttributeIds::MovementSlow,
+		0.10f
+	);
+	SetGameplayEffectModifierMagnitude(
+		secondSlowSpec,
+		OwnerAttributeIds::MovementSlow,
+		0.30f
+	);
+	firstSlowSpec.duration = 0.5f;
+	const float catalogSlowMagnitude =
+		EffectData::CryoSlowEffect.modifiers.empty()
+			? -1.f
+			: EffectData::CryoSlowEffect.modifiers.front().magnitude;
+	if (!NearlyEqual(catalogSlowMagnitude, 0.25f) ||
+		!NearlyEqual(firstSlowSpec.modifiers.front().magnitude, 0.10f) ||
+		!NearlyEqual(secondSlowSpec.modifiers.front().magnitude, 0.30f) ||
+		!NearlyEqual(firstSlowSpec.duration, 0.5f) ||
+		!NearlyEqual(secondSlowSpec.duration, EffectData::CryoSlowEffect.duration))
+	{
+		return Fail("Resolved gameplay-effect specs mutated shared content or leaked between sources");
+	}
+
+	GameplayEffectDefinition invalidEffect = EffectData::CryoSlowEffect;
+	invalidEffect.effectId = "Effect.Test.InvalidBehavior";
+	invalidEffect.behaviorTag = GameplayTag{ "EffectBehavior.NotRegistered" };
+	effectValidationFailure.clear();
+	if (ValidateGameplayEffectDefinition(invalidEffect, &effectValidationFailure) ||
+		effectValidationFailure.empty())
+	{
+		return Fail("Gameplay-effect validation accepted an unregistered behavior");
+	}
+	invalidEffect = EffectData::CryoSlowEffect;
+	invalidEffect.effectId = "Effect.Test.InvalidVisual";
+	invalidEffect.activeVisualId = "Visual.Effect.NotRegistered";
+	effectValidationFailure.clear();
+	if (ValidateGameplayEffectDefinition(invalidEffect, &effectValidationFailure) ||
+		effectValidationFailure.empty())
+	{
+		return Fail("Gameplay-effect validation accepted an unregistered visual");
+	}
+
 	const RocketPresentationProfile* rocketPresentationProfile =
 		PresentationProfileRegistry<RocketPresentationProfile>::Find(
 			RocketPresentationIds::Basic
@@ -622,8 +702,18 @@ int main()
 		PresentationProfileRegistry<SunBeamPresentationProfile>::Find(
 			SunBeamPresentationIds::StrikeBasic
 		);
+	const GravityAnomalyProjectilePresentationProfile* gravityProjectilePresentationProfile =
+		PresentationProfileRegistry<GravityAnomalyProjectilePresentationProfile>::Find(
+			GravityAnomalyPresentationIds::ProjectileBasic
+		);
+	const GravityAnomalyFieldPresentationProfile* gravityFieldPresentationProfile =
+		PresentationProfileRegistry<GravityAnomalyFieldPresentationProfile>::Find(
+			GravityAnomalyPresentationIds::FieldBasic
+		);
 	if (!rocketPresentationProfile
 		|| !sunBeamPresentationProfile
+		|| !gravityProjectilePresentationProfile
+		|| !gravityFieldPresentationProfile
 		|| rocketPresentationProfile->telegraph.outlineThickness <= 0.f
 		|| rocketPresentationProfile->visual.impactVisualDuration <= 0.f
 		|| sunBeamPresentationProfile->visual.impactFlashDuration <= 0.f)
@@ -635,6 +725,12 @@ int main()
 		) != nullptr
 		|| PresentationProfileRegistry<SunBeamPresentationProfile>::Find(
 			RocketPresentationIds::Basic
+		) != nullptr
+		|| PresentationProfileRegistry<GravityAnomalyProjectilePresentationProfile>::Find(
+			GravityAnomalyPresentationIds::FieldBasic
+		) != nullptr
+		|| PresentationProfileRegistry<GravityAnomalyFieldPresentationProfile>::Find(
+			GravityAnomalyPresentationIds::ProjectileBasic
 		) != nullptr)
 	{
 		return Fail("Typed presentation profile registries leaked profiles across ability families");
@@ -901,9 +997,9 @@ int main()
 	}
 
 	ActiveGameplayEffect barrier;
-	barrier.definition.effectId = "Effect.Test.Barrier";
-	barrier.definition.behaviorTag = BarrierEffectSchema::BehaviorId;
-	barrier.definition.attributes = {
+	barrier.spec.definition.effectId = "Effect.Test.Barrier";
+	barrier.spec.definition.behaviorTag = BarrierEffectSchema::BehaviorId;
+	barrier.spec.attributes = {
 		GameplayAttribute{ BarrierEffectSchema::Capacity, 30.f, 0.f },
 		GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f }
 	};
@@ -1098,7 +1194,7 @@ int main()
 		if (!buildup || buildup->stackCount != expectedStacks ||
 			!NearlyEqual(
 				cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(
-					OwnerAttributeIds::MoveSpeedHorizontal
+					OwnerAttributeIds::MovementSlow
 				),
 				0.f
 			))
@@ -1108,8 +1204,8 @@ int main()
 	}
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
 	if (!NearlyEqual(
-		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal),
-		-0.25f
+		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
+		0.25f
 	) || cryoTarget.GetCombatRuntime().GetEffects().FindEffectById(
 		DamageStatusEffectIds::CryoBuildup
 	) || !cryoTarget.GetCombatRuntime().GetEffects().FindEffectById(
@@ -1129,15 +1225,15 @@ int main()
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
 	cryoTarget.GetCombatRuntime().Tick(0.75f);
 	if (!NearlyEqual(
-		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal),
-		-0.25f
+		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
+		0.25f
 	))
 	{
 		return Fail("Cryo hit did not refresh the active slow duration");
 	}
 	cryoTarget.GetCombatRuntime().Tick(0.8f);
 	if (!NearlyEqual(
-		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal),
+		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
 		0.f
 	))
 	{
@@ -2134,6 +2230,26 @@ int main()
 		invalidSpawnActorReason.empty())
 	{
 		return Fail("Ability grant accepted an invalid actor definition");
+	}
+	AbilityDefinition invalidEffectAbility;
+	invalidEffectAbility.abilityId = "Ability.Test.InvalidEffect";
+	invalidEffectAbility.slot = AbilitySlot::Ability1;
+	invalidEffectAbility.actions = {
+		AbilityActionSpec{
+			AbilityActionPhase::OnActivate,
+			ApplyEffectAction{
+				"Effect.Test.Unknown",
+				AbilityTargetPolicy::Self
+			},
+			0.f,
+			1
+		}
+	};
+	std::string invalidEffectReason;
+	if (abilitySystem.GrantAbility(invalidEffectAbility, &invalidEffectReason).IsValid() ||
+		invalidEffectReason.empty())
+	{
+		return Fail("Ability grant accepted an unknown gameplay-effect definition");
 	}
 	std::string sunBeamGrantFailure;
 	if (!abilitySystem.GrantAbility(AbilityData::Definitions::SunBeam_Strike_Basic, &sunBeamGrantFailure).IsValid())
@@ -3376,6 +3492,527 @@ int main()
 		!NearlyEqual(rangeTarget->GetHealth(), 1000.f - rocketSettings->baseDamage))
 	{
 		return Fail("Basic Rocket did not explode and clean up at its fixed maximum range");
+	}
+
+	std::string gravityValidationFailure;
+	const AbilityDefinition* gravityDefinition = AbilityData::FindShippedAbilityDefinition(
+		"Ability.GravityAnomaly.Basic"
+	);
+	if (!AbilitySystem::ValidateCatalog(AbilityData::GetShippedAbilityDefinitions(), &gravityValidationFailure) ||
+		!gravityDefinition || gravityDefinition->slot != AbilitySlot::Ability1 ||
+		gravityDefinition->inputLabel != "Q" ||
+		gravityDefinition->behaviorId != AbilityData::GravityAnomaly::BehaviorId ||
+		gravityDefinition->damageTags.size() != 0 ||
+		!AbilityActorRegistry::ValidateDefinition(
+			AbilityData::AbilityActors::Actor_GravityAnomaly_Projectile_Basic
+		).isValid ||
+		!AbilityActorRegistry::ValidateDefinition(
+			AbilityData::AbilityActors::Actor_GravityAnomaly_Field_Basic
+		).isValid)
+	{
+		return Fail("Gravity Anomaly shipped ability or actor catalog validation failed");
+	}
+	PlayerSpaceShip gravityLoadout{ nullptr };
+	const AbilityInstance* gravityLoadoutAbility = gravityLoadout.GetCombatRuntime()
+		.GetAbilities().GetAbility(AbilitySlot::Ability1);
+	if (!gravityLoadoutAbility ||
+		gravityLoadoutAbility->GetDefinition().abilityId != "Ability.GravityAnomaly.Basic" ||
+		gravityLoadout.GetCombatRuntime().GetAbilities().GetAbilityById("Ability.Shield.Basic") != nullptr)
+	{
+		return Fail("Default player loadout did not place Gravity Anomaly on Ability1/Q");
+	}
+	AbilityActorDefinition gravityProjectileWithoutProfile =
+		AbilityData::AbilityActors::Actor_GravityAnomaly_Projectile_Basic;
+	gravityProjectileWithoutProfile.presentationProfileId.clear();
+	AbilityActorDefinition gravityProjectileWithFieldProfile =
+		AbilityData::AbilityActors::Actor_GravityAnomaly_Projectile_Basic;
+	gravityProjectileWithFieldProfile.presentationProfileId =
+		GravityAnomalyPresentationIds::FieldBasic;
+	if (AbilityActorRegistry::ValidateDefinition(gravityProjectileWithoutProfile).isValid ||
+		AbilityActorRegistry::ValidateDefinition(gravityProjectileWithFieldProfile).isValid)
+	{
+		return Fail("Gravity Anomaly actor validation accepted a missing or cross-family typed profile");
+	}
+
+	const AbilityData::GravityAnomaly::Settings* gravitySettings =
+		AbilityData::GravityAnomaly::FindSettings(gravityDefinition->abilityId);
+	const GameplayEffectDefinition& gravityInsideEffect =
+		EffectData::GravityAnomalyInsideEffect;
+	const auto MakeGravityInsideSpec = [](float slowMagnitude)
+	{
+		GameplayEffectSpec spec =
+			MakeGameplayEffectSpec(EffectData::GravityAnomalyInsideEffect);
+		SetGameplayEffectModifierMagnitude(
+			spec,
+			OwnerAttributeIds::MovementSlow,
+			slowMagnitude
+		);
+		return spec;
+	};
+	if (!gravitySettings || gravitySettings->cooldown != 8.f ||
+		gravitySettings->castRange != 900.f || gravitySettings->projectileSpeed != 2000.f ||
+		gravitySettings->baseDuration != 2.5f || gravitySettings->baseRadius != 220.f ||
+		gravitySettings->pullStrength != 500.f || gravitySettings->slowMagnitude != 0.20f ||
+		gravityInsideEffect.effectId != AbilityData::GravityAnomaly::EffectSchema::InsideEffectId ||
+		gravityInsideEffect.durationPolicy != GameplayEffectDurationPolicy::Duration ||
+		!NearlyEqual(
+			gravityInsideEffect.duration,
+			AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds
+		) ||
+		gravityInsideEffect.stackingPolicy != GameplayEffectStackingPolicy::RefreshDuration ||
+		!gravityInsideEffect.sourceScopedApplication)
+	{
+		return Fail("Gravity Anomaly base settings or source-scoped inside effect are invalid");
+	}
+
+	auto SpawnGravityProjectile = [&](
+		World& world,
+		TestCombatant& owner,
+		int level,
+		float resolvedMaxHealth
+	)
+	{
+		owner.GetCombatRuntime().InitializeOwnerAttributes(resolvedMaxHealth);
+		owner.SetActorLocation({ 0.f, 0.f });
+		owner.SetActorRotation(90.f);
+		owner.SetCollisionLayer(CollisionLayer::Player);
+		const AbilityHandle handle = owner.GetCombatRuntime().GetAbilities().GrantAbility(*gravityDefinition);
+		if (!handle.IsValid() ||
+			(level > 1 && !owner.GetCombatRuntime().GetAbilities().TrySetAbilityLevel(handle, level)))
+		{
+			return shared_ptr<GravityAnomalyProjectileActor>{};
+		}
+		owner.GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability1, true);
+		owner.GetCombatRuntime().GetAbilities().Tick(0.f);
+		world.TickInternal(0.f);
+		const List<weak_ptr<GravityAnomalyProjectileActor>> projectiles =
+			world.GetActorsByType<GravityAnomalyProjectileActor>();
+		return projectiles.size() == 1
+			? projectiles.front().lock()
+			: shared_ptr<GravityAnomalyProjectileActor>{};
+	};
+
+	World gravityCursorWorld{ nullptr };
+	TestCombatant gravityCursorOwner{ &gravityCursorWorld, 1000.f };
+	gravityCursorOwner.SetActorLocation({ 0.f, 0.f });
+	gravityCursorOwner.SetActorRotation(90.f);
+	const shared_ptr<GravityAnomalyProjectileActor> clampedGravityProjectile =
+		std::dynamic_pointer_cast<GravityAnomalyProjectileActor>(
+			AbilityActorRegistry::Spawn(
+				AbilityActorSpawnContext{
+					gravityCursorOwner,
+					AbilityData::AbilityActors::Actor_GravityAnomaly_Projectile_Basic,
+					AbilityData::AbilityActors::Actor_GravityAnomaly_Projectile_Basic.attributes,
+					std::optional<sf::Vector2f>{ sf::Vector2f{ 2000.f, 0.f } }
+				}
+			).lock()
+		);
+	if (!clampedGravityProjectile)
+	{
+		return Fail("Gravity Anomaly projectile could not spawn for target-resolution test");
+	}
+	clampedGravityProjectile->SetActorLocation({ gravitySettings->spawnDistance, 0.f });
+	clampedGravityProjectile->SetActorRotation(90.f);
+	clampedGravityProjectile->ConfigureFromAttributes(
+		AbilityData::AbilityActors::Actor_GravityAnomaly_Projectile_Basic.attributes
+	);
+	gravityCursorWorld.TickInternal(0.f);
+	if (!NearlyEqual(clampedGravityProjectile->GetResolvedTargetLocation().x, gravitySettings->castRange) ||
+		!NearlyEqual(clampedGravityProjectile->GetResolvedTargetLocation().y, 0.f) ||
+		!gravityCursorWorld.GetActorsByType<GravityAnomalyFieldActor>().empty())
+	{
+		return Fail("Gravity Anomaly did not clamp its resolved cursor target or spawned a field too early");
+	}
+	clampedGravityProjectile->OnActorBeginOverlap(&gravityCursorOwner);
+	gravityCursorWorld.TickInternal(0.1f);
+	if (!gravityCursorWorld.GetActorsByType<GravityAnomalyFieldActor>().empty())
+	{
+		return Fail("Gravity Anomaly projectile formed a field before reaching its resolved target");
+	}
+	gravityCursorWorld.TickInternal(0.5f);
+	gravityCursorWorld.TickInternal(0.f);
+	const List<weak_ptr<GravityAnomalyFieldActor>> resolvedGravityFields =
+		gravityCursorWorld.GetActorsByType<GravityAnomalyFieldActor>();
+	if (!clampedGravityProjectile->HasSpawnedField() || resolvedGravityFields.size() != 1 ||
+		!resolvedGravityFields.front().lock() ||
+		!NearlyEqual(resolvedGravityFields.front().lock()->GetActorLocation().x, gravitySettings->castRange))
+	{
+		return Fail("Gravity Anomaly projectile did not create one field at the resolved target");
+	}
+
+	auto SpawnGravityField = [](
+		World& world,
+		Actor& owner,
+		const sf::Vector2f& location
+	)
+	{
+		const GameplayAttributeList attributes =
+			AbilityData::AbilityActors::Actor_GravityAnomaly_Field_Basic.attributes;
+		const shared_ptr<GravityAnomalyFieldActor> field =
+			std::dynamic_pointer_cast<GravityAnomalyFieldActor>(
+				AbilityActorRegistry::Spawn(
+					AbilityActorSpawnContext{
+						owner,
+						AbilityData::AbilityActors::Actor_GravityAnomaly_Field_Basic,
+						attributes,
+						location
+					}
+				).lock()
+			);
+		if (field)
+		{
+			field->SetActorLocation(location);
+			field->ConfigureFromAttributes(attributes);
+		}
+		return field;
+	};
+
+	World gravityFieldWorld{ nullptr };
+	const shared_ptr<TestCombatant> gravityCaster =
+		gravityFieldWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	const shared_ptr<TestCombatant> gravityPlayerTarget =
+		gravityFieldWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	const shared_ptr<TestCombatant> gravityEnemyTarget =
+		gravityFieldWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	const shared_ptr<Actor> gravityProjectileTarget = gravityFieldWorld.SpawnActor<Actor>().lock();
+	const shared_ptr<Actor> gravityPickupTarget = gravityFieldWorld.SpawnActor<Actor>().lock();
+	if (!gravityCaster || !gravityPlayerTarget || !gravityEnemyTarget ||
+		!gravityProjectileTarget || !gravityPickupTarget)
+	{
+		return Fail("Gravity Anomaly field test actors could not spawn");
+	}
+	gravityCaster->SetCollisionLayer(CollisionLayer::Player);
+	gravityPlayerTarget->SetCollisionLayer(CollisionLayer::Player);
+	gravityEnemyTarget->SetCollisionLayer(CollisionLayer::Enemy);
+	gravityCaster->SetActorLocation({ 20.f, 0.f });
+	gravityPlayerTarget->SetActorLocation({ -30.f, 0.f });
+	gravityEnemyTarget->SetActorLocation({ 40.f, 0.f });
+	gravityProjectileTarget->SetCollisionLayer(CollisionLayer::PlayerBullet);
+	gravityProjectileTarget->SetActorLocation({ 10.f, 0.f });
+	gravityProjectileTarget->SetVelocity({ 7.f, 0.f });
+	gravityPickupTarget->SetCollisionLayer(CollisionLayer::Powerup);
+	gravityPickupTarget->SetActorLocation({ -10.f, 0.f });
+	gravityPickupTarget->SetVelocity({ 3.f, 0.f });
+	const shared_ptr<GravityAnomalyFieldActor> gravityField = SpawnGravityField(
+		gravityFieldWorld,
+		*gravityCaster,
+		{ 0.f, 0.f }
+	);
+	if (!gravityField)
+	{
+		return Fail("Gravity Anomaly field could not spawn");
+	}
+	gravityFieldWorld.TickInternal(0.f);
+	gravityFieldWorld.TickInternal(0.f);
+	for (const shared_ptr<TestCombatant>& target : {
+		gravityCaster,
+		gravityPlayerTarget,
+		gravityEnemyTarget
+	})
+	{
+		if (!target->GetCombatRuntime().GetEffects().FindEffectById(
+			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+		))
+		{
+			return Fail("Gravity Anomaly did not affect caster, player, and enemy combat targets equally");
+		}
+	}
+	if (gravityProjectileTarget->GetVelocity().x != 7.f || gravityPickupTarget->GetVelocity().x != 3.f ||
+		gravityField->GetAffectedTargetCount() != 3 ||
+		gravityFieldWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
+	{
+		return Fail("Gravity Anomaly affected a non-combat actor or missed effect visual lifecycle setup");
+	}
+
+	// Exercise the concrete player lifecycle too: gameplay code reaches this path
+	// only after BeginPlay has registered the ship's runtime-attribute listeners.
+	const shared_ptr<PlayerSpaceShip> gravityPlayerLifecycleTarget =
+		std::make_shared<PlayerSpaceShip>(nullptr);
+	if (!gravityPlayerLifecycleTarget)
+	{
+		return Fail("Gravity Anomaly player lifecycle target could not spawn");
+	}
+	gravityPlayerLifecycleTarget->BeginPlayInternal();
+	const GameplayEffectHandle gravityPlayerLifecycleEffect =
+		gravityPlayerLifecycleTarget->GetCombatRuntime().GetEffects().ApplyEffect(
+			MakeGravityInsideSpec(0.20f)
+		);
+	if (!gravityPlayerLifecycleEffect.IsValid() ||
+		!gravityPlayerLifecycleTarget->GetCombatRuntime().GetEffects().FindEffectById(
+			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+		))
+	{
+		return Fail("Gravity Anomaly crashed or failed while applying its effect to a begun player ship");
+	}
+
+	// A real player is world-owned, so entering the field also queues and runs the
+	// effect visual. Keep this covered separately from the world-less lifecycle
+	// check above: that path cannot expose actor-spawn/lifecycle regressions.
+	World gravityLivePlayerWorld{ nullptr };
+	const shared_ptr<PlayerSpaceShip> gravityLivePlayer =
+		gravityLivePlayerWorld.SpawnActor<PlayerSpaceShip>().lock();
+	if (!gravityLivePlayer)
+	{
+		return Fail("Gravity Anomaly could not spawn a live player target");
+	}
+	gravityLivePlayer->SetUseScreenClamp(false);
+	gravityLivePlayer->SetInvulnerability(false);
+	gravityLivePlayer->SetActorLocation({ 0.f, 0.f });
+	gravityLivePlayerWorld.TickInternal(0.f);
+	const shared_ptr<GravityAnomalyFieldActor> gravityLivePlayerField = SpawnGravityField(
+		gravityLivePlayerWorld,
+		*gravityLivePlayer,
+		{ 0.f, 0.f }
+	);
+	if (!gravityLivePlayerField)
+	{
+		return Fail("Gravity Anomaly could not spawn around a live player target");
+	}
+	gravityLivePlayerWorld.TickInternal(0.f);
+	gravityLivePlayerWorld.TickInternal(0.1f);
+	if (!gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	) || gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
+	{
+		return Fail("Gravity Anomaly failed while a live player entered its field");
+	}
+	gravityLivePlayerField->Destroy();
+	gravityLivePlayerWorld.TickInternal(0.f);
+	if (!gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	) || gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
+	{
+		return Fail("Gravity Anomaly did not preserve a live player's slow after its field ended");
+	}
+	gravityLivePlayerWorld.TickInternal(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds - 0.1f
+	);
+	if (!gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	))
+	{
+		return Fail("Gravity Anomaly slow expired before its two-second grace period ended");
+	}
+	gravityLivePlayerWorld.TickInternal(0.2f);
+	if (gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	) || !gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
+	{
+		return Fail("Gravity Anomaly did not clean up a live player's slow and visual after two seconds");
+	}
+
+	gravityEnemyTarget->GetCombatRuntime().Tick(0.1f);
+	if (!(gravityEnemyTarget->GetVelocity().x < 0.f))
+	{
+		return Fail("Gravity Anomaly pull did not add a center-directed velocity change");
+	}
+
+	TestCombatant pullTarget;
+	pullTarget.SetActorLocation({ 50.f, 0.f });
+	GravityAnomalyRuntimeContext pullContext;
+	pullContext.center = { 0.f, 0.f };
+	pullContext.resolvedRadius = 100.f;
+	pullContext.resolvedPullStrength = 500.f;
+	const GameplayEffectHandle pullHandle = pullTarget.GetCombatRuntime().GetEffects().ApplyEffect(
+		MakeGravityInsideSpec(0.20f),
+		GameplayEffectApplicationContext{
+			nullptr,
+			&pullContext,
+			std::make_shared<GravityAnomalyRuntimeContext>(pullContext)
+		}
+	);
+	pullTarget.GetCombatRuntime().Tick(0.1f);
+	if (!pullHandle.IsValid() || !NearlyEqual(pullTarget.GetVelocity().x, -12.5f) ||
+		!NearlyEqual(pullTarget.GetVelocity().y, 0.f))
+	{
+		return Fail("Gravity Anomaly pull falloff or delta-time integration is incorrect");
+	}
+	pullTarget.SetActorLocation({ 0.f, 0.f });
+	pullTarget.SetVelocity({ 0.f, 0.f });
+	pullTarget.GetCombatRuntime().Tick(0.1f);
+	if (!std::isfinite(pullTarget.GetVelocity().x) || !std::isfinite(pullTarget.GetVelocity().y))
+	{
+		return Fail("Gravity Anomaly pull produced a non-finite center velocity");
+	}
+
+	SpaceShip playerSlowMovement{ nullptr, ShipData::Ship_Player_Fighter };
+	SpaceShip enemySlowMovement{ nullptr, ShipData::Ship_Player_Fighter };
+	playerSlowMovement.SetCollisionLayer(CollisionLayer::Player);
+	enemySlowMovement.SetCollisionLayer(CollisionLayer::Enemy);
+	playerSlowMovement.SetVelocity({ 100.f, 0.f });
+	enemySlowMovement.SetVelocity({ 100.f, 0.f });
+	const GameplayEffectHandle playerSlowHandle = playerSlowMovement.GetCombatRuntime().GetEffects().ApplyEffect(
+		MakeGravityInsideSpec(0.20f)
+	);
+	const GameplayEffectHandle enemySlowHandle = enemySlowMovement.GetCombatRuntime().GetEffects().ApplyEffect(
+		MakeGravityInsideSpec(0.20f)
+	);
+	playerSlowMovement.Tick(0.1f);
+	enemySlowMovement.Tick(0.1f);
+	if (!NearlyEqual(playerSlowMovement.GetActorLocation().x, 8.f) ||
+		!NearlyEqual(enemySlowMovement.GetActorLocation().x, 8.f))
+	{
+		return Fail("GameplayEffect movement slow did not reduce real player and enemy movement");
+	}
+	playerSlowMovement.GetCombatRuntime().GetEffects().RemoveEffect(playerSlowHandle);
+	enemySlowMovement.GetCombatRuntime().GetEffects().RemoveEffect(enemySlowHandle);
+	playerSlowMovement.Tick(0.1f);
+	enemySlowMovement.Tick(0.1f);
+	if (!NearlyEqual(playerSlowMovement.GetActorLocation().x, 18.f) ||
+		!NearlyEqual(enemySlowMovement.GetActorLocation().x, 18.f))
+	{
+		return Fail("GameplayEffect movement slow did not cleanly restore movement");
+	}
+
+	World gravitySourceWorld{ nullptr };
+	const shared_ptr<TestCombatant> gravitySourceOwner =
+		gravitySourceWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	const shared_ptr<TestCombatant> gravitySourceTarget =
+		gravitySourceWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	if (!gravitySourceOwner || !gravitySourceTarget)
+	{
+		return Fail("Gravity Anomaly source ownership actors could not spawn");
+	}
+	gravitySourceTarget->SetActorLocation({ 0.f, 0.f });
+	const shared_ptr<GravityAnomalyFieldActor> firstGravityField = SpawnGravityField(
+		gravitySourceWorld, *gravitySourceOwner, { 0.f, 0.f }
+	);
+	const shared_ptr<GravityAnomalyFieldActor> secondGravityField = SpawnGravityField(
+		gravitySourceWorld, *gravitySourceOwner, { 0.f, 0.f }
+	);
+	gravitySourceWorld.TickInternal(0.f);
+	gravitySourceWorld.TickInternal(0.f);
+	const auto CountGravityEffects = [](const TestCombatant& target)
+	{
+		size_t count = 0;
+		for (const GameplayEffectSnapshot& snapshot : target.GetCombatRuntime().GetEffects().BuildSnapshots())
+		{
+			count += snapshot.effectId ==
+				AbilityData::GravityAnomaly::EffectSchema::InsideEffectId ? 1u : 0u;
+		}
+		return count;
+	};
+	if (!firstGravityField || !secondGravityField ||
+		CountGravityEffects(*gravitySourceTarget) != 2 ||
+		firstGravityField->GetAffectedTargetCount() != 2 ||
+		secondGravityField->GetAffectedTargetCount() != 2)
+	{
+		return Fail("Gravity Anomaly source-scoped applications stacked or registered incorrectly");
+	}
+	firstGravityField->Destroy();
+	gravitySourceWorld.TickInternal(0.f);
+	if (CountGravityEffects(*gravitySourceTarget) != 2)
+	{
+		return Fail("Gravity Anomaly field cleanup removed an effect before its grace period ended");
+	}
+	secondGravityField->Destroy();
+	gravitySourceWorld.TickInternal(0.f);
+	if (CountGravityEffects(*gravitySourceTarget) != 2)
+	{
+		return Fail("Gravity Anomaly second field removed an effect before the grace period ended");
+	}
+	gravitySourceTarget->GetCombatRuntime().Tick(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds + 0.1f
+	);
+	if (CountGravityEffects(*gravitySourceTarget) != 0)
+	{
+		return Fail("Gravity Anomaly field cleanup left an expired effect active");
+	}
+
+	World baselineGravityWorld{ nullptr };
+	TestCombatant baselineGravityOwner{ &baselineGravityWorld, 1000.f };
+	const shared_ptr<GravityAnomalyProjectileActor> baselineGravityProjectile =
+		SpawnGravityProjectile(baselineGravityWorld, baselineGravityOwner, 1, 0.f);
+	World scaledGravityWorld{ nullptr };
+	TestCombatant scaledGravityOwner{ &scaledGravityWorld, 1000.f };
+	const shared_ptr<GravityAnomalyProjectileActor> scaledGravityProjectile =
+		SpawnGravityProjectile(scaledGravityWorld, scaledGravityOwner, 1, 100.f);
+	if (!baselineGravityProjectile || !scaledGravityProjectile ||
+		!NearlyEqual(baselineGravityProjectile->GetResolvedFieldRadius(), 220.f) ||
+		!NearlyEqual(baselineGravityProjectile->GetResolvedFieldDuration(), 2.5f) ||
+		!NearlyEqual(scaledGravityProjectile->GetResolvedFieldRadius(), 240.f) ||
+		!NearlyEqual(scaledGravityProjectile->GetResolvedFieldDuration(), 2.75f) ||
+		!NearlyEqual(scaledGravityProjectile->GetProjectileSpeed(), baselineGravityProjectile->GetProjectileSpeed()) ||
+		!NearlyEqual(scaledGravityProjectile->GetCastRange(), baselineGravityProjectile->GetCastRange()) ||
+		!NearlyEqual(scaledGravityProjectile->GetResolvedPullStrength(), baselineGravityProjectile->GetResolvedPullStrength()) ||
+		!NearlyEqual(scaledGravityProjectile->GetResolvedSlowMagnitude(), baselineGravityProjectile->GetResolvedSlowMagnitude()))
+	{
+		return Fail("Gravity Anomaly MaxHealth scaling affected values other than radius and duration");
+	}
+
+	World levelGravityWorld{ nullptr };
+	TestCombatant levelGravityOwner{ &levelGravityWorld, 1000.f };
+	const shared_ptr<GravityAnomalyProjectileActor> levelGravityProjectile =
+		SpawnGravityProjectile(levelGravityWorld, levelGravityOwner, 15, 0.f);
+	const AbilityInstance* levelGravityInstance = levelGravityOwner.GetCombatRuntime().GetAbilities().GetAbility(
+		AbilitySlot::Ability1
+	);
+	if (!levelGravityProjectile || !levelGravityInstance ||
+		!NearlyEqual(levelGravityInstance->GetCooldownDuration(), 6.6f) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedFieldDuration(), 2.92f) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedFieldRadius(), 248.f) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedPullStrength(), 640.f) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedSlowMagnitude(), 0.27f) ||
+		!NearlyEqual(levelGravityProjectile->GetProjectileSpeed(), 2350.f) ||
+		!NearlyEqual(levelGravityProjectile->GetCastRange(), 970.f))
+	{
+		return Fail("Gravity Anomaly level progression was not cumulative through level fifteen");
+	}
+	levelGravityOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
+		AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
+	);
+	if (!(levelGravityInstance->GetCooldownDuration() < 6.6f))
+	{
+		return Fail("Gravity Anomaly did not use centralized AbilityHaste cooldown resolution");
+	}
+
+	// A target inside the field is refreshed to exactly two seconds. Leaving the
+	// field stops that refresh, but does not remove the slow prematurely.
+	gravityPlayerTarget->SetActorLocation({ gravityField->GetResolvedRadius() + 10.f, 0.f });
+	gravityFieldWorld.TickInternal(0.f);
+	if (!gravityPlayerTarget->GetCombatRuntime().GetEffects().FindEffectById(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	))
+	{
+		return Fail("Gravity Anomaly removed slow immediately when a target left the field");
+	}
+	gravityPlayerTarget->GetCombatRuntime().Tick(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds - 0.1f
+	);
+	if (!gravityPlayerTarget->GetCombatRuntime().GetEffects().FindEffectById(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	))
+	{
+		return Fail("Gravity Anomaly slow did not persist for two seconds after leaving the field");
+	}
+	gravityPlayerTarget->GetCombatRuntime().Tick(0.2f);
+	if (gravityPlayerTarget->GetCombatRuntime().GetEffects().FindEffectById(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	))
+	{
+		return Fail("Gravity Anomaly slow did not expire after leaving the field");
+	}
+
+	gravityField->Destroy();
+	gravityFieldWorld.TickInternal(0.f);
+	if (!gravityCaster->GetCombatRuntime().GetEffects().FindEffectById(
+			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+		) || gravityFieldWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
+	{
+		return Fail("Gravity Anomaly field destruction did not preserve active slows for two seconds");
+	}
+	gravityCaster->GetCombatRuntime().Tick(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds + 0.1f
+	);
+	gravityEnemyTarget->GetCombatRuntime().Tick(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds + 0.1f
+	);
+	gravityFieldWorld.TickInternal(0.f);
+	if (gravityCaster->GetCombatRuntime().GetEffects().FindEffectById(
+			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+		) || !gravityFieldWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
+	{
+		return Fail("Gravity Anomaly field destruction did not clean up expired slows and visuals");
 	}
 
 	std::string dashValidationFailure;

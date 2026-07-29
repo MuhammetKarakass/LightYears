@@ -29,6 +29,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/DashConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/GravityAnomalyConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/RocketConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/ShieldConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/SunBeamConfig.h
@@ -50,12 +51,22 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentLoadout.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageContext.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/DamageTypeConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageTypeSystem.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectHandle.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectSpec.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/ActiveGameplayEffect.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectValidation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectValidation.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectContent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectContent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/AreaGameplayEffectApplicator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/AreaGameplayEffectApplicator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectBehavior.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectBehavior.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/BarrierEffectBehavior.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/BarrierEffectBehavior.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectSystem.h
@@ -117,6 +128,12 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketProjectileActor.h
@@ -138,6 +155,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/AbilityPresentationContent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/PresentationProfileRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/common/AreaTelegraphVisualDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/gravityAnomaly/GravityAnomalyPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationProfile.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
@@ -148,6 +168,11 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisualRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualContent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisualContent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualDefinition.h
@@ -281,12 +306,23 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectBehavior.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectValidation.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectContent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/AreaGameplayEffectApplicator.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/BarrierEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectSystem.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/spaceShip/SpaceShip.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Player.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceShip.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistry.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistration.cpp
@@ -294,6 +330,9 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilitySystem.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityExecutor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketProjectileActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketVisualActor.cpp
@@ -306,10 +345,13 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamStrikeActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/AbilityPresentationContent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisualContent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
@@ -348,17 +390,21 @@ if(WIN32)
 	target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE sfml-main)
 endif()
 
-function(CopyLibDirToTarget LIB_NAME TARGET_NAME)
+function(CopyRuntimeLibToTarget LIB_NAME TARGET_NAME)
 	add_custom_command(TARGET ${TARGET_NAME}
 	POST_BUILD
 	COMMAND
-	${CMAKE_COMMAND} -E copy_directory
-	$<TARGET_FILE_DIR:${LIB_NAME}>
+	${CMAKE_COMMAND} -E copy_if_different
+	$<TARGET_FILE:${LIB_NAME}>
 	$<TARGET_FILE_DIR:${TARGET_NAME}>
 	)
 endfunction()
 
-CopyLibDirToTarget(${LIGHT_YEARS_ENGINE_TARGET_NAME} ${LIGHT_YEARS_GAME_TARGET_NAME})
+CopyRuntimeLibToTarget(sfml-graphics ${LIGHT_YEARS_GAME_TARGET_NAME})
+CopyRuntimeLibToTarget(sfml-window ${LIGHT_YEARS_GAME_TARGET_NAME})
+CopyRuntimeLibToTarget(sfml-system ${LIGHT_YEARS_GAME_TARGET_NAME})
+CopyRuntimeLibToTarget(sfml-audio ${LIGHT_YEARS_GAME_TARGET_NAME})
+CopyRuntimeLibToTarget(box2d ${LIGHT_YEARS_GAME_TARGET_NAME})
 
 set(RESOURCE_FOLDER_NAME "assets")
 set(RESOURCE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${RESOURCE_FOLDER_NAME}")

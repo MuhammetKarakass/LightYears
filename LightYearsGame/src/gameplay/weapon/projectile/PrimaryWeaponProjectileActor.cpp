@@ -127,7 +127,7 @@ namespace ly
 		if (IsValidAbilityTarget(directHitActor))
 		{
 			ApplyCombatDamage(*directHitActor, GetDamage(), GetOwner(), GetDamageTags(), GetDamagePayload());
-			LOG("damage: %f", GetDamage());
+			LY_GAME_TRACE("Primary weapon projectile damage: %f", GetDamage());
 		}
 	}
 

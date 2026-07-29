@@ -10,6 +10,10 @@
 #include <cctype>
 #include <functional>
 
+#include "framework/debug/Assert.h"
+#include "framework/debug/Log.h"
+#include "framework/debug/Profiler.h"
+
 // =====================================================
 // COLLISION LAYER SYSTEM
 // =====================================================
@@ -274,6 +278,8 @@ namespace ly
     template<typename T>
     using Set = std::unordered_set<T>;
 
-    // LOG isim, M mesaj, ... argumanlar; M mesaj, ## virgulu duruma gore siler.
-    #define LOG(M, ...) printf(M "\n", ##__VA_ARGS__)
 }
+
+// Legacy compatibility for the remaining engine asset/shader error sites.
+// New code should select an explicit channel and level.
+#define LOG(...) LY_CORE_ERROR(__VA_ARGS__)

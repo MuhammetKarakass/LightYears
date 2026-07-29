@@ -1,11 +1,15 @@
 #include "gameplay/ability/AbilityBehaviorRegistration.h"
 
 #include "gameConfigs/ability/DashConfig.h"
+#include "gameConfigs/ability/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/RocketConfig.h"
 #include "gameConfigs/ability/ShieldConfig.h"
 #include "gameConfigs/ability/SunBeamConfig.h"
 #include "gameplay/ability/AbilityBehaviorRegistry.h"
 #include "gameplay/ability/dash/DashAbility.h"
+#include "gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h"
+#include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
+#include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/rocket/RocketAbility.h"
 #include "gameplay/ability/shield/ShieldAbility.h"
@@ -27,6 +31,10 @@ namespace ly
 				AbilityData::Shield::BehaviorId,
 				[] { return std::make_unique<ShieldAbility>(); }
 			);
+			const bool gravityAnomalyRegistered = AbilityBehaviorRegistry::Register(
+				AbilityData::GravityAnomaly::BehaviorId,
+				[] { return std::make_unique<GravityAnomalyAbility>(); }
+			);
 			const bool rocketRegistered = AbilityBehaviorRegistry::Register(
 				AbilityData::Rocket::BehaviorId,
 				[] { return std::make_unique<RocketAbility>(); }
@@ -35,7 +43,8 @@ namespace ly
 				AbilityData::SunBeam::BehaviorId,
 				[] { return std::make_unique<SunBeamAbility>(); }
 			);
-			return dashRegistered && shieldRegistered && rocketRegistered && sunBeamRegistered;
+			return dashRegistered && shieldRegistered && gravityAnomalyRegistered &&
+				rocketRegistered && sunBeamRegistered;
 		}();
 		return registered;
 	}
@@ -43,6 +52,8 @@ namespace ly
 	bool RegisterGameAbilityActorTypes()
 	{
 		static const bool registered =
+			RegisterGravityAnomalyProjectileActorType() &&
+			RegisterGravityAnomalyFieldActorType() &&
 			RegisterRocketProjectileActorType() &&
 			RegisterSunBeamStrikeActorType();
 		return registered;

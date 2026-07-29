@@ -227,19 +227,17 @@ namespace ly
 
 		if (shapeCount > 0)
 		{
-			b2ShapeId* shapes = new b2ShapeId[shapeCount];
+			mShapeScratchBuffer.resize(static_cast<std::size_t>(shapeCount));
 
-			b2Body_GetShapes(bodyId, shapes, shapeCount);
+			b2Body_GetShapes(bodyId, mShapeScratchBuffer.data(), shapeCount);
 
 			for (int i = 0; i < shapeCount; ++i)
 			{
-				if (b2Shape_IsValid(shapes[i]))
+				if (b2Shape_IsValid(mShapeScratchBuffer[static_cast<std::size_t>(i)]))
 				{
-					b2DestroyShape(shapes[i], true);
+					b2DestroyShape(mShapeScratchBuffer[static_cast<std::size_t>(i)], true);
 				}
 			}
-
-			delete[] shapes;
 		}
 
 		b2ShapeDef shapeDef = b2DefaultShapeDef();

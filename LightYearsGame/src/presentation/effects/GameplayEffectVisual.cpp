@@ -8,7 +8,9 @@ namespace ly
 		const std::string& texturePath
 	)
 		: Actor(world, texturePath),
-		mOwner(owner)
+		mOwner(owner
+			? std::static_pointer_cast<Actor>(owner->GetWeakPtr().lock())
+			: shared_ptr<Actor>{})
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
 		SetCollisionLayer(CollisionLayer::None);
@@ -17,7 +19,8 @@ namespace ly
 
 	void GameplayEffectVisual::Tick(float deltaTime)
 	{
-		if (!mOwner || mOwner->GetIsPendingDestroy())
+		const shared_ptr<Actor> owner = GetVisualOwner();
+		if (!owner || owner->GetIsPendingDestroy())
 		{
 			Destroy();
 			return;

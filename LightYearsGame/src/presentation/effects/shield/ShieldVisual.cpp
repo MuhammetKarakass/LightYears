@@ -45,7 +45,7 @@ namespace ly
 
 	void ShieldVisual::TickVisual(float deltaTime)
 	{
-		Actor* owner = GetVisualOwner();
+		const shared_ptr<Actor> owner = GetVisualOwner();
 		if (!owner)
 		{
 			return;

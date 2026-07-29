@@ -44,13 +44,14 @@ Ana matematik açıklamaları için
 | --- | --- | --- | --- | --- |
 | AttributeSystem | ✅ | Add, Multiply, Override ve min/max clamp | gameplay/attributes/AttributeSystem.* | Aynı attribute için override önceliği test edilmeli |
 | AttributeMath | ✅ | Crit, luck, armor için doygun üstel eğriler | gameplay/attributes/AttributeMath.h | Rating scale değişimi tüm build’leri etkiler |
+| Engine diagnostics | ✅ | CORE/GAME kanallı structured logging, Debug assert/verify ve scope/counter profiler | LightYearsEngine/include/framework/debug/*; src/framework/debug/*; EntryPoint.cpp | Debug lifetime testleri log/filter/verify/profile kontratını doğrular; Release'te assert/profiling compile-out, logging Warning+ kalır |
 | CombatRuntime | ✅ | Attribute, effect, ability ve incoming damage akışını birleştirir | gameplay/combat/CombatRuntime.* | Damage sırası §6’da kayıtlı |
 | DamageTypeSystem | ✅ | 6 tür tag’i, payload override ve status uygulama | gameplay/damage/DamageTypeSystem.* | Hibrit tag önceliği tasarım kararı gerektirir |
 | HealthComponent | ✅ | Health clamp, damage/heal eventleri | gameplay/HealthComponent.* | Max health değişince yüzde koruma açık |
 | ShieldComponent | ✅ | Kalıcı gemi shield’ı, gecikme ve regen | gameplay/ShieldComponent.* | Energy hasarı shield kapasitesini daha hızlı tüketir |
 | EnergyComponent | ✅ | Afterburner enerjisi, gecikme ve regen | gameplay/EnergyComponent.* | Consume ve recharge aynı frame davranışı test edilebilir |
 | ShipRuntime | ✅ | Ship attribute'ları ile shield/afterburner türetmelerini owner attribute'lardan çözer | gameplay/ship/ShipRuntime.* | SpaceShip sahiplenir; CombatRuntime'dan ayrı tutulur |
-| GameplayEffectSystem | ✅ | Duration, stack, refresh, incoming damage phase ve visual | gameplay/effects/* | Effect sıra bağımlılığı varsa kayda geçir |
+| GameplayEffectSystem | ✅ | Immutable Definition → resolved Spec → mutable ActiveEffect; duration, stack, refresh, generic behavior hooks, incoming damage phase ve visual | gameplay/effects/*; gameConfigs/combat/EffectConfig.h | Ability, weapon, enemy, reward ve area aynı uygulama yolunu kullanır; core somut effect ID'sine branch etmez |
 | AbilitySystem | ✅ | Slot input, action, trigger, cooldown, level ve attachment endpoint’i | gameplay/ability/* | Ability eklemeden önce behavior kaydı ve validation yolunu çalıştır |
 | AbilityBehaviorRegistry | ✅ | Behavior ID’den ability'ye özgü Validate/Activate/Tick/End sınıfı üretir | gameplay/ability/AbilityBehaviorRegistry.* | Generic core somut ability include etmez |
 | Shared ability actors | ✅ | Ortak world actor registry, lifecycle ve alan telegraph altyapısı | gameplay/ability/actors/* | Yalnız bir ability'ye özgü actor kendi aile klasöründe kalır |
@@ -77,10 +78,11 @@ Ana matematik açıklamaları için
 | `gameplay/ability/` | AbilitySystem, AbilityInstance, AbilityBehavior, registry, executor ve event | Yalnız generic core; somut ability bağımlılığı yok |
 | `gameplay/ability/actors/` | AbilityWorldActor, AbilityActorRegistry, AreaTelegraphActor | Ability ID/config/hasar kuralı bilmeyen, yeniden kullanılabilir world-actor altyapısı |
 | `gameplay/ability/dash/` | DashAbility, DashMovementController, DashMovementMath | Dash'e özgü behavior, hareket kontratı ve evolve parçaları |
+| `gameplay/ability/gravityAnomaly/` | GravityAnomalyAbility, ProjectileActor, FieldActor | Gravity Anomaly validation, cursor delivery, source-scoped field lifecycle ve gelecek evolve parçaları |
 | `gameplay/ability/rocket/` | RocketAbility, RocketProjectileActor | Rocket'e özgü validation, projectile delivery, patlama ve gelecek evolve parçaları |
 | `gameplay/ability/shield/` | ShieldAbility | Shield'e özgü behavior |
 | `gameplay/ability/sunBeam/` | SunBeamAbility, actor ve visual sınıfları | SunBeam'e özgü tüm runtime parçaları |
-| `gameConfigs/ability/` | AbilityStructs, AbilityActorStructs, AbilityCatalog ve aile config'leri | Ortak şemalar ayrı; DashConfig, RocketConfig, ShieldConfig ve SunBeamConfig aileye özel |
+| `gameConfigs/ability/` | AbilityStructs, AbilityActorStructs, AbilityCatalog ve aile config'leri | Ortak şemalar ayrı; DashConfig, GravityAnomalyConfig, RocketConfig, ShieldConfig ve SunBeamConfig aileye özel |
 | `presentation/ability/<family>/` | Stable presentation ID, concrete typed profile ve shipped content registration | Her aile kendi visual/telegraph/explosion paketini sahiplenir; global visual config yok |
 | `presentation/ability/common/` | AreaTelegraphVisualDefinition gibi gerçekten paylaşılan primitive'ler | Benzer alanlar tek başına ortaklaştırma gerekçesi değildir |
 
@@ -101,10 +103,11 @@ profile kontratı** bölümündedir.
 
 | ID | Durum | Oyuncuda varsayılan mı? | Mevcut config | Runtime matematiği | Hedef / test notu |
 | --- | --- | --- | --- | --- | --- |
-| Ability.Shield.Basic | ✅ | Evet, Ability1 / Q | 8 sn cooldown; 5 sn duration; Basic Barrier uygular | Barrier capacity = 30 + 0.20×MaxHealth + 50×Armor | [ ] Shield uptime ve break event test edilecek |
+| Ability.Shield.Basic | ✅ | Hayır; shipped içerik, PlayerSpaceShip varsayılan grant listesinde değil | 8 sn cooldown; 5 sn duration; Basic Barrier uygular | Barrier capacity = 30 + 0.20×MaxHealth + 50×Armor | [ ] Shield uptime ve break event test edilecek |
 | Ability.SunBeam.Strike.Basic | ✅ | Evet, Ability2 / E | 1 sn cooldown; MouseWorld spawn | Base damage 40; radius 96; L2–5 her sefer +8 damage ve +8 radius | [ ] Tek hedef ve area hasarı ölçülecek |
 | Ability.Dash.Basic | ✅ | Evet, Ability3 / F | 2 sn cooldown; 0.24 sn duration; 1 charge; mevcut kamera mesafesine +%15 göreli zoom-out | Base 260 mesafe; mevcut velocity tamamen korunur ve Dash impulse üzerine eklenir; kamera velocity ile follow offset'i korur; göreli zoom kritik sönümlü kamera hattıyla girip çıkar; L2-L5 taban cooldown'un her seferinde %6'sını düşürerek 1.88/1.76/1.64/1.52 olur | [x] Katalog, tuning-safe cooldown, yön, tam momentum, kamera offset/göreli zoom ve zoom-velocity sürekliliği, lifecycle ve cleanup core testleri |
 | Ability.Rocket.Basic | ✅ | Evet, Ability4 / R | 7 sn cooldown; Instant; 1 charge; mouse aim yönünde tek projectile; cursor yakındaysa cursor'da, uzaktaysa 1100 maksimum menzilde patlar | Damage 55 + AttackPower×1.25; Kinetic; radius 55; speed 1000 ve maksimum range 1100 sabit. L2-L15: +4 damage, -0.12 sn cooldown, +1 radius | [x] Katalog/actor validation, cursor hedef mesafesi ve telegraph, max-range clamp, tek spawn, yön, owner scaling, haste, Kinetic AoE tek-vuruş, L1-L15 sabit delivery ve cleanup core testleri |
+| Ability.GravityAnomaly.Basic | ✅ | Evet, Ability1 / Q; bu slotta Shield'in varsayılan grant'inin yerini alır | 8 sn cooldown; Instant; 1 charge; 900 cast range, 2000 projectile speed; hedefte 2.5 sn / 220 radius field | Damage yok. Field caster/player/enemy Combatant'larına source-scoped `Effect.GravityAnomaly.Inside` uygular: içeride 2 sn'ye yenilenen %20 movement slow ve `500×(1-d/radius)^2×dt` velocity pull. Çıkış/field bitiminde pull kesilir, slow 2 sn sürer. MaxHealth yalnız radius (+0.20) ve duration'ı (+0.0025) scale eder. L2-L15: -0.10 cooldown, +0.03 duration, +2 radius, +10 pull, +0.005 slow, +25 speed, +5 range | [x] Typed profile/actor validation, varsayılan Ability1/Q loadout, clamp ve lifecycle, target filtreleme, pull/center güvenliği, gerçek movement slow, 2 sn exit/destroy tail, field-source expiry cleanup, L15/MaxHealth scaling ve effect visual cleanup |
 | PrimaryFire üretilmiş ability | ✅ | Evet, Space | Weapon definition’dan slot/action oluşturulur | Level ve scaling weapon profile’dan gelir | [ ] Her silah için ayrı card doldur |
 | BossThreeWayBlaster ability | 🟡 | Boss LevelOne içinde | Ability1’e fire weapon olarak atanır | 3 pellet, 60° spread, 0.5 FireRate | [ ] Boss phase test |
 | BossFrontalSweep ability | 🟡 | Boss LevelOne içinde | Ability2’ye atanır | 8 muzzle, 0.33 FireRate | [ ] Boss phase 3 test |
@@ -116,8 +119,9 @@ profile kontratı** bölümündedir.
 | --- | --- | --- | --- | --- |
 | Effect.Barrier.Basic | ✅ | Capacity 30; ratio 1; regen 6/sn; delay 1.5 sn; duration 5 sn | Kaynak hasar emilimi = capacitySpent / (ratio×shieldMultiplier) | [ ] Armor ile etkileşim doğrulanacak |
 | Effect.Test.BarrierBreak.ThrustBoost | ✅ | 2 sn; horizontal +0.20; vertical +0.25 | BarrierBroken trigger ile self’e uygulanır | [ ] “Test” ID’si üretim adlandırmasına taşınacak mı? |
+| Effect.GravityAnomaly.Inside | ✅ | 2 sn duration, refresh-duration, source-scoped; field başına %20 slow | `AreaGameplayEffectApplicator` hedef içerideyken süreyi sürekli 2 sn'ye resetler. Çıkışta veya field bitiminde pull hemen kapanır; slow ve target visual kalan 2 sn sürer. Ayrı field source scope'ları birbirini korur. | [x] Multi-field izolasyonu, enter/leave/destroy tail, expiry cleanup, gerçek movement slow ve target-following visual doğrulandı |
 | Thermal / Ignite | ✅ | 1 DPS, 3 sn, en fazla 4 stack | Ara stack sadece görünür; 4. stack’te 4 DPS DOT çalışır | [ ] Crit/DOT kuralı kayda geçir |
-| Cryo / Buildup + Slow | ✅ | 1 buildup/hit; 4 gereken; 2.5 sn buildup; %25 slow / 1.5 sn | 4. hit birikimi tüketir; aktif slow sonraki Cryo hit’lerinde 1.5 sn’ye yenilenir; magnitude Add(-0.25) kalır | [ ] Boss ve normal düşman hız testi |
+| Cryo / Buildup + Slow | ✅ | 1 buildup/hit; 4 gereken; 2.5 sn buildup; %25 slow / 1.5 sn | 4. hit birikimi tüketir; aktif slow sonraki Cryo hit’lerinde 1.5 sn’ye yenilenir; `MovementSlow` Add(+0.25) shared gerçek hareket çarpanını kullanır | [ ] Boss ve normal düşman hız testi |
 | Electric | ✅ | 0.04 taken-damage / stack; 3 sn; max 4 | Ara stack etkisiz; tam stack incomingDamage × 1.16, armor öncesi | [ ] Max stack burst testi |
 
 ## 5. Damage türleri ve mevcut matematik
@@ -127,9 +131,9 @@ profile kontratı** bölümündedir.
 | Photonic | ✅ | Özel numeric payload yok | DamageTypeSystem.cpp | [ ] Nötr baseline DPS tanımla |
 | Energy | ✅ | shieldDamageMultiplier 1.25; regen delay +0.75 sn | DamageTypeSystem.cpp | [ ] Shield karşıtı time-to-break ölç |
 | Kinetic | ✅ | armorPenetration 0.10 | DamageTypeSystem.cpp | [ ] Armor eşiği karşılaştır |
-| Thermal | ✅ | 1 Ignite/hit, 1 DPS/stack, 3 sn, max 4; yalnızca tam stack hasar verir | DamageTypeSystem.cpp; GameplayEffectSystem.cpp | [ ] DOT üst üste binme temposu |
+| Thermal | ✅ | 1 Ignite/hit, 1 DPS/stack, 3 sn, max 4; yalnızca tam stack hasar verir | EffectConfig.h; DamageTypeSystem.cpp; registered tick hook | [ ] DOT üst üste binme temposu |
 | Cryo | ✅ | 1/4 buildup; %25 slow; 1.5 sn; aktifken Cryo hit ile refresh | DamageTypeSystem.cpp | [x] Slow refresh davranışı GasLiteCoreTests’te doğrulandı |
-| Electric | ✅ | 1 stack/hit, +%4/stack, 3 sn, max 4; yalnızca tam stack x1.16 | DamageTypeSystem.cpp; GameplayEffectBehavior.cpp | [ ] Çoklu kaynak stack davranışı |
+| Electric | ✅ | 1 stack/hit, +%4/stack, 3 sn, max 4; yalnızca tam stack x1.16 | EffectConfig.h; DamageTypeSystem.cpp; registered PreMitigation hook | [ ] Çoklu kaynak stack davranışı |
 
 ### Hasar parametre değişiklik tablosu
 

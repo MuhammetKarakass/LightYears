@@ -1,9 +1,30 @@
 #pragma once
 #include "framework/Core.h"  // weak_ptr, shared_ptr, List tanýmlarý
+#include <algorithm>
+#include <cstdint>
 #include <functional> // std::function için
+#include <iterator>
+#include <utility>
 
 namespace ly
 {
+	class DelegateHandle
+	{
+	public:
+		DelegateHandle() = default;
+
+		bool IsValid() const { return mId != 0; }
+		void Reset() { mId = 0; }
+
+	private:
+		explicit DelegateHandle(std::uint64_t id) : mId{ id } {}
+
+		std::uint64_t mId{ 0 };
+
+		template<typename...>
+		friend class Delegate;
+	};
+
 	// ============================================================================
 	// FORWARD DECLARATION (Ýleriye Dönük Bildirim)
 	// ============================================================================
@@ -72,7 +93,7 @@ namespace ly
 		// Bu: "Spaceship sýnýfýnýn, void dönen ve 3 float alan üye fonksiyonu"
 		
 		template<typename ClassName>
-		void BindAction(weak_ptr<Object> obj, void(ClassName::* callback)(Args...))
+		DelegateHandle BindAction(weak_ptr<Object> obj, void(ClassName::* callback)(Args...))
 		{
 			// ================================================================
 			// LAMBDA EXPRESSION - Anonim Fonksiyon
@@ -137,7 +158,7 @@ namespace ly
 				// - shared_ptr kullanýrsak circular reference oluþur (memory leak)
 				// - raw pointer kullanýrsak dangling pointer riski var (crash)
 				// - weak_ptr: nesneyi "gözlemler" ama yaþam döngüsünü etkilemez
-				if (!obj.expired())
+				if (shared_ptr<Object> strongRef = obj.lock())
 				{
 					// ========================================================
 					// MEMBER FUNCTION POINTER CALL - En Karmaþýk Satýr!
@@ -188,7 +209,7 @@ namespace ly
 					//  |          |           ?? Parametreler
 					//  |       ?????????????? Member func ptr
 					//  ??????????????????????????????????????????????????????? Spaceship nesnesi
-					(static_cast<ClassName*>(obj.lock().get())->*callback)(args...);
+					(static_cast<ClassName*>(strongRef.get())->*callback)(args...);
 					return true;  // Ýþlem baþarýlý - listener hala aktif
 				}
 				return false;  // Nesne silinmiþ - bu listener'ý temizle
@@ -200,7 +221,7 @@ namespace ly
 			// Lambda'yý (std::function'a otomatik dönüþtürülmüþ halde) listeye ekler
 			// push_back: Container'ýn sonuna yeni eleman ekler
 			// Lambda'nýn copy constructor'ý çaðrýlýr (capture edilen deðerler kopyalanýr)
-			mCallbacks.push_back(callBackFunc);
+			return AddCallback(std::move(callBackFunc));
 		}
 
 		// ====================================================================
@@ -209,7 +230,7 @@ namespace ly
 		// Player gibi shared_ptr ile yönetilmeyen ama yaþam süresi garanti
 		// edilen nesneler için kullanýlýr. Lifetime kontrolü YAPILMAZ!
 		template<typename ClassName>
-		void BindAction(ClassName* obj, void(ClassName::* callback)(Args...))
+		DelegateHandle BindAction(ClassName* obj, void(ClassName::* callback)(Args...))
 		{
 			std::function<bool(Args...)> callBackFunc = [obj, callback](Args... args)->bool
 			{
@@ -221,7 +242,39 @@ namespace ly
 				return false;
 			};
 			
-			mCallbacks.push_back(callBackFunc);
+			return AddCallback(std::move(callBackFunc));
+		}
+
+		bool UnbindAction(DelegateHandle handle)
+		{
+			if (!handle.IsValid())
+			{
+				return false;
+			}
+
+			bool removed = MarkInactive(mCallbacks, handle.mId);
+			removed = MarkInactive(mPendingCallbacks, handle.mId) || removed;
+
+			if (mBroadcastDepth == 0)
+			{
+				CompactCallbacks();
+			}
+
+			return removed;
+		}
+
+		void Clear()
+		{
+			for (CallbackEntry& entry : mCallbacks)
+			{
+				entry.active = false;
+			}
+			mPendingCallbacks.clear();
+
+			if (mBroadcastDepth == 0)
+			{
+				mCallbacks.clear();
+			}
 		}
 
 		// ====================================================================
@@ -246,6 +299,13 @@ namespace ly
 		
 		void Broadcast(Args... args)
 		{
+			// Effects can change before any presentation or UI listener subscribes.
+			// Avoid constructing a Debug iterator for an empty callback vector.
+			if (mCallbacks.empty())
+			{
+				return;
+			}
+
 			// ================================================================
 			// ITERATOR-BASED LOOP - Manuel Iterator Kontrolü
 			// ================================================================
@@ -272,8 +332,16 @@ namespace ly
 			// - end() asla geçerli bir elemana iþaret etmez!
 			// - [begin, end) = "half-open range" (matematik notasyonu)
 			
-			for (auto iter = mCallbacks.begin(); iter != mCallbacks.end();)
+			++mBroadcastDepth;
+			try
 			{
+				for (std::size_t index = 0; index < mCallbacks.size(); ++index)
+				{
+					CallbackEntry& entry = mCallbacks[index];
+					if (!entry.active)
+					{
+						continue;
+					}
 				// ============================================================
 				// CALLBACK ÇAÐRISI VE SONUÇ KONTROLÜ
 				// ============================================================
@@ -298,7 +366,7 @@ namespace ly
 				// - true  = callback baþarýlý (nesne yaþýyor)
 				// - false = callback baþarýsýz (nesne ölmüþ)
 				
-				if ((*iter)(args...))
+				if (entry.callback(args...))
 				{
 					// ========================================================
 					// BAÞARILI CALLBACK - Sonraki Elemana Geç
@@ -316,7 +384,6 @@ namespace ly
 					// - Iterator'ler büyük nesneler olabilir (linked list vb.)
 					// - Pre-increment daha verimli
 					// - Modern C++ best practice
-					++iter;
 				}
 				else
 				{
@@ -351,12 +418,94 @@ namespace ly
 					// [A, C, D]
 					//     ^
 					//     iter (C'yi gösteriyor - otomatik ilerledi!)
-					iter = mCallbacks.erase(iter);
+					entry.active = false;
 				}
 			}
+			}
+			catch (...)
+			{
+				EndBroadcast();
+				throw;
+			}
+
+			EndBroadcast();
 		}
 
 	private:
+		using Callback = std::function<bool(Args...)>;
+
+		struct CallbackEntry
+		{
+			std::uint64_t id;
+			Callback callback;
+			bool active;
+		};
+
+		DelegateHandle AddCallback(Callback callback)
+		{
+			const std::uint64_t id = mNextCallbackId++;
+			CallbackEntry entry{ id, std::move(callback), true };
+
+			if (mBroadcastDepth == 0)
+			{
+				mCallbacks.push_back(std::move(entry));
+			}
+			else
+			{
+				mPendingCallbacks.push_back(std::move(entry));
+			}
+
+			return DelegateHandle{ id };
+		}
+
+		static bool MarkInactive(List<CallbackEntry>& callbacks, std::uint64_t id)
+		{
+			for (CallbackEntry& entry : callbacks)
+			{
+				if (entry.id == id && entry.active)
+				{
+					entry.active = false;
+					return true;
+				}
+			}
+			return false;
+		}
+
+		void CompactCallbacks()
+		{
+			mCallbacks.erase(
+				std::remove_if(
+					mCallbacks.begin(),
+					mCallbacks.end(),
+					[](const CallbackEntry& entry)
+					{
+						return !entry.active;
+					}
+				),
+				mCallbacks.end()
+			);
+		}
+
+		void EndBroadcast()
+		{
+			if (mBroadcastDepth == 0 || --mBroadcastDepth != 0)
+			{
+				return;
+			}
+
+			CompactCallbacks();
+			if (!mPendingCallbacks.empty())
+			{
+				mCallbacks.reserve(mCallbacks.size() + mPendingCallbacks.size());
+				std::move(
+					mPendingCallbacks.begin(),
+					mPendingCallbacks.end(),
+					std::back_inserter(mCallbacks)
+				);
+				mPendingCallbacks.clear();
+			}
+		}
+
 		// ====================================================================
 		// CALLBACK STORAGE - Dinleyici Listesi
 		// ====================================================================
@@ -406,7 +555,10 @@ namespace ly
 		// ÖRNEK AÇILIM:
 		// Delegate<float, int> için:
 		// List<std::function<bool(float, int)>> mCallbacks;
-		List<std::function<bool(Args...)>> mCallbacks;
+		List<CallbackEntry> mCallbacks;
+		List<CallbackEntry> mPendingCallbacks;
+		std::uint64_t mNextCallbackId{ 1 };
+		std::size_t mBroadcastDepth{ 0 };
 	};
 }
 

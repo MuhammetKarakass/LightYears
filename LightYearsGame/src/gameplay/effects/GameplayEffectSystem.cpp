@@ -3,7 +3,6 @@
 #include "gameplay/attributes/AttributeSystem.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/combat/Combatant.h"
-#include "gameplay/damage/DamageTypeSystem.h"
 #include "framework/Actor.h"
 #include "presentation/effects/GameplayEffectVisual.h"
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
@@ -24,6 +23,32 @@ namespace ly
 
 	GameplayEffectHandle GameplayEffectSystem::ApplyEffect(const GameplayEffectDefinition& definition, Actor* source)
 	{
+		return ApplyEffect(MakeGameplayEffectSpec(definition), GameplayEffectApplicationContext{ source });
+	}
+
+	GameplayEffectHandle GameplayEffectSystem::ApplyEffect(
+		const GameplayEffectDefinition& definition,
+		const GameplayEffectApplicationContext& context
+	)
+	{
+		return ApplyEffect(MakeGameplayEffectSpec(definition), context);
+	}
+
+	GameplayEffectHandle GameplayEffectSystem::ApplyEffect(
+		const GameplayEffectSpec& spec,
+		Actor* source
+	)
+	{
+		return ApplyEffect(spec, GameplayEffectApplicationContext{ source });
+	}
+
+	GameplayEffectHandle GameplayEffectSystem::ApplyEffect(
+		const GameplayEffectSpec& spec,
+		const GameplayEffectApplicationContext& context
+	)
+	{
+		LY_PROFILE_FUNCTION();
+		const GameplayEffectDefinition& definition = spec.definition;
 		if (!CanApplyEffect(definition))
 		{
 			return {};
@@ -34,7 +59,7 @@ namespace ly
 		{
 			if (mAttributes)
 			{
-				for (const AttributeModifier& modifier : definition.modifiers)
+				for (const AttributeModifier& modifier : spec.modifiers)
 				{
 					mAttributes->ApplyBaseModifier(modifier);
 				}
@@ -49,7 +74,9 @@ namespace ly
 		{
 			for (ActiveGameplayEffect& activeEffect : mActiveEffects)
 			{
-				if (activeEffect.definition.effectId != definition.effectId)
+				if (activeEffect.spec.definition.effectId != definition.effectId ||
+					(definition.sourceScopedApplication &&
+						activeEffect.sourceScope != context.sourceScope))
 				{
 					continue;
 				}
@@ -59,8 +86,10 @@ namespace ly
 					RemoveGrantedTags(activeEffect);
 					RemoveModifiers(activeEffect);
 					DestroyVisual(activeEffect);
-					activeEffect.definition = definition;
-					activeEffect.source = source;
+					activeEffect.spec = spec;
+					activeEffect.source = context.source;
+					activeEffect.sourceScope = context.sourceScope;
+					activeEffect.runtimeContext = context.runtimeContext;
 					activeEffect.stackCount = 1;
 					GameplayEffectBehavior::Refresh(activeEffect);
 					ApplyModifiers(activeEffect);
@@ -69,9 +98,11 @@ namespace ly
 				}
 				else if (definition.stackingPolicy == GameplayEffectStackingPolicy::Stack)
 				{
-					activeEffect.definition = definition;
-					activeEffect.source = source;
-					if (activeEffect.stackCount < std::max(1, definition.maxStacks))
+					activeEffect.spec = spec;
+					activeEffect.source = context.source;
+					activeEffect.sourceScope = context.sourceScope;
+					activeEffect.runtimeContext = context.runtimeContext;
+					if (activeEffect.stackCount < std::max(1, spec.maxStacks))
 					{
 						++activeEffect.stackCount;
 						ApplyModifiers(activeEffect);
@@ -79,8 +110,8 @@ namespace ly
 					}
 				}
 
-				activeEffect.remainingDuration = definition.duration;
-				activeEffect.totalDuration = definition.duration;
+				activeEffect.remainingDuration = spec.duration;
+				activeEffect.totalDuration = spec.duration;
 				SynchronizeVisual(activeEffect);
 				onEffectChanged.Broadcast(activeEffect.handle);
 				onEffectsChanged.Broadcast();
@@ -88,20 +119,41 @@ namespace ly
 			}
 		}
 
-		ActiveGameplayEffect effect;
+		mActiveEffects.emplace_back();
+		ActiveGameplayEffect& effect = mActiveEffects.back();
 		effect.handle = newHandle;
-		effect.definition = definition;
-		effect.remainingDuration = definition.duration;
-		effect.totalDuration = definition.duration;
-		effect.source = source;
+		effect.spec = spec;
+		effect.remainingDuration = spec.duration;
+		effect.totalDuration = spec.duration;
+		effect.source = context.source;
+		effect.sourceScope = context.sourceScope;
+		effect.runtimeContext = context.runtimeContext;
 		GameplayEffectBehavior::Initialize(effect);
 		ApplyModifiers(effect);
 		GrantTags(effect);
 		SpawnVisual(effect);
-		mActiveEffects.push_back(effect);
 		onEffectApplied.Broadcast(newHandle);
 		onEffectsChanged.Broadcast();
 		return newHandle;
+	}
+
+	bool GameplayEffectSystem::RefreshEffectDuration(GameplayEffectHandle handle)
+	{
+		for (ActiveGameplayEffect& effect : mActiveEffects)
+		{
+			if (!(effect.handle == handle) ||
+				effect.spec.definition.durationPolicy != GameplayEffectDurationPolicy::Duration)
+			{
+				continue;
+			}
+			effect.remainingDuration = effect.spec.duration;
+			effect.totalDuration = effect.spec.duration;
+			SynchronizeVisual(effect);
+			onEffectChanged.Broadcast(effect.handle);
+			onEffectsChanged.Broadcast();
+			return true;
+		}
+		return false;
 	}
 
 	void GameplayEffectSystem::RemoveEffect(GameplayEffectHandle handle)
@@ -118,10 +170,13 @@ namespace ly
 
 	void GameplayEffectSystem::Tick(float deltaTime)
 	{
+		LY_PROFILE_FUNCTION();
 		for (size_t i = 0; i < mActiveEffects.size();)
 		{
 			ActiveGameplayEffect& effect = mActiveEffects[i];
-			const GameplayEffectBehaviorResult behaviorTick = GameplayEffectBehavior::Tick(effect, deltaTime);
+			const GameplayEffectBehaviorResult behaviorTick = mOwner
+				? GameplayEffectBehavior::Tick(effect, *mOwner, deltaTime)
+				: GameplayEffectBehaviorResult{};
 			if (behaviorTick.changed)
 			{
 				SynchronizeVisual(effect);
@@ -133,31 +188,7 @@ namespace ly
 				RemoveEffectAt(i);
 				continue;
 			}
-			if (effect.definition.behaviorTag == DamageStatusSchema::IgniteBehavior && mOwner && deltaTime > 0.f)
-			{
-				const float damagePerSecond = std::max(
-					0.f,
-					FindGameplayAttributeValue(
-						effect.runtimeAttributes,
-						DamageAttributeIds::BurnDamagePerSecond,
-						0.f
-					)
-				);
-				if (damagePerSecond > 0.f &&
-					effect.stackCount >= std::max(1, effect.definition.maxStacks))
-				{
-					// Ignite builds visibly but starts damaging only at its full
-					// four-hit threshold. The default payload prevents a burn tick
-					// from recursively refreshing or stacking its own status effect.
-					ApplyCombatDamage(
-						*mOwner,
-						damagePerSecond * static_cast<float>(effect.stackCount) * deltaTime,
-						effect.source,
-						{ DamageTypeSchema::Thermal }
-					);
-				}
-			}
-			if (effect.definition.durationPolicy == GameplayEffectDurationPolicy::Duration)
+			if (effect.spec.definition.durationPolicy == GameplayEffectDurationPolicy::Duration)
 			{
 				effect.remainingDuration -= deltaTime;
 				if (effect.remainingDuration <= 0.f)
@@ -183,6 +214,7 @@ namespace ly
 
 	void GameplayEffectSystem::ProcessIncomingDamage(DamageContext& context)
 	{
+		LY_PROFILE_FUNCTION();
 		const auto processPhase = [&](IncomingDamagePhase phase)
 		{
 			for (size_t i = 0; i < mActiveEffects.size() && context.remainingDamage > 0.f;)
@@ -243,7 +275,7 @@ namespace ly
 	{
 		for (const ActiveGameplayEffect& effect : mActiveEffects)
 		{
-			if (effect.definition.effectId == effectId)
+			if (effect.spec.definition.effectId == effectId)
 			{
 				return &effect;
 			}
@@ -257,7 +289,7 @@ namespace ly
 		for (const ActiveGameplayEffect& effect : mActiveEffects)
 		{
 			GameplayEffectSnapshot snapshot;
-			snapshot.effectId = effect.definition.effectId;
+			snapshot.effectId = effect.spec.definition.effectId;
 			snapshot.remainingDuration = effect.remainingDuration;
 			snapshot.totalDuration = effect.totalDuration;
 			snapshot.stackCount = effect.stackCount;
@@ -295,7 +327,7 @@ namespace ly
 		{
 			return;
 		}
-		for (const AttributeModifier& modifier : effect.definition.modifiers)
+		for (const AttributeModifier& modifier : effect.spec.modifiers)
 		{
 			const AttributeModifierHandle handle = mAttributes->AddModifier(modifier);
 			if (handle.IsValid())
@@ -323,7 +355,7 @@ namespace ly
 		{
 			return;
 		}
-		for (const GameplayTag& tag : effect.definition.grantedTags)
+		for (const GameplayTag& tag : effect.spec.definition.grantedTags)
 		{
 			mOwnedTags->AddTag(tag);
 		}
@@ -335,7 +367,7 @@ namespace ly
 		{
 			return;
 		}
-		for (const GameplayTag& tag : effect.definition.grantedTags)
+		for (const GameplayTag& tag : effect.spec.definition.grantedTags)
 		{
 			mOwnedTags->RemoveTag(tag);
 		}
@@ -343,6 +375,12 @@ namespace ly
 
 	void GameplayEffectSystem::RemoveEffectAt(size_t index)
 	{
+		LY_ASSERT(
+			index < mActiveEffects.size(),
+			"GameplayEffectSystem removal index out of range: %zu/%zu",
+			index,
+			mActiveEffects.size()
+		);
 		if (index >= mActiveEffects.size())
 		{
 			return;
@@ -359,12 +397,12 @@ namespace ly
 
 	void GameplayEffectSystem::SpawnVisual(ActiveGameplayEffect& effect)
 	{
-		if (!mOwner || effect.definition.activeVisualId.empty())
+		if (!mOwner || effect.spec.definition.activeVisualId.empty())
 		{
 			return;
 		}
 		effect.visual = GameplayEffectVisualRegistry::Spawn(
-			effect.definition.activeVisualId,
+			effect.spec.definition.activeVisualId,
 			*mOwner
 		);
 		SynchronizeVisual(effect);

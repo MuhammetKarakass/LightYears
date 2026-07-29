@@ -33,6 +33,23 @@
 | Kod sınırı | `gameplay/ability/rocket/RocketAbility`, `RocketProjectileActor`, `gameConfigs/ability/RocketConfig.h` |
 | Sonrası | L6 ve L15 evolve seçimleri ertelendi; Basic Rocket'te homing, split, multi-rocket veya elemental davranış yok |
 
+## Uygulanan ability: Gravity Anomaly / Ability.GravityAnomaly.Basic
+
+| Alan | Not |
+| --- | --- |
+| Statü | Uygulandı; player varsayılan loadout'unda Shield'in yerine grant edilir |
+| Slot ve input | Ability1 / Q; OnPressed, cursor hedefi |
+| Cooldown / charge | 8.0 sn taban cooldown; 1 charge; AbilityHaste final cooldown'u merkezi eğri üzerinden azaltır |
+| Delivery | Owner önünde spawn olan projectile cursor'a gider; hedef 900 menzile clamp edilir, homing/collision ile patlama yoktur |
+| Field | Projectile hedefe ulaşınca 2.5 sn, 220 radius alan üretir; projectile ve pickup'lar hariç caster/player/enemy Combatant'ları etkiler |
+| Movement / effect | İçeride her hedefe field-source scoped, 2 sn refresh-duration `Effect.GravityAnomaly.Inside` uygulanır; içeride süre sürekli 2 sn'ye resetlenir. Çıkışta/field bitiminde pull kapanır, `%20 MovementSlow` ve visual 2 sn daha sürer. Pull velocity'ye `500 * (1-d/radius)^2 * dt` ekler |
+| Damage | Damage tag, DamageContext, crit ve hasar uygulaması yok |
+| Owner scaling | MaxHealth: radius +0.20 x MaxHealth, duration +0.0025 x MaxHealth; diğer resolved değerler değişmez |
+| Level 2-15 | Her level: cooldown -0.10 sn, duration +0.03 sn, radius +2, pull +10, slow +0.005, projectile speed +25, cast range +5. L15: 6.6 sn / 2.92 sn / 248 / 640 / %27 / 2350 / 970 |
+| Kod sınırı | `gameplay/ability/gravityAnomaly/`, `gameplay/effects/gravityAnomaly/`, `gameConfigs/ability/GravityAnomalyConfig.h`, typed presentation ve effect visual aile klasörleri |
+| Presentation | `RegisterGameAbilityPresentationContent()` projectile ve field için ayrı typed profile kaydeder; field world halkaları/inward particles çizer, hedef üzerindeki effect visual ayrı registry kaydıyla oluşur |
+| Sonrası | Value-only evolve mevcut typed profile tipinde yeni kayıt olur; yapısal evolve aynı ailede ayrı profile/actor/handler alır |
+
 Bu dosya, uygulanmış sistem referansından ayrı tutulmuş yaşayan çalışma
 notudur. Buradaki “Fikir” ve “Plan” maddeleri kodda var kabul edilmez.
 Uygulama tamamlandığında sonucu
@@ -76,6 +93,9 @@ dosyalarına yazılır. Bu üç kayıt güncellenmeden değişiklik tamamlanmı�
 | 2026-07-24 | Dash tuning güvenliği | Dash cooldown progression sabit `-0.3` yerine taban cooldown'un level başına %6'sı olarak tanımlandı; player ability grant hataları sebebiyle loglanıyor. | Uygulandı | Taban cooldown 1 sn yapılınca L5'in negatif cooldown üretip Dash'in hiç grant edilmemesi düzeltildi. Yapısal testler geçerli sayısal tuning değişikliklerini sabit eski değerler yüzünden reddetmez. |
 | 2026-07-24 | Primary weapon scaling | Rapid Laser 1.0 AP/1.0 AS korunurken Shotgun 0.75/0.50, Dual Kinetic 0.45/1.0, Electric 0.85/0.60, Beam 0.75 AP + 0.50 EnergyMax ve Cryo 0.75/0.50 olarak ayarlandı. | Uygulandı | Tekrarlanan ana silahlarda erken/orta oyun büyümesi indirildi; Dual'ın iki muzzle toplamı L50'de Rapid Laser'ın altında kaldı. Production runtime testleri L1/10/25/50 değerlerini doğrular. |
 | 2026-07-24 | Electric / Beam special scaling | Electric Luck artık hasar scale'ı değil, normal zincirlerden sonra tek ek uygun zincir için merkezi combat Luck ile en fazla %35 şanstır. Beam AttackSpeed yalnızca 50% heat sonrası heat gain'i azaltır; 75–100% aralığında doygun eğriyle en fazla %35'tir. | Uygulandı | Electric hedef tekrarını ve hedef yokken proc'u engeller. Beam AttackSpeed doğrudan DPS/tick/fire rate eklemez, overheat'i kaldırmaz; sadece yüksek heat penceresini uzatır. |
+| 2026-07-25 | Gravity Anomaly Basic | Gravity Anomaly player loadout'unda Ability1/Q'ya taşındı ve bu slotta önceki Shield grant'inin yerini aldı. Projectile cursor'a gider, sabit hedefte damage'siz field oluşturur. İçeride slow süresi sürekli 2 sn'ye yenilenir; alan terkinde veya field bitiminde pull hemen kapanır, slow/visual 2 sn sonra normal effect expiry ile temizlenir. | Uygulandı | Ayrı field'lar source scope ile birbirinin slow/pull effect'ini silmez. GasLiteCoreTests loadout/slot, clamp, lifecycle, target filtreleme, pull, exit/destroy tail, hareket slow, multi-field expiry, level/MaxHealth scale ve visual cleanup'ı doğrular. |
+| 2026-07-25 | Yeniden kullanılabilir gameplay effect mimarisi | Shipped effect'ler merkezi katalogda immutable `GameplayEffectDefinition` olarak tutulur; her ability, weapon/status, enemy, reward veya area uygulaması kaynağa özel `GameplayEffectSpec` üretir; hedef mutable `ActiveGameplayEffect` sahiplenir. Barrier, Ignite, Electric ve Gravity davranışları generic hook registry üzerinden çalışır. Alan yaşam döngüsü `AreaGameplayEffectApplicator` ile ortaklaştırıldı. | Uygulandı | Yeni slow, burn, haste, attack-speed veya benzeri effect için yeni bir effect system sınıfı yazılmaz. Data/modifier yeterliyse yalnız katalog tanımı; özel tick/damage gerekirse kayıtlı hook; feature'a özgü context gerekiyorsa typed runtime context eklenir. Core effect ID'lerine branch etmez. Katalog, spec izolasyonu, geçersiz behavior/visual/action reddi ve Debug/Release yaşam döngüsü testleri eklendi. |
+| 2026-07-27 | Engine diagnostics | Ortak `LY_ASSERT`/`LY_VERIFY`, CORE/GAME seviyeli structured logging ve RAII scope/counter profiler eklendi. Entry point başlangıç/kapanış sahipliğini üstlendi; application, world, ability, effect ve Gravity Anomaly kritik yolları instrument edildi. | Uygulandı | Debug invariant ihlalleri kaynak konumuyla durur; beklenen Release kontrolleri `LY_VERIFY` ile çalışmaya devam eder. Release profiler/assert maliyeti compile-out edilir, Warning+ loglar ve `LightYears.log` hata izi kalır. |
 | YYYY-AA-GG |  |  | Fikir |  |
 | YYYY-AA-GG |  |  |  |  |
 | YYYY-AA-GG |  |  |  |  |
