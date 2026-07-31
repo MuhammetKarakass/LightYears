@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 
 #include "framework/World.h"
@@ -66,7 +68,7 @@ namespace ly
 					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude
 				})
 				{
-					const GameplayAttribute* attribute = FindGameplayAttribute(definition.attributes, required);
+					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
 					if (!attribute || attribute->baseValue <= 0.f)
 					{
 						return { false, "Gravity Anomaly projectile requires a positive '" + required.ToString() + "' attribute." };
@@ -127,45 +129,45 @@ namespace ly
 	}
 
 	void GravityAnomalyProjectileActor::ConfigureFromAttributes(
-		const GameplayAttributeList& attributes
+		const sas::GameplayAttributeList& attributes
 	)
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
-		mProjectileSpeed = std::max(0.f, FindGameplayAttributeValue(
+		mProjectileSpeed = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed,
 			mProjectileSpeed
 		));
-		mCastRange = std::max(0.f, FindGameplayAttributeValue(
+		mCastRange = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::ActorSchema::CastRange,
 			mCastRange
 		));
-		mFieldDuration = std::max(0.f, FindGameplayAttributeValue(
+		mFieldDuration = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			CommonAttributeIds::Duration,
 			mFieldDuration
 		));
-		mFieldRadius = std::max(0.f, FindGameplayAttributeValue(
+		mFieldRadius = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			CommonAttributeIds::Radius,
 			mFieldRadius
 		));
-		mPullStrength = std::max(0.f, FindGameplayAttributeValue(
+		mPullStrength = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::ActorSchema::PullStrength,
 			mPullStrength
 		));
-		mSlowMagnitude = std::clamp(FindGameplayAttributeValue(
+		mSlowMagnitude = std::clamp(sas::FindGameplayAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
 			mSlowMagnitude
 		), 0.f, 0.95f);
 		mFieldAttributes = {
-			GameplayAttribute{ CommonAttributeIds::Duration, mFieldDuration, 0.01f },
-			GameplayAttribute{ CommonAttributeIds::Radius, mFieldRadius, 0.01f },
-			GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::PullStrength, mPullStrength, 0.f },
-			GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, mSlowMagnitude, 0.f, 0.95f }
+			sas::GameplayAttribute{ CommonAttributeIds::Duration, mFieldDuration, 0.01f },
+			sas::GameplayAttribute{ CommonAttributeIds::Radius, mFieldRadius, 0.01f },
+			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::PullStrength, mPullStrength, 0.f },
+			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, mSlowMagnitude, 0.f, 0.95f }
 		};
 		SetAbilityPhysicsEnabled(false);
 		SetCollisionLayer(CollisionLayer::None);

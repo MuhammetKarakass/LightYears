@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/weapon/wave/ExpandingWaveWeaponActor.h"
 
 #include "framework/World.h"
@@ -53,32 +55,32 @@ namespace ly
 		World* world,
 		Actor* owner,
 		const WeaponPresentationDefinition& presentation,
-		const GameplayAttributeList& attributes,
+		const sas::GameplayAttributeList& attributes,
 		const List<GameplayTag>& damageTags
 	)
 		: AbilityWorldActor(world, owner)
-		, mSpeed(std::max(0.f, FindGameplayAttributeValue(
+		, mSpeed(std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::Speed,
 			0.f
 		)))
-		, mMaxTravelDistance(std::max(0.f, FindGameplayAttributeValue(
+		, mMaxTravelDistance(std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			CommonAttributeIds::Range,
 			0.f
 		)))
-		, mInitialWidth(std::max(1.f, FindGameplayAttributeValue(
+		, mInitialWidth(std::max(1.f, sas::FindGameplayAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::InitialWidth,
 			1.f
 		)))
-		, mMaximumWidth(std::max(mInitialWidth, FindGameplayAttributeValue(
+		, mMaximumWidth(std::max(mInitialWidth, sas::FindGameplayAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::MaximumWidth,
 			mInitialWidth
 		)))
 		, mCurrentWidth(mInitialWidth)
-		, mThickness(std::max(1.f, FindGameplayAttributeValue(
+		, mThickness(std::max(1.f, sas::FindGameplayAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::Thickness,
 			1.f
@@ -86,7 +88,7 @@ namespace ly
 		, mColor(presentation.pointLightDef.color)
 	{
 		SetRenderLayer(RenderLayer::Projectile);
-		SetDamage(std::max(0.f, FindGameplayAttributeValue(
+		SetDamage(std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			CommonAttributeIds::Damage,
 			0.f

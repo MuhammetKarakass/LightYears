@@ -1,12 +1,16 @@
 #pragma once
 
-#include "gameConfigs/ability/AbilityStructs.h"
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
+#include "gameplay/ability/content/GameAbilityDefinition.h"
 
 namespace AbilityData
 {
 	namespace Dash
 	{
-		inline const ly::GameplayTag BehaviorId{ "AbilityBehavior.Dash" };
+		inline const ly::GameplayTag BehaviorId{ "GameAbilityBehavior.Dash" };
 		inline const ly::GameplayTag FamilyTag{ "Ability.Movement.Dash" };
 		inline const ly::GameplayTag StartEvent{ "Event.Ability.Dash.Start" };
 		inline const ly::GameplayTag EndEvent{ "Event.Ability.Dash.End" };
@@ -42,13 +46,13 @@ namespace AbilityData
 
 	namespace Definitions
 	{
-		inline const ly::AbilityDefinition Dash_Basic = []
+		inline const ly::GameAbilityDefinition Dash_Basic = []
 		{
-			ly::AbilityDefinition definition;
+			ly::GameAbilityDefinition definition;
 			definition.abilityId = "Ability.Dash.Basic";
-			definition.slot = ly::AbilitySlot::Ability3;
-			definition.activationPolicy = ly::AbilityActivationPolicy::OnPressed;
-			definition.lifetimePolicy = ly::AbilityLifetimePolicy::Duration;
+			definition.slot = sas::AbilitySlot::Ability3;
+			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
+			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 			definition.cooldown = 2.f; // Base cooldown before level progression and Ability Haste.
 			definition.duration = Dash::BasicSettings.duration;
 			definition.maxCharges = 1;
@@ -64,9 +68,9 @@ namespace AbilityData
 				4,
 				ly::AbilityLevelStep{
 					{
-						ly::AttributeModifier{
+						sas::AttributeModifier{
 							ly::CommonAttributeIds::Cooldown,
-							ly::AttributeModifierOperation::Add,
+							sas::AttributeModifierOperation::Add,
 							-definition.cooldown * Dash::BasicSettings.cooldownReductionPerLevelRatio
 						}
 					}

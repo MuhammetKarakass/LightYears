@@ -1,7 +1,11 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+#include "effects/AreaGameplayEffectApplicator.h"
+#include "effects/GameplayEffectBindings.h"
+#include "effects/GameplayEffectRuntimeEntry.h"
+
 #include "gameplay/ability/actors/AbilityWorldActor.h"
-#include "gameplay/effects/AreaGameplayEffectApplicator.h"
 #include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
@@ -24,7 +28,7 @@ namespace ly
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderWindow& window) override;
 		void Destroy() override;
-		void ConfigureFromAttributes(const GameplayAttributeList& attributes) override;
+		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
 
 		float GetResolvedRadius() const { return mRadius; }
 		float GetResolvedDuration() const { return mDuration; }
@@ -43,8 +47,11 @@ namespace ly
 
 		GravityAnomalyFieldPresentationProfile mPresentationProfile;
 		std::shared_ptr<GravityAnomalyRuntimeContext> mRuntimeContext;
-		GameplayEffectSpec mInsideEffectSpec;
-		AreaGameplayEffectApplicator mEffectApplicator;
+		sas::GameplayEffectSpec mInsideEffectSpec;
+		sas::AreaGameplayEffectApplicator<
+			Actor,
+			sas::GameplayEffectRuntimeContext
+		> mEffectApplicator;
 		sf::CircleShape mCenter;
 		sf::CircleShape mInnerRing;
 		sf::CircleShape mOuterRing;

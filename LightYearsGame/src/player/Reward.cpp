@@ -3,7 +3,7 @@
 #include <framework/World.h>
 #include "player/PlayerManager.h"
 #include "gameConfigs/combat/EffectConfig.h"
-#include "gameplay/effects/GameplayEffectSystem.h"
+#include "effects/GameplayEffectSystem.h"
 
 
 namespace ly
@@ -85,8 +85,8 @@ namespace ly
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			player->GetCombatRuntime().GetEffects().ApplyEffect(
-				MakeGameplayEffectSpec(EffectData::BasicBarrierEffect)
+			player->GetAbilitySystemComponent().ApplyGameplayEffect(
+				sas::MakeGameplayEffectSpec(EffectData::BasicBarrierEffect)
 			);
 		}
 	}

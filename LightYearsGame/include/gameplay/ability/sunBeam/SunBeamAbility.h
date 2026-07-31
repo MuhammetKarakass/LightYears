@@ -1,14 +1,14 @@
 #pragma once
 
-#include "gameplay/ability/AbilityBehavior.h"
+#include "gameplay/ability/GameAbility.h"
 
 namespace ly
 {
-	class SunBeamAbility final : public AbilityBehavior
+	class SunBeamAbility final : public GameAbilityBehavior
 	{
 	public:
 		bool Validate(
-			const AbilityDefinition& definition,
+			const GameAbilityDefinition& definition,
 			std::string* failureReason = nullptr
 		) const override;
 	};

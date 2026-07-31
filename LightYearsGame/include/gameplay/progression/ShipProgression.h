@@ -2,7 +2,7 @@
 
 #include "framework/Delegate.h"
 #include "gameConfigs/ship/ShipStructs.h"
-#include "gameplay/attributes/AttributeSystem.h"
+#include "attributes/AttributeSystem.h"
 
 namespace ly
 {
@@ -10,7 +10,7 @@ namespace ly
 	{
 	public:
 		void Configure(const ShipProgressionDefinition& definition);
-		void BindAttributes(AttributeSystem& attributes);
+		void BindAttributes(sas::AttributeSystem& attributes);
 		// Call when the currently bound ship begins destruction. This deliberately
 		// does not dereference the previous runtime, whose lifetime may already be ending.
 		void UnbindAttributes();
@@ -30,8 +30,8 @@ namespace ly
 		void RemoveCurrentLevelModifiers();
 
 		ShipProgressionDefinition mDefinition;
-		AttributeSystem* mBoundAttributes = nullptr;
-		List<AttributeModifierHandle> mLevelModifierHandles;
+		sas::AttributeSystem* mBoundAttributes = nullptr;
+		List<sas::AttributeModifierHandle> mLevelModifierHandles;
 		float mCurrentXP = 0.f;
 		int mCurrentLevel = 1;
 		bool mIsConfigured = false;

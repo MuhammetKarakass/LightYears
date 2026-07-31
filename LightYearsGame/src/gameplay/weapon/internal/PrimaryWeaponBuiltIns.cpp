@@ -1,3 +1,4 @@
+#include "attributes/AttributeSystem.h"
 #include "PrimaryWeaponBuiltIns.h"
 
 namespace ly::PrimaryWeaponBuiltIns
@@ -50,12 +51,12 @@ namespace ly::PrimaryWeaponBuiltIns
 		return roots;
 	}
 
-	const GameplayAttribute* FindDefinitionAttribute(
+	const sas::GameplayAttribute* FindDefinitionAttribute(
 		const PrimaryWeaponDefinition& definition,
 		const GameplayTag& attributeId
 	)
 	{
-		return FindGameplayAttribute(definition.attributes, attributeId);
+		return sas::FindGameplayAttribute(definition.attributes, attributeId);
 	}
 
 	PrimaryWeaponValidationResult RequireAttribute(

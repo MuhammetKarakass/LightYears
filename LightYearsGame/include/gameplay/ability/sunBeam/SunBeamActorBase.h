@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/sunBeam/SunBeamVisual.h"
 
@@ -17,11 +19,11 @@ namespace ly
 		void BeginPlay() final override;
 		void Tick(float deltaTime) final override;
 		void Render(sf::RenderWindow& window) final override;
-		void ConfigureFromAttributes(const GameplayAttributeList& attributes) final override;
+		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) final override;
 
 	protected:
 		virtual void OnSunBeamBeginPlay() {}
-		virtual void ConfigureSunBeam(const GameplayAttributeList& attributes) = 0;
+		virtual void ConfigureSunBeam(const sas::GameplayAttributeList& attributes) = 0;
 		virtual void TickSunBeam(float deltaTime) = 0;
 		virtual SunBeamVisualFrame BuildSunBeamVisualFrame() const = 0;
 

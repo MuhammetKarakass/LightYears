@@ -1,8 +1,10 @@
+#include "attributes/AttributeSystem.h"
 #include "level/ArenaLevel.h"
 #include "level/ArenaBoundaryIndicator.h"
 #include "player/PlayerSpaceShip.h"
 #include "gameConfigs/ability/DashConfig.h"
-#include "gameplay/ability/AbilityInstance.h"
+#include "gameConfigs/combat/EffectStructs.h"
+#include "gameplay/ability/GameAbility.h"
 #include "framework/TimerManager.h"
 
 namespace ly
@@ -11,8 +13,10 @@ namespace ly
 	{
 		float ResolveDashCameraZoomOutRatio(const PlayerSpaceShip& ship)
 		{
-			const AbilityInstance* dashAbility =
-				ship.GetCombatRuntime().GetAbilities().GetAbility(AbilitySlot::Ability3);
+			const GameAbility* dashAbility =
+				ship.GetAbilitySystemComponent().FindAbility<GameAbility>(
+					sas::AbilitySlot::Ability3
+				);
 			if (!dashAbility)
 			{
 				return 0.f;
@@ -214,9 +218,11 @@ namespace ly
          if (auto playerSpaceShip = dynamic_cast<PlayerSpaceShip*>(actor.get()))
          {
              float bonusHealth = 0.f;
-             for (const GameplayEffectSnapshot& effectSnapshot : playerSpaceShip->GetCombatRuntime().GetEffects().BuildSnapshots())
+             for (const sas::GameplayEffectRuntimeSnapshot& effectSnapshot :
+                 playerSpaceShip->GetAbilitySystemComponent()
+                     .BuildGameplayEffectSnapshots())
              {
-                 bonusHealth += FindGameplayAttributeValue(
+                 bonusHealth += sas::FindGameplayAttributeValue(
                      effectSnapshot.runtimeAttributes,
                      BarrierEffectSchema::Capacity,
                      0.f
@@ -299,5 +305,3 @@ namespace ly
          ClearGameplayWarning(GameplayWarningType::ArenaBoundary);
      }
 }
-
-

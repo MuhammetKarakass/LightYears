@@ -1,0 +1,70 @@
+add_library(${SPACE_ABILITY_SYSTEM_TARGET_NAME} STATIC
+	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemInterface.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityDefinitionValidation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityBehavior.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityBehaviorRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityEvent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityExecution.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityGrantRules.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityHandle.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityCollection.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityActionScheduler.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityCooldownTracker.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityLifecycleOrchestrator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityPolicies.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeSnapshot.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeEntry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/GameplayAbilityInstance.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeSystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilitySystemRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeState.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityTypes.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityTrigger.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/FactoryRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/attributes/GameplayAttribute.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/attributes/AttributeMath.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/attributes/AttributeSystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectDefinitionValidation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectCollection.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectBehaviorRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/ActiveGameplayEffect.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectBehaviorResult.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectBehaviorRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectSystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/AreaGameplayEffectApplicator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectBindings.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectHandle.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectLifecycleOrchestrator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectPolicies.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectRuntimeSnapshot.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectRuntimeState.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectRuntimeEntry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectRuntimeSystem.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectSpec.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/abilities/AbilityDefinitionValidation.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/AbilitySystemComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/abilities/AbilityGrantRules.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/abilities/AbilityActionScheduler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/abilities/AbilityCooldownTracker.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/abilities/AbilityLifecycleOrchestrator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/abilities/AbilityRuntimeState.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/abilities/AbilityTrigger.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/attributes/AttributeSystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/effects/GameplayEffectDefinitionValidation.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/effects/GameplayEffectBindings.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/effects/GameplayEffectLifecycleOrchestrator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/effects/GameplayEffectRuntimeState.cpp
+)
+
+target_include_directories(${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+	PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+	PUBLIC
+		${LIGHT_YEARS_ENGINE_TARGET_NAME}
+)

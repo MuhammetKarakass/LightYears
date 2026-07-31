@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/sunBeam/SunBeamActorBase.h"
 
 #include "framework/World.h"
@@ -51,13 +53,13 @@ namespace ly
 		mVisual.Draw(window, GetActorLocation(), frame, GetAge());
 	}
 
-	void SunBeamActorBase::ConfigureFromAttributes(const GameplayAttributeList& attributes)
+	void SunBeamActorBase::ConfigureFromAttributes(const sas::GameplayAttributeList& attributes)
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
 
 		mBeamWidth = std::max(
 			1.f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				AbilityData::SunBeam::ActorSchema::Width,
 				mBeamWidth
@@ -66,7 +68,7 @@ namespace ly
 
 		mBeamLength = std::max(
 			1.f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				AbilityData::SunBeam::ActorSchema::Length,
 				mBeamLength
@@ -74,7 +76,7 @@ namespace ly
 		);
 		mImpactRadius = std::max(
 			1.f,
-			FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, mImpactRadius)
+			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, mImpactRadius)
 		);
 
 		mVisual.Configure(mVisualDefinition, mBeamWidth, mBeamLength, mImpactRadius);

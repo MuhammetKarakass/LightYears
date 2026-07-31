@@ -1,10 +1,10 @@
 #pragma once
 
-#include "gameplay/attributes/AttributeSystem.h"
-#include "gameplay/effects/GameplayEffectSystem.h"
-#include "gameplay/ability/AbilitySystem.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "abilities/AbilityEvent.h"
 #include "gameplay/damage/DamageContext.h"
 #include "framework/Delegate.h"
+#include "presentation/effects/GameplayEffectPresentationBinding.h"
 
 namespace ly
 {
@@ -21,14 +21,14 @@ namespace ly
 		void Tick(float deltaTime);
 		void Clear();
 
-		AttributeSystem& GetAttributes() { return mAttributeSystem; }
-		const AttributeSystem& GetAttributes() const { return mAttributeSystem; }
-		GameplayEffectSystem& GetEffects() { return mEffectSystem; }
-		const GameplayEffectSystem& GetEffects() const { return mEffectSystem; }
-		AbilitySystem& GetAbilities() { return mAbilitySystem; }
-		const AbilitySystem& GetAbilities() const { return mAbilitySystem; }
-		GameplayTagContainer& GetOwnedTags() { return mOwnedTags; }
-		const GameplayTagContainer& GetOwnedTags() const { return mOwnedTags; }
+		LightYearsAbilitySystemComponent& GetAbilitySystemComponent()
+		{
+			return mAbilitySystemComponent;
+		}
+		const LightYearsAbilitySystemComponent& GetAbilitySystemComponent() const
+		{
+			return mAbilitySystemComponent;
+		}
 
 		void ProcessIncomingDamage(DamageContext& context);
 		void NotifyDamageResolved(const DamageContext& context);
@@ -37,11 +37,17 @@ namespace ly
 		Delegate<const DamageContext&> onDamageResolved;
 
 	private:
-		Actor* mOwner = nullptr;
-		AttributeSystem mAttributeSystem;
-		GameplayTagContainer mOwnedTags;
-		GameplayEffectSystem mEffectSystem;
-		AbilitySystem mAbilitySystem;
+		void QueueEffectEvent(
+			const sas::GameplayEffectBehaviorEvent& event,
+			const DamageContext* context = nullptr
+		);
+		void DispatchPendingEffectEvents();
+
+		Actor& mOwner;
+		LightYearsAbilitySystemComponent mAbilitySystemComponent;
+		GameplayEffectPresentationBinding mEffectPresentation;
+		List<sas::AbilityEvent> mPendingEffectEvents;
+		const DamageContext* mProcessingDamageContext = nullptr;
 	};
 }
 

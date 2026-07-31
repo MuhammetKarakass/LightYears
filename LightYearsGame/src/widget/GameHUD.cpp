@@ -1,8 +1,10 @@
+#include "attributes/AttributeSystem.h"
 #include "widget/GameHUD.h"
 #include "player/Player.h"
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
 #include "framework/TimerManager.h"
+#include "gameConfigs/combat/EffectStructs.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -185,9 +187,11 @@ namespace ly
 			auto ship = player->GetCurrentSpaceShip().lock();
 			if (ship)
 			{
-				for (const GameplayEffectSnapshot& effectSnapshot : ship->GetCombatRuntime().GetEffects().BuildSnapshots())
+				for (const sas::GameplayEffectRuntimeSnapshot& effectSnapshot :
+					ship->GetAbilitySystemComponent()
+						.BuildGameplayEffectSnapshots())
 				{
-					const GameplayAttribute* capacity = FindGameplayAttribute(
+					const sas::GameplayAttribute* capacity = sas::FindGameplayAttribute(
 						effectSnapshot.runtimeAttributes,
 						BarrierEffectSchema::Capacity
 					);
@@ -498,7 +502,4 @@ namespace ly
 	}
 
 }
-
-
-
 

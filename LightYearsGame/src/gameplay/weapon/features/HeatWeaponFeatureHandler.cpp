@@ -1,7 +1,9 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "../internal/PrimaryWeaponBuiltIns.h"
 
 #include "framework/Actor.h"
-#include "gameplay/attributes/AttributeMath.h"
+#include "attributes/AttributeMath.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
 
@@ -44,11 +46,11 @@ namespace ly
 				highHeatWeight = 1.f;
 			}
 
-			const float attackSpeed = combatant->GetCombatRuntime().GetAttributes().GetCurrentValue(
+			const float attackSpeed = combatant->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
 				OwnerAttributeIds::AttackSpeed
 			);
 			const float reduction = BeamMaximumAttackSpeedHeatGainReduction *
-				AttributeMath::SaturatingFraction(attackSpeed, AttributeMath::PercentageRatingScale) *
+				sas::AttributeMath::SaturatingFraction(attackSpeed, sas::AttributeMath::PercentageRatingScale) *
 				highHeatWeight;
 			return std::clamp(1.f - reduction, 1.f - BeamMaximumAttackSpeedHeatGainReduction, 1.f);
 		}
@@ -59,7 +61,7 @@ namespace ly
 			float capacity
 		)
 		{
-			const float baseGain = std::max(0.f, FindGameplayAttributeValue(
+			const float baseGain = std::max(0.f, sas::FindGameplayAttributeValue(
 				context.attributes,
 				PrimaryWeaponSchema::Feature::Heat::Gain,
 				0.f
@@ -158,7 +160,7 @@ namespace ly
 						return result;
 					}
 				}
-				const GameplayAttribute* capacity =
+				const sas::GameplayAttribute* capacity =
 					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
 						definition,
 						PrimaryWeaponSchema::Feature::Heat::Capacity
@@ -216,12 +218,12 @@ namespace ly
 						return result;
 					}
 				}
-				const GameplayAttribute* cooldown =
+				const sas::GameplayAttribute* cooldown =
 					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
 						definition,
 						PrimaryWeaponSchema::Feature::Heat::OverheatCooldown
 					);
-				const GameplayAttribute* maximumDamageMultiplier =
+				const sas::GameplayAttribute* maximumDamageMultiplier =
 					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
 						definition,
 						PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat
@@ -240,7 +242,7 @@ namespace ly
 				const PrimaryWeaponRuntimeState& state
 			) const override
 			{
-				const float capacity = std::max(0.f, FindGameplayAttributeValue(
+				const float capacity = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Capacity,
 					0.f
@@ -260,7 +262,7 @@ namespace ly
 				PrimaryWeaponRuntimeState& state
 			) const override
 			{
-				const float capacity = std::max(0.f, FindGameplayAttributeValue(
+				const float capacity = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Capacity,
 					0.f
@@ -288,7 +290,7 @@ namespace ly
 			{
 				if (state.handler && !state.handler->UsesIntervalFire())
 				{
-					const float capacity = std::max(0.f, FindGameplayAttributeValue(
+					const float capacity = std::max(0.f, sas::FindGameplayAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Feature::Heat::Capacity,
 						0.f
@@ -309,7 +311,7 @@ namespace ly
 					);
 					if (capacity > 0.f && current >= capacity)
 					{
-						state.RequestCooldown(std::max(0.f, FindGameplayAttributeValue(
+						state.RequestCooldown(std::max(0.f, sas::FindGameplayAttributeValue(
 							context.attributes,
 							PrimaryWeaponSchema::Feature::Heat::OverheatCooldown,
 							0.f
@@ -341,7 +343,7 @@ namespace ly
 				float deltaTime
 			)
 			{
-				const float dissipation = std::max(0.f, FindGameplayAttributeValue(
+				const float dissipation = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Dissipation,
 					0.f

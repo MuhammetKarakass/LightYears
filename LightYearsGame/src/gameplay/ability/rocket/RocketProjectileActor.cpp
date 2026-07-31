@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 
 #include "framework/World.h"
@@ -65,7 +67,7 @@ namespace ly
 					CommonAttributeIds::CollisionRadius
 				})
 				{
-					const GameplayAttribute* attribute = FindGameplayAttribute(definition.attributes, required);
+					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
 					if (!attribute || attribute->baseValue <= 0.f)
 					{
 						return {
@@ -75,11 +77,11 @@ namespace ly
 					}
 				}
 
-				const float speed = FindGameplayAttributeValue(
+				const float speed = sas::FindGameplayAttributeValue(
 					definition.attributes,
 					AbilityData::Rocket::ActorSchema::ProjectileSpeed
 				);
-				const float range = FindGameplayAttributeValue(
+				const float range = sas::FindGameplayAttributeValue(
 					definition.attributes,
 					CommonAttributeIds::Range
 				);
@@ -140,13 +142,13 @@ namespace ly
 		SpawnPresentation();
 	}
 
-	void RocketProjectileActor::ConfigureFromAttributes(const GameplayAttributeList& attributes)
+	void RocketProjectileActor::ConfigureFromAttributes(const sas::GameplayAttributeList& attributes)
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
 
 		mProjectileSpeed = std::max(
 			0.f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				AbilityData::Rocket::ActorSchema::ProjectileSpeed,
 				mProjectileSpeed
@@ -154,7 +156,7 @@ namespace ly
 		);
 		mMaximumRange = std::max(
 			0.f,
-			FindGameplayAttributeValue(attributes, CommonAttributeIds::Range, mMaximumRange)
+			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Range, mMaximumRange)
 		);
 		mTargetTravelDistance = mMaximumRange;
 		if (mTargetLocation)
@@ -178,7 +180,7 @@ namespace ly
 		}
 		mExplosionRadius = std::max(
 			0.f,
-			FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, mExplosionRadius)
+			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, mExplosionRadius)
 		);
 		mTravelDistance = 0.f;
 		mHasExploded = false;

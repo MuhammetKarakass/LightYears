@@ -5,12 +5,12 @@
 namespace ly
 {
 	bool ShieldAbility::Validate(
-		const AbilityDefinition& definition,
+		const GameAbilityDefinition& definition,
 		std::string* failureReason) const
 	{
 		for (const AbilityActionSpec& action : definition.actions)
 		{
-			if (action.phase == AbilityActionPhase::OnActivate &&
+			if (action.phase == sas::AbilityActionPhase::OnActivate &&
 				std::holds_alternative<ApplyEffectAction>(action.action))
 			{
 				return true;

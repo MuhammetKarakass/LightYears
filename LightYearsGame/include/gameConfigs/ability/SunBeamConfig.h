@@ -1,14 +1,18 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
 #include "gameConfigs/ability/AbilityActorStructs.h"
-#include "gameConfigs/ability/AbilityStructs.h"
+#include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationIds.h"
 
 namespace AbilityData
 {
 	namespace SunBeam
 	{
-		inline const ly::GameplayTag BehaviorId{ "AbilityBehavior.SunBeam" };
+		inline const ly::GameplayTag BehaviorId{ "GameAbilityBehavior.SunBeam" };
 		inline const ly::GameplayTag FamilyTag{ "Ability.Offense.SunBeam" };
 
 		struct ActorSchema
@@ -51,14 +55,14 @@ namespace AbilityData
 			0.f,
 			0.f,
 			{
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Damage, 40.f, 0.f },
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Radius, 96.f, 1.f },
-				ly::GameplayAttribute{ ActorSchema::Width, 72.f, 1.f },
-				ly::GameplayAttribute{ ActorSchema::Length, 720.f, 1.f },
-				ly::GameplayAttribute{ ActorSchema::Strike::TelegraphDuration, 0.5f, 0.f },
-				ly::GameplayAttribute{ ActorSchema::Strike::ArrivalDuration, 0.2f, 0.f },
-				ly::GameplayAttribute{ ActorSchema::Strike::ImpactDelay, 0.05f, 0.f },
-				ly::GameplayAttribute{ ActorSchema::Strike::ImpactVisualDuration, 0.22f, 0.f }
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 40.f, 0.f },
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 96.f, 1.f },
+				sas::GameplayAttribute{ ActorSchema::Width, 72.f, 1.f },
+				sas::GameplayAttribute{ ActorSchema::Length, 720.f, 1.f },
+				sas::GameplayAttribute{ ActorSchema::Strike::TelegraphDuration, 0.5f, 0.f },
+				sas::GameplayAttribute{ ActorSchema::Strike::ArrivalDuration, 0.2f, 0.f },
+				sas::GameplayAttribute{ ActorSchema::Strike::ImpactDelay, 0.05f, 0.f },
+				sas::GameplayAttribute{ ActorSchema::Strike::ImpactVisualDuration, 0.22f, 0.f }
 			},
 			ly::SunBeamPresentationIds::StrikeBasic
 		};
@@ -74,13 +78,13 @@ namespace AbilityData
 
 	namespace Definitions
 	{
-		inline const ly::AbilityDefinition SunBeam_Strike_Basic = []
+		inline const ly::GameAbilityDefinition SunBeam_Strike_Basic = []
 		{
-			ly::AbilityDefinition definition;
+			ly::GameAbilityDefinition definition;
 			definition.abilityId = "Ability.SunBeam.Strike.Basic";
-			definition.slot = ly::AbilitySlot::Ability2;
-			definition.activationPolicy = ly::AbilityActivationPolicy::OnPressed;
-			definition.lifetimePolicy = ly::AbilityLifetimePolicy::Instant;
+			definition.slot = sas::AbilitySlot::Ability2;
+			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
+			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.cooldown = 1.f;
 			definition.duration = 0.f;
 			definition.maxCharges = 1;
@@ -94,10 +98,10 @@ namespace AbilityData
 			definition.accentColor = sf::Color{ 255, 190, 70, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{
-					ly::AbilityActionPhase::OnActivate,
+					sas::AbilityActionPhase::OnActivate,
 					ly::SpawnActorAction{
 						SunBeam::ActorStrikeBasic.actorDefinitionId,
-						ly::AbilitySpawnPolicy::MouseWorld
+						sas::AbilitySpawnPolicy::MouseWorld
 					},
 					0.f,
 					1
@@ -107,14 +111,14 @@ namespace AbilityData
 				4,
 				ly::AbilityLevelStep{
 					{
-						ly::AttributeModifier{
+						sas::AttributeModifier{
 							ly::CommonAttributeIds::Damage,
-							ly::AttributeModifierOperation::Add,
+							sas::AttributeModifierOperation::Add,
 							8.f
 						},
-						ly::AttributeModifier{
+						sas::AttributeModifier{
 							ly::CommonAttributeIds::Radius,
-							ly::AttributeModifierOperation::Add,
+							sas::AttributeModifierOperation::Add,
 							8.f
 						}
 					}

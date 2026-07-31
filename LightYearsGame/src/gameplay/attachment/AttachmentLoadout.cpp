@@ -1,3 +1,4 @@
+#include "attributes/AttributeSystem.h"
 #include "gameplay/attachment/AttachmentLoadout.h"
 
 #include <algorithm>
@@ -22,13 +23,13 @@ namespace ly
 			});
 		}
 
-		GameplayAttributeList ApplyModifiers(
-			GameplayAttributeList attributes,
-			const List<AttributeModifier>& modifiers
+		sas::GameplayAttributeList ApplyModifiers(
+			sas::GameplayAttributeList attributes,
+			const List<sas::AttributeModifier>& modifiers
 		)
 		{
 			List<GameplayTag> processedAttributes;
-			for (const AttributeModifier& modifier : modifiers)
+			for (const sas::AttributeModifier& modifier : modifiers)
 			{
 				if (!modifier.attributeId.IsValid())
 				{
@@ -40,15 +41,15 @@ namespace ly
 				}
 				processedAttributes.push_back(modifier.attributeId);
 
-				GameplayAttribute* attribute = FindGameplayAttribute(attributes, modifier.attributeId);
+				sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(attributes, modifier.attributeId);
 				if (!attribute)
 				{
-					attributes.push_back(GameplayAttribute{ modifier.attributeId, 0.f, 0.f });
+					attributes.push_back(sas::GameplayAttribute{ modifier.attributeId, 0.f, 0.f });
 					attribute = &attributes.back();
 				}
 
-				List<AttributeModifier> targetModifiers;
-				for (const AttributeModifier& candidate : modifiers)
+				List<sas::AttributeModifier> targetModifiers;
+				for (const sas::AttributeModifier& candidate : modifiers)
 				{
 					if (candidate.attributeId == modifier.attributeId)
 					{
@@ -56,14 +57,14 @@ namespace ly
 					}
 				}
 
-				GameplayAttribute input{
+				sas::GameplayAttribute input{
 					attribute->id,
 					attribute->currentValue,
 					attribute->minValue,
 					attribute->maxValue
 				};
 				attribute->baseValue = input.baseValue;
-				attribute->currentValue = CalculateModifiedAttributeValue(input, targetModifiers);
+				attribute->currentValue = sas::CalculateModifiedAttributeValue(input, targetModifiers);
 			}
 
 			return attributes;
@@ -160,21 +161,21 @@ namespace ly
 		++mRevision;
 	}
 
-	GameplayAttributeList AttachmentLoadout::MergeGrantedAttributes(
+	sas::GameplayAttributeList AttachmentLoadout::MergeGrantedAttributes(
 		AttachmentHostKind hostKind,
-		const GameplayAttributeList& sourceAttributes
+		const sas::GameplayAttributeList& sourceAttributes
 	) const
 	{
-		GameplayAttributeList merged = sourceAttributes;
+		sas::GameplayAttributeList merged = sourceAttributes;
 		for (const EquippedAttachment& equipped : mEquipped)
 		{
 			if (equipped.hostKind != hostKind)
 			{
 				continue;
 			}
-			for (const GameplayAttribute& granted : equipped.definition.grantedAttributes)
+			for (const sas::GameplayAttribute& granted : equipped.definition.grantedAttributes)
 			{
-				if (granted.id.IsValid() && !FindGameplayAttribute(merged, granted.id))
+				if (granted.id.IsValid() && !sas::FindGameplayAttribute(merged, granted.id))
 				{
 					merged.push_back(granted);
 				}
@@ -183,27 +184,27 @@ namespace ly
 		return merged;
 	}
 
-	GameplayAttribute AttachmentLoadout::ApplyStaticModifiers(
+	sas::GameplayAttribute AttachmentLoadout::ApplyStaticModifiers(
 		AttachmentHostKind hostKind,
-		const GameplayAttribute& attribute
+		const sas::GameplayAttribute& attribute
 	) const
 	{
-		GameplayAttribute result = attribute;
-		const List<AttributeModifier> modifiers = CollectStaticModifiers(hostKind);
-		result.currentValue = CalculateModifiedAttributeValue(
-			GameplayAttribute{ attribute.id, attribute.currentValue, attribute.minValue, attribute.maxValue },
+		sas::GameplayAttribute result = attribute;
+		const List<sas::AttributeModifier> modifiers = CollectStaticModifiers(hostKind);
+		result.currentValue = sas::CalculateModifiedAttributeValue(
+			sas::GameplayAttribute{ attribute.id, attribute.currentValue, attribute.minValue, attribute.maxValue },
 			modifiers
 		);
 		return result;
 	}
 
-	GameplayAttributeList AttachmentLoadout::ApplyConditionalModifiers(
+	sas::GameplayAttributeList AttachmentLoadout::ApplyConditionalModifiers(
 		AttachmentHostKind hostKind,
-		const GameplayAttributeList& resolvedAttributes,
+		const sas::GameplayAttributeList& resolvedAttributes,
 		const List<GameplayTag>& originalDamageTags
 	) const
 	{
-		List<AttributeModifier> activeModifiers;
+		List<sas::AttributeModifier> activeModifiers;
 		for (const EquippedAttachment& equipped : mEquipped)
 		{
 			if (equipped.hostKind != hostKind)
@@ -257,14 +258,14 @@ namespace ly
 		float fallback
 	) const
 	{
-		GameplayAttribute value{ attributeId, fallback, 0.f };
+		sas::GameplayAttribute value{ attributeId, fallback, 0.f };
 		for (const EquippedAttachment& equipped : mEquipped)
 		{
 			if (equipped.hostKind != hostKind)
 			{
 				continue;
 			}
-			for (const GameplayAttribute& granted : equipped.definition.grantedAttributes)
+			for (const sas::GameplayAttribute& granted : equipped.definition.grantedAttributes)
 			{
 				if (granted.id == attributeId)
 				{
@@ -297,7 +298,7 @@ namespace ly
 
 	bool AttachmentLoadout::IsConditionMet(
 		const AttachmentCondition& condition,
-		const GameplayAttributeList& resolvedAttributes,
+		const sas::GameplayAttributeList& resolvedAttributes,
 		const List<GameplayTag>& originalDamageTags
 	) const
 	{
@@ -310,16 +311,16 @@ namespace ly
 		case AttachmentConditionType::MissingDamageTag:
 			return !HasMatchingTag(originalDamageTags, condition.subjectTag);
 		case AttachmentConditionType::AttributeLessThan:
-			return FindGameplayAttributeValue(resolvedAttributes, condition.subjectTag) < condition.threshold;
+			return sas::FindGameplayAttributeValue(resolvedAttributes, condition.subjectTag) < condition.threshold;
 		case AttachmentConditionType::AttributeGreaterThanOrEqual:
-			return FindGameplayAttributeValue(resolvedAttributes, condition.subjectTag) >= condition.threshold;
+			return sas::FindGameplayAttributeValue(resolvedAttributes, condition.subjectTag) >= condition.threshold;
 		}
 		return false;
 	}
 
-	List<AttributeModifier> AttachmentLoadout::CollectStaticModifiers(AttachmentHostKind hostKind) const
+	List<sas::AttributeModifier> AttachmentLoadout::CollectStaticModifiers(AttachmentHostKind hostKind) const
 	{
-		List<AttributeModifier> modifiers;
+		List<sas::AttributeModifier> modifiers;
 		for (const EquippedAttachment& equipped : mEquipped)
 		{
 			if (equipped.hostKind == hostKind)

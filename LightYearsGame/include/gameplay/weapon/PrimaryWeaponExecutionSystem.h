@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 namespace ly
@@ -47,7 +49,7 @@ namespace ly
 
 		static float ConsumeRequestedCooldown(PrimaryWeaponRuntimeState& state);
 		static float BuildBaseFireInterval(
-			const GameplayAttributeList& attributes,
+			const sas::GameplayAttributeList& attributes,
 			float actionInterval
 		);
 	};

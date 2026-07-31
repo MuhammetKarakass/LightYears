@@ -1,71 +1,76 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
 #include "gameConfigs/combat/WeaponStructs.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 
 // Readable stat helpers keep the gameplay tags out of weapon progression data.
 namespace WeaponData::WeaponGrowth
 {
-	inline ly::AttributeModifier Add(const ly::GameplayTag& attributeId, float value)
+	inline sas::AttributeModifier Add(const ly::GameplayTag& attributeId, float value)
 	{
-		return { attributeId, ly::AttributeModifierOperation::Add, value };
+		return { attributeId, sas::AttributeModifierOperation::Add, value };
 	}
 
-	inline ly::AttributeModifier Damage(float value)
+	inline sas::AttributeModifier Damage(float value)
 	{
 		return Add(ly::CommonAttributeIds::Damage, value);
 	}
 
-	inline ly::AttributeModifier FireRate(float value)
+	inline sas::AttributeModifier FireRate(float value)
 	{
 		return Add(ly::CommonAttributeIds::FireRate, value);
 	}
 
-	inline ly::AttributeModifier Range(float value)
+	inline sas::AttributeModifier Range(float value)
 	{
 		return Add(ly::CommonAttributeIds::Range, value);
 	}
 
-	inline ly::AttributeModifier ProjectileSpeed(float value)
+	inline sas::AttributeModifier ProjectileSpeed(float value)
 	{
 		return Add(PrimaryWeaponSchema::Projectile::Delivery::Speed, value);
 	}
 
-	inline ly::AttributeModifier ProjectilePierce(float value)
+	inline sas::AttributeModifier ProjectilePierce(float value)
 	{
 		return Add(PrimaryWeaponSchema::Projectile::Delivery::PierceCount, value);
 	}
 
-	inline ly::AttributeModifier ChainCount(float value)
+	inline sas::AttributeModifier ChainCount(float value)
 	{
 		return Add(PrimaryWeaponSchema::Arc::Electric::ChainCount, value);
 	}
 
-	inline ly::AttributeModifier ChainRange(float value)
+	inline sas::AttributeModifier ChainRange(float value)
 	{
 		return Add(PrimaryWeaponSchema::Arc::Electric::ChainRange, value);
 	}
 
-	inline ly::AttributeModifier ChainDamageMultiplier(float value)
+	inline sas::AttributeModifier ChainDamageMultiplier(float value)
 	{
 		return Add(PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain, value);
 	}
 
-	inline ly::AttributeModifier BeamRange(float value)
+	inline sas::AttributeModifier BeamRange(float value)
 	{
 		return Add(PrimaryWeaponSchema::Beam::Delivery::Range, value);
 	}
 
-	inline ly::AttributeModifier HeatDamageAtMax(float value)
+	inline sas::AttributeModifier HeatDamageAtMax(float value)
 	{
 		return Add(PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat, value);
 	}
 
-	inline ly::AttributeModifier WaveMaximumWidth(float value)
+	inline sas::AttributeModifier WaveMaximumWidth(float value)
 	{
 		return Add(PrimaryWeaponSchema::Wave::Delivery::MaximumWidth, value);
 	}
 
-	inline ly::AttributeModifier CryoBuildupDuration(float value)
+	inline sas::AttributeModifier CryoBuildupDuration(float value)
 	{
 		return Add(ly::DamageAttributeIds::CryoBuildupDuration, value);
 	}

@@ -25,7 +25,7 @@ namespace ly
 
 	void Vanguard::Shoot()
 	{
-		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::PrimaryFire, true);
+		GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	}
 }
 

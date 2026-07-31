@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "framework/Actor.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/damage/DamageContext.h"
@@ -21,7 +23,7 @@ namespace ly
 		float GetDamage() const { return mDamage; }
 		void SetDamageTags(const List<GameplayTag>& damageTags);
 		const List<GameplayTag>& GetDamageTags() const { return mDamageTags; }
-		void SetDamageAttributes(const GameplayAttributeList& attributes);
+		void SetDamageAttributes(const sas::GameplayAttributeList& attributes);
 		const DamagePayload& GetDamagePayload() const { return mDamagePayload; }
 		void SetAbilityUpgradeIds(const List<GameplayTag>& upgradeIds) { mAbilityUpgradeIds = upgradeIds; }
 		const List<GameplayTag>& GetAbilityUpgradeIds() const { return mAbilityUpgradeIds; }
@@ -42,7 +44,7 @@ namespace ly
 		}
 		void ConfigureCollisionFromOwner();
 
-		virtual void ConfigureFromAttributes(const GameplayAttributeList& attributes);
+		virtual void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes);
 
 	protected:
 		bool IsValidAbilityTarget(const Actor* actor) const;
@@ -58,7 +60,7 @@ namespace ly
 		Actor* mOwner;
 		float mDamage;
 		List<GameplayTag> mDamageTags;
-		GameplayAttributeList mDamageAttributes;
+		sas::GameplayAttributeList mDamageAttributes;
 		DamagePayload mDamagePayload;
 		List<GameplayTag> mAbilityUpgradeIds;
 		float mLifeTime;

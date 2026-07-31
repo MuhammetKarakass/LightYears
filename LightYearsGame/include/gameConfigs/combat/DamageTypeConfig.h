@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gameplay/attributes/GameplayAttribute.h"
+#include "attributes/GameplayAttribute.h"
 
 namespace ly
 {

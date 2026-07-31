@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "../internal/PrimaryWeaponBuiltIns.h"
 
 #include "framework/Actor.h"
@@ -48,12 +50,12 @@ namespace ly
 					}
 				}
 
-				const float initialWidth = FindGameplayAttributeValue(
+				const float initialWidth = sas::FindGameplayAttributeValue(
 					definition.attributes,
 					PrimaryWeaponSchema::Wave::Delivery::InitialWidth,
 					0.f
 				);
-				const float maximumWidth = FindGameplayAttributeValue(
+				const float maximumWidth = sas::FindGameplayAttributeValue(
 					definition.attributes,
 					PrimaryWeaponSchema::Wave::Delivery::MaximumWidth,
 					0.f

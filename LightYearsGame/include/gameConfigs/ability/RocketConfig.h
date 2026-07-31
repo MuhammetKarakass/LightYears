@@ -1,6 +1,10 @@
 #pragma once
 
-#include "gameConfigs/ability/AbilityStructs.h"
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
+#include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "presentation/ability/rocket/RocketPresentationIds.h"
@@ -9,7 +13,7 @@ namespace AbilityData
 {
 	namespace Rocket
 	{
-		inline const ly::GameplayTag BehaviorId{ "AbilityBehavior.Rocket" };
+		inline const ly::GameplayTag BehaviorId{ "GameAbilityBehavior.Rocket" };
 		inline const ly::GameplayTag FamilyTag{ "Ability.Offense.Rocket" };
 
 		struct ActorSchema
@@ -69,11 +73,11 @@ namespace AbilityData
 				BasicSettings.range / BasicSettings.projectileSpeed + BasicSettings.cleanupGraceDuration;
 			definition.spawnDistance = BasicSettings.spawnDistance;
 			definition.attributes = {
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Damage, BasicSettings.baseDamage, 0.f },
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Radius, BasicSettings.explosionRadius, 0.f },
-				ly::GameplayAttribute{ ActorSchema::ProjectileSpeed, BasicSettings.projectileSpeed, 0.f },
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Range, BasicSettings.range, 0.f },
-				ly::GameplayAttribute{ ly::CommonAttributeIds::CollisionRadius, BasicSettings.collisionRadius, 0.1f }
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, BasicSettings.baseDamage, 0.f },
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, BasicSettings.explosionRadius, 0.f },
+				sas::GameplayAttribute{ ActorSchema::ProjectileSpeed, BasicSettings.projectileSpeed, 0.f },
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Range, BasicSettings.range, 0.f },
+				sas::GameplayAttribute{ ly::CommonAttributeIds::CollisionRadius, BasicSettings.collisionRadius, 0.1f }
 			};
 			definition.presentationProfileId = ly::RocketPresentationIds::Basic;
 			return definition;
@@ -90,13 +94,13 @@ namespace AbilityData
 
 	namespace Definitions
 	{
-		inline const ly::AbilityDefinition Rocket_Basic = []
+		inline const ly::GameAbilityDefinition Rocket_Basic = []
 		{
-			ly::AbilityDefinition definition;
+			ly::GameAbilityDefinition definition;
 			definition.abilityId = "Ability.Rocket.Basic";
-			definition.slot = ly::AbilitySlot::Ability4;
-			definition.activationPolicy = ly::AbilityActivationPolicy::OnPressed;
-			definition.lifetimePolicy = ly::AbilityLifetimePolicy::Instant;
+			definition.slot = sas::AbilitySlot::Ability4;
+			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
+			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.cooldown = Rocket::BasicSettings.cooldown;
 			definition.duration = 0.f;
 			definition.maxCharges = 1;
@@ -110,11 +114,11 @@ namespace AbilityData
 			definition.accentColor = sf::Color{ 255, 115, 75, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{
-					ly::AbilityActionPhase::OnActivate,
+					sas::AbilityActionPhase::OnActivate,
 					ly::SpawnActorAction{
 						Rocket::ActorProjectileBasic.actorDefinitionId,
-						ly::AbilitySpawnPolicy::OwnerForward,
-						ly::AbilityDirectionPolicy::MouseWorld
+						sas::AbilitySpawnPolicy::OwnerForward,
+						sas::AbilityDirectionPolicy::MouseWorld
 					},
 					0.f,
 					1
@@ -124,19 +128,19 @@ namespace AbilityData
 				14,
 				ly::AbilityLevelStep{
 					{
-						ly::AttributeModifier{
+						sas::AttributeModifier{
 							ly::CommonAttributeIds::Damage,
-							ly::AttributeModifierOperation::Add,
+							sas::AttributeModifierOperation::Add,
 							Rocket::BasicSettings.damagePerLevel
 						},
-						ly::AttributeModifier{
+						sas::AttributeModifier{
 							ly::CommonAttributeIds::Cooldown,
-							ly::AttributeModifierOperation::Add,
+							sas::AttributeModifierOperation::Add,
 							-Rocket::BasicSettings.cooldownReductionPerLevel
 						},
-						ly::AttributeModifier{
+						sas::AttributeModifier{
 							ly::CommonAttributeIds::Radius,
-							ly::AttributeModifierOperation::Add,
+							sas::AttributeModifierOperation::Add,
 							Rocket::BasicSettings.explosionRadiusPerLevel
 						}
 					}
@@ -144,10 +148,10 @@ namespace AbilityData
 			);
 			definition.levelUpgradeScrapCosts = ly::List<unsigned int>(14, 60u);
 			definition.scalingRules = {
-				ly::AttributeScalingRule{
+				sas::AttributeScalingRule{
 					ly::CommonAttributeIds::Damage,
 					ly::OwnerAttributeIds::AttackPower,
-					ly::AttributeModifierOperation::Add,
+					sas::AttributeModifierOperation::Add,
 					1.25f
 				}
 			};

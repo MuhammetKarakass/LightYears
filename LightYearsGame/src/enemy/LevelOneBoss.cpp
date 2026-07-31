@@ -1,5 +1,6 @@
 #include "enemy/LevelOneBoss.h"
 #include "gameplay/HealthComponent.h"
+#include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/presentation/PointLightConfig.h"
 #include "gameConfigs/combat/WeaponConfig.h"
 
@@ -39,25 +40,25 @@ namespace ly
 				1
 			})) }
 	{
-		ly::AbilityDefinition threeWay = AbilityData::MakePrimaryFireAbilityDefinition(
+		ly::GameAbilityDefinition threeWay = AbilityData::MakePrimaryFireAbilityDefinition(
 			WeaponData::PrimaryWeapons::BossThreeWayBlaster
 		);
-		threeWay.slot = AbilitySlot::Ability1;
+		threeWay.slot = sas::AbilitySlot::Ability1;
 		threeWay.inputLabel = "";
-		GetCombatRuntime().GetAbilities().GrantAbility(threeWay);
-		ly::AbilityDefinition frontalSweep = AbilityData::MakePrimaryFireAbilityDefinition(
+		GetAbilitySystemComponent().GrantAbility(threeWay);
+		ly::GameAbilityDefinition frontalSweep = AbilityData::MakePrimaryFireAbilityDefinition(
 			WeaponData::PrimaryWeapons::BossFrontalSweep
 		);
-		frontalSweep.slot = AbilitySlot::Ability2;
+		frontalSweep.slot = sas::AbilitySlot::Ability2;
 		frontalSweep.inputLabel = "";
-		GetCombatRuntime().GetAbilities().GrantAbility(frontalSweep);
+		GetAbilitySystemComponent().GrantAbility(frontalSweep);
 
-		ly::AbilityDefinition lastStage = AbilityData::MakePrimaryFireAbilityDefinition(
+		ly::GameAbilityDefinition lastStage = AbilityData::MakePrimaryFireAbilityDefinition(
 			WeaponData::PrimaryWeapons::BossLastStageSideBlaster
 		);
-		lastStage.slot = AbilitySlot::Ability3;
+		lastStage.slot = sas::AbilitySlot::Ability3;
 		lastStage.inputLabel = "";
-		GetCombatRuntime().GetAbilities().GrantAbility(lastStage);
+		GetAbilitySystemComponent().GrantAbility(lastStage);
 
 		SetActorRotation(180.f);
 		SetExplosionType(ExplosionType::Boss);
@@ -110,10 +111,10 @@ namespace ly
 
 	void LevelOneBoss::UpdateWeaponFireIntent()
 	{
-		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::PrimaryFire, mCanShoot);
-		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability1, mCanShoot);
-		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability2, mCanShoot && mStage >= 3);
-		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability3, mCanShoot && mStage == 4);
+		GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, mCanShoot);
+		GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, mCanShoot);
+		GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability2, mCanShoot && mStage >= 3);
+		GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability3, mCanShoot && mStage == 4);
 	}
 
 	void LevelOneBoss::SetStage(int stage)

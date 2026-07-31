@@ -3,11 +3,11 @@
 #include <framework/Object.h>
 #include <framework/Delegate.h>
 #include "gameplay/progression/ShipProgression.h"
+#include "abilities/AbilityPolicies.h"
 #include <string>
 
 namespace ly
 {
-	enum class AbilitySlot;
 	class Actor;
 	class PlayerSpaceShip;
 	class World;
@@ -25,7 +25,7 @@ namespace ly
 		void AwardShipXP(float amount);
 		void AddShipXP(float amount);
 		void AwardScrap(unsigned int amount);
-		bool TryPurchaseAbilityLevel(AbilitySlot slot, std::string* failureReason = nullptr);
+		bool TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason = nullptr);
 
 		unsigned int GetLifeCount() const { return mLifeCount; };
 		unsigned int GetScore() const { return mScore; };

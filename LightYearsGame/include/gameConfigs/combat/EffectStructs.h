@@ -1,43 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
-#include "gameplay/attributes/AttributeSystem.h"
-namespace ly
-{
-	enum class GameplayEffectDurationPolicy
-	{
-		Instant,
-		Duration,
-		Infinite
-	};
-
-	enum class GameplayEffectStackingPolicy
-	{
-		None,
-		RefreshDuration,
-		Stack
-	};
-
-	struct GameplayEffectDefinition
-	{
-		std::string effectId;
-		GameplayTag behaviorTag;
-		GameplayEffectDurationPolicy durationPolicy = GameplayEffectDurationPolicy::Instant;
-		GameplayEffectStackingPolicy stackingPolicy = GameplayEffectStackingPolicy::None;
-		float duration = 0.f;
-		int maxStacks = 1;
-		List<GameplayTag> grantedTags;
-		List<AttributeModifier> modifiers;
-		GameplayAttributeList attributes;
-		std::string activeVisualId;
-		List<GameplayTag> applicationRequiredTags;
-		List<GameplayTag> applicationBlockedTags;
-		// Most effects intentionally coalesce by effect ID. Area effects can opt
-		// into source-scoped applications so separate world sources own and clean
-		// up their own instance without disturbing one another.
-		bool sourceScopedApplication = false;
-	};
-}
+#include "effects/GameplayEffectDefinition.h"
 
 struct BarrierEffectSchema
 {
@@ -52,5 +16,5 @@ struct BarrierEffectSchema
 
 namespace EffectData
 {
-	const ly::GameplayEffectDefinition* FindGameplayEffectDefinition(const std::string& effectId);
+	const sas::GameplayEffectDefinition* FindGameplayEffectDefinition(const std::string& effectId);
 }

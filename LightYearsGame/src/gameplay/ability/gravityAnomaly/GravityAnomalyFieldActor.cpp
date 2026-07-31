@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
 
 #include "framework/World.h"
@@ -6,7 +8,6 @@
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
-#include "gameplay/effects/GameplayEffectSystem.h"
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
@@ -63,7 +64,7 @@ namespace ly
 					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude
 				})
 				{
-					const GameplayAttribute* attribute = FindGameplayAttribute(definition.attributes, required);
+					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
 					if (!attribute || attribute->baseValue <= 0.f)
 					{
 						return { false, "Gravity Anomaly field requires a positive '" + required.ToString() + "' attribute." };
@@ -117,26 +118,26 @@ namespace ly
 	}
 
 	void GravityAnomalyFieldActor::ConfigureFromAttributes(
-		const GameplayAttributeList& attributes
+		const sas::GameplayAttributeList& attributes
 	)
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
-		mDuration = std::max(0.f, FindGameplayAttributeValue(
+		mDuration = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			CommonAttributeIds::Duration,
 			mDuration
 		));
-		mRadius = std::max(0.f, FindGameplayAttributeValue(
+		mRadius = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			CommonAttributeIds::Radius,
 			mRadius
 		));
-		mPullStrength = std::max(0.f, FindGameplayAttributeValue(
+		mPullStrength = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::ActorSchema::PullStrength,
 			mPullStrength
 		));
-		mSlowMagnitude = std::clamp(FindGameplayAttributeValue(
+		mSlowMagnitude = std::clamp(sas::FindGameplayAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
 			mSlowMagnitude
@@ -150,7 +151,7 @@ namespace ly
 		mRuntimeContext->resolvedRadius = mRadius;
 		mRuntimeContext->resolvedPullStrength = mPullStrength;
 		mRuntimeContext->sourceFieldScope = this;
-		mInsideEffectSpec = MakeGameplayEffectSpec(
+		mInsideEffectSpec = sas::MakeGameplayEffectSpec(
 			EffectData::GravityAnomalyInsideEffect
 		);
 		SetGameplayEffectModifierMagnitude(
@@ -213,7 +214,7 @@ namespace ly
 			}
 		}
 
-		const auto updatePullContext = [this](GameplayEffectRuntimeContext& baseContext)
+		const auto updatePullContext = [this](sas::GameplayEffectRuntimeContext& baseContext)
 		{
 			auto* context = dynamic_cast<GravityAnomalyRuntimeContext*>(&baseContext);
 			if (!context)
@@ -225,7 +226,7 @@ namespace ly
 			context->resolvedPullStrength = mPullStrength;
 			context->pullEnabled = true;
 		};
-		const auto disablePull = [](GameplayEffectRuntimeContext& baseContext)
+		const auto disablePull = [](sas::GameplayEffectRuntimeContext& baseContext)
 		{
 			if (auto* context =
 				dynamic_cast<GravityAnomalyRuntimeContext*>(&baseContext))
@@ -235,9 +236,39 @@ namespace ly
 		};
 		mEffectApplicator.Update(
 			targetsInside,
-			mInsideEffectSpec,
-			*this,
-			mRuntimeContext->sourceFieldScope,
+			[](Actor& target, sas::GameplayEffectHandle handle)
+			{
+				auto* combatant = dynamic_cast<Combatant*>(&target);
+				return combatant &&
+					combatant->GetAbilitySystemComponent()
+						.FindGameplayEffect(handle);
+			},
+			[](Actor& target, sas::GameplayEffectHandle handle)
+			{
+				if (auto* combatant = dynamic_cast<Combatant*>(&target))
+				{
+					combatant->GetAbilitySystemComponent()
+						.RefreshGameplayEffectDuration(handle);
+				}
+			},
+			[this](
+				Actor& target,
+				std::shared_ptr<sas::GameplayEffectRuntimeContext> runtimeContext
+			)
+			{
+				auto* combatant = dynamic_cast<Combatant*>(&target);
+				return combatant
+					? combatant->GetAbilitySystemComponent()
+						.ApplyGameplayEffect(
+						mInsideEffectSpec,
+						sas::GameplayEffectSourceContext{
+							this,
+							mRuntimeContext->sourceFieldScope,
+							std::move(runtimeContext)
+						}
+					)
+					: sas::GameplayEffectHandle{};
+			},
 			[this](Actor&)
 			{
 				return std::make_shared<GravityAnomalyRuntimeContext>(
@@ -251,7 +282,7 @@ namespace ly
 
 	void GravityAnomalyFieldActor::ClearAppliedEffects()
 	{
-		mEffectApplicator.Clear([](GameplayEffectRuntimeContext& baseContext)
+		mEffectApplicator.Clear([](sas::GameplayEffectRuntimeContext& baseContext)
 		{
 			if (auto* context =
 				dynamic_cast<GravityAnomalyRuntimeContext*>(&baseContext))

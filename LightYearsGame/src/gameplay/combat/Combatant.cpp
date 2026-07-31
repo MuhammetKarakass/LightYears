@@ -7,6 +7,17 @@
 
 namespace ly
 {
+	LightYearsAbilitySystemComponent& Combatant::GetAbilitySystemComponent()
+	{
+		return GetCombatRuntime().GetAbilitySystemComponent();
+	}
+
+	const LightYearsAbilitySystemComponent&
+	Combatant::GetAbilitySystemComponent() const
+	{
+		return GetCombatRuntime().GetAbilitySystemComponent();
+	}
+
 	void ApplyCombatDamage(Actor& target, float damage, Actor* source, const List<GameplayTag>& damageTags)
 	{
 		ApplyCombatDamage(target, damage, source, damageTags, {});

@@ -42,8 +42,21 @@ Ana matematik açıklamaları için
 
 | Sistem | Durum | Çalışan davranış | Kaynak / düzenleme noktası | Denge veya test notu |
 | --- | --- | --- | --- | --- |
-| AttributeSystem | ✅ | Add, Multiply, Override ve min/max clamp | gameplay/attributes/AttributeSystem.* | Aynı attribute için override önceliği test edilmeli |
-| AttributeMath | ✅ | Crit, luck, armor için doygun üstel eğriler | gameplay/attributes/AttributeMath.h | Rating scale değişimi tüm build’leri etkiler |
+| SpaceAbilitySystem statik kütüphanesi | ✅ Doğrulandı | Attribute, Ability ve Effect generic çekirdeği ile lifecycle kararları `sas` namespace'inde; engine/content/presentation entegrasyonları oyun adaptörlerinde | SpaceAbilitySystem/CMakeLists.txt; SpaceAbilitySystem/include/{attributes,abilities,effects}; SpaceAbilitySystem/src/{attributes,abilities,effects} | Debug/Release `SpaceAbilitySystem.lib`, oyun ve GAS test executable'ları üretildi; CTest iki konfigürasyonda 2/2 geçti |
+| sas::AttributeSystem | ✅ Doğrulandı | Add, Multiply, Override, min/max clamp ve definition scaling-rule çözümleme; davranış değiştirilmeden SAS'a taşındı | SpaceAbilitySystem/include/attributes/AttributeSystem.h; SpaceAbilitySystem/src/attributes/AttributeSystem.cpp | SAS-linked core test hedefi geçti |
+| sas::AttributeMath | ✅ Doğrulandı | Crit, luck, armor için doygun üstel eğriler | SpaceAbilitySystem/include/attributes/AttributeMath.h | Rating/cooldown/movement regresyonları core test içinde geçti |
+| Oyun attribute ID kataloğu | ✅ | Owner, ship ve ortak content tag'leri SAS çekirdeğinden ayrı tutulur | LightYearsGame/include/gameplay/attributes/AttributeIds.h | Yeni gemi stat/formülleri LightYearsGame'de kalır |
+| SAS Ability temel sözleşmeleri | ✅ Doğrulandı | `sas::AbilityHandle` ve slot/lifecycle/action/targeting policy enum'ları; aktif kod açık `sas::` tiplerini kullanır | SpaceAbilitySystem/include/abilities/{AbilityHandle,AbilityPolicies,AbilityTypes}.h | Legacy karşılaştırma dosyaları doğrulama sonrası silindi |
+| sas::AbilityRuntimeSnapshot | ✅ Doğrulandı | Game-owned definition pointer'ı olmadan ID, slot, level, active/cooldown/duration/charge durumunu taşır | SpaceAbilitySystem/include/abilities/AbilityRuntimeSnapshot.h | Eski pointer tabanlı karşılaştırma kaldırıldı |
+| sas::AbilityDefinition + validation | ✅ Doğrulandı | Kimlik, slot/lifecycle, owner tag koşulları ve generic attribute/scaling verisi; ID/sayı/duration/passive ile catalog null/duplicate doğrulaması | SpaceAbilitySystem/include/abilities/{AbilityDefinition,AbilityDefinitionValidation}.h; SpaceAbilitySystem/src/abilities/AbilityDefinitionValidation.cpp | Action/weapon/UI/content doğrulaması LightYearsGame'de kalır; catalog testleri Debug/Release geçti |
+| sas::AbilityEvent | ✅ Doğrulandı | Tag/magnitude ile typed opaque source/target/context referanslarını SAS taşır; Actor ve `DamageContext` oyun binding'i tarafından bağlanır | SpaceAbilitySystem/include/abilities/AbilityEvent.h | Oyun çağrıları typed `Set/GetSource`, `Set/GetTarget` ve context API'sine geçirildi |
+| sas::GameplayAbilityInstance + runtime state | ✅ Doğrulandı | Input/activation/end/level/cooldown/duration/charge/snapshot yaşam döngüsü SAS'a aittir | SpaceAbilitySystem/include/abilities/{GameplayAbilityInstance,AbilityRuntimeState}.h | Game tarafındaki `GameAbility` yalnız concrete behavior/action, weapon ve attachment içeriğidir; lifecycle testleri geçti |
+| LightYearsAbilitySystemComponent | ✅ Doğrulandı | `sas::AbilitySystemComponent` türevi tek oyun component'ı; Actor erişimi SAS-owned `AbilitySystemInterface::GetAbilitySystemComponent()` kontratından yapılır. Game subclass yalnız owner, shipped content/validation, attachment endpoint'leri ve `Actor`/`DamageContext` effect specialization'ını taşır | SpaceAbilitySystem/include/{AbilitySystemInterface,AbilitySystemComponent}.h; LightYearsGame/include/gameplay/ability/LightYearsAbilitySystemComponent.h | Self-facade ve eski CombatRuntime erişimleri olmadan oyun/test hedefleri linklendi |
+| SAS Ability runtime mekanikleri | ✅ Doğrulandı | `AbilityBehaviorRegistry`, `GameplayAbilityInstance`, `AbilityRuntimeSystem`, `AbilityExecution`, scheduler/trigger, component notification zinciri ve toplu cooldown azaltma framework sahipliğindedir | SpaceAbilitySystem/include/abilities; SpaceAbilitySystem/include/AbilitySystemComponent.h; SpaceAbilitySystem/src/AbilitySystemComponent.cpp | Debug/Release build ve GAS runtime testleri geçti |
+| SAS Effect çekirdeği | ✅ Doğrulandı | Handle/policy/definition/spec/validation/state yanında `GameplayEffectRuntimeSystem` tam active-effect lifecycle’ını, `GameplayEffectBehaviorRuntime` typed hook dispatch’ini sahiplenir | SpaceAbilitySystem/include/effects; SpaceAbilitySystem/src/effects | Typed runtime context namespace/include bağlantıları düzeltildi; Debug/Release effect testleri geçti |
+| sas::GameplayEffectCollection | ✅ Doğrulandı | Active-effect storage, handle allocator/lookup/index lookup, predicate lookup, index erase ve reset | SpaceAbilitySystem/include/effects/GameplayEffectCollection.h | Lifecycle policy kararları SAS orchestrator'ında; callback/visual cleanup adaptörü oyunda |
+| SAS Effect registry, bindings ve lifecycle | ✅ Doğrulandı | Typed hook storage; tag gate; modifier/tag binding; instant/refresh/stack/duration kararları; zorunlu attribute/tag sahipliği reference kontratıyla tutulur | SpaceAbilitySystem/include/effects; SpaceAbilitySystem/src/effects | Actor/DamageContext callback'leri ve visual orchestration game-owned; Debug/Release lifecycle testleri geçti |
+| Oyun ability definition/content sınırı | ✅ Tamamlandı | `ly::GameAbilityDefinition`, SAS definition tabanını action/trigger/level, silah, damage/attachment, behavior ve UI alanlarıyla genişletir | LightYearsGame/include/gameplay/ability/content/GameAbilityDefinition.h | Geçiş alias'ı ve eski `AbilityStructs.h` kaldırıldı |
 | Engine diagnostics | ✅ | CORE/GAME kanallı structured logging, Debug assert/verify ve scope/counter profiler | LightYearsEngine/include/framework/debug/*; src/framework/debug/*; EntryPoint.cpp | Debug lifetime testleri log/filter/verify/profile kontratını doğrular; Release'te assert/profiling compile-out, logging Warning+ kalır |
 | CombatRuntime | ✅ | Attribute, effect, ability ve incoming damage akışını birleştirir | gameplay/combat/CombatRuntime.* | Damage sırası §6’da kayıtlı |
 | DamageTypeSystem | ✅ | 6 tür tag’i, payload override ve status uygulama | gameplay/damage/DamageTypeSystem.* | Hibrit tag önceliği tasarım kararı gerektirir |
@@ -51,9 +64,9 @@ Ana matematik açıklamaları için
 | ShieldComponent | ✅ | Kalıcı gemi shield’ı, gecikme ve regen | gameplay/ShieldComponent.* | Energy hasarı shield kapasitesini daha hızlı tüketir |
 | EnergyComponent | ✅ | Afterburner enerjisi, gecikme ve regen | gameplay/EnergyComponent.* | Consume ve recharge aynı frame davranışı test edilebilir |
 | ShipRuntime | ✅ | Ship attribute'ları ile shield/afterburner türetmelerini owner attribute'lardan çözer | gameplay/ship/ShipRuntime.* | SpaceShip sahiplenir; CombatRuntime'dan ayrı tutulur |
-| GameplayEffectSystem | ✅ | Immutable Definition → resolved Spec → mutable ActiveEffect; duration, stack, refresh, generic behavior hooks, incoming damage phase ve visual | gameplay/effects/*; gameConfigs/combat/EffectConfig.h | Ability, weapon, enemy, reward ve area aynı uygulama yolunu kullanır; core somut effect ID'sine branch etmez |
-| AbilitySystem | ✅ | Slot input, action, trigger, cooldown, level ve attachment endpoint’i | gameplay/ability/* | Ability eklemeden önce behavior kaydı ve validation yolunu çalıştır |
-| AbilityBehaviorRegistry | ✅ | Behavior ID’den ability'ye özgü Validate/Activate/Tick/End sınıfı üretir | gameplay/ability/AbilityBehaviorRegistry.* | Generic core somut ability include etmez |
+| GameplayEffectSystem game adaptörü | ✅ Doğrulandı | SAS runtime component’ini Actor event, incoming `DamageContext` ve presentation sidecar callback’lerine bağlar | gameplay/effects/GameplayEffectSystem.* | Active storage/lifecycle bu sınıfta değil SAS’tadır |
+| AbilitySystem game adaptörü | ✅ Doğrulandı | SAS runtime component’ini Actor, trigger execution, attachment ve game delegate’lerine bağlar | gameplay/ability/AbilitySystem.* | Grant/remove/slot/tick/snapshot sahipliği SAS’tadır |
+| AbilityBehaviorRegistry adaptörü | ✅ Doğrulandı | SAS `FactoryRegistry`’yi game behavior ID’lerine bağlayan header-only typed adaptör | gameplay/ability/AbilityBehaviorRegistry.h | Tekrarlayan game `.cpp` kaldırıldı; somut ability kayıtları game-owned |
 | Shared ability actors | ✅ | Ortak world actor registry, lifecycle ve alan telegraph altyapısı | gameplay/ability/actors/* | Yalnız bir ability'ye özgü actor kendi aile klasöründe kalır |
 | AttachmentLoadout | ⚙️ | Host/capability doğrular, static/conditional modifier ve event uygular | gameplay/attachment/* | Katalog var; varsayılan oyuncuya otomatik attachment verilmiyor |
 | PrimaryWeaponExecution | ✅ | Type handler, runtime state, interval fire ve feature yönetimi | gameplay/weapon/PrimaryWeaponExecutionSystem.* | Handler validator’ı yeni config için zorunlu |
@@ -67,7 +80,7 @@ Ana matematik açıklamaları için
 | LevelOne akışı | 🟡 | Normal stages, boss ve infinite stage zinciri | level/LevelOne.cpp | Başlangıç app akışında doğrudan yüklenmiyor |
 | Boss fazları | 🟡 | HP eşiklerinde silah ve hareket değişimi | enemy/LevelOneBoss.cpp | LevelOne açıldığında etkin |
 | HUD / warning | ✅ | Gameplay HUD, shield/effect görünümü, arena uyarısı | widget/*; presentation/* | Tooltip’te resolved stat gösterimi ayrı iş |
-| Otomatik test runner | ✅ | Core gameplay sistemleri için GasLiteCoreTests | LightYearsGame/tests/GasLiteCoreTests.cpp | Sayısal playtest raporu yerine geçmez |
+| Otomatik test runner | ✅ | Core gameplay sistemleri için GasLiteCoreTests | LightYearsGame/tests/GasLiteCoreTests.cpp | SAS sınır doğrulaması sonunda Debug/Release çalıştırılır |
 
 ## 4. Aktif ability ve effect içeriği
 
@@ -75,14 +88,15 @@ Ana matematik açıklamaları için
 
 | Katman | İçerik | Kural |
 | --- | --- | --- |
-| `gameplay/ability/` | AbilitySystem, AbilityInstance, AbilityBehavior, registry, executor ve event | Yalnız generic core; somut ability bağımlılığı yok |
+| `gameplay/ability/` | AbilitySystem/Instance adaptörü, behavior kaydı, executor ve DamageContext event uzantısı | Actor, weapon, attachment, damage, presentation ve shipped content entegrasyonu |
 | `gameplay/ability/actors/` | AbilityWorldActor, AbilityActorRegistry, AreaTelegraphActor | Ability ID/config/hasar kuralı bilmeyen, yeniden kullanılabilir world-actor altyapısı |
 | `gameplay/ability/dash/` | DashAbility, DashMovementController, DashMovementMath | Dash'e özgü behavior, hareket kontratı ve evolve parçaları |
 | `gameplay/ability/gravityAnomaly/` | GravityAnomalyAbility, ProjectileActor, FieldActor | Gravity Anomaly validation, cursor delivery, source-scoped field lifecycle ve gelecek evolve parçaları |
 | `gameplay/ability/rocket/` | RocketAbility, RocketProjectileActor | Rocket'e özgü validation, projectile delivery, patlama ve gelecek evolve parçaları |
 | `gameplay/ability/shield/` | ShieldAbility | Shield'e özgü behavior |
 | `gameplay/ability/sunBeam/` | SunBeamAbility, actor ve visual sınıfları | SunBeam'e özgü tüm runtime parçaları |
-| `gameConfigs/ability/` | AbilityStructs, AbilityActorStructs, AbilityCatalog ve aile config'leri | Ortak şemalar ayrı; DashConfig, GravityAnomalyConfig, RocketConfig, ShieldConfig ve SunBeamConfig aileye özel |
+| `gameplay/ability/content/` | GameAbilityDefinition | SAS-owned temel tipleri kullanan game-owned definition, action payload ve UI metadata |
+| `gameConfigs/ability/` | AbilityActorStructs, AbilityCatalog ve aile config'leri | DashConfig, GravityAnomalyConfig, RocketConfig, ShieldConfig ve SunBeamConfig aileye özel |
 | `presentation/ability/<family>/` | Stable presentation ID, concrete typed profile ve shipped content registration | Her aile kendi visual/telegraph/explosion paketini sahiplenir; global visual config yok |
 | `presentation/ability/common/` | AreaTelegraphVisualDefinition gibi gerçekten paylaşılan primitive'ler | Benzer alanlar tek başına ortaklaştırma gerekçesi değildir |
 

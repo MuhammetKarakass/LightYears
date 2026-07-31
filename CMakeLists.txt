@@ -31,9 +31,11 @@ endif()
 
 #creates a variable
 set(LIGHT_YEARS_ENGINE_TARGET_NAME LightYearsEngine)
+set(SPACE_ABILITY_SYSTEM_TARGET_NAME SpaceAbilitySystem)
 set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
 add_subdirectory(LightYearsEngine)
+add_subdirectory(SpaceAbilitySystem)
 add_subdirectory(LightYearsGame)
 
 if(BUILD_TESTING)

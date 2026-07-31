@@ -22,7 +22,7 @@ namespace ly
 		void EnsureWidgetsCreated();
 		void ResetWidgets();
 		void RefreshFromAbilitySystem();
-		void UpdateWidgetVisuals(AbilitySlot slot);
+		void UpdateWidgetVisuals(sas::AbilitySlot slot);
 		void PositionWidgets();
 
 		weak_ptr<GameHUD> mGameHUD;
@@ -34,7 +34,7 @@ namespace ly
 			weak_ptr<TextWidget> inputLabel;
 			weak_ptr<TextWidget> stateText;
 		};
-		Map<AbilitySlot, SlotWidgets> mSlotWidgets;
+		Map<sas::AbilitySlot, SlotWidgets> mSlotWidgets;
 
 		bool mWidgetsCreated = false;
 		unsigned int mObservedShipId = 0;

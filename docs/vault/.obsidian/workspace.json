@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "01 - Architecture/Game Loop.md",
+                "file": "yetenekler.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Game Loop"
+              "title": "yetenekler"
             }
           }
         ]
@@ -53,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "yetenekler",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -74,7 +74,8 @@
               "title": "Yer İmleri"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -185,13 +186,16 @@
   },
   "active": "4e08fb1e347da931",
   "lastOpenFiles": [
+    "02 - Systems/Ability System.md",
+    "yetenekler.md",
+    "00 - Light Years Dashboard.md",
+    "05 - Balance/Ability Cooldown and Charge Rules.md",
+    "01 - Architecture/Game Loop.md",
     "01 - Architecture/Directory Map.md",
     "02 - Systems/Attribute System.md",
     "01 - Architecture/Project Overview.md",
     "01 - Architecture/Ownership and Lifetime.md",
     "01 - Architecture/Object Lifecycle.md",
-    "01 - Architecture/Game Loop.md",
-    "02 - Systems/Ability System.md",
     "06 - Status and Plans/Current Implementation.md",
     "04 - Important Classes/AbilityBehavior.md",
     "04 - Important Classes/World.md",
@@ -203,14 +207,11 @@
     "02 - Systems/Ability Behavior System.md",
     "02 - Systems/Shield System.md",
     "02 - Systems/Projectile System.md",
-    "00 - Light Years Dashboard.md",
     "03 - Code Walkthroughs/Physics Step and Contact Flow.md",
     "02 - Systems/Performance Monitoring.md",
     "02 - Systems/Math Utility.md",
     "02 - Systems/Physics System.md",
     "04 - Important Classes/CameraManager.md",
-    "04 - Important Classes/Delegate.md",
-    "03 - Code Walkthroughs/Timer, Delegate and Camera Frame Flow.md",
     "05 - Balance",
     "05 - Balance and Data",
     "04 - Important Classes",

@@ -1,14 +1,11 @@
+#include "gameplay/attributes/AttributeIds.h"
 #include "framework/Core.h"
-#include "gameplay/attributes/AttributeMath.h"
-#include "gameplay/attributes/AttributeSystem.h"
+#include "attributes/AttributeMath.h"
+#include "attributes/AttributeSystem.h"
 #include "gameplay/progression/ShipProgression.h"
-#include "gameplay/effects/GameplayEffectBehavior.h"
-#include "gameplay/effects/GameplayEffectContent.h"
-#include "gameplay/effects/GameplayEffectSpec.h"
-#include "gameplay/effects/GameplayEffectSystem.h"
-#include "gameplay/effects/GameplayEffectValidation.h"
-#include "gameplay/ability/AbilitySystem.h"
-#include "gameplay/ability/AbilityBehaviorRegistration.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "effects/GameplayEffectSpec.h"
+#include "effects/GameplayEffectSystem.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/dash/DashMovementController.h"
@@ -82,10 +79,10 @@ namespace
 			, mHealth{ maximumHealth, maximumHealth }
 			, mCombatRuntime{ *this }
 		{
-			mCombatRuntime.GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::Armor, 0.f);
-			mCombatRuntime.GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::AbilityHaste, 0.f, -0.95f);
-			mCombatRuntime.GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::MoveSpeedHorizontal, 0.f, -0.95f);
-			mCombatRuntime.GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::MoveSpeedVertical, 0.f, -0.95f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::Armor, 0.f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::AbilityHaste, 0.f, -0.95f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::MoveSpeedHorizontal, 0.f, -0.95f);
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::MoveSpeedVertical, 0.f, -0.95f);
 		}
 
 		ly::CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
@@ -127,8 +124,8 @@ namespace
 
 			mLastDashDistance = ly::DashMovementMath::ResolveDistance(
 				request.baseDistance,
-				mCombatRuntime.GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::MoveSpeedHorizontal),
-				mCombatRuntime.GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::MoveSpeedVertical)
+				mCombatRuntime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::MoveSpeedHorizontal),
+				mCombatRuntime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::MoveSpeedVertical)
 			);
 			mLastDashDirection = direction;
 			mDashActive = mLastDashDistance > 0.f;
@@ -186,7 +183,7 @@ namespace
 
 	struct DashEventRecorder
 	{
-		void Record(const ly::AbilityEvent& event)
+		void Record(const sas::AbilityEvent& event)
 		{
 			events.push_back(event.eventTag);
 		}
@@ -236,43 +233,43 @@ namespace
 
 		ly::ShipProgression progression;
 		progression.Configure(FighterProgressionDefinition);
-		progression.BindAttributes(runtime.GetAttributes());
+		progression.BindAttributes(runtime.GetAbilitySystemComponent().GetAttributes());
 		while (progression.GetLevel() < level)
 		{
 			progression.AddXP(progression.GetXPRequiredForNextLevel());
 		}
-		runtime.GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::AttackPower, additionalAttackPower }
+		runtime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackPower, additionalAttackPower }
 		);
-		runtime.GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, additionalAttackSpeed }
+		runtime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, additionalAttackSpeed }
 		);
-		runtime.GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::EnergyMax, additionalEnergyMax }
+		runtime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::EnergyMax, additionalEnergyMax }
 		);
 
-		const ly::AbilityHandle handle = runtime.GetAbilities().GrantAbility(
+		const sas::AbilityHandle handle = runtime.GetAbilitySystemComponent().GrantAbility(
 			AbilityData::MakePrimaryFireAbilityDefinition(weapon)
 		);
 		if (!handle.IsValid())
 		{
 			return false;
 		}
-		runtime.GetAbilities().SetSlotInput(ly::AbilitySlot::PrimaryFire, true);
-		runtime.GetAbilities().Tick(0.f);
-		const ly::AbilityInstance* instance = runtime.GetAbilities().GetAbility(handle);
+		runtime.GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
+		runtime.GetAbilitySystemComponent().Tick(0.f);
+		const ly::GameAbility* instance = runtime.GetAbilitySystemComponent().GetAbility(handle);
 		if (!instance || instance->GetPrimaryWeaponRuntimeAttributes().empty())
 		{
 			return false;
 		}
 
-		const ly::GameplayAttributeList& attributes = instance->GetPrimaryWeaponRuntimeAttributes();
-		sample.damage = ly::FindGameplayAttributeValue(attributes, ly::CommonAttributeIds::Damage, 0.f);
-		sample.fireRate = ly::FindGameplayAttributeValue(attributes, ly::CommonAttributeIds::FireRate, 0.f);
-		sample.attackPower = runtime.GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackPower);
-		sample.attackSpeed = runtime.GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackSpeed);
-		sample.energyMax = runtime.GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::EnergyMax);
-		sample.luck = runtime.GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::Luck);
+		const sas::GameplayAttributeList& attributes = instance->GetPrimaryWeaponRuntimeAttributes();
+		sample.damage = sas::FindGameplayAttributeValue(attributes, ly::CommonAttributeIds::Damage, 0.f);
+		sample.fireRate = sas::FindGameplayAttributeValue(attributes, ly::CommonAttributeIds::FireRate, 0.f);
+		sample.attackPower = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackPower);
+		sample.attackSpeed = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackSpeed);
+		sample.energyMax = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::EnergyMax);
+		sample.luck = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::Luck);
 		return true;
 	}
 
@@ -295,8 +292,8 @@ namespace
 			return false;
 		}
 		owner->GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-		owner->GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::Luck, luckRating }
+		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::Luck, luckRating }
 		);
 		owner->SetCollisionLayer(CollisionLayer::Player);
 
@@ -354,8 +351,8 @@ namespace
 			return -1.f;
 		}
 		owner->GetCombatRuntime().InitializeOwnerAttributes(1000000.f);
-		owner->GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::Luck, 100000.f }
+		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::Luck, 100000.f }
 		);
 		owner->SetCollisionLayer(CollisionLayer::Player);
 
@@ -398,12 +395,12 @@ namespace
 		}
 		ly::PrimaryWeaponExecutionSystem::EndFire(context, runtime);
 
-		const float baseDamage = ly::FindGameplayAttributeValue(
+		const float baseDamage = sas::FindGameplayAttributeValue(
 			definition.attributes,
 			ly::CommonAttributeIds::Damage,
 			0.f
 		);
-		const float falloff = ly::FindGameplayAttributeValue(
+		const float falloff = sas::FindGameplayAttributeValue(
 			definition.attributes,
 			PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain,
 			1.f
@@ -418,8 +415,8 @@ namespace
 	{
 		TestCombatant owner;
 		owner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
-		owner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
+		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
 		ly::PrimaryWeaponRuntimeState runtime;
 		const PrimaryWeaponDefinition& definition = WeaponData::PrimaryWeapons::ContinuousHeatLaser;
@@ -449,8 +446,8 @@ namespace
 	{
 		TestCombatant owner;
 		owner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
-		owner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
+		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
 		ly::PrimaryWeaponRuntimeState runtime;
 		const PrimaryWeaponDefinition& definition = WeaponData::PrimaryWeapons::ContinuousHeatLaser;
@@ -490,8 +487,8 @@ namespace
 			return -1.f;
 		}
 		owner->GetCombatRuntime().InitializeOwnerAttributes(100000.f);
-		owner->GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			ly::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
+		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
 		owner->SetCollisionLayer(CollisionLayer::Player);
 		owner->SetActorRotation(90.f);
@@ -624,33 +621,34 @@ int main()
 {
 	using namespace ly;
 
-	if (!RegisterGameGameplayEffectContent())
+	if (!LightYearsAbilitySystemComponent::RegisterGameContent())
 	{
-		return Fail("Game gameplay-effect content registration failed");
-	}
-	if (!RegisterGameAbilityContent())
-	{
-		return Fail("Game ability content could not be registered");
+		return Fail("Game ability-system content could not be registered");
 	}
 	std::string effectValidationFailure;
-	const List<const GameplayEffectDefinition*>& shippedEffects =
+	const List<const sas::GameplayEffectDefinition*>& shippedEffects =
 		EffectData::GetShippedGameplayEffectDefinitions();
+	const bool shippedEffectsValid =
+		LightYearsAbilitySystemComponent::ValidateShippedGameplayEffectDefinitions(&effectValidationFailure);
+	const auto* barrierDefinition = EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic");
+	const auto* gravityInsideDefinition = EffectData::FindGameplayEffectDefinition(
+		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+	);
+	const auto* missingDefinition = EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist");
 	if (shippedEffects.size() != 7 ||
-		!ValidateShippedGameplayEffectDefinitions(&effectValidationFailure) ||
-		EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic") !=
+		!shippedEffectsValid ||
+		barrierDefinition !=
 			&EffectData::BasicBarrierEffect ||
-		EffectData::FindGameplayEffectDefinition(
-			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
-		) != &EffectData::GravityAnomalyInsideEffect ||
-		EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist") != nullptr)
+		gravityInsideDefinition != &EffectData::GravityAnomalyInsideEffect ||
+		missingDefinition != nullptr)
 	{
 		return Fail("Central gameplay-effect catalog lookup or validation failed");
 	}
 
-	GameplayEffectSpec firstSlowSpec =
-		MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
-	GameplayEffectSpec secondSlowSpec =
-		MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
+	sas::GameplayEffectSpec firstSlowSpec =
+		sas::MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
+	sas::GameplayEffectSpec secondSlowSpec =
+		sas::MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
 	SetGameplayEffectModifierMagnitude(
 		firstSlowSpec,
 		OwnerAttributeIds::MovementSlow,
@@ -675,11 +673,11 @@ int main()
 		return Fail("Resolved gameplay-effect specs mutated shared content or leaked between sources");
 	}
 
-	GameplayEffectDefinition invalidEffect = EffectData::CryoSlowEffect;
+	sas::GameplayEffectDefinition invalidEffect = EffectData::CryoSlowEffect;
 	invalidEffect.effectId = "Effect.Test.InvalidBehavior";
 	invalidEffect.behaviorTag = GameplayTag{ "EffectBehavior.NotRegistered" };
 	effectValidationFailure.clear();
-	if (ValidateGameplayEffectDefinition(invalidEffect, &effectValidationFailure) ||
+	if (LightYearsAbilitySystemComponent::ValidateGameplayEffectDefinition(invalidEffect, &effectValidationFailure) ||
 		effectValidationFailure.empty())
 	{
 		return Fail("Gameplay-effect validation accepted an unregistered behavior");
@@ -688,7 +686,7 @@ int main()
 	invalidEffect.effectId = "Effect.Test.InvalidVisual";
 	invalidEffect.activeVisualId = "Visual.Effect.NotRegistered";
 	effectValidationFailure.clear();
-	if (ValidateGameplayEffectDefinition(invalidEffect, &effectValidationFailure) ||
+	if (LightYearsAbilitySystemComponent::ValidateGameplayEffectDefinition(invalidEffect, &effectValidationFailure) ||
 		effectValidationFailure.empty())
 	{
 		return Fail("Gameplay-effect validation accepted an unregistered visual");
@@ -761,20 +759,20 @@ int main()
 		return Fail("Counted tag was not removed");
 	}
 
-	AttributeSystem attributes;
+	sas::AttributeSystem attributes;
 	attributes.RegisterAttribute(OwnerAttributeIds::AttackPower, 10.f);
-	const AttributeModifierHandle additive = attributes.AddModifier(
-		AttributeModifier{ OwnerAttributeIds::AttackPower, AttributeModifierOperation::Add, 5.f }
+	const sas::AttributeModifierHandle additive = attributes.AddModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::AttackPower, sas::AttributeModifierOperation::Add, 5.f }
 	);
-	const AttributeModifierHandle multiplicative = attributes.AddModifier(
-		AttributeModifier{ OwnerAttributeIds::AttackPower, AttributeModifierOperation::Multiply, 2.f }
+	const sas::AttributeModifierHandle multiplicative = attributes.AddModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::AttackPower, sas::AttributeModifierOperation::Multiply, 2.f }
 	);
 	if (!NearlyEqual(attributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 30.f))
 	{
 		return Fail("Attribute modifier order failed");
 	}
 	attributes.RemoveModifier(multiplicative);
-	attributes.ApplyBaseModifier(AttributeModifier{ OwnerAttributeIds::AttackPower, 5.f });
+	attributes.ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::AttackPower, 5.f });
 	if (!NearlyEqual(attributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 20.f))
 	{
 		return Fail("Instant base modifier failed");
@@ -782,8 +780,8 @@ int main()
 	attributes.RemoveModifier(additive);
 
 	attributes.RegisterAttribute(OwnerAttributeIds::AbilityHaste, 0.f);
-	attributes.AddModifier(AttributeModifier{ OwnerAttributeIds::AbilityHaste, 0.1f });
-	attributes.AddModifier(AttributeModifier{ OwnerAttributeIds::AbilityHaste, 0.1f });
+	attributes.AddModifier(sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 0.1f });
+	attributes.AddModifier(sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 0.1f });
 	if (!NearlyEqual(attributes.GetSequentialReductionMultiplier(OwnerAttributeIds::AbilityHaste), 0.81f))
 	{
 		return Fail("Sequential haste calculation failed");
@@ -902,10 +900,12 @@ int main()
 	TestCombatant energyTestCombatant;
 	CombatRuntime& energyRuntime = energyTestCombatant.GetCombatRuntime();
 	energyRuntime.InitializeOwnerAttributes(energyTestShip.health);
-	ShipRuntime energyShipRuntime{ energyRuntime.GetAttributes() };
+	ShipRuntime energyShipRuntime{
+		energyRuntime.GetAbilitySystemComponent().GetAttributes()
+	};
 	energyShipRuntime.InitializeFromShipDefinition(energyTestShip);
-	energyRuntime.GetAttributes().ApplyBaseModifier(AttributeModifier{ OwnerAttributeIds::EnergyMax, 100.f });
-	const AttributeSystem& shipAttributes = energyShipRuntime.GetAttributes();
+	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyMax, 100.f });
+	const sas::AttributeSystem& shipAttributes = energyShipRuntime.GetAttributes();
 	if (!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::MaxShield), 175.f) ||
 		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen), 35.f) ||
 		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRechargeDelay), 4.f) ||
@@ -913,7 +913,7 @@ int main()
 		!NearlyEqual(energyShipRuntime.GetAfterburnerRegenPerSecond(), 10.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerRechargeDelay(), 2.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerEnergyDrainPerSecond(), 12.f) ||
-		!NearlyEqual(energyRuntime.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyRegen), 10.f) ||
+		!NearlyEqual(energyRuntime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyRegen), 10.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerSpeedMultiplier(), 1.4f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerAccelerationMultiplier(), 1.8f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerRampUpDuration(), 0.18f) ||
@@ -921,7 +921,7 @@ int main()
 	{
 		return Fail("Ship energy attributes did not derive shield and afterburner values correctly");
 	}
-	energyRuntime.GetAttributes().ApplyBaseModifier(AttributeModifier{ OwnerAttributeIds::EnergyMax, 50.f });
+	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyMax, 50.f });
 	if (!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 95.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerSpeedMultiplier(), 1.4f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerAccelerationMultiplier(), 1.8f))
@@ -939,11 +939,11 @@ int main()
 		return Fail("Movement rating curve was not monotonic with diminishing returns");
 	}
 
-	if (!NearlyEqual(AttributeMath::GetArmorDamageReduction(50.f), 0.5f) ||
-		AttributeMath::GetAbilityHasteReduction(500.f) >= 1.f ||
-		AttributeMath::GetCriticalChance(500.f) >= 1.f ||
-		AttributeMath::GetCombatLuckFactor(500.f) >= 1.f ||
-		AttributeMath::GetCombatLuckFactor(20.f) <= AttributeMath::GetCombatLuckFactor(10.f))
+	if (!NearlyEqual(sas::AttributeMath::GetArmorDamageReduction(50.f), 0.5f) ||
+		sas::AttributeMath::GetAbilityHasteReduction(500.f) >= 1.f ||
+		sas::AttributeMath::GetCriticalChance(500.f) >= 1.f ||
+		sas::AttributeMath::GetCombatLuckFactor(500.f) >= 1.f ||
+		sas::AttributeMath::GetCombatLuckFactor(20.f) <= sas::AttributeMath::GetCombatLuckFactor(10.f))
 	{
 		return Fail("Percentage rating curves were not asymptotic and monotonic");
 	}
@@ -965,13 +965,18 @@ int main()
 	TestCombatant fighterProgressionCombatant;
 	CombatRuntime& fighterRuntime = fighterProgressionCombatant.GetCombatRuntime();
 	fighterRuntime.InitializeOwnerAttributes(energyTestShip.health);
-	ShipRuntime fighterShipRuntime{ fighterRuntime.GetAttributes() };
+	ShipRuntime fighterShipRuntime{
+		fighterRuntime.GetAbilitySystemComponent().GetAttributes()
+	};
 	fighterShipRuntime.InitializeFromShipDefinition(energyTestShip);
 	ShipProgression fighterProgression;
 	fighterProgression.Configure(fighterProgressionDefinition);
-	fighterProgression.BindAttributes(fighterRuntime.GetAttributes());
+	fighterProgression.BindAttributes(
+		fighterRuntime.GetAbilitySystemComponent().GetAttributes()
+	);
 	fighterProgression.AddXP(100.f);
-	const AttributeSystem& fighterAttributes = fighterRuntime.GetAttributes();
+	const sas::AttributeSystem& fighterAttributes =
+		fighterRuntime.GetAbilitySystemComponent().GetAttributes();
 	if (fighterProgression.GetLevel() != 2 ||
 		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 9.f) ||
 		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackSpeed), 1.f) ||
@@ -983,7 +988,9 @@ int main()
 	{
 		return Fail("Fighter level growth did not apply its configured and default multipliers");
 	}
-	fighterProgression.BindAttributes(fighterRuntime.GetAttributes());
+	fighterProgression.BindAttributes(
+		fighterRuntime.GetAbilitySystemComponent().GetAttributes()
+	);
 	if (!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 9.f))
 	{
 		return Fail("Ship progression applied the same level bonus twice when rebound");
@@ -996,23 +1003,24 @@ int main()
 		return Fail("Ship progression did not support multiple levels from one XP grant");
 	}
 
-	ActiveGameplayEffect barrier;
+	sas::ActiveGameplayEffect barrier;
 	barrier.spec.definition.effectId = "Effect.Test.Barrier";
 	barrier.spec.definition.behaviorTag = BarrierEffectSchema::BehaviorId;
 	barrier.spec.attributes = {
-		GameplayAttribute{ BarrierEffectSchema::Capacity, 30.f, 0.f },
-		GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f }
+		sas::GameplayAttribute{ BarrierEffectSchema::Capacity, 30.f, 0.f },
+		sas::GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f }
 	};
-	GameplayEffectBehavior::Initialize(barrier);
+	barrier.ResetRuntimeAttributesFromSpec();
 
 	DamageContext firstHit;
 	firstHit.originalDamage = 12.f;
 	firstHit.remainingDamage = 12.f;
-	const GameplayEffectBehaviorResult firstResult =
-		GameplayEffectBehavior::ProcessIncomingDamage(barrier, firstHit);
+	const sas::GameplayEffectBehaviorResult firstResult =
+		LightYearsAbilitySystemComponent::
+			GetEffectBehaviorRuntime().ProcessEvent(barrier, firstHit);
 	if (!firstResult.changed || firstResult.removeEffect ||
 		!NearlyEqual(firstHit.remainingDamage, 0.f) ||
-		!NearlyEqual(FindGameplayAttributeValue(
+		!NearlyEqual(sas::FindGameplayAttributeValue(
 			barrier.runtimeAttributes,
 			BarrierEffectSchema::Capacity
 		), 18.f))
@@ -1023,17 +1031,19 @@ int main()
 	DamageContext breakingHit;
 	breakingHit.originalDamage = 20.f;
 	breakingHit.remainingDamage = 20.f;
-	const GameplayEffectBehaviorResult breakResult =
-		GameplayEffectBehavior::ProcessIncomingDamage(barrier, breakingHit);
+	const sas::GameplayEffectBehaviorResult breakResult =
+		LightYearsAbilitySystemComponent::
+			GetEffectBehaviorRuntime().ProcessEvent(barrier, breakingHit);
 	if (!breakResult.removeEffect || breakResult.events.empty() ||
 		!NearlyEqual(breakingHit.remainingDamage, 2.f))
 	{
 		return Fail("Barrier break behavior failed");
 	}
 
-	GameplayEffectBehavior::Refresh(barrier);
-	GameplayEffectBehavior::AddStack(barrier);
-	if (!NearlyEqual(FindGameplayAttributeValue(
+	barrier.ResetRuntimeAttributesFromSpec();
+	LightYearsAbilitySystemComponent::
+		GetEffectBehaviorRuntime().AddStack(barrier);
+	if (!NearlyEqual(sas::FindGameplayAttributeValue(
 		barrier.runtimeAttributes,
 		BarrierEffectSchema::Capacity
 	), 60.f))
@@ -1051,35 +1061,35 @@ int main()
 		return Fail("Energy damage shield regeneration delay was not resolved");
 	}
 
-	GameplayEffectDefinition regeneratingBarrier;
+	sas::GameplayEffectDefinition regeneratingBarrier;
 	regeneratingBarrier.effectId = "Effect.Test.RegeneratingBarrier";
 	regeneratingBarrier.behaviorTag = BarrierEffectSchema::BehaviorId;
-	regeneratingBarrier.durationPolicy = GameplayEffectDurationPolicy::Infinite;
+	regeneratingBarrier.durationPolicy = sas::GameplayEffectDurationPolicy::Infinite;
 	regeneratingBarrier.attributes = {
-		GameplayAttribute{ BarrierEffectSchema::Capacity, 10.f, 0.f },
-		GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f },
-		GameplayAttribute{ BarrierEffectSchema::RegenerationPerSecond, 5.f, 0.f },
-		GameplayAttribute{ BarrierEffectSchema::RegenerationDelay, 1.f, 0.f },
-		GameplayAttribute{ BarrierEffectSchema::RegenerationDelayRemaining, 0.f, 0.f }
+		sas::GameplayAttribute{ BarrierEffectSchema::Capacity, 10.f, 0.f },
+		sas::GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f },
+		sas::GameplayAttribute{ BarrierEffectSchema::RegenerationPerSecond, 5.f, 0.f },
+		sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelay, 1.f, 0.f },
+		sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelayRemaining, 0.f, 0.f }
 	};
 	TestCombatant regenerationTarget;
-	const GameplayEffectHandle regenerationHandle = regenerationTarget.GetCombatRuntime().GetEffects().ApplyEffect(
+	const sas::GameplayEffectHandle regenerationHandle = regenerationTarget.GetAbilitySystemComponent().ApplyGameplayEffect(
 		regeneratingBarrier
 	);
 	ApplyCombatDamage(regenerationTarget, 2.f, nullptr, { DamageTypeSchema::Energy }, energyPayload);
 	regenerationTarget.GetCombatRuntime().Tick(1.5f);
-	const ActiveGameplayEffect* delayedBarrier = regenerationTarget.GetCombatRuntime().GetEffects().FindEffect(regenerationHandle);
+	const sas::ActiveGameplayEffect* delayedBarrier = regenerationTarget.GetAbilitySystemComponent().FindGameplayEffect(regenerationHandle);
 	if (!delayedBarrier || !NearlyEqual(
-		FindGameplayAttributeValue(delayedBarrier->runtimeAttributes, BarrierEffectSchema::Capacity),
+		sas::FindGameplayAttributeValue(delayedBarrier->runtimeAttributes, BarrierEffectSchema::Capacity),
 		7.5f
 	))
 	{
 		return Fail("Energy damage did not delay shield regeneration");
 	}
 	regenerationTarget.GetCombatRuntime().Tick(0.5f);
-	const ActiveGameplayEffect* regeneratingBarrierState = regenerationTarget.GetCombatRuntime().GetEffects().FindEffect(regenerationHandle);
+	const sas::ActiveGameplayEffect* regeneratingBarrierState = regenerationTarget.GetAbilitySystemComponent().FindGameplayEffect(regenerationHandle);
 	if (!regeneratingBarrierState || !NearlyEqual(
-		FindGameplayAttributeValue(regeneratingBarrierState->runtimeAttributes, BarrierEffectSchema::Capacity),
+		sas::FindGameplayAttributeValue(regeneratingBarrierState->runtimeAttributes, BarrierEffectSchema::Capacity),
 		8.75f
 	))
 	{
@@ -1100,9 +1110,9 @@ int main()
 		AttachmentHostKind::PrimaryWeapon,
 		{ DamageTypeSchema::Photonic }
 	);
-	GameplayAttributeList energyAttachmentAttributes = energyAttachmentLoadout.MergeGrantedAttributes(
+	sas::GameplayAttributeList energyAttachmentAttributes = energyAttachmentLoadout.MergeGrantedAttributes(
 		AttachmentHostKind::PrimaryWeapon,
-		{ GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f } }
+		{ sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f } }
 	);
 	energyAttachmentAttributes = energyAttachmentLoadout.ApplyConditionalModifiers(
 		AttachmentHostKind::PrimaryWeapon,
@@ -1114,21 +1124,21 @@ int main()
 		energyAttachmentAttributes
 	);
 	if (energyAttachmentTags.size() != 1 || energyAttachmentTags.front() != DamageTypeSchema::Energy ||
-		!NearlyEqual(FindGameplayAttributeValue(energyAttachmentAttributes, CommonAttributeIds::Damage), 11.5f) ||
+		!NearlyEqual(sas::FindGameplayAttributeValue(energyAttachmentAttributes, CommonAttributeIds::Damage), 11.5f) ||
 		!NearlyEqual(attachmentEnergyPayload.shieldRegenerationDelay, 0.75f))
 	{
 		return Fail("Damage type attachment did not resolve its converted tag and conditional attributes");
 	}
-	GameplayEffectDefinition smallShield;
+	sas::GameplayEffectDefinition smallShield;
 	smallShield.effectId = "Effect.Test.SmallShield";
 	smallShield.behaviorTag = BarrierEffectSchema::BehaviorId;
-	smallShield.durationPolicy = GameplayEffectDurationPolicy::Infinite;
+	smallShield.durationPolicy = sas::GameplayEffectDurationPolicy::Infinite;
 	smallShield.attributes = {
-		GameplayAttribute{ BarrierEffectSchema::Capacity, 5.f, 0.f },
-		GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f }
+		sas::GameplayAttribute{ BarrierEffectSchema::Capacity, 5.f, 0.f },
+		sas::GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f }
 	};
 	TestCombatant shieldTarget;
-	shieldTarget.GetCombatRuntime().GetEffects().ApplyEffect(smallShield);
+	shieldTarget.GetAbilitySystemComponent().ApplyGameplayEffect(smallShield);
 	ApplyCombatDamage(shieldTarget, 8.f, nullptr, { DamageTypeSchema::Energy }, energyPayload);
 	if (!NearlyEqual(shieldTarget.GetHealth(), 96.f))
 	{
@@ -1136,8 +1146,8 @@ int main()
 	}
 
 	TestCombatant armoredTarget;
-	armoredTarget.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::Armor, AttributeModifierOperation::Override, 50.f }
+	armoredTarget.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::Armor, sas::AttributeModifierOperation::Override, 50.f }
 	);
 	const DamagePayload kineticPayload = DamageTypeSystem::BuildPayload({ DamageTypeSchema::Kinetic });
 	if (!NearlyEqual(kineticPayload.armorPenetration, 0.10f))
@@ -1146,7 +1156,7 @@ int main()
 	}
 	ApplyCombatDamage(armoredTarget, 10.f, nullptr, { DamageTypeSchema::Kinetic }, kineticPayload);
 	const float effectiveKineticReduction =
-		AttributeMath::GetArmorDamageReduction(50.f) * (1.f - kineticPayload.armorPenetration);
+		sas::AttributeMath::GetArmorDamageReduction(50.f) * (1.f - kineticPayload.armorPenetration);
 	const float expectedKineticHealth = 100.f - 10.f * (1.f - effectiveKineticReduction);
 	if (!NearlyEqual(armoredTarget.GetHealth(), expectedKineticHealth))
 	{
@@ -1187,13 +1197,13 @@ int main()
 	for (int expectedStacks = 1; expectedStacks < 4; ++expectedStacks)
 	{
 		ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-		const ActiveGameplayEffect* buildup =
-			cryoTarget.GetCombatRuntime().GetEffects().FindEffectById(
+		const sas::ActiveGameplayEffect* buildup =
+			cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 				DamageStatusEffectIds::CryoBuildup
 			);
 		if (!buildup || buildup->stackCount != expectedStacks ||
 			!NearlyEqual(
-				cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(
+				cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
 					OwnerAttributeIds::MovementSlow
 				),
 				0.f
@@ -1204,18 +1214,18 @@ int main()
 	}
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
 	if (!NearlyEqual(
-		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
+		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
 		0.25f
-	) || cryoTarget.GetCombatRuntime().GetEffects().FindEffectById(
+	) || cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoBuildup
-	) || !cryoTarget.GetCombatRuntime().GetEffects().FindEffectById(
+	) || !cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoSlowed
 	))
 	{
 		return Fail("Four-hit Cryo buildup did not consume stacks and apply slow");
 	}
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-	if (cryoTarget.GetCombatRuntime().GetEffects().FindEffectById(
+	if (cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoBuildup
 	))
 	{
@@ -1225,7 +1235,7 @@ int main()
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
 	cryoTarget.GetCombatRuntime().Tick(0.75f);
 	if (!NearlyEqual(
-		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
+		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
 		0.25f
 	))
 	{
@@ -1233,7 +1243,7 @@ int main()
 	}
 	cryoTarget.GetCombatRuntime().Tick(0.8f);
 	if (!NearlyEqual(
-		cryoTarget.GetCombatRuntime().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
+		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
 		0.f
 	))
 	{
@@ -1241,7 +1251,7 @@ int main()
 	}
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
 	cryoTarget.GetCombatRuntime().Tick(2.6f);
-	if (cryoTarget.GetCombatRuntime().GetEffects().FindEffectById(
+	if (cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoBuildup
 	))
 	{
@@ -1282,9 +1292,9 @@ int main()
 	PrimaryWeaponDefinition projectileWeapon;
 	projectileWeapon.weaponTypeTag = PrimaryWeaponSchema::Projectile::Standard::TypeId;
 	projectileWeapon.attributes = {
-		GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f, 0.f }
+		sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f, 0.f }
 	};
 	if (!PrimaryWeaponExecutionSystem::ValidateDefinition(projectileWeapon).isValid)
 	{
@@ -1303,9 +1313,9 @@ int main()
 	extensionWeapon.weaponId = "Weapon.Test.Extension";
 	extensionWeapon.weaponTypeTag = ExtensionWeaponType;
 	extensionWeapon.attributes = {
-		GameplayAttribute{ CommonAttributeIds::Damage, 1.f, 0.f },
-		GameplayAttribute{ ExtensionWeaponAttribute, 1.f, 0.f },
-		GameplayAttribute{ ExtensionFeatureAttribute, 1.f, 0.f }
+		sas::GameplayAttribute{ CommonAttributeIds::Damage, 1.f, 0.f },
+		sas::GameplayAttribute{ ExtensionWeaponAttribute, 1.f, 0.f },
+		sas::GameplayAttribute{ ExtensionFeatureAttribute, 1.f, 0.f }
 	};
 	extensionWeapon.featureTags = { ExtensionFeatureTag };
 	if (!PrimaryWeaponExecutionSystem::ValidateDefinition(extensionWeapon).isValid)
@@ -1342,11 +1352,11 @@ int main()
 	PrimaryWeaponDefinition electricArcWeapon;
 	electricArcWeapon.weaponTypeTag = PrimaryWeaponSchema::Arc::Electric::TypeId;
 	electricArcWeapon.attributes = {
-		GameplayAttribute{ CommonAttributeIds::Damage, 12.f, 0.f },
-		GameplayAttribute{ CommonAttributeIds::Range, 700.f, 1.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Arc::Electric::ChainCount, 2.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Arc::Electric::ChainRange, 240.f, 1.f },
-		GameplayAttribute{
+		sas::GameplayAttribute{ CommonAttributeIds::Damage, 12.f, 0.f },
+		sas::GameplayAttribute{ CommonAttributeIds::Range, 700.f, 1.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Arc::Electric::ChainCount, 2.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Arc::Electric::ChainRange, 240.f, 1.f },
+		sas::GameplayAttribute{
 			PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain,
 			0.75f,
 			0.01f,
@@ -1358,7 +1368,7 @@ int main()
 		return Fail("Valid arc projectile weapon was rejected");
 	}
 	PrimaryWeaponDefinition invalidElectricArcWeapon = electricArcWeapon;
-	FindGameplayAttribute(
+	sas::FindGameplayAttribute(
 		invalidElectricArcWeapon.attributes,
 		PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain
 	)->baseValue = 1.1f;
@@ -1372,23 +1382,23 @@ int main()
 	{
 		return Fail("A primary weapon family tag was accepted as a concrete weapon type");
 	}
-	const AbilityDefinition automaticPrimaryAbility = AbilityData::MakePrimaryFireAbilityDefinition(projectileWeapon);
+	const GameAbilityDefinition automaticPrimaryAbility = AbilityData::MakePrimaryFireAbilityDefinition(projectileWeapon);
 	PrimaryWeaponDefinition semiAutomaticWeapon = projectileWeapon;
 	semiAutomaticWeapon.automaticFire = false;
-	const AbilityDefinition semiAutomaticPrimaryAbility = AbilityData::MakePrimaryFireAbilityDefinition(semiAutomaticWeapon);
-	if (automaticPrimaryAbility.activationPolicy != AbilityActivationPolicy::WhileHeld ||
+	const GameAbilityDefinition semiAutomaticPrimaryAbility = AbilityData::MakePrimaryFireAbilityDefinition(semiAutomaticWeapon);
+	if (automaticPrimaryAbility.activationPolicy != sas::AbilityActivationPolicy::WhileHeld ||
 		automaticPrimaryAbility.actions.empty() ||
-		automaticPrimaryAbility.actions.front().phase != AbilityActionPhase::WhileActive ||
-		semiAutomaticPrimaryAbility.activationPolicy != AbilityActivationPolicy::OnPressed ||
+		automaticPrimaryAbility.actions.front().phase != sas::AbilityActionPhase::WhileActive ||
+		semiAutomaticPrimaryAbility.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 		semiAutomaticPrimaryAbility.actions.empty() ||
-		semiAutomaticPrimaryAbility.actions.front().phase != AbilityActionPhase::OnActivate)
+		semiAutomaticPrimaryAbility.actions.front().phase != sas::AbilityActionPhase::OnActivate)
 	{
 		return Fail("Primary weapon automatic fire policy was not generated correctly");
 	}
 
 	PrimaryWeaponDefinition mixedWeapon = projectileWeapon;
 	mixedWeapon.attributes.push_back(
-		GameplayAttribute{ PrimaryWeaponSchema::Beam::Delivery::Width, 20.f, 0.f }
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Beam::Delivery::Width, 20.f, 0.f }
 	);
 	if (PrimaryWeaponExecutionSystem::ValidateDefinition(mixedWeapon).isValid)
 	{
@@ -1396,7 +1406,7 @@ int main()
 	}
 	PrimaryWeaponDefinition standardProjectileWithShotgunAttribute = projectileWeapon;
 	standardProjectileWithShotgunAttribute.attributes.push_back(
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Shotgun::PelletCount, 3.f, 1.f }
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Shotgun::PelletCount, 3.f, 1.f }
 	);
 	if (PrimaryWeaponExecutionSystem::ValidateDefinition(standardProjectileWithShotgunAttribute).isValid)
 	{
@@ -1406,11 +1416,11 @@ int main()
 	PrimaryWeaponDefinition shotgunWeapon;
 	shotgunWeapon.weaponTypeTag = PrimaryWeaponSchema::Projectile::Shotgun::TypeId;
 	shotgunWeapon.attributes = {
-		GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Shotgun::PelletCount, 5.f, 1.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Shotgun::SpreadAngle, 42.f, 0.f }
+		sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Shotgun::PelletCount, 5.f, 1.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Shotgun::SpreadAngle, 42.f, 0.f }
 	};
 	if (!PrimaryWeaponExecutionSystem::ValidateDefinition(shotgunWeapon).isValid)
 	{
@@ -1432,14 +1442,14 @@ int main()
 	continuousBeamWeapon.weaponId = "TestContinuousHeatBeam";
 	continuousBeamWeapon.weaponTypeTag = PrimaryWeaponSchema::Beam::Continuous::TypeId;
 	continuousBeamWeapon.attributes = {
-		GameplayAttribute{ CommonAttributeIds::Damage, 20.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Beam::Delivery::Range, 800.f, 1.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Beam::Delivery::Width, 20.f, 1.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Gain, 50.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Capacity, 100.f, 1.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Dissipation, 20.f, 0.f },
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::OverheatCooldown, 2.5f, 0.1f },
-		GameplayAttribute{
+		sas::GameplayAttribute{ CommonAttributeIds::Damage, 20.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Beam::Delivery::Range, 800.f, 1.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Beam::Delivery::Width, 20.f, 1.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Gain, 50.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Capacity, 100.f, 1.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Dissipation, 20.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::OverheatCooldown, 2.5f, 0.1f },
+		sas::GameplayAttribute{
 			PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat,
 			1.5f,
 			1.f
@@ -1471,7 +1481,7 @@ int main()
 
 	PrimaryWeaponDefinition undeclaredFeatureWeapon = projectileWeapon;
 	undeclaredFeatureWeapon.attributes.push_back(
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Capacity, 100.f, 0.f }
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Capacity, 100.f, 0.f }
 	);
 	if (PrimaryWeaponExecutionSystem::ValidateDefinition(undeclaredFeatureWeapon).isValid)
 	{
@@ -1481,13 +1491,13 @@ int main()
 	PrimaryWeaponDefinition heatedProjectileWeapon = projectileWeapon;
 	heatedProjectileWeapon.featureTags = { PrimaryWeaponSchema::Feature::Heat::FeatureId };
 	heatedProjectileWeapon.attributes.push_back(
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Gain, 3.f, 0.f }
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Gain, 3.f, 0.f }
 	);
 	heatedProjectileWeapon.attributes.push_back(
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Capacity, 10.f, 0.f }
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Capacity, 10.f, 0.f }
 	);
 	heatedProjectileWeapon.attributes.push_back(
-		GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Dissipation, 2.f, 0.f }
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Feature::Heat::Dissipation, 2.f, 0.f }
 	);
 	PrimaryWeaponRuntimeState heatedRuntime;
 	if (!PrimaryWeaponExecutionSystem::InitializeRuntime(heatedProjectileWeapon, heatedRuntime).isValid)
@@ -1635,14 +1645,14 @@ int main()
 	progressiveHeatWeapon.progressionProfile = WeaponProgressionProfile{ 3 }
 		.AtLevel(
 			2,
-			{ AttributeModifier{ CommonAttributeIds::Damage, AttributeModifierOperation::Add, 5.f } },
+			{ sas::AttributeModifier{ CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 5.f } },
 			{ testWeaponUpgrade }
 		)
 		.AtLevel(
 			3,
-			{ AttributeModifier{
+			{ sas::AttributeModifier{
 				PrimaryWeaponSchema::Feature::Heat::Capacity,
-				AttributeModifierOperation::Add,
+				sas::AttributeModifierOperation::Add,
 				5.f
 			} },
 			{},
@@ -1653,7 +1663,7 @@ int main()
 		return Fail("A primary weapon with level-specific upgrades and features was rejected");
 	}
 
-	const AbilityDefinition progressivePrimaryAbility =
+	const GameAbilityDefinition progressivePrimaryAbility =
 		AbilityData::MakePrimaryFireAbilityDefinition(progressiveHeatWeapon);
 	if (progressivePrimaryAbility.GetMaxLevel() != 3 ||
 		progressivePrimaryAbility.levelProgression.size() != 2 ||
@@ -1667,14 +1677,14 @@ int main()
 	}
 
 	const WeaponProgressionProfile flexibleWeaponProfile = WeaponProgressionProfile{ 7 }
-		.EveryLevel({ AttributeModifier{ CommonAttributeIds::Damage, 1.f } })
-		.BetweenLevels(3, 5, { AttributeModifier{ CommonAttributeIds::FireRate, 0.25f } })
-		.AtLevel(6, { AttributeModifier{ PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 1.f } })
-		.FromLevel(6, { AttributeModifier{ CommonAttributeIds::Range, 50.f } });
+		.EveryLevel({ sas::AttributeModifier{ CommonAttributeIds::Damage, 1.f } })
+		.BetweenLevels(3, 5, { sas::AttributeModifier{ CommonAttributeIds::FireRate, 0.25f } })
+		.AtLevel(6, { sas::AttributeModifier{ PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 1.f } })
+		.FromLevel(6, { sas::AttributeModifier{ CommonAttributeIds::Range, 50.f } });
 	const List<PrimaryWeaponLevelStep> flexibleWeaponSteps = flexibleWeaponProfile.ResolveLevelSteps();
 	const auto stepHasModifier = [](const PrimaryWeaponLevelStep& step, const GameplayTag& attributeId, float value)
 	{
-		for (const AttributeModifier& modifier : step.attributeModifiers)
+		for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 		{
 			if (modifier.attributeId == attributeId && NearlyEqual(modifier.magnitude, value))
 			{
@@ -1736,37 +1746,27 @@ int main()
 	PrimaryWeaponExecutionSystem::EndFire(unlockedHeatContext, unlockedProgressionRuntime);
 
 	Actor liveProgressionOwner{ nullptr };
-	AttributeSystem liveProgressionAttributes;
-	GameplayTagContainer liveProgressionTags;
-	GameplayEffectSystem liveProgressionEffects{
-		liveProgressionOwner,
-		liveProgressionAttributes,
-		liveProgressionTags
+	LightYearsAbilitySystemComponent liveProgressionAbilities{
+		liveProgressionOwner
 	};
-	AbilitySystem liveProgressionAbilities{
-		liveProgressionOwner,
-		liveProgressionAttributes,
-		liveProgressionEffects,
-		liveProgressionTags
-	};
-	const AbilityHandle liveProgressionHandle =
+	const sas::AbilityHandle liveProgressionHandle =
 		liveProgressionAbilities.GrantAbility(progressivePrimaryAbility);
 	if (!liveProgressionHandle.IsValid())
 	{
 		return Fail("Live primary weapon progression ability could not be granted");
 	}
-	liveProgressionAbilities.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	liveProgressionAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	liveProgressionAbilities.Tick(0.f);
-	AbilityInstance* liveProgressionInstance =
+	GameAbility* liveProgressionInstance =
 		liveProgressionAbilities.GetAbility(liveProgressionHandle);
 	if (!liveProgressionInstance ||
 		!liveProgressionInstance->GetPrimaryWeaponRuntime().features.empty())
 	{
 		return Fail("Live primary weapon runtime activated a locked feature");
 	}
-	liveProgressionAbilities.SetSlotInput(AbilitySlot::PrimaryFire, false);
+	liveProgressionAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, false);
 	liveProgressionAbilities.Tick(0.f);
-	if (!liveProgressionAbilities.TrySetAbilityLevel(
+	if (!liveProgressionAbilities.SetAbilityLevel(
 			liveProgressionHandle,
 			progressivePrimaryAbility.GetMaxLevel()
 		))
@@ -1777,7 +1777,7 @@ int main()
 	{
 		return Fail("Level-up did not immediately reconfigure the live primary weapon feature set");
 	}
-	liveProgressionAbilities.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	liveProgressionAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	liveProgressionAbilities.Tick(1.f);
 	if (!NearlyEqual(
 			liveProgressionInstance->GetPrimaryWeaponRuntime().GetFeatureValue(
@@ -1788,9 +1788,9 @@ int main()
 	{
 		return Fail("Level-up did not reconfigure the live primary weapon feature set");
 	}
-	liveProgressionAbilities.SetSlotInput(AbilitySlot::PrimaryFire, false);
+	liveProgressionAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, false);
 	liveProgressionAbilities.Tick(0.f);
-	if (!liveProgressionAbilities.TrySetAbilityLevel(liveProgressionHandle, 1))
+	if (!liveProgressionAbilities.SetAbilityLevel(liveProgressionHandle, 1))
 	{
 		return Fail("Live primary weapon ability could not return to level one");
 	}
@@ -1808,7 +1808,7 @@ int main()
 	PrimaryWeaponDefinition invalidLevelTargetWeapon = projectileWeapon;
 	invalidLevelTargetWeapon.progressionProfile = WeaponProgressionProfile{ 2 }
 		.AtLevel(2, {
-			AttributeModifier{ CommonAttributeIds::AreaRadius, AttributeModifierOperation::Add, 10.f }
+			sas::AttributeModifier{ CommonAttributeIds::AreaRadius, sas::AttributeModifierOperation::Add, 10.f }
 		});
 	if (PrimaryWeaponExecutionSystem::ValidateDefinition(invalidLevelTargetWeapon).isValid)
 	{
@@ -1829,7 +1829,7 @@ int main()
 	}
 	AbilityActorDefinition invalidGenericActorDefinition = genericActorDefinition;
 	invalidGenericActorDefinition.attributes = {
-		GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f, 0.f }
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f, 0.f }
 	};
 	if (AbilityActorRegistry::ValidateDefinition(invalidGenericActorDefinition).isValid)
 	{
@@ -2063,9 +2063,9 @@ int main()
 		return Fail("Dash camera zoom and arena-bound clamp did not follow the same smoothed view size");
 	}
 
-	auto SetTestAttribute = [](GameplayAttributeList& testAttributes, const GameplayTag& id, float value)
+	auto SetTestAttribute = [](sas::GameplayAttributeList& testAttributes, const GameplayTag& id, float value)
 	{
-		if (GameplayAttribute* attribute = FindGameplayAttribute(testAttributes, id))
+		if (sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(testAttributes, id))
 		{
 			attribute->baseValue = value;
 			attribute->currentValue = value;
@@ -2085,7 +2085,7 @@ int main()
 	timingTarget->SetCollisionLayer(CollisionLayer::Enemy);
 	timingTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
 
-	GameplayAttributeList timingAttributes = AbilityData::AbilityActors::Actor_SunBeam_Basic.attributes;
+	sas::GameplayAttributeList timingAttributes = AbilityData::AbilityActors::Actor_SunBeam_Basic.attributes;
 	SetTestAttribute(timingAttributes, CommonAttributeIds::Damage, 10.f);
 	SetTestAttribute(
 		timingAttributes,
@@ -2178,26 +2178,23 @@ int main()
 	}
 
 	Actor abilityOwner{ nullptr };
-	AttributeSystem abilityAttributes;
-	GameplayTagContainer abilityTags;
-	GameplayEffectSystem abilityEffects{ abilityOwner, abilityAttributes, abilityTags };
-	AbilitySystem abilitySystem{ abilityOwner, abilityAttributes, abilityEffects, abilityTags };
-	const AbilityDefinition persistentHeatAbility = AbilityData::MakePrimaryFireAbilityDefinition(continuousBeamWeapon);
-	const AbilityHandle persistentHeatHandle = abilitySystem.GrantAbility(persistentHeatAbility);
+	LightYearsAbilitySystemComponent abilitySystem{ abilityOwner };
+	const GameAbilityDefinition persistentHeatAbility = AbilityData::MakePrimaryFireAbilityDefinition(continuousBeamWeapon);
+	const sas::AbilityHandle persistentHeatHandle = abilitySystem.GrantAbility(persistentHeatAbility);
 	if (!persistentHeatHandle.IsValid())
 	{
 		return Fail("Continuous heat primary ability could not be granted");
 	}
-	abilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	abilitySystem.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	abilitySystem.Tick(1.f);
-	AbilityInstance* persistentHeatInstance = abilitySystem.GetAbility(AbilitySlot::PrimaryFire);
+	GameAbility* persistentHeatInstance = abilitySystem.GetAbility(sas::AbilitySlot::PrimaryFire);
 	if (!persistentHeatInstance || !NearlyEqual(persistentHeatInstance->GetPrimaryWeaponRuntime().GetFeatureValue(
 		PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue
 	), 50.f))
 	{
 		return Fail("Continuous heat was not retained by the primary ability runtime");
 	}
-	abilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, false);
+	abilitySystem.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, false);
 	abilitySystem.Tick(1.f);
 	if (!NearlyEqual(persistentHeatInstance->GetPrimaryWeaponRuntime().GetFeatureValue(
 		PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue
@@ -2205,7 +2202,7 @@ int main()
 	{
 		return Fail("Released continuous heat did not dissipate through the ability runtime");
 	}
-	abilitySystem.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	abilitySystem.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	abilitySystem.Tick(0.f);
 	if (!NearlyEqual(persistentHeatInstance->GetPrimaryWeaponRuntime().GetFeatureValue(
 		PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue
@@ -2214,13 +2211,13 @@ int main()
 		return Fail("Reactivated continuous heat did not preserve its partially cooled value");
 	}
 	abilitySystem.RemoveAbility(persistentHeatHandle);
-	AbilityDefinition invalidSpawnActorAbility;
+	GameAbilityDefinition invalidSpawnActorAbility;
 	invalidSpawnActorAbility.abilityId = "Ability.Test.InvalidSpawnActor";
-	invalidSpawnActorAbility.slot = AbilitySlot::Ability1;
+	invalidSpawnActorAbility.slot = sas::AbilitySlot::Ability1;
 	invalidSpawnActorAbility.actions = {
 		AbilityActionSpec{
-			AbilityActionPhase::OnActivate,
-			SpawnActorAction{ "Actor.Test.Unknown", AbilitySpawnPolicy::AtOwner },
+			sas::AbilityActionPhase::OnActivate,
+			SpawnActorAction{ "Actor.Test.Unknown", sas::AbilitySpawnPolicy::AtOwner },
 			0.f,
 			1
 		}
@@ -2231,15 +2228,15 @@ int main()
 	{
 		return Fail("Ability grant accepted an invalid actor definition");
 	}
-	AbilityDefinition invalidEffectAbility;
+	GameAbilityDefinition invalidEffectAbility;
 	invalidEffectAbility.abilityId = "Ability.Test.InvalidEffect";
-	invalidEffectAbility.slot = AbilitySlot::Ability1;
+	invalidEffectAbility.slot = sas::AbilitySlot::Ability1;
 	invalidEffectAbility.actions = {
 		AbilityActionSpec{
-			AbilityActionPhase::OnActivate,
+			sas::AbilityActionPhase::OnActivate,
 			ApplyEffectAction{
 				"Effect.Test.Unknown",
-				AbilityTargetPolicy::Self
+				sas::AbilityTargetPolicy::Self
 			},
 			0.f,
 			1
@@ -2264,23 +2261,23 @@ int main()
 
 	const GameplayTag firstUpgradeId{ "Upgrade.Ability.Test.First" };
 	const GameplayTag secondUpgradeId{ "Upgrade.Ability.Test.Second" };
-	AbilityDefinition progressionAbility;
+	GameAbilityDefinition progressionAbility;
 	progressionAbility.abilityId = "Ability.Test.Progression";
-	progressionAbility.slot = AbilitySlot::Ability3;
+	progressionAbility.slot = sas::AbilitySlot::Ability3;
 	progressionAbility.duration = 4.f;
 	progressionAbility.attributeModifiers = {
-		AttributeModifier{ CommonAttributeIds::Radius, AttributeModifierOperation::Add, 1.f }
+		sas::AttributeModifier{ CommonAttributeIds::Radius, sas::AttributeModifierOperation::Add, 1.f }
 	};
 	progressionAbility.levelProgression = {
 		AbilityLevelStep{
 			{
-				AttributeModifier{ CommonAttributeIds::Damage, AttributeModifierOperation::Add, 5.f }
+				sas::AttributeModifier{ CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 5.f }
 			},
 			{ firstUpgradeId },
 			{
 				AbilityActionSpec{
-					AbilityActionPhase::OnActivate,
-					ApplyImpulseAction{ 10.f, AbilityDirectionPolicy::OwnerForward },
+					sas::AbilityActionPhase::OnActivate,
+					ApplyImpulseAction{ 10.f, sas::AbilityDirectionPolicy::OwnerForward },
 					0.f,
 					1
 				}
@@ -2289,8 +2286,8 @@ int main()
 		},
 		AbilityLevelStep{
 			{
-				AttributeModifier{ CommonAttributeIds::Damage, AttributeModifierOperation::Multiply, 2.f },
-				AttributeModifier{ CommonAttributeIds::Duration, AttributeModifierOperation::Add, 2.f }
+				sas::AttributeModifier{ CommonAttributeIds::Damage, sas::AttributeModifierOperation::Multiply, 2.f },
+				sas::AttributeModifier{ CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 2.f }
 			},
 			{ secondUpgradeId },
 			{},
@@ -2302,8 +2299,8 @@ int main()
 					{},
 					{
 						AbilityActionSpec{
-							AbilityActionPhase::OnActivate,
-							ApplyImpulseAction{ 5.f, AbilityDirectionPolicy::OwnerForward },
+							sas::AbilityActionPhase::OnActivate,
+							ApplyImpulseAction{ 5.f, sas::AbilityDirectionPolicy::OwnerForward },
 							0.f,
 							1
 						}
@@ -2312,20 +2309,20 @@ int main()
 			}
 		}
 	};
-	const AbilityHandle progressionHandle = abilitySystem.GrantAbility(progressionAbility);
-	AbilityInstance* progressionInstance = abilitySystem.GetAbility(progressionHandle);
+	const sas::AbilityHandle progressionHandle = abilitySystem.GrantAbility(progressionAbility);
+	GameAbility* progressionInstance = abilitySystem.GetAbility(progressionHandle);
 	if (!progressionInstance)
 	{
 		return Fail("Per-ability level progression failed to grant");
 	}
-	if (!abilitySystem.TrySetAbilityLevel(progressionHandle, 999))
+	if (!abilitySystem.SetAbilityLevel(progressionHandle, 999))
 	{
-		return Fail("AbilitySystem failed to set an ability level");
+		return Fail("LightYearsAbilitySystemComponent failed to set an ability level");
 	}
-	const AbilityDefinition& maxLevelDefinition = progressionInstance->GetDefinition();
-	const AbilityRuntimeSnapshot maxLevelSnapshot = progressionInstance->BuildSnapshot();
-	const float progressedDamage = CalculateModifiedAttributeValue(
-		GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
+	const GameAbilityDefinition& maxLevelDefinition = progressionInstance->GetDefinition();
+	const sas::AbilityRuntimeSnapshot maxLevelSnapshot = progressionInstance->BuildSnapshot();
+	const float progressedDamage = sas::CalculateModifiedAttributeValue(
+		sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
 		maxLevelDefinition.attributeModifiers
 	);
 	if (progressionInstance->GetLevel() != 3 ||
@@ -2340,15 +2337,15 @@ int main()
 	{
 		return Fail("Per-ability level steps did not compose modifiers, upgrades, actions, and triggers");
 	}
-	if (abilitySystem.TryLevelUpAbility(progressionHandle))
+	if (abilitySystem.LevelUpAbility(progressionHandle))
 	{
-		return Fail("AbilitySystem leveled an ability beyond its maximum level");
+		return Fail("LightYearsAbilitySystemComponent leveled an ability beyond its maximum level");
 	}
-	if (!abilitySystem.TrySetAbilityLevel(AbilitySlot::Ability3, 1))
+	if (!abilitySystem.SetAbilityLevel(sas::AbilitySlot::Ability3, 1))
 	{
-		return Fail("AbilitySystem failed to restore an ability level");
+		return Fail("LightYearsAbilitySystemComponent failed to restore an ability level");
 	}
-	const AbilityDefinition& resetDefinition = progressionInstance->GetDefinition();
+	const GameAbilityDefinition& resetDefinition = progressionInstance->GetDefinition();
 	if (resetDefinition.attributeModifiers.size() != 1 ||
 		!resetDefinition.unlockedUpgradeIds.empty() ||
 		!resetDefinition.actions.empty() ||
@@ -2357,22 +2354,22 @@ int main()
 	{
 		return Fail("Ability level reset did not rebuild from the base definition");
 	}
-	if (!abilitySystem.TryLevelUpAbility(AbilitySlot::Ability3) || progressionInstance->GetLevel() != 2)
+	if (!abilitySystem.LevelUpAbility(sas::AbilitySlot::Ability3) || progressionInstance->GetLevel() != 2)
 	{
-		return Fail("AbilitySystem failed to level up an ability");
+		return Fail("LightYearsAbilitySystemComponent failed to level up an ability");
 	}
 
-	AbilityDefinition invalidProgressionAbility;
+	GameAbilityDefinition invalidProgressionAbility;
 	invalidProgressionAbility.abilityId = "Ability.Test.InvalidProgression";
-	invalidProgressionAbility.slot = AbilitySlot::Ability4;
+	invalidProgressionAbility.slot = sas::AbilitySlot::Ability4;
 	invalidProgressionAbility.levelProgression = {
 		AbilityLevelStep{
 			{},
 			{ GameplayTag{ "Upgrade.Ability.Test.Invalid" } },
 			{
 				AbilityActionSpec{
-					AbilityActionPhase::OnActivate,
-					SpawnActorAction{ "Actor.Test.Unknown", AbilitySpawnPolicy::AtOwner },
+					sas::AbilityActionPhase::OnActivate,
+					SpawnActorAction{ "Actor.Test.Unknown", sas::AbilitySpawnPolicy::AtOwner },
 					0.f,
 					1
 				}
@@ -2386,20 +2383,20 @@ int main()
 	{
 		return Fail("Ability grant accepted an invalid level-step action");
 	}
-	AbilityDefinition passiveOne;
+	GameAbilityDefinition passiveOne;
 	passiveOne.abilityId = "Ability.Test.Passive.One";
-	passiveOne.slot = AbilitySlot::None;
-	passiveOne.activationPolicy = AbilityActivationPolicy::Passive;
-	passiveOne.lifetimePolicy = AbilityLifetimePolicy::UntilCancelled;
-	AbilityDefinition passiveTwo = passiveOne;
+	passiveOne.slot = sas::AbilitySlot::None;
+	passiveOne.activationPolicy = sas::AbilityActivationPolicy::Passive;
+	passiveOne.lifetimePolicy = sas::AbilityLifetimePolicy::UntilCancelled;
+	GameAbilityDefinition passiveTwo = passiveOne;
 	passiveTwo.abilityId = "Ability.Test.Passive.Two";
-	AbilityDefinition passiveThree = passiveOne;
+	GameAbilityDefinition passiveThree = passiveOne;
 	passiveThree.abilityId = "Ability.Test.Passive.Three";
-	const AbilityHandle passiveOneHandle = abilitySystem.GrantAbility(passiveOne);
-	const AbilityHandle passiveTwoHandle = abilitySystem.GrantAbility(passiveTwo);
-	const AbilityHandle passiveThreeHandle = abilitySystem.GrantAbility(passiveThree);
+	const sas::AbilityHandle passiveOneHandle = abilitySystem.GrantAbility(passiveOne);
+	const sas::AbilityHandle passiveTwoHandle = abilitySystem.GrantAbility(passiveTwo);
+	const sas::AbilityHandle passiveThreeHandle = abilitySystem.GrantAbility(passiveThree);
 	if (!passiveOneHandle.IsValid() || !passiveTwoHandle.IsValid() || passiveThreeHandle.IsValid() ||
-		abilitySystem.GetPassiveAbilityCount() != AbilitySystem::MaxPassiveAbilities ||
+		abilitySystem.GetPassiveAbilityCount() != LightYearsAbilitySystemComponent::MaxPassiveAbilities ||
 		abilitySystem.GetAbility(passiveOneHandle) == nullptr ||
 		abilitySystem.GetAbilityById(passiveTwo.abilityId) == nullptr)
 	{
@@ -2407,19 +2404,19 @@ int main()
 	}
 
 	TestCombatant damageTarget;
-	damageTarget.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::Armor, 50.f }
+	damageTarget.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::Armor, 50.f }
 	);
-	GameplayEffectDefinition integrationBarrier;
+	sas::GameplayEffectDefinition integrationBarrier;
 	integrationBarrier.effectId = "Effect.Test.IntegrationBarrier";
 	integrationBarrier.behaviorTag = BarrierEffectSchema::BehaviorId;
-	integrationBarrier.durationPolicy = GameplayEffectDurationPolicy::Duration;
+	integrationBarrier.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 	integrationBarrier.duration = 10.f;
 	integrationBarrier.attributes = {
-		GameplayAttribute{ BarrierEffectSchema::Capacity, 20.f, 0.f },
-		GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f }
+		sas::GameplayAttribute{ BarrierEffectSchema::Capacity, 20.f, 0.f },
+		sas::GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f }
 	};
-	damageTarget.GetCombatRuntime().GetEffects().ApplyEffect(integrationBarrier);
+	damageTarget.GetAbilitySystemComponent().ApplyGameplayEffect(integrationBarrier);
 	ApplyCombatDamage(damageTarget, 30.f);
 	if (!NearlyEqual(damageTarget.GetHealth(), 95.f))
 	{
@@ -2428,26 +2425,20 @@ int main()
 
 	World weaponCadenceWorld{ nullptr };
 	Actor weaponCadenceOwner{ &weaponCadenceWorld };
-	AttributeSystem weaponCadenceAttributes;
-	GameplayTagContainer weaponCadenceTags;
-	GameplayEffectSystem weaponCadenceEffects{ weaponCadenceOwner, weaponCadenceAttributes, weaponCadenceTags };
-	AbilitySystem weaponCadenceAbilities{
-		weaponCadenceOwner,
-		weaponCadenceAttributes,
-		weaponCadenceEffects,
-		weaponCadenceTags
+	LightYearsAbilitySystemComponent weaponCadenceAbilities{
+		weaponCadenceOwner
 	};
 	PrimaryWeaponDefinition weaponCadenceDefinition{
 		"Weapon.Test.Cadence",
 		PrimaryWeaponSchema::Projectile::Standard::TypeId,
 		WeaponData::Laser_Blue_PresentationDef,
 		{
-			GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
-			GameplayAttribute{ CommonAttributeIds::FireRate, 2.f, 0.01f },
-			GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 100.f, 0.f },
-			GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 10.f, 0.f },
-			GameplayAttribute{ CommonAttributeIds::Range, 10000.f, 0.f },
-			GameplayAttribute{ CommonAttributeIds::CollisionRadius, 7.f, 0.1f }
+			sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
+			sas::GameplayAttribute{ CommonAttributeIds::FireRate, 2.f, 0.01f },
+			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 100.f, 0.f },
+			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 10.f, 0.f },
+			sas::GameplayAttribute{ CommonAttributeIds::Range, 10000.f, 0.f },
+			sas::GameplayAttribute{ CommonAttributeIds::CollisionRadius, 7.f, 0.1f }
 		},
 		{},
 		true
@@ -2458,16 +2449,16 @@ int main()
 	{
 		return Fail("Weapon cadence test ability could not be granted");
 	}
-	weaponCadenceAbilities.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	weaponCadenceAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	weaponCadenceAbilities.Tick(0.f);
 	weaponCadenceWorld.TickInternal(0.f);
 	if (weaponCadenceWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 1)
 	{
 		return Fail("Weapon cadence test did not fire its initial shot");
 	}
-	weaponCadenceAbilities.SetSlotInput(AbilitySlot::PrimaryFire, false);
+	weaponCadenceAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, false);
 	weaponCadenceAbilities.Tick(0.1f);
-	weaponCadenceAbilities.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	weaponCadenceAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	weaponCadenceAbilities.Tick(0.1f);
 	weaponCadenceWorld.TickInternal(0.f);
 	if (weaponCadenceWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 1)
@@ -2489,14 +2480,8 @@ int main()
 
 	World dualKineticWorld{ nullptr };
 	Actor dualKineticOwner{ &dualKineticWorld };
-	AttributeSystem dualKineticAttributes;
-	GameplayTagContainer dualKineticTags;
-	GameplayEffectSystem dualKineticEffects{ dualKineticOwner, dualKineticAttributes, dualKineticTags };
-	AbilitySystem dualKineticAbilities{
-		dualKineticOwner,
-		dualKineticAttributes,
-		dualKineticEffects,
-		dualKineticTags
+	LightYearsAbilitySystemComponent dualKineticAbilities{
+		dualKineticOwner
 	};
 	if (!dualKineticAbilities.GrantAbility(
 		AbilityData::MakePrimaryFireAbilityDefinition(WeaponData::PrimaryWeapons::DualKineticBlaster)
@@ -2504,7 +2489,7 @@ int main()
 	{
 		return Fail("Dual kinetic blaster ability could not be granted");
 	}
-	dualKineticAbilities.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	dualKineticAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	dualKineticAbilities.Tick(0.f);
 	dualKineticWorld.TickInternal(0.f);
 	if (dualKineticWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 2)
@@ -2515,14 +2500,8 @@ int main()
 	World electricArcWorld{ nullptr };
 	Actor electricArcOwner{ &electricArcWorld };
 	electricArcOwner.SetCollisionLayer(CollisionLayer::Player);
-	AttributeSystem electricArcAttributes;
-	GameplayTagContainer electricArcTags;
-	GameplayEffectSystem electricArcEffects{ electricArcOwner, electricArcAttributes, electricArcTags };
-	AbilitySystem electricArcAbilities{
-		electricArcOwner,
-		electricArcAttributes,
-		electricArcEffects,
-		electricArcTags
+	LightYearsAbilitySystemComponent electricArcAbilities{
+		electricArcOwner
 	};
 	const shared_ptr<TestCombatant> firstArcTarget = electricArcWorld.SpawnActor<TestCombatant>().lock();
 	const shared_ptr<TestCombatant> secondArcTarget = electricArcWorld.SpawnActor<TestCombatant>().lock();
@@ -2546,7 +2525,7 @@ int main()
 	{
 		return Fail("Electric arc launcher ability could not be granted");
 	}
-	electricArcAbilities.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	electricArcAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	electricArcAbilities.Tick(0.f);
 	electricArcWorld.TickInternal(0.f);
 	if (!electricArcWorld.GetActorsByType<PrimaryWeaponProjectileActor>().empty() ||
@@ -2800,7 +2779,7 @@ int main()
 	const PrimaryWeaponDefinition& dualKineticBlaster = WeaponData::PrimaryWeapons::DualKineticBlaster;
 	if (dualKineticBlaster.weaponTypeTag != PrimaryWeaponSchema::Projectile::Standard::TypeId ||
 		dualKineticBlaster.muzzleDefinitions.size() != 2 ||
-		FindGameplayAttributeValue(dualKineticBlaster.attributes, CommonAttributeIds::Range) <= 400.f ||
+		sas::FindGameplayAttributeValue(dualKineticBlaster.attributes, CommonAttributeIds::Range) <= 400.f ||
 		dualKineticBlaster.damageTags.size() != 1 ||
 		dualKineticBlaster.damageTags.front() != DamageTypeSchema::Kinetic)
 	{
@@ -2808,11 +2787,11 @@ int main()
 	}
 	const PrimaryWeaponDefinition& electricArcLauncher = WeaponData::PrimaryWeapons::ElectricArcLauncher;
 	if (electricArcLauncher.weaponTypeTag != PrimaryWeaponSchema::Arc::Electric::TypeId ||
-		FindGameplayAttributeValue(
+		sas::FindGameplayAttributeValue(
 			electricArcLauncher.attributes,
 			PrimaryWeaponSchema::Arc::Electric::ChainCount
 		) != 3.f ||
-		FindGameplayAttributeValue(
+		sas::FindGameplayAttributeValue(
 			electricArcLauncher.attributes,
 			PrimaryWeaponSchema::Arc::Electric::ChainRange
 		) <= 0.f)
@@ -2843,11 +2822,11 @@ int main()
 		return std::any_of(
 			weapon.scalingRules.begin(),
 			weapon.scalingRules.end(),
-			[&](const AttributeScalingRule& rule)
+			[&](const sas::AttributeScalingRule& rule)
 			{
 				return rule.targetAttributeId == target &&
 					rule.sourceAttributeId == source &&
-					rule.operation == AttributeModifierOperation::Add &&
+					rule.operation == sas::AttributeModifierOperation::Add &&
 					NearlyEqual(rule.coefficient, coefficient);
 			}
 		);
@@ -2868,11 +2847,11 @@ int main()
 		return Fail("Player primary weapon scaling coefficients are not configured to the balance targets");
 	}
 	bool hasEnergyMaxBeamScaling = false;
-	for (const AttributeScalingRule& scalingRule : continuousHeatLaser.scalingRules)
+	for (const sas::AttributeScalingRule& scalingRule : continuousHeatLaser.scalingRules)
 	{
 		if (scalingRule.targetAttributeId == CommonAttributeIds::Damage &&
 			scalingRule.sourceAttributeId == OwnerAttributeIds::EnergyMax &&
-			scalingRule.operation == AttributeModifierOperation::Add &&
+			scalingRule.operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(scalingRule.coefficient, 0.50f))
 		{
 			hasEnergyMaxBeamScaling = true;
@@ -3001,7 +2980,7 @@ int main()
 		return Fail("Continuous beam sustained 10/30 second runtime DPS did not benefit from high-heat AttackSpeed cooling");
 	}
 
-	const AbilityDefinition basicLaserAbility = AbilityData::MakePrimaryFireAbilityDefinition(basicLaser);
+	const GameAbilityDefinition basicLaserAbility = AbilityData::MakePrimaryFireAbilityDefinition(basicLaser);
 	if (basicLaser.progressionProfile.GetScrapCostToReachLevel(2) != 40u ||
 		basicLaser.progressionProfile.GetScrapCostToReachLevel(3) != 50u ||
 		basicLaser.progressionProfile.GetScrapCostToReachLevel(4) != 65u ||
@@ -3011,35 +2990,35 @@ int main()
 	{
 		return Fail("Primary weapon scrap costs were not preserved during ability conversion");
 	}
-	const AbilityHandle basicLaserHandle = abilitySystem.GrantAbility(basicLaserAbility);
+	const sas::AbilityHandle basicLaserHandle = abilitySystem.GrantAbility(basicLaserAbility);
 	if (!basicLaserHandle.IsValid() ||
-		!abilitySystem.TrySetAbilityLevel(AbilitySlot::PrimaryFire, basicLaserAbility.GetMaxLevel()))
+		!abilitySystem.SetAbilityLevel(sas::AbilitySlot::PrimaryFire, basicLaserAbility.GetMaxLevel()))
 	{
 		return Fail("Fighter basic rapid laser could not reach its maximum level");
 	}
-	const AbilityInstance* basicLaserInstance = abilitySystem.GetAbility(AbilitySlot::PrimaryFire);
-	const GameplayAttribute* basicDamage = FindGameplayAttribute(basicLaser.attributes, CommonAttributeIds::Damage);
-	const GameplayAttribute* basicFireRate = FindGameplayAttribute(basicLaser.attributes, CommonAttributeIds::FireRate);
-	const GameplayAttribute* basicSpeed = FindGameplayAttribute(
+	const GameAbility* basicLaserInstance = abilitySystem.GetAbility(sas::AbilitySlot::PrimaryFire);
+	const sas::GameplayAttribute* basicDamage = sas::FindGameplayAttribute(basicLaser.attributes, CommonAttributeIds::Damage);
+	const sas::GameplayAttribute* basicFireRate = sas::FindGameplayAttribute(basicLaser.attributes, CommonAttributeIds::FireRate);
+	const sas::GameplayAttribute* basicSpeed = sas::FindGameplayAttribute(
 		basicLaser.attributes,
 		PrimaryWeaponSchema::Projectile::Delivery::Speed
 	);
-	const GameplayAttribute* basicRange = FindGameplayAttribute(basicLaser.attributes, CommonAttributeIds::Range);
+	const sas::GameplayAttribute* basicRange = sas::FindGameplayAttribute(basicLaser.attributes, CommonAttributeIds::Range);
 	if (!basicLaserInstance || basicLaserInstance->GetLevel() != basicLaserAbility.GetMaxLevel() ||
 		!basicDamage || !basicFireRate || !basicSpeed || !basicRange ||
-		CalculateModifiedAttributeValue(
+		sas::CalculateModifiedAttributeValue(
 			*basicDamage,
 			basicLaserInstance->GetDefinition().attributeModifiers
 		) <= basicDamage->currentValue ||
-		CalculateModifiedAttributeValue(
+		sas::CalculateModifiedAttributeValue(
 			*basicFireRate,
 			basicLaserInstance->GetDefinition().attributeModifiers
 		) <= basicFireRate->currentValue ||
-		CalculateModifiedAttributeValue(
+		sas::CalculateModifiedAttributeValue(
 			*basicSpeed,
 			basicLaserInstance->GetDefinition().attributeModifiers
 		) <= basicSpeed->currentValue ||
-		CalculateModifiedAttributeValue(
+		sas::CalculateModifiedAttributeValue(
 			*basicRange,
 			basicLaserInstance->GetDefinition().attributeModifiers
 		) <= basicRange->currentValue)
@@ -3066,22 +3045,22 @@ int main()
 	{
 		return Fail("Thermal attachment did not replace the default damage type");
 	}
-	const GameplayAttributeList thermalDamageAttributes = thermalLoadout.ApplyConditionalModifiers(
+	const sas::GameplayAttributeList thermalDamageAttributes = thermalLoadout.ApplyConditionalModifiers(
 		AttachmentHostKind::PrimaryWeapon,
-		{ GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f } },
+		{ sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f } },
 		{ DamageTypeSchema::Thermal }
 	);
-	if (!NearlyEqual(FindGameplayAttributeValue(thermalDamageAttributes, CommonAttributeIds::Damage), 12.f))
+	if (!NearlyEqual(sas::FindGameplayAttributeValue(thermalDamageAttributes, CommonAttributeIds::Damage), 12.f))
 	{
 		return Fail("Thermal attachment did not grant its already-thermal damage bonus");
 	}
 
-	AbilityDefinition attachmentAbility;
+	GameAbilityDefinition attachmentAbility;
 	attachmentAbility.abilityId = "Ability.Test.AttachmentHost";
-	attachmentAbility.slot = AbilitySlot::Ability4;
+	attachmentAbility.slot = sas::AbilitySlot::Ability4;
 	attachmentAbility.cooldown = 10.f;
 	attachmentAbility.abilityTags = { GameplayTag{ "Ability.Offense" } };
-	const AbilityHandle attachmentAbilityHandle = abilitySystem.GrantAbility(attachmentAbility);
+	const sas::AbilityHandle attachmentAbilityHandle = abilitySystem.GrantAbility(attachmentAbility);
 	if (!attachmentAbilityHandle.IsValid() || !abilitySystem.TryEquipAttachment(
 		attachmentAbilityHandle,
 		AttachmentData::Definitions::HeavyCapacitor,
@@ -3090,7 +3069,7 @@ int main()
 	{
 		return Fail("Ability-only cooldown attachment could not be equipped on an offensive ability");
 	}
-	const AbilityInstance* attachmentAbilityInstance = abilitySystem.GetAbility(attachmentAbilityHandle);
+	const GameAbility* attachmentAbilityInstance = abilitySystem.GetAbility(attachmentAbilityHandle);
 	if (!attachmentAbilityInstance || !NearlyEqual(attachmentAbilityInstance->GetCooldownDuration(), 12.5f))
 	{
 		return Fail("Ability attachment modifiers did not use the shared attribute math");
@@ -3106,30 +3085,20 @@ int main()
 
 	World attachmentWeaponWorld{ nullptr };
 	Actor attachmentWeaponOwner{ &attachmentWeaponWorld };
-	AttributeSystem attachmentWeaponAttributes;
-	GameplayTagContainer attachmentWeaponTags;
-	GameplayEffectSystem attachmentWeaponEffects{
-		attachmentWeaponOwner,
-		attachmentWeaponAttributes,
-		attachmentWeaponTags
-	};
-	AbilitySystem attachmentWeaponAbilities{
-		attachmentWeaponOwner,
-		attachmentWeaponAttributes,
-		attachmentWeaponEffects,
-		attachmentWeaponTags
+	LightYearsAbilitySystemComponent attachmentWeaponAbilities{
+		attachmentWeaponOwner
 	};
 	PrimaryWeaponDefinition attachmentWeaponDefinition{
 		"Weapon.Test.AttachmentSalvo",
 		PrimaryWeaponSchema::Projectile::Standard::TypeId,
 		WeaponData::Laser_Blue_PresentationDef,
 		{
-			GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
-			GameplayAttribute{ CommonAttributeIds::FireRate, 3.f, 0.01f },
-			GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 100.f, 0.f },
-			GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 10.f, 0.f },
-			GameplayAttribute{ CommonAttributeIds::Range, 10000.f, 0.f },
-			GameplayAttribute{ CommonAttributeIds::CollisionRadius, 7.f, 0.1f }
+			sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
+			sas::GameplayAttribute{ CommonAttributeIds::FireRate, 3.f, 0.01f },
+			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 100.f, 0.f },
+			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 10.f, 0.f },
+			sas::GameplayAttribute{ CommonAttributeIds::Range, 10000.f, 0.f },
+			sas::GameplayAttribute{ CommonAttributeIds::CollisionRadius, 7.f, 0.1f }
 		},
 		{},
 		true
@@ -3137,18 +3106,18 @@ int main()
 	if (!attachmentWeaponAbilities.GrantAbility(
 		AbilityData::MakePrimaryFireAbilityDefinition(attachmentWeaponDefinition)
 	).IsValid() || !attachmentWeaponAbilities.TryEquipAttachment(
-		AbilitySlot::PrimaryFire,
+		sas::AbilitySlot::PrimaryFire,
 		AttachmentData::Definitions::EmergencySalvo,
 		AttachmentHostKind::PrimaryWeapon
 	) || !attachmentWeaponAbilities.TryEquipAttachment(
-		AbilitySlot::PrimaryFire,
+		sas::AbilitySlot::PrimaryFire,
 		AttachmentData::Definitions::ThermalConverter,
 		AttachmentHostKind::PrimaryWeapon
 	))
 	{
 		return Fail("Compatible primary weapon attachments could not be equipped");
 	}
-	const AbilityInstance* attachmentPrimaryInstance = attachmentWeaponAbilities.GetAbility(AbilitySlot::PrimaryFire);
+	const GameAbility* attachmentPrimaryInstance = attachmentWeaponAbilities.GetAbility(sas::AbilitySlot::PrimaryFire);
 	const List<GameplayTag> attachmentPrimaryDamageTags = attachmentPrimaryInstance
 		? attachmentPrimaryInstance->GetResolvedDamageTags(AttachmentHostKind::PrimaryWeapon)
 		: List<GameplayTag>{};
@@ -3156,7 +3125,7 @@ int main()
 	{
 		return Fail("Primary weapon attachment damage type was not resolved");
 	}
-	attachmentWeaponAbilities.SetSlotInput(AbilitySlot::PrimaryFire, true);
+	attachmentWeaponAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	attachmentWeaponAbilities.Tick(0.f);
 	attachmentWeaponWorld.TickInternal(0.f);
 	if (attachmentWeaponWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 2)
@@ -3165,11 +3134,11 @@ int main()
 	}
 
 	std::string rocketValidationFailure;
-	const AbilityDefinition* rocketDefinition = AbilityData::FindShippedAbilityDefinition("Ability.Rocket.Basic");
-	if (!AbilitySystem::ValidateCatalog(AbilityData::GetShippedAbilityDefinitions(), &rocketValidationFailure) ||
-		!rocketDefinition || rocketDefinition->slot != AbilitySlot::Ability4 ||
-		rocketDefinition->activationPolicy != AbilityActivationPolicy::OnPressed ||
-		rocketDefinition->lifetimePolicy != AbilityLifetimePolicy::Instant ||
+	const GameAbilityDefinition* rocketDefinition = AbilityData::FindShippedAbilityDefinition("Ability.Rocket.Basic");
+	if (!LightYearsAbilitySystemComponent::ValidateCatalog(AbilityData::GetShippedAbilityDefinitions(), &rocketValidationFailure) ||
+		!rocketDefinition || rocketDefinition->slot != sas::AbilitySlot::Ability4 ||
+		rocketDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		rocketDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Instant ||
 		rocketDefinition->maxCharges != 1 || rocketDefinition->behaviorId != AbilityData::Rocket::BehaviorId ||
 		rocketDefinition->damageTags.size() != 1 || rocketDefinition->damageTags.front() != DamageTypeSchema::Kinetic ||
 		!AbilityActorRegistry::ValidateDefinition(AbilityData::AbilityActors::Actor_Rocket_Basic).isValid)
@@ -3206,28 +3175,28 @@ int main()
 	)
 	{
 		owner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-		owner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			AttributeModifier{ OwnerAttributeIds::AttackPower, attackPower }
+		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ OwnerAttributeIds::AttackPower, attackPower }
 		);
-		owner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			AttributeModifier{ OwnerAttributeIds::AttackSpeed, attackSpeed }
+		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
-		owner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			AttributeModifier{ OwnerAttributeIds::Luck, luck }
+		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ OwnerAttributeIds::Luck, luck }
 		);
-		owner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-			AttributeModifier{ OwnerAttributeIds::EnergyMax, energyMax }
+		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ OwnerAttributeIds::EnergyMax, energyMax }
 		);
 		owner.SetCollisionLayer(CollisionLayer::Player);
 		owner.SetActorRotation(90.f);
 
-		AbilitySystem& abilities = owner.GetCombatRuntime().GetAbilities();
-		const AbilityHandle handle = abilities.GrantAbility(*rocketDefinition);
-		if (!handle.IsValid() || (level > 1 && !abilities.TrySetAbilityLevel(handle, level)))
+		LightYearsAbilitySystemComponent& abilities = owner.GetCombatRuntime().GetAbilitySystemComponent();
+		const sas::AbilityHandle handle = abilities.GrantAbility(*rocketDefinition);
+		if (!handle.IsValid() || (level > 1 && !abilities.SetAbilityLevel(handle, level)))
 		{
 			return shared_ptr<RocketProjectileActor>{};
 		}
-		abilities.SetSlotInput(AbilitySlot::Ability4, true);
+		abilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
 		abilities.Tick(0.f);
 		world.TickInternal(0.f);
 
@@ -3378,8 +3347,8 @@ int main()
 			level
 		);
 		const float levelOffset = static_cast<float>(level - 1);
-		const AbilityInstance* levelInstance =
-			levelRocketOwner.GetCombatRuntime().GetAbilities().GetAbility(AbilitySlot::Ability4);
+		const GameAbility* levelInstance =
+			levelRocketOwner.GetCombatRuntime().GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability4);
 		if (!levelRocket || !levelInstance ||
 			!NearlyEqual(levelRocket->GetDamage(), rocketSettings->baseDamage + levelOffset * rocketSettings->damagePerLevel) ||
 			!NearlyEqual(levelRocket->GetExplosionRadius(), rocketSettings->explosionRadius + levelOffset * rocketSettings->explosionRadiusPerLevel) ||
@@ -3396,13 +3365,13 @@ int main()
 
 	TestCombatant hasteRocketOwner;
 	hasteRocketOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-	const AbilityHandle hasteRocketHandle = hasteRocketOwner.GetCombatRuntime().GetAbilities().GrantAbility(*rocketDefinition);
-	const float baseRocketCooldown = hasteRocketOwner.GetCombatRuntime().GetAbilities()
+	const sas::AbilityHandle hasteRocketHandle = hasteRocketOwner.GetAbilitySystemComponent().GrantAbility(*rocketDefinition);
+	const float baseRocketCooldown = hasteRocketOwner.GetCombatRuntime().GetAbilitySystemComponent()
 		.GetAbility(hasteRocketHandle)->GetCooldownDuration();
-	hasteRocketOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
+	hasteRocketOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
 	);
-	const AbilityInstance* hasteRocket = hasteRocketOwner.GetCombatRuntime().GetAbilities().GetAbility(hasteRocketHandle);
+	const GameAbility* hasteRocket = hasteRocketOwner.GetCombatRuntime().GetAbilitySystemComponent().GetAbility(hasteRocketHandle);
 	if (!hasteRocket || !(hasteRocket->GetCooldownDuration() < baseRocketCooldown))
 	{
 		return Fail("AbilityHaste did not reduce Basic Rocket final cooldown");
@@ -3495,11 +3464,11 @@ int main()
 	}
 
 	std::string gravityValidationFailure;
-	const AbilityDefinition* gravityDefinition = AbilityData::FindShippedAbilityDefinition(
+	const GameAbilityDefinition* gravityDefinition = AbilityData::FindShippedAbilityDefinition(
 		"Ability.GravityAnomaly.Basic"
 	);
-	if (!AbilitySystem::ValidateCatalog(AbilityData::GetShippedAbilityDefinitions(), &gravityValidationFailure) ||
-		!gravityDefinition || gravityDefinition->slot != AbilitySlot::Ability1 ||
+	if (!LightYearsAbilitySystemComponent::ValidateCatalog(AbilityData::GetShippedAbilityDefinitions(), &gravityValidationFailure) ||
+		!gravityDefinition || gravityDefinition->slot != sas::AbilitySlot::Ability1 ||
 		gravityDefinition->inputLabel != "Q" ||
 		gravityDefinition->behaviorId != AbilityData::GravityAnomaly::BehaviorId ||
 		gravityDefinition->damageTags.size() != 0 ||
@@ -3513,11 +3482,12 @@ int main()
 		return Fail("Gravity Anomaly shipped ability or actor catalog validation failed");
 	}
 	PlayerSpaceShip gravityLoadout{ nullptr };
-	const AbilityInstance* gravityLoadoutAbility = gravityLoadout.GetCombatRuntime()
-		.GetAbilities().GetAbility(AbilitySlot::Ability1);
+	const GameAbility* gravityLoadoutAbility =
+		gravityLoadout.GetAbilitySystemComponent()
+			.FindAbility<GameAbility>(sas::AbilitySlot::Ability1);
 	if (!gravityLoadoutAbility ||
 		gravityLoadoutAbility->GetDefinition().abilityId != "Ability.GravityAnomaly.Basic" ||
-		gravityLoadout.GetCombatRuntime().GetAbilities().GetAbilityById("Ability.Shield.Basic") != nullptr)
+		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById("Ability.Shield.Basic") != nullptr)
 	{
 		return Fail("Default player loadout did not place Gravity Anomaly on Ability1/Q");
 	}
@@ -3536,12 +3506,12 @@ int main()
 
 	const AbilityData::GravityAnomaly::Settings* gravitySettings =
 		AbilityData::GravityAnomaly::FindSettings(gravityDefinition->abilityId);
-	const GameplayEffectDefinition& gravityInsideEffect =
+	const sas::GameplayEffectDefinition& gravityInsideEffect =
 		EffectData::GravityAnomalyInsideEffect;
 	const auto MakeGravityInsideSpec = [](float slowMagnitude)
 	{
-		GameplayEffectSpec spec =
-			MakeGameplayEffectSpec(EffectData::GravityAnomalyInsideEffect);
+		sas::GameplayEffectSpec spec =
+			sas::MakeGameplayEffectSpec(EffectData::GravityAnomalyInsideEffect);
 		SetGameplayEffectModifierMagnitude(
 			spec,
 			OwnerAttributeIds::MovementSlow,
@@ -3554,12 +3524,12 @@ int main()
 		gravitySettings->baseDuration != 2.5f || gravitySettings->baseRadius != 220.f ||
 		gravitySettings->pullStrength != 500.f || gravitySettings->slowMagnitude != 0.20f ||
 		gravityInsideEffect.effectId != AbilityData::GravityAnomaly::EffectSchema::InsideEffectId ||
-		gravityInsideEffect.durationPolicy != GameplayEffectDurationPolicy::Duration ||
+		gravityInsideEffect.durationPolicy != sas::GameplayEffectDurationPolicy::Duration ||
 		!NearlyEqual(
 			gravityInsideEffect.duration,
 			AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds
 		) ||
-		gravityInsideEffect.stackingPolicy != GameplayEffectStackingPolicy::RefreshDuration ||
+		gravityInsideEffect.stackingPolicy != sas::GameplayEffectStackingPolicy::RefreshDuration ||
 		!gravityInsideEffect.sourceScopedApplication)
 	{
 		return Fail("Gravity Anomaly base settings or source-scoped inside effect are invalid");
@@ -3576,14 +3546,14 @@ int main()
 		owner.SetActorLocation({ 0.f, 0.f });
 		owner.SetActorRotation(90.f);
 		owner.SetCollisionLayer(CollisionLayer::Player);
-		const AbilityHandle handle = owner.GetCombatRuntime().GetAbilities().GrantAbility(*gravityDefinition);
+		const sas::AbilityHandle handle = owner.GetAbilitySystemComponent().GrantAbility(*gravityDefinition);
 		if (!handle.IsValid() ||
-			(level > 1 && !owner.GetCombatRuntime().GetAbilities().TrySetAbilityLevel(handle, level)))
+			(level > 1 && !owner.GetCombatRuntime().GetAbilitySystemComponent().SetAbilityLevel(handle, level)))
 		{
 			return shared_ptr<GravityAnomalyProjectileActor>{};
 		}
-		owner.GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability1, true);
-		owner.GetCombatRuntime().GetAbilities().Tick(0.f);
+		owner.GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+		owner.GetCombatRuntime().GetAbilitySystemComponent().Tick(0.f);
 		world.TickInternal(0.f);
 		const List<weak_ptr<GravityAnomalyProjectileActor>> projectiles =
 			world.GetActorsByType<GravityAnomalyProjectileActor>();
@@ -3646,7 +3616,7 @@ int main()
 		const sf::Vector2f& location
 	)
 	{
-		const GameplayAttributeList attributes =
+		const sas::GameplayAttributeList attributes =
 			AbilityData::AbilityActors::Actor_GravityAnomaly_Field_Basic.attributes;
 		const shared_ptr<GravityAnomalyFieldActor> field =
 			std::dynamic_pointer_cast<GravityAnomalyFieldActor>(
@@ -3710,7 +3680,7 @@ int main()
 		gravityEnemyTarget
 	})
 	{
-		if (!target->GetCombatRuntime().GetEffects().FindEffectById(
+		if (!target->GetAbilitySystemComponent().FindGameplayEffectById(
 			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 		))
 		{
@@ -3733,12 +3703,12 @@ int main()
 		return Fail("Gravity Anomaly player lifecycle target could not spawn");
 	}
 	gravityPlayerLifecycleTarget->BeginPlayInternal();
-	const GameplayEffectHandle gravityPlayerLifecycleEffect =
-		gravityPlayerLifecycleTarget->GetCombatRuntime().GetEffects().ApplyEffect(
+	const sas::GameplayEffectHandle gravityPlayerLifecycleEffect =
+		gravityPlayerLifecycleTarget->GetAbilitySystemComponent().ApplyGameplayEffect(
 			MakeGravityInsideSpec(0.20f)
 		);
 	if (!gravityPlayerLifecycleEffect.IsValid() ||
-		!gravityPlayerLifecycleTarget->GetCombatRuntime().GetEffects().FindEffectById(
+		!gravityPlayerLifecycleTarget->GetAbilitySystemComponent().FindGameplayEffectById(
 			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 		))
 	{
@@ -3770,7 +3740,7 @@ int main()
 	}
 	gravityLivePlayerWorld.TickInternal(0.f);
 	gravityLivePlayerWorld.TickInternal(0.1f);
-	if (!gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+	if (!gravityLivePlayer->GetAbilitySystemComponent().FindGameplayEffectById(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 	) || gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
 	{
@@ -3778,7 +3748,7 @@ int main()
 	}
 	gravityLivePlayerField->Destroy();
 	gravityLivePlayerWorld.TickInternal(0.f);
-	if (!gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+	if (!gravityLivePlayer->GetAbilitySystemComponent().FindGameplayEffectById(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 	) || gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
 	{
@@ -3787,14 +3757,14 @@ int main()
 	gravityLivePlayerWorld.TickInternal(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds - 0.1f
 	);
-	if (!gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+	if (!gravityLivePlayer->GetAbilitySystemComponent().FindGameplayEffectById(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 	))
 	{
 		return Fail("Gravity Anomaly slow expired before its two-second grace period ended");
 	}
 	gravityLivePlayerWorld.TickInternal(0.2f);
-	if (gravityLivePlayer->GetCombatRuntime().GetEffects().FindEffectById(
+	if (gravityLivePlayer->GetAbilitySystemComponent().FindGameplayEffectById(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 	) || !gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
 	{
@@ -3813,9 +3783,9 @@ int main()
 	pullContext.center = { 0.f, 0.f };
 	pullContext.resolvedRadius = 100.f;
 	pullContext.resolvedPullStrength = 500.f;
-	const GameplayEffectHandle pullHandle = pullTarget.GetCombatRuntime().GetEffects().ApplyEffect(
+	const sas::GameplayEffectHandle pullHandle = pullTarget.GetAbilitySystemComponent().ApplyGameplayEffect(
 		MakeGravityInsideSpec(0.20f),
-		GameplayEffectApplicationContext{
+		sas::GameplayEffectSourceContext{
 			nullptr,
 			&pullContext,
 			std::make_shared<GravityAnomalyRuntimeContext>(pullContext)
@@ -3841,10 +3811,10 @@ int main()
 	enemySlowMovement.SetCollisionLayer(CollisionLayer::Enemy);
 	playerSlowMovement.SetVelocity({ 100.f, 0.f });
 	enemySlowMovement.SetVelocity({ 100.f, 0.f });
-	const GameplayEffectHandle playerSlowHandle = playerSlowMovement.GetCombatRuntime().GetEffects().ApplyEffect(
+	const sas::GameplayEffectHandle playerSlowHandle = playerSlowMovement.GetAbilitySystemComponent().ApplyGameplayEffect(
 		MakeGravityInsideSpec(0.20f)
 	);
-	const GameplayEffectHandle enemySlowHandle = enemySlowMovement.GetCombatRuntime().GetEffects().ApplyEffect(
+	const sas::GameplayEffectHandle enemySlowHandle = enemySlowMovement.GetAbilitySystemComponent().ApplyGameplayEffect(
 		MakeGravityInsideSpec(0.20f)
 	);
 	playerSlowMovement.Tick(0.1f);
@@ -3854,8 +3824,8 @@ int main()
 	{
 		return Fail("GameplayEffect movement slow did not reduce real player and enemy movement");
 	}
-	playerSlowMovement.GetCombatRuntime().GetEffects().RemoveEffect(playerSlowHandle);
-	enemySlowMovement.GetCombatRuntime().GetEffects().RemoveEffect(enemySlowHandle);
+	playerSlowMovement.GetAbilitySystemComponent().RemoveGameplayEffect(playerSlowHandle);
+	enemySlowMovement.GetAbilitySystemComponent().RemoveGameplayEffect(enemySlowHandle);
 	playerSlowMovement.Tick(0.1f);
 	enemySlowMovement.Tick(0.1f);
 	if (!NearlyEqual(playerSlowMovement.GetActorLocation().x, 18.f) ||
@@ -3885,7 +3855,7 @@ int main()
 	const auto CountGravityEffects = [](const TestCombatant& target)
 	{
 		size_t count = 0;
-		for (const GameplayEffectSnapshot& snapshot : target.GetCombatRuntime().GetEffects().BuildSnapshots())
+		for (const sas::GameplayEffectRuntimeSnapshot& snapshot : target.GetAbilitySystemComponent().BuildGameplayEffectSnapshots())
 		{
 			count += snapshot.effectId ==
 				AbilityData::GravityAnomaly::EffectSchema::InsideEffectId ? 1u : 0u;
@@ -3944,8 +3914,8 @@ int main()
 	TestCombatant levelGravityOwner{ &levelGravityWorld, 1000.f };
 	const shared_ptr<GravityAnomalyProjectileActor> levelGravityProjectile =
 		SpawnGravityProjectile(levelGravityWorld, levelGravityOwner, 15, 0.f);
-	const AbilityInstance* levelGravityInstance = levelGravityOwner.GetCombatRuntime().GetAbilities().GetAbility(
-		AbilitySlot::Ability1
+	const GameAbility* levelGravityInstance = levelGravityOwner.GetCombatRuntime().GetAbilitySystemComponent().GetAbility(
+		sas::AbilitySlot::Ability1
 	);
 	if (!levelGravityProjectile || !levelGravityInstance ||
 		!NearlyEqual(levelGravityInstance->GetCooldownDuration(), 6.6f) ||
@@ -3958,8 +3928,8 @@ int main()
 	{
 		return Fail("Gravity Anomaly level progression was not cumulative through level fifteen");
 	}
-	levelGravityOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
+	levelGravityOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
 	);
 	if (!(levelGravityInstance->GetCooldownDuration() < 6.6f))
 	{
@@ -3970,7 +3940,7 @@ int main()
 	// field stops that refresh, but does not remove the slow prematurely.
 	gravityPlayerTarget->SetActorLocation({ gravityField->GetResolvedRadius() + 10.f, 0.f });
 	gravityFieldWorld.TickInternal(0.f);
-	if (!gravityPlayerTarget->GetCombatRuntime().GetEffects().FindEffectById(
+	if (!gravityPlayerTarget->GetAbilitySystemComponent().FindGameplayEffectById(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 	))
 	{
@@ -3979,14 +3949,14 @@ int main()
 	gravityPlayerTarget->GetCombatRuntime().Tick(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds - 0.1f
 	);
-	if (!gravityPlayerTarget->GetCombatRuntime().GetEffects().FindEffectById(
+	if (!gravityPlayerTarget->GetAbilitySystemComponent().FindGameplayEffectById(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 	))
 	{
 		return Fail("Gravity Anomaly slow did not persist for two seconds after leaving the field");
 	}
 	gravityPlayerTarget->GetCombatRuntime().Tick(0.2f);
-	if (gravityPlayerTarget->GetCombatRuntime().GetEffects().FindEffectById(
+	if (gravityPlayerTarget->GetAbilitySystemComponent().FindGameplayEffectById(
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 	))
 	{
@@ -3995,7 +3965,7 @@ int main()
 
 	gravityField->Destroy();
 	gravityFieldWorld.TickInternal(0.f);
-	if (!gravityCaster->GetCombatRuntime().GetEffects().FindEffectById(
+	if (!gravityCaster->GetAbilitySystemComponent().FindGameplayEffectById(
 			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 		) || gravityFieldWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
 	{
@@ -4008,7 +3978,7 @@ int main()
 		AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds + 0.1f
 	);
 	gravityFieldWorld.TickInternal(0.f);
-	if (gravityCaster->GetCombatRuntime().GetEffects().FindEffectById(
+	if (gravityCaster->GetAbilitySystemComponent().FindGameplayEffectById(
 			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
 		) || !gravityFieldWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
 	{
@@ -4016,11 +3986,11 @@ int main()
 	}
 
 	std::string dashValidationFailure;
-	const AbilityDefinition* dashDefinition = AbilityData::FindShippedAbilityDefinition("Ability.Dash.Basic");
-	if (!AbilitySystem::ValidateCatalog(AbilityData::GetShippedAbilityDefinitions(), &dashValidationFailure) ||
-		!dashDefinition || dashDefinition->slot != AbilitySlot::Ability3 ||
-		dashDefinition->activationPolicy != AbilityActivationPolicy::OnPressed ||
-		dashDefinition->lifetimePolicy != AbilityLifetimePolicy::Duration ||
+	const GameAbilityDefinition* dashDefinition = AbilityData::FindShippedAbilityDefinition("Ability.Dash.Basic");
+	if (!LightYearsAbilitySystemComponent::ValidateCatalog(AbilityData::GetShippedAbilityDefinitions(), &dashValidationFailure) ||
+		!dashDefinition || dashDefinition->slot != sas::AbilitySlot::Ability3 ||
+		dashDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		dashDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 		dashDefinition->cooldown <= 0.f || dashDefinition->duration <= 0.f ||
 		dashDefinition->maxCharges != 1 || !dashDefinition->damageTags.empty() ||
 		!dashDefinition->scalingRules.empty() || !dashDefinition->actions.empty() ||
@@ -4059,42 +4029,42 @@ int main()
 		return Fail("Basic Dash did not preserve the complete pre-Dash velocity");
 	}
 
-	AbilityDefinition malformedDash = *dashDefinition;
+	GameAbilityDefinition malformedDash = *dashDefinition;
 	malformedDash.duration += 0.01f;
-	if (AbilitySystem::ValidateDefinition(malformedDash, &dashValidationFailure))
+	if (LightYearsAbilitySystemComponent::ValidateDefinition(malformedDash, &dashValidationFailure))
 	{
 		return Fail("Mismatched Dash movement/lifetime duration was accepted");
 	}
 	malformedDash = *dashDefinition;
-	malformedDash.behaviorId = GameplayTag{ "AbilityBehavior.Unknown" };
-	if (AbilitySystem::ValidateDefinition(malformedDash, &dashValidationFailure))
+	malformedDash.behaviorId = GameplayTag{ "GameAbilityBehavior.Unknown" };
+	if (LightYearsAbilitySystemComponent::ValidateDefinition(malformedDash, &dashValidationFailure))
 	{
 		return Fail("Unknown ability behavior was accepted by validation");
 	}
 
 	auto ActivateBasicDash = [&](TestCombatant& owner, int level = 1)
 	{
-		AbilitySystem& dashAbilities = owner.GetCombatRuntime().GetAbilities();
-		const AbilityHandle handle = dashAbilities.GrantAbility(*dashDefinition);
-		if (!handle.IsValid() || (level > 1 && !dashAbilities.TrySetAbilityLevel(handle, level)))
+		LightYearsAbilitySystemComponent& dashAbilities = owner.GetCombatRuntime().GetAbilitySystemComponent();
+		const sas::AbilityHandle handle = dashAbilities.GrantAbility(*dashDefinition);
+		if (!handle.IsValid() || (level > 1 && !dashAbilities.SetAbilityLevel(handle, level)))
 		{
 			return false;
 		}
-		dashAbilities.SetSlotInput(AbilitySlot::Ability3, true);
+		dashAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
 		dashAbilities.Tick(0.f);
 		return owner.GetDashStartCount() == 1;
 	};
 
 	TestCombatant cooldownDashOwner;
 	cooldownDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
-	AbilitySystem& cooldownDashAbilities = cooldownDashOwner.GetCombatRuntime().GetAbilities();
-	const AbilityHandle cooldownDashHandle = cooldownDashAbilities.GrantAbility(*dashDefinition);
+	LightYearsAbilitySystemComponent& cooldownDashAbilities = cooldownDashOwner.GetCombatRuntime().GetAbilitySystemComponent();
+	const sas::AbilityHandle cooldownDashHandle = cooldownDashAbilities.GrantAbility(*dashDefinition);
 	for (int level = 1; level <= 5; ++level)
 	{
 		const float expectedDashCooldown =
 			dashDefinition->cooldown *
 			(1.f - dashSettings->cooldownReductionPerLevelRatio * static_cast<float>(level - 1));
-		if ((level > 1 && !cooldownDashAbilities.TrySetAbilityLevel(cooldownDashHandle, level)) ||
+		if ((level > 1 && !cooldownDashAbilities.SetAbilityLevel(cooldownDashHandle, level)) ||
 			!cooldownDashAbilities.GetAbility(cooldownDashHandle) ||
 			!NearlyEqual(
 				cooldownDashAbilities.GetAbility(cooldownDashHandle)->GetCooldownDuration(),
@@ -4104,15 +4074,15 @@ int main()
 			return Fail("Basic Dash level cooldown progression is incorrect");
 		}
 	}
-	cooldownDashOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
+	cooldownDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
 	);
 	const float expectedLevelFiveDashCooldown =
 		dashDefinition->cooldown *
 		(1.f - dashSettings->cooldownReductionPerLevelRatio * 4.f);
 	if (!NearlyEqual(
 		cooldownDashAbilities.GetAbility(cooldownDashHandle)->GetCooldownDuration(),
-		expectedLevelFiveDashCooldown * AttributeMath::GetAbilityCooldownMultiplier(100.f)
+		expectedLevelFiveDashCooldown * sas::AttributeMath::GetAbilityCooldownMultiplier(100.f)
 	))
 	{
 		return Fail("Basic Dash cooldown did not use central Ability Haste math");
@@ -4129,8 +4099,8 @@ int main()
 
 	TestCombatant horizontalDashOwner;
 	horizontalDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
-	horizontalDashOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, 20.f }
+	horizontalDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, 20.f }
 	);
 	horizontalDashOwner.SetDashMovementInput({ 1.f, 0.f });
 	if (!ActivateBasicDash(horizontalDashOwner) ||
@@ -4141,11 +4111,11 @@ int main()
 
 	TestCombatant highMovementDashOwner;
 	highMovementDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
-	highMovementDashOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, 20.f }
+	highMovementDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, 20.f }
 	);
-	highMovementDashOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(
-		AttributeModifier{ OwnerAttributeIds::MoveSpeedVertical, 20.f }
+	highMovementDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::MoveSpeedVertical, 20.f }
 	);
 	highMovementDashOwner.SetDashMovementInput({ 1.f, 0.f });
 	if (!ActivateBasicDash(highMovementDashOwner) ||
@@ -4157,7 +4127,7 @@ int main()
 
 	TestCombatant irrelevantStatDashOwner;
 	irrelevantStatDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
-	for (const AttributeModifier& modifier : List<AttributeModifier>{
+	for (const sas::AttributeModifier& modifier : List<sas::AttributeModifier>{
 		{ OwnerAttributeIds::AttackPower, 500.f },
 		{ OwnerAttributeIds::AttackSpeed, 500.f },
 		{ OwnerAttributeIds::EnergyMax, 500.f },
@@ -4165,7 +4135,7 @@ int main()
 		{ OwnerAttributeIds::CriticalChance, 500.f }
 	})
 	{
-		irrelevantStatDashOwner.GetCombatRuntime().GetAttributes().ApplyBaseModifier(modifier);
+		irrelevantStatDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(modifier);
 	}
 	irrelevantStatDashOwner.SetDashMovementInput({ 1.f, 0.f });
 	if (!ActivateBasicDash(irrelevantStatDashOwner) ||
@@ -4207,15 +4177,15 @@ int main()
 	TestCombatant zeroDirectionDashOwner;
 	zeroDirectionDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
 	DashEventRecorder zeroDirectionEvents;
-	zeroDirectionDashOwner.GetCombatRuntime().GetAbilities().onGameplayEvent.BindAction(
+	zeroDirectionDashOwner.GetCombatRuntime().GetAbilitySystemComponent().onGameplayEvent.BindAction(
 		&zeroDirectionEvents,
 		&DashEventRecorder::Record
 	);
-	const AbilityHandle zeroDirectionHandle = zeroDirectionDashOwner.GetCombatRuntime().GetAbilities().GrantAbility(*dashDefinition);
-	zeroDirectionDashOwner.GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::Ability3, true);
-	zeroDirectionDashOwner.GetCombatRuntime().GetAbilities().Tick(0.f);
+	const sas::AbilityHandle zeroDirectionHandle = zeroDirectionDashOwner.GetAbilitySystemComponent().GrantAbility(*dashDefinition);
+	zeroDirectionDashOwner.GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
+	zeroDirectionDashOwner.GetCombatRuntime().GetAbilitySystemComponent().Tick(0.f);
 	if (!zeroDirectionHandle.IsValid() || zeroDirectionDashOwner.GetDashStartCount() != 0 ||
-		zeroDirectionDashOwner.GetCombatRuntime().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
+		zeroDirectionDashOwner.GetAbilitySystemComponent().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
 		!zeroDirectionEvents.events.empty())
 	{
 		return Fail("Basic Dash accepted an invalid zero direction");
@@ -4225,20 +4195,20 @@ int main()
 	lifecycleDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
 	lifecycleDashOwner.SetDashMovementInput({ 1.f, 0.f });
 	DashEventRecorder lifecycleEvents;
-	lifecycleDashOwner.GetCombatRuntime().GetAbilities().onGameplayEvent.BindAction(
+	lifecycleDashOwner.GetCombatRuntime().GetAbilitySystemComponent().onGameplayEvent.BindAction(
 		&lifecycleEvents,
 		&DashEventRecorder::Record
 	);
 	if (!ActivateBasicDash(lifecycleDashOwner) ||
-		!lifecycleDashOwner.GetCombatRuntime().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
+		!lifecycleDashOwner.GetAbilitySystemComponent().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
 		lifecycleEvents.events.size() != 1 ||
 		lifecycleEvents.events.front() != AbilityData::Dash::StartEvent)
 	{
 		return Fail("Basic Dash start lifecycle did not publish its state and event");
 	}
-	lifecycleDashOwner.GetCombatRuntime().GetAbilities().Tick(dashSettings->duration);
+	lifecycleDashOwner.GetCombatRuntime().GetAbilitySystemComponent().Tick(dashSettings->duration);
 	if (lifecycleDashOwner.IsDashActive() || lifecycleDashOwner.GetDashEndCount() != 1 ||
-		lifecycleDashOwner.GetCombatRuntime().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
+		lifecycleDashOwner.GetAbilitySystemComponent().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
 		lifecycleEvents.events.size() != 2 ||
 		lifecycleEvents.events.back() != AbilityData::Dash::EndEvent)
 	{
@@ -4249,7 +4219,7 @@ int main()
 	clearedDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
 	clearedDashOwner.SetDashMovementInput({ 1.f, 0.f });
 	DashEventRecorder clearedEvents;
-	clearedDashOwner.GetCombatRuntime().GetAbilities().onGameplayEvent.BindAction(
+	clearedDashOwner.GetCombatRuntime().GetAbilitySystemComponent().onGameplayEvent.BindAction(
 		&clearedEvents,
 		&DashEventRecorder::Record
 	);
@@ -4257,9 +4227,9 @@ int main()
 	{
 		return Fail("Basic Dash could not activate before ability-system cleanup");
 	}
-	clearedDashOwner.GetCombatRuntime().GetAbilities().Clear();
+	clearedDashOwner.GetCombatRuntime().GetAbilitySystemComponent().Clear();
 	if (clearedDashOwner.IsDashActive() ||
-		clearedDashOwner.GetCombatRuntime().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
+		clearedDashOwner.GetAbilitySystemComponent().GetOwnedTags().HasTag(AbilityData::Dash::StateTag) ||
 		clearedEvents.events.size() != 2 ||
 		clearedEvents.events.back() != AbilityData::Dash::EndEvent)
 	{

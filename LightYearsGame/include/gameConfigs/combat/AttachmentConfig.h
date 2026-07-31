@@ -1,5 +1,9 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 
@@ -14,7 +18,7 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				ly::GameplayAttribute{
+				sas::GameplayAttribute{
 					ly::AttachmentSchema::Attribute::CooldownReductionOnIgnite,
 					0.4f,
 					0.f
@@ -27,9 +31,9 @@ namespace AttachmentData
 						ly::AttachmentConditionType::HasDamageTag,
 						ly::DamageTypeSchema::Thermal
 					},
-					ly::AttributeModifier{
+					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
-						ly::AttributeModifierOperation::Multiply,
+						sas::AttributeModifierOperation::Multiply,
 						1.2f
 					}
 				}
@@ -55,8 +59,8 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				ly::GameplayAttribute{ ly::DamageAttributeIds::ShieldDamageMultiplier, 1.25f, 0.f },
-				ly::GameplayAttribute{ ly::DamageAttributeIds::ShieldRegenerationDelay, 0.75f, 0.f }
+				sas::GameplayAttribute{ ly::DamageAttributeIds::ShieldDamageMultiplier, 1.25f, 0.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::ShieldRegenerationDelay, 0.75f, 0.f }
 			},
 			{},
 			{
@@ -65,9 +69,9 @@ namespace AttachmentData
 						ly::AttachmentConditionType::HasDamageTag,
 						ly::DamageTypeSchema::Energy
 					},
-					ly::AttributeModifier{
+					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
-						ly::AttributeModifierOperation::Multiply,
+						sas::AttributeModifierOperation::Multiply,
 						1.15f
 					}
 				}
@@ -83,7 +87,7 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				ly::GameplayAttribute{ ly::DamageAttributeIds::ArmorPenetration, 0.10f, 0.f, 0.25f }
+				sas::GameplayAttribute{ ly::DamageAttributeIds::ArmorPenetration, 0.10f, 0.f, 0.25f }
 			},
 			{},
 			{
@@ -92,9 +96,9 @@ namespace AttachmentData
 						ly::AttachmentConditionType::HasDamageTag,
 						ly::DamageTypeSchema::Kinetic
 					},
-					ly::AttributeModifier{
+					sas::AttributeModifier{
 						ly::DamageAttributeIds::ArmorPenetration,
-						ly::AttributeModifierOperation::Add,
+						sas::AttributeModifierOperation::Add,
 						0.05f
 					}
 				}
@@ -110,11 +114,11 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				ly::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupPerHit, 1.f, 1.f },
-				ly::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupRequired, 4.f, 1.f },
-				ly::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupDuration, 2.5f, 0.f },
-				ly::GameplayAttribute{ ly::DamageAttributeIds::CryoSlowPercent, 0.25f, 0.f, 0.30f },
-				ly::GameplayAttribute{ ly::DamageAttributeIds::CryoSlowDuration, 1.5f, 0.f }
+				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupPerHit, 1.f, 1.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupRequired, 4.f, 1.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupDuration, 2.5f, 0.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoSlowPercent, 0.25f, 0.f, 0.30f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoSlowDuration, 1.5f, 0.f }
 			},
 			{},
 			{
@@ -123,9 +127,9 @@ namespace AttachmentData
 						ly::AttachmentConditionType::HasDamageTag,
 						ly::DamageTypeSchema::Cryo
 					},
-					ly::AttributeModifier{
+					sas::AttributeModifier{
 						ly::DamageAttributeIds::CryoSlowPercent,
-						ly::AttributeModifierOperation::Add,
+						sas::AttributeModifierOperation::Add,
 						0.05f
 					}
 				}
@@ -141,13 +145,13 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				ly::GameplayAttribute{
+				sas::GameplayAttribute{
 					ly::DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
 					0.04f,
 					0.f
 				},
-				ly::GameplayAttribute{ ly::DamageAttributeIds::ElectricDuration, 3.f, 0.f },
-				ly::GameplayAttribute{ ly::DamageAttributeIds::ElectricMaxStacks, 4.f, 1.f }
+				sas::GameplayAttribute{ ly::DamageAttributeIds::ElectricDuration, 3.f, 0.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::ElectricMaxStacks, 4.f, 1.f }
 			},
 			{},
 			{
@@ -156,9 +160,9 @@ namespace AttachmentData
 						ly::AttachmentConditionType::HasDamageTag,
 						ly::DamageTypeSchema::Electric
 					},
-					ly::AttributeModifier{
+					sas::AttributeModifier{
 						ly::DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-						ly::AttributeModifierOperation::Add,
+						sas::AttributeModifierOperation::Add,
 						0.01f
 					}
 				}
@@ -178,14 +182,14 @@ namespace AttachmentData
 			},
 			{},
 			{
-				ly::AttributeModifier{
+				sas::AttributeModifier{
 					ly::CommonAttributeIds::Damage,
-					ly::AttributeModifierOperation::Multiply,
+					sas::AttributeModifierOperation::Multiply,
 					1.4f
 				},
-				ly::AttributeModifier{
+				sas::AttributeModifier{
 					ly::CommonAttributeIds::Cooldown,
-					ly::AttributeModifierOperation::Multiply,
+					sas::AttributeModifierOperation::Multiply,
 					1.25f
 				}
 			},
@@ -204,7 +208,7 @@ namespace AttachmentData
 				ly::AttachmentSchema::Capability::Projectile
 			},
 			{
-				ly::GameplayAttribute{
+				sas::GameplayAttribute{
 					PrimaryWeaponSchema::Projectile::Delivery::AdditionalProjectileCount,
 					0.f,
 					0.f
@@ -218,9 +222,9 @@ namespace AttachmentData
 						ly::CommonAttributeIds::FireRate,
 						4.f
 					},
-					ly::AttributeModifier{
+					sas::AttributeModifier{
 						PrimaryWeaponSchema::Projectile::Delivery::AdditionalProjectileCount,
-						ly::AttributeModifierOperation::Add,
+						sas::AttributeModifierOperation::Add,
 						1.f
 					}
 				}

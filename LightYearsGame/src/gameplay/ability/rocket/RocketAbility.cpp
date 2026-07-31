@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/rocket/RocketAbility.h"
 
 #include "gameConfigs/ability/RocketConfig.h"
@@ -14,10 +16,10 @@ namespace ly
 			const GameplayTag& attributeId,
 			float magnitude)
 		{
-			for (const AttributeModifier& modifier : step.attributeModifiers)
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == attributeId &&
-					modifier.operation == AttributeModifierOperation::Add &&
+					modifier.operation == sas::AttributeModifierOperation::Add &&
 					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
 				{
 					return true;
@@ -26,15 +28,15 @@ namespace ly
 			return false;
 		}
 
-		bool HasBasicRocketSpawnAction(const AbilityDefinition& definition)
+		bool HasBasicRocketSpawnAction(const GameAbilityDefinition& definition)
 		{
 			for (const AbilityActionSpec& action : definition.actions)
 			{
 				const SpawnActorAction* spawn = std::get_if<SpawnActorAction>(&action.action);
-				if (action.phase == AbilityActionPhase::OnActivate && spawn &&
+				if (action.phase == sas::AbilityActionPhase::OnActivate && spawn &&
 					spawn->actorDefinitionId == AbilityData::Rocket::ActorProjectileBasic.actorDefinitionId &&
-					spawn->spawnPolicy == AbilitySpawnPolicy::OwnerForward &&
-					spawn->directionPolicy == AbilityDirectionPolicy::MouseWorld &&
+					spawn->spawnPolicy == sas::AbilitySpawnPolicy::OwnerForward &&
+					spawn->directionPolicy == sas::AbilityDirectionPolicy::MouseWorld &&
 					action.maxExecutions == 1)
 				{
 					return true;
@@ -45,7 +47,7 @@ namespace ly
 	}
 
 	bool RocketAbility::Validate(
-		const AbilityDefinition& definition,
+		const GameAbilityDefinition& definition,
 		std::string* failureReason) const
 	{
 		const AbilityData::Rocket::Settings* settings =
@@ -64,8 +66,8 @@ namespace ly
 			return false;
 		}
 
-		if (definition.activationPolicy != AbilityActivationPolicy::OnPressed ||
-			definition.lifetimePolicy != AbilityLifetimePolicy::Instant ||
+		if (definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Instant ||
 			definition.maxCharges != 1 ||
 			std::abs(definition.cooldown - settings->cooldown) > 0.0001f ||
 			!HasBasicRocketSpawnAction(definition))
@@ -81,7 +83,7 @@ namespace ly
 			definition.scalingRules.size() != 1 ||
 			definition.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
 			definition.scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
-			definition.scalingRules.front().operation != AttributeModifierOperation::Add ||
+			definition.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
 			std::abs(definition.scalingRules.front().coefficient - 1.25f) > 0.0001f)
 		{
 			if (failureReason)

@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 
 #include "gameplay/weapon/PrimaryWeaponHandlerRegistry.h"
@@ -352,7 +354,7 @@ namespace ly
 	}
 
 	float PrimaryWeaponExecutionSystem::BuildBaseFireInterval(
-		const GameplayAttributeList& attributes,
+		const sas::GameplayAttributeList& attributes,
 		float actionInterval
 	)
 	{
@@ -362,7 +364,7 @@ namespace ly
 		}
 		const float fireRate = std::max(
 			0.01f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				CommonAttributeIds::FireRate,
 				1.f

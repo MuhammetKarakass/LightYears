@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "PrimaryWeaponDefinitionValidator.h"
 
 #include "gameplay/damage/DamageTypeSystem.h"
@@ -202,7 +204,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			ValidationContext& context
 		)
 		{
-			for (const GameplayAttribute& attribute : definition.attributes)
+			for (const sas::GameplayAttribute& attribute : definition.attributes)
 			{
 				if (!attribute.id.IsValid() ||
 					HasExactTag(context.attributeIds, attribute.id))
@@ -233,7 +235,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			const ValidationContext& context
 		)
 		{
-			for (const AttributeModifier& modifier : definition.attributeModifiers)
+			for (const sas::AttributeModifier& modifier : definition.attributeModifiers)
 			{
 				const PrimaryWeaponValidationResult result =
 					ValidateAttributeId(
@@ -256,7 +258,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 		{
 			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
 			{
-				for (const AttributeModifier& modifier : step.attributeModifiers)
+				for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 				{
 					const PrimaryWeaponValidationResult result =
 						ValidateAttributeId(
@@ -285,7 +287,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			const ValidationContext& context
 		)
 		{
-			for (const AttributeScalingRule& scaling : definition.scalingRules)
+			for (const sas::AttributeScalingRule& scaling : definition.scalingRules)
 			{
 				const PrimaryWeaponValidationResult result =
 					ValidateAttributeId(

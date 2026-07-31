@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/progression/ShipProgression.h"
 
 #include <algorithm>
@@ -42,7 +44,7 @@ namespace ly
 		RebuildLevelModifiers();
 	}
 
-	void ShipProgression::BindAttributes(AttributeSystem& attributes)
+	void ShipProgression::BindAttributes(sas::AttributeSystem& attributes)
 	{
 		if (mBoundAttributes == &attributes)
 		{
@@ -126,7 +128,7 @@ namespace ly
 				continue;
 			}
 			mLevelModifierHandles.push_back(mBoundAttributes->AddModifier(
-				AttributeModifier{ baseGrowth.attributeId, AttributeModifierOperation::Add, totalBonus }
+				sas::AttributeModifier{ baseGrowth.attributeId, sas::AttributeModifierOperation::Add, totalBonus }
 			));
 		}
 
@@ -138,7 +140,7 @@ namespace ly
 
 	void ShipProgression::RemoveCurrentLevelModifiers()
 	{
-		for (const AttributeModifierHandle handle : mLevelModifierHandles)
+		for (const sas::AttributeModifierHandle handle : mLevelModifierHandles)
 		{
 			mBoundAttributes->RemoveModifier(handle);
 		}

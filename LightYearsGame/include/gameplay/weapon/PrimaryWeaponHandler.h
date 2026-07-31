@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "framework/Core.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 
@@ -43,7 +45,7 @@ namespace ly
 	{
 		Actor& owner;
 		const PrimaryWeaponDefinition& definition;
-		const GameplayAttributeList& attributes;
+		const sas::GameplayAttributeList& attributes;
 		List<GameplayTag> damageTags;
 		const List<GameplayTag>* abilityUpgradeIds = nullptr;
 		PrimaryWeaponRuntimeState* runtime = nullptr;

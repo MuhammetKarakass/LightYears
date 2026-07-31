@@ -1,7 +1,6 @@
 #include "gameFramework/GameApplication.h"
 
-#include "gameplay/ability/AbilityBehaviorRegistration.h"
-#include "gameplay/effects/GameplayEffectContent.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "level/ArenaTestLevel.h"
 
 #include <framework/AssetManager.h>
@@ -19,13 +18,9 @@ namespace ly
 		: Application({ 1920, 1080}, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
-		if (!RegisterGameGameplayEffectContent())
+		if (!LightYearsAbilitySystemComponent::RegisterGameContent())
 		{
-			LY_GAME_ERROR("Failed to register game gameplay-effect content");
-		}
-		if (!RegisterGameAbilityContent())
-		{
-			LY_GAME_ERROR("Failed to register game ability content");
+			LY_GAME_ERROR("Failed to register game ability-system content");
 		}
 
 		ly::perf::g_disableLights.store(false);

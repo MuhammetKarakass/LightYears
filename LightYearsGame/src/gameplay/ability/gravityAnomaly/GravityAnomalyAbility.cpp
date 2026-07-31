@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h"
 
 #include "gameConfigs/ability/GravityAnomalyConfig.h"
@@ -15,10 +17,10 @@ namespace ly
 			float magnitude
 		)
 		{
-			for (const AttributeModifier& modifier : step.attributeModifiers)
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == attributeId &&
-					modifier.operation == AttributeModifierOperation::Add &&
+					modifier.operation == sas::AttributeModifierOperation::Add &&
 					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
 				{
 					return true;
@@ -27,16 +29,16 @@ namespace ly
 			return false;
 		}
 
-		bool HasProjectileSpawnAction(const AbilityDefinition& definition)
+		bool HasProjectileSpawnAction(const GameAbilityDefinition& definition)
 		{
 			for (const AbilityActionSpec& action : definition.actions)
 			{
 				const SpawnActorAction* spawn = std::get_if<SpawnActorAction>(&action.action);
-				if (action.phase == AbilityActionPhase::OnActivate && spawn &&
+				if (action.phase == sas::AbilityActionPhase::OnActivate && spawn &&
 					spawn->actorDefinitionId ==
 						AbilityData::GravityAnomaly::ActorProjectileBasic.actorDefinitionId &&
-					spawn->spawnPolicy == AbilitySpawnPolicy::OwnerForward &&
-					spawn->directionPolicy == AbilityDirectionPolicy::MouseWorld &&
+					spawn->spawnPolicy == sas::AbilitySpawnPolicy::OwnerForward &&
+					spawn->directionPolicy == sas::AbilityDirectionPolicy::MouseWorld &&
 					action.maxExecutions == 1)
 				{
 					return true;
@@ -47,7 +49,7 @@ namespace ly
 	}
 
 	bool GravityAnomalyAbility::Validate(
-		const AbilityDefinition& definition,
+		const GameAbilityDefinition& definition,
 		std::string* failureReason
 	) const
 	{
@@ -67,8 +69,8 @@ namespace ly
 			return false;
 		}
 
-		if (definition.activationPolicy != AbilityActivationPolicy::OnPressed ||
-			definition.lifetimePolicy != AbilityLifetimePolicy::Instant ||
+		if (definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Instant ||
 			definition.maxCharges != settings->chargeCount ||
 			std::abs(definition.cooldown - settings->cooldown) > 0.0001f ||
 			!definition.damageTags.empty() || !HasProjectileSpawnAction(definition))

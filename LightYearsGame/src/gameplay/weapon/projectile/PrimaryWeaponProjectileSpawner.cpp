@@ -1,3 +1,4 @@
+#include "attributes/AttributeSystem.h"
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h"
 
 #include "framework/Actor.h"
@@ -83,7 +84,7 @@ namespace ly::PrimaryWeaponProjectileSpawner
 						muzzle.rotationOffset +
 						localRotationOffset
 				);
-				const float projectileSpeed = FindGameplayAttributeValue(
+				const float projectileSpeed = sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Delivery::Speed,
 					500.f

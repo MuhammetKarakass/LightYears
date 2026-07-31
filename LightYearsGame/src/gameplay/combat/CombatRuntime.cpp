@@ -1,72 +1,138 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "framework/Actor.h"
-#include "gameplay/ability/AbilityEvent.h"
+#include "abilities/AbilityEvent.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
-#include "gameplay/attributes/AttributeMath.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "attributes/AttributeMath.h"
 #include <algorithm>
+#include <vector>
 
 namespace ly
 {
 	CombatRuntime::CombatRuntime(Actor& owner)
-		: mOwner{ &owner },
-		mAttributeSystem{},
-		mOwnedTags{},
-		mEffectSystem{ owner, mAttributeSystem, mOwnedTags },
-		mAbilitySystem{ owner, mAttributeSystem, mEffectSystem, mOwnedTags }
+		: mOwner{ owner },
+		mAbilitySystemComponent{ owner },
+		mEffectPresentation{ owner }
 	{
+		sas::AbilitySystemComponent::EffectCallbacks callbacks;
+		callbacks.addStack =
+			[](sas::ActiveGameplayEffect& effect)
+			{
+				return LightYearsAbilitySystemComponent::
+					GetEffectBehaviorRuntime().AddStack(effect);
+			};
+		callbacks.tick =
+			[this](sas::ActiveGameplayEffect& effect, float deltaTime)
+			{
+				return LightYearsAbilitySystemComponent::
+					GetEffectBehaviorRuntime().Tick(
+						effect,
+						mOwner,
+						deltaTime
+					);
+			};
+		callbacks.behaviorEvent =
+			[this](const sas::GameplayEffectBehaviorEvent& event)
+			{
+				QueueEffectEvent(event, mProcessingDamageContext);
+			};
+		callbacks.activated =
+			[this](sas::ActiveGameplayEffect& effect)
+			{
+				mEffectPresentation.Activate(effect);
+			};
+		callbacks.changed =
+			[this](sas::ActiveGameplayEffect& effect)
+			{
+				mEffectPresentation.Synchronize(effect);
+			};
+		callbacks.removing =
+			[this](sas::ActiveGameplayEffect& effect)
+			{
+				mEffectPresentation.Remove(effect);
+			};
+		mAbilitySystemComponent.SetEffectRuntimeCallbacks(std::move(callbacks));
 	}
 
 	void CombatRuntime::InitializeOwnerAttributes(float maxHealth)
 	{
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::MaxHealth, maxHealth);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::HealthRegen, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::EnergyMax, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::EnergyRegen, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::AttackPower, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::AttackSpeed, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::AbilityHaste, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::MoveSpeedHorizontal, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::MoveSpeedVertical, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::Armor, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::Luck, 0.f);
-		mAttributeSystem.RegisterAttribute(OwnerAttributeIds::CriticalChance, 0.f);
+		mAbilitySystemComponent.InitializeOwnerAttributes(maxHealth);
 	}
 
 	float CombatRuntime::GetCriticalChance() const
 	{
-		return AttributeMath::GetCriticalChance(mAttributeSystem.GetCurrentValue(OwnerAttributeIds::CriticalChance));
+		return sas::AttributeMath::GetCriticalChance(
+			mAbilitySystemComponent.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::CriticalChance
+			)
+		);
 	}
 
 	float CombatRuntime::GetCombatLuckFactor() const
 	{
-		return AttributeMath::GetCombatLuckFactor(mAttributeSystem.GetCurrentValue(OwnerAttributeIds::Luck));
+		return sas::AttributeMath::GetCombatLuckFactor(
+			mAbilitySystemComponent.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::Luck
+			)
+		);
 	}
 
 	void CombatRuntime::Tick(float deltaTime)
 	{
-		mEffectSystem.Tick(deltaTime);
-		mAbilitySystem.Tick(deltaTime);
+		mAbilitySystemComponent.Tick(deltaTime);
+		DispatchPendingEffectEvents();
 	}
 
 	void CombatRuntime::Clear()
 	{
-		mAbilitySystem.Clear();
-		mEffectSystem.Clear();
-		mOwnedTags.Clear();
-		mAttributeSystem.Clear();
+		mAbilitySystemComponent.Clear();
+		mEffectPresentation.Clear();
+		mPendingEffectEvents.clear();
 	}
 
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)
 	{
-		mEffectSystem.ProcessIncomingDamage(context);
-		for (const AbilityEvent& event : mEffectSystem.DrainPendingEvents())
-		{
-			mAbilitySystem.HandleGameplayEvent(event);
-		}
-		const float armorReduction = AttributeMath::GetArmorDamageReduction(
-			mAttributeSystem.GetCurrentValue(OwnerAttributeIds::Armor)
+		using IncomingDamagePhase =
+			LightYearsAbilitySystemComponent::IncomingDamagePhase;
+
+		mProcessingDamageContext = &context;
+		mAbilitySystemComponent.ProcessGameplayEffectEvent(
+			context,
+			std::vector<IncomingDamagePhase>{
+				IncomingDamagePhase::PreMitigation,
+				IncomingDamagePhase::Standard
+			},
+			[](const sas::ActiveGameplayEffect& effect)
+			{
+				return LightYearsAbilitySystemComponent::
+					GetEffectBehaviorRuntime().GetEventPhase(
+					effect,
+					IncomingDamagePhase::Standard
+				);
+			},
+			[](sas::ActiveGameplayEffect& effect, DamageContext& damageContext)
+			{
+				return LightYearsAbilitySystemComponent::
+					GetEffectBehaviorRuntime().ProcessEvent(
+					effect,
+					damageContext
+				);
+			},
+			[](const DamageContext& damageContext)
+			{
+				return damageContext.remainingDamage > 0.f;
+			}
+		);
+		mProcessingDamageContext = nullptr;
+		DispatchPendingEffectEvents();
+		const float armorReduction = sas::AttributeMath::GetArmorDamageReduction(
+			mAbilitySystemComponent.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::Armor
+			)
 		);
 		const float effectiveArmor = armorReduction * (1.f - context.payload.armorPenetration);
 		const float damageBeforeArmor = context.remainingDamage;
@@ -74,7 +140,11 @@ namespace ly
 		context.mitigatedDamage += damageBeforeArmor - context.remainingDamage;
 		context.modifiedDamage = context.remainingDamage;
 
-		const List<GameplayTag> appliedStatuses = DamageTypeSystem::ApplyStatusEffects(mEffectSystem, context);
+		const List<GameplayTag> appliedStatuses =
+			DamageTypeSystem::ApplyStatusEffects(
+				mAbilitySystemComponent,
+				context
+			);
 		if (auto* sourceCombatant = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr)
 		{
 			for (const GameplayTag& status : appliedStatuses)
@@ -83,45 +153,67 @@ namespace ly
 				{
 					continue;
 				}
-				AbilityEvent event;
+				sas::AbilityEvent event;
 				event.eventTag = AttachmentSchema::Event::SourceIgniteApplied;
-				event.source = context.source;
-				event.target = context.target;
+				event.SetSource(context.source);
+				event.SetTarget(context.target);
 				event.magnitude = context.remainingDamage;
-				event.damageContext = &context;
-				sourceCombatant->GetCombatRuntime().GetAbilities().HandleGameplayEvent(event);
+				event.SetContext(&context);
+				sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(event);
 			}
 		}
 		onDamageProcessed.Broadcast(context);
 	}
 
+	void CombatRuntime::QueueEffectEvent(
+		const sas::GameplayEffectBehaviorEvent& behaviorEvent,
+		const DamageContext* context
+	)
+	{
+		sas::AbilityEvent event;
+		event.eventTag = behaviorEvent.eventTag;
+		event.SetSource(context ? context->source : &mOwner);
+		event.SetTarget(&mOwner);
+		event.magnitude = behaviorEvent.magnitude;
+		event.SetContext(context);
+		mPendingEffectEvents.push_back(event);
+	}
+
+	void CombatRuntime::DispatchPendingEffectEvents()
+	{
+		List<sas::AbilityEvent> events = std::move(mPendingEffectEvents);
+		mPendingEffectEvents.clear();
+		for (const sas::AbilityEvent& event : events)
+		{
+			mAbilitySystemComponent.HandleGameplayEvent(event);
+		}
+	}
+
 	void CombatRuntime::NotifyDamageResolved(const DamageContext& context)
 	{
-		if (!mOwner || context.appliedDamage <= 0.f)
+		if (context.appliedDamage <= 0.f)
 		{
 			return;
 		}
 
-		AbilityEvent event;
+		sas::AbilityEvent event;
 		event.eventTag = GameplayTag{ "Event.Owner.DamageTaken" };
-		event.source = context.source;
-		event.target = context.target;
+		event.SetSource(context.source);
+		event.SetTarget(context.target);
 		event.magnitude = context.appliedDamage;
-		event.damageContext = &context;
-		mAbilitySystem.HandleGameplayEvent(event);
+		event.SetContext(&context);
+		mAbilitySystemComponent.HandleGameplayEvent(event);
 
 		if (auto* sourceCombatant = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr)
 		{
-			AbilityEvent sourceEvent;
+			sas::AbilityEvent sourceEvent;
 			sourceEvent.eventTag = AttachmentSchema::Event::SourceDamageDealt;
-			sourceEvent.source = context.source;
-			sourceEvent.target = context.target;
+			sourceEvent.SetSource(context.source);
+			sourceEvent.SetTarget(context.target);
 			sourceEvent.magnitude = context.appliedDamage;
-			sourceEvent.damageContext = &context;
-			sourceCombatant->GetCombatRuntime().GetAbilities().HandleGameplayEvent(sourceEvent);
+			sourceEvent.SetContext(&context);
+			sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(sourceEvent);
 		}
 		onDamageResolved.Broadcast(context);
 	}
 }
-
-

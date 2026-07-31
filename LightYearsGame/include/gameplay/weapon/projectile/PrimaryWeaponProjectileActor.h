@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 
@@ -15,7 +17,7 @@ namespace ly
 			World* world,
 			Actor* owner,
 			const WeaponPresentationDefinition& presentation,
-			const GameplayAttributeList& values
+			const sas::GameplayAttributeList& values
 		);
 
 		Actor* GetOwner() const { return GetOwnerActor(); }

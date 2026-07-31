@@ -32,7 +32,7 @@ namespace ly
 			{
 				mShipProgression.Configure(ShipData::Ship_Player_Fighter.progressionDefinition);
 			}
-			mShipProgression.BindAttributes(ship->GetCombatRuntime().GetAttributes());
+			mShipProgression.BindAttributes(ship->GetAbilitySystemComponent().GetAttributes());
 			RestorePurchasedAbilityLevels(*ship);
 			ship->onActorDestroyed.BindAction(this, &Player::OnCurrentShipDestroyed);
 
@@ -87,7 +87,7 @@ namespace ly
 		onScrapChange.Broadcast(mScrap);
 	}
 
-	bool Player::TryPurchaseAbilityLevel(AbilitySlot slot, std::string* failureReason)
+	bool Player::TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason)
 	{
 		const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock();
 		if (!ship || ship->GetIsPendingDestroy())
@@ -99,8 +99,10 @@ namespace ly
 			return false;
 		}
 
-		AbilitySystem& abilities = ship->GetCombatRuntime().GetAbilities();
-		AbilityInstance* ability = abilities.GetAbility(slot);
+		sas::AbilitySystemComponent& abilities =
+			ship->GetAbilitySystemComponent();
+		GameAbility* ability =
+			abilities.FindAbility<GameAbility>(slot);
 		if (!ability)
 		{
 			if (failureReason)
@@ -120,7 +122,7 @@ namespace ly
 			return false;
 		}
 
-		const AbilityDefinition& definition = ability->GetDefinition();
+		const GameAbilityDefinition& definition = ability->GetDefinition();
 		if (!definition.HasScrapCostToReachLevel(targetLevel))
 		{
 			if (failureReason)
@@ -141,7 +143,7 @@ namespace ly
 		}
 
 		const std::string abilityId = definition.abilityId;
-		if (!abilities.TryLevelUpAbility(slot))
+		if (!abilities.LevelUpAbility(slot))
 		{
 			if (failureReason)
 			{
@@ -163,16 +165,23 @@ namespace ly
 
 	void Player::RestorePurchasedAbilityLevels(PlayerSpaceShip& ship)
 	{
-		AbilitySystem& abilities = ship.GetCombatRuntime().GetAbilities();
+		sas::AbilitySystemComponent& abilities =
+			ship.GetAbilitySystemComponent();
 		for (auto& purchasedLevel : mPurchasedAbilityLevels)
 		{
-			AbilityInstance* ability = abilities.GetAbilityById(purchasedLevel.first);
+			GameAbility* ability =
+				abilities.FindAbilityById<GameAbility>(
+					purchasedLevel.first
+				);
 			if (!ability)
 			{
 				continue;
 			}
 
-			abilities.TrySetAbilityLevel(ability->GetHandle(), purchasedLevel.second);
+			abilities.SetAbilityLevel(
+				ability->GetHandle(),
+				purchasedLevel.second
+			);
 			purchasedLevel.second = ability->GetLevel();
 		}
 	}

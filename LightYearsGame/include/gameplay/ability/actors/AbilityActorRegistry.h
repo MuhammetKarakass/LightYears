@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "framework/Core.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 
@@ -21,7 +23,7 @@ namespace ly
 	{
 		Actor& owner;
 		const AbilityActorDefinition& definition;
-		const GameplayAttributeList& attributes;
+		const sas::GameplayAttributeList& attributes;
 		std::optional<sf::Vector2f> targetLocation;
 	};
 

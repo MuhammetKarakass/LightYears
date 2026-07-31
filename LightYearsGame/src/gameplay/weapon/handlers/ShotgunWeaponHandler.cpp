@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "../internal/PrimaryWeaponBuiltIns.h"
 
 #include "gameplay/damage/DamageTypeSystem.h"
@@ -72,12 +74,12 @@ namespace ly
 					return { false, "Shotgun spread angle cannot be negative." };
 				}
 
-				const GameplayAttribute* damageReduction =
+				const sas::GameplayAttribute* damageReduction =
 					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
 						definition,
 						PrimaryWeaponSchema::Projectile::Shotgun::DamageReductionPerAdditionalHit
 					);
-				const GameplayAttribute* minimumMultiplier =
+				const sas::GameplayAttribute* minimumMultiplier =
 					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
 						definition,
 						PrimaryWeaponSchema::Projectile::Shotgun::MinimumDamageMultiplier
@@ -107,12 +109,12 @@ namespace ly
 							"Shotgun minimum damage multiplier must be greater than zero and at most one."
 						};
 					}
-					if (FindGameplayAttributeValue(
+					if (sas::FindGameplayAttributeValue(
 							definition.attributes,
 							CommonAttributeIds::AreaRadius,
 							0.f
 						) > 0.f ||
-						FindGameplayAttributeValue(
+						sas::FindGameplayAttributeValue(
 							definition.attributes,
 							PrimaryWeaponSchema::Projectile::Delivery::PierceCount,
 							0.f
@@ -134,7 +136,7 @@ namespace ly
 			{
 				const int pelletCount = std::max(
 					1,
-					static_cast<int>(std::round(FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Projectile::Shotgun::PelletCount,
 						1.f
@@ -142,19 +144,19 @@ namespace ly
 				);
 				const int additionalProjectiles = std::max(
 					0,
-					static_cast<int>(std::round(FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Projectile::Delivery::AdditionalProjectileCount,
 						0.f
 					)))
 				);
 				const int totalPelletCount = pelletCount + additionalProjectiles;
-				const float spreadAngle = std::max(0.f, FindGameplayAttributeValue(
+				const float spreadAngle = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Shotgun::SpreadAngle,
 					0.f
 				));
-				const float damageReduction = FindGameplayAttributeValue(
+				const float damageReduction = sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Shotgun::DamageReductionPerAdditionalHit,
 					0.f
@@ -169,12 +171,12 @@ namespace ly
 					return;
 				}
 
-				const float minimumDamageMultiplier = FindGameplayAttributeValue(
+				const float minimumDamageMultiplier = sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Shotgun::MinimumDamageMultiplier,
 					1.f
 				);
-				const float baseDamage = std::max(0.f, FindGameplayAttributeValue(
+				const float baseDamage = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					CommonAttributeIds::Damage,
 					0.f

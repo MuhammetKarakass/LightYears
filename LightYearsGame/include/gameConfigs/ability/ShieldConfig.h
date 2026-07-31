@@ -1,25 +1,29 @@
 #pragma once
 
-#include "gameConfigs/ability/AbilityStructs.h"
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
+#include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameConfigs/combat/EffectConfig.h"
 
 namespace AbilityData
 {
 	namespace Shield
 	{
-		inline const ly::GameplayTag BehaviorId{ "AbilityBehavior.Shield" };
+		inline const ly::GameplayTag BehaviorId{ "GameAbilityBehavior.Shield" };
 		inline const ly::GameplayTag FamilyTag{ "Ability.Defense.Shield" };
 	}
 
 	namespace Definitions
 	{
-		inline const ly::AbilityDefinition Shield_Basic = []
+		inline const ly::GameAbilityDefinition Shield_Basic = []
 		{
-			ly::AbilityDefinition definition;
+			ly::GameAbilityDefinition definition;
 			definition.abilityId = "Ability.Shield.Basic";
-			definition.slot = ly::AbilitySlot::Ability1;
-			definition.activationPolicy = ly::AbilityActivationPolicy::OnPressed;
-			definition.lifetimePolicy = ly::AbilityLifetimePolicy::Duration;
+			definition.slot = sas::AbilitySlot::Ability1;
+			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
+			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 			definition.cooldown = 8.f;
 			definition.duration = 5.f;
 			definition.maxCharges = 1;
@@ -33,8 +37,8 @@ namespace AbilityData
 			definition.accentColor = sf::Color{ 80, 200, 255, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{
-					ly::AbilityActionPhase::OnActivate,
-					ly::ApplyEffectAction{ "Effect.Barrier.Basic", ly::AbilityTargetPolicy::Self },
+					sas::AbilityActionPhase::OnActivate,
+					ly::ApplyEffectAction{ "Effect.Barrier.Basic", sas::AbilityTargetPolicy::Self },
 					0.f,
 					1
 				}
@@ -47,10 +51,10 @@ namespace AbilityData
 					{},
 					{
 						ly::AbilityActionSpec{
-							ly::AbilityActionPhase::OnActivate,
+							sas::AbilityActionPhase::OnActivate,
 							ly::ApplyEffectAction{
 								"Effect.Test.BarrierBreak.ThrustBoost",
-								ly::AbilityTargetPolicy::Self
+								sas::AbilityTargetPolicy::Self
 							},
 							0.f,
 							1
@@ -59,16 +63,16 @@ namespace AbilityData
 				}
 			};
 			definition.scalingRules = {
-				ly::AttributeScalingRule{
+				sas::AttributeScalingRule{
 					BarrierEffectSchema::Capacity,
 					ly::OwnerAttributeIds::MaxHealth,
-					ly::AttributeModifierOperation::Add,
+					sas::AttributeModifierOperation::Add,
 					0.2f
 				},
-				ly::AttributeScalingRule{
+				sas::AttributeScalingRule{
 					BarrierEffectSchema::Capacity,
 					ly::OwnerAttributeIds::Armor,
-					ly::AttributeModifierOperation::Add,
+					sas::AttributeModifierOperation::Add,
 					50.f
 				}
 			};

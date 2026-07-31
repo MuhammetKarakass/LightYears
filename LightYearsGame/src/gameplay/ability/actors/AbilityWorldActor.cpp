@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "framework/World.h"
 #include "gameplay/combat/Combatant.h"
@@ -61,7 +63,7 @@ namespace ly
 		RebuildDamagePayload();
 	}
 
-	void AbilityWorldActor::SetDamageAttributes(const GameplayAttributeList& attributes)
+	void AbilityWorldActor::SetDamageAttributes(const sas::GameplayAttributeList& attributes)
 	{
 		mDamageAttributes = attributes;
 		RebuildDamagePayload();
@@ -148,11 +150,11 @@ namespace ly
 		}
 	}
 
-	void AbilityWorldActor::ConfigureFromAttributes(const GameplayAttributeList& attributes)
+	void AbilityWorldActor::ConfigureFromAttributes(const sas::GameplayAttributeList& attributes)
 	{
 		mDamage = std::max(
 			0.f,
-			FindGameplayAttributeValue(attributes, CommonAttributeIds::Damage, mDamage)
+			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Damage, mDamage)
 		);
 		SetDamageAttributes(attributes);
 	}

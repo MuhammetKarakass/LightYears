@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gameConfigs/ship/ShipStructs.h"
-#include "gameplay/attributes/AttributeSystem.h"
+#include "attributes/AttributeSystem.h"
 
 namespace ly
 {
@@ -10,14 +10,14 @@ namespace ly
 	class ShipRuntime
 	{
 	public:
-		explicit ShipRuntime(AttributeSystem& ownerAttributes);
+		explicit ShipRuntime(sas::AttributeSystem& ownerAttributes);
 
 		void InitializeFromShipDefinition(const ShipDefinition& shipDefinition);
 		void RecalculateAttributes();
 		void Clear();
 
-		AttributeSystem& GetAttributes() { return mAttributeSystem; }
-		const AttributeSystem& GetAttributes() const { return mAttributeSystem; }
+		sas::AttributeSystem& GetAttributes() { return mAttributeSystem; }
+		const sas::AttributeSystem& GetAttributes() const { return mAttributeSystem; }
 
 		float GetAfterburnerCapacity() const;
 		float GetAfterburnerRegenPerSecond() const;
@@ -32,9 +32,9 @@ namespace ly
 	private:
 		void OnOwnerAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue);
 
-		AttributeSystem* mOwnerAttributes = nullptr;
+		sas::AttributeSystem* mOwnerAttributes = nullptr;
 		ShipEnergyAttributes mEnergyAttributes;
-		AttributeSystem mAttributeSystem;
+		sas::AttributeSystem mAttributeSystem;
 		bool mOwnerAttributeCallbackBound = false;
 	};
 }

@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "../internal/PrimaryWeaponBuiltIns.h"
 
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h"
@@ -53,7 +55,7 @@ namespace ly
 			{
 				const int projectileCount = 1 + std::max(
 					0,
-					static_cast<int>(std::round(FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Projectile::Delivery::AdditionalProjectileCount,
 						0.f

@@ -21,10 +21,10 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementMath.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementController.h
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayAttribute.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayWarning.h
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityStructs.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/GameAbilityDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbilityActionExecutor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityActorStructs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
@@ -41,10 +41,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ship/ShipConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponProgressionConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/GameplayAttribute.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeMath.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeSystem.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attributes/AttributeSystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/progression/ShipProgression.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentDefinition.h
@@ -54,23 +51,10 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/DamageTypeConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageTypeSystem.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectHandle.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectSpec.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/ActiveGameplayEffect.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectValidation.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectValidation.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectContent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectContent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/AreaGameplayEffectApplicator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/AreaGameplayEffectApplicator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectBehavior.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/BarrierEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/BarrierEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/GameplayEffectSystem.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectSystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/content/barrier/BarrierEffectBehavior.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/barrier/BarrierEffectBehavior.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponHandler.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponHandlerRegistry.h
@@ -106,20 +90,11 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/Combatant.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityEvent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityExecution.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityBehaviorRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityBehaviorRegistration.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistration.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityInstance.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityInstance.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilityExecutor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityExecutor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/AbilitySystem.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilitySystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/LightYearsAbilitySystemComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityWorldActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityWorldActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorRegistry.h
@@ -168,6 +143,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisualRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectPresentationBinding.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectPresentationBinding.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualDefinition.h
@@ -293,13 +270,16 @@ target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME}
+	PUBLIC
+		${LIGHT_YEARS_ENGINE_TARGET_NAME}
+		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+)
 
 if(BUILD_TESTING)
 	add_executable(LightYearsGasLiteTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attributes/AttributeSystem.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
@@ -307,13 +287,8 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectBehavior.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectValidation.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectContent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/AreaGameplayEffectApplicator.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/BarrierEffectBehavior.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/GameplayEffectSystem.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/barrier/BarrierEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
@@ -323,12 +298,9 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceShip.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehavior.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistry.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityBehaviorRegistration.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityInstance.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilitySystem.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/AbilityExecutor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp
@@ -350,6 +322,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectPresentationBinding.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisualContent.cpp
@@ -377,7 +350,11 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
 	)
-	target_link_libraries(LightYearsGasLiteTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_link_libraries(LightYearsGasLiteTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+	)
 endif()
 
 if(WIN32)

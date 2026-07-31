@@ -16,10 +16,10 @@ namespace ly
 		, mCollisionDamage(shipDef.collisionDamage)
 	{
 		SetInvulnerability(true);
-		auto grantPlayerAbility = [this](const AbilityDefinition& definition)
+		auto grantPlayerAbility = [this](const GameAbilityDefinition& definition)
 		{
 			std::string failureReason;
-			const AbilityHandle handle = GetCombatRuntime().GetAbilities().GrantAbility(
+			const sas::AbilityHandle handle = GetAbilitySystemComponent().GrantAbility(
 				definition,
 				&failureReason
 			);

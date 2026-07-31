@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "../internal/PrimaryWeaponBuiltIns.h"
 
 #include "framework/Actor.h"
@@ -127,17 +129,17 @@ namespace ly
 					return;
 				}
 
-				const float range = std::max(0.f, FindGameplayAttributeValue(
+				const float range = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Beam::Delivery::Range,
 					0.f
 				));
-				const float width = std::max(0.f, FindGameplayAttributeValue(
+				const float width = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Beam::Delivery::Width,
 					0.f
 				));
-				const float baseDamagePerSecond = std::max(0.f, FindGameplayAttributeValue(
+				const float baseDamagePerSecond = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					CommonAttributeIds::Damage,
 					0.f
@@ -147,7 +149,7 @@ namespace ly
 					return;
 				}
 
-				const float heatCapacity = std::max(0.f, FindGameplayAttributeValue(
+				const float heatCapacity = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Capacity,
 					0.f
@@ -162,7 +164,7 @@ namespace ly
 					: 0.f;
 				const float maximumDamageMultiplier = std::max(
 					1.f,
-					FindGameplayAttributeValue(
+					sas::FindGameplayAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat,
 						1.f

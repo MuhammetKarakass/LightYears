@@ -1,18 +1,18 @@
 #pragma once
 
-#include "gameplay/ability/AbilityBehavior.h"
+#include "gameplay/ability/GameAbility.h"
 
 namespace ly
 {
-	class DashAbility final : public AbilityBehavior
+	class DashAbility final : public GameAbilityBehavior
 	{
 	public:
 		bool Validate(
-			const AbilityDefinition& definition,
+			const GameAbilityDefinition& definition,
 			std::string* failureReason = nullptr
 		) const override;
-		bool Activate(AbilityBehaviorContext& context) override;
-		void End(AbilityBehaviorContext& context, AbilityEndReason reason) override;
+		bool Activate(GameAbilityBehaviorContext& context) override;
+		void End(GameAbilityBehaviorContext& context, sas::AbilityEndReason reason) override;
 
 	private:
 		bool mStarted = false;

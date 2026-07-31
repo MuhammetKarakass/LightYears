@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/ability/sunBeam/SunBeamActorBase.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
 
@@ -20,7 +22,7 @@ namespace ly
 
 	protected:
 		void OnSunBeamBeginPlay() override;
-		void ConfigureSunBeam(const GameplayAttributeList& attributes) override;
+		void ConfigureSunBeam(const sas::GameplayAttributeList& attributes) override;
 		void TickSunBeam(float deltaTime) override;
 		SunBeamVisualFrame BuildSunBeamVisualFrame() const override;
 

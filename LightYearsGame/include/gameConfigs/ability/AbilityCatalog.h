@@ -12,7 +12,7 @@ namespace AbilityData
 {
 	namespace Definitions
 	{
-		inline ly::AbilityDefinition MakePrimaryFireAbilityDefinition(
+		inline ly::GameAbilityDefinition MakePrimaryFireAbilityDefinition(
 			const PrimaryWeaponDefinition& weaponDefinition)
 		{
 			const bool automaticFire = weaponDefinition.automaticFire;
@@ -31,15 +31,15 @@ namespace AbilityData
 				primaryLevelProgression.push_back(abilityLevelStep);
 			}
 
-			ly::AbilityDefinition definition;
+			ly::GameAbilityDefinition definition;
 			definition.abilityId = weaponDefinition.weaponId;
-			definition.slot = ly::AbilitySlot::PrimaryFire;
+			definition.slot = sas::AbilitySlot::PrimaryFire;
 			definition.activationPolicy = automaticFire
-				? ly::AbilityActivationPolicy::WhileHeld
-				: ly::AbilityActivationPolicy::OnPressed;
+				? sas::AbilityActivationPolicy::WhileHeld
+				: sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = automaticFire
-				? ly::AbilityLifetimePolicy::WhileInputHeld
-				: ly::AbilityLifetimePolicy::Instant;
+				? sas::AbilityLifetimePolicy::WhileInputHeld
+				: sas::AbilityLifetimePolicy::Instant;
 			definition.cooldown = 0.f;
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
@@ -55,8 +55,8 @@ namespace AbilityData
 			definition.actions = {
 				ly::AbilityActionSpec{
 					automaticFire
-						? ly::AbilityActionPhase::WhileActive
-						: ly::AbilityActionPhase::OnActivate,
+						? sas::AbilityActionPhase::WhileActive
+						: sas::AbilityActionPhase::OnActivate,
 					ly::FireWeaponAction{ weaponDefinition },
 					0.f,
 					automaticFire ? 0 : 1
@@ -75,15 +75,15 @@ namespace AbilityData
 		}
 	}
 
-	inline ly::AbilityDefinition MakePrimaryFireAbilityDefinition(
+	inline ly::GameAbilityDefinition MakePrimaryFireAbilityDefinition(
 		const PrimaryWeaponDefinition& weaponDefinition)
 	{
 		return Definitions::MakePrimaryFireAbilityDefinition(weaponDefinition);
 	}
 
-	inline const ly::List<const ly::AbilityDefinition*>& GetShippedAbilityDefinitions()
+	inline const ly::List<const ly::GameAbilityDefinition*>& GetShippedAbilityDefinitions()
 	{
-		static const ly::List<const ly::AbilityDefinition*> definitions{
+		static const ly::List<const ly::GameAbilityDefinition*> definitions{
 			&Definitions::Shield_Basic,
 			&Definitions::SunBeam_Strike_Basic,
 			&Definitions::Dash_Basic,
@@ -93,10 +93,10 @@ namespace AbilityData
 		return definitions;
 	}
 
-	inline const ly::AbilityDefinition* FindShippedAbilityDefinition(
+	inline const ly::GameAbilityDefinition* FindShippedAbilityDefinition(
 		const std::string& abilityId)
 	{
-		for (const ly::AbilityDefinition* definition : GetShippedAbilityDefinitions())
+		for (const ly::GameAbilityDefinition* definition : GetShippedAbilityDefinitions())
 		{
 			if (definition && definition->abilityId == abilityId)
 			{

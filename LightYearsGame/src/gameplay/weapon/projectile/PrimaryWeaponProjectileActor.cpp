@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/weapon/impact/ProjectileImpactBehavior.h"
@@ -13,22 +15,22 @@ namespace ly
 		World* world,
 		Actor* owner,
 		const WeaponPresentationDefinition& presentation,
-		const GameplayAttributeList& values
+		const sas::GameplayAttributeList& values
 	)
 		: AbilityWorldActor(world, owner, presentation.texturePath),
-		mSpeed(FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f)),
+		mSpeed(sas::FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Speed, 500.f)),
 		mLaunchVelocity{},
-		mMaxTravelDistance(FindGameplayAttributeValue(values, CommonAttributeIds::Range, 1600.f)),
+		mMaxTravelDistance(sas::FindGameplayAttributeValue(values, CommonAttributeIds::Range, 1600.f)),
 		mTravelDistance(0.f),
-		mAreaDamageRadius(std::max(0.f, FindGameplayAttributeValue(values, CommonAttributeIds::AreaRadius, 0.f))),
+		mAreaDamageRadius(std::max(0.f, sas::FindGameplayAttributeValue(values, CommonAttributeIds::AreaRadius, 0.f))),
 		mVisualScale(std::max(0.01f, presentation.visualScale)),
-		mRemainingPierces(std::max(0, static_cast<int>(std::round(FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 0.f)))))
+		mRemainingPierces(std::max(0, static_cast<int>(std::round(sas::FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 0.f)))))
 	{
 		SetRenderLayer(RenderLayer::Projectile);
-		SetDamage(FindGameplayAttributeValue(values, CommonAttributeIds::Damage, 0.f));
+		SetDamage(sas::FindGameplayAttributeValue(values, CommonAttributeIds::Damage, 0.f));
 		SetDamageAttributes(values);
-		SetLifeTime(FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f));
-		SetAbilityCollisionRadius(std::max(0.1f, FindGameplayAttributeValue(values, CommonAttributeIds::CollisionRadius, 8.f)));
+		SetLifeTime(sas::FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f));
+		SetAbilityCollisionRadius(std::max(0.1f, sas::FindGameplayAttributeValue(values, CommonAttributeIds::CollisionRadius, 8.f)));
 		ConfigureCollisionFromOwner();
 		SetVisualScale(mVisualScale);
 		ly::perf::IncBullets();

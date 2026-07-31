@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/MovementComponent.h"
 
 #include "gameplay/ability/dash/DashMovementMath.h"
@@ -33,14 +35,14 @@ namespace ly
 			ClampThrustDriftVelocity(speedCapMultiplier);
 		}
 
-		const float movementMultiplier = mOwner.GetCombatRuntime().GetAttributes()
+		const float movementMultiplier = mOwner.GetAbilitySystemComponent().GetAttributes()
 			.GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, 0.05f);
 		mOwner.AddActorLocationOffset(mOwner.GetVelocity() * movementMultiplier * deltaTime);
 	}
 
 	void MovementComponent::RefreshAttributes()
 	{
-		const AttributeSystem& attributes = mOwner.GetCombatRuntime().GetAttributes();
+		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
 		mMovementAttributes = mBaseMovementAttributes;
 
 		const float horizontalRating = attributes.HasAttribute(OwnerAttributeIds::MoveSpeedHorizontal)
@@ -78,7 +80,7 @@ namespace ly
 
 	sf::Vector2f MovementComponent::ResolveLegacySpeed(const sf::Vector2f& baseSpeed) const
 	{
-		const AttributeSystem& attributes = mOwner.GetCombatRuntime().GetAttributes();
+		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
 		const float horizontalRating = attributes.HasAttribute(OwnerAttributeIds::MoveSpeedHorizontal)
 			? std::max(0.f, attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal))
 			: 0.f;
@@ -178,7 +180,7 @@ namespace ly
 		}
 		NormalizeVector(direction);
 
-		const AttributeSystem& attributes = mOwner.GetCombatRuntime().GetAttributes();
+		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
 		const float horizontalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal);
 		const float verticalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical);
 		mResolvedDashDistance = DashMovementMath::ResolveDistance(

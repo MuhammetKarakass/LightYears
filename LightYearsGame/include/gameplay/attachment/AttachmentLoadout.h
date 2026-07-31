@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/attachment/AttachmentDefinition.h"
 
 namespace ly
@@ -19,17 +21,17 @@ namespace ly
 
 		const List<EquippedAttachment>& GetEquipped() const { return mEquipped; }
 		uint64_t GetRevision() const { return mRevision; }
-		GameplayAttributeList MergeGrantedAttributes(
+		sas::GameplayAttributeList MergeGrantedAttributes(
 			AttachmentHostKind hostKind,
-			const GameplayAttributeList& sourceAttributes
+			const sas::GameplayAttributeList& sourceAttributes
 		) const;
-		GameplayAttribute ApplyStaticModifiers(
+		sas::GameplayAttribute ApplyStaticModifiers(
 			AttachmentHostKind hostKind,
-			const GameplayAttribute& attribute
+			const sas::GameplayAttribute& attribute
 		) const;
-		GameplayAttributeList ApplyConditionalModifiers(
+		sas::GameplayAttributeList ApplyConditionalModifiers(
 			AttachmentHostKind hostKind,
-			const GameplayAttributeList& resolvedAttributes,
+			const sas::GameplayAttributeList& resolvedAttributes,
 			const List<GameplayTag>& originalDamageTags
 		) const;
 		List<GameplayTag> ResolveDamageTags(
@@ -50,10 +52,10 @@ namespace ly
 		) const;
 		bool IsConditionMet(
 			const AttachmentCondition& condition,
-			const GameplayAttributeList& resolvedAttributes,
+			const sas::GameplayAttributeList& resolvedAttributes,
 			const List<GameplayTag>& originalDamageTags
 		) const;
-		List<AttributeModifier> CollectStaticModifiers(AttachmentHostKind hostKind) const;
+		List<sas::AttributeModifier> CollectStaticModifiers(AttachmentHostKind hostKind) const;
 
 		List<EquippedAttachment> mEquipped;
 		uint64_t mRevision = 1;

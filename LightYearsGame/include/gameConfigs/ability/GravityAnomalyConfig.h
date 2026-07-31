@@ -1,14 +1,18 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
 #include "gameConfigs/ability/AbilityActorStructs.h"
-#include "gameConfigs/ability/AbilityStructs.h"
+#include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationIds.h"
 
 namespace AbilityData
 {
 	namespace GravityAnomaly
 	{
-		inline const ly::GameplayTag BehaviorId{ "AbilityBehavior.GravityAnomaly" };
+		inline const ly::GameplayTag BehaviorId{ "GameAbilityBehavior.GravityAnomaly" };
 		inline const ly::GameplayTag FamilyTag{ "Ability.Control.GravityAnomaly" };
 
 		struct EffectSchema
@@ -87,12 +91,12 @@ namespace AbilityData
 			definition.lifeTime = BasicSettings.baseDuration;
 			definition.spawnDistance = BasicSettings.spawnDistance;
 			definition.attributes = {
-				ly::GameplayAttribute{ ActorSchema::ProjectileSpeed, BasicSettings.projectileSpeed, 0.01f },
-				ly::GameplayAttribute{ ActorSchema::CastRange, BasicSettings.castRange, 0.01f },
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Duration, BasicSettings.baseDuration, 0.01f },
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Radius, BasicSettings.baseRadius, 0.01f },
-				ly::GameplayAttribute{ ActorSchema::PullStrength, BasicSettings.pullStrength, 0.f },
-				ly::GameplayAttribute{ ActorSchema::SlowMagnitude, BasicSettings.slowMagnitude, 0.f, 0.95f }
+				sas::GameplayAttribute{ ActorSchema::ProjectileSpeed, BasicSettings.projectileSpeed, 0.01f },
+				sas::GameplayAttribute{ ActorSchema::CastRange, BasicSettings.castRange, 0.01f },
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Duration, BasicSettings.baseDuration, 0.01f },
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, BasicSettings.baseRadius, 0.01f },
+				sas::GameplayAttribute{ ActorSchema::PullStrength, BasicSettings.pullStrength, 0.f },
+				sas::GameplayAttribute{ ActorSchema::SlowMagnitude, BasicSettings.slowMagnitude, 0.f, 0.95f }
 			};
 			definition.presentationProfileId = ly::GravityAnomalyPresentationIds::ProjectileBasic;
 			return definition;
@@ -105,10 +109,10 @@ namespace AbilityData
 			definition.actorTypeTag = ActorSchema::FieldTypeId;
 			definition.lifeTime = BasicSettings.baseDuration;
 			definition.attributes = {
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Duration, BasicSettings.baseDuration, 0.01f },
-				ly::GameplayAttribute{ ly::CommonAttributeIds::Radius, BasicSettings.baseRadius, 0.01f },
-				ly::GameplayAttribute{ ActorSchema::PullStrength, BasicSettings.pullStrength, 0.f },
-				ly::GameplayAttribute{ ActorSchema::SlowMagnitude, BasicSettings.slowMagnitude, 0.f, 0.95f }
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Duration, BasicSettings.baseDuration, 0.01f },
+				sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, BasicSettings.baseRadius, 0.01f },
+				sas::GameplayAttribute{ ActorSchema::PullStrength, BasicSettings.pullStrength, 0.f },
+				sas::GameplayAttribute{ ActorSchema::SlowMagnitude, BasicSettings.slowMagnitude, 0.f, 0.95f }
 			};
 			definition.presentationProfileId = ly::GravityAnomalyPresentationIds::FieldBasic;
 			return definition;
@@ -130,13 +134,13 @@ namespace AbilityData
 
 	namespace Definitions
 	{
-		inline const ly::AbilityDefinition GravityAnomaly_Basic = []
+		inline const ly::GameAbilityDefinition GravityAnomaly_Basic = []
 		{
-			ly::AbilityDefinition definition;
+			ly::GameAbilityDefinition definition;
 			definition.abilityId = "Ability.GravityAnomaly.Basic";
-			definition.slot = ly::AbilitySlot::Ability1;
-			definition.activationPolicy = ly::AbilityActivationPolicy::OnPressed;
-			definition.lifetimePolicy = ly::AbilityLifetimePolicy::Instant;
+			definition.slot = sas::AbilitySlot::Ability1;
+			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
+			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.cooldown = GravityAnomaly::BasicSettings.cooldown;
 			definition.maxCharges = GravityAnomaly::BasicSettings.chargeCount;
 			definition.abilityTags = {
@@ -149,11 +153,11 @@ namespace AbilityData
 			definition.accentColor = sf::Color{ 135, 95, 255, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{
-					ly::AbilityActionPhase::OnActivate,
+					sas::AbilityActionPhase::OnActivate,
 					ly::SpawnActorAction{
 						GravityAnomaly::ActorProjectileBasic.actorDefinitionId,
-						ly::AbilitySpawnPolicy::OwnerForward,
-						ly::AbilityDirectionPolicy::MouseWorld
+						sas::AbilitySpawnPolicy::OwnerForward,
+						sas::AbilityDirectionPolicy::MouseWorld
 					},
 					0.f,
 					1
@@ -163,28 +167,28 @@ namespace AbilityData
 				14,
 				ly::AbilityLevelStep{
 					{
-						ly::AttributeModifier{ ly::CommonAttributeIds::Cooldown, ly::AttributeModifierOperation::Add, -GravityAnomaly::BasicSettings.cooldownReductionPerLevel },
-						ly::AttributeModifier{ ly::CommonAttributeIds::Duration, ly::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.durationPerLevel },
-						ly::AttributeModifier{ ly::CommonAttributeIds::Radius, ly::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.radiusPerLevel },
-						ly::AttributeModifier{ GravityAnomaly::ActorSchema::PullStrength, ly::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.pullStrengthPerLevel },
-						ly::AttributeModifier{ GravityAnomaly::ActorSchema::SlowMagnitude, ly::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.slowMagnitudePerLevel },
-						ly::AttributeModifier{ GravityAnomaly::ActorSchema::ProjectileSpeed, ly::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.projectileSpeedPerLevel },
-						ly::AttributeModifier{ GravityAnomaly::ActorSchema::CastRange, ly::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.castRangePerLevel }
+						sas::AttributeModifier{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -GravityAnomaly::BasicSettings.cooldownReductionPerLevel },
+						sas::AttributeModifier{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.durationPerLevel },
+						sas::AttributeModifier{ ly::CommonAttributeIds::Radius, sas::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.radiusPerLevel },
+						sas::AttributeModifier{ GravityAnomaly::ActorSchema::PullStrength, sas::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.pullStrengthPerLevel },
+						sas::AttributeModifier{ GravityAnomaly::ActorSchema::SlowMagnitude, sas::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.slowMagnitudePerLevel },
+						sas::AttributeModifier{ GravityAnomaly::ActorSchema::ProjectileSpeed, sas::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.projectileSpeedPerLevel },
+						sas::AttributeModifier{ GravityAnomaly::ActorSchema::CastRange, sas::AttributeModifierOperation::Add, GravityAnomaly::BasicSettings.castRangePerLevel }
 					}
 				}
 			);
 			definition.levelUpgradeScrapCosts = ly::List<unsigned int>(14, 60u);
 			definition.scalingRules = {
-				ly::AttributeScalingRule{
+				sas::AttributeScalingRule{
 					ly::CommonAttributeIds::Radius,
 					ly::OwnerAttributeIds::MaxHealth,
-					ly::AttributeModifierOperation::Add,
+					sas::AttributeModifierOperation::Add,
 					GravityAnomaly::BasicSettings.radiusPerMaxHealth
 				},
-				ly::AttributeScalingRule{
+				sas::AttributeScalingRule{
 					ly::CommonAttributeIds::Duration,
 					ly::OwnerAttributeIds::MaxHealth,
-					ly::AttributeModifierOperation::Add,
+					sas::AttributeModifierOperation::Add,
 					GravityAnomaly::BasicSettings.durationPerMaxHealth
 				}
 			};

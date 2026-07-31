@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/rocket/RocketPresentationProfile.h"
 
@@ -26,7 +28,7 @@ namespace ly
 		void Render(sf::RenderWindow& window) override;
 		void Destroy() override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
-		void ConfigureFromAttributes(const GameplayAttributeList& attributes) override;
+		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
 
 		float GetProjectileSpeed() const { return mProjectileSpeed; }
 		float GetMaximumRange() const { return mMaximumRange; }

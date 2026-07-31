@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "framework/Actor.h"
@@ -123,7 +125,7 @@ namespace ly
 		}
 
 		List<GameplayTag> declaredAttributeIds;
-		for (const GameplayAttribute& attribute : definition.attributes)
+		for (const sas::GameplayAttribute& attribute : definition.attributes)
 		{
 			if (!attribute.id.IsValid() || HasExactTag(declaredAttributeIds, attribute.id))
 			{

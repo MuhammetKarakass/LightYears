@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include "framework/Core.h"
-#include "gameplay/GameplayAttribute.h"
+#include "attributes/GameplayAttribute.h"
 #include "engineConfigs/EngineStructs.h"
 #include "player/Reward.h"
 #include "gameConfigs/combat/WeaponStructs.h"
@@ -17,15 +17,15 @@ struct EngineMount
 
 struct ShipMovementAttributes
 {
-	ly::GameplayAttribute forwardThrust;
-	ly::GameplayAttribute reverseThrust;
-	ly::GameplayAttribute strafeThrust;
-	ly::GameplayAttribute angularTurnSpeed;
-	ly::GameplayAttribute angularTurnResponsiveness;
-	ly::GameplayAttribute linearDamping;
-	ly::GameplayAttribute maxSpeed;
-	ly::GameplayAttribute inputResponsiveness;
-	ly::GameplayAttribute mouseAimDeadZone;
+	sas::GameplayAttribute forwardThrust;
+	sas::GameplayAttribute reverseThrust;
+	sas::GameplayAttribute strafeThrust;
+	sas::GameplayAttribute angularTurnSpeed;
+	sas::GameplayAttribute angularTurnResponsiveness;
+	sas::GameplayAttribute linearDamping;
+	sas::GameplayAttribute maxSpeed;
+	sas::GameplayAttribute inputResponsiveness;
+	sas::GameplayAttribute mouseAimDeadZone;
 	float horizontalRatingToThrust = 60.f;
 	float verticalRatingToThrust = 60.f;
 	float ratingToMaxSpeed = 20.f;

@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "../internal/PrimaryWeaponBuiltIns.h"
 
 #include "framework/Actor.h"
@@ -95,7 +97,7 @@ namespace ly
 		)
 		{
 			World* world = context.owner.GetWorld();
-			const float baseDamage = std::max(0.f, FindGameplayAttributeValue(
+			const float baseDamage = std::max(0.f, sas::FindGameplayAttributeValue(
 				context.attributes,
 				CommonAttributeIds::Damage,
 				0.f
@@ -259,23 +261,23 @@ namespace ly
 			{
 				const int chainCount = std::max(
 					0,
-					static_cast<int>(std::round(FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Arc::Electric::ChainCount,
 						0.f
 					)))
 				);
-				const float chainRange = std::max(0.f, FindGameplayAttributeValue(
+				const float chainRange = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Arc::Electric::ChainRange,
 					0.f
 				));
-				const float damageMultiplier = std::clamp(FindGameplayAttributeValue(
+				const float damageMultiplier = std::clamp(sas::FindGameplayAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain,
 					1.f
 				), 0.f, 1.f);
-				const float targetRange = std::max(0.f, FindGameplayAttributeValue(
+				const float targetRange = std::max(0.f, sas::FindGameplayAttributeValue(
 					context.attributes,
 					CommonAttributeIds::Range,
 					0.f

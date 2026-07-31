@@ -3,7 +3,7 @@
 #include "player/PlayerManager.h"
 #include "player/Player.h"
 #include "player/PlayerSpaceShip.h"
-#include "gameplay/ability/AbilitySystem.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include <cstdio>
 
 namespace ly
@@ -72,11 +72,12 @@ namespace ly
 			ResetWidgets();
 		}
 
-		const AbilitySystem& abilitySystem = ship->GetCombatRuntime().GetAbilities();
+		const sas::AbilitySystemComponent& abilitySystem =
+			ship->GetAbilitySystemComponent();
 		bool widgetsChanged = false;
 		for (auto it = mSlotWidgets.begin(); it != mSlotWidgets.end();)
 		{
-			if (abilitySystem.GetAbility(it->first))
+			if (abilitySystem.FindAbility<GameAbility>(it->first))
 			{
 				++it;
 				continue;
@@ -90,24 +91,25 @@ namespace ly
 			widgetsChanged = true;
 		}
 
-		static const AbilitySlot abilitySlots[] = {
-			AbilitySlot::Ability1, AbilitySlot::Ability2, AbilitySlot::Ability3, AbilitySlot::Ability4
+		static const sas::AbilitySlot abilitySlots[] = {
+			sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4
 		};
 
-		for (AbilitySlot slot : abilitySlots)
+		for (sas::AbilitySlot slot : abilitySlots)
 		{
 			if (mSlotWidgets.find(slot) != mSlotWidgets.end())
 			{
 				continue;
 			}
 
-			const AbilityInstance* ability = abilitySystem.GetAbility(slot);
+			const GameAbility* ability =
+				abilitySystem.FindAbility<GameAbility>(slot);
 			if (!ability)
 			{
 				continue;
 			}
 
-			const AbilityDefinition& definition = ability->GetDefinition();
+			const GameAbilityDefinition& definition = ability->GetDefinition();
 			if (definition.iconPath.empty())
 			{
 				continue;
@@ -184,20 +186,22 @@ namespace ly
 			return;
 		}
 
-		const AbilitySystem& abilitySystem = ship->GetCombatRuntime().GetAbilities();
+		const sas::AbilitySystemComponent& abilitySystem =
+			ship->GetAbilitySystemComponent();
 
 		for (auto& [slot, widgets] : mSlotWidgets)
 		{
 			(void)widgets;
 
-			const AbilityInstance* ability = abilitySystem.GetAbility(slot);
+			const GameAbility* ability =
+				abilitySystem.FindAbility<GameAbility>(slot);
 			if (!ability)
 			{
 				mViewModel.SetAvailable(slot, false);
 				continue;
 			}
 
-			const AbilityDefinition& definition = ability->GetDefinition();
+			const GameAbilityDefinition& definition = ability->GetDefinition();
 			mViewModel.RegisterSlot(slot, definition);
 
 			if (ability->IsOnCooldown())
@@ -222,7 +226,7 @@ namespace ly
 		}
 	}
 
-	void AbilityUIController::UpdateWidgetVisuals(AbilitySlot slot)
+	void AbilityUIController::UpdateWidgetVisuals(sas::AbilitySlot slot)
 	{
 		const AbilitySlotUIData* data = mViewModel.GetSlotData(slot);
 		if (!data || !data->isAvailable)

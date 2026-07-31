@@ -1,8 +1,10 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/dash/DashAbility.h"
 
 #include "gameConfigs/ability/DashConfig.h"
-#include "gameplay/ability/AbilityInstance.h"
-#include "gameplay/ability/AbilitySystem.h"
+#include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/ability/dash/DashMovementController.h"
 #include "framework/Actor.h"
 
@@ -11,21 +13,21 @@ namespace ly
 	namespace
 	{
 		void EmitLifecycleEvent(
-			AbilitySystem& abilitySystem,
+			LightYearsAbilitySystemComponent& abilitySystem,
 			Actor& owner,
 			const GameplayTag& eventTag)
 		{
-			AbilityEvent event;
+			sas::AbilityEvent event;
 			event.eventTag = eventTag;
-			event.source = &owner;
-			event.target = &owner;
+			event.SetSource(&owner);
+			event.SetTarget(&owner);
 			abilitySystem.HandleGameplayEvent(event);
 		}
 
 		float ApplyCooldownStep(float cooldown, const AbilityLevelStep& step)
 		{
 			float result = cooldown;
-			for (const AttributeModifier& modifier : step.attributeModifiers)
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId != CommonAttributeIds::Cooldown)
 				{
@@ -34,13 +36,13 @@ namespace ly
 
 				switch (modifier.operation)
 				{
-				case AttributeModifierOperation::Add:
+				case sas::AttributeModifierOperation::Add:
 					result += modifier.magnitude;
 					break;
-				case AttributeModifierOperation::Multiply:
+				case sas::AttributeModifierOperation::Multiply:
 					result *= modifier.magnitude;
 					break;
-				case AttributeModifierOperation::Override:
+				case sas::AttributeModifierOperation::Override:
 					result = modifier.magnitude;
 					break;
 				}
@@ -50,7 +52,7 @@ namespace ly
 	}
 
 	bool DashAbility::Validate(
-		const AbilityDefinition& definition,
+		const GameAbilityDefinition& definition,
 		std::string* failureReason) const
 	{
 		const AbilityData::Dash::Settings* settings =
@@ -76,7 +78,7 @@ namespace ly
 			}
 			return false;
 		}
-		if (definition.lifetimePolicy != AbilityLifetimePolicy::Duration ||
+		if (definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.duration != settings->duration)
 		{
 			if (failureReason)
@@ -112,7 +114,7 @@ namespace ly
 		return true;
 	}
 
-	bool DashAbility::Activate(AbilityBehaviorContext& context)
+	bool DashAbility::Activate(GameAbilityBehaviorContext& context)
 	{
 		const AbilityData::Dash::Settings* settings =
 			AbilityData::Dash::FindSettings(context.definition.abilityId);
@@ -133,7 +135,7 @@ namespace ly
 		}
 
 		mStarted = true;
-		context.abilitySystem.AddOwnerTag(AbilityData::Dash::StateTag);
+		context.abilitySystem.AddOwnedTag(AbilityData::Dash::StateTag);
 		EmitLifecycleEvent(
 			context.abilitySystem,
 			context.owner,
@@ -142,7 +144,7 @@ namespace ly
 		return true;
 	}
 
-	void DashAbility::End(AbilityBehaviorContext& context, AbilityEndReason)
+	void DashAbility::End(GameAbilityBehaviorContext& context, sas::AbilityEndReason)
 	{
 		if (!mStarted)
 		{
@@ -153,7 +155,7 @@ namespace ly
 		{
 			movementController->EndDash();
 		}
-		context.abilitySystem.RemoveOwnerTag(AbilityData::Dash::StateTag);
+		context.abilitySystem.RemoveOwnedTag(AbilityData::Dash::StateTag);
 		EmitLifecycleEvent(
 			context.abilitySystem,
 			context.owner,

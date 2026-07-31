@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gameplay/attributes/AttributeIds.h"
+
 #include "player/Reward.h"
 #include "gameConfigs/presentation/PointLightConfig.h"
 #include "gameConfigs/ship/ShipStructs.h"

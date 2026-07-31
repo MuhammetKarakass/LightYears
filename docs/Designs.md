@@ -698,6 +698,10 @@ Combat ownership:
 - `World` remains responsible for active actors, HUD, physics, and local combat lifecycle.
 - `GameStage` can evolve into encounter stages or be used by encounter directors.
 - Enemies, bullets, pickups, hazards, particles, and background objects remain `Actor`-based.
+- Generic attribute/ability/effect mechanics live in the static
+  `SpaceAbilitySystem` library under the `sas` namespace. Ship-specific
+  attribute IDs, combat formulas, balance data, content and presentation remain
+  in `LightYearsGame`.
 
 Data flow:
 
@@ -1036,3 +1040,83 @@ Confirmed decisions:
 - Arena player A/D input uses adaptive screen strafe: when the ship faces mostly vertical, D moves toward screen-right and A moves toward screen-left; when the ship faces mostly horizontal, D moves toward screen-up and A moves toward screen-down; intermediate angles blend smoothly between those directions.
 - Arena player mouse input controls ship rotation target through world-space mouse position.
 - Legacy vertical movement remains separate through `ShipMovementMode::LegacyVelocity`; arena movement uses `ShipMovementMode::ThrustDrift`.
+- `SpaceAbilitySystem` is an internal static library. Migration proceeds
+  system-by-system in Attribute → Ability → Effect order; native plugin/DLL or
+  scripting support, if selected later, is a separate adapter/runtime layer.
+- The first Ability slice moves only stable handles and policy enums into
+  `abilities`. Game-specific definitions, action payloads, weapon data,
+  presentation and balance content remain in `LightYearsGame`.
+- The next slice keeps read-only runtime observation generic:
+  `sas::AbilityRuntimeSnapshot` owns an ability ID and slot instead of pointing
+  at the game-specific definition.
+- The definition/event slice keeps the event carrier fully SAS-owned:
+  `sas::AbilityEvent` stores tags, magnitude, and typed opaque
+  source/target/context references. LightYearsGame binds Actor and
+  `DamageContext` without defining a second event type. Core definition
+  validation runs in SAS, while content-specific validation stays in the game
+  adapter.
+- Mutable ability lifecycle and orchestration are SAS-owned. Input evaluation,
+  activation/end, level changes, active/cooldown/duration counters, charge
+  consumption/refill and snapshots live behind `sas::GameplayAbilityInstance`.
+  The game `GameAbility` adapter supplies owner-tag gates, concrete
+  behavior/action calls, weapons and attachments.
+- Reusable ability runtime mechanisms are SAS-owned as typed, game-agnostic
+  components: `AbilityBehaviorRegistry` stores typed behavior factories,
+  `AbilityActionScheduler`
+  advances repeated action intervals/counts, `AbilityCooldownTracker` owns
+  event-trigger cooldown timing, and `AbilityCollection` owns handle allocation
+  plus instance/ID/slot/passive indexing. LightYearsGame
+  keeps shipped concrete behavior registration and all weapon, action payload,
+  actor, damage, attachment and presentation adapters.
+- The ownership audit additionally places the generic behavior lifecycle
+  contract, runtime-entry storage, grant admission rules, and trigger
+  matching/cooldown-key policy in SAS. Attribute scaling/list helpers and
+  runtime snapshot construction are library-owned as well. The game
+  `LightYearsAbilitySystemComponent`, `GameAbility`, and
+  `GameAbilityActionExecutor` remain integration adapters only; they must not
+  accumulate reusable policy.
+- Actor access follows the component-provider pattern through the SAS-owned
+  `AbilitySystemInterface`. Game actors implement the interface and expose
+  their associated `sas::AbilitySystemComponent` through
+  `GetAbilitySystemComponent()`; the component may remain owned by a separate
+  game runtime object.
+- The SAS component owns ability notification forwarding, passive counts,
+  catalog-level structural validation and bulk cooldown reduction. Game
+  subclasses must call the inherited component API directly instead of adding
+  renamed forwarding methods or retaining a self-pointer facade. Raw ability
+  runtime and mutable active-effect container getters are not part of the
+  public component surface.
+- Effect migration follows the same extension boundary. SAS owns effect
+  handle/policies, immutable definition, resolved spec core, structural
+  validation, snapshot and duration/stack/runtime-attribute state.
+  LightYearsGame extends these with source ability upgrades, Actor/source
+  context, DamageContext behavior hooks, visuals and shipped content.
+- Active effect storage and the complete apply/stack/refresh/tick/expiry/remove
+  orchestration are owned by `sas::GameplayEffectRuntimeSystem`. Modifier/tag
+  binding cleanup and source-scope stacking therefore no longer live in the
+  game adapter.
+- Typed effect hook dispatch is owned by
+  `sas::GameplayEffectBehaviorRuntime`. Game code supplies the concrete
+  `DamageContext` handler signatures and presentation callbacks. The concrete
+  runtime specialization is exposed by the game component; redundant handler
+  aliases and default initialize/refresh callbacks are not added.
+- Ability input/lifetime decisions are centralized in
+  `sas::AbilityLifecycleOrchestrator`; game code supplies behavior, weapon,
+  action, actor, attachment, damage and presentation adapters.
+- Effect application kind, source-scope stacking match, refresh/stack state and
+  duration expiry decisions are centralized in
+  `sas::GameplayEffectLifecycleOrchestrator`. Game code retains typed
+  Actor/DamageContext hooks and presentation cleanup.
+- `sas::AbilityRuntimeSystem` owns grant/remove, handle and slot/passive
+  registration, ticking, clearing and snapshots. `sas::AbilityExecution` and
+  `sas::AbilityExecutionLifecycle` own the action runtime container and phase
+  traversal. Game action handlers retain FireWeapon, ApplyEffect and
+  SpawnActor integration.
+- Active effects no longer own visual pointers. The game presentation adapter
+  stores effect-handle-to-visual sidecars and synchronizes them through SAS
+  runtime callbacks.
+- The Attribute, Ability and Effect migration is complete at the static-library
+  boundary. Active code uses explicit `sas::` contracts. Legacy comparison
+  copies were deleted after zero-reference and Debug/Release verification.
+- The completed Debug build links the SAS library, game and test executable;
+  CTest passes `LightYearsGasLiteCore` and `LightYearsEngineLifetime` (2/2).

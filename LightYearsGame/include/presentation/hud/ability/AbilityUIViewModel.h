@@ -2,14 +2,14 @@
 
 #include "framework/Core.h"
 #include "framework/Delegate.h"
-#include "gameConfigs/ability/AbilityStructs.h"
+#include "gameplay/ability/content/GameAbilityDefinition.h"
 #include <string>
 
 namespace ly
 {
 	struct AbilitySlotUIData
 	{
-		AbilitySlot slot = AbilitySlot::Ability1;
+		sas::AbilitySlot slot = sas::AbilitySlot::Ability1;
 		std::string displayName;
 		std::string iconPath;
 		std::string inputLabel;
@@ -24,23 +24,23 @@ namespace ly
 	class AbilityUIViewModel
 	{
 	public:
-		void RegisterSlot(AbilitySlot slot, const AbilityDefinition& definition);
-		void UpdateCooldown(AbilitySlot slot, float remaining, float total);
-		void UpdateActive(AbilitySlot slot, bool active, float remaining, float total);
-		void SetAvailable(AbilitySlot slot, bool available);
+		void RegisterSlot(sas::AbilitySlot slot, const GameAbilityDefinition& definition);
+		void UpdateCooldown(sas::AbilitySlot slot, float remaining, float total);
+		void UpdateActive(sas::AbilitySlot slot, bool active, float remaining, float total);
+		void SetAvailable(sas::AbilitySlot slot, bool available);
 
-		const AbilitySlotUIData* GetSlotData(AbilitySlot slot) const;
-		const Map<AbilitySlot, AbilitySlotUIData>& GetAllSlotData() const { return mSlotData; }
+		const AbilitySlotUIData* GetSlotData(sas::AbilitySlot slot) const;
+		const Map<sas::AbilitySlot, AbilitySlotUIData>& GetAllSlotData() const { return mSlotData; }
 
-		Delegate<AbilitySlot> onSlotDataChanged;
+		Delegate<sas::AbilitySlot> onSlotDataChanged;
 
 	private:
-		AbilitySlotUIData& GetOrCreateSlotData(AbilitySlot slot);
+		AbilitySlotUIData& GetOrCreateSlotData(sas::AbilitySlot slot);
 
-		Map<AbilitySlot, AbilitySlotUIData> mSlotData;
+		Map<sas::AbilitySlot, AbilitySlotUIData> mSlotData;
 	};
 
-	inline void AbilityUIViewModel::RegisterSlot(AbilitySlot slot, const AbilityDefinition& definition)
+	inline void AbilityUIViewModel::RegisterSlot(sas::AbilitySlot slot, const GameAbilityDefinition& definition)
 	{
 		AbilitySlotUIData& data = GetOrCreateSlotData(slot);
 		data.displayName = definition.displayName;
@@ -51,7 +51,7 @@ namespace ly
 		onSlotDataChanged.Broadcast(slot);
 	}
 
-	inline void AbilityUIViewModel::UpdateCooldown(AbilitySlot slot, float remaining, float total)
+	inline void AbilityUIViewModel::UpdateCooldown(sas::AbilitySlot slot, float remaining, float total)
 	{
 		AbilitySlotUIData& data = GetOrCreateSlotData(slot);
 		data.cooldownPercent = (total > 0.f) ? (remaining / total) : 0.f;
@@ -59,7 +59,7 @@ namespace ly
 		onSlotDataChanged.Broadcast(slot);
 	}
 
-	inline void AbilityUIViewModel::UpdateActive(AbilitySlot slot, bool active, float remaining, float total)
+	inline void AbilityUIViewModel::UpdateActive(sas::AbilitySlot slot, bool active, float remaining, float total)
 	{
 		AbilitySlotUIData& data = GetOrCreateSlotData(slot);
 		data.isActive = active;
@@ -67,20 +67,20 @@ namespace ly
 		onSlotDataChanged.Broadcast(slot);
 	}
 
-	inline void AbilityUIViewModel::SetAvailable(AbilitySlot slot, bool available)
+	inline void AbilityUIViewModel::SetAvailable(sas::AbilitySlot slot, bool available)
 	{
 		AbilitySlotUIData& data = GetOrCreateSlotData(slot);
 		data.isAvailable = available;
 		onSlotDataChanged.Broadcast(slot);
 	}
 
-	inline const AbilitySlotUIData* AbilityUIViewModel::GetSlotData(AbilitySlot slot) const
+	inline const AbilitySlotUIData* AbilityUIViewModel::GetSlotData(sas::AbilitySlot slot) const
 	{
 		auto found = mSlotData.find(slot);
 		return found != mSlotData.end() ? &found->second : nullptr;
 	}
 
-	inline AbilitySlotUIData& AbilityUIViewModel::GetOrCreateSlotData(AbilitySlot slot)
+	inline AbilitySlotUIData& AbilityUIViewModel::GetOrCreateSlotData(sas::AbilitySlot slot)
 	{
 		auto found = mSlotData.find(slot);
 		if (found != mSlotData.end())

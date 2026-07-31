@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 
@@ -14,7 +16,7 @@ namespace ly
 			World* world,
 			Actor* owner,
 			const WeaponPresentationDefinition& presentation,
-			const GameplayAttributeList& attributes,
+			const sas::GameplayAttributeList& attributes,
 			const List<GameplayTag>& damageTags
 		);
 

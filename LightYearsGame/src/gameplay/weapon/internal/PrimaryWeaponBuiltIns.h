@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 namespace ly::PrimaryWeaponBuiltIns
@@ -11,7 +13,7 @@ namespace ly::PrimaryWeaponBuiltIns
 	const List<GameplayTag>& WaveDeliveryAttributeRoots();
 	const List<GameplayTag>& HeatAttributeRoots();
 
-	const GameplayAttribute* FindDefinitionAttribute(
+	const sas::GameplayAttribute* FindDefinitionAttribute(
 		const PrimaryWeaponDefinition& definition,
 		const GameplayTag& attributeId
 	);

@@ -1,8 +1,8 @@
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 
 #include "gameConfigs/ability/GravityAnomalyConfig.h"
-#include "gameplay/effects/GameplayEffectBehavior.h"
-#include "gameplay/attributes/GameplayAttribute.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "attributes/GameplayAttribute.h"
 #include "framework/Actor.h"
 
 #include <algorithm>
@@ -12,8 +12,8 @@ namespace ly
 {
 	namespace GravityAnomalyEffectBehavior
 	{
-		GameplayEffectBehaviorResult Tick(
-			ActiveGameplayEffect& effect,
+		sas::GameplayEffectBehaviorResult Tick(
+			sas::ActiveGameplayEffect& effect,
 			Actor& owner,
 			float deltaTime
 		)
@@ -59,10 +59,17 @@ namespace ly
 
 		bool RegisterGravityAnomalyEffectBehavior()
 		{
-			static const bool registered = GameplayEffectBehavior::RegisterTickHandler(
-				AbilityData::GravityAnomaly::EffectSchema::BehaviorId,
-				&Tick
-			);
+			static const bool registered = []
+			{
+				LightYearsAbilitySystemComponent::
+					EffectBehaviorRuntime::Hooks hooks;
+				hooks.tick = &Tick;
+				return LightYearsAbilitySystemComponent::
+					GetEffectBehaviorRuntime().Register(
+					AbilityData::GravityAnomaly::EffectSchema::BehaviorId,
+					hooks
+				);
+			}();
 			return registered;
 		}
 	}

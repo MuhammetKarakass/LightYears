@@ -20,7 +20,7 @@ namespace ly
 
 	void Hexagon::Shoot()
 	{
-		GetCombatRuntime().GetAbilities().SetSlotInput(AbilitySlot::PrimaryFire, true);
+		GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
 	}
 }
 

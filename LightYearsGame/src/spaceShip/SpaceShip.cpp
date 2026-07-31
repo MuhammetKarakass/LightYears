@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "spaceShip/SpaceShip.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include <framework/World.h>
@@ -14,7 +16,7 @@ namespace ly
 		mShieldComponent{},
 		mEnergyComponent{},
 		mCombatRuntime{ *this },
-		mShipRuntime{ mCombatRuntime.GetAttributes() },
+		mShipRuntime{ mCombatRuntime.GetAbilitySystemComponent().GetAttributes() },
 		mMovementComponent{ *this, shipDef },
 		mBlinkColor{255, 0, 0, 255},
 		mBlinkTime{0.f},
@@ -26,7 +28,8 @@ namespace ly
 		mCombatRuntime.InitializeOwnerAttributes(shipDef.health);
 		mShipRuntime.InitializeFromShipDefinition(shipDef);
 		std::string primaryWeaponFailureReason;
-		const AbilityHandle primaryWeaponHandle = mCombatRuntime.GetAbilities().GrantAbility(
+		const sas::AbilityHandle primaryWeaponHandle =
+			mCombatRuntime.GetAbilitySystemComponent().GrantAbility(
 			AbilityData::MakePrimaryFireAbilityDefinition(shipDef.primaryWeaponDefinition),
 			&primaryWeaponFailureReason
 		);
@@ -46,7 +49,7 @@ namespace ly
 		mHealthComponent.onHealthChanged.BindAction(GetWeakPtr(), &SpaceShip::OnHealthChanged);
 		mHealthComponent.onTakenDamage.BindAction(GetWeakPtr(), &SpaceShip::OnTakenDamage);
 		mHealthComponent.onHealthEmpty.BindAction(GetWeakPtr(), &SpaceShip::Blow);
-		mCombatRuntime.GetAttributes().onAttributeChanged.BindAction(GetWeakPtr(), &SpaceShip::OnRuntimeAttributeChanged);
+		mCombatRuntime.GetAbilitySystemComponent().GetAttributes().onAttributeChanged.BindAction(GetWeakPtr(), &SpaceShip::OnRuntimeAttributeChanged);
 		mShipRuntime.GetAttributes().onAttributeChanged.BindAction(GetWeakPtr(), &SpaceShip::OnShipAttributeChanged);
 		RefreshMovementAttributesFromRuntime();
 	}
@@ -62,8 +65,9 @@ namespace ly
 
 	void SpaceShip::RefreshMovementAttributesFromRuntime()
 	{
-		const AttributeSystem& attributes = mCombatRuntime.GetAttributes();
-		const AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
+		const sas::AttributeSystem& attributes =
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes();
+		const sas::AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
 		if (attributes.HasAttribute(OwnerAttributeIds::MaxHealth))
 		{
 			const float previousMaxHealth = mHealthComponent.GetMaxHealth();
@@ -116,8 +120,9 @@ namespace ly
 
 	void SpaceShip::UpdateRegeneration(float deltaTime)
 	{
-		const AttributeSystem& attributes = mCombatRuntime.GetAttributes();
-		const AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
+		const sas::AttributeSystem& attributes =
+			mCombatRuntime.GetAbilitySystemComponent().GetAttributes();
+		const sas::AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
 		float healthRegenerationTime = std::max(0.f, deltaTime);
 		if (mHealthRegenDelayRemaining > 0.f)
 		{

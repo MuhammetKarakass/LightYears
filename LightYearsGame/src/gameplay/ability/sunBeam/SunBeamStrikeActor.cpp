@@ -1,3 +1,5 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/sunBeam/SunBeamStrikeActor.h"
 
 #include "framework/World.h"
@@ -59,7 +61,7 @@ namespace ly
 					AbilityData::SunBeam::ActorSchema::Length
 				})
 				{
-					const GameplayAttribute* attribute = FindGameplayAttribute(
+					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(
 						definition.attributes,
 						required
 					);
@@ -126,7 +128,7 @@ namespace ly
 	}
 
 	void SunBeamStrikeActor::ConfigureSunBeam(
-		const GameplayAttributeList& attributes
+		const sas::GameplayAttributeList& attributes
 	)
 	{
 		SetAbilityPhysicsEnabled(false);
@@ -136,11 +138,11 @@ namespace ly
 		mImpactLocation = GetActorLocation();
 		mImpactRadius = std::max(
 			1.f,
-			FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, 1.f)
+			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, 1.f)
 		);
 		mTelegraphDuration = std::max(
 			0.f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				AbilityData::SunBeam::ActorSchema::Strike::TelegraphDuration,
 				0.f
@@ -148,7 +150,7 @@ namespace ly
 		);
 		mArrivalDuration = std::max(
 			0.f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				AbilityData::SunBeam::ActorSchema::Strike::ArrivalDuration,
 				0.f
@@ -156,7 +158,7 @@ namespace ly
 		);
 		mImpactDelay = std::max(
 			0.f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				AbilityData::SunBeam::ActorSchema::Strike::ImpactDelay,
 				0.f
@@ -164,7 +166,7 @@ namespace ly
 		);
 		mImpactVisualDuration = std::max(
 			0.f,
-			FindGameplayAttributeValue(
+			sas::FindGameplayAttributeValue(
 				attributes,
 				AbilityData::SunBeam::ActorSchema::Strike::ImpactVisualDuration,
 				0.f

@@ -1,10 +1,12 @@
+#include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <algorithm>
 
 namespace ly
 {
-	ShipRuntime::ShipRuntime(AttributeSystem& ownerAttributes)
+	ShipRuntime::ShipRuntime(sas::AttributeSystem& ownerAttributes)
 		: mOwnerAttributes{ &ownerAttributes }
 	{
 	}

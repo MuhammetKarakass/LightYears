@@ -66,24 +66,24 @@ namespace ly
 		);
 
 		CombatRuntime& combatRuntime = mOwner.GetCombatRuntime();
-		combatRuntime.GetAbilities().SetSlotInput(
-			AbilitySlot::PrimaryFire,
+		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::PrimaryFire,
 			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
 		);
-		combatRuntime.GetAbilities().SetSlotInput(
-			AbilitySlot::Ability1,
+		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::Ability1,
 			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)
 		);
-		combatRuntime.GetAbilities().SetSlotInput(
-			AbilitySlot::Ability2,
+		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::Ability2,
 			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)
 		);
-		combatRuntime.GetAbilities().SetSlotInput(
-			AbilitySlot::Ability3,
+		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::Ability3,
 			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)
 		);
-		combatRuntime.GetAbilities().SetSlotInput(
-			AbilitySlot::Ability4,
+		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::Ability4,
 			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)
 		);
 

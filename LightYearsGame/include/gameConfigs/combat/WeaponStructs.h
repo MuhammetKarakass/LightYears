@@ -3,7 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include "framework/Core.h"
 #include "framework/MathUtility.h"
-#include "gameplay/attributes/AttributeSystem.h"
+#include "attributes/AttributeSystem.h"
 #include "engineConfigs/EngineStructs.h"
 #include <string>
 
@@ -165,7 +165,7 @@ struct HeatGainCurveSegmentDefinition
 
 struct PrimaryWeaponLevelStep
 {
-	ly::List<ly::AttributeModifier> attributeModifiers;
+	ly::List<sas::AttributeModifier> attributeModifiers;
 	ly::List<ly::GameplayTag> unlockedUpgradeIds;
 	ly::List<ly::GameplayTag> unlockedFeatureTags;
 };
@@ -205,7 +205,7 @@ struct WeaponProgressionProfile
 	}
 
 	WeaponProgressionProfile& EveryLevel(
-		const ly::List<ly::AttributeModifier>& modifiers,
+		const ly::List<sas::AttributeModifier>& modifiers,
 		const ly::List<ly::GameplayTag>& upgradeIds = {},
 		const ly::List<ly::GameplayTag>& featureTags = {}
 	)
@@ -221,7 +221,7 @@ struct WeaponProgressionProfile
 
 	WeaponProgressionProfile& AtLevel(
 		int level,
-		const ly::List<ly::AttributeModifier>& modifiers = {},
+		const ly::List<sas::AttributeModifier>& modifiers = {},
 		const ly::List<ly::GameplayTag>& upgradeIds = {},
 		const ly::List<ly::GameplayTag>& featureTags = {}
 	)
@@ -232,7 +232,7 @@ struct WeaponProgressionProfile
 	WeaponProgressionProfile& BetweenLevels(
 		int firstLevel,
 		int lastLevel,
-		const ly::List<ly::AttributeModifier>& modifiers = {},
+		const ly::List<sas::AttributeModifier>& modifiers = {},
 		const ly::List<ly::GameplayTag>& upgradeIds = {},
 		const ly::List<ly::GameplayTag>& featureTags = {},
 		int levelInterval = 1
@@ -249,7 +249,7 @@ struct WeaponProgressionProfile
 
 	WeaponProgressionProfile& FromLevel(
 		int firstLevel,
-		const ly::List<ly::AttributeModifier>& modifiers = {},
+		const ly::List<sas::AttributeModifier>& modifiers = {},
 		const ly::List<ly::GameplayTag>& upgradeIds = {},
 		const ly::List<ly::GameplayTag>& featureTags = {},
 		int levelInterval = 1
@@ -352,12 +352,12 @@ struct PrimaryWeaponDefinition
 	std::string weaponId;
 	ly::GameplayTag weaponTypeTag;
 	WeaponPresentationDefinition presentationDefinition;
-	ly::GameplayAttributeList attributes;
+	sas::GameplayAttributeList attributes;
 	ly::List<WeaponMuzzleDefinition> muzzleDefinitions;
 	bool automaticFire;
 	WeaponProgressionProfile progressionProfile;
-	ly::List<ly::AttributeModifier> attributeModifiers;
-	ly::List<ly::AttributeScalingRule> scalingRules;
+	ly::List<sas::AttributeModifier> attributeModifiers;
+	ly::List<sas::AttributeScalingRule> scalingRules;
 	ly::List<ly::GameplayTag> featureTags;
 	ly::List<HeatGainCurveSegmentDefinition> heatGainCurve;
 	ly::List<ly::GameplayTag> damageTags;
@@ -368,12 +368,12 @@ struct PrimaryWeaponDefinition
 		const std::string& inWeaponId = "DefaultPrimaryWeapon",
 		const ly::GameplayTag& inWeaponTypeTag = PrimaryWeaponSchema::Projectile::Standard::TypeId,
 		const WeaponPresentationDefinition& inPresentationDefinition = WeaponPresentationDefinition{},
-		const ly::GameplayAttributeList& inAttributes = {},
+		const sas::GameplayAttributeList& inAttributes = {},
 		const ly::List<WeaponMuzzleDefinition>& inMuzzleDefinitions = { WeaponMuzzleDefinition{} },
 		bool inAutomaticFire = true,
 		const WeaponProgressionProfile& inProgressionProfile = WeaponProgressionProfile{},
-		const ly::List<ly::AttributeModifier>& inAttributeModifiers = {},
-		const ly::List<ly::AttributeScalingRule>& inScalingRules = {},
+		const ly::List<sas::AttributeModifier>& inAttributeModifiers = {},
+		const ly::List<sas::AttributeScalingRule>& inScalingRules = {},
 		const ly::List<ly::GameplayTag>& inFeatureTags = {},
 		const ly::List<HeatGainCurveSegmentDefinition>& inHeatGainCurve = {},
 		const ly::List<ly::GameplayTag>& inDamageTags = {},

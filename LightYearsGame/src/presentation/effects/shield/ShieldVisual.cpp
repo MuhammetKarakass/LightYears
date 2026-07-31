@@ -1,3 +1,4 @@
+#include "attributes/AttributeSystem.h"
 #include "presentation/effects/shield/ShieldVisual.h"
 
 #include "gameConfigs/combat/EffectStructs.h"
@@ -34,7 +35,7 @@ namespace ly
 			? std::clamp(state.remainingDuration / state.totalDuration, 0.f, 1.f)
 			: 1.f;
 
-		const GameplayAttribute* capacity = FindGameplayAttribute(
+		const sas::GameplayAttribute* capacity = sas::FindGameplayAttribute(
 			state.runtimeAttributes,
 			BarrierEffectSchema::Capacity
 		);

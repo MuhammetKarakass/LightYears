@@ -1,7 +1,7 @@
 #pragma once
 
 #include "framework/Actor.h"
-#include "gameplay/attributes/GameplayAttribute.h"
+#include "attributes/GameplayAttribute.h"
 
 namespace ly
 {
@@ -10,7 +10,7 @@ namespace ly
 		float remainingDuration = 0.f;
 		float totalDuration = 0.f;
 		int stackCount = 1;
-		const GameplayAttributeList& runtimeAttributes;
+		const sas::GameplayAttributeList& runtimeAttributes;
 	};
 
 	class GameplayEffectVisual : public Actor

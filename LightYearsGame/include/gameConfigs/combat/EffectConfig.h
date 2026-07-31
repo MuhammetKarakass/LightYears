@@ -1,5 +1,9 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
+#include "gameplay/attributes/AttributeIds.h"
+
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/ability/GravityAnomalyConfig.h"
@@ -7,11 +11,11 @@
 
 namespace EffectData
 {
-	inline const ly::GameplayEffectDefinition BasicBarrierEffect{
+	inline const sas::GameplayEffectDefinition BasicBarrierEffect{
 		"Effect.Barrier.Basic",
 		BarrierEffectSchema::BehaviorId,
-		ly::GameplayEffectDurationPolicy::Duration,
-		ly::GameplayEffectStackingPolicy::RefreshDuration,
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::RefreshDuration,
 		5.f,
 		1,
 		{
@@ -19,20 +23,20 @@ namespace EffectData
 		},
 		{},
 		{
-			ly::GameplayAttribute{ BarrierEffectSchema::Capacity, 30.f, 0.f },
-			ly::GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f },
-			ly::GameplayAttribute{ BarrierEffectSchema::RegenerationPerSecond, 6.f, 0.f },
-			ly::GameplayAttribute{ BarrierEffectSchema::RegenerationDelay, 1.5f, 0.f },
-			ly::GameplayAttribute{ BarrierEffectSchema::RegenerationDelayRemaining, 0.f, 0.f }
+			sas::GameplayAttribute{ BarrierEffectSchema::Capacity, 30.f, 0.f },
+			sas::GameplayAttribute{ BarrierEffectSchema::AbsorptionRatio, 1.f, 0.f, 1.f },
+			sas::GameplayAttribute{ BarrierEffectSchema::RegenerationPerSecond, 6.f, 0.f },
+			sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelay, 1.5f, 0.f },
+			sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelayRemaining, 0.f, 0.f }
 		},
 		ly::ShieldVisualIds::Basic
 	};
 
-	inline const ly::GameplayEffectDefinition BarrierBreakThrustBoostEffect{
+	inline const sas::GameplayEffectDefinition BarrierBreakThrustBoostEffect{
 		"Effect.Test.BarrierBreak.ThrustBoost",
 		{},
-		ly::GameplayEffectDurationPolicy::Duration,
-		ly::GameplayEffectStackingPolicy::RefreshDuration,
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::RefreshDuration,
 		2.f,
 		1,
 		{
@@ -40,24 +44,24 @@ namespace EffectData
 			ly::GameplayTag{ "Effect.Test.PassiveValidation" }
 		},
 		{
-			ly::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedVertical, ly::AttributeModifierOperation::Add, 0.25f, 0 },
-			ly::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedHorizontal, ly::AttributeModifierOperation::Add, 0.2f, 0 }
+			sas::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedVertical, sas::AttributeModifierOperation::Add, 0.25f, 0 },
+			sas::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedHorizontal, sas::AttributeModifierOperation::Add, 0.2f, 0 }
 		},
 		{},
 		""
 	};
 
-	inline const ly::GameplayEffectDefinition IgniteEffect{
+	inline const sas::GameplayEffectDefinition IgniteEffect{
 		"Effect.Status.Damage.Ignite",
 		ly::DamageStatusSchema::IgniteBehavior,
-		ly::GameplayEffectDurationPolicy::Duration,
-		ly::GameplayEffectStackingPolicy::Stack,
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::Stack,
 		3.f,
 		4,
 		{ ly::DamageStatusSchema::Ignite },
 		{},
 		{
-			ly::GameplayAttribute{
+			sas::GameplayAttribute{
 				ly::DamageAttributeIds::BurnDamagePerSecond,
 				1.f,
 				0.f
@@ -65,44 +69,44 @@ namespace EffectData
 		}
 	};
 
-	inline const ly::GameplayEffectDefinition CryoBuildupEffect{
+	inline const sas::GameplayEffectDefinition CryoBuildupEffect{
 		ly::DamageStatusEffectIds::CryoBuildup,
 		{},
-		ly::GameplayEffectDurationPolicy::Duration,
-		ly::GameplayEffectStackingPolicy::Stack,
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::Stack,
 		2.5f,
 		4,
 		{ ly::DamageStatusSchema::CryoBuildup }
 	};
 
-	inline const ly::GameplayEffectDefinition CryoSlowEffect{
+	inline const sas::GameplayEffectDefinition CryoSlowEffect{
 		ly::DamageStatusEffectIds::CryoSlowed,
 		{},
-		ly::GameplayEffectDurationPolicy::Duration,
-		ly::GameplayEffectStackingPolicy::RefreshDuration,
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::RefreshDuration,
 		1.5f,
 		1,
 		{ ly::DamageStatusSchema::CryoSlowed },
 		{
-			ly::AttributeModifier{
+			sas::AttributeModifier{
 				ly::OwnerAttributeIds::MovementSlow,
-				ly::AttributeModifierOperation::Add,
+				sas::AttributeModifierOperation::Add,
 				0.25f
 			}
 		}
 	};
 
-	inline const ly::GameplayEffectDefinition ElectricEffect{
+	inline const sas::GameplayEffectDefinition ElectricEffect{
 		"Effect.Status.Damage.Electric",
 		ly::DamageStatusSchema::ElectricBehavior,
-		ly::GameplayEffectDurationPolicy::Duration,
-		ly::GameplayEffectStackingPolicy::Stack,
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::Stack,
 		3.f,
 		4,
 		{ ly::DamageStatusSchema::Electric },
 		{},
 		{
-			ly::GameplayAttribute{
+			sas::GameplayAttribute{
 				ly::DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
 				0.04f,
 				0.f
@@ -110,16 +114,16 @@ namespace EffectData
 		}
 	};
 
-	inline const ly::GameplayEffectDefinition GravityAnomalyInsideEffect = []
+	inline const sas::GameplayEffectDefinition GravityAnomalyInsideEffect = []
 	{
-		ly::GameplayEffectDefinition definition;
+		sas::GameplayEffectDefinition definition;
 		definition.effectId =
 			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId;
 		definition.behaviorTag =
 			AbilityData::GravityAnomaly::EffectSchema::BehaviorId;
-		definition.durationPolicy = ly::GameplayEffectDurationPolicy::Duration;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy =
-			ly::GameplayEffectStackingPolicy::RefreshDuration;
+			sas::GameplayEffectStackingPolicy::RefreshDuration;
 		definition.duration =
 			AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds;
 		definition.maxStacks = 1;
@@ -127,9 +131,9 @@ namespace EffectData
 			AbilityData::GravityAnomaly::EffectSchema::InsideTag
 		};
 		definition.modifiers = {
-			ly::AttributeModifier{
+			sas::AttributeModifier{
 				ly::OwnerAttributeIds::MovementSlow,
-				ly::AttributeModifierOperation::Add,
+				sas::AttributeModifierOperation::Add,
 				AbilityData::GravityAnomaly::BasicSettings.slowMagnitude
 			}
 		};
@@ -138,10 +142,10 @@ namespace EffectData
 		return definition;
 	}();
 
-	inline const ly::List<const ly::GameplayEffectDefinition*>&
+	inline const ly::List<const sas::GameplayEffectDefinition*>&
 	GetShippedGameplayEffectDefinitions()
 	{
-		static const ly::List<const ly::GameplayEffectDefinition*> definitions{
+		static const ly::List<const sas::GameplayEffectDefinition*> definitions{
 			&BasicBarrierEffect,
 			&BarrierBreakThrustBoostEffect,
 			&IgniteEffect,
@@ -153,9 +157,9 @@ namespace EffectData
 		return definitions;
 	}
 
-	inline const ly::GameplayEffectDefinition* FindGameplayEffectDefinition(const std::string& effectId)
+	inline const sas::GameplayEffectDefinition* FindGameplayEffectDefinition(const std::string& effectId)
 	{
-		for (const ly::GameplayEffectDefinition* definition :
+		for (const sas::GameplayEffectDefinition* definition :
 			GetShippedGameplayEffectDefinitions())
 		{
 			if (definition && definition->effectId == effectId)

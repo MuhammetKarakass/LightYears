@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeSystem.h"
+
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h"
 
@@ -23,7 +25,7 @@ namespace ly
 
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderWindow& window) override;
-		void ConfigureFromAttributes(const GameplayAttributeList& attributes) override;
+		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
 
 		float GetProjectileSpeed() const { return mProjectileSpeed; }
 		float GetCastRange() const { return mCastRange; }
@@ -46,7 +48,7 @@ namespace ly
 		std::optional<sf::Vector2f> mRequestedTargetLocation;
 		sf::Vector2f mResolvedTargetLocation{ 0.f, 0.f };
 		sf::Vector2f mFlightDirection{ 0.f, -1.f };
-		GameplayAttributeList mFieldAttributes;
+		sas::GameplayAttributeList mFieldAttributes;
 		sf::CircleShape mGlow;
 		sf::CircleShape mCore;
 		sf::ConvexShape mTrail;

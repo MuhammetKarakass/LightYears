@@ -67,7 +67,7 @@ Eksiksiz mevcut içerik, çağrı yolu ve düzenlenebilir alan envanteri için:
 
 | Konu | Kaynak odak noktası | Not alınacak yer |
 | --- | --- | --- |
-| Genel mimari | LightYearsEngine ve LightYearsGame | Bu dosya, §1 |
+| Genel mimari | LightYearsEngine, SpaceAbilitySystem ve LightYearsGame | Bu dosya, §1 |
 | Mevcut içerik / durum envanteri | Tüm config ve runtime bağlantıları | Current Implementation Catalog |
 | Hasar, zırh, kritik, statüler | gameplay/combat, gameplay/damage, gameplay/effects | §2 ve Notebook §4 |
 | Attribute / ability scaling | gameplay/attributes, gameplay/ability | §3 ve Notebook §2 |
@@ -80,11 +80,12 @@ Eksiksiz mevcut içerik, çağrı yolu ve düzenlenebilir alan envanteri için:
 
 ## 1. Proje haritası
 
-LightYears iki katmandan oluşur:
+LightYears üç build katmanından oluşur:
 
 | Katman | Sorumluluk | Önemli dizinler |
 | --- | --- | --- |
 | LightYearsEngine | Yeniden kullanılabilir oyun çatısı: uygulama, dünya, aktör, fizik, kamera, ses, shader, widget | LightYearsEngine/include/framework, LightYearsEngine/src/framework |
+| SpaceAbilitySystem | Statik gameplay-system kütüphanesi; aşamalı olarak taşınan generic attribute, ability ve effect çekirdeği | SpaceAbilitySystem/include, SpaceAbilitySystem/src |
 | LightYearsGame | Oyuna özgü gemiler, combat, yetenekler, silahlar, level akışı, UI ve VFX | LightYearsGame/include, LightYearsGame/src |
 
 Ana çalışma akışı:
@@ -104,6 +105,10 @@ Application
 
 - Tanımlar ve başlangıç değerleri çoğunlukla LightYearsGame/include/gameConfigs
   altında header tabanlıdır.
+- Generic SAS tipleri `sas` namespace'indedir. Attribute çekirdeği ile Ability
+  handle/policy sözleşmeleri SAS'a aittir; oyun-özel attribute ID'leri, ability
+  definition/action içeriği, gemi formülleri ve presentation `LightYearsGame`
+  içinde kalır.
 - Çalışma anı davranışı LightYearsGame/src/gameplay altında çözülür.
 - Bir denge değeri değiştirilirken sadece config değil, onu çözen runtime da
   kontrol edilmelidir.
@@ -171,7 +176,7 @@ Release no-op kontratını kapsar.
 - LightYearsGame/src/gameplay/effects/GameplayEffectBehavior.cpp
 - LightYearsGame/src/gameplay/effects/BarrierEffectBehavior.cpp
 - LightYearsGame/src/spaceShip/SpaceShip.cpp
-- LightYearsGame/include/gameplay/attributes/AttributeMath.h
+- SpaceAbilitySystem/include/attributes/AttributeMath.h
 
 ### 2.1 Hasar çözüm sırası
 
@@ -214,6 +219,100 @@ criticalDamage = baseDamage * max(1, criticalDamageMultiplier)
   kullanılır.
 
 ### 2.3 Attribute çözümlenmesi
+
+Attribute çekirdeğinin public yüzeyi `sas` namespace'indedir:
+`sas::GameplayAttribute`, `sas::AttributeModifier`,
+`sas::AttributeScalingRule`, `sas::AttributeSystem` ve
+`sas::AttributeMath`. Header'lar `SpaceAbilitySystem/include/attributes`,
+uygulama dosyası `SpaceAbilitySystem/src/attributes` altındadır.
+`OwnerAttributeIds`, `ShipAttributeIds` ve `CommonAttributeIds` oyun content
+kataloğu oldukları için `LightYearsGame/include/gameplay/attributes/AttributeIds.h`
+içinde `ly` namespace'inde kalır.
+
+Ability taşımasının 2A diliminde yalnızca bağımsız temel sözleşmeler SAS
+sahipliğine alınmıştır. `sas::AbilityHandle` ile slot, activation, lifetime,
+action phase, end reason ve hedef/spawn/yön policy enum'ları
+`SpaceAbilitySystem/include/abilities` altındadır. Oyuna özgü
+`AbilityDefinition`, variant action payload'ları, weapon bağımlılığı, UI
+metadata'sı ve content construction
+`LightYearsGame/include/gameplay/ability/content/GameAbilityDefinition.h`
+altında kalır. Aktif kod SAS tiplerini açık `sas::` adlarıyla kullanır;
+geçiş alias'ları ve karşılaştırma şemaları doğrulama tamamlandıktan sonra
+2026-07-30 tarihinde kaldırılmıştır.
+
+Ability 2B dilimi runtime'ın salt-okunur veri sınırını ayırır.
+`sas::AbilityRuntimeSnapshot`, bir game-owned `AbilityDefinition*` saklamak
+yerine `abilityId` ve `sas::AbilitySlot` değerlerini doğrudan taşır; level,
+active/cooldown/duration ve charge alanları da SAS sözleşmesindedir.
+`AbilityInstance::BuildSnapshot()` ile `AbilitySystem::BuildSnapshots()` bu
+tipi döndürür. Önceki pointer tabanlı karşılaştırma şekli geçiş doğrulandıktan
+sonra kaldırılmıştır.
+
+Ability 2C diliminde definition ve event ortak gövdeleri ayrılmıştır.
+`sas::AbilityDefinition`; kimlik, slot/activation/lifetime, cooldown/duration/
+charge, owner tag koşulları ve generic attribute/scaling listelerini taşır.
+`ly::GameAbilityDefinition` bu tabanı action/trigger/level progression, scrap,
+damage/attachment, behavior ID ve UI metadata'sıyla genişletir. ID, negatif
+değer, duration ve passive-lifetime kontrolleri
+`sas::ValidateAbilityDefinition()` içinde SAS kaynak kodunda çalışır; action,
+weapon, behavior ve game content doğrulaması LightYearsGame'de devam eder.
+
+`sas::AbilityEvent`; `GameplayTag`, magnitude ve type-safe opaque
+source/target/context referanslarını taşır. Actor ile `DamageContext` doğrudan
+SAS tipine dahil edilmez; oyun bağlama katmanı `SetSource`, `SetTarget` ve
+`SetContext` ile bunları olaya ekler, ilgili somut tip üzerinden geri alır.
+Önceki `ly::GameAbilityEvent` uzantısı kaldırılmıştır.
+
+Ability 2D diliminde mutable fakat oyundan bağımsız runtime state
+`sas::AbilityRuntimeState` altında toplanmıştır. Sınıf level clamp/set, held
+input ve pressed-edge takibi, activation begin/end, active duration tick,
+cooldown clamp/tick, charge tüketim/yenileme ve cooldown reduction işlemlerini
+sahiplenir. 2026-07-30 tarihli son sahiplik düzeltmesinde input değerlendirme,
+activation/end, cooldown/duration tick, level değişimi ve snapshot üretimi
+`sas::GameplayAbilityInstance` tabanında birleştirilmiştir. Oyundaki
+`GameAbility` yalnız owner tag kontrolü, somut behavior/action
+çağrıları ile weapon/attachment bağlamasını uygular.
+
+Ability 2E diliminde kalan tekrar kullanılabilir runtime mekanikleri grup halinde
+SAS'a alınmıştır. `sas::AbilityBehaviorRegistry<Behavior, Key, Hash>` typed
+behavior factory depolama/üretim kuralını sahiplenir. Oyun tarafındaki
+`RegisterGameAbilityBehaviors()` yalnız shipped somut behavior factory'lerini
+kaydeder. `sas::AbilityActionScheduler`,
+`RepeatedAbilityActionState` üzerindeki interval ve maximum-execution
+ilerlemesini sahiplenir. `sas::AbilityCooldownTracker` event-trigger internal
+cooldown anahtarlarının başlatma/tick/expiry akışını yönetir.
+`sas::AbilityCollection<AbilityInstance>` ise handle üretimi, instance sahipliği,
+string ID/slot lookup ve passive handle listesini tek tutarlı container altında
+toplar. Weapon lifecycle, variant action dispatch,
+actor/effect/damage/attachment bağları LightYearsGame'de kalır. Önceki registry,
+execution runtime ve system storage karşılaştırmaları kaldırılmıştır.
+
+2026-07-30 sahiplik denetiminde bu sınır yeniden daraltılmıştır.
+`sas::AbilityBehavior<Definition, Context>` varsayılan Validate/Activate/Tick/End
+kontratını, `sas::AbilityRuntimeEntry<Definition, Execution>` handle/base
+definition/resolved definition/runtime state/execution sahipliğini taşır.
+`sas::ValidateAbilityGrant`, passive kapasite ve lifetime kabulünü;
+`sas::AbilityTrigger` ile trigger eşleştirme/cooldown anahtarı üretimi de
+oyundan bağımsız kararları sahiplenir. `ly::GameAbilityBehavior` artık SAS
+template'inin game context alias'ıdır. Eski `GameAbilityInstance`,
+`GameAbilityBehaviorRegistry`, `GameAbilityEvent` ve `GameAbilityExecution`
+dosyaları kaldırılmıştır. Game tarafında kalan `LightYearsAbilitySystemComponent`,
+`GameAbility` ve `GameAbilityActionExecutor` Actor, weapon, attachment,
+effect ve concrete content çağrılarını bağlayan adaptörlerdir.
+Fonksiyon bazlı ikinci denetimde attribute scaling-rule uygulaması,
+`HasGameplayAttribute`/base-list üretimi ve runtime snapshot construction da
+SAS'a alınmıştır; executor içindeki kalan çözümleme kodu attachment, weapon,
+game attribute ID veya World/Actor hedefleme bağımlılığı taşır.
+
+Son component yüzeyi denetiminde `LightYearsAbilitySystemComponent` içindeki
+`mComponent = this` self-alias'ı, ikinci runtime referansı, null kontrolleri ve
+SAS API'sini yalnız yeniden adlandıran grant/remove/level/input/tag/event
+wrapper'ları kaldırılmıştır. Ability notification zinciri, toplu cooldown
+azaltma ve catalog null/duplicate denetimi `sas::AbilitySystemComponent` ile
+SAS validation API'sine alınmıştır. Effect behavior tarafında yalnız
+`Actor`/`DamageContext`/incoming-damage phase somutlaştırması game component'ta
+kalır; kullanılmayan handler alias'ları ve initialize/refresh callback
+tekrarları kaldırılmıştır.
 
 Bir attribute üzerindeki modifier sırası:
 
@@ -436,7 +535,7 @@ SpaceShip
 |-- HealthComponent
 |-- ShipRuntime (movement, energy, kalıcı shield ve ship attribute’ları)
 `-- CombatRuntime
-    |-- AttributeSystem
+    |-- sas::AttributeSystem
     |-- GameplayEffectSystem
     `-- AbilitySystem -> AbilityInstance (handle başına)
 ```
@@ -452,9 +551,9 @@ veya spawn edilmiş world actor’da kalır.
 `ApplyEffectAction`, `SpawnActorAction`, `FireWeaponAction`,
 `ApplyImpulseAction` ve `EmitGameplayEventAction`. Silah ailesine özgü hedef
 seçimi, projectile/beam delivery veya chain davranışı weapon handler’larında
-kalmalıdır. Ability'ye özgü validation, activation, tick ve cleanup ise ilgili
-`AbilityBehavior` sınıfında kalır; generic core somut Dash, Shield veya SunBeam
-sınıfını include etmez.
+kalmalıdır. Ability'ye özgü validation, activation, tick ve cleanup ise SAS
+generic behavior kontratını genişleten ilgili oyun behavior sınıfında kalır;
+generic core somut Dash, Shield veya SunBeam sınıfını include etmez.
 
 ### 3.2 Mevcut aktif ability’ler
 
@@ -507,6 +606,38 @@ attribute'lar, visual ve typed runtime context'i sahiplenir. Böylece aynı Cryo
 veya hareket hızı effect tanımı farklı kaynak magnitudelarıyla eşzamanlı
 kullanıldığında global content mutasyona uğramaz.
 
+Effect 3A taşımasından sonra bu üç katmanın oyundan bağımsız gövdeleri
+`SpaceAbilitySystem/include/effects` altındadır. `sas::GameplayEffectHandle`,
+duration/stack policy enum'ları, `sas::GameplayEffectDefinition`,
+`sas::GameplayEffectSpec`, structural validation,
+`sas::GameplayEffectRuntimeSnapshot` ve `sas::GameplayEffectRuntimeState`
+kütüphane sınırını oluşturur. Runtime state duration refresh/tick, stack
+limit/artışı, modifier handle listesi ve runtime attribute reset/snapshot
+işlemlerini sahiplenir. Oyun `GameplayEffectSpec` tipi source ability upgrade
+tag'leriyle SAS spec'ini; `ActiveGameplayEffect` ise Actor/source scope, typed
+runtime context ve visual reference ile SAS state'ini genişletir. Behavior
+registration, DamageContext dispatch, visual registry ve shipped effect content
+LightYearsGame'de kalır. Önceki definition/spec/active state karşılaştırmaları
+kaldırılmıştır.
+
+Effect 3B diliminde active-effect depolaması da generic hale getirilmiştir.
+`sas::GameplayEffectCollection<ActiveEffect>` value storage, handle allocation,
+handle lookup, index erase ve reset işlemlerini sahiplenir.
+`ly::GameplayEffectSystem` bu collection'ı compose eder; modifier/granted-tag
+bağlama ve cleanup, stacking/source-scope eşleşmesi, behavior damage dispatch'i
+ve visual lifecycle sırasını oyun adaptörü olarak korur. Önceki ayrı
+`List<ActiveGameplayEffect>` ve handle sayacı karşılaştırması kaldırılmıştır.
+
+Effect 3C diliminde generic kayıt ve attribute/tag binding mekanikleri ayrılır.
+`sas::GameplayEffectBehaviorRegistry<Hooks>` tag ile typed hook değeri arasındaki
+duplicate-safe depolama, lookup ve registration sorgusunu sağlar; callback
+imzalarını tanımlayan `GameplayEffectBehavior::Hooks` oyun katmanındadır.
+`GameplayEffectBindings` required/blocked application tag gate'ini, Instant
+effect base modifier uygulamasını, active modifier handle ekleme/sökme ve
+granted-tag ekleme/sökme işlemlerini yürütür. `GameplayEffectSystem` refresh,
+stack ve removal sırasını; behavior callback, pending DamageContext event ve
+visual lifecycle orkestrasyonunu korur.
+
 `GameplayEffectSystem`; instant, duration ve infinite yaşam politikalarını;
 no-stack, refresh-duration ve stack davranışlarını; modifier/tag ekleme ve
 temizliğini; incoming damage hook dispatch'ini ve effect visual yaşam döngüsünü
@@ -514,7 +645,7 @@ sahiplenir. Ignite, Electric, Barrier veya Gravity Anomaly ID'lerine branch
 etmez. Add-stack, tick ve incoming-damage davranışları
 `GameplayEffectBehavior::Hooks` ile kaydedilir. Shipped katalog
 `EffectData::GetShippedGameplayEffectDefinitions()` üzerinden bulunur;
-`RegisterGameGameplayEffectContent()` behavior ve visual içeriklerini kaydettikten
+`LightYearsAbilitySystemComponent::RegisterGameContent()` behavior ve visual içeriklerini kaydettikten
 sonra ID, süre, stack, attribute/modifier ve kayıt referanslarını doğrular.
 Ability `ApplyEffectAction` da bilinmeyen veya geçersiz effect ID'si içerirse
 grant/catalog doğrulamasında reddedilir.
@@ -549,7 +680,7 @@ içindir. Effect visual’ları `GameplayEffectVisualRegistry` üzerinden spawn
 edilir, yalnızca synchronize edilmiş effect state okur ve effect kaldırılırken
 normal cleanup yoluyla yok edilir.
 
-`AbilityUIController`, `AbilityRuntimeSnapshot`; effect HUD ise
+`AbilityUIController`, `sas::AbilityRuntimeSnapshot`; effect HUD ise
 `GameplayEffectSnapshot` tüketir. UI, somut ability/effect sınıflarına göre
 branch etmez. `CombatRuntime::Tick` aynı frame’de önce effect’leri, sonra
 ability’leri tick eder. `CombatRuntime::Clear()` sırasıyla ability’leri iptal
@@ -568,6 +699,32 @@ lookup, Definition/Spec izolasyonu, geçersiz behavior/visual/ability-effect
 reddi, damage overflow ve aggregate catalog validation’ı kapsar. Yeni shipped content
 ilgili catalog enumerator’ına eklenmeli; aggregate validation hatası ertelenmiş
 runtime davranışı değil, geçersiz game data kabul edilmelidir.
+
+2026-07-29 tarihli statik `SpaceAbilitySystem` taşıması Attribute → Ability →
+Effect sırasıyla tamamlandı. Ability 2A–2E dilimleri handle/policy,
+snapshot, definition/event/validation, runtime state ve
+factory/scheduler/collection mekaniklerini; 2F dilimi input/lifetime kararlarını
+`sas::AbilityLifecycleOrchestrator` ile SAS'a taşıdı. Effect 3A–3C dilimleri
+contract/runtime/collection/registry/binding çekirdeğini; 3D dilimi application,
+stack/refresh ve duration expiry kararlarını
+`sas::GameplayEffectLifecycleOrchestrator` ile SAS'a taşıdı. Aktif oyun
+kaynaklarında geçiş alias'ı kalmadı; game-specific execution payload'ları,
+Actor/DamageContext hook'ları, silah/attachment ve presentation adaptörleri
+LightYearsGame'de tutuldu. Son sahiplik denetimi generic
+`GameplayEffectRuntimeEntry<Spec>` ile source-scope/runtime-state/spec
+sahipliğini, generic runtime context'i, behavior event/result kontratını,
+catalog null/duplicate doğrulamasını ve collection predicate/index lookup
+mekanizmasını da SAS'a taşıdı;
+oyun `ActiveGameplayEffect` uzantısı yalnız Actor ve visual bağlantısını ekler.
+Legacy karşılaştırma kopyaları, aktif bağlantı
+olmadığı ve Debug/Release doğrulamaları geçtiği teyit edildikten sonra
+2026-07-30 tarihinde silindi. Son entegrasyon doğrulamasında
+`SpaceAbilitySystem` hedefinin CMake `STATIC` kütüphanesi olduğu ve hem
+`LightYearsGame` hem `LightYearsGasLiteTests` tarafından linklendiği teyit
+edildi. Debug ve Release konfigürasyonlarında `SpaceAbilitySystem.lib`,
+`LightYearsGame.exe` ve `LightYearsGasLiteTests.exe` üretildi;
+`LightYearsGasLiteCore` ile `LightYearsEngineLifetime` CTest sonucu iki
+konfigürasyonda da 2/2 passed oldu.
 
 ## 4. Silah konfigürasyonu ve progression
 

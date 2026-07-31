@@ -1,7 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
-#include "gameplay/attributes/AttributeSystem.h"
+#include "attributes/AttributeSystem.h"
 #include <string>
 
 namespace ly
@@ -22,7 +22,7 @@ namespace ly
 		std::string texturePath;
 		float lifeTime = 0.f;
 		float spawnDistance = 0.f;
-		GameplayAttributeList attributes;
+		sas::GameplayAttributeList attributes;
 		std::string presentationProfileId;
 	};
 }

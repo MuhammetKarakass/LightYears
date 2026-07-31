@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gameplay/attributes/AttributeSystem.h"
+#include "attributes/AttributeSystem.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 
 namespace ly
@@ -56,7 +56,7 @@ namespace ly
 	struct ConditionalAttributeModifier
 	{
 		AttachmentCondition condition;
-		AttributeModifier modifier;
+		sas::AttributeModifier modifier;
 	};
 
 	enum class AttachmentEventAction
@@ -89,8 +89,8 @@ namespace ly
 		std::string displayName;
 		List<AttachmentHostKind> allowedHosts;
 		List<GameplayTag> requiredCapabilities;
-		GameplayAttributeList grantedAttributes;
-		List<AttributeModifier> attributeModifiers;
+		sas::GameplayAttributeList grantedAttributes;
+		List<sas::AttributeModifier> attributeModifiers;
 		List<ConditionalAttributeModifier> conditionalAttributeModifiers;
 		GameplayTag replaceDamageType;
 		int damageTypePriority = 0;
