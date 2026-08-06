@@ -23,5 +23,8 @@ namespace sas
 		ly::List<ly::GameplayTag> applicationRequiredTags;
 		ly::List<ly::GameplayTag> applicationBlockedTags;
 		bool sourceScopedApplication = false;
+		// Policy-only definitions receive duration, stacks and magnitudes from the
+		// source-owned GameplayEffectSpec at application time.
+		bool sourceParameterized = false;
 	};
 }

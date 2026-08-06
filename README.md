@@ -66,7 +66,7 @@ You can download the game from this repository (see `LightYears.7z`) or from [it
   - **UFO** — Bouncing movement with screen-edge reflection
   - **Boss** — Multi-phase fight with escalating weapons
 - **Elite Variants** — Stronger versions of standard enemies (higher HP, damage, score)
-- **Ability-Based Combat** — Slot-based ability system (PrimaryWeapon + active skills via AbilityController)
+- **Ability-Based Combat** — Slot-based ability system (PrimaryWeapon + active skills through the SAS-backed ability runtime)
 - **Shield System** — Activatable shield with HP absorption, cooldown, and HUD integration
 - **Arena Combat Mode** — Free 2D thrust/drift movement with camera follow (ThrustDrift mode)
 - **Infinite Survival Mode** — Endless waves with escalating difficulty and formation patterns
@@ -98,14 +98,14 @@ LightYears/
 │   ├── player/                    # Player ship, input, rewards, lives, shield, respawn
 │   ├── enemy/                     # Enemy AI, wave stages, boss
 │   ├── weapon/                    # Bullet actor (projectile runtime)
-│   ├── gameplay/                  # Ability controllers, health, attributes (logic layer)
-│   │   └── ability/               # AbilitySystem, AbilityController + controllers/
+│   ├── gameplay/                  # Ability, effect, health and attribute runtime (logic layer)
+│   │   └── ability/               # SAS adapter, game actions, behaviors and ability actors
 │   ├── level/                     # Level management, arena, main menu
 │   ├── environment/               # Asteroids
 │   ├── VFX/                       # Explosions
 │   ├── widget/                    # Game HUD, menus
 │   ├── presentation/hud/         # HUD controllers + view models (MVC layer)
-│   ├── gameConfigs/               # Pure-data schemas + static config catalog
+│   ├── gameConfigs/               # C++ content schemas + shipped static config catalog
 │   └── assets/                    # Textures, audio, shaders
 │       └── SpaceShooterRedux/     # Kenney.nl asset pack (CC0)
 │           ├── PNG/               # Ship, laser, planet, meteor textures
@@ -113,6 +113,20 @@ LightYears/
 │           ├── Shaders/           # 3 GLSL fragment shaders
 │           └── Bonus/             # Fonts and SFX
 ```
+
+### Content data boundary
+
+The shipped content model is hybrid. Runtime gameplay values for the current
+weapons, player ship, abilities, and gameplay effects are loaded from
+`LightYearsGame/assets/content/data/*.json`; C++ retains schemas, validation,
+behavior/action definitions, registries, and typed presentation profiles.
+Attachments currently have a parser but are not connected to runtime because
+the attachment mechanic is not implemented yet.
+
+JSON holds balance and value/reference content. C++ continues to own schemas,
+validation, gameplay tags, behavior/weapon handlers, runtime state and typed
+presentation profiles. CSV is reserved for balance import/export and analysis,
+not as the runtime source.
 
 ---
 
@@ -204,7 +218,7 @@ LightYears/
 - ✅ Dynamic GLSL lighting (engine glow, projectile trails, flicker)
 - ✅ Multi-layer parallax scrolling with planets and meteors
 - ✅ Advanced audio (cross-fading, intro+loop, sound pooling, time scaling)
-- ✅ Data-driven game design (pure-data configs in gameConfigs/, logic in gameplay/)
+- ✅ Hybrid content model: JSON data files with C++ schemas, validators, behaviors, and presentation registries
 - ✅ Box2D 3.x physics with team-based collision filtering
 - ✅ Performance-aware particle throttling
 - ✅ Full UI system (main menu, pause, game over, in-game HUD)

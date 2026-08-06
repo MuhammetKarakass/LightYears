@@ -5,14 +5,14 @@
 #include "gameplay/attributes/AttributeIds.h"
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
+#include "gameplay/ability/shield/ShieldContracts.h"
 #include "gameConfigs/combat/EffectConfig.h"
 
 namespace AbilityData
 {
 	namespace Shield
 	{
-		inline const ly::GameplayTag BehaviorId{ "GameAbilityBehavior.Shield" };
-		inline const ly::GameplayTag FamilyTag{ "Ability.Defense.Shield" };
+		// Behavior/action contract only. Numeric tuning lives in abilities.json.
 	}
 
 	namespace Definitions
@@ -24,9 +24,9 @@ namespace AbilityData
 			definition.slot = sas::AbilitySlot::Ability1;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-			definition.cooldown = 8.f;
-			definition.duration = 5.f;
-			definition.maxCharges = 1;
+			definition.cooldown = 0.f;
+			definition.duration = 0.f;
+			definition.maxCharges = 0;
 			definition.abilityTags = {
 				ly::GameplayTag{ "Ability.Defense" },
 				Shield::FamilyTag
@@ -60,20 +60,6 @@ namespace AbilityData
 							1
 						}
 					}
-				}
-			};
-			definition.scalingRules = {
-				sas::AttributeScalingRule{
-					BarrierEffectSchema::Capacity,
-					ly::OwnerAttributeIds::MaxHealth,
-					sas::AttributeModifierOperation::Add,
-					0.2f
-				},
-				sas::AttributeScalingRule{
-					BarrierEffectSchema::Capacity,
-					ly::OwnerAttributeIds::Armor,
-					sas::AttributeModifierOperation::Add,
-					50.f
 				}
 			};
 			definition.behaviorId = Shield::BehaviorId;

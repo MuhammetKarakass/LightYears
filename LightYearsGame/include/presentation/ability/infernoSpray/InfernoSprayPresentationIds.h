@@ -4,8 +4,8 @@
 
 namespace ly
 {
-	struct InfernoSprayPresentationIds
+	namespace InfernoSprayPresentationIds
 	{
-		inline static const std::string Basic{ "Presentation.Ability.InfernoSpray.Basic" };
-	};
+		inline const std::string Basic = "Presentation.Ability.InfernoSpray.Basic";
+	}
 }

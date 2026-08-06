@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "effects": [
+    {
+      "id": "Effect.Barrier.Basic",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["Effect.Defense.Barrier"],
+      "activeVisualId": "Visual.Shield.Basic",
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Test.BarrierBreak.ThrustBoost",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["Effect.Movement.Boost", "Effect.Test.PassiveValidation"],
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Status.Damage.Ignite",
+      "behaviorTag": "EffectBehavior.Damage.Ignite",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "Stack",
+      "grantedTags": ["Status.Damage.Ignite"],
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Status.Damage.Cryo.Buildup",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "Stack",
+      "grantedTags": ["Status.Damage.Cryo.Buildup"],
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Status.Damage.Cryo.Slowed",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["Status.Damage.Cryo.Slowed"],
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Status.Damage.Electric",
+      "behaviorTag": "EffectBehavior.Damage.Electric",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "Stack",
+      "grantedTags": ["Status.Damage.Electric"],
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.GravityAnomaly.Inside",
+      "behaviorTag": "EffectBehavior.GravityAnomaly",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["Effect.GravityAnomaly.Inside"],
+      "activeVisualId": "Visual.Effect.GravityAnomaly.Inside",
+      "sourceScopedApplication": true,
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Movement.Slow",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["Effect.Movement.Slow"],
+      "sourceParameterized": true
+    }
+  ]
+}

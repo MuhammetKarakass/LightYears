@@ -22,7 +22,11 @@ namespace AttachmentData
 					ly::AttachmentSchema::Attribute::CooldownReductionOnIgnite,
 					0.4f,
 					0.f
-				}
+				},
+				sas::GameplayAttribute{ ly::DamageAttributeIds::IgniteStacks, 1.f, 0.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::BurnDamagePerSecond, 1.f, 0.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::BurnDuration, 3.f, 0.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::BurnMaxStacks, 4.f, 1.f }
 			},
 			{},
 			{

@@ -1,19 +1,23 @@
 #include "attributes/AttributeSystem.h"
+#include <iostream>
 #include "abilities/AbilityDefinitionValidation.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
-#include "gameConfigs/ability/DashConfig.h"
-#include "gameConfigs/ability/GravityAnomalyConfig.h"
-#include "gameConfigs/ability/RocketConfig.h"
-#include "gameConfigs/ability/ShieldConfig.h"
-#include "gameConfigs/ability/SunBeamConfig.h"
+#include "gameplay/ability/dash/DashContracts.h"
+#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
+#include "gameConfigs/ability/offensive/RocketConfig.h"
+#include "gameplay/ability/shield/ShieldContracts.h"
+#include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameplay/ability/dash/DashAbility.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
+#include "gameplay/ability/infernoSpray/InfernoSprayAbility.h"
+#include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
 #include "gameplay/ability/rocket/RocketAbility.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/shield/ShieldAbility.h"
@@ -24,12 +28,21 @@
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/effects/content/barrier/BarrierEffectBehavior.h"
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
+#include "gameplay/content/WeaponContentCatalog.h"
+#include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/content/AbilityContentCatalog.h"
+#include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "presentation/ability/AbilityPresentationContent.h"
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
 #include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h"
 #include "presentation/effects/shield/ShieldVisualContent.h"
+
+#include "framework/AssetManager.h"
+
+#include <filesystem>
 #include <algorithm>
+#include <cmath>
 
 namespace ly
 {
@@ -141,6 +154,67 @@ namespace ly
 			return ValidateWeaponActions(actions, failureReason) &&
 				ValidateActorActions(actions, failureReason) &&
 				ValidateEffectActions(actions, failureReason);
+		}
+
+		bool ValidateSourceEffectSpecs(
+			const GameAbilityDefinition& ability,
+			const List<AbilityActionSpec>& actions,
+			std::string* failureReason
+		)
+		{
+			for (const AbilityActionSpec& action : actions)
+			{
+				const auto* applyEffect = std::get_if<ApplyEffectAction>(&action.action);
+				if (!applyEffect)
+				{
+					continue;
+				}
+				const sas::GameplayEffectDefinition* effect =
+					EffectData::FindGameplayEffectDefinition(applyEffect->effectId);
+				if (effect && effect->sourceParameterized &&
+					!ability.FindEffectSpec(applyEffect->effectId))
+				{
+					if (failureReason)
+					{
+						*failureReason = "Ability '" + ability.abilityId +
+							"' must own an effectSpecs entry for '" + applyEffect->effectId + "'.";
+					}
+					return false;
+				}
+			}
+			return true;
+		}
+
+		bool ValidateOwnedEffectSpecs(
+			const GameAbilityDefinition& ability,
+			std::string* failureReason
+		)
+		{
+			for (const AbilityEffectSpecDefinition& spec : ability.effectSpecs)
+			{
+				const sas::GameplayEffectDefinition* effect =
+					EffectData::FindGameplayEffectDefinition(spec.effectId);
+				if (!effect)
+				{
+					if (failureReason) *failureReason = "Ability effectSpecs references an unknown effect.";
+					return false;
+				}
+				const float duration = spec.useAbilityDuration
+					? ability.duration
+					: spec.duration.value_or(effect->duration);
+				if (effect->durationPolicy == sas::GameplayEffectDurationPolicy::Duration &&
+					(!std::isfinite(duration) || duration <= 0.f))
+				{
+					if (failureReason) *failureReason = "Ability-owned duration must be positive for effect '" + spec.effectId + "'.";
+					return false;
+				}
+				if (spec.maxStacks.has_value() && *spec.maxStacks < 1)
+				{
+					if (failureReason) *failureReason = "Ability-owned maxStacks must be at least one.";
+					return false;
+				}
+			}
+			return true;
 		}
 
 		bool ValidateLevelProgression(const GameAbilityDefinition& definition, std::string* failureReason)
@@ -276,6 +350,68 @@ namespace ly
 	{
 		static const bool registered = []
 		{
+			std::filesystem::path assetRoot =
+				AssetManager::GetAssetManager().GetAssetRootDirectory();
+			if (assetRoot.empty())
+			{
+				assetRoot = "LightYearsGame/assets";
+			}
+
+			std::string weaponLoadFailureReason;
+			const bool weaponsLoaded = content::WeaponContentCatalog::LoadFromFile(
+				assetRoot / "content/data/weapons.json",
+				&weaponLoadFailureReason
+			);
+			if (!weaponsLoaded)
+			{
+				LY_GAME_ERROR(
+					"Failed to load weapon content: %s",
+					weaponLoadFailureReason.c_str()
+				);
+			}
+
+			std::string shipLoadFailureReason;
+			const bool shipsLoaded = content::ShipContentCatalog::LoadFromFile(
+				assetRoot / "content/data/ships.json",
+				&shipLoadFailureReason
+			);
+			if (!shipsLoaded)
+			{
+				LY_GAME_ERROR(
+					"Failed to load ship content: %s",
+					shipLoadFailureReason.c_str()
+				);
+			}
+
+			std::string abilityLoadFailureReason;
+			const bool abilitiesLoaded = content::AbilityContentCatalog::LoadFromFile(
+				assetRoot / "content/data/abilities.json",
+				AbilityData::GetBuiltinShippedAbilityDefinitions(),
+				AbilityData::GetBuiltinAbilityActorDefinitions(),
+				&abilityLoadFailureReason
+			);
+			if (!abilitiesLoaded)
+			{
+				LY_GAME_ERROR(
+					"Failed to load ability content: %s",
+					abilityLoadFailureReason.c_str()
+				);
+			}
+
+			std::string effectLoadFailureReason;
+			const bool effectsLoaded = content::EffectContentCatalog::LoadFromFile(
+				assetRoot / "content/data/effects.json",
+				EffectData::GetBuiltinGameplayEffectDefinitions(),
+				&effectLoadFailureReason
+			);
+			if (!effectsLoaded)
+			{
+				LY_GAME_ERROR(
+					"Failed to load gameplay effect content: %s",
+					effectLoadFailureReason.c_str()
+				);
+			}
+
 			const bool presentationRegistered =
 				RegisterGameAbilityPresentationContent();
 			const bool configuredRegistered =
@@ -304,13 +440,18 @@ namespace ly
 				GameAbilityBehaviorRegistry::Register(
 					AbilityData::SunBeam::BehaviorId,
 					[] { return std::make_unique<SunBeamAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityData::InfernoSpray::BehaviorId,
+					[] { return std::make_unique<InfernoSprayAbility>(); }
 				);
 
 			const bool abilityActorsRegistered =
 				RegisterGravityAnomalyProjectileActorType() &&
 				RegisterGravityAnomalyFieldActorType() &&
 				RegisterRocketProjectileActorType() &&
-				RegisterSunBeamStrikeActorType();
+				RegisterSunBeamStrikeActorType() &&
+				RegisterInfernoSprayActorType();
 
 			const bool effectsRegistered =
 				RegisterGravityAnomalyEffectVisuals() &&
@@ -319,16 +460,40 @@ namespace ly
 				DamageTypeSystem::RegisterDamageEffectBehaviors() &&
 				GravityAnomalyEffectBehavior::
 					RegisterGravityAnomalyEffectBehavior();
+			std::string abilityValidationFailureReason;
 			const bool abilitiesValidated =
 				abilitiesRegistered &&
 				LightYearsAbilitySystemComponent::
-					ValidateShippedAbilityDefinitions();
+					ValidateShippedAbilityDefinitions(&abilityValidationFailureReason);
+			if (!abilitiesValidated && !abilityValidationFailureReason.empty())
+			{
+				LY_GAME_ERROR(
+					"Shipped ability validation failed: %s",
+					abilityValidationFailureReason.c_str()
+				);
+			}
 
-			return presentationRegistered &&
+			std::string effectValidationFailureReason;
+			const bool effectsValidated =
+				LightYearsAbilitySystemComponent::
+				ValidateShippedGameplayEffectDefinitions(&effectValidationFailureReason);
+			if (!effectsValidated && !effectValidationFailureReason.empty())
+			{
+				LY_GAME_ERROR(
+					"Shipped gameplay effect validation failed: %s",
+					effectValidationFailureReason.c_str()
+				);
+			}
+
+			return weaponsLoaded &&
+				shipsLoaded &&
+				abilitiesLoaded &&
+				effectsLoaded &&
+				presentationRegistered &&
 				abilitiesValidated &&
 				abilityActorsRegistered &&
 				effectsRegistered &&
-				LightYearsAbilitySystemComponent::ValidateShippedGameplayEffectDefinitions();
+				effectsValidated;
 		}();
 		return registered;
 	}
@@ -403,6 +568,11 @@ namespace ly
 		{
 			return false;
 		}
+		if (!ValidateOwnedEffectSpecs(definition, failureReason) ||
+			!ValidateSourceEffectSpecs(definition, definition.actions, failureReason))
+		{
+			return false;
+		}
 		for (const AbilityTriggerSpec& trigger : definition.triggers)
 		{
 			if (!trigger.eventTag.IsValid() || !ValidateActions(trigger.actions, failureReason))
@@ -411,6 +581,10 @@ namespace ly
 				{
 					*failureReason = "Ability triggers require a valid event tag.";
 				}
+				return false;
+			}
+			if (!ValidateSourceEffectSpecs(definition, trigger.actions, failureReason))
+			{
 				return false;
 			}
 		}

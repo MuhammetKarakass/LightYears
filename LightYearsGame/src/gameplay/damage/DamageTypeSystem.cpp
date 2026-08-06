@@ -59,25 +59,46 @@ namespace ly
 			return spec;
 		}
 
+		sas::GameplayEffectSpec MakeMovementSlowSpec(
+			const sas::GameplayEffectDefinition& definition,
+			float duration,
+			float magnitude
+		)
+		{
+			sas::GameplayEffectSpec spec = MakeStatusEffectSpec(definition, duration, 1);
+			spec.modifiers = {
+				sas::AttributeModifier{
+					OwnerAttributeIds::MovementSlow,
+					sas::AttributeModifierOperation::Add,
+					magnitude
+				}
+			};
+			return spec;
+		}
+
 		bool TryApplyCryoSlow(
 			sas::AbilitySystemComponent& targetAbilitySystem,
 			const DamageContext& context
 		)
 		{
+			const sas::GameplayEffectDefinition* slowDefinition =
+				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoSlowed);
+			const sas::GameplayEffectDefinition* buildupDefinition =
+				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoBuildup);
+			if (!slowDefinition || !buildupDefinition)
+			{
+				return false;
+			}
+
 			if (targetAbilitySystem.FindGameplayEffectById(
 				DamageStatusEffectIds::CryoSlowed
 			))
 			{
 				// Once the four-hit threshold has been met, continued Cryo hits
 				// sustain the existing slow without increasing its magnitude.
-				sas::GameplayEffectSpec slowSpec = MakeStatusEffectSpec(
-					EffectData::CryoSlowEffect,
+				sas::GameplayEffectSpec slowSpec = MakeMovementSlowSpec(
+					*slowDefinition,
 					context.payload.cryoSlowDuration,
-					1
-				);
-				SetGameplayEffectModifierMagnitude(
-					slowSpec,
-					OwnerAttributeIds::MovementSlow,
 					context.payload.cryoSlowPercent
 				);
 				return targetAbilitySystem.ApplyGameplayEffect(
@@ -89,7 +110,7 @@ namespace ly
 			for (int stack = 0; stack < context.payload.cryoBuildupPerHit; ++stack)
 			{
 				const sas::GameplayEffectSpec buildupSpec = MakeStatusEffectSpec(
-					EffectData::CryoBuildupEffect,
+					*buildupDefinition,
 					context.payload.cryoBuildupDuration,
 					context.payload.cryoBuildupRequired
 				);
@@ -107,14 +128,9 @@ namespace ly
 				}
 
 				targetAbilitySystem.RemoveGameplayEffect(buildupHandle);
-				sas::GameplayEffectSpec slowSpec = MakeStatusEffectSpec(
-					EffectData::CryoSlowEffect,
+				sas::GameplayEffectSpec slowSpec = MakeMovementSlowSpec(
+					*slowDefinition,
 					context.payload.cryoSlowDuration,
-					1
-				);
-				SetGameplayEffectModifierMagnitude(
-					slowSpec,
-					OwnerAttributeIds::MovementSlow,
 					context.payload.cryoSlowPercent
 				);
 				return targetAbilitySystem.ApplyGameplayEffect(
@@ -185,58 +201,40 @@ namespace ly
 	)
 	{
 		DamagePayload payload;
+		// Damage tags provide identity only. Every balance value below is supplied
+		// by the owning weapon, ability or enemy through sourceAttributes.
+
 		if (HasDamageType(damageTags, DamageTypeSchema::Energy))
 		{
-			payload.shieldDamageMultiplier = 1.25f;
-			payload.shieldRegenerationDelay = 0.75f;
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ShieldDamageMultiplier, payload.shieldDamageMultiplier);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ShieldRegenerationDelay, payload.shieldRegenerationDelay);
 		}
-		else if (HasDamageType(damageTags, DamageTypeSchema::Kinetic))
+		if (HasDamageType(damageTags, DamageTypeSchema::Kinetic))
 		{
-			payload.armorPenetration = 0.10f;
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ArmorPenetration, payload.armorPenetration);
 		}
-		else if (HasDamageType(damageTags, DamageTypeSchema::Thermal))
+		if (HasDamageType(damageTags, DamageTypeSchema::Thermal))
 		{
-			payload.igniteStacks = 1;
-			payload.burnDamagePerSecond = 1.f;
-			payload.burnDuration = 3.f;
-			payload.burnMaxStacks = 4;
+			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::IgniteStacks, payload.igniteStacks);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDamagePerSecond, payload.burnDamagePerSecond);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDuration, payload.burnDuration);
+			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::BurnMaxStacks, payload.burnMaxStacks);
 		}
-		else if (HasDamageType(damageTags, DamageTypeSchema::Cryo))
+		if (HasDamageType(damageTags, DamageTypeSchema::Cryo))
 		{
-			payload.cryoBuildupPerHit = 1;
-			payload.cryoBuildupRequired = 4;
-			payload.cryoBuildupDuration = 2.5f;
-			payload.cryoSlowPercent = 0.25f;
-			payload.cryoSlowDuration = 1.5f;
+			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupPerHit, payload.cryoBuildupPerHit);
+			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupRequired, payload.cryoBuildupRequired);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupDuration, payload.cryoBuildupDuration);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoSlowPercent, payload.cryoSlowPercent);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoSlowDuration, payload.cryoSlowDuration);
 		}
-		else if (HasDamageType(damageTags, DamageTypeSchema::Electric))
+		if (HasDamageType(damageTags, DamageTypeSchema::Electric))
 		{
-			payload.electricStacks = 1;
-			payload.electricDamageTakenMultiplierPerStack = 0.04f;
-			payload.electricDuration = 3.f;
-			payload.electricMaxStacks = 4;
+			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::ElectricStacks, payload.electricStacks);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ElectricDamageTakenMultiplierPerStack, payload.electricDamageTakenMultiplierPerStack);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ElectricDuration, payload.electricDuration);
+			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::ElectricMaxStacks, payload.electricMaxStacks);
 		}
-
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ShieldDamageMultiplier, payload.shieldDamageMultiplier);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ShieldRegenerationDelay, payload.shieldRegenerationDelay);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ArmorPenetration, payload.armorPenetration);
-		OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::IgniteStacks, payload.igniteStacks);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDamagePerSecond, payload.burnDamagePerSecond);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDuration, payload.burnDuration);
-		OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::BurnMaxStacks, payload.burnMaxStacks);
-		OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupPerHit, payload.cryoBuildupPerHit);
-		OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupRequired, payload.cryoBuildupRequired);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupDuration, payload.cryoBuildupDuration);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoSlowPercent, payload.cryoSlowPercent);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoSlowDuration, payload.cryoSlowDuration);
-		OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::ElectricStacks, payload.electricStacks);
-		OverrideIfDeclared(
-			sourceAttributes,
-			DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-			payload.electricDamageTakenMultiplierPerStack
-		);
-		OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ElectricDuration, payload.electricDuration);
-		OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::ElectricMaxStacks, payload.electricMaxStacks);
 
 		payload.shieldDamageMultiplier = std::max(0.f, payload.shieldDamageMultiplier);
 		payload.shieldRegenerationDelay = std::max(0.f, payload.shieldRegenerationDelay);
@@ -246,20 +244,20 @@ namespace ly
 		payload.igniteStacks = std::clamp(payload.igniteStacks, 0, 1);
 		payload.burnDamagePerSecond = std::clamp(payload.burnDamagePerSecond, 0.f, 1.f);
 		payload.burnDuration = std::max(0.f, payload.burnDuration);
-		payload.burnMaxStacks = 4;
+		payload.burnMaxStacks = std::max(1, payload.burnMaxStacks);
 		payload.cryoBuildupPerHit = std::clamp(payload.cryoBuildupPerHit, 0, 1);
-		payload.cryoBuildupRequired = 4;
+		payload.cryoBuildupRequired = std::max(1, payload.cryoBuildupRequired);
 		payload.cryoBuildupDuration = std::max(0.f, payload.cryoBuildupDuration);
-		payload.cryoSlowPercent = std::clamp(payload.cryoSlowPercent, 0.f, 0.30f);
-		payload.cryoSlowDuration = std::clamp(payload.cryoSlowDuration, 0.f, 1.5f);
+		payload.cryoSlowPercent = std::clamp(payload.cryoSlowPercent, 0.f, 1.f);
+		payload.cryoSlowDuration = std::max(0.f, payload.cryoSlowDuration);
 		payload.electricStacks = std::clamp(payload.electricStacks, 0, 1);
 		payload.electricDamageTakenMultiplierPerStack = std::clamp(
 			payload.electricDamageTakenMultiplierPerStack,
 			0.f,
-			0.05f
+			1.f
 		);
 		payload.electricDuration = std::max(0.f, payload.electricDuration);
-		payload.electricMaxStacks = 4;
+		payload.electricMaxStacks = std::max(1, payload.electricMaxStacks);
 		return payload;
 	}
 
@@ -276,16 +274,24 @@ namespace ly
 
 		if (context.payload.igniteStacks > 0 && context.payload.burnDamagePerSecond > 0.f && context.payload.burnDuration > 0.f)
 		{
+			const sas::GameplayEffectDefinition* igniteDefinition =
+				EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Ignite");
+			if (!igniteDefinition)
+			{
+				return applied;
+			}
 			sas::GameplayEffectSpec igniteSpec = MakeStatusEffectSpec(
-				EffectData::IgniteEffect,
+				*igniteDefinition,
 				context.payload.burnDuration,
 				context.payload.burnMaxStacks
 			);
-			SetGameplayEffectAttributeBaseValue(
-				igniteSpec,
-				DamageAttributeIds::BurnDamagePerSecond,
-				context.payload.burnDamagePerSecond
-			);
+			igniteSpec.attributes = {
+				sas::GameplayAttribute{
+					DamageAttributeIds::BurnDamagePerSecond,
+					context.payload.burnDamagePerSecond,
+					0.f
+				}
+			};
 			bool igniteApplied = false;
 			for (int stack = 0; stack < context.payload.igniteStacks; ++stack)
 			{
@@ -314,16 +320,24 @@ namespace ly
 			context.payload.electricDamageTakenMultiplierPerStack > 0.f &&
 			context.payload.electricDuration > 0.f)
 		{
+			const sas::GameplayEffectDefinition* electricDefinition =
+				EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Electric");
+			if (!electricDefinition)
+			{
+				return applied;
+			}
 			sas::GameplayEffectSpec electricSpec = MakeStatusEffectSpec(
-				EffectData::ElectricEffect,
+				*electricDefinition,
 				context.payload.electricDuration,
 				context.payload.electricMaxStacks
 			);
-			SetGameplayEffectAttributeBaseValue(
-				electricSpec,
-				DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-				context.payload.electricDamageTakenMultiplierPerStack
-			);
+			electricSpec.attributes = {
+				sas::GameplayAttribute{
+					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
+					context.payload.electricDamageTakenMultiplierPerStack,
+					0.f
+				}
+			};
 			bool electricApplied = false;
 			for (int stack = 0; stack < context.payload.electricStacks; ++stack)
 			{

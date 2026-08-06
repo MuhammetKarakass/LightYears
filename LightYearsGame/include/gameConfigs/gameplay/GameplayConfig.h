@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gameConfigs/presentation/PointLightConfig.h"
-#include "gameConfigs/combat/WeaponConfig.h"
 #include "gameConfigs/ship/ShipConfig.h"
 #include "gameConfigs/world/EnvironmentConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"

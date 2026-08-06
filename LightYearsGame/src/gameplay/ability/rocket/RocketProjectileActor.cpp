@@ -3,7 +3,8 @@
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/RocketConfig.h"
+#include "gameConfigs/ability/offensive/RocketConfig.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
@@ -27,7 +28,8 @@ namespace ly
 		};
 
 		const List<GameplayTag> RocketProjectileAttributeRoots{
-			AbilityData::Rocket::ActorSchema::AttributeRoot
+			AbilityData::Rocket::ActorSchema::AttributeRoot,
+			DamageAttributeIds::AttributeRoot
 		};
 
 		class RocketProjectileActorTypeHandler final : public AbilityActorTypeHandler

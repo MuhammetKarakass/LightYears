@@ -5,7 +5,6 @@
 #include "player/Reward.h"
 #include "gameConfigs/presentation/PointLightConfig.h"
 #include "gameConfigs/ship/ShipStructs.h"
-#include "gameConfigs/combat/WeaponConfig.h"
 #include "VFX/Explosion.h"
 
 namespace ShipData
@@ -22,7 +21,7 @@ namespace ShipData
 			EngineMount{ {+22.f, -12.f}, LightingData::Engine_Cyan_PointLightDef }
 		},
 		{},
-		WeaponData::PrimaryWeapons::BasicRapidLaser,
+		"FighterBasicRapidLaser",
 		ShipMovementAttributes{
 			650.f,
 			190.f,
@@ -81,7 +80,7 @@ namespace ShipData
 			{ ly::CreateRewardLife, 0.05f},
 			{ ly::CreateRewardShield, 0.08f }
 		},
-		WeaponData::PrimaryWeapons::VanguardBlaster
+		""
 	);
 
 	static const ShipDefinition Ship_Enemy_Vanguard_Elite
@@ -100,7 +99,7 @@ namespace ShipData
 			{ ly::CreateRewardLife, 0.01f},
 			{ ly::CreateRewardShield, 0.08f }
 		},
-		WeaponData::PrimaryWeapons::VanguardEliteBlaster
+		""
 	);
 
 	static const ShipDefinition Ship_Enemy_TwinBlade
@@ -128,7 +127,7 @@ namespace ShipData
 			{ ly::CreateRewardLife, 0.05f},
 			{ ly::CreateRewardShield, 0.08f }
 		},
-		WeaponData::PrimaryWeapons::TwinBladeDualBlaster
+		""
 	);
 
 	static const ShipDefinition Ship_Enemy_Hexagon
@@ -156,7 +155,7 @@ namespace ShipData
 			{ ly::CreateRewardLife, 0.05f},
 			{ ly::CreateRewardShield, 0.10f }
 		},
-		WeaponData::PrimaryWeapons::HexagonRadialBlaster
+		""
 	);
 
 	static const ShipDefinition Ship_Enemy_UFO
@@ -188,6 +187,6 @@ namespace ShipData
 			{ ly::CreateRewardLife, 0.08f },
 			{ ly::CreateRewardShield, 0.10f }
 		},
-		WeaponData::PrimaryWeapons::UfoTriBlaster
+		""
 	);
 }

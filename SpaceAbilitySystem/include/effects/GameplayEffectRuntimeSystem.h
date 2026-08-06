@@ -7,6 +7,7 @@
 #include "effects/GameplayEffectRuntimeEntry.h"
 
 #include <cstddef>
+#include <cmath>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -69,7 +70,9 @@ namespace sas
 		)
 		{
 			const GameplayEffectDefinition& definition = spec.definition;
-			if (!CanApplyEffect(definition))
+			if (!CanApplyEffect(definition) || spec.maxStacks < 1 ||
+				(definition.durationPolicy == GameplayEffectDurationPolicy::Duration &&
+					(!std::isfinite(spec.duration) || spec.duration <= 0.f)))
 			{
 				return {};
 			}

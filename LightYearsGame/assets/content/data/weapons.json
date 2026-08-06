@@ -1,0 +1,576 @@
+{
+  "schemaVersion": 1,
+  "weapons": [
+    {
+      "id": "FighterBasicRapidLaser",
+      "typeId": "PrimaryWeapon.Projectile.Standard",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserBlue01.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [75, 244, 255, 200],
+          "intensity": 0.3,
+          "size": [18.0, 80.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 38.0],
+        "visualScale": 1.0
+      },
+      "attributes": [
+        { "id": "Attribute.Common.Damage", "baseValue": 8.0, "minValue": 0.0 },
+        { "id": "Attribute.Common.FireRate", "baseValue": 8.0, "minValue": 0.01 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 1100.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.Common.Range", "baseValue": 1600.0, "minValue": 0.0 },
+        { "id": "Attribute.Collision.Radius", "baseValue": 7.0, "minValue": 0.1 },
+        { "id": "Attribute.Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 50.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 4,
+        "levelUpgradeScrapCosts": [40, 50, 65],
+        "rules": [
+          {
+            "firstLevel": 2,
+            "lastLevel": 2,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.FireRate", "operation": "Add", "magnitude": 1.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 3,
+            "lastLevel": 3,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 2.0 },
+                { "attributeId": "Attribute.PrimaryWeapon.Projectile.Delivery.Speed", "operation": "Add", "magnitude": 100.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 4,
+            "lastLevel": 4,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 2.0 },
+                { "attributeId": "Attribute.Common.FireRate", "operation": "Add", "magnitude": 1.0 },
+                { "attributeId": "Attribute.Common.Range", "operation": "Add", "magnitude": 100.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          }
+        ]
+      },
+      "attributeModifiers": [],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 1.0
+        },
+        {
+          "targetAttributeId": "Attribute.Common.FireRate",
+          "sourceAttributeId": "Attribute.Owner.AttackSpeed",
+          "operation": "Add",
+          "coefficient": 1.0
+        }
+      ],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Photonic"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 2
+    },
+    {
+      "id": "PlayerRapidShotgun",
+      "typeId": "PrimaryWeapon.Projectile.Shotgun",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserGreen11.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [110, 255, 110, 200],
+          "intensity": 0.3,
+          "size": [18.0, 80.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 38.0],
+        "visualScale": 1.0
+      },
+      "attributes": [
+        { "id": "Attribute.Common.Damage", "baseValue": 10.0, "minValue": 0.0 },
+        { "id": "Attribute.Common.FireRate", "baseValue": 2.5, "minValue": 0.01 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 3000.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.Common.Range", "baseValue": 400.0, "minValue": 0.0 },
+        { "id": "Attribute.Collision.Radius", "baseValue": 7.0, "minValue": 0.1 },
+        { "id": "Attribute.Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Shotgun.PelletCount", "baseValue": 3.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Shotgun.SpreadAngle", "baseValue": 8.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Shotgun.DamageReductionPerAdditionalHit", "baseValue": 0.1, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Shotgun.MinimumDamageMultiplier", "baseValue": 0.5, "minValue": 0.01 },
+        { "id": "Attribute.Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.BurnDamagePerSecond", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.BurnDuration", "baseValue": 3.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.BurnMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 50.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 1,
+        "levelUpgradeScrapCosts": [],
+        "rules": []
+      },
+      "attributeModifiers": [],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.75
+        },
+        {
+          "targetAttributeId": "Attribute.Common.FireRate",
+          "sourceAttributeId": "Attribute.Owner.AttackSpeed",
+          "operation": "Add",
+          "coefficient": 0.5
+        }
+      ],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Thermal"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 2
+    },
+    {
+      "id": "PlayerDualKineticBlaster",
+      "typeId": "PrimaryWeapon.Projectile.Standard",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserRed04.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [255, 110, 110, 200],
+          "intensity": 0.3,
+          "size": [18.0, 80.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 30.0],
+        "visualScale": 0.9
+      },
+      "attributes": [
+        { "id": "Attribute.Common.Damage", "baseValue": 3.5, "minValue": 0.0 },
+        { "id": "Attribute.Common.FireRate", "baseValue": 12.0, "minValue": 0.01 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 3400.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.Common.Range", "baseValue": 650.0, "minValue": 1.0 },
+        { "id": "Attribute.Collision.Radius", "baseValue": 6.0, "minValue": 0.1 },
+        { "id": "Attribute.Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.ArmorPenetration", "baseValue": 0.10, "minValue": 0.0, "maxValue": 0.25 }
+      ],
+      "muzzles": [
+        { "offset": [-18.0, 48.0], "rotationOffset": 0.0 },
+        { "offset": [18.0, 48.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 4,
+        "levelUpgradeScrapCosts": [40, 50, 65],
+        "rules": [
+          {
+            "firstLevel": 2,
+            "lastLevel": 2,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.FireRate", "operation": "Add", "magnitude": 1.5 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 3,
+            "lastLevel": 3,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 1.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 4,
+            "lastLevel": 4,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Range", "operation": "Add", "magnitude": 100.0 },
+                { "attributeId": "Attribute.Common.FireRate", "operation": "Add", "magnitude": 1.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          }
+        ]
+      },
+      "attributeModifiers": [],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.45
+        },
+        {
+          "targetAttributeId": "Attribute.Common.FireRate",
+          "sourceAttributeId": "Attribute.Owner.AttackSpeed",
+          "operation": "Add",
+          "coefficient": 1.0
+        }
+      ],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Kinetic"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 2
+    },
+    {
+      "id": "PlayerElectricArcLauncher",
+      "typeId": "PrimaryWeapon.Arc.Electric",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserBlue16.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [75, 244, 255, 200],
+          "intensity": 0.3,
+          "size": [18.0, 80.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 32.0],
+        "visualScale": 1.1
+      },
+      "attributes": [
+        { "id": "Attribute.Common.Damage", "baseValue": 15.0, "minValue": 0.0 },
+        { "id": "Attribute.Common.FireRate", "baseValue": 2.8, "minValue": 0.01 },
+        { "id": "Attribute.Common.Range", "baseValue": 850.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Arc.Electric.ChainCount", "baseValue": 3.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Arc.Electric.ChainRange", "baseValue": 250.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Arc.Electric.DamageMultiplierPerChain", "baseValue": 0.72, "minValue": 0.01, "maxValue": 1.0 },
+        { "id": "Attribute.Damage.ElectricStacks", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.ElectricDamageTakenMultiplierPerStack", "baseValue": 0.04, "minValue": 0.0 },
+        { "id": "Attribute.Damage.ElectricDuration", "baseValue": 3.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.ElectricMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 50.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 4,
+        "levelUpgradeScrapCosts": [40, 50, 65],
+        "rules": [
+          {
+            "firstLevel": 2,
+            "lastLevel": 2,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 3,
+            "lastLevel": 3,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.PrimaryWeapon.Arc.Electric.ChainCount", "operation": "Add", "magnitude": 1.0 },
+                { "attributeId": "Attribute.PrimaryWeapon.Arc.Electric.ChainRange", "operation": "Add", "magnitude": 80.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 4,
+            "lastLevel": 4,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.FireRate", "operation": "Add", "magnitude": 0.4 },
+                { "attributeId": "Attribute.PrimaryWeapon.Arc.Electric.DamageMultiplierPerChain", "operation": "Add", "magnitude": 0.08 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          }
+        ]
+      },
+      "attributeModifiers": [],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.85
+        },
+        {
+          "targetAttributeId": "Attribute.Common.FireRate",
+          "sourceAttributeId": "Attribute.Owner.AttackSpeed",
+          "operation": "Add",
+          "coefficient": 0.6
+        }
+      ],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Electric"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 2
+    },
+    {
+      "id": "PlayerContinuousHeatLaser",
+      "typeId": "PrimaryWeapon.Beam.Continuous",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserBlue01.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [75, 244, 255, 200],
+          "intensity": 0.3,
+          "size": [18.0, 80.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 38.0],
+        "visualScale": 1.0
+      },
+      "attributes": [
+        { "id": "Attribute.Common.Damage", "baseValue": 28.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Beam.Delivery.Range", "baseValue": 950.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Beam.Delivery.Width", "baseValue": 26.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Feature.Heat.Gain", "baseValue": 38.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Feature.Heat.Capacity", "baseValue": 100.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Feature.Heat.Dissipation", "baseValue": 25.0, "minValue": 0.0 },
+        { "id": "Attribute.PrimaryWeapon.Feature.Heat.OverheatCooldown", "baseValue": 2.5, "minValue": 0.1 },
+        { "id": "Attribute.PrimaryWeapon.Feature.Heat.DamageMultiplierAtMaxHeat", "baseValue": 1.75, "minValue": 1.0 },
+        { "id": "Attribute.Damage.ShieldDamageMultiplier", "baseValue": 1.25, "minValue": 0.0 },
+        { "id": "Attribute.Damage.ShieldRegenerationDelay", "baseValue": 0.75, "minValue": 0.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 50.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 4,
+        "levelUpgradeScrapCosts": [40, 50, 65],
+        "rules": [
+          {
+            "firstLevel": 2,
+            "lastLevel": 2,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 6.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 3,
+            "lastLevel": 3,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.PrimaryWeapon.Beam.Delivery.Range", "operation": "Add", "magnitude": 150.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 4,
+            "lastLevel": 4,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.PrimaryWeapon.Feature.Heat.DamageMultiplierAtMaxHeat", "operation": "Add", "magnitude": 0.2 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          }
+        ]
+      },
+      "attributeModifiers": [],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.75
+        },
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.Energy.Max",
+          "operation": "Add",
+          "coefficient": 0.5
+        }
+      ],
+      "featureTags": ["PrimaryWeapon.Feature.Heat"],
+      "heatGainCurve": [
+        { "endHeatPercentage": 50.0, "gainMultiplier": 1.0 },
+        { "endHeatPercentage": 75.0, "gainMultiplier": 0.5 },
+        { "endHeatPercentage": 90.0, "gainMultiplier": 0.25 },
+        { "endHeatPercentage": 100.0, "gainMultiplier": 0.15 }
+      ],
+      "damageTags": ["Damage.Type.Energy"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 2
+    },
+    {
+      "id": "PlayerCryoWaveProjector",
+      "typeId": "PrimaryWeapon.Wave.Expanding",
+      "presentation": {
+        "texturePath": "",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [75, 244, 255, 200],
+          "intensity": 0.3,
+          "size": [18.0, 80.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 0.0],
+        "visualScale": 1.0
+      },
+      "attributes": [
+        { "id": "Attribute.Common.Damage", "baseValue": 7.0, "minValue": 0.0 },
+        { "id": "Attribute.Common.FireRate", "baseValue": 1.8, "minValue": 0.01 },
+        { "id": "Attribute.Common.Range", "baseValue": 780.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Wave.Delivery.Speed", "baseValue": 850.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Wave.Delivery.InitialWidth", "baseValue": 80.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Wave.Delivery.MaximumWidth", "baseValue": 260.0, "minValue": 1.0 },
+        { "id": "Attribute.PrimaryWeapon.Wave.Delivery.Thickness", "baseValue": 30.0, "minValue": 1.0 },
+        { "id": "Attribute.Damage.Cryo.BuildupPerHit", "baseValue": 1.0, "minValue": 1.0 },
+        { "id": "Attribute.Damage.Cryo.BuildupRequired", "baseValue": 4.0, "minValue": 1.0 },
+        { "id": "Attribute.Damage.Cryo.BuildupDuration", "baseValue": 2.5, "minValue": 0.0 },
+        { "id": "Attribute.Damage.Cryo.SlowPercent", "baseValue": 0.25, "minValue": 0.0, "maxValue": 0.3 },
+        { "id": "Attribute.Damage.Cryo.SlowDuration", "baseValue": 1.5, "minValue": 0.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 50.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 4,
+        "levelUpgradeScrapCosts": [40, 50, 65],
+        "rules": [
+          {
+            "firstLevel": 2,
+            "lastLevel": 2,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 2.0 },
+                { "attributeId": "Attribute.PrimaryWeapon.Wave.Delivery.MaximumWidth", "operation": "Add", "magnitude": 30.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 3,
+            "lastLevel": 3,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.Range", "operation": "Add", "magnitude": 100.0 },
+                { "attributeId": "Attribute.Damage.Cryo.BuildupDuration", "operation": "Add", "magnitude": 0.5 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          },
+          {
+            "firstLevel": 4,
+            "lastLevel": 4,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Attribute.Common.FireRate", "operation": "Add", "magnitude": 0.3 },
+                { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 2.0 }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          }
+        ]
+      },
+      "attributeModifiers": [],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.75
+        },
+        {
+          "targetAttributeId": "Attribute.Common.FireRate",
+          "sourceAttributeId": "Attribute.Owner.AttackSpeed",
+          "operation": "Add",
+          "coefficient": 0.5
+        }
+      ],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Cryo"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 2
+    }
+  ]
+}

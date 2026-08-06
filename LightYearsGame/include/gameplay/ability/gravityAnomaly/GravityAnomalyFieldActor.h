@@ -61,6 +61,7 @@ namespace ly
 		float mDuration = 0.f;
 		float mPullStrength = 0.f;
 		float mSlowMagnitude = 0.f;
+		float mInsideEffectDuration = 0.f;
 		float mVisualAge = 0.f;
 	};
 

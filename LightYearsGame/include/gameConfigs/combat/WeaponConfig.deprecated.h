@@ -5,7 +5,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 
 #include "gameConfigs/presentation/PointLightConfig.h"
-#include "gameConfigs/combat/WeaponProgressionConfig.h"
+#include "gameConfigs/combat/WeaponProgressionConfig.deprecated.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 

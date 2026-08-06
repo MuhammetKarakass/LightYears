@@ -25,19 +25,10 @@ namespace ly
 		const GameAbilityDefinition& definition;
 	};
 
-	using GameAbilityBehavior =
-		sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>;
-	using GameAbilityBehaviorRegistry = sas::AbilityBehaviorRegistry<
-		GameAbilityBehavior,
-		GameplayTag,
-		GameplayTagHash
-	>;
+	using GameAbilityBehavior = sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>;
+	using GameAbilityBehaviorRegistry = sas::AbilityBehaviorRegistry<GameAbilityBehavior,GameplayTag,GameplayTagHash>;
 
-	class GameAbility
-		: public sas::GameplayAbilityInstance<
-			GameAbilityDefinition,
-			GameAbilityExecution
-		>
+	class GameAbility: public sas::GameplayAbilityInstance<GameAbilityDefinition,GameAbilityExecution>
 	{
 	public:
 		GameAbility(
@@ -46,6 +37,9 @@ namespace ly
 			const GameAbilityDefinition& definition,
 			unique_ptr<GameAbilityBehavior> behavior
 		);
+
+		bool IsInputHeld() const { return this->mRuntimeState.IsInputHeld(); }
+		bool IsPressedThisFrame() const { return this->mRuntimeState.IsPressedThisFrame(); }
 
 		float GetWeaponFireIntervalRemaining() const { return mWeaponFireIntervalRemaining; }
 		void SetWeaponFireIntervalRemaining(float interval);

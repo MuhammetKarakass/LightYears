@@ -7,6 +7,15 @@ project(LightYears
 
 include(CTest)
 
+include(FetchContent)
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+FetchContent_Declare(
+    json
+    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+
 SET(CMAKE_CXX_STANDARD          17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS       OFF)
@@ -39,5 +48,9 @@ add_subdirectory(SpaceAbilitySystem)
 add_subdirectory(LightYearsGame)
 
 if(BUILD_TESTING)
-    add_test(NAME LightYearsGasLiteCore COMMAND LightYearsGasLiteTests)
+	add_test(
+		NAME LightYearsGasLiteCore
+		COMMAND LightYearsGasLiteTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
 endif()

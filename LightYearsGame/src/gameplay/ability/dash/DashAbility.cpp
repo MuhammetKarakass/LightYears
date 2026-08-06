@@ -2,16 +2,29 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/dash/DashAbility.h"
 
-#include "gameConfigs/ability/DashConfig.h"
+#include "gameConfigs/ability/functional/DashConfig.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/ability/dash/DashMovementController.h"
 #include "framework/Actor.h"
+
+#include <cmath>
 
 namespace ly
 {
 	namespace
 	{
+		float ResolveNumericSetting(
+			const std::string& abilityId,
+			const std::string& settingName,
+			float fallback
+		)
+		{
+			return content::AbilityContentCatalog::FindNumericSetting(abilityId, settingName)
+				.value_or(fallback);
+		}
+
 		void EmitLifecycleEvent(
 			LightYearsAbilitySystemComponent& abilitySystem,
 			Actor& owner,
@@ -55,31 +68,35 @@ namespace ly
 		const GameAbilityDefinition& definition,
 		std::string* failureReason) const
 	{
-		const AbilityData::Dash::Settings* settings =
-			AbilityData::Dash::FindSettings(definition.abilityId);
-		if (!settings)
-		{
-			if (failureReason)
-			{
-				*failureReason = "Dash behavior references an unknown Dash definition.";
-			}
-			return false;
-		}
-		if (settings->baseDistance <= 0.f || settings->duration <= 0.f ||
-			settings->cameraZoomOutRatio < 0.f || settings->cameraZoomOutRatio > 0.5f ||
-			settings->cooldownReductionPerLevelRatio < 0.f ||
-			settings->cooldownReductionPerLevelRatio >= 0.25f)
+		const float baseDistance = ResolveNumericSetting(
+			definition.abilityId,
+			"baseDistance",
+			0.f
+		);
+		const float cameraZoomOutRatio = ResolveNumericSetting(
+			definition.abilityId,
+			"cameraZoomOutRatio",
+			0.f
+		);
+		if (baseDistance <= 0.f || definition.duration <= 0.f ||
+			cameraZoomOutRatio < 0.f || cameraZoomOutRatio > 0.5f ||
+			definition.levelProgression.empty())
 		{
 			if (failureReason)
 			{
 				*failureReason =
 					"Dash settings require positive movement values, a camera zoom-out ratio from 0 to 0.5, "
-					"and a per-level cooldown reduction ratio from 0 to below 0.25.";
+					"and a JSON-owned cooldown progression.";
 			}
 			return false;
 		}
 		if (definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
-			definition.duration != settings->duration)
+			definition.duration <= 0.f ||
+			(content::AbilityContentCatalog::FindById(definition.abilityId) &&
+				std::abs(
+					definition.duration -
+					content::AbilityContentCatalog::FindById(definition.abilityId)->duration
+				) > 0.0001f))
 		{
 			if (failureReason)
 			{
@@ -116,18 +133,21 @@ namespace ly
 
 	bool DashAbility::Activate(GameAbilityBehaviorContext& context)
 	{
-		const AbilityData::Dash::Settings* settings =
-			AbilityData::Dash::FindSettings(context.definition.abilityId);
 		auto* movementController = dynamic_cast<DashMovementController*>(&context.owner);
-		if (!settings || !movementController)
+		if (!movementController)
 		{
 			return false;
 		}
 
+		const float baseDistance = ResolveNumericSetting(
+			context.definition.abilityId,
+			"baseDistance",
+			0.f
+		);
 		const DashRequest request{
 			movementController->ResolveDashDirection(),
-			settings->baseDistance,
-			settings->duration
+			baseDistance,
+			context.definition.duration
 		};
 		if (!movementController->StartDash(request))
 		{

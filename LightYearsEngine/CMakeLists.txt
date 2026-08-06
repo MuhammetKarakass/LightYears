@@ -87,10 +87,16 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/widget/Button.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/widget/Button.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/JsonDocumentLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/JsonDocumentLoader.cpp
 )
 
 target_include_directories(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_link_libraries(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
+    nlohmann_json::nlohmann_json)
 
 target_compile_definitions(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
     LY_ENABLE_LOGGING=1

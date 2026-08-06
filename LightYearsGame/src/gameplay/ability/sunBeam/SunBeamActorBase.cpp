@@ -3,7 +3,7 @@
 #include "gameplay/ability/sunBeam/SunBeamActorBase.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/SunBeamConfig.h"
+#include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameplay/combat/Combatant.h"
 
 #include <algorithm>

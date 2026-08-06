@@ -2,7 +2,6 @@
 #include "gameplay/HealthComponent.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/presentation/PointLightConfig.h"
-#include "gameConfigs/combat/WeaponConfig.h"
 
 namespace ly
 {
@@ -18,7 +17,7 @@ namespace ly
 
 		},
 		LevelOneBoss::GetDefaultRewards(),
-		WeaponData::PrimaryWeapons::BossBaseDualBlaster
+		""
 	);
 
 	LevelOneBoss::LevelOneBoss(World* world)
@@ -40,26 +39,6 @@ namespace ly
 				1
 			})) }
 	{
-		ly::GameAbilityDefinition threeWay = AbilityData::MakePrimaryFireAbilityDefinition(
-			WeaponData::PrimaryWeapons::BossThreeWayBlaster
-		);
-		threeWay.slot = sas::AbilitySlot::Ability1;
-		threeWay.inputLabel = "";
-		GetAbilitySystemComponent().GrantAbility(threeWay);
-		ly::GameAbilityDefinition frontalSweep = AbilityData::MakePrimaryFireAbilityDefinition(
-			WeaponData::PrimaryWeapons::BossFrontalSweep
-		);
-		frontalSweep.slot = sas::AbilitySlot::Ability2;
-		frontalSweep.inputLabel = "";
-		GetAbilitySystemComponent().GrantAbility(frontalSweep);
-
-		ly::GameAbilityDefinition lastStage = AbilityData::MakePrimaryFireAbilityDefinition(
-			WeaponData::PrimaryWeapons::BossLastStageSideBlaster
-		);
-		lastStage.slot = sas::AbilitySlot::Ability3;
-		lastStage.inputLabel = "";
-		GetAbilitySystemComponent().GrantAbility(lastStage);
-
 		SetActorRotation(180.f);
 		SetExplosionType(ExplosionType::Boss);
 		SetScoreAmt(1000);

@@ -6,11 +6,15 @@
 
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
-#include "gameConfigs/ability/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameplay/content/EffectContentCatalog.h"
 #include "presentation/effects/shield/ShieldVisualIds.h"
 
 namespace EffectData
 {
+	// JSON fallback/test catalog only. Shipped runtime policy comes from
+	// effects.json; source-owned magnitudes and durations come from the weapon,
+	// ability, attachment, enemy or reward that creates GameplayEffectSpec.
 	inline const sas::GameplayEffectDefinition BasicBarrierEffect{
 		"Effect.Barrier.Basic",
 		BarrierEffectSchema::BehaviorId,
@@ -134,7 +138,9 @@ namespace EffectData
 			sas::AttributeModifier{
 				ly::OwnerAttributeIds::MovementSlow,
 				sas::AttributeModifierOperation::Add,
-				AbilityData::GravityAnomaly::BasicSettings.slowMagnitude
+				// GravityAnomalyFieldActor resolves this value from the JSON-loaded
+				// actor attributes before applying the effect spec.
+				0.f
 			}
 		};
 		definition.activeVisualId = "Visual.Effect.GravityAnomaly.Inside";
@@ -142,8 +148,30 @@ namespace EffectData
 		return definition;
 	}();
 
+	inline const sas::GameplayEffectDefinition MovementSlowEffect{
+		"Effect.Movement.Slow",
+		{},
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::RefreshDuration,
+		3.0f,
+		1,
+		{
+			ly::GameplayTag{ "Effect.Movement.Slow" }
+		},
+		{
+			sas::AttributeModifier{
+				ly::OwnerAttributeIds::MovementSlow,
+				sas::AttributeModifierOperation::Add,
+				0.35f,
+				0
+			}
+		},
+		{},
+		""
+	};
+
 	inline const ly::List<const sas::GameplayEffectDefinition*>&
-	GetShippedGameplayEffectDefinitions()
+	GetBuiltinGameplayEffectDefinitions()
 	{
 		static const ly::List<const sas::GameplayEffectDefinition*> definitions{
 			&BasicBarrierEffect,
@@ -152,15 +180,30 @@ namespace EffectData
 			&CryoBuildupEffect,
 			&CryoSlowEffect,
 			&ElectricEffect,
-			&GravityAnomalyInsideEffect
+			&GravityAnomalyInsideEffect,
+			&MovementSlowEffect
 		};
 		return definitions;
 	}
 
+	inline const ly::List<const sas::GameplayEffectDefinition*>&
+	GetShippedGameplayEffectDefinitions()
+	{
+		if (ly::content::EffectContentCatalog::IsLoaded())
+		{
+			return ly::content::EffectContentCatalog::GetDefinitions();
+		}
+		return GetBuiltinGameplayEffectDefinitions();
+	}
+
 	inline const sas::GameplayEffectDefinition* FindGameplayEffectDefinition(const std::string& effectId)
 	{
+		if (ly::content::EffectContentCatalog::IsLoaded())
+		{
+			return ly::content::EffectContentCatalog::FindById(effectId);
+		}
 		for (const sas::GameplayEffectDefinition* definition :
-			GetShippedGameplayEffectDefinitions())
+			GetBuiltinGameplayEffectDefinitions())
 		{
 			if (definition && definition->effectId == effectId)
 			{

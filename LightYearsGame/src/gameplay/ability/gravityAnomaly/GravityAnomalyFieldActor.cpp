@@ -3,7 +3,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/combat/Combatant.h"
@@ -61,7 +61,8 @@ namespace ly
 					CommonAttributeIds::Duration,
 					CommonAttributeIds::Radius,
 					AbilityData::GravityAnomaly::ActorSchema::PullStrength,
-					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude
+					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
+					AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
@@ -142,6 +143,11 @@ namespace ly
 			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
 			mSlowMagnitude
 		), 0.f, 0.95f);
+		mInsideEffectDuration = std::max(0.f, sas::FindGameplayAttributeValue(
+			attributes,
+			AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration,
+			mInsideEffectDuration
+		));
 		SetLifeTime(mDuration);
 		SetAbilityPhysicsEnabled(false);
 		SetCollisionLayer(CollisionLayer::None);
@@ -151,14 +157,25 @@ namespace ly
 		mRuntimeContext->resolvedRadius = mRadius;
 		mRuntimeContext->resolvedPullStrength = mPullStrength;
 		mRuntimeContext->sourceFieldScope = this;
-		mInsideEffectSpec = sas::MakeGameplayEffectSpec(
-			EffectData::GravityAnomalyInsideEffect
-		);
-		SetGameplayEffectModifierMagnitude(
-			mInsideEffectSpec,
-			OwnerAttributeIds::MovementSlow,
-			mSlowMagnitude
-		);
+		if (const sas::GameplayEffectDefinition* insideEffect =
+			EffectData::FindGameplayEffectDefinition(
+				AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+			))
+		{
+			mInsideEffectSpec = sas::MakeGameplayEffectSpec(*insideEffect);
+			mInsideEffectSpec.duration = mInsideEffectDuration;
+			mInsideEffectSpec.modifiers = {
+				sas::AttributeModifier{
+					OwnerAttributeIds::MovementSlow,
+					sas::AttributeModifierOperation::Add,
+					mSlowMagnitude
+				}
+			};
+		}
+		else
+		{
+			mInsideEffectSpec = {};
+		}
 		ConfigureVisualGeometry();
 	}
 

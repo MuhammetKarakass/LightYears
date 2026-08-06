@@ -30,7 +30,7 @@
 | Base attribute'lar | Damage 55; projectile speed 1000; range 1100; explosion radius 55; projectile count 1 |
 | Owner scaling | ResolvedDamage = level ile gelişmiş base damage + AttackPower × 1.25 |
 | Level 2–15 | Her level +4 damage, -0.12 sn cooldown, +1 explosion radius; speed ve range bilerek sabittir |
-| Kod sınırı | `gameplay/ability/rocket/RocketAbility`, `RocketProjectileActor`, `gameConfigs/ability/RocketConfig.h` |
+| Kod sınırı | `gameplay/ability/rocket/RocketAbility`, `RocketProjectileActor`, `gameConfigs/ability/offensive/RocketConfig.h` |
 | Sonrası | L6 ve L15 evolve seçimleri ertelendi; Basic Rocket'te homing, split, multi-rocket veya elemental davranış yok |
 
 ## Uygulanan ability: Gravity Anomaly / Ability.GravityAnomaly.Basic
@@ -46,7 +46,7 @@
 | Damage | Damage tag, DamageContext, crit ve hasar uygulaması yok |
 | Owner scaling | MaxHealth: radius +0.20 x MaxHealth, duration +0.0025 x MaxHealth; diğer resolved değerler değişmez |
 | Level 2-15 | Her level: cooldown -0.10 sn, duration +0.03 sn, radius +2, pull +10, slow +0.005, projectile speed +25, cast range +5. L15: 6.6 sn / 2.92 sn / 248 / 640 / %27 / 2350 / 970 |
-| Kod sınırı | `gameplay/ability/gravityAnomaly/`, `gameplay/effects/gravityAnomaly/`, `gameConfigs/ability/GravityAnomalyConfig.h`, typed presentation ve effect visual aile klasörleri |
+| Kod sınırı | `gameplay/ability/gravityAnomaly/`, `gameplay/effects/gravityAnomaly/`, `gameConfigs/ability/offensive/GravityAnomalyConfig.h`, typed presentation ve effect visual aile klasörleri |
 | Presentation | `RegisterGameAbilityPresentationContent()` projectile ve field için ayrı typed profile kaydeder; field world halkaları/inward particles çizer, hedef üzerindeki effect visual ayrı registry kaydıyla oluşur |
 | Sonrası | Value-only evolve mevcut typed profile tipinde yeni kayıt olur; yapısal evolve aynı ailede ayrı profile/actor/handler alır |
 
@@ -310,6 +310,19 @@ anlamına gelmez.
   validator için otomatik test kapsamını artır.
 - [ ] Config doğrulama hatalarını UI veya başlangıç logunda görünür yap.
 - [ ] Denge değerleri için tek bir export/rapor akışı ekle.
+- [x] Harici content geçişinin ilk dilimi tamamlandı: weapon, player ship ve
+  ability gameplay değerleri ve gameplay effect'ler JSON'da; şema,
+  validation, tag/handler/presentation registry'leri C++'da.
+- [ ] Ship presentation, düşman/boss content, attachment runtime ve diğer
+  content türleri için JSON kataloglarını genişlet.
+- [x] JSON loader, C++ fallback eşdeğerliği, duplicate ID ve geçersiz
+  ID/reference reddi için temel test senaryolarını ekle.
+- [x] Sayısal effect sahipliğini kaynağa taşı: weapon status değerleri
+  `weapons.json`, ability effect spec'leri `abilities.json`; `effects.json`
+  yalnız policy/contract. Source-owned numeric alanları effect loader lint ile
+  reddet ve damage tag'lerden gizli varsayılan üretme.
+- [ ] CSV'yi runtime kaynağı değil, balance import/export ve playtest analizi
+  aracı olarak sınırla.
 - [ ] Playtest telemetrisi: DPS, alınan hasar, ölüm nedeni, out-of-bounds.
 
 ## 8. Playtest kayıtları

@@ -3,7 +3,7 @@
 #include "gameplay/ability/sunBeam/SunBeamStrikeActor.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/SunBeamConfig.h"
+#include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "presentation/ability/PresentationProfileRegistry.h"

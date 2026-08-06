@@ -120,7 +120,7 @@ struct ShipDefinition
 	ly::List<EngineMount> engineMounts;
 
 	ly::List<ly::WeightedReward> rewards;
-	PrimaryWeaponDefinition primaryWeaponDefinition;
+	std::string primaryWeaponId;
 	ShipMovementAttributes movementAttributes;
 	ShipEnergyAttributes energyAttributes;
 	ShipProgressionDefinition progressionDefinition;
@@ -135,7 +135,7 @@ struct ShipDefinition
 		int inExplosionType,
 		const ly::List<EngineMount>& inEngineMounts,
 		const ly::List<ly::WeightedReward>& inRewards,
-		const PrimaryWeaponDefinition& inPrimaryWeaponDefinition = PrimaryWeaponDefinition{},
+		const std::string& inPrimaryWeaponId = {},
 		const ShipMovementAttributes& inMovementAttributes = ShipMovementAttributes{},
 		const ShipEnergyAttributes& inEnergyAttributes = ShipEnergyAttributes{},
 		const ShipProgressionDefinition& inProgressionDefinition = ShipProgressionDefinition{},
@@ -151,7 +151,7 @@ struct ShipDefinition
 		, explosionType(inExplosionType)
 		, engineMounts(inEngineMounts)
 		, rewards(inRewards)
-		, primaryWeaponDefinition(inPrimaryWeaponDefinition)
+		, primaryWeaponId(inPrimaryWeaponId)
 		, movementAttributes(inMovementAttributes)
 		, energyAttributes(inEnergyAttributes)
 		, progressionDefinition(inProgressionDefinition)

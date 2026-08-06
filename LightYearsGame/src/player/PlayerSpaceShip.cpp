@@ -32,10 +32,18 @@ namespace ly
 				);
 			}
 		};
-		grantPlayerAbility(AbilityData::Definitions::GravityAnomaly_Basic);
-		grantPlayerAbility(AbilityData::Definitions::SunBeam_Strike_Basic);
-		grantPlayerAbility(AbilityData::Definitions::Dash_Basic);
-		grantPlayerAbility(AbilityData::Definitions::Rocket_Basic);
+		const auto grantPlayerAbilityById = [&grantPlayerAbility](const std::string& abilityId)
+		{
+			if (const GameAbilityDefinition* definition =
+				AbilityData::FindShippedAbilityDefinition(abilityId))
+			{
+				grantPlayerAbility(*definition);
+			}
+		};
+		grantPlayerAbilityById("Ability.GravityAnomaly.Basic");
+		grantPlayerAbilityById("Ability.InfernoSpray.Basic");
+		grantPlayerAbilityById("Ability.Dash.Basic");
+		grantPlayerAbilityById("Ability.Rocket.Basic");
 
 		SetActorRotation(0.f);
 		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));

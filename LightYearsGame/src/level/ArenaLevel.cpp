@@ -2,9 +2,9 @@
 #include "level/ArenaLevel.h"
 #include "level/ArenaBoundaryIndicator.h"
 #include "player/PlayerSpaceShip.h"
-#include "gameConfigs/ability/DashConfig.h"
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/content/AbilityContentCatalog.h"
 #include "framework/TimerManager.h"
 
 namespace ly
@@ -22,9 +22,10 @@ namespace ly
 				return 0.f;
 			}
 
-			const AbilityData::Dash::Settings* dashSettings =
-				AbilityData::Dash::FindSettings(dashAbility->GetDefinition().abilityId);
-			return dashSettings ? dashSettings->cameraZoomOutRatio : 0.f;
+			return content::AbilityContentCatalog::FindNumericSetting(
+				dashAbility->GetDefinition().abilityId,
+				"cameraZoomOutRatio"
+			).value_or(0.15f);
 		}
 	}
 

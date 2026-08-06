@@ -325,6 +325,33 @@ namespace ly
 		{
 			sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(effectDefinition);
 			spec.sourceAbilityUpgradeIds = abilityDefinition.unlockedUpgradeIds;
+			const AbilityEffectSpecDefinition* sourceSpec =
+				abilityDefinition.FindEffectSpec(effectDefinition.effectId);
+			if (sourceSpec)
+			{
+				if (sourceSpec->useAbilityDuration)
+				{
+					spec.duration = abilityDefinition.duration;
+				}
+				else if (sourceSpec->duration.has_value())
+				{
+					spec.duration = *sourceSpec->duration;
+				}
+				if (sourceSpec->maxStacks.has_value())
+				{
+					spec.maxStacks = *sourceSpec->maxStacks;
+				}
+				spec.modifiers = sourceSpec->modifiers;
+				spec.attributes = ResolveAttributes(
+					abilitySystem,
+					abilityDefinition,
+					nullptr,
+					sourceSpec->attributes,
+					instance,
+					originalDamageTags
+				);
+				return spec;
+			}
 			spec.attributes = ResolveAttributes(
 				abilitySystem,
 				abilityDefinition,

@@ -1,11 +1,13 @@
 #pragma once
 
-#include "gameConfigs/ability/DashConfig.h"
-#include "gameConfigs/ability/GravityAnomalyConfig.h"
-#include "gameConfigs/ability/RocketConfig.h"
-#include "gameConfigs/ability/ShieldConfig.h"
-#include "gameConfigs/ability/SunBeamConfig.h"
-#include "gameConfigs/combat/WeaponConfig.h"
+#include "gameConfigs/ability/functional/DashConfig.h"
+#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
+#include "gameConfigs/ability/offensive/RocketConfig.h"
+#include "gameConfigs/ability/defensive/ShieldConfig.h"
+#include "gameConfigs/ability/offensive/SunBeamConfig.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
+#include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 
 namespace AbilityData
@@ -81,28 +83,10 @@ namespace AbilityData
 		return Definitions::MakePrimaryFireAbilityDefinition(weaponDefinition);
 	}
 
-	inline const ly::List<const ly::GameAbilityDefinition*>& GetShippedAbilityDefinitions()
-	{
-		static const ly::List<const ly::GameAbilityDefinition*> definitions{
-			&Definitions::Shield_Basic,
-			&Definitions::SunBeam_Strike_Basic,
-			&Definitions::Dash_Basic,
-			&Definitions::GravityAnomaly_Basic,
-			&Definitions::Rocket_Basic
-		};
-		return definitions;
-	}
-
-	inline const ly::GameAbilityDefinition* FindShippedAbilityDefinition(
-		const std::string& abilityId)
-	{
-		for (const ly::GameAbilityDefinition* definition : GetShippedAbilityDefinitions())
-		{
-			if (definition && definition->abilityId == abilityId)
-			{
-				return definition;
-			}
-		}
-		return nullptr;
-	}
+	const ly::List<const ly::GameAbilityDefinition*>& GetBuiltinShippedAbilityDefinitions();
+	const ly::List<const ly::AbilityActorDefinition*>& GetBuiltinAbilityActorDefinitions();
+	const ly::List<const ly::GameAbilityDefinition*>& GetShippedAbilityDefinitions();
+	const ly::GameAbilityDefinition* FindShippedAbilityDefinition(
+		const std::string& abilityId
+	);
 }

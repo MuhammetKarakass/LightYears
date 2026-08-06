@@ -4,7 +4,8 @@
 
 `Ability.Dash.Basic`, Ability3/F üzerinde çalışan ayrı bir ability behavior
 sınıfıdır: `gameplay/ability/dash/DashAbility`. `AbilitySystem`, davranışı
-`AbilityBehaviorRegistry` üzerinden üretir; generic `AbilityExecutor` yalnızca
+`AbilityBehaviorRegistry` üzerinden üretir; game adaptörü
+`GameAbilityActionExecutor` yalnızca
 ortak action türlerini çalıştırır. Dash validation, start/end event ve state tag
 cleanup bu sınıfta kalır. `DashMovementController` ability ile gemi hareketi
 arasındaki dar kontrattır; `MovementComponent` input-or-mouse yönünü ve fiziksel
@@ -103,8 +104,9 @@ Application
 
 Önemli ayrım:
 
-- Tanımlar ve başlangıç değerleri çoğunlukla LightYearsGame/include/gameConfigs
-  altında header tabanlıdır.
+- Tanımların şeması ve davranış bağlantıları `LightYearsGame/include/gameConfigs`
+  altında C++ tarafında kalır; silah, player ship ve ability gameplay değerleri
+  `LightYearsGame/assets/content/data/*.json` dosyalarından yüklenir.
 - Generic SAS tipleri `sas` namespace'indedir. Attribute çekirdeği ile Ability
   handle/policy sözleşmeleri SAS'a aittir; oyun-özel attribute ID'leri, ability
   definition/action içeriği, gemi formülleri ve presentation `LightYearsGame`
@@ -244,7 +246,8 @@ Ability 2B dilimi runtime'ın salt-okunur veri sınırını ayırır.
 `sas::AbilityRuntimeSnapshot`, bir game-owned `AbilityDefinition*` saklamak
 yerine `abilityId` ve `sas::AbilitySlot` değerlerini doğrudan taşır; level,
 active/cooldown/duration ve charge alanları da SAS sözleşmesindedir.
-`AbilityInstance::BuildSnapshot()` ile `AbilitySystem::BuildSnapshots()` bu
+`sas::GameplayAbilityInstance::BuildSnapshot()` ile
+`sas::AbilityRuntimeSystem::BuildSnapshots()` bu
 tipi döndürür. Önceki pointer tabanlı karşılaştırma şekli geçiş doğrulandıktan
 sonra kaldırılmıştır.
 
@@ -281,7 +284,7 @@ kaydeder. `sas::AbilityActionScheduler`,
 `RepeatedAbilityActionState` üzerindeki interval ve maximum-execution
 ilerlemesini sahiplenir. `sas::AbilityCooldownTracker` event-trigger internal
 cooldown anahtarlarının başlatma/tick/expiry akışını yönetir.
-`sas::AbilityCollection<AbilityInstance>` ise handle üretimi, instance sahipliği,
+`sas::AbilityCollection<sas::GameplayAbilityInstance>` ise handle üretimi, instance sahipliği,
 string ID/slot lookup ve passive handle listesini tek tutarlı container altında
 toplar. Weapon lifecycle, variant action dispatch,
 actor/effect/damage/attachment bağları LightYearsGame'de kalır. Önceki registry,
@@ -428,7 +431,7 @@ bir klasör veya runtime katmanı açılmaz.
 
 ```text
 gameplay/ability/
-|-- AbilitySystem / AbilityInstance / AbilityBehavior / AbilityExecutor
+|-- LightYearsAbilitySystemComponent / GameAbility / GameAbilityActionExecutor
 |-- actors/
 |   |-- AbilityWorldActor
 |   |-- AbilityActorRegistry
@@ -463,6 +466,10 @@ Yerleştirme kuralları:
 - Her shipped ability kendi behavior sınıfına ve kendi aile klasörüne sahiptir.
   O ability'ye özgü config, runtime yardımcıları, actor ve visual sınıfları aynı
   vertical slice içinde kalır.
+- `gameConfigs/ability/<category>/<Ability>Config.h` dosyaları shipped sayısal
+  tuning kaynağı değildir. Bu dosyalarda yalnız ID/tag, behavior/action, actor
+  type, presentation ve attribute/schema kontratı tutulur; cooldown, damage,
+  duration, range, progression ve effect spec sayıları JSON'dan gelir.
 - Her görsel actor olmak zorunda değildir. Bağımsız world konumu, tick,
   collision veya lifetime gerektiren nesne actor olur; salt çizim/sunum
   feature-local visual/helper olarak kalır.
@@ -471,9 +478,70 @@ Yerleştirme kuralları:
   `AreaTelegraphActor` altyapısını kullanabilir. Yalnız ability kimliğinden
   bağımsız parçalar `actors/` altına taşınır.
 - Yeni ability eklemek core'da `if/switch` açmayı gerektirmez. Yeni behavior
-  `AbilityBehaviorRegistry`'ye kaydedilir; config'i
-  `gameConfigs/ability/<Ability>Config.h` içinde tutulur ve
+  `AbilityBehaviorRegistry`'ye kaydedilir; mevcut C++ config'i
+  `gameConfigs/ability/<category>/<Ability>Config.h` içinde tutulur ve
   `AbilityCatalog.h` shipped kataloğa ekler.
+
+### 3.0.0 Content kaynak sınırı ve planlanan harici veri geçişi
+
+Mevcut durum: weapon, player ship, ability ve gameplay effect değerleri
+`LightYearsGame/assets/content/data/*.json` dosyalarından runtime'da yüklenir.
+Şemalar, validation, behavior/action tanımları ve typed presentation profilleri
+C++ tarafında kalır. Attachment JSON parser'ı vardır ancak attachment mekaniği
+henüz runtime'a bağlanmamıştır.
+
+Hedef hibrit sınır aşağıdaki gibidir:
+
+| Katman | Sahiplik |
+| --- | --- |
+| Harici content (aktif JSON) | Silah, player ship ve ability kaynaklarına ait denge değerleri; gameplay effect policy/contract kayıtları; ID/reference alanları |
+| CSV | Yalnız editör/balance import-export ve analiz; runtime'ın otoriter kaynağı değil |
+| C++ | Şemalar, parse/semantic validation, gameplay tag eşlemesi, behavior ve weapon handler'ları, action türleri, typed presentation profile türleri/registration ve tüm mutable runtime state |
+
+İlk geçişte yalnız value/reference ağırlıklı content taşınır. Mevcut JSON kaydı
+behavior veya presentation seçebilir; fakat bu ID'lerin C++ registry'de
+kayıtlı/uyumlu olması validation ile zorunlu kılınır. `AbilityActorDefinition`
+ve §3.0.1'deki typed presentation sözleşmesi değişmez. Böylece 30 ability,
+attachment/evolve, gemi ve düşman sayıları artarken denge verisi dışarı alınır;
+oyun davranışı ile visual type güvenliği C++ tarafında kalır.
+
+#### Ability `baseId` ve evolve/variant kuralı
+
+Bir ability varyantı `baseId` ile başka bir JSON ability kaydından türeyebilir.
+Object alanları recursive olarak birleştirilir; varyantta yazılan scalar değerler
+ve object içindeki alanlar base değerin üzerine çıkar, array alanları ise
+varyant tarafından tamamen değiştirilir. Böylece yalnız değişen cooldown,
+setting veya progression değerini yazmak yeterlidir. Kalıtım zinciri döngüye
+giremez ve eksik `baseId` reddedilir.
+
+Value-only varyant actor listesini tekrar üretmez; base ability'nin C++ behavior
+ve actor/presentation bağlantılarını kullanır. Yapısal olarak yeni actor veya
+presentation gerektiren evolve, aynı ability ailesinde ayrı C++ actor/profile/
+handler ve benzersiz actor ID'leriyle tanımlanmalıdır.
+
+#### Sayısal veri sahipliği
+
+Bir sayısal değeri, onu üreten gameplay kaynağı sahiplenir. Weapon hit/status
+değerleri `weapons.json` içindeki `Attribute.Damage.*` alanlarında; ability'nin
+uyguladığı effect değerleri `abilities.json` içindeki `effectSpecs` alanında;
+ability actor alan değerleri actor kaydında veya ability-local
+`attributeProfiles` içinde tutulur. `effects.json` magnitude, duration, stack
+limiti veya runtime attribute base value tutmaz; yalnız effect ID, behavior,
+duration/stacking politikası, tag, visual ve source-scope sözleşmesini taşır.
+
+`sourceParameterized: true` olan bir effect kaydına `duration`, `maxStacks`,
+`modifiers` veya `attributes` eklenmesi loader tarafından reddedilir. Damage tag
+yalnız davranış kimliğidir; gizli sayısal varsayılan üretmez. C++ config
+tanımları yalnız eşleşen JSON kaydının typed behavior/action/actor/presentation
+iskeletini ve loader/test uyumluluğunu sağlar; loader sayısal alanları bu
+tanımlardan runtime'a taşımaz. Shipped runtime için sayısal değerlerin tek
+kaynağı JSON'dır.
+
+Startup sırasında weapon, ship, ability ve effect catalog'larının herhangi biri
+yüklenemezse `RegisterGameContent()` başarısız olur ve `GameApplication` oyun
+dünyasını yüklemeden `QuitApplication()` ile kapanır. Effect catalog, loader'ın
+tip/behavior çözümlemek için kullandığı C++ fallback kayıtlarını JSON'da eksik
+olan yeni kayıtlar olarak eklemez; JSON'da bulunmayan effect runtime'da yoktur.
 
 ### 3.0.1 Ability presentation profile kontratı
 
@@ -523,7 +591,7 @@ Temel şema:
 | damageTags | DamagePayload kimliği |
 | attachmentCapabilities / slotCapacity | Uyumlu attachment seti |
 
-AbilityInstance level yükseltirken base definition’ı yeniden kurar ve Level 2
+`sas::GameplayAbilityInstance` level yükseltirken base definition’ı yeniden kurar ve Level 2
 ile mevcut level arasındaki her progression adımını ekler. Dolayısıyla
 progression modifier’ları birikimlidir; bir level step’i “toplam değer” değil
 “o levelde eklenecek fark” olarak yazılmalıdır.
@@ -537,18 +605,20 @@ SpaceShip
 `-- CombatRuntime
     |-- sas::AttributeSystem
     |-- GameplayEffectSystem
-    `-- AbilitySystem -> AbilityInstance (handle başına)
+    `-- LightYearsAbilitySystemComponent -> sas::GameplayAbilityInstance (handle başına)
 ```
 
 `CombatRuntime`, owner-local combat attribute’larını, tag’lerini, effect’lerini
 ve ability’lerini sahiplenir; HUD widget’ları ve visual actor’lar gameplay
-state sahibi değildir. Saf tanımlar `gameConfigs/ability` ve
-`gameConfigs/combat` altında bulunur. Mutable state ise `AbilityInstance`,
-`AbilityExecution`, `ActiveGameplayEffect`, primary weapon runtime state’i
-veya spawn edilmiş world actor’da kalır.
+state sahibi değildir. Saf tanımlar bugün `gameConfigs/ability` ve
+`gameConfigs/combat` altındaki C++ catalog'larında bulunur; planlanan JSON
+content bu immutable tanımların alternatif kaynağı olacaktır. Mutable state ise
+`sas::GameplayAbilityInstance`, `sas::AbilityExecution`,
+`ActiveGameplayEffect`, primary weapon runtime state’i veya spawn edilmiş world
+actor’da kalır.
 
-`AbilityExecutor` yalnızca yeniden kullanılabilir action türlerini çalıştırır:
-`ApplyEffectAction`, `SpawnActorAction`, `FireWeaponAction`,
+`GameAbilityActionExecutor` yalnızca yeniden kullanılabilir action türlerini
+çalıştırır: `ApplyEffectAction`, `SpawnActorAction`, `FireWeaponAction`,
 `ApplyImpulseAction` ve `EmitGameplayEventAction`. Silah ailesine özgü hedef
 seçimi, projectile/beam delivery veya chain davranışı weapon handler’larında
 kalmalıdır. Ability'ye özgü validation, activation, tick ve cleanup ise SAS
@@ -596,11 +666,12 @@ GameplayEffectDefinition (immutable shipped content)
         -> ActiveGameplayEffect (hedefe ait mutable runtime state)
 ```
 
-`GameplayEffectDefinition`; ID, duration/stack politikası, tag, varsayılan
-modifier/attribute, behavior ve visual referansını taşır. Silah, ability, enemy,
-reward veya alan üreticisi bu tanımı değiştirmez; `GameplayEffectSpec` kopyası
-üretip duration, stack limiti, modifier, runtime attribute ve source-upgrade
-değerlerini kendi uygulaması için çözer. `ActiveGameplayEffect` ise handle,
+`GameplayEffectDefinition`; ID, duration/stack politikası, tag, behavior,
+visual ve source-scope sözleşmesini taşır. Source-parameterized shipped
+effect'lerde sayısal denge değeri taşımaz. Silah, ability, enemy, reward veya
+alan üreticisi bu tanımı değiştirmez; `GameplayEffectSpec` kopyası üretip
+duration, stack limiti, modifier, runtime attribute ve source-upgrade
+değerlerini kendi JSON kaynağından çözer. `ActiveGameplayEffect` ise handle,
 remaining duration, stack count, uygulanmış modifier handle'ları, runtime
 attribute'lar, visual ve typed runtime context'i sahiplenir. Böylece aynı Cryo
 veya hareket hızı effect tanımı farklı kaynak magnitudelarıyla eşzamanlı
@@ -731,8 +802,8 @@ konfigürasyonda da 2/2 passed oldu.
 İlgili kaynaklar:
 
 - LightYearsGame/include/gameConfigs/combat/WeaponStructs.h
-- LightYearsGame/include/gameConfigs/combat/WeaponConfig.h
-- LightYearsGame/include/gameConfigs/combat/WeaponProgressionConfig.h
+- LightYearsGame/include/gameConfigs/combat/WeaponConfig.deprecated.h
+- LightYearsGame/include/gameConfigs/combat/WeaponProgressionConfig.deprecated.h
 - LightYearsGame/src/gameplay/weapon
 
 ### 4.1 Silah tanımı kuralı
@@ -812,7 +883,8 @@ bölgesine daha uzun süre erişim sağlar.
 
 ### 4.3.1 Primary weapon balance runtime checks (2026-07-24)
 
-`GasLiteCoreTests`, production `AbilitySystem`/`AbilityExecutor` attribute resolution
+`GasLiteCoreTests`, production `LightYearsAbilitySystemComponent`/
+`GameAbilityActionExecutor` attribute resolution
 and current Fighter `ShipProgression` profile at levels 1, 10, 25 and 50. The checks
 cover AP/AS/EnergyMax contribution, muzzle and pellet aggregates, Cryo four-hit tempo,
 Electric 1/2/4/5 target falloff plus high-Luck proc cap, and Beam heat/overheat with

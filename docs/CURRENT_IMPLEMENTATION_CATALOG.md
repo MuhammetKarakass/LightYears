@@ -84,6 +84,41 @@ Ana matematik açıklamaları için
 
 ## 4. Aktif ability ve effect içeriği
 
+### Content kaynak durumu
+
+| Konu | Mevcut durum | Planlanan sınır |
+| --- | --- | --- |
+| Otoriter shipped content | Weapon/ability sayısal değerleri owner JSON'da; `effects.json` yalnız policy/contract; player gemisi JSON'da | Düşman/boss silahları, attachment runtime ve diğer content türleri daha sonra bağlanacak |
+| JSON / CSV runtime loader | ✅ JSON loader + domain loader/catalog + temel semantic validation | CSV yalnızca balance import/export ve analiz için kullanılacak |
+| C++'da kalacak alanlar | Şema, tag, behavior/action/weapon handler, typed presentation ve runtime state | Aynı sahiplik korunacak; JSON yalnız kayıtlı C++ ID'lerine referans verecek |
+| CSV kullanımı | ❌ Yok | Balance import/export ve analiz; doğrudan oyun runtime kaynağı değil |
+
+Bu tablo mevcut runtime durumunu açıklar. JSON kaynağı yüklendiğinde ilgili
+catalog yalnızca JSON kayıtlarını içerir. C++ fallback tanımları yeni kayıt
+eklemek için kullanılmaz; loader bunları yalnızca JSON kaydının eşleşen
+behavior/action/actor/presentation iskeletini çözmek için kullanır. JSON
+yükleme başarısızsa catalog başarısız kalır ve uygulama oyun dünyasını başlatmaz.
+
+Effect sahiplik kuralı: `sourceParameterized` effect kayıtları sayısal alan
+taşıyamaz. Weapon status değerleri `Attribute.Damage.*`, ability effect
+değerleri `effectSpecs`, paylaşılan actor değerleri ability-local
+`attributeProfiles` üzerinden runtime `GameplayEffectSpec` üretir. Damage tag
+yalnız davranış seçer; sayı üretmez. Loader lint ve catalog validation eksik ya
+da çift kaynaklı kayıtları başlangıçta reddeder.
+
+Startup strictness: `RegisterGameContent()` herhangi bir JSON catalog'u
+yüklenemezse `false` döner ve `GameApplication` `QuitApplication()` çağırarak
+oyun dünyasını yüklemeden kapanır. Effect C++ fallback kayıtları yalnız JSON
+kaydının behavior/policy iskeletini parse etmeye yarar; JSON'da olmayan effect'i
+katalogda otomatik olarak yaşatmaz.
+
+Ability varyantları `baseId` ile JSON içindeki başka bir ability kaydından
+türeyebilir. Object alanları recursive merge edilir, array alanları varyantta
+verilmişse tamamen değiştirilir. Value-only varyantlar base actor listesini
+çoğaltmaz; behavior ve actor/presentation bağlantısı base ability'den gelir.
+Yeni actor/presentation gerektiren yapısal evolve'lar ayrı C++ actor/profile/
+handler ve benzersiz actor ID'si gerektirir.
+
 ### Ability klasör kontratı
 
 | Katman | İçerik | Kural |
@@ -96,7 +131,7 @@ Ana matematik açıklamaları için
 | `gameplay/ability/shield/` | ShieldAbility | Shield'e özgü behavior |
 | `gameplay/ability/sunBeam/` | SunBeamAbility, actor ve visual sınıfları | SunBeam'e özgü tüm runtime parçaları |
 | `gameplay/ability/content/` | GameAbilityDefinition | SAS-owned temel tipleri kullanan game-owned definition, action payload ve UI metadata |
-| `gameConfigs/ability/` | AbilityActorStructs, AbilityCatalog ve aile config'leri | DashConfig, GravityAnomalyConfig, RocketConfig, ShieldConfig ve SunBeamConfig aileye özel |
+| `gameConfigs/ability/` | AbilityActorStructs, AbilityCatalog ve kategoriye ayrılmış aile config'leri | `functional/DashConfig`, `defensive/ShieldConfig`, `offensive/{SunBeam,GravityAnomaly,Rocket,InfernoSpray}Config`; bu config'ler yalnız ID/tag, behavior/action, actor type, presentation ve schema kontratını taşır; sayısal tuning JSON'dadır |
 | `presentation/ability/<family>/` | Stable presentation ID, concrete typed profile ve shipped content registration | Her aile kendi visual/telegraph/explosion paketini sahiplenir; global visual config yok |
 | `presentation/ability/common/` | AreaTelegraphVisualDefinition gibi gerçekten paylaşılan primitive'ler | Benzer alanlar tek başına ortaklaştırma gerekçesi değildir |
 
@@ -207,8 +242,9 @@ profile kontratı** bölümündedir.
 
 ### Primary weapon runtime balance verification (2026-07-24)
 
-`GasLiteCoreTests` resolves the production weapon definitions through `AbilitySystem`,
-`AbilityExecutor` and `ShipProgression` at ship levels 1, 10, 25 and 50. Values below
+`GasLiteCoreTests` resolves the production weapon definitions through
+`LightYearsAbilitySystemComponent`, `GameAbilityActionExecutor` and
+`ShipProgression` at ship levels 1, 10, 25 and 50. Values below
 assume weapon ability level 1, no attachment, no crit, no armor and every shot connects.
 Shotgun values are three pellets on one target; Beam values are base single-target DPS
 before its heat multiplier.

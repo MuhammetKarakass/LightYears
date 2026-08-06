@@ -8,6 +8,7 @@
 #include "attributes/AttributeSystem.h"
 
 #include <SFML/Graphics/Color.hpp>
+#include <optional>
 #include <string>
 
 namespace ly
@@ -15,6 +16,16 @@ namespace ly
 	struct AbilityBehaviorSchema
 	{
 		inline static const GameplayTag Configured{ "GameAbilityBehavior.Configured" };
+	};
+
+	struct AbilityEffectSpecDefinition
+	{
+		std::string effectId;
+		bool useAbilityDuration = false;
+		std::optional<float> duration;
+		std::optional<int> maxStacks;
+		List<sas::AttributeModifier> modifiers;
+		sas::GameplayAttributeList attributes;
 	};
 
 	struct GameAbilityDefinition : sas::AbilityDefinition
@@ -25,6 +36,8 @@ namespace ly
 		sf::Color accentColor = sf::Color::White;
 		List<AbilityActionSpec> actions;
 		List<AbilityTriggerSpec> triggers;
+		// Source-owned balance values used to parameterize policy-only effects.
+		List<AbilityEffectSpecDefinition> effectSpecs;
 		List<AbilityLevelStep> levelProgression;
 		// Indexed by target level minus two: [0] purchases level two.
 		// Empty means this ability cannot be purchased through the run economy.
@@ -34,6 +47,18 @@ namespace ly
 		List<GameplayTag> attachmentCapabilities;
 		size_t attachmentSlotCapacity = 2;
 		GameplayTag behaviorId = AbilityBehaviorSchema::Configured;
+
+		const AbilityEffectSpecDefinition* FindEffectSpec(const std::string& effectId) const
+		{
+			for (const AbilityEffectSpecDefinition& spec : effectSpecs)
+			{
+				if (spec.effectId == effectId)
+				{
+					return &spec;
+				}
+			}
+			return nullptr;
+		}
 
 		int GetMaxLevel() const
 		{

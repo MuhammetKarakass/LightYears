@@ -20,7 +20,9 @@ namespace ly
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
 		if (!LightYearsAbilitySystemComponent::RegisterGameContent())
 		{
-			LY_GAME_ERROR("Failed to register game ability-system content");
+			LY_GAME_ERROR("Failed to register shipped game content; application will not start the game world");
+			QuitApplication();
+			return;
 		}
 
 		ly::perf::g_disableLights.store(false);

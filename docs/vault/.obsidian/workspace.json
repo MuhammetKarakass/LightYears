@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "yetenekler.md",
+                "file": "Abilites/offensive/01 - sunbeam.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "yetenekler"
+              "title": "01 - sunbeam"
+            }
+          },
+          {
+            "id": "26977a04bc581d41",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "06 - Status and Plans/Current Implementation.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Current Implementation"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -41,10 +56,12 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
-              "title": "Dosya Gezgini"
+              "title": "Files"
             }
           },
           {
@@ -53,7 +70,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "yetenekler",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -61,7 +78,7 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Ara"
+              "title": "Search"
             }
           },
           {
@@ -74,8 +91,7 @@
               "title": "Yer İmleri"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -95,7 +111,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Hoş geldiniz.md",
+                "file": "Obsidian Yetenek Sistemi Kurulum.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -105,7 +121,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Hoş geldiniz için geri bağlantılar"
+              "title": "Geri Bağlantılar"
             }
           },
           {
@@ -148,7 +164,7 @@
                 "searchQuery": ""
               },
               "icon": "lucide-archive",
-              "title": "Tüm özellikler"
+              "title": "All properties"
             }
           },
           {
@@ -157,69 +173,71 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Hoş geldiniz.md",
+                "file": "Obsidian Yetenek Sistemi Kurulum.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Hoş geldiniz ana hatları"
+              "title": "Anahat"
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Hızlı geçişi aç": false,
-      "graph:Grafik görünümünü aç": false,
-      "canvas:Yeni tuval oluşturun": false,
-      "daily-notes:Bugünün Notunu Aç": false,
-      "templates:Şablon ekle": false,
-      "command-palette:Komut paletini aç": false,
-      "bases:Yeni taban oluştur": false
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "templater-obsidian:Templater": false
     }
   },
-  "active": "4e08fb1e347da931",
+  "active": "ad2bf7107c43f3a1",
   "lastOpenFiles": [
-    "02 - Systems/Ability System.md",
-    "yetenekler.md",
+    "Abilites/offensive/01 - sunbeam.md",
+    "06 - Status and Plans/Current Implementation.md",
+    "Abilites/defensive/03 - null-pulse.md",
+    "Untitled.md",
+    "Abilites/offensive/03 - inferno-spray.md",
+    "Abilites/offensive/02 - rocket.md",
+    "Abilites/yetenekler.md",
+    "Abilites/defensive/01 - shield.md",
+    "Abilites/defensive/02 - gravity-anomaly.md",
+    "Abilites/Untitled.md",
+    "Abilites/offensive/04 - swarm-micro-missiles.md",
+    "Abilites/functional/02 - overdrive-core.md",
+    "Abilites/functional/01 - dash.md",
+    "Abilites/functional",
+    "Abilites/defensive",
+    "06 - Status and Plans/Technical Debt and Roadmap.md",
+    "10 - Existing Documentation/Existing Documentation Index.md",
+    "Abilites/yetenekler 1.md",
+    "Abilites/offensive",
+    "Yetenekler",
+    "Abilites/Obsidian Yetenek Sistemi Kurulum.md",
+    "Abilites/yetenekler-dashboard.md",
+    "_templates/Yetenek Notu.md",
     "00 - Light Years Dashboard.md",
+    "Abilites",
+    "Hoş geldiniz.md",
+    "_templates",
+    "_scripts/yetenek_olustur.js",
+    "_scripts",
+    "02 - Systems/Ability System.md",
     "05 - Balance/Ability Cooldown and Charge Rules.md",
     "01 - Architecture/Game Loop.md",
     "01 - Architecture/Directory Map.md",
     "02 - Systems/Attribute System.md",
-    "01 - Architecture/Project Overview.md",
-    "01 - Architecture/Ownership and Lifetime.md",
-    "01 - Architecture/Object Lifecycle.md",
-    "06 - Status and Plans/Current Implementation.md",
-    "04 - Important Classes/AbilityBehavior.md",
-    "04 - Important Classes/World.md",
-    "04 - Important Classes/TimerManager.md",
-    "04 - Important Classes/PrimaryWeaponProjectileActor.md",
-    "03 - Code Walkthroughs/Ability Action Execution Flow.md",
-    "02 - Systems/Ability Skill Progression System.md",
-    "02 - Systems/Ability Execution System.md",
-    "02 - Systems/Ability Behavior System.md",
-    "02 - Systems/Shield System.md",
-    "02 - Systems/Projectile System.md",
-    "03 - Code Walkthroughs/Physics Step and Contact Flow.md",
-    "02 - Systems/Performance Monitoring.md",
-    "02 - Systems/Math Utility.md",
-    "02 - Systems/Physics System.md",
-    "04 - Important Classes/CameraManager.md",
     "05 - Balance",
-    "05 - Balance and Data",
-    "04 - Important Classes",
-    "03 - Code Walkthroughs",
-    "02 - Systems",
-    "10 - Existing Documentation",
-    "06 - Status and Plans",
-    "09 - Index",
-    "01 - Architecture"
+    "05 - Balance and Data"
   ]
 }

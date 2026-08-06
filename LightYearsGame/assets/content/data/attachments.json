@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "attachments": [
+    {
+      "id": "Attachment.Thermal.Converter",
+      "displayName": "Thermal Converter",
+
+      "allowedHosts": [
+        "Ability",
+        "PrimaryWeapon"
+      ],
+
+      "requiredCapabilities": [
+        "Attachment.Capability.Damage"
+      ],
+
+      "grantedAttributes": [
+        {
+          "id": "Attribute.Attachment.CooldownReductionOnIgnite",
+          "baseValue": 0.4,
+          "minValue": 0.0
+        },
+        { "id": "Attribute.Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.BurnDamagePerSecond", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.BurnDuration", "baseValue": 3.0, "minValue": 0.0 },
+        { "id": "Attribute.Damage.BurnMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
+      ],
+
+      "attributeModifiers": [],
+
+      "conditionalAttributeModifiers": [
+        {
+          "condition": {
+            "type": "HasDamageTag",
+            "subjectTag": "Damage.Type.Thermal",
+            "threshold": 0.0
+          },
+          "modifier": {
+            "attributeId": "Attribute.Common.Damage",
+            "operation": "Multiply",
+            "magnitude": 1.2
+          }
+        }
+      ],
+
+      "replaceDamageType": "Damage.Type.Thermal",
+      "damageTypePriority": 0,
+
+      "eventRules": [
+        {
+          "eventTag": "Event.Source.StatusApplied.Ignite",
+          "action": "ReduceCooldown",
+          "cooldownTarget": "AllNonPrimaryAbilities",
+          "magnitudeAttributeId": "Attribute.Attachment.CooldownReductionOnIgnite",
+          "baseMagnitude": 0.0,
+          "requireOwnerAsEventSource": true,
+          "requiredDamageTags": [
+            "Damage.Type.Thermal"
+          ]
+        }
+      ]
+    }
+  ]
+}

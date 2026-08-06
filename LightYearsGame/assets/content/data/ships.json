@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "ships": [
+    {
+      "id": "Player.Fighter",
+      "health": 100.0,
+      "speed": [350.0, 350.0],
+      "collisionDamage": 25.0,
+      "score": 0,
+      "shipXPReward": 0.0,
+      "primaryWeaponId": "FighterBasicRapidLaser",
+      "movement": {
+        "forwardThrust": 650.0,
+        "reverseThrust": 190.0,
+        "strafeThrust": 270.0,
+        "angularTurnSpeed": 400.0,
+        "angularTurnResponsiveness": 5.0,
+        "linearDamping": 0.36,
+        "maxSpeed": 520.0,
+        "inputResponsiveness": 12.0,
+        "mouseAimDeadZone": 32.0,
+        "horizontalRatingToThrust": 60.0,
+        "verticalRatingToThrust": 60.0,
+        "ratingToMaxSpeed": 20.0,
+        "movementRatingDiminishingScale": 20.0
+      },
+      "energy": {
+        "baseMaxShield": 100.0,
+        "shieldFullRechargeDuration": 5.5,
+        "baseShieldRechargeDelay": 4.0,
+        "baseAfterburnerCapacity": 50.0,
+        "afterburnerFullRechargeDuration": 8.0,
+        "baseAfterburnerRechargeDelay": 1.5,
+        "baseAfterburnerSpeedMultiplier": 1.55,
+        "baseAfterburnerAccelerationMultiplier": 1.8,
+        "baseAfterburnerEnergyDrainPerSecond": 16.5,
+        "maxShieldPerMaxEnergy": 0.5,
+        "afterburnerCapacityPerMaxEnergy": 1.0,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.45,
+        "baseAfterburnerManeuverabilityMultiplier": 0.9
+      },
+      "progression": {
+        "baseXP": 100.0,
+        "xpExponent": 1.25,
+        "growthOverrides": [
+          { "attributeId": "Attribute.Owner.AttackPower", "multiplier": 3.0 },
+          { "attributeId": "Attribute.Owner.AttackSpeed", "multiplier": 2.0 },
+          { "attributeId": "Attribute.Owner.CriticalChance", "multiplier": 2.0 },
+          { "attributeId": "Attribute.Owner.MaxHealth", "multiplier": 1.0 },
+          { "attributeId": "Attribute.Owner.Armor", "multiplier": 1.0 },
+          { "attributeId": "Attribute.Owner.Energy.Max", "multiplier": 0.5 },
+          { "attributeId": "Attribute.Owner.MoveSpeedHorizontal", "multiplier": 0.5 },
+          { "attributeId": "Attribute.Owner.MoveSpeedVertical", "multiplier": 0.5 }
+        ]
+      }
+    }
+  ]
+}

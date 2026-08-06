@@ -12,10 +12,7 @@ namespace sas
 	public:
 		virtual ~AbilityBehavior() = default;
 
-		virtual bool Validate(
-			const Definition&,
-			std::string* = nullptr
-		) const
+		virtual bool Validate(const Definition&,std::string* = nullptr) const
 		{
 			return true;
 		}

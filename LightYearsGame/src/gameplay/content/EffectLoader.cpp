@@ -1,0 +1,292 @@
+#include "gameplay/content/EffectLoader.h"
+
+#include "framework/JsonDocumentLoader.h"
+
+#include <limits>
+#include <set>
+#include <stdexcept>
+#include <utility>
+
+namespace ly::content
+{
+	namespace
+	{
+		using Json = JsonDocumentLoader::Json;
+
+		const sas::GameplayEffectDefinition* FindFallback(
+			const List<const sas::GameplayEffectDefinition*>& fallbackDefinitions,
+			const std::string& effectId
+		)
+		{
+			for (const sas::GameplayEffectDefinition* definition : fallbackDefinitions)
+			{
+				if (definition && definition->effectId == effectId)
+				{
+					return definition;
+				}
+			}
+			return nullptr;
+		}
+
+		sas::GameplayEffectDurationPolicy ParseDurationPolicy(const std::string& value)
+		{
+			if (value == "Instant")
+			{
+				return sas::GameplayEffectDurationPolicy::Instant;
+			}
+			if (value == "Duration")
+			{
+				return sas::GameplayEffectDurationPolicy::Duration;
+			}
+			if (value == "Infinite")
+			{
+				return sas::GameplayEffectDurationPolicy::Infinite;
+			}
+			throw std::runtime_error("Unknown gameplay effect duration policy: " + value);
+		}
+
+		sas::GameplayEffectStackingPolicy ParseStackingPolicy(const std::string& value)
+		{
+			if (value == "None")
+			{
+				return sas::GameplayEffectStackingPolicy::None;
+			}
+			if (value == "RefreshDuration")
+			{
+				return sas::GameplayEffectStackingPolicy::RefreshDuration;
+			}
+			if (value == "Stack")
+			{
+				return sas::GameplayEffectStackingPolicy::Stack;
+			}
+			throw std::runtime_error("Unknown gameplay effect stacking policy: " + value);
+		}
+
+		List<GameplayTag> ParseTags(const Json& values)
+		{
+			List<GameplayTag> tags;
+			for (const Json& value : values)
+			{
+				tags.emplace_back(GameplayTag{ value.get<std::string>() });
+			}
+			return tags;
+		}
+
+		sas::AttributeModifierOperation ParseOperation(const std::string& value)
+		{
+			if (value == "Add")
+			{
+				return sas::AttributeModifierOperation::Add;
+			}
+			if (value == "Multiply")
+			{
+				return sas::AttributeModifierOperation::Multiply;
+			}
+			if (value == "Override")
+			{
+				return sas::AttributeModifierOperation::Override;
+			}
+			throw std::runtime_error("Unknown gameplay effect modifier operation: " + value);
+		}
+
+		List<sas::AttributeModifier> ParseModifiers(const Json& values)
+		{
+			List<sas::AttributeModifier> modifiers;
+			for (const Json& value : values)
+			{
+				modifiers.push_back(sas::AttributeModifier{
+					GameplayTag{ value.at("attributeId").get<std::string>() },
+					ParseOperation(value.at("operation").get<std::string>()),
+					value.at("magnitude").get<float>(),
+					value.value("priority", 0)
+				});
+			}
+			return modifiers;
+		}
+
+		sas::GameplayAttributeList ParseAttributes(const Json& values)
+		{
+			sas::GameplayAttributeList attributes;
+			for (const Json& value : values)
+			{
+				attributes.push_back(sas::GameplayAttribute{
+					GameplayTag{ value.at("id").get<std::string>() },
+					value.at("baseValue").get<float>(),
+					value.value("minValue", 0.f),
+					value.value("maxValue", std::numeric_limits<float>::max())
+				});
+			}
+			return attributes;
+		}
+
+		EffectLoader::LoadedDefinition ParseEffect(
+			const Json& object,
+			const List<const sas::GameplayEffectDefinition*>& fallbackDefinitions
+		)
+		{
+			const std::string id = object.at("id").get<std::string>();
+			for (const char* requiredField : { "durationPolicy", "stackingPolicy", "sourceParameterized" })
+			{
+				if (!object.contains(requiredField))
+				{
+					throw std::runtime_error(
+						"Gameplay effect '" + id +
+						"' requires JSON field '" + requiredField + "'"
+					);
+				}
+			}
+			const sas::GameplayEffectDefinition* fallback = FindFallback(
+				fallbackDefinitions,
+				id
+			);
+			if (!fallback)
+			{
+				throw std::runtime_error(
+					"No C++ gameplay effect base exists for effect '" + id + "'"
+				);
+			}
+
+			EffectLoader::LoadedDefinition loaded{ id, *fallback };
+			loaded.definition.effectId = id;
+			// Keep the C++ definition as a typed behavior/presentation skeleton.
+			// Numeric effect state is owned by JSON (or by the source that creates
+			// a source-parameterized runtime spec), never by this fallback copy.
+			loaded.definition.duration = 0.f;
+			loaded.definition.maxStacks = 1;
+			loaded.definition.modifiers.clear();
+			loaded.definition.attributes.clear();
+			loaded.definition.sourceParameterized = object.value(
+				"sourceParameterized",
+				false
+			);
+			if (loaded.definition.sourceParameterized)
+			{
+				for (const char* forbiddenField : { "duration", "maxStacks", "modifiers", "attributes" })
+				{
+					if (object.contains(forbiddenField))
+					{
+						throw std::runtime_error(
+							"Source-parameterized effect '" + id +
+							"' cannot own numeric field '" + forbiddenField + "'"
+						);
+					}
+				}
+				loaded.definition.duration = 0.f;
+				loaded.definition.maxStacks = 1;
+				loaded.definition.modifiers.clear();
+				loaded.definition.attributes.clear();
+			}
+			if (object.contains("behaviorTag"))
+			{
+				loaded.definition.behaviorTag = GameplayTag{
+					object.at("behaviorTag").get<std::string>()
+				};
+			}
+			if (object.contains("durationPolicy"))
+			{
+				loaded.definition.durationPolicy = ParseDurationPolicy(
+					object.at("durationPolicy").get<std::string>()
+				);
+			}
+			if (object.contains("stackingPolicy"))
+			{
+				loaded.definition.stackingPolicy = ParseStackingPolicy(
+					object.at("stackingPolicy").get<std::string>()
+				);
+			}
+			if (object.contains("duration"))
+			{
+				loaded.definition.duration = object.at("duration").get<float>();
+			}
+			if (object.contains("maxStacks"))
+			{
+				loaded.definition.maxStacks = object.at("maxStacks").get<int>();
+			}
+			if (object.contains("grantedTags"))
+			{
+				loaded.definition.grantedTags = ParseTags(object.at("grantedTags"));
+			}
+			if (object.contains("modifiers"))
+			{
+				loaded.definition.modifiers = ParseModifiers(object.at("modifiers"));
+			}
+			if (object.contains("attributes"))
+			{
+				loaded.definition.attributes = ParseAttributes(object.at("attributes"));
+			}
+			if (object.contains("activeVisualId"))
+			{
+				loaded.definition.activeVisualId = object.at("activeVisualId").get<std::string>();
+			}
+			if (object.contains("applicationRequiredTags"))
+			{
+				loaded.definition.applicationRequiredTags = ParseTags(
+					object.at("applicationRequiredTags")
+				);
+			}
+			if (object.contains("applicationBlockedTags"))
+			{
+				loaded.definition.applicationBlockedTags = ParseTags(
+					object.at("applicationBlockedTags")
+				);
+			}
+			if (object.contains("sourceScopedApplication"))
+			{
+				loaded.definition.sourceScopedApplication = object.at(
+					"sourceScopedApplication"
+				).get<bool>();
+			}
+			return loaded;
+		}
+	}
+
+	EffectLoader::Result EffectLoader::LoadFromFile(
+		const std::filesystem::path& filePath,
+		const List<const sas::GameplayEffectDefinition*>& fallbackDefinitions
+	)
+	{
+		const JsonDocumentLoader::Result documentResult =
+			JsonDocumentLoader::LoadFromFile(filePath);
+		if (!documentResult.Succeeded())
+		{
+			return Result{ {}, documentResult.error };
+		}
+
+		try
+		{
+			const Json& root = *documentResult.document;
+			if (root.at("schemaVersion").get<int>() != 1)
+			{
+				return Result{ {}, "Unsupported gameplay effect schema version" };
+			}
+
+			Result result;
+			std::set<std::string> effectIds;
+			for (const Json& effect : root.at("effects"))
+			{
+				LoadedDefinition loaded = ParseEffect(effect, fallbackDefinitions);
+				if (loaded.id.empty())
+				{
+					throw std::runtime_error("Gameplay effect ID cannot be empty");
+				}
+				if (!effectIds.insert(loaded.id).second)
+				{
+					throw std::runtime_error("Duplicate gameplay effect ID: " + loaded.id);
+				}
+				result.definitions.push_back(std::move(loaded));
+			}
+			if (result.definitions.empty())
+			{
+				return Result{ {}, "Gameplay effect catalog is empty" };
+			}
+			return result;
+		}
+		catch (const std::exception& exception)
+		{
+			return Result{
+				{},
+				"Failed to load gameplay effects from '" + filePath.string() + "': " + exception.what()
+			};
+		}
+	}
+}

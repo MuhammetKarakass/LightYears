@@ -27,6 +27,7 @@ namespace sas
 			return Fail(failureReason, "Gameplay effect ID cannot be empty.");
 		}
 		if (definition.durationPolicy == GameplayEffectDurationPolicy::Duration &&
+			!definition.sourceParameterized &&
 			(!std::isfinite(definition.duration) || definition.duration <= 0.f))
 		{
 			return Fail(

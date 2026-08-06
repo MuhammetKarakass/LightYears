@@ -3,7 +3,9 @@
 #include <framework/World.h>
 #include "player/PlayerManager.h"
 #include "gameConfigs/combat/EffectConfig.h"
+#include "gameConfigs/ability/AbilityCatalog.h"
 #include "effects/GameplayEffectSystem.h"
+#include "effects/GameplayEffectSpec.h"
 
 
 namespace ly
@@ -85,9 +87,26 @@ namespace ly
 	{
 		if (player && !player->GetIsPendingDestroy())
 		{
-			player->GetAbilitySystemComponent().ApplyGameplayEffect(
-				sas::MakeGameplayEffectSpec(EffectData::BasicBarrierEffect)
-			);
+			if (const sas::GameplayEffectDefinition* barrier =
+				EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic"))
+			{
+				const GameAbilityDefinition* shield =
+					AbilityData::FindShippedAbilityDefinition("Ability.Shield.Basic");
+				const AbilityEffectSpecDefinition* sourceSpec = shield
+					? shield->FindEffectSpec(barrier->effectId)
+					: nullptr;
+				if (shield && sourceSpec)
+				{
+					sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(*barrier);
+					spec.duration = sourceSpec->useAbilityDuration
+						? shield->duration
+						: sourceSpec->duration.value_or(spec.duration);
+					spec.maxStacks = sourceSpec->maxStacks.value_or(spec.maxStacks);
+					spec.modifiers = sourceSpec->modifiers;
+					spec.attributes = sourceSpec->attributes;
+					player->GetAbilitySystemComponent().ApplyGameplayEffect(spec);
+				}
+			}
 		}
 	}
 }

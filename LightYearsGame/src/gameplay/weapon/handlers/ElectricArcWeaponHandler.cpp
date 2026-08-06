@@ -8,6 +8,7 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/weapon/visuals/ElectricArcVisualActor.h"
 
 #include <algorithm>
@@ -27,64 +28,6 @@ namespace ly
 			return combatant
 				? ElectricMaximumBonusChainChance * combatant->GetCombatRuntime().GetCombatLuckFactor()
 				: 0.f;
-		}
-
-		bool IsElectricArcTarget(const Actor& source, const Actor& candidate)
-		{
-			if (&candidate == &source || candidate.GetIsPendingDestroy())
-			{
-				return false;
-			}
-
-			CollisionLayer expectedTargetLayer = CollisionLayer::None;
-			CollisionLayer virtualProjectileLayer = CollisionLayer::None;
-			switch (source.GetCollisionLayer())
-			{
-			case CollisionLayer::Player:
-				expectedTargetLayer = CollisionLayer::Enemy;
-				virtualProjectileLayer = CollisionLayer::PlayerBullet;
-				break;
-			case CollisionLayer::Enemy:
-				expectedTargetLayer = CollisionLayer::Player;
-				virtualProjectileLayer = CollisionLayer::EnemyBullet;
-				break;
-			default:
-				return false;
-			}
-
-			return HasCollisionLayer(expectedTargetLayer, candidate.GetCollisionLayer()) &&
-				HasCollisionLayer(candidate.GetCollisionMask(), virtualProjectileLayer);
-		}
-
-		Actor* FindClosestElectricArcTarget(
-			World& world,
-			const Actor& source,
-			const sf::Vector2f& origin,
-			float range,
-			const std::unordered_set<Actor*>& excludedTargets
-		)
-		{
-			Actor* closestTarget = nullptr;
-			float closestDistanceSquared = std::numeric_limits<float>::max();
-			const float rangeSquared = std::max(0.f, range) * std::max(0.f, range);
-			for (const weak_ptr<Actor>& targetWeak : world.GetActorsByType<Actor>())
-			{
-				const shared_ptr<Actor> candidate = targetWeak.lock();
-				if (!candidate || excludedTargets.count(candidate.get()) > 0 ||
-					!IsElectricArcTarget(source, *candidate))
-				{
-					continue;
-				}
-
-				const sf::Vector2f offset = candidate->GetActorLocation() - origin;
-				const float distanceSquared = offset.x * offset.x + offset.y * offset.y;
-				if (distanceSquared <= rangeSquared && distanceSquared < closestDistanceSquared)
-				{
-					closestTarget = candidate.get();
-					closestDistanceSquared = distanceSquared;
-				}
-			}
-			return closestTarget;
 		}
 
 		void ResolveElectricArc(
@@ -107,10 +50,45 @@ namespace ly
 				return;
 			}
 
+			CollisionLayer expectedTargetLayer = CollisionLayer::None;
+			CollisionLayer virtualProjectileLayer = CollisionLayer::None;
+			switch (context.owner.GetCollisionLayer())
+			{
+			case CollisionLayer::Player:
+				expectedTargetLayer = CollisionLayer::Enemy;
+				virtualProjectileLayer = CollisionLayer::PlayerBullet;
+				break;
+			case CollisionLayer::Enemy:
+				expectedTargetLayer = CollisionLayer::Player;
+				virtualProjectileLayer = CollisionLayer::EnemyBullet;
+				break;
+			default:
+				return;
+			}
+
+			auto findClosestTarget = [&](
+				const sf::Vector2f& searchOrigin,
+				float searchRange,
+				const std::unordered_set<Actor*>& excludedTargets
+			) -> shared_ptr<Actor>
+			{
+				targeting::TargetingQuery query;
+				query.source = &context.owner;
+				query.origin = searchOrigin;
+				query.range = searchRange;
+				query.maxTargets = 1;
+				query.requiredTargetLayers = expectedTargetLayer;
+				query.requiredCandidateCollisionMask = virtualProjectileLayer;
+				query.excludedTargets.reserve(excludedTargets.size());
+				for (Actor* excludedTarget : excludedTargets)
+				{
+					query.excludedTargets.push_back(excludedTarget);
+				}
+				return targeting::AutoTargeting::FindTarget(*world, query).lock();
+			};
+
 			std::unordered_set<Actor*> struckTargets;
-			Actor* currentTarget = FindClosestElectricArcTarget(
-				*world,
-				context.owner,
+			shared_ptr<Actor> currentTarget = findClosestTarget(
 				origin,
 				targetRange,
 				struckTargets
@@ -147,16 +125,14 @@ namespace ly
 					targetLocation,
 					context.definition.presentationDefinition.pointLightDef.color
 				);
-				struckTargets.insert(currentTarget);
+				struckTargets.insert(currentTarget.get());
 				arcStart = targetLocation;
 				damage *= std::clamp(damageMultiplierPerChain, 0.f, 1.f);
 				if (damage <= 0.f)
 				{
 					return;
 				}
-				Actor* nextTarget = FindClosestElectricArcTarget(
-					*world,
-					context.owner,
+				shared_ptr<Actor> nextTarget = findClosestTarget(
 					arcStart,
 					chainRange,
 					struckTargets

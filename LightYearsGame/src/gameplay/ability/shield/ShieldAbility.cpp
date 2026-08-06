@@ -1,5 +1,8 @@
 #include "gameplay/ability/shield/ShieldAbility.h"
 
+#include "gameConfigs/combat/EffectConfig.h"
+
+#include <cmath>
 #include <variant>
 
 namespace ly
@@ -8,6 +11,41 @@ namespace ly
 		const GameAbilityDefinition& definition,
 		std::string* failureReason) const
 	{
+		const sas::GameplayEffectDefinition* barrier =
+			EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic");
+		const AbilityEffectSpecDefinition* barrierSpec =
+			definition.FindEffectSpec("Effect.Barrier.Basic");
+		if (!barrier || !barrierSpec ||
+			barrier->durationPolicy != sas::GameplayEffectDurationPolicy::Duration ||
+			!barrierSpec->useAbilityDuration ||
+			!std::isfinite(definition.duration) || definition.duration <= 0.f)
+		{
+			if (failureReason)
+			{
+				*failureReason =
+					"Shield must own a positive barrier duration through useAbilityDuration.";
+			}
+			return false;
+		}
+		for (const GameplayTag& requiredAttribute : {
+			BarrierEffectSchema::Capacity,
+			BarrierEffectSchema::AbsorptionRatio,
+			BarrierEffectSchema::RegenerationPerSecond,
+			BarrierEffectSchema::RegenerationDelay,
+			BarrierEffectSchema::RegenerationDelayRemaining
+		})
+		{
+			if (!sas::FindGameplayAttribute(barrierSpec->attributes, requiredAttribute))
+			{
+				if (failureReason)
+				{
+					*failureReason =
+						"Shield ability effectSpecs is missing a required barrier attribute.";
+				}
+				return false;
+			}
+		}
+
 		for (const AbilityActionSpec& action : definition.actions)
 		{
 			if (action.phase == sas::AbilityActionPhase::OnActivate &&

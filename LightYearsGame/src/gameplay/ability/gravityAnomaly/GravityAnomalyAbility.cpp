@@ -1,16 +1,30 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h"
+#include "gameConfigs/ability/AbilityActorStructs.h"
 
-#include "gameConfigs/ability/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
 
 #include <cmath>
+#include <optional>
 #include <variant>
 
 namespace ly
 {
 	namespace
 	{
+		std::optional<float> FindActorAttribute(
+			const AbilityActorDefinition& actor,
+			const GameplayTag& attributeId
+		)
+		{
+			const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(
+				actor.attributes,
+				attributeId
+			);
+			return attribute ? std::optional<float>{ attribute->baseValue } : std::nullopt;
+		}
+
 		bool HasModifier(
 			const AbilityLevelStep& step,
 			const GameplayTag& attributeId,
@@ -27,6 +41,39 @@ namespace ly
 				}
 			}
 			return false;
+		}
+
+		std::optional<float> FindModifierMagnitude(
+			const AbilityLevelStep& step,
+			const GameplayTag& attributeId
+		)
+		{
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.attributeId == attributeId &&
+					modifier.operation == sas::AttributeModifierOperation::Add)
+				{
+					return modifier.magnitude;
+				}
+			}
+			return std::nullopt;
+		}
+
+		std::optional<float> FindScalingCoefficient(
+			const GameAbilityDefinition& definition,
+			const GameplayTag& targetAttributeId
+		)
+		{
+			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
+			{
+				if (rule.targetAttributeId == targetAttributeId &&
+					rule.sourceAttributeId == OwnerAttributeIds::MaxHealth &&
+					rule.operation == sas::AttributeModifierOperation::Add)
+				{
+					return rule.coefficient;
+				}
+			}
+			return std::nullopt;
 		}
 
 		bool HasProjectileSpawnAction(const GameAbilityDefinition& definition)
@@ -53,14 +100,46 @@ namespace ly
 		std::string* failureReason
 	) const
 	{
-		const AbilityData::GravityAnomaly::Settings* settings =
-			AbilityData::GravityAnomaly::FindSettings(definition.abilityId);
-		if (!settings || settings->cooldown <= 0.f || settings->chargeCount != 1 ||
-			settings->castRange <= 0.f || settings->projectileSpeed <= 0.f ||
-			settings->baseDuration <= 0.f || settings->baseRadius <= 0.f ||
-			settings->pullStrength <= 0.f || settings->slowMagnitude <= 0.f ||
-			settings->slowMagnitude >= 1.f || settings->radiusPerMaxHealth < 0.f ||
-			settings->durationPerMaxHealth < 0.f)
+		const AbilityActorDefinition* projectile = AbilityData::FindAbilityActorDefinition(
+			AbilityData::GravityAnomaly::ActorProjectileBasic.actorDefinitionId
+		);
+		const AbilityActorDefinition* field = AbilityData::FindAbilityActorDefinition(
+			AbilityData::GravityAnomaly::ActorFieldBasic.actorDefinitionId
+		);
+		const std::optional<float> castRange = projectile
+			? FindActorAttribute(*projectile, AbilityData::GravityAnomaly::ActorSchema::CastRange)
+			: std::nullopt;
+		const std::optional<float> projectileSpeed = projectile
+			? FindActorAttribute(*projectile, AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed)
+			: std::nullopt;
+		const std::optional<float> baseDuration = field
+			? FindActorAttribute(*field, CommonAttributeIds::Duration)
+			: std::nullopt;
+		const std::optional<float> baseRadius = field
+			? FindActorAttribute(*field, CommonAttributeIds::Radius)
+			: std::nullopt;
+		const std::optional<float> pullStrength = field
+			? FindActorAttribute(*field, AbilityData::GravityAnomaly::ActorSchema::PullStrength)
+			: std::nullopt;
+		const std::optional<float> slowMagnitude = field
+			? FindActorAttribute(*field, AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude)
+			: std::nullopt;
+		const std::optional<float> radiusPerMaxHealth = FindScalingCoefficient(
+			definition,
+			CommonAttributeIds::Radius
+		);
+		const std::optional<float> durationPerMaxHealth = FindScalingCoefficient(
+			definition,
+			CommonAttributeIds::Duration
+		);
+		if (!projectile || !field || !castRange || !projectileSpeed ||
+			!baseDuration || !baseRadius || !pullStrength || !slowMagnitude ||
+			!radiusPerMaxHealth || !durationPerMaxHealth || definition.cooldown <= 0.f ||
+			definition.maxCharges != 1 || *castRange <= 0.f ||
+			*projectileSpeed <= 0.f || *baseDuration <= 0.f || *baseRadius <= 0.f ||
+			*pullStrength <= 0.f || *slowMagnitude <= 0.f || *slowMagnitude >= 1.f ||
+			*radiusPerMaxHealth < 0.f || *durationPerMaxHealth < 0.f ||
+			projectile->spawnDistance < 0.f)
 		{
 			if (failureReason)
 			{
@@ -71,8 +150,8 @@ namespace ly
 
 		if (definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Instant ||
-			definition.maxCharges != settings->chargeCount ||
-			std::abs(definition.cooldown - settings->cooldown) > 0.0001f ||
+			definition.maxCharges != 1 ||
+			definition.cooldown <= 0.f ||
 			!definition.damageTags.empty() || !HasProjectileSpawnAction(definition))
 		{
 			if (failureReason)
@@ -91,17 +170,61 @@ namespace ly
 			return false;
 		}
 
+		const AbilityLevelStep& firstStep = definition.levelProgression.front();
+		const std::optional<float> cooldownReductionPerLevel = FindModifierMagnitude(
+			firstStep,
+			CommonAttributeIds::Cooldown
+		);
+		const std::optional<float> durationPerLevel = FindModifierMagnitude(
+			firstStep,
+			CommonAttributeIds::Duration
+		);
+		const std::optional<float> radiusPerLevel = FindModifierMagnitude(
+			firstStep,
+			CommonAttributeIds::Radius
+		);
+		const std::optional<float> pullStrengthPerLevel = FindModifierMagnitude(
+			firstStep,
+			AbilityData::GravityAnomaly::ActorSchema::PullStrength
+		);
+		const std::optional<float> slowMagnitudePerLevel = FindModifierMagnitude(
+			firstStep,
+			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude
+		);
+		const std::optional<float> projectileSpeedPerLevel = FindModifierMagnitude(
+			firstStep,
+			AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed
+		);
+		const std::optional<float> castRangePerLevel = FindModifierMagnitude(
+			firstStep,
+			AbilityData::GravityAnomaly::ActorSchema::CastRange
+		);
+		if (!cooldownReductionPerLevel || !durationPerLevel || !radiusPerLevel ||
+			!pullStrengthPerLevel || !slowMagnitudePerLevel ||
+			!projectileSpeedPerLevel || !castRangePerLevel ||
+			*cooldownReductionPerLevel >= 0.f || *durationPerLevel <= 0.f ||
+			*radiusPerLevel <= 0.f || *pullStrengthPerLevel <= 0.f ||
+			*slowMagnitudePerLevel <= 0.f || *projectileSpeedPerLevel <= 0.f ||
+			*castRangePerLevel <= 0.f)
+		{
+			if (failureReason)
+			{
+				*failureReason = "Gravity Anomaly progression must contain valid delivery, field, and cooldown increments.";
+			}
+			return false;
+		}
+
 		float cooldown = definition.cooldown;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
 			if (step.attributeModifiers.size() != 7 ||
-				!HasModifier(step, CommonAttributeIds::Cooldown, -settings->cooldownReductionPerLevel) ||
-				!HasModifier(step, CommonAttributeIds::Duration, settings->durationPerLevel) ||
-				!HasModifier(step, CommonAttributeIds::Radius, settings->radiusPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::PullStrength, settings->pullStrengthPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, settings->slowMagnitudePerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed, settings->projectileSpeedPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::CastRange, settings->castRangePerLevel))
+				!HasModifier(step, CommonAttributeIds::Cooldown, *cooldownReductionPerLevel) ||
+				!HasModifier(step, CommonAttributeIds::Duration, *durationPerLevel) ||
+				!HasModifier(step, CommonAttributeIds::Radius, *radiusPerLevel) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::PullStrength, *pullStrengthPerLevel) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, *slowMagnitudePerLevel) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed, *projectileSpeedPerLevel) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::CastRange, *castRangePerLevel))
 			{
 				if (failureReason)
 				{
@@ -109,7 +232,7 @@ namespace ly
 				}
 				return false;
 			}
-			cooldown -= settings->cooldownReductionPerLevel;
+			cooldown += *cooldownReductionPerLevel;
 			if (cooldown <= 0.f)
 			{
 				if (failureReason)

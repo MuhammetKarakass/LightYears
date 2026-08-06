@@ -1,5 +1,7 @@
 #include "level/ArenaTestLevel.h"
 #include "framework/AudioManager.h"
+#include "enemy/DummyEnemy.h"
+#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly
 {
@@ -42,6 +44,23 @@ namespace ly
 	void ArenaTestLevel::OnGameStart()
 	{
 		ArenaLevel::OnGameStart();
+
+		ShipDefinition dummyDefinition = ShipData::Ship_Enemy_Hexagon;
+		dummyDefinition.health = 99999.f;
+		dummyDefinition.speed = { 0.f, 0.f };
+
+		const sf::FloatRect& arenaBounds = GetArenaDefinition().legalBounds;
+		const sf::Vector2f arenaCenter{
+			arenaBounds.position.x + arenaBounds.size.x * 0.5f,
+			arenaBounds.position.y + arenaBounds.size.y * 0.5f
+		};
+
+		if (auto dummy = SpawnActor<DummyEnemy>(dummyDefinition).lock())
+		{
+			dummy->SetActorLocation(arenaCenter);
+			dummy->SetVelocity({ 0.f, 0.f });
+		}
+
 		AudioManager::GetAudioManager().FadeToMusic("SpaceShooterRedux/Musics/cosmic_reverie.ogg",
 			AudioType::Music,
 			5.0f,

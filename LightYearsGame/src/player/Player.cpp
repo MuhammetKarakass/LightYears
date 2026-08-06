@@ -1,5 +1,6 @@
 #include "player/Player.h"
 #include "player/PlayerSpaceShip.h"
+#include "gameplay/content/ShipContentCatalog.h"
 #include <framework/World.h>
 
 namespace ly
@@ -30,7 +31,9 @@ namespace ly
 
 			if (!mShipProgression.IsConfigured())
 			{
-				mShipProgression.Configure(ShipData::Ship_Player_Fighter.progressionDefinition);
+				mShipProgression.Configure(
+					content::ShipContentCatalog::GetPlayerFighterDefinition().progressionDefinition
+				);
 			}
 			mShipProgression.BindAttributes(ship->GetAbilitySystemComponent().GetAttributes());
 			RestorePurchasedAbilityLevels(*ship);

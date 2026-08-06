@@ -3,7 +3,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -65,7 +65,8 @@ namespace ly
 					CommonAttributeIds::Duration,
 					CommonAttributeIds::Radius,
 					AbilityData::GravityAnomaly::ActorSchema::PullStrength,
-					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude
+					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
+					AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
@@ -163,11 +164,17 @@ namespace ly
 			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
 			mSlowMagnitude
 		), 0.f, 0.95f);
+		mInsideEffectDuration = std::max(0.f, sas::FindGameplayAttributeValue(
+			attributes,
+			AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration,
+			mInsideEffectDuration
+		));
 		mFieldAttributes = {
 			sas::GameplayAttribute{ CommonAttributeIds::Duration, mFieldDuration, 0.01f },
 			sas::GameplayAttribute{ CommonAttributeIds::Radius, mFieldRadius, 0.01f },
 			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::PullStrength, mPullStrength, 0.f },
-			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, mSlowMagnitude, 0.f, 0.95f }
+			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, mSlowMagnitude, 0.f, 0.95f },
+			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration, mInsideEffectDuration, 0.f }
 		};
 		SetAbilityPhysicsEnabled(false);
 		SetCollisionLayer(CollisionLayer::None);

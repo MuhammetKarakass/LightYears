@@ -1,5 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/content/WeaponContentCatalog.h"
 #include "spaceShip/SpaceShip.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include <framework/World.h>
@@ -27,15 +28,25 @@ namespace ly
 		SetCollisionLayer(CollisionLayer::None);
 		mCombatRuntime.InitializeOwnerAttributes(shipDef.health);
 		mShipRuntime.InitializeFromShipDefinition(shipDef);
-		std::string primaryWeaponFailureReason;
-		const sas::AbilityHandle primaryWeaponHandle =
-			mCombatRuntime.GetAbilitySystemComponent().GrantAbility(
-			AbilityData::MakePrimaryFireAbilityDefinition(shipDef.primaryWeaponDefinition),
-			&primaryWeaponFailureReason
-		);
-		if (!primaryWeaponHandle.IsValid())
+		if (!shipDef.primaryWeaponId.empty())
 		{
-			LY_GAME_ERROR("Invalid primary weapon '%s': %s", shipDef.primaryWeaponDefinition.weaponId.c_str(), primaryWeaponFailureReason.c_str());
+			const PrimaryWeaponDefinition* runtimeWeapon =
+				content::WeaponContentCatalog::FindById(shipDef.primaryWeaponId);
+			if (!runtimeWeapon)
+			{
+				LY_GAME_ERROR("Primary weapon '%s' was not found in JSON content", shipDef.primaryWeaponId.c_str());
+				return;
+			}
+			std::string primaryWeaponFailureReason;
+			const sas::AbilityHandle primaryWeaponHandle =
+				mCombatRuntime.GetAbilitySystemComponent().GrantAbility(
+					AbilityData::MakePrimaryFireAbilityDefinition(*runtimeWeapon),
+					&primaryWeaponFailureReason
+				);
+			if (!primaryWeaponHandle.IsValid())
+			{
+				LY_GAME_ERROR("Invalid primary weapon '%s': %s", runtimeWeapon->weaponId.c_str(), primaryWeaponFailureReason.c_str());
+			}
 		}
 	}
 

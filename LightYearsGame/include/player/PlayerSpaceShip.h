@@ -3,7 +3,7 @@
 #include "framework/Core.h"
 #include "framework/TimerManager.h"
 #include "player/PlayerMovementComponent.h"
-#include "gameConfigs/ship/ShipConfig.h"
+#include "gameplay/content/ShipContentCatalog.h"
 
 namespace ly
 {
@@ -12,7 +12,10 @@ namespace ly
 	{
 	public:
 
-		PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef = ShipData::Ship_Player_Fighter);
+		PlayerSpaceShip(
+			World* owningWorld,
+			const ShipDefinition& shipDef = content::ShipContentCatalog::GetPlayerFighterDefinition()
+		);
 
 		virtual void BeginPlay() override;
 		virtual void ApplyDamage(float amt) override;

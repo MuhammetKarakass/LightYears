@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "abilities": [
+    {
+      "id": "Ability.Dash.Basic",
+      "cooldown": 2.0,
+      "duration": 0.24,
+      "maxCharges": 1,
+      "settings": {
+        "baseDistance": 260.0,
+        "cameraZoomOutRatio": 0.15
+      },
+      "progression": {
+        "levelUpgradeScrapCosts": [40, 50, 65, 80],
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Attribute.Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.12
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Attribute.Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.12
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Attribute.Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.12
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Attribute.Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Ability.Shield.Basic",
+      "cooldown": 8.0,
+      "duration": 5.0,
+      "maxCharges": 1,
+      "settings": {},
+      "effectSpecs": [
+        {
+          "effectId": "Effect.Barrier.Basic",
+          "useAbilityDuration": true,
+          "maxStacks": 1,
+          "attributes": [
+            { "id": "Attribute.Effect.BarrierCapacity", "baseValue": 30.0, "minValue": 0.0 },
+            { "id": "Attribute.Effect.BarrierAbsorptionRatio", "baseValue": 1.0, "minValue": 0.0, "maxValue": 1.0 },
+            { "id": "Attribute.Effect.BarrierRegenerationPerSecond", "baseValue": 6.0, "minValue": 0.0 },
+            { "id": "Attribute.Effect.BarrierRegenerationDelay", "baseValue": 1.5, "minValue": 0.0 },
+            { "id": "Attribute.Effect.BarrierRegenerationDelayRemaining", "baseValue": 0.0, "minValue": 0.0 }
+          ]
+        },
+        {
+          "effectId": "Effect.Test.BarrierBreak.ThrustBoost",
+          "duration": 2.0,
+          "maxStacks": 1,
+          "modifiers": [
+            { "attributeId": "Attribute.Owner.MoveSpeedVertical", "operation": "Add", "magnitude": 0.25 },
+            { "attributeId": "Attribute.Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": 0.2 }
+          ]
+        }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Effect.BarrierCapacity",
+          "sourceAttributeId": "Attribute.Owner.MaxHealth",
+          "operation": "Add",
+          "coefficient": 0.2
+        },
+        {
+          "targetAttributeId": "Attribute.Effect.BarrierCapacity",
+          "sourceAttributeId": "Attribute.Owner.Armor",
+          "operation": "Add",
+          "coefficient": 50.0
+        }
+      ]
+    },
+    {
+      "id": "Ability.SunBeam.Strike.Basic",
+      "cooldown": 1.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "actors": [
+        {
+          "id": "Actor.Ability.SunBeam.Strike.Basic",
+          "lifeTime": 0.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Attribute.Common.Damage", "baseValue": 40.0 },
+            { "id": "Attribute.Common.Radius", "baseValue": 96.0, "minValue": 1.0 },
+            { "id": "Attribute.AbilityActor.SunBeam.Shared.Width", "baseValue": 72.0, "minValue": 1.0 },
+            { "id": "Attribute.AbilityActor.SunBeam.Shared.Length", "baseValue": 720.0, "minValue": 1.0 },
+            { "id": "Attribute.AbilityActor.SunBeam.Strike.TelegraphDuration", "baseValue": 0.5 },
+            { "id": "Attribute.AbilityActor.SunBeam.Strike.ArrivalDuration", "baseValue": 0.2 },
+            { "id": "Attribute.AbilityActor.SunBeam.Strike.ImpactDelay", "baseValue": 0.05 },
+            { "id": "Attribute.AbilityActor.SunBeam.Strike.ImpactVisualDuration", "baseValue": 0.22 }
+          ]
+        }
+      ],
+      "progression": {
+        "levelUpgradeScrapCosts": [40, 50, 65, 80],
+        "levels": [
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 8.0 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 8.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 8.0 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 8.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 8.0 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 8.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 8.0 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 8.0 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "Ability.Rocket.Basic",
+      "cooldown": 3.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Damage",
+          "sourceAttributeId": "Attribute.Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 1.25
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.Rocket.Projectile.Basic",
+          "lifeTime": 1.35,
+          "spawnDistance": 42.0,
+          "attributes": [
+            { "id": "Attribute.Common.Damage", "baseValue": 55.0 },
+            { "id": "Attribute.Common.Radius", "baseValue": 55.0 },
+            { "id": "Attribute.AbilityActor.Rocket.ProjectileSpeed", "baseValue": 1000.0 },
+            { "id": "Attribute.Common.Range", "baseValue": 1100.0 },
+            { "id": "Attribute.Collision.Radius", "baseValue": 8.0, "minValue": 0.1 },
+            { "id": "Attribute.Damage.ArmorPenetration", "baseValue": 0.10, "minValue": 0.0, "maxValue": 0.25 }
+          ]
+        }
+      ],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "levels": [
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] },
+          { "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.12 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 1.0 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "Ability.GravityAnomaly.Basic",
+      "cooldown": 8.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "scalingRules": [
+        {
+          "targetAttributeId": "Attribute.Common.Radius",
+          "sourceAttributeId": "Attribute.Owner.MaxHealth",
+          "operation": "Add",
+          "coefficient": 0.20
+        },
+        {
+          "targetAttributeId": "Attribute.Common.Duration",
+          "sourceAttributeId": "Attribute.Owner.MaxHealth",
+          "operation": "Add",
+          "coefficient": 0.0025
+        }
+      ],
+      "attributeProfiles": [
+        {
+          "id": "AttributeProfile.GravityAnomaly.Field.Basic",
+          "attributes": [
+            { "id": "Attribute.Common.Duration", "baseValue": 2.5, "minValue": 0.01 },
+            { "id": "Attribute.Common.Radius", "baseValue": 320.0, "minValue": 0.01 },
+            { "id": "Attribute.AbilityActor.GravityAnomaly.PullStrength", "baseValue": 1500.0 },
+            { "id": "Attribute.AbilityActor.GravityAnomaly.SlowMagnitude", "baseValue": 0.40, "maxValue": 0.95 },
+            { "id": "Attribute.AbilityActor.GravityAnomaly.InsideEffectDuration", "baseValue": 2.0, "minValue": 0.01 }
+          ]
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.GravityAnomaly.Projectile.Basic",
+          "spawnDistance": 42.0,
+          "attributeProfileIds": ["AttributeProfile.GravityAnomaly.Field.Basic"],
+          "attributes": [
+            { "id": "Attribute.AbilityActor.GravityAnomaly.ProjectileSpeed", "baseValue": 2000.0, "minValue": 0.01 },
+            { "id": "Attribute.AbilityActor.GravityAnomaly.CastRange", "baseValue": 900.0, "minValue": 0.01 }
+          ]
+        },
+        {
+          "id": "Actor.Ability.GravityAnomaly.Field.Basic",
+          "spawnDistance": 0.0,
+          "attributeProfileIds": ["AttributeProfile.GravityAnomaly.Field.Basic"],
+          "attributes": []
+        }
+      ],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.10 },
+            { "attributeId": "Attribute.Common.Duration", "operation": "Add", "magnitude": 0.03 },
+            { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 2.0 },
+            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.PullStrength", "operation": "Add", "magnitude": 20.0 },
+            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.SlowMagnitude", "operation": "Add", "magnitude": 0.005 },
+            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.ProjectileSpeed", "operation": "Add", "magnitude": 25.0 },
+            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.CastRange", "operation": "Add", "magnitude": 5.0 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.InfernoSpray.Basic",
+      "cooldown": 3.0,
+      "duration": 3.0,
+      "maxCharges": 1,
+      "settings": {
+        "minCancelDuration": 1.0
+      },
+      "effectSpecs": [
+        {
+          "effectId": "Effect.Movement.Slow",
+          "useAbilityDuration": true,
+          "maxStacks": 1,
+          "modifiers": [
+            { "attributeId": "Attribute.Owner.MovementSlow", "operation": "Add", "magnitude": 0.35 }
+          ]
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.InfernoSpray.FlameCone.Basic",
+          "lifeTime": 0.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Attribute.AbilityActor.InfernoSpray.Range", "baseValue": 520.0 },
+            { "id": "Attribute.AbilityActor.InfernoSpray.ConeAngle", "baseValue": 36.0 },
+            { "id": "Attribute.AbilityActor.InfernoSpray.CombatTickInterval", "baseValue": 0.25 },
+            { "id": "Attribute.AbilityActor.InfernoSpray.BaseDPS", "baseValue": 24.0 },
+            { "id": "Attribute.Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 },
+            { "id": "Attribute.Damage.BurnDamagePerSecond", "baseValue": 1.0, "minValue": 0.0 },
+            { "id": "Attribute.Damage.BurnDuration", "baseValue": 3.0, "minValue": 0.0 },
+            { "id": "Attribute.Damage.BurnMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
+          ]
+        }
+      ]
+    }
+  ]
+}

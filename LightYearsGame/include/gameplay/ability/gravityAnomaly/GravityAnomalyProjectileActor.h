@@ -60,6 +60,7 @@ namespace ly
 		float mFieldRadius = 0.f;
 		float mPullStrength = 0.f;
 		float mSlowMagnitude = 0.f;
+		float mInsideEffectDuration = 0.f;
 		bool mHasSpawnedField = false;
 	};
 
