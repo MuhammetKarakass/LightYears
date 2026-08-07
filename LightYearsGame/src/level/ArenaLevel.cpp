@@ -4,6 +4,7 @@
 #include "player/PlayerSpaceShip.h"
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/dash/DashContracts.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "framework/TimerManager.h"
 
@@ -24,7 +25,7 @@ namespace ly
 
 			return content::AbilityContentCatalog::FindNumericSetting(
 				dashAbility->GetDefinition().abilityId,
-				"cameraZoomOutRatio"
+				AbilityData::Dash::Setting::CameraZoomOutRatio
 			).value_or(0.15f);
 		}
 	}

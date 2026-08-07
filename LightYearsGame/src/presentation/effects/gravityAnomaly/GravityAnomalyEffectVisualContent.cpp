@@ -12,7 +12,7 @@ namespace ly
 		{
 			const GravityAnomalyEffectVisualDefinition definition;
 			return GameplayEffectVisualRegistry::RegisterFactory(
-				"Visual.Effect.GravityAnomaly.Inside",
+				GravityAnomalyEffectVisualIds::Inside,
 				[definition](Actor& owner) -> weak_ptr<GameplayEffectVisual>
 				{
 					World* world = owner.GetWorld();

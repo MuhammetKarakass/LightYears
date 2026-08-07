@@ -15,6 +15,8 @@ namespace ly
 {
 	struct AbilityBehaviorSchema
 	{
+		// This is the generic fallback behavior used by content-only definitions.
+		// Concrete ability families own their behavior tags in feature contracts.
 		inline static const GameplayTag Configured{ "GameAbilityBehavior.Configured" };
 	};
 
@@ -46,7 +48,7 @@ namespace ly
 		List<GameplayTag> damageTags;
 		List<GameplayTag> attachmentCapabilities;
 		size_t attachmentSlotCapacity = 2;
-		GameplayTag behaviorId = AbilityBehaviorSchema::Configured;
+		GameplayTag behaviorTag = AbilityBehaviorSchema::Configured;
 
 		const AbilityEffectSpecDefinition* FindEffectSpec(const std::string& effectId) const
 		{

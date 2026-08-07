@@ -21,7 +21,7 @@ namespace ShipData
 			EngineMount{ {+22.f, -12.f}, LightingData::Engine_Cyan_PointLightDef }
 		},
 		{},
-		"FighterBasicRapidLaser",
+		"Weapon.Projectile.FighterRapidLaser.Basic",
 		ShipMovementAttributes{
 			650.f,
 			190.f,

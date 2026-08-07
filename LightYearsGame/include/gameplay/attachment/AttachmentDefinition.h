@@ -85,7 +85,7 @@ namespace ly
 	// Definitions are data only. The small runtime resolver interprets these generic rules.
 	struct AttachmentDefinition
 	{
-		GameplayTag attachmentId;
+		std::string attachmentId;
 		std::string displayName;
 		List<AttachmentHostKind> allowedHosts;
 		List<GameplayTag> requiredCapabilities;

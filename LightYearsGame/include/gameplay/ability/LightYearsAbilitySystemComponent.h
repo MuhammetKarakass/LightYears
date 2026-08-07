@@ -2,57 +2,22 @@
 
 #include "AbilitySystemComponent.h"
 #include "abilities/AbilityEvent.h"
-#include "effects/GameplayEffectBehaviorRuntime.h"
-#include "framework/Core.h"
 #include "gameplay/ability/GameAbility.h"
 
 namespace ly
 {
 	class Actor;
 	struct AttachmentDefinition;
-	struct DamageContext;
 	enum class AttachmentHostKind;
 
 	class LightYearsAbilitySystemComponent
 		: public sas::AbilitySystemComponent
 	{
 	public:
-		enum class IncomingDamagePhase
-		{
-			PreMitigation,
-			Standard
-		};
-
-		using EffectBehaviorRuntime =
-			sas::GameplayEffectBehaviorRuntime<
-				sas::ActiveGameplayEffect,
-				Actor,
-				DamageContext,
-				IncomingDamagePhase
-			>;
-
 		static constexpr size_t MaxPassiveAbilities = 2;
 
 		explicit LightYearsAbilitySystemComponent(Actor& owner);
-		void InitializeOwnerAttributes(float maxHealth);
 
-		static EffectBehaviorRuntime& GetEffectBehaviorRuntime();
-		static bool RegisterGameContent();
-		static bool ValidateDefinition(const GameAbilityDefinition& definition, std::string* failureReason = nullptr);
-		static bool ValidateCatalog(
-			const List<const GameAbilityDefinition*>& definitions,
-			std::string* failureReason = nullptr
-		);
-		static bool ValidateShippedAbilityDefinitions(
-			std::string* failureReason = nullptr
-		);
-		static bool ValidateGameplayEffectDefinition(
-			const sas::GameplayEffectDefinition& definition,
-			std::string* failureReason = nullptr
-		);
-		static bool ValidateShippedGameplayEffectDefinitions(
-			std::string* failureReason = nullptr
-		);
 
 		bool TryEquipAttachment(
 			sas::AbilityHandle handle,
@@ -66,7 +31,7 @@ namespace ly
 			AttachmentHostKind hostKind,
 			std::string* failureReason = nullptr
 		);
-		bool RemoveAttachment(sas::AbilityHandle handle, const GameplayTag& attachmentId, AttachmentHostKind hostKind);
+		bool RemoveAttachment(sas::AbilityHandle handle, const std::string& attachmentId, AttachmentHostKind hostKind);
 		GameAbility* GetAbility(sas::AbilitySlot slot);
 		const GameAbility* GetAbility(sas::AbilitySlot slot) const;
 		GameAbility* GetAbility(sas::AbilityHandle handle);

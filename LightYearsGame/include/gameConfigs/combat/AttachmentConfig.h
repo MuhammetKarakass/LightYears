@@ -13,7 +13,7 @@ namespace AttachmentData
 	namespace Definitions
 	{
 		static const ly::AttachmentDefinition ThermalConverter{
-			ly::GameplayTag{ "Attachment.Thermal.Converter" },
+			"Attachment.Thermal.Converter.Basic",
 			"Thermal Converter",
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
@@ -58,7 +58,7 @@ namespace AttachmentData
 		};
 
 		static const ly::AttachmentDefinition EnergyCoupler{
-			ly::GameplayTag{ "Attachment.Energy.Coupler" },
+			"Attachment.Energy.Coupler.Basic",
 			"Energy Coupler",
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
@@ -86,7 +86,7 @@ namespace AttachmentData
 		};
 
 		static const ly::AttachmentDefinition KineticBore{
-			ly::GameplayTag{ "Attachment.Kinetic.Bore" },
+			"Attachment.Kinetic.Bore.Basic",
 			"Kinetic Bore",
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
@@ -113,7 +113,7 @@ namespace AttachmentData
 		};
 
 		static const ly::AttachmentDefinition CryoConduit{
-			ly::GameplayTag{ "Attachment.Cryo.Conduit" },
+			"Attachment.Cryo.Conduit.Basic",
 			"Cryo Conduit",
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
@@ -144,7 +144,7 @@ namespace AttachmentData
 		};
 
 		static const ly::AttachmentDefinition ElectricConduit{
-			ly::GameplayTag{ "Attachment.Electric.Conduit" },
+			"Attachment.Electric.Conduit.Basic",
 			"Electric Conduit",
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
@@ -177,7 +177,7 @@ namespace AttachmentData
 		};
 
 		static const ly::AttachmentDefinition HeavyCapacitor{
-			ly::GameplayTag{ "Attachment.Heavy.Capacitor" },
+			"Attachment.Heavy.Capacitor.Basic",
 			"Heavy Capacitor",
 			{ ly::AttachmentHostKind::Ability },
 			{
@@ -204,7 +204,7 @@ namespace AttachmentData
 		};
 
 		static const ly::AttachmentDefinition EmergencySalvo{
-			ly::GameplayTag{ "Attachment.Projectile.EmergencySalvo" },
+			"Attachment.Projectile.EmergencySalvo.Basic",
 			"Emergency Salvo",
 			{ ly::AttachmentHostKind::PrimaryWeapon },
 			{
@@ -253,7 +253,7 @@ namespace AttachmentData
 		return definitions;
 	}
 
-	inline const ly::AttachmentDefinition* FindAttachmentDefinition(const ly::GameplayTag& attachmentId)
+	inline const ly::AttachmentDefinition* FindAttachmentDefinition(const std::string& attachmentId)
 	{
 		for (const ly::AttachmentDefinition* definition : GetDefinitions())
 		{

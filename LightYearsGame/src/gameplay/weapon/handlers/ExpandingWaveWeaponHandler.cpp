@@ -17,7 +17,7 @@ namespace ly
 		public:
 			const GameplayTag& GetTypeTag() const override
 			{
-				return PrimaryWeaponSchema::Wave::Expanding::TypeId;
+				return PrimaryWeaponSchema::Wave::Expanding::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override

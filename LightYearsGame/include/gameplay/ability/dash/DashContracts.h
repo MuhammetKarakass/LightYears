@@ -1,14 +1,41 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "gameplay/ability/content/NumericSettingContract.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 
 namespace AbilityData::Dash
 {
-	inline const ly::GameplayTag BehaviorId{ "GameAbilityBehavior.Dash" };
+	struct AbilityId
+	{
+		inline static constexpr char Basic[] = "Ability.Movement.Dash.Basic";
+	};
+
+	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityMovement };
+	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.Dash" };
 	inline const ly::GameplayTag FamilyTag{ "Ability.Movement.Dash" };
-	inline const ly::GameplayTag StartEvent{ "Event.Ability.Dash.Start" };
-	inline const ly::GameplayTag EndEvent{ "Event.Ability.Dash.End" };
-	inline const ly::GameplayTag StateTag{ "State.Ability.Dashing" };
+
+	struct State
+	{
+		inline static const ly::GameplayTag Active{ "State.Ability.Dash.Active" };
+	};
+
+	struct Event
+	{
+		inline static const ly::GameplayTag Started{ "Event.Ability.Dash.Start" };
+		inline static const ly::GameplayTag Ended{ "Event.Ability.Dash.End" };
+	};
+
+	struct Setting
+	{
+		inline static constexpr char BaseDistance[] = "baseDistance";
+		inline static constexpr char CameraZoomOutRatio[] = "cameraZoomOutRatio";
+
+		inline static const ly::content::NumericSettingContract Contract{
+			{ BaseDistance, CameraZoomOutRatio },
+			{ BaseDistance, CameraZoomOutRatio }
+		};
+	};
 
 	enum class DirectionPolicy
 	{

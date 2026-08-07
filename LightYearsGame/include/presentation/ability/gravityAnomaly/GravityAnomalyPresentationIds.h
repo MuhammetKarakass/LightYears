@@ -2,6 +2,8 @@
 
 namespace ly::GravityAnomalyPresentationIds
 {
-	inline constexpr char ProjectileBasic[] = "Presentation.GravityAnomaly.Projectile.Basic";
-	inline constexpr char FieldBasic[] = "Presentation.GravityAnomaly.Field.Basic";
+	inline constexpr char ProjectileBasic[] =
+		"Presentation.Ability.GravityAnomaly.Projectile.Basic";
+	inline constexpr char FieldBasic[] =
+		"Presentation.Ability.GravityAnomaly.Field.Basic";
 }

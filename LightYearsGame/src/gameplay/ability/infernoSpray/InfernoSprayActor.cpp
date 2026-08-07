@@ -24,15 +24,8 @@ namespace ly
 {
 	namespace
 	{
-		const List<GameplayTag> InfernoSprayCommonAttributes{
-			AbilityData::InfernoSpray::ActorSchema::Range,
-			AbilityData::InfernoSpray::ActorSchema::ConeAngle,
-			AbilityData::InfernoSpray::ActorSchema::CombatTickInterval,
-			AbilityData::InfernoSpray::ActorSchema::BaseDPS
-		};
-
 		const List<GameplayTag> InfernoSprayAttributeRoots{
-			AbilityData::InfernoSpray::ActorSchema::AttributeRoot,
+			AbilityData::InfernoSpray::Actor::FlameCone::AttributeRoot,
 			DamageAttributeIds::AttributeRoot
 		};
 
@@ -41,17 +34,12 @@ namespace ly
 		public:
 			const GameplayTag& GetActorTypeTag() const override
 			{
-				return AbilityData::InfernoSpray::ActorSchema::TypeId;
+				return AbilityData::InfernoSpray::Actor::FlameCone::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override
 			{
 				return InfernoSprayAttributeRoots;
-			}
-
-			const List<GameplayTag>& GetAllowedCommonAttributeIds() const override
-			{
-				return InfernoSprayCommonAttributes;
 			}
 
 			AbilityActorValidationResult ValidateDefinition(
@@ -114,22 +102,22 @@ namespace ly
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
 		mRange = std::max(10.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::InfernoSpray::ActorSchema::Range,
+			AbilityData::InfernoSpray::Actor::FlameCone::Range,
 			0.f
 		));
 		mConeAngleDegrees = std::clamp(sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::InfernoSpray::ActorSchema::ConeAngle,
+			AbilityData::InfernoSpray::Actor::FlameCone::ConeAngle,
 			0.f
 		), 1.f, 180.f);
 		mCombatTickInterval = std::max(0.05f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::InfernoSpray::ActorSchema::CombatTickInterval,
+			AbilityData::InfernoSpray::Actor::FlameCone::CombatTickInterval,
 			0.f
 		));
 		mBaseDPS = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::InfernoSpray::ActorSchema::BaseDPS,
+			AbilityData::InfernoSpray::Actor::FlameCone::BaseDPS,
 			0.f
 		));
 	}
@@ -147,7 +135,7 @@ namespace ly
 
 		if (auto* combatant = dynamic_cast<Combatant*>(owner))
 		{
-			if (!combatant->GetCombatRuntime().GetAbilitySystemComponent().GetOwnedTags().HasTag(AbilityData::InfernoSpray::StateTag))
+			if (!combatant->GetCombatRuntime().GetAbilitySystemComponent().GetOwnedTags().HasTag(AbilityData::InfernoSpray::State::Active))
 			{
 				Destroy();
 				return;
@@ -243,7 +231,7 @@ namespace ly
 					context.originalDamage = damagePerTick;
 					context.remainingDamage = damagePerTick;
 					context.damageTags = GetDamageTags().empty()
-						? List<GameplayTag>{ GameplayTag{ "Damage.Thermal" } }
+						? List<GameplayTag>{ DamageTypeSchema::Thermal }
 						: GetDamageTags();
 					context.payload = GetDamagePayload();
 

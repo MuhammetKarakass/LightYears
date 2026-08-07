@@ -87,7 +87,7 @@ namespace ly
 			? FindActorAttribute(*actor, CommonAttributeIds::Damage)
 			: std::nullopt;
 		const std::optional<float> projectileSpeed = actor
-			? FindActorAttribute(*actor, AbilityData::Rocket::ActorSchema::ProjectileSpeed)
+			? FindActorAttribute(*actor, AbilityData::Rocket::Actor::Projectile::ProjectileSpeed)
 			: std::nullopt;
 		const std::optional<float> range = actor
 			? FindActorAttribute(*actor, CommonAttributeIds::Range)
@@ -96,7 +96,7 @@ namespace ly
 			? FindActorAttribute(*actor, CommonAttributeIds::Radius)
 			: std::nullopt;
 		const std::optional<float> collisionRadius = actor
-			? FindActorAttribute(*actor, CommonAttributeIds::CollisionRadius)
+			? FindActorAttribute(*actor, CollisionAttributeIds::Radius)
 			: std::nullopt;
 		if (!actor || !baseDamage || !projectileSpeed || !range ||
 			!explosionRadius || !collisionRadius || definition.cooldown <= 0.f ||

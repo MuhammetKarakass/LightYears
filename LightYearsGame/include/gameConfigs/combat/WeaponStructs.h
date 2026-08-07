@@ -12,7 +12,7 @@ struct PrimaryWeaponSchema
 	// A definition selects exactly one concrete leaf type, never a family tag.
 	struct Projectile
 	{
-		inline static const ly::GameplayTag FamilyId{ "PrimaryWeapon.Projectile" };
+		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Projectile" };
 
 		struct Delivery
 		{
@@ -27,12 +27,12 @@ struct PrimaryWeaponSchema
 
 		struct Standard
 		{
-			inline static const ly::GameplayTag TypeId{ "PrimaryWeapon.Projectile.Standard" };
+			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Projectile.Standard" };
 		};
 
 		struct Shotgun
 		{
-			inline static const ly::GameplayTag TypeId{ "PrimaryWeapon.Projectile.Shotgun" };
+			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Projectile.Shotgun" };
 			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Projectile.Shotgun" };
 			inline static const ly::GameplayTag PelletCount{ "Attribute.PrimaryWeapon.Projectile.Shotgun.PelletCount" };
 			inline static const ly::GameplayTag SpreadAngle{ "Attribute.PrimaryWeapon.Projectile.Shotgun.SpreadAngle" };
@@ -48,11 +48,11 @@ struct PrimaryWeaponSchema
 
 	struct Arc
 	{
-		inline static const ly::GameplayTag FamilyId{ "PrimaryWeapon.Arc" };
+		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Arc" };
 
 		struct Electric
 		{
-			inline static const ly::GameplayTag TypeId{ "PrimaryWeapon.Arc.Electric" };
+			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Arc.Electric" };
 			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Arc.Electric" };
 			// Number of additional targets after the direct hit.
 			inline static const ly::GameplayTag ChainCount{ "Attribute.PrimaryWeapon.Arc.Electric.ChainCount" };
@@ -65,7 +65,7 @@ struct PrimaryWeaponSchema
 
 	struct Beam
 	{
-		inline static const ly::GameplayTag FamilyId{ "PrimaryWeapon.Beam" };
+		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Beam" };
 
 		struct Delivery
 		{
@@ -76,13 +76,13 @@ struct PrimaryWeaponSchema
 
 		struct Continuous
 		{
-			inline static const ly::GameplayTag TypeId{ "PrimaryWeapon.Beam.Continuous" };
+			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Beam.Continuous" };
 		};
 	};
 
 	struct Wave
 	{
-		inline static const ly::GameplayTag FamilyId{ "PrimaryWeapon.Wave" };
+		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Wave" };
 
 		struct Delivery
 		{
@@ -95,7 +95,7 @@ struct PrimaryWeaponSchema
 
 		struct Expanding
 		{
-			inline static const ly::GameplayTag TypeId{ "PrimaryWeapon.Wave.Expanding" };
+			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Wave.Expanding" };
 		};
 	};
 
@@ -103,7 +103,7 @@ struct PrimaryWeaponSchema
 	{
 		struct Heat
 		{
-			inline static const ly::GameplayTag FeatureId{ "PrimaryWeapon.Feature.Heat" };
+			inline static const ly::GameplayTag FeatureTag{ "PrimaryWeapon.Feature.Heat" };
 			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Feature.Heat" };
 			inline static const ly::GameplayTag Gain{ "Attribute.PrimaryWeapon.Feature.Heat.Gain" };
 			inline static const ly::GameplayTag Capacity{ "Attribute.PrimaryWeapon.Feature.Heat.Capacity" };
@@ -365,8 +365,10 @@ struct PrimaryWeaponDefinition
 	size_t attachmentSlotCapacity = 2;
 
 	PrimaryWeaponDefinition(
-		const std::string& inWeaponId = "DefaultPrimaryWeapon",
-		const ly::GameplayTag& inWeaponTypeTag = PrimaryWeaponSchema::Projectile::Standard::TypeId,
+		// Empty identifies an ephemeral/test definition. Shipped catalog entries
+		// always receive a validated Weapon.* content ID from WeaponLoader.
+		const std::string& inWeaponId = {},
+		const ly::GameplayTag& inWeaponTypeTag = PrimaryWeaponSchema::Projectile::Standard::TypeTag,
 		const WeaponPresentationDefinition& inPresentationDefinition = WeaponPresentationDefinition{},
 		const sas::GameplayAttributeList& inAttributes = {},
 		const ly::List<WeaponMuzzleDefinition>& inMuzzleDefinitions = { WeaponMuzzleDefinition{} },

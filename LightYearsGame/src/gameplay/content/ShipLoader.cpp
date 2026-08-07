@@ -1,5 +1,7 @@
 #include "gameplay/content/ShipLoader.h"
 
+#include "gameplay/content/ContentIdSchema.h"
+
 #include "framework/JsonDocumentLoader.h"
 
 #include <set>
@@ -93,6 +95,11 @@ namespace ly::content
 				object.at("id").get<std::string>(),
 				presentationBase
 			};
+			std::string shipIdFailure;
+			if (!ContentIdSchema::ValidateShipId(loaded.id, &shipIdFailure))
+			{
+				throw std::runtime_error(shipIdFailure);
+			}
 			loaded.definition.health = object.at("health").get<float>();
 			loaded.definition.speed = ParseVector2(object.at("speed"));
 			loaded.definition.collisionDamage = object.at("collisionDamage").get<float>();
@@ -105,6 +112,17 @@ namespace ly::content
 				"primaryWeaponId",
 				std::string{}
 			);
+			if (!loaded.definition.primaryWeaponId.empty())
+			{
+				std::string weaponIdFailure;
+				if (!ContentIdSchema::ValidateWeaponId(
+					loaded.definition.primaryWeaponId,
+					&weaponIdFailure
+				))
+				{
+					throw std::runtime_error(weaponIdFailure);
+				}
+			}
 			ParseMovement(loaded.definition.movementAttributes, object.at("movement"));
 			ParseEnergy(loaded.definition.energyAttributes, object.at("energy"));
 			ParseProgression(loaded.definition.progressionDefinition, object.at("progression"));

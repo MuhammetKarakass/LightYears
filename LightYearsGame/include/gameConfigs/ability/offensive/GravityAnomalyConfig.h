@@ -18,9 +18,8 @@ namespace AbilityData
 		inline const ly::AbilityActorDefinition ActorProjectileBasic = []
 		{
 			ly::AbilityActorDefinition definition;
-			definition.actorDefinitionId = "Actor.Ability.GravityAnomaly.Projectile.Basic";
-			definition.actorTypeTag = ActorSchema::ProjectileTypeId;
-			definition.texturePath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
+			definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
+			definition.actorTypeTag = Actor::Projectile::TypeTag;
 			definition.presentationProfileId = ly::GravityAnomalyPresentationIds::ProjectileBasic;
 			return definition;
 		}();
@@ -28,24 +27,12 @@ namespace AbilityData
 		inline const ly::AbilityActorDefinition ActorFieldBasic = []
 		{
 			ly::AbilityActorDefinition definition;
-			definition.actorDefinitionId = "Actor.Ability.GravityAnomaly.Field.Basic";
-			definition.actorTypeTag = ActorSchema::FieldTypeId;
+			definition.actorDefinitionId = Actor::Field::BasicDefinitionId;
+			definition.actorTypeTag = Actor::Field::TypeTag;
 			definition.presentationProfileId = ly::GravityAnomalyPresentationIds::FieldBasic;
 			return definition;
 		}();
 
-		inline const ly::AbilityActorDefinition* FindActorDefinition(
-			const std::string& actorDefinitionId
-		)
-		{
-			if (actorDefinitionId == ActorProjectileBasic.actorDefinitionId)
-			{
-				return &ActorProjectileBasic;
-			}
-			return actorDefinitionId == ActorFieldBasic.actorDefinitionId
-				? &ActorFieldBasic
-				: nullptr;
-		}
 	}
 
 	namespace Definitions
@@ -53,14 +40,14 @@ namespace AbilityData
 		inline const ly::GameAbilityDefinition GravityAnomaly_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
-			definition.abilityId = "Ability.GravityAnomaly.Basic";
+			definition.abilityId = GravityAnomaly::AbilityId::Basic;
 			definition.slot = sas::AbilitySlot::Ability1;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.cooldown = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTag{ "Ability.Control" },
+				GravityAnomaly::CategoryTag,
 				GravityAnomaly::FamilyTag
 			};
 			definition.displayName = "Gravity Anomaly";
@@ -79,16 +66,9 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorId = GravityAnomaly::BehaviorId;
+			definition.behaviorTag = GravityAnomaly::BehaviorTag;
 			return definition;
 		}();
 	}
 
-	namespace AbilityActors
-	{
-		inline const ly::AbilityActorDefinition& Actor_GravityAnomaly_Projectile_Basic =
-			GravityAnomaly::ActorProjectileBasic;
-		inline const ly::AbilityActorDefinition& Actor_GravityAnomaly_Field_Basic =
-			GravityAnomaly::ActorFieldBasic;
-	}
 }

@@ -2,6 +2,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "attributes/AttributeMath.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 #include "abilities/AbilityEvent.h"
 #include "attributes/AttributeSystem.h"
 #include "gameplay/damage/DamageContext.h"
@@ -55,7 +56,7 @@ namespace ly
 		return equipped;
 	}
 
-	bool GameAbility::RemoveAttachment(const GameplayTag& attachmentId, AttachmentHostKind hostKind)
+	bool GameAbility::RemoveAttachment(const std::string& attachmentId, AttachmentHostKind hostKind)
 	{
 		const bool removed = mAttachments.Remove(attachmentId, hostKind);
 		if (removed)
@@ -167,9 +168,16 @@ namespace ly
 
 	bool GameAbility::CanActivateContent() const
 	{
+		// Standard locks are checked here so every current and future game ability
+		// shares one activation gate. Producers only need to grant the shared tag.
+		const GameplayTag& sharedBlockTag =
+			mDefinition.slot == sas::AbilitySlot::PrimaryFire
+			? GameplayTagSchema::BlockPrimaryWeaponFire
+			: GameplayTagSchema::BlockAbilityActivation;
 		return mBehavior &&
 			mAbilitySystem.HasAllOwnedTags(mDefinition.requiredOwnerTags) &&
-			!mAbilitySystem.HasAnyOwnedTags(mDefinition.blockedOwnerTags);
+			!mAbilitySystem.HasAnyOwnedTags(mDefinition.blockedOwnerTags) &&
+			!mAbilitySystem.HasOwnedTag(sharedBlockTag);
 	}
 
 	bool GameAbility::ActivateContent()
@@ -447,7 +455,7 @@ namespace ly
 			}
 			if (std::any_of(mDefinition.abilityTags.begin(), mDefinition.abilityTags.end(), [](const GameplayTag& tag)
 			{
-				return tag.MatchesTag(GameplayTag{ "Ability.Offense" });
+				return tag.MatchesTag(GameplayTagSchema::AbilityOffense);
 			}))
 			{
 				addCapability(AttachmentSchema::Capability::Damage);
@@ -474,11 +482,11 @@ namespace ly
 			{
 				addCapability(AttachmentSchema::Capability::FireRate);
 			}
-			if (fireAction->weaponDefinition.weaponTypeTag.MatchesTag(PrimaryWeaponSchema::Projectile::FamilyId))
+			if (fireAction->weaponDefinition.weaponTypeTag.MatchesTag(PrimaryWeaponSchema::Projectile::FamilyTag))
 			{
 				addCapability(AttachmentSchema::Capability::Projectile);
 			}
-			if (fireAction->weaponDefinition.weaponTypeTag.MatchesTag(PrimaryWeaponSchema::Beam::FamilyId))
+			if (fireAction->weaponDefinition.weaponTypeTag.MatchesTag(PrimaryWeaponSchema::Beam::FamilyTag))
 			{
 				addCapability(AttachmentSchema::Capability::Beam);
 			}

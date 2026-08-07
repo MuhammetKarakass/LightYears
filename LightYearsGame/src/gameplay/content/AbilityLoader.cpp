@@ -1,6 +1,10 @@
 #include "gameplay/content/AbilityLoader.h"
 
 #include "framework/JsonDocumentLoader.h"
+#include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/ability/content/NumericSettingContractRegistry.h"
+#include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/content/GameAbilitySettingContracts.h"
 
 #include <limits>
 #include <functional>
@@ -89,6 +93,13 @@ namespace ly::content
 			{
 				AbilityEffectSpecDefinition spec;
 				spec.effectId = RequiredString(value, "effectId");
+				std::string idFailure;
+				if (!ContentIdSchema::ValidateEffectId(spec.effectId, &idFailure))
+				{
+					throw std::runtime_error(
+						"Ability effect spec has invalid effect ID '" + spec.effectId + "': " + idFailure
+					);
+				}
 				if (!effectIds.insert(spec.effectId).second)
 				{
 					throw std::runtime_error(
@@ -204,37 +215,6 @@ namespace ly::content
 			return base;
 		}
 
-		struct NumericSettingContract
-		{
-			std::set<std::string> allowed;
-			std::set<std::string> required;
-		};
-
-		const NumericSettingContract& GetNumericSettingContract(
-			const std::string& abilityId
-		)
-		{
-			static const std::map<std::string, NumericSettingContract> contracts{
-				{
-					"Ability.Dash.Basic",
-					NumericSettingContract{
-						{ "baseDistance", "cameraZoomOutRatio" },
-						{ "baseDistance", "cameraZoomOutRatio" }
-					}
-				},
-				{
-					"Ability.InfernoSpray.Basic",
-					NumericSettingContract{
-						{ "minCancelDuration" },
-						{ "minCancelDuration" }
-					}
-				}
-			};
-			static const NumericSettingContract emptyContract{};
-			const auto found = contracts.find(abilityId);
-			return found != contracts.end() ? found->second : emptyContract;
-		}
-
 		AbilityActorDefinition ParseActor(
 			const Json& object,
 			const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
@@ -242,6 +222,14 @@ namespace ly::content
 		)
 		{
 			const std::string actorDefinitionId = RequiredString(object, "id");
+			std::string actorIdFailure;
+			if (!ContentIdSchema::ValidateAbilityActorDefinitionId(
+				actorDefinitionId,
+				&actorIdFailure
+			))
+			{
+				throw std::runtime_error(actorIdFailure);
+			}
 			if (!object.contains("spawnDistance") || !object.at("spawnDistance").is_number())
 			{
 				throw std::runtime_error(
@@ -283,6 +271,14 @@ namespace ly::content
 			for (const Json& profileIdValue : object.value("attributeProfileIds", Json::array()))
 			{
 				const std::string profileId = profileIdValue.get<std::string>();
+				std::string profileIdFailure;
+				if (!ContentIdSchema::ValidateAbilityAttributeProfileId(
+					profileId,
+					&profileIdFailure
+				))
+				{
+					throw std::runtime_error(profileIdFailure);
+				}
 				const auto profile = attributeProfiles.find(profileId);
 				if (profile == attributeProfiles.end())
 				{
@@ -312,7 +308,7 @@ namespace ly::content
 			if (!object.contains("lifeTime"))
 			{
 				if (const sas::GameplayAttribute* duration =
-					sas::FindGameplayAttribute(definition.attributes, GameplayTag{ "Attribute.Common.Duration" }))
+						sas::FindGameplayAttribute(definition.attributes, CommonAttributeIds::Duration))
 				{
 					definition.lifeTime = duration->baseValue;
 				}
@@ -320,7 +316,8 @@ namespace ly::content
 				{
 					throw std::runtime_error(
 						"Ability actor '" + actorDefinitionId +
-						"' requires 'lifeTime' or an Attribute.Common.Duration value in JSON"
+						"' requires 'lifeTime' or an " + CommonAttributeIds::Duration.ToString() +
+						" value in JSON"
 					);
 				}
 			}
@@ -396,7 +393,7 @@ namespace ly::content
 
 			const Json settings = object.value("settings", Json::object());
 			const NumericSettingContract& settingsContract =
-				GetNumericSettingContract(fallbackAbilityId);
+				NumericSettingContractRegistry::Find(fallback->behaviorTag);
 			for (const auto& [name, value] : settings.items())
 			{
 				if (settingsContract.allowed.find(name) == settingsContract.allowed.end())
@@ -427,6 +424,14 @@ namespace ly::content
 			for (const Json& profile : object.value("attributeProfiles", Json::array()))
 			{
 				const std::string profileId = RequiredString(profile, "id");
+				std::string profileIdFailure;
+				if (!ContentIdSchema::ValidateAbilityAttributeProfileId(
+					profileId,
+					&profileIdFailure
+				))
+				{
+					throw std::runtime_error(profileIdFailure);
+				}
 				sas::GameplayAttributeList attributes;
 				std::set<GameplayTag> attributeIds;
 				for (const Json& attribute : profile.value("attributes", Json::array()))
@@ -472,6 +477,12 @@ namespace ly::content
 
 		try
 		{
+			std::string contractFailure;
+			if (!RegisterGameAbilitySettingContracts(&contractFailure))
+			{
+				return Result{ {}, contractFailure };
+			}
+
 			const Json& root = *documentResult.document;
 			if (root.at("schemaVersion").get<int>() != 1)
 			{
@@ -485,6 +496,23 @@ namespace ly::content
 			for (const Json& ability : root.at("abilities"))
 			{
 				const std::string abilityId = RequiredString(ability, "id");
+				std::string idFailure;
+				if (!ContentIdSchema::ValidateAbilityId(abilityId, &idFailure))
+				{
+					throw std::runtime_error(
+						"Invalid ability ID '" + abilityId + "': " + idFailure
+					);
+				}
+				if (ability.contains("baseId"))
+				{
+					const std::string baseId = ability.at("baseId").get<std::string>();
+					if (!ContentIdSchema::ValidateAbilityId(baseId, &idFailure))
+					{
+						throw std::runtime_error(
+							"Invalid ability baseId '" + baseId + "': " + idFailure
+						);
+					}
+				}
 				if (!abilityIds.insert(abilityId).second)
 				{
 					throw std::runtime_error("Duplicate ability ID: " + abilityId);

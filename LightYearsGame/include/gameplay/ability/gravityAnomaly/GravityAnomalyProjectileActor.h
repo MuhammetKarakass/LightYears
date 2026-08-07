@@ -18,7 +18,6 @@ namespace ly
 		GravityAnomalyProjectileActor(
 			World* world,
 			Actor* owner,
-			const std::string& texturePath,
 			const GravityAnomalyProjectilePresentationProfile& presentationProfile,
 			std::optional<sf::Vector2f> requestedTargetLocation
 		);

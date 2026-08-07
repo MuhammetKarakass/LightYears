@@ -104,14 +104,14 @@ int main()
   "schemaVersion": 1,
   "abilities": [
     {
-      "id": "Ability.Dash.Basic",
+      "id": "Ability.Movement.Dash.Basic",
       "cooldown": 2.0,
       "duration": 0.24,
       "maxCharges": 1,
       "settings": { "baseDistance": 260.0, "cameraZoomOutRatio": 0.15 }
     },
     {
-      "id": "Ability.Dash.Basic",
+      "id": "Ability.Movement.Dash.Basic",
       "cooldown": 2.0,
       "duration": 0.24,
       "maxCharges": 1,
@@ -133,6 +133,35 @@ int main()
 		return Fail("Ability loader accepted a duplicate ability ID") ? 0 : 1;
 	}
 
+	const std::filesystem::path malformedAbilityIdPath =
+		std::filesystem::temp_directory_path() /
+		"lightyears_malformed_ability_id_test.json";
+	{
+		std::ofstream malformedAbilityIdFile{ malformedAbilityIdPath };
+		malformedAbilityIdFile << R"({
+  "schemaVersion": 1,
+  "abilities": [{
+    "id": "Ability.Offense.Rocket",
+    "cooldown": 1.0,
+    "duration": 0.1,
+    "maxCharges": 1,
+    "settings": {}
+  }]
+})";
+	}
+	const ly::content::AbilityLoader::Result malformedAbilityId =
+		ly::content::AbilityLoader::LoadFromFile(
+			malformedAbilityIdPath,
+			fallbackAbilities,
+			fallbackAbilityActors
+		);
+	std::filesystem::remove(malformedAbilityIdPath);
+	if (malformedAbilityId.Succeeded() ||
+		malformedAbilityId.error.find("Invalid ability ID") == std::string::npos)
+	{
+		return Fail("Ability loader accepted an ID without a variant segment") ? 0 : 1;
+	}
+
 	const std::filesystem::path abilityVariantPath =
 		std::filesystem::temp_directory_path() /
 		"lightyears_ability_variant_test.json";
@@ -142,15 +171,15 @@ int main()
   "schemaVersion": 1,
   "abilities": [
     {
-      "id": "Ability.Dash.Basic",
+      "id": "Ability.Movement.Dash.Basic",
       "cooldown": 2.0,
       "duration": 0.24,
       "maxCharges": 1,
       "settings": { "baseDistance": 333.0, "cameraZoomOutRatio": 0.15 }
     },
     {
-      "id": "Ability.Dash.Variant",
-      "baseId": "Ability.Dash.Basic",
+      "id": "Ability.Movement.Dash.Variant",
+      "baseId": "Ability.Movement.Dash.Basic",
       "cooldown": 1.5,
       "duration": 0.20,
       "maxCharges": 1,
@@ -168,7 +197,7 @@ int main()
 	std::filesystem::remove(abilityVariantPath);
 	if (!abilityVariant.Succeeded() || abilityVariant.definitions.size() != 2 ||
 		abilityVariant.definitions.back().definition.abilityId !=
-			"Ability.Dash.Variant" ||
+			"Ability.Movement.Dash.Variant" ||
 		!NearlyEqual(
 			abilityVariant.definitions.back().numericSettings.at("baseDistance"),
 			333.f
@@ -188,7 +217,7 @@ int main()
 		missingAbilityNumbersFile << R"({
   "schemaVersion": 1,
   "abilities": [{
-    "id": "Ability.Dash.Basic",
+    "id": "Ability.Movement.Dash.Basic",
     "cooldown": 1.0,
     "settings": { "baseDistance": 300.0, "cameraZoomOutRatio": 0.10 }
   }]
@@ -207,7 +236,7 @@ int main()
 		return Fail("Ability loader accepted missing required JSON numeric fields") ? 0 : 1;
 	}
 	const auto& dash = loadedAbilities.definitions.front();
-	if (dash.id != "Ability.Dash.Basic" ||
+	if (dash.id != "Ability.Movement.Dash.Basic" ||
 		!NearlyEqual(dash.definition.cooldown, 2.f) ||
 		!NearlyEqual(dash.definition.duration, 0.24f) ||
 		dash.definition.maxCharges != 1 ||
@@ -223,7 +252,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.Shield.Basic";
+			return definition.id == "Ability.Defense.Shield.Basic";
 		}
 	);
 	if (shieldIt == loadedAbilities.definitions.end() ||
@@ -251,7 +280,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.SunBeam.Strike.Basic";
+			return definition.id == "Ability.Offense.SunBeam.Strike.Basic";
 		}
 	);
 	if (sunBeamIt == loadedAbilities.definitions.end() ||
@@ -266,7 +295,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.Rocket.Basic";
+			return definition.id == "Ability.Offense.Rocket.Basic";
 		}
 	);
 	if (rocketIt == loadedAbilities.definitions.end() ||
@@ -281,7 +310,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.GravityAnomaly.Basic";
+			return definition.id == "Ability.Control.GravityAnomaly.Basic";
 		}
 	);
 	if (gravityIt == loadedAbilities.definitions.end() ||
@@ -307,7 +336,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.InfernoSpray.Basic";
+			return definition.id == "Ability.Offense.InfernoSpray.Basic";
 		}
 	);
 	if (infernoIt == loadedAbilities.definitions.end() ||
@@ -334,12 +363,12 @@ int main()
 	}
 
 	const char* expectedWeaponIds[] = {
-		"FighterBasicRapidLaser",
-		"PlayerRapidShotgun",
-		"PlayerDualKineticBlaster",
-		"PlayerElectricArcLauncher",
-		"PlayerContinuousHeatLaser",
-		"PlayerCryoWaveProjector"
+		"Weapon.Projectile.FighterRapidLaser.Basic",
+		"Weapon.Projectile.RapidShotgun.Basic",
+		"Weapon.Projectile.DualKineticBlaster.Basic",
+		"Weapon.Arc.ElectricLauncher.Basic",
+		"Weapon.Beam.ContinuousHeatLaser.Basic",
+		"Weapon.Wave.CryoProjector.Basic"
 	};
 	for (const char* expectedId : expectedWeaponIds)
 	{
@@ -350,12 +379,12 @@ int main()
 	}
 
 	const PrimaryWeaponDefinition* basicLaser =
-		FindWeapon(loaded.definitions, "FighterBasicRapidLaser");
+		FindWeapon(loaded.definitions, "Weapon.Projectile.FighterRapidLaser.Basic");
 	const sas::GameplayAttribute* basicDamage = sas::FindGameplayAttribute(
 		basicLaser->attributes,
 		ly::CommonAttributeIds::Damage
 	);
-	if (basicLaser->weaponTypeTag != PrimaryWeaponSchema::Projectile::Standard::TypeId ||
+	if (basicLaser->weaponTypeTag != PrimaryWeaponSchema::Projectile::Standard::TypeTag ||
 		!basicDamage ||
 		!NearlyEqual(basicDamage->baseValue, 8.f) ||
 		basicLaser->progressionProfile.ResolveLevelSteps().size() != 3 ||
@@ -365,8 +394,8 @@ int main()
 	}
 
 	const PrimaryWeaponDefinition* shotgun =
-		FindWeapon(loaded.definitions, "PlayerRapidShotgun");
-	if (shotgun->weaponTypeTag != PrimaryWeaponSchema::Projectile::Shotgun::TypeId ||
+		FindWeapon(loaded.definitions, "Weapon.Projectile.RapidShotgun.Basic");
+	if (shotgun->weaponTypeTag != PrimaryWeaponSchema::Projectile::Shotgun::TypeTag ||
 		shotgun->muzzleDefinitions.size() != 1 ||
 		shotgun->attributes.size() != 16 ||
 		!sas::FindGameplayAttribute(shotgun->attributes, ly::DamageAttributeIds::BurnDuration) ||
@@ -376,7 +405,7 @@ int main()
 	}
 
 	const PrimaryWeaponDefinition* dual =
-		FindWeapon(loaded.definitions, "PlayerDualKineticBlaster");
+		FindWeapon(loaded.definitions, "Weapon.Projectile.DualKineticBlaster.Basic");
 	if (dual->muzzleDefinitions.size() != 2 ||
 		dual->progressionProfile.ResolveLevelSteps().size() != 3 ||
 		dual->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
@@ -385,8 +414,8 @@ int main()
 	}
 
 	const PrimaryWeaponDefinition* electric =
-		FindWeapon(loaded.definitions, "PlayerElectricArcLauncher");
-	if (electric->weaponTypeTag != PrimaryWeaponSchema::Arc::Electric::TypeId ||
+		FindWeapon(loaded.definitions, "Weapon.Arc.ElectricLauncher.Basic");
+	if (electric->weaponTypeTag != PrimaryWeaponSchema::Arc::Electric::TypeTag ||
 		!sas::FindGameplayAttribute(
 			electric->attributes,
 			PrimaryWeaponSchema::Arc::Electric::ChainCount
@@ -397,9 +426,9 @@ int main()
 	}
 
 	const PrimaryWeaponDefinition* beam =
-		FindWeapon(loaded.definitions, "PlayerContinuousHeatLaser");
-	if (beam->weaponTypeTag != PrimaryWeaponSchema::Beam::Continuous::TypeId ||
-		beam->featureTags != ly::List<ly::GameplayTag>{ PrimaryWeaponSchema::Feature::Heat::FeatureId } ||
+		FindWeapon(loaded.definitions, "Weapon.Beam.ContinuousHeatLaser.Basic");
+	if (beam->weaponTypeTag != PrimaryWeaponSchema::Beam::Continuous::TypeTag ||
+		beam->featureTags != ly::List<ly::GameplayTag>{ PrimaryWeaponSchema::Feature::Heat::FeatureTag } ||
 		beam->heatGainCurve.size() != 4 ||
 		beam->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy })
 	{
@@ -407,8 +436,8 @@ int main()
 	}
 
 	const PrimaryWeaponDefinition* cryo =
-		FindWeapon(loaded.definitions, "PlayerCryoWaveProjector");
-	if (cryo->weaponTypeTag != PrimaryWeaponSchema::Wave::Expanding::TypeId ||
+		FindWeapon(loaded.definitions, "Weapon.Wave.CryoProjector.Basic");
+	if (cryo->weaponTypeTag != PrimaryWeaponSchema::Wave::Expanding::TypeTag ||
 		cryo->attributes.size() != 12 ||
 		cryo->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo })
 	{
@@ -434,9 +463,9 @@ int main()
 			shipPresentationBase
 		);
 	if (!loadedShips.Succeeded() || loadedShips.definitions.size() != 1 ||
-		loadedShips.definitions.front().id != "Player.Fighter" ||
+		loadedShips.definitions.front().id != "Ship.Player.Fighter.Basic" ||
 		loadedShips.definitions.front().definition.primaryWeaponId !=
-			"FighterBasicRapidLaser" ||
+			"Weapon.Projectile.FighterRapidLaser.Basic" ||
 		!NearlyEqual(loadedShips.definitions.front().definition.health, 100.f))
 	{
 		return Fail("Ship JSON catalog did not load the player definition") ? 0 : 1;
@@ -449,7 +478,7 @@ int main()
 		ly::content::AttachmentLoader::LoadFromFile(attachmentPath);
 	if (!loadedAttachments.Succeeded() || loadedAttachments.definitions.size() != 1 ||
 		loadedAttachments.definitions.front().attachmentId !=
-			ly::GameplayTag{ "Attachment.Thermal.Converter" } ||
+			"Attachment.Thermal.Converter.Basic" ||
 		loadedAttachments.definitions.front().eventRules.size() != 1)
 	{
 		return Fail("Attachment JSON catalog did not load the expected definition") ? 0 : 1;
@@ -503,6 +532,57 @@ int main()
 	if (invalidOwnedEffect.Succeeded())
 	{
 		return Fail("Effect ownership lint accepted source-owned numeric data in effects.json") ? 0 : 1;
+	}
+	const std::filesystem::path invalidEffectTagsPath =
+		std::filesystem::temp_directory_path() / "lightyears_invalid_effect_tags_test.json";
+	{
+		std::ofstream invalidEffectTagsFile{ invalidEffectTagsPath };
+		invalidEffectTagsFile << R"({
+  "schemaVersion": 1,
+  "effects": [{
+    "id": "Effect.Barrier.Basic",
+    "durationPolicy": "Instant",
+    "stackingPolicy": "None",
+    "sourceParameterized": false,
+    "grantedTags": ["Attribute.Owner.Health"]
+  }]
+})";
+	}
+	const ly::content::EffectLoader::Result invalidEffectTags =
+		ly::content::EffectLoader::LoadFromFile(
+			invalidEffectTagsPath,
+			EffectData::GetBuiltinGameplayEffectDefinitions()
+		);
+	std::filesystem::remove(invalidEffectTagsPath);
+	if (invalidEffectTags.Succeeded() ||
+		invalidEffectTags.error.find("invalid granted tag") == std::string::npos)
+	{
+		return Fail("Effect loader accepted a tag from an unrelated domain") ? 0 : 1;
+	}
+	const std::filesystem::path malformedEffectIdPath =
+		std::filesystem::temp_directory_path() / "lightyears_malformed_effect_id_test.json";
+	{
+		std::ofstream malformedEffectIdFile{ malformedEffectIdPath };
+		malformedEffectIdFile << R"({
+  "schemaVersion": 1,
+  "effects": [{
+    "id": "Effect.Barrier",
+    "durationPolicy": "Instant",
+    "stackingPolicy": "None",
+    "sourceParameterized": false
+  }]
+})";
+	}
+	const ly::content::EffectLoader::Result malformedEffectId =
+		ly::content::EffectLoader::LoadFromFile(
+			malformedEffectIdPath,
+			EffectData::GetBuiltinGameplayEffectDefinitions()
+		);
+	std::filesystem::remove(malformedEffectIdPath);
+	if (malformedEffectId.Succeeded() ||
+		malformedEffectId.error.find("Invalid gameplay effect ID") == std::string::npos)
+	{
+		return Fail("Effect loader accepted an ID without a variant segment") ? 0 : 1;
 	}
 	std::string effectCatalogFailure;
 	if (!ly::content::EffectContentCatalog::LoadFromFile(

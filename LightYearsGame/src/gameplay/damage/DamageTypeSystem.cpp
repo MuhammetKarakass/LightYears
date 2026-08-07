@@ -4,7 +4,7 @@
 
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/combat/Combatant.h"
-#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include <algorithm>
 
 namespace ly
@@ -82,16 +82,16 @@ namespace ly
 		)
 		{
 			const sas::GameplayEffectDefinition* slowDefinition =
-				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoSlowed);
+				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoSlowedEffectId);
 			const sas::GameplayEffectDefinition* buildupDefinition =
-				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoBuildup);
+				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoBuildupEffectId);
 			if (!slowDefinition || !buildupDefinition)
 			{
 				return false;
 			}
 
 			if (targetAbilitySystem.FindGameplayEffectById(
-				DamageStatusEffectIds::CryoSlowed
+				DamageStatusEffectIds::CryoSlowedEffectId
 			))
 			{
 				// Once the four-hit threshold has been met, continued Cryo hits
@@ -358,26 +358,21 @@ namespace ly
 	{
 		static const bool registered = []
 		{
-			LightYearsAbilitySystemComponent::
-				EffectBehaviorRuntime::Hooks igniteHooks;
+			LightYearsEffectBehaviorRuntime::Hooks igniteHooks;
 			igniteHooks.tick = &TickIgnite;
 			const bool igniteRegistered =
-				LightYearsAbilitySystemComponent::
-					GetEffectBehaviorRuntime().Register(
-						DamageStatusSchema::IgniteBehavior,
+				GetEffectBehaviorRuntime().Register(
+						DamageStatusSchema::IgniteBehaviorTag,
 						igniteHooks
 					);
 
-			LightYearsAbilitySystemComponent::
-				EffectBehaviorRuntime::Hooks electricHooks;
+			LightYearsEffectBehaviorRuntime::Hooks electricHooks;
 			electricHooks.eventPhase =
-				LightYearsAbilitySystemComponent::
-					IncomingDamagePhase::PreMitigation;
+				IncomingDamagePhase::PreMitigation;
 			electricHooks.processEvent = &ProcessElectricIncomingDamage;
 			const bool electricRegistered =
-				LightYearsAbilitySystemComponent::
-					GetEffectBehaviorRuntime().Register(
-						DamageStatusSchema::ElectricBehavior,
+				GetEffectBehaviorRuntime().Register(
+						DamageStatusSchema::ElectricBehaviorTag,
 						electricHooks
 					);
 			return igniteRegistered && electricRegistered;

@@ -2,6 +2,8 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include <algorithm>
@@ -27,8 +29,10 @@ namespace ly
 			CommonAttributeIds::Damage,
 			CommonAttributeIds::Duration,
 			CommonAttributeIds::Radius,
-			CommonAttributeIds::CollisionRadius
+			CollisionAttributeIds::Radius
 		};
+
+		const GameplayTag AbilityActorAttributeRoot{ "Attribute.AbilityActor" };
 
 		bool HasExactTag(const List<GameplayTag>& tags, const GameplayTag& expectedTag)
 		{
@@ -46,12 +50,30 @@ namespace ly
 			});
 		}
 
+		bool IsFamilyScopedAbilityActorAttributeRoot(
+			const GameplayTag& root,
+			const std::string& family
+		)
+		{
+			// Only feature-local actor roots are constrained here. Roots such as
+			// Attribute.Damage are intentionally reusable across families.
+			if (!root.MatchesTag(AbilityActorAttributeRoot))
+			{
+				return true;
+			}
+
+			const std::string expectedPrefix =
+				AbilityActorAttributeRoot.name + "." + family + ".";
+			return root.name.compare(0, expectedPrefix.size(), expectedPrefix) == 0 &&
+				root.name.size() > expectedPrefix.size();
+		}
+
 		class GenericAbilityActorType final : public AbilityActorTypeHandler
 		{
 		public:
 			const GameplayTag& GetActorTypeTag() const override
 			{
-				return AbilityActorSchema::Generic::TypeId;
+				return AbilityActorSchema::Generic::TypeTag;
 			}
 
 			const List<GameplayTag>& GetAllowedCommonAttributeIds() const override
@@ -63,7 +85,7 @@ namespace ly
 			{
 				World* world = context.owner.GetWorld();
 				return world
-					? world->SpawnActor<AbilityWorldActor>(&context.owner, context.definition.texturePath)
+					? world->SpawnActor<AbilityWorldActor>(&context.owner, "")
 					: weak_ptr<AbilityWorldActor>{};
 			}
 		};
@@ -73,7 +95,7 @@ namespace ly
 			static const bool initialized = []
 			{
 				GetHandlers().emplace(
-					AbilityActorSchema::Generic::TypeId,
+					AbilityActorSchema::Generic::TypeTag,
 					std::make_unique<GenericAbilityActorType>()
 				);
 				return true;
@@ -91,9 +113,43 @@ namespace ly
 
 	AbilityActorValidationResult AbilityActorTypeHandler::ValidateDefinition(const AbilityActorDefinition& definition) const
 	{
-		return definition.actorDefinitionId.empty()
-			? AbilityActorValidationResult{ false, "Ability actor definition requires an ID." }
-			: AbilityActorValidationResult{ true, {} };
+		std::string failureReason;
+		content::ParsedFamilyRoleId actorId;
+		if (!content::ContentIdSchema::ParseAbilityActorDefinitionId(
+			definition.actorDefinitionId,
+			actorId,
+			&failureReason
+		))
+		{
+			return { false, failureReason };
+		}
+		content::ParsedFamilyRoleId presentationId;
+		if (!content::ContentIdSchema::ParseAbilityPresentationProfileId(
+			definition.presentationProfileId,
+			presentationId,
+			&failureReason
+		))
+		{
+			return { false, failureReason };
+		}
+		if (actorId.family != presentationId.family || actorId.role != presentationId.role)
+		{
+			return {
+				false,
+				"Ability actor and presentation profile IDs must use the same family and role."
+			};
+		}
+		const GameplayTag expectedTypeTag{
+			"AbilityActor." + actorId.family + "." + actorId.role
+		};
+		if (!definition.actorTypeTag.MatchesTagExact(expectedTypeTag))
+		{
+			return {
+				false,
+				"Ability actor type tag must match the family and role encoded by its definition ID."
+			};
+		}
+		return { true, {} };
 	}
 
 	const List<GameplayTag>& AbilityActorTypeHandler::GetOwnedAttributeRoots() const
@@ -118,16 +174,50 @@ namespace ly
 
 	AbilityActorValidationResult AbilityActorRegistry::ValidateDefinition(const AbilityActorDefinition& definition)
 	{
+		std::string tagFailureReason;
+		if (!GameplayTagSchema::Validate(
+			definition.actorTypeTag,
+			GameplayTagKind::AbilityActorType,
+			&tagFailureReason
+		))
+		{
+			return { false, "Ability actor type tag is invalid: " + tagFailureReason };
+		}
 		const AbilityActorTypeHandler* handler = FindHandler(definition.actorTypeTag);
 		if (!handler)
 		{
 			return { false, "No ability actor handler is registered for this actor type." };
 		}
 
+		content::ParsedFamilyRoleId actorId;
+		if (!content::ContentIdSchema::ParseAbilityActorDefinitionId(
+			definition.actorDefinitionId,
+			actorId,
+			&tagFailureReason
+		))
+		{
+			return { false, tagFailureReason };
+		}
+		for (const GameplayTag& root : handler->GetOwnedAttributeRoots())
+		{
+			if (!IsFamilyScopedAbilityActorAttributeRoot(root, actorId.family))
+			{
+				return {
+					false,
+					"Ability actor custom attribute roots must use "
+					"Attribute.AbilityActor.<Family>.<Role>."
+				};
+			}
+		}
+
 		List<GameplayTag> declaredAttributeIds;
 		for (const sas::GameplayAttribute& attribute : definition.attributes)
 		{
-			if (!attribute.id.IsValid() || HasExactTag(declaredAttributeIds, attribute.id))
+			if (!GameplayTagSchema::Validate(
+				attribute.id,
+				GameplayTagKind::Attribute,
+				&tagFailureReason
+			) || HasExactTag(declaredAttributeIds, attribute.id))
 			{
 				return { false, "Ability actor attributes must have valid, unique IDs." };
 			}

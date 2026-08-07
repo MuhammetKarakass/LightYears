@@ -11,6 +11,7 @@ namespace ly
 		{
 			GravityAnomalyProjectilePresentationProfile profile;
 			profile.profileId = GravityAnomalyPresentationIds::ProjectileBasic;
+			profile.texturePath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 			return profile;
 		}
 

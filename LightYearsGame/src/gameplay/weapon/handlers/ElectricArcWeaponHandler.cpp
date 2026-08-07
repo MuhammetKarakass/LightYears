@@ -162,7 +162,7 @@ namespace ly
 		public:
 			const GameplayTag& GetTypeTag() const override
 			{
-				return PrimaryWeaponSchema::Arc::Electric::TypeId;
+				return PrimaryWeaponSchema::Arc::Electric::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override

@@ -58,7 +58,7 @@ namespace ly
 			AttachmentHostKind hostKind,
 			std::string* failureReason = nullptr
 		);
-		bool RemoveAttachment(const GameplayTag& attachmentId, AttachmentHostKind hostKind);
+		bool RemoveAttachment(const std::string& attachmentId, AttachmentHostKind hostKind);
 		const AttachmentLoadout& GetAttachments() const { return mAttachments; }
 		sas::GameplayAttributeList MergeAttachmentAttributes(
 			AttachmentHostKind hostKind,

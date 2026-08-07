@@ -20,7 +20,7 @@ namespace AbilityData
 		inline const ly::GameAbilityDefinition Shield_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
-			definition.abilityId = "Ability.Shield.Basic";
+			definition.abilityId = Shield::AbilityId::Basic;
 			definition.slot = sas::AbilitySlot::Ability1;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
@@ -28,7 +28,7 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTag{ "Ability.Defense" },
+				Shield::CategoryTag,
 				Shield::FamilyTag
 			};
 			definition.displayName = "Shield";
@@ -38,14 +38,17 @@ namespace AbilityData
 			definition.actions = {
 				ly::AbilityActionSpec{
 					sas::AbilityActionPhase::OnActivate,
-					ly::ApplyEffectAction{ "Effect.Barrier.Basic", sas::AbilityTargetPolicy::Self },
+					ly::ApplyEffectAction{
+						BarrierEffectSchema::BasicEffectId,
+						sas::AbilityTargetPolicy::Self
+					},
 					0.f,
 					1
 				}
 			};
 			definition.triggers = {
 				ly::AbilityTriggerSpec{
-					ly::GameplayTag{ "Event.Owner.BarrierBroken" },
+					BarrierEffectSchema::BrokenEventTag,
 					0.f,
 					{},
 					{},
@@ -53,7 +56,7 @@ namespace AbilityData
 						ly::AbilityActionSpec{
 							sas::AbilityActionPhase::OnActivate,
 							ly::ApplyEffectAction{
-								"Effect.Test.BarrierBreak.ThrustBoost",
+								BarrierEffectSchema::BreakThrustBoostEffectId,
 								sas::AbilityTargetPolicy::Self
 							},
 							0.f,
@@ -62,7 +65,7 @@ namespace AbilityData
 					}
 				}
 			};
-			definition.behaviorId = Shield::BehaviorId;
+			definition.behaviorTag = Shield::BehaviorTag;
 			return definition;
 		}();
 	}

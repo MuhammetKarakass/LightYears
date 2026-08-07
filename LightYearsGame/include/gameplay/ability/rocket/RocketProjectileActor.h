@@ -18,7 +18,6 @@ namespace ly
 		RocketProjectileActor(
 			World* world,
 			Actor* owner,
-			const std::string& texturePath,
 			const RocketPresentationProfile& presentationProfile,
 			std::optional<sf::Vector2f> targetLocation
 		);

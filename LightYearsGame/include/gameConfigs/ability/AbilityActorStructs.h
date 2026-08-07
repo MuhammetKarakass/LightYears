@@ -10,7 +10,7 @@ namespace ly
 	{
 		struct Generic
 		{
-			inline static const GameplayTag TypeId{ "AbilityActor.Generic" };
+			inline static const GameplayTag TypeTag{ "AbilityActor.Generic.Generic" };
 		};
 	};
 
@@ -18,8 +18,7 @@ namespace ly
 	struct AbilityActorDefinition
 	{
 		std::string actorDefinitionId;
-		GameplayTag actorTypeTag = AbilityActorSchema::Generic::TypeId;
-		std::string texturePath;
+		GameplayTag actorTypeTag = AbilityActorSchema::Generic::TypeTag;
 		float lifeTime = 0.f;
 		float spawnDistance = 0.f;
 		sas::GameplayAttributeList attributes;

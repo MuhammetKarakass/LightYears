@@ -5,15 +5,15 @@
       "id": "Effect.Barrier.Basic",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
-      "grantedTags": ["Effect.Defense.Barrier"],
-      "activeVisualId": "Visual.Shield.Basic",
+	  "grantedTags": ["State.Effect.Defense.Barrier"],
+      "activeVisualId": "Visual.Effect.Shield.Basic",
       "sourceParameterized": true
     },
     {
       "id": "Effect.Test.BarrierBreak.ThrustBoost",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
-      "grantedTags": ["Effect.Movement.Boost", "Effect.Test.PassiveValidation"],
+	  "grantedTags": ["State.Effect.Movement.Boost", "State.Effect.Test.PassiveValidation"],
       "sourceParameterized": true
     },
     {
@@ -47,20 +47,20 @@
       "sourceParameterized": true
     },
     {
-      "id": "Effect.GravityAnomaly.Inside",
+      "id": "Effect.GravityAnomaly.Inside.Basic",
       "behaviorTag": "EffectBehavior.GravityAnomaly",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
-      "grantedTags": ["Effect.GravityAnomaly.Inside"],
+	  "grantedTags": ["State.Effect.GravityAnomaly.Inside"],
       "activeVisualId": "Visual.Effect.GravityAnomaly.Inside",
       "sourceScopedApplication": true,
       "sourceParameterized": true
     },
     {
-      "id": "Effect.Movement.Slow",
+      "id": "Effect.Movement.Slow.Basic",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
-      "grantedTags": ["Effect.Movement.Slow"],
+	  "grantedTags": ["State.Effect.Movement.Slow"],
       "sourceParameterized": true
     }
   ]

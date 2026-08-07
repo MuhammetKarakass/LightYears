@@ -36,6 +36,7 @@ namespace ly
 	struct GravityAnomalyProjectilePresentationProfile
 	{
 		std::string profileId;
+		std::string texturePath;
 		GravityAnomalyProjectileVisualDefinition visual;
 	};
 

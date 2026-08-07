@@ -46,7 +46,15 @@ namespace ly
 		inline static const GameplayTag Interval{ "Attribute.Common.Interval" };
 		inline static const GameplayTag FireRate{ "Attribute.Common.FireRate" };
 		inline static const GameplayTag Range{ "Attribute.Common.Range" };
-		inline static const GameplayTag CollisionRadius{ "Attribute.Collision.Radius" };
-		inline static const GameplayTag AreaRadius{ "Attribute.Area.Radius" };
+	};
+
+	struct CollisionAttributeIds
+	{
+		inline static const GameplayTag Radius{ "Attribute.Collision.Radius" };
+	};
+
+	struct AreaAttributeIds
+	{
+		inline static const GameplayTag Radius{ "Attribute.Area.Radius" };
 	};
 }

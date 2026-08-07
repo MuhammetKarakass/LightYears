@@ -18,7 +18,7 @@ namespace ly
 		public:
 			const GameplayTag& GetTypeTag() const override
 			{
-				return PrimaryWeaponSchema::Projectile::Shotgun::TypeId;
+				return PrimaryWeaponSchema::Projectile::Shotgun::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override
@@ -111,7 +111,7 @@ namespace ly
 					}
 					if (sas::FindGameplayAttributeValue(
 							definition.attributes,
-							CommonAttributeIds::AreaRadius,
+							AreaAttributeIds::Radius,
 							0.f
 						) > 0.f ||
 						sas::FindGameplayAttributeValue(

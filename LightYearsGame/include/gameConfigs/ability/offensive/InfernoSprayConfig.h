@@ -14,23 +14,16 @@ namespace AbilityData
 	{
 		// Actor/behavior/presentation contract only. Numeric tuning lives in abilities.json.
 
-		inline const ly::AbilityActorDefinition ActorFlameConeBasic{
-			"Actor.Ability.InfernoSpray.FlameCone.Basic",
-			ActorSchema::TypeId,
-			"",
-			0.f,
-			0.f,
-			{},
-			ly::InfernoSprayPresentationIds::Basic
-		};
-
-		inline const ly::AbilityActorDefinition* FindActorDefinition(
-			const std::string& actorDefinitionId)
+		inline const ly::AbilityActorDefinition ActorFlameConeBasic = []
 		{
-			return actorDefinitionId == ActorFlameConeBasic.actorDefinitionId
-				? &ActorFlameConeBasic
-				: nullptr;
-		}
+			ly::AbilityActorDefinition definition;
+			definition.actorDefinitionId = Actor::FlameCone::BasicDefinitionId;
+			definition.actorTypeTag = Actor::FlameCone::TypeTag;
+			definition.presentationProfileId =
+				ly::InfernoSprayPresentationIds::FlameConeBasic;
+			return definition;
+		}();
+
 	}
 
 	namespace Definitions
@@ -38,7 +31,7 @@ namespace AbilityData
 		inline const ly::GameAbilityDefinition InfernoSpray_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
-			definition.abilityId = "Ability.InfernoSpray.Basic";
+			definition.abilityId = InfernoSpray::AbilityId::Basic;
 			definition.slot = sas::AbilitySlot::Ability2;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
@@ -46,7 +39,7 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTag{ "Ability.Offense" },
+				InfernoSpray::CategoryTag,
 				InfernoSpray::FamilyTag
 			};
 			definition.damageTags = {
@@ -68,14 +61,9 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorId = InfernoSpray::BehaviorId;
+			definition.behaviorTag = InfernoSpray::BehaviorTag;
 			return definition;
 		}();
 	}
 
-	namespace AbilityActors
-	{
-		inline const ly::AbilityActorDefinition& Actor_InfernoSpray_Basic =
-			InfernoSpray::ActorFlameConeBasic;
-	}
 }

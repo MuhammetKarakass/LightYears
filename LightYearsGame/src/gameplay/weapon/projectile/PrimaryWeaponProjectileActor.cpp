@@ -22,7 +22,7 @@ namespace ly
 		mLaunchVelocity{},
 		mMaxTravelDistance(sas::FindGameplayAttributeValue(values, CommonAttributeIds::Range, 1600.f)),
 		mTravelDistance(0.f),
-		mAreaDamageRadius(std::max(0.f, sas::FindGameplayAttributeValue(values, CommonAttributeIds::AreaRadius, 0.f))),
+		mAreaDamageRadius(std::max(0.f, sas::FindGameplayAttributeValue(values, AreaAttributeIds::Radius, 0.f))),
 		mVisualScale(std::max(0.01f, presentation.visualScale)),
 		mRemainingPierces(std::max(0, static_cast<int>(std::round(sas::FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 0.f)))))
 	{
@@ -30,7 +30,7 @@ namespace ly
 		SetDamage(sas::FindGameplayAttributeValue(values, CommonAttributeIds::Damage, 0.f));
 		SetDamageAttributes(values);
 		SetLifeTime(sas::FindGameplayAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f));
-		SetAbilityCollisionRadius(std::max(0.1f, sas::FindGameplayAttributeValue(values, CommonAttributeIds::CollisionRadius, 8.f)));
+		SetAbilityCollisionRadius(std::max(0.1f, sas::FindGameplayAttributeValue(values, CollisionAttributeIds::Radius, 8.f)));
 		ConfigureCollisionFromOwner();
 		SetVisualScale(mVisualScale);
 		ly::perf::IncBullets();

@@ -3,6 +3,7 @@
 #include "gameConfigs/ship/ShipConfig.h"
 #include "gameplay/content/ShipLoader.h"
 #include "gameplay/content/WeaponContentCatalog.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 
 #include <cmath>
 
@@ -75,6 +76,30 @@ namespace ly::content
 				IsFiniteNonNegative(progression.baseXP) &&
 				std::isfinite(progression.xpExponent) && progression.xpExponent > 0.f;
 		}
+
+		bool ValidateShipTagSchema(
+			const ShipDefinition& definition,
+			std::string* failureReason
+		)
+		{
+			for (const AttributeGrowthEntry& growth :
+				definition.progressionDefinition.growthOverrides)
+			{
+				std::string tagFailureReason;
+				if (!GameplayTagSchema::Validate(
+					growth.attributeId,
+					GameplayTagKind::Attribute,
+					&tagFailureReason
+				))
+				{
+					return Fail(
+						failureReason,
+						"Ship progression attribute tag is invalid: " + tagFailureReason
+					);
+				}
+			}
+			return true;
+		}
 	}
 
 	bool ShipContentCatalog::LoadFromFile(
@@ -116,6 +141,10 @@ namespace ly::content
 					"Invalid numeric values in ship '" + definition.id + "'"
 				);
 			}
+			if (!ValidateShipTagSchema(definition.definition, failureReason))
+			{
+				return false;
+			}
 		}
 
 		GetDefinitions() = loaded.definitions;
@@ -137,7 +166,7 @@ namespace ly::content
 
 	const ShipDefinition& ShipContentCatalog::GetPlayerFighterDefinition()
 	{
-		const ShipDefinition* loaded = FindById("Player.Fighter");
+		const ShipDefinition* loaded = FindById("Ship.Player.Fighter.Basic");
 		return loaded ? *loaded : ShipData::Ship_Player_Fighter;
 	}
 

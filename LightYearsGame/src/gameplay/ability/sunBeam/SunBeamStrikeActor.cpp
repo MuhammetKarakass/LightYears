@@ -21,8 +21,8 @@ namespace ly
 		};
 
 		const List<GameplayTag> SunBeamStrikeAttributeRoots{
-			AbilityData::SunBeam::ActorSchema::SharedAttributeRoot,
-			AbilityData::SunBeam::ActorSchema::Strike::AttributeRoot
+			AbilityData::SunBeam::Actor::Shared::AttributeRoot,
+			AbilityData::SunBeam::Actor::Strike::AttributeRoot
 		};
 
 		class SunBeamStrikeActorTypeHandler final : public AbilityActorTypeHandler
@@ -30,7 +30,7 @@ namespace ly
 		public:
 			const GameplayTag& GetActorTypeTag() const override
 			{
-				return AbilityData::SunBeam::ActorSchema::Strike::TypeId;
+				return AbilityData::SunBeam::Actor::Strike::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override
@@ -57,8 +57,8 @@ namespace ly
 				for (const GameplayTag& required : {
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Radius,
-					AbilityData::SunBeam::ActorSchema::Width,
-					AbilityData::SunBeam::ActorSchema::Length
+					AbilityData::SunBeam::Actor::Shared::Width,
+					AbilityData::SunBeam::Actor::Shared::Length
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(
@@ -144,7 +144,7 @@ namespace ly
 			0.f,
 			sas::FindGameplayAttributeValue(
 				attributes,
-				AbilityData::SunBeam::ActorSchema::Strike::TelegraphDuration,
+				AbilityData::SunBeam::Actor::Strike::TelegraphDuration,
 				0.f
 			)
 		);
@@ -152,7 +152,7 @@ namespace ly
 			0.f,
 			sas::FindGameplayAttributeValue(
 				attributes,
-				AbilityData::SunBeam::ActorSchema::Strike::ArrivalDuration,
+				AbilityData::SunBeam::Actor::Strike::ArrivalDuration,
 				0.f
 			)
 		);
@@ -160,7 +160,7 @@ namespace ly
 			0.f,
 			sas::FindGameplayAttributeValue(
 				attributes,
-				AbilityData::SunBeam::ActorSchema::Strike::ImpactDelay,
+				AbilityData::SunBeam::Actor::Strike::ImpactDelay,
 				0.f
 			)
 		);
@@ -168,7 +168,7 @@ namespace ly
 			0.f,
 			sas::FindGameplayAttributeValue(
 				attributes,
-				AbilityData::SunBeam::ActorSchema::Strike::ImpactVisualDuration,
+				AbilityData::SunBeam::Actor::Strike::ImpactVisualDuration,
 				0.f
 			)
 		);

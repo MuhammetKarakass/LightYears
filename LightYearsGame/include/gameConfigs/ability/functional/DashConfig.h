@@ -19,7 +19,7 @@ namespace AbilityData
 		inline const ly::GameAbilityDefinition Dash_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
-			definition.abilityId = "Ability.Dash.Basic";
+			definition.abilityId = Dash::AbilityId::Basic;
 			definition.slot = sas::AbilitySlot::Ability3;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
@@ -27,14 +27,14 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTag{ "Ability.Movement" },
+				Dash::CategoryTag,
 				Dash::FamilyTag
 			};
 			definition.displayName = "Dash";
 			definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/star_gold.png";
 			definition.inputLabel = "F";
 			definition.accentColor = sf::Color{ 120, 220, 255, 255 };
-			definition.behaviorId = Dash::BehaviorId;
+			definition.behaviorTag = Dash::BehaviorTag;
 			return definition;
 		}();
 	}

@@ -23,7 +23,7 @@ namespace ly
 		)
 		{
 			if (!context.definition.weaponTypeTag.MatchesTagExact(
-				PrimaryWeaponSchema::Beam::Continuous::TypeId
+				PrimaryWeaponSchema::Beam::Continuous::TypeTag
 			) || capacity <= 0.f)
 			{
 				return 1.f;
@@ -123,7 +123,7 @@ namespace ly
 		public:
 			const GameplayTag& GetFeatureTag() const override
 			{
-				return PrimaryWeaponSchema::Feature::Heat::FeatureId;
+				return PrimaryWeaponSchema::Feature::Heat::FeatureTag;
 			}
 
 			const List<GameplayTag>& GetAttributeRoots() const override
@@ -196,7 +196,7 @@ namespace ly
 				}
 
 				if (!definition.weaponTypeTag.MatchesTagExact(
-					PrimaryWeaponSchema::Beam::Continuous::TypeId
+					PrimaryWeaponSchema::Beam::Continuous::TypeTag
 				))
 				{
 					return { true, {} };

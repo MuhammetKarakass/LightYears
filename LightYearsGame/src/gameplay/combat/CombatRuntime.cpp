@@ -7,6 +7,7 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "attributes/AttributeMath.h"
 #include <algorithm>
 #include <vector>
@@ -22,14 +23,12 @@ namespace ly
 		callbacks.addStack =
 			[](sas::ActiveGameplayEffect& effect)
 			{
-				return LightYearsAbilitySystemComponent::
-					GetEffectBehaviorRuntime().AddStack(effect);
+				return GetEffectBehaviorRuntime().AddStack(effect);
 			};
 		callbacks.tick =
 			[this](sas::ActiveGameplayEffect& effect, float deltaTime)
 			{
-				return LightYearsAbilitySystemComponent::
-					GetEffectBehaviorRuntime().Tick(
+				return GetEffectBehaviorRuntime().Tick(
 						effect,
 						mOwner,
 						deltaTime
@@ -60,7 +59,19 @@ namespace ly
 
 	void CombatRuntime::InitializeOwnerAttributes(float maxHealth)
 	{
-		mAbilitySystemComponent.InitializeOwnerAttributes(maxHealth);
+		sas::AttributeSystem& attributes = mAbilitySystemComponent.GetAttributes();
+		attributes.RegisterAttribute(OwnerAttributeIds::MaxHealth, maxHealth);
+		attributes.RegisterAttribute(OwnerAttributeIds::HealthRegen, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::EnergyMax, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::EnergyRegen, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::AttackPower, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::AttackSpeed, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::AbilityHaste, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::MoveSpeedHorizontal, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::MoveSpeedVertical, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::Armor, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::Luck, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::CriticalChance, 0.f);
 	}
 
 	float CombatRuntime::GetCriticalChance() const
@@ -96,9 +107,6 @@ namespace ly
 
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)
 	{
-		using IncomingDamagePhase =
-			LightYearsAbilitySystemComponent::IncomingDamagePhase;
-
 		mProcessingDamageContext = &context;
 		mAbilitySystemComponent.ProcessGameplayEffectEvent(
 			context,
@@ -108,16 +116,14 @@ namespace ly
 			},
 			[](const sas::ActiveGameplayEffect& effect)
 			{
-				return LightYearsAbilitySystemComponent::
-					GetEffectBehaviorRuntime().GetEventPhase(
+				return GetEffectBehaviorRuntime().GetEventPhase(
 					effect,
 					IncomingDamagePhase::Standard
 				);
 			},
 			[](sas::ActiveGameplayEffect& effect, DamageContext& damageContext)
 			{
-				return LightYearsAbilitySystemComponent::
-					GetEffectBehaviorRuntime().ProcessEvent(
+				return GetEffectBehaviorRuntime().ProcessEvent(
 					effect,
 					damageContext
 				);
@@ -197,7 +203,7 @@ namespace ly
 		}
 
 		sas::AbilityEvent event;
-		event.eventTag = GameplayTag{ "Event.Owner.DamageTaken" };
+		event.eventTag = CombatEventSchema::OwnerDamageTaken;
 		event.SetSource(context.source);
 		event.SetTarget(context.target);
 		event.magnitude = context.appliedDamage;

@@ -1,5 +1,7 @@
 #include "gameplay/content/WeaponLoader.h"
 
+#include "gameplay/content/ContentIdSchema.h"
+
 #include "framework/JsonDocumentLoader.h"
 
 #include <cstdint>
@@ -173,8 +175,13 @@ namespace ly::content
 		{
 			PrimaryWeaponDefinition definition;
 			definition.weaponId = RequiredString(object, "id");
+			std::string weaponIdFailure;
+			if (!ContentIdSchema::ValidateWeaponId(definition.weaponId, &weaponIdFailure))
+			{
+				throw std::runtime_error(weaponIdFailure);
+			}
 			definition.weaponTypeTag = GameplayTag{
-				RequiredString(object, "typeId")
+				RequiredString(object, "typeTag")
 			};
 			definition.presentationDefinition = ParsePresentation(
 				object.at("presentation")

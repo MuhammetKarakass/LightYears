@@ -19,20 +19,12 @@ namespace AbilityData
 		inline const ly::AbilityActorDefinition ActorProjectileBasic = []
 		{
 			ly::AbilityActorDefinition definition;
-			definition.actorDefinitionId = "Actor.Ability.Rocket.Projectile.Basic";
-			definition.actorTypeTag = ActorSchema::TypeId;
-			definition.texturePath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
-			definition.presentationProfileId = ly::RocketPresentationIds::Basic;
+			definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
+			definition.actorTypeTag = Actor::Projectile::TypeTag;
+			definition.presentationProfileId = ly::RocketPresentationIds::ProjectileBasic;
 			return definition;
 		}();
 
-		inline const ly::AbilityActorDefinition* FindActorDefinition(
-			const std::string& actorDefinitionId)
-		{
-			return actorDefinitionId == ActorProjectileBasic.actorDefinitionId
-				? &ActorProjectileBasic
-				: nullptr;
-		}
 	}
 
 	namespace Definitions
@@ -40,7 +32,7 @@ namespace AbilityData
 		inline const ly::GameAbilityDefinition Rocket_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
-			definition.abilityId = "Ability.Rocket.Basic";
+			definition.abilityId = Rocket::AbilityId::Basic;
 			definition.slot = sas::AbilitySlot::Ability4;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
@@ -48,7 +40,7 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTag{ "Ability.Offense" },
+				Rocket::CategoryTag,
 				Rocket::FamilyTag
 			};
 			definition.displayName = "Rocket";
@@ -69,14 +61,9 @@ namespace AbilityData
 			};
 			definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 			definition.attachmentCapabilities = { ly::AttachmentSchema::Capability::Damage };
-			definition.behaviorId = Rocket::BehaviorId;
+			definition.behaviorTag = Rocket::BehaviorTag;
 			return definition;
 		}();
 	}
 
-	namespace AbilityActors
-	{
-		inline const ly::AbilityActorDefinition& Actor_Rocket_Basic =
-			Rocket::ActorProjectileBasic;
-	}
 }

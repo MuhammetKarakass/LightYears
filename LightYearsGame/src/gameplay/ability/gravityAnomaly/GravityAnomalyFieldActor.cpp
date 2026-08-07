@@ -26,7 +26,7 @@ namespace ly
 		};
 
 		const List<GameplayTag> GravityAnomalyAttributeRoots{
-			AbilityData::GravityAnomaly::ActorSchema::AttributeRoot
+			AbilityData::GravityAnomaly::Actor::Field::AttributeRoot
 		};
 
 		class GravityAnomalyFieldActorTypeHandler final : public AbilityActorTypeHandler
@@ -34,7 +34,7 @@ namespace ly
 		public:
 			const GameplayTag& GetActorTypeTag() const override
 			{
-				return AbilityData::GravityAnomaly::ActorSchema::FieldTypeId;
+				return AbilityData::GravityAnomaly::Actor::Field::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override
@@ -60,9 +60,9 @@ namespace ly
 				for (const GameplayTag& required : {
 					CommonAttributeIds::Duration,
 					CommonAttributeIds::Radius,
-					AbilityData::GravityAnomaly::ActorSchema::PullStrength,
-					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
-					AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration
+					AbilityData::GravityAnomaly::Actor::Field::PullStrength,
+					AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude,
+					AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
@@ -135,17 +135,17 @@ namespace ly
 		));
 		mPullStrength = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::PullStrength,
+			AbilityData::GravityAnomaly::Actor::Field::PullStrength,
 			mPullStrength
 		));
 		mSlowMagnitude = std::clamp(sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
+			AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude,
 			mSlowMagnitude
 		), 0.f, 0.95f);
 		mInsideEffectDuration = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration,
+			AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration,
 			mInsideEffectDuration
 		));
 		SetLifeTime(mDuration);
@@ -159,7 +159,7 @@ namespace ly
 		mRuntimeContext->sourceFieldScope = this;
 		if (const sas::GameplayEffectDefinition* insideEffect =
 			EffectData::FindGameplayEffectDefinition(
-				AbilityData::GravityAnomaly::EffectSchema::InsideEffectId
+				AbilityData::GravityAnomaly::Effect::InsideEffectId
 			))
 		{
 			mInsideEffectSpec = sas::MakeGameplayEffectSpec(*insideEffect);

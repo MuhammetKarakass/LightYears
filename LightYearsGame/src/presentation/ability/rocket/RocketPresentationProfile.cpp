@@ -10,7 +10,8 @@ namespace ly
 		RocketPresentationProfile BuildBasicRocketProfile()
 		{
 			RocketPresentationProfile profile;
-			profile.profileId = RocketPresentationIds::Basic;
+			profile.profileId = RocketPresentationIds::ProjectileBasic;
+			profile.texturePath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
 
 			profile.visual.exhaustOuterColor = sf::Color{ 255, 80, 25, 185 };
 			profile.visual.exhaustCoreColor = sf::Color{ 255, 235, 150, 250 };

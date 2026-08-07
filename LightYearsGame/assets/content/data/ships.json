@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "ships": [
     {
-      "id": "Player.Fighter",
+      "id": "Ship.Player.Fighter.Basic",
       "health": 100.0,
       "speed": [350.0, 350.0],
       "collisionDamage": 25.0,
       "score": 0,
       "shipXPReward": 0.0,
-      "primaryWeaponId": "FighterBasicRapidLaser",
+      "primaryWeaponId": "Weapon.Projectile.FighterRapidLaser.Basic",
       "movement": {
         "forwardThrust": 650.0,
         "reverseThrust": 190.0,

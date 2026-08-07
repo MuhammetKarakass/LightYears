@@ -1,6 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameConfigs/combat/EffectConfig.h"
-#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "gameplay/damage/DamageContext.h"
 #include "gameplay/effects/content/barrier/BarrierEffectBehavior.h"
 #include <algorithm>
@@ -160,7 +160,7 @@ namespace ly::BarrierEffectBehavior
 		{
 			result.removeEffect = true;
 			result.events.push_back(sas::GameplayEffectBehaviorEvent{
-				BarrierEffectSchema::BrokenEventId,
+				BarrierEffectSchema::BrokenEventTag,
 				absorbedSourceDamage
 			});
 		}
@@ -171,15 +171,14 @@ namespace ly::BarrierEffectBehavior
 	{
 		static const bool registered = []
 		{
-			LightYearsAbilitySystemComponent::EffectBehaviorRuntime::Hooks hooks;
+			LightYearsEffectBehaviorRuntime::Hooks hooks;
 			hooks.addStack = &AddStack;
 			hooks.tick = &Tick;
 			hooks.eventPhase =
-				LightYearsAbilitySystemComponent::IncomingDamagePhase::Standard;
+				IncomingDamagePhase::Standard;
 			hooks.processEvent = &ProcessIncomingDamage;
-			return LightYearsAbilitySystemComponent::
-				GetEffectBehaviorRuntime().Register(
-				BarrierEffectSchema::BehaviorId,
+			return GetEffectBehaviorRuntime().Register(
+				BarrierEffectSchema::BehaviorTag,
 				hooks
 			);
 		}();

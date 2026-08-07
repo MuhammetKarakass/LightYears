@@ -88,10 +88,10 @@ namespace ly
 		if (player && !player->GetIsPendingDestroy())
 		{
 			if (const sas::GameplayEffectDefinition* barrier =
-				EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic"))
+				EffectData::FindGameplayEffectDefinition(BarrierEffectSchema::BasicEffectId))
 			{
 				const GameAbilityDefinition* shield =
-					AbilityData::FindShippedAbilityDefinition("Ability.Shield.Basic");
+					AbilityData::FindShippedAbilityDefinition(AbilityData::Shield::AbilityId::Basic);
 				const AbilityEffectSpecDefinition* sourceSpec = shield
 					? shield->FindEffectSpec(barrier->effectId)
 					: nullptr;

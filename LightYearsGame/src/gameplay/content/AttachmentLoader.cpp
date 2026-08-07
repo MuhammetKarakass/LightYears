@@ -1,5 +1,8 @@
 #include "gameplay/content/AttachmentLoader.h"
 
+#include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/tags/GameplayTagSchema.h"
+
 #include "framework/JsonDocumentLoader.h"
 
 #include <limits>
@@ -188,9 +191,7 @@ namespace ly::content
 		AttachmentDefinition ParseAttachment(const Json& object)
 		{
 			AttachmentDefinition definition;
-			definition.attachmentId = GameplayTag{
-				ReadRequiredString(object, "id")
-			};
+			definition.attachmentId = ReadRequiredString(object, "id");
 			definition.displayName = ReadRequiredString(object, "displayName");
 
 			for (const Json& host : object.at("allowedHosts"))
@@ -245,6 +246,70 @@ namespace ly::content
 
 			return definition;
 		}
+
+		void RequireValidTag(
+			const GameplayTag& tag,
+			GameplayTagKind kind,
+			const char* usage
+		)
+		{
+			std::string failureReason;
+			if (!GameplayTagSchema::Validate(tag, kind, &failureReason))
+			{
+				throw std::runtime_error(std::string{ usage } + ": " + failureReason);
+			}
+		}
+
+		void ValidateAttachmentTags(const AttachmentDefinition& definition)
+		{
+			std::string idFailureReason;
+			if (!ContentIdSchema::ValidateAttachmentId(
+				definition.attachmentId,
+				&idFailureReason
+			))
+			{
+				throw std::runtime_error("Attachment ID: " + idFailureReason);
+			}
+			for (const GameplayTag& capability : definition.requiredCapabilities)
+			{
+				RequireValidTag(capability, GameplayTagKind::AttachmentCapability, "Attachment capability");
+			}
+			for (const sas::GameplayAttribute& attribute : definition.grantedAttributes)
+			{
+				RequireValidTag(attribute.id, GameplayTagKind::Attribute, "Attachment attribute");
+			}
+			for (const sas::AttributeModifier& modifier : definition.attributeModifiers)
+			{
+				RequireValidTag(modifier.attributeId, GameplayTagKind::Attribute, "Attachment modifier attribute");
+			}
+			for (const ConditionalAttributeModifier& conditional : definition.conditionalAttributeModifiers)
+			{
+				RequireValidTag(conditional.modifier.attributeId, GameplayTagKind::Attribute, "Attachment conditional modifier");
+				if (conditional.condition.type == AttachmentConditionType::Always)
+				{
+					continue;
+				}
+				const GameplayTagKind conditionTagKind =
+					conditional.condition.type == AttachmentConditionType::HasDamageTag ||
+					conditional.condition.type == AttachmentConditionType::MissingDamageTag
+					? GameplayTagKind::DamageType
+					: GameplayTagKind::Attribute;
+				RequireValidTag(conditional.condition.subjectTag, conditionTagKind, "Attachment condition");
+			}
+			if (definition.replaceDamageType.IsValid())
+			{
+				RequireValidTag(definition.replaceDamageType, GameplayTagKind::DamageType, "Attachment damage replacement");
+			}
+			for (const AttachmentEventRule& rule : definition.eventRules)
+			{
+				RequireValidTag(rule.eventTag, GameplayTagKind::Event, "Attachment event");
+				RequireValidTag(rule.magnitudeAttributeId, GameplayTagKind::Attribute, "Attachment event magnitude");
+				for (const GameplayTag& damageTag : rule.requiredDamageTags)
+				{
+					RequireValidTag(damageTag, GameplayTagKind::DamageType, "Attachment event damage tag");
+				}
+			}
+		}
 	}
 
 	AttachmentLoader::Result AttachmentLoader::LoadFromFile(
@@ -274,11 +339,8 @@ namespace ly::content
 			for (const Json& attachment : root.at("attachments"))
 			{
 				AttachmentDefinition definition = ParseAttachment(attachment);
-				if (!definition.attachmentId.IsValid())
-				{
-					throw std::runtime_error("Attachment ID cannot be empty");
-				}
-				const std::string id = definition.attachmentId.ToString();
+				ValidateAttachmentTags(definition);
+				const std::string& id = definition.attachmentId;
 				if (!attachmentIds.insert(id).second)
 				{
 					throw std::runtime_error("Duplicate attachment ID: " + id);

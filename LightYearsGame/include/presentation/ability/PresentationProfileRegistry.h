@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gameplay/content/ContentIdSchema.h"
+
 #include <cstddef>
 #include <string>
 #include <unordered_map>
@@ -13,7 +15,9 @@ namespace ly
 	public:
 		static bool Register(Profile profile)
 		{
-			if (profile.profileId.empty())
+			if (!content::ContentIdSchema::ValidateAbilityPresentationProfileId(
+				profile.profileId
+			))
 			{
 				return false;
 			}

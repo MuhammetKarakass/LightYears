@@ -16,7 +16,7 @@ namespace ly
 		public:
 			const GameplayTag& GetTypeTag() const override
 			{
-				return PrimaryWeaponSchema::Projectile::Standard::TypeId;
+				return PrimaryWeaponSchema::Projectile::Standard::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override

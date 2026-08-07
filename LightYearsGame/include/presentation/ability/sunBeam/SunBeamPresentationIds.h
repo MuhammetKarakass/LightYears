@@ -2,5 +2,6 @@
 
 namespace ly::SunBeamPresentationIds
 {
-	inline constexpr char StrikeBasic[] = "Presentation.SunBeam.Strike.Basic";
+	inline constexpr char StrikeBasic[] =
+		"Presentation.Ability.SunBeam.Strike.Basic";
 }

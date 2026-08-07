@@ -107,10 +107,10 @@ namespace ly
 			AbilityData::GravityAnomaly::ActorFieldBasic.actorDefinitionId
 		);
 		const std::optional<float> castRange = projectile
-			? FindActorAttribute(*projectile, AbilityData::GravityAnomaly::ActorSchema::CastRange)
+			? FindActorAttribute(*projectile, CommonAttributeIds::Range)
 			: std::nullopt;
 		const std::optional<float> projectileSpeed = projectile
-			? FindActorAttribute(*projectile, AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed)
+			? FindActorAttribute(*projectile, AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed)
 			: std::nullopt;
 		const std::optional<float> baseDuration = field
 			? FindActorAttribute(*field, CommonAttributeIds::Duration)
@@ -119,10 +119,10 @@ namespace ly
 			? FindActorAttribute(*field, CommonAttributeIds::Radius)
 			: std::nullopt;
 		const std::optional<float> pullStrength = field
-			? FindActorAttribute(*field, AbilityData::GravityAnomaly::ActorSchema::PullStrength)
+			? FindActorAttribute(*field, AbilityData::GravityAnomaly::Actor::Field::PullStrength)
 			: std::nullopt;
 		const std::optional<float> slowMagnitude = field
-			? FindActorAttribute(*field, AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude)
+			? FindActorAttribute(*field, AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude)
 			: std::nullopt;
 		const std::optional<float> radiusPerMaxHealth = FindScalingCoefficient(
 			definition,
@@ -185,19 +185,19 @@ namespace ly
 		);
 		const std::optional<float> pullStrengthPerLevel = FindModifierMagnitude(
 			firstStep,
-			AbilityData::GravityAnomaly::ActorSchema::PullStrength
+			AbilityData::GravityAnomaly::Actor::Field::PullStrength
 		);
 		const std::optional<float> slowMagnitudePerLevel = FindModifierMagnitude(
 			firstStep,
-			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude
+			AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude
 		);
 		const std::optional<float> projectileSpeedPerLevel = FindModifierMagnitude(
 			firstStep,
-			AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed
+			AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed
 		);
 		const std::optional<float> castRangePerLevel = FindModifierMagnitude(
 			firstStep,
-			AbilityData::GravityAnomaly::ActorSchema::CastRange
+			CommonAttributeIds::Range
 		);
 		if (!cooldownReductionPerLevel || !durationPerLevel || !radiusPerLevel ||
 			!pullStrengthPerLevel || !slowMagnitudePerLevel ||
@@ -221,10 +221,10 @@ namespace ly
 				!HasModifier(step, CommonAttributeIds::Cooldown, *cooldownReductionPerLevel) ||
 				!HasModifier(step, CommonAttributeIds::Duration, *durationPerLevel) ||
 				!HasModifier(step, CommonAttributeIds::Radius, *radiusPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::PullStrength, *pullStrengthPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, *slowMagnitudePerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed, *projectileSpeedPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::ActorSchema::CastRange, *castRangePerLevel))
+				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::PullStrength, *pullStrengthPerLevel) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude, *slowMagnitudePerLevel) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed, *projectileSpeedPerLevel) ||
+				!HasModifier(step, CommonAttributeIds::Range, *castRangePerLevel))
 			{
 				if (failureReason)
 				{

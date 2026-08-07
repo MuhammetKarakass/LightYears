@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "abilities": [
     {
-      "id": "Ability.Dash.Basic",
+      "id": "Ability.Movement.Dash.Basic",
       "cooldown": 2.0,
       "duration": 0.24,
       "maxCharges": 1,
@@ -53,7 +53,7 @@
       }
     },
     {
-      "id": "Ability.Shield.Basic",
+      "id": "Ability.Defense.Shield.Basic",
       "cooldown": 8.0,
       "duration": 5.0,
       "maxCharges": 1,
@@ -97,7 +97,7 @@
       ]
     },
     {
-      "id": "Ability.SunBeam.Strike.Basic",
+      "id": "Ability.Offense.SunBeam.Strike.Basic",
       "cooldown": 1.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -142,7 +142,7 @@
       }
     },
     {
-      "id": "Ability.Rocket.Basic",
+      "id": "Ability.Offense.Rocket.Basic",
       "cooldown": 3.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -163,7 +163,7 @@
           "attributes": [
             { "id": "Attribute.Common.Damage", "baseValue": 55.0 },
             { "id": "Attribute.Common.Radius", "baseValue": 55.0 },
-            { "id": "Attribute.AbilityActor.Rocket.ProjectileSpeed", "baseValue": 1000.0 },
+            { "id": "Attribute.AbilityActor.Rocket.Projectile.ProjectileSpeed", "baseValue": 1000.0 },
             { "id": "Attribute.Common.Range", "baseValue": 1100.0 },
             { "id": "Attribute.Collision.Radius", "baseValue": 8.0, "minValue": 0.1 },
             { "id": "Attribute.Damage.ArmorPenetration", "baseValue": 0.10, "minValue": 0.0, "maxValue": 0.25 }
@@ -247,7 +247,7 @@
       }
     },
     {
-      "id": "Ability.GravityAnomaly.Basic",
+      "id": "Ability.Control.GravityAnomaly.Basic",
       "cooldown": 8.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -272,9 +272,9 @@
           "attributes": [
             { "id": "Attribute.Common.Duration", "baseValue": 2.5, "minValue": 0.01 },
             { "id": "Attribute.Common.Radius", "baseValue": 320.0, "minValue": 0.01 },
-            { "id": "Attribute.AbilityActor.GravityAnomaly.PullStrength", "baseValue": 1500.0 },
-            { "id": "Attribute.AbilityActor.GravityAnomaly.SlowMagnitude", "baseValue": 0.40, "maxValue": 0.95 },
-            { "id": "Attribute.AbilityActor.GravityAnomaly.InsideEffectDuration", "baseValue": 2.0, "minValue": 0.01 }
+            { "id": "Attribute.AbilityActor.GravityAnomaly.Field.PullStrength", "baseValue": 1500.0 },
+            { "id": "Attribute.AbilityActor.GravityAnomaly.Field.SlowMagnitude", "baseValue": 0.40, "maxValue": 0.95 },
+            { "id": "Attribute.AbilityActor.GravityAnomaly.Field.InsideEffectDuration", "baseValue": 2.0, "minValue": 0.01 }
           ]
         }
       ],
@@ -284,8 +284,8 @@
           "spawnDistance": 42.0,
           "attributeProfileIds": ["AttributeProfile.GravityAnomaly.Field.Basic"],
           "attributes": [
-            { "id": "Attribute.AbilityActor.GravityAnomaly.ProjectileSpeed", "baseValue": 2000.0, "minValue": 0.01 },
-            { "id": "Attribute.AbilityActor.GravityAnomaly.CastRange", "baseValue": 900.0, "minValue": 0.01 }
+            { "id": "Attribute.AbilityActor.GravityAnomaly.Projectile.ProjectileSpeed", "baseValue": 2000.0, "minValue": 0.01 },
+            { "id": "Attribute.Common.Range", "baseValue": 900.0, "minValue": 0.01 }
           ]
         },
         {
@@ -303,16 +303,16 @@
             { "attributeId": "Attribute.Common.Cooldown", "operation": "Add", "magnitude": -0.10 },
             { "attributeId": "Attribute.Common.Duration", "operation": "Add", "magnitude": 0.03 },
             { "attributeId": "Attribute.Common.Radius", "operation": "Add", "magnitude": 2.0 },
-            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.PullStrength", "operation": "Add", "magnitude": 20.0 },
-            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.SlowMagnitude", "operation": "Add", "magnitude": 0.005 },
-            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.ProjectileSpeed", "operation": "Add", "magnitude": 25.0 },
-            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.CastRange", "operation": "Add", "magnitude": 5.0 }
+            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.Field.PullStrength", "operation": "Add", "magnitude": 20.0 },
+            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.Field.SlowMagnitude", "operation": "Add", "magnitude": 0.005 },
+            { "attributeId": "Attribute.AbilityActor.GravityAnomaly.Projectile.ProjectileSpeed", "operation": "Add", "magnitude": 25.0 },
+            { "attributeId": "Attribute.Common.Range", "operation": "Add", "magnitude": 5.0 }
           ]
         }
       }
     },
     {
-      "id": "Ability.InfernoSpray.Basic",
+      "id": "Ability.Offense.InfernoSpray.Basic",
       "cooldown": 3.0,
       "duration": 3.0,
       "maxCharges": 1,
@@ -321,7 +321,7 @@
       },
       "effectSpecs": [
         {
-          "effectId": "Effect.Movement.Slow",
+          "effectId": "Effect.Movement.Slow.Basic",
           "useAbilityDuration": true,
           "maxStacks": 1,
           "modifiers": [
@@ -335,10 +335,10 @@
           "lifeTime": 0.0,
           "spawnDistance": 0.0,
           "attributes": [
-            { "id": "Attribute.AbilityActor.InfernoSpray.Range", "baseValue": 520.0 },
-            { "id": "Attribute.AbilityActor.InfernoSpray.ConeAngle", "baseValue": 36.0 },
-            { "id": "Attribute.AbilityActor.InfernoSpray.CombatTickInterval", "baseValue": 0.25 },
-            { "id": "Attribute.AbilityActor.InfernoSpray.BaseDPS", "baseValue": 24.0 },
+            { "id": "Attribute.AbilityActor.InfernoSpray.FlameCone.Range", "baseValue": 520.0 },
+            { "id": "Attribute.AbilityActor.InfernoSpray.FlameCone.ConeAngle", "baseValue": 36.0 },
+            { "id": "Attribute.AbilityActor.InfernoSpray.FlameCone.CombatTickInterval", "baseValue": 0.25 },
+            { "id": "Attribute.AbilityActor.InfernoSpray.FlameCone.BaseDPS", "baseValue": 24.0 },
             { "id": "Attribute.Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 },
             { "id": "Attribute.Damage.BurnDamagePerSecond", "baseValue": 1.0, "minValue": 0.0 },
             { "id": "Attribute.Damage.BurnDuration", "baseValue": 3.0, "minValue": 0.0 },

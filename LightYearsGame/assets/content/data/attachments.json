@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "attachments": [
     {
-      "id": "Attachment.Thermal.Converter",
+      "id": "Attachment.Thermal.Converter.Basic",
       "displayName": "Thermal Converter",
 
       "allowedHosts": [

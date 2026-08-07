@@ -70,12 +70,12 @@ namespace ly
 	{
 		const float baseDistance = ResolveNumericSetting(
 			definition.abilityId,
-			"baseDistance",
+			AbilityData::Dash::Setting::BaseDistance,
 			0.f
 		);
 		const float cameraZoomOutRatio = ResolveNumericSetting(
 			definition.abilityId,
-			"cameraZoomOutRatio",
+			AbilityData::Dash::Setting::CameraZoomOutRatio,
 			0.f
 		);
 		if (baseDistance <= 0.f || definition.duration <= 0.f ||
@@ -141,7 +141,7 @@ namespace ly
 
 		const float baseDistance = ResolveNumericSetting(
 			context.definition.abilityId,
-			"baseDistance",
+			AbilityData::Dash::Setting::BaseDistance,
 			0.f
 		);
 		const DashRequest request{
@@ -155,11 +155,11 @@ namespace ly
 		}
 
 		mStarted = true;
-		context.abilitySystem.AddOwnedTag(AbilityData::Dash::StateTag);
+		context.abilitySystem.AddOwnedTag(AbilityData::Dash::State::Active);
 		EmitLifecycleEvent(
 			context.abilitySystem,
 			context.owner,
-			AbilityData::Dash::StartEvent
+			AbilityData::Dash::Event::Started
 		);
 		return true;
 	}
@@ -175,11 +175,11 @@ namespace ly
 		{
 			movementController->EndDash();
 		}
-		context.abilitySystem.RemoveOwnedTag(AbilityData::Dash::StateTag);
+		context.abilitySystem.RemoveOwnedTag(AbilityData::Dash::State::Active);
 		EmitLifecycleEvent(
 			context.abilitySystem,
 			context.owner,
-			AbilityData::Dash::EndEvent
+			AbilityData::Dash::Event::Ended
 		);
 		mStarted = false;
 	}

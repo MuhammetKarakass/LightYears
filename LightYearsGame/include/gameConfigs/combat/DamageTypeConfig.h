@@ -47,15 +47,19 @@ namespace ly
 		inline static const GameplayTag CryoBuildup{ "Status.Damage.Cryo.Buildup" };
 		inline static const GameplayTag CryoSlowed{ "Status.Damage.Cryo.Slowed" };
 		inline static const GameplayTag Electric{ "Status.Damage.Electric" };
-		inline static const GameplayTag IgniteBehavior{ "EffectBehavior.Damage.Ignite" };
-		inline static const GameplayTag ElectricBehavior{ "EffectBehavior.Damage.Electric" };
+		inline static const GameplayTag IgniteBehaviorTag{ "EffectBehavior.Damage.Ignite" };
+		inline static const GameplayTag ElectricBehaviorTag{ "EffectBehavior.Damage.Electric" };
 	};
 
 	struct DamageStatusEffectIds
 	{
-		inline static constexpr const char* CryoBuildup =
+		inline static constexpr char IgniteEffectId[] =
+			"Effect.Status.Damage.Ignite";
+		inline static constexpr char CryoBuildupEffectId[] =
 			"Effect.Status.Damage.Cryo.Buildup";
-		inline static constexpr const char* CryoSlowed =
+		inline static constexpr char CryoSlowedEffectId[] =
 			"Effect.Status.Damage.Cryo.Slowed";
+		inline static constexpr char ElectricEffectId[] =
+			"Effect.Status.Damage.Electric";
 	};
 }

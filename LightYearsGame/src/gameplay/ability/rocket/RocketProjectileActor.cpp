@@ -23,12 +23,12 @@ namespace ly
 			CommonAttributeIds::Damage,
 			CommonAttributeIds::Radius,
 			CommonAttributeIds::Range,
-			CommonAttributeIds::CollisionRadius,
+			CollisionAttributeIds::Radius,
 			CommonAttributeIds::Duration
 		};
 
 		const List<GameplayTag> RocketProjectileAttributeRoots{
-			AbilityData::Rocket::ActorSchema::AttributeRoot,
+			AbilityData::Rocket::Actor::Projectile::AttributeRoot,
 			DamageAttributeIds::AttributeRoot
 		};
 
@@ -37,7 +37,7 @@ namespace ly
 		public:
 			const GameplayTag& GetActorTypeTag() const override
 			{
-				return AbilityData::Rocket::ActorSchema::TypeId;
+				return AbilityData::Rocket::Actor::Projectile::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override
@@ -64,9 +64,9 @@ namespace ly
 				for (const GameplayTag& required : {
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Radius,
-					AbilityData::Rocket::ActorSchema::ProjectileSpeed,
+					AbilityData::Rocket::Actor::Projectile::ProjectileSpeed,
 					CommonAttributeIds::Range,
-					CommonAttributeIds::CollisionRadius
+					CollisionAttributeIds::Radius
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
@@ -81,7 +81,7 @@ namespace ly
 
 				const float speed = sas::FindGameplayAttributeValue(
 					definition.attributes,
-					AbilityData::Rocket::ActorSchema::ProjectileSpeed
+					AbilityData::Rocket::Actor::Projectile::ProjectileSpeed
 				);
 				const float range = sas::FindGameplayAttributeValue(
 					definition.attributes,
@@ -115,7 +115,6 @@ namespace ly
 				return world && presentationProfile
 					? world->SpawnActor<RocketProjectileActor>(
 						&context.owner,
-						context.definition.texturePath,
 						*presentationProfile,
 						context.targetLocation
 					)
@@ -127,11 +126,10 @@ namespace ly
 	RocketProjectileActor::RocketProjectileActor(
 		World* world,
 		Actor* owner,
-		const std::string& texturePath,
 		const RocketPresentationProfile& presentationProfile,
 		std::optional<sf::Vector2f> targetLocation
 	)
-		: AbilityWorldActor(world, owner, texturePath),
+		: AbilityWorldActor(world, owner, presentationProfile.texturePath),
 		mPresentationProfile(presentationProfile),
 		mTargetLocation(std::move(targetLocation))
 	{
@@ -152,7 +150,7 @@ namespace ly
 			0.f,
 			sas::FindGameplayAttributeValue(
 				attributes,
-				AbilityData::Rocket::ActorSchema::ProjectileSpeed,
+				AbilityData::Rocket::Actor::Projectile::ProjectileSpeed,
 				mProjectileSpeed
 			)
 		);

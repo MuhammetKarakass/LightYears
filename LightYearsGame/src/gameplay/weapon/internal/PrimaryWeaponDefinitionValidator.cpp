@@ -3,6 +3,8 @@
 #include "PrimaryWeaponDefinitionValidator.h"
 
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/weapon/PrimaryWeaponHandlerRegistry.h"
 
 #include <algorithm>
@@ -54,8 +56,8 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				CommonAttributeIds::FireRate,
 				CommonAttributeIds::Interval,
 				CommonAttributeIds::Range,
-				CommonAttributeIds::CollisionRadius,
-				CommonAttributeIds::AreaRadius
+				CollisionAttributeIds::Radius,
+				AreaAttributeIds::Radius
 			};
 			return std::any_of(
 				supportedAttributes.begin(),
@@ -95,6 +97,15 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			const char* usage
 		)
 		{
+			std::string tagFailureReason;
+			if (!GameplayTagSchema::Validate(
+				attributeId,
+				GameplayTagKind::Attribute,
+				&tagFailureReason
+			))
+			{
+				return { false, std::string{ usage } + " has an invalid attribute tag: " + tagFailureReason };
+			}
 			return IsAllowedAttribute(context, attributeId)
 				? PrimaryWeaponValidationResult{ true, {} }
 				: PrimaryWeaponValidationResult{
@@ -109,7 +120,12 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			ValidationContext& context
 		)
 		{
-			if (!featureTag.IsValid() ||
+			std::string tagFailureReason;
+			if (!GameplayTagSchema::Validate(
+				featureTag,
+				GameplayTagKind::PrimaryWeaponFeature,
+				&tagFailureReason
+			) ||
 				HasExactTag(context.featureTags, featureTag))
 			{
 				return {
@@ -191,7 +207,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			if (!definition.heatGainCurve.empty() &&
 				!HasExactTag(
 					context.featureTags,
-					PrimaryWeaponSchema::Feature::Heat::FeatureId
+					PrimaryWeaponSchema::Feature::Heat::FeatureTag
 				))
 			{
 				return { false, "Heat gain curve requires the heat feature." };
@@ -299,6 +315,18 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				{
 					return result;
 				}
+				std::string sourceTagFailureReason;
+				if (!GameplayTagSchema::Validate(
+					scaling.sourceAttributeId,
+					GameplayTagKind::Attribute,
+					&sourceTagFailureReason
+				))
+				{
+					return {
+						false,
+						"Weapon scaling source has an invalid attribute tag: " + sourceTagFailureReason
+					};
+				}
 			}
 			return { true, {} };
 		}
@@ -332,6 +360,62 @@ namespace ly::PrimaryWeaponDefinitionValidator
 		const PrimaryWeaponDefinition& definition
 	)
 	{
+		std::string tagFailureReason;
+		if (!GameplayTagSchema::Validate(
+			definition.weaponTypeTag,
+			GameplayTagKind::PrimaryWeaponType,
+			&tagFailureReason
+		))
+		{
+			return { false, "Primary weapon type tag is invalid: " + tagFailureReason };
+		}
+		if (!definition.weaponId.empty())
+		{
+			content::ParsedWeaponId parsedWeaponId;
+			if (!content::ContentIdSchema::ParseWeaponId(
+				definition.weaponId,
+				parsedWeaponId,
+				&tagFailureReason
+			))
+			{
+				return { false, "Primary weapon content ID is invalid: " + tagFailureReason };
+			}
+			const std::size_t familyStart = definition.weaponTypeTag.name.find('.') + 1;
+			const std::size_t familyEnd = definition.weaponTypeTag.name.find('.', familyStart);
+			const std::string typeFamily = definition.weaponTypeTag.name.substr(
+				familyStart,
+				familyEnd - familyStart
+			);
+			if (parsedWeaponId.family != typeFamily)
+			{
+				return {
+					false,
+					"Primary weapon content ID family must match its weapon type tag family."
+				};
+			}
+		}
+		for (const GameplayTag& damageTag : definition.damageTags)
+		{
+			if (!GameplayTagSchema::Validate(
+				damageTag,
+				GameplayTagKind::DamageType,
+				&tagFailureReason
+			))
+			{
+				return { false, "Primary weapon damage tag is invalid: " + tagFailureReason };
+			}
+		}
+		for (const GameplayTag& capability : definition.attachmentCapabilities)
+		{
+			if (!GameplayTagSchema::Validate(
+				capability,
+				GameplayTagKind::AttachmentCapability,
+				&tagFailureReason
+			))
+			{
+				return { false, "Primary weapon attachment capability tag is invalid: " + tagFailureReason };
+			}
+		}
 		const PrimaryWeaponHandler* handler =
 			PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponTypeTag);
 		if (!handler)

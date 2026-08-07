@@ -2,5 +2,6 @@
 
 namespace ly::RocketPresentationIds
 {
-	inline constexpr char Basic[] = "Presentation.Rocket.Basic";
+	inline constexpr char ProjectileBasic[] =
+		"Presentation.Ability.Rocket.Projectile.Basic";
 }

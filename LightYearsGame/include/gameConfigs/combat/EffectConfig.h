@@ -8,6 +8,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
 #include "gameplay/content/EffectContentCatalog.h"
+#include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h"
 #include "presentation/effects/shield/ShieldVisualIds.h"
 
 namespace EffectData
@@ -16,14 +17,14 @@ namespace EffectData
 	// effects.json; source-owned magnitudes and durations come from the weapon,
 	// ability, attachment, enemy or reward that creates GameplayEffectSpec.
 	inline const sas::GameplayEffectDefinition BasicBarrierEffect{
-		"Effect.Barrier.Basic",
-		BarrierEffectSchema::BehaviorId,
+		BarrierEffectSchema::BasicEffectId,
+		BarrierEffectSchema::BehaviorTag,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::RefreshDuration,
 		5.f,
 		1,
 		{
-			ly::GameplayTag{ "Effect.Defense.Barrier" }
+			BarrierEffectSchema::GrantedTag
 		},
 		{},
 		{
@@ -37,15 +38,15 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition BarrierBreakThrustBoostEffect{
-		"Effect.Test.BarrierBreak.ThrustBoost",
+		BarrierEffectSchema::BreakThrustBoostEffectId,
 		{},
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::RefreshDuration,
 		2.f,
 		1,
 		{
-			ly::GameplayTag{ "Effect.Movement.Boost" },
-			ly::GameplayTag{ "Effect.Test.PassiveValidation" }
+			BarrierEffectSchema::BreakThrustBoostTag,
+			BarrierEffectSchema::BreakValidationTag
 		},
 		{
 			sas::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedVertical, sas::AttributeModifierOperation::Add, 0.25f, 0 },
@@ -56,8 +57,8 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition IgniteEffect{
-		"Effect.Status.Damage.Ignite",
-		ly::DamageStatusSchema::IgniteBehavior,
+		ly::DamageStatusEffectIds::IgniteEffectId,
+		ly::DamageStatusSchema::IgniteBehaviorTag,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		3.f,
@@ -74,7 +75,7 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition CryoBuildupEffect{
-		ly::DamageStatusEffectIds::CryoBuildup,
+		ly::DamageStatusEffectIds::CryoBuildupEffectId,
 		{},
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
@@ -84,7 +85,7 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition CryoSlowEffect{
-		ly::DamageStatusEffectIds::CryoSlowed,
+		ly::DamageStatusEffectIds::CryoSlowedEffectId,
 		{},
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::RefreshDuration,
@@ -101,8 +102,8 @@ namespace EffectData
 	};
 
 	inline const sas::GameplayEffectDefinition ElectricEffect{
-		"Effect.Status.Damage.Electric",
-		ly::DamageStatusSchema::ElectricBehavior,
+		ly::DamageStatusEffectIds::ElectricEffectId,
+		ly::DamageStatusSchema::ElectricBehaviorTag,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		3.f,
@@ -122,17 +123,17 @@ namespace EffectData
 	{
 		sas::GameplayEffectDefinition definition;
 		definition.effectId =
-			AbilityData::GravityAnomaly::EffectSchema::InsideEffectId;
+			AbilityData::GravityAnomaly::Effect::InsideEffectId;
 		definition.behaviorTag =
-			AbilityData::GravityAnomaly::EffectSchema::BehaviorId;
+			AbilityData::GravityAnomaly::Effect::BehaviorTag;
 		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy =
 			sas::GameplayEffectStackingPolicy::RefreshDuration;
 		definition.duration =
-			AbilityData::GravityAnomaly::EffectSchema::InsideEffectDurationSeconds;
+			AbilityData::GravityAnomaly::Effect::InsideEffectDurationSeconds;
 		definition.maxStacks = 1;
 		definition.grantedTags = {
-			AbilityData::GravityAnomaly::EffectSchema::InsideTag
+			AbilityData::GravityAnomaly::Effect::InsideTag
 		};
 		definition.modifiers = {
 			sas::AttributeModifier{
@@ -143,20 +144,20 @@ namespace EffectData
 				0.f
 			}
 		};
-		definition.activeVisualId = "Visual.Effect.GravityAnomaly.Inside";
+		definition.activeVisualId = ly::GravityAnomalyEffectVisualIds::Inside;
 		definition.sourceScopedApplication = true;
 		return definition;
 	}();
 
 	inline const sas::GameplayEffectDefinition MovementSlowEffect{
-		"Effect.Movement.Slow",
+		MovementEffectSchema::SlowEffectId,
 		{},
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::RefreshDuration,
 		3.0f,
 		1,
 		{
-			ly::GameplayTag{ "Effect.Movement.Slow" }
+			MovementEffectSchema::SlowGrantedTag
 		},
 		{
 			sas::AttributeModifier{

@@ -32,6 +32,7 @@ namespace ly
 	struct RocketPresentationProfile
 	{
 		std::string profileId;
+		std::string texturePath;
 		RocketVisualDefinition visual;
 		AreaTelegraphVisualDefinition telegraph;
 		ExplosionType explosionType = ExplosionType::Small;

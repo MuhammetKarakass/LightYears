@@ -2,7 +2,7 @@
 
 ## Dash implementation
 
-`Ability.Dash.Basic`, Ability3/F üzerinde çalışan ayrı bir ability behavior
+`Ability.Movement.Dash.Basic`, Ability3/F üzerinde çalışan ayrı bir ability behavior
 sınıfıdır: `gameplay/ability/dash/DashAbility`. `AbilitySystem`, davranışı
 `AbilityBehaviorRegistry` üzerinden üretir; game adaptörü
 `GameAbilityActionExecutor` yalnızca
@@ -29,7 +29,7 @@ postDashVelocity = preservedVelocity
 Bu nedenle Dash öncesindeki yatay/dikey momentum eksiksiz korunur; Dash bittiğinde
 gemi aynı velocity ile normal thrust'a döner. Hareket actor offset yolundan
 gittiği için arena boundary kurallarını atlamaz. Lifecycle tag/eventleri
-`State.Ability.Dashing`, `Event.Ability.Dash.Start` ve `Event.Ability.Dash.End`'dir.
+`State.Ability.Dash.Active`, `Event.Ability.Dash.Start` ve `Event.Ability.Dash.End`'dir.
 
 Dash velocity kısa süreli bir displacement impulse kabul edilir ve kameranın
 speed zoom / movement look-ahead girdisine verilmez. Arena kamerası Dash
@@ -426,6 +426,153 @@ bu zincirin başında uygulanır.
 
 ### 3.0 Ability yerleşim kontratı
 
+### 3.0.A Proje geneli gameplay tag sözleşmesi
+
+`LightYearsGame/include/gameplay/tags/GameplayTagSchema.h`, bütün gameplay
+sistemlerinin ortak tag dilini tanımlar. Bu bir evrensel leaf-tag registry'si
+değildir: yalnız domain köklerini, biçim doğrulamasını ve paylaşılan davranış
+taglerini sahiplenir. Ability, weapon, effect, damage ve attachment aileleri
+kendi leaf taglerini kendi feature/config klasöründe tanımlamaya devam eder.
+
+| Alan | Zorunlu tag ailesi | Sahibi |
+| --- | --- | --- |
+| Ability sınıflandırması | `Ability.<Category>` ve `Ability.<Category>.<Family>` | Feature-local contract/config |
+| Ability behavior | `GameAbilityBehavior.<Family>` | Feature-local behavior contract |
+| Ability lifecycle | `State.Ability.<Family>.<State>` ve `Event.Ability.<Family>.<Event>`; dinlenen dış olaylar `Event.<Producer>.<Event>` | Feature-local behavior contract |
+| Ability actor | `AbilityActor.<Family>.<Role>` | Feature-local actor contract |
+| Effect runtime state | `State.Effect.<Family>.<State>` | Feature-local effect contract/config |
+| Attribute | `Attribute.<Owner>...` | İlgili sistemin attribute ID kataloğu |
+| Effect behavior | `EffectBehavior.<Family>[.<Behavior>]` | Feature-local effect behavior |
+| Primary weapon | `PrimaryWeapon.<Family>.<Type>` / `PrimaryWeapon.Feature.<Feature>` | Weapon handler/feature |
+| Damage | `Damage.Type.<Type>` | Damage type schema |
+| Attachment capability | `Attachment.Capability.<Capability>` | Attachment schema |
+
+Bu tablo yalnız runtime'da sorgulanan veya grant edilen gameplay taglerini
+gösterir. `Ability.<Category>.<Family>.<Variant>` ve
+`Attachment.<Family>.<Name>.<Variant>` biçimindeki somut kayıt kimlikleri
+`GameplayTag` değil, `ContentIdSchema` tarafından doğrulanan string content
+ID'leridir.
+
+`State.ActionLock.AbilityActivation` ve
+`State.ActionLock.PrimaryWeaponFire` iki kayıtlı ortak kilittir. Bir mekanik
+bu taglerden birini owner'a geçici olarak verir; `GameAbility::CanActivateContent`
+tüm normal ability aktivasyonlarını ilk tag ile, PrimaryFire aktivasyonunu ikinci
+tag ile engeller. Overdrive gibi bir ability kendi local firing state'ini UI ve
+lifecycle için ayrıca kullanabilir; global input/activation engeli için yeni
+feature-özel block tag üretilmez.
+
+Bir gameplay tag ancak domain'i, producer'ı ve consumer'ı açıksa eklenir.
+Parent tag doğrudan grant edilmez; parent sorgusu yalnız bilinçli grup sorgusu
+olarak kullanılır. Yeni content doğrulaması ability, effect, ability actor,
+primary weapon, attachment JSON loader'ı ve ship progression giriş noktalarında
+bu şemayı çağırır.
+
+Her ability ailesinin `gameplay/ability/<family>/<Family>Contracts.h` dosyası
+aynı contract yüzeyini kullanır: zorunlu `AbilityId`, `CategoryTag`, `FamilyTag`
+ve `BehaviorTag`; varsa `State`, `Event` ve `Actor` alt alanları. Actor role'ü
+altında onun definition ID'si, type tag'i ve attribute tag'leri birlikte kalır.
+Bir effect ID'si veya dış event, onu üreten effect/owner sisteminin contract'ında
+tanımlanır; ability yalnız onu tüketir. Bu nedenle boş `State`/`Event`/`Actor`
+struct'ları açılmaz ve feature'lar shared action-lock tag'i yeniden tanımlamaz.
+
+`State` ve `Event` alanları yalnızca ilgili ability davranışı veya onun
+data-driven action/trigger akışı state tag'ini gerçekten grant/remove ediyor,
+event yayıyor ya da bu event'i contract üzerinden tüketiyorsa eklenir. Instant
+ability olması tek başına State/Event gerektirmez; aynı şekilde duration ability
+olması da otomatik olarak State/Event gerektirmez. State veya event sahipliği
+başka bir effect/combat sistemindeyse ability contract'ına kopyalanmaz.
+
+`Setting` ve `Setting::Contract` yalnızca behavior'ın JSON `settings` nesnesinden
+okuduğu özel anahtarlar için eklenir. Standart ability alanları için setting
+anahtarı oluşturulmaz ve boş contract kaydedilmez. Mevcut shipped ability
+verisinde bu durum Dash ve InfernoSpray olmak üzere 6 ability'den 2'si için
+geçerlidir.
+
+Ability'ye özel effect ID, behavior tag'i ve effect state tag'i yalnızca o
+ability ailesinin effect lifecycle'ına aitse ability contract'ındaki `Effect`
+alanında tutulur. Birden fazla kaynak tarafından kullanılan veya bağımsız
+effect behavior/lifecycle'ı olan effect'ler `gameConfigs/combat/` altındaki
+effect schema'sına aittir.
+
+Not: Üretilmiş `PrimaryFire` ability tanımı, `Ability.Primary` / `Ability.Offense`
+sınıflandırmalarına ek olarak somut `PrimaryWeapon.<Family>.<Type>` tagini aynı
+`abilityTags` listesinde taşır. Bu, weapon tipini ayrı bir runtime alanına
+kopyalamadan consumer'ların filtrelemesine izin veren tek istisnadır.
+
+Kimlik ve contract kuralları:
+
+- Kalıcı content kayıtları `inline constexpr char ...Id[]` ile tanımlanır ve
+  loader tarafından doğrulanır: `Ability.<Category>.<Family>.<Variant>`,
+  `Effect.<Family>.<Variant>`, `Actor.Ability.<Family>.<Role>.<Variant>`,
+  `AttributeProfile.<Family>.<Role>.<Variant>`,
+  `Presentation.Ability.<Family>.<Role>.<Variant>`,
+  `Weapon.<Family>.<Name>.<Variant>`, `Ship.<Faction>.<Name>.<Variant>`,
+  `Attachment.<Family>.<Name>.<Variant>` ve
+  `Visual.Effect.<Family>.<VariantPath>`.
+- Sorgulanan veya grant edilen semantic değerler `GameplayTag` olur. Struct
+  alanları ve rol bildiren sabitler `...Tag` ile biter: `behaviorTag`,
+  `FamilyTag`, `TypeTag`, `FeatureTag`. `DamageTypeSchema::Thermal` gibi türü
+  enclosing schema tarafından açık olan leaf sabitler kısa kalabilir.
+- `...Id` daima catalog/registry kaydı olan string kimliktir. Attachment kayıt
+  kimliği content ID'dir; yalnız `Attachment.Capability.*` değerleri tagdir.
+- `Effect.<Family>.<Variant>` yalnız content ID'dir; aktif effect varlığını
+  taşıyan semantic tagler `State.Effect.<Family>.<State>` altında kalır.
+- Her ability family contract'ında üst seviyede yalnızca `AbilityId`,
+  `CategoryTag`, `FamilyTag`, `BehaviorTag` bulunur. İsteğe bağlı veriler
+  sahipliğine göre `State`, `Event`, `Actor`, `Effect` ve `Setting` altında
+  gruplanır. JSON numeric-setting contract'ı `Setting::Contract` içinde kalır;
+  loader family'yi bilmez, behavior registry üzerinden onu çözer.
+- Aileye özel actor attribute'ları daima
+  `Attribute.AbilityActor.<Family>.<Role>.<Name>` biçimindedir ve ilgili
+  `Actor::<Role>` contract'ında tanımlanır. `CommonAttributeIds` değerleri
+  contract'ta yeniden adlandırılmaz. Bir actor başka bir role ait değerleri
+  yalnızca onları üretilecek actor'a iletmek için tüketiyorsa (Gravity Anomaly
+  projectile -> field gibi), handler iki role ait dar kökleri açıkça bildirir;
+  aile kökü tek başına yetki vermez.
+- Somut shipped ability'nin ID family segmenti, `BehaviorTag`in son segmentiyle
+  aynı olmak zorundadır; yalnız generic `GameAbilityBehavior.Configured` ile
+  tanımlanan content-only test/prototype ability'ler bu eşleşmeden muaftır.
+  Owner activation koşulları yalnızca kalıcı effect/status/ability/
+  ability-state/action-lock domainlerinden seçilir; `Event.*` geçici olduğu için
+  koşul olarak kullanılamaz.
+- Weapon content ID family segmenti `PrimaryWeapon.<Family>.<Type>` family
+  segmentiyle eşleşir. Ability actor definition, actor type ve presentation
+  profile aynı `<Family>.<Role>` çiftini kullanır.
+- Runtime'da geçici/test amaçlı oluşturulan weapon definition boş `weaponId`
+  kullanabilir. Shipped weapon catalog kayıtlarında ID zorunludur ve loader
+  tarafından doğrulanır.
+
+Content sahiplik matrisi:
+
+| Content | C++ sahipliği | JSON sahipliği |
+| --- | --- | --- |
+| Ability | Behavior, structural actions, tag/actor contract ve fallback skeleton | Cooldown/duration/charge, progression, scaling, effect spec, actor/attribute değerleri ve numeric settings |
+| Effect | Typed behavior/presentation skeleton | Policy, stacking, granted/application tagleri ve source-owned olmayan numeric değerler |
+| Weapon | Handler/feature type contractları | Tam weapon definition, presentation, progression ve balance |
+| Attachment | Capability/event/condition yorumlama kodu | Tam attachment definition ve balance |
+| Ship | Runtime struct ve presentation base | Kimlik, gameplay değerleri, primary weapon referansı ve progression |
+| Ability presentation | Concrete typed profile yapısı ve registration | Şimdilik JSON sahibi değildir; profile değerleri feature-local C++ content'tir |
+
+Yeni shipped ability dikey dilim olarak eklenir. Applicable kayıt noktaları:
+
+1. Family contract ve C++ structural fallback.
+2. `abilities.json` kaydı.
+3. Behavior composition kaydı.
+4. Actor handler ve typed presentation profile kaydı gerekiyorsa bunların ikisi.
+5. Numeric `Setting::Contract` varsa settings composition kaydı.
+6. Built-in catalog, CMake source listesi ve shipped validation testi.
+
+Taslak ability yalnız contract ve schema testinden oluşabilir. Boş config,
+kaydedilmeyen presentation ID veya yarım actor/profile yüzeyi açılmaz. Overdrive
+Core taslağı bu nedenle yalnız contract ve schema testi olarak tutulur; behavior,
+JSON ve actor/profile bir sonraki dikey dilimde birlikte eklenir.
+
+Dosyalar yalnız satır sayısı nedeniyle bölünmez. Ayrıştırma için en az iki ayrı
+değişim nedeni veya başka consumer tarafından yeniden kullanılan bağımsız bir
+sorumluluk gerekir. Loader'a özel saf JSON parse/materialization yardımcıları
+private/internal kalır; public registry, service veya feature ancak bağımsız bir
+runtime kontratı varsa açılır.
+
 Kod tarafındaki tek terim **ability**'dir; aynı kavram için `skill` adlı paralel
 bir klasör veya runtime katmanı açılmaz.
 
@@ -538,7 +685,7 @@ tanımlardan runtime'a taşımaz. Shipped runtime için sayısal değerlerin tek
 kaynağı JSON'dır.
 
 Startup sırasında weapon, ship, ability ve effect catalog'larının herhangi biri
-yüklenemezse `RegisterGameContent()` başarısız olur ve `GameApplication` oyun
+yüklenemezse `GameContentBootstrap::Register()` başarısız olur ve `GameApplication` oyun
 dünyasını yüklemeden `QuitApplication()` ile kapanır. Effect catalog, loader'ın
 tip/behavior çözümlemek için kullandığı C++ fallback kayıtlarını JSON'da eksik
 olan yeni kayıtlar olarak eklemez; JSON'da bulunmayan effect runtime'da yoktur.
@@ -583,7 +730,7 @@ Temel şema:
 | activationPolicy | OnPressed, WhileHeld, Toggle, Passive, GameplayEvent |
 | lifetimePolicy | Instant, Duration, WhileInputHeld, UntilCancelled |
 | cooldown / duration / maxCharges | Yaşam ve kaynak zamanlaması |
-| behaviorId | Ability ailesine ait behavior factory kaydı |
+| behaviorTag | Ability ailesine ait behavior factory kaydı |
 | actions | Effect uygulama, actor spawn, weapon fire, impulse, event yayma |
 | triggers | Event tabanlı, cooldown/required/blocked tag filtreli eylemler |
 | levelProgression | Level 2’den başlayarak eklenen modifier, upgrade, action, trigger |
@@ -624,6 +771,12 @@ seçimi, projectile/beam delivery veya chain davranışı weapon handler’ları
 kalmalıdır. Ability'ye özgü validation, activation, tick ve cleanup ise SAS
 generic behavior kontratını genişleten ilgili oyun behavior sınıfında kalır;
 generic core somut Dash, Shield veya SunBeam sınıfını include etmez.
+
+`FireWeaponAction`ın begin/tick/end lifecycle'ı
+`gameplay/ability/actions/FireWeaponActionRuntime` tarafından yürütülür.
+`GameAbilityActionExecutor` yalnız action phase dispatch ve genel scheduler
+sahibidir; shared scaling/attachment değer çözümü ise
+`AbilityActionAttributeResolver` içinde tutulur.
 
 ### 3.2 Mevcut aktif ability’ler
 
@@ -716,7 +869,7 @@ sahiplenir. Ignite, Electric, Barrier veya Gravity Anomaly ID'lerine branch
 etmez. Add-stack, tick ve incoming-damage davranışları
 `GameplayEffectBehavior::Hooks` ile kaydedilir. Shipped katalog
 `EffectData::GetShippedGameplayEffectDefinitions()` üzerinden bulunur;
-`LightYearsAbilitySystemComponent::RegisterGameContent()` behavior ve visual içeriklerini kaydettikten
+`GameContentBootstrap::Register()` behavior ve visual içeriklerini kaydettikten
 sonra ID, süre, stack, attribute/modifier ve kayıt referanslarını doğrular.
 Ability `ApplyEffectAction` da bilinmeyen veya geçersiz effect ID'si içerirse
 grant/catalog doğrulamasında reddedilir.
@@ -802,8 +955,7 @@ konfigürasyonda da 2/2 passed oldu.
 İlgili kaynaklar:
 
 - LightYearsGame/include/gameConfigs/combat/WeaponStructs.h
-- LightYearsGame/include/gameConfigs/combat/WeaponConfig.deprecated.h
-- LightYearsGame/include/gameConfigs/combat/WeaponProgressionConfig.deprecated.h
+- LightYearsGame/assets/content/data/weapons.json
 - LightYearsGame/src/gameplay/weapon
 
 ### 4.1 Silah tanımı kuralı
@@ -825,12 +977,12 @@ eklenmelidir. feature tag’leri (örneğin Heat) type’dan bağımsız ek
 
 | Silah | Type / tür | Temel değerler | Owner scaling |
 | --- | --- | --- | --- |
-| FighterBasicRapidLaser | Standard / Photonic | Damage 8, FireRate 8, speed 1100, range 1600, radius 7, 1 muzzle | Damage +1.0 AttackPower; FireRate +1.0 AttackSpeed |
-| PlayerRapidShotgun | Shotgun / Thermal | Damage 10, FireRate 2.5, speed 3000, range 400, 3 pellet, spread 8°, floor x0.5 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
-| PlayerDualKineticBlaster | Standard / Kinetic | Damage 3.5, FireRate 12, speed 3400, range 650, radius 6, 2 muzzle | Damage +0.45 AttackPower; FireRate +1.0 AttackSpeed |
-| PlayerElectricArcLauncher | Arc / Electric | Damage 15, FireRate 2.8, range 850, 3 normal chain, chain range 250, x0.72 / chain | Damage +0.85 AttackPower; FireRate +0.60 AttackSpeed; no direct Luck damage |
-| PlayerContinuousHeatLaser | Continuous beam / Energy | Damage 28 DPS, range 950, width 26, heat 38/sn, cap 100, cool 25/sn, overheat 2.5 sn, max heat x1.75 | Damage +0.75 AttackPower ve +0.50 EnergyMax; AttackSpeed only affects high-heat gain |
-| PlayerCryoWaveProjector | Expanding wave / Cryo | Damage 7, FireRate 1.8, range 780, speed 850, width 80→260, thickness 30 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
+| Weapon.Projectile.FighterRapidLaser.Basic | Standard / Photonic | Damage 8, FireRate 8, speed 1100, range 1600, radius 7, 1 muzzle | Damage +1.0 AttackPower; FireRate +1.0 AttackSpeed |
+| Weapon.Projectile.RapidShotgun.Basic | Shotgun / Thermal | Damage 10, FireRate 2.5, speed 3000, range 400, 3 pellet, spread 8°, floor x0.5 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
+| Weapon.Projectile.DualKineticBlaster.Basic | Standard / Kinetic | Damage 3.5, FireRate 12, speed 3400, range 650, radius 6, 2 muzzle | Damage +0.45 AttackPower; FireRate +1.0 AttackSpeed |
+| Weapon.Arc.ElectricLauncher.Basic | Arc / Electric | Damage 15, FireRate 2.8, range 850, 3 normal chain, chain range 250, x0.72 / chain | Damage +0.85 AttackPower; FireRate +0.60 AttackSpeed; no direct Luck damage |
+| Weapon.Beam.ContinuousHeatLaser.Basic | Continuous beam / Energy | Damage 28 DPS, range 950, width 26, heat 38/sn, cap 100, cool 25/sn, overheat 2.5 sn, max heat x1.75 | Damage +0.75 AttackPower ve +0.50 EnergyMax; AttackSpeed only affects high-heat gain |
+| Weapon.Wave.CryoProjector.Basic | Expanding wave / Cryo | Damage 7, FireRate 1.8, range 780, speed 850, width 80→260, thickness 30 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
 
 Bu değerler ham tanım değerleridir. Level, attachment, owner stat ve status
 etkileri uygulandıktan sonraki ekrandaki değer farklı olabilir.
@@ -929,7 +1081,7 @@ shipXPReward verilmemişse scoreAmt değeri kullanılır; score ve progression
 | Alan | Değer |
 | --- | --- |
 | Health | 100 |
-| Başlangıç silahı | FighterBasicRapidLaser |
+| Başlangıç silahı | Weapon.Projectile.FighterRapidLaser.Basic |
 | Forward / Reverse / Strafe thrust | 650 / 190 / 270 |
 | Angular speed / responsiveness | 400 / 5 |
 | Linear damping | 0.36 |

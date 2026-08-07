@@ -1,11 +1,7 @@
 #pragma once
 
-#include <string>
-
-namespace ly
+namespace ly::InfernoSprayPresentationIds
 {
-	namespace InfernoSprayPresentationIds
-	{
-		inline const std::string Basic = "Presentation.Ability.InfernoSpray.Basic";
-	}
+	inline constexpr char FlameConeBasic[] =
+		"Presentation.Ability.InfernoSpray.FlameCone.Basic";
 }

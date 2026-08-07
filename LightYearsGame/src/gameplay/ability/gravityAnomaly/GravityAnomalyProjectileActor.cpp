@@ -18,11 +18,15 @@ namespace ly
 	{
 		const List<GameplayTag> ProjectileCommonAttributes{
 			CommonAttributeIds::Duration,
-			CommonAttributeIds::Radius
+			CommonAttributeIds::Radius,
+			CommonAttributeIds::Range
 		};
 
 		const List<GameplayTag> GravityAnomalyAttributeRoots{
-			AbilityData::GravityAnomaly::ActorSchema::AttributeRoot
+			AbilityData::GravityAnomaly::Actor::Projectile::AttributeRoot,
+			// The projectile profile carries field tuning forwarded to the spawned
+			// field actor, so both feature-local roots are authorized here.
+			AbilityData::GravityAnomaly::Actor::Field::AttributeRoot
 		};
 
 		bool IsFiniteVector(const sf::Vector2f& value)
@@ -35,7 +39,7 @@ namespace ly
 		public:
 			const GameplayTag& GetActorTypeTag() const override
 			{
-				return AbilityData::GravityAnomaly::ActorSchema::ProjectileTypeId;
+				return AbilityData::GravityAnomaly::Actor::Projectile::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override
@@ -60,13 +64,13 @@ namespace ly
 				}
 
 				for (const GameplayTag& required : {
-					AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed,
-					AbilityData::GravityAnomaly::ActorSchema::CastRange,
+					AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed,
+					CommonAttributeIds::Range,
 					CommonAttributeIds::Duration,
 					CommonAttributeIds::Radius,
-					AbilityData::GravityAnomaly::ActorSchema::PullStrength,
-					AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
-					AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration
+					AbilityData::GravityAnomaly::Actor::Field::PullStrength,
+					AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude,
+					AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
@@ -98,7 +102,6 @@ namespace ly
 				return world && profile
 					? world->SpawnActor<GravityAnomalyProjectileActor>(
 						&context.owner,
-						context.definition.texturePath,
 						*profile,
 						context.targetLocation
 					)
@@ -110,11 +113,10 @@ namespace ly
 	GravityAnomalyProjectileActor::GravityAnomalyProjectileActor(
 		World* world,
 		Actor* owner,
-		const std::string& texturePath,
 		const GravityAnomalyProjectilePresentationProfile& presentationProfile,
 		std::optional<sf::Vector2f> requestedTargetLocation
 	)
-		: AbilityWorldActor(world, owner, texturePath)
+		: AbilityWorldActor(world, owner, presentationProfile.texturePath)
 		, mPresentationProfile(presentationProfile)
 		, mRequestedTargetLocation(std::move(requestedTargetLocation))
 		, mGlow(std::max(1.f, presentationProfile.visual.glowRadius), 28)
@@ -136,12 +138,12 @@ namespace ly
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
 		mProjectileSpeed = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::ProjectileSpeed,
+			AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed,
 			mProjectileSpeed
 		));
 		mCastRange = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::CastRange,
+			CommonAttributeIds::Range,
 			mCastRange
 		));
 		mFieldDuration = std::max(0.f, sas::FindGameplayAttributeValue(
@@ -156,25 +158,25 @@ namespace ly
 		));
 		mPullStrength = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::PullStrength,
+			AbilityData::GravityAnomaly::Actor::Field::PullStrength,
 			mPullStrength
 		));
 		mSlowMagnitude = std::clamp(sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude,
+			AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude,
 			mSlowMagnitude
 		), 0.f, 0.95f);
 		mInsideEffectDuration = std::max(0.f, sas::FindGameplayAttributeValue(
 			attributes,
-			AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration,
+			AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration,
 			mInsideEffectDuration
 		));
 		mFieldAttributes = {
 			sas::GameplayAttribute{ CommonAttributeIds::Duration, mFieldDuration, 0.01f },
 			sas::GameplayAttribute{ CommonAttributeIds::Radius, mFieldRadius, 0.01f },
-			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::PullStrength, mPullStrength, 0.f },
-			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::SlowMagnitude, mSlowMagnitude, 0.f, 0.95f },
-			sas::GameplayAttribute{ AbilityData::GravityAnomaly::ActorSchema::InsideEffectDuration, mInsideEffectDuration, 0.f }
+		sas::GameplayAttribute{ AbilityData::GravityAnomaly::Actor::Field::PullStrength, mPullStrength, 0.f },
+		sas::GameplayAttribute{ AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude, mSlowMagnitude, 0.f, 0.95f },
+		sas::GameplayAttribute{ AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration, mInsideEffectDuration, 0.f }
 		};
 		SetAbilityPhysicsEnabled(false);
 		SetCollisionLayer(CollisionLayer::None);
@@ -273,8 +275,8 @@ namespace ly
 		mHasSpawnedField = true;
 
 		Actor* owner = GetOwnerActor();
-		const AbilityActorDefinition* definition = AbilityData::GravityAnomaly::FindActorDefinition(
-			"Actor.Ability.GravityAnomaly.Field.Basic"
+		const AbilityActorDefinition* definition = AbilityData::FindAbilityActorDefinition(
+			AbilityData::GravityAnomaly::Actor::Field::BasicDefinitionId
 		);
 		if (!owner || !definition)
 		{

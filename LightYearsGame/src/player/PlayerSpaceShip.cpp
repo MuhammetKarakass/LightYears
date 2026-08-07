@@ -40,10 +40,10 @@ namespace ly
 				grantPlayerAbility(*definition);
 			}
 		};
-		grantPlayerAbilityById("Ability.GravityAnomaly.Basic");
-		grantPlayerAbilityById("Ability.InfernoSpray.Basic");
-		grantPlayerAbilityById("Ability.Dash.Basic");
-		grantPlayerAbilityById("Ability.Rocket.Basic");
+		grantPlayerAbilityById(AbilityData::GravityAnomaly::AbilityId::Basic);
+		grantPlayerAbilityById(AbilityData::InfernoSpray::AbilityId::Basic);
+		grantPlayerAbilityById(AbilityData::Dash::AbilityId::Basic);
+		grantPlayerAbilityById(AbilityData::Rocket::AbilityId::Basic);
 
 		SetActorRotation(0.f);
 		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));

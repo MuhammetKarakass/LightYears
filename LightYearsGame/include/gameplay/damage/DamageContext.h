@@ -6,6 +6,13 @@ namespace ly
 {
 	class Actor;
 
+	// CombatRuntime emits this shared event after damage has been resolved. It
+	// belongs to the combat pipeline rather than to an ability-family contract.
+	struct CombatEventSchema
+	{
+		inline static const GameplayTag OwnerDamageTaken{ "Event.Owner.DamageTaken" };
+	};
+
 	// Numeric damage-type behavior is carried with each hit. Values are resolved
 	// once by DamageTypeSystem, so the combat pipeline does not need to know the
 	// weapon or ability that produced the hit.

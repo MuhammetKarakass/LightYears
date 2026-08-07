@@ -9,7 +9,7 @@ namespace ly
 		InfernoSprayPresentationProfile BuildBasicInfernoSprayProfile()
 		{
 			InfernoSprayPresentationProfile profile;
-			profile.profileId = InfernoSprayPresentationIds::Basic;
+			profile.profileId = InfernoSprayPresentationIds::FlameConeBasic;
 			profile.visual.outerFlameColor = sf::Color{ 255, 100, 20, 200 };
 			profile.visual.coreFlameColor = sf::Color{ 255, 240, 120, 255 };
 			profile.visual.flickerIntensity = 0.02f;

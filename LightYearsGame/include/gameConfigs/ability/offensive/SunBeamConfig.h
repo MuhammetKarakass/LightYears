@@ -15,23 +15,15 @@ namespace AbilityData
 	{
 		// Actor/behavior/presentation contract only. Numeric tuning lives in abilities.json.
 
-		inline const ly::AbilityActorDefinition ActorStrikeBasic{
-			"Actor.Ability.SunBeam.Strike.Basic",
-			ActorSchema::Strike::TypeId,
-			"",
-			0.f,
-			0.f,
-			{},
-			ly::SunBeamPresentationIds::StrikeBasic
-		};
-
-		inline const ly::AbilityActorDefinition* FindActorDefinition(
-			const std::string& actorDefinitionId)
+		inline const ly::AbilityActorDefinition ActorStrikeBasic = []
 		{
-			return actorDefinitionId == ActorStrikeBasic.actorDefinitionId
-				? &ActorStrikeBasic
-				: nullptr;
-		}
+			ly::AbilityActorDefinition definition;
+			definition.actorDefinitionId = Actor::Strike::BasicDefinitionId;
+			definition.actorTypeTag = Actor::Strike::TypeTag;
+			definition.presentationProfileId = ly::SunBeamPresentationIds::StrikeBasic;
+			return definition;
+		}();
+
 	}
 
 	namespace Definitions
@@ -39,7 +31,7 @@ namespace AbilityData
 		inline const ly::GameAbilityDefinition SunBeam_Strike_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
-			definition.abilityId = "Ability.SunBeam.Strike.Basic";
+			definition.abilityId = SunBeam::AbilityId::Strike::Basic;
 			definition.slot = sas::AbilitySlot::Ability2;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
@@ -47,7 +39,7 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTag{ "Ability.Offense" },
+				SunBeam::CategoryTag,
 				SunBeam::FamilyTag
 			};
 			definition.displayName = "Sun Beam";
@@ -65,14 +57,9 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorId = SunBeam::BehaviorId;
+			definition.behaviorTag = SunBeam::BehaviorTag;
 			return definition;
 		}();
 	}
 
-	namespace AbilityActors
-	{
-		inline const ly::AbilityActorDefinition& Actor_SunBeam_Basic =
-			SunBeam::ActorStrikeBasic;
-	}
 }

@@ -1,3 +1,36 @@
+set(LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME LightYearsGameplayCore)
+
+# Game-specific reusable gameplay services. This target deliberately depends on
+# SpaceAbilitySystem instead of extending it with LightYears contracts, content,
+# actors, or presentation rules.
+add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContractRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/content/NumericSettingContractRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/AbilityActionValidator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/AbilityActionValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/GameAbilityDefinitionValidator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/GameAbilityDefinitionValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/GameplayEffectDefinitionValidator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/GameplayEffectDefinitionValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/GameContentBootstrap.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/GameContentBootstrap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/GameAbilitySettingContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/GameAbilitySettingContracts.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/LightYearsEffectBehaviorRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/LightYearsEffectBehaviorRuntime.cpp
+)
+target_include_directories(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+	PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+	PUBLIC
+		${LIGHT_YEARS_ENGINE_TARGET_NAME}
+		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+		nlohmann_json::nlohmann_json
+)
+
 add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameFramework/GameApplication.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp
@@ -18,6 +51,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/MovementComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/GameplayTagSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetingTypes.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/AutoTargeting.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
@@ -33,6 +67,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityLoader.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ContentIdSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityContentCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EffectLoader.h
@@ -47,6 +82,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/GameAbilityDefinition.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbilityActionExecutor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actions/AbilityActionAttributeResolver.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actions/FireWeaponActionRuntime.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityActorStructs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
@@ -114,6 +151,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/LightYearsAbilitySystemComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityWorldActor.h
@@ -134,6 +173,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketAbility.h
@@ -309,6 +349,7 @@ target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME}
 	PUBLIC
 		${LIGHT_YEARS_ENGINE_TARGET_NAME}
 		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		nlohmann_json::nlohmann_json
 )
 
@@ -333,6 +374,7 @@ if(BUILD_TESTING)
 		PRIVATE
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 	)
 	add_test(
 		NAME LightYearsContent
@@ -374,6 +416,8 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp
@@ -430,6 +474,7 @@ if(BUILD_TESTING)
 		PRIVATE
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 			nlohmann_json::nlohmann_json
 	)
 	add_executable(LightYearsAutoTargetingTests
@@ -446,6 +491,18 @@ if(BUILD_TESTING)
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 	)
 	add_test(NAME LightYearsAutoTargeting COMMAND LightYearsAutoTargetingTests)
+	add_executable(LightYearsGameplayTagSchemaTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayTagSchemaTests.cpp
+	)
+	target_include_directories(LightYearsGameplayTagSchemaTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsGameplayTagSchemaTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+	)
+	add_test(NAME LightYearsGameplayTagSchema COMMAND LightYearsGameplayTagSchemaTests)
 endif()
 
 if(WIN32)

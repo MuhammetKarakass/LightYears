@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "weapons": [
     {
-      "id": "FighterBasicRapidLaser",
-      "typeId": "PrimaryWeapon.Projectile.Standard",
+      "id": "Weapon.Projectile.FighterRapidLaser.Basic",
+      "typeTag": "PrimaryWeapon.Projectile.Standard",
       "presentation": {
         "texturePath": "SpaceShooterRedux/PNG/Lasers/laserBlue01.png",
         "pointLight": {
@@ -101,8 +101,8 @@
       "attachmentSlotCapacity": 2
     },
     {
-      "id": "PlayerRapidShotgun",
-      "typeId": "PrimaryWeapon.Projectile.Shotgun",
+      "id": "Weapon.Projectile.RapidShotgun.Basic",
+      "typeTag": "PrimaryWeapon.Projectile.Shotgun",
       "presentation": {
         "texturePath": "SpaceShooterRedux/PNG/Lasers/laserGreen11.png",
         "pointLight": {
@@ -168,8 +168,8 @@
       "attachmentSlotCapacity": 2
     },
     {
-      "id": "PlayerDualKineticBlaster",
-      "typeId": "PrimaryWeapon.Projectile.Standard",
+      "id": "Weapon.Projectile.DualKineticBlaster.Basic",
+      "typeTag": "PrimaryWeapon.Projectile.Standard",
       "presentation": {
         "texturePath": "SpaceShooterRedux/PNG/Lasers/laserRed04.png",
         "pointLight": {
@@ -267,8 +267,8 @@
       "attachmentSlotCapacity": 2
     },
     {
-      "id": "PlayerElectricArcLauncher",
-      "typeId": "PrimaryWeapon.Arc.Electric",
+      "id": "Weapon.Arc.ElectricLauncher.Basic",
+      "typeTag": "PrimaryWeapon.Arc.Electric",
       "presentation": {
         "texturePath": "SpaceShooterRedux/PNG/Lasers/laserBlue16.png",
         "pointLight": {
@@ -367,8 +367,8 @@
       "attachmentSlotCapacity": 2
     },
     {
-      "id": "PlayerContinuousHeatLaser",
-      "typeId": "PrimaryWeapon.Beam.Continuous",
+      "id": "Weapon.Beam.ContinuousHeatLaser.Basic",
+      "typeTag": "PrimaryWeapon.Beam.Continuous",
       "presentation": {
         "texturePath": "SpaceShooterRedux/PNG/Lasers/laserBlue01.png",
         "pointLight": {
@@ -470,8 +470,8 @@
       "attachmentSlotCapacity": 2
     },
     {
-      "id": "PlayerCryoWaveProjector",
-      "typeId": "PrimaryWeapon.Wave.Expanding",
+      "id": "Weapon.Wave.CryoProjector.Basic",
+      "typeTag": "PrimaryWeapon.Wave.Expanding",
       "presentation": {
         "texturePath": "",
         "pointLight": {

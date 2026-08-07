@@ -1,7 +1,7 @@
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 
 #include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
-#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "attributes/GameplayAttribute.h"
 #include "framework/Actor.h"
 
@@ -61,12 +61,10 @@ namespace ly
 		{
 			static const bool registered = []
 			{
-				LightYearsAbilitySystemComponent::
-					EffectBehaviorRuntime::Hooks hooks;
+				LightYearsEffectBehaviorRuntime::Hooks hooks;
 				hooks.tick = &Tick;
-				return LightYearsAbilitySystemComponent::
-					GetEffectBehaviorRuntime().Register(
-					AbilityData::GravityAnomaly::EffectSchema::BehaviorId,
+				return GetEffectBehaviorRuntime().Register(
+					AbilityData::GravityAnomaly::Effect::BehaviorTag,
 					hooks
 				);
 			}();

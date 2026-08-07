@@ -40,7 +40,7 @@ namespace ly
 		const GameAbilityDefinition& definition,
 		std::string* failureReason) const
 	{
-		if (!definition.FindEffectSpec(AbilityData::InfernoSpray::MovementPenaltyEffectId))
+		if (!definition.FindEffectSpec(MovementEffectSchema::SlowEffectId))
 		{
 			if (failureReason)
 			{
@@ -70,12 +70,12 @@ namespace ly
 		mCancelAvailableFired = false;
 
 		const sas::GameplayEffectDefinition* effectDef =
-			EffectData::FindGameplayEffectDefinition(AbilityData::InfernoSpray::MovementPenaltyEffectId);
+			EffectData::FindGameplayEffectDefinition(MovementEffectSchema::SlowEffectId);
 		if (effectDef)
 		{
 			sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(*effectDef);
 			if (const AbilityEffectSpecDefinition* sourceSpec =
-				context.definition.FindEffectSpec(AbilityData::InfernoSpray::MovementPenaltyEffectId))
+				context.definition.FindEffectSpec(MovementEffectSchema::SlowEffectId))
 			{
 				spec.duration = sourceSpec->useAbilityDuration
 					? context.definition.duration
@@ -87,11 +87,11 @@ namespace ly
 			mMovementPenaltyEffectHandle = context.abilitySystem.ApplyGameplayEffect(spec);
 		}
 
-		context.abilitySystem.AddOwnedTag(AbilityData::InfernoSpray::StateTag);
+		context.abilitySystem.AddOwnedTag(AbilityData::InfernoSpray::State::Active);
 		EmitLifecycleEvent(
 			context.abilitySystem,
 			context.owner,
-			AbilityData::InfernoSpray::StartEvent
+			AbilityData::InfernoSpray::Event::Started
 		);
 
 		mStarted = true;
@@ -108,7 +108,7 @@ namespace ly
 		mActiveTime += deltaTime;
 		const float minCancelDuration = ResolveInfernoSetting(
 			context.definition.abilityId,
-			"minCancelDuration",
+			AbilityData::InfernoSpray::Setting::MinCancelDuration,
 			0.f
 		);
 
@@ -119,7 +119,7 @@ namespace ly
 			EmitLifecycleEvent(
 				context.abilitySystem,
 				context.owner,
-				AbilityData::InfernoSpray::CancelAvailableEvent
+				AbilityData::InfernoSpray::Event::CancelAvailable
 			);
 		}
 
@@ -145,14 +145,14 @@ namespace ly
 			mMovementPenaltyEffectHandle = {};
 		}
 
-		context.abilitySystem.RemoveOwnedTag(AbilityData::InfernoSpray::StateTag);
+		context.abilitySystem.RemoveOwnedTag(AbilityData::InfernoSpray::State::Active);
 
 		if (reason == sas::AbilityEndReason::Cancelled)
 		{
 			EmitLifecycleEvent(
 				context.abilitySystem,
 				context.owner,
-				AbilityData::InfernoSpray::CancelledEvent
+				AbilityData::InfernoSpray::Event::Cancelled
 			);
 		}
 		else
@@ -160,14 +160,14 @@ namespace ly
 			EmitLifecycleEvent(
 				context.abilitySystem,
 				context.owner,
-				AbilityData::InfernoSpray::CompletedEvent
+				AbilityData::InfernoSpray::Event::Completed
 			);
 		}
 
 		EmitLifecycleEvent(
 			context.abilitySystem,
 			context.owner,
-			AbilityData::InfernoSpray::EndEvent
+			AbilityData::InfernoSpray::Event::Ended
 		);
 
 		mStarted = false;

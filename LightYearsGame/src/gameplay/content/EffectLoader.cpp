@@ -1,6 +1,7 @@
 #include "gameplay/content/EffectLoader.h"
 
 #include "framework/JsonDocumentLoader.h"
+#include "gameplay/content/ContentIdSchema.h"
 
 #include <limits>
 #include <set>
@@ -125,6 +126,13 @@ namespace ly::content
 		)
 		{
 			const std::string id = object.at("id").get<std::string>();
+			std::string idFailure;
+			if (!ContentIdSchema::ValidateEffectId(id, &idFailure))
+			{
+				throw std::runtime_error(
+					"Invalid gameplay effect ID '" + id + "': " + idFailure
+				);
+			}
 			for (const char* requiredField : { "durationPolicy", "stackingPolicy", "sourceParameterized" })
 			{
 				if (!object.contains(requiredField))
@@ -205,6 +213,22 @@ namespace ly::content
 			if (object.contains("grantedTags"))
 			{
 				loaded.definition.grantedTags = ParseTags(object.at("grantedTags"));
+				for (const GameplayTag& tag : loaded.definition.grantedTags)
+				{
+					if (!GameplayTagSchema::ValidateEffectGrantedTag(tag, &idFailure))
+					{
+						throw std::runtime_error(
+							"Gameplay effect '" + id + "' has invalid granted tag '" +
+							tag.ToString() + "': " + idFailure
+						);
+					}
+					if (tag.ToString() == id)
+					{
+						throw std::runtime_error(
+							"Gameplay effect ID must not also be used as a granted tag: " + id
+						);
+					}
+				}
 			}
 			if (object.contains("modifiers"))
 			{
@@ -217,18 +241,48 @@ namespace ly::content
 			if (object.contains("activeVisualId"))
 			{
 				loaded.definition.activeVisualId = object.at("activeVisualId").get<std::string>();
+				if (!ContentIdSchema::ValidateGameplayEffectVisualId(
+					loaded.definition.activeVisualId,
+					&idFailure
+				))
+				{
+					throw std::runtime_error(
+						"Gameplay effect '" + id + "' has invalid active visual ID: " +
+						idFailure
+					);
+				}
 			}
 			if (object.contains("applicationRequiredTags"))
 			{
 				loaded.definition.applicationRequiredTags = ParseTags(
 					object.at("applicationRequiredTags")
 				);
+				for (const GameplayTag& tag : loaded.definition.applicationRequiredTags)
+				{
+					if (!GameplayTagSchema::ValidateEffectApplicationTag(tag, &idFailure))
+					{
+						throw std::runtime_error(
+							"Gameplay effect '" + id + "' has invalid required tag '" +
+							tag.ToString() + "': " + idFailure
+						);
+					}
+				}
 			}
 			if (object.contains("applicationBlockedTags"))
 			{
 				loaded.definition.applicationBlockedTags = ParseTags(
 					object.at("applicationBlockedTags")
 				);
+				for (const GameplayTag& tag : loaded.definition.applicationBlockedTags)
+				{
+					if (!GameplayTagSchema::ValidateEffectApplicationTag(tag, &idFailure))
+					{
+						throw std::runtime_error(
+							"Gameplay effect '" + id + "' has invalid blocked tag '" +
+							tag.ToString() + "': " + idFailure
+						);
+					}
+				}
 			}
 			if (object.contains("sourceScopedApplication"))
 			{

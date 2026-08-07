@@ -9,6 +9,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 
 namespace AbilityData
 {
@@ -46,8 +47,8 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				ly::GameplayTag{ "Ability.Primary" },
-				ly::GameplayTag{ "Ability.Offense" },
+				ly::GameplayTagSchema::AbilityPrimary,
+				ly::GameplayTagSchema::AbilityOffense,
 				weaponDefinition.weaponTypeTag
 			};
 			definition.displayName = weaponDefinition.weaponId;

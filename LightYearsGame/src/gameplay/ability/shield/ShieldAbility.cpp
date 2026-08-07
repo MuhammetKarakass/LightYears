@@ -12,9 +12,9 @@ namespace ly
 		std::string* failureReason) const
 	{
 		const sas::GameplayEffectDefinition* barrier =
-			EffectData::FindGameplayEffectDefinition("Effect.Barrier.Basic");
+			EffectData::FindGameplayEffectDefinition(BarrierEffectSchema::BasicEffectId);
 		const AbilityEffectSpecDefinition* barrierSpec =
-			definition.FindEffectSpec("Effect.Barrier.Basic");
+			definition.FindEffectSpec(BarrierEffectSchema::BasicEffectId);
 		if (!barrier || !barrierSpec ||
 			barrier->durationPolicy != sas::GameplayEffectDurationPolicy::Duration ||
 			!barrierSpec->useAbilityDuration ||

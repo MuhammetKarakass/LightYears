@@ -1,5 +1,6 @@
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
 
+#include "gameplay/content/ContentIdSchema.h"
 #include "presentation/effects/GameplayEffectVisual.h"
 
 #include <utility>
@@ -20,7 +21,7 @@ namespace ly
 		GameplayEffectVisualFactory factory
 	)
 	{
-		if (visualId.empty() || !factory)
+		if (!content::ContentIdSchema::ValidateGameplayEffectVisualId(visualId) || !factory)
 		{
 			return false;
 		}

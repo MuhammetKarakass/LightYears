@@ -16,7 +16,7 @@ namespace ly
 			size_t slotCapacity,
 			std::string* failureReason = nullptr
 		);
-		bool Remove(const GameplayTag& attachmentId, AttachmentHostKind hostKind);
+		bool Remove(const std::string& attachmentId, AttachmentHostKind hostKind);
 		void Clear();
 
 		const List<EquippedAttachment>& GetEquipped() const { return mEquipped; }

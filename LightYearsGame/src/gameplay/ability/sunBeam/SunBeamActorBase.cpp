@@ -61,7 +61,7 @@ namespace ly
 			1.f,
 			sas::FindGameplayAttributeValue(
 				attributes,
-				AbilityData::SunBeam::ActorSchema::Width,
+				AbilityData::SunBeam::Actor::Shared::Width,
 				mBeamWidth
 			)
 		);
@@ -70,7 +70,7 @@ namespace ly
 			1.f,
 			sas::FindGameplayAttributeValue(
 				attributes,
-				AbilityData::SunBeam::ActorSchema::Length,
+				AbilityData::SunBeam::Actor::Shared::Length,
 				mBeamLength
 			)
 		);

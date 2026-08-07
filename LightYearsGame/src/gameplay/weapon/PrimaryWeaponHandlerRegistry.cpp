@@ -35,27 +35,27 @@ namespace ly
 		static const bool initialized = []
 		{
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Projectile::Standard::TypeId,
+				PrimaryWeaponSchema::Projectile::Standard::TypeTag,
 				PrimaryWeaponBuiltIns::CreateStandardProjectileWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Projectile::Shotgun::TypeId,
+				PrimaryWeaponSchema::Projectile::Shotgun::TypeTag,
 				PrimaryWeaponBuiltIns::CreateShotgunWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Arc::Electric::TypeId,
+				PrimaryWeaponSchema::Arc::Electric::TypeTag,
 				PrimaryWeaponBuiltIns::CreateElectricArcWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Beam::Continuous::TypeId,
+				PrimaryWeaponSchema::Beam::Continuous::TypeTag,
 				PrimaryWeaponBuiltIns::CreateContinuousBeamWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Wave::Expanding::TypeId,
+				PrimaryWeaponSchema::Wave::Expanding::TypeTag,
 				PrimaryWeaponBuiltIns::CreateExpandingWaveWeaponHandler()
 			);
 			GetFeatures().emplace(
-				PrimaryWeaponSchema::Feature::Heat::FeatureId,
+				PrimaryWeaponSchema::Feature::Heat::FeatureTag,
 				PrimaryWeaponBuiltIns::CreateHeatFeatureHandler()
 			);
 			return true;

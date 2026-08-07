@@ -26,7 +26,7 @@ namespace ly
 		public:
 			const GameplayTag& GetTypeTag() const override
 			{
-				return PrimaryWeaponSchema::Beam::Continuous::TypeId;
+				return PrimaryWeaponSchema::Beam::Continuous::TypeTag;
 			}
 
 			const List<GameplayTag>& GetOwnedAttributeRoots() const override

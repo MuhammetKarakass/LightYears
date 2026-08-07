@@ -1,5 +1,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attachment/AttachmentLoadout.h"
+#include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 
 #include <algorithm>
 
@@ -79,13 +81,122 @@ namespace ly
 		std::string* failureReason
 	)
 	{
-		if (!definition.attachmentId.IsValid())
+		std::string tagFailureReason;
+		if (!content::ContentIdSchema::ValidateAttachmentId(
+			definition.attachmentId,
+			&tagFailureReason
+		))
 		{
 			if (failureReason)
 			{
-				*failureReason = "Attachment requires a valid ID.";
+				*failureReason = "Attachment requires a valid ID: " + tagFailureReason;
 			}
 			return false;
+		}
+		for (const GameplayTag& capability : definition.requiredCapabilities)
+		{
+			if (!GameplayTagSchema::Validate(
+				capability,
+				GameplayTagKind::AttachmentCapability,
+				&tagFailureReason
+			))
+			{
+				if (failureReason) *failureReason = "Attachment capability tag is invalid: " + tagFailureReason;
+				return false;
+			}
+		}
+		for (const GameplayTag& capability : hostCapabilities)
+		{
+			if (!GameplayTagSchema::Validate(
+				capability,
+				GameplayTagKind::AttachmentCapability,
+				&tagFailureReason
+			))
+			{
+				if (failureReason) *failureReason = "Host attachment capability tag is invalid: " + tagFailureReason;
+				return false;
+			}
+		}
+		if (definition.replaceDamageType.IsValid() && !GameplayTagSchema::Validate(
+			definition.replaceDamageType,
+			GameplayTagKind::DamageType,
+			&tagFailureReason
+		))
+		{
+			if (failureReason) *failureReason = "Attachment damage type tag is invalid: " + tagFailureReason;
+			return false;
+		}
+		for (const sas::GameplayAttribute& attribute : definition.grantedAttributes)
+		{
+			if (!GameplayTagSchema::Validate(
+				attribute.id,
+				GameplayTagKind::Attribute,
+				&tagFailureReason
+			))
+			{
+				if (failureReason) *failureReason = "Attachment attribute tag is invalid: " + tagFailureReason;
+				return false;
+			}
+		}
+		for (const sas::AttributeModifier& modifier : definition.attributeModifiers)
+		{
+			if (!GameplayTagSchema::Validate(
+				modifier.attributeId,
+				GameplayTagKind::Attribute,
+				&tagFailureReason
+			))
+			{
+				if (failureReason) *failureReason = "Attachment modifier attribute tag is invalid: " + tagFailureReason;
+				return false;
+			}
+		}
+		for (const ConditionalAttributeModifier& conditional : definition.conditionalAttributeModifiers)
+		{
+			if (!GameplayTagSchema::Validate(
+				conditional.modifier.attributeId,
+				GameplayTagKind::Attribute,
+				&tagFailureReason
+			))
+			{
+				if (failureReason) *failureReason = "Attachment conditional modifier tag is invalid: " + tagFailureReason;
+				return false;
+			}
+			const GameplayTagKind conditionTagKind =
+				conditional.condition.type == AttachmentConditionType::HasDamageTag ||
+				conditional.condition.type == AttachmentConditionType::MissingDamageTag
+				? GameplayTagKind::DamageType
+				: GameplayTagKind::Attribute;
+			if (conditional.condition.type != AttachmentConditionType::Always &&
+				!GameplayTagSchema::Validate(
+					conditional.condition.subjectTag,
+					conditionTagKind,
+					&tagFailureReason
+				))
+			{
+				if (failureReason) *failureReason = "Attachment condition tag is invalid: " + tagFailureReason;
+				return false;
+			}
+		}
+		for (const AttachmentEventRule& rule : definition.eventRules)
+		{
+			if (!GameplayTagSchema::Validate(rule.eventTag, GameplayTagKind::Event, &tagFailureReason) ||
+				!GameplayTagSchema::Validate(rule.magnitudeAttributeId, GameplayTagKind::Attribute, &tagFailureReason))
+			{
+				if (failureReason) *failureReason = "Attachment event tag is invalid: " + tagFailureReason;
+				return false;
+			}
+			for (const GameplayTag& damageTag : rule.requiredDamageTags)
+			{
+				if (!GameplayTagSchema::Validate(
+					damageTag,
+					GameplayTagKind::DamageType,
+					&tagFailureReason
+				))
+				{
+					if (failureReason) *failureReason = "Attachment event damage tag is invalid: " + tagFailureReason;
+					return false;
+				}
+			}
 		}
 		if (std::find(definition.allowedHosts.begin(), definition.allowedHosts.end(), hostKind) == definition.allowedHosts.end())
 		{
@@ -140,7 +251,7 @@ namespace ly
 		return true;
 	}
 
-	bool AttachmentLoadout::Remove(const GameplayTag& attachmentId, AttachmentHostKind hostKind)
+	bool AttachmentLoadout::Remove(const std::string& attachmentId, AttachmentHostKind hostKind)
 	{
 		auto found = std::find_if(mEquipped.begin(), mEquipped.end(), [&](const EquippedAttachment& equipped)
 		{
