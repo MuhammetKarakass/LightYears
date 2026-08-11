@@ -191,7 +191,7 @@ namespace ly
 					ship->GetAbilitySystemComponent()
 						.BuildGameplayEffectSnapshots())
 				{
-					const sas::GameplayAttribute* capacity = sas::FindGameplayAttribute(
+					const sas::GameplayAttribute* capacity = sas::FindAttribute(
 						effectSnapshot.runtimeAttributes,
 						BarrierEffectSchema::Capacity
 					);

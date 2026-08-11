@@ -1,13 +1,6 @@
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/damage/DamageContext.h"
-#include "gameplay/ability/dash/DashContracts.h"
-#include "gameplay/ability/gravityAnomaly/GravityAnomalyContracts.h"
-#include "gameplay/ability/infernoSpray/InfernoSprayContracts.h"
-#include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
-#include "gameplay/ability/rocket/RocketContracts.h"
-#include "gameplay/ability/shield/ShieldContracts.h"
-#include "gameplay/ability/sunBeam/SunBeamContracts.h"
 
 #include <iostream>
 
@@ -76,18 +69,6 @@ int main()
 	))
 	{
 		return Fail("Unregistered shared action lock was accepted");
-	}
-	if (!GameplayTagSchema::Validate(
-		GameplayTag{ "PrimaryWeapon.Projectile.Standard" },
-		GameplayTagKind::PrimaryWeaponType,
-		&failureReason
-	) || !GameplayTagSchema::Validate(
-		GameplayTag{ "PrimaryWeapon.Feature.Heat" },
-		GameplayTagKind::PrimaryWeaponFeature,
-		&failureReason
-	))
-	{
-		return Fail("Primary weapon tag domains were rejected");
 	}
 	if (!content::ContentIdSchema::ValidateAttachmentId(
 		"Attachment.Thermal.Converter.Basic",
@@ -207,61 +188,6 @@ int main()
 		))
 	{
 		return Fail("Ability owner-condition tag domain validation is inconsistent");
-	}
-
-	// Every ability family exposes the same mandatory contract surface. Optional
-	// state/event/actor members are validated below only where the behavior owns
-	// those mechanics; this keeps future families extensible without fake leaves.
-	if (!IsValid(GameplayTag{ AbilityData::Dash::AbilityId::Basic }, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::Dash::CategoryTag, GameplayTagKind::AbilityCategory) ||
-		!IsValid(AbilityData::Dash::FamilyTag, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::Dash::BehaviorTag, GameplayTagKind::AbilityBehavior) ||
-		!IsValid(AbilityData::Dash::State::Active, GameplayTagKind::AbilityState) ||
-		!IsValid(AbilityData::Dash::Event::Started, GameplayTagKind::AbilityEvent) ||
-		!IsValid(AbilityData::Dash::Event::Ended, GameplayTagKind::AbilityEvent) ||
-		!IsValid(GameplayTag{ AbilityData::Shield::AbilityId::Basic }, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::Shield::CategoryTag, GameplayTagKind::AbilityCategory) ||
-		!IsValid(AbilityData::Shield::FamilyTag, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::Shield::BehaviorTag, GameplayTagKind::AbilityBehavior) ||
-		!IsValid(GameplayTag{ AbilityData::Rocket::AbilityId::Basic }, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::Rocket::CategoryTag, GameplayTagKind::AbilityCategory) ||
-		!IsValid(AbilityData::Rocket::FamilyTag, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::Rocket::BehaviorTag, GameplayTagKind::AbilityBehavior) ||
-		!IsValid(AbilityData::Rocket::Actor::Projectile::TypeTag, GameplayTagKind::AbilityActorType) ||
-		!IsValid(AbilityData::Rocket::Actor::Projectile::ProjectileSpeed, GameplayTagKind::Attribute) ||
-		!IsValid(GameplayTag{ AbilityData::InfernoSpray::AbilityId::Basic }, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::InfernoSpray::CategoryTag, GameplayTagKind::AbilityCategory) ||
-		!IsValid(AbilityData::InfernoSpray::FamilyTag, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::InfernoSpray::BehaviorTag, GameplayTagKind::AbilityBehavior) ||
-		!IsValid(AbilityData::InfernoSpray::State::Active, GameplayTagKind::AbilityState) ||
-		!IsValid(AbilityData::InfernoSpray::Event::Started, GameplayTagKind::AbilityEvent) ||
-		!IsValid(AbilityData::InfernoSpray::Actor::FlameCone::TypeTag, GameplayTagKind::AbilityActorType) ||
-		!IsValid(AbilityData::InfernoSpray::Actor::FlameCone::Range, GameplayTagKind::Attribute) ||
-		!IsValid(GameplayTag{ AbilityData::SunBeam::AbilityId::Strike::Basic }, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::SunBeam::CategoryTag, GameplayTagKind::AbilityCategory) ||
-		!IsValid(AbilityData::SunBeam::FamilyTag, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::SunBeam::BehaviorTag, GameplayTagKind::AbilityBehavior) ||
-		!IsValid(AbilityData::SunBeam::Actor::Strike::TypeTag, GameplayTagKind::AbilityActorType) ||
-		!IsValid(AbilityData::SunBeam::Actor::Shared::Width, GameplayTagKind::Attribute) ||
-		!IsValid(GameplayTag{ AbilityData::GravityAnomaly::AbilityId::Basic }, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::GravityAnomaly::CategoryTag, GameplayTagKind::AbilityCategory) ||
-		!IsValid(AbilityData::GravityAnomaly::FamilyTag, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::GravityAnomaly::BehaviorTag, GameplayTagKind::AbilityBehavior) ||
-		!IsValid(AbilityData::GravityAnomaly::Actor::Projectile::TypeTag, GameplayTagKind::AbilityActorType) ||
-		!IsValid(AbilityData::GravityAnomaly::Actor::Field::TypeTag, GameplayTagKind::AbilityActorType) ||
-		!IsValid(AbilityData::GravityAnomaly::Actor::Field::PullStrength, GameplayTagKind::Attribute) ||
-		!IsValid(AbilityData::GravityAnomaly::Effect::BehaviorTag, GameplayTagKind::EffectBehavior) ||
-		!IsValid(GameplayTag{ AbilityData::OverdriveCore::AbilityId::Basic }, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::OverdriveCore::CategoryTag, GameplayTagKind::AbilityCategory) ||
-		!IsValid(AbilityData::OverdriveCore::FamilyTag, GameplayTagKind::Ability) ||
-		!IsValid(AbilityData::OverdriveCore::BehaviorTag, GameplayTagKind::AbilityBehavior) ||
-		!IsValid(AbilityData::OverdriveCore::State::Firing, GameplayTagKind::AbilityState) ||
-		!IsValid(AbilityData::OverdriveCore::State::AttackSpeedBoost, GameplayTagKind::AbilityState) ||
-		!IsValid(AbilityData::OverdriveCore::Event::Started, GameplayTagKind::AbilityEvent) ||
-		!IsValid(AbilityData::OverdriveCore::Event::Ended, GameplayTagKind::AbilityEvent) ||
-		!IsValid(AbilityData::OverdriveCore::Event::AttackSpeedBoostEnded, GameplayTagKind::AbilityEvent))
-	{
-		return Fail("Ability contract tags violate the shared gameplay tag schema");
 	}
 
 	return 0;

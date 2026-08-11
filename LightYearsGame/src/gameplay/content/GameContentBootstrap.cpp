@@ -19,6 +19,10 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayAbility.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
+#include "gameplay/ability/overdriveCore/OverdriveCoreAbility.h"
+#include "gameplay/ability/nullPulse/NullPulseAbility.h"
+#include "gameplay/ability/phaseDrift/PhaseDriftAbility.h"
+#include "gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h"
 #include "gameplay/ability/rocket/RocketAbility.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/shield/ShieldAbility.h"
@@ -42,9 +46,9 @@ namespace ly
 {
 	namespace
 	{
-		bool IsEffectBehaviorRegistered(const GameplayTag& behaviorTag)
+		bool IsEffectBehaviorRegistered(const sas::GameplayEffectBehaviorKey& behaviorKey)
 		{
-			return GetEffectBehaviorRuntime().IsRegistered(behaviorTag);
+			return GetEffectBehaviorRuntime().IsRegistered(behaviorKey);
 		}
 
 		bool ValidateEffectForRuntime(
@@ -137,39 +141,52 @@ namespace ly
 
 			const bool presentationRegistered = RegisterGameAbilityPresentationContent();
 			const bool configuredRegistered = GameAbilityBehaviorRegistry::Register(
-				AbilityBehaviorSchema::Configured,
+				AbilityBehaviorType::Configured,
 				[] { return std::make_unique<GameAbilityBehavior>(); }
 			);
 			const bool abilitiesRegistered = configuredRegistered &&
 				GameAbilityBehaviorRegistry::Register(
-					AbilityData::Dash::BehaviorTag,
+					AbilityBehaviorType::Dash,
 					[] { return std::make_unique<DashAbility>(); }
 				) &&
 				GameAbilityBehaviorRegistry::Register(
-					AbilityData::Shield::BehaviorTag,
+					AbilityBehaviorType::Shield,
 					[] { return std::make_unique<ShieldAbility>(); }
 				) &&
 				GameAbilityBehaviorRegistry::Register(
-					AbilityData::GravityAnomaly::BehaviorTag,
+					AbilityBehaviorType::GravityAnomaly,
 					[] { return std::make_unique<GravityAnomalyAbility>(); }
 				) &&
 				GameAbilityBehaviorRegistry::Register(
-					AbilityData::Rocket::BehaviorTag,
+					AbilityBehaviorType::Rocket,
 					[] { return std::make_unique<RocketAbility>(); }
 				) &&
 				GameAbilityBehaviorRegistry::Register(
-					AbilityData::SunBeam::BehaviorTag,
+					AbilityBehaviorType::SunBeam,
 					[] { return std::make_unique<SunBeamAbility>(); }
 				) &&
 				GameAbilityBehaviorRegistry::Register(
-					AbilityData::InfernoSpray::BehaviorTag,
+					AbilityBehaviorType::InfernoSpray,
 					[] { return std::make_unique<InfernoSprayAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::OverdriveCore,
+					[] { return std::make_unique<OverdriveCoreAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::NullPulse,
+					[] { return std::make_unique<NullPulseAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::PhaseDrift,
+					[] { return std::make_unique<PhaseDriftAbility>(); }
 				);
 
 			const bool abilityActorsRegistered =
 				RegisterGravityAnomalyProjectileActorType() &&
 				RegisterGravityAnomalyFieldActorType() &&
 				RegisterRocketProjectileActorType() &&
+				RegisterOverdriveCoreProjectileActorType() &&
 				RegisterSunBeamStrikeActorType() &&
 				RegisterInfernoSprayActorType();
 			const bool effectsRegistered =

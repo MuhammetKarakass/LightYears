@@ -40,7 +40,7 @@ namespace ly
 		)
 		{
 			World* world = context.owner.GetWorld();
-			const float baseDamage = std::max(0.f, sas::FindGameplayAttributeValue(
+			const float baseDamage = std::max(0.f, sas::FindAttributeValue(
 				context.attributes,
 				CommonAttributeIds::Damage,
 				0.f
@@ -160,12 +160,12 @@ namespace ly
 		class ElectricArcWeaponHandler final : public PrimaryWeaponHandler
 		{
 		public:
-			const GameplayTag& GetTypeTag() const override
+			PrimaryWeaponType GetType() const override
 			{
-				return PrimaryWeaponSchema::Arc::Electric::TypeTag;
+				return PrimaryWeaponType::ArcElectric;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return PrimaryWeaponBuiltIns::ArcAttributeRoots();
 			}
@@ -174,7 +174,7 @@ namespace ly
 				const PrimaryWeaponDefinition& definition
 			) const override
 			{
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Range,
 					PrimaryWeaponSchema::Arc::Electric::ChainCount,
@@ -237,23 +237,23 @@ namespace ly
 			{
 				const int chainCount = std::max(
 					0,
-					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Arc::Electric::ChainCount,
 						0.f
 					)))
 				);
-				const float chainRange = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float chainRange = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Arc::Electric::ChainRange,
 					0.f
 				));
-				const float damageMultiplier = std::clamp(sas::FindGameplayAttributeValue(
+				const float damageMultiplier = std::clamp(sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain,
 					1.f
 				), 0.f, 1.f);
-				const float targetRange = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float targetRange = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					CommonAttributeIds::Range,
 					0.f

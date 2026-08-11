@@ -1,4 +1,5 @@
 #include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
+#include "gameplay/tags/GameplayTags.h"
 
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -24,20 +25,20 @@ namespace ly
 {
 	namespace
 	{
-		const List<GameplayTag> InfernoSprayAttributeRoots{
-			AbilityData::InfernoSpray::Actor::FlameCone::AttributeRoot,
-			DamageAttributeIds::AttributeRoot
+		const List<sas::AttributeId> InfernoSprayAttributeRoots{
+			AbilityData::InfernoSpray::Actor::FlameCone::Root,
+			DamageAttributeIds::Root
 		};
 
 		class InfernoSprayActorTypeHandler final : public AbilityActorTypeHandler
 		{
 		public:
-			const GameplayTag& GetActorTypeTag() const override
+			AbilityActorType GetActorType() const override
 			{
-				return AbilityData::InfernoSpray::Actor::FlameCone::TypeTag;
+				return AbilityActorType::InfernoSprayFlameCone;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return InfernoSprayAttributeRoots;
 			}
@@ -52,9 +53,9 @@ namespace ly
 				{
 					return baseResult;
 				}
-				if (definition.presentationProfileId.empty() ||
+				if (!definition.presentationProfileId.IsValid() ||
 					PresentationProfileRegistry<InfernoSprayPresentationProfile>::Find(
-						definition.presentationProfileId
+						definition.presentationProfileId.ToString()
 					) == nullptr)
 				{
 					return { false, "Inferno Spray actor requires a valid typed presentation profile." };
@@ -69,7 +70,7 @@ namespace ly
 				World* world = context.owner.GetWorld();
 				const InfernoSprayPresentationProfile* profile =
 					PresentationProfileRegistry<InfernoSprayPresentationProfile>::Find(
-						context.definition.presentationProfileId
+						context.definition.presentationProfileId.ToString()
 					);
 				return world && profile
 					? world->SpawnActor<InfernoSprayActor>(&context.owner, *profile)
@@ -100,22 +101,22 @@ namespace ly
 	void InfernoSprayActor::ConfigureFromAttributes(const sas::GameplayAttributeList& attributes)
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
-		mRange = std::max(10.f, sas::FindGameplayAttributeValue(
+		mRange = std::max(10.f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::InfernoSpray::Actor::FlameCone::Range,
 			0.f
 		));
-		mConeAngleDegrees = std::clamp(sas::FindGameplayAttributeValue(
+		mConeAngleDegrees = std::clamp(sas::FindAttributeValue(
 			attributes,
 			AbilityData::InfernoSpray::Actor::FlameCone::ConeAngle,
 			0.f
 		), 1.f, 180.f);
-		mCombatTickInterval = std::max(0.05f, sas::FindGameplayAttributeValue(
+		mCombatTickInterval = std::max(0.05f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::InfernoSpray::Actor::FlameCone::CombatTickInterval,
 			0.f
 		));
-		mBaseDPS = std::max(0.f, sas::FindGameplayAttributeValue(
+		mBaseDPS = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::InfernoSpray::Actor::FlameCone::BaseDPS,
 			0.f
@@ -135,7 +136,7 @@ namespace ly
 
 		if (auto* combatant = dynamic_cast<Combatant*>(owner))
 		{
-			if (!combatant->GetCombatRuntime().GetAbilitySystemComponent().GetOwnedTags().HasTag(AbilityData::InfernoSpray::State::Active))
+			if (!combatant->GetCombatRuntime().GetAbilitySystemComponent().GetOwnedTags().HasTag(GameplayTags::State::Ability::InfernoSpray::Active))
 			{
 				Destroy();
 				return;

@@ -8,19 +8,20 @@
 #include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/ability/rocket/RocketContracts.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/rocket/RocketPresentationIds.h"
 
 namespace AbilityData
 {
 	namespace Rocket
 	{
-		// Actor/behavior/presentation contract only. Numeric tuning lives in abilities.json.
+		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
 
 		inline const ly::AbilityActorDefinition ActorProjectileBasic = []
 		{
 			ly::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-			definition.actorTypeTag = Actor::Projectile::TypeTag;
+			definition.actorType = ly::AbilityActorType::RocketProjectile;
 			definition.presentationProfileId = ly::RocketPresentationIds::ProjectileBasic;
 			return definition;
 		}();
@@ -40,8 +41,8 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				Rocket::CategoryTag,
-				Rocket::FamilyTag
+				ly::GameplayTags::Ability::Offense,
+				ly::GameplayTags::Ability::Family::Rocket
 			};
 			definition.displayName = "Rocket";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
@@ -61,7 +62,7 @@ namespace AbilityData
 			};
 			definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 			definition.attachmentCapabilities = { ly::AttachmentSchema::Capability::Damage };
-			definition.behaviorTag = Rocket::BehaviorTag;
+			definition.behaviorType = ly::AbilityBehaviorType::Rocket;
 			return definition;
 		}();
 	}

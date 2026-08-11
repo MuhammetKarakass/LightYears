@@ -15,6 +15,8 @@ namespace ly
 
 		void SetMaxEnergy(float maxEnergy, bool preserveEnergyPercent = false);
 		void SetRechargeDelay(float rechargeDelay);
+		// Clears only the current delay; the configured base delay remains intact.
+		void ClearRechargeDelay() { mRechargeDelayRemaining = 0.f; }
 		float Consume(float amount);
 		// A caller may pause both the recharge delay and regeneration while a system is active.
 		void Tick(float deltaTime, float regenerationPerSecond, bool allowRecharge = true);

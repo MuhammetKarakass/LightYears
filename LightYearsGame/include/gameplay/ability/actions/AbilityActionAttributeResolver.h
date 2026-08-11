@@ -14,6 +14,12 @@ namespace ly::AbilityActionAttributeResolver
 		const List<GameplayTag>& originalDamageTags = {}
 	);
 
+	// Resolves the ability definition's own numeric values through the same
+	// level, attachment, owner-scaling, and clamp pipeline used by actions.
+	sas::GameplayAttributeList ResolveAbilityAttributes(
+		AbilityExecutionContext& context
+	);
+
 	float ResolveEffectiveInterval(
 		AbilityExecutionContext& context,
 		float baseInterval,

@@ -20,29 +20,29 @@ namespace ly
 {
 	namespace
 	{
-		const List<GameplayTag> FieldCommonAttributes{
+		const List<sas::AttributeId> FieldCommonAttributes{
 			CommonAttributeIds::Duration,
 			CommonAttributeIds::Radius
 		};
 
-		const List<GameplayTag> GravityAnomalyAttributeRoots{
-			AbilityData::GravityAnomaly::Actor::Field::AttributeRoot
+		const List<sas::AttributeId> GravityAnomalyAttributeRoots{
+			AbilityData::GravityAnomaly::Actor::Field::Root
 		};
 
 		class GravityAnomalyFieldActorTypeHandler final : public AbilityActorTypeHandler
 		{
 		public:
-			const GameplayTag& GetActorTypeTag() const override
+			AbilityActorType GetActorType() const override
 			{
-				return AbilityData::GravityAnomaly::Actor::Field::TypeTag;
+				return AbilityActorType::GravityAnomalyField;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return GravityAnomalyAttributeRoots;
 			}
 
-			const List<GameplayTag>& GetAllowedCommonAttributeIds() const override
+		const List<sas::AttributeId>& GetAllowedCommonAttributeIds() const override
 			{
 				return FieldCommonAttributes;
 			}
@@ -57,7 +57,7 @@ namespace ly
 				{
 					return baseResult;
 				}
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Duration,
 					CommonAttributeIds::Radius,
 					AbilityData::GravityAnomaly::Actor::Field::PullStrength,
@@ -65,15 +65,15 @@ namespace ly
 					AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration
 				})
 				{
-					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
+					const sas::GameplayAttribute* attribute = sas::FindAttribute(definition.attributes, required);
 					if (!attribute || attribute->baseValue <= 0.f)
 					{
-						return { false, "Gravity Anomaly field requires a positive '" + required.ToString() + "' attribute." };
+						return { false, "Gravity Anomaly field requires a positive '" + std::string{ required.GetName() } + "' attribute." };
 					}
 				}
-				if (definition.presentationProfileId.empty() ||
+				if (!definition.presentationProfileId.IsValid() ||
 					PresentationProfileRegistry<GravityAnomalyFieldPresentationProfile>::Find(
-						definition.presentationProfileId
+						definition.presentationProfileId.ToString()
 					) == nullptr)
 				{
 					return { false, "Gravity Anomaly field requires a valid typed presentation profile." };
@@ -88,7 +88,7 @@ namespace ly
 				World* world = context.owner.GetWorld();
 				const GravityAnomalyFieldPresentationProfile* profile =
 					PresentationProfileRegistry<GravityAnomalyFieldPresentationProfile>::Find(
-						context.definition.presentationProfileId
+						context.definition.presentationProfileId.ToString()
 					);
 				return world && profile
 					? world->SpawnActor<GravityAnomalyFieldActor>(&context.owner, *profile)
@@ -123,27 +123,27 @@ namespace ly
 	)
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
-		mDuration = std::max(0.f, sas::FindGameplayAttributeValue(
+		mDuration = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			CommonAttributeIds::Duration,
 			mDuration
 		));
-		mRadius = std::max(0.f, sas::FindGameplayAttributeValue(
+		mRadius = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			CommonAttributeIds::Radius,
 			mRadius
 		));
-		mPullStrength = std::max(0.f, sas::FindGameplayAttributeValue(
+		mPullStrength = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::Actor::Field::PullStrength,
 			mPullStrength
 		));
-		mSlowMagnitude = std::clamp(sas::FindGameplayAttributeValue(
+		mSlowMagnitude = std::clamp(sas::FindAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude,
 			mSlowMagnitude
 		), 0.f, 0.95f);
-		mInsideEffectDuration = std::max(0.f, sas::FindGameplayAttributeValue(
+		mInsideEffectDuration = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration,
 			mInsideEffectDuration

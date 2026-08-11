@@ -6,6 +6,7 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/shield/ShieldContracts.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/EffectConfig.h"
 
 namespace AbilityData
@@ -28,8 +29,8 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				Shield::CategoryTag,
-				Shield::FamilyTag
+				ly::GameplayTags::Ability::Defense,
+				ly::GameplayTags::Ability::Family::Shield
 			};
 			definition.displayName = "Shield";
 			definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
@@ -52,6 +53,14 @@ namespace AbilityData
 					0.f,
 					{},
 					{},
+					{},
+					{},
+					{},
+					{},
+					false,
+					0,
+					{},
+					{},
 					{
 						ly::AbilityActionSpec{
 							sas::AbilityActionPhase::OnActivate,
@@ -65,7 +74,7 @@ namespace AbilityData
 					}
 				}
 			};
-			definition.behaviorTag = Shield::BehaviorTag;
+			definition.behaviorType = ly::AbilityBehaviorType::Shield;
 			return definition;
 		}();
 	}

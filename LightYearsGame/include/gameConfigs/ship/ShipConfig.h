@@ -99,7 +99,12 @@ namespace ShipData
 			{ ly::CreateRewardLife, 0.01f},
 			{ ly::CreateRewardShield, 0.08f }
 		},
-		""
+		"",
+		ShipMovementAttributes{},
+		ShipEnergyAttributes{},
+		ShipProgressionDefinition{},
+		-1.f,
+		ly::ControlTargetClass::Elite
 	);
 
 	static const ShipDefinition Ship_Enemy_TwinBlade

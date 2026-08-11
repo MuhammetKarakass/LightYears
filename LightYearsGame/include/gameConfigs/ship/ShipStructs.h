@@ -8,6 +8,7 @@
 #include "engineConfigs/EngineStructs.h"
 #include "player/Reward.h"
 #include "gameConfigs/combat/WeaponStructs.h"
+#include "gameplay/control/ControlResponse.h"
 
 struct EngineMount
 {
@@ -73,7 +74,7 @@ struct ShipMovementAttributes
 
 struct AttributeGrowthEntry
 {
-	ly::GameplayTag attributeId;
+	sas::AttributeId attributeId;
 	float multiplier = 0.25f;
 };
 
@@ -139,7 +140,8 @@ struct ShipDefinition
 		const ShipMovementAttributes& inMovementAttributes = ShipMovementAttributes{},
 		const ShipEnergyAttributes& inEnergyAttributes = ShipEnergyAttributes{},
 		const ShipProgressionDefinition& inProgressionDefinition = ShipProgressionDefinition{},
-		float inShipXPReward = -1.f
+		float inShipXPReward = -1.f,
+		ly::ControlTargetClass inControlTargetClass = ly::ControlTargetClass::Normal
 	)
 		: texturePath(inTexturePath)
 		, health(inHealth)
@@ -155,8 +157,11 @@ struct ShipDefinition
 		, movementAttributes(inMovementAttributes)
 		, energyAttributes(inEnergyAttributes)
 		, progressionDefinition(inProgressionDefinition)
+		, controlTargetClass(inControlTargetClass)
 	{
 	}
+
+	ly::ControlTargetClass controlTargetClass = ly::ControlTargetClass::Normal;
 };
 
 

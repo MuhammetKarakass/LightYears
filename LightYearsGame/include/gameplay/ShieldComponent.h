@@ -15,6 +15,8 @@ namespace ly
 
 		void SetMaxShield(float maxShield, bool preserveShieldPercent = false);
 		void SetRechargeDelay(float rechargeDelay);
+		// Clears only the current delay; the configured base delay remains intact.
+		void ClearRechargeDelay() { mRechargeDelayRemaining = 0.f; }
 
 		// Returns source damage consumed by the shield. The multiplier lets damage
 		// types spend more or less shield capacity without leaking extra hull damage.

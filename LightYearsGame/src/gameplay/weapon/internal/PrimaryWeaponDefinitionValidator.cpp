@@ -1,4 +1,5 @@
 #include "attributes/AttributeSystem.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "PrimaryWeaponDefinitionValidator.h"
 
@@ -9,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <string_view>
 
 namespace ly::PrimaryWeaponDefinitionValidator
 {
@@ -18,40 +20,71 @@ namespace ly::PrimaryWeaponDefinitionValidator
 		{
 			const PrimaryWeaponHandler& handler;
 			List<const PrimaryWeaponFeatureHandler*> features;
-			List<GameplayTag> featureTags;
-			List<GameplayTag> upgradeIds;
-			List<GameplayTag> attributeIds;
+			List<PrimaryWeaponFeatureType> featureTypes;
+			List<std::string> upgradeIds;
+			List<sas::AttributeId> attributeIds;
 		};
 
-		bool HasExactTag(
-			const List<GameplayTag>& tags,
-			const GameplayTag& expectedTag
+		bool HasExactId(
+			const List<std::string>& ids,
+			const std::string& expectedId
 		)
 		{
-			return std::any_of(tags.begin(), tags.end(), [&](const GameplayTag& tag)
+			return std::any_of(ids.begin(), ids.end(), [&](const std::string& id)
 			{
-				return tag.MatchesTagExact(expectedTag);
+				return id == expectedId;
 			});
+		}
+
+		bool HasFeature(
+			const List<PrimaryWeaponFeatureType>& featureTypes,
+			PrimaryWeaponFeatureType expectedType
+		)
+		{
+			return std::find(featureTypes.begin(), featureTypes.end(), expectedType) != featureTypes.end();
+		}
+
+		bool IsFeatureUpgradeId(
+			const List<PrimaryWeaponFeatureType>& featureTypes,
+			const std::string& upgradeId
+		)
+		{
+			return std::any_of(featureTypes.begin(), featureTypes.end(), [&](PrimaryWeaponFeatureType type)
+			{
+				return upgradeId == PrimaryWeaponFeatureUpgradeId(type);
+			});
+		}
+
+		bool IsInAttributeRoot(
+			const sas::AttributeId& id,
+			const sas::AttributeId& root
+		)
+		{
+			const std::string_view name = id.GetName();
+			const std::string_view prefix = root.GetName();
+			return name.size() >= prefix.size() &&
+				name.compare(0, prefix.size(), prefix) == 0 &&
+				(name.size() == prefix.size() || name[prefix.size()] == '.');
 		}
 
 		bool MatchesAnyRoot(
-			const GameplayTag& tag,
-			const List<GameplayTag>& roots
+			const sas::AttributeId& id,
+			const List<sas::AttributeId>& roots
 		)
 		{
-			return std::any_of(roots.begin(), roots.end(), [&](const GameplayTag& root)
+			return std::any_of(roots.begin(), roots.end(), [&](const sas::AttributeId& root)
 			{
-				return tag.MatchesTag(root);
+				return IsInAttributeRoot(id, root);
 			});
 		}
 
-		bool IsCommonWeaponAttribute(const GameplayTag& attributeId)
+		bool IsCommonWeaponAttribute(const sas::AttributeId& attributeId)
 		{
-			if (attributeId.MatchesTag(DamageAttributeIds::AttributeRoot))
+			if (IsInAttributeRoot(attributeId, DamageAttributeIds::Root))
 			{
 				return true;
 			}
-			static const std::array<GameplayTag, 6> supportedAttributes{
+			static const std::array<sas::AttributeId, 6> supportedAttributes{
 				CommonAttributeIds::Damage,
 				CommonAttributeIds::FireRate,
 				CommonAttributeIds::Interval,
@@ -62,16 +95,16 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			return std::any_of(
 				supportedAttributes.begin(),
 				supportedAttributes.end(),
-				[&](const GameplayTag& supported)
+				[&](const sas::AttributeId& supported)
 				{
-					return attributeId.MatchesTagExact(supported);
+					return attributeId == supported;
 				}
 			);
 		}
 
 		bool IsAllowedAttribute(
 			const ValidationContext& context,
-			const GameplayTag& attributeId
+			const sas::AttributeId& attributeId
 		)
 		{
 			if (IsCommonWeaponAttribute(attributeId) ||
@@ -93,18 +126,13 @@ namespace ly::PrimaryWeaponDefinitionValidator
 
 		PrimaryWeaponValidationResult ValidateAttributeId(
 			const ValidationContext& context,
-			const GameplayTag& attributeId,
+			const sas::AttributeId& attributeId,
 			const char* usage
 		)
 		{
-			std::string tagFailureReason;
-			if (!GameplayTagSchema::Validate(
-				attributeId,
-				GameplayTagKind::Attribute,
-				&tagFailureReason
-			))
+			if (!AttributeIdSchema::Validate(attributeId, nullptr))
 			{
-				return { false, std::string{ usage } + " has an invalid attribute tag: " + tagFailureReason };
+				return { false, std::string{ usage } + " has an invalid AttributeId." };
 			}
 			return IsAllowedAttribute(context, attributeId)
 				? PrimaryWeaponValidationResult{ true, {} }
@@ -116,26 +144,20 @@ namespace ly::PrimaryWeaponDefinitionValidator
 		}
 
 		PrimaryWeaponValidationResult DeclareFeature(
-			const GameplayTag& featureTag,
+			PrimaryWeaponFeatureType featureType,
 			ValidationContext& context
 		)
 		{
-			std::string tagFailureReason;
-			if (!GameplayTagSchema::Validate(
-				featureTag,
-				GameplayTagKind::PrimaryWeaponFeature,
-				&tagFailureReason
-			) ||
-				HasExactTag(context.featureTags, featureTag))
+			if (HasFeature(context.featureTypes, featureType))
 			{
 				return {
 					false,
-					"Primary weapon feature tags must be valid and unique."
+				"Primary weapon feature types must be valid and unique."
 				};
 			}
 
 			const PrimaryWeaponFeatureHandler* feature =
-				PrimaryWeaponHandlerRegistry::FindFeature(featureTag);
+				PrimaryWeaponHandlerRegistry::FindFeature(featureType);
 			if (!feature)
 			{
 				return {
@@ -144,7 +166,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				};
 			}
 
-			context.featureTags.push_back(featureTag);
+			context.featureTypes.push_back(featureType);
 			context.features.push_back(feature);
 			return { true, {} };
 		}
@@ -154,10 +176,10 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			ValidationContext& context
 		)
 		{
-			for (const GameplayTag& featureTag : definition.featureTags)
+			for (const PrimaryWeaponFeatureType featureType : definition.featureTypes)
 			{
 				const PrimaryWeaponValidationResult result =
-					DeclareFeature(featureTag, context);
+					DeclareFeature(featureType, context);
 				if (!result.isValid)
 				{
 					return result;
@@ -171,43 +193,45 @@ namespace ly::PrimaryWeaponDefinitionValidator
 
 			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
 			{
-				for (const GameplayTag& upgradeId : step.unlockedUpgradeIds)
+				for (const std::string& upgradeId : step.unlockedUpgradeIds)
 				{
-					if (!upgradeId.IsValid() ||
-						HasExactTag(context.upgradeIds, upgradeId) ||
-						HasExactTag(context.featureTags, upgradeId))
+					if (!content::ContentIdSchema::ValidateContentId(upgradeId) ||
+						HasExactId(context.upgradeIds, upgradeId) ||
+						IsFeatureUpgradeId(context.featureTypes, upgradeId))
 					{
 						return {
 							false,
-							"Primary weapon level upgrade IDs must be valid, unique, and distinct from feature tags."
+							"Primary weapon level upgrade IDs must be valid, unique, and distinct from feature upgrades."
 						};
 					}
 					context.upgradeIds.push_back(upgradeId);
 				}
 
-				for (const GameplayTag& featureTag : step.unlockedFeatureTags)
+				for (const PrimaryWeaponFeatureType featureType : step.unlockedFeatureTypes)
 				{
-					if (HasExactTag(context.upgradeIds, featureTag))
+					const std::string featureUpgradeId =
+						PrimaryWeaponFeatureUpgradeId(featureType);
+					if (HasExactId(context.upgradeIds, featureUpgradeId))
 					{
 						return {
 							false,
-							"Primary weapon level feature tags must be unique and distinct from upgrade IDs."
+							"Primary weapon level feature upgrades must be unique and distinct from upgrade IDs."
 						};
 					}
 					const PrimaryWeaponValidationResult result =
-						DeclareFeature(featureTag, context);
+						DeclareFeature(featureType, context);
 					if (!result.isValid)
 					{
 						return result;
 					}
-					context.upgradeIds.push_back(featureTag);
+					context.upgradeIds.push_back(featureUpgradeId);
 				}
 			}
 
 			if (!definition.heatGainCurve.empty() &&
-				!HasExactTag(
-					context.featureTags,
-					PrimaryWeaponSchema::Feature::Heat::FeatureTag
+				!HasFeature(
+					context.featureTypes,
+					PrimaryWeaponFeatureType::Heat
 				))
 			{
 				return { false, "Heat gain curve requires the heat feature." };
@@ -222,8 +246,8 @@ namespace ly::PrimaryWeaponDefinitionValidator
 		{
 			for (const sas::GameplayAttribute& attribute : definition.attributes)
 			{
-				if (!attribute.id.IsValid() ||
-					HasExactTag(context.attributeIds, attribute.id))
+				if (!AttributeIdSchema::Validate(attribute.id, nullptr) ||
+					std::find(context.attributeIds.begin(), context.attributeIds.end(), attribute.id) != context.attributeIds.end())
 				{
 					return {
 						false,
@@ -286,7 +310,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 					{
 						return result;
 					}
-					if (!HasExactTag(context.attributeIds, modifier.attributeId))
+					if (std::find(context.attributeIds.begin(), context.attributeIds.end(), modifier.attributeId) == context.attributeIds.end())
 					{
 						return {
 							false,
@@ -315,16 +339,11 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				{
 					return result;
 				}
-				std::string sourceTagFailureReason;
-				if (!GameplayTagSchema::Validate(
-					scaling.sourceAttributeId,
-					GameplayTagKind::Attribute,
-					&sourceTagFailureReason
-				))
+				if (!AttributeIdSchema::Validate(scaling.sourceAttributeId, nullptr))
 				{
 					return {
 						false,
-						"Weapon scaling source has an invalid attribute tag: " + sourceTagFailureReason
+						"Weapon scaling source has an invalid AttributeId."
 					};
 				}
 			}
@@ -361,14 +380,6 @@ namespace ly::PrimaryWeaponDefinitionValidator
 	)
 	{
 		std::string tagFailureReason;
-		if (!GameplayTagSchema::Validate(
-			definition.weaponTypeTag,
-			GameplayTagKind::PrimaryWeaponType,
-			&tagFailureReason
-		))
-		{
-			return { false, "Primary weapon type tag is invalid: " + tagFailureReason };
-		}
 		if (!definition.weaponId.empty())
 		{
 			content::ParsedWeaponId parsedWeaponId;
@@ -380,17 +391,12 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			{
 				return { false, "Primary weapon content ID is invalid: " + tagFailureReason };
 			}
-			const std::size_t familyStart = definition.weaponTypeTag.name.find('.') + 1;
-			const std::size_t familyEnd = definition.weaponTypeTag.name.find('.', familyStart);
-			const std::string typeFamily = definition.weaponTypeTag.name.substr(
-				familyStart,
-				familyEnd - familyStart
-			);
+			const std::string typeFamily = PrimaryWeaponFamilyName(definition.weaponType);
 			if (parsedWeaponId.family != typeFamily)
 			{
 				return {
 					false,
-					"Primary weapon content ID family must match its weapon type tag family."
+					"Primary weapon content ID family must match its selected weapon type."
 				};
 			}
 		}
@@ -417,7 +423,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			}
 		}
 		const PrimaryWeaponHandler* handler =
-			PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponTypeTag);
+			PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponType);
 		if (!handler)
 		{
 			return {

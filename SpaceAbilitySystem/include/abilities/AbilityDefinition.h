@@ -22,6 +22,6 @@ namespace sas
 		ly::List<ly::GameplayTag> blockedOwnerTags;
 		ly::List<AttributeModifier> attributeModifiers;
 		ly::List<AttributeScalingRule> scalingRules;
-		ly::List<ly::GameplayTag> unlockedUpgradeIds;
+		ly::List<std::string> unlockedUpgradeIds;
 	};
 }

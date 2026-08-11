@@ -1,5 +1,7 @@
 #pragma once
 
+#include "content/ContentId.h"
+
 #include <SFML/Graphics/Color.hpp>
 #include <string>
 
@@ -16,7 +18,7 @@ namespace ly
 
 	struct InfernoSprayPresentationProfile
 	{
-		std::string profileId;
+		sas::ContentId profileId;
 		InfernoSprayVisualDefinition visual;
 	};
 

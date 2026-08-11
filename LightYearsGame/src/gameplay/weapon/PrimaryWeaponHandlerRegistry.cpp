@@ -7,14 +7,14 @@ namespace ly
 	namespace
 	{
 		using PrimaryWeaponHandlerMap = Dictionary<
-			GameplayTag,
+			PrimaryWeaponType,
 			unique_ptr<PrimaryWeaponHandler>,
-			GameplayTagHash
+			std::hash<PrimaryWeaponType>
 		>;
 		using PrimaryWeaponFeatureMap = Dictionary<
-			GameplayTag,
+			PrimaryWeaponFeatureType,
 			unique_ptr<PrimaryWeaponFeatureHandler>,
-			GameplayTagHash
+			std::hash<PrimaryWeaponFeatureType>
 		>;
 
 		PrimaryWeaponHandlerMap& GetHandlers()
@@ -35,27 +35,27 @@ namespace ly
 		static const bool initialized = []
 		{
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Projectile::Standard::TypeTag,
+				PrimaryWeaponType::ProjectileStandard,
 				PrimaryWeaponBuiltIns::CreateStandardProjectileWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Projectile::Shotgun::TypeTag,
+				PrimaryWeaponType::ProjectileShotgun,
 				PrimaryWeaponBuiltIns::CreateShotgunWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Arc::Electric::TypeTag,
+				PrimaryWeaponType::ArcElectric,
 				PrimaryWeaponBuiltIns::CreateElectricArcWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Beam::Continuous::TypeTag,
+				PrimaryWeaponType::BeamContinuous,
 				PrimaryWeaponBuiltIns::CreateContinuousBeamWeaponHandler()
 			);
 			GetHandlers().emplace(
-				PrimaryWeaponSchema::Wave::Expanding::TypeTag,
+				PrimaryWeaponType::WaveExpanding,
 				PrimaryWeaponBuiltIns::CreateExpandingWaveWeaponHandler()
 			);
 			GetFeatures().emplace(
-				PrimaryWeaponSchema::Feature::Heat::FeatureTag,
+				PrimaryWeaponFeatureType::Heat,
 				PrimaryWeaponBuiltIns::CreateHeatFeatureHandler()
 			);
 			return true;
@@ -68,11 +68,11 @@ namespace ly
 	)
 	{
 		EnsureBuiltIns();
-		if (!handler || !handler->GetTypeTag().IsValid())
+		if (!handler)
 		{
 			return false;
 		}
-		return GetHandlers().emplace(handler->GetTypeTag(), std::move(handler)).second;
+		return GetHandlers().emplace(handler->GetType(), std::move(handler)).second;
 	}
 
 	bool PrimaryWeaponHandlerRegistry::RegisterFeature(
@@ -80,28 +80,28 @@ namespace ly
 	)
 	{
 		EnsureBuiltIns();
-		if (!feature || !feature->GetFeatureTag().IsValid())
+		if (!feature)
 		{
 			return false;
 		}
-		return GetFeatures().emplace(feature->GetFeatureTag(), std::move(feature)).second;
+		return GetFeatures().emplace(feature->GetFeatureType(), std::move(feature)).second;
 	}
 
 	const PrimaryWeaponHandler* PrimaryWeaponHandlerRegistry::FindHandler(
-		const GameplayTag& weaponTypeTag
+		PrimaryWeaponType weaponType
 	)
 	{
 		EnsureBuiltIns();
-		auto found = GetHandlers().find(weaponTypeTag);
+		auto found = GetHandlers().find(weaponType);
 		return found != GetHandlers().end() ? found->second.get() : nullptr;
 	}
 
 	const PrimaryWeaponFeatureHandler* PrimaryWeaponHandlerRegistry::FindFeature(
-		const GameplayTag& featureTag
+		PrimaryWeaponFeatureType featureType
 	)
 	{
 		EnsureBuiltIns();
-		auto found = GetFeatures().find(featureTag);
+		auto found = GetFeatures().find(featureType);
 		return found != GetFeatures().end() ? found->second.get() : nullptr;
 	}
 }

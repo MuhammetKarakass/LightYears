@@ -3,9 +3,12 @@
   "effects": [
     {
       "id": "Effect.Barrier.Basic",
+      "behaviorKey": "EffectBehavior.Barrier",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
 	  "grantedTags": ["State.Effect.Defense.Barrier"],
+      "disposition": "Beneficial",
+      "category": "Defense.Barrier",
       "activeVisualId": "Visual.Effect.Shield.Basic",
       "sourceParameterized": true
     },
@@ -14,14 +17,19 @@
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
 	  "grantedTags": ["State.Effect.Movement.Boost", "State.Effect.Test.PassiveValidation"],
+      "disposition": "Beneficial",
+      "category": "AttributeModifier",
       "sourceParameterized": true
     },
     {
       "id": "Effect.Status.Damage.Ignite",
-      "behaviorTag": "EffectBehavior.Damage.Ignite",
+      "behaviorKey": "EffectBehavior.Damage.Ignite",
       "durationPolicy": "Duration",
       "stackingPolicy": "Stack",
       "grantedTags": ["Status.Damage.Ignite"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Damage.OverTime",
       "sourceParameterized": true
     },
     {
@@ -29,6 +37,9 @@
       "durationPolicy": "Duration",
       "stackingPolicy": "Stack",
       "grantedTags": ["Status.Damage.Cryo.Buildup"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Control.CryoBuildup",
       "sourceParameterized": true
     },
     {
@@ -36,22 +47,35 @@
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
       "grantedTags": ["Status.Damage.Cryo.Slowed"],
+      "applicationBlockedTags": ["State.Effect.Immunity.Movement.Slow"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Movement.Slow",
+      "immunityCategory": "Movement.Slow",
       "sourceParameterized": true
     },
     {
       "id": "Effect.Status.Damage.Electric",
-      "behaviorTag": "EffectBehavior.Damage.Electric",
+      "behaviorKey": "EffectBehavior.Damage.Electric",
       "durationPolicy": "Duration",
       "stackingPolicy": "Stack",
       "grantedTags": ["Status.Damage.Electric"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Damage.Electric",
       "sourceParameterized": true
     },
     {
       "id": "Effect.GravityAnomaly.Inside.Basic",
-      "behaviorTag": "EffectBehavior.GravityAnomaly",
+      "behaviorKey": "EffectBehavior.GravityAnomaly",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
-	  "grantedTags": ["State.Effect.GravityAnomaly.Inside"],
+      "grantedTags": ["State.Effect.GravityAnomaly.Inside"],
+      "applicationBlockedTags": ["State.Effect.Immunity.Movement.Slow"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Control.GravityAnomaly",
+      "immunityCategory": "Movement.Slow",
       "activeVisualId": "Visual.Effect.GravityAnomaly.Inside",
       "sourceScopedApplication": true,
       "sourceParameterized": true
@@ -60,8 +84,89 @@
       "id": "Effect.Movement.Slow.Basic",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
-	  "grantedTags": ["State.Effect.Movement.Slow"],
+      "grantedTags": ["State.Effect.Movement.Slow"],
+      "applicationBlockedTags": ["State.Effect.Immunity.Movement.Slow"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Movement.Slow",
+      "immunityCategory": "Movement.Slow",
       "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Immunity.Movement.Slow",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "duration": 5.0,
+      "grantedTags": ["State.Effect.Immunity.Movement.Slow"],
+      "disposition": "Beneficial",
+      "category": "Immunity.MovementSlow",
+      "grantedImmunityCategory": "Movement.Slow",
+      "sourceParameterized": false
+    },
+    {
+      "id": "Effect.Control.Stun.Basic",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["State.Effect.Control.Stunned"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Control.Stun",
+      "immunityCategory": "Control.Stun",
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Control.Stagger.Basic",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["State.Effect.Control.Staggered"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Control.Stagger",
+      "immunityCategory": "Control.Stagger",
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Offense.OverdriveCore.AttackSpeedBoost.Basic",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["State.Effect.Offense.OverdriveCore.AttackSpeedBoost"],
+      "disposition": "Beneficial",
+      "category": "Offense.OverdriveCore.AttackSpeedBoost",
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.PhaseDrift.MovementBoost",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "duration": 6.0,
+      "maxStacks": 1,
+      "grantedTags": ["State.Effect.Movement.Boost"],
+      "disposition": "Beneficial",
+      "category": "Defense.PhaseDrift.Movement",
+      "sourceScopedApplication": true,
+      "sourceParameterized": false
+    },
+    {
+      "id": "Effect.PhaseDrift.ShieldRecovery",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "duration": 6.0,
+      "maxStacks": 1,
+      "disposition": "Beneficial",
+      "category": "Defense.PhaseDrift.ShieldRecovery",
+      "sourceScopedApplication": true,
+      "sourceParameterized": false
+    },
+    {
+      "id": "Effect.PhaseDrift.AfterburnerRecovery",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "duration": 6.0,
+      "maxStacks": 1,
+      "disposition": "Beneficial",
+      "category": "Defense.PhaseDrift.AfterburnerRecovery",
+      "sourceScopedApplication": true,
+      "sourceParameterized": false
     }
   ]
 }

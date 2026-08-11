@@ -1,6 +1,8 @@
 #include "player/PlayerSpaceShip.h"
 
 #include "gameConfigs/ability/AbilityCatalog.h"
+#include "gameplay/ability/nullPulse/NullPulseContracts.h"
+#include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/combat/Combatant.h"
 #include <framework/MathUtility.h>
 
@@ -41,9 +43,16 @@ namespace ly
 			}
 		};
 		grantPlayerAbilityById(AbilityData::GravityAnomaly::AbilityId::Basic);
-		grantPlayerAbilityById(AbilityData::InfernoSpray::AbilityId::Basic);
-		grantPlayerAbilityById(AbilityData::Dash::AbilityId::Basic);
-		grantPlayerAbilityById(AbilityData::Rocket::AbilityId::Basic);
+		// Null Pulse replaces the previous Ability2 grant and is therefore
+		// available through the E input in the default player loadout.
+		grantPlayerAbilityById(AbilityData::NullPulse::AbilityId::Basic);
+		// Ability3 now hosts Phase Drift. Dash remains available to other
+		// loadouts, but is not granted in the default player loadout.
+		grantPlayerAbilityById(AbilityData::PhaseDrift::AbilityId::Basic);
+		// Ability4 is a unique active slot. Overdrive Core is the current
+		// Ability4 playtest ability, so Rocket remains shipped/catalogued but is
+		// not granted at the same time and cannot silently win this slot.
+		grantPlayerAbilityById(AbilityData::OverdriveCore::AbilityId::Basic);
 
 		SetActorRotation(0.f);
 		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
@@ -78,7 +87,7 @@ namespace ly
 
 	void PlayerSpaceShip::ReceiveDamage(DamageContext context)
 	{
-		if (IsInvulnerable())
+		if (IsInvulnerable() || GetCombatRuntime().BlocksIncomingDamage())
 		{
 			return;
 		}

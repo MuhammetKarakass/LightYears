@@ -7,6 +7,7 @@
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/ability/dash/DashMovementController.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "framework/Actor.h"
 
 #include <cmath>
@@ -23,18 +24,6 @@ namespace ly
 		{
 			return content::AbilityContentCatalog::FindNumericSetting(abilityId, settingName)
 				.value_or(fallback);
-		}
-
-		void EmitLifecycleEvent(
-			LightYearsAbilitySystemComponent& abilitySystem,
-			Actor& owner,
-			const GameplayTag& eventTag)
-		{
-			sas::AbilityEvent event;
-			event.eventTag = eventTag;
-			event.SetSource(&owner);
-			event.SetTarget(&owner);
-			abilitySystem.HandleGameplayEvent(event);
 		}
 
 		float ApplyCooldownStep(float cooldown, const AbilityLevelStep& step)
@@ -155,12 +144,7 @@ namespace ly
 		}
 
 		mStarted = true;
-		context.abilitySystem.AddOwnedTag(AbilityData::Dash::State::Active);
-		EmitLifecycleEvent(
-			context.abilitySystem,
-			context.owner,
-			AbilityData::Dash::Event::Started
-		);
+		context.abilitySystem.AddOwnedTag(GameplayTags::State::Ability::Dash::Active);
 		return true;
 	}
 
@@ -175,12 +159,7 @@ namespace ly
 		{
 			movementController->EndDash();
 		}
-		context.abilitySystem.RemoveOwnedTag(AbilityData::Dash::State::Active);
-		EmitLifecycleEvent(
-			context.abilitySystem,
-			context.owner,
-			AbilityData::Dash::Event::Ended
-		);
+		context.abilitySystem.RemoveOwnedTag(GameplayTags::State::Ability::Dash::Active);
 		mStarted = false;
 	}
 }

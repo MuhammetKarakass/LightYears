@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "gameplay/ability/content/AbilityBehaviorType.h"
 #include "gameplay/ability/content/NumericSettingContract.h"
 
 #include <string>
@@ -13,10 +14,10 @@ namespace ly::content
 	{
 	public:
 		static bool Register(
-			const GameplayTag& behaviorTag,
+			AbilityBehaviorType behaviorType,
 			const NumericSettingContract& contract,
 			std::string* failureReason = nullptr
 		);
-		static const NumericSettingContract& Find(const GameplayTag& behaviorTag);
+		static const NumericSettingContract& Find(AbilityBehaviorType behaviorType);
 	};
 }

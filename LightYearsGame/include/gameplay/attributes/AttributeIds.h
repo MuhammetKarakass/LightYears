@@ -1,60 +1,61 @@
 #pragma once
 
-#include "framework/Core.h"
+#include "attributes/AttributeId.h"
 
 namespace ly
 {
 	struct OwnerAttributeIds
 	{
-		inline static const GameplayTag MaxHealth{ "Attribute.Owner.MaxHealth" };
-		inline static const GameplayTag HealthRegen{ "Attribute.Owner.HealthRegen" };
-		inline static const GameplayTag EnergyMax{ "Attribute.Owner.Energy.Max" };
-		inline static const GameplayTag EnergyRegen{ "Attribute.Owner.Energy.Regen" };
-		inline static const GameplayTag AttackPower{ "Attribute.Owner.AttackPower" };
-		inline static const GameplayTag AttackSpeed{ "Attribute.Owner.AttackSpeed" };
-		inline static const GameplayTag AbilityHaste{ "Attribute.Owner.AbilityHaste" };
-		inline static const GameplayTag MoveSpeedHorizontal{ "Attribute.Owner.MoveSpeedHorizontal" };
-		inline static const GameplayTag MoveSpeedVertical{ "Attribute.Owner.MoveSpeedVertical" };
-		inline static const GameplayTag MovementSlow{ "Attribute.Owner.MovementSlow" };
-		inline static const GameplayTag Armor{ "Attribute.Owner.Armor" };
-		inline static const GameplayTag Luck{ "Attribute.Owner.Luck" };
-		inline static const GameplayTag CriticalChance{ "Attribute.Owner.CriticalChance" };
+		inline static const sas::AttributeId MaxHealth{ "Owner.MaxHealth" };
+		inline static const sas::AttributeId HealthRegen{ "Owner.HealthRegen" };
+		inline static const sas::AttributeId EnergyMax{ "Owner.Energy.Max" };
+		inline static const sas::AttributeId EnergyRegen{ "Owner.Energy.Regen" };
+		inline static const sas::AttributeId AttackPower{ "Owner.AttackPower" };
+		inline static const sas::AttributeId AttackSpeed{ "Owner.AttackSpeed" };
+		inline static const sas::AttributeId AbilityHaste{ "Owner.AbilityHaste" };
+		inline static const sas::AttributeId MoveSpeedHorizontal{ "Owner.MoveSpeedHorizontal" };
+		inline static const sas::AttributeId MoveSpeedVertical{ "Owner.MoveSpeedVertical" };
+		inline static const sas::AttributeId MovementSlow{ "Owner.MovementSlow" };
+		inline static const sas::AttributeId Armor{ "Owner.Armor" };
+		inline static const sas::AttributeId Luck{ "Owner.Luck" };
+		inline static const sas::AttributeId CriticalChance{ "Owner.CriticalChance" };
 	};
 
 	struct ShipAttributeIds
 	{
-		inline static const GameplayTag MaxShield{ "Attribute.Ship.Shield.Max" };
-		inline static const GameplayTag ShieldRegen{ "Attribute.Ship.Shield.Regen" };
-		inline static const GameplayTag ShieldRechargeDelay{ "Attribute.Ship.Shield.RechargeDelay" };
-		inline static const GameplayTag AfterburnerCapacity{ "Attribute.Ship.Afterburner.Capacity" };
-		inline static const GameplayTag AfterburnerRegen{ "Attribute.Ship.Afterburner.Regen" };
-		inline static const GameplayTag AfterburnerRechargeDelay{ "Attribute.Ship.Afterburner.RechargeDelay" };
-		inline static const GameplayTag AfterburnerEnergyDrainPerSecond{ "Attribute.Ship.Afterburner.EnergyDrainPerSecond" };
-		inline static const GameplayTag AfterburnerSpeedMultiplier{ "Attribute.Ship.Afterburner.SpeedMultiplier" };
-		inline static const GameplayTag AfterburnerAccelerationMultiplier{ "Attribute.Ship.Afterburner.AccelerationMultiplier" };
-		inline static const GameplayTag AfterburnerRampUpDuration{ "Attribute.Ship.Afterburner.RampUpDuration" };
-		inline static const GameplayTag AfterburnerRampDownDuration{ "Attribute.Ship.Afterburner.RampDownDuration" };
-		inline static const GameplayTag AfterburnerManeuverabilityMultiplier{ "Attribute.Ship.Afterburner.ManeuverabilityMultiplier" };
+		inline static const sas::AttributeId MaxShield{ "Ship.Shield.Max" };
+		inline static const sas::AttributeId ShieldRegen{ "Ship.Shield.Regen" };
+		inline static const sas::AttributeId ShieldRechargeDelay{ "Ship.Shield.RechargeDelay" };
+		inline static const sas::AttributeId AfterburnerCapacity{ "Ship.Afterburner.Capacity" };
+		inline static const sas::AttributeId AfterburnerRegen{ "Ship.Afterburner.Regen" };
+		inline static const sas::AttributeId AfterburnerRechargeDelay{ "Ship.Afterburner.RechargeDelay" };
+		inline static const sas::AttributeId AfterburnerEnergyDrainPerSecond{ "Ship.Afterburner.EnergyDrainPerSecond" };
+		inline static const sas::AttributeId AfterburnerSpeedMultiplier{ "Ship.Afterburner.SpeedMultiplier" };
+		inline static const sas::AttributeId AfterburnerAccelerationMultiplier{ "Ship.Afterburner.AccelerationMultiplier" };
+		inline static const sas::AttributeId AfterburnerRampUpDuration{ "Ship.Afterburner.RampUpDuration" };
+		inline static const sas::AttributeId AfterburnerRampDownDuration{ "Ship.Afterburner.RampDownDuration" };
+		inline static const sas::AttributeId AfterburnerManeuverabilityMultiplier{ "Ship.Afterburner.ManeuverabilityMultiplier" };
 	};
 
 	struct CommonAttributeIds
 	{
-		inline static const GameplayTag Cooldown{ "Attribute.Common.Cooldown" };
-		inline static const GameplayTag Damage{ "Attribute.Common.Damage" };
-		inline static const GameplayTag Radius{ "Attribute.Common.Radius" };
-		inline static const GameplayTag Duration{ "Attribute.Common.Duration" };
-		inline static const GameplayTag Interval{ "Attribute.Common.Interval" };
-		inline static const GameplayTag FireRate{ "Attribute.Common.FireRate" };
-		inline static const GameplayTag Range{ "Attribute.Common.Range" };
+		inline static const sas::AttributeId Cooldown{ "Common.Cooldown" };
+		inline static const sas::AttributeId Damage{ "Common.Damage" };
+		inline static const sas::AttributeId Radius{ "Common.Radius" };
+		inline static const sas::AttributeId Duration{ "Common.Duration" };
+		inline static const sas::AttributeId Interval{ "Common.Interval" };
+		inline static const sas::AttributeId FireRate{ "Common.FireRate" };
+		inline static const sas::AttributeId Range{ "Common.Range" };
+		inline static const sas::AttributeId ProjectileCount{ "Common.ProjectileCount" };
 	};
 
 	struct CollisionAttributeIds
 	{
-		inline static const GameplayTag Radius{ "Attribute.Collision.Radius" };
+		inline static const sas::AttributeId Radius{ "Collision.Radius" };
 	};
 
 	struct AreaAttributeIds
 	{
-		inline static const GameplayTag Radius{ "Attribute.Area.Radius" };
+		inline static const sas::AttributeId Radius{ "Area.Radius" };
 	};
 }

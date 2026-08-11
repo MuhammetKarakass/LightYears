@@ -11,10 +11,10 @@ namespace ly
 		static bool RegisterFeature(unique_ptr<PrimaryWeaponFeatureHandler> feature);
 
 		static const PrimaryWeaponHandler* FindHandler(
-			const GameplayTag& weaponTypeTag
+			PrimaryWeaponType weaponType
 		);
 		static const PrimaryWeaponFeatureHandler* FindFeature(
-			const GameplayTag& featureTag
+			PrimaryWeaponFeatureType featureType
 		);
 
 	private:

@@ -25,15 +25,17 @@ namespace ly
 		const AbilityActorDefinition& definition;
 		const sas::GameplayAttributeList& attributes;
 		std::optional<sf::Vector2f> targetLocation;
+		// Optional live target for projectiles that must follow moving actors.
+		weak_ptr<Actor> targetActor;
 	};
 
 	class AbilityActorTypeHandler
 	{
 	public:
 		virtual ~AbilityActorTypeHandler() = default;
-		virtual const GameplayTag& GetActorTypeTag() const = 0;
-		virtual const List<GameplayTag>& GetOwnedAttributeRoots() const;
-		virtual const List<GameplayTag>& GetAllowedCommonAttributeIds() const;
+		virtual AbilityActorType GetActorType() const = 0;
+		virtual const List<sas::AttributeId>& GetOwnedAttributeRoots() const;
+		virtual const List<sas::AttributeId>& GetAllowedCommonAttributeIds() const;
 		virtual AbilityActorValidationResult ValidateDefinition(const AbilityActorDefinition& definition) const;
 		virtual weak_ptr<AbilityWorldActor> Spawn(const AbilityActorSpawnContext& context) const = 0;
 	};

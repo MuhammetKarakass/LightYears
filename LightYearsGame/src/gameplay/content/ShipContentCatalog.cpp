@@ -1,6 +1,7 @@
 #include "gameplay/content/ShipContentCatalog.h"
 
 #include "gameConfigs/ship/ShipConfig.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/content/ShipLoader.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -85,16 +86,11 @@ namespace ly::content
 			for (const AttributeGrowthEntry& growth :
 				definition.progressionDefinition.growthOverrides)
 			{
-				std::string tagFailureReason;
-				if (!GameplayTagSchema::Validate(
-					growth.attributeId,
-					GameplayTagKind::Attribute,
-					&tagFailureReason
-				))
+				if (!AttributeIdSchema::Validate(growth.attributeId, nullptr))
 				{
 					return Fail(
 						failureReason,
-						"Ship progression attribute tag is invalid: " + tagFailureReason
+						"Ship progression AttributeId is invalid."
 					);
 				}
 			}

@@ -18,12 +18,20 @@ namespace ly
 			List<const PrimaryWeaponFeatureHandler*> features;
 		};
 
-		bool HasExactTag(const List<GameplayTag>& tags, const GameplayTag& expectedTag)
+		bool HasExactId(const List<std::string>& ids, const std::string& expectedId)
 		{
-			return std::any_of(tags.begin(), tags.end(), [&](const GameplayTag& tag)
+			return std::any_of(ids.begin(), ids.end(), [&](const std::string& id)
 			{
-				return tag.MatchesTagExact(expectedTag);
+				return id == expectedId;
 			});
+		}
+
+		bool HasExactId(
+			const List<sas::AttributeId>& ids,
+			const sas::AttributeId& expectedId
+		)
+		{
+			return std::find(ids.begin(), ids.end(), expectedId) != ids.end();
 		}
 
 		PrimaryWeaponExecutionContext WithRuntimeState(
@@ -38,7 +46,7 @@ namespace ly
 
 		PrimaryWeaponValidationResult ResolveRuntimeConfiguration(
 			const PrimaryWeaponDefinition& definition,
-			const List<GameplayTag>* unlockedUpgradeIds,
+			const List<std::string>* unlockedUpgradeIds,
 			RuntimeConfiguration& configuration
 		)
 		{
@@ -51,11 +59,11 @@ namespace ly
 
 			configuration.weaponId = definition.weaponId;
 			configuration.handler =
-				PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponTypeTag);
-			const auto addFeature = [&](const GameplayTag& featureTag)
+				PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponType);
+			const auto addFeature = [&](PrimaryWeaponFeatureType featureType)
 			{
 				const PrimaryWeaponFeatureHandler* feature =
-					PrimaryWeaponHandlerRegistry::FindFeature(featureTag);
+					PrimaryWeaponHandlerRegistry::FindFeature(featureType);
 				if (feature && std::find(
 						configuration.features.begin(),
 						configuration.features.end(),
@@ -66,19 +74,22 @@ namespace ly
 				}
 			};
 
-			for (const GameplayTag& featureTag : definition.featureTags)
+			for (const PrimaryWeaponFeatureType featureType : definition.featureTypes)
 			{
-				addFeature(featureTag);
+				addFeature(featureType);
 			}
 			if (unlockedUpgradeIds)
 			{
 				for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
 				{
-					for (const GameplayTag& featureTag : step.unlockedFeatureTags)
+					for (const PrimaryWeaponFeatureType featureType : step.unlockedFeatureTypes)
 					{
-						if (HasExactTag(*unlockedUpgradeIds, featureTag))
+						if (HasExactId(
+							*unlockedUpgradeIds,
+							PrimaryWeaponFeatureUpgradeId(featureType)
+						))
 						{
-							addFeature(featureTag);
+							addFeature(featureType);
 						}
 					}
 				}
@@ -115,21 +126,21 @@ namespace ly
 
 		bool OwnsRuntimeValue(
 			const List<const PrimaryWeaponFeatureHandler*>& features,
-			const GameplayTag& key
+			const sas::AttributeId& key
 		)
 		{
 			return std::any_of(features.begin(), features.end(), [&](const auto* feature)
 			{
-				return feature && HasExactTag(feature->GetRuntimeValueKeys(), key);
+				return feature && HasExactId(feature->GetRuntimeValueKeys(), key);
 			});
 		}
 
-		Map<GameplayTag, float> RetainFeatureValues(
-			const Map<GameplayTag, float>& values,
+		Map<sas::AttributeId, float> RetainFeatureValues(
+			const Map<sas::AttributeId, float>& values,
 			const List<const PrimaryWeaponFeatureHandler*>& features
 		)
 		{
-			Map<GameplayTag, float> retainedValues;
+			Map<sas::AttributeId, float> retainedValues;
 			for (const auto& [key, value] : values)
 			{
 				if (OwnsRuntimeValue(features, key))
@@ -151,7 +162,7 @@ namespace ly
 	PrimaryWeaponValidationResult PrimaryWeaponExecutionSystem::InitializeRuntime(
 		const PrimaryWeaponDefinition& definition,
 		PrimaryWeaponRuntimeState& state,
-		const List<GameplayTag>* unlockedUpgradeIds
+		const List<std::string>* unlockedUpgradeIds
 	)
 	{
 		RuntimeConfiguration configuration;
@@ -179,7 +190,7 @@ namespace ly
 		PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured(
 			const PrimaryWeaponDefinition& definition,
 			PrimaryWeaponRuntimeState& state,
-			const List<GameplayTag>* unlockedUpgradeIds
+			const List<std::string>* unlockedUpgradeIds
 		)
 	{
 		RuntimeConfiguration configuration;
@@ -224,7 +235,7 @@ namespace ly
 			};
 		}
 
-		Map<GameplayTag, float> retainedValues =
+		Map<sas::AttributeId, float> retainedValues =
 			RetainFeatureValues(state.featureValues, configuration.features);
 		state.features = std::move(configuration.features);
 		state.featureValues = std::move(retainedValues);
@@ -364,7 +375,7 @@ namespace ly
 		}
 		const float fireRate = std::max(
 			0.01f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				CommonAttributeIds::FireRate,
 				1.f

@@ -30,7 +30,7 @@ namespace ly
 		float GetAfterburnerManeuverabilityMultiplier() const;
 
 	private:
-		void OnOwnerAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue);
+		void OnOwnerAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue);
 
 		sas::AttributeSystem* mOwnerAttributes = nullptr;
 		ShipEnergyAttributes mEnergyAttributes;

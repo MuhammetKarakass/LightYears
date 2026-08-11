@@ -25,8 +25,34 @@ namespace ly
 		const GameAbilityDefinition& definition;
 	};
 
-	using GameAbilityBehavior = sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>;
-	using GameAbilityBehaviorRegistry = sas::AbilityBehaviorRegistry<GameAbilityBehavior,GameplayTag,GameplayTagHash>;
+	// Game-owned behavior extensions stay outside SpaceAbilitySystem. The
+	// default methods preserve the generic behavior contract while allowing a
+	// family to resolve dynamic duration or react to another ability's successful
+	// activation without adding family IDs to the runtime core.
+	class GameAbilityBehavior
+		: public sas::AbilityBehavior<GameAbilityDefinition, GameAbilityBehaviorContext>
+	{
+	public:
+		virtual float ResolveActiveDuration(
+			const GameAbilityBehaviorContext& context,
+			float defaultDuration
+		) const
+		{
+			(void)context;
+			return defaultDuration;
+		}
+
+		virtual void OnOwnerAbilityActivated(
+			GameAbilityBehaviorContext& context,
+			const sas::AbilityLifecycleEvent& event
+		)
+		{
+			(void)context;
+			(void)event;
+		}
+	};
+
+	using GameAbilityBehaviorRegistry = sas::AbilityBehaviorRegistry<GameAbilityBehavior,AbilityBehaviorType>;
 
 	class GameAbility: public sas::GameplayAbilityInstance<GameAbilityDefinition,GameAbilityExecution>
 	{
@@ -75,6 +101,7 @@ namespace ly
 		) const;
 		List<GameplayTag> GetResolvedDamageTags(AttachmentHostKind hostKind) const;
 		void HandleAttachmentEvent(const sas::AbilityEvent& event);
+		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
 		friend class LightYearsAbilitySystemComponent;
@@ -87,6 +114,7 @@ namespace ly
 		void EndExecution(sas::AbilityEndReason reason) override;
 		void TickInactive(float deltaTime) override;
 		void EndContent(sas::AbilityEndReason reason) override;
+		void NotifyOwnerAbilityActivated(const sas::AbilityLifecycleEvent& event);
 		int GetMaximumLevel() const override;
 		float ResolveCooldownDuration() const override;
 		float ResolveActiveDuration() const override;
@@ -94,6 +122,22 @@ namespace ly
 		void OnLevelConfigurationChanged() override;
 
 		void UpdateWeaponFireInterval(float deltaTime);
+		void RefreshScopedConfiguration();
+		void HandleAttachmentEventInternal(
+			const sas::AbilityEvent& event,
+			const sas::AbilityLifecycleEvent* lifecycleEvent
+		);
+		bool MatchesAttachmentEventRule(
+			const AttachmentEventRule& rule,
+			const sas::AbilityEvent& event,
+			const sas::AbilityLifecycleEvent* lifecycleEvent,
+			const GameplayTagContainer& sourceAbilityTags,
+			const List<GameplayTag>* damageTags
+		) const;
+		bool ExecuteAttachmentEventRule(
+			EquippedAttachment& equipped,
+			const AttachmentEventRule& rule
+		);
 		void TickInactivePrimaryWeaponRuntime(float deltaTime);
 		void RefreshPrimaryWeaponRuntimeConfiguration();
 		List<GameplayTag> GetAttachmentCapabilities(AttachmentHostKind hostKind) const;

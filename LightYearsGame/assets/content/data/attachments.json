@@ -16,14 +16,14 @@
 
       "grantedAttributes": [
         {
-          "id": "Attribute.Attachment.CooldownReductionOnIgnite",
+          "id": "Attachment.CooldownReductionOnIgnite",
           "baseValue": 0.4,
           "minValue": 0.0
         },
-        { "id": "Attribute.Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 },
-        { "id": "Attribute.Damage.BurnDamagePerSecond", "baseValue": 1.0, "minValue": 0.0 },
-        { "id": "Attribute.Damage.BurnDuration", "baseValue": 3.0, "minValue": 0.0 },
-        { "id": "Attribute.Damage.BurnMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
+        { "id": "Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Damage.BurnDamagePerSecond", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Damage.BurnDuration", "baseValue": 3.0, "minValue": 0.0 },
+        { "id": "Damage.BurnMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
       ],
 
       "attributeModifiers": [],
@@ -36,7 +36,7 @@
             "threshold": 0.0
           },
           "modifier": {
-            "attributeId": "Attribute.Common.Damage",
+            "attributeId": "Common.Damage",
             "operation": "Multiply",
             "magnitude": 1.2
           }
@@ -51,7 +51,7 @@
           "eventTag": "Event.Source.StatusApplied.Ignite",
           "action": "ReduceCooldown",
           "cooldownTarget": "AllNonPrimaryAbilities",
-          "magnitudeAttributeId": "Attribute.Attachment.CooldownReductionOnIgnite",
+          "magnitudeAttributeId": "Attachment.CooldownReductionOnIgnite",
           "baseMagnitude": 0.0,
           "requireOwnerAsEventSource": true,
           "requiredDamageTags": [

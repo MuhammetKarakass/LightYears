@@ -19,7 +19,7 @@ namespace ly
 {
 	namespace
 	{
-		const List<GameplayTag> RocketProjectileCommonAttributes{
+		const List<sas::AttributeId> RocketProjectileCommonAttributes{
 			CommonAttributeIds::Damage,
 			CommonAttributeIds::Radius,
 			CommonAttributeIds::Range,
@@ -27,25 +27,25 @@ namespace ly
 			CommonAttributeIds::Duration
 		};
 
-		const List<GameplayTag> RocketProjectileAttributeRoots{
-			AbilityData::Rocket::Actor::Projectile::AttributeRoot,
-			DamageAttributeIds::AttributeRoot
+		const List<sas::AttributeId> RocketProjectileAttributeRoots{
+			AbilityData::Rocket::Actor::Projectile::Root,
+			DamageAttributeIds::Root
 		};
 
 		class RocketProjectileActorTypeHandler final : public AbilityActorTypeHandler
 		{
 		public:
-			const GameplayTag& GetActorTypeTag() const override
+			AbilityActorType GetActorType() const override
 			{
-				return AbilityData::Rocket::Actor::Projectile::TypeTag;
+				return AbilityActorType::RocketProjectile;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return RocketProjectileAttributeRoots;
 			}
 
-			const List<GameplayTag>& GetAllowedCommonAttributeIds() const override
+		const List<sas::AttributeId>& GetAllowedCommonAttributeIds() const override
 			{
 				return RocketProjectileCommonAttributes;
 			}
@@ -61,7 +61,7 @@ namespace ly
 					return baseResult;
 				}
 
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Radius,
 					AbilityData::Rocket::Actor::Projectile::ProjectileSpeed,
@@ -69,21 +69,21 @@ namespace ly
 					CollisionAttributeIds::Radius
 				})
 				{
-					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(definition.attributes, required);
+					const sas::GameplayAttribute* attribute = sas::FindAttribute(definition.attributes, required);
 					if (!attribute || attribute->baseValue <= 0.f)
 					{
 						return {
 							false,
-							"Rocket projectile requires a positive '" + required.ToString() + "' attribute."
+							"Rocket projectile requires a positive '" + std::string{ required.GetName() } + "' attribute."
 						};
 					}
 				}
 
-				const float speed = sas::FindGameplayAttributeValue(
+				const float speed = sas::FindAttributeValue(
 					definition.attributes,
 					AbilityData::Rocket::Actor::Projectile::ProjectileSpeed
 				);
-				const float range = sas::FindGameplayAttributeValue(
+				const float range = sas::FindAttributeValue(
 					definition.attributes,
 					CommonAttributeIds::Range
 				);
@@ -92,9 +92,9 @@ namespace ly
 					return { false, "Rocket projectile lifetime must provide cleanup time beyond maximum range." };
 				}
 
-				if (definition.presentationProfileId.empty()
+				if (!definition.presentationProfileId.IsValid()
 					|| PresentationProfileRegistry<RocketPresentationProfile>::Find(
-						definition.presentationProfileId
+						definition.presentationProfileId.ToString()
 					) == nullptr)
 				{
 					return { false, "Rocket projectile requires a valid presentation profile." };
@@ -110,7 +110,7 @@ namespace ly
 				World* world = context.owner.GetWorld();
 				const RocketPresentationProfile* presentationProfile =
 					PresentationProfileRegistry<RocketPresentationProfile>::Find(
-						context.definition.presentationProfileId
+						context.definition.presentationProfileId.ToString()
 					);
 				return world && presentationProfile
 					? world->SpawnActor<RocketProjectileActor>(
@@ -148,7 +148,7 @@ namespace ly
 
 		mProjectileSpeed = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				AbilityData::Rocket::Actor::Projectile::ProjectileSpeed,
 				mProjectileSpeed
@@ -156,7 +156,7 @@ namespace ly
 		);
 		mMaximumRange = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Range, mMaximumRange)
+			sas::FindAttributeValue(attributes, CommonAttributeIds::Range, mMaximumRange)
 		);
 		mTargetTravelDistance = mMaximumRange;
 		if (mTargetLocation)
@@ -180,7 +180,7 @@ namespace ly
 		}
 		mExplosionRadius = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, mExplosionRadius)
+			sas::FindAttributeValue(attributes, CommonAttributeIds::Radius, mExplosionRadius)
 		);
 		mTravelDistance = 0.f;
 		mHasExploded = false;

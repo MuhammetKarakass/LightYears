@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "gameplay/tags/GameplayTags.h"
 
 #include <cctype>
 #include <string>
@@ -14,60 +15,44 @@ namespace ly
 		Any,
 		Ability,
 		AbilityCategory,
-		AbilityBehavior,
 		AbilityState,
 		Event,
 		AbilityEvent,
 		Status,
 		EffectState,
-		Runtime,
 		ActionLock,
-		AbilityActorType,
-		Attribute,
-		EffectBehavior,
-		PrimaryWeaponType,
-		PrimaryWeaponFeature,
 		DamageType,
-		AttachmentCapability
+		AttachmentCapability,
+		Cooldown
 	};
 
 	class GameplayTagSchema final
 	{
 	public:
-		inline static const GameplayTag AbilityRoot{ "Ability" };
-		inline static const GameplayTag AbilityPrimary{ "Ability.Primary" };
-		inline static const GameplayTag AbilityOffense{ "Ability.Offense" };
-		inline static const GameplayTag AbilityDefense{ "Ability.Defense" };
-		inline static const GameplayTag AbilityMovement{ "Ability.Movement" };
-		inline static const GameplayTag AbilityControl{ "Ability.Control" };
-		inline static const GameplayTag AbilityUtility{ "Ability.Utility" };
-		inline static const GameplayTag GameAbilityBehaviorRoot{ "GameAbilityBehavior" };
-		inline static const GameplayTag AbilityStateRoot{ "State.Ability" };
-		inline static const GameplayTag EventRoot{ "Event" };
-		inline static const GameplayTag AbilityEventRoot{ "Event.Ability" };
-		inline static const GameplayTag EventOwnerRoot{ "Event.Owner" };
-		inline static const GameplayTag EventSourceRoot{ "Event.Source" };
-		inline static const GameplayTag StatusRoot{ "Status" };
-		inline static const GameplayTag EffectStateRoot{ "State.Effect" };
-		inline static const GameplayTag RuntimeRoot{ "Runtime" };
-		inline static const GameplayTag ActionLockRoot{ "State.ActionLock" };
-		inline static const GameplayTag AbilityActorRoot{ "AbilityActor" };
-		inline static const GameplayTag AttributeRoot{ "Attribute" };
-		inline static const GameplayTag EffectBehaviorRoot{ "EffectBehavior" };
-		inline static const GameplayTag PrimaryWeaponRoot{ "PrimaryWeapon" };
-		inline static const GameplayTag PrimaryWeaponFeatureRoot{ "PrimaryWeapon.Feature" };
-		inline static const GameplayTag DamageTypeRoot{ "Damage.Type" };
-		inline static const GameplayTag AttachmentRoot{ "Attachment" };
-		inline static const GameplayTag AttachmentCapabilityRoot{ "Attachment.Capability" };
+		inline static const GameplayTag& AbilityRoot = GameplayTags::Ability::Root;
+		inline static const GameplayTag& AbilityPrimary = GameplayTags::Ability::Primary;
+		inline static const GameplayTag& AbilityOffense = GameplayTags::Ability::Offense;
+		inline static const GameplayTag& AbilityDefense = GameplayTags::Ability::Defense;
+		inline static const GameplayTag& AbilityMovement = GameplayTags::Ability::Movement;
+		inline static const GameplayTag& AbilityControl = GameplayTags::Ability::Control;
+		inline static const GameplayTag& AbilityUtility = GameplayTags::Ability::Utility;
+		inline static const GameplayTag& AbilityStateRoot = GameplayTags::State::Ability::Root;
+		inline static const GameplayTag& EventRoot = GameplayTags::Event::Root;
+		inline static const GameplayTag& AbilityEventRoot = GameplayTags::Event::Ability::Root;
+		inline static const GameplayTag& EventOwnerRoot = GameplayTags::Event::Owner::Root;
+		inline static const GameplayTag& EventSourceRoot = GameplayTags::Event::Source::Root;
+		inline static const GameplayTag& StatusRoot = GameplayTags::Status::Root;
+		inline static const GameplayTag& EffectStateRoot = GameplayTags::State::Effect::Root;
+		inline static const GameplayTag& ActionLockRoot = GameplayTags::State::ActionLock::Root;
+		inline static const GameplayTag& DamageTypeRoot = GameplayTags::Damage::Type::Root;
+		inline static const GameplayTag& AttachmentRoot = GameplayTags::Attachment::Root;
+		inline static const GameplayTag& AttachmentCapabilityRoot = GameplayTags::Attachment::Capability::Root;
+		inline static const GameplayTag& CooldownRoot = GameplayTags::Cooldown::Root;
 
 		// These locks are intentionally shared. A producing ability grants one of
 		// them; every GameAbility consumes the matching lock during activation.
-		inline static const GameplayTag BlockAbilityActivation{
-			"State.ActionLock.AbilityActivation"
-		};
-		inline static const GameplayTag BlockPrimaryWeaponFire{
-			"State.ActionLock.PrimaryWeaponFire"
-		};
+		inline static const GameplayTag& BlockAbilityActivation = GameplayTags::State::ActionLock::AbilityActivation;
+		inline static const GameplayTag& BlockPrimaryWeaponFire = GameplayTags::State::ActionLock::PrimaryWeaponFire;
 
 		static bool Validate(
 			const GameplayTag& tag,
@@ -75,6 +60,11 @@ namespace ly
 			std::string* failureReason = nullptr
 		)
 		{
+			if (tag.name.rfind("Attribute.", 0) == 0)
+			{
+				return Fail(failureReason, "Numeric gameplay values must use AttributeId, not GameplayTag.");
+			}
+
 			if (!IsCanonical(tag))
 			{
 				return Fail(failureReason, "Gameplay tag must use non-empty dot-separated identifier segments.");
@@ -95,8 +85,6 @@ namespace ly
 					return IsChildOf(tag, AbilityRoot);
 				case GameplayTagKind::AbilityCategory:
 					return IsAbilityCategory(tag);
-				case GameplayTagKind::AbilityBehavior:
-					return IsChildOf(tag, GameAbilityBehaviorRoot);
 				case GameplayTagKind::AbilityState:
 					return IsChildOf(tag, AbilityStateRoot);
 				case GameplayTagKind::Event:
@@ -107,25 +95,14 @@ namespace ly
 					return IsChildOf(tag, StatusRoot);
 				case GameplayTagKind::EffectState:
 					return IsChildOf(tag, EffectStateRoot);
-				case GameplayTagKind::Runtime:
-					return IsChildOf(tag, RuntimeRoot);
 				case GameplayTagKind::ActionLock:
 					return IsActionLock(tag);
-				case GameplayTagKind::AbilityActorType:
-					return IsChildOf(tag, AbilityActorRoot);
-				case GameplayTagKind::Attribute:
-					return IsChildOf(tag, AttributeRoot);
-				case GameplayTagKind::EffectBehavior:
-					return IsChildOf(tag, EffectBehaviorRoot);
-				case GameplayTagKind::PrimaryWeaponType:
-					return HasAtLeastSegments(tag, 3) && IsChildOf(tag, PrimaryWeaponRoot) &&
-						!tag.MatchesTag(PrimaryWeaponFeatureRoot);
-				case GameplayTagKind::PrimaryWeaponFeature:
-					return IsChildOf(tag, PrimaryWeaponFeatureRoot);
 				case GameplayTagKind::DamageType:
 					return IsChildOf(tag, DamageTypeRoot);
 				case GameplayTagKind::AttachmentCapability:
 					return IsChildOf(tag, AttachmentCapabilityRoot);
+				case GameplayTagKind::Cooldown:
+					return IsChildOf(tag, CooldownRoot);
 				}
 				return false;
 			}();
@@ -169,7 +146,7 @@ namespace ly
 
 		// Conditions can observe state produced by abilities and events in addition
 		// to effect/status state, but they still cannot use unrelated data domains
-		// such as raw Attribute.* or Damage.Type.* tags.
+		// such as raw numeric attribute IDs or Damage.Type.* tags.
 		static bool ValidateEffectApplicationTag(
 			const GameplayTag& tag,
 			std::string* failureReason = nullptr
@@ -180,7 +157,8 @@ namespace ly
 				Validate(tag, GameplayTagKind::Ability, nullptr) ||
 				Validate(tag, GameplayTagKind::AbilityState, nullptr) ||
 				Validate(tag, GameplayTagKind::Event, nullptr) ||
-				Validate(tag, GameplayTagKind::ActionLock, nullptr))
+				Validate(tag, GameplayTagKind::ActionLock, nullptr) ||
+				Validate(tag, GameplayTagKind::Cooldown, nullptr))
 			{
 				return true;
 			}
@@ -202,7 +180,8 @@ namespace ly
 				Validate(tag, GameplayTagKind::Status, nullptr) ||
 				Validate(tag, GameplayTagKind::Ability, nullptr) ||
 				Validate(tag, GameplayTagKind::AbilityState, nullptr) ||
-				Validate(tag, GameplayTagKind::ActionLock, nullptr))
+				Validate(tag, GameplayTagKind::ActionLock, nullptr) ||
+				Validate(tag, GameplayTagKind::Cooldown, nullptr))
 			{
 				return true;
 			}
@@ -256,17 +235,5 @@ namespace ly
 			return tag.name != root.name && tag.MatchesTag(root);
 		}
 
-		static bool HasAtLeastSegments(const GameplayTag& tag, size_t minimumSegments)
-		{
-			size_t segments = 1;
-			for (const char character : tag.name)
-			{
-				if (character == '.')
-				{
-					++segments;
-				}
-			}
-			return segments >= minimumSegments;
-		}
 	};
 }

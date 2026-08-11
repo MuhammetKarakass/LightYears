@@ -1,9 +1,11 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attachment/AttachmentLoadout.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace ly
 {
@@ -30,10 +32,10 @@ namespace ly
 			const List<sas::AttributeModifier>& modifiers
 		)
 		{
-			List<GameplayTag> processedAttributes;
+			List<sas::AttributeId> processedAttributes;
 			for (const sas::AttributeModifier& modifier : modifiers)
 			{
-				if (!modifier.attributeId.IsValid())
+				if (!AttributeIdSchema::Validate(modifier.attributeId, nullptr))
 				{
 					continue;
 				}
@@ -43,7 +45,7 @@ namespace ly
 				}
 				processedAttributes.push_back(modifier.attributeId);
 
-				sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(attributes, modifier.attributeId);
+				sas::GameplayAttribute* attribute = sas::FindAttribute(attributes, modifier.attributeId);
 				if (!attribute)
 				{
 					attributes.push_back(sas::GameplayAttribute{ modifier.attributeId, 0.f, 0.f });
@@ -83,7 +85,7 @@ namespace ly
 	{
 		std::string tagFailureReason;
 		if (!content::ContentIdSchema::ValidateAttachmentId(
-			definition.attachmentId,
+			definition.attachmentId.ToString(),
 			&tagFailureReason
 		))
 		{
@@ -128,62 +130,82 @@ namespace ly
 		}
 		for (const sas::GameplayAttribute& attribute : definition.grantedAttributes)
 		{
-			if (!GameplayTagSchema::Validate(
-				attribute.id,
-				GameplayTagKind::Attribute,
-				&tagFailureReason
-			))
+			if (!AttributeIdSchema::Validate(attribute.id, nullptr))
 			{
-				if (failureReason) *failureReason = "Attachment attribute tag is invalid: " + tagFailureReason;
+				if (failureReason) *failureReason = "Attachment attribute ID is invalid.";
 				return false;
 			}
 		}
 		for (const sas::AttributeModifier& modifier : definition.attributeModifiers)
 		{
-			if (!GameplayTagSchema::Validate(
-				modifier.attributeId,
-				GameplayTagKind::Attribute,
-				&tagFailureReason
-			))
+			if (!AttributeIdSchema::Validate(modifier.attributeId, nullptr))
 			{
-				if (failureReason) *failureReason = "Attachment modifier attribute tag is invalid: " + tagFailureReason;
+				if (failureReason) *failureReason = "Attachment modifier attribute ID is invalid.";
 				return false;
 			}
 		}
 		for (const ConditionalAttributeModifier& conditional : definition.conditionalAttributeModifiers)
 		{
-			if (!GameplayTagSchema::Validate(
-				conditional.modifier.attributeId,
-				GameplayTagKind::Attribute,
-				&tagFailureReason
-			))
+			if (!AttributeIdSchema::Validate(conditional.modifier.attributeId, nullptr))
 			{
-				if (failureReason) *failureReason = "Attachment conditional modifier tag is invalid: " + tagFailureReason;
+				if (failureReason) *failureReason = "Attachment conditional modifier ID is invalid.";
 				return false;
 			}
-			const GameplayTagKind conditionTagKind =
-				conditional.condition.type == AttachmentConditionType::HasDamageTag ||
-				conditional.condition.type == AttachmentConditionType::MissingDamageTag
-				? GameplayTagKind::DamageType
-				: GameplayTagKind::Attribute;
-			if (conditional.condition.type != AttachmentConditionType::Always &&
-				!GameplayTagSchema::Validate(
+			if (conditional.condition.type == AttachmentConditionType::HasDamageTag ||
+				conditional.condition.type == AttachmentConditionType::MissingDamageTag)
+			{
+				if (!GameplayTagSchema::Validate(
 					conditional.condition.subjectTag,
-					conditionTagKind,
+					GameplayTagKind::DamageType,
 					&tagFailureReason
 				))
+				{
+					if (failureReason) *failureReason = "Attachment condition tag is invalid: " + tagFailureReason;
+					return false;
+				}
+			}
+			else if (conditional.condition.type == AttachmentConditionType::AttributeLessThan ||
+				conditional.condition.type == AttachmentConditionType::AttributeGreaterThanOrEqual)
 			{
-				if (failureReason) *failureReason = "Attachment condition tag is invalid: " + tagFailureReason;
-				return false;
+				if (!AttributeIdSchema::Validate(conditional.condition.subjectAttributeId, nullptr))
+				{
+					if (failureReason) *failureReason = "Attachment condition attribute ID is invalid.";
+					return false;
+				}
 			}
 		}
 		for (const AttachmentEventRule& rule : definition.eventRules)
 		{
-			if (!GameplayTagSchema::Validate(rule.eventTag, GameplayTagKind::Event, &tagFailureReason) ||
-				!GameplayTagSchema::Validate(rule.magnitudeAttributeId, GameplayTagKind::Attribute, &tagFailureReason))
+			if (rule.maxMatches < 0)
 			{
-				if (failureReason) *failureReason = "Attachment event tag is invalid: " + tagFailureReason;
+				if (failureReason)
+				{
+					*failureReason = "Attachment event maxMatches cannot be negative.";
+				}
 				return false;
+			}
+			if (!GameplayTagSchema::Validate(rule.eventTag, GameplayTagKind::Event, &tagFailureReason))
+			{
+				if (failureReason) *failureReason = "Attachment event tag or magnitude attribute ID is invalid: " + tagFailureReason;
+				return false;
+			}
+			if (rule.action == AttachmentEventAction::ReduceCooldown &&
+				!AttributeIdSchema::Validate(rule.magnitudeAttributeId, nullptr))
+			{
+				if (failureReason) *failureReason = "Attachment event magnitude attribute ID is invalid.";
+				return false;
+			}
+			if (rule.abilityId.IsValid())
+			{
+				std::string abilityIdFailure;
+				if (!content::ContentIdSchema::ValidateAbilityId(
+					rule.abilityId.ToString(),
+					&abilityIdFailure
+				))
+				{
+					if (failureReason) *failureReason = "Attachment event ability ID is invalid: " + abilityIdFailure;
+					return false;
+				}
 			}
 			for (const GameplayTag& damageTag : rule.requiredDamageTags)
 			{
@@ -246,12 +268,14 @@ namespace ly
 			}
 		}
 
-		mEquipped.push_back(EquippedAttachment{ definition, hostKind });
+		EquippedAttachment equipped{ definition, hostKind };
+		equipped.eventMatchCounts.resize(definition.eventRules.size(), 0);
+		mEquipped.push_back(std::move(equipped));
 		++mRevision;
 		return true;
 	}
 
-	bool AttachmentLoadout::Remove(const std::string& attachmentId, AttachmentHostKind hostKind)
+	bool AttachmentLoadout::Remove(const sas::ContentId& attachmentId, AttachmentHostKind hostKind)
 	{
 		auto found = std::find_if(mEquipped.begin(), mEquipped.end(), [&](const EquippedAttachment& equipped)
 		{
@@ -286,7 +310,7 @@ namespace ly
 			}
 			for (const sas::GameplayAttribute& granted : equipped.definition.grantedAttributes)
 			{
-				if (granted.id.IsValid() && !sas::FindGameplayAttribute(merged, granted.id))
+				if (AttributeIdSchema::Validate(granted.id, nullptr) && !sas::FindAttribute(merged, granted.id))
 				{
 					merged.push_back(granted);
 				}
@@ -365,7 +389,7 @@ namespace ly
 
 	float AttachmentLoadout::ResolveGrantedAttributeValue(
 		AttachmentHostKind hostKind,
-		const GameplayTag& attributeId,
+		const sas::AttributeId& attributeId,
 		float fallback
 	) const
 	{
@@ -422,9 +446,9 @@ namespace ly
 		case AttachmentConditionType::MissingDamageTag:
 			return !HasMatchingTag(originalDamageTags, condition.subjectTag);
 		case AttachmentConditionType::AttributeLessThan:
-			return sas::FindGameplayAttributeValue(resolvedAttributes, condition.subjectTag) < condition.threshold;
+			return sas::FindAttributeValue(resolvedAttributes, condition.subjectAttributeId) < condition.threshold;
 		case AttachmentConditionType::AttributeGreaterThanOrEqual:
-			return sas::FindGameplayAttributeValue(resolvedAttributes, condition.subjectTag) >= condition.threshold;
+			return sas::FindAttributeValue(resolvedAttributes, condition.subjectAttributeId) >= condition.threshold;
 		}
 		return false;
 	}

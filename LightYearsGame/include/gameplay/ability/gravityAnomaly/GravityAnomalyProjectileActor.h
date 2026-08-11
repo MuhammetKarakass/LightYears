@@ -23,6 +23,7 @@ namespace ly
 		);
 
 		void Tick(float deltaTime) override;
+		bool IsProjectileActor() const override { return true; }
 		void Render(sf::RenderWindow& window) override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
 

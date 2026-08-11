@@ -1,6 +1,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/MovementComponent.h"
+#include "gameplay/tags/GameplayTags.h"
 
 #include "gameplay/ability/dash/DashMovementMath.h"
 #include "spaceShip/SpaceShip.h"
@@ -24,6 +25,18 @@ namespace ly
 
 	void MovementComponent::Tick(float deltaTime, float speedCapMultiplier)
 	{
+		const auto& ownedTags = mOwner.GetAbilitySystemComponent().GetOwnedTags();
+		if (ownedTags.HasTag(GameplayTags::State::Effect::Control::Stunned) ||
+			ownedTags.HasTag(GameplayTags::State::Effect::Control::Staggered))
+		{
+			if (mIsDashing)
+			{
+				EndDash();
+			}
+			mOwner.SetVelocity({ 0.f, 0.f });
+			return;
+		}
+
 		if (TickDash(deltaTime))
 		{
 			return;

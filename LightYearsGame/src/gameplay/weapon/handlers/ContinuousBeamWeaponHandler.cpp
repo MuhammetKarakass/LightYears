@@ -24,12 +24,12 @@ namespace ly
 		class ContinuousBeamWeaponHandler final : public PrimaryWeaponHandler
 		{
 		public:
-			const GameplayTag& GetTypeTag() const override
+			PrimaryWeaponType GetType() const override
 			{
-				return PrimaryWeaponSchema::Beam::Continuous::TypeTag;
+				return PrimaryWeaponType::BeamContinuous;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return PrimaryWeaponBuiltIns::BeamDeliveryAttributeRoots();
 			}
@@ -38,7 +38,7 @@ namespace ly
 				const PrimaryWeaponDefinition& definition
 			) const override
 			{
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					PrimaryWeaponSchema::Beam::Delivery::Range,
 					PrimaryWeaponSchema::Beam::Delivery::Width
@@ -129,17 +129,17 @@ namespace ly
 					return;
 				}
 
-				const float range = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float range = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Beam::Delivery::Range,
 					0.f
 				));
-				const float width = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float width = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Beam::Delivery::Width,
 					0.f
 				));
-				const float baseDamagePerSecond = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float baseDamagePerSecond = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					CommonAttributeIds::Damage,
 					0.f
@@ -149,7 +149,7 @@ namespace ly
 					return;
 				}
 
-				const float heatCapacity = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float heatCapacity = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Capacity,
 					0.f
@@ -164,7 +164,7 @@ namespace ly
 					: 0.f;
 				const float maximumDamageMultiplier = std::max(
 					1.f,
-					sas::FindGameplayAttributeValue(
+					sas::FindAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat,
 						1.f

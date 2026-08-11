@@ -1,9 +1,12 @@
 #include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
+#include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
+#include "gameConfigs/ability/control/NullPulseConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameConfigs/ability/functional/DashConfig.h"
 #include "gameConfigs/ability/defensive/ShieldConfig.h"
+#include "gameConfigs/ability/defensive/PhaseDriftConfig.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 
 namespace AbilityData
@@ -16,7 +19,10 @@ namespace AbilityData
 			&Definitions::Dash_Basic,
 			&Definitions::GravityAnomaly_Basic,
 			&Definitions::Rocket_Basic,
-			&Definitions::InfernoSpray_Basic
+			&Definitions::InfernoSpray_Basic,
+			&Definitions::OverdriveCore_Basic,
+			&Definitions::NullPulse_Basic,
+			&Definitions::PhaseDrift_Basic
 		};
 		return definitions;
 	}
@@ -37,6 +43,7 @@ namespace AbilityData
 			&GravityAnomaly::ActorProjectileBasic,
 			&GravityAnomaly::ActorFieldBasic,
 			&Rocket::ActorProjectileBasic,
+			&OverdriveCore::ActorProjectileBasic,
 			&InfernoSpray::ActorFlameConeBasic,
 			&SunBeam::ActorStrikeBasic
 		};
@@ -72,7 +79,7 @@ namespace AbilityData
 
 		for (const ly::AbilityActorDefinition* definition : GetBuiltinAbilityActorDefinitions())
 		{
-			if (definition && definition->actorDefinitionId == actorDefinitionId)
+			if (definition && definition->actorDefinitionId.ToString() == actorDefinitionId)
 			{
 				return definition;
 			}

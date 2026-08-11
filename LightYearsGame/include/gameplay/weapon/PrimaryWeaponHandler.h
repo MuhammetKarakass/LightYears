@@ -29,14 +29,14 @@ namespace ly
 		const PrimaryWeaponHandler* handler = nullptr;
 		List<const PrimaryWeaponFeatureHandler*> features;
 		unique_ptr<PrimaryWeaponTypeRuntimeState> typeState;
-		Map<GameplayTag, float> featureValues;
+		Map<sas::AttributeId, float> featureValues;
 		std::string configuredWeaponId;
 		bool isInitialized = false;
 		bool isFiring = false;
 		float requestedCooldown = 0.f;
 
-		float GetFeatureValue(const GameplayTag& key, float fallback = 0.f) const;
-		void SetFeatureValue(const GameplayTag& key, float value);
+		float GetFeatureValue(const sas::AttributeId& key, float fallback = 0.f) const;
+		void SetFeatureValue(const sas::AttributeId& key, float value);
 		void RequestCooldown(float duration);
 		float ConsumeRequestedCooldown();
 	};
@@ -47,18 +47,18 @@ namespace ly
 		const PrimaryWeaponDefinition& definition;
 		const sas::GameplayAttributeList& attributes;
 		List<GameplayTag> damageTags;
-		const List<GameplayTag>* abilityUpgradeIds = nullptr;
+		const List<std::string>* abilityUpgradeIds = nullptr;
 		PrimaryWeaponRuntimeState* runtime = nullptr;
 
-		bool HasAbilityUpgrade(const GameplayTag& upgradeId) const
+		bool HasAbilityUpgrade(const std::string& upgradeId) const
 		{
 			if (!abilityUpgradeIds)
 			{
 				return false;
 			}
-			for (const GameplayTag& unlockedUpgradeId : *abilityUpgradeIds)
+			for (const std::string& unlockedUpgradeId : *abilityUpgradeIds)
 			{
-				if (unlockedUpgradeId.MatchesTag(upgradeId))
+				if (unlockedUpgradeId == upgradeId)
 				{
 					return true;
 				}
@@ -71,9 +71,9 @@ namespace ly
 	{
 	public:
 		virtual ~PrimaryWeaponHandler() = default;
-		virtual const GameplayTag& GetTypeTag() const = 0;
-		virtual const List<GameplayTag>& GetOwnedAttributeRoots() const = 0;
-		virtual const List<GameplayTag>& GetInheritedAttributeRoots() const;
+		virtual PrimaryWeaponType GetType() const = 0;
+		virtual const List<sas::AttributeId>& GetOwnedAttributeRoots() const = 0;
+		virtual const List<sas::AttributeId>& GetInheritedAttributeRoots() const;
 		virtual PrimaryWeaponValidationResult ValidateDefinition(
 			const PrimaryWeaponDefinition& definition
 		) const;
@@ -102,9 +102,9 @@ namespace ly
 	{
 	public:
 		virtual ~PrimaryWeaponFeatureHandler() = default;
-		virtual const GameplayTag& GetFeatureTag() const = 0;
-		virtual const List<GameplayTag>& GetAttributeRoots() const = 0;
-		virtual const List<GameplayTag>& GetRuntimeValueKeys() const;
+		virtual PrimaryWeaponFeatureType GetFeatureType() const = 0;
+		virtual const List<sas::AttributeId>& GetAttributeRoots() const = 0;
+		virtual const List<sas::AttributeId>& GetRuntimeValueKeys() const;
 		virtual PrimaryWeaponValidationResult ValidateDefinition(
 			const PrimaryWeaponDefinition& definition
 		) const;

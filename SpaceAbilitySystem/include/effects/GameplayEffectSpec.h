@@ -11,13 +11,13 @@ namespace sas
 		int maxStacks = 1;
 		ly::List<AttributeModifier> modifiers;
 		GameplayAttributeList attributes;
-		ly::List<ly::GameplayTag> sourceAbilityUpgradeIds;
+		ly::List<std::string> sourceAbilityUpgradeIds;
 
-		bool HasSourceAbilityUpgrade(const ly::GameplayTag& upgradeId) const
+		bool HasSourceAbilityUpgrade(const std::string& upgradeId) const
 		{
-			for (const ly::GameplayTag& sourceUpgradeId : sourceAbilityUpgradeIds)
+			for (const std::string& sourceUpgradeId : sourceAbilityUpgradeIds)
 			{
-				if (sourceUpgradeId.MatchesTag(upgradeId))
+				if (sourceUpgradeId == upgradeId)
 				{
 					return true;
 				}
@@ -42,7 +42,7 @@ namespace sas
 
 	inline bool SetGameplayEffectModifierMagnitude(
 		GameplayEffectSpec& spec,
-		const ly::GameplayTag& attributeId,
+		const AttributeId& attributeId,
 		float magnitude
 	)
 	{
@@ -60,11 +60,11 @@ namespace sas
 
 	inline bool SetGameplayEffectAttributeBaseValue(
 		GameplayEffectSpec& spec,
-		const ly::GameplayTag& attributeId,
+		const AttributeId& attributeId,
 		float value
 	)
 	{
-		GameplayAttribute* attribute = FindGameplayAttribute(spec.attributes, attributeId);
+		GameplayAttribute* attribute = FindAttribute(spec.attributes, attributeId);
 		if (!attribute)
 		{
 			return false;

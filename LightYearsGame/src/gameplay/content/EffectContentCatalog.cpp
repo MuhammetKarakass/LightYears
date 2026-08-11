@@ -2,6 +2,7 @@
 
 #include "gameplay/content/EffectLoader.h"
 
+
 namespace ly::content
 {
 	namespace

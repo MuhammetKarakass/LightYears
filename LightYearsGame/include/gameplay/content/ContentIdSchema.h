@@ -1,7 +1,6 @@
 #pragma once
 
-#include "gameplay/tags/GameplayTagSchema.h"
-
+#include <cctype>
 #include <string>
 
 namespace ly::content
@@ -11,8 +10,8 @@ namespace ly::content
 	// runtime validation cannot silently drift apart.
 	struct ParsedAbilityId
 	{
-		GameplayTag categoryTag;
-		GameplayTag familyTag;
+		std::string category;
+		std::string family;
 	};
 
 	struct ParsedFamilyRoleId
@@ -29,19 +28,29 @@ namespace ly::content
 	class ContentIdSchema final
 	{
 	public:
+		static bool ValidateContentId(
+			const std::string& id,
+			std::string* failureReason = nullptr
+		)
+		{
+			return IsCanonical(id) || Fail(
+				failureReason,
+				"Content ID must use non-empty dot-separated identifier segments."
+			);
+		}
+
 		static bool ParseAbilityId(
 			const std::string& id,
 			ParsedAbilityId& parsed,
 			std::string* failureReason = nullptr
 		)
 		{
-			if (!GameplayTagSchema::Validate(
-				GameplayTag{ id },
-				GameplayTagKind::Ability,
-				failureReason
-			))
+			if (!IsCanonical(id))
 			{
-				return false;
+				return Fail(
+					failureReason,
+					"Content ID must use non-empty dot-separated identifier segments."
+				);
 			}
 
 			const std::size_t categoryStart = std::string{ "Ability." }.size();
@@ -59,19 +68,11 @@ namespace ly::content
 				);
 			}
 
-			parsed.categoryTag = GameplayTag{ id.substr(0, familySeparator) };
-			parsed.familyTag = GameplayTag{ id.substr(0, variantSeparator) };
-			if (!GameplayTagSchema::Validate(
-				parsed.categoryTag,
-				GameplayTagKind::AbilityCategory,
-				failureReason
-			) || !GameplayTagSchema::Validate(
-				parsed.familyTag,
-				GameplayTagKind::Ability,
-				failureReason
-			))
+			parsed.category = id.substr(0, familySeparator);
+			parsed.family = id.substr(0, variantSeparator);
+			if (!IsAbilityCategory(parsed.category))
 			{
-				return false;
+				return Fail(failureReason, "Ability ID uses an unknown ability category.");
 			}
 			return true;
 		}
@@ -255,11 +256,12 @@ namespace ly::content
 			std::string* failureReason
 		)
 		{
-			if (!GameplayTagSchema::Validate(
-				GameplayTag{ id }, GameplayTagKind::Any, failureReason
-			))
+			if (!IsCanonical(id))
 			{
-				return false;
+				return Fail(
+					failureReason,
+					"Content ID must use non-empty dot-separated identifier segments."
+				);
 			}
 			if (id.rfind(prefix, 0) != 0)
 			{
@@ -274,6 +276,44 @@ namespace ly::content
 				}
 			}
 			return segmentCount >= minimumSegments || Fail(failureReason, formatError);
+		}
+
+		static bool IsAbilityCategory(const std::string& category)
+		{
+			return category == "Ability.Primary" ||
+				category == "Ability.Offense" ||
+				category == "Ability.Defense" ||
+				category == "Ability.Movement" ||
+				category == "Ability.Control" ||
+				category == "Ability.Utility";
+		}
+
+		static bool IsCanonical(const std::string& value)
+		{
+			if (value.empty() || value.front() == '.' || value.back() == '.')
+			{
+				return false;
+			}
+
+			bool beginsSegment = true;
+			for (const unsigned char character : value)
+			{
+				if (character == '.')
+				{
+					if (beginsSegment)
+					{
+						return false;
+					}
+					beginsSegment = true;
+					continue;
+				}
+				if (!std::isalnum(character) && character != '_')
+				{
+					return false;
+				}
+				beginsSegment = false;
+			}
+			return !beginsSegment;
 		}
 
 		static bool Fail(std::string* failureReason, const char* reason)

@@ -11,7 +11,7 @@ namespace ly
 	struct AbilityLevelStep
 	{
 		List<sas::AttributeModifier> attributeModifiers;
-		List<GameplayTag> unlockedUpgradeIds;
+		List<std::string> unlockedUpgradeIds;
 		List<AbilityActionSpec> addedActions;
 		List<AbilityTriggerSpec> addedTriggers;
 	};

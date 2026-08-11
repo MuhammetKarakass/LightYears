@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "attributes/AttributeId.h"
 
 #include <algorithm>
 #include <limits>
@@ -9,7 +10,7 @@ namespace sas
 {
 	struct GameplayAttribute
 	{
-		ly::GameplayTag id;
+		AttributeId id;
 		float baseValue = 0.f;
 		float currentValue = 0.f;
 		float minValue = 0.f;
@@ -18,7 +19,7 @@ namespace sas
 		GameplayAttribute() = default;
 		GameplayAttribute(float value) : baseValue{ value }, currentValue{ value } {}
 		GameplayAttribute(
-			const ly::GameplayTag& inId,
+			const AttributeId& inId,
 			float value,
 			float inMinValue = 0.f,
 			float inMaxValue = std::numeric_limits<float>::max()
@@ -40,9 +41,9 @@ namespace sas
 
 	using GameplayAttributeList = ly::List<GameplayAttribute>;
 
-	inline GameplayAttribute* FindGameplayAttribute(
+	inline GameplayAttribute* FindAttribute(
 		GameplayAttributeList& attributes,
-		const ly::GameplayTag& id
+		const AttributeId& id
 	)
 	{
 		for (GameplayAttribute& attribute : attributes)
@@ -55,9 +56,9 @@ namespace sas
 		return nullptr;
 	}
 
-	inline const GameplayAttribute* FindGameplayAttribute(
+	inline const GameplayAttribute* FindAttribute(
 		const GameplayAttributeList& attributes,
-		const ly::GameplayTag& id
+		const AttributeId& id
 	)
 	{
 		for (const GameplayAttribute& attribute : attributes)
@@ -70,22 +71,22 @@ namespace sas
 		return nullptr;
 	}
 
-	inline float FindGameplayAttributeValue(
+	inline float FindAttributeValue(
 		const GameplayAttributeList& attributes,
-		const ly::GameplayTag& id,
+		const AttributeId& id,
 		float fallback = 0.f
 	)
 	{
-		const GameplayAttribute* attribute = FindGameplayAttribute(attributes, id);
+		const GameplayAttribute* attribute = FindAttribute(attributes, id);
 		return attribute ? attribute->currentValue : fallback;
 	}
 
-	inline bool HasGameplayAttribute(
+	inline bool HasAttribute(
 		const GameplayAttributeList& attributes,
-		const ly::GameplayTag& id
+		const AttributeId& id
 	)
 	{
-		return FindGameplayAttribute(attributes, id) != nullptr;
+		return FindAttribute(attributes, id) != nullptr;
 	}
 
 	inline GameplayAttributeList BuildBaseGameplayAttributes(

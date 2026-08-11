@@ -3,10 +3,12 @@
 #include "attributes/AttributeMath.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/tags/GameplayTagSchema.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "abilities/AbilityEvent.h"
 #include "attributes/AttributeSystem.h"
 #include "gameplay/damage/DamageContext.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
+#include "gameConfigs/combat/EffectConfig.h"
 #include "framework/Actor.h"
 #include <algorithm>
 #include <variant>
@@ -58,7 +60,7 @@ namespace ly
 
 	bool GameAbility::RemoveAttachment(const std::string& attachmentId, AttachmentHostKind hostKind)
 	{
-		const bool removed = mAttachments.Remove(attachmentId, hostKind);
+		const bool removed = mAttachments.Remove(sas::ContentId{ attachmentId }, hostKind);
 		if (removed)
 		{
 			mAbilitySystem.NotifyAbilityChanged(mHandle);
@@ -103,67 +105,182 @@ namespace ly
 		const sas::AbilityEvent& event
 	)
 	{
-		for (const EquippedAttachment& equipped : mAttachments.GetEquipped())
+		HandleAttachmentEventInternal(event, nullptr);
+	}
+
+	void GameAbility::HandleAbilityLifecycleEvent(
+		const sas::AbilityLifecycleEvent& event
+	)
+	{
+		if (event.eventTag == GameplayTags::Event::Ability::Activated &&
+			event.abilityId != mDefinition.abilityId)
 		{
-			for (const AttachmentEventRule& rule : equipped.definition.eventRules)
+			// The generic lifecycle dispatcher calls this for every granted ability.
+			// Only a successful activation is emitted here, so a behavior such as
+			// Phase Drift can end itself on a real action without observing failed
+			// cooldown or blocked-input attempts.
+			NotifyOwnerAbilityActivated(event);
+		}
+		HandleAttachmentEventInternal(event, &event);
+	}
+
+	void GameAbility::HandleAttachmentEventInternal(
+		const sas::AbilityEvent& event,
+		const sas::AbilityLifecycleEvent* lifecycleEvent
+	)
+	{
+		const List<GameplayTag>* sourceAbilityTags = lifecycleEvent
+			? &lifecycleEvent->abilityTags
+			: &event.sourceAbilityTags;
+		GameplayTagContainer sourceAbilityTagContainer;
+		for (const GameplayTag& tag : *sourceAbilityTags)
+		{
+			sourceAbilityTagContainer.AddTag(tag);
+		}
+
+		const DamageContext* damageContext = event.GetContext<DamageContext>();
+		const List<GameplayTag>* damageTags = damageContext
+			? &damageContext->damageTags
+			: nullptr;
+
+		List<EquippedAttachment>& equippedAttachments = mAttachments.GetEquipped();
+		for (EquippedAttachment& equipped : equippedAttachments)
+		{
+			for (std::size_t ruleIndex = 0;
+				ruleIndex < equipped.definition.eventRules.size();
+				++ruleIndex)
 			{
-				if (!event.eventTag.MatchesTag(rule.eventTag) ||
-					(rule.requireOwnerAsEventSource &&
-						event.GetSource<Actor>() != &mAbilitySystem.GetOwner()))
+				const AttachmentEventRule& rule = equipped.definition.eventRules[ruleIndex];
+				const int matchLimit = rule.consumeOnMatch ? 1 : rule.maxMatches;
+				if (matchLimit > 0 &&
+					ruleIndex < equipped.eventMatchCounts.size() &&
+					equipped.eventMatchCounts[ruleIndex] >= matchLimit)
 				{
 					continue;
 				}
-
-				const DamageContext* damageContext =
-					event.GetContext<DamageContext>();
-				const List<GameplayTag>* damageTags = damageContext
-					? &damageContext->damageTags
-					: nullptr;
-				const bool matchesDamageTags = std::all_of(
-					rule.requiredDamageTags.begin(),
-					rule.requiredDamageTags.end(),
-					[&](const GameplayTag& requiredTag)
+				if (!MatchesAttachmentEventRule(
+					rule,
+					event,
+					lifecycleEvent,
+					sourceAbilityTagContainer,
+					damageTags
+				))
+				{
+					continue;
+				}
+				if (ExecuteAttachmentEventRule(equipped, rule) && matchLimit > 0)
+				{
+					if (equipped.eventMatchCounts.size() < equipped.definition.eventRules.size())
 					{
-						return damageTags && std::any_of(damageTags->begin(), damageTags->end(), [&](const GameplayTag& tag)
-						{
-							return tag.MatchesTag(requiredTag);
-						});
+						equipped.eventMatchCounts.resize(equipped.definition.eventRules.size(), 0);
 					}
-				);
-				if (!matchesDamageTags)
-				{
-					continue;
-				}
-
-				const float magnitude = mAttachments.ResolveGrantedAttributeValue(
-					equipped.hostKind,
-					rule.magnitudeAttributeId,
-					rule.baseMagnitude
-				);
-				if (magnitude <= 0.f)
-				{
-					continue;
-				}
-
-				switch (rule.action)
-				{
-				case AttachmentEventAction::ReduceCooldown:
-					switch (rule.cooldownTarget)
-					{
-					case AttachmentCooldownTarget::Host:
-						ReduceCooldownRemaining(magnitude);
-						break;
-					case AttachmentCooldownTarget::AllOwnerAbilities:
-						mAbilitySystem.ReduceAbilityCooldowns(magnitude, true);
-						break;
-					case AttachmentCooldownTarget::AllNonPrimaryAbilities:
-						mAbilitySystem.ReduceAbilityCooldowns(magnitude, false);
-						break;
-					}
-					break;
+					++equipped.eventMatchCounts[ruleIndex];
 				}
 			}
 		}
+	}
+
+	bool GameAbility::MatchesAttachmentEventRule(
+		const AttachmentEventRule& rule,
+		const sas::AbilityEvent& event,
+		const sas::AbilityLifecycleEvent* lifecycleEvent,
+		const GameplayTagContainer& sourceAbilityTags,
+		const List<GameplayTag>* damageTags
+	) const
+	{
+		if (!event.eventTag.MatchesTag(rule.eventTag) ||
+			!mAbilitySystem.HasAllOwnedTags(rule.requiredOwnerTags) ||
+			mAbilitySystem.HasAnyOwnedTags(rule.blockedOwnerTags) ||
+			!sourceAbilityTags.HasAll(rule.requiredAbilityTags) ||
+			sourceAbilityTags.HasAny(rule.blockedAbilityTags) ||
+			(rule.abilityId.IsValid() &&
+				(!lifecycleEvent || lifecycleEvent->abilityId != rule.abilityId)) ||
+			(rule.endReason.has_value() &&
+				(!lifecycleEvent || lifecycleEvent->endReason != *rule.endReason)) ||
+			(rule.requireOwnerAsEventSource &&
+				event.GetSource<Actor>() != &mAbilitySystem.GetOwner()))
+		{
+			return false;
+		}
+
+		return std::all_of(
+			rule.requiredDamageTags.begin(),
+			rule.requiredDamageTags.end(),
+			[&](const GameplayTag& requiredTag)
+			{
+				return damageTags && std::any_of(
+					damageTags->begin(),
+					damageTags->end(),
+				[&](const GameplayTag& tag)
+					{
+						return tag.MatchesTag(requiredTag);
+					}
+				);
+			}
+		);
+	}
+
+	bool GameAbility::ExecuteAttachmentEventRule(
+		EquippedAttachment& equipped,
+		const AttachmentEventRule& rule
+	)
+	{
+		const float magnitude = mAttachments.ResolveGrantedAttributeValue(
+			equipped.hostKind,
+			rule.magnitudeAttributeId,
+			rule.baseMagnitude
+		);
+		if (rule.action == AttachmentEventAction::ReduceCooldown && magnitude <= 0.f)
+		{
+			return false;
+		}
+
+		switch (rule.action)
+		{
+		case AttachmentEventAction::ReduceCooldown:
+			switch (rule.cooldownTarget)
+			{
+			case AttachmentCooldownTarget::Host:
+				ReduceCooldownRemaining(magnitude);
+				break;
+			case AttachmentCooldownTarget::AllOwnerAbilities:
+				mAbilitySystem.ReduceAbilityCooldowns(magnitude, true);
+				break;
+			case AttachmentCooldownTarget::AllNonPrimaryAbilities:
+				mAbilitySystem.ReduceAbilityCooldowns(magnitude, false);
+				break;
+			}
+			return true;
+		case AttachmentEventAction::ApplyEffect:
+			if (const sas::GameplayEffectDefinition* definition =
+				EffectData::FindGameplayEffectDefinition(rule.effectId.ToString()))
+			{
+				if (!definition->sourceParameterized)
+				{
+					mAbilitySystem.ApplyGameplayEffect(*definition, &mAbilitySystem.GetOwner());
+					return true;
+				}
+			}
+			return false;
+		case AttachmentEventAction::RemoveEffects:
+			mAbilitySystem.RemoveGameplayEffectsIf(
+				[&](const sas::ActiveGameplayEffect& activeEffect)
+				{
+					const sas::GameplayEffectDefinition& definition =
+						activeEffect.spec.definition;
+					return
+						(!rule.effectDisposition.has_value() ||
+							definition.disposition == *rule.effectDisposition) &&
+						(!rule.effectCleanseableOnly || definition.cleanseable) &&
+						(rule.effectCategory.empty() ||
+							definition.category == rule.effectCategory) &&
+						(rule.effectImmunityCategory.empty() ||
+							definition.immunityCategory == rule.effectImmunityCategory);
+				}
+			);
+			return true;
+		}
+		return false;
 	}
 
 	bool GameAbility::CanActivateContent() const
@@ -188,7 +305,21 @@ namespace ly
 			mAbilitySystem.GetOwner(),
 			mDefinition
 		};
-		return mBehavior->Activate(behaviorContext);
+		if (!mBehavior->Activate(behaviorContext))
+		{
+			return false;
+		}
+
+		sas::AbilityLifecycleEvent event;
+		event.eventTag = GameplayTags::Event::Ability::Activated;
+		event.abilityId = sas::ContentId{ mDefinition.abilityId };
+		event.abilityTags = mDefinition.abilityTags;
+		event.sourceAbilityId = event.abilityId;
+		event.sourceAbilityTags = event.abilityTags;
+		event.SetSource(&mAbilitySystem.GetOwner());
+		event.SetTarget(&mAbilitySystem.GetOwner());
+		mAbilitySystem.HandleAbilityLifecycleEvent(event);
+		return true;
 	}
 
 	void GameAbility::BeginExecution()
@@ -258,11 +389,26 @@ namespace ly
 			};
 			mBehavior->End(behaviorContext, reason);
 		}
+
+		sas::AbilityLifecycleEvent event;
+		event.eventTag = GameplayTags::Event::Ability::Ended;
+		event.abilityId = sas::ContentId{ mDefinition.abilityId };
+		event.abilityTags = mDefinition.abilityTags;
+		event.sourceAbilityId = event.abilityId;
+		event.sourceAbilityTags = event.abilityTags;
+		event.endReason = reason;
+		event.SetSource(&mAbilitySystem.GetOwner());
+		event.SetTarget(&mAbilitySystem.GetOwner());
+		mAbilitySystem.HandleAbilityLifecycleEvent(event);
 	}
 
 	int GameAbility::GetMaximumLevel() const
 	{
-		return mBaseDefinition.GetMaxLevel();
+		return std::max(
+			1,
+			mBaseDefinition.GetMaxLevel() +
+				mAbilitySystem.GetScopedAbilityLevelBonus(mBaseDefinition)
+		);
 	}
 
 	float GameAbility::ResolveCooldownDuration() const
@@ -298,14 +444,53 @@ namespace ly
 			sas::GameplayAttribute{ CommonAttributeIds::Duration, mDefinition.duration, 0.f },
 			mDefinition.attributeModifiers
 		);
-		return ApplyAttachmentModifiers(
+		const float attachmentModifiedDuration = ApplyAttachmentModifiers(
 			AttachmentHostKind::Ability,
 			sas::GameplayAttribute{ CommonAttributeIds::Duration, leveledDuration, 0.f }
 		).currentValue;
+		if (!mBehavior)
+		{
+			return attachmentModifiedDuration;
+		}
+
+		GameAbilityBehaviorContext behaviorContext{
+			const_cast<LightYearsAbilitySystemComponent&>(mAbilitySystem),
+			const_cast<GameAbility&>(*this),
+			const_cast<Actor&>(mAbilitySystem.GetOwner()),
+			mDefinition
+		};
+		return std::max(
+			0.f,
+			mBehavior->ResolveActiveDuration(behaviorContext, attachmentModifiedDuration)
+		);
+	}
+
+	void GameAbility::NotifyOwnerAbilityActivated(
+		const sas::AbilityLifecycleEvent& event
+	)
+	{
+		if (!mBehavior || !IsActive())
+		{
+			return;
+		}
+
+		GameAbilityBehaviorContext behaviorContext{
+			mAbilitySystem,
+			*this,
+			mAbilitySystem.GetOwner(),
+			mDefinition
+		};
+		mBehavior->OnOwnerAbilityActivated(behaviorContext, event);
 	}
 
 	void GameAbility::OnLevelConfigurationChanged()
 	{
+		RefreshPrimaryWeaponRuntimeConfiguration();
+	}
+
+	void GameAbility::RefreshScopedConfiguration()
+	{
+		RebuildDefinitionForLevel();
 		RefreshPrimaryWeaponRuntimeConfiguration();
 	}
 
@@ -367,7 +552,11 @@ namespace ly
 		mDefinition = mBaseDefinition;
 
 		const int stepsToApply = std::min(
-			std::max(0, mRuntimeState.GetLevel() - 1),
+			std::max(
+				0,
+				mRuntimeState.GetLevel() - 1 +
+					mAbilitySystem.GetScopedAbilityLevelBonus(mBaseDefinition)
+			),
 			static_cast<int>(mBaseDefinition.levelProgression.size())
 		);
 
@@ -378,12 +567,12 @@ namespace ly
 			{
 				mDefinition.attributeModifiers.push_back(modifier);
 			}
-			for (const GameplayTag& upgradeId : step.unlockedUpgradeIds)
+			for (const std::string& upgradeId : step.unlockedUpgradeIds)
 			{
 				const bool alreadyUnlocked = std::any_of(
 					mDefinition.unlockedUpgradeIds.begin(),
 					mDefinition.unlockedUpgradeIds.end(),
-					[&](const GameplayTag& existingUpgradeId)
+					[&](const std::string& existingUpgradeId)
 					{
 						return existingUpgradeId == upgradeId;
 					}
@@ -474,19 +663,19 @@ namespace ly
 			{
 				addCapability(capability);
 			}
-			if (sas::FindGameplayAttribute(fireAction->weaponDefinition.attributes, CommonAttributeIds::Damage))
+			if (sas::FindAttribute(fireAction->weaponDefinition.attributes, CommonAttributeIds::Damage))
 			{
 				addCapability(AttachmentSchema::Capability::Damage);
 			}
-			if (sas::FindGameplayAttribute(fireAction->weaponDefinition.attributes, CommonAttributeIds::FireRate))
+			if (sas::FindAttribute(fireAction->weaponDefinition.attributes, CommonAttributeIds::FireRate))
 			{
 				addCapability(AttachmentSchema::Capability::FireRate);
 			}
-			if (fireAction->weaponDefinition.weaponTypeTag.MatchesTag(PrimaryWeaponSchema::Projectile::FamilyTag))
+			if (IsProjectileWeaponType(fireAction->weaponDefinition.weaponType))
 			{
 				addCapability(AttachmentSchema::Capability::Projectile);
 			}
-			if (fireAction->weaponDefinition.weaponTypeTag.MatchesTag(PrimaryWeaponSchema::Beam::FamilyTag))
+			if (IsBeamWeaponType(fireAction->weaponDefinition.weaponType))
 			{
 				addCapability(AttachmentSchema::Capability::Beam);
 			}

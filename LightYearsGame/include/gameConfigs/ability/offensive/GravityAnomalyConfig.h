@@ -7,19 +7,20 @@
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyContracts.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationIds.h"
 
 namespace AbilityData
 {
 	namespace GravityAnomaly
 	{
-		// Actor/behavior/presentation contract only. Numeric tuning lives in abilities.json.
+		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
 
 		inline const ly::AbilityActorDefinition ActorProjectileBasic = []
 		{
 			ly::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
-			definition.actorTypeTag = Actor::Projectile::TypeTag;
+			definition.actorType = ly::AbilityActorType::GravityAnomalyProjectile;
 			definition.presentationProfileId = ly::GravityAnomalyPresentationIds::ProjectileBasic;
 			return definition;
 		}();
@@ -28,7 +29,7 @@ namespace AbilityData
 		{
 			ly::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::Field::BasicDefinitionId;
-			definition.actorTypeTag = Actor::Field::TypeTag;
+			definition.actorType = ly::AbilityActorType::GravityAnomalyField;
 			definition.presentationProfileId = ly::GravityAnomalyPresentationIds::FieldBasic;
 			return definition;
 		}();
@@ -47,8 +48,8 @@ namespace AbilityData
 			definition.cooldown = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				GravityAnomaly::CategoryTag,
-				GravityAnomaly::FamilyTag
+				ly::GameplayTags::Ability::Control,
+				ly::GameplayTags::Ability::Family::GravityAnomaly
 			};
 			definition.displayName = "Gravity Anomaly";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
@@ -66,7 +67,7 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorTag = GravityAnomaly::BehaviorTag;
+			definition.behaviorType = ly::AbilityBehaviorType::GravityAnomaly;
 			return definition;
 		}();
 	}

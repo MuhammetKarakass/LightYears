@@ -1,6 +1,8 @@
 #include "gameplay/content/AbilityLoader.h"
 
+#include "attributes/AttributeId.h"
 #include "framework/JsonDocumentLoader.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/content/NumericSettingContractRegistry.h"
 #include "gameplay/content/ContentIdSchema.h"
@@ -11,6 +13,7 @@
 #include <map>
 #include <set>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace ly::content
 {
@@ -43,7 +46,7 @@ namespace ly::content
 		sas::AttributeModifier ParseModifier(const Json& object)
 		{
 			return sas::AttributeModifier{
-				GameplayTag{ RequiredString(object, "attributeId") },
+				sas::AttributeId{ RequiredString(object, "attributeId") },
 				ParseOperation(RequiredString(object, "operation")),
 				object.at("magnitude").get<float>(),
 				object.value("priority", 0)
@@ -53,11 +56,46 @@ namespace ly::content
 		sas::GameplayAttribute ParseAttribute(const Json& object)
 		{
 			return sas::GameplayAttribute{
-				GameplayTag{ RequiredString(object, "id") },
+				sas::AttributeId{ RequiredString(object, "id") },
 				object.at("baseValue").get<float>(),
 				object.value("minValue", 0.f),
 				object.value("maxValue", std::numeric_limits<float>::max())
 			};
+		}
+
+		sas::GameplayAttributeList ParseAttributeList(
+			const Json& values,
+			const std::string& ownerLabel
+		)
+		{
+			if (!values.is_array())
+			{
+				throw std::runtime_error(ownerLabel + " attributes must be an array");
+			}
+
+			sas::GameplayAttributeList attributes;
+			std::unordered_set<sas::AttributeId, sas::AttributeIdHash> attributeIds;
+			for (const Json& value : values)
+			{
+				sas::GameplayAttribute attribute = ParseAttribute(value);
+				std::string attributeFailure;
+				if (!AttributeIdSchema::Validate(attribute.id, &attributeFailure))
+				{
+					throw std::runtime_error(
+						"Invalid " + ownerLabel + " attribute ID '" +
+						std::string{ attribute.id.GetName() } + "': " + attributeFailure
+					);
+				}
+				if (!attributeIds.insert(attribute.id).second)
+				{
+					throw std::runtime_error(
+						"Duplicate " + ownerLabel + " attribute '" +
+						std::string{ attribute.id.GetName() } + "'"
+					);
+				}
+				attributes.push_back(std::move(attribute));
+			}
+			return attributes;
 		}
 
 		List<sas::AttributeModifier> ParseModifiers(const Json& values)
@@ -76,8 +114,8 @@ namespace ly::content
 			for (const Json& value : values)
 			{
 				rules.push_back(sas::AttributeScalingRule{
-					GameplayTag{ value.at("targetAttributeId").get<std::string>() },
-					GameplayTag{ value.at("sourceAttributeId").get<std::string>() },
+					sas::AttributeId{ value.at("targetAttributeId").get<std::string>() },
+					sas::AttributeId{ value.at("sourceAttributeId").get<std::string>() },
 					ParseOperation(value.at("operation").get<std::string>()),
 					value.at("coefficient").get<float>()
 				});
@@ -92,18 +130,18 @@ namespace ly::content
 			for (const Json& value : values)
 			{
 				AbilityEffectSpecDefinition spec;
-				spec.effectId = RequiredString(value, "effectId");
+				spec.effectId = sas::ContentId{ RequiredString(value, "effectId") };
 				std::string idFailure;
-				if (!ContentIdSchema::ValidateEffectId(spec.effectId, &idFailure))
+				if (!ContentIdSchema::ValidateEffectId(spec.effectId.ToString(), &idFailure))
 				{
 					throw std::runtime_error(
-						"Ability effect spec has invalid effect ID '" + spec.effectId + "': " + idFailure
+						"Ability effect spec has invalid effect ID '" + spec.effectId.ToString() + "': " + idFailure
 					);
 				}
-				if (!effectIds.insert(spec.effectId).second)
+				if (!effectIds.insert(spec.effectId.ToString()).second)
 				{
 					throw std::runtime_error(
-						"Duplicate ability effect spec for '" + spec.effectId + "'"
+						"Duplicate ability effect spec for '" + spec.effectId.ToString() + "'"
 					);
 				}
 				spec.useAbilityDuration = value.value("useAbilityDuration", false);
@@ -114,7 +152,7 @@ namespace ly::content
 				if (spec.useAbilityDuration && spec.duration.has_value())
 				{
 					throw std::runtime_error(
-						"Ability effect spec '" + spec.effectId +
+						"Ability effect spec '" + spec.effectId.ToString() +
 						"' cannot declare both duration and useAbilityDuration"
 					);
 				}
@@ -157,7 +195,7 @@ namespace ly::content
 				);
 				for (const Json& upgradeId : level.value("unlockedUpgradeIds", Json::array()))
 				{
-					step.unlockedUpgradeIds.emplace_back(GameplayTag{ upgradeId.get<std::string>() });
+					step.unlockedUpgradeIds.emplace_back(upgradeId.get<std::string>());
 				}
 				levels.push_back(std::move(step));
 			}
@@ -186,7 +224,7 @@ namespace ly::content
 		{
 			for (const AbilityActorDefinition* definition : fallbackActorDefinitions)
 			{
-				if (definition && definition->actorDefinitionId == actorDefinitionId)
+				if (definition && definition->actorDefinitionId.ToString() == actorDefinitionId)
 				{
 					return definition;
 				}
@@ -261,13 +299,13 @@ namespace ly::content
 			}
 
 			AbilityActorDefinition definition = *fallback;
-			definition.actorDefinitionId = actorDefinitionId;
+			definition.actorDefinitionId = sas::ContentId{ actorDefinitionId };
 			// The C++ record supplies the actor type/presentation skeleton only.
 			// Runtime numeric values must come from the authoritative JSON record.
 			definition.lifeTime = object.value("lifeTime", 0.f);
 			definition.spawnDistance = object.value("spawnDistance", 0.f);
 			definition.attributes.clear();
-			std::set<GameplayTag> attributeIds;
+			std::unordered_set<sas::AttributeId, sas::AttributeIdHash> attributeIds;
 			for (const Json& profileIdValue : object.value("attributeProfileIds", Json::array()))
 			{
 				const std::string profileId = profileIdValue.get<std::string>();
@@ -291,7 +329,7 @@ namespace ly::content
 				{
 					if (!attributeIds.insert(attribute.id).second)
 					{
-						throw std::runtime_error("Duplicate inherited actor attribute '" + attribute.id.ToString() + "'");
+						throw std::runtime_error("Duplicate inherited actor attribute '" + std::string{ attribute.id.GetName() } + "'");
 					}
 					definition.attributes.push_back(attribute);
 				}
@@ -301,14 +339,14 @@ namespace ly::content
 				sas::GameplayAttribute parsed = ParseAttribute(attribute);
 				if (!attributeIds.insert(parsed.id).second)
 				{
-					throw std::runtime_error("Duplicate actor attribute '" + parsed.id.ToString() + "'");
+					throw std::runtime_error("Duplicate actor attribute '" + std::string{ parsed.id.GetName() } + "'");
 				}
 				definition.attributes.push_back(std::move(parsed));
 			}
 			if (!object.contains("lifeTime"))
 			{
 				if (const sas::GameplayAttribute* duration =
-						sas::FindGameplayAttribute(definition.attributes, CommonAttributeIds::Duration))
+						sas::FindAttribute(definition.attributes, CommonAttributeIds::Duration))
 				{
 					definition.lifeTime = duration->baseValue;
 				}
@@ -316,7 +354,7 @@ namespace ly::content
 				{
 					throw std::runtime_error(
 						"Ability actor '" + actorDefinitionId +
-						"' requires 'lifeTime' or an " + CommonAttributeIds::Duration.ToString() +
+						"' requires 'lifeTime' or an " + std::string{ CommonAttributeIds::Duration.GetName() } +
 						" value in JSON"
 					);
 				}
@@ -372,6 +410,7 @@ namespace ly::content
 			loaded.definition.levelProgression.clear();
 			loaded.definition.levelUpgradeScrapCosts.clear();
 			loaded.definition.effectSpecs.clear();
+			loaded.definition.attributes.clear();
 			if (object.contains("scalingRules"))
 			{
 				loaded.definition.scalingRules = ParseScalingRules(object.at("scalingRules"));
@@ -391,9 +430,17 @@ namespace ly::content
 				);
 			}
 
+			// Unlike settings, ability-scoped attributes participate in the shared
+			// attribute/scaling pipeline. The JSON record is authoritative, so a
+			// fallback definition cannot silently retain old numeric values.
+			loaded.definition.attributes = ParseAttributeList(
+				object.value("attributes", Json::array()),
+				"Ability '" + loaded.id + "'"
+			);
+
 			const Json settings = object.value("settings", Json::object());
 			const NumericSettingContract& settingsContract =
-				NumericSettingContractRegistry::Find(fallback->behaviorTag);
+				NumericSettingContractRegistry::Find(fallback->behaviorType);
 			for (const auto& [name, value] : settings.items())
 			{
 				if (settingsContract.allowed.find(name) == settingsContract.allowed.end())
@@ -433,13 +480,13 @@ namespace ly::content
 					throw std::runtime_error(profileIdFailure);
 				}
 				sas::GameplayAttributeList attributes;
-				std::set<GameplayTag> attributeIds;
+				std::unordered_set<sas::AttributeId, sas::AttributeIdHash> attributeIds;
 				for (const Json& attribute : profile.value("attributes", Json::array()))
 				{
 					sas::GameplayAttribute parsed = ParseAttribute(attribute);
 					if (!attributeIds.insert(parsed.id).second)
 					{
-						throw std::runtime_error("Duplicate attribute profile value '" + parsed.id.ToString() + "'");
+						throw std::runtime_error("Duplicate attribute profile value '" + std::string{ parsed.id.GetName() } + "'");
 					}
 					attributes.push_back(std::move(parsed));
 				}
@@ -584,11 +631,11 @@ namespace ly::content
 				);
 				for (const AbilityActorDefinition& actor : definition.actorDefinitions)
 				{
-					if (!actorIds.insert(actor.actorDefinitionId).second)
+					if (!actorIds.insert(actor.actorDefinitionId.ToString()).second)
 					{
 						throw std::runtime_error(
 							"Duplicate ability actor ID: " +
-							actor.actorDefinitionId
+							actor.actorDefinitionId.ToString()
 						);
 					}
 				}

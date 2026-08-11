@@ -9,11 +9,11 @@ namespace ly::content
 	bool RegisterGameAbilitySettingContracts(std::string* failureReason)
 	{
 		return NumericSettingContractRegistry::Register(
-			AbilityData::Dash::BehaviorTag,
+			AbilityBehaviorType::Dash,
 			AbilityData::Dash::Setting::Contract,
 			failureReason
 		) && NumericSettingContractRegistry::Register(
-			AbilityData::InfernoSpray::BehaviorTag,
+			AbilityBehaviorType::InfernoSpray,
 			AbilityData::InfernoSpray::Setting::Contract,
 			failureReason
 		);

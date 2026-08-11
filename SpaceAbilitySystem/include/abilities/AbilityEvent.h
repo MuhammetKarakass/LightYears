@@ -1,5 +1,7 @@
 #pragma once
 
+#include "abilities/AbilityPolicies.h"
+#include "content/ContentId.h"
 #include "framework/Core.h"
 
 #include <typeinfo>
@@ -10,6 +12,11 @@ namespace sas
 	{
 		ly::GameplayTag eventTag;
 		float magnitude = 0.f;
+		ContentId sourceAbilityId;
+		ly::List<ly::GameplayTag> sourceAbilityTags;
+		// Optional semantic payload selectors (damage type, status, category,
+		// capability...). Identity remains in typed context or dedicated fields.
+		ly::List<ly::GameplayTag> payloadTags;
 
 		template <typename Source>
 		void SetSource(Source* source)
@@ -69,5 +76,17 @@ namespace sas
 		const std::type_info* targetType = nullptr;
 		const void* contextObject = nullptr;
 		const std::type_info* contextType = nullptr;
+	};
+
+	// Lifecycle events are the public, data-driven boundary for ability state.
+	// Internal behavior flow continues to use Activate/End/Cancel callbacks.
+	struct AbilityLifecycleEvent final : AbilityEvent
+	{
+		ContentId abilityId;
+		// Semantic tags describe the source ability (category, family and other
+		// queryable capabilities). The event kind remains generic; consumers do
+		// not need one event tag per ability.
+		ly::List<ly::GameplayTag> abilityTags;
+		AbilityEndReason endReason = AbilityEndReason::Completed;
 	};
 }

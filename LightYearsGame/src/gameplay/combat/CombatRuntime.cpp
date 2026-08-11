@@ -92,6 +92,53 @@ namespace ly
 		);
 	}
 
+	void CombatRuntime::SetDamageProtection(
+		const std::string& sourceId,
+		bool blocksIncomingDamage,
+		bool blocksOutgoingDamage
+	)
+	{
+		if (sourceId.empty())
+		{
+			return;
+		}
+		mDamageProtections[sourceId] = DamageProtection{
+			blocksIncomingDamage,
+			blocksOutgoingDamage
+		};
+	}
+
+	void CombatRuntime::RemoveDamageProtection(const std::string& sourceId)
+	{
+		mDamageProtections.erase(sourceId);
+	}
+
+	bool CombatRuntime::BlocksIncomingDamage() const
+	{
+		for (const auto& [sourceId, protection] : mDamageProtections)
+		{
+			(void)sourceId;
+			if (protection.blocksIncomingDamage)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool CombatRuntime::BlocksOutgoingDamage() const
+	{
+		for (const auto& [sourceId, protection] : mDamageProtections)
+		{
+			(void)sourceId;
+			if (protection.blocksOutgoingDamage)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void CombatRuntime::Tick(float deltaTime)
 	{
 		mAbilitySystemComponent.Tick(deltaTime);
@@ -103,6 +150,7 @@ namespace ly
 		mAbilitySystemComponent.Clear();
 		mEffectPresentation.Clear();
 		mPendingEffectEvents.clear();
+		mDamageProtections.clear();
 	}
 
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)
@@ -146,6 +194,19 @@ namespace ly
 		context.mitigatedDamage += damageBeforeArmor - context.remainingDamage;
 		context.modifiedDamage = context.remainingDamage;
 
+		// One generic combat event carries the incoming damage context and its
+		// semantic payload tags. Ability/attachment triggers can filter owner
+		// status tags and payload damage tags without per-combination event tags.
+		sas::AbilityEvent damageEvent;
+		damageEvent.eventTag = GameplayTags::Event::Combat::DamageReceived;
+		damageEvent.SetSource(context.source);
+		damageEvent.SetTarget(&mOwner);
+		damageEvent.payloadTags = context.damageTags;
+		damageEvent.sourceAbilityId = context.sourceAbilityId;
+		damageEvent.sourceAbilityTags = context.sourceAbilityTags;
+		damageEvent.SetContext(&context);
+		mAbilitySystemComponent.HandleGameplayEvent(damageEvent);
+
 		const List<GameplayTag> appliedStatuses =
 			DamageTypeSystem::ApplyStatusEffects(
 				mAbilitySystemComponent,
@@ -160,7 +221,7 @@ namespace ly
 					continue;
 				}
 				sas::AbilityEvent event;
-				event.eventTag = AttachmentSchema::Event::SourceIgniteApplied;
+				event.eventTag = AttachmentSchema::Event::SourceStatusIgniteApplied;
 				event.SetSource(context.source);
 				event.SetTarget(context.target);
 				event.magnitude = context.remainingDamage;
@@ -207,6 +268,9 @@ namespace ly
 		event.SetSource(context.source);
 		event.SetTarget(context.target);
 		event.magnitude = context.appliedDamage;
+		event.payloadTags = context.damageTags;
+		event.sourceAbilityId = context.sourceAbilityId;
+		event.sourceAbilityTags = context.sourceAbilityTags;
 		event.SetContext(&context);
 		mAbilitySystemComponent.HandleGameplayEvent(event);
 
@@ -217,8 +281,22 @@ namespace ly
 			sourceEvent.SetSource(context.source);
 			sourceEvent.SetTarget(context.target);
 			sourceEvent.magnitude = context.appliedDamage;
+			sourceEvent.payloadTags = context.damageTags;
+			sourceEvent.sourceAbilityId = context.sourceAbilityId;
+			sourceEvent.sourceAbilityTags = context.sourceAbilityTags;
 			sourceEvent.SetContext(&context);
 			sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(sourceEvent);
+
+			sas::AbilityEvent combatEvent;
+			combatEvent.eventTag = GameplayTags::Event::Combat::DamageDealt;
+			combatEvent.SetSource(context.source);
+			combatEvent.SetTarget(context.target);
+			combatEvent.magnitude = context.appliedDamage;
+			combatEvent.payloadTags = context.damageTags;
+			combatEvent.sourceAbilityId = context.sourceAbilityId;
+			combatEvent.sourceAbilityTags = context.sourceAbilityTags;
+			combatEvent.SetContext(&context);
+			sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(combatEvent);
 		}
 		onDamageResolved.Broadcast(context);
 	}

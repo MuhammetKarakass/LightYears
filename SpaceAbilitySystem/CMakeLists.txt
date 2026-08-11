@@ -1,4 +1,5 @@
 add_library(${SPACE_ABILITY_SYSTEM_TARGET_NAME} STATIC
+	${CMAKE_CURRENT_SOURCE_DIR}/include/content/ContentId.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemInterface.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityDefinition.h
@@ -24,9 +25,11 @@ add_library(${SPACE_ABILITY_SYSTEM_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityTrigger.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/FactoryRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/attributes/GameplayAttribute.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/attributes/AttributeId.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/attributes/AttributeMath.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/attributes/AttributeSystem.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectBehaviorKey.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectDefinitionValidation.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectCollection.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/effects/GameplayEffectBehaviorRegistry.h

@@ -25,11 +25,11 @@ namespace ly
 
 		void OverrideIfDeclared(
 			const sas::GameplayAttributeList& attributes,
-			const GameplayTag& id,
+			const sas::AttributeId& id,
 			float& value
 		)
 		{
-			if (const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(attributes, id))
+			if (const sas::GameplayAttribute* attribute = sas::FindAttribute(attributes, id))
 			{
 				value = attribute->currentValue;
 			}
@@ -37,11 +37,11 @@ namespace ly
 
 		void OverrideIntIfDeclared(
 			const sas::GameplayAttributeList& attributes,
-			const GameplayTag& id,
+			const sas::AttributeId& id,
 			int& value
 		)
 		{
-			if (const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(attributes, id))
+			if (const sas::GameplayAttribute* attribute = sas::FindAttribute(attributes, id))
 			{
 				value = std::max(0, static_cast<int>(attribute->currentValue));
 			}
@@ -154,7 +154,7 @@ namespace ly
 			}
 			const float damagePerSecond = std::max(
 				0.f,
-				sas::FindGameplayAttributeValue(
+				sas::FindAttributeValue(
 					effect.runtimeAttributes,
 					DamageAttributeIds::BurnDamagePerSecond,
 					0.f
@@ -183,7 +183,7 @@ namespace ly
 			}
 			const float multiplierPerStack = std::max(
 				0.f,
-				sas::FindGameplayAttributeValue(
+				sas::FindAttributeValue(
 					effect.runtimeAttributes,
 					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
 					0.f
@@ -362,7 +362,7 @@ namespace ly
 			igniteHooks.tick = &TickIgnite;
 			const bool igniteRegistered =
 				GetEffectBehaviorRuntime().Register(
-						DamageStatusSchema::IgniteBehaviorTag,
+						EffectData::DamageIgniteBehaviorKey,
 						igniteHooks
 					);
 
@@ -372,7 +372,7 @@ namespace ly
 			electricHooks.processEvent = &ProcessElectricIncomingDamage;
 			const bool electricRegistered =
 				GetEffectBehaviorRuntime().Register(
-						DamageStatusSchema::ElectricBehaviorTag,
+						EffectData::DamageElectricBehaviorKey,
 						electricHooks
 					);
 			return igniteRegistered && electricRegistered;

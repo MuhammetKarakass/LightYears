@@ -224,7 +224,7 @@ namespace ly
                  playerSpaceShip->GetAbilitySystemComponent()
                      .BuildGameplayEffectSnapshots())
              {
-                 bonusHealth += sas::FindGameplayAttributeValue(
+                 bonusHealth += sas::FindAttributeValue(
                      effectSnapshot.runtimeAttributes,
                      BarrierEffectSchema::Capacity,
                      0.f

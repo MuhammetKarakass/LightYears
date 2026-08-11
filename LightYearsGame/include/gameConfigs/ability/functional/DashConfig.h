@@ -6,12 +6,13 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/dash/DashContracts.h"
+#include "gameplay/tags/GameplayTags.h"
 
 namespace AbilityData
 {
 	namespace Dash
 	{
-		// Behavior/schema contract only. Numeric tuning lives in abilities.json.
+		// Feature schema only. Numeric tuning lives in abilities.json.
 	}
 
 	namespace Definitions
@@ -27,14 +28,14 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				Dash::CategoryTag,
-				Dash::FamilyTag
+				ly::GameplayTags::Ability::Movement,
+				ly::GameplayTags::Ability::Family::Dash
 			};
 			definition.displayName = "Dash";
 			definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/star_gold.png";
 			definition.inputLabel = "F";
 			definition.accentColor = sf::Color{ 120, 220, 255, 255 };
-			definition.behaviorTag = Dash::BehaviorTag;
+			definition.behaviorType = ly::AbilityBehaviorType::Dash;
 			return definition;
 		}();
 	}

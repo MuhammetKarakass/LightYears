@@ -6,7 +6,7 @@ namespace sas
 {
 	float ApplyAttributeScalings(
 		float baseValue,
-		const ly::GameplayTag& targetAttributeId,
+		const AttributeId& targetAttributeId,
 		const ly::List<AttributeScalingRule>& scalingRules,
 		const AttributeSystem& sourceAttributes
 	)
@@ -38,7 +38,7 @@ namespace sas
 	}
 
 	void AttributeSystem::RegisterAttribute(
-		const ly::GameplayTag& id,
+		const AttributeId& id,
 		float baseValue,
 		float minValue,
 		float maxValue
@@ -60,19 +60,19 @@ namespace sas
 		}
 	}
 
-	bool AttributeSystem::HasAttribute(const ly::GameplayTag& id) const
+	bool AttributeSystem::HasAttribute(const AttributeId& id) const
 	{
 		return mAttributes.find(id) != mAttributes.end();
 	}
 
-	float AttributeSystem::GetBaseValue(const ly::GameplayTag& id) const
+	float AttributeSystem::GetBaseValue(const AttributeId& id) const
 	{
 		auto found = mAttributes.find(id);
 		return found != mAttributes.end() ? found->second.attribute.baseValue : 0.f;
 	}
 
 	float AttributeSystem::GetCurrentValue(
-		const ly::GameplayTag& id,
+		const AttributeId& id,
 		float fallback
 	) const
 	{
@@ -81,7 +81,7 @@ namespace sas
 	}
 
 	float AttributeSystem::GetSequentialReductionMultiplier(
-		const ly::GameplayTag& id,
+		const AttributeId& id,
 		float minimumMultiplier
 	) const
 	{
@@ -132,7 +132,7 @@ namespace sas
 		return std::max(minimumMultiplier, multiplier);
 	}
 
-	void AttributeSystem::SetBaseValue(const ly::GameplayTag& id, float baseValue)
+	void AttributeSystem::SetBaseValue(const AttributeId& id, float baseValue)
 	{
 		if (!id.IsValid())
 		{
@@ -210,7 +210,7 @@ namespace sas
 			return;
 		}
 
-		const ly::GameplayTag attributeId = foundAttribute->second;
+		const AttributeId attributeId = foundAttribute->second;
 		auto foundEntry = mAttributes.find(attributeId);
 		if (foundEntry != mAttributes.end())
 		{
@@ -229,7 +229,7 @@ namespace sas
 		onAttributesCleared.Broadcast();
 	}
 
-	void AttributeSystem::Recalculate(const ly::GameplayTag& id)
+	void AttributeSystem::Recalculate(const AttributeId& id)
 	{
 		auto found = mAttributes.find(id);
 		if (found == mAttributes.end())

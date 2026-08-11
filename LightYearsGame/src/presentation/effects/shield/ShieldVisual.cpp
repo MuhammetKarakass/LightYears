@@ -35,7 +35,7 @@ namespace ly
 			? std::clamp(state.remainingDuration / state.totalDuration, 0.f, 1.f)
 			: 1.f;
 
-		const sas::GameplayAttribute* capacity = sas::FindGameplayAttribute(
+		const sas::GameplayAttribute* capacity = sas::FindAttribute(
 			state.runtimeAttributes,
 			BarrierEffectSchema::Capacity
 		);

@@ -1,6 +1,7 @@
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
 
 #include "effects/GameplayEffectDefinitionValidation.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
@@ -25,11 +26,7 @@ namespace ly
 		{
 			for (const sas::GameplayAttribute& attribute : attributes)
 			{
-				if (!GameplayTagSchema::Validate(
-					attribute.id,
-					GameplayTagKind::Attribute,
-					failureReason
-				))
+				if (!AttributeIdSchema::Validate(attribute.id, nullptr))
 				{
 					return false;
 				}
@@ -44,11 +41,7 @@ namespace ly
 		{
 			for (const sas::AttributeModifier& modifier : modifiers)
 			{
-				if (!GameplayTagSchema::Validate(
-					modifier.attributeId,
-					GameplayTagKind::Attribute,
-					failureReason
-				))
+				if (!AttributeIdSchema::Validate(modifier.attributeId, nullptr))
 				{
 					return false;
 				}
@@ -67,14 +60,6 @@ namespace ly
 			!content::ContentIdSchema::ValidateEffectId(definition.effectId, failureReason) ||
 			!ValidateAttributeModifiers(definition.modifiers, failureReason) ||
 			!ValidateAttributeList(definition.attributes, failureReason))
-		{
-			return false;
-		}
-		if (definition.behaviorTag.IsValid() && !GameplayTagSchema::Validate(
-			definition.behaviorTag,
-			GameplayTagKind::EffectBehavior,
-			failureReason
-		))
 		{
 			return false;
 		}
@@ -106,8 +91,8 @@ namespace ly
 				return false;
 			}
 		}
-		if (definition.behaviorTag.IsValid() &&
-			(!isBehaviorRegistered || !isBehaviorRegistered(definition.behaviorTag)))
+		if (definition.behaviorKey.IsValid() &&
+			(!isBehaviorRegistered || !isBehaviorRegistered(definition.behaviorKey)))
 		{
 			return Fail(
 				failureReason,

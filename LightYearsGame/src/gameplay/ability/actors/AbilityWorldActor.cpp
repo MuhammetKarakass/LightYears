@@ -7,6 +7,39 @@
 
 #include <algorithm>
 
+namespace
+{
+	float DistanceSquaredToActorBounds(
+		const ly::Actor& actor,
+		const sf::Vector2f& point
+	)
+	{
+		const sf::FloatRect bounds = actor.GetActorGlobalBounds();
+		if (bounds.size.x <= 0.f || bounds.size.y <= 0.f)
+		{
+			const sf::Vector2f delta = actor.GetActorLocation() - point;
+			return delta.x * delta.x + delta.y * delta.y;
+		}
+
+		// Actor physics uses the visual bounds as its default box shape. Testing
+		// the closest point on that same bounds keeps splash damage consistent
+		// with collision geometry instead of testing only the actor's origin.
+		const float closestX = std::clamp(
+			point.x,
+			bounds.position.x,
+			bounds.position.x + bounds.size.x
+		);
+		const float closestY = std::clamp(
+			point.y,
+			bounds.position.y,
+			bounds.position.y + bounds.size.y
+		);
+		const float deltaX = point.x - closestX;
+		const float deltaY = point.y - closestY;
+		return deltaX * deltaX + deltaY * deltaY;
+	}
+}
+
 namespace ly
 {
 	AbilityWorldActor::AbilityWorldActor(World* world, Actor* owner, const std::string& texturePath)
@@ -74,14 +107,14 @@ namespace ly
 		mDamagePayload = DamageTypeSystem::BuildPayload(mDamageTags, mDamageAttributes);
 	}
 
-	bool AbilityWorldActor::HasAbilityUpgrade(const GameplayTag& upgradeId) const
+	bool AbilityWorldActor::HasAbilityUpgrade(const std::string& upgradeId) const
 	{
 		return std::any_of(
 			mAbilityUpgradeIds.begin(),
 			mAbilityUpgradeIds.end(),
-			[&](const GameplayTag& unlockedUpgradeId)
+			[&](const std::string& unlockedUpgradeId)
 			{
-				return unlockedUpgradeId.MatchesTag(upgradeId);
+				return unlockedUpgradeId == upgradeId;
 			}
 		);
 	}
@@ -141,11 +174,18 @@ namespace ly
 				continue;
 			}
 
-			const sf::Vector2f delta = target->GetActorLocation() - center;
-			const float distanceSquared = delta.x * delta.x + delta.y * delta.y;
+			const float distanceSquared = DistanceSquaredToActorBounds(*target, center);
 			if (distanceSquared <= radiusSquared)
 			{
-				ApplyCombatDamage(*target, damage, mOwner, mDamageTags, mDamagePayload);
+				ApplyCombatDamage(
+					*target,
+					damage,
+					mOwner,
+					mDamageTags,
+					mDamagePayload,
+					mSourceAbilityId,
+					mSourceAbilityTags
+				);
 			}
 		}
 	}
@@ -154,10 +194,8 @@ namespace ly
 	{
 		mDamage = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Damage, mDamage)
+			sas::FindAttributeValue(attributes, CommonAttributeIds::Damage, mDamage)
 		);
 		SetDamageAttributes(attributes);
 	}
 }
-
-

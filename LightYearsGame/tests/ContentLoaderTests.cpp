@@ -14,6 +14,9 @@
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
+#include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
+#include "gameConfigs/ability/control/NullPulseConfig.h"
+#include "gameConfigs/ability/defensive/PhaseDriftConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 
 #include <cmath>
@@ -62,14 +65,18 @@ int main()
 		&AbilityData::Definitions::SunBeam_Strike_Basic,
 		&AbilityData::Definitions::Rocket_Basic,
 		&AbilityData::Definitions::GravityAnomaly_Basic,
-		&AbilityData::Definitions::InfernoSpray_Basic
+		&AbilityData::Definitions::InfernoSpray_Basic,
+		&AbilityData::Definitions::OverdriveCore_Basic,
+		&AbilityData::Definitions::NullPulse_Basic,
+		&AbilityData::Definitions::PhaseDrift_Basic
 	};
 	const ly::List<const ly::AbilityActorDefinition*> fallbackAbilityActors{
 		&AbilityData::GravityAnomaly::ActorProjectileBasic,
 		&AbilityData::GravityAnomaly::ActorFieldBasic,
 		&AbilityData::Rocket::ActorProjectileBasic,
 		&AbilityData::InfernoSpray::ActorFlameConeBasic,
-		&AbilityData::SunBeam::ActorStrikeBasic
+		&AbilityData::SunBeam::ActorStrikeBasic,
+		&AbilityData::OverdriveCore::ActorProjectileBasic
 	};
 	const ly::content::AbilityLoader::Result loadedAbilities =
 		ly::content::AbilityLoader::LoadFromFile(
@@ -81,7 +88,7 @@ int main()
 	{
 		return Fail(loadedAbilities.error.c_str()) ? 0 : 1;
 	}
-	if (loadedAbilities.definitions.size() != 6)
+	if (loadedAbilities.definitions.size() != 9)
 	{
 		return Fail("Ability JSON catalog did not load the expected pilot definitions") ? 0 : 1;
 	}
@@ -90,7 +97,7 @@ int main()
 	{
 		actorDefinitionCount += definition.actorDefinitions.size();
 	}
-	if (actorDefinitionCount != 5)
+	if (actorDefinitionCount != 6)
 	{
 		return Fail("Ability actor JSON catalog did not load the expected actor definitions") ? 0 : 1;
 	}
@@ -209,6 +216,48 @@ int main()
 	{
 		return Fail("Ability loader could not inherit and override a value-only ability variant") ? 0 : 1;
 	}
+
+	const std::filesystem::path abilityScopedAttributesPath =
+		std::filesystem::temp_directory_path() /
+		"lightyears_ability_scoped_attributes_test.json";
+	{
+		std::ofstream attributesFile{ abilityScopedAttributesPath };
+		attributesFile << R"({
+  "schemaVersion": 1,
+  "abilities": [{
+    "id": "Ability.Movement.Dash.Basic",
+    "cooldown": 2.0,
+    "duration": 0.24,
+    "maxCharges": 1,
+    "settings": { "baseDistance": 260.0, "cameraZoomOutRatio": 0.15 },
+    "attributes": [
+      { "id": "Common.ProjectileCount", "baseValue": 8.0, "minValue": 1.0 },
+      { "id": "Ability.Movement.Dash.TestValue", "baseValue": 2.0 }
+    ]
+  }]
+})";
+	}
+	const ly::content::AbilityLoader::Result abilityScopedAttributes =
+		ly::content::AbilityLoader::LoadFromFile(
+			abilityScopedAttributesPath,
+			fallbackAbilities,
+			fallbackAbilityActors
+		);
+	std::filesystem::remove(abilityScopedAttributesPath);
+	if (!abilityScopedAttributes.Succeeded() ||
+		abilityScopedAttributes.definitions.size() != 1 ||
+		sas::FindAttributeValue(
+			abilityScopedAttributes.definitions.front().definition.attributes,
+			ly::CommonAttributeIds::ProjectileCount
+		) != 8.f ||
+		sas::FindAttributeValue(
+			abilityScopedAttributes.definitions.front().definition.attributes,
+			sas::AttributeId{ "Ability.Movement.Dash.TestValue" }
+		) != 2.f)
+	{
+		return Fail("Ability loader did not materialize ability-scoped attributes") ? 0 : 1;
+	}
+
 	const std::filesystem::path missingAbilityNumbersPath =
 		std::filesystem::temp_directory_path() /
 		"lightyears_missing_ability_numbers_test.json";
@@ -266,7 +315,7 @@ int main()
 		shieldIt->definition.effectSpecs.size() != 2 ||
 		!shieldIt->definition.effectSpecs.front().useAbilityDuration ||
 		!NearlyEqual(
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				shieldIt->definition.effectSpecs.front().attributes,
 				BarrierEffectSchema::Capacity
 			),
@@ -322,7 +371,7 @@ int main()
 		gravityIt->actorDefinitions.front().attributes.size() != 7 ||
 		gravityIt->actorDefinitions.back().attributes.size() != 5 ||
 		!NearlyEqual(
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				gravityIt->actorDefinitions.front().attributes,
 				ly::CommonAttributeIds::Radius
 			),
@@ -345,6 +394,60 @@ int main()
 		infernoIt->definition.maxCharges != 1)
 	{
 		return Fail("Inferno Spray ability JSON profile is invalid") ? 0 : 1;
+	}
+	const auto overdriveIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Offense.OverdriveCore.Basic";
+		}
+	);
+	if (overdriveIt == loadedAbilities.definitions.end() ||
+		!NearlyEqual(overdriveIt->definition.cooldown, 1.f) ||
+		!NearlyEqual(overdriveIt->definition.duration, 6.f) ||
+		overdriveIt->definition.attributes.size() != 7 ||
+		overdriveIt->actorDefinitions.size() != 1 ||
+		overdriveIt->actorDefinitions.front().presentationProfileId !=
+			ly::OverdriveCorePresentationIds::ProjectileBasic)
+	{
+		return Fail("Overdrive Core ability JSON profile is invalid") ? 0 : 1;
+	}
+	const auto nullPulseIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Control.NullPulse.Basic";
+		}
+	);
+	if (nullPulseIt == loadedAbilities.definitions.end() ||
+		!NearlyEqual(nullPulseIt->definition.cooldown, 11.f) ||
+		nullPulseIt->definition.duration != 0.f ||
+		nullPulseIt->definition.maxCharges != 1 ||
+		nullPulseIt->definition.attributes.size() != 7 ||
+		nullPulseIt->definition.levelProgression.size() != 14 ||
+		nullPulseIt->definition.damageTags !=
+			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy })
+	{
+		return Fail("Null Pulse ability JSON profile is invalid") ? 0 : 1;
+	}
+	const auto phaseDriftIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Defense.PhaseDrift.Basic";
+		}
+	);
+	if (phaseDriftIt == loadedAbilities.definitions.end() ||
+		!NearlyEqual(phaseDriftIt->definition.cooldown, 14.f) ||
+		!NearlyEqual(phaseDriftIt->definition.duration, 6.f) ||
+		phaseDriftIt->definition.maxCharges != 1 ||
+		phaseDriftIt->definition.attributes.size() != 8 ||
+		phaseDriftIt->definition.levelProgression.size() != 14)
+	{
+		return Fail("Phase Drift ability JSON profile is invalid") ? 0 : 1;
 	}
 
 	const std::filesystem::path weaponPath =
@@ -380,11 +483,11 @@ int main()
 
 	const PrimaryWeaponDefinition* basicLaser =
 		FindWeapon(loaded.definitions, "Weapon.Projectile.FighterRapidLaser.Basic");
-	const sas::GameplayAttribute* basicDamage = sas::FindGameplayAttribute(
+	const sas::GameplayAttribute* basicDamage = sas::FindAttribute(
 		basicLaser->attributes,
 		ly::CommonAttributeIds::Damage
 	);
-	if (basicLaser->weaponTypeTag != PrimaryWeaponSchema::Projectile::Standard::TypeTag ||
+	if (basicLaser->weaponType != PrimaryWeaponType::ProjectileStandard ||
 		!basicDamage ||
 		!NearlyEqual(basicDamage->baseValue, 8.f) ||
 		basicLaser->progressionProfile.ResolveLevelSteps().size() != 3 ||
@@ -395,10 +498,10 @@ int main()
 
 	const PrimaryWeaponDefinition* shotgun =
 		FindWeapon(loaded.definitions, "Weapon.Projectile.RapidShotgun.Basic");
-	if (shotgun->weaponTypeTag != PrimaryWeaponSchema::Projectile::Shotgun::TypeTag ||
+	if (shotgun->weaponType != PrimaryWeaponType::ProjectileShotgun ||
 		shotgun->muzzleDefinitions.size() != 1 ||
 		shotgun->attributes.size() != 16 ||
-		!sas::FindGameplayAttribute(shotgun->attributes, ly::DamageAttributeIds::BurnDuration) ||
+		!sas::FindAttribute(shotgun->attributes, ly::DamageAttributeIds::BurnDuration) ||
 		shotgun->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Thermal })
 	{
 		return Fail("Rapid shotgun JSON profile is invalid") ? 0 : 1;
@@ -415,8 +518,8 @@ int main()
 
 	const PrimaryWeaponDefinition* electric =
 		FindWeapon(loaded.definitions, "Weapon.Arc.ElectricLauncher.Basic");
-	if (electric->weaponTypeTag != PrimaryWeaponSchema::Arc::Electric::TypeTag ||
-		!sas::FindGameplayAttribute(
+	if (electric->weaponType != PrimaryWeaponType::ArcElectric ||
+		!sas::FindAttribute(
 			electric->attributes,
 			PrimaryWeaponSchema::Arc::Electric::ChainCount
 		) ||
@@ -427,8 +530,8 @@ int main()
 
 	const PrimaryWeaponDefinition* beam =
 		FindWeapon(loaded.definitions, "Weapon.Beam.ContinuousHeatLaser.Basic");
-	if (beam->weaponTypeTag != PrimaryWeaponSchema::Beam::Continuous::TypeTag ||
-		beam->featureTags != ly::List<ly::GameplayTag>{ PrimaryWeaponSchema::Feature::Heat::FeatureTag } ||
+	if (beam->weaponType != PrimaryWeaponType::BeamContinuous ||
+		beam->featureTypes != ly::List<PrimaryWeaponFeatureType>{ PrimaryWeaponFeatureType::Heat } ||
 		beam->heatGainCurve.size() != 4 ||
 		beam->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy })
 	{
@@ -437,7 +540,7 @@ int main()
 
 	const PrimaryWeaponDefinition* cryo =
 		FindWeapon(loaded.definitions, "Weapon.Wave.CryoProjector.Basic");
-	if (cryo->weaponTypeTag != PrimaryWeaponSchema::Wave::Expanding::TypeTag ||
+	if (cryo->weaponType != PrimaryWeaponType::WaveExpanding ||
 		cryo->attributes.size() != 12 ||
 		cryo->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo })
 	{
@@ -490,8 +593,8 @@ int main()
 	const ly::content::EffectLoader::Result loadedEffects =
 		ly::content::EffectLoader::LoadFromFile(
 			effectPath,
-			EffectData::GetBuiltinGameplayEffectDefinitions()
-		);
+		EffectData::GetBuiltinGameplayEffectDefinitions()
+	);
 	const auto barrierEffectIt = std::find_if(
 		loadedEffects.definitions.begin(),
 		loadedEffects.definitions.end(),
@@ -500,7 +603,11 @@ int main()
 			return definition.id == "Effect.Barrier.Basic";
 		}
 	);
-	if (!loadedEffects.Succeeded() || loadedEffects.definitions.size() != 8 ||
+	if (!loadedEffects.Succeeded())
+	{
+		return Fail(loadedEffects.error.c_str()) ? 0 : 1;
+	}
+	if (loadedEffects.definitions.size() != 15 ||
 		barrierEffectIt == loadedEffects.definitions.end() ||
 		!barrierEffectIt->definition.sourceParameterized ||
 		!barrierEffectIt->definition.attributes.empty() ||

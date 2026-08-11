@@ -147,7 +147,7 @@ namespace ly
 		return mAttributeSystem.GetCurrentValue(ShipAttributeIds::AfterburnerManeuverabilityMultiplier);
 	}
 
-	void ShipRuntime::OnOwnerAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue)
+	void ShipRuntime::OnOwnerAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue)
 	{
 		(void)previousValue;
 		(void)currentValue;

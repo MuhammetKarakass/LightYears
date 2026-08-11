@@ -7,40 +7,81 @@
 #include "engineConfigs/EngineStructs.h"
 #include <string>
 
+enum class PrimaryWeaponType
+{
+	ProjectileStandard,
+	ProjectileShotgun,
+	ArcElectric,
+	BeamContinuous,
+	WaveExpanding
+};
+
+enum class PrimaryWeaponFeatureType
+{
+	Heat
+};
+
+inline const char* PrimaryWeaponFeatureUpgradeId(PrimaryWeaponFeatureType type)
+{
+	return type == PrimaryWeaponFeatureType::Heat
+		? "PrimaryWeapon.Feature.Heat"
+		: "";
+}
+
+inline bool IsProjectileWeaponType(PrimaryWeaponType type)
+{
+	return type == PrimaryWeaponType::ProjectileStandard ||
+		type == PrimaryWeaponType::ProjectileShotgun;
+}
+
+inline bool IsBeamWeaponType(PrimaryWeaponType type)
+{
+	return type == PrimaryWeaponType::BeamContinuous;
+}
+
+inline const char* PrimaryWeaponFamilyName(PrimaryWeaponType type)
+{
+	switch (type)
+	{
+	case PrimaryWeaponType::ProjectileStandard:
+	case PrimaryWeaponType::ProjectileShotgun: return "Projectile";
+	case PrimaryWeaponType::ArcElectric: return "Arc";
+	case PrimaryWeaponType::BeamContinuous: return "Beam";
+	case PrimaryWeaponType::WaveExpanding: return "Wave";
+	}
+	return "";
+}
+
 struct PrimaryWeaponSchema
 {
 	// A definition selects exactly one concrete leaf type, never a family tag.
 	struct Projectile
 	{
-		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Projectile" };
-
 		struct Delivery
 		{
-			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Projectile.Delivery" };
-			inline static const ly::GameplayTag Speed{ "Attribute.PrimaryWeapon.Projectile.Delivery.Speed" };
-			inline static const ly::GameplayTag Lifetime{ "Attribute.PrimaryWeapon.Projectile.Delivery.Lifetime" };
-			inline static const ly::GameplayTag PierceCount{ "Attribute.PrimaryWeapon.Projectile.Delivery.PierceCount" };
-			inline static const ly::GameplayTag AdditionalProjectileCount{
-				"Attribute.PrimaryWeapon.Projectile.Delivery.AdditionalProjectileCount"
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Projectile.Delivery" };
+			inline static const sas::AttributeId Speed{ "PrimaryWeapon.Projectile.Delivery.Speed" };
+			inline static const sas::AttributeId Lifetime{ "PrimaryWeapon.Projectile.Delivery.Lifetime" };
+			inline static const sas::AttributeId PierceCount{ "PrimaryWeapon.Projectile.Delivery.PierceCount" };
+			inline static const sas::AttributeId AdditionalProjectileCount{
+				"PrimaryWeapon.Projectile.Delivery.AdditionalProjectileCount"
 			};
 		};
 
 		struct Standard
 		{
-			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Projectile.Standard" };
 		};
 
 		struct Shotgun
 		{
-			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Projectile.Shotgun" };
-			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Projectile.Shotgun" };
-			inline static const ly::GameplayTag PelletCount{ "Attribute.PrimaryWeapon.Projectile.Shotgun.PelletCount" };
-			inline static const ly::GameplayTag SpreadAngle{ "Attribute.PrimaryWeapon.Projectile.Shotgun.SpreadAngle" };
-			inline static const ly::GameplayTag DamageReductionPerAdditionalHit{
-				"Attribute.PrimaryWeapon.Projectile.Shotgun.DamageReductionPerAdditionalHit"
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Projectile.Shotgun" };
+			inline static const sas::AttributeId PelletCount{ "PrimaryWeapon.Projectile.Shotgun.PelletCount" };
+			inline static const sas::AttributeId SpreadAngle{ "PrimaryWeapon.Projectile.Shotgun.SpreadAngle" };
+			inline static const sas::AttributeId DamageReductionPerAdditionalHit{
+				"PrimaryWeapon.Projectile.Shotgun.DamageReductionPerAdditionalHit"
 			};
-			inline static const ly::GameplayTag MinimumDamageMultiplier{
-				"Attribute.PrimaryWeapon.Projectile.Shotgun.MinimumDamageMultiplier"
+			inline static const sas::AttributeId MinimumDamageMultiplier{
+				"PrimaryWeapon.Projectile.Shotgun.MinimumDamageMultiplier"
 			};
 		};
 
@@ -48,54 +89,45 @@ struct PrimaryWeaponSchema
 
 	struct Arc
 	{
-		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Arc" };
-
 		struct Electric
 		{
-			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Arc.Electric" };
-			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Arc.Electric" };
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Arc.Electric" };
 			// Number of additional targets after the direct hit.
-			inline static const ly::GameplayTag ChainCount{ "Attribute.PrimaryWeapon.Arc.Electric.ChainCount" };
-			inline static const ly::GameplayTag ChainRange{ "Attribute.PrimaryWeapon.Arc.Electric.ChainRange" };
-			inline static const ly::GameplayTag DamageMultiplierPerChain{
-				"Attribute.PrimaryWeapon.Arc.Electric.DamageMultiplierPerChain"
+			inline static const sas::AttributeId ChainCount{ "PrimaryWeapon.Arc.Electric.ChainCount" };
+			inline static const sas::AttributeId ChainRange{ "PrimaryWeapon.Arc.Electric.ChainRange" };
+			inline static const sas::AttributeId DamageMultiplierPerChain{
+				"PrimaryWeapon.Arc.Electric.DamageMultiplierPerChain"
 			};
 		};
 	};
 
 	struct Beam
 	{
-		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Beam" };
-
 		struct Delivery
 		{
-			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Beam.Delivery" };
-			inline static const ly::GameplayTag Range{ "Attribute.PrimaryWeapon.Beam.Delivery.Range" };
-			inline static const ly::GameplayTag Width{ "Attribute.PrimaryWeapon.Beam.Delivery.Width" };
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Beam.Delivery" };
+			inline static const sas::AttributeId Range{ "PrimaryWeapon.Beam.Delivery.Range" };
+			inline static const sas::AttributeId Width{ "PrimaryWeapon.Beam.Delivery.Width" };
 		};
 
 		struct Continuous
 		{
-			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Beam.Continuous" };
 		};
 	};
 
 	struct Wave
 	{
-		inline static const ly::GameplayTag FamilyTag{ "PrimaryWeapon.Wave" };
-
 		struct Delivery
 		{
-			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Wave.Delivery" };
-			inline static const ly::GameplayTag Speed{ "Attribute.PrimaryWeapon.Wave.Delivery.Speed" };
-			inline static const ly::GameplayTag InitialWidth{ "Attribute.PrimaryWeapon.Wave.Delivery.InitialWidth" };
-			inline static const ly::GameplayTag MaximumWidth{ "Attribute.PrimaryWeapon.Wave.Delivery.MaximumWidth" };
-			inline static const ly::GameplayTag Thickness{ "Attribute.PrimaryWeapon.Wave.Delivery.Thickness" };
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Wave.Delivery" };
+			inline static const sas::AttributeId Speed{ "PrimaryWeapon.Wave.Delivery.Speed" };
+			inline static const sas::AttributeId InitialWidth{ "PrimaryWeapon.Wave.Delivery.InitialWidth" };
+			inline static const sas::AttributeId MaximumWidth{ "PrimaryWeapon.Wave.Delivery.MaximumWidth" };
+			inline static const sas::AttributeId Thickness{ "PrimaryWeapon.Wave.Delivery.Thickness" };
 		};
 
 		struct Expanding
 		{
-			inline static const ly::GameplayTag TypeTag{ "PrimaryWeapon.Wave.Expanding" };
 		};
 	};
 
@@ -103,18 +135,19 @@ struct PrimaryWeaponSchema
 	{
 		struct Heat
 		{
-			inline static const ly::GameplayTag FeatureTag{ "PrimaryWeapon.Feature.Heat" };
-			inline static const ly::GameplayTag AttributeRoot{ "Attribute.PrimaryWeapon.Feature.Heat" };
-			inline static const ly::GameplayTag Gain{ "Attribute.PrimaryWeapon.Feature.Heat.Gain" };
-			inline static const ly::GameplayTag Capacity{ "Attribute.PrimaryWeapon.Feature.Heat.Capacity" };
-			inline static const ly::GameplayTag Dissipation{ "Attribute.PrimaryWeapon.Feature.Heat.Dissipation" };
-			inline static const ly::GameplayTag OverheatCooldown{
-				"Attribute.PrimaryWeapon.Feature.Heat.OverheatCooldown"
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Feature.Heat" };
+			inline static const sas::AttributeId Gain{ "PrimaryWeapon.Feature.Heat.Gain" };
+			inline static const sas::AttributeId Capacity{ "PrimaryWeapon.Feature.Heat.Capacity" };
+			inline static const sas::AttributeId Dissipation{ "PrimaryWeapon.Feature.Heat.Dissipation" };
+			inline static const sas::AttributeId OverheatCooldown{
+				"PrimaryWeapon.Feature.Heat.OverheatCooldown"
 			};
-			inline static const ly::GameplayTag DamageMultiplierAtMaxHeat{
-				"Attribute.PrimaryWeapon.Feature.Heat.DamageMultiplierAtMaxHeat"
+			inline static const sas::AttributeId DamageMultiplierAtMaxHeat{
+				"PrimaryWeapon.Feature.Heat.DamageMultiplierAtMaxHeat"
 			};
-			inline static const ly::GameplayTag CurrentRuntimeValue{ "Runtime.PrimaryWeapon.Feature.Heat.Current" };
+			inline static const sas::AttributeId CurrentRuntimeValue{
+				"PrimaryWeapon.Feature.Heat.Current"
+			};
 		};
 	};
 };
@@ -166,8 +199,8 @@ struct HeatGainCurveSegmentDefinition
 struct PrimaryWeaponLevelStep
 {
 	ly::List<sas::AttributeModifier> attributeModifiers;
-	ly::List<ly::GameplayTag> unlockedUpgradeIds;
-	ly::List<ly::GameplayTag> unlockedFeatureTags;
+	ly::List<std::string> unlockedUpgradeIds;
+	ly::List<PrimaryWeaponFeatureType> unlockedFeatureTypes;
 };
 
 // A rule applies its reward to every matching weapon level, inclusively.
@@ -206,11 +239,11 @@ struct WeaponProgressionProfile
 
 	WeaponProgressionProfile& EveryLevel(
 		const ly::List<sas::AttributeModifier>& modifiers,
-		const ly::List<ly::GameplayTag>& upgradeIds = {},
-		const ly::List<ly::GameplayTag>& featureTags = {}
+		const ly::List<std::string>& upgradeIds = {},
+		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {}
 	)
 	{
-		return BetweenLevels(2, maxLevel, modifiers, upgradeIds, featureTags);
+		return BetweenLevels(2, maxLevel, modifiers, upgradeIds, featureTypes);
 	}
 
 	WeaponProgressionProfile& ScrapCosts(const ly::List<unsigned int>& costs)
@@ -222,19 +255,19 @@ struct WeaponProgressionProfile
 	WeaponProgressionProfile& AtLevel(
 		int level,
 		const ly::List<sas::AttributeModifier>& modifiers = {},
-		const ly::List<ly::GameplayTag>& upgradeIds = {},
-		const ly::List<ly::GameplayTag>& featureTags = {}
+		const ly::List<std::string>& upgradeIds = {},
+		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {}
 	)
 	{
-		return BetweenLevels(level, level, modifiers, upgradeIds, featureTags);
+		return BetweenLevels(level, level, modifiers, upgradeIds, featureTypes);
 	}
 
 	WeaponProgressionProfile& BetweenLevels(
 		int firstLevel,
 		int lastLevel,
 		const ly::List<sas::AttributeModifier>& modifiers = {},
-		const ly::List<ly::GameplayTag>& upgradeIds = {},
-		const ly::List<ly::GameplayTag>& featureTags = {},
+		const ly::List<std::string>& upgradeIds = {},
+		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
 		int levelInterval = 1
 	)
 	{
@@ -242,7 +275,7 @@ struct WeaponProgressionProfile
 			firstLevel,
 			lastLevel,
 			levelInterval,
-			PrimaryWeaponLevelStep{ modifiers, upgradeIds, featureTags }
+			PrimaryWeaponLevelStep{ modifiers, upgradeIds, featureTypes }
 		});
 		return *this;
 	}
@@ -250,8 +283,8 @@ struct WeaponProgressionProfile
 	WeaponProgressionProfile& FromLevel(
 		int firstLevel,
 		const ly::List<sas::AttributeModifier>& modifiers = {},
-		const ly::List<ly::GameplayTag>& upgradeIds = {},
-		const ly::List<ly::GameplayTag>& featureTags = {},
+		const ly::List<std::string>& upgradeIds = {},
+		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
 		int levelInterval = 1
 	)
 	{
@@ -260,7 +293,7 @@ struct WeaponProgressionProfile
 			maxLevel,
 			modifiers,
 			upgradeIds,
-			featureTags,
+			featureTypes,
 			levelInterval
 		);
 	}
@@ -336,10 +369,10 @@ struct WeaponProgressionProfile
 					rule.reward.unlockedUpgradeIds.begin(),
 					rule.reward.unlockedUpgradeIds.end()
 				);
-				resolvedStep.unlockedFeatureTags.insert(
-					resolvedStep.unlockedFeatureTags.end(),
-					rule.reward.unlockedFeatureTags.begin(),
-					rule.reward.unlockedFeatureTags.end()
+				resolvedStep.unlockedFeatureTypes.insert(
+					resolvedStep.unlockedFeatureTypes.end(),
+					rule.reward.unlockedFeatureTypes.begin(),
+					rule.reward.unlockedFeatureTypes.end()
 				);
 			}
 		}
@@ -350,7 +383,7 @@ struct WeaponProgressionProfile
 struct PrimaryWeaponDefinition
 {
 	std::string weaponId;
-	ly::GameplayTag weaponTypeTag;
+	PrimaryWeaponType weaponType = PrimaryWeaponType::ProjectileStandard;
 	WeaponPresentationDefinition presentationDefinition;
 	sas::GameplayAttributeList attributes;
 	ly::List<WeaponMuzzleDefinition> muzzleDefinitions;
@@ -358,7 +391,7 @@ struct PrimaryWeaponDefinition
 	WeaponProgressionProfile progressionProfile;
 	ly::List<sas::AttributeModifier> attributeModifiers;
 	ly::List<sas::AttributeScalingRule> scalingRules;
-	ly::List<ly::GameplayTag> featureTags;
+	ly::List<PrimaryWeaponFeatureType> featureTypes;
 	ly::List<HeatGainCurveSegmentDefinition> heatGainCurve;
 	ly::List<ly::GameplayTag> damageTags;
 	ly::List<ly::GameplayTag> attachmentCapabilities;
@@ -368,7 +401,7 @@ struct PrimaryWeaponDefinition
 		// Empty identifies an ephemeral/test definition. Shipped catalog entries
 		// always receive a validated Weapon.* content ID from WeaponLoader.
 		const std::string& inWeaponId = {},
-		const ly::GameplayTag& inWeaponTypeTag = PrimaryWeaponSchema::Projectile::Standard::TypeTag,
+		PrimaryWeaponType inWeaponType = PrimaryWeaponType::ProjectileStandard,
 		const WeaponPresentationDefinition& inPresentationDefinition = WeaponPresentationDefinition{},
 		const sas::GameplayAttributeList& inAttributes = {},
 		const ly::List<WeaponMuzzleDefinition>& inMuzzleDefinitions = { WeaponMuzzleDefinition{} },
@@ -376,14 +409,14 @@ struct PrimaryWeaponDefinition
 		const WeaponProgressionProfile& inProgressionProfile = WeaponProgressionProfile{},
 		const ly::List<sas::AttributeModifier>& inAttributeModifiers = {},
 		const ly::List<sas::AttributeScalingRule>& inScalingRules = {},
-		const ly::List<ly::GameplayTag>& inFeatureTags = {},
+		const ly::List<PrimaryWeaponFeatureType>& inFeatureTypes = {},
 		const ly::List<HeatGainCurveSegmentDefinition>& inHeatGainCurve = {},
 		const ly::List<ly::GameplayTag>& inDamageTags = {},
 		const ly::List<ly::GameplayTag>& inAttachmentCapabilities = {},
 		size_t inAttachmentSlotCapacity = 2
 	)
 		: weaponId(inWeaponId)
-		, weaponTypeTag(inWeaponTypeTag)
+		, weaponType(inWeaponType)
 		, presentationDefinition(inPresentationDefinition)
 		, attributes(inAttributes)
 		, muzzleDefinitions(inMuzzleDefinitions)
@@ -391,7 +424,7 @@ struct PrimaryWeaponDefinition
 		, progressionProfile(inProgressionProfile)
 		, attributeModifiers(inAttributeModifiers)
 		, scalingRules(inScalingRules)
-		, featureTags(inFeatureTags)
+		, featureTypes(inFeatureTypes)
 		, heatGainCurve(inHeatGainCurve)
 		, damageTags(inDamageTags)
 		, attachmentCapabilities(inAttachmentCapabilities)

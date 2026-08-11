@@ -1,6 +1,7 @@
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 
 #include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameplay/effects/EffectBehaviorKeys.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "attributes/GameplayAttribute.h"
 #include "framework/Actor.h"
@@ -64,7 +65,7 @@ namespace ly
 				LightYearsEffectBehaviorRuntime::Hooks hooks;
 				hooks.tick = &Tick;
 				return GetEffectBehaviorRuntime().Register(
-					AbilityData::GravityAnomaly::Effect::BehaviorTag,
+					EffectBehaviorKeys::GravityAnomaly,
 					hooks
 				);
 			}();

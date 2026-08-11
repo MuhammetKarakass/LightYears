@@ -7,18 +7,33 @@
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameplay/ability/nullPulse/NullPulseContracts.h"
+#include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
+#include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/content/EffectContentCatalog.h"
+#include "gameplay/effects/EffectBehaviorKeys.h"
 #include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h"
 #include "presentation/effects/shield/ShieldVisualIds.h"
 
 namespace EffectData
 {
+	// Effect behavior selectors belong to the content/registry boundary, not to
+	// gameplay schemas or ability contracts.
+	inline const sas::GameplayEffectBehaviorKey& BarrierBehaviorKey =
+		ly::EffectBehaviorKeys::Barrier;
+	inline const sas::GameplayEffectBehaviorKey& DamageIgniteBehaviorKey =
+		ly::EffectBehaviorKeys::DamageIgnite;
+	inline const sas::GameplayEffectBehaviorKey& DamageElectricBehaviorKey =
+		ly::EffectBehaviorKeys::DamageElectric;
+	inline const sas::GameplayEffectBehaviorKey& GravityAnomalyBehaviorKey =
+		ly::EffectBehaviorKeys::GravityAnomaly;
+
 	// JSON fallback/test catalog only. Shipped runtime policy comes from
 	// effects.json; source-owned magnitudes and durations come from the weapon,
 	// ability, attachment, enemy or reward that creates GameplayEffectSpec.
 	inline const sas::GameplayEffectDefinition BasicBarrierEffect{
 		BarrierEffectSchema::BasicEffectId,
-		BarrierEffectSchema::BehaviorTag,
+		BarrierBehaviorKey,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::RefreshDuration,
 		5.f,
@@ -34,7 +49,15 @@ namespace EffectData
 			sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelay, 1.5f, 0.f },
 			sas::GameplayAttribute{ BarrierEffectSchema::RegenerationDelayRemaining, 0.f, 0.f }
 		},
-		ly::ShieldVisualIds::Basic
+		ly::ShieldVisualIds::Basic,
+		{},
+		{},
+		false,
+		false,
+		sas::GameplayEffectDisposition::Beneficial,
+		false,
+		"Defense.Barrier",
+		""
 	};
 
 	inline const sas::GameplayEffectDefinition BarrierBreakThrustBoostEffect{
@@ -53,12 +76,20 @@ namespace EffectData
 			sas::AttributeModifier{ ly::OwnerAttributeIds::MoveSpeedHorizontal, sas::AttributeModifierOperation::Add, 0.2f, 0 }
 		},
 		{},
+		"",
+		{},
+		{},
+		false,
+		false,
+		sas::GameplayEffectDisposition::Beneficial,
+		false,
+		"AttributeModifier",
 		""
 	};
 
 	inline const sas::GameplayEffectDefinition IgniteEffect{
 		ly::DamageStatusEffectIds::IgniteEffectId,
-		ly::DamageStatusSchema::IgniteBehaviorTag,
+		DamageIgniteBehaviorKey,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		3.f,
@@ -71,7 +102,16 @@ namespace EffectData
 				1.f,
 				0.f
 			}
-		}
+		},
+		"",
+		{},
+		{},
+		false,
+		false,
+		sas::GameplayEffectDisposition::Harmful,
+		true,
+		"Damage.OverTime",
+		""
 	};
 
 	inline const sas::GameplayEffectDefinition CryoBuildupEffect{
@@ -81,7 +121,18 @@ namespace EffectData
 		sas::GameplayEffectStackingPolicy::Stack,
 		2.5f,
 		4,
-		{ ly::DamageStatusSchema::CryoBuildup }
+		{ ly::DamageStatusSchema::CryoBuildup },
+		{},
+		{},
+		"",
+		{},
+		{},
+		false,
+		false,
+		sas::GameplayEffectDisposition::Harmful,
+		true,
+		"Control.CryoBuildup",
+		""
 	};
 
 	inline const sas::GameplayEffectDefinition CryoSlowEffect{
@@ -98,12 +149,22 @@ namespace EffectData
 				sas::AttributeModifierOperation::Add,
 				0.25f
 			}
-		}
+		},
+		{},
+		"",
+		{},
+		{ MovementEffectSchema::SlowImmunityGrantedTag },
+		false,
+		false,
+		sas::GameplayEffectDisposition::Harmful,
+		true,
+		"Movement.Slow",
+		"Movement.Slow"
 	};
 
 	inline const sas::GameplayEffectDefinition ElectricEffect{
 		ly::DamageStatusEffectIds::ElectricEffectId,
-		ly::DamageStatusSchema::ElectricBehaviorTag,
+		DamageElectricBehaviorKey,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
 		3.f,
@@ -116,7 +177,16 @@ namespace EffectData
 				0.04f,
 				0.f
 			}
-		}
+		},
+		"",
+		{},
+		{},
+		false,
+		false,
+		sas::GameplayEffectDisposition::Harmful,
+		true,
+		"Damage.Electric",
+		""
 	};
 
 	inline const sas::GameplayEffectDefinition GravityAnomalyInsideEffect = []
@@ -124,8 +194,8 @@ namespace EffectData
 		sas::GameplayEffectDefinition definition;
 		definition.effectId =
 			AbilityData::GravityAnomaly::Effect::InsideEffectId;
-		definition.behaviorTag =
-			AbilityData::GravityAnomaly::Effect::BehaviorTag;
+	definition.behaviorKey =
+			GravityAnomalyBehaviorKey;
 		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
 		definition.stackingPolicy =
 			sas::GameplayEffectStackingPolicy::RefreshDuration;
@@ -133,7 +203,10 @@ namespace EffectData
 			AbilityData::GravityAnomaly::Effect::InsideEffectDurationSeconds;
 		definition.maxStacks = 1;
 		definition.grantedTags = {
-			AbilityData::GravityAnomaly::Effect::InsideTag
+			ly::GameplayTags::State::Effect::GravityAnomaly::Inside
+		};
+		definition.applicationBlockedTags = {
+			MovementEffectSchema::SlowImmunityGrantedTag
 		};
 		definition.modifiers = {
 			sas::AttributeModifier{
@@ -146,6 +219,10 @@ namespace EffectData
 		};
 		definition.activeVisualId = ly::GravityAnomalyEffectVisualIds::Inside;
 		definition.sourceScopedApplication = true;
+		definition.disposition = sas::GameplayEffectDisposition::Harmful;
+		definition.cleanseable = true;
+		definition.category = "Control.GravityAnomaly";
+		definition.immunityCategory = "Movement.Slow";
 		return definition;
 	}();
 
@@ -168,8 +245,138 @@ namespace EffectData
 			}
 		},
 		{},
-		""
+		"",
+		{},
+		{ MovementEffectSchema::SlowImmunityGrantedTag },
+		false,
+		false,
+		sas::GameplayEffectDisposition::Harmful,
+		true,
+		"Movement.Slow",
+		"Movement.Slow"
 	};
+
+	inline const sas::GameplayEffectDefinition MovementSlowImmunityEffect{
+		MovementEffectSchema::SlowImmunityEffectId,
+		{},
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::RefreshDuration,
+		5.f,
+		1,
+		{ MovementEffectSchema::SlowImmunityGrantedTag },
+		{},
+		{},
+		"",
+		{},
+		{},
+		false,
+		false,
+		sas::GameplayEffectDisposition::Beneficial,
+		false,
+		"Immunity.MovementSlow",
+		"",
+		"Movement.Slow"
+	};
+
+	// Overdrive supplies duration and the AttackSpeed magnitude at application
+	// time. The fallback exists only so the JSON effect can resolve a typed
+	// policy definition without introducing a second effect behavior class.
+	inline const sas::GameplayEffectDefinition OverdriveCoreAttackSpeedBoostEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::OverdriveCore::Effect::AttackSpeedBoostId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.sourceParameterized = true;
+		definition.grantedTags = {
+			ly::GameplayTags::State::Effect::OverdriveCore::AttackSpeedBoost
+		};
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Offense.OverdriveCore.AttackSpeedBoost";
+		return definition;
+	}();
+
+	// Phase Drift owns the actual movement/resource multipliers in the reusable
+	// ship runtime modifier set. These policy effects provide source-scoped
+	// lifecycle records so the ability can track and remove only its own effects.
+	inline const sas::GameplayEffectDefinition PhaseDriftMovementBoostEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::PhaseDrift::Effect::MovementBoostId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.duration = 6.f;
+		definition.maxStacks = 1;
+		definition.grantedTags = { ly::GameplayTags::State::Effect::Movement::Boost };
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Defense.PhaseDrift.Movement";
+		definition.sourceScopedApplication = true;
+		return definition;
+	}();
+
+	inline const sas::GameplayEffectDefinition PhaseDriftShieldRecoveryEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::PhaseDrift::Effect::ShieldRecoveryId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.duration = 6.f;
+		definition.maxStacks = 1;
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Defense.PhaseDrift.ShieldRecovery";
+		definition.sourceScopedApplication = true;
+		return definition;
+	}();
+
+	inline const sas::GameplayEffectDefinition PhaseDriftAfterburnerRecoveryEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::PhaseDrift::Effect::AfterburnerRecoveryId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.duration = 6.f;
+		definition.maxStacks = 1;
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Defense.PhaseDrift.AfterburnerRecovery";
+		definition.sourceScopedApplication = true;
+		return definition;
+	}();
+
+	// Control effects are policy-only definitions. Null Pulse supplies the
+	// resolved duration and target-side response at application time.
+	inline const sas::GameplayEffectDefinition NullPulseStunEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::NullPulse::Effect::StunId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.grantedTags = {
+			ly::GameplayTags::State::Effect::Control::Stunned
+		};
+		definition.disposition = sas::GameplayEffectDisposition::Harmful;
+		definition.cleanseable = true;
+		definition.category = "Control.Stun";
+		definition.immunityCategory = "Control.Stun";
+		definition.sourceParameterized = true;
+		return definition;
+	}();
+
+	inline const sas::GameplayEffectDefinition NullPulseStaggerEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::NullPulse::Effect::StaggerId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.grantedTags = {
+			ly::GameplayTags::State::Effect::Control::Staggered
+		};
+		definition.disposition = sas::GameplayEffectDisposition::Harmful;
+		definition.cleanseable = true;
+		definition.category = "Control.Stagger";
+		definition.immunityCategory = "Control.Stagger";
+		definition.sourceParameterized = true;
+		return definition;
+	}();
 
 	inline const ly::List<const sas::GameplayEffectDefinition*>&
 	GetBuiltinGameplayEffectDefinitions()
@@ -182,7 +389,14 @@ namespace EffectData
 			&CryoSlowEffect,
 			&ElectricEffect,
 			&GravityAnomalyInsideEffect,
-			&MovementSlowEffect
+			&MovementSlowEffect,
+			&MovementSlowImmunityEffect,
+			&OverdriveCoreAttackSpeedBoostEffect,
+			&PhaseDriftMovementBoostEffect,
+			&PhaseDriftShieldRecoveryEffect,
+			&PhaseDriftAfterburnerRecoveryEffect,
+			&NullPulseStunEffect,
+			&NullPulseStaggerEffect
 		};
 		return definitions;
 	}

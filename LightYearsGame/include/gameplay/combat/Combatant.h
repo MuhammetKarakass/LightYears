@@ -2,6 +2,7 @@
 
 #include "AbilitySystemInterface.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageContext.h"
 
 namespace ly
@@ -15,6 +16,13 @@ namespace ly
 		virtual ~Combatant() = default;
 		virtual CombatRuntime& GetCombatRuntime() = 0;
 		virtual const CombatRuntime& GetCombatRuntime() const = 0;
+		virtual ControlResponse ResolveControlResponse(
+			const GameplayTag& controlTag
+		) const
+		{
+			(void)controlTag;
+			return {};
+		}
 		LightYearsAbilitySystemComponent&
 			GetAbilitySystemComponent() override;
 		virtual const LightYearsAbilitySystemComponent&
@@ -35,5 +43,15 @@ namespace ly
 		Actor* source,
 		const List<GameplayTag>& damageTags,
 		const DamagePayload& payload
+	);
+
+	void ApplyCombatDamage(
+		Actor& target,
+		float damage,
+		Actor* source,
+		const List<GameplayTag>& damageTags,
+		const DamagePayload& payload,
+		const sas::ContentId& sourceAbilityId,
+		const List<GameplayTag>& sourceAbilityTags
 	);
 }

@@ -1,15 +1,13 @@
 #include "gameplay/ability/content/NumericSettingContractRegistry.h"
-#include "gameplay/tags/GameplayTagSchema.h"
-
 #include <map>
 
 namespace ly::content
 {
 	namespace
 	{
-		std::map<GameplayTag, NumericSettingContract>& GetContracts()
+		std::map<AbilityBehaviorType, NumericSettingContract>& GetContracts()
 		{
-			static std::map<GameplayTag, NumericSettingContract> contracts;
+			static std::map<AbilityBehaviorType, NumericSettingContract> contracts;
 			return contracts;
 		}
 
@@ -21,25 +19,11 @@ namespace ly::content
 	}
 
 	bool NumericSettingContractRegistry::Register(
-		const GameplayTag& behaviorTag,
+		AbilityBehaviorType behaviorType,
 		const NumericSettingContract& contract,
 		std::string* failureReason
 	)
 	{
-		std::string tagFailureReason;
-		if (!GameplayTagSchema::Validate(
-			behaviorTag,
-			GameplayTagKind::AbilityBehavior,
-			&tagFailureReason
-		))
-		{
-			if (failureReason)
-			{
-				*failureReason = "Numeric setting contract behavior tag is invalid: " +
-					tagFailureReason;
-			}
-			return false;
-		}
 		for (const std::string& requiredSetting : contract.required)
 		{
 			if (contract.allowed.find(requiredSetting) == contract.allowed.end())
@@ -47,17 +31,17 @@ namespace ly::content
 				if (failureReason)
 				{
 					*failureReason = "Required numeric setting '" + requiredSetting +
-						"' is not allowed for behavior '" + behaviorTag.ToString() + "'.";
+						"' is not allowed for behavior '" + std::string{ ToString(behaviorType) } + "'.";
 				}
 				return false;
 			}
 		}
 
 		auto& contracts = GetContracts();
-		const auto found = contracts.find(behaviorTag);
+		const auto found = contracts.find(behaviorType);
 		if (found == contracts.end())
 		{
-			contracts.emplace(behaviorTag, contract);
+			contracts.emplace(behaviorType, contract);
 			return true;
 		}
 		if (found->second == contract)
@@ -67,16 +51,16 @@ namespace ly::content
 		if (failureReason)
 		{
 			*failureReason = "Conflicting numeric setting contract for behavior '" +
-				behaviorTag.ToString() + "'.";
+				std::string{ ToString(behaviorType) } + "'.";
 		}
 		return false;
 	}
 
 	const NumericSettingContract& NumericSettingContractRegistry::Find(
-		const GameplayTag& behaviorTag
+		AbilityBehaviorType behaviorType
 	)
 	{
-		const auto found = GetContracts().find(behaviorTag);
+		const auto found = GetContracts().find(behaviorType);
 		return found != GetContracts().end() ? found->second : GetEmptyContract();
 	}
 }

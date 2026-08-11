@@ -33,19 +33,19 @@ namespace sas
 			EventHandler processEvent = nullptr;
 		};
 
-		bool Register(const ly::GameplayTag& behaviorTag, const Hooks& hooks)
+		bool Register(const GameplayEffectBehaviorKey& behaviorKey, const Hooks& hooks)
 		{
-			if (!behaviorTag.IsValid() ||
+			if (!behaviorKey.IsValid() ||
 				(!hooks.addStack && !hooks.tick && !hooks.processEvent))
 			{
 				return false;
 			}
-			return mRegistry.Register(behaviorTag, hooks);
+			return mRegistry.Register(behaviorKey, hooks);
 		}
 
-		bool IsRegistered(const ly::GameplayTag& behaviorTag) const
+		bool IsRegistered(const GameplayEffectBehaviorKey& behaviorKey) const
 		{
-			return mRegistry.IsRegistered(behaviorTag);
+			return mRegistry.IsRegistered(behaviorKey);
 		}
 
 		bool AddStack(ActiveEffect& effect) const
@@ -94,7 +94,7 @@ namespace sas
 	private:
 		const Hooks* Find(const ActiveEffect& effect) const
 		{
-			return mRegistry.Find(effect.spec.definition.behaviorTag);
+			return mRegistry.Find(effect.spec.definition.behaviorKey);
 		}
 
 		GameplayEffectBehaviorRegistry<Hooks> mRegistry;

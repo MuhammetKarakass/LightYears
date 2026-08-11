@@ -17,7 +17,12 @@ namespace ly
 
 		},
 		LevelOneBoss::GetDefaultRewards(),
-		""
+		"",
+		ShipMovementAttributes{},
+		ShipEnergyAttributes{},
+		ShipProgressionDefinition{},
+		-1.f,
+		ControlTargetClass::Boss
 	);
 
 	LevelOneBoss::LevelOneBoss(World* world)

@@ -64,6 +64,18 @@ namespace ly::AbilityActionAttributeResolver
 				weaponDefinition,
 				context.instance
 			);
+			if (!weaponDefinition)
+			{
+				value = context.abilitySystem->ApplyScopedAbilityModifiers(
+					*context.definition,
+					sas::GameplayAttribute{
+						attribute.id,
+						value,
+						attribute.minValue,
+						attribute.maxValue
+					}
+				).currentValue;
+			}
 			value = sas::ApplyAttributeScalings(
 				value,
 				attribute.id,
@@ -141,6 +153,22 @@ namespace ly::AbilityActionAttributeResolver
 			}
 		}
 		return values;
+	}
+
+	sas::GameplayAttributeList ResolveAbilityAttributes(
+		AbilityExecutionContext& context
+	)
+	{
+		if (!context.definition)
+		{
+			return {};
+		}
+
+		return ResolveAttributes(
+			context,
+			nullptr,
+			context.definition->attributes
+		);
 	}
 
 	float ResolveEffectiveInterval(

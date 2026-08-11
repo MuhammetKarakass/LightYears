@@ -1,6 +1,7 @@
 #pragma once
 
 #include "presentation/ability/common/AreaTelegraphVisualDefinition.h"
+#include "content/ContentId.h"
 
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -41,7 +42,7 @@ namespace ly
 
 	struct SunBeamPresentationProfile
 	{
-		std::string profileId;
+		sas::ContentId profileId;
 		SunBeamVisualDefinition visual;
 		AreaTelegraphVisualDefinition telegraph;
 	};

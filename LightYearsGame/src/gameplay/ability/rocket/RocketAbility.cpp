@@ -15,10 +15,10 @@ namespace ly
 	{
 		std::optional<float> FindActorAttribute(
 			const AbilityActorDefinition& actor,
-			const GameplayTag& attributeId
+			const sas::AttributeId& attributeId
 		)
 		{
-			const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(
+			const sas::GameplayAttribute* attribute = sas::FindAttribute(
 				actor.attributes,
 				attributeId
 			);
@@ -27,7 +27,7 @@ namespace ly
 
 		bool HasExpectedModifier(
 			const AbilityLevelStep& step,
-			const GameplayTag& attributeId,
+			const sas::AttributeId& attributeId,
 			float magnitude)
 		{
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
@@ -44,7 +44,7 @@ namespace ly
 
 		std::optional<float> FindModifierMagnitude(
 			const AbilityLevelStep& step,
-			const GameplayTag& attributeId
+			const sas::AttributeId& attributeId
 		)
 		{
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
@@ -81,7 +81,7 @@ namespace ly
 		std::string* failureReason) const
 	{
 		const AbilityActorDefinition* actor = AbilityData::FindAbilityActorDefinition(
-			AbilityData::Rocket::ActorProjectileBasic.actorDefinitionId
+			AbilityData::Rocket::ActorProjectileBasic.actorDefinitionId.ToString()
 		);
 		const std::optional<float> baseDamage = actor
 			? FindActorAttribute(*actor, CommonAttributeIds::Damage)

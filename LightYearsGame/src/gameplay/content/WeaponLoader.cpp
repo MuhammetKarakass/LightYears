@@ -1,5 +1,6 @@
 #include "gameplay/content/WeaponLoader.h"
 
+#include "attributes/AttributeId.h"
 #include "gameplay/content/ContentIdSchema.h"
 
 #include "framework/JsonDocumentLoader.h"
@@ -68,7 +69,7 @@ namespace ly::content
 		sas::GameplayAttribute ParseAttribute(const Json& object)
 		{
 			return sas::GameplayAttribute{
-				GameplayTag{ RequiredString(object, "id") },
+				sas::AttributeId{ RequiredString(object, "id") },
 				object.at("baseValue").get<float>(),
 				object.value("minValue", 0.f),
 				object.value(
@@ -81,7 +82,7 @@ namespace ly::content
 		sas::AttributeModifier ParseModifier(const Json& object)
 		{
 			return sas::AttributeModifier{
-				GameplayTag{ RequiredString(object, "attributeId") },
+				sas::AttributeId{ RequiredString(object, "attributeId") },
 				ParseOperation(RequiredString(object, "operation")),
 				object.at("magnitude").get<float>(),
 				object.value("priority", 0)
@@ -98,6 +99,16 @@ namespace ly::content
 			return modifiers;
 		}
 
+		ly::List<std::string> ParseUpgradeIds(const Json& values)
+		{
+			ly::List<std::string> ids;
+			for (const Json& value : values)
+			{
+				ids.emplace_back(value.get<std::string>());
+			}
+			return ids;
+		}
+
 		ly::List<GameplayTag> ParseTags(const Json& values)
 		{
 			ly::List<GameplayTag> tags;
@@ -106,6 +117,32 @@ namespace ly::content
 				tags.emplace_back(GameplayTag{ value.get<std::string>() });
 			}
 			return tags;
+		}
+
+		PrimaryWeaponType ParseWeaponType(const std::string& value)
+		{
+			if (value == "PrimaryWeapon.Projectile.Standard") return PrimaryWeaponType::ProjectileStandard;
+			if (value == "PrimaryWeapon.Projectile.Shotgun") return PrimaryWeaponType::ProjectileShotgun;
+			if (value == "PrimaryWeapon.Arc.Electric") return PrimaryWeaponType::ArcElectric;
+			if (value == "PrimaryWeapon.Beam.Continuous") return PrimaryWeaponType::BeamContinuous;
+			if (value == "PrimaryWeapon.Wave.Expanding") return PrimaryWeaponType::WaveExpanding;
+			throw std::runtime_error("Unknown primary weapon type: " + value);
+		}
+
+		PrimaryWeaponFeatureType ParseFeatureType(const std::string& value)
+		{
+			if (value == "PrimaryWeapon.Feature.Heat") return PrimaryWeaponFeatureType::Heat;
+			throw std::runtime_error("Unknown primary weapon feature: " + value);
+		}
+
+		ly::List<PrimaryWeaponFeatureType> ParseFeatureTypes(const Json& values)
+		{
+			ly::List<PrimaryWeaponFeatureType> types;
+			for (const Json& value : values)
+			{
+				types.push_back(ParseFeatureType(value.get<std::string>()));
+			}
+			return types;
 		}
 
 		WeaponPresentationDefinition ParsePresentation(const Json& object)
@@ -144,8 +181,8 @@ namespace ly::content
 		{
 			return PrimaryWeaponLevelStep{
 				ParseModifiers(object.value("attributeModifiers", Json::array())),
-				ParseTags(object.value("unlockedUpgradeIds", Json::array())),
-				ParseTags(object.value("unlockedFeatureTags", Json::array()))
+				ParseUpgradeIds(object.value("unlockedUpgradeIds", Json::array())),
+				ParseFeatureTypes(object.value("unlockedFeatureTags", Json::array()))
 			};
 		}
 
@@ -180,9 +217,7 @@ namespace ly::content
 			{
 				throw std::runtime_error(weaponIdFailure);
 			}
-			definition.weaponTypeTag = GameplayTag{
-				RequiredString(object, "typeTag")
-			};
+			definition.weaponType = ParseWeaponType(RequiredString(object, "typeTag"));
 			definition.presentationDefinition = ParsePresentation(
 				object.at("presentation")
 			);
@@ -208,14 +243,14 @@ namespace ly::content
 			for (const Json& scalingRule : object.value("scalingRules", Json::array()))
 			{
 				definition.scalingRules.emplace_back(sas::AttributeScalingRule{
-					GameplayTag{ RequiredString(scalingRule, "targetAttributeId") },
-					GameplayTag{ RequiredString(scalingRule, "sourceAttributeId") },
+					sas::AttributeId{ RequiredString(scalingRule, "targetAttributeId") },
+					sas::AttributeId{ RequiredString(scalingRule, "sourceAttributeId") },
 					ParseOperation(RequiredString(scalingRule, "operation")),
 					scalingRule.value("coefficient", 1.f)
 				});
 			}
 
-			definition.featureTags = ParseTags(
+			definition.featureTypes = ParseFeatureTypes(
 				object.value("featureTags", Json::array())
 			);
 			for (const Json& segment : object.value("heatGainCurve", Json::array()))

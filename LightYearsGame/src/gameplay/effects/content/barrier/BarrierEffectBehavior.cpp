@@ -9,11 +9,11 @@ namespace ly::BarrierEffectBehavior
 {
 	void AddStack(sas::ActiveGameplayEffect& effect)
 	{
-		sas::GameplayAttribute* runtimeCapacity = sas::FindGameplayAttribute(
+		sas::GameplayAttribute* runtimeCapacity = sas::FindAttribute(
 			effect.runtimeAttributes,
 			BarrierEffectSchema::Capacity
 		);
-		const sas::GameplayAttribute* stackCapacity = sas::FindGameplayAttribute(
+		const sas::GameplayAttribute* stackCapacity = sas::FindAttribute(
 			effect.spec.attributes,
 			BarrierEffectSchema::Capacity
 		);
@@ -41,11 +41,11 @@ namespace ly::BarrierEffectBehavior
 			return result;
 		}
 
-		sas::GameplayAttribute* capacity = sas::FindGameplayAttribute(
+		sas::GameplayAttribute* capacity = sas::FindAttribute(
 			effect.runtimeAttributes,
 			BarrierEffectSchema::Capacity
 		);
-		sas::GameplayAttribute* regenerationDelayRemaining = sas::FindGameplayAttribute(
+		sas::GameplayAttribute* regenerationDelayRemaining = sas::FindAttribute(
 			effect.runtimeAttributes,
 			BarrierEffectSchema::RegenerationDelayRemaining
 		);
@@ -69,7 +69,7 @@ namespace ly::BarrierEffectBehavior
 
 		const float regenerationPerSecond = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				effect.runtimeAttributes,
 				BarrierEffectSchema::RegenerationPerSecond,
 				0.f
@@ -100,7 +100,7 @@ namespace ly::BarrierEffectBehavior
 			return result;
 		}
 
-		sas::GameplayAttribute* capacity = sas::FindGameplayAttribute(
+		sas::GameplayAttribute* capacity = sas::FindAttribute(
 			effect.runtimeAttributes,
 			BarrierEffectSchema::Capacity
 		);
@@ -110,7 +110,7 @@ namespace ly::BarrierEffectBehavior
 		}
 
 		const float absorptionRatio = std::clamp(
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				effect.runtimeAttributes,
 				BarrierEffectSchema::AbsorptionRatio,
 				1.f
@@ -136,14 +136,14 @@ namespace ly::BarrierEffectBehavior
 		context.absorbedDamage += absorbedSourceDamage;
 		result.changed = absorbedShieldDamage > 0.f;
 
-		if (sas::GameplayAttribute* regenerationDelayRemaining = sas::FindGameplayAttribute(
+		if (sas::GameplayAttribute* regenerationDelayRemaining = sas::FindAttribute(
 			effect.runtimeAttributes,
 			BarrierEffectSchema::RegenerationDelayRemaining
 		))
 		{
 			const float baseDelay = std::max(
 				0.f,
-				sas::FindGameplayAttributeValue(
+				sas::FindAttributeValue(
 					effect.runtimeAttributes,
 					BarrierEffectSchema::RegenerationDelay,
 					0.f
@@ -178,7 +178,7 @@ namespace ly::BarrierEffectBehavior
 				IncomingDamagePhase::Standard;
 			hooks.processEvent = &ProcessIncomingDamage;
 			return GetEffectBehaviorRuntime().Register(
-				BarrierEffectSchema::BehaviorTag,
+				EffectData::BarrierBehaviorKey,
 				hooks
 			);
 		}();

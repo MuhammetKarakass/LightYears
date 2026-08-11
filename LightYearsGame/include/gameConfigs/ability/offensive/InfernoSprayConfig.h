@@ -6,19 +6,20 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayContracts.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/infernoSpray/InfernoSprayPresentationIds.h"
 
 namespace AbilityData
 {
 	namespace InfernoSpray
 	{
-		// Actor/behavior/presentation contract only. Numeric tuning lives in abilities.json.
+		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
 
 		inline const ly::AbilityActorDefinition ActorFlameConeBasic = []
 		{
 			ly::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::FlameCone::BasicDefinitionId;
-			definition.actorTypeTag = Actor::FlameCone::TypeTag;
+			definition.actorType = ly::AbilityActorType::InfernoSprayFlameCone;
 			definition.presentationProfileId =
 				ly::InfernoSprayPresentationIds::FlameConeBasic;
 			return definition;
@@ -39,8 +40,8 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				InfernoSpray::CategoryTag,
-				InfernoSpray::FamilyTag
+				ly::GameplayTags::Ability::Offense,
+				ly::GameplayTags::Ability::Family::InfernoSpray
 			};
 			definition.damageTags = {
 				ly::DamageTypeSchema::Thermal
@@ -61,7 +62,7 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorTag = InfernoSpray::BehaviorTag;
+			definition.behaviorType = ly::AbilityBehaviorType::InfernoSpray;
 			return definition;
 		}();
 	}

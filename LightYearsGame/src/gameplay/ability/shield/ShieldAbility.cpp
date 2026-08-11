@@ -27,7 +27,7 @@ namespace ly
 			}
 			return false;
 		}
-		for (const GameplayTag& requiredAttribute : {
+		for (const sas::AttributeId& requiredAttribute : {
 			BarrierEffectSchema::Capacity,
 			BarrierEffectSchema::AbsorptionRatio,
 			BarrierEffectSchema::RegenerationPerSecond,
@@ -35,7 +35,7 @@ namespace ly
 			BarrierEffectSchema::RegenerationDelayRemaining
 		})
 		{
-			if (!sas::FindGameplayAttribute(barrierSpec->attributes, requiredAttribute))
+			if (!sas::FindAttribute(barrierSpec->attributes, requiredAttribute))
 			{
 				if (failureReason)
 				{

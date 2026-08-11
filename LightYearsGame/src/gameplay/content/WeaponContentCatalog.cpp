@@ -45,18 +45,18 @@ namespace ly::content
 
 		bool RequireDamageAttributes(
 			const PrimaryWeaponDefinition& definition,
-			const List<GameplayTag>& required,
+			const List<sas::AttributeId>& required,
 			std::string* failureReason
 		)
 		{
-			for (const GameplayTag& attributeId : required)
+			for (const sas::AttributeId& attributeId : required)
 			{
-				if (!sas::FindGameplayAttribute(definition.attributes, attributeId))
+				if (!sas::FindAttribute(definition.attributes, attributeId))
 				{
 					return Fail(
 						failureReason,
 						"Weapon '" + definition.weaponId + "' owns damage type values but is missing '" +
-						attributeId.ToString() + "'."
+						std::string{ attributeId.GetName() } + "'."
 					);
 				}
 			}

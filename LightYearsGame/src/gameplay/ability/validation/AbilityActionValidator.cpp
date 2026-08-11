@@ -33,7 +33,7 @@ namespace ly
 			else if (const auto* spawnActor = std::get_if<SpawnActorAction>(&action.action))
 			{
 				const AbilityActorDefinition* actorDefinition =
-					AbilityData::FindAbilityActorDefinition(spawnActor->actorDefinitionId);
+					AbilityData::FindAbilityActorDefinition(spawnActor->actorDefinitionId.ToString());
 				if (!actorDefinition)
 				{
 					if (failureReason)
@@ -57,7 +57,7 @@ namespace ly
 			else if (const auto* applyEffect = std::get_if<ApplyEffectAction>(&action.action))
 			{
 				const sas::GameplayEffectDefinition* definition =
-					EffectData::FindGameplayEffectDefinition(applyEffect->effectId);
+					EffectData::FindGameplayEffectDefinition(applyEffect->effectId.ToString());
 				if (!definition)
 				{
 					if (failureReason)
@@ -69,6 +69,21 @@ namespace ly
 				}
 				if (!validateEffect || !validateEffect(*definition, failureReason))
 				{
+					return false;
+				}
+			}
+			else if (const auto* removeEffects = std::get_if<RemoveEffectsAction>(&action.action))
+			{
+				if (!removeEffects->disposition.has_value() &&
+					!removeEffects->cleanseableOnly &&
+					removeEffects->category.empty() &&
+					removeEffects->immunityCategory.empty())
+				{
+					if (failureReason)
+					{
+						*failureReason =
+							"Remove effects action requires at least one metadata filter.";
+					}
 					return false;
 				}
 			}

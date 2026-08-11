@@ -3,9 +3,11 @@
 #include "framework/Core.h"
 #include "gameplay/ability/content/GameAbilityActions.h"
 #include "gameplay/ability/content/GameAbilityProgression.h"
+#include "gameplay/ability/content/AbilityBehaviorType.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "abilities/AbilityDefinition.h"
 #include "attributes/AttributeSystem.h"
+#include "content/ContentId.h"
 
 #include <SFML/Graphics/Color.hpp>
 #include <optional>
@@ -13,16 +15,9 @@
 
 namespace ly
 {
-	struct AbilityBehaviorSchema
-	{
-		// This is the generic fallback behavior used by content-only definitions.
-		// Concrete ability families own their behavior tags in feature contracts.
-		inline static const GameplayTag Configured{ "GameAbilityBehavior.Configured" };
-	};
-
 	struct AbilityEffectSpecDefinition
 	{
-		std::string effectId;
+		sas::ContentId effectId;
 		bool useAbilityDuration = false;
 		std::optional<float> duration;
 		std::optional<int> maxStacks;
@@ -38,6 +33,12 @@ namespace ly
 		sf::Color accentColor = sf::Color::White;
 		List<AbilityActionSpec> actions;
 		List<AbilityTriggerSpec> triggers;
+		// Ability-scoped numeric values are materialized from the ability JSON
+		// "attributes" array. This list may contain shared Common.* values such
+		// as Common.ProjectileCount and feature-local Ability.* values. They are
+		// resolved per ability execution and are deliberately not registered in
+		// the owner's global AttributeSystem.
+		sas::GameplayAttributeList attributes;
 		// Source-owned balance values used to parameterize policy-only effects.
 		List<AbilityEffectSpecDefinition> effectSpecs;
 		List<AbilityLevelStep> levelProgression;
@@ -48,9 +49,9 @@ namespace ly
 		List<GameplayTag> damageTags;
 		List<GameplayTag> attachmentCapabilities;
 		size_t attachmentSlotCapacity = 2;
-		GameplayTag behaviorTag = AbilityBehaviorSchema::Configured;
+		AbilityBehaviorType behaviorType = AbilityBehaviorType::Configured;
 
-		const AbilityEffectSpecDefinition* FindEffectSpec(const std::string& effectId) const
+		const AbilityEffectSpecDefinition* FindEffectSpec(const sas::ContentId& effectId) const
 		{
 			for (const AbilityEffectSpecDefinition& spec : effectSpecs)
 			{
@@ -82,11 +83,11 @@ namespace ly
 				: 0;
 		}
 
-		bool HasUnlockedUpgrade(const GameplayTag& upgradeId) const
+		bool HasUnlockedUpgrade(const std::string& upgradeId) const
 		{
-			for (const GameplayTag& unlockedUpgradeId : unlockedUpgradeIds)
+			for (const std::string& unlockedUpgradeId : unlockedUpgradeIds)
 			{
-				if (unlockedUpgradeId.MatchesTag(upgradeId))
+				if (unlockedUpgradeId == upgradeId)
 				{
 					return true;
 				}

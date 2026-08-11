@@ -1,29 +1,33 @@
 #pragma once
 
-#include "framework/Core.h"
+#include "effects/GameplayEffectBehaviorKey.h"
 
 #include <unordered_map>
 #include <utility>
 
 namespace sas
 {
-	template <typename Hooks>
+	template <
+		typename Hooks,
+		typename Key = GameplayEffectBehaviorKey,
+		typename Hash = std::hash<Key>
+	>
 	class GameplayEffectBehaviorRegistry
 	{
 	public:
-		bool Register(const ly::GameplayTag& behaviorTag, Hooks hooks)
+		bool Register(const Key& behaviorKey, Hooks hooks)
 		{
-			return mHooks.emplace(behaviorTag, std::move(hooks)).second;
+			return mHooks.emplace(behaviorKey, std::move(hooks)).second;
 		}
 
-		bool IsRegistered(const ly::GameplayTag& behaviorTag) const
+		bool IsRegistered(const Key& behaviorKey) const
 		{
-			return mHooks.find(behaviorTag) != mHooks.end();
+			return mHooks.find(behaviorKey) != mHooks.end();
 		}
 
-		const Hooks* Find(const ly::GameplayTag& behaviorTag) const
+		const Hooks* Find(const Key& behaviorKey) const
 		{
-			const auto found = mHooks.find(behaviorTag);
+			const auto found = mHooks.find(behaviorKey);
 			return found != mHooks.end() ? &found->second : nullptr;
 		}
 
@@ -33,6 +37,6 @@ namespace sas
 		}
 
 	private:
-		std::unordered_map<ly::GameplayTag, Hooks, ly::GameplayTagHash> mHooks;
+		std::unordered_map<Key, Hooks, Hash> mHooks;
 	};
 }

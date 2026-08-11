@@ -7,19 +7,20 @@
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/sunBeam/SunBeamContracts.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationIds.h"
 
 namespace AbilityData
 {
 	namespace SunBeam
 	{
-		// Actor/behavior/presentation contract only. Numeric tuning lives in abilities.json.
+		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
 
 		inline const ly::AbilityActorDefinition ActorStrikeBasic = []
 		{
 			ly::AbilityActorDefinition definition;
 			definition.actorDefinitionId = Actor::Strike::BasicDefinitionId;
-			definition.actorTypeTag = Actor::Strike::TypeTag;
+			definition.actorType = ly::AbilityActorType::SunBeamStrike;
 			definition.presentationProfileId = ly::SunBeamPresentationIds::StrikeBasic;
 			return definition;
 		}();
@@ -39,8 +40,8 @@ namespace AbilityData
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
 			definition.abilityTags = {
-				SunBeam::CategoryTag,
-				SunBeam::FamilyTag
+				ly::GameplayTags::Ability::Offense,
+				ly::GameplayTags::Ability::Family::SunBeam
 			};
 			definition.displayName = "Sun Beam";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
@@ -57,7 +58,7 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.behaviorTag = SunBeam::BehaviorTag;
+			definition.behaviorType = ly::AbilityBehaviorType::SunBeam;
 			return definition;
 		}();
 	}

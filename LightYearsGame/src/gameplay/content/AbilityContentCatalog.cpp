@@ -118,7 +118,7 @@ namespace ly::content
 	{
 		for (const AbilityActorDefinition* definition : GetActorDefinitionPointers())
 		{
-			if (definition && definition->actorDefinitionId == actorDefinitionId)
+			if (definition && definition->actorDefinitionId.ToString() == actorDefinitionId)
 			{
 				return definition;
 			}

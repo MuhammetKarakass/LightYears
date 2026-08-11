@@ -21,6 +21,5 @@ namespace ly
 		sas::GameplayEffectHandle mMovementPenaltyEffectHandle;
 		float mActiveTime = 0.f;
 		bool mStarted = false;
-		bool mCancelAvailableFired = false;
 	};
 }

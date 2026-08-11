@@ -3,65 +3,65 @@
 
 namespace ly::PrimaryWeaponBuiltIns
 {
-	const List<GameplayTag>& ProjectileDeliveryAttributeRoots()
+	const List<sas::AttributeId>& ProjectileDeliveryAttributeRoots()
 	{
-		static const List<GameplayTag> roots{
-			PrimaryWeaponSchema::Projectile::Delivery::AttributeRoot
+		static const List<sas::AttributeId> roots{
+			PrimaryWeaponSchema::Projectile::Delivery::Root
 		};
 		return roots;
 	}
 
-	const List<GameplayTag>& ShotgunAttributeRoots()
+	const List<sas::AttributeId>& ShotgunAttributeRoots()
 	{
-		static const List<GameplayTag> roots{
-			PrimaryWeaponSchema::Projectile::Shotgun::AttributeRoot
+		static const List<sas::AttributeId> roots{
+			PrimaryWeaponSchema::Projectile::Shotgun::Root
 		};
 		return roots;
 	}
 
-	const List<GameplayTag>& ArcAttributeRoots()
+	const List<sas::AttributeId>& ArcAttributeRoots()
 	{
-		static const List<GameplayTag> roots{
-			PrimaryWeaponSchema::Arc::Electric::AttributeRoot
+		static const List<sas::AttributeId> roots{
+			PrimaryWeaponSchema::Arc::Electric::Root
 		};
 		return roots;
 	}
 
-	const List<GameplayTag>& BeamDeliveryAttributeRoots()
+	const List<sas::AttributeId>& BeamDeliveryAttributeRoots()
 	{
-		static const List<GameplayTag> roots{
-			PrimaryWeaponSchema::Beam::Delivery::AttributeRoot
+		static const List<sas::AttributeId> roots{
+			PrimaryWeaponSchema::Beam::Delivery::Root
 		};
 		return roots;
 	}
 
-	const List<GameplayTag>& WaveDeliveryAttributeRoots()
+	const List<sas::AttributeId>& WaveDeliveryAttributeRoots()
 	{
-		static const List<GameplayTag> roots{
-			PrimaryWeaponSchema::Wave::Delivery::AttributeRoot
+		static const List<sas::AttributeId> roots{
+			PrimaryWeaponSchema::Wave::Delivery::Root
 		};
 		return roots;
 	}
 
-	const List<GameplayTag>& HeatAttributeRoots()
+	const List<sas::AttributeId>& HeatAttributeRoots()
 	{
-		static const List<GameplayTag> roots{
-			PrimaryWeaponSchema::Feature::Heat::AttributeRoot
+		static const List<sas::AttributeId> roots{
+			PrimaryWeaponSchema::Feature::Heat::Root
 		};
 		return roots;
 	}
 
 	const sas::GameplayAttribute* FindDefinitionAttribute(
 		const PrimaryWeaponDefinition& definition,
-		const GameplayTag& attributeId
+		const sas::AttributeId& attributeId
 	)
 	{
-		return sas::FindGameplayAttribute(definition.attributes, attributeId);
+		return sas::FindAttribute(definition.attributes, attributeId);
 	}
 
 	PrimaryWeaponValidationResult RequireAttribute(
 		const PrimaryWeaponDefinition& definition,
-		const GameplayTag& attributeId,
+		const sas::AttributeId& attributeId,
 		const char* ownerName
 	)
 	{
@@ -69,7 +69,7 @@ namespace ly::PrimaryWeaponBuiltIns
 			? PrimaryWeaponValidationResult{ true, {} }
 			: PrimaryWeaponValidationResult{
 				false,
-				std::string{ ownerName } + " requires attribute '" + attributeId.ToString() + "'."
+				std::string{ ownerName } + " requires attribute '" + std::string{ attributeId.GetName() } + "'."
 			};
 	}
 }

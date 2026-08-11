@@ -1,7 +1,9 @@
 #include "effects/GameplayEffectDefinitionValidation.h"
 
 #include <cmath>
+#include <cctype>
 #include <unordered_set>
+#include <utility>
 
 namespace sas
 {
@@ -14,6 +16,34 @@ namespace sas
 				*failureReason = reason;
 			}
 			return false;
+		}
+
+		bool IsCanonicalMetadataKey(const std::string& value)
+		{
+			if (value.empty() || value.front() == '.' || value.back() == '.')
+			{
+				return false;
+			}
+
+			bool beginsSegment = true;
+			for (const unsigned char character : value)
+			{
+				if (character == '.')
+				{
+					if (beginsSegment)
+					{
+						return false;
+					}
+					beginsSegment = true;
+					continue;
+				}
+				if (!std::isalnum(character) && character != '_')
+				{
+					return false;
+				}
+				beginsSegment = false;
+			}
+			return !beginsSegment;
 		}
 	}
 
@@ -43,6 +73,22 @@ namespace sas
 				"Gameplay effect '" + definition.effectId +
 					"' requires maxStacks >= 1."
 			);
+		}
+		for (const std::pair<const char*, const std::string*> metadata : {
+			std::pair{ "category", &definition.category },
+			std::pair{ "immunityCategory", &definition.immunityCategory },
+			std::pair{ "grantedImmunityCategory", &definition.grantedImmunityCategory }
+		})
+		{
+			if (!metadata.second->empty() &&
+				!IsCanonicalMetadataKey(*metadata.second))
+			{
+				return Fail(
+					failureReason,
+					"Gameplay effect '" + definition.effectId +
+					"' has invalid " + metadata.first + "."
+				);
+			}
 		}
 		for (const AttributeModifier& modifier : definition.modifiers)
 		{

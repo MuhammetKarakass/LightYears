@@ -6,6 +6,9 @@
 #include "framework/Delegate.h"
 #include "presentation/effects/GameplayEffectPresentationBinding.h"
 
+#include <string>
+#include <unordered_map>
+
 namespace ly
 {
 	class Actor;
@@ -20,6 +23,17 @@ namespace ly
 		float GetCombatLuckFactor() const;
 		void Tick(float deltaTime);
 		void Clear();
+
+		// Abilities can register temporary, source-owned combat protection
+		// without making ship classes know the ability family that requested it.
+		void SetDamageProtection(
+			const std::string& sourceId,
+			bool blocksIncomingDamage,
+			bool blocksOutgoingDamage
+		);
+		void RemoveDamageProtection(const std::string& sourceId);
+		bool BlocksIncomingDamage() const;
+		bool BlocksOutgoingDamage() const;
 
 		LightYearsAbilitySystemComponent& GetAbilitySystemComponent()
 		{
@@ -48,6 +62,12 @@ namespace ly
 		GameplayEffectPresentationBinding mEffectPresentation;
 		List<sas::AbilityEvent> mPendingEffectEvents;
 		const DamageContext* mProcessingDamageContext = nullptr;
+		struct DamageProtection
+		{
+			bool blocksIncomingDamage = false;
+			bool blocksOutgoingDamage = false;
+		};
+		std::unordered_map<std::string, DamageProtection> mDamageProtections;
 	};
 }
 

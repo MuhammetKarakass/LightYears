@@ -15,4 +15,11 @@ namespace sas
 		RefreshDuration,
 		Stack
 	};
+
+	enum class GameplayEffectDisposition
+	{
+		Beneficial,
+		Harmful,
+		Neutral
+	};
 }

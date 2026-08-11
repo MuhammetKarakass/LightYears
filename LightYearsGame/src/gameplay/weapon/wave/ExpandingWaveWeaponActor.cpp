@@ -59,28 +59,28 @@ namespace ly
 		const List<GameplayTag>& damageTags
 	)
 		: AbilityWorldActor(world, owner)
-		, mSpeed(std::max(0.f, sas::FindGameplayAttributeValue(
+		, mSpeed(std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::Speed,
 			0.f
 		)))
-		, mMaxTravelDistance(std::max(0.f, sas::FindGameplayAttributeValue(
+		, mMaxTravelDistance(std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			CommonAttributeIds::Range,
 			0.f
 		)))
-		, mInitialWidth(std::max(1.f, sas::FindGameplayAttributeValue(
+		, mInitialWidth(std::max(1.f, sas::FindAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::InitialWidth,
 			1.f
 		)))
-		, mMaximumWidth(std::max(mInitialWidth, sas::FindGameplayAttributeValue(
+		, mMaximumWidth(std::max(mInitialWidth, sas::FindAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::MaximumWidth,
 			mInitialWidth
 		)))
 		, mCurrentWidth(mInitialWidth)
-		, mThickness(std::max(1.f, sas::FindGameplayAttributeValue(
+		, mThickness(std::max(1.f, sas::FindAttributeValue(
 			attributes,
 			PrimaryWeaponSchema::Wave::Delivery::Thickness,
 			1.f
@@ -88,7 +88,7 @@ namespace ly
 		, mColor(presentation.pointLightDef.color)
 	{
 		SetRenderLayer(RenderLayer::Projectile);
-		SetDamage(std::max(0.f, sas::FindGameplayAttributeValue(
+		SetDamage(std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			CommonAttributeIds::Damage,
 			0.f

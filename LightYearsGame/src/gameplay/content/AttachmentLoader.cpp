@@ -1,5 +1,7 @@
 #include "gameplay/content/AttachmentLoader.h"
 
+#include "attributes/AttributeId.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 
@@ -89,8 +91,26 @@ namespace ly::content
 			{
 				return AttachmentEventAction::ReduceCooldown;
 			}
+			if (value == "ApplyEffect")
+			{
+				return AttachmentEventAction::ApplyEffect;
+			}
+			if (value == "RemoveEffects")
+			{
+				return AttachmentEventAction::RemoveEffects;
+			}
 
 			throw std::runtime_error("Unknown attachment event action: " + value);
+		}
+
+		sas::GameplayEffectDisposition ParseEffectDisposition(
+			const std::string& value
+		)
+		{
+			if (value == "Beneficial") return sas::GameplayEffectDisposition::Beneficial;
+			if (value == "Harmful") return sas::GameplayEffectDisposition::Harmful;
+			if (value == "Neutral") return sas::GameplayEffectDisposition::Neutral;
+			throw std::runtime_error("Unknown attachment effect disposition: " + value);
 		}
 
 		AttachmentCooldownTarget ParseCooldownTarget(const std::string& value)
@@ -111,10 +131,21 @@ namespace ly::content
 			throw std::runtime_error("Unknown attachment cooldown target: " + value);
 		}
 
+		sas::AbilityEndReason ParseAbilityEndReason(const std::string& value)
+		{
+			if (value == "Completed") return sas::AbilityEndReason::Completed;
+			if (value == "DurationExpired") return sas::AbilityEndReason::DurationExpired;
+			if (value == "InputReleased") return sas::AbilityEndReason::InputReleased;
+			if (value == "Cancelled") return sas::AbilityEndReason::Cancelled;
+			if (value == "Interrupted") return sas::AbilityEndReason::Interrupted;
+			if (value == "OwnerDestroyed") return sas::AbilityEndReason::OwnerDestroyed;
+			throw std::runtime_error("Unknown ability end reason: " + value);
+		}
+
 		sas::GameplayAttribute ParseGameplayAttribute(const Json& object)
 		{
 			return sas::GameplayAttribute{
-				GameplayTag{ ReadRequiredString(object, "id") },
+				sas::AttributeId{ ReadRequiredString(object, "id") },
 				object.at("baseValue").get<float>(),
 				object.value("minValue", 0.f),
 				object.value(
@@ -127,7 +158,7 @@ namespace ly::content
 		sas::AttributeModifier ParseAttributeModifier(const Json& object)
 		{
 			return sas::AttributeModifier{
-				GameplayTag{ ReadRequiredString(object, "attributeId") },
+				sas::AttributeId{ ReadRequiredString(object, "attributeId") },
 				ParseModifierOperation(
 					ReadRequiredString(object, "operation")
 				),
@@ -142,9 +173,16 @@ namespace ly::content
 			condition.type = ParseConditionType(
 				ReadRequiredString(object, "type")
 			);
-			condition.subjectTag = GameplayTag{
-				object.value("subjectTag", std::string{})
-			};
+			const std::string subject = object.value("subjectTag", std::string{});
+			if (condition.type == AttachmentConditionType::AttributeLessThan ||
+				condition.type == AttachmentConditionType::AttributeGreaterThanOrEqual)
+			{
+				condition.subjectAttributeId = sas::AttributeId{ subject };
+			}
+			else
+			{
+				condition.subjectTag = GameplayTag{ subject };
+			}
 			condition.threshold = object.value("threshold", 0.f);
 			return condition;
 		}
@@ -166,21 +204,75 @@ namespace ly::content
 			rule.action = ParseEventAction(
 				ReadRequiredString(object, "action")
 			);
-			rule.cooldownTarget = ParseCooldownTarget(
-				ReadRequiredString(object, "cooldownTarget")
-			);
-			rule.magnitudeAttributeId = GameplayTag{
-				ReadRequiredString(object, "magnitudeAttributeId")
-			};
+			if (rule.action == AttachmentEventAction::ReduceCooldown)
+			{
+				rule.cooldownTarget = ParseCooldownTarget(
+					ReadRequiredString(object, "cooldownTarget")
+				);
+				rule.magnitudeAttributeId = sas::AttributeId{
+					ReadRequiredString(object, "magnitudeAttributeId")
+				};
+			}
 			rule.baseMagnitude = object.value("baseMagnitude", 0.f);
-		rule.requireOwnerAsEventSource = object.value(
+			rule.requireOwnerAsEventSource = object.value(
 				"requireOwnerAsEventSource",
 				true
 			);
+			rule.abilityId = sas::ContentId{
+				object.value("abilityId", std::string{})
+			};
+			if (object.contains("endReason"))
+			{
+				rule.endReason = ParseAbilityEndReason(
+					object.at("endReason").get<std::string>()
+				);
+			}
+			for (const Json& tag : object.value("requiredAbilityTags", Json::array()))
+			{
+				rule.requiredAbilityTags.emplace_back(
+					GameplayTag{ tag.get<std::string>() }
+				);
+			}
+			for (const Json& tag : object.value("blockedAbilityTags", Json::array()))
+			{
+				rule.blockedAbilityTags.emplace_back(
+					GameplayTag{ tag.get<std::string>() }
+				);
+			}
+			rule.consumeOnMatch = object.value("consumeOnMatch", false);
+			rule.maxMatches = object.value("maxMatches", 0);
 
 			for (const Json& tag : object.value("requiredDamageTags", Json::array()))
 			{
 				rule.requiredDamageTags.emplace_back(
+					GameplayTag{ tag.get<std::string>() }
+				);
+			}
+			if (rule.action == AttachmentEventAction::ApplyEffect)
+			{
+				rule.effectId = sas::ContentId{ ReadRequiredString(object, "effectId") };
+			}
+			if (rule.action == AttachmentEventAction::RemoveEffects)
+			{
+				if (object.contains("disposition"))
+				{
+					rule.effectDisposition = ParseEffectDisposition(
+						object.at("disposition").get<std::string>()
+					);
+				}
+				rule.effectCleanseableOnly = object.value("cleanseableOnly", false);
+				rule.effectCategory = object.value("category", std::string{});
+				rule.effectImmunityCategory = object.value("immunityCategory", std::string{});
+			}
+			for (const Json& tag : object.value("requiredOwnerTags", Json::array()))
+			{
+				rule.requiredOwnerTags.emplace_back(
+					GameplayTag{ tag.get<std::string>() }
+				);
+			}
+			for (const Json& tag : object.value("blockedOwnerTags", Json::array()))
+			{
+				rule.blockedOwnerTags.emplace_back(
 					GameplayTag{ tag.get<std::string>() }
 				);
 			}
@@ -191,7 +283,7 @@ namespace ly::content
 		AttachmentDefinition ParseAttachment(const Json& object)
 		{
 			AttachmentDefinition definition;
-			definition.attachmentId = ReadRequiredString(object, "id");
+			definition.attachmentId = sas::ContentId{ ReadRequiredString(object, "id") };
 			definition.displayName = ReadRequiredString(object, "displayName");
 
 			for (const Json& host : object.at("allowedHosts"))
@@ -260,11 +352,22 @@ namespace ly::content
 			}
 		}
 
+		void RequireValidAttribute(
+			const sas::AttributeId& id,
+			const char* usage
+		)
+		{
+			if (!AttributeIdSchema::Validate(id, nullptr))
+			{
+				throw std::runtime_error(std::string{ usage } + ": invalid AttributeId");
+			}
+		}
+
 		void ValidateAttachmentTags(const AttachmentDefinition& definition)
 		{
 			std::string idFailureReason;
 			if (!ContentIdSchema::ValidateAttachmentId(
-				definition.attachmentId,
+				definition.attachmentId.ToString(),
 				&idFailureReason
 			))
 			{
@@ -276,25 +379,28 @@ namespace ly::content
 			}
 			for (const sas::GameplayAttribute& attribute : definition.grantedAttributes)
 			{
-				RequireValidTag(attribute.id, GameplayTagKind::Attribute, "Attachment attribute");
+				RequireValidAttribute(attribute.id, "Attachment attribute");
 			}
 			for (const sas::AttributeModifier& modifier : definition.attributeModifiers)
 			{
-				RequireValidTag(modifier.attributeId, GameplayTagKind::Attribute, "Attachment modifier attribute");
+				RequireValidAttribute(modifier.attributeId, "Attachment modifier attribute");
 			}
 			for (const ConditionalAttributeModifier& conditional : definition.conditionalAttributeModifiers)
 			{
-				RequireValidTag(conditional.modifier.attributeId, GameplayTagKind::Attribute, "Attachment conditional modifier");
+				RequireValidAttribute(conditional.modifier.attributeId, "Attachment conditional modifier");
 				if (conditional.condition.type == AttachmentConditionType::Always)
 				{
 					continue;
 				}
-				const GameplayTagKind conditionTagKind =
-					conditional.condition.type == AttachmentConditionType::HasDamageTag ||
-					conditional.condition.type == AttachmentConditionType::MissingDamageTag
-					? GameplayTagKind::DamageType
-					: GameplayTagKind::Attribute;
-				RequireValidTag(conditional.condition.subjectTag, conditionTagKind, "Attachment condition");
+				if (conditional.condition.type == AttachmentConditionType::HasDamageTag ||
+					conditional.condition.type == AttachmentConditionType::MissingDamageTag)
+				{
+					RequireValidTag(conditional.condition.subjectTag, GameplayTagKind::DamageType, "Attachment condition");
+				}
+				else
+				{
+					RequireValidAttribute(conditional.condition.subjectAttributeId, "Attachment condition");
+				}
 			}
 			if (definition.replaceDamageType.IsValid())
 			{
@@ -302,8 +408,62 @@ namespace ly::content
 			}
 			for (const AttachmentEventRule& rule : definition.eventRules)
 			{
+				if (rule.maxMatches < 0)
+				{
+					throw std::runtime_error(
+						"Attachment event maxMatches cannot be negative."
+					);
+				}
 				RequireValidTag(rule.eventTag, GameplayTagKind::Event, "Attachment event");
-				RequireValidTag(rule.magnitudeAttributeId, GameplayTagKind::Attribute, "Attachment event magnitude");
+				for (const GameplayTag& tag : rule.requiredOwnerTags)
+				{
+					if (!GameplayTagSchema::ValidateAbilityOwnerConditionTag(tag, &idFailureReason))
+					{
+						throw std::runtime_error("Attachment required owner tag: " + idFailureReason);
+					}
+				}
+				for (const GameplayTag& tag : rule.blockedOwnerTags)
+				{
+					if (!GameplayTagSchema::ValidateAbilityOwnerConditionTag(tag, &idFailureReason))
+					{
+						throw std::runtime_error("Attachment blocked owner tag: " + idFailureReason);
+					}
+				}
+				for (const GameplayTag& tag : rule.requiredAbilityTags)
+				{
+					if (!GameplayTagSchema::ValidateAbilityOwnerConditionTag(tag, &idFailureReason))
+					{
+						throw std::runtime_error("Attachment required ability tag: " + idFailureReason);
+					}
+				}
+				for (const GameplayTag& tag : rule.blockedAbilityTags)
+				{
+					if (!GameplayTagSchema::ValidateAbilityOwnerConditionTag(tag, &idFailureReason))
+					{
+						throw std::runtime_error("Attachment blocked ability tag: " + idFailureReason);
+					}
+				}
+				if (rule.action == AttachmentEventAction::ReduceCooldown)
+				{
+					RequireValidAttribute(rule.magnitudeAttributeId, "Attachment event magnitude");
+				}
+				if (rule.action == AttachmentEventAction::ApplyEffect)
+				{
+					if (!ContentIdSchema::ValidateEffectId(rule.effectId.ToString(), &idFailureReason))
+					{
+						throw std::runtime_error("Attachment event effect ID: " + idFailureReason);
+					}
+				}
+				if (rule.action == AttachmentEventAction::RemoveEffects &&
+					!rule.effectDisposition.has_value() &&
+					!rule.effectCleanseableOnly &&
+					rule.effectCategory.empty() &&
+					rule.effectImmunityCategory.empty())
+				{
+					throw std::runtime_error(
+						"Attachment RemoveEffects action requires a metadata filter."
+					);
+				}
 				for (const GameplayTag& damageTag : rule.requiredDamageTags)
 				{
 					RequireValidTag(damageTag, GameplayTagKind::DamageType, "Attachment event damage tag");
@@ -340,7 +500,7 @@ namespace ly::content
 			{
 				AttachmentDefinition definition = ParseAttachment(attachment);
 				ValidateAttachmentTags(definition);
-				const std::string& id = definition.attachmentId;
+				const std::string& id = definition.attachmentId.ToString();
 				if (!attachmentIds.insert(id).second)
 				{
 					throw std::runtime_error("Duplicate attachment ID: " + id);

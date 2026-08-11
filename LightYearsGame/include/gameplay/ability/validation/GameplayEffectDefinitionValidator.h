@@ -13,7 +13,7 @@ namespace ly
 	class GameplayEffectDefinitionValidator final
 	{
 	public:
-		using BehaviorRegistrationQuery = std::function<bool(const GameplayTag&)>;
+		using BehaviorRegistrationQuery = std::function<bool(const sas::GameplayEffectBehaviorKey&)>;
 
 		static bool Validate(
 			const sas::GameplayEffectDefinition& definition,

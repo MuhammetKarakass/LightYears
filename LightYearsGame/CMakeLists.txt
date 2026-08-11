@@ -6,6 +6,9 @@ set(LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME LightYearsGameplayCore)
 add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContractRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/AbilityBehaviorType.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorType.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIdSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/content/NumericSettingContractRegistry.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/AbilityActionValidator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/AbilityActionValidator.cpp
@@ -51,10 +54,24 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/MovementComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ship/ShipRuntimeModifiers.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntimeModifiers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/GameplayTagSchema.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/GameplayTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/DashTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/GravityAnomalyTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/InfernoSprayTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/OverdriveCoreTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/NullPulseTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/PhaseDriftTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/RocketTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ShieldTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/SunBeamTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetingTypes.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/AutoTargeting.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetAllocation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AttachmentLoader.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AttachmentLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/WeaponLoader.h
@@ -68,6 +85,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityLoader.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ContentIdSchema.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/EffectBehaviorKeys.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityContentCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EffectLoader.h
@@ -90,8 +108,11 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/functional/DashConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/GravityAnomalyConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/InfernoSprayConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/OverdriveCoreConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/control/NullPulseConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/RocketConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ShieldConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/PhaseDriftConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/SunBeamConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/AttachmentConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectStructs.h
@@ -100,6 +121,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/presentation/PointLightConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ship/ShipConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIdSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/progression/ShipProgression.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentDefinition.h
@@ -148,6 +170,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/Combatant.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/control/ControlResponse.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
@@ -159,6 +182,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityWorldActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorSpawner.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorSpawner.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AreaTelegraphActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashAbility.h
@@ -174,6 +199,24 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftVisualActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftVisualActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseTargetQuery.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseTargetQuery.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseVisualActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseVisualActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreVisualActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreVisualActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketAbility.h
@@ -209,6 +252,15 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationProfile.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/overdriveCore/OverdriveCorePresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/overdriveCore/OverdriveCorePresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/overdriveCore/OverdriveCorePresentationProfile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/nullPulse/NullPulsePresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/nullPulse/NullPulsePresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/nullPulse/NullPulsePresentationProfile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/phaseDrift/PhaseDriftPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationProfile.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
@@ -402,12 +454,17 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseTargetQuery.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/barrier/BarrierEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntimeModifiers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/spaceShip/SpaceShip.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemySpaceShip.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/DummyEnemy.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Player.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
@@ -424,6 +481,13 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftVisualActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseVisualActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreVisualActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketProjectileActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketVisualActor.cpp
@@ -431,6 +495,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityWorldActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorRegistry.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorSpawner.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamActorBase.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamVisual.cpp
@@ -439,6 +504,9 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/infernoSpray/InfernoSprayPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/overdriveCore/OverdriveCorePresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/nullPulse/NullPulsePresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
@@ -480,6 +548,7 @@ if(BUILD_TESTING)
 	add_executable(LightYearsAutoTargetingTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AutoTargetingTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
 	)
 	target_include_directories(LightYearsAutoTargetingTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -501,6 +570,7 @@ if(BUILD_TESTING)
 	target_link_libraries(LightYearsGameplayTagSchemaTests
 		PRIVATE
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 	)
 	add_test(NAME LightYearsGameplayTagSchema COMMAND LightYearsGameplayTagSchemaTests)
 endif()

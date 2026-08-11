@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VFX/Explosion.h"
+#include "content/ContentId.h"
 #include "presentation/ability/common/AreaTelegraphVisualDefinition.h"
 
 #include <SFML/Graphics/Color.hpp>
@@ -31,7 +32,7 @@ namespace ly
 
 	struct RocketPresentationProfile
 	{
-		std::string profileId;
+		sas::ContentId profileId;
 		std::string texturePath;
 		RocketVisualDefinition visual;
 		AreaTelegraphVisualDefinition telegraph;

@@ -15,10 +15,10 @@ namespace ly
 	{
 		std::optional<float> FindActorAttribute(
 			const AbilityActorDefinition& actor,
-			const GameplayTag& attributeId
+			const sas::AttributeId& attributeId
 		)
 		{
-			const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(
+			const sas::GameplayAttribute* attribute = sas::FindAttribute(
 				actor.attributes,
 				attributeId
 			);
@@ -27,7 +27,7 @@ namespace ly
 
 		bool HasModifier(
 			const AbilityLevelStep& step,
-			const GameplayTag& attributeId,
+			const sas::AttributeId& attributeId,
 			float magnitude
 		)
 		{
@@ -45,7 +45,7 @@ namespace ly
 
 		std::optional<float> FindModifierMagnitude(
 			const AbilityLevelStep& step,
-			const GameplayTag& attributeId
+			const sas::AttributeId& attributeId
 		)
 		{
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
@@ -61,7 +61,7 @@ namespace ly
 
 		std::optional<float> FindScalingCoefficient(
 			const GameAbilityDefinition& definition,
-			const GameplayTag& targetAttributeId
+			const sas::AttributeId& targetAttributeId
 		)
 		{
 			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
@@ -101,10 +101,10 @@ namespace ly
 	) const
 	{
 		const AbilityActorDefinition* projectile = AbilityData::FindAbilityActorDefinition(
-			AbilityData::GravityAnomaly::ActorProjectileBasic.actorDefinitionId
+			AbilityData::GravityAnomaly::ActorProjectileBasic.actorDefinitionId.ToString()
 		);
 		const AbilityActorDefinition* field = AbilityData::FindAbilityActorDefinition(
-			AbilityData::GravityAnomaly::ActorFieldBasic.actorDefinitionId
+			AbilityData::GravityAnomaly::ActorFieldBasic.actorDefinitionId.ToString()
 		);
 		const std::optional<float> castRange = projectile
 			? FindActorAttribute(*projectile, CommonAttributeIds::Range)

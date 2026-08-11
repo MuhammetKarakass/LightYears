@@ -163,7 +163,8 @@ namespace ly
 				1.f,
 				mOwner.GetShipRuntime().GetAfterburnerSpeedMultiplier()
 			);
-			const sf::Vector2f normalSpeed = movement.ResolveLegacySpeed();
+			const sf::Vector2f normalSpeed =
+				movement.ResolveLegacySpeed() * mOwner.GetMovementSpeedMultiplier();
 			const float speedMultiplier = Lerp(1.f, afterburnerSpeedMultiplier, mAfterburnerIntensity);
 			const sf::Vector2f targetVelocity{
 				movementDirection.x * normalSpeed.x * speedMultiplier,

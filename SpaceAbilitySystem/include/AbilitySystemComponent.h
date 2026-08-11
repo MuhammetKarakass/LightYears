@@ -1,6 +1,7 @@
 #pragma once
 
 #include "abilities/AbilitySystemRuntime.h"
+#include "abilities/AbilityCooldownTags.h"
 #include "abilities/GameplayAbilityInstance.h"
 #include "attributes/AttributeSystem.h"
 #include "effects/ActiveGameplayEffect.h"
@@ -226,6 +227,9 @@ namespace sas
 		);
 		bool RefreshGameplayEffectDuration(GameplayEffectHandle handle);
 		void RemoveGameplayEffect(GameplayEffectHandle handle);
+		std::size_t RemoveGameplayEffectsIf(
+			const std::function<bool(const ActiveGameplayEffect&)>& predicate
+		);
 		ActiveGameplayEffect* FindGameplayEffect(GameplayEffectHandle handle);
 		const ActiveGameplayEffect* FindGameplayEffect(
 			GameplayEffectHandle handle
@@ -331,6 +335,7 @@ namespace sas
 
 	private:
 		void RebuildEffectRuntimeCallbacks();
+		void RefreshCooldownTags();
 
 		std::unique_ptr<AbilitySystemRuntimeBase> mAbilityRuntime;
 		const std::type_info* mGameplayEventType = nullptr;
@@ -339,5 +344,7 @@ namespace sas
 		ly::GameplayTagContainer mOwnedTags;
 		GameplayEffectSystem mEffects;
 		EffectCallbacks mEffectBindings;
+		bool mAbilityCooldownTagActive = false;
+		bool mPrimaryWeaponCooldownTagActive = false;
 	};
 }

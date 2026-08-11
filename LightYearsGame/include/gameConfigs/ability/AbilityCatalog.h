@@ -3,8 +3,10 @@
 #include "gameConfigs/ability/functional/DashConfig.h"
 #include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
+#include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/defensive/ShieldConfig.h"
+#include "gameConfigs/ability/defensive/PhaseDriftConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/combat/WeaponStructs.h"
@@ -26,11 +28,12 @@ namespace AbilityData
 				ly::AbilityLevelStep abilityLevelStep;
 				abilityLevelStep.attributeModifiers = weaponLevelStep.attributeModifiers;
 				abilityLevelStep.unlockedUpgradeIds = weaponLevelStep.unlockedUpgradeIds;
-				abilityLevelStep.unlockedUpgradeIds.insert(
-					abilityLevelStep.unlockedUpgradeIds.end(),
-					weaponLevelStep.unlockedFeatureTags.begin(),
-					weaponLevelStep.unlockedFeatureTags.end()
-				);
+				for (const PrimaryWeaponFeatureType featureType : weaponLevelStep.unlockedFeatureTypes)
+				{
+					abilityLevelStep.unlockedUpgradeIds.emplace_back(
+						PrimaryWeaponFeatureUpgradeId(featureType)
+					);
+				}
 				primaryLevelProgression.push_back(abilityLevelStep);
 			}
 
@@ -48,8 +51,7 @@ namespace AbilityData
 			definition.maxCharges = 0;
 			definition.abilityTags = {
 				ly::GameplayTagSchema::AbilityPrimary,
-				ly::GameplayTagSchema::AbilityOffense,
-				weaponDefinition.weaponTypeTag
+				ly::GameplayTagSchema::AbilityOffense
 			};
 			definition.displayName = weaponDefinition.weaponId;
 			definition.iconPath = weaponDefinition.presentationDefinition.texturePath;

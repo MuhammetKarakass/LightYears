@@ -16,17 +16,17 @@ namespace ly
 		class ShotgunWeaponHandler final : public PrimaryWeaponHandler
 		{
 		public:
-			const GameplayTag& GetTypeTag() const override
+			PrimaryWeaponType GetType() const override
 			{
-				return PrimaryWeaponSchema::Projectile::Shotgun::TypeTag;
+				return PrimaryWeaponType::ProjectileShotgun;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return PrimaryWeaponBuiltIns::ShotgunAttributeRoots();
 			}
 
-			const List<GameplayTag>& GetInheritedAttributeRoots() const override
+			const List<sas::AttributeId>& GetInheritedAttributeRoots() const override
 			{
 				return PrimaryWeaponBuiltIns::ProjectileDeliveryAttributeRoots();
 			}
@@ -35,7 +35,7 @@ namespace ly
 				const PrimaryWeaponDefinition& definition
 			) const override
 			{
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					PrimaryWeaponSchema::Projectile::Delivery::Speed,
 					PrimaryWeaponSchema::Projectile::Delivery::Lifetime,
@@ -109,12 +109,12 @@ namespace ly
 							"Shotgun minimum damage multiplier must be greater than zero and at most one."
 						};
 					}
-					if (sas::FindGameplayAttributeValue(
+					if (sas::FindAttributeValue(
 							definition.attributes,
 							AreaAttributeIds::Radius,
 							0.f
 						) > 0.f ||
-						sas::FindGameplayAttributeValue(
+						sas::FindAttributeValue(
 							definition.attributes,
 							PrimaryWeaponSchema::Projectile::Delivery::PierceCount,
 							0.f
@@ -136,7 +136,7 @@ namespace ly
 			{
 				const int pelletCount = std::max(
 					1,
-					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Projectile::Shotgun::PelletCount,
 						1.f
@@ -144,19 +144,19 @@ namespace ly
 				);
 				const int additionalProjectiles = std::max(
 					0,
-					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Projectile::Delivery::AdditionalProjectileCount,
 						0.f
 					)))
 				);
 				const int totalPelletCount = pelletCount + additionalProjectiles;
-				const float spreadAngle = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float spreadAngle = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Shotgun::SpreadAngle,
 					0.f
 				));
-				const float damageReduction = sas::FindGameplayAttributeValue(
+				const float damageReduction = sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Shotgun::DamageReductionPerAdditionalHit,
 					0.f
@@ -171,12 +171,12 @@ namespace ly
 					return;
 				}
 
-				const float minimumDamageMultiplier = sas::FindGameplayAttributeValue(
+				const float minimumDamageMultiplier = sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Projectile::Shotgun::MinimumDamageMultiplier,
 					1.f
 				);
-				const float baseDamage = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float baseDamage = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					CommonAttributeIds::Damage,
 					0.f

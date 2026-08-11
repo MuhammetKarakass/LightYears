@@ -16,9 +16,10 @@ namespace ly
 			size_t slotCapacity,
 			std::string* failureReason = nullptr
 		);
-		bool Remove(const std::string& attachmentId, AttachmentHostKind hostKind);
+		bool Remove(const sas::ContentId& attachmentId, AttachmentHostKind hostKind);
 		void Clear();
 
+		List<EquippedAttachment>& GetEquipped() { return mEquipped; }
 		const List<EquippedAttachment>& GetEquipped() const { return mEquipped; }
 		uint64_t GetRevision() const { return mRevision; }
 		sas::GameplayAttributeList MergeGrantedAttributes(
@@ -40,7 +41,7 @@ namespace ly
 		) const;
 		float ResolveGrantedAttributeValue(
 			AttachmentHostKind hostKind,
-			const GameplayTag& attributeId,
+			const sas::AttributeId& attributeId,
 			float fallback = 0.f
 		) const;
 

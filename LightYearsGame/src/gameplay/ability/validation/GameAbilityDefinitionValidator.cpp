@@ -4,6 +4,8 @@
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 
@@ -23,13 +25,9 @@ namespace ly
 			return false;
 		}
 
-		bool ValidateAttributeTag(const GameplayTag& tag, std::string* failureReason)
+		bool ValidateAttributeId(const sas::AttributeId& id, std::string* failureReason)
 		{
-			return GameplayTagSchema::Validate(
-				tag,
-				GameplayTagKind::Attribute,
-				failureReason
-			);
+			return AttributeIdSchema::Validate(id, failureReason);
 		}
 
 		bool ValidateAttributeModifiers(
@@ -39,7 +37,7 @@ namespace ly
 		{
 			for (const sas::AttributeModifier& modifier : modifiers)
 			{
-				if (!ValidateAttributeTag(modifier.attributeId, failureReason))
+				if (!ValidateAttributeId(modifier.attributeId, failureReason))
 				{
 					return false;
 				}
@@ -48,17 +46,79 @@ namespace ly
 		}
 
 		bool ValidateScalingRules(
+			const GameAbilityDefinition& ability,
 			const List<sas::AttributeScalingRule>& scalingRules,
 			std::string* failureReason
 		)
 		{
 			for (const sas::AttributeScalingRule& rule : scalingRules)
 			{
-				if (!ValidateAttributeTag(rule.targetAttributeId, failureReason) ||
-					!ValidateAttributeTag(rule.sourceAttributeId, failureReason))
+				if (!ValidateAttributeId(rule.targetAttributeId, failureReason) ||
+					!ValidateAttributeId(rule.sourceAttributeId, failureReason))
 				{
 					return false;
 				}
+				// A feature-local Ability.* target must be declared by the
+				// ability itself. Common.* targets may belong to an actor,
+				// effect, or this ability-scoped list and therefore remain
+				// open to the existing consumer contracts.
+				if (AttributeIdSchema::IsInNamespace(rule.targetAttributeId, "Ability") &&
+					!sas::FindAttribute(ability.attributes, rule.targetAttributeId))
+				{
+					return Fail(
+						failureReason,
+						"Ability scaling target must be declared in the ability attributes list."
+					);
+				}
+			}
+			return true;
+		}
+
+		bool ValidateAbilityScopedAttributes(
+			const GameAbilityDefinition& ability,
+			std::string* failureReason
+		)
+		{
+			List<sas::AttributeId> declaredIds;
+			for (const sas::GameplayAttribute& attribute : ability.attributes)
+			{
+				if (!ValidateAttributeId(attribute.id, failureReason))
+				{
+					return false;
+				}
+				const bool isCommonAttribute = AttributeIdSchema::IsInNamespace(
+					attribute.id,
+					"Common"
+				);
+				const bool isAbilityAttribute = AttributeIdSchema::IsInNamespace(
+					attribute.id,
+					"Ability"
+				);
+				if (!isCommonAttribute && !isAbilityAttribute)
+				{
+					return Fail(
+						failureReason,
+						"Ability-scoped attributes must belong to Common.* or Ability.*."
+					);
+				}
+				if (attribute.id == CommonAttributeIds::ProjectileCount &&
+					(attribute.baseValue < 1.f ||
+						std::round(attribute.baseValue) != attribute.baseValue ||
+						attribute.minValue < 1.f))
+				{
+					return Fail(
+						failureReason,
+						"Common.ProjectileCount must have an integer base value and a minimum of one."
+					);
+				}
+				if (std::find(declaredIds.begin(), declaredIds.end(), attribute.id) != declaredIds.end())
+				{
+					return Fail(
+						failureReason,
+						"Ability-scoped attribute IDs must be unique."
+					);
+				}
+				declaredIds.push_back(attribute.id);
 			}
 			return true;
 		}
@@ -71,7 +131,7 @@ namespace ly
 			for (const AbilityEffectSpecDefinition& spec : ability.effectSpecs)
 			{
 				const sas::GameplayEffectDefinition* effect =
-					EffectData::FindGameplayEffectDefinition(spec.effectId);
+					EffectData::FindGameplayEffectDefinition(spec.effectId.ToString());
 				if (!effect)
 				{
 					return Fail(failureReason, "Ability effectSpecs references an unknown effect.");
@@ -85,7 +145,7 @@ namespace ly
 					return Fail(
 						failureReason,
 						"Ability-owned duration must be positive for effect '" +
-							spec.effectId + "'."
+							spec.effectId.ToString() + "'."
 					);
 				}
 				if (spec.maxStacks.has_value() && *spec.maxStacks < 1)
@@ -98,7 +158,7 @@ namespace ly
 				}
 				for (const sas::GameplayAttribute& attribute : spec.attributes)
 				{
-					if (!ValidateAttributeTag(attribute.id, failureReason))
+					if (!ValidateAttributeId(attribute.id, failureReason))
 					{
 						return false;
 					}
@@ -121,7 +181,7 @@ namespace ly
 					continue;
 				}
 				const sas::GameplayEffectDefinition* effect =
-					EffectData::FindGameplayEffectDefinition(applyEffect->effectId);
+					EffectData::FindGameplayEffectDefinition(applyEffect->effectId.ToString());
 				if (effect && effect->sourceParameterized &&
 					!ability.FindEffectSpec(applyEffect->effectId))
 				{
@@ -129,8 +189,193 @@ namespace ly
 						failureReason,
 						"Ability '" + ability.abilityId +
 							"' must own an effectSpecs entry for '" +
-							applyEffect->effectId + "'."
+							applyEffect->effectId.ToString() + "'."
 					);
+				}
+			}
+			return true;
+		}
+
+		bool ValidateAbilitySourceTags(
+			const AbilityTriggerSpec& trigger,
+			std::string* failureReason
+		)
+		{
+			for (const GameplayTag& tag : trigger.requiredAbilityTags)
+			{
+				if (!GameplayTagSchema::Validate(
+					tag,
+					GameplayTagKind::Ability,
+					failureReason
+				))
+				{
+					return Fail(
+						failureReason,
+						"Ability trigger required source tags must belong to the Ability.* domain."
+					);
+				}
+			}
+			for (const GameplayTag& tag : trigger.blockedAbilityTags)
+			{
+				if (!GameplayTagSchema::Validate(
+					tag,
+					GameplayTagKind::Ability,
+					failureReason
+				))
+				{
+					return Fail(
+						failureReason,
+						"Ability trigger blocked source tags must belong to the Ability.* domain."
+					);
+				}
+			}
+			return true;
+		}
+
+		bool ValidateTriggerBudget(
+			const AbilityTriggerSpec& trigger,
+			std::string* failureReason
+		)
+		{
+			if (trigger.maxMatches < 0)
+			{
+				return Fail(
+					failureReason,
+					"Ability trigger maxMatches cannot be negative."
+				);
+			}
+			return true;
+		}
+
+		bool ValidateTriggerPayloadTags(
+			const AbilityTriggerSpec& trigger,
+			std::string* failureReason
+		)
+		{
+			for (const GameplayTag& tag : trigger.requiredPayloadTags)
+			{
+				if (!GameplayTagSchema::Validate(tag, GameplayTagKind::Any, failureReason))
+				{
+					return Fail(failureReason, "Ability trigger required payload tag is invalid.");
+				}
+			}
+			for (const GameplayTag& tag : trigger.blockedPayloadTags)
+			{
+				if (!GameplayTagSchema::Validate(tag, GameplayTagKind::Any, failureReason))
+				{
+					return Fail(failureReason, "Ability trigger blocked payload tag is invalid.");
+				}
+			}
+			return true;
+		}
+
+		bool ValidateLevelUpgradeCosts(
+			const GameAbilityDefinition& definition,
+			std::string* failureReason
+		)
+		{
+			if (definition.levelUpgradeScrapCosts.empty())
+			{
+				return true;
+			}
+			if (definition.levelUpgradeScrapCosts.size() != definition.levelProgression.size())
+			{
+				return Fail(
+					failureReason,
+					"Ability upgrade scrap costs must match the number of level steps."
+				);
+			}
+			for (const unsigned int cost : definition.levelUpgradeScrapCosts)
+			{
+				if (cost == 0)
+				{
+					return Fail(
+						failureReason,
+						"Ability upgrade scrap costs must be greater than zero."
+					);
+				}
+			}
+			return true;
+		}
+
+		bool ValidateAndRecordUpgradeIds(
+			const List<std::string>& upgradeIds,
+			List<std::string>& declaredUpgradeIds,
+			std::string* failureReason
+		)
+		{
+			for (const std::string& upgradeId : upgradeIds)
+			{
+				const bool alreadyDeclared = std::find(
+					declaredUpgradeIds.begin(),
+					declaredUpgradeIds.end(),
+					upgradeId
+				) != declaredUpgradeIds.end();
+				if (!content::ContentIdSchema::ValidateContentId(upgradeId) || alreadyDeclared)
+				{
+					return Fail(failureReason, "Ability upgrade IDs must be valid and unique.");
+				}
+				declaredUpgradeIds.push_back(upgradeId);
+			}
+			return true;
+		}
+
+		bool ValidateAbilityLevelTrigger(
+			const AbilityTriggerSpec& trigger,
+			const AbilityActionValidator::EffectValidationFunction& validateEffect,
+			std::string* failureReason
+		)
+		{
+			if (!GameplayTagSchema::Validate(
+				trigger.eventTag,
+				GameplayTagKind::Event,
+				failureReason
+			))
+			{
+				return Fail(
+					failureReason,
+					"Ability level triggers require a valid event tag."
+				);
+			}
+			if (!ValidateAbilitySourceTags(trigger, failureReason) ||
+				!ValidateTriggerBudget(trigger, failureReason) ||
+				!ValidateTriggerPayloadTags(trigger, failureReason))
+			{
+				return false;
+			}
+			return AbilityActionValidator::Validate(
+				trigger.actions,
+				validateEffect,
+				failureReason
+			);
+		}
+
+		bool ValidateAbilityLevelStep(
+			const AbilityLevelStep& step,
+			const AbilityActionValidator::EffectValidationFunction& validateEffect,
+			std::string* failureReason
+		)
+		{
+			if (!ValidateAttributeModifiers(step.attributeModifiers, failureReason))
+			{
+				return Fail(
+					failureReason,
+					"Ability level modifiers require a valid attribute ID."
+				);
+			}
+			if (!AbilityActionValidator::Validate(
+				step.addedActions,
+				validateEffect,
+				failureReason
+			))
+			{
+				return false;
+			}
+			for (const AbilityTriggerSpec& trigger : step.addedTriggers)
+			{
+				if (!ValidateAbilityLevelTrigger(trigger, validateEffect, failureReason))
+				{
+					return false;
 				}
 			}
 			return true;
@@ -142,96 +387,29 @@ namespace ly
 			std::string* failureReason
 		)
 		{
-			if (!definition.levelUpgradeScrapCosts.empty())
+			if (!ValidateLevelUpgradeCosts(definition, failureReason))
 			{
-				if (definition.levelUpgradeScrapCosts.size() != definition.levelProgression.size())
-				{
-					return Fail(
-						failureReason,
-						"Ability upgrade scrap costs must match the number of level steps."
-					);
-				}
-				for (const unsigned int cost : definition.levelUpgradeScrapCosts)
-				{
-					if (cost == 0)
-					{
-						return Fail(
-							failureReason,
-							"Ability upgrade scrap costs must be greater than zero."
-						);
-					}
-				}
+				return false;
 			}
-
-			List<GameplayTag> declaredUpgradeIds;
-			for (const GameplayTag& upgradeId : definition.unlockedUpgradeIds)
+			List<std::string> declaredUpgradeIds;
+			if (!ValidateAndRecordUpgradeIds(
+				definition.unlockedUpgradeIds,
+				declaredUpgradeIds,
+				failureReason
+			))
 			{
-				const bool alreadyDeclared = std::find(
-					declaredUpgradeIds.begin(),
-					declaredUpgradeIds.end(),
-					upgradeId
-				) != declaredUpgradeIds.end();
-				if (!upgradeId.IsValid() || alreadyDeclared)
-				{
-					return Fail(failureReason, "Ability upgrade IDs must be valid and unique.");
-				}
-				declaredUpgradeIds.push_back(upgradeId);
+				return false;
 			}
-
 			for (const AbilityLevelStep& step : definition.levelProgression)
 			{
-				if (!ValidateAttributeModifiers(step.attributeModifiers, failureReason))
-				{
-					return Fail(
-						failureReason,
-						"Ability level modifiers require a valid attribute ID."
-					);
-				}
-				for (const GameplayTag& upgradeId : step.unlockedUpgradeIds)
-				{
-					const bool alreadyDeclared = std::find(
-						declaredUpgradeIds.begin(),
-						declaredUpgradeIds.end(),
-						upgradeId
-					) != declaredUpgradeIds.end();
-					if (!upgradeId.IsValid() || alreadyDeclared)
-					{
-						return Fail(
-							failureReason,
-							"Ability level upgrade IDs must be valid and unique."
-						);
-					}
-					declaredUpgradeIds.push_back(upgradeId);
-				}
-				if (!AbilityActionValidator::Validate(
-					step.addedActions,
-					validateEffect,
+				if (!ValidateAndRecordUpgradeIds(
+					step.unlockedUpgradeIds,
+					declaredUpgradeIds,
 					failureReason
-				))
+				) ||
+					!ValidateAbilityLevelStep(step, validateEffect, failureReason))
 				{
 					return false;
-				}
-				for (const AbilityTriggerSpec& trigger : step.addedTriggers)
-				{
-					if (!GameplayTagSchema::Validate(
-						trigger.eventTag,
-						GameplayTagKind::Event,
-						failureReason
-					))
-					{
-						return Fail(
-							failureReason,
-							"Ability level triggers require a valid event tag."
-						);
-					}
-					if (!AbilityActionValidator::Validate(
-						trigger.actions,
-						validateEffect,
-						failureReason
-					))
-					{
-						return false;
-					}
 				}
 			}
 			return true;
@@ -251,9 +429,9 @@ namespace ly
 		std::string expectedBehaviorFamilyName;
 		// Content-only test/prototype abilities intentionally use the generic
 		// configured behavior. Concrete shipped families must use their own
-		// behavior tag and therefore match the family encoded in their content ID.
+		// behavior selector and therefore match the family encoded in their content ID.
 		if (definition.slot != sas::AbilitySlot::PrimaryFire &&
-			!definition.behaviorTag.MatchesTagExact(AbilityBehaviorSchema::Configured))
+			definition.behaviorType != AbilityBehaviorType::Configured)
 		{
 			content::ParsedAbilityId parsedId;
 			if (!content::ContentIdSchema::ParseAbilityId(
@@ -273,10 +451,10 @@ namespace ly
 				{
 					++categoryCount;
 					hasMatchingCategory = hasMatchingCategory ||
-						abilityTag.name == parsedId.categoryTag.name;
+						abilityTag.name == parsedId.category;
 				}
 				hasMatchingFamily = hasMatchingFamily ||
-					abilityTag.name == parsedId.familyTag.name;
+					abilityTag.name == parsedId.family;
 			}
 			if (categoryCount != 1 || !hasMatchingCategory)
 			{
@@ -289,33 +467,26 @@ namespace ly
 			{
 				return Fail(failureReason, "Ability must have a family tag matching its ID.");
 			}
-			const std::size_t familySeparator = parsedId.familyTag.name.find_last_of('.');
+			const std::size_t familySeparator = parsedId.family.find_last_of('.');
 			expectedBehaviorFamilyName = familySeparator == std::string::npos
-				? parsedId.familyTag.name
-				: parsedId.familyTag.name.substr(familySeparator + 1);
+				? parsedId.family
+				: parsedId.family.substr(familySeparator + 1);
 		}
-		if (!ValidateAttributeModifiers(definition.attributeModifiers, failureReason) ||
-			!ValidateScalingRules(definition.scalingRules, failureReason) ||
-			!GameplayTagSchema::Validate(
-				definition.behaviorTag,
-				GameplayTagKind::AbilityBehavior,
-				failureReason
-			))
+		if (!ValidateAbilityScopedAttributes(definition, failureReason) ||
+			!ValidateAttributeModifiers(definition.attributeModifiers, failureReason) ||
+			!ValidateScalingRules(definition, definition.scalingRules, failureReason))
 		{
 			return false;
 		}
 		if (definition.slot != sas::AbilitySlot::PrimaryFire &&
-			!definition.behaviorTag.MatchesTagExact(AbilityBehaviorSchema::Configured))
+			definition.behaviorType != AbilityBehaviorType::Configured)
 		{
-			const std::size_t behaviorSeparator = definition.behaviorTag.name.find_last_of('.');
-			const std::string behaviorName = behaviorSeparator == std::string::npos
-				? definition.behaviorTag.name
-				: definition.behaviorTag.name.substr(behaviorSeparator + 1);
+			const std::string behaviorName = ToString(definition.behaviorType);
 			if (expectedBehaviorFamilyName != behaviorName)
 			{
 				return Fail(
 					failureReason,
-					"Ability behavior tag must end with the family segment from its ability ID."
+					"Ability behavior type must match the family segment from its ability ID."
 				);
 			}
 		}
@@ -325,16 +496,11 @@ namespace ly
 			{
 				return false;
 			}
-			if (!abilityTag.MatchesTag(GameplayTagSchema::AbilityRoot) &&
-				!GameplayTagSchema::Validate(
-					abilityTag,
-					GameplayTagKind::PrimaryWeaponType,
-					nullptr
-				))
+			if (!abilityTag.MatchesTag(GameplayTagSchema::AbilityRoot))
 			{
 				return Fail(
 					failureReason,
-					"Ability tags must belong to Ability.* or name a concrete primary weapon type."
+					"Ability tags must belong to the Ability.* semantic domain."
 				);
 			}
 		}
@@ -398,6 +564,18 @@ namespace ly
 				}
 				return false;
 			}
+			if (!ValidateAbilitySourceTags(trigger, failureReason))
+			{
+				return false;
+			}
+			if (!ValidateTriggerBudget(trigger, failureReason))
+			{
+				return false;
+			}
+			if (!ValidateTriggerPayloadTags(trigger, failureReason))
+			{
+				return false;
+			}
 			if (!ValidateSourceEffectSpecs(definition, trigger.actions, failureReason))
 			{
 				return false;
@@ -409,7 +587,7 @@ namespace ly
 		}
 
 		unique_ptr<GameAbilityBehavior> behavior =
-			GameAbilityBehaviorRegistry::Create(definition.behaviorTag);
+			GameAbilityBehaviorRegistry::Create(definition.behaviorType);
 		if (!behavior)
 		{
 			return Fail(

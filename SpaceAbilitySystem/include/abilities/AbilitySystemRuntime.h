@@ -8,6 +8,7 @@
 #include <functional>
 #include <string>
 #include <typeinfo>
+#include <unordered_map>
 #include <utility>
 
 namespace sas
@@ -252,6 +253,16 @@ namespace sas
 					{
 						continue;
 					}
+					const int matchLimit = trigger.consumeOnMatch
+						? 1
+						: trigger.maxMatches;
+					const auto matchCount = mTriggerMatchCounts.find(cooldownKey);
+					if (matchLimit > 0 &&
+						matchCount != mTriggerMatchCounts.end() &&
+						matchCount->second >= matchLimit)
+					{
+						continue;
+					}
 
 					std::invoke(
 						executeTrigger,
@@ -260,6 +271,10 @@ namespace sas
 						trigger,
 						event
 					);
+					if (matchLimit > 0)
+					{
+						++mTriggerMatchCounts[cooldownKey];
+					}
 					if (trigger.internalCooldown > 0.f)
 					{
 						mTriggerCooldowns.Start(
@@ -281,10 +296,12 @@ namespace sas
 		{
 			mRuntime.Clear();
 			mTriggerCooldowns.Clear();
+			mTriggerMatchCounts.clear();
 		}
 
 	private:
 		Runtime mRuntime;
 		AbilityCooldownTracker mTriggerCooldowns;
+		std::unordered_map<std::string, int> mTriggerMatchCounts;
 	};
 }

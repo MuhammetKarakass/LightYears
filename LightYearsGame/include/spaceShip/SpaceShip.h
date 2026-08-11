@@ -10,6 +10,7 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/ship/ShipRuntime.h"
 #include "gameplay/MovementComponent.h"
+#include "gameplay/ship/ShipRuntimeModifiers.h"
 #include "gameplay/ability/dash/DashMovementController.h"
 #include "gameConfigs/ship/ShipStructs.h"
 
@@ -35,8 +36,16 @@ namespace ly
 		const EnergyComponent& GetEnergyComponent() const { return mEnergyComponent; }
 		CombatRuntime& GetCombatRuntime() override { return mCombatRuntime; }
 		const CombatRuntime& GetCombatRuntime() const override { return mCombatRuntime; }
+		ControlResponse ResolveControlResponse(
+			const GameplayTag& controlTag
+		) const override;
 		ShipRuntime& GetShipRuntime() { return mShipRuntime; }
 		const ShipRuntime& GetShipRuntime() const { return mShipRuntime; }
+		ShipRuntimeModifiers& GetRuntimeModifiers() { return mRuntimeModifiers; }
+		const ShipRuntimeModifiers& GetRuntimeModifiers() const { return mRuntimeModifiers; }
+		float GetMovementSpeedMultiplier() const { return mRuntimeModifiers.GetMovementSpeedMultiplier(); }
+		float GetShieldRegenMultiplier() const { return mRuntimeModifiers.GetShieldRegenMultiplier(); }
+		float GetAfterburnerRegenMultiplier() const { return mRuntimeModifiers.GetAfterburnerRegenMultiplier(); }
 
 		virtual void Shoot();
 		virtual void ApplyDamage(float amt) override;
@@ -64,6 +73,12 @@ namespace ly
 		bool StartDash(const DashRequest& request) override;
 		void EndDash() override;
 
+		void SetControlTargetClass(ControlTargetClass targetClass)
+		{
+			mControlTargetClass = targetClass;
+		}
+		ControlTargetClass GetControlTargetClass() const { return mControlTargetClass; }
+
 		virtual void SetupCollisionLayers();
 
 		List<GameplayTag> mAttachedLightTags;
@@ -80,7 +95,9 @@ namespace ly
 		EnergyComponent mEnergyComponent;
 		CombatRuntime mCombatRuntime;
 		ShipRuntime mShipRuntime;
+		ShipRuntimeModifiers mRuntimeModifiers;
 		MovementComponent mMovementComponent;
+		ControlTargetClass mControlTargetClass = ControlTargetClass::Normal;
 
 		sf::Color mBlinkColor;
 		float mBlinkTime;
@@ -94,8 +111,8 @@ namespace ly
 		void Blink();
 		void UpdateBlink(float deltaTime);
 		void UpdateRegeneration(float deltaTime);
-		void OnRuntimeAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue);
-		void OnShipAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue);
+		void OnRuntimeAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue);
+		void OnShipAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue);
 
 
 		virtual void OnHealthChanged(float amt, float health, float maxHealth);

@@ -21,7 +21,7 @@ namespace ly
 		int GetLevel() const { return mCurrentLevel; }
 		bool IsConfigured() const { return mIsConfigured; }
 		float GetXPRequiredForNextLevel() const;
-		float GetGrowthMultiplier(const GameplayTag& attributeId) const;
+		float GetGrowthMultiplier(const sas::AttributeId& attributeId) const;
 
 		Delegate<int, int> onLevelChanged;
 
@@ -38,5 +38,5 @@ namespace ly
 	};
 
 	const List<AttributeGrowthEntry>& GetLevelGrowthBaseValues();
-	bool IsLevelGrowthAttribute(const GameplayTag& attributeId);
+	bool IsLevelGrowthAttribute(const sas::AttributeId& attributeId);
 }

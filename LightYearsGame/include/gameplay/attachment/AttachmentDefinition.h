@@ -1,7 +1,13 @@
 #pragma once
 
 #include "attributes/AttributeSystem.h"
+#include "abilities/AbilityPolicies.h"
+#include "content/ContentId.h"
+#include "effects/GameplayEffectPolicies.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/tags/GameplayTags.h"
+
+#include <optional>
 
 namespace ly
 {
@@ -9,25 +15,26 @@ namespace ly
 	{
 		struct Capability
 		{
-			inline static const GameplayTag Damage{ "Attachment.Capability.Damage" };
-			inline static const GameplayTag Cooldown{ "Attachment.Capability.Cooldown" };
-			inline static const GameplayTag FireRate{ "Attachment.Capability.FireRate" };
-			inline static const GameplayTag Projectile{ "Attachment.Capability.Projectile" };
-			inline static const GameplayTag Beam{ "Attachment.Capability.Beam" };
-			inline static const GameplayTag Area{ "Attachment.Capability.Area" };
+			inline static const GameplayTag& Damage = GameplayTags::Attachment::Capability::Damage;
+			inline static const GameplayTag& Cooldown = GameplayTags::Attachment::Capability::Cooldown;
+			inline static const GameplayTag& FireRate = GameplayTags::Attachment::Capability::FireRate;
+			inline static const GameplayTag& Projectile = GameplayTags::Attachment::Capability::Projectile;
+			inline static const GameplayTag& Beam = GameplayTags::Attachment::Capability::Beam;
+			inline static const GameplayTag& Area = GameplayTags::Attachment::Capability::Area;
 		};
 
-		struct Attribute
+		struct AttributeIds
 		{
-			inline static const GameplayTag CooldownReductionOnIgnite{
-				"Attribute.Attachment.CooldownReductionOnIgnite"
+			inline static const sas::AttributeId CooldownReductionOnIgnite{
+				"Attachment.CooldownReductionOnIgnite"
 			};
 		};
 
 		struct Event
 		{
-			inline static const GameplayTag SourceDamageDealt{ "Event.Source.DamageDealt" };
-			inline static const GameplayTag SourceIgniteApplied{ "Event.Source.StatusApplied.Ignite" };
+			inline static const GameplayTag& SourceDamageDealt = GameplayTags::Event::Source::DamageDealt;
+			inline static const GameplayTag& SourceStatusIgniteApplied =
+				GameplayTags::Event::Source::StatusApplied::Ignite;
 		};
 	};
 
@@ -51,6 +58,7 @@ namespace ly
 		AttachmentConditionType type = AttachmentConditionType::Always;
 		GameplayTag subjectTag;
 		float threshold = 0.f;
+		sas::AttributeId subjectAttributeId;
 	};
 
 	struct ConditionalAttributeModifier
@@ -61,7 +69,9 @@ namespace ly
 
 	enum class AttachmentEventAction
 	{
-		ReduceCooldown
+		ReduceCooldown,
+		ApplyEffect,
+		RemoveEffects
 	};
 
 	enum class AttachmentCooldownTarget
@@ -76,16 +86,37 @@ namespace ly
 		GameplayTag eventTag;
 		AttachmentEventAction action = AttachmentEventAction::ReduceCooldown;
 		AttachmentCooldownTarget cooldownTarget = AttachmentCooldownTarget::Host;
-		GameplayTag magnitudeAttributeId;
+		sas::AttributeId magnitudeAttributeId;
 		float baseMagnitude = 0.f;
 		bool requireOwnerAsEventSource = true;
 		List<GameplayTag> requiredDamageTags;
+		// Empty means any ability lifecycle source. These are payload filters,
+		// not additional event tags.
+		sas::ContentId abilityId;
+		std::optional<sas::AbilityEndReason> endReason;
+		// Source-ability category/family filters stay in payload data. They allow
+		// one attachment rule to observe every Offensive or Defense ability.
+		List<GameplayTag> requiredAbilityTags;
+		List<GameplayTag> blockedAbilityTags;
+		// Zero means unlimited matches. consumeOnMatch is the compact one-shot
+		// form and takes precedence over maxMatches.
+		bool consumeOnMatch = false;
+		int maxMatches = 0;
+		// Generic effect actions are optional extensions of the event rule. They
+		// keep attachment reactions data-driven without adding a new subsystem.
+		sas::ContentId effectId;
+		std::optional<sas::GameplayEffectDisposition> effectDisposition;
+		bool effectCleanseableOnly = false;
+		std::string effectCategory;
+		std::string effectImmunityCategory;
+		List<GameplayTag> requiredOwnerTags;
+		List<GameplayTag> blockedOwnerTags;
 	};
 
 	// Definitions are data only. The small runtime resolver interprets these generic rules.
 	struct AttachmentDefinition
 	{
-		std::string attachmentId;
+		sas::ContentId attachmentId;
 		std::string displayName;
 		List<AttachmentHostKind> allowedHosts;
 		List<GameplayTag> requiredCapabilities;
@@ -101,5 +132,6 @@ namespace ly
 	{
 		AttachmentDefinition definition;
 		AttachmentHostKind hostKind = AttachmentHostKind::Ability;
+		List<int> eventMatchCounts;
 	};
 }

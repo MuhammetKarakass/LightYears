@@ -5,6 +5,7 @@
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "framework/Actor.h"
 
 #include <variant>
@@ -23,17 +24,6 @@ namespace ly
 				.value_or(fallback);
 		}
 
-		void EmitLifecycleEvent(
-			LightYearsAbilitySystemComponent& abilitySystem,
-			Actor& owner,
-			const GameplayTag& eventTag)
-		{
-			sas::AbilityEvent event;
-			event.eventTag = eventTag;
-			event.SetSource(&owner);
-			event.SetTarget(&owner);
-			abilitySystem.HandleGameplayEvent(event);
-		}
 	}
 
 	bool InfernoSprayAbility::Validate(
@@ -67,7 +57,6 @@ namespace ly
 	bool InfernoSprayAbility::Activate(GameAbilityBehaviorContext& context)
 	{
 		mActiveTime = 0.f;
-		mCancelAvailableFired = false;
 
 		const sas::GameplayEffectDefinition* effectDef =
 			EffectData::FindGameplayEffectDefinition(MovementEffectSchema::SlowEffectId);
@@ -87,12 +76,7 @@ namespace ly
 			mMovementPenaltyEffectHandle = context.abilitySystem.ApplyGameplayEffect(spec);
 		}
 
-		context.abilitySystem.AddOwnedTag(AbilityData::InfernoSpray::State::Active);
-		EmitLifecycleEvent(
-			context.abilitySystem,
-			context.owner,
-			AbilityData::InfernoSpray::Event::Started
-		);
+		context.abilitySystem.AddOwnedTag(GameplayTags::State::Ability::InfernoSpray::Active);
 
 		mStarted = true;
 		return true;
@@ -111,17 +95,6 @@ namespace ly
 			AbilityData::InfernoSpray::Setting::MinCancelDuration,
 			0.f
 		);
-
-		if (mActiveTime >= minCancelDuration &&
-			!mCancelAvailableFired)
-		{
-			mCancelAvailableFired = true;
-			EmitLifecycleEvent(
-				context.abilitySystem,
-				context.owner,
-				AbilityData::InfernoSpray::Event::CancelAvailable
-			);
-		}
 
 		if (context.instance.IsPressedThisFrame())
 		{
@@ -145,30 +118,7 @@ namespace ly
 			mMovementPenaltyEffectHandle = {};
 		}
 
-		context.abilitySystem.RemoveOwnedTag(AbilityData::InfernoSpray::State::Active);
-
-		if (reason == sas::AbilityEndReason::Cancelled)
-		{
-			EmitLifecycleEvent(
-				context.abilitySystem,
-				context.owner,
-				AbilityData::InfernoSpray::Event::Cancelled
-			);
-		}
-		else
-		{
-			EmitLifecycleEvent(
-				context.abilitySystem,
-				context.owner,
-				AbilityData::InfernoSpray::Event::Completed
-			);
-		}
-
-		EmitLifecycleEvent(
-			context.abilitySystem,
-			context.owner,
-			AbilityData::InfernoSpray::Event::Ended
-		);
+		context.abilitySystem.RemoveOwnedTag(GameplayTags::State::Ability::InfernoSpray::Active);
 
 		mStarted = false;
 	}

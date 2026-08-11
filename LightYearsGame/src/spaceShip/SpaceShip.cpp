@@ -19,6 +19,7 @@ namespace ly
 		mCombatRuntime{ *this },
 		mShipRuntime{ mCombatRuntime.GetAbilitySystemComponent().GetAttributes() },
 		mMovementComponent{ *this, shipDef },
+		mControlTargetClass{ shipDef.controlTargetClass },
 		mBlinkColor{255, 0, 0, 255},
 		mBlinkTime{0.f},
 		mBlinkDuration{.25f},
@@ -68,7 +69,10 @@ namespace ly
 	void SpaceShip::Tick(float deltaTime)
 	{
 		Actor::Tick(deltaTime);
-		mMovementComponent.Tick(deltaTime, GetMovementSpeedCapMultiplier());
+		mMovementComponent.Tick(
+			deltaTime,
+			GetMovementSpeedCapMultiplier() * GetMovementSpeedMultiplier()
+		);
 		UpdateBlink(deltaTime);      
 		mCombatRuntime.Tick(deltaTime);
 		UpdateRegeneration(deltaTime);
@@ -103,7 +107,7 @@ namespace ly
 		mMovementComponent.RefreshAttributes();
 	}
 
-	void SpaceShip::OnRuntimeAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue)
+	void SpaceShip::OnRuntimeAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue)
 	{
 		(void)previousValue;
 		(void)currentValue;
@@ -116,7 +120,7 @@ namespace ly
 		}
 	}
 
-	void SpaceShip::OnShipAttributeChanged(GameplayTag attributeId, float previousValue, float currentValue)
+	void SpaceShip::OnShipAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue)
 	{
 		(void)previousValue;
 		(void)currentValue;
@@ -150,10 +154,15 @@ namespace ly
 		const bool allowRecharge = !IsAfterburnerRechargeBlocked();
 		mShieldComponent.Tick(
 			deltaTime,
-			std::max(0.f, shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen)),
+			std::max(0.f, shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen)) *
+				GetShieldRegenMultiplier(),
 			allowRecharge
 		);
-		mEnergyComponent.Tick(deltaTime, mShipRuntime.GetAfterburnerRegenPerSecond(), allowRecharge);
+		mEnergyComponent.Tick(
+			deltaTime,
+			mShipRuntime.GetAfterburnerRegenPerSecond() * GetAfterburnerRegenMultiplier(),
+			allowRecharge
+		);
 	}
 
 	sf::Vector2f SpaceShip::ResolveLegacyMovementSpeed(const sf::Vector2f& baseSpeed) const
@@ -188,6 +197,25 @@ namespace ly
 	void SpaceShip::EndDash()
 	{
 		mMovementComponent.EndDash();
+	}
+
+	ControlResponse SpaceShip::ResolveControlResponse(
+		const GameplayTag& controlTag
+	) const
+	{
+		(void)controlTag;
+		switch (mControlTargetClass)
+		{
+		case ControlTargetClass::Normal:
+			return { ControlResponseMode::Full, 1.f, 0.f, true };
+		case ControlTargetClass::Elite:
+			return { ControlResponseMode::Reduced, 0.6f, 0.f, true };
+		case ControlTargetClass::MiniBoss:
+			return { ControlResponseMode::Reduced, 0.3f, 0.f, true };
+		case ControlTargetClass::Boss:
+			return { ControlResponseMode::InterruptOnly, 0.f, 0.15f, true };
+		}
+		return {};
 	}
 
 
@@ -251,7 +279,9 @@ namespace ly
 
 	void SpaceShip::ReceiveDamage(DamageContext context)
 	{
-		if (IsInvulnerable() || context.remainingDamage <= 0.f)
+		if (IsInvulnerable() ||
+			GetCombatRuntime().BlocksIncomingDamage() ||
+			context.remainingDamage <= 0.f)
 		{
 			return;
 		}

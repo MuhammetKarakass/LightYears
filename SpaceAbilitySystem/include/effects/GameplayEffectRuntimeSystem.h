@@ -238,6 +238,28 @@ namespace sas
 			return RemoveEffectInternal(handle);
 		}
 
+		std::size_t RemoveEffectsIf(
+			const std::function<bool(const ActiveEffect&)>& predicate
+		)
+		{
+			if (!predicate)
+			{
+				return 0;
+			}
+
+			std::size_t removedCount = 0;
+			for (const GameplayEffectHandle handle : GetHandles())
+			{
+				const ActiveEffect* effect = FindEffect(handle);
+				if (!effect || !predicate(*effect))
+				{
+					continue;
+				}
+				removedCount += RemoveEffect(handle) ? 1u : 0u;
+			}
+			return removedCount;
+		}
+
 		void Tick(float deltaTime)
 		{
 			for (const GameplayEffectHandle effectHandle : GetHandles())
@@ -420,7 +442,24 @@ namespace sas
 
 		bool CanApplyEffect(const GameplayEffectDefinition& definition) const
 		{
-			return CanApplyGameplayEffect(definition, mOwnedTags);
+			if (!CanApplyGameplayEffect(definition, mOwnedTags))
+			{
+				return false;
+			}
+
+			if (!definition.immunityCategory.empty())
+			{
+				for (const ActiveEffect& activeEffect : mActiveEffects.GetAll())
+				{
+					if (activeEffect.spec.definition.grantedImmunityCategory ==
+						definition.immunityCategory)
+					{
+						return false;
+					}
+				}
+			}
+
+			return true;
 		}
 
 		template <

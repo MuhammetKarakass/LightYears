@@ -1,6 +1,8 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "content/ContentId.h"
+#include "gameplay/tags/GameplayTags.h"
 
 namespace ly
 {
@@ -10,7 +12,7 @@ namespace ly
 	// belongs to the combat pipeline rather than to an ability-family contract.
 	struct CombatEventSchema
 	{
-		inline static const GameplayTag OwnerDamageTaken{ "Event.Owner.DamageTaken" };
+		inline static const GameplayTag& OwnerDamageTaken = GameplayTags::Event::Owner::DamageTaken;
 	};
 
 	// Numeric damage-type behavior is carried with each hit. Values are resolved
@@ -42,6 +44,8 @@ namespace ly
 	{
 		Actor* source = nullptr;
 		Actor* target = nullptr;
+		sas::ContentId sourceAbilityId;
+		List<GameplayTag> sourceAbilityTags;
 		float originalDamage = 0.f;
 		float remainingDamage = 0.f;
 		float absorbedDamage = 0.f;

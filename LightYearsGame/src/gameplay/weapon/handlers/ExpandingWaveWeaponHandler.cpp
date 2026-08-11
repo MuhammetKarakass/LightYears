@@ -15,12 +15,12 @@ namespace ly
 		class ExpandingWaveWeaponHandler final : public PrimaryWeaponHandler
 		{
 		public:
-			const GameplayTag& GetTypeTag() const override
+			PrimaryWeaponType GetType() const override
 			{
-				return PrimaryWeaponSchema::Wave::Expanding::TypeTag;
+				return PrimaryWeaponType::WaveExpanding;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return PrimaryWeaponBuiltIns::WaveDeliveryAttributeRoots();
 			}
@@ -29,7 +29,7 @@ namespace ly
 				const PrimaryWeaponDefinition& definition
 			) const override
 			{
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Range,
 					PrimaryWeaponSchema::Wave::Delivery::Speed,
@@ -50,12 +50,12 @@ namespace ly
 					}
 				}
 
-				const float initialWidth = sas::FindGameplayAttributeValue(
+				const float initialWidth = sas::FindAttributeValue(
 					definition.attributes,
 					PrimaryWeaponSchema::Wave::Delivery::InitialWidth,
 					0.f
 				);
-				const float maximumWidth = sas::FindGameplayAttributeValue(
+				const float maximumWidth = sas::FindAttributeValue(
 					definition.attributes,
 					PrimaryWeaponSchema::Wave::Delivery::MaximumWidth,
 					0.f

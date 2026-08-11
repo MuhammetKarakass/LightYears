@@ -303,7 +303,7 @@ dosyaları kaldırılmıştır. Game tarafında kalan `LightYearsAbilitySystemCo
 `GameAbility` ve `GameAbilityActionExecutor` Actor, weapon, attachment,
 effect ve concrete content çağrılarını bağlayan adaptörlerdir.
 Fonksiyon bazlı ikinci denetimde attribute scaling-rule uygulaması,
-`HasGameplayAttribute`/base-list üretimi ve runtime snapshot construction da
+`HasAttribute`/base-list üretimi ve runtime snapshot construction da
 SAS'a alınmıştır; executor içindeki kalan çözümleme kodu attachment, weapon,
 game attribute ID veya World/Actor hedefleme bağımlılığı taşır.
 
@@ -441,7 +441,7 @@ kendi leaf taglerini kendi feature/config klasöründe tanımlamaya devam eder.
 | Ability lifecycle | `State.Ability.<Family>.<State>` ve `Event.Ability.<Family>.<Event>`; dinlenen dış olaylar `Event.<Producer>.<Event>` | Feature-local behavior contract |
 | Ability actor | `AbilityActor.<Family>.<Role>` | Feature-local actor contract |
 | Effect runtime state | `State.Effect.<Family>.<State>` | Feature-local effect contract/config |
-| Attribute | `Attribute.<Owner>...` | İlgili sistemin attribute ID kataloğu |
+| Attribute ID | `<Owner>...` / `<AbilityActor>...` | İlgili sistemin AttributeId kataloğu |
 | Effect behavior | `EffectBehavior.<Family>[.<Behavior>]` | Feature-local effect behavior |
 | Primary weapon | `PrimaryWeapon.<Family>.<Type>` / `PrimaryWeapon.Feature.<Feature>` | Weapon handler/feature |
 | Damage | `Damage.Type.<Type>` | Damage type schema |
@@ -452,6 +452,23 @@ gösterir. `Ability.<Category>.<Family>.<Variant>` ve
 `Attachment.<Family>.<Name>.<Variant>` biçimindeki somut kayıt kimlikleri
 `GameplayTag` değil, `ContentIdSchema` tarafından doğrulanan string content
 ID'leridir.
+
+Numeric gameplay değerlerinin kimliği `sas::AttributeId`'dir. AttributeId
+string-backed ve opaque bir SAS tipidir; `GameplayTag` hiyerarşisi, tag
+conversion'ı veya `MatchesTag()` semantiği taşımaz. `GameplayTag` yalnızca
+semantic gameplay bilgisi için kullanılır. AttributeId namespace ve contract
+doğrulaması LightYearsGame katmanına aittir; SAS generic AttributeId'nin game
+namespace'lerini bilmez.
+
+Canonical AttributeId adı `Owner.*`, `Ship.*`, `Common.*`, `Damage.*`,
+`Effect.*`, `PrimaryWeapon.*`, `AbilityActor.*` veya feature tarafından
+sahiplenilen eşdeğer bir namespace ile başlar; eski `Attribute.*` prefix'i
+JSON loader'larında ve `GameplayTagSchema` içinde reddedilir. `AttributeIdSchema`
+yalnızca lexical biçim ve namespace sınırı yardımcılarını sağlar, kayıtlı tüm
+attribute'ları listelemez. Hangi ID'lerin geçerli olduğu ilgili game catalog,
+weapon handler veya ability actor contract'ında kalır. Lookup API'leri de bu
+ayrımdan sonra `FindAttribute`, `FindAttributeValue` ve `HasAttribute` olarak
+adlandırılmıştır; davranış ve modifier/scaling sırası değişmemiştir.
 
 `State.ActionLock.AbilityActivation` ve
 `State.ActionLock.PrimaryWeaponFire` iki kayıtlı ortak kilittir. Bir mekanik
@@ -470,7 +487,7 @@ bu şemayı çağırır.
 Her ability ailesinin `gameplay/ability/<family>/<Family>Contracts.h` dosyası
 aynı contract yüzeyini kullanır: zorunlu `AbilityId`, `CategoryTag`, `FamilyTag`
 ve `BehaviorTag`; varsa `State`, `Event` ve `Actor` alt alanları. Actor role'ü
-altında onun definition ID'si, type tag'i ve attribute tag'leri birlikte kalır.
+altında onun definition ID'si, type tag'i ve attribute ID'leri birlikte kalır.
 Bir effect ID'si veya dış event, onu üreten effect/owner sisteminin contract'ında
 tanımlanır; ability yalnız onu tüketir. Bu nedenle boş `State`/`Event`/`Actor`
 struct'ları açılmaz ve feature'lar shared action-lock tag'i yeniden tanımlamaz.
@@ -485,7 +502,7 @@ başka bir effect/combat sistemindeyse ability contract'ına kopyalanmaz.
 `Setting` ve `Setting::Contract` yalnızca behavior'ın JSON `settings` nesnesinden
 okuduğu özel anahtarlar için eklenir. Standart ability alanları için setting
 anahtarı oluşturulmaz ve boş contract kaydedilmez. Mevcut shipped ability
-verisinde bu durum Dash ve InfernoSpray olmak üzere 6 ability'den 2'si için
+verisinde bu durum Dash ve InfernoSpray olmak üzere 8 ability'den 2'si için
 geçerlidir.
 
 Ability'ye özel effect ID, behavior tag'i ve effect state tag'i yalnızca o
@@ -509,8 +526,9 @@ Kimlik ve contract kuralları:
   `Weapon.<Family>.<Name>.<Variant>`, `Ship.<Faction>.<Name>.<Variant>`,
   `Attachment.<Family>.<Name>.<Variant>` ve
   `Visual.Effect.<Family>.<VariantPath>`.
-- Sorgulanan veya grant edilen semantic değerler `GameplayTag` olur. Struct
-  alanları ve rol bildiren sabitler `...Tag` ile biter: `behaviorTag`,
+- Sorgulanan veya grant edilen semantic değerler `GameplayTag` olur. Numeric
+  gameplay değerlerinin kimliği `sas::AttributeId` olur. Struct alanları ve rol
+  bildiren sabitler `...Tag` ile biter: `behaviorTag`,
   `FamilyTag`, `TypeTag`, `FeatureTag`. `DamageTypeSchema::Thermal` gibi türü
   enclosing schema tarafından açık olan leaf sabitler kısa kalabilir.
 - `...Id` daima catalog/registry kaydı olan string kimliktir. Attachment kayıt
@@ -523,7 +541,7 @@ Kimlik ve contract kuralları:
   gruplanır. JSON numeric-setting contract'ı `Setting::Contract` içinde kalır;
   loader family'yi bilmez, behavior registry üzerinden onu çözer.
 - Aileye özel actor attribute'ları daima
-  `Attribute.AbilityActor.<Family>.<Role>.<Name>` biçimindedir ve ilgili
+  `AbilityActor.<Family>.<Role>.<Name>` biçimindeki AttributeId adlarıdır ve ilgili
   `Actor::<Role>` contract'ında tanımlanır. `CommonAttributeIds` değerleri
   contract'ta yeniden adlandırılmaz. Bir actor başka bir role ait değerleri
   yalnızca onları üretilecek actor'a iletmek için tüketiyorsa (Gravity Anomaly
@@ -563,9 +581,10 @@ Yeni shipped ability dikey dilim olarak eklenir. Applicable kayıt noktaları:
 6. Built-in catalog, CMake source listesi ve shipped validation testi.
 
 Taslak ability yalnız contract ve schema testinden oluşabilir. Boş config,
-kaydedilmeyen presentation ID veya yarım actor/profile yüzeyi açılmaz. Overdrive
-Core taslağı bu nedenle yalnız contract ve schema testi olarak tutulur; behavior,
-JSON ve actor/profile bir sonraki dikey dilimde birlikte eklenir.
+kaydedilmeyen presentation ID veya yarım actor/profile yüzeyi açılmaz. Null
+Pulse dikey dilimi bu kuralın tam uygulamasıdır: contract, JSON, ayrı behavior,
+yeniden kullanılabilir projectile sınıflandırması, kontrol effect'leri, typed
+presentation profile ve runtime testleri birlikte kaydedilmiştir.
 
 Dosyalar yalnız satır sayısı nedeniyle bölünmez. Ayrıştırma için en az iki ayrı
 değişim nedeni veya başka consumer tarafından yeniden kullanılan bağımsız bir
@@ -591,6 +610,10 @@ gameplay/ability/
 |   |-- GravityAnomalyAbility
 |   |-- GravityAnomalyProjectileActor
 |   `-- GravityAnomalyFieldActor
+|-- nullPulse/
+|   |-- NullPulseAbility
+|   |-- NullPulseTargetQuery
+|   `-- NullPulseVisualActor
 |-- rocket/
 |   |-- RocketAbility
 |   `-- RocketProjectileActor
@@ -669,7 +692,7 @@ handler ve benzersiz actor ID'leriyle tanımlanmalıdır.
 #### Sayısal veri sahipliği
 
 Bir sayısal değeri, onu üreten gameplay kaynağı sahiplenir. Weapon hit/status
-değerleri `weapons.json` içindeki `Attribute.Damage.*` alanlarında; ability'nin
+değerleri `weapons.json` içindeki `Damage.*` alanlarında; ability'nin
 uyguladığı effect değerleri `abilities.json` içindeki `effectSpecs` alanında;
 ability actor alan değerleri actor kaydında veya ability-local
 `attributeProfiles` içinde tutulur. `effects.json` magnitude, duration, stack
@@ -782,6 +805,7 @@ sahibidir; shared scaling/attachment değer çözümü ise
 
 | Ability | Slot | Çalışma | Başlangıç / scale | Level |
 | --- | --- | --- | --- | --- |
+| NullPulse_Basic | Ability2 (E), varsayılan player grant | 11 sn cooldown; Instant; 1 charge; oyuncu merkezli 500 radius pulse (+200) | Her uygun düşman Combatant'a bir kez Energy damage; projectile işaretli actor'ları yok eder; normal/elite/miniboss için Stun, boss için kısa Stagger/interrupt; beams, field'ler, pickup'lar ve görsel actor'lar silinmez | Damage L1 10, her level +2; cooldown her level -0.25; stun 1.0 sn + EnergyMax tabanlı en fazla +0.65 sn; crit/AttackPower/AttackSpeed etkisi yok |
 | Shield_Basic | Ability1 (Q), varsayılan player grant yok | 8 sn cooldown, 5 sn duration; Basic Barrier uygular | Barrier kapasitesi +0.20 × MaxHealth ve +50 × Armor | Progression tanımlı değil |
 | SunBeam_Strike_Basic | Ability2 (E) | MouseWorld konumunda SunBeam strike actor spawn eder | Başlangıç damage 40, radius 96, width 72, length 720 | 2–5: her level +8 Damage, +8 Radius; scrap: 40/50/65/80 |
 | Dash_Basic | Ability3 (F) | 2 sn cooldown, 0.24 sn duration; input veya mouse yönünde hareket | Base 260 mesafe; movement rating ile en fazla +%50; mevcut kamera hedefinin üzerine +%15 zoom-out | 2–5: cooldown 1.88/1.76/1.64/1.52 sn |

@@ -59,7 +59,7 @@ namespace ly
 
 		mBeamWidth = std::max(
 			1.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				AbilityData::SunBeam::Actor::Shared::Width,
 				mBeamWidth
@@ -68,7 +68,7 @@ namespace ly
 
 		mBeamLength = std::max(
 			1.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				AbilityData::SunBeam::Actor::Shared::Length,
 				mBeamLength
@@ -76,7 +76,7 @@ namespace ly
 		);
 		mImpactRadius = std::max(
 			1.f,
-			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, mImpactRadius)
+			sas::FindAttributeValue(attributes, CommonAttributeIds::Radius, mImpactRadius)
 		);
 
 		mVisual.Configure(mVisualDefinition, mBeamWidth, mBeamLength, mImpactRadius);
@@ -117,7 +117,15 @@ namespace ly
 				continue;
 			}
 
-			ApplyCombatDamage(*target, damage, GetOwnerActor(), GetDamageTags(), GetDamagePayload());
+			ApplyCombatDamage(
+				*target,
+				damage,
+				GetOwnerActor(),
+				GetDamageTags(),
+				GetDamagePayload(),
+				GetSourceAbilityId(),
+				GetSourceAbilityTags()
+			);
 		}
 	}
 

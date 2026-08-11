@@ -2,27 +2,20 @@
 
 #include "framework/Core.h"
 #include "attributes/AttributeSystem.h"
+#include "gameplay/ability/actors/AbilityActorType.h"
+#include "content/ContentId.h"
 #include <string>
 
 namespace ly
 {
-	struct AbilityActorSchema
-	{
-		struct Generic
-		{
-			inline static const GameplayTag TypeTag{ "AbilityActor.Generic.Generic" };
-		};
-	};
-
-
 	struct AbilityActorDefinition
 	{
-		std::string actorDefinitionId;
-		GameplayTag actorTypeTag = AbilityActorSchema::Generic::TypeTag;
+		sas::ContentId actorDefinitionId;
+		AbilityActorType actorType = AbilityActorType::Generic;
 		float lifeTime = 0.f;
 		float spawnDistance = 0.f;
 		sas::GameplayAttributeList attributes;
-		std::string presentationProfileId;
+		sas::ContentId presentationProfileId;
 	};
 }
 

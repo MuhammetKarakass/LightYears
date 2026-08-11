@@ -1,7 +1,9 @@
 #include "gameplay/content/EffectLoader.h"
 
+#include "attributes/AttributeId.h"
 #include "framework/JsonDocumentLoader.h"
 #include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 
 #include <limits>
 #include <set>
@@ -63,6 +65,23 @@ namespace ly::content
 			throw std::runtime_error("Unknown gameplay effect stacking policy: " + value);
 		}
 
+		sas::GameplayEffectDisposition ParseDisposition(const std::string& value)
+		{
+			if (value == "Beneficial")
+			{
+				return sas::GameplayEffectDisposition::Beneficial;
+			}
+			if (value == "Harmful")
+			{
+				return sas::GameplayEffectDisposition::Harmful;
+			}
+			if (value == "Neutral")
+			{
+				return sas::GameplayEffectDisposition::Neutral;
+			}
+			throw std::runtime_error("Unknown gameplay effect disposition: " + value);
+		}
+
 		List<GameplayTag> ParseTags(const Json& values)
 		{
 			List<GameplayTag> tags;
@@ -96,7 +115,7 @@ namespace ly::content
 			for (const Json& value : values)
 			{
 				modifiers.push_back(sas::AttributeModifier{
-					GameplayTag{ value.at("attributeId").get<std::string>() },
+					sas::AttributeId{ value.at("attributeId").get<std::string>() },
 					ParseOperation(value.at("operation").get<std::string>()),
 					value.at("magnitude").get<float>(),
 					value.value("priority", 0)
@@ -111,7 +130,7 @@ namespace ly::content
 			for (const Json& value : values)
 			{
 				attributes.push_back(sas::GameplayAttribute{
-					GameplayTag{ value.at("id").get<std::string>() },
+					sas::AttributeId{ value.at("id").get<std::string>() },
 					value.at("baseValue").get<float>(),
 					value.value("minValue", 0.f),
 					value.value("maxValue", std::numeric_limits<float>::max())
@@ -147,22 +166,24 @@ namespace ly::content
 				fallbackDefinitions,
 				id
 			);
-			if (!fallback)
+			if (!fallback && !object.contains("behaviorKey"))
 			{
 				throw std::runtime_error(
-					"No C++ gameplay effect base exists for effect '" + id + "'"
+					"Gameplay effect '" + id +
+					"' requires either JSON behaviorKey or a C++ behavior base"
 				);
 			}
 
-			EffectLoader::LoadedDefinition loaded{ id, *fallback };
+			EffectLoader::LoadedDefinition loaded{ id, {} };
+			// The fallback contributes only the executable behavior selector. Every
+			// other effect-content field is reset and must come from JSON. This keeps
+			// the C++ record a typed behavior fallback instead of a second balance or
+			// metadata catalog.
 			loaded.definition.effectId = id;
-			// Keep the C++ definition as a typed behavior/presentation skeleton.
-			// Numeric effect state is owned by JSON (or by the source that creates
-			// a source-parameterized runtime spec), never by this fallback copy.
-			loaded.definition.duration = 0.f;
-			loaded.definition.maxStacks = 1;
-			loaded.definition.modifiers.clear();
-			loaded.definition.attributes.clear();
+			if (fallback)
+			{
+				loaded.definition.behaviorKey = fallback->behaviorKey;
+			}
 			loaded.definition.sourceParameterized = object.value(
 				"sourceParameterized",
 				false
@@ -184,10 +205,10 @@ namespace ly::content
 				loaded.definition.modifiers.clear();
 				loaded.definition.attributes.clear();
 			}
-			if (object.contains("behaviorTag"))
+			if (object.contains("behaviorKey"))
 			{
-				loaded.definition.behaviorTag = GameplayTag{
-					object.at("behaviorTag").get<std::string>()
+				loaded.definition.behaviorKey = sas::GameplayEffectBehaviorKey{
+					object.at("behaviorKey").get<std::string>()
 				};
 			}
 			if (object.contains("durationPolicy"))
@@ -289,6 +310,32 @@ namespace ly::content
 				loaded.definition.sourceScopedApplication = object.at(
 					"sourceScopedApplication"
 				).get<bool>();
+			}
+			if (object.contains("disposition"))
+			{
+				loaded.definition.disposition = ParseDisposition(
+					object.at("disposition").get<std::string>()
+				);
+			}
+			if (object.contains("cleanseable"))
+			{
+				loaded.definition.cleanseable = object.at("cleanseable").get<bool>();
+			}
+			if (object.contains("category"))
+			{
+				loaded.definition.category = object.at("category").get<std::string>();
+			}
+			if (object.contains("immunityCategory"))
+			{
+				loaded.definition.immunityCategory = object.at(
+					"immunityCategory"
+				).get<std::string>();
+			}
+			if (object.contains("grantedImmunityCategory"))
+			{
+				loaded.definition.grantedImmunityCategory = object.at(
+					"grantedImmunityCategory"
+				).get<std::string>();
 			}
 			return loaded;
 		}

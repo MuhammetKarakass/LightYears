@@ -25,7 +25,7 @@ namespace ly
 		return BaseValues;
 	}
 
-	bool IsLevelGrowthAttribute(const GameplayTag& attributeId)
+	bool IsLevelGrowthAttribute(const sas::AttributeId& attributeId)
 	{
 		for (const AttributeGrowthEntry& entry : GetLevelGrowthBaseValues())
 		{
@@ -99,7 +99,7 @@ namespace ly
 		return std::max(1.f, mDefinition.baseXP * std::pow(static_cast<float>(mCurrentLevel), mDefinition.xpExponent));
 	}
 
-	float ShipProgression::GetGrowthMultiplier(const GameplayTag& attributeId) const
+	float ShipProgression::GetGrowthMultiplier(const sas::AttributeId& attributeId) const
 	{
 		for (const AttributeGrowthEntry& entry : mDefinition.growthOverrides)
 		{

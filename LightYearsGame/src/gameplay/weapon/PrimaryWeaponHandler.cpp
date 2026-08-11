@@ -7,10 +7,11 @@ namespace ly
 	namespace
 	{
 		const List<GameplayTag> EmptyTags{};
+		const List<sas::AttributeId> EmptyAttributeRoots{};
 	}
 
 	float PrimaryWeaponRuntimeState::GetFeatureValue(
-		const GameplayTag& key,
+		const sas::AttributeId& key,
 		float fallback
 	) const
 	{
@@ -19,7 +20,7 @@ namespace ly
 	}
 
 	void PrimaryWeaponRuntimeState::SetFeatureValue(
-		const GameplayTag& key,
+		const sas::AttributeId& key,
 		float value
 	)
 	{
@@ -38,9 +39,9 @@ namespace ly
 		return cooldown;
 	}
 
-	const List<GameplayTag>& PrimaryWeaponHandler::GetInheritedAttributeRoots() const
+	const List<sas::AttributeId>& PrimaryWeaponHandler::GetInheritedAttributeRoots() const
 	{
-		return EmptyTags;
+		return EmptyAttributeRoots;
 	}
 
 	PrimaryWeaponValidationResult PrimaryWeaponHandler::ValidateDefinition(
@@ -85,9 +86,10 @@ namespace ly
 		return { true, {} };
 	}
 
-	const List<GameplayTag>& PrimaryWeaponFeatureHandler::GetRuntimeValueKeys() const
+	const List<sas::AttributeId>& PrimaryWeaponFeatureHandler::GetRuntimeValueKeys() const
 	{
-		return EmptyTags;
+		static const List<sas::AttributeId> emptyKeys{};
+		return emptyKeys;
 	}
 
 	void PrimaryWeaponFeatureHandler::BeginFire(

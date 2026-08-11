@@ -22,9 +22,8 @@ namespace ly
 			float capacity
 		)
 		{
-			if (!context.definition.weaponTypeTag.MatchesTagExact(
-				PrimaryWeaponSchema::Beam::Continuous::TypeTag
-			) || capacity <= 0.f)
+			if (context.definition.weaponType !=
+				PrimaryWeaponType::BeamContinuous || capacity <= 0.f)
 			{
 				return 1.f;
 			}
@@ -61,7 +60,7 @@ namespace ly
 			float capacity
 		)
 		{
-			const float baseGain = std::max(0.f, sas::FindGameplayAttributeValue(
+			const float baseGain = std::max(0.f, sas::FindAttributeValue(
 				context.attributes,
 				PrimaryWeaponSchema::Feature::Heat::Gain,
 				0.f
@@ -121,19 +120,19 @@ namespace ly
 		class HeatWeaponFeatureHandler final : public PrimaryWeaponFeatureHandler
 		{
 		public:
-			const GameplayTag& GetFeatureTag() const override
+			PrimaryWeaponFeatureType GetFeatureType() const override
 			{
-				return PrimaryWeaponSchema::Feature::Heat::FeatureTag;
+				return PrimaryWeaponFeatureType::Heat;
 			}
 
-			const List<GameplayTag>& GetAttributeRoots() const override
+			const List<sas::AttributeId>& GetAttributeRoots() const override
 			{
 				return PrimaryWeaponBuiltIns::HeatAttributeRoots();
 			}
 
-			const List<GameplayTag>& GetRuntimeValueKeys() const override
+			const List<sas::AttributeId>& GetRuntimeValueKeys() const override
 			{
-				static const List<GameplayTag> keys{
+				static const List<sas::AttributeId> keys{
 					PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue
 				};
 				return keys;
@@ -143,7 +142,7 @@ namespace ly
 				const PrimaryWeaponDefinition& definition
 			) const override
 			{
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					PrimaryWeaponSchema::Feature::Heat::Gain,
 					PrimaryWeaponSchema::Feature::Heat::Capacity,
 					PrimaryWeaponSchema::Feature::Heat::Dissipation
@@ -195,14 +194,13 @@ namespace ly
 					}
 				}
 
-				if (!definition.weaponTypeTag.MatchesTagExact(
-					PrimaryWeaponSchema::Beam::Continuous::TypeTag
-				))
+				if (definition.weaponType !=
+					PrimaryWeaponType::BeamContinuous)
 				{
 					return { true, {} };
 				}
 
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					PrimaryWeaponSchema::Feature::Heat::OverheatCooldown,
 					PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat
 				})
@@ -242,7 +240,7 @@ namespace ly
 				const PrimaryWeaponRuntimeState& state
 			) const override
 			{
-				const float capacity = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float capacity = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Capacity,
 					0.f
@@ -262,7 +260,7 @@ namespace ly
 				PrimaryWeaponRuntimeState& state
 			) const override
 			{
-				const float capacity = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float capacity = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Capacity,
 					0.f
@@ -290,7 +288,7 @@ namespace ly
 			{
 				if (state.handler && !state.handler->UsesIntervalFire())
 				{
-					const float capacity = std::max(0.f, sas::FindGameplayAttributeValue(
+					const float capacity = std::max(0.f, sas::FindAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Feature::Heat::Capacity,
 						0.f
@@ -311,7 +309,7 @@ namespace ly
 					);
 					if (capacity > 0.f && current >= capacity)
 					{
-						state.RequestCooldown(std::max(0.f, sas::FindGameplayAttributeValue(
+						state.RequestCooldown(std::max(0.f, sas::FindAttributeValue(
 							context.attributes,
 							PrimaryWeaponSchema::Feature::Heat::OverheatCooldown,
 							0.f
@@ -343,7 +341,7 @@ namespace ly
 				float deltaTime
 			)
 			{
-				const float dissipation = std::max(0.f, sas::FindGameplayAttributeValue(
+				const float dissipation = std::max(0.f, sas::FindAttributeValue(
 					context.attributes,
 					PrimaryWeaponSchema::Feature::Heat::Dissipation,
 					0.f

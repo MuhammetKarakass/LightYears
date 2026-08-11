@@ -1,7 +1,7 @@
 #pragma once
 
+#include "attributes/AttributeId.h"
 #include "framework/Core.h"
-#include "gameplay/tags/GameplayTagSchema.h"
 
 namespace AbilityData::GravityAnomaly
 {
@@ -10,20 +10,10 @@ namespace AbilityData::GravityAnomaly
 		inline static constexpr char Basic[] = "Ability.Control.GravityAnomaly.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityControl };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.GravityAnomaly" };
-	inline const ly::GameplayTag FamilyTag{ "Ability.Control.GravityAnomaly" };
-
 	struct Effect
 	{
-		inline static const ly::GameplayTag BehaviorTag{ 
-			"EffectBehavior.GravityAnomaly"
-		};
 		inline static constexpr char InsideEffectId[] =
 			"Effect.GravityAnomaly.Inside.Basic";
-		inline static const ly::GameplayTag InsideTag{
-			"State.Effect.GravityAnomaly.Inside"
-		};
 		// C++ fallback/test value. Shipped content owns this in abilities.json.
 		inline static constexpr float InsideEffectDurationSeconds = 2.f;
 	};
@@ -34,14 +24,11 @@ namespace AbilityData::GravityAnomaly
 		{
 			inline static constexpr char BasicDefinitionId[] =
 				"Actor.Ability.GravityAnomaly.Projectile.Basic";
-			inline static const ly::GameplayTag TypeTag{
+			inline static const sas::AttributeId Root{
 				"AbilityActor.GravityAnomaly.Projectile"
 			};
-			inline static const ly::GameplayTag AttributeRoot{
-				"Attribute.AbilityActor.GravityAnomaly.Projectile"
-			};
-			inline static const ly::GameplayTag ProjectileSpeed{
-				"Attribute.AbilityActor.GravityAnomaly.Projectile.ProjectileSpeed"
+			inline static const sas::AttributeId ProjectileSpeed{
+				"AbilityActor.GravityAnomaly.Projectile.ProjectileSpeed"
 			};
 		};
 
@@ -51,18 +38,17 @@ namespace AbilityData::GravityAnomaly
 				"Actor.Ability.GravityAnomaly.Field.Basic";
 			inline static constexpr char BasicAttributeProfileId[] =
 				"AttributeProfile.GravityAnomaly.Field.Basic";
-			inline static const ly::GameplayTag TypeTag{ "AbilityActor.GravityAnomaly.Field" };
-			inline static const ly::GameplayTag AttributeRoot{
-				"Attribute.AbilityActor.GravityAnomaly.Field"
+			inline static const sas::AttributeId Root{
+				"AbilityActor.GravityAnomaly.Field"
 			};
-			inline static const ly::GameplayTag PullStrength{
-				"Attribute.AbilityActor.GravityAnomaly.Field.PullStrength"
+			inline static const sas::AttributeId PullStrength{
+				"AbilityActor.GravityAnomaly.Field.PullStrength"
 			};
-			inline static const ly::GameplayTag SlowMagnitude{
-				"Attribute.AbilityActor.GravityAnomaly.Field.SlowMagnitude"
+			inline static const sas::AttributeId SlowMagnitude{
+				"AbilityActor.GravityAnomaly.Field.SlowMagnitude"
 			};
-			inline static const ly::GameplayTag InsideEffectDuration{
-				"Attribute.AbilityActor.GravityAnomaly.Field.InsideEffectDuration"
+			inline static const sas::AttributeId InsideEffectDuration{
+				"AbilityActor.GravityAnomaly.Field.InsideEffectDuration"
 			};
 		};
 	};

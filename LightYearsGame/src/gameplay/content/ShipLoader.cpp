@@ -80,7 +80,7 @@ namespace ly::content
 			for (const Json& growth : object.value("growthOverrides", Json::array()))
 			{
 				progression.growthOverrides.push_back({
-					GameplayTag{ growth.at("attributeId").get<std::string>() },
+					sas::AttributeId{ growth.at("attributeId").get<std::string>() },
 					growth.at("multiplier").get<float>()
 				});
 			}

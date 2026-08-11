@@ -1,5 +1,7 @@
 #pragma once
 
+#include "content/ContentId.h"
+
 #include <SFML/Graphics/Color.hpp>
 
 #include <string>
@@ -35,14 +37,14 @@ namespace ly
 
 	struct GravityAnomalyProjectilePresentationProfile
 	{
-		std::string profileId;
+		sas::ContentId profileId;
 		std::string texturePath;
 		GravityAnomalyProjectileVisualDefinition visual;
 	};
 
 	struct GravityAnomalyFieldPresentationProfile
 	{
-		std::string profileId;
+		sas::ContentId profileId;
 		GravityAnomalyFieldVisualDefinition visual;
 	};
 

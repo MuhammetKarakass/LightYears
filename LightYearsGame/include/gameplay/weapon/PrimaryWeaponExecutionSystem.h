@@ -15,12 +15,12 @@ namespace ly
 		static PrimaryWeaponValidationResult InitializeRuntime(
 			const PrimaryWeaponDefinition& definition,
 			PrimaryWeaponRuntimeState& state,
-			const List<GameplayTag>* unlockedUpgradeIds = nullptr
+			const List<std::string>* unlockedUpgradeIds = nullptr
 		);
 		static PrimaryWeaponValidationResult EnsureRuntimeConfigured(
 			const PrimaryWeaponDefinition& definition,
 			PrimaryWeaponRuntimeState& state,
-			const List<GameplayTag>* unlockedUpgradeIds = nullptr
+			const List<std::string>* unlockedUpgradeIds = nullptr
 		);
 
 		static void BeginFire(

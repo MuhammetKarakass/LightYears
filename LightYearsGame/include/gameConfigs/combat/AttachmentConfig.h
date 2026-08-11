@@ -19,7 +19,7 @@ namespace AttachmentData
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
 				sas::GameplayAttribute{
-					ly::AttachmentSchema::Attribute::CooldownReductionOnIgnite,
+					ly::AttachmentSchema::AttributeIds::CooldownReductionOnIgnite,
 					0.4f,
 					0.f
 				},
@@ -46,10 +46,10 @@ namespace AttachmentData
 			0,
 			{
 				ly::AttachmentEventRule{
-					ly::AttachmentSchema::Event::SourceIgniteApplied,
+					ly::AttachmentSchema::Event::SourceStatusIgniteApplied,
 					ly::AttachmentEventAction::ReduceCooldown,
 					ly::AttachmentCooldownTarget::AllNonPrimaryAbilities,
-					ly::AttachmentSchema::Attribute::CooldownReductionOnIgnite,
+					ly::AttachmentSchema::AttributeIds::CooldownReductionOnIgnite,
 					0.f,
 					true,
 					{ ly::DamageTypeSchema::Thermal }
@@ -223,8 +223,9 @@ namespace AttachmentData
 				ly::ConditionalAttributeModifier{
 					ly::AttachmentCondition{
 						ly::AttachmentConditionType::AttributeLessThan,
-						ly::CommonAttributeIds::FireRate,
-						4.f
+						{},
+						4.f,
+						ly::CommonAttributeIds::FireRate
 					},
 					sas::AttributeModifier{
 						PrimaryWeaponSchema::Projectile::Delivery::AdditionalProjectileCount,
@@ -257,7 +258,7 @@ namespace AttachmentData
 	{
 		for (const ly::AttachmentDefinition* definition : GetDefinitions())
 		{
-			if (definition && definition->attachmentId == attachmentId)
+			if (definition && definition->attachmentId.ToString() == attachmentId)
 			{
 				return definition;
 			}

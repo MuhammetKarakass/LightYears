@@ -18,13 +18,13 @@ namespace sas
 
 	struct AttributeModifier
 	{
-		ly::GameplayTag attributeId;
+		AttributeId attributeId;
 		AttributeModifierOperation operation = AttributeModifierOperation::Add;
 		float magnitude = 0.f;
 		int priority = 0;
 
 		AttributeModifier() = default;
-		AttributeModifier(const ly::GameplayTag& inAttributeId, float inMagnitude)
+		AttributeModifier(const AttributeId& inAttributeId, float inMagnitude)
 			: attributeId{ inAttributeId },
 			operation{ AttributeModifierOperation::Add },
 			magnitude{ inMagnitude },
@@ -32,7 +32,7 @@ namespace sas
 		{
 		}
 		AttributeModifier(
-			const ly::GameplayTag& inAttributeId,
+			const AttributeId& inAttributeId,
 			AttributeModifierOperation inOperation,
 			float inMagnitude,
 			int inPriority = 0
@@ -47,8 +47,8 @@ namespace sas
 
 	struct AttributeScalingRule
 	{
-		ly::GameplayTag targetAttributeId;
-		ly::GameplayTag sourceAttributeId;
+		AttributeId targetAttributeId;
+		AttributeId sourceAttributeId;
 		AttributeModifierOperation operation = AttributeModifierOperation::Multiply;
 		float coefficient = 1.f;
 	};
@@ -114,47 +114,47 @@ namespace sas
 	class AttributeSystem
 	{
 	public:
-		void RegisterAttribute(
-			const ly::GameplayTag& id,
+	void RegisterAttribute(
+			const AttributeId& id,
 			float baseValue,
 			float minValue = 0.f,
 			float maxValue = std::numeric_limits<float>::max()
 		);
 		void RegisterAttribute(const GameplayAttribute& attribute);
-		bool HasAttribute(const ly::GameplayTag& id) const;
+		bool HasAttribute(const AttributeId& id) const;
 		uint64_t GetRevision() const { return mRevision; }
-		float GetBaseValue(const ly::GameplayTag& id) const;
-		float GetCurrentValue(const ly::GameplayTag& id, float fallback = 0.f) const;
+		float GetBaseValue(const AttributeId& id) const;
+		float GetCurrentValue(const AttributeId& id, float fallback = 0.f) const;
 		float GetSequentialReductionMultiplier(
-			const ly::GameplayTag& id,
+			const AttributeId& id,
 			float minimumMultiplier = 0.05f
 		) const;
-		void SetBaseValue(const ly::GameplayTag& id, float baseValue);
+		void SetBaseValue(const AttributeId& id, float baseValue);
 		void ApplyBaseModifier(const AttributeModifier& modifier);
 		AttributeModifierHandle AddModifier(const AttributeModifier& modifier);
 		void RemoveModifier(AttributeModifierHandle handle);
 		void Clear();
 
-		ly::Delegate<ly::GameplayTag, float, float> onAttributeChanged;
-		ly::Delegate<ly::GameplayTag> onAttributeRegistered;
+		ly::Delegate<AttributeId, float, float> onAttributeChanged;
+		ly::Delegate<AttributeId> onAttributeRegistered;
 		ly::Delegate<> onAttributesCleared;
 
 	private:
-		void Recalculate(const ly::GameplayTag& id);
+		void Recalculate(const AttributeId& id);
 
 		ly::Dictionary<
-			ly::GameplayTag,
+			AttributeId,
 			GameplayAttributeEntry,
-			ly::GameplayTagHash
+			AttributeIdHash
 		> mAttributes;
-		ly::Map<unsigned int, ly::GameplayTag> mHandleToAttribute;
+		ly::Map<unsigned int, AttributeId> mHandleToAttribute;
 		unsigned int mNextHandleId = 1;
 		uint64_t mRevision = 1;
 	};
 
 	float ApplyAttributeScalings(
 		float baseValue,
-		const ly::GameplayTag& targetAttributeId,
+		const AttributeId& targetAttributeId,
 		const ly::List<AttributeScalingRule>& scalingRules,
 		const AttributeSystem& sourceAttributes
 	);

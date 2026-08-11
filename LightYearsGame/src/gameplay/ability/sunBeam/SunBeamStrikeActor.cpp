@@ -15,30 +15,30 @@ namespace ly
 {
 	namespace
 	{
-		const List<GameplayTag> SunBeamStrikeCommonAttributes{
+		const List<sas::AttributeId> SunBeamStrikeCommonAttributes{
 			CommonAttributeIds::Damage,
 			CommonAttributeIds::Radius
 		};
 
-		const List<GameplayTag> SunBeamStrikeAttributeRoots{
-			AbilityData::SunBeam::Actor::Shared::AttributeRoot,
-			AbilityData::SunBeam::Actor::Strike::AttributeRoot
+		const List<sas::AttributeId> SunBeamStrikeAttributeRoots{
+			AbilityData::SunBeam::Actor::Shared::Root,
+			AbilityData::SunBeam::Actor::Strike::Root
 		};
 
 		class SunBeamStrikeActorTypeHandler final : public AbilityActorTypeHandler
 		{
 		public:
-			const GameplayTag& GetActorTypeTag() const override
+			AbilityActorType GetActorType() const override
 			{
-				return AbilityData::SunBeam::Actor::Strike::TypeTag;
+				return AbilityActorType::SunBeamStrike;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return SunBeamStrikeAttributeRoots;
 			}
 
-			const List<GameplayTag>& GetAllowedCommonAttributeIds() const override
+		const List<sas::AttributeId>& GetAllowedCommonAttributeIds() const override
 			{
 				return SunBeamStrikeCommonAttributes;
 			}
@@ -54,14 +54,14 @@ namespace ly
 					return baseResult;
 				}
 
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Radius,
 					AbilityData::SunBeam::Actor::Shared::Width,
 					AbilityData::SunBeam::Actor::Shared::Length
 				})
 				{
-					const sas::GameplayAttribute* attribute = sas::FindGameplayAttribute(
+					const sas::GameplayAttribute* attribute = sas::FindAttribute(
 						definition.attributes,
 						required
 					);
@@ -69,14 +69,14 @@ namespace ly
 					{
 						return {
 							false,
-							"Sun Beam strike requires a positive '" + required.ToString() + "' attribute."
+							"Sun Beam strike requires a positive '" + std::string{ required.GetName() } + "' attribute."
 						};
 					}
 				}
 
-				if (definition.presentationProfileId.empty()
+				if (!definition.presentationProfileId.IsValid()
 					|| PresentationProfileRegistry<SunBeamPresentationProfile>::Find(
-						definition.presentationProfileId
+						definition.presentationProfileId.ToString()
 					) == nullptr)
 				{
 					return { false, "Sun Beam strike requires a valid presentation profile." };
@@ -92,7 +92,7 @@ namespace ly
 				World* world = context.owner.GetWorld();
 				const SunBeamPresentationProfile* presentationProfile =
 					PresentationProfileRegistry<SunBeamPresentationProfile>::Find(
-						context.definition.presentationProfileId
+						context.definition.presentationProfileId.ToString()
 					);
 				return world && presentationProfile
 					? world->SpawnActor<SunBeamStrikeActor>(
@@ -138,11 +138,11 @@ namespace ly
 		mImpactLocation = GetActorLocation();
 		mImpactRadius = std::max(
 			1.f,
-			sas::FindGameplayAttributeValue(attributes, CommonAttributeIds::Radius, 1.f)
+			sas::FindAttributeValue(attributes, CommonAttributeIds::Radius, 1.f)
 		);
 		mTelegraphDuration = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				AbilityData::SunBeam::Actor::Strike::TelegraphDuration,
 				0.f
@@ -150,7 +150,7 @@ namespace ly
 		);
 		mArrivalDuration = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				AbilityData::SunBeam::Actor::Strike::ArrivalDuration,
 				0.f
@@ -158,7 +158,7 @@ namespace ly
 		);
 		mImpactDelay = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				AbilityData::SunBeam::Actor::Strike::ImpactDelay,
 				0.f
@@ -166,7 +166,7 @@ namespace ly
 		);
 		mImpactVisualDuration = std::max(
 			0.f,
-			sas::FindGameplayAttributeValue(
+			sas::FindAttributeValue(
 				attributes,
 				AbilityData::SunBeam::Actor::Strike::ImpactVisualDuration,
 				0.f

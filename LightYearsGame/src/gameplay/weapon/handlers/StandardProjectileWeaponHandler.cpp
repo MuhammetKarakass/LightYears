@@ -14,12 +14,12 @@ namespace ly
 		class StandardProjectileWeaponHandler final : public PrimaryWeaponHandler
 		{
 		public:
-			const GameplayTag& GetTypeTag() const override
+			PrimaryWeaponType GetType() const override
 			{
-				return PrimaryWeaponSchema::Projectile::Standard::TypeTag;
+				return PrimaryWeaponType::ProjectileStandard;
 			}
 
-			const List<GameplayTag>& GetOwnedAttributeRoots() const override
+			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
 			{
 				return PrimaryWeaponBuiltIns::ProjectileDeliveryAttributeRoots();
 			}
@@ -28,7 +28,7 @@ namespace ly
 				const PrimaryWeaponDefinition& definition
 			) const override
 			{
-				for (const GameplayTag& required : {
+				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					PrimaryWeaponSchema::Projectile::Delivery::Speed,
 					PrimaryWeaponSchema::Projectile::Delivery::Lifetime
@@ -55,7 +55,7 @@ namespace ly
 			{
 				const int projectileCount = 1 + std::max(
 					0,
-					static_cast<int>(std::round(sas::FindGameplayAttributeValue(
+					static_cast<int>(std::round(sas::FindAttributeValue(
 						context.attributes,
 						PrimaryWeaponSchema::Projectile::Delivery::AdditionalProjectileCount,
 						0.f

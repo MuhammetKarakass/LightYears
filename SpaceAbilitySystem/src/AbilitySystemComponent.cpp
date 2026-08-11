@@ -131,7 +131,59 @@ namespace sas
 
 	void AbilitySystemComponent::NotifyAbilityChanged(AbilityHandle handle)
 	{
+		RefreshCooldownTags();
 		onAbilityChanged.Broadcast(handle);
+	}
+
+	void AbilitySystemComponent::RefreshCooldownTags()
+	{
+		bool abilityCooldownActive = false;
+		bool primaryWeaponCooldownActive = false;
+		if (mAbilityRuntime)
+		{
+			for (const AbilityRuntimeSnapshot& snapshot :
+				mAbilityRuntime->BuildSnapshots())
+			{
+				if (snapshot.cooldownRemaining <= 0.f)
+				{
+					continue;
+				}
+				if (snapshot.slot == AbilitySlot::PrimaryFire)
+				{
+					primaryWeaponCooldownActive = true;
+				}
+				else
+				{
+					abilityCooldownActive = true;
+				}
+			}
+		}
+
+		if (abilityCooldownActive != mAbilityCooldownTagActive)
+		{
+			if (abilityCooldownActive)
+			{
+				mOwnedTags.AddTag(AbilityCooldownTags::Ability);
+			}
+			else
+			{
+				mOwnedTags.RemoveTag(AbilityCooldownTags::Ability);
+			}
+			mAbilityCooldownTagActive = abilityCooldownActive;
+		}
+
+		if (primaryWeaponCooldownActive != mPrimaryWeaponCooldownTagActive)
+		{
+			if (primaryWeaponCooldownActive)
+			{
+				mOwnedTags.AddTag(AbilityCooldownTags::PrimaryWeapon);
+			}
+			else
+			{
+				mOwnedTags.RemoveTag(AbilityCooldownTags::PrimaryWeapon);
+			}
+			mPrimaryWeaponCooldownTagActive = primaryWeaponCooldownActive;
+		}
 	}
 
 	void AbilitySystemComponent::AddOwnedTag(const ly::GameplayTag& tag)
@@ -259,6 +311,13 @@ namespace sas
 	)
 	{
 		mEffects.RemoveEffect(handle);
+	}
+
+	std::size_t AbilitySystemComponent::RemoveGameplayEffectsIf(
+		const std::function<bool(const ActiveGameplayEffect&)>& predicate
+	)
+	{
+		return mEffects.RemoveEffectsIf(predicate);
 	}
 
 	ActiveGameplayEffect* AbilitySystemComponent::FindGameplayEffect(

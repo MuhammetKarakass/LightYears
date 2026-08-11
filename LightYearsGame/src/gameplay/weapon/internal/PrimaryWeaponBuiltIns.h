@@ -6,20 +6,20 @@
 
 namespace ly::PrimaryWeaponBuiltIns
 {
-	const List<GameplayTag>& ProjectileDeliveryAttributeRoots();
-	const List<GameplayTag>& ShotgunAttributeRoots();
-	const List<GameplayTag>& ArcAttributeRoots();
-	const List<GameplayTag>& BeamDeliveryAttributeRoots();
-	const List<GameplayTag>& WaveDeliveryAttributeRoots();
-	const List<GameplayTag>& HeatAttributeRoots();
+	const List<sas::AttributeId>& ProjectileDeliveryAttributeRoots();
+	const List<sas::AttributeId>& ShotgunAttributeRoots();
+	const List<sas::AttributeId>& ArcAttributeRoots();
+	const List<sas::AttributeId>& BeamDeliveryAttributeRoots();
+	const List<sas::AttributeId>& WaveDeliveryAttributeRoots();
+	const List<sas::AttributeId>& HeatAttributeRoots();
 
 	const sas::GameplayAttribute* FindDefinitionAttribute(
 		const PrimaryWeaponDefinition& definition,
-		const GameplayTag& attributeId
+		const sas::AttributeId& attributeId
 	);
 	PrimaryWeaponValidationResult RequireAttribute(
 		const PrimaryWeaponDefinition& definition,
-		const GameplayTag& attributeId,
+		const sas::AttributeId& attributeId,
 		const char* ownerName
 	);
 

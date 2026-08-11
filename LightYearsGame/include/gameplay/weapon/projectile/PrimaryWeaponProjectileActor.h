@@ -24,6 +24,7 @@ namespace ly
 
 		virtual void BeginPlay() override;
 		virtual void Tick(float deltaTime) override;
+		bool IsProjectileActor() const override { return true; }
 
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 
@@ -51,5 +52,4 @@ namespace ly
 		bool mImpactBehaviorCompleted = false;
 	};
 }
-
 

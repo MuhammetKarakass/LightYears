@@ -50,6 +50,21 @@
 | Presentation | `RegisterGameAbilityPresentationContent()` projectile ve field için ayrı typed profile kaydeder; field world halkaları/inward particles çizer, hedef üzerindeki effect visual ayrı registry kaydıyla oluşur |
 | Sonrası | Value-only evolve mevcut typed profile tipinde yeni kayıt olur; yapısal evolve aynı ailede ayrı profile/actor/handler alır |
 
+## Uygulanan ability: Null Pulse / Ability.Control.NullPulse.Basic
+
+| Alan | Not |
+| --- | --- |
+| Statü | Uygulandı; shipped content'te mevcut ve default player loadout'unda Ability2/E olarak grant edilir |
+| Slot ve input | Ability2 / E; OnPressed, Instant, tek charge |
+| Pulse | Oyuncu merkezli 500 radius (+200); menzildeki uygun düşman Combatant'lara bir kez Energy damage ve control response uygulanır |
+| Projectile temizliği | Yalnız `AbilityWorldActor::IsProjectileActor()` true olan actor'lar yok edilir. Primary projectile, Rocket, Gravity Anomaly ve Overdrive projectile'ları kapsanır; beam, field, wave, pickup, düşman, oyuncu ve persistent görseller kapsanmaz |
+| Hasar ve level | L1 damage 10; her level +2 damage ve -0.25 sn cooldown. Crit, AttackPower, AttackSpeed, Mobility ve MaxHealth damage/radius/cleanup'ı scale etmez |
+| Control | Normal tam Stun, elite %60, miniboss %30; boss tam Stun almaz, en fazla kısa Stagger/interrupt alır. Boss phase/telegraph/scripted/death/arena sequence kesintisi bu ability tarafından yapılmaz |
+| EnergyMax | `BonusEnergyMax = max(0, ResolvedEnergyMax - 50)`; stun `1.0 + 0.65 × (1 - exp(-BonusEnergyMax / 50))`, normal üst sınır 1.65 sn |
+| Effect / presentation | Reusable `Effect.Control.Stun.Basic` ve `Effect.Control.Stagger.Basic`; typed `NullPulsePresentationProfile` ve self-cleaning, non-colliding pulse visual |
+| Kod sınırı | `gameplay/ability/nullPulse/`, `gameConfigs/ability/control/NullPulseConfig.h`, `presentation/ability/nullPulse/`; projectile sorgusu family ID bilmeyen reusable marker/query katmanıdır |
+| Test | Content loader, behavior/effect validation, damage/control, EnergyMax formülü, projectile-vs-persistent actor ayrımı, visual cleanup ve full CTest doğrulandı |
+
 Bu dosya, uygulanmış sistem referansından ayrı tutulmuş yaşayan çalışma
 notudur. Buradaki “Fikir” ve “Plan” maddeleri kodda var kabul edilmez.
 Uygulama tamamlandığında sonucu
@@ -83,7 +98,13 @@ dosyalarına yazılır. Bu üç kayıt güncellenmeden değişiklik tamamlanmı�
 
 | Tarih | Alan | Karar / değişiklik | Statü | Neden / sonuç |
 | --- | --- | --- | --- | --- |
+| 2026-08-09 | Null Pulse | `Ability.Control.NullPulse.Basic` shipped edildi: self-centered pulse, yalnız işaretli projectile temizliği, reusable Stun/Stagger ve typed feature-local presentation eklendi. Ability2/E default grant'i Null Pulse'a geçirildi; InfernoSpray default grant listesinden çıkarıldı. | Uygulandı | Null Pulse; ability family'lerinin özel davranışını generic SAS'a taşımadan, reusable actor marker/query ve merkezi control response ile çözer. Content loader, runtime ve full CTest geçti; diğer default slotlar değişmedi. |
 | 2026-08-06 | Proje geneli gameplay tag sözleşmesi | `GameplayTagSchema` eklendi. Merkez yalnız domain köklerini, canonical biçimi ve iki action lock tagini sahiplenir; ability/weapon/effect/actor/attachment leaf tagleri kendi feature kontratlarında kalır. | Uygulandı | Feature'lar arası rastgele blok tag üretimini engeller. Ability, effect, actor, weapon, attachment JSON ve ship progression doğrulaması aynı şemayı çağırır; `GameAbility` shared action lock'ları tek activation gate'de tüketir. |
+| 2026-08-07 | Attribute kimlik mimarisi - Aşama 1 | `sas::AttributeId` ve `sas::AttributeIdHash` eklendi. Tip string-backed ve opaque'tır; `GameplayTag` conversion, hierarchy ve tag matching davranışı yoktur. | Uygulandı | Sonraki aşamalarda `GameplayAttribute`, `AttributeSystem`, loader ve katalog kullanımları da `AttributeId`'ye geçirildi; test çalıştırılmadı. |
+| 2026-08-07 | Attribute kimlik mimarisi - Aşama 2/3 | SAS `GameplayAttribute`, `AttributeModifier`, `AttributeScalingRule` ve `AttributeSystem` lookup/delegate/handle yolları `sas::AttributeId` kullanacak hale getirildi. Owner/Ship/Common/Collision/Area katalog sabitleri de `AttributeId` tipine geçirildi. | Uygulandı | Modifier Add/Multiply/Override, scaling sırası ve runtime hesaplama formülüne dokunulmadı; format/schema temizliği Aşama 4-9 satırında tamamlandı. Test çalıştırılmadı. |
+| 2026-08-07 | Attribute kimlik mimarisi - Aşama 4-9 | Loader'lar, `GameplayEffectSpec` mutator'ları, weapon/damage/effect/attachment/ability actor katalogları ve ability actor/weapon tüketicileri numeric kimlik olarak `sas::AttributeId` kullanıyor. JSON ve C++ numeric ID'leri canonical prefix'siz biçime (`Common.*`, `AbilityActor.*` vb.) taşındı. `ly::AttributeIdSchema` yalnız lexical/namespace sınırı doğrular; `GameplayTagSchema` legacy `Attribute.*` taglerini reddeder. | Uygulandı | `GameAbilityActionExecutor` büyütülmedi; global attribute knowledge base oluşturulmadı. AttributeContract redesign'i ayrıca değerlendirildi ve mevcut feature-local root/exact-list sınırları korunarak merkezi sınıf eklenmedi. Test çalıştırılmadı. |
+| 2026-08-07 | Attribute lookup API rename | `FindGameplayAttribute`, `FindGameplayAttributeValue` ve `HasGameplayAttribute` çağrıları sırasıyla `FindAttribute`, `FindAttributeValue` ve `HasAttribute` oldu. | Uygulandı | JSON migration ile aynı değişiklik setine karıştırılmadı; davranış ve scaling formülleri değiştirilmedi. Test çalıştırılmadı. |
+| 2026-08-07 | Attribute semantic audit | Numeric değerler lookup/modifier/scaling kullandığı sürece `AttributeId` olarak bırakıldı. Heat `CurrentRuntimeValue` yalnız runtime feature key, InfernoSpray `MinCancelDuration` ise `NumericSettingContract` ayarı olduğu için attribute yapılmadı. | Uygulandı | Yeni global attribute registry veya AttributeContract God Class eklenmedi; feature-local contract sınırları korundu. Test çalıştırılmadı. |
 | 2026-07-24 | Elemental hasar | Thermal, Cryo ve Electric yalnızca 4. vuruşta tam stack’e ulaşır; ara stack’ler görünür fakat combat etkisi üretmez. Kinetic penetration ve tüm elemental payoff değerleri düşürüldü. | Uygulandı | Sık kullanılan silahlarda sürekli ara-stack kazancı ile Electric’in tüm kaynaklardan %50 vulnerability vermesi kaldırıldı. GasLiteCoreTests eşik, değer ve süre bitişini doğrular. |
 | 2026-07-24 | Cryo slow sustain | Tamamlanmış Cryo slow, sonraki her Cryo isabetinde 1.5 sn olarak yenilenir; şiddet %25’te kalır. | Uygulandı | Cryo’nun dört-vuruş payoff’ı sürekli ateşte zayıf kalmamalı; magnitude stacklenmediği için etki kontrollü kalır. |
 | 2026-07-24 | Runtime mimarisi | ShipRuntime eklendi. Shield/afterburner türetmeleri ve ship attribute'ları CombatRuntime'dan SpaceShip sahipliğindeki ShipRuntime'a taşındı. | Uygulandı | CombatRuntime yalnızca combat attribute, effect ve ability akışında kalır. Bu sınır ileride EncounterRuntime ve EnemyRuntime gibi bağımsız runtime'ların eklenmesini kolaylaştırır. |

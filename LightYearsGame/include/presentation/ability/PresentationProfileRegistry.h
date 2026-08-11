@@ -16,13 +16,13 @@ namespace ly
 		static bool Register(Profile profile)
 		{
 			if (!content::ContentIdSchema::ValidateAbilityPresentationProfileId(
-				profile.profileId
+				profile.profileId.ToString()
 			))
 			{
 				return false;
 			}
 
-			const std::string profileId = profile.profileId;
+			const std::string profileId = profile.profileId.ToString();
 			return GetProfiles().emplace(profileId, std::move(profile)).second;
 		}
 
