@@ -23,6 +23,16 @@ namespace sas
 			const void* definition,
 			std::string* failureReason
 		) = 0;
+		virtual AbilityHandle GrantAbilityUntyped(
+			const void* definition,
+			AbilityRuntimeBinding binding,
+			std::string* failureReason
+		) = 0;
+		virtual bool RebindAbility(
+			AbilityHandle handle,
+			AbilityRuntimeBinding binding,
+			std::string* failureReason
+		) = 0;
 		virtual bool RemoveAbility(
 			AbilityHandle handle,
 			AbilityEndReason reason
@@ -89,6 +99,30 @@ namespace sas
 					failureReason
 				)
 				: AbilityHandle{};
+		}
+
+		AbilityHandle GrantAbilityUntyped(
+			const void* definition,
+			AbilityRuntimeBinding binding,
+			std::string* failureReason
+		) override
+		{
+			return definition
+				? mRuntime.GrantAbility(
+					*static_cast<const Definition*>(definition),
+					binding,
+					failureReason
+				)
+				: AbilityHandle{};
+		}
+
+		bool RebindAbility(
+			AbilityHandle handle,
+			AbilityRuntimeBinding binding,
+			std::string* failureReason
+		) override
+		{
+			return mRuntime.RebindAbility(handle, binding, failureReason);
 		}
 
 		bool RemoveAbility(

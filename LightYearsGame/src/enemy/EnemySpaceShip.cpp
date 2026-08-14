@@ -25,7 +25,11 @@ namespace ly
 	void EnemySpaceShip::SetupCollisionLayers()
 	{
 		SetCollisionLayer(CollisionLayer::Enemy);  
-		SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
+		SetCollisionMask(
+			CollisionLayer::Player |
+			CollisionLayer::PlayerBullet |
+			CollisionLayer::RelayProjectile
+		);
 	}
 
 	void EnemySpaceShip::OnActorBeginOverlap(Actor* otherActor)

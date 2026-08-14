@@ -12,6 +12,7 @@ namespace ly
 		GravityAnomalyProjectile,
 		GravityAnomalyField,
 		InfernoSprayFlameCone,
-		SunBeamStrike
+		SunBeamStrike,
+		RelayPrism
 	};
 }

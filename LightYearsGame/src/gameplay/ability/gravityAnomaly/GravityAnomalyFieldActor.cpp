@@ -3,7 +3,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/combat/Combatant.h"

@@ -8,15 +8,21 @@
 #include "attributes/GameplayAttribute.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "gameConfigs/ability/functional/DashConfig.h"
+#include "gameConfigs/ability/movement/DashConfig.h"
 #include "gameConfigs/ability/defensive/ShieldConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
+#include "gameConfigs/ability/offensive/OrbitalDronesConfig.h"
+#include "gameConfigs/ability/offensive/ExecutionDriveConfig.h"
 #include "gameConfigs/ability/control/NullPulseConfig.h"
-#include "gameConfigs/ability/defensive/PhaseDriftConfig.h"
+#include "gameConfigs/ability/movement/PhaseDriftConfig.h"
+#include "gameConfigs/ability/offensive/HullShockConfig.h"
+#include "gameConfigs/ability/defensive/ShieldHarvestConfig.h"
+#include "gameConfigs/ability/utility/RelayPrismConfig.h"
+#include "gameConfigs/ability/utility/EchoProtocolConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 
 #include <cmath>
@@ -68,7 +74,13 @@ int main()
 		&AbilityData::Definitions::InfernoSpray_Basic,
 		&AbilityData::Definitions::OverdriveCore_Basic,
 		&AbilityData::Definitions::NullPulse_Basic,
-		&AbilityData::Definitions::PhaseDrift_Basic
+		&AbilityData::Definitions::PhaseDrift_Basic,
+		&AbilityData::Definitions::ShieldHarvest_Basic,
+		&AbilityData::Definitions::HullShock_Basic,
+		&AbilityData::Definitions::OrbitalDrones_Basic,
+		&AbilityData::Definitions::ExecutionDrive_Basic,
+		&AbilityData::Definitions::RelayPrism_Basic,
+		&AbilityData::Definitions::EchoProtocol_Basic
 	};
 	const ly::List<const ly::AbilityActorDefinition*> fallbackAbilityActors{
 		&AbilityData::GravityAnomaly::ActorProjectileBasic,
@@ -76,7 +88,8 @@ int main()
 		&AbilityData::Rocket::ActorProjectileBasic,
 		&AbilityData::InfernoSpray::ActorFlameConeBasic,
 		&AbilityData::SunBeam::ActorStrikeBasic,
-		&AbilityData::OverdriveCore::ActorProjectileBasic
+		&AbilityData::OverdriveCore::ActorProjectileBasic,
+		&AbilityData::RelayPrism::ActorRelayBasic
 	};
 	const ly::content::AbilityLoader::Result loadedAbilities =
 		ly::content::AbilityLoader::LoadFromFile(
@@ -88,7 +101,7 @@ int main()
 	{
 		return Fail(loadedAbilities.error.c_str()) ? 0 : 1;
 	}
-	if (loadedAbilities.definitions.size() != 9)
+	if (loadedAbilities.definitions.size() != 15)
 	{
 		return Fail("Ability JSON catalog did not load the expected pilot definitions") ? 0 : 1;
 	}
@@ -97,7 +110,7 @@ int main()
 	{
 		actorDefinitionCount += definition.actorDefinitions.size();
 	}
-	if (actorDefinitionCount != 6)
+	if (actorDefinitionCount != 7)
 	{
 		return Fail("Ability actor JSON catalog did not load the expected actor definitions") ? 0 : 1;
 	}
@@ -437,7 +450,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.Defense.PhaseDrift.Basic";
+			return definition.id == "Ability.Movement.PhaseDrift.Basic";
 		}
 	);
 	if (phaseDriftIt == loadedAbilities.definitions.end() ||
@@ -448,6 +461,245 @@ int main()
 		phaseDriftIt->definition.levelProgression.size() != 14)
 	{
 		return Fail("Phase Drift ability JSON profile is invalid") ? 0 : 1;
+	}
+	const auto shieldHarvestIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Defense.ShieldHarvest.Basic";
+		}
+	);
+	if (shieldHarvestIt == loadedAbilities.definitions.end() ||
+		!NearlyEqual(shieldHarvestIt->definition.cooldown, 14.f) ||
+		!NearlyEqual(shieldHarvestIt->definition.duration, 1.5f) ||
+		shieldHarvestIt->definition.maxCharges != 1 ||
+		shieldHarvestIt->definition.attributes.size() != 4 ||
+		shieldHarvestIt->definition.levelProgression.size() != 14 ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				shieldHarvestIt->definition.attributes,
+				ly::CommonAttributeIds::Radius
+			),
+			700.f
+		))
+	{
+		return Fail("Shield Harvest ability JSON profile is invalid") ? 0 : 1;
+	}
+	const auto hullShockIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Offense.HullShock.Basic";
+		}
+	);
+	if (hullShockIt == loadedAbilities.definitions.end() ||
+		!NearlyEqual(hullShockIt->definition.cooldown, 12.f) ||
+		!NearlyEqual(hullShockIt->definition.duration, 2.f) ||
+		hullShockIt->definition.maxCharges != 1 ||
+		hullShockIt->definition.attributes.size() != 9 ||
+		hullShockIt->definition.scalingRules.size() != 1 ||
+		hullShockIt->definition.levelProgression.size() != 14 ||
+		hullShockIt->definition.damageTags !=
+			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Electric } ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				hullShockIt->definition.attributes,
+				ly::CommonAttributeIds::Radius
+			),
+			600.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				hullShockIt->definition.attributes,
+				ly::CommonAttributeIds::Damage
+			),
+			30.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				hullShockIt->definition.attributes,
+				AbilityData::HullShock::Attribute::MinimumChargeRadius
+			),
+			300.f
+		))
+	{
+		return Fail("Hull Shock ability JSON profile is invalid") ? 0 : 1;
+	}
+	const auto orbitalDronesIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Offense.OrbitalDrones.Basic";
+		}
+	);
+	if (orbitalDronesIt == loadedAbilities.definitions.end() ||
+		orbitalDronesIt->definition.slot != sas::AbilitySlot::Ability4 ||
+		orbitalDronesIt->definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		orbitalDronesIt->definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+		!NearlyEqual(orbitalDronesIt->definition.cooldown, 12.f) ||
+		!NearlyEqual(orbitalDronesIt->definition.duration, 6.f) ||
+		orbitalDronesIt->definition.maxCharges != 1 ||
+		orbitalDronesIt->definition.abilityTags !=
+			ly::List<ly::GameplayTag>{
+				ly::GameplayTags::Ability::Offense,
+				ly::GameplayTags::Ability::Family::OrbitalDrones
+			} ||
+		orbitalDronesIt->definition.attributes.size() != 8 ||
+		sas::FindAttributeValue(
+			orbitalDronesIt->definition.attributes,
+			ly::CommonAttributeIds::Radius,
+			0.f
+		) <= 0.f ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesIt->definition.attributes,
+				ly::CommonAttributeIds::Damage,
+				0.f
+			),
+			18.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesIt->definition.attributes,
+				AbilityData::OrbitalDrones::Attribute::DroneCount,
+				0.f
+			),
+			4.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesIt->definition.attributes,
+				AbilityData::OrbitalDrones::Attribute::SameTargetHitCooldown,
+				0.f
+			),
+			0.5f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesIt->definition.attributes,
+				AbilityData::OrbitalDrones::Attribute::BaseAngularSpeedRadiansPerSecond,
+				0.f
+			),
+			2.5f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesIt->definition.attributes,
+				AbilityData::OrbitalDrones::Attribute::ContactRadius,
+				0.f
+			),
+			12.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesIt->definition.attributes,
+				AbilityData::OrbitalDrones::Attribute::EnergyMaxReference,
+				0.f
+			),
+			50.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesIt->definition.attributes,
+				AbilityData::OrbitalDrones::Attribute::EnergyMaxDurationScale,
+				0.f
+			),
+			0.02f
+		) ||
+		orbitalDronesIt->definition.scalingRules.size() != 1 ||
+		orbitalDronesIt->definition.scalingRules.front().targetAttributeId !=
+			ly::CommonAttributeIds::Damage ||
+		orbitalDronesIt->definition.scalingRules.front().sourceAttributeId !=
+			ly::OwnerAttributeIds::AttackPower ||
+		orbitalDronesIt->definition.scalingRules.front().operation !=
+			sas::AttributeModifierOperation::Add ||
+		!NearlyEqual(orbitalDronesIt->definition.scalingRules.front().coefficient, 0.50f) ||
+		orbitalDronesIt->definition.levelProgression.size() != 14 ||
+		orbitalDronesIt->definition.levelUpgradeScrapCosts.size() != 14 ||
+		orbitalDronesIt->definition.damageTags !=
+			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
+	{
+		return Fail("Orbital Drones ability JSON profile is invalid") ? 0 : 1;
+	}
+	for (const ly::AbilityLevelStep& step : orbitalDronesIt->definition.levelProgression)
+	{
+		bool hasDamageUpgrade = false;
+		bool hasCooldownUpgrade = false;
+		if (step.attributeModifiers.size() != 2)
+		{
+			return Fail("Orbital Drones level progression does not contain exactly two modifiers")
+				? 0
+				: 1;
+		}
+		for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+		{
+			if (modifier.attributeId == ly::CommonAttributeIds::Damage &&
+				modifier.operation == sas::AttributeModifierOperation::Add &&
+				NearlyEqual(modifier.magnitude, 2.f))
+			{
+				hasDamageUpgrade = true;
+			}
+			if (modifier.attributeId == ly::CommonAttributeIds::Cooldown &&
+				modifier.operation == sas::AttributeModifierOperation::Add &&
+				NearlyEqual(modifier.magnitude, -0.25f))
+			{
+				hasCooldownUpgrade = true;
+			}
+		}
+		if (!hasDamageUpgrade || !hasCooldownUpgrade)
+		{
+			return Fail("Orbital Drones level progression has an unexpected modifier") ? 0 : 1;
+		}
+	}
+
+	const auto relayPrismIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Utility.RelayPrism.Basic";
+		}
+	);
+	if (relayPrismIt == loadedAbilities.definitions.end() ||
+		relayPrismIt->definition.slot != sas::AbilitySlot::Ability2 ||
+		relayPrismIt->definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		relayPrismIt->definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+		!NearlyEqual(relayPrismIt->definition.cooldown, 10.f) ||
+		!NearlyEqual(relayPrismIt->definition.duration, 4.f) ||
+		relayPrismIt->definition.maxCharges != 1 ||
+		relayPrismIt->definition.attributes.size() != 6 ||
+		relayPrismIt->actorDefinitions.size() != 1 ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				relayPrismIt->definition.attributes,
+				ly::CommonAttributeIds::ProjectileCount,
+				0.f
+			),
+			4.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				relayPrismIt->definition.attributes,
+				AbilityData::RelayPrism::Attribute::DamageTransferRatio,
+				0.f
+			),
+			0.15f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				relayPrismIt->actorDefinitions.front().attributes,
+				ly::CommonAttributeIds::Radius,
+				0.f
+			),
+			100.f
+		) ||
+		relayPrismIt->definition.levelProgression.size() != 14 ||
+		relayPrismIt->definition.levelUpgradeScrapCosts.size() != 14)
+	{
+		return Fail("Relay Prism ability JSON profile is invalid") ? 0 : 1;
 	}
 
 	const std::filesystem::path weaponPath =
@@ -607,7 +859,7 @@ int main()
 	{
 		return Fail(loadedEffects.error.c_str()) ? 0 : 1;
 	}
-	if (loadedEffects.definitions.size() != 15 ||
+	if (loadedEffects.definitions.size() != 16 ||
 		barrierEffectIt == loadedEffects.definitions.end() ||
 		!barrierEffectIt->definition.sourceParameterized ||
 		!barrierEffectIt->definition.attributes.empty() ||

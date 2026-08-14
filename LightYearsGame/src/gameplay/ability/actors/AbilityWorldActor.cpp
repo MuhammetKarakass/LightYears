@@ -4,8 +4,10 @@
 #include "framework/World.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "framework/MathUtility.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -49,6 +51,7 @@ namespace ly
 		mLifeTime{ 0.f },
 		mAge{ 0.f },
 		mCollisionRadius{ 0.f },
+		mAllowFriendlyFire{ false },
 		mEnablePhysicsOnBeginPlay{ true }
 	{
 	}
@@ -90,6 +93,46 @@ namespace ly
 		SetCollisionRadius(mCollisionRadius);
 	}
 
+	void AbilityWorldActor::SetRelayProjectileDamagePolicy(bool allowFriendlyFire)
+	{
+		mAllowFriendlyFire = allowFriendlyFire;
+		if (mAllowFriendlyFire)
+		{
+			SetCollisionLayer(CollisionLayer::RelayProjectile);
+			SetCollisionMask(CollisionLayer::AllRelayTargets);
+		}
+		else
+		{
+			ConfigureCollisionFromOwner();
+		}
+	}
+
+	void AbilityWorldActor::ConfigureRelayClone(
+		const ProjectileRelayCloneRequest& request
+	)
+	{
+		SetActorLocation(request.location);
+		if (GetVectorLength(request.direction) > 0.001f)
+		{
+			const float rotation = std::atan2(
+				request.direction.y,
+				request.direction.x
+			) * 57.2957795131f + 90.f;
+			SetActorRotation(rotation);
+		}
+
+		SetDamageTags(request.snapshot.damageTags);
+		SetSourceAbility(
+			request.snapshot.sourceAbilityId,
+			request.snapshot.sourceAbilityTags
+		);
+		SetProjectileRelayLineage(request.snapshot.lineage);
+		SetAbilityCollisionRadius(request.snapshot.collisionRadius);
+		SetLifeTime(request.snapshot.remainingLifetime);
+		SetRelayProjectileDamagePolicy(request.allowFriendlyFire);
+		SetDamage(request.damage);
+	}
+
 	void AbilityWorldActor::SetDamageTags(const List<GameplayTag>& damageTags)
 	{
 		mDamageTags = damageTags;
@@ -100,6 +143,37 @@ namespace ly
 	{
 		mDamageAttributes = attributes;
 		RebuildDamagePayload();
+	}
+
+	bool AbilityWorldActor::BuildRelaySnapshot(
+		ProjectileRelaySnapshot& snapshot
+	) const
+	{
+		if (!CanBeCapturedByRelay())
+		{
+			return false;
+		}
+
+		snapshot.damage = GetDamage();
+		snapshot.damageAttributes = mDamageAttributes;
+		snapshot.damageTags = mDamageTags;
+		snapshot.sourceAbilityId = mSourceAbilityId;
+		snapshot.sourceAbilityTags = mSourceAbilityTags;
+		snapshot.velocity = GetVelocity();
+		snapshot.collisionRadius = mCollisionRadius;
+		snapshot.remainingLifetime = mLifeTime > 0.f
+			? std::max(0.f, mLifeTime - mAge)
+			: 0.f;
+		snapshot.lineage = mProjectileRelayLineage;
+		return true;
+	}
+
+	weak_ptr<AbilityWorldActor> AbilityWorldActor::SpawnRelayClone(
+		const ProjectileRelayCloneRequest& request
+	) const
+	{
+		(void)request;
+		return {};
 	}
 
 	void AbilityWorldActor::RebuildDamagePayload()
@@ -147,7 +221,8 @@ namespace ly
 
 	bool AbilityWorldActor::IsValidAbilityTarget(const Actor* actor) const
 	{
-		return actor && actor != this && actor != mOwner && !actor->GetIsPendingDestroy()
+		return actor && actor != this && (mAllowFriendlyFire || actor != mOwner) &&
+			!actor->GetIsPendingDestroy()
 			&& CanCollideWith(actor) && actor->CanCollideWith(this);
 	}
 

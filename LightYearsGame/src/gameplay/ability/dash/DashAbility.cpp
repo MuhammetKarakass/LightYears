@@ -2,7 +2,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/dash/DashAbility.h"
 
-#include "gameConfigs/ability/functional/DashConfig.h"
+#include "gameConfigs/ability/movement/DashConfig.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/content/AbilityContentCatalog.h"

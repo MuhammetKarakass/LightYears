@@ -40,6 +40,7 @@ namespace ly
 		void RefreshHealthBar();
 		void RefreshEnergyBar(float energy, float maxEnergy);
 		void PlayerHealthUpdated(float amt, float currentHealth, float maxHealth);
+		void PlayerShieldUpdated(float amt, float currentShield, float maxShield);
 		void PlayerSpaceShipDestroyed(Actor* actor);
 		void RefreshHealthBarDeferred();
 		void ConnectStatus();
@@ -49,6 +50,7 @@ namespace ly
 		void UpdateGameplayWarningVisuals(float deltaTime);
 
 		std::optional<ValueGauge> mPlayerHealthBar;
+		std::optional<ValueGauge> mPlayerShieldBar;
 		std::optional<ValueGauge> mPlayerEnergyBar;
 		std::optional<TextWidget> mFrameRateText;
 

@@ -1,5 +1,10 @@
 # LightYears — Balance & Roadmap Notebook
 
+> **Runtime kaynak notu (14 Ağustos 2026):** uygulanan ability sayıları ve
+> progression değerleri `LightYearsGame/assets/content/data/abilities.json`
+> içindedir; bu not hedef tuning, playtest soruları ve gelecek fikirler içindir.
+> Execution Drive ve Relay Prism artık fikir değil, shipped behavior'lardır.
+
 ## Uygulanan ability: Dash / Ability.Movement.Dash.Basic
 
 | Alan | Not |
@@ -46,7 +51,7 @@
 | Damage | Damage tag, DamageContext, crit ve hasar uygulaması yok |
 | Owner scaling | MaxHealth: radius +0.20 x MaxHealth, duration +0.0025 x MaxHealth; diğer resolved değerler değişmez |
 | Level 2-15 | Her level: cooldown -0.10 sn, duration +0.03 sn, radius +2, pull +10, slow +0.005, projectile speed +25, cast range +5. L15: 6.6 sn / 2.92 sn / 248 / 640 / %27 / 2350 / 970 |
-| Kod sınırı | `gameplay/ability/gravityAnomaly/`, `gameplay/effects/gravityAnomaly/`, `gameConfigs/ability/offensive/GravityAnomalyConfig.h`, typed presentation ve effect visual aile klasörleri |
+| Kod sınırı | `gameplay/ability/gravityAnomaly/`, `gameplay/effects/gravityAnomaly/`, `gameConfigs/ability/control/GravityAnomalyConfig.h`, typed presentation ve effect visual aile klasörleri |
 | Presentation | `RegisterGameAbilityPresentationContent()` projectile ve field için ayrı typed profile kaydeder; field world halkaları/inward particles çizer, hedef üzerindeki effect visual ayrı registry kaydıyla oluşur |
 | Sonrası | Value-only evolve mevcut typed profile tipinde yeni kayıt olur; yapısal evolve aynı ailede ayrı profile/actor/handler alır |
 
@@ -61,7 +66,7 @@
 | Hasar ve level | L1 damage 10; her level +2 damage ve -0.25 sn cooldown. Crit, AttackPower, AttackSpeed, Mobility ve MaxHealth damage/radius/cleanup'ı scale etmez |
 | Control | Normal tam Stun, elite %60, miniboss %30; boss tam Stun almaz, en fazla kısa Stagger/interrupt alır. Boss phase/telegraph/scripted/death/arena sequence kesintisi bu ability tarafından yapılmaz |
 | EnergyMax | `BonusEnergyMax = max(0, ResolvedEnergyMax - 50)`; stun `1.0 + 0.65 × (1 - exp(-BonusEnergyMax / 50))`, normal üst sınır 1.65 sn |
-| Effect / presentation | Reusable `Effect.Control.Stun.Basic` ve `Effect.Control.Stagger.Basic`; typed `NullPulsePresentationProfile` ve self-cleaning, non-colliding pulse visual |
+| Effect / presentation | Reusable `Effect.Control.Stun.Basic` ve `Effect.Control.Stagger.Basic`; Stun movement yanında ability/primary fire activation ve active execution, outgoing damage ve owner trigger aksiyonlarını kilitler; typed `NullPulsePresentationProfile` ve self-cleaning, non-colliding pulse visual |
 | Kod sınırı | `gameplay/ability/nullPulse/`, `gameConfigs/ability/control/NullPulseConfig.h`, `presentation/ability/nullPulse/`; projectile sorgusu family ID bilmeyen reusable marker/query katmanıdır |
 | Test | Content loader, behavior/effect validation, damage/control, EnergyMax formülü, projectile-vs-persistent actor ayrımı, visual cleanup ve full CTest doğrulandı |
 
@@ -98,6 +103,9 @@ dosyalarına yazılır. Bu üç kayıt güncellenmeden değişiklik tamamlanmı�
 
 | Tarih | Alan | Karar / değişiklik | Statü | Neden / sonuç |
 | --- | --- | --- | --- | --- |
+| 2026-08-11 | Ability attribute family ownership | Non-primary ability base attribute'ları yalnız `Common.*` veya content ID'den türetilen exact `Ability.<Category>.<Family>.*` namespace'ini kullanır. `Ability.*` definition modifier, scaling target ve level modifier'ları ayrıca aynı family'de ve base listede declare edilmiş olmak zorundadır. PrimaryFire `Ability.*` değer/hedef taşıyamaz. | Uygulandı ve doğrulandı | Foreign-family, similar-prefix ve undeclared target sızıntısı kapatıldı. Scaling source ile `Effect.*`/`AbilityActor.*` consumer-owned hedefleri korunur. Configured/PrimaryFire edge case'leri, Common hedefleri ve shipped catalog dahil Debug build ile CTest 5/5 geçti. |
+| 2026-08-11 | Overdrive Core | `Ability.Offense.OverdriveCore.Basic` Ability4/R varsayılan grant olarak shipped edildi: 8 homing Kinetic rocket, same-target decay ve CriticalChance-scaled AttackSpeed boost eklendi; typed projectile profile/telegraph/explosion kullanılır. | Uygulandı | Content, actor/profile validation, hedef takibi, damage ve boost regresyonları GasLiteCoreTests içinde doğrulandı. |
+| 2026-08-11 | Phase Drift | `Ability.Movement.PhaseDrift.Basic` shipped kataloğa eklendi: cleanse, geçici damage/collision protection, movement/shield/afterburner recovery boost, break-on-action ve typed aura presentation sağlar. Varsayılan player loadout'una bağlanmadı. | Uygulandı; runtime regresyon kapsamı eksik | Content loader doğrulaması mevcut; lifecycle, collision restoration, cleanse/protection ve visual cleanup için ayrı runtime testleri eklenmeli. |
 | 2026-08-09 | Null Pulse | `Ability.Control.NullPulse.Basic` shipped edildi: self-centered pulse, yalnız işaretli projectile temizliği, reusable Stun/Stagger ve typed feature-local presentation eklendi. Ability2/E default grant'i Null Pulse'a geçirildi; InfernoSpray default grant listesinden çıkarıldı. | Uygulandı | Null Pulse; ability family'lerinin özel davranışını generic SAS'a taşımadan, reusable actor marker/query ve merkezi control response ile çözer. Content loader, runtime ve full CTest geçti; diğer default slotlar değişmedi. |
 | 2026-08-06 | Proje geneli gameplay tag sözleşmesi | `GameplayTagSchema` eklendi. Merkez yalnız domain köklerini, canonical biçimi ve iki action lock tagini sahiplenir; ability/weapon/effect/actor/attachment leaf tagleri kendi feature kontratlarında kalır. | Uygulandı | Feature'lar arası rastgele blok tag üretimini engeller. Ability, effect, actor, weapon, attachment JSON ve ship progression doğrulaması aynı şemayı çağırır; `GameAbility` shared action lock'ları tek activation gate'de tüketir. |
 | 2026-08-07 | Attribute kimlik mimarisi - Aşama 1 | `sas::AttributeId` ve `sas::AttributeIdHash` eklendi. Tip string-backed ve opaque'tır; `GameplayTag` conversion, hierarchy ve tag matching davranışı yoktur. | Uygulandı | Sonraki aşamalarda `GameplayAttribute`, `AttributeSystem`, loader ve katalog kullanımları da `AttributeId`'ye geçirildi; test çalıştırılmadı. |

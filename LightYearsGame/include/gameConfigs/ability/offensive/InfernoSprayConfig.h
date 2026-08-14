@@ -48,7 +48,6 @@ namespace AbilityData
 			};
 			definition.displayName = "Inferno Spray";
 			definition.iconPath = "SpaceShooterRedux/PNG/Effects/star2.png";
-			definition.inputLabel = "E";
 			definition.accentColor = sf::Color{ 255, 100, 20, 255 };
 
 			definition.actions = {

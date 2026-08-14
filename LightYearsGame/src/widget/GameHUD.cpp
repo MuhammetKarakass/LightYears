@@ -14,6 +14,7 @@ namespace ly
 	GameHUD::GameHUD() :
 		mFrameRateText{ std::in_place, "Frame Rate:" },
 		mPlayerHealthBar{ std::in_place },
+		mPlayerShieldBar{ std::in_place, sf::Vector2f{ 220.f, 18.f }, 1.f, sf::Color{ 120, 180, 255, 255 }, sf::Color{ 35, 55, 95, 255 } },
 		mPlayerEnergyBar{ std::in_place, sf::Vector2f{ 220.f, 18.f }, 1.f, sf::Color{ 70, 205, 255, 255 }, sf::Color{ 35, 70, 95, 255 } },
 		mPlayerLifeIcon{ std::in_place, "SpaceShooterRedux/PNG/pickups/playerLife1_blue.png" },
 		mPlayerLifeText{ std::in_place, " " },
@@ -45,6 +46,9 @@ namespace ly
 
 		if (mPlayerHealthBar.has_value())
 			mPlayerHealthBar->NativeDraw(windowRef);
+
+		if (mPlayerShieldBar.has_value())
+			mPlayerShieldBar->NativeDraw(windowRef);
 
 		if (mPlayerEnergyBar.has_value())
 			mPlayerEnergyBar->NativeDraw(windowRef);
@@ -114,7 +118,8 @@ namespace ly
 		auto windowSize = windowRef.getSize();
 		mWindowSize = windowSize;
 		mPlayerHealthBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 50.f });
-		mPlayerEnergyBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 74.f });
+		mPlayerShieldBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 74.f });
+		mPlayerEnergyBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 98.f });
 
 		sf::Vector2f nextWidgetPos = mPlayerHealthBar->GetWidgetLocation();
 		nextWidgetPos += sf::Vector2f{ mPlayerHealthBar->GetBound().size.x + mWidgetSpacingX, 0.f };
@@ -146,6 +151,7 @@ namespace ly
 		{
 			mObservedPlayerSpaceShip.reset();
 			mPlayerHealthBar->UpdateValue(0.f, 1.f);
+			mPlayerShieldBar->UpdateValue(0.f, 1.f);
 			return;
 		}
 
@@ -155,6 +161,7 @@ namespace ly
 		{
 			mObservedPlayerSpaceShip.reset();
 			mPlayerHealthBar->UpdateValue(0.f, 1.f);
+			mPlayerShieldBar->UpdateValue(0.f, 1.f);
 			return;
 		}
 
@@ -163,10 +170,13 @@ namespace ly
 			mObservedPlayerSpaceShip = lockedSpaceShip;
 			lockedSpaceShip->onActorDestroyed.BindAction(GetWeakPtr(), &GameHUD::PlayerSpaceShipDestroyed);
 			lockedSpaceShip->GetHealthComponent().onHealthChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerHealthUpdated);
+			lockedSpaceShip->GetShieldComponent().onShieldChanged.BindAction(GetWeakPtr(), &GameHUD::PlayerShieldUpdated);
 		}
 
 		HealthComponent& healthComponent = lockedSpaceShip->GetHealthComponent();
 		PlayerHealthUpdated(0, healthComponent.GetHealth(), healthComponent.GetMaxHealth());
+		const ShieldComponent& shieldComponent = lockedSpaceShip->GetShieldComponent();
+		PlayerShieldUpdated(0, shieldComponent.GetShield(), shieldComponent.GetMaxShield());
 	}
 
 	void GameHUD::PlayerHealthUpdated(float amt, float currentHealth, float maxHealth)
@@ -231,6 +241,17 @@ namespace ly
 		mPlayerHealthBar->SetForegroundColor(sf::Color{ r, g, 0, 255 });
 	}
 
+	void GameHUD::PlayerShieldUpdated(float amt, float currentShield, float maxShield)
+	{
+		if (maxShield <= 0.f)
+		{
+			mPlayerShieldBar->UpdateValue(0.f, 1.f);
+			return;
+		}
+
+		mPlayerShieldBar->UpdateValue(std::max(0.f, currentShield), maxShield);
+	}
+
 	void GameHUD::RefreshEnergyBar(float energy, float maxEnergy)
 	{
 		if (!mPlayerEnergyBar.has_value())
@@ -289,6 +310,7 @@ namespace ly
 		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
 		if (!player)
 		{
+			RefreshHealthBar();
 			RefreshEnergyBar(0.f, 1.f);
 			return;
 		}
@@ -299,12 +321,14 @@ namespace ly
 
 		if (!currentShip)
 		{
+			RefreshHealthBar();
 			RefreshEnergyBar(0.f, 1.f);
 			return;
 		}
 
 		if (currentShip->GetIsPendingDestroy())
 		{
+			RefreshHealthBar();
 			RefreshEnergyBar(0.f, 1.f);
 			return;
 		}
@@ -502,4 +526,3 @@ namespace ly
 	}
 
 }
-

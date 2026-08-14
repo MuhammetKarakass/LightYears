@@ -3,8 +3,7 @@
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
-#include "gameplay/combat/Combatant.h"
-#include "gameplay/targeting/AutoTargeting.h"
+#include "gameplay/targeting/CombatantTargetQuery.h"
 
 #include <algorithm>
 
@@ -18,18 +17,6 @@ namespace ly
 			return delta.x * delta.x + delta.y * delta.y;
 		}
 
-		CollisionLayer ResolveEnemyLayer(const Actor& source)
-		{
-			if (source.GetCollisionLayer() == CollisionLayer::Player)
-			{
-				return CollisionLayer::Enemy;
-			}
-			if (source.GetCollisionLayer() == CollisionLayer::Enemy)
-			{
-				return CollisionLayer::Player;
-			}
-			return CollisionLayer::None;
-		}
 	}
 
 	namespace NullPulseTargetQuery
@@ -73,36 +60,7 @@ namespace ly
 			float radius
 		)
 		{
-			List<shared_ptr<Actor>> result;
-			const CollisionLayer enemyLayer = ResolveEnemyLayer(source);
-			if (enemyLayer == CollisionLayer::None)
-			{
-				return result;
-			}
-
-			targeting::TargetingQuery query;
-			query.source = &source;
-			query.origin = source.GetActorLocation();
-			query.range = std::max(0.f, radius);
-			query.requiredTargetLayers = enemyLayer;
-			query.requireCollisionCompatibility = true;
-			query.filter = [](
-				const Actor*,
-				const Actor& candidate,
-				const targeting::TargetingCandidate&)
-			{
-				return dynamic_cast<const Combatant*>(&candidate) != nullptr;
-			};
-
-			for (const targeting::TargetingCandidate& candidate :
-				targeting::AutoTargeting::FindTargets(world, query))
-			{
-				if (candidate.actor)
-				{
-					result.push_back(candidate.actor);
-				}
-			}
-			return result;
+			return targeting::FindOpposingCombatants(world, source, radius);
 		}
 	}
 }

@@ -1,7 +1,7 @@
 # Light Years
 
 ![Language](https://img.shields.io/badge/language-C%2B%2B17-blue)
-![SFML](https://img.shields.io/badge/SFML-3.0.1-green)
+![SFML](https://img.shields.io/badge/SFML-3.1.0-green)
 ![Physics](https://img.shields.io/badge/Box2D-3.1.1-orange)
 ![CMake](https://img.shields.io/badge/CMake-3.31.6-red)
 ![License](https://img.shields.io/badge/license-Educational-lightgrey)
@@ -18,6 +18,8 @@ A high-performance 2D space shooter built from scratch with a custom engine arch
   content and its source locations.
 - [Balance & Roadmap Notebook](docs/BALANCE_AND_ROADMAP_NOTEBOOK.md) — proposed
   work, design decisions, and playtest records.
+- [Vault Runtime Snapshot](docs/vault/00%20-%20Runtime%20Snapshot.md) — current
+  dirty-worktree ability, loadout, combat, projectile, and arena state.
 - [Roguelite Design](docs/Designs.md) — long-term product direction.
 - [Visual Production Plan](docs/VisualProductionPlan.md) — rendering and VFX
   roadmap.
@@ -202,6 +204,10 @@ not as the runtime source.
 | **S / ↓** | Move Down |
 | **D / →** | Move Right |
 | **Space** | Shoot |
+| **Q** | Gravity Anomaly (default Ability1) |
+| **E** | Relay Prism (default Ability2) |
+| **F** | Rocket (default Ability3) |
+| **R** | Overdrive Core (default Ability4) |
 | **ESC** | Pause Menu |
 
 ---
@@ -211,7 +217,8 @@ not as the runtime source.
 - ✅ Custom game engine with actor lifecycle management
 - ✅ 5 enemy types + elite variants with unique AI behaviors
 - ✅ Multi-phase boss fight with health-based stage transitions
-- ✅ Slot-based ability system (PrimaryWeapon + Shield controllers)
+- ✅ SAS-backed, runtime-rebindable ability loadout and shipped behavior catalog
+- ✅ Projectile transformation (Relay Prism), charge burst (Hull Shock), temporary overshield, orbital drones, and kill-stack combat drive
 - ✅ Arena combat mode with free 2D thrust/drift movement
 - ✅ Shield ability with HP absorption, cooldown, and HUD integration
 - ✅ Infinite survival mode with escalating difficulty

@@ -49,8 +49,37 @@ geminin gerisinde kalıp sonradan yetişmez.
 > [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)'a ve
 > Balance & Roadmap Notebook'a kaydedilir.
 >
-> Kaynak anlık görüntüsü: 24 Temmuz 2026. Bu belge, çalışma ağacındaki mevcut
+> Kaynak anlık görüntüsü: 14 Ağustos 2026. Bu belge, çalışma ağacındaki mevcut
 > sistemleri açıklar; önerilen fikirler yalnızca notebook dosyasında tutulur.
+
+## 0. Güncel runtime değişiklikleri (14 Ağustos 2026)
+
+Bu anlık görüntüde C++ identity/behavior katmanı ile JSON balance katmanı
+birlikte çalışır. `abilities.json` ve `effects.json` yüklenmişse shipped runtime
+değerleri JSON'dan gelir; yüklenmemiş test/fallback akışında C++ definition'ları
+kullanılır. C++ tarafı ability kimliğini, behavior türünü, actor türünü,
+presentation profile tipini ve validasyon sözleşmesini sahibi olmaya devam eder.
+
+- `sas::AbilityRuntimeBinding`, ability'nin content tanımından bağımsız runtime
+  ekipman slotunu taşır. Varsayılan oyuncu yüklemesi artık Q Gravity Anomaly,
+  E Relay Prism, F Rocket, R Overdrive Core'dur.
+- Shipped catalog; Shield Harvest, Hull Shock, Orbital Drones, Execution Drive
+  ve Relay Prism ile genişlemiştir. Ayrıntılı güncel tablo
+  [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md) ve vault
+  içindeki `00 - Runtime Snapshot` notundadır.
+- Relay Prism, farenin konumunda ability projectile yakalayıp lineage korumalı
+  dost clone'lara dönüştüren fizik dışı bir query actor'dür. Execution Drive,
+  kill-confirmed olayından stack alır; temporary AttackPower effect'i ve düşük
+  canlı hedefe chase movement modifier'ı birlikte yönetir.
+- Area telegraph presentation, typed profil sınırını koruyarak sabit/takip,
+  zamanlı/external progress ve completion feedback fazlarına ayrılmıştır. Hull
+  Shock gerçek alan yarıçapını aynı radial resolver'dan türetir.
+- Shield Harvest'in temporary overshield'ı kalıcı ship shield ve Barrier
+  effect'inden ayrı bir runtime katmanıdır.
+
+Bu bölüm, tarihsel migration notlarının yerine geçmez; eski bölümlerdeki
+"varsayılan loadout" ve "son doğrulama" ifadeleriyle çelişirse bu bölüm ile
+runtime source-of-truth önceliklidir.
 
 ## Durum anahtarı
 
@@ -441,7 +470,7 @@ kendi leaf taglerini kendi feature/config klasöründe tanımlamaya devam eder.
 | Ability lifecycle | `State.Ability.<Family>.<State>` ve `Event.Ability.<Family>.<Event>`; dinlenen dış olaylar `Event.<Producer>.<Event>` | Feature-local behavior contract |
 | Ability actor | `AbilityActor.<Family>.<Role>` | Feature-local actor contract |
 | Effect runtime state | `State.Effect.<Family>.<State>` | Feature-local effect contract/config |
-| Attribute ID | `<Owner>...` / `<AbilityActor>...` | İlgili sistemin AttributeId kataloğu |
+| Attribute ID | `Common.*`, `Ability.<Category>.<Family>.*`, `<Owner>...` / `<AbilityActor>...` | İlgili sistemin AttributeId kataloğu ve family-local contract |
 | Effect behavior | `EffectBehavior.<Family>[.<Behavior>]` | Feature-local effect behavior |
 | Primary weapon | `PrimaryWeapon.<Family>.<Type>` / `PrimaryWeapon.Feature.<Feature>` | Weapon handler/feature |
 | Damage | `Damage.Type.<Type>` | Damage type schema |
@@ -469,6 +498,21 @@ attribute'ları listelemez. Hangi ID'lerin geçerli olduğu ilgili game catalog,
 weapon handler veya ability actor contract'ında kalır. Lookup API'leri de bu
 ayrımdan sonra `FindAttribute`, `FindAttributeValue` ve `HasAttribute` olarak
 adlandırılmıştır; davranış ve modifier/scaling sırası değişmemiştir.
+
+Non-primary bir ability'nin özel numeric değerleri, content ID'sinden türetilen
+exact family namespace'inde tutulur. Örneğin
+`Ability.Movement.PhaseDrift.Basic` yalnız `Common.*` ve
+`Ability.Movement.PhaseDrift.*` base attribute'larını taşıyabilir;
+`Ability.Offense.OverdriveCore.*` veya benzer-prefix
+`Ability.Movement.PhaseDriftExtended.*` değerleri reddedilir.
+`GameAbilityDefinitionValidator` aynı sahiplik kontrolünü definition
+modifier'larına, scaling target'larına ve level-progression modifier'larına da
+uygular. `Ability.*` hedefi ayrıca ability'nin base attribute listesinde declare
+edilmiş olmalıdır. Scaling source'ları (`Owner.*`, `Ship.*`) ile consumer-owned
+`Effect.*` ve `AbilityActor.*` hedefleri bu family kuralına tabi değildir; kendi
+consumer kontratlarında doğrulanır. PrimaryFire tanımlarının kimliği `Weapon.*`
+olduğu için ability family namespace'i yoktur ve `Ability.*` değer/hedef taşıması
+yasaktır; `Common.*` kullanımı geçerliliğini korur.
 
 `State.ActionLock.AbilityActivation` ve
 `State.ActionLock.PrimaryWeaponFire` iki kayıtlı ortak kilittir. Bir mekanik
@@ -805,7 +849,9 @@ sahibidir; shared scaling/attachment değer çözümü ise
 
 | Ability | Slot | Çalışma | Başlangıç / scale | Level |
 | --- | --- | --- | --- | --- |
-| NullPulse_Basic | Ability2 (E), varsayılan player grant | 11 sn cooldown; Instant; 1 charge; oyuncu merkezli 500 radius pulse (+200) | Her uygun düşman Combatant'a bir kez Energy damage; projectile işaretli actor'ları yok eder; normal/elite/miniboss için Stun, boss için kısa Stagger/interrupt; beams, field'ler, pickup'lar ve görsel actor'lar silinmez | Damage L1 10, her level +2; cooldown her level -0.25; stun 1.0 sn + EnergyMax tabanlı en fazla +0.65 sn; crit/AttackPower/AttackSpeed etkisi yok |
+| NullPulse_Basic | Ability2 (E), varsayılan player grant | 11 sn cooldown; Instant; 1 charge; oyuncu merkezli 500 radius pulse (+200) | Her uygun düşman Combatant'a bir kez Energy damage; projectile işaretli actor'ları yok eder; normal/elite/miniboss için Stun, boss için kısa Stagger/interrupt; Stun yeni ability/primary-fire aktivasyonunu, aktif execution'ı ve outgoing damage/trigger aksiyonlarını keser; beams, field'ler, pickup'lar ve görsel actor'lar silinmez | Damage L1 10, her level +2; cooldown her level -0.25; stun 1.0 sn + EnergyMax tabanlı en fazla +0.65 sn; crit/AttackPower/AttackSpeed etkisi yok |
+| OverdriveCore_Basic | Ability4 (R), varsayılan player grant | 1 sn cooldown; 1 sn boyunca hedeflere 8 homing Kinetic rocket yollar, ardından 5 sn AttackSpeed boost verir | Aynı hedefe ardışık hasar ×0.90 azalır; boost tabanı +5 AttackSpeed, level başına +1 ve CriticalChance ile scale edilir | 2–5 progression tanımlıdır; toplam duration 6 sn, actor/presentation typed OverdriveCore profile kullanır |
+| PhaseDrift_Basic | Ability3 (F), shipped fakat varsayılan grant değil | 14 sn cooldown, 6 sn duration; cleanse, damage protection, collision phase ve recovery boost uygular; başka ability aktivasyonu ile kırılır | Movement +%20, ShieldRegen +%50, AfterburnerRegen +%40; Energy ve mobility değerleri bonusları doygun eğriyle scale eder | 2–15: her level cooldown -0.25 ve movement/recovery bonus artışı; typed aura profile lifecycle sonunda temizlenir |
 | Shield_Basic | Ability1 (Q), varsayılan player grant yok | 8 sn cooldown, 5 sn duration; Basic Barrier uygular | Barrier kapasitesi +0.20 × MaxHealth ve +50 × Armor | Progression tanımlı değil |
 | SunBeam_Strike_Basic | Ability2 (E) | MouseWorld konumunda SunBeam strike actor spawn eder | Başlangıç damage 40, radius 96, width 72, length 720 | 2–5: her level +8 Damage, +8 Radius; scrap: 40/50/65/80 |
 | Dash_Basic | Ability3 (F) | 2 sn cooldown, 0.24 sn duration; input veya mouse yönünde hareket | Base 260 mesafe; movement rating ile en fazla +%50; mevcut kamera hedefinin üzerine +%15 zoom-out | 2–5: cooldown 1.88/1.76/1.64/1.52 sn |

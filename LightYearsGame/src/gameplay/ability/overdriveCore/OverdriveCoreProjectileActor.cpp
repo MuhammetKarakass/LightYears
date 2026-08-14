@@ -6,6 +6,7 @@
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreVisualActor.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -20,6 +21,8 @@ namespace ly
 {
 	namespace
 	{
+		constexpr float RelayDeliveryLifetimeMarginSeconds = 0.05f;
+
 		const List<sas::AttributeId> OverdriveCoreProjectileCommonAttributes{
 			CommonAttributeIds::Damage,
 			CommonAttributeIds::Radius,
@@ -270,11 +273,71 @@ namespace ly
 
 	void OverdriveCoreProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (GetIsPendingDestroy())
+		{
+			return;
+		}
+		if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(otherActor);
+			captureVolume && captureVolume->TryCaptureProjectile(*this))
+		{
+			return;
+		}
 		AbilityWorldActor::OnActorBeginOverlap(otherActor);
 		if (!mHasExploded && IsValidAbilityTarget(otherActor))
 		{
 			Explode();
 		}
+	}
+
+	weak_ptr<AbilityWorldActor> OverdriveCoreProjectileActor::SpawnRelayClone(
+		const ProjectileRelayCloneRequest& request
+	) const
+	{
+		World* world = GetWorld();
+		Actor* owner = GetOwnerActor();
+		if (!world || !owner)
+		{
+			return {};
+		}
+
+		weak_ptr<OverdriveCoreProjectileActor> clone =
+			world->SpawnActor<OverdriveCoreProjectileActor>(
+				owner,
+				mPresentationProfile,
+				std::nullopt,
+				request.snapshot.homingTarget
+			);
+		if (const shared_ptr<OverdriveCoreProjectileActor> spawned = clone.lock())
+		{
+			spawned->ConfigureRelayClone(request);
+			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);
+			spawned->ConfigureRelayClone(request);
+
+			// Echo/Prism can recast an Overdrive projectile after its source has
+			// already aged. The clone needs a fresh delivery window instead of
+			// inheriting a lifetime that expires before maximum range.
+			const float requiredDeliveryLifetime = spawned->mProjectileSpeed > 0.f
+				? spawned->mMaximumRange / spawned->mProjectileSpeed +
+					RelayDeliveryLifetimeMarginSeconds
+				: 0.f;
+			spawned->SetLifeTime(std::max(
+				spawned->GetLifeTime(),
+				requiredDeliveryLifetime
+			));
+		}
+		return clone;
+	}
+
+	bool OverdriveCoreProjectileActor::BuildRelaySnapshot(
+		ProjectileRelaySnapshot& snapshot
+	) const
+	{
+		if (!AbilityWorldActor::BuildRelaySnapshot(snapshot))
+		{
+			return false;
+		}
+		snapshot.homingTarget = mTargetActor;
+		return true;
 	}
 
 	void OverdriveCoreProjectileActor::Move(float deltaTime)
@@ -342,10 +405,14 @@ namespace ly
 		if (mTargetTravelDistance > 0.f && travelDuration > 0.f)
 		{
 			mTelegraph = world->SpawnActor<AreaTelegraphActor>(
-				GetActorLocation() + GetActorForwardDirection() * mTargetTravelDistance,
-				mExplosionRadius,
-				travelDuration + 0.15f,
-				mPresentationProfile.telegraph
+				AreaTelegraphActor::SpawnParams{
+					GetActorLocation() + GetActorForwardDirection() * mTargetTravelDistance,
+					mExplosionRadius,
+					0.f,
+					mPresentationProfile.telegraph,
+					AreaTelegraphAnchorMode::FixedLocation,
+					AreaTelegraphProgressDriver::External
+				}
 			);
 		}
 		SynchronizePresentation();
@@ -367,7 +434,7 @@ namespace ly
 		}
 		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())
 		{
-			telegraph->SetCountdownProgress(progress);
+			telegraph->SetExternalProgress(progress);
 		}
 	}
 

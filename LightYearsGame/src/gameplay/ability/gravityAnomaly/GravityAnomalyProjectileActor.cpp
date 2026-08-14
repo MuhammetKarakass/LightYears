@@ -3,7 +3,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -16,6 +16,8 @@ namespace ly
 {
 	namespace
 	{
+		constexpr float RelayDeliveryLifetimeMarginSeconds = 0.05f;
+
 		const List<sas::AttributeId> ProjectileCommonAttributes{
 			CommonAttributeIds::Duration,
 			CommonAttributeIds::Radius,
@@ -190,14 +192,28 @@ namespace ly
 	void GravityAnomalyProjectileActor::ResolveTargetLocation()
 	{
 		Actor* owner = GetOwnerActor();
-		const sf::Vector2f sourceLocation = owner ? owner->GetActorLocation() : GetActorLocation();
+		const sf::Vector2f sourceLocation = mRelayLaunchDirection
+			? GetActorLocation()
+			: (owner ? owner->GetActorLocation() : GetActorLocation());
 		sf::Vector2f direction = owner ? owner->GetActorForwardDirection() : GetActorForwardDirection();
 		if (!IsFiniteVector(direction) || direction.x * direction.x + direction.y * direction.y <= 0.000001f)
 		{
 			direction = { 0.f, -1.f };
 		}
 
-		if (mRequestedTargetLocation && IsFiniteVector(*mRequestedTargetLocation))
+		if (mRelayLaunchDirection && IsFiniteVector(*mRelayLaunchDirection))
+		{
+			direction = *mRelayLaunchDirection;
+			const float directionLength = std::sqrt(
+				direction.x * direction.x + direction.y * direction.y
+			);
+			if (directionLength > 0.001f)
+			{
+				direction /= directionLength;
+			}
+			mResolvedTargetLocation = sourceLocation + direction * mCastRange;
+		}
+		else if (mRequestedTargetLocation && IsFiniteVector(*mRequestedTargetLocation))
 		{
 			const sf::Vector2f aimDelta = *mRequestedTargetLocation - sourceLocation;
 			const float aimDistanceSquared = aimDelta.x * aimDelta.x + aimDelta.y * aimDelta.y;
@@ -295,6 +311,45 @@ namespace ly
 			field->SetAbilityCollisionRadius(0.f);
 			field->ConfigureFromAttributes(mFieldAttributes);
 		}
+	}
+
+	weak_ptr<AbilityWorldActor> GravityAnomalyProjectileActor::SpawnRelayClone(
+		const ProjectileRelayCloneRequest& request
+	) const
+	{
+		World* world = GetWorld();
+		Actor* owner = GetOwnerActor();
+		if (!world || !owner)
+		{
+			return {};
+		}
+
+		weak_ptr<GravityAnomalyProjectileActor> clone =
+			world->SpawnActor<GravityAnomalyProjectileActor>(
+				owner,
+				mPresentationProfile,
+				std::nullopt
+			);
+		if (const shared_ptr<GravityAnomalyProjectileActor> spawned = clone.lock())
+		{
+			spawned->SetRelayLaunchDirection(request.direction);
+			spawned->ConfigureRelayClone(request);
+			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);
+			spawned->ConfigureRelayClone(request);
+
+			// The source snapshot may have only a fraction of its original
+			// lifetime left. A relay clone starts a new delivery, so it must be
+			// allowed to reach the cast point and spawn its field first.
+			const float requiredDeliveryLifetime = spawned->mProjectileSpeed > 0.f
+				? spawned->mCastRange / spawned->mProjectileSpeed +
+					RelayDeliveryLifetimeMarginSeconds
+				: 0.f;
+			spawned->SetLifeTime(std::max(
+				spawned->GetLifeTime(),
+				requiredDeliveryLifetime
+			));
+		}
+		return clone;
 	}
 
 	void GravityAnomalyProjectileActor::ConfigureVisualGeometry()

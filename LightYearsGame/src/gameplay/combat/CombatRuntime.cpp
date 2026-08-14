@@ -297,6 +297,20 @@ namespace ly
 			combatEvent.sourceAbilityTags = context.sourceAbilityTags;
 			combatEvent.SetContext(&context);
 			sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(combatEvent);
+
+			if (context.targetWasKilled)
+			{
+				sas::AbilityEvent killEvent;
+				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+				killEvent.SetSource(context.source);
+				killEvent.SetTarget(context.target);
+				killEvent.magnitude = context.appliedDamage;
+				killEvent.payloadTags = context.damageTags;
+				killEvent.sourceAbilityId = context.sourceAbilityId;
+				killEvent.sourceAbilityTags = context.sourceAbilityTags;
+				killEvent.SetContext(&context);
+				sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+			}
 		}
 		onDamageResolved.Broadcast(context);
 	}

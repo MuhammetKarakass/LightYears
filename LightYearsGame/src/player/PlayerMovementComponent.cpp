@@ -2,6 +2,8 @@
 
 #include "player/PlayerSpaceShip.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
+#include "gameplay/tags/GameplayTags.h"
+#include "gameplay/input/AbilityInputSchema.h"
 #include <framework/MathUtility.h>
 #include <framework/World.h>
 
@@ -18,6 +20,18 @@ namespace ly
 	void PlayerMovementComponent::Tick(float deltaTime)
 	{
 		SetInput();
+		if (mOwner.GetAbilitySystemComponent().HasOwnedTag(
+			GameplayTags::State::Effect::Control::Stunned
+		))
+		{
+			mMoveInput = { 0.f, 0.f };
+			mSmoothedMoveInput = { 0.f, 0.f };
+			mAfterburnerRequested = false;
+			mAfterburnerIsDraining = false;
+			mAfterburnerIntensity = 0.f;
+			mOwner.SetVelocity({ 0.f, 0.f });
+			return;
+		}
 		ConsumeInput(deltaTime);
 	}
 
@@ -66,26 +80,13 @@ namespace ly
 		);
 
 		CombatRuntime& combatRuntime = mOwner.GetCombatRuntime();
-		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
-			sas::AbilitySlot::PrimaryFire,
-			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
-		);
-		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
-			sas::AbilitySlot::Ability1,
-			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)
-		);
-		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
-			sas::AbilitySlot::Ability2,
-			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)
-		);
-		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
-			sas::AbilitySlot::Ability3,
-			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)
-		);
-		combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
-			sas::AbilitySlot::Ability4,
-			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)
-		);
+		for (const AbilityInputBinding& binding : AbilityInputSchema::GetBindings())
+		{
+			combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
+				binding.slot,
+				sf::Keyboard::isKeyPressed(binding.key)
+			);
+		}
 
 		if (mOwner.GetMovementComponent().GetMovementMode() == ShipMovementMode::LegacyVelocity)
 		{
@@ -139,6 +140,9 @@ namespace ly
 			{
 				worldAcceleration *= dominantAxisMagnitude / accelerationLength;
 			}
+			worldAcceleration *= mOwner.GetConditionalMovementSpeedMultiplier(
+				worldAcceleration
+			);
 
 			const float afterburnerAccelerationMultiplier = std::max(
 				1.f,
@@ -164,7 +168,9 @@ namespace ly
 				mOwner.GetShipRuntime().GetAfterburnerSpeedMultiplier()
 			);
 			const sf::Vector2f normalSpeed =
-				movement.ResolveLegacySpeed() * mOwner.GetMovementSpeedMultiplier();
+				movement.ResolveLegacySpeed() *
+				mOwner.GetMovementSpeedMultiplier() *
+				mOwner.GetConditionalMovementSpeedMultiplier(movementDirection);
 			const float speedMultiplier = Lerp(1.f, afterburnerSpeedMultiplier, mAfterburnerIntensity);
 			const sf::Vector2f targetVelocity{
 				movementDirection.x * normalSpeed.x * speedMultiplier,

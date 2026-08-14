@@ -45,7 +45,6 @@ namespace AbilityData
 			};
 			definition.displayName = "Sun Beam";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
-			definition.inputLabel = "E";
 			definition.accentColor = sf::Color{ 255, 190, 70, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{

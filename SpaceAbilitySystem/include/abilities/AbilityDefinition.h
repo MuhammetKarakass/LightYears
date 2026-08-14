@@ -11,6 +11,8 @@ namespace sas
 	struct AbilityDefinition
 	{
 		std::string abilityId;
+		// Transitional content default. Runtime loadout callers must pass an
+		// AbilityRuntimeBinding; this field is no longer the source of input truth.
 		AbilitySlot slot = AbilitySlot::Ability1;
 		AbilityActivationPolicy activationPolicy = AbilityActivationPolicy::OnPressed;
 		AbilityLifetimePolicy lifetimePolicy = AbilityLifetimePolicy::Instant;

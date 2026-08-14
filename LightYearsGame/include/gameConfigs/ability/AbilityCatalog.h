@@ -1,13 +1,15 @@
 #pragma once
 
-#include "gameConfigs/ability/functional/DashConfig.h"
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/movement/DashConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
+#include "gameConfigs/ability/offensive/ExecutionDriveConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/defensive/ShieldConfig.h"
-#include "gameConfigs/ability/defensive/PhaseDriftConfig.h"
+#include "gameConfigs/ability/movement/PhaseDriftConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
+#include "gameConfigs/ability/utility/EchoProtocolConfig.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
@@ -55,7 +57,6 @@ namespace AbilityData
 			};
 			definition.displayName = weaponDefinition.weaponId;
 			definition.iconPath = weaponDefinition.presentationDefinition.texturePath;
-			definition.inputLabel = "Space";
 			definition.accentColor = sf::Color{ 100, 220, 255, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{

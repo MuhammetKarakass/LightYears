@@ -29,6 +29,9 @@ namespace ly
 		void Destroy() override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
+		weak_ptr<AbilityWorldActor> SpawnRelayClone(
+			const ProjectileRelayCloneRequest& request
+		) const override;
 
 		float GetProjectileSpeed() const { return mProjectileSpeed; }
 		float GetMaximumRange() const { return mMaximumRange; }

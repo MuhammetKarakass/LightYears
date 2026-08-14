@@ -41,11 +41,18 @@ enum class CollisionLayer : uint8_t
     Powerup = 1 << 4,    // 0001 0000 - Power-ups
     Environment = 1 << 5,// 0010 0000 - Obstacles
 
+    // RELAY PROJECTILES
+    // Relay clones use a separate layer so only transformed projectiles can
+    // damage their owner/friendly ships. Normal bullets keep their existing
+    // faction-only collision rules.
+    RelayProjectile = 1 << 6,
+
     // COMBINATIONS (Bit masks)
     AllPlayers = static_cast<uint8_t>(Player) | static_cast<uint8_t>(PlayerBullet),
     AllEnemies = static_cast<uint8_t>(Enemy) | static_cast<uint8_t>(EnemyBullet),
     AllBullets = static_cast<uint8_t>(PlayerBullet) | static_cast<uint8_t>(EnemyBullet),
-    AllShips   = static_cast<uint8_t>(Player) | static_cast<uint8_t>(Enemy)
+    AllShips   = static_cast<uint8_t>(Player) | static_cast<uint8_t>(Enemy),
+    AllRelayTargets = static_cast<uint8_t>(Player) | static_cast<uint8_t>(Enemy)
 };
 
 namespace ly

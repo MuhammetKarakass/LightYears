@@ -89,6 +89,28 @@ namespace sas
 			return mInstances.erase(handle) > 0;
 		}
 
+		bool Rebind(AbilityHandle handle, AbilitySlot newSlot)
+		{
+			const auto registration = mRegistrations.find(handle);
+			if (registration == mRegistrations.end() ||
+				registration->second.isPassive ||
+				newSlot == AbilitySlot::None ||
+				(mSlotBindings.find(newSlot) != mSlotBindings.end() &&
+					!(mSlotBindings.find(newSlot)->second == handle)))
+			{
+				return false;
+			}
+
+			const auto oldBinding = mSlotBindings.find(registration->second.slot);
+			if (oldBinding != mSlotBindings.end() && oldBinding->second == handle)
+			{
+				mSlotBindings.erase(oldBinding);
+			}
+			registration->second.slot = newSlot;
+			mSlotBindings[newSlot] = handle;
+			return true;
+		}
+
 		AbilityInstance* Find(AbilityHandle handle)
 		{
 			const auto found = mInstances.find(handle);

@@ -44,6 +44,12 @@ namespace ly
 		ShipRuntimeModifiers& GetRuntimeModifiers() { return mRuntimeModifiers; }
 		const ShipRuntimeModifiers& GetRuntimeModifiers() const { return mRuntimeModifiers; }
 		float GetMovementSpeedMultiplier() const { return mRuntimeModifiers.GetMovementSpeedMultiplier(); }
+		float GetConditionalMovementSpeedMultiplier(
+			const sf::Vector2f& movementDirection
+		) const
+		{
+			return mRuntimeModifiers.GetConditionalMovementSpeedMultiplier(movementDirection);
+		}
 		float GetShieldRegenMultiplier() const { return mRuntimeModifiers.GetShieldRegenMultiplier(); }
 		float GetAfterburnerRegenMultiplier() const { return mRuntimeModifiers.GetAfterburnerRegenMultiplier(); }
 

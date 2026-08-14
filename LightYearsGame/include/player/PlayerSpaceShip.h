@@ -4,6 +4,7 @@
 #include "framework/TimerManager.h"
 #include "player/PlayerMovementComponent.h"
 #include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/ability/loadout/AbilityLoadoutManager.h"
 
 namespace ly
 {
@@ -23,6 +24,8 @@ namespace ly
 		virtual void Tick(float deltaTime) override;
 		void SetSpeed(float speed) { mPlayerMovement.SetSpeed(speed); }
 		float GetSpeed() const { return mPlayerMovement.GetSpeed(); }
+		AbilityLoadoutManager& GetAbilityLoadout() { return mAbilityLoadout; }
+		const AbilityLoadoutManager& GetAbilityLoadout() const { return mAbilityLoadout; }
 
 		void SetUseScreenClamp(bool useClamp) { mPlayerMovement.SetUseScreenClamp(useClamp); }
 		bool GetUseScreenClamp() const { return mPlayerMovement.GetUseScreenClamp(); }
@@ -41,6 +44,7 @@ namespace ly
 		void StopInvulnerability();
 		void UpdateInvulnerability(float deltaTime);
 
+		AbilityLoadoutManager mAbilityLoadout;
 		PlayerMovementComponent mPlayerMovement;
 
 		float mInvulnerabilityTime;

@@ -4,7 +4,7 @@
 
 namespace ly::GameplayTags::Ability::Family
 {
-	inline const GameplayTag PhaseDrift{ "Ability.Defense.PhaseDrift" };
+	inline const GameplayTag PhaseDrift{ "Ability.Movement.PhaseDrift" };
 }
 
 namespace ly::GameplayTags::State::Ability::PhaseDrift

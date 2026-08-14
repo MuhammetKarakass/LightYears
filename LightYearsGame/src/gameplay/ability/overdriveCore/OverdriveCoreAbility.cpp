@@ -83,7 +83,7 @@ namespace ly
 		std::string* failureReason
 	) const
 	{
-		if (definition.slot != sas::AbilitySlot::Ability4 ||
+		if (!sas::IsLoadoutAbilitySlot(definition.slot) ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.cooldown <= 0.f)
@@ -91,7 +91,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Overdrive Core requires an Ability4, pressed, one-charge duration definition.";
+					"Overdrive Core requires a loadout slot, pressed activation, and one charge.";
 			}
 			return false;
 		}

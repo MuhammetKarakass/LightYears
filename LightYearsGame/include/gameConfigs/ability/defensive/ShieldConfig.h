@@ -34,7 +34,6 @@ namespace AbilityData
 			};
 			definition.displayName = "Shield";
 			definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
-			definition.inputLabel = "Q";
 			definition.accentColor = sf::Color{ 80, 200, 255, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{

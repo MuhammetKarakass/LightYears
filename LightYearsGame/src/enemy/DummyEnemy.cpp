@@ -12,5 +12,14 @@ namespace ly
 	void DummyEnemy::Tick(float deltaTime)
 	{
 		SpaceShip::Tick(deltaTime);
+		Shoot();
+	}
+
+	void DummyEnemy::Shoot()
+	{
+		GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::PrimaryFire,
+			true
+		);
 	}
 }

@@ -23,6 +23,20 @@ namespace sas
 			mAbilityRuntime->RemoveAbility(handle, reason);
 	}
 
+	bool AbilitySystemComponent::RebindAbility(
+		AbilityHandle handle,
+		AbilitySlot targetSlot,
+		std::string* failureReason
+	)
+	{
+		return mAbilityRuntime &&
+			mAbilityRuntime->RebindAbility(
+				handle,
+				AbilityRuntimeBinding{ targetSlot },
+				failureReason
+			);
+	}
+
 	void AbilitySystemComponent::ClearAbilitySlot(AbilitySlot slot)
 	{
 		if (mAbilityRuntime)

@@ -1,6 +1,6 @@
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameplay/effects/EffectBehaviorKeys.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "attributes/GameplayAttribute.h"

@@ -4,6 +4,9 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/progression/ShipProgression.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
+#include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
+#include "gameplay/ability/runtime/AbilityUseHistory.h"
 #include "gameplay/ability/validation/GameAbilityDefinitionValidator.h"
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
 #include "gameplay/content/AbilityContentCatalog.h"
@@ -20,6 +23,14 @@
 #include "gameplay/ability/nullPulse/NullPulseVisualActor.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h"
+#include "gameplay/ability/orbitalDrones/OrbitalDronesContracts.h"
+#include "gameplay/ability/relayPrism/RelayPrismActor.h"
+#include "gameplay/ability/relayPrism/RelayPrismContracts.h"
+#include "gameplay/ability/orbitalDrones/OrbitingDroneActor.h"
+#include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
+#include "gameplay/ability/echoProtocol/EchoProtocolContracts.h"
+#include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
+#include "gameplay/ability/hullShock/HullShockContracts.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
 #include "enemy/DummyEnemy.h"
@@ -32,6 +43,8 @@
 #include "presentation/ability/rocket/RocketPresentationProfile.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationIds.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
+#include "presentation/ability/orbitalDrones/OrbitalDronesPresentationIds.h"
+#include "presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
@@ -49,13 +62,14 @@
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/ship/ShipConfig.h"
 #include "presentation/ability/infernoSpray/InfernoSprayPresentationProfile.h"
 #include "player/PlayerSpaceShip.h"
+#include "gameplay/input/AbilityInputSchema.h"
 #include "spaceShip/SpaceShip.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/weapon/PrimaryWeaponHandlerRegistry.h"
@@ -633,6 +647,105 @@ int main()
 {
 	using namespace ly;
 
+	// Common lifecycle infrastructure must remain testable without booting the
+	// full game content catalog. This verifies the reusable LIFO semantics and
+	// proves that observers and veto guards are independent concerns.
+	{
+		AbilityUseHistory history;
+		for (int index = 0; index < 12; ++index)
+		{
+			AbilityUseRecord record;
+			record.abilityId = sas::ContentId{
+				"Ability.Test.History." + std::to_string(index)
+			};
+			record.level = index + 1;
+			history.Record(std::move(record));
+		}
+
+		if (history.GetRecords().size() != AbilityUseHistory::MaxRecords ||
+			history.GetRecords().front().abilityId !=
+				sas::ContentId{ "Ability.Test.History.11" } ||
+			history.GetRecords().back().abilityId !=
+				sas::ContentId{ "Ability.Test.History.2" })
+		{
+			return Fail("Ability-use history did not retain the newest ten records");
+		}
+
+		const AbilityUseRecord* latest = history.FindLatestUnconsumed(
+			[](const AbilityUseRecord& record)
+			{
+				return record.abilityId == "Ability.Test.History.7" ||
+					record.abilityId == "Ability.Test.History.8";
+			}
+		);
+		if (!latest || latest->abilityId != "Ability.Test.History.8" ||
+			!history.Consume(latest->sequence))
+		{
+			return Fail("Ability-use history did not expose or consume the LIFO record");
+		}
+		if (history.GetRecords().size() != AbilityUseHistory::MaxRecords)
+		{
+			return Fail("Ability-use history did not preserve a consumed snapshot for future systems");
+		}
+		const AbilityUseRecord* previous = history.FindLatestUnconsumed(
+			[](const AbilityUseRecord& record)
+			{
+				return record.abilityId == "Ability.Test.History.7" ||
+					record.abilityId == "Ability.Test.History.8";
+			}
+		);
+		if (!previous || previous->abilityId != "Ability.Test.History.7")
+		{
+			return Fail("Ability-use history did not expose the next unconsumed record");
+		}
+	}
+
+	{
+		AbilityLifecycleDispatcher dispatcher;
+		int observed = 0;
+		int guardCalls = 0;
+		AbilityLifecycleObserverHandle observer = dispatcher.RegisterObserver(
+			AbilityLifecycleObserverFilter{
+				std::nullopt,
+				std::nullopt,
+				sas::AbilityActivationOrigin::NormalInput,
+				std::nullopt
+			},
+			[&](const sas::AbilityLifecycleEvent&)
+			{
+				++observed;
+			}
+		);
+		AbilityActivationGuardHandle guard = dispatcher.RegisterActivationGuard(
+			[&](const sas::AbilityLifecycleEvent& event)
+			{
+				++guardCalls;
+				return event.abilityId != "Ability.Test.Blocked";
+			}
+		);
+
+		sas::AbilityLifecycleEvent allowed;
+		allowed.abilityId = sas::ContentId{ "Ability.Test.Allowed" };
+		allowed.activationOrigin = sas::AbilityActivationOrigin::NormalInput;
+		sas::AbilityLifecycleEvent blocked;
+		blocked.abilityId = sas::ContentId{ "Ability.Test.Blocked" };
+		blocked.activationOrigin = sas::AbilityActivationOrigin::NormalInput;
+		if (!dispatcher.CanActivate(allowed) ||
+			dispatcher.CanActivate(blocked) ||
+			guardCalls != 2)
+		{
+			return Fail("Ability activation guard did not veto only the blocked event");
+		}
+		dispatcher.Publish(allowed);
+		dispatcher.Publish(blocked);
+		if (observed != 2 ||
+			!dispatcher.UnregisterObserver(observer) ||
+			!dispatcher.UnregisterActivationGuard(guard))
+		{
+			return Fail("Ability lifecycle observer registration or dispatch failed");
+		}
+	}
+
 	if (!GameContentBootstrap::Register())
 	{
 		return Fail("Game ability-system content could not be registered");
@@ -656,7 +769,7 @@ int main()
 		AbilityData::NullPulse::Effect::StaggerId
 	);
 	const auto* missingDefinition = EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist");
-	if (shippedEffects.size() != 15 ||
+	if (shippedEffects.size() != 16 ||
 		!shippedEffectsValid ||
 		!barrierDefinition ||
 		barrierDefinition->effectId != "Effect.Barrier.Basic" ||
@@ -682,6 +795,331 @@ int main()
 	if (!nullPulseDefinition || nullPulseDefinition->behaviorType != AbilityBehaviorType::NullPulse)
 	{
 		return Fail("Null Pulse shipped definition was not registered with its behavior");
+	}
+	const GameAbilityDefinition* phaseDriftDefinition =
+		AbilityData::FindShippedAbilityDefinition(AbilityData::PhaseDrift::AbilityId::Basic);
+	const GameAbilityDefinition* orbitalDronesDefinition =
+		AbilityData::FindShippedAbilityDefinition(AbilityData::OrbitalDrones::AbilityId::Basic);
+	const GameAbilityDefinition* executionDriveDefinition =
+		AbilityData::FindShippedAbilityDefinition(AbilityData::ExecutionDrive::AbilityId::Basic);
+	const GameAbilityDefinition* echoProtocolDefinition =
+		AbilityData::FindShippedAbilityDefinition(AbilityData::EchoProtocol::AbilityId::Basic);
+	std::string abilityOwnershipFailure;
+	if (!phaseDriftDefinition || !orbitalDronesDefinition || !executionDriveDefinition ||
+		!echoProtocolDefinition ||
+		!ValidateAbilityCatalog(AbilityData::GetShippedAbilityDefinitions(), &abilityOwnershipFailure))
+	{
+		return Fail("Shipped ability catalog failed family-owned attribute validation");
+	}
+	if (orbitalDronesDefinition->slot != sas::AbilitySlot::Ability4 ||
+		orbitalDronesDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		orbitalDronesDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+		!NearlyEqual(orbitalDronesDefinition->cooldown, 12.f) ||
+		!NearlyEqual(orbitalDronesDefinition->duration, 6.f) ||
+		orbitalDronesDefinition->maxCharges != 1 ||
+		orbitalDronesDefinition->behaviorType != AbilityBehaviorType::OrbitalDrones ||
+		orbitalDronesDefinition->abilityTags !=
+			List<GameplayTag>{
+				GameplayTags::Ability::Offense,
+				GameplayTags::Ability::Family::OrbitalDrones
+			} ||
+		orbitalDronesDefinition->damageTags !=
+			List<GameplayTag>{ DamageTypeSchema::Kinetic } ||
+		orbitalDronesDefinition->attributes.size() != 8 ||
+		sas::FindAttributeValue(
+			orbitalDronesDefinition->attributes,
+			CommonAttributeIds::Radius,
+			0.f
+		) <= 0.f ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesDefinition->attributes,
+				CommonAttributeIds::Damage,
+				0.f
+			),
+			18.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesDefinition->attributes,
+				AbilityData::OrbitalDrones::Attribute::DroneCount,
+				0.f
+			),
+			4.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesDefinition->attributes,
+				AbilityData::OrbitalDrones::Attribute::SameTargetHitCooldown,
+				0.f
+			),
+			0.5f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesDefinition->attributes,
+				AbilityData::OrbitalDrones::Attribute::BaseAngularSpeedRadiansPerSecond,
+				0.f
+			),
+			2.5f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesDefinition->attributes,
+				AbilityData::OrbitalDrones::Attribute::ContactRadius,
+				0.f
+			),
+			12.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesDefinition->attributes,
+				AbilityData::OrbitalDrones::Attribute::EnergyMaxReference,
+				0.f
+			),
+			50.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				orbitalDronesDefinition->attributes,
+				AbilityData::OrbitalDrones::Attribute::EnergyMaxDurationScale,
+				0.f
+			),
+			0.02f
+		) ||
+		orbitalDronesDefinition->scalingRules.size() != 1 ||
+		orbitalDronesDefinition->scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
+		orbitalDronesDefinition->scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
+		orbitalDronesDefinition->scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
+		!NearlyEqual(orbitalDronesDefinition->scalingRules.front().coefficient, 0.50f) ||
+		orbitalDronesDefinition->levelProgression.size() != 14 ||
+		orbitalDronesDefinition->levelUpgradeScrapCosts.size() != 14)
+	{
+		return Fail("Orbital Drones shipped ability contract is invalid");
+	}
+	if (executionDriveDefinition->behaviorType != AbilityBehaviorType::ExecutionDrive ||
+		executionDriveDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		executionDriveDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+		executionDriveDefinition->maxCharges != 1 ||
+		!NearlyEqual(executionDriveDefinition->cooldown, 14.f) ||
+		!NearlyEqual(executionDriveDefinition->duration, 5.f) ||
+		executionDriveDefinition->abilityTags !=
+			List<GameplayTag>{
+				GameplayTags::Ability::Offense,
+				GameplayTags::Ability::Family::ExecutionDrive
+			} ||
+		executionDriveDefinition->attributes.size() != 7 ||
+		!EffectData::FindGameplayEffectDefinition(
+			AbilityData::ExecutionDrive::Effect::AttackPowerId
+		))
+	{
+		return Fail("Execution Drive shipped ability contract is invalid");
+	}
+	if (echoProtocolDefinition->slot != sas::AbilitySlot::Ability3 ||
+		echoProtocolDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		echoProtocolDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Instant ||
+		echoProtocolDefinition->cooldown <= 0.f ||
+		echoProtocolDefinition->maxCharges != 1 ||
+		echoProtocolDefinition->behaviorType != AbilityBehaviorType::EchoProtocol ||
+		echoProtocolDefinition->recordInAbilityHistory ||
+		echoProtocolDefinition->abilityTags !=
+			List<GameplayTag>{
+				GameplayTags::Ability::Utility,
+				GameplayTags::Ability::Family::EchoProtocol
+			} ||
+		echoProtocolDefinition->attributes.size() != 8 ||
+		echoProtocolDefinition->levelProgression.size() != 14 ||
+		echoProtocolDefinition->levelUpgradeScrapCosts.size() != 14)
+	{
+		return Fail("Echo Protocol shipped ability contract is invalid");
+	}
+	for (const AbilityLevelStep& step : orbitalDronesDefinition->levelProgression)
+	{
+		bool hasDamageUpgrade = false;
+		bool hasCooldownUpgrade = false;
+		if (step.attributeModifiers.size() != 2)
+		{
+			return Fail("Orbital Drones shipped progression does not contain two modifiers per level");
+		}
+		for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+		{
+			if (modifier.attributeId == CommonAttributeIds::Damage &&
+				modifier.operation == sas::AttributeModifierOperation::Add &&
+				NearlyEqual(modifier.magnitude, 2.f))
+			{
+				hasDamageUpgrade = true;
+			}
+			if (modifier.attributeId == CommonAttributeIds::Cooldown &&
+				modifier.operation == sas::AttributeModifierOperation::Add &&
+				NearlyEqual(modifier.magnitude, -0.25f))
+			{
+				hasCooldownUpgrade = true;
+			}
+		}
+		if (!hasDamageUpgrade || !hasCooldownUpgrade)
+		{
+			return Fail("Orbital Drones shipped progression has an unexpected modifier");
+		}
+	}
+	GameAbilityDefinition configuredFamilyFixture;
+	configuredFamilyFixture.abilityId = "Ability.Utility.ConfiguredFixture.Basic";
+	configuredFamilyFixture.abilityTags = { GameplayTagSchema::AbilityUtility };
+	configuredFamilyFixture.attributes = {
+		sas::GameplayAttribute{
+			sas::AttributeId{ "Ability.Utility.ConfiguredFixture.OwnedValue" },
+			1.f,
+			0.f
+		}
+	};
+	if (!ValidateAbilityDefinition(configuredFamilyFixture, &abilityOwnershipFailure))
+	{
+		return Fail("Configured non-primary ability did not derive its attribute family from the ID");
+	}
+	configuredFamilyFixture.attributes.emplace_back(
+		sas::AttributeId{ "Ability.Utility.ConfiguredFixtureOther.ForeignValue" },
+		1.f,
+		0.f
+	);
+	if (ValidateAbilityDefinition(configuredFamilyFixture, &abilityOwnershipFailure))
+	{
+		return Fail("Configured non-primary ability accepted a non-ID attribute family");
+	}
+
+	// A concrete ability may use shared Common.* values and its own exact
+	// family namespace. Its Ability.* targets must also be declared locally;
+	// other attribute domains remain governed by their consumer contracts.
+	GameAbilityDefinition ownedPhaseDrift = *phaseDriftDefinition;
+	ownedPhaseDrift.attributes.emplace_back(
+		sas::AttributeId{ "Ability.Movement.PhaseDrift.TestOwnedValue" },
+		1.f,
+		0.f
+	);
+	ownedPhaseDrift.attributeModifiers = {
+		sas::AttributeModifier{
+			AbilityData::PhaseDrift::Attribute::MovementSpeedBonus,
+			0.01f
+		},
+		sas::AttributeModifier{ sas::AttributeId{ "Effect.Test.Parameter" }, 1.f },
+		sas::AttributeModifier{
+			sas::AttributeId{ "AbilityActor.PhaseDrift.VisualIntensity" },
+			1.f
+		}
+	};
+	ownedPhaseDrift.scalingRules = {
+		sas::AttributeScalingRule{
+			AbilityData::PhaseDrift::Attribute::MovementSpeedBonus,
+			sas::AttributeId{ "Owner.Test.Mobility" },
+			sas::AttributeModifierOperation::Add,
+			1.f
+		}
+	};
+	ownedPhaseDrift.levelProgression.front().attributeModifiers.emplace_back(
+		AbilityData::PhaseDrift::Attribute::ShieldRegenBonus,
+		0.01f
+	);
+	if (!ValidateAbilityDefinition(ownedPhaseDrift, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator rejected valid family-owned attribute targets");
+	}
+	GameAbilityDefinition commonTargetPhaseDrift = *phaseDriftDefinition;
+	const sas::AttributeId commonTestAttribute{ "Common.Test.AbilityValidator" };
+	commonTargetPhaseDrift.attributes.emplace_back(commonTestAttribute, 1.f, 0.f);
+	commonTargetPhaseDrift.attributeModifiers.emplace_back(commonTestAttribute, 0.01f);
+	commonTargetPhaseDrift.scalingRules.emplace_back(sas::AttributeScalingRule{
+		commonTestAttribute,
+		sas::AttributeId{ "Owner.Test.Mobility" },
+		sas::AttributeModifierOperation::Add,
+		1.f
+	});
+	commonTargetPhaseDrift.levelProgression.front().attributeModifiers.emplace_back(
+		commonTestAttribute,
+		0.01f
+	);
+	if (!ValidateAbilityDefinition(commonTargetPhaseDrift, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator rejected Common.* modifier, scaling, or level targets");
+	}
+
+	GameAbilityDefinition foreignAbilityAttribute = *phaseDriftDefinition;
+	foreignAbilityAttribute.attributes.emplace_back(
+		sas::AttributeId{ "Ability.Offense.OverdriveCore.ForeignValue" },
+		1.f,
+		0.f
+	);
+	if (ValidateAbilityDefinition(foreignAbilityAttribute, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted a foreign-family base attribute");
+	}
+	GameAbilityDefinition similarPrefixAbilityAttribute = *phaseDriftDefinition;
+	similarPrefixAbilityAttribute.attributes.emplace_back(
+		sas::AttributeId{ "Ability.Movement.PhaseDriftExtended.ForeignValue" },
+		1.f,
+		0.f
+	);
+	if (ValidateAbilityDefinition(similarPrefixAbilityAttribute, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted a similar-prefix base attribute");
+	}
+
+	GameAbilityDefinition foreignDefinitionModifier = *phaseDriftDefinition;
+	foreignDefinitionModifier.attributeModifiers.emplace_back(
+		sas::AttributeId{ "Ability.Offense.OverdriveCore.ForeignValue" },
+		1.f
+	);
+	if (ValidateAbilityDefinition(foreignDefinitionModifier, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted a foreign-family definition modifier");
+	}
+	GameAbilityDefinition undeclaredDefinitionModifier = *phaseDriftDefinition;
+	undeclaredDefinitionModifier.attributeModifiers.emplace_back(
+		sas::AttributeId{ "Ability.Movement.PhaseDrift.UndeclaredValue" },
+		1.f
+	);
+	if (ValidateAbilityDefinition(undeclaredDefinitionModifier, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted an undeclared family definition modifier");
+	}
+
+	GameAbilityDefinition foreignScalingTarget = *phaseDriftDefinition;
+	foreignScalingTarget.scalingRules.emplace_back(sas::AttributeScalingRule{
+		sas::AttributeId{ "Ability.Offense.OverdriveCore.ForeignValue" },
+		sas::AttributeId{ "Owner.Test.Mobility" },
+		sas::AttributeModifierOperation::Add,
+		1.f
+	});
+	if (ValidateAbilityDefinition(foreignScalingTarget, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted a foreign-family scaling target");
+	}
+	GameAbilityDefinition undeclaredScalingTarget = *phaseDriftDefinition;
+	undeclaredScalingTarget.scalingRules.emplace_back(sas::AttributeScalingRule{
+		sas::AttributeId{ "Ability.Movement.PhaseDrift.UndeclaredValue" },
+		sas::AttributeId{ "Owner.Test.Mobility" },
+		sas::AttributeModifierOperation::Add,
+		1.f
+	});
+	if (ValidateAbilityDefinition(undeclaredScalingTarget, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted an undeclared family scaling target");
+	}
+
+	GameAbilityDefinition foreignLevelModifier = *phaseDriftDefinition;
+	foreignLevelModifier.levelProgression.front().attributeModifiers.emplace_back(
+		sas::AttributeId{ "Ability.Offense.OverdriveCore.ForeignValue" },
+		1.f
+	);
+	if (ValidateAbilityDefinition(foreignLevelModifier, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted a foreign-family level modifier");
+	}
+	GameAbilityDefinition undeclaredLevelModifier = *phaseDriftDefinition;
+	undeclaredLevelModifier.levelProgression.front().attributeModifiers.emplace_back(
+		sas::AttributeId{ "Ability.Movement.PhaseDrift.UndeclaredValue" },
+		1.f
+	);
+	if (ValidateAbilityDefinition(undeclaredLevelModifier, &abilityOwnershipFailure))
+	{
+		return Fail("Ability validator accepted an undeclared family level modifier");
 	}
 
 	World nullPulseWorld{ nullptr };
@@ -821,13 +1259,23 @@ int main()
 		PresentationProfileRegistry<GravityAnomalyFieldPresentationProfile>::Find(
 			GravityAnomalyPresentationIds::FieldBasic
 		);
+	const OrbitalDronesPresentationProfile* orbitalDronesPresentationProfile =
+		PresentationProfileRegistry<OrbitalDronesPresentationProfile>::Find(
+			OrbitalDronesPresentationIds::DroneBasic
+		);
 	if (!rocketPresentationProfile
 		|| !sunBeamPresentationProfile
 		|| !gravityProjectilePresentationProfile
 		|| !gravityFieldPresentationProfile
+		|| !orbitalDronesPresentationProfile
 		|| rocketPresentationProfile->telegraph.outlineThickness <= 0.f
 		|| rocketPresentationProfile->visual.impactVisualDuration <= 0.f
-		|| sunBeamPresentationProfile->visual.impactFlashDuration <= 0.f)
+		|| sunBeamPresentationProfile->visual.impactFlashDuration <= 0.f
+		|| orbitalDronesPresentationProfile->profileId.ToString() !=
+			OrbitalDronesPresentationIds::DroneBasic
+		|| orbitalDronesPresentationProfile->visual.bodyRadius <= 0.f
+		|| orbitalDronesPresentationProfile->visual.trailSegments <= 0
+		|| orbitalDronesPresentationProfile->visual.expiryFadeDuration <= 0.f)
 	{
 		return Fail("Feature-local ability presentation profiles were not registered correctly");
 	}
@@ -842,6 +1290,12 @@ int main()
 		) != nullptr
 		|| PresentationProfileRegistry<GravityAnomalyFieldPresentationProfile>::Find(
 			GravityAnomalyPresentationIds::ProjectileBasic
+		) != nullptr
+		|| PresentationProfileRegistry<OrbitalDronesPresentationProfile>::Find(
+			RocketPresentationIds::ProjectileBasic
+		) != nullptr
+		|| PresentationProfileRegistry<RocketPresentationProfile>::Find(
+			OrbitalDronesPresentationIds::DroneBasic
 		) != nullptr)
 	{
 		return Fail("Typed presentation profile registries leaked profiles across ability families");
@@ -851,6 +1305,149 @@ int main()
 	))
 	{
 		return Fail("Presentation profile registry accepted a duplicate profile id");
+	}
+	// A family-local registry must fail closed when a drone variant has not been
+	// registered; the behavior relies on this lookup before it spawns anything.
+	if (PresentationProfileRegistry<OrbitalDronesPresentationProfile>::Find(
+		"Presentation.Ability.OrbitalDrones.Drone.Missing"
+	) != nullptr)
+	{
+		return Fail("Orbital Drones accepted a missing presentation profile");
+	}
+	// The actor owns only formation motion and lifetime. This direct lifecycle
+	// test keeps it independent from input/UI while proving four equal phases,
+	// owner following, and automatic duration cleanup.
+	World orbitalDronesWorld{ nullptr };
+	const shared_ptr<TestCombatant> orbitalDronesOwner =
+		orbitalDronesWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	if (!orbitalDronesOwner)
+	{
+		return Fail("Orbital Drones runtime owner could not be spawned");
+	}
+	orbitalDronesOwner->SetCollisionLayer(CollisionLayer::Player);
+	orbitalDronesOwner->SetActorLocation({ 100.f, 200.f });
+	for (std::size_t droneIndex = 0; droneIndex < 4; ++droneIndex)
+	{
+		const float phase = OrbitingDroneActor::CalculateFormationPhase(
+			droneIndex,
+			4
+		);
+		const shared_ptr<OrbitingDroneActor> drone =
+			orbitalDronesWorld.SpawnActor<OrbitingDroneActor>(
+				orbitalDronesOwner.get(),
+				*orbitalDronesPresentationProfile,
+				OrbitingDroneActor::OrbitConfiguration{ 200.f, 2.5f, phase }
+			).lock();
+		if (!drone || !NearlyEqual(drone->GetOrbitConfiguration().radius, 200.f) ||
+			!NearlyEqual(drone->GetOrbitAngleRadians(), phase))
+		{
+			return Fail("Orbital Drones did not spawn a stable evenly phased formation");
+		}
+		drone->SetLifeTime(0.1f);
+		drone->SetContactRadius(12.f);
+	}
+	orbitalDronesWorld.TickInternal(0.f);
+	const List<weak_ptr<OrbitingDroneActor>> orbitalDrones =
+		orbitalDronesWorld.GetActorsByType<OrbitingDroneActor>();
+	if (orbitalDrones.size() != 4)
+	{
+		return Fail("Orbital Drones did not retain four spawned runtime actors");
+	}
+	for (std::size_t droneIndex = 0; droneIndex < orbitalDrones.size(); ++droneIndex)
+	{
+		const shared_ptr<OrbitingDroneActor> drone = orbitalDrones[droneIndex].lock();
+		if (!drone || !NearlyEqual(
+			drone->GetOrbitAngleRadians(),
+			OrbitingDroneActor::CalculateFormationPhase(droneIndex, 4)
+		))
+		{
+			return Fail("Orbital Drones formation phase was not preserved at spawn");
+		}
+	}
+	const shared_ptr<OrbitingDroneActor> firstOrbitalDrone = orbitalDrones.front().lock();
+	const float firstOrbitalAngle = firstOrbitalDrone
+		? firstOrbitalDrone->GetOrbitAngleRadians()
+		: 0.f;
+	orbitalDronesWorld.TickInternal(0.05f);
+	if (!firstOrbitalDrone || NearlyEqual(
+			firstOrbitalDrone->GetOrbitAngleRadians(),
+			firstOrbitalAngle
+		))
+	{
+		return Fail("Orbital Drones did not advance their orbit angle during Tick");
+	}
+	orbitalDronesWorld.TickInternal(0.06f);
+	if (!orbitalDronesWorld.GetActorsByType<OrbitingDroneActor>().empty())
+	{
+		return Fail("Orbital Drones actor lifetime did not clean up the formation");
+	}
+
+	AreaTelegraphVisualDefinition radialTelegraphDefinition;
+	radialTelegraphDefinition.fillMode = AreaTelegraphFillMode::RadialProgress;
+	radialTelegraphDefinition.radialGrowthLogStrength = 2.f;
+	radialTelegraphDefinition.radialGrowthPrimaryPhaseEnd = 0.5f;
+	radialTelegraphDefinition.radialGrowthPrimaryPhaseFill = 0.4f;
+	if (!NearlyEqual(ResolveAreaTelegraphRadialProgress(radialTelegraphDefinition, 0.f), 0.f) ||
+		!NearlyEqual(ResolveAreaTelegraphRadialProgress(radialTelegraphDefinition, 0.5f), 0.4f) ||
+		!NearlyEqual(ResolveAreaTelegraphRadialProgress(radialTelegraphDefinition, 1.f), 1.f))
+	{
+		return Fail("Area telegraph radial resolver did not honor its phase boundaries");
+	}
+
+	AreaTelegraphVisualDefinition lifecycleTelegraphDefinition;
+	lifecycleTelegraphDefinition.completionFeedbackDuration = 0.1f;
+	{
+		World timedTelegraphWorld{ nullptr };
+		timedTelegraphWorld.SpawnActor<AreaTelegraphActor>(
+			AreaTelegraphActor::SpawnParams{
+				{ 0.f, 0.f },
+				50.f,
+				0.1f,
+				lifecycleTelegraphDefinition,
+				AreaTelegraphAnchorMode::FixedLocation,
+				AreaTelegraphProgressDriver::Timed
+			}
+		);
+		timedTelegraphWorld.TickInternal(0.2f);
+		if (!timedTelegraphWorld.GetActorsByType<AreaTelegraphActor>().empty())
+		{
+			return Fail("Timed area telegraph did not clean itself up");
+		}
+	}
+	{
+		World externalTelegraphWorld{ nullptr };
+		const shared_ptr<AreaTelegraphActor> externalTelegraph =
+			externalTelegraphWorld.SpawnActor<AreaTelegraphActor>(
+				AreaTelegraphActor::SpawnParams{
+					{ 0.f, 0.f },
+					50.f,
+					0.1f,
+					lifecycleTelegraphDefinition,
+					AreaTelegraphAnchorMode::FixedLocation,
+					AreaTelegraphProgressDriver::External
+				}
+			).lock();
+		if (!externalTelegraph)
+		{
+			return Fail("External area telegraph could not be spawned");
+		}
+		externalTelegraphWorld.TickInternal(0.2f);
+		if (externalTelegraphWorld.GetActorsByType<AreaTelegraphActor>().size() != 1)
+		{
+			return Fail("External area telegraph cleaned up without an explicit end");
+		}
+		externalTelegraph->SetExternalProgress(0.5f);
+		externalTelegraph->Complete(0.5f);
+		if (!externalTelegraph->IsInCompletionFeedback())
+		{
+			return Fail("Area telegraph did not enter completion feedback");
+		}
+		externalTelegraph->SetExternalProgress(0.f);
+		externalTelegraphWorld.TickInternal(0.2f);
+		if (!externalTelegraphWorld.GetActorsByType<AreaTelegraphActor>().empty())
+		{
+			return Fail("Area telegraph completion feedback did not clean itself up");
+		}
 	}
 
 	GameplayTagContainer tags;
@@ -1502,6 +2099,33 @@ int main()
 		semiAutomaticPrimaryAbility.actions.front().phase != sas::AbilityActionPhase::OnActivate)
 	{
 		return Fail("Primary weapon automatic fire policy was not generated correctly");
+	}
+	const GameAbilityDefinition validPrimaryAbility = AbilityData::MakePrimaryFireAbilityDefinition(
+		LoadedWeapon("Weapon.Projectile.DualKineticBlaster.Basic")
+	);
+	std::string primaryAbilityValidationFailure;
+	if (!ValidateAbilityDefinition(validPrimaryAbility, &primaryAbilityValidationFailure))
+	{
+		return Fail("PrimaryFire ability was rejected by family-owned attribute validation");
+	}
+	GameAbilityDefinition primaryAbilityWithAbilityAttribute = validPrimaryAbility;
+	primaryAbilityWithAbilityAttribute.attributes.emplace_back(
+		sas::AttributeId{ "Ability.Offense.OverdriveCore.ForeignValue" },
+		1.f,
+		0.f
+	);
+	if (ValidateAbilityDefinition(primaryAbilityWithAbilityAttribute, &primaryAbilityValidationFailure))
+	{
+		return Fail("PrimaryFire ability accepted an Ability.* base attribute");
+	}
+	GameAbilityDefinition primaryAbilityWithAbilityModifier = validPrimaryAbility;
+	primaryAbilityWithAbilityModifier.attributeModifiers.emplace_back(
+		sas::AttributeId{ "Ability.Offense.OverdriveCore.ForeignValue" },
+		1.f
+	);
+	if (ValidateAbilityDefinition(primaryAbilityWithAbilityModifier, &primaryAbilityValidationFailure))
+	{
+		return Fail("PrimaryFire ability accepted an Ability.* definition modifier target");
 	}
 
 	PrimaryWeaponDefinition mixedWeapon = projectileWeapon;
@@ -3344,7 +3968,7 @@ int main()
 	const GameAbilityDefinition* rocketDefinition =
 		AbilityData::FindShippedAbilityDefinition(AbilityData::Rocket::AbilityId::Basic);
 	if (!ValidateAbilityCatalog(AbilityData::GetShippedAbilityDefinitions(), &rocketValidationFailure) ||
-		!rocketDefinition || rocketDefinition->slot != sas::AbilitySlot::Ability4 ||
+		!rocketDefinition || rocketDefinition->slot != sas::AbilitySlot::Ability3 ||
 		rocketDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 		rocketDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Instant ||
 	rocketDefinition->maxCharges != 1 || rocketDefinition->behaviorType != AbilityBehaviorType::Rocket ||
@@ -3461,7 +4085,7 @@ int main()
 		{
 			return shared_ptr<RocketProjectileActor>{};
 		}
-		abilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
+		abilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
 		abilities.Tick(0.f);
 		world.TickInternal(0.f);
 
@@ -3613,7 +4237,7 @@ int main()
 		);
 		const float levelOffset = static_cast<float>(level - 1);
 		const GameAbility* levelInstance =
-			levelRocketOwner.GetCombatRuntime().GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability4);
+			levelRocketOwner.GetCombatRuntime().GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability3);
 		if (!levelRocket || !levelInstance ||
 			!NearlyEqual(levelRocket->GetDamage(), rocketSettings->baseDamage + levelOffset * rocketSettings->damagePerLevel) ||
 			!NearlyEqual(levelRocket->GetExplosionRadius(), rocketSettings->explosionRadius + levelOffset * rocketSettings->explosionRadiusPerLevel) ||
@@ -3734,7 +4358,7 @@ int main()
 	);
 	if (!ValidateAbilityCatalog(AbilityData::GetShippedAbilityDefinitions(), &gravityValidationFailure) ||
 		!gravityDefinition || gravityDefinition->slot != sas::AbilitySlot::Ability1 ||
-		gravityDefinition->inputLabel != "Q" ||
+		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability1) } != "Q" ||
 		gravityDefinition->behaviorType != AbilityBehaviorType::GravityAnomaly ||
 		gravityDefinition->damageTags.size() != 0 ||
 		!AbilityActorRegistry::ValidateDefinition(
@@ -3752,26 +4376,67 @@ int main()
 			.FindAbility<GameAbility>(sas::AbilitySlot::Ability1);
 	if (!gravityLoadoutAbility ||
 		gravityLoadoutAbility->GetDefinition().abilityId != AbilityData::GravityAnomaly::AbilityId::Basic ||
-		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(AbilityData::Shield::AbilityId::Basic) != nullptr)
+		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(AbilityData::HullShock::AbilityId::Basic) != nullptr)
 	{
 		return Fail("Default player loadout did not place Gravity Anomaly on Ability1/Q");
+	}
+	const GameAbility* relayPrismLoadoutAbility =
+		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability2);
+	if (!relayPrismLoadoutAbility ||
+		relayPrismLoadoutAbility->GetDefinition().abilityId != AbilityData::RelayPrism::AbilityId::Basic ||
+		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability2) } != "E")
+	{
+		return Fail("Default player loadout did not place Relay Prism on Ability2/E");
+	}
+	const GameAbility* echoLoadoutAbility =
+		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability3);
+	if (!echoLoadoutAbility ||
+		echoLoadoutAbility->GetDefinition().abilityId != AbilityData::EchoProtocol::AbilityId::Basic ||
+		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability3) } != "F")
+	{
+		return Fail("Default player loadout did not place Echo Protocol on Ability3/F");
 	}
 	const GameAbility* overdriveLoadoutAbility =
 		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability4);
 	if (!overdriveLoadoutAbility ||
 		overdriveLoadoutAbility->GetDefinition().abilityId != AbilityData::OverdriveCore::AbilityId::Basic ||
-		overdriveLoadoutAbility->GetDefinition().inputLabel != "R" ||
+		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability4) } != "R" ||
 		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(
-			AbilityData::Rocket::AbilityId::Basic
+			AbilityData::OrbitalDrones::AbilityId::Basic
 		) != nullptr)
 	{
-		return Fail("Default player loadout did not reserve Ability4/R for Overdrive Core");
+		return Fail("Default player loadout did not place Overdrive Core on Ability4/R");
+	}
+
+	// A catalog slot is only a default binding. A newly acquired ability and an
+	// already granted ability must both accept every swappable loadout slot.
+	std::string runtimeSlotFailure;
+	if (!gravityLoadout.GetAbilityLoadout().EquipAbility(
+			AbilityData::HullShock::AbilityId::Basic,
+			sas::AbilitySlot::Ability2,
+			&runtimeSlotFailure
+		))
+	{
+		return Fail("A fresh loadout ability could not be granted to an alternate slot");
+	}
+	GameAbility* reboundHullShock = gravityLoadout.GetAbilitySystemComponent().GetAbilityById(
+		AbilityData::HullShock::AbilityId::Basic
+	);
+	if (!reboundHullShock || reboundHullShock->GetDefinition().slot != sas::AbilitySlot::Ability2 ||
+		!gravityLoadout.GetAbilityLoadout().EquipAbility(
+			AbilityData::HullShock::AbilityId::Basic,
+			sas::AbilitySlot::Ability3,
+			&runtimeSlotFailure
+		) ||
+		reboundHullShock->GetDefinition().slot != sas::AbilitySlot::Ability3)
+	{
+		return Fail("Fresh grant and rebind do not share the runtime loadout-slot contract");
 	}
 
 	const GameAbilityDefinition* overdriveDefinition =
 		AbilityData::FindShippedAbilityDefinition(AbilityData::OverdriveCore::AbilityId::Basic);
 	if (!overdriveDefinition || overdriveDefinition->slot != sas::AbilitySlot::Ability4 ||
-		overdriveDefinition->inputLabel != "R")
+		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability4) } != "R")
 	{
 		return Fail("Overdrive Core shipped definition is not aligned with Ability4/R");
 	}
@@ -3875,6 +4540,18 @@ int main()
 	if (!realOverdriveOwner || !realOverdriveDummy)
 	{
 		return Fail("Overdrive Core real ship/dummy test actors could not spawn");
+	}
+	std::string overdriveLoadoutFailure;
+	if (!realOverdriveOwner->GetAbilityLoadout().EquipAbility(
+			AbilityData::OverdriveCore::AbilityId::Basic,
+			sas::AbilitySlot::Ability4,
+			&overdriveLoadoutFailure
+		))
+	{
+		const std::string failureMessage =
+			"Overdrive Core could not replace the default R-slot ability: " +
+			overdriveLoadoutFailure;
+		return Fail(failureMessage.c_str());
 	}
 	realOverdriveOwner->SetUseScreenClamp(false);
 	realOverdriveOwner->SetActorLocation({ 0.f, 0.f });
@@ -4726,6 +5403,474 @@ int main()
 		return Fail("Basic Dash did not clean up its state on ability-system clear");
 	}
 
+	// Echo Protocol must consume the newest normal ability record, replay the
+	// source through the common invocation runtime, and keep the replay out of
+	// the history so Echo cannot recursively record itself.
+	TestCombatant echoOwner;
+	echoOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
+	echoOwner.SetDashMovementInput({ 1.f, 0.f });
+	LightYearsAbilitySystemComponent& echoAbilities =
+		echoOwner.GetCombatRuntime().GetAbilitySystemComponent();
+	GameAbilityDefinition echoSourceDash = *dashDefinition;
+	// Echo owns F/Ability3 in the real loadout, so place the test source on a
+	// different slot to exercise the runtime slot separation correctly.
+	echoSourceDash.slot = sas::AbilitySlot::Ability4;
+	const sas::AbilityHandle recordedDashHandle = echoAbilities.GrantAbility(echoSourceDash);
+	const sas::AbilityHandle echoHandle = echoAbilities.GrantAbility(*echoProtocolDefinition);
+	if (!recordedDashHandle.IsValid() || !echoHandle.IsValid())
+	{
+		return Fail("Echo Protocol test abilities could not be granted");
+	}
+	// The source copy is intentionally on Ability4; Echo itself owns F/Ability3.
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
+	echoAbilities.Tick(0.f);
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, false);
+	echoAbilities.Tick(dashDefinition->duration);
+	if (echoAbilities.GetAbilityUseHistory().GetRecords().size() != 1 ||
+		echoAbilities.GetAbilityUseHistory().GetRecords().front().abilityId !=
+			sas::ContentId{ AbilityData::Dash::AbilityId::Basic } ||
+		echoOwner.GetDashStartCount() != 1)
+	{
+		return Fail("Normal ability activation was not recorded for Echo Protocol");
+	}
+
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
+	echoAbilities.Tick(0.f);
+	if (echoOwner.GetDashStartCount() != 2 ||
+		echoAbilities.GetActiveAbilityInvocationCount() != 1 ||
+		echoAbilities.GetAbilityUseHistory().GetRecords().size() != 1 ||
+		!echoAbilities.GetAbilityUseHistory().GetRecords().front().consumed)
+	{
+		return Fail("Echo Protocol did not consume the newest recorded Dash");
+	}
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, false);
+	echoAbilities.Tick(dashDefinition->duration);
+	if (echoAbilities.GetActiveAbilityInvocationCount() != 0)
+	{
+		return Fail("Echo Protocol invocation runtime did not clean up the replayed ability");
+	}
+	if (echoAbilities.GetAbilityUseHistory().GetRecords().size() != 1 ||
+		!echoAbilities.GetAbilityUseHistory().GetRecords().front().consumed)
+	{
+		return Fail("Echo Protocol did not preserve the consumed history snapshot");
+	}
+
+	// A second Echo with no new ability must not fall back to an older history
+	// entry. A later normal activation must become the new one-record Echo
+	// candidate while the older snapshots remain available globally.
+	if (GameAbility* echoAbility = echoAbilities.GetAbility(echoHandle))
+	{
+		echoAbility->ReduceCooldownRemaining(0.1f);
+	}
+	echoAbilities.Tick(20.f);
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
+	echoAbilities.Tick(0.f);
+	if (echoOwner.GetDashStartCount() != 2 ||
+		echoAbilities.GetActiveAbilityInvocationCount() != 0)
+	{
+		return Fail("Echo Protocol incorrectly fell back to an older ability after consuming the latest one");
+	}
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, false);
+	// Commit the released control state before pressing the source again. This
+	// keeps the test focused on history advancement rather than input edges.
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, false);
+	echoAbilities.Tick(0.f);
+	if (GameAbility* recordedDash = echoAbilities.GetAbility(recordedDashHandle))
+	{
+		// Leave a positive remainder so the normal cooldown tick restores the
+		// spent charge as well as making the source ready again.
+		recordedDash->ReduceCooldownRemaining(0.1f);
+	}
+	echoAbilities.Tick(20.f);
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
+	echoAbilities.Tick(0.f);
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, false);
+	echoAbilities.Tick(dashDefinition->duration);
+	if (echoAbilities.GetAbilityUseHistory().GetRecords().size() != 2)
+	{
+		return Fail("Echo Protocol did not record the newer normal activation");
+	}
+	if (echoAbilities.GetAbilityUseHistory().GetRecords().front().consumed)
+	{
+		return Fail("Echo Protocol marked the newer normal activation consumed too early");
+	}
+	if (GameAbility* echoAbility = echoAbilities.GetAbility(echoHandle))
+	{
+		echoAbility->ReduceCooldownRemaining(0.1f);
+	}
+	echoAbilities.Tick(20.f);
+	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
+	echoAbilities.Tick(0.f);
+	if (echoOwner.GetDashStartCount() != 4 ||
+		echoAbilities.GetActiveAbilityInvocationCount() != 1)
+	{
+		return Fail("Echo Protocol did not replay the newly recorded ability");
+	}
+
+	// Echo's final power multiplier must affect declared output channels only.
+	// This regression matrix covers the three projectile families that exposed
+	// the bug in-game: Gravity keeps its intentional MaxHealth-scaled radius and
+	// duration, while delivery speed/range/lifetime/collision remain fixed;
+	// Relay Prism keeps its fixed geometry; Rocket keeps its fixed delivery data.
+	{
+		TestCombatant echoResolutionOwner;
+		echoResolutionOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
+		LightYearsAbilitySystemComponent& echoResolutionAbilities =
+			echoResolutionOwner.GetAbilitySystemComponent();
+		echoResolutionAbilities.GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ OwnerAttributeIds::Armor, 1.f }
+		);
+		echoResolutionAbilities.GetAttributes().ApplyBaseModifier(
+			sas::AttributeModifier{ OwnerAttributeIds::AttackSpeed, 2.f }
+		);
+		const float maxHealth = echoResolutionAbilities.GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::MaxHealth,
+			1000.f
+		);
+
+		GameAbilityDefinition gravityReplayDefinition;
+		gravityReplayDefinition.attributeOutputMultiplier = 0.60f;
+		gravityReplayDefinition.scalingRules = {
+			sas::AttributeScalingRule{
+				CommonAttributeIds::Radius,
+				OwnerAttributeIds::MaxHealth,
+				sas::AttributeModifierOperation::Add,
+				0.20f
+			},
+			sas::AttributeScalingRule{
+				CommonAttributeIds::Duration,
+				OwnerAttributeIds::MaxHealth,
+				sas::AttributeModifierOperation::Add,
+				0.0025f
+			}
+		};
+		AbilityExecutionContext gravityReplayContext{
+			&echoResolutionAbilities,
+			&gravityReplayDefinition,
+			nullptr,
+			nullptr
+		};
+		const sas::GameplayAttributeList gravityReplayValues =
+			AbilityActionAttributeResolver::ResolveAttributes(
+				gravityReplayContext,
+				nullptr,
+				{
+					sas::GameplayAttribute{ CommonAttributeIds::Radius, 320.f, 0.f },
+					sas::GameplayAttribute{ CommonAttributeIds::Duration, 2.5f, 0.f },
+					sas::GameplayAttribute{
+						AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed,
+						2000.f,
+						0.f
+					},
+					sas::GameplayAttribute{ CommonAttributeIds::Range, 900.f, 0.f },
+					sas::GameplayAttribute{ CollisionAttributeIds::Radius, 8.f, 0.f }
+				}
+			);
+		const float expectedGravityRadius = (320.f + maxHealth * 0.20f) * 0.60f;
+		const float expectedGravityDuration = (2.5f + maxHealth * 0.0025f) * 0.60f;
+		if (!NearlyEqual(
+				sas::FindAttributeValue(gravityReplayValues, CommonAttributeIds::Radius),
+				expectedGravityRadius
+			) || !NearlyEqual(
+				sas::FindAttributeValue(gravityReplayValues, CommonAttributeIds::Duration),
+				expectedGravityDuration
+			) || !NearlyEqual(
+				sas::FindAttributeValue(
+					gravityReplayValues,
+					AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed
+				),
+				2000.f
+			) || !NearlyEqual(
+				sas::FindAttributeValue(gravityReplayValues, CommonAttributeIds::Range),
+				900.f
+			) || !NearlyEqual(
+				sas::FindAttributeValue(gravityReplayValues, CollisionAttributeIds::Radius),
+				8.f
+			))
+		{
+			return Fail("Echo Gravity output scaling changed fixed delivery data or duration coefficients");
+		}
+
+		GameAbilityDefinition prismReplayDefinition;
+		prismReplayDefinition.attributeOutputMultiplier = 0.60f;
+		AbilityExecutionContext prismReplayContext{
+			&echoResolutionAbilities,
+			&prismReplayDefinition,
+			nullptr,
+			nullptr
+		};
+		const sas::GameplayAttributeList prismReplayValues =
+			AbilityActionAttributeResolver::ResolveAttributes(
+				prismReplayContext,
+				nullptr,
+				{
+					sas::GameplayAttribute{ CommonAttributeIds::Radius, 100.f, 0.f },
+					sas::GameplayAttribute{ CommonAttributeIds::Range, 600.f, 0.f },
+					sas::GameplayAttribute{
+						AbilityData::RelayPrism::Actor::Relay::ProjectileSpeed,
+						450.f,
+						0.f
+					},
+					sas::GameplayAttribute{ CommonAttributeIds::Duration, 4.f, 0.f }
+				}
+			);
+		if (!NearlyEqual(sas::FindAttributeValue(prismReplayValues, CommonAttributeIds::Radius), 100.f) ||
+			!NearlyEqual(sas::FindAttributeValue(prismReplayValues, CommonAttributeIds::Range), 600.f) ||
+			!NearlyEqual(
+				sas::FindAttributeValue(
+					prismReplayValues,
+					AbilityData::RelayPrism::Actor::Relay::ProjectileSpeed
+				),
+				450.f
+			) || !NearlyEqual(sas::FindAttributeValue(prismReplayValues, CommonAttributeIds::Duration), 4.f))
+		{
+			return Fail("Echo Relay Prism changed fixed geometry or delivery values");
+		}
+
+		GameAbilityDefinition rocketReplayDefinition;
+		rocketReplayDefinition.attributeOutputMultiplier = 0.60f;
+		rocketReplayDefinition.scalingRules = {
+			sas::AttributeScalingRule{
+				CommonAttributeIds::Damage,
+				OwnerAttributeIds::AttackPower,
+				sas::AttributeModifierOperation::Add,
+				1.30f
+			}
+		};
+		AbilityExecutionContext rocketReplayContext{
+			&echoResolutionAbilities,
+			&rocketReplayDefinition,
+			nullptr,
+			nullptr
+		};
+		const sas::GameplayAttributeList rocketReplayValues =
+			AbilityActionAttributeResolver::ResolveAttributes(
+				rocketReplayContext,
+				nullptr,
+				{
+					sas::GameplayAttribute{ CommonAttributeIds::Damage, 55.f, 0.f },
+					sas::GameplayAttribute{
+						AbilityData::Rocket::Actor::Projectile::ProjectileSpeed,
+						1000.f,
+						0.f
+					},
+					sas::GameplayAttribute{ CommonAttributeIds::Range, 1100.f, 0.f },
+					sas::GameplayAttribute{ CommonAttributeIds::Duration, 1.35f, 0.f },
+					sas::GameplayAttribute{ CommonAttributeIds::Radius, 55.f, 0.f },
+					sas::GameplayAttribute{ CollisionAttributeIds::Radius, 8.f, 0.f }
+				}
+			);
+		if (!NearlyEqual(sas::FindAttributeValue(rocketReplayValues, CommonAttributeIds::Damage), 33.f) ||
+			!NearlyEqual(
+				sas::FindAttributeValue(
+					rocketReplayValues,
+					AbilityData::Rocket::Actor::Projectile::ProjectileSpeed
+				),
+				1000.f
+			) || !NearlyEqual(sas::FindAttributeValue(rocketReplayValues, CommonAttributeIds::Range), 1100.f) ||
+			!NearlyEqual(sas::FindAttributeValue(rocketReplayValues, CommonAttributeIds::Duration), 1.35f) ||
+			!NearlyEqual(sas::FindAttributeValue(rocketReplayValues, CommonAttributeIds::Radius), 55.f) ||
+			!NearlyEqual(sas::FindAttributeValue(rocketReplayValues, CollisionAttributeIds::Radius), 8.f))
+		{
+			return Fail("Echo Rocket changed fixed delivery or collision values");
+		}
+
+		GameAbilityDefinition overdriveReplayDefinition;
+		overdriveReplayDefinition.attributeOutputMultiplier = 0.60f;
+		overdriveReplayDefinition.scalingRules = {
+			sas::AttributeScalingRule{
+				CommonAttributeIds::ProjectileCount,
+				OwnerAttributeIds::AttackSpeed,
+				sas::AttributeModifierOperation::Multiply,
+				0.20f
+			},
+			sas::AttributeScalingRule{
+				CommonAttributeIds::Damage,
+				OwnerAttributeIds::AttackPower,
+				sas::AttributeModifierOperation::Add,
+				1.30f
+			}
+		};
+		AbilityExecutionContext overdriveReplayContext{
+			&echoResolutionAbilities,
+			&overdriveReplayDefinition,
+			nullptr,
+			nullptr
+		};
+		const sas::GameplayAttributeList overdriveReplayValues =
+			AbilityActionAttributeResolver::ResolveAttributes(
+				overdriveReplayContext,
+				nullptr,
+				{
+					sas::GameplayAttribute{ CommonAttributeIds::ProjectileCount, 8.f, 0.f },
+					sas::GameplayAttribute{
+						AbilityData::OverdriveCore::Actor::Projectile::ProjectileSpeed,
+						1400.f,
+						0.f
+					},
+					sas::GameplayAttribute{ CommonAttributeIds::Range, 1100.f, 0.f },
+					sas::GameplayAttribute{ CommonAttributeIds::Duration, 1.f, 0.f },
+					sas::GameplayAttribute{ CommonAttributeIds::Radius, 28.f, 0.f }
+				}
+			);
+		if (!NearlyEqual(
+				sas::FindAttributeValue(overdriveReplayValues, CommonAttributeIds::ProjectileCount),
+				8.f * (1.f + 2.f * 0.20f) * 0.60f
+			) || !NearlyEqual(
+				sas::FindAttributeValue(
+					overdriveReplayValues,
+					AbilityData::OverdriveCore::Actor::Projectile::ProjectileSpeed
+				),
+				1400.f
+			) || !NearlyEqual(sas::FindAttributeValue(overdriveReplayValues, CommonAttributeIds::Range), 1100.f) ||
+			!NearlyEqual(sas::FindAttributeValue(overdriveReplayValues, CommonAttributeIds::Duration), 1.f) ||
+			!NearlyEqual(sas::FindAttributeValue(overdriveReplayValues, CommonAttributeIds::Radius), 28.f))
+		{
+			return Fail("Echo Overdrive changed Multiply scaling semantics or fixed delivery data");
+		}
+
+		GameAbilityDefinition shieldReplayDefinition;
+		shieldReplayDefinition.attributeOutputMultiplier = 0.60f;
+		shieldReplayDefinition.scalingRules = {
+			sas::AttributeScalingRule{
+				sas::AttributeId{ "Effect.BarrierCapacity" },
+				OwnerAttributeIds::MaxHealth,
+				sas::AttributeModifierOperation::Add,
+				0.20f
+			},
+			sas::AttributeScalingRule{
+				sas::AttributeId{ "Effect.BarrierCapacity" },
+				OwnerAttributeIds::Armor,
+				sas::AttributeModifierOperation::Add,
+				50.f
+			}
+		};
+		AbilityExecutionContext shieldReplayContext{
+			&echoResolutionAbilities,
+			&shieldReplayDefinition,
+			nullptr,
+			nullptr
+		};
+		const sas::GameplayAttributeList shieldReplayValues =
+			AbilityActionAttributeResolver::ResolveAttributes(
+				shieldReplayContext,
+				nullptr,
+				{ sas::GameplayAttribute{
+					sas::AttributeId{ "Effect.BarrierCapacity" },
+					30.f,
+					0.f
+				} }
+			);
+		if (!NearlyEqual(
+			sas::FindAttributeValue(
+				shieldReplayValues,
+				sas::AttributeId{ "Effect.BarrierCapacity" }
+			),
+			(maxHealth * 0.20f + 50.f + 30.f) * 0.60f
+		))
+		{
+			return Fail("Echo Shield dropped an unsupported Armor scaling channel");
+		}
+	}
+
+	// Run the real Echo -> Gravity invocation as well as the resolver matrix.
+	// This protects the hand-off from AbilityUseHistory into the invocation
+	// definition, where the target-specific Duration coefficient used to be
+	// lost before the resolver was reached.
+	{
+		World echoGravityWorld{ nullptr };
+		TestCombatant echoGravityOwner{ &echoGravityWorld, 1000.f };
+		echoGravityOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
+		echoGravityOwner.SetActorRotation(90.f);
+		echoGravityOwner.SetCollisionLayer(CollisionLayer::Player);
+		LightYearsAbilitySystemComponent& echoGravityAbilities =
+			echoGravityOwner.GetAbilitySystemComponent();
+		GameAbilityDefinition echoGravitySourceDefinition = *gravityDefinition;
+		echoGravitySourceDefinition.slot = sas::AbilitySlot::Ability4;
+		if (!echoGravityAbilities.GrantAbility(echoGravitySourceDefinition).IsValid() ||
+			!echoGravityAbilities.GrantAbility(*echoProtocolDefinition).IsValid())
+		{
+			return Fail("Echo Gravity regression abilities could not be granted");
+		}
+		echoGravityAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
+		echoGravityAbilities.Tick(0.f);
+		echoGravityAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, false);
+		echoGravityWorld.TickInternal(0.f);
+		if (echoGravityAbilities.GetAbilityUseHistory().GetRecords().size() != 1)
+		{
+			return Fail("Echo Gravity source activation was not recorded");
+		}
+		echoGravityAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
+		echoGravityAbilities.Tick(0.f);
+		echoGravityWorld.TickInternal(0.f);
+		const List<weak_ptr<GravityAnomalyProjectileActor>> echoGravityProjectiles =
+			echoGravityWorld.GetActorsByType<GravityAnomalyProjectileActor>();
+		if (echoGravityProjectiles.size() != 2)
+		{
+			return Fail("Echo Gravity did not create exactly one replay projectile");
+		}
+		bool foundBaseGravity = false;
+		bool foundEchoGravity = false;
+		for (const weak_ptr<GravityAnomalyProjectileActor>& projectileWeak : echoGravityProjectiles)
+		{
+			const shared_ptr<GravityAnomalyProjectileActor> projectile = projectileWeak.lock();
+			if (!projectile)
+			{
+				continue;
+			}
+			foundBaseGravity = foundBaseGravity ||
+				NearlyEqual(projectile->GetProjectileSpeed(), 2000.f) &&
+				NearlyEqual(projectile->GetResolvedFieldDuration(), 5.f);
+			foundEchoGravity = foundEchoGravity ||
+				NearlyEqual(projectile->GetProjectileSpeed(), 2000.f) &&
+				NearlyEqual(projectile->GetResolvedFieldDuration(), 3.f);
+		}
+		if (!foundBaseGravity || !foundEchoGravity)
+		{
+			return Fail("Echo Gravity replay changed projectile speed or inflated field duration");
+		}
+	}
+
+	TestCombatant stunnedDashOwner;
+	stunnedDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
+	stunnedDashOwner.SetDashMovementInput({ 1.f, 0.f });
+	if (!ActivateBasicDash(stunnedDashOwner))
+	{
+		return Fail("Stun interruption test could not activate Basic Dash");
+	}
+	sas::GameplayEffectSpec stunSpec = sas::MakeGameplayEffectSpec(
+		*nullPulseStunDefinition
+	);
+	stunSpec.duration = 1.f;
+	if (!stunnedDashOwner.GetAbilitySystemComponent().ApplyGameplayEffect(stunSpec).IsValid())
+	{
+		return Fail("Stun interruption test could not apply the stun effect");
+	}
+	stunnedDashOwner.GetCombatRuntime().GetAbilitySystemComponent().Tick(0.f);
+	if (stunnedDashOwner.IsDashActive() ||
+		stunnedDashOwner.GetDashEndCount() != 1 ||
+		stunnedDashOwner.GetAbilitySystemComponent().GetAbilityById(
+			dashDefinition->abilityId
+		)->IsActive())
+	{
+		return Fail("Stun did not interrupt an active ability");
+	}
+	TestCombatant stunDamageTarget;
+	ApplyCombatDamage(stunDamageTarget, 10.f, &stunnedDashOwner);
+	if (!NearlyEqual(stunDamageTarget.GetHealth(), 100.f))
+	{
+		return Fail("Stun did not block outgoing damage from the stunned owner");
+	}
+
+	TestCombatant blockedDashOwner;
+	blockedDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
+	blockedDashOwner.SetDashMovementInput({ 1.f, 0.f });
+	if (!blockedDashOwner.GetAbilitySystemComponent().ApplyGameplayEffect(stunSpec).IsValid() ||
+		ActivateBasicDash(blockedDashOwner))
+	{
+		return Fail("Stun did not block a new ability activation");
+	}
+
 	// -------------------------------------------------------------------------
 	// Inferno Spray Detailed System Tests
 	// -------------------------------------------------------------------------
@@ -4885,6 +6030,282 @@ int main()
 		if (burnDamage <= 0.5f)
 		{
 			return Fail("Ignite 4/4 full stack burn tick damage was not dealt over time");
+		}
+	}
+
+	{
+		World relayProjectileWorld{ nullptr };
+		const shared_ptr<TestCombatant> relayProjectileOwner =
+			relayProjectileWorld.SpawnActor<TestCombatant>(1000.f).lock();
+		if (!relayProjectileOwner)
+		{
+			return Fail("Relay Prism projectile owner could not spawn");
+		}
+		relayProjectileOwner->SetActorLocation({ 0.f, 0.f });
+		RelayPrismPresentationProfile relayProjectilePresentation;
+		const shared_ptr<RelayPrismActor> relayProjectile =
+			relayProjectileWorld.SpawnActor<RelayPrismActor>(
+				relayProjectileOwner.get(),
+				relayProjectilePresentation,
+				sf::Vector2f{ 1200.f, 0.f }
+			).lock();
+		if (!relayProjectile)
+		{
+			return Fail("Relay Prism projectile could not spawn");
+		}
+		relayProjectile->SetActorLocation({ 0.f, 0.f });
+		relayProjectile->SetLifeTime(4.f);
+		relayProjectile->ConfigureFromAttributes({
+			sas::GameplayAttribute{ CommonAttributeIds::Radius, 100.f, 1.f },
+			sas::GameplayAttribute{ CommonAttributeIds::Range, 600.f, 1.f },
+			sas::GameplayAttribute{
+				AbilityData::RelayPrism::Actor::Relay::ProjectileSpeed,
+				450.f,
+				1.f
+			}
+		});
+		relayProjectileWorld.TickInternal(0.f);
+		if (!relayProjectile->IsProjectileActor() ||
+			!NearlyEqual(relayProjectile->GetMaximumRange(), 600.f) ||
+			!NearlyEqual(relayProjectile->GetProjectileSpeed(), 450.f) ||
+			relayProjectile->IsCaptureOpen())
+		{
+			return Fail("Relay Prism opened its capture volume before reaching the destination");
+		}
+		relayProjectileWorld.TickInternal(1.f);
+		if (relayProjectile->HasReachedTarget() ||
+			!NearlyEqual(relayProjectile->GetActorLocation().x, 450.f) ||
+			relayProjectile->IsCaptureOpen())
+		{
+			return Fail("Relay Prism projectile did not remain closed during flight");
+		}
+		relayProjectileWorld.TickInternal(0.5f);
+		if (!relayProjectile->HasReachedTarget() ||
+			!NearlyEqual(relayProjectile->GetActorLocation().x, 600.f) ||
+			relayProjectile->GetTravelDistance() > relayProjectile->GetMaximumRange() + 0.001f ||
+			!relayProjectile->IsCaptureOpen())
+		{
+			return Fail("Relay Prism did not open its capture volume at the destination");
+		}
+	}
+
+	{
+		// Relay Prism must consume the source exactly once and preserve the
+		// projectile state that is meaningful after conversion. This exercises
+		// the shared ProjectileRelayParticipant path with a real primary projectile.
+		World relayWorld{ nullptr };
+		const shared_ptr<TestCombatant> relayOwner =
+			relayWorld.SpawnActor<TestCombatant>(1000.f).lock();
+		if (!relayOwner)
+		{
+			return Fail("Relay Prism test owner could not spawn");
+		}
+		relayOwner->GetCombatRuntime().InitializeOwnerAttributes(1000.f);
+		relayOwner->SetCollisionLayer(CollisionLayer::Player);
+		relayOwner->SetCollisionMask(CollisionLayer::RelayProjectile);
+		relayOwner->SetActorLocation({ 500.f, 0.f });
+
+		RelayPrismPresentationProfile relayPresentation;
+		const shared_ptr<RelayPrismActor> relay =
+			relayWorld.SpawnActor<RelayPrismActor>(relayOwner.get(), relayPresentation).lock();
+		if (!relay)
+		{
+			return Fail("Relay Prism capture volume could not spawn");
+		}
+		relay->SetActorLocation({ 0.f, 0.f });
+		relay->ConfigureFromAttributes({
+			sas::GameplayAttribute{ CommonAttributeIds::Radius, 150.f, 1.f }
+		});
+		relay->ConfigureFromAbilityValues({
+			sas::GameplayAttribute{ CommonAttributeIds::ProjectileCount, 2.f, 1.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::DamageTransferRatio, 0.5f, 0.f, 1.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::AttackPowerCoefficient, 0.f, 0.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MinimumScatterAngle, 60.f, 0.f, 360.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumScatterAngle, 60.f, 0.f, 360.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumBonusProjectileCount, 0.f, 0.f }
+		});
+
+		const sas::GameplayAttributeList relayProjectileValues{
+			sas::GameplayAttribute{ CommonAttributeIds::Damage, 100.f, 0.f },
+			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 200.f, 0.f },
+			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 5.f, 0.f },
+			sas::GameplayAttribute{ CommonAttributeIds::Range, 5000.f, 1.f },
+			sas::GameplayAttribute{ CollisionAttributeIds::Radius, 8.f, 0.f }
+		};
+		const shared_ptr<PrimaryWeaponProjectileActor> relaySource =
+			relayWorld.SpawnActor<PrimaryWeaponProjectileActor>(
+				relayOwner.get(),
+				WeaponPresentationDefinition{},
+				relayProjectileValues
+			).lock();
+		if (!relaySource)
+		{
+			return Fail("Relay Prism source projectile could not spawn");
+		}
+		relaySource->SetActorLocation({ 0.f, 0.f });
+		relaySource->SetLaunchVelocity({ 200.f, 0.f });
+		relaySource->SetDamageTags({ DamageTypeSchema::Kinetic });
+		relaySource->SetSourceAbility(
+			sas::ContentId{ "Ability.Test.RelaySource" },
+			{ GameplayTags::Ability::Offense }
+		);
+		relaySource->AbilityWorldActor::Tick(1.25f);
+
+		if (!relay->TryCaptureProjectile(*relaySource) || !relaySource->GetIsPendingDestroy())
+		{
+			return Fail("Relay Prism did not consume an eligible source projectile");
+		}
+		// Flush the newly spawned clone actors through their normal lifecycle.
+		// The relay sees them during this tick but rejects its own lineage.
+		relayWorld.TickInternal(0.f);
+
+		List<shared_ptr<PrimaryWeaponProjectileActor>> relayClones;
+		for (const weak_ptr<PrimaryWeaponProjectileActor>& projectileWeak :
+			relayWorld.GetActorsByType<PrimaryWeaponProjectileActor>())
+		{
+			if (const shared_ptr<PrimaryWeaponProjectileActor> projectile = projectileWeak.lock();
+				projectile && projectile.get() != relaySource.get() &&
+				!projectile->GetIsPendingDestroy())
+			{
+				relayClones.push_back(projectile);
+			}
+		}
+		if (relayClones.size() != 2)
+		{
+			return Fail("Relay Prism did not create its configured clone count");
+		}
+
+		for (const shared_ptr<PrimaryWeaponProjectileActor>& clone : relayClones)
+		{
+			if (!NearlyEqual(clone->GetDamage(), 50.f) ||
+				!NearlyEqual(clone->GetLifeTime(), 3.75f) ||
+				clone->GetProjectileRelayLineage().generation != 1 ||
+				!clone->GetProjectileRelayLineage().HasVisited(relay->GetCaptureVolumeId()) ||
+				clone->GetCollisionLayer() != CollisionLayer::RelayProjectile ||
+				clone->GetCollisionMask() != CollisionLayer::AllRelayTargets ||
+				clone->GetDamageTags().size() != 1 ||
+				clone->GetDamageTags().front() != DamageTypeSchema::Kinetic)
+			{
+				return Fail("Relay Prism clone did not preserve converted combat state");
+			}
+		}
+
+		const sf::Vector2f firstDirection = relayClones[0]->GetVelocity();
+		const sf::Vector2f secondDirection = relayClones[1]->GetVelocity();
+		const float directionDot = firstDirection.x * secondDirection.x +
+			firstDirection.y * secondDirection.y;
+		const float directionLengths = GetVectorLength(firstDirection) * GetVectorLength(secondDirection);
+		const float scatterAngle = directionLengths > 0.f
+			? std::acos(std::clamp(directionDot / directionLengths, -1.f, 1.f)) * 57.2957795131f
+			: 0.f;
+		if (!NearlyEqual(scatterAngle, 60.f))
+		{
+			return Fail("Relay Prism clone scatter direction ignored the configured angle");
+		}
+
+		const float ownerHealthBeforeRelayHit = relayOwner->GetHealth();
+		relayClones.front()->OnActorBeginOverlap(relayOwner.get());
+		if (!NearlyEqual(relayOwner->GetHealth(), ownerHealthBeforeRelayHit - 50.f))
+		{
+			return Fail("Relay Prism clone did not apply its explicit friendly-fire policy");
+		}
+
+		const std::size_t actorsBeforeLoopAttempt =
+			relayWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size();
+		if (relay->TryCaptureProjectile(*relayClones.back()) ||
+			relayClones.back()->GetIsPendingDestroy() ||
+			relayWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() !=
+			actorsBeforeLoopAttempt)
+		{
+			return Fail("Relay Prism did not reject a clone from its own relay lineage");
+		}
+	}
+
+	{
+		// A Rocket captured after it has already spent part of its source
+		// lifetime must still have enough time to travel from the Prism to its
+		// own maximum range. The source's remaining lifetime is intentionally
+		// shorter than that delivery time in this regression scenario.
+		World rocketRelayWorld{ nullptr };
+		const shared_ptr<TestCombatant> rocketRelayOwner =
+			rocketRelayWorld.SpawnActor<TestCombatant>(1000.f).lock();
+		if (!rocketRelayOwner)
+		{
+			return Fail("Rocket relay regression owner could not spawn");
+		}
+
+		const shared_ptr<RocketProjectileActor> rocketSource = SpawnRocket(
+			rocketRelayWorld,
+			*rocketRelayOwner
+		);
+		if (!rocketSource)
+		{
+			return Fail("Rocket relay regression source could not spawn");
+		}
+
+		RelayPrismPresentationProfile rocketRelayPresentation;
+		const shared_ptr<RelayPrismActor> rocketRelay =
+			rocketRelayWorld.SpawnActor<RelayPrismActor>(
+				rocketRelayOwner.get(),
+				rocketRelayPresentation
+			).lock();
+		if (!rocketRelay)
+		{
+			return Fail("Rocket relay regression Prism could not spawn");
+		}
+		rocketRelay->SetActorLocation(rocketSource->GetActorLocation());
+		rocketRelay->ConfigureFromAttributes({
+			sas::GameplayAttribute{ CommonAttributeIds::Radius, 150.f, 1.f }
+		});
+		rocketRelay->ConfigureFromAbilityValues({
+			sas::GameplayAttribute{ CommonAttributeIds::ProjectileCount, 1.f, 1.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::DamageTransferRatio, 1.f, 0.f, 1.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::AttackPowerCoefficient, 0.f, 0.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MinimumScatterAngle, 0.f, 0.f, 360.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumScatterAngle, 0.f, 0.f, 360.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumBonusProjectileCount, 0.f, 0.f }
+		});
+
+		// Simulate the Rocket entering the Prism after spending most of its
+		// original lifetime, without moving it out of the capture radius.
+		rocketSource->AbilityWorldActor::Tick(0.5f);
+		if (!rocketRelay->TryCaptureProjectile(*rocketSource))
+		{
+			return Fail("Rocket relay regression source was not captured");
+		}
+		rocketRelayWorld.TickInternal(0.f);
+
+		shared_ptr<RocketProjectileActor> rocketClone;
+		for (const weak_ptr<RocketProjectileActor>& projectileWeak :
+			rocketRelayWorld.GetActorsByType<RocketProjectileActor>())
+		{
+			if (const shared_ptr<RocketProjectileActor> projectile = projectileWeak.lock();
+				projectile && projectile.get() != rocketSource.get() &&
+				!projectile->GetIsPendingDestroy())
+			{
+				rocketClone = projectile;
+				break;
+			}
+		}
+		if (!rocketClone)
+		{
+			return Fail("Rocket relay regression clone did not spawn");
+		}
+
+		const float fullRangeTravelTime = rocketClone->GetMaximumRange() /
+			rocketClone->GetProjectileSpeed();
+		if (rocketClone->GetLifeTime() <= fullRangeTravelTime)
+		{
+			return Fail("Rocket relay clone lifetime did not cover its full range");
+		}
+
+		// The clone must still exist immediately before the range endpoint. The
+		// old behavior destroyed it here because it inherited the source's
+		// already-consumed lifetime.
+		rocketRelayWorld.TickInternal(std::max(0.01f, fullRangeTravelTime - 0.1f));
+		if (rocketClone->GetIsPendingDestroy())
+		{
+			return Fail("Rocket relay clone disappeared before reaching full range");
 		}
 	}
 

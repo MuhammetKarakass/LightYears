@@ -33,7 +33,6 @@ namespace AbilityData
 			};
 			definition.displayName = "Dash";
 			definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/star_gold.png";
-			definition.inputLabel = "F";
 			definition.accentColor = sf::Color{ 120, 220, 255, 255 };
 			definition.behaviorType = ly::AbilityBehaviorType::Dash;
 			return definition;

@@ -2,10 +2,12 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "gameplay/weapon/impact/ProjectileImpactBehavior.h"
 #include "framework/Core.h"
 #include "framework/PerfMonitor.h"
 #include "framework/MathUtility.h"
+#include "framework/World.h"
 #include <algorithm>
 #include <cmath>
 
@@ -24,7 +26,8 @@ namespace ly
 		mTravelDistance(0.f),
 		mAreaDamageRadius(std::max(0.f, sas::FindAttributeValue(values, AreaAttributeIds::Radius, 0.f))),
 		mVisualScale(std::max(0.01f, presentation.visualScale)),
-		mRemainingPierces(std::max(0, static_cast<int>(std::round(sas::FindAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 0.f)))))
+		mRemainingPierces(std::max(0, static_cast<int>(std::round(sas::FindAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 0.f))))),
+		mPresentationDefinition(presentation)
 	{
 		SetRenderLayer(RenderLayer::Projectile);
 		SetDamage(sas::FindAttributeValue(values, CommonAttributeIds::Damage, 0.f));
@@ -66,6 +69,15 @@ namespace ly
 
 	void PrimaryWeaponProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (GetIsPendingDestroy())
+		{
+			return;
+		}
+		if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(otherActor);
+			captureVolume && captureVolume->TryCaptureProjectile(*this))
+		{
+			return;
+		}
 		AbilityWorldActor::OnActorBeginOverlap(otherActor);
 		if(GetCanCollide())
 		{
@@ -91,6 +103,37 @@ namespace ly
 
 			Destroy();
 		}
+	}
+
+	weak_ptr<AbilityWorldActor> PrimaryWeaponProjectileActor::SpawnRelayClone(
+		const ProjectileRelayCloneRequest& request
+	) const
+	{
+		World* world = GetWorld();
+		Actor* owner = GetOwnerActor();
+		if (!world || !owner)
+		{
+			return {};
+		}
+
+		weak_ptr<PrimaryWeaponProjectileActor> clone =
+			world->SpawnActor<PrimaryWeaponProjectileActor>(
+				owner,
+				mPresentationDefinition,
+				request.snapshot.damageAttributes
+			);
+		if (const shared_ptr<PrimaryWeaponProjectileActor> spawned = clone.lock())
+		{
+			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);
+			spawned->ConfigureRelayClone(request);
+			const float speed = sas::FindAttributeValue(
+				request.snapshot.damageAttributes,
+				PrimaryWeaponSchema::Projectile::Delivery::Speed,
+				500.f
+			);
+			spawned->SetLaunchVelocity(request.direction * speed);
+		}
+		return clone;
 	}
 
 	void PrimaryWeaponProjectileActor::SetImpactBehavior(

@@ -27,6 +27,9 @@ namespace ly
 		bool IsProjectileActor() const override { return true; }
 
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
+		weak_ptr<AbilityWorldActor> SpawnRelayClone(
+			const ProjectileRelayCloneRequest& request
+		) const override;
 
 		float GetDamage() const { return AbilityWorldActor::GetDamage(); };
 		void SetLaunchVelocity(const sf::Vector2f& launchVelocity);
@@ -47,9 +50,9 @@ namespace ly
 		float mAreaDamageRadius;
 		float mVisualScale;
 		int mRemainingPierces;
+		WeaponPresentationDefinition mPresentationDefinition;
 		shared_ptr<ProjectileImpactBehavior> mImpactBehavior;
 		bool mHasLaunchVelocity = false;
 		bool mImpactBehaviorCompleted = false;
 	};
 }
-

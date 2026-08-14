@@ -1,12 +1,18 @@
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
+#include "gameConfigs/ability/offensive/OrbitalDronesConfig.h"
+#include "gameConfigs/ability/offensive/ExecutionDriveConfig.h"
 #include "gameConfigs/ability/control/NullPulseConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
-#include "gameConfigs/ability/functional/DashConfig.h"
+#include "gameConfigs/ability/movement/DashConfig.h"
 #include "gameConfigs/ability/defensive/ShieldConfig.h"
-#include "gameConfigs/ability/defensive/PhaseDriftConfig.h"
+#include "gameConfigs/ability/movement/PhaseDriftConfig.h"
+#include "gameConfigs/ability/offensive/HullShockConfig.h"
+#include "gameConfigs/ability/defensive/ShieldHarvestConfig.h"
+#include "gameConfigs/ability/utility/RelayPrismConfig.h"
+#include "gameConfigs/ability/utility/EchoProtocolConfig.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 
 namespace AbilityData
@@ -22,7 +28,13 @@ namespace AbilityData
 			&Definitions::InfernoSpray_Basic,
 			&Definitions::OverdriveCore_Basic,
 			&Definitions::NullPulse_Basic,
-			&Definitions::PhaseDrift_Basic
+			&Definitions::PhaseDrift_Basic,
+			&Definitions::ShieldHarvest_Basic,
+			&Definitions::HullShock_Basic,
+			&Definitions::OrbitalDrones_Basic,
+			&Definitions::ExecutionDrive_Basic,
+			&Definitions::RelayPrism_Basic,
+			&Definitions::EchoProtocol_Basic
 		};
 		return definitions;
 	}
@@ -45,7 +57,8 @@ namespace AbilityData
 			&Rocket::ActorProjectileBasic,
 			&OverdriveCore::ActorProjectileBasic,
 			&InfernoSpray::ActorFlameConeBasic,
-			&SunBeam::ActorStrikeBasic
+			&SunBeam::ActorStrikeBasic,
+			&RelayPrism::ActorRelayBasic
 		};
 		return definitions;
 	}

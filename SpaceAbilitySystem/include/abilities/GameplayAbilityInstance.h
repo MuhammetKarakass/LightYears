@@ -142,6 +142,16 @@ namespace sas
 			}
 		}
 
+		bool RefreshActiveDuration(float activeDuration)
+		{
+			if (!this->mRuntimeState.RefreshActiveDuration(activeDuration))
+			{
+				return false;
+			}
+			NotifyChanged();
+			return true;
+		}
+
 		bool IsActive() const { return this->mRuntimeState.IsActive(); }
 		bool IsOnCooldown() const
 		{

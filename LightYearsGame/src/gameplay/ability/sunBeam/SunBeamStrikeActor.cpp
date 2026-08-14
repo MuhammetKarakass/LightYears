@@ -324,10 +324,14 @@ namespace ly
 		}
 
 		mTelegraph = world->SpawnActor<AreaTelegraphActor>(
-			mImpactLocation,
-			mImpactRadius,
-			warningDuration + 0.25f,
-			mTelegraphVisualDefinition
+			AreaTelegraphActor::SpawnParams{
+				mImpactLocation,
+				mImpactRadius,
+				0.f,
+				mTelegraphVisualDefinition,
+				AreaTelegraphAnchorMode::FixedLocation,
+				AreaTelegraphProgressDriver::External
+			}
 		);
 		SynchronizeTelegraph();
 	}
@@ -344,7 +348,7 @@ namespace ly
 		const float progress = convergenceDuration > 0.f
 			? std::clamp(mTimelineElapsed / convergenceDuration, 0.f, 1.f)
 			: 1.f;
-		telegraph->SetCountdownProgress(progress);
+		telegraph->SetExternalProgress(progress);
 	}
 
 	void SunBeamStrikeActor::DestroyTelegraph()

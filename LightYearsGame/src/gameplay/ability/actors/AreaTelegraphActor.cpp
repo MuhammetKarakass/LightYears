@@ -1,34 +1,50 @@
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 
 #include <algorithm>
-#include <cmath>
-#include <cstdint>
+#include <memory>
 
 namespace ly
 {
 	namespace
 	{
-		float Saturate(float value)
+		weak_ptr<Actor> MakeWeakActor(Actor* actor)
 		{
-			return std::clamp(value, 0.f, 1.f);
-		}
-
-		sf::Color BlendTelegraphColor(const sf::Color& from, const sf::Color& to, float alpha)
-		{
-			const float t = Saturate(alpha);
-			auto lerpChannel = [t](std::uint8_t a, std::uint8_t b)
+			if (!actor)
 			{
-				return static_cast<std::uint8_t>(
-					std::clamp(static_cast<float>(a) + (static_cast<float>(b) - a) * t, 0.f, 255.f)
-				);
-			};
-			return {
-				lerpChannel(from.r, to.r),
-				lerpChannel(from.g, to.g),
-				lerpChannel(from.b, to.b),
-				lerpChannel(from.a, to.a)
-			};
+				return {};
+			}
+
+			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
+			return object
+				? std::dynamic_pointer_cast<Actor>(object)
+				: weak_ptr<Actor>{};
 		}
+	}
+
+	AreaTelegraphActor::AreaTelegraphActor(
+		World* world,
+		const SpawnParams& params
+	)
+		: Actor(world),
+		mDefinition(params.visual),
+		mFill(std::max(1.f, params.radius), 64),
+		mCountdownRing(std::max(1.f, params.radius), 64),
+		mOutline(std::max(1.f, params.radius), 64),
+		mDuration(std::max(0.f, params.duration)),
+		mAnchor(params.anchor),
+		mProgressDriver(params.progress),
+		mTargetActor(MakeWeakActor(params.targetActor))
+	{
+		SetActorLocation(params.targetActor ? params.targetActor->GetActorLocation() : params.location);
+		SetRenderLayer(RenderLayer::GroundDecal);
+		SetCollisionLayer(CollisionLayer::None);
+		SetCollisionMask(CollisionLayer::None);
+
+		const float effectiveRadius = std::max(1.f, params.radius);
+		mFill.setOrigin({ effectiveRadius, effectiveRadius });
+		mCountdownRing.setOrigin({ effectiveRadius, effectiveRadius });
+		mOutline.setOrigin({ effectiveRadius, effectiveRadius });
+		UpdateVisuals();
 	}
 
 	AreaTelegraphActor::AreaTelegraphActor(
@@ -36,31 +52,59 @@ namespace ly
 		const sf::Vector2f& worldLocation,
 		float radius,
 		float lifeTime,
-		const AreaTelegraphVisualDefinition& definition
+		const AreaTelegraphVisualDefinition& definition,
+		Actor* targetActor
 	)
-		: Actor(world),
-		mDefinition(definition),
-		mFill(std::max(1.f, radius), 64),
-		mCountdownRing(std::max(1.f, radius), 64),
-		mOutline(std::max(1.f, radius), 64),
-		mLifeTime(std::max(0.f, lifeTime))
+		: AreaTelegraphActor(
+			world,
+			SpawnParams{
+				worldLocation,
+				radius,
+				lifeTime,
+				definition,
+				targetActor ? AreaTelegraphAnchorMode::FollowActor : AreaTelegraphAnchorMode::FixedLocation,
+				AreaTelegraphProgressDriver::Timed,
+				targetActor
+			}
+		)
 	{
-		SetActorLocation(worldLocation);
-		SetRenderLayer(RenderLayer::GroundDecal);
-		SetCollisionLayer(CollisionLayer::None);
-		SetCollisionMask(CollisionLayer::None);
-
-		const float effectiveRadius = std::max(1.f, radius);
-		mFill.setOrigin({ effectiveRadius, effectiveRadius });
-		mCountdownRing.setOrigin({ effectiveRadius, effectiveRadius });
-		mOutline.setOrigin({ effectiveRadius, effectiveRadius });
-		UpdateVisuals();
 	}
 
 	void AreaTelegraphActor::Tick(float deltaTime)
 	{
-		mAge += deltaTime;
-		if (mLifeTime > 0.f && mAge >= mLifeTime)
+		if (mAnchor == AreaTelegraphAnchorMode::FollowActor)
+		{
+			const shared_ptr<Actor> targetActor = mTargetActor.lock();
+			if (!targetActor || targetActor->GetIsPendingDestroy())
+			{
+				Destroy();
+				return;
+			}
+
+			SetActorLocation(targetActor->GetActorLocation());
+		}
+
+		const float safeDeltaTime = std::max(0.f, deltaTime);
+		mAge += safeDeltaTime;
+		if (mPhase == AreaTelegraphPhase::CompletionFeedback)
+		{
+			mCompletionAge += safeDeltaTime;
+			if (mDefinition.completionFeedbackDuration <= 0.f ||
+				mCompletionAge >= mDefinition.completionFeedbackDuration)
+			{
+				Destroy();
+				return;
+			}
+
+			UpdateVisuals();
+			Actor::Tick(deltaTime);
+			return;
+		}
+
+		// Timed actors own their lifetime. External actors are ended explicitly by
+		// their ability, which keeps impact and completion frames deterministic.
+		if (mProgressDriver == AreaTelegraphProgressDriver::Timed &&
+			mDuration > 0.f && mAge >= mDuration)
 		{
 			Destroy();
 			return;
@@ -70,11 +114,63 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
+	void AreaTelegraphActor::SetExternalProgress(float normalizedProgress)
+	{
+		if (GetIsPendingDestroy() || mPhase != AreaTelegraphPhase::Countdown)
+		{
+			return;
+		}
+
+		mProgressDriver = AreaTelegraphProgressDriver::External;
+		mCountdownProgress = SaturateAreaTelegraphProgress(normalizedProgress);
+		UpdateVisuals();
+	}
+
+	void AreaTelegraphActor::Complete(float normalizedProgress)
+	{
+		if (GetIsPendingDestroy() || mPhase != AreaTelegraphPhase::Countdown)
+		{
+			return;
+		}
+
+		const float feedbackDuration = std::max(0.f, mDefinition.completionFeedbackDuration);
+		if (feedbackDuration <= 0.f)
+		{
+			Destroy();
+			return;
+		}
+
+		mProgressDriver = AreaTelegraphProgressDriver::External;
+		mCountdownProgress = SaturateAreaTelegraphProgress(normalizedProgress);
+		mCompletionProgress = mCountdownProgress;
+		mCompletionAge = 0.f;
+		mPhase = AreaTelegraphPhase::CompletionFeedback;
+		UpdateVisuals();
+	}
+
+	bool AreaTelegraphActor::IsInCompletionFeedback() const
+	{
+		return mPhase == AreaTelegraphPhase::CompletionFeedback && !GetIsPendingDestroy();
+	}
+
 	void AreaTelegraphActor::SetCountdownProgress(float normalizedProgress)
 	{
-		mHasExternalCountdown = true;
-		mCountdownProgress = Saturate(normalizedProgress);
-		UpdateVisuals();
+		SetExternalProgress(normalizedProgress);
+	}
+
+	void AreaTelegraphActor::SetCompleted()
+	{
+		Complete();
+	}
+
+	void AreaTelegraphActor::SetCompleted(float normalizedProgress)
+	{
+		Complete(normalizedProgress);
+	}
+
+	bool AreaTelegraphActor::IsShowingCompletionFeedback() const
+	{
+		return IsInCompletionFeedback();
 	}
 
 	void AreaTelegraphActor::Render(sf::RenderWindow& window)
@@ -90,47 +186,42 @@ namespace ly
 		mFill.setPosition(location);
 		mCountdownRing.setPosition(location);
 		mOutline.setPosition(location);
-		window.draw(mFill);
-		window.draw(mCountdownRing);
+		if (mDefinition.drawInteriorFill)
+		{
+			window.draw(mFill);
+		}
+		if (mDefinition.drawCountdownRing)
+		{
+			window.draw(mCountdownRing);
+		}
 		window.draw(mOutline);
 	}
 
 	void AreaTelegraphActor::UpdateVisuals()
 	{
-		const float rawProgress = mHasExternalCountdown
+		const float countdownProgress = mProgressDriver == AreaTelegraphProgressDriver::External
 			? mCountdownProgress
-			: (mLifeTime > 0.f ? Saturate(mAge / mLifeTime) : 0.f);
-		const float easedProgress = std::pow(
-			rawProgress,
-			std::max(1.f, mDefinition.countdownEaseExponent)
-		);
-		const float sinePulse = (std::sin(mAge * mDefinition.pulseSpeed) + 1.f) * 0.5f;
-		const float intensity = mDefinition.minimumPulse
-			+ (mDefinition.maximumPulse - mDefinition.minimumPulse) * sinePulse;
-		const float baseScale = mDefinition.countdownStartScale
-			+ (mDefinition.countdownEndScale - mDefinition.countdownStartScale) * easedProgress;
-		const float pulseScale = 1.f + mDefinition.pulseScaleAmount * sinePulse;
+			: (mDuration > 0.f ? SaturateAreaTelegraphProgress(mAge / mDuration) : 0.f);
+		const AreaTelegraphRuntimeState runtime{
+			mPhase,
+			mAge,
+			countdownProgress,
+			mCompletionProgress,
+			mCompletionAge
+		};
+		const AreaTelegraphVisualState state = ResolveAreaTelegraphVisualState(mDefinition, runtime);
 
-		sf::Color fillColor = BlendTelegraphColor(mDefinition.fillColor, mDefinition.dangerFillColor, easedProgress);
-		sf::Color outlineColor = BlendTelegraphColor(
-			mDefinition.outlineColor,
-			mDefinition.dangerOutlineColor,
-			easedProgress
-		);
-		fillColor.a = static_cast<std::uint8_t>(std::clamp(fillColor.a * intensity, 0.f, 255.f));
-		outlineColor.a = static_cast<std::uint8_t>(std::clamp(outlineColor.a * intensity, 0.f, 255.f));
-
-		mFill.setFillColor(fillColor);
-		mFill.setScale({ pulseScale, pulseScale });
+		mFill.setFillColor(state.fillColor);
+		mFill.setScale({ state.fillScale, state.fillScale });
 
 		mCountdownRing.setFillColor(sf::Color::Transparent);
-		mCountdownRing.setOutlineColor(outlineColor);
+		mCountdownRing.setOutlineColor(state.outlineColor);
 		mCountdownRing.setOutlineThickness(std::max(0.f, mDefinition.countdownRingThickness));
-		mCountdownRing.setScale({ baseScale, baseScale });
+		mCountdownRing.setScale({ state.countdownRingScale, state.countdownRingScale });
 
 		mOutline.setFillColor(sf::Color::Transparent);
-		mOutline.setOutlineColor(outlineColor);
+		mOutline.setOutlineColor(state.outlineColor);
 		mOutline.setOutlineThickness(mDefinition.outlineThickness);
-		mOutline.setScale({ pulseScale, pulseScale });
+		mOutline.setScale({ state.outlineScale, state.outlineScale });
 	}
 }

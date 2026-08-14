@@ -130,6 +130,7 @@ namespace ly
 			AbilityExecutionContext& context,
 			Actor& owner,
 			const sf::Vector2f& direction,
+			const sf::Vector2f& spawnLocation,
 			const std::optional<sf::Vector2f>& targetLocation,
 			float damageMultiplier,
 			Actor* targetActor
@@ -193,9 +194,7 @@ namespace ly
 				sas::FindAttributeValue(values, CommonAttributeIds::Radius, 0.f)
 			);
 
-			actor->SetActorLocation(
-				owner.GetActorLocation() + direction * actorDefinition->spawnDistance
-			);
+			actor->SetActorLocation(spawnLocation);
 			actor->SetActorRotation(ResolveRotation(direction, owner.GetActorRotation()));
 			actor->SetLifeTime(duration);
 			actor->SetDamageTags(damageTags);
@@ -273,6 +272,13 @@ namespace ly
 			context,
 			owner,
 			direction,
+			ResolveSpawnLocation(
+				owner,
+				actionData,
+				*actorDefinition,
+				context,
+				direction
+			),
 			ResolveTargetLocation(owner, actionData, context),
 			1.f,
 			nullptr
@@ -289,11 +295,16 @@ namespace ly
 		Actor* targetActor
 	)
 	{
+		const AbilityActorDefinition* actorDefinition =
+			AbilityData::FindAbilityActorDefinition(actorDefinitionId.ToString());
 		return SpawnResolved(
 			actorDefinitionId,
 			context,
 			owner,
 			direction,
+			owner.GetActorLocation() + direction * (
+				actorDefinition ? actorDefinition->spawnDistance : 0.f
+			),
 			targetLocation,
 			damageMultiplier,
 			targetActor

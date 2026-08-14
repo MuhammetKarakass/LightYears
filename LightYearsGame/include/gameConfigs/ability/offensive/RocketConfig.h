@@ -34,7 +34,9 @@ namespace AbilityData
 		{
 			ly::GameAbilityDefinition definition;
 			definition.abilityId = Rocket::AbilityId::Basic;
-			definition.slot = sas::AbilitySlot::Ability4;
+			// Ability3 is the default F binding for the projectile loadout.
+			// Runtime loadout bindings may still move Rocket later.
+			definition.slot = sas::AbilitySlot::Ability3;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.cooldown = 0.f;
@@ -46,7 +48,6 @@ namespace AbilityData
 			};
 			definition.displayName = "Rocket";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
-			definition.inputLabel = "R";
 			definition.accentColor = sf::Color{ 255, 115, 75, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{

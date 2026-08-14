@@ -1,8 +1,6 @@
 #include "player/PlayerSpaceShip.h"
 
-#include "gameConfigs/ability/AbilityCatalog.h"
-#include "gameplay/ability/nullPulse/NullPulseContracts.h"
-#include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
+#include "gameplay/ability/loadout/DefaultAbilityLoadout.h"
 #include "gameplay/combat/Combatant.h"
 #include <framework/MathUtility.h>
 
@@ -10,6 +8,7 @@ namespace ly
 {
 	PlayerSpaceShip::PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef)
 		: SpaceShip(owningWorld, shipDef)
+		, mAbilityLoadout(GetAbilitySystemComponent())
 		, mPlayerMovement(*this)
 		, mInvulnerabilityTime(2.f)
 		, mInvulnerabilityBlinkInterval(0.4f)
@@ -18,42 +17,18 @@ namespace ly
 		, mCollisionDamage(shipDef.collisionDamage)
 	{
 		SetInvulnerability(true);
-		auto grantPlayerAbility = [this](const GameAbilityDefinition& definition)
+		for (const DefaultAbilityLoadoutEntry& entry : GetDefaultAbilityLoadout())
 		{
 			std::string failureReason;
-			const sas::AbilityHandle handle = GetAbilitySystemComponent().GrantAbility(
-				definition,
-				&failureReason
-			);
-			if (!handle.IsValid())
+			if (!mAbilityLoadout.EquipAbility(entry.abilityId, entry.slot, &failureReason))
 			{
 				LY_GAME_ERROR(
-					"Invalid player ability '%s': %s",
-					definition.abilityId.c_str(),
+					"Invalid default player loadout ability '%s': %s",
+					entry.abilityId.c_str(),
 					failureReason.c_str()
 				);
 			}
-		};
-		const auto grantPlayerAbilityById = [&grantPlayerAbility](const std::string& abilityId)
-		{
-			if (const GameAbilityDefinition* definition =
-				AbilityData::FindShippedAbilityDefinition(abilityId))
-			{
-				grantPlayerAbility(*definition);
-			}
-		};
-		grantPlayerAbilityById(AbilityData::GravityAnomaly::AbilityId::Basic);
-		// Null Pulse replaces the previous Ability2 grant and is therefore
-		// available through the E input in the default player loadout.
-		grantPlayerAbilityById(AbilityData::NullPulse::AbilityId::Basic);
-		// Ability3 now hosts Phase Drift. Dash remains available to other
-		// loadouts, but is not granted in the default player loadout.
-		grantPlayerAbilityById(AbilityData::PhaseDrift::AbilityId::Basic);
-		// Ability4 is a unique active slot. Overdrive Core is the current
-		// Ability4 playtest ability, so Rocket remains shipped/catalogued but is
-		// not granted at the same time and cannot silently win this slot.
-		grantPlayerAbilityById(AbilityData::OverdriveCore::AbilityId::Basic);
-
+		}
 		SetActorRotation(0.f);
 		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
 		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
@@ -62,7 +37,12 @@ namespace ly
 	void PlayerSpaceShip::SetupCollisionLayers()
 	{
 		SetCollisionLayer(CollisionLayer::Player);
-		SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet | CollisionLayer::Powerup);
+		SetCollisionMask(
+			CollisionLayer::Enemy |
+			CollisionLayer::EnemyBullet |
+			CollisionLayer::Powerup |
+			CollisionLayer::RelayProjectile
+		);
 	}
 
 	void PlayerSpaceShip::BeginPlay()

@@ -47,6 +47,27 @@ namespace ly
 		return ResolveProduct(mModifiers, &ShipRuntimeModifier::movementSpeedMultiplier);
 	}
 
+	float ShipRuntimeModifiers::GetConditionalMovementSpeedMultiplier(
+		const sf::Vector2f& movementDirection
+	) const
+	{
+		float result = 1.f;
+		for (const auto& [sourceId, modifier] : mModifiers)
+		{
+			(void)sourceId;
+			if (!modifier.movementSpeedResolver)
+			{
+				continue;
+			}
+
+			result *= std::max(
+				0.f,
+				modifier.movementSpeedResolver(movementDirection)
+			);
+		}
+		return std::max(0.f, result);
+	}
+
 	float ShipRuntimeModifiers::GetShieldRegenMultiplier() const
 	{
 		return ResolveProduct(mModifiers, &ShipRuntimeModifier::shieldRegenMultiplier);

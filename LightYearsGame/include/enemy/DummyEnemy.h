@@ -10,5 +10,8 @@ namespace ly
 		DummyEnemy(World* owningWorld, const ShipDefinition& shipDef);
 
 		void Tick(float deltaTime) override;
+
+	protected:
+		void Shoot() override;
 	};
 }

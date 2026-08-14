@@ -16,6 +16,7 @@ add_library(${SPACE_ABILITY_SYSTEM_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityLifecycleOrchestrator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityPolicies.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeSnapshot.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeBinding.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeEntry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/GameplayAbilityInstance.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityRuntimeSystem.h

@@ -24,6 +24,7 @@ namespace sas
 		bool SetLevel(int requestedLevel, int maxLevel);
 		bool CanActivate(int maxCharges) const;
 		void BeginActivation(float activeDuration, int maxCharges);
+		bool RefreshActiveDuration(float activeDuration);
 		void EndActivation(float cooldownDuration, int maxCharges);
 		bool TickCooldown(float deltaTime, float cooldownDuration, int maxCharges);
 		bool TickActiveDuration(float deltaTime);

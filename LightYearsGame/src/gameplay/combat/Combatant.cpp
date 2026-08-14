@@ -2,6 +2,7 @@
 #include "gameplay/combat/CombatRuntime.h"
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
+#include "gameplay/tags/GameplayTags.h"
 
 #include <algorithm>
 
@@ -63,7 +64,9 @@ namespace ly
 		// a concrete ability family.
 		if (const auto* sourceCombatant = dynamic_cast<const Combatant*>(source))
 		{
-			if (sourceCombatant->GetCombatRuntime().BlocksOutgoingDamage())
+			const auto& sourceTags = sourceCombatant->GetAbilitySystemComponent().GetOwnedTags();
+			if (sourceTags.HasTag(GameplayTags::State::Effect::Control::Stunned) ||
+				sourceCombatant->GetCombatRuntime().BlocksOutgoingDamage())
 			{
 				return;
 			}

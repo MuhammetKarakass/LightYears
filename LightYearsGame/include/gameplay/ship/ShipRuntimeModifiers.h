@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <functional>
 #include <unordered_map>
+#include <SFML/System/Vector2.hpp>
 
 namespace ly
 {
@@ -13,6 +15,9 @@ namespace ly
 		float movementSpeedMultiplier = 1.f;
 		float shieldRegenMultiplier = 1.f;
 		float afterburnerRegenMultiplier = 1.f;
+		// Returns a movement multiplier for the current movement direction. A
+		// resolver is optional so ordinary constant modifiers remain unchanged.
+		std::function<float(const sf::Vector2f&)> movementSpeedResolver;
 	};
 
 	class ShipRuntimeModifiers final
@@ -22,6 +27,9 @@ namespace ly
 		void Remove(const std::string& sourceId);
 
 		float GetMovementSpeedMultiplier() const;
+		float GetConditionalMovementSpeedMultiplier(
+			const sf::Vector2f& movementDirection
+		) const;
 		float GetShieldRegenMultiplier() const;
 		float GetAfterburnerRegenMultiplier() const;
 

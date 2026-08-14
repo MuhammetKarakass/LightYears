@@ -6,4 +6,5 @@
 #include "abilities/AbilityHandle.h"
 #include "abilities/AbilityPolicies.h"
 #include "abilities/AbilityRuntimeSnapshot.h"
+#include "abilities/AbilityRuntimeBinding.h"
 #include "abilities/AbilityRuntimeState.h"

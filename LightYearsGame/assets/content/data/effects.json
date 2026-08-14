@@ -135,6 +135,16 @@
       "sourceParameterized": true
     },
     {
+      "id": "Effect.Offense.ExecutionDrive.AttackPower.Basic",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["State.Effect.Offense.ExecutionDrive.AttackPower"],
+      "disposition": "Beneficial",
+      "category": "Offense.ExecutionDrive.AttackPower",
+      "sourceScopedApplication": true,
+      "sourceParameterized": true
+    },
+    {
       "id": "Effect.PhaseDrift.MovementBoost",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",

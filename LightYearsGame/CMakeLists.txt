@@ -8,8 +8,12 @@ add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContractRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/AbilityBehaviorType.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorType.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/AbilityLifecycleDispatcher.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/AbilityUseHistory.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIdSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/content/NumericSettingContractRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityLifecycleDispatcher.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityUseHistory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/AbilityActionValidator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/AbilityActionValidator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/GameAbilityDefinitionValidator.h
@@ -45,6 +49,17 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceship.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerMovementComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/input/AbilityInputSchema.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/input/AbilityInputSchema.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/OwnedAbilityState.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/AbilityInventory.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityInventory.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/AbilityLoadout.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadout.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/AbilityLoadoutManager.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadoutManager.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/DefaultAbilityLoadout.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/HealthComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
@@ -60,16 +75,22 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/GameplayTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/DashTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/GravityAnomalyTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/HullShockTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/InfernoSprayTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/OverdriveCoreTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/NullPulseTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/OrbitalDronesTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/PhaseDriftTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/RelayPrismTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/RocketTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ShieldTags.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ShieldHarvestTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/SunBeamTags.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetingTypes.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/AutoTargeting.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/CombatantTargetQuery.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/CombatantTargetQuery.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetAllocation.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AttachmentLoader.h
@@ -105,14 +126,19 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityActorStructs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/functional/DashConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/GravityAnomalyConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/DashConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/control/GravityAnomalyConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/InfernoSprayConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/OverdriveCoreConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/OrbitalDronesConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/ExecutionDriveConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/control/NullPulseConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/RocketConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ShieldConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/PhaseDriftConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/PhaseDriftConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/HullShockConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ShieldHarvestConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/RelayPrismConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/SunBeamConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/AttachmentConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectStructs.h
@@ -173,6 +199,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/control/ControlResponse.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/AbilityInvocationRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityInvocationRuntime.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp
@@ -186,6 +214,17 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorSpawner.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AreaTelegraphActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/relayPrism/RelayPrismContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/relayPrism/RelayPrismAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/echoProtocol/EchoProtocolAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/echoProtocol/EchoProtocolAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/relayPrism/RelayPrismActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileRelayPayload.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileRelayParticipant.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileCaptureVolume.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileRelayPayload.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h
@@ -199,12 +238,26 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/orbitalDrones/OrbitalDronesContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/orbitalDrones/OrbitalDronesAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitalDronesAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/orbitalDrones/OrbitingDroneActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitingDroneActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/executionDrive/ExecutionDriveContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/executionDrive/ExecutionDriveAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/executionDrive/ExecutionDriveAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftVisualActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftVisualActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/hullShock/HullShockContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/hullShock/HullShockAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/hullShock/HullShockAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shieldHarvest/ShieldHarvestContracts.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shieldHarvest/ShieldHarvestAbility.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldHarvest/ShieldHarvestAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseTargetQuery.h
@@ -242,6 +295,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/AbilityPresentationContent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/AbilityPresentationContent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/PresentationProfileRegistry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/orbitalDrones/OrbitalDronesPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/common/AreaTelegraphVisualDefinition.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/gravityAnomaly/GravityAnomalyPresentationIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h
@@ -261,9 +317,18 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/phaseDrift/PhaseDriftPresentationIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/hullShock/HullShockPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/hullShock/HullShockPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/hullShock/HullShockPresentationProfile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/shieldHarvest/ShieldHarvestPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationProfile.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/relayPrism/RelayPrismPresentationIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/relayPrism/RelayPrismPresentationProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/relayPrism/RelayPrismPresentationProfile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisual.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisualRegistry.h
@@ -454,6 +519,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/CombatantTargetQuery.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseTargetQuery.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
@@ -470,8 +536,14 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceShip.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/input/AbilityInputSchema.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityInventory.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadout.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadoutManager.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityInvocationRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp
@@ -483,8 +555,16 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftVisualActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/hullShock/HullShockAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldHarvest/ShieldHarvestAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitalDronesAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitingDroneActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/executionDrive/ExecutionDriveAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/echoProtocol/EchoProtocolAbility.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseVisualActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreVisualActor.cpp
@@ -497,6 +577,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorRegistry.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorSpawner.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileRelayPayload.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamActorBase.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamStrikeActor.cpp
@@ -506,8 +587,12 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/overdriveCore/OverdriveCorePresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/nullPulse/NullPulsePresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/hullShock/HullShockPresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/relayPrism/RelayPrismPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectPresentationBinding.cpp

@@ -43,6 +43,23 @@ namespace sas
 			};
 		}
 
+	public:
+		void SetRuntimeSlot(AbilitySlot slot)
+		{
+			// Level rebuilds start from mBaseDefinition, so keep the effective
+			// binding in both runtime copies until the legacy definition slot is
+			// fully removed from the content model.
+			mBaseDefinition.slot = slot;
+			mDefinition.slot = slot;
+		}
+
+		AbilitySlot GetRuntimeSlot() const
+		{
+			return mDefinition.slot;
+		}
+
+	protected:
+
 		AbilityHandle mHandle;
 		Definition mBaseDefinition;
 		Definition mDefinition;

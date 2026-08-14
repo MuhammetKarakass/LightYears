@@ -113,7 +113,7 @@ namespace ly
 	) const
 	{
 		if (definition.abilityId != AbilityData::PhaseDrift::AbilityId::Basic ||
-			definition.slot != sas::AbilitySlot::Ability3 ||
+			!sas::IsLoadoutAbilitySlot(definition.slot) ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.cooldown <= 0.f ||
@@ -122,7 +122,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Phase Drift requires an Ability3, pressed, one-charge duration definition.";
+					"Phase Drift requires a loadout slot, pressed activation, and one charge.";
 			}
 			return false;
 		}

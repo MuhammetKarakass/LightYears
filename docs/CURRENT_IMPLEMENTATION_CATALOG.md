@@ -1,5 +1,12 @@
 # LightYears — Mevcut Uygulama Kataloğu
 
+> **14 Ağustos 2026 güncellemesi:** Bu katalog çalışma ağacındaki dirty
+> implementation'ı açıklar. Sayısal shipped ability/effect değerleri
+> `LightYearsGame/assets/content/data/*.json` kaynaklıdır; C++ fallback
+> definition'ları behavior, typed actor ve presentation sözleşmesini korur.
+> Varsayılan loadout: Q `GravityAnomaly`, E `RelayPrism`, F `Rocket`, R
+> `OverdriveCore`. Vault için kısa eşlenik: `docs/vault/00 - Runtime Snapshot.md`.
+
 Bu belge, şu anda kaynak kodunda bulunan sistemlerin ve content tanımlarının
 doldurulabilir envanteridir. Bir satırdaki “Mevcut değer” koddan gelir.
 “Hedef / karar” ve “Test sonucu” kolonları ekip tarafından değiştirilebilir.
@@ -35,18 +42,35 @@ Ana matematik açıklamaları için
 | Uygulama başlangıç dünyası | ✅ ArenaTestLevel yükleniyor | LightYearsGame/src/gameFramework/GameApplication.cpp | Başlangıç test arena; normal LevelOne varsayılan boot yolu değil |
 | Ana menüden oyun | 🟡 MainMenuLevel, StartGame ile LevelOne yükler | LightYearsGame/src/level/MainMenuLevel.cpp | Başlangıç dünyası MainMenuLevel olursa erişilir |
 | Oyuncu spawnı | ✅ Player, Ship_Player_Fighter ile spawn olur | LightYearsGame/src/player/Player.cpp | Player ship ID / respawn politikasına göre değiştirilebilir |
-| Başlangıç loadout | ✅ BasicRapidLaser + GravityAnomaly + NullPulse + Dash + OverdriveCore | LightYearsGame/include/gameConfigs/ship/ShipConfig.h; LightYearsGame/src/player/PlayerSpaceShip.cpp | Null Pulse varsayılan Ability2/E grant'idir; InfernoSpray shipped/cataloguedır ancak default grant listesinde değildir |
+| Başlangıç loadout | ✅ BasicRapidLaser + GravityAnomaly + RelayPrism + Rocket + OverdriveCore | `gameplay/ability/loadout/DefaultAbilityLoadout.cpp`; `player/PlayerSpaceShip.cpp` | Runtime binding tanımdaki content slotundan ayrıdır; shipped catalog'daki diğer ability'ler sonradan uygun slota takılabilir |
 | İlk hasar koruması | ✅ Oyuncu 2 sn invulnerable başlar | LightYearsGame/src/player/PlayerSpaceShip.cpp | mInvulnerabilityTime ile değiştirilebilir |
 
 ## 3. Sistem envanteri
 
+### 14 Ağustos 2026 ability runtime kartları
+
+| ID | Durum | Runtime davranışı | Kaynak |
+| --- | --- | --- | --- |
+| `Ability.Defense.ShieldHarvest.Basic` | ✅ | 1.5 s alan sayımı; 700 radius içinde her rakip için 40 temporary overshield; 5 s hold, 100/s decay | JSON; `ability/shieldHarvest/` |
+| `Ability.Offense.HullShock.Basic` | ✅ | Hold-to-charge Electric burst; 300→600 radius, 30 base damage, `MaxHealth×0.30`; shared telegraph radial curve | JSON; `ability/hullShock/` |
+| `Ability.Offense.OrbitalDrones.Basic` | ✅ | 6 s boyunca 4 drone, 500 orbit radius, 18 Kinetic contact damage ve 0.5 s aynı-hedef beklemesi | JSON; `ability/orbitalDrones/` |
+| `Ability.Offense.ExecutionDrive.Basic` | ✅ | +10 AttackPower effect; kill başına +3 stack ve duration refresh; düşük canlı hedefe chase movement | JSON; `ability/executionDrive/` |
+| `Ability.Utility.RelayPrism.Basic` | ✅ | MouseWorld capture volume; uygun ability projectile'i %15 transfer + `AttackPower×0.25` hasarlı 4+Luck clone'a dönüştürür | JSON; `ability/relayPrism/` |
+| `sas::AbilityRuntimeBinding` | ✅ | Tanımın content slotundan bağımsız, current equipment slotunu taşır | `SpaceAbilitySystem/include/abilities/AbilityRuntimeBinding.h` |
+
+Önceki tablolar tarihsel ayrıntı içerebilir. Güncel sayısal değerler için
+`abilities.json`, bu kartlar ve vault [[00 - Runtime Snapshot]] birlikte
+okunmalıdır.
+
 | Sistem | Durum | Çalışan davranış | Kaynak / düzenleme noktası | Denge veya test notu |
 | --- | --- | --- | --- | --- |
-| Ability.Control.NullPulse.Basic | ✅ | Evet, varsayılan Ability2 / E | 11 sn cooldown; Instant; 1 charge; self-centered radius 500 (+200); JSON'da `settings` boş, runtime attribute'ları `attributes` bölümünde | Energy damage bir kez uygulanır; `IsProjectileActor()` işaretli actor'lar temizlenir. Normal/elite/miniboss Stun, boss kısa Stagger/interrupt alır. L1 damage 10, her level +2; cooldown her level -0.25; stun `1.0 + 0.65×(1-exp(-BonusEnergyMax/50))` ile en fazla 1.65 sn; ability level stun/radius/cleanup kuralını değiştirmez; crit yok | [x] Content loader, behavior validation, projectile/persistent actor ayrımı, hasar, Stun/Stagger effect, EnergyMax formülü, typed profile/visual self-cleanup ve CTest |
+| Ability.Control.NullPulse.Basic | ✅ | Varsayılan Ability2/E; 11 sn cooldown, Instant, 1 charge; radius 500 (+200); Energy damage, projectile cleanup ve Stun/Stagger uygular; Stun yeni/aktif ability ve primary fire yürütmesini, outgoing damage ve trigger aksiyonlarını bloklar | `assets/content/data/abilities.json`; `gameplay/ability/nullPulse/`; `presentation/ability/nullPulse/` | [x] Loader, behavior validation, damage/control, projectile ayrımı, EnergyMax scale, typed visual cleanup ve CTest |
+| Ability.Offense.OverdriveCore.Basic | ✅ | Varsayılan Ability4/R; 1 sn launch + 5 sn AttackSpeed boost; 8 homing Kinetic projectile; same-target decay 0.90, CriticalChance-scaled boost ve 2–5 progression | `assets/content/data/abilities.json`; `gameplay/ability/overdriveCore/`; `presentation/ability/overdriveCore/` | [x] Loader, actor/profile validation, homing/damage, gerçek ship/dummy, boost state/effect ve CTest |
+| Ability.Movement.PhaseDrift.Basic | ✅ | Shipped, varsayılan loadout'ta değil; 14 sn cooldown, 6 sn duration; cleanse, damage/collision protection, movement/recovery boost, break-on-action ve typed aura | `assets/content/data/abilities.json`; `gameplay/ability/phaseDrift/`; `presentation/ability/phaseDrift/` | [ ] Loader var; runtime lifecycle, cleanse/protection, collision restoration, break-on-action ve visual cleanup testleri eklenmeli |
 | SpaceAbilitySystem statik kütüphanesi | ✅ Doğrulandı | Attribute, Ability ve Effect generic çekirdeği ile lifecycle kararları `sas` namespace'inde; engine/content/presentation entegrasyonları oyun adaptörlerinde | SpaceAbilitySystem/CMakeLists.txt; SpaceAbilitySystem/include/{attributes,abilities,effects}; SpaceAbilitySystem/src/{attributes,abilities,effects} | Debug/Release `SpaceAbilitySystem.lib`, oyun ve GAS test executable'ları üretildi; CTest iki konfigürasyonda 2/2 geçti |
 | sas::AttributeSystem | ✅ Doğrulandı | `GameplayAttribute`, modifier, scaling rule, lookup map, handle map ve delegate kimlikleri `sas::AttributeId` kullanır; Add, Multiply, Override, min/max clamp ve scaling sırası korunur | SpaceAbilitySystem/include/attributes/AttributeSystem.h; SpaceAbilitySystem/include/attributes/GameplayAttribute.h; SpaceAbilitySystem/src/attributes/AttributeSystem.cpp | Davranış test edilmedi; test çalıştırılmadı |
 | sas::AttributeId | Uygulandı | Numeric gameplay attribute kimliği için string-backed, opaque API; equality, validity ve hash desteği; SAS lookup/delegate/spec mutator yolları ve game loader'ları kullanır | SpaceAbilitySystem/include/attributes/AttributeId.h; SpaceAbilitySystem/include/attributes/GameplayAttribute.h; SpaceAbilitySystem/include/effects/GameplayEffectSpec.h | Lookup API'leri `FindAttribute`, `FindAttributeValue`, `HasAttribute`; test çalıştırılmadı |
-| ly::AttributeIdSchema | Uygulandı | Canonical AttributeId biçimi, legacy `Attribute.` prefix reddi ve namespace sınırı yardımcıları; shipped ID kataloğu tutmaz | LightYearsGame/include/gameplay/attributes/AttributeIdSchema.h | Feature/catalog sahipliği korunur; test çalıştırılmadı |
+| ly::AttributeIdSchema + ability family ownership | ✅ Doğrulandı | Canonical AttributeId biçimi, legacy `Attribute.` prefix reddi ve nokta-segment namespace sınırı; non-primary ability base değerleri ve `Ability.*` modifier/scaling/level target'ları exact content-ID family namespace'inde ve declare edilmiş olmalıdır | LightYearsGame/include/gameplay/attributes/AttributeIdSchema.h; LightYearsGame/src/gameplay/ability/validation/GameAbilityDefinitionValidator.cpp | `Common.*` açık kalır; scaling source ile `Effect.*`/`AbilityActor.*` consumer-owned hedefleri ayrıdır; Configured ve PrimaryFire edge case'leri dahil GasLiteCoreTests geçti |
 | sas::AttributeMath | ✅ Doğrulandı | Crit, luck, armor için doygun üstel eğriler | SpaceAbilitySystem/include/attributes/AttributeMath.h | Rating/cooldown/movement regresyonları core test içinde geçti |
 | Oyun attribute ID kataloğu | Uygulandı | Owner, ship, ortak, weapon, damage, effect, attachment ve ability actor numeric katalog sabitleri `sas::AttributeId`; canonical format `Owner.*`, `Common.*`, `AbilityActor.*` vb. | LightYearsGame/include/gameplay/attributes/AttributeIds.h; gameConfigs/*; gameplay/ability/*Contracts.h | Semantic audit tamamlandı; `CurrentRuntimeValue` semantic runtime key ve `MinCancelDuration` numeric setting olarak ayrık kaldı |
 | Proje geneli gameplay tag sözleşmesi | ✅ | Domain kökleri/biçim doğrulaması ile iki ortak action lock; numeric `Attribute.*` tag biçimi reddedilir, feature leaf'leri yerel kalır | LightYearsGame/include/gameplay/tags/GameplayTagSchema.h; ability/effect/actor/weapon/attachment ve ship progression validation | Attribute API rename tamamlandı; semantic attribute bilgisi schema'ya taşınmadı; test çalıştırılmadı |
@@ -132,11 +156,13 @@ handler ve benzersiz actor ID'si gerektirir.
 | `gameplay/ability/dash/` | DashAbility, DashMovementController, DashMovementMath | Dash'e özgü behavior, hareket kontratı ve evolve parçaları |
 | `gameplay/ability/gravityAnomaly/` | GravityAnomalyAbility, ProjectileActor, FieldActor | Gravity Anomaly validation, cursor delivery, source-scoped field lifecycle ve gelecek evolve parçaları |
 | `gameplay/ability/nullPulse/` | NullPulseAbility, NullPulseTargetQuery, NullPulseVisualActor | Self-centered projectile cleanup, enemy damage/control response ve feature-local pulse presentation |
+| `gameplay/ability/overdriveCore/` | OverdriveCoreAbility, ProjectileActor, VisualActor | Multi-rocket hedef tahsisi, homing projectile, same-target decay, AttackSpeed boost ve presentation cleanup |
+| `gameplay/ability/phaseDrift/` | PhaseDriftAbility, PhaseDriftVisualActor | Cleanse, geçici damage/collision protection, ship runtime modifier'ları, break-on-action ve aura lifecycle |
 | `gameplay/ability/rocket/` | RocketAbility, RocketProjectileActor | Rocket'e özgü validation, projectile delivery, patlama ve gelecek evolve parçaları |
 | `gameplay/ability/shield/` | ShieldAbility | Shield'e özgü behavior |
 | `gameplay/ability/sunBeam/` | SunBeamAbility, actor ve visual sınıfları | SunBeam'e özgü tüm runtime parçaları |
 | `gameplay/ability/content/` | GameAbilityDefinition | SAS-owned temel tipleri kullanan game-owned definition, action payload ve UI metadata |
-| `gameConfigs/ability/` | AbilityActorStructs, AbilityCatalog ve kategoriye ayrılmış aile config'leri | `functional/DashConfig`, `defensive/ShieldConfig`, `offensive/{SunBeam,GravityAnomaly,Rocket,InfernoSpray}Config`; bu config'ler yalnız ID/tag, behavior/action, actor type, presentation ve schema kontratını taşır; sayısal tuning JSON'dadır |
+| `gameConfigs/ability/` | AbilityActorStructs, AbilityCatalog ve kategoriye ayrılmış aile config'leri | `movement/{Dash,PhaseDrift}Config`, `control/{GravityAnomaly,NullPulse}Config`, `defensive/{Shield,ShieldHarvest}Config`, `offensive/{HullShock,SunBeam,Rocket,InfernoSpray,OverdriveCore,OrbitalDrones,ExecutionDrive}Config`; bu config'ler yalnız ID/tag, behavior/action, actor type, presentation ve schema kontratını taşır; sayısal tuning JSON'dadır |
 | `presentation/ability/<family>/` | Stable presentation ID, concrete typed profile ve shipped content registration | Her aile kendi visual/telegraph/explosion paketini sahiplenir; global visual config yok |
 | `presentation/ability/common/` | AreaTelegraphVisualDefinition gibi gerçekten paylaşılan primitive'ler | Benzer alanlar tek başına ortaklaştırma gerekçesi değildir |
 

@@ -43,12 +43,12 @@ namespace ly
      {
      }
      
-     void ArenaLevel::InitializeLevelSystems()
-     {
+	 void ArenaLevel::InitializeLevelSystems()
+	 {
 		 GameLevel::InitializeLevelSystems();
 		 InitializeArena();
-         InitializeArenaCamera();
-         InitializePlayerRespawnSystem();
+		 InitializeArenaCamera();
+		 InitializePlayerRespawnSystem();
      }
 
      void ArenaLevel::Tick(float deltaTime)
@@ -64,7 +64,7 @@ namespace ly
      {
          GameLevel::OnGameStart();
 
-         StartPlayerRespawn();
+		 StartPlayerRespawn();
      }
 
      PlayerRespawnDefinition ArenaLevel::CreatePlayerRespawnDefinition() const

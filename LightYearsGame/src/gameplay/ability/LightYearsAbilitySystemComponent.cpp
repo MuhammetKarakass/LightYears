@@ -63,17 +63,21 @@ namespace ly
 		: mOwner{ owner },
 		mComponentRuntime{
 			InitializeAbilitySystem<GameAbilityDefinition, GameAbility>(MaxPassiveAbilities)
-		}
+		},
+		mAbilityInvocationRuntime{ *this }
 	{
 		sas::AbilityRuntimeSystem<GameAbilityDefinition, GameAbility>::Callbacks callbacks;
 		callbacks.validate =
 			[](const GameAbilityDefinition& definition, std::string* failureReason)
 			{
-				return GameAbilityDefinitionValidator::Validate(
+				LY_GAME_INFO("Ability validate begin: %s", definition.abilityId.c_str());
+				const bool result = GameAbilityDefinitionValidator::Validate(
 					definition,
 					ValidateEffectForRuntime,
 					failureReason
 				);
+				LY_GAME_INFO("Ability validate returned: %s", result ? "valid" : "invalid");
+				return result;
 			};
 		callbacks.create =
 			[this](
@@ -82,6 +86,7 @@ namespace ly
 				std::string* failureReason
 			) -> unique_ptr<GameAbility>
 			{
+				LY_GAME_INFO("Ability create begin: %s", definition.abilityId.c_str());
 				unique_ptr<GameAbilityBehavior> behavior =
 					GameAbilityBehaviorRegistry::Create(definition.behaviorType);
 				if (!behavior)
@@ -98,10 +103,12 @@ namespace ly
 					definition,
 					std::move(behavior)
 				);
+				LY_GAME_INFO("Ability instance constructed: %s", definition.abilityId.c_str());
 				// Scoped progression rules may exist before a content ability is
 				// granted. Materialize their level effect immediately so future
 				// abilities receive the same category-based rule as existing ones.
 				ability->RefreshScopedConfiguration();
+				LY_GAME_INFO("Ability create returned: %s", definition.abilityId.c_str());
 				return ability;
 			};
 		callbacks.cancel = [](GameAbility& ability, sas::AbilityEndReason reason)
@@ -229,6 +236,121 @@ namespace ly
 		}
 	}
 
+	void LightYearsAbilitySystemComponent::SetAbilitySlotInput(
+		sas::AbilitySlot slot,
+		bool inputHeld
+	)
+	{
+		sas::AbilitySystemComponent::SetAbilitySlotInput(slot, inputHeld);
+		mAbilityInvocationRuntime.SetControlInput(slot, inputHeld);
+	}
+
+	void LightYearsAbilitySystemComponent::Tick(float deltaTime)
+	{
+		// Effects are ticked before abilities by the generic runtime. Cancel any
+		// ability that was already stunned on the previous frame, then let the
+		// ability tick guard handle a stun applied during this frame's effect pass.
+		CancelActiveAbilitiesForStun();
+		sas::AbilitySystemComponent::Tick(deltaTime);
+		mAbilityInvocationRuntime.Tick(deltaTime);
+		CancelActiveAbilitiesForStun();
+	}
+
+	void LightYearsAbilitySystemComponent::Clear()
+	{
+		mAbilityInvocationRuntime.Clear();
+		mAbilityUseHistory.Clear();
+		mLifecycleDispatcher.Clear();
+		sas::AbilitySystemComponent::Clear();
+	}
+
+	bool LightYearsAbilitySystemComponent::InvokeRecordedAbility(
+		const AbilityUseRecord& record,
+		const List<sas::AttributeScalingRule>& scalingRules,
+		float outputMultiplier,
+		sas::AbilitySlot controlSlot,
+		bool inputHeld,
+		std::string* failureReason
+	)
+	{
+		return mAbilityInvocationRuntime.Invoke(
+			record,
+			scalingRules,
+			outputMultiplier,
+			controlSlot,
+			inputHeld,
+			failureReason
+		);
+	}
+
+	AbilityLifecycleObserverHandle
+		LightYearsAbilitySystemComponent::RegisterAbilityLifecycleObserver(
+			AbilityLifecycleObserverFilter filter,
+			AbilityLifecycleObserver callback,
+			int priority
+		)
+	{
+		return mLifecycleDispatcher.RegisterObserver(
+			std::move(filter),
+			std::move(callback),
+			priority
+		);
+	}
+
+	bool LightYearsAbilitySystemComponent::UnregisterAbilityLifecycleObserver(
+		AbilityLifecycleObserverHandle handle
+	)
+	{
+		return mLifecycleDispatcher.UnregisterObserver(handle);
+	}
+
+	AbilityActivationGuardHandle
+		LightYearsAbilitySystemComponent::RegisterAbilityActivationGuard(
+			AbilityActivationGuard callback,
+			int priority
+		)
+	{
+		return mLifecycleDispatcher.RegisterActivationGuard(
+			std::move(callback),
+			priority
+		);
+	}
+
+	bool LightYearsAbilitySystemComponent::UnregisterAbilityActivationGuard(
+		AbilityActivationGuardHandle handle
+	)
+	{
+		return mLifecycleDispatcher.UnregisterActivationGuard(handle);
+	}
+
+	bool LightYearsAbilitySystemComponent::EvaluateAbilityActivation(
+		const sas::AbilityLifecycleEvent& event
+	) const
+	{
+		return mLifecycleDispatcher.CanActivate(event);
+	}
+
+	void LightYearsAbilitySystemComponent::CancelActiveAbilitiesForStun()
+	{
+		if (!HasOwnedTag(GameplayTags::State::Effect::Control::Stunned))
+		{
+			return;
+		}
+
+		for (const sas::AbilityRuntimeSnapshot& snapshot : BuildAbilitySnapshots())
+		{
+			if (!snapshot.active)
+			{
+				continue;
+			}
+
+			if (GameAbility* ability = GetAbility(snapshot.handle))
+			{
+				ability->Cancel(sas::AbilityEndReason::Interrupted);
+			}
+		}
+	}
+
 	std::size_t LightYearsAbilitySystemComponent::AddScopedAbilityRule(
 		ScopedAbilityRule rule
 	)
@@ -342,11 +464,17 @@ namespace ly
 		const sas::AbilityEvent& event
 	)
 	{
+		if (HasOwnedTag(GameplayTags::State::Effect::Control::Stunned))
+		{
+			return;
+		}
+
 		mComponentRuntime.HandleGameplayEvent(
 			event,
 			GetOwnedTags(),
 			[](GameAbility& ability, const sas::AbilityEvent& abilityEvent)
 			{
+				ability.HandleGameplayEvent(abilityEvent);
 				ability.HandleAttachmentEvent(abilityEvent);
 			},
 			[this](
@@ -379,6 +507,17 @@ namespace ly
 		const sas::AbilityLifecycleEvent& event
 	)
 	{
+		// History is populated before observers run so an observer can consume the
+		// newly recorded action immediately. Echo/system invocations are excluded
+		// by origin, preventing recursive history pollution.
+		RecordAbilityActivation(event);
+		mLifecycleDispatcher.Publish(event);
+
+		if (HasOwnedTag(GameplayTags::State::Effect::Control::Stunned))
+		{
+			return;
+		}
+
 		mComponentRuntime.HandleGameplayEvent(
 			event,
 			GetOwnedTags(),
@@ -402,5 +541,54 @@ namespace ly
 				);
 			}
 		);
+	}
+
+	void LightYearsAbilitySystemComponent::RecordAbilityActivation(
+		const sas::AbilityLifecycleEvent& event
+	)
+	{
+		if (event.eventTag != GameplayTags::Event::Ability::Activated ||
+			event.activationOrigin != sas::AbilityActivationOrigin::NormalInput ||
+			!event.abilityHandle.IsValid())
+		{
+			return;
+		}
+
+		const GameAbility* ability = GetAbility(event.abilityHandle);
+		if (!ability)
+		{
+			return;
+		}
+
+		const GameAbilityDefinition& definition = ability->GetDefinition();
+		if (!definition.recordInAbilityHistory ||
+			!sas::IsLoadoutAbilitySlot(definition.slot) ||
+			definition.activationPolicy == sas::AbilityActivationPolicy::Passive ||
+			definition.activationPolicy == sas::AbilityActivationPolicy::GameplayEvent)
+		{
+			return;
+		}
+
+		AbilityUseRecord record;
+		record.abilityHandle = event.abilityHandle;
+		record.abilityId = event.abilityId;
+		record.slot = definition.slot;
+		record.level = ability->GetLevel();
+		record.maxLevel = ability->GetMaxLevel();
+		record.abilityTags = definition.abilityTags;
+		record.unlockedUpgradeIds = definition.unlockedUpgradeIds;
+		record.activationOrigin = event.activationOrigin;
+		for (const sas::AttributeScalingRule& rule : definition.scalingRules)
+		{
+			record.scalingChannels.push_back(
+				AbilityScalingChannel{
+					rule.targetAttributeId,
+					rule.sourceAttributeId,
+					rule.operation,
+					rule.coefficient
+				}
+			);
+		}
+		mAbilityUseHistory.Record(std::move(record));
 	}
 }

@@ -3,6 +3,7 @@
 #include "framework/Core.h"
 #include "framework/Delegate.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
+#include "gameplay/input/AbilityInputSchema.h"
 #include <string>
 
 namespace ly
@@ -45,7 +46,9 @@ namespace ly
 		AbilitySlotUIData& data = GetOrCreateSlotData(slot);
 		data.displayName = definition.displayName;
 		data.iconPath = definition.iconPath;
-		data.inputLabel = definition.inputLabel;
+		// The key label belongs to the shared input schema, not to ability
+		// content. This remains correct after a runtime slot move.
+		data.inputLabel = AbilityInputSchema::GetLabel(slot);
 		data.accentColor = definition.accentColor;
 		data.isAvailable = true;
 		onSlotDataChanged.Broadcast(slot);

@@ -238,8 +238,9 @@ namespace ly
 
 		payload.shieldDamageMultiplier = std::max(0.f, payload.shieldDamageMultiplier);
 		payload.shieldRegenerationDelay = std::max(0.f, payload.shieldRegenerationDelay);
-		// The three elemental effects are intentionally four-hit payoffs.  Their
-		// intermediate stacks remain visible, but do not alter combat until full.
+		// Ordinary weapon hits usually contribute one elemental stack, while an
+		// ability may intentionally contribute several stacks in one discharge.
+		// Keep the generic payload bounded by the effect's configured capacity.
 		payload.armorPenetration = std::clamp(payload.armorPenetration, 0.f, 0.25f);
 		payload.igniteStacks = std::clamp(payload.igniteStacks, 0, 1);
 		payload.burnDamagePerSecond = std::clamp(payload.burnDamagePerSecond, 0.f, 1.f);
@@ -250,7 +251,6 @@ namespace ly
 		payload.cryoBuildupDuration = std::max(0.f, payload.cryoBuildupDuration);
 		payload.cryoSlowPercent = std::clamp(payload.cryoSlowPercent, 0.f, 1.f);
 		payload.cryoSlowDuration = std::max(0.f, payload.cryoSlowDuration);
-		payload.electricStacks = std::clamp(payload.electricStacks, 0, 1);
 		payload.electricDamageTakenMultiplierPerStack = std::clamp(
 			payload.electricDamageTakenMultiplierPerStack,
 			0.f,
@@ -258,6 +258,11 @@ namespace ly
 		);
 		payload.electricDuration = std::max(0.f, payload.electricDuration);
 		payload.electricMaxStacks = std::max(1, payload.electricMaxStacks);
+		payload.electricStacks = std::clamp(
+			payload.electricStacks,
+			0,
+			payload.electricMaxStacks
+		);
 		return payload;
 	}
 

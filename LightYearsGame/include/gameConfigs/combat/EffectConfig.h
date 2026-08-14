@@ -6,9 +6,10 @@
 
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
+#include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/effects/EffectBehaviorKeys.h"
@@ -296,6 +297,25 @@ namespace EffectData
 		return definition;
 	}();
 
+	// Execution Drive replaces this source-scoped effect whenever its kill
+	// streak changes. The ability supplies the current AttackPower magnitude and
+	// the five-second duration through GameplayEffectSpec.
+	inline const sas::GameplayEffectDefinition ExecutionDriveAttackPowerEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::ExecutionDrive::Effect::AttackPowerId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.sourceScopedApplication = true;
+		definition.sourceParameterized = true;
+		definition.grantedTags = {
+			ly::GameplayTags::State::Effect::Offense::ExecutionDrive::AttackPower
+		};
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Offense.ExecutionDrive.AttackPower";
+		return definition;
+	}();
+
 	// Phase Drift owns the actual movement/resource multipliers in the reusable
 	// ship runtime modifier set. These policy effects provide source-scoped
 	// lifecycle records so the ability can track and remove only its own effects.
@@ -392,6 +412,7 @@ namespace EffectData
 			&MovementSlowEffect,
 			&MovementSlowImmunityEffect,
 			&OverdriveCoreAttackSpeedBoostEffect,
+			&ExecutionDriveAttackPowerEffect,
 			&PhaseDriftMovementBoostEffect,
 			&PhaseDriftShieldRecoveryEffect,
 			&PhaseDriftAfterburnerRecoveryEffect,

@@ -69,9 +69,21 @@ namespace ly
 	void SpaceShip::Tick(float deltaTime)
 	{
 		Actor::Tick(deltaTime);
+		sf::Vector2f currentMovementDirection = GetVelocity();
+		const float currentMovementLength = GetVectorLength(currentMovementDirection);
+		if (currentMovementLength > 0.001f)
+		{
+			currentMovementDirection /= currentMovementLength;
+		}
+		else
+		{
+			currentMovementDirection = { 0.f, 0.f };
+		}
 		mMovementComponent.Tick(
 			deltaTime,
-			GetMovementSpeedCapMultiplier() * GetMovementSpeedMultiplier()
+			GetMovementSpeedCapMultiplier() *
+			GetMovementSpeedMultiplier() *
+			GetConditionalMovementSpeedMultiplier(currentMovementDirection)
 		);
 		UpdateBlink(deltaTime);      
 		mCombatRuntime.Tick(deltaTime);
@@ -152,6 +164,10 @@ namespace ly
 			);
 		}
 		const bool allowRecharge = !IsAfterburnerRechargeBlocked();
+		// Temporary overshield decay is independent from normal recharge. It is
+		// ticked first so the regular shield rules can resume immediately after
+		// the excess reaches the ship's normal maximum.
+		mShieldComponent.TickTemporaryOvershields(deltaTime);
 		mShieldComponent.Tick(
 			deltaTime,
 			std::max(0.f, shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen)) *
@@ -303,6 +319,8 @@ namespace ly
 			mHealthComponent.ChangeHealth(-context.remainingDamage);
 			const float healthDamage = std::max(0.f, healthBeforeDamage - mHealthComponent.GetHealth());
 			context.appliedDamage = shieldAbsorbedDamage + healthDamage;
+			context.targetWasKilled = healthBeforeDamage > 0.f &&
+				mHealthComponent.GetHealth() <= 0.f;
 		}
 
 		mCombatRuntime.NotifyDamageResolved(context);

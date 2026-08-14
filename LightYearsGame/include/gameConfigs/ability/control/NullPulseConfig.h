@@ -29,7 +29,6 @@ namespace AbilityData::Definitions
 		// path did not exist and caused the HUD image widget to receive a
 		// missing texture during startup.
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
-		definition.inputLabel = "E";
 		definition.accentColor = sf::Color{ 100, 225, 255, 255 };
 		definition.damageTags = { ly::DamageTypeSchema::Energy };
 		definition.attachmentCapabilities = {

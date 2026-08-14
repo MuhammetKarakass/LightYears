@@ -13,7 +13,13 @@ namespace ly
 		InfernoSpray,
 		OverdriveCore,
 		NullPulse,
-		PhaseDrift
+		PhaseDrift,
+		ShieldHarvest,
+		HullShock,
+		OrbitalDrones,
+		ExecutionDrive,
+		RelayPrism,
+		EchoProtocol
 	};
 
 	inline const char* ToString(AbilityBehaviorType type)
@@ -30,6 +36,12 @@ namespace ly
 		case AbilityBehaviorType::OverdriveCore: return "OverdriveCore";
 		case AbilityBehaviorType::NullPulse: return "NullPulse";
 		case AbilityBehaviorType::PhaseDrift: return "PhaseDrift";
+		case AbilityBehaviorType::ShieldHarvest: return "ShieldHarvest";
+		case AbilityBehaviorType::HullShock: return "HullShock";
+		case AbilityBehaviorType::OrbitalDrones: return "OrbitalDrones";
+		case AbilityBehaviorType::ExecutionDrive: return "ExecutionDrive";
+		case AbilityBehaviorType::RelayPrism: return "RelayPrism";
+		case AbilityBehaviorType::EchoProtocol: return "EchoProtocol";
 		}
 		return "Unknown";
 	}

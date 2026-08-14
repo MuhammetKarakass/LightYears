@@ -5,12 +5,18 @@
 
 #include "gameplay/tags/ability/DashTags.h"
 #include "gameplay/tags/ability/GravityAnomalyTags.h"
+#include "gameplay/tags/ability/HullShockTags.h"
 #include "gameplay/tags/ability/InfernoSprayTags.h"
 #include "gameplay/tags/ability/OverdriveCoreTags.h"
 #include "gameplay/tags/ability/NullPulseTags.h"
+#include "gameplay/tags/ability/OrbitalDronesTags.h"
+#include "gameplay/tags/ability/ExecutionDriveTags.h"
 #include "gameplay/tags/ability/PhaseDriftTags.h"
+#include "gameplay/tags/ability/RelayPrismTags.h"
+#include "gameplay/tags/ability/EchoProtocolTags.h"
 #include "gameplay/tags/ability/RocketTags.h"
 #include "gameplay/tags/ability/ShieldTags.h"
+#include "gameplay/tags/ability/ShieldHarvestTags.h"
 #include "gameplay/tags/ability/SunBeamTags.h"
 
 namespace ly::GameplayTags
@@ -102,11 +108,12 @@ namespace ly::GameplayTags
 			}
 		}
 
-		namespace Combat
+			namespace Combat
 		{
 			inline const GameplayTag Root{ "Event.Combat" };
 			inline const GameplayTag DamageReceived{ "Event.Combat.DamageReceived" };
 			inline const GameplayTag DamageDealt{ "Event.Combat.DamageDealt" };
+			inline const GameplayTag KillConfirmed{ "Event.Combat.KillConfirmed" };
 		}
 	}
 

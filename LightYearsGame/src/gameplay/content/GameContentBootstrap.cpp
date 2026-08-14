@@ -5,10 +5,11 @@
 #include "effects/GameplayEffectDefinitionValidation.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/combat/EffectConfig.h"
-#include "gameConfigs/ability/offensive/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
+#include "gameConfigs/ability/utility/RelayPrismConfig.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/validation/GameAbilityDefinitionValidator.h"
@@ -21,10 +22,17 @@
 #include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreAbility.h"
 #include "gameplay/ability/nullPulse/NullPulseAbility.h"
+#include "gameplay/ability/orbitalDrones/OrbitalDronesAbility.h"
+#include "gameplay/ability/executionDrive/ExecutionDriveAbility.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftAbility.h"
+#include "gameplay/ability/hullShock/HullShockAbility.h"
+#include "gameplay/ability/shieldHarvest/ShieldHarvestAbility.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h"
 #include "gameplay/ability/rocket/RocketAbility.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
+#include "gameplay/ability/relayPrism/RelayPrismAbility.h"
+#include "gameplay/ability/relayPrism/RelayPrismActor.h"
+#include "gameplay/ability/echoProtocol/EchoProtocolAbility.h"
 #include "gameplay/ability/shield/ShieldAbility.h"
 #include "gameplay/ability/sunBeam/SunBeamAbility.h"
 #include "gameplay/ability/sunBeam/SunBeamStrikeActor.h"
@@ -180,6 +188,30 @@ namespace ly
 				GameAbilityBehaviorRegistry::Register(
 					AbilityBehaviorType::PhaseDrift,
 					[] { return std::make_unique<PhaseDriftAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::ShieldHarvest,
+					[] { return std::make_unique<ShieldHarvestAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::HullShock,
+					[] { return std::make_unique<HullShockAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::OrbitalDrones,
+					[] { return std::make_unique<OrbitalDronesAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::ExecutionDrive,
+					[] { return std::make_unique<ExecutionDriveAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::RelayPrism,
+					[] { return std::make_unique<RelayPrismAbility>(); }
+				) &&
+				GameAbilityBehaviorRegistry::Register(
+					AbilityBehaviorType::EchoProtocol,
+					[] { return std::make_unique<EchoProtocolAbility>(); }
 				);
 
 			const bool abilityActorsRegistered =
@@ -188,7 +220,8 @@ namespace ly
 				RegisterRocketProjectileActorType() &&
 				RegisterOverdriveCoreProjectileActorType() &&
 				RegisterSunBeamStrikeActorType() &&
-				RegisterInfernoSprayActorType();
+				RegisterInfernoSprayActorType() &&
+				RegisterRelayPrismActorType();
 			const bool effectsRegistered =
 				RegisterGravityAnomalyEffectVisuals() &&
 				RegisterShieldVisuals() &&

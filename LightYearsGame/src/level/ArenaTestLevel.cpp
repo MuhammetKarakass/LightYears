@@ -44,10 +44,10 @@ namespace ly
 	void ArenaTestLevel::OnGameStart()
 	{
 		ArenaLevel::OnGameStart();
-
 		ShipDefinition dummyDefinition = ShipData::Ship_Enemy_Hexagon;
 		dummyDefinition.health = 99999.f;
 		dummyDefinition.speed = { 0.f, 0.f };
+		dummyDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
 
 		const sf::FloatRect& arenaBounds = GetArenaDefinition().legalBounds;
 		const sf::Vector2f arenaCenter{
@@ -55,11 +55,26 @@ namespace ly
 			arenaBounds.position.y + arenaBounds.size.y * 0.5f
 		};
 
-		if (auto dummy = SpawnActor<DummyEnemy>(dummyDefinition).lock())
+		const auto spawnDummy = [&](float horizontalOffset)
 		{
-			dummy->SetActorLocation(arenaCenter);
-			dummy->SetVelocity({ 0.f, 0.f });
-		}
+			const sf::Vector2f dummyLocation{
+				arenaCenter.x + horizontalOffset,
+				arenaCenter.y + 450.f
+			};
+			if (auto dummy = SpawnActor<DummyEnemy>(dummyDefinition).lock())
+			{
+				dummy->SetActorLocation(dummyLocation);
+				dummy->SetVelocity({ 0.f, 0.f });
+				dummy->SetActorRotation(0.f);
+			}
+		};
+
+		// Four stationary targets in one evenly spaced horizontal line, all
+		// facing upward toward the player side of the arena.
+		spawnDummy(-900.f);
+		spawnDummy(-300.f);
+		spawnDummy(300.f);
+		spawnDummy(900.f);
 
 		AudioManager::GetAudioManager().FadeToMusic("SpaceShooterRedux/Musics/cosmic_reverie.ogg",
 			AudioType::Music,

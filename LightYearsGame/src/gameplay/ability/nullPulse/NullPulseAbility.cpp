@@ -135,7 +135,7 @@ namespace ly
 	) const
 	{
 		if (definition.abilityId != AbilityData::NullPulse::AbilityId::Basic ||
-			definition.slot != sas::AbilitySlot::Ability2 ||
+			!sas::IsLoadoutAbilitySlot(definition.slot) ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Instant ||
 			definition.maxCharges != 1 || definition.cooldown <= 0.f ||
@@ -144,7 +144,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Null Pulse requires an Ability2, pressed, one-charge instant definition.";
+					"Null Pulse requires a loadout slot, pressed activation, and one charge.";
 			}
 			return false;
 		}

@@ -2,6 +2,7 @@
 
 #include "abilities/AbilityCollection.h"
 #include "abilities/AbilityGrantRules.h"
+#include "abilities/AbilityRuntimeBinding.h"
 #include "abilities/AbilityRuntimeSnapshot.h"
 
 #include <cstddef>
@@ -57,6 +58,138 @@ namespace sas
 		AbilityHandle GrantAbility(
 			const Definition& definition,
 			std::string* failureReason = nullptr
+		)
+		{
+			// Compatibility path for existing callers. New runtime loadout code
+			// must pass an explicit binding instead of relying on content defaults.
+			return GrantAbility(
+				definition,
+				AbilityRuntimeBinding{ definition.slot },
+				failureReason
+			);
+		}
+
+		AbilityHandle GrantAbility(
+			const Definition& definition,
+			AbilityRuntimeBinding binding,
+			std::string* failureReason = nullptr
+		)
+		{
+			if (!IsValidRuntimeBinding(definition, binding, failureReason))
+			{
+				return {};
+			}
+			// The runtime instance receives a bound copy. The catalog definition
+			// remains immutable, while existing behavior code can still read the
+			// effective slot from its runtime definition during this migration.
+			Definition boundDefinition = definition;
+			boundDefinition.slot = binding.slot;
+			return GrantBoundAbility(boundDefinition, failureReason);
+		}
+
+		bool RebindAbility(
+			AbilityHandle handle,
+			AbilityRuntimeBinding binding,
+			std::string* failureReason = nullptr
+		)
+		{
+			Instance* ability = mAbilities.Find(handle);
+			if (!ability)
+			{
+				if (failureReason)
+				{
+					*failureReason = "Cannot rebind an unknown ability handle.";
+				}
+				return false;
+			}
+
+			const AbilitySlot currentSlot = ability->GetDefinition().slot;
+			if (currentSlot == binding.slot)
+			{
+				return true;
+			}
+			if (!IsLoadoutAbilitySlot(currentSlot) ||
+				!IsLoadoutAbilitySlot(binding.slot))
+			{
+				if (failureReason)
+				{
+					*failureReason =
+						"Only abilities already bound to Ability1 through Ability4 can be rebound.";
+				}
+				return false;
+			}
+
+			// Validation receives the same effective definition that the instance
+			// will use after the rebind. This keeps rebinds subject to the exact
+			// same content and behavior constraints as fresh grants, before an
+			// occupied target slot is modified.
+			Definition reboundDefinition = ability->GetDefinition();
+			reboundDefinition.slot = binding.slot;
+			if (mCallbacks.validate &&
+				!mCallbacks.validate(reboundDefinition, failureReason))
+			{
+				return false;
+			}
+
+			const AbilityHandle occupyingHandle = mAbilities.FindHandle(binding.slot);
+			if (occupyingHandle.IsValid() && !(occupyingHandle == handle))
+			{
+				RemoveAbility(occupyingHandle, AbilityEndReason::Cancelled);
+			}
+
+			ability = mAbilities.Find(handle);
+			if (!ability || !mAbilities.Rebind(handle, binding.slot))
+			{
+				if (failureReason)
+				{
+					*failureReason = "Ability collection rejected the new runtime binding.";
+				}
+				return false;
+			}
+			ability->SetRuntimeSlot(binding.slot);
+			if (mCallbacks.changed) mCallbacks.changed(handle);
+			return true;
+		}
+
+	private:
+		static bool IsValidRuntimeBinding(
+			const Definition& definition,
+			AbilityRuntimeBinding binding,
+			std::string* failureReason
+		)
+		{
+			if (definition.slot == AbilitySlot::PrimaryFire ||
+				definition.slot == AbilitySlot::None)
+			{
+				if (definition.slot == binding.slot)
+				{
+					return true;
+				}
+				if (failureReason)
+				{
+					*failureReason = definition.slot == AbilitySlot::PrimaryFire
+						? "PrimaryFire is reserved and cannot be assigned to a loadout slot."
+						: "Passive abilities cannot be assigned to a loadout slot.";
+				}
+				return false;
+			}
+
+			if (IsLoadoutAbilitySlot(definition.slot) &&
+				IsLoadoutAbilitySlot(binding.slot))
+			{
+				return true;
+			}
+			if (failureReason)
+			{
+				*failureReason =
+					"Loadout abilities must be assigned to Ability1 through Ability4.";
+			}
+			return false;
+		}
+
+		AbilityHandle GrantBoundAbility(
+			const Definition& definition,
+			std::string* failureReason
 		)
 		{
 			if (mCallbacks.validate &&
@@ -145,6 +278,8 @@ namespace sas
 			if (mCallbacks.changed) mCallbacks.changed(handle);
 			return handle;
 		}
+
+	public:
 
 		bool RemoveAbility(
 			AbilityHandle handle,
@@ -287,7 +422,6 @@ namespace sas
 			return snapshots;
 		}
 
-	private:
 		bool IsGrantMutationBlocked(const Definition& definition) const
 		{
 			const bool slotBlocked =

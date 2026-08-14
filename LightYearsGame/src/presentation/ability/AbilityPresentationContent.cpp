@@ -5,8 +5,12 @@
 #include "presentation/ability/rocket/RocketPresentationProfile.h"
 #include "presentation/ability/overdriveCore/OverdriveCorePresentationProfile.h"
 #include "presentation/ability/nullPulse/NullPulsePresentationProfile.h"
+#include "presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.h"
 #include "presentation/ability/phaseDrift/PhaseDriftPresentationProfile.h"
+#include "presentation/ability/hullShock/HullShockPresentationProfile.h"
+#include "presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
+#include "presentation/ability/relayPrism/RelayPrismPresentationProfile.h"
 
 namespace ly
 {
@@ -17,9 +21,13 @@ namespace ly
 			RegisterRocketPresentationProfiles() &&
 			RegisterOverdriveCorePresentationProfiles() &&
 			RegisterNullPulsePresentationProfiles() &&
+			RegisterOrbitalDronesPresentationProfiles() &&
 			RegisterPhaseDriftPresentationProfiles() &&
+			RegisterShieldHarvestPresentationProfiles() &&
+			RegisterHullShockPresentationProfiles() &&
 			RegisterSunBeamPresentationProfiles() &&
-			RegisterInfernoSprayPresentationProfiles();
+			RegisterInfernoSprayPresentationProfiles() &&
+			RegisterRelayPrismPresentationProfiles();
 		return registered;
 	}
 }

@@ -28,6 +28,10 @@ namespace ly
 		void Destroy() override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
+		bool BuildRelaySnapshot(ProjectileRelaySnapshot& snapshot) const override;
+		weak_ptr<AbilityWorldActor> SpawnRelayClone(
+			const ProjectileRelayCloneRequest& request
+		) const override;
 
 	private:
 		void Move(float deltaTime);

@@ -64,9 +64,38 @@ namespace sas
 			);
 		}
 
+		template <typename Definition>
+		AbilityHandle GrantAbility(
+			const Definition& definition,
+			AbilitySlot targetSlot,
+			std::string* failureReason = nullptr
+		)
+		{
+			if (!mAbilityRuntime ||
+				mAbilityRuntime->GetDefinitionType() != typeid(Definition))
+			{
+				if (failureReason)
+				{
+					*failureReason =
+						"Ability system component has no compatible ability runtime.";
+				}
+				return {};
+			}
+			return mAbilityRuntime->GrantAbilityUntyped(
+				&definition,
+				AbilityRuntimeBinding{ targetSlot },
+				failureReason
+			);
+		}
+
 		bool RemoveAbility(
 			AbilityHandle handle,
 			AbilityEndReason reason = AbilityEndReason::Cancelled
+		);
+		bool RebindAbility(
+			AbilityHandle handle,
+			AbilitySlot targetSlot,
+			std::string* failureReason = nullptr
 		);
 		void ClearAbilitySlot(AbilitySlot slot);
 		void SetAbilitySlotInput(AbilitySlot slot, bool inputHeld);

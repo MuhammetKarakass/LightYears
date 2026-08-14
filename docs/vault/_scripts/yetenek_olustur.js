@@ -2,12 +2,13 @@
 // Templater ayarlarinda User scripts folder olarak _scripts klasorunu secin.
 
 module.exports = async function (tp) {
-  const categories = ["passive", "offensive", "defensive", "functional"];
+  const categories = ["passive", "offensive", "defensive", "movement", "control", "utility"];
   const categoryLabels = {
     passive: "Passive",
     offensive: "Offensive",
     defensive: "Defensive",
-    functional: "Functional",
+    movement: "Movement",
+    control: "Control",
   };
   const statuses = ["planned", "design", "implemented", "tested", "cancelled"];
 

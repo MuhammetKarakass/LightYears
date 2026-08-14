@@ -1,6 +1,7 @@
 #pragma once
 
 #include "abilities/AbilityPolicies.h"
+#include "abilities/AbilityHandle.h"
 #include "content/ContentId.h"
 #include "framework/Core.h"
 
@@ -82,7 +83,12 @@ namespace sas
 	// Internal behavior flow continues to use Activate/End/Cancel callbacks.
 	struct AbilityLifecycleEvent final : AbilityEvent
 	{
+		AbilityHandle abilityHandle;
 		ContentId abilityId;
+		AbilitySlot slot = AbilitySlot::None;
+		int abilityLevel = 1;
+		int abilityMaxLevel = 1;
+		AbilityActivationOrigin activationOrigin = AbilityActivationOrigin::NormalInput;
 		// Semantic tags describe the source ability (category, family and other
 		// queryable capabilities). The event kind remains generic; consumers do
 		// not need one event tag per ability.

@@ -4,6 +4,7 @@
 #include "player/Player.h"
 #include "player/PlayerSpaceShip.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/input/AbilityInputSchema.h"
 #include <cstdio>
 
 namespace ly
@@ -123,7 +124,10 @@ namespace ly
 				iconLocked->SetVisibility(true);
 			}
 
-			auto inputLabel = hud->AddWidget<TextWidget>(definition.inputLabel, "SpaceShooterRedux/Bonus/OrbitronBlack.ttf");
+			auto inputLabel = hud->AddWidget<TextWidget>(
+				AbilityInputSchema::GetLabel(slot),
+				"SpaceShooterRedux/Bonus/OrbitronBlack.ttf"
+			);
 			if (auto labelLocked = inputLabel.lock())
 			{
 				labelLocked->SetTextSize(14);

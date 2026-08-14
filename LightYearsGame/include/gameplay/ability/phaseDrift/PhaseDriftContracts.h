@@ -9,10 +9,10 @@ namespace AbilityData::PhaseDrift
 {
 	struct AbilityId
 	{
-		inline static constexpr char Basic[] = "Ability.Defense.PhaseDrift.Basic";
+		inline static constexpr char Basic[] = "Ability.Movement.PhaseDrift.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityDefense };
+	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityMovement };
 	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.PhaseDrift" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::PhaseDrift };
 
@@ -44,28 +44,28 @@ namespace AbilityData::PhaseDrift
 	struct Attribute
 	{
 		inline static const sas::AttributeId MaximumMobilityDurationBonus{
-			"Ability.Defense.PhaseDrift.MaximumMobilityDurationBonus"
+			"Ability.Movement.PhaseDrift.MaximumMobilityDurationBonus"
 		};
 		inline static const sas::AttributeId MobilityScale{
-			"Ability.Defense.PhaseDrift.MobilityScale"
+			"Ability.Movement.PhaseDrift.MobilityScale"
 		};
 		inline static const sas::AttributeId MovementSpeedBonus{
-			"Ability.Defense.PhaseDrift.MovementSpeedBonus"
+			"Ability.Movement.PhaseDrift.MovementSpeedBonus"
 		};
 		inline static const sas::AttributeId ShieldRegenBonus{
-			"Ability.Defense.PhaseDrift.ShieldRegenBonus"
+			"Ability.Movement.PhaseDrift.ShieldRegenBonus"
 		};
 		inline static const sas::AttributeId AfterburnerRegenBonus{
-			"Ability.Defense.PhaseDrift.AfterburnerRegenBonus"
+			"Ability.Movement.PhaseDrift.AfterburnerRegenBonus"
 		};
 		inline static const sas::AttributeId EnergyScale{
-			"Ability.Defense.PhaseDrift.EnergyScale"
+			"Ability.Movement.PhaseDrift.EnergyScale"
 		};
 		inline static const sas::AttributeId MaximumEnergyShieldBonus{
-			"Ability.Defense.PhaseDrift.MaximumEnergyShieldBonus"
+			"Ability.Movement.PhaseDrift.MaximumEnergyShieldBonus"
 		};
 		inline static const sas::AttributeId MaximumEnergyAfterburnerBonus{
-			"Ability.Defense.PhaseDrift.MaximumEnergyAfterburnerBonus"
+			"Ability.Movement.PhaseDrift.MaximumEnergyAfterburnerBonus"
 		};
 	};
 

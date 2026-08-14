@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string_view>
 
 namespace ly
 {
@@ -45,30 +46,85 @@ namespace ly
 			return true;
 		}
 
+		bool ValidateAbilityAttributeTarget(
+			const GameAbilityDefinition& ability,
+			std::string_view familyNamespace,
+			const sas::AttributeId& targetAttributeId,
+			std::string* failureReason
+		)
+		{
+			if (!ValidateAttributeId(targetAttributeId, failureReason))
+			{
+				return false;
+			}
+
+			// Only Ability.* targets are owned by an ability definition. Other
+			// domains (for example Owner.*, Effect.*, and AbilityActor.*) retain
+			// their existing consumer-specific validation contracts.
+			if (!AttributeIdSchema::IsInNamespace(targetAttributeId, "Ability"))
+			{
+				return true;
+			}
+
+			if (familyNamespace.empty() ||
+				!AttributeIdSchema::IsInNamespace(targetAttributeId, familyNamespace))
+			{
+				return Fail(
+					failureReason,
+					"Ability attribute targets must belong to the family encoded in the ability ID."
+				);
+			}
+
+			if (!sas::FindAttribute(ability.attributes, targetAttributeId))
+			{
+				return Fail(
+					failureReason,
+					"Ability attribute targets must be declared in the ability attributes list."
+				);
+			}
+			return true;
+		}
+
+		bool ValidateAbilityAttributeModifiers(
+			const GameAbilityDefinition& ability,
+			std::string_view familyNamespace,
+			const List<sas::AttributeModifier>& modifiers,
+			std::string* failureReason
+		)
+		{
+			for (const sas::AttributeModifier& modifier : modifiers)
+			{
+				if (!ValidateAbilityAttributeTarget(
+					ability,
+					familyNamespace,
+					modifier.attributeId,
+					failureReason
+				))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
 		bool ValidateScalingRules(
 			const GameAbilityDefinition& ability,
+			std::string_view familyNamespace,
 			const List<sas::AttributeScalingRule>& scalingRules,
 			std::string* failureReason
 		)
 		{
 			for (const sas::AttributeScalingRule& rule : scalingRules)
 			{
-				if (!ValidateAttributeId(rule.targetAttributeId, failureReason) ||
+				if (!ValidateAbilityAttributeTarget(
+					ability,
+					familyNamespace,
+					rule.targetAttributeId,
+					failureReason
+				) ||
 					!ValidateAttributeId(rule.sourceAttributeId, failureReason))
 				{
 					return false;
-				}
-				// A feature-local Ability.* target must be declared by the
-				// ability itself. Common.* targets may belong to an actor,
-				// effect, or this ability-scoped list and therefore remain
-				// open to the existing consumer contracts.
-				if (AttributeIdSchema::IsInNamespace(rule.targetAttributeId, "Ability") &&
-					!sas::FindAttribute(ability.attributes, rule.targetAttributeId))
-				{
-					return Fail(
-						failureReason,
-						"Ability scaling target must be declared in the ability attributes list."
-					);
 				}
 			}
 			return true;
@@ -76,6 +132,7 @@ namespace ly
 
 		bool ValidateAbilityScopedAttributes(
 			const GameAbilityDefinition& ability,
+			std::string_view familyNamespace,
 			std::string* failureReason
 		)
 		{
@@ -90,15 +147,13 @@ namespace ly
 					attribute.id,
 					"Common"
 				);
-				const bool isAbilityAttribute = AttributeIdSchema::IsInNamespace(
-					attribute.id,
-					"Ability"
-				);
-				if (!isCommonAttribute && !isAbilityAttribute)
+				const bool isOwnedAbilityAttribute = !familyNamespace.empty() &&
+					AttributeIdSchema::IsInNamespace(attribute.id, familyNamespace);
+				if (!isCommonAttribute && !isOwnedAbilityAttribute)
 				{
 					return Fail(
 						failureReason,
-						"Ability-scoped attributes must belong to Common.* or Ability.*."
+						"Ability-scoped attributes must belong to Common.* or the family encoded in the ability ID."
 					);
 				}
 				if (attribute.id == CommonAttributeIds::ProjectileCount &&
@@ -351,17 +406,21 @@ namespace ly
 		}
 
 		bool ValidateAbilityLevelStep(
+			const GameAbilityDefinition& definition,
+			std::string_view familyNamespace,
 			const AbilityLevelStep& step,
 			const AbilityActionValidator::EffectValidationFunction& validateEffect,
 			std::string* failureReason
 		)
 		{
-			if (!ValidateAttributeModifiers(step.attributeModifiers, failureReason))
+			if (!ValidateAbilityAttributeModifiers(
+				definition,
+				familyNamespace,
+				step.attributeModifiers,
+				failureReason
+			))
 			{
-				return Fail(
-					failureReason,
-					"Ability level modifiers require a valid attribute ID."
-				);
+				return false;
 			}
 			if (!AbilityActionValidator::Validate(
 				step.addedActions,
@@ -383,6 +442,7 @@ namespace ly
 
 		bool ValidateLevelProgression(
 			const GameAbilityDefinition& definition,
+			std::string_view familyNamespace,
 			const AbilityActionValidator::EffectValidationFunction& validateEffect,
 			std::string* failureReason
 		)
@@ -407,7 +467,13 @@ namespace ly
 					declaredUpgradeIds,
 					failureReason
 				) ||
-					!ValidateAbilityLevelStep(step, validateEffect, failureReason))
+					!ValidateAbilityLevelStep(
+						definition,
+						familyNamespace,
+						step,
+						validateEffect,
+						failureReason
+					))
 				{
 					return false;
 				}
@@ -426,14 +492,10 @@ namespace ly
 		{
 			return false;
 		}
-		std::string expectedBehaviorFamilyName;
-		// Content-only test/prototype abilities intentionally use the generic
-		// configured behavior. Concrete shipped families must use their own
-		// behavior selector and therefore match the family encoded in their content ID.
-		if (definition.slot != sas::AbilitySlot::PrimaryFire &&
-			definition.behaviorType != AbilityBehaviorType::Configured)
+		content::ParsedAbilityId parsedId;
+		std::string_view familyNamespace;
+		if (definition.slot != sas::AbilitySlot::PrimaryFire)
 		{
-			content::ParsedAbilityId parsedId;
 			if (!content::ContentIdSchema::ParseAbilityId(
 				definition.abilityId,
 				parsedId,
@@ -442,6 +504,16 @@ namespace ly
 			{
 				return false;
 			}
+			familyNamespace = parsedId.family;
+		}
+
+		std::string expectedBehaviorFamilyName;
+		// Content-only test/prototype abilities intentionally use the generic
+		// configured behavior. Concrete shipped families must use their own
+		// behavior selector and therefore match the family encoded in their content ID.
+		if (definition.slot != sas::AbilitySlot::PrimaryFire &&
+			definition.behaviorType != AbilityBehaviorType::Configured)
+		{
 			std::size_t categoryCount = 0;
 			bool hasMatchingCategory = false;
 			bool hasMatchingFamily = false;
@@ -472,9 +544,19 @@ namespace ly
 				? parsedId.family
 				: parsedId.family.substr(familySeparator + 1);
 		}
-		if (!ValidateAbilityScopedAttributes(definition, failureReason) ||
-			!ValidateAttributeModifiers(definition.attributeModifiers, failureReason) ||
-			!ValidateScalingRules(definition, definition.scalingRules, failureReason))
+		if (!ValidateAbilityScopedAttributes(definition, familyNamespace, failureReason) ||
+			!ValidateAbilityAttributeModifiers(
+				definition,
+				familyNamespace,
+				definition.attributeModifiers,
+				failureReason
+			) ||
+			!ValidateScalingRules(
+				definition,
+				familyNamespace,
+				definition.scalingRules,
+				failureReason
+			))
 		{
 			return false;
 		}
@@ -486,7 +568,9 @@ namespace ly
 			{
 				return Fail(
 					failureReason,
-					"Ability behavior type must match the family segment from its ability ID."
+					"Ability '" + definition.abilityId +
+					"' behavior '" + behaviorName +
+					"' does not match family '" + expectedBehaviorFamilyName + "'."
 				);
 			}
 		}
@@ -581,7 +665,12 @@ namespace ly
 				return false;
 			}
 		}
-		if (!ValidateLevelProgression(definition, validateEffect, failureReason))
+		if (!ValidateLevelProgression(
+			definition,
+			familyNamespace,
+			validateEffect,
+			failureReason
+		))
 		{
 			return false;
 		}

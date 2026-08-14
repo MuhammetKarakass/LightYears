@@ -53,7 +53,6 @@ namespace AbilityData
 			};
 			definition.displayName = "Gravity Anomaly";
 			definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
-			definition.inputLabel = "Q";
 			definition.accentColor = sf::Color{ 135, 95, 255, 255 };
 			definition.actions = {
 				ly::AbilityActionSpec{

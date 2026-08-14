@@ -50,6 +50,15 @@ namespace ly
 			(void)context;
 			(void)event;
 		}
+
+		virtual void OnGameplayEvent(
+			GameAbilityBehaviorContext& context,
+			const sas::AbilityEvent& event
+		)
+		{
+			(void)context;
+			(void)event;
+		}
 	};
 
 	using GameAbilityBehaviorRegistry = sas::AbilityBehaviorRegistry<GameAbilityBehavior,AbilityBehaviorType>;
@@ -61,11 +70,24 @@ namespace ly
 			LightYearsAbilitySystemComponent& abilitySystem,
 			sas::AbilityHandle handle,
 			const GameAbilityDefinition& definition,
-			unique_ptr<GameAbilityBehavior> behavior
+			unique_ptr<GameAbilityBehavior> behavior,
+			bool emitNotifications = true
 		);
 
 		bool IsInputHeld() const { return this->mRuntimeState.IsInputHeld(); }
 		bool IsPressedThisFrame() const { return this->mRuntimeState.IsPressedThisFrame(); }
+		void SetActivationOrigin(sas::AbilityActivationOrigin origin)
+		{
+			mActivationOrigin = origin;
+		}
+		// Echo and other recorded invocations already materialize their level
+		// modifiers into the invocation definition. They still need the source
+		// level exposed to behavior code without running a second level rebuild.
+		void ConfigureInvocationLevel(int level, int maximumLevel);
+		sas::AbilityActivationOrigin GetActivationOrigin() const
+		{
+			return mActivationOrigin;
+		}
 
 		float GetWeaponFireIntervalRemaining() const { return mWeaponFireIntervalRemaining; }
 		void SetWeaponFireIntervalRemaining(float interval);
@@ -101,6 +123,7 @@ namespace ly
 		) const;
 		List<GameplayTag> GetResolvedDamageTags(AttachmentHostKind hostKind) const;
 		void HandleAttachmentEvent(const sas::AbilityEvent& event);
+		void HandleGameplayEvent(const sas::AbilityEvent& event);
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
@@ -114,6 +137,10 @@ namespace ly
 		void EndExecution(sas::AbilityEndReason reason) override;
 		void TickInactive(float deltaTime) override;
 		void EndContent(sas::AbilityEndReason reason) override;
+		sas::AbilityLifecycleEvent BuildLifecycleEvent(
+			const GameplayTag& eventTag,
+			sas::AbilityEndReason endReason
+		) const;
 		void NotifyOwnerAbilityActivated(const sas::AbilityLifecycleEvent& event);
 		int GetMaximumLevel() const override;
 		float ResolveCooldownDuration() const override;
@@ -151,5 +178,8 @@ namespace ly
 		List<GameplayTag> mPrimaryWeaponRuntimeDamageTags;
 		AttachmentLoadout mAttachments;
 		unique_ptr<GameAbilityBehavior> mBehavior;
+		sas::AbilityActivationOrigin mActivationOrigin =
+			sas::AbilityActivationOrigin::NormalInput;
+		int mInvocationMaximumLevel = 0;
 	};
 }

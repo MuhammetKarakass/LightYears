@@ -26,6 +26,13 @@ namespace ly
 		bool IsProjectileActor() const override { return true; }
 		void Render(sf::RenderWindow& window) override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
+		weak_ptr<AbilityWorldActor> SpawnRelayClone(
+			const ProjectileRelayCloneRequest& request
+		) const override;
+		void SetRelayLaunchDirection(const sf::Vector2f& direction)
+		{
+			mRelayLaunchDirection = direction;
+		}
 
 		float GetProjectileSpeed() const { return mProjectileSpeed; }
 		float GetCastRange() const { return mCastRange; }
@@ -61,6 +68,7 @@ namespace ly
 		float mPullStrength = 0.f;
 		float mSlowMagnitude = 0.f;
 		float mInsideEffectDuration = 0.f;
+		std::optional<sf::Vector2f> mRelayLaunchDirection;
 		bool mHasSpawnedField = false;
 	};
 

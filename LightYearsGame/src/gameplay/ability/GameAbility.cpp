@@ -19,18 +19,27 @@ namespace ly
 		LightYearsAbilitySystemComponent& abilitySystem,
 		sas::AbilityHandle handle,
 		const GameAbilityDefinition& definition,
-		unique_ptr<GameAbilityBehavior> behavior)
+		unique_ptr<GameAbilityBehavior> behavior,
+		bool emitNotifications)
 		: sas::GameplayAbilityInstance<
 			GameAbilityDefinition,
 			GameAbilityExecution
 		>{
 			handle,
 			definition,
-			abilitySystem.CreateAbilityInstanceNotifications()
+			emitNotifications
+				? abilitySystem.CreateAbilityInstanceNotifications()
+				: sas::AbilityInstanceNotifications{}
 		},
 		mAbilitySystem{ abilitySystem },
 		mBehavior{ std::move(behavior) }
 	{
+	}
+
+	void GameAbility::ConfigureInvocationLevel(int level, int maximumLevel)
+	{
+		mInvocationMaximumLevel = std::max(1, maximumLevel);
+		mRuntimeState.SetLevel(level, mInvocationMaximumLevel);
 	}
 
 	void GameAbility::SetWeaponFireIntervalRemaining(float interval)
@@ -122,6 +131,22 @@ namespace ly
 			NotifyOwnerAbilityActivated(event);
 		}
 		HandleAttachmentEventInternal(event, &event);
+	}
+
+	void GameAbility::HandleGameplayEvent(const sas::AbilityEvent& event)
+	{
+		if (!mBehavior || !IsActive())
+		{
+			return;
+		}
+
+		GameAbilityBehaviorContext behaviorContext{
+			mAbilitySystem,
+			*this,
+			mAbilitySystem.GetOwner(),
+			mDefinition
+		};
+		mBehavior->OnGameplayEvent(behaviorContext, event);
 	}
 
 	void GameAbility::HandleAttachmentEventInternal(
@@ -294,11 +319,21 @@ namespace ly
 		return mBehavior &&
 			mAbilitySystem.HasAllOwnedTags(mDefinition.requiredOwnerTags) &&
 			!mAbilitySystem.HasAnyOwnedTags(mDefinition.blockedOwnerTags) &&
+			!mAbilitySystem.HasOwnedTag(GameplayTags::State::Effect::Control::Stunned) &&
 			!mAbilitySystem.HasOwnedTag(sharedBlockTag);
 	}
 
 	bool GameAbility::ActivateContent()
 	{
+		const sas::AbilityLifecycleEvent lifecycleEvent = BuildLifecycleEvent(
+			GameplayTags::Event::Ability::Activated,
+			sas::AbilityEndReason::Completed
+		);
+		if (!mAbilitySystem.EvaluateAbilityActivation(lifecycleEvent))
+		{
+			return false;
+		}
+
 		GameAbilityBehaviorContext behaviorContext{
 			mAbilitySystem,
 			*this,
@@ -310,15 +345,7 @@ namespace ly
 			return false;
 		}
 
-		sas::AbilityLifecycleEvent event;
-		event.eventTag = GameplayTags::Event::Ability::Activated;
-		event.abilityId = sas::ContentId{ mDefinition.abilityId };
-		event.abilityTags = mDefinition.abilityTags;
-		event.sourceAbilityId = event.abilityId;
-		event.sourceAbilityTags = event.abilityTags;
-		event.SetSource(&mAbilitySystem.GetOwner());
-		event.SetTarget(&mAbilitySystem.GetOwner());
-		mAbilitySystem.HandleAbilityLifecycleEvent(event);
+		mAbilitySystem.HandleAbilityLifecycleEvent(lifecycleEvent);
 		return true;
 	}
 
@@ -336,6 +363,12 @@ namespace ly
 
 	void GameAbility::TickExecution(float deltaTime)
 	{
+		if (mAbilitySystem.HasOwnedTag(GameplayTags::State::Effect::Control::Stunned))
+		{
+			Cancel(sas::AbilityEndReason::Interrupted);
+			return;
+		}
+
 		AbilityExecutionContext context{
 			&mAbilitySystem,
 			&mDefinition,
@@ -390,20 +423,42 @@ namespace ly
 			mBehavior->End(behaviorContext, reason);
 		}
 
+		const sas::AbilityLifecycleEvent event = BuildLifecycleEvent(
+			GameplayTags::Event::Ability::Ended,
+			reason
+		);
+		mAbilitySystem.HandleAbilityLifecycleEvent(event);
+	}
+
+	sas::AbilityLifecycleEvent GameAbility::BuildLifecycleEvent(
+		const GameplayTag& eventTag,
+		sas::AbilityEndReason endReason
+	) const
+	{
 		sas::AbilityLifecycleEvent event;
-		event.eventTag = GameplayTags::Event::Ability::Ended;
+		event.eventTag = eventTag;
+		event.abilityHandle = GetHandle();
 		event.abilityId = sas::ContentId{ mDefinition.abilityId };
+		event.slot = mDefinition.slot;
+		event.abilityLevel = GetLevel();
+		event.abilityMaxLevel = GetMaxLevel();
+		event.activationOrigin = mActivationOrigin;
 		event.abilityTags = mDefinition.abilityTags;
 		event.sourceAbilityId = event.abilityId;
 		event.sourceAbilityTags = event.abilityTags;
-		event.endReason = reason;
+		event.endReason = endReason;
 		event.SetSource(&mAbilitySystem.GetOwner());
 		event.SetTarget(&mAbilitySystem.GetOwner());
-		mAbilitySystem.HandleAbilityLifecycleEvent(event);
+		return event;
 	}
 
 	int GameAbility::GetMaximumLevel() const
 	{
+		if (mInvocationMaximumLevel > 0)
+		{
+			return mInvocationMaximumLevel;
+		}
+
 		return std::max(
 			1,
 			mBaseDefinition.GetMaxLevel() +

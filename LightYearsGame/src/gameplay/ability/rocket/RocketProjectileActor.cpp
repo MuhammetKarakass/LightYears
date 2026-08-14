@@ -8,6 +8,7 @@
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
+#include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
 #include <algorithm>
@@ -19,6 +20,13 @@ namespace ly
 {
 	namespace
 	{
+		// A relay clone starts from the Prism instead of the source projectile's
+		// original position. It therefore needs enough lifetime for a complete
+		// delivery to its own maximum range, plus a small scheduling margin so a
+		// frame-boundary lifetime check cannot destroy it just before the range
+		// check reaches the endpoint.
+		constexpr float RelayDeliveryLifetimeMarginSeconds = 0.05f;
+
 		const List<sas::AttributeId> RocketProjectileCommonAttributes{
 			CommonAttributeIds::Damage,
 			CommonAttributeIds::Radius,
@@ -226,11 +234,61 @@ namespace ly
 
 	void RocketProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (GetIsPendingDestroy())
+		{
+			return;
+		}
+		if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(otherActor);
+			captureVolume && captureVolume->TryCaptureProjectile(*this))
+		{
+			return;
+		}
 		AbilityWorldActor::OnActorBeginOverlap(otherActor);
 		if (!mHasExploded && IsValidAbilityTarget(otherActor))
 		{
 			Explode();
 		}
+	}
+
+	weak_ptr<AbilityWorldActor> RocketProjectileActor::SpawnRelayClone(
+		const ProjectileRelayCloneRequest& request
+	) const
+	{
+		World* world = GetWorld();
+		Actor* owner = GetOwnerActor();
+		if (!world || !owner)
+		{
+			return {};
+		}
+
+		weak_ptr<RocketProjectileActor> clone =
+			world->SpawnActor<RocketProjectileActor>(
+				owner,
+				mPresentationProfile,
+				std::nullopt
+			);
+		if (const shared_ptr<RocketProjectileActor> spawned = clone.lock())
+		{
+			// Set the requested direction before the typed configuration so the
+			// rocket's launch velocity and presentation target use that direction.
+			spawned->ConfigureRelayClone(request);
+			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);
+			spawned->ConfigureRelayClone(request);
+
+			// The source snapshot's remaining lifetime is valid for the original
+			// projectile, but not necessarily for a clone that starts travelling
+			// again from the Prism. Never let that inherited value expire before
+			// this Rocket can cover its configured maximum range.
+			const float requiredDeliveryLifetime = spawned->mProjectileSpeed > 0.f
+				? spawned->mMaximumRange / spawned->mProjectileSpeed +
+					RelayDeliveryLifetimeMarginSeconds
+				: 0.f;
+			spawned->SetLifeTime(std::max(
+				spawned->GetLifeTime(),
+				requiredDeliveryLifetime
+			));
+		}
+		return clone;
 	}
 
 	void RocketProjectileActor::Move(float deltaTime)
@@ -294,10 +352,14 @@ namespace ly
 			mPredictedImpactLocation =
 				GetActorLocation() + GetActorForwardDirection() * mTargetTravelDistance;
 			mTelegraph = world->SpawnActor<AreaTelegraphActor>(
-				mPredictedImpactLocation,
-				mExplosionRadius,
-				travelDuration + 0.25f,
-				mPresentationProfile.telegraph
+				AreaTelegraphActor::SpawnParams{
+					mPredictedImpactLocation,
+					mExplosionRadius,
+					0.f,
+					mPresentationProfile.telegraph,
+					AreaTelegraphAnchorMode::FixedLocation,
+					AreaTelegraphProgressDriver::External
+				}
 			);
 		}
 
@@ -321,7 +383,7 @@ namespace ly
 		}
 		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())
 		{
-			telegraph->SetCountdownProgress(travelProgress);
+			telegraph->SetExternalProgress(travelProgress);
 		}
 	}
 

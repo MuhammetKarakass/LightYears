@@ -42,6 +42,22 @@ namespace sas
 		mActiveTimeRemaining = activeDuration;
 	}
 
+	bool AbilityRuntimeState::RefreshActiveDuration(float activeDuration)
+	{
+		if (!mIsActive || activeDuration < 0.f)
+		{
+			return false;
+		}
+
+		if (mActiveTimeRemaining == activeDuration)
+		{
+			return false;
+		}
+
+		mActiveTimeRemaining = activeDuration;
+		return true;
+	}
+
 	void AbilityRuntimeState::EndActivation(float cooldownDuration, int maxCharges)
 	{
 		mIsActive = false;

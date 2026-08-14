@@ -39,9 +39,6 @@ namespace AbilityData::Definitions
 		};
 		definition.displayName = "Overdrive Core";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
-		// Ability4 is bound to R in PlayerMovementComponent. Keeping the
-		// definition label in sync prevents the UI from showing a different key.
-		definition.inputLabel = "R";
 		definition.accentColor = sf::Color{ 255, 95, 45, 255 };
 		definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 		definition.attachmentCapabilities = {

@@ -12,6 +12,29 @@ namespace ly::AbilityActionAttributeResolver
 {
 	namespace
 	{
+		bool IsInvocationOutputAttribute(
+			const GameAbilityDefinition& definition,
+			const sas::AttributeId& attributeId
+		)
+		{
+			// Damage is the universal ability output channel. Other output
+			// channels must opt in through a source scaling rule. Structural
+			// delivery data such as projectile speed, range, lifetime, collision
+			// radius and visual geometry therefore remains invariant during Echo.
+			if (attributeId == CommonAttributeIds::Damage)
+			{
+				return true;
+			}
+			return std::any_of(
+				definition.scalingRules.begin(),
+				definition.scalingRules.end(),
+				[&](const sas::AttributeScalingRule& rule)
+				{
+					return rule.targetAttributeId == attributeId;
+				}
+			);
+		}
+
 		float CalculateDefinitionAttributeValue(
 			const sas::GameplayAttribute& attribute,
 			const GameAbilityDefinition& abilityDefinition,
@@ -90,6 +113,13 @@ namespace ly::AbilityActionAttributeResolver
 					weaponDefinition->scalingRules,
 					context.abilitySystem->GetAttributes()
 				);
+			}
+			// Echo power applies only to declared output channels. Applying it to
+			// every resolved number made fixed delivery data slower/shorter and
+			// shrank Relay Prism even though Prism size is not level-scaled.
+			if (IsInvocationOutputAttribute(*context.definition, attribute.id))
+			{
+				value *= context.definition->attributeOutputMultiplier;
 			}
 			if (attribute.id == CommonAttributeIds::Interval && value > 0.f && !weaponDefinition)
 			{

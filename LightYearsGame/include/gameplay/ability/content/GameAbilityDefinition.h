@@ -29,7 +29,6 @@ namespace ly
 	{
 		std::string displayName;
 		std::string iconPath;
-		std::string inputLabel;
 		sf::Color accentColor = sf::Color::White;
 		List<AbilityActionSpec> actions;
 		List<AbilityTriggerSpec> triggers;
@@ -50,6 +49,14 @@ namespace ly
 		List<GameplayTag> attachmentCapabilities;
 		size_t attachmentSlotCapacity = 2;
 		AbilityBehaviorType behaviorType = AbilityBehaviorType::Configured;
+		// Normal player activations are eligible for the shared ability-use
+		// history by default. System abilities such as Echo can opt out without
+		// making the history know a family-specific ability ID.
+		bool recordInAbilityHistory = true;
+		// Invocation systems may apply a final multiplier after the normal
+		// attribute and scaling pipeline. The default keeps existing abilities
+		// numerically unchanged; Echo uses it for its power rule.
+		float attributeOutputMultiplier = 1.f;
 
 		const AbilityEffectSpecDefinition* FindEffectSpec(const sas::ContentId& effectId) const
 		{

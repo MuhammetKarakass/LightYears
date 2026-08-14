@@ -3,6 +3,9 @@
 #include "AbilitySystemComponent.h"
 #include "abilities/AbilityEvent.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
+#include "gameplay/ability/runtime/AbilityInvocationRuntime.h"
+#include "gameplay/ability/runtime/AbilityUseHistory.h"
 
 #include <cstddef>
 #include <utility>
@@ -67,12 +70,61 @@ namespace ly
 		// checking the lock only during the next activation would allow the
 		// current WhileHeld fire execution to continue.
 		void AddOwnedTag(const GameplayTag& tag);
+		void SetAbilitySlotInput(sas::AbilitySlot slot, bool inputHeld);
+		void Tick(float deltaTime);
+		void Clear();
+
+		bool InvokeRecordedAbility(
+			const AbilityUseRecord& record,
+			const List<sas::AttributeScalingRule>& scalingRules,
+			float outputMultiplier,
+			sas::AbilitySlot controlSlot,
+			bool inputHeld,
+			std::string* failureReason = nullptr
+		);
+		std::size_t GetActiveAbilityInvocationCount() const
+		{
+			return mAbilityInvocationRuntime.GetActiveInvocationCount();
+		}
+
+		// Common lifecycle services are intentionally exposed through the game
+		// component rather than through individual abilities. This lets future
+		// checkpoints, analytics and replay systems subscribe without teaching
+		// every ability family about one another.
+		AbilityLifecycleObserverHandle RegisterAbilityLifecycleObserver(
+			AbilityLifecycleObserverFilter filter,
+			AbilityLifecycleObserver callback,
+			int priority = 0
+		);
+		bool UnregisterAbilityLifecycleObserver(
+			AbilityLifecycleObserverHandle handle
+		);
+		AbilityActivationGuardHandle RegisterAbilityActivationGuard(
+			AbilityActivationGuard callback,
+			int priority = 0
+		);
+		bool UnregisterAbilityActivationGuard(
+			AbilityActivationGuardHandle handle
+		);
+		bool EvaluateAbilityActivation(
+			const sas::AbilityLifecycleEvent& event
+		) const;
+		const AbilityUseHistory& GetAbilityUseHistory() const
+		{
+			return mAbilityUseHistory;
+		}
+		AbilityUseHistory& GetAbilityUseHistory()
+		{
+			return mAbilityUseHistory;
+		}
 
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
 		void ProcessGameGameplayEvent(const sas::AbilityEvent& event);
 		void ProcessAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
+		void RecordAbilityActivation(const sas::AbilityLifecycleEvent& event);
+		void CancelActiveAbilitiesForStun();
 		void RefreshScopedAbilityRules();
 		bool MatchesScopedAbilityRule(
 			const ScopedAbilityRule& rule,
@@ -85,6 +137,9 @@ namespace ly
 		ComponentRuntime& mComponentRuntime;
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mScopedAbilityRules;
 		std::size_t mNextScopedAbilityRuleHandle = 1;
+		AbilityLifecycleDispatcher mLifecycleDispatcher;
+		AbilityUseHistory mAbilityUseHistory;
+		AbilityInvocationRuntime mAbilityInvocationRuntime;
 	};
 }
 

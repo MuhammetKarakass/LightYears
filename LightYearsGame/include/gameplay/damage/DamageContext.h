@@ -53,6 +53,9 @@ namespace ly
 		float modifiedDamage = 0.f;
 		float appliedDamage = 0.f;
 		bool wasCritical = false;
+		// This is true only after health/shield resolution confirms that the hit
+		// actually reduced the target's health to zero.
+		bool targetWasKilled = false;
 		List<GameplayTag> damageTags;
 		DamagePayload payload;
 	};
