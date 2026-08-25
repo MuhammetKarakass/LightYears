@@ -47,6 +47,11 @@ namespace ly
 		inline static const sas::AttributeId FireRate{ "Common.FireRate" };
 		inline static const sas::AttributeId Range{ "Common.Range" };
 		inline static const sas::AttributeId ProjectileCount{ "Common.ProjectileCount" };
+		// Fraction of damage retained after each successful pierce. A value of
+		// 0.20 means the projectile keeps 80% of its current damage per target.
+		// This is shared because future projectile families may use the same
+		// decay contract without inventing family-specific IDs.
+		inline static const sas::AttributeId PierceDamageLoss{ "Common.PierceDamageLoss" };
 	};
 
 	struct CollisionAttributeIds
@@ -57,5 +62,9 @@ namespace ly
 	struct AreaAttributeIds
 	{
 		inline static const sas::AttributeId Radius{ "Area.Radius" };
+		// Rectangular area consumers share these geometry attributes instead of
+		// inventing family-local Width/Length IDs for every trail or telegraph.
+		inline static const sas::AttributeId Width{ "Area.Width" };
+		inline static const sas::AttributeId Length{ "Area.Length" };
 	};
 }

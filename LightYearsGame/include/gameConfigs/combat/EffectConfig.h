@@ -11,6 +11,8 @@
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
+#include "gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h"
+#include "gameplay/ability/cryostasis/CryostasisContracts.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/effects/EffectBehaviorKeys.h"
 #include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h"
@@ -28,6 +30,8 @@ namespace EffectData
 		ly::EffectBehaviorKeys::DamageElectric;
 	inline const sas::GameplayEffectBehaviorKey& GravityAnomalyBehaviorKey =
 		ly::EffectBehaviorKeys::GravityAnomaly;
+	inline const sas::GameplayEffectBehaviorKey& DirectionalBarrierBehaviorKey =
+		ly::EffectBehaviorKeys::DirectionalBarrier;
 
 	// JSON fallback/test catalog only. Shipped runtime policy comes from
 	// effects.json; source-owned magnitudes and durations come from the weapon,
@@ -398,6 +402,39 @@ namespace EffectData
 		return definition;
 	}();
 
+	inline const sas::GameplayEffectDefinition DirectionalBarrierActiveEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::DirectionalBarrier::Effect::ActiveEffectId;
+		definition.behaviorKey = DirectionalBarrierBehaviorKey;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.grantedTags = {
+			AbilityData::DirectionalBarrier::State::Active
+		};
+		definition.sourceScopedApplication = true;
+		definition.sourceParameterized = true;
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Defense.DirectionalBarrier";
+		return definition;
+	}();
+
+	inline const sas::GameplayEffectDefinition CryostasisIceShellEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::Cryostasis::Effect::IceShellId;
+		definition.behaviorKey = ly::EffectBehaviorKeys::CryostasisIceShell;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.grantedTags = { ly::GameplayTags::State::Effect::Defense::Cryostasis::IceShell };
+		definition.sourceScopedApplication = true;
+		definition.sourceParameterized = true;
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Defense.Cryostasis.IceShell";
+		definition.grantedImmunityCategory = "Control";
+		return definition;
+	}();
+
 	inline const ly::List<const sas::GameplayEffectDefinition*>&
 	GetBuiltinGameplayEffectDefinitions()
 	{
@@ -418,6 +455,8 @@ namespace EffectData
 			&PhaseDriftAfterburnerRecoveryEffect,
 			&NullPulseStunEffect,
 			&NullPulseStaggerEffect
+			,&DirectionalBarrierActiveEffect
+			,&CryostasisIceShellEffect
 		};
 		return definitions;
 	}

@@ -15,6 +15,10 @@ namespace ly
 		float movementSpeedMultiplier = 1.f;
 		float shieldRegenMultiplier = 1.f;
 		float afterburnerRegenMultiplier = 1.f;
+		// A zero multiplier makes afterburner use free while preserving its
+		// normal movement power. The movement component still distinguishes
+		// active afterburner from resource consumption.
+		float afterburnerEnergyDrainMultiplier = 1.f;
 		// Returns a movement multiplier for the current movement direction. A
 		// resolver is optional so ordinary constant modifiers remain unchanged.
 		std::function<float(const sf::Vector2f&)> movementSpeedResolver;
@@ -32,6 +36,7 @@ namespace ly
 		) const;
 		float GetShieldRegenMultiplier() const;
 		float GetAfterburnerRegenMultiplier() const;
+		float GetAfterburnerEnergyDrainMultiplier() const;
 
 	private:
 		std::unordered_map<std::string, ShipRuntimeModifier> mModifiers;

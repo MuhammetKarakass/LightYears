@@ -9,6 +9,8 @@
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
+#include "gameplay/projectile/ProjectileReflectionService.h"
+#include "gameplay/projectile/ProjectileSweep.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
 #include <algorithm>
@@ -26,6 +28,15 @@ namespace ly
 		// frame-boundary lifetime check cannot destroy it just before the range
 		// check reaches the endpoint.
 		constexpr float RelayDeliveryLifetimeMarginSeconds = 0.05f;
+
+		sf::Vector2f NormalizeOrDefault(
+			const sf::Vector2f& direction,
+			const sf::Vector2f& fallback
+		)
+		{
+			const float length = GetVectorLength(direction);
+			return length > 0.001f ? direction / length : fallback;
+		}
 
 		const List<sas::AttributeId> RocketProjectileCommonAttributes{
 			CommonAttributeIds::Damage,
@@ -198,6 +209,19 @@ namespace ly
 
 	void RocketProjectileActor::Tick(float deltaTime)
 	{
+		if (IsInPortalTransit())
+		{
+			if (const shared_ptr<RocketVisualActor> visual = mVisualActor.lock())
+			{
+				visual->SetFlightVisible(false);
+			}
+			AbilityWorldActor::Tick(deltaTime);
+			return;
+		}
+		if (const shared_ptr<RocketVisualActor> visual = mVisualActor.lock())
+		{
+			visual->SetFlightVisible(true);
+		}
 		if (mHasExploded)
 		{
 			return;
@@ -216,7 +240,7 @@ namespace ly
 
 	void RocketProjectileActor::Render(sf::RenderWindow& window)
 	{
-		if (!mHasExploded)
+		if (!mHasExploded && !IsInPortalTransit())
 		{
 			AbilityWorldActor::Render(window);
 		}
@@ -235,6 +259,10 @@ namespace ly
 	void RocketProjectileActor::OnActorBeginOverlap(Actor* otherActor)
 	{
 		if (GetIsPendingDestroy())
+		{
+			return;
+		}
+		if (TryReflectOnOverlap(otherActor))
 		{
 			return;
 		}
@@ -291,6 +319,32 @@ namespace ly
 		return clone;
 	}
 
+	bool RocketProjectileActor::TryReflectProjectile(
+		const ProjectileReflectionRequest& request
+	)
+	{
+		if (!CanBeReflected() || mHasExploded ||
+			(GetOwnerActor() == &request.newOwner && !request.allowSameOwnerReflection) ||
+			GetVectorLength(request.returnDirection) <= 0.001f)
+		{
+			return false;
+		}
+
+		const sf::Vector2f direction = NormalizeOrDefault(
+			request.returnDirection,
+			GetActorForwardDirection()
+		);
+		ApplyReflectionOwnership(request.newOwner, request.damageMultiplier);
+		// mTravelDistance intentionally remains unchanged: the rocket only gets
+		// the range it had left when it reached the defender.
+		mTargetLocation.reset();
+		mTargetTravelDistance = mMaximumRange;
+		mLaunchVelocity = direction * mProjectileSpeed;
+		SetVelocity(mLaunchVelocity);
+		SetActorRotation(std::atan2(direction.y, direction.x) * 57.2957795131f + 90.f);
+		return true;
+	}
+
 	void RocketProjectileActor::Move(float deltaTime)
 	{
 		const float safeDeltaTime = std::max(0.f, deltaTime);
@@ -306,7 +360,38 @@ namespace ly
 		);
 
 		SetVelocity(mLaunchVelocity);
-		AddActorLocationOffset(GetActorForwardDirection() * travelDistance);
+		const sf::Vector2f startLocation = GetActorLocation();
+		const sf::Vector2f endLocation =
+			startLocation + GetActorForwardDirection() * travelDistance;
+		for (const projectile::SweptContact& contact :
+			projectile::FindSweptContacts(
+				*this,
+				startLocation,
+				endLocation,
+				GetPhysicsCollisionRadius()
+			))
+		{
+			SetActorLocation(
+				startLocation + (endLocation - startLocation) * contact.fraction
+			);
+			if (contact.hasSurfaceNormal &&
+				ProjectileReflectionService::TryReflectFromSurface(
+					*this,
+					*contact.actor,
+					{ contact.impactLocation, contact.surfaceNormal }
+				))
+			{
+				mTravelDistance += travelDistance * contact.fraction;
+				return;
+			}
+			OnActorBeginOverlap(contact.actor.get());
+			if (mHasExploded || GetIsPendingDestroy() || IsInPortalTransit())
+			{
+				mTravelDistance += travelDistance * contact.fraction;
+				return;
+			}
+		}
+		SetActorLocation(endLocation);
 		mTravelDistance += travelDistance;
 	}
 

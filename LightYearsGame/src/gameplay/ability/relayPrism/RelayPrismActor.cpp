@@ -173,6 +173,11 @@ namespace ly
 
 	void RelayPrismActor::Tick(float deltaTime)
 	{
+		if (IsInPortalTransit())
+		{
+			AbilityWorldActor::Tick(deltaTime);
+			return;
+		}
 		Move(deltaTime);
 		AbilityWorldActor::Tick(deltaTime);
 		if (GetIsPendingDestroy())
@@ -183,6 +188,38 @@ namespace ly
 		if (mCaptureOpened)
 		{
 			CaptureNearbyProjectiles();
+		}
+	}
+
+	void RelayPrismActor::BeginPortalTransit()
+	{
+		mPortalRemainingTargetDistance = mTargetLocation && !mHasReachedTarget
+			? std::max(0.f, GetVectorLength(*mTargetLocation - GetActorLocation()))
+			: 0.f;
+		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())
+		{
+			telegraph->SetRenderEnabled(false);
+		}
+		AbilityWorldActor::BeginPortalTransit();
+	}
+
+	void RelayPrismActor::RebasePortalDestination(
+		const sf::Vector2f& exitLocation
+	)
+	{
+		if (mTargetLocation && !mHasReachedTarget)
+		{
+			// Keep the destination relative to the portal exit so a flying Prism
+			// opens where it actually finishes its post-portal flight.
+			mTargetLocation = portal::RebaseForwardDestination(
+				exitLocation, GetActorForwardDirection(), mPortalRemainingTargetDistance
+			);
+		}
+		mPortalRemainingTargetDistance = 0.f;
+		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())
+		{
+			telegraph->SetActorLocation(exitLocation);
+			telegraph->SetRenderEnabled(true);
 		}
 	}
 
@@ -198,11 +235,11 @@ namespace ly
 
 	void RelayPrismActor::Render(sf::RenderWindow& window)
 	{
-		Actor::Render(window);
-		if (GetIsPendingDestroy())
+		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{
 			return;
 		}
+		Actor::Render(window);
 
 		const RelayPrismProjectileVisualDefinition& visual =
 			mPresentationProfile.projectile;
@@ -257,6 +294,7 @@ namespace ly
 			)
 		);
 		mTravelDistance = 0.f;
+		mPortalRemainingTargetDistance = 0.f;
 		mHasReachedTarget = !mTargetLocation.has_value();
 		mCaptureOpened = false;
 		mLaunchVelocity = {};
@@ -429,6 +467,7 @@ namespace ly
 			const shared_ptr<AbilityWorldActor> projectile = projectileWeak.lock();
 			if (!projectile || projectile.get() == this ||
 				projectile->GetIsPendingDestroy() ||
+				projectile->IsInPortalTransit() ||
 				!IsInsideCaptureRadius(
 					projectile->GetActorLocation(),
 					GetActorLocation(),
@@ -445,6 +484,7 @@ namespace ly
 	bool RelayPrismActor::TryCaptureProjectile(AbilityWorldActor& projectile)
 	{
 		if (GetIsPendingDestroy() || projectile.GetIsPendingDestroy() ||
+			projectile.IsInPortalTransit() ||
 			(mTargetLocation.has_value() && !mCaptureOpened) ||
 			!projectile.CanBeCapturedByRelay() ||
 			projectile.GetProjectileRelayLineage().HasVisited(mCaptureVolumeId) ||
@@ -493,10 +533,8 @@ namespace ly
 		const int cloneCount = std::max(1, mBaseProjectileCount + bonus);
 		const ProjectileRelayLineage lineage = snapshot.lineage.Appended(mCaptureVolumeId);
 
-		// Destroy the source before spawning clones. This makes capture one-shot
-		// even when the source projectile was also overlapping the volume.
-		projectile.Destroy();
 		mHasScatterRotation = false;
+		bool spawnedAnyClone = false;
 		for (int projectileIndex = 0; projectileIndex < cloneCount; ++projectileIndex)
 		{
 			ProjectileRelayCloneRequest request;
@@ -506,8 +544,19 @@ namespace ly
 			request.allowFriendlyFire = true;
 			request.snapshot = snapshot;
 			request.snapshot.lineage = lineage;
-			projectile.SpawnRelayClone(request);
+			const weak_ptr<AbilityWorldActor> clone = projectile.SpawnRelayClone(request);
+			spawnedAnyClone = spawnedAnyClone || !clone.expired();
 		}
+
+		// Capture is transactional: a source is consumed only after at least one
+		// replacement clone was created. This protects unsupported or failed
+		// projectile families from disappearing inside the Prism.
+		if (!spawnedAnyClone)
+		{
+			mHasScatterRotation = false;
+			return false;
+		}
+		projectile.Destroy();
 
 		if (Combatant* combatant = dynamic_cast<Combatant*>(GetOwnerActor()))
 		{

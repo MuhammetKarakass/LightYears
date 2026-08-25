@@ -27,6 +27,7 @@ namespace ly
 		SetCollisionLayer(CollisionLayer::Enemy);  
 		SetCollisionMask(
 			CollisionLayer::Player |
+			CollisionLayer::FriendlySummon |
 			CollisionLayer::PlayerBullet |
 			CollisionLayer::RelayProjectile
 		);
@@ -36,7 +37,8 @@ namespace ly
 	{
 		SpaceShip::OnActorBeginOverlap(otherActor);
 		if (otherActor == nullptr) return;
-		if (otherActor->GetCollisionLayer() == CollisionLayer::Player)
+		if (otherActor->GetCollisionLayer() == CollisionLayer::Player &&
+			CanApplyContactDamage(*this, *otherActor))
 		{
 			ApplyCombatDamage(*otherActor, mCollisionDamage, this);
 		}

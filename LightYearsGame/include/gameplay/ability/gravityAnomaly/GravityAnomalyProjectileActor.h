@@ -3,6 +3,7 @@
 #include "attributes/AttributeSystem.h"
 
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameplay/portal/PortalDestinationRebaser.h"
 #include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
@@ -12,7 +13,9 @@
 
 namespace ly
 {
-	class GravityAnomalyProjectileActor final : public AbilityWorldActor
+	class GravityAnomalyProjectileActor final
+		: public AbilityWorldActor,
+		  public PortalDestinationRebaser
 	{
 	public:
 		GravityAnomalyProjectileActor(
@@ -24,11 +27,16 @@ namespace ly
 
 		void Tick(float deltaTime) override;
 		bool IsProjectileActor() const override { return true; }
+		bool CanBeReflected() const override { return true; }
 		void Render(sf::RenderWindow& window) override;
+		void RebasePortalDestination(const sf::Vector2f& exitLocation) override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
 		weak_ptr<AbilityWorldActor> SpawnRelayClone(
 			const ProjectileRelayCloneRequest& request
 		) const override;
+		bool TryReflectProjectile(
+			const ProjectileReflectionRequest& request
+		) override;
 		void SetRelayLaunchDirection(const sf::Vector2f& direction)
 		{
 			mRelayLaunchDirection = direction;
@@ -47,7 +55,7 @@ namespace ly
 
 	private:
 		void ResolveTargetLocation();
-		void MoveTowardTarget(float deltaTime);
+		bool MoveTowardTarget(float deltaTime);
 		void SpawnField();
 		void ConfigureVisualGeometry();
 

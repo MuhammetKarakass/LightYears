@@ -451,8 +451,15 @@ namespace sas
 			{
 				for (const ActiveEffect& activeEffect : mActiveEffects.GetAll())
 				{
-					if (activeEffect.spec.definition.grantedImmunityCategory ==
-						definition.immunityCategory)
+					const std::string& grantedCategory =
+						activeEffect.spec.definition.grantedImmunityCategory;
+					// Immunity categories are a dot-separated hierarchy. A provider of
+					// "Control" therefore blocks every concrete control subtype (for
+					// example "Control.Stun"), while a specific provider such as
+					// "Movement.Slow" remains narrow.
+					if (grantedCategory == definition.immunityCategory ||
+						(!grantedCategory.empty() &&
+							definition.immunityCategory.rfind(grantedCategory + ".", 0) == 0))
 					{
 						return false;
 					}

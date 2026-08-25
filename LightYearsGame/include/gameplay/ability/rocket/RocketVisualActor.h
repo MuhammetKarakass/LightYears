@@ -23,6 +23,7 @@ namespace ly
 			float normalizedTravel
 		);
 		void BeginImpact(const sf::Vector2f& worldLocation, float explosionRadius);
+		void SetFlightVisible(bool visible) { mFlightVisible = visible; }
 
 		bool IsImpacting() const { return mPhase == Phase::Impact; }
 		float GetImpactVisualDuration() const { return mDefinition.impactVisualDuration; }
@@ -50,5 +51,6 @@ namespace ly
 		float mNormalizedTravel = 0.f;
 		float mPhaseAge = 0.f;
 		Phase mPhase = Phase::Flight;
+		bool mFlightVisible = true;
 	};
 }

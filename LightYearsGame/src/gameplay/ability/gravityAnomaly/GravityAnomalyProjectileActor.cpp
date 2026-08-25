@@ -6,6 +6,8 @@
 #include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameplay/projectile/ProjectileReflectionService.h"
+#include "gameplay/projectile/ProjectileSweep.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
 #include <algorithm>
@@ -253,12 +255,21 @@ namespace ly
 
 	void GravityAnomalyProjectileActor::Tick(float deltaTime)
 	{
+		if (IsInPortalTransit())
+		{
+			AbilityWorldActor::Tick(deltaTime);
+			return;
+		}
 		if (mHasSpawnedField)
 		{
 			return;
 		}
 
-		MoveTowardTarget(deltaTime);
+		if (MoveTowardTarget(deltaTime))
+		{
+			AbilityWorldActor::Tick(deltaTime);
+			return;
+		}
 		if (mTravelDistance >= mTargetTravelDistance)
 		{
 			SpawnField();
@@ -268,18 +279,69 @@ namespace ly
 		AbilityWorldActor::Tick(deltaTime);
 	}
 
-	void GravityAnomalyProjectileActor::MoveTowardTarget(float deltaTime)
+	void GravityAnomalyProjectileActor::RebasePortalDestination(
+		const sf::Vector2f& exitLocation
+	)
+	{
+		const float remainingDistance = std::max(
+			0.f,
+			mTargetTravelDistance - mTravelDistance
+		);
+		if (!mHasSpawnedField)
+		{
+			// A portal relocates the delivery projectile, not an already-selected
+			// field. Preserve its remaining travel budget from the new exit point.
+			mResolvedTargetLocation = portal::RebaseForwardDestination(
+				exitLocation, mFlightDirection, remainingDistance
+			);
+		}
+	}
+
+	bool GravityAnomalyProjectileActor::MoveTowardTarget(float deltaTime)
 	{
 		const float safeDeltaTime = std::max(0.f, deltaTime);
 		if (mProjectileSpeed <= 0.f || safeDeltaTime <= 0.f || mTargetTravelDistance <= 0.f)
 		{
-			return;
+			return false;
 		}
 		const float remainingDistance = std::max(0.f, mTargetTravelDistance - mTravelDistance);
 		const float stepDistance = std::min(mProjectileSpeed * safeDeltaTime, remainingDistance);
+		const sf::Vector2f startLocation = GetActorLocation();
+		const sf::Vector2f endLocation = startLocation + mFlightDirection * stepDistance;
 		SetVelocity(mFlightDirection * mProjectileSpeed);
-		AddActorLocationOffset(mFlightDirection * stepDistance);
+		for (const projectile::SweptContact& contact : projectile::FindSweptContacts(
+			*this,
+			startLocation,
+			endLocation,
+			GetPhysicsCollisionRadius()
+		))
+		{
+			if (!contact.hasSurfaceNormal)
+			{
+				continue;
+			}
+			SetActorLocation(contact.impactLocation);
+			mTravelDistance += stepDistance * contact.fraction;
+			if (ProjectileReflectionService::TryReflectFromSurface(
+				*this,
+				*contact.actor,
+				{ contact.impactLocation, contact.surfaceNormal }
+			))
+			{
+				return true;
+			}
+			// A delivery projectile that cannot reflect from a static world object
+			// must not pass through it and create its field on the far side.
+			Destroy();
+			return true;
+		}
+		SetActorLocation(endLocation);
 		mTravelDistance += stepDistance;
+		return ProjectileReflectionService::TryReflectProjectileAlongPath(
+			*this,
+			startLocation,
+			GetActorLocation()
+		);
 	}
 
 	void GravityAnomalyProjectileActor::SpawnField()
@@ -352,6 +414,39 @@ namespace ly
 		return clone;
 	}
 
+	bool GravityAnomalyProjectileActor::TryReflectProjectile(
+		const ProjectileReflectionRequest& request
+	)
+	{
+		if (!CanBeReflected() || mHasSpawnedField ||
+			(GetOwnerActor() == &request.newOwner && !request.allowSameOwnerReflection))
+		{
+			return false;
+		}
+
+		const float directionLength = GetVectorLength(request.returnDirection);
+		if (directionLength <= 0.001f)
+		{
+			return false;
+		}
+		const sf::Vector2f direction = request.returnDirection / directionLength;
+		const float remainingDistance = std::max(
+			0.f,
+			mTargetTravelDistance - mTravelDistance
+		);
+		ApplyReflectionOwnership(request.newOwner, request.damageMultiplier);
+		// The delivery retains payload and remaining travel, but does not gain
+		// homing: this selects one straight return direction at reflection time.
+		mRequestedTargetLocation.reset();
+		mRelayLaunchDirection = direction;
+		mFlightDirection = direction;
+		mResolvedTargetLocation = GetActorLocation() + direction * remainingDistance;
+		mTargetTravelDistance = mTravelDistance + remainingDistance;
+		SetActorRotation(std::atan2(direction.y, direction.x) * 57.2957795131f + 90.f);
+		SetVelocity(direction * mProjectileSpeed);
+		return true;
+	}
+
 	void GravityAnomalyProjectileActor::ConfigureVisualGeometry()
 	{
 		const GravityAnomalyProjectileVisualDefinition& visual = mPresentationProfile.visual;
@@ -363,11 +458,11 @@ namespace ly
 
 	void GravityAnomalyProjectileActor::Render(sf::RenderWindow& window)
 	{
-		Actor::Render(window);
-		if (GetIsPendingDestroy())
+		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{
 			return;
 		}
+		Actor::Render(window);
 		const GravityAnomalyProjectileVisualDefinition& visual = mPresentationProfile.visual;
 		const float pulse = 0.85f + 0.15f * std::sin(GetAge() * visual.pulseSpeed);
 		mTrail.setPosition(GetActorLocation());

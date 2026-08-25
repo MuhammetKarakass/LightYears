@@ -7,6 +7,7 @@
 #include "gameplay/ability/overdriveCore/OverdriveCoreVisualActor.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
+#include "gameplay/projectile/ProjectileSweep.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -202,6 +203,19 @@ namespace ly
 
 	void OverdriveCoreProjectileActor::Tick(float deltaTime)
 	{
+		if (IsInPortalTransit())
+		{
+			if (const shared_ptr<OverdriveCoreVisualActor> visual = mVisualActor.lock())
+			{
+				visual->SetFlightVisible(false);
+			}
+			AbilityWorldActor::Tick(deltaTime);
+			return;
+		}
+		if (const shared_ptr<OverdriveCoreVisualActor> visual = mVisualActor.lock())
+		{
+			visual->SetFlightVisible(true);
+		}
 		if (mHasExploded)
 		{
 			return;
@@ -255,7 +269,7 @@ namespace ly
 
 	void OverdriveCoreProjectileActor::Render(sf::RenderWindow& window)
 	{
-		if (!mHasExploded)
+		if (!mHasExploded && !IsInPortalTransit())
 		{
 			AbilityWorldActor::Render(window);
 		}
@@ -364,7 +378,28 @@ namespace ly
 			remainingTravel
 		);
 		SetVelocity(mLaunchVelocity);
-		AddActorLocationOffset(GetActorForwardDirection() * travelDistance);
+		const sf::Vector2f startLocation = GetActorLocation();
+		const sf::Vector2f endLocation =
+			startLocation + GetActorForwardDirection() * travelDistance;
+		for (const projectile::SweptContact& contact :
+			projectile::FindSweptContacts(
+				*this,
+				startLocation,
+				endLocation,
+				GetPhysicsCollisionRadius()
+			))
+		{
+			SetActorLocation(
+				startLocation + (endLocation - startLocation) * contact.fraction
+			);
+			OnActorBeginOverlap(contact.actor.get());
+			if (mHasExploded || GetIsPendingDestroy() || IsInPortalTransit())
+			{
+				mTravelDistance += travelDistance * contact.fraction;
+				return;
+			}
+		}
+		SetActorLocation(endLocation);
 		mTravelDistance += travelDistance;
 	}
 

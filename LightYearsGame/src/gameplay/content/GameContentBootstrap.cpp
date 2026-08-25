@@ -1,52 +1,18 @@
 #include "gameplay/content/GameContentBootstrap.h"
 
+#include "effects/GameplayEffectDefinitionValidation.h"
 #include "framework/AssetManager.h"
 #include "framework/Core.h"
-#include "effects/GameplayEffectDefinitionValidation.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/combat/EffectConfig.h"
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
-#include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
-#include "gameConfigs/ability/offensive/RocketConfig.h"
-#include "gameConfigs/ability/offensive/SunBeamConfig.h"
-#include "gameConfigs/ability/utility/RelayPrismConfig.h"
-#include "gameplay/ability/GameAbility.h"
-#include "gameplay/ability/actors/AbilityActorRegistry.h"
+#include "gameplay/ability/content/GameAbilityContentRegistration.h"
 #include "gameplay/ability/validation/GameAbilityDefinitionValidator.h"
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
-#include "gameplay/ability/dash/DashAbility.h"
-#include "gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h"
-#include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
-#include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
-#include "gameplay/ability/infernoSpray/InfernoSprayAbility.h"
-#include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
-#include "gameplay/ability/overdriveCore/OverdriveCoreAbility.h"
-#include "gameplay/ability/nullPulse/NullPulseAbility.h"
-#include "gameplay/ability/orbitalDrones/OrbitalDronesAbility.h"
-#include "gameplay/ability/executionDrive/ExecutionDriveAbility.h"
-#include "gameplay/ability/phaseDrift/PhaseDriftAbility.h"
-#include "gameplay/ability/hullShock/HullShockAbility.h"
-#include "gameplay/ability/shieldHarvest/ShieldHarvestAbility.h"
-#include "gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h"
-#include "gameplay/ability/rocket/RocketAbility.h"
-#include "gameplay/ability/rocket/RocketProjectileActor.h"
-#include "gameplay/ability/relayPrism/RelayPrismAbility.h"
-#include "gameplay/ability/relayPrism/RelayPrismActor.h"
-#include "gameplay/ability/echoProtocol/EchoProtocolAbility.h"
-#include "gameplay/ability/shield/ShieldAbility.h"
-#include "gameplay/ability/sunBeam/SunBeamAbility.h"
-#include "gameplay/ability/sunBeam/SunBeamStrikeActor.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/content/WeaponContentCatalog.h"
-#include "gameplay/damage/DamageTypeSystem.h"
-#include "gameplay/effects/content/barrier/BarrierEffectBehavior.h"
-#include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
-#include "presentation/ability/AbilityPresentationContent.h"
-#include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h"
-#include "presentation/effects/shield/ShieldVisualContent.h"
 
 #include <filesystem>
 
@@ -88,6 +54,14 @@ namespace ly
 				failureReason
 			);
 		}
+
+		void LogContentLoadFailure(
+			const char* contentName,
+			const std::string& failureReason
+		)
+		{
+			LY_GAME_ERROR("Failed to load %s content: %s", contentName, failureReason.c_str());
+		}
 	}
 
 	bool GameContentBootstrap::Register()
@@ -108,7 +82,7 @@ namespace ly
 			);
 			if (!weaponsLoaded)
 			{
-				LY_GAME_ERROR("Failed to load weapon content: %s", weaponLoadFailureReason.c_str());
+				LogContentLoadFailure("weapon", weaponLoadFailureReason);
 			}
 
 			std::string shipLoadFailureReason;
@@ -118,7 +92,7 @@ namespace ly
 			);
 			if (!shipsLoaded)
 			{
-				LY_GAME_ERROR("Failed to load ship content: %s", shipLoadFailureReason.c_str());
+				LogContentLoadFailure("ship", shipLoadFailureReason);
 			}
 
 			std::string abilityLoadFailureReason;
@@ -130,7 +104,7 @@ namespace ly
 			);
 			if (!abilitiesLoaded)
 			{
-				LY_GAME_ERROR("Failed to load ability content: %s", abilityLoadFailureReason.c_str());
+				LogContentLoadFailure("ability", abilityLoadFailureReason);
 			}
 
 			std::string effectLoadFailureReason;
@@ -141,96 +115,15 @@ namespace ly
 			);
 			if (!effectsLoaded)
 			{
-				LY_GAME_ERROR(
-					"Failed to load gameplay effect content: %s",
-					effectLoadFailureReason.c_str()
-				);
+				LogContentLoadFailure("gameplay effect", effectLoadFailureReason);
 			}
 
-			const bool presentationRegistered = RegisterGameAbilityPresentationContent();
-			const bool configuredRegistered = GameAbilityBehaviorRegistry::Register(
-				AbilityBehaviorType::Configured,
-				[] { return std::make_unique<GameAbilityBehavior>(); }
-			);
-			const bool abilitiesRegistered = configuredRegistered &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::Dash,
-					[] { return std::make_unique<DashAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::Shield,
-					[] { return std::make_unique<ShieldAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::GravityAnomaly,
-					[] { return std::make_unique<GravityAnomalyAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::Rocket,
-					[] { return std::make_unique<RocketAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::SunBeam,
-					[] { return std::make_unique<SunBeamAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::InfernoSpray,
-					[] { return std::make_unique<InfernoSprayAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::OverdriveCore,
-					[] { return std::make_unique<OverdriveCoreAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::NullPulse,
-					[] { return std::make_unique<NullPulseAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::PhaseDrift,
-					[] { return std::make_unique<PhaseDriftAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::ShieldHarvest,
-					[] { return std::make_unique<ShieldHarvestAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::HullShock,
-					[] { return std::make_unique<HullShockAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::OrbitalDrones,
-					[] { return std::make_unique<OrbitalDronesAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::ExecutionDrive,
-					[] { return std::make_unique<ExecutionDriveAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::RelayPrism,
-					[] { return std::make_unique<RelayPrismAbility>(); }
-				) &&
-				GameAbilityBehaviorRegistry::Register(
-					AbilityBehaviorType::EchoProtocol,
-					[] { return std::make_unique<EchoProtocolAbility>(); }
-				);
-
-			const bool abilityActorsRegistered =
-				RegisterGravityAnomalyProjectileActorType() &&
-				RegisterGravityAnomalyFieldActorType() &&
-				RegisterRocketProjectileActorType() &&
-				RegisterOverdriveCoreProjectileActorType() &&
-				RegisterSunBeamStrikeActorType() &&
-				RegisterInfernoSprayActorType() &&
-				RegisterRelayPrismActorType();
-			const bool effectsRegistered =
-				RegisterGravityAnomalyEffectVisuals() &&
-				RegisterShieldVisuals() &&
-				BarrierEffectBehavior::RegisterBarrierEffectBehavior() &&
-				DamageTypeSystem::RegisterDamageEffectBehaviors() &&
-				GravityAnomalyEffectBehavior::RegisterGravityAnomalyEffectBehavior();
+			// Concrete feature registration happens before shipped definitions are
+			// validated. The bootstrap only owns startup orchestration.
+			const bool abilityContentRegistered = RegisterGameAbilityContent();
 
 			std::string abilityValidationFailureReason;
-			const bool abilitiesValidated = abilitiesRegistered &&
+			const bool abilitiesValidated = abilityContentRegistered &&
 				ValidateShippedAbilities(&abilityValidationFailureReason);
 			if (!abilitiesValidated && !abilityValidationFailureReason.empty())
 			{
@@ -241,7 +134,8 @@ namespace ly
 			}
 
 			std::string effectValidationFailureReason;
-			const bool effectsValidated = ValidateShippedEffects(&effectValidationFailureReason);
+			const bool effectsValidated = abilityContentRegistered &&
+				ValidateShippedEffects(&effectValidationFailureReason);
 			if (!effectsValidated && !effectValidationFailureReason.empty())
 			{
 				LY_GAME_ERROR(
@@ -251,8 +145,7 @@ namespace ly
 			}
 
 			return weaponsLoaded && shipsLoaded && abilitiesLoaded && effectsLoaded &&
-				presentationRegistered && abilitiesValidated && abilityActorsRegistered &&
-				effectsRegistered && effectsValidated;
+				abilityContentRegistered && abilitiesValidated && effectsValidated;
 		}();
 		return registered;
 	}

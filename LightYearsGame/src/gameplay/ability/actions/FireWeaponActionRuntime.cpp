@@ -4,6 +4,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
+#include "gameplay/time/IntervalDebt.h"
 #include "framework/Actor.h"
 
 #include <algorithm>
@@ -197,7 +198,9 @@ namespace ly
 		const FireWeaponAction& fireAction = std::get<FireWeaponAction>(action.spec->action);
 		FireWeaponRuntimeState& state = GetOrCreateState(action, context, fireAction, true);
 		const sas::GameplayAttributeList& values = ResolveAttributes(context, fireAction, state);
-		state.intervalRemaining = std::max(0.f, state.intervalRemaining - deltaTime);
+		// Preserve negative interval debt. A long frame may owe more than one shot;
+		// clamping here made automatic-weapon DPS depend on frame rate.
+		time::AdvanceIntervalDebt(state.intervalRemaining, deltaTime);
 		if (!state.lifecycleStarted && state.intervalRemaining > 0.f)
 		{
 			if (context.instance)
@@ -240,7 +243,9 @@ namespace ly
 		{
 			return;
 		}
+		int catchUpExecutions = 0;
 		while (state.intervalRemaining <= 0.f &&
+			catchUpExecutions < time::DefaultMaximumIntervalCatchUp &&
 			(action.spec->maxExecutions <= 0 || state.executionCount < action.spec->maxExecutions))
 		{
 			const bool fired = PrimaryWeaponExecutionSystem::FireOnce(
@@ -250,8 +255,12 @@ namespace ly
 			if (fired)
 			{
 				++state.executionCount;
+				++catchUpExecutions;
 			}
-			state.intervalRemaining += BuildFireInterval(context, fireAction, *action.spec, values);
+			time::CommitInterval(
+				state.intervalRemaining,
+				BuildFireInterval(context, fireAction, *action.spec, values)
+			);
 			if (!fired)
 			{
 				break;

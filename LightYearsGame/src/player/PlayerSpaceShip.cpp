@@ -122,7 +122,8 @@ namespace ly
 	void PlayerSpaceShip::OnActorBeginOverlap(Actor* otherActor)
 	{
 		SpaceShip::OnActorBeginOverlap(otherActor);
-		if (otherActor && GetCanCollide() && !IsInvulnerable())
+		if (otherActor && !IsInPortalTransit() && GetCanCollide() && !IsInvulnerable() &&
+			CanApplyContactDamage(*this, *otherActor))
 		{
 			ApplyCombatDamage(*otherActor, mCollisionDamage, this);
 		}

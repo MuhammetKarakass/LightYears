@@ -48,6 +48,10 @@ namespace sas
 
 			if (this->mRuntimeState.IsActive())
 			{
+				// Track elapsed active time for all lifetimes, not only Duration.
+				// Toggle input uses this shared clock to enforce the minimum commit
+				// window without teaching individual abilities about key timing.
+				this->mRuntimeState.TickActiveTime(deltaTime);
 				TickExecution(deltaTime);
 				const AbilityLifecycleDecision durationDecision =
 					AbilityLifecycleOrchestrator::TickActiveDuration(
@@ -83,7 +87,8 @@ namespace sas
 
 			this->mRuntimeState.BeginActivation(
 				ResolveActiveDuration(),
-				this->mDefinition.maxCharges
+				this->mDefinition.maxCharges,
+				ShouldDeferActiveDurationStart()
 			);
 			BeginExecution();
 			if (mNotifications.activated)
@@ -152,6 +157,16 @@ namespace sas
 			return true;
 		}
 
+		bool StartDeferredActiveDuration(float activeDuration)
+		{
+			if (!this->mRuntimeState.StartDeferredActiveDuration(activeDuration))
+			{
+				return false;
+			}
+			NotifyChanged();
+			return true;
+		}
+
 		bool IsActive() const { return this->mRuntimeState.IsActive(); }
 		bool IsOnCooldown() const
 		{
@@ -195,9 +210,17 @@ namespace sas
 		virtual void TickExecution(float) {}
 		virtual void EndExecution(AbilityEndReason) {}
 		virtual void TickInactive(float) {}
+		virtual bool HandleInputPressed() { return false; }
+		virtual bool ShouldDeferActiveDurationStart() const { return false; }
 		virtual void EndContent(AbilityEndReason) {}
 		virtual int GetMaximumLevel() const = 0;
 		virtual float ResolveCooldownDuration() const = 0;
+		// Behaviors with an explicit end-state reward can override this without
+		// editing the runtime state after its cooldown has already begun.
+		virtual float ResolveCooldownDurationOnEnd(AbilityEndReason)
+		{
+			return ResolveCooldownDuration();
+		}
 		virtual float ResolveActiveDuration() const = 0;
 		virtual void RebuildDefinitionForLevel() = 0;
 		virtual void OnLevelConfigurationChanged() {}
@@ -226,6 +249,13 @@ namespace sas
 
 		void UpdateInputActivation()
 		{
+			if (this->mRuntimeState.IsActive() &&
+				this->mRuntimeState.IsPressedThisFrame() &&
+				HandleInputPressed())
+			{
+				return;
+			}
+
 			const AbilityLifecycleDecision decision =
 				AbilityLifecycleOrchestrator::EvaluateInput(
 					this->mDefinition.activationPolicy,
@@ -252,7 +282,7 @@ namespace sas
 			EndContent(reason);
 			EndExecution(reason);
 			this->mRuntimeState.EndActivation(
-				ResolveCooldownDuration(),
+				ResolveCooldownDurationOnEnd(reason),
 				this->mDefinition.maxCharges
 			);
 			if (mNotifications.ended)

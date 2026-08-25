@@ -25,6 +25,7 @@ namespace ly
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
 		bool IsProjectileActor() const override { return true; }
+		bool CanBeReflected() const override { return true; }
 		void Render(sf::RenderWindow& window) override;
 		void Destroy() override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
@@ -32,6 +33,9 @@ namespace ly
 		weak_ptr<AbilityWorldActor> SpawnRelayClone(
 			const ProjectileRelayCloneRequest& request
 		) const override;
+		bool TryReflectProjectile(
+			const ProjectileReflectionRequest& request
+		) override;
 
 		float GetProjectileSpeed() const { return mProjectileSpeed; }
 		float GetMaximumRange() const { return mMaximumRange; }

@@ -1,4 +1,5 @@
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
+#include "gameplay/portal/PortalTransferParticipant.h"
 
 #include <algorithm>
 #include <memory>
@@ -80,7 +81,16 @@ namespace ly
 				Destroy();
 				return;
 			}
+			if (const auto* participant = dynamic_cast<const PortalTransferParticipant*>(
+				targetActor.get()); participant && participant->IsInPortalTransit())
+			{
+				// A follow telegraph is owner-bound feedback, not a world effect.
+				// Hide and pause it until its owner has fully left the portal.
+				SetRenderEnabled(false);
+				return;
+			}
 
+			SetRenderEnabled(true);
 			SetActorLocation(targetActor->GetActorLocation());
 		}
 
@@ -175,7 +185,7 @@ namespace ly
 
 	void AreaTelegraphActor::Render(sf::RenderWindow& window)
 	{
-		if (GetIsPendingDestroy())
+		if (GetIsPendingDestroy() || !IsRenderEnabled())
 		{
 			return;
 		}

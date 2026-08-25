@@ -2,6 +2,7 @@
 
 #include "framework/Actor.h"
 #include "framework/World.h"
+#include "gameplay/targeting/SweptGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -61,6 +62,19 @@ namespace ly
 				{
 					outAngleRadians = 0.f;
 					return true;
+				}
+
+				if (query.shape == TargetingShape::Rectangle)
+				{
+					const float directionLength = std::sqrt(directionLengthSquared);
+					const sf::Vector2f forward = query.direction / directionLength;
+					const sf::Vector2f right{ -forward.y, forward.x };
+					const float forwardDistance = Dot(forward, offset);
+					const float sideDistance = Dot(right, offset);
+					return std::abs(forwardDistance) <=
+						std::max(0.f, query.rectangleHalfExtents.x) &&
+						std::abs(sideDistance) <=
+						std::max(0.f, query.rectangleHalfExtents.y);
 				}
 
 				const float normalizedDot = std::clamp(
@@ -188,7 +202,9 @@ namespace ly
 		{
 			const List<weak_ptr<Actor>> candidates = query.candidateProvider
 				? query.candidateProvider(world, query)
-				: world.GetActorsByType<Actor>();
+				: world.GetActorsInBounds(
+					swept::RadiusBounds(query.origin, std::max(0.f, query.range))
+				);
 			return FindTargetsInternal(candidates, query);
 		}
 

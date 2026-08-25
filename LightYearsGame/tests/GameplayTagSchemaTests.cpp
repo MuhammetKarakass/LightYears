@@ -58,6 +58,10 @@ int main()
 		GameplayTagSchema::BlockPrimaryWeaponFire,
 		GameplayTagKind::ActionLock,
 		&failureReason
+	) || !GameplayTagSchema::Validate(
+		GameplayTagSchema::BlockMovementInput,
+		GameplayTagKind::ActionLock,
+		&failureReason
 	))
 	{
 		return Fail("Registered shared action locks were rejected");

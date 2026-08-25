@@ -19,7 +19,8 @@ namespace sas
 		static AbilityLifecycleDecision EvaluateInput(
 			AbilityActivationPolicy activationPolicy,
 			AbilityLifetimePolicy lifetimePolicy,
-			const AbilityRuntimeState& state
+			const AbilityRuntimeState& state,
+			float minimumToggleActiveDuration = ToggleMinimumActiveDurationSeconds
 		);
 		static AbilityLifecycleDecision TickActiveDuration(
 			AbilityLifetimePolicy lifetimePolicy,

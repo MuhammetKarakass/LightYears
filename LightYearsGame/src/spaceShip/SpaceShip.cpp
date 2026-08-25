@@ -69,6 +69,11 @@ namespace ly
 	void SpaceShip::Tick(float deltaTime)
 	{
 		Actor::Tick(deltaTime);
+		if (mPortalTransit)
+		{
+			mCombatRuntime.Tick(deltaTime);
+			return;
+		}
 		sf::Vector2f currentMovementDirection = GetVelocity();
 		const float currentMovementLength = GetVectorLength(currentMovementDirection);
 		if (currentMovementLength > 0.001f)
@@ -88,6 +93,56 @@ namespace ly
 		UpdateBlink(deltaTime);      
 		mCombatRuntime.Tick(deltaTime);
 		UpdateRegeneration(deltaTime);
+	}
+
+	bool SpaceShip::CanEnterPortalTransfer() const
+	{
+		return !GetIsPendingDestroy() &&
+			GetHealthComponent().GetHealth() > 0.f;
+	}
+
+	float SpaceShip::GetPortalTransferRadius() const
+	{
+		const sf::FloatRect bounds = GetActorGlobalBounds();
+		return std::max(1.f, std::min(bounds.size.x, bounds.size.y) * 0.5f);
+	}
+
+	void SpaceShip::BeginPortalTransit()
+	{
+		if (mPortalTransit)
+		{
+			return;
+		}
+
+		mPortalTransit = true;
+		mPortalPhysicsWasEnabled = IsPhysicsEnabled();
+		mPortalCollisionLayer = GetCollisionLayer();
+		mPortalCollisionMask = GetCollisionMask();
+		mPortalVelocity = GetVelocity();
+		SetRenderEnabled(false);
+		SetVelocity({});
+		SetCollisionLayer(CollisionLayer::None);
+		SetCollisionMask(CollisionLayer::None);
+		SetEnablePhysics(false);
+	}
+
+	void SpaceShip::CompletePortalTransit(const sf::Vector2f& exitLocation)
+	{
+		if (!mPortalTransit)
+		{
+			return;
+		}
+
+		SetActorLocation(exitLocation);
+		SetCollisionLayer(mPortalCollisionLayer);
+		SetCollisionMask(mPortalCollisionMask);
+		if (mPortalPhysicsWasEnabled)
+		{
+			SetEnablePhysics(true);
+		}
+		SetVelocity(mPortalVelocity);
+		SetRenderEnabled(true);
+		mPortalTransit = false;
 	}
 
 	void SpaceShip::RefreshMovementAttributesFromRuntime()
@@ -324,5 +379,14 @@ namespace ly
 		}
 
 		mCombatRuntime.NotifyDamageResolved(context);
+		if (context.appliedDamage > 0.f)
+		{
+			onDamageTaken.Broadcast(
+				this,
+				context.appliedDamage,
+				mHealthComponent.GetHealth(),
+				mHealthComponent.GetMaxHealth()
+			);
+		}
 	}
 }

@@ -156,6 +156,15 @@ namespace ly
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)
 	{
 		mProcessingDamageContext = &context;
+		// Capture target identity and location before any status/death callback can
+		// destroy the owning ship. Kill-driven abilities consume this snapshot
+		// instead of dereferencing a possibly invalid event target pointer.
+		context.targetWasEnemyCombatant =
+			mOwner.GetCollisionLayer() == CollisionLayer::Enemy &&
+			dynamic_cast<Combatant*>(&mOwner) != nullptr;
+		const sf::Vector2f targetLocation = mOwner.GetActorLocation();
+		context.targetLocationAtResolution.x = targetLocation.x;
+		context.targetLocationAtResolution.y = targetLocation.y;
 		mAbilitySystemComponent.ProcessGameplayEffectEvent(
 			context,
 			std::vector<IncomingDamagePhase>{
@@ -212,6 +221,17 @@ namespace ly
 				mAbilitySystemComponent,
 				context
 			);
+		// HealthComponent::HealthEmpty can synchronously destroy the ship and
+		// clear its effects. Capture Cryo state now, after this hit's Cryo status
+		// application, so KillConfirmed can still observe it later in the source
+		// combatant's notification path.
+		context.targetWasCryoAffected =
+			mAbilitySystemComponent.FindGameplayEffectById(
+				DamageStatusEffectIds::CryoBuildupEffectId
+			) != nullptr ||
+			mAbilitySystemComponent.FindGameplayEffectById(
+				DamageStatusEffectIds::CryoSlowedEffectId
+			) != nullptr;
 		if (auto* sourceCombatant = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr)
 		{
 			for (const GameplayTag& status : appliedStatuses)

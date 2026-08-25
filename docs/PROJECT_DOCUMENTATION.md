@@ -61,10 +61,10 @@ kullanılır. C++ tarafı ability kimliğini, behavior türünü, actor türün�
 presentation profile tipini ve validasyon sözleşmesini sahibi olmaya devam eder.
 
 - `sas::AbilityRuntimeBinding`, ability'nin content tanımından bağımsız runtime
-  ekipman slotunu taşır. Varsayılan oyuncu yüklemesi artık Q Gravity Anomaly,
-  E Relay Prism, F Rocket, R Overdrive Core'dur.
-- Shipped catalog; Shield Harvest, Hull Shock, Orbital Drones, Execution Drive
-  ve Relay Prism ile genişlemiştir. Ayrıntılı güncel tablo
+  ekipman slotunu taşır. Varsayılan oyuncu yüklemesi artık Q Directional Barrier,
+  E Relay Prism, F Ion Storm, R Rail Burst'tür.
+- Shipped catalog; Echo Protocol, Mine Layer, Rail Burst, Crescent Reaver,
+  Energy Spear, Scorch Drive ve Ion Storm ile 21 active family'ye genişlemiştir. Varsayılan loadout'ta F slotu Ion Storm'a bağlıdır. Ayrıntılı güncel tablo
   [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md) ve vault
   içindeki `00 - Runtime Snapshot` notundadır.
 - Relay Prism, farenin konumunda ability projectile yakalayıp lineage korumalı
@@ -76,6 +76,13 @@ presentation profile tipini ve validasyon sözleşmesini sahibi olmaya devam ede
   Shock gerçek alan yarıçapını aynı radial resolver'dan türetir.
 - Shield Harvest'in temporary overshield'ı kalıcı ship shield ve Barrier
   effect'inden ayrı bir runtime katmanıdır.
+- Ion Storm, cursor'a giden hasarsız projectile'ın hedefte 4 saniyelik Electric
+  alan açtığı bir delivery/field family'sidir. Alanın düzensiz sınırı cast başına
+  bir kez üretilir; aynı `IonStormBoundary` hem gameplay hedef filtresinde hem de
+  presentation çiziminde kullanılır. 250 inner core, 250–335 dış sınır, 0.25 sn
+  tick ve 16 tick sabittir; Common.Damage 6 + `Owner.AttackPower × 0.12` ile
+  çözülür ve seviyeler yalnız damage/cooldown'u geliştirir. Presentation tek
+  renkli tek dolu düzensiz şekildir; iç dolgu katmanı ve iç enerji çizgileri yoktur.
 
 Bu bölüm, tarihsel migration notlarının yerine geçmez; eski bölümlerdeki
 "varsayılan loadout" ve "son doğrulama" ifadeleriyle çelişirse bu bölüm ile
@@ -1063,13 +1070,14 @@ etkileri uygulandıktan sonraki ekrandaki değer farklı olabilir.
 
 ~~~text
 perPelletMultiplier = max(minimumDamageMultiplier,
-                          1 - damageReductionPerAdditionalHit * (hitCount - 1))
+	                          1 - damageReductionPerAdditionalHit * priorHitsOnTarget)
 damagePerPellet = baseDamage * perPelletMultiplier
 ~~~
 
-Rapid Shotgun’da üç pellet aynı hedefe çarparsa çarpan x0.8, toplam vuruş
-hasarı 3 × 10 × 0.8 = 24 olur; üçü farklı hedefe çarparsa her hedef x1.0
-ile 10 alır.
+Rapid Shotgun’da üç pellet aynı hedefe çarparsa çarpanlar sırasıyla x1.0,
+x0.9 ve x0.8 olur; toplam vuruş hasarı `10 + 9 + 8 = 27` olur. Hasar her
+pellet impact anında uygulanır; volley'nin son pellet'ini beklemez. Üç pellet
+farklı hedefe çarparsa her hedef ilk-hit x1.0 ile 10 alır.
 
 **Electric Arc**
 

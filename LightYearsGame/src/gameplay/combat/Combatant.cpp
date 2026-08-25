@@ -19,6 +19,19 @@ namespace ly
 		return GetCombatRuntime().GetAbilitySystemComponent();
 	}
 
+	bool CanApplyContactDamage(const Actor& source, const Actor& target)
+	{
+		const auto blocksContactDamage = [](const Actor& actor)
+		{
+			const auto* combatant = dynamic_cast<const Combatant*>(&actor);
+			return combatant && combatant->GetAbilitySystemComponent().HasOwnedTag(
+				GameplayTags::State::Ability::EnergySpear::Traversing
+			);
+		};
+
+		return !blocksContactDamage(source) && !blocksContactDamage(target);
+	}
+
 	void ApplyCombatDamage(Actor& target, float damage, Actor* source, const List<GameplayTag>& damageTags)
 	{
 		ApplyCombatDamage(target, damage, source, damageTags, {});
@@ -50,7 +63,9 @@ namespace ly
 		const List<GameplayTag>& damageTags,
 		const DamagePayload& payload,
 		const sas::ContentId& sourceAbilityId,
-		const List<GameplayTag>& sourceAbilityTags
+		const List<GameplayTag>& sourceAbilityTags,
+		DamageDeliveryType deliveryType,
+		Actor* deliveryActor
 	)
 	{
 		if (damage <= 0.f)
@@ -99,6 +114,8 @@ namespace ly
 			DamageContext context;
 			context.source = source;
 			context.target = &target;
+			context.deliveryType = deliveryType;
+			context.deliveryActor = deliveryActor;
 			context.sourceAbilityId = sourceAbilityId;
 			context.sourceAbilityTags = sourceAbilityTags;
 			context.originalDamage = resolvedDamage;

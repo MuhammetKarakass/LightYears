@@ -8,6 +8,7 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/weapon/visuals/ContinuousBeamVisualActor.h"
+#include "gameplay/targeting/SweptGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -175,6 +176,7 @@ namespace ly
 				const DamagePayload payload =
 					DamageTypeSystem::BuildPayload(context.damageTags, context.attributes);
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
+				Set<Actor*> damagedTargets;
 				size_t beamIndex = 0;
 				const auto tickBeam = [&](const WeaponMuzzleDefinition& muzzle)
 				{
@@ -203,23 +205,28 @@ namespace ly
 						context.definition.presentationDefinition.pointLightDef.color
 					);
 
+					const sf::Vector2f end = start + direction * range;
 					for (const weak_ptr<Actor>& targetWeak :
-						context.owner.GetWorld()->GetActorsByType<Actor>())
+						context.owner.GetWorld()->GetActorsInBounds(
+							targeting::swept::SegmentBounds(start, end, width * 0.5f)
+						))
 					{
 						const shared_ptr<Actor> target = targetWeak.lock();
-						if (!target || !beam->IsValidDamageTarget(target.get()))
+						if (!target ||
+							damagedTargets.find(target.get()) != damagedTargets.end() ||
+							!beam->IsValidDamageTarget(target.get()))
 						{
 							continue;
 						}
 
-						const sf::Vector2f toTarget = target->GetActorLocation() - start;
-						const float forwardDistance =
-							toTarget.x * direction.x + toTarget.y * direction.y;
-						const float lateralDistance =
-							std::abs(toTarget.x * direction.y - toTarget.y * direction.x);
-						if (forwardDistance >= 0.f && forwardDistance <= range &&
-							lateralDistance <= width * 0.5f)
+						if (targeting::swept::SegmentIntersectsExpandedBounds(
+							start,
+							end,
+							target->GetActorGlobalBounds(),
+							width * 0.5f
+						))
 						{
+							damagedTargets.insert(target.get());
 							ApplyCombatDamage(
 								*target,
 								damage,

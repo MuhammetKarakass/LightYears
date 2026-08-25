@@ -7,10 +7,13 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
+#include "gameplay/targeting/SweptGeometry.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/time/PeriodicTickAccumulator.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/portal/PortalTransferParticipant.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
 #include <SFML/Graphics/PrimitiveType.hpp>
@@ -125,14 +128,20 @@ namespace ly
 
 	void InfernoSprayActor::Tick(float deltaTime)
 	{
-		AbilityWorldActor::Tick(deltaTime);
-
 		Actor* owner = GetOwnerActor();
 		if (!owner || owner->GetIsPendingDestroy())
 		{
 			Destroy();
 			return;
 		}
+		if (const auto* participant = dynamic_cast<const PortalTransferParticipant*>(owner);
+			participant && participant->IsInPortalTransit())
+		{
+			SetRenderEnabled(false);
+			return;
+		}
+		SetRenderEnabled(true);
+		AbilityWorldActor::Tick(deltaTime);
 
 		if (auto* combatant = dynamic_cast<Combatant*>(owner))
 		{
@@ -146,10 +155,13 @@ namespace ly
 		SetActorLocation(GetMuzzleLocation());
 
 		mVisualTime += deltaTime;
-		mCombatTickTimer += deltaTime;
-		while (mCombatTickTimer >= mCombatTickInterval && mCombatTickInterval > 0.f)
+		const int tickCount = time::ConsumePeriodicTicks(
+			mCombatTickTimer,
+			deltaTime,
+			mCombatTickInterval
+		);
+		for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
 		{
-			mCombatTickTimer -= mCombatTickInterval;
 			PerformCombatTick();
 		}
 	}
@@ -204,7 +216,9 @@ namespace ly
 		const float resolvedDPS = mBaseDPS + attackPower * 0.75f;
 		const float damagePerTick = resolvedDPS * mCombatTickInterval;
 
-		for (const weak_ptr<Actor>& actorWeak : world->GetActorsByType<Actor>())
+		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
+			targeting::swept::RadiusBounds(muzzlePos, mRange)
+		))
 		{
 			shared_ptr<Actor> target = actorWeak.lock();
 			if (!target || !IsValidAbilityTarget(target.get()))
@@ -244,6 +258,10 @@ namespace ly
 
 	void InfernoSprayActor::Render(sf::RenderWindow& window)
 	{
+		if (!IsRenderEnabled())
+		{
+			return;
+		}
 		AbilityWorldActor::Render(window);
 
 		const sf::Vector2f muzzlePos = GetMuzzleLocation();

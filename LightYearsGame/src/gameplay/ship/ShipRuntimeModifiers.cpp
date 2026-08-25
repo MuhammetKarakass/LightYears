@@ -34,6 +34,10 @@ namespace ly
 		modifier.movementSpeedMultiplier = std::max(0.f, modifier.movementSpeedMultiplier);
 		modifier.shieldRegenMultiplier = std::max(0.f, modifier.shieldRegenMultiplier);
 		modifier.afterburnerRegenMultiplier = std::max(0.f, modifier.afterburnerRegenMultiplier);
+		modifier.afterburnerEnergyDrainMultiplier = std::max(
+			0.f,
+			modifier.afterburnerEnergyDrainMultiplier
+		);
 		mModifiers[sourceId] = modifier;
 	}
 
@@ -76,5 +80,13 @@ namespace ly
 	float ShipRuntimeModifiers::GetAfterburnerRegenMultiplier() const
 	{
 		return ResolveProduct(mModifiers, &ShipRuntimeModifier::afterburnerRegenMultiplier);
+	}
+
+	float ShipRuntimeModifiers::GetAfterburnerEnergyDrainMultiplier() const
+	{
+		return ResolveProduct(
+			mModifiers,
+			&ShipRuntimeModifier::afterburnerEnergyDrainMultiplier
+		);
 	}
 }

@@ -11,6 +11,25 @@
 #include "presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.h"
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
 #include "presentation/ability/relayPrism/RelayPrismPresentationProfile.h"
+#include "presentation/ability/railBurst/RailBurstPresentationProfile.h"
+#include "presentation/ability/crescentReaver/CrescentReaverPresentationProfile.h"
+#include "presentation/ability/mineLayer/MineLayerPresentationProfile.h"
+#include "presentation/ability/energySpear/EnergySpearPresentationProfile.h"
+#include "presentation/ability/scorchDrive/ScorchDrivePresentationProfile.h"
+#include "presentation/ability/ionStorm/IonStormPresentationProfile.h"
+#include "presentation/ability/directionalBarrier/DirectionalBarrierPresentationProfile.h"
+#include "presentation/ability/glacialPressure/GlacialPressurePresentationProfile.h"
+#include "presentation/ability/chainLightning/ChainLightningPresentationProfile.h"
+#include "presentation/ability/voidGate/VoidGatePresentationProfile.h"
+#include "presentation/ability/cryostasis/CryostasisPresentationProfile.h"
+#include "presentation/ability/frostMaelstrom/FrostMaelstromPresentationProfile.h"
+#include "presentation/ability/frozenThrong/FrozenThrongPresentationProfile.h"
+#include "presentation/ability/combatSentry/CombatSentryPresentationProfile.h"
+#include "presentation/ability/nanoPlague/NanoPlaguePresentationProfile.h"
+#include "presentation/ability/astralSurge/AstralSurgePresentationProfile.h"
+#include "presentation/ability/wingSentinels/WingSentinelsPresentationProfile.h"
+#include "presentation/ability/returnProtocol/ReturnProtocolPresentationProfile.h"
+#include "presentation/ability/crystalBarricade/CrystalBarricadePresentationProfile.h"
 
 namespace ly
 {
@@ -27,7 +46,26 @@ namespace ly
 			RegisterHullShockPresentationProfiles() &&
 			RegisterSunBeamPresentationProfiles() &&
 			RegisterInfernoSprayPresentationProfiles() &&
-			RegisterRelayPrismPresentationProfiles();
+			RegisterRelayPrismPresentationProfiles() &&
+			RegisterRailBurstPresentationProfiles() &&
+			RegisterCrescentReaverPresentationProfiles() &&
+			RegisterMineLayerPresentationProfiles() &&
+			RegisterEnergySpearPresentationProfiles() &&
+			RegisterScorchDrivePresentationProfiles() &&
+			RegisterDirectionalBarrierPresentationProfiles() &&
+			RegisterIonStormPresentationProfiles() &&
+			RegisterGlacialPressurePresentationProfiles() &&
+			RegisterChainLightningPresentationProfiles() &&
+			RegisterCryostasisPresentationProfiles() &&
+			RegisterVoidGatePresentationProfiles() &&
+			RegisterFrostMaelstromPresentationProfiles() &&
+			RegisterFrozenThrongPresentationProfiles() &&
+			RegisterCombatSentryPresentationProfiles() &&
+			RegisterNanoPlaguePresentationProfiles() &&
+			RegisterAstralSurgePresentationProfiles() &&
+			RegisterWingSentinelsPresentationProfiles() &&
+			RegisterReturnProtocolPresentationProfiles() &&
+			RegisterCrystalBarricadePresentationProfiles();
 		return registered;
 	}
 }

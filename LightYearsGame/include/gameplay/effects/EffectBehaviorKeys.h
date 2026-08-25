@@ -18,4 +18,10 @@ namespace ly::EffectBehaviorKeys
 	inline const sas::GameplayEffectBehaviorKey GravityAnomaly{
 		"EffectBehavior.GravityAnomaly"
 	};
+	inline const sas::GameplayEffectBehaviorKey DirectionalBarrier{
+		"EffectBehavior.DirectionalBarrier"
+	};
+	inline const sas::GameplayEffectBehaviorKey CryostasisIceShell{
+		"EffectBehavior.CryostasisIceShell"
+	};
 }

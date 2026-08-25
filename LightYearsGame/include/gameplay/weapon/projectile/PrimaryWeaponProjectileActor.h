@@ -5,6 +5,8 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 
+#include <unordered_set>
+
 
 namespace ly
 {
@@ -25,11 +27,15 @@ namespace ly
 		virtual void BeginPlay() override;
 		virtual void Tick(float deltaTime) override;
 		bool IsProjectileActor() const override { return true; }
+		bool CanBeReflected() const override { return true; }
 
 		virtual void OnActorBeginOverlap(Actor* otherActor) override;
 		weak_ptr<AbilityWorldActor> SpawnRelayClone(
 			const ProjectileRelayCloneRequest& request
 		) const override;
+		bool TryReflectProjectile(
+			const ProjectileReflectionRequest& request
+		) override;
 
 		float GetDamage() const { return AbilityWorldActor::GetDamage(); };
 		void SetLaunchVelocity(const sf::Vector2f& launchVelocity);
@@ -54,5 +60,6 @@ namespace ly
 		shared_ptr<ProjectileImpactBehavior> mImpactBehavior;
 		bool mHasLaunchVelocity = false;
 		bool mImpactBehaviorCompleted = false;
+		std::unordered_set<unsigned int> mProcessedImpactTargets;
 	};
 }

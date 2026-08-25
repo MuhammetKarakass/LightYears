@@ -3,7 +3,9 @@
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
+#include "gameplay/projectile/ProjectileReflectionService.h"
 #include "gameplay/weapon/impact/ProjectileImpactBehavior.h"
+#include "gameplay/projectile/ProjectileSweep.h"
 #include "framework/Core.h"
 #include "framework/PerfMonitor.h"
 #include "framework/MathUtility.h"
@@ -13,6 +15,18 @@
 
 namespace ly
 {
+	namespace
+	{
+		sf::Vector2f NormalizeOrDefault(
+			const sf::Vector2f& direction,
+			const sf::Vector2f& fallback
+		)
+		{
+			const float length = GetVectorLength(direction);
+			return length > 0.001f ? direction / length : fallback;
+		}
+	}
+
 	PrimaryWeaponProjectileActor::PrimaryWeaponProjectileActor(
 		World* world,
 		Actor* owner,
@@ -55,6 +69,11 @@ namespace ly
 
 	void PrimaryWeaponProjectileActor::Tick(float deltaTime)
 	{
+		if (IsInPortalTransit())
+		{
+			AbilityWorldActor::Tick(deltaTime);
+			return;
+		}
 		Move(deltaTime);
 		mTravelDistance += GetVectorLength(mLaunchVelocity) * deltaTime;
 
@@ -73,8 +92,17 @@ namespace ly
 		{
 			return;
 		}
+		if (TryReflectOnOverlap(otherActor))
+		{
+			return;
+		}
 		if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(otherActor);
 			captureVolume && captureVolume->TryCaptureProjectile(*this))
+		{
+			return;
+		}
+		if (!otherActor ||
+			!mProcessedImpactTargets.insert(otherActor->GetUniqueID()).second)
 		{
 			return;
 		}
@@ -136,6 +164,34 @@ namespace ly
 		return clone;
 	}
 
+	bool PrimaryWeaponProjectileActor::TryReflectProjectile(
+		const ProjectileReflectionRequest& request
+	)
+	{
+		if (!CanBeReflected() ||
+			(GetOwnerActor() == &request.newOwner && !request.allowSameOwnerReflection) ||
+			GetVectorLength(request.returnDirection) <= 0.001f)
+		{
+			return false;
+		}
+
+		const float speed = std::max(
+			0.f,
+			GetVectorLength(mLaunchVelocity) > 0.001f
+				? GetVectorLength(mLaunchVelocity)
+				: mSpeed
+		);
+		const sf::Vector2f direction = NormalizeOrDefault(
+			request.returnDirection,
+			GetActorForwardDirection()
+		);
+		ApplyReflectionOwnership(request.newOwner, request.damageMultiplier);
+		mLaunchVelocity = direction * speed;
+		SetVelocity(mLaunchVelocity);
+		SetActorRotation(std::atan2(direction.y, direction.x) * 57.2957795131f + 90.f);
+		return true;
+	}
+
 	void PrimaryWeaponProjectileActor::SetImpactBehavior(
 		const shared_ptr<ProjectileImpactBehavior>& impactBehavior
 	)
@@ -158,7 +214,49 @@ namespace ly
 			mHasLaunchVelocity = true;
 		}
 		SetVelocity(mLaunchVelocity);
-		AddActorLocationOffset(mLaunchVelocity * deltaTime);
+
+		const sf::Vector2f startLocation = GetActorLocation();
+		const sf::Vector2f endLocation = startLocation + mLaunchVelocity * deltaTime;
+		World* world = GetWorld();
+		if (!world || deltaTime <= 0.f)
+		{
+			SetActorLocation(endLocation);
+			return;
+		}
+
+		const float collisionRadius = std::max(0.f, GetPhysicsCollisionRadius());
+		for (const projectile::SweptContact& contact :
+			projectile::FindSweptContacts(
+				*this,
+				startLocation,
+				endLocation,
+				collisionRadius
+			))
+		{
+			if (GetIsPendingDestroy() || IsInPortalTransit())
+			{
+				return;
+			}
+			SetActorLocation(
+				startLocation + (endLocation - startLocation) * contact.fraction
+			);
+			if (contact.hasSurfaceNormal &&
+				ProjectileReflectionService::TryReflectFromSurface(
+					*this,
+					*contact.actor,
+					{ contact.impactLocation, contact.surfaceNormal }
+				))
+			{
+				// The reflected velocity starts a fresh segment next frame. Continuing
+				// along the pre-impact segment would overwrite the new direction.
+				return;
+			}
+			OnActorBeginOverlap(contact.actor.get());
+		}
+		if (!GetIsPendingDestroy() && !IsInPortalTransit())
+		{
+			SetActorLocation(endLocation);
+		}
 	}
 
 	void PrimaryWeaponProjectileActor::ApplyImpactDamage(Actor* directHitActor)
@@ -171,7 +269,17 @@ namespace ly
 
 		if (IsValidAbilityTarget(directHitActor))
 		{
-			ApplyCombatDamage(*directHitActor, GetDamage(), GetOwner(), GetDamageTags(), GetDamagePayload());
+			ApplyCombatDamage(
+				*directHitActor,
+				GetDamage(),
+				GetOwner(),
+				GetDamageTags(),
+				GetDamagePayload(),
+				sas::ContentId{},
+				{},
+				DamageDeliveryType::Projectile,
+				this
+			);
 			LY_GAME_TRACE("Primary weapon projectile damage: %f", GetDamage());
 		}
 	}

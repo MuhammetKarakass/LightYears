@@ -7,10 +7,12 @@
 #include <widget/Button.h>
 #include "framework/TimerManager.h"
 #include "gameplay/GameplayWarning.h"
+#include <unordered_set>
 
 namespace ly
 {
 	class Actor;
+	class SpaceShip;
 	class PlayerSpaceShip;
 
 	class GameHUD : public HUD
@@ -48,11 +50,25 @@ namespace ly
 		void PlayerLifeUpdated(int amt);
 		void PlayerScoreUpdated(int amt);
 		void UpdateGameplayWarningVisuals(float deltaTime);
+		void ConnectDamageObservers();
+		void ShipDamageTaken(SpaceShip* ship, float amount, float health, float maxHealth);
+		void UpdateDamageNumberVisuals(float deltaTime);
+		void UpdatePlayerSpeed();
 
+		struct DamageNumberEntry
+		{
+			weak_ptr<SpaceShip> ship;
+			weak_ptr<TextWidget> widget;
+			float age{ 0.f };
+		};
+
+		// TEMPORARY TEST UI: damage numbers and the speed readout are prototype
+		// presentation only and will be replaced/repositioned during HUD polish.
 		std::optional<ValueGauge> mPlayerHealthBar;
 		std::optional<ValueGauge> mPlayerShieldBar;
 		std::optional<ValueGauge> mPlayerEnergyBar;
 		std::optional<TextWidget> mFrameRateText;
+		std::optional<TextWidget> mPlayerSpeedText;
 
 		std::optional<ImageWidget> mPlayerLifeIcon;
 		std::optional<TextWidget> mPlayerLifeText;
@@ -63,6 +79,8 @@ namespace ly
 		std::optional<TextWidget> mTopCenterText;
 		weak_ptr<TextWidget> mTimerText;
 		weak_ptr<TextWidget> mCenterNotificationText;
+		List<DamageNumberEntry> mDamageNumbers;
+		std::unordered_set<SpaceShip*> mObservedDamageShips;
 
 		weak_ptr<ValueGauge> mBossHealthBar;
 		weak_ptr<TextWidget> mBossNameText;

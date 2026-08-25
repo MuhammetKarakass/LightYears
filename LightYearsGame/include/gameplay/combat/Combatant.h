@@ -52,6 +52,12 @@ namespace ly
 		const List<GameplayTag>& damageTags,
 		const DamagePayload& payload,
 		const sas::ContentId& sourceAbilityId,
-		const List<GameplayTag>& sourceAbilityTags
+		const List<GameplayTag>& sourceAbilityTags,
+		DamageDeliveryType deliveryType = DamageDeliveryType::Direct,
+		Actor* deliveryActor = nullptr
 	);
+
+	// Contact damage is emitted by several actor families. Keeping this gate
+	// here prevents each ship/obstacle from knowing Energy Spear's lifecycle.
+	bool CanApplyContactDamage(const Actor& source, const Actor& target);
 }

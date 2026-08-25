@@ -4,6 +4,7 @@
 #include "framework/World.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
+#include "gameplay/targeting/SweptGeometry.h"
 
 #include <algorithm>
 
@@ -32,7 +33,9 @@ namespace ly
 			const float radiusSquared = safeRadius * safeRadius;
 			Set<Actor*> seenActors;
 
-			for (const weak_ptr<Actor>& actorWeak : world.GetActorsByType<Actor>())
+			for (const weak_ptr<Actor>& actorWeak : world.GetActorsInBounds(
+				targeting::swept::RadiusBounds(source.GetActorLocation(), safeRadius)
+			))
 			{
 				const shared_ptr<Actor> actor = actorWeak.lock();
 				if (!actor || actor.get() == &source ||

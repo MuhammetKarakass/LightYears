@@ -22,6 +22,14 @@ namespace sas
 			return true;
 		}
 
+		// Active abilities may consume a new press themselves. This is used by
+		// staged abilities such as a two-point portal, while ordinary abilities
+		// continue through the normal lifecycle evaluator.
+		virtual bool OnInputPressed(Context&)
+		{
+			return false;
+		}
+
 		virtual void Tick(Context&, float)
 		{
 		}

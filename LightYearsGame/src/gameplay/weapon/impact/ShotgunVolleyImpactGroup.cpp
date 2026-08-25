@@ -29,67 +29,39 @@ namespace ly
 
 	void ShotgunVolleyImpactGroup::AddPellet()
 	{
-		if (!mResolved)
-		{
-			++mRemainingPellets;
-		}
+		++mRemainingPellets;
 	}
 
 	void ShotgunVolleyImpactGroup::RegisterImpact(Actor& target)
 	{
-		if (mResolved || target.GetIsPendingDestroy())
+		if (target.GetIsPendingDestroy())
 		{
 			return;
 		}
 
-		const shared_ptr<Object> targetObject = target.GetWeakPtr().lock();
-		const shared_ptr<Actor> targetActor = std::dynamic_pointer_cast<Actor>(targetObject);
-		if (!targetActor)
-		{
-			return;
-		}
-
-		TargetImpactRecord& record = mTargetImpacts[target.GetUniqueID()];
-		record.target = targetActor;
-		++record.hitCount;
+		int& hitCount = mTargetHitCounts[target.GetUniqueID()];
+		const float multiplier = std::max(
+			mMinimumDamageMultiplier,
+			1.f - mDamageReductionPerAdditionalHit * static_cast<float>(hitCount)
+		);
+		++hitCount;
+		const shared_ptr<Actor> source = mSource.lock();
+		ApplyCombatDamage(
+			target,
+			mBaseDamage * multiplier,
+			source.get(),
+			mDamageTags,
+			mDamagePayload
+		);
 	}
 
 	void ShotgunVolleyImpactGroup::CompletePellet()
 	{
-		if (mResolved || mRemainingPellets <= 0)
+		if (mRemainingPellets <= 0)
 		{
 			return;
 		}
 
 		--mRemainingPellets;
-		if (mRemainingPellets == 0)
-		{
-			mResolved = true;
-			ResolveDamage();
-		}
-	}
-
-	void ShotgunVolleyImpactGroup::ResolveDamage()
-	{
-		const shared_ptr<Actor> source = mSource.lock();
-		for (const auto& [targetId, record] : mTargetImpacts)
-		{
-			(void)targetId;
-			const shared_ptr<Actor> target = record.target.lock();
-			if (!target || target->GetIsPendingDestroy() || record.hitCount <= 0)
-			{
-				continue;
-			}
-
-			const float multiplier = std::max(
-				mMinimumDamageMultiplier,
-				1.f - mDamageReductionPerAdditionalHit * static_cast<float>(record.hitCount - 1)
-			);
-			const float damagePerPellet = mBaseDamage * multiplier;
-			for (int hitIndex = 0; hitIndex < record.hitCount && !target->GetIsPendingDestroy(); ++hitIndex)
-			{
-				ApplyCombatDamage(*target, damagePerPellet, source.get(), mDamageTags, mDamagePayload);
-			}
-		}
 	}
 }

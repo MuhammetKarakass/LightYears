@@ -4,6 +4,7 @@
 #include "gameplay/GameStage.h"
 #include "widget/HUD.h"
 #include "framework/PerfMonitor.h"
+#include "framework/PhysicsSystem.h"
 #include <algorithm>
 #include <iterator>
 #include <utility>
@@ -364,6 +365,69 @@ namespace ly{
 		{
 			mCameraManager.Update(deltaTime, mOwningApp->GetRenderWindow().getDefaultView());
 		}
+	}
+
+	List<weak_ptr<Actor>> World::GetActorsInBounds(
+		const sf::FloatRect& bounds
+	) const
+	{
+		List<weak_ptr<Actor>> result;
+		Set<Actor*> seen;
+		const auto addActor = [&](Actor* actor)
+		{
+			if (!actor || actor->GetWorld() != this || actor->GetIsPendingDestroy() ||
+				!seen.insert(actor).second)
+			{
+				return;
+			}
+			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
+			const shared_ptr<Actor> sharedActor = object
+				? std::dynamic_pointer_cast<Actor>(object)
+				: shared_ptr<Actor>{};
+			if (sharedActor)
+			{
+				result.push_back(sharedActor);
+			}
+		};
+
+		for (Actor* actor : PhysicsSystem::Get().QueryActorsInBounds(bounds))
+		{
+			addActor(actor);
+		}
+
+		// Physics-disabled gameplay coordinators and test fixtures still need to
+		// participate. Production combatants normally come from the broadphase,
+		// keeping this fallback set small.
+		for (const shared_ptr<Actor>& actor : mActors)
+		{
+			if (!actor || actor->HasPhysicsBody() || actor->GetIsPendingDestroy())
+			{
+				continue;
+			}
+			const sf::FloatRect actorBounds = actor->GetActorGlobalBounds();
+			const sf::Vector2f location = actor->GetActorLocation();
+			const float actorLeft = actorBounds.size.x > 0.f
+				? actorBounds.position.x
+				: location.x;
+			const float actorRight = actorBounds.size.x > 0.f
+				? actorBounds.position.x + actorBounds.size.x
+				: location.x;
+			const float actorTop = actorBounds.size.y > 0.f
+				? actorBounds.position.y
+				: location.y;
+			const float actorBottom = actorBounds.size.y > 0.f
+				? actorBounds.position.y + actorBounds.size.y
+				: location.y;
+			const bool intersects = actorRight >= bounds.position.x &&
+				actorLeft <= bounds.position.x + bounds.size.x &&
+				actorBottom >= bounds.position.y &&
+				actorTop <= bounds.position.y + bounds.size.y;
+			if (intersects)
+			{
+				addActor(actor.get());
+			}
+		}
+		return result;
 	}
 	void World::RenderHUD(sf::RenderWindow& window)
 	{

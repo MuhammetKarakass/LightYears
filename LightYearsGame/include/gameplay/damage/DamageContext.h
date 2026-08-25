@@ -25,6 +25,10 @@ namespace ly
 		float armorPenetration = 0.f;
 		int igniteStacks = 0;
 		float burnDamagePerSecond = 0.f;
+		// Optional fixed-period Burn mode. Legacy sources continue to use
+		// burnDamagePerSecond; Scorch Drive supplies these snapshot values.
+		float burnDamagePerTick = 0.f;
+		float burnTickInterval = 0.f;
 		float burnDuration = 0.f;
 		int burnMaxStacks = 1;
 		int cryoBuildupPerHit = 0;
@@ -40,10 +44,24 @@ namespace ly
 		float criticalDamageMultiplier = 2.f;
 	};
 
+	// Delivery kind is shared metadata for incoming-damage defenses. It keeps
+	// projectile-only protection out of weapon/ability-specific conditionals and
+	// leaves beams, fields, contact, and direct damage distinguishable.
+	enum class DamageDeliveryType
+	{
+		Direct,
+		Projectile,
+		Beam,
+		Area,
+		Contact
+	};
+
 	struct DamageContext
 	{
 		Actor* source = nullptr;
 		Actor* target = nullptr;
+		DamageDeliveryType deliveryType = DamageDeliveryType::Direct;
+		Actor* deliveryActor = nullptr;
 		sas::ContentId sourceAbilityId;
 		List<GameplayTag> sourceAbilityTags;
 		float originalDamage = 0.f;
@@ -56,6 +74,19 @@ namespace ly
 		// This is true only after health/shield resolution confirms that the hit
 		// actually reduced the target's health to zero.
 		bool targetWasKilled = false;
+		// Snapshot taken after this hit's status application but before health
+		// death callbacks can clear the target's CombatRuntime. This lets global
+		// kill mechanics evaluate Cryo at the actual kill boundary.
+		bool targetWasCryoAffected = false;
+		// Immutable target snapshots keep kill reactions safe when the target's
+		// death callback destroys the actor before the source receives KillConfirmed.
+		bool targetWasEnemyCombatant = false;
+		struct TargetLocationSnapshot
+		{
+			float x = 0.f;
+			float y = 0.f;
+		};
+		TargetLocationSnapshot targetLocationAtResolution{};
 		List<GameplayTag> damageTags;
 		DamagePayload payload;
 	};

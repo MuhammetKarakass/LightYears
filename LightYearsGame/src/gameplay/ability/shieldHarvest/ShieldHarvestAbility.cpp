@@ -4,6 +4,7 @@
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/shieldHarvest/ShieldHarvestContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/portal/PortalTransferParticipant.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -176,6 +177,13 @@ namespace ly
 	{
 		if (mHarvested)
 		{
+			return;
+		}
+		if (const auto* participant = dynamic_cast<const PortalTransferParticipant*>(
+			&context.owner); participant && participant->IsInPortalTransit())
+		{
+			// The enemy count is a single completion-edge snapshot. Pause the
+			// focus rather than resolving it from the hidden entrance position.
 			return;
 		}
 

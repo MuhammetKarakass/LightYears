@@ -34,12 +34,46 @@ namespace sas
 
 	void AbilityRuntimeState::BeginActivation(float activeDuration, int maxCharges)
 	{
+		BeginActivation(activeDuration, maxCharges, false);
+	}
+
+	void AbilityRuntimeState::BeginActivation(
+		float activeDuration,
+		int maxCharges,
+		bool deferActiveDuration
+	)
+	{
 		if (maxCharges > 0 && mCharges > 0)
 		{
 			--mCharges;
 		}
 		mIsActive = true;
-		mActiveTimeRemaining = activeDuration;
+		mActiveTimeElapsed = 0.f;
+		mActiveDurationDeferred = deferActiveDuration;
+		mActiveTimeRemaining = deferActiveDuration
+			? 0.f
+			: activeDuration;
+	}
+
+	bool AbilityRuntimeState::StartDeferredActiveDuration(float activeDuration)
+	{
+		if (!mIsActive || !mActiveDurationDeferred)
+		{
+			return false;
+		}
+
+		mActiveDurationDeferred = false;
+		mActiveTimeRemaining = std::max(0.f, activeDuration);
+		return true;
+	}
+
+	void AbilityRuntimeState::TickActiveTime(float deltaTime)
+	{
+		if (!mIsActive || deltaTime <= 0.f)
+		{
+			return;
+		}
+		mActiveTimeElapsed += deltaTime;
 	}
 
 	bool AbilityRuntimeState::RefreshActiveDuration(float activeDuration)
@@ -61,7 +95,9 @@ namespace sas
 	void AbilityRuntimeState::EndActivation(float cooldownDuration, int maxCharges)
 	{
 		mIsActive = false;
+		mActiveTimeElapsed = 0.f;
 		mActiveTimeRemaining = 0.f;
+		mActiveDurationDeferred = false;
 		mCooldownRemaining = cooldownDuration;
 		if (mCooldownRemaining <= 0.f && maxCharges > 0)
 		{

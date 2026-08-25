@@ -9,6 +9,7 @@
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
 #include "gameplay/ability/validation/GameAbilityDefinitionValidator.h"
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
+#include "abilities/AbilityLifecycleOrchestrator.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/WeaponContentCatalog.h"
@@ -20,6 +21,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
+#include "gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h"
 #include "gameplay/ability/nullPulse/NullPulseVisualActor.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h"
@@ -29,10 +31,32 @@
 #include "gameplay/ability/orbitalDrones/OrbitingDroneActor.h"
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
 #include "gameplay/ability/echoProtocol/EchoProtocolContracts.h"
+#include "gameplay/ability/scorchDrive/ScorchDriveContracts.h"
+#include "gameplay/ability/ionStorm/IonStormContracts.h"
+#include "gameplay/ability/ionStorm/IonStormProjectileActor.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/ability/hullShock/HullShockContracts.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
+#include "gameplay/ability/railBurst/RailBurstProjectileActor.h"
+#include "gameplay/ability/astralSurge/AstralSurgeContracts.h"
+#include "gameplay/ability/chainLightning/ChainLightningContracts.h"
+#include "gameplay/ability/combatSentry/CombatSentryContracts.h"
+#include "gameplay/ability/astralSurge/AstralSurgeProjectileActor.h"
+#include "gameplay/ability/mineLayer/MineLayerContracts.h"
+#include "gameplay/ability/crescentReaver/CrescentReaverContracts.h"
+#include "gameplay/ability/crescentReaver/CrescentReaverProjectileActor.h"
+#include "gameplay/ability/actors/DirectionalChargeTelegraphActor.h"
+#include "gameplay/ability/energySpear/EnergySpearContracts.h"
+#include "gameplay/ability/energySpear/EnergySpearTraversalActor.h"
+#include "gameplay/ability/frostMaelstrom/FrostMaelstromContracts.h"
+#include "gameplay/ability/frozenThrong/FrozenThrongContracts.h"
+#include "gameplay/ability/wingSentinels/WingSentinelsContracts.h"
+#include "gameplay/ability/crystalBarricade/CrystalBarricadeContracts.h"
+#include "gameplay/ability/crystalBarricade/CrystalBarricadeActor.h"
+#include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
+#include "gameplay/ability/returnProtocol/ReturnProtocolVisualActor.h"
+#include "gameplay/ability/ionStorm/IonStormBoundary.h"
 #include "enemy/DummyEnemy.h"
 #include "framework/AssetManager.h"
 #include "gameplay/ability/sunBeam/SunBeamStrikeActor.h"
@@ -45,9 +69,14 @@
 #include "presentation/ability/sunBeam/SunBeamPresentationProfile.h"
 #include "presentation/ability/orbitalDrones/OrbitalDronesPresentationIds.h"
 #include "presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.h"
+#include "presentation/ability/ionStorm/IonStormPresentationProfile.h"
+#include "presentation/ability/directionalBarrier/DirectionalBarrierPresentationIds.h"
+#include "presentation/ability/directionalBarrier/DirectionalBarrierPresentationProfile.h"
+#include "gameplay/ability/directionalBarrier/DirectionalBarrierVisualActor.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
+#include "gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.h"
 #include "gameplay/ship/ShipRuntime.h"
@@ -62,6 +91,7 @@
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
+#include "gameConfigs/ability/defensive/ReturnProtocolConfig.h"
 #include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -768,8 +798,11 @@ int main()
 	const auto* nullPulseStaggerDefinition = EffectData::FindGameplayEffectDefinition(
 		AbilityData::NullPulse::Effect::StaggerId
 	);
+	const auto* directionalBarrierDefinition = EffectData::FindGameplayEffectDefinition(
+		AbilityData::DirectionalBarrier::Effect::ActiveEffectId
+	);
 	const auto* missingDefinition = EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist");
-	if (shippedEffects.size() != 16 ||
+	if (shippedEffects.size() != 18 ||
 		!shippedEffectsValid ||
 		!barrierDefinition ||
 		barrierDefinition->effectId != "Effect.Barrier.Basic" ||
@@ -785,9 +818,63 @@ int main()
 		!nullPulseStaggerDefinition ||
 		nullPulseStaggerDefinition->effectId != AbilityData::NullPulse::Effect::StaggerId ||
 		!nullPulseStaggerDefinition->sourceParameterized ||
+		!directionalBarrierDefinition ||
+		directionalBarrierDefinition->effectId !=
+			AbilityData::DirectionalBarrier::Effect::ActiveEffectId ||
+		!(directionalBarrierDefinition->behaviorKey ==
+			EffectData::DirectionalBarrierBehaviorKey) ||
+		directionalBarrierDefinition->grantedTags.size() != 1 ||
+		directionalBarrierDefinition->grantedTags.front() !=
+			AbilityData::DirectionalBarrier::State::Active ||
+		!directionalBarrierDefinition->sourceParameterized ||
 		missingDefinition != nullptr)
 	{
 		return Fail("Central gameplay-effect catalog lookup or validation failed");
+	}
+
+	// Toggle abilities share one lifecycle rule: a second press cannot end
+	// the ability until the common one-second minimum active duration elapses.
+	{
+		sas::AbilityRuntimeState toggleState{ 1 };
+		toggleState.SetInputHeld(true);
+		const sas::AbilityLifecycleDecision activation =
+			sas::AbilityLifecycleOrchestrator::EvaluateInput(
+				sas::AbilityActivationPolicy::Toggle,
+				sas::AbilityLifetimePolicy::Duration,
+				toggleState
+			);
+		if (!activation.requestActivation)
+		{
+			return Fail("Toggle ability did not request activation on its first press");
+		}
+
+		toggleState.BeginActivation(5.f, 1);
+		toggleState.CommitInputFrame();
+		toggleState.SetInputHeld(false);
+		toggleState.CommitInputFrame();
+		toggleState.SetInputHeld(true);
+		const sas::AbilityLifecycleDecision earlyDeactivation =
+			sas::AbilityLifecycleOrchestrator::EvaluateInput(
+				sas::AbilityActivationPolicy::Toggle,
+				sas::AbilityLifetimePolicy::Duration,
+				toggleState
+			);
+		if (earlyDeactivation.requestEnd)
+		{
+			return Fail("Toggle ability deactivated before the common one-second minimum");
+		}
+
+		toggleState.TickActiveTime(1.01f);
+		const sas::AbilityLifecycleDecision allowedDeactivation =
+			sas::AbilityLifecycleOrchestrator::EvaluateInput(
+				sas::AbilityActivationPolicy::Toggle,
+				sas::AbilityLifetimePolicy::Duration,
+				toggleState
+			);
+		if (!allowedDeactivation.requestEnd)
+		{
+			return Fail("Toggle ability did not deactivate after the common one-second minimum");
+		}
 	}
 
 	const GameAbilityDefinition* nullPulseDefinition =
@@ -1263,11 +1350,16 @@ int main()
 		PresentationProfileRegistry<OrbitalDronesPresentationProfile>::Find(
 			OrbitalDronesPresentationIds::DroneBasic
 		);
+	const DirectionalBarrierPresentationProfile* directionalBarrierPresentationProfile =
+		PresentationProfileRegistry<DirectionalBarrierPresentationProfile>::Find(
+			DirectionalBarrierPresentationIds::Basic
+		);
 	if (!rocketPresentationProfile
 		|| !sunBeamPresentationProfile
 		|| !gravityProjectilePresentationProfile
 		|| !gravityFieldPresentationProfile
 		|| !orbitalDronesPresentationProfile
+		|| !directionalBarrierPresentationProfile
 		|| rocketPresentationProfile->telegraph.outlineThickness <= 0.f
 		|| rocketPresentationProfile->visual.impactVisualDuration <= 0.f
 		|| sunBeamPresentationProfile->visual.impactFlashDuration <= 0.f
@@ -1275,7 +1367,10 @@ int main()
 			OrbitalDronesPresentationIds::DroneBasic
 		|| orbitalDronesPresentationProfile->visual.bodyRadius <= 0.f
 		|| orbitalDronesPresentationProfile->visual.trailSegments <= 0
-		|| orbitalDronesPresentationProfile->visual.expiryFadeDuration <= 0.f)
+		|| orbitalDronesPresentationProfile->visual.expiryFadeDuration <= 0.f
+		|| directionalBarrierPresentationProfile->radius <= 0.f
+		|| directionalBarrierPresentationProfile->halfAngleDegrees <= 0.f
+		|| directionalBarrierPresentationProfile->edgeThickness <= 0.f)
 	{
 		return Fail("Feature-local ability presentation profiles were not registered correctly");
 	}
@@ -1314,6 +1409,186 @@ int main()
 	{
 		return Fail("Orbital Drones accepted a missing presentation profile");
 	}
+
+	// Directional Barrier is a real Toggle ability, so exercise its complete
+	// activation/lifecycle path in a live player world. The second press is
+	// intentionally attempted twice: the first one is rejected before one
+	// second, the second one is accepted after the shared minimum has elapsed.
+	World directionalBarrierWorld{ nullptr };
+	const shared_ptr<SpaceShip> directionalBarrierOwner =
+		directionalBarrierWorld.SpawnActor<SpaceShip>(
+		ShipData::Ship_Player_Fighter
+	).lock();
+	if (!directionalBarrierOwner)
+	{
+		return Fail("Directional Barrier could not spawn a live player owner");
+	}
+	directionalBarrierWorld.TickInternal(0.f);
+	directionalBarrierOwner->GetAbilitySystemComponent().ClearAbilitySlot(
+		sas::AbilitySlot::Ability1
+	);
+	const GameAbilityDefinition* directionalBarrierAbilityDefinition =
+		AbilityData::FindShippedAbilityDefinition(
+			AbilityData::DirectionalBarrier::AbilityId::Basic
+		);
+	if (!directionalBarrierAbilityDefinition)
+	{
+		return Fail("Directional Barrier shipped definition could not be found");
+	}
+	const sas::AbilityHandle directionalBarrierHandle =
+		directionalBarrierOwner->GetAbilitySystemComponent().GrantAbility(
+			*directionalBarrierAbilityDefinition
+		);
+	directionalBarrierOwner->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		true
+	);
+	directionalBarrierWorld.TickInternal(0.f);
+	directionalBarrierWorld.TickInternal(0.f);
+	GameAbility* directionalBarrierAbility =
+		directionalBarrierOwner->GetAbilitySystemComponent().GetAbility(
+			directionalBarrierHandle
+		);
+	if (!directionalBarrierHandle.IsValid())
+	{
+		return Fail("Directional Barrier could not be granted to Ability1");
+	}
+	if (!directionalBarrierAbility)
+	{
+		return Fail("Directional Barrier handle could not resolve its GameAbility instance");
+	}
+	if (!directionalBarrierAbility->IsActive())
+	{
+		return Fail("Directional Barrier did not become active after its first press");
+	}
+	if (!directionalBarrierOwner->GetAbilitySystemComponent().HasOwnedTag(
+		AbilityData::DirectionalBarrier::State::Active
+	))
+	{
+		return Fail("Directional Barrier active effect did not grant its canonical state tag");
+	}
+	const shared_ptr<TestClearableProjectile> incomingBarrierProjectile =
+		directionalBarrierWorld.SpawnActor<TestClearableProjectile>(nullptr).lock();
+	if (!incomingBarrierProjectile)
+	{
+		return Fail("Directional Barrier projectile interception test actor could not spawn");
+	}
+	directionalBarrierWorld.TickInternal(0.f);
+	directionalBarrierOwner->SetCollisionLayer(CollisionLayer::Player);
+	directionalBarrierOwner->SetCollisionMask(
+		CollisionLayer::Enemy | CollisionLayer::EnemyBullet
+	);
+	incomingBarrierProjectile->SetCollisionLayer(CollisionLayer::EnemyBullet);
+	incomingBarrierProjectile->SetCollisionMask(CollisionLayer::Player);
+	incomingBarrierProjectile->SetAbilityCollisionRadius(5.f);
+	incomingBarrierProjectile->SetActorLocation({ 0.f, -90.f });
+	incomingBarrierProjectile->SetVelocity({ 0.f, 200.f });
+	if (!DirectionalBarrierEffectBehavior::TryInterceptProjectile(
+		*incomingBarrierProjectile,
+		{ 0.f, -140.f }
+	))
+	{
+		return Fail("Directional Barrier did not intercept a projectile at its outer edge");
+	}
+	incomingBarrierProjectile->Destroy();
+	if (directionalBarrierOwner->GetMovementSpeedMultiplier() >= 1.f)
+	{
+		return Fail("Directional Barrier did not apply its movement modifier");
+	}
+	if (directionalBarrierWorld.GetActorsByType<DirectionalBarrierVisualActor>().size() != 1)
+	{
+		return Fail("Directional Barrier did not spawn its visual actor");
+	}
+	directionalBarrierOwner->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		false
+	);
+	directionalBarrierWorld.TickInternal(0.f);
+	directionalBarrierOwner->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		true
+	);
+	directionalBarrierWorld.TickInternal(0.1f);
+	if (!directionalBarrierAbility->IsActive())
+	{
+		return Fail("Directional Barrier deactivated before its one-second minimum");
+	}
+	directionalBarrierWorld.TickInternal(1.0f);
+	directionalBarrierOwner->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		false
+	);
+	directionalBarrierWorld.TickInternal(0.f);
+	directionalBarrierOwner->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		true
+	);
+	directionalBarrierWorld.TickInternal(0.f);
+	directionalBarrierWorld.TickInternal(0.f);
+	if (directionalBarrierAbility->IsActive())
+	{
+		return Fail("Directional Barrier remained active after the valid second press");
+	}
+	if (directionalBarrierOwner->GetAbilitySystemComponent().HasOwnedTag(
+		AbilityData::DirectionalBarrier::State::Active
+	))
+	{
+		return Fail("Directional Barrier retained its active effect tag after ending");
+	}
+	if (directionalBarrierOwner->GetMovementSpeedMultiplier() < 1.f)
+	{
+		return Fail("Directional Barrier retained its movement modifier after ending");
+	}
+	if (!directionalBarrierWorld.GetActorsByType<DirectionalBarrierVisualActor>().empty())
+	{
+		return Fail("Directional Barrier did not clean up its visual actor after ending");
+	}
+
+	// The effect behavior consumes only projectile deliveries approaching the
+	// ship's forward hemisphere. Area, beam, contact, and rear deliveries remain
+	// available to the normal combat pipeline.
+	TestCombatant directionalBarrierDamageTarget;
+	sas::GameplayEffectSpec directionalBarrierDamageSpec =
+		sas::MakeGameplayEffectSpec(EffectData::DirectionalBarrierActiveEffect);
+	directionalBarrierDamageSpec.duration = 5.f;
+	directionalBarrierDamageTarget.GetAbilitySystemComponent().ApplyGameplayEffect(
+		directionalBarrierDamageSpec
+	);
+	TestClearableProjectile directionalBarrierProjectile{ nullptr, nullptr };
+	directionalBarrierProjectile.SetActorLocation({ 0.f, -100.f });
+	const float shieldedTargetHealth = directionalBarrierDamageTarget.GetHealth();
+	ApplyCombatDamage(
+		directionalBarrierDamageTarget,
+		10.f,
+		&directionalBarrierProjectile,
+		{ DamageTypeSchema::Kinetic },
+		{},
+		sas::ContentId{},
+		{},
+		DamageDeliveryType::Projectile,
+		&directionalBarrierProjectile
+	);
+	if (!NearlyEqual(directionalBarrierDamageTarget.GetHealth(), shieldedTargetHealth))
+	{
+		return Fail("Directional Barrier did not block a forward projectile delivery");
+	}
+	directionalBarrierProjectile.SetActorLocation({ 0.f, 100.f });
+	ApplyCombatDamage(
+		directionalBarrierDamageTarget,
+		10.f,
+		&directionalBarrierProjectile,
+		{ DamageTypeSchema::Kinetic },
+		{},
+		sas::ContentId{},
+		{},
+		DamageDeliveryType::Projectile,
+		&directionalBarrierProjectile
+	);
+	if (!(directionalBarrierDamageTarget.GetHealth() < shieldedTargetHealth))
+	{
+		return Fail("Directional Barrier incorrectly blocked a rear projectile delivery");
+	}
+
 	// The actor owns only formation motion and lifetime. This direct lifecycle
 	// test keeps it independent from input/UI while proving four equal phases,
 	// owner following, and automatic duration cleanup.
@@ -3261,6 +3536,12 @@ int main()
 	{
 		return Fail("Primary fire did not resume after its fire-rate interval");
 	}
+	weaponCadenceAbilities.Tick(1.01f);
+	weaponCadenceWorld.TickInternal(0.f);
+	if (weaponCadenceWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 4)
+	{
+		return Fail("Primary fire discarded owed shots after a long frame");
+	}
 	GameAbility* activePrimaryWeapon =
 		weaponCadenceAbilities.GetAbility(sas::AbilitySlot::PrimaryFire);
 	if (!activePrimaryWeapon || !activePrimaryWeapon->IsActive())
@@ -3277,9 +3558,178 @@ int main()
 	}
 	weaponCadenceAbilities.Tick(0.5f);
 	weaponCadenceWorld.TickInternal(0.f);
-	if (weaponCadenceWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 2)
+	if (weaponCadenceWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 4)
 	{
 		return Fail("Primary weapon fired while the shared action lock was active");
+	}
+
+	World sweptProjectileWorld{ nullptr };
+	Actor sweptProjectileOwner{ &sweptProjectileWorld };
+	sweptProjectileOwner.SetCollisionLayer(CollisionLayer::Player);
+	const shared_ptr<TestCombatant> sweptProjectileTarget =
+		sweptProjectileWorld.SpawnActor<TestCombatant>().lock();
+	if (!sweptProjectileTarget)
+	{
+		return Fail("Swept projectile target could not spawn");
+	}
+	sweptProjectileTarget->SetActorLocation({ 100.f, 0.f });
+	sweptProjectileTarget->SetCollisionLayer(CollisionLayer::Enemy);
+	sweptProjectileTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+	const sas::GameplayAttributeList sweptProjectileAttributes{
+		sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 1000.f, 0.f },
+		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 2.f, 0.f },
+		sas::GameplayAttribute{ CommonAttributeIds::Range, 1000.f, 0.f },
+		sas::GameplayAttribute{ CollisionAttributeIds::Radius, 5.f, 0.1f }
+	};
+	const shared_ptr<PrimaryWeaponProjectileActor> sweptProjectile =
+		sweptProjectileWorld.SpawnActor<PrimaryWeaponProjectileActor>(
+			&sweptProjectileOwner,
+			WeaponPresentationDefinition{},
+			sweptProjectileAttributes
+		).lock();
+	if (!sweptProjectile)
+	{
+		return Fail("Swept projectile could not spawn");
+	}
+	sweptProjectile->SetActorLocation({ 0.f, 0.f });
+	sweptProjectile->SetLaunchVelocity({ 1000.f, 0.f });
+	sweptProjectileWorld.TickInternal(0.f);
+	sweptProjectileWorld.TickInternal(0.2f);
+	if (!NearlyEqual(sweptProjectileTarget->GetHealth(), 90.f))
+	{
+		return Fail("High-speed primary projectile tunneled through its target");
+	}
+
+	// A reflection must move the projectile out of the surface before the
+	// same-surface lock starts. Without that separation, the next tick can
+	// interpret the still-overlapping wall as a normal projectile impact.
+	World crystalReflectionWorld{ nullptr };
+	Actor crystalReflectionOwner{ &crystalReflectionWorld };
+	crystalReflectionOwner.SetCollisionLayer(CollisionLayer::Player);
+	const shared_ptr<CrystalBarricadeActor> crystalWall =
+		crystalReflectionWorld.SpawnActor<CrystalBarricadeActor>(
+			&crystalReflectionOwner,
+			CrystalBarricadeWallPresentationProfile{}
+		).lock();
+	const shared_ptr<PrimaryWeaponProjectileActor> crystalReflectionProjectile =
+		crystalReflectionWorld.SpawnActor<PrimaryWeaponProjectileActor>(
+			&crystalReflectionOwner,
+			WeaponPresentationDefinition{},
+			sweptProjectileAttributes
+		).lock();
+	if (!crystalWall || !crystalReflectionProjectile)
+	{
+		return Fail("Crystal Barricade reflection test actors could not spawn");
+	}
+	crystalWall->SetActorLocation({ 300.f, 0.f });
+	crystalWall->SetActorRotation(0.f);
+	crystalReflectionProjectile->SetActorLocation({ 0.f, 0.f });
+	crystalReflectionProjectile->SetLaunchVelocity({ 1000.f, 0.f });
+	crystalReflectionWorld.TickInternal(0.f);
+	crystalReflectionWorld.TickInternal(0.2f);
+	crystalReflectionWorld.TickInternal(0.02f);
+	if (crystalReflectionProjectile->GetIsPendingDestroy() ||
+		crystalReflectionProjectile->GetVelocity().x >= 0.f ||
+		crystalReflectionProjectile->GetActorLocation().x >= 150.f)
+	{
+		return Fail("Crystal Barricade did not keep a reflected projectile outside its surface");
+	}
+
+	// Return Protocol is a receiver registration, not a condition hard-coded
+	// into the player ship. A compatible hostile projectile must be reflected
+	// before it resolves damage, then stop reflecting after the one-second window.
+	{
+	World returnProtocolWorld{ nullptr };
+	const shared_ptr<TestCombatant> returnProtocolDefender =
+		returnProtocolWorld.SpawnActor<TestCombatant>().lock();
+	const shared_ptr<TestCombatant> returnProtocolAttacker =
+		returnProtocolWorld.SpawnActor<TestCombatant>().lock();
+	if (!returnProtocolDefender || !returnProtocolAttacker)
+	{
+		return Fail("Return Protocol test combatants could not spawn");
+	}
+	returnProtocolDefender->SetCollisionLayer(CollisionLayer::Player);
+	returnProtocolDefender->SetCollisionMask(CollisionLayer::EnemyBullet);
+	returnProtocolAttacker->SetCollisionLayer(CollisionLayer::Enemy);
+	returnProtocolAttacker->SetCollisionMask(CollisionLayer::PlayerBullet);
+	returnProtocolAttacker->SetActorLocation({ -100.f, 0.f });
+	if (!returnProtocolDefender->GetAbilitySystemComponent().GrantAbility(
+		AbilityData::Definitions::ReturnProtocol_Basic
+	).IsValid())
+	{
+		return Fail("Return Protocol ability could not be granted");
+	}
+	returnProtocolDefender->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		true
+	);
+	returnProtocolDefender->GetAbilitySystemComponent().Tick(0.f);
+	returnProtocolDefender->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		false
+	);
+	if (!returnProtocolDefender->GetAbilitySystemComponent().HasOwnedTag(
+		AbilityData::ReturnProtocol::State::Active
+	))
+	{
+		return Fail("Return Protocol did not enter its active reflection window");
+	}
+	returnProtocolWorld.TickInternal(0.f);
+	if (returnProtocolWorld.GetActorsByType<ReturnProtocolVisualActor>().empty())
+	{
+		return Fail("Return Protocol did not spawn its active-window visual");
+	}
+	const shared_ptr<PrimaryWeaponProjectileActor> reflectedProjectile =
+		returnProtocolWorld.SpawnActor<PrimaryWeaponProjectileActor>(
+			returnProtocolAttacker.get(),
+			WeaponPresentationDefinition{},
+			sweptProjectileAttributes
+		).lock();
+	if (!reflectedProjectile)
+	{
+		return Fail("Return Protocol incoming projectile could not spawn");
+	}
+	reflectedProjectile->SetActorLocation({ -10.f, 0.f });
+	reflectedProjectile->SetLaunchVelocity({ 1000.f, 0.f });
+	returnProtocolWorld.TickInternal(0.f);
+	reflectedProjectile->OnActorBeginOverlap(returnProtocolDefender.get());
+	if (!NearlyEqual(returnProtocolDefender->GetHealth(), 100.f) ||
+		reflectedProjectile->GetOwnerActor() != returnProtocolDefender.get() ||
+		reflectedProjectile->GetOriginalProjectileOwner() != returnProtocolAttacker.get() ||
+		!NearlyEqual(reflectedProjectile->GetDamage(), 8.f) ||
+		reflectedProjectile->GetVelocity().x >= 0.f)
+	{
+		return Fail("Return Protocol did not preserve and reverse the incoming projectile");
+	}
+	returnProtocolDefender->GetAbilitySystemComponent().Tick(1.01f);
+	if (returnProtocolDefender->GetAbilitySystemComponent().HasOwnedTag(
+		AbilityData::ReturnProtocol::State::Active
+	))
+	{
+		return Fail("Return Protocol reflection window did not end after one second");
+	}
+	returnProtocolWorld.TickInternal(0.f);
+	if (!returnProtocolWorld.GetActorsByType<ReturnProtocolVisualActor>().empty())
+	{
+		return Fail("Return Protocol did not clean up its active-window visual");
+	}
+	const shared_ptr<PrimaryWeaponProjectileActor> unreflectedProjectile =
+		returnProtocolWorld.SpawnActor<PrimaryWeaponProjectileActor>(
+			returnProtocolAttacker.get(),
+			WeaponPresentationDefinition{},
+			sweptProjectileAttributes
+		).lock();
+	if (!unreflectedProjectile)
+	{
+		return Fail("Return Protocol post-window projectile could not spawn");
+	}
+	unreflectedProjectile->OnActorBeginOverlap(returnProtocolDefender.get());
+	if (!NearlyEqual(returnProtocolDefender->GetHealth(), 90.f) ||
+		unreflectedProjectile->GetOwnerActor() != returnProtocolAttacker.get())
+	{
+		return Fail("Return Protocol reflected a projectile outside its active window");
+	}
 	}
 
 	World dualKineticWorld{ nullptr };
@@ -3491,13 +3941,17 @@ int main()
 	{
 		threePelletGroup.RegisterImpact(*shotgunTarget);
 	}
+	if (!NearlyEqual(shotgunTarget->GetHealth(), 73.f))
+	{
+		return Fail("Shotgun pellets were not applied immediately with progressive falloff");
+	}
 	for (int pelletIndex = 0; pelletIndex < 3; ++pelletIndex)
 	{
 		threePelletGroup.CompletePellet();
 	}
-	if (!NearlyEqual(shotgunTarget->GetHealth(), 76.f))
+	if (!NearlyEqual(shotgunTarget->GetHealth(), 73.f))
 	{
-		return Fail("Three shotgun pellets did not apply the expected 8 damage per pellet");
+		return Fail("Completing shotgun projectiles changed already-resolved pellet damage");
 	}
 
 	const weak_ptr<TestCombatant> splitShotTargetWeak = shotgunImpactWorld.SpawnActor<TestCombatant>();
@@ -3520,7 +3974,7 @@ int main()
 	{
 		splitImpactGroup.CompletePellet();
 	}
-	if (!NearlyEqual(splitShotTarget->GetHealth(), 82.f) ||
+	if (!NearlyEqual(splitShotTarget->GetHealth(), 81.f) ||
 		!NearlyEqual(singleShotTarget->GetHealth(), 90.f))
 	{
 		return Fail("Shotgun damage falloff was not calculated separately per target");
@@ -3542,7 +3996,7 @@ int main()
 	{
 		minimumDamageGroup.CompletePellet();
 	}
-	if (!NearlyEqual(minimumDamageTarget->GetHealth(), 60.f))
+	if (!NearlyEqual(minimumDamageTarget->GetHealth(), 45.f))
 	{
 		return Fail("Shotgun minimum damage multiplier was not respected");
 	}
@@ -4352,6 +4806,277 @@ int main()
 		return Fail("Basic Rocket did not explode and clean up at its fixed maximum range");
 	}
 
+	std::string railBurstValidationFailure;
+	const GameAbilityDefinition* railBurstDefinition =
+		AbilityData::FindShippedAbilityDefinition(
+			AbilityData::RailBurst::AbilityId::Basic
+		);
+	const AbilityActorDefinition& railBurstActor = LoadedAbilityActor(
+		"Actor.Ability.RailBurst.Projectile.Basic"
+	);
+	const auto railBurstAttribute = [&](const sas::AttributeId& attributeId)
+	{
+		return sas::FindAttributeValue(railBurstActor.attributes, attributeId, 0.f);
+	};
+	if (!railBurstDefinition ||
+		!ValidateAbilityDefinition(*railBurstDefinition, &railBurstValidationFailure) ||
+		railBurstDefinition->behaviorType != AbilityBehaviorType::RailBurst ||
+		railBurstActor.lifeTime <=
+			railBurstAttribute(CommonAttributeIds::Range) /
+				railBurstAttribute(AbilityData::RailBurst::Actor::Projectile::ProjectileSpeed))
+	{
+		return Fail("Rail Burst shipped definition or shared pierce contract is invalid");
+	}
+
+	struct RailBurstTestSettings
+	{
+		float baseDamage;
+		float projectileSpeed;
+		float range;
+		float spawnDistance;
+	};
+	const RailBurstTestSettings railBurstSettings{
+		railBurstAttribute(CommonAttributeIds::Damage),
+		railBurstAttribute(AbilityData::RailBurst::Actor::Projectile::ProjectileSpeed),
+		railBurstAttribute(CommonAttributeIds::Range),
+		railBurstActor.spawnDistance
+	};
+	auto SpawnRailBurst = [&](World& world, TestCombatant& owner)
+	{
+		owner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
+		owner.SetCollisionLayer(CollisionLayer::Player);
+		owner.SetActorRotation(90.f);
+		LightYearsAbilitySystemComponent& abilities =
+			owner.GetCombatRuntime().GetAbilitySystemComponent();
+		const sas::AbilityHandle handle = abilities.GrantAbility(*railBurstDefinition);
+		if (!handle.IsValid())
+		{
+			return shared_ptr<RailBurstProjectileActor>{};
+		}
+		abilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
+		abilities.Tick(0.f);
+		world.TickInternal(0.f);
+		const List<weak_ptr<RailBurstProjectileActor>> projectiles =
+			world.GetActorsByType<RailBurstProjectileActor>();
+		return projectiles.size() == 1
+			? projectiles.front().lock()
+			: shared_ptr<RailBurstProjectileActor>{};
+	};
+
+	World railBurstWorld{ nullptr };
+	TestCombatant railBurstOwner{ &railBurstWorld, 1000.f };
+	const shared_ptr<TestCombatant> firstRailTarget =
+		railBurstWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	const shared_ptr<TestCombatant> secondRailTarget =
+		railBurstWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	const shared_ptr<TestCombatant> thirdRailTarget =
+		railBurstWorld.SpawnActor<TestCombatant>(1000.f).lock();
+	if (!firstRailTarget || !secondRailTarget || !thirdRailTarget)
+	{
+		return Fail("Rail Burst test targets could not spawn");
+	}
+	for (const shared_ptr<TestCombatant>& target : {
+		firstRailTarget,
+		secondRailTarget,
+		thirdRailTarget
+	})
+	{
+		target->SetCollisionLayer(CollisionLayer::Enemy);
+		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+	}
+	firstRailTarget->SetActorLocation({ railBurstSettings.spawnDistance + 80.f, 0.f });
+	secondRailTarget->SetActorLocation({ railBurstSettings.spawnDistance + 160.f, 0.f });
+	thirdRailTarget->SetActorLocation({ railBurstSettings.spawnDistance + 240.f, 0.f });
+	railBurstWorld.TickInternal(0.f);
+	const shared_ptr<RailBurstProjectileActor> railBurst =
+		SpawnRailBurst(railBurstWorld, railBurstOwner);
+	if (!railBurst ||
+		!NearlyEqual(railBurst->GetDamage(), railBurstSettings.baseDamage) ||
+		!NearlyEqual(railBurst->GetProjectileSpeed(), railBurstSettings.projectileSpeed) ||
+		!NearlyEqual(railBurst->GetMaximumRange(), railBurstSettings.range) ||
+		railBurst->GetDamageTags().size() != 1 ||
+		railBurst->GetDamageTags().front() != DamageTypeSchema::Energy)
+	{
+		return Fail("Rail Burst did not spawn with its Energy configuration");
+	}
+	const float firstDamage = railBurstSettings.baseDamage;
+	railBurst->OnActorBeginOverlap(firstRailTarget.get());
+	railBurst->OnActorBeginOverlap(firstRailTarget.get());
+	railBurst->OnActorBeginOverlap(secondRailTarget.get());
+	railBurst->OnActorBeginOverlap(thirdRailTarget.get());
+	if (!NearlyEqual(firstRailTarget->GetHealth(), 1000.f - firstDamage) ||
+		!NearlyEqual(secondRailTarget->GetHealth(), 1000.f - firstDamage) ||
+		!NearlyEqual(thirdRailTarget->GetHealth(), 1000.f - firstDamage) ||
+		!NearlyEqual(railBurst->GetDamage(), firstDamage) ||
+		railBurst->GetHitTargetCount() != 3)
+	{
+		return Fail("Rail Burst did not apply one-time full-damage pierce hits");
+	}
+	const float railBurstX = railBurst->GetActorLocation().x;
+	railBurstWorld.TickInternal(0.1f);
+	if (!NearlyEqual(
+				railBurst->GetActorLocation().x,
+			railBurstX + railBurstSettings.projectileSpeed * 0.1f
+		) ||
+		!NearlyEqual(railBurst->GetVelocity().x, railBurstSettings.projectileSpeed) ||
+		!NearlyEqual(railBurst->GetVelocity().y, 0.f))
+	{
+		return Fail("Rail Burst did not travel along its owner-forward direction");
+	}
+
+	const GameAbilityDefinition* astralSurgeDefinition =
+		AbilityData::FindShippedAbilityDefinition(
+			AbilityData::AstralSurge::AbilityId::Basic
+		);
+	if (!astralSurgeDefinition)
+	{
+		return Fail("Astral Surge shipped definition is missing");
+	}
+	World astralSurgeWorld{ nullptr };
+	TestCombatant astralSurgeOwner{ &astralSurgeWorld, 1000.f };
+	astralSurgeOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
+	astralSurgeOwner.SetCollisionLayer(CollisionLayer::Player);
+	astralSurgeOwner.SetActorRotation(90.f);
+	LightYearsAbilitySystemComponent& astralSurgeAbilities =
+		astralSurgeOwner.GetCombatRuntime().GetAbilitySystemComponent();
+	if (!astralSurgeAbilities.GrantAbility(*astralSurgeDefinition).IsValid())
+	{
+		return Fail("Astral Surge could not be granted in the runtime test");
+	}
+	astralSurgeAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability3, true);
+	astralSurgeAbilities.Tick(0.f);
+	if (!astralSurgeAbilities.HasOwnedTag(GameplayTags::State::ActionLock::AbilityActivation) ||
+		!astralSurgeAbilities.HasOwnedTag(GameplayTags::State::ActionLock::PrimaryWeaponFire) ||
+		!astralSurgeAbilities.HasOwnedTag(GameplayTags::State::ActionLock::MovementInput) ||
+		!astralSurgeAbilities.HasOwnedTag(AbilityData::AstralSurge::State::Focusing) ||
+		!astralSurgeWorld.GetActorsByType<AstralSurgeProjectileActor>().empty())
+	{
+		return Fail("Astral Surge did not hold its focus locks before release");
+	}
+	astralSurgeAbilities.Tick(0.50f);
+	if (!astralSurgeWorld.GetActorsByType<AstralSurgeProjectileActor>().empty())
+	{
+		return Fail("Astral Surge fired before its one-second focus completed");
+	}
+	astralSurgeAbilities.Tick(0.50f);
+	astralSurgeWorld.TickInternal(0.f);
+	if (astralSurgeWorld.GetActorsByType<AstralSurgeProjectileActor>().size() != 1)
+	{
+		return Fail("Astral Surge did not spawn its projectile at one second");
+	}
+	if (astralSurgeAbilities.HasOwnedTag(GameplayTags::State::ActionLock::AbilityActivation) ||
+		astralSurgeAbilities.HasOwnedTag(GameplayTags::State::ActionLock::PrimaryWeaponFire) ||
+		astralSurgeAbilities.HasOwnedTag(GameplayTags::State::ActionLock::MovementInput) ||
+		astralSurgeAbilities.HasOwnedTag(AbilityData::AstralSurge::State::Focusing))
+	{
+		return Fail("Astral Surge did not release all focus locks at one second");
+	}
+
+	std::string energySpearValidationFailure;
+	const GameAbilityDefinition* energySpearDefinition =
+		AbilityData::FindShippedAbilityDefinition(
+			AbilityData::EnergySpear::AbilityId::Basic
+		);
+	if (!energySpearDefinition ||
+		!ValidateAbilityCatalog(
+			AbilityData::GetShippedAbilityDefinitions(),
+			&energySpearValidationFailure
+		) ||
+		energySpearDefinition->behaviorType != AbilityBehaviorType::EnergySpear ||
+		energySpearDefinition->slot != sas::AbilitySlot::Ability1)
+	{
+		return Fail("Energy Spear shipped ability or behavior registration is invalid");
+	}
+
+	{
+		// The ability instance owns only focus. Release hands the bounded movement
+		// and piercing phase to a world actor, so input release cannot cancel it.
+		World energySpearWorld{ nullptr };
+		const shared_ptr<TestCombatant> energySpearOwner =
+			energySpearWorld.SpawnActor<TestCombatant>(1000.f).lock();
+		const shared_ptr<TestCombatant> energySpearTarget =
+			energySpearWorld.SpawnActor<TestCombatant>(1000.f).lock();
+		if (!energySpearOwner || !energySpearTarget)
+		{
+			return Fail("Energy Spear test actors could not spawn");
+		}
+
+		energySpearOwner->SetCollisionLayer(CollisionLayer::Player);
+		energySpearTarget->SetCollisionLayer(CollisionLayer::Enemy);
+		energySpearTarget->SetCollisionMask(CollisionLayer::Player);
+		const sf::Vector2f spearDirection{ 0.f, -1.f };
+		energySpearTarget->SetActorLocation(
+			energySpearOwner->GetActorLocation() + spearDirection * 100.f
+		);
+
+		LightYearsAbilitySystemComponent& energySpearAbilities =
+			energySpearOwner->GetAbilitySystemComponent();
+		const sas::AbilityHandle energySpearHandle =
+			energySpearAbilities.GrantAbility(*energySpearDefinition);
+		if (!energySpearHandle.IsValid())
+		{
+			return Fail("Energy Spear could not be granted to its owner");
+		}
+
+		energySpearAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+		energySpearAbilities.Tick(0.f);
+		energySpearWorld.TickInternal(0.f);
+		if (!energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTags::State::Ability::EnergySpear::Focusing
+			) ||
+			energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTagSchema::BlockMovementInput
+			) ||
+			energySpearWorld.GetActorsByType<DirectionalChargeTelegraphActor>().empty())
+		{
+			return Fail("Energy Spear focus did not preserve movement with a directional telegraph");
+		}
+
+		energySpearAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability1, false);
+		energySpearAbilities.Tick(0.f);
+		energySpearWorld.TickInternal(0.f);
+		const List<weak_ptr<EnergySpearTraversalActor>> traversalActors =
+			energySpearWorld.GetActorsByType<EnergySpearTraversalActor>();
+		const shared_ptr<EnergySpearTraversalActor> traversalActor =
+			traversalActors.empty() ? shared_ptr<EnergySpearTraversalActor>{}
+			: traversalActors.front().lock();
+		if (!traversalActor ||
+			!energySpearWorld.GetActorsByType<DirectionalChargeTelegraphActor>().empty() ||
+			!energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTagSchema::BlockMovementInput
+			) ||
+			!energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTags::State::Ability::EnergySpear::Traversing
+			))
+		{
+			return Fail("Energy Spear did not hand release to its traversal actor");
+		}
+
+		energySpearWorld.TickInternal(0.05f);
+		if (traversalActor->GetHitTargetCount() != 1)
+		{
+			return Fail("Energy Spear traversal did not register its traversed target");
+		}
+		if (energySpearTarget->GetHealth() >= 1000.f ||
+			!energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTags::State::Ability::EnergySpear::Traversing
+			))
+		{
+			return Fail("Energy Spear did not pierce and damage its traversed target");
+		}
+
+		energySpearWorld.TickInternal(0.06f);
+		if (energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTags::State::Ability::EnergySpear::Traversing
+			) ||
+			energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTagSchema::BlockMovementInput
+			))
+		{
+			return Fail("Energy Spear did not clean up traversal and movement locks");
+		}
+	}
+
 	std::string gravityValidationFailure;
 	const GameAbilityDefinition* gravityDefinition = AbilityData::FindShippedAbilityDefinition(
 		AbilityData::GravityAnomaly::AbilityId::Basic
@@ -4375,10 +5100,12 @@ int main()
 		gravityLoadout.GetAbilitySystemComponent()
 			.FindAbility<GameAbility>(sas::AbilitySlot::Ability1);
 	if (!gravityLoadoutAbility ||
-		gravityLoadoutAbility->GetDefinition().abilityId != AbilityData::GravityAnomaly::AbilityId::Basic ||
-		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(AbilityData::HullShock::AbilityId::Basic) != nullptr)
+		gravityLoadoutAbility->GetDefinition().abilityId != AbilityData::CrystalBarricade::AbilityId::Basic ||
+		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(
+			AbilityData::DirectionalBarrier::AbilityId::Basic
+		) != nullptr)
 	{
-		return Fail("Default player loadout did not place Gravity Anomaly on Ability1/Q");
+		return Fail("Default player loadout did not place Crystal Barricade on Ability1/Q");
 	}
 	const GameAbility* relayPrismLoadoutAbility =
 		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability2);
@@ -4388,24 +5115,80 @@ int main()
 	{
 		return Fail("Default player loadout did not place Relay Prism on Ability2/E");
 	}
-	const GameAbility* echoLoadoutAbility =
+	const GameAbility* returnProtocolLoadoutAbility =
 		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability3);
-	if (!echoLoadoutAbility ||
-		echoLoadoutAbility->GetDefinition().abilityId != AbilityData::EchoProtocol::AbilityId::Basic ||
+	if (!returnProtocolLoadoutAbility ||
+		returnProtocolLoadoutAbility->GetDefinition().abilityId != AbilityData::ReturnProtocol::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability3) } != "F")
 	{
-		return Fail("Default player loadout did not place Echo Protocol on Ability3/F");
+		return Fail("Default player loadout did not place Return Protocol on Ability3/F");
 	}
-	const GameAbility* overdriveLoadoutAbility =
+	const GameAbility* combatSentryLoadoutAbility =
 		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability4);
-	if (!overdriveLoadoutAbility ||
-		overdriveLoadoutAbility->GetDefinition().abilityId != AbilityData::OverdriveCore::AbilityId::Basic ||
+	if (!combatSentryLoadoutAbility ||
+		combatSentryLoadoutAbility->GetDefinition().abilityId != AbilityData::CombatSentry::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability4) } != "R" ||
 		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(
-			AbilityData::OrbitalDrones::AbilityId::Basic
+			AbilityData::OverdriveCore::AbilityId::Basic
 		) != nullptr)
 	{
-		return Fail("Default player loadout did not place Overdrive Core on Ability4/R");
+		return Fail("Default player loadout did not place Combat Sentry on Ability4/R");
+	}
+
+	// Exercise the generic activation/action-spawn path used by the player Q
+	// binding without involving player-only asset initialization.
+	World crescentReaverWorld{ nullptr };
+	const shared_ptr<TestCombatant> crescentReaverOwner =
+		crescentReaverWorld.SpawnActor<TestCombatant>(100000.f).lock();
+	const shared_ptr<TestCombatant> crescentReaverTarget =
+		crescentReaverWorld.SpawnActor<TestCombatant>(100000.f).lock();
+	if (!crescentReaverOwner || !crescentReaverTarget)
+	{
+		return Fail("Crescent Reaver input-path test actors could not spawn");
+	}
+	crescentReaverOwner->SetCollisionLayer(CollisionLayer::Player);
+	crescentReaverOwner->SetCollisionMask(CollisionLayer::Enemy);
+	crescentReaverTarget->SetCollisionLayer(CollisionLayer::Enemy);
+	crescentReaverTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+	crescentReaverTarget->SetActorLocation({ 0.f, -210.f });
+	crescentReaverWorld.TickInternal(0.f);
+	const sas::AbilityHandle crescentReaverHandle =
+		crescentReaverOwner->GetAbilitySystemComponent().GrantAbility(
+			*AbilityData::FindShippedAbilityDefinition(
+				AbilityData::CrescentReaver::AbilityId::Basic
+			),
+			sas::AbilitySlot::Ability1
+		);
+	if (!crescentReaverHandle.IsValid())
+	{
+		return Fail("Crescent Reaver could not be granted to Ability1/Q");
+	}
+	crescentReaverOwner->GetAbilitySystemComponent().SetAbilitySlotInput(
+		sas::AbilitySlot::Ability1,
+		true
+	);
+	crescentReaverOwner->GetAbilitySystemComponent().Tick(0.f);
+	crescentReaverWorld.TickInternal(0.f);
+	if (crescentReaverWorld.GetActorsByType<CrescentReaverProjectileActor>().size() != 1)
+	{
+		return Fail("Ability1/Q activation did not spawn the Crescent Reaver projectile");
+	}
+	GameAbility* crescentReaverAbility =
+		crescentReaverOwner->GetAbilitySystemComponent().GetAbility(crescentReaverHandle);
+	if (!crescentReaverAbility)
+	{
+		return Fail("Crescent Reaver runtime ability instance was not retained");
+	}
+	const float cooldownBeforeBounce = crescentReaverAbility->GetCooldownRemaining();
+	crescentReaverWorld.TickInternal(0.05f);
+	if (crescentReaverWorld.GetActorsByType<CrescentReaverProjectileActor>().size() != 1)
+	{
+		return Fail("Crescent Reaver projectile was removed on its first movement frame");
+	}
+	crescentReaverWorld.TickInternal(0.10f);
+	if (crescentReaverAbility->GetCooldownRemaining() >= cooldownBeforeBounce)
+	{
+		return Fail("Crescent Reaver bounce did not reduce its source ability cooldown");
 	}
 
 	// A catalog slot is only a default binding. A newly acquired ability and an
@@ -4854,11 +5637,17 @@ int main()
 	}
 	gravityLivePlayerWorld.TickInternal(0.f);
 	gravityLivePlayerWorld.TickInternal(0.1f);
-	if (!gravityLivePlayer->GetAbilitySystemComponent().FindGameplayEffectById(
-		AbilityData::GravityAnomaly::Effect::InsideEffectId
-	) || gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty())
+	const bool gravityLivePlayerHasEffect =
+		gravityLivePlayer->GetAbilitySystemComponent().FindGameplayEffectById(
+			AbilityData::GravityAnomaly::Effect::InsideEffectId
+		) != nullptr;
+	const bool gravityLivePlayerHasVisual =
+		!gravityLivePlayerWorld.GetActorsByType<GravityAnomalyEffectVisual>().empty();
+	if (!gravityLivePlayerHasEffect || !gravityLivePlayerHasVisual)
 	{
-		return Fail("Gravity Anomaly failed while a live player entered its field");
+		return Fail(gravityLivePlayerHasEffect
+			? "Gravity Anomaly did not spawn its live-player effect visual"
+			: "Gravity Anomaly did not apply its live-player gameplay effect");
 	}
 	gravityLivePlayerField->Destroy();
 	gravityLivePlayerWorld.TickInternal(0.f);
@@ -5412,8 +6201,8 @@ int main()
 	LightYearsAbilitySystemComponent& echoAbilities =
 		echoOwner.GetCombatRuntime().GetAbilitySystemComponent();
 	GameAbilityDefinition echoSourceDash = *dashDefinition;
-	// Echo owns F/Ability3 in the real loadout, so place the test source on a
-	// different slot to exercise the runtime slot separation correctly.
+	// This isolated replay test places Echo on F/Ability3 explicitly, while the
+	// default player loadout reserves F for Scorch Drive.
 	echoSourceDash.slot = sas::AbilitySlot::Ability4;
 	const sas::AbilityHandle recordedDashHandle = echoAbilities.GrantAbility(echoSourceDash);
 	const sas::AbilityHandle echoHandle = echoAbilities.GrantAbility(*echoProtocolDefinition);
@@ -5421,7 +6210,8 @@ int main()
 	{
 		return Fail("Echo Protocol test abilities could not be granted");
 	}
-	// The source copy is intentionally on Ability4; Echo itself owns F/Ability3.
+	// The source copy is intentionally on Ability4; Echo itself is manually
+	// granted on Ability3 for this focused replay test.
 	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
 	echoAbilities.Tick(0.f);
 	echoAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability4, false);
@@ -6215,9 +7005,188 @@ int main()
 		if (relay->TryCaptureProjectile(*relayClones.back()) ||
 			relayClones.back()->GetIsPendingDestroy() ||
 			relayWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() !=
-			actorsBeforeLoopAttempt)
+				actorsBeforeLoopAttempt)
 		{
 			return Fail("Relay Prism did not reject a clone from its own relay lineage");
+		}
+	}
+
+	{
+		// Ion Storm is a delivery projectile that creates a field at its
+		// destination, so Relay Prism must let it pass instead of consuming it
+		// without a compatible relay clone.
+		World ionRelayWorld{ nullptr };
+		const shared_ptr<TestCombatant> ionRelayOwner =
+			ionRelayWorld.SpawnActor<TestCombatant>(1000.f).lock();
+		if (!ionRelayOwner)
+		{
+			return Fail("Ion Storm Relay Prism test owner could not spawn");
+		}
+
+		RelayPrismPresentationProfile ionRelayPresentation;
+		const shared_ptr<RelayPrismActor> ionRelay =
+			ionRelayWorld.SpawnActor<RelayPrismActor>(
+				ionRelayOwner.get(),
+				ionRelayPresentation
+			).lock();
+		IonStormProjectilePresentationProfile ionProjectilePresentation;
+		const shared_ptr<IonStormProjectileActor> ionProjectile =
+			ionRelayWorld.SpawnActor<IonStormProjectileActor>(
+				ionRelayOwner.get(),
+				ionProjectilePresentation,
+				std::nullopt
+			).lock();
+		if (!ionRelay || !ionProjectile)
+		{
+			return Fail("Ion Storm Relay Prism test actors could not spawn");
+		}
+
+		ionRelay->SetActorLocation({ 0.f, 0.f });
+		ionRelay->ConfigureFromAttributes({
+			sas::GameplayAttribute{ CommonAttributeIds::Radius, 150.f, 1.f }
+		});
+		ionProjectile->SetActorLocation({ 0.f, 0.f });
+		if (ionProjectile->CanBeCapturedByRelay() ||
+			ionRelay->TryCaptureProjectile(*ionProjectile) ||
+			ionProjectile->GetIsPendingDestroy())
+		{
+			return Fail("Relay Prism consumed an Ion Storm delivery projectile");
+		}
+	}
+
+	{
+		// Crescent Reaver keeps a family-local cached launch velocity. Relay Prism
+		// must therefore prove both cardinality and scatter: four spawned clones
+		// with one shared velocity would render and behave like a single projectile.
+		World crescentRelayWorld{ nullptr };
+		const shared_ptr<TestCombatant> crescentRelayOwner =
+			crescentRelayWorld.SpawnActor<TestCombatant>(1000.f).lock();
+		if (!crescentRelayOwner)
+		{
+			return Fail("Crescent Relay Prism test owner could not spawn");
+		}
+
+		CrescentReaverPresentationProfile crescentRelayPresentation;
+		const shared_ptr<CrescentReaverProjectileActor> crescentRelaySource =
+			crescentRelayWorld.SpawnActor<CrescentReaverProjectileActor>(
+				crescentRelayOwner.get(),
+				crescentRelayPresentation
+			).lock();
+		if (!crescentRelaySource)
+		{
+			return Fail("Crescent Relay Prism source could not spawn");
+		}
+		crescentRelaySource->SetActorLocation({ 0.f, 0.f });
+		crescentRelaySource->ConfigureFromAttributes({
+			sas::GameplayAttribute{ CommonAttributeIds::Damage, 100.f, 0.f },
+			sas::GameplayAttribute{
+				AbilityData::CrescentReaver::Actor::Projectile::ProjectileSpeed,
+				1300.f,
+				0.f
+			},
+			sas::GameplayAttribute{
+				AbilityData::CrescentReaver::Actor::Projectile::BounceCount,
+				5.f,
+				0.f
+			},
+			sas::GameplayAttribute{
+				AbilityData::CrescentReaver::Actor::Projectile::BounceDamageGrowth,
+				0.15f,
+				0.f
+			},
+			sas::GameplayAttribute{
+				AbilityData::CrescentReaver::Actor::Projectile::BounceCooldownReduction,
+				0.30f,
+				0.f
+			},
+			sas::GameplayAttribute{ CollisionAttributeIds::Radius, 11.f, 0.f }
+		});
+		crescentRelaySource->SetDamageTags({ DamageTypeSchema::Kinetic });
+
+		RelayPrismPresentationProfile crescentRelayPrismPresentation;
+		const shared_ptr<RelayPrismActor> crescentRelay =
+			crescentRelayWorld.SpawnActor<RelayPrismActor>(
+				crescentRelayOwner.get(),
+				crescentRelayPrismPresentation
+			).lock();
+		if (!crescentRelay)
+		{
+			return Fail("Crescent Relay Prism capture volume could not spawn");
+		}
+		crescentRelay->SetActorLocation({ 0.f, 0.f });
+		crescentRelay->ConfigureFromAttributes({
+			sas::GameplayAttribute{ CommonAttributeIds::Radius, 150.f, 1.f }
+		});
+		crescentRelay->ConfigureFromAbilityValues({
+			sas::GameplayAttribute{ CommonAttributeIds::ProjectileCount, 4.f, 1.f },
+			sas::GameplayAttribute{
+				AbilityData::RelayPrism::Attribute::DamageTransferRatio,
+				1.f,
+				0.f,
+				1.f
+			},
+			sas::GameplayAttribute{
+				AbilityData::RelayPrism::Attribute::AttackPowerCoefficient,
+				0.f,
+				0.f
+			},
+			sas::GameplayAttribute{
+				AbilityData::RelayPrism::Attribute::MinimumScatterAngle,
+				60.f,
+				0.f,
+				360.f
+			},
+			sas::GameplayAttribute{
+				AbilityData::RelayPrism::Attribute::MaximumScatterAngle,
+				60.f,
+				0.f,
+				360.f
+			},
+			sas::GameplayAttribute{
+				AbilityData::RelayPrism::Attribute::MaximumBonusProjectileCount,
+				0.f,
+				0.f
+			}
+		});
+		if (!crescentRelay->TryCaptureProjectile(*crescentRelaySource))
+		{
+			return Fail("Relay Prism did not capture Crescent Reaver");
+		}
+		// SpawnActor queues new actors until the next world lifecycle pass.
+		crescentRelayWorld.TickInternal(0.f);
+
+		List<shared_ptr<CrescentReaverProjectileActor>> crescentRelayClones;
+		for (const weak_ptr<CrescentReaverProjectileActor>& projectileWeak :
+			crescentRelayWorld.GetActorsByType<CrescentReaverProjectileActor>())
+		{
+			if (const shared_ptr<CrescentReaverProjectileActor> projectile = projectileWeak.lock();
+				projectile && projectile.get() != crescentRelaySource.get() &&
+				!projectile->GetIsPendingDestroy())
+			{
+				crescentRelayClones.push_back(projectile);
+			}
+		}
+		if (crescentRelayClones.size() != 4)
+		{
+			return Fail("Relay Prism did not create four Crescent Reaver clones");
+		}
+
+		const sf::Vector2f firstCrescentDirection = crescentRelayClones[0]->GetVelocity();
+		const sf::Vector2f secondCrescentDirection = crescentRelayClones[1]->GetVelocity();
+		const float crescentDirectionLengths =
+			GetVectorLength(firstCrescentDirection) * GetVectorLength(secondCrescentDirection);
+		const float crescentScatterAngle = crescentDirectionLengths > 0.f
+			? std::acos(std::clamp(
+				(firstCrescentDirection.x * secondCrescentDirection.x +
+					firstCrescentDirection.y * secondCrescentDirection.y) /
+					crescentDirectionLengths,
+				-1.f,
+				1.f
+			)) * 57.2957795131f
+			: 0.f;
+		if (!NearlyEqual(crescentScatterAngle, 60.f))
+		{
+			return Fail("Crescent Reaver Relay clones ignored Prism scatter directions");
 		}
 	}
 
@@ -6306,6 +7275,37 @@ int main()
 		if (rocketClone->GetIsPendingDestroy())
 		{
 			return Fail("Rocket relay clone disappeared before reaching full range");
+		}
+	}
+
+	{
+		// Ion Storm's irregular silhouette is generated once per cast. Verify the
+		// resolver's stable point count, guaranteed inner core, and shared render
+		// boundary contract without requiring a World or a live combat actor.
+		const IonStormBoundary boundary = IonStormBoundary::Generate(
+			20,
+			250.f,
+			250.f,
+			335.f
+		);
+		if (boundary.GetControlPointCount() != 20 ||
+			!boundary.Contains({ 0.f, 0.f }) ||
+			!boundary.Contains({ 249.f, 0.f }) ||
+			boundary.Contains({ 336.f, 0.f }))
+		{
+			return Fail("Ion Storm boundary did not preserve its core and maximum radius rules");
+		}
+		const List<sf::Vector2f> renderedBoundary = boundary.BuildBoundaryPoints(64);
+		if (renderedBoundary.size() != 64)
+		{
+			return Fail("Ion Storm boundary did not produce the requested render resolution");
+		}
+		for (const sf::Vector2f& point : renderedBoundary)
+		{
+			if (!boundary.Contains(point))
+			{
+				return Fail("Ion Storm gameplay boundary diverged from its render points");
+			}
 		}
 	}
 

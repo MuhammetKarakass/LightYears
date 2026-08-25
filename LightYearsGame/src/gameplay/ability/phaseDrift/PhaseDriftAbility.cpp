@@ -336,8 +336,14 @@ namespace ly
 			ship->GetRuntimeModifiers().Remove(AbilityData::PhaseDrift::AbilityId::Basic);
 			if (mCollisionSnapshotValid)
 			{
-				ship->SetCollisionLayer(mOriginalCollisionLayer);
-				ship->SetCollisionMask(mOriginalCollisionMask);
+				// Restore only the values Phase still owns. A concurrent system may
+				// legitimately replace collision policy while Phase is active; in that
+				// case its newer values must survive Phase cleanup.
+				if (ship->GetCollisionLayer() == mOriginalCollisionLayer &&
+					ship->GetCollisionMask() == CollisionLayer::Powerup)
+				{
+					ship->SetCollisionMask(mOriginalCollisionMask);
+				}
 			}
 		}
 		context.abilitySystem.RemoveOwnedTag(AbilityData::PhaseDrift::State::Active);

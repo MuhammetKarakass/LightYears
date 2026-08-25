@@ -17,6 +17,7 @@ namespace ly
 		mVelocity{},
 		mPhysicsBodyId{},
 		mPhysicsEnabled{ false },
+		mPhysicsBodyType{ PhysicsBodyType::Dynamic },
 		mCollisionLayer{ CollisionLayer::None },
 		mCollisionMask{ CollisionLayer::None },
 		mCanCollide{ false },
@@ -284,7 +285,7 @@ namespace ly
 
 	void Actor::Render(sf::RenderWindow& window)
 	{
-		if (GetIsPendingDestroy()) return;
+		if (GetIsPendingDestroy() || !mRenderEnabled) return;
 		RenderLights(window);
 
 		if(mSprite.has_value())
@@ -453,10 +454,32 @@ namespace ly
 		}
 	}
 
+	void Actor::SetPhysicsBodyType(PhysicsBodyType bodyType)
+	{
+		mPhysicsBodyType = bodyType;
+		if (mPhysicsBodyId)
+		{
+			b2Body_SetType(
+				*mPhysicsBodyId,
+				bodyType == PhysicsBodyType::Static ? b2_staticBody : b2_dynamicBody
+			);
+		}
+	}
+
 	bool Actor::CanCollideWith(const Actor* other) const
 	{
 		if (other == nullptr) return false;
 		return HasCollisionLayer(mCollisionMask, other->GetCollisionLayer());
+	}
+
+	void Actor::SetCollisionLayer(CollisionLayer layer)
+	{
+		mCollisionLayer = layer;
+	}
+
+	void Actor::SetCollisionMask(CollisionLayer mask)
+	{
+		mCollisionMask = mask;
 	}
 
 	void Actor::OnActorBeginOverlap(Actor* otherActor)

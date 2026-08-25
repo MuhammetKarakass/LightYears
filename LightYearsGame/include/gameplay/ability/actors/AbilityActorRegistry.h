@@ -12,6 +12,9 @@ namespace ly
 {
 	class Actor;
 	class AbilityWorldActor;
+	class GameAbility;
+	class LightYearsAbilitySystemComponent;
+	struct GameAbilityDefinition;
 
 	struct AbilityActorValidationResult
 	{
@@ -27,6 +30,16 @@ namespace ly
 		std::optional<sf::Vector2f> targetLocation;
 		// Optional live target for projectiles that must follow moving actors.
 		weak_ptr<Actor> targetActor;
+		// The concrete projectile may need to send a result back to the exact
+		// ability instance that spawned it (for example, Crescent Reaver reduces
+		// its own cooldown after a successful bounce). This is optional so generic
+		// actors remain independent from ability behavior classes.
+		GameAbility* sourceAbilityInstance = nullptr;
+		// A persistent summon can spawn child actors after its source ability has
+		// completed. Keep the immutable execution metadata with that summon instead
+		// of making the summon re-discover a transient ability instance later.
+		LightYearsAbilitySystemComponent* abilitySystem = nullptr;
+		const GameAbilityDefinition* abilityDefinition = nullptr;
 	};
 
 	class AbilityActorTypeHandler

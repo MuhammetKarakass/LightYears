@@ -80,7 +80,8 @@ namespace ly
 	{
 		Actor::OnActorBeginOverlap(otherActor);
 		if (!otherActor) return;
-		if (otherActor->GetCollisionLayer() == CollisionLayer::Player)
+		if (otherActor->GetCollisionLayer() == CollisionLayer::Player &&
+			CanApplyContactDamage(*this, *otherActor))
 		{
 			ApplyCombatDamage(*otherActor, mDamage, this);
 		}

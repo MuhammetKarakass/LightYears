@@ -1,6 +1,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/MovementComponent.h"
+#include "gameplay/movement/MovementCollisionService.h"
 #include "gameplay/tags/GameplayTags.h"
 
 #include "gameplay/ability/dash/DashMovementMath.h"
@@ -26,6 +27,57 @@ namespace ly
 	void MovementComponent::Tick(float deltaTime, float speedCapMultiplier)
 	{
 		const auto& ownedTags = mOwner.GetAbilitySystemComponent().GetOwnedTags();
+		const auto applyForcedMovement = [&]()
+		{
+			sf::Vector2f forcedVelocity{};
+			for (const auto& [sourceId, velocity] : mForcedMovementVelocities)
+			{
+				(void)sourceId;
+				forcedVelocity += velocity;
+			}
+			if (GetVectorLength(forcedVelocity) > 0.001f)
+			{
+				MoveOwner(forcedVelocity * std::max(0.f, deltaTime));
+			}
+		};
+		if (ownedTags.HasTag(GameplayTags::State::ActionLock::MovementInput))
+		{
+			// Focus and traversal own the ship's position. Clearing the regular
+			// velocity here prevents player input or drift from fighting them.
+			if (mIsDashing)
+			{
+				EndDash();
+			}
+			mOwner.SetVelocity({ 0.f, 0.f });
+			if (ownedTags.HasTag(GameplayTags::State::ActionLock::ExternalMovement))
+			{
+				// Hard stasis discards both new and pre-existing impulses so releasing
+				// the lock cannot produce a delayed knockback.
+				mExternalImpulses.clear();
+			}
+			else
+			{
+				TickExternalImpulse(deltaTime);
+			}
+			applyForcedMovement();
+			return;
+		}
+
+		if (!mForcedMovementVelocities.empty())
+		{
+			// A forced source owns translational movement but not aim/rotation or
+			// combat. Movement abilities are blocked by the shared input lock while
+			// this branch keeps the ship moving through the normal component.
+			if (mIsDashing)
+			{
+				EndDash();
+			}
+			mOwner.SetVelocity({ 0.f, 0.f });
+			applyForcedMovement();
+			TickExternalImpulse(deltaTime);
+			return;
+		}
+
 		if (ownedTags.HasTag(GameplayTags::State::Effect::Control::Stunned) ||
 			ownedTags.HasTag(GameplayTags::State::Effect::Control::Staggered))
 		{
@@ -34,6 +86,7 @@ namespace ly
 				EndDash();
 			}
 			mOwner.SetVelocity({ 0.f, 0.f });
+			TickExternalImpulse(deltaTime);
 			return;
 		}
 
@@ -50,7 +103,74 @@ namespace ly
 
 		const float movementMultiplier = mOwner.GetAbilitySystemComponent().GetAttributes()
 			.GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, 0.05f);
-		mOwner.AddActorLocationOffset(mOwner.GetVelocity() * movementMultiplier * deltaTime);
+		MoveOwner(mOwner.GetVelocity() * movementMultiplier * deltaTime);
+		TickExternalImpulse(deltaTime);
+	}
+
+	void MovementComponent::ApplyExternalImpulse(
+		const sf::Vector2f& velocityChange,
+		float retentionPerSecond
+	)
+	{
+		if (!std::isfinite(velocityChange.x) || !std::isfinite(velocityChange.y))
+		{
+			return;
+		}
+		if (mOwner.GetAbilitySystemComponent().HasOwnedTag(
+			GameplayTags::State::ActionLock::ExternalMovement
+		))
+		{
+			return;
+		}
+		mExternalImpulses.push_back(ExternalImpulse{
+			velocityChange,
+			std::clamp(retentionPerSecond, 0.0001f, 0.9999f)
+		});
+	}
+
+	void MovementComponent::SetForcedMovementVelocity(
+		ForcedMovementSourceId sourceId,
+		const sf::Vector2f& velocity
+	)
+	{
+		if (sourceId == 0 || !std::isfinite(velocity.x) || !std::isfinite(velocity.y))
+		{
+			return;
+		}
+		mForcedMovementVelocities[sourceId] = velocity;
+	}
+
+	void MovementComponent::RemoveForcedMovementSource(
+		ForcedMovementSourceId sourceId
+	)
+	{
+		mForcedMovementVelocities.erase(sourceId);
+	}
+
+	void MovementComponent::TickExternalImpulse(float deltaTime)
+	{
+		const float safeDeltaTime = std::max(0.f, deltaTime);
+		if (safeDeltaTime <= 0.f)
+		{
+			return;
+		}
+
+		for (auto impulse = mExternalImpulses.begin();
+			impulse != mExternalImpulses.end();)
+		{
+			if (GetVectorLength(impulse->velocity) <= 0.001f)
+			{
+				impulse = mExternalImpulses.erase(impulse);
+				continue;
+			}
+
+			MoveOwner(impulse->velocity * safeDeltaTime);
+			impulse->velocity *= std::pow(
+				impulse->retentionPerSecond,
+				safeDeltaTime
+			);
+			++impulse;
+		}
 	}
 
 	void MovementComponent::RefreshAttributes()
@@ -308,13 +428,20 @@ namespace ly
 
 		const float stepDuration = std::min(std::max(0.f, deltaTime), mDashTimeRemaining);
 		mOwner.SetVelocity(mDashVelocity);
-		mOwner.AddActorLocationOffset(mDashVelocity * stepDuration);
+		MoveOwner(mDashVelocity * stepDuration);
 		mDashTimeRemaining = std::max(0.f, mDashTimeRemaining - stepDuration);
 		if (mDashTimeRemaining <= 0.f)
 		{
 			EndDash();
 		}
 		return true;
+	}
+
+	void MovementComponent::MoveOwner(const sf::Vector2f& requestedOffset)
+	{
+		mOwner.AddActorLocationOffset(
+			movement::ConstrainMovementAgainstStaticGeometry(mOwner, requestedOffset)
+		);
 	}
 
 	float MovementComponent::GetShortestAngleDelta(float targetAngle, float currentAngle) const

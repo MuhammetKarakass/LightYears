@@ -1,11 +1,14 @@
 #include "abilities/AbilityLifecycleOrchestrator.h"
 
+#include <algorithm>
+
 namespace sas
 {
 	AbilityLifecycleDecision AbilityLifecycleOrchestrator::EvaluateInput(
 		AbilityActivationPolicy activationPolicy,
 		AbilityLifetimePolicy lifetimePolicy,
-		const AbilityRuntimeState& state
+		const AbilityRuntimeState& state,
+		float minimumToggleActiveDuration
 	)
 	{
 		AbilityLifecycleDecision decision;
@@ -25,9 +28,16 @@ namespace sas
 		case AbilityActivationPolicy::Toggle:
 			if (state.IsPressedThisFrame())
 			{
-				decision.requestEnd = state.IsActive();
-				decision.requestActivation = !state.IsActive();
-				decision.endReason = AbilityEndReason::Cancelled;
+				if (!state.IsActive())
+				{
+					decision.requestActivation = true;
+				}
+				else if (state.GetActiveTimeElapsed() >=
+					std::max(0.f, minimumToggleActiveDuration))
+				{
+					decision.requestEnd = true;
+					decision.endReason = AbilityEndReason::Cancelled;
+				}
 			}
 			break;
 		case AbilityActivationPolicy::Passive:
@@ -47,6 +57,7 @@ namespace sas
 	{
 		AbilityLifecycleDecision decision;
 		if (lifetimePolicy != AbilityLifetimePolicy::Duration ||
+			state.IsActiveDurationDeferred() ||
 			state.GetActiveTimeRemaining() <= 0.f)
 		{
 			return decision;

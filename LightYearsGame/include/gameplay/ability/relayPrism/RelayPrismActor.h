@@ -3,6 +3,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/relayPrism/RelayPrismContracts.h"
+#include "gameplay/portal/PortalDestinationRebaser.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "presentation/ability/relayPrism/RelayPrismPresentationProfile.h"
 
@@ -18,7 +19,8 @@ namespace ly
 
 	class RelayPrismActor final
 		: public AbilityWorldActor,
-		  public ProjectileCaptureVolume
+		  public ProjectileCaptureVolume,
+		  public PortalDestinationRebaser
 	{
 	public:
 		RelayPrismActor(
@@ -30,6 +32,8 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
+		void BeginPortalTransit() override;
+		void RebasePortalDestination(const sf::Vector2f& exitLocation) override;
 		void Destroy() override;
 		void Render(sf::RenderWindow& window) override;
 		bool IsProjectileActor() const override { return true; }
@@ -74,6 +78,10 @@ namespace ly
 		float mProjectileSpeed = 0.f;
 		float mMaximumRange = 0.f;
 		float mTravelDistance = 0.f;
+		// Portal transit relocates the projectile. Cache the old remaining flight
+		// distance before that relocation so the capture point keeps its intended
+		// post-portal travel budget instead of measuring from the new exit.
+		float mPortalRemainingTargetDistance = 0.f;
 		std::optional<sf::Vector2f> mTargetLocation;
 		sf::Vector2f mLaunchVelocity{};
 		bool mHasReachedTarget = true;

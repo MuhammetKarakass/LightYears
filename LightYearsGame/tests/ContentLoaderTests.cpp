@@ -10,9 +10,14 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameConfigs/ability/movement/DashConfig.h"
 #include "gameConfigs/ability/defensive/ShieldConfig.h"
+#include "gameConfigs/ability/defensive/DirectionalBarrierConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/control/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/control/FrostMaelstromConfig.h"
+#include "gameConfigs/ability/offensive/FrozenThrongConfig.h"
+#include "gameConfigs/ability/offensive/CombatSentryConfig.h"
+#include "gameConfigs/ability/offensive/NanoPlagueConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
 #include "gameConfigs/ability/offensive/OrbitalDronesConfig.h"
@@ -21,8 +26,22 @@
 #include "gameConfigs/ability/movement/PhaseDriftConfig.h"
 #include "gameConfigs/ability/offensive/HullShockConfig.h"
 #include "gameConfigs/ability/defensive/ShieldHarvestConfig.h"
+#include "gameConfigs/ability/defensive/CryostasisConfig.h"
 #include "gameConfigs/ability/utility/RelayPrismConfig.h"
 #include "gameConfigs/ability/utility/EchoProtocolConfig.h"
+#include "gameConfigs/ability/utility/VoidGateConfig.h"
+#include "gameConfigs/ability/offensive/RailBurstConfig.h"
+#include "gameConfigs/ability/offensive/AstralSurgeConfig.h"
+#include "gameConfigs/ability/offensive/WingSentinelsConfig.h"
+#include "gameConfigs/ability/defensive/ReturnProtocolConfig.h"
+#include "gameConfigs/ability/defensive/CrystalBarricadeConfig.h"
+#include "gameConfigs/ability/offensive/CrescentReaverConfig.h"
+#include "gameConfigs/ability/offensive/ScorchDriveConfig.h"
+#include "gameConfigs/ability/offensive/IonStormConfig.h"
+#include "gameConfigs/ability/offensive/ChainLightningConfig.h"
+#include "gameConfigs/ability/offensive/GlacialPressureConfig.h"
+#include "gameConfigs/ability/offensive/MineLayerConfig.h"
+#include "gameConfigs/ability/movement/EnergySpearConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 
 #include <cmath>
@@ -30,6 +49,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <variant>
 
 namespace
 {
@@ -68,6 +88,7 @@ int main()
 	const ly::List<const ly::GameAbilityDefinition*> fallbackAbilities{
 		&AbilityData::Definitions::Dash_Basic,
 		&AbilityData::Definitions::Shield_Basic,
+		&AbilityData::Definitions::DirectionalBarrier_Basic,
 		&AbilityData::Definitions::SunBeam_Strike_Basic,
 		&AbilityData::Definitions::Rocket_Basic,
 		&AbilityData::Definitions::GravityAnomaly_Basic,
@@ -76,11 +97,38 @@ int main()
 		&AbilityData::Definitions::NullPulse_Basic,
 		&AbilityData::Definitions::PhaseDrift_Basic,
 		&AbilityData::Definitions::ShieldHarvest_Basic,
+		&AbilityData::Definitions::Cryostasis_Basic,
 		&AbilityData::Definitions::HullShock_Basic,
 		&AbilityData::Definitions::OrbitalDrones_Basic,
 		&AbilityData::Definitions::ExecutionDrive_Basic,
 		&AbilityData::Definitions::RelayPrism_Basic,
-		&AbilityData::Definitions::EchoProtocol_Basic
+		&AbilityData::Definitions::EchoProtocol_Basic,
+		&AbilityData::Definitions::RailBurst_Basic,
+		&AbilityData::Definitions::CrescentReaver_Basic,
+		&AbilityData::Definitions::MineLayer_Basic,
+		&AbilityData::Definitions::EnergySpear_Basic,
+		&AbilityData::Definitions::ScorchDrive_Basic,
+		&AbilityData::Definitions::IonStorm_Basic,
+		&AbilityData::Definitions::ChainLightning_Basic,
+		&AbilityData::Definitions::GlacialPressure_Basic
+		,
+		&AbilityData::Definitions::VoidGate_Basic
+		,
+		&AbilityData::Definitions::FrostMaelstrom_Basic
+		,
+		&AbilityData::Definitions::FrozenThrong_Basic
+		,
+		&AbilityData::Definitions::CombatSentry_Basic
+		,
+		&AbilityData::Definitions::NanoPlague_Basic
+		,
+		&AbilityData::Definitions::AstralSurge_Basic
+		,
+		&AbilityData::Definitions::WingSentinels_Basic
+		,
+		&AbilityData::Definitions::ReturnProtocol_Basic
+		,
+		&AbilityData::Definitions::CrystalBarricade_Basic
 	};
 	const ly::List<const ly::AbilityActorDefinition*> fallbackAbilityActors{
 		&AbilityData::GravityAnomaly::ActorProjectileBasic,
@@ -89,7 +137,29 @@ int main()
 		&AbilityData::InfernoSpray::ActorFlameConeBasic,
 		&AbilityData::SunBeam::ActorStrikeBasic,
 		&AbilityData::OverdriveCore::ActorProjectileBasic,
-		&AbilityData::RelayPrism::ActorRelayBasic
+		&AbilityData::RelayPrism::ActorRelayBasic,
+		&AbilityData::RailBurst::ActorProjectileBasic,
+		&AbilityData::CrescentReaver::ActorProjectileBasic,
+		&AbilityData::MineLayer::ActorMineBasic,
+		&AbilityData::ScorchDrive::ActorFireSegmentBasic,
+		&AbilityData::IonStorm::ActorProjectileBasic,
+		&AbilityData::IonStorm::ActorFieldBasic
+		,
+		&AbilityData::Definitions::VoidGatePortalBasic
+		,
+		&AbilityData::Definitions::FrostMaelstromFieldBasic
+		,
+		&AbilityData::Definitions::FrozenThrongHuskBasic
+		,
+		&AbilityData::CombatSentry::ActorTurretBasic
+		,
+		&AbilityData::CombatSentry::ActorProjectileBasic
+		,
+		&AbilityData::AstralSurge::ActorProjectileBasic
+		,
+		&AbilityData::WingSentinels::ActorProjectileBasic
+		,
+		&AbilityData::CrystalBarricade::ActorWallBasic
 	};
 	const ly::content::AbilityLoader::Result loadedAbilities =
 		ly::content::AbilityLoader::LoadFromFile(
@@ -101,7 +171,7 @@ int main()
 	{
 		return Fail(loadedAbilities.error.c_str()) ? 0 : 1;
 	}
-	if (loadedAbilities.definitions.size() != 15)
+	if (loadedAbilities.definitions.size() != 34)
 	{
 		return Fail("Ability JSON catalog did not load the expected pilot definitions") ? 0 : 1;
 	}
@@ -110,9 +180,210 @@ int main()
 	{
 		actorDefinitionCount += definition.actorDefinitions.size();
 	}
-	if (actorDefinitionCount != 7)
+	if (actorDefinitionCount != 21)
 	{
 		return Fail("Ability actor JSON catalog did not load the expected actor definitions") ? 0 : 1;
+	}
+
+	const ly::content::AbilityLoader::LoadedDefinition* railBurstLoaded = nullptr;
+	for (const ly::content::AbilityLoader::LoadedDefinition& loaded : loadedAbilities.definitions)
+	{
+		if (loaded.id == "Ability.Offense.RailBurst.Basic")
+		{
+			railBurstLoaded = &loaded;
+			break;
+		}
+	}
+	if (!railBurstLoaded || railBurstLoaded->actorDefinitions.size() != 1)
+	{
+		return Fail("Rail Burst JSON definition or projectile actor was not loaded") ? 0 : 1;
+	}
+	if (sas::FindAttribute(
+		railBurstLoaded->actorDefinitions.front().attributes,
+		ly::CommonAttributeIds::PierceDamageLoss
+	))
+	{
+		return Fail("Rail Burst still declares removed damage falloff") ? 0 : 1;
+	}
+
+	const auto astralSurgeIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Offense.AstralSurge.Basic";
+		}
+	);
+	if (astralSurgeIt == loadedAbilities.definitions.end() ||
+		!NearlyEqual(astralSurgeIt->definition.cooldown, 16.f) ||
+		!NearlyEqual(astralSurgeIt->definition.duration, 1.f) ||
+		astralSurgeIt->definition.maxCharges != 1 ||
+		astralSurgeIt->definition.scalingRules.size() != 1 ||
+		astralSurgeIt->definition.scalingRules.front().sourceAttributeId !=
+			ly::OwnerAttributeIds::EnergyMax ||
+		!NearlyEqual(astralSurgeIt->definition.scalingRules.front().coefficient, 0.45f) ||
+		astralSurgeIt->definition.levelProgression.size() != 14 ||
+		astralSurgeIt->actorDefinitions.size() != 1 ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				astralSurgeIt->actorDefinitions.front().attributes,
+				ly::AreaAttributeIds::Width,
+				0.f
+			),
+			280.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				astralSurgeIt->actorDefinitions.front().attributes,
+				ly::CommonAttributeIds::PierceDamageLoss,
+				0.f
+			),
+			0.05f
+		))
+	{
+		return Fail("Astral Surge JSON profile is invalid") ? 0 : 1;
+	}
+
+	const auto crescentReaverIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Offense.CrescentReaver.Basic";
+		}
+	);
+	const ly::SpawnActorAction* crescentSpawn = nullptr;
+	if (crescentReaverIt != loadedAbilities.definitions.end())
+	{
+		for (const ly::AbilityActionSpec& action : crescentReaverIt->definition.actions)
+		{
+			if (const auto* spawn = std::get_if<ly::SpawnActorAction>(&action.action))
+			{
+				crescentSpawn = spawn;
+				break;
+			}
+		}
+	}
+	if (crescentReaverIt == loadedAbilities.definitions.end() ||
+		crescentReaverIt->definition.scalingRules.size() != 2 ||
+		crescentReaverIt->definition.damageTags !=
+			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic } ||
+		!crescentSpawn ||
+		crescentSpawn->spawnPolicy != sas::AbilitySpawnPolicy::OwnerForward ||
+		crescentSpawn->directionPolicy != sas::AbilityDirectionPolicy::MouseWorld ||
+		crescentReaverIt->actorDefinitions.size() != 1 ||
+		!sas::FindAttribute(
+			crescentReaverIt->actorDefinitions.front().attributes,
+			AbilityData::CrescentReaver::Actor::Projectile::BounceCount
+		))
+	{
+		return Fail("Crescent Reaver JSON profile or cursor direction contract is invalid") ? 0 : 1;
+	}
+
+	const auto energySpearIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Movement.EnergySpear.Basic";
+		}
+	);
+	if (energySpearIt == loadedAbilities.definitions.end() ||
+		!NearlyEqual(energySpearIt->definition.cooldown, 8.f) ||
+		!NearlyEqual(energySpearIt->definition.duration, 1.5f) ||
+		energySpearIt->definition.attributes.size() != 10 ||
+		energySpearIt->definition.levelProgression.size() != 14 ||
+		energySpearIt->definition.damageTags !=
+			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } ||
+		!sas::FindAttribute(
+			energySpearIt->definition.attributes,
+			ly::CommonAttributeIds::Radius
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				energySpearIt->definition.attributes,
+				ly::CommonAttributeIds::Range,
+				0.f
+			),
+			600.f
+		))
+	{
+		return Fail("Energy Spear ability JSON profile is invalid") ? 0 : 1;
+	}
+
+	const auto frostMaelstromIt = std::find_if(
+		loadedAbilities.definitions.begin(),
+		loadedAbilities.definitions.end(),
+		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
+		{
+			return definition.id == "Ability.Control.FrostMaelstrom.Basic";
+		}
+	);
+	if (frostMaelstromIt == loadedAbilities.definitions.end() ||
+		frostMaelstromIt->definition.attributes.size() != 13 ||
+		frostMaelstromIt->definition.levelProgression.size() != 14 ||
+		!NearlyEqual(frostMaelstromIt->definition.duration, 6.f) ||
+		frostMaelstromIt->definition.damageTags !=
+			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo } ||
+		frostMaelstromIt->actorDefinitions.size() != 1 ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				frostMaelstromIt->actorDefinitions.front().attributes,
+				ly::CommonAttributeIds::Duration,
+				0.f
+			),
+			6.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				frostMaelstromIt->definition.attributes,
+				AbilityData::FrostMaelstrom::Attribute::MaximumRadius,
+				0.f
+			),
+			600.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				frostMaelstromIt->definition.attributes,
+				AbilityData::FrostMaelstrom::Attribute::InwardForce,
+				0.f
+			),
+			1500.f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				frostMaelstromIt->definition.attributes,
+				AbilityData::FrostMaelstrom::Attribute::OrbitalAngularSpeed,
+				0.f
+			),
+			4.5f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				frostMaelstromIt->definition.attributes,
+				AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio,
+				0.f
+			),
+			0.42f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				frostMaelstromIt->definition.attributes,
+				AbilityData::FrostMaelstrom::Attribute::TickInterval,
+				0.f
+			),
+			0.25f
+		) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				frostMaelstromIt->definition.attributes,
+				AbilityData::FrostMaelstrom::Attribute::CryoStacksPerTick,
+				0.f
+			),
+			1.f
+		))
+	{
+		return Fail("Frost Maelstrom JSON runtime and Cryo tick contract is invalid") ? 0 : 1;
 	}
 
 	const std::filesystem::path duplicateAbilityPath =
@@ -859,7 +1130,7 @@ int main()
 	{
 		return Fail(loadedEffects.error.c_str()) ? 0 : 1;
 	}
-	if (loadedEffects.definitions.size() != 16 ||
+	if (loadedEffects.definitions.size() != 18 ||
 		barrierEffectIt == loadedEffects.definitions.end() ||
 		!barrierEffectIt->definition.sourceParameterized ||
 		!barrierEffectIt->definition.attributes.empty() ||

@@ -4,6 +4,8 @@
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
 #include "framework/TimerManager.h"
+#include <framework/MathUtility.h>
+#include <framework/World.h>
 #include "gameConfigs/combat/EffectStructs.h"
 #include <algorithm>
 #include <cmath>
@@ -13,6 +15,7 @@ namespace ly
 {
 	GameHUD::GameHUD() :
 		mFrameRateText{ std::in_place, "Frame Rate:" },
+		mPlayerSpeedText{ std::in_place, "Speed:" },
 		mPlayerHealthBar{ std::in_place },
 		mPlayerShieldBar{ std::in_place, sf::Vector2f{ 220.f, 18.f }, 1.f, sf::Color{ 120, 180, 255, 255 }, sf::Color{ 35, 55, 95, 255 } },
 		mPlayerEnergyBar{ std::in_place, sf::Vector2f{ 220.f, 18.f }, 1.f, sf::Color{ 70, 205, 255, 255 }, sf::Color{ 35, 70, 95, 255 } },
@@ -24,6 +27,7 @@ namespace ly
 		mWidgetSpacingX{ 10.f }
 	{
 		mFrameRateText->SetTextSize(20);
+		mPlayerSpeedText->SetTextSize(20);
 		mPlayerLifeText->SetTextSize(20);
 		mPlayerScoreText->SetTextSize(20);
 		mTopCenterText->SetTextSize(20);
@@ -43,6 +47,9 @@ namespace ly
 
 		if (mFrameRateText.has_value())
 			mFrameRateText->NativeDraw(windowRef);
+
+		if (mPlayerSpeedText.has_value())
+			mPlayerSpeedText->NativeDraw(windowRef);
 
 		if (mPlayerHealthBar.has_value())
 			mPlayerHealthBar->NativeDraw(windowRef);
@@ -87,6 +94,9 @@ namespace ly
 
 
 		RefreshPlayerHUDState();
+		ConnectDamageObservers();
+		UpdatePlayerSpeed();
+		UpdateDamageNumberVisuals(deltaTime);
 		UpdateGameplayWarningVisuals(deltaTime);
 		HUD::Tick(deltaTime);
 
@@ -117,6 +127,9 @@ namespace ly
 	{
 		auto windowSize = windowRef.getSize();
 		mWindowSize = windowSize;
+		mWindowRef = &windowRef;
+		mFrameRateText->SetWidgetLocation(sf::Vector2f{ 20.f, 18.f });
+		mPlayerSpeedText->SetWidgetLocation(sf::Vector2f{ 20.f, 43.f });
 		mPlayerHealthBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 50.f });
 		mPlayerShieldBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 74.f });
 		mPlayerEnergyBar->SetWidgetLocation(sf::Vector2f{ 20.f, windowSize.y - 98.f });
@@ -358,6 +371,168 @@ namespace ly
 	void GameHUD::PlayerScoreUpdated(int amt)
 	{
 		mPlayerScoreText->SetString(std::to_string(amt));
+	}
+
+	void GameHUD::ConnectDamageObservers()
+	{
+		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+		if (!player)
+		{
+			return;
+		}
+
+		shared_ptr<PlayerSpaceShip> currentShip = player->GetCurrentSpaceShip().lock();
+		if (!currentShip || !currentShip->GetWorld())
+		{
+			return;
+		}
+
+		for (const weak_ptr<SpaceShip>& weakShip : currentShip->GetWorld()->GetActorsByType<SpaceShip>())
+		{
+			shared_ptr<SpaceShip> ship = weakShip.lock();
+			if (!ship || mObservedDamageShips.find(ship.get()) != mObservedDamageShips.end())
+			{
+				continue;
+			}
+
+			ship->onDamageTaken.BindAction(GetWeakPtr(), &GameHUD::ShipDamageTaken);
+			mObservedDamageShips.insert(ship.get());
+		}
+	}
+
+	void GameHUD::ShipDamageTaken(SpaceShip* ship, float amount, float health, float maxHealth)
+	{
+		(void)health;
+		(void)maxHealth;
+		if (!ship || amount <= 0.f || !mWindowRef)
+		{
+			return;
+		}
+
+		DamageNumberEntry entry;
+		entry.ship = std::dynamic_pointer_cast<SpaceShip>(ship->GetWeakPtr().lock());
+		if (entry.ship.expired())
+		{
+			return;
+		}
+
+		const std::string damageText = std::to_string(static_cast<int>(std::round(amount)));
+		weak_ptr<TextWidget> widget = AddWidget<TextWidget>(
+			damageText,
+			"SpaceShooterRedux/Bonus/OrbitronBlack.ttf",
+			22
+		);
+		entry.widget = widget;
+		mDamageNumbers.insert(mDamageNumbers.begin(), entry);
+
+		int sameShipCount = 0;
+		for (auto it = mDamageNumbers.begin(); it != mDamageNumbers.end();)
+		{
+			if (it->ship.lock().get() != ship)
+			{
+				++it;
+				continue;
+			}
+
+			++sameShipCount;
+			if (sameShipCount > 5)
+			{
+				RemoveWidget(it->widget);
+				it = mDamageNumbers.erase(it);
+				continue;
+			}
+			++it;
+		}
+
+		if (auto lockedWidget = widget.lock())
+		{
+			lockedWidget->SetFillColor(
+				dynamic_cast<PlayerSpaceShip*>(ship)
+					? sf::Color{ 255, 105, 105, 255 }
+					: sf::Color{ 255, 220, 120, 255 }
+			);
+			lockedWidget->SetOriginNormalized(0.f, 1.f);
+			lockedWidget->SetLifeTime(1.5f);
+		}
+	}
+
+	void GameHUD::UpdateDamageNumberVisuals(float deltaTime)
+	{
+		if (!mWindowRef)
+		{
+			return;
+		}
+
+		for (auto it = mDamageNumbers.begin(); it != mDamageNumbers.end();)
+		{
+			it->age += std::max(0.f, deltaTime);
+			shared_ptr<SpaceShip> ship = it->ship.lock();
+			shared_ptr<TextWidget> widget = it->widget.lock();
+			if (!ship || ship->GetIsPendingDestroy() || !widget || it->age >= 1.5f)
+			{
+				if (widget)
+				{
+					RemoveWidget(it->widget);
+				}
+				it = mDamageNumbers.erase(it);
+				continue;
+			}
+
+			int slot = 0;
+			for (const DamageNumberEntry& candidate : mDamageNumbers)
+			{
+				if (&candidate == &(*it))
+				{
+					break;
+				}
+				if (candidate.ship.lock().get() == ship.get())
+				{
+					++slot;
+				}
+			}
+
+			const sf::FloatRect bounds = ship->GetActorGlobalBounds();
+			const sf::Vector2f worldAnchor{
+				bounds.position.x + bounds.size.x + 8.f,
+				bounds.position.y - 5.f
+			};
+			const sf::Vector2i pixelAnchor = mWindowRef->mapCoordsToPixel(
+				worldAnchor,
+				ship->GetWorld()->GetWorldView()
+			);
+			const float rise = static_cast<float>(slot) * 24.f + it->age * 14.f;
+			const unsigned int textSize = static_cast<unsigned int>(
+				std::max(12, 22 - slot * 2)
+			);
+			widget->SetTextSize(textSize);
+			widget->SetOriginNormalized(0.f, 1.f);
+			widget->SetWidgetLocation(sf::Vector2f{
+				static_cast<float>(pixelAnchor.x),
+				static_cast<float>(pixelAnchor.y) - rise
+			});
+
+			const float fadeStart = 1.1f;
+			const float alpha = it->age <= fadeStart
+				? 1.f
+				: std::clamp((1.5f - it->age) / 0.4f, 0.f, 1.f);
+			widget->SetAlpha(alpha);
+			++it;
+		}
+	}
+
+	void GameHUD::UpdatePlayerSpeed()
+	{
+		if (!mPlayerSpeedText.has_value())
+		{
+			return;
+		}
+
+		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+		shared_ptr<PlayerSpaceShip> ship = player ? player->GetCurrentSpaceShip().lock() : nullptr;
+		const float speed = ship ? GetVectorLength(ship->GetVelocity()) : 0.f;
+		char buffer[48];
+		snprintf(buffer, sizeof(buffer), "Speed: %.0f", speed);
+		mPlayerSpeedText->SetString(buffer);
 	}
 
 	void GameHUD::ShowTimer(float fadeIn, float hold, float fadeOut)

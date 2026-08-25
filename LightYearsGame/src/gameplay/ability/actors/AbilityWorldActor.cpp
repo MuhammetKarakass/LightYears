@@ -1,16 +1,33 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameplay/ability/GameAbility.h"
+#include "gameplay/portal/PortalDestinationRebaser.h"
+#include "gameplay/projectile/ProjectileReflectionService.h"
 #include "framework/World.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.h"
 #include "framework/MathUtility.h"
+#include "gameplay/targeting/SweptGeometry.h"
 
 #include <algorithm>
 #include <cmath>
 
 namespace
 {
+	ly::weak_ptr<ly::Actor> MakeWeakActor(ly::Actor* actor)
+	{
+		if (!actor)
+		{
+			return {};
+		}
+		const ly::shared_ptr<ly::Object> object = actor->GetWeakPtr().lock();
+		return object
+			? std::dynamic_pointer_cast<ly::Actor>(object)
+			: ly::weak_ptr<ly::Actor>{};
+	}
+
 	float DistanceSquaredToActorBounds(
 		const ly::Actor& actor,
 		const sf::Vector2f& point
@@ -40,25 +57,66 @@ namespace
 		const float deltaY = point.y - closestY;
 		return deltaX * deltaX + deltaY * deltaY;
 	}
+
+	sf::Vector2f NormalizeOrFallback(
+		const sf::Vector2f& value,
+		const sf::Vector2f& fallback
+	)
+	{
+		const float length = ly::GetVectorLength(value);
+		return length > 0.001f ? value / length : fallback;
+	}
 }
 
 namespace ly
 {
 	AbilityWorldActor::AbilityWorldActor(World* world, Actor* owner, const std::string& texturePath)
 		: Actor(world, texturePath),
-		mOwner{ owner },
+		mOwner{ MakeWeakActor(owner) },
+		mUnmanagedOwner{ mOwner.expired() ? owner : nullptr },
 		mDamage{ 0.f },
 		mLifeTime{ 0.f },
 		mAge{ 0.f },
+		mPreviousLocation{},
 		mCollisionRadius{ 0.f },
 		mAllowFriendlyFire{ false },
 		mEnablePhysicsOnBeginPlay{ true }
 	{
 	}
 
+	Actor* AbilityWorldActor::GetOwnerActor() const
+	{
+		const shared_ptr<Actor> owner = mOwner.lock();
+		return owner ? owner.get() : mUnmanagedOwner;
+	}
+
+	Actor* AbilityWorldActor::GetOriginalProjectileOwner() const
+	{
+		const shared_ptr<Actor> owner = mOriginalProjectileOwner.lock();
+		return owner ? owner.get() : mUnmanagedOriginalProjectileOwner;
+	}
+
+	void AbilityWorldActor::SetSourceAbilityInstance(GameAbility* instance)
+	{
+		mSourceAbilityHandle = instance
+			? instance->GetHandle()
+			: sas::AbilityHandle{};
+	}
+
+	GameAbility* AbilityWorldActor::GetSourceAbilityInstance() const
+	{
+		const shared_ptr<Actor> owner = mOwner.lock();
+		Actor* ownerActor = owner ? owner.get() : mUnmanagedOwner;
+		auto* combatant = dynamic_cast<Combatant*>(ownerActor);
+		return combatant && mSourceAbilityHandle.IsValid()
+			? combatant->GetAbilitySystemComponent().GetAbility(mSourceAbilityHandle)
+			: nullptr;
+	}
+
 	void AbilityWorldActor::BeginPlay()
 	{
 		Actor::BeginPlay();
+		mPreviousLocation = GetActorLocation();
 
 		if (mEnablePhysicsOnBeginPlay)
 		{
@@ -72,6 +130,23 @@ namespace ly
 
 	void AbilityWorldActor::Tick(float deltaTime)
 	{
+		if (mPortalTransit)
+		{
+			return;
+		}
+
+		if (!GetIsPendingDestroy() &&
+			IsProjectileActor() &&
+			DirectionalBarrierEffectBehavior::TryInterceptProjectile(
+				*this,
+				mPreviousLocation
+			))
+		{
+			mPreviousLocation = GetActorLocation();
+			Destroy();
+			return;
+		}
+
 		mAge += deltaTime;
 
 		if (mLifeTime > 0.f && mAge >= mLifeTime)
@@ -79,12 +154,140 @@ namespace ly
 			Destroy();
 		}
 
+		mPreviousLocation = GetActorLocation();
 		Actor::Tick(deltaTime);
 	}
 
 	void AbilityWorldActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		if (mPortalTransit)
+		{
+			return;
+		}
 		Actor::OnActorBeginOverlap(otherActor);
+		if (IsProjectileActor() && !CanBeReflected() && otherActor &&
+			otherActor->GetPhysicsBodyType() == PhysicsBodyType::Static)
+		{
+			const sf::Vector2f halfExtents = otherActor->GetPhysicsCollisionBoxHalfExtents();
+			if (halfExtents.x > 0.f || halfExtents.y > 0.f)
+			{
+				// Families that support reflection consume the surface before they
+				// reach this overlap. Every other travelling ability projectile is
+				// still blocked by the same reusable physical geometry.
+				Destroy();
+			}
+		}
+	}
+
+	bool AbilityWorldActor::TryReflectProjectile(
+		const ProjectileReflectionRequest& request
+	)
+	{
+		(void)request;
+		return false;
+	}
+
+	bool AbilityWorldActor::TryReflectOnOverlap(Actor* otherActor)
+	{
+		if (!otherActor || !IsProjectileActor() || GetIsPendingDestroy())
+		{
+			return false;
+		}
+
+		// A Box2D overlap can arrive before the projectile family's manual sweep.
+		// Check both common reflection mechanisms here so that timing does not turn
+		// a valid wall bounce into an ordinary projectile impact.
+		return ProjectileReflectionService::TryReflectProjectile(*this, *otherActor) ||
+			ProjectileReflectionService::TryReflectFromSurfaceOverlap(*this, *otherActor);
+	}
+
+	bool AbilityWorldActor::ApplyBallisticReflection(
+		const ProjectileReflectionRequest& request,
+		float speed,
+		sf::Vector2f& inOutTrajectory
+	)
+	{
+		if (!CanBeReflected() ||
+			(GetOwnerActor() == &request.newOwner && !request.allowSameOwnerReflection) ||
+			GetVectorLength(request.returnDirection) <= 0.001f)
+		{
+			return false;
+		}
+
+		const float safeSpeed = std::max(0.f, speed);
+		const sf::Vector2f direction = NormalizeOrFallback(
+			request.returnDirection,
+			GetActorForwardDirection()
+		);
+		ApplyReflectionOwnership(request.newOwner, request.damageMultiplier);
+		inOutTrajectory = direction * safeSpeed;
+		SetVelocity(inOutTrajectory);
+		SetActorRotation(std::atan2(direction.y, direction.x) * 57.2957795131f + 90.f);
+		return true;
+	}
+
+	void AbilityWorldActor::ApplyReflectionOwnership(
+		Actor& newOwner,
+		float damageMultiplier
+	)
+	{
+		if (!mHasOriginalProjectileOwner)
+		{
+			mOriginalProjectileOwner = mOwner;
+			mUnmanagedOriginalProjectileOwner = mOriginalProjectileOwner.expired()
+				? GetOwnerActor()
+				: nullptr;
+			mHasOriginalProjectileOwner = true;
+		}
+		mOwner = MakeWeakActor(&newOwner);
+		mUnmanagedOwner = mOwner.expired() ? &newOwner : nullptr;
+		mAllowFriendlyFire = false;
+		SetDamage(std::max(0.f, GetDamage() * std::max(0.f, damageMultiplier)));
+		ConfigureCollisionFromOwner();
+	}
+
+	void AbilityWorldActor::BeginPortalTransit()
+	{
+		if (mPortalTransit)
+		{
+			return;
+		}
+
+		mPortalTransit = true;
+		mPortalPhysicsWasEnabled = IsPhysicsEnabled();
+		mPortalCollisionLayer = GetCollisionLayer();
+		mPortalCollisionMask = GetCollisionMask();
+		mPortalVelocity = GetVelocity();
+		SetRenderEnabled(false);
+		SetVelocity({});
+		SetCollisionLayer(CollisionLayer::None);
+		SetCollisionMask(CollisionLayer::None);
+		SetEnablePhysics(false);
+	}
+
+	void AbilityWorldActor::CompletePortalTransit(
+		const sf::Vector2f& exitLocation
+	)
+	{
+		if (!mPortalTransit)
+		{
+			return;
+		}
+
+		SetActorLocation(exitLocation);
+		SetCollisionLayer(mPortalCollisionLayer);
+		SetCollisionMask(mPortalCollisionMask);
+		if (mPortalPhysicsWasEnabled)
+		{
+			SetEnablePhysics(true);
+		}
+		SetVelocity(mPortalVelocity);
+		SetRenderEnabled(true);
+		mPortalTransit = false;
+		if (auto* destinationRebaser = dynamic_cast<PortalDestinationRebaser*>(this))
+		{
+			destinationRebaser->RebasePortalDestination(exitLocation);
+		}
 	}
 
 	void AbilityWorldActor::SetAbilityCollisionRadius(float radius)
@@ -195,22 +398,34 @@ namespace ly
 
 	void AbilityWorldActor::ConfigureCollisionFromOwner()
 	{
-		if (!mOwner)
+		const shared_ptr<Actor> owner = mOwner.lock();
+		Actor* ownerActor = owner ? owner.get() : mUnmanagedOwner;
+		if (!ownerActor)
 		{
 			SetCollisionLayer(CollisionLayer::None);
 			SetCollisionMask(CollisionLayer::None);
 			return;
 		}
 
-		switch (mOwner->GetCollisionLayer())
+		switch (ownerActor->GetCollisionLayer())
 		{
 		case CollisionLayer::Player:
+		case CollisionLayer::FriendlySummon:
 			SetCollisionLayer(CollisionLayer::PlayerBullet);
-			SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet);
+			SetCollisionMask(
+				CollisionLayer::Enemy |
+				CollisionLayer::EnemyBullet |
+				CollisionLayer::Environment
+			);
 			break;
 		case CollisionLayer::Enemy:
 			SetCollisionLayer(CollisionLayer::EnemyBullet);
-			SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
+			SetCollisionMask(
+				CollisionLayer::Player |
+				CollisionLayer::FriendlySummon |
+				CollisionLayer::PlayerBullet |
+				CollisionLayer::Environment
+			);
 			break;
 		default:
 			SetCollisionLayer(CollisionLayer::None);
@@ -221,7 +436,9 @@ namespace ly
 
 	bool AbilityWorldActor::IsValidAbilityTarget(const Actor* actor) const
 	{
-		return actor && actor != this && (mAllowFriendlyFire || actor != mOwner) &&
+		const shared_ptr<Actor> owner = mOwner.lock();
+		Actor* ownerActor = owner ? owner.get() : mUnmanagedOwner;
+		return actor && actor != this && (mAllowFriendlyFire || actor != ownerActor) &&
 			!actor->GetIsPendingDestroy()
 			&& CanCollideWith(actor) && actor->CanCollideWith(this);
 	}
@@ -241,7 +458,11 @@ namespace ly
 		}
 
 		const float radiusSquared = effectiveRadius * effectiveRadius;
-		for (const weak_ptr<Actor>& actorWeak : world->GetActorsByType<Actor>())
+		const shared_ptr<Actor> owner = mOwner.lock();
+		Actor* ownerActor = owner ? owner.get() : mUnmanagedOwner;
+		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
+			targeting::swept::RadiusBounds(center, effectiveRadius)
+		))
 		{
 			const shared_ptr<Actor> target = actorWeak.lock();
 			if (!target || !IsValidAbilityTarget(target.get()))
@@ -255,11 +476,13 @@ namespace ly
 				ApplyCombatDamage(
 					*target,
 					damage,
-					mOwner,
+					ownerActor,
 					mDamageTags,
 					mDamagePayload,
 					mSourceAbilityId,
-					mSourceAbilityTags
+					mSourceAbilityTags,
+					DamageDeliveryType::Area,
+					this
 				);
 			}
 		}

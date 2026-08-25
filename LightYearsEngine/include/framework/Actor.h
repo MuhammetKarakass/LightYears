@@ -13,8 +13,17 @@
 
 
 
-namespace ly
+	namespace ly
 {
+	// Physics bodies are opt-in by shape and mobility. The default preserves the
+	// existing moving-actor behavior; static boxes are for reusable world
+	// geometry such as barriers, doors, and future map obstacles.
+	enum class PhysicsBodyType : uint8_t
+	{
+		Dynamic,
+		Static
+	};
+
 	enum class RenderLayer : uint8_t
 	{
 		Background,
@@ -76,17 +85,29 @@ namespace ly
 
 		//PHYSICS
 		void SetEnablePhysics(bool enable);
+		bool IsPhysicsEnabled() const { return mPhysicsEnabled; }
+		bool HasPhysicsBody() const { return mPhysicsBodyId.has_value(); }
 		void InitializePhysics();
 		void UnInitializePhysics();
 		void UpdatePhysicsTransform();
+		// Actors without a sprite can still participate in physics when they
+		// provide an explicit gameplay collision radius. The default remains zero
+		// so ordinary visual-less actors do not receive an accidental body.
+		virtual float GetPhysicsCollisionRadius() const { return 0.f; }
+		// A non-zero value selects a rotated box over sprite-derived bounds. The
+		// actor transform supplies the box orientation, so no feature needs to
+		// create its own physics fixture implementation.
+		virtual sf::Vector2f GetPhysicsCollisionBoxHalfExtents() const { return {}; }
+		void SetPhysicsBodyType(PhysicsBodyType bodyType);
+		PhysicsBodyType GetPhysicsBodyType() const { return mPhysicsBodyType; }
 		bool CanCollideWith(const Actor* other) const;
 		virtual	void OnActorEndOverlap(Actor* otherActor);
 		virtual void OnActorBeginOverlap(Actor* otherActor);
 		virtual void Destroy() override;
 		CollisionLayer GetCollisionLayer() const { return mCollisionLayer; }
 		CollisionLayer GetCollisionMask() const { return mCollisionMask; }
-		void SetCollisionLayer(CollisionLayer layer) { mCollisionLayer = layer; }
-		void SetCollisionMask(CollisionLayer mask) { mCollisionMask = mask; }
+		void SetCollisionLayer(CollisionLayer layer);
+		void SetCollisionMask(CollisionLayer mask);
 
 
 		// LIGHT SYSTEM - GameplayTag Based (Auto-Indexed)
@@ -129,6 +150,11 @@ namespace ly
 
 		//SPRITE AND TRANSFORM
 		void SetVisibility(bool visible) { if (mSprite) mSprite->setColor(visible ? sf::Color::White : sf::Color::Transparent); }
+		// Temporarily suppresses every base-actor render pass without changing a
+		// sprite's authored tint/alpha. Portal transfer uses this instead of
+		// SetVisibility so temporary invisibility cannot overwrite another effect.
+		void SetRenderEnabled(bool enabled) { mRenderEnabled = enabled; }
+		bool IsRenderEnabled() const { return mRenderEnabled; }
 		std::optional<sf::Sprite>& GetSprite() { return mSprite; }
 		sf::FloatRect GetActorGlobalBounds() const;
 		void SetTexture(const std::string& texturePath);
@@ -175,10 +201,12 @@ namespace ly
 
 		bool mPhysicsEnabled;
 		std::optional<b2BodyId> mPhysicsBodyId;
+		PhysicsBodyType mPhysicsBodyType = PhysicsBodyType::Dynamic;
 
 		CollisionLayer mCollisionLayer;
 		CollisionLayer mCollisionMask;
 		RenderLayer mRenderLayer = RenderLayer::World;
+		bool mRenderEnabled = true;
 
 		Dictionary<GameplayTag, LightData, GameplayTagHash> mLightShaders;
 	};

@@ -2,6 +2,7 @@
 
 #include <box2d/box2d.h>
 #include "framework/Core.h"
+#include <SFML/Graphics/Rect.hpp>
 
 namespace ly
 {
@@ -27,6 +28,7 @@ namespace ly
 		bool IsInitialized() const;
 
 		void SetCollisionRadius(b2BodyId bodyId, float radius);
+		List<Actor*> QueryActorsInBounds(const sf::FloatRect& bounds) const;
 		
 		~PhysicsSystem();  // Public destructor for unique_ptr
 

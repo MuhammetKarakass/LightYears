@@ -1,8 +1,10 @@
 #include "gameplay/ability/orbitalDrones/OrbitingDroneActor.h"
 
 #include "framework/World.h"
+#include "gameplay/targeting/SweptGeometry.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/portal/PortalTransferParticipant.h"
 
 #include <SFML/Graphics/VertexArray.hpp>
 
@@ -128,6 +130,16 @@ namespace ly
 		{
 			return;
 		}
+		const shared_ptr<Actor> portalOwner = mOwnerActor.lock();
+		const auto* portalParticipant = portalOwner
+			? dynamic_cast<const PortalTransferParticipant*>(portalOwner.get())
+			: nullptr;
+		if (portalParticipant && portalParticipant->IsInPortalTransit())
+		{
+			SetRenderEnabled(false);
+			return;
+		}
+		SetRenderEnabled(true);
 
 		const float safeDeltaTime = std::max(0.f, deltaTime);
 		mContactClock += safeDeltaTime;
@@ -138,7 +150,7 @@ namespace ly
 		// Destroy() from contact handling; only its configured lifetime or owner
 		// loss can end it.
 		AbilityWorldActor::Tick(deltaTime);
-		if (GetIsPendingDestroy())
+		if (GetIsPendingDestroy() || !IsRenderEnabled())
 		{
 			return;
 		}
@@ -216,6 +228,14 @@ namespace ly
 
 	void OrbitingDroneActor::OnActorBeginOverlap(Actor* otherActor)
 	{
+		const shared_ptr<Actor> portalOwner = mOwnerActor.lock();
+		const auto* portalParticipant = portalOwner
+			? dynamic_cast<const PortalTransferParticipant*>(portalOwner.get())
+			: nullptr;
+		if (portalParticipant && portalParticipant->IsInPortalTransit())
+		{
+			return;
+		}
 		AbilityWorldActor::OnActorBeginOverlap(otherActor);
 		TryDamageTarget(otherActor);
 	}
@@ -339,7 +359,9 @@ namespace ly
 			return;
 		}
 
-		for (const weak_ptr<Actor>& actorWeak : world->GetActorsByType<Actor>())
+		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
+			targeting::swept::RadiusBounds(GetActorLocation(), mContactRadius)
+		))
 		{
 			const shared_ptr<Actor> target = actorWeak.lock();
 			if (target)

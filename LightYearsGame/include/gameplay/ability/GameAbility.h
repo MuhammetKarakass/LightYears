@@ -51,6 +51,12 @@ namespace ly
 			(void)event;
 		}
 
+		virtual bool OnInputPressed(GameAbilityBehaviorContext& context)
+		{
+			(void)context;
+			return false;
+		}
+
 		virtual void OnGameplayEvent(
 			GameAbilityBehaviorContext& context,
 			const sas::AbilityEvent& event
@@ -58,6 +64,20 @@ namespace ly
 		{
 			(void)context;
 			(void)event;
+		}
+
+		// Runs before the shared lifecycle writes its cooldown. Conditional
+		// cooldown rewards remain deterministic rather than relying on a fragile
+		// post-end mutation.
+		virtual float ResolveCooldownDurationOnEnd(
+			GameAbilityBehaviorContext& context,
+			sas::AbilityEndReason reason,
+			float resolvedCooldown
+		)
+		{
+			(void)context;
+			(void)reason;
+			return resolvedCooldown;
 		}
 	};
 
@@ -125,6 +145,10 @@ namespace ly
 		void HandleAttachmentEvent(const sas::AbilityEvent& event);
 		void HandleGameplayEvent(const sas::AbilityEvent& event);
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
+		void DeferActiveDurationStart()
+		{
+			mDeferActiveDurationStart = true;
+		}
 
 	private:
 		friend class LightYearsAbilitySystemComponent;
@@ -144,9 +168,15 @@ namespace ly
 		void NotifyOwnerAbilityActivated(const sas::AbilityLifecycleEvent& event);
 		int GetMaximumLevel() const override;
 		float ResolveCooldownDuration() const override;
+		float ResolveCooldownDurationOnEnd(sas::AbilityEndReason reason) override;
 		float ResolveActiveDuration() const override;
 		void RebuildDefinitionForLevel() override;
 		void OnLevelConfigurationChanged() override;
+		bool HandleInputPressed() override;
+		bool ShouldDeferActiveDurationStart() const override
+		{
+			return mDeferActiveDurationStart;
+		}
 
 		void UpdateWeaponFireInterval(float deltaTime);
 		void RefreshScopedConfiguration();
@@ -181,5 +211,6 @@ namespace ly
 		sas::AbilityActivationOrigin mActivationOrigin =
 			sas::AbilityActivationOrigin::NormalInput;
 		int mInvocationMaximumLevel = 0;
+		bool mDeferActiveDurationStart = false;
 	};
 }

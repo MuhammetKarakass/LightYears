@@ -8,7 +8,8 @@ namespace ly
 {
 	class Actor;
 
-	// Resolves per-target pellet falloff after every projectile in one shotgun volley completes.
+	// Applies each pellet immediately. Per-target hit order supplies progressive
+	// falloff without making the whole volley wait for its slowest projectile.
 	class ShotgunVolleyImpactGroup final : public ProjectileImpactBehavior
 	{
 	public:
@@ -33,22 +34,13 @@ namespace ly
 		void OnProjectileFinished() override { CompletePellet(); }
 
 	private:
-		struct TargetImpactRecord
-		{
-			weak_ptr<Actor> target;
-			int hitCount = 0;
-		};
-
-		void ResolveDamage();
-
 		weak_ptr<Actor> mSource;
 		List<GameplayTag> mDamageTags;
 		DamagePayload mDamagePayload;
-		Map<unsigned int, TargetImpactRecord> mTargetImpacts;
+		Map<unsigned int, int> mTargetHitCounts;
 		float mBaseDamage = 0.f;
 		float mDamageReductionPerAdditionalHit = 0.f;
 		float mMinimumDamageMultiplier = 1.f;
 		int mRemainingPellets = 0;
-		bool mResolved = false;
 	};
 }

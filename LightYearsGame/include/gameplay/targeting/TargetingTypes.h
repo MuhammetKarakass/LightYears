@@ -16,7 +16,8 @@ namespace ly
 		enum class TargetingShape : uint8_t
 		{
 			Radius,
-			Cone
+			Cone,
+			Rectangle
 		};
 
 		enum class TargetLockMode : uint8_t
@@ -73,6 +74,9 @@ namespace ly
 			TargetingShape shape = TargetingShape::Radius;
 			sf::Vector2f direction{ 1.f, 0.f };
 			float coneHalfAngleRadians = 0.f;
+			// Rectangle queries use direction as their local forward axis. The
+			// half-extents are expressed as (length / 2, width / 2).
+			sf::Vector2f rectangleHalfExtents{ 0.f, 0.f };
 
 			// Zero means unlimited. A custom selector may still return fewer targets.
 			std::size_t maxTargets = 0;

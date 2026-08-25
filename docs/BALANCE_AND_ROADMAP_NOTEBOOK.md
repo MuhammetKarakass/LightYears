@@ -70,6 +70,21 @@
 | Kod sınırı | `gameplay/ability/nullPulse/`, `gameConfigs/ability/control/NullPulseConfig.h`, `presentation/ability/nullPulse/`; projectile sorgusu family ID bilmeyen reusable marker/query katmanıdır |
 | Test | Content loader, behavior/effect validation, damage/control, EnergyMax formülü, projectile-vs-persistent actor ayrımı, visual cleanup ve full CTest doğrulandı |
 
+## Uygulanan ability: Ion Storm / Ability.Offense.IonStorm.Basic
+
+| Alan | Not |
+| --- | --- |
+| Statü | Uygulandı; shipped catalog'da mevcut ve varsayılan Ability3/F loadout'una bağlandı |
+| Activation / delivery | OnPressed / Instant; owner önünde doğan, cursor hedefini 900 menzile clamp eden 2000 hızlı projectile; projectile hasar vermez |
+| Field | Hedefte 4.0 sn alan; 0.25 sn tick aralığı ve toplam 16 tick; yalnız Combatant karşı hedefleri etkiler |
+| Boundary | Cast başına bir kez oluşturulan 20 kontrol noktalı düşük frekanslı radial sınır; 250 inner core, 250 minimum dış yarıçap, 335 maksimum dış yarıçap; gameplay ve render aynı resolver'ı kullanır |
+| Damage / type | Electric; tick başına Common.Damage 6 + `Owner.AttackPower × 0.12`; mevcut Electric damage/status pipeline'ı kullanılır |
+| Level 2–15 | Her level +1 Common.Damage ve -0.20 sn cooldown; alan geometrisi, süre, tick, projectile hızı ve cast range değişmez |
+| Presentation | Tek renkli tek dolu düzensiz şekil; ayrı inner fill ve iç enerji çizgileri kaldırıldı |
+| Cooldown / charge | 10.0 sn taban cooldown; 1 charge; AbilityHaste final cooldown'u merkezi eğri üzerinden azaltır |
+| Kod sınırı | `gameplay/ability/ionStorm/` projectile, field ve boundary; `presentation/ability/ionStorm/` typed profile; `gameConfigs/ability/offensive/IonStormConfig.h` fallback contract |
+| Test | JSON content loader, shipped game startup validation/build ve boundary core/max/render eşleşmesi doğrulandı; tam GasLite çalışması mevcut Directional Barrier regresyonunda duruyor |
+
 Bu dosya, uygulanmış sistem referansından ayrı tutulmuş yaşayan çalışma
 notudur. Buradaki “Fikir” ve “Plan” maddeleri kodda var kabul edilmez.
 Uygulama tamamlandığında sonucu
@@ -106,6 +121,7 @@ dosyalarına yazılır. Bu üç kayıt güncellenmeden değişiklik tamamlanmı�
 | 2026-08-11 | Ability attribute family ownership | Non-primary ability base attribute'ları yalnız `Common.*` veya content ID'den türetilen exact `Ability.<Category>.<Family>.*` namespace'ini kullanır. `Ability.*` definition modifier, scaling target ve level modifier'ları ayrıca aynı family'de ve base listede declare edilmiş olmak zorundadır. PrimaryFire `Ability.*` değer/hedef taşıyamaz. | Uygulandı ve doğrulandı | Foreign-family, similar-prefix ve undeclared target sızıntısı kapatıldı. Scaling source ile `Effect.*`/`AbilityActor.*` consumer-owned hedefleri korunur. Configured/PrimaryFire edge case'leri, Common hedefleri ve shipped catalog dahil Debug build ile CTest 5/5 geçti. |
 | 2026-08-11 | Overdrive Core | `Ability.Offense.OverdriveCore.Basic` Ability4/R varsayılan grant olarak shipped edildi: 8 homing Kinetic rocket, same-target decay ve CriticalChance-scaled AttackSpeed boost eklendi; typed projectile profile/telegraph/explosion kullanılır. | Uygulandı | Content, actor/profile validation, hedef takibi, damage ve boost regresyonları GasLiteCoreTests içinde doğrulandı. |
 | 2026-08-11 | Phase Drift | `Ability.Movement.PhaseDrift.Basic` shipped kataloğa eklendi: cleanse, geçici damage/collision protection, movement/shield/afterburner recovery boost, break-on-action ve typed aura presentation sağlar. Varsayılan player loadout'una bağlanmadı. | Uygulandı; runtime regresyon kapsamı eksik | Content loader doğrulaması mevcut; lifecycle, collision restoration, cleanse/protection ve visual cleanup için ayrı runtime testleri eklenmeli. |
+| 2026-08-15 | Ion Storm | `Ability.Offense.IonStorm.Basic` eklendi: cursor delivery projectile, cast-stable düzensiz Electric field, ortak damage/scaling kanalı ve typed projectile/field presentation kullanır. | Uygulandı | Alan sınırı tek feature-local resolver'da tutuldu; gameplay filtresi ile görsel sınır ayrışmıyor. Content loader, game startup ve boundary unit regresyonu doğrulandı. |
 | 2026-08-09 | Null Pulse | `Ability.Control.NullPulse.Basic` shipped edildi: self-centered pulse, yalnız işaretli projectile temizliği, reusable Stun/Stagger ve typed feature-local presentation eklendi. Ability2/E default grant'i Null Pulse'a geçirildi; InfernoSpray default grant listesinden çıkarıldı. | Uygulandı | Null Pulse; ability family'lerinin özel davranışını generic SAS'a taşımadan, reusable actor marker/query ve merkezi control response ile çözer. Content loader, runtime ve full CTest geçti; diğer default slotlar değişmedi. |
 | 2026-08-06 | Proje geneli gameplay tag sözleşmesi | `GameplayTagSchema` eklendi. Merkez yalnız domain köklerini, canonical biçimi ve iki action lock tagini sahiplenir; ability/weapon/effect/actor/attachment leaf tagleri kendi feature kontratlarında kalır. | Uygulandı | Feature'lar arası rastgele blok tag üretimini engeller. Ability, effect, actor, weapon, attachment JSON ve ship progression doğrulaması aynı şemayı çağırır; `GameAbility` shared action lock'ları tek activation gate'de tüketir. |
 | 2026-08-07 | Attribute kimlik mimarisi - Aşama 1 | `sas::AttributeId` ve `sas::AttributeIdHash` eklendi. Tip string-backed ve opaque'tır; `GameplayTag` conversion, hierarchy ve tag matching davranışı yoktur. | Uygulandı | Sonraki aşamalarda `GameplayAttribute`, `AttributeSystem`, loader ve katalog kullanımları da `AttributeId`'ye geçirildi; test çalıştırılmadı. |
@@ -307,6 +323,27 @@ Hatırlatma:
 
 Bu liste yalnızca planlama içindir; işaretlenmiş olması implementasyon
 anlamına gelmez.
+
+### Ertelenmiş — boss ve düşman sistemleri
+
+> **Karar (20 Ağustos 2026):** Boss ve düşmanlar şu aşamada ürün önceliği
+> değildir. Aşağıdaki maddeler kullanıcı açıkça yeniden istediğinde ele
+> alınacak; oyuncu ability/weapon/effect refactor'ına dahil edilmeyecektir.
+
+- [ ] `LevelOneBoss` için boş `primaryWeaponId` ile sürülen
+  `PrimaryFire/Ability1-3` input'larını gerçek, grant edilmiş boss saldırı
+  loadout'una bağla.
+- [ ] Dokümanda geçen fakat runtime definition'ı bulunmayan
+  `BossThreeWayBlaster`, `BossFrontalSweep` ve
+  `BossLastStageSideBlaster` içeriklerinin kaldırılmasına veya yeniden
+  uygulanmasına karar ver.
+- [ ] Mine Layer ve Glacial Pressure'ın boss `InterruptOnly` yanıtını yok
+  sayması ile Null Pulse'ın stagger uygulaması arasındaki kontrol politikasını
+  boss tasarımı açıldığında merkezileştir.
+- [ ] Crescent Reaver, Energy Spear ve Execution Drive içindeki doğrudan
+  `CollisionLayer::Enemy` kontrollerini yalnız düşmanların player ability
+  kullanması/faction desteği gündeme geldiğinde `TargetRelation` üzerinden
+  simetrik hale getir.
 
 ### P0 — ölçülebilir çekirdek denge
 

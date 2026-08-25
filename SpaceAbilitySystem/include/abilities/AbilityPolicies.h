@@ -2,6 +2,12 @@
 
 namespace sas
 {
+	// Toggle abilities share one gameplay rule: the player must commit to the
+	// active state for at least one second before a second press may deactivate
+	// it. System-driven cancellation (interruption, stun, owner destruction) is
+	// intentionally separate and is not filtered by this input rule.
+	inline constexpr float ToggleMinimumActiveDurationSeconds = 1.f;
+
 	enum class AbilitySlot
 	{
 		None,

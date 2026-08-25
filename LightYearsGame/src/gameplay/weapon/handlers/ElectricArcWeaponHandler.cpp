@@ -9,6 +9,7 @@
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/targeting/AutoTargeting.h"
+#include "gameplay/targeting/CombatTargetPriority.h"
 #include "gameplay/weapon/visuals/ElectricArcVisualActor.h"
 
 #include <algorithm>
@@ -59,7 +60,8 @@ namespace ly
 				virtualProjectileLayer = CollisionLayer::PlayerBullet;
 				break;
 			case CollisionLayer::Enemy:
-				expectedTargetLayer = CollisionLayer::Player;
+				expectedTargetLayer =
+					CollisionLayer::Player | CollisionLayer::FriendlySummon;
 				virtualProjectileLayer = CollisionLayer::EnemyBullet;
 				break;
 			default:
@@ -79,6 +81,9 @@ namespace ly
 				query.maxTargets = 1;
 				query.requiredTargetLayers = expectedTargetLayer;
 				query.requiredCandidateCollisionMask = virtualProjectileLayer;
+				query.comparator = targeting::MakeCombatTargetPriorityComparator(
+					context.owner.GetCollisionLayer()
+				);
 				query.excludedTargets.reserve(excludedTargets.size());
 				for (Actor* excludedTarget : excludedTargets)
 				{

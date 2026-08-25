@@ -44,10 +44,13 @@ namespace ly
 	void ArenaTestLevel::OnGameStart()
 	{
 		ArenaLevel::OnGameStart();
-		ShipDefinition dummyDefinition = ShipData::Ship_Enemy_Hexagon;
-		dummyDefinition.health = 99999.f;
-		dummyDefinition.speed = { 0.f, 0.f };
-		dummyDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
+		ShipDefinition oldDummyDefinition = ShipData::Ship_Enemy_Hexagon;
+		oldDummyDefinition.health = 99999.f;
+		oldDummyDefinition.speed = { 0.f, 0.f };
+		oldDummyDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
+
+		ShipDefinition newDummyDefinition = oldDummyDefinition;
+		newDummyDefinition.health = 50.f;
 
 		const sf::FloatRect& arenaBounds = GetArenaDefinition().legalBounds;
 		const sf::Vector2f arenaCenter{
@@ -55,13 +58,14 @@ namespace ly
 			arenaBounds.position.y + arenaBounds.size.y * 0.5f
 		};
 
-		const auto spawnDummy = [&](float horizontalOffset)
+		const float squareHalfExtent = 250.f;
+		const auto spawnDummy = [&](const ShipDefinition& definition, float horizontalOffset, float verticalOffset)
 		{
 			const sf::Vector2f dummyLocation{
 				arenaCenter.x + horizontalOffset,
-				arenaCenter.y + 450.f
+				arenaCenter.y + verticalOffset
 			};
-			if (auto dummy = SpawnActor<DummyEnemy>(dummyDefinition).lock())
+			if (auto dummy = SpawnActor<DummyEnemy>(definition).lock())
 			{
 				dummy->SetActorLocation(dummyLocation);
 				dummy->SetVelocity({ 0.f, 0.f });
@@ -69,12 +73,17 @@ namespace ly
 			}
 		};
 
-		// Four stationary targets in one evenly spaced horizontal line, all
-		// facing upward toward the player side of the arena.
-		spawnDummy(-900.f);
-		spawnDummy(-300.f);
-		spawnDummy(300.f);
-		spawnDummy(900.f);
+		// Existing stationary targets remain in their original horizontal layout.
+		spawnDummy(oldDummyDefinition, -900.f, 450.f);
+		spawnDummy(oldDummyDefinition, -300.f, 450.f);
+		spawnDummy(oldDummyDefinition, 300.f, 450.f);
+		spawnDummy(oldDummyDefinition, 900.f, 450.f);
+
+		// New 50-health stationary targets at the corners of a square around arena center.
+		spawnDummy(newDummyDefinition, -squareHalfExtent, -squareHalfExtent);
+		spawnDummy(newDummyDefinition, squareHalfExtent, -squareHalfExtent);
+		spawnDummy(newDummyDefinition, -squareHalfExtent, squareHalfExtent);
+		spawnDummy(newDummyDefinition, squareHalfExtent, squareHalfExtent);
 
 		AudioManager::GetAudioManager().FadeToMusic("SpaceShooterRedux/Musics/cosmic_reverie.ogg",
 			AudioType::Music,

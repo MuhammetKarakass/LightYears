@@ -53,6 +53,8 @@ namespace ly
 		// them; every GameAbility consumes the matching lock during activation.
 		inline static const GameplayTag& BlockAbilityActivation = GameplayTags::State::ActionLock::AbilityActivation;
 		inline static const GameplayTag& BlockPrimaryWeaponFire = GameplayTags::State::ActionLock::PrimaryWeaponFire;
+		inline static const GameplayTag& BlockMovementInput = GameplayTags::State::ActionLock::MovementInput;
+		inline static const GameplayTag& BlockExternalMovement = GameplayTags::State::ActionLock::ExternalMovement;
 
 		static bool Validate(
 			const GameplayTag& tag,
@@ -113,7 +115,9 @@ namespace ly
 		static bool IsActionLock(const GameplayTag& tag)
 		{
 			return tag.MatchesTagExact(BlockAbilityActivation) ||
-				tag.MatchesTagExact(BlockPrimaryWeaponFire);
+				tag.MatchesTagExact(BlockPrimaryWeaponFire) ||
+				tag.MatchesTagExact(BlockMovementInput) ||
+				tag.MatchesTagExact(BlockExternalMovement);
 		}
 
 		static bool IsAbilityCategory(const GameplayTag& tag)

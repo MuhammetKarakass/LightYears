@@ -1,5 +1,7 @@
 #include "gameplay/content/AbilityLoader.h"
 
+#include "gameplay/content/AbilityDefinitionMaterializer.h"
+
 #include "attributes/AttributeId.h"
 #include "framework/JsonDocumentLoader.h"
 #include "gameplay/attributes/AttributeIdSchema.h"
@@ -202,21 +204,6 @@ namespace ly::content
 			return levels;
 		}
 
-		const GameAbilityDefinition* FindFallback(
-			const List<const GameAbilityDefinition*>& fallbackDefinitions,
-			const std::string& abilityId
-		)
-		{
-			for (const GameAbilityDefinition* definition : fallbackDefinitions)
-			{
-				if (definition && definition->abilityId == abilityId)
-				{
-					return definition;
-				}
-			}
-			return nullptr;
-		}
-
 		const AbilityActorDefinition* FindActorFallback(
 			const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
 			const std::string& actorDefinitionId
@@ -369,22 +356,12 @@ namespace ly::content
 			const std::string& fallbackAbilityId
 		)
 		{
-			AbilityLoader::LoadedDefinition loaded;
-			loaded.id = RequiredString(object, "id");
-			const GameAbilityDefinition* fallback = FindFallback(
-				fallbackDefinitions,
-				fallbackAbilityId
+			const std::string abilityId = RequiredString(object, "id");
+			AbilityLoader::LoadedDefinition loaded = MaterializeAbilityDefinition(
+				abilityId,
+				fallbackAbilityId,
+				fallbackDefinitions
 			);
-			if (!fallback)
-			{
-				throw std::runtime_error(
-					"No C++ behavior base exists for ability '" +
-					fallbackAbilityId + "'"
-				);
-			}
-
-			loaded.definition = *fallback;
-			loaded.definition.abilityId = loaded.id;
 			for (const char* requiredField : { "cooldown", "duration", "maxCharges" })
 			{
 				if (!object.contains(requiredField) || !object.at(requiredField).is_number())
@@ -406,11 +383,6 @@ namespace ly::content
 			// BaseId materialization already supplies inherited values from JSON.
 			loaded.definition.duration = object.value("duration", 0.f);
 			loaded.definition.maxCharges = object.value("maxCharges", 0);
-			loaded.definition.scalingRules.clear();
-			loaded.definition.levelProgression.clear();
-			loaded.definition.levelUpgradeScrapCosts.clear();
-			loaded.definition.effectSpecs.clear();
-			loaded.definition.attributes.clear();
 			if (object.contains("scalingRules"))
 			{
 				loaded.definition.scalingRules = ParseScalingRules(object.at("scalingRules"));
@@ -440,7 +412,7 @@ namespace ly::content
 
 			const Json settings = object.value("settings", Json::object());
 			const NumericSettingContract& settingsContract =
-				NumericSettingContractRegistry::Find(fallback->behaviorType);
+				NumericSettingContractRegistry::Find(loaded.definition.behaviorType);
 			for (const auto& [name, value] : settings.items())
 			{
 				if (settingsContract.allowed.find(name) == settingsContract.allowed.end())

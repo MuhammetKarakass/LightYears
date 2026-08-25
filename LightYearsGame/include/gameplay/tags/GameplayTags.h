@@ -15,9 +15,28 @@
 #include "gameplay/tags/ability/RelayPrismTags.h"
 #include "gameplay/tags/ability/EchoProtocolTags.h"
 #include "gameplay/tags/ability/RocketTags.h"
+#include "gameplay/tags/ability/RailBurstTags.h"
+#include "gameplay/tags/ability/MineLayerTags.h"
+#include "gameplay/tags/ability/EnergySpearTags.h"
 #include "gameplay/tags/ability/ShieldTags.h"
 #include "gameplay/tags/ability/ShieldHarvestTags.h"
 #include "gameplay/tags/ability/SunBeamTags.h"
+#include "gameplay/tags/ability/ScorchDriveTags.h"
+#include "gameplay/tags/ability/CrescentReaverTags.h"
+#include "gameplay/tags/ability/DirectionalBarrierTags.h"
+#include "gameplay/tags/ability/IonStormTags.h"
+#include "gameplay/tags/ability/ChainLightningTags.h"
+#include "gameplay/tags/ability/CryostasisTags.h"
+#include "gameplay/tags/ability/GlacialPressureTags.h"
+#include "gameplay/tags/ability/VoidGateTags.h"
+#include "gameplay/tags/ability/FrostMaelstromTags.h"
+#include "gameplay/tags/ability/FrozenThrongTags.h"
+#include "gameplay/tags/ability/CombatSentryTags.h"
+#include "gameplay/tags/ability/NanoPlagueTags.h"
+#include "gameplay/tags/ability/AstralSurgeTags.h"
+#include "gameplay/tags/ability/WingSentinelsTags.h"
+#include "gameplay/tags/ability/ReturnProtocolTags.h"
+#include "gameplay/tags/ability/CrystalBarricadeTags.h"
 
 namespace ly::GameplayTags
 {
@@ -67,8 +86,8 @@ namespace ly::GameplayTags
 			}
 		}
 
-		namespace ActionLock
-		{
+			namespace ActionLock
+			{
 			inline const GameplayTag Root{ "State.ActionLock" };
 			inline const GameplayTag AbilityActivation{
 				"State.ActionLock.AbilityActivation"
@@ -76,7 +95,14 @@ namespace ly::GameplayTags
 			inline const GameplayTag PrimaryWeaponFire{
 				"State.ActionLock.PrimaryWeaponFire"
 			};
-		}
+				inline const GameplayTag MovementInput{
+					"State.ActionLock.MovementInput"
+				};
+				// A hard stasis may reject external impulses as well as player input.
+				inline const GameplayTag ExternalMovement{
+					"State.ActionLock.ExternalMovement"
+				};
+			}
 	}
 
 	namespace Event

@@ -29,7 +29,11 @@ namespace ly
 			{
 				auto windowSize = GetWorld()->GetWindowSize();
 				mBoss.lock()->SetCollisionLayer(CollisionLayer::Enemy);
-				mBoss.lock()->SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
+				mBoss.lock()->SetCollisionMask(
+					CollisionLayer::Player |
+					CollisionLayer::FriendlySummon |
+					CollisionLayer::PlayerBullet
+				);
 				mBoss.lock()->SetVisibility(true);
 				mBoss.lock()->SetActorLocation({ windowSize.x / 2.f, -200.f });
 				mBoss.lock()->SetVelocity({ 0.f, 100.f });

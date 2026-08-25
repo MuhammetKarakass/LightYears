@@ -42,6 +42,7 @@ namespace ly
 		void PlayCameraShake(float amplitude, float duration, float frequency);
 
 		weak_ptr<Actor> GetActorByLayer(CollisionLayer layer) const;
+		List<weak_ptr<Actor>> GetActorsInBounds(const sf::FloatRect& bounds) const;
 
 		sf::Vector2u GetWindowSize();
 		sf::View GetWorldView() const;

@@ -5,36 +5,37 @@
 #include "gameplay/combat/Combatant.h"
 #include "spaceShip/SpaceShip.h"
 #include "gameplay/targeting/AutoTargeting.h"
+#include "gameplay/targeting/TargetRelation.h"
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
-namespace ly::targeting
+	namespace ly::targeting
 {
-	namespace
-	{
-		CollisionLayer ResolveOpposingLayer(const Actor& source)
-		{
-			if (source.GetCollisionLayer() == CollisionLayer::Player)
-			{
-				return CollisionLayer::Enemy;
-			}
-			if (source.GetCollisionLayer() == CollisionLayer::Enemy)
-			{
-				return CollisionLayer::Player;
-			}
-			return CollisionLayer::None;
-		}
-	}
-
 	List<shared_ptr<Actor>> FindOpposingCombatants(
 		World& world,
 		const Actor& source,
 		float range
 	)
 	{
+		return FindOpposingCombatants(
+			world,
+			source,
+			source.GetActorLocation(),
+			range
+		);
+	}
+
+	List<shared_ptr<Actor>> FindOpposingCombatants(
+		World& world,
+		const Actor& source,
+		const sf::Vector2f& origin,
+		float range
+	)
+	{
 		List<shared_ptr<Actor>> result;
-		const CollisionLayer opposingLayer = ResolveOpposingLayer(source);
+		const CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
 		if (opposingLayer == CollisionLayer::None)
 		{
 			return result;
@@ -42,7 +43,7 @@ namespace ly::targeting
 
 		TargetingQuery query;
 		query.source = &source;
-		query.origin = source.GetActorLocation();
+		query.origin = origin;
 		query.range = std::max(0.f, range);
 		query.requiredTargetLayers = opposingLayer;
 		query.requireCollisionCompatibility = true;
@@ -82,7 +83,7 @@ namespace ly::targeting
 		}
 
 		const float safeThreshold = std::clamp(directionThreshold, -1.f, 1.f);
-		const CollisionLayer opposingLayer = ResolveOpposingLayer(source);
+		const CollisionLayer opposingLayer = targeting::ResolveOpposingLayer(source);
 		if (opposingLayer == CollisionLayer::None)
 		{
 			return {};
@@ -119,5 +120,68 @@ namespace ly::targeting
 		};
 
 		return AutoTargeting::FindTarget(world, query).lock();
+	}
+
+	shared_ptr<Actor> FindDensestOpposingCombatant(
+		World& world,
+		const Actor& source,
+		const sf::Vector2f& origin,
+		float searchRadius,
+		float densityRadius
+	)
+	{
+		const List<shared_ptr<Actor>> candidates = FindOpposingCombatants(
+			world,
+			source,
+			origin,
+			std::max(0.f, searchRadius)
+		);
+		if (candidates.empty())
+		{
+			return {};
+		}
+
+		const float safeDensityRadius = std::max(0.f, densityRadius);
+		const float densityRadiusSquared = safeDensityRadius * safeDensityRadius;
+		shared_ptr<Actor> best;
+		std::size_t bestDensity = 0;
+		float bestDistanceSquared = std::numeric_limits<float>::max();
+		for (const shared_ptr<Actor>& candidate : candidates)
+		{
+			if (!candidate || candidate->GetIsPendingDestroy())
+			{
+				continue;
+			}
+
+			std::size_t density = 0;
+			for (const shared_ptr<Actor>& neighbor : candidates)
+			{
+				if (!neighbor || neighbor->GetIsPendingDestroy())
+				{
+					continue;
+				}
+				const sf::Vector2f delta =
+					neighbor->GetActorLocation() - candidate->GetActorLocation();
+				const float distanceSquared =
+					delta.x * delta.x + delta.y * delta.y;
+				if (distanceSquared <= densityRadiusSquared)
+				{
+					++density;
+				}
+			}
+
+			const sf::Vector2f originDelta =
+				candidate->GetActorLocation() - origin;
+			const float distanceSquared =
+				originDelta.x * originDelta.x + originDelta.y * originDelta.y;
+			if (!best || density > bestDensity ||
+				(density == bestDensity && distanceSquared < bestDistanceSquared))
+			{
+				best = candidate;
+				bestDensity = density;
+				bestDistanceSquared = distanceSquared;
+			}
+		}
+		return best;
 	}
 }

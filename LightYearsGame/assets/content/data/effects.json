@@ -177,6 +177,29 @@
       "category": "Defense.PhaseDrift.AfterburnerRecovery",
       "sourceScopedApplication": true,
       "sourceParameterized": false
+    },
+    {
+      "id": "Effect.Defense.DirectionalBarrier.Active.Basic",
+      "behaviorKey": "EffectBehavior.DirectionalBarrier",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["State.Effect.Defense.DirectionalBarrier.Active"],
+      "disposition": "Beneficial",
+      "category": "Defense.DirectionalBarrier",
+      "sourceScopedApplication": true,
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Defense.Cryostasis.IceShell.Basic",
+      "behaviorKey": "EffectBehavior.CryostasisIceShell",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "grantedTags": ["State.Effect.Defense.Cryostasis.IceShell"],
+      "disposition": "Beneficial",
+      "category": "Defense.Cryostasis.IceShell",
+      "grantedImmunityCategory": "Control",
+      "sourceScopedApplication": true,
+      "sourceParameterized": true
     }
   ]
 }

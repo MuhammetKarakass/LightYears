@@ -103,7 +103,11 @@ namespace ly
 			return;
 		}
 
-		for (const weak_ptr<Actor>& actorWeak : world->GetActorsByType<Actor>())
+		const sf::FloatRect beamBounds{
+			{ center.x - halfWidth, center.y - halfLength },
+			{ halfWidth * 2.f, halfLength * 2.f }
+		};
+		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(beamBounds))
 		{
 			const shared_ptr<Actor> target = actorWeak.lock();
 			if (!target || !IsValidAbilityTarget(target.get()))
@@ -111,8 +115,24 @@ namespace ly
 				continue;
 			}
 
-			const sf::Vector2f delta = target->GetActorLocation() - center;
-			if (std::abs(delta.x) > halfWidth || std::abs(delta.y) > halfLength)
+			const sf::FloatRect targetBounds = target->GetActorGlobalBounds();
+			const sf::Vector2f targetLocation = target->GetActorLocation();
+			const float targetLeft = targetBounds.size.x > 0.f
+				? targetBounds.position.x
+				: targetLocation.x;
+			const float targetRight = targetBounds.size.x > 0.f
+				? targetBounds.position.x + targetBounds.size.x
+				: targetLocation.x;
+			const float targetTop = targetBounds.size.y > 0.f
+				? targetBounds.position.y
+				: targetLocation.y;
+			const float targetBottom = targetBounds.size.y > 0.f
+				? targetBounds.position.y + targetBounds.size.y
+				: targetLocation.y;
+			if (targetRight < beamBounds.position.x ||
+				targetLeft > beamBounds.position.x + beamBounds.size.x ||
+				targetBottom < beamBounds.position.y ||
+				targetTop > beamBounds.position.y + beamBounds.size.y)
 			{
 				continue;
 			}

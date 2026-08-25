@@ -5,6 +5,7 @@
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
+#include "gameplay/time/PeriodicTickAccumulator.h"
 #include <algorithm>
 
 namespace ly
@@ -152,6 +153,70 @@ namespace ly
 			{
 				return {};
 			}
+
+			const float damagePerTick = std::max(
+				0.f,
+				sas::FindAttributeValue(
+					effect.runtimeAttributes,
+					DamageAttributeIds::BurnDamagePerTick,
+					0.f
+				)
+			);
+			const float tickInterval = std::max(
+				0.f,
+				sas::FindAttributeValue(
+					effect.runtimeAttributes,
+					DamageAttributeIds::BurnTickInterval,
+					0.f
+				)
+			);
+			if (damagePerTick > 0.f && tickInterval > 0.f)
+			{
+				// Periodic Burn is an optional generic mode. It is deliberately
+				// independent of Ignite stack count: four stacks unlock the status,
+				// but do not multiply the snapshotted Scorch Drive damage.
+				sas::GameplayAttribute* accumulator = sas::FindAttribute(
+					effect.runtimeAttributes,
+					DamageAttributeIds::BurnTickAccumulator
+				);
+				if (!accumulator)
+				{
+					effect.runtimeAttributes.emplace_back(
+						DamageAttributeIds::BurnTickAccumulator,
+						0.f,
+						0.f
+					);
+					accumulator = sas::FindAttribute(
+						effect.runtimeAttributes,
+						DamageAttributeIds::BurnTickAccumulator
+					);
+				}
+				if (!accumulator)
+				{
+					return {};
+				}
+
+				const int tickCount = time::ConsumePeriodicTicks(
+					accumulator->currentValue,
+					deltaTime,
+					tickInterval
+				);
+				for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
+				{
+					// Preserve player ownership for periodic effect damage while its
+					// source actor is still available. If the source has already gone
+					// away, the hit remains valid damage but is intentionally unowned.
+					Actor* effectSource = effect.GetSourceObject<Actor>();
+					ApplyCombatDamage(
+						owner,
+						damagePerTick,
+						effectSource,
+						{ DamageTypeSchema::Thermal }
+					);
+				}
+				return {};
+			}
+
 			const float damagePerSecond = std::max(
 				0.f,
 				sas::FindAttributeValue(
@@ -217,6 +282,8 @@ namespace ly
 		{
 			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::IgniteStacks, payload.igniteStacks);
 			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDamagePerSecond, payload.burnDamagePerSecond);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDamagePerTick, payload.burnDamagePerTick);
+			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnTickInterval, payload.burnTickInterval);
 			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDuration, payload.burnDuration);
 			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::BurnMaxStacks, payload.burnMaxStacks);
 		}
@@ -238,16 +305,26 @@ namespace ly
 
 		payload.shieldDamageMultiplier = std::max(0.f, payload.shieldDamageMultiplier);
 		payload.shieldRegenerationDelay = std::max(0.f, payload.shieldRegenerationDelay);
-		// Ordinary weapon hits usually contribute one elemental stack, while an
-		// ability may intentionally contribute several stacks in one discharge.
-		// Keep the generic payload bounded by the effect's configured capacity.
-		payload.armorPenetration = std::clamp(payload.armorPenetration, 0.f, 0.25f);
-		payload.igniteStacks = std::clamp(payload.igniteStacks, 0, 1);
-		payload.burnDamagePerSecond = std::clamp(payload.burnDamagePerSecond, 0.f, 1.f);
-		payload.burnDuration = std::max(0.f, payload.burnDuration);
+		// Generic payload sanitation must not encode one shipped balance profile.
+		// Family/content validation owns those caps; the runtime only enforces
+		// mathematically safe ranges and relationships between payload fields.
+		payload.armorPenetration = std::clamp(payload.armorPenetration, 0.f, 1.f);
 		payload.burnMaxStacks = std::max(1, payload.burnMaxStacks);
-		payload.cryoBuildupPerHit = std::clamp(payload.cryoBuildupPerHit, 0, 1);
+		payload.igniteStacks = std::clamp(
+			payload.igniteStacks,
+			0,
+			payload.burnMaxStacks
+		);
+		payload.burnDamagePerSecond = std::max(0.f, payload.burnDamagePerSecond);
+		payload.burnDamagePerTick = std::max(0.f, payload.burnDamagePerTick);
+		payload.burnTickInterval = std::max(0.f, payload.burnTickInterval);
+		payload.burnDuration = std::max(0.f, payload.burnDuration);
 		payload.cryoBuildupRequired = std::max(1, payload.cryoBuildupRequired);
+		payload.cryoBuildupPerHit = std::clamp(
+			payload.cryoBuildupPerHit,
+			0,
+			payload.cryoBuildupRequired
+		);
 		payload.cryoBuildupDuration = std::max(0.f, payload.cryoBuildupDuration);
 		payload.cryoSlowPercent = std::clamp(payload.cryoSlowPercent, 0.f, 1.f);
 		payload.cryoSlowDuration = std::max(0.f, payload.cryoSlowDuration);
@@ -277,37 +354,61 @@ namespace ly
 			return applied;
 		}
 
-		if (context.payload.igniteStacks > 0 && context.payload.burnDamagePerSecond > 0.f && context.payload.burnDuration > 0.f)
+		const bool hasPeriodicBurn =
+			context.payload.burnDamagePerTick > 0.f &&
+			context.payload.burnTickInterval > 0.f;
+		if (context.payload.igniteStacks > 0 &&
+			(context.payload.burnDamagePerSecond > 0.f || hasPeriodicBurn) &&
+			context.payload.burnDuration > 0.f)
 		{
 			const sas::GameplayEffectDefinition* igniteDefinition =
 				EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Ignite");
-			if (!igniteDefinition)
+			if (igniteDefinition)
 			{
-				return applied;
-			}
-			sas::GameplayEffectSpec igniteSpec = MakeStatusEffectSpec(
-				*igniteDefinition,
-				context.payload.burnDuration,
-				context.payload.burnMaxStacks
-			);
-			igniteSpec.attributes = {
-				sas::GameplayAttribute{
-					DamageAttributeIds::BurnDamagePerSecond,
-					context.payload.burnDamagePerSecond,
-					0.f
+				sas::GameplayEffectSpec igniteSpec = MakeStatusEffectSpec(
+					*igniteDefinition,
+					context.payload.burnDuration,
+					context.payload.burnMaxStacks
+				);
+				igniteSpec.attributes.clear();
+				if (context.payload.burnDamagePerSecond > 0.f)
+				{
+					igniteSpec.attributes.emplace_back(
+						DamageAttributeIds::BurnDamagePerSecond,
+						context.payload.burnDamagePerSecond,
+						0.f
+					);
 				}
-			};
-			bool igniteApplied = false;
-			for (int stack = 0; stack < context.payload.igniteStacks; ++stack)
-			{
-				igniteApplied = targetAbilitySystem.ApplyGameplayEffect(
-					igniteSpec,
-					context.source
-				).IsValid() || igniteApplied;
-			}
-			if (igniteApplied)
-			{
-				applied.push_back(DamageStatusSchema::Ignite);
+				if (hasPeriodicBurn)
+				{
+					igniteSpec.attributes.emplace_back(
+						DamageAttributeIds::BurnDamagePerTick,
+						context.payload.burnDamagePerTick,
+						0.f
+					);
+					igniteSpec.attributes.emplace_back(
+						DamageAttributeIds::BurnTickInterval,
+						context.payload.burnTickInterval,
+						0.001f
+					);
+					igniteSpec.attributes.emplace_back(
+						DamageAttributeIds::BurnTickAccumulator,
+						0.f,
+						0.f
+					);
+				}
+				bool igniteApplied = false;
+				for (int stack = 0; stack < context.payload.igniteStacks; ++stack)
+				{
+					igniteApplied = targetAbilitySystem.ApplyGameplayEffect(
+						igniteSpec,
+						context.source
+					).IsValid() || igniteApplied;
+				}
+				if (igniteApplied)
+				{
+					applied.push_back(DamageStatusSchema::Ignite);
+				}
 			}
 		}
 		if (context.payload.cryoBuildupPerHit > 0 &&
@@ -327,33 +428,32 @@ namespace ly
 		{
 			const sas::GameplayEffectDefinition* electricDefinition =
 				EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Electric");
-			if (!electricDefinition)
+			if (electricDefinition)
 			{
-				return applied;
-			}
-			sas::GameplayEffectSpec electricSpec = MakeStatusEffectSpec(
-				*electricDefinition,
-				context.payload.electricDuration,
-				context.payload.electricMaxStacks
-			);
-			electricSpec.attributes = {
-				sas::GameplayAttribute{
-					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-					context.payload.electricDamageTakenMultiplierPerStack,
-					0.f
+				sas::GameplayEffectSpec electricSpec = MakeStatusEffectSpec(
+					*electricDefinition,
+					context.payload.electricDuration,
+					context.payload.electricMaxStacks
+				);
+				electricSpec.attributes = {
+					sas::GameplayAttribute{
+						DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
+						context.payload.electricDamageTakenMultiplierPerStack,
+						0.f
+					}
+				};
+				bool electricApplied = false;
+				for (int stack = 0; stack < context.payload.electricStacks; ++stack)
+				{
+					electricApplied = targetAbilitySystem.ApplyGameplayEffect(
+						electricSpec,
+						context.source
+					).IsValid() || electricApplied;
 				}
-			};
-			bool electricApplied = false;
-			for (int stack = 0; stack < context.payload.electricStacks; ++stack)
-			{
-				electricApplied = targetAbilitySystem.ApplyGameplayEffect(
-					electricSpec,
-					context.source
-				).IsValid() || electricApplied;
-			}
-			if (electricApplied)
-			{
-				applied.push_back(DamageStatusSchema::Electric);
+				if (electricApplied)
+				{
+					applied.push_back(DamageStatusSchema::Electric);
+				}
 			}
 		}
 		return applied;

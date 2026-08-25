@@ -316,15 +316,26 @@ namespace ly
 			mDefinition.slot == sas::AbilitySlot::PrimaryFire
 			? GameplayTagSchema::BlockPrimaryWeaponFire
 			: GameplayTagSchema::BlockAbilityActivation;
+		const bool isMovementAbility = std::any_of(
+			mDefinition.abilityTags.begin(),
+			mDefinition.abilityTags.end(),
+			[](const GameplayTag& tag)
+			{
+				return tag.MatchesTagExact(GameplayTags::Ability::Movement);
+			}
+		);
 		return mBehavior &&
 			mAbilitySystem.HasAllOwnedTags(mDefinition.requiredOwnerTags) &&
 			!mAbilitySystem.HasAnyOwnedTags(mDefinition.blockedOwnerTags) &&
 			!mAbilitySystem.HasOwnedTag(GameplayTags::State::Effect::Control::Stunned) &&
-			!mAbilitySystem.HasOwnedTag(sharedBlockTag);
+			!mAbilitySystem.HasOwnedTag(sharedBlockTag) &&
+			(!isMovementAbility ||
+				!mAbilitySystem.HasOwnedTag(GameplayTagSchema::BlockMovementInput));
 	}
 
 	bool GameAbility::ActivateContent()
 	{
+		mDeferActiveDurationStart = false;
 		const sas::AbilityLifecycleEvent lifecycleEvent = BuildLifecycleEvent(
 			GameplayTags::Event::Ability::Activated,
 			sas::AbilityEndReason::Completed
@@ -342,6 +353,7 @@ namespace ly
 		};
 		if (!mBehavior->Activate(behaviorContext))
 		{
+			mDeferActiveDurationStart = false;
 			return false;
 		}
 
@@ -428,6 +440,23 @@ namespace ly
 			reason
 		);
 		mAbilitySystem.HandleAbilityLifecycleEvent(event);
+		mDeferActiveDurationStart = false;
+	}
+
+	bool GameAbility::HandleInputPressed()
+	{
+		if (!mBehavior || !IsActive())
+		{
+			return false;
+		}
+
+		GameAbilityBehaviorContext behaviorContext{
+			mAbilitySystem,
+			*this,
+			mAbilitySystem.GetOwner(),
+			mDefinition
+		};
+		return mBehavior->OnInputPressed(behaviorContext);
 	}
 
 	sas::AbilityLifecycleEvent GameAbility::BuildLifecycleEvent(
@@ -491,6 +520,30 @@ namespace ly
 				)
 			);
 		return std::max(0.f, attachmentModifiedCooldown * hasteMultiplier);
+	}
+
+	float GameAbility::ResolveCooldownDurationOnEnd(sas::AbilityEndReason reason)
+	{
+		const float baseCooldown = ResolveCooldownDuration();
+		if (!mBehavior)
+		{
+			return baseCooldown;
+		}
+
+		GameAbilityBehaviorContext behaviorContext{
+			mAbilitySystem,
+			*this,
+			mAbilitySystem.GetOwner(),
+			mDefinition
+		};
+		return std::max(
+			0.f,
+			mBehavior->ResolveCooldownDurationOnEnd(
+				behaviorContext,
+				reason,
+				baseCooldown
+			)
+		);
 	}
 
 	float GameAbility::ResolveActiveDuration() const

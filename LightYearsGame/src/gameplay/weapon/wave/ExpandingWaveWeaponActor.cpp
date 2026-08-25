@@ -4,6 +4,7 @@
 
 #include "framework/World.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/targeting/SweptGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,32 +15,6 @@ namespace ly
 	namespace
 	{
 		constexpr size_t WavePointCount = 15;
-
-		float DistanceSquaredToSegment(
-			const sf::Vector2f& point,
-			const sf::Vector2f& segmentStart,
-			const sf::Vector2f& segmentEnd
-		)
-		{
-			const sf::Vector2f segment = segmentEnd - segmentStart;
-			const float lengthSquared =
-				segment.x * segment.x + segment.y * segment.y;
-			if (lengthSquared <= 0.0001f)
-			{
-				const sf::Vector2f delta = point - segmentStart;
-				return delta.x * delta.x + delta.y * delta.y;
-			}
-
-			const sf::Vector2f toPoint = point - segmentStart;
-			const float projection = std::clamp(
-				(toPoint.x * segment.x + toPoint.y * segment.y) / lengthSquared,
-				0.f,
-				1.f
-			);
-			const sf::Vector2f closest = segmentStart + segment * projection;
-			const sf::Vector2f delta = point - closest;
-			return delta.x * delta.x + delta.y * delta.y;
-		}
 
 		sf::Color WithAlpha(const sf::Color& color, float alpha)
 		{
@@ -115,6 +90,7 @@ namespace ly
 
 		const float safeDeltaTime = std::max(0.f, deltaTime);
 		const sf::Vector2f segmentStart = GetActorLocation();
+		const float startWidth = mCurrentWidth;
 		const sf::Vector2f movement =
 			GetActorForwardDirection() * mSpeed * safeDeltaTime;
 		const sf::Vector2f segmentEnd = segmentStart + movement;
@@ -127,7 +103,7 @@ namespace ly
 			: 1.f;
 		mCurrentWidth =
 			mInitialWidth + (mMaximumWidth - mInitialWidth) * progress;
-		ApplyHits(segmentStart, segmentEnd);
+		ApplyHits(segmentStart, segmentEnd, startWidth, mCurrentWidth);
 		RebuildGeometry();
 
 		if (mMaxTravelDistance <= 0.f ||
@@ -151,19 +127,24 @@ namespace ly
 
 	void ExpandingWaveWeaponActor::ApplyHits(
 		const sf::Vector2f& segmentStart,
-		const sf::Vector2f& segmentEnd
+		const sf::Vector2f& segmentEnd,
+		float startWidth,
+		float endWidth
 	)
 	{
 		World* world = GetWorld();
-		const float hitRadius = mCurrentWidth * 0.5f;
-		const float hitRadiusSquared = hitRadius * hitRadius;
-		if (!world || GetDamage() <= 0.f || hitRadiusSquared <= 0.f)
+		const float maximumHitRadius = std::max(startWidth, endWidth) * 0.5f;
+		if (!world || GetDamage() <= 0.f || maximumHitRadius <= 0.f)
 		{
 			return;
 		}
 
 		for (const weak_ptr<Actor>& targetWeak :
-			world->GetActorsByType<Actor>())
+			world->GetActorsInBounds(targeting::swept::SegmentBounds(
+				segmentStart,
+				segmentEnd,
+				maximumHitRadius
+			)))
 		{
 			const shared_ptr<Actor> target = targetWeak.lock();
 			if (!target ||
@@ -172,11 +153,20 @@ namespace ly
 			{
 				continue;
 			}
-			if (DistanceSquaredToSegment(
+			const float projection = targeting::swept::SegmentProjectionFraction(
 				target->GetActorLocation(),
 				segmentStart,
 				segmentEnd
-			) > hitRadiusSquared)
+			);
+			const float localHitRadius = (
+				startWidth + (endWidth - startWidth) * projection
+			) * 0.5f;
+			if (!targeting::swept::SegmentIntersectsExpandedBounds(
+				segmentStart,
+				segmentEnd,
+				target->GetActorGlobalBounds(),
+				localHitRadius
+			))
 			{
 				continue;
 			}

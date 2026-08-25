@@ -41,6 +41,6 @@ namespace ly
 		float mAfterburnerIntensity = 0.f;
 		bool mUseScreenClamp = true;
 		bool mAfterburnerRequested = false;
-		bool mAfterburnerIsDraining = false;
+		bool mAfterburnerIsActive = false;
 	};
 }

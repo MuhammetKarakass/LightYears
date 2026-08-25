@@ -12,13 +12,18 @@
 #include "gameplay/MovementComponent.h"
 #include "gameplay/ship/ShipRuntimeModifiers.h"
 #include "gameplay/ability/dash/DashMovementController.h"
+#include "gameplay/portal/PortalTransferParticipant.h"
 #include "gameConfigs/ship/ShipStructs.h"
 
 namespace ly
 {
 	class World;
 
-	class SpaceShip : public Actor, public Combatant, public DashMovementController
+	class SpaceShip
+		: public Actor,
+		  public Combatant,
+		  public DashMovementController,
+		  public PortalTransferParticipant
 	{
 	public:
 		virtual void BeginPlay() override;
@@ -79,6 +84,13 @@ namespace ly
 		bool StartDash(const DashRequest& request) override;
 		void EndDash() override;
 
+		Actor& GetPortalTransferActor() override { return *this; }
+		bool CanEnterPortalTransfer() const override;
+		float GetPortalTransferRadius() const override;
+		bool IsInPortalTransit() const override { return mPortalTransit; }
+		void BeginPortalTransit() override;
+		void CompletePortalTransit(const sf::Vector2f& exitLocation) override;
+
 		void SetControlTargetClass(ControlTargetClass targetClass)
 		{
 			mControlTargetClass = targetClass;
@@ -88,6 +100,10 @@ namespace ly
 		virtual void SetupCollisionLayers();
 
 		List<GameplayTag> mAttachedLightTags;
+		// TEMPORARY TEST BRIDGE: damage UI currently observes this delegate through
+		// SpaceShip. Move it to the combat/presentation event path before shipping;
+		// the final UI must not remain part of the SpaceShip API.
+		Delegate<SpaceShip*, float, float, float> onDamageTaken;
 
 	protected:
 		virtual float GetMovementSpeedCapMultiplier() const { return 1.f; }
@@ -110,6 +126,11 @@ namespace ly
 		float mBlinkDuration;
 
 		bool mInvulnerability;
+		bool mPortalTransit = false;
+		bool mPortalPhysicsWasEnabled = false;
+		CollisionLayer mPortalCollisionLayer = CollisionLayer::None;
+		CollisionLayer mPortalCollisionMask = CollisionLayer::None;
+		sf::Vector2f mPortalVelocity{};
 
 		ExplosionType mExplosionType;
 		float mHealthRegenDelayRemaining = 0.f;

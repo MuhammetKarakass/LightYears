@@ -3,6 +3,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
 
 #include "framework/World.h"
+#include "gameplay/targeting/SweptGeometry.h"
 #include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
@@ -216,7 +217,9 @@ namespace ly
 
 		List<shared_ptr<Actor>> targetsInside;
 		const float radiusSquared = mRadius * mRadius;
-		for (const weak_ptr<Actor>& actorWeak : world->GetActorsByType<Actor>())
+		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
+			targeting::swept::RadiusBounds(GetActorLocation(), mRadius)
+		))
 		{
 			const shared_ptr<Actor> actor = actorWeak.lock();
 			if (!actor || !IsEligibleTarget(*actor))

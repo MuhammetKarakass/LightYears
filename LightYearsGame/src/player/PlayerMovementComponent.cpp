@@ -19,6 +19,16 @@ namespace ly
 
 	void PlayerMovementComponent::Tick(float deltaTime)
 	{
+		if (mOwner.IsInPortalTransit())
+		{
+			mMoveInput = { 0.f, 0.f };
+			mSmoothedMoveInput = { 0.f, 0.f };
+			mAfterburnerRequested = false;
+			mAfterburnerIsActive = false;
+			mAfterburnerIntensity = 0.f;
+			return;
+		}
+
 		SetInput();
 		if (mOwner.GetAbilitySystemComponent().HasOwnedTag(
 			GameplayTags::State::Effect::Control::Stunned
@@ -27,7 +37,7 @@ namespace ly
 			mMoveInput = { 0.f, 0.f };
 			mSmoothedMoveInput = { 0.f, 0.f };
 			mAfterburnerRequested = false;
-			mAfterburnerIsDraining = false;
+			mAfterburnerIsActive = false;
 			mAfterburnerIntensity = 0.f;
 			mOwner.SetVelocity({ 0.f, 0.f });
 			return;
@@ -118,7 +128,7 @@ namespace ly
 			float forwardInput = std::clamp(-mSmoothedMoveInput.y, -1.f, 1.f);
 			const float strafeInput = std::clamp(mSmoothedMoveInput.x, -1.f, 1.f);
 			const bool hasMovementInput = std::max(std::abs(mMoveInput.x), std::abs(mMoveInput.y)) > 0.001f;
-			if (mAfterburnerIsDraining && !hasMovementInput)
+			if (mAfterburnerIsActive && !hasMovementInput)
 			{
 				forwardInput = 1.f;
 			}
@@ -203,21 +213,31 @@ namespace ly
 
 	void PlayerMovementComponent::UpdateAfterburnerState(float deltaTime)
 	{
-		mAfterburnerIsDraining = false;
+		mAfterburnerIsActive = false;
 		if (mAfterburnerRequested && deltaTime > 0.f)
 		{
-			const float drainPerSecond = std::max(
+			const float baseDrainPerSecond = std::max(
 				0.f,
 				mOwner.GetShipRuntime().GetAfterburnerEnergyDrainPerSecond()
+			);
+			const float drainPerSecond = baseDrainPerSecond * std::max(
+				0.f,
+				mOwner.GetRuntimeModifiers().GetAfterburnerEnergyDrainMultiplier()
 			);
 			const float requestedEnergy = drainPerSecond * deltaTime;
 			if (requestedEnergy > 0.f)
 			{
-				mAfterburnerIsDraining = mOwner.GetEnergyComponent().Consume(requestedEnergy) > 0.f;
+				mAfterburnerIsActive = mOwner.GetEnergyComponent().Consume(requestedEnergy) > 0.f;
+			}
+			else
+			{
+				// Free afterburner modifiers suppress resource consumption without
+				// suppressing the actual afterburner movement state.
+				mAfterburnerIsActive = true;
 			}
 		}
 
-		const float targetIntensity = mAfterburnerIsDraining ? 1.f : 0.f;
+		const float targetIntensity = mAfterburnerIsActive ? 1.f : 0.f;
 		const float transitionDuration = targetIntensity > mAfterburnerIntensity
 			? std::max(0.f, mOwner.GetShipRuntime().GetAfterburnerRampUpDuration())
 			: std::max(0.f, mOwner.GetShipRuntime().GetAfterburnerRampDownDuration());

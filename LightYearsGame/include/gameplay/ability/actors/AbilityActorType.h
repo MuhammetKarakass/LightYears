@@ -13,6 +13,23 @@ namespace ly
 		GravityAnomalyField,
 		InfernoSprayFlameCone,
 		SunBeamStrike,
-		RelayPrism
+		RelayPrism,
+		RailBurstProjectile,
+		CrescentReaverProjectile,
+		MineLayerMine,
+		ScorchDriveFireSegment,
+		IonStormProjectile,
+		IonStormField,
+		VoidGatePortal,
+		FrostMaelstromField,
+		FrozenThrongHusk
+		,
+		CombatSentryTurret,
+		CombatSentryProjectile
+		,
+		AstralSurgeProjectile
+		,
+		WingSentinelProjectile,
+		CrystalBarricadeWall
 	};
 }

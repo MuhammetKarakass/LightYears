@@ -78,7 +78,8 @@ namespace ly
 
 	void RocketVisualActor::Render(sf::RenderWindow& window)
 	{
-		if (GetIsPendingDestroy())
+		if (GetIsPendingDestroy() ||
+			(mPhase == Phase::Flight && !mFlightVisible))
 		{
 			return;
 		}

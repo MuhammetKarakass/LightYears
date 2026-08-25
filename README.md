@@ -204,10 +204,10 @@ not as the runtime source.
 | **S / ↓** | Move Down |
 | **D / →** | Move Right |
 | **Space** | Shoot |
-| **Q** | Gravity Anomaly (default Ability1) |
+| **Q** | Crescent Reaver (default Ability1) |
 | **E** | Relay Prism (default Ability2) |
-| **F** | Rocket (default Ability3) |
-| **R** | Overdrive Core (default Ability4) |
+| **F** | Scorch Drive (default Ability3) |
+| **R** | Rail Burst (default Ability4) |
 | **ESC** | Pause Menu |
 
 ---

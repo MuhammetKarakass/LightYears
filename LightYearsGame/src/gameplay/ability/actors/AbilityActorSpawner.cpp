@@ -168,7 +168,10 @@ namespace ly
 					*actorDefinition,
 					values,
 					targetLocation,
-					MakeWeakActor(targetActor)
+					MakeWeakActor(targetActor),
+					context.instance,
+					context.abilitySystem,
+					context.definition
 				}
 			);
 
@@ -202,6 +205,10 @@ namespace ly
 				sas::ContentId{ context.definition->abilityId },
 				context.definition->abilityTags
 			);
+			// Preserve the exact runtime instance instead of looking up by content ID
+			// later. This matters when the same family is equipped in a different
+			// runtime slot or when a projectile survives the ability's instant phase.
+			actor->SetSourceAbilityInstance(context.instance);
 			actor->SetAbilityUpgradeIds(context.definition->unlockedUpgradeIds);
 			actor->SetAbilityCollisionRadius(collisionRadius);
 			actor->ConfigureCollisionFromOwner();
@@ -305,6 +312,50 @@ namespace ly
 			owner.GetActorLocation() + direction * (
 				actorDefinition ? actorDefinition->spawnDistance : 0.f
 			),
+			targetLocation,
+			damageMultiplier,
+			targetActor
+		);
+	}
+
+	weak_ptr<AbilityWorldActor> AbilityActorSpawner::SpawnAtLocation(
+		const sas::ContentId& actorDefinitionId,
+		AbilityExecutionContext& context,
+		Actor& owner,
+		const sf::Vector2f& location,
+		const sf::Vector2f& direction,
+		float damageMultiplier
+	)
+	{
+		return SpawnAtLocation(
+			actorDefinitionId,
+			context,
+			owner,
+			location,
+			direction,
+			damageMultiplier,
+			std::nullopt,
+			nullptr
+		);
+	}
+
+	weak_ptr<AbilityWorldActor> AbilityActorSpawner::SpawnAtLocation(
+		const sas::ContentId& actorDefinitionId,
+		AbilityExecutionContext& context,
+		Actor& owner,
+		const sf::Vector2f& location,
+		const sf::Vector2f& direction,
+		float damageMultiplier,
+		const std::optional<sf::Vector2f>& targetLocation,
+		Actor* targetActor
+	)
+	{
+		return SpawnResolved(
+			actorDefinitionId,
+			context,
+			owner,
+			direction,
+			location,
 			targetLocation,
 			damageMultiplier,
 			targetActor

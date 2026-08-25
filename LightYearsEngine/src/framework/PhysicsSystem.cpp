@@ -62,17 +62,25 @@ namespace ly
 	{
 		if (listener->GetIsPendingDestroy()) return b2BodyId{ 0,0,0 };
 
-		// Actors without a visual bounds cannot form a valid Box2D polygon.  Such
-		// actors use gameplay queries (or have physics explicitly disabled), so
-		// leave them without a physics body instead of creating a zero-sized box.
+		// Most actors use their visual bounds as a polygon. Gameplay projectiles
+		// are often rendered procedurally and have no sprite, so allow them to
+		// provide an explicit collision radius instead of silently losing physics.
 		sf::FloatRect bounds = listener->GetActorGlobalBounds();
-		if (bounds.size.x <= 0.0f || bounds.size.y <= 0.0f)
+		const float collisionRadius = std::max(0.f, listener->GetPhysicsCollisionRadius());
+		const sf::Vector2f explicitBoxHalfExtents =
+			listener->GetPhysicsCollisionBoxHalfExtents();
+		const bool hasExplicitBox = explicitBoxHalfExtents.x > 0.f &&
+			explicitBoxHalfExtents.y > 0.f;
+		const bool hasValidBounds = bounds.size.x > 0.0f && bounds.size.y > 0.0f;
+		if (!hasValidBounds && collisionRadius <= 0.f && !hasExplicitBox)
 		{
 			return b2BodyId{ 0,0,0 };
 		}
 
 		b2BodyDef bodyDef = b2DefaultBodyDef();
-		bodyDef.type = b2_dynamicBody;
+		bodyDef.type = listener->GetPhysicsBodyType() == PhysicsBodyType::Static
+			? b2_staticBody
+			: b2_dynamicBody;
 
 		bodyDef.userData = listener;
 
@@ -81,11 +89,6 @@ namespace ly
 		bodyDef.rotation = b2MakeRot(DegreesToRadians(listener->GetActorRotation()));
 
 		b2BodyId bodyId = b2CreateBody(mPhysicsWorld, &bodyDef);
-
-		float halfWidth = bounds.size.x / 2.0f * GetPhysicsRate();
-		float halfHeight = bounds.size.y / 2.0f * GetPhysicsRate();
-
-		b2Polygon box = b2MakeBox(halfWidth, halfHeight);
 
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 
@@ -100,7 +103,29 @@ namespace ly
 
 		shapeDef.invokeContactCreation = true;
 
-		b2ShapeId shapeId = b2CreatePolygonShape(bodyId, &shapeDef, &box);
+		const sf::Vector2f boxHalfExtents = explicitBoxHalfExtents;
+		if (boxHalfExtents.x > 0.f && boxHalfExtents.y > 0.f)
+		{
+			const b2Polygon box = b2MakeBox(
+				boxHalfExtents.x * GetPhysicsRate(),
+				boxHalfExtents.y * GetPhysicsRate()
+			);
+			b2CreatePolygonShape(bodyId, &shapeDef, &box);
+		}
+		else if (collisionRadius > 0.f)
+		{
+			b2Circle circle;
+			circle.center = { 0.f, 0.f };
+			circle.radius = collisionRadius * GetPhysicsRate();
+			b2CreateCircleShape(bodyId, &shapeDef, &circle);
+		}
+		else
+		{
+			const float halfWidth = bounds.size.x / 2.0f * GetPhysicsRate();
+			const float halfHeight = bounds.size.y / 2.0f * GetPhysicsRate();
+			b2Polygon box = b2MakeBox(halfWidth, halfHeight);
+			b2CreatePolygonShape(bodyId, &shapeDef, &box);
+		}
 
 		return bodyId;
 	}
@@ -254,6 +279,60 @@ namespace ly
 		circle.radius = radius * mPhysicsRate;
 
 		b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	}
+
+
+	List<Actor*> PhysicsSystem::QueryActorsInBounds(
+		const sf::FloatRect& bounds
+	) const
+	{
+		List<Actor*> actors;
+		if (mPhysicsWorld.index1 == 0 ||
+			bounds.size.x < 0.f || bounds.size.y < 0.f)
+		{
+			return actors;
+		}
+
+		struct QueryContext
+		{
+			List<Actor*>* actors = nullptr;
+			Set<Actor*> seen;
+		};
+		QueryContext context{ &actors, {} };
+		const auto callback = [](b2ShapeId shapeId, void* rawContext)
+		{
+			auto* query = static_cast<QueryContext*>(rawContext);
+			if (!query || !b2Shape_IsValid(shapeId))
+			{
+				return true;
+			}
+			const b2BodyId bodyId = b2Shape_GetBody(shapeId);
+			Actor* actor = b2Body_IsValid(bodyId)
+				? static_cast<Actor*>(b2Body_GetUserData(bodyId))
+				: nullptr;
+			if (actor && !actor->GetIsPendingDestroy() && query->seen.insert(actor).second)
+			{
+				query->actors->push_back(actor);
+			}
+			return true;
+		};
+
+		const float physicsRate = GetPhysicsRate();
+		const b2AABB queryBounds{
+			{ bounds.position.x * physicsRate, bounds.position.y * physicsRate },
+			{
+				(bounds.position.x + bounds.size.x) * physicsRate,
+				(bounds.position.y + bounds.size.y) * physicsRate
+			}
+		};
+		b2World_OverlapAABB(
+			mPhysicsWorld,
+			queryBounds,
+			b2DefaultQueryFilter(),
+			callback,
+			&context
+		);
+		return actors;
 	}
 
 	PhysicsSystem::PhysicsSystem() :

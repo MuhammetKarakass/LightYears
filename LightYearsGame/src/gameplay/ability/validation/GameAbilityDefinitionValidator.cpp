@@ -15,6 +15,8 @@
 
 namespace ly
 {
+	// Keep this translation unit dependent on the complete behavior selector so
+	// newly registered concrete families are reflected in runtime validation.
 	namespace
 	{
 		bool Fail(std::string* failureReason, const std::string& reason)
@@ -563,6 +565,8 @@ namespace ly
 		if (definition.slot != sas::AbilitySlot::PrimaryFire &&
 			definition.behaviorType != AbilityBehaviorType::Configured)
 		{
+			// Concrete family selectors (including newly shipped families) must
+			// remain textually aligned with their content-ID family segment.
 			const std::string behaviorName = ToString(definition.behaviorType);
 			if (expectedBehaviorFamilyName != behaviorName)
 			{

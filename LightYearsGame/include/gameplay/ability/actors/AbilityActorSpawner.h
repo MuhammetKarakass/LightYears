@@ -49,5 +49,28 @@ namespace ly
 			float damageMultiplier = 1.f,
 			Actor* targetActor = nullptr
 		);
+
+		// Feature behaviors that create world-space trail/decal actors can reuse
+		// the same content, attribute, collision and source metadata pipeline while
+		// choosing an exact interpolated location themselves.
+		static weak_ptr<AbilityWorldActor> SpawnAtLocation(
+			const sas::ContentId& actorDefinitionId,
+			AbilityExecutionContext& context,
+			Actor& owner,
+			const sf::Vector2f& location,
+			const sf::Vector2f& direction,
+			float damageMultiplier = 1.f
+		);
+
+		static weak_ptr<AbilityWorldActor> SpawnAtLocation(
+			const sas::ContentId& actorDefinitionId,
+			AbilityExecutionContext& context,
+			Actor& owner,
+			const sf::Vector2f& location,
+			const sf::Vector2f& direction,
+			float damageMultiplier,
+			const std::optional<sf::Vector2f>& targetLocation,
+			Actor* targetActor
+		);
 	};
 }

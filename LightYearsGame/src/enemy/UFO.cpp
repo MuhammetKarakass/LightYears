@@ -38,7 +38,12 @@ namespace ly
 	void UFO::SetupCollisionLayers()
 	{
 		SetCollisionLayer(CollisionLayer::Enemy);
-		SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet | CollisionLayer::Enemy);
+		SetCollisionMask(
+			CollisionLayer::Player |
+			CollisionLayer::FriendlySummon |
+			CollisionLayer::PlayerBullet |
+			CollisionLayer::Enemy
+		);
 	}
 
 	void UFO::OnActorBeginOverlap(Actor* otherActor)
@@ -84,7 +89,10 @@ namespace ly
 			return;
 		}
 
+		if (CanApplyContactDamage(*this, *otherActor))
+		{
 			ApplyCombatDamage(*otherActor, GetCollisionDamage(), this);
+		}
 	}
 
 	void UFO::CheckBounce()

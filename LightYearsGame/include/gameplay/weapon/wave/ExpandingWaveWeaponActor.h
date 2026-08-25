@@ -26,7 +26,9 @@ namespace ly
 	private:
 		void ApplyHits(
 			const sf::Vector2f& segmentStart,
-			const sf::Vector2f& segmentEnd
+			const sf::Vector2f& segmentEnd,
+			float startWidth,
+			float endWidth
 		);
 		void RebuildGeometry();
 

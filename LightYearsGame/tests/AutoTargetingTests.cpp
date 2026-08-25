@@ -1,4 +1,5 @@
 #include "gameplay/targeting/AutoTargeting.h"
+#include "gameplay/targeting/TargetRelation.h"
 
 #include "framework/Actor.h"
 #include "framework/World.h"
@@ -37,7 +38,8 @@ int main()
 	const ly::shared_ptr<TestActor> nearest = world.SpawnActor<TestActor>().lock();
 	const ly::shared_ptr<TestActor> farthest = world.SpawnActor<TestActor>().lock();
 	const ly::shared_ptr<TestActor> outside = world.SpawnActor<TestActor>().lock();
-	if (!source || !nearest || !farthest || !outside)
+	const ly::shared_ptr<TestActor> rectangleSide = world.SpawnActor<TestActor>().lock();
+	if (!source || !nearest || !farthest || !outside || !rectangleSide)
 	{
 		return Fail("AutoTargeting test actors could not be created");
 	}
@@ -53,7 +55,16 @@ int main()
 	outside->SetActorLocation({ 500.f, 0.f });
 	outside->SetCollisionLayer(CollisionLayer::Enemy);
 	outside->SetCollisionMask(CollisionLayer::PlayerBullet);
+	rectangleSide->SetActorLocation({ 50.f, 60.f });
+	// Keep the geometry-only fixture out of the earlier radius/cone assertions.
+	rectangleSide->SetCollisionLayer(CollisionLayer::None);
+	rectangleSide->SetCollisionMask(CollisionLayer::PlayerBullet);
 	world.TickInternal(0.f);
+	if (!ly::targeting::IsOpposingTarget(*source, *nearest) ||
+		ly::targeting::IsOpposingTarget(*source, *source))
+	{
+		return Fail("Target relation policy did not resolve opposing collision layers");
+	}
 
 	ly::targeting::TargetingQuery nearestQuery;
 	nearestQuery.source = source.get();
@@ -101,6 +112,25 @@ int main()
 	{
 		return Fail("AutoTargeting cone shape accepted a target outside its angle");
 	}
+
+	ly::targeting::TargetingQuery rectangleQuery = nearestQuery;
+	rectangleSide->SetCollisionLayer(CollisionLayer::Enemy);
+	world.TickInternal(0.f);
+	rectangleQuery.shape = ly::targeting::TargetingShape::Rectangle;
+	rectangleQuery.direction = { 1.f, 0.f };
+	rectangleQuery.range = 120.f;
+	rectangleQuery.rectangleHalfExtents = { 110.f, 50.f };
+	const ly::List<ly::targeting::TargetingCandidate> rectangleTargets =
+		ly::targeting::AutoTargeting::FindTargets(world, rectangleQuery);
+	if (rectangleTargets.size() != 1 ||
+		rectangleTargets.front().actor.get() != nearest.get())
+	{
+		return Fail("AutoTargeting rectangle shape did not reject outside width or length");
+	}
+	// Restore the fixture so the remaining target-lock assertions keep their
+	// original nearest-target setup.
+	rectangleSide->SetCollisionLayer(CollisionLayer::None);
+	world.TickInternal(0.f);
 	nearestQuery.excludedTargets.push_back(outsideCone.get());
 
 	ly::targeting::TargetingQuery customSelectionQuery = allTargetsQuery;

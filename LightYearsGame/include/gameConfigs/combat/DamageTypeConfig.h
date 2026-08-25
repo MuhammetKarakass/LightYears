@@ -27,6 +27,9 @@ namespace ly
 		inline static const sas::AttributeId ArmorPenetration{ "Damage.ArmorPenetration" };
 		inline static const sas::AttributeId IgniteStacks{ "Damage.IgniteStacks" };
 		inline static const sas::AttributeId BurnDamagePerSecond{ "Damage.BurnDamagePerSecond" };
+		inline static const sas::AttributeId BurnDamagePerTick{ "Damage.BurnDamagePerTick" };
+		inline static const sas::AttributeId BurnTickInterval{ "Damage.BurnTickInterval" };
+		inline static const sas::AttributeId BurnTickAccumulator{ "Damage.BurnTickAccumulator" };
 		inline static const sas::AttributeId BurnDuration{ "Damage.BurnDuration" };
 		inline static const sas::AttributeId BurnMaxStacks{ "Damage.BurnMaxStacks" };
 		inline static const sas::AttributeId CryoBuildupPerHit{ "Damage.Cryo.BuildupPerHit" };

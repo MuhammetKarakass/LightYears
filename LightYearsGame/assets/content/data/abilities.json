@@ -263,10 +263,46 @@
       }
     },
     {
+      "id": "Ability.Offense.GlacialPressure.Basic",
+      "cooldown": 12.0,
+      "duration": 1.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Range", "baseValue": 700.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.GlacialPressure.InitialDamage", "baseValue": 12.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.CollisionDamage", "baseValue": 45.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.EnergyMaxInitialScale", "baseValue": 0.05, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.EnergyMaxCollisionScale", "baseValue": 0.25, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.MaxHealthReference", "baseValue": 100.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.MaxHealthPushScale", "baseValue": 0.0005, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.PushDistance", "baseValue": 800.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.PushDuration", "baseValue": 1.5, "minValue": 0.01 },
+        { "id": "Ability.Offense.GlacialPressure.ConeHalfAngleDegrees", "baseValue": 22.0, "minValue": 1.0, "maxValue": 89.0 },
+        { "id": "Ability.Offense.GlacialPressure.SegmentCount", "baseValue": 5.0, "minValue": 1.0, "maxValue": 5.0 },
+        { "id": "Ability.Offense.GlacialPressure.SegmentOneExtraStun", "baseValue": 2.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.PushStunDuration", "baseValue": 1.5, "minValue": 0.0 },
+        { "id": "Ability.Offense.GlacialPressure.CollisionStunDuration", "baseValue": 2.0, "minValue": 0.0 }
+      ],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Ability.Offense.GlacialPressure.InitialDamage", "operation": "Add", "magnitude": 1.0 },
+            { "attributeId": "Ability.Offense.GlacialPressure.CollisionDamage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.25 }
+          ]
+        }
+      },
+      "damageTags": ["Damage.Type.Cryo"]
+    },
+    {
       "id": "Ability.Offense.OrbitalDrones.Basic",
       "cooldown": 12.0,
       "duration": 6.0,
       "maxCharges": 1,
+      "recordInAbilityHistory": false,
       "settings": {},
       "attributes": [
         { "id": "Common.Radius", "baseValue": 500.0, "minValue": 1.0 },
@@ -792,6 +828,40 @@
       }
     },
     {
+      "id": "Ability.Utility.VoidGate.Basic",
+      "cooldown": 12.0,
+      "duration": 6.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Radius", "baseValue": 70.0, "minValue": 1.0 },
+        { "id": "Ability.Utility.VoidGate.TransferDuration", "baseValue": 0.25, "minValue": 0.01 },
+        { "id": "Ability.Utility.VoidGate.ReentryCooldown", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Ability.Utility.VoidGate.PortalBPlacementTimeout", "baseValue": 4.0, "minValue": 0.01 },
+        { "id": "Ability.Utility.VoidGate.EnergyMaxReference", "baseValue": 50.0, "minValue": 0.0 },
+        { "id": "Ability.Utility.VoidGate.EnergyMaxDurationScale", "baseValue": 0.002, "minValue": 0.0 }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.VoidGate.Portal.Basic",
+          "spawnDistance": 0.0,
+          "lifeTime": 0.0,
+          "attributes": [
+            { "id": "Common.Radius", "baseValue": 70.0, "minValue": 1.0 }
+          ]
+        }
+      ],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.25 }
+          ]
+        }
+      }
+    },
+    {
       "id": "Ability.Utility.EchoProtocol.Basic",
       "cooldown": 18.0,
       "duration": 0.0,
@@ -813,6 +883,727 @@
           "count": 14,
           "attributeModifiers": [
             { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.30 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.MineLayer.Basic",
+      "cooldown": 9.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Ability.Offense.MineLayer.BaseMineCount", "baseValue": 3.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.MineLayer.MineSpacing", "baseValue": 120.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.MineLayer.LuckToBonusMineScale", "baseValue": 1.0, "minValue": 0.0 }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.75
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.MineLayer.Mine.Basic",
+          "lifeTime": 8.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Damage", "baseValue": 30.0, "minValue": 0.0 },
+            { "id": "Common.Radius", "baseValue": 120.0, "minValue": 1.0 },
+            { "id": "AbilityActor.MineLayer.Mine.TriggerRadius", "baseValue": 90.0, "minValue": 1.0 },
+            { "id": "AbilityActor.MineLayer.Mine.LaunchSpeed", "baseValue": 600.0, "minValue": 1.0 },
+            { "id": "AbilityActor.MineLayer.Mine.StunDuration", "baseValue": 0.5, "minValue": 0.0 },
+            { "id": "AbilityActor.MineLayer.Mine.KnockbackStrength", "baseValue": 300.0, "minValue": 0.0 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Energy"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 3.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.RailBurst.Basic",
+      "cooldown": 6.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 1.50
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.RailBurst.Projectile.Basic",
+          "lifeTime": 0.65,
+          "spawnDistance": 42.0,
+          "attributes": [
+            { "id": "Common.Damage", "baseValue": 80.0, "minValue": 0.0 },
+            { "id": "Common.Range", "baseValue": 1400.0, "minValue": 1.0 },
+            { "id": "AbilityActor.RailBurst.Projectile.ProjectileSpeed", "baseValue": 2400.0, "minValue": 0.01 },
+            { "id": "Collision.Radius", "baseValue": 8.0, "minValue": 0.1 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Energy"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 6.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.15 }
+          ]
+        }
+      }
+    }
+    ,
+    {
+      "id": "Ability.Offense.AstralSurge.Basic",
+      "cooldown": 16.0,
+      "duration": 1.0,
+      "maxCharges": 1,
+      "settings": {},
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.Energy.Max",
+          "operation": "Add",
+          "coefficient": 0.45
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.AstralSurge.Projectile.Basic",
+          "lifeTime": 0.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Damage", "baseValue": 50.0, "minValue": 0.0 },
+            { "id": "Common.PierceDamageLoss", "baseValue": 0.05, "minValue": 0.0, "maxValue": 0.99 },
+            { "id": "Area.Width", "baseValue": 280.0, "minValue": 0.1 },
+            { "id": "AbilityActor.AstralSurge.Projectile.ProjectileSpeed", "baseValue": 1000.0, "minValue": 0.01 },
+            { "id": "AbilityActor.AstralSurge.Projectile.MinimumDamageMultiplier", "baseValue": 0.40, "minValue": 0.0, "maxValue": 1.0 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Energy"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 5.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.25 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.CrescentReaver.Basic",
+      "cooldown": 8.5,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.80
+        },
+        {
+          "targetAttributeId": "AbilityActor.CrescentReaver.Projectile.BounceCount",
+          "sourceAttributeId": "Owner.Luck",
+          "operation": "Add",
+          "coefficient": 0.05
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.CrescentReaver.Projectile.Basic",
+          "lifeTime": 0.0,
+          "spawnDistance": 38.0,
+          "attributes": [
+            { "id": "Common.Damage", "baseValue": 26.0, "minValue": 0.0 },
+            { "id": "AbilityActor.CrescentReaver.Projectile.ProjectileSpeed", "baseValue": 1300.0, "minValue": 0.01 },
+            { "id": "AbilityActor.CrescentReaver.Projectile.BounceCount", "baseValue": 5.0, "minValue": 0.0 },
+            { "id": "AbilityActor.CrescentReaver.Projectile.BounceDamageGrowth", "baseValue": 0.15, "minValue": 0.0 },
+            { "id": "AbilityActor.CrescentReaver.Projectile.BounceCooldownReduction", "baseValue": 0.30, "minValue": 0.0 },
+            { "id": "Collision.Radius", "baseValue": 11.0, "minValue": 0.1 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Kinetic"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 3.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    }
+    ,
+    {
+      "id": "Ability.Movement.EnergySpear.Basic",
+      "cooldown": 8.0,
+      "duration": 1.5,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 10.0, "minValue": 0.0 },
+        { "id": "Common.Range", "baseValue": 600.0, "minValue": 1.0 },
+        { "id": "Common.Radius", "baseValue": 18.0, "minValue": 0.1 },
+        { "id": "Ability.Movement.EnergySpear.MinimumDistance", "baseValue": 200.0, "minValue": 1.0 },
+        { "id": "Ability.Movement.EnergySpear.MaximumDistanceChargeThreshold", "baseValue": 0.90, "minValue": 0.0, "maxValue": 1.0 },
+        { "id": "Ability.Movement.EnergySpear.ChargeDamageMultiplierAtFull", "baseValue": 2.50, "minValue": 1.0 },
+        { "id": "Ability.Movement.EnergySpear.DistanceDamageMultiplierAtEndpoint", "baseValue": 2.0, "minValue": 1.0 },
+        { "id": "Ability.Movement.EnergySpear.EnergyMaxReference", "baseValue": 50.0, "minValue": 0.0 },
+        { "id": "Ability.Movement.EnergySpear.EnergyMaxDistanceScale", "baseValue": 2.0, "minValue": 0.0 },
+        { "id": "Ability.Movement.EnergySpear.TravelSpeed", "baseValue": 2400.0, "minValue": 1.0 }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 1.0
+        }
+      ],
+      "damageTags": ["Damage.Type.Energy"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.ScorchDrive.Basic",
+      "cooldown": 13.0,
+      "duration": 5.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 8.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.ScorchDrive.SegmentSpawnDistance", "baseValue": 60.0, "minValue": 0.1 },
+        { "id": "Ability.Offense.ScorchDrive.BaseSegmentLifetime", "baseValue": 5.0, "minValue": 0.01 },
+        { "id": "Ability.Offense.ScorchDrive.FireTickInterval", "baseValue": 0.25, "minValue": 0.01 },
+        { "id": "Ability.Offense.ScorchDrive.BurnThresholdTicks", "baseValue": 4.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.ScorchDrive.BurnDuration", "baseValue": 3.0, "minValue": 0.01 },
+        { "id": "Ability.Offense.ScorchDrive.BurnTickInterval", "baseValue": 0.5, "minValue": 0.01 },
+        { "id": "Ability.Offense.ScorchDrive.BurnDamageRatio", "baseValue": 0.5, "minValue": 0.0, "maxValue": 1.0 },
+        { "id": "Ability.Offense.ScorchDrive.ReferenceMaxHealth", "baseValue": 100.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.ScorchDrive.MaxHealthLifetimeScale", "baseValue": 0.01, "minValue": 0.0 }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.30
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.ScorchDrive.FireSegment.Basic",
+          "lifeTime": 5.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Area.Width", "baseValue": 70.0, "minValue": 0.1 },
+            { "id": "Area.Length", "baseValue": 80.0, "minValue": 0.1 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Thermal"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.25 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Defense.DirectionalBarrier.Basic",
+      "cooldown": 11.0,
+      "duration": 5.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        {
+          "id": "Ability.Defense.DirectionalBarrier.MaxHealthReference",
+          "baseValue": 100.0,
+          "minValue": 0.0
+        },
+        {
+          "id": "Ability.Defense.DirectionalBarrier.MaxHealthDurationScale",
+          "baseValue": 0.0025,
+          "minValue": 0.0
+        },
+        {
+          "id": "Ability.Defense.DirectionalBarrier.MovementSpeedMultiplier",
+          "baseValue": 0.80,
+          "minValue": 0.0,
+          "maxValue": 1.0
+        }
+      ],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Duration", "operation": "Add", "magnitude": 0.05 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.IonStorm.Basic",
+      "cooldown": 10.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.12
+        }
+      ],
+      "attributeProfiles": [
+        {
+          "id": "AttributeProfile.IonStorm.Field.Basic",
+          "attributes": [
+            { "id": "Common.Duration", "baseValue": 4.0, "minValue": 0.01 },
+            { "id": "Common.Radius", "baseValue": 335.0, "minValue": 0.01 },
+            { "id": "Common.Damage", "baseValue": 6.0, "minValue": 0.0 },
+            { "id": "AbilityActor.IonStorm.Field.TickInterval", "baseValue": 0.25, "minValue": 0.01 },
+            { "id": "AbilityActor.IonStorm.Field.InnerCoreRadius", "baseValue": 250.0, "minValue": 0.01 },
+            { "id": "AbilityActor.IonStorm.Field.OuterMinRadius", "baseValue": 250.0, "minValue": 0.01 },
+            { "id": "AbilityActor.IonStorm.Field.OuterMaxRadius", "baseValue": 335.0, "minValue": 0.01 },
+            { "id": "AbilityActor.IonStorm.Field.BoundaryPointCount", "baseValue": 20.0, "minValue": 3.0 }
+          ]
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.IonStorm.Projectile.Basic",
+          "lifeTime": 0.0,
+          "spawnDistance": 42.0,
+          "attributeProfileIds": ["AttributeProfile.IonStorm.Field.Basic"],
+          "attributes": [
+            { "id": "AbilityActor.IonStorm.Projectile.ProjectileSpeed", "baseValue": 2000.0, "minValue": 0.01 },
+            { "id": "Common.Range", "baseValue": 900.0, "minValue": 0.01 }
+          ]
+        },
+        {
+          "id": "Actor.Ability.IonStorm.Field.Basic",
+          "lifeTime": 4.0,
+          "spawnDistance": 0.0,
+          "attributeProfileIds": ["AttributeProfile.IonStorm.Field.Basic"],
+          "attributes": []
+        }
+      ],
+      "damageTags": ["Damage.Type.Electric"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 1.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.ChainLightning.Basic",
+      "cooldown": 7.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 28.0, "minValue": 0.0 },
+        { "id": "Common.Range", "baseValue": 700.0, "minValue": 0.01 },
+        { "id": "Ability.Offense.ChainLightning.BounceRange", "baseValue": 350.0, "minValue": 0.01 },
+        { "id": "Ability.Offense.ChainLightning.BaseBounceCount", "baseValue": 5.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.ChainLightning.LinkTravelTime", "baseValue": 0.22, "minValue": 0.01 },
+        { "id": "Ability.Offense.ChainLightning.ElectricStacks", "baseValue": 1.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.ChainLightning.ElectricDamageTakenMultiplierPerStack", "baseValue": 0.04, "minValue": 0.0 },
+        { "id": "Ability.Offense.ChainLightning.ElectricDuration", "baseValue": 3.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.ChainLightning.ElectricMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
+      ],
+      "damageTags": ["Damage.Type.Electric"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Defense.Cryostasis.Basic",
+      "cooldown": 22.0,
+      "duration": 5.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Radius", "baseValue": 300.0, "minValue": 1.0 },
+        { "id": "Common.Damage", "baseValue": 4.0, "minValue": 0.0 },
+        { "id": "Common.Interval", "baseValue": 0.25, "minValue": 0.01 },
+        { "id": "Ability.Defense.Cryostasis.FieldTickDamageMaxHealthScale", "baseValue": 0.02, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.BaseIceHealth", "baseValue": 200.0, "minValue": 1.0 },
+        { "id": "Ability.Defense.Cryostasis.IceHealthMaxHealthScale", "baseValue": 0.40, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.BaseHealthRegenPerSecond", "baseValue": 8.0, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.HealthRegenMaxHealthScale", "baseValue": 0.04, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.BaseEnergyRegenPerSecond", "baseValue": 4.0, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.EnergyRegenMaxHealthScale", "baseValue": 0.01, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.BaseBreakDamage", "baseValue": 70.0, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.BreakDamageMaxIceHealthScale", "baseValue": 0.30, "minValue": 0.0 },
+        { "id": "Ability.Defense.Cryostasis.FieldCryoStacks", "baseValue": 1.0, "minValue": 1.0, "maxValue": 1.0 },
+        { "id": "Ability.Defense.Cryostasis.BreakCryoStacks", "baseValue": 4.0, "minValue": 4.0, "maxValue": 4.0 },
+        { "id": "Ability.Defense.Cryostasis.BreakCooldownMultiplier", "baseValue": 0.50, "minValue": 0.0, "maxValue": 1.0 }
+      ],
+      "damageTags": ["Damage.Type.Cryo"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 1.0 },
+            { "attributeId": "Ability.Defense.Cryostasis.BaseIceHealth", "operation": "Add", "magnitude": 15.0 },
+            { "attributeId": "Ability.Defense.Cryostasis.BaseHealthRegenPerSecond", "operation": "Add", "magnitude": 0.75 },
+            { "attributeId": "Ability.Defense.Cryostasis.BaseEnergyRegenPerSecond", "operation": "Add", "magnitude": 0.25 },
+            { "attributeId": "Ability.Defense.Cryostasis.BaseBreakDamage", "operation": "Add", "magnitude": 5.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.40 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Control.FrostMaelstrom.Basic",
+      "cooldown": 12.0,
+      "duration": 6.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Ability.Control.FrostMaelstrom.MinimumRadius", "baseValue": 300.0, "minValue": 1.0 },
+        { "id": "Ability.Control.FrostMaelstrom.MaximumRadius", "baseValue": 600.0, "minValue": 1.0 },
+        { "id": "Ability.Control.FrostMaelstrom.MinimumMovementSpeed", "baseValue": 200.0, "minValue": 0.0 },
+        { "id": "Ability.Control.FrostMaelstrom.MaximumMovementSpeed", "baseValue": 500.0, "minValue": 0.0 },
+        { "id": "Ability.Control.FrostMaelstrom.TickInterval", "baseValue": 0.25, "minValue": 0.01 },
+        { "id": "Ability.Control.FrostMaelstrom.CryoStacksPerTick", "baseValue": 1.0, "minValue": 1.0, "maxValue": 1.0 },
+        { "id": "Ability.Control.FrostMaelstrom.OrbitalAngularSpeed", "baseValue": 4.5, "minValue": 0.0 },
+        { "id": "Ability.Control.FrostMaelstrom.InwardForce", "baseValue": 1500.0, "minValue": 0.0 },
+        { "id": "Ability.Control.FrostMaelstrom.OrbitalRadiusRatio", "baseValue": 0.42, "minValue": 0.01, "maxValue": 1.0 },
+        { "id": "Ability.Control.FrostMaelstrom.EnergyMaxReference", "baseValue": 50.0, "minValue": 0.0 },
+        { "id": "Ability.Control.FrostMaelstrom.EnergyMaxDamageScale", "baseValue": 0.005, "minValue": 0.0 },
+        { "id": "Ability.Control.FrostMaelstrom.EnergyMaxRadiusScale", "baseValue": 0.20, "minValue": 0.0 },
+        { "id": "Common.Damage", "baseValue": 2.0, "minValue": 0.0 }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.03
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.FrostMaelstrom.Field.Basic",
+          "lifeTime": 6.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Duration", "baseValue": 6.0, "minValue": 0.01 },
+            { "id": "Common.Damage", "baseValue": 2.0, "minValue": 0.0 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Cryo"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.FrozenThrong.Basic",
+      "cooldown": 16.0,
+      "duration": 6.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 24.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.FrozenThrong.LuckToHuskScale", "baseValue": 0.01, "minValue": 0.0 },
+        { "id": "Ability.Offense.FrozenThrong.HuskDelay", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.FrozenThrong.TargetSearchRadius", "baseValue": 900.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.FrozenThrong.DensityRadius", "baseValue": 180.0, "minValue": 0.0 },
+        { "id": "Common.Radius", "baseValue": 120.0, "minValue": 0.0 }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.60
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.FrozenThrong.Husk.Basic",
+          "lifeTime": 3.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Damage", "baseValue": 24.0, "minValue": 0.0 },
+            { "id": "Common.Duration", "baseValue": 3.0, "minValue": 0.01 },
+            { "id": "Common.Radius", "baseValue": 120.0, "minValue": 0.0 },
+            { "id": "Common.Range", "baseValue": 900.0, "minValue": 0.0 },
+            { "id": "Collision.Radius", "baseValue": 12.0, "minValue": 0.0 },
+            { "id": "AbilityActor.FrozenThrong.Husk.ProjectileSpeed", "baseValue": 1100.0, "minValue": 0.0 },
+            { "id": "Damage.Cryo.BuildupPerHit", "baseValue": 2.0, "minValue": 1.0 },
+            { "id": "Damage.Cryo.BuildupRequired", "baseValue": 4.0, "minValue": 1.0 },
+            { "id": "Damage.Cryo.BuildupDuration", "baseValue": 2.5, "minValue": 0.0 },
+            { "id": "Damage.Cryo.SlowPercent", "baseValue": 0.25, "minValue": 0.0, "maxValue": 1.0 },
+            { "id": "Damage.Cryo.SlowDuration", "baseValue": 1.5, "minValue": 0.0 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Cryo"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 4.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.30 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.WingSentinels.Basic",
+      "cooldown": 14.0,
+      "duration": 8.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Ability.Offense.WingSentinels.DroneCount", "baseValue": 2.0, "minValue": 2.0, "maxValue": 2.0 },
+        { "id": "Ability.Offense.WingSentinels.SideOffset", "baseValue": 110.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.WingSentinels.BaseAttackRate", "baseValue": 1.5, "minValue": 0.01 },
+        { "id": "Common.Range", "baseValue": 650.0, "minValue": 1.0 }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.30
+        }
+      ],
+      "actors": [
+        {
+          "id": "Actor.Ability.WingSentinels.Projectile.Basic",
+          "lifeTime": 0.60,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Damage", "baseValue": 10.0, "minValue": 0.0 },
+            { "id": "Common.Range", "baseValue": 650.0, "minValue": 1.0 },
+            { "id": "Collision.Radius", "baseValue": 5.0, "minValue": 0.1 },
+            { "id": "AbilityActor.WingSentinels.Projectile.ProjectileSpeed", "baseValue": 1200.0, "minValue": 1.0 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Kinetic"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 },
+            { "attributeId": "Ability.Offense.WingSentinels.BaseAttackRate", "operation": "Add", "magnitude": 0.025 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.25 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.CombatSentry.Basic",
+      "cooldown": 25.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [],
+      "scalingRules": [],
+      "actors": [
+        {
+          "id": "Actor.Ability.CombatSentry.Turret.Basic",
+          "lifeTime": 20.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Duration", "baseValue": 20.0, "minValue": 0.01 },
+            { "id": "Collision.Radius", "baseValue": 28.0, "minValue": 0.1 },
+            { "id": "AbilityActor.CombatSentry.Turret.MaxHealth", "baseValue": 150.0, "minValue": 1.0 },
+            { "id": "AbilityActor.CombatSentry.Turret.OwnerMaxHealthScale", "baseValue": 0.50, "minValue": 0.0 },
+            { "id": "AbilityActor.CombatSentry.Turret.Armor", "baseValue": 5.0, "minValue": 0.0 },
+            { "id": "AbilityActor.CombatSentry.Turret.OwnerArmorScale", "baseValue": 0.50, "minValue": 0.0 },
+            { "id": "AbilityActor.CombatSentry.Turret.BaseDamage", "baseValue": 14.0, "minValue": 0.0 },
+            { "id": "AbilityActor.CombatSentry.Turret.OwnerAttackPowerScale", "baseValue": 0.60, "minValue": 0.0 },
+            { "id": "AbilityActor.CombatSentry.Turret.TargetingRange", "baseValue": 800.0, "minValue": 1.0 },
+            { "id": "AbilityActor.CombatSentry.Turret.AttackRate", "baseValue": 1.25, "minValue": 0.01 }
+          ]
+        },
+        {
+          "id": "Actor.Ability.CombatSentry.Projectile.Basic",
+          "lifeTime": 1.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Duration", "baseValue": 1.0, "minValue": 0.01 },
+            { "id": "Common.Range", "baseValue": 800.0, "minValue": 1.0 },
+            { "id": "Collision.Radius", "baseValue": 7.0, "minValue": 0.1 },
+            { "id": "AbilityActor.CombatSentry.Projectile.ProjectileSpeed", "baseValue": 1300.0, "minValue": 1.0 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Kinetic"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "AbilityActor.CombatSentry.Turret.MaxHealth", "operation": "Add", "magnitude": 15.0 },
+            { "attributeId": "AbilityActor.CombatSentry.Turret.Armor", "operation": "Add", "magnitude": 1.0 },
+            { "attributeId": "AbilityActor.CombatSentry.Turret.BaseDamage", "operation": "Add", "magnitude": 2.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.30 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Offense.NanoPlague.Basic",
+      "cooldown": 8.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 4.0, "minValue": 0.0 },
+        { "id": "Common.Duration", "baseValue": 3.0, "minValue": 0.01 },
+        { "id": "Common.Interval", "baseValue": 0.25, "minValue": 0.01 },
+        { "id": "Common.Range", "baseValue": 800.0, "minValue": 1.0 },
+        { "id": "Common.Radius", "baseValue": 300.0, "minValue": 1.0 },
+        { "id": "Ability.Offense.NanoPlague.EnergyMaxTickScale", "baseValue": 0.03, "minValue": 0.0 },
+        { "id": "Ability.Offense.NanoPlague.BaseSpreadTargetCount", "baseValue": 1.0, "minValue": 1.0, "maxValue": 5.0 },
+        { "id": "Ability.Offense.NanoPlague.MaximumSpreadTargetCount", "baseValue": 5.0, "minValue": 1.0, "maxValue": 5.0 }
+      ],
+      "scalingRules": [],
+      "damageTags": ["Damage.Type.Energy"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 1.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.20 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Defense.ReturnProtocol.Basic",
+      "cooldown": 14.0,
+      "duration": 1.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [
+        { "id": "Ability.Defense.ReturnProtocol.BaseReflectDamageMultiplier", "baseValue": 0.80, "minValue": 0.0 },
+        { "id": "Ability.Defense.ReturnProtocol.MaxHealthReference", "baseValue": 100.0, "minValue": 0.0 },
+        { "id": "Ability.Defense.ReturnProtocol.MaxHealthDamageScale", "baseValue": 0.001, "minValue": 0.0 }
+      ],
+      "scalingRules": [],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "Ability.Defense.ReturnProtocol.BaseReflectDamageMultiplier", "operation": "Add", "magnitude": 0.03 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.25 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Ability.Defense.CrystalBarricade.Basic",
+      "cooldown": 14.0,
+      "duration": 0.0,
+      "maxCharges": 1,
+      "settings": {},
+      "attributes": [],
+      "scalingRules": [],
+      "actors": [
+        {
+          "id": "Actor.Ability.CrystalBarricade.Wall.Basic",
+          "lifeTime": 6.0,
+          "spawnDistance": 0.0,
+          "attributes": [
+            { "id": "Common.Duration", "baseValue": 6.0, "minValue": 0.01 },
+            { "id": "Area.Length", "baseValue": 300.0, "minValue": 1.0 },
+            { "id": "Area.Width", "baseValue": 22.0, "minValue": 1.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.BaseContactDamage", "baseValue": 20.0, "minValue": 0.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.EnergyMaxContactScale", "baseValue": 0.15, "minValue": 0.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.ContactInterval", "baseValue": 0.50, "minValue": 0.01 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.BaseRicochetMultiplier", "baseValue": 0.80, "minValue": 0.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.EnergyMaxRicochetReference", "baseValue": 50.0, "minValue": 0.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.EnergyMaxRicochetScale", "baseValue": 0.001, "minValue": 0.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.SameSurfaceLockDuration", "baseValue": 0.12, "minValue": 0.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.MaxHealthDurationReference", "baseValue": 100.0, "minValue": 0.0 },
+            { "id": "AbilityActor.CrystalBarricade.Wall.MaxHealthDurationScale", "baseValue": 0.005, "minValue": 0.0 }
+          ]
+        }
+      ],
+      "damageTags": ["Damage.Type.Kinetic"],
+      "progression": {
+        "levelUpgradeScrapCosts": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+        "repeat": {
+          "count": 14,
+          "attributeModifiers": [
+            { "attributeId": "AbilityActor.CrystalBarricade.Wall.BaseRicochetMultiplier", "operation": "Add", "magnitude": 0.04 },
+            { "attributeId": "AbilityActor.CrystalBarricade.Wall.BaseContactDamage", "operation": "Add", "magnitude": 3.0 },
+            { "attributeId": "Common.Cooldown", "operation": "Add", "magnitude": -0.25 }
           ]
         }
       }

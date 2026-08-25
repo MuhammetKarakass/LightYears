@@ -14,8 +14,10 @@ namespace sas
 		void CommitInputFrame() { mWasInputHeld = mInputHeld; }
 
 		bool IsActive() const { return mIsActive; }
+		bool IsActiveDurationDeferred() const { return mActiveDurationDeferred; }
 		bool IsOnCooldown() const { return mCooldownRemaining > 0.f; }
 		float GetCooldownRemaining() const { return mCooldownRemaining; }
+		float GetActiveTimeElapsed() const { return mActiveTimeElapsed; }
 		float GetActiveTimeRemaining() const { return mActiveTimeRemaining; }
 		int GetCharges() const { return mCharges; }
 		int GetLevel() const { return mLevel; }
@@ -24,6 +26,13 @@ namespace sas
 		bool SetLevel(int requestedLevel, int maxLevel);
 		bool CanActivate(int maxCharges) const;
 		void BeginActivation(float activeDuration, int maxCharges);
+		void BeginActivation(
+			float activeDuration,
+			int maxCharges,
+			bool deferActiveDuration
+		);
+		bool StartDeferredActiveDuration(float activeDuration);
+		void TickActiveTime(float deltaTime);
 		bool RefreshActiveDuration(float activeDuration);
 		void EndActivation(float cooldownDuration, int maxCharges);
 		bool TickCooldown(float deltaTime, float cooldownDuration, int maxCharges);
@@ -35,7 +44,9 @@ namespace sas
 		bool mInputHeld = false;
 		bool mWasInputHeld = false;
 		bool mIsActive = false;
+		bool mActiveDurationDeferred = false;
 		float mCooldownRemaining = 0.f;
+		float mActiveTimeElapsed = 0.f;
 		float mActiveTimeRemaining = 0.f;
 		int mCharges = 0;
 	};
