@@ -3,6 +3,7 @@
 #include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameplay/effects/EffectBehaviorKeys.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
+#include "gameplay/movement/MovementInfluenceService.h"
 #include "attributes/GameplayAttribute.h"
 #include "framework/Actor.h"
 
@@ -47,14 +48,18 @@ namespace ly
 			);
 			const float pullFactor = (1.f - normalizedDistance) * (1.f - normalizedDistance);
 			const sf::Vector2f direction = delta / distance;
-			const sf::Vector2f velocityChange = direction *
-				context->resolvedPullStrength * pullFactor * deltaTime;
-			if (!std::isfinite(velocityChange.x) || !std::isfinite(velocityChange.y))
+			const sf::Vector2f acceleration = direction *
+				context->resolvedPullStrength * pullFactor;
+			if (!std::isfinite(acceleration.x) || !std::isfinite(acceleration.y))
 			{
 				return {};
 			}
 
-			owner.SetVelocity(owner.GetVelocity() + velocityChange);
+			movement::MovementInfluenceService::ApplyInstantAcceleration(
+				owner,
+				acceleration,
+				deltaTime
+			);
 			return {};
 		}
 

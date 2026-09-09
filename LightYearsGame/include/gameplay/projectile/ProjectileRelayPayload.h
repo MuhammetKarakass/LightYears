@@ -49,6 +49,13 @@ namespace ly
 		sf::Vector2f location{};
 		sf::Vector2f direction{ 0.f, -1.f };
 		float damage = 0.f;
+		// Relay families can need to distribute family-owned runtime payloads
+		// (for example a carried resource) without adding those fields to this
+		// common combat snapshot. The concrete clone uses these neutral split
+		// facts to partition its own typed state.
+		int cloneIndex = 0;
+		int cloneCount = 1;
+		float transferRatio = 1.f;
 		bool allowFriendlyFire = false;
 		ProjectileRelaySnapshot snapshot;
 	};

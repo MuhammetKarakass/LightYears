@@ -77,6 +77,93 @@ namespace ly
 			return spec;
 		}
 
+		struct CappedStackApplicationResult
+		{
+			bool wasApplied = false;
+			int stackCount = 0;
+			int maxStacks = 1;
+
+			bool IsAtThreshold() const
+			{
+				return stackCount >= maxStacks;
+			}
+		};
+
+		// All stack-based damage statuses share this lifecycle: applications add up
+		// to their cap, then remain at that cap while later applications refresh
+		// duration. A threshold effect is therefore sustained, never consumed.
+		CappedStackApplicationResult ApplyCappedStackEffect(
+			sas::AbilitySystemComponent& targetAbilitySystem,
+			const sas::GameplayEffectSpec& spec,
+			Actor* source,
+			int incomingStacks
+		)
+		{
+			CappedStackApplicationResult result;
+			result.maxStacks = std::max(1, spec.maxStacks);
+			for (int stack = 0; stack < std::max(0, incomingStacks); ++stack)
+			{
+				result.wasApplied = targetAbilitySystem.ApplyGameplayEffect(
+					spec,
+					source
+				).IsValid() || result.wasApplied;
+			}
+
+			if (const sas::ActiveGameplayEffect* active =
+				targetAbilitySystem.FindGameplayEffectById(spec.definition.effectId))
+			{
+				result.stackCount = active->stackCount;
+				result.maxStacks = std::max(1, active->spec.maxStacks);
+			}
+			return result;
+		}
+
+		float GetMovementSlowMagnitude(const sas::ActiveGameplayEffect& effect)
+		{
+			for (const sas::AttributeModifier& modifier : effect.spec.modifiers)
+			{
+				if (modifier.attributeId == OwnerAttributeIds::MovementSlow &&
+					modifier.operation == sas::AttributeModifierOperation::Add)
+				{
+					return std::clamp(modifier.magnitude, 0.f, 1.f);
+				}
+			}
+			return 0.f;
+		}
+
+		bool TryApplyOrRefreshCryoSlow(
+			sas::AbilitySystemComponent& targetAbilitySystem,
+			const sas::GameplayEffectDefinition& slowDefinition,
+			const DamageContext& context
+		)
+		{
+			if (const sas::ActiveGameplayEffect* activeSlow =
+				targetAbilitySystem.FindGameplayEffectById(
+					DamageStatusEffectIds::CryoSlowedEffectId
+				))
+			{
+				constexpr float MagnitudeEqualityTolerance = 0.0001f;
+				const float activeMagnitude = GetMovementSlowMagnitude(*activeSlow);
+				if (context.payload.cryoSlowPercent + MagnitudeEqualityTolerance <
+					activeMagnitude)
+				{
+					// A weaker Cryo hit keeps the stronger effect and cannot extend it.
+					return false;
+				}
+			}
+
+			// A stronger slow replaces the old one; an equal slow refreshes its own
+			// duration through the shared RefreshDuration stacking policy.
+			return targetAbilitySystem.ApplyGameplayEffect(
+				MakeMovementSlowSpec(
+					slowDefinition,
+					context.payload.cryoSlowDuration,
+					context.payload.cryoSlowPercent
+				),
+				context.source
+			).IsValid();
+		}
+
 		bool TryApplyCryoSlow(
 			sas::AbilitySystemComponent& targetAbilitySystem,
 			const DamageContext& context
@@ -91,55 +178,22 @@ namespace ly
 				return false;
 			}
 
-			if (targetAbilitySystem.FindGameplayEffectById(
-				DamageStatusEffectIds::CryoSlowedEffectId
-			))
-			{
-				// Once the four-hit threshold has been met, continued Cryo hits
-				// sustain the existing slow without increasing its magnitude.
-				sas::GameplayEffectSpec slowSpec = MakeMovementSlowSpec(
-					*slowDefinition,
-					context.payload.cryoSlowDuration,
-					context.payload.cryoSlowPercent
-				);
-				return targetAbilitySystem.ApplyGameplayEffect(
-					slowSpec,
-					context.source
-				).IsValid();
-			}
-
-			for (int stack = 0; stack < context.payload.cryoBuildupPerHit; ++stack)
-			{
-				const sas::GameplayEffectSpec buildupSpec = MakeStatusEffectSpec(
+			const CappedStackApplicationResult buildup = ApplyCappedStackEffect(
+				targetAbilitySystem,
+				MakeStatusEffectSpec(
 					*buildupDefinition,
 					context.payload.cryoBuildupDuration,
 					context.payload.cryoBuildupRequired
-				);
-				const sas::GameplayEffectHandle buildupHandle =
-					targetAbilitySystem.ApplyGameplayEffect(
-					buildupSpec,
-					context.source
-				);
-				const sas::ActiveGameplayEffect* buildup =
-					targetAbilitySystem.FindGameplayEffect(buildupHandle);
-				if (!buildup ||
-					buildup->stackCount < context.payload.cryoBuildupRequired)
-				{
-					continue;
-				}
-
-				targetAbilitySystem.RemoveGameplayEffect(buildupHandle);
-				sas::GameplayEffectSpec slowSpec = MakeMovementSlowSpec(
+				),
+				context.source,
+				context.payload.cryoBuildupPerHit
+			);
+			return buildup.wasApplied && buildup.IsAtThreshold() &&
+				TryApplyOrRefreshCryoSlow(
+					targetAbilitySystem,
 					*slowDefinition,
-					context.payload.cryoSlowDuration,
-					context.payload.cryoSlowPercent
+					context
 				);
-				return targetAbilitySystem.ApplyGameplayEffect(
-					slowSpec,
-					context.source
-				).IsValid();
-			}
-			return false;
 		}
 
 		sas::GameplayEffectBehaviorResult TickIgnite(
@@ -397,15 +451,12 @@ namespace ly
 						0.f
 					);
 				}
-				bool igniteApplied = false;
-				for (int stack = 0; stack < context.payload.igniteStacks; ++stack)
-				{
-					igniteApplied = targetAbilitySystem.ApplyGameplayEffect(
-						igniteSpec,
-						context.source
-					).IsValid() || igniteApplied;
-				}
-				if (igniteApplied)
+				if (ApplyCappedStackEffect(
+					targetAbilitySystem,
+					igniteSpec,
+					context.source,
+					context.payload.igniteStacks
+				).wasApplied)
 				{
 					applied.push_back(DamageStatusSchema::Ignite);
 				}
@@ -442,15 +493,12 @@ namespace ly
 						0.f
 					}
 				};
-				bool electricApplied = false;
-				for (int stack = 0; stack < context.payload.electricStacks; ++stack)
-				{
-					electricApplied = targetAbilitySystem.ApplyGameplayEffect(
-						electricSpec,
-						context.source
-					).IsValid() || electricApplied;
-				}
-				if (electricApplied)
+				if (ApplyCappedStackEffect(
+					targetAbilitySystem,
+					electricSpec,
+					context.source,
+					context.payload.electricStacks
+				).wasApplied)
 				{
 					applied.push_back(DamageStatusSchema::Electric);
 				}

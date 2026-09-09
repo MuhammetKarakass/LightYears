@@ -92,6 +92,11 @@ namespace sas
 		return true;
 	}
 
+	void AbilityRuntimeState::StartCooldown(float cooldownDuration)
+	{
+		mCooldownRemaining = std::max(0.f, cooldownDuration);
+	}
+
 	void AbilityRuntimeState::EndActivation(float cooldownDuration, int maxCharges)
 	{
 		mIsActive = false;

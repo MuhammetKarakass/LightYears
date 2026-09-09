@@ -51,7 +51,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Combat Sentry";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 110, 210, 255, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 		definition.behaviorType = ly::AbilityBehaviorType::CombatSentry;
 		return definition;
 	}();

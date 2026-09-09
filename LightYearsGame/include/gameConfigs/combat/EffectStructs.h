@@ -28,6 +28,15 @@ struct MovementEffectSchema
 	inline static const ly::GameplayTag& SlowImmunityGrantedTag = ly::GameplayTags::State::Effect::Immunity::Movement::Slow;
 };
 
+// Reusable incoming-damage multiplier. Effects author a resolved fraction in
+// their spec, while the behavior applies it consistently in PreMitigation.
+struct DamageReductionEffectSchema
+{
+	inline static const sas::AttributeId Fraction{
+		"Effect.Defense.DamageReduction.Fraction"
+	};
+};
+
 namespace EffectData
 {
 	const sas::GameplayEffectDefinition* FindGameplayEffectDefinition(const std::string& effectId);

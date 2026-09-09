@@ -1,15 +1,12 @@
 #pragma once
 
-#include <SFML/System/Vector2.hpp>
+#include "gameplay/movement/MovementBurstTypes.h"
 
 namespace ly
 {
-	struct DashRequest
-	{
-		sf::Vector2f direction{ 0.f, 0.f };
-		float baseDistance = 0.f;
-		float duration = 0.f;
-	};
+	// Compatibility alias for the Dash ability contract. The actual movement
+	// request is owned by the generic movement layer.
+	using DashRequest = movement::MovementBurstRequest;
 
 	// Bridge implemented by actors that support the Dash ability family.
 	class DashMovementController

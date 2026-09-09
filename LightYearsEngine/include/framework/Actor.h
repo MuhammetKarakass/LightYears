@@ -1,8 +1,10 @@
 #pragma once
 #include "framework/Object.h"
 #include "framework/Core.h"
+#include "framework/SimulationTime.h"
 #include <SFML/Graphics.hpp>
 #include <box2d/box2d.h> 
+#include <cstddef>
 #include <optional>
 #include "engineConfigs/EngineStructs.h"
 
@@ -67,6 +69,16 @@
 	};
 
 	class World;
+	// A body-local physical box. Most actors still expose one centered box via
+	// GetPhysicsCollisionBoxHalfExtents(); actors with non-rectangular outlines
+	// can opt into several boxes without owning Box2D fixtures themselves.
+	struct PhysicsCollisionBox
+	{
+		sf::Vector2f halfExtents{};
+		sf::Vector2f localCenter{};
+		float localRotationDegrees = 0.f;
+	};
+
 	class Actor : public Object
 	{
 	public:
@@ -81,6 +93,14 @@
 		virtual void Render(sf::RenderWindow& window);
 
 		World* GetWorld() const { return mOwningWorld; }
+		void SetSimulationTimeDomain(SimulationTimeDomain domain)
+		{
+			mSimulationTimeDomain = domain;
+		}
+		SimulationTimeDomain GetSimulationTimeDomain() const
+		{
+			return mSimulationTimeDomain;
+		}
 		bool IsActorOutOfWindow(float allowance=10.f) const;
 
 		//PHYSICS
@@ -98,6 +118,20 @@
 		// actor transform supplies the box orientation, so no feature needs to
 		// create its own physics fixture implementation.
 		virtual sf::Vector2f GetPhysicsCollisionBoxHalfExtents() const { return {}; }
+		// Backward-compatible multi-box extension. Existing actors that override
+		// only GetPhysicsCollisionBoxHalfExtents() continue to create one centered
+		// box. Complex physical outlines override these two methods instead.
+		virtual std::size_t GetPhysicsCollisionBoxCount() const
+		{
+			const sf::Vector2f halfExtents = GetPhysicsCollisionBoxHalfExtents();
+			return halfExtents.x > 0.f && halfExtents.y > 0.f ? 1u : 0u;
+		}
+		virtual PhysicsCollisionBox GetPhysicsCollisionBox(std::size_t index) const
+		{
+			return index == 0u
+				? PhysicsCollisionBox{ GetPhysicsCollisionBoxHalfExtents(), {}, 0.f }
+				: PhysicsCollisionBox{};
+		}
 		void SetPhysicsBodyType(PhysicsBodyType bodyType);
 		PhysicsBodyType GetPhysicsBodyType() const { return mPhysicsBodyType; }
 		bool CanCollideWith(const Actor* other) const;
@@ -157,6 +191,10 @@
 		bool IsRenderEnabled() const { return mRenderEnabled; }
 		std::optional<sf::Sprite>& GetSprite() { return mSprite; }
 		sf::FloatRect GetActorGlobalBounds() const;
+		// Returns a conservative bounds for the base sprite/light render path.
+		// Actors that render custom geometry without a base sprite or light return
+		// no bounds so World keeps rendering them rather than risking a false cull.
+		virtual std::optional<sf::FloatRect> GetRenderBounds() const;
 		void SetTexture(const std::string& texturePath);
 		void SetActorLocation(const sf::Vector2f& newLoc);
 		void SetActorRotation(float newRotation);
@@ -189,6 +227,7 @@
 		int GetNextLightIndex(const GameplayTag& baseTag) const;
 
 		World* mOwningWorld;
+		SimulationTimeDomain mSimulationTimeDomain = SimulationTimeDomain::RealTime;
 		bool mBeganPlay;
 
 		bool mCanCollide;
@@ -209,5 +248,11 @@
 		bool mRenderEnabled = true;
 
 		Dictionary<GameplayTag, LightData, GameplayTagHash> mLightShaders;
+		// World-owned manual spatial queries use this stamp to deduplicate an
+		// actor that overlaps more than one grid cell without allocating a
+		// per-query set.
+		mutable std::uint64_t mLastManualSpatialQueryStamp = 0;
+
+		friend class World;
 	};
 }

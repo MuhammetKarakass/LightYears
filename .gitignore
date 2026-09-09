@@ -2,13 +2,15 @@
 build*/
 out/
 documentation.md
-docs/*.md
+# AI-generated working material and agent instructions
+AGENTS.md
+docs/
+*.md
+*.py
+*.bat
+*.ps1
+*.sh
+orchestrator.py
+flash_test.txt
 run_stdout.log
 run_stderr.log
-*.md
-!AGENTS.md
-!docs/PROJECT_DOCUMENTATION.md
-!docs/BALANCE_AND_ROADMAP_NOTEBOOK.md
-!docs/CURRENT_IMPLEMENTATION_CATALOG.md
-!docs/Designs.md
-!docs/VisualProductionPlan.md

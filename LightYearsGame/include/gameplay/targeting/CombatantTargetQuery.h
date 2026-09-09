@@ -20,6 +20,13 @@ namespace ly
 			float range
 		);
 
+		List<shared_ptr<Actor>> FindOpposingCombatants(
+			World& world,
+			const Actor& source,
+			float range,
+			bool requireCollisionCompatibility
+		);
+
 		// The source still determines friendly/enemy relation, while the origin
 		// can belong to a moving field, projectile, or telegraph. This keeps the
 		// reusable combatant query correct for actors whose effect center moves
@@ -29,6 +36,14 @@ namespace ly
 			const Actor& source,
 			const sf::Vector2f& origin,
 			float range
+		);
+
+		List<shared_ptr<Actor>> FindOpposingCombatants(
+			World& world,
+			const Actor& source,
+			const sf::Vector2f& origin,
+			float range,
+			bool requireCollisionCompatibility
 		);
 
 		// Selects a damaged opposing ship inside a directional cone. This is a

@@ -4,6 +4,7 @@
 #include "framework/World.h"
 #include "gameplay/ability/energySpear/EnergySpearContracts.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameplay/targeting/SweptGeometry.h"
 
@@ -79,6 +80,9 @@ namespace ly
 		SetRenderLayer(RenderLayer::Projectile);
 		SetCollisionLayer(CollisionLayer::None);
 		SetCollisionMask(CollisionLayer::None);
+		// SpawnActor promotes pending actors on the next world tick. Register now
+		// so the old immediate suppression behavior remains true during that gap.
+		RegisterContactDamageGuard();
 	}
 
 	void EnergySpearTraversalActor::BeginPlay()
@@ -89,6 +93,7 @@ namespace ly
 			mPreservedVelocity = owner->GetVelocity();
 			owner->SetVelocity(mDirection * mTravelSpeed);
 		}
+		RegisterContactDamageGuard();
 	}
 
 	void EnergySpearTraversalActor::Tick(float deltaTime)
@@ -252,6 +257,7 @@ namespace ly
 			return;
 		}
 		mFinished = true;
+		UnregisterContactDamageGuard();
 
 		if (const shared_ptr<Actor> owner = mOwner.lock())
 		{
@@ -281,6 +287,58 @@ namespace ly
 			}
 		}
 		Actor::Destroy();
+	}
+
+	void EnergySpearTraversalActor::RegisterContactDamageGuard()
+	{
+		if (mContactDamageGuardHandle.IsValid())
+		{
+			return;
+		}
+
+		const shared_ptr<Actor> owner = mOwner.lock();
+		Combatant* combatant = owner
+			? dynamic_cast<Combatant*>(owner.get())
+			: nullptr;
+		if (!combatant)
+		{
+			return;
+		}
+
+		const weak_ptr<Actor> ownerWeak = mOwner;
+		mContactDamageGuardHandle = combatant->GetCombatRuntime()
+			.GetContactDamageGuardRegistry()
+			.Register(
+				[ownerWeak](const Actor& source, const Actor& target)
+				{
+					const shared_ptr<Actor> guardedOwner = ownerWeak.lock();
+					if (!guardedOwner)
+					{
+						return true;
+					}
+					return &source != guardedOwner.get() &&
+						&target != guardedOwner.get();
+				}
+			);
+	}
+
+	void EnergySpearTraversalActor::UnregisterContactDamageGuard()
+	{
+		if (!mContactDamageGuardHandle.IsValid())
+		{
+			return;
+		}
+
+		if (const shared_ptr<Actor> owner = mOwner.lock())
+		{
+			if (Combatant* combatant = dynamic_cast<Combatant*>(owner.get()))
+			{
+				combatant->GetCombatRuntime().GetContactDamageGuardRegistry().Unregister(
+					mContactDamageGuardHandle
+				);
+			}
+		}
+		mContactDamageGuardHandle = {};
 	}
 
 	void EnergySpearTraversalActor::Destroy()

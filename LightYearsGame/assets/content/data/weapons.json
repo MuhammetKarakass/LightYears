@@ -571,6 +571,62 @@
       "damageTags": ["Damage.Type.Cryo"],
       "attachmentCapabilities": [],
       "attachmentSlotCapacity": 2
+    },
+    {
+      "id": "Weapon.Projectile.IroncladMinigun.Basic",
+      "typeTag": "PrimaryWeapon.Projectile.Standard",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserRed01.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [255, 188, 85, 220],
+          "intensity": 0.25,
+          "size": [14.0, 64.0],
+          "shouldStretch": true,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 38.0],
+        "visualScale": 0.75
+      },
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 8.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 8.0, "minValue": 0.01 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 1800.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Common.Range", "baseValue": 1200.0, "minValue": 1.0 },
+        { "id": "Collision.Radius", "baseValue": 5.0, "minValue": 0.1 },
+        { "id": "Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Damage.ArmorPenetration", "baseValue": 0.10, "minValue": 0.0, "maxValue": 0.25 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 50.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {},
+      "attributeModifiers": [],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.AttackPower",
+          "operation": "Add",
+          "coefficient": 0.25
+        },
+        {
+          "targetAttributeId": "Common.FireRate",
+          "sourceAttributeId": "Owner.AttackSpeed",
+          "operation": "Add",
+          "coefficient": 1.0
+        }
+      ],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Kinetic"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 0
     }
   ]
 }

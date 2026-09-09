@@ -5,6 +5,9 @@
 #include <framework/PhysicsSystem.h>
 #include "framework/PerfMonitor.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace ly
 {
 	Actor::Actor(World* OwningWorld, const std::string& TexturePath)
@@ -91,6 +94,10 @@ namespace ly
 			return;
 		}
 
+		if (mOwningWorld)
+		{
+			mOwningWorld->RemoveActorSpatialQuery(*this);
+		}
 		UnInitializePhysics();
 		onActorDestroyed.Broadcast(this);
 		Object::Destroy();
@@ -413,6 +420,11 @@ namespace ly
 		{
 			UnInitializePhysics();  
 		}
+
+		if (mOwningWorld)
+		{
+			mOwningWorld->RefreshActorSpatialQuery(*this);
+		}
 	}
 	
 	void Actor::InitializePhysics()
@@ -475,11 +487,27 @@ namespace ly
 	void Actor::SetCollisionLayer(CollisionLayer layer)
 	{
 		mCollisionLayer = layer;
+		if (mPhysicsBodyId)
+		{
+			PhysicsSystem::Get().RefreshCollisionFilter(*mPhysicsBodyId);
+		}
+		if (mOwningWorld)
+		{
+			mOwningWorld->RefreshActorSpatialQuery(*this);
+		}
 	}
 
 	void Actor::SetCollisionMask(CollisionLayer mask)
 	{
 		mCollisionMask = mask;
+		if (mPhysicsBodyId)
+		{
+			PhysicsSystem::Get().RefreshCollisionFilter(*mPhysicsBodyId);
+		}
+		if (mOwningWorld)
+		{
+			mOwningWorld->RefreshActorSpatialQuery(*this);
+		}
 	}
 
 	void Actor::OnActorBeginOverlap(Actor* otherActor)
@@ -515,6 +543,58 @@ namespace ly
 			? mSprite->getGlobalBounds()
 			: sf::FloatRect{ mActorLocation, { 0.f, 0.f } };
 	}
+
+	std::optional<sf::FloatRect> Actor::GetRenderBounds() const
+	{
+		std::optional<sf::FloatRect> result;
+		if (mSprite)
+		{
+			result = mSprite->getGlobalBounds();
+		}
+
+		for (const auto& [tag, light] : mLightShaders)
+		{
+			(void)tag;
+			if (!light.isEnabled || !light.shader)
+			{
+				continue;
+			}
+
+			sf::Vector2f size = light.size;
+			if (light.shouldStretch)
+			{
+				size.y *= light.currentStretchFactor;
+			}
+			const float extent = 0.5f * std::sqrt(size.x * size.x + size.y * size.y);
+			const sf::Vector2f center = light.lightSpace == LightSpace::World
+				? light.offset
+				: TransformLocalToWorld(light.offset) + GetActorLocation();
+			const sf::FloatRect lightBounds{
+				{ center.x - extent, center.y - extent },
+				{ extent * 2.f, extent * 2.f }
+			};
+
+			if (!result)
+			{
+				result = lightBounds;
+				continue;
+			}
+
+			const float left = std::min(result->position.x, lightBounds.position.x);
+			const float top = std::min(result->position.y, lightBounds.position.y);
+			const float right = std::max(
+				result->position.x + result->size.x,
+				lightBounds.position.x + lightBounds.size.x
+			);
+			const float bottom = std::max(
+				result->position.y + result->size.y,
+				lightBounds.position.y + lightBounds.size.y
+			);
+			*result = { { left, top }, { right - left, bottom - top } };
+		}
+
+		return result;
+	}
 	
 	void Actor::SetTexture(const std::string& texturePath)
 	{
@@ -546,6 +626,10 @@ namespace ly
 			mSprite->setPosition(newLoc);
 		}
 		UpdatePhysicsTransform(); 
+		if (mOwningWorld)
+		{
+			mOwningWorld->RefreshActorSpatialQuery(*this);
+		}
 	}
 	
 	void Actor::SetActorRotation(float newRotation)

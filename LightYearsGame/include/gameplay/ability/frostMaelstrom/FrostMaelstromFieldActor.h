@@ -2,6 +2,7 @@
 
 #include "attributes/AttributeSystem.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "gameplay/movement/MovementInfluenceTypes.h"
 #include "presentation/ability/frostMaelstrom/FrostMaelstromPresentationProfile.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
@@ -50,7 +51,7 @@ namespace ly
 
 		void AdvanceField(float deltaTime);
 		void UpdateControlledTargets();
-		void ApplyControlForces(float deltaTime);
+		void ApplyControlForces();
 		void ApplyCryoTick();
 		void AddTarget(const shared_ptr<SpaceShip>& target);
 		bool ContainsTarget(const SpaceShip* target) const;
@@ -59,6 +60,7 @@ namespace ly
 		sf::Vector2f ResolveControlAcceleration(
 			const ControlledTarget& controlled
 		) const;
+		movement::MovementInfluenceSourceId GetControlSourceId() const;
 		void ConfigureGeometry();
 
 		FrostMaelstromPresentationProfile mPresentationProfile;

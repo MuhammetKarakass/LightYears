@@ -1,5 +1,7 @@
 #include "gameplay/ability/astralSurge/AstralSurgeAbility.h"
 
+#include "gameplay/ability/runtime/FocusActionLocks.h"
+
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
 #include "gameplay/ability/astralSurge/AstralSurgeContracts.h"
@@ -185,15 +187,7 @@ namespace ly
 
 		// Astral Surge is a committed focus: input, primary fire, and every
 		// other ability are blocked until the one-second wave release completes.
-		context.abilitySystem.AddOwnedTag(
-			GameplayTags::State::ActionLock::AbilityActivation
-		);
-		context.abilitySystem.AddOwnedTag(
-			GameplayTags::State::ActionLock::PrimaryWeaponFire
-		);
-		context.abilitySystem.AddOwnedTag(
-			GameplayTags::State::ActionLock::MovementInput
-		);
+		ability::ApplyFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.AddOwnedTag(AbilityData::AstralSurge::State::Focusing);
 
 		EmitEvent(context, AbilityData::AstralSurge::Event::Started);
@@ -286,15 +280,7 @@ namespace ly
 		GameAbilityBehaviorContext& context
 	) const
 	{
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::AbilityActivation
-		);
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::PrimaryWeaponFire
-		);
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::MovementInput
-		);
+		ability::RemoveFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::AstralSurge::State::Focusing);
 	}
 

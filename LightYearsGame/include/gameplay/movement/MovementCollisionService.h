@@ -14,7 +14,7 @@ namespace ly
 		// Keeping that correction here lets input, dash and external impulses obey
 		// the same physical-obstacle rule without coupling them to a specific ability.
 		sf::Vector2f ConstrainMovementAgainstStaticGeometry(
-			const Actor& movingActor,
+			Actor& movingActor,
 			const sf::Vector2f& requestedOffset
 		);
 	}

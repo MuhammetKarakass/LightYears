@@ -22,6 +22,10 @@ namespace ly
 		// Returns a movement multiplier for the current movement direction. A
 		// resolver is optional so ordinary constant modifiers remain unchanged.
 		std::function<float(const sf::Vector2f&)> movementSpeedResolver;
+		// Kept last to preserve existing aggregate initializers. Sources contribute
+		// decimal thrust bonuses additively: 0.60 and 0.15 resolve to +75%.
+		float thrustBonus = 0.f;
+		float turnCapabilityMultiplier = 1.f;
 	};
 
 	class ShipRuntimeModifiers final
@@ -31,6 +35,8 @@ namespace ly
 		void Remove(const std::string& sourceId);
 
 		float GetMovementSpeedMultiplier() const;
+		float GetThrustBonus() const;
+		float GetTurnCapabilityMultiplier() const;
 		float GetConditionalMovementSpeedMultiplier(
 			const sf::Vector2f& movementDirection
 		) const;

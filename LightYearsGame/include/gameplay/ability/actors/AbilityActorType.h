@@ -16,6 +16,7 @@ namespace ly
 		RelayPrism,
 		RailBurstProjectile,
 		CrescentReaverProjectile,
+		AegisReaverProjectile,
 		MineLayerMine,
 		ScorchDriveFireSegment,
 		IonStormProjectile,
@@ -30,6 +31,18 @@ namespace ly
 		AstralSurgeProjectile
 		,
 		WingSentinelProjectile,
-		CrystalBarricadeWall
+		CrystalBarricadeWall,
+		SolarBombardmentProjectile,
+		StrikeRunBombardment
+		,
+		SeismicChargeBomb,
+		ArcScythesBeam,
+		TemporalConvergenceField,
+		ClosedCircuitDelivery,
+		FoldspaceArena,
+		CryoBolaProjectile,
+		InertialWake,
+		LanceDrive,
+		ReclaimerRepairKit
 	};
 }

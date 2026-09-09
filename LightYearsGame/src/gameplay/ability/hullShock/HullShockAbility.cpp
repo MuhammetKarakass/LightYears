@@ -1,5 +1,7 @@
 #include "gameplay/ability/hullShock/HullShockAbility.h"
 
+#include "gameplay/ability/runtime/FocusActionLocks.h"
+
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/hullShock/HullShockContracts.h"
@@ -238,10 +240,9 @@ namespace ly
 		mFocusElapsed = 0.f;
 		mDischarged = false;
 
-		// These shared lock tags make the focus window atomic: primary fire and
-		// other ability activation cannot interrupt the charge or fire beside it.
-		context.abilitySystem.AddOwnedTag(GameplayTags::State::ActionLock::AbilityActivation);
-		context.abilitySystem.AddOwnedTag(GameplayTags::State::ActionLock::PrimaryWeaponFire);
+		// The common focus rule atomically blocks voluntary movement, primary fire,
+		// and other ability activation while allowing rotation and world movement.
+		ability::ApplyFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.AddOwnedTag(AbilityData::HullShock::State::Focusing);
 
 		if (World* world = context.owner.GetWorld())
@@ -316,12 +317,7 @@ namespace ly
 			Discharge(context);
 		}
 
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::AbilityActivation
-		);
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::PrimaryWeaponFire
-		);
+		ability::RemoveFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::HullShock::State::Focusing);
 
 		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())

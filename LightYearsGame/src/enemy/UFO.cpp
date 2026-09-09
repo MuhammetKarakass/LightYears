@@ -42,7 +42,8 @@ namespace ly
 			CollisionLayer::Player |
 			CollisionLayer::FriendlySummon |
 			CollisionLayer::PlayerBullet |
-			CollisionLayer::Enemy
+			CollisionLayer::Enemy |
+			CollisionLayer::Environment
 		);
 	}
 

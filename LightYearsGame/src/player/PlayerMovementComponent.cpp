@@ -106,9 +106,23 @@ namespace ly
 
 	void PlayerMovementComponent::ConsumeInput(float deltaTime)
 	{
-		UpdateAfterburnerState(deltaTime);
 		MovementComponent& movement = mOwner.GetMovementComponent();
-		if (movement.IsDashing())
+		if (mOwner.GetAbilitySystemComponent().HasOwnedTag(
+			GameplayTags::State::ActionLock::MovementInput
+		))
+		{
+			// Focus rejects only new player translation. It must not overwrite the
+			// velocity that existed before the lock, while mouse aiming stays live.
+			mMoveInput = { 0.f, 0.f };
+			mSmoothedMoveInput = { 0.f, 0.f };
+			mAfterburnerRequested = false;
+			mAfterburnerIsActive = false;
+			mAfterburnerIntensity = 0.f;
+			RotateTowardMouseCursor(deltaTime);
+			return;
+		}
+		UpdateAfterburnerState(deltaTime);
+		if (movement.IsMovementBurstActive())
 		{
 			mSmoothedMoveInput = { 0.f, 0.f };
 			return;
@@ -134,9 +148,9 @@ namespace ly
 			}
 
 			const float forwardThrust = forwardInput >= 0.f
-				? movementAttributes.forwardThrust.currentValue
-				: movementAttributes.reverseThrust.currentValue;
-			const float strafeThrust = movementAttributes.strafeThrust.currentValue;
+				? movement.ResolveForwardThrust()
+				: movement.ResolveReverseThrust();
+			const float strafeThrust = movement.ResolveStrafeThrust();
 			sf::Vector2f worldAcceleration =
 				mOwner.GetActorForwardDirection() * forwardInput * forwardThrust +
 				GetAdaptiveScreenStrafeDirection() * strafeInput * strafeThrust;
@@ -333,7 +347,8 @@ namespace ly
 			0.f,
 			1.f
 		);
-		return Lerp(1.f, maneuverabilityMultiplier, mAfterburnerIntensity);
+		return Lerp(1.f, maneuverabilityMultiplier, mAfterburnerIntensity) *
+			mOwner.GetRuntimeModifiers().GetTurnCapabilityMultiplier();
 	}
 
 	bool PlayerMovementComponent::IsAfterburnerRechargeBlocked() const

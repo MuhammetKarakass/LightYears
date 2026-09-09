@@ -5,6 +5,7 @@
 #include "gameplay/damage/DamageContext.h"
 #include "framework/Delegate.h"
 #include "presentation/effects/GameplayEffectPresentationBinding.h"
+#include "gameplay/combat/ContactDamageGuardRegistry.h"
 
 #include <string>
 #include <unordered_map>
@@ -44,6 +45,15 @@ namespace ly
 			return mAbilitySystemComponent;
 		}
 
+		ContactDamageGuardRegistry& GetContactDamageGuardRegistry()
+		{
+			return mContactDamageGuardRegistry;
+		}
+		const ContactDamageGuardRegistry& GetContactDamageGuardRegistry() const
+		{
+			return mContactDamageGuardRegistry;
+		}
+
 		void ProcessIncomingDamage(DamageContext& context);
 		void NotifyDamageResolved(const DamageContext& context);
 
@@ -60,6 +70,7 @@ namespace ly
 		Actor& mOwner;
 		LightYearsAbilitySystemComponent mAbilitySystemComponent;
 		GameplayEffectPresentationBinding mEffectPresentation;
+		ContactDamageGuardRegistry mContactDamageGuardRegistry;
 		List<sas::AbilityEvent> mPendingEffectEvents;
 		const DamageContext* mProcessingDamageContext = nullptr;
 		struct DamageProtection

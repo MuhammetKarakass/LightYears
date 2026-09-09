@@ -1,5 +1,7 @@
 #include "gameplay/ability/shieldHarvest/ShieldHarvestAbility.h"
 
+#include "gameplay/ability/runtime/FocusActionLocks.h"
+
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/shieldHarvest/ShieldHarvestContracts.h"
@@ -143,6 +145,7 @@ namespace ly
 		const float focusDuration = std::max(0.001f, context.definition.duration);
 		mFocusElapsed = 0.f;
 		mHarvested = false;
+		ability::ApplyFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.AddOwnedTag(AbilityData::ShieldHarvest::State::Focusing);
 
 		if (World* world = context.owner.GetWorld())
@@ -253,6 +256,7 @@ namespace ly
 	)
 	{
 		(void)reason;
+		ability::RemoveFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::ShieldHarvest::State::Focusing);
 		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())
 		{

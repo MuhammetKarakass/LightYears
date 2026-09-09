@@ -90,6 +90,11 @@ namespace sas
 				this->mDefinition.maxCharges,
 				ShouldDeferActiveDurationStart()
 			);
+			if (this->mDefinition.cooldownStartPolicy ==
+				AbilityCooldownStartPolicy::OnActivation)
+			{
+				this->mRuntimeState.StartCooldown(ResolveCooldownDuration());
+			}
 			BeginExecution();
 			if (mNotifications.activated)
 			{
@@ -281,8 +286,12 @@ namespace sas
 
 			EndContent(reason);
 			EndExecution(reason);
+			const float cooldownOnEnd = this->mDefinition.cooldownStartPolicy ==
+				AbilityCooldownStartPolicy::OnActivation
+				? this->mRuntimeState.GetCooldownRemaining()
+				: ResolveCooldownDurationOnEnd(reason);
 			this->mRuntimeState.EndActivation(
-				ResolveCooldownDurationOnEnd(reason),
+				cooldownOnEnd,
 				this->mDefinition.maxCharges
 			);
 			if (mNotifications.ended)

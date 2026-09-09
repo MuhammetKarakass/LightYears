@@ -4,7 +4,7 @@
 #include "gameplay/movement/MovementCollisionService.h"
 #include "gameplay/tags/GameplayTags.h"
 
-#include "gameplay/ability/dash/DashMovementMath.h"
+#include "gameplay/movement/MovementBurstMath.h"
 #include "spaceShip/SpaceShip.h"
 #include <framework/MathUtility.h>
 #include <framework/World.h>
@@ -26,15 +26,12 @@ namespace ly
 
 	void MovementComponent::Tick(float deltaTime, float speedCapMultiplier)
 	{
+		mMovementPolicies.Tick(deltaTime);
 		const auto& ownedTags = mOwner.GetAbilitySystemComponent().GetOwnedTags();
 		const auto applyForcedMovement = [&]()
 		{
-			sf::Vector2f forcedVelocity{};
-			for (const auto& [sourceId, velocity] : mForcedMovementVelocities)
-			{
-				(void)sourceId;
-				forcedVelocity += velocity;
-			}
+			const sf::Vector2f forcedVelocity =
+				mMovementInfluences.ResolveForcedVelocity();
 			if (GetVectorLength(forcedVelocity) > 0.001f)
 			{
 				MoveOwner(forcedVelocity * std::max(0.f, deltaTime));
@@ -42,58 +39,90 @@ namespace ly
 		};
 		if (ownedTags.HasTag(GameplayTags::State::ActionLock::MovementInput))
 		{
-			// Focus and traversal own the ship's position. Clearing the regular
-			// velocity here prevents player input or drift from fighting them.
-			if (mIsDashing)
-			{
-				EndDash();
-			}
-			mOwner.SetVelocity({ 0.f, 0.f });
 			if (ownedTags.HasTag(GameplayTags::State::ActionLock::ExternalMovement))
 			{
+				// Hard stasis is the only action lock that stops an already-moving
+				// ship. Focus deliberately does not enter this branch.
+				if (mIsMovementBurstActive)
+				{
+					EndMovementBurst();
+				}
+				mOwner.SetVelocity({ 0.f, 0.f });
 				// Hard stasis discards both new and pre-existing impulses so releasing
 				// the lock cannot produce a delayed knockback.
-				mExternalImpulses.clear();
+				mMovementInfluences.ClearImpulses();
+				mMovementInfluences.ClearAccelerationSources();
+				return;
 			}
-			else
+
+			if (mMovementInfluences.HasForcedMovement())
 			{
-				TickExternalImpulse(deltaTime);
+				// A movement ability such as Blastback recoil owns translation for
+				// its authored window, even though it also blocks new player input.
+				if (mIsMovementBurstActive)
+				{
+					EndMovementBurst();
+				}
+				mOwner.SetVelocity({ 0.f, 0.f });
+				applyForcedMovement();
+				TickInfluenceImpulses(deltaTime);
+				return;
 			}
-			applyForcedMovement();
+
+			// MovementInput means “do not accept a new command”, not “freeze the
+			// ship”. Preserve prior drift, natural damping and external influences
+			// throughout focus so a concentrating ship can still be pushed or pulled.
+			if (TickMovementBurst(deltaTime))
+			{
+				TickInfluenceImpulses(deltaTime);
+				return;
+			}
+			ApplyContinuousInfluences(deltaTime);
+			if (mMovementMode == ShipMovementMode::ThrustDrift)
+			{
+				ApplyThrustDriftDamping(deltaTime);
+				ClampThrustDriftVelocity(speedCapMultiplier);
+			}
+			const float movementMultiplier = mOwner.GetAbilitySystemComponent().GetAttributes()
+				.GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, 0.05f);
+			MoveOwner(mOwner.GetVelocity() * movementMultiplier * std::max(0.f, deltaTime));
+			TickInfluenceImpulses(deltaTime);
 			return;
 		}
 
-		if (!mForcedMovementVelocities.empty())
+		if (mMovementInfluences.HasForcedMovement())
 		{
 			// A forced source owns translational movement but not aim/rotation or
 			// combat. Movement abilities are blocked by the shared input lock while
 			// this branch keeps the ship moving through the normal component.
-			if (mIsDashing)
+			if (mIsMovementBurstActive)
 			{
-				EndDash();
+				EndMovementBurst();
 			}
 			mOwner.SetVelocity({ 0.f, 0.f });
 			applyForcedMovement();
-			TickExternalImpulse(deltaTime);
+			TickInfluenceImpulses(deltaTime);
 			return;
 		}
 
 		if (ownedTags.HasTag(GameplayTags::State::Effect::Control::Stunned) ||
 			ownedTags.HasTag(GameplayTags::State::Effect::Control::Staggered))
 		{
-			if (mIsDashing)
+			if (mIsMovementBurstActive)
 			{
-				EndDash();
+				EndMovementBurst();
 			}
 			mOwner.SetVelocity({ 0.f, 0.f });
-			TickExternalImpulse(deltaTime);
+			TickInfluenceImpulses(deltaTime);
 			return;
 		}
 
-		if (TickDash(deltaTime))
+		if (TickMovementBurst(deltaTime))
 		{
 			return;
 		}
+
+		ApplyContinuousInfluences(deltaTime);
 
 		if (mMovementMode == ShipMovementMode::ThrustDrift)
 		{
@@ -104,72 +133,92 @@ namespace ly
 		const float movementMultiplier = mOwner.GetAbilitySystemComponent().GetAttributes()
 			.GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, 0.05f);
 		MoveOwner(mOwner.GetVelocity() * movementMultiplier * deltaTime);
-		TickExternalImpulse(deltaTime);
+		TickInfluenceImpulses(deltaTime);
 	}
 
-	void MovementComponent::ApplyExternalImpulse(
-		const sf::Vector2f& velocityChange,
-		float retentionPerSecond
+	void MovementComponent::ApplyInfluenceImpulse(
+		const movement::ImpulseRequest& request
 	)
 	{
-		if (!std::isfinite(velocityChange.x) || !std::isfinite(velocityChange.y))
-		{
-			return;
-		}
-		if (mOwner.GetAbilitySystemComponent().HasOwnedTag(
-			GameplayTags::State::ActionLock::ExternalMovement
-		))
-		{
-			return;
-		}
-		mExternalImpulses.push_back(ExternalImpulse{
-			velocityChange,
-			std::clamp(retentionPerSecond, 0.0001f, 0.9999f)
-		});
+		mMovementInfluences.ApplyImpulse(request);
 	}
 
-	void MovementComponent::SetForcedMovementVelocity(
-		ForcedMovementSourceId sourceId,
-		const sf::Vector2f& velocity
+	void MovementComponent::ApplyInfluenceAcceleration(
+		const sf::Vector2f& acceleration,
+		float deltaTime
 	)
 	{
-		if (sourceId == 0 || !std::isfinite(velocity.x) || !std::isfinite(velocity.y))
-		{
-			return;
-		}
-		mForcedMovementVelocities[sourceId] = velocity;
+		mOwner.SetVelocity(mOwner.GetVelocity() + acceleration * std::max(0.f, deltaTime));
 	}
 
-	void MovementComponent::RemoveForcedMovementSource(
-		ForcedMovementSourceId sourceId
+	void MovementComponent::SetInfluenceAccelerationSource(
+		const movement::AccelerationSourceRequest& request
 	)
 	{
-		mForcedMovementVelocities.erase(sourceId);
+		mMovementInfluences.SetAccelerationSource(request);
 	}
 
-	void MovementComponent::TickExternalImpulse(float deltaTime)
+	void MovementComponent::SetInfluenceForcedMovement(
+		const movement::ForcedMovementRequest& request
+	)
 	{
-		const float safeDeltaTime = std::max(0.f, deltaTime);
-		if (safeDeltaTime <= 0.f)
+		mMovementInfluences.SetForcedMovement(request);
+	}
+
+	void MovementComponent::RemoveInfluenceSource(
+		movement::MovementInfluenceSourceId sourceId
+	)
+	{
+		mMovementInfluences.RemoveSource(sourceId);
+	}
+
+	bool MovementComponent::ApplyMovementPolicy(
+		const movement::MovementPolicyRequest& request
+	)
+	{
+		return mMovementPolicies.SetPolicy(request);
+	}
+
+	bool MovementComponent::ReleaseMovementPolicy(
+		const movement::MovementPolicySourceId& sourceId,
+		movement::MovementPolicyReleaseMode releaseMode,
+		float normalizationDuration
+	)
+	{
+		return mMovementPolicies.RemovePolicy(
+			sourceId,
+			releaseMode,
+			GetVectorLength(mOwner.GetVelocity()),
+			normalizationDuration
+		);
+	}
+
+	void MovementComponent::ClearMovementPolicies()
+	{
+		mMovementPolicies.ClearPolicies();
+	}
+
+	bool MovementComponent::SupportsMovementPolicies() const
+	{
+		// LegacyVelocity replaces velocity from input before this component ticks;
+		// it cannot preserve momentum-based policies reliably.
+		return mMovementMode == ShipMovementMode::ThrustDrift;
+	}
+
+	void MovementComponent::ApplyContinuousInfluences(float deltaTime)
+	{
+		const sf::Vector2f acceleration = mMovementInfluences.ResolveAcceleration();
+		if (GetVectorLength(acceleration) > 0.001f)
 		{
-			return;
+			ApplyInfluenceAcceleration(acceleration, deltaTime);
 		}
+	}
 
-		for (auto impulse = mExternalImpulses.begin();
-			impulse != mExternalImpulses.end();)
+	void MovementComponent::TickInfluenceImpulses(float deltaTime)
+	{
+		for (const sf::Vector2f& offset : mMovementInfluences.AdvanceImpulses(deltaTime))
 		{
-			if (GetVectorLength(impulse->velocity) <= 0.001f)
-			{
-				impulse = mExternalImpulses.erase(impulse);
-				continue;
-			}
-
-			MoveOwner(impulse->velocity * safeDeltaTime);
-			impulse->velocity *= std::pow(
-				impulse->retentionPerSecond,
-				safeDeltaTime
-			);
-			++impulse;
+			MoveOwner(offset);
 		}
 	}
 
@@ -211,6 +260,52 @@ namespace ly
 			);
 	}
 
+	void MovementComponent::SetDirectionalThrustSync(
+		const std::string& sourceId,
+		bool enabled
+	)
+	{
+		if (sourceId.empty())
+		{
+			return;
+		}
+		if (enabled)
+		{
+			mDirectionalThrustSyncSources.insert(sourceId);
+		}
+		else
+		{
+			mDirectionalThrustSyncSources.erase(sourceId);
+		}
+	}
+
+	float MovementComponent::ResolveForwardThrust() const
+	{
+		return mMovementAttributes.forwardThrust.currentValue * mOwner.GetThrustMultiplier();
+	}
+
+	float MovementComponent::ResolveReverseThrust() const
+	{
+		return HasDirectionalThrustSync()
+			? ResolveForwardThrust()
+			: mMovementAttributes.reverseThrust.currentValue * mOwner.GetThrustMultiplier();
+	}
+
+	float MovementComponent::ResolveStrafeThrust() const
+	{
+		return HasDirectionalThrustSync()
+			? ResolveForwardThrust()
+			: mMovementAttributes.strafeThrust.currentValue * mOwner.GetThrustMultiplier();
+	}
+
+	float MovementComponent::ResolveCurrentSpeedCap(float speedCapMultiplier) const
+	{
+		return mMovementPolicies.ResolveSpeedCap(
+			mMovementAttributes.maxSpeed.currentValue,
+			speedCapMultiplier
+		);
+	}
+
 	sf::Vector2f MovementComponent::ResolveLegacySpeed(const sf::Vector2f& baseSpeed) const
 	{
 		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
@@ -243,9 +338,9 @@ namespace ly
 		const float strafeInput = std::clamp(localThrustInput.x, -1.f, 1.f);
 		const float forwardInput = std::clamp(localThrustInput.y, -1.f, 1.f);
 		const float forwardThrust = forwardInput >= 0.f
-			? mMovementAttributes.forwardThrust.currentValue
-			: mMovementAttributes.reverseThrust.currentValue;
-		const float strafeThrust = mMovementAttributes.strafeThrust.currentValue;
+			? ResolveForwardThrust()
+			: ResolveReverseThrust();
+		const float strafeThrust = ResolveStrafeThrust();
 
 		sf::Vector2f weightedLocalAcceleration{
 			strafeInput * strafeThrust,
@@ -270,14 +365,14 @@ namespace ly
 
 	void MovementComponent::AddWorldAcceleration(const sf::Vector2f& worldAcceleration, float deltaTime)
 	{
-		if (mIsDashing)
+		if (mIsMovementBurstActive)
 		{
 			return;
 		}
 		mOwner.SetVelocity(mOwner.GetVelocity() + worldAcceleration * deltaTime);
 	}
 
-	sf::Vector2f MovementComponent::ResolveDashDirection() const
+	sf::Vector2f MovementComponent::ResolveMovementBurstDirection() const
 	{
 		sf::Vector2f direction = mAbilityWorldMovementInput;
 		if (GetVectorLength(direction) > 0.001f)
@@ -299,7 +394,9 @@ namespace ly
 		return { 0.f, 0.f };
 	}
 
-	bool MovementComponent::StartDash(const DashRequest& request)
+	bool MovementComponent::StartMovementBurst(
+		const movement::MovementBurstRequest& request
+	)
 	{
 		if (request.baseDistance <= 0.f || request.duration <= 0.f)
 		{
@@ -316,37 +413,37 @@ namespace ly
 		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
 		const float horizontalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal);
 		const float verticalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical);
-		mResolvedDashDistance = DashMovementMath::ResolveDistance(
+		mResolvedMovementBurstDistance = movement::MovementBurstMath::ResolveDistance(
 			request.baseDistance,
 			horizontalRating,
 			verticalRating
 		);
-		if (mResolvedDashDistance <= 0.f)
+		if (mResolvedMovementBurstDistance <= 0.f)
 		{
 			return false;
 		}
 
-		mPreservedDashVelocity = mOwner.GetVelocity();
-		mDashVelocity = DashMovementMath::ResolveVelocity(
+		mPreservedMovementBurstVelocity = mOwner.GetVelocity();
+		mMovementBurstVelocity = movement::MovementBurstMath::ResolveVelocity(
 			direction,
-			mResolvedDashDistance,
+			mResolvedMovementBurstDistance,
 			request.duration,
-			mPreservedDashVelocity
+			mPreservedMovementBurstVelocity
 		);
-		mDashTimeRemaining = request.duration;
-		mIsDashing = true;
-		mOwner.SetVelocity(mDashVelocity);
+		mMovementBurstTimeRemaining = request.duration;
+		mIsMovementBurstActive = true;
+		mOwner.SetVelocity(mMovementBurstVelocity);
 		return true;
 	}
 
-	void MovementComponent::EndDash()
+	void MovementComponent::EndMovementBurst()
 	{
-		if (mIsDashing)
+		if (mIsMovementBurstActive)
 		{
-			mOwner.SetVelocity(mPreservedDashVelocity);
+			mOwner.SetVelocity(mPreservedMovementBurstVelocity);
 		}
-		mIsDashing = false;
-		mDashTimeRemaining = 0.f;
+		mIsMovementBurstActive = false;
+		mMovementBurstTimeRemaining = 0.f;
 	}
 
 	void MovementComponent::RotateTowardWorldLocation(
@@ -403,13 +500,15 @@ namespace ly
 
 	void MovementComponent::ApplyThrustDriftDamping(float deltaTime)
 	{
-		const float dampingCoefficient = std::clamp(mMovementAttributes.linearDamping.currentValue, 0.f, 1.f);
+		const float dampingCoefficient = mMovementPolicies.ResolveDampingRetention(
+			mMovementAttributes.linearDamping.currentValue
+		);
 		mOwner.SetVelocity(mOwner.GetVelocity() * std::pow(dampingCoefficient, deltaTime));
 	}
 
 	void MovementComponent::ClampThrustDriftVelocity(float speedCapMultiplier)
 	{
-		const float maxSpeed = std::max(0.f, mMovementAttributes.maxSpeed.currentValue * speedCapMultiplier);
+		const float maxSpeed = ResolveCurrentSpeedCap(speedCapMultiplier);
 		const float currentSpeed = GetVectorLength(mOwner.GetVelocity());
 		if (maxSpeed <= 0.f || currentSpeed <= maxSpeed)
 		{
@@ -419,20 +518,26 @@ namespace ly
 		mOwner.SetVelocity(mOwner.GetVelocity() * (maxSpeed / currentSpeed));
 	}
 
-	bool MovementComponent::TickDash(float deltaTime)
+	bool MovementComponent::TickMovementBurst(float deltaTime)
 	{
-		if (!mIsDashing)
+		if (!mIsMovementBurstActive)
 		{
 			return false;
 		}
 
-		const float stepDuration = std::min(std::max(0.f, deltaTime), mDashTimeRemaining);
-		mOwner.SetVelocity(mDashVelocity);
-		MoveOwner(mDashVelocity * stepDuration);
-		mDashTimeRemaining = std::max(0.f, mDashTimeRemaining - stepDuration);
-		if (mDashTimeRemaining <= 0.f)
+		const float stepDuration = std::min(
+			std::max(0.f, deltaTime),
+			mMovementBurstTimeRemaining
+		);
+		mOwner.SetVelocity(mMovementBurstVelocity);
+		MoveOwner(mMovementBurstVelocity * stepDuration);
+		mMovementBurstTimeRemaining = std::max(
+			0.f,
+			mMovementBurstTimeRemaining - stepDuration
+		);
+		if (mMovementBurstTimeRemaining <= 0.f)
 		{
-			EndDash();
+			EndMovementBurst();
 		}
 		return true;
 	}

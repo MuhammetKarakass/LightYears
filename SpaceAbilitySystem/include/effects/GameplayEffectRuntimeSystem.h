@@ -196,7 +196,7 @@ namespace sas
 				return stackingHandle;
 			}
 
-			ActiveEffect& effect = mActiveEffects.Emplace();
+			ActiveEffect& effect = mActiveEffects.Emplace(newHandle);
 			effect.spec = spec;
 			effect.Initialize(newHandle, spec.duration, spec.attributes);
 			BindSource(effect, context);
@@ -262,7 +262,45 @@ namespace sas
 
 		void Tick(float deltaTime)
 		{
-			for (const GameplayEffectHandle effectHandle : GetHandles())
+			// Effects may add or remove effects from callbacks, so ticking must use a
+			// stable handle snapshot. Reuse the normal-frame snapshot capacity instead
+			// of allocating a new vector every frame. A nested Tick can occur through a
+			// callback; it receives its own snapshot so it cannot overwrite the outer
+			// iteration buffer.
+			if (mTickInProgress)
+			{
+				const std::vector<GameplayEffectHandle> nestedHandles = GetHandles();
+				TickHandles(nestedHandles, deltaTime);
+				return;
+			}
+
+			mTickHandleScratch.clear();
+			mTickHandleScratch.reserve(mActiveEffects.GetAll().size());
+			for (const ActiveEffect& effect : mActiveEffects.GetAll())
+			{
+				mTickHandleScratch.push_back(effect.handle);
+			}
+
+			mTickInProgress = true;
+			try
+			{
+				TickHandles(mTickHandleScratch, deltaTime);
+			}
+			catch (...)
+			{
+				mTickInProgress = false;
+				throw;
+			}
+			mTickInProgress = false;
+		}
+
+	private:
+		void TickHandles(
+			const std::vector<GameplayEffectHandle>& handles,
+			float deltaTime
+		)
+		{
+			for (const GameplayEffectHandle effectHandle : handles)
 			{
 				ActiveEffect* effect = FindEffect(effectHandle);
 				if (!effect)
@@ -322,6 +360,7 @@ namespace sas
 			}
 		}
 
+	public:
 		void Clear()
 		{
 			for (const GameplayEffectHandle handle : GetHandles())
@@ -377,11 +416,7 @@ namespace sas
 			RemoveGameplayEffectTags(effect->spec.definition, mOwnedTags);
 			RemoveGameplayEffectModifiers(*effect, mAttributes);
 			NotifyRemoving(*effect);
-			const auto currentIndex = mActiveEffects.FindIndex(handle);
-			if (currentIndex)
-			{
-				mActiveEffects.EraseAt(*currentIndex);
-			}
+			mActiveEffects.Erase(handle);
 			mRemovalInProgress.pop_back();
 			NotifyRemoved(handle);
 			NotifyCollectionChanged();
@@ -619,5 +654,7 @@ namespace sas
 		Callbacks mCallbacks;
 		Collection mActiveEffects;
 		std::vector<GameplayEffectHandle> mRemovalInProgress;
+		std::vector<GameplayEffectHandle> mTickHandleScratch;
+		bool mTickInProgress = false;
 	};
 }

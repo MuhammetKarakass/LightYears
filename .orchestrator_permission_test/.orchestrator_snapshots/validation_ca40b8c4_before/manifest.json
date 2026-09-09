@@ -1,0 +1,23 @@
+{
+  "ORCHESTRATOR.md": {
+    "path": "ORCHESTRATOR.md",
+    "is_dir": false,
+    "is_binary": false,
+    "size": 7772,
+    "content_hash": "b298bbdeae9396b6c74fc011cbcbb967214fc40b84eece1be8fa7faf5c89fce2"
+  },
+  "TEST_PLAN.md": {
+    "path": "TEST_PLAN.md",
+    "is_dir": false,
+    "is_binary": false,
+    "size": 196,
+    "content_hash": "4e2770ec62b3d5e9fdb53666bea33d7a7bdf25226ff994cbebfe8c0e3509bdaf"
+  },
+  "test.txt": {
+    "path": "test.txt",
+    "is_dir": false,
+    "is_binary": false,
+    "size": 29,
+    "content_hash": "d3e74776d117dba767a6833057241bc8d8ffd81269640721b5169bca6fca5a64"
+  }
+}

@@ -22,8 +22,24 @@
 		return FindOpposingCombatants(
 			world,
 			source,
+			range,
+			true
+		);
+	}
+
+	List<shared_ptr<Actor>> FindOpposingCombatants(
+		World& world,
+		const Actor& source,
+		float range,
+		bool requireCollisionCompatibility
+	)
+	{
+		return FindOpposingCombatants(
+			world,
+			source,
 			source.GetActorLocation(),
-			range
+			range,
+			requireCollisionCompatibility
 		);
 	}
 
@@ -32,6 +48,23 @@
 		const Actor& source,
 		const sf::Vector2f& origin,
 		float range
+	)
+	{
+		return FindOpposingCombatants(
+			world,
+			source,
+			origin,
+			range,
+			true
+		);
+	}
+
+	List<shared_ptr<Actor>> FindOpposingCombatants(
+		World& world,
+		const Actor& source,
+		const sf::Vector2f& origin,
+		float range,
+		bool requireCollisionCompatibility
 	)
 	{
 		List<shared_ptr<Actor>> result;
@@ -46,7 +79,7 @@
 		query.origin = origin;
 		query.range = std::max(0.f, range);
 		query.requiredTargetLayers = opposingLayer;
-		query.requireCollisionCompatibility = true;
+		query.requireCollisionCompatibility = requireCollisionCompatibility;
 		query.filter = [](
 			const Actor*,
 			const Actor& candidate,

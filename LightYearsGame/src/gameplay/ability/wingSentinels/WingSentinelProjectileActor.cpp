@@ -99,7 +99,7 @@ namespace ly
 				mTravelDistance += distance * contact.fraction;
 				return;
 			}
-			OnActorBeginOverlap(contact.actor.get());
+			OnActorBeginOverlap(contact.actor);
 			if (GetIsPendingDestroy() || IsInPortalTransit()) return;
 		}
 		SetActorLocation(end);

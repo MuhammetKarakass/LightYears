@@ -147,6 +147,7 @@ namespace ly
 
 	void CombatRuntime::Clear()
 	{
+		mContactDamageGuardRegistry.Clear();
 		mAbilitySystemComponent.Clear();
 		mEffectPresentation.Clear();
 		mPendingEffectEvents.clear();

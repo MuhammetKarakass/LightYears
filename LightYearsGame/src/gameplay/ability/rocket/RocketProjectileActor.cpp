@@ -384,7 +384,7 @@ namespace ly
 				mTravelDistance += travelDistance * contact.fraction;
 				return;
 			}
-			OnActorBeginOverlap(contact.actor.get());
+			OnActorBeginOverlap(contact.actor);
 			if (mHasExploded || GetIsPendingDestroy() || IsInPortalTransit())
 			{
 				mTravelDistance += travelDistance * contact.fraction;

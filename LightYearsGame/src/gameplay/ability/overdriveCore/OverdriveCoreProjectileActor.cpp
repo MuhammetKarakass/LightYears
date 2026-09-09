@@ -392,7 +392,7 @@ namespace ly
 			SetActorLocation(
 				startLocation + (endLocation - startLocation) * contact.fraction
 			);
-			OnActorBeginOverlap(contact.actor.get());
+			OnActorBeginOverlap(contact.actor);
 			if (mHasExploded || GetIsPendingDestroy() || IsInPortalTransit())
 			{
 				mTravelDistance += travelDistance * contact.fraction;

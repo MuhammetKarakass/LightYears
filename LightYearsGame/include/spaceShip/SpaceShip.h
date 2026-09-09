@@ -11,6 +11,8 @@
 #include "gameplay/ship/ShipRuntime.h"
 #include "gameplay/MovementComponent.h"
 #include "gameplay/ship/ShipRuntimeModifiers.h"
+#include "gameplay/temporal/TemporalStateHistory.h"
+#include "gameplay/temporal/TemporalRateModifierLedger.h"
 #include "gameplay/ability/dash/DashMovementController.h"
 #include "gameplay/portal/PortalTransferParticipant.h"
 #include "gameConfigs/ship/ShipStructs.h"
@@ -49,6 +51,10 @@ namespace ly
 		ShipRuntimeModifiers& GetRuntimeModifiers() { return mRuntimeModifiers; }
 		const ShipRuntimeModifiers& GetRuntimeModifiers() const { return mRuntimeModifiers; }
 		float GetMovementSpeedMultiplier() const { return mRuntimeModifiers.GetMovementSpeedMultiplier(); }
+		float GetThrustMultiplier() const
+		{
+			return std::max(0.f, 1.f + mRuntimeModifiers.GetThrustBonus());
+		}
 		float GetConditionalMovementSpeedMultiplier(
 			const sf::Vector2f& movementDirection
 		) const
@@ -75,6 +81,25 @@ namespace ly
 
 		const ShipMovementAttributes& GetMovementAttributes() const { return mMovementComponent.GetAttributes(); }
 		ShipMovementAttributes& GetMovementAttributes() { return mMovementComponent.GetAttributes(); }
+		TemporalStateHistory& GetTemporalStateHistory() { return mTemporalStateHistory; }
+		const TemporalStateHistory& GetTemporalStateHistory() const { return mTemporalStateHistory; }
+		void SetPrimaryWeaponFireRateModifier(
+			temporal::RateModifierSourceId sourceId,
+			float multiplier
+		)
+		{
+			mPrimaryWeaponFireRateModifiers.SetModifier(sourceId, multiplier);
+		}
+		void RemovePrimaryWeaponFireRateModifier(
+			temporal::RateModifierSourceId sourceId
+		)
+		{
+			mPrimaryWeaponFireRateModifiers.RemoveModifier(sourceId);
+		}
+		float GetPrimaryWeaponFireRateMultiplier() const
+		{
+			return mPrimaryWeaponFireRateModifiers.ResolveMultiplier();
+		}
 
 		void AddShipRelativeThrust(const sf::Vector2f& localThrustInput, float deltaTime);
 		void RotateTowardWorldLocation(const sf::Vector2f& worldLocation, float deltaTime);
@@ -119,6 +144,8 @@ namespace ly
 		ShipRuntime mShipRuntime;
 		ShipRuntimeModifiers mRuntimeModifiers;
 		MovementComponent mMovementComponent;
+		TemporalStateHistory mTemporalStateHistory;
+		temporal::TemporalRateModifierLedger mPrimaryWeaponFireRateModifiers;
 		ControlTargetClass mControlTargetClass = ControlTargetClass::Normal;
 
 		sf::Color mBlinkColor;

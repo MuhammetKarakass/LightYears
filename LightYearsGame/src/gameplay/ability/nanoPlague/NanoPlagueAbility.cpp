@@ -63,7 +63,7 @@ namespace ly
 			definition.behaviorType == AbilityBehaviorType::NanoPlague &&
 			HasExactAbilityTags(definition) &&
 			definition.damageTags.size() == 1 &&
-			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Energy);
+			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Electric);
 		const bool validLifecycle =
 			sas::IsLoadoutAbilitySlot(definition.slot) &&
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
@@ -91,7 +91,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Nano Plague requires an instant energy infection with eight runtime attributes and fourteen progression steps.";
+					"Nano Plague requires an instant electric infection with eight runtime attributes and fourteen progression steps.";
 			}
 			return false;
 		}

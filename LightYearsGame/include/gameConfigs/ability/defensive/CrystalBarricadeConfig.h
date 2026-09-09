@@ -37,7 +37,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Crystal Barricade";
 	definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png";
 		definition.accentColor = sf::Color{ 110, 225, 255, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 		definition.behaviorType = ly::AbilityBehaviorType::CrystalBarricade;
 		return definition;
 	}();

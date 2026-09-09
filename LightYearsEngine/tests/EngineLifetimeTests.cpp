@@ -1,6 +1,9 @@
 #include "framework/Delegate.h"
+#include "framework/Actor.h"
 #include "framework/Object.h"
+#include "framework/PhysicsSystem.h"
 #include "framework/TimerManager.h"
+#include "framework/World.h"
 #include "framework/debug/Assert.h"
 #include "framework/debug/Log.h"
 #include "framework/debug/Profiler.h"
@@ -114,6 +117,31 @@ namespace
 		int clearCallbackCount{ 0 };
 		int replacementCallbackCount{ 0 };
 	};
+
+	class PhysicsProbeActor final : public ly::Actor
+	{
+	public:
+		explicit PhysicsProbeActor(ly::World* world)
+			: Actor(world)
+		{
+		}
+
+		float GetPhysicsCollisionRadius() const override
+		{
+			return 1.f;
+		}
+
+		void OnActorBeginOverlap(ly::Actor* otherActor) override
+		{
+			Actor::OnActorBeginOverlap(otherActor);
+			if (CanCollideWith(otherActor) && otherActor->CanCollideWith(this))
+			{
+				++overlapCount;
+			}
+		}
+
+		int overlapCount{ 0 };
+	};
 }
 
 int main()
@@ -185,6 +213,49 @@ int main()
 	{
 		return Fail("Release build recorded a compile-disabled profile scope");
 	}
+
+	ly::PhysicsSystem& physicsSystem = ly::PhysicsSystem::Get();
+	physicsSystem.InitializeWorld();
+	{
+		ly::World physicsWorld{ nullptr };
+		PhysicsProbeActor probe{ &physicsWorld };
+		PhysicsProbeActor otherProbe{ &physicsWorld };
+		probe.SetCollisionLayer(CollisionLayer::Player);
+		probe.SetCollisionMask(CollisionLayer::Enemy);
+		otherProbe.SetCollisionLayer(CollisionLayer::PlayerBullet);
+		otherProbe.SetCollisionMask(CollisionLayer::Enemy);
+		probe.SetEnablePhysics(true);
+		otherProbe.SetEnablePhysics(true);
+		if (!probe.HasPhysicsBody())
+		{
+			return Fail("Physics probe did not create its explicit-radius body");
+		}
+		bool probeFoundBySpatialQuery = false;
+		for (ly::Actor* actor : physicsSystem.QueryActorsInBounds(
+			{ { -2.f, -2.f }, { 4.f, 4.f } }
+		))
+		{
+			probeFoundBySpatialQuery = probeFoundBySpatialQuery || actor == &probe;
+		}
+		if (!probeFoundBySpatialQuery)
+		{
+			return Fail("Spatial query incorrectly applied an actor collision mask");
+		}
+		physicsSystem.Step(1.f / 60.f);
+		if (probe.overlapCount != 0 || otherProbe.overlapCount != 0)
+		{
+			return Fail("Physics emitted an overlap outside the gameplay collision masks");
+		}
+
+		otherProbe.SetCollisionLayer(CollisionLayer::Enemy);
+		otherProbe.SetCollisionMask(CollisionLayer::Player);
+		physicsSystem.Step(1.f / 60.f);
+		if (probe.overlapCount != 1 || otherProbe.overlapCount != 1)
+		{
+			return Fail("Runtime collision filter update did not create the expected overlap");
+		}
+	}
+	physicsSystem.Cleanup();
 
 	ly::Delegate<int> weakDelegate;
 	std::shared_ptr<WeakListener> weakListener = std::make_shared<WeakListener>();

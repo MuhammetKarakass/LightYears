@@ -10,7 +10,10 @@ namespace ly::projectile
 {
 	struct SweptContact
 	{
-		shared_ptr<Actor> actor;
+		// Contacts are consumed in the current actor tick, before World can
+		// reclaim pending actors. A raw pointer avoids shared-pointer churn for
+		// every broadphase candidate in projectile-heavy frames.
+		Actor* actor = nullptr;
 		float fraction = 0.f;
 		sf::Vector2f impactLocation{};
 		sf::Vector2f surfaceNormal{};
@@ -32,37 +35,35 @@ namespace ly::projectile
 		}
 
 		const float safeRadius = std::max(0.f, collisionRadius);
-		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
+		world->ForEachActorInBounds(
 			targeting::swept::SegmentBounds(
 				startLocation,
 				endLocation,
 				safeRadius
-			)
-		))
+			),
+			[&](Actor& candidate)
 		{
-			const shared_ptr<Actor> candidate = actorWeak.lock();
-			if (!candidate || candidate.get() == &projectileActor ||
-				candidate->GetIsPendingDestroy() ||
-				!projectileActor.CanCollideWith(candidate.get()) ||
-				!candidate->CanCollideWith(&projectileActor))
+			if (&candidate == &projectileActor || candidate.GetIsPendingDestroy() ||
+				!projectileActor.CanCollideWith(&candidate) ||
+				!candidate.CanCollideWith(&projectileActor))
 			{
-				continue;
+				return;
 			}
 
 			float fraction = 0.f;
 			sf::Vector2f surfaceNormal{};
 			bool hasSurfaceNormal = false;
 			const sf::Vector2f boxHalfExtents =
-				candidate->GetPhysicsCollisionBoxHalfExtents();
+				candidate.GetPhysicsCollisionBoxHalfExtents();
 			const bool hasExplicitBox = boxHalfExtents.x > 0.f &&
 				boxHalfExtents.y > 0.f;
 			const bool intersects = hasExplicitBox
 				? targeting::swept::SegmentIntersectsExpandedOrientedBox(
 					startLocation,
 					endLocation,
-					candidate->GetActorLocation(),
+					candidate.GetActorLocation(),
 					boxHalfExtents,
-					candidate->GetActorRotation() * 0.01745329251994329577f,
+					candidate.GetActorRotation() * 0.01745329251994329577f,
 					safeRadius,
 					fraction,
 					surfaceNormal
@@ -70,29 +71,32 @@ namespace ly::projectile
 				: targeting::swept::SegmentIntersectsExpandedBounds(
 					startLocation,
 					endLocation,
-					candidate->GetActorGlobalBounds(),
+					candidate.GetActorGlobalBounds(),
 					safeRadius
 				);
 			if (!intersects)
 			{
-				continue;
+				return;
 			}
 			if (!hasExplicitBox)
 			{
 				fraction = targeting::swept::SegmentProjectionFraction(
-					candidate->GetActorLocation(), startLocation, endLocation
+					candidate.GetActorLocation(), startLocation, endLocation
 				);
 			}
 			hasSurfaceNormal = hasExplicitBox;
 			contacts.push_back(SweptContact{
-				candidate,
+				&candidate,
 				fraction,
 				startLocation + (endLocation - startLocation) * fraction,
 				surfaceNormal,
 				hasSurfaceNormal
 			});
-		}
-		std::stable_sort(
+			}
+		);
+		// std::sort is in-place; stable_sort may allocate an auxiliary buffer for
+		// a multi-hit projectile every frame.
+		std::sort(
 			contacts.begin(),
 			contacts.end(),
 			[](const SweptContact& left, const SweptContact& right)

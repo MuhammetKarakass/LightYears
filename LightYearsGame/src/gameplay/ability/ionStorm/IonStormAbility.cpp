@@ -26,6 +26,7 @@ namespace ly
 		constexpr float BaseOuterMaxRadius = 335.f;
 		constexpr float BaseBoundaryPointCount = 20.f;
 		constexpr float AttackPowerScale = 0.12f;
+		constexpr float EnergyMaxDamageScale = 0.05f;
 		constexpr float DamagePerLevel = 1.f;
 		constexpr float CooldownPerLevel = -0.20f;
 		constexpr float Epsilon = 0.0001f;
@@ -96,16 +97,28 @@ namespace ly
 
 		bool HasExpectedScaling(const GameAbilityDefinition& definition)
 		{
-			if (definition.scalingRules.size() != 1)
+			if (definition.scalingRules.size() != 2)
 			{
 				return false;
 			}
 
-			const sas::AttributeScalingRule& rule = definition.scalingRules.front();
-			return rule.targetAttributeId == CommonAttributeIds::Damage &&
-				rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
-				rule.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(rule.coefficient, AttackPowerScale);
+			bool hasAttackPower = false;
+			bool hasEnergyMax = false;
+			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
+			{
+				if (rule.targetAttributeId != CommonAttributeIds::Damage ||
+					rule.operation != sas::AttributeModifierOperation::Add)
+				{
+					continue;
+				}
+				hasAttackPower = hasAttackPower ||
+					(rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
+						NearlyEqual(rule.coefficient, AttackPowerScale));
+				hasEnergyMax = hasEnergyMax ||
+					(rule.sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+						NearlyEqual(rule.coefficient, EnergyMaxDamageScale));
+			}
+			return hasAttackPower && hasEnergyMax;
 		}
 
 		bool HasExpectedModifier(

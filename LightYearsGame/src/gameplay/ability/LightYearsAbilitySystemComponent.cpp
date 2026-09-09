@@ -262,6 +262,35 @@ namespace ly
 		mAbilityUseHistory.Clear();
 		mLifecycleDispatcher.Clear();
 		sas::AbilitySystemComponent::Clear();
+		mPrimaryWeaponOverrides.Clear();
+	}
+
+	PrimaryWeaponOverrideHandle LightYearsAbilitySystemComponent::PushPrimaryWeaponOverride(
+		const sas::ContentId& sourceId,
+		const PrimaryWeaponDefinition& weaponDefinition,
+		int priority
+	)
+	{
+		return mPrimaryWeaponOverrides.Push(sourceId, weaponDefinition, priority);
+	}
+
+	bool LightYearsAbilitySystemComponent::RemovePrimaryWeaponOverride(
+		PrimaryWeaponOverrideHandle handle
+	)
+	{
+		return mPrimaryWeaponOverrides.Remove(handle);
+	}
+
+	PrimaryWeaponOverrideState::ActiveOverride*
+	LightYearsAbilitySystemComponent::GetActivePrimaryWeaponOverride()
+	{
+		return mPrimaryWeaponOverrides.GetActive();
+	}
+
+	const PrimaryWeaponOverrideState::ActiveOverride*
+	LightYearsAbilitySystemComponent::GetActivePrimaryWeaponOverride() const
+	{
+		return mPrimaryWeaponOverrides.GetActive();
 	}
 
 	bool LightYearsAbilitySystemComponent::InvokeRecordedAbility(

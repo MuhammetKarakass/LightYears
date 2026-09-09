@@ -16,6 +16,7 @@ namespace sas
 		AbilitySlot slot = AbilitySlot::Ability1;
 		AbilityActivationPolicy activationPolicy = AbilityActivationPolicy::OnPressed;
 		AbilityLifetimePolicy lifetimePolicy = AbilityLifetimePolicy::Instant;
+		AbilityCooldownStartPolicy cooldownStartPolicy = AbilityCooldownStartPolicy::OnAbilityEnd;
 		float cooldown = 0.f;
 		float duration = 0.f;
 		int maxCharges = 1;

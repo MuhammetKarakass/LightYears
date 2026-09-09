@@ -2,7 +2,11 @@
 
 ## 1. Purpose
 
-Light Years is currently a vertical space shooter built on a custom C++17/SFML engine. The goal is to evolve it into a roguelite space action game with chapter-based node progression, biome-themed encounters, ship building, persistent meta progression, and eventually open arena/twin-stick combat.
+Light Years is a custom C++17/SFML space action game with legacy vertical-shmup
+content and an active ArenaTestLevel open-arena path. The goal is to evolve it
+into a roguelite space action game with chapter-based node progression,
+biome-themed encounters, ship building, persistent meta progression, and a
+complete open arena/twin-stick run loop.
 
 This document defines the current design direction before implementation. It is intentionally written as a living design/technical document: specific numbers can change during prototyping, but the hierarchy and system ownership should remain stable unless we deliberately revise them.
 
@@ -30,13 +34,26 @@ Weak points:
 
 - `LevelOne` and several enemy behaviors still carry vertical-shmup assumptions. The current bootstrap world is `ArenaTestLevel`, where camera follow, world/screen-space separation, thrust/drift movement, and arena-boundary feedback are already present.
 - `LevelOne` is a hardcoded linear sequence, not a flexible run progression system.
-- There is no persistent profile, run-state, chapter-state, node graph state, biome definition system, or currency model.
+- There is no persistent profile or disk save, chapter-state/node-graph state,
+  or complete run currency model. Player run/progression and Scrap state exist
+  in memory, but they are not a persistent profile or a validated economy loop.
 - Visual rendering works but lacks a centralized render pipeline. Shader logic is split between `AssetManager`, `ShaderManager`, and actor-level light rendering.
 - Content definitions are partly data-driven, but many encounter and spawn behaviors are hardcoded in stage classes.
 
 Design conclusion:
 
 The existing engine should be evolved, not replaced. The roguelite layer should be modeled above combat worlds as run/chapter/node state, while combat entities remain actors.
+
+### 2.1 Current implementation checkpoint — 7 September 2026
+
+The arena foundation is now partially present in the working tree: the
+camera/world HUD split, ThrustDrift movement, arena bounds warning, velocity
+look-ahead and Dash camera follow/zoom behavior are implemented runtime paths.
+The active ability runtime and typed presentation contract are also implemented
+as infrastructure. The current gaps are arena restart/run lifecycle, HUD
+consistency across level tick paths, economy and purchase/restore correctness,
+and content acquisition/evolve selection. The JSON registration counts are an
+inventory only; they do not prove every ability is playable end to end.
 
 ## 3. Target Game Summary
 
@@ -895,7 +912,7 @@ Mitigation:
 
 ## 20. Recommended Implementation Order
 
-### Milestone 1: Arena Foundation
+### Milestone 1: Arena Foundation — implementation checkpoint
 
 Goal:
 
@@ -910,14 +927,16 @@ Work:
 - Add free movement with acceleration/damping.
 - Add Unauthorized Region warning and 5-second death rule.
 
-Success criteria:
+Current status and remaining verification:
 
-- Player can move inside a 3000x2000 style area.
-- Camera follows smoothly.
-- HUD stays fixed.
-- Leaving bounds shows warning and kills after grace period.
+- ✅ Player can move inside a large arena with ThrustDrift.
+- ✅ Camera follows smoothly with cursor/velocity look-ahead and Dash
+  compensation.
+- ✅ HUD uses a screen-space path and arena bounds warning is present.
+- 🧪 Recheck restart, death/respawn/game-over lifecycle and HUD parity in both
+  ArenaTestLevel and LevelOne before calling the milestone complete.
 
-### Milestone 2: Arena Encounter Prototype
+### Milestone 2: Arena Encounter Prototype — current next milestone
 
 Goal:
 
@@ -935,6 +954,10 @@ Success criteria:
 - Enemies can spawn from multiple directions.
 - Combat is playable in a large area.
 - Existing rewards and explosions still work.
+
+Before expanding encounter content, verify arena restart/lifecycle, HUD
+controller updates and scrap/ability purchase economy. These are the current
+integration gates for the arena loop.
 
 ### Milestone 3: Chapter Graph Prototype
 
@@ -1025,9 +1048,11 @@ Confirmed decisions:
 - Gold is for run shops/items/upgrades.
 - Scrap is for weapon-linked skill modifier improvement.
 - First skill system is weapon modifier based.
-- Separate active skill system is postponed.
+- Active ability runtime exists. Separate active skill selection/evolve UI and
+  acquisition flow remain postponed until the run economy is connected.
 - Ships start with stat differences, one passive, and one unique weapon.
-- Ship active abilities are postponed.
+- Ship-specific active loadout/evolve selection is postponed; the generic
+  active ability runtime is already part of the implementation checkpoint.
 - Biome boundaries are clear by node cluster.
 - No gradual biome transition in the first version.
 - Long-term combat format is open arena/twin-stick, not vertical shmup.
@@ -1120,3 +1145,7 @@ Confirmed decisions:
   copies were deleted after zero-reference and Debug/Release verification.
 - The completed Debug build links the SAS library, game and test executable;
   CTest passes `LightYearsGasLiteCore` and `LightYearsEngineLifetime` (2/2).
+- **20 Ağustos 2026 kapsam kararı:** Boss ve düşman sistemi ürün önceliği
+  değildir. `LevelOne` stage zinciri ve bazı C++ düşman davranışları mevcut olsa
+  da tüm düşmanların ateşlediği veya boss loadout'unun grant edildiği
+  doğrulanmış sayılmaz; bu konu kullanıcı yeniden istediğinde açılır.

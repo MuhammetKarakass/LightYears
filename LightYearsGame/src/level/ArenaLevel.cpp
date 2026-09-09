@@ -148,7 +148,7 @@ namespace ly
              return;
          }
 
-		const bool isDashing = ship->GetMovementComponent().IsDashing();
+		const bool isDashing = ship->GetMovementComponent().IsMovementBurstActive();
 		SetCameraPreserveFollowTargetOffset(isDashing || mWasCameraFollowShipDashing);
 
 		// Dash velocity is a short displacement impulse, not sustained travel speed.

@@ -43,7 +43,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Relay Prism";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 220, 100, 255, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Projectile,
 			ly::AttachmentSchema::Capability::Damage

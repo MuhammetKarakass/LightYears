@@ -19,6 +19,8 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/World.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/World.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SimulationTime.h
+
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/camera/CameraManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/camera/CameraManager.cpp
 

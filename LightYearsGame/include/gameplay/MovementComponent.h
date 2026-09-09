@@ -2,14 +2,21 @@
 
 #include <framework/Core.h>
 #include "gameConfigs/ship/ShipStructs.h"
-#include "gameplay/ability/dash/DashMovementController.h"
-#include "gameplay/movement/ForcedMovementRequest.h"
+#include "gameplay/movement/MovementInfluenceController.h"
+#include "gameplay/movement/MovementBurstTypes.h"
+#include "gameplay/movement/MovementPolicyController.h"
 
-#include <unordered_map>
+#include <string>
+#include <unordered_set>
 
 namespace ly
 {
 	class SpaceShip;
+		namespace movement
+		{
+			class MovementInfluenceService;
+			class MovementPolicyService;
+		}
 
 	enum class ShipMovementMode
 	{
@@ -32,6 +39,17 @@ namespace ly
 		const ShipMovementAttributes& GetAttributes() const { return mMovementAttributes; }
 		ShipMovementAttributes& GetAttributes() { return mMovementAttributes; }
 
+		// Multiple independent sources may request this movement rule. The input
+		// resolver treats it as active until the final source releases it.
+		void SetDirectionalThrustSync(const std::string& sourceId, bool enabled);
+		bool HasDirectionalThrustSync() const { return !mDirectionalThrustSyncSources.empty(); }
+		float ResolveForwardThrust() const;
+		float ResolveReverseThrust() const;
+		float ResolveStrafeThrust() const;
+		// Returns the current policy-resolved speed cap so movement abilities can
+		// enter a constant-speed state without duplicating policy arithmetic.
+		float ResolveCurrentSpeedCap(float speedCapMultiplier = 1.f) const;
+
 		void SetLegacySpeed(const sf::Vector2f& speed) { mBaseLegacySpeed = speed; }
 		const sf::Vector2f& GetLegacySpeed() const { return mBaseLegacySpeed; }
 		sf::Vector2f ResolveLegacySpeed() const { return ResolveLegacySpeed(mBaseLegacySpeed); }
@@ -39,27 +57,12 @@ namespace ly
 
 		void AddShipRelativeThrust(const sf::Vector2f& localThrustInput, float deltaTime);
 		void AddWorldAcceleration(const sf::Vector2f& worldAcceleration, float deltaTime);
-		// External forces (explosions, pulls, future knockbacks) are velocity
-		// impulses, not position teleports. They remain active while control
-		// effects block player input, then decay naturally.
-		inline static constexpr float ExternalImpulseRetentionPerSecond = 0.01f;
-		void ApplyExternalImpulse(
-			const sf::Vector2f& velocityChange,
-			float retentionPerSecond = ExternalImpulseRetentionPerSecond
-		);
-		// Forced movement is resolved by the movement component so player input,
-		// drift and control abilities share one integration path.
-		void SetForcedMovementVelocity(
-			ForcedMovementSourceId sourceId,
-			const sf::Vector2f& velocity
-		);
-		void RemoveForcedMovementSource(ForcedMovementSourceId sourceId);
 		void SetAbilityWorldMovementInput(const sf::Vector2f& input) { mAbilityWorldMovementInput = input; }
-		sf::Vector2f ResolveDashDirection() const;
-		bool StartDash(const DashRequest& request);
-		void EndDash();
-		bool IsDashing() const { return mIsDashing; }
-		float GetResolvedDashDistance() const { return mResolvedDashDistance; }
+		sf::Vector2f ResolveMovementBurstDirection() const;
+		bool StartMovementBurst(const movement::MovementBurstRequest& request);
+		void EndMovementBurst();
+		bool IsMovementBurstActive() const { return mIsMovementBurstActive; }
+		float GetResolvedMovementBurstDistance() const { return mResolvedMovementBurstDistance; }
 		void RotateTowardWorldLocation(
 			const sf::Vector2f& worldLocation,
 			float deltaTime,
@@ -67,18 +70,41 @@ namespace ly
 		);
 
 	private:
+		friend class movement::MovementInfluenceService;
+		friend class movement::MovementPolicyService;
+
+		// Gameplay code reaches these through MovementInfluenceService. Keeping
+		// them private prevents individual abilities from inventing their own
+		// movement integration path.
+		void ApplyInfluenceImpulse(const movement::ImpulseRequest& request);
+		void ApplyInfluenceAcceleration(
+			const sf::Vector2f& acceleration,
+			float deltaTime
+		);
+		void SetInfluenceAccelerationSource(
+			const movement::AccelerationSourceRequest& request
+		);
+		void SetInfluenceForcedMovement(
+			const movement::ForcedMovementRequest& request
+		);
+		void RemoveInfluenceSource(movement::MovementInfluenceSourceId sourceId);
+
+		bool ApplyMovementPolicy(const movement::MovementPolicyRequest& request);
+		bool ReleaseMovementPolicy(
+			const movement::MovementPolicySourceId& sourceId,
+			movement::MovementPolicyReleaseMode releaseMode,
+			float normalizationDuration
+		);
+		void ClearMovementPolicies();
+		bool SupportsMovementPolicies() const;
+
 		void ApplyThrustDriftDamping(float deltaTime);
 		void MoveOwner(const sf::Vector2f& requestedOffset);
-		void TickExternalImpulse(float deltaTime);
+		void ApplyContinuousInfluences(float deltaTime);
+		void TickInfluenceImpulses(float deltaTime);
 		void ClampThrustDriftVelocity(float speedCapMultiplier);
-		bool TickDash(float deltaTime);
+		bool TickMovementBurst(float deltaTime);
 		float GetShortestAngleDelta(float targetAngle, float currentAngle) const;
-
-		struct ExternalImpulse
-		{
-			sf::Vector2f velocity{ 0.f, 0.f };
-			float retentionPerSecond = ExternalImpulseRetentionPerSecond;
-		};
 
 		SpaceShip& mOwner;
 		ShipMovementMode mMovementMode;
@@ -87,14 +113,13 @@ namespace ly
 		ShipMovementAttributes mMovementAttributes;
 		float mAngularVelocity;
 		sf::Vector2f mAbilityWorldMovementInput{ 0.f, 0.f };
-		// Each source decays independently. This prevents a soft ability-driven
-		// drift from changing the short, sharp knockback of an explosion.
-		List<ExternalImpulse> mExternalImpulses;
-		std::unordered_map<ForcedMovementSourceId, sf::Vector2f> mForcedMovementVelocities;
-		sf::Vector2f mDashVelocity{ 0.f, 0.f };
-		sf::Vector2f mPreservedDashVelocity{ 0.f, 0.f };
-		float mDashTimeRemaining = 0.f;
-		float mResolvedDashDistance = 0.f;
-		bool mIsDashing = false;
+		movement::MovementInfluenceController mMovementInfluences;
+		movement::MovementPolicyController mMovementPolicies;
+		sf::Vector2f mMovementBurstVelocity{ 0.f, 0.f };
+		sf::Vector2f mPreservedMovementBurstVelocity{ 0.f, 0.f };
+		float mMovementBurstTimeRemaining = 0.f;
+		float mResolvedMovementBurstDistance = 0.f;
+		bool mIsMovementBurstActive = false;
+		std::unordered_set<std::string> mDirectionalThrustSyncSources;
 	};
 }

@@ -3,6 +3,8 @@
 #include "gameplay/ability/content/NumericSettingContractRegistry.h"
 #include "gameplay/ability/dash/DashContracts.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayContracts.h"
+#include "gameplay/ability/arcScythes/ArcScythesContracts.h"
+#include "gameplay/ability/closedCircuit/ClosedCircuitContracts.h"
 
 namespace ly::content
 {
@@ -15,6 +17,14 @@ namespace ly::content
 		) && NumericSettingContractRegistry::Register(
 			AbilityBehaviorType::InfernoSpray,
 			AbilityData::InfernoSpray::Setting::Contract,
+			failureReason
+		) && NumericSettingContractRegistry::Register(
+			AbilityBehaviorType::ArcScythes,
+			AbilityData::ArcScythes::Setting::Contract,
+			failureReason
+		) && NumericSettingContractRegistry::Register(
+			AbilityBehaviorType::ClosedCircuit,
+			AbilityData::ClosedCircuit::Setting::Contract,
 			failureReason
 		);
 	}

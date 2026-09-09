@@ -24,4 +24,7 @@ namespace ly::EffectBehaviorKeys
 	inline const sas::GameplayEffectBehaviorKey CryostasisIceShell{
 		"EffectBehavior.CryostasisIceShell"
 	};
+	inline const sas::GameplayEffectBehaviorKey DamageReduction{
+		"EffectBehavior.Defense.DamageReduction"
+	};
 }

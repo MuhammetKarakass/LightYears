@@ -43,7 +43,28 @@ namespace ly
 		WingSentinels = 31,
 		NanoPlague = 32,
 		ReturnProtocol = 33,
-		CrystalBarricade = 34
+		CrystalBarricade = 34,
+		SolarBombardment = 35,
+		StrikeRun = 36,
+		Blastback = 37,
+		SeismicCharge = 38,
+		ArcScythes = 39,
+		IroncladProtocol = 40,
+		VectorSync = 41,
+		TemporalConvergence = 42,
+		ClosedCircuit = 43,
+		TemporalRecall = 44,
+		FoldspaceArena = 45,
+		TimeSlip = 46,
+		ZeroDrag = 47,
+		AegisReaver = 48,
+		CryoBola = 49,
+		InertialWake = 50,
+		StormMark = 51,
+		ShieldGraft = 52,
+		EmberSwarm = 53,
+		LanceDrive = 54,
+		ReclaimerProtocol = 55
 	};
 
 	inline const char* ToString(AbilityBehaviorType type)
@@ -85,6 +106,27 @@ namespace ly
 		case AbilityBehaviorType::NanoPlague: return "NanoPlague";
 		case AbilityBehaviorType::ReturnProtocol: return "ReturnProtocol";
 		case AbilityBehaviorType::CrystalBarricade: return "CrystalBarricade";
+		case AbilityBehaviorType::SolarBombardment: return "SolarBombardment";
+		case AbilityBehaviorType::StrikeRun: return "StrikeRun";
+		case AbilityBehaviorType::Blastback: return "Blastback";
+		case AbilityBehaviorType::SeismicCharge: return "SeismicCharge";
+		case AbilityBehaviorType::ArcScythes: return "ArcScythes";
+		case AbilityBehaviorType::IroncladProtocol: return "IroncladProtocol";
+		case AbilityBehaviorType::VectorSync: return "VectorSync";
+		case AbilityBehaviorType::TemporalConvergence: return "TemporalConvergence";
+		case AbilityBehaviorType::ClosedCircuit: return "ClosedCircuit";
+		case AbilityBehaviorType::TemporalRecall: return "TemporalRecall";
+		case AbilityBehaviorType::FoldspaceArena: return "FoldspaceArena";
+		case AbilityBehaviorType::TimeSlip: return "TimeSlip";
+		case AbilityBehaviorType::ZeroDrag: return "ZeroDrag";
+		case AbilityBehaviorType::AegisReaver: return "AegisReaver";
+		case AbilityBehaviorType::CryoBola: return "CryoBola";
+		case AbilityBehaviorType::InertialWake: return "InertialWake";
+		case AbilityBehaviorType::StormMark: return "StormMark";
+		case AbilityBehaviorType::ShieldGraft: return "ShieldGraft";
+		case AbilityBehaviorType::EmberSwarm: return "EmberSwarm";
+		case AbilityBehaviorType::LanceDrive: return "LanceDrive";
+		case AbilityBehaviorType::ReclaimerProtocol: return "ReclaimerProtocol";
 		}
 		return "Unknown";
 	}

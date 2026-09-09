@@ -5,6 +5,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 
+#include <algorithm>
 #include <cmath>
 #include <optional>
 #include <variant>
@@ -131,18 +132,31 @@ namespace ly
 			return false;
 		}
 
+		const auto hasDamageScaling = [&](const sas::AttributeId& sourceAttributeId,
+			float coefficient)
+		{
+			return std::any_of(
+				definition.scalingRules.begin(),
+				definition.scalingRules.end(),
+				[&](const sas::AttributeScalingRule& rule)
+				{
+					return rule.targetAttributeId == CommonAttributeIds::Damage &&
+						rule.sourceAttributeId == sourceAttributeId &&
+						rule.operation == sas::AttributeModifierOperation::Add &&
+						std::abs(rule.coefficient - coefficient) <= 0.0001f;
+				}
+			);
+		};
 		if (definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Energy ||
-			definition.scalingRules.size() != 1 ||
-			definition.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
-			definition.scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
-			definition.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
-			std::abs(definition.scalingRules.front().coefficient - 1.50f) > 0.0001f)
+			definition.scalingRules.size() != 2 ||
+			!hasDamageScaling(OwnerAttributeIds::AttackPower, 1.50f) ||
+			!hasDamageScaling(OwnerAttributeIds::EnergyMax, 0.20f))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Rail Burst requires Energy damage and additive AttackPower x1.50 scaling.";
+					"Rail Burst requires Energy damage plus additive AttackPower and EnergyMax scaling.";
 			}
 			return false;
 		}

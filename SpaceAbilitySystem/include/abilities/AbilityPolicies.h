@@ -45,6 +45,16 @@ namespace sas
 		UntilCancelled
 	};
 
+	// Most duration abilities begin recovery when they end. A few deliberate
+	// non-channel mechanics (for example a drawing window) must begin recovery
+	// on input while remaining active; keeping that distinction in the shared
+	// policy layer avoids family-specific cooldown workarounds.
+	enum class AbilityCooldownStartPolicy
+	{
+		OnAbilityEnd,
+		OnActivation
+	};
+
 	// Lifecycle consumers use this origin to distinguish a normal player cast
 	// from a system-generated invocation. Keeping the origin in the shared
 	// policy layer prevents history, checkpoint and analytics systems from

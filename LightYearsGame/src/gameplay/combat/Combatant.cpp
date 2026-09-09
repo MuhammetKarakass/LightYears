@@ -2,7 +2,6 @@
 #include "gameplay/combat/CombatRuntime.h"
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
-#include "gameplay/tags/GameplayTags.h"
 
 #include <algorithm>
 
@@ -21,15 +20,14 @@ namespace ly
 
 	bool CanApplyContactDamage(const Actor& source, const Actor& target)
 	{
-		const auto blocksContactDamage = [](const Actor& actor)
+		const auto allowsContactDamage = [&](const Actor& actor)
 		{
-			const auto* combatant = dynamic_cast<const Combatant*>(&actor);
-			return combatant && combatant->GetAbilitySystemComponent().HasOwnedTag(
-				GameplayTags::State::Ability::EnergySpear::Traversing
-			);
+			const Combatant* combatant = dynamic_cast<const Combatant*>(&actor);
+			return !combatant || combatant->GetCombatRuntime()
+				.GetContactDamageGuardRegistry().Allows(source, target);
 		};
 
-		return !blocksContactDamage(source) && !blocksContactDamage(target);
+		return allowsContactDamage(source) && allowsContactDamage(target);
 	}
 
 	void ApplyCombatDamage(Actor& target, float damage, Actor* source, const List<GameplayTag>& damageTags)
@@ -73,15 +71,14 @@ namespace ly
 			return;
 		}
 
-		// Temporary protection is owned by the ability that registered it.
-		// Keeping the gate at the shared damage entry point covers collision,
-		// projectile, ability, and effect damage without coupling producers to
-		// a concrete ability family.
+		// Temporary damage-suppression is owned by the ability that registered it.
+		// Control effects, including Stun, deliberately do not belong here: they
+		// stop player input and interrupt focus/ability execution, but must not
+		// suppress direct, projectile, field, or ongoing damage already owned by
+		// that combatant.
 		if (const auto* sourceCombatant = dynamic_cast<const Combatant*>(source))
 		{
-			const auto& sourceTags = sourceCombatant->GetAbilitySystemComponent().GetOwnedTags();
-			if (sourceTags.HasTag(GameplayTags::State::Effect::Control::Stunned) ||
-				sourceCombatant->GetCombatRuntime().BlocksOutgoingDamage())
+			if (sourceCombatant->GetCombatRuntime().BlocksOutgoingDamage())
 			{
 				return;
 			}

@@ -34,7 +34,7 @@ namespace ly
 		{
 			mShield = std::min(mShield, mMaxShield);
 		}
-		ReconcileTemporaryOvershieldLedger();
+		mTemporaryOvershields.Reconcile(mShield, mMaxShield);
 
 		BroadcastShieldChanged(previousShield);
 	}
@@ -42,6 +42,30 @@ namespace ly
 	void ShieldComponent::SetRechargeDelay(float rechargeDelay)
 	{
 		mRechargeDelay = std::max(0.f, rechargeDelay);
+	}
+
+	void ShieldComponent::ChangeShield(float amount)
+	{
+		if (amount == 0.f)
+		{
+			return;
+		}
+
+		const float previousShield = mShield;
+		mShield = std::max(0.f, mShield + amount);
+		if (amount > 0.f)
+		{
+			mShield = std::min(mShield, mMaxShield);
+		}
+		else
+		{
+			const float previousExcess = std::max(0.f, previousShield - mMaxShield);
+			const float currentExcess = std::max(0.f, mShield - mMaxShield);
+			mTemporaryOvershields.Consume(
+				std::max(0.f, previousExcess - currentExcess)
+			);
+		}
+		BroadcastShieldChanged(previousShield);
 	}
 
 	float ShieldComponent::AbsorbDamage(float sourceDamage, float shieldDamageMultiplier, float extraRechargeDelay)
@@ -67,7 +91,7 @@ namespace ly
 		const float absorbedShieldDamage = std::min(mShield, sourceDamage * multiplier);
 		mShield -= absorbedShieldDamage;
 		const float currentOvershield = std::max(0.f, mShield - mMaxShield);
-		ConsumeTemporaryOvershield(
+		mTemporaryOvershields.Consume(
 			std::max(0.f, previousOvershield - currentOvershield)
 		);
 		BroadcastShieldChanged(previousShield);
@@ -95,7 +119,7 @@ namespace ly
 		const float temporaryPortion = std::max(0.f, newOvershield - previousOvershield);
 		if (temporaryPortion > 0.f)
 		{
-			mTemporaryOvershields.push_back(TemporaryOvershield{
+			mTemporaryOvershields.Add(TemporaryOvercapRequest{
 				sourceId,
 				temporaryPortion,
 				std::max(0.f, holdDuration),
@@ -108,50 +132,44 @@ namespace ly
 
 	void ShieldComponent::TickTemporaryOvershields(float deltaTime)
 	{
-		if (deltaTime <= 0.f || mTemporaryOvershields.empty())
-		{
-			return;
-		}
-
-		ReconcileTemporaryOvershieldLedger();
-		if (mTemporaryOvershields.empty())
-		{
-			return;
-		}
-
-		float decayAmount = 0.f;
-		for (TemporaryOvershield& overshield : mTemporaryOvershields)
-		{
-			overshield.holdRemaining = std::max(
-				0.f,
-				overshield.holdRemaining - deltaTime
-			);
-			if (overshield.holdRemaining <= 0.f && overshield.decayPerSecond > 0.f)
-			{
-				const float entryDecay = std::min(
-					overshield.amount,
-					overshield.decayPerSecond * deltaTime
-				);
-				overshield.amount -= entryDecay;
-				decayAmount += entryDecay;
-			}
-		}
-
+		const float decayAmount = mTemporaryOvershields.Tick(
+			deltaTime,
+			mShield,
+			mMaxShield
+		);
 		if (decayAmount <= 0.f)
 		{
-			ReconcileTemporaryOvershieldLedger();
 			return;
 		}
 
 		const float previousShield = mShield;
 		mShield = std::max(mMaxShield, mShield - decayAmount);
-		ReconcileTemporaryOvershieldLedger();
 		BroadcastShieldChanged(previousShield);
+	}
+
+	void ShieldComponent::SetPassiveRegenBlocked(
+		const std::string& sourceId,
+		bool blocked
+	)
+	{
+		if (sourceId.empty())
+		{
+			return;
+		}
+		if (blocked)
+		{
+			mPassiveRegenBlockers.insert(sourceId);
+		}
+		else
+		{
+			mPassiveRegenBlockers.erase(sourceId);
+		}
 	}
 
 	void ShieldComponent::Tick(float deltaTime, float regenerationPerSecond, bool allowRecharge)
 	{
-		if (!allowRecharge || deltaTime <= 0.f || mShield >= mMaxShield)
+		if (!allowRecharge || IsPassiveRegenBlocked() || deltaTime <= 0.f ||
+			mShield >= mMaxShield)
 		{
 			return;
 		}
@@ -173,48 +191,6 @@ namespace ly
 		const float previousShield = mShield;
 		mShield = std::min(mMaxShield, mShield + regeneration * regenerationTime);
 		BroadcastShieldChanged(previousShield);
-	}
-
-	void ShieldComponent::ConsumeTemporaryOvershield(float amount)
-	{
-		float remaining = std::max(0.f, amount);
-		for (TemporaryOvershield& overshield : mTemporaryOvershields)
-		{
-			if (remaining <= 0.f)
-			{
-				break;
-			}
-			const float consumed = std::min(overshield.amount, remaining);
-			overshield.amount -= consumed;
-			remaining -= consumed;
-		}
-	}
-
-	void ShieldComponent::ReconcileTemporaryOvershieldLedger()
-	{
-		const float currentOvershield = std::max(0.f, mShield - mMaxShield);
-		float recordedOvershield = 0.f;
-		for (const TemporaryOvershield& overshield : mTemporaryOvershields)
-		{
-			recordedOvershield += std::max(0.f, overshield.amount);
-		}
-
-		if (recordedOvershield > currentOvershield)
-		{
-			ConsumeTemporaryOvershield(recordedOvershield - currentOvershield);
-		}
-
-		mTemporaryOvershields.erase(
-			std::remove_if(
-				mTemporaryOvershields.begin(),
-				mTemporaryOvershields.end(),
-				[](const TemporaryOvershield& overshield)
-				{
-					return overshield.amount <= 0.001f;
-				}
-			),
-			mTemporaryOvershields.end()
-		);
 	}
 
 	void ShieldComponent::BroadcastShieldChanged(float previousShield)

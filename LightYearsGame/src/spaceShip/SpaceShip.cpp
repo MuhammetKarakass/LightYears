@@ -64,6 +64,7 @@ namespace ly
 		mCombatRuntime.GetAbilitySystemComponent().GetAttributes().onAttributeChanged.BindAction(GetWeakPtr(), &SpaceShip::OnRuntimeAttributeChanged);
 		mShipRuntime.GetAttributes().onAttributeChanged.BindAction(GetWeakPtr(), &SpaceShip::OnShipAttributeChanged);
 		RefreshMovementAttributesFromRuntime();
+		mTemporalStateHistory.CaptureInitial(*this);
 	}
 
 	void SpaceShip::Tick(float deltaTime)
@@ -93,6 +94,7 @@ namespace ly
 		UpdateBlink(deltaTime);      
 		mCombatRuntime.Tick(deltaTime);
 		UpdateRegeneration(deltaTime);
+		mTemporalStateHistory.AdvanceAndCapture(*this, deltaTime);
 	}
 
 	bool SpaceShip::CanEnterPortalTransfer() const
@@ -205,6 +207,9 @@ namespace ly
 		const sas::AttributeSystem& attributes =
 			mCombatRuntime.GetAbilitySystemComponent().GetAttributes();
 		const sas::AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
+		// Overcap decay is resource-owned and intentionally runs before normal
+		// regeneration, so regular regen resumes as soon as the excess is gone.
+		mHealthComponent.TickTemporaryOverhealths(deltaTime);
 		float healthRegenerationTime = std::max(0.f, deltaTime);
 		if (mHealthRegenDelayRemaining > 0.f)
 		{
@@ -251,23 +256,24 @@ namespace ly
 		mMovementComponent.RotateTowardWorldLocation(
 			worldLocation,
 			deltaTime,
-			GetMovementTurnCapabilityMultiplier()
+			GetMovementTurnCapabilityMultiplier() *
+			mRuntimeModifiers.GetTurnCapabilityMultiplier()
 		);
 	}
 
 	sf::Vector2f SpaceShip::ResolveDashDirection() const
 	{
-		return mMovementComponent.ResolveDashDirection();
+		return mMovementComponent.ResolveMovementBurstDirection();
 	}
 
 	bool SpaceShip::StartDash(const DashRequest& request)
 	{
-		return mMovementComponent.StartDash(request);
+		return mMovementComponent.StartMovementBurst(request);
 	}
 
 	void SpaceShip::EndDash()
 	{
-		mMovementComponent.EndDash();
+		mMovementComponent.EndMovementBurst();
 	}
 
 	ControlResponse SpaceShip::ResolveControlResponse(

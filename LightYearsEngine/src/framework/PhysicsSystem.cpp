@@ -4,6 +4,62 @@
 
 namespace ly
 {
+	namespace
+	{
+		b2Filter MakeCollisionFilter(const Actor& actor)
+		{
+			b2Filter filter = b2DefaultFilter();
+			filter.categoryBits = static_cast<uint8_t>(actor.GetCollisionLayer());
+			filter.maskBits = static_cast<uint8_t>(actor.GetCollisionMask());
+			return filter;
+		}
+
+		Actor* ResolveActor(b2ShapeId shapeId)
+		{
+			if (!b2Shape_IsValid(shapeId))
+			{
+				return nullptr;
+			}
+			const b2BodyId bodyId = b2Shape_GetBody(shapeId);
+			return b2Body_IsValid(bodyId)
+				? static_cast<Actor*>(b2Body_GetUserData(bodyId))
+				: nullptr;
+		}
+
+		void DispatchContactEvent(
+			b2ShapeId shapeIdA,
+			b2ShapeId shapeIdB,
+			bool isBeginEvent
+		)
+		{
+			Actor* actorA = ResolveActor(shapeIdA);
+			Actor* actorB = ResolveActor(shapeIdB);
+			if (!actorA || !actorB || actorA->GetIsPendingDestroy() ||
+				actorB->GetIsPendingDestroy() || !actorA->CanCollideWith(actorB) ||
+				!actorB->CanCollideWith(actorA))
+			{
+				return;
+			}
+
+			if (isBeginEvent)
+			{
+				actorA->OnActorBeginOverlap(actorB);
+				if (!actorB->GetIsPendingDestroy())
+				{
+					actorB->OnActorBeginOverlap(actorA);
+				}
+			}
+			else
+			{
+				actorA->OnActorEndOverlap(actorB);
+				if (!actorB->GetIsPendingDestroy())
+				{
+					actorB->OnActorEndOverlap(actorA);
+				}
+			}
+		}
+	}
+
 	unique_ptr<PhysicsSystem> PhysicsSystem::physicsSystem{ nullptr };
 
 	PhysicsSystem& PhysicsSystem::Get()
@@ -67,10 +123,17 @@ namespace ly
 		// provide an explicit collision radius instead of silently losing physics.
 		sf::FloatRect bounds = listener->GetActorGlobalBounds();
 		const float collisionRadius = std::max(0.f, listener->GetPhysicsCollisionRadius());
-		const sf::Vector2f explicitBoxHalfExtents =
-			listener->GetPhysicsCollisionBoxHalfExtents();
-		const bool hasExplicitBox = explicitBoxHalfExtents.x > 0.f &&
-			explicitBoxHalfExtents.y > 0.f;
+		const std::size_t explicitBoxCount = listener->GetPhysicsCollisionBoxCount();
+		bool hasExplicitBox = false;
+		for (std::size_t index = 0; index < explicitBoxCount; ++index)
+		{
+			const PhysicsCollisionBox box = listener->GetPhysicsCollisionBox(index);
+			if (box.halfExtents.x > 0.f && box.halfExtents.y > 0.f)
+			{
+				hasExplicitBox = true;
+				break;
+			}
+		}
 		const bool hasValidBounds = bounds.size.x > 0.0f && bounds.size.y > 0.0f;
 		if (!hasValidBounds && collisionRadius <= 0.f && !hasExplicitBox)
 		{
@@ -102,15 +165,31 @@ namespace ly
 		shapeDef.enableSensorEvents = false;
 
 		shapeDef.invokeContactCreation = true;
+		// Keep Box2D's broadphase aligned with the gameplay collision contract.
+		// Without this, every physics shape can form contacts with every other
+		// shape and gets rejected only after the expensive contact callback path.
+		shapeDef.filter = MakeCollisionFilter(*listener);
 
-		const sf::Vector2f boxHalfExtents = explicitBoxHalfExtents;
-		if (boxHalfExtents.x > 0.f && boxHalfExtents.y > 0.f)
+		if (hasExplicitBox)
 		{
-			const b2Polygon box = b2MakeBox(
-				boxHalfExtents.x * GetPhysicsRate(),
-				boxHalfExtents.y * GetPhysicsRate()
-			);
-			b2CreatePolygonShape(bodyId, &shapeDef, &box);
+			for (std::size_t index = 0; index < explicitBoxCount; ++index)
+			{
+				const PhysicsCollisionBox box = listener->GetPhysicsCollisionBox(index);
+				if (box.halfExtents.x <= 0.f || box.halfExtents.y <= 0.f)
+				{
+					continue;
+				}
+				const b2Polygon shape = b2MakeOffsetBox(
+					box.halfExtents.x * GetPhysicsRate(),
+					box.halfExtents.y * GetPhysicsRate(),
+					{
+						box.localCenter.x * GetPhysicsRate(),
+						box.localCenter.y * GetPhysicsRate()
+					},
+					b2MakeRot(DegreesToRadians(box.localRotationDegrees))
+				);
+				b2CreatePolygonShape(bodyId, &shapeDef, &shape);
+			}
 		}
 		else if (collisionRadius > 0.f)
 		{
@@ -138,96 +217,14 @@ namespace ly
 
 		for (int i = 0; i < contactEvents.beginCount; ++i)
 		{
-			b2ContactBeginTouchEvent beginEvent = contactEvents.beginEvents[i];
-
-			Actor* actorA = nullptr;
-			Actor* actorB = nullptr;
-
-			if (b2Shape_IsValid(beginEvent.shapeIdA))
-			{
-				b2BodyId bodyIdA = b2Shape_GetBody(beginEvent.shapeIdA);
-				if (b2Body_IsValid(bodyIdA))
-				{
-					void* userDataA = b2Body_GetUserData(bodyIdA);
-					if (userDataA)
-					{
-						actorA = static_cast<Actor*>(userDataA);
-					}
-				}
-			}
-
-			if (b2Shape_IsValid(beginEvent.shapeIdB))
-			{
-				b2BodyId bodyIdB = b2Shape_GetBody(beginEvent.shapeIdB);
-				if (b2Body_IsValid(bodyIdB))
-				{
-					void* userDataB = b2Body_GetUserData(bodyIdB);
-					if (userDataB)
-					{
-						actorB = static_cast<Actor*>(userDataB);
-					}
-				}
-			}
-
-			bool aValidAtStart = actorA && !actorA->GetIsPendingDestroy();
-			bool bValidAtStart = actorB && !actorB->GetIsPendingDestroy();
-
-			if (aValidAtStart)
-			{
-				actorA->OnActorBeginOverlap(actorB);
-			}
-
-			if (bValidAtStart)
-			{
-				actorB->OnActorBeginOverlap(actorA);
-			}
+			const b2ContactBeginTouchEvent& beginEvent = contactEvents.beginEvents[i];
+			DispatchContactEvent(beginEvent.shapeIdA, beginEvent.shapeIdB, true);
 		}
 
 		for (int i = 0; i < contactEvents.endCount; ++i)
 		{
-			b2ContactEndTouchEvent endEvent = contactEvents.endEvents[i];
-
-			Actor* actorA = nullptr;
-			Actor* actorB = nullptr;
-
-			if (b2Shape_IsValid(endEvent.shapeIdA))
-			{
-				b2BodyId bodyIdA = b2Shape_GetBody(endEvent.shapeIdA);
-				if (b2Body_IsValid(bodyIdA))
-				{
-					void* userDataA = b2Body_GetUserData(bodyIdA);
-					if (userDataA)
-					{
-						actorA = static_cast<Actor*>(userDataA);
-					}
-				}
-			}
-
-			if (b2Shape_IsValid(endEvent.shapeIdB))
-			{
-				b2BodyId bodyIdB = b2Shape_GetBody(endEvent.shapeIdB);
-				if (b2Body_IsValid(bodyIdB))
-				{
-					void* userDataB = b2Body_GetUserData(bodyIdB);
-					if (userDataB)
-					{
-						actorB = static_cast<Actor*>(userDataB);
-					}
-				}
-			}
-
-			bool aValidAtStart = actorA && !actorA->GetIsPendingDestroy();
-			bool bValidAtStart = actorB && !actorB->GetIsPendingDestroy();
-
-			if (aValidAtStart)
-			{
-				actorA->OnActorEndOverlap(actorB);
-			}
-
-			if (bValidAtStart)
-			{
-				actorB->OnActorEndOverlap(actorA);
-			}
+			const b2ContactEndTouchEvent& endEvent = contactEvents.endEvents[i];
+			DispatchContactEvent(endEvent.shapeIdA, endEvent.shapeIdB, false);
 		}
 	}
 
@@ -273,6 +270,10 @@ namespace ly
 		shapeDef.enableContactEvents = true;
 		shapeDef.invokeContactCreation = true;
 		shapeDef.isSensor = false;
+		if (Actor* actor = static_cast<Actor*>(b2Body_GetUserData(bodyId)))
+		{
+			shapeDef.filter = MakeCollisionFilter(*actor);
+		}
 
 		b2Circle circle;
 		circle.center = { 0.0f, 0.0f };
@@ -281,24 +282,57 @@ namespace ly
 		b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	}
 
+	void PhysicsSystem::RefreshCollisionFilter(b2BodyId bodyId)
+	{
+		if (!b2Body_IsValid(bodyId))
+		{
+			return;
+		}
 
-	List<Actor*> PhysicsSystem::QueryActorsInBounds(
-		const sf::FloatRect& bounds
+		Actor* actor = static_cast<Actor*>(b2Body_GetUserData(bodyId));
+		if (!actor)
+		{
+			return;
+		}
+
+		const int shapeCount = b2Body_GetShapeCount(bodyId);
+		if (shapeCount <= 0)
+		{
+			return;
+		}
+
+		mShapeScratchBuffer.resize(static_cast<std::size_t>(shapeCount));
+		b2Body_GetShapes(bodyId, mShapeScratchBuffer.data(), shapeCount);
+		const b2Filter filter = MakeCollisionFilter(*actor);
+		for (int i = 0; i < shapeCount; ++i)
+		{
+			const b2ShapeId shapeId = mShapeScratchBuffer[static_cast<std::size_t>(i)];
+			if (b2Shape_IsValid(shapeId))
+			{
+				b2Shape_SetFilter(shapeId, filter);
+			}
+		}
+	}
+
+
+	void PhysicsSystem::VisitActorsInBounds(
+		const sf::FloatRect& bounds,
+		void* context,
+		ActorBoundsVisitor visitor
 	) const
 	{
-		List<Actor*> actors;
 		if (mPhysicsWorld.index1 == 0 ||
-			bounds.size.x < 0.f || bounds.size.y < 0.f)
+			bounds.size.x < 0.f || bounds.size.y < 0.f || !visitor)
 		{
-			return actors;
+			return;
 		}
 
 		struct QueryContext
 		{
-			List<Actor*>* actors = nullptr;
-			Set<Actor*> seen;
+			void* visitorContext = nullptr;
+			ActorBoundsVisitor visitor = nullptr;
 		};
-		QueryContext context{ &actors, {} };
+		QueryContext queryContext{ context, visitor };
 		const auto callback = [](b2ShapeId shapeId, void* rawContext)
 		{
 			auto* query = static_cast<QueryContext*>(rawContext);
@@ -306,13 +340,10 @@ namespace ly
 			{
 				return true;
 			}
-			const b2BodyId bodyId = b2Shape_GetBody(shapeId);
-			Actor* actor = b2Body_IsValid(bodyId)
-				? static_cast<Actor*>(b2Body_GetUserData(bodyId))
-				: nullptr;
-			if (actor && !actor->GetIsPendingDestroy() && query->seen.insert(actor).second)
+			Actor* actor = ResolveActor(shapeId);
+			if (actor && !actor->GetIsPendingDestroy())
 			{
-				query->actors->push_back(actor);
+				return query->visitor(query->visitorContext, actor);
 			}
 			return true;
 		};
@@ -325,12 +356,35 @@ namespace ly
 				(bounds.position.y + bounds.size.y) * physicsRate
 			}
 		};
+		// Gameplay spatial queries are discovery operations, not collision tests.
+		// Use all bits in both directions so an actor whose collision mask only
+		// accepts enemies is still discoverable by area effects such as Gravity
+		// Anomaly. Collision filtering remains active for actual Box2D contacts.
+		b2QueryFilter queryFilter = b2DefaultQueryFilter();
+		queryFilter.categoryBits = ~uint64_t{ 0 };
+		queryFilter.maskBits = ~uint64_t{ 0 };
 		b2World_OverlapAABB(
 			mPhysicsWorld,
 			queryBounds,
-			b2DefaultQueryFilter(),
+			queryFilter,
 			callback,
-			&context
+			&queryContext
+		);
+	}
+
+	List<Actor*> PhysicsSystem::QueryActorsInBounds(
+		const sf::FloatRect& bounds
+	) const
+	{
+		List<Actor*> actors;
+		VisitActorsInBounds(
+			bounds,
+			&actors,
+			[](void* context, Actor* actor)
+			{
+				static_cast<List<Actor*>*>(context)->push_back(actor);
+				return true;
+			}
 		);
 		return actors;
 	}

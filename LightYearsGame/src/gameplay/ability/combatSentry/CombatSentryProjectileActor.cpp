@@ -175,7 +175,7 @@ namespace ly
 				mTravelDistance += GetVectorLength(movement) * contact.fraction;
 				return;
 			}
-			OnActorBeginOverlap(contact.actor.get());
+			OnActorBeginOverlap(contact.actor);
 		}
 		if (!GetIsPendingDestroy())
 		{

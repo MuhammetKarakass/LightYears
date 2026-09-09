@@ -1,9 +1,14 @@
 # LightYears — Sistem Referansı
 
+> 7 Eylül 2026 kaynak denetimi: [Proje durum raporu](<vault/06 - Status and Plans/2026-09-07 Project Status Review.md>). Güncel default loadout Q Shield Graft, E Relay Prism, F Glacial Pressure, R Ironclad Protocol; eski tarihli loadout/test ifadeleri güncel çalışma ağacının kanıtı değildir. Bu denetimde build/test çalıştırılmadı; tarihsel teknik kararlar korunmuştur.
+
+
 ## Dash implementation
 
-`Ability.Movement.Dash.Basic`, Ability3/F üzerinde çalışan ayrı bir ability behavior
-sınıfıdır: `gameplay/ability/dash/DashAbility`. `AbilitySystem`, davranışı
+`Ability.Movement.Dash.Basic`, kendi behavior contract'ı ve tarihsel Ability3/F
+slot profili olan ayrı bir ability behavior sınıfıdır:
+`gameplay/ability/dash/DashAbility`. Slot binding default loadout'tan ayrıdır.
+`AbilitySystem`, davranışı
 `AbilityBehaviorRegistry` üzerinden üretir; game adaptörü
 `GameAbilityActionExecutor` yalnızca
 ortak action türlerini çalıştırır. Dash validation, start/end event ve state tag
@@ -15,8 +20,9 @@ Base mesafe 260'dır. Yatay ve dikey movement rating ortalaması `1-exp(-rating/
 eğrisiyle en fazla +%50 mesafeye dönüşür. AttackPower, AttackSpeed, EnergyMax,
 Luck, Critical ve ability level mesafeyi değiştirmez. Level 2-5 yalnızca cooldown'u
 2.0'dan 1.88/1.76/1.64/1.52 saniyeye indirir. Seviye başına düşüş taban
-cooldown'un `%6`'sıdır; böylece taban cooldown tuning'i progression'ı geçersiz
-hâle getirmez. Ability Haste merkezi cooldown çarpanı üzerinden en son uygulanır.
+cooldown progression'da her seviye için authored sabit `-0.12` değeridir;
+otomatik yüzde kuralı değildir. Ability Haste merkezi cooldown çarpanı
+üzerinden en son uygulanır.
 
 Dash impulse hızı `resolvedDistance / 0.24` olarak sabittir ve mevcut velocity
 üzerine eklenir:
@@ -45,14 +51,17 @@ geminin gerisinde kalıp sonradan yetişmez.
 > sistem veya sayı değiştirildiğinde, ilgili bölüm ve
 > [Balance & Roadmap Notebook](BALANCE_AND_ROADMAP_NOTEBOOK.md) birlikte
 > güncellenmelidir.
-> Uygulanan her değişiklik aynı değişiklik setinde bu belgeye,
-> [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)'a ve
-> Balance & Roadmap Notebook'a kaydedilir.
+> Güncel teknik gerçekler bu belgede tutulur; JSON envanteri
+> [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)'a, tarihli
+> karar ve roadmap ise [Balance & Roadmap Notebook](BALANCE_AND_ROADMAP_NOTEBOOK.md)'a
+> aittir. Etkilenen belgeler arasında bağlantı kurun, aynı tabloyu çoğaltmayın.
 >
-> Kaynak anlık görüntüsü: 14 Ağustos 2026. Bu belge, çalışma ağacındaki mevcut
-> sistemleri açıklar; önerilen fikirler yalnızca notebook dosyasında tutulur.
+> Kaynak anlık görüntüsü: 7 Eylül 2026. Bu belge, çalışma ağacındaki mevcut
+> teknik sınırları açıklar; önerilen fikirler yalnızca notebook dosyasında
+> tutulur. JSON kayıt sayıları için [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)
+> tek envanterdir.
 
-## 0. Güncel runtime değişiklikleri (14 Ağustos 2026)
+## 0. Güncel runtime değişiklikleri (7 Eylül 2026)
 
 Bu anlık görüntüde C++ identity/behavior katmanı ile JSON balance katmanı
 birlikte çalışır. `abilities.json` ve `effects.json` yüklenmişse shipped runtime
@@ -61,12 +70,13 @@ kullanılır. C++ tarafı ability kimliğini, behavior türünü, actor türün�
 presentation profile tipini ve validasyon sözleşmesini sahibi olmaya devam eder.
 
 - `sas::AbilityRuntimeBinding`, ability'nin content tanımından bağımsız runtime
-  ekipman slotunu taşır. Varsayılan oyuncu yüklemesi artık Q Directional Barrier,
-  E Relay Prism, F Ion Storm, R Rail Burst'tür.
-- Shipped catalog; Echo Protocol, Mine Layer, Rail Burst, Crescent Reaver,
-  Energy Spear, Scorch Drive ve Ion Storm ile 21 active family'ye genişlemiştir. Varsayılan loadout'ta F slotu Ion Storm'a bağlıdır. Ayrıntılı güncel tablo
-  [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md) ve vault
-  içindeki `00 - Runtime Snapshot` notundadır.
+  ekipman slotunu taşır. Güncel varsayılan oyuncu yüklemesi Q Shield Graft,
+  E Relay Prism, F Glacial Pressure, R Ironclad Protocol'dür.
+- `abilities.json` 51, `effects.json` 19, `weapons.json` 7, `ships.json` 1 ve
+  `attachments.json` 1 kayıt içerir. Bu sayılar registration envanteridir;
+  aktif slot, acquisition UI veya uçtan uca oynanış kanıtı değildir. Tam ID
+  listesi [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)
+  içindedir.
 - Relay Prism, farenin konumunda ability projectile yakalayıp lineage korumalı
   dost clone'lara dönüştüren fizik dışı bir query actor'dür. Execution Drive,
   kill-confirmed olayından stack alır; temporary AttackPower effect'i ve düşük
@@ -83,10 +93,20 @@ presentation profile tipini ve validasyon sözleşmesini sahibi olmaya devam ede
   tick ve 16 tick sabittir; Common.Damage 6 + `Owner.AttackPower × 0.12` ile
   çözülür ve seviyeler yalnız damage/cooldown'u geliştirir. Presentation tek
   renkli tek dolu düzensiz şekildir; iç dolgu katmanı ve iç enerji çizgileri yoktur.
+- Time Slip, player'ı gerçek zamanda bırakıp `HostileGameplay` actor domain'ini
+  seçici olarak 0.35× yavaşlatan temporal ability'dir. Enemy gemileri ve owner'
+  ından türeyen hostile actor'lar ve tüm player/hostile projectile'lar ortak
+  `ProjectileGameplay` domain'inde aynı 0.35× çarpanı kullanır; player primary
+  fire cadence'i ayrıca 0.35× olurken movement, diğer ability cooldown'ları,
+  camera ve UI gerçek zamanda kalır. Süre L1'de 3.0 sn'dir,
+  level başına +0.10 sn ve cooldown başına -0.20 sn ilerler; `EnergyMax` bonusu
+  `max(0, EnergyMax - 50) × 0.0015` ile uygulanır.
 
 Bu bölüm, tarihsel migration notlarının yerine geçmez; eski bölümlerdeki
 "varsayılan loadout" ve "son doğrulama" ifadeleriyle çelişirse bu bölüm ile
-runtime source-of-truth önceliklidir.
+runtime source-of-truth önceliklidir. Enemy/boss C++ ShipConfig weapon
+literal'ları shipped `weapons.json` kayıtlarına dahil değildir. Input gönderimi
+de grant edilmiş weapon/ability bulunduğunu tek başına kanıtlamaz.
 
 ## Durum anahtarı
 
@@ -123,6 +143,7 @@ LightYears üç build katmanından oluşur:
 | --- | --- | --- |
 | LightYearsEngine | Yeniden kullanılabilir oyun çatısı: uygulama, dünya, aktör, fizik, kamera, ses, shader, widget | LightYearsEngine/include/framework, LightYearsEngine/src/framework |
 | SpaceAbilitySystem | Statik gameplay-system kütüphanesi; aşamalı olarak taşınan generic attribute, ability ve effect çekirdeği | SpaceAbilitySystem/include, SpaceAbilitySystem/src |
+| LightYearsGameplayCore | LightYearsGame ile engine arasındaki statik oyun çekirdeği; gameplay contract, combat/ability integration ve ortak game runtime kodu | LightYearsGame gameplay core target ve ilgili include/src dizinleri |
 | LightYearsGame | Oyuna özgü gemiler, combat, yetenekler, silahlar, level akışı, UI ve VFX | LightYearsGame/include, LightYearsGame/src |
 
 Ana çalışma akışı:
@@ -388,8 +409,10 @@ effectiveArmor = armorReduction * (1 - armorPenetration)
 postArmorDamage = preArmorDamage * (1 - effectiveArmor)
 ~~~
 
-- Armor penetration 0 ile 0.25 aralığına clamp edilir.
-- Kinetic hasarın varsayılan armor penetration değeri 0.10’dur.
+- `DamagePayload` armor penetration'ı 0 ile 1 aralığında clamp eder;
+  source weapon/ability profile'ı ayrıca daha dar bir üst sınır tanımlayabilir.
+- Örneğin JSON'daki Kinetic weapon profilleri `Damage.ArmorPenetration` değerini
+  0.10 ile başlatır; bu global damage payload default'u değildir.
 - Bu işlem Barrier effect’inden sonra, geminin kalıcı shield
   component’inden önce yapılır.
 
@@ -402,8 +425,9 @@ remainingDamage = remainingDamage * (1 + multiplierPerStack * stackCount)
 ~~~
 
 Electric’in ilk üç stack’i yalnızca buildup/visual bilgisidir; hasarı değiştirmez.
-Varsayılan payload 3 sn sürer, dört stack’te dolar ve yalnızca 4/4 stack’te
-uygulanır. Stack başına 0.04 ile tam-stack çarpanı **1.16**’dır.
+JSON weapon/ability source profile'larında payload 3 sn sürer, dört stack’te
+dolar ve yalnızca 4/4 stack’te uygulanır. Stack başına 0.04 ile tam-stack
+çarpanı **1.16**’dır; bu değer global tag default'u olarak üretilmez.
 
 **Barrier effect** kapasite tabanlı geçici kalkan effect’idir:
 
@@ -423,11 +447,12 @@ kısmen kırılırsa kalan kaynak hasarı health’e doğru biçimde taşınır.
 
 ### 2.6 Hasar türleri
 
-DamageTypeSystem, damage tag listesinde aşağıdaki sırayla bulunan ilk türün
-varsayılan payload’ını oluşturur: Energy → Kinetic → Thermal → Cryo →
-Electric. Birden fazla tür tag’i verildiğinde payload davranışı ilk eşleşen
-türden gelir; bu nedenle hibrit hasar tasarlanmadan önce bu öncelik özellikle
-değiştirilmelidir.
+`DamageTypeSystem::BuildPayload`, türleri tek bir global öncelik sırasına göre
+seçmez; tanınan damage türlerini ve source attribute'larını bağımsız olarak
+payload'a işler. `DamageContext.h` yalnız güvenli yapısal default'ları sağlar
+(shield multiplier 1, armor penetration 0, status stack'leri 0, crit açık ve
+çarpan 2). Hibrit veya çoklu tag davranışı source profile ve çağrı yoluyla
+belirlenir; tag tek başına status için gizli numeric değer üretmez.
 
 | Tür | Varsayılan davranış | Denge etkisi |
 | --- | --- | --- |
@@ -521,11 +546,24 @@ consumer kontratlarında doğrulanır. PrimaryFire tanımlarının kimliği `Wea
 olduğu için ability family namespace'i yoktur ve `Ability.*` değer/hedef taşıması
 yasaktır; `Common.*` kullanımı geçerliliğini korur.
 
-`State.ActionLock.AbilityActivation` ve
-`State.ActionLock.PrimaryWeaponFire` iki kayıtlı ortak kilittir. Bir mekanik
-bu taglerden birini owner'a geçici olarak verir; `GameAbility::CanActivateContent`
-tüm normal ability aktivasyonlarını ilk tag ile, PrimaryFire aktivasyonunu ikinci
-tag ile engeller. Overdrive gibi bir ability kendi local firing state'ini UI ve
+`State.ActionLock.AbilityActivation`,
+`State.ActionLock.PrimaryWeaponFire`,
+`State.ActionLock.MovementInput` ve
+`State.ActionLock.ExternalMovement` kayıtlı ortak kilitlerdir. Bir mekanik bu
+taglerden gerekli olanını owner'a geçici olarak verir; `GameAbility::CanActivateContent`
+ilk tag ile normal ability aktivasyonlarını, ikinci tag ile PrimaryFire
+aktivasyonunu engeller. `MovementInput` yalnız oyuncu tarafından verilen hareket
+komutunu engeller; `ExternalMovement` ise push, pull ve benzeri dünya kuvvetlerini
+de engelleyen nadir hard-stasis kilididir.
+
+Odaklanma (focus) bir feature'ın yeniden tanımlayacağı serbest bir tag paketi
+değildir. `ability::ApplyFocusActionLocks()` her odaklanma penceresinde
+AbilityActivation + PrimaryWeaponFire + MovementInput kilitlerini birlikte
+uygular. Böylece gemi nişan yönünü değiştirebilir ve dış kuvvetlerle sürüklenebilir,
+ama hareket input'u veremez, ateş edemez veya başka ability başlatamaz. Focus
+ability boyunca sürerse yalnız `RemoveFocusActionLocks()` ile temizlenir; bir
+devam actor'ına devredilirse aynı lock referansları actor tarafından bir kez
+temizlenir. Overdrive gibi bir ability kendi local firing state'ini UI ve
 lifecycle için ayrıca kullanabilir; global input/activation engeli için yeni
 feature-özel block tag üretilmez.
 
@@ -536,9 +574,11 @@ primary weapon, attachment JSON loader'ı ve ship progression giriş noktaların
 bu şemayı çağırır.
 
 Her ability ailesinin `gameplay/ability/<family>/<Family>Contracts.h` dosyası
-aynı contract yüzeyini kullanır: zorunlu `AbilityId`, `CategoryTag`, `FamilyTag`
-ve `BehaviorTag`; varsa `State`, `Event` ve `Actor` alt alanları. Actor role'ü
-altında onun definition ID'si, type tag'i ve attribute ID'leri birlikte kalır.
+feature-local ID, setting, direction/payload ve state/event/actor parçalarını
+sahiplenir. Ability dispatch selector'ı ayrı `AbilityBehaviorType`/registry
+sınırındadır; bütün aile contract'larının aynı zorunlu alan kümesini taşıdığı
+varsayılmaz. Actor role'ü altında onun definition ID'si, type tag'i ve
+attribute ID'leri birlikte kalır.
 Bir effect ID'si veya dış event, onu üreten effect/owner sisteminin contract'ında
 tanımlanır; ability yalnız onu tüketir. Bu nedenle boş `State`/`Event`/`Actor`
 struct'ları açılmaz ve feature'lar shared action-lock tag'i yeniden tanımlamaz.
@@ -579,18 +619,20 @@ Kimlik ve contract kuralları:
   `Visual.Effect.<Family>.<VariantPath>`.
 - Sorgulanan veya grant edilen semantic değerler `GameplayTag` olur. Numeric
   gameplay değerlerinin kimliği `sas::AttributeId` olur. Struct alanları ve rol
-  bildiren sabitler `...Tag` ile biter: `behaviorTag`,
-  `FamilyTag`, `TypeTag`, `FeatureTag`. `DamageTypeSchema::Thermal` gibi türü
+  bildiren semantic sabitler `...Tag` ile biter: `FamilyTag`, `TypeTag`,
+  `FeatureTag`. Ability behavior dispatch'i `AbilityBehaviorType` enum'udur;
+  effect `behaviorKey` yalnız `GameplayEffectDefinition` sınırında kullanılır.
+  `DamageTypeSchema::Thermal` gibi türü
   enclosing schema tarafından açık olan leaf sabitler kısa kalabilir.
 - `...Id` daima catalog/registry kaydı olan string kimliktir. Attachment kayıt
   kimliği content ID'dir; yalnız `Attachment.Capability.*` değerleri tagdir.
 - `Effect.<Family>.<Variant>` yalnız content ID'dir; aktif effect varlığını
   taşıyan semantic tagler `State.Effect.<Family>.<State>` altında kalır.
-- Her ability family contract'ında üst seviyede yalnızca `AbilityId`,
-  `CategoryTag`, `FamilyTag`, `BehaviorTag` bulunur. İsteğe bağlı veriler
-  sahipliğine göre `State`, `Event`, `Actor`, `Effect` ve `Setting` altında
-  gruplanır. JSON numeric-setting contract'ı `Setting::Contract` içinde kalır;
-  loader family'yi bilmez, behavior registry üzerinden onu çözer.
+- Ability family contract'ları yalnız gerçekten kullandıkları ID, setting,
+  payload, state/event/actor ve effect alanlarını taşır. Dispatch selector'ları
+  registry/enum sınırında kalır; JSON loader family'yi bilmez, kayıtlı behavior
+  registry üzerinden onu çözer. JSON numeric-setting contract'ı
+  `Setting::Contract` içinde kalır.
 - Aileye özel actor attribute'ları daima
   `AbilityActor.<Family>.<Role>.<Name>` biçimindeki AttributeId adlarıdır ve ilgili
   `Actor::<Role>` contract'ında tanımlanır. `CommonAttributeIds` değerleri
@@ -598,8 +640,8 @@ Kimlik ve contract kuralları:
   yalnızca onları üretilecek actor'a iletmek için tüketiyorsa (Gravity Anomaly
   projectile -> field gibi), handler iki role ait dar kökleri açıkça bildirir;
   aile kökü tek başına yetki vermez.
-- Somut shipped ability'nin ID family segmenti, `BehaviorTag`in son segmentiyle
-  aynı olmak zorundadır; yalnız generic `GameAbilityBehavior.Configured` ile
+- Somut shipped ability'nin ID family segmenti behavior contract'ı ile
+  uyumlu olmak zorundadır; yalnız generic `GameAbilityBehavior.Configured` ile
   tanımlanan content-only test/prototype ability'ler bu eşleşmeden muaftır.
   Owner activation koşulları yalnızca kalıcı effect/status/ability/
   ability-state/action-lock domainlerinden seçilir; `Event.*` geçici olduğu için
@@ -708,8 +750,11 @@ Yerleştirme kuralları:
 Mevcut durum: weapon, player ship, ability ve gameplay effect değerleri
 `LightYearsGame/assets/content/data/*.json` dosyalarından runtime'da yüklenir.
 Şemalar, validation, behavior/action tanımları ve typed presentation profilleri
-C++ tarafında kalır. Attachment JSON parser'ı vardır ancak attachment mekaniği
-henüz runtime'a bağlanmamıştır.
+C++ tarafında kalır. `attachments.json` bir kayıt içerir; `GameAbility` içinde
+attachment equip, modifier merge/condition ve event yolları vardır. Ancak
+`GameContentBootstrap` attachments JSON yüklemiyor ve acquisition UI bu
+denetimde doğrulanmadı; attachment'ı tam shipped content akışı olarak
+belgelemeyin.
 
 Hedef hibrit sınır aşağıdaki gibidir:
 
@@ -722,7 +767,7 @@ Hedef hibrit sınır aşağıdaki gibidir:
 İlk geçişte yalnız value/reference ağırlıklı content taşınır. Mevcut JSON kaydı
 behavior veya presentation seçebilir; fakat bu ID'lerin C++ registry'de
 kayıtlı/uyumlu olması validation ile zorunlu kılınır. `AbilityActorDefinition`
-ve §3.0.1'deki typed presentation sözleşmesi değişmez. Böylece 30 ability,
+ve §3.0.1'deki typed presentation sözleşmesi değişmez. Böylece ability,
 attachment/evolve, gemi ve düşman sayıları artarken denge verisi dışarı alınır;
 oyun davranışı ile visual type güvenliği C++ tarafında kalır.
 
@@ -746,9 +791,16 @@ Bir sayısal değeri, onu üreten gameplay kaynağı sahiplenir. Weapon hit/stat
 değerleri `weapons.json` içindeki `Damage.*` alanlarında; ability'nin
 uyguladığı effect değerleri `abilities.json` içindeki `effectSpecs` alanında;
 ability actor alan değerleri actor kaydında veya ability-local
-`attributeProfiles` içinde tutulur. `effects.json` magnitude, duration, stack
-limiti veya runtime attribute base value tutmaz; yalnız effect ID, behavior,
-duration/stacking politikası, tag, visual ve source-scope sözleşmesini taşır.
+`attributeProfiles` içinde tutulur. `effects.json` çoğu source-parameterized
+kayıt için magnitude, duration, stack limiti veya runtime attribute base value
+tutmaz; yalnız effect ID, behavior, duration/stacking politikası, tag, visual ve
+source-scope sözleşmesini taşır. İstisna olarak dört
+`sourceParameterized=false` effect kaydı policy ile uyumlu sabit duration
+içerir: `Effect.Immunity.Movement.Slow` (5 sn) ve
+`Effect.PhaseDrift.MovementBoost`, `Effect.PhaseDrift.ShieldRecovery`,
+`Effect.PhaseDrift.AfterburnerRecovery` (6 sn). Source-parameterized kayıtlar
+sayısal alanları reddeder; bu nedenle effects JSON için “hiç numeric içermez”
+ifadesi yanlıştır.
 
 `sourceParameterized: true` olan bir effect kaydına `duration`, `maxStacks`,
 `modifiers` veya `attributes` eklenmesi loader tarafından reddedilir. Damage tag
@@ -804,7 +856,7 @@ Temel şema:
 | activationPolicy | OnPressed, WhileHeld, Toggle, Passive, GameplayEvent |
 | lifetimePolicy | Instant, Duration, WhileInputHeld, UntilCancelled |
 | cooldown / duration / maxCharges | Yaşam ve kaynak zamanlaması |
-| behaviorTag | Ability ailesine ait behavior factory kaydı |
+| behaviorType | Ability behavior registry dispatch enum'u; semantic gameplay tag değildir |
 | actions | Effect uygulama, actor spawn, weapon fire, impulse, event yayma |
 | triggers | Event tabanlı, cooldown/required/blocked tag filtreli eylemler |
 | levelProgression | Level 2’den başlayarak eklenen modifier, upgrade, action, trigger |
@@ -831,9 +883,10 @@ SpaceShip
 
 `CombatRuntime`, owner-local combat attribute’larını, tag’lerini, effect’lerini
 ve ability’lerini sahiplenir; HUD widget’ları ve visual actor’lar gameplay
-state sahibi değildir. Saf tanımlar bugün `gameConfigs/ability` ve
-`gameConfigs/combat` altındaki C++ catalog'larında bulunur; planlanan JSON
-content bu immutable tanımların alternatif kaynağı olacaktır. Mutable state ise
+state sahibi değildir. Shipped sayısal tanımlar
+`LightYearsGame/assets/content/data/*.json` içinden materialize edilir; C++
+catalog'ları structural/fallback contract, behavior ve typed presentation
+sahipliğini korur. Mutable state ise
 `sas::GameplayAbilityInstance`, `sas::AbilityExecution`,
 `ActiveGameplayEffect`, primary weapon runtime state’i veya spawn edilmiş world
 actor’da kalır.
@@ -852,19 +905,26 @@ generic core somut Dash, Shield veya SunBeam sınıfını include etmez.
 sahibidir; shared scaling/attachment değer çözümü ise
 `AbilityActionAttributeResolver` içinde tutulur.
 
-### 3.2 Mevcut aktif ability’ler
+### 3.2 Mevcut shipped ability content
 
-| Ability | Slot | Çalışma | Başlangıç / scale | Level |
-| --- | --- | --- | --- | --- |
-| NullPulse_Basic | Ability2 (E), varsayılan player grant | 11 sn cooldown; Instant; 1 charge; oyuncu merkezli 500 radius pulse (+200) | Her uygun düşman Combatant'a bir kez Energy damage; projectile işaretli actor'ları yok eder; normal/elite/miniboss için Stun, boss için kısa Stagger/interrupt; Stun yeni ability/primary-fire aktivasyonunu, aktif execution'ı ve outgoing damage/trigger aksiyonlarını keser; beams, field'ler, pickup'lar ve görsel actor'lar silinmez | Damage L1 10, her level +2; cooldown her level -0.25; stun 1.0 sn + EnergyMax tabanlı en fazla +0.65 sn; crit/AttackPower/AttackSpeed etkisi yok |
-| OverdriveCore_Basic | Ability4 (R), varsayılan player grant | 1 sn cooldown; 1 sn boyunca hedeflere 8 homing Kinetic rocket yollar, ardından 5 sn AttackSpeed boost verir | Aynı hedefe ardışık hasar ×0.90 azalır; boost tabanı +5 AttackSpeed, level başına +1 ve CriticalChance ile scale edilir | 2–5 progression tanımlıdır; toplam duration 6 sn, actor/presentation typed OverdriveCore profile kullanır |
-| PhaseDrift_Basic | Ability3 (F), shipped fakat varsayılan grant değil | 14 sn cooldown, 6 sn duration; cleanse, damage protection, collision phase ve recovery boost uygular; başka ability aktivasyonu ile kırılır | Movement +%20, ShieldRegen +%50, AfterburnerRegen +%40; Energy ve mobility değerleri bonusları doygun eğriyle scale eder | 2–15: her level cooldown -0.25 ve movement/recovery bonus artışı; typed aura profile lifecycle sonunda temizlenir |
-| Shield_Basic | Ability1 (Q), varsayılan player grant yok | 8 sn cooldown, 5 sn duration; Basic Barrier uygular | Barrier kapasitesi +0.20 × MaxHealth ve +50 × Armor | Progression tanımlı değil |
-| SunBeam_Strike_Basic | Ability2 (E) | MouseWorld konumunda SunBeam strike actor spawn eder | Başlangıç damage 40, radius 96, width 72, length 720 | 2–5: her level +8 Damage, +8 Radius; scrap: 40/50/65/80 |
-| Dash_Basic | Ability3 (F) | 2 sn cooldown, 0.24 sn duration; input veya mouse yönünde hareket | Base 260 mesafe; movement rating ile en fazla +%50; mevcut kamera hedefinin üzerine +%15 zoom-out | 2–5: cooldown 1.88/1.76/1.64/1.52 sn |
-| Rocket_Basic | Ability4 (R) | 7 sn cooldown; mouse aim yönünde tek projectile, fare konumunda veya daha önce çarpışırsa Kinetic alan patlaması | Base damage 55 + AttackPower×1.25; radius 55; speed 1000; range 1100 üst sınırdır ve level ile değişmez | 2–15: her level +4 Damage, -0.12 sn cooldown, +1 Radius; L6/L15 evolve seçimi ertelendi |
-| GravityAnomaly_Basic | Ability1 (Q), varsayılan player grant | 8 sn cooldown; cursor hedefi 900 menzile clamp edilir, projectile yalnız hedefe ulaştığında sabit field üretir | Damage yok. Field: 2.5 sn, radius 220, pull 500, %20 MovementSlow; MaxHealth yalnız radius (+0.20) ve duration'ı (+0.0025) scale eder | 2–15: her level -0.10 cooldown, +0.03 duration, +2 radius, +10 pull, +0.005 slow, +25 speed, +5 range |
-| Primary fire | PrimaryFire (Space) | Weapon definition’dan otomatik üretilir | Silahın progression ve scaling rule’ları kullanılır | Silah profiline bağlı |
+Güncel başlangıç slotları Q Shield Graft, E Relay Prism, F Glacial Pressure,
+R Ironclad Protocol'dür. Bu dört JSON kaydının mevcut base contract değerleri:
+
+| Ability ID | Cooldown | Duration | Max charges | Progression |
+| --- | ---: | ---: | ---: | --- |
+| `Ability.Defense.ShieldGraft.Basic` | 12.0 s | 0.0 s | 1 | 14 repeat step; conversion +0.01, cooldown -0.20 |
+| `Ability.Utility.RelayPrism.Basic` | 10.0 s | 4.0 s | 1 | 14 level step; transfer +0.01, cooldown -0.20 |
+| `Ability.Offense.GlacialPressure.Basic` | 12.0 s | 1.0 s | 1 | 14 repeat step; initial damage +1, collision +4, cooldown -0.25 |
+| `Ability.Defense.IroncladProtocol.Basic` | 22.0 s | 10.0 s | 1 | 14 repeat step; minigun damage +2, cooldown -0.35 |
+
+Bu tablo yalnız JSON base/progression kaydını gösterir; resolved owner scaling,
+presentation ve uçtan uca oynanış kanıtı değildir. 51 kaydın tam ID envanteri
+ve kapsam sınırı [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)
+içindedir. Ability definition'ında `behaviorType` dar C++ registry dispatch
+enum'udur; effect definition'ında `behaviorKey` kullanılır. Bunlar semantic
+gameplay tag değildir; content ID ve runtime semantic tag ayrımı
+[IDENTITY_AND_CONTRACT_RULES](IDENTITY_AND_CONTRACT_RULES.md)
+ile korunur.
 
 SunBeam strike zamanları: telegraph 0.5 sn, arrival 0.2 sn, impact delay
 0.05 sn, impact visual 0.22 sn. Bunlar `SunBeamConfig.h` içindeki
@@ -878,13 +938,14 @@ durumuna göre uygulanır.
 
 | Attachment | Hedef | Temel etki | Koşullu / olay etkisi |
 | --- | --- | --- | --- |
-| Thermal Converter | Ability, PrimaryWeapon | Ignite sonrası cooldown azaltma değeri 0.4 | Thermal damage: Damage x1.20; Ignite olayı tüm non-primary ability cooldown’larını azaltır |
-| Energy Coupler | Ability, PrimaryWeapon | Shield damage x1.25, regen delay +0.75 sn | Energy damage: Damage x1.15 |
-| Kinetic Bore | Ability, PrimaryWeapon | Armor penetration 0.10 | Kinetic damage: +0.05 armor penetration |
-| Cryo Conduit | Ability, PrimaryWeapon | Cryo 4-hit, %25 / 1.5 sn parametreleri | Cryo slow +0.05 (üst sınır %30) |
-| Electric Conduit | Ability, PrimaryWeapon | Electric 0.04/stack, 3 sn, max 4 | Electric stack multiplier +0.01 (üst sınır 0.05/stack) |
-| Heavy Capacitor | Ability | Damage x1.40 | Cooldown x1.25; net güçlü fakat daha yavaş active ability |
-| Emergency Salvo | PrimaryWeapon | Ek projectile başlangıç değeri 0 | FireRate < 4 ise +1 projectile |
+| Thermal Converter | Ability, PrimaryWeapon | JSON'da kayıtlı tek attachment; Thermal capability yolu | Equip/modifier/event runtime yolu mevcut; acquisition ve bootstrap JSON akışı doğrulanmadı |
+
+Bu denetimde `attachments.json` yalnızca `Attachment.Thermal.Converter.Basic`
+kaydını içerir. Eski Energy Coupler, Kinetic Bore, Cryo Conduit, Electric
+Conduit, Heavy Capacitor ve Emergency Salvo satırları tarihsel tasarım
+adaylarıdır; shipped attachment kataloğu veya otomatik drop kanıtı olarak
+okunmaz. `GameAbility::TryEquipAttachment` ve attachment modifier/event
+yolları runtime altyapısını gösterir, acquisition UI göstermez.
 
 ### 3.4 Effect, event, UI ve cleanup kontratı
 
@@ -898,7 +959,9 @@ GameplayEffectDefinition (immutable shipped content)
 
 `GameplayEffectDefinition`; ID, duration/stack politikası, tag, behavior,
 visual ve source-scope sözleşmesini taşır. Source-parameterized shipped
-effect'lerde sayısal denge değeri taşımaz. Silah, ability, enemy, reward veya
+effect'lerde sayısal denge değeri taşımaz; dört `sourceParameterized=false`
+kayıt policy ile uyumlu sabit duration taşır (Movement Slow 5 sn, Phase Drift
+üç boost/recovery effect'i 6 sn). Silah, ability, enemy, reward veya
 alan üreticisi bu tanımı değiştirmez; `GameplayEffectSpec` kopyası üretip
 duration, stack limiti, modifier, runtime attribute ve source-upgrade
 değerlerini kendi JSON kaynağından çözer. `ActiveGameplayEffect` ise handle,
@@ -1112,6 +1175,9 @@ fazla %35 reduction uygulanır. Bu overheat'i kaldırmaz; sadece yüksek heat
 bölgesine daha uzun süre erişim sağlar.
 
 ### 4.3.1 Primary weapon balance runtime checks (2026-07-24)
+
+> Tarihsel test kaydıdır. 7 Eylül 2026 source review sırasında yeniden
+> çalıştırılmadı; aşağıdaki sonuçlar güncel build/test kanıtı değildir.
 
 `GasLiteCoreTests`, production `LightYearsAbilitySystemComponent`/
 `GameAbilityActionExecutor` attribute resolution
@@ -1393,10 +1459,10 @@ difficultyMultiplier = 1 + (wave / 5) * 0.25
 ## 10. Dokümantasyon bakımı
 
 - Gerçekleşmiş bir değişiklikte bu dosyadaki güncel tabloyu değiştirin.
-- Her uygulanan değişiklikte bu dosyaya ek olarak
-  **BALANCE_AND_ROADMAP_NOTEBOOK.md** ve
-  **CURRENT_IMPLEMENTATION_CATALOG.md** aynı değişiklik setinde güncellenir;
-  üç kayıt tamamlanmadan iş bitti kabul edilmez.
+- Her değişiklik yalnızca etkilediği sahiplik belgesinde kaydedilir. Bir değişiklik
+  runtime davranışını, JSON envanterini ve tarihli denge kararını birlikte
+  etkiliyorsa ilgili belgeler birbirine bağlantı verir; aynı tabloyu üç kez
+  kopyalamayın.
 - Henüz karara bağlanmamış fikirleri yalnızca
   [Balance & Roadmap Notebook](BALANCE_AND_ROADMAP_NOTEBOOK.md) içinde
   “Fikir” veya “Deney” statüsünde tutun.

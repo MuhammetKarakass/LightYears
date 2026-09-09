@@ -12,6 +12,7 @@
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h"
+#include "gameplay/ability/ironcladProtocol/IroncladProtocolContracts.h"
 #include "gameplay/ability/cryostasis/CryostasisContracts.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/effects/EffectBehaviorKeys.h"
@@ -32,6 +33,8 @@ namespace EffectData
 		ly::EffectBehaviorKeys::GravityAnomaly;
 	inline const sas::GameplayEffectBehaviorKey& DirectionalBarrierBehaviorKey =
 		ly::EffectBehaviorKeys::DirectionalBarrier;
+	inline const sas::GameplayEffectBehaviorKey& DamageReductionBehaviorKey =
+		ly::EffectBehaviorKeys::DamageReduction;
 
 	// JSON fallback/test catalog only. Shipped runtime policy comes from
 	// effects.json; source-owned magnitudes and durations come from the weapon,
@@ -435,6 +438,20 @@ namespace EffectData
 		return definition;
 	}();
 
+	inline const sas::GameplayEffectDefinition IroncladProtocolDamageReductionEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = AbilityData::IroncladProtocol::Effect::DamageReductionId;
+		definition.behaviorKey = DamageReductionBehaviorKey;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.sourceScopedApplication = true;
+		definition.sourceParameterized = true;
+		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
+		definition.category = "Defense.DamageReduction";
+		return definition;
+	}();
+
 	inline const ly::List<const sas::GameplayEffectDefinition*>&
 	GetBuiltinGameplayEffectDefinitions()
 	{
@@ -457,6 +474,7 @@ namespace EffectData
 			&NullPulseStaggerEffect
 			,&DirectionalBarrierActiveEffect
 			,&CryostasisIceShellEffect
+			,&IroncladProtocolDamageReductionEffect
 		};
 		return definitions;
 	}

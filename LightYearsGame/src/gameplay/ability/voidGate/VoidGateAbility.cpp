@@ -160,7 +160,7 @@ namespace ly
 	{
 		SpaceShip* ship = dynamic_cast<SpaceShip*>(&context.owner);
 		if (!ship || !context.owner.GetWorld() || !mPortalA.expired() ||
-			ship->GetMovementComponent().IsDashing())
+			ship->GetMovementComponent().IsMovementBurstActive())
 		{
 			return false;
 		}

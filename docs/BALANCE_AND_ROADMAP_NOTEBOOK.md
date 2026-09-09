@@ -1,9 +1,20 @@
 # LightYears — Balance & Roadmap Notebook
 
-> **Runtime kaynak notu (14 Ağustos 2026):** uygulanan ability sayıları ve
+> 7 Eylül 2026 kaynak denetimi: [Proje durum raporu](<vault/06 - Status and Plans/2026-09-07 Project Status Review.md>). Güncel default loadout Q Shield Graft, E Relay Prism, F Glacial Pressure, R Ironclad Protocol; eski tarihli loadout/test ifadeleri güncel çalışma ağacının kanıtı değildir. Bu denetimde build/test çalıştırılmadı; bu belgenin mevcut tasarım ve çalışma notları korunmuştur.
+
+
+> **Runtime kaynak notu (7 Eylül 2026):** uygulanan ability sayıları ve
 > progression değerleri `LightYearsGame/assets/content/data/abilities.json`
 > içindedir; bu not hedef tuning, playtest soruları ve gelecek fikirler içindir.
 > Execution Drive ve Relay Prism artık fikir değil, shipped behavior'lardır.
+> Güncel default loadout Q Shield Graft, E Relay Prism, F Glacial Pressure, R
+> Ironclad Protocol'dür. Bu denetimde build/test çalıştırılmadı; tarihsel test
+> satırları yeni doğrulama olarak okunmamalıdır.
+
+> Aşağıdaki uygulanan ability kartları tarihsel tuning ve behavior kayıtlarıdır.
+> Güncel default loadout veya güncel resolved stat kaynağı değildir; bunlar
+> [CURRENT_IMPLEMENTATION_CATALOG](CURRENT_IMPLEMENTATION_CATALOG.md) ve JSON
+> kaynaklarında tutulur.
 
 ## Uygulanan ability: Dash / Ability.Movement.Dash.Basic
 
@@ -12,7 +23,7 @@
 | Statü | Uygulandı |
 | Slot ve input | Ability3 / F |
 | Activation / lifetime | OnPressed / 0.24 sn Duration |
-| Cooldown / duration / charge | L1-L5: 2.0 / 1.88 / 1.76 / 1.64 / 1.52 sn; taban cooldown'un level başına %6'sı düşer; 1 charge |
+| Cooldown / duration / charge | L1-L5: 2.0 / 1.88 / 1.76 / 1.64 / 1.52 sn; JSON progression her level için authored sabit -0.12 sn; 1 charge |
 | Davranış | Girdi yönü normalize edilir; girdi yoksa mouse aim kullanılır; ikisi de geçersizse dash başlamaz |
 | Mesafe | Base 260; yatay ve dikey movement rating ortalaması ile diminishing ve en fazla +%50 |
 | Momentum | Dash öncesi velocity’nin X/Y bileşenleri tamamen korunur; impulse bunun üzerine eklenir ve bitişte aynı velocity devam eder |
@@ -42,7 +53,7 @@
 
 | Alan | Not |
 | --- | --- |
-| Statü | Uygulandı; player varsayılan loadout'unda Shield'in yerine grant edilir |
+| Statü | Uygulandı; tarihsel test loadout'unda Shield'in yerine grant edildi; güncel default değil |
 | Slot ve input | Ability1 / Q; OnPressed, cursor hedefi |
 | Cooldown / charge | 8.0 sn taban cooldown; 1 charge; AbilityHaste final cooldown'u merkezi eğri üzerinden azaltır |
 | Delivery | Owner önünde spawn olan projectile cursor'a gider; hedef 900 menzile clamp edilir, homing/collision ile patlama yoktur |
@@ -59,14 +70,14 @@
 
 | Alan | Not |
 | --- | --- |
-| Statü | Uygulandı; shipped content'te mevcut ve default player loadout'unda Ability2/E olarak grant edilir |
+| Statü | Uygulandı; shipped content'te mevcut; güncel default loadout'ta değil |
 | Slot ve input | Ability2 / E; OnPressed, Instant, tek charge |
 | Pulse | Oyuncu merkezli 500 radius (+200); menzildeki uygun düşman Combatant'lara bir kez Energy damage ve control response uygulanır |
 | Projectile temizliği | Yalnız `AbilityWorldActor::IsProjectileActor()` true olan actor'lar yok edilir. Primary projectile, Rocket, Gravity Anomaly ve Overdrive projectile'ları kapsanır; beam, field, wave, pickup, düşman, oyuncu ve persistent görseller kapsanmaz |
 | Hasar ve level | L1 damage 10; her level +2 damage ve -0.25 sn cooldown. Crit, AttackPower, AttackSpeed, Mobility ve MaxHealth damage/radius/cleanup'ı scale etmez |
-| Control | Normal tam Stun, elite %60, miniboss %30; boss tam Stun almaz, en fazla kısa Stagger/interrupt alır. Boss phase/telegraph/scripted/death/arena sequence kesintisi bu ability tarafından yapılmaz |
+| Control | Normal tam Stun, elite %60, miniboss %30; boss tam Stun almaz, en fazla kısa Stagger/interrupt alır. Stun activation/active execution ve trigger action kilitler; outgoing damage suppression bu kartın doğrulanmış etkisi değildir. |
 | EnergyMax | `BonusEnergyMax = max(0, ResolvedEnergyMax - 50)`; stun `1.0 + 0.65 × (1 - exp(-BonusEnergyMax / 50))`, normal üst sınır 1.65 sn |
-| Effect / presentation | Reusable `Effect.Control.Stun.Basic` ve `Effect.Control.Stagger.Basic`; Stun movement yanında ability/primary fire activation ve active execution, outgoing damage ve owner trigger aksiyonlarını kilitler; typed `NullPulsePresentationProfile` ve self-cleaning, non-colliding pulse visual |
+| Effect / presentation | Reusable `Effect.Control.Stun.Basic` ve `Effect.Control.Stagger.Basic`; Stun movement yanında ability/primary fire activation, active execution ve owner trigger aksiyonlarını kilitler; outgoing damage suppression bu tarihsel kartta doğrulanmış bir kontrat değildir; typed `NullPulsePresentationProfile` ve self-cleaning, non-colliding pulse visual |
 | Kod sınırı | `gameplay/ability/nullPulse/`, `gameConfigs/ability/control/NullPulseConfig.h`, `presentation/ability/nullPulse/`; projectile sorgusu family ID bilmeyen reusable marker/query katmanıdır |
 | Test | Content loader, behavior/effect validation, damage/control, EnergyMax formülü, projectile-vs-persistent actor ayrımı, visual cleanup ve full CTest doğrulandı |
 
@@ -74,7 +85,7 @@
 
 | Alan | Not |
 | --- | --- |
-| Statü | Uygulandı; shipped catalog'da mevcut ve varsayılan Ability3/F loadout'una bağlandı |
+| Statü | Uygulandı; shipped catalog'da mevcut; güncel default loadout'ta değil |
 | Activation / delivery | OnPressed / Instant; owner önünde doğan, cursor hedefini 900 menzile clamp eden 2000 hızlı projectile; projectile hasar vermez |
 | Field | Hedefte 4.0 sn alan; 0.25 sn tick aralığı ve toplam 16 tick; yalnız Combatant karşı hedefleri etkiler |
 | Boundary | Cast başına bir kez oluşturulan 20 kontrol noktalı düşük frekanslı radial sınır; 250 inner core, 250 minimum dış yarıçap, 335 maksimum dış yarıçap; gameplay ve render aynı resolver'ı kullanır |
@@ -108,20 +119,22 @@ değer” ile “şu an çalışan değer” birbirine karışmaz.
 Her denge kaydı mümkünse şu dört alanı içermelidir: hedef davranış, değişen
 değer, ölçüm / test sahnesi, sonuç.
 
-Zorunlu kayıt kuralı: Uygulanmış her değişiklik (denge, kod, konfigürasyon,
-roadmap veya dokümantasyon) aynı
-değişiklik setinde **BALANCE_AND_ROADMAP_NOTEBOOK.md**,
-**CURRENT_IMPLEMENTATION_CATALOG.md** ve **PROJECT_DOCUMENTATION.md**
-dosyalarına yazılır. Bu üç kayıt güncellenmeden değişiklik tamamlanmış sayılmaz.
+Belge sahipliği kuralı: Runtime teknik gerçekleri
+**PROJECT_DOCUMENTATION.md**, JSON ID/sayı envanteri
+**CURRENT_IMPLEMENTATION_CATALOG.md**, tarihli karar/deney/roadmap ise bu
+notebook içinde tutulur. Bir değişiklik birden fazla alanı etkiliyorsa
+belgeler birbirine bağlanır; aynı tabloyu üç belgede tekrar etmeyin.
 
 ## 1. Karar günlüğü
 
 | Tarih | Alan | Karar / değişiklik | Statü | Neden / sonuç |
 | --- | --- | --- | --- | --- |
+| 2026-09-07 | Kaynak kapsamı ve belge sahipliği | JSON envanteri 51 ability, 19 effect, 7 weapon, 1 player ship ve 1 attachment olarak kaydedildi. Güncel default Q Shield Graft, E Relay Prism, F Glacial Pressure, R Ironclad Protocol. Registration sayısı e2e oynanış kanıtı değildir; attachment equip runtime yolları var, bootstrap acquisition akışı doğrulanmadı. | Uygulandı; source review | Katalog tek content envanteri; teknik kontrat ve tarihli roadmap sahipliklerine ayrıldı. Build/test çalıştırılmadı. |
 | 2026-08-11 | Ability attribute family ownership | Non-primary ability base attribute'ları yalnız `Common.*` veya content ID'den türetilen exact `Ability.<Category>.<Family>.*` namespace'ini kullanır. `Ability.*` definition modifier, scaling target ve level modifier'ları ayrıca aynı family'de ve base listede declare edilmiş olmak zorundadır. PrimaryFire `Ability.*` değer/hedef taşıyamaz. | Uygulandı ve doğrulandı | Foreign-family, similar-prefix ve undeclared target sızıntısı kapatıldı. Scaling source ile `Effect.*`/`AbilityActor.*` consumer-owned hedefleri korunur. Configured/PrimaryFire edge case'leri, Common hedefleri ve shipped catalog dahil Debug build ile CTest 5/5 geçti. |
 | 2026-08-11 | Overdrive Core | `Ability.Offense.OverdriveCore.Basic` Ability4/R varsayılan grant olarak shipped edildi: 8 homing Kinetic rocket, same-target decay ve CriticalChance-scaled AttackSpeed boost eklendi; typed projectile profile/telegraph/explosion kullanılır. | Uygulandı | Content, actor/profile validation, hedef takibi, damage ve boost regresyonları GasLiteCoreTests içinde doğrulandı. |
 | 2026-08-11 | Phase Drift | `Ability.Movement.PhaseDrift.Basic` shipped kataloğa eklendi: cleanse, geçici damage/collision protection, movement/shield/afterburner recovery boost, break-on-action ve typed aura presentation sağlar. Varsayılan player loadout'una bağlanmadı. | Uygulandı; runtime regresyon kapsamı eksik | Content loader doğrulaması mevcut; lifecycle, collision restoration, cleanse/protection ve visual cleanup için ayrı runtime testleri eklenmeli. |
 | 2026-08-15 | Ion Storm | `Ability.Offense.IonStorm.Basic` eklendi: cursor delivery projectile, cast-stable düzensiz Electric field, ortak damage/scaling kanalı ve typed projectile/field presentation kullanır. | Uygulandı | Alan sınırı tek feature-local resolver'da tutuldu; gameplay filtresi ile görsel sınır ayrışmıyor. Content loader, game startup ve boundary unit regresyonu doğrulandı. |
+| 2026-08-28 | Time Slip | `Ability.Defense.TimeSlip.Basic` eklendi: Player gerçek zamanda kalırken `HostileGameplay` actor'ları ve player/hostile tüm projectile'lar ortak temporal çarpanla 0.35× yavaşlar; primary fire cadence'i 0.35× olur. L1 süre 3.0 sn, cooldown 18.0 sn, EnergyMax bonusu `(EnergyMax - 50) × 0.0015` tabanlıdır. | Uygulandı; playtest bekliyor | Engine-wide global time scale kullanılmadı. Kaynak-ID'li temporal modifier ledger ile birden fazla gelecekteki modifier'ın birbirini yanlışlıkla silmesi engellendi. Projectile sınıflandırması ortak `IsProjectileActor()` marker'ından çözülür; değişiklik sonrası yeniden build/playtest gerekir. |
 | 2026-08-09 | Null Pulse | `Ability.Control.NullPulse.Basic` shipped edildi: self-centered pulse, yalnız işaretli projectile temizliği, reusable Stun/Stagger ve typed feature-local presentation eklendi. Ability2/E default grant'i Null Pulse'a geçirildi; InfernoSpray default grant listesinden çıkarıldı. | Uygulandı | Null Pulse; ability family'lerinin özel davranışını generic SAS'a taşımadan, reusable actor marker/query ve merkezi control response ile çözer. Content loader, runtime ve full CTest geçti; diğer default slotlar değişmedi. |
 | 2026-08-06 | Proje geneli gameplay tag sözleşmesi | `GameplayTagSchema` eklendi. Merkez yalnız domain köklerini, canonical biçimi ve iki action lock tagini sahiplenir; ability/weapon/effect/actor/attachment leaf tagleri kendi feature kontratlarında kalır. | Uygulandı | Feature'lar arası rastgele blok tag üretimini engeller. Ability, effect, actor, weapon, attachment JSON ve ship progression doğrulaması aynı şemayı çağırır; `GameAbility` shared action lock'ları tek activation gate'de tüketir. |
 | 2026-08-07 | Attribute kimlik mimarisi - Aşama 1 | `sas::AttributeId` ve `sas::AttributeIdHash` eklendi. Tip string-backed ve opaque'tır; `GameplayTag` conversion, hierarchy ve tag matching davranışı yoktur. | Uygulandı | Sonraki aşamalarda `GameplayAttribute`, `AttributeSystem`, loader ve katalog kullanımları da `AttributeId`'ye geçirildi; test çalıştırılmadı. |
@@ -136,7 +149,7 @@ dosyalarına yazılır. Bu üç kayıt güncellenmeden değişiklik tamamlanmı�
 | 2026-07-24 | Ability presentation mimarisi | Global `VisualConfig.h` ve `AbilityVisualStructs.h` kaldırıldı. Actor config'i tek `presentationProfileId` taşır; Rocket ve SunBeam feature-local concrete profile'larını typed registry üzerinden çözer. Shield visual içeriği de feature-local definition/ID/content dosyalarına ayrıldı. | Uygulandı | Yeni ability ve value-only evolve aynı aile altında yeni typed profile kaydeder. Yapısal olarak farklı evolve base profile'a optional alan/flag yığmaz; aynı ailede ayrı profile ve actor/handler alır. Bağlayıcı kontrat `PROJECT_DOCUMENTATION.md` §3.0.1 içindedir. |
 | 2026-07-24 | Rocket Basic | Ability.Offense.Rocket.Basic ayrı Rocket behavior ve projectile actor olarak eklendi. Damage/radius/cooldown normal level ilerlemesinde gelişir; projectile speed ve maksimum range delivery kimliği olarak sabit kalır. | Uygulandı | Rocket cursor menzil içindeyse cursor konumunda, cursor uzaktaysa 1100 maksimum menzilde patlar; telegraph gerçek clamp edilmiş patlama noktasını gösterir. Çarpışma daha önce gerçekleşirse alan içindeki her uygun hedefe bir kez merkezi Kinetic DamageContext uygulanır. Gelecek evolve'lar aynı `rocket/` ailesine behavior/actor bileşimi olarak eklenir. |
 | 2026-07-24 | Dash momentum ve kamera kontrolü | Dash öncesi velocity tamamen korunup Dash impulse üzerine eklendi. Kısa süreli impulse speed zoom’dan çıkarıldı; kamera merkezi Dash displacement’ıyla birlikte taşınıyor. Dash, o andaki normal speed/afterburner kamera hedefinin üzerine +%15 göreli zoom-out ekliyor. | Uygulandı | Gemi Dash sonrasında hızını kaybetmez. Kamera–gemi offset'i korunur; Dash başında yaklaşma olmaz. Göreli katman kritik sönümlü zoom hattıyla girip çıkar; hedef kapanınca zoom hızı bir karede tersine dönmez. Momentum, kamera offset, göreli zoom ve zoom-velocity regresyon testleri eklendi. |
-| 2026-07-24 | Dash tuning güvenliği | Dash cooldown progression sabit `-0.3` yerine taban cooldown'un level başına %6'sı olarak tanımlandı; player ability grant hataları sebebiyle loglanıyor. | Uygulandı | Taban cooldown 1 sn yapılınca L5'in negatif cooldown üretip Dash'in hiç grant edilmemesi düzeltildi. Yapısal testler geçerli sayısal tuning değişikliklerini sabit eski değerler yüzünden reddetmez. |
+| 2026-07-24 | Dash tuning güvenliği | Dash cooldown progression daha sonra JSON'da level başına authored sabit `-0.12` olarak tutuldu; bu satır tarihsel tasarım kararını kaydeder. | Tarihsel kayıt; güncel kaynak JSON | Güncel teknik referans JSON değerini esas alır; yüzde kuralı varsayılmaz. |
 | 2026-07-24 | Primary weapon scaling | Rapid Laser 1.0 AP/1.0 AS korunurken Shotgun 0.75/0.50, Dual Kinetic 0.45/1.0, Electric 0.85/0.60, Beam 0.75 AP + 0.50 EnergyMax ve Cryo 0.75/0.50 olarak ayarlandı. | Uygulandı | Tekrarlanan ana silahlarda erken/orta oyun büyümesi indirildi; Dual'ın iki muzzle toplamı L50'de Rapid Laser'ın altında kaldı. Production runtime testleri L1/10/25/50 değerlerini doğrular. |
 | 2026-07-24 | Electric / Beam special scaling | Electric Luck artık hasar scale'ı değil, normal zincirlerden sonra tek ek uygun zincir için merkezi combat Luck ile en fazla %35 şanstır. Beam AttackSpeed yalnızca 50% heat sonrası heat gain'i azaltır; 75–100% aralığında doygun eğriyle en fazla %35'tir. | Uygulandı | Electric hedef tekrarını ve hedef yokken proc'u engeller. Beam AttackSpeed doğrudan DPS/tick/fire rate eklemez, overheat'i kaldırmaz; sadece yüksek heat penceresini uzatır. |
 | 2026-07-25 | Gravity Anomaly Basic | Gravity Anomaly player loadout'unda Ability1/Q'ya taşındı ve bu slotta önceki Shield grant'inin yerini aldı. Projectile cursor'a gider, sabit hedefte damage'siz field oluşturur. İçeride slow süresi sürekli 2 sn'ye yenilenir; alan terkinde veya field bitiminde pull hemen kapanır, slow/visual 2 sn sonra normal effect expiry ile temizlenir. | Uygulandı | Ayrı field'lar source scope ile birbirinin slow/pull effect'ini silmez. GasLiteCoreTests loadout/slot, clamp, lifecycle, target filtreleme, pull, exit/destroy tail, hareket slow, multi-field expiry, level/MaxHealth scale ve visual cleanup'ı doğrular. |
@@ -347,6 +360,13 @@ anlamına gelmez.
 
 ### P0 — ölçülebilir çekirdek denge
 
+- [ ] Arena restart ve run lifecycle akışını tek bir tekrar üretilebilir senaryoda
+  doğrula; death, respawn, game-over ve yeniden başlatma durumlarını ayır.
+- [ ] HUD controller'ın ArenaTestLevel ve LevelOne tick yollarında aynı
+  resolved ability/health/shield/energy değerlerini gösterdiğini doğrula.
+- [ ] Scrap award, ability purchase/restore ve default loadout binding için
+  economy kaynak/harcama doğruluğunu doğrula; kayıt varlığı otomatik ekonomi
+  akışı anlamına gelmez.
 - [ ] Tek hedef / çok hedef / shield / armor için tekrar üretilebilir combat
   test sahnesi kur.
 - [ ] Her oyuncu silahı için level 1–4 teorik ve ölçülen DPS tablosunu doldur.
@@ -392,6 +412,12 @@ anlamına gelmez.
 - [ ] CSV'yi runtime kaynağı değil, balance import/export ve playtest analizi
   aracı olarak sınırla.
 - [ ] Playtest telemetrisi: DPS, alınan hasar, ölüm nedeni, out-of-bounds.
+
+Kamera/world HUD ayrımı, ThrustDrift hareketi, arena boundary uyarısı ve Dash
+takip/zoom davranışı uygulanmış runtime parçalarıdır; bunlar artık roadmap'te
+"başlangıç işi" olarak tekrar açılmaz. Active ability runtime da uygulanmış
+durumdadır; ertelenen konu ability sistemi değil, içerik acquisition/evolve
+seçimi ve ekonomi bağlantısının doğruluğudur.
 
 ## 8. Playtest kayıtları
 

@@ -1,6 +1,7 @@
 #include "gameplay/ship/ShipRuntimeModifiers.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace ly
 {
@@ -32,6 +33,12 @@ namespace ly
 		}
 
 		modifier.movementSpeedMultiplier = std::max(0.f, modifier.movementSpeedMultiplier);
+		modifier.thrustBonus = std::isfinite(modifier.thrustBonus)
+			? std::max(-1.f, modifier.thrustBonus)
+			: 0.f;
+		modifier.turnCapabilityMultiplier = std::isfinite(modifier.turnCapabilityMultiplier)
+			? std::max(0.f, modifier.turnCapabilityMultiplier)
+			: 1.f;
 		modifier.shieldRegenMultiplier = std::max(0.f, modifier.shieldRegenMultiplier);
 		modifier.afterburnerRegenMultiplier = std::max(0.f, modifier.afterburnerRegenMultiplier);
 		modifier.afterburnerEnergyDrainMultiplier = std::max(
@@ -49,6 +56,22 @@ namespace ly
 	float ShipRuntimeModifiers::GetMovementSpeedMultiplier() const
 	{
 		return ResolveProduct(mModifiers, &ShipRuntimeModifier::movementSpeedMultiplier);
+	}
+
+	float ShipRuntimeModifiers::GetThrustBonus() const
+	{
+		float total = 0.f;
+		for (const auto& [sourceId, modifier] : mModifiers)
+		{
+			(void)sourceId;
+			total += modifier.thrustBonus;
+		}
+		return total;
+	}
+
+	float ShipRuntimeModifiers::GetTurnCapabilityMultiplier() const
+	{
+		return ResolveProduct(mModifiers, &ShipRuntimeModifier::turnCapabilityMultiplier);
 	}
 
 	float ShipRuntimeModifiers::GetConditionalMovementSpeedMultiplier(

@@ -356,7 +356,7 @@ namespace ly
 			target,
 			std::max(0.f, mSettings.baseTickDamage + energyMax * mSettings.energyMaxTickScale),
 			owner,
-			{ DamageTypeSchema::Energy },
+			{ DamageTypeSchema::Electric },
 			{},
 			mSettings.sourceAbilityId,
 			mSettings.sourceAbilityTags,

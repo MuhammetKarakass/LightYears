@@ -17,6 +17,7 @@ namespace ly
 {
 	// Keep this translation unit dependent on the complete behavior selector so
 	// newly registered concrete families are reflected in runtime validation.
+	// ReclaimerProtocol included in AbilityBehaviorType.
 	namespace
 	{
 		bool Fail(std::string* failureReason, const std::string& reason)

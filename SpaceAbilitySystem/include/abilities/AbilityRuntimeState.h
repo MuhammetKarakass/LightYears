@@ -34,6 +34,7 @@ namespace sas
 		bool StartDeferredActiveDuration(float activeDuration);
 		void TickActiveTime(float deltaTime);
 		bool RefreshActiveDuration(float activeDuration);
+		void StartCooldown(float cooldownDuration);
 		void EndActivation(float cooldownDuration, int maxCharges);
 		bool TickCooldown(float deltaTime, float cooldownDuration, int maxCharges);
 		bool TickActiveDuration(float deltaTime);

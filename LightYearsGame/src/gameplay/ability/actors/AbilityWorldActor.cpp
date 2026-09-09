@@ -4,6 +4,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/portal/PortalDestinationRebaser.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"
+#include "gameplay/projectile/ProjectileInterceptionService.h"
 #include "framework/World.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
@@ -82,6 +83,12 @@ namespace ly
 		mAllowFriendlyFire{ false },
 		mEnablePhysicsOnBeginPlay{ true }
 	{
+		// A projectile/field owned by an enemy automatically follows the same
+		// temporal domain, so Time Slip also affects actors spawned after activation.
+		if (owner)
+		{
+			SetSimulationTimeDomain(owner->GetSimulationTimeDomain());
+		}
 	}
 
 	Actor* AbilityWorldActor::GetOwnerActor() const
@@ -115,6 +122,14 @@ namespace ly
 
 	void AbilityWorldActor::BeginPlay()
 	{
+		// Every concrete ability/weapon projectile already opts in through the
+		// shared marker. Assigning the domain here keeps newly added projectile
+		// families consistent without repeating temporal code in each constructor.
+		if (IsProjectileActor())
+		{
+			SetSimulationTimeDomain(SimulationTimeDomain::ProjectileGameplay);
+		}
+
 		Actor::BeginPlay();
 		mPreviousLocation = GetActorLocation();
 
@@ -143,7 +158,28 @@ namespace ly
 			))
 		{
 			mPreviousLocation = GetActorLocation();
-			Destroy();
+			// The interception policy normally only reports the hit and lets this
+			// common owner destroy the projectile. Keep the guard because a future
+			// boundary is allowed to consume it during its response; calling a
+			// derived Destroy() twice can repeat family-specific cleanup.
+			if (!GetIsPendingDestroy())
+			{
+				Destroy();
+			}
+			return;
+		}
+		if (!GetIsPendingDestroy() &&
+			IsProjectileActor() &&
+			ProjectileInterceptionService::TryInterceptProjectile(
+				*this,
+				mPreviousLocation
+			))
+		{
+			mPreviousLocation = GetActorLocation();
+			if (!GetIsPendingDestroy())
+			{
+				Destroy();
+			}
 			return;
 		}
 
@@ -241,6 +277,11 @@ namespace ly
 		}
 		mOwner = MakeWeakActor(&newOwner);
 		mUnmanagedOwner = mOwner.expired() ? &newOwner : nullptr;
+		SetSimulationTimeDomain(
+			IsProjectileActor()
+				? SimulationTimeDomain::ProjectileGameplay
+				: newOwner.GetSimulationTimeDomain()
+		);
 		mAllowFriendlyFire = false;
 		SetDamage(std::max(0.f, GetDamage() * std::max(0.f, damageMultiplier)));
 		ConfigureCollisionFromOwner();
@@ -294,6 +335,10 @@ namespace ly
 	{
 		mCollisionRadius = std::max(0.f, radius);
 		SetCollisionRadius(mCollisionRadius);
+		if (World* world = GetWorld())
+		{
+			world->RefreshActorSpatialQuery(*this);
+		}
 	}
 
 	void AbilityWorldActor::SetRelayProjectileDamagePolicy(bool allowFriendlyFire)
@@ -460,21 +505,20 @@ namespace ly
 		const float radiusSquared = effectiveRadius * effectiveRadius;
 		const shared_ptr<Actor> owner = mOwner.lock();
 		Actor* ownerActor = owner ? owner.get() : mUnmanagedOwner;
-		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
-			targeting::swept::RadiusBounds(center, effectiveRadius)
-		))
-		{
-			const shared_ptr<Actor> target = actorWeak.lock();
-			if (!target || !IsValidAbilityTarget(target.get()))
+		world->ForEachActorInBounds(
+			targeting::swept::RadiusBounds(center, effectiveRadius),
+			[this, center, radiusSquared, damage, ownerActor](Actor& target)
 			{
-				continue;
+			if (!IsValidAbilityTarget(&target))
+			{
+				return;
 			}
 
-			const float distanceSquared = DistanceSquaredToActorBounds(*target, center);
+			const float distanceSquared = DistanceSquaredToActorBounds(target, center);
 			if (distanceSquared <= radiusSquared)
 			{
 				ApplyCombatDamage(
-					*target,
+					target,
 					damage,
 					ownerActor,
 					mDamageTags,
@@ -485,7 +529,8 @@ namespace ly
 					this
 				);
 			}
-		}
+			}
+		);
 	}
 
 	void AbilityWorldActor::ConfigureFromAttributes(const sas::GameplayAttributeList& attributes)

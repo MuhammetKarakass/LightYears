@@ -6,9 +6,12 @@
 
 namespace ly { namespace perf {
 
-inline std::atomic<int> g_activeActors{0};
-inline std::atomic<int> g_bullets{0};
-inline std::atomic<int> g_particles{0};
+	inline std::atomic<int> g_activeActors{0};
+	inline std::atomic<int> g_bullets{0};
+	inline std::atomic<int> g_particles{0};
+	inline std::atomic<int> g_renderCandidates{0};
+	inline std::atomic<int> g_renderCulled{0};
+	inline std::atomic<int> g_renderSubmitted{0};
 
 inline float g_reportTimer =0.0f;
 
@@ -20,7 +23,13 @@ inline void DecActiveActors() { g_activeActors.fetch_sub(1, std::memory_order_re
 inline void IncBullets() { g_bullets.fetch_add(1, std::memory_order_relaxed); }
 inline void DecBullets() { g_bullets.fetch_sub(1, std::memory_order_relaxed); }
 inline void IncParticles() { g_particles.fetch_add(1, std::memory_order_relaxed); }
-inline void DecParticles() { g_particles.fetch_sub(1, std::memory_order_relaxed); }
+	inline void DecParticles() { g_particles.fetch_sub(1, std::memory_order_relaxed); }
+	inline void SetRenderStats(int candidates, int culled, int submitted)
+	{
+		g_renderCandidates.store(candidates, std::memory_order_relaxed);
+		g_renderCulled.store(culled, std::memory_order_relaxed);
+		g_renderSubmitted.store(submitted, std::memory_order_relaxed);
+	}
 
 inline void TickAndReport(float deltaTime)
 {
@@ -28,18 +37,27 @@ inline void TickAndReport(float deltaTime)
  if (g_reportTimer >=5.0f)
  {
  g_reportTimer =0.0f;
- const int activeActors = g_activeActors.load();
- const int bullets = g_bullets.load();
- const int particles = g_particles.load();
- LY_PROFILE_COUNTER("Actors", activeActors);
- LY_PROFILE_COUNTER("Bullets", bullets);
- LY_PROFILE_COUNTER("Particles", particles);
- LY_CORE_INFO(
-  "PerfReport: Actors=%d Bullets=%d Particles=%d",
-  activeActors,
-  bullets,
-  particles
- );
+	  const int activeActors = g_activeActors.load();
+	  const int bullets = g_bullets.load();
+	  const int particles = g_particles.load();
+	  const int renderCandidates = g_renderCandidates.load();
+	  const int renderCulled = g_renderCulled.load();
+	  const int renderSubmitted = g_renderSubmitted.load();
+	  LY_PROFILE_COUNTER("Actors", activeActors);
+	  LY_PROFILE_COUNTER("Bullets", bullets);
+	  LY_PROFILE_COUNTER("Particles", particles);
+	  LY_PROFILE_COUNTER("RenderCandidates", renderCandidates);
+	  LY_PROFILE_COUNTER("RenderCulled", renderCulled);
+	  LY_PROFILE_COUNTER("RenderSubmitted", renderSubmitted);
+	  LY_CORE_INFO(
+	   "PerfReport: Actors=%d Bullets=%d Particles=%d Render=%d/%d (culled=%d)",
+	   activeActors,
+	   bullets,
+	   particles,
+	   renderSubmitted,
+	   renderCandidates,
+	   renderCulled
+	  );
  }
 }
 

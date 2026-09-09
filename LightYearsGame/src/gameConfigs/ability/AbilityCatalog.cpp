@@ -1,5 +1,6 @@
 #include "gameConfigs/ability/control/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/control/FrostMaelstromConfig.h"
+#include "gameConfigs/ability/control/CryoBolaConfig.h"
 #include "gameConfigs/ability/offensive/FrozenThrongConfig.h"
 #include "gameConfigs/ability/offensive/CombatSentryConfig.h"
 #include "gameConfigs/ability/offensive/NanoPlagueConfig.h"
@@ -9,20 +10,37 @@
 #include "gameConfigs/ability/offensive/AstralSurgeConfig.h"
 #include "gameConfigs/ability/offensive/WingSentinelsConfig.h"
 #include "gameConfigs/ability/offensive/CrescentReaverConfig.h"
+#include "gameConfigs/ability/offensive/AegisReaverConfig.h"
 #include "gameConfigs/ability/offensive/MineLayerConfig.h"
 #include "gameConfigs/ability/offensive/ScorchDriveConfig.h"
 #include "gameConfigs/ability/offensive/IonStormConfig.h"
+#include "gameConfigs/ability/offensive/InertialWakeConfig.h"
+#include "gameConfigs/ability/offensive/LanceDriveConfig.h"
 #include "gameConfigs/ability/offensive/ChainLightningConfig.h"
+#include "gameConfigs/ability/offensive/StormMarkConfig.h"
+#include "gameConfigs/ability/offensive/SolarBombardmentConfig.h"
+#include "gameConfigs/ability/offensive/StrikeRunConfig.h"
+#include "gameConfigs/ability/offensive/BlastbackConfig.h"
+#include "gameConfigs/ability/offensive/SeismicChargeConfig.h"
+#include "gameConfigs/ability/offensive/ArcScythesConfig.h"
 #include "gameConfigs/ability/movement/EnergySpearConfig.h"
 #include "gameConfigs/ability/offensive/OrbitalDronesConfig.h"
 #include "gameConfigs/ability/offensive/ExecutionDriveConfig.h"
 #include "gameConfigs/ability/control/NullPulseConfig.h"
 #include "gameConfigs/ability/defensive/DirectionalBarrierConfig.h"
+#include "gameConfigs/ability/defensive/IroncladProtocolConfig.h"
+#include "gameConfigs/ability/defensive/ClosedCircuitConfig.h"
+#include "gameConfigs/ability/defensive/ShieldGraftConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameConfigs/ability/movement/DashConfig.h"
 #include "gameConfigs/ability/defensive/ShieldConfig.h"
 #include "gameConfigs/ability/movement/PhaseDriftConfig.h"
+#include "gameConfigs/ability/movement/VectorSyncConfig.h"
+#include "gameConfigs/ability/movement/ZeroDragConfig.h"
+#include "gameConfigs/ability/defensive/TemporalConvergenceConfig.h"
+#include "gameConfigs/ability/defensive/TemporalRecallConfig.h"
+#include "gameConfigs/ability/defensive/TimeSlipConfig.h"
 #include "gameConfigs/ability/offensive/HullShockConfig.h"
 #include "gameConfigs/ability/offensive/GlacialPressureConfig.h"
 #include "gameConfigs/ability/defensive/ShieldHarvestConfig.h"
@@ -32,6 +50,9 @@
 #include "gameConfigs/ability/utility/RelayPrismConfig.h"
 #include "gameConfigs/ability/utility/EchoProtocolConfig.h"
 #include "gameConfigs/ability/utility/VoidGateConfig.h"
+#include "gameConfigs/ability/utility/FoldspaceArenaConfig.h"
+#include "gameConfigs/ability/offensive/EmberSwarmConfig.h"
+#include "gameConfigs/ability/defensive/ReclaimerProtocolConfig.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 
 namespace AbilityData
@@ -59,15 +80,22 @@ namespace AbilityData
 			&Definitions::EchoProtocol_Basic,
 			&Definitions::RailBurst_Basic,
 			&Definitions::CrescentReaver_Basic,
+			&Definitions::AegisReaver_Basic,
 			&Definitions::MineLayer_Basic,
 			&Definitions::EnergySpear_Basic,
 			&Definitions::ScorchDrive_Basic,
+			&Definitions::InertialWake_Basic,
+			&Definitions::LanceDrive_Basic,
 			&Definitions::IonStorm_Basic,
 			&Definitions::ChainLightning_Basic
+			,
+			&Definitions::StormMark_Basic
 			,
 			&Definitions::VoidGate_Basic
 			,
 			&Definitions::FrostMaelstrom_Basic
+			,
+			&Definitions::CryoBola_Basic
 			,
 			&Definitions::FrozenThrong_Basic
 			,
@@ -83,6 +111,28 @@ namespace AbilityData
 			&Definitions::ReturnProtocol_Basic
 			,
 			&Definitions::CrystalBarricade_Basic
+			,
+			&Definitions::SolarBombardment_Basic,
+			&Definitions::StrikeRun_Basic,
+			&Definitions::Blastback_Basic,
+			&Definitions::SeismicCharge_Basic,
+			&Definitions::ArcScythes_Basic
+			,
+			&Definitions::IroncladProtocol_Basic,
+			&Definitions::ClosedCircuit_Basic,
+			&Definitions::VectorSync_Basic,
+			&Definitions::ZeroDrag_Basic,
+			&Definitions::TemporalConvergence_Basic
+			,
+			&Definitions::TemporalRecall_Basic
+			,
+			&Definitions::TimeSlip_Basic
+			,
+			&Definitions::FoldspaceArena_Basic,
+			&Definitions::ShieldGraft_Basic,
+			&Definitions::EmberSwarm_Basic,
+			// Normal fallback slot in catalog metadata; runtime loadout owns player binding.
+			&Definitions::ReclaimerProtocol_Basic
 		};
 		return definitions;
 	}
@@ -109,14 +159,19 @@ namespace AbilityData
 			&RelayPrism::ActorRelayBasic,
 			&RailBurst::ActorProjectileBasic,
 			&CrescentReaver::ActorProjectileBasic,
+			&AegisReaver::ActorProjectileBasic,
 			&MineLayer::ActorMineBasic,
 			&ScorchDrive::ActorFireSegmentBasic,
+			&InertialWake::ActorWakeBasic,
+			&LanceDrive::ActorLanceBasic,
 			&IonStorm::ActorProjectileBasic,
 			&IonStorm::ActorFieldBasic
 			,
 			&Definitions::VoidGatePortalBasic
 			,
 			&Definitions::FrostMaelstromFieldBasic
+			,
+			&CryoBola::ActorProjectileBasic
 			,
 			&Definitions::FrozenThrongHuskBasic
 			,
@@ -129,6 +184,16 @@ namespace AbilityData
 			&WingSentinels::ActorProjectileBasic
 			,
 			&CrystalBarricade::ActorWallBasic
+			,
+			&SolarBombardment::ActorProjectileBasic,
+			&StrikeRun::ActorBombardmentBasic,
+			&SeismicCharge::ActorBombBasic,
+			&ArcScythes::ActorBeamBasic,
+			&TemporalConvergence::ActorFieldBasic,
+			&Definitions::ClosedCircuitDeliveryBasic
+			,
+			&FoldspaceArena::ActorArenaBasic,
+			&Definitions::ReclaimerRepairKitBasic
 		};
 		return definitions;
 	}

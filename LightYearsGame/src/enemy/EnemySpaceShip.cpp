@@ -10,6 +10,9 @@ namespace ly
 		mScoreAmt{ shipDef.scoreAmt },
 		mShipXPReward{ shipDef.shipXPReward }
 	{
+		// Enemy ships are the hostile gameplay domain. Their child projectiles
+		// inherit this domain through AbilityWorldActor's owner propagation.
+		SetSimulationTimeDomain(SimulationTimeDomain::HostileGameplay);
 	}
 	
 	void EnemySpaceShip::Tick(float deltaTime)
@@ -29,7 +32,10 @@ namespace ly
 			CollisionLayer::Player |
 			CollisionLayer::FriendlySummon |
 			CollisionLayer::PlayerBullet |
-			CollisionLayer::RelayProjectile
+			CollisionLayer::RelayProjectile |
+			// Environment includes static ability walls such as Lance Drive's
+			// edge segments and the reusable Crystal Barricade geometry.
+			CollisionLayer::Environment
 		);
 	}
 

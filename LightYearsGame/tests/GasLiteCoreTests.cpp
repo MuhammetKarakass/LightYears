@@ -29,12 +29,21 @@
 #include "gameplay/ability/relayPrism/RelayPrismActor.h"
 #include "gameplay/ability/relayPrism/RelayPrismContracts.h"
 #include "gameplay/ability/orbitalDrones/OrbitingDroneActor.h"
+#include "gameplay/ability/emberSwarm/EmberSwarmContracts.h"
+#include "gameplay/ability/emberSwarm/EmberDroneActor.h"
+#include "gameplay/ability/lanceDrive/LanceDriveContracts.h"
+#include "gameplay/ability/lanceDrive/LanceDriveActor.h"
+#include "presentation/ability/emberSwarm/EmberSwarmPresentationIds.h"
+#include "presentation/ability/emberSwarm/EmberSwarmPresentationProfile.h"
+#include "presentation/ability/lanceDrive/LanceDrivePresentationIds.h"
+#include "presentation/ability/lanceDrive/LanceDrivePresentationProfile.h"
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
 #include "gameplay/ability/echoProtocol/EchoProtocolContracts.h"
 #include "gameplay/ability/scorchDrive/ScorchDriveContracts.h"
 #include "gameplay/ability/ionStorm/IonStormContracts.h"
 #include "gameplay/ability/ionStorm/IonStormProjectileActor.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
+#include "gameplay/ability/zeroDrag/ZeroDragContracts.h"
 #include "gameplay/ability/hullShock/HullShockContracts.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
@@ -54,7 +63,22 @@
 #include "gameplay/ability/wingSentinels/WingSentinelsContracts.h"
 #include "gameplay/ability/crystalBarricade/CrystalBarricadeContracts.h"
 #include "gameplay/ability/crystalBarricade/CrystalBarricadeActor.h"
+#include "gameplay/ability/seismicCharge/SeismicChargeContracts.h"
+#include "gameplay/ability/temporalConvergence/TemporalConvergenceContracts.h"
+#include "gameplay/ability/arcScythes/ArcScythesContracts.h"
+#include "gameplay/ability/ironcladProtocol/IroncladProtocolContracts.h"
+#include "gameplay/ability/temporalRecall/TemporalRecallContracts.h"
+#include "gameplay/ability/timeSlip/TimeSlipContracts.h"
+#include "gameplay/ability/closedCircuit/ClosedCircuitContracts.h"
+#include "gameplay/ability/foldspaceArena/FoldspaceArenaContracts.h"
+#include "gameplay/ability/aegisReaver/AegisReaverContracts.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
+#include "gameplay/ability/shieldGraft/ShieldGraftContracts.h"
+#include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolContracts.h"
+#include "gameplay/ability/reclaimerProtocol/ReclaimerRepairKitActor.h"
+#include "presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationIds.h"
+#include "presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationProfile.h"
+#include "gameConfigs/ability/defensive/ReclaimerProtocolConfig.h"
 #include "gameplay/ability/returnProtocol/ReturnProtocolVisualActor.h"
 #include "gameplay/ability/ionStorm/IonStormBoundary.h"
 #include "enemy/DummyEnemy.h"
@@ -75,6 +99,7 @@
 #include "gameplay/ability/directionalBarrier/DirectionalBarrierVisualActor.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/ContactDamageGuardRegistry.h"
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 #include "gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
@@ -677,6 +702,101 @@ int main()
 {
 	using namespace ly;
 
+	{
+		ContactDamageGuardRegistry registry;
+		std::vector<int> callOrder;
+		const ContactDamageGuardHandle first = registry.Register(
+			[&](const Actor&, const Actor&)
+			{
+				callOrder.push_back(1);
+				return true;
+			}
+		);
+		const ContactDamageGuardHandle second = registry.Register(
+			[&](const Actor&, const Actor&)
+			{
+				callOrder.push_back(2);
+				return false;
+			}
+		);
+		Actor source{ nullptr };
+		Actor target{ nullptr };
+		if (!first.IsValid() || !second.IsValid() || first == second ||
+			registry.IsEmpty() || registry.Allows(source, target) ||
+			callOrder != std::vector<int>{ 1, 2 })
+		{
+			return Fail("Contact damage guards did not preserve order and false veto semantics");
+		}
+		if (!registry.Unregister(first) || registry.Unregister(first) ||
+			registry.Allows(source, target))
+		{
+			return Fail("Contact damage guard unregister did not preserve the remaining veto");
+		}
+		if (!registry.Unregister(second) || !registry.IsEmpty() ||
+			!registry.Allows(source, target))
+		{
+			return Fail("Contact damage guard registry did not recover after unregistering guards");
+		}
+
+		const ContactDamageGuardHandle stale = registry.Register(
+			[](const Actor&, const Actor&)
+			{
+				return false;
+			}
+		);
+		registry.Clear();
+		const ContactDamageGuardHandle afterClear = registry.Register(
+			[](const Actor&, const Actor&)
+			{
+				return true;
+			}
+		);
+		if (!stale.IsValid() || !afterClear.IsValid() || stale == afterClear ||
+			registry.Unregister(stale) || !registry.Allows(source, target))
+		{
+			return Fail("Contact damage guard handles were reused after Clear");
+		}
+	}
+
+	{
+		TestCombatant source;
+		TestCombatant target;
+		const ContactDamageGuardHandle sourceGuard = source.GetCombatRuntime()
+			.GetContactDamageGuardRegistry()
+			.Register(
+				[](const Actor&, const Actor&)
+				{
+					return false;
+				}
+			);
+		if (!sourceGuard.IsValid() || CanApplyContactDamage(source, target))
+		{
+			return Fail("Contact damage did not query the source combat runtime guard registry");
+		}
+		if (!source.GetCombatRuntime().GetContactDamageGuardRegistry().Unregister(sourceGuard))
+		{
+			return Fail("Source contact damage guard could not be unregistered");
+		}
+
+		const ContactDamageGuardHandle targetGuard = target.GetCombatRuntime()
+			.GetContactDamageGuardRegistry()
+			.Register(
+				[](const Actor&, const Actor&)
+				{
+					return false;
+				}
+			);
+		if (!targetGuard.IsValid() || CanApplyContactDamage(source, target))
+		{
+			return Fail("Contact damage did not query the target combat runtime guard registry");
+		}
+		target.GetCombatRuntime().Clear();
+		if (!CanApplyContactDamage(source, target))
+		{
+			return Fail("Combat runtime Clear did not clear contact damage guards");
+		}
+	}
+
 	// Common lifecycle infrastructure must remain testable without booting the
 	// full game content catalog. This verifies the reusable LIFO semantics and
 	// proves that observers and veto guards are independent concerns.
@@ -802,7 +922,7 @@ int main()
 		AbilityData::DirectionalBarrier::Effect::ActiveEffectId
 	);
 	const auto* missingDefinition = EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist");
-	if (shippedEffects.size() != 18 ||
+	if (shippedEffects.size() != 19 ||
 		!shippedEffectsValid ||
 		!barrierDefinition ||
 		barrierDefinition->effectId != "Effect.Barrier.Basic" ||
@@ -891,12 +1011,30 @@ int main()
 		AbilityData::FindShippedAbilityDefinition(AbilityData::ExecutionDrive::AbilityId::Basic);
 	const GameAbilityDefinition* echoProtocolDefinition =
 		AbilityData::FindShippedAbilityDefinition(AbilityData::EchoProtocol::AbilityId::Basic);
+	const GameAbilityDefinition* lanceDriveDefinition =
+		AbilityData::FindShippedAbilityDefinition(AbilityData::LanceDrive::AbilityId::Basic);
 	std::string abilityOwnershipFailure;
 	if (!phaseDriftDefinition || !orbitalDronesDefinition || !executionDriveDefinition ||
-		!echoProtocolDefinition ||
+		!echoProtocolDefinition || !lanceDriveDefinition ||
 		!ValidateAbilityCatalog(AbilityData::GetShippedAbilityDefinitions(), &abilityOwnershipFailure))
 	{
 		return Fail("Shipped ability catalog failed family-owned attribute validation");
+	}
+	if (lanceDriveDefinition->behaviorType != AbilityBehaviorType::LanceDrive ||
+		lanceDriveDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+		lanceDriveDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+		!NearlyEqual(lanceDriveDefinition->duration, 6.f) ||
+		!NearlyEqual(lanceDriveDefinition->cooldown, 15.f) ||
+		lanceDriveDefinition->attributes.size() != 12 ||
+		lanceDriveDefinition->damageTags != List<GameplayTag>{ DamageTypeSchema::Kinetic } ||
+		!AbilityData::FindAbilityActorDefinition(
+			AbilityData::LanceDrive::Actor::Lance::BasicDefinitionId
+		) ||
+		!PresentationProfileRegistry<LanceDrivePresentationProfile>::Find(
+			LanceDrivePresentationIds::LanceBasic.ToString()
+		))
+	{
+		return Fail("Lance Drive shipped behavior, actor, or presentation registration is incomplete");
 	}
 	if (orbitalDronesDefinition->slot != sas::AbilitySlot::Ability4 ||
 		orbitalDronesDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
@@ -1410,6 +1548,36 @@ int main()
 		return Fail("Orbital Drones accepted a missing presentation profile");
 	}
 
+	const EmberSwarmPresentationProfile* emberSwarmPresentationProfile =
+		PresentationProfileRegistry<EmberSwarmPresentationProfile>::Find(
+			EmberSwarmPresentationIds::DroneBasic
+		);
+	if (!emberSwarmPresentationProfile
+		|| emberSwarmPresentationProfile->profileId.ToString() !=
+			EmberSwarmPresentationIds::DroneBasic
+		|| emberSwarmPresentationProfile->visual.bodyRadius <= 0.f
+		|| emberSwarmPresentationProfile->visual.coreRadius <= 0.f
+		|| emberSwarmPresentationProfile->visual.glowRadius <= 0.f
+		|| emberSwarmPresentationProfile->visual.expiryFadeDuration <= 0.f)
+	{
+		return Fail("Ember Swarm presentation profile was not registered correctly");
+	}
+	if (PresentationProfileRegistry<EmberSwarmPresentationProfile>::Find(
+			OrbitalDronesPresentationIds::DroneBasic
+		) != nullptr
+		|| PresentationProfileRegistry<OrbitalDronesPresentationProfile>::Find(
+			EmberSwarmPresentationIds::DroneBasic
+		) != nullptr)
+	{
+		return Fail("Typed presentation profile registries leaked profiles between Ember Swarm and Orbital Drones");
+	}
+	if (PresentationProfileRegistry<EmberSwarmPresentationProfile>::Find(
+		"Presentation.Ability.EmberSwarm.Drone.Missing"
+	) != nullptr)
+	{
+		return Fail("Ember Swarm accepted a missing presentation profile");
+	}
+
 	// Directional Barrier is a real Toggle ability, so exercise its complete
 	// activation/lifecycle path in a live player world. The second press is
 	// intentionally attempted twice: the first one is rejected before one
@@ -1785,6 +1953,23 @@ int main()
 		!NearlyEqual(regeneratingShield.GetShield(), 75.f))
 	{
 		return Fail("Ship shield did not absorb damage using the shield multiplier");
+	}
+	ShieldComponent frameRateIndependentOvershield{ 150.f, 150.f, 3.f };
+	frameRateIndependentOvershield.GrantTemporaryOvershield(
+		"Test.Overshield",
+		100.f,
+		0.f,
+		100.f
+	);
+	frameRateIndependentOvershield.TickTemporaryOvershields(0.01f);
+	if (!NearlyEqual(frameRateIndependentOvershield.GetShield(), 249.f))
+	{
+		return Fail("Temporary overshield decay was not proportional to a 0.01 second tick");
+	}
+	frameRateIndependentOvershield.TickTemporaryOvershields(0.09f);
+	if (!NearlyEqual(frameRateIndependentOvershield.GetShield(), 240.f))
+	{
+		return Fail("Temporary overshield decay did not preserve its per-second rate");
 	}
 	regeneratingShield.Tick(3.74f, 40.f);
 	if (!NearlyEqual(regeneratingShield.GetShield(), 75.f))
@@ -2191,6 +2376,15 @@ int main()
 	{
 		return Fail("Thermal damage did not activate at its four-hit threshold");
 	}
+	ApplyCombatDamage(thermalTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+	const sas::ActiveGameplayEffect* cappedIgnite =
+		thermalTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			"Effect.Status.Damage.Ignite"
+		);
+	if (!cappedIgnite || cappedIgnite->stackCount != 4)
+	{
+		return Fail("Ignite did not remain at its stack cap after another hit");
+	}
 
 	TestCombatant cryoTarget;
 	const DamagePayload cryoPayload = DamageTypeSystem::BuildPayload(
@@ -2228,23 +2422,27 @@ int main()
 		}
 	}
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
+	const sas::ActiveGameplayEffect* fullCryoBuildup =
+		cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::CryoBuildupEffectId
+		);
 	if (!NearlyEqual(
 		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
 		0.25f
-	) || cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-		DamageStatusEffectIds::CryoBuildupEffectId
-	) || !cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-		DamageStatusEffectIds::CryoSlowedEffectId
-	))
+	) || !fullCryoBuildup || fullCryoBuildup->stackCount != 4 ||
+		!cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::CryoSlowedEffectId
+		))
 	{
-		return Fail("Four-hit Cryo buildup did not consume stacks and apply slow");
+		return Fail("Four-hit Cryo buildup did not retain full stacks and apply slow");
 	}
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-	if (cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+	fullCryoBuildup = cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoBuildupEffectId
-	))
+	);
+	if (!fullCryoBuildup || fullCryoBuildup->stackCount != 4)
 	{
-		return Fail("Cryo buildup accumulated while the slow was active");
+		return Fail("Cryo buildup did not remain at its cap while slow was active");
 	}
 	cryoTarget.GetCombatRuntime().Tick(1.f);
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
@@ -2271,6 +2469,93 @@ int main()
 	))
 	{
 		return Fail("Incomplete Cryo buildup did not expire");
+	}
+
+	TestCombatant cryoPriorityTarget;
+	const DamagePayload strongCryoPayload = DamageTypeSystem::BuildPayload(
+		{ DamageTypeSchema::Cryo },
+		{
+			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupPerHit, 4.f, 0.f },
+			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupRequired, 4.f, 1.f },
+			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupDuration, 2.5f, 0.f },
+			sas::GameplayAttribute{ DamageAttributeIds::CryoSlowPercent, 0.50f, 0.f },
+			sas::GameplayAttribute{ DamageAttributeIds::CryoSlowDuration, 2.f, 0.f }
+		}
+	);
+	ApplyCombatDamage(
+		cryoPriorityTarget,
+		1.f,
+		nullptr,
+		{ DamageTypeSchema::Cryo },
+		strongCryoPayload
+	);
+	cryoPriorityTarget.GetCombatRuntime().Tick(1.f);
+	ApplyCombatDamage(
+		cryoPriorityTarget,
+		1.f,
+		nullptr,
+		{ DamageTypeSchema::Cryo },
+		cryoPayload
+	);
+	cryoPriorityTarget.GetCombatRuntime().Tick(1.1f);
+	if (!NearlyEqual(
+		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::MovementSlow
+		),
+		0.f
+	))
+	{
+		return Fail("Weaker Cryo slow replaced or refreshed the stronger slow");
+	}
+	ApplyCombatDamage(
+		cryoPriorityTarget,
+		1.f,
+		nullptr,
+		{ DamageTypeSchema::Cryo },
+		cryoPayload
+	);
+	if (!NearlyEqual(
+		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::MovementSlow
+		),
+		0.25f
+	))
+	{
+		return Fail("Full Cryo stacks did not apply a slow after the old one expired");
+	}
+	ApplyCombatDamage(
+		cryoPriorityTarget,
+		1.f,
+		nullptr,
+		{ DamageTypeSchema::Cryo },
+		strongCryoPayload
+	);
+	if (!NearlyEqual(
+		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::MovementSlow
+		),
+		0.50f
+	))
+	{
+		return Fail("Stronger Cryo slow did not replace the weaker slow");
+	}
+	cryoPriorityTarget.GetCombatRuntime().Tick(1.25f);
+	ApplyCombatDamage(
+		cryoPriorityTarget,
+		1.f,
+		nullptr,
+		{ DamageTypeSchema::Cryo },
+		strongCryoPayload
+	);
+	cryoPriorityTarget.GetCombatRuntime().Tick(1.f);
+	if (!NearlyEqual(
+		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::MovementSlow
+		),
+		0.50f
+	))
+	{
+		return Fail("Equal Cryo slow did not refresh its duration");
 	}
 
 
@@ -3595,6 +3880,10 @@ int main()
 	sweptProjectile->SetActorLocation({ 0.f, 0.f });
 	sweptProjectile->SetLaunchVelocity({ 1000.f, 0.f });
 	sweptProjectileWorld.TickInternal(0.f);
+	if (sweptProjectile->HasPhysicsBody())
+	{
+		return Fail("Primary projectile created a redundant physics body");
+	}
 	sweptProjectileWorld.TickInternal(0.2f);
 	if (!NearlyEqual(sweptProjectileTarget->GetHealth(), 90.f))
 	{
@@ -3605,6 +3894,35 @@ int main()
 	// same-surface lock starts. Without that separation, the next tick can
 	// interpret the still-overlapping wall as a normal projectile impact.
 	World crystalReflectionWorld{ nullptr };
+	// A stationary enemy must be displaced when Lance moves across it. Testing
+	// only an enemy's requested movement misses the owner-following wall case.
+	{
+		World wallWorld{ nullptr };
+		auto owner = wallWorld.SpawnActor<TestCombatant>().lock();
+		auto target = wallWorld.SpawnActor<DummyEnemy>(ShipData::Ship_Enemy_Hexagon).lock();
+		owner->SetCollisionLayer(CollisionLayer::Player);
+		owner->GetAbilitySystemComponent().AddOwnedTag(AbilityData::LanceDrive::State::Active);
+		owner->SetActorLocation({ 1000.f, 1000.f });
+		owner->SetActorRotation(0.f);
+		target->SetCollisionLayer(CollisionLayer::Enemy);
+		target->SetActorLocation({ 1091.f, 820.f });
+		target->SetVelocity({});
+		auto wall = wallWorld.SpawnActor<LanceDriveActor>(owner.get(), LanceDrivePresentationProfile{}).lock();
+		wallWorld.TickInternal(0.f);
+		const sf::Vector2f before = target->GetActorLocation();
+		owner->SetActorLocation({ 1000.f, 960.f });
+		wall->Tick(0.1f);
+		if (GetVectorLength(target->GetActorLocation() - before) < 1.f)
+		{
+			return Fail("Moving Lance wall did not separate a stationary enemy");
+		}
+		const sf::Vector2f separated = target->GetActorLocation();
+		target->Tick(0.1f);
+		if (GetVectorLength(target->GetActorLocation() - separated) < 0.1f)
+		{
+			return Fail("Lance contact did not produce movement-component knockback");
+		}
+	}
 	Actor crystalReflectionOwner{ &crystalReflectionWorld };
 	crystalReflectionOwner.SetCollisionLayer(CollisionLayer::Player);
 	const shared_ptr<CrystalBarricadeActor> crystalWall =
@@ -5024,12 +5342,12 @@ int main()
 		if (!energySpearAbilities.GetOwnedTags().HasTag(
 				GameplayTags::State::Ability::EnergySpear::Focusing
 			) ||
-			energySpearAbilities.GetOwnedTags().HasTag(
+			!energySpearAbilities.GetOwnedTags().HasTag(
 				GameplayTagSchema::BlockMovementInput
 			) ||
 			energySpearWorld.GetActorsByType<DirectionalChargeTelegraphActor>().empty())
 		{
-			return Fail("Energy Spear focus did not preserve movement with a directional telegraph");
+			return Fail("Energy Spear focus did not apply the shared input lock with a directional telegraph");
 		}
 
 		energySpearAbilities.SetAbilitySlotInput(sas::AbilitySlot::Ability1, false);
@@ -5051,6 +5369,10 @@ int main()
 		{
 			return Fail("Energy Spear did not hand release to its traversal actor");
 		}
+		if (CanApplyContactDamage(*energySpearOwner, *energySpearTarget))
+		{
+			return Fail("Energy Spear traversal did not register its source-owned contact guard");
+		}
 
 		energySpearWorld.TickInternal(0.05f);
 		if (traversalActor->GetHitTargetCount() != 1)
@@ -5065,7 +5387,9 @@ int main()
 			return Fail("Energy Spear did not pierce and damage its traversed target");
 		}
 
-		energySpearWorld.TickInternal(0.06f);
+		// Let the minimum-distance traversal complete. A slightly larger step keeps
+		// this lifecycle assertion independent from floating-point substep edges.
+		energySpearWorld.TickInternal(0.10f);
 		if (energySpearAbilities.GetOwnedTags().HasTag(
 				GameplayTags::State::Ability::EnergySpear::Traversing
 			) ||
@@ -5073,7 +5397,17 @@ int main()
 				GameplayTagSchema::BlockMovementInput
 			))
 		{
-			return Fail("Energy Spear did not clean up traversal and movement locks");
+			if (energySpearAbilities.GetOwnedTags().HasTag(
+				GameplayTags::State::Ability::EnergySpear::Traversing
+			))
+			{
+				return Fail("Energy Spear did not clean up its traversal state");
+			}
+			return Fail("Energy Spear did not clean up its movement input lock");
+		}
+		if (!CanApplyContactDamage(*energySpearOwner, *energySpearTarget))
+		{
+			return Fail("Energy Spear traversal did not unregister its contact guard on finish");
 		}
 	}
 
@@ -5095,44 +5429,39 @@ int main()
 	{
 		return Fail("Gravity Anomaly shipped ability or actor catalog validation failed");
 	}
-	PlayerSpaceShip gravityLoadout{ nullptr };
-	const GameAbility* gravityLoadoutAbility =
-		gravityLoadout.GetAbilitySystemComponent()
+	PlayerSpaceShip defaultLoadoutShip{ nullptr };
+	const GameAbility* lanceDriveLoadoutAbility =
+		defaultLoadoutShip.GetAbilitySystemComponent()
 			.FindAbility<GameAbility>(sas::AbilitySlot::Ability1);
-	if (!gravityLoadoutAbility ||
-		gravityLoadoutAbility->GetDefinition().abilityId != AbilityData::CrystalBarricade::AbilityId::Basic ||
-		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(
-			AbilityData::DirectionalBarrier::AbilityId::Basic
-		) != nullptr)
+	if (!lanceDriveLoadoutAbility ||
+		lanceDriveLoadoutAbility->GetDefinition().abilityId != AbilityData::LanceDrive::AbilityId::Basic ||
+		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability1) } != "Q")
 	{
-		return Fail("Default player loadout did not place Crystal Barricade on Ability1/Q");
+		return Fail("Default player loadout did not place Lance Drive on Ability1/Q");
 	}
 	const GameAbility* relayPrismLoadoutAbility =
-		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability2);
+		defaultLoadoutShip.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability2);
 	if (!relayPrismLoadoutAbility ||
 		relayPrismLoadoutAbility->GetDefinition().abilityId != AbilityData::RelayPrism::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability2) } != "E")
 	{
 		return Fail("Default player loadout did not place Relay Prism on Ability2/E");
 	}
-	const GameAbility* returnProtocolLoadoutAbility =
-		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability3);
-	if (!returnProtocolLoadoutAbility ||
-		returnProtocolLoadoutAbility->GetDefinition().abilityId != AbilityData::ReturnProtocol::AbilityId::Basic ||
+	const GameAbility* glacialPressureLoadoutAbility =
+		defaultLoadoutShip.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability3);
+	if (!glacialPressureLoadoutAbility ||
+		glacialPressureLoadoutAbility->GetDefinition().abilityId != AbilityData::GlacialPressure::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability3) } != "F")
 	{
-		return Fail("Default player loadout did not place Return Protocol on Ability3/F");
+		return Fail("Default player loadout did not place Glacial Pressure on Ability3/F");
 	}
-	const GameAbility* combatSentryLoadoutAbility =
-		gravityLoadout.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability4);
-	if (!combatSentryLoadoutAbility ||
-		combatSentryLoadoutAbility->GetDefinition().abilityId != AbilityData::CombatSentry::AbilityId::Basic ||
-		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability4) } != "R" ||
-		gravityLoadout.GetCombatRuntime().GetAbilitySystemComponent().GetAbilityById(
-			AbilityData::OverdriveCore::AbilityId::Basic
-		) != nullptr)
+	const GameAbility* ironcladProtocolLoadoutAbility =
+		defaultLoadoutShip.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability4);
+	if (!ironcladProtocolLoadoutAbility ||
+		ironcladProtocolLoadoutAbility->GetDefinition().abilityId != AbilityData::IroncladProtocol::AbilityId::Basic ||
+		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability4) } != "R")
 	{
-		return Fail("Default player loadout did not place Combat Sentry on Ability4/R");
+		return Fail("Default player loadout did not place Ironclad Protocol on Ability4/R");
 	}
 
 	// Exercise the generic activation/action-spawn path used by the player Q
@@ -5194,7 +5523,7 @@ int main()
 	// A catalog slot is only a default binding. A newly acquired ability and an
 	// already granted ability must both accept every swappable loadout slot.
 	std::string runtimeSlotFailure;
-	if (!gravityLoadout.GetAbilityLoadout().EquipAbility(
+	if (!defaultLoadoutShip.GetAbilityLoadout().EquipAbility(
 			AbilityData::HullShock::AbilityId::Basic,
 			sas::AbilitySlot::Ability2,
 			&runtimeSlotFailure
@@ -5202,11 +5531,11 @@ int main()
 	{
 		return Fail("A fresh loadout ability could not be granted to an alternate slot");
 	}
-	GameAbility* reboundHullShock = gravityLoadout.GetAbilitySystemComponent().GetAbilityById(
+	GameAbility* reboundHullShock = defaultLoadoutShip.GetAbilitySystemComponent().GetAbilityById(
 		AbilityData::HullShock::AbilityId::Basic
 	);
 	if (!reboundHullShock || reboundHullShock->GetDefinition().slot != sas::AbilitySlot::Ability2 ||
-		!gravityLoadout.GetAbilityLoadout().EquipAbility(
+		!defaultLoadoutShip.GetAbilityLoadout().EquipAbility(
 			AbilityData::HullShock::AbilityId::Basic,
 			sas::AbilitySlot::Ability3,
 			&runtimeSlotFailure
@@ -6647,9 +6976,9 @@ int main()
 	}
 	TestCombatant stunDamageTarget;
 	ApplyCombatDamage(stunDamageTarget, 10.f, &stunnedDashOwner);
-	if (!NearlyEqual(stunDamageTarget.GetHealth(), 100.f))
+	if (!NearlyEqual(stunDamageTarget.GetHealth(), 90.f))
 	{
-		return Fail("Stun did not block outgoing damage from the stunned owner");
+		return Fail("Stun incorrectly suppressed damage from the stunned owner");
 	}
 
 	TestCombatant blockedDashOwner;
@@ -7309,5 +7638,1126 @@ int main()
 		}
 	}
 
+	{
+		// Ember Swarm Milestone 1: spawn exactly three drones around owner, fixed 6-second lifetime, clean despawn.
+		const GameAbilityDefinition* emberSwarmDefinition =
+			AbilityData::FindShippedAbilityDefinition(AbilityData::EmberSwarm::AbilityId::Basic);
+		if (!emberSwarmDefinition)
+		{
+			return Fail("Ember Swarm shipped definition could not be found");
+		}
+		if (emberSwarmDefinition->behaviorType != AbilityBehaviorType::EmberSwarm ||
+			!sas::IsLoadoutAbilitySlot(emberSwarmDefinition->slot) ||
+			emberSwarmDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+			emberSwarmDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+			!NearlyEqual(emberSwarmDefinition->cooldown, 14.f) ||
+			!NearlyEqual(emberSwarmDefinition->duration, 6.f) ||
+			emberSwarmDefinition->maxCharges != 1 ||
+			emberSwarmDefinition->abilityTags !=
+				List<GameplayTag>{
+					GameplayTags::Ability::Offense,
+					GameplayTags::Ability::Family::EmberSwarm
+				} ||
+			emberSwarmDefinition->levelProgression.size() != 14)
+		{
+			return Fail("Ember Swarm definition did not match Milestone 1 contract");
+		}
+
+		World emberSwarmWorld{ nullptr };
+		const shared_ptr<SpaceShip> emberSwarmOwner =
+			emberSwarmWorld.SpawnActor<SpaceShip>(
+				ShipData::Ship_Player_Fighter
+			).lock();
+		if (!emberSwarmOwner)
+		{
+			return Fail("Ember Swarm could not spawn a live player owner");
+		}
+		emberSwarmWorld.TickInternal(0.f);
+
+		emberSwarmOwner->GetAbilitySystemComponent().ClearAbilitySlot(
+			sas::AbilitySlot::Ability1
+		);
+		std::string grantFailure;
+		const sas::AbilityHandle emberSwarmHandle =
+			emberSwarmOwner->GetAbilitySystemComponent().GrantAbility(
+				*emberSwarmDefinition,
+				sas::AbilitySlot::Ability1,
+				&grantFailure
+			);
+		if (!emberSwarmHandle.IsValid())
+		{
+			return Fail(("Ember Swarm could not be granted to player: " + grantFailure).c_str());
+		}
+
+		// Activate Ember Swarm
+		emberSwarmOwner->GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::Ability1,
+			true
+		);
+		emberSwarmWorld.TickInternal(0.f);
+		emberSwarmWorld.TickInternal(0.f);
+
+		GameAbility* emberSwarmAbility =
+			emberSwarmOwner->GetAbilitySystemComponent().GetAbility(
+				emberSwarmHandle
+			);
+		if (!emberSwarmAbility || !emberSwarmAbility->IsActive())
+		{
+			return Fail("Ember Swarm did not activate on input");
+		}
+		if (!emberSwarmOwner->GetAbilitySystemComponent().HasOwnedTag(
+			AbilityData::EmberSwarm::State::Active
+		))
+		{
+			return Fail("Ember Swarm did not add its active state tag");
+		}
+
+		// Exactly three visible non-colliding drones spawned around owner
+		const List<weak_ptr<EmberDroneActor>> drones =
+			emberSwarmWorld.GetActorsByType<EmberDroneActor>();
+		if (drones.size() != 3)
+		{
+			return Fail("Ember Swarm did not spawn exactly three drones");
+		}
+		for (const auto& droneWeak : drones)
+		{
+			const shared_ptr<EmberDroneActor> drone = droneWeak.lock();
+			if (!drone || drone->GetIsPendingDestroy())
+			{
+				return Fail("Ember Swarm spawned an invalid drone");
+			}
+			if (drone->IsPhysicsEnabled() || drone->HasPhysicsBody())
+			{
+				return Fail("Ember Swarm drone must be non-colliding");
+			}
+			if (drone->IsProjectileActor())
+			{
+				return Fail("Ember Swarm drone must not be a projectile actor");
+			}
+			if (!NearlyEqual(drone->GetLifeTime(), 6.f))
+			{
+				return Fail("Ember Swarm drone does not have a 6-second lifetime");
+			}
+		}
+
+		// Drones remain active and present at 3 seconds
+		emberSwarmWorld.TickInternal(3.0f);
+		if (!emberSwarmAbility->IsActive())
+		{
+			return Fail("Ember Swarm deactivated prematurely at 3 seconds");
+		}
+		if (emberSwarmWorld.GetActorsByType<EmberDroneActor>().size() != 3)
+		{
+			return Fail("Ember Swarm drones despawned prematurely at 3 seconds");
+		}
+
+		// Complete 6 seconds: drones cleanly despawn
+		emberSwarmWorld.TickInternal(3.1f);
+		emberSwarmWorld.TickInternal(0.f);
+
+		if (emberSwarmAbility->IsActive())
+		{
+			return Fail("Ember Swarm remained active after 6 seconds");
+		}
+		if (emberSwarmOwner->GetAbilitySystemComponent().HasOwnedTag(
+			AbilityData::EmberSwarm::State::Active
+		))
+		{
+			return Fail("Ember Swarm retained active tag after 6 seconds");
+		}
+		if (!emberSwarmWorld.GetActorsByType<EmberDroneActor>().empty())
+		{
+			return Fail("Ember Swarm drones did not cleanly despawn after 6 seconds");
+		}
+	}
+
+	{
+		// Ember Swarm Milestone 2: Travel no damage, pulse thermal + one Ignite request, under-cap preference, single target capped fallback, leash/death/expiry cleanup.
+		const GameAbilityDefinition* emberSwarmDefinition =
+			AbilityData::FindShippedAbilityDefinition(AbilityData::EmberSwarm::AbilityId::Basic);
+		if (!emberSwarmDefinition)
+		{
+			return Fail("Ember Swarm shipped definition could not be found for Milestone 2 tests");
+		}
+
+		// 1. Travel no damage test
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			const shared_ptr<TestCombatant> target =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			if (!owner || !target)
+			{
+				return Fail("Could not spawn owner and target for travel test");
+			}
+
+			owner->SetActorLocation({ 0.f, 0.f });
+			owner->SetCollisionLayer(CollisionLayer::Player);
+
+			target->SetActorLocation({ 500.f, 0.f }); // within search 750
+			target->SetCollisionLayer(CollisionLayer::Enemy);
+			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+
+			world.TickInternal(0.f);
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			const sas::AbilityHandle handle =
+				owner->GetAbilitySystemComponent().GrantAbility(*emberSwarmDefinition, sas::AbilitySlot::Ability1);
+			if (!handle.IsValid())
+			{
+				return Fail("Could not grant Ember Swarm for travel test");
+			}
+
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			const List<weak_ptr<EmberDroneActor>> drones = world.GetActorsByType<EmberDroneActor>();
+			if (drones.size() != 3)
+			{
+				return Fail("Ember Swarm did not spawn 3 drones for travel test");
+			}
+
+			// Tick 0.15s: drones are traveling at 1100 to target at 500
+			world.TickInternal(0.15f);
+
+			for (const auto& droneWeak : drones)
+			{
+				const shared_ptr<EmberDroneActor> drone = droneWeak.lock();
+				if (!drone)
+				{
+					return Fail("Ember Swarm drone was invalid during travel");
+				}
+				if (drone->GetState() != EmberDroneActor::State::TravelingToTarget)
+				{
+					return Fail("Ember Swarm drone must be in TravelingToTarget state while traveling");
+				}
+			}
+
+			// Target must have taken NO damage and NO ignite during travel
+			if (!NearlyEqual(target->GetHealth(), 100.f))
+			{
+				return Fail("Ember Swarm drones dealt damage during travel");
+			}
+			const sas::ActiveGameplayEffect* igniteEffect =
+				target->GetAbilitySystemComponent().FindGameplayEffectById(DamageStatusEffectIds::IgniteEffectId);
+			if (igniteEffect != nullptr && igniteEffect->stackCount > 0)
+			{
+				return Fail("Ember Swarm drones applied Ignite during travel");
+			}
+		}
+
+		// 2. Pulse thermal + one Ignite request + damage calculation test
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			const shared_ptr<TestCombatant> target =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			if (!owner || !target)
+			{
+				return Fail("Could not spawn owner and target for pulse combat test");
+			}
+
+			owner->SetActorLocation({ 0.f, 0.f });
+			owner->SetCollisionLayer(CollisionLayer::Player);
+
+			// Place target at { 80.f, 0.f } (close to owner so drones arrive rapidly)
+			target->SetActorLocation({ 80.f, 0.f });
+			target->SetCollisionLayer(CollisionLayer::Enemy);
+			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+
+			world.TickInternal(0.f);
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			const sas::AbilityHandle handle =
+				owner->GetAbilitySystemComponent().GrantAbility(*emberSwarmDefinition, sas::AbilitySlot::Ability1);
+			if (!handle.IsValid())
+			{
+				return Fail("Could not grant Ember Swarm for pulse combat test");
+			}
+
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			const List<weak_ptr<EmberDroneActor>> drones = world.GetActorsByType<EmberDroneActor>();
+			if (drones.empty())
+			{
+				return Fail("No drones spawned for pulse combat test");
+			}
+
+			// Advance by 0.15s: drones arrive at orbit and pulse
+			world.TickInternal(0.15f);
+
+			if (target->GetHealth() >= 100.f)
+			{
+				return Fail("Ember Swarm drone did not deal pulse damage");
+			}
+			const sas::ActiveGameplayEffect* igniteEffect =
+				target->GetAbilitySystemComponent().FindGameplayEffectById(DamageStatusEffectIds::IgniteEffectId);
+			if (!igniteEffect || igniteEffect->stackCount < 1)
+			{
+				return Fail("Ember Swarm pulse did not apply Ignite status effect");
+			}
+
+			// Test with AttackPower attribute: 4 + AP*0.08
+			owner->GetAbilitySystemComponent().GetAttributes().RegisterAttribute(OwnerAttributeIds::AttackPower, 50.f);
+			const float healthBeforeAPHit = target->GetHealth();
+
+			// Advance another 0.25s (full pulse cycle with AP 50)
+			world.TickInternal(0.25f);
+
+			const float damageDealt = healthBeforeAPHit - target->GetHealth();
+			// Expected damage per pulse with AP 50: 4 + 50 * 0.08 = 8.0f (or higher on crit)
+			if (damageDealt < 7.99f)
+			{
+				return Fail("Ember Swarm pulse did not scale damage with AttackPower (4 + AP*0.08)");
+			}
+		}
+
+		// 3. Under-cap preference and batch-reservation test
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			const shared_ptr<TestCombatant> targetCapped =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			const shared_ptr<TestCombatant> targetUnderCap =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			if (!owner || !targetCapped || !targetUnderCap)
+			{
+				return Fail("Could not spawn actors for under-cap preference test");
+			}
+
+			owner->SetActorLocation({ 0.f, 0.f });
+			owner->SetCollisionLayer(CollisionLayer::Player);
+
+			// Target A (capped, 4 stacks) is closer to owner (150)
+			targetCapped->SetActorLocation({ 150.f, 0.f });
+			targetCapped->SetCollisionLayer(CollisionLayer::Enemy);
+			targetCapped->SetCollisionMask(CollisionLayer::PlayerBullet);
+
+			// Target B (under-cap, 0 stacks) is further (250)
+			targetUnderCap->SetActorLocation({ 250.f, 0.f });
+			targetUnderCap->SetCollisionLayer(CollisionLayer::Enemy);
+			targetUnderCap->SetCollisionMask(CollisionLayer::PlayerBullet);
+
+			// Apply 4 stacks of Ignite to Target A
+			DamagePayload fourStackPayload;
+			fourStackPayload.igniteStacks = 4;
+			fourStackPayload.burnDamagePerSecond = 1.f;
+			fourStackPayload.burnDuration = 3.f;
+			fourStackPayload.burnMaxStacks = 4;
+			ApplyCombatDamage(*targetCapped, 1.f, owner.get(), { DamageTypeSchema::Thermal }, fourStackPayload);
+
+			const sas::ActiveGameplayEffect* activeIgnite =
+				targetCapped->GetAbilitySystemComponent().FindGameplayEffectById(DamageStatusEffectIds::IgniteEffectId);
+			if (!activeIgnite || activeIgnite->stackCount != 4)
+			{
+				return Fail("Target A was not initialized with 4 Ignite stacks");
+			}
+
+			world.TickInternal(0.f);
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			const sas::AbilityHandle handle =
+				owner->GetAbilitySystemComponent().GrantAbility(*emberSwarmDefinition, sas::AbilitySlot::Ability1);
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			const List<weak_ptr<EmberDroneActor>> drones = world.GetActorsByType<EmberDroneActor>();
+			if (drones.size() != 3)
+			{
+				return Fail("Drones did not spawn for under-cap preference test");
+			}
+
+			// Since Target B is under-cap (< 4) and Target A is capped (= 4),
+			// drones must prefer Target B despite Target A being closer!
+			for (const auto& droneWeak : drones)
+			{
+				const shared_ptr<EmberDroneActor> drone = droneWeak.lock();
+				if (!drone || drone->GetTarget() != targetUnderCap.get())
+				{
+					return Fail("Ember Swarm drone did not prefer under-cap target over capped target");
+				}
+			}
+		}
+
+		// 4. Single target capped fallback test
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			const shared_ptr<TestCombatant> soleTarget =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			if (!owner || !soleTarget)
+			{
+				return Fail("Could not spawn actors for single target capped fallback test");
+			}
+
+			owner->SetActorLocation({ 0.f, 0.f });
+			owner->SetCollisionLayer(CollisionLayer::Player);
+
+			soleTarget->SetActorLocation({ 200.f, 0.f });
+			soleTarget->SetCollisionLayer(CollisionLayer::Enemy);
+			soleTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+
+			// Pre-apply 4 stacks of Ignite to sole target
+			DamagePayload fourStackPayload;
+			fourStackPayload.igniteStacks = 4;
+			fourStackPayload.burnDamagePerSecond = 1.f;
+			fourStackPayload.burnDuration = 3.f;
+			fourStackPayload.burnMaxStacks = 4;
+			ApplyCombatDamage(*soleTarget, 1.f, owner.get(), { DamageTypeSchema::Thermal }, fourStackPayload);
+
+			world.TickInternal(0.f);
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			const sas::AbilityHandle handle =
+				owner->GetAbilitySystemComponent().GrantAbility(*emberSwarmDefinition, sas::AbilitySlot::Ability1);
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			const List<weak_ptr<EmberDroneActor>> drones = world.GetActorsByType<EmberDroneActor>();
+			if (drones.size() != 3)
+			{
+				return Fail("Drones did not spawn for single target fallback test");
+			}
+
+			// When no under-cap targets exist, drones must choose and retain the capped target so single target damage continues
+			for (const auto& droneWeak : drones)
+			{
+				const shared_ptr<EmberDroneActor> drone = droneWeak.lock();
+				if (!drone || drone->GetTarget() != soleTarget.get())
+				{
+					return Fail("Ember Swarm drones did not fall back to capped target when no under-cap target exists");
+				}
+			}
+
+			const float initialHealth = soleTarget->GetHealth();
+			// Advance time to allow drones to travel, orbit, and pulse the capped target
+			for (int step = 0; step < 10; ++step)
+			{
+				world.TickInternal(0.1f);
+			}
+
+			if (soleTarget->GetHealth() >= initialHealth)
+			{
+				return Fail("Ember Swarm drones failed to continue dealing damage to single capped target");
+			}
+		}
+
+		// 5. Leash / death / expiry cleanup test
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			const shared_ptr<TestCombatant> target =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			if (!owner || !target)
+			{
+				return Fail("Could not spawn actors for cleanup test");
+			}
+
+			owner->SetActorLocation({ 0.f, 0.f });
+			owner->SetCollisionLayer(CollisionLayer::Player);
+
+			target->SetActorLocation({ 200.f, 0.f });
+			target->SetCollisionLayer(CollisionLayer::Enemy);
+			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+
+			world.TickInternal(0.f);
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			const sas::AbilityHandle handle =
+				owner->GetAbilitySystemComponent().GrantAbility(*emberSwarmDefinition, sas::AbilitySlot::Ability1);
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			const List<weak_ptr<EmberDroneActor>> drones = world.GetActorsByType<EmberDroneActor>();
+			if (drones.size() != 3)
+			{
+				return Fail("Drones did not spawn for cleanup test");
+			}
+
+			// Drones should have targeted the target
+			const shared_ptr<EmberDroneActor> drone0 = drones[0].lock();
+			if (!drone0 || drone0->GetTarget() != target.get())
+			{
+				return Fail("Drone did not acquire target initially");
+			}
+
+			// Move target beyond leash (> 1000 from owner, e.g. 1050)
+			target->SetActorLocation({ 1050.f, 0.f });
+			world.TickInternal(0.26f); // Triggers next 0.25s evaluation
+
+			if (drone0->GetTarget() != nullptr)
+			{
+				return Fail("Ember Swarm drone did not drop target after target exceeded leash of 1000");
+			}
+
+			// Move target back into search range (< 750)
+			target->SetActorLocation({ 300.f, 0.f });
+			world.TickInternal(0.26f);
+
+			if (drone0->GetTarget() != target.get())
+			{
+				return Fail("Ember Swarm drone did not re-acquire target after returning into search range");
+			}
+
+			// Target death: destroy target
+			target->Destroy();
+			world.TickInternal(0.05f);
+
+			if (drone0->GetTarget() != nullptr)
+			{
+				return Fail("Ember Swarm drone did not drop target upon target death/destruction");
+			}
+
+			// Ability expiry: tick until 6.0s lifetime ends
+			world.TickInternal(5.5f);
+			world.TickInternal(0.f);
+
+			if (!world.GetActorsByType<EmberDroneActor>().empty())
+			{
+				return Fail("Ember Swarm drones were not cleaned up upon ability duration expiry");
+			}
+		}
+	}
+
+		{
+		// =========================================================================
+		// Reclaimer Protocol Tests
+		// =========================================================================
+
+		// 1. Content/progression JSON + fallback & definition validation
+		const GameAbilityDefinition* reclaimerDefinition =
+			AbilityData::FindShippedAbilityDefinition(AbilityData::ReclaimerProtocol::AbilityId::Basic);
+		if (!reclaimerDefinition)
+		{
+			return Fail("Reclaimer Protocol shipped definition could not be found");
+		}
+		if (reclaimerDefinition->behaviorType != AbilityBehaviorType::ReclaimerProtocol ||
+			!sas::IsLoadoutAbilitySlot(reclaimerDefinition->slot) ||
+			reclaimerDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+			reclaimerDefinition->lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+			!NearlyEqual(reclaimerDefinition->cooldown, 16.f) ||
+			!NearlyEqual(reclaimerDefinition->duration, 6.f) ||
+			reclaimerDefinition->maxCharges != 1 ||
+			reclaimerDefinition->abilityTags !=
+				List<GameplayTag>{
+					GameplayTags::Ability::Defense,
+					GameplayTags::Ability::Family::ReclaimerProtocol
+				} ||
+			reclaimerDefinition->levelProgression.size() != 14)
+		{
+			return Fail("Reclaimer Protocol definition did not match baseline contract");
+		}
+
+		std::string reclaimerValidationFailure;
+		if (!ValidateAbilityDefinition(*reclaimerDefinition, &reclaimerValidationFailure))
+		{
+			return Fail(("Reclaimer Protocol definition validation failed: " + reclaimerValidationFailure).c_str());
+		}
+
+		// Verify fallback equals JSON progression
+		const sas::GameplayAttribute* healRatioAttr = sas::FindAttribute(
+			reclaimerDefinition->attributes,
+			AbilityData::ReclaimerProtocol::Attribute::HealRatio
+		);
+		if (!healRatioAttr || !NearlyEqual(healRatioAttr->baseValue, 0.04f))
+		{
+			return Fail("Reclaimer Protocol base HealRatio attribute is missing or not 0.04");
+		}
+
+		// Level progression check: 14 steps, each +.0015 HealRatio and -.25 Cooldown
+		// Level 15 = level 1 + 14 upgrades => HealRatio = 0.04 + 14 * 0.0015 = 0.061, Cooldown = 16 - 14 * 0.25 = 12.5
+		float simulatedHealRatio = healRatioAttr->baseValue;
+		float simulatedCooldown = reclaimerDefinition->cooldown;
+		for (const auto& step : reclaimerDefinition->levelProgression)
+		{
+			for (const auto& mod : step.attributeModifiers)
+			{
+				if (mod.attributeId == AbilityData::ReclaimerProtocol::Attribute::HealRatio)
+				{
+					simulatedHealRatio += mod.magnitude;
+				}
+				else if (mod.attributeId == CommonAttributeIds::Cooldown)
+				{
+					simulatedCooldown += mod.magnitude;
+				}
+			}
+		}
+		if (!NearlyEqual(simulatedHealRatio, 0.061f) || !NearlyEqual(simulatedCooldown, 12.5f))
+		{
+			return Fail("Reclaimer Protocol level 15 progression does not match expected 0.061 HealRatio or 12.5 Cooldown");
+		}
+
+		// Actor definition check
+		const AbilityActorDefinition* kitActorDef =
+			AbilityData::FindAbilityActorDefinition(AbilityData::ReclaimerProtocol::Actor::RepairKit::BasicDefinitionId);
+		if (!kitActorDef)
+		{
+			return Fail("Reclaimer Repair Kit actor definition could not be found");
+		}
+		if (kitActorDef->actorType != AbilityActorType::ReclaimerRepairKit ||
+			!NearlyEqual(kitActorDef->lifeTime, 10.f))
+		{
+			return Fail("Reclaimer Repair Kit actor definition does not match expected actorType or 10s lifetime");
+		}
+		const sas::GameplayAttribute* kitDurationAttr = sas::FindAttribute(kitActorDef->attributes, CommonAttributeIds::Duration);
+		const sas::GameplayAttribute* kitRadiusAttr = sas::FindAttribute(kitActorDef->attributes, CollisionAttributeIds::Radius);
+		const sas::GameplayAttribute* kitHealRatioAttr = sas::FindAttribute(kitActorDef->attributes, AbilityData::ReclaimerProtocol::Actor::RepairKit::HealRatio);
+		if (!kitDurationAttr || !NearlyEqual(kitDurationAttr->baseValue, 10.f) ||
+			!kitRadiusAttr || !NearlyEqual(kitRadiusAttr->baseValue, 16.f) ||
+			!kitHealRatioAttr || !NearlyEqual(kitHealRatioAttr->baseValue, 0.04f))
+		{
+			return Fail("Reclaimer Repair Kit actor attributes do not match expected Duration, Radius, or HealRatio");
+		}
+
+		// 2. Profile registration / isolation / missing rejection
+		const ReclaimerProtocolPresentationProfile* registeredProfile =
+			PresentationProfileRegistry<ReclaimerProtocolPresentationProfile>::Find(
+				ReclaimerProtocolPresentationIds::RepairKitBasic
+			);
+		if (!registeredProfile)
+		{
+			return Fail("Reclaimer Protocol typed presentation profile was not registered");
+		}
+		if (registeredProfile->profileId.ToString() != ReclaimerProtocolPresentationIds::RepairKitBasic)
+		{
+			return Fail("Reclaimer Protocol presentation profile ID mismatch");
+		}
+		if (PresentationProfileRegistry<ReclaimerProtocolPresentationProfile>::Find("Presentation.Ability.NonExistent.Profile") != nullptr)
+		{
+			return Fail("Reclaimer Protocol profile registry returned an unregistered profile");
+		}
+
+		// Missing profile rejection during actor validation
+		AbilityActorDefinition invalidActorDef = *kitActorDef;
+		invalidActorDef.presentationProfileId = sas::ContentId{ "Presentation.Ability.Invalid.Missing.Profile" };
+		if (AbilityActorRegistry::ValidateDefinition(invalidActorDef).isValid)
+		{
+			return Fail("ReclaimerRepairKit actor handler must reject definition with missing presentation profile");
+		}
+
+		// Missing HealRatio rejection
+		AbilityActorDefinition missingAttrDef = *kitActorDef;
+		missingAttrDef.attributes.clear();
+		missingAttrDef.attributes.push_back(sas::GameplayAttribute{ CommonAttributeIds::Duration, 10.f, 0.01f });
+		missingAttrDef.attributes.push_back(sas::GameplayAttribute{ CollisionAttributeIds::Radius, 16.f, 0.f });
+		if (AbilityActorRegistry::ValidateDefinition(missingAttrDef).isValid)
+		{
+			return Fail("ReclaimerRepairKit actor handler must reject definition missing HealRatio attribute");
+		}
+
+		// 3. Activation has NO health, shield, regen, or damage effect
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			if (!owner)
+			{
+				return Fail("Could not spawn player spaceship for activation test");
+			}
+			world.TickInternal(0.f);
+
+			// Injure owner and deplete shield slightly to verify activation does NOT heal, shield, or add regen
+			owner->GetHealthComponent().ChangeHealth(-30.f);
+			owner->GetShieldComponent().ChangeShield(-20.f);
+			const float healthBefore = owner->GetHealthComponent().GetHealth();
+			const float shieldBefore = owner->GetShieldComponent().GetShield();
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			std::string grantFailure;
+			const sas::AbilityHandle handle = owner->GetAbilitySystemComponent().GrantAbility(
+				*reclaimerDefinition,
+				sas::AbilitySlot::Ability1,
+				&grantFailure
+			);
+			if (!handle.IsValid())
+			{
+				return Fail(("Failed to grant Reclaimer Protocol: " + grantFailure).c_str());
+			}
+
+			// Activate
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			GameAbility* ability = owner->GetAbilitySystemComponent().GetAbility(handle);
+			if (!ability || !ability->IsActive())
+			{
+				return Fail("Reclaimer Protocol failed to activate");
+			}
+			if (!owner->GetAbilitySystemComponent().HasOwnedTag(AbilityData::ReclaimerProtocol::State::Active))
+			{
+				return Fail("Reclaimer Protocol did not add Active state tag");
+			}
+
+			if (!NearlyEqual(owner->GetHealthComponent().GetHealth(), healthBefore))
+			{
+				return Fail("Reclaimer Protocol activation modified health");
+			}
+			if (!NearlyEqual(owner->GetShieldComponent().GetShield(), shieldBefore))
+			{
+				return Fail("Reclaimer Protocol activation modified shield");
+			}
+		}
+
+		// 4. Ability Haste applies to cooldown
+		{
+			TestCombatant hasteOwner;
+			hasteOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
+			hasteOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+				sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
+			);
+			const sas::AbilityHandle handle =
+				hasteOwner.GetAbilitySystemComponent().GrantAbility(*reclaimerDefinition, sas::AbilitySlot::Ability1);
+			if (!handle.IsValid())
+			{
+				return Fail("Could not grant Reclaimer Protocol to haste owner");
+			}
+			GameAbility* ability = hasteOwner.GetAbilitySystemComponent().GetAbility(handle);
+			if (!ability)
+			{
+				return Fail("Could not find ability on haste owner");
+			}
+			const float expectedCooldown = 16.f * sas::AttributeMath::GetAbilityCooldownMultiplier(100.f);
+			if (!NearlyEqual(ability->GetCooldownDuration(), expectedCooldown))
+			{
+				return Fail("Reclaimer Protocol cooldown did not scale with Ability Haste");
+			}
+		}
+
+		// 5. Qualifying owner kill creates exactly one kit at target death snapshot location;
+		// invalid events (non-owner source, target not killed, target not enemy, non-finite loc) do NOT create kit.
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			const shared_ptr<TestCombatant> nonOwner =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			if (!owner || !nonOwner)
+			{
+				return Fail("Could not spawn owner or nonOwner for event testing");
+			}
+			world.TickInternal(0.f);
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			const sas::AbilityHandle handle =
+				owner->GetAbilitySystemComponent().GrantAbility(*reclaimerDefinition, sas::AbilitySlot::Ability1);
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			// Test A: Kill confirmed from a non-owner source -> 0 kits
+			{
+				DamageContext nonOwnerContext;
+				nonOwnerContext.source = nonOwner.get();
+				nonOwnerContext.targetWasKilled = true;
+				nonOwnerContext.targetWasEnemyCombatant = true;
+				nonOwnerContext.targetLocationAtResolution = { 100.f, 200.f };
+
+				sas::AbilityEvent killEvent;
+				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+				killEvent.SetSource(nonOwner.get());
+				killEvent.SetContext(&nonOwnerContext);
+
+				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+				world.TickInternal(0.f);
+
+				if (!world.GetActorsByType<ReclaimerRepairKitActor>().empty())
+				{
+					return Fail("Reclaimer Protocol spawned a kit for a non-owner kill event");
+				}
+			}
+
+			// Test B: targetWasKilled = false -> 0 kits
+			{
+				DamageContext notKilledContext;
+				notKilledContext.source = owner.get();
+				notKilledContext.targetWasKilled = false;
+				notKilledContext.targetWasEnemyCombatant = true;
+				notKilledContext.targetLocationAtResolution = { 100.f, 200.f };
+
+				sas::AbilityEvent killEvent;
+				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+				killEvent.SetSource(owner.get());
+				killEvent.SetContext(&notKilledContext);
+
+				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+				world.TickInternal(0.f);
+
+				if (!world.GetActorsByType<ReclaimerRepairKitActor>().empty())
+				{
+					return Fail("Reclaimer Protocol spawned a kit when target was not killed");
+				}
+			}
+
+			// Test C: targetWasEnemyCombatant = false -> 0 kits
+			{
+				DamageContext nonEnemyContext;
+				nonEnemyContext.source = owner.get();
+				nonEnemyContext.targetWasKilled = true;
+				nonEnemyContext.targetWasEnemyCombatant = false;
+				nonEnemyContext.targetLocationAtResolution = { 100.f, 200.f };
+
+				sas::AbilityEvent killEvent;
+				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+				killEvent.SetSource(owner.get());
+				killEvent.SetContext(&nonEnemyContext);
+
+				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+				world.TickInternal(0.f);
+
+				if (!world.GetActorsByType<ReclaimerRepairKitActor>().empty())
+				{
+					return Fail("Reclaimer Protocol spawned a kit when target was not an enemy combatant");
+				}
+			}
+
+			// Test D: Non-finite location -> 0 kits
+			{
+				DamageContext nonFiniteContext;
+				nonFiniteContext.source = owner.get();
+				nonFiniteContext.targetWasKilled = true;
+				nonFiniteContext.targetWasEnemyCombatant = true;
+				nonFiniteContext.targetLocationAtResolution = { std::numeric_limits<float>::quiet_NaN(), 200.f };
+
+				sas::AbilityEvent killEvent;
+				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+				killEvent.SetSource(owner.get());
+				killEvent.SetContext(&nonFiniteContext);
+
+				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+				world.TickInternal(0.f);
+
+				if (!world.GetActorsByType<ReclaimerRepairKitActor>().empty())
+				{
+					return Fail("Reclaimer Protocol spawned a kit with non-finite coordinates");
+				}
+			}
+
+			// Test E: Qualifying owner kill -> exactly ONE kit at target location snapshot
+			const sf::Vector2f killLocation{ 320.f, -150.f };
+			{
+				DamageContext validContext;
+				validContext.source = owner.get();
+				validContext.targetWasKilled = true;
+				validContext.targetWasEnemyCombatant = true;
+				validContext.targetLocationAtResolution = { killLocation.x, killLocation.y };
+
+				sas::AbilityEvent killEvent;
+				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+				killEvent.SetSource(owner.get());
+				killEvent.SetContext(&validContext);
+
+				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+				world.TickInternal(0.f);
+
+				const List<weak_ptr<ReclaimerRepairKitActor>> kits =
+					world.GetActorsByType<ReclaimerRepairKitActor>();
+				if (kits.size() != 1)
+				{
+					return Fail("Reclaimer Protocol did not spawn exactly one kit on qualifying kill");
+				}
+
+				const shared_ptr<ReclaimerRepairKitActor> kit = kits.front().lock();
+				if (!kit)
+				{
+					return Fail("Reclaimer Repair Kit is invalid after spawn");
+				}
+				if (!NearlyEqual(kit->GetActorLocation().x, killLocation.x) ||
+					!NearlyEqual(kit->GetActorLocation().y, killLocation.y))
+				{
+					return Fail("Reclaimer Repair Kit was not spawned at the immutable target death snapshot location");
+				}
+				if (!NearlyEqual(kit->GetResolvedHealRatio(), 0.04f))
+				{
+					return Fail("Reclaimer Repair Kit did not snapshot resolved HealRatio");
+				}
+			}
+
+			// Multiple qualifying kills spawn multiple kits (no cap)
+			for (int i = 0; i < 3; ++i)
+			{
+				DamageContext anotherContext;
+				anotherContext.source = owner.get();
+				anotherContext.targetWasKilled = true;
+				anotherContext.targetWasEnemyCombatant = true;
+				anotherContext.targetLocationAtResolution = { 10.f * static_cast<float>(i), 20.f };
+
+				sas::AbilityEvent killEvent;
+				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+				killEvent.SetSource(owner.get());
+				killEvent.SetContext(&anotherContext);
+
+				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+				world.TickInternal(0.f);
+			}
+
+			if (world.GetActorsByType<ReclaimerRepairKitActor>().size() != 4)
+			{
+				return Fail("Reclaimer Protocol did not spawn kit for each qualifying kill without cap");
+			}
+		}
+
+		// 6. Kit survives ability end; end blocks future kits; kit expires at 10s
+		{
+			World world{ nullptr };
+			const shared_ptr<SpaceShip> owner =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			if (!owner)
+			{
+				return Fail("Could not spawn owner for lifecycle survival test");
+			}
+			world.TickInternal(0.f);
+
+			owner->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			owner->GetAbilitySystemComponent().GrantAbility(*reclaimerDefinition, sas::AbilitySlot::Ability1);
+			owner->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			// Spawn 1 kit at t = 2s
+			world.TickInternal(2.0f);
+			DamageContext killContext;
+			killContext.source = owner.get();
+			killContext.targetWasKilled = true;
+			killContext.targetWasEnemyCombatant = true;
+			killContext.targetLocationAtResolution = { 50.f, 50.f };
+
+			sas::AbilityEvent killEvent;
+			killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+			killEvent.SetSource(owner.get());
+			killEvent.SetContext(&killContext);
+			owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+			world.TickInternal(0.f);
+
+			if (world.GetActorsByType<ReclaimerRepairKitActor>().size() != 1)
+			{
+				return Fail("Failed to spawn initial kit for survival test");
+			}
+
+			// Advance beyond ability duration: 6s total (2s already elapsed + 4.1s)
+			world.TickInternal(4.1f);
+
+			// Ability must be ended
+			if (owner->GetAbilitySystemComponent().HasOwnedTag(AbilityData::ReclaimerProtocol::State::Active))
+			{
+				return Fail("Reclaimer Protocol remained active after its duration");
+			}
+
+			// Kit spawned at t=2s has age 4.1s (out of 10s lifetime). It must still exist!
+			if (world.GetActorsByType<ReclaimerRepairKitActor>().empty())
+			{
+				return Fail("Reclaimer Repair Kit was prematurely destroyed when ability ended");
+			}
+
+			// Now that ability ended, future kills must NOT spawn kits
+			owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+			world.TickInternal(0.f);
+			if (world.GetActorsByType<ReclaimerRepairKitActor>().size() != 1)
+			{
+				return Fail("Reclaimer Protocol spawned a kit after ability ended");
+			}
+
+			// Advance until kit expires (total age > 10s, remaining 5.9s)
+			world.TickInternal(6.0f);
+			world.TickInternal(0.f);
+
+			if (!world.GetActorsByType<ReclaimerRepairKitActor>().empty())
+			{
+				return Fail("Reclaimer Repair Kit failed to expire after its 10-second lifetime");
+			}
+		}
+
+		// 7. Healing math, clamp, full health retains kit, no shield/regen mutation
+		{
+			World world{ nullptr };
+			const shared_ptr<PlayerSpaceShip> player =
+				world.SpawnActor<PlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			if (!player)
+			{
+				return Fail("Could not spawn player for kit overlap test");
+			}
+			world.TickInternal(0.f);
+
+			const float maxHealth = player->GetHealthComponent().GetMaxHealth();
+			// Place player at { 0, 0 }
+			player->SetActorLocation({ 0.f, 0.f });
+
+			// Case A: Full health retains kit on overlap
+			const shared_ptr<ReclaimerRepairKitActor> kit1 =
+				world.SpawnActor<ReclaimerRepairKitActor>(
+					player.get(),
+					*registeredProfile
+				).lock();
+			if (!kit1)
+			{
+				return Fail("Could not spawn kit1");
+			}
+			kit1->SetActorLocation({ 0.f, 0.f });
+			kit1->SetResolvedHealRatio(0.04f);
+			world.TickInternal(0.f);
+
+			// Overlap at full health
+			kit1->OnActorBeginOverlap(player.get());
+			world.TickInternal(0.f);
+
+			if (kit1->GetIsPendingDestroy())
+			{
+				return Fail("Reclaimer Repair Kit was consumed when player was at full health");
+			}
+			if (!NearlyEqual(player->GetHealthComponent().GetHealth(), maxHealth))
+			{
+				return Fail("Player health was mutated during full health overlap");
+			}
+
+			// Case B: Injured player heals min(maxHealth * ratio, missing)
+			// Injure player by 20 points
+			player->GetHealthComponent().ChangeHealth(-20.f);
+			const float currentHealthBefore = player->GetHealthComponent().GetHealth();
+			const float shieldBefore = player->GetShieldComponent().GetShield();
+
+			// Expected heal: maxHealth * 0.04 = 100 * 0.04 = 4.0 (missing = 20 > 4.0)
+			const float expectedHeal = maxHealth * 0.04f;
+
+			kit1->OnActorBeginOverlap(player.get());
+			world.TickInternal(0.15f); // allow flash to complete and kit to destroy
+
+			if (!NearlyEqual(player->GetHealthComponent().GetHealth(), currentHealthBefore + expectedHeal))
+			{
+				return Fail("Reclaimer Repair Kit healing did not equal maxHealth * HealRatio");
+			}
+			if (!NearlyEqual(player->GetShieldComponent().GetShield(), shieldBefore))
+			{
+				return Fail("Reclaimer Repair Kit overlap mutated shield");
+			}
+			if (!kit1->GetIsPendingDestroy())
+			{
+				return Fail("Reclaimer Repair Kit was not consumed after positive healing");
+			}
+
+			// Case C: Missing health is less than maxHealth * ratio -> clamped to missing
+			// Heal player to maxHealth - 1.0f
+			player->GetHealthComponent().SetInitialHealth(maxHealth - 1.f, maxHealth);
+			const shared_ptr<ReclaimerRepairKitActor> kit2 =
+				world.SpawnActor<ReclaimerRepairKitActor>(
+					player.get(),
+					*registeredProfile
+				).lock();
+			if (!kit2)
+			{
+				return Fail("Could not spawn kit2");
+			}
+			kit2->SetActorLocation({ 0.f, 0.f });
+			kit2->SetResolvedHealRatio(0.04f);
+			world.TickInternal(0.f);
+
+			kit2->OnActorBeginOverlap(player.get());
+			world.TickInternal(0.15f);
+
+			if (!NearlyEqual(player->GetHealthComponent().GetHealth(), maxHealth))
+			{
+				return Fail("Reclaimer Repair Kit did not clamp healing to missing health");
+			}
+			if (!kit2->GetIsPendingDestroy())
+			{
+				return Fail("Reclaimer Repair Kit was not consumed when healing clamped to missing health");
+			}
+
+			// Case D: Non-player ship cannot consume or heal from repair kit even via direct overlap
+			const shared_ptr<SpaceShip> nonPlayerShip =
+				world.SpawnActor<SpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			if (!nonPlayerShip)
+			{
+				return Fail("Could not spawn non-player ship for overlap rejection test");
+			}
+			nonPlayerShip->SetActorLocation({ 0.f, 0.f });
+			nonPlayerShip->GetHealthComponent().ChangeHealth(-20.f);
+			const float nonPlayerHealthBefore = nonPlayerShip->GetHealthComponent().GetHealth();
+
+			const shared_ptr<ReclaimerRepairKitActor> kit3 =
+				world.SpawnActor<ReclaimerRepairKitActor>(
+					player.get(),
+					*registeredProfile
+				).lock();
+			if (!kit3)
+			{
+				return Fail("Could not spawn kit3");
+			}
+			kit3->SetActorLocation({ 0.f, 0.f });
+			kit3->SetResolvedHealRatio(0.04f);
+			world.TickInternal(0.f);
+
+			kit3->OnActorBeginOverlap(nonPlayerShip.get());
+			world.TickInternal(0.15f);
+
+			if (kit3->GetIsPendingDestroy())
+			{
+				return Fail("Reclaimer Repair Kit was consumed by non-player ship overlap");
+			}
+			if (!NearlyEqual(nonPlayerShip->GetHealthComponent().GetHealth(), nonPlayerHealthBefore))
+			{
+				return Fail("Non-player ship health was modified by Reclaimer Repair Kit overlap");
+			}
+		}
+
+		// 8. Pre-existing player-owned source case
+		{
+			World world{ nullptr };
+			const shared_ptr<PlayerSpaceShip> player =
+				world.SpawnActor<PlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
+			const shared_ptr<TestCombatant> enemy =
+				world.SpawnActor<TestCombatant>(100.f).lock();
+			if (!player || !enemy)
+			{
+				return Fail("Could not spawn player or enemy for player-owned source test");
+			}
+			player->SetActorLocation({ 0.f, 0.f });
+			player->SetCollisionLayer(CollisionLayer::Player);
+			enemy->SetActorLocation({ 200.f, 0.f });
+			enemy->SetCollisionLayer(CollisionLayer::Enemy);
+			enemy->SetCollisionMask(CollisionLayer::PlayerBullet);
+			world.TickInternal(0.f);
+
+			player->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
+			player->GetAbilitySystemComponent().GrantAbility(*reclaimerDefinition, sas::AbilitySlot::Ability1);
+			player->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			world.TickInternal(0.f);
+			world.TickInternal(0.f);
+
+			// Simulate CombatRuntime damage resolution resulting in kill from player
+			DamageContext killContext;
+			killContext.source = player.get();
+			killContext.target = enemy.get();
+			killContext.targetWasKilled = true;
+			killContext.targetWasEnemyCombatant = true;
+			killContext.targetLocationAtResolution = { enemy->GetActorLocation().x, enemy->GetActorLocation().y };
+
+			sas::AbilityEvent killEvent;
+			killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
+			killEvent.SetSource(player.get());
+			killEvent.SetTarget(enemy.get());
+			killEvent.SetContext(&killContext);
+
+			player->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
+			world.TickInternal(0.f);
+
+			const List<weak_ptr<ReclaimerRepairKitActor>> kits =
+				world.GetActorsByType<ReclaimerRepairKitActor>();
+			if (kits.size() != 1)
+			{
+				return Fail("Player-owned kill confirmed did not spawn a Reclaimer Repair Kit");
+			}
+		}
+	}
 	return 0;
 }

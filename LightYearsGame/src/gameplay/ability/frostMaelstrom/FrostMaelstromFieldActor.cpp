@@ -8,6 +8,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/movement/MovementInfluenceService.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "spaceShip/SpaceShip.h"
@@ -321,6 +322,10 @@ namespace ly
 	{
 		if (const shared_ptr<SpaceShip> target = controlled.target.lock())
 		{
+			movement::MovementInfluenceService::RemoveSource(
+				*target,
+				GetControlSourceId()
+			);
 			target->GetAbilitySystemComponent().RemoveOwnedTag(
 				AbilityData::FrostMaelstrom::State::Controlling
 			);
@@ -429,15 +434,28 @@ namespace ly
 		return radialAcceleration + velocityCorrection;
 	}
 
-	void FrostMaelstromFieldActor::ApplyControlForces(float deltaTime)
+	movement::MovementInfluenceSourceId
+	FrostMaelstromFieldActor::GetControlSourceId() const
+	{
+		return static_cast<movement::MovementInfluenceSourceId>(
+			reinterpret_cast<std::uintptr_t>(this)
+		);
+	}
+
+	void FrostMaelstromFieldActor::ApplyControlForces()
 	{
 		for (ControlledTarget& controlled : mControlledTargets)
 		{
 			if (const shared_ptr<SpaceShip> target = controlled.target.lock())
 			{
-				target->GetMovementComponent().AddWorldAcceleration(
-					ResolveControlAcceleration(controlled),
-					std::max(0.f, deltaTime)
+				// The orbital math stays with Frost Maelstrom, while the shared
+				// movement controller owns stacking and source cleanup.
+				movement::MovementInfluenceService::SetAccelerationSource(
+					*target,
+					movement::AccelerationSourceRequest{
+						GetControlSourceId(),
+						ResolveControlAcceleration(controlled)
+					}
 				);
 			}
 		}
@@ -512,7 +530,7 @@ namespace ly
 		mFieldAge += safeDeltaTime;
 		AdvanceField(safeDeltaTime);
 		UpdateControlledTargets();
-		ApplyControlForces(safeDeltaTime);
+		ApplyControlForces();
 		mTickAccumulator += safeDeltaTime;
 		while (mTickAccumulator >= mTickInterval && mFieldAge <= mDuration + 0.001f)
 		{

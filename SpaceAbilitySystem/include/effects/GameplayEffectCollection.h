@@ -6,6 +6,7 @@
 #include <iterator>
 #include <list>
 #include <optional>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,7 @@ namespace sas
 		// Stable node storage prevents an effect insertion from invalidating the
 		// callback's current ActiveEffect reference.
 		using Container = std::list<ActiveEffect>;
+		using Iterator = typename Container::iterator;
 
 		GameplayEffectHandle AllocateHandle()
 		{
@@ -27,38 +29,29 @@ namespace sas
 			{
 				handle = GameplayEffectHandle{ mNextHandleId++ };
 			}
-			while (Find(handle) != nullptr);
+			while (mEffectsByHandle.find(handle.id) != mEffectsByHandle.end());
 			return handle;
 		}
 
-		ActiveEffect& Emplace()
+		ActiveEffect& Emplace(GameplayEffectHandle handle)
 		{
 			mEffects.emplace_back();
-			return mEffects.back();
+			Iterator iterator = std::prev(mEffects.end());
+			iterator->handle = handle;
+			mEffectsByHandle.emplace(handle.id, iterator);
+			return *iterator;
 		}
 
 		ActiveEffect* Find(GameplayEffectHandle handle)
 		{
-			for (ActiveEffect& effect : mEffects)
-			{
-				if (effect.handle == handle)
-				{
-					return &effect;
-				}
-			}
-			return nullptr;
+			const auto iterator = mEffectsByHandle.find(handle.id);
+			return iterator != mEffectsByHandle.end() ? &*iterator->second : nullptr;
 		}
 
 		const ActiveEffect* Find(GameplayEffectHandle handle) const
 		{
-			for (const ActiveEffect& effect : mEffects)
-			{
-				if (effect.handle == handle)
-				{
-					return &effect;
-				}
-			}
-			return nullptr;
+			const auto iterator = mEffectsByHandle.find(handle.id);
+			return iterator != mEffectsByHandle.end() ? &*iterator->second : nullptr;
 		}
 
 		std::optional<std::size_t> FindIndex(GameplayEffectHandle handle) const
@@ -109,7 +102,20 @@ namespace sas
 			}
 			auto iterator = mEffects.begin();
 			std::advance(iterator, static_cast<std::ptrdiff_t>(index));
+			mEffectsByHandle.erase(iterator->handle.id);
 			mEffects.erase(iterator);
+			return true;
+		}
+
+		bool Erase(GameplayEffectHandle handle)
+		{
+			const auto index = mEffectsByHandle.find(handle.id);
+			if (index == mEffectsByHandle.end())
+			{
+				return false;
+			}
+			mEffects.erase(index->second);
+			mEffectsByHandle.erase(index);
 			return true;
 		}
 
@@ -141,11 +147,13 @@ namespace sas
 		void Reset()
 		{
 			mEffects.clear();
+			mEffectsByHandle.clear();
 			mNextHandleId = 1;
 		}
 
 	private:
 		Container mEffects;
+		std::unordered_map<unsigned int, Iterator> mEffectsByHandle;
 		unsigned int mNextHandleId = 1;
 	};
 }

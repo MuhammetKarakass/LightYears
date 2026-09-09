@@ -23,9 +23,9 @@ namespace AbilityData::Definitions
 			ly::GameplayTags::Ability::Family::NanoPlague
 		};
 		definition.displayName = "Nano Plague";
-		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupGreen_bolt.png";
-		definition.accentColor = sf::Color{ 95, 255, 140, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Energy };
+		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
+		definition.accentColor = sf::Color{ 90, 215, 255, 255 };
+		definition.damageTags = { ly::DamageTypeSchema::Electric };
 		definition.behaviorType = ly::AbilityBehaviorType::NanoPlague;
 		return definition;
 	}();

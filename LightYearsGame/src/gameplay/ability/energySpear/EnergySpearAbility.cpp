@@ -1,5 +1,7 @@
 #include "gameplay/ability/energySpear/EnergySpearAbility.h"
 
+#include "gameplay/ability/runtime/FocusActionLocks.h"
+
 #include "attributes/AttributeSystem.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/DirectionalChargeTelegraphActor.h"
@@ -66,16 +68,28 @@ namespace ly
 
 		bool HasExpectedScalingRule(const GameAbilityDefinition& definition)
 		{
-			if (definition.scalingRules.size() != 1)
+			if (definition.scalingRules.size() != 2)
 			{
 				return false;
 			}
 
-			const sas::AttributeScalingRule& rule = definition.scalingRules.front();
-			return rule.targetAttributeId == AbilityData::EnergySpear::Attribute::Damage &&
-				rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
-				rule.operation == sas::AttributeModifierOperation::Add &&
-				std::abs(rule.coefficient - 1.f) <= 0.0001f;
+			bool hasAttackPower = false;
+			bool hasEnergyMax = false;
+			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
+			{
+				if (rule.targetAttributeId != AbilityData::EnergySpear::Attribute::Damage ||
+					rule.operation != sas::AttributeModifierOperation::Add)
+				{
+					continue;
+				}
+				hasAttackPower = hasAttackPower ||
+					(rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
+						std::abs(rule.coefficient - 1.f) <= 0.0001f);
+				hasEnergyMax = hasEnergyMax ||
+					(rule.sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+						std::abs(rule.coefficient - 0.20f) <= 0.0001f);
+			}
+			return hasAttackPower && hasEnergyMax;
 		}
 
 		bool HasExpectedLevelStep(const AbilityLevelStep& step)
@@ -232,11 +246,10 @@ namespace ly
 		mReleased = false;
 		mTraversalStarted = false;
 
-		context.abilitySystem.AddOwnedTag(GameplayTags::State::ActionLock::AbilityActivation);
-		context.abilitySystem.AddOwnedTag(GameplayTags::State::ActionLock::PrimaryWeaponFire);
-		// Focusing is a charge/aim phase. The player must remain free to move
-		// while choosing position; movement is locked only after release hands
-		// control to the fixed-direction traversal actor.
+		ability::ApplyFocusActionLocks(context.abilitySystem);
+		// Focus is a committed input-locked phase. Rotation remains available,
+		// while world forces may still move the ship because focus never grants
+		// the ExternalMovement lock.
 		context.abilitySystem.AddOwnedTag(AbilityData::EnergySpear::State::Focusing);
 
 		if (World* world = context.owner.GetWorld())
@@ -371,8 +384,9 @@ namespace ly
 			return;
 		}
 		mReleased = true;
-		// Movement is allowed during focus, so the spear must originate from the
-		// ship's current position rather than the position at activation time.
+		// Input movement is locked during focus, but external forces may still
+		// displace the ship. Capture its current position at release so the spear
+		// always begins where the owner actually is.
 		mStartLocation = context.owner.GetActorLocation();
 		mDirection = ResolveMouseDirection(context.owner);
 
@@ -493,9 +507,9 @@ namespace ly
 		mTraversalStarted = true;
 		context.abilitySystem.RemoveOwnedTag(AbilityData::EnergySpear::State::Focusing);
 		context.abilitySystem.AddOwnedTag(AbilityData::EnergySpear::State::Traversing);
-		// Traversal moves the owner along a captured direction, so normal input
-		// must stop affecting the ship until the traversal actor completes.
-		context.abilitySystem.AddOwnedTag(GameplayTags::State::ActionLock::MovementInput);
+		// Keep the focus locks alive through traversal. The traversal actor becomes
+		// their sole cleanup owner; adding MovementInput again would leave a
+		// reference-counted lock behind after it finishes.
 		if (telegraph)
 		{
 			// The charge preview belongs to the focus phase. Once released, the
@@ -508,12 +522,7 @@ namespace ly
 
 	void EnergySpearAbility::RemoveFocusLocks(GameAbilityBehaviorContext& context) const
 	{
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::AbilityActivation
-		);
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::PrimaryWeaponFire
-		);
+		ability::RemoveFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::EnergySpear::State::Focusing);
 	}
 

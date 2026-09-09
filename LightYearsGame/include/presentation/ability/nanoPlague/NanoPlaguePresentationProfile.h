@@ -9,9 +9,10 @@ namespace ly
 	struct NanoPlaguePresentationProfile
 	{
 		sas::ContentId profileId;
-		sf::Color infectionColor{ 95, 255, 140, 125 };
-		sf::Color injectionColor{ 175, 255, 205, 230 };
-		sf::Color spreadColor{ 95, 255, 140, 200 };
+		// Nano Plague uses the same electric visual language as its damage type.
+		sf::Color infectionColor{ 70, 185, 255, 145 };
+		sf::Color injectionColor{ 220, 250, 255, 240 };
+		sf::Color spreadColor{ 105, 210, 255, 220 };
 		float auraRadius = 25.f;
 		float injectionDuration = 0.18f;
 		float spreadDuration = 0.34f;

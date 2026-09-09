@@ -13,6 +13,7 @@
 #include "presentation/ability/relayPrism/RelayPrismPresentationProfile.h"
 #include "presentation/ability/railBurst/RailBurstPresentationProfile.h"
 #include "presentation/ability/crescentReaver/CrescentReaverPresentationProfile.h"
+#include "presentation/ability/aegisReaver/AegisReaverPresentationProfile.h"
 #include "presentation/ability/mineLayer/MineLayerPresentationProfile.h"
 #include "presentation/ability/energySpear/EnergySpearPresentationProfile.h"
 #include "presentation/ability/scorchDrive/ScorchDrivePresentationProfile.h"
@@ -20,6 +21,7 @@
 #include "presentation/ability/directionalBarrier/DirectionalBarrierPresentationProfile.h"
 #include "presentation/ability/glacialPressure/GlacialPressurePresentationProfile.h"
 #include "presentation/ability/chainLightning/ChainLightningPresentationProfile.h"
+#include "presentation/ability/stormMark/StormMarkPresentationProfile.h"
 #include "presentation/ability/voidGate/VoidGatePresentationProfile.h"
 #include "presentation/ability/cryostasis/CryostasisPresentationProfile.h"
 #include "presentation/ability/frostMaelstrom/FrostMaelstromPresentationProfile.h"
@@ -30,6 +32,20 @@
 #include "presentation/ability/wingSentinels/WingSentinelsPresentationProfile.h"
 #include "presentation/ability/returnProtocol/ReturnProtocolPresentationProfile.h"
 #include "presentation/ability/crystalBarricade/CrystalBarricadePresentationProfile.h"
+#include "presentation/ability/solarBombardment/SolarBombardmentPresentationProfile.h"
+#include "presentation/ability/strikeRun/StrikeRunPresentationProfile.h"
+#include "presentation/ability/blastback/BlastbackPresentationProfile.h"
+#include "presentation/ability/seismicCharge/SeismicChargePresentationProfile.h"
+#include "presentation/ability/arcScythes/ArcScythesPresentationProfile.h"
+#include "presentation/ability/temporalConvergence/TemporalConvergencePresentationProfile.h"
+#include "presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.h"
+#include "presentation/ability/foldspaceArena/FoldspaceArenaPresentationProfile.h"
+#include "presentation/ability/cryoBola/CryoBolaPresentationProfile.h"
+#include "presentation/ability/inertialWake/InertialWakePresentationProfile.h"
+#include "presentation/ability/shieldGraft/ShieldGraftPresentationProfile.h"
+#include "presentation/ability/emberSwarm/EmberSwarmPresentationProfile.h"
+#include "presentation/ability/lanceDrive/LanceDrivePresentationProfile.h"
+#include "presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationProfile.h"
 
 namespace ly
 {
@@ -49,6 +65,7 @@ namespace ly
 			RegisterRelayPrismPresentationProfiles() &&
 			RegisterRailBurstPresentationProfiles() &&
 			RegisterCrescentReaverPresentationProfiles() &&
+			RegisterAegisReaverPresentationProfiles() &&
 			RegisterMineLayerPresentationProfiles() &&
 			RegisterEnergySpearPresentationProfiles() &&
 			RegisterScorchDrivePresentationProfiles() &&
@@ -56,6 +73,7 @@ namespace ly
 			RegisterIonStormPresentationProfiles() &&
 			RegisterGlacialPressurePresentationProfiles() &&
 			RegisterChainLightningPresentationProfiles() &&
+			RegisterStormMarkPresentationProfiles() &&
 			RegisterCryostasisPresentationProfiles() &&
 			RegisterVoidGatePresentationProfiles() &&
 			RegisterFrostMaelstromPresentationProfiles() &&
@@ -65,7 +83,21 @@ namespace ly
 			RegisterAstralSurgePresentationProfiles() &&
 			RegisterWingSentinelsPresentationProfiles() &&
 			RegisterReturnProtocolPresentationProfiles() &&
-			RegisterCrystalBarricadePresentationProfiles();
+			RegisterCrystalBarricadePresentationProfiles() &&
+			RegisterSolarBombardmentPresentationProfiles() &&
+			RegisterStrikeRunPresentationProfiles() &&
+			RegisterBlastbackPresentationProfiles() &&
+			RegisterSeismicChargePresentationProfiles() &&
+			RegisterArcScythesPresentationProfiles() &&
+			RegisterTemporalConvergencePresentationProfiles() &&
+			RegisterClosedCircuitPresentationProfiles() &&
+			RegisterFoldspaceArenaPresentationProfiles() &&
+			RegisterCryoBolaPresentationProfiles() &&
+			RegisterInertialWakePresentationProfiles() &&
+			RegisterShieldGraftPresentationProfiles() &&
+			RegisterEmberSwarmPresentationProfiles() &&
+			RegisterLanceDrivePresentationProfiles() &&
+			RegisterReclaimerProtocolPresentationProfiles();
 		return registered;
 	}
 }

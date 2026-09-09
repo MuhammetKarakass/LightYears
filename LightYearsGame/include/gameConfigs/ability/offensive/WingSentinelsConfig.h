@@ -69,7 +69,6 @@ namespace AbilityData::Definitions
 			}, {}, {}, {} }
 		);
 		definition.levelUpgradeScrapCosts = { 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60 };
-		definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Damage,
 			ly::AttachmentSchema::Capability::Projectile

@@ -6,6 +6,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/control/ControlResponse.h"
+#include "gameplay/movement/MovementInfluenceService.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetRelation.h"
 #include "gameplay/targeting/TargetingTypes.h"
@@ -13,7 +14,6 @@
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
-#include "spaceShip/SpaceShip.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
 
@@ -371,19 +371,13 @@ namespace ly
 		const sf::Vector2f direction = NormalizeOrDefault(
 			target.GetActorLocation() - GetActorLocation()
 		);
-		// A mine explosion applies a velocity impulse. SpaceShip keeps this
-		// external force separate from voluntary movement, so it still moves a
-		// stunned target without teleporting it or re-enabling player input.
-		if (SpaceShip* ship = dynamic_cast<SpaceShip*>(&target))
-		{
-			ship->GetMovementComponent().ApplyExternalImpulse(
-				direction * mKnockbackStrength
-			);
-		}
-		else
-		{
-			target.SetVelocity(target.GetVelocity() + direction * mKnockbackStrength);
-		}
+		// All external displacement enters through the shared movement influence
+		// boundary. Ships receive collision-aware decaying impulses; legacy
+		// movable combatants use the service's velocity compatibility path.
+		movement::MovementInfluenceService::ApplyImpulse(
+			target,
+			movement::ImpulseRequest{ direction * mKnockbackStrength }
+		);
 
 		const sas::GameplayEffectDefinition* stunDefinition =
 			EffectData::FindGameplayEffectDefinition(AbilityData::MineLayer::Effect::StunId);

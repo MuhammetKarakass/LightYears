@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Actor.h"
+#include "gameplay/combat/ContactDamageGuardRegistry.h"
 #include "gameplay/damage/DamageContext.h"
 #include "presentation/ability/energySpear/EnergySpearPresentationProfile.h"
 
@@ -62,6 +63,8 @@ namespace ly
 			const sf::Vector2f& segmentEnd
 		);
 		void Finish();
+		void RegisterContactDamageGuard();
+		void UnregisterContactDamageGuard();
 		void DrawImpacts(sf::RenderWindow& window) const;
 
 		weak_ptr<Actor> mOwner;
@@ -79,6 +82,7 @@ namespace ly
 		DamagePayload mDamagePayload;
 		sas::ContentId mSourceAbilityId;
 		List<GameplayTag> mSourceAbilityTags;
+		ContactDamageGuardHandle mContactDamageGuardHandle;
 		float mDistanceTravelled = 0.f;
 		sf::Vector2f mPreservedVelocity{};
 		Set<Actor*> mHitTargets;

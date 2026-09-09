@@ -2,6 +2,9 @@
 
 #include <framework/Core.h>
 #include <framework/Delegate.h>
+#include "gameplay/resource/TemporaryOvercapLedger.h"
+
+#include <string>
 
 namespace ly
 {
@@ -17,6 +20,15 @@ namespace ly
 
 		void ChangeHealth(float amount);
 		void Regenerate(float amount);
+		// Grants health that may exceed the normal maximum. Only the excess is
+		// recorded, so ordinary healing and damage keep their existing semantics.
+		float GrantTemporaryOverhealth(
+			const std::string& sourceId,
+			float amount,
+			float holdDuration,
+			float decayPerSecond
+		);
+		void TickTemporaryOverhealths(float deltaTime);
 
 		Delegate<float,float,float> onHealthChanged;
 		Delegate<float, float, float> onTakenDamage;
@@ -29,6 +41,7 @@ namespace ly
 
 		float mHealth;
 		float mMaxHealth;
+		TemporaryOvercapLedger mTemporaryOverhealths;
 	};
 }
 

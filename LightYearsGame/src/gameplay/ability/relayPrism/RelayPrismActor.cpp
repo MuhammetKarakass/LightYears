@@ -541,6 +541,9 @@ namespace ly
 			request.location = GetActorLocation();
 			request.direction = MakeScatterDirection(projectileIndex);
 			request.damage = transferredDamage;
+			request.cloneIndex = projectileIndex;
+			request.cloneCount = cloneCount;
+			request.transferRatio = mDamageTransferRatio;
 			request.allowFriendlyFire = true;
 			request.snapshot = snapshot;
 			request.snapshot.lineage = lineage;

@@ -200,6 +200,16 @@
       "grantedImmunityCategory": "Control",
       "sourceScopedApplication": true,
       "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Defense.IroncladProtocol.DamageReduction.Basic",
+      "behaviorKey": "EffectBehavior.Defense.DamageReduction",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "disposition": "Beneficial",
+      "category": "Defense.DamageReduction",
+      "sourceScopedApplication": true,
+      "sourceParameterized": true
     }
   ]
 }

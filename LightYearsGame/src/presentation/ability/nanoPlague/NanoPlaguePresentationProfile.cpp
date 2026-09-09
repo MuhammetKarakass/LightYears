@@ -10,9 +10,9 @@ namespace ly
 		return PresentationProfileRegistry<NanoPlaguePresentationProfile>::Register(
 			NanoPlaguePresentationProfile{
 				sas::ContentId{ NanoPlaguePresentationIds::InfectionBasic },
-				sf::Color{ 95, 255, 140, 125 },
-				sf::Color{ 175, 255, 205, 230 },
-				sf::Color{ 95, 255, 140, 200 },
+				sf::Color{ 70, 185, 255, 145 },
+				sf::Color{ 220, 250, 255, 240 },
+				sf::Color{ 105, 210, 255, 220 },
 				25.f,
 				0.18f,
 				0.34f

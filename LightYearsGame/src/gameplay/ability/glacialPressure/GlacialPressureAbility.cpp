@@ -1,5 +1,7 @@
 #include "gameplay/ability/glacialPressure/GlacialPressureAbility.h"
 
+#include "gameplay/ability/runtime/FocusActionLocks.h"
+
 #include "effects/GameplayEffectSpec.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/glacialPressure/GlacialPressureContracts.h"
@@ -8,6 +10,7 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/movement/MovementInfluenceService.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetRelation.h"
 #include "gameplay/targeting/SweptGeometry.h"
@@ -264,14 +267,9 @@ namespace ly
 		mPushDuration = 0.f;
 		mDischarged = false;
 
-		// Focus is an atomic preparation window: primary fire and other ability
-		// activation are blocked until the blast is emitted.
-		context.abilitySystem.AddOwnedTag(
-			GameplayTags::State::ActionLock::AbilityActivation
-		);
-		context.abilitySystem.AddOwnedTag(
-			GameplayTags::State::ActionLock::PrimaryWeaponFire
-		);
+		// Focus uses the project-wide committed-input rule: voluntary movement,
+		// primary fire, and ability activation are blocked until discharge.
+		ability::ApplyFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.AddOwnedTag(AbilityData::GlacialPressure::State::Focusing);
 
 		if (World* world = context.owner.GetWorld())
@@ -329,12 +327,7 @@ namespace ly
 	)
 	{
 		(void)reason;
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::AbilityActivation
-		);
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::PrimaryWeaponFire
-		);
+		ability::RemoveFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::GlacialPressure::State::Focusing);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::GlacialPressure::State::Pushing);
 
@@ -575,13 +568,16 @@ namespace ly
 				target->GetMovementComponent()
 					.GetAttributes().linearDamping.currentValue
 			);
-			// Apply the force once. The shared movement component owns the ensuing
-			// displacement and exponential slowdown instead of this ability moving
-			// the target at a fixed speed.
-			target->GetMovementComponent().ApplyExternalImpulse(
-				pushDirection * impulseSpeed,
-				target->GetMovementComponent()
-					.GetAttributes().linearDamping.currentValue
+			// Apply the force once. The common movement boundary owns ensuing
+			// collision-aware displacement and exponential slowdown, so this ability
+			// never moves a target at a fixed speed by itself.
+			movement::MovementInfluenceService::ApplyImpulse(
+				*target,
+				movement::ImpulseRequest{
+					pushDirection * impulseSpeed,
+					target->GetMovementComponent()
+						.GetAttributes().linearDamping.currentValue
+				}
 			);
 
 			ApplyStun(context, *target, pushStunDuration);
@@ -598,12 +594,7 @@ namespace ly
 			});
 		}
 
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::AbilityActivation
-		);
-		context.abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::PrimaryWeaponFire
-		);
+		ability::RemoveFocusActionLocks(context.abilitySystem);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::GlacialPressure::State::Focusing);
 		if (!mPushStates.empty())
 		{

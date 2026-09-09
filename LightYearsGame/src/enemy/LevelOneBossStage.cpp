@@ -32,7 +32,8 @@ namespace ly
 				mBoss.lock()->SetCollisionMask(
 					CollisionLayer::Player |
 					CollisionLayer::FriendlySummon |
-					CollisionLayer::PlayerBullet
+					CollisionLayer::PlayerBullet |
+					CollisionLayer::Environment
 				);
 				mBoss.lock()->SetVisibility(true);
 				mBoss.lock()->SetActorLocation({ windowSize.x / 2.f, -200.f });

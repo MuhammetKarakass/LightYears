@@ -1,5 +1,7 @@
 #include "gameplay/HealthComponent.h"
 
+#include <algorithm>
+
 namespace ly
 {
 	HealthComponent::HealthComponent(float health, float maxHealth):
@@ -13,6 +15,7 @@ namespace ly
 	{
 		mHealth = health;
 		mMaxHealth = maxHealth;
+		mTemporaryOverhealths.Clear();
 		if(health>maxHealth)
 		{
 			mHealth = maxHealth;
@@ -37,6 +40,7 @@ namespace ly
 		{
 			mHealth = mMaxHealth;
 		}
+		mTemporaryOverhealths.Reconcile(mHealth, mMaxHealth);
 
 		onHealthChanged.Broadcast(mHealth - previousHealth, mHealth, mMaxHealth);
 	}
@@ -53,7 +57,7 @@ namespace ly
 			mHealth = 0; 
 		}
 
-		if (mHealth > mMaxHealth)
+		if (amount > 0.f && mHealth > mMaxHealth)
 		{
 			mHealth = mMaxHealth; 
 		}
@@ -63,6 +67,11 @@ namespace ly
 
 		if (actualDelta < 0)
 		{
+			const float previousExcess = std::max(0.f, previousHealth - mMaxHealth);
+			const float currentExcess = std::max(0.f, mHealth - mMaxHealth);
+			mTemporaryOverhealths.Consume(
+				std::max(0.f, previousExcess - currentExcess)
+			);
 			TakenDamage(-actualDelta);  
 			if (mHealth <= 0)
 			{
@@ -78,6 +87,46 @@ namespace ly
 		{
 			ChangeHealth(amount);
 		}
+	}
+
+	float HealthComponent::GrantTemporaryOverhealth(
+		const std::string& sourceId,
+		float amount,
+		float holdDuration,
+		float decayPerSecond
+	)
+	{
+		const float safeAmount = std::max(0.f, amount);
+		if (safeAmount <= 0.f || mHealth <= 0.f)
+		{
+			return 0.f;
+		}
+
+		const float previousHealth = mHealth;
+		const float previousExcess = std::max(0.f, previousHealth - mMaxHealth);
+		mHealth += safeAmount;
+		const float newExcess = std::max(0.f, mHealth - mMaxHealth);
+		mTemporaryOverhealths.Add(TemporaryOvercapRequest{
+			sourceId,
+			std::max(0.f, newExcess - previousExcess),
+			holdDuration,
+			decayPerSecond
+		});
+		onHealthChanged.Broadcast(mHealth - previousHealth, mHealth, mMaxHealth);
+		return safeAmount;
+	}
+
+	void HealthComponent::TickTemporaryOverhealths(float deltaTime)
+	{
+		const float decay = mTemporaryOverhealths.Tick(deltaTime, mHealth, mMaxHealth);
+		if (decay <= 0.f)
+		{
+			return;
+		}
+
+		const float previousHealth = mHealth;
+		mHealth = std::max(mMaxHealth, mHealth - decay);
+		onHealthChanged.Broadcast(mHealth - previousHealth, mHealth, mMaxHealth);
 	}
 
 	void HealthComponent::TakenDamage(float amount)

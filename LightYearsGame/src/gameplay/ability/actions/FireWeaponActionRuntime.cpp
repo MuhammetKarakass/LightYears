@@ -6,6 +6,7 @@
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/time/IntervalDebt.h"
 #include "framework/Actor.h"
+#include "spaceShip/SpaceShip.h"
 
 #include <algorithm>
 
@@ -13,6 +14,58 @@ namespace ly
 {
 	namespace
 	{
+		const PrimaryWeaponOverrideState::ActiveOverride* FindPrimaryOverride(
+			const AbilityExecutionContext& context
+		)
+		{
+			if (!context.abilitySystem || !context.definition ||
+				context.definition->slot != sas::AbilitySlot::PrimaryFire)
+			{
+				return nullptr;
+			}
+			return context.abilitySystem->GetActivePrimaryWeaponOverride();
+		}
+
+		const FireWeaponAction& ResolveFireAction(
+			const AbilityExecutionContext& context,
+			const FireWeaponAction& authoredAction,
+			FireWeaponAction& overrideStorage
+		)
+		{
+			const PrimaryWeaponOverrideState::ActiveOverride* overrideEntry =
+				FindPrimaryOverride(context);
+			if (!overrideEntry)
+			{
+				return authoredAction;
+			}
+
+			// A normal primary shot does not allocate or copy its weapon definition.
+			// The short-lived copy exists only while a transformation replaces it.
+			overrideStorage = authoredAction;
+			overrideStorage.weaponDefinition = overrideEntry->weaponDefinition;
+			return overrideStorage;
+		}
+
+		List<GameplayTag> ResolveDamageTags(
+			AbilityExecutionContext& context,
+			const FireWeaponAction& fireAction
+		)
+		{
+			if (const PrimaryWeaponOverrideState::ActiveOverride* overrideEntry =
+				FindPrimaryOverride(context);
+				overrideEntry &&
+				overrideEntry->weaponDefinition.weaponId == fireAction.weaponDefinition.weaponId)
+			{
+				// A replacement weapon owns its damage family and must not inherit the
+				// equipped weapon's tags.
+				return fireAction.weaponDefinition.damageTags;
+			}
+			return AbilityActionAttributeResolver::ResolveDamageTags(
+				context,
+				AttachmentHostKind::PrimaryWeapon
+			);
+		}
+
 		const sas::GameplayAttributeList& ResolveAttributes(
 			AbilityExecutionContext& context,
 			const FireWeaponAction& fireAction,
@@ -33,10 +86,7 @@ namespace ly
 						context,
 						&fireAction.weaponDefinition,
 						state.runtimeAttributes,
-						AbilityActionAttributeResolver::ResolveDamageTags(
-							context,
-							AttachmentHostKind::PrimaryWeapon
-						)
+						ResolveDamageTags(context, fireAction)
 					)
 					: sas::BuildBaseGameplayAttributes(state.runtimeAttributes);
 				state.resolvedAttributeRevision = attributeRevision;
@@ -57,10 +107,7 @@ namespace ly
 				owner,
 				fireAction.weaponDefinition,
 				attributes,
-				AbilityActionAttributeResolver::ResolveDamageTags(
-					context,
-					AttachmentHostKind::PrimaryWeapon
-				),
+				ResolveDamageTags(context, fireAction),
 				context.definition ? &context.definition->unlockedUpgradeIds : nullptr
 			};
 		}
@@ -78,15 +125,24 @@ namespace ly
 				state.runtimeAttributes = fireAction.weaponDefinition.attributes;
 				state.initialized = true;
 			}
-			if (context.instance)
+			if (PrimaryWeaponOverrideState::ActiveOverride* overrideEntry =
+				context.abilitySystem
+					? context.abilitySystem->GetActivePrimaryWeaponOverride()
+					: nullptr;
+				overrideEntry && context.definition &&
+				context.definition->slot == sas::AbilitySlot::PrimaryFire &&
+				overrideEntry->weaponDefinition.weaponId == fireAction.weaponDefinition.weaponId)
+			{
+				// The form owns a separate runtime. Its firing state therefore cannot
+				// overwrite heat, cooldown, or burst state of the equipped primary.
+				state.persistentWeaponRuntime = &overrideEntry->runtime;
+			}
+			else if (context.instance)
 			{
 				context.instance->UpdatePrimaryWeaponRuntimeContext(
 					fireAction.weaponDefinition,
 					attributes,
-					AbilityActionAttributeResolver::ResolveDamageTags(
-						context,
-						AttachmentHostKind::PrimaryWeapon
-					)
+					ResolveDamageTags(context, fireAction)
 				);
 				state.persistentWeaponRuntime = &context.instance->GetPrimaryWeaponRuntime();
 			}
@@ -124,13 +180,27 @@ namespace ly
 				attributes,
 				actionSpec.interval
 			);
-			return context.definition
+			const float resolvedInterval = context.definition
 				? AbilityActionAttributeResolver::ResolveEffectiveInterval(
 					context,
 					baseInterval,
 					&fireAction.weaponDefinition
 				)
 				: baseInterval;
+
+			if (!context.definition ||
+				context.definition->slot != sas::AbilitySlot::PrimaryFire)
+			{
+				return resolvedInterval;
+			}
+
+		const auto* ship = dynamic_cast<const SpaceShip*>(&context.abilitySystem->GetOwner());
+		const float fireRateMultiplier = ship
+			? ship->GetPrimaryWeaponFireRateMultiplier()
+			: 1.f;
+		return fireRateMultiplier > 0.f
+			? resolvedInterval / fireRateMultiplier
+			: resolvedInterval;
 		}
 
 		FireWeaponRuntimeState& GetOrCreateState(
@@ -165,7 +235,9 @@ namespace ly
 			return;
 		}
 		Actor& owner = context.abilitySystem->GetOwner();
-		const FireWeaponAction& fireAction = std::get<FireWeaponAction>(action.spec->action);
+		const FireWeaponAction& authoredAction = std::get<FireWeaponAction>(action.spec->action);
+		FireWeaponAction overrideAction;
+		const FireWeaponAction& fireAction = ResolveFireAction(context, authoredAction, overrideAction);
 		FireWeaponRuntimeState& state = GetOrCreateState(action, context, fireAction, false);
 		const sas::GameplayAttributeList& values = ResolveAttributes(context, fireAction, state);
 		if (state.intervalRemaining <= 0.f && EnsureLifecycle(owner, context, fireAction, state, values) &&
@@ -195,7 +267,9 @@ namespace ly
 			return;
 		}
 		Actor& owner = context.abilitySystem->GetOwner();
-		const FireWeaponAction& fireAction = std::get<FireWeaponAction>(action.spec->action);
+		const FireWeaponAction& authoredAction = std::get<FireWeaponAction>(action.spec->action);
+		FireWeaponAction overrideAction;
+		const FireWeaponAction& fireAction = ResolveFireAction(context, authoredAction, overrideAction);
 		FireWeaponRuntimeState& state = GetOrCreateState(action, context, fireAction, true);
 		const sas::GameplayAttributeList& values = ResolveAttributes(context, fireAction, state);
 		// Preserve negative interval debt. A long frame may owe more than one shot;
@@ -293,7 +367,9 @@ namespace ly
 			return;
 		}
 		Actor& owner = context.abilitySystem->GetOwner();
-		const FireWeaponAction& fireAction = std::get<FireWeaponAction>(action.spec->action);
+		const FireWeaponAction& authoredAction = std::get<FireWeaponAction>(action.spec->action);
+		FireWeaponAction overrideAction;
+		const FireWeaponAction& fireAction = ResolveFireAction(context, authoredAction, overrideAction);
 		PrimaryWeaponExecutionSystem::EndFire(
 			MakeExecutionContext(owner, context, fireAction, ResolveAttributes(context, fireAction, state)),
 			state.GetWeaponRuntime()

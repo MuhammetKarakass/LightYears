@@ -6,6 +6,7 @@
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/ability/runtime/AbilityInvocationRuntime.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
+#include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
 
 #include <cstddef>
 #include <utility>
@@ -74,6 +75,15 @@ namespace ly
 		void Tick(float deltaTime);
 		void Clear();
 
+		PrimaryWeaponOverrideHandle PushPrimaryWeaponOverride(
+			const sas::ContentId& sourceId,
+			const PrimaryWeaponDefinition& weaponDefinition,
+			int priority = 0
+		);
+		bool RemovePrimaryWeaponOverride(PrimaryWeaponOverrideHandle handle);
+		PrimaryWeaponOverrideState::ActiveOverride* GetActivePrimaryWeaponOverride();
+		const PrimaryWeaponOverrideState::ActiveOverride* GetActivePrimaryWeaponOverride() const;
+
 		bool InvokeRecordedAbility(
 			const AbilityUseRecord& record,
 			const List<sas::AttributeScalingRule>& scalingRules,
@@ -140,6 +150,7 @@ namespace ly
 		AbilityLifecycleDispatcher mLifecycleDispatcher;
 		AbilityUseHistory mAbilityUseHistory;
 		AbilityInvocationRuntime mAbilityInvocationRuntime;
+		PrimaryWeaponOverrideState mPrimaryWeaponOverrides;
 	};
 }
 

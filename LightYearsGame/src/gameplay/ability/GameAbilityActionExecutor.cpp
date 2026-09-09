@@ -4,6 +4,7 @@
 #include "gameplay/ability/actions/FireWeaponActionRuntime.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
+#include "gameplay/movement/MovementInfluenceService.h"
 #include "AbilitySystemComponent.h"
 #include "gameplay/combat/Combatant.h"
 #include "framework/Actor.h"
@@ -147,12 +148,14 @@ namespace ly
 			Actor& owner
 		)
 		{
-			owner.SetVelocity(
-				owner.GetVelocity() +
+			movement::MovementInfluenceService::ApplyImpulse(
+				owner,
+				movement::ImpulseRequest{
 				AbilityActorSpawner::ResolveDirection(
 					owner,
 					actionData.directionPolicy
 				) * actionData.magnitude
+				}
 			);
 		}
 

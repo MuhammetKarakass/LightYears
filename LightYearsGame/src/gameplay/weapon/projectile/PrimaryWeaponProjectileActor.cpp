@@ -44,6 +44,10 @@ namespace ly
 		mPresentationDefinition(presentation)
 	{
 		SetRenderLayer(RenderLayer::Projectile);
+		// Primary shots own collision through their swept segment test in Move().
+		// A second Box2D body only duplicates collision work for every active
+		// projectile and produces no gameplay result that the sweep does not.
+		SetAbilityPhysicsEnabled(false);
 		SetDamage(sas::FindAttributeValue(values, CommonAttributeIds::Damage, 0.f));
 		SetDamageAttributes(values);
 		SetLifeTime(sas::FindAttributeValue(values, PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 3.f));
@@ -251,7 +255,7 @@ namespace ly
 				// along the pre-impact segment would overwrite the new direction.
 				return;
 			}
-			OnActorBeginOverlap(contact.actor.get());
+			OnActorBeginOverlap(contact.actor);
 		}
 		if (!GetIsPendingDestroy() && !IsInPortalTransit())
 		{
