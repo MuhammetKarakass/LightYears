@@ -12,5 +12,9 @@ docs/
 *.sh
 orchestrator.py
 flash_test.txt
+.orchestrator_permission_test/
+Testing/Temporary/
+__pycache__/
+**/__pycache__/
 run_stdout.log
 run_stderr.log
