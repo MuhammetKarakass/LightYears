@@ -14,7 +14,7 @@ namespace ly
 		sas::ContentId sourceAbilityId;
 		List<GameplayTag> sourceAbilityTags;
 		float targetControlMultiplier = 1.f;
-		std::string presentationProfileId;
+		sas::ContentId presentationProfileId;
 	};
 
 	class NullPulseAbility final : public GameAbilityBehavior

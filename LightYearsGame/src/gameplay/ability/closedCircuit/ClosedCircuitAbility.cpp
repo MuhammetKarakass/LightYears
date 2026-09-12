@@ -54,10 +54,10 @@ namespace ly
 		AbilityExecutionContext executionContext{ &context.abilitySystem, &context.definition, nullptr, &context.instance };
 		const sas::GameplayAttributeList values = AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		const auto* owner = dynamic_cast<const Combatant*>(&context.owner);
-		const float energyMax = owner ? std::max(0.f, owner->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyMax)) : 0.f;
+		const float energyPower = owner ? std::max(0.f, owner->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)) : 0.f;
 		const float health = std::max(0.f,
 			sas::FindAttributeValue(values, AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 180.f) +
-			energyMax * std::max(0.f, sas::FindAttributeValue(values, AbilityData::ClosedCircuit::Attribute::EnergyMaxBarrierHealthScale, 0.60f))
+			energyPower * std::max(0.f, sas::FindAttributeValue(values, AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.60f))
 		);
 		mPendingDelivery = {
 			target,

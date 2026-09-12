@@ -299,7 +299,6 @@ namespace ly
 		const float pulseDamage = baseDamage + attackPower * 0.08f;
 
 		DamagePayload payload;
-		payload.canCrit = true;
 		payload.igniteStacks = 1;
 		payload.burnDamagePerSecond = 1.f;
 		payload.burnDuration = 3.f;

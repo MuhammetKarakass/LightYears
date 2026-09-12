@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <string_view>
 
 namespace ly::PrimaryWeaponDefinitionValidator
@@ -78,9 +79,10 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			});
 		}
 
-		bool IsCommonWeaponAttribute(const sas::AttributeId& attributeId)
+		bool IsSharedWeaponAttribute(const sas::AttributeId& attributeId)
 		{
-			if (IsInAttributeRoot(attributeId, DamageAttributeIds::Root))
+			if (IsInAttributeRoot(attributeId, DamageAttributeIds::Root) ||
+				IsInAttributeRoot(attributeId, PrimaryWeaponSchema::Empowered::Root))
 			{
 				return true;
 			}
@@ -107,7 +109,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			const sas::AttributeId& attributeId
 		)
 		{
-			if (IsCommonWeaponAttribute(attributeId) ||
+			if (IsSharedWeaponAttribute(attributeId) ||
 				MatchesAnyRoot(attributeId, context.handler.GetOwnedAttributeRoots()) ||
 				MatchesAnyRoot(attributeId, context.handler.GetInheritedAttributeRoots()))
 			{
@@ -327,13 +329,14 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			const ValidationContext& context
 		)
 		{
-			for (const sas::AttributeScalingRule& scaling : definition.scalingRules)
+			const auto validateRule = [&](const sas::AttributeScalingRule& scaling, const char* usage)
+				-> PrimaryWeaponValidationResult
 			{
 				const PrimaryWeaponValidationResult result =
 					ValidateAttributeId(
 						context,
 						scaling.targetAttributeId,
-						"Weapon scaling target"
+						usage
 					);
 				if (!result.isValid)
 				{
@@ -343,8 +346,38 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				{
 					return {
 						false,
-						"Weapon scaling source has an invalid AttributeId."
+						std::string{ usage } + " source has an invalid AttributeId."
 					};
+				}
+				if (!AttributeIdSchema::IsInNamespace(scaling.sourceAttributeId, "Owner"))
+				{
+					return {
+						false,
+						std::string{ usage } + " source attribute ID must be in the Owner namespace."
+					};
+				}
+				return { true, {} };
+			};
+
+			for (const sas::AttributeScalingRule& scaling : definition.scalingRules)
+			{
+				const PrimaryWeaponValidationResult result =
+					validateRule(scaling, "Weapon scaling target");
+				if (!result.isValid)
+				{
+					return result;
+				}
+			}
+			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
+			{
+				for (const sas::AttributeScalingRule& scaling : step.scalingRules)
+				{
+					const PrimaryWeaponValidationResult result =
+						validateRule(scaling, "Weapon level scaling target");
+					if (!result.isValid)
+					{
+						return result;
+					}
 				}
 			}
 			return { true, {} };
@@ -371,6 +404,130 @@ namespace ly::PrimaryWeaponDefinitionValidator
 					return featureResult;
 				}
 			}
+			return { true, {} };
+		}
+
+		PrimaryWeaponValidationResult ValidateMagazineAndCadence(
+			const PrimaryWeaponDefinition& definition,
+			const ValidationContext& context
+		)
+		{
+			if (definition.magazine.has_value())
+			{
+				if (!context.handler.UsesIntervalFire())
+				{
+					return {
+						false,
+						"Continuous beam weapons cannot use magazine configuration."
+					};
+				}
+				if (definition.magazine->capacity <= 0)
+				{
+					return {
+						false,
+						"Primary weapon magazine capacity must be a positive integer."
+					};
+				}
+				if (!std::isfinite(definition.magazine->baseReloadTime) ||
+					definition.magazine->baseReloadTime <= 0.f)
+				{
+					return {
+						false,
+						"Primary weapon base reload time must be finite and positive."
+					};
+				}
+			}
+
+			if (definition.cadenceMode == PrimaryWeaponCadenceMode::OwnerAttackSpeedPercentage)
+			{
+				if (!context.handler.UsesIntervalFire())
+				{
+					return {
+						false,
+						"OwnerAttackSpeedPercentage cadence mode is only supported for interval-based weapons."
+					};
+				}
+				const sas::GameplayAttribute* fireRateAttr =
+					sas::FindAttribute(definition.attributes, CommonAttributeIds::FireRate);
+				if (!fireRateAttr ||
+					!std::isfinite(fireRateAttr->currentValue) ||
+					fireRateAttr->currentValue <= 0.f)
+				{
+					return {
+						false,
+						"Weapons using OwnerAttackSpeedPercentage cadence mode must have a positive, finite FireRate."
+					};
+				}
+				for (const sas::AttributeScalingRule& scaling : definition.scalingRules)
+				{
+					if (scaling.sourceAttributeId == OwnerAttributeIds::AttackSpeed &&
+						(scaling.targetAttributeId == CommonAttributeIds::FireRate ||
+						 scaling.targetAttributeId == CommonAttributeIds::Interval))
+					{
+						return {
+							false,
+							"OwnerAttackSpeedPercentage cadence mode cannot use scaling rules from AttackSpeed to FireRate or Interval."
+						};
+					}
+				}
+			}
+
+			if (definition.empoweredShot.has_value())
+			{
+				if (!context.handler.UsesIntervalFire() || !IsProjectileWeaponType(definition.weaponType))
+				{
+					return {
+						false,
+						"Empowered shot configuration is only supported for interval projectile weapons."
+					};
+				}
+				const sas::GameplayAttribute* everySuccessfulShots = sas::FindAttribute(
+					definition.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulShots);
+				const sas::GameplayAttribute* finalMagazineRounds = sas::FindAttribute(
+					definition.attributes, PrimaryWeaponSchema::Empowered::FinalMagazineRounds);
+				if (!everySuccessfulShots || everySuccessfulShots->baseValue < 1.f ||
+					std::round(everySuccessfulShots->baseValue) != everySuccessfulShots->baseValue)
+				{
+					return { false, "Empowered shot weapons must declare a positive integer EverySuccessfulShots attribute." };
+				}
+				if (!finalMagazineRounds || finalMagazineRounds->baseValue < 0.f ||
+					std::round(finalMagazineRounds->baseValue) != finalMagazineRounds->baseValue)
+				{
+					return { false, "Empowered shot weapons must declare a non-negative integer FinalMagazineRounds attribute." };
+				}
+				if (!definition.magazine.has_value())
+				{
+					if (finalMagazineRounds->baseValue != 0.f)
+					{
+						return {
+							false,
+							"Empowered shot finalMagazineRounds must be 0 if the weapon has no magazine."
+						};
+					}
+				}
+				else
+				{
+					if (finalMagazineRounds->baseValue > static_cast<float>(definition.magazine->capacity))
+					{
+						return {
+							false,
+							"Empowered shot finalMagazineRounds cannot exceed magazine capacity."
+						};
+					}
+				}
+				const sas::GameplayAttribute* empoweredAttr = sas::FindAttribute(
+					definition.attributes,
+					PrimaryWeaponSchema::Empowered::BonusDamage
+				);
+				if (!empoweredAttr)
+				{
+					return {
+						false,
+						"Empowered shot weapons must declare the PrimaryWeapon.Empowered.BonusDamage attribute."
+					};
+				}
+			}
+
 			return { true, {} };
 		}
 	}
@@ -450,6 +607,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			ValidateBaseModifiers,
 			ValidateLevelModifiers,
 			ValidateScalingRules,
+			ValidateMagazineAndCadence,
 			ValidateConsumers
 		})
 		{

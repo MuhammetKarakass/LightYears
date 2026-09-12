@@ -164,7 +164,7 @@ namespace ly
 				0.f,
 				FindValue(
 					values,
-					AbilityData::OrbitalDrones::Attribute::EnergyMaxReference,
+					AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
 					BaseEnergyReference
 				)
 			);
@@ -172,19 +172,19 @@ namespace ly
 				0.f,
 				FindValue(
 					values,
-					AbilityData::OrbitalDrones::Attribute::EnergyMaxDurationScale,
+					AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
 					BaseEnergyDurationScale
 				)
 			);
-			const float energyMax = context.abilitySystem.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::EnergyMax
+			const float energyPower = context.abilitySystem.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::EnergyPower
 			);
-			if (!std::isfinite(energyMax))
+			if (!std::isfinite(energyPower))
 			{
 				return 0.f;
 			}
 
-			return std::max(0.f, energyMax - energyReference) * durationScale;
+			return std::max(0.f, energyPower - energyReference) * durationScale;
 		}
 	}
 
@@ -250,12 +250,12 @@ namespace ly
 			) &&
 			HasValidAttribute(
 				definition,
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxReference,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
 				0.f
 			) &&
 			HasValidAttribute(
 				definition,
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxDurationScale,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
 				0.f
 			);
 		if (!validAttributes)

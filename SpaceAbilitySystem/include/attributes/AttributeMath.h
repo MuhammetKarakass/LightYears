@@ -8,7 +8,6 @@ namespace sas::AttributeMath
 	// Rating curves are asymptotic: every point contributes, but no percentage
 	// stat can ever reach 100%. The scales are centralized for balance tuning.
 	inline constexpr float PercentageRatingScale = 100.f;
-	inline constexpr float ArmorRatingScale = 50.f / 0.69314718056f;
 
 	inline float SaturatingFraction(float rating, float scale)
 	{
@@ -61,8 +60,14 @@ namespace sas::AttributeMath
 		return baseChance + (1.f - baseChance) * contribution;
 	}
 
+	inline float GetArmorDamageMultiplier(float armorRating)
+	{
+		const float safeArmor = std::max(0.f, armorRating);
+		return 100.f / (safeArmor + 100.f);
+	}
+
 	inline float GetArmorDamageReduction(float armorRating)
 	{
-		return SaturatingFraction(armorRating, ArmorRatingScale);
+		return 1.f - GetArmorDamageMultiplier(armorRating);
 	}
 }

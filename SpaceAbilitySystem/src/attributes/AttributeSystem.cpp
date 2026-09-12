@@ -224,7 +224,9 @@ namespace sas
 	{
 		mAttributes.clear();
 		mHandleToAttribute.clear();
-		mNextHandleId = 1;
+		// Handle IDs are never recycled. Resetting the counter here would let a
+		// handle held across a clear alias a modifier created after it, silently
+		// removing the wrong modifier.
 		++mRevision;
 		onAttributesCleared.Broadcast();
 	}

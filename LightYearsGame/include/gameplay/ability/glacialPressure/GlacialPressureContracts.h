@@ -51,11 +51,11 @@ namespace AbilityData::GlacialPressure
 		inline static const sas::AttributeId CollisionDamage{
 			"Ability.Offense.GlacialPressure.CollisionDamage"
 		};
-		inline static const sas::AttributeId EnergyMaxInitialScale{
-			"Ability.Offense.GlacialPressure.EnergyMaxInitialScale"
+		inline static const sas::AttributeId EnergyPowerInitialScale{
+			"Ability.Offense.GlacialPressure.EnergyPowerInitialScale"
 		};
-		inline static const sas::AttributeId EnergyMaxCollisionScale{
-			"Ability.Offense.GlacialPressure.EnergyMaxCollisionScale"
+		inline static const sas::AttributeId EnergyPowerCollisionScale{
+			"Ability.Offense.GlacialPressure.EnergyPowerCollisionScale"
 		};
 		inline static const sas::AttributeId MaxHealthReference{
 			"Ability.Offense.GlacialPressure.MaxHealthReference"

@@ -83,8 +83,8 @@ namespace ly
 			AbilityData::TemporalRecall::Attribute::PositiveRecoveryRatio,
 			AbilityData::TemporalRecall::Attribute::MaxHealthReference,
 			AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale,
-			AbilityData::TemporalRecall::Attribute::EnergyMaxReference,
-			AbilityData::TemporalRecall::Attribute::EnergyMaxRecoveryScale,
+			AbilityData::TemporalRecall::Attribute::EnergyPowerReference,
+			AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale,
 			AbilityData::TemporalRecall::Attribute::OvercapHoldDuration,
 			AbilityData::TemporalRecall::Attribute::OvercapDecayPerSecond
 		})
@@ -301,8 +301,8 @@ namespace ly
 			ownerAttributes.GetCurrentValue(
 				AbilityData::TemporalRecall::Attribute::ShieldScalingSource
 			),
-			FindValue(values, AbilityData::TemporalRecall::Attribute::EnergyMaxReference, 100.f),
-			FindValue(values, AbilityData::TemporalRecall::Attribute::EnergyMaxRecoveryScale, 0.f)
+			FindValue(values, AbilityData::TemporalRecall::Attribute::EnergyPowerReference, 100.f),
+			FindValue(values, AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale, 0.f)
 		);
 		const float holdDuration = std::max(
 			0.f,

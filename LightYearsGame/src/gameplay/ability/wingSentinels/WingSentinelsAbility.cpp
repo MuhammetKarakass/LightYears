@@ -6,7 +6,6 @@
 #include "gameplay/ability/wingSentinels/WingSentinelsContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
-#include "presentation/ability/wingSentinels/WingSentinelsPresentationIds.h"
 #include "presentation/ability/wingSentinels/WingSentinelsPresentationProfile.h"
 #include "framework/World.h"
 
@@ -48,7 +47,7 @@ namespace ly
 			if (failureReason) *failureReason = "Wing Sentinels requires its projectile definition.";
 			return false;
 		}
-		if (!PresentationProfileRegistry<WingSentinelsPresentationProfile>::Find(WingSentinelsPresentationIds::Basic))
+		if (!projectile->presentationProfileId.IsValid() || !PresentationProfileRegistry<WingSentinelsPresentationProfile>::Find(projectile->presentationProfileId.ToString()))
 		{
 			if (failureReason) *failureReason = "Wing Sentinels requires its presentation profile.";
 			return false;
@@ -59,7 +58,9 @@ namespace ly
 	bool WingSentinelsAbility::Activate(GameAbilityBehaviorContext& context)
 	{
 		if (mActive || !context.owner.GetWorld()) return false;
-		const WingSentinelsPresentationProfile* profile = PresentationProfileRegistry<WingSentinelsPresentationProfile>::Find(WingSentinelsPresentationIds::Basic);
+		const AbilityActorDefinition* projectile = AbilityData::FindAbilityActorDefinition(AbilityData::WingSentinels::Actor::Projectile::BasicDefinitionId);
+		if (!projectile || !projectile->presentationProfileId.IsValid()) return false;
+		const WingSentinelsPresentationProfile* profile = PresentationProfileRegistry<WingSentinelsPresentationProfile>::Find(projectile->presentationProfileId.ToString());
 		if (!profile) return false;
 		AbilityExecutionContext execution{ &context.abilitySystem, &context.definition, nullptr, &context.instance };
 		const sas::GameplayAttributeList values = AbilityActionAttributeResolver::ResolveAbilityAttributes(execution);

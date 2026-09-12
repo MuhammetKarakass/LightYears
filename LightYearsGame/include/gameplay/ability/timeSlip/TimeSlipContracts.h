@@ -39,22 +39,22 @@ namespace AbilityData::TimeSlip
 		// This shared value controls hostile actors and every projectile actor.
 		// Keeping one multiplier guarantees that all projectile families receive
 		// the same temporal slowdown instead of drifting into separate balance
-		// values. The ability still reads the canonical Owner.Energy.Max below.
+		// values. The ability still reads the canonical Owner.Energy.Power below.
 		inline static const sas::AttributeId GameplayTimeMultiplier{
 			"Ability.Defense.TimeSlip.GameplayTimeMultiplier"
 		};
 		inline static const sas::AttributeId PrimaryFireRateMultiplier{
 			"Ability.Defense.TimeSlip.PrimaryFireRateMultiplier"
 		};
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Defense.TimeSlip.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Defense.TimeSlip.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxDurationScale{
-			"Ability.Defense.TimeSlip.EnergyMaxDurationScale"
+		inline static const sas::AttributeId EnergyPowerDurationScale{
+			"Ability.Defense.TimeSlip.EnergyPowerDurationScale"
 		};
 
 		// Explicit alias documents the only owner stat used by Time Slip scaling.
 		inline static const sas::AttributeId DurationScalingSource =
-			ly::OwnerAttributeIds::EnergyMax;
+			ly::OwnerAttributeIds::EnergyPower;
 	};
 }

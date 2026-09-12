@@ -37,8 +37,8 @@ namespace ly
 		InertialWakePresentationProfile mPresentationProfile;
 		std::unordered_map<const Actor*, float> mNextHitTime;
 		float mSpeedDamageConversion = 0.30f;
-		float mEnergyMaxReference = 50.f;
-		float mEnergyMaxConversionPerPoint = 0.0001f;
+		float mEnergyPowerReference = 50.f;
+		float mEnergyPowerConversionPerPoint = 0.0001f;
 		float mSameTargetHitCooldown = 2.f;
 		float mMinimumSpeedRatio = 0.20f;
 		float mBaseEdgeThickness = 3.f;

@@ -49,8 +49,8 @@ namespace AbilityData::Definitions
 		definition.attributes = {
 			{ AbilityData::LanceDrive::Attribute::BaseDamage, 10.f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::SpeedDamageConversion, 0.20f, 0.f },
-			{ AbilityData::LanceDrive::Attribute::EnergyMaxReference, 50.f, 0.f },
-			{ AbilityData::LanceDrive::Attribute::EnergyMaxConversionPerPoint, 0.0001f, 0.f },
+			{ AbilityData::LanceDrive::Attribute::EnergyPowerReference, 50.f, 0.f },
+			{ AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint, 0.0001f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::TopSpeedBonus, 300.f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::ThrustBonus, 0.25f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::TurnCapabilityMultiplier, 0.35f, 0.f },

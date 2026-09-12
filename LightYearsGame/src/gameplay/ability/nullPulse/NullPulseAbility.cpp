@@ -71,7 +71,7 @@ namespace ly
 				0.f,
 				FindValue(
 					values,
-					AbilityData::NullPulse::Attribute::ReferenceEnergyMax,
+					AbilityData::NullPulse::Attribute::ReferenceEnergyPower,
 					0.f
 				)
 			);
@@ -85,12 +85,12 @@ namespace ly
 			);
 
 			const auto* sourceCombatant = dynamic_cast<const Combatant*>(&owner);
-			const float resolvedEnergyMax = sourceCombatant
+			const float resolvedEnergyPower = sourceCombatant
 				? sourceCombatant->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-					OwnerAttributeIds::EnergyMax
+					OwnerAttributeIds::EnergyPower
 				)
 				: referenceEnergy;
-			const float bonusEnergy = std::max(0.f, resolvedEnergyMax - referenceEnergy);
+			const float bonusEnergy = std::max(0.f, resolvedEnergyPower - referenceEnergy);
 			const float bonusDuration = maximumBonus * (
 				1.f - std::exp(-bonusEnergy / energyScale)
 			);
@@ -105,7 +105,7 @@ namespace ly
 			const sas::GameplayEffectDefinition& effectDefinition,
 			float duration,
 			float controlMultiplier,
-			const char* presentationProfileId
+			const sas::ContentId& presentationProfileId
 		)
 		{
 			if (duration <= 0.f)
@@ -154,7 +154,7 @@ namespace ly
 			AbilityData::NullPulse::Attribute::Damage,
 			AbilityData::NullPulse::Attribute::BaseStunDuration,
 			AbilityData::NullPulse::Attribute::MaxBonusStun,
-			AbilityData::NullPulse::Attribute::ReferenceEnergyMax,
+			AbilityData::NullPulse::Attribute::ReferenceEnergyPower,
 			AbilityData::NullPulse::Attribute::EnergyScale,
 			AbilityData::NullPulse::Attribute::BossStaggerDuration
 		})
@@ -175,7 +175,7 @@ namespace ly
 			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::Damage)->baseValue) ||
 			FindAttribute(definition, AbilityData::NullPulse::Attribute::BaseStunDuration)->baseValue <= 0.f ||
 			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::MaxBonusStun)->baseValue) ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::ReferenceEnergyMax)->baseValue) ||
+			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::ReferenceEnergyPower)->baseValue) ||
 			FindAttribute(definition, AbilityData::NullPulse::Attribute::EnergyScale)->baseValue <= 0.f ||
 			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::BossStaggerDuration)->baseValue))
 		{
@@ -269,7 +269,7 @@ namespace ly
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags);
-		payload.canCrit = false;
+		payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 
 		const sas::GameplayEffectDefinition* stunDefinition =
 			EffectData::FindGameplayEffectDefinition(AbilityData::NullPulse::Effect::StunId);
@@ -321,7 +321,7 @@ namespace ly
 						*staggerDefinition,
 						std::min(bossStaggerDuration, response.maximumInterruptDuration),
 						0.f,
-						NullPulsePresentationIds::PulseBasic
+						sas::ContentId{ NullPulsePresentationIds::PulseBasic }
 					);
 				}
 				continue;
@@ -336,7 +336,7 @@ namespace ly
 					*stunDefinition,
 					baseStunDuration * std::max(0.f, response.durationMultiplier),
 					response.durationMultiplier,
-					NullPulsePresentationIds::PulseBasic
+					sas::ContentId{ NullPulsePresentationIds::PulseBasic }
 				);
 			}
 		}

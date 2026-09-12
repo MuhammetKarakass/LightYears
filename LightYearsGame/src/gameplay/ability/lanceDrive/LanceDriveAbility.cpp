@@ -76,8 +76,8 @@ namespace ly
 		const List<sas::AttributeId> required{
 			AbilityData::LanceDrive::Attribute::BaseDamage,
 			AbilityData::LanceDrive::Attribute::SpeedDamageConversion,
-			AbilityData::LanceDrive::Attribute::EnergyMaxReference,
-			AbilityData::LanceDrive::Attribute::EnergyMaxConversionPerPoint,
+			AbilityData::LanceDrive::Attribute::EnergyPowerReference,
+			AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint,
 			AbilityData::LanceDrive::Attribute::TopSpeedBonus,
 			AbilityData::LanceDrive::Attribute::ThrustBonus,
 			AbilityData::LanceDrive::Attribute::TurnCapabilityMultiplier,
@@ -115,8 +115,8 @@ namespace ly
 		};
 		if (value(AbilityData::LanceDrive::Attribute::BaseDamage) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::SpeedDamageConversion) < 0.f ||
-			value(AbilityData::LanceDrive::Attribute::EnergyMaxReference) < 0.f ||
-			value(AbilityData::LanceDrive::Attribute::EnergyMaxConversionPerPoint) < 0.f ||
+			value(AbilityData::LanceDrive::Attribute::EnergyPowerReference) < 0.f ||
+			value(AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::TopSpeedBonus) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::ThrustBonus) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::TurnCapabilityMultiplier) <= 0.f ||

@@ -133,7 +133,7 @@ namespace ly
 
 		const bool validScaling = definition.scalingRules.size() == 1 &&
 			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			definition.scalingRules.front().operation ==
 				sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 0.20f);
@@ -144,7 +144,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Cryo Bola requires one instant owner-forward projectile with Cryo full-stack payload, EnergyMax damage scaling, and its fixed 15-level progression.";
+					"Cryo Bola requires one instant owner-forward projectile with Cryo full-stack payload, EnergyPower damage scaling, and its fixed 15-level progression.";
 			}
 			return false;
 		}

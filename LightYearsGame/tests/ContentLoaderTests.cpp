@@ -171,7 +171,7 @@ int main()
 	{
 		return Fail(loadedAbilities.error.c_str()) ? 0 : 1;
 	}
-	if (loadedAbilities.definitions.size() != 34)
+	if (loadedAbilities.definitions.size() != 55)
 	{
 		return Fail("Ability JSON catalog did not load the expected pilot definitions") ? 0 : 1;
 	}
@@ -180,7 +180,7 @@ int main()
 	{
 		actorDefinitionCount += definition.actorDefinitions.size();
 	}
-	if (actorDefinitionCount != 21)
+	if (actorDefinitionCount != 33)
 	{
 		return Fail("Ability actor JSON catalog did not load the expected actor definitions") ? 0 : 1;
 	}
@@ -220,7 +220,7 @@ int main()
 		astralSurgeIt->definition.maxCharges != 1 ||
 		astralSurgeIt->definition.scalingRules.size() != 1 ||
 		astralSurgeIt->definition.scalingRules.front().sourceAttributeId !=
-			ly::OwnerAttributeIds::EnergyMax ||
+			ly::OwnerAttributeIds::EnergyPower ||
 		!NearlyEqual(astralSurgeIt->definition.scalingRules.front().coefficient, 0.45f) ||
 		astralSurgeIt->definition.levelProgression.size() != 14 ||
 		astralSurgeIt->actorDefinitions.size() != 1 ||
@@ -867,7 +867,7 @@ int main()
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				orbitalDronesIt->definition.attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxReference,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
 				0.f
 			),
 			50.f
@@ -875,7 +875,7 @@ int main()
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				orbitalDronesIt->definition.attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxDurationScale,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
 				0.f
 			),
 			0.02f
@@ -983,9 +983,9 @@ int main()
 	{
 		return Fail(loaded.error.c_str()) ? 0 : 1;
 	}
-	if (loaded.definitions.size() != 6)
+	if (loaded.definitions.size() != 7)
 	{
-		return Fail("Weapon JSON catalog did not load exactly six definitions") ? 0 : 1;
+		return Fail("Weapon JSON catalog did not load exactly seven definitions") ? 0 : 1;
 	}
 
 	const char* expectedWeaponIds[] = {
@@ -994,7 +994,8 @@ int main()
 		"Weapon.Projectile.DualKineticBlaster.Basic",
 		"Weapon.Arc.ElectricLauncher.Basic",
 		"Weapon.Beam.ContinuousHeatLaser.Basic",
-		"Weapon.Wave.CryoProjector.Basic"
+		"Weapon.Wave.CryoProjector.Basic",
+		"Weapon.Projectile.IroncladMinigun.Basic"
 	};
 	for (const char* expectedId : expectedWeaponIds)
 	{
@@ -1092,7 +1093,7 @@ int main()
 		loadedShips.definitions.front().id != "Ship.Player.Fighter.Basic" ||
 		loadedShips.definitions.front().definition.primaryWeaponId !=
 			"Weapon.Projectile.FighterRapidLaser.Basic" ||
-		!NearlyEqual(loadedShips.definitions.front().definition.health, 100.f))
+		!NearlyEqual(loadedShips.definitions.front().definition.health, 250.f))
 	{
 		return Fail("Ship JSON catalog did not load the player definition") ? 0 : 1;
 	}

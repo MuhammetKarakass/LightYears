@@ -73,11 +73,11 @@ namespace AbilityData::FoldspaceArena
 		inline static const sas::AttributeId BaseArenaDuration{
 			"Ability.Utility.FoldspaceArena.BaseArenaDuration"
 		};
-		inline static const sas::AttributeId EnergyMaxDurationReference{
-			"Ability.Utility.FoldspaceArena.EnergyMaxDurationReference"
+		inline static const sas::AttributeId EnergyPowerDurationReference{
+			"Ability.Utility.FoldspaceArena.EnergyPowerDurationReference"
 		};
-		inline static const sas::AttributeId EnergyMaxDurationPerPoint{
-			"Ability.Utility.FoldspaceArena.EnergyMaxDurationPerPoint"
+		inline static const sas::AttributeId EnergyPowerDurationPerPoint{
+			"Ability.Utility.FoldspaceArena.EnergyPowerDurationPerPoint"
 		};
 	};
 }

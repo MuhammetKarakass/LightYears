@@ -87,18 +87,18 @@ namespace AbilityData::Definitions
 				1.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FrostMaelstrom::Attribute::EnergyMaxReference,
-				AbilityData::FrostMaelstrom::DefaultEnergyMaxReference,
+				AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference,
+				AbilityData::FrostMaelstrom::DefaultEnergyPowerReference,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FrostMaelstrom::Attribute::EnergyMaxDamageScale,
-				AbilityData::FrostMaelstrom::DefaultEnergyMaxDamageScale,
+				AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
+				AbilityData::FrostMaelstrom::DefaultEnergyPowerDamageScale,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FrostMaelstrom::Attribute::EnergyMaxRadiusScale,
-				AbilityData::FrostMaelstrom::DefaultEnergyMaxRadiusScale,
+				AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale,
+				AbilityData::FrostMaelstrom::DefaultEnergyPowerRadiusScale,
 				0.f
 			},
 			sas::GameplayAttribute{

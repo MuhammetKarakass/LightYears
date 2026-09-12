@@ -74,8 +74,8 @@ namespace ly
 
 		for (const sas::AttributeId& required : {
 			AbilityData::ShieldGraft::Attribute::ConversionRatio,
-			AbilityData::ShieldGraft::Attribute::EnergyMaxReference,
-			AbilityData::ShieldGraft::Attribute::EnergyMaxScale
+			AbilityData::ShieldGraft::Attribute::EnergyPowerReference,
+			AbilityData::ShieldGraft::Attribute::EnergyPowerScale
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -98,11 +98,11 @@ namespace ly
 		);
 		const sas::GameplayAttribute* energyRef = sas::FindAttribute(
 			definition.attributes,
-			AbilityData::ShieldGraft::Attribute::EnergyMaxReference
+			AbilityData::ShieldGraft::Attribute::EnergyPowerReference
 		);
 		const sas::GameplayAttribute* energyScale = sas::FindAttribute(
 			definition.attributes,
-			AbilityData::ShieldGraft::Attribute::EnergyMaxScale
+			AbilityData::ShieldGraft::Attribute::EnergyPowerScale
 		);
 
 		if (!IsFinitePositive(conversion->baseValue) ||
@@ -159,34 +159,30 @@ namespace ly
 			0.40f
 		);
 
-		float ownerEnergyMax = 0.f;
-		if (context.abilitySystem.GetAttributes().HasAttribute(OwnerAttributeIds::EnergyMax))
+		float ownerEnergyPower = 0.f;
+		if (context.abilitySystem.GetAttributes().HasAttribute(OwnerAttributeIds::EnergyPower))
 		{
-			ownerEnergyMax = context.abilitySystem.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::EnergyMax
+			ownerEnergyPower = context.abilitySystem.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::EnergyPower
 			);
 		}
-		else
+		if (!std::isfinite(ownerEnergyPower) || ownerEnergyPower < 0.f)
 		{
-			ownerEnergyMax = ship->GetEnergyComponent().GetMaxEnergy();
-		}
-		if (!std::isfinite(ownerEnergyMax) || ownerEnergyMax < 0.f)
-		{
-			ownerEnergyMax = 0.f;
+			ownerEnergyPower = 0.f;
 		}
 
 		const float energyReference = FindValue(
 			values,
-			AbilityData::ShieldGraft::Attribute::EnergyMaxReference,
+			AbilityData::ShieldGraft::Attribute::EnergyPowerReference,
 			50.f
 		);
 		const float energyScale = FindValue(
 			values,
-			AbilityData::ShieldGraft::Attribute::EnergyMaxScale,
+			AbilityData::ShieldGraft::Attribute::EnergyPowerScale,
 			0.0001f
 		);
 
-		const float energyBonus = std::max(0.f, ownerEnergyMax - energyReference) * energyScale;
+		const float energyBonus = std::max(0.f, ownerEnergyPower - energyReference) * energyScale;
 		const float conversion = baseConversion + energyBonus;
 		if (!std::isfinite(conversion) || conversion <= 0.f)
 		{

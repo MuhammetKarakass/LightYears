@@ -369,7 +369,7 @@ namespace ly
 
 		const bool validScaling = definition.scalingRules.size() == 1 &&
 			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 0.25f);
 
@@ -388,7 +388,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Storm Mark requires its electric identity, ten target/timing/status attributes, EnergyMax damage scaling, and fourteen damage/cooldown progression steps.";
+					"Storm Mark requires its electric identity, ten target/timing/status attributes, EnergyPower damage scaling, and fourteen damage/cooldown progression steps.";
 			}
 			return false;
 		}

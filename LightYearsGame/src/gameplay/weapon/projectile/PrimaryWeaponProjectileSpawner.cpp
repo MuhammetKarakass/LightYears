@@ -1,5 +1,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h"
+#include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/combat/Combatant.h"
 
 #include "framework/Actor.h"
 #include "framework/World.h"
@@ -45,7 +47,7 @@ namespace ly::PrimaryWeaponProjectileSpawner
 {
 	namespace
 	{
-		void FireProjectile(
+		bool FireProjectile(
 			const PrimaryWeaponExecutionContext& context,
 			const WeaponMuzzleDefinition& muzzle,
 			float localRotationOffset,
@@ -55,7 +57,7 @@ namespace ly::PrimaryWeaponProjectileSpawner
 		{
 			if (!context.owner.GetWorld())
 			{
-				return;
+				return false;
 			}
 			if (impactBehavior)
 			{
@@ -75,7 +77,23 @@ namespace ly::PrimaryWeaponProjectileSpawner
 				{
 					spawnedProjectile->SetImpactBehavior(impactBehavior);
 				}
+				const float baseDamage = sas::FindAttributeValue(
+					context.attributes,
+					CommonAttributeIds::Damage,
+					0.f
+				);
+				float shotDamage = baseDamage;
+				if (context.shotMetadata.isEmpowered && context.definition.empoweredShot.has_value())
+				{
+					shotDamage += sas::FindAttributeValue(
+						context.attributes,
+						PrimaryWeaponSchema::Empowered::BonusDamage,
+						0.f
+					);
+				}
+				spawnedProjectile->SetDamage(shotDamage);
 				spawnedProjectile->SetDamageTags(context.damageTags);
+				spawnedProjectile->SetShotMetadata(context.shotMetadata);
 				const sf::Vector2f location = context.owner.GetActorLocation() +
 					context.owner.TransformLocalToWorld(muzzle.offset);
 				spawnedProjectile->SetActorLocation(location);
@@ -92,21 +110,24 @@ namespace ly::PrimaryWeaponProjectileSpawner
 				spawnedProjectile->SetLaunchVelocity(
 					spawnedProjectile->GetActorForwardDirection() * projectileSpeed + carrierVelocity
 				);
+				return true;
 			}
 			else if (impactBehavior)
 			{
 				impactBehavior->OnProjectileFinished();
 			}
+			return false;
 		}
 	}
 
-	void FireSet(
+	int FireSet(
 		const PrimaryWeaponExecutionContext& context,
 		int projectileCount,
 		float spreadAngle,
 		const shared_ptr<ProjectileImpactBehavior>& impactBehavior
 	)
 	{
+		int spawnedCount = 0;
 		const int count = std::max(1, projectileCount);
 		const float angleStep =
 			count > 1 ? spreadAngle / static_cast<float>(count - 1) : 0.f;
@@ -123,24 +144,28 @@ namespace ly::PrimaryWeaponProjectileSpawner
 			);
 			for (int index = 0; index < count; ++index)
 			{
-				FireProjectile(
+				if (FireProjectile(
 					context,
 					muzzle,
 					startAngle + angleStep * static_cast<float>(index),
 					carrierVelocity,
 					impactBehavior
-				);
+				))
+				{
+					++spawnedCount;
+				}
 			}
 		};
 
 		if (context.definition.muzzleDefinitions.empty())
 		{
 			fireFromMuzzle(WeaponMuzzleDefinition{});
-			return;
+			return spawnedCount;
 		}
 		for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
 		{
 			fireFromMuzzle(muzzle);
 		}
+		return spawnedCount;
 	}
 }

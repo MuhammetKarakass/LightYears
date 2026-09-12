@@ -60,12 +60,12 @@ namespace AbilityData::Definitions
 				1.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::EnergySpear::Attribute::EnergyMaxReference,
+				AbilityData::EnergySpear::Attribute::EnergyPowerReference,
 				50.f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::EnergySpear::Attribute::EnergyMaxDistanceScale,
+				AbilityData::EnergySpear::Attribute::EnergyPowerDistanceScale,
 				2.f,
 				0.f
 			},

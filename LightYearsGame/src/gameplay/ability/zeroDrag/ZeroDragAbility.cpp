@@ -129,8 +129,8 @@ namespace ly
 			);
 
 		const List<sas::AttributeId> requiredAttributes = {
-			AbilityData::ZeroDrag::Attribute::EnergyMaxReference,
-			AbilityData::ZeroDrag::Attribute::EnergyMaxDurationPerPoint,
+			AbilityData::ZeroDrag::Attribute::EnergyPowerReference,
+			AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint,
 			AbilityData::ZeroDrag::Attribute::ThrustBonus,
 			AbilityData::ZeroDrag::Attribute::NormalizationDuration
 		};
@@ -148,11 +148,11 @@ namespace ly
 		{
 			const float energyReference = FindAttribute(
 				definition,
-				AbilityData::ZeroDrag::Attribute::EnergyMaxReference
+				AbilityData::ZeroDrag::Attribute::EnergyPowerReference
 			)->baseValue;
 			const float durationPerPoint = FindAttribute(
 				definition,
-				AbilityData::ZeroDrag::Attribute::EnergyMaxDurationPerPoint
+				AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint
 			)->baseValue;
 			const float thrustBonus = FindAttribute(
 				definition,
@@ -205,21 +205,21 @@ namespace ly
 	) const
 	{
 		const sas::GameplayAttributeList values = ResolveValues(context);
-		const float energyMax = std::max(
+		const float energyPower = std::max(
 			0.f,
-			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyMax)
+			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)
 		);
 		const float energyReference = std::max(
 			0.f,
-			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyMaxReference, 50.f)
+			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyPowerReference, 50.f)
 		);
 		const float durationPerPoint = std::max(
 			0.f,
-			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyMaxDurationPerPoint, 0.002f)
+			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint, 0.002f)
 		);
 		return std::max(
 			0.f,
-			defaultDuration + std::max(0.f, energyMax - energyReference) * durationPerPoint
+			defaultDuration + std::max(0.f, energyPower - energyReference) * durationPerPoint
 		);
 	}
 

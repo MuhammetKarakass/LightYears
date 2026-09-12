@@ -38,11 +38,11 @@ namespace AbilityData::ZeroDrag
 	// they describe Zero Drag's own duration and release balance.
 	struct Attribute
 	{
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Movement.ZeroDrag.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Movement.ZeroDrag.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxDurationPerPoint{
-			"Ability.Movement.ZeroDrag.EnergyMaxDurationPerPoint"
+		inline static const sas::AttributeId EnergyPowerDurationPerPoint{
+			"Ability.Movement.ZeroDrag.EnergyPowerDurationPerPoint"
 		};
 		inline static const sas::AttributeId ThrustBonus{
 			"Ability.Movement.ZeroDrag.ThrustBonus"

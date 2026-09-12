@@ -15,6 +15,13 @@ namespace ly
 		inline static const GameplayTag& OwnerDamageTaken = GameplayTags::Event::Owner::DamageTaken;
 	};
 
+	enum class DamageCriticalPolicy
+	{
+		Random,
+		Guaranteed,
+		Disabled
+	};
+
 	// Numeric damage-type behavior is carried with each hit. Values are resolved
 	// once by DamageTypeSystem, so the combat pipeline does not need to know the
 	// weapon or ability that produced the hit.
@@ -40,8 +47,8 @@ namespace ly
 		float electricDamageTakenMultiplierPerStack = 0.f;
 		float electricDuration = 0.f;
 		int electricMaxStacks = 1;
-		bool canCrit = true;
-		float criticalDamageMultiplier = 2.f;
+		DamageCriticalPolicy criticalPolicy = DamageCriticalPolicy::Random;
+		bool roundDamageUp = false;
 	};
 
 	// Delivery kind is shared metadata for incoming-damage defenses. It keeps

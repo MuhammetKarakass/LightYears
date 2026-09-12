@@ -21,7 +21,7 @@ namespace AbilityData::ClosedCircuit
 	struct Attribute
 	{
 		inline static const sas::AttributeId BaseBarrierHealth{ "Ability.Defense.ClosedCircuit.BaseBarrierHealth" };
-		inline static const sas::AttributeId EnergyMaxBarrierHealthScale{ "Ability.Defense.ClosedCircuit.EnergyMaxBarrierHealthScale" };
+		inline static const sas::AttributeId EnergyPowerBarrierHealthScale{ "Ability.Defense.ClosedCircuit.EnergyPowerBarrierHealthScale" };
 	};
 	struct Setting
 	{

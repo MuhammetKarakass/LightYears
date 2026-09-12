@@ -356,12 +356,11 @@ namespace
 		float fireRate = 0.f;
 		float attackPower = 0.f;
 		float attackSpeed = 0.f;
-		float energyMax = 0.f;
+		float energyPower = 0.f;
 		float luck = 0.f;
 	};
 
-	// Mirrors the current player fighter profile so this focused GAS-Lite target remains
-	// independent from reward actor linkage in the complete ship content header.
+	// Synthetic progression fixture used to exercise owner-attribute scaling independently.
 	const ShipProgressionDefinition FighterProgressionDefinition{
 		100.f,
 		1.25f,
@@ -371,7 +370,7 @@ namespace
 			{ ly::OwnerAttributeIds::CriticalChance, 2.f },
 			{ ly::OwnerAttributeIds::MaxHealth, 1.f },
 			{ ly::OwnerAttributeIds::Armor, 1.f },
-			{ ly::OwnerAttributeIds::EnergyMax, 0.5f },
+			{ ly::OwnerAttributeIds::EnergyPower, 0.5f },
 			{ ly::OwnerAttributeIds::MoveSpeedHorizontal, 0.5f },
 			{ ly::OwnerAttributeIds::MoveSpeedVertical, 0.5f }
 		}
@@ -383,7 +382,7 @@ namespace
 		PrimaryWeaponScalingSample& sample,
 		float additionalAttackPower = 0.f,
 		float additionalAttackSpeed = 0.f,
-		float additionalEnergyMax = 0.f
+		float additionalEnergyPower = 0.f
 	)
 	{
 		TestCombatant owner;
@@ -404,7 +403,7 @@ namespace
 			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, additionalAttackSpeed }
 		);
 		runtime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ ly::OwnerAttributeIds::EnergyMax, additionalEnergyMax }
+			sas::AttributeModifier{ ly::OwnerAttributeIds::EnergyPower, additionalEnergyPower }
 		);
 
 		const sas::AbilityHandle handle = runtime.GetAbilitySystemComponent().GrantAbility(
@@ -427,7 +426,7 @@ namespace
 		sample.fireRate = sas::FindAttributeValue(attributes, ly::CommonAttributeIds::FireRate, 0.f);
 		sample.attackPower = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackPower);
 		sample.attackSpeed = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::AttackSpeed);
-		sample.energyMax = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::EnergyMax);
+		sample.energyPower = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::EnergyPower);
 		sample.luck = runtime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::Luck);
 		return true;
 	}
@@ -1099,7 +1098,7 @@ int main()
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				orbitalDronesDefinition->attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxReference,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
 				0.f
 			),
 			50.f
@@ -1107,7 +1106,7 @@ int main()
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				orbitalDronesDefinition->attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxDurationScale,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
 				0.f
 			),
 			0.02f
@@ -1366,7 +1365,7 @@ int main()
 
 	nullPulseOwner->GetCombatRuntime().InitializeOwnerAttributes(1000.f);
 	nullPulseOwner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-		sas::AttributeModifier{ OwnerAttributeIds::EnergyMax, 100.f }
+		sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, 100.f }
 	);
 	nullPulseOwner->SetCollisionLayer(CollisionLayer::Player);
 	nullPulseOwner->SetCollisionMask(CollisionLayer::Enemy);
@@ -2049,8 +2048,8 @@ int main()
 	tankEnergyAttributes.baseAfterburnerSpeedMultiplier = 1.4f;
 	tankEnergyAttributes.baseAfterburnerAccelerationMultiplier = 1.8f;
 	tankEnergyAttributes.baseAfterburnerEnergyDrainPerSecond = 12.f;
-	tankEnergyAttributes.maxShieldPerMaxEnergy = 0.75f;
-	tankEnergyAttributes.afterburnerCapacityPerMaxEnergy = 0.30f;
+	tankEnergyAttributes.shieldAffinity = 0.5f;
+	tankEnergyAttributes.afterburnerAffinity = 0.5f;
 	tankEnergyAttributes.baseAfterburnerRampUpDuration = 0.18f;
 	tankEnergyAttributes.baseAfterburnerRampDownDuration = 0.25f;
 	tankEnergyAttributes.baseAfterburnerManeuverabilityMultiplier = 0.8f;
@@ -2074,16 +2073,15 @@ int main()
 		energyRuntime.GetAbilitySystemComponent().GetAttributes()
 	};
 	energyShipRuntime.InitializeFromShipDefinition(energyTestShip);
-	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyMax, 100.f });
+	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, 100.f });
 	const sas::AttributeSystem& shipAttributes = energyShipRuntime.GetAttributes();
-	if (!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::MaxShield), 175.f) ||
-		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen), 35.f) ||
+	if (!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::MaxShield), 200.f) ||
+		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen), 40.f) ||
 		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRechargeDelay), 4.f) ||
-		!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 80.f) ||
-		!NearlyEqual(energyShipRuntime.GetAfterburnerRegenPerSecond(), 10.f) ||
+		!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 150.f) ||
+		!NearlyEqual(energyShipRuntime.GetAfterburnerRegenPerSecond(), 18.75f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerRechargeDelay(), 2.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerEnergyDrainPerSecond(), 12.f) ||
-		!NearlyEqual(energyRuntime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyRegen), 10.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerSpeedMultiplier(), 1.4f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerAccelerationMultiplier(), 1.8f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerRampUpDuration(), 0.18f) ||
@@ -2091,8 +2089,8 @@ int main()
 	{
 		return Fail("Ship energy attributes did not derive shield and afterburner values correctly");
 	}
-	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyMax, 50.f });
-	if (!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 95.f) ||
+	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, 50.f });
+	if (!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 200.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerSpeedMultiplier(), 1.4f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerAccelerationMultiplier(), 1.8f))
 	{
@@ -2109,7 +2107,7 @@ int main()
 		return Fail("Movement rating curve was not monotonic with diminishing returns");
 	}
 
-	if (!NearlyEqual(sas::AttributeMath::GetArmorDamageReduction(50.f), 0.5f) ||
+	if (!NearlyEqual(sas::AttributeMath::GetArmorDamageReduction(50.f), 1.f / 3.f) ||
 		sas::AttributeMath::GetAbilityHasteReduction(500.f) >= 1.f ||
 		sas::AttributeMath::GetCriticalChance(500.f) >= 1.f ||
 		sas::AttributeMath::GetCombatLuckFactor(500.f) >= 1.f ||
@@ -2127,7 +2125,7 @@ int main()
 			{ OwnerAttributeIds::CriticalChance, 2.f },
 			{ OwnerAttributeIds::MaxHealth, 1.f },
 			{ OwnerAttributeIds::Armor, 1.f },
-			{ OwnerAttributeIds::EnergyMax, 0.5f },
+			{ OwnerAttributeIds::EnergyPower, 0.5f },
 			{ OwnerAttributeIds::MoveSpeedHorizontal, 0.5f },
 			{ OwnerAttributeIds::MoveSpeedVertical, 0.5f }
 		}
@@ -2148,20 +2146,21 @@ int main()
 	const sas::AttributeSystem& fighterAttributes =
 		fighterRuntime.GetAbilitySystemComponent().GetAttributes();
 	if (fighterProgression.GetLevel() != 2 ||
-		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 9.f) ||
-		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackSpeed), 1.f) ||
-		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::CriticalChance), 0.7f) ||
-		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::Luck), 0.075f) ||
-		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AbilityHaste), 0.125f) ||
-		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::EnergyMax), 1.f) ||
-		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::HealthRegen), 108.f / 1200.f))
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::MaxHealth), 101.f) ||
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 3.f) ||
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackSpeed), 2.f) ||
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::CriticalChance), 2.f) ||
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::Luck), 0.f) ||
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AbilityHaste), 0.f) ||
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::EnergyPower), 0.5f) ||
+		!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::HealthRegen), 101.f / 1200.f))
 	{
-		return Fail("Fighter level growth did not apply its configured and default multipliers");
+		return Fail("Natural growth did not apply the configured owner attributes");
 	}
 	fighterProgression.BindAttributes(
 		fighterRuntime.GetAbilitySystemComponent().GetAttributes()
 	);
-	if (!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 9.f))
+	if (!NearlyEqual(fighterAttributes.GetCurrentValue(OwnerAttributeIds::AttackPower), 3.f))
 	{
 		return Fail("Ship progression applied the same level bonus twice when rebound");
 	}
@@ -2796,7 +2795,8 @@ int main()
 	{
 		return Fail("Valid heat feature was rejected");
 	}
-	Actor heatTestOwner{ nullptr };
+	World heatTestWorld{ nullptr };
+	Actor heatTestOwner{ &heatTestWorld };
 	const List<GameplayTag> noDamageTags;
 	const PrimaryWeaponExecutionContext heatContext{
 		heatTestOwner,
@@ -3035,7 +3035,8 @@ int main()
 	}
 	PrimaryWeaponExecutionSystem::EndFire(unlockedHeatContext, unlockedProgressionRuntime);
 
-	Actor liveProgressionOwner{ nullptr };
+	World liveProgressionWorld{ nullptr };
+	Actor liveProgressionOwner{ &liveProgressionWorld };
 	LightYearsAbilitySystemComponent liveProgressionAbilities{
 		liveProgressionOwner
 	};
@@ -3752,7 +3753,7 @@ int main()
 	};
 	damageTarget.GetAbilitySystemComponent().ApplyGameplayEffect(integrationBarrier);
 	ApplyCombatDamage(damageTarget, 30.f);
-	if (!NearlyEqual(damageTarget.GetHealth(), 95.f))
+	if (!NearlyEqual(damageTarget.GetHealth(), 100.f - 10.f * (100.f / 150.f)))
 	{
 		return Fail("Combat damage did not flow through barrier, armor, and health");
 	}
@@ -4398,8 +4399,9 @@ int main()
 			}
 		);
 	};
-	if (!hasAdditiveScaling(basicLaser, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 1.f) ||
-		!hasAdditiveScaling(basicLaser, CommonAttributeIds::FireRate, OwnerAttributeIds::AttackSpeed, 1.f))
+	if (!hasAdditiveScaling(basicLaser, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 0.40f) ||
+		hasAdditiveScaling(basicLaser, CommonAttributeIds::FireRate, OwnerAttributeIds::AttackSpeed, 1.f) ||
+		basicLaser.cadenceMode != PrimaryWeaponCadenceMode::OwnerAttackSpeedPercentage)
 	{
 		return Fail("Basic laser JSON scaling coefficients are invalid");
 	}
@@ -4419,7 +4421,7 @@ int main()
 		return Fail("Electric arc launcher JSON scaling coefficients are invalid");
 	}
 	if (!hasAdditiveScaling(continuousHeatLaser, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 0.75f) ||
-		!hasAdditiveScaling(continuousHeatLaser, CommonAttributeIds::Damage, OwnerAttributeIds::EnergyMax, 0.50f))
+		!hasAdditiveScaling(continuousHeatLaser, CommonAttributeIds::Damage, OwnerAttributeIds::EnergyPower, 0.50f))
 	{
 		return Fail("Continuous heat laser JSON scaling coefficients are invalid");
 	}
@@ -4428,24 +4430,24 @@ int main()
 	{
 		return Fail("Cryo wave projector JSON scaling coefficients are invalid");
 	}
-	bool hasEnergyMaxBeamScaling = false;
+	bool hasEnergyPowerBeamScaling = false;
 	for (const sas::AttributeScalingRule& scalingRule : continuousHeatLaser.scalingRules)
 	{
 		if (scalingRule.targetAttributeId == CommonAttributeIds::Damage &&
-			scalingRule.sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+			scalingRule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			scalingRule.operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(scalingRule.coefficient, 0.50f))
 		{
-			hasEnergyMaxBeamScaling = true;
+			hasEnergyPowerBeamScaling = true;
 		}
 		if (scalingRule.sourceAttributeId == ShipAttributeIds::MaxShield)
 		{
 			return Fail("Continuous heat laser must not scale from current or maximum shield");
 		}
 	}
-	if (!hasEnergyMaxBeamScaling)
+	if (!hasEnergyPowerBeamScaling)
 	{
-		return Fail("Continuous heat laser is missing its EnergyMax damage scaling");
+		return Fail("Continuous heat laser is missing its EnergyPower damage scaling");
 	}
 
 	const List<int> scalingTestLevels{ 1, 10, 25, 50 };
@@ -4482,11 +4484,6 @@ int main()
 			return Fail("Player primary weapon theory DPS or Cryo slow tempo regressed across fighter levels");
 		}
 		previousCryoSlowTempo = cryoSlowTempo;
-		if (level == 50 && dualDps >= rapidDps)
-		{
-			return Fail("Dual kinetic growth remains above the rapid laser after its two-muzzle cadence is included");
-		}
-
 		const auto verifiesAttackPower = [&](const PrimaryWeaponDefinition& weapon, float coefficient)
 		{
 			PrimaryWeaponScalingSample base;
@@ -4503,7 +4500,7 @@ int main()
 				ResolveFighterPrimaryWeaponScaling(weapon, level, withAttackSpeed, 0.f, 1.f) &&
 				NearlyEqual(withAttackSpeed.fireRate - base.fireRate, coefficient);
 		};
-		if (!verifiesAttackPower(basicLaser, 1.f) || !verifiesAttackSpeed(basicLaser, 1.f))
+		if (!verifiesAttackPower(basicLaser, 0.40f))
 		{
 			return Fail("Basic laser runtime scaling did not match JSON");
 		}
@@ -4540,7 +4537,7 @@ int main()
 			!NearlyEqual(beamWithAttackSpeed.fireRate, 0.f) ||
 			!NearlyEqual(beamWithEnergy.damage - beam.damage, 0.5f))
 		{
-			return Fail("Continuous beam AttackSpeed or EnergyMax runtime scaling did not match its balance contract");
+		return Fail("Continuous beam AttackSpeed or EnergyPower runtime scaling did not match its balance contract");
 		}
 	}
 
@@ -4582,11 +4579,13 @@ int main()
 
 	const GameAbilityDefinition basicLaserAbility = AbilityData::MakePrimaryFireAbilityDefinition(basicLaser);
 	if (basicLaser.progressionProfile.GetScrapCostToReachLevel(2) != 40u ||
-		basicLaser.progressionProfile.GetScrapCostToReachLevel(3) != 50u ||
-		basicLaser.progressionProfile.GetScrapCostToReachLevel(4) != 65u ||
+		basicLaser.progressionProfile.GetScrapCostToReachLevel(3) != 45u ||
+		basicLaser.progressionProfile.GetScrapCostToReachLevel(4) != 50u ||
+		basicLaser.progressionProfile.GetScrapCostToReachLevel(15) != 105u ||
 		!basicLaserAbility.HasScrapCostToReachLevel(2) ||
 		basicLaserAbility.GetScrapCostToReachLevel(2) != 40u ||
-		basicLaserAbility.GetScrapCostToReachLevel(4) != 65u)
+		basicLaserAbility.GetScrapCostToReachLevel(4) != 50u ||
+		basicLaserAbility.GetScrapCostToReachLevel(15) != 105u)
 	{
 		return Fail("Primary weapon scrap costs were not preserved during ability conversion");
 	}
@@ -4598,6 +4597,10 @@ int main()
 	}
 	const GameAbility* basicLaserInstance = abilitySystem.GetAbility(sas::AbilitySlot::PrimaryFire);
 	const sas::GameplayAttribute* basicDamage = sas::FindAttribute(basicLaser.attributes, CommonAttributeIds::Damage);
+	const sas::GameplayAttribute* basicEmpoweredDamage = sas::FindAttribute(
+		basicLaser.attributes,
+		PrimaryWeaponSchema::Empowered::BonusDamage
+	);
 	const sas::GameplayAttribute* basicFireRate = sas::FindAttribute(basicLaser.attributes, CommonAttributeIds::FireRate);
 	const sas::GameplayAttribute* basicSpeed = sas::FindAttribute(
 		basicLaser.attributes,
@@ -4605,23 +4608,27 @@ int main()
 	);
 	const sas::GameplayAttribute* basicRange = sas::FindAttribute(basicLaser.attributes, CommonAttributeIds::Range);
 	if (!basicLaserInstance || basicLaserInstance->GetLevel() != basicLaserAbility.GetMaxLevel() ||
-		!basicDamage || !basicFireRate || !basicSpeed || !basicRange ||
+		!basicDamage || !basicEmpoweredDamage || !basicFireRate || !basicSpeed || !basicRange ||
 		sas::CalculateModifiedAttributeValue(
 			*basicDamage,
 			basicLaserInstance->GetDefinition().attributeModifiers
 		) <= basicDamage->currentValue ||
 		sas::CalculateModifiedAttributeValue(
+			*basicEmpoweredDamage,
+			basicLaserInstance->GetDefinition().attributeModifiers
+		) <= basicEmpoweredDamage->currentValue ||
+		!NearlyEqual(sas::CalculateModifiedAttributeValue(
 			*basicFireRate,
 			basicLaserInstance->GetDefinition().attributeModifiers
-		) <= basicFireRate->currentValue ||
-		sas::CalculateModifiedAttributeValue(
+		), basicFireRate->currentValue) ||
+		!NearlyEqual(sas::CalculateModifiedAttributeValue(
 			*basicSpeed,
 			basicLaserInstance->GetDefinition().attributeModifiers
-		) <= basicSpeed->currentValue ||
-		sas::CalculateModifiedAttributeValue(
+		), basicSpeed->currentValue) ||
+		!NearlyEqual(sas::CalculateModifiedAttributeValue(
 			*basicRange,
 			basicLaserInstance->GetDefinition().attributeModifiers
-		) <= basicRange->currentValue)
+		), basicRange->currentValue))
 	{
 		return Fail("Fighter basic rapid laser progression produced the wrong final profile");
 	}
@@ -4832,7 +4839,7 @@ int main()
 		float attackPower = 0.f,
 		float attackSpeed = 0.f,
 		float luck = 0.f,
-		float energyMax = 0.f
+		float energyPower = 0.f
 	)
 	{
 		owner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
@@ -4846,7 +4853,7 @@ int main()
 			sas::AttributeModifier{ OwnerAttributeIds::Luck, luck }
 		);
 		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-			sas::AttributeModifier{ OwnerAttributeIds::EnergyMax, energyMax }
+			sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, energyPower }
 		);
 		owner.SetCollisionLayer(CollisionLayer::Player);
 		owner.SetActorRotation(90.f);
@@ -4995,7 +5002,7 @@ int main()
 	);
 	if (!irrelevantRocket || !NearlyEqual(irrelevantRocket->GetDamage(), rocketSettings->baseDamage))
 	{
-		return Fail("AttackSpeed, Luck, or EnergyMax changed Basic Rocket damage");
+		return Fail("AttackSpeed, Luck, or EnergyPower changed Basic Rocket damage");
 	}
 
 	for (int level = 1; level <= 15; ++level)
@@ -6415,7 +6422,7 @@ int main()
 	for (const sas::AttributeModifier& modifier : List<sas::AttributeModifier>{
 		{ OwnerAttributeIds::AttackPower, 500.f },
 		{ OwnerAttributeIds::AttackSpeed, 500.f },
-		{ OwnerAttributeIds::EnergyMax, 500.f },
+		{ OwnerAttributeIds::EnergyPower, 500.f },
 		{ OwnerAttributeIds::Luck, 500.f },
 		{ OwnerAttributeIds::CriticalChance, 500.f }
 	})

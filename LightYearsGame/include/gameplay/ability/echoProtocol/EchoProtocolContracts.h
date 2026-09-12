@@ -34,8 +34,8 @@ namespace AbilityData::EchoProtocol
 		inline static const sas::AttributeId MaxHealthScale{
 			"Ability.Utility.EchoProtocol.MaxHealthScale"
 		};
-		inline static const sas::AttributeId EnergyMaxScale{
-			"Ability.Utility.EchoProtocol.EnergyMaxScale"
+		inline static const sas::AttributeId EnergyPowerScale{
+			"Ability.Utility.EchoProtocol.EnergyPowerScale"
 		};
 		inline static const sas::AttributeId AttackSpeedScale{
 			"Ability.Utility.EchoProtocol.AttackSpeedScale"

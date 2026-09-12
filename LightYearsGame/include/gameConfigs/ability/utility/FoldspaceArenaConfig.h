@@ -15,7 +15,7 @@ namespace AbilityData::FoldspaceArena
 		ly::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Arena::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::FoldspaceArena;
-		// Runtime duration is resolved from EnergyMax. This is only a safe ceiling
+		// Runtime duration is resolved from EnergyPower. This is only a safe ceiling
 		// so actor cleanup still succeeds if future content is misconfigured.
 		definition.lifeTime = 10.f;
 		definition.spawnDistance = 0.f;
@@ -64,12 +64,12 @@ namespace AbilityData::Definitions
 				AbilityData::FoldspaceArena::Attribute::BaseArenaDuration, 6.f, 0.01f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FoldspaceArena::Attribute::EnergyMaxDurationReference,
+				AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationReference,
 				50.f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FoldspaceArena::Attribute::EnergyMaxDurationPerPoint,
+				AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationPerPoint,
 				0.002f,
 				0.f
 			}
@@ -77,7 +77,7 @@ namespace AbilityData::Definitions
 		definition.scalingRules = {
 			sas::AttributeScalingRule{
 				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::EnergyMax,
+				ly::OwnerAttributeIds::EnergyPower,
 				sas::AttributeModifierOperation::Add,
 				0.08f
 			}

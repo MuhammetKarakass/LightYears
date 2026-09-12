@@ -31,12 +31,12 @@ namespace AbilityData::Definitions
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::ShieldGraft::Attribute::EnergyMaxReference,
+				AbilityData::ShieldGraft::Attribute::EnergyPowerReference,
 				50.f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::ShieldGraft::Attribute::EnergyMaxScale,
+				AbilityData::ShieldGraft::Attribute::EnergyPowerScale,
 				0.0001f,
 				0.f
 			}

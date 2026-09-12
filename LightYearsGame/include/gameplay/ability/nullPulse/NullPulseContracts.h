@@ -30,8 +30,8 @@ namespace AbilityData::NullPulse
 		inline static const sas::AttributeId MaxBonusStun{
 			"Ability.Control.NullPulse.MaxBonusStun"
 		};
-		inline static const sas::AttributeId ReferenceEnergyMax{
-			"Ability.Control.NullPulse.ReferenceEnergyMax"
+		inline static const sas::AttributeId ReferenceEnergyPower{
+			"Ability.Control.NullPulse.ReferenceEnergyPower"
 		};
 		inline static const sas::AttributeId EnergyScale{
 			"Ability.Control.NullPulse.EnergyScale"

@@ -29,8 +29,8 @@ namespace AbilityData::Definitions
 		definition.attributes = {
 			{ AbilityData::TimeSlip::Attribute::GameplayTimeMultiplier, 0.35f, 0.001f, 1.f },
 			{ AbilityData::TimeSlip::Attribute::PrimaryFireRateMultiplier, 0.35f, 0.001f, 1.f },
-			{ AbilityData::TimeSlip::Attribute::EnergyMaxReference, 50.f, 0.f },
-			{ AbilityData::TimeSlip::Attribute::EnergyMaxDurationScale, 0.0015f, 0.f }
+			{ AbilityData::TimeSlip::Attribute::EnergyPowerReference, 50.f, 0.f },
+			{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale, 0.0015f, 0.f }
 		};
 		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
 			14,

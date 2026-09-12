@@ -192,7 +192,7 @@ namespace ly
 
 	void FoldspaceArenaActor::ConfigureFromAbilityValues(
 		const sas::GameplayAttributeList& values,
-		float ownerEnergyMax
+		float ownerEnergyPower
 	)
 	{
 		SetDamage(std::max(0.f, FindValue(
@@ -203,15 +203,15 @@ namespace ly
 		));
 		const float energyReference = std::max(0.f, FindValue(
 			values,
-			AbilityData::FoldspaceArena::Attribute::EnergyMaxDurationReference,
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationReference,
 			50.f
 		));
 		const float durationPerEnergy = std::max(0.f, FindValue(
 			values,
-			AbilityData::FoldspaceArena::Attribute::EnergyMaxDurationPerPoint,
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationPerPoint,
 			0.002f
 		));
-		mArenaDuration = baseDuration + std::max(0.f, ownerEnergyMax - energyReference) *
+		mArenaDuration = baseDuration + std::max(0.f, ownerEnergyPower - energyReference) *
 			durationPerEnergy;
 		mPhase = Phase::Travelling;
 		mPhaseElapsed = 0.f;

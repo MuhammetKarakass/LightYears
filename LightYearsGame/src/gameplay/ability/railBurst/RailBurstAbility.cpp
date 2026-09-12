@@ -151,12 +151,12 @@ namespace ly
 			definition.damageTags.front() != DamageTypeSchema::Energy ||
 			definition.scalingRules.size() != 2 ||
 			!hasDamageScaling(OwnerAttributeIds::AttackPower, 1.50f) ||
-			!hasDamageScaling(OwnerAttributeIds::EnergyMax, 0.20f))
+			!hasDamageScaling(OwnerAttributeIds::EnergyPower, 0.20f))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Rail Burst requires Energy damage plus additive AttackPower and EnergyMax scaling.";
+					"Rail Burst requires Energy damage plus additive AttackPower and EnergyPower scaling.";
 			}
 			return false;
 		}

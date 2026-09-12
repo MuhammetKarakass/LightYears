@@ -30,10 +30,18 @@ namespace ly
 		float GetAfterburnerManeuverabilityMultiplier() const;
 
 	private:
+		void RebindOwnerAttributeContributions(
+			const List<OwnerAttributeBaseEntry>& entries,
+			List<OwnerAttributeBaseEntry>& appliedEntries
+		);
+		void RebindBaseOwnerAttributes(const List<OwnerAttributeBaseEntry>& entries);
+		void RebindDerivedOwnerAttributes(const List<OwnerAttributeBaseEntry>& entries);
 		void OnOwnerAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue);
 
 		sas::AttributeSystem* mOwnerAttributes = nullptr;
 		ShipEnergyAttributes mEnergyAttributes;
+		List<OwnerAttributeBaseEntry> mAppliedBaseOwnerAttributes;
+		List<OwnerAttributeBaseEntry> mAppliedDerivedOwnerAttributes;
 		sas::AttributeSystem mAttributeSystem;
 		bool mOwnerAttributeCallbackBound = false;
 	};

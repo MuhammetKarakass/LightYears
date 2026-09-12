@@ -227,31 +227,31 @@ namespace ly
 			AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio,
 			AbilityData::FrostMaelstrom::DefaultOrbitalRadiusRatio
 		), 0.1f, 1.f);
-		mEnergyMaxReference = std::max(0.f, find(
-			AbilityData::FrostMaelstrom::Attribute::EnergyMaxReference,
-			AbilityData::FrostMaelstrom::DefaultEnergyMaxReference
+		mEnergyPowerReference = std::max(0.f, find(
+			AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference,
+			AbilityData::FrostMaelstrom::DefaultEnergyPowerReference
 		));
-		mEnergyMaxDamageScale = std::max(0.f, find(
-			AbilityData::FrostMaelstrom::Attribute::EnergyMaxDamageScale,
-			AbilityData::FrostMaelstrom::DefaultEnergyMaxDamageScale
+		mEnergyPowerDamageScale = std::max(0.f, find(
+			AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
+			AbilityData::FrostMaelstrom::DefaultEnergyPowerDamageScale
 		));
-		mEnergyMaxRadiusScale = std::max(0.f, find(
-			AbilityData::FrostMaelstrom::Attribute::EnergyMaxRadiusScale,
-			AbilityData::FrostMaelstrom::DefaultEnergyMaxRadiusScale
+		mEnergyPowerRadiusScale = std::max(0.f, find(
+			AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale,
+			AbilityData::FrostMaelstrom::DefaultEnergyPowerRadiusScale
 		));
 
 		mTickDamage = std::max(0.f, find(
 			AbilityData::FrostMaelstrom::Attribute::TickDamage,
 			mTickDamage
 		));
-		float energyMax = 0.f;
+		float energyPower = 0.f;
 		if (const Combatant* combatant = dynamic_cast<const Combatant*>(GetOwnerActor()))
 		{
-			energyMax = combatant->GetAbilitySystemComponent().GetAttributes()
-				.GetCurrentValue(OwnerAttributeIds::EnergyMax);
+			energyPower = combatant->GetAbilitySystemComponent().GetAttributes()
+				.GetCurrentValue(OwnerAttributeIds::EnergyPower);
 		}
-		const float energyBonus = std::max(0.f, energyMax - mEnergyMaxReference);
-		const float radiusBonus = energyBonus * mEnergyMaxRadiusScale;
+		const float energyBonus = std::max(0.f, energyPower - mEnergyPowerReference);
+		const float radiusBonus = energyBonus * mEnergyPowerRadiusScale;
 		mMinimumRadius = std::min(
 			AbilityData::FrostMaelstrom::DefaultMaximumRadius,
 			mMinimumRadius + radiusBonus
@@ -260,7 +260,7 @@ namespace ly
 			AbilityData::FrostMaelstrom::DefaultMaximumRadius,
 			mMaximumRadius + radiusBonus
 		);
-		mTickDamage += energyBonus * mEnergyMaxDamageScale;
+		mTickDamage += energyBonus * mEnergyPowerDamageScale;
 		mCurrentRadius = mMinimumRadius;
 		mCurrentSpeed = mMinimumSpeed;
 		mFieldAge = 0.f;

@@ -50,6 +50,7 @@ namespace ly
 			return mDamageAttributes;
 		}
 		const DamagePayload& GetDamagePayload() const { return mDamagePayload; }
+		void SetDamagePayload(const DamagePayload& payload) { mDamagePayload = payload; }
 		void SetAbilityUpgradeIds(const List<std::string>& upgradeIds) { mAbilityUpgradeIds = upgradeIds; }
 		const List<std::string>& GetAbilityUpgradeIds() const { return mAbilityUpgradeIds; }
 		bool HasAbilityUpgrade(const std::string& upgradeId) const;

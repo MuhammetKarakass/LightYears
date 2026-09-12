@@ -348,13 +348,13 @@ namespace ly
 		{
 			return;
 		}
-		const float energyMax = std::max(0.f, ownerCombatant
+		const float energyPower = std::max(0.f, ownerCombatant
 			->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::EnergyMax
+				OwnerAttributeIds::EnergyPower
 			));
 		ApplyCombatDamage(
 			target,
-			std::max(0.f, mSettings.baseTickDamage + energyMax * mSettings.energyMaxTickScale),
+			std::max(0.f, mSettings.baseTickDamage + energyPower * mSettings.energyPowerTickScale),
 			owner,
 			{ DamageTypeSchema::Electric },
 			{},

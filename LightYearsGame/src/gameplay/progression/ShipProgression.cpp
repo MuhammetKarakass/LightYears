@@ -8,35 +8,6 @@
 
 namespace ly
 {
-	const List<AttributeGrowthEntry>& GetLevelGrowthBaseValues()
-	{
-		static const List<AttributeGrowthEntry> BaseValues{
-			{ OwnerAttributeIds::MaxHealth, 8.f },
-			{ OwnerAttributeIds::EnergyMax, 2.f },
-			{ OwnerAttributeIds::AttackPower, 3.f },
-			{ OwnerAttributeIds::AttackSpeed, 0.5f },
-			{ OwnerAttributeIds::AbilityHaste, 0.5f },
-			{ OwnerAttributeIds::MoveSpeedHorizontal, 0.2f },
-			{ OwnerAttributeIds::MoveSpeedVertical, 0.2f },
-			{ OwnerAttributeIds::Armor, 1.5f },
-			{ OwnerAttributeIds::Luck, 0.3f },
-			{ OwnerAttributeIds::CriticalChance, 0.35f }
-		};
-		return BaseValues;
-	}
-
-	bool IsLevelGrowthAttribute(const sas::AttributeId& attributeId)
-	{
-		for (const AttributeGrowthEntry& entry : GetLevelGrowthBaseValues())
-		{
-			if (entry.attributeId == attributeId)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
 	void ShipProgression::Configure(const ShipProgressionDefinition& definition)
 	{
 		mDefinition = definition;
@@ -52,14 +23,25 @@ namespace ly
 			return;
 		}
 
-		// A respawn destroys the old runtime. Never dereference its old pointer;
-		// bind the new runtime and rebuild the deterministic total bonus instead.
+		if (mBoundAttributes)
+		{
+			RemoveCurrentLevelModifiers();
+		}
 		mBoundAttributes = &attributes;
 		mLevelModifierHandles.clear();
 		RebuildLevelModifiers();
 	}
 
-	void ShipProgression::UnbindAttributes()
+	void ShipProgression::RemoveModifiersAndUnbind()
+	{
+		if (mBoundAttributes)
+		{
+			RemoveCurrentLevelModifiers();
+		}
+		mBoundAttributes = nullptr;
+	}
+
+	void ShipProgression::ForgetDestroyedAttributes()
 	{
 		mBoundAttributes = nullptr;
 		mLevelModifierHandles.clear();
@@ -91,24 +73,12 @@ namespace ly
 	{
 		mCurrentXP = 0.f;
 		mCurrentLevel = 1;
-		UnbindAttributes();
+		RemoveModifiersAndUnbind();
 	}
 
 	float ShipProgression::GetXPRequiredForNextLevel() const
 	{
 		return std::max(1.f, mDefinition.baseXP * std::pow(static_cast<float>(mCurrentLevel), mDefinition.xpExponent));
-	}
-
-	float ShipProgression::GetGrowthMultiplier(const sas::AttributeId& attributeId) const
-	{
-		for (const AttributeGrowthEntry& entry : mDefinition.growthOverrides)
-		{
-			if (entry.attributeId == attributeId)
-			{
-				return std::max(0.f, entry.multiplier);
-			}
-		}
-		return 0.25f;
 	}
 
 	void ShipProgression::RebuildLevelModifiers()
@@ -120,21 +90,18 @@ namespace ly
 
 		RemoveCurrentLevelModifiers();
 		const float completedLevelCount = static_cast<float>(std::max(0, mCurrentLevel - 1));
-		for (const AttributeGrowthEntry& baseGrowth : GetLevelGrowthBaseValues())
+		for (const AttributeGrowthEntry& growth : mDefinition.naturalGrowth)
 		{
-			const float totalBonus = completedLevelCount * baseGrowth.multiplier * GetGrowthMultiplier(baseGrowth.attributeId);
+			assert(IsNaturalGrowthAttribute(growth.attributeId) &&
+				"Only approved owner attributes may receive natural ship growth.");
+			const float totalBonus = completedLevelCount * std::max(0.f, growth.perLevel);
 			if (totalBonus <= 0.f)
 			{
 				continue;
 			}
 			mLevelModifierHandles.push_back(mBoundAttributes->AddModifier(
-				sas::AttributeModifier{ baseGrowth.attributeId, sas::AttributeModifierOperation::Add, totalBonus }
+				sas::AttributeModifier{ growth.attributeId, sas::AttributeModifierOperation::Add, totalBonus }
 			));
-		}
-
-		for (const AttributeGrowthEntry& overrideEntry : mDefinition.growthOverrides)
-		{
-			assert(IsLevelGrowthAttribute(overrideEntry.attributeId) && "Derived attributes cannot receive level growth.");
 		}
 	}
 

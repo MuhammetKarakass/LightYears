@@ -47,12 +47,12 @@ namespace AbilityData::Definitions
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::GlacialPressure::Attribute::EnergyMaxInitialScale,
+				AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale,
 				0.05f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::GlacialPressure::Attribute::EnergyMaxCollisionScale,
+				AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale,
 				0.25f,
 				0.f
 			},

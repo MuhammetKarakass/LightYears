@@ -462,7 +462,7 @@ namespace ly
 		// inheriting the one-stack default used by ordinary Electric weapon hits.
 		payload.electricStacks = electricStacks;
 		payload.electricMaxStacks = electricMaxStacks;
-		payload.canCrit = false;
+		payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 
 		for (const shared_ptr<Actor>& target : targeting::FindOpposingCombatants(
 			*world,

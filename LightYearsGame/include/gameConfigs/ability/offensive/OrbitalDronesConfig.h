@@ -52,12 +52,12 @@ namespace AbilityData::Definitions
 				0.1f
 			},
 			sas::GameplayAttribute{
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxReference,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
 				50.f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::OrbitalDrones::Attribute::EnergyMaxDurationScale,
+				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
 				0.02f,
 				0.f
 			}

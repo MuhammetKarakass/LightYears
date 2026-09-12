@@ -2,7 +2,11 @@
 
 #include "framework/Delegate.h"
 #include "gameConfigs/ship/ShipStructs.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "attributes/AttributeSystem.h"
+
+#include <algorithm>
+#include <array>
 
 namespace ly
 {
@@ -11,9 +15,11 @@ namespace ly
 	public:
 		void Configure(const ShipProgressionDefinition& definition);
 		void BindAttributes(sas::AttributeSystem& attributes);
-		// Call when the currently bound ship begins destruction. This deliberately
-		// does not dereference the previous runtime, whose lifetime may already be ending.
-		void UnbindAttributes();
+		// Removes progression modifiers from a live runtime before releasing it.
+		void RemoveModifiersAndUnbind();
+		// Call only after the bound ship starts destruction. It deliberately never
+		// dereferences the previous runtime, whose lifetime may already be ending.
+		void ForgetDestroyedAttributes();
 		void AddXP(float amount);
 		void ResetForNewRun();
 
@@ -21,7 +27,6 @@ namespace ly
 		int GetLevel() const { return mCurrentLevel; }
 		bool IsConfigured() const { return mIsConfigured; }
 		float GetXPRequiredForNextLevel() const;
-		float GetGrowthMultiplier(const sas::AttributeId& attributeId) const;
 
 		Delegate<int, int> onLevelChanged;
 
@@ -37,6 +42,24 @@ namespace ly
 		bool mIsConfigured = false;
 	};
 
-	const List<AttributeGrowthEntry>& GetLevelGrowthBaseValues();
-	bool IsLevelGrowthAttribute(const sas::AttributeId& attributeId);
+	inline bool IsNaturalGrowthAttribute(const sas::AttributeId& attributeId)
+	{
+		static const std::array<sas::AttributeId, 10> allowed{
+			OwnerAttributeIds::MaxHealth, OwnerAttributeIds::AttackPower, OwnerAttributeIds::EnergyPower,
+			OwnerAttributeIds::Armor, OwnerAttributeIds::Luck, OwnerAttributeIds::AttackSpeed,
+			OwnerAttributeIds::CriticalChance, OwnerAttributeIds::AbilityHaste,
+			OwnerAttributeIds::MoveSpeedHorizontal, OwnerAttributeIds::MoveSpeedVertical
+		};
+		return std::find(allowed.begin(), allowed.end(), attributeId) != allowed.end();
+	}
+
+	inline bool IsAllowedBaseOwnerCombatAttribute(const sas::AttributeId& attributeId)
+	{
+		static const std::array<sas::AttributeId, 7> allowed{
+			OwnerAttributeIds::AttackPower, OwnerAttributeIds::Armor, OwnerAttributeIds::Luck,
+			OwnerAttributeIds::AttackSpeed, OwnerAttributeIds::CriticalChance,
+			OwnerAttributeIds::CriticalDamage, OwnerAttributeIds::AbilityHaste
+		};
+		return std::find(allowed.begin(), allowed.end(), attributeId) != allowed.end();
+	}
 }

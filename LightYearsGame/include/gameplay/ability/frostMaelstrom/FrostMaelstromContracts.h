@@ -66,14 +66,14 @@ namespace AbilityData::FrostMaelstrom
 		inline static const sas::AttributeId OrbitalRadiusRatio{
 			"Ability.Control.FrostMaelstrom.OrbitalRadiusRatio"
 		};
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Control.FrostMaelstrom.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Control.FrostMaelstrom.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxDamageScale{
-			"Ability.Control.FrostMaelstrom.EnergyMaxDamageScale"
+		inline static const sas::AttributeId EnergyPowerDamageScale{
+			"Ability.Control.FrostMaelstrom.EnergyPowerDamageScale"
 		};
-		inline static const sas::AttributeId EnergyMaxRadiusScale{
-			"Ability.Control.FrostMaelstrom.EnergyMaxRadiusScale"
+		inline static const sas::AttributeId EnergyPowerRadiusScale{
+			"Ability.Control.FrostMaelstrom.EnergyPowerRadiusScale"
 		};
 
 		// Tick damage uses the project-wide Common.Damage identity so normal
@@ -104,8 +104,8 @@ namespace AbilityData::FrostMaelstrom
 	inline constexpr float DefaultOrbitalAngularSpeed = 4.5f;
 	inline constexpr float DefaultInwardForce = 1500.f;
 	inline constexpr float DefaultOrbitalRadiusRatio = 0.42f;
-	inline constexpr float DefaultEnergyMaxReference = 50.f;
-	inline constexpr float DefaultEnergyMaxDamageScale = 0.005f;
-	inline constexpr float DefaultEnergyMaxRadiusScale = 0.20f;
+	inline constexpr float DefaultEnergyPowerReference = 50.f;
+	inline constexpr float DefaultEnergyPowerDamageScale = 0.005f;
+	inline constexpr float DefaultEnergyPowerRadiusScale = 0.20f;
 	inline constexpr float DefaultTickDamage = 2.f;
 }

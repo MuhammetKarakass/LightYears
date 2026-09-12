@@ -48,7 +48,7 @@ namespace ly
 				return { true, {} };
 			}
 
-			void FireOnce(
+			bool FireOnce(
 				const PrimaryWeaponExecutionContext& context,
 				PrimaryWeaponTypeRuntimeState&
 			) const override
@@ -61,11 +61,11 @@ namespace ly
 						0.f
 					)))
 				);
-				PrimaryWeaponProjectileSpawner::FireSet(
+				return PrimaryWeaponProjectileSpawner::FireSet(
 					context,
 					projectileCount,
 					0.f
-				);
+				) > 0;
 			}
 		};
 	}

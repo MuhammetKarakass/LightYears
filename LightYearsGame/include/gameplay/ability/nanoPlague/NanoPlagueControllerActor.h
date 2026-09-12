@@ -15,7 +15,7 @@ namespace ly
 		struct Settings
 		{
 			float baseTickDamage = 4.f;
-			float energyMaxTickScale = 0.03f;
+			float energyPowerTickScale = 0.03f;
 			float duration = 3.f;
 			float tickInterval = 0.25f;
 			float spreadRadius = 300.f;

@@ -129,7 +129,7 @@ namespace ly
 				return { true, {} };
 			}
 
-			void FireOnce(
+			bool FireOnce(
 				const PrimaryWeaponExecutionContext& context,
 				PrimaryWeaponTypeRuntimeState&
 			) const override
@@ -163,12 +163,11 @@ namespace ly
 				);
 				if (damageReduction <= 0.f)
 				{
-					PrimaryWeaponProjectileSpawner::FireSet(
+					return PrimaryWeaponProjectileSpawner::FireSet(
 						context,
 						totalPelletCount,
 						spreadAngle
-					);
-					return;
+					) > 0;
 				}
 
 				const float minimumDamageMultiplier = sas::FindAttributeValue(
@@ -193,12 +192,12 @@ namespace ly
 							context.attributes
 						)
 					);
-				PrimaryWeaponProjectileSpawner::FireSet(
+				return PrimaryWeaponProjectileSpawner::FireSet(
 					context,
 					totalPelletCount,
 					spreadAngle,
 					impactGroup
-				);
+				) > 0;
 			}
 		};
 	}

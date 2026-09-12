@@ -48,7 +48,7 @@ namespace AbilityData::Definitions
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::EchoProtocol::Attribute::EnergyMaxScale,
+				AbilityData::EchoProtocol::Attribute::EnergyPowerScale,
 				0.10f,
 				0.f
 			},

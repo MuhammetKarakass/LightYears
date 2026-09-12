@@ -62,8 +62,7 @@ namespace ly
 		sas::AttributeSystem& attributes = mAbilitySystemComponent.GetAttributes();
 		attributes.RegisterAttribute(OwnerAttributeIds::MaxHealth, maxHealth);
 		attributes.RegisterAttribute(OwnerAttributeIds::HealthRegen, 0.f);
-		attributes.RegisterAttribute(OwnerAttributeIds::EnergyMax, 0.f);
-		attributes.RegisterAttribute(OwnerAttributeIds::EnergyRegen, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::EnergyPower, 0.f);
 		attributes.RegisterAttribute(OwnerAttributeIds::AttackPower, 0.f);
 		attributes.RegisterAttribute(OwnerAttributeIds::AttackSpeed, 0.f);
 		attributes.RegisterAttribute(OwnerAttributeIds::AbilityHaste, 0.f);
@@ -72,6 +71,7 @@ namespace ly
 		attributes.RegisterAttribute(OwnerAttributeIds::Armor, 0.f);
 		attributes.RegisterAttribute(OwnerAttributeIds::Luck, 0.f);
 		attributes.RegisterAttribute(OwnerAttributeIds::CriticalChance, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::CriticalDamage, 1.5f);
 	}
 
 	float CombatRuntime::GetCriticalChance() const
@@ -90,6 +90,11 @@ namespace ly
 				OwnerAttributeIds::Luck
 			)
 		);
+	}
+
+	float CombatRuntime::GetCriticalDamageMultiplier() const
+	{
+		return std::max(1.f, mAbilitySystemComponent.GetAttributes().GetCurrentValue(OwnerAttributeIds::CriticalDamage));
 	}
 
 	void CombatRuntime::SetDamageProtection(
@@ -193,14 +198,18 @@ namespace ly
 		);
 		mProcessingDamageContext = nullptr;
 		DispatchPendingEffectEvents();
-		const float armorReduction = sas::AttributeMath::GetArmorDamageReduction(
+		const float armorDamageMultiplier = sas::AttributeMath::GetArmorDamageMultiplier(
 			mAbilitySystemComponent.GetAttributes().GetCurrentValue(
 				OwnerAttributeIds::Armor
 			)
 		);
-		const float effectiveArmor = armorReduction * (1.f - context.payload.armorPenetration);
+		// Preserve the established penetration semantics while resolving from the
+		// multiplier directly. This avoids 1 - reduction cancellation at extreme
+		// but finite Armor values, where float reduction can round to exactly 1.
+		const float finalArmorDamageMultiplier = armorDamageMultiplier +
+			context.payload.armorPenetration * (1.f - armorDamageMultiplier);
 		const float damageBeforeArmor = context.remainingDamage;
-		context.remainingDamage = std::max(0.f, damageBeforeArmor * (1.f - effectiveArmor));
+		context.remainingDamage = std::max(0.f, damageBeforeArmor * finalArmorDamageMultiplier);
 		context.mitigatedDamage += damageBeforeArmor - context.remainingDamage;
 		context.modifiedDamage = context.remainingDamage;
 

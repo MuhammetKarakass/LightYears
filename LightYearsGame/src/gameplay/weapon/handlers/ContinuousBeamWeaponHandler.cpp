@@ -112,11 +112,12 @@ namespace ly
 				}
 			}
 
-			void FireOnce(
+			bool FireOnce(
 				const PrimaryWeaponExecutionContext&,
 				PrimaryWeaponTypeRuntimeState&
 			) const override
 			{
+				return false;
 			}
 
 			void TickFire(

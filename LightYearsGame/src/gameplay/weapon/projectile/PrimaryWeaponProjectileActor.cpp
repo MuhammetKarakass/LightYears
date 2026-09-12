@@ -263,6 +263,15 @@ namespace ly
 		}
 	}
 
+	void PrimaryWeaponProjectileActor::SetShotMetadata(const PrimaryWeaponShotMetadata& metadata)
+	{
+		mShotMetadata = metadata;
+		DamagePayload payload = GetDamagePayload();
+		payload.criticalPolicy = metadata.criticalPolicy;
+		payload.roundDamageUp = metadata.roundFinalDamageUp;
+		SetDamagePayload(payload);
+	}
+
 	void PrimaryWeaponProjectileActor::ApplyImpactDamage(Actor* directHitActor)
 	{
 		if (mAreaDamageRadius > 0.f)

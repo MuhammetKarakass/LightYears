@@ -76,7 +76,7 @@ namespace ly
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::TickInterval, 0.01f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::InitialTargetRange, 0.01f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::SpreadRadius, 0.01f) &&
-			HasAttribute(definition, AbilityData::NanoPlague::Attribute::EnergyMaxTickScale, 0.f) &&
+			HasAttribute(definition, AbilityData::NanoPlague::Attribute::EnergyPowerTickScale, 0.f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::BaseSpreadTargetCount, 1.f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::MaximumSpreadTargetCount, 1.f);
 		const bool validRuntimeOwnership = definition.actions.empty() &&
@@ -147,9 +147,9 @@ namespace ly
 		settings.baseTickDamage = std::max(0.f, sas::FindAttributeValue(
 			values, AbilityData::NanoPlague::Attribute::BaseTickDamage,
 			AbilityData::NanoPlague::DefaultBaseTickDamage));
-		settings.energyMaxTickScale = std::max(0.f, sas::FindAttributeValue(
-			values, AbilityData::NanoPlague::Attribute::EnergyMaxTickScale,
-			AbilityData::NanoPlague::DefaultEnergyMaxTickScale));
+		settings.energyPowerTickScale = std::max(0.f, sas::FindAttributeValue(
+			values, AbilityData::NanoPlague::Attribute::EnergyPowerTickScale,
+			AbilityData::NanoPlague::DefaultEnergyPowerTickScale));
 		settings.duration = std::max(0.01f, sas::FindAttributeValue(
 			values, AbilityData::NanoPlague::Attribute::Duration,
 			AbilityData::NanoPlague::DefaultDuration));

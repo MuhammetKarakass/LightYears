@@ -4,6 +4,15 @@ out/
 documentation.md
 # AI-generated working material and agent instructions
 AGENTS.md
+.agents/
+.aider/
+.claude/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.roo/
+.serena/
 docs/
 *.md
 *.py
@@ -13,8 +22,13 @@ docs/
 orchestrator.py
 flash_test.txt
 .orchestrator_permission_test/
+
+# Local test sources and generated test output
+LightYearsGame/tests/
 Testing/Temporary/
 __pycache__/
 **/__pycache__/
 run_stdout.log
 run_stderr.log
+err*.txt
+out*.txt

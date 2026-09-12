@@ -7,7 +7,6 @@
 #include <framework/MathUtility.h>
 #include "VFX/Explosion.h" 
 #include <algorithm>
-#include <cmath>
 
 namespace ly
 {
@@ -181,7 +180,7 @@ namespace ly
 		(void)previousValue;
 		(void)currentValue;
 		if (attributeId == OwnerAttributeIds::MaxHealth ||
-			attributeId == OwnerAttributeIds::EnergyMax ||
+			attributeId == OwnerAttributeIds::EnergyPower ||
 			attributeId == OwnerAttributeIds::MoveSpeedHorizontal ||
 			attributeId == OwnerAttributeIds::MoveSpeedVertical)
 		{

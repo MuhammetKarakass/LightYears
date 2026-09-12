@@ -1,8 +1,8 @@
 #include "gameplay/content/ShipContentCatalog.h"
 
 #include "gameConfigs/ship/ShipConfig.h"
-#include "gameplay/attributes/AttributeIdSchema.h"
 #include "gameplay/content/ShipLoader.h"
+#include "gameplay/progression/ShipProgression.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 
@@ -38,64 +38,95 @@ namespace ly::content
 			return std::isfinite(value) && value >= 0.f;
 		}
 
-		bool IsValidShipDefinition(const ShipDefinition& definition)
+		bool IsValidProgression(const ShipProgressionDefinition& progression)
 		{
-			const ShipMovementAttributes& movement = definition.movementAttributes;
-			const ShipEnergyAttributes& energy = definition.energyAttributes;
-			const ShipProgressionDefinition& progression = definition.progressionDefinition;
-			return std::isfinite(definition.health) && definition.health > 0.f &&
-				std::isfinite(definition.speed.x) && std::isfinite(definition.speed.y) &&
-				IsFiniteNonNegative(definition.collisionDamage) &&
-				IsFiniteNonNegative(definition.shipXPReward) &&
-				IsFiniteNonNegative(movement.forwardThrust.baseValue) &&
-				IsFiniteNonNegative(movement.reverseThrust.baseValue) &&
-				IsFiniteNonNegative(movement.strafeThrust.baseValue) &&
-				IsFiniteNonNegative(movement.angularTurnSpeed.baseValue) &&
-				IsFiniteNonNegative(movement.angularTurnResponsiveness.baseValue) &&
-				IsFiniteNonNegative(movement.linearDamping.baseValue) &&
-				IsFiniteNonNegative(movement.maxSpeed.baseValue) &&
-				IsFiniteNonNegative(movement.inputResponsiveness.baseValue) &&
-				IsFiniteNonNegative(movement.mouseAimDeadZone.baseValue) &&
-				IsFiniteNonNegative(movement.horizontalRatingToThrust) &&
-				IsFiniteNonNegative(movement.verticalRatingToThrust) &&
-				IsFiniteNonNegative(movement.ratingToMaxSpeed) &&
-				IsFiniteNonNegative(movement.movementRatingDiminishingScale) &&
-				IsFiniteNonNegative(energy.baseMaxShield) &&
-				IsFiniteNonNegative(energy.shieldFullRechargeDuration) &&
-				IsFiniteNonNegative(energy.baseShieldRechargeDelay) &&
-				IsFiniteNonNegative(energy.baseAfterburnerCapacity) &&
-				IsFiniteNonNegative(energy.afterburnerFullRechargeDuration) &&
-				IsFiniteNonNegative(energy.baseAfterburnerRechargeDelay) &&
-				IsFiniteNonNegative(energy.baseAfterburnerSpeedMultiplier) &&
-				IsFiniteNonNegative(energy.baseAfterburnerAccelerationMultiplier) &&
-				IsFiniteNonNegative(energy.baseAfterburnerEnergyDrainPerSecond) &&
-				IsFiniteNonNegative(energy.maxShieldPerMaxEnergy) &&
-				IsFiniteNonNegative(energy.afterburnerCapacityPerMaxEnergy) &&
-				IsFiniteNonNegative(energy.baseAfterburnerRampUpDuration) &&
-				IsFiniteNonNegative(energy.baseAfterburnerRampDownDuration) &&
-				IsFiniteNonNegative(energy.baseAfterburnerManeuverabilityMultiplier) &&
-				IsFiniteNonNegative(progression.baseXP) &&
-				std::isfinite(progression.xpExponent) && progression.xpExponent > 0.f;
-		}
-
-		bool ValidateShipTagSchema(
-			const ShipDefinition& definition,
-			std::string* failureReason
-		)
-		{
-			for (const AttributeGrowthEntry& growth :
-				definition.progressionDefinition.growthOverrides)
+			if (!IsFiniteNonNegative(progression.baseXP) || progression.baseXP <= 0.f ||
+				!std::isfinite(progression.xpExponent) || progression.xpExponent <= 0.f)
 			{
-				if (!AttributeIdSchema::Validate(growth.attributeId, nullptr))
+				return false;
+			}
+			for (std::size_t index = 0; index < progression.naturalGrowth.size(); ++index)
+			{
+				const AttributeGrowthEntry& growth = progression.naturalGrowth[index];
+				if (!IsNaturalGrowthAttribute(growth.attributeId) ||
+					!IsFiniteNonNegative(growth.perLevel))
 				{
-					return Fail(
-						failureReason,
-						"Ship progression AttributeId is invalid."
-					);
+					return false;
+				}
+				for (std::size_t previous = 0; previous < index; ++previous)
+				{
+					if (progression.naturalGrowth[previous].attributeId == growth.attributeId)
+					{
+						return false;
+					}
 				}
 			}
 			return true;
 		}
+
+		bool IsValidBaseOwnerAttributes(const List<OwnerAttributeBaseEntry>& baseOwnerAttributes)
+		{
+			for (std::size_t index = 0; index < baseOwnerAttributes.size(); ++index)
+			{
+				const OwnerAttributeBaseEntry& entry = baseOwnerAttributes[index];
+				if (!IsAllowedBaseOwnerCombatAttribute(entry.attributeId) ||
+					!IsFiniteNonNegative(entry.baseValue))
+				{
+					return false;
+				}
+				for (std::size_t previous = 0; previous < index; ++previous)
+				{
+					if (baseOwnerAttributes[previous].attributeId == entry.attributeId)
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+	}
+
+	bool ShipContentCatalog::IsValidShipDefinition(const ShipDefinition& definition)
+	{
+		const ShipMovementAttributes& movement = definition.movementAttributes;
+		const ShipEnergyAttributes& energy = definition.energyAttributes;
+		const ShipProgressionDefinition& progression = definition.progressionDefinition;
+		const float affinityTotal = energy.shieldAffinity + energy.afterburnerAffinity;
+		return std::isfinite(definition.health) && definition.health > 0.f &&
+			std::isfinite(definition.speed.x) && std::isfinite(definition.speed.y) &&
+			IsFiniteNonNegative(definition.collisionDamage) &&
+			IsFiniteNonNegative(definition.shipXPReward) &&
+			IsFiniteNonNegative(movement.forwardThrust.baseValue) &&
+			IsFiniteNonNegative(movement.reverseThrust.baseValue) &&
+			IsFiniteNonNegative(movement.strafeThrust.baseValue) &&
+			IsFiniteNonNegative(movement.angularTurnSpeed.baseValue) &&
+			IsFiniteNonNegative(movement.angularTurnResponsiveness.baseValue) &&
+			IsFiniteNonNegative(movement.linearDamping.baseValue) &&
+			IsFiniteNonNegative(movement.maxSpeed.baseValue) &&
+			IsFiniteNonNegative(movement.inputResponsiveness.baseValue) &&
+			IsFiniteNonNegative(movement.mouseAimDeadZone.baseValue) &&
+			IsFiniteNonNegative(movement.horizontalRatingToThrust) &&
+			IsFiniteNonNegative(movement.verticalRatingToThrust) &&
+			IsFiniteNonNegative(movement.ratingToMaxSpeed) &&
+			IsFiniteNonNegative(movement.movementRatingDiminishingScale) &&
+			IsFiniteNonNegative(energy.baseEnergyPower) &&
+			IsFiniteNonNegative(energy.baseMaxShield) &&
+			IsFiniteNonNegative(energy.shieldFullRechargeDuration) &&
+			IsFiniteNonNegative(energy.baseShieldRechargeDelay) &&
+			IsFiniteNonNegative(energy.baseAfterburnerCapacity) &&
+			IsFiniteNonNegative(energy.afterburnerFullRechargeDuration) &&
+			IsFiniteNonNegative(energy.baseAfterburnerRechargeDelay) &&
+			IsFiniteNonNegative(energy.baseAfterburnerSpeedMultiplier) &&
+			IsFiniteNonNegative(energy.baseAfterburnerAccelerationMultiplier) &&
+			IsFiniteNonNegative(energy.baseAfterburnerEnergyDrainPerSecond) &&
+			IsFiniteNonNegative(energy.shieldAffinity) &&
+			IsFiniteNonNegative(energy.afterburnerAffinity) &&
+			std::abs(affinityTotal - 1.f) <= 0.0001f &&
+			IsFiniteNonNegative(energy.baseAfterburnerRampUpDuration) &&
+			IsFiniteNonNegative(energy.baseAfterburnerRampDownDuration) &&
+			IsFiniteNonNegative(energy.baseAfterburnerManeuverabilityMultiplier) &&
+			IsValidProgression(progression) &&
+			IsValidBaseOwnerAttributes(definition.baseOwnerAttributes);
 	}
 
 	bool ShipContentCatalog::LoadFromFile(
@@ -136,10 +167,6 @@ namespace ly::content
 					failureReason,
 					"Invalid numeric values in ship '" + definition.id + "'"
 				);
-			}
-			if (!ValidateShipTagSchema(definition.definition, failureReason))
-			{
-				return false;
 			}
 		}
 

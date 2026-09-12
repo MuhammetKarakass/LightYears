@@ -69,13 +69,13 @@ namespace AbilityData::Definitions
 				0.01f
 			},
 			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::EnergyMaxReference,
-				AbilityData::VoidGate::DefaultEnergyMaxReference,
+				AbilityData::VoidGate::Attribute::EnergyPowerReference,
+				AbilityData::VoidGate::DefaultEnergyPowerReference,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::EnergyMaxDurationScale,
-				AbilityData::VoidGate::DefaultEnergyMaxDurationScale,
+				AbilityData::VoidGate::Attribute::EnergyPowerDurationScale,
+				AbilityData::VoidGate::DefaultEnergyPowerDurationScale,
 				0.f
 			}
 		};

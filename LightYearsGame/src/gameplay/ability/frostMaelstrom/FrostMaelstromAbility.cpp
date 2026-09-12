@@ -86,9 +86,9 @@ namespace ly
 			AbilityData::FrostMaelstrom::Attribute::OrbitalAngularSpeed,
 			AbilityData::FrostMaelstrom::Attribute::InwardForce,
 			AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio,
-			AbilityData::FrostMaelstrom::Attribute::EnergyMaxReference,
-			AbilityData::FrostMaelstrom::Attribute::EnergyMaxDamageScale,
-			AbilityData::FrostMaelstrom::Attribute::EnergyMaxRadiusScale,
+			AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference,
+			AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
+			AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale,
 			CommonAttributeIds::Damage
 		})
 		{
@@ -119,9 +119,9 @@ namespace ly
 			value(AbilityData::FrostMaelstrom::Attribute::InwardForce) < 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio) <= 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio) > 1.f ||
-			value(AbilityData::FrostMaelstrom::Attribute::EnergyMaxReference) < 0.f ||
-			value(AbilityData::FrostMaelstrom::Attribute::EnergyMaxDamageScale) < 0.f ||
-			value(AbilityData::FrostMaelstrom::Attribute::EnergyMaxRadiusScale) < 0.f ||
+			value(AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference) < 0.f ||
+			value(AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale) < 0.f ||
+			value(AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale) < 0.f ||
 			value(CommonAttributeIds::Damage) < 0.f ||
 			definition.levelProgression.size() != 14 ||
 			definition.damageTags.size() != 1 ||

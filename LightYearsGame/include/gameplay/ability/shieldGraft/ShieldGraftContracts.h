@@ -20,11 +20,11 @@ namespace AbilityData::ShieldGraft
 		inline static const sas::AttributeId ConversionRatio{
 			"Ability.Defense.ShieldGraft.ConversionRatio"
 		};
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Defense.ShieldGraft.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Defense.ShieldGraft.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxScale{
-			"Ability.Defense.ShieldGraft.EnergyMaxScale"
+		inline static const sas::AttributeId EnergyPowerScale{
+			"Ability.Defense.ShieldGraft.EnergyPowerScale"
 		};
 	};
 }

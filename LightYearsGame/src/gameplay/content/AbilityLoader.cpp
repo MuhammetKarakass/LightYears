@@ -1,6 +1,7 @@
 #include "gameplay/content/AbilityLoader.h"
 
 #include "gameplay/content/AbilityDefinitionMaterializer.h"
+#include "gameplay/content/AttributeJsonParser.h"
 
 #include "attributes/AttributeId.h"
 #include "framework/JsonDocumentLoader.h"
@@ -28,28 +29,11 @@ namespace ly::content
 			return object.at(fieldName).get<std::string>();
 		}
 
-		sas::AttributeModifierOperation ParseOperation(const std::string& value)
-		{
-			if (value == "Add")
-			{
-				return sas::AttributeModifierOperation::Add;
-			}
-			if (value == "Multiply")
-			{
-				return sas::AttributeModifierOperation::Multiply;
-			}
-			if (value == "Override")
-			{
-				return sas::AttributeModifierOperation::Override;
-			}
-			throw std::runtime_error("Unknown ability modifier operation: " + value);
-		}
-
 		sas::AttributeModifier ParseModifier(const Json& object)
 		{
 			return sas::AttributeModifier{
 				sas::AttributeId{ RequiredString(object, "attributeId") },
-				ParseOperation(RequiredString(object, "operation")),
+				AttributeJsonParser::ParseOperation(RequiredString(object, "operation")),
 				object.at("magnitude").get<float>(),
 				object.value("priority", 0)
 			};
@@ -100,6 +84,30 @@ namespace ly::content
 			return attributes;
 		}
 
+		List<GameplayTag> ParseDamageTags(
+			const Json& values,
+			const std::string& ownerLabel
+		)
+		{
+			if (!values.is_array())
+			{
+				throw std::runtime_error(ownerLabel + " damageTags must be an array");
+			}
+
+			List<GameplayTag> tags;
+			for (const Json& value : values)
+			{
+				if (!value.is_string())
+				{
+					throw std::runtime_error(
+						ownerLabel + " damageTags entries must be strings"
+					);
+				}
+				tags.emplace_back(GameplayTag{ value.get<std::string>() });
+			}
+			return tags;
+		}
+
 		List<sas::AttributeModifier> ParseModifiers(const Json& values)
 		{
 			List<sas::AttributeModifier> modifiers;
@@ -108,21 +116,6 @@ namespace ly::content
 				modifiers.push_back(ParseModifier(value));
 			}
 			return modifiers;
-		}
-
-		List<sas::AttributeScalingRule> ParseScalingRules(const Json& values)
-		{
-			List<sas::AttributeScalingRule> rules;
-			for (const Json& value : values)
-			{
-				rules.push_back(sas::AttributeScalingRule{
-					sas::AttributeId{ value.at("targetAttributeId").get<std::string>() },
-					sas::AttributeId{ value.at("sourceAttributeId").get<std::string>() },
-					ParseOperation(value.at("operation").get<std::string>()),
-					value.at("coefficient").get<float>()
-				});
-			}
-			return rules;
 		}
 
 		List<AbilityEffectSpecDefinition> ParseEffectSpecs(const Json& values)
@@ -172,7 +165,10 @@ namespace ly::content
 			return specs;
 		}
 
-		List<AbilityLevelStep> ParseLevelProgression(const Json& progression)
+		List<AbilityLevelStep> ParseLevelProgression(
+			const Json& progression,
+			const std::string& ownerLabel = ""
+		)
 		{
 			List<AbilityLevelStep> levels;
 			if (progression.contains("repeat"))
@@ -181,19 +177,34 @@ namespace ly::content
 				const List<sas::AttributeModifier> repeatedModifiers = ParseModifiers(
 					repeated.value("attributeModifiers", Json::array())
 				);
+				const std::string repeatContext =
+					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "levelProgression.repeat.scalingRules";
+				const List<sas::AttributeScalingRule> repeatedScalingRules = AttributeJsonParser::ParseScalingRules(
+					repeated.value("scalingRules", Json::array()),
+					repeatContext
+				);
 				const std::size_t repeatCount = repeated.at("count").get<std::size_t>();
 				for (std::size_t index = 0; index < repeatCount; ++index)
 				{
 					AbilityLevelStep step;
 					step.attributeModifiers = repeatedModifiers;
+					step.scalingRules = repeatedScalingRules;
 					levels.push_back(std::move(step));
 				}
 			}
+			std::size_t levelIndex = 0;
 			for (const Json& level : progression.value("levels", Json::array()))
 			{
 				AbilityLevelStep step;
 				step.attributeModifiers = ParseModifiers(
 					level.value("attributeModifiers", Json::array())
+				);
+				const std::string levelContext =
+					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "levelProgression.levels[" +
+					std::to_string(levelIndex++) + "].scalingRules";
+				step.scalingRules = AttributeJsonParser::ParseScalingRules(
+					level.value("scalingRules", Json::array()),
+					levelContext
 				);
 				for (const Json& upgradeId : level.value("unlockedUpgradeIds", Json::array()))
 				{
@@ -385,17 +396,62 @@ namespace ly::content
 			loaded.definition.maxCharges = object.value("maxCharges", 0);
 			if (object.contains("scalingRules"))
 			{
-				loaded.definition.scalingRules = ParseScalingRules(object.at("scalingRules"));
+				loaded.definition.scalingRules = AttributeJsonParser::ParseScalingRules(
+					object.at("scalingRules"),
+					"Ability '" + loaded.id + "': scalingRules"
+				);
+			}
+			if (object.contains("invocationOutputAttributes"))
+			{
+				const Json& outputAttrsJson = object.at("invocationOutputAttributes");
+				if (!outputAttrsJson.is_array())
+				{
+					throw std::runtime_error(
+						"Ability '" + loaded.id + "': invocationOutputAttributes must be an array"
+					);
+				}
+				loaded.definition.invocationOutputAttributes.clear();
+				for (const Json& item : outputAttrsJson)
+				{
+					if (!item.is_string() || item.get<std::string>().empty())
+					{
+						throw std::runtime_error(
+							"Ability '" + loaded.id + "': invocationOutputAttributes entries must be non-empty strings"
+						);
+					}
+					const sas::AttributeId attrId{ item.get<std::string>() };
+					std::string idFailure;
+					if (!AttributeIdSchema::Validate(attrId, &idFailure))
+					{
+						throw std::runtime_error(
+							"Ability '" + loaded.id + "' invalid invocationOutputAttribute ID '" +
+							std::string{ attrId.GetName() } + "': " + idFailure
+						);
+					}
+					loaded.definition.invocationOutputAttributes.push_back(attrId);
+				}
 			}
 			if (object.contains("effectSpecs"))
 			{
 				loaded.definition.effectSpecs = ParseEffectSpecs(object.at("effectSpecs"));
 			}
 
+			// Damage identity is authored per ability. The key is only read when
+			// the record declares it, so the JSON stays authoritative for the
+			// abilities it covers while the remaining ones keep the fallback
+			// tags instead of silently losing their damage type.
+			if (object.contains("damageTags"))
+			{
+				loaded.definition.damageTags = ParseDamageTags(
+					object.at("damageTags"),
+					"Ability '" + loaded.id + "'"
+				);
+			}
+
 			if (object.contains("progression"))
 			{
 				const Json& progression = object.at("progression");
-				loaded.definition.levelProgression = ParseLevelProgression(progression);
+				loaded.definition.levelProgression = ParseLevelProgression(progression, "Ability '" + loaded.id + "'");
 				loaded.definition.levelUpgradeScrapCosts = progression.value(
 					"levelUpgradeScrapCosts",
 					List<unsigned int>{}

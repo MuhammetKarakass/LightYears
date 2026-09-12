@@ -89,7 +89,7 @@ namespace ly
 		const bool validScaling = definition.scalingRules.size() == 1 &&
 			definition.scalingRules.front().targetAttributeId ==
 				AbilityData::TemporalConvergence::Attribute::BaseShield &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			definition.scalingRules.front().operation ==
 				sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 0.60f);
@@ -105,7 +105,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Temporal Convergence requires its instant snapshot field, EnergyMax shield scaling, and fourteen level steps.";
+					"Temporal Convergence requires its instant snapshot field, EnergyPower shield scaling, and fourteen level steps.";
 			}
 			return false;
 		}

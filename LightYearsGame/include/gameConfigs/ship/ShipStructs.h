@@ -75,18 +75,26 @@ struct ShipMovementAttributes
 struct AttributeGrowthEntry
 {
 	sas::AttributeId attributeId;
-	float multiplier = 0.25f;
+	// Raw unit of the target owner attribute. Percentage-like attributes use
+	// their established rating units (PercentageRatingScale = 100), not a
+	// 0..1 fraction or a display-percent literal.
+	float perLevel = 0.f;
 };
 
 struct ShipProgressionDefinition
 {
 	float baseXP = 100.f;
 	float xpExponent = 1.25f;
-	ly::List<AttributeGrowthEntry> growthOverrides;
+	// Missing entries have zero natural growth. Values are flat bonuses per
+	// completed level; this is not the retired base-growth multiplier model.
+	ly::List<AttributeGrowthEntry> naturalGrowth;
 };
 
 struct ShipEnergyAttributes
 {
+	// EnergyPower is an owner attribute, but its level-one value belongs to the
+	// ship profile. It is reactor output, never a consumable resource.
+	float baseEnergyPower = 0.f;
 	float baseMaxShield = 0.f;
 	float shieldFullRechargeDuration = 5.5f;
 	float baseShieldRechargeDelay = 3.f;
@@ -98,12 +106,20 @@ struct ShipEnergyAttributes
 	float baseAfterburnerAccelerationMultiplier = 1.f;
 	float baseAfterburnerEnergyDrainPerSecond = 15.f;
 
-	float maxShieldPerMaxEnergy = 0.f;
-	float afterburnerCapacityPerMaxEnergy = 0.f;
+	// The two closed configuration values split the linear reactor budget.
+	// Content validation requires their sum to equal 1.0.
+	float shieldAffinity = 0.5f;
+	float afterburnerAffinity = 0.5f;
 
 	float baseAfterburnerRampUpDuration = 0.22f;
 	float baseAfterburnerRampDownDuration = 0.20f;
 	float baseAfterburnerManeuverabilityMultiplier = 1.f;
+};
+
+struct OwnerAttributeBaseEntry
+{
+	sas::AttributeId attributeId;
+	float baseValue = 0.f;
 };
 
 struct ShipDefinition
@@ -125,6 +141,8 @@ struct ShipDefinition
 	ShipMovementAttributes movementAttributes;
 	ShipEnergyAttributes energyAttributes;
 	ShipProgressionDefinition progressionDefinition;
+	ly::ControlTargetClass controlTargetClass = ly::ControlTargetClass::Normal;
+	ly::List<OwnerAttributeBaseEntry> baseOwnerAttributes;
 
 	ShipDefinition
 	(
@@ -141,7 +159,8 @@ struct ShipDefinition
 		const ShipEnergyAttributes& inEnergyAttributes = ShipEnergyAttributes{},
 		const ShipProgressionDefinition& inProgressionDefinition = ShipProgressionDefinition{},
 		float inShipXPReward = -1.f,
-		ly::ControlTargetClass inControlTargetClass = ly::ControlTargetClass::Normal
+		ly::ControlTargetClass inControlTargetClass = ly::ControlTargetClass::Normal,
+		const ly::List<OwnerAttributeBaseEntry>& inBaseOwnerAttributes = {}
 	)
 		: texturePath(inTexturePath)
 		, health(inHealth)
@@ -158,10 +177,9 @@ struct ShipDefinition
 		, energyAttributes(inEnergyAttributes)
 		, progressionDefinition(inProgressionDefinition)
 		, controlTargetClass(inControlTargetClass)
+		, baseOwnerAttributes(inBaseOwnerAttributes)
 	{
 	}
-
-	ly::ControlTargetClass controlTargetClass = ly::ControlTargetClass::Normal;
 };
 
 

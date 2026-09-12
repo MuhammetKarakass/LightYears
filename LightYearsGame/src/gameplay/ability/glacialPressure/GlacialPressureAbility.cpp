@@ -171,8 +171,8 @@ namespace ly
 			AbilityData::GlacialPressure::Attribute::Range,
 			AbilityData::GlacialPressure::Attribute::InitialDamage,
 			AbilityData::GlacialPressure::Attribute::CollisionDamage,
-			AbilityData::GlacialPressure::Attribute::EnergyMaxInitialScale,
-			AbilityData::GlacialPressure::Attribute::EnergyMaxCollisionScale,
+			AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale,
+			AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale,
 			AbilityData::GlacialPressure::Attribute::MaxHealthReference,
 			AbilityData::GlacialPressure::Attribute::MaxHealthPushScale,
 			AbilityData::GlacialPressure::Attribute::PushDistance,
@@ -209,8 +209,8 @@ namespace ly
 		if (range <= 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::InitialDamage) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::CollisionDamage) < 0.f ||
-			value(AbilityData::GlacialPressure::Attribute::EnergyMaxInitialScale) < 0.f ||
-			value(AbilityData::GlacialPressure::Attribute::EnergyMaxCollisionScale) < 0.f ||
+			value(AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale) < 0.f ||
+			value(AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::MaxHealthReference) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::MaxHealthPushScale) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::PushDistance) <= 0.f ||
@@ -398,10 +398,10 @@ namespace ly
 			)
 		);
 
-		const float energyMax = std::max(
+		const float energyPower = std::max(
 			0.f,
 			context.abilitySystem.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::EnergyMax
+				OwnerAttributeIds::EnergyPower
 			)
 		);
 		const float maxHealth = std::max(
@@ -416,11 +416,11 @@ namespace ly
 				values,
 				AbilityData::GlacialPressure::Attribute::InitialDamage,
 				12.f
-			) + energyMax * std::max(
+			) + energyPower * std::max(
 				0.f,
 				FindValue(
 					values,
-					AbilityData::GlacialPressure::Attribute::EnergyMaxInitialScale,
+					AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale,
 					0.05f
 				)
 			)
@@ -431,11 +431,11 @@ namespace ly
 				values,
 				AbilityData::GlacialPressure::Attribute::CollisionDamage,
 				45.f
-			) + energyMax * std::max(
+			) + energyPower * std::max(
 				0.f,
 				FindValue(
 					values,
-					AbilityData::GlacialPressure::Attribute::EnergyMaxCollisionScale,
+					AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale,
 					0.25f
 				)
 			)

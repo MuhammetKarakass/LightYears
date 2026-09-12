@@ -17,7 +17,7 @@ namespace ly
 		if (mLifeCount > 0)
 		{
 			--mLifeCount;
-			mShipProgression.UnbindAttributes();
+			mShipProgression.ForgetDestroyedAttributes();
 			auto windowSize = world->GetWindowSize();
 			mCurrentSpaceShip = world->SpawnActor<PlayerSpaceShip>();
 
@@ -197,7 +197,7 @@ namespace ly
 			return;
 		}
 
-		mShipProgression.UnbindAttributes();
+		mShipProgression.ForgetDestroyedAttributes();
 		mCurrentSpaceShip = weak_ptr<PlayerSpaceShip>{};
 	}
 

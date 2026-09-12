@@ -181,6 +181,58 @@ namespace ly
 			return true;
 		}
 
+		bool ValidateInvocationOutputAttributes(const GameAbilityDefinition& ability, std::string* failureReason)
+		{
+			const auto actionsDeclareOutput = [](const List<AbilityActionSpec>& actions, const sas::AttributeId& outputId)
+			{
+				for (const AbilityActionSpec& action : actions)
+				{
+					if (const auto* spawnActor = std::get_if<SpawnActorAction>(&action.action))
+					{
+						const AbilityActorDefinition* actor = AbilityData::FindAbilityActorDefinition(spawnActor->actorDefinitionId.ToString());
+						if (actor && sas::FindAttribute(actor->attributes, outputId)) return true;
+					}
+					if (const auto* fireWeapon = std::get_if<FireWeaponAction>(&action.action);
+						fireWeapon && sas::FindAttribute(fireWeapon->weaponDefinition.attributes, outputId)) return true;
+				}
+				return false;
+			};
+			List<sas::AttributeId> outputIds;
+			for (const sas::AttributeId& outputId : ability.invocationOutputAttributes)
+			{
+				if (!ValidateAttributeId(outputId, failureReason)) return false;
+				bool declared = sas::FindAttribute(ability.attributes, outputId) || actionsDeclareOutput(ability.actions, outputId);
+				for (const AbilityEffectSpecDefinition& effectSpec : ability.effectSpecs)
+				{
+					declared = declared || sas::FindAttribute(effectSpec.attributes, outputId);
+				}
+				for (const AbilityTriggerSpec& trigger : ability.triggers)
+				{
+					declared = declared || actionsDeclareOutput(trigger.actions, outputId);
+				}
+				for (const AbilityLevelStep& step : ability.levelProgression)
+				{
+					declared = declared || actionsDeclareOutput(step.addedActions, outputId);
+					for (const AbilityTriggerSpec& trigger : step.addedTriggers)
+					{
+						declared = declared || actionsDeclareOutput(trigger.actions, outputId);
+					}
+				}
+				const bool conventionalDamageOutput = outputId == CommonAttributeIds::Damage;
+				if (!declared && !conventionalDamageOutput)
+				{
+					return Fail(failureReason, "Invocation output attribute '" + std::string{ outputId.GetName() } +
+						"' is not produced by ability '" + ability.abilityId + "'.");
+				}
+				if (std::find(outputIds.begin(), outputIds.end(), outputId) != outputIds.end())
+				{
+					return Fail(failureReason, "Invocation output attribute IDs must be unique.");
+				}
+				outputIds.push_back(outputId);
+			}
+			return true;
+		}
+
 		bool ValidateOwnedEffectSpecs(
 			const GameAbilityDefinition& ability,
 			std::string* failureReason
@@ -421,7 +473,13 @@ namespace ly
 				familyNamespace,
 				step.attributeModifiers,
 				failureReason
-			))
+			) ||
+				!ValidateScalingRules(
+					definition,
+					familyNamespace,
+					step.scalingRules,
+					failureReason
+				))
 			{
 				return false;
 			}
@@ -548,6 +606,7 @@ namespace ly
 				: parsedId.family.substr(familySeparator + 1);
 		}
 		if (!ValidateAbilityScopedAttributes(definition, familyNamespace, failureReason) ||
+			!ValidateInvocationOutputAttributes(definition, failureReason) ||
 			!ValidateAbilityAttributeModifiers(
 				definition,
 				familyNamespace,

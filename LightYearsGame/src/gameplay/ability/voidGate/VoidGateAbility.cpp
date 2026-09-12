@@ -67,8 +67,8 @@ namespace ly
 			AbilityData::VoidGate::Attribute::TransferDuration,
 			AbilityData::VoidGate::Attribute::ReentryCooldown,
 			AbilityData::VoidGate::Attribute::PortalBPlacementTimeout,
-			AbilityData::VoidGate::Attribute::EnergyMaxReference,
-			AbilityData::VoidGate::Attribute::EnergyMaxDurationScale
+			AbilityData::VoidGate::Attribute::EnergyPowerReference,
+			AbilityData::VoidGate::Attribute::EnergyPowerDurationScale
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -94,8 +94,8 @@ namespace ly
 			value(AbilityData::VoidGate::Attribute::TransferDuration) <= 0.f ||
 			value(AbilityData::VoidGate::Attribute::ReentryCooldown) < 0.f ||
 			value(AbilityData::VoidGate::Attribute::PortalBPlacementTimeout) <= 0.f ||
-			value(AbilityData::VoidGate::Attribute::EnergyMaxReference) < 0.f ||
-			value(AbilityData::VoidGate::Attribute::EnergyMaxDurationScale) < 0.f ||
+			value(AbilityData::VoidGate::Attribute::EnergyPowerReference) < 0.f ||
+			value(AbilityData::VoidGate::Attribute::EnergyPowerDurationScale) < 0.f ||
 			definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
@@ -130,30 +130,30 @@ namespace ly
 			context.definition
 		};
 		const sas::GameplayAttributeList values = ResolveValues(mutableContext);
-		const float energyMax = std::max(
+		const float energyPower = std::max(
 			0.f,
 			context.abilitySystem.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::EnergyMax
+				OwnerAttributeIds::EnergyPower
 			)
 		);
 		const float reference = std::max(
 			0.f,
 			FindValue(
 				values,
-				AbilityData::VoidGate::Attribute::EnergyMaxReference,
-				AbilityData::VoidGate::DefaultEnergyMaxReference
+				AbilityData::VoidGate::Attribute::EnergyPowerReference,
+				AbilityData::VoidGate::DefaultEnergyPowerReference
 			)
 		);
 		const float scale = std::max(
 			0.f,
 			FindValue(
 				values,
-				AbilityData::VoidGate::Attribute::EnergyMaxDurationScale,
-				AbilityData::VoidGate::DefaultEnergyMaxDurationScale
+				AbilityData::VoidGate::Attribute::EnergyPowerDurationScale,
+				AbilityData::VoidGate::DefaultEnergyPowerDurationScale
 			)
 		);
 		return std::max(0.f, defaultDuration) +
-			std::max(0.f, energyMax - reference) * scale;
+			std::max(0.f, energyPower - reference) * scale;
 	}
 
 	bool VoidGateAbility::Activate(GameAbilityBehaviorContext& context)

@@ -3,6 +3,7 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/time/IntervalDebt.h"
 #include "framework/Actor.h"
@@ -78,8 +79,12 @@ namespace ly
 			const uint64_t attachmentRevision = context.instance
 				? context.instance->GetAttachments().GetRevision()
 				: 0;
+			const uint64_t configurationRevision = context.instance
+				? context.instance->GetConfigurationRevision()
+				: 0;
 			if (!state.hasResolvedAttributes || state.resolvedAttributeRevision != attributeRevision ||
-				state.resolvedAttachmentRevision != attachmentRevision)
+				state.resolvedAttachmentRevision != attachmentRevision ||
+				state.resolvedConfigurationRevision != configurationRevision)
 			{
 				state.resolvedAttributes = context.definition
 					? AbilityActionAttributeResolver::ResolveAttributes(
@@ -91,6 +96,7 @@ namespace ly
 					: sas::BuildBaseGameplayAttributes(state.runtimeAttributes);
 				state.resolvedAttributeRevision = attributeRevision;
 				state.resolvedAttachmentRevision = attachmentRevision;
+				state.resolvedConfigurationRevision = configurationRevision;
 				state.hasResolvedAttributes = true;
 			}
 			return state.resolvedAttributes;
@@ -161,6 +167,10 @@ namespace ly
 			{
 				return false;
 			}
+			if (weaponRuntime.fireIntervalRemaining > 0.f)
+			{
+				return true;
+			}
 			PrimaryWeaponExecutionSystem::BeginFire(
 				MakeExecutionContext(owner, context, fireAction, attributes),
 				weaponRuntime
@@ -176,17 +186,41 @@ namespace ly
 			const sas::GameplayAttributeList& attributes
 		)
 		{
-			const float baseInterval = PrimaryWeaponExecutionSystem::BuildBaseFireInterval(
-				attributes,
-				actionSpec.interval
-			);
-			const float resolvedInterval = context.definition
-				? AbilityActionAttributeResolver::ResolveEffectiveInterval(
-					context,
-					baseInterval,
-					&fireAction.weaponDefinition
-				)
-				: baseInterval;
+			float resolvedInterval = 0.f;
+			if (fireAction.weaponDefinition.cadenceMode ==
+				PrimaryWeaponCadenceMode::OwnerAttackSpeedPercentage)
+			{
+				const float resolvedWeaponFireRate = std::max(
+					0.01f,
+					sas::FindAttributeValue(
+						attributes,
+						CommonAttributeIds::FireRate,
+						1.f
+					)
+				);
+				const float attackSpeedMultiplier =
+					context.abilitySystem
+						? PrimaryWeaponExecutionSystem::CalculateAttackSpeedMultiplier(
+							context.abilitySystem->GetOwner()
+						)
+						: 1.f;
+				const float finalFireRate = resolvedWeaponFireRate * attackSpeedMultiplier;
+				resolvedInterval = 1.f / std::max(0.0001f, finalFireRate);
+			}
+			else
+			{
+				const float baseInterval = PrimaryWeaponExecutionSystem::BuildBaseFireInterval(
+					attributes,
+					actionSpec.interval
+				);
+				resolvedInterval = context.definition
+					? AbilityActionAttributeResolver::ResolveEffectiveInterval(
+						context,
+						baseInterval,
+						&fireAction.weaponDefinition
+					)
+					: baseInterval;
+			}
 
 			if (!context.definition ||
 				context.definition->slot != sas::AbilitySlot::PrimaryFire)
@@ -194,13 +228,13 @@ namespace ly
 				return resolvedInterval;
 			}
 
-		const auto* ship = dynamic_cast<const SpaceShip*>(&context.abilitySystem->GetOwner());
-		const float fireRateMultiplier = ship
-			? ship->GetPrimaryWeaponFireRateMultiplier()
-			: 1.f;
-		return fireRateMultiplier > 0.f
-			? resolvedInterval / fireRateMultiplier
-			: resolvedInterval;
+			const auto* ship = dynamic_cast<const SpaceShip*>(&context.abilitySystem->GetOwner());
+			const float fireRateMultiplier = ship
+				? ship->GetPrimaryWeaponFireRateMultiplier()
+				: 1.f;
+			return fireRateMultiplier > 0.f
+				? resolvedInterval / fireRateMultiplier
+				: resolvedInterval;
 		}
 
 		FireWeaponRuntimeState& GetOrCreateState(
@@ -214,9 +248,6 @@ namespace ly
 			{
 				FireWeaponRuntimeState state;
 				state.runtimeAttributes = fireAction.weaponDefinition.attributes;
-				state.intervalRemaining = context.instance
-					? context.instance->GetWeaponFireIntervalRemaining()
-					: 0.f;
 				state.initialized = markInitialized;
 				action.runtimeState = std::move(state);
 			}
@@ -240,16 +271,19 @@ namespace ly
 		const FireWeaponAction& fireAction = ResolveFireAction(context, authoredAction, overrideAction);
 		FireWeaponRuntimeState& state = GetOrCreateState(action, context, fireAction, false);
 		const sas::GameplayAttributeList& values = ResolveAttributes(context, fireAction, state);
-		if (state.intervalRemaining <= 0.f && EnsureLifecycle(owner, context, fireAction, state, values) &&
-			PrimaryWeaponExecutionSystem::FireOnce(
-				MakeExecutionContext(owner, context, fireAction, values),
-				state.GetWeaponRuntime()
-			))
+		if (!EnsureLifecycle(owner, context, fireAction, state, values))
 		{
-			state.intervalRemaining = BuildFireInterval(context, fireAction, *action.spec, values);
-			if (context.instance)
+			return;
+		}
+		PrimaryWeaponRuntimeState& weaponRuntime = state.GetWeaponRuntime();
+		if (weaponRuntime.fireIntervalRemaining <= 0.f)
+		{
+			if (PrimaryWeaponExecutionSystem::FireOnce(
+					MakeExecutionContext(owner, context, fireAction, values),
+					weaponRuntime
+				))
 			{
-				context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
+				weaponRuntime.fireIntervalRemaining = BuildFireInterval(context, fireAction, *action.spec, values);
 			}
 		}
 	}
@@ -272,81 +306,47 @@ namespace ly
 		const FireWeaponAction& fireAction = ResolveFireAction(context, authoredAction, overrideAction);
 		FireWeaponRuntimeState& state = GetOrCreateState(action, context, fireAction, true);
 		const sas::GameplayAttributeList& values = ResolveAttributes(context, fireAction, state);
-		// Preserve negative interval debt. A long frame may owe more than one shot;
-		// clamping here made automatic-weapon DPS depend on frame rate.
-		time::AdvanceIntervalDebt(state.intervalRemaining, deltaTime);
-		if (!state.lifecycleStarted && state.intervalRemaining > 0.f)
-		{
-			if (context.instance)
-			{
-				context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
-			}
-			return;
-		}
+
 		if (!EnsureLifecycle(owner, context, fireAction, state, values))
 		{
 			return;
 		}
+
 		PrimaryWeaponExecutionContext weaponContext = MakeExecutionContext(
 			owner,
 			context,
 			fireAction,
 			values
 		);
-		const auto applyRequestedWeaponCooldown = [&]()
+		PrimaryWeaponRuntimeState& weaponRuntime = state.GetWeaponRuntime();
+		if (!state.lifecycleStarted && weaponRuntime.fireIntervalRemaining > 0.f)
 		{
-			const float requestedCooldown = PrimaryWeaponExecutionSystem::ConsumeRequestedCooldown(
-				state.GetWeaponRuntime()
-			);
-			if (requestedCooldown <= 0.f)
+			const float inactiveDeltaTime = std::min(deltaTime, weaponRuntime.fireIntervalRemaining);
+			PrimaryWeaponExecutionSystem::TickInactive(weaponContext, weaponRuntime, inactiveDeltaTime);
+			deltaTime = std::max(0.f, deltaTime - inactiveDeltaTime);
+			if (weaponRuntime.fireIntervalRemaining > 0.f)
 			{
-				return false;
+				return;
 			}
-			PrimaryWeaponExecutionSystem::EndFire(weaponContext, state.GetWeaponRuntime());
+			if (!EnsureLifecycle(owner, context, fireAction, state, values))
+			{
+				return;
+			}
+		}
+
+		const float fireInterval = BuildFireInterval(context, fireAction, *action.spec, values);
+		const auto simResult = PrimaryWeaponExecutionSystem::SimulateActiveFire(
+			weaponContext,
+			weaponRuntime,
+			deltaTime,
+			fireInterval,
+			action.spec->maxExecutions,
+			state.executionCount
+		);
+		state.executionCount += simResult.executionsProduced;
+		if (simResult.lifecycleInterrupted)
+		{
 			state.lifecycleStarted = false;
-			state.intervalRemaining = std::max(state.intervalRemaining, requestedCooldown);
-			if (context.instance)
-			{
-				context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
-			}
-			return true;
-		};
-		PrimaryWeaponExecutionSystem::TickFire(weaponContext, state.GetWeaponRuntime(), deltaTime);
-		if (applyRequestedWeaponCooldown() ||
-			!PrimaryWeaponExecutionSystem::UsesIntervalFire(state.GetWeaponRuntime()))
-		{
-			return;
-		}
-		int catchUpExecutions = 0;
-		while (state.intervalRemaining <= 0.f &&
-			catchUpExecutions < time::DefaultMaximumIntervalCatchUp &&
-			(action.spec->maxExecutions <= 0 || state.executionCount < action.spec->maxExecutions))
-		{
-			const bool fired = PrimaryWeaponExecutionSystem::FireOnce(
-				weaponContext,
-				state.GetWeaponRuntime()
-			);
-			if (fired)
-			{
-				++state.executionCount;
-				++catchUpExecutions;
-			}
-			time::CommitInterval(
-				state.intervalRemaining,
-				BuildFireInterval(context, fireAction, *action.spec, values)
-			);
-			if (!fired)
-			{
-				break;
-			}
-		}
-		if (applyRequestedWeaponCooldown())
-		{
-			return;
-		}
-		if (context.instance)
-		{
-			context.instance->SetWeaponFireIntervalRemaining(state.intervalRemaining);
 		}
 	}
 
@@ -375,5 +375,25 @@ namespace ly
 			state.GetWeaponRuntime()
 		);
 		state.lifecycleStarted = false;
+
+		// A catch-up-limited frame may leave elapsed simulation time on the
+		// persistent weapon runtime. Once input is released, that elapsed time may
+		// advance cooldown/reload, but it must not synthesize shots on the next press.
+		PrimaryWeaponRuntimeState& weaponRuntime = state.GetWeaponRuntime();
+		const float pendingTime = std::max(0.f, weaponRuntime.unprocessedSimulationTime);
+		weaponRuntime.unprocessedSimulationTime = 0.f;
+		if (pendingTime > 0.f)
+		{
+			PrimaryWeaponExecutionSystem::TickInactive(
+				MakeExecutionContext(owner, context, fireAction, ResolveAttributes(context, fireAction, state)),
+				weaponRuntime,
+				pendingTime
+			);
+		}
+
+		// The override runtime lives inside the override state's vector, so a
+		// later erase or push_back would dangle this pointer between frames.
+		// Nothing reads it before the next lifecycle starts, so drop it now.
+		state.persistentWeaponRuntime = nullptr;
 	}
 }

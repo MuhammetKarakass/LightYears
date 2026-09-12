@@ -74,8 +74,8 @@ namespace ly
 		for (const sas::AttributeId& required : {
 			AbilityData::TimeSlip::Attribute::GameplayTimeMultiplier,
 			AbilityData::TimeSlip::Attribute::PrimaryFireRateMultiplier,
-			AbilityData::TimeSlip::Attribute::EnergyMaxReference,
-			AbilityData::TimeSlip::Attribute::EnergyMaxDurationScale
+			AbilityData::TimeSlip::Attribute::EnergyPowerReference,
+			AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -205,18 +205,18 @@ namespace ly
 		const sas::GameplayAttributeList values = ResolveValues(mutableContext);
 		const float energyReference = FindValue(
 			values,
-			AbilityData::TimeSlip::Attribute::EnergyMaxReference,
+			AbilityData::TimeSlip::Attribute::EnergyPowerReference,
 			50.f
 		);
 		const float energyScale = FindValue(
 			values,
-			AbilityData::TimeSlip::Attribute::EnergyMaxDurationScale,
+			AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale,
 			0.0015f
 		);
-		const float energyMax = context.abilitySystem.GetAttributes().GetCurrentValue(
+		const float energyPower = context.abilitySystem.GetAttributes().GetCurrentValue(
 			AbilityData::TimeSlip::Attribute::DurationScalingSource
 		);
-		const float durationBonus = std::max(0.f, energyMax - energyReference) *
+		const float durationBonus = std::max(0.f, energyPower - energyReference) *
 			std::max(0.f, energyScale);
 		const float resolvedDuration = defaultDuration + durationBonus;
 		return std::isfinite(resolvedDuration)

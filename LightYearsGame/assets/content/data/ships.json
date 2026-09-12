@@ -3,12 +3,18 @@
   "ships": [
     {
       "id": "Ship.Player.Fighter.Basic",
-      "health": 100.0,
+      "health": 250.0,
       "speed": [350.0, 350.0],
       "collisionDamage": 25.0,
       "score": 0,
       "shipXPReward": 0.0,
       "primaryWeaponId": "Weapon.Projectile.FighterRapidLaser.Basic",
+      "baseOwnerAttributes": [
+        {
+          "attributeId": "Owner.AttackPower",
+          "baseValue": 35.0
+        }
+      ],
       "movement": {
         "forwardThrust": 650.0,
         "reverseThrust": 190.0,
@@ -25,17 +31,18 @@
         "movementRatingDiminishingScale": 20.0
       },
       "energy": {
-        "baseMaxShield": 100.0,
-        "shieldFullRechargeDuration": 5.5,
-        "baseShieldRechargeDelay": 4.0,
-        "baseAfterburnerCapacity": 50.0,
-        "afterburnerFullRechargeDuration": 8.0,
+        "baseEnergyPower": 35.0,
+        "baseMaxShield": 115.0,
+        "shieldFullRechargeDuration": 6.0,
+        "baseShieldRechargeDelay": 6.0,
+        "baseAfterburnerCapacity": 65.0,
+        "afterburnerFullRechargeDuration": 6.0,
         "baseAfterburnerRechargeDelay": 1.5,
         "baseAfterburnerSpeedMultiplier": 1.55,
         "baseAfterburnerAccelerationMultiplier": 1.8,
-        "baseAfterburnerEnergyDrainPerSecond": 16.5,
-        "maxShieldPerMaxEnergy": 0.5,
-        "afterburnerCapacityPerMaxEnergy": 1.0,
+        "baseAfterburnerEnergyDrainPerSecond": 33.0,
+        "shieldAffinity": 0.5,
+        "afterburnerAffinity": 0.5,
         "baseAfterburnerRampUpDuration": 0.22,
         "baseAfterburnerRampDownDuration": 0.45,
         "baseAfterburnerManeuverabilityMultiplier": 0.9
@@ -43,15 +50,12 @@
       "progression": {
         "baseXP": 100.0,
         "xpExponent": 1.25,
-        "growthOverrides": [
-          { "attributeId": "Owner.AttackPower", "multiplier": 3.0 },
-          { "attributeId": "Owner.AttackSpeed", "multiplier": 2.0 },
-          { "attributeId": "Owner.CriticalChance", "multiplier": 2.0 },
-          { "attributeId": "Owner.MaxHealth", "multiplier": 1.0 },
-          { "attributeId": "Owner.Armor", "multiplier": 1.0 },
-          { "attributeId": "Owner.Energy.Max", "multiplier": 0.5 },
-          { "attributeId": "Owner.MoveSpeedHorizontal", "multiplier": 0.5 },
-          { "attributeId": "Owner.MoveSpeedVertical", "multiplier": 0.5 }
+        "naturalGrowth": [
+          { "attributeId": "Owner.MaxHealth", "perLevel": 75.0 },
+          { "attributeId": "Owner.AttackPower", "perLevel": 3.0 },
+          { "attributeId": "Owner.Energy.Power", "perLevel": 2.0 },
+          { "attributeId": "Owner.Armor", "perLevel": 2.0 },
+          { "attributeId": "Owner.Luck", "perLevel": 1.0 }
         ]
       }
     }

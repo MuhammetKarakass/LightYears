@@ -88,7 +88,7 @@ namespace AbilityData::Definitions
 		definition.scalingRules = {
 			sas::AttributeScalingRule{
 				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::EnergyMax,
+				ly::OwnerAttributeIds::EnergyPower,
 				sas::AttributeModifierOperation::Add,
 				0.25f
 			}

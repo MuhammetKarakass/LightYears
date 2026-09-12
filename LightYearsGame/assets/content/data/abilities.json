@@ -115,6 +115,9 @@
           ]
         }
       ],
+      "invocationOutputAttributes": [
+        "Effect.BarrierCapacity"
+      ],
       "scalingRules": [
         {
           "targetAttributeId": "Effect.BarrierCapacity",
@@ -719,12 +722,12 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.GlacialPressure.EnergyMaxInitialScale",
+          "id": "Ability.Offense.GlacialPressure.EnergyPowerInitialScale",
           "baseValue": 0.05,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.GlacialPressure.EnergyMaxCollisionScale",
+          "id": "Ability.Offense.GlacialPressure.EnergyPowerCollisionScale",
           "baseValue": 0.25,
           "minValue": 0.0
         },
@@ -857,12 +860,12 @@
           "minValue": 0.1
         },
         {
-          "id": "Ability.Offense.OrbitalDrones.EnergyMaxReference",
+          "id": "Ability.Offense.OrbitalDrones.EnergyPowerReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.OrbitalDrones.EnergyMaxDurationScale",
+          "id": "Ability.Offense.OrbitalDrones.EnergyPowerDurationScale",
           "baseValue": 0.02,
           "minValue": 0.0
         }
@@ -1369,6 +1372,11 @@
       "duration": 0.0,
       "maxCharges": 1,
       "settings": {},
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Common.Radius",
+        "Common.Duration"
+      ],
       "scalingRules": [
         {
           "targetAttributeId": "Common.Radius",
@@ -1614,6 +1622,10 @@
           "minValue": 0.0
         }
       ],
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Common.ProjectileCount"
+      ],
       "scalingRules": [
         {
           "targetAttributeId": "Common.ProjectileCount",
@@ -1736,7 +1748,7 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.NullPulse.ReferenceEnergyMax",
+          "id": "Ability.Control.NullPulse.ReferenceEnergyPower",
           "baseValue": 50.0,
           "minValue": 0.0
         },
@@ -2323,12 +2335,12 @@
           "minValue": 0.01
         },
         {
-          "id": "Ability.Utility.VoidGate.EnergyMaxReference",
+          "id": "Ability.Utility.VoidGate.EnergyPowerReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Utility.VoidGate.EnergyMaxDurationScale",
+          "id": "Ability.Utility.VoidGate.EnergyPowerDurationScale",
           "baseValue": 0.002,
           "minValue": 0.0
         }
@@ -2404,7 +2416,7 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Utility.EchoProtocol.EnergyMaxScale",
+          "id": "Ability.Utility.EchoProtocol.EnergyPowerScale",
           "baseValue": 0.1,
           "minValue": 0.0
         },
@@ -2575,7 +2587,7 @@
         },
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.2
         }
@@ -2655,7 +2667,7 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.45
         }
@@ -2739,6 +2751,10 @@
       "duration": 0.0,
       "maxCharges": 1,
       "settings": {},
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "AbilityActor.CrescentReaver.Projectile.BounceCount"
+      ],
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
@@ -2971,12 +2987,12 @@
           "minValue": 1.0
         },
         {
-          "id": "Ability.Movement.EnergySpear.EnergyMaxReference",
+          "id": "Ability.Movement.EnergySpear.EnergyPowerReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Movement.EnergySpear.EnergyMaxDistanceScale",
+          "id": "Ability.Movement.EnergySpear.EnergyPowerDistanceScale",
           "baseValue": 2.0,
           "minValue": 0.0
         },
@@ -2995,7 +3011,7 @@
         },
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.2
         }
@@ -3233,7 +3249,7 @@
         },
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.05
         }
@@ -3629,7 +3645,7 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.25
         }
@@ -3719,12 +3735,12 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.Cryostasis.BaseEnergyRegenPerSecond",
+          "id": "Ability.Defense.Cryostasis.BaseAfterburnerRecoveryPerSecond",
           "baseValue": 4.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.Cryostasis.EnergyRegenMaxHealthScale",
+          "id": "Ability.Defense.Cryostasis.AfterburnerRecoveryMaxHealthScale",
           "baseValue": 0.01,
           "minValue": 0.0
         },
@@ -3796,7 +3812,7 @@
               "magnitude": 0.75
             },
             {
-              "attributeId": "Ability.Defense.Cryostasis.BaseEnergyRegenPerSecond",
+              "attributeId": "Ability.Defense.Cryostasis.BaseAfterburnerRecoveryPerSecond",
               "operation": "Add",
               "magnitude": 0.25
             },
@@ -3869,17 +3885,17 @@
           "maxValue": 1.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.EnergyMaxReference",
+          "id": "Ability.Control.FrostMaelstrom.EnergyPowerReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.EnergyMaxDamageScale",
+          "id": "Ability.Control.FrostMaelstrom.EnergyPowerDamageScale",
           "baseValue": 0.005,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.EnergyMaxRadiusScale",
+          "id": "Ability.Control.FrostMaelstrom.EnergyPowerRadiusScale",
           "baseValue": 0.2,
           "minValue": 0.0
         },
@@ -3995,7 +4011,7 @@
         },
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.2
         }
@@ -4378,7 +4394,7 @@
           "minValue": 1.0
         },
         {
-          "id": "Ability.Offense.NanoPlague.EnergyMaxTickScale",
+          "id": "Ability.Offense.NanoPlague.EnergyPowerTickScale",
           "baseValue": 0.03,
           "minValue": 0.0
         },
@@ -4529,12 +4545,12 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.TemporalRecall.EnergyMaxReference",
+          "id": "Ability.Defense.TemporalRecall.EnergyPowerReference",
           "baseValue": 100.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.TemporalRecall.EnergyMaxRecoveryScale",
+          "id": "Ability.Defense.TemporalRecall.EnergyPowerRecoveryScale",
           "baseValue": 0.002,
           "minValue": 0.0
         },
@@ -4604,12 +4620,12 @@
           "maxValue": 1.0
         },
         {
-          "id": "Ability.Defense.TimeSlip.EnergyMaxReference",
+          "id": "Ability.Defense.TimeSlip.EnergyPowerReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.TimeSlip.EnergyMaxDurationScale",
+          "id": "Ability.Defense.TimeSlip.EnergyPowerDurationScale",
           "baseValue": 0.0015,
           "minValue": 0.0
         }
@@ -4684,7 +4700,7 @@
               "minValue": 0.0
             },
             {
-              "id": "AbilityActor.CrystalBarricade.Wall.EnergyMaxContactScale",
+              "id": "AbilityActor.CrystalBarricade.Wall.EnergyPowerContactScale",
               "baseValue": 0.15,
               "minValue": 0.0
             },
@@ -4699,12 +4715,12 @@
               "minValue": 0.0
             },
             {
-              "id": "AbilityActor.CrystalBarricade.Wall.EnergyMaxRicochetReference",
+              "id": "AbilityActor.CrystalBarricade.Wall.EnergyPowerRicochetReference",
               "baseValue": 50.0,
               "minValue": 0.0
             },
             {
-              "id": "AbilityActor.CrystalBarricade.Wall.EnergyMaxRicochetScale",
+              "id": "AbilityActor.CrystalBarricade.Wall.EnergyPowerRicochetScale",
               "baseValue": 0.001,
               "minValue": 0.0
             },
@@ -4876,7 +4892,7 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.8
         }
@@ -4974,7 +4990,7 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.06
         }
@@ -5234,7 +5250,7 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.ClosedCircuit.EnergyMaxBarrierHealthScale",
+          "id": "Ability.Defense.ClosedCircuit.EnergyPowerBarrierHealthScale",
           "baseValue": 0.6,
           "minValue": 0.0
         }
@@ -5415,12 +5431,12 @@
       "settings": {},
       "attributes": [
         {
-          "id": "Ability.Movement.ZeroDrag.EnergyMaxReference",
+          "id": "Ability.Movement.ZeroDrag.EnergyPowerReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Movement.ZeroDrag.EnergyMaxDurationPerPoint",
+          "id": "Ability.Movement.ZeroDrag.EnergyPowerDurationPerPoint",
           "baseValue": 0.002,
           "minValue": 0.0
         },
@@ -5530,10 +5546,14 @@
           "minValue": 0.0
         }
       ],
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Ability.Defense.TemporalConvergence.BaseShield"
+      ],
       "scalingRules": [
         {
           "targetAttributeId": "Ability.Defense.TemporalConvergence.BaseShield",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.6
         }
@@ -5615,12 +5635,12 @@
           "minValue": 0.01
         },
         {
-          "id": "Ability.Utility.FoldspaceArena.EnergyMaxDurationReference",
+          "id": "Ability.Utility.FoldspaceArena.EnergyPowerDurationReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Utility.FoldspaceArena.EnergyMaxDurationPerPoint",
+          "id": "Ability.Utility.FoldspaceArena.EnergyPowerDurationPerPoint",
           "baseValue": 0.002,
           "minValue": 0.0
         }
@@ -5628,7 +5648,7 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.08
         }
@@ -5723,7 +5743,7 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Max",
+          "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
           "coefficient": 0.2
         }
@@ -5841,8 +5861,8 @@
       "attributes": [
         { "id": "Ability.Offense.LanceDrive.BaseDamage", "baseValue": 10.0, "minValue": 0.0 },
         { "id": "Ability.Offense.LanceDrive.SpeedDamageConversion", "baseValue": 0.20, "minValue": 0.0 },
-        { "id": "Ability.Offense.LanceDrive.EnergyMaxReference", "baseValue": 50.0, "minValue": 0.0 },
-        { "id": "Ability.Offense.LanceDrive.EnergyMaxConversionPerPoint", "baseValue": 0.0001, "minValue": 0.0 },
+        { "id": "Ability.Offense.LanceDrive.EnergyPowerReference", "baseValue": 50.0, "minValue": 0.0 },
+        { "id": "Ability.Offense.LanceDrive.EnergyPowerConversionPerPoint", "baseValue": 0.0001, "minValue": 0.0 },
         { "id": "Ability.Offense.LanceDrive.TopSpeedBonus", "baseValue": 300.0, "minValue": 0.0 },
         { "id": "Ability.Offense.LanceDrive.ThrustBonus", "baseValue": 0.25, "minValue": 0.0 },
         { "id": "Ability.Offense.LanceDrive.TurnCapabilityMultiplier", "baseValue": 0.25, "minValue": 0.0, "maxValue": 1.0 },
@@ -5921,12 +5941,12 @@
               "minValue": 0.0
             },
             {
-              "id": "AbilityActor.InertialWake.Wake.EnergyMaxReference",
+              "id": "AbilityActor.InertialWake.Wake.EnergyPowerReference",
               "baseValue": 50.0,
               "minValue": 0.0
             },
             {
-              "id": "AbilityActor.InertialWake.Wake.EnergyMaxConversionPerPoint",
+              "id": "AbilityActor.InertialWake.Wake.EnergyPowerConversionPerPoint",
               "baseValue": 0.0001,
               "minValue": 0.0
             },
@@ -6045,12 +6065,12 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.ShieldGraft.EnergyMaxReference",
+          "id": "Ability.Defense.ShieldGraft.EnergyPowerReference",
           "baseValue": 50.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Defense.ShieldGraft.EnergyMaxScale",
+          "id": "Ability.Defense.ShieldGraft.EnergyPowerScale",
           "baseValue": 0.0001,
           "minValue": 0.0
         }

@@ -90,7 +90,7 @@ namespace ly
 			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Electric);
 		const bool validScaling = definition.scalingRules.size() == 1 &&
 			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 0.06f);
 		const bool validSpawn = definition.actions.size() == 1 &&
@@ -116,7 +116,7 @@ namespace ly
 			{
 				*failureReason =
 					"Arc Scythes requires its four-second Electric dual-beam lifecycle, "
-					"EnergyMax damage scaling, and fourteen damage/cooldown progression steps.";
+					"EnergyPower damage scaling, and fourteen damage/cooldown progression steps.";
 			}
 			return false;
 		}

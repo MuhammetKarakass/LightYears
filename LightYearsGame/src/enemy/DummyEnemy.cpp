@@ -12,7 +12,8 @@ namespace ly
 			dummyDefinition.energyAttributes.baseMaxShield = DummyMaxShield;
 			// The training target should have a deterministic shield value even if
 			// its source definition later gains an energy-based shield contribution.
-			dummyDefinition.energyAttributes.maxShieldPerMaxEnergy = 0.f;
+			dummyDefinition.energyAttributes.shieldAffinity = 0.f;
+			dummyDefinition.energyAttributes.afterburnerAffinity = 1.f;
 			return dummyDefinition;
 		}
 	}

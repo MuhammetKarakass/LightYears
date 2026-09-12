@@ -31,8 +31,8 @@ namespace AbilityData::NanoPlague
 		inline static const sas::AttributeId& SpreadRadius = ly::CommonAttributeIds::Radius;
 
 		// These express Nano Plague policy, so they remain family-owned.
-		inline static const sas::AttributeId EnergyMaxTickScale{
-			"Ability.Offense.NanoPlague.EnergyMaxTickScale"
+		inline static const sas::AttributeId EnergyPowerTickScale{
+			"Ability.Offense.NanoPlague.EnergyPowerTickScale"
 		};
 		inline static const sas::AttributeId BaseSpreadTargetCount{
 			"Ability.Offense.NanoPlague.BaseSpreadTargetCount"
@@ -46,7 +46,7 @@ namespace AbilityData::NanoPlague
 	inline constexpr float DefaultDuration = 3.f;
 	inline constexpr float DefaultTickInterval = 0.25f;
 	inline constexpr float DefaultBaseTickDamage = 4.f;
-	inline constexpr float DefaultEnergyMaxTickScale = 0.03f;
+	inline constexpr float DefaultEnergyPowerTickScale = 0.03f;
 	inline constexpr float DefaultInitialTargetRange = 800.f;
 	inline constexpr float DefaultSpreadRadius = 300.f;
 	inline constexpr int DefaultBaseSpreadTargetCount = 1;

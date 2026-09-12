@@ -5,7 +5,9 @@
 #include "framework/MathUtility.h"
 #include "attributes/AttributeSystem.h"
 #include "engineConfigs/EngineStructs.h"
+#include "gameplay/damage/DamageContext.h"
 #include <string>
+#include <optional>
 
 enum class PrimaryWeaponType
 {
@@ -14,6 +16,54 @@ enum class PrimaryWeaponType
 	ArcElectric,
 	BeamContinuous,
 	WaveExpanding
+};
+
+enum class PrimaryWeaponCadenceMode
+{
+	AuthoredScaling,
+	OwnerAttackSpeedPercentage
+};
+
+enum class PrimaryWeaponDamageRoundingPolicy
+{
+	None,
+	CeilFinalDamage
+};
+
+struct PrimaryWeaponMagazineDefinition
+{
+	int capacity = 1;
+	float baseReloadTime = 1.f;
+
+	bool operator==(const PrimaryWeaponMagazineDefinition& other) const
+	{
+		return capacity == other.capacity && baseReloadTime == other.baseReloadTime;
+	}
+	bool operator!=(const PrimaryWeaponMagazineDefinition& other) const
+	{
+		return !(*this == other);
+	}
+};
+
+struct PrimaryWeaponEmpoweredShotDefinition
+{
+	bool guaranteedCritical = false;
+
+	bool operator==(const PrimaryWeaponEmpoweredShotDefinition& other) const
+	{
+		return guaranteedCritical == other.guaranteedCritical;
+	}
+	bool operator!=(const PrimaryWeaponEmpoweredShotDefinition& other) const
+	{
+		return !(*this == other);
+	}
+};
+
+struct PrimaryWeaponShotMetadata
+{
+	bool isEmpowered = false;
+	ly::DamageCriticalPolicy criticalPolicy = ly::DamageCriticalPolicy::Random;
+	bool roundFinalDamageUp = false;
 };
 
 enum class PrimaryWeaponFeatureType
@@ -150,6 +200,14 @@ struct PrimaryWeaponSchema
 			};
 		};
 	};
+
+	struct Empowered
+	{
+		inline static const sas::AttributeId Root{ "PrimaryWeapon.Empowered" };
+		inline static const sas::AttributeId BonusDamage{ "PrimaryWeapon.Empowered.BonusDamage" };
+		inline static const sas::AttributeId EverySuccessfulShots{ "PrimaryWeapon.Empowered.EverySuccessfulShots" };
+		inline static const sas::AttributeId FinalMagazineRounds{ "PrimaryWeapon.Empowered.FinalMagazineRounds" };
+	};
 };
 
 struct WeaponPresentationDefinition
@@ -199,6 +257,7 @@ struct HeatGainCurveSegmentDefinition
 struct PrimaryWeaponLevelStep
 {
 	ly::List<sas::AttributeModifier> attributeModifiers;
+	ly::List<sas::AttributeScalingRule> scalingRules;
 	ly::List<std::string> unlockedUpgradeIds;
 	ly::List<PrimaryWeaponFeatureType> unlockedFeatureTypes;
 };
@@ -240,10 +299,11 @@ struct WeaponProgressionProfile
 	WeaponProgressionProfile& EveryLevel(
 		const ly::List<sas::AttributeModifier>& modifiers,
 		const ly::List<std::string>& upgradeIds = {},
-		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {}
+		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
+		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
-		return BetweenLevels(2, maxLevel, modifiers, upgradeIds, featureTypes);
+		return BetweenLevels(2, maxLevel, modifiers, upgradeIds, featureTypes, 1, scalingRules);
 	}
 
 	WeaponProgressionProfile& ScrapCosts(const ly::List<unsigned int>& costs)
@@ -256,10 +316,11 @@ struct WeaponProgressionProfile
 		int level,
 		const ly::List<sas::AttributeModifier>& modifiers = {},
 		const ly::List<std::string>& upgradeIds = {},
-		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {}
+		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
+		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
-		return BetweenLevels(level, level, modifiers, upgradeIds, featureTypes);
+		return BetweenLevels(level, level, modifiers, upgradeIds, featureTypes, 1, scalingRules);
 	}
 
 	WeaponProgressionProfile& BetweenLevels(
@@ -268,14 +329,15 @@ struct WeaponProgressionProfile
 		const ly::List<sas::AttributeModifier>& modifiers = {},
 		const ly::List<std::string>& upgradeIds = {},
 		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
-		int levelInterval = 1
+		int levelInterval = 1,
+		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
 		rules.push_back(WeaponLevelRule{
 			firstLevel,
 			lastLevel,
 			levelInterval,
-			PrimaryWeaponLevelStep{ modifiers, upgradeIds, featureTypes }
+			PrimaryWeaponLevelStep{ modifiers, scalingRules, upgradeIds, featureTypes }
 		});
 		return *this;
 	}
@@ -285,7 +347,8 @@ struct WeaponProgressionProfile
 		const ly::List<sas::AttributeModifier>& modifiers = {},
 		const ly::List<std::string>& upgradeIds = {},
 		const ly::List<PrimaryWeaponFeatureType>& featureTypes = {},
-		int levelInterval = 1
+		int levelInterval = 1,
+		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
 		return BetweenLevels(
@@ -294,7 +357,8 @@ struct WeaponProgressionProfile
 			modifiers,
 			upgradeIds,
 			featureTypes,
-			levelInterval
+			levelInterval,
+			scalingRules
 		);
 	}
 
@@ -364,6 +428,11 @@ struct WeaponProgressionProfile
 					rule.reward.attributeModifiers.begin(),
 					rule.reward.attributeModifiers.end()
 				);
+				resolvedStep.scalingRules.insert(
+					resolvedStep.scalingRules.end(),
+					rule.reward.scalingRules.begin(),
+					rule.reward.scalingRules.end()
+				);
 				resolvedStep.unlockedUpgradeIds.insert(
 					resolvedStep.unlockedUpgradeIds.end(),
 					rule.reward.unlockedUpgradeIds.begin(),
@@ -396,6 +465,10 @@ struct PrimaryWeaponDefinition
 	ly::List<ly::GameplayTag> damageTags;
 	ly::List<ly::GameplayTag> attachmentCapabilities;
 	size_t attachmentSlotCapacity = 2;
+	std::optional<PrimaryWeaponMagazineDefinition> magazine;
+	PrimaryWeaponCadenceMode cadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling;
+	PrimaryWeaponDamageRoundingPolicy damageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None;
+	std::optional<PrimaryWeaponEmpoweredShotDefinition> empoweredShot;
 
 	PrimaryWeaponDefinition(
 		// Empty identifies an ephemeral/test definition. Shipped catalog entries
@@ -413,7 +486,11 @@ struct PrimaryWeaponDefinition
 		const ly::List<HeatGainCurveSegmentDefinition>& inHeatGainCurve = {},
 		const ly::List<ly::GameplayTag>& inDamageTags = {},
 		const ly::List<ly::GameplayTag>& inAttachmentCapabilities = {},
-		size_t inAttachmentSlotCapacity = 2
+		size_t inAttachmentSlotCapacity = 2,
+		const std::optional<PrimaryWeaponMagazineDefinition>& inMagazine = std::nullopt,
+		PrimaryWeaponCadenceMode inCadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling,
+		PrimaryWeaponDamageRoundingPolicy inDamageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None,
+		const std::optional<PrimaryWeaponEmpoweredShotDefinition>& inEmpoweredShot = std::nullopt
 	)
 		: weaponId(inWeaponId)
 		, weaponType(inWeaponType)
@@ -429,6 +506,10 @@ struct PrimaryWeaponDefinition
 		, damageTags(inDamageTags)
 		, attachmentCapabilities(inAttachmentCapabilities)
 		, attachmentSlotCapacity(inAttachmentSlotCapacity)
+		, magazine(inMagazine)
+		, cadenceMode(inCadenceMode)
+		, damageRoundingPolicy(inDamageRoundingPolicy)
+		, empoweredShot(inEmpoweredShot)
 	{
 	}
 };

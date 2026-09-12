@@ -66,11 +66,11 @@ namespace AbilityData::EnergySpear
 		inline static const sas::AttributeId DistanceDamageMultiplierAtEndpoint{
 			"Ability.Movement.EnergySpear.DistanceDamageMultiplierAtEndpoint"
 		};
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Movement.EnergySpear.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Movement.EnergySpear.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxDistanceScale{
-			"Ability.Movement.EnergySpear.EnergyMaxDistanceScale"
+		inline static const sas::AttributeId EnergyPowerDistanceScale{
+			"Ability.Movement.EnergySpear.EnergyPowerDistanceScale"
 		};
 		inline static const sas::AttributeId TravelSpeed{
 			"Ability.Movement.EnergySpear.TravelSpeed"

@@ -74,7 +74,7 @@ namespace ly
 			}
 
 			bool hasAttackPower = false;
-			bool hasEnergyMax = false;
+			bool hasEnergyPower = false;
 			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
 			{
 				if (rule.targetAttributeId != AbilityData::EnergySpear::Attribute::Damage ||
@@ -85,11 +85,11 @@ namespace ly
 				hasAttackPower = hasAttackPower ||
 					(rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
 						std::abs(rule.coefficient - 1.f) <= 0.0001f);
-				hasEnergyMax = hasEnergyMax ||
-					(rule.sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+				hasEnergyPower = hasEnergyPower ||
+					(rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 						std::abs(rule.coefficient - 0.20f) <= 0.0001f);
 			}
-			return hasAttackPower && hasEnergyMax;
+			return hasAttackPower && hasEnergyPower;
 		}
 
 		bool HasExpectedLevelStep(const AbilityLevelStep& step)
@@ -151,8 +151,8 @@ namespace ly
 			AbilityData::EnergySpear::Attribute::MaximumDistanceChargeThreshold,
 			AbilityData::EnergySpear::Attribute::ChargeDamageMultiplierAtFull,
 			AbilityData::EnergySpear::Attribute::DistanceDamageMultiplierAtEndpoint,
-			AbilityData::EnergySpear::Attribute::EnergyMaxReference,
-			AbilityData::EnergySpear::Attribute::EnergyMaxDistanceScale,
+			AbilityData::EnergySpear::Attribute::EnergyPowerReference,
+			AbilityData::EnergySpear::Attribute::EnergyPowerDistanceScale,
 			AbilityData::EnergySpear::Attribute::TravelSpeed
 		};
 		for (const sas::AttributeId& attributeId : requiredAttributes)
@@ -186,8 +186,8 @@ namespace ly
 			threshold <= 0.f || threshold > 1.f ||
 			value(AbilityData::EnergySpear::Attribute::ChargeDamageMultiplierAtFull) < 1.f ||
 			value(AbilityData::EnergySpear::Attribute::DistanceDamageMultiplierAtEndpoint) < 1.f ||
-			value(AbilityData::EnergySpear::Attribute::EnergyMaxReference) < 0.f ||
-			value(AbilityData::EnergySpear::Attribute::EnergyMaxDistanceScale) < 0.f ||
+			value(AbilityData::EnergySpear::Attribute::EnergyPowerReference) < 0.f ||
+			value(AbilityData::EnergySpear::Attribute::EnergyPowerDistanceScale) < 0.f ||
 			value(AbilityData::EnergySpear::Attribute::TravelSpeed) <= 0.f)
 		{
 			if (failureReason)
@@ -415,19 +415,19 @@ namespace ly
 			0.001f,
 			1.f
 		);
-		const float energyMax = context.abilitySystem.GetAttributes().GetCurrentValue(
-			OwnerAttributeIds::EnergyMax
+		const float energyPower = context.abilitySystem.GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::EnergyPower
 		);
-		const float energyMaxReference = std::max(
+		const float energyPowerReference = std::max(
 			0.f,
-			FindValue(values, AbilityData::EnergySpear::Attribute::EnergyMaxReference, 50.f)
+			FindValue(values, AbilityData::EnergySpear::Attribute::EnergyPowerReference, 50.f)
 		);
-		const float energyMaxDistanceScale = std::max(
+		const float energyPowerDistanceScale = std::max(
 			0.f,
-			FindValue(values, AbilityData::EnergySpear::Attribute::EnergyMaxDistanceScale, 2.f)
+			FindValue(values, AbilityData::EnergySpear::Attribute::EnergyPowerDistanceScale, 2.f)
 		);
 		const float maximumDistance = baseMaximumDistance +
-			std::max(0.f, energyMax - energyMaxReference) * energyMaxDistanceScale;
+			std::max(0.f, energyPower - energyPowerReference) * energyPowerDistanceScale;
 		const float distanceProgress = std::clamp(
 			chargeProgress / maximumDistanceChargeThreshold,
 			0.f,

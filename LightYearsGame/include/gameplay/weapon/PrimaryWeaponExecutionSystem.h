@@ -37,8 +37,28 @@ namespace ly
 			PrimaryWeaponRuntimeState& state,
 			float deltaTime
 		);
+		struct ActiveFireSimulationResult
+		{
+			int executionsProduced = 0;
+			bool lifecycleInterrupted = false;
+		};
+
+		static ActiveFireSimulationResult SimulateActiveFire(
+			const PrimaryWeaponExecutionContext& context,
+			PrimaryWeaponRuntimeState& state,
+			float deltaTime,
+			float fireInterval,
+			int maxExecutions = 0,
+			int currentExecutionCount = 0
+		);
 		static void TickInactive(
 			const PrimaryWeaponExecutionContext& context,
+			PrimaryWeaponRuntimeState& state,
+			float deltaTime
+		);
+		// Advances the shared magazine state without ticking weapon-type features.
+		static void AdvanceMagazineReload(
+			const PrimaryWeaponDefinition& definition,
 			PrimaryWeaponRuntimeState& state,
 			float deltaTime
 		);
@@ -51,6 +71,11 @@ namespace ly
 		static float BuildBaseFireInterval(
 			const sas::GameplayAttributeList& attributes,
 			float actionInterval
+		);
+		static float CalculateAttackSpeedMultiplier(const Actor& owner);
+		static float CalculateReloadDuration(
+			float baseReloadTime,
+			const Actor& owner
 		);
 	};
 }

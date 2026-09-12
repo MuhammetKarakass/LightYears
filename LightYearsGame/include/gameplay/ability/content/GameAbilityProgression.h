@@ -14,6 +14,7 @@ namespace ly
 		List<std::string> unlockedUpgradeIds;
 		List<AbilityActionSpec> addedActions;
 		List<AbilityTriggerSpec> addedTriggers;
+		List<sas::AttributeScalingRule> scalingRules;
 	};
 
 	inline List<AbilityLevelStep> MakeRepeatedAbilityLevelProgression(

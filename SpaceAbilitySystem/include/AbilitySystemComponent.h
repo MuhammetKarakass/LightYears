@@ -98,7 +98,7 @@ namespace sas
 			std::string* failureReason = nullptr
 		);
 		void ClearAbilitySlot(AbilitySlot slot);
-		void SetAbilitySlotInput(AbilitySlot slot, bool inputHeld);
+		virtual void SetAbilitySlotInput(AbilitySlot slot, bool inputHeld);
 		bool SetAbilityLevel(AbilityHandle handle, int level);
 		bool SetAbilityLevel(AbilitySlot slot, int level);
 		bool LevelUpAbility(AbilityHandle handle);
@@ -236,7 +236,7 @@ namespace sas
 			return mOwnedTags;
 		}
 
-		void AddOwnedTag(const ly::GameplayTag& tag);
+		virtual void AddOwnedTag(const ly::GameplayTag& tag);
 		void RemoveOwnedTag(const ly::GameplayTag& tag);
 		bool HasOwnedTag(
 			const ly::GameplayTag& tag,
@@ -302,8 +302,8 @@ namespace sas
 		ly::Delegate<GameplayEffectHandle> onGameplayEffectChanged;
 		ly::Delegate<> onGameplayEffectsChanged;
 
-		void Tick(float deltaTime);
-		void Clear();
+		virtual void Tick(float deltaTime);
+		virtual void Clear();
 
 	protected:
 		template <typename Definition, typename Instance>

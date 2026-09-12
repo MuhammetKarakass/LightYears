@@ -26,7 +26,7 @@ namespace ly
 		constexpr float BaseOuterMaxRadius = 335.f;
 		constexpr float BaseBoundaryPointCount = 20.f;
 		constexpr float AttackPowerScale = 0.12f;
-		constexpr float EnergyMaxDamageScale = 0.05f;
+		constexpr float EnergyPowerDamageScale = 0.05f;
 		constexpr float DamagePerLevel = 1.f;
 		constexpr float CooldownPerLevel = -0.20f;
 		constexpr float Epsilon = 0.0001f;
@@ -103,7 +103,7 @@ namespace ly
 			}
 
 			bool hasAttackPower = false;
-			bool hasEnergyMax = false;
+			bool hasEnergyPower = false;
 			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
 			{
 				if (rule.targetAttributeId != CommonAttributeIds::Damage ||
@@ -114,11 +114,11 @@ namespace ly
 				hasAttackPower = hasAttackPower ||
 					(rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
 						NearlyEqual(rule.coefficient, AttackPowerScale));
-				hasEnergyMax = hasEnergyMax ||
-					(rule.sourceAttributeId == OwnerAttributeIds::EnergyMax &&
-						NearlyEqual(rule.coefficient, EnergyMaxDamageScale));
+				hasEnergyPower = hasEnergyPower ||
+					(rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+						NearlyEqual(rule.coefficient, EnergyPowerDamageScale));
 			}
-			return hasAttackPower && hasEnergyMax;
+			return hasAttackPower && hasEnergyPower;
 		}
 
 		bool HasExpectedModifier(

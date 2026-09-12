@@ -54,11 +54,11 @@ namespace AbilityData::VoidGate
 		inline static const sas::AttributeId PortalBPlacementTimeout{
 			"Ability.Utility.VoidGate.PortalBPlacementTimeout"
 		};
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Utility.VoidGate.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Utility.VoidGate.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxDurationScale{
-			"Ability.Utility.VoidGate.EnergyMaxDurationScale"
+		inline static const sas::AttributeId EnergyPowerDurationScale{
+			"Ability.Utility.VoidGate.EnergyPowerDurationScale"
 		};
 	};
 
@@ -75,8 +75,8 @@ namespace AbilityData::VoidGate
 	inline constexpr float DefaultTransferDuration = 0.25f;
 	inline constexpr float DefaultReentryCooldown = 1.f;
 	inline constexpr float DefaultPortalBPlacementTimeout = 4.f;
-	inline constexpr float DefaultEnergyMaxReference = 50.f;
-	inline constexpr float DefaultEnergyMaxDurationScale = 0.002f;
+	inline constexpr float DefaultEnergyPowerReference = 50.f;
+	inline constexpr float DefaultEnergyPowerDurationScale = 0.002f;
 	inline constexpr float DefaultActiveDuration = 6.f;
 	inline constexpr float DefaultCooldown = 12.f;
 }

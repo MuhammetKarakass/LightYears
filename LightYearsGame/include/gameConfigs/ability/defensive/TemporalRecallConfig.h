@@ -33,8 +33,8 @@ namespace AbilityData::Definitions
 			{ AbilityData::TemporalRecall::Attribute::PositiveRecoveryRatio, 0.60f, 0.f },
 			{ AbilityData::TemporalRecall::Attribute::MaxHealthReference, 100.f, 0.f },
 			{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale, 0.002f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::EnergyMaxReference, 100.f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::EnergyMaxRecoveryScale, 0.002f, 0.f },
+			{ AbilityData::TemporalRecall::Attribute::EnergyPowerReference, 100.f, 0.f },
+			{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale, 0.002f, 0.f },
 			{ AbilityData::TemporalRecall::Attribute::OvercapHoldDuration, 4.f, 0.f },
 			{ AbilityData::TemporalRecall::Attribute::OvercapDecayPerSecond, 100.f, 0.f }
 		};

@@ -66,11 +66,11 @@ namespace ly
 				0.001f,
 				FindValue(values, AbilityData::PhaseDrift::Attribute::EnergyScale, 1.f)
 			);
-			const float energyMax = std::max(
+			const float energyPower = std::max(
 				0.f,
-				abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyMax)
+				abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)
 			);
-			return std::clamp(1.f - std::exp(-energyMax / energyScale), 0.f, 1.f);
+			return std::clamp(1.f - std::exp(-energyPower / energyScale), 0.f, 1.f);
 		}
 
 		bool ApplyPolicyEffect(

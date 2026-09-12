@@ -235,11 +235,16 @@ namespace ly
 					};
 			}
 
-			void FireOnce(
+			bool FireOnce(
 				const PrimaryWeaponExecutionContext& context,
 				PrimaryWeaponTypeRuntimeState&
 			) const override
 			{
+				if (!context.owner.GetWorld())
+				{
+					return false;
+				}
+
 				const int chainCount = std::max(
 					0,
 					static_cast<int>(std::round(sas::FindAttributeValue(
@@ -279,12 +284,13 @@ namespace ly
 				if (context.definition.muzzleDefinitions.empty())
 				{
 					fireFromMuzzle(WeaponMuzzleDefinition{});
-					return;
+					return true;
 				}
 				for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
 				{
 					fireFromMuzzle(muzzle);
 				}
+				return true;
 			}
 		};
 	}

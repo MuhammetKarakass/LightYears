@@ -122,8 +122,8 @@ namespace ly
 			CommonAttributeIds::Damage,
 			AbilityData::FoldspaceArena::Attribute::MinimumArenaDuration,
 			AbilityData::FoldspaceArena::Attribute::BaseArenaDuration,
-			AbilityData::FoldspaceArena::Attribute::EnergyMaxDurationReference,
-			AbilityData::FoldspaceArena::Attribute::EnergyMaxDurationPerPoint
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationReference,
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationPerPoint
 		};
 		const bool validAttributes = std::all_of(
 			requiredAttributes.begin(), requiredAttributes.end(),
@@ -136,7 +136,7 @@ namespace ly
 			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Photonic);
 		const bool validScaling = definition.scalingRules.size() == 1 &&
 			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 0.08f);
 		const bool validProgression = definition.levelProgression.size() == 14 &&
@@ -218,7 +218,7 @@ namespace ly
 		arena->ConfigureFromAbilityValues(
 			values,
 			std::max(0.f, context.abilitySystem.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::EnergyMax
+				OwnerAttributeIds::EnergyPower
 			))
 		);
 		arena->SetSnapshotTarget(target);

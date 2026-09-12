@@ -22,7 +22,7 @@ namespace ly
 
 	namespace PrimaryWeaponProjectileSpawner
 	{
-		void FireSet(
+		int FireSet(
 			const PrimaryWeaponExecutionContext& context,
 			int projectileCount,
 			float spreadAngle,

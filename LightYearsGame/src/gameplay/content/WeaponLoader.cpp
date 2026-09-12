@@ -1,10 +1,12 @@
 #include "gameplay/content/WeaponLoader.h"
 
 #include "attributes/AttributeId.h"
+#include "gameplay/content/AttributeJsonParser.h"
 #include "gameplay/content/ContentIdSchema.h"
 
 #include "framework/JsonDocumentLoader.h"
 
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <set>
@@ -17,6 +19,61 @@ namespace ly::content
 	namespace
 	{
 		using Json = JsonDocumentLoader::Json;
+
+		PrimaryWeaponCadenceMode ParseCadenceMode(const std::string& value)
+		{
+			if (value == "AuthoredScaling") return PrimaryWeaponCadenceMode::AuthoredScaling;
+			if (value == "OwnerAttackSpeedPercentage") return PrimaryWeaponCadenceMode::OwnerAttackSpeedPercentage;
+			throw std::runtime_error("Unknown primary weapon cadence mode: " + value);
+		}
+
+		PrimaryWeaponDamageRoundingPolicy ParseDamageRoundingPolicy(const std::string& value)
+		{
+			if (value == "None") return PrimaryWeaponDamageRoundingPolicy::None;
+			if (value == "CeilFinalDamage") return PrimaryWeaponDamageRoundingPolicy::CeilFinalDamage;
+			throw std::runtime_error("Unknown primary weapon damage rounding policy: " + value);
+		}
+
+		PrimaryWeaponMagazineDefinition ParseMagazine(const Json& object)
+		{
+			if (!object.is_object())
+			{
+				throw std::runtime_error("Expected a magazine object");
+			}
+			const Json& capacityVal = object.at("capacity");
+			if (!capacityVal.is_number_integer())
+			{
+				throw std::runtime_error("Magazine capacity must be an integer");
+			}
+			if (capacityVal.is_number_unsigned())
+			{
+				const uint64_t rawCapacity = capacityVal.get<uint64_t>();
+				if (rawCapacity == 0 || rawCapacity > static_cast<uint64_t>(std::numeric_limits<int>::max()))
+				{
+					throw std::runtime_error("Magazine capacity must be positive and within valid range");
+				}
+			}
+			else
+			{
+				const int64_t rawCapacity = capacityVal.get<int64_t>();
+				if (rawCapacity <= 0 || rawCapacity > static_cast<int64_t>(std::numeric_limits<int>::max()))
+				{
+					throw std::runtime_error("Magazine capacity must be positive and within valid range");
+				}
+			}
+			const int capacity = capacityVal.get<int>();
+			const Json& reloadVal = object.at("baseReloadTime");
+			if (!reloadVal.is_number())
+			{
+				throw std::runtime_error("Magazine baseReloadTime must be a number");
+			}
+			const float baseReloadTime = reloadVal.get<float>();
+			if (!std::isfinite(baseReloadTime) || baseReloadTime <= 0.f)
+			{
+				throw std::runtime_error("Magazine baseReloadTime must be finite and positive");
+			}
+			return PrimaryWeaponMagazineDefinition{ capacity, baseReloadTime };
+		}
 
 		std::string RequiredString(const Json& object, const char* fieldName)
 		{
@@ -49,23 +106,6 @@ namespace ly::content
 			};
 		}
 
-		sas::AttributeModifierOperation ParseOperation(const std::string& value)
-		{
-			if (value == "Add")
-			{
-				return sas::AttributeModifierOperation::Add;
-			}
-			if (value == "Multiply")
-			{
-				return sas::AttributeModifierOperation::Multiply;
-			}
-			if (value == "Override")
-			{
-				return sas::AttributeModifierOperation::Override;
-			}
-			throw std::runtime_error("Unknown weapon modifier operation: " + value);
-		}
-
 		sas::GameplayAttribute ParseAttribute(const Json& object)
 		{
 			return sas::GameplayAttribute{
@@ -83,7 +123,7 @@ namespace ly::content
 		{
 			return sas::AttributeModifier{
 				sas::AttributeId{ RequiredString(object, "attributeId") },
-				ParseOperation(RequiredString(object, "operation")),
+				AttributeJsonParser::ParseOperation(RequiredString(object, "operation")),
 				object.at("magnitude").get<float>(),
 				object.value("priority", 0)
 			};
@@ -135,6 +175,15 @@ namespace ly::content
 			throw std::runtime_error("Unknown primary weapon feature: " + value);
 		}
 
+		PrimaryWeaponEmpoweredShotDefinition ParseEmpoweredShot(const Json& object)
+		{
+			if (!object.is_object())
+			{
+				throw std::runtime_error("Expected an empoweredShot object");
+			}
+			return PrimaryWeaponEmpoweredShotDefinition{ object.value("guaranteedCritical", false) };
+		}
+
 		ly::List<PrimaryWeaponFeatureType> ParseFeatureTypes(const Json& values)
 		{
 			ly::List<PrimaryWeaponFeatureType> types;
@@ -177,16 +226,26 @@ namespace ly::content
 			};
 		}
 
-		PrimaryWeaponLevelStep ParseLevelStep(const Json& object)
+		PrimaryWeaponLevelStep ParseLevelStep(
+			const Json& object,
+			const std::string& contextPath = "reward"
+		)
 		{
 			return PrimaryWeaponLevelStep{
 				ParseModifiers(object.value("attributeModifiers", Json::array())),
+				AttributeJsonParser::ParseScalingRules(
+					object.value("scalingRules", Json::array()),
+					contextPath + ".scalingRules"
+				),
 				ParseUpgradeIds(object.value("unlockedUpgradeIds", Json::array())),
 				ParseFeatureTypes(object.value("unlockedFeatureTags", Json::array()))
 			};
 		}
 
-		WeaponProgressionProfile ParseProgression(const Json& object)
+		WeaponProgressionProfile ParseProgression(
+			const Json& object,
+			const std::string& ownerLabel = ""
+		)
 		{
 			WeaponProgressionProfile profile{
 				object.value("maxLevel", 1)
@@ -196,13 +255,17 @@ namespace ly::content
 				ly::List<unsigned int>{}
 			);
 
+			std::size_t ruleIndex = 0;
 			for (const Json& rule : object.value("rules", Json::array()))
 			{
+				const std::string ruleContext =
+					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "progression.rules[" +
+					std::to_string(ruleIndex++) + "].reward";
 				profile.rules.emplace_back(WeaponLevelRule{
 					rule.value("firstLevel", 2),
 					rule.value("lastLevel", 2),
 					rule.value("levelInterval", 1),
-					ParseLevelStep(rule.at("reward"))
+					ParseLevelStep(rule.at("reward"), ruleContext)
 				});
 			}
 			return profile;
@@ -234,21 +297,17 @@ namespace ly::content
 
 			definition.automaticFire = object.value("automaticFire", true);
 			definition.progressionProfile = ParseProgression(
-				object.value("progression", Json::object())
+				object.value("progression", Json::object()),
+				"Weapon '" + definition.weaponId + "'"
 			);
 			definition.attributeModifiers = ParseModifiers(
 				object.value("attributeModifiers", Json::array())
 			);
 
-			for (const Json& scalingRule : object.value("scalingRules", Json::array()))
-			{
-				definition.scalingRules.emplace_back(sas::AttributeScalingRule{
-					sas::AttributeId{ RequiredString(scalingRule, "targetAttributeId") },
-					sas::AttributeId{ RequiredString(scalingRule, "sourceAttributeId") },
-					ParseOperation(RequiredString(scalingRule, "operation")),
-					scalingRule.value("coefficient", 1.f)
-				});
-			}
+			definition.scalingRules = AttributeJsonParser::ParseScalingRules(
+				object.value("scalingRules", Json::array()),
+				"Weapon '" + definition.weaponId + "': scalingRules"
+			);
 
 			definition.featureTypes = ParseFeatureTypes(
 				object.value("featureTags", Json::array())
@@ -272,6 +331,41 @@ namespace ly::content
 				"attachmentSlotCapacity",
 				static_cast<size_t>(2)
 			);
+
+			if (object.contains("cadenceMode"))
+			{
+				const Json& cadenceVal = object.at("cadenceMode");
+				if (!cadenceVal.is_string())
+				{
+					throw std::runtime_error("Expected cadenceMode to be a string");
+				}
+				definition.cadenceMode = ParseCadenceMode(cadenceVal.get<std::string>());
+			}
+			else
+			{
+				definition.cadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling;
+			}
+			definition.damageRoundingPolicy = object.contains("damageRoundingPolicy")
+				? ParseDamageRoundingPolicy(RequiredString(object, "damageRoundingPolicy"))
+				: PrimaryWeaponDamageRoundingPolicy::None;
+
+			if (object.contains("magazine"))
+			{
+				definition.magazine = ParseMagazine(object.at("magazine"));
+			}
+			else
+			{
+				definition.magazine = std::nullopt;
+			}
+
+			if (object.contains("empoweredShot"))
+			{
+				definition.empoweredShot = ParseEmpoweredShot(object.at("empoweredShot"));
+			}
+			else
+			{
+				definition.empoweredShot = std::nullopt;
+			}
 
 			return definition;
 		}

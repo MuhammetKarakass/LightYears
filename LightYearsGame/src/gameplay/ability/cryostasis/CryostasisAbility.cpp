@@ -102,8 +102,8 @@ namespace ly
 			AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale,
 			AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond,
 			AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale,
-			AbilityData::Cryostasis::Attribute::BaseEnergyRegenPerSecond,
-			AbilityData::Cryostasis::Attribute::EnergyRegenMaxHealthScale,
+			AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond,
+			AbilityData::Cryostasis::Attribute::AfterburnerRecoveryMaxHealthScale,
 			AbilityData::Cryostasis::Attribute::BaseBreakDamage,
 			AbilityData::Cryostasis::Attribute::BreakDamageMaxIceHealthScale,
 			AbilityData::Cryostasis::Attribute::FieldCryoStacks,
@@ -232,13 +232,13 @@ namespace ly
 			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, 8.f) +
 				maximumHealth * std::max(0.f, FindValue(mResolvedValues,
 					AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, 0.04f)));
-		const float energyRegen = std::max(0.f,
-			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseEnergyRegenPerSecond, 4.f) +
+		const float afterburnerRecovery = std::max(0.f,
+			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, 4.f) +
 				maximumHealth * std::max(0.f, FindValue(mResolvedValues,
-					AbilityData::Cryostasis::Attribute::EnergyRegenMaxHealthScale, 0.01f)));
+					AbilityData::Cryostasis::Attribute::AfterburnerRecoveryMaxHealthScale, 0.01f)));
 		ship->GetHealthComponent().Regenerate(healthRegen * safeDeltaTime);
 		ship->GetEnergyComponent().ClearRechargeDelay();
-		ship->GetEnergyComponent().Tick(safeDeltaTime, energyRegen, true);
+		ship->GetEnergyComponent().Tick(safeDeltaTime, afterburnerRecovery, true);
 		if (const shared_ptr<CryostasisVisualActor> visual = mVisualActor.lock())
 		{
 			float iceHealthRatio = 0.f;

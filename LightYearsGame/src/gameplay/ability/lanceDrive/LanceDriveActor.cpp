@@ -156,11 +156,11 @@ namespace ly
 		mSpeedDamageConversion = std::max(0.f, FindValue(
 			attributes, AbilityData::LanceDrive::Attribute::SpeedDamageConversion, 0.20f
 		));
-		mEnergyMaxReference = std::max(0.f, FindValue(
-			attributes, AbilityData::LanceDrive::Attribute::EnergyMaxReference, 50.f
+		mEnergyPowerReference = std::max(0.f, FindValue(
+			attributes, AbilityData::LanceDrive::Attribute::EnergyPowerReference, 50.f
 		));
-		mEnergyMaxConversionPerPoint = std::max(0.f, FindValue(
-			attributes, AbilityData::LanceDrive::Attribute::EnergyMaxConversionPerPoint, 0.0001f
+		mEnergyPowerConversionPerPoint = std::max(0.f, FindValue(
+			attributes, AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint, 0.0001f
 		));
 		mSameTargetHitCooldown = std::max(0.01f, FindValue(
 			attributes, AbilityData::LanceDrive::Attribute::SameTargetHitCooldown, 0.75f
@@ -296,14 +296,14 @@ namespace ly
 		{
 			return;
 		}
-		float energyMax = 0.f;
+		float energyPower = 0.f;
 		if (const auto* combatant = dynamic_cast<const Combatant*>(owner))
 		{
-			energyMax = std::max(0.f, combatant->GetAbilitySystemComponent().GetAttributes()
-				.GetCurrentValue(OwnerAttributeIds::EnergyMax));
+			energyPower = std::max(0.f, combatant->GetAbilitySystemComponent().GetAttributes()
+				.GetCurrentValue(OwnerAttributeIds::EnergyPower));
 		}
 		const float conversion = mSpeedDamageConversion +
-			std::max(0.f, energyMax - mEnergyMaxReference) * mEnergyMaxConversionPerPoint;
+			std::max(0.f, energyPower - mEnergyPowerReference) * mEnergyPowerConversionPerPoint;
 		const float damage = mBaseDamage + std::max(0.f, speed) * conversion;
 
 		ApplyCombatDamage(

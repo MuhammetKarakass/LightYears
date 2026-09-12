@@ -11,7 +11,7 @@ namespace ShipData
 {
 	static const ShipDefinition Ship_Player_Fighter(
 		"SpaceShooterRedux/PNG/playerShip1_blue.png",
-		100.f,
+		250.f,
 		sf::Vector2f{ 350.f, 350.f },
 		25.f,
 		0.f,
@@ -34,17 +34,18 @@ namespace ShipData
 			32.f
 		},
 		ShipEnergyAttributes{
-			100.f,
-			5.5f,
-			4.f,
-			50.f,
-			8.f,
+			35.f,
+			115.f,
+			6.f,
+			6.f,
+			65.f,
+			6.f,
 			1.5f,
 			1.55f,
 			1.80f,
-			16.5f,
+			33.f,
 			0.5f,
-			1.f,
+			0.5f,
 			0.22f,
 			0.45f,
 			0.90f
@@ -53,15 +54,17 @@ namespace ShipData
 			100.f,
 			1.25f,
 			{
+				{ ly::OwnerAttributeIds::MaxHealth, 75.f },
 				{ ly::OwnerAttributeIds::AttackPower, 3.f },
-				{ ly::OwnerAttributeIds::AttackSpeed, 2.f },
-				{ ly::OwnerAttributeIds::CriticalChance, 2.f },
-				{ ly::OwnerAttributeIds::MaxHealth, 1.f },
-				{ ly::OwnerAttributeIds::Armor, 1.f },
-				{ ly::OwnerAttributeIds::EnergyMax, 0.5f },
-				{ ly::OwnerAttributeIds::MoveSpeedHorizontal, 0.5f },
-				{ ly::OwnerAttributeIds::MoveSpeedVertical, 0.5f }
+				{ ly::OwnerAttributeIds::EnergyPower, 2.f },
+				{ ly::OwnerAttributeIds::Armor, 2.f },
+				{ ly::OwnerAttributeIds::Luck, 1.f }
 			}
+		},
+		0.f,
+		ly::ControlTargetClass::Normal,
+		{
+			{ ly::OwnerAttributeIds::AttackPower, 35.f }
 		}
 	);
 

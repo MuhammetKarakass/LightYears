@@ -154,6 +154,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AttachmentLoader.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AttachmentLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/WeaponLoader.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AttributeJsonParser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/WeaponContentCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponContentCatalog.cpp
@@ -931,8 +932,7 @@ if(BUILD_TESTING)
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 
-	add_executable(LightYearsGasLiteTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
+	set(LIGHT_YEARS_GAS_LITE_TEST_SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
@@ -1190,6 +1190,11 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ContinuousBeamVisualActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
 	)
+
+	add_executable(LightYearsGasLiteTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
 	target_include_directories(LightYearsGasLiteTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
@@ -1201,6 +1206,33 @@ if(BUILD_TESTING)
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 			nlohmann_json::nlohmann_json
 	)
+
+	add_executable(LightYearsPrimaryWeaponTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/PrimaryWeaponMagazineTests.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
+	target_include_directories(LightYearsPrimaryWeaponTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsPrimaryWeaponTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsPrimaryWeapon
+		COMMAND LightYearsPrimaryWeaponTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	option(
+		LIGHT_YEARS_BUILD_SPECIALIZED_TESTS
+		"Build small standalone specialist test executables"
+		OFF
+	)
+	if(LIGHT_YEARS_BUILD_SPECIALIZED_TESTS)
 	add_executable(LightYearsAutoTargetingTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AutoTargetingTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
@@ -1229,29 +1261,6 @@ if(BUILD_TESTING)
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 	)
 	add_test(NAME LightYearsGameplayTagSchema COMMAND LightYearsGameplayTagSchemaTests)
-	add_executable(LightYearsIonStormBoundaryTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/IonStormBoundaryTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormBoundary.cpp
-	)
-	target_include_directories(LightYearsIonStormBoundaryTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsIonStormBoundaryTests
-		PRIVATE
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-	)
-	add_test(NAME LightYearsIonStormBoundary COMMAND LightYearsIonStormBoundaryTests)
-	add_executable(LightYearsAbilityRuntimeUtilityTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityRuntimeUtilityTests.cpp
-	)
-	target_include_directories(LightYearsAbilityRuntimeUtilityTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-	)
-	target_link_libraries(LightYearsAbilityRuntimeUtilityTests PRIVATE
-		${LIGHT_YEARS_ENGINE_TARGET_NAME}
-	)
-	add_test(NAME LightYearsAbilityRuntimeUtility COMMAND LightYearsAbilityRuntimeUtilityTests)
 	add_executable(LightYearsMovementInfluenceTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/MovementInfluenceTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementInfluenceController.cpp
@@ -1275,6 +1284,7 @@ if(BUILD_TESTING)
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 	)
 	add_test(NAME LightYearsMovementPolicy COMMAND LightYearsMovementPolicyTests)
+	endif()
 endif()
 
 if(WIN32)

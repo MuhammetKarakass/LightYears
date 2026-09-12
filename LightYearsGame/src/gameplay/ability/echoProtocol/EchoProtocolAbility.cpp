@@ -47,7 +47,7 @@ namespace ly
 			AbilityData::EchoProtocol::Attribute::PowerPerLevel,
 			AbilityData::EchoProtocol::Attribute::AttackPowerScale,
 			AbilityData::EchoProtocol::Attribute::MaxHealthScale,
-			AbilityData::EchoProtocol::Attribute::EnergyMaxScale,
+			AbilityData::EchoProtocol::Attribute::EnergyPowerScale,
 			AbilityData::EchoProtocol::Attribute::AttackSpeedScale,
 			AbilityData::EchoProtocol::Attribute::LuckScale,
 			AbilityData::EchoProtocol::Attribute::MovementScale
@@ -105,9 +105,9 @@ namespace ly
 		{
 			return ResolveValue(context, Attribute::MaxHealthScale, 0.20f);
 		}
-		if (sourceAttributeId == OwnerAttributeIds::EnergyMax)
+		if (sourceAttributeId == OwnerAttributeIds::EnergyPower)
 		{
-			return ResolveValue(context, Attribute::EnergyMaxScale, 0.10f);
+			return ResolveValue(context, Attribute::EnergyPowerScale, 0.10f);
 		}
 		if (sourceAttributeId == OwnerAttributeIds::AttackSpeed)
 		{

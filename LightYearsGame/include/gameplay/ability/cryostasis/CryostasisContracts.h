@@ -68,11 +68,11 @@ namespace AbilityData::Cryostasis
 		inline static const sas::AttributeId HealthRegenMaxHealthScale{
 			"Ability.Defense.Cryostasis.HealthRegenMaxHealthScale"
 		};
-		inline static const sas::AttributeId BaseEnergyRegenPerSecond{
-			"Ability.Defense.Cryostasis.BaseEnergyRegenPerSecond"
+		inline static const sas::AttributeId BaseAfterburnerRecoveryPerSecond{
+			"Ability.Defense.Cryostasis.BaseAfterburnerRecoveryPerSecond"
 		};
-		inline static const sas::AttributeId EnergyRegenMaxHealthScale{
-			"Ability.Defense.Cryostasis.EnergyRegenMaxHealthScale"
+		inline static const sas::AttributeId AfterburnerRecoveryMaxHealthScale{
+			"Ability.Defense.Cryostasis.AfterburnerRecoveryMaxHealthScale"
 		};
 		inline static const sas::AttributeId BaseBreakDamage{
 			"Ability.Defense.Cryostasis.BaseBreakDamage"

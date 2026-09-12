@@ -58,11 +58,11 @@ namespace ly
 					AreaAttributeIds::Length,
 					AreaAttributeIds::Width,
 					AbilityData::CrystalBarricade::Actor::Wall::BaseContactDamage,
-					AbilityData::CrystalBarricade::Actor::Wall::EnergyMaxContactScale,
+					AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerContactScale,
 					AbilityData::CrystalBarricade::Actor::Wall::ContactInterval,
 					AbilityData::CrystalBarricade::Actor::Wall::BaseRicochetMultiplier,
-					AbilityData::CrystalBarricade::Actor::Wall::EnergyMaxRicochetReference,
-					AbilityData::CrystalBarricade::Actor::Wall::EnergyMaxRicochetScale,
+					AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetReference,
+					AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetScale,
 					AbilityData::CrystalBarricade::Actor::Wall::SameSurfaceLockDuration,
 					AbilityData::CrystalBarricade::Actor::Wall::MaxHealthDurationReference,
 					AbilityData::CrystalBarricade::Actor::Wall::MaxHealthDurationScale
@@ -133,7 +133,7 @@ namespace ly
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
 		mLength = std::max(1.f, Value(attributes, AreaAttributeIds::Length, mLength));
 		mThickness = std::max(1.f, Value(attributes, AreaAttributeIds::Width, mThickness));
-		const float energyMax = ResolveOwnerAttribute(OwnerAttributeIds::EnergyMax);
+		const float energyPower = ResolveOwnerAttribute(OwnerAttributeIds::EnergyPower);
 		const float maxHealth = ResolveOwnerAttribute(OwnerAttributeIds::MaxHealth);
 		mRemainingDuration = std::max(0.f,
 			Value(attributes, CommonAttributeIds::Duration, mRemainingDuration) +
@@ -143,16 +143,16 @@ namespace ly
 		);
 		mContactDamage = std::max(0.f,
 			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::BaseContactDamage, 20.f) +
-			energyMax * Value(attributes,
-				AbilityData::CrystalBarricade::Actor::Wall::EnergyMaxContactScale, 0.15f)
+			energyPower * Value(attributes,
+				AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerContactScale, 0.15f)
 		);
 		mContactInterval = std::max(0.01f, Value(attributes,
 			AbilityData::CrystalBarricade::Actor::Wall::ContactInterval, 0.5f));
 		mRicochetMultiplier = std::max(0.f,
 			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::BaseRicochetMultiplier, 0.8f) +
-			std::max(0.f, energyMax - Value(attributes,
-				AbilityData::CrystalBarricade::Actor::Wall::EnergyMaxRicochetReference, 50.f)) *
-			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::EnergyMaxRicochetScale, 0.001f)
+			std::max(0.f, energyPower - Value(attributes,
+				AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetReference, 50.f)) *
+			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetScale, 0.001f)
 		);
 		mSameSurfaceLockDuration = std::max(0.f, Value(attributes,
 			AbilityData::CrystalBarricade::Actor::Wall::SameSurfaceLockDuration, 0.12f));

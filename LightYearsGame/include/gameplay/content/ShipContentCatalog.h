@@ -18,5 +18,6 @@ namespace ly::content
 		static const ShipDefinition* FindById(const std::string& shipId);
 		static const ShipDefinition& GetPlayerFighterDefinition();
 		static bool IsLoaded() noexcept;
+		static bool IsValidShipDefinition(const ShipDefinition& definition);
 	};
 }

@@ -71,7 +71,7 @@ namespace ly
 				return { true, {} };
 			}
 
-			void FireOnce(
+			bool FireOnce(
 				const PrimaryWeaponExecutionContext& context,
 				PrimaryWeaponTypeRuntimeState&
 			) const override
@@ -79,11 +79,12 @@ namespace ly
 				World* world = context.owner.GetWorld();
 				if (!world)
 				{
-					return;
+					return false;
 				}
 
+				bool anySpawned = false;
 				const auto spawnFromMuzzle =
-					[&](const WeaponMuzzleDefinition& muzzle)
+					[&](const WeaponMuzzleDefinition& muzzle) -> bool
 				{
 					const weak_ptr<ExpandingWaveWeaponActor> wave =
 						world->SpawnActor<ExpandingWaveWeaponActor>(
@@ -103,19 +104,24 @@ namespace ly
 							context.owner.GetActorRotation() +
 							muzzle.rotationOffset
 						);
+						return true;
 					}
+					return false;
 				};
 
 				if (context.definition.muzzleDefinitions.empty())
 				{
-					spawnFromMuzzle(WeaponMuzzleDefinition{});
-					return;
+					return spawnFromMuzzle(WeaponMuzzleDefinition{});
 				}
 				for (const WeaponMuzzleDefinition& muzzle :
 					context.definition.muzzleDefinitions)
 				{
-					spawnFromMuzzle(muzzle);
+					if (spawnFromMuzzle(muzzle))
+					{
+						anySpawned = true;
+					}
 				}
+				return anySpawned;
 			}
 		};
 	}

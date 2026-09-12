@@ -158,11 +158,11 @@ namespace ly
 		mSpeedDamageConversion = std::max(0.f, FindValue(
 			attributes, AbilityData::InertialWake::Actor::Wake::SpeedDamageConversion, 0.30f
 		));
-		mEnergyMaxReference = std::max(0.f, FindValue(
-			attributes, AbilityData::InertialWake::Actor::Wake::EnergyMaxReference, 50.f
+		mEnergyPowerReference = std::max(0.f, FindValue(
+			attributes, AbilityData::InertialWake::Actor::Wake::EnergyPowerReference, 50.f
 		));
-		mEnergyMaxConversionPerPoint = std::max(0.f, FindValue(
-			attributes, AbilityData::InertialWake::Actor::Wake::EnergyMaxConversionPerPoint, 0.0001f
+		mEnergyPowerConversionPerPoint = std::max(0.f, FindValue(
+			attributes, AbilityData::InertialWake::Actor::Wake::EnergyPowerConversionPerPoint, 0.0001f
 		));
 		mSameTargetHitCooldown = std::max(0.01f, FindValue(
 			attributes, AbilityData::InertialWake::Actor::Wake::SameTargetHitCooldown, 2.f
@@ -327,14 +327,14 @@ namespace ly
 		{
 			return;
 		}
-		float energyMax = 0.f;
+		float energyPower = 0.f;
 		if (const auto* combatantOwner = dynamic_cast<const Combatant*>(owner))
 		{
-			energyMax = std::max(0.f, combatantOwner->GetAbilitySystemComponent()
-				.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyMax));
+			energyPower = std::max(0.f, combatantOwner->GetAbilitySystemComponent()
+				.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower));
 		}
 		const float conversion = mSpeedDamageConversion +
-			std::max(0.f, energyMax - mEnergyMaxReference) * mEnergyMaxConversionPerPoint;
+			std::max(0.f, energyPower - mEnergyPowerReference) * mEnergyPowerConversionPerPoint;
 		// The hit samples real velocity here, not an activation snapshot. No upper
 		// limit is applied: high-speed builds retain their full kinetic payoff.
 		ApplyCombatDamage(

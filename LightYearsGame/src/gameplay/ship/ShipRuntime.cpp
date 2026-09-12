@@ -14,6 +14,15 @@ namespace ly
 	void ShipRuntime::InitializeFromShipDefinition(const ShipDefinition& shipDefinition)
 	{
 		mEnergyAttributes = shipDefinition.energyAttributes;
+		if (mOwnerAttributes)
+		{
+			List<OwnerAttributeBaseEntry> profileAttributes = shipDefinition.baseOwnerAttributes;
+			profileAttributes.push_back({
+				OwnerAttributeIds::EnergyPower,
+				std::max(0.f, mEnergyAttributes.baseEnergyPower)
+			});
+			RebindBaseOwnerAttributes(profileAttributes);
+		}
 		mAttributeSystem.Clear();
 
 		mAttributeSystem.RegisterAttribute(ShipAttributeIds::MaxShield, 0.f);
@@ -64,21 +73,24 @@ namespace ly
 		}
 
 		const float maxHealth = std::max(0.f, mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::MaxHealth));
-		const float maxEnergy = mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::EnergyMax);
-		mOwnerAttributes->SetBaseValue(OwnerAttributeIds::HealthRegen, maxHealth / 1200.f);
+		const float energyPower = std::max(
+			0.f,
+			mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::EnergyPower)
+		);
+		RebindDerivedOwnerAttributes({ { OwnerAttributeIds::HealthRegen, maxHealth / 1200.f } });
 
+		constexpr float ReactorBudgetPerEnergyPower = 2.f;
+		const float reactorBudget = energyPower * ReactorBudgetPerEnergyPower;
 		const float maxShield = std::max(0.f,
-			mEnergyAttributes.baseMaxShield + maxEnergy * mEnergyAttributes.maxShieldPerMaxEnergy
+			mEnergyAttributes.baseMaxShield + reactorBudget * mEnergyAttributes.shieldAffinity
 		);
 		const float afterburnerCapacity = std::max(0.f,
 			mEnergyAttributes.baseAfterburnerCapacity +
-				maxEnergy * mEnergyAttributes.afterburnerCapacityPerMaxEnergy
+				reactorBudget * mEnergyAttributes.afterburnerAffinity
 		);
 		const float afterburnerRegen = afterburnerCapacity /
 			std::max(0.001f, mEnergyAttributes.afterburnerFullRechargeDuration);
 
-		// The owner-facing value is intentionally retained for UI and ability scaling.
-		mOwnerAttributes->SetBaseValue(OwnerAttributeIds::EnergyRegen, afterburnerRegen);
 		mAttributeSystem.SetBaseValue(ShipAttributeIds::MaxShield, maxShield);
 		mAttributeSystem.SetBaseValue(
 			ShipAttributeIds::ShieldRegen,
@@ -98,8 +110,55 @@ namespace ly
 
 	void ShipRuntime::Clear()
 	{
+		RebindBaseOwnerAttributes({});
+		RebindDerivedOwnerAttributes({});
 		mAttributeSystem.Clear();
 		mEnergyAttributes = ShipEnergyAttributes{};
+	}
+
+	void ShipRuntime::RebindOwnerAttributeContributions(const List<OwnerAttributeBaseEntry>& entries, List<OwnerAttributeBaseEntry>& appliedEntries)
+	{
+		if (!mOwnerAttributes)
+		{
+			return;
+		}
+
+		// Profile values are fixed base contributions; instant effects mutate the
+		// resulting base value. Replace only our contribution, retaining those
+		// mutations and all active modifier handles. Apply one write per attribute
+		// so a temporary clamp between removing and adding cannot lose a debuff.
+		List<OwnerAttributeBaseEntry> changes = entries;
+		for (const OwnerAttributeBaseEntry& previous : appliedEntries)
+		{
+			auto replacement = std::find_if(changes.begin(), changes.end(),
+				[&previous](const OwnerAttributeBaseEntry& entry) {
+					return entry.attributeId == previous.attributeId;
+				});
+			if (replacement != changes.end())
+			{
+				replacement->baseValue -= previous.baseValue;
+			}
+			else
+			{
+				changes.push_back({ previous.attributeId, -previous.baseValue });
+			}
+		}
+		for (const OwnerAttributeBaseEntry& change : changes)
+		{
+			mOwnerAttributes->SetBaseValue(change.attributeId,
+				mOwnerAttributes->GetBaseValue(change.attributeId) + change.baseValue);
+		}
+		appliedEntries = entries;
+	}
+
+	void ShipRuntime::RebindBaseOwnerAttributes(const List<OwnerAttributeBaseEntry>& entries)
+	{
+		RebindOwnerAttributeContributions(entries, mAppliedBaseOwnerAttributes);
+	}
+
+	void ShipRuntime::RebindDerivedOwnerAttributes(const List<OwnerAttributeBaseEntry>& entries)
+	{
+		RebindOwnerAttributeContributions(entries, mAppliedDerivedOwnerAttributes);
 	}
 
 	float ShipRuntime::GetAfterburnerCapacity() const
@@ -151,7 +210,7 @@ namespace ly
 	{
 		(void)previousValue;
 		(void)currentValue;
-		if (attributeId == OwnerAttributeIds::MaxHealth || attributeId == OwnerAttributeIds::EnergyMax)
+		if (attributeId == OwnerAttributeIds::MaxHealth || attributeId == OwnerAttributeIds::EnergyPower)
 		{
 			RecalculateAttributes();
 		}

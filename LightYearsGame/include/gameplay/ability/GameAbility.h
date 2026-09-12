@@ -109,7 +109,7 @@ namespace ly
 			return mActivationOrigin;
 		}
 
-		float GetWeaponFireIntervalRemaining() const { return mWeaponFireIntervalRemaining; }
+		float GetWeaponFireIntervalRemaining() const { return mPrimaryWeaponRuntime.fireIntervalRemaining; }
 		void SetWeaponFireIntervalRemaining(float interval);
 		PrimaryWeaponRuntimeState& GetPrimaryWeaponRuntime() { return mPrimaryWeaponRuntime; }
 		const sas::GameplayAttributeList& GetPrimaryWeaponRuntimeAttributes() const
@@ -128,6 +128,7 @@ namespace ly
 		);
 		bool RemoveAttachment(const std::string& attachmentId, AttachmentHostKind hostKind);
 		const AttachmentLoadout& GetAttachments() const { return mAttachments; }
+		uint64_t GetConfigurationRevision() const { return mConfigurationRevision; }
 		sas::GameplayAttributeList MergeAttachmentAttributes(
 			AttachmentHostKind hostKind,
 			const sas::GameplayAttributeList& attributes
@@ -178,7 +179,6 @@ namespace ly
 			return mDeferActiveDurationStart;
 		}
 
-		void UpdateWeaponFireInterval(float deltaTime);
 		void RefreshScopedConfiguration();
 		void HandleAttachmentEventInternal(
 			const sas::AbilityEvent& event,
@@ -201,16 +201,20 @@ namespace ly
 		size_t GetAttachmentSlotCapacity(AttachmentHostKind hostKind) const;
 
 		LightYearsAbilitySystemComponent& mAbilitySystem;
-		float mWeaponFireIntervalRemaining = 0.f;
 		PrimaryWeaponRuntimeState mPrimaryWeaponRuntime;
 		std::string mPrimaryWeaponRuntimeWeaponId;
 		sas::GameplayAttributeList mPrimaryWeaponRuntimeAttributes;
 		List<GameplayTag> mPrimaryWeaponRuntimeDamageTags;
+		uint64_t mPrimaryWeaponRuntimeAttributeRevision = 0;
+		uint64_t mPrimaryWeaponRuntimeAttachmentRevision = 0;
+		uint64_t mPrimaryWeaponRuntimeConfigurationRevision = 0;
+		bool mHasPrimaryWeaponRuntimeResolvedContext = false;
 		AttachmentLoadout mAttachments;
 		unique_ptr<GameAbilityBehavior> mBehavior;
 		sas::AbilityActivationOrigin mActivationOrigin =
 			sas::AbilityActivationOrigin::NormalInput;
 		int mInvocationMaximumLevel = 0;
 		bool mDeferActiveDurationStart = false;
+		uint64_t mConfigurationRevision = 0;
 	};
 }

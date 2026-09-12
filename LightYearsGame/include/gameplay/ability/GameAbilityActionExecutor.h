@@ -21,8 +21,8 @@ namespace ly
 		sas::GameplayAttributeList resolvedAttributes;
 		uint64_t resolvedAttributeRevision = 0;
 		uint64_t resolvedAttachmentRevision = 0;
+		uint64_t resolvedConfigurationRevision = 0;
 		bool hasResolvedAttributes = false;
-		float intervalRemaining = 0.f;
 		int executionCount = 0;
 		bool initialized = false;
 		bool lifecycleStarted = false;

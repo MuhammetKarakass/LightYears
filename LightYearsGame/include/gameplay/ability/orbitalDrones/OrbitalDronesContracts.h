@@ -61,11 +61,11 @@ namespace AbilityData::OrbitalDrones
 		inline static const sas::AttributeId ContactRadius{
 			"Ability.Offense.OrbitalDrones.ContactRadius"
 		};
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Offense.OrbitalDrones.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Offense.OrbitalDrones.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxDurationScale{
-			"Ability.Offense.OrbitalDrones.EnergyMaxDurationScale"
+		inline static const sas::AttributeId EnergyPowerDurationScale{
+			"Ability.Offense.OrbitalDrones.EnergyPowerDurationScale"
 		};
 
 	};

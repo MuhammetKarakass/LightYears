@@ -5,6 +5,8 @@
 #include "framework/Core.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 
+#include <cstdint>
+
 namespace ly
 {
 	class Actor;
@@ -21,6 +23,12 @@ namespace ly
 		virtual ~PrimaryWeaponTypeRuntimeState() = default;
 	};
 
+	struct PrimaryWeaponMagazineRuntimeState
+	{
+		int roundsRemaining = 0;
+		double reloadRemaining = 0.0;
+	};
+
 	class PrimaryWeaponHandler;
 	class PrimaryWeaponFeatureHandler;
 
@@ -30,10 +38,18 @@ namespace ly
 		List<const PrimaryWeaponFeatureHandler*> features;
 		unique_ptr<PrimaryWeaponTypeRuntimeState> typeState;
 		Map<sas::AttributeId, float> featureValues;
+		PrimaryWeaponMagazineRuntimeState magazineState;
+		std::optional<PrimaryWeaponMagazineDefinition> configuredMagazine;
+		PrimaryWeaponCadenceMode configuredCadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling;
+		PrimaryWeaponDamageRoundingPolicy configuredDamageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None;
+		std::optional<PrimaryWeaponEmpoweredShotDefinition> configuredEmpoweredShot;
 		std::string configuredWeaponId;
 		bool isInitialized = false;
 		bool isFiring = false;
+		uint64_t successfulFireCount = 0;
 		float requestedCooldown = 0.f;
+		float unprocessedSimulationTime = 0.f;
+		float fireIntervalRemaining = 0.f;
 
 		float GetFeatureValue(const sas::AttributeId& key, float fallback = 0.f) const;
 		void SetFeatureValue(const sas::AttributeId& key, float value);
@@ -49,6 +65,7 @@ namespace ly
 		List<GameplayTag> damageTags;
 		const List<std::string>* abilityUpgradeIds = nullptr;
 		PrimaryWeaponRuntimeState* runtime = nullptr;
+		PrimaryWeaponShotMetadata shotMetadata;
 
 		bool HasAbilityUpgrade(const std::string& upgradeId) const
 		{
@@ -83,7 +100,7 @@ namespace ly
 			const PrimaryWeaponExecutionContext& context,
 			PrimaryWeaponTypeRuntimeState& state
 		) const;
-		virtual void FireOnce(
+		virtual bool FireOnce(
 			const PrimaryWeaponExecutionContext& context,
 			PrimaryWeaponTypeRuntimeState& state
 		) const = 0;

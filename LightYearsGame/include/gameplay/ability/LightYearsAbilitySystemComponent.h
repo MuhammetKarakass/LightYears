@@ -70,10 +70,10 @@ namespace ly
 		// lock must interrupt an already active automatic weapon immediately;
 		// checking the lock only during the next activation would allow the
 		// current WhileHeld fire execution to continue.
-		void AddOwnedTag(const GameplayTag& tag);
-		void SetAbilitySlotInput(sas::AbilitySlot slot, bool inputHeld);
-		void Tick(float deltaTime);
-		void Clear();
+		void AddOwnedTag(const GameplayTag& tag) override;
+		void SetAbilitySlotInput(sas::AbilitySlot slot, bool inputHeld) override;
+		void Tick(float deltaTime) override;
+		void Clear() override;
 
 		PrimaryWeaponOverrideHandle PushPrimaryWeaponOverride(
 			const sas::ContentId& sourceId,

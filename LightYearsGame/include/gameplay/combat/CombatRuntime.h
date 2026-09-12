@@ -21,6 +21,7 @@ namespace ly
 
 		void InitializeOwnerAttributes(float maxHealth);
 		float GetCriticalChance() const;
+		float GetCriticalDamageMultiplier() const;
 		float GetCombatLuckFactor() const;
 		void Tick(float deltaTime);
 		void Clear();

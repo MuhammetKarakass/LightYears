@@ -51,6 +51,7 @@ namespace ly::content
 			const Json& object
 		)
 		{
+			energy.baseEnergyPower = object.at("baseEnergyPower").get<float>();
 			energy.baseMaxShield = object.at("baseMaxShield").get<float>();
 			energy.shieldFullRechargeDuration = object.at("shieldFullRechargeDuration").get<float>();
 			energy.baseShieldRechargeDelay = object.at("baseShieldRechargeDelay").get<float>();
@@ -60,8 +61,8 @@ namespace ly::content
 			energy.baseAfterburnerSpeedMultiplier = object.at("baseAfterburnerSpeedMultiplier").get<float>();
 			energy.baseAfterburnerAccelerationMultiplier = object.at("baseAfterburnerAccelerationMultiplier").get<float>();
 			energy.baseAfterburnerEnergyDrainPerSecond = object.at("baseAfterburnerEnergyDrainPerSecond").get<float>();
-			energy.maxShieldPerMaxEnergy = object.at("maxShieldPerMaxEnergy").get<float>();
-			energy.afterburnerCapacityPerMaxEnergy = object.at("afterburnerCapacityPerMaxEnergy").get<float>();
+			energy.shieldAffinity = object.at("shieldAffinity").get<float>();
+			energy.afterburnerAffinity = object.at("afterburnerAffinity").get<float>();
 			energy.baseAfterburnerRampUpDuration = object.at("baseAfterburnerRampUpDuration").get<float>();
 			energy.baseAfterburnerRampDownDuration = object.at("baseAfterburnerRampDownDuration").get<float>();
 			energy.baseAfterburnerManeuverabilityMultiplier = object.at(
@@ -76,12 +77,12 @@ namespace ly::content
 		{
 			progression.baseXP = object.at("baseXP").get<float>();
 			progression.xpExponent = object.at("xpExponent").get<float>();
-			progression.growthOverrides.clear();
-			for (const Json& growth : object.value("growthOverrides", Json::array()))
+			progression.naturalGrowth.clear();
+			for (const Json& growth : object.value("naturalGrowth", Json::array()))
 			{
-				progression.growthOverrides.push_back({
+				progression.naturalGrowth.push_back({
 					sas::AttributeId{ growth.at("attributeId").get<std::string>() },
-					growth.at("multiplier").get<float>()
+					growth.at("perLevel").get<float>()
 				});
 			}
 		}
@@ -126,6 +127,14 @@ namespace ly::content
 			ParseMovement(loaded.definition.movementAttributes, object.at("movement"));
 			ParseEnergy(loaded.definition.energyAttributes, object.at("energy"));
 			ParseProgression(loaded.definition.progressionDefinition, object.at("progression"));
+			loaded.definition.baseOwnerAttributes.clear();
+			for (const Json& baseAttr : object.value("baseOwnerAttributes", Json::array()))
+			{
+				loaded.definition.baseOwnerAttributes.push_back({
+					sas::AttributeId{ baseAttr.at("attributeId").get<std::string>() },
+					baseAttr.at("baseValue").get<float>()
+				});
+			}
 			return loaded;
 		}
 	}

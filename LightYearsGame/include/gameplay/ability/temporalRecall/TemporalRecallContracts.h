@@ -65,11 +65,11 @@ namespace AbilityData::TemporalRecall
 		inline static const sas::AttributeId MaxHealthRecoveryScale{
 			"Ability.Defense.TemporalRecall.MaxHealthRecoveryScale"
 		};
-		inline static const sas::AttributeId EnergyMaxReference{
-			"Ability.Defense.TemporalRecall.EnergyMaxReference"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Defense.TemporalRecall.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyMaxRecoveryScale{
-			"Ability.Defense.TemporalRecall.EnergyMaxRecoveryScale"
+		inline static const sas::AttributeId EnergyPowerRecoveryScale{
+			"Ability.Defense.TemporalRecall.EnergyPowerRecoveryScale"
 		};
 		inline static const sas::AttributeId OvercapHoldDuration{
 			"Ability.Defense.TemporalRecall.OvercapHoldDuration"
@@ -83,6 +83,6 @@ namespace AbilityData::TemporalRecall
 		inline static const sas::AttributeId HealthScalingSource =
 			ly::OwnerAttributeIds::MaxHealth;
 		inline static const sas::AttributeId ShieldScalingSource =
-			ly::OwnerAttributeIds::EnergyMax;
+			ly::OwnerAttributeIds::EnergyPower;
 	};
 }

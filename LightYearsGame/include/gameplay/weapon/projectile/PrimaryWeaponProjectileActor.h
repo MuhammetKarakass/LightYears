@@ -42,6 +42,9 @@ namespace ly
 		void SetImpactBehavior(
 			const shared_ptr<ProjectileImpactBehavior>& impactBehavior
 		);
+		bool IsEmpowered() const { return mShotMetadata.isEmpowered; }
+		const PrimaryWeaponShotMetadata& GetShotMetadata() const { return mShotMetadata; }
+		void SetShotMetadata(const PrimaryWeaponShotMetadata& metadata);
 		virtual void Destroy() override;
 	private:
 		void SetVisualScale(float scale);
@@ -58,6 +61,7 @@ namespace ly
 		int mRemainingPierces;
 		WeaponPresentationDefinition mPresentationDefinition;
 		shared_ptr<ProjectileImpactBehavior> mImpactBehavior;
+		PrimaryWeaponShotMetadata mShotMetadata;
 		bool mHasLaunchVelocity = false;
 		bool mImpactBehaviorCompleted = false;
 		std::unordered_set<unsigned int> mProcessedImpactTargets;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/content/GameAbilityActions.h"
 #include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/content/AbilityBehaviorType.h"
@@ -57,6 +58,14 @@ namespace ly
 		// attribute and scaling pipeline. The default keeps existing abilities
 		// numerically unchanged; Echo uses it for its power rule.
 		float attributeOutputMultiplier = 1.f;
+		// Explicit list of attributes affected by attributeOutputMultiplier.
+		// Decoupled from attribute scaling rules: adding or removing a scaling rule
+		// does not change whether an attribute is an invocation output.
+		// Initialized by default to { Common.Damage } to preserve existing baseline behavior.
+		List<sas::AttributeId> invocationOutputAttributes = { CommonAttributeIds::Damage };
+		// Level progression scaling rules materialized during RebuildDefinitionForLevel.
+		// Kept separate from base scalingRules so execution order is explicit and deterministic.
+		List<sas::AttributeScalingRule> levelScalingRules;
 
 		const AbilityEffectSpecDefinition* FindEffectSpec(const sas::ContentId& effectId) const
 		{

@@ -38,8 +38,8 @@ namespace AbilityData::Definitions
 			{ AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale, 0.40f, 0.f },
 			{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, 8.f, 0.f },
 			{ AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, 0.04f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::BaseEnergyRegenPerSecond, 4.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::EnergyRegenMaxHealthScale, 0.01f, 0.f },
+			{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, 4.f, 0.f },
+			{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryMaxHealthScale, 0.01f, 0.f },
 			{ AbilityData::Cryostasis::Attribute::BaseBreakDamage, 70.f, 0.f },
 			{ AbilityData::Cryostasis::Attribute::BreakDamageMaxIceHealthScale, 0.30f, 0.f },
 			{ AbilityData::Cryostasis::Attribute::FieldCryoStacks, 1.f, 1.f, 1.f },
@@ -52,7 +52,7 @@ namespace AbilityData::Definitions
 				{ AbilityData::Cryostasis::Attribute::FieldTickDamage, sas::AttributeModifierOperation::Add, 1.f },
 				{ AbilityData::Cryostasis::Attribute::BaseIceHealth, sas::AttributeModifierOperation::Add, 15.f },
 				{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, sas::AttributeModifierOperation::Add, 0.75f },
-				{ AbilityData::Cryostasis::Attribute::BaseEnergyRegenPerSecond, sas::AttributeModifierOperation::Add, 0.25f },
+				{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, sas::AttributeModifierOperation::Add, 0.25f },
 				{ AbilityData::Cryostasis::Attribute::BaseBreakDamage, sas::AttributeModifierOperation::Add, 5.f },
 				{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -0.4f }
 			}, {}, {}, {} }

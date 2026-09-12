@@ -4,6 +4,7 @@
 #include "framework/MathUtility.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace ly
 {
@@ -91,19 +92,36 @@ namespace ly
 			}
 		}
 
+		const auto resolveCriticalMultiplier = [&]()
+		{
+			const auto* sourceCombatant = source ? dynamic_cast<const Combatant*>(source) : nullptr;
+			return sourceCombatant ? sourceCombatant->GetCombatRuntime().GetCriticalDamageMultiplier() : 1.f;
+		};
 		float resolvedDamage = damage;
 		bool wasCritical = false;
-		if (payload.canCrit)
+		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
 		{
-			if (auto* sourceCombatant = source ? dynamic_cast<Combatant*>(source) : nullptr)
+			if (payload.criticalPolicy == DamageCriticalPolicy::Guaranteed)
 			{
-				const float criticalChance = sourceCombatant->GetCombatRuntime().GetCriticalChance();
-				if (RandRange(0.f, 1.f) < criticalChance)
+				resolvedDamage *= resolveCriticalMultiplier();
+				wasCritical = true;
+			}
+			else if (payload.criticalPolicy == DamageCriticalPolicy::Random)
+			{
+				if (auto* sourceCombatant = source ? dynamic_cast<Combatant*>(source) : nullptr)
 				{
-					resolvedDamage *= std::max(1.f, payload.criticalDamageMultiplier);
-					wasCritical = true;
+					const float criticalChance = sourceCombatant->GetCombatRuntime().GetCriticalChance();
+					if (RandRange(0.f, 1.f) < criticalChance)
+					{
+						resolvedDamage *= resolveCriticalMultiplier();
+						wasCritical = true;
+					}
 				}
 			}
+		}
+		if (payload.roundDamageUp)
+		{
+			resolvedDamage = std::ceil(resolvedDamage);
 		}
 
 		if (auto* combatant = dynamic_cast<Combatant*>(&target))
@@ -124,7 +142,6 @@ namespace ly
 			return;
 		}
 
-		// Non-combat actors keep the engine's lightweight damage path.
 		target.ApplyDamage(resolvedDamage);
 	}
 }

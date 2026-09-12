@@ -68,11 +68,11 @@ namespace AbilityData::InertialWake
 			inline static const sas::AttributeId SpeedDamageConversion{
 				"AbilityActor.InertialWake.Wake.SpeedDamageConversion"
 			};
-			inline static const sas::AttributeId EnergyMaxReference{
-				"AbilityActor.InertialWake.Wake.EnergyMaxReference"
+			inline static const sas::AttributeId EnergyPowerReference{
+				"AbilityActor.InertialWake.Wake.EnergyPowerReference"
 			};
-			inline static const sas::AttributeId EnergyMaxConversionPerPoint{
-				"AbilityActor.InertialWake.Wake.EnergyMaxConversionPerPoint"
+			inline static const sas::AttributeId EnergyPowerConversionPerPoint{
+				"AbilityActor.InertialWake.Wake.EnergyPowerConversionPerPoint"
 			};
 			inline static const sas::AttributeId SameTargetHitCooldown{
 				"AbilityActor.InertialWake.Wake.SameTargetHitCooldown"

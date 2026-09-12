@@ -23,7 +23,7 @@ namespace ly
 		) override;
 		void ConfigureFromAbilityValues(
 			const sas::GameplayAttributeList& values,
-			float ownerEnergyMax
+			float ownerEnergyPower
 		);
 		void SetSnapshotTarget(const sf::Vector2f& targetLocation);
 

@@ -1,5 +1,6 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "attributes/AttributeMath.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -44,7 +45,7 @@ namespace ly
 
 	void GameAbility::SetWeaponFireIntervalRemaining(float interval)
 	{
-		mWeaponFireIntervalRemaining = std::max(0.f, interval);
+		mPrimaryWeaponRuntime.fireIntervalRemaining = std::max(0.f, interval);
 	}
 
 	bool GameAbility::TryEquipAttachment(
@@ -419,7 +420,6 @@ namespace ly
 	void GameAbility::TickInactive(float deltaTime)
 	{
 		TickInactivePrimaryWeaponRuntime(deltaTime);
-		UpdateWeaponFireInterval(deltaTime);
 	}
 
 	void GameAbility::EndContent(sas::AbilityEndReason reason)
@@ -602,11 +602,6 @@ namespace ly
 		RefreshPrimaryWeaponRuntimeConfiguration();
 	}
 
-	void GameAbility::UpdateWeaponFireInterval(float deltaTime)
-	{
-		mWeaponFireIntervalRemaining = std::max(0.f, mWeaponFireIntervalRemaining - deltaTime);
-	}
-
 	void GameAbility::UpdatePrimaryWeaponRuntimeContext(
 		const PrimaryWeaponDefinition& weaponDefinition,
 		const sas::GameplayAttributeList& attributes,
@@ -617,17 +612,27 @@ namespace ly
 		{
 			mPrimaryWeaponRuntime = PrimaryWeaponRuntimeState{};
 			mPrimaryWeaponRuntimeWeaponId = weaponDefinition.weaponId;
+			mHasPrimaryWeaponRuntimeResolvedContext = false;
 		}
 		mPrimaryWeaponRuntimeAttributes = attributes;
 		mPrimaryWeaponRuntimeDamageTags = damageTags;
+		mPrimaryWeaponRuntimeAttributeRevision = mAbilitySystem.GetAttributes().GetRevision();
+		mPrimaryWeaponRuntimeAttachmentRevision = mAttachments.GetRevision();
+		mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
+		mHasPrimaryWeaponRuntimeResolvedContext = true;
 	}
 
 	void GameAbility::TickInactivePrimaryWeaponRuntime(float deltaTime)
 	{
+		if (mPrimaryWeaponRuntime.isInitialized && !mPrimaryWeaponRuntime.isFiring)
+		{
+			RefreshPrimaryWeaponRuntimeConfiguration();
+		}
 		if (!mPrimaryWeaponRuntime.isInitialized ||
 			mPrimaryWeaponRuntime.isFiring ||
 			mPrimaryWeaponRuntimeWeaponId.empty() || mPrimaryWeaponRuntimeAttributes.empty())
 		{
+			mPrimaryWeaponRuntime.fireIntervalRemaining = std::max(0.f, mPrimaryWeaponRuntime.fireIntervalRemaining - deltaTime);
 			return;
 		}
 
@@ -653,6 +658,7 @@ namespace ly
 			);
 			return;
 		}
+		mPrimaryWeaponRuntime.fireIntervalRemaining = std::max(0.f, mPrimaryWeaponRuntime.fireIntervalRemaining - deltaTime);
 	}
 
 	void GameAbility::RebuildDefinitionForLevel()
@@ -674,6 +680,10 @@ namespace ly
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				mDefinition.attributeModifiers.push_back(modifier);
+			}
+			for (const sas::AttributeScalingRule& scalingRule : step.scalingRules)
+			{
+				mDefinition.levelScalingRules.push_back(scalingRule);
 			}
 			for (const std::string& upgradeId : step.unlockedUpgradeIds)
 			{
@@ -701,6 +711,7 @@ namespace ly
 				step.addedTriggers.end()
 			);
 		}
+		++mConfigurationRevision;
 	}
 
 	void GameAbility::RefreshPrimaryWeaponRuntimeConfiguration()
@@ -721,12 +732,40 @@ namespace ly
 			{
 				continue;
 			}
-
-			PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured(
-				fireAction->weaponDefinition,
-				mPrimaryWeaponRuntime,
-				&mDefinition.unlockedUpgradeIds
+			const uint64_t attributeRevision = mAbilitySystem.GetAttributes().GetRevision();
+			const uint64_t attachmentRevision = mAttachments.GetRevision();
+			const bool configurationChanged = !mHasPrimaryWeaponRuntimeResolvedContext ||
+				mPrimaryWeaponRuntimeConfigurationRevision != mConfigurationRevision;
+			if (configurationChanged)
+			{
+				const PrimaryWeaponValidationResult validation =
+					PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured(
+						fireAction->weaponDefinition,
+						mPrimaryWeaponRuntime,
+						&mDefinition.unlockedUpgradeIds
+					);
+				if (!validation.isValid)
+				{
+					return;
+				}
+			}
+			if (!configurationChanged &&
+				mPrimaryWeaponRuntimeAttributeRevision == attributeRevision &&
+				mPrimaryWeaponRuntimeAttachmentRevision == attachmentRevision)
+			{
+				return;
+			}
+			AbilityExecutionContext context{ &mAbilitySystem, &mDefinition, nullptr, this };
+			mPrimaryWeaponRuntimeAttributes = AbilityActionAttributeResolver::ResolveAttributes(
+				context,
+				&fireAction->weaponDefinition,
+				fireAction->weaponDefinition.attributes,
+				fireAction->weaponDefinition.damageTags
 			);
+			mPrimaryWeaponRuntimeAttributeRevision = attributeRevision;
+			mPrimaryWeaponRuntimeAttachmentRevision = attachmentRevision;
+			mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
+			mHasPrimaryWeaponRuntimeResolvedContext = true;
 			return;
 		}
 	}

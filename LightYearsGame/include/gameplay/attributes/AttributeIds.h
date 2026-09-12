@@ -8,8 +8,7 @@ namespace ly
 	{
 		inline static const sas::AttributeId MaxHealth{ "Owner.MaxHealth" };
 		inline static const sas::AttributeId HealthRegen{ "Owner.HealthRegen" };
-		inline static const sas::AttributeId EnergyMax{ "Owner.Energy.Max" };
-		inline static const sas::AttributeId EnergyRegen{ "Owner.Energy.Regen" };
+		inline static const sas::AttributeId EnergyPower{ "Owner.Energy.Power" };
 		inline static const sas::AttributeId AttackPower{ "Owner.AttackPower" };
 		inline static const sas::AttributeId AttackSpeed{ "Owner.AttackSpeed" };
 		inline static const sas::AttributeId AbilityHaste{ "Owner.AbilityHaste" };
@@ -19,6 +18,8 @@ namespace ly
 		inline static const sas::AttributeId Armor{ "Owner.Armor" };
 		inline static const sas::AttributeId Luck{ "Owner.Luck" };
 		inline static const sas::AttributeId CriticalChance{ "Owner.CriticalChance" };
+		// Total damage multiplier used when a hit resolves as critical: 1.5 means 150% damage.
+		inline static const sas::AttributeId CriticalDamage{ "Owner.CriticalDamage" };
 	};
 
 	struct ShipAttributeIds

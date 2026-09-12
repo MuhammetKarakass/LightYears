@@ -77,9 +77,9 @@ namespace ly
 		float mOrbitalAngularSpeed = 4.5f;
 		float mInwardForce = 1500.f;
 		float mOrbitalRadiusRatio = 0.42f;
-		float mEnergyMaxReference = 50.f;
-		float mEnergyMaxDamageScale = 0.005f;
-		float mEnergyMaxRadiusScale = 0.20f;
+		float mEnergyPowerReference = 50.f;
+		float mEnergyPowerDamageScale = 0.005f;
+		float mEnergyPowerRadiusScale = 0.20f;
 		float mFieldAge = 0.f;
 		float mTickAccumulator = 0.f;
 		float mVisualAge = 0.f;

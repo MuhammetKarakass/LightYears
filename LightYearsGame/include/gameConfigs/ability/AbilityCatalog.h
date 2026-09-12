@@ -59,6 +59,7 @@ namespace AbilityData
 			{
 				ly::AbilityLevelStep abilityLevelStep;
 				abilityLevelStep.attributeModifiers = weaponLevelStep.attributeModifiers;
+				abilityLevelStep.scalingRules = weaponLevelStep.scalingRules;
 				abilityLevelStep.unlockedUpgradeIds = weaponLevelStep.unlockedUpgradeIds;
 				for (const PrimaryWeaponFeatureType featureType : weaponLevelStep.unlockedFeatureTypes)
 				{

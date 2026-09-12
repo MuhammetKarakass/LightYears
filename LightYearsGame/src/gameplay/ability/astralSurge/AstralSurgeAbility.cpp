@@ -43,7 +43,7 @@ namespace ly
 			}
 			const sas::AttributeScalingRule& rule = definition.scalingRules.front();
 			return rule.targetAttributeId == CommonAttributeIds::Damage &&
-				rule.sourceAttributeId == OwnerAttributeIds::EnergyMax &&
+				rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 				rule.operation == sas::AttributeModifierOperation::Add &&
 				std::abs(rule.coefficient - 0.45f) <= 0.0001f;
 		}
@@ -92,7 +92,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Astral Surge requires a timed OnPressed lifecycle and EnergyMax damage scaling.";
+					"Astral Surge requires a timed OnPressed lifecycle and EnergyPower damage scaling.";
 			}
 			return false;
 		}

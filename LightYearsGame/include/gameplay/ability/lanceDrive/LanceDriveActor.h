@@ -43,8 +43,8 @@ namespace ly
 		std::unordered_map<const Actor*, float> mNextHitTime;
 		float mBaseDamage = 10.f;
 		float mSpeedDamageConversion = 0.20f;
-		float mEnergyMaxReference = 50.f;
-		float mEnergyMaxConversionPerPoint = 0.0001f;
+		float mEnergyPowerReference = 50.f;
+		float mEnergyPowerConversionPerPoint = 0.0001f;
 		float mSameTargetHitCooldown = 0.75f;
 		float mLength = 146.25f;
 		float mEdgeThickness = 6.f;

@@ -28,8 +28,8 @@ namespace AbilityData::Definitions
 		definition.accentColor = sf::Color{ 150, 230, 255, 255 };
 
 		definition.attributes = {
-			{ AbilityData::ZeroDrag::Attribute::EnergyMaxReference, 50.f, 0.f },
-			{ AbilityData::ZeroDrag::Attribute::EnergyMaxDurationPerPoint, 0.002f, 0.f },
+			{ AbilityData::ZeroDrag::Attribute::EnergyPowerReference, 50.f, 0.f },
+			{ AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint, 0.002f, 0.f },
 			// Normal damping remains active. This extra drive force lets the player
 			// actually reach the uncapped high-speed state instead of settling near
 			// the normal ship's thrust-versus-damping equilibrium.
