@@ -1,4 +1,4 @@
-﻿#include "framework/Actor.h"
+#include "framework/Actor.h"
 #include "framework/AssetManager.h"
 #include "framework/World.h"
 #include "framework/MathUtility.h"

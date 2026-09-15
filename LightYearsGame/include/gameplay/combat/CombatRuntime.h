@@ -6,6 +6,7 @@
 #include "framework/Delegate.h"
 #include "presentation/effects/GameplayEffectPresentationBinding.h"
 #include "gameplay/combat/ContactDamageGuardRegistry.h"
+#include "gameplay/combat/CombatRuntimeModifiers.h"
 
 #include <string>
 #include <unordered_map>
@@ -25,6 +26,10 @@ namespace ly
 		float GetCombatLuckFactor() const;
 		void Tick(float deltaTime);
 		void Clear();
+
+		bool SetRuntimeModifier(const std::string& sourceId, CombatRuntimeModifier modifier);
+		bool RemoveRuntimeModifier(const std::string& sourceId);
+		float GetOutgoingDamageMultiplier() const noexcept;
 
 		// Abilities can register temporary, source-owned combat protection
 		// without making ship classes know the ability family that requested it.
@@ -80,6 +85,7 @@ namespace ly
 			bool blocksOutgoingDamage = false;
 		};
 		std::unordered_map<std::string, DamageProtection> mDamageProtections;
+		CombatRuntimeModifiers mRuntimeModifiers;
 	};
 }
 

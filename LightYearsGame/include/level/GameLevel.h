@@ -38,6 +38,9 @@ namespace ly
 		virtual void CreateGameHUD();
 		virtual void CreateHUDControllers();
 
+		// Single-ownership registration point for derived levels; null controllers are ignored.
+		void AddHUDController(shared_ptr<HUDController> controller);
+
 		void BroadcastGameplayWarning(const GameplayWarning& warning);
 		void ClearGameplayWarning(GameplayWarningType warningType);
 

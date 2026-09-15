@@ -10,6 +10,8 @@
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "attributes/AttributeMath.h"
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <vector>
 
 namespace ly
@@ -150,6 +152,21 @@ namespace ly
 		DispatchPendingEffectEvents();
 	}
 
+	bool CombatRuntime::SetRuntimeModifier(const std::string& sourceId, CombatRuntimeModifier modifier)
+	{
+		return mRuntimeModifiers.Set(sourceId, modifier);
+	}
+
+	bool CombatRuntime::RemoveRuntimeModifier(const std::string& sourceId)
+	{
+		return mRuntimeModifiers.Remove(sourceId);
+	}
+
+	float CombatRuntime::GetOutgoingDamageMultiplier() const noexcept
+	{
+		return mRuntimeModifiers.GetOutgoingDamageMultiplier();
+	}
+
 	void CombatRuntime::Clear()
 	{
 		mContactDamageGuardRegistry.Clear();
@@ -157,6 +174,7 @@ namespace ly
 		mEffectPresentation.Clear();
 		mPendingEffectEvents.clear();
 		mDamageProtections.clear();
+		mRuntimeModifiers.Clear();
 	}
 
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)

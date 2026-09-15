@@ -1,6 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "../internal/PrimaryWeaponBuiltIns.h"
+#include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/weapon/impact/ShotgunVolleyImpactGroup.h"
@@ -19,114 +19,6 @@ namespace ly
 			PrimaryWeaponType GetType() const override
 			{
 				return PrimaryWeaponType::ProjectileShotgun;
-			}
-
-			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
-			{
-				return PrimaryWeaponBuiltIns::ShotgunAttributeRoots();
-			}
-
-			const List<sas::AttributeId>& GetInheritedAttributeRoots() const override
-			{
-				return PrimaryWeaponBuiltIns::ProjectileDeliveryAttributeRoots();
-			}
-
-			PrimaryWeaponValidationResult ValidateDefinition(
-				const PrimaryWeaponDefinition& definition
-			) const override
-			{
-				for (const sas::AttributeId& required : {
-					CommonAttributeIds::Damage,
-					PrimaryWeaponSchema::Projectile::Delivery::Speed,
-					PrimaryWeaponSchema::Projectile::Delivery::Lifetime,
-					PrimaryWeaponSchema::Projectile::Shotgun::PelletCount,
-					PrimaryWeaponSchema::Projectile::Shotgun::SpreadAngle
-				})
-				{
-					const PrimaryWeaponValidationResult result =
-						PrimaryWeaponBuiltIns::RequireAttribute(
-							definition,
-							required,
-							"Shotgun weapon"
-						);
-					if (!result.isValid)
-					{
-						return result;
-					}
-				}
-
-				const float pelletCount = PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-					definition,
-					PrimaryWeaponSchema::Projectile::Shotgun::PelletCount
-				)->baseValue;
-				if (pelletCount < 2.f || std::round(pelletCount) != pelletCount)
-				{
-					return {
-						false,
-						"Shotgun pellet count must be an integer of at least two."
-					};
-				}
-				if (PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-					definition,
-					PrimaryWeaponSchema::Projectile::Shotgun::SpreadAngle
-				)->baseValue < 0.f)
-				{
-					return { false, "Shotgun spread angle cannot be negative." };
-				}
-
-				const sas::GameplayAttribute* damageReduction =
-					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-						definition,
-						PrimaryWeaponSchema::Projectile::Shotgun::DamageReductionPerAdditionalHit
-					);
-				const sas::GameplayAttribute* minimumMultiplier =
-					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-						definition,
-						PrimaryWeaponSchema::Projectile::Shotgun::MinimumDamageMultiplier
-					);
-				if (damageReduction || minimumMultiplier)
-				{
-					if (!damageReduction || !minimumMultiplier)
-					{
-						return {
-							false,
-							"Shotgun pellet falloff requires both reduction and minimum multiplier attributes."
-						};
-					}
-					if (damageReduction->baseValue <= 0.f ||
-						damageReduction->baseValue >= 1.f)
-					{
-						return {
-							false,
-							"Shotgun pellet damage reduction must be between zero and one."
-						};
-					}
-					if (minimumMultiplier->baseValue <= 0.f ||
-						minimumMultiplier->baseValue > 1.f)
-					{
-						return {
-							false,
-							"Shotgun minimum damage multiplier must be greater than zero and at most one."
-						};
-					}
-					if (sas::FindAttributeValue(
-							definition.attributes,
-							AreaAttributeIds::Radius,
-							0.f
-						) > 0.f ||
-						sas::FindAttributeValue(
-							definition.attributes,
-							PrimaryWeaponSchema::Projectile::Delivery::PierceCount,
-							0.f
-						) > 0.f)
-					{
-						return {
-							false,
-							"Shotgun pellet falloff only supports direct, non-piercing pellets."
-						};
-					}
-				}
-				return { true, {} };
 			}
 
 			bool FireOnce(

@@ -1,6 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "../internal/PrimaryWeaponBuiltIns.h"
+#include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h"
 
@@ -17,35 +17,6 @@ namespace ly
 			PrimaryWeaponType GetType() const override
 			{
 				return PrimaryWeaponType::ProjectileStandard;
-			}
-
-			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
-			{
-				return PrimaryWeaponBuiltIns::ProjectileDeliveryAttributeRoots();
-			}
-
-			PrimaryWeaponValidationResult ValidateDefinition(
-				const PrimaryWeaponDefinition& definition
-			) const override
-			{
-				for (const sas::AttributeId& required : {
-					CommonAttributeIds::Damage,
-					PrimaryWeaponSchema::Projectile::Delivery::Speed,
-					PrimaryWeaponSchema::Projectile::Delivery::Lifetime
-				})
-				{
-					const PrimaryWeaponValidationResult result =
-						PrimaryWeaponBuiltIns::RequireAttribute(
-							definition,
-							required,
-							"Projectile weapon"
-						);
-					if (!result.isValid)
-					{
-						return result;
-					}
-				}
-				return { true, {} };
 			}
 
 			bool FireOnce(

@@ -4,6 +4,7 @@
 
 #include "framework/JsonDocumentLoader.h"
 
+#include <cmath>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -70,6 +71,30 @@ namespace ly::content
 			).get<float>();
 		}
 
+		ly::List<ly::WeightedReward> ParseRewards(const Json& value)
+		{
+			if (!value.is_array()) throw std::runtime_error("Ship rewards must be an array");
+			ly::List<ly::WeightedReward> rewards;
+			float totalWeight = 0.f;
+			for (const Json& entry : value)
+			{
+				const std::string type = entry.at("type").get<std::string>();
+				ly::RewardFactoryFunc factory;
+				if (type == "Health") factory = &ly::CreateRewardHealth;
+				else if (type == "Life") factory = &ly::CreateRewardLife;
+				else if (type == "Shield") factory = &ly::CreateRewardShield;
+				else throw std::runtime_error("Unknown ship reward type: " + type);
+				const float weight = entry.at("weight").get<float>();
+				if (!std::isfinite(weight) || weight < 0.f || weight > 1.f)
+					throw std::runtime_error("Ship reward weight must be finite and within [0, 1]");
+				totalWeight += weight;
+				rewards.push_back({ std::move(factory), weight });
+			}
+			if (!std::isfinite(totalWeight) || totalWeight > 1.f)
+				throw std::runtime_error("Ship reward weights must total no more than 1");
+			return rewards;
+		}
+
 		void ParseProgression(
 			ShipProgressionDefinition& progression,
 			const Json& object
@@ -102,6 +127,7 @@ namespace ly::content
 				throw std::runtime_error(shipIdFailure);
 			}
 			loaded.definition.health = object.at("health").get<float>();
+			loaded.definition.texturePath = object.value("texturePath", loaded.definition.texturePath);
 			loaded.definition.speed = ParseVector2(object.at("speed"));
 			loaded.definition.collisionDamage = object.at("collisionDamage").get<float>();
 			loaded.definition.scoreAmt = object.at("score").get<unsigned int>();
@@ -127,6 +153,7 @@ namespace ly::content
 			ParseMovement(loaded.definition.movementAttributes, object.at("movement"));
 			ParseEnergy(loaded.definition.energyAttributes, object.at("energy"));
 			ParseProgression(loaded.definition.progressionDefinition, object.at("progression"));
+			loaded.definition.rewards = ParseRewards(object.value("rewards", Json::array()));
 			loaded.definition.baseOwnerAttributes.clear();
 			for (const Json& baseAttr : object.value("baseOwnerAttributes", Json::array()))
 			{

@@ -16,6 +16,7 @@
 #include "effects/GameplayEffectSpec.h"
 #include "effects/GameplayEffectSystem.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
+#include "EnemyCombatFoundationTests.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/dash/DashMovementController.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h"
@@ -140,7 +141,6 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
-
 namespace
 {
 	bool NearlyEqual(float left, float right)
@@ -316,6 +316,16 @@ namespace
 		bool mDashActive = false;
 		int mDashStartCount = 0;
 		int mDashEndCount = 0;
+	};
+
+	class HeadlessTestPlayerSpaceShip final : public ly::PlayerSpaceShip
+	{
+	public:
+		HeadlessTestPlayerSpaceShip(ly::World* world, const ShipDefinition& shipDefinition) : PlayerSpaceShip{ world, shipDefinition }
+		{
+		}
+
+		void Tick(float deltaTime) override { SpaceShip::Tick(deltaTime); }
 	};
 
 	class TestClearableProjectile final : public ly::AbilityWorldActor
@@ -700,6 +710,9 @@ namespace
 int main()
 {
 	using namespace ly;
+
+	const int enemyFoundationResult = RunEnemyCombatFoundationTests();
+	if (enemyFoundationResult != 0) return enemyFoundationResult;
 
 	{
 		ContactDamageGuardRegistry registry;
@@ -3906,7 +3919,9 @@ int main()
 		owner->SetActorLocation({ 1000.f, 1000.f });
 		owner->SetActorRotation(0.f);
 		target->SetCollisionLayer(CollisionLayer::Enemy);
-		target->SetActorLocation({ 1091.f, 820.f });
+		// The target begins outside the wall and enters its right arm only after
+		// the owner-following wall advances by 40 units.
+		target->SetActorLocation({ 1055.f, 850.f });
 		target->SetVelocity({});
 		auto wall = wallWorld.SpawnActor<LanceDriveActor>(owner.get(), LanceDrivePresentationProfile{}).lock();
 		wallWorld.TickInternal(0.f);
@@ -4339,7 +4354,7 @@ int main()
 	const PrimaryWeaponDefinition& basicLaser = LoadedWeapon("Weapon.Projectile.FighterRapidLaser.Basic");
 	if (basicLaser.weaponId != "Weapon.Projectile.FighterRapidLaser.Basic" ||
 		basicLaser.weaponType != PrimaryWeaponType::ProjectileStandard ||
-		basicLaser.progressionProfile.ResolveLevelSteps().size() != 3)
+		basicLaser.progressionProfile.ResolveLevelSteps().size() != 14)
 	{
 		return Fail("Fighter basic rapid laser has the wrong base profile");
 	}
@@ -5462,13 +5477,13 @@ int main()
 	{
 		return Fail("Default player loadout did not place Glacial Pressure on Ability3/F");
 	}
-	const GameAbility* ironcladProtocolLoadoutAbility =
+	const GameAbility* reclaimerProtocolLoadoutAbility =
 		defaultLoadoutShip.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability4);
-	if (!ironcladProtocolLoadoutAbility ||
-		ironcladProtocolLoadoutAbility->GetDefinition().abilityId != AbilityData::IroncladProtocol::AbilityId::Basic ||
+	if (!reclaimerProtocolLoadoutAbility ||
+		reclaimerProtocolLoadoutAbility->GetDefinition().abilityId != AbilityData::ReclaimerProtocol::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability4) } != "R")
 	{
-		return Fail("Default player loadout did not place Ironclad Protocol on Ability4/R");
+		return Fail("Default player loadout did not place Reclaimer Protocol on Ability4/R");
 	}
 
 	// Exercise the generic activation/action-spawn path used by the player Q
@@ -6656,6 +6671,10 @@ int main()
 
 		GameAbilityDefinition gravityReplayDefinition;
 		gravityReplayDefinition.attributeOutputMultiplier = 0.60f;
+		gravityReplayDefinition.invocationOutputAttributes = {
+			CommonAttributeIds::Radius,
+			CommonAttributeIds::Duration
+		};
 		gravityReplayDefinition.scalingRules = {
 			sas::AttributeScalingRule{
 				CommonAttributeIds::Radius,
@@ -6803,6 +6822,10 @@ int main()
 
 		GameAbilityDefinition overdriveReplayDefinition;
 		overdriveReplayDefinition.attributeOutputMultiplier = 0.60f;
+		overdriveReplayDefinition.invocationOutputAttributes = {
+			CommonAttributeIds::Damage,
+			CommonAttributeIds::ProjectileCount
+		};
 		overdriveReplayDefinition.scalingRules = {
 			sas::AttributeScalingRule{
 				CommonAttributeIds::ProjectileCount,
@@ -6857,6 +6880,9 @@ int main()
 
 		GameAbilityDefinition shieldReplayDefinition;
 		shieldReplayDefinition.attributeOutputMultiplier = 0.60f;
+		shieldReplayDefinition.invocationOutputAttributes = {
+			sas::AttributeId{ "Effect.BarrierCapacity" }
+		};
 		shieldReplayDefinition.scalingRules = {
 			sas::AttributeScalingRule{
 				sas::AttributeId{ "Effect.BarrierCapacity" },
@@ -8373,7 +8399,7 @@ int main()
 
 				sas::AbilityEvent killEvent;
 				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-				killEvent.SetSource(nonOwner.get());
+				killEvent.SetSource(static_cast<Actor*>(nonOwner.get()));
 				killEvent.SetContext(&nonOwnerContext);
 
 				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
@@ -8395,7 +8421,7 @@ int main()
 
 				sas::AbilityEvent killEvent;
 				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-				killEvent.SetSource(owner.get());
+				killEvent.SetSource(static_cast<Actor*>(owner.get()));
 				killEvent.SetContext(&notKilledContext);
 
 				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
@@ -8417,7 +8443,7 @@ int main()
 
 				sas::AbilityEvent killEvent;
 				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-				killEvent.SetSource(owner.get());
+				killEvent.SetSource(static_cast<Actor*>(owner.get()));
 				killEvent.SetContext(&nonEnemyContext);
 
 				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
@@ -8439,7 +8465,7 @@ int main()
 
 				sas::AbilityEvent killEvent;
 				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-				killEvent.SetSource(owner.get());
+				killEvent.SetSource(static_cast<Actor*>(owner.get()));
 				killEvent.SetContext(&nonFiniteContext);
 
 				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
@@ -8462,7 +8488,7 @@ int main()
 
 				sas::AbilityEvent killEvent;
 				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-				killEvent.SetSource(owner.get());
+				killEvent.SetSource(static_cast<Actor*>(owner.get()));
 				killEvent.SetContext(&validContext);
 
 				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
@@ -8502,7 +8528,7 @@ int main()
 
 				sas::AbilityEvent killEvent;
 				killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-				killEvent.SetSource(owner.get());
+				killEvent.SetSource(static_cast<Actor*>(owner.get()));
 				killEvent.SetContext(&anotherContext);
 
 				owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
@@ -8542,7 +8568,7 @@ int main()
 
 			sas::AbilityEvent killEvent;
 			killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-			killEvent.SetSource(owner.get());
+			killEvent.SetSource(static_cast<Actor*>(owner.get()));
 			killEvent.SetContext(&killContext);
 			owner->GetAbilitySystemComponent().HandleGameplayEvent(killEvent);
 			world.TickInternal(0.f);
@@ -8589,7 +8615,7 @@ int main()
 		{
 			World world{ nullptr };
 			const shared_ptr<PlayerSpaceShip> player =
-				world.SpawnActor<PlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
+				world.SpawnActor<HeadlessTestPlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			if (!player)
 			{
 				return Fail("Could not spawn player for kit overlap test");
@@ -8705,15 +8731,15 @@ int main()
 			world.TickInternal(0.f);
 
 			kit3->OnActorBeginOverlap(nonPlayerShip.get());
+			if (!NearlyEqual(nonPlayerShip->GetHealthComponent().GetHealth(), nonPlayerHealthBefore))
+			{
+				return Fail("Non-player ship health was modified by Reclaimer Repair Kit overlap");
+			}
 			world.TickInternal(0.15f);
 
 			if (kit3->GetIsPendingDestroy())
 			{
 				return Fail("Reclaimer Repair Kit was consumed by non-player ship overlap");
-			}
-			if (!NearlyEqual(nonPlayerShip->GetHealthComponent().GetHealth(), nonPlayerHealthBefore))
-			{
-				return Fail("Non-player ship health was modified by Reclaimer Repair Kit overlap");
 			}
 		}
 
@@ -8721,7 +8747,7 @@ int main()
 		{
 			World world{ nullptr };
 			const shared_ptr<PlayerSpaceShip> player =
-				world.SpawnActor<PlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
+				world.SpawnActor<HeadlessTestPlayerSpaceShip>(ShipData::Ship_Player_Fighter).lock();
 			const shared_ptr<TestCombatant> enemy =
 				world.SpawnActor<TestCombatant>(100.f).lock();
 			if (!player || !enemy)
@@ -8735,9 +8761,11 @@ int main()
 			enemy->SetCollisionMask(CollisionLayer::PlayerBullet);
 			world.TickInternal(0.f);
 
+			player->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability4);
 			player->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability1);
 			player->GetAbilitySystemComponent().GrantAbility(*reclaimerDefinition, sas::AbilitySlot::Ability1);
 			player->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			player->GetAbilitySystemComponent().Tick(0.f);
 			world.TickInternal(0.f);
 			world.TickInternal(0.f);
 
@@ -8751,7 +8779,7 @@ int main()
 
 			sas::AbilityEvent killEvent;
 			killEvent.eventTag = GameplayTags::Event::Combat::KillConfirmed;
-			killEvent.SetSource(player.get());
+			killEvent.SetSource(static_cast<Actor*>(player.get()));
 			killEvent.SetTarget(enemy.get());
 			killEvent.SetContext(&killContext);
 

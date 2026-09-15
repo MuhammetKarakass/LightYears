@@ -7,7 +7,7 @@
 #include "level/MainMenuLevel.h"
 #include "level/LevelOne.h"
 #include "player/PlayerManager.h"
-#include "enemy/EnemySpaceShip.h"
+#include "enemy/EnemyActor.h"
 #include "presentation/hud/GameplayWarningHUDController.h"
 #include "presentation/hud/ability/AbilityUIController.h"
 
@@ -62,15 +62,18 @@ namespace ly
 
 	void GameLevel::OnActorSpawned(Actor* actor)
 	{
-		EnemySpaceShip* enemy = dynamic_cast<EnemySpaceShip*>(actor);
 		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
-		if (!enemy || !player)
+		if (!player)
 		{
 			return;
 		}
 
-		enemy->onScoreAwarded.BindAction(player, &Player::OnScoreAwarded);
-		enemy->onShipXPAwarded.BindAction(player, &Player::AwardShipXP);
+		if (EnemyActor* enemy = dynamic_cast<EnemyActor*>(actor))
+		{
+			enemy->onScoreAwarded.BindAction(player, &Player::OnScoreAwarded);
+			enemy->onShipXPAwarded.BindAction(player, &Player::AwardShipXP);
+			return;
+		}
 	}
 	
 	void GameLevel::OnGameStart()
@@ -105,11 +108,13 @@ namespace ly
 
 	void GameLevel::CreateHUDControllers()
 	{
-		shared_ptr<GameplayWarningHUDController> warningHUDController = std::make_shared<GameplayWarningHUDController>(mGameHUD);
-		mHUDControllers.push_back(warningHUDController);
+		AddHUDController(std::make_shared<GameplayWarningHUDController>(mGameHUD));
+		AddHUDController(std::make_shared<AbilityUIController>(mGameHUD));
+	}
 
-		shared_ptr<AbilityUIController> abilityUIController = std::make_shared<AbilityUIController>(mGameHUD);
-		mHUDControllers.push_back(abilityUIController);
+	void GameLevel::AddHUDController(shared_ptr<HUDController> controller)
+	{
+		if (controller) mHUDControllers.push_back(std::move(controller));
 	}
 
 	void GameLevel::BroadcastGameplayWarning(const GameplayWarning& warning)

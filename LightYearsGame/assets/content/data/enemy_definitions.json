@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "enemies": [
+    {
+      "id": "Enemy.ApproachGunner.Basic",
+      "shipId": "Ship.Enemy.ApproachGunner.Basic",
+      "combatProfileId": "EnemyCombat.ApproachGunner.Basic",
+      "behaviorProfileId": "EnemyBehavior.ApproachGunner.Basic"
+    },
+    {
+      "id": "Enemy.StrafeSkirmisher.Basic",
+      "shipId": "Ship.Enemy.StrafeSkirmisher.Basic",
+      "combatProfileId": "EnemyCombat.StrafeSkirmisher.Basic",
+      "behaviorProfileId": "EnemyBehavior.StrafeSkirmisher.Basic"
+    },
+    {
+      "id": "Enemy.RangeKeeper.Basic",
+      "shipId": "Ship.Enemy.RangeKeeper.Basic",
+      "combatProfileId": "EnemyCombat.RangeKeeper.Basic",
+      "behaviorProfileId": "EnemyBehavior.RangeKeeper.Basic"
+    }
+  ]
+}

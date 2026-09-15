@@ -1,6 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "../internal/PrimaryWeaponBuiltIns.h"
+#include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 #include "framework/Actor.h"
 #include "framework/World.h"
@@ -18,57 +18,6 @@ namespace ly
 			PrimaryWeaponType GetType() const override
 			{
 				return PrimaryWeaponType::WaveExpanding;
-			}
-
-			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
-			{
-				return PrimaryWeaponBuiltIns::WaveDeliveryAttributeRoots();
-			}
-
-			PrimaryWeaponValidationResult ValidateDefinition(
-				const PrimaryWeaponDefinition& definition
-			) const override
-			{
-				for (const sas::AttributeId& required : {
-					CommonAttributeIds::Damage,
-					CommonAttributeIds::Range,
-					PrimaryWeaponSchema::Wave::Delivery::Speed,
-					PrimaryWeaponSchema::Wave::Delivery::InitialWidth,
-					PrimaryWeaponSchema::Wave::Delivery::MaximumWidth,
-					PrimaryWeaponSchema::Wave::Delivery::Thickness
-				})
-				{
-					const PrimaryWeaponValidationResult result =
-						PrimaryWeaponBuiltIns::RequireAttribute(
-							definition,
-							required,
-							"Expanding wave weapon"
-						);
-					if (!result.isValid)
-					{
-						return result;
-					}
-				}
-
-				const float initialWidth = sas::FindAttributeValue(
-					definition.attributes,
-					PrimaryWeaponSchema::Wave::Delivery::InitialWidth,
-					0.f
-				);
-				const float maximumWidth = sas::FindAttributeValue(
-					definition.attributes,
-					PrimaryWeaponSchema::Wave::Delivery::MaximumWidth,
-					0.f
-				);
-				if (initialWidth <= 0.f || maximumWidth < initialWidth)
-				{
-					return {
-						false,
-						"Expanding wave weapon requires a positive initial width "
-						"and a maximum width no smaller than it."
-					};
-				}
-				return { true, {} };
 			}
 
 			bool FireOnce(

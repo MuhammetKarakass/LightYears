@@ -1,15 +1,16 @@
 #pragma once
 
-#include "enemy/EnemySpaceShip.h"
+#include "spaceShip/SpaceShip.h"
 
 namespace ly
 {
-	class DummyEnemy : public EnemySpaceShip
+	class DummyEnemy : public SpaceShip
 	{
 	public:
 		DummyEnemy(World* owningWorld, const ShipDefinition& shipDef);
 
 		void Tick(float deltaTime) override;
+		void SetupCollisionLayers() override;
 
 	protected:
 		void Shoot() override;

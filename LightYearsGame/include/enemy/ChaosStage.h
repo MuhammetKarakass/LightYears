@@ -29,7 +29,6 @@ namespace ly
 		void SpawnVanguard();
 		void SpawnTwinBlade();
 		void SpawnHexagon();
-		void SpawnUFO();
 		void SpawnAsteroid();
 		void TotalChaos();
 		void SpawnEnemyByType(int enemyType);
@@ -38,9 +37,6 @@ namespace ly
 		void StageDurationFinished();
 
 		sf::Vector2f GetRandomSpawnLocationTop();
-		sf::Vector2f GetRandomSpawnLocationSide();
-
-		std::pair<sf::Vector2f, sf::Vector2f> GetSpawnPropertiesUFO();
 
 		float mSpawnInterval;
 

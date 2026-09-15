@@ -35,18 +35,12 @@ namespace ly
 			});
 		}
 
-		bool HasExactId(
-			const List<sas::AttributeId>& ids,
-			const sas::AttributeId& expectedId
-		)
+		bool HasExactId(const List<sas::AttributeId>& ids, const sas::AttributeId& expectedId)
 		{
 			return std::find(ids.begin(), ids.end(), expectedId) != ids.end();
 		}
 
-		PrimaryWeaponExecutionContext WithRuntimeState(
-			const PrimaryWeaponExecutionContext& context,
-			PrimaryWeaponRuntimeState& state
-		)
+		PrimaryWeaponExecutionContext WithRuntimeState(const PrimaryWeaponExecutionContext& context, PrimaryWeaponRuntimeState& state)
 		{
 			PrimaryWeaponExecutionContext runtimeContext = context;
 			runtimeContext.runtime = &state;
@@ -59,37 +53,52 @@ namespace ly
 			RuntimeConfiguration& configuration
 		)
 		{
-			const PrimaryWeaponValidationResult validation =
-				PrimaryWeaponDefinitionValidator::Validate(definition);
+			const PrimaryWeaponValidationResult validation = PrimaryWeaponDefinitionValidator::Validate(definition);
 			if (!validation.isValid)
 			{
 				return validation;
 			}
 
 			configuration.weaponId = definition.weaponId;
-			configuration.handler =
-				PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponType);
+			configuration.handler = PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponType);
+			if (!configuration.handler)
+			{
+				return { false, "No runtime primary weapon handler is registered for weapon type '" + std::string{ PrimaryWeaponTypeName(definition.weaponType) } + "'." };
+			}
+			if (configuration.handler->GetType() != definition.weaponType)
+			{
+				return { false, "Runtime primary weapon handler identity does not match weapon type '" + std::string{ PrimaryWeaponTypeName(definition.weaponType) } + "'." };
+			}
 			configuration.magazine = definition.magazine;
 			configuration.cadenceMode = definition.cadenceMode;
 			configuration.damageRoundingPolicy = definition.damageRoundingPolicy;
 			configuration.empoweredShot = definition.empoweredShot;
-			const auto addFeature = [&](PrimaryWeaponFeatureType featureType)
+			const auto addFeature = [&](PrimaryWeaponFeatureType featureType) -> PrimaryWeaponValidationResult
 			{
-				const PrimaryWeaponFeatureHandler* feature =
-					PrimaryWeaponHandlerRegistry::FindFeature(featureType);
-				if (feature && std::find(
-						configuration.features.begin(),
-						configuration.features.end(),
-						feature
-					) == configuration.features.end())
+				const PrimaryWeaponFeatureHandler* feature = PrimaryWeaponHandlerRegistry::FindFeature(featureType);
+				if (!feature)
+				{
+					return { false, "No runtime primary weapon feature handler is registered for feature '" + std::string{ PrimaryWeaponFeatureName(featureType) } + "'." };
+				}
+				if (feature->GetFeatureType() != featureType)
+				{
+					return { false, "Runtime primary weapon feature handler identity does not match feature '" + std::string{ PrimaryWeaponFeatureName(featureType) } + "'." };
+				}
+				const bool alreadyAdded = std::find(configuration.features.begin(), configuration.features.end(), feature) != configuration.features.end();
+				if (!alreadyAdded)
 				{
 					configuration.features.push_back(feature);
 				}
+				return { true, {} };
 			};
 
 			for (const PrimaryWeaponFeatureType featureType : definition.featureTypes)
 			{
-				addFeature(featureType);
+				const PrimaryWeaponValidationResult featureResult = addFeature(featureType);
+				if (!featureResult.isValid)
+				{
+					return featureResult;
+				}
 			}
 			if (unlockedUpgradeIds)
 			{
@@ -97,12 +106,13 @@ namespace ly
 				{
 					for (const PrimaryWeaponFeatureType featureType : step.unlockedFeatureTypes)
 					{
-						if (HasExactId(
-							*unlockedUpgradeIds,
-							PrimaryWeaponFeatureUpgradeId(featureType)
-						))
+						if (HasExactId(*unlockedUpgradeIds, PrimaryWeaponFeatureUpgradeId(featureType)))
 						{
-							addFeature(featureType);
+							const PrimaryWeaponValidationResult featureResult = addFeature(featureType);
+							if (!featureResult.isValid)
+							{
+								return featureResult;
+							}
 						}
 					}
 				}

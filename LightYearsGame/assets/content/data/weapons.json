@@ -627,6 +627,155 @@
       "damageTags": ["Damage.Type.Kinetic"],
       "attachmentCapabilities": [],
       "attachmentSlotCapacity": 0
+    },
+    {
+      "id": "Weapon.Projectile.EnemyVanguardPulse.Basic",
+      "typeTag": "PrimaryWeapon.Projectile.Standard",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserRed01.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [255, 80, 80, 200],
+          "intensity": 0.3,
+          "size": [16.0, 60.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 30.0],
+        "visualScale": 1.0
+      },
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 15.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 1.2, "minValue": 0.01 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 700.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Common.Range", "baseValue": 1200.0, "minValue": 1.0 },
+        { "id": "Collision.Radius", "baseValue": 6.0, "minValue": 0.1 },
+        { "id": "Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Damage.ShieldDamageMultiplier", "baseValue": 1.0, "minValue": 0.0 },
+        { "id": "Damage.ShieldRegenerationDelay", "baseValue": 0.0, "minValue": 0.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 30.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 1,
+        "levelUpgradeScrapCosts": [],
+        "rules": []
+      },
+      "attributeModifiers": [],
+      "scalingRules": [],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Energy"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 0
+    },
+    {
+      "id": "Weapon.Projectile.EnemyTwinBladeScatter.Basic",
+      "typeTag": "PrimaryWeapon.Projectile.Shotgun",
+      "presentation": {
+        "texturePath": "SpaceShooterRedux/PNG/Lasers/laserRed08.png",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [255, 100, 60, 200],
+          "intensity": 0.3,
+          "size": [14.0, 50.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 25.0],
+        "visualScale": 1.0
+      },
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 8.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 0.8, "minValue": 0.01 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 800.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "Common.Range", "baseValue": 500.0, "minValue": 1.0 },
+        { "id": "Collision.Radius", "baseValue": 5.0, "minValue": 0.1 },
+        { "id": "Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Shotgun.PelletCount", "baseValue": 3.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Projectile.Shotgun.SpreadAngle", "baseValue": 12.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Shotgun.DamageReductionPerAdditionalHit", "baseValue": 0.1, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Projectile.Shotgun.MinimumDamageMultiplier", "baseValue": 0.5, "minValue": 0.01 },
+        { "id": "Damage.ArmorPenetration", "baseValue": 0.0, "minValue": 0.0, "maxValue": 1.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 25.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 1,
+        "levelUpgradeScrapCosts": [],
+        "rules": []
+      },
+      "attributeModifiers": [],
+      "scalingRules": [],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Kinetic"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 0
+    },
+    {
+      "id": "Weapon.Wave.EnemyHexagonCryoPulse.Basic",
+      "typeTag": "PrimaryWeapon.Wave.Expanding",
+      "presentation": {
+        "texturePath": "",
+        "pointLight": {
+          "shaderPath": "SpaceShooterRedux/Shaders/point_light.frag",
+          "color": [75, 200, 255, 200],
+          "intensity": 0.3,
+          "size": [16.0, 70.0],
+          "shouldStretch": false,
+          "complexTrail": false,
+          "taperAmount": 0.0,
+          "edgeSoftness": 0.4,
+          "shapeRoundness": 0.7
+        },
+        "lightOffset": [0.0, 0.0],
+        "visualScale": 1.0
+      },
+      "attributes": [
+        { "id": "Common.Damage", "baseValue": 10.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 0.6, "minValue": 0.01 },
+        { "id": "Common.Range", "baseValue": 1200.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Wave.Delivery.Speed", "baseValue": 500.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Wave.Delivery.InitialWidth", "baseValue": 60.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Wave.Delivery.MaximumWidth", "baseValue": 200.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Wave.Delivery.Thickness", "baseValue": 25.0, "minValue": 1.0 },
+        { "id": "Damage.Cryo.BuildupPerHit", "baseValue": 1.0, "minValue": 1.0 },
+        { "id": "Damage.Cryo.BuildupRequired", "baseValue": 4.0, "minValue": 1.0 },
+        { "id": "Damage.Cryo.BuildupDuration", "baseValue": 2.0, "minValue": 0.0 },
+        { "id": "Damage.Cryo.SlowPercent", "baseValue": 0.2, "minValue": 0.0, "maxValue": 0.3 },
+        { "id": "Damage.Cryo.SlowDuration", "baseValue": 1.5, "minValue": 0.0 }
+      ],
+      "muzzles": [
+        { "offset": [0.0, 30.0], "rotationOffset": 0.0 }
+      ],
+      "automaticFire": true,
+      "progression": {
+        "maxLevel": 1,
+        "levelUpgradeScrapCosts": [],
+        "rules": []
+      },
+      "attributeModifiers": [],
+      "scalingRules": [],
+      "featureTags": [],
+      "heatGainCurve": [],
+      "damageTags": ["Damage.Type.Cryo"],
+      "attachmentCapabilities": [],
+      "attachmentSlotCapacity": 0
     }
   ]
 }

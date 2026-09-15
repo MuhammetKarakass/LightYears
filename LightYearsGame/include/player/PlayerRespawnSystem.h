@@ -16,6 +16,7 @@ namespace ly
 	class PlayerRespawnSystem
 	{
 	public:
+		~PlayerRespawnSystem();
 
 		void Initialize(World* world, weak_ptr<Object> timerOwner, const PlayerRespawnDefinition& respawnDefinition);
 		void Clear();
@@ -40,6 +41,7 @@ namespace ly
 		weak_ptr<Object> mTimerOwner;
 		PlayerRespawnDefinition mRespawnDefinition;
 		weak_ptr<PlayerSpaceShip> mCurrentPlayerShip;
+		DelegateHandle mPlayerShipDestroyedDelegateHandle;
 		TimerHandle mRespawnTimerHandle;
 		bool mHasPendingRespawn = false;
 	};

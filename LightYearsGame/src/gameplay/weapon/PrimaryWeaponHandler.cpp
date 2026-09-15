@@ -4,12 +4,6 @@
 
 namespace ly
 {
-	namespace
-	{
-		const List<GameplayTag> EmptyTags{};
-		const List<sas::AttributeId> EmptyAttributeRoots{};
-	}
-
 	float PrimaryWeaponRuntimeState::GetFeatureValue(
 		const sas::AttributeId& key,
 		float fallback
@@ -39,22 +33,16 @@ namespace ly
 		return cooldown;
 	}
 
-	const List<sas::AttributeId>& PrimaryWeaponHandler::GetInheritedAttributeRoots() const
-	{
-		return EmptyAttributeRoots;
-	}
-
-	PrimaryWeaponValidationResult PrimaryWeaponHandler::ValidateDefinition(
-		const PrimaryWeaponDefinition&
-	) const
-	{
-		return { true, {} };
-	}
-
-	unique_ptr<PrimaryWeaponTypeRuntimeState>
-		PrimaryWeaponHandler::CreateRuntimeState() const
+	unique_ptr<PrimaryWeaponTypeRuntimeState> PrimaryWeaponHandler::CreateRuntimeState() const
 	{
 		return std::make_unique<PrimaryWeaponTypeRuntimeState>();
+	}
+
+	bool PrimaryWeaponHandler::UsesIntervalFire() const
+	{
+		const PrimaryWeaponTypeValidationContract* contract =
+			PrimaryWeaponValidationContractRegistry::FindType(GetType());
+		return contract && contract->usesIntervalFire;
 	}
 
 	void PrimaryWeaponHandler::BeginFire(
@@ -77,13 +65,6 @@ namespace ly
 		PrimaryWeaponTypeRuntimeState&
 	) const
 	{
-	}
-
-	PrimaryWeaponValidationResult PrimaryWeaponFeatureHandler::ValidateDefinition(
-		const PrimaryWeaponDefinition&
-	) const
-	{
-		return { true, {} };
 	}
 
 	const List<sas::AttributeId>& PrimaryWeaponFeatureHandler::GetRuntimeValueKeys() const

@@ -26,7 +26,7 @@ namespace ly
 
 	class Actor;
 	class World;
-	class EnemySpaceShip;
+	class SpaceShip;
 
 	class InfiniteStage : public GameStage 
 	{
@@ -40,8 +40,7 @@ namespace ly
 		void StartWave();
 		void CompleteWave();
 
-		weak_ptr<EnemySpaceShip> SpawnEnemyAtLocation(int enemyType,const sf::Vector2f& location);
-		weak_ptr<EnemySpaceShip> SpawnUFOWithDynamicPath();
+		weak_ptr<SpaceShip> SpawnEnemyAtLocation(int enemyType, const sf::Vector2f& location);
 		void SpawnEnemy();
 		void AsteroidDifficulty();
 		void OnEnemyDestroyed(Actor* actor);

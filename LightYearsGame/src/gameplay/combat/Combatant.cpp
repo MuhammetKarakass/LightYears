@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace ly
 {
@@ -92,18 +93,20 @@ namespace ly
 			}
 		}
 
+		const auto* sourceCombatant = source ? dynamic_cast<const Combatant*>(source) : nullptr;
 		const auto resolveCriticalMultiplier = [&]()
 		{
-			const auto* sourceCombatant = source ? dynamic_cast<const Combatant*>(source) : nullptr;
 			return sourceCombatant ? sourceCombatant->GetCombatRuntime().GetCriticalDamageMultiplier() : 1.f;
 		};
-		float resolvedDamage = damage;
+		const float sourceOutgoingDamageMultiplier =
+			sourceCombatant ? sourceCombatant->GetCombatRuntime().GetOutgoingDamageMultiplier() : 1.f;
+		long double sourceResolvedDamage = static_cast<long double>(damage) * sourceOutgoingDamageMultiplier;
 		bool wasCritical = false;
 		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
 		{
 			if (payload.criticalPolicy == DamageCriticalPolicy::Guaranteed)
 			{
-				resolvedDamage *= resolveCriticalMultiplier();
+				sourceResolvedDamage *= resolveCriticalMultiplier();
 				wasCritical = true;
 			}
 			else if (payload.criticalPolicy == DamageCriticalPolicy::Random)
@@ -113,15 +116,23 @@ namespace ly
 					const float criticalChance = sourceCombatant->GetCombatRuntime().GetCriticalChance();
 					if (RandRange(0.f, 1.f) < criticalChance)
 					{
-						resolvedDamage *= resolveCriticalMultiplier();
+						sourceResolvedDamage *= resolveCriticalMultiplier();
 						wasCritical = true;
 					}
 				}
 			}
 		}
+		float resolvedDamage = 0.f;
+		if (std::isfinite(sourceResolvedDamage) && sourceResolvedDamage > 0.0L)
+		{
+			const long double maximum = static_cast<long double>(std::numeric_limits<float>::max());
+			resolvedDamage = sourceResolvedDamage >= maximum
+				? std::numeric_limits<float>::max()
+				: static_cast<float>(sourceResolvedDamage);
+		}
 		if (payload.roundDamageUp)
 		{
-			resolvedDamage = std::ceil(resolvedDamage);
+			resolvedDamage = std::min(std::ceil(resolvedDamage), std::numeric_limits<float>::max());
 		}
 
 		if (auto* combatant = dynamic_cast<Combatant*>(&target))

@@ -67,6 +67,22 @@ namespace ly
 		 StartPlayerRespawn();
      }
 
+	void ArenaLevel::OnRestartLevel()
+	{
+		// The player owns callbacks into Player and PlayerRespawnSystem. Destroy it
+		// while those owners are still valid, then clear any respawn it scheduled.
+		const shared_ptr<PlayerSpaceShip> previousPlayerShip = mPlayerRespawnSystem.GetCurrentPlayerShip().lock();
+		mPlayerRespawnSystem.Clear();
+		if (previousPlayerShip && !previousPlayerShip->GetIsPendingDestroy())
+		{
+			previousPlayerShip->Destroy();
+		}
+		mPlayerRespawnSystem.Clear();
+
+		GameLevel::OnRestartLevel();
+		StartPlayerRespawn();
+	}
+
      PlayerRespawnDefinition ArenaLevel::CreatePlayerRespawnDefinition() const
      {
          PlayerRespawnDefinition respawnDefinition;

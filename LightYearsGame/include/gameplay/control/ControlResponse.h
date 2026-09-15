@@ -6,7 +6,7 @@ namespace ly
 {
 	// Control classification belongs to the target, not to the ability that
 	// applies a control effect. This keeps future abilities from branching on
-	// concrete enemy classes such as LevelOneBoss.
+	// concrete actor classes with control-specific responses.
 	enum class ControlTargetClass
 	{
 		Normal,

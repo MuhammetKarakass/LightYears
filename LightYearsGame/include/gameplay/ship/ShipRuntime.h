@@ -3,6 +3,8 @@
 #include "gameConfigs/ship/ShipStructs.h"
 #include "attributes/AttributeSystem.h"
 
+#include <unordered_map>
+
 namespace ly
 {
 	// Resolves runtime values that belong to a ship body, independently of combat flow.
@@ -14,6 +16,9 @@ namespace ly
 
 		void InitializeFromShipDefinition(const ShipDefinition& shipDefinition);
 		void RecalculateAttributes();
+		bool SetBaseMaxShieldContribution(const std::string& sourceId, float value);
+		bool RemoveBaseMaxShieldContribution(const std::string& sourceId);
+		float GetAuthoredBaseMaxShield() const noexcept { return mEnergyAttributes.baseMaxShield; }
 		void Clear();
 
 		sas::AttributeSystem& GetAttributes() { return mAttributeSystem; }
@@ -40,6 +45,7 @@ namespace ly
 
 		sas::AttributeSystem* mOwnerAttributes = nullptr;
 		ShipEnergyAttributes mEnergyAttributes;
+		std::unordered_map<std::string, float> mBaseMaxShieldContributions;
 		List<OwnerAttributeBaseEntry> mAppliedBaseOwnerAttributes;
 		List<OwnerAttributeBaseEntry> mAppliedDerivedOwnerAttributes;
 		sas::AttributeSystem mAttributeSystem;

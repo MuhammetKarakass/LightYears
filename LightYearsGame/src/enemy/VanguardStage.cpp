@@ -1,8 +1,8 @@
 #include "enemy/VanguardStage.h"
-#include "enemy/Vanguard.h"
+#include "gameplay/content/EnemyFactory.h"
+#include "gameplay/enemy/EnemyIds.h"
 #include <framework/World.h>
 #include "environment/Asteroid.h"
-#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly
 {
@@ -74,8 +74,11 @@ namespace ly
 
 	void VanguardStage::SpawnVanguard()
 	{
-		weak_ptr<Vanguard> newVanguard = GetWorld()->SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
-		newVanguard.lock()->SetActorLocation(sf::Vector2f {mSpawnLocIndex[RandomizeSpawnLoc()],mSpawnLoc.y });
+		content::SpawnEnemy(
+			*GetWorld(),
+			EnemyIds::ApproachGunnerBasic,
+			{ mSpawnLocIndex[RandomizeSpawnLoc()], mSpawnLoc.y }
+		);
 		++mCurrentRowVanguardCount;
 
 		if (mVanguardPerRow == mCurrentRowVanguardCount)

@@ -1,6 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "../internal/PrimaryWeaponBuiltIns.h"
+#include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
@@ -168,71 +168,6 @@ namespace ly
 			PrimaryWeaponType GetType() const override
 			{
 				return PrimaryWeaponType::ArcElectric;
-			}
-
-			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
-			{
-				return PrimaryWeaponBuiltIns::ArcAttributeRoots();
-			}
-
-			PrimaryWeaponValidationResult ValidateDefinition(
-				const PrimaryWeaponDefinition& definition
-			) const override
-			{
-				for (const sas::AttributeId& required : {
-					CommonAttributeIds::Damage,
-					CommonAttributeIds::Range,
-					PrimaryWeaponSchema::Arc::Electric::ChainCount,
-					PrimaryWeaponSchema::Arc::Electric::ChainRange,
-					PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain
-				})
-				{
-					const PrimaryWeaponValidationResult result =
-						PrimaryWeaponBuiltIns::RequireAttribute(
-							definition,
-							required,
-							"Electric arc weapon"
-						);
-					if (!result.isValid)
-					{
-						return result;
-					}
-				}
-
-				const float chainCount = PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-					definition,
-					PrimaryWeaponSchema::Arc::Electric::ChainCount
-				)->baseValue;
-				if (chainCount < 0.f || std::round(chainCount) != chainCount)
-				{
-					return { false, "Arc chain count must be a non-negative integer." };
-				}
-				const float chainRange = PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-					definition,
-					PrimaryWeaponSchema::Arc::Electric::ChainRange
-				)->baseValue;
-				if (PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-						definition,
-						CommonAttributeIds::Range
-					)->baseValue <= 0.f ||
-					chainRange <= 0.f)
-				{
-					return {
-						false,
-						"Electric arc target and chain ranges must be greater than zero."
-					};
-				}
-				const float damageMultiplier =
-					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-						definition,
-						PrimaryWeaponSchema::Arc::Electric::DamageMultiplierPerChain
-					)->baseValue;
-				return damageMultiplier > 0.f && damageMultiplier <= 1.f
-					? PrimaryWeaponValidationResult{ true, {} }
-					: PrimaryWeaponValidationResult{
-						false,
-						"Arc damage multiplier per chain must be greater than zero and at most one."
-					};
 			}
 
 			bool FireOnce(

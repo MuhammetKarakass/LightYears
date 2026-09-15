@@ -3,6 +3,8 @@
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 namespace ly
 {
@@ -81,9 +83,15 @@ namespace ly
 
 		constexpr float ReactorBudgetPerEnergyPower = 2.f;
 		const float reactorBudget = energyPower * ReactorBudgetPerEnergyPower;
-		const float maxShield = std::max(0.f,
-			mEnergyAttributes.baseMaxShield + reactorBudget * mEnergyAttributes.shieldAffinity
-		);
+		double shieldContribution = 0.0;
+		for (const auto& [_, value] : mBaseMaxShieldContributions) shieldContribution += static_cast<double>(value);
+		const float safeShieldContribution = static_cast<float>(std::clamp(shieldContribution,
+			-static_cast<double>(std::numeric_limits<float>::max()),
+			static_cast<double>(std::numeric_limits<float>::max())));
+		const double resolvedMaxShield = static_cast<double>(mEnergyAttributes.baseMaxShield) +
+			static_cast<double>(safeShieldContribution) + static_cast<double>(reactorBudget) * mEnergyAttributes.shieldAffinity;
+		const float maxShield = static_cast<float>(std::clamp(resolvedMaxShield, 0.0,
+			static_cast<double>(std::numeric_limits<float>::max())));
 		const float afterburnerCapacity = std::max(0.f,
 			mEnergyAttributes.baseAfterburnerCapacity +
 				reactorBudget * mEnergyAttributes.afterburnerAffinity
@@ -108,12 +116,27 @@ namespace ly
 		);
 	}
 
+	bool ShipRuntime::SetBaseMaxShieldContribution(const std::string& sourceId, float value)
+	{
+		if (sourceId.empty() || !std::isfinite(value)) return false;
+		mBaseMaxShieldContributions[sourceId] = value;
+		RecalculateAttributes();
+		return true;
+	}
+
+	bool ShipRuntime::RemoveBaseMaxShieldContribution(const std::string& sourceId)
+	{
+		if (mBaseMaxShieldContributions.erase(sourceId) > 0) RecalculateAttributes();
+		return true;
+	}
+
 	void ShipRuntime::Clear()
 	{
 		RebindBaseOwnerAttributes({});
 		RebindDerivedOwnerAttributes({});
 		mAttributeSystem.Clear();
 		mEnergyAttributes = ShipEnergyAttributes{};
+		mBaseMaxShieldContributions.clear();
 	}
 
 	void ShipRuntime::RebindOwnerAttributeContributions(const List<OwnerAttributeBaseEntry>& entries, List<OwnerAttributeBaseEntry>& appliedEntries)

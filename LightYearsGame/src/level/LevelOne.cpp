@@ -1,25 +1,19 @@
 #include "level/LevelOne.h"
 #include "player/PlayerSpaceShip.h"
 #include "spaceShip/SpaceShip.h"
-#include "enemy/Vanguard.h"
 #include <gameplay/GameStage.h>
 #include "enemy/VanguardStage.h"
 #include "enemy/TwinBladeStage.h"
 #include "enemy/HexagonStage.h"
-#include "enemy/UFOStage.h"
 #include <gameplay/WaitStage.h>
 #include "player/PlayerManager.h"
 #include "widget/GameHUD.h"
-#include "gameConfigs/ship/ShipConfig.h"
 #include "framework/Application.h"
 #include "enemy/ChaosStage.h"
-#include "enemy/LevelOneBossStage.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
-#include "gameConfigs/gameplay/GameplayConfig.h"
 #include "enemy/InfiniteStage.h"
-#include "framework/AudioManager.h"
-#include "enemy/LevelOneBoss.h"
+#include "gameConfigs/world/EnvironmentConfig.h"
 
 namespace ly
 {
@@ -29,8 +23,7 @@ namespace ly
 		mChaosStage{},
 		mBackgroundActor{},
 		mPlanetsLayer{},
-		mMeteorsLayer{},
-		mBossStage{}
+		mMeteorsLayer{}
 	{
 	
 	}
@@ -46,30 +39,6 @@ namespace ly
 		if (!mPlayerSpaceShip.lock()) return;
 		mPlayerSpaceShip.lock()->onActorDestroyed.BindAction(GetWeakPtr(), &LevelOne::PlayerShipDestroyed);
 
-		/*weak_ptr<Vanguard> vanguardEnemy = SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
-		if (auto vanguard = vanguardEnemy.lock())
-		{
-			vanguard->SetActorLocation(sf::Vector2f{ 100, 100.f });
-			vanguard->SetVelocity(sf::Vector2f{ 0.f, 0.f });
-		}
-		weak_ptr<TwinBlade> twinBladeEnemy = SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
-		if (auto twinBlade = twinBladeEnemy.lock())
-		{
-			twinBlade->SetActorLocation(sf::Vector2f{ 200.f, 100.f });
-			twinBlade->SetVelocity(sf::Vector2f{ 0.f, 0.f });
-		}
-		weak_ptr<Hexagon> hexagonEnemy = SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-		if (auto hexagon = hexagonEnemy.lock())
-		{
-			hexagon->SetActorLocation(sf::Vector2f{ 300.f, 100.f });
-			hexagon->SetVelocity(sf::Vector2f{ 0.f, 0.f });
-		}
-		weak_ptr<UFO> ufoEnemy = SpawnActor<UFO>(ShipData::Ship_Enemy_UFO,sf::Vector2f{ 0.f, 0.f });
-		if (auto ufo = ufoEnemy.lock())
-		{
-			ufo->SetActorLocation(sf::Vector2f{ 400.f, 100.f });
-			ufo->SetVelocity(sf::Vector2f{ 0.f, 0.f });
-		}*/
 	}
 
 	void LevelOne::PlayerShipDestroyed(Actor* destroyedActor)
@@ -135,8 +104,6 @@ namespace ly
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 		AddGameStage(shared_ptr<HexagonStage>{new HexagonStage(this)});
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
-		AddGameStage(shared_ptr<UFOStage>{new UFOStage(this)});
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 
 		shared_ptr<ChaosStage> chaosStage = shared_ptr<ChaosStage>{ new ChaosStage(this) };
 		mChaosStage = chaosStage;
@@ -144,12 +111,6 @@ namespace ly
 		chaosStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectChaosStageToHUD);
 
 		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 10.f)});
-
-		shared_ptr<LevelOneBossStage> bossStage = shared_ptr<LevelOneBossStage>{ new LevelOneBossStage(this) };
-		mBossStage = bossStage;
-		AddGameStage(bossStage);
-		bossStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectTheBossStageToHUD);
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 5.f)});
 
 		shared_ptr<InfiniteStage> infStage = shared_ptr<InfiniteStage>{ new InfiniteStage(this) };
 		mInfStage = infStage;
@@ -171,29 +132,6 @@ namespace ly
 		}
 	}
 
-	void LevelOne::ConnectTheBossStageToHUD()
-	{
-
-		if (auto bossStage = mBossStage.lock())
-		{
-			OnBossStageStarted();
-			if (auto hud = GetGameHUD().lock())
-			{
-				bossStage->onNotification.BindAction(
-					hud->GetWeakPtr(),
-					&GameHUD::ShowDynamicNotification
-				);
-
-				bossStage->onBossHealthBarCreated.BindAction(
-					hud->GetWeakPtr(),
-					&GameHUD::CreateBossHealthBar
-				);
-
-				bossStage->onBossSpawned.BindAction(GetWeakPtr(), &LevelOne::OnBossSpawned);
-			}
-		}
-	}
-
 	void LevelOne::ConnectInfiniteStageToHUD()
 	{
 		if (auto infStage = mInfStage.lock())
@@ -203,42 +141,6 @@ namespace ly
 				infStage->onNotification.BindAction(hud->GetWeakPtr(), &GameHUD::ShowDynamicNotification);
 			}
 		}
-	}
-
-	void LevelOne::OnBossSpawned(LevelOneBoss* boss)
-	{
-		if (!boss)
-		{
-			return;
-		}
-
-		auto hud = GetGameHUD().lock();
-		if (!hud)
-		{
-			return;
-		}
-		boss->GetHealthComponent().onHealthChanged.BindAction(
-			hud->GetWeakPtr(),
-			&GameHUD::BossHealthUpdated
-		);
-
-		if (auto bossStage = mBossStage.lock())
-		{
-			bossStage->onArrivedLocation.BindAction(
-				boss->GetWeakPtr(),
-				&LevelOneBoss::BossArrivedLocation
-			);
-		}
-
-		boss->onActorDestroyed.BindAction(
-			hud->GetWeakPtr(),
-			&GameHUD::RemoveBossHealthBar
-		);
-
-		boss->onActorDestroyed.BindAction(
-			GetWeakPtr(),
-			&LevelOne::OnBossDefeated
-		);
 	}
 
 	void LevelOne::SpawnCosmetics()
@@ -310,40 +212,6 @@ namespace ly
 		mMeteorsLayer.lock()->SetRandomVisibility(false);
 		mMeteorsLayer.lock()->SetSizeRange(0.5f, 0.7f);
 		mMeteorsLayer.lock()->SetVelocityRange(sf::Vector2f{ 0.f,50.f }, sf::Vector2f{ 0.f,100.f });
-	}
-
-	void LevelOne::OnBossStageStarted()
-	{
-		if (GetIsPendingDestroy())
-			return;
-
-		AudioManager::GetAudioManager().StopMusic();
-
-		TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(), [this]() {
-			AudioManager::GetAudioManager().FadeToMusicWithIntro(
-				"SpaceShooterRedux/Musics/boss_theme_intro.ogg",
-				"SpaceShooterRedux/Musics/boss_theme_loop.ogg",
-				AudioType::Music,
-				60.0f,
-				1.0f,
-				3.f
-			);
-		}, 8.f, false);
-	}
-
-	void LevelOne::OnBossDefeated(Actor* actor)
-	{
-		if (GetIsPendingDestroy())
-			return;
-
-		AudioManager::GetAudioManager().FadeToMusic(
-			"SpaceShooterRedux/Musics/cosmic_reverie.ogg",
-			AudioType::Music,
-			50.0f,
-			1.0f,
-			true,
-			3.f
-		);
 	}
 
 	void LevelOne::Tick(float deltaTime)

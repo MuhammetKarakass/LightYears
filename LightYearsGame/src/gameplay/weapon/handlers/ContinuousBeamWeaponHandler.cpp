@@ -1,6 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "../internal/PrimaryWeaponBuiltIns.h"
+#include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
@@ -30,57 +30,9 @@ namespace ly
 				return PrimaryWeaponType::BeamContinuous;
 			}
 
-			const List<sas::AttributeId>& GetOwnedAttributeRoots() const override
-			{
-				return PrimaryWeaponBuiltIns::BeamDeliveryAttributeRoots();
-			}
-
-			PrimaryWeaponValidationResult ValidateDefinition(
-				const PrimaryWeaponDefinition& definition
-			) const override
-			{
-				for (const sas::AttributeId& required : {
-					CommonAttributeIds::Damage,
-					PrimaryWeaponSchema::Beam::Delivery::Range,
-					PrimaryWeaponSchema::Beam::Delivery::Width
-				})
-				{
-					const PrimaryWeaponValidationResult result =
-						PrimaryWeaponBuiltIns::RequireAttribute(
-							definition,
-							required,
-							"Continuous beam weapon"
-						);
-					if (!result.isValid)
-					{
-						return result;
-					}
-				}
-
-				const float range = PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-					definition,
-					PrimaryWeaponSchema::Beam::Delivery::Range
-				)->baseValue;
-				const float width = PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-					definition,
-					PrimaryWeaponSchema::Beam::Delivery::Width
-				)->baseValue;
-				return range > 0.f && width > 0.f
-					? PrimaryWeaponValidationResult{ true, {} }
-					: PrimaryWeaponValidationResult{
-						false,
-						"Continuous beam range and width must be greater than zero."
-					};
-			}
-
 			unique_ptr<PrimaryWeaponTypeRuntimeState> CreateRuntimeState() const override
 			{
 				return std::make_unique<ContinuousBeamWeaponRuntimeState>();
-			}
-
-			bool UsesIntervalFire() const override
-			{
-				return false;
 			}
 
 			void BeginFire(

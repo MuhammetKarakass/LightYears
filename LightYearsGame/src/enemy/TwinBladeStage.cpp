@@ -1,7 +1,8 @@
 #include "enemy/TwinBladeStage.h"
-#include "enemy/TwinBlade.h"
+#include "gameplay/content/EnemyFactory.h"
+#include "gameplay/enemy/EnemyIds.h"
+#include <framework/MathUtility.h>
 #include <framework/World.h>
-#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly {
 	TwinBladeStage::TwinBladeStage(World* world):
@@ -26,9 +27,7 @@ namespace ly {
 	}
 	void TwinBladeStage::SpawnTwinBlade()
 	{
-		weak_ptr<TwinBlade> newTwinBlade = GetWorld()->SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
-		
-		newTwinBlade.lock()->SetActorLocation(
+		sf::Vector2f spawnLocation =
 			[this]() ->sf::Vector2f 
 			{
 				if (mSpawnLocations.size() == 1)
@@ -43,8 +42,8 @@ namespace ly {
 				} while (newLocation == mLastSpawnLoc);
 				mLastSpawnLoc = newLocation;
 				return newLocation;
-			}()
-		);
+			}();
+		content::SpawnEnemy(*GetWorld(), EnemyIds::StrafeSkirmisherBasic, spawnLocation);
 
 		++mCurrentSpawnCount;
 

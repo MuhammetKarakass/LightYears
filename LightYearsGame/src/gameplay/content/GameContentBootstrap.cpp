@@ -10,6 +10,8 @@
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/content/EffectContentCatalog.h"
+#include "gameplay/content/EnemyCombatProfileCatalog.h"
+#include "gameplay/content/EnemyContentCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
@@ -144,8 +146,34 @@ namespace ly
 				);
 			}
 
+			std::string enemyProfileLoadFailureReason;
+			const bool enemyProfilesLoaded = content::EnemyCombatProfileCatalog::LoadFromFile(
+				assetRoot / "content/data/enemy_combat_profiles.json",
+				&enemyProfileLoadFailureReason
+			);
+			if (!enemyProfilesLoaded)
+			{
+				LogContentLoadFailure("enemy combat profile", enemyProfileLoadFailureReason);
+			}
+
+			std::string enemyContentLoadFailureReason;
+			const bool enemyContentLoaded = enemyProfilesLoaded &&
+				content::EnemyContentCatalog::LoadFromFiles(
+					assetRoot / "content/data/enemy_definitions.json",
+					assetRoot / "content/data/enemy_behavior_profiles.json",
+					&enemyContentLoadFailureReason
+				);
+			if (!enemyContentLoaded && !enemyContentLoadFailureReason.empty())
+			{
+				LY_GAME_ERROR(
+					"Enemy content validation failed: %s",
+					enemyContentLoadFailureReason.c_str()
+				);
+			}
+
 			return weaponsLoaded && shipsLoaded && abilitiesLoaded && effectsLoaded &&
-				abilityContentRegistered && abilitiesValidated && effectsValidated;
+				abilityContentRegistered && abilitiesValidated && effectsValidated &&
+				enemyProfilesLoaded && enemyContentLoaded;
 		}();
 		return registered;
 	}

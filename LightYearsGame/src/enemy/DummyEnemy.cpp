@@ -19,7 +19,7 @@ namespace ly
 	}
 
 	DummyEnemy::DummyEnemy(World* owningWorld, const ShipDefinition& shipDef)
-		: EnemySpaceShip(owningWorld, MakeDummyShipDefinition(shipDef))
+		: SpaceShip(owningWorld, MakeDummyShipDefinition(shipDef))
 	{
 		SetMovementMode(ShipMovementMode::ThrustDrift);
 		SetVelocity({ 0.f, 0.f });
@@ -27,8 +27,24 @@ namespace ly
 
 	void DummyEnemy::Tick(float deltaTime)
 	{
-		SpaceShip::Tick(deltaTime);
 		Shoot();
+		SpaceShip::Tick(deltaTime);
+		GetAbilitySystemComponent().SetAbilitySlotInput(
+			sas::AbilitySlot::PrimaryFire,
+			false
+		);
+	}
+
+	void DummyEnemy::SetupCollisionLayers()
+	{
+		SetCollisionLayer(CollisionLayer::Enemy);
+		SetCollisionMask(
+			CollisionLayer::Player |
+			CollisionLayer::FriendlySummon |
+			CollisionLayer::PlayerBullet |
+			CollisionLayer::RelayProjectile |
+			CollisionLayer::Environment
+		);
 	}
 
 	void DummyEnemy::Shoot()

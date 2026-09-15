@@ -68,76 +68,6 @@ namespace ShipData
 		}
 	);
 
-	static const ShipDefinition Ship_Enemy_Vanguard(
-		"SpaceShooterRedux/PNG/Enemies/enemyBlack1.png",
-		60.f,
-		sf::Vector2f{ 0.f,200.f },
-		50.f,
-		10.f,
-		(int)ly::ExplosionType::Medium,
-		{
-			EngineMount{ {0.f,-10.f},LightingData::Engine_Yellow_PointLightDef },
-		},
-		{
-			{ ly::CreateRewardHealth, 0.2f },
-			{ ly::CreateRewardLife, 0.05f},
-			{ ly::CreateRewardShield, 0.08f }
-		},
-		""
-	);
-
-	static const ShipDefinition Ship_Enemy_Vanguard_Elite
-	(
-		"SpaceShooterRedux/PNG/Enemies/enemyBlue1.png",
-		200.f,
-		sf::Vector2f{ 0.f,175.f },
-		75.f,
-		25.f,
-		(int)ly::ExplosionType::Heavy,
-		{
-			EngineMount{ {0.f,20.f},LightingData::Engine_Orange_PointLightDef },
-		},
-		{
-			{ ly::CreateRewardHealth, 0.2f },
-			{ ly::CreateRewardLife, 0.01f},
-			{ ly::CreateRewardShield, 0.08f }
-		},
-		"",
-		ShipMovementAttributes{},
-		ShipEnergyAttributes{},
-		ShipProgressionDefinition{},
-		-1.f,
-		ly::ControlTargetClass::Elite
-	);
-
-	static const ShipDefinition Ship_Enemy_TwinBlade
-	(
-		"SpaceShooterRedux/PNG/Enemies/enemyBlack3.png",
-		60.f,
-		sf::Vector2f{ 0.f,175.f },
-		50.f,
-		20.f,
-		(int)ly::ExplosionType::Medium,
-		{
-			EngineMount{ {0.f,-30.f},PointLightDefinition("SpaceShooterRedux/Shaders/point_light.frag",
-		sf::Color{ 255, 255, 0, 200 },
-		1.5f,
-		sf::Vector2f{ 45.f,60.f },
-		true,
-		true,
-		1.f,
-		1.f,
-		0.2f)
-			}
-		},
-		{
-			{ ly::CreateRewardHealth, 0.25f },
-			{ ly::CreateRewardLife, 0.05f},
-			{ ly::CreateRewardShield, 0.08f }
-		},
-		""
-	);
-
 	static const ShipDefinition Ship_Enemy_Hexagon
 	(
 		"SpaceShooterRedux/PNG/Enemies/enemyBlack4.png",
@@ -161,38 +91,6 @@ namespace ShipData
 		{
 			{ ly::CreateRewardHealth, 0.3f },
 			{ ly::CreateRewardLife, 0.05f},
-			{ ly::CreateRewardShield, 0.10f }
-		},
-		""
-	);
-
-	static const ShipDefinition Ship_Enemy_UFO
-	(
-		"SpaceShooterRedux/PNG/Enemies/ufoBlack.png",
-		80.f,
-		sf::Vector2f{ 0.f,300.f },
-		80.f,
-		40.f,
-		(int)ly::ExplosionType::Heavy,
-		{
-			EngineMount{
-				{0.f, 70.f},
-				PointLightDefinition(
-					"SpaceShooterRedux/Shaders/point_light.frag",
-					sf::Color{ 255, 255, 0, 200},
-					1.5f,
-					sf::Vector2f{ 140.f, 140.f },
-					false,
-					false,
-					0.0f,
-					0.7f,
-					0.0f
-				)
-			}
-		},
-		{
-			{ ly::CreateRewardHealth, 0.3f },
-			{ ly::CreateRewardLife, 0.08f },
 			{ ly::CreateRewardShield, 0.10f }
 		},
 		""

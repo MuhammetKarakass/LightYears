@@ -1,0 +1,14 @@
+{
+    "$schema":  "https://opencode.ai/config.json",
+    "mcp":  {
+                "agentify-desktop":  {
+                                         "type":  "local",
+                                         "command":  [
+                                                         "node",
+                                                         "D:\\Tools\\agentify-desktop-fixed\\bin\\agentify-desktop.mjs",
+                                                         "mcp"
+                                                     ],
+                                         "timeout":  900000
+                                     }
+            }
+}

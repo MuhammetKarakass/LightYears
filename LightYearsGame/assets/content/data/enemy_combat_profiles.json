@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "id": "EnemyCombat.ApproachGunner.Basic",
+      "weapons": [
+        { "weaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic", "slot": "PrimaryFire", "level": 1 }
+      ],
+      "powerScalingPolicy": "Disabled",
+      "abilities": [],
+      "progression": {
+        "naturalGrowth": [{ "attributeId": "Owner.MaxHealth", "perLevel": 12.0 }, { "attributeId": "Owner.Armor", "perLevel": 1.0 }],
+        "maxShieldPerLevel": 2.0,
+        "outgoingDamagePerLevel": 0.04,
+        "variation": { "maxHealth": { "minimumMultiplier": 0.95, "maximumMultiplier": 1.05 }, "armor": { "minimumMultiplier": 0.90, "maximumMultiplier": 1.10 }, "maxShield": { "minimumMultiplier": 0.90, "maximumMultiplier": 1.10 }, "outgoingDamage": { "minimumMultiplier": 0.95, "maximumMultiplier": 1.05 } }
+      }
+    },
+    {
+      "id": "EnemyCombat.StrafeSkirmisher.Basic",
+      "weapons": [
+        { "weaponId": "Weapon.Projectile.EnemyTwinBladeScatter.Basic", "slot": "PrimaryFire", "level": 1 }
+      ],
+      "powerScalingPolicy": "Disabled",
+      "abilities": [],
+      "progression": {
+        "naturalGrowth": [{ "attributeId": "Owner.MaxHealth", "perLevel": 8.0 }, { "attributeId": "Owner.Armor", "perLevel": 1.0 }],
+        "maxShieldPerLevel": 1.0,
+        "outgoingDamagePerLevel": 0.05,
+        "variation": { "maxHealth": { "minimumMultiplier": 0.95, "maximumMultiplier": 1.05 }, "armor": { "minimumMultiplier": 0.90, "maximumMultiplier": 1.10 }, "maxShield": { "minimumMultiplier": 0.90, "maximumMultiplier": 1.10 }, "outgoingDamage": { "minimumMultiplier": 0.95, "maximumMultiplier": 1.05 } }
+      }
+    },
+    {
+      "id": "EnemyCombat.RangeKeeper.Basic",
+      "weapons": [
+        { "weaponId": "Weapon.Wave.EnemyHexagonCryoPulse.Basic", "slot": "PrimaryFire", "level": 1 }
+      ],
+      "powerScalingPolicy": "Disabled",
+      "abilities": [],
+      "progression": {
+        "naturalGrowth": [{ "attributeId": "Owner.MaxHealth", "perLevel": 10.0 }, { "attributeId": "Owner.Armor", "perLevel": 1.0 }],
+        "maxShieldPerLevel": 4.0,
+        "outgoingDamagePerLevel": 0.035,
+        "variation": { "maxHealth": { "minimumMultiplier": 0.95, "maximumMultiplier": 1.05 }, "armor": { "minimumMultiplier": 0.90, "maximumMultiplier": 1.10 }, "maxShield": { "minimumMultiplier": 0.90, "maximumMultiplier": 1.10 }, "outgoingDamage": { "minimumMultiplier": 0.95, "maximumMultiplier": 1.05 } }
+      }
+    }
+  ]
+}

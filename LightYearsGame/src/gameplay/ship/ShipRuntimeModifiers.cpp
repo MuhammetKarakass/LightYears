@@ -1,7 +1,9 @@
 #include "gameplay/ship/ShipRuntimeModifiers.h"
+#include "gameplay/math/MultiplierMath.h"
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 namespace ly
 {
@@ -12,13 +14,19 @@ namespace ly
 			float ShipRuntimeModifier::*member
 		)
 		{
-			float result = 1.f;
+			std::vector<float> values;
+			values.reserve(modifiers.size());
 			for (const auto& [sourceId, modifier] : modifiers)
 			{
 				(void)sourceId;
-				result *= std::max(0.f, modifier.*member);
+				values.push_back(modifier.*member);
 			}
-			return std::max(0.f, result);
+			float resolvedMultiplier = 0.f;
+			return math::TryResolveMultiplierProduct(
+				values.data(),
+				values.size(),
+				resolvedMultiplier
+			) ? resolvedMultiplier : 0.f;
 		}
 	}
 
@@ -32,19 +40,16 @@ namespace ly
 			return;
 		}
 
-		modifier.movementSpeedMultiplier = std::max(0.f, modifier.movementSpeedMultiplier);
-		modifier.thrustBonus = std::isfinite(modifier.thrustBonus)
-			? std::max(-1.f, modifier.thrustBonus)
-			: 0.f;
-		modifier.turnCapabilityMultiplier = std::isfinite(modifier.turnCapabilityMultiplier)
-			? std::max(0.f, modifier.turnCapabilityMultiplier)
-			: 1.f;
-		modifier.shieldRegenMultiplier = std::max(0.f, modifier.shieldRegenMultiplier);
-		modifier.afterburnerRegenMultiplier = std::max(0.f, modifier.afterburnerRegenMultiplier);
-		modifier.afterburnerEnergyDrainMultiplier = std::max(
-			0.f,
-			modifier.afterburnerEnergyDrainMultiplier
-		);
+		if (!math::IsFiniteNonNegativeMultiplier(modifier.movementSpeedMultiplier) ||
+			!std::isfinite(modifier.thrustBonus) ||
+			!math::IsFiniteNonNegativeMultiplier(modifier.turnCapabilityMultiplier) ||
+			!math::IsFiniteNonNegativeMultiplier(modifier.shieldRegenMultiplier) ||
+			!math::IsFiniteNonNegativeMultiplier(modifier.afterburnerRegenMultiplier) ||
+			!math::IsFiniteNonNegativeMultiplier(modifier.afterburnerEnergyDrainMultiplier))
+		{
+			return;
+		}
+		modifier.thrustBonus = std::max(-1.f, modifier.thrustBonus);
 		mModifiers[sourceId] = modifier;
 	}
 
@@ -78,7 +83,8 @@ namespace ly
 		const sf::Vector2f& movementDirection
 	) const
 	{
-		float result = 1.f;
+		std::vector<float> values;
+		values.reserve(mModifiers.size());
 		for (const auto& [sourceId, modifier] : mModifiers)
 		{
 			(void)sourceId;
@@ -87,12 +93,14 @@ namespace ly
 				continue;
 			}
 
-			result *= std::max(
-				0.f,
-				modifier.movementSpeedResolver(movementDirection)
-			);
+			values.push_back(modifier.movementSpeedResolver(movementDirection));
 		}
-		return std::max(0.f, result);
+		float resolvedMultiplier = 0.f;
+		return math::TryResolveMultiplierProduct(
+			values.data(),
+			values.size(),
+			resolvedMultiplier
+		) ? resolvedMultiplier : 0.f;
 	}
 
 	float ShipRuntimeModifiers::GetShieldRegenMultiplier() const

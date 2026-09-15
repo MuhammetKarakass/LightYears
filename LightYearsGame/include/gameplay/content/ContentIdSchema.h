@@ -207,6 +207,61 @@ namespace ly::content
 			);
 		}
 
+		static bool ValidateEnemyId(
+			const std::string& id,
+			std::string* failureReason = nullptr
+		)
+		{
+			if (!ValidatePrefixedId(
+				id, "Enemy.", 3,
+				"Enemy ID must use Enemy.<Archetype>.<Variant>.",
+				failureReason
+			))
+			{
+				return false;
+			}
+			std::size_t segmentCount = 1;
+			for (const char character : id)
+			{
+				if (character == '.')
+				{
+					++segmentCount;
+				}
+			}
+			return segmentCount == 3 || Fail(
+				failureReason,
+				"Enemy ID must use Enemy.<Archetype>.<Variant>."
+			);
+		}
+
+		static bool ValidateEnemyCombatProfileId(
+			const std::string& id,
+			std::string* failureReason = nullptr
+		)
+		{
+			return ValidatePrefixedId(
+				id,
+				"EnemyCombat.",
+				3,
+				"Enemy combat profile ID must use EnemyCombat.<Archetype>.<Variant>.",
+				failureReason
+			);
+		}
+
+		static bool ValidateEnemyBehaviorProfileId(
+			const std::string& id,
+			std::string* failureReason = nullptr
+		)
+		{
+			return ValidatePrefixedId(
+				id,
+				"EnemyBehavior.",
+				3,
+				"Enemy behavior profile ID must use EnemyBehavior.<Archetype>.<Variant>.",
+				failureReason
+			);
+		}
+
 		static bool ValidateAttachmentId(
 			const std::string& id,
 			std::string* failureReason = nullptr

@@ -24,6 +24,7 @@ namespace ly
 		virtual void Tick(float deltaTime) override;
 
 		virtual void OnGameStart() override;
+		virtual void OnRestartLevel() override;
 		virtual PlayerRespawnDefinition CreatePlayerRespawnDefinition() const;
 		virtual CameraSettings CreateCameraSettings() const;
 

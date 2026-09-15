@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gameplay/weapon/PrimaryWeaponHandler.h"
+#include "gameplay/weapon/PrimaryWeaponValidationContract.h"
 
 namespace ly::PrimaryWeaponDefinitionValidator
 {

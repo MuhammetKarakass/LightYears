@@ -110,6 +110,16 @@ namespace ly
 			return true;
 		}
 
+		bool IsWeaponDefinition(const GameAbilityDefinition& definition)
+		{
+			if (!content::ContentIdSchema::ValidateWeaponId(definition.abilityId)) return false;
+			for (const AbilityActionSpec& action : definition.actions)
+			{
+				if (std::get_if<FireWeaponAction>(&action.action)) return true;
+			}
+			return false;
+		}
+
 		bool ValidateScalingRules(
 			const GameAbilityDefinition& ability,
 			std::string_view familyNamespace,
@@ -555,7 +565,8 @@ namespace ly
 		}
 		content::ParsedAbilityId parsedId;
 		std::string_view familyNamespace;
-		if (definition.slot != sas::AbilitySlot::PrimaryFire)
+		const bool weaponDefinition = IsWeaponDefinition(definition);
+		if (!weaponDefinition)
 		{
 			if (!content::ContentIdSchema::ParseAbilityId(
 				definition.abilityId,
@@ -572,7 +583,7 @@ namespace ly
 		// Content-only test/prototype abilities intentionally use the generic
 		// configured behavior. Concrete shipped families must use their own
 		// behavior selector and therefore match the family encoded in their content ID.
-		if (definition.slot != sas::AbilitySlot::PrimaryFire &&
+		if (!weaponDefinition &&
 			definition.behaviorType != AbilityBehaviorType::Configured)
 		{
 			std::size_t categoryCount = 0;
@@ -622,7 +633,7 @@ namespace ly
 		{
 			return false;
 		}
-		if (definition.slot != sas::AbilitySlot::PrimaryFire &&
+		if (!weaponDefinition &&
 			definition.behaviorType != AbilityBehaviorType::Configured)
 		{
 			// Concrete family selectors (including newly shipped families) must

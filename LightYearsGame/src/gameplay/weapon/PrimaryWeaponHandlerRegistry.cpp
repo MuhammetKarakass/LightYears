@@ -2,6 +2,8 @@
 
 #include "internal/PrimaryWeaponBuiltIns.h"
 
+#include <cstdlib>
+
 namespace ly
 {
 	namespace
@@ -34,38 +36,32 @@ namespace ly
 	{
 		static const bool initialized = []
 		{
-			GetHandlers().emplace(
-				PrimaryWeaponType::ProjectileStandard,
-				PrimaryWeaponBuiltIns::CreateStandardProjectileWeaponHandler()
-			);
-			GetHandlers().emplace(
-				PrimaryWeaponType::ProjectileShotgun,
-				PrimaryWeaponBuiltIns::CreateShotgunWeaponHandler()
-			);
-			GetHandlers().emplace(
-				PrimaryWeaponType::ArcElectric,
-				PrimaryWeaponBuiltIns::CreateElectricArcWeaponHandler()
-			);
-			GetHandlers().emplace(
-				PrimaryWeaponType::BeamContinuous,
-				PrimaryWeaponBuiltIns::CreateContinuousBeamWeaponHandler()
-			);
-			GetHandlers().emplace(
-				PrimaryWeaponType::WaveExpanding,
-				PrimaryWeaponBuiltIns::CreateExpandingWaveWeaponHandler()
-			);
-			GetFeatures().emplace(
-				PrimaryWeaponFeatureType::Heat,
-				PrimaryWeaponBuiltIns::CreateHeatFeatureHandler()
-			);
+			const auto registerHandler = [](unique_ptr<PrimaryWeaponHandler> handler)
+			{
+				return handler && GetHandlers().emplace(handler->GetType(), std::move(handler)).second;
+			};
+			const auto registerFeature = [](unique_ptr<PrimaryWeaponFeatureHandler> feature)
+			{
+				return feature && GetFeatures().emplace(feature->GetFeatureType(), std::move(feature)).second;
+			};
+
+			bool registered = true;
+			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateStandardProjectileWeaponHandler());
+			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateShotgunWeaponHandler());
+			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateElectricArcWeaponHandler());
+			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateContinuousBeamWeaponHandler());
+			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateExpandingWaveWeaponHandler());
+			registered &= registerFeature(PrimaryWeaponBuiltIns::CreateHeatFeatureHandler());
+			if (!registered)
+			{
+				std::abort();
+			}
 			return true;
 		}();
 		(void)initialized;
 	}
 
-	bool PrimaryWeaponHandlerRegistry::RegisterHandler(
-		unique_ptr<PrimaryWeaponHandler> handler
-	)
+	bool PrimaryWeaponHandlerRegistry::RegisterHandler(unique_ptr<PrimaryWeaponHandler> handler)
 	{
 		EnsureBuiltIns();
 		if (!handler)
@@ -75,9 +71,7 @@ namespace ly
 		return GetHandlers().emplace(handler->GetType(), std::move(handler)).second;
 	}
 
-	bool PrimaryWeaponHandlerRegistry::RegisterFeature(
-		unique_ptr<PrimaryWeaponFeatureHandler> feature
-	)
+	bool PrimaryWeaponHandlerRegistry::RegisterFeature(unique_ptr<PrimaryWeaponFeatureHandler> feature)
 	{
 		EnsureBuiltIns();
 		if (!feature)
@@ -87,18 +81,14 @@ namespace ly
 		return GetFeatures().emplace(feature->GetFeatureType(), std::move(feature)).second;
 	}
 
-	const PrimaryWeaponHandler* PrimaryWeaponHandlerRegistry::FindHandler(
-		PrimaryWeaponType weaponType
-	)
+	const PrimaryWeaponHandler* PrimaryWeaponHandlerRegistry::FindHandler(PrimaryWeaponType weaponType)
 	{
 		EnsureBuiltIns();
 		auto found = GetHandlers().find(weaponType);
 		return found != GetHandlers().end() ? found->second.get() : nullptr;
 	}
 
-	const PrimaryWeaponFeatureHandler* PrimaryWeaponHandlerRegistry::FindFeature(
-		PrimaryWeaponFeatureType featureType
-	)
+	const PrimaryWeaponFeatureHandler* PrimaryWeaponHandlerRegistry::FindFeature(PrimaryWeaponFeatureType featureType)
 	{
 		EnsureBuiltIns();
 		auto found = GetFeatures().find(featureType);

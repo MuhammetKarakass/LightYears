@@ -71,6 +71,24 @@ enum class PrimaryWeaponFeatureType
 	Heat
 };
 
+inline const char* PrimaryWeaponTypeName(PrimaryWeaponType type)
+{
+	switch (type)
+	{
+	case PrimaryWeaponType::ProjectileStandard: return "ProjectileStandard";
+	case PrimaryWeaponType::ProjectileShotgun: return "ProjectileShotgun";
+	case PrimaryWeaponType::ArcElectric: return "ArcElectric";
+	case PrimaryWeaponType::BeamContinuous: return "BeamContinuous";
+	case PrimaryWeaponType::WaveExpanding: return "WaveExpanding";
+	}
+	return "Unknown";
+}
+
+inline const char* PrimaryWeaponFeatureName(PrimaryWeaponFeatureType type)
+{
+	return type == PrimaryWeaponFeatureType::Heat ? "Heat" : "Unknown";
+}
+
 inline const char* PrimaryWeaponFeatureUpgradeId(PrimaryWeaponFeatureType type)
 {
 	return type == PrimaryWeaponFeatureType::Heat

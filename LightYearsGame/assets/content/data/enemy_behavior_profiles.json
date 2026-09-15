@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "id": "EnemyBehavior.ApproachGunner.Basic",
+      "targetSearchRange": 2200.0,
+      "targetRefreshInterval": 0.2,
+      "desiredDistance": 700.0,
+      "minimumDistance": 400.0,
+      "maximumDistance": 0.0,
+      "movementMode": "Approach",
+      "strafeDirectionChangeInterval": 2.0,
+      "aimTurnSpeed": 1.0,
+      "slotRules": [
+        {
+          "slot": "PrimaryFire",
+          "inputMode": "Hold",
+          "requiresTarget": true,
+          "minimumRange": 0.0,
+          "maximumRange": 1200.0,
+          "aimConeThreshold": 0.94,
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "EnemyBehavior.StrafeSkirmisher.Basic",
+      "targetSearchRange": 2200.0,
+      "targetRefreshInterval": 0.15,
+      "desiredDistance": 0.0,
+      "minimumDistance": 300.0,
+      "maximumDistance": 450.0,
+      "movementMode": "Strafe",
+      "strafeDirectionChangeInterval": 1.5,
+      "aimTurnSpeed": 1.0,
+      "slotRules": [
+        {
+          "slot": "PrimaryFire",
+          "inputMode": "Hold",
+          "requiresTarget": true,
+          "minimumRange": 0.0,
+          "maximumRange": 500.0,
+          "aimConeThreshold": 0.9,
+          "priority": 0
+        }
+      ]
+    },
+    {
+      "id": "EnemyBehavior.RangeKeeper.Basic",
+      "targetSearchRange": 2400.0,
+      "targetRefreshInterval": 0.25,
+      "desiredDistance": 0.0,
+      "minimumDistance": 750.0,
+      "maximumDistance": 1050.0,
+      "movementMode": "HoldRange",
+      "strafeDirectionChangeInterval": 2.5,
+      "aimTurnSpeed": 1.0,
+      "slotRules": [
+        {
+          "slot": "PrimaryFire",
+          "inputMode": "Hold",
+          "requiresTarget": true,
+          "minimumRange": 0.0,
+          "maximumRange": 1100.0,
+          "aimConeThreshold": 0.96,
+          "priority": 0
+        }
+      ]
+    }
+  ]
+}

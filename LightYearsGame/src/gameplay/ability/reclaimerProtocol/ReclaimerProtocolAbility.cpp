@@ -1,4 +1,4 @@
-﻿#include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolAbility.h"
+#include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolAbility.h"
 
 #include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolContracts.h"
 #include "gameplay/ability/reclaimerProtocol/ReclaimerRepairKitActor.h"

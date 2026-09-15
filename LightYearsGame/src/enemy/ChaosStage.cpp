@@ -1,11 +1,9 @@
 #include "enemy/ChaosStage.h"
-#include "enemy/Vanguard.h"
-#include "enemy/TwinBlade.h"
-#include "enemy/Hexagon.h"
-#include "enemy/UFO.h"
+#include "gameplay/content/EnemyFactory.h"
+#include "gameplay/enemy/EnemyIds.h"
+#include <framework/MathUtility.h>
 #include <framework/World.h>
 #include "environment/AsteroidSpawner.h"
-#include "gameConfigs/ship/ShipConfig.h"
 
 namespace ly
 {
@@ -75,8 +73,7 @@ namespace ly
 	{
 		mReservedTopSpawnLocs.clear();
 
-		weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
-		vanguard.lock()->SetActorLocation(GetRandomSpawnLocationTop());
+		content::SpawnEnemy(*GetWorld(), EnemyIds::ApproachGunnerBasic, GetRandomSpawnLocationTop());
 
 		for(unsigned int i=2; i <= mSpawnAmt; ++i)
 		{
@@ -87,8 +84,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
-					weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
-					vanguard.lock()->SetActorLocation(nextSpawnLoc);
+					content::SpawnEnemy(*GetWorld(), EnemyIds::ApproachGunnerBasic, nextSpawnLoc);
 				},
 				delay,
 				false
@@ -106,8 +102,7 @@ namespace ly
 	{
 		mReservedTopSpawnLocs.clear();
 
-		weak_ptr<TwinBlade> twinBlade= GetWorld()->SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
-		twinBlade.lock()->SetActorLocation(GetRandomSpawnLocationTop());
+		content::SpawnEnemy(*GetWorld(), EnemyIds::StrafeSkirmisherBasic, GetRandomSpawnLocationTop());
 
 		for (unsigned int i=2; i <= mSpawnAmt; ++i)
 		{
@@ -116,8 +111,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
-					weak_ptr<TwinBlade> twinBlade = GetWorld()->SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
-					twinBlade.lock()->SetActorLocation(nextSpawnLoc);
+					content::SpawnEnemy(*GetWorld(), EnemyIds::StrafeSkirmisherBasic, nextSpawnLoc);
 				},
 				delay,
 				false
@@ -135,8 +129,7 @@ namespace ly
 	{
 		mReservedTopSpawnLocs.clear();
 
-		weak_ptr<Hexagon> hexagon= GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-		hexagon.lock()->SetActorLocation(GetRandomSpawnLocationTop());
+		content::SpawnEnemy(*GetWorld(), EnemyIds::RangeKeeperBasic, GetRandomSpawnLocationTop());
 
 		for (unsigned int i = 2; i <= mSpawnAmt; ++i)
 		{
@@ -145,36 +138,7 @@ namespace ly
 			TimerManager::GetGameTimerManager().SetTimer(
 				GetWeakPtr(),
 				[this, nextSpawnLoc]() {
-					weak_ptr<Hexagon> hexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-					hexagon.lock()->SetActorLocation(nextSpawnLoc);
-				},
-				delay,
-				false
-			);
-		}
-
-		mSpawnTimerHandle = TimerManager::GetGameTimerManager().SetTimer(
-			GetWeakPtr(),
-			&ChaosStage::SpawnUFO,
-			mSpawnInterval
-		);
-	}
-
-	void ChaosStage::SpawnUFO()
-	{
-		auto[spawnLoc, velocity] = GetSpawnPropertiesUFO();
-		weak_ptr<UFO> ufo=GetWorld()->SpawnActor<UFO>(ShipData::Ship_Enemy_UFO,velocity);
-		ufo.lock()->SetActorLocation(spawnLoc);
-
-		for(unsigned int i=2; i <= mSpawnAmt; ++i)
-		{
-			float delay = RandRange(0.1f, 0.3f);
-			auto [spawnLoc, velocity] = GetSpawnPropertiesUFO();
-			TimerManager::GetGameTimerManager().SetTimer(
-				GetWeakPtr(),
-				[this, spawnLoc, velocity]() {
-					weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(ShipData::Ship_Enemy_UFO,velocity);
-					ufo.lock()->SetActorLocation(spawnLoc);
+					content::SpawnEnemy(*GetWorld(), EnemyIds::RangeKeeperBasic, nextSpawnLoc);
 				},
 				delay,
 				false
@@ -202,7 +166,7 @@ namespace ly
 
 		for (int i = 0; i < batchSize; ++i)
 		{
-			int enemyType = RandRange(1, 4);
+			int enemyType = RandRange(1, 3);
 			float microDelay = RandRange(0.4f, 0.8f);
 
 			TimerManager::GetGameTimerManager().SetTimer(
@@ -225,29 +189,19 @@ namespace ly
 
 	void ChaosStage::SpawnEnemyByType(int enemyType)
 	{
-		if (enemyType == 4)
-		{
-			auto [spawnLoc, velocity] = GetSpawnPropertiesUFO();
-			weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(ShipData::Ship_Enemy_UFO,velocity);
-			ufo.lock()->SetActorLocation(spawnLoc);
-		}
-
-		else 
+		if (enemyType >= 1 && enemyType <= 3)
 		{
 			if(enemyType==1)
 			{
-				weak_ptr<Vanguard> vanguard = GetWorld()->SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
-				vanguard.lock()->SetActorLocation(GetRandomSpawnLocationTop());
+				content::SpawnEnemy(*GetWorld(), EnemyIds::ApproachGunnerBasic, GetRandomSpawnLocationTop());
 			}
 			else if(enemyType==2)
 			{
-				weak_ptr<TwinBlade> twinBlade = GetWorld()->SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
-				twinBlade.lock()->SetActorLocation(GetRandomSpawnLocationTop());
+				content::SpawnEnemy(*GetWorld(), EnemyIds::StrafeSkirmisherBasic, GetRandomSpawnLocationTop());
 			}
 			else if(enemyType==3)
 			{
-				weak_ptr<Hexagon> hexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-				hexagon.lock()->SetActorLocation(GetRandomSpawnLocationTop());
+				content::SpawnEnemy(*GetWorld(), EnemyIds::RangeKeeperBasic, GetRandomSpawnLocationTop());
 			}
 		}
 	}
@@ -334,38 +288,5 @@ namespace ly
 		return sf::Vector2f{ candidateX, -100.f };
 	}
 
-	sf::Vector2f ChaosStage::GetRandomSpawnLocationSide()
-	{
-		auto windowSize = GetWorld()->GetWindowSize();
-		float spawnSide = RandRange(0.f, 1.f);
-		float spawnLocX = 0.f;
-
-		if(spawnSide < 0.5f)
-		{
-			spawnLocX = -100.f;
-		}
-		else
-		{
-			spawnLocX = windowSize.x + 100.f;
-		}
-
-		float halfHeight = windowSize.y/2.f;
-		float spawnLocY = RandRange(0.f, halfHeight);
-
-		return sf::Vector2f{ spawnLocX, spawnLocY };
-	}
-	std::pair<sf::Vector2f, sf::Vector2f> ChaosStage::GetSpawnPropertiesUFO()
-	{
-		sf::Vector2f spawnLoc = GetRandomSpawnLocationSide();
-		auto windowSize = GetWorld()->GetWindowSize();
-		auto center = sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f };
-
-		sf::Vector2f directionToCenter = center - spawnLoc;
-		sf::Vector2f normalizedVector = NormalizeVector(directionToCenter);
-
-		sf::Vector2f velocity = normalizedVector * 200.f;
-
-		return {spawnLoc, velocity};
-	}
 }
 

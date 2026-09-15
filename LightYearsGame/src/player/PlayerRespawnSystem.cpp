@@ -8,6 +8,11 @@
 
 namespace ly
 {
+	PlayerRespawnSystem::~PlayerRespawnSystem()
+	{
+		Clear();
+	}
+
 	void PlayerRespawnSystem::Initialize(World* world, weak_ptr<Object> timerOwner, const PlayerRespawnDefinition& respawnDefinition)
 	{
 		Clear();
@@ -18,6 +23,11 @@ namespace ly
 	void PlayerRespawnSystem::Clear()
 	{
 		TimerManager::GetGameTimerManager().ClearTimer(mRespawnTimerHandle);
+		if (const shared_ptr<PlayerSpaceShip> playerShip = mCurrentPlayerShip.lock(); playerShip && mPlayerShipDestroyedDelegateHandle.IsValid())
+		{
+			playerShip->onActorDestroyed.UnbindAction(mPlayerShipDestroyedDelegateHandle);
+		}
+		mPlayerShipDestroyedDelegateHandle.Reset();
 		mHasPendingRespawn = false;
 		mCurrentPlayerShip.reset();
 	}
@@ -82,7 +92,9 @@ namespace ly
 		{
 			playerShip->SetActorLocation(mRespawnDefinition.spawnLocation);
 			playerShip->SetUseScreenClamp(mRespawnDefinition.useScreenClamp);
-			playerShip->onActorDestroyed.BindAction(this, &PlayerRespawnSystem::HandlePlayerShipDestroyed);
+			mPlayerShipDestroyedDelegateHandle = playerShip->onActorDestroyed.BindAction(
+				this, &PlayerRespawnSystem::HandlePlayerShipDestroyed
+			);
 
 			onPlayerShipSpawned.Broadcast(mCurrentPlayerShip);
 			return mCurrentPlayerShip;
@@ -102,6 +114,7 @@ namespace ly
 		}
 
 		mCurrentPlayerShip.reset();
+		mPlayerShipDestroyedDelegateHandle.Reset();
 		onPlayerShipDestroyed.Broadcast(destroyedActor);
 		ScheduleRespawn();
 	}
@@ -109,6 +122,7 @@ namespace ly
 	{
 		TimerManager::GetGameTimerManager().ClearTimer(mRespawnTimerHandle);
 		mHasPendingRespawn = false;
+		mPlayerShipDestroyedDelegateHandle.Reset();
 		mCurrentPlayerShip.reset();
 		onRespawnFailed.Broadcast();
 	}

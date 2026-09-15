@@ -1,11 +1,9 @@
 #include "enemy/InfiniteStage.h"
-#include "enemy/EnemySpaceShip.h"
+#include "spaceShip/SpaceShip.h"
 #include "framework/World.h"
-#include "enemy/Vanguard.h"
-#include "enemy/TwinBlade.h"
-#include "enemy/Hexagon.h"
-#include "enemy/UFO.h"
-#include "gameConfigs/ship/ShipConfig.h"
+#include "enemy/EnemyActor.h"
+#include "gameplay/content/EnemyFactory.h"
+#include "gameplay/enemy/EnemyIds.h"
 #include "gameplay/HealthComponent.h"
 #include "framework/Actor.h"
 
@@ -102,29 +100,25 @@ namespace ly
 		mWaveTimerHandle = TimerManager::GetGameTimerManager().SetTimer(GetWeakPtr(), &InfiniteStage::StartWave, mNextWaveSpawnInterval, false);
 	}
 
-	weak_ptr<EnemySpaceShip> InfiniteStage::SpawnEnemyAtLocation(int enemyType, const sf::Vector2f& location)
+	weak_ptr<SpaceShip> InfiniteStage::SpawnEnemyAtLocation(int enemyType, const sf::Vector2f& location)
 	{
-		weak_ptr<EnemySpaceShip> enemy;
-		switch (enemyType)
+		weak_ptr<SpaceShip> enemy;
+			switch (enemyType)
 		{
 			case 0:
-				enemy = GetWorld()->SpawnActor<Vanguard>(ShipData::Ship_Enemy_Vanguard);
+				if (auto spawned = content::SpawnEnemy(*GetWorld(), EnemyIds::ApproachGunnerBasic, location).lock()) enemy = spawned;
 				break;
 			case 1:
-				enemy = GetWorld()->SpawnActor<TwinBlade>(ShipData::Ship_Enemy_TwinBlade);
+				if (auto spawned = content::SpawnEnemy(*GetWorld(), EnemyIds::StrafeSkirmisherBasic, location).lock()) enemy = spawned;
 				break;
 			case 2:
-				enemy = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-				break;
-			case 3:
-				enemy = SpawnUFOWithDynamicPath();
+				if (auto spawned = content::SpawnEnemy(*GetWorld(), EnemyIds::RangeKeeperBasic, location).lock()) enemy = spawned;
 				break;
 			default:
 				break;
 		}
 		if (auto e = enemy.lock())
 		{
-			e->SetActorLocation(location);
 			sf::Vector2f velocity = e->GetVelocity();
 			float randSpeed = RandRange(0.85f, 1.15f);
 			e->SetVelocity(velocity * randSpeed);
@@ -143,71 +137,10 @@ namespace ly
 			return;
 		}
 
-		int enemyType = mCurrentWave < 5 ? RandRange(0, 2) : RandRange(0, 3);
+		int enemyType = RandRange(0, 2);
 		sf::Vector2f spawnLocation = GetSpawnLocation();
 		SpawnEnemyAtLocation(enemyType, spawnLocation);
 		mCurrentSpawnIndex++;
-	}
-
-	weak_ptr<EnemySpaceShip> InfiniteStage::SpawnUFOWithDynamicPath()
-	{
-		auto windowSize = GetWorld()->GetWindowSize();
-		
-		float spawnType = RandRange(0.f, 1.f);
-		
-		sf::Vector2f spawnPos;
-		sf::Vector2f velocity;
-		
-		if (spawnType < 0.65f)
-		{
-			float spawnSide = RandRange(0.f, 1.f);
-			float spawnLocX = (spawnSide < 0.5f) ? -100.f : windowSize.x + 100.f;
-			
-			float upperHalfHeight = windowSize.y / 2.f;
-			float spawnLocY = RandRange(0.f, upperHalfHeight);
-			
-			spawnPos = sf::Vector2f{spawnLocX, spawnLocY};
-			
-			sf::Vector2f center{windowSize.x / 2.f, windowSize.y / 2.f};
-			sf::Vector2f direction = center - spawnPos;
-			NormalizeVector(direction);
-			velocity = direction * 240.f;
-		}
-		else
-		{
-			float spawnX = RandRange(100.f, windowSize.x - 100.f);
-			spawnPos = sf::Vector2f{spawnX, -50.f};
-			
-			float horizontalOffset = RandRange(-150.f, 150.f);
-			sf::Vector2f target{
-				spawnPos.x + horizontalOffset,
-				windowSize.y + 50.f
-			};
-			
-			sf::Vector2f direction = target - spawnPos;
-			NormalizeVector(direction);
-			velocity = direction * 100.f;
-		}
-		
-		weak_ptr<UFO> ufo = GetWorld()->SpawnActor<UFO>(
-			ShipData::Ship_Enemy_UFO,
-			velocity
-		);
-		
-		if (auto u = ufo.lock())
-		{
-			u->SetActorLocation(spawnPos);
-			sf::Vector2f vel = u->GetVelocity();
-			float randSpeed = RandRange(0.85f, 1.15f);
-			u->SetVelocity(vel * randSpeed);
-			
-			u->onActorDestroyed.BindAction(GetWeakPtr(), &InfiniteStage::OnEnemyDestroyed);
-			
-			mEnemiesAlive++;
-			mEnemiesSpawned++;
-		}
-		
-		return ufo;
 	}
 
 	void InfiniteStage::AsteroidDifficulty()

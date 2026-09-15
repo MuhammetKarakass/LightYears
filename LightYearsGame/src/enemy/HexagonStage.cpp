@@ -1,7 +1,7 @@
 #include "enemy/HexagonStage.h"
 #include <framework/World.h>
-#include "enemy/Hexagon.h"
-#include "gameConfigs/ship/ShipConfig.h"
+#include "gameplay/content/EnemyFactory.h"
+#include "gameplay/enemy/EnemyIds.h"
 
 namespace ly
 {
@@ -29,27 +29,24 @@ namespace ly
 	void HexagonStage::SpawnHexagon()
 	{
 
-		weak_ptr<Hexagon> newHexagon;
        //TODO: hafif bir randomize ekle
+		const auto spawn = [this](const sf::Vector2f& location)
+		{
+			content::SpawnEnemy(*GetWorld(), EnemyIds::RangeKeeperBasic, location);
+		};
 		if(mCurrentSpawnCount % 6 == 0)
 		{
-			newHexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-			newHexagon.lock()->SetActorLocation(mMidSpawnLoc);
-			newHexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x - 150.f, mMidSpawnLoc.y - 150.f });
-			newHexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x + 150.f, mMidSpawnLoc.y - 150.f });
+			spawn(mMidSpawnLoc);
+			spawn({ mMidSpawnLoc.x - 150.f, mMidSpawnLoc.y - 150.f });
+			spawn({ mMidSpawnLoc.x + 150.f, mMidSpawnLoc.y - 150.f });
 			mCurrentSpawnCount += 3;
 		}
 
 		else
 		{
-			newHexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x , mMidSpawnLoc.y - 150.f });
-			newHexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x - 150.f, mMidSpawnLoc.y });
-			newHexagon = GetWorld()->SpawnActor<Hexagon>(ShipData::Ship_Enemy_Hexagon);
-			newHexagon.lock()->SetActorLocation(sf::Vector2f{ mMidSpawnLoc.x + 150.f, mMidSpawnLoc.y });
+			spawn({ mMidSpawnLoc.x, mMidSpawnLoc.y - 150.f });
+			spawn({ mMidSpawnLoc.x - 150.f, mMidSpawnLoc.y });
+			spawn({ mMidSpawnLoc.x + 150.f, mMidSpawnLoc.y });
 			mCurrentSpawnCount += 3;
 		}
 

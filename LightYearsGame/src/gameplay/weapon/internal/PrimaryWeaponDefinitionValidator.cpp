@@ -6,7 +6,7 @@
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/content/ContentIdSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
-#include "gameplay/weapon/PrimaryWeaponHandlerRegistry.h"
+#include "gameplay/weapon/PrimaryWeaponValidationContract.h"
 
 #include <algorithm>
 #include <array>
@@ -19,8 +19,8 @@ namespace ly::PrimaryWeaponDefinitionValidator
 	{
 		struct ValidationContext
 		{
-			const PrimaryWeaponHandler& handler;
-			List<const PrimaryWeaponFeatureHandler*> features;
+			const PrimaryWeaponTypeValidationContract& typeContract;
+			List<const PrimaryWeaponFeatureValidationContract*> featureContracts;
 			List<PrimaryWeaponFeatureType> featureTypes;
 			List<std::string> upgradeIds;
 			List<sas::AttributeId> attributeIds;
@@ -110,18 +110,18 @@ namespace ly::PrimaryWeaponDefinitionValidator
 		)
 		{
 			if (IsSharedWeaponAttribute(attributeId) ||
-				MatchesAnyRoot(attributeId, context.handler.GetOwnedAttributeRoots()) ||
-				MatchesAnyRoot(attributeId, context.handler.GetInheritedAttributeRoots()))
+				MatchesAnyRoot(attributeId, context.typeContract.ownedAttributeRoots) ||
+				MatchesAnyRoot(attributeId, context.typeContract.inheritedAttributeRoots))
 			{
 				return true;
 			}
 			return std::any_of(
-				context.features.begin(),
-				context.features.end(),
-				[&](const PrimaryWeaponFeatureHandler* feature)
+				context.featureContracts.begin(),
+				context.featureContracts.end(),
+				[&](const PrimaryWeaponFeatureValidationContract* featureContract)
 				{
-					return feature &&
-						MatchesAnyRoot(attributeId, feature->GetAttributeRoots());
+					return featureContract &&
+						MatchesAnyRoot(attributeId, featureContract->attributeRoots);
 				}
 			);
 		}
@@ -158,9 +158,9 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				};
 			}
 
-			const PrimaryWeaponFeatureHandler* feature =
-				PrimaryWeaponHandlerRegistry::FindFeature(featureType);
-			if (!feature)
+			const PrimaryWeaponFeatureValidationContract* featureContract =
+				PrimaryWeaponValidationContractRegistry::FindFeature(featureType);
+			if (!featureContract)
 			{
 				return {
 					false,
@@ -169,7 +169,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			}
 
 			context.featureTypes.push_back(featureType);
-			context.features.push_back(feature);
+			context.featureContracts.push_back(featureContract);
 			return { true, {} };
 		}
 
@@ -388,17 +388,23 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			const ValidationContext& context
 		)
 		{
-			const PrimaryWeaponValidationResult handlerResult =
-				context.handler.ValidateDefinition(definition);
-			if (!handlerResult.isValid)
+			if (!context.typeContract.validate)
 			{
-				return handlerResult;
+				return { false, "No primary weapon validation contract is registered for this weapon type." };
+			}
+			const PrimaryWeaponValidationResult typeResult = context.typeContract.validate(definition);
+			if (!typeResult.isValid)
+			{
+				return typeResult;
 			}
 
-			for (const PrimaryWeaponFeatureHandler* feature : context.features)
+			for (const PrimaryWeaponFeatureValidationContract* featureContract : context.featureContracts)
 			{
-				const PrimaryWeaponValidationResult featureResult =
-					feature->ValidateDefinition(definition);
+				if (!featureContract || !featureContract->validate)
+				{
+					return { false, "No primary weapon feature validation contract is registered for this feature." };
+				}
+				const PrimaryWeaponValidationResult featureResult = featureContract->validate(definition);
 				if (!featureResult.isValid)
 				{
 					return featureResult;
@@ -414,7 +420,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 		{
 			if (definition.magazine.has_value())
 			{
-				if (!context.handler.UsesIntervalFire())
+				if (!context.typeContract.usesIntervalFire)
 				{
 					return {
 						false,
@@ -440,7 +446,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 
 			if (definition.cadenceMode == PrimaryWeaponCadenceMode::OwnerAttackSpeedPercentage)
 			{
-				if (!context.handler.UsesIntervalFire())
+				if (!context.typeContract.usesIntervalFire)
 				{
 					return {
 						false,
@@ -474,7 +480,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 
 			if (definition.empoweredShot.has_value())
 			{
-				if (!context.handler.UsesIntervalFire() || !IsProjectileWeaponType(definition.weaponType))
+				if (!context.typeContract.usesIntervalFire || !IsProjectileWeaponType(definition.weaponType))
 				{
 					return {
 						false,
@@ -579,9 +585,9 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				return { false, "Primary weapon attachment capability tag is invalid: " + tagFailureReason };
 			}
 		}
-		const PrimaryWeaponHandler* handler =
-			PrimaryWeaponHandlerRegistry::FindHandler(definition.weaponType);
-		if (!handler)
+		const PrimaryWeaponTypeValidationContract* typeContract =
+			PrimaryWeaponValidationContractRegistry::FindType(definition.weaponType);
+		if (!typeContract)
 		{
 			return {
 				false,
@@ -589,7 +595,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			};
 		}
 
-		ValidationContext context{ *handler };
+		ValidationContext context{ *typeContract };
 		for (const auto validator : {
 			ResolveDeclarations,
 			ValidateAttributes

@@ -1,21 +1,14 @@
 #pragma once
 
-#include "attributes/AttributeSystem.h"
-
 #include "framework/Core.h"
 #include "gameConfigs/combat/WeaponStructs.h"
+#include "gameplay/weapon/PrimaryWeaponValidationContract.h"
 
 #include <cstdint>
 
 namespace ly
 {
 	class Actor;
-
-	struct PrimaryWeaponValidationResult
-	{
-		bool isValid = false;
-		std::string reason;
-	};
 
 	class PrimaryWeaponTypeRuntimeState
 	{
@@ -89,13 +82,8 @@ namespace ly
 	public:
 		virtual ~PrimaryWeaponHandler() = default;
 		virtual PrimaryWeaponType GetType() const = 0;
-		virtual const List<sas::AttributeId>& GetOwnedAttributeRoots() const = 0;
-		virtual const List<sas::AttributeId>& GetInheritedAttributeRoots() const;
-		virtual PrimaryWeaponValidationResult ValidateDefinition(
-			const PrimaryWeaponDefinition& definition
-		) const;
 		virtual unique_ptr<PrimaryWeaponTypeRuntimeState> CreateRuntimeState() const;
-		virtual bool UsesIntervalFire() const { return true; }
+		bool UsesIntervalFire() const;
 		virtual void BeginFire(
 			const PrimaryWeaponExecutionContext& context,
 			PrimaryWeaponTypeRuntimeState& state
@@ -120,11 +108,7 @@ namespace ly
 	public:
 		virtual ~PrimaryWeaponFeatureHandler() = default;
 		virtual PrimaryWeaponFeatureType GetFeatureType() const = 0;
-		virtual const List<sas::AttributeId>& GetAttributeRoots() const = 0;
 		virtual const List<sas::AttributeId>& GetRuntimeValueKeys() const;
-		virtual PrimaryWeaponValidationResult ValidateDefinition(
-			const PrimaryWeaponDefinition& definition
-		) const;
 		virtual void BeginFire(
 			const PrimaryWeaponExecutionContext& context,
 			PrimaryWeaponRuntimeState& state

@@ -10,12 +10,8 @@ namespace ly
 		static bool RegisterHandler(unique_ptr<PrimaryWeaponHandler> handler);
 		static bool RegisterFeature(unique_ptr<PrimaryWeaponFeatureHandler> feature);
 
-		static const PrimaryWeaponHandler* FindHandler(
-			PrimaryWeaponType weaponType
-		);
-		static const PrimaryWeaponFeatureHandler* FindFeature(
-			PrimaryWeaponFeatureType featureType
-		);
+		static const PrimaryWeaponHandler* FindHandler(PrimaryWeaponType weaponType);
+		static const PrimaryWeaponFeatureHandler* FindFeature(PrimaryWeaponFeatureType featureType);
 
 	private:
 		static void EnsureBuiltIns();

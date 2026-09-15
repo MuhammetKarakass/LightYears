@@ -1,4 +1,4 @@
-﻿#include "framework/World.h"
+#include "framework/World.h"
 #include "framework/Actor.h"
 #include "framework/Application.h"
 #include "gameplay/GameStage.h"

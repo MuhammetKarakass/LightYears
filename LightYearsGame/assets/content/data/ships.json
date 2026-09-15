@@ -58,6 +58,150 @@
           { "attributeId": "Owner.Luck", "perLevel": 1.0 }
         ]
       }
+    },
+    {
+      "id": "Ship.Enemy.ApproachGunner.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/Enemies/enemyBlack1.png",
+      "health": 60.0,
+      "speed": [0.0, 0.0],
+      "collisionDamage": 50.0,
+      "score": 10,
+      "shipXPReward": 10.0,
+      "rewards": [
+        { "type": "Health", "weight": 0.2 },
+        { "type": "Life", "weight": 0.05 },
+        { "type": "Shield", "weight": 0.08 }
+      ],
+      "movement": {
+        "forwardThrust": 420.0,
+        "reverseThrust": 110.0,
+        "strafeThrust": 120.0,
+        "angularTurnSpeed": 100.0,
+        "angularTurnResponsiveness": 2.0,
+        "linearDamping": 0.55,
+        "maxSpeed": 420.0,
+        "inputResponsiveness": 14.0,
+        "mouseAimDeadZone": 28.0
+      },
+      "energy": {
+        "baseEnergyPower": 0.0,
+        "baseMaxShield": 25.0,
+        "shieldFullRechargeDuration": 5.5,
+        "baseShieldRechargeDelay": 3.0,
+        "baseAfterburnerCapacity": 0.0,
+        "afterburnerFullRechargeDuration": 8.0,
+        "baseAfterburnerRechargeDelay": 1.5,
+        "baseAfterburnerSpeedMultiplier": 1.0,
+        "baseAfterburnerAccelerationMultiplier": 1.0,
+        "baseAfterburnerEnergyDrainPerSecond": 15.0,
+        "shieldAffinity": 0.0,
+        "afterburnerAffinity": 1.0,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.20,
+        "baseAfterburnerManeuverabilityMultiplier": 1.0
+      },
+      "progression": {
+        "baseXP": 100.0,
+        "xpExponent": 1.25,
+        "naturalGrowth": []
+      },
+      "baseOwnerAttributes": []
+    },
+    {
+      "id": "Ship.Enemy.StrafeSkirmisher.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/Enemies/enemyBlack3.png",
+      "health": 60.0,
+      "speed": [0.0, 0.0],
+      "collisionDamage": 50.0,
+      "score": 20,
+      "shipXPReward": 20.0,
+      "rewards": [
+        { "type": "Health", "weight": 0.25 },
+        { "type": "Life", "weight": 0.05 },
+        { "type": "Shield", "weight": 0.08 }
+      ],
+      "movement": {
+        "forwardThrust": 320.0,
+        "reverseThrust": 220.0,
+        "strafeThrust": 300.0,
+        "angularTurnSpeed": 100.0,
+        "angularTurnResponsiveness": 2.0,
+        "linearDamping": 0.55,
+        "maxSpeed": 460.0,
+        "inputResponsiveness": 14.0,
+        "mouseAimDeadZone": 28.0
+      },
+      "energy": {
+        "baseEnergyPower": 0.0,
+        "baseMaxShield": 10.0,
+        "shieldFullRechargeDuration": 5.5,
+        "baseShieldRechargeDelay": 3.0,
+        "baseAfterburnerCapacity": 0.0,
+        "afterburnerFullRechargeDuration": 8.0,
+        "baseAfterburnerRechargeDelay": 1.5,
+        "baseAfterburnerSpeedMultiplier": 1.0,
+        "baseAfterburnerAccelerationMultiplier": 1.0,
+        "baseAfterburnerEnergyDrainPerSecond": 15.0,
+        "shieldAffinity": 0.0,
+        "afterburnerAffinity": 1.0,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.20,
+        "baseAfterburnerManeuverabilityMultiplier": 1.0
+      },
+      "progression": {
+        "baseXP": 100.0,
+        "xpExponent": 1.25,
+        "naturalGrowth": []
+      },
+      "baseOwnerAttributes": []
+    },
+    {
+      "id": "Ship.Enemy.RangeKeeper.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/Enemies/enemyBlack4.png",
+      "health": 100.0,
+      "speed": [0.0, 0.0],
+      "collisionDamage": 60.0,
+      "score": 30,
+      "shipXPReward": 30.0,
+      "rewards": [
+        { "type": "Health", "weight": 0.3 },
+        { "type": "Life", "weight": 0.05 },
+        { "type": "Shield", "weight": 0.1 }
+      ],
+      "movement": {
+        "forwardThrust": 240.0,
+        "reverseThrust": 300.0,
+        "strafeThrust": 180.0,
+        "angularTurnSpeed": 100.0,
+        "angularTurnResponsiveness": 2.0,
+        "linearDamping": 0.55,
+        "maxSpeed": 360.0,
+        "inputResponsiveness": 14.0,
+        "mouseAimDeadZone": 28.0
+      },
+      "energy": {
+        "baseEnergyPower": 0.0,
+        "baseMaxShield": 60.0,
+        "shieldFullRechargeDuration": 5.5,
+        "baseShieldRechargeDelay": 3.0,
+        "baseAfterburnerCapacity": 0.0,
+        "afterburnerFullRechargeDuration": 8.0,
+        "baseAfterburnerRechargeDelay": 1.5,
+        "baseAfterburnerSpeedMultiplier": 1.0,
+        "baseAfterburnerAccelerationMultiplier": 1.0,
+        "baseAfterburnerEnergyDrainPerSecond": 15.0,
+        "shieldAffinity": 0.0,
+        "afterburnerAffinity": 1.0,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.20,
+        "baseAfterburnerManeuverabilityMultiplier": 1.0
+      },
+      "progression": {
+        "baseXP": 100.0,
+        "xpExponent": 1.25,
+        "naturalGrowth": []
+      },
+      "baseOwnerAttributes": []
     }
   ]
 }

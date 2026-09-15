@@ -47,6 +47,12 @@ target_link_libraries(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		nlohmann_json::nlohmann_json
 )
 
+# Encounter presentation sources, shared by the game and the GasLite test targets.
+set(LIGHT_YEARS_ENCOUNTER_HUD_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/encounter/EncounterHUDController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/encounter/EncounterHUDController.cpp
+)
+
 add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameFramework/GameApplication.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp
@@ -176,6 +182,28 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EffectContentCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyCombatProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyRuntime.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyCombatProfileLoader.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileLoader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyCombatProfileCatalog.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileCatalog.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyContentCatalog.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyContentCatalog.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyFactory.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyFactory.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/encounter/EncounterWaveRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/encounter/EncounterWaveRuntime.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyIds.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorProfile.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorProfileValidator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorProfileValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorDecision.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorDecision.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorRuntime.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorRuntime.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementMath.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementController.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashContracts.h
@@ -269,10 +297,11 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponHandlerRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandlerRegistry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponValidationContract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponValidationContract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponExecutionSystem.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponBuiltIns.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponBuiltIns.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
@@ -296,6 +325,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/CombatRuntime.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/CombatRuntimeModifiers.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntimeModifiers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/ContactDamageGuardRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/ContactDamageGuardRegistry.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ship/ShipRuntime.h
@@ -780,13 +811,11 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/VFX/Explosion.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/EnemySpaceShip.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemySpaceShip.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/EnemyActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemyActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/DummyEnemy.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/DummyEnemy.cpp
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/Vanguard.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/Vanguard.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/level/LevelOne.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/level/LevelOne.cpp
@@ -818,32 +847,16 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/VanguardStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/TwinBlade.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/TwinBlade.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/TwinBladeStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/TwinBladeStage.cpp
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/Hexagon.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/Hexagon.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/HexagonStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/HexagonStage.cpp
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/UFO.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/UFO.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/UFOStage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/UFOStage.cpp
-
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/ChaosStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/LevelOneBoss.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/LevelOneBoss.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/LevelOneBossStage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/LevelOneBossStage.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/InfiniteStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/InfiniteStage.cpp
@@ -882,6 +895,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityUIController.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityUIController.cpp
 
+	${LIGHT_YEARS_ENCOUNTER_HUD_SOURCES}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/gameplay/GameplayConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponStructs.h
@@ -907,14 +921,24 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AttachmentLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileCatalog.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyContentCatalog.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorDecision.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorProfileValidator.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponValidationContract.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
 	)
 	target_include_directories(LightYearsContentTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${CMAKE_CURRENT_SOURCE_DIR}/src
 		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
 	)
 	target_compile_definitions(LightYearsContentTests PRIVATE
@@ -933,6 +957,37 @@ if(BUILD_TESTING)
 	)
 
 	set(LIGHT_YEARS_GAS_LITE_TEST_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyRuntime.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileCatalog.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyContentCatalog.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyFactory.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/encounter/EncounterWaveRuntime.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/level/GameLevel.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/level/MainMenuLevel.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/level/LevelOne.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaLevel.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundaryIndicator.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundarySystem.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaTestLevel.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerRespawnSystem.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameHUD.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/MainMenuHUD.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/PauseMenuHUD.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameOverHUD.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/GameplayWarningHUDController.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityUIController.cpp
+		${LIGHT_YEARS_ENCOUNTER_HUD_SOURCES}
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/TwinBladeStage.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/HexagonStage.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/InfiniteStage.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/environment/AsteroidSpawner.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/environment/Asteroid.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorProfileValidator.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorDecision.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
@@ -968,11 +1023,12 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/damageReduction/DamageReductionEffectBehavior.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntimeModifiers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/ContactDamageGuardRegistry.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntimeModifiers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/spaceShip/SpaceShip.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemySpaceShip.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemyActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/DummyEnemy.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Player.cpp
@@ -1174,8 +1230,8 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandlerRegistry.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponValidationContract.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponBuiltIns.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ShotgunWeaponHandler.cpp
@@ -1193,6 +1249,7 @@ if(BUILD_TESTING)
 
 	add_executable(LightYearsGasLiteTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/EnemyCombatFoundationTests.cpp
 		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsGasLiteTests PRIVATE

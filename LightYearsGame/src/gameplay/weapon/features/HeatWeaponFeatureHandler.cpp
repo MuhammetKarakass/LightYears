@@ -1,6 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "../internal/PrimaryWeaponBuiltIns.h"
+#include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 #include "framework/Actor.h"
 #include "attributes/AttributeMath.h"
@@ -125,114 +125,12 @@ namespace ly
 				return PrimaryWeaponFeatureType::Heat;
 			}
 
-			const List<sas::AttributeId>& GetAttributeRoots() const override
-			{
-				return PrimaryWeaponBuiltIns::HeatAttributeRoots();
-			}
-
 			const List<sas::AttributeId>& GetRuntimeValueKeys() const override
 			{
 				static const List<sas::AttributeId> keys{
 					PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue
 				};
 				return keys;
-			}
-
-			PrimaryWeaponValidationResult ValidateDefinition(
-				const PrimaryWeaponDefinition& definition
-			) const override
-			{
-				for (const sas::AttributeId& required : {
-					PrimaryWeaponSchema::Feature::Heat::Gain,
-					PrimaryWeaponSchema::Feature::Heat::Capacity,
-					PrimaryWeaponSchema::Feature::Heat::Dissipation
-				})
-				{
-					const PrimaryWeaponValidationResult result =
-						PrimaryWeaponBuiltIns::RequireAttribute(
-							definition,
-							required,
-							"Heat feature"
-						);
-					if (!result.isValid)
-					{
-						return result;
-					}
-				}
-				const sas::GameplayAttribute* capacity =
-					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-						definition,
-						PrimaryWeaponSchema::Feature::Heat::Capacity
-					);
-				if (!capacity || capacity->baseValue <= 0.f)
-				{
-					return { false, "Heat capacity must be greater than zero." };
-				}
-				if (!definition.heatGainCurve.empty())
-				{
-					float previousEndPercentage = 0.f;
-					for (const HeatGainCurveSegmentDefinition& segment :
-						definition.heatGainCurve)
-					{
-						if (segment.endHeatPercentage <= previousEndPercentage ||
-							segment.endHeatPercentage > 100.f ||
-							segment.gainMultiplier <= 0.f)
-						{
-							return {
-								false,
-								"Heat gain curve segments must have increasing end percentages within zero to one hundred and positive multipliers."
-							};
-						}
-						previousEndPercentage = segment.endHeatPercentage;
-					}
-					if (std::abs(previousEndPercentage - 100.f) > 0.001f)
-					{
-						return {
-							false,
-							"Heat gain curve must end at one hundred percent heat."
-						};
-					}
-				}
-
-				if (definition.weaponType !=
-					PrimaryWeaponType::BeamContinuous)
-				{
-					return { true, {} };
-				}
-
-				for (const sas::AttributeId& required : {
-					PrimaryWeaponSchema::Feature::Heat::OverheatCooldown,
-					PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat
-				})
-				{
-					const PrimaryWeaponValidationResult result =
-						PrimaryWeaponBuiltIns::RequireAttribute(
-							definition,
-							required,
-							"Continuous beam heat feature"
-						);
-					if (!result.isValid)
-					{
-						return result;
-					}
-				}
-				const sas::GameplayAttribute* cooldown =
-					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-						definition,
-						PrimaryWeaponSchema::Feature::Heat::OverheatCooldown
-					);
-				const sas::GameplayAttribute* maximumDamageMultiplier =
-					PrimaryWeaponBuiltIns::FindDefinitionAttribute(
-						definition,
-						PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat
-					);
-				return cooldown->baseValue > 0.f &&
-					maximumDamageMultiplier->baseValue >= 1.f
-					? PrimaryWeaponValidationResult{ true, {} }
-					: PrimaryWeaponValidationResult{
-						false,
-						"Continuous beam heat cooldown must be positive and its maximum damage multiplier must be at least one."
-					};
 			}
 
 			bool CanFire(

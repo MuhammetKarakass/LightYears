@@ -3,9 +3,18 @@
 #include "gameplay/content/EffectLoader.h"
 #include "gameplay/content/ShipLoader.h"
 #include "gameplay/content/WeaponLoader.h"
+#include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/content/AbilityLoader.h"
+#include "gameplay/content/EnemyCombatProfileLoader.h"
+#include "gameplay/content/EnemyCombatProfileCatalog.h"
+#include "gameplay/content/EnemyContentCatalog.h"
+#include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/content/AbilityContentCatalog.h"
+#include "gameplay/enemy/EnemyIds.h"
+#include "gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.h"
 
 #include "attributes/GameplayAttribute.h"
+#include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameConfigs/ability/movement/DashConfig.h"
@@ -51,12 +60,23 @@
 #include <iostream>
 #include <variant>
 
+namespace ly
+{
+	weak_ptr<Reward> CreateRewardHealth(World*) { return {}; }
+	weak_ptr<Reward> CreateRewardLife(World*) { return {}; }
+	weak_ptr<Reward> CreateRewardShield(World*) { return {}; }
+}
+
 namespace
 {
 	bool NearlyEqual(float left, float right, float tolerance = 0.0001f)
 	{
 		return std::fabs(left - right) <= tolerance;
 	}
+}
+
+namespace
+{
 
 	bool Fail(const char* message)
 	{
@@ -80,87 +100,628 @@ namespace
 	}
 }
 
+namespace
+{
+	int RunEnemyCombatProfileContentTests()
+	{
+		const std::filesystem::path weaponPath =
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
+			"LightYearsGame/assets/content/data/weapons.json";
+		const std::filesystem::path enemyProfilePath =
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
+			"LightYearsGame/assets/content/data/enemy_combat_profiles.json";
+		const std::filesystem::path abilitiesPath =
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
+			"LightYearsGame/assets/content/data/abilities.json";
+		const std::filesystem::path shipsPath =
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
+			"LightYearsGame/assets/content/data/ships.json";
+
+		if (!ly::content::WeaponContentCatalog::IsLoaded())
+		{
+			ly::content::WeaponContentCatalog::LoadFromFile(weaponPath);
+		}
+		if (!ly::content::AbilityContentCatalog::IsLoaded())
+		{
+			std::string abilityLoadErr;
+			if (!ly::content::AbilityContentCatalog::LoadFromFile(
+				abilitiesPath,
+				AbilityData::GetBuiltinShippedAbilityDefinitions(),
+				AbilityData::GetBuiltinAbilityActorDefinitions(),
+				&abilityLoadErr))
+			{
+				return Fail(("Failed to load AbilityContentCatalog: " + abilityLoadErr).c_str()) ? 0 : 1;
+			}
+		}
+
+		const ly::content::EnemyCombatProfileLoader::Result loadedEnemyProfiles =
+			ly::content::EnemyCombatProfileLoader::LoadFromFile(enemyProfilePath);
+		if (!loadedEnemyProfiles.Succeeded())
+		{
+			return Fail(loadedEnemyProfiles.error.c_str()) ? 0 : 1;
+		}
+		if (loadedEnemyProfiles.profiles.size() != 3)
+		{
+			return Fail("Enemy combat profiles did not load exactly three profiles") ? 0 : 1;
+		}
+
+		std::string enemyCatalogError;
+		if (!ly::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath, &enemyCatalogError))
+		{
+			return Fail(enemyCatalogError.c_str()) ? 0 : 1;
+		}
+
+	const ly::EnemyCombatProfile* vanguardProfile =
+			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.ApproachGunner.Basic");
+		const ly::EnemyCombatProfile* twinBladeProfile =
+			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.StrafeSkirmisher.Basic");
+		const ly::EnemyCombatProfile* hexagonProfile =
+			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.RangeKeeper.Basic");
+
+		if (!vanguardProfile || !twinBladeProfile || !hexagonProfile)
+		{
+			return Fail("Catalog failed to find one of the three basic enemy profiles") ? 0 : 1;
+		}
+
+		if (vanguardProfile->weapons.size() != 1 || vanguardProfile->weapons.front().weaponId != "Weapon.Projectile.EnemyVanguardPulse.Basic" ||
+			vanguardProfile->powerScalingPolicy != ly::EnemyPowerScalingPolicy::Disabled)
+		{
+			return Fail("Vanguard enemy combat profile has unexpected weapon or scaling policy") ? 0 : 1;
+		}
+
+		// Duplicate enemy profile ID rejected
+		const std::filesystem::path duplicateProfilePath =
+			std::filesystem::temp_directory_path() / "lightyears_dup_enemy_profile.json";
+		{
+			std::ofstream dupFile{ duplicateProfilePath };
+			dupFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    { "id": "EnemyCombat.Test.Basic", "weapons": [{ "weaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic", "slot": "PrimaryFire" }] },
+	    { "id": "EnemyCombat.Test.Basic", "weapons": [{ "weaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic", "slot": "PrimaryFire" }] }
+	  ]
+	})";
+		}
+		const ly::content::EnemyCombatProfileLoader::Result dupLoadResult =
+			ly::content::EnemyCombatProfileLoader::LoadFromFile(duplicateProfilePath);
+		std::filesystem::remove(duplicateProfilePath);
+		if (dupLoadResult.Succeeded() || dupLoadResult.error.find("Duplicate") == std::string::npos)
+		{
+			return Fail("Enemy combat profile loader accepted duplicate profile IDs") ? 0 : 1;
+		}
+
+		// Missing primary weapon rejected
+		const std::filesystem::path missingWeaponPath =
+			std::filesystem::temp_directory_path() / "lightyears_missing_weapon_profile.json";
+		{
+			std::ofstream mwFile{ missingWeaponPath };
+			mwFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    { "id": "EnemyCombat.Test.Basic", "weapons": [{ "weaponId": "Weapon.Projectile.NonExistent.Basic", "slot": "PrimaryFire" }] }
+	  ]
+	})";
+		}
+		std::string missingWeaponError;
+		const bool missingWeaponLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(missingWeaponPath, &missingWeaponError);
+		std::filesystem::remove(missingWeaponPath);
+		if (missingWeaponLoaded || missingWeaponError.find("not found") == std::string::npos)
+		{
+			return Fail("Enemy combat profile catalog accepted nonexistent primary weapon") ? 0 : 1;
+		}
+
+		// Missing ability rejected
+		const std::filesystem::path missingAbilityPath =
+			std::filesystem::temp_directory_path() / "lightyears_missing_ability_profile.json";
+		{
+			std::ofstream maFile{ missingAbilityPath };
+			maFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic",
+	      "weapons": [{ "weaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic", "slot": "PrimaryFire" }],
+	      "abilities": [{ "abilityId": "Ability.Offense.NonExistent.Basic", "slot": "Ability1" }]
+	    }
+	  ]
+	})";
+		}
+		std::string missingAbilityError;
+		const bool missingAbilityLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(missingAbilityPath, &missingAbilityError);
+		std::filesystem::remove(missingAbilityPath);
+		if (missingAbilityLoaded || missingAbilityError.find("not found") == std::string::npos)
+		{
+			return Fail("Enemy combat profile catalog accepted nonexistent ability") ? 0 : 1;
+		}
+
+		// Duplicate ability slot rejected
+		const std::filesystem::path dupSlotPath =
+			std::filesystem::temp_directory_path() / "lightyears_dup_slot_profile.json";
+		{
+			std::ofstream dsFile{ dupSlotPath };
+			dsFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic",
+	      "weapons": [{ "weaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic", "slot": "PrimaryFire" }],
+	      "abilities": [
+	        { "abilityId": "Ability.Offense.Rocket.Basic", "slot": "Ability1" },
+	        { "abilityId": "Ability.Offense.Rocket.Basic", "slot": "Ability1" }
+	      ]
+	    }
+	  ]
+	})";
+		}
+		std::string dupSlotError;
+		const bool dupSlotLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(dupSlotPath, &dupSlotError);
+		std::filesystem::remove(dupSlotPath);
+		if (dupSlotLoaded || dupSlotError.find("slot") == std::string::npos)
+		{
+			return Fail("Enemy combat profile catalog accepted duplicate ability slots") ? 0 : 1;
+		}
+
+		// PowerScalingPolicy::Disabled rejects AP/EP scaling content
+		const std::filesystem::path disabledScalingPath =
+			std::filesystem::temp_directory_path() / "lightyears_disabled_scaling_profile.json";
+		{
+			std::ofstream disFile{ disabledScalingPath };
+			disFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic",
+	      "weapons": [{ "weaponId": "Weapon.Projectile.FighterRapidLaser.Basic", "slot": "PrimaryFire" }],
+	      "powerScalingPolicy": "Disabled"
+	    }
+	  ]
+	})";
+		}
+		std::string disabledScalingError;
+		const bool disabledScalingLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(disabledScalingPath, &disabledScalingError);
+		std::filesystem::remove(disabledScalingPath);
+		if (disabledScalingLoaded || disabledScalingError.find("scaling") == std::string::npos)
+		{
+			return Fail("Enemy combat profile catalog accepted AP/EP scaling under Disabled policy") ? 0 : 1;
+		}
+
+		// PowerScalingPolicy::Allowed accepts AP/EP scaling content without granting automatic AP/EP
+		const std::filesystem::path allowedScalingPath =
+			std::filesystem::temp_directory_path() / "lightyears_allowed_scaling_profile.json";
+		{
+			std::ofstream allowFile{ allowedScalingPath };
+			allowFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic",
+	      "weapons": [{ "weaponId": "Weapon.Projectile.FighterRapidLaser.Basic", "slot": "PrimaryFire" }],
+	      "powerScalingPolicy": "Allowed"
+	    }
+	  ]
+	})";
+		}
+		std::string allowedScalingError;
+		const bool allowedScalingLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(allowedScalingPath, &allowedScalingError);
+		std::filesystem::remove(allowedScalingPath);
+		if (!allowedScalingLoaded)
+		{
+			return Fail(allowedScalingError.c_str()) ? 0 : 1;
+		}
+		const ly::EnemyCombatProfile* allowedProfile =
+			ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.Test.Basic");
+		if (!allowedProfile || allowedProfile->powerScalingPolicy != ly::EnemyPowerScalingPolicy::Allowed)
+		{
+			return Fail("Allowed profile policy not preserved") ? 0 : 1;
+		}
+
+		// Duplicate ability ID in different slots is rejected
+		const std::filesystem::path dupAbilityIdPath =
+			std::filesystem::temp_directory_path() / "lightyears_dup_ability_id_profile.json";
+		{
+			std::ofstream dupFile{ dupAbilityIdPath };
+			dupFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic",
+	      "weapons": [{ "weaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic", "slot": "PrimaryFire" }],
+	      "abilities": [
+	        { "abilityId": "Ability.Movement.Dash.Basic", "slot": "Ability1" },
+	        { "abilityId": "Ability.Movement.Dash.Basic", "slot": "Ability2" }
+	      ]
+	    }
+	  ]
+	})";
+		}
+		std::string dupAbilityIdError;
+		const bool dupAbilityIdLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(dupAbilityIdPath, &dupAbilityIdError);
+		std::filesystem::remove(dupAbilityIdPath);
+		if (dupAbilityIdLoaded || dupAbilityIdError.find("Duplicate ability ID") == std::string::npos)
+		{
+			return Fail("Enemy combat profile catalog accepted duplicate ability ID across slots") ? 0 : 1;
+		}
+
+		// The removed singular primaryWeaponId must not silently fall back.
+		const std::filesystem::path legacyKeyPath =
+			std::filesystem::temp_directory_path() / "lightyears_legacy_key_profile.json";
+		{
+			std::ofstream legacyFile{ legacyKeyPath };
+			legacyFile << R"({
+		  "schemaVersion": 1,
+		  "profiles": [
+		    {
+      "id": "EnemyCombat.Test.Basic",
+		      "primaryWeaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic"
+		    }
+		  ]
+		})";
+		}
+		ly::EnemyCombatProfile invalidEnemyGrowth = *vanguardProfile;
+		invalidEnemyGrowth.profileId = "EnemyCombat.Test.InvalidGrowth";
+		invalidEnemyGrowth.progression.naturalGrowth.push_back({ ly::OwnerAttributeIds::AttackPower, 1.f });
+		std::string invalidGrowthError;
+		if (ly::content::EnemyCombatProfileCatalog::ValidateProfile(invalidEnemyGrowth, &invalidGrowthError) || invalidGrowthError.find("Owner.MaxHealth") == std::string::npos)
+		{
+			return Fail("Enemy catalog accepted a non-whitelisted natural growth attribute") ? 0 : 1;
+		}
+		std::string legacyKeyError;
+		const bool legacyKeyLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(legacyKeyPath, &legacyKeyError);
+		std::filesystem::remove(legacyKeyPath);
+		if (legacyKeyLoaded || legacyKeyError.find("Unknown key 'primaryWeaponId'") == std::string::npos)
+		{
+			return Fail("Enemy combat profile loader accepted removed primaryWeaponId") ? 0 : 1;
+		}
+
+		// Catalog validation is generic and must not require a hardcoded roster.
+		std::string shippedValErr;
+		if (!ly::content::EnemyCombatProfileCatalog::ValidateShippedProfiles(&shippedValErr))
+		{
+			return Fail(("Generic enemy combat profile validation failed: " + shippedValErr).c_str()) ? 0 : 1;
+		}
+
+		// Valid multi-ability profile without power scaling is accepted
+		const std::filesystem::path multiAbilityPath =
+			std::filesystem::temp_directory_path() / "lightyears_multi_ability_profile.json";
+		{
+			std::ofstream multiFile{ multiAbilityPath };
+			multiFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic",
+	      "weapons": [{ "weaponId": "Weapon.Projectile.EnemyVanguardPulse.Basic", "slot": "PrimaryFire" }],
+	      "abilities": [
+	        { "abilityId": "Ability.Movement.Dash.Basic", "slot": "Ability1" },
+	        { "abilityId": "Ability.Defense.Shield.Basic", "slot": "Ability2" }
+	      ]
+	    }
+	  ]
+	})";
+		}
+		std::string multiAbilityError;
+		const bool multiAbilityLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(multiAbilityPath, &multiAbilityError);
+		std::filesystem::remove(multiAbilityPath);
+		if (!multiAbilityLoaded)
+		{
+			return Fail(("Valid multi-ability profile rejected: " + multiAbilityError).c_str()) ? 0 : 1;
+		}
+
+		// Profile with no attack method and allowContactDamageOnly=false is rejected
+		const std::filesystem::path noAttackPath =
+			std::filesystem::temp_directory_path() / "lightyears_no_attack_profile.json";
+		{
+			std::ofstream noAttFile{ noAttackPath };
+			noAttFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic"
+	    }
+	  ]
+	})";
+		}
+		std::string noAttackError;
+		const bool noAttackLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(noAttackPath, &noAttackError);
+		std::filesystem::remove(noAttackPath);
+		if (noAttackLoaded || noAttackError.find("no attack method") == std::string::npos)
+		{
+			return Fail("Profile with no attack method was accepted when allowContactDamageOnly is false") ? 0 : 1;
+		}
+
+		// Profile with contact damage only is accepted when allowContactDamageOnly=true
+		const std::filesystem::path contactOnlyPath =
+			std::filesystem::temp_directory_path() / "lightyears_contact_only_profile.json";
+		{
+			std::ofstream conFile{ contactOnlyPath };
+			conFile << R"({
+	  "schemaVersion": 1,
+	  "profiles": [
+	    {
+      "id": "EnemyCombat.Test.Basic",
+	      "allowContactDamageOnly": true
+	    }
+	  ]
+	})";
+		}
+		std::string contactOnlyError;
+		const bool contactOnlyLoaded =
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(contactOnlyPath, &contactOnlyError);
+		std::filesystem::remove(contactOnlyPath);
+		if (!contactOnlyLoaded)
+		{
+			return Fail(("Contact damage only profile was rejected: " + contactOnlyError).c_str()) ? 0 : 1;
+		}
+
+		// Restore original catalog
+		ly::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath);
+
+		// Verify that the restored shipped catalog validates successfully
+		if (!ly::content::EnemyCombatProfileCatalog::ValidateShippedProfiles(&shippedValErr))
+		{
+			return Fail(("Shipped catalog failed validation after restoration: " + shippedValErr).c_str()) ? 0 : 1;
+		}
+
+		std::string shipCatalogError;
+		if (!ly::content::ShipContentCatalog::LoadFromFile(shipsPath, &shipCatalogError))
+		{
+			return Fail(("Ship catalog failed to load: " + shipCatalogError).c_str()) ? 0 : 1;
+		}
+		std::string enemyDefinitionCatalogError;
+		if (!ly::content::EnemyContentCatalog::LoadFromFiles(
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_definitions.json",
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_behavior_profiles.json",
+			&enemyDefinitionCatalogError))
+		{
+			return Fail(("Enemy definition catalog failed to load: " + enemyDefinitionCatalogError).c_str()) ? 0 : 1;
+		}
+		if (ly::content::EnemyContentCatalog::GetDefinitions().size() != 3 ||
+			!ly::content::EnemyContentCatalog::FindById(ly::EnemyIds::ApproachGunnerBasic))
+		{
+			return Fail("Enemy definition catalog did not resolve the shipped generic enemies") ? 0 : 1;
+		}
+
+		const auto validateCombinedFixture = [&](const char* suffix, const char* combatJson, const char* behaviorJson, bool expected, const char* failureText)
+		{
+			const std::filesystem::path fixtureCombatPath = std::filesystem::temp_directory_path() / (std::string{ "lightyears_combined_" } + suffix + "_combat.json");
+			const std::filesystem::path fixtureDefinitionsPath = std::filesystem::temp_directory_path() / (std::string{ "lightyears_combined_" } + suffix + "_definitions.json");
+			const std::filesystem::path fixtureBehaviorPath = std::filesystem::temp_directory_path() / (std::string{ "lightyears_combined_" } + suffix + "_behavior.json");
+			{
+				std::ofstream file{ fixtureCombatPath }; file << combatJson;
+				std::ofstream definitions{ fixtureDefinitionsPath };
+				definitions << R"({"schemaVersion":1,"enemies":[{"id":"Enemy.Test.Combined","shipId":"Ship.Enemy.ApproachGunner.Basic","combatProfileId":"EnemyCombat.Test.Combined","behaviorProfileId":"EnemyBehavior.Test.Combined"}]})";
+				std::ofstream behavior{ fixtureBehaviorPath }; behavior << behaviorJson;
+			}
+			std::string fixtureError;
+			const bool combatLoaded = ly::content::EnemyCombatProfileCatalog::LoadFromFile(fixtureCombatPath, &fixtureError);
+			const bool combinedLoaded = combatLoaded && ly::content::EnemyContentCatalog::LoadFromFiles(fixtureDefinitionsPath, fixtureBehaviorPath, &fixtureError);
+			std::filesystem::remove(fixtureCombatPath);
+			std::filesystem::remove(fixtureDefinitionsPath);
+			std::filesystem::remove(fixtureBehaviorPath);
+			ly::content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath);
+			ly::content::EnemyContentCatalog::LoadFromFiles(
+				std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_definitions.json",
+				std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets/content/data/enemy_behavior_profiles.json");
+			if (combinedLoaded != expected)
+			{
+				return Fail(failureText) ? 0 : 1;
+			}
+			return 0;
+		};
+		const char* combinedBehaviorHeader = R"("schemaVersion":1,"profiles":[{"id":"EnemyBehavior.Test.Combined","targetSearchRange":2000.0,"targetRefreshInterval":0.2,"desiredDistance":700.0,"minimumDistance":400.0,"maximumDistance":0.0,"movementMode":"Approach","slotRules":)";
+		if (validateCombinedFixture("weapon_range", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","weapons":[{"weaponId":"Weapon.Projectile.EnemyTwinBladeScatter.Basic","slot":"PrimaryFire"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"PrimaryFire","inputMode":"Hold","requiresTarget":true,"minimumRange":0.0,"maximumRange":501.0}]}]})").c_str(), false, "Combined validation accepted a behavior weapon range above Common.Range") != 0)
+			return 1;
+		if (validateCombinedFixture("missing_weapon_rule", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","weapons":[{"weaponId":"Weapon.Projectile.EnemyVanguardPulse.Basic","slot":"PrimaryFire"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + "[]}]}" ).c_str(), false, "Combined validation accepted an active weapon without a behavior rule") != 0)
+			return 1;
+		if (validateCombinedFixture("missing_ability_rule", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","abilities":[{"abilityId":"Ability.Movement.Dash.Basic","slot":"Ability1"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + "[]}]}" ).c_str(), false, "Combined validation accepted an active ability without a behavior rule") != 0)
+			return 1;
+		if (validateCombinedFixture("contact_active", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","weapons":[{"weaponId":"Weapon.Projectile.EnemyVanguardPulse.Basic","slot":"PrimaryFire"}],"allowContactDamageOnly":true}]})", (std::string{ "{" } + combinedBehaviorHeader + "[]}]}" ).c_str(), false, "Contact-only flag exempted an active binding without a behavior rule") != 0)
+			return 1;
+		if (validateCombinedFixture("contact_active_valid", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","weapons":[{"weaponId":"Weapon.Projectile.EnemyVanguardPulse.Basic","slot":"PrimaryFire"}],"allowContactDamageOnly":true}]})", (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"PrimaryFire","inputMode":"Hold","requiresTarget":true,"minimumRange":400.0,"maximumRange":700.0}]}]})").c_str(), true, "Contact-only permission incorrectly rejected a valid active binding") != 0)
+			return 1;
+		if (validateCombinedFixture("ability_only", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","abilities":[{"abilityId":"Ability.Movement.Dash.Basic","slot":"Ability1"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"Ability1","inputMode":"Pulse","requiresTarget":false}]}]})").c_str(), true, "Combined validation rejected a valid ability-only loadout") != 0)
+			return 1;
+		if (validateCombinedFixture("unsupported_policy", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","abilities":[{"abilityId":"Ability.Defense.DirectionalBarrier.Basic","slot":"Ability1"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"Ability1","inputMode":"Hold","requiresTarget":false}]}]})").c_str(), false, "Combined validation accepted an unsupported ability activation policy") != 0)
+			return 1;
+		const char* coveredCombat = R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","powerScalingPolicy":"Allowed","weapons":[{"weaponId":"Weapon.Projectile.EnemyVanguardPulse.Basic","slot":"PrimaryFire"},{"weaponId":"Weapon.Projectile.FighterRapidLaser.Basic","slot":"Ability1"}]}]})";
+		if (validateCombinedFixture("coverage_accept", coveredCombat, (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"PrimaryFire","inputMode":"Hold","requiresTarget":true,"minimumRange":400.0,"maximumRange":500.0},{"slot":"Ability1","inputMode":"Hold","requiresTarget":true,"minimumRange":500.0,"maximumRange":700.0}]}]})").c_str(), true, "Combined validation rejected attack rules that cover the movement band") != 0)
+			return 1;
+		if (validateCombinedFixture("coverage_gap", coveredCombat, (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"PrimaryFire","inputMode":"Hold","requiresTarget":true,"minimumRange":400.0,"maximumRange":500.0},{"slot":"Ability1","inputMode":"Hold","requiresTarget":true,"minimumRange":600.0,"maximumRange":700.0}]}]})").c_str(), false, "Combined validation accepted a gap in the movement band") != 0)
+			return 1;
+
+		const ShipDefinition* approachShip = ly::content::ShipContentCatalog::FindById("Ship.Enemy.ApproachGunner.Basic");
+		const ShipDefinition* strafeShip = ly::content::ShipContentCatalog::FindById("Ship.Enemy.StrafeSkirmisher.Basic");
+		const ShipDefinition* rangeShip = ly::content::ShipContentCatalog::FindById("Ship.Enemy.RangeKeeper.Basic");
+		const PrimaryWeaponDefinition* approachWeapon = ly::content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyVanguardPulse.Basic");
+		const PrimaryWeaponDefinition* strafeWeapon = ly::content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyTwinBladeScatter.Basic");
+		const PrimaryWeaponDefinition* rangeWeapon = ly::content::WeaponContentCatalog::FindById("Weapon.Wave.EnemyHexagonCryoPulse.Basic");
+		const ly::EnemyBehaviorProfile* approachBehavior = ly::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.ApproachGunner.Basic");
+		const ly::EnemyBehaviorProfile* strafeBehavior = ly::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.StrafeSkirmisher.Basic");
+		const ly::EnemyBehaviorProfile* rangeBehavior = ly::content::EnemyContentCatalog::FindBehaviorById("EnemyBehavior.RangeKeeper.Basic");
+		auto hasNonZeroOwnerAttribute = [](const ShipDefinition* ship, const sas::AttributeId& attributeId)
+		{
+			return ship && std::any_of(ship->baseOwnerAttributes.begin(), ship->baseOwnerAttributes.end(),
+				[&](const OwnerAttributeBaseEntry& entry) { return entry.attributeId == attributeId && !NearlyEqual(entry.baseValue, 0.f); });
+		};
+		const bool enemyPowerScalingIsDisabled = approachShip && strafeShip && rangeShip &&
+			NearlyEqual(approachShip->energyAttributes.baseEnergyPower, 0.f) && NearlyEqual(strafeShip->energyAttributes.baseEnergyPower, 0.f) &&
+			NearlyEqual(rangeShip->energyAttributes.baseEnergyPower, 0.f) &&
+			!hasNonZeroOwnerAttribute(approachShip, ly::OwnerAttributeIds::AttackPower) &&
+			!hasNonZeroOwnerAttribute(strafeShip, ly::OwnerAttributeIds::AttackPower) &&
+			!hasNonZeroOwnerAttribute(rangeShip, ly::OwnerAttributeIds::AttackPower) &&
+			!hasNonZeroOwnerAttribute(approachShip, ly::OwnerAttributeIds::EnergyPower) &&
+			!hasNonZeroOwnerAttribute(strafeShip, ly::OwnerAttributeIds::EnergyPower) &&
+			!hasNonZeroOwnerAttribute(rangeShip, ly::OwnerAttributeIds::EnergyPower);
+		const bool enemyStatsMatchRoles = approachShip && strafeShip && rangeShip &&
+			NearlyEqual(approachShip->health, 60.f) && NearlyEqual(strafeShip->health, 60.f) && NearlyEqual(rangeShip->health, 100.f) &&
+			NearlyEqual(approachShip->speed.x, 0.f) && NearlyEqual(approachShip->speed.y, 0.f) &&
+			NearlyEqual(strafeShip->speed.x, 0.f) && NearlyEqual(strafeShip->speed.y, 0.f) &&
+			NearlyEqual(rangeShip->speed.x, 0.f) && NearlyEqual(rangeShip->speed.y, 0.f) &&
+			NearlyEqual(approachShip->collisionDamage, 50.f) && NearlyEqual(strafeShip->collisionDamage, 50.f) && NearlyEqual(rangeShip->collisionDamage, 60.f) &&
+			NearlyEqual(approachShip->movementAttributes.forwardThrust.currentValue, 420.f) &&
+			NearlyEqual(approachShip->movementAttributes.reverseThrust.currentValue, 110.f) &&
+			NearlyEqual(approachShip->movementAttributes.strafeThrust.currentValue, 120.f) &&
+			NearlyEqual(approachShip->movementAttributes.maxSpeed.currentValue, 420.f) &&
+			NearlyEqual(strafeShip->movementAttributes.forwardThrust.currentValue, 320.f) &&
+			NearlyEqual(strafeShip->movementAttributes.reverseThrust.currentValue, 220.f) &&
+			NearlyEqual(strafeShip->movementAttributes.strafeThrust.currentValue, 300.f) &&
+			NearlyEqual(strafeShip->movementAttributes.maxSpeed.currentValue, 460.f) &&
+			NearlyEqual(rangeShip->movementAttributes.forwardThrust.currentValue, 240.f) &&
+			NearlyEqual(rangeShip->movementAttributes.reverseThrust.currentValue, 300.f) &&
+			NearlyEqual(rangeShip->movementAttributes.strafeThrust.currentValue, 180.f) &&
+			NearlyEqual(rangeShip->movementAttributes.maxSpeed.currentValue, 360.f);
+		const bool behaviorMatchesRoles = approachBehavior && strafeBehavior && rangeBehavior &&
+			approachBehavior->movementMode == ly::EnemyMovementMode::Approach &&
+			strafeBehavior->movementMode == ly::EnemyMovementMode::Strafe &&
+			rangeBehavior->movementMode == ly::EnemyMovementMode::HoldRange &&
+			NearlyEqual(approachBehavior->desiredDistance, 700.f) && NearlyEqual(approachBehavior->minimumDistance, 400.f) &&
+			NearlyEqual(strafeBehavior->minimumDistance, 300.f) && NearlyEqual(strafeBehavior->maximumDistance, 450.f) &&
+			NearlyEqual(rangeBehavior->minimumDistance, 750.f) && NearlyEqual(rangeBehavior->maximumDistance, 1050.f) &&
+			NearlyEqual(approachBehavior->slotRules.front().maximumRange, 1200.f) &&
+			NearlyEqual(strafeBehavior->slotRules.front().maximumRange, 500.f) &&
+			NearlyEqual(rangeBehavior->slotRules.front().maximumRange, 1100.f);
+		const bool weaponsMatchRoles = approachWeapon && strafeWeapon && rangeWeapon &&
+			approachWeapon->weaponType == PrimaryWeaponType::ProjectileStandard &&
+			strafeWeapon->weaponType == PrimaryWeaponType::ProjectileShotgun &&
+			rangeWeapon->weaponType == PrimaryWeaponType::WaveExpanding &&
+			approachWeapon->damageTags == ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } &&
+			strafeWeapon->damageTags == ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic } &&
+			rangeWeapon->damageTags == ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo } &&
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 15.f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 8.f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 10.f) &&
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 1.2f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 0.8f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 0.6f) &&
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1200.f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 500.f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1200.f);
+		const auto hasMatchingRule = [](const ly::EnemyCombatProfile* combat, const ly::EnemyBehaviorProfile* behavior)
+		{
+			if (!combat || !behavior || combat->weapons.size() + combat->abilities.size() != behavior->slotRules.size()) return false;
+			for (const ly::EnemyWeaponBinding& binding : combat->weapons)
+				if (std::none_of(behavior->slotRules.begin(), behavior->slotRules.end(), [&](const ly::EnemySlotDecisionRule& rule) { return rule.slot == binding.slot; })) return false;
+			for (const ly::EnemyAbilityBinding& binding : combat->abilities)
+				if (std::none_of(behavior->slotRules.begin(), behavior->slotRules.end(), [&](const ly::EnemySlotDecisionRule& rule) { return rule.slot == binding.slot; })) return false;
+			return true;
+		};
+		const ly::EnemyCombatProfile* approachCombat = ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.ApproachGunner.Basic");
+		const ly::EnemyCombatProfile* strafeCombat = ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.StrafeSkirmisher.Basic");
+		const ly::EnemyCombatProfile* rangeCombat = ly::content::EnemyCombatProfileCatalog::FindById("EnemyCombat.RangeKeeper.Basic");
+		if (!enemyPowerScalingIsDisabled || !enemyStatsMatchRoles || !behaviorMatchesRoles || !weaponsMatchRoles ||
+			!hasMatchingRule(approachCombat, approachBehavior) || !hasMatchingRule(strafeCombat, strafeBehavior) || !hasMatchingRule(rangeCombat, rangeBehavior))
+		{
+			return Fail("Shipped enemy ship, combat, behavior, or weapon profiles do not match their intended roles") ? 0 : 1;
+		}
+
+		const std::filesystem::path testEnemyDefinitionsPath =
+			std::filesystem::temp_directory_path() / "lightyears_enemy_slot_test_definitions.json";
+		const std::filesystem::path testEnemyBehaviorPath =
+			std::filesystem::temp_directory_path() / "lightyears_enemy_slot_test_behavior.json";
+		{
+			std::ofstream definitionsFile{ testEnemyDefinitionsPath };
+			definitionsFile << R"({
+  "schemaVersion": 1,
+  "enemies": [
+    {
+      "id": "Enemy.Test.SlotRules",
+      "shipId": "Ship.Enemy.ApproachGunner.Basic",
+      "combatProfileId": "EnemyCombat.ApproachGunner.Basic",
+      "behaviorProfileId": "EnemyBehavior.Test.SlotRules"
+    }
+  ]
+})";
+		}
+		{
+			std::ofstream behaviorFile{ testEnemyBehaviorPath };
+			behaviorFile << R"({
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "id": "EnemyBehavior.Test.SlotRules",
+      "targetSearchRange": 1000.0,
+      "targetRefreshInterval": 0.2,
+      "desiredDistance": 400.0,
+      "minimumDistance": 200.0,
+      "maximumDistance": 0.0,
+      "movementMode": "Approach",
+      "fireRange": 500.0,
+      "fireConeThreshold": 0.9
+    }
+  ]
+})";
+		}
+		std::string legacyBehaviorError;
+		const bool legacyBehaviorLoaded = ly::content::EnemyContentCatalog::LoadFromFiles(
+			testEnemyDefinitionsPath, testEnemyBehaviorPath, &legacyBehaviorError);
+		if (legacyBehaviorLoaded ||
+			(legacyBehaviorError.find("fireRange") == std::string::npos &&
+			 legacyBehaviorError.find("fireConeThreshold") == std::string::npos))
+		{
+			std::filesystem::remove(testEnemyDefinitionsPath);
+			std::filesystem::remove(testEnemyBehaviorPath);
+			return Fail("Legacy fireRange behavior fields were not rejected") ? 0 : 1;
+		}
+		{
+			std::ofstream behaviorFile{ testEnemyBehaviorPath };
+			behaviorFile << R"({
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "id": "EnemyBehavior.Test.SlotRules",
+      "targetSearchRange": 1000.0,
+      "targetRefreshInterval": 0.2,
+      "desiredDistance": 400.0,
+      "minimumDistance": 200.0,
+      "maximumDistance": 0.0,
+      "movementMode": "Approach",
+      "slotRules": [
+        {
+          "slot": "Ability1",
+          "inputMode": "Pulse",
+          "requiresTarget": false
+        }
+      ]
+    }
+  ]
+})";
+		}
+		std::string unboundRuleError;
+		const bool unboundRuleLoaded = ly::content::EnemyContentCatalog::LoadFromFiles(
+			testEnemyDefinitionsPath, testEnemyBehaviorPath, &unboundRuleError);
+		std::filesystem::remove(testEnemyDefinitionsPath);
+		std::filesystem::remove(testEnemyBehaviorPath);
+		if (unboundRuleLoaded || unboundRuleError.find("active combat binding") == std::string::npos)
+			return Fail("Behavior slot rule without an active combat binding was accepted") ? 0 : 1;
+
+		std::cout << "[PASS] All Enemy Combat Profile content tests passed successfully!\n";
+		return 0;
+	}
+}
+
 int main()
 {
+	const int enemyProfileResult = RunEnemyCombatProfileContentTests();
+	if (enemyProfileResult != 0)
+	{
+		return enemyProfileResult;
+	}
 	const std::filesystem::path abilityPath =
 		std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 		"LightYearsGame/assets/content/data/abilities.json";
-	const ly::List<const ly::GameAbilityDefinition*> fallbackAbilities{
-		&AbilityData::Definitions::Dash_Basic,
-		&AbilityData::Definitions::Shield_Basic,
-		&AbilityData::Definitions::DirectionalBarrier_Basic,
-		&AbilityData::Definitions::SunBeam_Strike_Basic,
-		&AbilityData::Definitions::Rocket_Basic,
-		&AbilityData::Definitions::GravityAnomaly_Basic,
-		&AbilityData::Definitions::InfernoSpray_Basic,
-		&AbilityData::Definitions::OverdriveCore_Basic,
-		&AbilityData::Definitions::NullPulse_Basic,
-		&AbilityData::Definitions::PhaseDrift_Basic,
-		&AbilityData::Definitions::ShieldHarvest_Basic,
-		&AbilityData::Definitions::Cryostasis_Basic,
-		&AbilityData::Definitions::HullShock_Basic,
-		&AbilityData::Definitions::OrbitalDrones_Basic,
-		&AbilityData::Definitions::ExecutionDrive_Basic,
-		&AbilityData::Definitions::RelayPrism_Basic,
-		&AbilityData::Definitions::EchoProtocol_Basic,
-		&AbilityData::Definitions::RailBurst_Basic,
-		&AbilityData::Definitions::CrescentReaver_Basic,
-		&AbilityData::Definitions::MineLayer_Basic,
-		&AbilityData::Definitions::EnergySpear_Basic,
-		&AbilityData::Definitions::ScorchDrive_Basic,
-		&AbilityData::Definitions::IonStorm_Basic,
-		&AbilityData::Definitions::ChainLightning_Basic,
-		&AbilityData::Definitions::GlacialPressure_Basic
-		,
-		&AbilityData::Definitions::VoidGate_Basic
-		,
-		&AbilityData::Definitions::FrostMaelstrom_Basic
-		,
-		&AbilityData::Definitions::FrozenThrong_Basic
-		,
-		&AbilityData::Definitions::CombatSentry_Basic
-		,
-		&AbilityData::Definitions::NanoPlague_Basic
-		,
-		&AbilityData::Definitions::AstralSurge_Basic
-		,
-		&AbilityData::Definitions::WingSentinels_Basic
-		,
-		&AbilityData::Definitions::ReturnProtocol_Basic
-		,
-		&AbilityData::Definitions::CrystalBarricade_Basic
-	};
-	const ly::List<const ly::AbilityActorDefinition*> fallbackAbilityActors{
-		&AbilityData::GravityAnomaly::ActorProjectileBasic,
-		&AbilityData::GravityAnomaly::ActorFieldBasic,
-		&AbilityData::Rocket::ActorProjectileBasic,
-		&AbilityData::InfernoSpray::ActorFlameConeBasic,
-		&AbilityData::SunBeam::ActorStrikeBasic,
-		&AbilityData::OverdriveCore::ActorProjectileBasic,
-		&AbilityData::RelayPrism::ActorRelayBasic,
-		&AbilityData::RailBurst::ActorProjectileBasic,
-		&AbilityData::CrescentReaver::ActorProjectileBasic,
-		&AbilityData::MineLayer::ActorMineBasic,
-		&AbilityData::ScorchDrive::ActorFireSegmentBasic,
-		&AbilityData::IonStorm::ActorProjectileBasic,
-		&AbilityData::IonStorm::ActorFieldBasic
-		,
-		&AbilityData::Definitions::VoidGatePortalBasic
-		,
-		&AbilityData::Definitions::FrostMaelstromFieldBasic
-		,
-		&AbilityData::Definitions::FrozenThrongHuskBasic
-		,
-		&AbilityData::CombatSentry::ActorTurretBasic
-		,
-		&AbilityData::CombatSentry::ActorProjectileBasic
-		,
-		&AbilityData::AstralSurge::ActorProjectileBasic
-		,
-		&AbilityData::WingSentinels::ActorProjectileBasic
-		,
-		&AbilityData::CrystalBarricade::ActorWallBasic
-	};
+	const ly::List<const ly::GameAbilityDefinition*>& fallbackAbilities =
+		AbilityData::GetBuiltinShippedAbilityDefinitions();
+	const ly::List<const ly::AbilityActorDefinition*>& fallbackAbilityActors =
+		AbilityData::GetBuiltinAbilityActorDefinitions();
 	const ly::content::AbilityLoader::Result loadedAbilities =
 		ly::content::AbilityLoader::LoadFromFile(
 			abilityPath,
@@ -983,9 +1544,9 @@ int main()
 	{
 		return Fail(loaded.error.c_str()) ? 0 : 1;
 	}
-	if (loaded.definitions.size() != 7)
+	if (loaded.definitions.size() != 10)
 	{
-		return Fail("Weapon JSON catalog did not load exactly seven definitions") ? 0 : 1;
+		return Fail("Weapon JSON catalog did not load exactly ten definitions") ? 0 : 1;
 	}
 
 	const char* expectedWeaponIds[] = {
@@ -995,7 +1556,10 @@ int main()
 		"Weapon.Arc.ElectricLauncher.Basic",
 		"Weapon.Beam.ContinuousHeatLaser.Basic",
 		"Weapon.Wave.CryoProjector.Basic",
-		"Weapon.Projectile.IroncladMinigun.Basic"
+		"Weapon.Projectile.IroncladMinigun.Basic",
+		"Weapon.Projectile.EnemyVanguardPulse.Basic",
+		"Weapon.Projectile.EnemyTwinBladeScatter.Basic",
+		"Weapon.Wave.EnemyHexagonCryoPulse.Basic"
 	};
 	for (const char* expectedId : expectedWeaponIds)
 	{
@@ -1013,8 +1577,8 @@ int main()
 	);
 	if (basicLaser->weaponType != PrimaryWeaponType::ProjectileStandard ||
 		!basicDamage ||
-		!NearlyEqual(basicDamage->baseValue, 8.f) ||
-		basicLaser->progressionProfile.ResolveLevelSteps().size() != 3 ||
+		!NearlyEqual(basicDamage->baseValue, 12.f) ||
+		basicLaser->progressionProfile.ResolveLevelSteps().size() != 14 ||
 		basicLaser->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic })
 	{
 		return Fail("Basic rapid laser JSON profile is invalid") ? 0 : 1;
@@ -1089,7 +1653,7 @@ int main()
 			shipPath,
 			shipPresentationBase
 		);
-	if (!loadedShips.Succeeded() || loadedShips.definitions.size() != 1 ||
+	if (!loadedShips.Succeeded() || loadedShips.definitions.size() != 4 ||
 		loadedShips.definitions.front().id != "Ship.Player.Fighter.Basic" ||
 		loadedShips.definitions.front().definition.primaryWeaponId !=
 			"Weapon.Projectile.FighterRapidLaser.Basic" ||
@@ -1131,7 +1695,7 @@ int main()
 	{
 		return Fail(loadedEffects.error.c_str()) ? 0 : 1;
 	}
-	if (loadedEffects.definitions.size() != 18 ||
+	if (loadedEffects.definitions.size() != 19 ||
 		barrierEffectIt == loadedEffects.definitions.end() ||
 		!barrierEffectIt->definition.sourceParameterized ||
 		!barrierEffectIt->definition.attributes.empty() ||
@@ -1258,6 +1822,6 @@ int main()
 		return Fail("Effect catalog reintroduced a C++ fallback record missing from JSON") ? 0 : 1;
 	}
 
-	std::cout << "Ability, weapon, ship, attachment, and effect content loader tests passed\n";
+	std::cout << "Ability, weapon, ship, attachment, effect, and enemy combat profile content loader tests passed\n";
 	return 0;
 }
