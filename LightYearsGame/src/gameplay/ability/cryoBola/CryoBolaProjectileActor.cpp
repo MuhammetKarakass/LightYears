@@ -3,10 +3,12 @@
 #include "attributes/AttributeSystem.h"
 #include "framework/World.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/cryoBola/CryoBolaContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/targeting/SweptGeometry.h"
@@ -90,11 +92,7 @@ namespace ly
 					CollisionAttributeIds::Radius,
 					AbilityData::CryoBola::Actor::Projectile::ProjectileSpeed,
 					AbilityData::CryoBola::Actor::Projectile::RuptureRadius,
-					DamageAttributeIds::CryoBuildupPerHit,
-					DamageAttributeIds::CryoBuildupRequired,
-					DamageAttributeIds::CryoBuildupDuration,
-					DamageAttributeIds::CryoSlowPercent,
-					DamageAttributeIds::CryoSlowDuration
+					DamageAttributeIds::CryoBuildupPerHit
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -123,13 +121,6 @@ namespace ly
 					AbilityData::CryoBola::Actor::Projectile::RuptureRadius,
 					0.f
 				);
-				const int requiredStacks = static_cast<int>(std::lround(
-					sas::FindAttributeValue(
-						definition.attributes,
-						DamageAttributeIds::CryoBuildupRequired,
-						0.f
-					)
-				));
 				const int appliedStacks = static_cast<int>(std::lround(
 					sas::FindAttributeValue(
 						definition.attributes,
@@ -138,7 +129,8 @@ namespace ly
 					)
 				));
 				if (speed <= 0.f || range <= 0.f || ruptureRadius <= 0.f ||
-					requiredStacks <= 0 || appliedStacks != requiredStacks ||
+					appliedStacks <= 0 ||
+					appliedStacks > content::DamageStatusBalanceCatalog::Get().cryo.maxStacks ||
 					definition.lifeTime <= range / speed ||
 					!definition.presentationProfileId.IsValid() ||
 					PresentationProfileRegistry<CryoBolaPresentationProfile>::Find(

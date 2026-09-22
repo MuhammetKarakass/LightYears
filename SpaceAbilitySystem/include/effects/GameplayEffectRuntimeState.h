@@ -13,6 +13,7 @@ namespace sas
 		GameplayEffectHandle handle;
 		float remainingDuration = 0.f;
 		float totalDuration = 0.f;
+		float stackDecayInterval = 1.f;
 		int stackCount = 1;
 		ly::List<AttributeModifierHandle> appliedModifierHandles;
 		GameplayAttributeList runtimeAttributes;
@@ -20,10 +21,12 @@ namespace sas
 		void Initialize(
 			GameplayEffectHandle newHandle,
 			float duration,
+			float decayInterval,
 			const GameplayAttributeList& attributes
 		);
-		void RefreshDuration(float duration);
+		void RefreshDuration(float duration, float decayInterval = 1.f);
 		bool TickDuration(float deltaTime);
+		bool TickStackDecay(float deltaTime);
 		void ResetStackCount();
 		bool TryAddStack(int maxStacks);
 		void ResetRuntimeAttributes(const GameplayAttributeList& attributes);

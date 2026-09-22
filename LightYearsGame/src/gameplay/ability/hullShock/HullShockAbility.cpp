@@ -7,7 +7,9 @@
 #include "gameplay/ability/hullShock/HullShockContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -114,10 +116,7 @@ namespace ly
 			AbilityData::HullShock::Attribute::FullRadiusDuration,
 			AbilityData::HullShock::Attribute::MinimumChargeRadius,
 			AbilityData::HullShock::Attribute::ElectricChargeThreshold,
-			AbilityData::HullShock::Attribute::MinimumChargeDamageMultiplier,
-			AbilityData::HullShock::Attribute::ElectricDamageTakenMultiplierPerStack,
-			AbilityData::HullShock::Attribute::ElectricDuration,
-			AbilityData::HullShock::Attribute::ElectricMaxStacks
+			AbilityData::HullShock::Attribute::MinimumChargeDamageMultiplier
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -158,18 +157,6 @@ namespace ly
 			definition.attributes,
 			AbilityData::HullShock::Attribute::MinimumChargeDamageMultiplier
 		);
-		const sas::GameplayAttribute* electricMultiplier = sas::FindAttribute(
-			definition.attributes,
-			AbilityData::HullShock::Attribute::ElectricDamageTakenMultiplierPerStack
-		);
-		const sas::GameplayAttribute* electricDuration = sas::FindAttribute(
-			definition.attributes,
-			AbilityData::HullShock::Attribute::ElectricDuration
-		);
-		const sas::GameplayAttribute* electricMaxStacks = sas::FindAttribute(
-			definition.attributes,
-			AbilityData::HullShock::Attribute::ElectricMaxStacks
-		);
 		if (radius->baseValue <= 0.f || damage->baseValue < 0.f ||
 			fullRadiusDuration->baseValue <= 0.f ||
 			fullRadiusDuration->baseValue > definition.duration ||
@@ -178,11 +165,7 @@ namespace ly
 			electricThreshold->baseValue < fullRadiusDuration->baseValue ||
 			electricThreshold->baseValue > definition.duration ||
 			minimumDamageMultiplier->baseValue < 0.f ||
-			minimumDamageMultiplier->baseValue > 1.f ||
-			electricMultiplier->baseValue < 0.f ||
-			electricDuration->baseValue <= 0.f ||
-			electricMaxStacks->baseValue < 1.f ||
-			std::round(electricMaxStacks->baseValue) != electricMaxStacks->baseValue)
+			minimumDamageMultiplier->baseValue > 1.f)
 		{
 			if (failureReason)
 			{
@@ -423,45 +406,17 @@ namespace ly
 			0.f,
 			1.f
 		);
-		const int electricMaxStacks = std::max(
-			1,
-			static_cast<int>(std::lround(FindValue(
-				values,
-				AbilityData::HullShock::Attribute::ElectricMaxStacks,
-				4.f
-			)))
-		);
 		const int electricStacks = ResolveElectricStackCount(
 			chargeProgress,
 			electricThresholdProgress,
-			electricMaxStacks
+			content::DamageStatusBalanceCatalog::Get().electric.maxStacks
 		);
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
-		// The definition owns these values in the HullShock family namespace;
-		// project them into the shared combat payload at the boundary.
-		payload.electricDamageTakenMultiplierPerStack = std::clamp(
-			FindValue(
-				values,
-				AbilityData::HullShock::Attribute::ElectricDamageTakenMultiplierPerStack,
-				0.04f
-			),
-			0.f,
-			1.f
-		);
-		payload.electricDuration = std::max(
-			0.f,
-			FindValue(
-				values,
-				AbilityData::HullShock::Attribute::ElectricDuration,
-				3.f
-			)
-		);
 		// Hull Shock deliberately selects 1/2/3/4 stacks from charge instead of
 		// inheriting the one-stack default used by ordinary Electric weapon hits.
 		payload.electricStacks = electricStacks;
-		payload.electricMaxStacks = electricMaxStacks;
 		payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 
 		for (const shared_ptr<Actor>& target : targeting::FindOpposingCombatants(

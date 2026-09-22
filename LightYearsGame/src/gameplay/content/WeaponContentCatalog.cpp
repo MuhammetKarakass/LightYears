@@ -72,34 +72,13 @@ namespace ly::content
 		)
 		{
 			if (HasDamageTag(definition, DamageTypeSchema::Energy) &&
-				!RequireDamageAttributes(definition, {
-					DamageAttributeIds::ShieldDamageMultiplier,
-					DamageAttributeIds::ShieldRegenerationDelay
-				}, failureReason)) return false;
-			if (HasDamageTag(definition, DamageTypeSchema::Kinetic) &&
-				!RequireDamageAttributes(definition, { DamageAttributeIds::ArmorPenetration }, failureReason)) return false;
+				!RequireDamageAttributes(definition, { DamageAttributeIds::ShieldRegenerationDelay }, failureReason)) return false;
 			if (HasDamageTag(definition, DamageTypeSchema::Thermal) &&
-				!RequireDamageAttributes(definition, {
-					DamageAttributeIds::IgniteStacks,
-					DamageAttributeIds::BurnDamagePerSecond,
-					DamageAttributeIds::BurnDuration,
-					DamageAttributeIds::BurnMaxStacks
-				}, failureReason)) return false;
+				!RequireDamageAttributes(definition, { DamageAttributeIds::IgniteStacks }, failureReason)) return false;
 			if (HasDamageTag(definition, DamageTypeSchema::Cryo) &&
-				!RequireDamageAttributes(definition, {
-					DamageAttributeIds::CryoBuildupPerHit,
-					DamageAttributeIds::CryoBuildupRequired,
-					DamageAttributeIds::CryoBuildupDuration,
-					DamageAttributeIds::CryoSlowPercent,
-					DamageAttributeIds::CryoSlowDuration
-				}, failureReason)) return false;
+				!RequireDamageAttributes(definition, { DamageAttributeIds::CryoBuildupPerHit }, failureReason)) return false;
 			if (HasDamageTag(definition, DamageTypeSchema::Electric) &&
-				!RequireDamageAttributes(definition, {
-					DamageAttributeIds::ElectricStacks,
-					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-					DamageAttributeIds::ElectricDuration,
-					DamageAttributeIds::ElectricMaxStacks
-				}, failureReason)) return false;
+				!RequireDamageAttributes(definition, { DamageAttributeIds::ElectricStacks }, failureReason)) return false;
 			return true;
 		}
 	}

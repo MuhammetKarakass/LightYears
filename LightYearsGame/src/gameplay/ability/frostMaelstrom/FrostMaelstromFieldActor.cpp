@@ -479,10 +479,6 @@ namespace ly
 			1,
 			4
 		);
-		payload.cryoBuildupRequired = 4;
-		payload.cryoBuildupDuration = 2.5f;
-		payload.cryoSlowPercent = 0.25f;
-		payload.cryoSlowDuration = 1.5f;
 		for (const shared_ptr<Actor>& target : targeting::FindOpposingCombatants(
 			*world,
 			*owner,

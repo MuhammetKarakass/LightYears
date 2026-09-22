@@ -56,6 +56,7 @@ namespace ly
 		float mShipXPReward = 0.f;
 		float mEncounterDamageMultiplier = 1.f;
 		EnemySpawnContext mSpawnContext;
+		bool mWindowCullEnabled = true;
 		bool mHasChassisPrimaryWeapon = false;
 	};
 }

@@ -157,15 +157,12 @@ namespace ly
 				{
 					return baseResult;
 				}
-				const bool validAttributes = definition.attributes.size() == 8 &&
+				const bool validAttributes = definition.attributes.size() == 5 &&
 					HasNonNegativeAttribute(definition, AbilityData::ArcScythes::Attribute::Damage) &&
 					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::Range) &&
 					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::CombatTickInterval) &&
 					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::BeamHalfThickness) &&
-					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::ElectricStacks) &&
-					HasNonNegativeAttribute(definition, AbilityData::ArcScythes::Attribute::ElectricDamageTakenMultiplierPerStack) &&
-					HasNonNegativeAttribute(definition, AbilityData::ArcScythes::Attribute::ElectricDuration) &&
-					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::ElectricMaxStacks);
+					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::ElectricStacks);
 				if (!validAttributes || definition.lifeTime < 4.f ||
 					!definition.presentationProfileId.IsValid() ||
 					!PresentationProfileRegistry<ArcScythesPresentationProfile>::Find(
@@ -174,7 +171,7 @@ namespace ly
 				{
 					return {
 						false,
-						"Arc Scythes requires its eight beam and Electric payload attributes plus a registered typed presentation profile."
+						"Arc Scythes requires its beam and Electric stack attributes plus a registered typed presentation profile."
 					};
 				}
 				return { true, {} };

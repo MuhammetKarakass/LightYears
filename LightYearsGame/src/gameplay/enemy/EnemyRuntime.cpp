@@ -95,6 +95,20 @@ namespace ly
 			return range.minimumMultiplier + (range.maximumMultiplier - range.minimumMultiplier) * normalized;
 		}
 
+		float ResolveNaturalGrowthVariation(
+			const EnemyProgressionDefinition& progression,
+			uint32_t seed,
+			const sas::AttributeId& attributeId) noexcept
+		{
+			if (attributeId == OwnerAttributeIds::MaxHealth)
+				return ResolveVariation(seed, 0x48a14c71u, progression.maxHealthVariation);
+			if (attributeId == OwnerAttributeIds::Armor)
+				return ResolveVariation(seed, 0x91b831cdu, progression.armorVariation);
+			// EnemyCombatProfileCatalog currently whitelists only the two channels above.
+			// Future growth attributes must opt into a named channel instead of inheriting Armor variation.
+			return 1.f;
+		}
+
 		void AddUniqueHandle(List<sas::AbilityHandle>& handles, sas::AbilityHandle handle)
 		{
 			if (handle.IsValid() && std::find(handles.begin(), handles.end(), handle) == handles.end())
@@ -320,18 +334,17 @@ namespace ly
 		}
 		result = {};
 		const float completedLevels = static_cast<float>(spawnContext.level - 1);
-		const float healthVariation = ResolveVariation(spawnContext.variationSeed, 0x48a14c71u, profile.progression.maxHealthVariation);
-		const float armorVariation = ResolveVariation(spawnContext.variationSeed, 0x91b831cdu, profile.progression.armorVariation);
 		const float shieldVariation = ResolveVariation(spawnContext.variationSeed, 0x63d83595u, profile.progression.maxShieldVariation);
 		const float damageVariation = ResolveVariation(spawnContext.variationSeed, 0xa7f48d13u, profile.progression.outgoingDamageVariation);
-		if (!std::isfinite(healthVariation) || !std::isfinite(armorVariation) || !std::isfinite(shieldVariation) || !std::isfinite(damageVariation)) return Fail(failureReason, "Enemy progression variation resolved to a non-finite value.");
+		if (!std::isfinite(shieldVariation) || !std::isfinite(damageVariation)) return Fail(failureReason, "Enemy progression variation resolved to a non-finite value.");
 		if (mShipRuntime)
 		{
 			auto& attributes = mCombatRuntime.GetAbilitySystemComponent().GetAttributes();
 			for (const AttributeGrowthEntry& growth : profile.progression.naturalGrowth)
 			{
 				const float base = attributes.GetBaseValue(growth.attributeId);
-				const float variation = growth.attributeId == OwnerAttributeIds::MaxHealth ? healthVariation : armorVariation;
+				const float variation = ResolveNaturalGrowthVariation(profile.progression, spawnContext.variationSeed, growth.attributeId);
+				if (!std::isfinite(variation)) return Fail(failureReason, "Enemy natural growth variation resolved to a non-finite value.");
 				const float magnitude = (base + growth.perLevel * completedLevels) * variation - base;
 				if (!std::isfinite(magnitude)) return Fail(failureReason, "Enemy progression modifier resolved to a non-finite value.");
 				if (magnitude != 0.f) result.ownerModifiers.push_back({ growth.attributeId, sas::AttributeModifierOperation::Add, magnitude });

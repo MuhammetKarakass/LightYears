@@ -50,21 +50,6 @@ namespace AbilityData::Definitions
 				0.f,
 				1.f
 			},
-			sas::GameplayAttribute{
-				AbilityData::HullShock::Attribute::ElectricDamageTakenMultiplierPerStack,
-				0.04f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::HullShock::Attribute::ElectricDuration,
-				3.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::HullShock::Attribute::ElectricMaxStacks,
-				4.f,
-				1.f
-			}
 		};
 		definition.scalingRules = {
 			sas::AttributeScalingRule{

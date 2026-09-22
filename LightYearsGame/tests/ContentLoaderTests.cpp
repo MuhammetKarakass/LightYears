@@ -10,6 +10,7 @@
 #include "gameplay/content/EnemyContentCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/content/AbilityContentCatalog.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/enemy/EnemyIds.h"
 #include "gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.h"
 
@@ -58,6 +59,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <variant>
 
 namespace ly
@@ -102,6 +104,109 @@ namespace
 
 namespace
 {
+	int RunDamageStatusBalanceContentTests()
+	{
+		const std::filesystem::path balancePath =
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
+			"LightYearsGame/assets/content/data/damage_status_balance.json";
+		std::string failureReason;
+		if (!ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+			balancePath,
+			&failureReason
+		) || !ly::content::DamageStatusBalanceCatalog::IsLoaded())
+		{
+			return Fail("Damage status balance JSON did not load") ? 0 : 1;
+		}
+
+		const ly::DamageStatusBalance& balance =
+			ly::content::DamageStatusBalanceCatalog::Get();
+		if (!NearlyEqual(balance.energyShieldDamageMultiplier, 1.50f) ||
+			balance.cryo.maxStacks != 4 ||
+			!NearlyEqual(balance.cryo.duration, 5.f) ||
+			!NearlyEqual(balance.cryo.values[3], 0.20f) ||
+			balance.electric.maxStacks != 4 ||
+			!NearlyEqual(balance.electric.values[0], 0.03f) ||
+			!NearlyEqual(balance.ThermalDamagePerSecond(4), 5.f) ||
+			!NearlyEqual(balance.KineticArmorPenetration(4), 0.30f))
+		{
+			return Fail("Damage status balance acceptance values are invalid") ? 0 : 1;
+		}
+
+		const std::filesystem::path invalidPath =
+			std::filesystem::temp_directory_path() /
+			"lightyears_invalid_damage_status_balance.json";
+		{
+			std::ofstream invalidFile{ invalidPath };
+			invalidFile << R"({
+  "schemaVersion": 1,
+  "energyShieldDamageMultiplier": 1.5,
+  "statuses": {}
+})";
+		}
+		failureReason.clear();
+		const bool invalidLoaded =
+			ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+				invalidPath,
+				&failureReason
+			);
+		std::filesystem::remove(invalidPath);
+		bool invalidGetRejected = false;
+		try
+		{
+			ly::content::DamageStatusBalanceCatalog::Get();
+		}
+		catch (const std::logic_error&)
+		{
+			invalidGetRejected = true;
+		}
+		if (invalidLoaded || failureReason.empty() ||
+			ly::content::DamageStatusBalanceCatalog::IsLoaded() || !invalidGetRejected)
+		{
+			return Fail("Invalid damage status balance JSON did not fail closed") ? 0 : 1;
+		}
+
+		const std::filesystem::path missingPath =
+			std::filesystem::temp_directory_path() /
+			"lightyears_missing_damage_status_balance.json";
+		std::filesystem::remove(missingPath);
+		failureReason.clear();
+		const bool missingLoaded =
+			ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+				missingPath,
+				&failureReason
+			);
+		bool missingGetRejected = false;
+		try
+		{
+			ly::content::DamageStatusBalanceCatalog::Get();
+		}
+		catch (const std::logic_error&)
+		{
+			missingGetRejected = true;
+		}
+		if (missingLoaded || failureReason.empty() ||
+			ly::content::DamageStatusBalanceCatalog::IsLoaded() || !missingGetRejected)
+		{
+			return Fail("Missing damage status balance JSON did not fail closed") ? 0 : 1;
+		}
+
+		failureReason.clear();
+		if (!ly::content::DamageStatusBalanceCatalog::LoadFromFile(
+			balancePath,
+			&failureReason
+		) || !ly::content::DamageStatusBalanceCatalog::IsLoaded() ||
+			!NearlyEqual(
+				ly::content::DamageStatusBalanceCatalog::Get().energyShieldDamageMultiplier,
+				1.50f
+			))
+		{
+			return Fail("Damage status balance catalog did not recover after a failed reload") ? 0 : 1;
+		}
+
+		std::cout << "[PASS] Damage status balance content tests passed successfully!\n";
+		return 0;
+	}
+
 	int RunEnemyCombatProfileContentTests()
 	{
 		const std::filesystem::path weaponPath =
@@ -518,7 +623,7 @@ namespace
 			return 0;
 		};
 		const char* combinedBehaviorHeader = R"("schemaVersion":1,"profiles":[{"id":"EnemyBehavior.Test.Combined","targetSearchRange":2000.0,"targetRefreshInterval":0.2,"desiredDistance":700.0,"minimumDistance":400.0,"maximumDistance":0.0,"movementMode":"Approach","slotRules":)";
-		if (validateCombinedFixture("weapon_range", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","weapons":[{"weaponId":"Weapon.Projectile.EnemyTwinBladeScatter.Basic","slot":"PrimaryFire"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"PrimaryFire","inputMode":"Hold","requiresTarget":true,"minimumRange":0.0,"maximumRange":501.0}]}]})").c_str(), false, "Combined validation accepted a behavior weapon range above Common.Range") != 0)
+		if (validateCombinedFixture("weapon_range", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","weapons":[{"weaponId":"Weapon.Projectile.EnemyTwinBladeScatter.Basic","slot":"PrimaryFire"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + R"([{"slot":"PrimaryFire","inputMode":"Hold","requiresTarget":true,"minimumRange":0.0,"maximumRange":601.0}]}]})").c_str(), false, "Combined validation accepted a behavior weapon range above Common.Range") != 0)
 			return 1;
 		if (validateCombinedFixture("missing_weapon_rule", R"({"schemaVersion":1,"profiles":[{"id":"EnemyCombat.Test.Combined","weapons":[{"weaponId":"Weapon.Projectile.EnemyVanguardPulse.Basic","slot":"PrimaryFire"}]}]})", (std::string{ "{" } + combinedBehaviorHeader + "[]}]}" ).c_str(), false, "Combined validation accepted an active weapon without a behavior rule") != 0)
 			return 1;
@@ -567,28 +672,28 @@ namespace
 			NearlyEqual(strafeShip->speed.x, 0.f) && NearlyEqual(strafeShip->speed.y, 0.f) &&
 			NearlyEqual(rangeShip->speed.x, 0.f) && NearlyEqual(rangeShip->speed.y, 0.f) &&
 			NearlyEqual(approachShip->collisionDamage, 50.f) && NearlyEqual(strafeShip->collisionDamage, 50.f) && NearlyEqual(rangeShip->collisionDamage, 60.f) &&
-			NearlyEqual(approachShip->movementAttributes.forwardThrust.currentValue, 420.f) &&
-			NearlyEqual(approachShip->movementAttributes.reverseThrust.currentValue, 110.f) &&
-			NearlyEqual(approachShip->movementAttributes.strafeThrust.currentValue, 120.f) &&
-			NearlyEqual(approachShip->movementAttributes.maxSpeed.currentValue, 420.f) &&
-			NearlyEqual(strafeShip->movementAttributes.forwardThrust.currentValue, 320.f) &&
-			NearlyEqual(strafeShip->movementAttributes.reverseThrust.currentValue, 220.f) &&
-			NearlyEqual(strafeShip->movementAttributes.strafeThrust.currentValue, 300.f) &&
-			NearlyEqual(strafeShip->movementAttributes.maxSpeed.currentValue, 460.f) &&
-			NearlyEqual(rangeShip->movementAttributes.forwardThrust.currentValue, 240.f) &&
-			NearlyEqual(rangeShip->movementAttributes.reverseThrust.currentValue, 300.f) &&
-			NearlyEqual(rangeShip->movementAttributes.strafeThrust.currentValue, 180.f) &&
-			NearlyEqual(rangeShip->movementAttributes.maxSpeed.currentValue, 360.f);
+			NearlyEqual(approachShip->movementAttributes.forwardThrust.currentValue, 630.f) &&
+			NearlyEqual(approachShip->movementAttributes.reverseThrust.currentValue, 165.f) &&
+			NearlyEqual(approachShip->movementAttributes.strafeThrust.currentValue, 240.f) &&
+			NearlyEqual(approachShip->movementAttributes.maxSpeed.currentValue, 490.f) &&
+			NearlyEqual(strafeShip->movementAttributes.forwardThrust.currentValue, 480.f) &&
+			NearlyEqual(strafeShip->movementAttributes.reverseThrust.currentValue, 330.f) &&
+			NearlyEqual(strafeShip->movementAttributes.strafeThrust.currentValue, 600.f) &&
+			NearlyEqual(strafeShip->movementAttributes.maxSpeed.currentValue, 515.f) &&
+			NearlyEqual(rangeShip->movementAttributes.forwardThrust.currentValue, 360.f) &&
+			NearlyEqual(rangeShip->movementAttributes.reverseThrust.currentValue, 450.f) &&
+			NearlyEqual(rangeShip->movementAttributes.strafeThrust.currentValue, 360.f) &&
+			NearlyEqual(rangeShip->movementAttributes.maxSpeed.currentValue, 460.f);
 		const bool behaviorMatchesRoles = approachBehavior && strafeBehavior && rangeBehavior &&
 			approachBehavior->movementMode == ly::EnemyMovementMode::Approach &&
 			strafeBehavior->movementMode == ly::EnemyMovementMode::Strafe &&
 			rangeBehavior->movementMode == ly::EnemyMovementMode::HoldRange &&
-			NearlyEqual(approachBehavior->desiredDistance, 700.f) && NearlyEqual(approachBehavior->minimumDistance, 400.f) &&
-			NearlyEqual(strafeBehavior->minimumDistance, 300.f) && NearlyEqual(strafeBehavior->maximumDistance, 450.f) &&
-			NearlyEqual(rangeBehavior->minimumDistance, 750.f) && NearlyEqual(rangeBehavior->maximumDistance, 1050.f) &&
-			NearlyEqual(approachBehavior->slotRules.front().maximumRange, 1200.f) &&
-			NearlyEqual(strafeBehavior->slotRules.front().maximumRange, 500.f) &&
-			NearlyEqual(rangeBehavior->slotRules.front().maximumRange, 1100.f);
+			NearlyEqual(approachBehavior->desiredDistance, 800.f) && NearlyEqual(approachBehavior->minimumDistance, 400.f) &&
+			NearlyEqual(strafeBehavior->minimumDistance, 300.f) && NearlyEqual(strafeBehavior->maximumDistance, 500.f) &&
+			NearlyEqual(rangeBehavior->minimumDistance, 800.f) && NearlyEqual(rangeBehavior->maximumDistance, 1200.f) &&
+			NearlyEqual(approachBehavior->slotRules.front().maximumRange, 1300.f) &&
+			NearlyEqual(strafeBehavior->slotRules.front().maximumRange, 600.f) &&
+			NearlyEqual(rangeBehavior->slotRules.front().maximumRange, 1200.f);
 		const bool weaponsMatchRoles = approachWeapon && strafeWeapon && rangeWeapon &&
 			approachWeapon->weaponType == PrimaryWeaponType::ProjectileStandard &&
 			strafeWeapon->weaponType == PrimaryWeaponType::ProjectileShotgun &&
@@ -599,12 +704,12 @@ namespace
 			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 15.f) &&
 			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 8.f) &&
 			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::Damage)->baseValue, 10.f) &&
-			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 1.2f) &&
-			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 0.8f) &&
-			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 0.6f) &&
-			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1200.f) &&
-			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 500.f) &&
-			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1200.f);
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 1.8f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 1.2f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::FireRate)->baseValue, 0.9f) &&
+			NearlyEqual(sas::FindAttribute(approachWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1300.f) &&
+			NearlyEqual(sas::FindAttribute(strafeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 600.f) &&
+			NearlyEqual(sas::FindAttribute(rangeWeapon->attributes, ly::CommonAttributeIds::Range)->baseValue, 1400.f);
 		const auto hasMatchingRule = [](const ly::EnemyCombatProfile* combat, const ly::EnemyBehaviorProfile* behavior)
 		{
 			if (!combat || !behavior || combat->weapons.size() + combat->abilities.size() != behavior->slotRules.size()) return false;
@@ -710,6 +815,11 @@ namespace
 
 int main()
 {
+	const int damageStatusBalanceResult = RunDamageStatusBalanceContentTests();
+	if (damageStatusBalanceResult != 0)
+	{
+		return damageStatusBalanceResult;
+	}
 	const int enemyProfileResult = RunEnemyCombatProfileContentTests();
 	if (enemyProfileResult != 0)
 	{
@@ -1330,7 +1440,7 @@ int main()
 		!NearlyEqual(hullShockIt->definition.cooldown, 12.f) ||
 		!NearlyEqual(hullShockIt->definition.duration, 2.f) ||
 		hullShockIt->definition.maxCharges != 1 ||
-		hullShockIt->definition.attributes.size() != 9 ||
+		hullShockIt->definition.attributes.size() != 6 ||
 		hullShockIt->definition.scalingRules.size() != 1 ||
 		hullShockIt->definition.levelProgression.size() != 14 ||
 		hullShockIt->definition.damageTags !=
@@ -1588,8 +1698,8 @@ int main()
 		FindWeapon(loaded.definitions, "Weapon.Projectile.RapidShotgun.Basic");
 	if (shotgun->weaponType != PrimaryWeaponType::ProjectileShotgun ||
 		shotgun->muzzleDefinitions.size() != 1 ||
-		shotgun->attributes.size() != 16 ||
-		!sas::FindAttribute(shotgun->attributes, ly::DamageAttributeIds::BurnDuration) ||
+		shotgun->attributes.size() != 13 ||
+		!sas::FindAttribute(shotgun->attributes, ly::DamageAttributeIds::IgniteStacks) ||
 		shotgun->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Thermal })
 	{
 		return Fail("Rapid shotgun JSON profile is invalid") ? 0 : 1;
@@ -1618,18 +1728,25 @@ int main()
 
 	const PrimaryWeaponDefinition* beam =
 		FindWeapon(loaded.definitions, "Weapon.Beam.ContinuousHeatLaser.Basic");
+	const PrimaryWeaponDefinition* enemyEnergy =
+		FindWeapon(loaded.definitions, "Weapon.Projectile.EnemyVanguardPulse.Basic");
 	if (beam->weaponType != PrimaryWeaponType::BeamContinuous ||
 		beam->featureTypes != ly::List<PrimaryWeaponFeatureType>{ PrimaryWeaponFeatureType::Heat } ||
 		beam->heatGainCurve.size() != 4 ||
-		beam->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy })
+		beam->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } ||
+		!enemyEnergy ||
+		sas::FindAttribute(beam->attributes, ly::DamageAttributeIds::ShieldDamageMultiplier) ||
+		sas::FindAttribute(enemyEnergy->attributes, ly::DamageAttributeIds::ShieldDamageMultiplier) ||
+		!sas::FindAttribute(beam->attributes, ly::DamageAttributeIds::ShieldRegenerationDelay) ||
+		!sas::FindAttribute(enemyEnergy->attributes, ly::DamageAttributeIds::ShieldRegenerationDelay))
 	{
-		return Fail("Continuous heat laser JSON profile is invalid") ? 0 : 1;
+		return Fail("Shipped Energy weapon JSON profiles must omit the baseline multiplier and retain shield regeneration delay") ? 0 : 1;
 	}
 
 	const PrimaryWeaponDefinition* cryo =
 		FindWeapon(loaded.definitions, "Weapon.Wave.CryoProjector.Basic");
 	if (cryo->weaponType != PrimaryWeaponType::WaveExpanding ||
-		cryo->attributes.size() != 12 ||
+		cryo->attributes.size() != 8 ||
 		cryo->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo })
 	{
 		return Fail("Cryo wave projector JSON profile is invalid") ? 0 : 1;
@@ -1667,10 +1784,34 @@ int main()
 		"LightYearsGame/assets/content/data/attachments.json";
 	const ly::content::AttachmentLoader::Result loadedAttachments =
 		ly::content::AttachmentLoader::LoadFromFile(attachmentPath);
-	if (!loadedAttachments.Succeeded() || loadedAttachments.definitions.size() != 1 ||
+	const auto kineticBoreIt = std::find_if(
+		loadedAttachments.definitions.begin(),
+		loadedAttachments.definitions.end(),
+		[](const ly::AttachmentDefinition& definition)
+		{
+			return definition.attachmentId == "Attachment.Kinetic.Bore.Basic";
+		}
+	);
+	if (!loadedAttachments.Succeeded() || loadedAttachments.definitions.size() != 2 ||
 		loadedAttachments.definitions.front().attachmentId !=
 			"Attachment.Thermal.Converter.Basic" ||
-		loadedAttachments.definitions.front().eventRules.size() != 1)
+		loadedAttachments.definitions.front().eventRules.size() != 1 ||
+		kineticBoreIt == loadedAttachments.definitions.end() ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				kineticBoreIt->grantedAttributes,
+				ly::DamageAttributeIds::ArmorPenetration,
+				0.f
+			),
+			0.10f
+		) ||
+		kineticBoreIt->conditionalAttributeModifiers.size() != 1 ||
+		kineticBoreIt->conditionalAttributeModifiers.front().modifier.attributeId !=
+			ly::DamageAttributeIds::ArmorPenetration ||
+		!NearlyEqual(
+			kineticBoreIt->conditionalAttributeModifiers.front().modifier.magnitude,
+			0.05f
+		))
 	{
 		return Fail("Attachment JSON catalog did not load the expected definition") ? 0 : 1;
 	}

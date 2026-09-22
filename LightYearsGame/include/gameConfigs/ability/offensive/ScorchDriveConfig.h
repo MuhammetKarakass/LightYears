@@ -67,11 +67,6 @@ namespace AbilityData::Definitions
 				0.01f
 			},
 			sas::GameplayAttribute{
-				AbilityData::ScorchDrive::Attribute::BurnThresholdTicks,
-				4.f,
-				1.f
-			},
-			sas::GameplayAttribute{
 				AbilityData::ScorchDrive::Attribute::BurnDuration,
 				3.f,
 				0.01f

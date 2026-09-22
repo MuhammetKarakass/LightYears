@@ -4,8 +4,10 @@
 
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "gameplay/time/PeriodicTickAccumulator.h"
+#include "effects/GameplayEffectBindings.h"
 #include <algorithm>
 
 namespace ly
@@ -22,6 +24,11 @@ namespace ly
 				}
 			}
 			return false;
+		}
+
+		const DamageStatusBalance& GetDamageStatusBalance()
+		{
+			return content::DamageStatusBalanceCatalog::Get();
 		}
 
 		void OverrideIfDeclared(
@@ -49,9 +56,7 @@ namespace ly
 		}
 
 		sas::GameplayEffectSpec MakeStatusEffectSpec(
-			const sas::GameplayEffectDefinition& definition,
-			float duration,
-			int maxStacks
+			const sas::GameplayEffectDefinition& definition, float duration, int maxStacks
 		)
 		{
 			sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(definition);
@@ -61,139 +66,53 @@ namespace ly
 		}
 
 		sas::GameplayEffectSpec MakeMovementSlowSpec(
-			const sas::GameplayEffectDefinition& definition,
-			float duration,
-			float magnitude
+			const sas::GameplayEffectDefinition& definition, float duration, int maxStacks, float magnitude
 		)
 		{
-			sas::GameplayEffectSpec spec = MakeStatusEffectSpec(definition, duration, 1);
-			spec.modifiers = {
-				sas::AttributeModifier{
-					OwnerAttributeIds::MovementSlow,
-					sas::AttributeModifierOperation::Add,
-					magnitude
-				}
-			};
+			sas::GameplayEffectSpec spec = MakeStatusEffectSpec(definition, duration, maxStacks);
+			spec.modifiers = { sas::AttributeModifier{ OwnerAttributeIds::MovementSlow, sas::AttributeModifierOperation::Add, magnitude } };
 			return spec;
 		}
 
-		struct CappedStackApplicationResult
-		{
-			bool wasApplied = false;
-			int stackCount = 0;
-			int maxStacks = 1;
-
-			bool IsAtThreshold() const
-			{
-				return stackCount >= maxStacks;
-			}
-		};
-
-		// All stack-based damage statuses share this lifecycle: applications add up
-		// to their cap, then remain at that cap while later applications refresh
-		// duration. A threshold effect is therefore sustained, never consumed.
-		CappedStackApplicationResult ApplyCappedStackEffect(
+		// All selected damage statuses use the ASC's ordinary Stack policy. The
+		// opt-in stack lifetime policy owns decay; this helper only applies hits.
+		bool ApplyCappedStackEffect(
 			sas::AbilitySystemComponent& targetAbilitySystem,
 			const sas::GameplayEffectSpec& spec,
 			Actor* source,
 			int incomingStacks
 		)
 		{
-			CappedStackApplicationResult result;
-			result.maxStacks = std::max(1, spec.maxStacks);
+			bool applied = false;
 			for (int stack = 0; stack < std::max(0, incomingStacks); ++stack)
 			{
-				result.wasApplied = targetAbilitySystem.ApplyGameplayEffect(
-					spec,
-					source
-				).IsValid() || result.wasApplied;
+				applied = targetAbilitySystem.ApplyGameplayEffect(spec, source).IsValid() || applied;
 			}
-
-			if (const sas::ActiveGameplayEffect* active =
-				targetAbilitySystem.FindGameplayEffectById(spec.definition.effectId))
-			{
-				result.stackCount = active->stackCount;
-				result.maxStacks = std::max(1, active->spec.maxStacks);
-			}
-			return result;
+			return applied;
 		}
 
-		float GetMovementSlowMagnitude(const sas::ActiveGameplayEffect& effect)
-		{
-			for (const sas::AttributeModifier& modifier : effect.spec.modifiers)
-			{
-				if (modifier.attributeId == OwnerAttributeIds::MovementSlow &&
-					modifier.operation == sas::AttributeModifierOperation::Add)
-				{
-					return std::clamp(modifier.magnitude, 0.f, 1.f);
-				}
-			}
-			return 0.f;
-		}
-
-		bool TryApplyOrRefreshCryoSlow(
-			sas::AbilitySystemComponent& targetAbilitySystem,
-			const sas::GameplayEffectDefinition& slowDefinition,
-			const DamageContext& context
-		)
-		{
-			if (const sas::ActiveGameplayEffect* activeSlow =
-				targetAbilitySystem.FindGameplayEffectById(
-					DamageStatusEffectIds::CryoSlowedEffectId
-				))
-			{
-				constexpr float MagnitudeEqualityTolerance = 0.0001f;
-				const float activeMagnitude = GetMovementSlowMagnitude(*activeSlow);
-				if (context.payload.cryoSlowPercent + MagnitudeEqualityTolerance <
-					activeMagnitude)
-				{
-					// A weaker Cryo hit keeps the stronger effect and cannot extend it.
-					return false;
-				}
-			}
-
-			// A stronger slow replaces the old one; an equal slow refreshes its own
-			// duration through the shared RefreshDuration stacking policy.
-			return targetAbilitySystem.ApplyGameplayEffect(
-				MakeMovementSlowSpec(
-					slowDefinition,
-					context.payload.cryoSlowDuration,
-					context.payload.cryoSlowPercent
-				),
-				context.source
-			).IsValid();
-		}
-
-		bool TryApplyCryoSlow(
+		bool ApplyCryoStatus(
 			sas::AbilitySystemComponent& targetAbilitySystem,
 			const DamageContext& context
 		)
 		{
 			const sas::GameplayEffectDefinition* slowDefinition =
 				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoSlowedEffectId);
-			const sas::GameplayEffectDefinition* buildupDefinition =
-				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoBuildupEffectId);
-			if (!slowDefinition || !buildupDefinition)
+			if (!slowDefinition)
 			{
 				return false;
 			}
-
-			const CappedStackApplicationResult buildup = ApplyCappedStackEffect(
+			return ApplyCappedStackEffect(
 				targetAbilitySystem,
-				MakeStatusEffectSpec(
-					*buildupDefinition,
-					context.payload.cryoBuildupDuration,
-					context.payload.cryoBuildupRequired
+				MakeMovementSlowSpec(
+					*slowDefinition,
+					GetDamageStatusBalance().cryo.duration,
+					GetDamageStatusBalance().cryo.maxStacks,
+					GetDamageStatusBalance().CryoSlowPercent(1)
 				),
 				context.source,
 				context.payload.cryoBuildupPerHit
 			);
-			return buildup.wasApplied && buildup.IsAtThreshold() &&
-				TryApplyOrRefreshCryoSlow(
-					targetAbilitySystem,
-					*slowDefinition,
-					context
-				);
 		}
 
 		sas::GameplayEffectBehaviorResult TickIgnite(
@@ -202,8 +121,7 @@ namespace ly
 			float deltaTime
 		)
 		{
-			if (deltaTime <= 0.f ||
-				effect.stackCount < std::max(1, effect.spec.maxStacks))
+			if (deltaTime <= 0.f)
 			{
 				return {};
 			}
@@ -226,9 +144,8 @@ namespace ly
 			);
 			if (damagePerTick > 0.f && tickInterval > 0.f)
 			{
-				// Periodic Burn is an optional generic mode. It is deliberately
-				// independent of Ignite stack count: four stacks unlock the status,
-				// but do not multiply the snapshotted Scorch Drive damage.
+				// Periodic Burn is an explicit source-owned mode. It is independent of
+				// the canonical Thermal DPS table and therefore returns after ticking.
 				sas::GameplayAttribute* accumulator = sas::FindAttribute(
 					effect.runtimeAttributes,
 					DamageAttributeIds::BurnTickAccumulator
@@ -271,19 +188,14 @@ namespace ly
 				return {};
 			}
 
-			const float damagePerSecond = std::max(
-				0.f,
-				sas::FindAttributeValue(
-					effect.runtimeAttributes,
-					DamageAttributeIds::BurnDamagePerSecond,
-					0.f
-				)
+			const float damagePerSecond = GetDamageStatusBalance().ThermalDamagePerSecond(
+				effect.stackCount
 			);
 			if (damagePerSecond > 0.f)
 			{
 				ApplyCombatDamage(
 					owner,
-					damagePerSecond * static_cast<float>(effect.stackCount) * deltaTime,
+					damagePerSecond * deltaTime,
 					effect.GetSourceObject<Actor>(),
 					{ DamageTypeSchema::Thermal }
 				);
@@ -296,21 +208,44 @@ namespace ly
 			DamageContext& context
 		)
 		{
-			if (effect.stackCount < std::max(1, effect.spec.maxStacks))
-			{
-				return {};
-			}
-			const float multiplierPerStack = std::max(
-				0.f,
-				sas::FindAttributeValue(
-					effect.runtimeAttributes,
-					DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-					0.f
-				)
-			);
 			context.remainingDamage *=
-				1.f + multiplierPerStack * static_cast<float>(effect.stackCount);
+				1.f + GetDamageStatusBalance().ElectricDamageTakenMultiplier(effect.stackCount);
 			return {};
+		}
+
+		bool ApplyKineticStatus(
+			sas::AbilitySystemComponent& targetAbilitySystem,
+			DamageContext& context
+		)
+		{
+			const sas::ActiveGameplayEffect* active = targetAbilitySystem.FindGameplayEffectById(
+				DamageStatusEffectIds::KineticEffectId
+			);
+			if (active && active->stackCount > 0)
+			{
+				context.payload.armorPenetration = std::clamp(
+					context.payload.armorPenetration +
+					GetDamageStatusBalance().KineticArmorPenetration(active->stackCount),
+					0.f,
+					1.f
+				);
+			}
+			const sas::GameplayEffectDefinition* definition =
+				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::KineticEffectId);
+			if (!definition)
+			{
+				return false;
+			}
+			return ApplyCappedStackEffect(
+				targetAbilitySystem,
+				MakeStatusEffectSpec(
+					*definition,
+					GetDamageStatusBalance().kinetic.duration,
+					GetDamageStatusBalance().kinetic.maxStacks
+				),
+				context.source,
+				context.payload.kineticStacks
+			);
 		}
 	}
 
@@ -325,36 +260,38 @@ namespace ly
 
 		if (HasDamageType(damageTags, DamageTypeSchema::Energy))
 		{
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ShieldDamageMultiplier, payload.shieldDamageMultiplier);
+			payload.shieldDamageMultiplier = GetDamageStatusBalance().energyShieldDamageMultiplier;
+			if (const sas::GameplayAttribute* attribute = sas::FindAttribute(
+				sourceAttributes,
+				DamageAttributeIds::ShieldDamageMultiplier
+			))
+			{
+				payload.shieldDamageMultiplier = std::max(
+					payload.shieldDamageMultiplier,
+					attribute->currentValue
+				);
+			}
 			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ShieldRegenerationDelay, payload.shieldRegenerationDelay);
 		}
 		if (HasDamageType(damageTags, DamageTypeSchema::Kinetic))
 		{
 			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ArmorPenetration, payload.armorPenetration);
+			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::KineticStacks, payload.kineticStacks);
 		}
 		if (HasDamageType(damageTags, DamageTypeSchema::Thermal))
 		{
 			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::IgniteStacks, payload.igniteStacks);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDamagePerSecond, payload.burnDamagePerSecond);
 			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDamagePerTick, payload.burnDamagePerTick);
 			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnTickInterval, payload.burnTickInterval);
 			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDuration, payload.burnDuration);
-			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::BurnMaxStacks, payload.burnMaxStacks);
 		}
 		if (HasDamageType(damageTags, DamageTypeSchema::Cryo))
 		{
 			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupPerHit, payload.cryoBuildupPerHit);
-			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupRequired, payload.cryoBuildupRequired);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoBuildupDuration, payload.cryoBuildupDuration);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoSlowPercent, payload.cryoSlowPercent);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::CryoSlowDuration, payload.cryoSlowDuration);
 		}
 		if (HasDamageType(damageTags, DamageTypeSchema::Electric))
 		{
 			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::ElectricStacks, payload.electricStacks);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ElectricDamageTakenMultiplierPerStack, payload.electricDamageTakenMultiplierPerStack);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::ElectricDuration, payload.electricDuration);
-			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::ElectricMaxStacks, payload.electricMaxStacks);
 		}
 
 		payload.shieldDamageMultiplier = std::max(0.f, payload.shieldDamageMultiplier);
@@ -363,43 +300,35 @@ namespace ly
 		// Family/content validation owns those caps; the runtime only enforces
 		// mathematically safe ranges and relationships between payload fields.
 		payload.armorPenetration = std::clamp(payload.armorPenetration, 0.f, 1.f);
-		payload.burnMaxStacks = std::max(1, payload.burnMaxStacks);
 		payload.igniteStacks = std::clamp(
 			payload.igniteStacks,
 			0,
-			payload.burnMaxStacks
+			GetDamageStatusBalance().thermal.maxStacks
 		);
-		payload.burnDamagePerSecond = std::max(0.f, payload.burnDamagePerSecond);
 		payload.burnDamagePerTick = std::max(0.f, payload.burnDamagePerTick);
 		payload.burnTickInterval = std::max(0.f, payload.burnTickInterval);
 		payload.burnDuration = std::max(0.f, payload.burnDuration);
-		payload.cryoBuildupRequired = std::max(1, payload.cryoBuildupRequired);
 		payload.cryoBuildupPerHit = std::clamp(
 			payload.cryoBuildupPerHit,
 			0,
-			payload.cryoBuildupRequired
+			GetDamageStatusBalance().cryo.maxStacks
 		);
-		payload.cryoBuildupDuration = std::max(0.f, payload.cryoBuildupDuration);
-		payload.cryoSlowPercent = std::clamp(payload.cryoSlowPercent, 0.f, 1.f);
-		payload.cryoSlowDuration = std::max(0.f, payload.cryoSlowDuration);
-		payload.electricDamageTakenMultiplierPerStack = std::clamp(
-			payload.electricDamageTakenMultiplierPerStack,
-			0.f,
-			1.f
-		);
-		payload.electricDuration = std::max(0.f, payload.electricDuration);
-		payload.electricMaxStacks = std::max(1, payload.electricMaxStacks);
 		payload.electricStacks = std::clamp(
 			payload.electricStacks,
 			0,
-			payload.electricMaxStacks
+			GetDamageStatusBalance().electric.maxStacks
+		);
+		payload.kineticStacks = std::clamp(
+			payload.kineticStacks,
+			0,
+			GetDamageStatusBalance().kinetic.maxStacks
 		);
 		return payload;
 	}
 
 	List<GameplayTag> DamageTypeSystem::ApplyStatusEffects(
 		sas::AbilitySystemComponent& targetAbilitySystem,
-		const DamageContext& context
+		DamageContext& context
 	)
 	{
 		List<GameplayTag> applied;
@@ -408,12 +337,14 @@ namespace ly
 			return applied;
 		}
 
-		const bool hasPeriodicBurn =
-			context.payload.burnDamagePerTick > 0.f &&
-			context.payload.burnTickInterval > 0.f;
-		if (context.payload.igniteStacks > 0 &&
-			(context.payload.burnDamagePerSecond > 0.f || hasPeriodicBurn) &&
-			context.payload.burnDuration > 0.f)
+		const bool hasPeriodicBurnDamage = context.payload.burnDamagePerTick > 0.f;
+		const bool hasPeriodicBurnInterval = context.payload.burnTickInterval > 0.f;
+		const bool hasPeriodicBurn = hasPeriodicBurnDamage && hasPeriodicBurnInterval;
+		const bool hasInvalidPeriodicBurn =
+			(hasPeriodicBurnDamage || hasPeriodicBurnInterval || context.payload.burnDuration > 0.f) &&
+			!hasPeriodicBurn;
+		if (HasDamageType(context.damageTags, DamageTypeSchema::Thermal) &&
+			context.payload.igniteStacks > 0 && !hasInvalidPeriodicBurn)
 		{
 			const sas::GameplayEffectDefinition* igniteDefinition =
 				EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Ignite");
@@ -421,18 +352,12 @@ namespace ly
 			{
 				sas::GameplayEffectSpec igniteSpec = MakeStatusEffectSpec(
 					*igniteDefinition,
-					context.payload.burnDuration,
-					context.payload.burnMaxStacks
+					hasPeriodicBurn && context.payload.burnDuration > 0.f
+					? context.payload.burnDuration
+					: GetDamageStatusBalance().thermal.duration,
+					GetDamageStatusBalance().thermal.maxStacks
 				);
 				igniteSpec.attributes.clear();
-				if (context.payload.burnDamagePerSecond > 0.f)
-				{
-					igniteSpec.attributes.emplace_back(
-						DamageAttributeIds::BurnDamagePerSecond,
-						context.payload.burnDamagePerSecond,
-						0.f
-					);
-				}
 				if (hasPeriodicBurn)
 				{
 					igniteSpec.attributes.emplace_back(
@@ -456,26 +381,22 @@ namespace ly
 					igniteSpec,
 					context.source,
 					context.payload.igniteStacks
-				).wasApplied)
+				))
 				{
 					applied.push_back(DamageStatusSchema::Ignite);
 				}
 			}
 		}
-		if (context.payload.cryoBuildupPerHit > 0 &&
-			context.payload.cryoBuildupRequired > 0 &&
-			context.payload.cryoBuildupDuration > 0.f &&
-			context.payload.cryoSlowPercent > 0.f &&
-			context.payload.cryoSlowDuration > 0.f)
+		if (HasDamageType(context.damageTags, DamageTypeSchema::Cryo) &&
+			context.payload.cryoBuildupPerHit > 0)
 		{
-			if (TryApplyCryoSlow(targetAbilitySystem, context))
+			if (ApplyCryoStatus(targetAbilitySystem, context))
 			{
 				applied.push_back(DamageStatusSchema::CryoSlowed);
 			}
 		}
-		if (context.payload.electricStacks > 0 &&
-			context.payload.electricDamageTakenMultiplierPerStack > 0.f &&
-			context.payload.electricDuration > 0.f)
+		if (HasDamageType(context.damageTags, DamageTypeSchema::Electric) &&
+			context.payload.electricStacks > 0)
 		{
 			const sas::GameplayEffectDefinition* electricDefinition =
 				EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Electric");
@@ -483,28 +404,55 @@ namespace ly
 			{
 				sas::GameplayEffectSpec electricSpec = MakeStatusEffectSpec(
 					*electricDefinition,
-					context.payload.electricDuration,
-					context.payload.electricMaxStacks
+					GetDamageStatusBalance().electric.duration,
+					GetDamageStatusBalance().electric.maxStacks
 				);
-				electricSpec.attributes = {
-					sas::GameplayAttribute{
-						DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-						context.payload.electricDamageTakenMultiplierPerStack,
-						0.f
-					}
-				};
+				electricSpec.attributes.clear();
 				if (ApplyCappedStackEffect(
 					targetAbilitySystem,
 					electricSpec,
 					context.source,
 					context.payload.electricStacks
-				).wasApplied)
+				))
 				{
 					applied.push_back(DamageStatusSchema::Electric);
 				}
 			}
 		}
+		if (HasDamageType(context.damageTags, DamageTypeSchema::Kinetic) &&
+			ApplyKineticStatus(targetAbilitySystem, context))
+		{
+			applied.push_back(DamageStatusSchema::Kinetic);
+		}
 		return applied;
+	}
+
+	void DamageTypeSystem::SynchronizeStatusEffect(
+		sas::AbilitySystemComponent& targetAbilitySystem,
+		sas::ActiveGameplayEffect& effect
+	)
+	{
+		if (effect.spec.definition.effectId != DamageStatusEffectIds::CryoSlowedEffectId)
+		{
+			return;
+		}
+		sas::RemoveGameplayEffectModifiers(effect, targetAbilitySystem.GetAttributes());
+		if (effect.stackCount <= 0)
+		{
+			return;
+		}
+		effect.spec.modifiers = {
+			sas::AttributeModifier{
+				OwnerAttributeIds::MovementSlow,
+				sas::AttributeModifierOperation::Add,
+				GetDamageStatusBalance().CryoSlowPercent(effect.stackCount)
+			}
+		};
+		sas::ApplyGameplayEffectModifiers(
+			effect.spec,
+			effect,
+			targetAbilitySystem.GetAttributes()
+		);
 	}
 
 	bool DamageTypeSystem::RegisterDamageEffectBehaviors()

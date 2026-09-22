@@ -4,6 +4,8 @@
 
 #include <SFML/System/Vector2.hpp>
 
+#include <cstdint>
+
 namespace ly
 {
 	class Actor;
@@ -25,13 +27,40 @@ namespace ly
 	class ProjectileReflectionService
 	{
 	public:
-		static bool RegisterReceiver(
+		// RAII handle for one active reflection registration. The holder keeps the
+		// registration alive and its destructor removes the entry, so correctness does
+		// not depend on the owning ability's End() running. A behavior that is destroyed
+		// without End() (for example its ship dies while the ability is active) still
+		// unregisters, and the registry can never call into a dead receiver.
+		class Registration
+		{
+		public:
+			Registration() = default;
+			~Registration();
+
+			Registration(Registration&& other) noexcept;
+			Registration& operator=(Registration&& other) noexcept;
+			Registration(const Registration&) = delete;
+			Registration& operator=(const Registration&) = delete;
+
+			bool IsValid() const { return mDefenderId != 0u; }
+			void Reset();
+
+		private:
+			friend class ProjectileReflectionService;
+			Registration(unsigned int defenderId, uint64_t generation);
+
+			unsigned int mDefenderId = 0u;
+			// A newer registration for the same defender bumps the generation, so an
+			// older token can never erase the newer entry.
+			uint64_t mGeneration = 0u;
+		};
+
+		// Replaces any existing registration for the defender and returns its handle.
+		// An invalid handle means the receiver could not be registered.
+		static Registration RegisterReceiver(
 			Actor& defender,
 			ProjectileReflectionReceiver& receiver
-		);
-		static void UnregisterReceiver(
-			Actor& defender,
-			const ProjectileReflectionReceiver& receiver
 		);
 		static bool TryReflectProjectile(
 			AbilityWorldActor& projectile,

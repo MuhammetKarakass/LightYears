@@ -27,7 +27,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t RequiredAttributeCount = 9;
+		constexpr std::size_t RequiredAttributeCount = 6;
 		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 7.f;
 		constexpr float BaseDuration = 0.f;
@@ -37,9 +37,6 @@ namespace ly
 		constexpr float BaseBounceCount = 5.f;
 		constexpr float BaseLinkTravelTime = 0.22f;
 		constexpr float BaseElectricStacks = 1.f;
-		constexpr float BaseElectricDamageTakenMultiplierPerStack = 0.04f;
-		constexpr float BaseElectricDuration = 3.f;
-		constexpr float BaseElectricMaxStacks = 4.f;
 		constexpr float DamagePerLevel = 4.f;
 		constexpr float CooldownPerLevel = -0.20f;
 		constexpr int MaximumBonusBounces = 8;
@@ -266,46 +263,6 @@ namespace ly
 					0.f
 				),
 				BaseElectricStacks
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::ChainLightning::Attribute::ElectricDamageTakenMultiplierPerStack,
-				0.f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::ElectricDamageTakenMultiplierPerStack,
-					0.f
-				),
-				BaseElectricDamageTakenMultiplierPerStack
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::ChainLightning::Attribute::ElectricDuration,
-				0.f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::ElectricDuration,
-					0.f
-				),
-				BaseElectricDuration
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::ChainLightning::Attribute::ElectricMaxStacks,
-				1.f,
-				true
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::ElectricMaxStacks,
-					0.f
-				),
-				BaseElectricMaxStacks
 			);
 
 		// Chain Lightning is a behavior-owned traversal. Generic actions would
@@ -357,7 +314,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Chain Lightning requires its electric identity, nine declared traversal and electric payload attributes, and fourteen damage/cooldown progression steps.";
+					"Chain Lightning requires its electric identity, six declared traversal and electric payload attributes, and fourteen damage/cooldown progression steps.";
 			}
 			return false;
 		}
@@ -558,30 +515,6 @@ namespace ly
 				AbilityData::ChainLightning::Attribute::ElectricStacks,
 				BaseElectricStacks
 			)))
-		);
-		payload.electricMaxStacks = std::max(
-			1,
-			static_cast<int>(std::lround(sas::FindAttributeValue(
-				values,
-				AbilityData::ChainLightning::Attribute::ElectricMaxStacks,
-				BaseElectricMaxStacks
-			)))
-		);
-		payload.electricDamageTakenMultiplierPerStack = std::max(
-			0.f,
-			sas::FindAttributeValue(
-				values,
-				AbilityData::ChainLightning::Attribute::ElectricDamageTakenMultiplierPerStack,
-				BaseElectricDamageTakenMultiplierPerStack
-			)
-		);
-		payload.electricDuration = std::max(
-			0.f,
-			sas::FindAttributeValue(
-				values,
-				AbilityData::ChainLightning::Attribute::ElectricDuration,
-				BaseElectricDuration
-			)
 		);
 
 		const float damage = std::max(

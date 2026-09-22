@@ -63,21 +63,6 @@ namespace AbilityData::Definitions
 				AbilityData::StormMark::Attribute::ElectricStacks,
 				1.f,
 				1.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::ElectricDamageTakenMultiplierPerStack,
-				0.04f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::ElectricDuration,
-				3.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::ElectricMaxStacks,
-				4.f,
-				1.f
 			}
 		};
 		definition.damageTags = { ly::DamageTypeSchema::Electric };

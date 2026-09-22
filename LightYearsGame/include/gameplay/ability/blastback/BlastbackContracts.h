@@ -80,18 +80,6 @@ namespace AbilityData::Blastback
 		inline static const sas::AttributeId RecoilDuration{
 			"Ability.Offense.Blastback.RecoilDuration"
 		};
-		// Thermal status behavior is owned by the ability because direct ability
-		// attributes may not declare generic Damage.* override IDs. The payload is
-		// built explicitly at the one-shot hit boundary.
-		inline static const sas::AttributeId BurnDamagePerSecond{
-			"Ability.Offense.Blastback.BurnDamagePerSecond"
-		};
-		inline static const sas::AttributeId BurnDuration{
-			"Ability.Offense.Blastback.BurnDuration"
-		};
-		inline static const sas::AttributeId BurnMaxStacks{
-			"Ability.Offense.Blastback.BurnMaxStacks"
-		};
 	};
 
 	struct Effect

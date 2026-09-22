@@ -1,6 +1,0 @@
-[mcp_servers.codebase-memory-mcp]
-command = "codebase-memory-mcp"
-args = []
-
-[projects."D:\\LightYears"]
-trust_level = "trusted"

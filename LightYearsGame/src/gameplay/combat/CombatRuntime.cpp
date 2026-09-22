@@ -27,6 +27,17 @@ namespace ly
 			{
 				return GetEffectBehaviorRuntime().AddStack(effect);
 			};
+		callbacks.cappedReapply =
+			[](sas::ActiveGameplayEffect& effect, const sas::GameplayEffectSpec& incomingSpec)
+			{
+				if (effect.spec.definition.effectId != DamageStatusEffectIds::IgniteEffectId)
+				{
+					return false;
+				}
+				effect.spec.attributes = incomingSpec.attributes;
+				effect.ResetRuntimeAttributesFromSpec();
+				return true;
+			};
 		callbacks.tick =
 			[this](sas::ActiveGameplayEffect& effect, float deltaTime)
 			{
@@ -50,6 +61,14 @@ namespace ly
 			[this](sas::ActiveGameplayEffect& effect)
 			{
 				mEffectPresentation.Synchronize(effect);
+			};
+		callbacks.stackChanged =
+			[this](sas::ActiveGameplayEffect& effect)
+			{
+				DamageTypeSystem::SynchronizeStatusEffect(
+					mAbilitySystemComponent,
+					effect
+				);
 			};
 		callbacks.removing =
 			[this](sas::ActiveGameplayEffect& effect)
@@ -216,20 +235,9 @@ namespace ly
 		);
 		mProcessingDamageContext = nullptr;
 		DispatchPendingEffectEvents();
-		const float armorDamageMultiplier = sas::AttributeMath::GetArmorDamageMultiplier(
-			mAbilitySystemComponent.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::Armor
-			)
-		);
-		// Preserve the established penetration semantics while resolving from the
-		// multiplier directly. This avoids 1 - reduction cancellation at extreme
-		// but finite Armor values, where float reduction can round to exactly 1.
-		const float finalArmorDamageMultiplier = armorDamageMultiplier +
-			context.payload.armorPenetration * (1.f - armorDamageMultiplier);
-		const float damageBeforeArmor = context.remainingDamage;
-		context.remainingDamage = std::max(0.f, damageBeforeArmor * finalArmorDamageMultiplier);
-		context.mitigatedDamage += damageBeforeArmor - context.remainingDamage;
-		context.modifiedDamage = context.remainingDamage;
+
+		// Armor is resolved after shield absorption by the owning combatant.
+		// Keep incoming event and status timing above unchanged.
 
 		// One generic combat event carries the incoming damage context and its
 		// semantic payload tags. Ability/attachment triggers can filter owner
@@ -253,13 +261,9 @@ namespace ly
 		// clear its effects. Capture Cryo state now, after this hit's Cryo status
 		// application, so KillConfirmed can still observe it later in the source
 		// combatant's notification path.
-		context.targetWasCryoAffected =
-			mAbilitySystemComponent.FindGameplayEffectById(
-				DamageStatusEffectIds::CryoBuildupEffectId
-			) != nullptr ||
-			mAbilitySystemComponent.FindGameplayEffectById(
-				DamageStatusEffectIds::CryoSlowedEffectId
-			) != nullptr;
+		context.targetWasCryoAffected = mAbilitySystemComponent.FindGameplayEffectById(
+			DamageStatusEffectIds::CryoSlowedEffectId
+		) != nullptr;
 		if (auto* sourceCombatant = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr)
 		{
 			for (const GameplayTag& status : appliedStatuses)
@@ -278,6 +282,24 @@ namespace ly
 			}
 		}
 		onDamageProcessed.Broadcast(context);
+	}
+
+	void CombatRuntime::ApplyHullDamageMitigation(DamageContext& context)
+	{
+		const float armorDamageMultiplier = sas::AttributeMath::GetArmorDamageMultiplier(
+			mAbilitySystemComponent.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::Armor
+			)
+		);
+		// Preserve the established penetration semantics while resolving from the
+		// multiplier directly. This avoids 1 - reduction cancellation at extreme
+		// but finite Armor values, where float reduction can round to exactly 1.
+		const float finalArmorDamageMultiplier = armorDamageMultiplier +
+			context.payload.armorPenetration * (1.f - armorDamageMultiplier);
+		const float damageBeforeArmor = context.remainingDamage;
+		context.remainingDamage = std::max(0.f, damageBeforeArmor * finalArmorDamageMultiplier);
+		context.mitigatedDamage += damageBeforeArmor - context.remainingDamage;
+		context.modifiedDamage = context.remainingDamage;
 	}
 
 	void CombatRuntime::QueueEffectEvent(

@@ -19,7 +19,12 @@ namespace ly
 		// that were actually applied by this hit.
 		List<GameplayTag> ApplyStatusEffects(
 			sas::AbilitySystemComponent& targetAbilitySystem,
-			const DamageContext& context
+			DamageContext& context
+		);
+
+		void SynchronizeStatusEffect(
+			sas::AbilitySystemComponent& targetAbilitySystem,
+			sas::ActiveGameplayEffect& effect
 		);
 
 		bool RegisterDamageEffectBehaviors();

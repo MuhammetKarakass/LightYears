@@ -182,6 +182,10 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EffectContentCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/DamageStatusBalanceLoader.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceLoader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/DamageStatusBalanceCatalog.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyCombatProfile.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyRuntime.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyRuntime.cpp
@@ -858,9 +862,6 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/ChaosStage.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/InfiniteStage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/InfiniteStage.cpp
-
 	${CMAKE_CURRENT_SOURCE_DIR}/include/environment/Asteroid.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/environment/Asteroid.cpp
 
@@ -928,6 +929,8 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyContentCatalog.cpp
@@ -982,7 +985,6 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/TwinBladeStage.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/HexagonStage.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/InfiniteStage.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/environment/AsteroidSpawner.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/environment/Asteroid.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorProfileValidator.cpp
@@ -1001,6 +1003,8 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp

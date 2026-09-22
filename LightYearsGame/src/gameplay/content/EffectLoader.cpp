@@ -65,6 +65,21 @@ namespace ly::content
 			throw std::runtime_error("Unknown gameplay effect stacking policy: " + value);
 		}
 
+		sas::GameplayEffectStackLifetimePolicy ParseStackLifetimePolicy(
+			const std::string& value
+		)
+		{
+			if (value == "None")
+			{
+				return sas::GameplayEffectStackLifetimePolicy::None;
+			}
+			if (value == "DecayAfterDuration")
+			{
+				return sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration;
+			}
+			throw std::runtime_error("Unknown gameplay effect stack lifetime policy: " + value);
+		}
+
 		sas::GameplayEffectDisposition ParseDisposition(const std::string& value)
 		{
 			if (value == "Beneficial")
@@ -222,6 +237,18 @@ namespace ly::content
 				loaded.definition.stackingPolicy = ParseStackingPolicy(
 					object.at("stackingPolicy").get<std::string>()
 				);
+			}
+			if (object.contains("stackLifetimePolicy"))
+			{
+				loaded.definition.stackLifetimePolicy = ParseStackLifetimePolicy(
+					object.at("stackLifetimePolicy").get<std::string>()
+				);
+			}
+			if (object.contains("stackDecayInterval"))
+			{
+				loaded.definition.stackDecayInterval = object.at(
+					"stackDecayInterval"
+				).get<float>();
 			}
 			if (object.contains("duration"))
 			{

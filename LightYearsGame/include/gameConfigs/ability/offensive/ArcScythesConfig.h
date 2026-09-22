@@ -22,12 +22,7 @@ namespace AbilityData::ArcScythes
 			sas::GameplayAttribute{ Attribute::Range, 700.f, 1.f },
 			sas::GameplayAttribute{ Attribute::CombatTickInterval, 0.25f, 0.01f },
 			sas::GameplayAttribute{ Attribute::BeamHalfThickness, 22.f, 1.f },
-			sas::GameplayAttribute{ Attribute::ElectricStacks, 1.f, 1.f },
-			sas::GameplayAttribute{
-				Attribute::ElectricDamageTakenMultiplierPerStack, 0.04f, 0.f
-			},
-			sas::GameplayAttribute{ Attribute::ElectricDuration, 3.f, 0.f },
-			sas::GameplayAttribute{ Attribute::ElectricMaxStacks, 4.f, 1.f }
+			sas::GameplayAttribute{ Attribute::ElectricStacks, 1.f, 1.f }
 		};
 		return definition;
 	}();

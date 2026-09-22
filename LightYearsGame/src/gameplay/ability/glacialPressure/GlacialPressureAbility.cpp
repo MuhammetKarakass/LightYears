@@ -99,10 +99,6 @@ namespace ly
 			// stack. Glacial Pressure snapshots the segment's stack count into the
 			// same payload instead of creating a second slow implementation.
 			payload.cryoBuildupPerHit = std::clamp(cryoStacks, 0, 4);
-			payload.cryoBuildupRequired = 4;
-			payload.cryoBuildupDuration = 2.5f;
-			payload.cryoSlowPercent = 0.25f;
-			payload.cryoSlowDuration = 1.5f;
 			return payload;
 		}
 

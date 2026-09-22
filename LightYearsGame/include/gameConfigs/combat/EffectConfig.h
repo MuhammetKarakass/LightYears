@@ -100,17 +100,11 @@ namespace EffectData
 		DamageIgniteBehaviorKey,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
-		3.f,
-		4,
+		0.f,
+		1,
 		{ ly::DamageStatusSchema::Ignite },
 		{},
-		{
-			sas::GameplayAttribute{
-				ly::DamageAttributeIds::BurnDamagePerSecond,
-				1.f,
-				0.f
-			}
-		},
+		{},
 		"",
 		{},
 		{},
@@ -119,45 +113,21 @@ namespace EffectData
 		sas::GameplayEffectDisposition::Harmful,
 		true,
 		"Damage.OverTime",
-		""
-	};
-
-	inline const sas::GameplayEffectDefinition CryoBuildupEffect{
-		ly::DamageStatusEffectIds::CryoBuildupEffectId,
-		{},
-		sas::GameplayEffectDurationPolicy::Duration,
-		sas::GameplayEffectStackingPolicy::Stack,
-		2.5f,
-		4,
-		{ ly::DamageStatusSchema::CryoBuildup },
-		{},
-		{},
 		"",
-		{},
-		{},
-		false,
-		false,
-		sas::GameplayEffectDisposition::Harmful,
-		true,
-		"Control.CryoBuildup",
-		""
+		"",
+		sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration,
+		1.f
 	};
 
 	inline const sas::GameplayEffectDefinition CryoSlowEffect{
 		ly::DamageStatusEffectIds::CryoSlowedEffectId,
 		{},
 		sas::GameplayEffectDurationPolicy::Duration,
-		sas::GameplayEffectStackingPolicy::RefreshDuration,
-		1.5f,
+		sas::GameplayEffectStackingPolicy::Stack,
+		0.f,
 		1,
 		{ ly::DamageStatusSchema::CryoSlowed },
-		{
-			sas::AttributeModifier{
-				ly::OwnerAttributeIds::MovementSlow,
-				sas::AttributeModifierOperation::Add,
-				0.25f
-			}
-		},
+		{},
 		{},
 		"",
 		{},
@@ -167,7 +137,10 @@ namespace EffectData
 		sas::GameplayEffectDisposition::Harmful,
 		true,
 		"Movement.Slow",
-		"Movement.Slow"
+		"Movement.Slow",
+		"",
+		sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration,
+		1.f
 	};
 
 	inline const sas::GameplayEffectDefinition ElectricEffect{
@@ -175,17 +148,11 @@ namespace EffectData
 		DamageElectricBehaviorKey,
 		sas::GameplayEffectDurationPolicy::Duration,
 		sas::GameplayEffectStackingPolicy::Stack,
-		3.f,
-		4,
+		0.f,
+		1,
 		{ ly::DamageStatusSchema::Electric },
 		{},
-		{
-			sas::GameplayAttribute{
-				ly::DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-				0.04f,
-				0.f
-			}
-		},
+		{},
 		"",
 		{},
 		{},
@@ -194,7 +161,34 @@ namespace EffectData
 		sas::GameplayEffectDisposition::Harmful,
 		true,
 		"Damage.Electric",
-		""
+		"",
+		"",
+		sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration,
+		1.f
+	};
+
+	inline const sas::GameplayEffectDefinition KineticEffect{
+		ly::DamageStatusEffectIds::KineticEffectId,
+		{},
+		sas::GameplayEffectDurationPolicy::Duration,
+		sas::GameplayEffectStackingPolicy::Stack,
+		0.f,
+		1,
+		{ ly::DamageStatusSchema::Kinetic },
+		{},
+		{},
+		"",
+		{},
+		{},
+		false,
+		false,
+		sas::GameplayEffectDisposition::Harmful,
+		true,
+		"Damage.Kinetic",
+		"",
+		"",
+		sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration,
+		1.f
 	};
 
 	inline const sas::GameplayEffectDefinition GravityAnomalyInsideEffect = []
@@ -459,9 +453,9 @@ namespace EffectData
 			&BasicBarrierEffect,
 			&BarrierBreakThrustBoostEffect,
 			&IgniteEffect,
-			&CryoBuildupEffect,
 			&CryoSlowEffect,
 			&ElectricEffect,
+			&KineticEffect,
 			&GravityAnomalyInsideEffect,
 			&MovementSlowEffect,
 			&MovementSlowImmunityEffect,

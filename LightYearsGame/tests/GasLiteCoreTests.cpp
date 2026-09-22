@@ -10,7 +10,9 @@
 #include "gameplay/ability/validation/GameAbilityDefinitionValidator.h"
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
 #include "abilities/AbilityLifecycleOrchestrator.h"
+#include "abilities/AbilityDefinitionValidation.h"
 #include "gameplay/content/AbilityContentCatalog.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "effects/GameplayEffectSpec.h"
@@ -46,6 +48,7 @@
 #include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/ability/zeroDrag/ZeroDragContracts.h"
 #include "gameplay/ability/hullShock/HullShockContracts.h"
+#include "gameplay/ability/stormMark/StormMarkContracts.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/rocket/RocketVisualActor.h"
 #include "gameplay/ability/railBurst/RailBurstProjectileActor.h"
@@ -59,6 +62,7 @@
 #include "gameplay/ability/actors/DirectionalChargeTelegraphActor.h"
 #include "gameplay/ability/energySpear/EnergySpearContracts.h"
 #include "gameplay/ability/energySpear/EnergySpearTraversalActor.h"
+#include "gameplay/ability/cryostasis/CryostasisContracts.h"
 #include "gameplay/ability/frostMaelstrom/FrostMaelstromContracts.h"
 #include "gameplay/ability/frozenThrong/FrozenThrongContracts.h"
 #include "gameplay/ability/wingSentinels/WingSentinelsContracts.h"
@@ -100,6 +104,7 @@
 #include "gameplay/ability/directionalBarrier/DirectionalBarrierVisualActor.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/summon/SummonedCombatantActor.h"
 #include "gameplay/combat/ContactDamageGuardRegistry.h"
 #include "gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h"
 #include "gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.h"
@@ -285,6 +290,7 @@ namespace
 		void ReceiveDamage(ly::DamageContext context) override
 		{
 			mCombatRuntime.ProcessIncomingDamage(context);
+			mCombatRuntime.ApplyHullDamageMitigation(context);
 			if (context.remainingDamage > 0.f)
 			{
 				const float healthBeforeDamage = mHealth.GetHealth();
@@ -912,6 +918,8 @@ int main()
 	{
 		return Fail("Game ability-system content could not be registered");
 	}
+	const DamageStatusBalance& damageStatusBalance =
+		content::DamageStatusBalanceCatalog::Get();
 	std::string effectValidationFailure;
 	const List<const sas::GameplayEffectDefinition*>& shippedEffects =
 		EffectData::GetShippedGameplayEffectDefinitions();
@@ -1425,10 +1433,18 @@ int main()
 		return Fail("Null Pulse pulse visual did not clean itself up");
 	}
 
+	sas::GameplayEffectDefinition cryoSlowSpecDefinition = EffectData::CryoSlowEffect;
+	cryoSlowSpecDefinition.modifiers = {
+		sas::AttributeModifier{
+			OwnerAttributeIds::MovementSlow,
+			sas::AttributeModifierOperation::Add,
+			damageStatusBalance.CryoSlowPercent(1)
+		}
+	};
 	sas::GameplayEffectSpec firstSlowSpec =
-		sas::MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
+		sas::MakeGameplayEffectSpec(cryoSlowSpecDefinition);
 	sas::GameplayEffectSpec secondSlowSpec =
-		sas::MakeGameplayEffectSpec(EffectData::CryoSlowEffect);
+		sas::MakeGameplayEffectSpec(cryoSlowSpecDefinition);
 	SetGameplayEffectModifierMagnitude(
 		firstSlowSpec,
 		OwnerAttributeIds::MovementSlow,
@@ -1440,11 +1456,8 @@ int main()
 		0.30f
 	);
 	firstSlowSpec.duration = 0.5f;
-	const float catalogSlowMagnitude =
-		EffectData::CryoSlowEffect.modifiers.empty()
-			? -1.f
-			: EffectData::CryoSlowEffect.modifiers.front().magnitude;
-	if (!NearlyEqual(catalogSlowMagnitude, 0.25f) ||
+	if (!EffectData::CryoSlowEffect.modifiers.empty() ||
+		!NearlyEqual(damageStatusBalance.CryoSlowPercent(1), 0.04f) ||
 		!NearlyEqual(firstSlowSpec.modifiers.front().magnitude, 0.10f) ||
 		!NearlyEqual(secondSlowSpec.modifiers.front().magnitude, 0.30f) ||
 		!NearlyEqual(firstSlowSpec.duration, 0.5f) ||
@@ -1961,10 +1974,88 @@ int main()
 	}
 
 	ShieldComponent regeneratingShield{ 100.f, 100.f, 3.f };
-	if (!NearlyEqual(regeneratingShield.AbsorbDamage(20.f, 1.25f, 0.75f), 20.f) ||
-		!NearlyEqual(regeneratingShield.GetShield(), 75.f))
+	if (!NearlyEqual(regeneratingShield.AbsorbDamage(20.f, 1.50f, 0.75f), 20.f) ||
+		!NearlyEqual(regeneratingShield.GetShield(), 70.f))
 	{
 		return Fail("Ship shield did not absorb damage using the shield multiplier");
+	}
+	{
+		SpaceShip shieldOnlyShip{ nullptr, ShipData::Ship_Player_Fighter };
+		shieldOnlyShip.GetCombatRuntime().GetAbilitySystemComponent().GetAttributes().SetBaseValue(
+			OwnerAttributeIds::Armor,
+			100.f
+		);
+		shieldOnlyShip.GetShieldComponent().SetMaxShield(100.f);
+		shieldOnlyShip.GetShieldComponent().ChangeShield(100.f);
+		shieldOnlyShip.GetHealthComponent().SetInitialHealth(100.f, 100.f);
+		DamageContext hit;
+		hit.originalDamage = 100.f;
+		hit.remainingDamage = 100.f;
+		hit.payload.shieldDamageMultiplier = 1.f;
+		shieldOnlyShip.ReceiveDamage(hit);
+		if (!NearlyEqual(shieldOnlyShip.GetShieldComponent().GetShield(), 0.f) ||
+			!NearlyEqual(shieldOnlyShip.GetHealthComponent().GetHealth(), 100.f))
+		{
+			return Fail("Armor incorrectly reduced a shield-only hit");
+		}
+	}
+	{
+		SpaceShip overflowShip{ nullptr, ShipData::Ship_Player_Fighter };
+		overflowShip.GetCombatRuntime().GetAbilitySystemComponent().GetAttributes().SetBaseValue(
+			OwnerAttributeIds::Armor,
+			100.f
+		);
+		overflowShip.GetShieldComponent().SetMaxShield(50.f);
+		overflowShip.GetShieldComponent().ChangeShield(50.f);
+		overflowShip.GetHealthComponent().SetInitialHealth(100.f, 100.f);
+		DamageContext hit;
+		hit.originalDamage = 100.f;
+		hit.remainingDamage = 100.f;
+		hit.payload.shieldDamageMultiplier = 1.f;
+		overflowShip.ReceiveDamage(hit);
+		if (!NearlyEqual(overflowShip.GetShieldComponent().GetShield(), 0.f) ||
+			!NearlyEqual(overflowShip.GetHealthComponent().GetHealth(), 75.f))
+		{
+			return Fail("Armor did not apply to shield overflow hull damage");
+		}
+	}
+	{
+		ShieldComponent energyShield{ 50.f, 50.f, 3.f };
+		if (!NearlyEqual(energyShield.AbsorbDamage(100.f, 1.50f, 0.f), 100.f / 3.f) ||
+			!NearlyEqual(energyShield.GetShield(), 0.f))
+		{
+			return Fail("Energy shield absorption conflated source damage with capacity loss");
+		}
+		SpaceShip energyShip{ nullptr, ShipData::Ship_Player_Fighter };
+		energyShip.GetCombatRuntime().GetAbilitySystemComponent().GetAttributes().SetBaseValue(
+			OwnerAttributeIds::Armor,
+			100.f
+		);
+		energyShip.GetShieldComponent().SetMaxShield(50.f);
+		energyShip.GetShieldComponent().ChangeShield(50.f);
+		energyShip.GetHealthComponent().SetInitialHealth(100.f, 100.f);
+		DamageContext hit;
+		hit.originalDamage = 100.f;
+		hit.remainingDamage = 100.f;
+		hit.payload.shieldDamageMultiplier = 1.50f;
+		energyShip.ReceiveDamage(hit);
+		if (!NearlyEqual(energyShip.GetShieldComponent().GetShield(), 0.f) ||
+			!NearlyEqual(energyShip.GetHealthComponent().GetHealth(), 100.f - 100.f / 3.f))
+		{
+			return Fail("Energy shield multiplier did not preserve post-shield armor order");
+		}
+	}
+	{
+		SummonedCombatantActor summon{ nullptr, nullptr };
+		summon.ConfigureCombatant(SummonedCombatantActor::CombatantConfiguration{ 100.f, 100.f, 0.f, 1.f });
+		DamageContext hit;
+		hit.originalDamage = 100.f;
+		hit.remainingDamage = 100.f;
+		summon.ReceiveDamage(hit);
+		if (!NearlyEqual(summon.GetHealthComponent().GetHealth(), 50.f))
+		{
+			return Fail("Shieldless summon did not apply Armor mitigation");
+		}
 	}
 	ShieldComponent frameRateIndependentOvershield{ 150.f, 150.f, 3.f };
 	frameRateIndependentOvershield.GrantTemporaryOvershield(
@@ -1984,19 +2075,19 @@ int main()
 		return Fail("Temporary overshield decay did not preserve its per-second rate");
 	}
 	regeneratingShield.Tick(3.74f, 40.f);
-	if (!NearlyEqual(regeneratingShield.GetShield(), 75.f))
+	if (!NearlyEqual(regeneratingShield.GetShield(), 70.f))
 	{
 		return Fail("Ship shield started recharging before its damage delay elapsed");
 	}
 	regeneratingShield.Tick(0.26f, 40.f);
-	if (!NearlyEqual(regeneratingShield.GetShield(), 85.f))
+	if (!NearlyEqual(regeneratingShield.GetShield(), 80.f))
 	{
 		return Fail("Ship shield did not recharge after its damage delay elapsed");
 	}
 	regeneratingShield.AbsorbDamage(20.f, 1.f, 0.f);
 	const float shieldDelayBeforeBoostPause = regeneratingShield.GetRechargeDelayRemaining();
 	regeneratingShield.Tick(10.f, 40.f, false);
-	if (!NearlyEqual(regeneratingShield.GetShield(), 65.f) ||
+	if (!NearlyEqual(regeneratingShield.GetShield(), 60.f) ||
 		!NearlyEqual(regeneratingShield.GetRechargeDelayRemaining(), shieldDelayBeforeBoostPause))
 	{
 		return Fail("Ship shield recharged while afterburner recharge blocking was active");
@@ -2233,24 +2324,50 @@ int main()
 	const DamagePayload energyPayload = DamageTypeSystem::BuildPayload(
 		{ DamageTypeSchema::Energy },
 		{
-			sas::GameplayAttribute{ DamageAttributeIds::ShieldDamageMultiplier, 1.25f, 0.f },
+			sas::GameplayAttribute{ DamageAttributeIds::ShieldDamageMultiplier, 1.50f, 0.f },
 			sas::GameplayAttribute{ DamageAttributeIds::ShieldRegenerationDelay, 0.75f, 0.f }
 		}
 	);
 	const DamagePayload identityOnlyThermalPayload =
 		DamageTypeSystem::BuildPayload({ DamageTypeSchema::Thermal });
-	if (identityOnlyThermalPayload.igniteStacks != 0 ||
-		!NearlyEqual(identityOnlyThermalPayload.burnDamagePerSecond, 0.f))
+	if (identityOnlyThermalPayload.igniteStacks != 0)
 	{
 		return Fail("Damage tag identity unexpectedly supplied hidden balance defaults");
 	}
-	if (!NearlyEqual(energyPayload.shieldDamageMultiplier, 1.25f))
+	if (!NearlyEqual(energyPayload.shieldDamageMultiplier, 1.50f))
 	{
 		return Fail("Energy damage payload was not resolved");
 	}
 	if (!NearlyEqual(energyPayload.shieldRegenerationDelay, 0.75f))
 	{
 		return Fail("Energy damage shield regeneration delay was not resolved");
+	}
+	const DamagePayload baselineEnergyPayload = DamageTypeSystem::BuildPayload({ DamageTypeSchema::Energy });
+	if (!NearlyEqual(baselineEnergyPayload.shieldDamageMultiplier, damageStatusBalance.energyShieldDamageMultiplier))
+	{
+		return Fail("Energy damage without a source multiplier did not use the canonical baseline");
+	}
+	const DamagePayload boostedEnergyPayload = DamageTypeSystem::BuildPayload(
+		{ DamageTypeSchema::Energy },
+		{ sas::GameplayAttribute{ DamageAttributeIds::ShieldDamageMultiplier, 1.75f, 0.f } }
+	);
+	if (!NearlyEqual(boostedEnergyPayload.shieldDamageMultiplier, 1.75f))
+	{
+		return Fail("Explicit Energy shield bonus above the baseline was not preserved");
+	}
+	for (const float legacyMultiplier : { 1.0f, 1.25f })
+	{
+		const DamagePayload migratedEnergyPayload = DamageTypeSystem::BuildPayload(
+			{ DamageTypeSchema::Energy },
+			{ sas::GameplayAttribute{ DamageAttributeIds::ShieldDamageMultiplier, legacyMultiplier, 0.f } }
+		);
+		if (!NearlyEqual(
+			migratedEnergyPayload.shieldDamageMultiplier,
+			damageStatusBalance.energyShieldDamageMultiplier
+		))
+		{
+			return Fail("Legacy Energy shield multiplier lowered the canonical base");
+		}
 	}
 
 	sas::GameplayEffectDefinition regeneratingBarrier;
@@ -2273,7 +2390,7 @@ int main()
 	const sas::ActiveGameplayEffect* delayedBarrier = regenerationTarget.GetAbilitySystemComponent().FindGameplayEffect(regenerationHandle);
 	if (!delayedBarrier || !NearlyEqual(
 		sas::FindAttributeValue(delayedBarrier->runtimeAttributes, BarrierEffectSchema::Capacity),
-		7.5f
+		7.f
 	))
 	{
 		return Fail("Energy damage did not delay shield regeneration");
@@ -2282,7 +2399,7 @@ int main()
 	const sas::ActiveGameplayEffect* regeneratingBarrierState = regenerationTarget.GetAbilitySystemComponent().FindGameplayEffect(regenerationHandle);
 	if (!regeneratingBarrierState || !NearlyEqual(
 		sas::FindAttributeValue(regeneratingBarrierState->runtimeAttributes, BarrierEffectSchema::Capacity),
-		8.75f
+		8.25f
 	))
 	{
 		return Fail("Barrier did not regenerate after its delay elapsed");
@@ -2332,281 +2449,516 @@ int main()
 	TestCombatant shieldTarget;
 	shieldTarget.GetAbilitySystemComponent().ApplyGameplayEffect(smallShield);
 	ApplyCombatDamage(shieldTarget, 8.f, nullptr, { DamageTypeSchema::Energy }, energyPayload);
-	if (!NearlyEqual(shieldTarget.GetHealth(), 96.f))
+	if (!NearlyEqual(shieldTarget.GetHealth(), 100.f - (8.f - 5.f / 1.50f)))
 	{
 		return Fail("Energy damage did not apply its shield multiplier correctly");
 	}
 
 	TestCombatant armoredTarget;
 	armoredTarget.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-		sas::AttributeModifier{ OwnerAttributeIds::Armor, sas::AttributeModifierOperation::Override, 50.f }
+		sas::AttributeModifier{ OwnerAttributeIds::Armor, sas::AttributeModifierOperation::Override, 100.f }
 	);
-	const DamagePayload kineticPayload = DamageTypeSystem::BuildPayload(
-		{ DamageTypeSchema::Kinetic },
-		{ sas::GameplayAttribute{ DamageAttributeIds::ArmorPenetration, 0.10f, 0.f, 0.25f } }
-	);
-	if (!NearlyEqual(kineticPayload.armorPenetration, 0.10f))
+	const DamagePayload kineticPayload = DamageTypeSystem::BuildPayload({ DamageTypeSchema::Kinetic });
+	if (!NearlyEqual(kineticPayload.armorPenetration, 0.f) || kineticPayload.kineticStacks != 1)
 	{
-		return Fail("Kinetic armor penetration was not reduced");
+		return Fail("Kinetic did not resolve its default status payload");
 	}
 	ApplyCombatDamage(armoredTarget, 10.f, nullptr, { DamageTypeSchema::Kinetic }, kineticPayload);
-	const float effectiveKineticReduction =
-		sas::AttributeMath::GetArmorDamageReduction(50.f) * (1.f - kineticPayload.armorPenetration);
-	const float expectedKineticHealth = 100.f - 10.f * (1.f - effectiveKineticReduction);
-	if (!NearlyEqual(armoredTarget.GetHealth(), expectedKineticHealth))
+	const sas::ActiveGameplayEffect* kineticEffect = armoredTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::KineticEffectId
+	);
+	if (!kineticEffect || kineticEffect->stackCount != 1)
 	{
-		return Fail("Kinetic armor penetration was not applied");
+		return Fail("Kinetic did not apply its first stack");
+	}
+	if (!NearlyEqual(armoredTarget.GetHealth(), 95.f))
+	{
+		return Fail("New Kinetic stack affected the same hit that applied it");
+	}
+	ApplyCombatDamage(armoredTarget, 1.f, nullptr, { DamageTypeSchema::Kinetic }, kineticPayload);
+	kineticEffect = armoredTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::KineticEffectId
+	);
+	if (!kineticEffect || kineticEffect->stackCount != 2)
+	{
+		return Fail("Kinetic did not add a second stack");
+	}
+	if (!NearlyEqual(armoredTarget.GetHealth(), 94.47f))
+	{
+		return Fail("Existing Kinetic stack did not affect the next hit");
+	}
+
+	TestCombatant fourStackTarget;
+	fourStackTarget.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::Armor, sas::AttributeModifierOperation::Override, 100.f }
+	);
+	const DamagePayload fourStackKineticPayload = DamageTypeSystem::BuildPayload(
+		{ DamageTypeSchema::Kinetic },
+		{ sas::GameplayAttribute{ DamageAttributeIds::KineticStacks, 4.f, 0.f, 4.f } }
+	);
+	ApplyCombatDamage(fourStackTarget, 1.f, nullptr, { DamageTypeSchema::Kinetic }, fourStackKineticPayload);
+	const float healthBeforeFourStackHit = fourStackTarget.GetHealth();
+	ApplyCombatDamage(fourStackTarget, 100.f, nullptr, { DamageTypeSchema::Kinetic }, kineticPayload);
+	if (!NearlyEqual(healthBeforeFourStackHit - fourStackTarget.GetHealth(), 65.f))
+	{
+		return Fail("Four existing Kinetic stacks did not resolve 30 percent penetration");
+	}
+
+	TestCombatant energyAgainstKineticTarget;
+	energyAgainstKineticTarget.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::Armor, sas::AttributeModifierOperation::Override, 100.f }
+	);
+	ApplyCombatDamage(
+		energyAgainstKineticTarget,
+		1.f,
+		nullptr,
+		{ DamageTypeSchema::Kinetic },
+		fourStackKineticPayload
+	);
+	const float healthBeforeEnergyHit = energyAgainstKineticTarget.GetHealth();
+	ApplyCombatDamage(
+		energyAgainstKineticTarget,
+		100.f,
+		nullptr,
+		{ DamageTypeSchema::Energy },
+		DamageTypeSystem::BuildPayload({ DamageTypeSchema::Energy })
+	);
+	if (!NearlyEqual(healthBeforeEnergyHit - energyAgainstKineticTarget.GetHealth(), 50.f))
+	{
+		return Fail("Kinetic penetration leaked into an Energy hull hit");
 	}
 
 	TestCombatant thermalTarget;
 	const DamagePayload thermalPayload = DamageTypeSystem::BuildPayload(
 		{ DamageTypeSchema::Thermal },
-		{
-			sas::GameplayAttribute{ DamageAttributeIds::IgniteStacks, 1.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::BurnDamagePerSecond, 1.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::BurnDuration, 3.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::BurnMaxStacks, 4.f, 1.f }
-		}
+		{ sas::GameplayAttribute{ DamageAttributeIds::IgniteStacks, 1.f, 0.f } }
 	);
-	if (!NearlyEqual(thermalPayload.burnDamagePerSecond, 1.f) ||
-		thermalPayload.burnMaxStacks != 4)
+	for (int expectedStacks = 1; expectedStacks <= damageStatusBalance.thermal.maxStacks; ++expectedStacks)
 	{
-		return Fail("Thermal damage payload was not resolved to the four-hit profile");
+		ApplyCombatDamage(thermalTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+		const sas::ActiveGameplayEffect* ignite = thermalTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::IgniteEffectId
+		);
+		if (!ignite || ignite->stackCount != expectedStacks)
+		{
+			return Fail("Thermal did not apply each stack from the first hit");
+		}
+		const float healthBeforeTick = thermalTarget.GetHealth();
+		thermalTarget.GetCombatRuntime().Tick(1.f);
+		if (!NearlyEqual(
+			healthBeforeTick - thermalTarget.GetHealth(),
+			damageStatusBalance.ThermalDamagePerSecond(expectedStacks)
+		))
+		{
+			return Fail("Thermal stack did not resolve its canonical damage per second");
+		}
 	}
-	ApplyCombatDamage(thermalTarget, 10.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
-	thermalTarget.GetCombatRuntime().Tick(1.f);
-	if (!NearlyEqual(thermalTarget.GetHealth(), 90.f))
+	thermalTarget.GetCombatRuntime().Tick(damageStatusBalance.thermal.duration - 1.f);
+	const sas::ActiveGameplayEffect* decayingIgnite = thermalTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::IgniteEffectId
+	);
+	if (!decayingIgnite || decayingIgnite->stackCount != 3)
 	{
-		return Fail("Thermal damage applied before its four-hit threshold");
-	}
-	for (int hit = 0; hit < 3; ++hit)
-	{
-		ApplyCombatDamage(thermalTarget, 10.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
-	}
-	thermalTarget.GetCombatRuntime().Tick(1.f);
-	if (!NearlyEqual(thermalTarget.GetHealth(), 56.f))
-	{
-		return Fail("Thermal damage did not activate at its four-hit threshold");
+		return Fail("Thermal did not lose its first stack after full duration");
 	}
 	ApplyCombatDamage(thermalTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
-	const sas::ActiveGameplayEffect* cappedIgnite =
-		thermalTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-			"Effect.Status.Damage.Ignite"
-		);
-	if (!cappedIgnite || cappedIgnite->stackCount != 4)
+	decayingIgnite = thermalTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::IgniteEffectId
+	);
+	if (!decayingIgnite || decayingIgnite->stackCount != 4 ||
+		!NearlyEqual(decayingIgnite->remainingDuration, damageStatusBalance.thermal.duration))
 	{
-		return Fail("Ignite did not remain at its stack cap after another hit");
+		return Fail("Thermal reapply did not add and refresh during decay");
+	}
+
+	TestCombatant thermalLargeDeltaTarget;
+	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+	{
+		ApplyCombatDamage(thermalLargeDeltaTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+	}
+	const float thermalLargeDeltaHealth = thermalLargeDeltaTarget.GetHealth();
+	thermalLargeDeltaTarget.GetCombatRuntime().Tick(8.f);
+	if (!NearlyEqual(thermalLargeDeltaHealth - thermalLargeDeltaTarget.GetHealth(), 31.f) ||
+		thermalLargeDeltaTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::IgniteEffectId
+		))
+	{
+		return Fail("A single large Thermal tick did not slice damage at each stack boundary");
+	}
+
+	TestCombatant thermalUnitDeltaTarget;
+	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+	{
+		ApplyCombatDamage(thermalUnitDeltaTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+	}
+	const float thermalUnitDeltaHealth = thermalUnitDeltaTarget.GetHealth();
+	for (int second = 0; second < 8; ++second)
+	{
+		thermalUnitDeltaTarget.GetCombatRuntime().Tick(1.f);
+	}
+	if (!NearlyEqual(thermalUnitDeltaHealth - thermalUnitDeltaTarget.GetHealth(), 31.f) ||
+		!NearlyEqual(
+			thermalLargeDeltaHealth - thermalLargeDeltaTarget.GetHealth(),
+			thermalUnitDeltaHealth - thermalUnitDeltaTarget.GetHealth()
+		))
+	{
+		return Fail("Thermal Tick(8) did not match eight Tick(1) calls");
+	}
+
+	TestCombatant thermalFractionalTarget;
+	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+	{
+		ApplyCombatDamage(thermalFractionalTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+	}
+	const float thermalFractionalHealth = thermalFractionalTarget.GetHealth();
+	thermalFractionalTarget.GetCombatRuntime().Tick(5.5f);
+	const sas::ActiveGameplayEffect* fractionalIgnite =
+		thermalFractionalTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::IgniteEffectId
+		);
+	if (!NearlyEqual(thermalFractionalHealth - thermalFractionalTarget.GetHealth(), 26.5f) ||
+		!fractionalIgnite || fractionalIgnite->stackCount != 3 ||
+		!NearlyEqual(fractionalIgnite->remainingDuration, 0.5f))
+	{
+		return Fail("Fractional Thermal time was not split at the exact stack boundary");
+	}
+
+	TestCombatant thermalSourceA;
+	TestCombatant thermalSourceB;
+	const DamagePayload periodicThermalPayload = DamageTypeSystem::BuildPayload(
+		{ DamageTypeSchema::Thermal },
+		{
+			sas::GameplayAttribute{ DamageAttributeIds::IgniteStacks, 1.f, 0.f },
+			sas::GameplayAttribute{ DamageAttributeIds::BurnDamagePerTick, 2.f, 0.f },
+			sas::GameplayAttribute{ DamageAttributeIds::BurnTickInterval, 1.f, 0.001f },
+			sas::GameplayAttribute{ DamageAttributeIds::BurnDuration, 5.f, 0.f }
+		}
+	);
+	DamagePayload slicedPeriodicPayload = periodicThermalPayload;
+	slicedPeriodicPayload.burnTickInterval = 0.75f;
+	TestCombatant periodicSliceTarget;
+	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+	{
+		ApplyCombatDamage(
+			periodicSliceTarget,
+			1.f,
+			nullptr,
+			{ DamageTypeSchema::Thermal },
+			slicedPeriodicPayload
+		);
+	}
+	const float periodicSliceHealth = periodicSliceTarget.GetHealth();
+	periodicSliceTarget.GetCombatRuntime().Tick(5.5f);
+	const sas::ActiveGameplayEffect* periodicSliceIgnite =
+		periodicSliceTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::IgniteEffectId
+		);
+	if (!NearlyEqual(periodicSliceHealth - periodicSliceTarget.GetHealth(), 14.f) ||
+		!periodicSliceIgnite || periodicSliceIgnite->stackCount != 3 ||
+		!NearlyEqual(periodicSliceIgnite->remainingDuration, 0.5f))
+	{
+		return Fail("Periodic Scorch time did not preserve its accumulator across slices");
+	}
+	TestCombatant generalToPeriodicTarget;
+	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+	{
+		ApplyCombatDamage(
+			generalToPeriodicTarget,
+			1.f,
+			&thermalSourceA,
+			{ DamageTypeSchema::Thermal },
+			thermalPayload
+		);
+	}
+	ApplyCombatDamage(
+		generalToPeriodicTarget,
+		1.f,
+		&thermalSourceB,
+		{ DamageTypeSchema::Thermal },
+		periodicThermalPayload
+	);
+	const sas::ActiveGameplayEffect* periodicIgnite =
+		generalToPeriodicTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::IgniteEffectId
+		);
+	if (!periodicIgnite || periodicIgnite->stackCount != damageStatusBalance.thermal.maxStacks ||
+		!NearlyEqual(periodicIgnite->remainingDuration, 5.f) ||
+		periodicIgnite->GetSourceObject<Actor>() != &thermalSourceB ||
+		!NearlyEqual(sas::FindAttributeValue(
+			periodicIgnite->spec.attributes,
+			DamageAttributeIds::BurnDamagePerTick,
+			0.f
+		), 2.f) ||
+		!NearlyEqual(sas::FindAttributeValue(
+			periodicIgnite->runtimeAttributes,
+			DamageAttributeIds::BurnTickAccumulator,
+			-1.f
+		), 0.f))
+	{
+		return Fail("Capped general-to-periodic Ignite reapply did not replace its mode and source");
+	}
+	const float periodicHealthBeforeTick = generalToPeriodicTarget.GetHealth();
+	generalToPeriodicTarget.GetCombatRuntime().Tick(1.f);
+	if (!NearlyEqual(
+		periodicHealthBeforeTick - generalToPeriodicTarget.GetHealth(),
+		2.f
+	))
+	{
+		return Fail("Periodic Ignite reapply used the canonical stack DPS");
+	}
+
+	TestCombatant periodicToGeneralTarget;
+	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+	{
+		ApplyCombatDamage(
+			periodicToGeneralTarget,
+			1.f,
+			&thermalSourceA,
+			{ DamageTypeSchema::Thermal },
+			periodicThermalPayload
+		);
+	}
+	ApplyCombatDamage(
+		periodicToGeneralTarget,
+		1.f,
+		&thermalSourceB,
+		{ DamageTypeSchema::Thermal },
+		thermalPayload
+	);
+	const sas::ActiveGameplayEffect* generalIgnite =
+		periodicToGeneralTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::IgniteEffectId
+		);
+	if (!generalIgnite || generalIgnite->stackCount != damageStatusBalance.thermal.maxStacks ||
+		generalIgnite->GetSourceObject<Actor>() != &thermalSourceB ||
+		!generalIgnite->spec.attributes.empty() ||
+		!generalIgnite->runtimeAttributes.empty())
+	{
+		return Fail("Capped periodic-to-general Ignite reapply retained snapshot attributes");
+	}
+	const float generalHealthBeforeTick = periodicToGeneralTarget.GetHealth();
+	periodicToGeneralTarget.GetCombatRuntime().Tick(1.f);
+	if (!NearlyEqual(
+		generalHealthBeforeTick - periodicToGeneralTarget.GetHealth(),
+		damageStatusBalance.ThermalDamagePerSecond(damageStatusBalance.thermal.maxStacks)
+	))
+	{
+		return Fail("General Ignite reapply did not restore canonical stack DPS");
+	}
+
+	TestCombatant samePeriodicTarget;
+	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+	{
+		ApplyCombatDamage(
+			samePeriodicTarget,
+			1.f,
+			&thermalSourceA,
+			{ DamageTypeSchema::Thermal },
+			periodicThermalPayload
+		);
+	}
+	DamagePayload strongerPeriodicPayload = periodicThermalPayload;
+	strongerPeriodicPayload.burnDamagePerTick = 3.f;
+	strongerPeriodicPayload.burnDuration = 6.f;
+	ApplyCombatDamage(
+		samePeriodicTarget,
+		1.f,
+		&thermalSourceB,
+		{ DamageTypeSchema::Thermal },
+		strongerPeriodicPayload
+	);
+	const sas::ActiveGameplayEffect* refreshedPeriodicIgnite =
+		samePeriodicTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::IgniteEffectId
+		);
+	if (!refreshedPeriodicIgnite || refreshedPeriodicIgnite->stackCount != damageStatusBalance.thermal.maxStacks ||
+		!NearlyEqual(refreshedPeriodicIgnite->remainingDuration, 6.f) ||
+		!NearlyEqual(sas::FindAttributeValue(
+			refreshedPeriodicIgnite->runtimeAttributes,
+			DamageAttributeIds::BurnDamagePerTick,
+			0.f
+		), 3.f))
+	{
+		return Fail("Capped same-mode Ignite reapply did not refresh its snapshot");
+	}
+
+	TestCombatant twoStackGeneralTarget;
+	ApplyCombatDamage(twoStackGeneralTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+	ApplyCombatDamage(twoStackGeneralTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+	const float twoStackGeneralHealth = twoStackGeneralTarget.GetHealth();
+	twoStackGeneralTarget.GetCombatRuntime().Tick(1.f);
+	if (!NearlyEqual(
+		twoStackGeneralHealth - twoStackGeneralTarget.GetHealth(),
+		damageStatusBalance.ThermalDamagePerSecond(2)
+	))
+	{
+		return Fail("Two-stack general Ignite did not use its stack table");
+	}
+	TestCombatant twoStackPeriodicTarget;
+	ApplyCombatDamage(twoStackPeriodicTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, periodicThermalPayload);
+	ApplyCombatDamage(twoStackPeriodicTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, periodicThermalPayload);
+	const float twoStackPeriodicHealth = twoStackPeriodicTarget.GetHealth();
+	twoStackPeriodicTarget.GetCombatRuntime().Tick(1.f);
+	if (!NearlyEqual(
+		twoStackPeriodicHealth - twoStackPeriodicTarget.GetHealth(),
+		2.f
+	))
+	{
+		return Fail("Two-stack periodic Ignite multiplied snapshot damage by stack count");
+	}
+
+	const DamagePayload partialPeriodicPayload = DamageTypeSystem::BuildPayload(
+		{ DamageTypeSchema::Thermal },
+		{
+			sas::GameplayAttribute{ DamageAttributeIds::IgniteStacks, 1.f, 0.f },
+			sas::GameplayAttribute{ DamageAttributeIds::BurnDamagePerTick, 2.f, 0.f }
+		}
+	);
+	TestCombatant partialPeriodicTarget;
+	ApplyCombatDamage(
+		partialPeriodicTarget,
+		1.f,
+		nullptr,
+		{ DamageTypeSchema::Thermal },
+		partialPeriodicPayload
+	);
+	if (partialPeriodicTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::IgniteEffectId
+	))
+	{
+		return Fail("Partial periodic Ignite payload silently fell back to StackDps");
 	}
 
 	TestCombatant cryoTarget;
-	const DamagePayload cryoPayload = DamageTypeSystem::BuildPayload(
+	const DamagePayload cryoStatusPayload = DamageTypeSystem::BuildPayload(
 		{ DamageTypeSchema::Cryo },
-		{
-			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupPerHit, 1.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupRequired, 4.f, 1.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupDuration, 2.5f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoSlowPercent, 0.25f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoSlowDuration, 1.5f, 0.f }
-		}
+		{ sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupPerHit, 1.f, 0.f } }
 	);
-	if (cryoPayload.cryoBuildupRequired != 4 ||
-		!NearlyEqual(cryoPayload.cryoSlowPercent, 0.25f) ||
-		!NearlyEqual(cryoPayload.cryoSlowDuration, 1.5f))
+	for (int expectedStacks = 1; expectedStacks <= damageStatusBalance.cryo.maxStacks; ++expectedStacks)
 	{
-		return Fail("Cryo damage payload was not resolved to the four-hit profile");
-	}
-	for (int expectedStacks = 1; expectedStacks < 4; ++expectedStacks)
-	{
-		ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-		const sas::ActiveGameplayEffect* buildup =
-			cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-				DamageStatusEffectIds::CryoBuildupEffectId
-			);
-		if (!buildup || buildup->stackCount != expectedStacks ||
-			!NearlyEqual(
-				cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-					OwnerAttributeIds::MovementSlow
-				),
-				0.f
-			))
-		{
-			return Fail("Cryo slowed before its four-hit buildup was complete");
-		}
-	}
-	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-	const sas::ActiveGameplayEffect* fullCryoBuildup =
-		cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-			DamageStatusEffectIds::CryoBuildupEffectId
-		);
-	if (!NearlyEqual(
-		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
-		0.25f
-	) || !fullCryoBuildup || fullCryoBuildup->stackCount != 4 ||
-		!cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoStatusPayload);
+		const sas::ActiveGameplayEffect* cryo = cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 			DamageStatusEffectIds::CryoSlowedEffectId
+		);
+		if (!cryo || cryo->stackCount != expectedStacks || !NearlyEqual(
+			cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::MovementSlow
+			),
+			damageStatusBalance.CryoSlowPercent(expectedStacks)
 		))
-	{
-		return Fail("Four-hit Cryo buildup did not retain full stacks and apply slow");
+		{
+			return Fail("Cryo did not resolve its first-to-fourth stack slow table");
+		}
 	}
-	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-	fullCryoBuildup = cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-		DamageStatusEffectIds::CryoBuildupEffectId
+	cryoTarget.GetCombatRuntime().Tick(damageStatusBalance.cryo.duration);
+	sas::ActiveGameplayEffect* decayingCryo = cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::CryoSlowedEffectId
 	);
-	if (!fullCryoBuildup || fullCryoBuildup->stackCount != 4)
+	if (!decayingCryo || decayingCryo->stackCount != 3 || !NearlyEqual(
+		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
+		damageStatusBalance.CryoSlowPercent(3)
+	))
 	{
-		return Fail("Cryo buildup did not remain at its cap while slow was active");
+		return Fail("Cryo did not update its modifier while decaying");
 	}
 	cryoTarget.GetCombatRuntime().Tick(1.f);
-	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-	cryoTarget.GetCombatRuntime().Tick(0.75f);
-	if (!NearlyEqual(
+	cryoTarget.GetCombatRuntime().Tick(1.f);
+	if (!cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::CryoSlowedEffectId
+	) || !NearlyEqual(
 		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
-		0.25f
+		damageStatusBalance.CryoSlowPercent(1)
 	))
 	{
-		return Fail("Cryo hit did not refresh the active slow duration");
+		return Fail("Cryo did not decay one stack per second");
 	}
-	cryoTarget.GetCombatRuntime().Tick(0.8f);
+	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoStatusPayload);
+	decayingCryo = cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::CryoSlowedEffectId
+	);
+	if (!decayingCryo || decayingCryo->stackCount != 2 ||
+		!NearlyEqual(decayingCryo->remainingDuration, damageStatusBalance.cryo.duration))
+	{
+		return Fail("Cryo reapply did not add and refresh during decay");
+	}
+	if (!NearlyEqual(damageStatusBalance.CryoSlowPercent(0), 0.f) ||
+		!NearlyEqual(damageStatusBalance.ElectricDamageTakenMultiplier(0), 0.f) ||
+		!NearlyEqual(damageStatusBalance.ThermalDamagePerSecond(0), 0.f) ||
+		!NearlyEqual(damageStatusBalance.KineticArmorPenetration(0), 0.f))
+	{
+		return Fail("Zero-stack status balance resolved to a positive first-stack value");
+	}
+	decayingCryo->stackCount = 0;
+	DamageTypeSystem::SynchronizeStatusEffect(
+		cryoTarget.GetAbilitySystemComponent(),
+		*decayingCryo
+	);
 	if (!NearlyEqual(
 		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
 		0.f
 	))
 	{
-		return Fail("Cryo slow did not expire");
+		return Fail("Zero-stack Cryo synchronization reapplied MovementSlow");
 	}
-	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoPayload);
-	cryoTarget.GetCombatRuntime().Tick(2.6f);
-	if (cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-		DamageStatusEffectIds::CryoBuildupEffectId
-	))
-	{
-		return Fail("Incomplete Cryo buildup did not expire");
-	}
-
-	TestCombatant cryoPriorityTarget;
-	const DamagePayload strongCryoPayload = DamageTypeSystem::BuildPayload(
-		{ DamageTypeSchema::Cryo },
-		{
-			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupPerHit, 4.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupRequired, 4.f, 1.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoBuildupDuration, 2.5f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoSlowPercent, 0.50f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::CryoSlowDuration, 2.f, 0.f }
-		}
-	);
-	ApplyCombatDamage(
-		cryoPriorityTarget,
-		1.f,
-		nullptr,
-		{ DamageTypeSchema::Cryo },
-		strongCryoPayload
-	);
-	cryoPriorityTarget.GetCombatRuntime().Tick(1.f);
-	ApplyCombatDamage(
-		cryoPriorityTarget,
-		1.f,
-		nullptr,
-		{ DamageTypeSchema::Cryo },
-		cryoPayload
-	);
-	cryoPriorityTarget.GetCombatRuntime().Tick(1.1f);
-	if (!NearlyEqual(
-		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-			OwnerAttributeIds::MovementSlow
-		),
-		0.f
-	))
-	{
-		return Fail("Weaker Cryo slow replaced or refreshed the stronger slow");
-	}
-	ApplyCombatDamage(
-		cryoPriorityTarget,
-		1.f,
-		nullptr,
-		{ DamageTypeSchema::Cryo },
-		cryoPayload
-	);
-	if (!NearlyEqual(
-		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-			OwnerAttributeIds::MovementSlow
-		),
-		0.25f
-	))
-	{
-		return Fail("Full Cryo stacks did not apply a slow after the old one expired");
-	}
-	ApplyCombatDamage(
-		cryoPriorityTarget,
-		1.f,
-		nullptr,
-		{ DamageTypeSchema::Cryo },
-		strongCryoPayload
-	);
-	if (!NearlyEqual(
-		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-			OwnerAttributeIds::MovementSlow
-		),
-		0.50f
-	))
-	{
-		return Fail("Stronger Cryo slow did not replace the weaker slow");
-	}
-	cryoPriorityTarget.GetCombatRuntime().Tick(1.25f);
-	ApplyCombatDamage(
-		cryoPriorityTarget,
-		1.f,
-		nullptr,
-		{ DamageTypeSchema::Cryo },
-		strongCryoPayload
-	);
-	cryoPriorityTarget.GetCombatRuntime().Tick(1.f);
-	if (!NearlyEqual(
-		cryoPriorityTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-			OwnerAttributeIds::MovementSlow
-		),
-		0.50f
-	))
-	{
-		return Fail("Equal Cryo slow did not refresh its duration");
-	}
-
 
 	TestCombatant electricTarget;
-	const DamagePayload electricPayload = DamageTypeSystem::BuildPayload(
+	const DamagePayload electricStatusPayload = DamageTypeSystem::BuildPayload(
 		{ DamageTypeSchema::Electric },
-		{
-			sas::GameplayAttribute{ DamageAttributeIds::ElectricStacks, 1.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::ElectricDamageTakenMultiplierPerStack, 0.04f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::ElectricDuration, 3.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::ElectricMaxStacks, 4.f, 1.f }
-		}
+		{ sas::GameplayAttribute{ DamageAttributeIds::ElectricStacks, 1.f, 0.f } }
 	);
-	if (electricPayload.electricStacks != 1 ||
-		!NearlyEqual(electricPayload.electricDamageTakenMultiplierPerStack, 0.04f) ||
-		electricPayload.electricMaxStacks != 4)
+	for (int expectedStacks = 1; expectedStacks <= damageStatusBalance.electric.maxStacks; ++expectedStacks)
 	{
-		return Fail("Electric damage payload was not resolved to the four-hit profile");
+		ApplyCombatDamage(electricTarget, 1.f, nullptr, { DamageTypeSchema::Electric }, electricStatusPayload);
+		const sas::ActiveGameplayEffect* electric = electricTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+			DamageStatusEffectIds::ElectricEffectId
+		);
+		if (!electric || electric->stackCount != expectedStacks)
+		{
+			return Fail("Electric did not apply each stack from the first hit");
+		}
+		const float healthBeforeVulnerability = electricTarget.GetHealth();
+		ApplyCombatDamage(electricTarget, 10.f, nullptr);
+		if (!NearlyEqual(
+			healthBeforeVulnerability - electricTarget.GetHealth(),
+			10.f * (1.f + damageStatusBalance.ElectricDamageTakenMultiplier(expectedStacks))
+		))
+		{
+			return Fail("Electric did not resolve its canonical taken-damage multiplier");
+		}
 	}
-	for (int hit = 0; hit < 3; ++hit)
+	electricTarget.GetCombatRuntime().Tick(damageStatusBalance.electric.duration);
+	const sas::ActiveGameplayEffect* decayingElectric = electricTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::ElectricEffectId
+	);
+	if (!decayingElectric || decayingElectric->stackCount != 3)
 	{
-		ApplyCombatDamage(electricTarget, 1.f, nullptr, { DamageTypeSchema::Electric }, electricPayload);
+		return Fail("Electric did not lose its first stack after four seconds");
 	}
-	ApplyCombatDamage(electricTarget, 10.f, nullptr);
-	if (!NearlyEqual(electricTarget.GetHealth(), 87.f))
+	ApplyCombatDamage(electricTarget, 1.f, nullptr, { DamageTypeSchema::Electric }, electricStatusPayload);
+	decayingElectric = electricTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::ElectricEffectId
+	);
+	if (!decayingElectric || decayingElectric->stackCount != 4 ||
+		!NearlyEqual(decayingElectric->remainingDuration, damageStatusBalance.electric.duration))
 	{
-		return Fail("Electric amplified damage before its four-hit threshold");
+		return Fail("Electric reapply did not add and refresh during decay");
 	}
-	ApplyCombatDamage(electricTarget, 1.f, nullptr, { DamageTypeSchema::Electric }, electricPayload);
-	ApplyCombatDamage(electricTarget, 10.f, nullptr);
-	if (!NearlyEqual(electricTarget.GetHealth(), 74.4f))
+
+	TestCombatant genericStackTarget;
+	sas::GameplayEffectDefinition genericStackEffect;
+	genericStackEffect.effectId = "Effect.Test.GenericStackNoDecay";
+	genericStackEffect.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+	genericStackEffect.stackingPolicy = sas::GameplayEffectStackingPolicy::Stack;
+	genericStackEffect.duration = 2.f;
+	genericStackEffect.maxStacks = 2;
+	genericStackTarget.GetAbilitySystemComponent().ApplyGameplayEffect(genericStackEffect);
+	genericStackTarget.GetAbilitySystemComponent().ApplyGameplayEffect(genericStackEffect);
+	genericStackTarget.GetCombatRuntime().Tick(2.1f);
+	if (genericStackTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		genericStackEffect.effectId
+	))
 	{
-		return Fail("Electric did not apply its reduced full-stack vulnerability");
-	}
-	electricTarget.GetCombatRuntime().Tick(3.1f);
-	ApplyCombatDamage(electricTarget, 10.f, nullptr);
-	if (!NearlyEqual(electricTarget.GetHealth(), 64.4f))
-	{
-		return Fail("Electric vulnerability did not expire");
+		return Fail("Unselected generic Stack effect inherited status decay");
 	}
 
 	PrimaryWeaponDefinition projectileWeapon;
@@ -3572,6 +3924,83 @@ int main()
 		invalidEffectReason.empty())
 	{
 		return Fail("Ability grant accepted an unknown gameplay-effect definition");
+	}
+	{
+		// The definition slot still decides whether the runtime registers an
+		// ability as passive, so a slot-less input-driven definition and a
+		// slotted passive definition are contradictory. Slot-less event-driven
+		// abilities remain valid.
+		sas::AbilityDefinition slotlessInputAbility;
+		slotlessInputAbility.abilityId = "Ability.Test.SlotlessInput";
+		slotlessInputAbility.slot = sas::AbilitySlot::None;
+		slotlessInputAbility.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
+		std::string slotlessInputReason;
+		if (sas::ValidateAbilityDefinition(slotlessInputAbility, &slotlessInputReason) ||
+			slotlessInputReason.empty())
+		{
+			return Fail("Ability validation accepted a slot-less input-driven definition");
+		}
+		sas::AbilityDefinition slottedPassiveAbility;
+		slottedPassiveAbility.abilityId = "Ability.Test.SlottedPassive";
+		slottedPassiveAbility.slot = sas::AbilitySlot::Ability1;
+		slottedPassiveAbility.activationPolicy = sas::AbilityActivationPolicy::Passive;
+		slottedPassiveAbility.lifetimePolicy = sas::AbilityLifetimePolicy::UntilCancelled;
+		std::string slottedPassiveReason;
+		if (sas::ValidateAbilityDefinition(slottedPassiveAbility, &slottedPassiveReason) ||
+			slottedPassiveReason.empty())
+		{
+			return Fail("Ability validation accepted a passive definition with an input slot");
+		}
+		sas::AbilityDefinition slotlessEventAbility;
+		slotlessEventAbility.abilityId = "Ability.Test.SlotlessEvent";
+		slotlessEventAbility.slot = sas::AbilitySlot::None;
+		slotlessEventAbility.activationPolicy = sas::AbilityActivationPolicy::GameplayEvent;
+		if (!sas::ValidateAbilityDefinition(slotlessEventAbility, nullptr))
+		{
+			return Fail("Ability validation rejected a slot-less event-driven definition");
+		}
+		sas::AbilityDefinition validPassiveAbility;
+		validPassiveAbility.abilityId = "Ability.Test.ValidPassive";
+		validPassiveAbility.slot = sas::AbilitySlot::None;
+		validPassiveAbility.activationPolicy = sas::AbilityActivationPolicy::Passive;
+		validPassiveAbility.lifetimePolicy = sas::AbilityLifetimePolicy::UntilCancelled;
+		if (!sas::ValidateAbilityDefinition(validPassiveAbility, nullptr))
+		{
+			return Fail("Ability validation rejected a valid passive definition");
+		}
+	}
+	{
+		// WhileInputHeld only terminates through the WhileHeld input path, so any
+		// other activation policy must be rejected. Loadout slots are used so the
+		// slot/policy guard cannot preempt this reason.
+		sas::AbilityDefinition whileInputHeldAbility;
+		whileInputHeldAbility.abilityId = "Ability.Test.WhileInputHeld";
+		whileInputHeldAbility.slot = sas::AbilitySlot::Ability1;
+		whileInputHeldAbility.lifetimePolicy = sas::AbilityLifetimePolicy::WhileInputHeld;
+		for (const sas::AbilityActivationPolicy policy : {
+			sas::AbilityActivationPolicy::OnPressed,
+			sas::AbilityActivationPolicy::Toggle,
+			sas::AbilityActivationPolicy::GameplayEvent })
+		{
+			whileInputHeldAbility.activationPolicy = policy;
+			std::string whileInputHeldReason;
+			if (sas::ValidateAbilityDefinition(whileInputHeldAbility, &whileInputHeldReason) ||
+				whileInputHeldReason != "WhileInputHeld abilities must use WhileHeld activation.")
+			{
+				return Fail("Ability validation accepted WhileInputHeld with a non-WhileHeld policy");
+			}
+		}
+		whileInputHeldAbility.activationPolicy = sas::AbilityActivationPolicy::WhileHeld;
+		if (!sas::ValidateAbilityDefinition(whileInputHeldAbility, nullptr))
+		{
+			return Fail("Ability validation rejected WhileHeld with WhileInputHeld lifetime");
+		}
+		whileInputHeldAbility.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
+		whileInputHeldAbility.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
+		if (!sas::ValidateAbilityDefinition(whileInputHeldAbility, nullptr))
+		{
+			return Fail("Ability validation rejected the unchanged Instant lifetime baseline");
+		}
 	}
 	std::string sunBeamGrantFailure;
 	const GameAbilityDefinition* shippedSunBeamDefinition =
@@ -5452,38 +5881,38 @@ int main()
 		return Fail("Gravity Anomaly shipped ability or actor catalog validation failed");
 	}
 	PlayerSpaceShip defaultLoadoutShip{ nullptr };
-	const GameAbility* lanceDriveLoadoutAbility =
+	const GameAbility* frostMaelstromLoadoutAbility =
 		defaultLoadoutShip.GetAbilitySystemComponent()
 			.FindAbility<GameAbility>(sas::AbilitySlot::Ability1);
-	if (!lanceDriveLoadoutAbility ||
-		lanceDriveLoadoutAbility->GetDefinition().abilityId != AbilityData::LanceDrive::AbilityId::Basic ||
+	if (!frostMaelstromLoadoutAbility ||
+		frostMaelstromLoadoutAbility->GetDefinition().abilityId != AbilityData::FrostMaelstrom::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability1) } != "Q")
 	{
-		return Fail("Default player loadout did not place Lance Drive on Ability1/Q");
+		return Fail("Default player loadout did not place Frost Maelstrom on Ability1/Q");
 	}
-	const GameAbility* relayPrismLoadoutAbility =
+	const GameAbility* nanoPlagueLoadoutAbility =
 		defaultLoadoutShip.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability2);
-	if (!relayPrismLoadoutAbility ||
-		relayPrismLoadoutAbility->GetDefinition().abilityId != AbilityData::RelayPrism::AbilityId::Basic ||
+	if (!nanoPlagueLoadoutAbility ||
+		nanoPlagueLoadoutAbility->GetDefinition().abilityId != AbilityData::NanoPlague::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability2) } != "E")
 	{
-		return Fail("Default player loadout did not place Relay Prism on Ability2/E");
+		return Fail("Default player loadout did not place Nano Plague on Ability2/E");
 	}
-	const GameAbility* glacialPressureLoadoutAbility =
+	const GameAbility* seismicChargeLoadoutAbility =
 		defaultLoadoutShip.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability3);
-	if (!glacialPressureLoadoutAbility ||
-		glacialPressureLoadoutAbility->GetDefinition().abilityId != AbilityData::GlacialPressure::AbilityId::Basic ||
+	if (!seismicChargeLoadoutAbility ||
+		seismicChargeLoadoutAbility->GetDefinition().abilityId != AbilityData::SeismicCharge::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability3) } != "F")
 	{
-		return Fail("Default player loadout did not place Glacial Pressure on Ability3/F");
+		return Fail("Default player loadout did not place Seismic Charge on Ability3/F");
 	}
-	const GameAbility* reclaimerProtocolLoadoutAbility =
+	const GameAbility* cryostasisLoadoutAbility =
 		defaultLoadoutShip.GetAbilitySystemComponent().FindAbility<GameAbility>(sas::AbilitySlot::Ability4);
-	if (!reclaimerProtocolLoadoutAbility ||
-		reclaimerProtocolLoadoutAbility->GetDefinition().abilityId != AbilityData::ReclaimerProtocol::AbilityId::Basic ||
+	if (!cryostasisLoadoutAbility ||
+		cryostasisLoadoutAbility->GetDefinition().abilityId != AbilityData::Cryostasis::AbilityId::Basic ||
 		std::string{ AbilityInputSchema::GetLabel(sas::AbilitySlot::Ability4) } != "R")
 	{
-		return Fail("Default player loadout did not place Reclaimer Protocol on Ability4/R");
+		return Fail("Default player loadout did not place Cryostasis on Ability4/R");
 	}
 
 	// Exercise the generic activation/action-spawn path used by the player Q
@@ -7980,9 +8409,6 @@ int main()
 			// Apply 4 stacks of Ignite to Target A
 			DamagePayload fourStackPayload;
 			fourStackPayload.igniteStacks = 4;
-			fourStackPayload.burnDamagePerSecond = 1.f;
-			fourStackPayload.burnDuration = 3.f;
-			fourStackPayload.burnMaxStacks = 4;
 			ApplyCombatDamage(*targetCapped, 1.f, owner.get(), { DamageTypeSchema::Thermal }, fourStackPayload);
 
 			const sas::ActiveGameplayEffect* activeIgnite =
@@ -8041,9 +8467,6 @@ int main()
 			// Pre-apply 4 stacks of Ignite to sole target
 			DamagePayload fourStackPayload;
 			fourStackPayload.igniteStacks = 4;
-			fourStackPayload.burnDamagePerSecond = 1.f;
-			fourStackPayload.burnDuration = 3.f;
-			fourStackPayload.burnMaxStacks = 4;
 			ApplyCombatDamage(*soleTarget, 1.f, owner.get(), { DamageTypeSchema::Thermal }, fourStackPayload);
 
 			world.TickInternal(0.f);

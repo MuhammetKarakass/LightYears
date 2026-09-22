@@ -1,23 +1,25 @@
 #include "gameplay/ability/loadout/DefaultAbilityLoadout.h"
 
-#include "gameplay/ability/lanceDrive/LanceDriveContracts.h"
-#include "gameplay/ability/relayPrism/RelayPrismContracts.h"
-#include "gameplay/ability/glacialPressure/GlacialPressureContracts.h"
-#include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolContracts.h"
+#include "gameplay/ability/cryostasis/CryostasisContracts.h"
+#include "gameplay/ability/frostMaelstrom/FrostMaelstromContracts.h"
+#include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
+#include "gameplay/ability/seismicCharge/SeismicChargeContracts.h"
 
 namespace ly
 {
+	// Fighter arena control kit: establish a Cryo zone, spread NanoPlague through
+	// the group, detonate a charge in the cluster, then use Cryostasis to survive.
 	const std::vector<DefaultAbilityLoadoutEntry>& GetDefaultAbilityLoadout()
 	{
 		static const std::vector<DefaultAbilityLoadoutEntry> loadout{
-			// Q: Lance Drive - kinetic V-shaped ram.
-			{ AbilityData::LanceDrive::AbilityId::Basic, sas::AbilitySlot::Ability1 },
-			// E: Relay Prism - beam relay prism.
-			{ AbilityData::RelayPrism::AbilityId::Basic, sas::AbilitySlot::Ability2 },
-			// F: Glacial Pressure - multi-segment ice push cone.
-			{ AbilityData::GlacialPressure::AbilityId::Basic, sas::AbilitySlot::Ability3 },
-			// R: Reclaimer Protocol - kill-window repair kits.
-			{ AbilityData::ReclaimerProtocol::AbilityId::Basic, sas::AbilitySlot::Ability4 }
+			// Q: Frost Maelstrom - Cryo control zone that slows and holds enemies.
+			{ AbilityData::FrostMaelstrom::AbilityId::Basic, sas::AbilitySlot::Ability1 },
+			// E: NanoPlague - spreads damage through the controlled enemy group.
+			{ AbilityData::NanoPlague::AbilityId::Basic, sas::AbilitySlot::Ability2 },
+			// F: Seismic Charge - explosive damage placed inside the controlled group.
+			{ AbilityData::SeismicCharge::AbilityId::Basic, sas::AbilitySlot::Ability3 },
+			// R: Cryostasis - defensive recovery and Cryo pressure during the hold.
+			{ AbilityData::Cryostasis::AbilityId::Basic, sas::AbilitySlot::Ability4 }
 		};
 		return loadout;
 	}

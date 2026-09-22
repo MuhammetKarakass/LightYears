@@ -300,9 +300,6 @@ namespace ly
 
 		DamagePayload payload;
 		payload.igniteStacks = 1;
-		payload.burnDamagePerSecond = 1.f;
-		payload.burnDuration = 3.f;
-		payload.burnMaxStacks = 4;
 
 		ApplyCombatDamage(
 			target,

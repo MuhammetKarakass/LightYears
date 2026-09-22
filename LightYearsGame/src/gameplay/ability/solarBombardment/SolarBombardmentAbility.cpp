@@ -105,10 +105,7 @@ namespace ly
 				AbilityData::SolarBombardment::Attribute::InnerIgniteStacks,
 				AbilityData::SolarBombardment::Attribute::OuterIgniteStacks,
 				AbilityData::SolarBombardment::Attribute::MinTravelTime,
-				AbilityData::SolarBombardment::Attribute::MaxTravelTime,
-				DamageAttributeIds::BurnDamagePerSecond,
-				DamageAttributeIds::BurnDuration,
-				DamageAttributeIds::BurnMaxStacks
+				AbilityData::SolarBombardment::Attribute::MaxTravelTime
 			})
 			{
 				const sas::GameplayAttribute* attribute = sas::FindAttribute(

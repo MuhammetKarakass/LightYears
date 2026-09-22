@@ -67,11 +67,5 @@ namespace AbilityData::ArcScythes
 		// Scythes declares values for it; DamageTypeSystem applies the status.
 		inline static const sas::AttributeId ElectricStacks =
 			ly::DamageAttributeIds::ElectricStacks;
-		inline static const sas::AttributeId ElectricDamageTakenMultiplierPerStack =
-			ly::DamageAttributeIds::ElectricDamageTakenMultiplierPerStack;
-		inline static const sas::AttributeId ElectricDuration =
-			ly::DamageAttributeIds::ElectricDuration;
-		inline static const sas::AttributeId ElectricMaxStacks =
-			ly::DamageAttributeIds::ElectricMaxStacks;
 	};
 }

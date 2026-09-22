@@ -61,8 +61,11 @@ namespace ly
 		case EncounterWaveState::Spawning:
 		case EncounterWaveState::WaitingForClear:
 			viewModel.visible = true;
-			viewModel.title = "WAVE " + std::to_string(snapshot.currentWaveNumber) + " / " +
-				std::to_string(snapshot.totalWaveCount);
+			// A finite encounter prints its authored total; an endless one has none.
+			viewModel.title = "WAVE " + std::to_string(snapshot.currentWaveNumber) +
+				(snapshot.totalWaveCount.has_value()
+					? " / " + std::to_string(*snapshot.totalWaveCount)
+					: " | ENDLESS");
 			viewModel.detail = "ENEMIES " + std::to_string(snapshot.aliveEnemyCount + snapshot.remainingSpawnCount) +
 				DetailSeparator + "LEVEL " + std::to_string(snapshot.enemyLevel);
 			return viewModel;
@@ -172,13 +175,17 @@ namespace ly
 			? ResolveCountdownSeconds(snapshot.interWaveRemainingTime)
 			: NoCountdown;
 
-		// The state and the wave number shape both lines; the rest only shapes the detail line.
-		const bool stateChanged = snapshot.state != mLastState || snapshot.currentWaveNumber != mLastWaveNumber;
+		// The title depends on the sequence mode and the optional total as well, so a controller
+		// reused across encounters must not suppress a rewrite when only those differ.
+		const bool stateChanged = snapshot.state != mLastState || snapshot.currentWaveNumber != mLastWaveNumber ||
+			snapshot.sequenceMode != mLastSequenceMode || snapshot.totalWaveCount != mLastTotalWaveCount;
 		const bool detailChanged = threatCount != mLastThreatCount || countdownSecond != mLastCountdownSecond ||
 			snapshot.enemyLevel != mLastEnemyLevel;
 
 		mLastState = snapshot.state;
 		mLastWaveNumber = snapshot.currentWaveNumber;
+		mLastSequenceMode = snapshot.sequenceMode;
+		mLastTotalWaveCount = snapshot.totalWaveCount;
 		mLastThreatCount = threatCount;
 		mLastCountdownSecond = countdownSecond;
 		mLastEnemyLevel = snapshot.enemyLevel;

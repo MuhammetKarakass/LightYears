@@ -31,22 +31,15 @@ namespace ly
 		float shieldRegenerationDelay = 0.f;
 		float armorPenetration = 0.f;
 		int igniteStacks = 0;
-		float burnDamagePerSecond = 0.f;
-		// Optional fixed-period Burn mode. Legacy sources continue to use
-		// burnDamagePerSecond; Scorch Drive supplies these snapshot values.
+		// Optional fixed-period Burn mode. The four selected Thermal stacks use
+		// the loaded damage-status balance catalog for ordinary DPS; Scorch Drive supplies this snapshot
+		// mode explicitly so it does not double with the canonical table.
 		float burnDamagePerTick = 0.f;
 		float burnTickInterval = 0.f;
 		float burnDuration = 0.f;
-		int burnMaxStacks = 1;
 		int cryoBuildupPerHit = 0;
-		int cryoBuildupRequired = 1;
-		float cryoBuildupDuration = 0.f;
-		float cryoSlowPercent = 0.f;
-		float cryoSlowDuration = 0.f;
 		int electricStacks = 0;
-		float electricDamageTakenMultiplierPerStack = 0.f;
-		float electricDuration = 0.f;
-		int electricMaxStacks = 1;
+		int kineticStacks = 1;
 		DamageCriticalPolicy criticalPolicy = DamageCriticalPolicy::Random;
 		bool roundDamageUp = false;
 	};

@@ -18,7 +18,6 @@ namespace ly
 			Actor* owner,
 			float fireDamage,
 			float fireTickInterval,
-			int burnThresholdTicks,
 			float burnDuration,
 			float burnTickInterval,
 			float burnDamageRatio,
@@ -44,7 +43,6 @@ namespace ly
 		List<weak_ptr<ScorchDriveFireSegmentActor>> mSegments;
 		float mFireDamage = 0.f;
 		float mFireTickInterval = 0.f;
-		int mBurnThresholdTicks = 1;
 		float mBurnDuration = 0.f;
 		float mBurnTickInterval = 0.f;
 		float mBurnDamageRatio = 0.f;

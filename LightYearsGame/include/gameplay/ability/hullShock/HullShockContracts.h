@@ -58,14 +58,5 @@ namespace AbilityData::HullShock
 		// These values belong to Hull Shock's balance contract. They are mapped
 		// into the shared DamagePayload only at discharge; the ability definition
 		// must not own Damage.* system attributes directly.
-		inline static const sas::AttributeId ElectricDamageTakenMultiplierPerStack{
-			"Ability.Offense.HullShock.ElectricDamageTakenMultiplierPerStack"
-		};
-		inline static const sas::AttributeId ElectricDuration{
-			"Ability.Offense.HullShock.ElectricDuration"
-		};
-		inline static const sas::AttributeId ElectricMaxStacks{
-			"Ability.Offense.HullShock.ElectricMaxStacks"
-		};
 	};
 }

@@ -20,10 +20,7 @@
           "baseValue": 0.4,
           "minValue": 0.0
         },
-        { "id": "Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 },
-        { "id": "Damage.BurnDamagePerSecond", "baseValue": 1.0, "minValue": 0.0 },
-        { "id": "Damage.BurnDuration", "baseValue": 3.0, "minValue": 0.0 },
-        { "id": "Damage.BurnMaxStacks", "baseValue": 4.0, "minValue": 1.0 }
+        { "id": "Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 }
       ],
 
       "attributeModifiers": [],
@@ -59,6 +56,50 @@
           ]
         }
       ]
+    },
+    {
+      "id": "Attachment.Kinetic.Bore.Basic",
+      "displayName": "Kinetic Bore",
+
+      "allowedHosts": [
+        "Ability",
+        "PrimaryWeapon"
+      ],
+
+      "requiredCapabilities": [
+        "Attachment.Capability.Damage"
+      ],
+
+      "grantedAttributes": [
+        {
+          "id": "Damage.ArmorPenetration",
+          "baseValue": 0.10,
+          "minValue": 0.0,
+          "maxValue": 0.25
+        }
+      ],
+
+      "attributeModifiers": [],
+
+      "conditionalAttributeModifiers": [
+        {
+          "condition": {
+            "type": "HasDamageTag",
+            "subjectTag": "Damage.Type.Kinetic",
+            "threshold": 0.0
+          },
+          "modifier": {
+            "attributeId": "Damage.ArmorPenetration",
+            "operation": "Add",
+            "magnitude": 0.05
+          }
+        }
+      ],
+
+      "replaceDamageType": "Damage.Type.Kinetic",
+      "damageTypePriority": 0,
+
+      "eventRules": []
     }
   ]
 }

@@ -72,3 +72,17 @@ target_link_libraries(${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 	PUBLIC
 		${LIGHT_YEARS_ENGINE_TARGET_NAME}
 )
+
+if(BUILD_TESTING)
+	add_executable(SpaceAbilitySystemLifecycleTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayEffectLifecycleTests.cpp
+	)
+	target_link_libraries(SpaceAbilitySystemLifecycleTests PRIVATE
+		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+	)
+	add_test(
+		NAME SpaceAbilitySystemLifecycle
+		COMMAND SpaceAbilitySystemLifecycleTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+endif()

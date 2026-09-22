@@ -26,6 +26,8 @@
       "behaviorKey": "EffectBehavior.Damage.Ignite",
       "durationPolicy": "Duration",
       "stackingPolicy": "Stack",
+      "stackLifetimePolicy": "DecayAfterDuration",
+      "stackDecayInterval": 1.0,
       "grantedTags": ["Status.Damage.Ignite"],
       "disposition": "Harmful",
       "cleanseable": true,
@@ -33,19 +35,11 @@
       "sourceParameterized": true
     },
     {
-      "id": "Effect.Status.Damage.Cryo.Buildup",
-      "durationPolicy": "Duration",
-      "stackingPolicy": "Stack",
-      "grantedTags": ["Status.Damage.Cryo.Buildup"],
-      "disposition": "Harmful",
-      "cleanseable": true,
-      "category": "Control.CryoBuildup",
-      "sourceParameterized": true
-    },
-    {
       "id": "Effect.Status.Damage.Cryo.Slowed",
       "durationPolicy": "Duration",
-      "stackingPolicy": "RefreshDuration",
+      "stackingPolicy": "Stack",
+      "stackLifetimePolicy": "DecayAfterDuration",
+      "stackDecayInterval": 1.0,
       "grantedTags": ["Status.Damage.Cryo.Slowed"],
       "applicationBlockedTags": ["State.Effect.Immunity.Movement.Slow"],
       "disposition": "Harmful",
@@ -59,6 +53,8 @@
       "behaviorKey": "EffectBehavior.Damage.Electric",
       "durationPolicy": "Duration",
       "stackingPolicy": "Stack",
+      "stackLifetimePolicy": "DecayAfterDuration",
+      "stackDecayInterval": 1.0,
       "grantedTags": ["Status.Damage.Electric"],
       "disposition": "Harmful",
       "cleanseable": true,
@@ -112,6 +108,18 @@
       "cleanseable": true,
       "category": "Control.Stun",
       "immunityCategory": "Control.Stun",
+      "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Status.Damage.Kinetic",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "Stack",
+      "stackLifetimePolicy": "DecayAfterDuration",
+      "stackDecayInterval": 1.0,
+      "grantedTags": ["Status.Damage.Kinetic"],
+      "disposition": "Harmful",
+      "cleanseable": true,
+      "category": "Damage.Kinetic",
       "sourceParameterized": true
     },
     {

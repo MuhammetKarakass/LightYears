@@ -11,7 +11,6 @@ namespace ly
 	class ChaosStage;
 	class BackGroundActor;
 	class BackgroundLayer;
-	class InfiniteStage;
 	class LevelOne : public GameLevel
 	{
 
@@ -34,11 +33,9 @@ namespace ly
 		virtual void InitGameStages() override;
 		void PlayerShipDestroyed(Actor* destroyedActor);
 		void ConnectChaosStageToHUD();
-		void ConnectInfiniteStageToHUD();
 		void SpawnCosmetics();
 
 		weak_ptr<ChaosStage> mChaosStage;
-		weak_ptr<InfiniteStage> mInfStage;
 		weak_ptr<BackGroundActor> mBackgroundActor;
 		weak_ptr<BackgroundLayer> mPlanetsLayer;
 		weak_ptr<BackgroundLayer> mMeteorsLayer;

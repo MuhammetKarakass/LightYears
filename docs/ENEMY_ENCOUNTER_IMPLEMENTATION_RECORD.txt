@@ -1,0 +1,636 @@
+LIGHT YEARS — ENEMY / BEHAVIOR / ENCOUNTER UYGULAMA KAYDI
+Güncel durum: 20 Eylül 2026
+
+AMAÇ VE KAPSAM
+===============
+
+Bu kayıt, generic enemy foundation kararından başlayarak enemy combat,
+behavior, arena encounter, wave progression, lifecycle ve snapshot-driven HUD
+çalışmasına kadar alınan kararları toplar. Amaç; sonraki implementasyon veya
+refactor parçasında eski sistem varsayımlarına dönmemek, sorumluluk sınırlarını
+korumak ve henüz yapılmayan işleri uygulanmış gibi değerlendirmemektir.
+
+Bu kayıt balance kaynağı değildir. Güncel sayısal içerik için:
+
+- docs/CURRENT_IMPLEMENTATION_CATALOG.md
+- LightYearsGame/assets/content/data/enemy_combat_profiles.json
+- LightYearsGame/assets/content/data/enemy_behavior_profiles.json
+- LightYearsGame/assets/content/data/enemy_definitions.json
+- LightYearsGame/assets/content/data/weapons.json
+
+kaynakları esas alınır. Geniş yön ve sıradaki işler için
+docs/BALANCE_AND_ROADMAP_NOTEBOOK.md kullanılır.
+
+
+1. TEMEL TASARIM KARARLARI
+==========================
+
+1.1 Data-driven enemy modeli
+-----------------------------
+
+- Yeni düşmanların varsayılan runtime actor'ı generic EnemyActor'tır.
+- Her yeni düşman için C++ child class yazmak zorunlu değildir. 10 veya 20
+  düşman türü olması tek başına inheritance gerektirmez.
+- Child actor yalnız gerçekten farklı engine entegrasyonu, lifecycle, collision
+  veya diğer generic profillerin ifade edemediği ayrı davranış gerektiğinde
+  düşünülür.
+- Şimdiki düşman kimliği composition ile kurulur:
+
+  ShipDefinition
+      + EnemyCombatProfile
+      + EnemyBehaviorProfile
+      + EnemyDefinition
+      -> EnemyFactory
+      -> EnemyActor + EnemyRuntime
+
+- EnemyDefinition, ship/combat/behavior ContentId referanslarını bir araya
+  getirir. Factory bu üç referansı çözer ve generic actor'ı üretir.
+- Vanguard, TwinBlade, Hexagon, UFO, LevelOneBoss ve EnemySpaceShip gibi eski
+  hardcoded enemy actor yaklaşımı yeni sistemin sahibi değildir. Legacy boss ve
+  vertical-shmup stage akışları sonraki temizlik kapsamıdır.
+
+1.2 Dummy sınırı
+----------------
+
+- DummyEnemy yalnız silah ve ability test hedefidir.
+- DummyEnemy, EnemyRuntime, EnemyBehaviorRuntime, EnemyFactory, enemy level,
+  enemy variation veya encounter progression kullanmaz.
+- Dummy'lerin arena sahnesinde bulunması, encounter'ın clear gate'ini veya
+  completion durumunu etkilememelidir.
+
+1.3 Enemy stat ve hasar yaklaşımı
+---------------------------------
+
+- Düşman saldırılarının ana değeri okunabilir authored base damage'dir.
+- Varsayılan enemy Owner.AttackPower ve Owner.EnergyPower değeri 0'dır.
+- Enemy AP/EP alanlarının sistemde bulunması, her düşmanın bu değerlerle
+  scale olması demek değildir.
+- AP/EP scaling yalnız gerçekten özel bir enemy mekaniği bunu gerektirirse
+  açık EnemyPowerScalingPolicy ile etkinleştirilebilir.
+- Genel encounter gücü; direkt her weapon/ability ratio'sını ayrı ayrı
+  değiştirmek yerine, enemy profile progression ve ortak outgoing-damage
+  modifier hattından gelir.
+- Outgoing multiplier weapon, ability, projectile, expanding wave, contact
+  damage ve DoT dahil ortak damage boundary'de yalnız bir kez uygulanır.
+  Aynı hasar kaynağında ikinci kez weapon-side multiplier uygulanmaz.
+- Enemy level, type'a özgü Health, Shield, Armor ve outgoing damage büyümesini
+  belirler. Growth değerleri player balance veya ship natural-growth kararları
+  değildir; geçici vertical-slice değerleridir ve playtest ile yeniden
+  dengelenecektir.
+
+1.4 Mevcut attribute/runtime sahipliği
+--------------------------------------
+
+- Player ve enemy combat statları mevcut AttributeSystem üzerinde Owner
+  Attribute olarak kalır. Enemy için paralel attribute sistemi oluşturulmaz.
+- Enemy Runtime kendi verdiği modifier handle'larını sahiplenir; harici effect,
+  attachment, ability veya modifier state'ini temizlemez.
+- Health ve Armor level growth, enemy-owned source/handle ile mevcut owner
+  AttributeSystem'a uygulanır.
+- Shield contribution, ShipRuntime'ın source-owned
+  SetBaseMaxShieldContribution / RemoveBaseMaxShieldContribution API'siyle
+  uygulanır. ShipAttributeIds::MaxShield üzerine doğrudan rastgele modifier
+  basılmaz.
+- Encounter damage, CombatRuntime üzerindeki
+  EnemyRuntime.EncounterDamage source kimliği ile temsil edilir.
+- Enemy Runtime Clear/reinitialization/destruction sırasında yalnız kendi
+  weapon/ability handle'larını, progression modifier'larını, shield
+  contribution'ını ve encounter multiplier'ını kaldırır.
+
+
+2. ENEMY COMBAT FOUNDATION — TAMAMLANANLAR
+==========================================
+
+2.1 Enemy combat profile ve loadout esnekliği
+----------------------------------------------
+
+- EnemyCombatProfile tek primaryWeaponId alanından çoklu weapons[] loadout
+  modeline geçirildi.
+- Sistem şu kombinasyonları desteklemelidir ve foundation bunu hedefler:
+
+  * yalnız bir weapon;
+  * yalnız bir veya birden çok ability;
+  * weapon + ability;
+  * iki weapon;
+  * iki weapon + bir veya daha çok ability.
+
+- Weapon ve ability'ler generic ability runtime hattından grant edilir.
+- Slot çakışması, duplicate weapon ID, geçersiz ID/level, passive kapasitesi,
+  contact-only kuralı ve harici ability/slot çakışması mutation öncesi
+  doğrulanır.
+- Weapon olarak kabul edilen içerik yalnız Weapon.* kimliği taşıdığı için değil,
+  weapon action/validation contract'ını gerçekten sağladığı için doğrulanır.
+- Active OnPressed/WhileHeld binding'ler için combat binding -> behavior rule
+  doğrulaması çift yönlüdür. Passive, AbilitySlot::None ve
+  allowContactDamageOnly istisnaları yanlış biçimde behavior rule zorunluluğuna
+  sokulmaz.
+
+2.2 EnemyRuntime lifecycle ve transaction kuralları
+----------------------------------------------------
+
+- EnemyRuntime copy ve move edilemez. CombatRuntime referansı ve canlı ability
+  handle sahipliği default move için güvenli değildir.
+- Initialize mutasyondan önce preflight yapar.
+- Eski owned loadout kaldırılmadan önce rollback için snapshot alınır.
+- Yeni grant veya SetAbilityLevel adımlarından biri başarısız olursa o denemede
+  açılan handle'lar kaldırılır ve önceki başarılı loadout geri kurulur.
+- Cleanup/rollback tamamlanamazsa runtime fault state'e geçer; temizlenmeyen
+  handle'lar unresolved ownership olarak gizlenmeden tutulur.
+- Bir runtime aynı instance üzerinde başka profile ile initialize edilirse eski
+  profile'a ait stale owned state kalamaz.
+- Production EnemyActor initialization sonucunu yutmaz. Combat initialization
+  başarısızsa actor base gameplay/collision/spatial/reward akışına girmeden
+  pending destroy olur.
+
+2.3 Enemy behavior foundation
+-----------------------------
+
+Mevcut behavior sistemi tam AI değildir. Parametrik ve test edilebilir bir
+combat karar katmanıdır.
+
+- Movement mode'ları: Approach, HoldRange, Strafe.
+- Target acquisition opposing Combatant query üzerinden yapılır; Player
+  singleton'a bağlanmaz.
+- Target referansları weak_ptr ile tutulur. hasTarget gibi ayrı ve stale
+  olabilecek paralel boolean state tutulmaz.
+- Behavior runtime target validity, refresh cadence, aim/rotation, movement
+  intent ve slot command seçimini yönetir.
+- EnemyActor yalnız intent'i SpaceShip movement, rotation ve input API'lerine
+  adapte eder; karar matematiği actor içine taşınmaz.
+- Behavior runtime doğrudan ability execute etmez. Slot command, mevcut ability
+  input/activation hattına gider.
+- Slot command modeli Hold/Pulse input mode, target/geometri şartı, priority
+  ve retry/release davranışlarını taşır.
+- Priority her tick yeniden değerlendirilir. Hold aktif olması tek başına
+  selection kararını kilitlemez.
+- Retry veya releasePending durumundaki Pulse rule aday değildir; uygun düşük
+  priority rule fallback olarak çalışabilir.
+- Behavior validator finite değerleri, Approach/HoldRange/Strafe mesafe
+  semantiğini, target/fire/search menzil ilişkisini ve slot rule binding
+  sözleşmesini doğrular.
+
+2.4 Content range ve hareket doğrulaması
+----------------------------------------
+
+- Weapon authored Common.Range, behavior rule maximumRange ve movement
+  mesafeleri ortak resolver üzerinden doğrulanır.
+- Rule maksimum menzili weapon menzilini aşamaz.
+- Approach desiredDistance weapon menzilini aşamaz.
+- Strafe/HoldRange maximumDistance weapon menzilini aşamaz.
+- EnemyShip eski ve kullanılmayan speed alanı gerçek hareket kimliği değildir.
+  ThrustDrift'te gerçek hareket forward/reverse/strafe thrust ve maxSpeed ile
+  gelir; shipped enemy chassis değerleri buna göre yapılandırılmıştır.
+
+
+3. SHIPPED VERTICAL-SLICE ENEMY İÇERİĞİ
+=======================================
+
+Bu üç düşman gerçek production balance değildir. Generic foundation, weapon,
+behavior, range ve progression zincirini oynanabilir vertical slice içinde
+denemek için vardır.
+
+3.1 ApproachGunner
+------------------
+
+- Enemy ID: Enemy.ApproachGunner.Basic
+- Combat profile: EnemyCombat.ApproachGunner.Basic
+- Behavior: EnemyBehavior.ApproachGunner.Basic
+- Weapon: Weapon.Projectile.EnemyVanguardPulse.Basic
+- Damage type: Energy
+- Weapon: 15 damage, 1.2 fire rate, 700 projectile speed, 1200 range.
+- Behavior: Approach, desired distance 700, minimum distance 400,
+  PrimaryFire maximum range 1200.
+- Base chassis: 60 HP, shield/armor 0, collision damage 50.
+- Level growth: +12 MaxHealth, +1 Armor, +2 MaxShield, +4% outgoing damage
+  per enemy level before variation.
+
+3.2 StrafeSkirmisher
+--------------------
+
+- Enemy ID: Enemy.StrafeSkirmisher.Basic
+- Combat profile: EnemyCombat.StrafeSkirmisher.Basic
+- Behavior: EnemyBehavior.StrafeSkirmisher.Basic
+- Weapon: Weapon.Projectile.EnemyTwinBladeScatter.Basic
+- Damage type: Kinetic
+- Weapon: 3 pellet shotgun, pellet başına 8 damage, 0.8 fire rate, 500 range.
+- Behavior: Strafe, 300–450 mesafe, PrimaryFire maximum range 500.
+- Base chassis: 60 HP, shield/armor 0, collision damage 50.
+- Level growth: +8 MaxHealth, +1 Armor, +1 MaxShield, +5% outgoing damage
+  per enemy level before variation.
+
+3.3 RangeKeeper
+---------------
+
+- Enemy ID: Enemy.RangeKeeper.Basic
+- Combat profile: EnemyCombat.RangeKeeper.Basic
+- Behavior: EnemyBehavior.RangeKeeper.Basic
+- Weapon: Weapon.Wave.EnemyHexagonCryoPulse.Basic
+- Damage type: Cryo
+- Weapon: 10 damage, 0.6 fire rate, 500 wave speed, 1200 range,
+  60 -> 200 width.
+- Behavior: HoldRange, 750–1050 mesafe, PrimaryFire maximum range 1100.
+- Base chassis: 100 HP, shield/armor 0, collision damage 60.
+- Level growth: +10 MaxHealth, +1 Armor, +4 MaxShield, +3.5% outgoing damage
+  per enemy level before variation.
+
+3.4 Deterministik variation
+----------------------------
+
+- Variation yalnız MaxHealth, Armor, MaxShield ve outgoing damage için
+  uygulanır.
+- Health ve outgoing damage aralığı 0.95–1.05'tir.
+- Armor ve MaxShield aralığı 0.90–1.10'dur.
+- Variation seed'i global RNG veya std::hash kullanmaz.
+- Seed, encounter seed + wave index + wave-local spawn index + ContentId
+  hash-combine üzerinden türetilir.
+- Aynı encounter definition ve aynı seed aynı EnemySpawnContext değerlerini
+  üretir; aynı wave içindeki farklı spawn'lar farklı seed alır.
+- Seed 0 nötr variation anlamına gelir.
+- Variation; cadence, cooldown, movement mesafesi, projectile count, behavior
+  modu, ability/weapon loadout veya damage type'ı değiştirmez.
+
+
+4. ENCOUNTER WAVE FOUNDATION — TAMAMLANANLAR
+============================================
+
+4.1 EncounterWaveRuntime sorumluluğu
+-------------------------------------
+
+EncounterWaveRuntime küçük ve generic wave state machine'dir. Arena onun
+üstünde player lifecycle ve presentation bağlamını taşır.
+
+State akışı:
+
+  Idle -> Spawning -> WaitingForClear -> InterWaveDelay -> Spawning
+                                       -> Completed
+                                  -> Failed
+
+- Runtime yalnız kendi callback'i ile spawn ettiği EnemyActor referanslarını
+  izler.
+- Harici enemy, dummy veya stage actor'ı clear gate'i etkilemez.
+- Spawn callback EnemyFactory zincirine EnemySpawnContext ile bağlanır.
+- Spawn interval büyük deltaTime geldiğinde kalan zamanı tüketir; bir frame'de
+  interval atlanıp spawn kaybolmaz.
+- Final wave temizlendiğinde nextWaveDelay beklenmeden Completed olur.
+- Reset yalnız runtime-owned wave state'i, callback'i ve tracked reference
+  listesini temizler; dış actor'ları yok etmez.
+- Spawn failure runtime'ı Failed yapar ve failure reason okunabilir kalır.
+
+4.2 Arena test encounter ayarı
+------------------------------
+
+- ArenaTestLevel şu anda üç authored test wave kullanır.
+- EncounterProgression arena ayarı:
+
+  endless cycle
+  first wave target = 3
+  enemy count = +1 per wave
+  enemyLevelEveryWaves = 3
+  maximumEnemyLevel = 15
+  maximumConcurrentEnemies = 24
+  seed = 1337
+
+- Level-up wave'inde hedef enemy sayısından bilinçli 2 enemy düşülür; bu
+  level artışını sayısal olarak kısmen telafi eden vertical-slice test kararıdır.
+  Örnek: 3, 4, 5, 4, 5, 6, 5, ...
+- Endless cycle üç authored template'i döngüsel kullanır; ek enemy'ler
+  authored entry'lere round-robin dağıtılır.
+- Eski Start(definitions, callback) çağrıları için default progression
+  nötrdür: ek enemy 0, maximum level 1.
+- Bu wave kompozisyonu, sayı, level cap ve interval değerleri production
+  encounter balance değildir. Playtest sonrası değiştirilebilir.
+
+4.3 EnemySpawnContext
+----------------------
+
+- EnemySpawnContext level ve variationSeed taşır.
+- EnemyFactory level < 1 olan context'i reddeder.
+- Factory -> EnemyActor -> EnemyRuntime zinciri canonical context'i taşır.
+- Eski factory overload'u geriye uyumluluk için vardır ve nötr level-1 context
+  üretir.
+
+4.4 Encounter snapshot kontratı
+--------------------------------
+
+EncounterWaveSnapshot, EncounterWaveRuntime'ın salt-okunur görünümüdür.
+Snapshot mutable gameplay state değildir ve kendi cleanup/hesap sahipliği
+oluşturmaz.
+
+Alanlar:
+
+- state
+- currentWaveNumber (oyuncu için 1 tabanlı; Idle'da 0)
+- totalWaveCount
+- plannedEnemyCount
+- spawnedEnemyCount
+- aliveEnemyCount
+- remainingSpawnCount
+- interWaveRemainingTime
+- enemyLevel
+
+Kurallar:
+
+- İç runtime index'i 0 tabanlı kalır; UI için 1 tabanlı sayıya dönüştürme tek
+  snapshot sınırında yapılır.
+- plannedEnemyCount progression uygulanmış toplam spawn sayısıdır.
+- spawnedEnemyCount başarılı spawn edilmiş enemy sayısıdır.
+- aliveEnemyCount expired veya pending-destroy olmayan runtime-owned enemy
+  sayısıdır.
+- remainingSpawnCount max(0, planned - spawned) olarak hesaplanır.
+- interWaveRemainingTime yalnız InterWaveDelay state'inde doludur; diğer
+  state'lerde 0'dır.
+- BuildSnapshot() const ve yan etkisizdir.
+- Expired/pending-destroy weak reference temizliği BuildSnapshot'ta değil,
+  runtime Tick akışında canonical olarak yapılır.
+- HUD/debug tüketicileri mOwnedEnemies listesini dolaşmak veya wave
+  matematiğini tekrar yazmak yerine snapshot tüketmelidir.
+
+
+5. ARENA LIFECYCLE — TAMAMLANANLAR
+==================================
+
+5.1 Arena state sahipliği
+-------------------------
+
+- ArenaTestLevel kendi ArenaEncounterState değerini taşır:
+  Idle / Running / Completed / Failed.
+- Arena state, EncounterWaveState ile aynı şey değildir ve birleştirilmez.
+- EncounterWaveState spawn/clear/delay mekanizmasını temsil eder.
+- ArenaEncounterState player varlığı, player ölümü, restart ve arena-owned
+  cleanup sonuçlarını temsil eder.
+
+5.2 Start, player death ve restart
+----------------------------------
+
+- Aktif player ship yoksa StartEncounter false döner ve Arena state Failed
+  olur; encounter yanlışlıkla Running'e geçmez.
+- Player öldüğünde yalnız encounter-owned düşmanlar destroy edilir.
+- Harici player, dummy ve actor'lar encounter failure cleanup tarafından
+  yok edilmez.
+- Completed state yalnız bir kez atanır.
+- RestartEncounter reset + fresh StartEncounter yolunu kullanır.
+- Arena level restart:
+
+  1. Encounter-owned state temizlenir.
+  2. Mevcut player ship, owner callback'leri hâlâ geçerliyken yok edilir.
+  3. PlayerRespawnSystem pending state temizlenir.
+  4. GameLevel restart PlayerManager'ı resetler.
+  5. Yeni player ship spawn edilir.
+  6. Fresh encounter Running durumuna geçer.
+
+5.3 PlayerRespawnSystem callback güvenliği
+------------------------------------------
+
+- PlayerRespawnSystem, player ship onActorDestroyed delegate handle'ını saklar.
+- Clear() timer'ı temizler, handle geçerliyse ship delegate'inden unbind eder,
+  handle'ı resetler ve pending/current state'i boşaltır.
+- Destructor Clear() çağırır.
+- Bu kural level yıkımından sonra saklanmış ship'in callback yayınlaması gibi
+  durumlarda PlayerRespawnSystem'a dangling çağrı kalmamasını hedefler.
+
+
+6. UYGULAMA KURALLARI VE ÇALIŞMA BİÇİMİ
+========================================
+
+6.1 Mimari ve sorumluluk kuralları
+----------------------------------
+
+- Bir kimlik türünün tek canonical sahibi olur. GameplayTag, AttributeId,
+  ContentId, enum selector veya registry selector için ikinci kaynak
+  oluşturulmaz.
+- JSON yalnız content/config sınırıdır. Runtime JSON string'i gameplay tag
+  veya attribute kimliği yerine geçmez.
+- Loader validation strict olmalıdır: unknown alanlar, yanlış tipler, duplicate
+  IDs, eksik referanslar ve geçersiz range/slot kombinasyonları sessizce
+  atlanmaz.
+- Generic sistemleri yalnız ortak gerçekten varsa genişlet. Bir enemy türünün
+  veya bir weapon handler'ın özel ihtiyacı için catch-all struct, std::any,
+  büyük optional alan yığını veya paralel runtime tasarlama.
+- EnemyRuntime, EnemyBehaviorRuntime, EncounterWaveRuntime, ArenaTestLevel,
+  HUD controller ve GameHUD farklı sahiplik sınırlarıdır. Bir katman diğerinin
+  iç state'ini doğrudan taşımamalı veya yeniden hesaplamamalıdır.
+- Dummy ve legacy stage kodu yeni generic enemy/encounter sahipliğiyle
+  karıştırılmamalıdır.
+
+6.2 C++ yazım kuralları
+-----------------------
+
+- Kısa fonksiyon imzaları, return ifadeleri, initializer ve kısa çağrılar
+  gereksiz satırlara bölünmez.
+- Normal C++ block indentation kullanılır.
+- Uzun ifade okunabilirliği gerçekten artırıyorsa satır bölünür; yalnız dikey
+  hizalama için yeni satır açılmaz.
+- Kısa örnek:
+
+  std::ifstream input{ filePath, std::ios::in | std::ios::binary };
+  return Result{ std::nullopt, message };
+
+- Büyük OR zincirleri veya ad-hoc whitelist'ler yeniden değerlendirilmelidir.
+  Canonical attribute kümeleri varsa uygun existing registry/schema/collection
+  kullanılmalı; karar mantığı okunabilir helper'a ayrılmalıdır.
+
+6.3 Değişiklik disiplini
+------------------------
+
+- Önce direct owner ve en yakın benzer feature okunur; güvenli entegrasyon
+  yolu bulunduktan sonra scope dışına taşmadan implementasyon yapılır.
+- Dirty worktree içindeki ilgisiz değişikliklere dokunulmaz.
+- Yeni runtime source, gerekli CMake hedeflerine bağlanır. Runtime/content/
+  registry/CMake değişikliğinde LightYearsGame ve LightYearsGasLiteTests
+  bağlantısı birlikte doğrulanır.
+- Build başarılı olması gameplay kanıtı değildir. Sadece ilgili dar runtime,
+  content veya lifecycle kontratı için hedefli test eklenir.
+- Her küçük değer değişiminde geniş ve gereksiz test paketi yazılmaz; kritik
+  contract, lifecycle, ownership veya regresyon varsa test yazılır.
+- Test kaynaklarının LightYearsGame/tests/ altında yerel kalması bilinçli
+  tercihtir. Bu nedenle git ignore, local testlerin çalışmadığı veya önemsiz
+  olduğu anlamına gelmez.
+- Commit oluşturma ancak açıkça istenirse yapılır.
+
+
+7. TARİHSEL TEST / BUILD DURUMU (15 EYLÜL SNAPSHOT'I)
+=====================================================
+
+Bu bölüm 15 Eylül 2026 tarihli uygulama kaydının kanıtlarını taşır. 20 Eylül
+2026 docs-only denetiminde build/test çalıştırılmadı; aşağıdaki sonuçlar güncel
+build kanıtı olarak kullanılmamalıdır.
+
+- LightYearsGame build başarılı.
+- LightYearsContentTests build ve çalıştırma başarılı.
+- LightYearsGasLiteTests build ve çalıştırma başarılı; exit code 0.
+- CTest raporunda LightYearsGasLiteCore, LightYearsEngineLifetime,
+  LightYearsContent ve LightYearsPrimaryWeapon suite'leri geçti.
+- Enemy Foundation testleri; initialization/rollback, slot conflicts,
+  multi-weapon/ability binding, behavior slot command, profile validation,
+  range coverage, factory spawn, gerçek projectile/wave attack, enemy death
+  cleanup, level/variation progression ve snapshot kontratını kapsar.
+- Arena lifecycle testleri; playerless start failure, player death failure,
+  external actor korunması, restart fresh player/encounter ve destroy delegate
+  cleanup yolunu kapsar.
+- Encounter testleri; wave order, spawn interval, büyük deltaTime, clear gate,
+  final completion, reset, failure, deterministic seed, count/level
+  progression ve snapshot alanlarını kapsar.
+- git diff --check kaynakta whitespace hatası göstermemiştir. docs/ ve tests/
+  local ignore altında olduğunda bu araç bu dosyaları takip etmez; ilgili
+  dosyaların biçimi ayrıca gözle kontrol edilir.
+
+
+8. TAMAMLANAN SNAPSHOT / HUD PARÇASI
+====================================
+
+8.1 Minimal Encounter HUD
+-------------------------
+
+Durum: IMPLEMENTE EDİLDİ.
+
+Amaç: Arena vertical slice içinde oyuncunun wave durumunu görebilmesi.
+
+HUD yalnız EncounterWaveSnapshot tüketir. Wave state, live enemy count,
+progression veya timing hesabını yeniden yazmaz.
+
+Hedef metinler:
+
+  WAVE 2 / 3
+  ENEMIES 4  •  LEVEL 2
+
+InterWaveDelay örneği:
+
+  WAVE 2 CLEARED
+  NEXT WAVE IN 2
+
+Completed örneği:
+
+  ENCOUNTER COMPLETE
+
+Uygulanan mimari:
+
+- Yeni presentation/hud/encounter/EncounterHUDController.
+- Controller, GameHUD weak reference'i ve side-effect-free snapshot provider
+  alır.
+- Provider raw this yakalamaz; level lifetime'ı weak ownership üzerinden
+  korunur.
+- GameLevel private mHUDControllers listesini dışarı açmaz. Derived level
+  extension için protected AddHUDController(shared_ptr<HUDController>) API'si
+  eklenir; mevcut controller kayıtları da bu API'yi kullanır.
+- ArenaTestLevel, base HUD controller'ları kurduktan sonra EncounterHUDController
+  kaydeder.
+- Controller iki TextWidget ile sunum yapabilir: wave title ve detail text.
+- Existing mTopCenterText arena boundary warning'e aittir; encounter HUD onu
+  tekrar kullanmaz ve warning ile widget ownership yarışına girmez.
+- Active wave için presentation threat count:
+
+  aliveEnemyCount + remainingSpawnCount
+
+  olur. Bu yalnız UI anlamıdır; gameplay/runtime hesabı değildir.
+- Inter-wave countdown presentation'da ceil(interWaveRemainingTime) ile
+  gösterilebilir. Bu, timer matematiğini değiştirmez.
+- Idle ve Failed durumda widget'lar gizlenir. Completed durumda completion
+  metni gösterilir. Ödül/victory/game-over akışı tetiklenmez.
+- Widget lifetime controller'a aittir. Controller destroy olurken HUD yaşıyorsa
+  widget'lar kaldırılır; cleanup idempotent olmalıdır.
+- Snapshot cache yalnız SetString çağrılarını azaltan presentation cache'i
+  olabilir; ikinci gameplay state machine oluşturmaz.
+
+Bu parçada YAPILMAYACAKLAR:
+
+- Wave JSON migration.
+- Encounter reward/drop sistemi.
+- Victory veya game-over redesign.
+- Enemy/Fighter balance değişimi.
+- Spawn point değişimi.
+- Ses, büyük animasyon veya UI polish.
+- Legacy stage migration/removal.
+
+
+9. HUD SONRASI YAKIN SIRADAKİ ADIMLAR
+=====================================
+
+1. Arena vertical slice playtest ölçümü.
+   - Wave clear süreleri.
+   - Aynı anda yaşayan enemy sayısı.
+   - Player'ın aldığı toplam hasar.
+   - Shield/hull dağılımı.
+   - Enemy türü başına TTK.
+   - Reload risk penceresi.
+   - Player ölüm oranı ve arena dışına çıkma sıklığı.
+
+2. Ölçüme dayalı enemy/wave balance düzeltmesi.
+   - HP, shield, armor, outgoing damage growth.
+   - Variation sınırları.
+   - Wave count/level cadence ve cap.
+   - Weapon authored base değerleri.
+   Bu değerler test sahnesindeki geçici sayılardan kopyalanarak final karar
+   yapılmayacaktır.
+
+3. Test runner düzenlemesi.
+   - Monolitik GasLite runner, aynı executable düzenini koruyarak sistem bazlı
+     kaynaklara ayrılacak.
+   - Bu iş davranış/balance refactor'ı değildir.
+
+4. ShipDefinition legacy sahiplik temizliği.
+   - health, speed ve primaryWeaponId gibi eski alanların canonical sahipliği
+     netleştirilecek ve migration planıyla temizlenecek.
+   - Geniş, kör bir struct bölme veya toplu klasör taşıma yapılmayacak.
+
+5. LevelOne migration.
+   - Yeni encounter sistemi yeterince doğrulandıktan sonra LevelOne mevcut
+     generic EncounterWaveRuntime / EnemyFactory akışına geçirilecek.
+   - Ardından eski stage/wave sınıfları için silme planı yapılacak.
+
+6. Daha uzak gelecek.
+   - Reward/drop ve objective sistemi.
+   - Elite, affix, boss, procedural director.
+   - Threat, behavior tree, coordinated formations ve gelişmiş AI.
+   - Encounter definition JSON/content migration.
+   - Chapter/node/run/metaprogression yapısı.
+
+
+10. AÇIK TASARIM SORULARI
+=========================
+
+- Enemy level başına Health, Shield, Armor ve outgoing damage değerleri
+  playtestte hangi bandı hedeflemeli?
+- Wave count ve enemy level artışı hangi cadence ile oyuncu loadout growth'u
+  karşısında anlamlı kalır?
+- Health/Armor/Shield/outgoing variation aralıkları hangi noktada aynı enemy
+  kimliğini bozacak kadar geniş olur?
+- Encounter completion sonrası ödül, seçim veya bir sonraki node geçişi hangi
+  sistem tarafından sahiplenilecek?
+- Mevcut three-wave fixture ne zaman data-driven encounter definition'a
+  taşınmalı? Cevap: HUD ve ilk playtestten sonra, birden çok encounter recipe
+  ihtiyacı gerçekten doğduğunda.
+- Advanced AI için behavior tree/state machine gereksinimi hangi shipped
+  düşman davranışının parametrik Approach/HoldRange/Strafe modelini aşmasıyla
+  kanıtlanacak?
+
+
+11. KISA DURUM ÖZETİ
+====================
+
+TAMAMLANDI
+
+- Data-driven generic EnemyActor / EnemyRuntime foundation.
+- Multi-weapon ve ability loadout altyapısı.
+- Transactional enemy initialization/rollback ve owned cleanup.
+- Approach, Strafe, HoldRange behavior; slot command priority/retry modeli.
+- Üç gerçek vertical-slice enemy ve range/content validation.
+- Enemy level growth, deterministic variation ve common outgoing multiplier.
+- Generic encounter wave runtime; count/level progression, seed ve clear gate.
+- Arena encounter lifecycle, player death/restart ownership ve respawn callback
+  cleanup.
+- Read-only EncounterWaveSnapshot kontratı.
+
+TAMAMLANAN SON PARÇA
+
+- Snapshot-driven minimal encounter HUD: `EncounterHUDController` artık
+  `EncounterWaveSnapshot` tüketerek wave, threat, level, countdown ve completion
+  metinlerini gösteriyor. Controller wave/enemy matematiğini yeniden hesaplamıyor.
+
+HENÜZ YAPILMAYANLAR
+
+- Ödül/victory loop.
+- Production enemy balance.
+- Boss, elite, affix, director ve gelişmiş AI.
+- LevelOne migration ve legacy stage silme.
+- Encounter JSON recipe sistemi.
+- Run/chapter/node/metaprogression.

@@ -23,14 +23,6 @@ namespace sas
 			}
 			return false;
 		}
-		if (!isPassive && definition.slot == AbilitySlot::None)
-		{
-			if (failureReason)
-			{
-				*failureReason = "Active abilities require an input slot.";
-			}
-			return false;
-		}
 		if (isPassive &&
 			definition.activationPolicy == AbilityActivationPolicy::Passive &&
 			definition.lifetimePolicy != AbilityLifetimePolicy::UntilCancelled)

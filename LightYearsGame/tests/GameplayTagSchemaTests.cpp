@@ -106,10 +106,10 @@ int main()
 		return Fail("Shared category, status, effect, or combat-event tag was rejected");
 	}
 	if (!content::ContentIdSchema::ValidateAbilityId(
-			"Ability.Offense.SunBeam.Strike.Basic",
+		"Ability.Offense.SunBeam.Strike.Basic",
 			&failureReason
 		) || !content::ContentIdSchema::ValidateEffectId(
-			"Effect.Status.Damage.Cryo.Buildup",
+			"Effect.Status.Damage.Cryo.Slowed",
 			&failureReason
 		) || !content::ContentIdSchema::ValidateAbilityActorDefinitionId(
 			"Actor.Ability.SunBeam.Strike.Basic",

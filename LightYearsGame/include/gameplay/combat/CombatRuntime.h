@@ -61,6 +61,7 @@ namespace ly
 		}
 
 		void ProcessIncomingDamage(DamageContext& context);
+		void ApplyHullDamageMitigation(DamageContext& context);
 		void NotifyDamageResolved(const DamageContext& context);
 
 		Delegate<const DamageContext&> onDamageProcessed;

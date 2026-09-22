@@ -42,12 +42,7 @@ namespace AbilityData::Definitions
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::MaximumPushInitialSpeed, 760.f, 0.f },
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::InnerPushMultiplier, 1.2f, 1.f },
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::RecoilInitialSpeed, 800.f, 0.f },
-			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::RecoilDuration, 0.5f, 0.01f },
-			// Inner/outer stack count is selected at hit time; these values define
-			// the shared Thermal status instance that receives those stacks.
-			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::BurnDamagePerSecond, 1.f, 0.f },
-			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::BurnDuration, 3.f, 0.f },
-			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::BurnMaxStacks, 4.f, 1.f }
+			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::RecoilDuration, 0.5f, 0.01f }
 		};
 		definition.scalingRules = {
 			sas::AttributeScalingRule{

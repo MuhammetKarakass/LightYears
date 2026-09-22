@@ -15,7 +15,6 @@ namespace ly
 	{
 		constexpr float BaseCooldown = 13.f;
 		constexpr float DamagePerLevel = 4.f;
-		constexpr float SlowPerLevel = 0.01f;
 		constexpr float CooldownPerLevel = -0.20f;
 
 		bool NearlyEqual(float left, float right)
@@ -104,11 +103,7 @@ namespace ly
 			CollisionAttributeIds::Radius,
 			AbilityData::CryoBola::Actor::Projectile::ProjectileSpeed,
 			AbilityData::CryoBola::Actor::Projectile::RuptureRadius,
-			DamageAttributeIds::CryoBuildupPerHit,
-			DamageAttributeIds::CryoBuildupRequired,
-			DamageAttributeIds::CryoBuildupDuration,
-			DamageAttributeIds::CryoSlowPercent,
-			DamageAttributeIds::CryoSlowDuration
+			DamageAttributeIds::CryoBuildupPerHit
 		})
 		{
 			if (!validProjectile || !sas::FindAttribute(projectile->attributes, required))
@@ -121,9 +116,8 @@ namespace ly
 		bool validProgression = definition.levelProgression.size() == 14;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (!validProgression || step.attributeModifiers.size() != 3 ||
+			if (!validProgression || step.attributeModifiers.size() != 2 ||
 				!HasModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-				!HasModifier(step, DamageAttributeIds::CryoSlowPercent, SlowPerLevel) ||
 				!HasModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
 			{
 				validProgression = false;

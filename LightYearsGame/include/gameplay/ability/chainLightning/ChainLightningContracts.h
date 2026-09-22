@@ -70,14 +70,5 @@ namespace AbilityData::ChainLightning
 		inline static const sas::AttributeId ElectricStacks{
 			"Ability.Offense.ChainLightning.ElectricStacks"
 		};
-		inline static const sas::AttributeId ElectricDamageTakenMultiplierPerStack{
-			"Ability.Offense.ChainLightning.ElectricDamageTakenMultiplierPerStack"
-		};
-		inline static const sas::AttributeId ElectricDuration{
-			"Ability.Offense.ChainLightning.ElectricDuration"
-		};
-		inline static const sas::AttributeId ElectricMaxStacks{
-			"Ability.Offense.ChainLightning.ElectricMaxStacks"
-		};
 	};
 }

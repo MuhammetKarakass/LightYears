@@ -47,6 +47,7 @@ namespace sas
 		GameplayEffectApplicationKind applicationKind,
 		GameplayEffectRuntimeState& state,
 		float duration,
+		float stackDecayInterval,
 		int resolvedMaxStacks
 	)
 	{
@@ -59,13 +60,14 @@ namespace sas
 		{
 			stackAdded = state.TryAddStack(resolvedMaxStacks);
 		}
-		state.RefreshDuration(duration);
+		state.RefreshDuration(duration, stackDecayInterval);
 		return stackAdded;
 	}
 
 	GameplayEffectDurationTickResult
 	GameplayEffectLifecycleOrchestrator::TickDuration(
 		GameplayEffectDurationPolicy durationPolicy,
+		GameplayEffectStackLifetimePolicy stackLifetimePolicy,
 		GameplayEffectRuntimeState& state,
 		float deltaTime
 	)
@@ -74,10 +76,31 @@ namespace sas
 		{
 			return {};
 		}
-		return GameplayEffectDurationTickResult{
-			true,
-			state.TickDuration(deltaTime)
-		};
+		if (stackLifetimePolicy == GameplayEffectStackLifetimePolicy::DecayAfterDuration)
+		{
+			const bool stackChangedOrExpired = state.TickStackDecay(deltaTime);
+			return GameplayEffectDurationTickResult{
+				stackChangedOrExpired || deltaTime > 0.f,
+				state.stackCount == 0
+			};
+		}
+		return GameplayEffectDurationTickResult{ true, state.TickDuration(deltaTime) };
+	}
+
+	float GameplayEffectLifecycleOrchestrator::GetTickSliceDuration(
+		GameplayEffectDurationPolicy durationPolicy,
+		GameplayEffectStackLifetimePolicy stackLifetimePolicy,
+		const GameplayEffectRuntimeState& state,
+		float deltaTime
+	)
+	{
+		if (durationPolicy != GameplayEffectDurationPolicy::Duration ||
+			stackLifetimePolicy != GameplayEffectStackLifetimePolicy::DecayAfterDuration ||
+			deltaTime <= 0.f)
+		{
+			return deltaTime;
+		}
+		return std::min(deltaTime, std::max(0.f, state.remainingDuration));
 	}
 
 	bool GameplayEffectLifecycleOrchestrator::CanRefreshDuration(

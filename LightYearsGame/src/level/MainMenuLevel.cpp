@@ -2,7 +2,7 @@
 #include "widget/MainMenuHUD.h"
 #include "framework/Application.h"
 #include "framework/AudioManager.h"
-#include "level/LevelOne.h"
+#include "level/ArenaTestLevel.h"
 
 namespace ly
 {
@@ -31,10 +31,10 @@ namespace ly
 
 	void MainMenuLevel::StartGame()
 	{
-		// Menü müziðini durdur
+		// Stop menu music.
 		AudioManager::GetAudioManager().StopMusic();
 		
-		GetApplication()->LoadWorld<LevelOne>();
+		GetApplication()->LoadWorld<ArenaTestLevel>();
 	}
 
 	void MainMenuLevel::QuitGame()

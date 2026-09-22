@@ -29,10 +29,6 @@ namespace AbilityData::SolarBombardment
 			sas::GameplayAttribute{ Attribute::OuterIgniteStacks, 2.f, 1.f },
 			sas::GameplayAttribute{ Attribute::MinTravelTime, 0.8f, 0.01f },
 			sas::GameplayAttribute{ Attribute::MaxTravelTime, 1.6f, 0.01f },
-			sas::GameplayAttribute{ ly::DamageAttributeIds::IgniteStacks, 4.f, 0.f },
-			sas::GameplayAttribute{ ly::DamageAttributeIds::BurnDamagePerSecond, 1.f, 0.f },
-			sas::GameplayAttribute{ ly::DamageAttributeIds::BurnDuration, 3.f, 0.f },
-			sas::GameplayAttribute{ ly::DamageAttributeIds::BurnMaxStacks, 4.f, 1.f },
 			sas::GameplayAttribute{ ly::CollisionAttributeIds::Radius, 1.f, 0.f }
 		};
 		return definition;

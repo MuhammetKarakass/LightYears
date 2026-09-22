@@ -5,6 +5,7 @@
 #include "effects/GameplayEffectCollection.h"
 #include "effects/GameplayEffectLifecycleOrchestrator.h"
 #include "effects/GameplayEffectRuntimeEntry.h"
+#include "effects/GameplayEffectSpec.h"
 
 #include <cstddef>
 #include <cmath>
@@ -14,17 +15,19 @@
 
 namespace sas
 {
-	template <typename ActiveEffect>
+	template <typename ActiveEffect, typename IncomingSpec = GameplayEffectSpec>
 	struct GameplayEffectRuntimeCallbacks
 	{
 		std::function<void(ActiveEffect&, const GameplayEffectSourceContext&)> bindSource;
 		std::function<void(ActiveEffect&)> initialize;
 		std::function<void(ActiveEffect&)> refresh;
+		std::function<bool(ActiveEffect&, const IncomingSpec&)> cappedReapply;
 		std::function<bool(ActiveEffect&)> addStack;
 		std::function<GameplayEffectBehaviorResult(ActiveEffect&, float)> tick;
 		std::function<void(const GameplayEffectBehaviorEvent&)> behaviorEvent;
 		std::function<void(ActiveEffect&)> activated;
 		std::function<void(ActiveEffect&)> changed;
+		std::function<void(ActiveEffect&)> stackChanged;
 		std::function<void(ActiveEffect&)> removing;
 		std::function<void(GameplayEffectHandle)> applied;
 		std::function<void(GameplayEffectHandle)> removed;
@@ -35,7 +38,7 @@ namespace sas
 	class GameplayEffectRuntimeSystem
 	{
 	public:
-		using Callbacks = GameplayEffectRuntimeCallbacks<ActiveEffect>;
+		using Callbacks = GameplayEffectRuntimeCallbacks<ActiveEffect, Spec>;
 		using Collection = GameplayEffectCollection<ActiveEffect>;
 
 		GameplayEffectRuntimeSystem(
@@ -72,7 +75,11 @@ namespace sas
 			const GameplayEffectDefinition& definition = spec.definition;
 			if (!CanApplyEffect(definition) || spec.maxStacks < 1 ||
 				(definition.durationPolicy == GameplayEffectDurationPolicy::Duration &&
-					(!std::isfinite(spec.duration) || spec.duration <= 0.f)))
+					(!std::isfinite(spec.duration) || spec.duration <= 0.f)) ||
+				(definition.stackLifetimePolicy ==
+						GameplayEffectStackLifetimePolicy::DecayAfterDuration &&
+					(!std::isfinite(definition.stackDecayInterval) ||
+						definition.stackDecayInterval <= 0.f)))
 			{
 				return {};
 			}
@@ -136,10 +143,19 @@ namespace sas
 					{
 						return {};
 					}
+					if (mCallbacks.cappedReapply)
+					{
+						mCallbacks.cappedReapply(*stackingTarget, spec);
+						if (!FindEffect(stackingHandle))
+						{
+							return {};
+						}
+					}
 					GameplayEffectLifecycleOrchestrator::ApplyStackingState(
 						applicationKind,
 						*stackingTarget,
 						spec.duration,
+						spec.definition.stackDecayInterval,
 						spec.maxStacks
 					);
 				}
@@ -156,6 +172,7 @@ namespace sas
 							applicationKind,
 							*stackingTarget,
 							spec.duration,
+							spec.definition.stackDecayInterval,
 							spec.maxStacks
 						);
 					if (applicationKind == GameplayEffectApplicationKind::RefreshActive)
@@ -181,6 +198,7 @@ namespace sas
 						ApplyGameplayEffectModifiers(
 							stackingTarget->spec, *stackingTarget, mAttributes
 						);
+						NotifyStackChanged(*stackingTarget);
 					}
 				}
 				if (!FindEffect(stackingHandle))
@@ -198,7 +216,12 @@ namespace sas
 
 			ActiveEffect& effect = mActiveEffects.Emplace(newHandle);
 			effect.spec = spec;
-			effect.Initialize(newHandle, spec.duration, spec.attributes);
+			effect.Initialize(
+				newHandle,
+				spec.duration,
+				spec.definition.stackDecayInterval,
+				spec.attributes
+			);
 			BindSource(effect, context);
 			if (!FindEffect(newHandle))
 			{
@@ -227,7 +250,10 @@ namespace sas
 			{
 				return false;
 			}
-			effect->RefreshDuration(effect->spec.duration);
+			effect->RefreshDuration(
+				effect->spec.duration,
+				effect->spec.definition.stackDecayInterval
+			);
 			NotifyChanged(*effect);
 			NotifyCollectionChanged();
 			return true;
@@ -295,6 +321,140 @@ namespace sas
 		}
 
 	private:
+		bool IsDecayAfterDuration(const ActiveEffect& effect) const
+		{
+			return effect.spec.definition.durationPolicy == GameplayEffectDurationPolicy::Duration &&
+				effect.spec.definition.stackLifetimePolicy == GameplayEffectStackLifetimePolicy::DecayAfterDuration;
+		}
+
+		void TickDecayEffect(GameplayEffectHandle effectHandle, float deltaTime)
+		{
+			float remainingDeltaTime = deltaTime;
+			auto notifyDurationChange = [&](bool expired, bool stackChanged) -> bool
+			{
+				if (!stackChanged)
+				{
+					if (expired)
+					{
+						RemoveEffect(effectHandle);
+						return false;
+					}
+					return true;
+				}
+
+				ActiveEffect* current = FindEffect(effectHandle);
+				if (!current)
+				{
+					return false;
+				}
+				NotifyStackChanged(*current);
+				current = FindEffect(effectHandle);
+				if (!current)
+				{
+					return false;
+				}
+				NotifyChanged(*current);
+				if (!FindEffect(effectHandle))
+				{
+					return false;
+				}
+				if (expired)
+				{
+					RemoveEffect(effectHandle);
+					return false;
+				}
+				NotifyCollectionChanged();
+				return true;
+			};
+
+			while (remainingDeltaTime > 0.f)
+			{
+				ActiveEffect* effect = FindEffect(effectHandle);
+				if (!effect || !IsDecayAfterDuration(*effect))
+				{
+					return;
+				}
+
+				const float slice = GameplayEffectLifecycleOrchestrator::GetTickSliceDuration(
+					effect->spec.definition.durationPolicy,
+					effect->spec.definition.stackLifetimePolicy,
+					*effect,
+					remainingDeltaTime);
+				if (slice <= 0.f)
+				{
+					const int stackCountBeforeDurationTick = effect->stackCount;
+					const GameplayEffectDurationTickResult durationTick =
+						GameplayEffectLifecycleOrchestrator::TickDuration(
+							effect->spec.definition.durationPolicy,
+							effect->spec.definition.stackLifetimePolicy,
+							*effect,
+							0.f);
+					const bool stackChanged = effect->stackCount != stackCountBeforeDurationTick;
+					if (!stackChanged && !durationTick.expired)
+					{
+						return;
+					}
+					if (!notifyDurationChange(durationTick.expired, stackChanged))
+					{
+						return;
+					}
+					continue;
+				}
+
+				const GameplayEffectBehaviorResult behaviorTick =
+					mCallbacks.tick
+						? mCallbacks.tick(*effect, slice)
+						: GameplayEffectBehaviorResult{};
+				for (const GameplayEffectBehaviorEvent& event : behaviorTick.events)
+				{
+					if (mCallbacks.behaviorEvent)
+					{
+						mCallbacks.behaviorEvent(event);
+					}
+					if (!FindEffect(effectHandle))
+					{
+						return;
+					}
+				}
+				if (behaviorTick.changed)
+				{
+					if (ActiveEffect* current = FindEffect(effectHandle))
+					{
+						NotifyChanged(*current);
+					}
+					if (!FindEffect(effectHandle))
+					{
+						return;
+					}
+					NotifyCollectionChanged();
+				}
+				if (behaviorTick.removeEffect)
+				{
+					RemoveEffect(effectHandle);
+					return;
+				}
+
+				effect = FindEffect(effectHandle);
+				if (!effect || !IsDecayAfterDuration(*effect))
+				{
+					return;
+				}
+				const int stackCountBeforeDurationTick = effect->stackCount;
+				const GameplayEffectDurationTickResult durationTick =
+					GameplayEffectLifecycleOrchestrator::TickDuration(
+						effect->spec.definition.durationPolicy,
+						effect->spec.definition.stackLifetimePolicy,
+						*effect,
+						slice);
+				const bool stackChanged = effect->stackCount != stackCountBeforeDurationTick;
+				if (!notifyDurationChange(durationTick.expired, stackChanged))
+				{
+					return;
+				}
+				remainingDeltaTime -= slice;
+			}
+		}
+
 		void TickHandles(
 			const std::vector<GameplayEffectHandle>& handles,
 			float deltaTime
@@ -305,6 +465,11 @@ namespace sas
 				ActiveEffect* effect = FindEffect(effectHandle);
 				if (!effect)
 				{
+					continue;
+				}
+				if (IsDecayAfterDuration(*effect))
+				{
+					TickDecayEffect(effectHandle, deltaTime);
 					continue;
 				}
 				const GameplayEffectBehaviorResult behaviorTick =
@@ -340,12 +505,31 @@ namespace sas
 				{
 					continue;
 				}
+				const int stackCountBeforeDurationTick = effect->stackCount;
 				const GameplayEffectDurationTickResult durationTick =
 					GameplayEffectLifecycleOrchestrator::TickDuration(
-						effect->spec.definition.durationPolicy, *effect, deltaTime
+						effect->spec.definition.durationPolicy,
+						effect->spec.definition.stackLifetimePolicy,
+						*effect,
+						deltaTime
 					);
+				const bool stackChanged =
+					effect->stackCount != stackCountBeforeDurationTick;
 				if (durationTick.expired)
 				{
+					if (stackChanged)
+					{
+						if (ActiveEffect* current = FindEffect(effectHandle))
+						{
+							NotifyStackChanged(*current);
+							current = FindEffect(effectHandle);
+							if (!current)
+							{
+								continue;
+							}
+							NotifyChanged(*current);
+						}
+					}
 					RemoveEffect(effectHandle);
 					continue;
 				}
@@ -353,6 +537,15 @@ namespace sas
 				{
 					if (ActiveEffect* current = FindEffect(effectHandle))
 					{
+						if (stackChanged)
+						{
+							NotifyStackChanged(*current);
+							current = FindEffect(effectHandle);
+							if (!current)
+							{
+								continue;
+							}
+						}
 						NotifyChanged(*current);
 					}
 					NotifyCollectionChanged();
@@ -627,6 +820,11 @@ namespace sas
 		void NotifyChanged(ActiveEffect& effect)
 		{
 			if (mCallbacks.changed) mCallbacks.changed(effect);
+		}
+
+		void NotifyStackChanged(ActiveEffect& effect)
+		{
+			if (mCallbacks.stackChanged) mCallbacks.stackChanged(effect);
 		}
 
 		void NotifyRemoving(ActiveEffect& effect)

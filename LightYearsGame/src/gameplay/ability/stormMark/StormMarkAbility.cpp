@@ -4,6 +4,7 @@
 #include "framework/TimerManager.h"
 #include "framework/World.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
+#include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/stormMark/StormMarkContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
@@ -25,7 +26,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t RequiredAttributeCount = 10;
+		constexpr std::size_t RequiredAttributeCount = 7;
 		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 9.f;
 		constexpr float BaseDuration = 0.f;
@@ -36,9 +37,6 @@ namespace ly
 		constexpr float BaseStrikeDuration = 0.20f;
 		constexpr float BaseLuckPerExtraTarget = 50.f;
 		constexpr float BaseElectricStacks = 1.f;
-		constexpr float BaseElectricDamageTakenMultiplierPerStack = 0.04f;
-		constexpr float BaseElectricDuration = 3.f;
-		constexpr float BaseElectricMaxStacks = 4.f;
 		constexpr float DamagePerLevel = 4.f;
 		constexpr float CooldownPerLevel = -0.20f;
 		constexpr float Epsilon = 0.0001f;
@@ -161,6 +159,38 @@ namespace ly
 				return CollisionLayer::Player;
 			}
 			return CollisionLayer::None;
+		}
+
+		// Shared by the activation gate and the delayed strikes so both agree on what a
+		// markable target is.
+		List<targeting::TargetingCandidate> FindMarkTargets(
+			World& world,
+			Actor& owner,
+			const sf::Vector2f& origin,
+			float searchRadius,
+			int targetLimit,
+			CollisionLayer opposingLayer
+		)
+		{
+			targeting::TargetingQuery query;
+			query.source = &owner;
+			query.origin = origin;
+			query.range = searchRadius;
+			query.shape = targeting::TargetingShape::Radius;
+			query.maxTargets = static_cast<std::size_t>(std::max(1, targetLimit));
+			query.requiredTargetLayers = opposingLayer;
+			query.requireCollisionCompatibility = true;
+			query.filter = [](
+				const Actor*,
+				const Actor& candidate,
+				const targeting::TargetingCandidate&
+			)
+			{
+				// Combatant is the shared boundary for live ships. Projectiles,
+				// pickups, fields and other world actors are intentionally ignored.
+				return dynamic_cast<const Combatant*>(&candidate) != nullptr;
+			};
+			return targeting::AutoTargeting::FindTargets(world, query);
 		}
 
 		int ResolveTargetLimit(
@@ -298,46 +328,6 @@ namespace ly
 					0.f
 				),
 				BaseElectricStacks
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::StormMark::Attribute::ElectricDamageTakenMultiplierPerStack,
-				0.f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::ElectricDamageTakenMultiplierPerStack,
-					0.f
-				),
-				BaseElectricDamageTakenMultiplierPerStack
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::StormMark::Attribute::ElectricDuration,
-				0.f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::ElectricDuration,
-					0.f
-				),
-				BaseElectricDuration
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::StormMark::Attribute::ElectricMaxStacks,
-				1.f,
-				true
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::ElectricMaxStacks,
-					0.f
-				),
-				BaseElectricMaxStacks
 			);
 
 		bool validProgression = definition.levelProgression.size() ==
@@ -388,7 +378,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Storm Mark requires its electric identity, ten target/timing/status attributes, EnergyPower damage scaling, and fourteen damage/cooldown progression steps.";
+					"Storm Mark requires its electric identity, seven target/timing/status attributes, EnergyPower damage scaling, and fourteen damage/cooldown progression steps.";
 			}
 			return false;
 		}
@@ -460,30 +450,6 @@ namespace ly
 				BaseElectricStacks
 			)))
 		);
-		payload.electricDamageTakenMultiplierPerStack = std::max(
-			0.f,
-			sas::FindAttributeValue(
-				values,
-				AbilityData::StormMark::Attribute::ElectricDamageTakenMultiplierPerStack,
-				BaseElectricDamageTakenMultiplierPerStack
-			)
-		);
-		payload.electricDuration = std::max(
-			0.f,
-			sas::FindAttributeValue(
-				values,
-				AbilityData::StormMark::Attribute::ElectricDuration,
-				BaseElectricDuration
-			)
-		);
-		payload.electricMaxStacks = std::max(
-			1,
-			static_cast<int>(std::lround(sas::FindAttributeValue(
-				values,
-				AbilityData::StormMark::Attribute::ElectricMaxStacks,
-				BaseElectricMaxStacks
-			)))
-		);
 
 		const StormMarkPresentationProfile* presentationProfile =
 			PresentationProfileRegistry<StormMarkPresentationProfile>::Find(
@@ -493,6 +459,37 @@ namespace ly
 		{
 			return false;
 		}
+
+		// Pressing the mark with nothing markable in range must not spend the cooldown.
+		// Returning false leaves the ability instance untouched, so no charge or cooldown
+		// is consumed and the player can press again once a target arrives.
+		const CollisionLayer opposingLayer = GetOpposingLayer(context.owner);
+		if (opposingLayer == CollisionLayer::None ||
+			FindMarkTargets(
+				*world,
+				context.owner,
+				context.owner.GetActorLocation(),
+				searchRadius,
+				targetLimit,
+				opposingLayer
+			).empty())
+		{
+			return false;
+		}
+
+		// Show the searched area for as long as the mark takes to resolve, following the
+		// caster so the ring tracks the ship that owns the search.
+		world->SpawnActor<AreaTelegraphActor>(
+			AreaTelegraphActor::SpawnParams{
+				context.owner.GetActorLocation(),
+				searchRadius,
+				focusDuration + strikeDuration,
+				presentationProfile->searchArea,
+				AreaTelegraphAnchorMode::FollowActor,
+				AreaTelegraphProgressDriver::Timed,
+				&context.owner
+			}
+		);
 
 		const weak_ptr<Actor> ownerWeak = MakeWeakActor(&context.owner);
 		const weak_ptr<Object> timerOwner = context.owner.GetWeakPtr();
@@ -533,27 +530,14 @@ namespace ly
 					return;
 				}
 
-				targeting::TargetingQuery query;
-				query.source = owner.get();
-				query.origin = owner->GetActorLocation();
-				query.range = searchRadius;
-				query.shape = targeting::TargetingShape::Radius;
-				query.maxTargets = static_cast<std::size_t>(safeTargetLimit);
-				query.requiredTargetLayers = opposingLayer;
-				query.requireCollisionCompatibility = true;
-				query.filter = [](
-					const Actor*,
-					const Actor& candidate,
-					const targeting::TargetingCandidate&
-				)
-				{
-					// Combatant is the shared boundary for live ships. Projectiles,
-					// pickups, fields and other world actors are intentionally ignored.
-					return dynamic_cast<const Combatant*>(&candidate) != nullptr;
-				};
-
-				const List<targeting::TargetingCandidate> targets =
-					targeting::AutoTargeting::FindTargets(*world, query);
+				const List<targeting::TargetingCandidate> targets = FindMarkTargets(
+					*world,
+					*owner,
+					owner->GetActorLocation(),
+					searchRadius,
+					safeTargetLimit,
+					opposingLayer
+				);
 				if (targets.empty())
 				{
 					return;

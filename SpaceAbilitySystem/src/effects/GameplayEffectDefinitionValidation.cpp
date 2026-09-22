@@ -74,6 +74,25 @@ namespace sas
 					"' requires maxStacks >= 1."
 			);
 		}
+		if (definition.stackLifetimePolicy != GameplayEffectStackLifetimePolicy::None &&
+			(definition.durationPolicy != GameplayEffectDurationPolicy::Duration ||
+				definition.stackingPolicy != GameplayEffectStackingPolicy::Stack))
+		{
+			return Fail(
+				failureReason,
+				"Stack lifetime decay requires a duration Stack gameplay effect."
+			);
+		}
+		if (definition.stackLifetimePolicy ==
+				GameplayEffectStackLifetimePolicy::DecayAfterDuration &&
+			(!std::isfinite(definition.stackDecayInterval) ||
+				definition.stackDecayInterval <= 0.f))
+		{
+			return Fail(
+				failureReason,
+				"Stack lifetime decay requires a positive finite decay interval."
+			);
+		}
 		for (const std::pair<const char*, const std::string*> metadata : {
 			std::pair{ "category", &definition.category },
 			std::pair{ "immunityCategory", &definition.immunityCategory },

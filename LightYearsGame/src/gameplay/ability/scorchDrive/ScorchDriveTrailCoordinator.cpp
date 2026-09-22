@@ -36,7 +36,6 @@ namespace ly
 		Actor* owner,
 		float fireDamage,
 		float fireTickInterval,
-		int burnThresholdTicks,
 		float burnDuration,
 		float burnTickInterval,
 		float burnDamageRatio,
@@ -48,7 +47,6 @@ namespace ly
 		, mOwner(MakeWeakActor(owner))
 		, mFireDamage(std::max(0.f, fireDamage))
 		, mFireTickInterval(std::max(0.001f, fireTickInterval))
-		, mBurnThresholdTicks(std::max(1, burnThresholdTicks))
 		, mBurnDuration(std::max(0.f, burnDuration))
 		, mBurnTickInterval(std::max(0.f, burnTickInterval))
 		, mBurnDamageRatio(std::max(0.f, burnDamageRatio))
@@ -206,8 +204,7 @@ namespace ly
 		}
 
 		DamagePayload payload = DamageTypeSystem::BuildPayload(mDamageTags);
-		payload.igniteStacks = 1;
-		payload.burnMaxStacks = mBurnThresholdTicks;
+		payload.igniteStacks = mBurnDamageRatio > 0.f ? 1 : 0;
 		payload.burnDuration = mBurnDuration;
 		payload.burnTickInterval = mBurnTickInterval;
 		payload.burnDamagePerTick = mFireDamage * mBurnDamageRatio;

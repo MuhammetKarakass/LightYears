@@ -53,6 +53,8 @@ namespace ly
 		// Last presented values so unchanged snapshots do not rewrite widget text.
 		EncounterWaveState mLastState = EncounterWaveState::Idle;
 		size_t mLastWaveNumber = 0;
+		EncounterSequenceMode mLastSequenceMode = EncounterSequenceMode::Finite;
+		std::optional<size_t> mLastTotalWaveCount;
 		int mLastThreatCount = -1;
 		int mLastCountdownSecond = -1;
 		int mLastEnemyLevel = -1;

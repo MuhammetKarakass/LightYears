@@ -60,6 +60,12 @@ namespace ly
 			weak_ptr<SpaceShip> ship;
 			weak_ptr<TextWidget> widget;
 			float age{ 0.f };
+			// Grouping key so numbers stay stacked per ship even after the ship is gone.
+			unsigned int shipId{ 0 };
+			// Screen-space anchor captured while the ship still existed, so the number from a
+			// killing blow survives the ship's destruction instead of being erased instantly.
+			sf::Vector2f lastPixelAnchor{ 0.f, 0.f };
+			bool hasAnchor{ false };
 		};
 
 		// TEMPORARY TEST UI: damage numbers and the speed readout are prototype
@@ -80,7 +86,10 @@ namespace ly
 		weak_ptr<TextWidget> mTimerText;
 		weak_ptr<TextWidget> mCenterNotificationText;
 		List<DamageNumberEntry> mDamageNumbers;
-		std::unordered_set<SpaceShip*> mObservedDamageShips;
+		// Keyed on Object::GetUniqueID(), not on the raw actor address: destroyed enemies
+		// free their address and the spawner reuses it, so a pointer key made a fresh
+		// enemy look already observed and it never received a damage observer.
+		std::unordered_set<unsigned int> mObservedDamageShips;
 
 		weak_ptr<ValueGauge> mBossHealthBar;
 		weak_ptr<TextWidget> mBossNameText;

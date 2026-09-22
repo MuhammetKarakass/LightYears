@@ -95,10 +95,7 @@ namespace ly
 			AbilityData::Blastback::Attribute::MaximumPushInitialSpeed,
 			AbilityData::Blastback::Attribute::InnerPushMultiplier,
 			AbilityData::Blastback::Attribute::RecoilInitialSpeed,
-			AbilityData::Blastback::Attribute::RecoilDuration,
-			AbilityData::Blastback::Attribute::BurnDamagePerSecond,
-			AbilityData::Blastback::Attribute::BurnDuration,
-			AbilityData::Blastback::Attribute::BurnMaxStacks
+			AbilityData::Blastback::Attribute::RecoilDuration
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -350,23 +347,6 @@ namespace ly
 			const bool innerZone = distance <= innerRange;
 			DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
 			payload.igniteStacks = innerZone ? innerIgniteStacks : outerIgniteStacks;
-			payload.burnDamagePerSecond = std::max(0.f, FindValue(
-				values,
-				AbilityData::Blastback::Attribute::BurnDamagePerSecond,
-				1.f
-			));
-			payload.burnDuration = std::max(0.f, FindValue(
-				values,
-				AbilityData::Blastback::Attribute::BurnDuration,
-				3.f
-			));
-			payload.burnMaxStacks = std::max(1, static_cast<int>(std::lround(
-				FindValue(
-					values,
-					AbilityData::Blastback::Attribute::BurnMaxStacks,
-					4.f
-				)
-			)));
 			ApplyCombatDamage(
 				*target,
 				baseDamage * (innerZone ? innerDamageMultiplier : 1.f),

@@ -38,7 +38,6 @@ namespace ly
 		float mBaseSegmentLifetime = 5.f;
 		float mFireDamage = 0.f;
 		float mFireTickInterval = 0.25f;
-		int mBurnThresholdTicks = 4;
 		float mBurnDuration = 3.f;
 		float mBurnTickInterval = 0.5f;
 		float mBurnDamageRatio = 0.5f;

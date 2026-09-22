@@ -54,27 +54,6 @@ namespace AbilityData::Definitions
 				ly::DamageAttributeIds::CryoBuildupPerHit,
 				2.f,
 				1.f
-			},
-			sas::GameplayAttribute{
-				ly::DamageAttributeIds::CryoBuildupRequired,
-				4.f,
-				1.f
-			},
-			sas::GameplayAttribute{
-				ly::DamageAttributeIds::CryoBuildupDuration,
-				2.5f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				ly::DamageAttributeIds::CryoSlowPercent,
-				0.25f,
-				0.f,
-				1.f
-			},
-			sas::GameplayAttribute{
-				ly::DamageAttributeIds::CryoSlowDuration,
-				1.5f,
-				0.f
 			}
 		};
 		return definition;

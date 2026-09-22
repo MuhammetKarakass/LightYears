@@ -13,10 +13,32 @@ namespace ly
 {
 	namespace
 	{
-		std::unordered_map<Actor*, ProjectileReflectionReceiver*>& Receivers()
+		struct ReflectionEntry
 		{
-			static std::unordered_map<Actor*, ProjectileReflectionReceiver*> receivers;
-			return receivers;
+			// Weak identity. The key is the monotonic Object id and the entry only ever
+			// reaches the actor through this handle, so a recycled address can never be
+			// mistaken for the actor that registered.
+			weak_ptr<Actor> defender;
+			ProjectileReflectionReceiver* receiver = nullptr;
+			uint64_t generation = 0u;
+		};
+
+		std::unordered_map<unsigned int, ReflectionEntry>& ReflectionEntries()
+		{
+			static std::unordered_map<unsigned int, ReflectionEntry> entries;
+			return entries;
+		}
+
+		uint64_t NextReflectionGeneration()
+		{
+			static uint64_t generation = 0u;
+			return ++generation;
+		}
+
+		weak_ptr<Actor> MakeWeakActorHandle(Actor& actor)
+		{
+			const shared_ptr<Object> object = actor.GetWeakPtr().lock();
+			return object ? std::dynamic_pointer_cast<Actor>(object) : weak_ptr<Actor>{};
 		}
 
 		struct SurfaceLockKey
@@ -109,27 +131,80 @@ namespace ly
 		}
 	}
 
-	bool ProjectileReflectionService::RegisterReceiver(
+	ProjectileReflectionService::Registration::Registration(
+		unsigned int defenderId,
+		uint64_t generation
+	)
+		: mDefenderId(defenderId)
+		, mGeneration(generation)
+	{
+	}
+
+	ProjectileReflectionService::Registration::~Registration()
+	{
+		Reset();
+	}
+
+	ProjectileReflectionService::Registration::Registration(Registration&& other) noexcept
+		: mDefenderId(other.mDefenderId)
+		, mGeneration(other.mGeneration)
+	{
+		other.mDefenderId = 0u;
+		other.mGeneration = 0u;
+	}
+
+	ProjectileReflectionService::Registration&
+	ProjectileReflectionService::Registration::operator=(Registration&& other) noexcept
+	{
+		if (this != &other)
+		{
+			Reset();
+			mDefenderId = other.mDefenderId;
+			mGeneration = other.mGeneration;
+			other.mDefenderId = 0u;
+			other.mGeneration = 0u;
+		}
+		return *this;
+	}
+
+	void ProjectileReflectionService::Registration::Reset()
+	{
+		if (mDefenderId == 0u)
+		{
+			return;
+		}
+
+		auto& entries = ReflectionEntries();
+		const auto iterator = entries.find(mDefenderId);
+		// The generation check keeps an older token from erasing a newer registration.
+		if (iterator != entries.end() && iterator->second.generation == mGeneration)
+		{
+			entries.erase(iterator);
+		}
+		mDefenderId = 0u;
+		mGeneration = 0u;
+	}
+
+	ProjectileReflectionService::Registration ProjectileReflectionService::RegisterReceiver(
 		Actor& defender,
 		ProjectileReflectionReceiver& receiver
 	)
 	{
-		auto& receivers = Receivers();
-		const auto [iterator, inserted] = receivers.emplace(&defender, &receiver);
-		return inserted || iterator->second == &receiver;
-	}
-
-	void ProjectileReflectionService::UnregisterReceiver(
-		Actor& defender,
-		const ProjectileReflectionReceiver& receiver
-	)
-	{
-		auto& receivers = Receivers();
-		const auto iterator = receivers.find(&defender);
-		if (iterator != receivers.end() && iterator->second == &receiver)
+		const unsigned int defenderId = defender.GetUniqueID();
+		if (defenderId == 0u)
 		{
-			receivers.erase(iterator);
+			return Registration{};
 		}
+
+		const uint64_t generation = NextReflectionGeneration();
+		// Explicit replace: the newest registration wins and an earlier token for the
+		// same defender becomes inert, instead of silently keeping the old receiver.
+		ReflectionEntries()[defenderId] = ReflectionEntry{
+			MakeWeakActorHandle(defender),
+			&receiver,
+			generation
+		};
+		return Registration{ defenderId, generation };
 	}
 
 	bool ProjectileReflectionService::TryReflectProjectile(
@@ -137,9 +212,15 @@ namespace ly
 		Actor& defender
 	)
 	{
-		const auto iterator = Receivers().find(&defender);
-		return iterator != Receivers().end() && iterator->second &&
-			iterator->second->TryReflectIncomingProjectile(projectile, defender);
+		const auto iterator = ReflectionEntries().find(defender.GetUniqueID());
+		if (iterator == ReflectionEntries().end())
+		{
+			return false;
+		}
+
+		const shared_ptr<Actor> liveDefender = iterator->second.defender.lock();
+		return liveDefender.get() == &defender && iterator->second.receiver &&
+			iterator->second.receiver->TryReflectIncomingProjectile(projectile, defender);
 	}
 
 	bool ProjectileReflectionService::TryReflectProjectileAlongPath(
@@ -148,10 +229,24 @@ namespace ly
 		const sf::Vector2f& end
 	)
 	{
-		for (const auto& [defender, receiver] : Receivers())
+		auto& entries = ReflectionEntries();
+		for (auto iterator = entries.begin(); iterator != entries.end();)
 		{
-			if (!defender || !receiver || defender->GetIsPendingDestroy() ||
-				defender->GetWorld() != projectile.GetWorld())
+			const shared_ptr<Actor> defender = iterator->second.defender.lock();
+			ProjectileReflectionReceiver* receiver = iterator->second.receiver;
+			if (!defender || !receiver || defender->GetIsPendingDestroy())
+			{
+				// Dead entries are pruned here, so a long run cannot accumulate stale
+				// state from destroyed actors or retired worlds.
+				iterator = entries.erase(iterator);
+				continue;
+			}
+
+			// Advance before calling out: the receiver may end its own ability and
+			// invalidate this iterator.
+			++iterator;
+
+			if (defender->GetWorld() != projectile.GetWorld())
 			{
 				continue;
 			}

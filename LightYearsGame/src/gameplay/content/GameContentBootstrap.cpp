@@ -9,6 +9,7 @@
 #include "gameplay/ability/validation/GameAbilityDefinitionValidator.h"
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
 #include "gameplay/content/AbilityContentCatalog.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/EnemyCombatProfileCatalog.h"
 #include "gameplay/content/EnemyContentCatalog.h"
@@ -75,6 +76,20 @@ namespace ly
 			if (assetRoot.empty())
 			{
 				assetRoot = "LightYearsGame/assets";
+			}
+
+			std::string damageStatusBalanceLoadFailureReason;
+			const bool damageStatusBalanceLoaded =
+				content::DamageStatusBalanceCatalog::LoadFromFile(
+					assetRoot / "content/data/damage_status_balance.json",
+					&damageStatusBalanceLoadFailureReason
+				);
+			if (!damageStatusBalanceLoaded)
+			{
+				LogContentLoadFailure(
+					"damage status balance",
+					damageStatusBalanceLoadFailureReason
+				);
 			}
 
 			std::string weaponLoadFailureReason;
@@ -171,7 +186,8 @@ namespace ly
 				);
 			}
 
-			return weaponsLoaded && shipsLoaded && abilitiesLoaded && effectsLoaded &&
+			return damageStatusBalanceLoaded && weaponsLoaded && shipsLoaded &&
+				abilitiesLoaded && effectsLoaded &&
 				abilityContentRegistered && abilitiesValidated && effectsValidated &&
 				enemyProfilesLoaded && enemyContentLoaded;
 		}();

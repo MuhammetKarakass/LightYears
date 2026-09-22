@@ -18,11 +18,12 @@ A high-performance 2D space shooter built from scratch with a custom engine arch
   content and its source locations.
 - [Balance & Roadmap Notebook](docs/BALANCE_AND_ROADMAP_NOTEBOOK.md) — proposed
   work, design decisions, and playtest records.
-- [Vault Runtime Snapshot](docs/vault/00%20-%20Runtime%20Snapshot.md) — current
-  dirty-worktree ability, loadout, combat, projectile, and arena state.
+- [Vault Runtime Snapshot](docs/vault/00%20-%20Runtime%20Snapshot.md) — historical
+ 7 Eylül source snapshot; current runtime binding is owned by
+ `LightYearsGame/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp`.
 - [Roguelite Design](docs/Designs.md) — long-term product direction.
-- [Visual Production Plan](docs/VisualProductionPlan.md) — rendering and VFX
-  roadmap.
+- [Presentation Contract](docs/PROJECT_DOCUMENTATION.md#301-ability-presentation-profile-kontratı) — typed
+  presentation and VFX integration rules.
 
 ---
 
@@ -122,8 +123,8 @@ The shipped content model is hybrid. Runtime gameplay values for the current
 weapons, player ship, abilities, and gameplay effects are loaded from
 `LightYearsGame/assets/content/data/*.json`; C++ retains schemas, validation,
 behavior/action definitions, registries, and typed presentation profiles.
-Attachments currently have a parser but are not connected to runtime because
-the attachment mechanic is not implemented yet.
+Attachment runtime equip/resolve is present, but bootstrap and acquisition are
+not complete yet.
 
 JSON holds balance and value/reference content. C++ continues to own schemas,
 validation, gameplay tags, behavior/weapon handlers, runtime state and typed
@@ -147,7 +148,7 @@ not as the runtime source.
 
 | Library | Version | Purpose |
 |---------|---------|---------|
-| **SFML** | 3.0.1 | Graphics, Audio, Window, System |
+| **SFML** | 3.1.0 | Graphics, Audio, Window, System |
 | **Box2D** | 3.1.1 | Physics Engine |
 | **FreeType** | (via SFML) | Font Rendering |
 | **FLAC/Vorbis/Ogg** | (via SFML) | Audio Codecs |
@@ -204,10 +205,10 @@ not as the runtime source.
 | **S / ↓** | Move Down |
 | **D / →** | Move Right |
 | **Space** | Shoot |
-| **Q** | Crescent Reaver (default Ability1) |
-| **E** | Relay Prism (default Ability2) |
-| **F** | Scorch Drive (default Ability3) |
-| **R** | Rail Burst (default Ability4) |
+| **Q** | FrostMaelstrom |
+| **E** | NanoPlague |
+| **F** | SeismicCharge |
+| **R** | Cryostasis |
 | **ESC** | Pause Menu |
 
 ---

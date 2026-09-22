@@ -67,11 +67,7 @@ namespace ly
 					CommonAttributeIds::Radius,
 					CommonAttributeIds::Range,
 					AbilityData::FrozenThrong::Actor::Husk::ProjectileSpeed,
-					DamageAttributeIds::CryoBuildupPerHit,
-					DamageAttributeIds::CryoBuildupRequired,
-					DamageAttributeIds::CryoBuildupDuration,
-					DamageAttributeIds::CryoSlowPercent,
-					DamageAttributeIds::CryoSlowDuration
+					DamageAttributeIds::CryoBuildupPerHit
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindAttribute(

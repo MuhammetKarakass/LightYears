@@ -60,6 +60,7 @@ namespace ly
 
 		context.target = this;
 		mCombatRuntime.ProcessIncomingDamage(context);
+		mCombatRuntime.ApplyHullDamageMitigation(context);
 		if (context.remainingDamage > 0.f)
 		{
 			const float healthBeforeDamage = mHealthComponent.GetHealth();

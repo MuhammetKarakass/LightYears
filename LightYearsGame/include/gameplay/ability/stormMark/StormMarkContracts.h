@@ -50,14 +50,5 @@ namespace AbilityData::StormMark
 		inline static const sas::AttributeId ElectricStacks{
 			"Ability.Offense.StormMark.ElectricStacks"
 		};
-		inline static const sas::AttributeId ElectricDamageTakenMultiplierPerStack{
-			"Ability.Offense.StormMark.ElectricDamageTakenMultiplierPerStack"
-		};
-		inline static const sas::AttributeId ElectricDuration{
-			"Ability.Offense.StormMark.ElectricDuration"
-		};
-		inline static const sas::AttributeId ElectricMaxStacks{
-			"Ability.Offense.StormMark.ElectricMaxStacks"
-		};
 	};
 }

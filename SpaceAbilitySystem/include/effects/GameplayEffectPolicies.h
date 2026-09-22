@@ -16,6 +16,12 @@ namespace sas
 		Stack
 	};
 
+	enum class GameplayEffectStackLifetimePolicy
+	{
+		None,
+		DecayAfterDuration
+	};
+
 	enum class GameplayEffectDisposition
 	{
 		Beneficial,

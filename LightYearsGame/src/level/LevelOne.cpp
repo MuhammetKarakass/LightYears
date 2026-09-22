@@ -12,7 +12,6 @@
 #include "enemy/ChaosStage.h"
 #include "framework/BackGroundActor.h"
 #include "framework/BackgroundLayer.h"
-#include "enemy/InfiniteStage.h"
 #include "gameConfigs/world/EnvironmentConfig.h"
 
 namespace ly
@@ -110,12 +109,6 @@ namespace ly
 		AddGameStage(chaosStage);
 		chaosStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectChaosStageToHUD);
 
-		AddGameStage(shared_ptr<WaitStage>{new WaitStage(this, 10.f)});
-
-		shared_ptr<InfiniteStage> infStage = shared_ptr<InfiniteStage>{ new InfiniteStage(this) };
-		mInfStage = infStage;
-		AddGameStage(infStage);
-		infStage->onStageStarted.BindAction(GetWeakPtr(), &LevelOne::ConnectInfiniteStageToHUD);
 	}
 
 	void LevelOne::ConnectChaosStageToHUD()
@@ -128,17 +121,6 @@ namespace ly
 				chaosStage->onTotalChaosStarted.BindAction(hud->GetWeakPtr(), &GameHUD::ShowTimer);
 				chaosStage->onChaosTimerUpdated.BindAction(hud->GetWeakPtr(), &GameHUD::UpdateTimer);
 				chaosStage->onTotalChaosEnded.BindAction(hud->GetWeakPtr(), &GameHUD::TimerFinished);
-			}
-		}
-	}
-
-	void LevelOne::ConnectInfiniteStageToHUD()
-	{
-		if (auto infStage = mInfStage.lock())
-		{
-			if (auto hud = GetGameHUD().lock())
-			{
-				infStage->onNotification.BindAction(hud->GetWeakPtr(), &GameHUD::ShowDynamicNotification);
 			}
 		}
 	}

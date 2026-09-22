@@ -7,26 +7,49 @@ namespace sas
 	void GameplayEffectRuntimeState::Initialize(
 		GameplayEffectHandle newHandle,
 		float duration,
+		float decayInterval,
 		const GameplayAttributeList& attributes
 	)
 	{
 		handle = newHandle;
-		RefreshDuration(duration);
+		RefreshDuration(duration, decayInterval);
 		stackCount = 1;
 		appliedModifierHandles.clear();
 		ResetRuntimeAttributes(attributes);
 	}
 
-	void GameplayEffectRuntimeState::RefreshDuration(float duration)
+	void GameplayEffectRuntimeState::RefreshDuration(float duration, float decayInterval)
 	{
 		remainingDuration = duration;
 		totalDuration = duration;
+		stackDecayInterval = decayInterval;
 	}
 
 	bool GameplayEffectRuntimeState::TickDuration(float deltaTime)
 	{
 		remainingDuration -= deltaTime;
 		return remainingDuration <= 0.f;
+	}
+
+	bool GameplayEffectRuntimeState::TickStackDecay(float deltaTime)
+	{
+		if (deltaTime < 0.f || stackDecayInterval <= 0.f)
+		{
+			return false;
+		}
+		remainingDuration -= deltaTime;
+		bool stackChanged = false;
+		while (remainingDuration <= 0.f && stackCount > 0)
+		{
+			--stackCount;
+			stackChanged = true;
+			if (stackCount == 0)
+			{
+				return true;
+			}
+			remainingDuration += stackDecayInterval;
+		}
+		return stackChanged;
 	}
 
 	void GameplayEffectRuntimeState::ResetStackCount()

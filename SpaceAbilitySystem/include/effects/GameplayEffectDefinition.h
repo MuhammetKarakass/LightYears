@@ -36,5 +36,8 @@ namespace sas
 		// use this separate field so ordinary Slow effects do not immunize against
 		// other Slow effects merely because they share the same classification.
 		std::string grantedImmunityCategory;
+		GameplayEffectStackLifetimePolicy stackLifetimePolicy =
+			GameplayEffectStackLifetimePolicy::None;
+		float stackDecayInterval = 1.f;
 	};
 }

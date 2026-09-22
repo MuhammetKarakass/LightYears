@@ -61,12 +61,8 @@ namespace ly
 			// Cryostasis applies the established Cryo status contract; it only
 			// selects whether this hit contributes one field stack or four break
 			// stacks. Slow mechanics remain in DamageTypeSystem.
-			payload.cryoBuildupPerHit = std::clamp(stacks, 0, 4);
-			payload.cryoBuildupRequired = 4;
-			payload.cryoBuildupDuration = 2.5f;
-			payload.cryoSlowPercent = 0.25f;
-			payload.cryoSlowDuration = 1.5f;
-			return payload;
+		payload.cryoBuildupPerHit = std::clamp(stacks, 0, 4);
+		return payload;
 		}
 	}
 

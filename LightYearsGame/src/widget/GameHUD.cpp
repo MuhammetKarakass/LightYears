@@ -390,13 +390,20 @@ namespace ly
 		for (const weak_ptr<SpaceShip>& weakShip : currentShip->GetWorld()->GetActorsByType<SpaceShip>())
 		{
 			shared_ptr<SpaceShip> ship = weakShip.lock();
-			if (!ship || mObservedDamageShips.find(ship.get()) != mObservedDamageShips.end())
+			if (!ship)
+			{
+				continue;
+			}
+
+			// The unique id is monotonic and never recycled, unlike the actor address.
+			const unsigned int shipId = ship->GetUniqueID();
+			if (mObservedDamageShips.find(shipId) != mObservedDamageShips.end())
 			{
 				continue;
 			}
 
 			ship->onDamageTaken.BindAction(GetWeakPtr(), &GameHUD::ShipDamageTaken);
-			mObservedDamageShips.insert(ship.get());
+			mObservedDamageShips.insert(shipId);
 		}
 	}
 
@@ -422,13 +429,14 @@ namespace ly
 			"SpaceShooterRedux/Bonus/OrbitronBlack.ttf",
 			22
 		);
+		entry.shipId = ship->GetUniqueID();
 		entry.widget = widget;
 		mDamageNumbers.insert(mDamageNumbers.begin(), entry);
 
 		int sameShipCount = 0;
 		for (auto it = mDamageNumbers.begin(); it != mDamageNumbers.end();)
 		{
-			if (it->ship.lock().get() != ship)
+			if (it->shipId != entry.shipId)
 			{
 				++it;
 				continue;
@@ -468,7 +476,10 @@ namespace ly
 			it->age += std::max(0.f, deltaTime);
 			shared_ptr<SpaceShip> ship = it->ship.lock();
 			shared_ptr<TextWidget> widget = it->widget.lock();
-			if (!ship || ship->GetIsPendingDestroy() || !widget || it->age >= 1.5f)
+			// A ship killed by this very hit is already pending destroy when the damage is
+			// broadcast, so the killing blow must not drop its number. The entry lives out
+			// its full lifetime, frozen at the last position it was drawn at.
+			if (!widget || it->age >= 1.5f || (!ship && !it->hasAnchor))
 			{
 				if (widget)
 				{
@@ -485,21 +496,30 @@ namespace ly
 				{
 					break;
 				}
-				if (candidate.ship.lock().get() == ship.get())
+				if (candidate.shipId == it->shipId)
 				{
 					++slot;
 				}
 			}
 
-			const sf::FloatRect bounds = ship->GetActorGlobalBounds();
-			const sf::Vector2f worldAnchor{
-				bounds.position.x + bounds.size.x + 8.f,
-				bounds.position.y - 5.f
-			};
-			const sf::Vector2i pixelAnchor = mWindowRef->mapCoordsToPixel(
-				worldAnchor,
-				ship->GetWorld()->GetWorldView()
-			);
+			if (ship && ship->GetWorld())
+			{
+				const sf::FloatRect bounds = ship->GetActorGlobalBounds();
+				const sf::Vector2f worldAnchor{
+					bounds.position.x + bounds.size.x + 8.f,
+					bounds.position.y - 5.f
+				};
+				const sf::Vector2i pixelAnchor = mWindowRef->mapCoordsToPixel(
+					worldAnchor,
+					ship->GetWorld()->GetWorldView()
+				);
+				it->lastPixelAnchor = sf::Vector2f{
+					static_cast<float>(pixelAnchor.x),
+					static_cast<float>(pixelAnchor.y)
+				};
+				it->hasAnchor = true;
+			}
+
 			const float rise = static_cast<float>(slot) * 24.f + it->age * 14.f;
 			const unsigned int textSize = static_cast<unsigned int>(
 				std::max(12, 22 - slot * 2)
@@ -507,8 +527,8 @@ namespace ly
 			widget->SetTextSize(textSize);
 			widget->SetOriginNormalized(0.f, 1.f);
 			widget->SetWidgetLocation(sf::Vector2f{
-				static_cast<float>(pixelAnchor.x),
-				static_cast<float>(pixelAnchor.y) - rise
+				it->lastPixelAnchor.x,
+				it->lastPixelAnchor.y - rise
 			});
 
 			const float fadeStart = 1.1f;

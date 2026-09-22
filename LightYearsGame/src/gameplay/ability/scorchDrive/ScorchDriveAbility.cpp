@@ -84,7 +84,6 @@ namespace ly
 			AbilityData::ScorchDrive::Attribute::SegmentSpawnDistance,
 			AbilityData::ScorchDrive::Attribute::BaseSegmentLifetime,
 			AbilityData::ScorchDrive::Attribute::FireTickInterval,
-			AbilityData::ScorchDrive::Attribute::BurnThresholdTicks,
 			AbilityData::ScorchDrive::Attribute::BurnDuration,
 			AbilityData::ScorchDrive::Attribute::BurnTickInterval,
 			AbilityData::ScorchDrive::Attribute::BurnDamageRatio,
@@ -112,12 +111,10 @@ namespace ly
 			return FindValue(definition.attributes, id, 0.f);
 		};
 		const float burnRatio = value(AbilityData::ScorchDrive::Attribute::BurnDamageRatio);
-		const float threshold = value(AbilityData::ScorchDrive::Attribute::BurnThresholdTicks);
 		if (value(AbilityData::ScorchDrive::Attribute::Damage) < 0.f ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::SegmentSpawnDistance)) ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::BaseSegmentLifetime)) ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::FireTickInterval)) ||
-			!IsFinitePositive(threshold) || std::round(threshold) != threshold ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::BurnDuration)) ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::BurnTickInterval)) ||
 			burnRatio < 0.f || burnRatio > 1.f ||
@@ -162,14 +159,6 @@ namespace ly
 			0.01f,
 			FindValue(values, AbilityData::ScorchDrive::Attribute::FireTickInterval, 0.25f)
 		);
-		mBurnThresholdTicks = std::max(
-			1,
-			static_cast<int>(std::lround(FindValue(
-				values,
-				AbilityData::ScorchDrive::Attribute::BurnThresholdTicks,
-				4.f
-			)))
-		);
 		mBurnDuration = std::max(
 			0.f,
 			FindValue(values, AbilityData::ScorchDrive::Attribute::BurnDuration, 3.f)
@@ -196,7 +185,6 @@ namespace ly
 			&context.owner,
 			mFireDamage,
 			mFireTickInterval,
-			mBurnThresholdTicks,
 			mBurnDuration,
 			mBurnTickInterval,
 			mBurnDamageRatio,

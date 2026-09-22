@@ -1,9 +1,10 @@
 .vs/
 build*/
 out/
-documentation.md
 # AI-generated working material and agent instructions
 AGENTS.md
+CLAUDE.md
+GEMINI.md
 .agents/
 .aider/
 .claude/
@@ -13,18 +14,38 @@ AGENTS.md
 .gemini/
 .roo/
 .serena/
-docs/
-*.md
-*.py
-*.bat
-*.ps1
-*.sh
+/build.bat
 orchestrator.py
 flash_test.txt
 .orchestrator_permission_test/
 
+# Local memory, agents, and orchestration tooling
+/beyin/
+/.beyin-runtime.json
+/.beyin-version
+/beyin.py
+/Beyni Guncelle.cmd
+/.codebase-memory/
+/.opencode/
+/.orchestrator_snapshots/
+/orchestrator.py
+ORCHESTRATOR.md
+/opencode.json
+/agy-debug.txt
+
+# Local-only test and generated artifacts
+/Testing/
+/tests/
+/outputs/
+/.tmp/
+/LightYears.7z
+/LightYears.log
+**/.DS_Store
+
 # Local test sources and generated test output
-LightYearsGame/tests/
+LightYearsGame/tests/*
+!LightYearsGame/tests/*.cpp
+!LightYearsGame/tests/*.h
 Testing/Temporary/
 __pycache__/
 **/__pycache__/

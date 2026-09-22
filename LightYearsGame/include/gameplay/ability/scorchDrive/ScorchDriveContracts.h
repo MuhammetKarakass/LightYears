@@ -38,9 +38,6 @@ namespace AbilityData::ScorchDrive
 		inline static const sas::AttributeId FireTickInterval{
 			"Ability.Offense.ScorchDrive.FireTickInterval"
 		};
-		inline static const sas::AttributeId BurnThresholdTicks{
-			"Ability.Offense.ScorchDrive.BurnThresholdTicks"
-		};
 		inline static const sas::AttributeId BurnDuration{
 			"Ability.Offense.ScorchDrive.BurnDuration"
 		};

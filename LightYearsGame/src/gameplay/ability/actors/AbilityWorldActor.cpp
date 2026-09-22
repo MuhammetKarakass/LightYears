@@ -457,18 +457,18 @@ namespace ly
 		case CollisionLayer::Player:
 		case CollisionLayer::FriendlySummon:
 			SetCollisionLayer(CollisionLayer::PlayerBullet);
+			// Opposing projectiles are never valid targets and must pass through each other.
 			SetCollisionMask(
 				CollisionLayer::Enemy |
-				CollisionLayer::EnemyBullet |
 				CollisionLayer::Environment
 			);
 			break;
 		case CollisionLayer::Enemy:
 			SetCollisionLayer(CollisionLayer::EnemyBullet);
+			// Opposing projectiles are never valid targets and must pass through each other.
 			SetCollisionMask(
 				CollisionLayer::Player |
 				CollisionLayer::FriendlySummon |
-				CollisionLayer::PlayerBullet |
 				CollisionLayer::Environment
 			);
 			break;

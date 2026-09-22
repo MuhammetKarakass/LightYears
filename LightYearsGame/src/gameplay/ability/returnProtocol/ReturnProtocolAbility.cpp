@@ -85,10 +85,13 @@ namespace ly
 
 	bool ReturnProtocolAbility::Activate(GameAbilityBehaviorContext& context)
 	{
-		if (mActive || !ProjectileReflectionService::RegisterReceiver(
-			context.owner,
-			*this
-		))
+		if (mActive)
+		{
+			return false;
+		}
+
+		mRegistration = ProjectileReflectionService::RegisterReceiver(context.owner, *this);
+		if (!mRegistration.IsValid())
 		{
 			return false;
 		}
@@ -127,7 +130,9 @@ namespace ly
 			return;
 		}
 
-		ProjectileReflectionService::UnregisterReceiver(context.owner, *this);
+		// The token owns the registration: releasing it here preserves the explicit
+		// teardown, while its destructor also covers every path that never reaches End().
+		mRegistration.Reset();
 		context.abilitySystem.RemoveOwnedTag(AbilityData::ReturnProtocol::State::Active);
 		if (const shared_ptr<ReturnProtocolVisualActor> visual = mVisualActor.lock())
 		{

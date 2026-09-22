@@ -374,6 +374,7 @@ namespace ly
 			);
 			context.remainingDamage = std::max(0.f, context.remainingDamage - shieldAbsorbedDamage);
 			context.absorbedDamage += shieldAbsorbedDamage;
+			mCombatRuntime.ApplyHullDamageMitigation(context);
 
 			const float healthBeforeDamage = mHealthComponent.GetHealth();
 			mHealthComponent.ChangeHealth(-context.remainingDamage);

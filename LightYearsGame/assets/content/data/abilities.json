@@ -637,21 +637,6 @@
           "baseValue": 0.25,
           "minValue": 0.0,
           "maxValue": 1.0
-        },
-        {
-          "id": "Ability.Offense.HullShock.ElectricDamageTakenMultiplierPerStack",
-          "baseValue": 0.04,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.HullShock.ElectricDuration",
-          "baseValue": 3.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.HullShock.ElectricMaxStacks",
-          "baseValue": 4.0,
-          "minValue": 1.0
         }
       ],
       "scalingRules": [
@@ -1071,10 +1056,10 @@
               "minValue": 0.1
             },
             {
-              "id": "Damage.ArmorPenetration",
-              "baseValue": 0.1,
+              "id": "Damage.Kinetic.Stacks",
+              "baseValue": 2.0,
               "minValue": 0.0,
-              "maxValue": 0.25
+              "maxValue": 4.0
             }
           ]
         }
@@ -1558,21 +1543,6 @@
               "id": "Damage.IgniteStacks",
               "baseValue": 1.0,
               "minValue": 0.0
-            },
-            {
-              "id": "Damage.BurnDamagePerSecond",
-              "baseValue": 1.0,
-              "minValue": 0.0
-            },
-            {
-              "id": "Damage.BurnDuration",
-              "baseValue": 3.0,
-              "minValue": 0.0
-            },
-            {
-              "id": "Damage.BurnMaxStacks",
-              "baseValue": 4.0,
-              "minValue": 1.0
             }
           ]
         }
@@ -3081,11 +3051,6 @@
           "minValue": 0.01
         },
         {
-          "id": "Ability.Offense.ScorchDrive.BurnThresholdTicks",
-          "baseValue": 4.0,
-          "minValue": 1.0
-        },
-        {
           "id": "Ability.Offense.ScorchDrive.BurnDuration",
           "baseValue": 3.0,
           "minValue": 0.01
@@ -3435,21 +3400,6 @@
               "minValue": 0.01
             },
             {
-              "id": "Damage.BurnDamagePerSecond",
-              "baseValue": 1.0,
-              "minValue": 0.0
-            },
-            {
-              "id": "Damage.BurnDuration",
-              "baseValue": 3.0,
-              "minValue": 0.0
-            },
-            {
-              "id": "Damage.BurnMaxStacks",
-              "baseValue": 4.0,
-              "minValue": 1.0
-            },
-            {
               "id": "Collision.Radius",
               "baseValue": 1.0,
               "minValue": 0.0
@@ -3526,26 +3476,11 @@
           "baseValue": 0.22,
           "minValue": 0.01
         },
-        {
-          "id": "Ability.Offense.ChainLightning.ElectricStacks",
-          "baseValue": 1.0,
-          "minValue": 1.0
-        },
-        {
-          "id": "Ability.Offense.ChainLightning.ElectricDamageTakenMultiplierPerStack",
-          "baseValue": 0.04,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.ChainLightning.ElectricDuration",
-          "baseValue": 3.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.ChainLightning.ElectricMaxStacks",
-          "baseValue": 4.0,
-          "minValue": 1.0
-        }
+            {
+              "id": "Ability.Offense.ChainLightning.ElectricStacks",
+              "baseValue": 1.0,
+              "minValue": 1.0
+            }
       ],
       "damageTags": [
         "Damage.Type.Electric"
@@ -3624,21 +3559,6 @@
         {
           "id": "Ability.Offense.StormMark.ElectricStacks",
           "baseValue": 1.0,
-          "minValue": 1.0
-        },
-        {
-          "id": "Ability.Offense.StormMark.ElectricDamageTakenMultiplierPerStack",
-          "baseValue": 0.04,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.StormMark.ElectricDuration",
-          "baseValue": 3.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.StormMark.ElectricMaxStacks",
-          "baseValue": 4.0,
           "minValue": 1.0
         }
       ],
@@ -4056,27 +3976,6 @@
               "id": "Damage.Cryo.BuildupPerHit",
               "baseValue": 2.0,
               "minValue": 1.0
-            },
-            {
-              "id": "Damage.Cryo.BuildupRequired",
-              "baseValue": 4.0,
-              "minValue": 1.0
-            },
-            {
-              "id": "Damage.Cryo.BuildupDuration",
-              "baseValue": 2.5,
-              "minValue": 0.0
-            },
-            {
-              "id": "Damage.Cryo.SlowPercent",
-              "baseValue": 0.25,
-              "minValue": 0.0,
-              "maxValue": 1.0
-            },
-            {
-              "id": "Damage.Cryo.SlowDuration",
-              "baseValue": 1.5,
-              "minValue": 0.0
             }
           ]
         }
@@ -5025,21 +4924,6 @@
               "id": "Damage.ElectricStacks",
               "baseValue": 1.0,
               "minValue": 1.0
-            },
-            {
-              "id": "Damage.ElectricDamageTakenMultiplierPerStack",
-              "baseValue": 0.04,
-              "minValue": 0.0
-            },
-            {
-              "id": "Damage.ElectricDuration",
-              "baseValue": 3.0,
-              "minValue": 0.0
-            },
-            {
-              "id": "Damage.ElectricMaxStacks",
-              "baseValue": 4.0,
-              "minValue": 1.0
             }
           ]
         }
@@ -5170,21 +5054,6 @@
           "id": "Ability.Offense.Blastback.RecoilDuration",
           "baseValue": 0.5,
           "minValue": 0.01
-        },
-        {
-          "id": "Ability.Offense.Blastback.BurnDamagePerSecond",
-          "baseValue": 1.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.Blastback.BurnDuration",
-          "baseValue": 3.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.Blastback.BurnMaxStacks",
-          "baseValue": 4.0,
-          "minValue": 1.0
         }
       ],
       "scalingRules": [
@@ -5784,28 +5653,6 @@
               "baseValue": 4.0,
               "minValue": 4.0,
               "maxValue": 4.0
-            },
-            {
-              "id": "Damage.Cryo.BuildupRequired",
-              "baseValue": 4.0,
-              "minValue": 4.0,
-              "maxValue": 4.0
-            },
-            {
-              "id": "Damage.Cryo.BuildupDuration",
-              "baseValue": 2.5,
-              "minValue": 0.01
-            },
-            {
-              "id": "Damage.Cryo.SlowPercent",
-              "baseValue": 0.5,
-              "minValue": 0.0,
-              "maxValue": 0.95
-            },
-            {
-              "id": "Damage.Cryo.SlowDuration",
-              "baseValue": 4.0,
-              "minValue": 0.01
             }
           ]
         }
@@ -5837,11 +5684,6 @@
               "attributeId": "Common.Damage",
               "operation": "Add",
               "magnitude": 4.0
-            },
-            {
-              "attributeId": "Damage.Cryo.SlowPercent",
-              "operation": "Add",
-              "magnitude": 0.01
             },
             {
               "attributeId": "Common.Cooldown",

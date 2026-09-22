@@ -41,6 +41,7 @@ namespace ly
 		mShipXPReward{ shipDefinition.shipXPReward },
 		mEncounterDamageMultiplier{ encounterDamageMultiplier },
 		mSpawnContext{ spawnContext },
+		mWindowCullEnabled{ spawnContext.windowCullEnabled },
 		mHasChassisPrimaryWeapon{ !shipDefinition.primaryWeaponId.empty() }
 	{
 		SetSimulationTimeDomain(SimulationTimeDomain::HostileGameplay);
@@ -97,7 +98,7 @@ namespace ly
 	{
 		ResetControlIntents();
 		if (GetIsPendingDestroy()) return;
-		if (GetWorld() && GetWorld()->GetApplication() && IsActorOutOfWindow(GetActorGlobalBounds().size.x * 2.f))
+		if (mWindowCullEnabled && GetWorld() && GetWorld()->GetApplication() && IsActorOutOfWindow(GetActorGlobalBounds().size.x * 2.f))
 		{
 			Destroy();
 			ResetControlIntents();
@@ -114,7 +115,7 @@ namespace ly
 			return;
 		}
 		SpaceShip::Tick(deltaTime);
-		if (!GetIsPendingDestroy() && GetWorld() && GetWorld()->GetApplication() &&
+		if (mWindowCullEnabled && !GetIsPendingDestroy() && GetWorld() && GetWorld()->GetApplication() &&
 			IsActorOutOfWindow(GetActorGlobalBounds().size.x * 2.f)) Destroy();
 		ResetControlIntents();
 	}

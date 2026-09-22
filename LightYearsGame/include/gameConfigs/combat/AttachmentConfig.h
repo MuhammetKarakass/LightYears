@@ -23,10 +23,7 @@ namespace AttachmentData
 					0.4f,
 					0.f
 				},
-				sas::GameplayAttribute{ ly::DamageAttributeIds::IgniteStacks, 1.f, 0.f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::BurnDamagePerSecond, 1.f, 0.f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::BurnDuration, 3.f, 0.f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::BurnMaxStacks, 4.f, 1.f }
+				sas::GameplayAttribute{ ly::DamageAttributeIds::IgniteStacks, 1.f, 0.f }
 			},
 			{},
 			{
@@ -63,7 +60,7 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				sas::GameplayAttribute{ ly::DamageAttributeIds::ShieldDamageMultiplier, 1.25f, 0.f },
+				sas::GameplayAttribute{ ly::DamageAttributeIds::ShieldDamageMultiplier, 1.50f, 0.f },
 				sas::GameplayAttribute{ ly::DamageAttributeIds::ShieldRegenerationDelay, 0.75f, 0.f }
 			},
 			{},
@@ -118,11 +115,7 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupPerHit, 1.f, 1.f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupRequired, 4.f, 1.f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupDuration, 2.5f, 0.f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoSlowPercent, 0.25f, 0.f, 0.30f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoSlowDuration, 1.5f, 0.f }
+				sas::GameplayAttribute{ ly::DamageAttributeIds::CryoBuildupPerHit, 1.f, 1.f }
 			},
 			{},
 			{
@@ -132,9 +125,9 @@ namespace AttachmentData
 						ly::DamageTypeSchema::Cryo
 					},
 					sas::AttributeModifier{
-						ly::DamageAttributeIds::CryoSlowPercent,
+						ly::DamageAttributeIds::CryoBuildupPerHit,
 						sas::AttributeModifierOperation::Add,
-						0.05f
+						1.f
 					}
 				}
 			},
@@ -149,13 +142,7 @@ namespace AttachmentData
 			{ ly::AttachmentHostKind::Ability, ly::AttachmentHostKind::PrimaryWeapon },
 			{ ly::AttachmentSchema::Capability::Damage },
 			{
-				sas::GameplayAttribute{
-					ly::DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
-					0.04f,
-					0.f
-				},
-				sas::GameplayAttribute{ ly::DamageAttributeIds::ElectricDuration, 3.f, 0.f },
-				sas::GameplayAttribute{ ly::DamageAttributeIds::ElectricMaxStacks, 4.f, 1.f }
+				sas::GameplayAttribute{ ly::DamageAttributeIds::ElectricStacks, 1.f, 1.f }
 			},
 			{},
 			{
@@ -165,9 +152,9 @@ namespace AttachmentData
 						ly::DamageTypeSchema::Electric
 					},
 					sas::AttributeModifier{
-						ly::DamageAttributeIds::ElectricDamageTakenMultiplierPerStack,
+						ly::DamageAttributeIds::ElectricStacks,
 						sas::AttributeModifierOperation::Add,
-						0.01f
+						1.f
 					}
 				}
 			},
