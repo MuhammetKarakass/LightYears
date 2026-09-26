@@ -164,6 +164,8 @@ namespace ly
 		void EndExecution(sas::AbilityEndReason reason) override;
 		void TickInactive(float deltaTime) override;
 		void EndContent(sas::AbilityEndReason reason) override;
+		bool HasPendingContentCleanup() const override { return mBehaviorCleanupPending; }
+		void RetryContentCleanup() override;
 		void OnInstanceOperationCompleted() override;
 		sas::AbilityLifecycleEvent BuildLifecycleEvent(
 			const GameplayTag& eventTag,
@@ -183,6 +185,7 @@ namespace ly
 		}
 
 		void RefreshScopedConfiguration();
+		void EndBehavior(sas::AbilityEndReason reason);
 		void HandleAttachmentEventInternal(
 			const sas::AbilityEvent& event,
 			const sas::AbilityLifecycleEvent* lifecycleEvent
@@ -215,6 +218,9 @@ namespace ly
 		AttachmentLoadout mAttachments;
 		unique_ptr<GameAbilityBehavior> mBehavior;
 		bool mBehaviorStarted = false;
+		bool mBehaviorCleanupPending = false;
+		bool mEndLifecycleNotificationAttempted = false;
+		sas::AbilityEndReason mBehaviorEndReason = sas::AbilityEndReason::Interrupted;
 		sas::AbilityActivationOrigin mActivationOrigin =
 			sas::AbilityActivationOrigin::NormalInput;
 		int mInvocationMaximumLevel = 0;

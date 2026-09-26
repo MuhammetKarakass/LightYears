@@ -350,6 +350,7 @@ namespace ly
 	bool GameAbility::ActivateContent()
 	{
 		mDeferActiveDurationStart = false;
+		mEndLifecycleNotificationAttempted = false;
 		const sas::AbilityLifecycleEvent lifecycleEvent = BuildLifecycleEvent(
 			GameplayTags::Event::Ability::Activated,
 			sas::AbilityEndReason::Completed
@@ -384,10 +385,7 @@ namespace ly
 	void GameAbility::AbortActivationContent()
 	{
 		mDeferActiveDurationStart = false;
-		if (!mBehaviorStarted) return;
-		mBehaviorStarted = false;
-		GameAbilityBehaviorContext context{ mAbilitySystem, *this, mAbilitySystem.GetOwner(), mDefinition };
-		mBehavior->End(context, sas::AbilityEndReason::Interrupted);
+		EndBehavior(sas::AbilityEndReason::Interrupted);
 	}
 
 	void GameAbility::BeginExecution()
@@ -461,26 +459,52 @@ namespace ly
 	{
 		mDeferActiveDurationStart = false;
 		std::exception_ptr error;
-		if (mBehavior && mBehaviorStarted)
+		try { EndBehavior(reason); }
+		catch (...) { error = std::current_exception(); }
+
+		if (!mEndLifecycleNotificationAttempted)
 		{
-			mBehaviorStarted = false;
-			GameAbilityBehaviorContext behaviorContext{
-				mAbilitySystem,
-				*this,
-				mAbilitySystem.GetOwner(),
-				mDefinition
-			};
-			try { mBehavior->End(behaviorContext, reason); }
-			catch (...) { error = std::current_exception(); }
+			mEndLifecycleNotificationAttempted = true;
+			try
+			{
+				const sas::AbilityLifecycleEvent event = BuildLifecycleEvent(
+					GameplayTags::Event::Ability::Ended,
+					reason
+				);
+				mAbilitySystem.HandleAbilityLifecycleEvent(event);
+			}
+			catch (...) { if (!error) error = std::current_exception(); }
+		}
+		if (error) std::rethrow_exception(error);
+	}
+
+	void GameAbility::RetryContentCleanup()
+	{
+		if (mBehaviorCleanupPending)
+		{
+			EndBehavior(mBehaviorEndReason);
+		}
+	}
+
+	void GameAbility::EndBehavior(sas::AbilityEndReason reason)
+	{
+		if (!mBehavior || !mBehaviorStarted)
+		{
+			mBehaviorCleanupPending = false;
+			return;
 		}
 
-		const sas::AbilityLifecycleEvent event = BuildLifecycleEvent(
-			GameplayTags::Event::Ability::Ended,
-			reason
-		);
-		try { mAbilitySystem.HandleAbilityLifecycleEvent(event); }
-		catch (...) { if (!error) error = std::current_exception(); }
-		if (error) std::rethrow_exception(error);
+		mBehaviorEndReason = reason;
+		mBehaviorCleanupPending = true;
+		GameAbilityBehaviorContext context{
+			mAbilitySystem,
+			*this,
+			mAbilitySystem.GetOwner(),
+			mDefinition
+		};
+		mBehavior->End(context, reason);
+		mBehaviorStarted = false;
+		mBehaviorCleanupPending = false;
 	}
 
 	bool GameAbility::HandleInputPressed()
@@ -640,6 +664,7 @@ namespace ly
 	{
 		return RunInstanceOperation([&]()
 		{
+			EnsurePendingCleanupDrained();
 			RebuildDefinitionForLevel();
 			RefreshPrimaryWeaponRuntimeConfiguration();
 		});

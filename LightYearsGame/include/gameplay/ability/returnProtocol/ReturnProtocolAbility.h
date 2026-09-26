@@ -40,6 +40,10 @@ namespace ly
 		weak_ptr<ReturnProtocolVisualActor> mVisualActor;
 		float mReflectDamageMultiplier = 1.f;
 		bool mActive = false;
+		bool mVisualDestroyPending = false;
+		bool mEndTagRemovalAttempted = false;
+		bool mEndedEventAttempted = false;
+		bool mEnding = false;
 		// Owns the reflection registration. Declared last so it is destroyed before the
 		// receiver half of this object, guaranteeing the registry never holds a pointer
 		// to a partially destroyed behavior.

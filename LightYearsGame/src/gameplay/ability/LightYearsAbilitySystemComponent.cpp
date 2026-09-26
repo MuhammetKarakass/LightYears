@@ -280,7 +280,7 @@ namespace ly
 		catch (...) { error = std::current_exception(); }
 		mAbilityUseHistory.Clear();
 		mLifecycleDispatcher.Clear();
-		if (!preserveRuntimeDependencies)
+		if (!preserveRuntimeDependencies && !error)
 		{
 			mScopedAbilityRules.clear();
 			mDeferredScopedAbilityRules.clear();

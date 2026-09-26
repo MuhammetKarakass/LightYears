@@ -476,7 +476,13 @@ namespace sas
 			// game-owned weapon override state until retained EndFire debt is drained.
 			std::rethrow_exception(error);
 		}
-		cleanup([&] { ClearAdditionalState(false); });
+		try { ClearAdditionalState(false); }
+		catch (...)
+		{
+			if (!error) error = std::current_exception();
+			mClearing = false;
+			std::rethrow_exception(error);
+		}
 		cleanup([&] { mEffects.Clear(); });
 		cleanup([&] { mOwnedTags.Clear(); });
 		cleanup([&] { mAttributes.Clear(); });

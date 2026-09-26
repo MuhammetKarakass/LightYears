@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <exception>
 
 namespace ly
 {
@@ -85,10 +86,12 @@ namespace ly
 
 	bool ReturnProtocolAbility::Activate(GameAbilityBehaviorContext& context)
 	{
-		if (mActive)
+		if (mActive || mVisualDestroyPending)
 		{
 			return false;
 		}
+		mEndTagRemovalAttempted = false;
+		mEndedEventAttempted = false;
 
 		mRegistration = ProjectileReflectionService::RegisterReceiver(context.owner, *this);
 		if (!mRegistration.IsValid())
@@ -125,28 +128,64 @@ namespace ly
 	)
 	{
 		(void)reason;
-		if (!mActive)
+		if (mEnding || (!mActive && !mVisualDestroyPending))
 		{
 			return;
 		}
+		mEnding = true;
+		struct EndScope
+		{
+			bool& ending;
+			~EndScope() { ending = false; }
+		} endScope{ mEnding };
 
-		// The token owns the registration: releasing it here preserves the explicit
-		// teardown, while its destructor also covers every path that never reaches End().
-		mRegistration.Reset();
-		const auto visual = mVisualActor.lock();
-		mVisualActor.reset();
-		mOwner = nullptr;
-		mReflectDamageMultiplier = 1.f;
-		mActive = false;
+		const bool wasActive = mActive;
 		std::exception_ptr error;
 		const auto cleanup = [&error](auto&& operation)
 		{
 			try { operation(); }
 			catch (...) { if (!error) error = std::current_exception(); }
 		};
-		cleanup([&] { if (visual) visual->Destroy(); });
-		cleanup([&] { context.abilitySystem.RemoveOwnedTag(AbilityData::ReturnProtocol::State::Active); });
-		cleanup([&] { EmitEvent(context, AbilityData::ReturnProtocol::Event::Ended); });
+		if (wasActive)
+		{
+			// The token owns the registration: explicit reset handles normal End(),
+			// while its destructor covers paths that never reach End().
+			cleanup([&] { mRegistration.Reset(); });
+			mOwner = nullptr;
+			mReflectDamageMultiplier = 1.f;
+			mActive = false;
+			mVisualDestroyPending = !mVisualActor.expired();
+		}
+
+		if (mVisualDestroyPending)
+		{
+			const auto visual = mVisualActor.lock();
+			if (!visual)
+			{
+				mVisualActor.reset();
+				mVisualDestroyPending = false;
+			}
+			else
+			{
+				cleanup([&] { visual->Destroy(); });
+				if (visual->GetIsPendingDestroy())
+				{
+					mVisualActor.reset();
+					mVisualDestroyPending = false;
+				}
+			}
+		}
+
+		if (wasActive && !mEndTagRemovalAttempted)
+		{
+			mEndTagRemovalAttempted = true;
+			cleanup([&] { context.abilitySystem.RemoveOwnedTag(AbilityData::ReturnProtocol::State::Active); });
+		}
+		if (wasActive && !mEndedEventAttempted)
+		{
+			mEndedEventAttempted = true;
+			cleanup([&] { EmitEvent(context, AbilityData::ReturnProtocol::Event::Ended); });
+		}
 		if (error) std::rethrow_exception(error);
 	}
 

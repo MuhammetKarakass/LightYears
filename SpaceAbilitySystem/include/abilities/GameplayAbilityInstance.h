@@ -51,6 +51,10 @@ namespace sas
 			return RunInstanceOperation([&]()
 			{
 				if (mExecutionCallbackDepth != 0 || mActivating || mEnding || (mNotifications.canExecute && !mNotifications.canExecute())) return;
+				if (!this->mRuntimeState.IsActive() && HasPendingCleanup())
+				{
+					RetryPendingCleanup();
+				}
 				UpdateCooldown(deltaTime);
 				if (mNotifications.canExecute && !mNotifications.canExecute()) return;
 				UpdateInputActivation();
@@ -94,9 +98,9 @@ namespace sas
 			return RunInstanceOperation([&]() -> bool
 			{
 				if (mExecutionCallbackDepth != 0 || mActivating || mEnding || (mNotifications.canExecute && !mNotifications.canExecute())) return false;
-				if (!this->mRuntimeState.IsActive() && mExecutionStarted)
+				if (!this->mRuntimeState.IsActive() && HasPendingCleanup())
 				{
-					RetryFailedExecutionCleanup();
+					RetryPendingCleanup();
 				}
 				if (!this->mRuntimeState.CanActivate(this->mDefinition.maxCharges)) return false;
 				mActivating = true;
@@ -176,9 +180,9 @@ namespace sas
 				{
 					EndAbility(reason);
 				}
-				else if (mExecutionStarted)
+				else if (HasPendingCleanup())
 				{
-					RetryFailedExecutionCleanup();
+					RetryPendingCleanup();
 				}
 			});
 		}
@@ -188,6 +192,7 @@ namespace sas
 			return RunInstanceOperation([&]() -> bool
 			{
 				if (mExecutionCallbackDepth != 0 || mActivating || mEnding || (mNotifications.canExecute && !mNotifications.canExecute())) return false;
+				EnsurePendingCleanupDrained();
 				const int maxLevel = GetMaximumLevel();
 				const int newLevel = AbilityRuntimeState::ClampLevel(level, maxLevel);
 				if (newLevel == this->mRuntimeState.GetLevel())
@@ -251,6 +256,11 @@ namespace sas
 		}
 
 		bool IsActive() const { return this->mRuntimeState.IsActive(); }
+		bool HasPendingCleanup() const
+		{
+			return !this->mRuntimeState.IsActive() &&
+				(mExecutionStarted || HasPendingContentCleanup());
+		}
 		bool IsInCallbackScope() const
 		{
 			return mActivating || mEnding || mExecutionCallbackDepth != 0;
@@ -341,8 +351,14 @@ namespace sas
 		virtual bool HandleInputPressed() { return false; }
 		virtual bool ShouldDeferActiveDurationStart() const { return false; }
 		virtual void EndContent(AbilityEndReason) {}
+		virtual bool HasPendingContentCleanup() const { return false; }
+		virtual void RetryContentCleanup() {}
 		virtual void OnExecutionCallbackCompleted() {}
 		virtual void OnInstanceOperationCompleted() {}
+		void EnsurePendingCleanupDrained()
+		{
+			if (HasPendingCleanup()) RetryPendingCleanup();
+		}
 		virtual int GetMaximumLevel() const = 0;
 		virtual float ResolveCooldownDuration() const = 0;
 		// Behaviors with an explicit end-state reward can override this without
@@ -498,17 +514,31 @@ namespace sas
 			if (error) std::rethrow_exception(error);
 		}
 
-		void RetryFailedExecutionCleanup()
+		void RetryPendingCleanup()
 		{
-			if (!mExecutionStarted || this->mRuntimeState.IsActive() ||
+			if (!HasPendingCleanup() ||
 				mExecutionCallbackDepth != 0 || mActivating || mEnding)
 			{
 				return;
 			}
 			mEnding = true;
 			struct EndScope { bool& ending; ~EndScope() { ending = false; } } scope{ mEnding };
-			RunExecutionCallback([&] { EndExecution(mExecutionEndReason); });
-			mExecutionStarted = false;
+			std::exception_ptr error;
+			try { RetryContentCleanup(); }
+			catch (...) { error = std::current_exception(); }
+			if (mExecutionStarted)
+			{
+				try
+				{
+					RunExecutionCallback([&] { EndExecution(mExecutionEndReason); });
+					mExecutionStarted = false;
+				}
+				catch (...)
+				{
+					if (!error) error = std::current_exception();
+				}
+			}
+			if (error) std::rethrow_exception(error);
 		}
 
 		bool RunInputPressedCallback()

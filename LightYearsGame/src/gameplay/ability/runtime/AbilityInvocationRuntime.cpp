@@ -4,6 +4,9 @@
 #include "gameplay/content/AbilityContentCatalog.h"
 
 #include <algorithm>
+#include <exception>
+#include <iterator>
+#include <stdexcept>
 #include <utility>
 
 namespace ly
@@ -143,8 +146,31 @@ namespace ly
 		ability->SetActivationOrigin(sas::AbilityActivationOrigin::EchoInvocation);
 		ability->ConfigureInvocationLevel(record.level, record.maxLevel);
 		ability->SetInputHeld(inputHeld);
-		if (!ability->TryActivate())
+		const auto retainIfCleanupRemains = [&]()
 		{
+			if (ability && (ability->IsActive() || ability->HasPendingCleanup()))
+			{
+				mActiveInvocations.push_back(ActiveInvocation{
+					std::move(ability),
+					controlSlot
+				});
+			}
+		};
+		bool activated = false;
+		try
+		{
+			activated = ability->TryActivate();
+		}
+		catch (...)
+		{
+			const std::exception_ptr error = std::current_exception();
+			retainIfCleanupRemains();
+			std::rethrow_exception(error);
+		}
+
+		if (!activated)
+		{
+			retainIfCleanupRemains();
 			if (failureReason)
 			{
 				*failureReason = "Echo source ability rejected the invocation.";
@@ -152,13 +178,7 @@ namespace ly
 			return false;
 		}
 
-		if (ability->IsActive())
-		{
-			mActiveInvocations.push_back(ActiveInvocation{
-				std::move(ability),
-				controlSlot
-			});
-		}
+		retainIfCleanupRemains();
 		return true;
 	}
 
@@ -188,7 +208,7 @@ namespace ly
 			}
 
 			ability->Tick(deltaTime);
-			if (!ability->IsActive())
+			if (!ability->IsActive() && !ability->HasPendingCleanup())
 			{
 				mActiveInvocations.erase(mActiveInvocations.begin() + index);
 				continue;
@@ -199,16 +219,44 @@ namespace ly
 
 	void AbilityInvocationRuntime::Clear()
 	{
+		std::vector<ActiveInvocation> retained;
+		retained.reserve(mActiveInvocations.size());
+		std::vector<ActiveInvocation> invocations;
+		invocations.swap(mActiveInvocations);
 		std::exception_ptr error;
-		for (ActiveInvocation& invocation : mActiveInvocations)
+		for (ActiveInvocation& invocation : invocations)
 		{
 			if (invocation.ability)
 			{
 				try { invocation.ability->Cancel(sas::AbilityEndReason::OwnerDestroyed); }
 				catch (...) { if (!error) error = std::current_exception(); }
+				if (invocation.ability->IsActive() || invocation.ability->HasPendingCleanup())
+				{
+					if (!error)
+					{
+						error = std::make_exception_ptr(std::runtime_error(
+							"Ability invocation cleanup is incomplete; retry Clear after cleanup succeeds."
+						));
+					}
+					retained.push_back(std::move(invocation));
+				}
 			}
 		}
-		mActiveInvocations.clear();
+		if (!retained.empty())
+		{
+			if (mActiveInvocations.empty())
+			{
+				mActiveInvocations.swap(retained);
+			}
+			else
+			{
+				mActiveInvocations.insert(
+					mActiveInvocations.end(),
+					std::make_move_iterator(retained.begin()),
+					std::make_move_iterator(retained.end())
+				);
+			}
+		}
 		if (error) std::rethrow_exception(error);
 	}
 }
