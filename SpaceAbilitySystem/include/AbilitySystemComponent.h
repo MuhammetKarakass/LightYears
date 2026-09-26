@@ -8,6 +8,7 @@
 #include "effects/GameplayEffectSystem.h"
 
 #include <memory>
+#include <optional>
 #include <functional>
 #include <type_traits>
 #include <typeinfo>
@@ -58,10 +59,8 @@ namespace sas
 				}
 				return {};
 			}
-			return mAbilityRuntime->GrantAbilityUntyped(
-				&definition,
-				failureReason
-			);
+			const AbilityHandle handle = RunOperation([&] { return mAbilityRuntime->GrantAbilityUntyped(&definition, failureReason); });
+			return !IsClearPending() && mAbilityRuntime->FindAbility(handle) ? handle : AbilityHandle{};
 		}
 
 		template <typename Definition>
@@ -81,11 +80,8 @@ namespace sas
 				}
 				return {};
 			}
-			return mAbilityRuntime->GrantAbilityUntyped(
-				&definition,
-				AbilityRuntimeBinding{ targetSlot },
-				failureReason
-			);
+			const AbilityHandle handle = RunOperation([&] { return mAbilityRuntime->GrantAbilityUntyped(&definition, AbilityRuntimeBinding{ targetSlot }, failureReason); });
+			return !IsClearPending() && mAbilityRuntime->FindAbility(handle) ? handle : AbilityHandle{};
 		}
 
 		bool RemoveAbility(
@@ -177,7 +173,25 @@ namespace sas
 			return GetPassiveAbilities().size();
 		}
 
-		AbilityInstanceNotifications CreateAbilityInstanceNotifications();
+		AbilityInstanceNotifications CreateAbilityInstanceNotifications(bool emitNotifications = true);
+
+		// Nested operations share one teardown boundary. Cleanup runs after the
+		// outermost caller has released its instance/effect references.
+		template<typename Operation>
+		auto RunOperation(Operation&& operation) -> decltype(operation())
+		{
+			if constexpr (std::is_void_v<decltype(operation())>)
+			{
+				ExecuteOperation(std::forward<Operation>(operation));
+			}
+			else
+			{
+				std::optional<decltype(operation())> result;
+				ExecuteOperation([&] { result.emplace(operation()); });
+				return std::move(*result);
+			}
+		}
+		bool IsClearPending() const { return mClearRequested || mClearing; }
 		void NotifyAbilityChanged(AbilityHandle handle);
 
 		template <typename Event, typename Handler>
@@ -207,15 +221,15 @@ namespace sas
 				std::is_base_of_v<AbilityEvent, Event>,
 				"Gameplay event types must derive from sas::AbilityEvent."
 			);
-			onGameplayEvent.Broadcast(event);
-			if (!mGameplayEventHandler ||
-				!mGameplayEventType ||
-				*mGameplayEventType != typeid(Event))
+			return RunOperation([&]() -> bool
 			{
-				return false;
-			}
-			mGameplayEventHandler(&event);
-			return true;
+				if (IsClearPending()) return false;
+				onGameplayEvent.Broadcast(event);
+				if (IsClearPending() || !mGameplayEventHandler ||
+					!mGameplayEventType || *mGameplayEventType != typeid(Event)) return false;
+				mGameplayEventHandler(&event);
+				return true;
+			});
 		}
 
 		ly::Delegate<AbilityHandle> onAbilityGranted;
@@ -288,13 +302,12 @@ namespace sas
 			ContinuePredicate&& shouldContinue
 		)
 		{
-			mEffects.ProcessEvent(
-				context,
-				phases,
-				std::forward<PhaseResolver>(resolvePhase),
-				std::forward<EventProcessor>(process),
-				std::forward<ContinuePredicate>(shouldContinue)
-			);
+			RunOperation([&]
+			{
+				if (IsClearPending()) return;
+				mEffects.ProcessEvent(context, phases, std::forward<PhaseResolver>(resolvePhase),
+					std::forward<EventProcessor>(process), std::forward<ContinuePredicate>(shouldContinue));
+			});
 		}
 
 		ly::Delegate<GameplayEffectHandle> onGameplayEffectApplied;
@@ -306,6 +319,8 @@ namespace sas
 		virtual void Clear();
 
 	protected:
+		virtual void ClearAdditionalState() {}
+		virtual void OnClearCompleted() {}
 		template <typename Definition, typename Instance>
 		void ConfigureAbilityRuntime(
 			AbilitySystemRuntime<Definition, Instance>& runtime,
@@ -315,6 +330,7 @@ namespace sas
 			>::Callbacks callbacks
 		)
 		{
+			callbacks.canMutate = [this] { return !IsClearPending() && mInstanceExecutionDepth == 0; };
 			auto granted = std::move(callbacks.granted);
 			callbacks.granted =
 				[this, callback = std::move(granted)](AbilityHandle handle)
@@ -363,6 +379,8 @@ namespace sas
 		}
 
 	private:
+		void ExecuteOperation(const std::function<void()>& operation);
+		void ExecuteInstanceOperation(const std::function<void()>& operation);
 		void RebuildEffectRuntimeCallbacks();
 		void RefreshCooldownTags();
 
@@ -375,5 +393,9 @@ namespace sas
 		EffectCallbacks mEffectBindings;
 		bool mAbilityCooldownTagActive = false;
 		bool mPrimaryWeaponCooldownTagActive = false;
+		std::size_t mOperationDepth = 0;
+		std::size_t mInstanceExecutionDepth = 0;
+		bool mClearRequested = false;
+		bool mClearing = false;
 	};
 }

@@ -4,6 +4,9 @@
 #include "presentation/effects/GameplayEffectVisual.h"
 #include "presentation/effects/GameplayEffectVisualRegistry.h"
 
+#include <exception>
+#include <vector>
+
 namespace ly
 {
 	GameplayEffectPresentationBinding::GameplayEffectPresentationBinding(
@@ -52,27 +55,56 @@ namespace ly
 		sas::ActiveGameplayEffect& effect
 	)
 	{
-		const auto found = mVisuals.find(effect.handle.id);
+		const unsigned int handle = effect.handle.id;
+		const auto found = mVisuals.find(handle);
 		if (found == mVisuals.end())
 		{
 			return;
 		}
-		if (auto visual = found->second.lock())
+		const weak_ptr<GameplayEffectVisual> ownedVisual = found->second;
+		if (auto visual = ownedVisual.lock())
 		{
 			visual->Destroy();
 		}
-		mVisuals.erase(found);
+		const auto current = mVisuals.find(handle);
+		if (current != mVisuals.end() &&
+			!current->second.owner_before(ownedVisual) &&
+			!ownedVisual.owner_before(current->second))
+		{
+			mVisuals.erase(current);
+		}
 	}
 
 	void GameplayEffectPresentationBinding::Clear()
 	{
-		for (auto& [handle, visualWeak] : mVisuals)
+		std::vector<unsigned int> handles;
+		handles.reserve(mVisuals.size());
+		for (const auto& [handle, visualWeak] : mVisuals)
 		{
-			if (auto visual = visualWeak.lock())
+			(void)visualWeak;
+			handles.push_back(handle);
+		}
+
+		std::exception_ptr error;
+		for (const unsigned int handle : handles)
+		{
+			auto found = mVisuals.find(handle);
+			if (found == mVisuals.end()) continue;
+			const weak_ptr<GameplayEffectVisual> ownedVisual = found->second;
+			try
 			{
-				visual->Destroy();
+				if (auto visual = ownedVisual.lock()) visual->Destroy();
+			}
+			catch (...) { if (!error) error = std::current_exception(); continue; }
+
+			found = mVisuals.find(handle);
+			if (found != mVisuals.end() &&
+				!found->second.owner_before(ownedVisual) &&
+				!ownedVisual.owner_before(found->second))
+			{
+				mVisuals.erase(found);
 			}
 		}
-		mVisuals.clear();
+		if (error) std::rethrow_exception(error);
 	}
 }

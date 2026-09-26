@@ -148,7 +148,6 @@ namespace sas
 		{
 			mEffects.clear();
 			mEffectsByHandle.clear();
-			mNextHandleId = 1;
 		}
 
 	private:

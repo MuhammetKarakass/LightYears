@@ -1,6 +1,7 @@
 #include "AbilitySystemComponent.h"
 
 #include <utility>
+#include <exception>
 
 namespace sas
 {
@@ -19,8 +20,11 @@ namespace sas
 		AbilityEndReason reason
 	)
 	{
-		return mAbilityRuntime &&
-			mAbilityRuntime->RemoveAbility(handle, reason);
+		return RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->RemoveAbility(handle, reason);
+		});
 	}
 
 	bool AbilitySystemComponent::RebindAbility(
@@ -29,20 +33,27 @@ namespace sas
 		std::string* failureReason
 	)
 	{
-		return mAbilityRuntime &&
-			mAbilityRuntime->RebindAbility(
-				handle,
-				AbilityRuntimeBinding{ targetSlot },
-				failureReason
-			);
+		const bool rebound = RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->RebindAbility(
+					handle,
+					AbilityRuntimeBinding{ targetSlot },
+					failureReason
+				);
+		});
+		return rebound && !IsClearPending() && mAbilityRuntime && mAbilityRuntime->FindAbility(handle);
 	}
 
 	void AbilitySystemComponent::ClearAbilitySlot(AbilitySlot slot)
 	{
-		if (mAbilityRuntime)
+		return RunOperation([&]()
 		{
-			mAbilityRuntime->ClearSlot(slot);
-		}
+			if (mAbilityRuntime)
+			{
+				mAbilityRuntime->ClearSlot(slot);
+			}
+		});
 	}
 
 	void AbilitySystemComponent::SetAbilitySlotInput(
@@ -50,10 +61,13 @@ namespace sas
 		bool inputHeld
 	)
 	{
-		if (mAbilityRuntime)
+		return RunOperation([&]()
 		{
-			mAbilityRuntime->SetSlotInput(slot, inputHeld);
-		}
+			if (mAbilityRuntime)
+			{
+				mAbilityRuntime->SetSlotInput(slot, inputHeld);
+			}
+		});
 	}
 
 	bool AbilitySystemComponent::SetAbilityLevel(
@@ -61,8 +75,11 @@ namespace sas
 		int level
 	)
 	{
-		return mAbilityRuntime &&
-			mAbilityRuntime->SetAbilityLevel(handle, level);
+		return RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->SetAbilityLevel(handle, level);
+		});
 	}
 
 	bool AbilitySystemComponent::SetAbilityLevel(
@@ -70,20 +87,29 @@ namespace sas
 		int level
 	)
 	{
-		return mAbilityRuntime &&
-			mAbilityRuntime->SetAbilityLevel(slot, level);
+		return RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->SetAbilityLevel(slot, level);
+		});
 	}
 
 	bool AbilitySystemComponent::LevelUpAbility(AbilityHandle handle)
 	{
-		return mAbilityRuntime &&
-			mAbilityRuntime->LevelUpAbility(handle);
+		return RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->LevelUpAbility(handle);
+		});
 	}
 
 	bool AbilitySystemComponent::LevelUpAbility(AbilitySlot slot)
 	{
-		return mAbilityRuntime &&
-			mAbilityRuntime->LevelUpAbility(slot);
+		return RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->LevelUpAbility(slot);
+		});
 	}
 
 	void AbilitySystemComponent::ReduceAbilityCooldowns(
@@ -91,13 +117,16 @@ namespace sas
 		bool includePrimaryFire
 	)
 	{
-		if (mAbilityRuntime)
+		return RunOperation([&]()
 		{
-			mAbilityRuntime->ReduceCooldowns(
-				amount,
-				includePrimaryFire
-			);
-		}
+			if (mAbilityRuntime)
+			{
+				mAbilityRuntime->ReduceCooldowns(
+					amount,
+					includePrimaryFire
+				);
+			}
+		});
 	}
 
 	ly::List<AbilityRuntimeSnapshot>
@@ -118,9 +147,9 @@ namespace sas
 	}
 
 	AbilityInstanceNotifications
-	AbilitySystemComponent::CreateAbilityInstanceNotifications()
+	AbilitySystemComponent::CreateAbilityInstanceNotifications(bool emitNotifications)
 	{
-		return AbilityInstanceNotifications{
+		AbilityInstanceNotifications notifications{
 			[this](AbilityHandle handle)
 			{
 				NotifyAbilityChanged(handle);
@@ -141,6 +170,10 @@ namespace sas
 				NotifyAbilityChanged(handle);
 			}
 		};
+		if (!emitNotifications) notifications = {};
+		notifications.execute = [this](const std::function<void()>& operation) { ExecuteInstanceOperation(operation); };
+		notifications.canExecute = [this] { return !IsClearPending(); };
+		return notifications;
 	}
 
 	void AbilitySystemComponent::NotifyAbilityChanged(AbilityHandle handle)
@@ -202,12 +235,19 @@ namespace sas
 
 	void AbilitySystemComponent::AddOwnedTag(const ly::GameplayTag& tag)
 	{
-		mOwnedTags.AddTag(tag);
+		return RunOperation([&]()
+		{
+			if (IsClearPending()) return;
+			mOwnedTags.AddTag(tag);
+		});
 	}
 
 	void AbilitySystemComponent::RemoveOwnedTag(const ly::GameplayTag& tag)
 	{
-		mOwnedTags.RemoveTag(tag);
+		return RunOperation([&]()
+		{
+			mOwnedTags.RemoveTag(tag);
+		});
 	}
 
 	bool AbilitySystemComponent::HasOwnedTag(
@@ -254,7 +294,7 @@ namespace sas
 				{
 					callback(effect);
 				}
-				onGameplayEffectChanged.Broadcast(effect.handle);
+				if (!IsClearPending()) onGameplayEffectChanged.Broadcast(effect.handle);
 			};
 
 		auto applied = std::move(callbacks.applied);
@@ -267,7 +307,7 @@ namespace sas
 				{
 					callback(handle);
 				}
-				onGameplayEffectApplied.Broadcast(handle);
+				if (!IsClearPending()) onGameplayEffectApplied.Broadcast(handle);
 			};
 
 		auto removed = std::move(callbacks.removed);
@@ -280,7 +320,7 @@ namespace sas
 				{
 					callback(handle);
 				}
-				onGameplayEffectRemoved.Broadcast(handle);
+				if (!IsClearPending()) onGameplayEffectRemoved.Broadcast(handle);
 			};
 
 		auto collectionChanged = std::move(callbacks.collectionChanged);
@@ -291,9 +331,10 @@ namespace sas
 				{
 					callback();
 				}
-				onGameplayEffectsChanged.Broadcast();
+				if (!IsClearPending()) onGameplayEffectsChanged.Broadcast();
 			};
 
+		callbacks.shouldContinue = [this] { return !IsClearPending(); };
 		mEffects.SetCallbacks(std::move(callbacks));
 	}
 
@@ -302,7 +343,11 @@ namespace sas
 		const GameplayEffectSourceContext& context
 	)
 	{
-		return mEffects.ApplyEffect(definition, context);
+		return RunOperation([&]() -> GameplayEffectHandle
+		{
+			if (IsClearPending()) return {};
+			return mEffects.ApplyEffect(definition, context);
+		});
 	}
 
 	GameplayEffectHandle AbilitySystemComponent::ApplyGameplayEffect(
@@ -310,28 +355,41 @@ namespace sas
 		const GameplayEffectSourceContext& context
 	)
 	{
-		return mEffects.ApplyEffect(spec, context);
+		return RunOperation([&]() -> GameplayEffectHandle
+		{
+			if (IsClearPending()) return {};
+			return mEffects.ApplyEffect(spec, context);
+		});
 	}
 
 	bool AbilitySystemComponent::RefreshGameplayEffectDuration(
 		GameplayEffectHandle handle
 	)
 	{
-		return mEffects.RefreshEffectDuration(handle);
+		return RunOperation([&]() -> bool
+		{
+			return mEffects.RefreshEffectDuration(handle);
+		});
 	}
 
 	void AbilitySystemComponent::RemoveGameplayEffect(
 		GameplayEffectHandle handle
 	)
 	{
-		mEffects.RemoveEffect(handle);
+		return RunOperation([&]()
+		{
+			mEffects.RemoveEffect(handle);
+		});
 	}
 
 	std::size_t AbilitySystemComponent::RemoveGameplayEffectsIf(
 		const std::function<bool(const ActiveGameplayEffect&)>& predicate
 	)
 	{
-		return mEffects.RemoveEffectsIf(predicate);
+		return RunOperation([&]()
+		{
+			return mEffects.RemoveEffectsIf(predicate);
+		});
 	}
 
 	ActiveGameplayEffect* AbilitySystemComponent::FindGameplayEffect(
@@ -372,26 +430,69 @@ namespace sas
 		const GameplayEffectDefinition& definition
 	) const
 	{
-		return mEffects.CanApplyEffect(definition);
+		return !IsClearPending() && mEffects.CanApplyEffect(definition);
 	}
 
 	void AbilitySystemComponent::Tick(float deltaTime)
 	{
-		mEffects.Tick(deltaTime);
-		if (mAbilityRuntime)
+		return RunOperation([&]()
 		{
-			mAbilityRuntime->Tick(deltaTime);
-		}
+			if (IsClearPending()) return;
+			mEffects.Tick(deltaTime);
+			if (!IsClearPending() && mAbilityRuntime)
+			{
+				mAbilityRuntime->Tick(deltaTime);
+			}
+		});
 	}
 
 	void AbilitySystemComponent::Clear()
 	{
-		if (mAbilityRuntime)
+		if (mClearing) return;
+		mClearRequested = true;
+		if (mOperationDepth != 0) return;
+		mClearing = true;
+		std::exception_ptr error;
+		const auto cleanup = [&error](auto&& operation)
 		{
-			mAbilityRuntime->Clear();
+			try { operation(); }
+			catch (...) { if (!error) error = std::current_exception(); }
+		};
+		cleanup([&] { if (mAbilityRuntime) mAbilityRuntime->Clear(); });
+		cleanup([&] { ClearAdditionalState(); });
+		cleanup([&] { mEffects.Clear(); });
+		cleanup([&] { mOwnedTags.Clear(); });
+		cleanup([&] { mAttributes.Clear(); });
+		cleanup([&] { OnClearCompleted(); });
+		mAbilityCooldownTagActive = false;
+		mPrimaryWeaponCooldownTagActive = false;
+		mClearRequested = false;
+		mClearing = false;
+		if (error) std::rethrow_exception(error);
+	}
+
+	void AbilitySystemComponent::ExecuteOperation(const std::function<void()>& operation)
+	{
+		++mOperationDepth;
+		std::exception_ptr error;
+		try { operation(); }
+		catch (...) { error = std::current_exception(); }
+		--mOperationDepth;
+		if (mOperationDepth == 0 && mClearRequested && !mClearing)
+		{
+			try { Clear(); }
+			catch (...) { if (!error) error = std::current_exception(); }
 		}
-		mEffects.Clear();
-		mOwnedTags.Clear();
-		mAttributes.Clear();
+		if (error) std::rethrow_exception(error);
+	}
+
+	void AbilitySystemComponent::ExecuteInstanceOperation(const std::function<void()>& operation)
+	{
+		ExecuteOperation([&]
+		{
+			++mInstanceExecutionDepth;
+			struct Scope { std::size_t& depth; ~Scope() { --depth; } } scope{ mInstanceExecutionDepth };
+			operation();
+		});
 	}
 }

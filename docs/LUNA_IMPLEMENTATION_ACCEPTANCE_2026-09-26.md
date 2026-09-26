@@ -1,0 +1,83 @@
+# Luna implementation acceptance — 2026-09-26
+
+Status: **P0 complete; P1/P2 implemented with E01–E07 E2E evidence; P3 partially started and unverified; P4–P7 pending.** This report separates the pre-existing working tree from changes made while executing the Luna plan. It does not claim whole-repository correctness.
+
+## Change contract
+
+- **Objective:** apply the P1–P6 ownership, callback, lifetime, and commit-boundary changes from [the plan](LUNA_IMPLEMENTATION_PLAN_2026-09-26.md), then verify the required real-runtime E2E cases and regressions in P7.
+- **Allowed owners:** P1 `AttributeSystem`; P2 the gameplay-effect runtime, collection/state/bindings, and component boundary where needed; P3 the ability instance/execution/runtime, game ability/action executor, and weapon action runtime; P4 `Player`; P5 `CombatRuntime` and its event payload boundary; P6 `TimerManager`. P7 may update the existing E2E fixtures and their CMake registration. Extra files require a stated dependency in this report.
+- **Invariants:** preserve the pre-existing dirty worktree; do not alter shipped balance, slot mapping, normal cooldown/charge, damage order, or presentation; do not add or run unit tests; use real-runtime E2E as the sole test mechanism. No worker is running concurrently.
+- **Proof:** inspect each package diff and related callback callers; build the specified game/GasLite/E2E targets; execute the plan's E2E matrix and regression suite; retain repeatable JSON/log artifacts. Build success alone is not gameplay evidence.
+
+## P0 — baseline and scope gate
+
+### Starting state
+
+- Repository HEAD: `ce14e9308c9d9825c7648c7217661a3d3fbbaafe`.
+- Before any P1–P6 source edit, the worktree already had **172** status entries: **130 tracked modified files**, **42 untracked files**. `git diff --shortstat` reported **130 files changed, 3,173 insertions, 1,649 deletions**. These changes are baseline input and are not attributed to this plan execution.
+- Captured baseline records: [full status](../build/e2e-artifacts/luna-p0-baseline-status.txt), [tracked direct-owner diff](../build/e2e-artifacts/luna-p0-baseline.patch), and [direct-owner SHA-256 list](../build/e2e-artifacts/luna-p0-baseline-hashes.json). The baseline patch covers the owners and E2E/CMake files listed in the hash list; unrelated dirty files remain untouched.
+
+### Current target inventory
+
+`LightYearsGame/CMakeLists.txt` registers these six tests matching `E2E$`: `LightYearsContinuousBeamWallE2E`, `LightYearsAbilityContentRegistrationE2E`, `LightYearsAbilityLoaderPublicLoadE2E`, `LightYearsTimerManagerSceneE2E`, `LightYearsGameHUDDamageEventE2E`, and `LightYearsAuditFixesE2E`. The corresponding fixture sources and current CMake wiring exist. The E2E artifact directory is `build/e2e-artifacts/`.
+
+### Baseline build and E2E
+
+- Build command: `cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul && set VSLANG=1033&& cmake --build build --target LightYearsGame LightYearsGasLiteTests LightYearsContinuousBeamWallE2ETests --parallel 8'` — exit **0**. Ninja output was only `[1/1] Synchronizing game runtime assets...`; this incremental run compiled no C++ sources and is not compilation evidence.
+- E2E command: `ctest --test-dir build -R 'E2E$' --output-on-failure --output-log build/e2e-artifacts/luna-baseline-suite.log` — exit **0**, **6/6 passed** in 3.22 seconds. No unit test ran.
+- Baseline E2E artifacts: `continuous-beam-wall.json` SHA-256 `4E9F2572CB7DCBCF6041220576B4AE89AEC4AB04A0924BDF0F8E36ADA6EA1FBB`; `ability-content-registration.json` `2C44BF1F1E89C8B22882115C662275F8C6A2355E8D8D500DA4A5B1E36943B1DC`; `ability-loader-public-load.json` `0FC808F7081F6938A97A310F07E24E5D7455C2CF378B39C8DEC520D21433DCFF`; `timer-manager-scene.json` `8408B46879D6D8C0CDA49FA7D549098E8127E38AD2FDD4FA1E3851A1BCD3AEB5`; `game-hud-damage-event.json` `CD11D6D6B18AF5D229EF85023BA943237AA01DAF01C71DD697E2FD5509587C90`; `audit-fixes.json` `9E96D5C259CD0258C1148D42FF9780AE19CA4A28685F827E4AFAAC6BCB76C0ED`.
+
+### Package contracts carried forward from the user plan
+
+These are intended semantics, not yet completed implementation claims:
+
+- **P1:** keep modifier and reverse-index state consistent before callbacks; use the existing `std::map` contract; no rehash-based rationale or container replacement.
+- **P2:** protect each active effect operation from same-effect reentry/removal; track only resources actually acquired; attempt independent cleanup after an exception and rethrow the first error; do not promise rollback of external gameplay side effects.
+- **P3:** preserve action/spec storage while callbacks borrow it; cancellation stops later work; structural action definitions remain stable for an active execution; cleanup attempts each independent resource.
+- **P4:** charge only after level commit; committed purchases and progression survive later observer errors/Clear and respawn; prices and ordinary progression behavior remain unchanged.
+- **P5:** nested damage uses nested dispatch frames; effect events tied to damage are dispatched synchronously while that frame is alive; no borrowed stack context persists in a queue.
+- **P6:** consume a one-shot timer before its callback, do not retry it automatically, and make same-manager nested update a no-op.
+
+P1/P2 source changes and E01–E07 are implemented, with the latest `LightYearsAuditFixesE2E` pass recorded in `build/e2e-artifacts/luna-p1-p2-final.log`. Final P7 regression acceptance is still pending. P3 has only an in-progress `GameplayAbilityInstance` edit; it has not been integrated with the game action executor, has no E08–E11 cases, and has not been compiled or run. P4–P6 have not started. Each remaining package must be checked against current source and callers before editing; if a chosen contract conflicts with shipped behavior, stop at that package and document the conflict.
+
+## P1 — Attribute mutation and ownership handoff
+
+### Change contract
+
+- **Objective:** make modifier map updates complete before attribute callbacks and expose each committed handle to its effect owner before any external registration/change callback can throw or clear the system.
+- **Allowed files:** `SpaceAbilitySystem/include/attributes/AttributeSystem.h`, `SpaceAbilitySystem/src/attributes/AttributeSystem.cpp`, `SpaceAbilitySystem/src/effects/GameplayEffectBindings.cpp`, and the existing real-runtime fixture `LightYearsGame/tests/AuditFixesE2E.cpp` for E01–E02.
+- **Canonical owner:** `AttributeSystem` owns modifier IDs and the handle-to-attribute map; `GameplayEffectRuntimeState::appliedModifierHandles` owns effect-acquired modifier cleanup debt.
+- **Invariants:** preserve `std::map` reverse-index type, event order, monotonically non-reused handles across `Clear`, and normal gameplay values. A callback that clears/re-registers an attribute invalidates the in-flight add. Removal is idempotent and does not touch iterators after callbacks.
+- **Proof:** E01 duplicate/reentrant removal and E02 registration/change callback `Clear`/throw through a production attribute/effect path; exact build and E2E runs will be recorded in P7.
+
+### Source finding
+
+The current `RemoveModifier` erased the attribute-side modifier, recalculated (which broadcasts), then erased the reverse map entry; reentrant removal therefore saw stale ownership. `AddModifier` appended the effect ledger only after `AddModifier` returned, while both implicit attribute registration and recalculation can broadcast first. `Recalculate` performs no member access after `onAttributeChanged.Broadcast`, but its callback argument is a borrowed reference; the implementation will pass a local value. The reverse map is `ly::Map` (`std::map`); its container type stays unchanged.
+
+## P2 — Effect operation lifetime and source-by-source cleanup
+
+### Change contract
+
+- **Objective:** keep each active effect record alive while its own callback borrows it; make same-effect reentry visible as rejection; defer self-removal/Clear to the outer operation boundary; retain the effect node until modifier, granted-tag, and presentation cleanup debt has completed.
+- **Allowed files:** P2 runtime owner/state/bindings/component boundary from the plan, `LightYearsGame/src/presentation/effects/GameplayEffectPresentationBinding.cpp` because its direct `Clear` owner must retain failed entries and attempt independent destroys, plus `LightYearsGame/tests/AuditFixesE2E.cpp` for E03–E07. Read `CombatRuntime` and typed effect behavior/presentation owners; no other game-side change is authorized by this contract.
+- **Canonical owner:** `GameplayEffectRuntimeState` owns per-effect operation flags and the modifier/tag ledgers; `GameplayEffectRuntimeSystem` owns mutation/removal sequencing; the existing `GameplayEffectPresentationBinding` remains visual owner and its `Remove` retains its entry until `Destroy` succeeds.
+- **Invariants:** independent effects may run nested operations; a same-effect nested apply/refresh is rejected with an invalid/false result. Remove requests become visible immediately and stop further callbacks, while physical erase waits for the outer borrower. First exceptions survive after independent modifier/tag cleanup. No rollback is promised for already-published gameplay side effects.
+- **Proof:** E03–E07 cover apply/refresh self-removal, cleanup exceptions at first/middle/last resource, shared tags/modifiers, same-key versus other-effect nested apply, Clear/throw combinations, and component reuse after the attempt.
+
+### Source finding
+
+`GameplayEffectCollection` uses stable `std::list` nodes, which protects a reference from insertion but not from `Erase`. `ApplyEffect`, `TickHandles`, and `ProcessEvent` pass live effect references to callbacks; `RemoveEffectInternal` previously copied the effect and erased the live node even when cleanup threw. Modifier removal also stopped at the first throw, and granted tags were reconstructed from the definition rather than from tags actually acquired. `GameplayEffectPresentationBinding::Remove` retained its weak visual entry until `Destroy` returned, so retry is supported; however, its `Clear` aborted at the first thrown destroy and left later visuals unattempted. Its callbacks can also reenter the binding, so its iterator cannot be reused after `Destroy`. The component already defers whole-component Clear through `RunOperation`; a runtime continuation predicate makes the in-flight effect stop issuing later callbacks once that request is visible.
+
+## P3 — Ability execution callback and resource lifetime
+
+### Change contract
+
+- **Objective:** keep active action storage valid while callbacks borrow it, defer same-instance cancellation until the callback unwinds, stop later action/behavior/duration work after cancellation, preserve one activation's action specs across scoped definition refresh, and attempt every independent action/weapon cleanup before returning the first error.
+- **Allowed files:** `SpaceAbilitySystem/include/abilities/GameplayAbilityInstance.h`, `SpaceAbilitySystem/include/abilities/AbilityExecution.h`, `SpaceAbilitySystem/include/abilities/AbilityRuntimeSystem.h` only if removal cleanup needs an exception-safe guard; `LightYearsGame/include/gameplay/ability/GameAbilityActionExecutor.h`, `LightYearsGame/include/gameplay/ability/LightYearsAbilitySystemComponent.h`, `LightYearsGame/src/gameplay/ability/GameAbility.cpp`, `LightYearsGame/src/gameplay/ability/GameAbilityActionExecutor.cpp`, `LightYearsGame/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp`, `LightYearsGame/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp`, and the direct weapon owner `LightYearsGame/include/gameplay/weapon/PrimaryWeaponHandler.h`, `LightYearsGame/include/gameplay/weapon/PrimaryWeaponExecutionSystem.h`, `LightYearsGame/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp`; existing real-runtime fixture `LightYearsGame/tests/AuditFixesE2E.cpp` for E08–E11. The weapon owner is included because lifecycle begin/tick/end callbacks and feature EndFire are invoked there.
+- **Canonical owner:** `GameplayAbilityInstance` owns callback depth, deferred end reason, and exactly-once lifecycle end; `GameAbilityExecution` owns an immutable per-activation action-spec snapshot and active action runtime state; `FireWeaponRuntimeState` owns an active weapon lifecycle and pending simulation-time debt; `PrimaryWeaponExecutionSystem` owns weapon-level firing-state transitions and handler/feature callback fan-out.
+- **Invariants:** `OwnerDestroyed` supersedes a weaker queued reason and otherwise the first same-priority end request wins; no action vector is erased while its callback is on stack; nested same-instance Tick/TryActivate and callback-time SetLevel are rejected; active action specs and OnEnd use the same activation snapshot while numeric attributes, attachments, and configuration revision remain live; cancellation prevents subsequent actions, behavior Tick, and duration advancement; cleanup attempts all independent resources, clears each completed ownership before callbacks, and rethrows the first failure. Ordinary end-then-rebuild level changes and normal weapon cadence remain unchanged.
+- **Proof:** E08–E11 use the existing production runtime fixture to cover cancellation/reentry/level mutation, scoped structural refresh and next activation, combined cancel+Clear+throw, and independent weapon/action cleanup after the first callback throws. Build and E2E results will be recorded in P7.
+
+### Source finding
+
+`GameplayAbilityInstance::Cancel` immediately reaches `EndAbility` during `TickExecution`, which runs `EndExecution` and clears `mExecution.actions` while `AbilityExecutionLifecycle::Tick` still holds references into that vector. `GameAbilityExecution` currently stores pointers into mutable `mDefinition.actions`; `RefreshScopedConfiguration` rebuilds that definition during attachment/scoped-rule callbacks. `AbilityExecutionLifecycle::End` and `PrimaryWeaponExecutionSystem::EndFire` stop at the first thrown cleanup callback. `FireWeaponActionRuntime::End` clears `lifecycleStarted`, pending simulation time, and the persistent runtime pointer only after external EndFire callbacks, so an exception leaves ownership state stale.

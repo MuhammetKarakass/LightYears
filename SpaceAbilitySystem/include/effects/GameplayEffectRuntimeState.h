@@ -4,6 +4,7 @@
 #include "effects/GameplayEffectHandle.h"
 #include "effects/GameplayEffectRuntimeSnapshot.h"
 
+#include <cstddef>
 #include <string>
 
 namespace sas
@@ -16,7 +17,11 @@ namespace sas
 		float stackDecayInterval = 1.f;
 		int stackCount = 1;
 		ly::List<AttributeModifierHandle> appliedModifierHandles;
+		ly::List<ly::GameplayTag> appliedGrantedTags;
 		GameplayAttributeList runtimeAttributes;
+		std::size_t operationDepth = 0;
+		bool removeRequested = false;
+		bool removalInProgress = false;
 
 		void Initialize(
 			GameplayEffectHandle newHandle,

@@ -10,6 +10,10 @@
 #include <cstddef>
 #include <cmath>
 #include <functional>
+#include <exception>
+#include <optional>
+#include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -32,6 +36,7 @@ namespace sas
 		std::function<void(GameplayEffectHandle)> applied;
 		std::function<void(GameplayEffectHandle)> removed;
 		std::function<void()> collectionChanged;
+		std::function<bool()> shouldContinue;
 	};
 
 	template <typename Spec, typename ActiveEffect = GameplayEffectRuntimeEntry<Spec>>
@@ -72,6 +77,11 @@ namespace sas
 			const GameplayEffectSourceContext& context = {}
 		)
 		{
+			if (mIsClearing || mClearRequested || mCleanupIncomplete)
+			{
+				return {};
+			}
+
 			const GameplayEffectDefinition& definition = spec.definition;
 			if (!CanApplyEffect(definition) || spec.maxStacks < 1 ||
 				(definition.durationPolicy == GameplayEffectDurationPolicy::Duration &&
@@ -91,11 +101,14 @@ namespace sas
 				);
 			if (applicationKind == GameplayEffectApplicationKind::Instant)
 			{
-				ApplyInstantGameplayEffect(spec, mAttributes);
+				ApplyInstantGameplayEffect(spec, mAttributes, [this] { return ShouldContinueGlobal(); });
+				if (!ShouldContinueGlobal()) return {};
 				NotifyApplied(newHandle);
+				if (!ShouldContinueGlobal()) return {};
 				NotifyRemoved(newHandle);
+				if (!ShouldContinueGlobal()) return {};
 				NotifyCollectionChanged();
-				return newHandle;
+				return ShouldContinueGlobal() ? newHandle : GameplayEffectHandle{};
 			}
 
 			ActiveEffect* stackingTarget = mActiveEffects.FindFirst(
@@ -118,126 +131,125 @@ namespace sas
 			if (stackingTarget)
 			{
 				const GameplayEffectHandle stackingHandle = stackingTarget->handle;
-				if (applicationKind == GameplayEffectApplicationKind::RefreshActive)
+				if (stackingTarget->operationDepth != 0 ||
+					stackingTarget->removeRequested ||
+					stackingTarget->removalInProgress)
 				{
-					RemoveGameplayEffectTags(stackingTarget->spec.definition, mOwnedTags);
-					RemoveGameplayEffectModifiers(*stackingTarget, mAttributes);
-					NotifyRemoving(*stackingTarget);
-					if (!FindEffect(stackingHandle))
-					{
-						return {};
-					}
+					return {};
 				}
-
-				if (applicationKind == GameplayEffectApplicationKind::RefreshStackDuration)
+				return RunEffectOperation(stackingHandle, [&]() -> GameplayEffectHandle
 				{
-					// This policy is duration-only. Keep the active runtime
-					// attributes and modifiers intact; only the duration-facing
-					// spec fields and source context are refreshed.
-					stackingTarget->spec.duration = spec.duration;
-					stackingTarget->spec.maxStacks = spec.maxStacks;
-					stackingTarget->spec.sourceAbilityUpgradeIds =
-						spec.sourceAbilityUpgradeIds;
-					BindSource(*stackingTarget, context);
-					if (!FindEffect(stackingHandle))
+					if (applicationKind == GameplayEffectApplicationKind::RefreshActive)
 					{
-						return {};
+						RemoveGameplayEffectTags(*stackingTarget, mOwnedTags);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
+						RemoveGameplayEffectModifiers(*stackingTarget, mAttributes);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
+						NotifyRemoving(*stackingTarget);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
 					}
-					if (mCallbacks.cappedReapply)
+
+					if (applicationKind == GameplayEffectApplicationKind::RefreshStackDuration)
 					{
-						mCallbacks.cappedReapply(*stackingTarget, spec);
-						if (!FindEffect(stackingHandle))
+						// This policy is duration-only. Keep the active runtime
+						// attributes and modifiers intact; only the duration-facing
+						// spec fields and source context are refreshed.
+						stackingTarget->spec.duration = spec.duration;
+						stackingTarget->spec.maxStacks = spec.maxStacks;
+						stackingTarget->spec.sourceAbilityUpgradeIds =
+							spec.sourceAbilityUpgradeIds;
+						BindSource(*stackingTarget, context);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
+						if (mCallbacks.cappedReapply)
 						{
-							return {};
-						}
+						mCallbacks.cappedReapply(*stackingTarget, spec);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
 					}
 					GameplayEffectLifecycleOrchestrator::ApplyStackingState(
-						applicationKind,
-						*stackingTarget,
-						spec.duration,
-						spec.definition.stackDecayInterval,
-						spec.maxStacks
+						applicationKind, *stackingTarget, spec.duration,
+						spec.definition.stackDecayInterval, spec.maxStacks
 					);
 				}
 				else
 				{
 					stackingTarget->spec = spec;
 					BindSource(*stackingTarget, context);
-					if (!FindEffect(stackingHandle))
-					{
-						return {};
-					}
+					if (!ShouldContinueOperation(stackingHandle)) return {};
 					const bool stackAdded =
 						GameplayEffectLifecycleOrchestrator::ApplyStackingState(
-							applicationKind,
-							*stackingTarget,
-							spec.duration,
-							spec.definition.stackDecayInterval,
-							spec.maxStacks
+							applicationKind, *stackingTarget, spec.duration,
+							spec.definition.stackDecayInterval, spec.maxStacks
 						);
 					if (applicationKind == GameplayEffectApplicationKind::RefreshActive)
 					{
 						Refresh(*stackingTarget);
-						if (!FindEffect(stackingHandle))
-						{
-							return {};
-						}
+						if (!ShouldContinueOperation(stackingHandle)) return {};
 						ApplyGameplayEffectModifiers(
-							stackingTarget->spec, *stackingTarget, mAttributes
+							stackingTarget->spec, *stackingTarget, mAttributes,
+							[&] { return ShouldContinueOperation(stackingHandle); }
 						);
-						GrantGameplayEffectTags(stackingTarget->spec.definition, mOwnedTags);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
+						GrantGameplayEffectTags(
+							stackingTarget->spec.definition, *stackingTarget, mOwnedTags
+						);
 						NotifyActivated(*stackingTarget);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
 					}
 					else if (stackAdded)
 					{
 						const bool customStackHandled = AddStack(*stackingTarget);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
 						if (!customStackHandled)
 						{
 							stackingTarget->RefreshRuntimeAttributesFromSpec();
 						}
 						ApplyGameplayEffectModifiers(
-							stackingTarget->spec, *stackingTarget, mAttributes
+							stackingTarget->spec, *stackingTarget, mAttributes,
+							[&] { return ShouldContinueOperation(stackingHandle); }
 						);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
 						NotifyStackChanged(*stackingTarget);
+						if (!ShouldContinueOperation(stackingHandle)) return {};
 					}
 				}
-				if (!FindEffect(stackingHandle))
-				{
-					return {};
-				}
 				NotifyChanged(*stackingTarget);
-				if (!FindEffect(stackingHandle))
-				{
-					return {};
-				}
+				if (!ShouldContinueOperation(stackingHandle)) return {};
 				NotifyCollectionChanged();
-				return stackingHandle;
+				return ShouldContinueOperation(stackingHandle)
+					? stackingHandle
+					: GameplayEffectHandle{};
+				});
 			}
 
-			ActiveEffect& effect = mActiveEffects.Emplace(newHandle);
-			effect.spec = spec;
-			effect.Initialize(
-				newHandle,
-				spec.duration,
-				spec.definition.stackDecayInterval,
-				spec.attributes
-			);
-			BindSource(effect, context);
-			if (!FindEffect(newHandle))
+			mActiveEffects.Emplace(newHandle);
+			return RunEffectOperation(newHandle, [&]() -> GameplayEffectHandle
 			{
-				return {};
-			}
-			Initialize(effect);
-			if (!FindEffect(newHandle))
-			{
-				return {};
-			}
-			ApplyGameplayEffectModifiers(effect.spec, effect, mAttributes);
-			GrantGameplayEffectTags(effect.spec.definition, mOwnedTags);
-			NotifyActivated(effect);
-			NotifyApplied(newHandle);
-			NotifyCollectionChanged();
-			return newHandle;
+				ActiveEffect* current = FindEffect(newHandle);
+				if (!current) return {};
+				current->spec = spec;
+				current->Initialize(
+					newHandle, spec.duration,
+					spec.definition.stackDecayInterval, spec.attributes
+				);
+				BindSource(*current, context);
+				if (!ShouldContinueOperation(newHandle)) return {};
+				Initialize(*current);
+				if (!ShouldContinueOperation(newHandle)) return {};
+				ApplyGameplayEffectModifiers(
+					current->spec, *current, mAttributes,
+					[&] { return ShouldContinueOperation(newHandle); }
+				);
+				if (!ShouldContinueOperation(newHandle)) return {};
+				GrantGameplayEffectTags(current->spec.definition, *current, mOwnedTags);
+				NotifyActivated(*current);
+				if (!ShouldContinueOperation(newHandle)) return {};
+				NotifyApplied(newHandle);
+				if (!ShouldContinueOperation(newHandle)) return {};
+				NotifyCollectionChanged();
+				return ShouldContinueOperation(newHandle)
+					? newHandle
+					: GameplayEffectHandle{};
+			});
 		}
 
 		bool RefreshEffectDuration(GameplayEffectHandle handle)
@@ -250,13 +262,24 @@ namespace sas
 			{
 				return false;
 			}
-			effect->RefreshDuration(
-				effect->spec.duration,
-				effect->spec.definition.stackDecayInterval
-			);
-			NotifyChanged(*effect);
-			NotifyCollectionChanged();
-			return true;
+			if (effect->operationDepth != 0 || effect->removeRequested ||
+				effect->removalInProgress)
+			{
+				return false;
+			}
+			return RunEffectOperation(handle, [&]() -> bool
+			{
+				ActiveEffect* current = FindEffect(handle);
+				if (!current) return false;
+				current->RefreshDuration(
+					current->spec.duration,
+					current->spec.definition.stackDecayInterval
+				);
+				NotifyChanged(*current);
+				if (!ShouldContinueOperation(handle)) return false;
+				NotifyCollectionChanged();
+				return ShouldContinueOperation(handle);
+			});
 		}
 
 		bool RemoveEffect(GameplayEffectHandle handle)
@@ -276,12 +299,17 @@ namespace sas
 			std::size_t removedCount = 0;
 			for (const GameplayEffectHandle handle : GetHandles())
 			{
-				const ActiveEffect* effect = FindEffect(handle);
-				if (!effect || !predicate(*effect))
+				bool matched = false;
+				RunEffectOperation(handle, [&]
 				{
-					continue;
+					const ActiveEffect* current = FindEffect(handle);
+					matched = current && predicate(*current);
+				});
+				if (matched)
+				{
+					if (FindEffect(handle)) RemoveEffect(handle);
+					if (!FindEffect(handle)) ++removedCount;
 				}
-				removedCount += RemoveEffect(handle) ? 1u : 0u;
 			}
 			return removedCount;
 		}
@@ -321,6 +349,147 @@ namespace sas
 		}
 
 	private:
+		bool ShouldContinueGlobal() const
+		{
+			return !mIsClearing && !mClearRequested && !mCleanupIncomplete &&
+				(!mCallbacks.shouldContinue || mCallbacks.shouldContinue());
+		}
+
+		bool ShouldContinueOperation(GameplayEffectHandle handle)
+		{
+			ActiveEffect* effect = FindEffect(handle);
+			if (!effect || effect->removeRequested || effect->removalInProgress)
+			{
+				return false;
+			}
+			if (!ShouldContinueGlobal())
+			{
+				effect->removeRequested = true;
+				return false;
+			}
+			return true;
+		}
+
+		template <typename Operation>
+		auto RunEffectOperation(
+			GameplayEffectHandle handle,
+			Operation&& operation
+		) -> decltype(operation())
+		{
+			using Result = decltype(operation());
+			ActiveEffect* effect = FindEffect(handle);
+			if (!effect || effect->operationDepth != 0 || effect->removeRequested ||
+				effect->removalInProgress || !ShouldContinueGlobal())
+			{
+				if constexpr (!std::is_void_v<Result>) return Result{};
+				else return;
+			}
+
+			++effect->operationDepth;
+			std::exception_ptr error;
+			if constexpr (std::is_void_v<Result>)
+			{
+				try
+				{
+					std::invoke(std::forward<Operation>(operation));
+					ShouldContinueOperation(handle);
+				}
+				catch (...) { error = std::current_exception(); }
+			}
+			else
+			{
+				std::optional<Result> result;
+				try
+				{
+					result.emplace(std::invoke(std::forward<Operation>(operation)));
+					ShouldContinueOperation(handle);
+				}
+				catch (...) { error = std::current_exception(); }
+
+				effect = FindEffect(handle);
+				if (effect)
+				{
+					if (error) effect->removeRequested = true;
+					if (effect->operationDepth != 0) --effect->operationDepth;
+				}
+				if (effect && effect->operationDepth == 0 && effect->removeRequested)
+				{
+					try { RemoveEffectInternal(handle); }
+					catch (...) { if (!error) error = std::current_exception(); }
+				}
+				if (mClearRequested && !mIsClearing)
+				{
+					DrainRequestedClear(error);
+				}
+				if (error) std::rethrow_exception(error);
+				effect = FindEffect(handle);
+				return effect && !effect->removeRequested
+					? std::move(*result)
+					: Result{};
+			}
+
+			if (!error) ShouldContinueOperation(handle);
+			effect = FindEffect(handle);
+			if (effect)
+			{
+				if (error) effect->removeRequested = true;
+				if (effect->operationDepth != 0) --effect->operationDepth;
+			}
+			if (effect && effect->operationDepth == 0 && effect->removeRequested)
+			{
+				try { RemoveEffectInternal(handle); }
+				catch (...) { if (!error) error = std::current_exception(); }
+			}
+			if (mClearRequested && !mIsClearing)
+			{
+				DrainRequestedClear(error);
+			}
+			if (error) std::rethrow_exception(error);
+		}
+
+		void DrainRequestedClear(std::exception_ptr& error)
+		{
+			if (!mClearRequested || mIsClearing) return;
+			mIsClearing = true;
+			for (ActiveEffect& effect : mActiveEffects.GetAll())
+			{
+				effect.removeRequested = true;
+			}
+
+			std::vector<GameplayEffectHandle> handles;
+			try { handles = GetHandles(); }
+			catch (...)
+			{
+				if (!error) error = std::current_exception();
+				mIsClearing = false;
+				mCleanupIncomplete = !mActiveEffects.GetAll().empty();
+				return;
+			}
+			for (const GameplayEffectHandle handle : handles)
+			{
+				try { RemoveEffectInternal(handle); }
+				catch (...) { if (!error) error = std::current_exception(); }
+			}
+			mIsClearing = false;
+
+			if (mActiveEffects.GetAll().empty())
+			{
+				mClearRequested = false;
+				mCleanupIncomplete = false;
+				return;
+			}
+
+			mCleanupIncomplete = false;
+			for (const ActiveEffect& effect : mActiveEffects.GetAll())
+			{
+				if (effect.operationDepth == 0 && !effect.removalInProgress)
+				{
+					mCleanupIncomplete = true;
+					break;
+				}
+			}
+		}
+
 		bool IsDecayAfterDuration(const ActiveEffect& effect) const
 		{
 			return effect.spec.definition.durationPolicy == GameplayEffectDurationPolicy::Duration &&
@@ -343,18 +512,19 @@ namespace sas
 				}
 
 				ActiveEffect* current = FindEffect(effectHandle);
-				if (!current)
+				if (!current || !ShouldContinueOperation(effectHandle))
 				{
 					return false;
 				}
 				NotifyStackChanged(*current);
-				current = FindEffect(effectHandle);
-				if (!current)
+				if (!ShouldContinueOperation(effectHandle))
 				{
 					return false;
 				}
+				current = FindEffect(effectHandle);
+				if (!current) return false;
 				NotifyChanged(*current);
-				if (!FindEffect(effectHandle))
+				if (!ShouldContinueOperation(effectHandle))
 				{
 					return false;
 				}
@@ -405,13 +575,14 @@ namespace sas
 					mCallbacks.tick
 						? mCallbacks.tick(*effect, slice)
 						: GameplayEffectBehaviorResult{};
+				if (!ShouldContinueOperation(effectHandle)) return;
 				for (const GameplayEffectBehaviorEvent& event : behaviorTick.events)
 				{
 					if (mCallbacks.behaviorEvent)
 					{
 						mCallbacks.behaviorEvent(event);
 					}
-					if (!FindEffect(effectHandle))
+					if (!ShouldContinueOperation(effectHandle))
 					{
 						return;
 					}
@@ -422,11 +593,12 @@ namespace sas
 					{
 						NotifyChanged(*current);
 					}
-					if (!FindEffect(effectHandle))
+					if (!ShouldContinueOperation(effectHandle))
 					{
 						return;
 					}
 					NotifyCollectionChanged();
+					if (!ShouldContinueOperation(effectHandle)) return;
 				}
 				if (behaviorTick.removeEffect)
 				{
@@ -462,118 +634,107 @@ namespace sas
 		{
 			for (const GameplayEffectHandle effectHandle : handles)
 			{
-				ActiveEffect* effect = FindEffect(effectHandle);
-				if (!effect)
-				{
-					continue;
-				}
-				if (IsDecayAfterDuration(*effect))
-				{
-					TickDecayEffect(effectHandle, deltaTime);
-					continue;
-				}
-				const GameplayEffectBehaviorResult behaviorTick =
-					mCallbacks.tick
-						? mCallbacks.tick(*effect, deltaTime)
-						: GameplayEffectBehaviorResult{};
-				for (const GameplayEffectBehaviorEvent& event : behaviorTick.events)
-				{
-					if (mCallbacks.behaviorEvent)
-					{
-						mCallbacks.behaviorEvent(event);
-					}
-				}
-				if (behaviorTick.changed)
+				if (!FindEffect(effectHandle)) continue;
+				RunEffectOperation(effectHandle, [&] { TickHandle(effectHandle, deltaTime); });
+			}
+		}
+
+		void TickHandle(GameplayEffectHandle effectHandle, float deltaTime)
+		{
+			ActiveEffect* effect = FindEffect(effectHandle);
+			if (!effect) return;
+			if (IsDecayAfterDuration(*effect))
+			{
+				TickDecayEffect(effectHandle, deltaTime);
+				return;
+			}
+
+			const GameplayEffectBehaviorResult behaviorTick = mCallbacks.tick
+				? mCallbacks.tick(*effect, deltaTime)
+				: GameplayEffectBehaviorResult{};
+			if (!ShouldContinueOperation(effectHandle)) return;
+			for (const GameplayEffectBehaviorEvent& event : behaviorTick.events)
+			{
+				if (mCallbacks.behaviorEvent) mCallbacks.behaviorEvent(event);
+				if (!ShouldContinueOperation(effectHandle)) return;
+			}
+			if (behaviorTick.changed)
+			{
+				if (ActiveEffect* current = FindEffect(effectHandle)) NotifyChanged(*current);
+				if (!ShouldContinueOperation(effectHandle)) return;
+				NotifyCollectionChanged();
+				if (!ShouldContinueOperation(effectHandle)) return;
+			}
+			if (behaviorTick.removeEffect)
+			{
+				RemoveEffect(effectHandle);
+				return;
+			}
+
+			effect = FindEffect(effectHandle);
+			if (!effect) return;
+			const int stackCountBeforeDurationTick = effect->stackCount;
+			const GameplayEffectDurationTickResult durationTick =
+				GameplayEffectLifecycleOrchestrator::TickDuration(
+					effect->spec.definition.durationPolicy,
+					effect->spec.definition.stackLifetimePolicy,
+					*effect,
+					deltaTime
+				);
+			const bool stackChanged = effect->stackCount != stackCountBeforeDurationTick;
+			if (durationTick.expired)
+			{
+				if (stackChanged)
 				{
 					if (ActiveEffect* current = FindEffect(effectHandle))
 					{
+						NotifyStackChanged(*current);
+						if (!ShouldContinueOperation(effectHandle)) return;
+						current = FindEffect(effectHandle);
+						if (!current) return;
 						NotifyChanged(*current);
+						if (!ShouldContinueOperation(effectHandle)) return;
 					}
-					if (!FindEffect(effectHandle))
-					{
-						continue;
-					}
-					NotifyCollectionChanged();
 				}
-				if (behaviorTick.removeEffect)
-				{
-					RemoveEffect(effectHandle);
-					continue;
-				}
-				effect = FindEffect(effectHandle);
-				if (!effect)
-				{
-					continue;
-				}
-				const int stackCountBeforeDurationTick = effect->stackCount;
-				const GameplayEffectDurationTickResult durationTick =
-					GameplayEffectLifecycleOrchestrator::TickDuration(
-						effect->spec.definition.durationPolicy,
-						effect->spec.definition.stackLifetimePolicy,
-						*effect,
-						deltaTime
-					);
-				const bool stackChanged =
-					effect->stackCount != stackCountBeforeDurationTick;
-				if (durationTick.expired)
+				RemoveEffect(effectHandle);
+				return;
+			}
+			if (durationTick.changed)
+			{
+				if (ActiveEffect* current = FindEffect(effectHandle))
 				{
 					if (stackChanged)
 					{
-						if (ActiveEffect* current = FindEffect(effectHandle))
-						{
-							NotifyStackChanged(*current);
-							current = FindEffect(effectHandle);
-							if (!current)
-							{
-								continue;
-							}
-							NotifyChanged(*current);
-						}
+						NotifyStackChanged(*current);
+						if (!ShouldContinueOperation(effectHandle)) return;
+						current = FindEffect(effectHandle);
+						if (!current) return;
 					}
-					RemoveEffect(effectHandle);
-					continue;
+					NotifyChanged(*current);
+					if (!ShouldContinueOperation(effectHandle)) return;
 				}
-				if (durationTick.changed)
-				{
-					if (ActiveEffect* current = FindEffect(effectHandle))
-					{
-						if (stackChanged)
-						{
-							NotifyStackChanged(*current);
-							current = FindEffect(effectHandle);
-							if (!current)
-							{
-								continue;
-							}
-						}
-						NotifyChanged(*current);
-					}
-					NotifyCollectionChanged();
-				}
+				NotifyCollectionChanged();
+				ShouldContinueOperation(effectHandle);
 			}
 		}
 
 	public:
 		void Clear()
 		{
-			for (const GameplayEffectHandle handle : GetHandles())
+			if (mIsClearing)
 			{
-				RemoveEffect(handle);
+				return;
 			}
-			while (!mActiveEffects.GetAll().empty())
+			mClearRequested = true;
+			std::exception_ptr error;
+			DrainRequestedClear(error);
+			if (!error && mCleanupIncomplete)
 			{
-				const std::vector<GameplayEffectHandle> handles = GetHandles();
-				bool removedAny = false;
-				for (const GameplayEffectHandle handle : handles)
-				{
-					removedAny = RemoveEffect(handle) || removedAny;
-				}
-				if (!removedAny)
-				{
-					break;
-				}
+				error = std::make_exception_ptr(
+					std::runtime_error("Gameplay effect cleanup remains incomplete.")
+				);
 			}
-			mActiveEffects.Reset();
+			if (error) std::rethrow_exception(error);
 		}
 
 		bool RemoveEffectAt(std::size_t index)
@@ -592,28 +753,65 @@ namespace sas
 
 		bool RemoveEffectInternal(GameplayEffectHandle handle)
 		{
-			if (std::find(
-					mRemovalInProgress.begin(),
-					mRemovalInProgress.end(),
-					handle
-				) != mRemovalInProgress.end())
-			{
-				return false;
-			}
 			ActiveEffect* effect = mActiveEffects.Find(handle);
 			if (!effect)
 			{
 				return false;
 			}
-			mRemovalInProgress.push_back(handle);
-			RemoveGameplayEffectTags(effect->spec.definition, mOwnedTags);
-			RemoveGameplayEffectModifiers(*effect, mAttributes);
-			NotifyRemoving(*effect);
-			mActiveEffects.Erase(handle);
-			mRemovalInProgress.pop_back();
-			NotifyRemoved(handle);
-			NotifyCollectionChanged();
-			return true;
+			if (effect->operationDepth != 0 || effect->removalInProgress)
+			{
+				effect->removeRequested = true;
+				return true;
+			}
+
+			effect->removeRequested = true;
+			effect->removalInProgress = true;
+			std::exception_ptr error;
+			const auto cleanup = [&error](auto&& operation)
+			{
+				try { operation(); }
+				catch (...) { if (!error) error = std::current_exception(); }
+			};
+			cleanup([&] { RemoveGameplayEffectTags(*effect, mOwnedTags); });
+			cleanup([&] { RemoveGameplayEffectModifiers(*effect, mAttributes); });
+			bool removingCallbackCompleted = true;
+			try { NotifyRemoving(*effect); }
+			catch (...)
+			{
+				removingCallbackCompleted = false;
+				if (!error) error = std::current_exception();
+			}
+
+			effect = mActiveEffects.Find(handle);
+			if (!effect)
+			{
+				if (error) std::rethrow_exception(error);
+				return false;
+			}
+			if (!removingCallbackCompleted ||
+				!effect->appliedModifierHandles.empty() ||
+				!effect->appliedGrantedTags.empty())
+			{
+				effect->removalInProgress = false;
+				if (error) std::rethrow_exception(error);
+				return false;
+			}
+
+			effect->removalInProgress = false;
+			const bool erased = mActiveEffects.Erase(handle);
+			if (!erased)
+			{
+				if (error) std::rethrow_exception(error);
+				return false;
+			}
+			cleanup([&] { NotifyRemoved(handle); });
+			cleanup([&] { NotifyCollectionChanged(); });
+			if (mClearRequested && !mIsClearing)
+			{
+				DrainRequestedClear(error);
+			}
+			if (error) std::rethrow_exception(error);
+			return erased;
 		}
 
 		ActiveEffect* FindEffect(GameplayEffectHandle handle)
@@ -670,7 +868,8 @@ namespace sas
 
 		bool CanApplyEffect(const GameplayEffectDefinition& definition) const
 		{
-			if (!CanApplyGameplayEffect(definition, mOwnedTags))
+			if (!ShouldContinueGlobal() ||
+				!CanApplyGameplayEffect(definition, mOwnedTags))
 			{
 				return false;
 			}
@@ -721,45 +920,35 @@ namespace sas
 					{
 						break;
 					}
-					ActiveEffect* effect = FindEffect(effectHandle);
-					if (!effect)
+					if (!FindEffect(effectHandle)) continue;
+					RunEffectOperation(effectHandle, [&]
 					{
-						continue;
-					}
-					if (std::invoke(resolvePhase, *effect) != phase)
-					{
-						continue;
-					}
-
-					const GameplayEffectBehaviorResult result =
-						std::invoke(process, *effect, context);
-					for (const GameplayEffectBehaviorEvent& event : result.events)
-					{
-						if (mCallbacks.behaviorEvent)
+						ActiveEffect* effect = FindEffect(effectHandle);
+						if (!effect || !ShouldContinueOperation(effectHandle) ||
+							std::invoke(resolvePhase, *effect) != phase)
 						{
-							mCallbacks.behaviorEvent(event);
+							return;
 						}
-					}
-					if (!FindEffect(effectHandle))
-					{
-						continue;
-					}
-					if (result.changed)
-					{
-						if (ActiveEffect* current = FindEffect(effectHandle))
+						const GameplayEffectBehaviorResult result =
+							std::invoke(process, *effect, context);
+						if (!ShouldContinueOperation(effectHandle)) return;
+						for (const GameplayEffectBehaviorEvent& event : result.events)
 						{
-							NotifyChanged(*current);
+							if (mCallbacks.behaviorEvent) mCallbacks.behaviorEvent(event);
+							if (!ShouldContinueOperation(effectHandle)) return;
 						}
-						if (!FindEffect(effectHandle))
+						if (result.changed)
 						{
-							continue;
+							if (ActiveEffect* current = FindEffect(effectHandle))
+							{
+								NotifyChanged(*current);
+							}
+							if (!ShouldContinueOperation(effectHandle)) return;
+							NotifyCollectionChanged();
+							if (!ShouldContinueOperation(effectHandle)) return;
 						}
-						NotifyCollectionChanged();
-					}
-					if (result.removeEffect)
-					{
-						RemoveEffect(effectHandle);
-					}
+						if (result.removeEffect) RemoveEffect(effectHandle);
+					});
 				}
 			}
 		}
@@ -851,7 +1040,9 @@ namespace sas
 		ly::GameplayTagContainer& mOwnedTags;
 		Callbacks mCallbacks;
 		Collection mActiveEffects;
-		std::vector<GameplayEffectHandle> mRemovalInProgress;
+		bool mIsClearing = false;
+		bool mClearRequested = false;
+		bool mCleanupIncomplete = false;
 		std::vector<GameplayEffectHandle> mTickHandleScratch;
 		bool mTickInProgress = false;
 	};

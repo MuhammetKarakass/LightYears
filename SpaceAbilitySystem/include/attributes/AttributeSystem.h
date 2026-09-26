@@ -132,6 +132,10 @@ namespace sas
 		void SetBaseValue(const AttributeId& id, float baseValue);
 		void ApplyBaseModifier(const AttributeModifier& modifier);
 		AttributeModifierHandle AddModifier(const AttributeModifier& modifier);
+		AttributeModifierHandle AddModifier(
+			const AttributeModifier& modifier,
+			AttributeModifierHandle& committedHandle
+		);
 		void RemoveModifier(AttributeModifierHandle handle);
 		void Clear();
 
@@ -149,6 +153,7 @@ namespace sas
 		> mAttributes;
 		ly::Map<unsigned int, AttributeId> mHandleToAttribute;
 		unsigned int mNextHandleId = 1;
+		uint64_t mClearGeneration = 1;
 		uint64_t mRevision = 1;
 	};
 

@@ -1,6 +1,8 @@
 #include "attributes/AttributeSystem.h"
 
 #include <algorithm>
+#include <exception>
+#include <stdexcept>
 
 namespace sas
 {
@@ -186,20 +188,75 @@ namespace sas
 		const AttributeModifier& modifier
 	)
 	{
+		AttributeModifierHandle committedHandle;
+		try
+		{
+			return AddModifier(modifier, committedHandle);
+		}
+		catch (...)
+		{
+			const std::exception_ptr error = std::current_exception();
+			if (committedHandle.IsValid())
+			{
+				try { RemoveModifier(committedHandle); }
+				catch (...) {}
+			}
+			std::rethrow_exception(error);
+		}
+	}
+
+	AttributeModifierHandle AttributeSystem::AddModifier(
+		const AttributeModifier& modifier,
+		AttributeModifierHandle& committedHandle
+	)
+	{
+		committedHandle = {};
 		if (!modifier.attributeId.IsValid())
 		{
 			return {};
 		}
+
+		const AttributeId attributeId = modifier.attributeId;
+		const uint64_t clearGeneration = mClearGeneration;
+		if (mNextHandleId == 0)
+		{
+			throw std::overflow_error("Attribute modifier handle IDs are exhausted.");
+		}
+		const AttributeModifierHandle handle{ mNextHandleId++ };
+		mHandleToAttribute.emplace(handle.id, attributeId);
+		committedHandle = handle;
+
 		if (!HasAttribute(modifier.attributeId))
 		{
-			RegisterAttribute(modifier.attributeId, 0.f);
+			RegisterAttribute(attributeId, 0.f);
+			if (mClearGeneration != clearGeneration ||
+				mHandleToAttribute.find(handle.id) == mHandleToAttribute.end())
+			{
+				return {};
+			}
 		}
 
-		const unsigned int handleId = mNextHandleId++;
-		mAttributes[modifier.attributeId].modifiers[handleId] = modifier;
-		mHandleToAttribute[handleId] = modifier.attributeId;
-		Recalculate(modifier.attributeId);
-		return AttributeModifierHandle{ handleId };
+		auto foundEntry = mAttributes.find(attributeId);
+		if (foundEntry == mAttributes.end() ||
+			mHandleToAttribute.find(handle.id) == mHandleToAttribute.end())
+		{
+			return {};
+		}
+		foundEntry->second.modifiers.emplace(handle.id, modifier);
+		Recalculate(attributeId);
+
+		if (mClearGeneration != clearGeneration)
+		{
+			return {};
+		}
+		const auto foundHandle = mHandleToAttribute.find(handle.id);
+		const auto currentEntry = mAttributes.find(attributeId);
+		return foundHandle != mHandleToAttribute.end() &&
+			currentEntry != mAttributes.end() &&
+			currentEntry->second.modifiers.find(handle.id) !=
+				currentEntry->second.modifiers.end()
+			? handle
+			: AttributeModifierHandle{};
 	}
 
 	void AttributeSystem::RemoveModifier(AttributeModifierHandle handle)
@@ -211,17 +268,18 @@ namespace sas
 		}
 
 		const AttributeId attributeId = foundAttribute->second;
+		mHandleToAttribute.erase(foundAttribute);
 		auto foundEntry = mAttributes.find(attributeId);
-		if (foundEntry != mAttributes.end())
+		if (foundEntry != mAttributes.end() &&
+			foundEntry->second.modifiers.erase(handle.id) != 0)
 		{
-			foundEntry->second.modifiers.erase(handle.id);
 			Recalculate(attributeId);
 		}
-		mHandleToAttribute.erase(foundAttribute);
 	}
 
 	void AttributeSystem::Clear()
 	{
+		++mClearGeneration;
 		mAttributes.clear();
 		mHandleToAttribute.clear();
 		// Handle IDs are never recycled. Resetting the counter here would let a
@@ -233,7 +291,8 @@ namespace sas
 
 	void AttributeSystem::Recalculate(const AttributeId& id)
 	{
-		auto found = mAttributes.find(id);
+		const AttributeId attributeId = id;
+		auto found = mAttributes.find(attributeId);
 		if (found == mAttributes.end())
 		{
 			return;
@@ -281,7 +340,7 @@ namespace sas
 		if (previousValue != value)
 		{
 			++mRevision;
-			onAttributeChanged.Broadcast(id, previousValue, value);
+			onAttributeChanged.Broadcast(attributeId, previousValue, value);
 		}
 	}
 }
