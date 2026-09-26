@@ -14,6 +14,7 @@
 #include <iostream>
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 
 namespace ly
@@ -129,6 +130,359 @@ namespace ly
 			output << artifact.dump(2) << '\n';
 			return output.good();
 		}
+
+		Json RunOneShotThrowScenario(TimerManager& timerManager, const std::weak_ptr<Object>& listener)
+		{
+			constexpr const char* expectedErrorId = "E16.one-shot-callback";
+			const std::size_t timerCountBeforeClear = timerManager.GetTraversalTimerCount();
+			timerManager.ClearAllTimers();
+			const std::size_t timerCountAfterClear = timerManager.GetTraversalTimerCount();
+			int callbackCount = 0;
+			std::vector<std::string> callbackOrder;
+			std::string firstUpdateErrorId;
+			std::string secondUpdateErrorId;
+			const TimerHandle oneShotHandle = timerManager.SetTimer(listener, [&]()
+			{
+				++callbackCount;
+				callbackOrder.emplace_back("one-shot-callback");
+				throw std::runtime_error{ expectedErrorId };
+			}, SimulationDeltaSeconds, false);
+			const std::size_t timerCountBeforeFirstUpdate = timerManager.GetTraversalTimerCount();
+			try
+			{
+				timerManager.UpdateTimer(SimulationDeltaSeconds);
+			}
+			catch (const std::exception& exception)
+			{
+				firstUpdateErrorId = exception.what();
+			}
+			catch (...)
+			{
+				firstUpdateErrorId = "unknown-exception";
+			}
+			const std::size_t timerCountAfterFirstUpdate = timerManager.GetTraversalTimerCount();
+			try
+			{
+				timerManager.UpdateTimer(SimulationDeltaSeconds);
+			}
+			catch (const std::exception& exception)
+			{
+				secondUpdateErrorId = exception.what();
+			}
+			catch (...)
+			{
+				secondUpdateErrorId = "unknown-exception";
+			}
+			const std::size_t timerCountAfterSecondUpdate = timerManager.GetTraversalTimerCount();
+			timerManager.ClearAllTimers();
+			const std::size_t timerCountAfterCleanup = timerManager.GetTraversalTimerCount();
+			const bool firstErrorPreserved = firstUpdateErrorId == expectedErrorId;
+			const bool oneShotNotRetried = callbackCount == 1 && secondUpdateErrorId.empty();
+			const bool timerConsumed = timerCountAfterFirstUpdate == 0 && timerCountAfterSecondUpdate == 0;
+			return {
+				{ "assertions", {
+					{ "firstErrorPreserved", firstErrorPreserved },
+					{ "oneShotConsumedAfterThrow", timerConsumed },
+					{ "oneShotNotRetried", oneShotNotRetried }
+				} },
+				{ "callbackOrder", callbackOrder },
+				{ "caseId", "E16" },
+				{ "counts", {
+					{ "callbackInvocations", callbackCount },
+					{ "timersAfterCleanup", timerCountAfterCleanup },
+					{ "timersAfterFirstUpdate", timerCountAfterFirstUpdate },
+					{ "timersAfterSecondUpdate", timerCountAfterSecondUpdate },
+					{ "timersBeforeClear", timerCountBeforeClear },
+					{ "timersBeforeFirstUpdate", timerCountBeforeFirstUpdate },
+					{ "timersAfterClear", timerCountAfterClear }
+				} },
+				{ "errors", {
+					{ "expectedFirstUpdateErrorId", expectedErrorId },
+					{ "firstUpdateErrorId", firstUpdateErrorId },
+					{ "secondUpdateErrorId", secondUpdateErrorId }
+				} },
+				{ "expected", {
+					{ "callbackInvocations", 1 },
+					{ "firstUpdateErrorId", expectedErrorId },
+					{ "secondUpdateErrorId", "" },
+					{ "timersAfterFirstUpdate", 0 },
+					{ "timersAfterSecondUpdate", 0 }
+				} },
+				{ "actual", {
+					{ "callbackInvocations", callbackCount },
+					{ "firstUpdateErrorId", firstUpdateErrorId },
+					{ "secondUpdateErrorId", secondUpdateErrorId },
+					{ "timersAfterFirstUpdate", timerCountAfterFirstUpdate },
+					{ "timersAfterSecondUpdate", timerCountAfterSecondUpdate }
+				} },
+				{ "handles", { { "oneShot", oneShotHandle.GetTimerKey() } } },
+				{ "input", {
+					{ "durationSeconds", SimulationDeltaSeconds },
+					{ "firstUpdateDeltaSeconds", SimulationDeltaSeconds },
+					{ "repeat", false },
+					{ "secondUpdateDeltaSeconds", SimulationDeltaSeconds }
+				} },
+				{ "passed", timerCountBeforeFirstUpdate == 1 && timerCountAfterCleanup == 0 &&
+					firstErrorPreserved && oneShotNotRetried && timerConsumed },
+				{ "scenario", "luna.e16.one_shot_throw_and_second_update" },
+				{ "schemaVersion", 1 }
+			};
+		}
+
+		Json RunClearAddNestedUpdateScenario(TimerManager& timerManager, const std::weak_ptr<Object>& listener)
+		{
+			constexpr float outerUpdateDeltaSeconds = 0.125f;
+			constexpr float nestedUpdateDeltaSeconds = 1.f;
+			constexpr float followUpTimerDurationSeconds = 0.25f;
+			const std::size_t timerCountBeforeClear = timerManager.GetTraversalTimerCount();
+			timerManager.ClearAllTimers();
+			const std::size_t timerCountAfterClear = timerManager.GetTraversalTimerCount();
+			int outerCallbackCount = 0;
+			int followUpCallbackCount = 0;
+			std::vector<std::string> callbackOrder;
+			std::string nestedUpdateError;
+			std::string outerUpdateError;
+			std::string firstFollowUpUpdateError;
+			std::string secondFollowUpUpdateError;
+			std::string listenerLifetimeUpdateError;
+			std::string pendingListenerUpdateError;
+			unsigned int followUpHandleKey = 0;
+			const TimerHandle outerHandle = timerManager.SetTimer(listener, [&]()
+			{
+				++outerCallbackCount;
+				callbackOrder.emplace_back("outer-callback-enter");
+				timerManager.ClearAllTimers();
+				callbackOrder.emplace_back("clear-all");
+				const TimerHandle followUpHandle = timerManager.SetTimer(listener, [&]()
+				{
+					++followUpCallbackCount;
+					callbackOrder.emplace_back("follow-up-callback");
+				}, followUpTimerDurationSeconds, false);
+				followUpHandleKey = followUpHandle.GetTimerKey();
+				callbackOrder.emplace_back("follow-up-registered");
+				callbackOrder.emplace_back("nested-update-requested");
+				try
+				{
+					timerManager.UpdateTimer(nestedUpdateDeltaSeconds);
+				}
+				catch (const std::exception& exception)
+				{
+					nestedUpdateError = exception.what();
+				}
+				catch (...)
+				{
+					nestedUpdateError = "unknown-exception";
+				}
+				callbackOrder.emplace_back("nested-update-returned");
+				callbackOrder.emplace_back("outer-callback-return");
+			}, outerUpdateDeltaSeconds, false);
+			const std::size_t timerCountBeforeOuterUpdate = timerManager.GetTraversalTimerCount();
+			try
+			{
+				timerManager.UpdateTimer(outerUpdateDeltaSeconds);
+			}
+			catch (const std::exception& exception)
+			{
+				outerUpdateError = exception.what();
+			}
+			catch (...)
+			{
+				outerUpdateError = "unknown-exception";
+			}
+			callbackOrder.emplace_back("outer-update-returned");
+			const std::size_t timerCountAfterOuterUpdate = timerManager.GetTraversalTimerCount();
+			const int followUpCallbackCountAfterOuterUpdate = followUpCallbackCount;
+			try
+			{
+				timerManager.UpdateTimer(outerUpdateDeltaSeconds);
+			}
+			catch (const std::exception& exception)
+			{
+				firstFollowUpUpdateError = exception.what();
+			}
+			catch (...)
+			{
+				firstFollowUpUpdateError = "unknown-exception";
+			}
+			callbackOrder.emplace_back("follow-up-update-1-returned");
+			const int followUpCallbackCountAfterFirstUpdate = followUpCallbackCount;
+			const std::size_t timerCountAfterFirstFollowUpUpdate = timerManager.GetTraversalTimerCount();
+			try
+			{
+				timerManager.UpdateTimer(outerUpdateDeltaSeconds);
+			}
+			catch (const std::exception& exception)
+			{
+				secondFollowUpUpdateError = exception.what();
+			}
+			catch (...)
+			{
+				secondFollowUpUpdateError = "unknown-exception";
+			}
+			callbackOrder.emplace_back("follow-up-update-2-returned");
+			const std::size_t timerCountAfterSecondFollowUpUpdate = timerManager.GetTraversalTimerCount();
+
+			std::shared_ptr<Object> lifetimeOwner = std::make_shared<Object>();
+			const unsigned int lifetimeOwnerId = lifetimeOwner->GetUniqueID();
+			const std::weak_ptr<Object> weakLifetimeOwner{ lifetimeOwner };
+			int lifetimeCallbackCount = 0;
+			bool listenerAliveInsideCallback = false;
+			const TimerHandle lifetimeHandle = timerManager.SetTimer(weakLifetimeOwner, [&]()
+			{
+				++lifetimeCallbackCount;
+				lifetimeOwner.reset();
+				listenerAliveInsideCallback = !weakLifetimeOwner.expired();
+				callbackOrder.emplace_back("listener-lifetime-callback");
+			}, 0.f, false);
+			const std::size_t timerCountBeforeLifetimeUpdate = timerManager.GetTraversalTimerCount();
+			try
+			{
+				timerManager.UpdateTimer(0.f);
+			}
+			catch (const std::exception& exception)
+			{
+				listenerLifetimeUpdateError = exception.what();
+			}
+			catch (...)
+			{
+				listenerLifetimeUpdateError = "unknown-exception";
+			}
+			const bool listenerExpiredAfterCallback = weakLifetimeOwner.expired();
+			const std::size_t timerCountAfterLifetimeUpdate = timerManager.GetTraversalTimerCount();
+
+			std::shared_ptr<Object> pendingOwner = std::make_shared<Object>();
+			const unsigned int pendingOwnerId = pendingOwner->GetUniqueID();
+			pendingOwner->Destroy();
+			int pendingListenerCallbackCount = 0;
+			const TimerHandle pendingListenerHandle = timerManager.SetTimer(pendingOwner, [&]()
+			{
+				++pendingListenerCallbackCount;
+			}, 0.f, false);
+			const std::size_t timerCountBeforePendingListenerUpdate = timerManager.GetTraversalTimerCount();
+			try
+			{
+				timerManager.UpdateTimer(0.f);
+			}
+			catch (const std::exception& exception)
+			{
+				pendingListenerUpdateError = exception.what();
+			}
+			catch (...)
+			{
+				pendingListenerUpdateError = "unknown-exception";
+			}
+			const std::size_t timerCountAfterPendingListenerUpdate = timerManager.GetTraversalTimerCount();
+			timerManager.ClearAllTimers();
+			const std::size_t timerCountAfterCleanup = timerManager.GetTraversalTimerCount();
+			const std::vector<std::string> expectedCallbackOrder{
+				"outer-callback-enter", "clear-all", "follow-up-registered", "nested-update-requested",
+				"nested-update-returned", "outer-callback-return", "outer-update-returned",
+				"follow-up-update-1-returned", "follow-up-callback", "follow-up-update-2-returned",
+				"listener-lifetime-callback"
+			};
+			const bool noUnexpectedExceptions = nestedUpdateError.empty() && outerUpdateError.empty() &&
+				firstFollowUpUpdateError.empty() && secondFollowUpUpdateError.empty() &&
+				listenerLifetimeUpdateError.empty() && pendingListenerUpdateError.empty();
+			const bool followUpFiredAtCorrectTime = followUpCallbackCountAfterOuterUpdate == 0 &&
+				followUpCallbackCountAfterFirstUpdate == 0 &&
+				followUpCallbackCount == 1 && timerCountAfterFirstFollowUpUpdate == 1 &&
+				timerCountAfterSecondFollowUpUpdate == 0;
+			const bool timerCountsCorrect = timerCountAfterClear == 0 && timerCountBeforeOuterUpdate == 1 &&
+				timerCountAfterOuterUpdate == 1 && timerCountBeforeLifetimeUpdate == 1 &&
+				timerCountAfterLifetimeUpdate == 0 && timerCountBeforePendingListenerUpdate == 1 &&
+				timerCountAfterPendingListenerUpdate == 0 && timerCountAfterCleanup == 0;
+			const bool listenerLifetimeCorrect = lifetimeCallbackCount == 1 && listenerAliveInsideCallback &&
+				listenerExpiredAfterCallback;
+			const bool pendingListenerRejected = pendingListenerCallbackCount == 0;
+			return {
+				{ "assertions", {
+					{ "clearAddAndNestedUpdateCompleteSafely", noUnexpectedExceptions && timerCountsCorrect },
+					{ "newTimerUsesOnlyOuterUpdatesAfterRegistration", followUpFiredAtCorrectTime },
+					{ "callbackOrderMatchesExpected", callbackOrder == expectedCallbackOrder },
+					{ "listenerHeldThroughCallbackAndReleasedAfterward", listenerLifetimeCorrect },
+					{ "pendingListenerDoesNotRun", pendingListenerRejected }
+				} },
+				{ "callbackOrder", callbackOrder },
+				{ "caseId", "E17" },
+				{ "counts", {
+					{ "outerCallbackInvocations", outerCallbackCount },
+					{ "followUpCallbackInvocations", followUpCallbackCount },
+					{ "followUpCallbacksAfterOuterUpdate", followUpCallbackCountAfterOuterUpdate },
+					{ "followUpCallbacksAfterFirstUpdate", followUpCallbackCountAfterFirstUpdate },
+					{ "listenerLifetimeCallbackInvocations", lifetimeCallbackCount },
+					{ "listenerAliveInsideCallback", listenerAliveInsideCallback },
+					{ "listenerExpiredAfterCallback", listenerExpiredAfterCallback },
+					{ "pendingListenerCallbackInvocations", pendingListenerCallbackCount },
+					{ "timersAfterClear", timerCountAfterClear },
+					{ "timersAfterOuterUpdate", timerCountAfterOuterUpdate },
+					{ "timersAfterFirstFollowUpUpdate", timerCountAfterFirstFollowUpUpdate },
+					{ "timersAfterSecondFollowUpUpdate", timerCountAfterSecondFollowUpUpdate },
+					{ "timersBeforeOuterUpdate", timerCountBeforeOuterUpdate },
+					{ "timersBeforeLifetimeUpdate", timerCountBeforeLifetimeUpdate },
+					{ "timersAfterLifetimeUpdate", timerCountAfterLifetimeUpdate },
+					{ "timersBeforePendingListenerUpdate", timerCountBeforePendingListenerUpdate },
+					{ "timersAfterPendingListenerUpdate", timerCountAfterPendingListenerUpdate },
+					{ "timersBeforeClear", timerCountBeforeClear },
+					{ "timersAfterCleanup", timerCountAfterCleanup }
+				} },
+				{ "errors", {
+					{ "nestedUpdateError", nestedUpdateError },
+					{ "outerUpdateError", outerUpdateError },
+					{ "firstFollowUpUpdateError", firstFollowUpUpdateError },
+					{ "secondFollowUpUpdateError", secondFollowUpUpdateError },
+					{ "listenerLifetimeUpdateError", listenerLifetimeUpdateError },
+					{ "pendingListenerUpdateError", pendingListenerUpdateError }
+				} },
+				{ "expected", {
+					{ "callbackOrder", expectedCallbackOrder },
+					{ "followUpCallbackInvocationsAfterOuterUpdate", 0 },
+					{ "followUpCallbackInvocationsAfterFirstUpdate", 0 },
+					{ "followUpCallbackInvocationsAfterSecondUpdate", 1 },
+					{ "timersAfterOuterUpdate", 1 },
+					{ "timersAfterFirstFollowUpUpdate", 1 },
+					{ "timersAfterSecondFollowUpUpdate", 0 },
+					{ "listenerAliveInsideCallback", true },
+					{ "listenerExpiredAfterCallback", true },
+					{ "pendingListenerCallbackInvocations", 0 }
+				} },
+				{ "actual", {
+					{ "callbackOrder", callbackOrder },
+					{ "followUpCallbackInvocationsAfterOuterUpdate", followUpCallbackCountAfterOuterUpdate },
+					{ "followUpCallbackInvocationsAfterFirstUpdate", followUpCallbackCountAfterFirstUpdate },
+					{ "followUpCallbackInvocationsAfterSecondUpdate", followUpCallbackCount },
+					{ "timersAfterOuterUpdate", timerCountAfterOuterUpdate },
+					{ "timersAfterFirstFollowUpUpdate", timerCountAfterFirstFollowUpUpdate },
+					{ "timersAfterSecondFollowUpUpdate", timerCountAfterSecondFollowUpUpdate },
+					{ "listenerAliveInsideCallback", listenerAliveInsideCallback },
+					{ "listenerExpiredAfterCallback", listenerExpiredAfterCallback },
+					{ "pendingListenerCallbackInvocations", pendingListenerCallbackCount }
+				} },
+				{ "expectedCallbackOrder", expectedCallbackOrder },
+				{ "handles", {
+					{ "outerTimer", outerHandle.GetTimerKey() },
+					{ "followUpTimer", followUpHandleKey },
+					{ "listenerLifetimeTimer", lifetimeHandle.GetTimerKey() },
+					{ "pendingListenerTimer", pendingListenerHandle.GetTimerKey() }
+				} },
+				{ "input", {
+					{ "outerUpdateDeltaSeconds", outerUpdateDeltaSeconds },
+					{ "nestedUpdateDeltaSeconds", nestedUpdateDeltaSeconds },
+					{ "followUpTimerDurationSeconds", followUpTimerDurationSeconds },
+					{ "listenerLifetimeOwnerId", lifetimeOwnerId },
+					{ "pendingOwnerId", pendingOwnerId },
+					{ "listenerLifetimeTimerDurationSeconds", 0.f },
+					{ "listenerLifetimeUpdateDeltaSeconds", 0.f },
+					{ "pendingListenerTimerDurationSeconds", 0.f },
+					{ "pendingListenerUpdateDeltaSeconds", 0.f },
+					{ "followUpUpdateDeltasSeconds", { outerUpdateDeltaSeconds, outerUpdateDeltaSeconds } }
+				} },
+				{ "passed", outerCallbackCount == 1 && timerCountBeforeClear >= timerCountAfterClear &&
+					noUnexpectedExceptions && followUpFiredAtCorrectTime && timerCountsCorrect &&
+					callbackOrder == expectedCallbackOrder && listenerLifetimeCorrect && pendingListenerRejected },
+				{ "scenario", "luna.e17.clear_add_and_nested_update" },
+				{ "schemaVersion", 1 }
+			};
+		}
 	}
 
 	int RunTimerManagerSceneE2E(const char* artifactPath, const std::string& setupError)
@@ -141,6 +495,20 @@ namespace ly
 		TimerSamples gameSamples;
 		std::vector<double> combinedFrameUpdateMicroseconds;
 		std::string runtimeError;
+		Json e16Artifact{
+			{ "caseId", "E16" },
+			{ "passed", false },
+			{ "scenario", "luna.e16.one_shot_throw_and_second_update" },
+			{ "status", "skipped: production scene did not complete" },
+			{ "schemaVersion", 1 }
+		};
+		Json e17Artifact{
+			{ "caseId", "E17" },
+			{ "passed", false },
+			{ "scenario", "luna.e17.clear_add_and_nested_update" },
+			{ "status", "skipped: production scene did not complete" },
+			{ "schemaVersion", 1 }
+		};
 		bool levelStarted = false;
 		bool physicsInitialized = false;
 		int completedFrames = 0;
@@ -193,6 +561,23 @@ namespace ly
 				runtimeError = "Unknown exception while ticking ArenaLevel";
 			}
 		}
+		if (setupError.empty() && runtimeError.empty() && levelStarted)
+		{
+			try
+			{
+				const std::weak_ptr<Object> sceneListener{ level };
+				e16Artifact = RunOneShotThrowScenario(TimerManager::GetGlobalTimerManager(), sceneListener);
+				e17Artifact = RunClearAddNestedUpdateScenario(TimerManager::GetGlobalTimerManager(), sceneListener);
+			}
+			catch (const std::exception& exception)
+			{
+				runtimeError = exception.what();
+			}
+			catch (...)
+			{
+				runtimeError = "Unknown exception while running TimerManager callback contract scenarios";
+			}
+		}
 
 		const double combinedP95Microseconds = Percentile(combinedFrameUpdateMicroseconds, 0.95);
 		const double combinedMaximumMicroseconds = combinedFrameUpdateMicroseconds.empty()
@@ -203,16 +588,35 @@ namespace ly
 			globalSamples.updateMicroseconds.size() == SimulationFrameCount &&
 			gameSamples.traversalCounts.size() == SimulationFrameCount &&
 			gameSamples.updateMicroseconds.size() == SimulationFrameCount;
-		const bool measurementCompleted = setupError.empty() && runtimeError.empty() && levelStarted &&
-			metricSamplesComplete;
 		const bool schedulerGateExceeded =
 			combinedP95Microseconds / 1000.0 > TimerUpdateBudgetMilliseconds;
+		const std::filesystem::path absoluteArtifactPath = std::filesystem::absolute(artifactPath);
+		const std::filesystem::path e16ArtifactPath = absoluteArtifactPath.parent_path() / "luna-e16-timer-one-shot.json";
+		const std::filesystem::path e17ArtifactPath = absoluteArtifactPath.parent_path() / "luna-e17-timer-clear-add-nested-update.json";
+		const bool e16ArtifactWritten = WriteArtifact(e16ArtifactPath, e16Artifact);
+		const bool e17ArtifactWritten = WriteArtifact(e17ArtifactPath, e17Artifact);
+		const bool callbackScenariosPassed = e16Artifact.value("passed", false) && e17Artifact.value("passed", false);
+		const bool behaviorArtifactsWritten = e16ArtifactWritten && e17ArtifactWritten;
+		const bool sceneMeasurementCompleted = setupError.empty() && runtimeError.empty() && levelStarted &&
+			metricSamplesComplete;
+		const bool measurementCompleted = sceneMeasurementCompleted && callbackScenariosPassed && behaviorArtifactsWritten;
 
 		Json artifact{
 			{ "assertions", {
 				{ "bothApplicationTimerManagersMeasured", metricSamplesComplete },
+				{ "e16OneShotConsumedBeforeThrowAndNotRetried", e16Artifact.value("passed", false) },
+				{ "e17ClearAddAndNestedUpdateRemainSafe", e17Artifact.value("passed", false) },
 				{ "realArenaLevelStartedAndTicked", levelStarted && completedFrames == SimulationFrameCount },
 				{ "runtimeContentBootstrapSucceeded", setupError.empty() }
+			} },
+			{ "callbackContractScenarios", {
+				{ "e16", e16Artifact },
+				{ "e17", e17Artifact },
+				{ "passed", callbackScenariosPassed }
+			} },
+			{ "contractArtifacts", {
+				{ "e16", { { "path", e16ArtifactPath.string() }, { "written", e16ArtifactWritten } } },
+				{ "e17", { { "path", e17ArtifactPath.string() }, { "written", e17ArtifactWritten } } }
 			} },
 			{ "input", {
 				{ "deltaSecondsPerFrame", SimulationDeltaSeconds },
@@ -267,7 +671,8 @@ namespace ly
 				*std::max_element(globalSamples.traversalCounts.begin(), globalSamples.traversalCounts.end()))
 			<< " gameCountMax=" << (gameSamples.traversalCounts.empty() ? 0 :
 				*std::max_element(gameSamples.traversalCounts.begin(), gameSamples.traversalCounts.end()))
-			<< " combinedUpdateP95Us=" << combinedP95Microseconds << '\n';
+			<< " combinedUpdateP95Us=" << combinedP95Microseconds
+			<< " callbackScenariosPassed=" << callbackScenariosPassed << '\n';
 		if (!measurementCompleted)
 		{
 			std::cerr << "TimerManager scene E2E measurement failed; see the artifact for outcomes.\n";

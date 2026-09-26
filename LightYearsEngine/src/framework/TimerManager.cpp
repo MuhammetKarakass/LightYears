@@ -76,6 +76,7 @@ namespace ly
 
 	void TimerManager::UpdateTimer(float deltaTime)
 	{
+		if (mIsUpdating) return;
 		mIsUpdating = true;
 		try
 		{
@@ -194,7 +195,11 @@ namespace ly
 				while (!IsExpired() && mTimeCounter >= mDuration && callbackCount < MaxRepeatingTimerCatchUpCallbacks)
 				{
 					mTimeCounter -= mDuration;
-					mListener.second();
+					{
+						const shared_ptr<Object> listener = mListener.first.lock();
+						if (!listener || listener->GetIsPendingDestroy()) return;
+						mListener.second();
+					}
 					++callbackCount;
 					if (IsExpired()) return;
 				}
@@ -202,8 +207,10 @@ namespace ly
 			}
 			else
 			{
-				mListener.second();
 				SetExpired();
+				const shared_ptr<Object> listener = mListener.first.lock();
+				if (!listener || listener->GetIsPendingDestroy()) return;
+				mListener.second();
 			}
 		}
 	}
