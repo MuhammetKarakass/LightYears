@@ -1,6 +1,7 @@
 #pragma once
 #include "framework/Core.h"
 #include "framework/Object.h"
+#include <cstddef>
 #include <functional>
 #include <utility>
 
@@ -61,6 +62,7 @@ namespace ly
 
 		// Her frame tüm timer'larý günceller
 		void UpdateTimer(float deltaTime);
+		std::size_t GetTraversalTimerCount() const { return mTimers.size(); }
 
 		void ClearTimer(TimerHandle timerIndex);
 

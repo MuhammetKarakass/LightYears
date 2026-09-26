@@ -1,0 +1,529 @@
+#include "AbilityDefinitionJsonParser.h"
+
+#include "gameplay/content/AbilityDefinitionMaterializer.h"
+#include "gameplay/content/AttributeJsonParser.h"
+
+#include "attributes/AttributeId.h"
+#include "gameplay/attributes/AttributeIdSchema.h"
+#include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/ability/content/NumericSettingContractRegistry.h"
+#include "gameplay/content/ContentIdSchema.h"
+
+#include <limits>
+#include <map>
+#include <set>
+#include <stdexcept>
+#include <unordered_set>
+#include <utility>
+
+namespace ly::content::ability_loader_detail
+{
+	namespace
+	{
+		std::string ReadRequiredString(const Json& object, const char* fieldName)
+		{
+			return object.at(fieldName).get<std::string>();
+		}
+
+		sas::AttributeModifier ParseModifier(const Json& object)
+		{
+			return sas::AttributeModifier{
+				sas::AttributeId{ ReadRequiredString(object, "attributeId") },
+				AttributeJsonParser::ParseOperation(ReadRequiredString(object, "operation")),
+				object.at("magnitude").get<float>(),
+				object.value("priority", 0)
+			};
+		}
+
+		sas::GameplayAttribute ParseAttribute(const Json& object)
+		{
+			return sas::GameplayAttribute{
+				sas::AttributeId{ ReadRequiredString(object, "id") },
+				object.at("baseValue").get<float>(),
+				object.value("minValue", 0.f),
+				object.value("maxValue", std::numeric_limits<float>::max())
+			};
+		}
+
+		sas::GameplayAttributeList ParseAttributeList(
+			const Json& values,
+			const std::string& ownerLabel
+		)
+		{
+			if (!values.is_array())
+			{
+				throw std::runtime_error(ownerLabel + " attributes must be an array");
+			}
+
+			sas::GameplayAttributeList attributes;
+			std::unordered_set<sas::AttributeId, sas::AttributeIdHash> attributeIds;
+			for (const Json& value : values)
+			{
+				sas::GameplayAttribute attribute = ParseAttribute(value);
+				std::string attributeFailure;
+				if (!AttributeIdSchema::Validate(attribute.id, &attributeFailure))
+				{
+					throw std::runtime_error(
+						"Invalid " + ownerLabel + " attribute ID '" +
+						std::string{ attribute.id.GetName() } + "': " + attributeFailure
+					);
+				}
+				if (!attributeIds.insert(attribute.id).second)
+				{
+					throw std::runtime_error(
+						"Duplicate " + ownerLabel + " attribute '" +
+						std::string{ attribute.id.GetName() } + "'"
+					);
+				}
+				attributes.push_back(std::move(attribute));
+			}
+			return attributes;
+		}
+
+		List<GameplayTag> ParseDamageTags(
+			const Json& values,
+			const std::string& ownerLabel
+		)
+		{
+			if (!values.is_array())
+			{
+				throw std::runtime_error(ownerLabel + " damageTags must be an array");
+			}
+
+			List<GameplayTag> tags;
+			for (const Json& value : values)
+			{
+				if (!value.is_string())
+				{
+					throw std::runtime_error(
+						ownerLabel + " damageTags entries must be strings"
+					);
+				}
+				tags.emplace_back(GameplayTag{ value.get<std::string>() });
+			}
+			return tags;
+		}
+
+		List<sas::AttributeModifier> ParseModifiers(const Json& values)
+		{
+			List<sas::AttributeModifier> modifiers;
+			for (const Json& value : values)
+			{
+				modifiers.push_back(ParseModifier(value));
+			}
+			return modifiers;
+		}
+
+		List<AbilityEffectSpecDefinition> ParseEffectSpecs(const Json& values)
+		{
+			List<AbilityEffectSpecDefinition> specs;
+			std::set<std::string> effectIds;
+			for (const Json& value : values)
+			{
+				AbilityEffectSpecDefinition spec;
+				spec.effectId = sas::ContentId{ ReadRequiredString(value, "effectId") };
+				std::string idFailure;
+				if (!ContentIdSchema::ValidateEffectId(spec.effectId.ToString(), &idFailure))
+				{
+					throw std::runtime_error(
+						"Ability effect spec has invalid effect ID '" + spec.effectId.ToString() + "': " + idFailure
+					);
+				}
+				if (!effectIds.insert(spec.effectId.ToString()).second)
+				{
+					throw std::runtime_error(
+						"Duplicate ability effect spec for '" + spec.effectId.ToString() + "'"
+					);
+				}
+				spec.useAbilityDuration = value.value("useAbilityDuration", false);
+				if (value.contains("duration"))
+				{
+					spec.duration = value.at("duration").get<float>();
+				}
+				if (spec.useAbilityDuration && spec.duration.has_value())
+				{
+					throw std::runtime_error(
+						"Ability effect spec '" + spec.effectId.ToString() +
+						"' cannot declare both duration and useAbilityDuration"
+					);
+				}
+				if (value.contains("maxStacks"))
+				{
+					spec.maxStacks = value.at("maxStacks").get<int>();
+				}
+				spec.modifiers = ParseModifiers(value.value("modifiers", Json::array()));
+				for (const Json& attribute : value.value("attributes", Json::array()))
+				{
+					spec.attributes.push_back(ParseAttribute(attribute));
+				}
+				specs.push_back(std::move(spec));
+			}
+			return specs;
+		}
+
+		List<AbilityLevelStep> ParseLevelProgression(
+			const Json& progression,
+			const std::string& ownerLabel = ""
+		)
+		{
+			List<AbilityLevelStep> levels;
+			if (progression.contains("repeat"))
+			{
+				const Json& repeated = progression.at("repeat");
+				const List<sas::AttributeModifier> repeatedModifiers = ParseModifiers(
+					repeated.value("attributeModifiers", Json::array())
+				);
+				const std::string repeatContext =
+					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "levelProgression.repeat.scalingRules";
+				const List<sas::AttributeScalingRule> repeatedScalingRules = AttributeJsonParser::ParseScalingRules(
+					repeated.value("scalingRules", Json::array()),
+					repeatContext
+				);
+				const std::size_t repeatCount = repeated.at("count").get<std::size_t>();
+				for (std::size_t index = 0; index < repeatCount; ++index)
+				{
+					AbilityLevelStep step;
+					step.attributeModifiers = repeatedModifiers;
+					step.scalingRules = repeatedScalingRules;
+					levels.push_back(std::move(step));
+				}
+			}
+			std::size_t levelIndex = 0;
+			for (const Json& level : progression.value("levels", Json::array()))
+			{
+				AbilityLevelStep step;
+				step.attributeModifiers = ParseModifiers(
+					level.value("attributeModifiers", Json::array())
+				);
+				const std::string levelContext =
+					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "levelProgression.levels[" +
+					std::to_string(levelIndex++) + "].scalingRules";
+				step.scalingRules = AttributeJsonParser::ParseScalingRules(
+					level.value("scalingRules", Json::array()),
+					levelContext
+				);
+				for (const Json& upgradeId : level.value("unlockedUpgradeIds", Json::array()))
+				{
+					step.unlockedUpgradeIds.emplace_back(upgradeId.get<std::string>());
+				}
+				levels.push_back(std::move(step));
+			}
+			return levels;
+		}
+
+		const AbilityActorDefinition* FindActorFallback(
+			const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
+			const std::string& actorDefinitionId
+		)
+		{
+			for (const AbilityActorDefinition* definition : fallbackActorDefinitions)
+			{
+				if (definition && definition->actorDefinitionId.ToString() == actorDefinitionId)
+				{
+					return definition;
+				}
+			}
+			return nullptr;
+		}
+
+		AbilityActorDefinition ParseActor(
+			const Json& object,
+			const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
+			const std::map<std::string, sas::GameplayAttributeList>& attributeProfiles
+		)
+		{
+			const std::string actorDefinitionId = RequiredString(object, "id");
+			std::string actorIdFailure;
+			if (!ContentIdSchema::ValidateAbilityActorDefinitionId(
+				actorDefinitionId,
+				&actorIdFailure
+			))
+			{
+				throw std::runtime_error(actorIdFailure);
+			}
+			if (!object.contains("spawnDistance") || !object.at("spawnDistance").is_number())
+			{
+				throw std::runtime_error(
+					"Ability actor '" + actorDefinitionId +
+					"' requires numeric JSON field 'spawnDistance'"
+				);
+			}
+			if (object.contains("lifeTime") && !object.at("lifeTime").is_number())
+			{
+				throw std::runtime_error(
+					"Ability actor '" + actorDefinitionId +
+					"' JSON field 'lifeTime' must be numeric"
+				);
+			}
+			const std::string fallbackActorDefinitionId = object.value(
+				"baseId",
+				actorDefinitionId
+			);
+			const AbilityActorDefinition* fallback = FindActorFallback(
+				fallbackActorDefinitions,
+				fallbackActorDefinitionId
+			);
+			if (!fallback)
+			{
+				throw std::runtime_error(
+					"No C++ presentation base exists for ability actor '" +
+					actorDefinitionId + "'"
+				);
+			}
+
+			AbilityActorDefinition definition = *fallback;
+			definition.actorDefinitionId = sas::ContentId{ actorDefinitionId };
+			// The C++ record supplies the actor type/presentation skeleton only.
+			// Runtime numeric values must come from the authoritative JSON record.
+			definition.lifeTime = object.value("lifeTime", 0.f);
+			definition.spawnDistance = object.value("spawnDistance", 0.f);
+			definition.attributes.clear();
+			std::unordered_set<sas::AttributeId, sas::AttributeIdHash> attributeIds;
+			for (const Json& profileIdValue : object.value("attributeProfileIds", Json::array()))
+			{
+				const std::string profileId = profileIdValue.get<std::string>();
+				std::string profileIdFailure;
+				if (!ContentIdSchema::ValidateAbilityAttributeProfileId(
+					profileId,
+					&profileIdFailure
+				))
+				{
+					throw std::runtime_error(profileIdFailure);
+				}
+				const auto profile = attributeProfiles.find(profileId);
+				if (profile == attributeProfiles.end())
+				{
+					throw std::runtime_error(
+						"Ability actor '" + actorDefinitionId +
+						"' references missing attribute profile '" + profileId + "'"
+					);
+				}
+				for (const sas::GameplayAttribute& attribute : profile->second)
+				{
+					if (!attributeIds.insert(attribute.id).second)
+					{
+						throw std::runtime_error("Duplicate inherited actor attribute '" + std::string{ attribute.id.GetName() } + "'");
+					}
+					definition.attributes.push_back(attribute);
+				}
+			}
+			for (const Json& attribute : object.value("attributes", Json::array()))
+			{
+				sas::GameplayAttribute parsed = ParseAttribute(attribute);
+				if (!attributeIds.insert(parsed.id).second)
+				{
+					throw std::runtime_error("Duplicate actor attribute '" + std::string{ parsed.id.GetName() } + "'");
+				}
+				definition.attributes.push_back(std::move(parsed));
+			}
+			if (!object.contains("lifeTime"))
+			{
+				if (const sas::GameplayAttribute* duration =
+						sas::FindAttribute(definition.attributes, CommonAttributeIds::Duration))
+				{
+					definition.lifeTime = duration->baseValue;
+				}
+				else
+				{
+					throw std::runtime_error(
+						"Ability actor '" + actorDefinitionId +
+						"' requires 'lifeTime' or an " + std::string{ CommonAttributeIds::Duration.GetName() } +
+						" value in JSON"
+					);
+				}
+			}
+			return definition;
+		}
+
+		AbilityLoader::LoadedDefinition ParseAbilityImpl(
+			const Json& object,
+			const List<const GameAbilityDefinition*>& fallbackDefinitions,
+			const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
+			const std::string& fallbackAbilityId
+		)
+		{
+			const std::string abilityId = RequiredString(object, "id");
+			AbilityLoader::LoadedDefinition loaded = MaterializeAbilityDefinition(
+				abilityId,
+				fallbackAbilityId,
+				fallbackDefinitions
+			);
+			for (const char* requiredField : { "cooldown", "duration", "maxCharges" })
+			{
+				if (!object.contains(requiredField) || !object.at(requiredField).is_number())
+				{
+					throw std::runtime_error(
+						"Ability '" + loaded.id +
+						"' requires numeric JSON field '" + requiredField + "'"
+					);
+				}
+			}
+			if (!object.contains("settings") || !object.at("settings").is_object())
+			{
+				throw std::runtime_error(
+					"Ability '" + loaded.id + "' requires a JSON object named 'settings'"
+				);
+			}
+			loaded.definition.cooldown = object.at("cooldown").get<float>();
+			// Do not inherit numeric balance from the C++ fallback definition.
+			// BaseId materialization already supplies inherited values from JSON.
+			loaded.definition.duration = object.value("duration", 0.f);
+			loaded.definition.maxCharges = object.value("maxCharges", 0);
+			if (object.contains("scalingRules"))
+			{
+				loaded.definition.scalingRules = AttributeJsonParser::ParseScalingRules(
+					object.at("scalingRules"),
+					"Ability '" + loaded.id + "': scalingRules"
+				);
+			}
+			if (object.contains("invocationOutputAttributes"))
+			{
+				const Json& outputAttrsJson = object.at("invocationOutputAttributes");
+				if (!outputAttrsJson.is_array())
+				{
+					throw std::runtime_error(
+						"Ability '" + loaded.id + "': invocationOutputAttributes must be an array"
+					);
+				}
+				loaded.definition.invocationOutputAttributes.clear();
+				for (const Json& item : outputAttrsJson)
+				{
+					if (!item.is_string() || item.get<std::string>().empty())
+					{
+						throw std::runtime_error(
+							"Ability '" + loaded.id + "': invocationOutputAttributes entries must be non-empty strings"
+						);
+					}
+					const sas::AttributeId attrId{ item.get<std::string>() };
+					std::string idFailure;
+					if (!AttributeIdSchema::Validate(attrId, &idFailure))
+					{
+						throw std::runtime_error(
+							"Ability '" + loaded.id + "' invalid invocationOutputAttribute ID '" +
+							std::string{ attrId.GetName() } + "': " + idFailure
+						);
+					}
+					loaded.definition.invocationOutputAttributes.push_back(attrId);
+				}
+			}
+			if (object.contains("effectSpecs"))
+			{
+				loaded.definition.effectSpecs = ParseEffectSpecs(object.at("effectSpecs"));
+			}
+
+			// Damage identity is authored per ability. The key is only read when
+			// the record declares it, so the JSON stays authoritative for the
+			// abilities it covers while the remaining ones keep the fallback
+			// tags instead of silently losing their damage type.
+			if (object.contains("damageTags"))
+			{
+				loaded.definition.damageTags = ParseDamageTags(
+					object.at("damageTags"),
+					"Ability '" + loaded.id + "'"
+				);
+			}
+
+			if (object.contains("progression"))
+			{
+				const Json& progression = object.at("progression");
+				loaded.definition.levelProgression = ParseLevelProgression(progression, "Ability '" + loaded.id + "'");
+				loaded.definition.levelUpgradeScrapCosts = progression.value(
+					"levelUpgradeScrapCosts",
+					List<unsigned int>{}
+				);
+			}
+
+			// Unlike settings, ability-scoped attributes participate in the shared
+			// attribute/scaling pipeline. The JSON record is authoritative, so a
+			// fallback definition cannot silently retain old numeric values.
+			loaded.definition.attributes = ParseAttributeList(
+				object.value("attributes", Json::array()),
+				"Ability '" + loaded.id + "'"
+			);
+
+			const Json settings = object.value("settings", Json::object());
+			const NumericSettingContract& settingsContract =
+				NumericSettingContractRegistry::Find(loaded.definition.behaviorType);
+			for (const auto& [name, value] : settings.items())
+			{
+				if (settingsContract.allowed.find(name) == settingsContract.allowed.end())
+				{
+					throw std::runtime_error(
+						"Unknown numeric setting '" + name +
+						"' for ability '" + loaded.id + "'"
+					);
+				}
+				if (!value.is_number())
+				{
+					throw std::runtime_error("Ability numeric setting '" + name + "' must be a number");
+				}
+				loaded.numericSettings.emplace(name, value.get<float>());
+			}
+			for (const std::string& required : settingsContract.required)
+			{
+				if (loaded.numericSettings.find(required) == loaded.numericSettings.end())
+				{
+					throw std::runtime_error(
+						"Missing required numeric setting '" + required +
+						"' for ability '" + loaded.id + "'"
+					);
+				}
+			}
+
+			std::map<std::string, sas::GameplayAttributeList> attributeProfiles;
+			for (const Json& profile : object.value("attributeProfiles", Json::array()))
+			{
+				const std::string profileId = RequiredString(profile, "id");
+				std::string profileIdFailure;
+				if (!ContentIdSchema::ValidateAbilityAttributeProfileId(
+					profileId,
+					&profileIdFailure
+				))
+				{
+					throw std::runtime_error(profileIdFailure);
+				}
+				sas::GameplayAttributeList attributes;
+				std::unordered_set<sas::AttributeId, sas::AttributeIdHash> attributeIds;
+				for (const Json& attribute : profile.value("attributes", Json::array()))
+				{
+					sas::GameplayAttribute parsed = ParseAttribute(attribute);
+					if (!attributeIds.insert(parsed.id).second)
+					{
+						throw std::runtime_error("Duplicate attribute profile value '" + std::string{ parsed.id.GetName() } + "'");
+					}
+					attributes.push_back(std::move(parsed));
+				}
+				if (!attributeProfiles.emplace(profileId, std::move(attributes)).second)
+				{
+					throw std::runtime_error("Duplicate ability attribute profile ID: " + profileId);
+				}
+			}
+
+			for (const Json& actor : object.value("actors", Json::array()))
+			{
+				loaded.actorDefinitions.push_back(ParseActor(
+					actor,
+					fallbackActorDefinitions,
+					attributeProfiles
+				));
+			}
+
+			return loaded;
+		}
+	}
+
+	std::string RequiredString(const Json& object, const char* fieldName)
+	{
+		return ReadRequiredString(object, fieldName);
+	}
+
+	AbilityLoader::LoadedDefinition ParseAbility(
+		const Json& object,
+		const List<const GameAbilityDefinition*>& fallbackDefinitions,
+		const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
+		const std::string& fallbackAbilityId
+	)
+	{
+		return ParseAbilityImpl(object, fallbackDefinitions, fallbackActorDefinitions, fallbackAbilityId);
+	}
+}

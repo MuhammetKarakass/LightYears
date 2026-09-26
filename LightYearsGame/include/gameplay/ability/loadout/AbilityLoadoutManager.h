@@ -10,6 +10,18 @@ namespace ly
 {
 	class LightYearsAbilitySystemComponent;
 
+	// Live read-only projection. Runtime is the sole owner of equipped bindings.
+	class AbilityLoadoutView
+	{
+	public:
+		explicit AbilityLoadoutView(const LightYearsAbilitySystemComponent& system) : mSystem(system) {}
+		// Pointer lifetime follows the runtime definition; copy the id across mutations.
+		const std::string* FindAbility(sas::AbilitySlot slot) const;
+		sas::AbilitySlot FindSlot(const std::string& abilityId) const;
+	private:
+		const LightYearsAbilitySystemComponent& mSystem;
+	};
+
 	class AbilityLoadoutManager
 	{
 	public:
@@ -30,13 +42,15 @@ namespace ly
 		);
 
 		const AbilityInventory& GetInventory() const { return mInventory; }
-		const AbilityLoadout& GetLoadout() const { return mLoadout; }
+		const AbilityLoadoutView& GetLoadout() const { return mLoadout; }
 
 	private:
 		static bool IsEquippableSlot(sas::AbilitySlot slot);
+		void SynchronizeInventory();
 
 		LightYearsAbilitySystemComponent& mAbilitySystem;
 		AbilityInventory mInventory;
-		AbilityLoadout mLoadout;
+		AbilityLoadoutView mLoadout;
+		bool mMutationInProgress = false;
 	};
 }

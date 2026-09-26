@@ -22,6 +22,7 @@
 #include <cmath>
 #include <limits>
 #include <unordered_set>
+#include <vector>
 
 namespace ly
 {
@@ -156,7 +157,132 @@ namespace ly
 				? std::dynamic_pointer_cast<Actor>(object)
 				: weak_ptr<Actor>{};
 		}
+
+		class ChainLightningTimerOwnerActor final : public Actor
+		{
+		public:
+			explicit ChainLightningTimerOwnerActor(World* world) : Actor(world) {}
+
+			~ChainLightningTimerOwnerActor() override
+			{
+				UnbindOwner();
+				ClearTimerHandles();
+			}
+
+			bool BindOwner(const weak_ptr<Actor>& owner)
+			{
+				const shared_ptr<Actor> strongOwner = owner.lock();
+				if (!strongOwner || strongOwner->GetIsPendingDestroy()) return false;
+
+				mOwner = owner;
+				mOwnerDestroyedHandle = strongOwner->onActorDestroyed.BindAction(
+					this,
+					&ChainLightningTimerOwnerActor::OnOwnerDestroyed
+				);
+				return mOwnerDestroyedHandle.IsValid();
+			}
+
+			void SetPendingLinkCount(std::size_t count) { mPendingLinkCount = count; }
+			void TrackTimer(TimerHandle handle) { mTimerHandles.push_back(handle); }
+
+			void CompleteLink()
+			{
+				if (mIsFinished || mPendingLinkCount == 0) return;
+				--mPendingLinkCount;
+				if (mPendingLinkCount == 0) Finish();
+			}
+
+			void Cancel()
+			{
+				Finish();
+			}
+
+		private:
+			void OnOwnerDestroyed(Actor* destroyedOwner)
+			{
+				const shared_ptr<Actor> owner = mOwner.lock();
+				if (owner && owner.get() == destroyedOwner) Finish();
+			}
+
+			void Finish()
+			{
+				if (mIsFinished) return;
+				mIsFinished = true;
+				UnbindOwner();
+				ClearTimerHandles();
+				if (!GetIsPendingDestroy()) Destroy();
+			}
+
+			void UnbindOwner()
+			{
+				if (const shared_ptr<Actor> owner = mOwner.lock())
+				{
+					owner->onActorDestroyed.UnbindAction(mOwnerDestroyedHandle);
+				}
+				mOwnerDestroyedHandle.Reset();
+				mOwner.reset();
+			}
+
+			void ClearTimerHandles()
+			{
+				if (mTimerHandles.empty()) return;
+				TimerManager& timerManager = TimerManager::GetGameTimerManager();
+				for (const TimerHandle handle : mTimerHandles)
+				{
+					timerManager.ClearTimer(handle);
+				}
+				mTimerHandles.clear();
+			}
+
+			weak_ptr<Actor> mOwner;
+			DelegateHandle mOwnerDestroyedHandle;
+			std::vector<TimerHandle> mTimerHandles;
+			std::size_t mPendingLinkCount{ 0 };
+			bool mIsFinished{ false };
+		};
 	}
+
+	class ChainLightningAbilityLifetimeState final
+	{
+	public:
+		~ChainLightningAbilityLifetimeState()
+		{
+			for (const weak_ptr<Actor>& castOwner : mCastOwners)
+			{
+				const shared_ptr<Actor> actor = castOwner.lock();
+				const shared_ptr<ChainLightningTimerOwnerActor> timerOwner =
+					std::dynamic_pointer_cast<ChainLightningTimerOwnerActor>(actor);
+				if (timerOwner) timerOwner->Cancel();
+			}
+		}
+
+		void RegisterCast(const shared_ptr<ChainLightningTimerOwnerActor>& castOwner)
+		{
+			mCastOwners.erase(
+				std::remove_if(
+					mCastOwners.begin(),
+					mCastOwners.end(),
+					[](const weak_ptr<Actor>& candidate)
+					{
+						const shared_ptr<Actor> actor = candidate.lock();
+						return !actor || actor->GetIsPendingDestroy();
+					}
+				),
+				mCastOwners.end()
+			);
+			mCastOwners.push_back(castOwner);
+		}
+
+	private:
+		std::vector<weak_ptr<Actor>> mCastOwners;
+	};
+
+	ChainLightningAbility::ChainLightningAbility()
+		: mLifetimeState{ std::make_shared<ChainLightningAbilityLifetimeState>() }
+	{
+	}
+
+	ChainLightningAbility::~ChainLightningAbility() = default;
 
 	bool ChainLightningAbility::Validate(
 		const GameAbilityDefinition& definition,
@@ -325,10 +451,12 @@ namespace ly
 	bool ChainLightningAbility::Activate(GameAbilityBehaviorContext& context)
 	{
 		World* world = context.owner.GetWorld();
-		if (!world)
+		if (!world || world->GetIsPendingDestroy())
 		{
 			return false;
 		}
+		const weak_ptr<Object> worldLifetime = world->GetWeakPtr();
+		if (worldLifetime.expired()) return false;
 
 		AbilityExecutionContext executionContext{
 			&context.abilitySystem,
@@ -522,7 +650,18 @@ namespace ly
 			sas::FindAttributeValue(values, CommonAttributeIds::Damage, BaseDamage)
 		);
 		const weak_ptr<Actor> ownerWeak = MakeWeakActor(&context.owner);
-		const weak_ptr<Object> timerOwner = context.owner.GetWeakPtr();
+		if (ownerWeak.expired()) return false;
+		const weak_ptr<ChainLightningTimerOwnerActor> timerOwner =
+			world->SpawnActor<ChainLightningTimerOwnerActor>();
+		const shared_ptr<ChainLightningTimerOwnerActor> strongTimerOwner = timerOwner.lock();
+		if (!strongTimerOwner || !strongTimerOwner->BindOwner(ownerWeak))
+		{
+			if (strongTimerOwner) strongTimerOwner->Cancel();
+			return false;
+		}
+		mLifetimeState->RegisterCast(strongTimerOwner);
+		strongTimerOwner->SetPendingLinkCount(chainTargets.size());
+		const weak_ptr<ChainLightningAbilityLifetimeState> abilityLifetime = mLifetimeState;
 		const sf::Vector2f ownerLocation = context.owner.GetActorLocation();
 		const sas::ContentId sourceAbilityId{ context.definition.abilityId };
 		const List<GameplayTag> sourceAbilityTags = context.definition.abilityTags;
@@ -544,10 +683,13 @@ namespace ly
 				: chainTargets[linkIndex - 1];
 			const weak_ptr<Actor> targetActor = chainTargets[linkIndex];
 			const float delay = linkTravelTime * static_cast<float>(linkIndex + 1);
-			TimerManager::GetGameTimerManager().SetTimer(
-				timerOwner,
+			const weak_ptr<ChainLightningTimerOwnerActor> timerOwnerWeak = timerOwner;
+			const TimerHandle timerHandle = TimerManager::GetGameTimerManager().SetTimer(
+				worldLifetime,
 				[
-					world,
+					worldLifetime,
+					abilityLifetime,
+					timerOwnerWeak,
 					ownerWeak,
 					startActor,
 					targetActor,
@@ -561,12 +703,29 @@ namespace ly
 				]()
 				{
 					LY_GAME_INFO("Chain Lightning: link timer callback entered.");
+					const shared_ptr<World> activeWorld =
+						std::dynamic_pointer_cast<World>(worldLifetime.lock());
+					const shared_ptr<ChainLightningTimerOwnerActor> timerOwner = timerOwnerWeak.lock();
+					if (!timerOwner || timerOwner->GetIsPendingDestroy()) return;
+					if (abilityLifetime.expired())
+					{
+						timerOwner->Cancel();
+						return;
+					}
+					if (!activeWorld || activeWorld->GetIsPendingDestroy())
+					{
+						timerOwner->Cancel();
+						return;
+					}
+					timerOwner->CompleteLink();
+
 					const shared_ptr<Actor> owner = ownerWeak.lock();
 					const shared_ptr<Actor> target = targetActor.lock();
 					if (!owner || owner->GetIsPendingDestroy() || !target ||
 						target->GetIsPendingDestroy())
 					{
 						LY_GAME_INFO("Chain Lightning: link cancelled because its owner or target no longer exists.");
+						timerOwner->Cancel();
 						return;
 					}
 
@@ -575,7 +734,7 @@ namespace ly
 						? start->GetActorLocation()
 						: ownerLocation;
 					const sf::Vector2f targetLocation = target->GetActorLocation();
-					world->SpawnActor<ElectricArcVisualActor>(
+					activeWorld->SpawnActor<ElectricArcVisualActor>(
 						startLocation,
 						targetLocation,
 						arcColor
@@ -595,6 +754,7 @@ namespace ly
 				delay,
 				false
 			);
+			strongTimerOwner->TrackTimer(timerHandle);
 		}
 		return true;
 	}

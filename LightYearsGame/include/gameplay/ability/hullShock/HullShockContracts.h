@@ -13,7 +13,6 @@ namespace AbilityData::HullShock
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.HullShock" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::HullShock };
 
 	struct State

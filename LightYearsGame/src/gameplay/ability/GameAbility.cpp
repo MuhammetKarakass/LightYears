@@ -28,9 +28,7 @@ namespace ly
 		>{
 			handle,
 			definition,
-			emitNotifications
-				? abilitySystem.CreateAbilityInstanceNotifications()
-				: sas::AbilityInstanceNotifications{}
+			abilitySystem.CreateAbilityInstanceNotifications(emitNotifications)
 		},
 		mAbilitySystem{ abilitySystem },
 		mBehavior{ std::move(behavior) }
@@ -54,28 +52,34 @@ namespace ly
 		std::string* failureReason
 	)
 	{
-		const bool equipped = mAttachments.TryEquip(
-			definition,
-			hostKind,
-			GetAttachmentCapabilities(hostKind),
-			GetAttachmentSlotCapacity(hostKind),
-			failureReason
-		);
-		if (equipped)
+		return RunInstanceOperation([&]() -> bool
 		{
-			mAbilitySystem.NotifyAbilityChanged(mHandle);
-		}
-		return equipped;
+			const bool equipped = mAttachments.TryEquip(
+				definition,
+				hostKind,
+				GetAttachmentCapabilities(hostKind),
+				GetAttachmentSlotCapacity(hostKind),
+				failureReason
+			);
+			if (equipped)
+			{
+				mAbilitySystem.NotifyAbilityChanged(mHandle);
+			}
+			return equipped;
+		});
 	}
 
 	bool GameAbility::RemoveAttachment(const std::string& attachmentId, AttachmentHostKind hostKind)
 	{
-		const bool removed = mAttachments.Remove(sas::ContentId{ attachmentId }, hostKind);
-		if (removed)
+		return RunInstanceOperation([&]() -> bool
 		{
-			mAbilitySystem.NotifyAbilityChanged(mHandle);
-		}
-		return removed;
+			const bool removed = mAttachments.Remove(sas::ContentId{ attachmentId }, hostKind);
+			if (removed)
+			{
+				mAbilitySystem.NotifyAbilityChanged(mHandle);
+			}
+			return removed;
+		});
 	}
 
 	sas::GameplayAttributeList GameAbility::MergeAttachmentAttributes(
@@ -115,39 +119,48 @@ namespace ly
 		const sas::AbilityEvent& event
 	)
 	{
-		HandleAttachmentEventInternal(event, nullptr);
+		return RunInstanceOperation([&]()
+		{
+			HandleAttachmentEventInternal(event, nullptr);
+		});
 	}
 
 	void GameAbility::HandleAbilityLifecycleEvent(
 		const sas::AbilityLifecycleEvent& event
 	)
 	{
-		if (event.eventTag == GameplayTags::Event::Ability::Activated &&
-			event.abilityId != mDefinition.abilityId)
+		return RunInstanceOperation([&]()
 		{
-			// The generic lifecycle dispatcher calls this for every granted ability.
-			// Only a successful activation is emitted here, so a behavior such as
-			// Phase Drift can end itself on a real action without observing failed
-			// cooldown or blocked-input attempts.
-			NotifyOwnerAbilityActivated(event);
-		}
-		HandleAttachmentEventInternal(event, &event);
+			if (event.eventTag == GameplayTags::Event::Ability::Activated &&
+				event.abilityId != mDefinition.abilityId)
+			{
+				// The generic lifecycle dispatcher calls this for every granted ability.
+				// Only a successful activation is emitted here, so a behavior such as
+				// Phase Drift can end itself on a real action without observing failed
+				// cooldown or blocked-input attempts.
+				NotifyOwnerAbilityActivated(event);
+			}
+			HandleAttachmentEventInternal(event, &event);
+		});
 	}
 
 	void GameAbility::HandleGameplayEvent(const sas::AbilityEvent& event)
 	{
-		if (!mBehavior || !IsActive())
+		return RunInstanceOperation([&]()
 		{
-			return;
-		}
+			if (!mBehavior || !IsActive())
+			{
+				return;
+			}
 
-		GameAbilityBehaviorContext behaviorContext{
-			mAbilitySystem,
-			*this,
-			mAbilitySystem.GetOwner(),
-			mDefinition
-		};
-		mBehavior->OnGameplayEvent(behaviorContext, event);
+			GameAbilityBehaviorContext behaviorContext{
+				mAbilitySystem,
+				*this,
+				mAbilitySystem.GetOwner(),
+				mDefinition
+			};
+			mBehavior->OnGameplayEvent(behaviorContext, event);
+		});
 	}
 
 	void GameAbility::HandleAttachmentEventInternal(
@@ -341,7 +354,7 @@ namespace ly
 			GameplayTags::Event::Ability::Activated,
 			sas::AbilityEndReason::Completed
 		);
-		if (!mAbilitySystem.EvaluateAbilityActivation(lifecycleEvent))
+		if (!mAbilitySystem.EvaluateAbilityActivation(lifecycleEvent) || ActivationInterrupted())
 		{
 			return false;
 		}
@@ -352,14 +365,29 @@ namespace ly
 			mAbilitySystem.GetOwner(),
 			mDefinition
 		};
-		if (!mBehavior->Activate(behaviorContext))
+		mBehaviorStarted = true;
+		if (!mBehavior->Activate(behaviorContext) || ActivationInterrupted())
 		{
 			mDeferActiveDurationStart = false;
 			return false;
 		}
 
-		mAbilitySystem.HandleAbilityLifecycleEvent(lifecycleEvent);
 		return true;
+	}
+
+	void GameAbility::OnActivationCommitted()
+	{
+		mAbilitySystem.HandleAbilityLifecycleEvent(BuildLifecycleEvent(
+			GameplayTags::Event::Ability::Activated, sas::AbilityEndReason::Completed));
+	}
+
+	void GameAbility::AbortActivationContent()
+	{
+		mDeferActiveDurationStart = false;
+		if (!mBehaviorStarted) return;
+		mBehaviorStarted = false;
+		GameAbilityBehaviorContext context{ mAbilitySystem, *this, mAbilitySystem.GetOwner(), mDefinition };
+		mBehavior->End(context, sas::AbilityEndReason::Interrupted);
 	}
 
 	void GameAbility::BeginExecution()
@@ -424,23 +452,28 @@ namespace ly
 
 	void GameAbility::EndContent(sas::AbilityEndReason reason)
 	{
-		if (mBehavior)
+		mDeferActiveDurationStart = false;
+		std::exception_ptr error;
+		if (mBehavior && mBehaviorStarted)
 		{
+			mBehaviorStarted = false;
 			GameAbilityBehaviorContext behaviorContext{
 				mAbilitySystem,
 				*this,
 				mAbilitySystem.GetOwner(),
 				mDefinition
 			};
-			mBehavior->End(behaviorContext, reason);
+			try { mBehavior->End(behaviorContext, reason); }
+			catch (...) { error = std::current_exception(); }
 		}
 
 		const sas::AbilityLifecycleEvent event = BuildLifecycleEvent(
 			GameplayTags::Event::Ability::Ended,
 			reason
 		);
-		mAbilitySystem.HandleAbilityLifecycleEvent(event);
-		mDeferActiveDurationStart = false;
+		try { mAbilitySystem.HandleAbilityLifecycleEvent(event); }
+		catch (...) { if (!error) error = std::current_exception(); }
+		if (error) std::rethrow_exception(error);
 	}
 
 	bool GameAbility::HandleInputPressed()
@@ -598,8 +631,11 @@ namespace ly
 
 	void GameAbility::RefreshScopedConfiguration()
 	{
-		RebuildDefinitionForLevel();
-		RefreshPrimaryWeaponRuntimeConfiguration();
+		return RunInstanceOperation([&]()
+		{
+			RebuildDefinitionForLevel();
+			RefreshPrimaryWeaponRuntimeConfiguration();
+		});
 	}
 
 	void GameAbility::UpdatePrimaryWeaponRuntimeContext(

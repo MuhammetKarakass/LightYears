@@ -640,6 +640,10 @@ namespace ly
 			mSprite->setRotation(sf::degrees(newRotation));
 		}
 		UpdatePhysicsTransform();  
+		if (mOwningWorld)
+		{
+			mOwningWorld->RefreshActorSpatialQuery(*this);
+		}
 	}
 
 	void Actor::SetTextureRepeated(bool repeated)

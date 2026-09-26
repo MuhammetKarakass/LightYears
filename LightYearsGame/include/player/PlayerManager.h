@@ -2,6 +2,7 @@
 
 #include <framework/Core.h>
 #include "player/Player.h"
+#include <deque>
 
 namespace ly
 {
@@ -13,17 +14,20 @@ namespace ly
 		
 		Player* GetPlayer(int playerIndex = 0);
 		const Player* GetPlayer(int playerIndex = 0) const;
-		const List<Player>& GetPlayers() const { return mPlayers; };
+		const std::deque<Player>& GetPlayers() const { return mPlayers; };
 
 		void Reset();
 
 		static PlayerManager& GetPlayerManager();
+
+		Delegate<Player*> onPlayerAboutToBeDestroyed;
+		Delegate<Player*> onPlayerCreated;
 	protected:
 		PlayerManager();
 
 	private:
 
-		List<Player> mPlayers;
+		std::deque<Player> mPlayers;
 		static unique_ptr<PlayerManager> playerManager;
 	};
 }

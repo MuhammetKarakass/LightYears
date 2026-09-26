@@ -13,7 +13,6 @@ namespace AbilityData::LanceDrive
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityOffense };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.LanceDrive" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::LanceDrive };
 
 	struct State

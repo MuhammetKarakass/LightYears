@@ -16,6 +16,7 @@ namespace ly
 	{
 	public:
 		Player();
+		~Player() override;
 
 		weak_ptr<PlayerSpaceShip> SpawnSpaceShip(World* world);
 		const weak_ptr<PlayerSpaceShip> GetCurrentSpaceShip() const { return mCurrentSpaceShip; };
@@ -46,6 +47,7 @@ namespace ly
 		void ResetRunProgression();
 
 		weak_ptr<PlayerSpaceShip> mCurrentSpaceShip;
+		DelegateHandle mCurrentShipDestroyedHandle;
 		ShipProgression mShipProgression;
 		Map<std::string, int> mPurchasedAbilityLevels;
 		unsigned int mLifeCount;

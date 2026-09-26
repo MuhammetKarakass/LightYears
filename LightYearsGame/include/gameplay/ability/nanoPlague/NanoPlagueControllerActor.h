@@ -1,8 +1,11 @@
 #pragma once
 
 #include "framework/Actor.h"
+#include "gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.h"
 #include "gameplay/damage/DamageContext.h"
 #include "presentation/ability/nanoPlague/NanoPlaguePresentationProfile.h"
+#include <cstdint>
+#include <map>
 
 namespace ly
 {
@@ -47,11 +50,16 @@ namespace ly
 
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderWindow& window) override;
+		void Destroy() override;
 
 	private:
+		friend struct AuditFixesE2EAccess;
 		struct Infection
 		{
+			std::uint64_t id = 0;
+			std::uint64_t revision = 0;
 			weak_ptr<Actor> target;
+			DelegateHandle damageSubscription;
 			int generation = 0;
 			float remainingDuration = 0.f;
 			float tickAccumulator = 0.f;
@@ -69,11 +77,12 @@ namespace ly
 			bool isSpread = false;
 		};
 
-		Actor* GetOwnerActor() const;
+		shared_ptr<Actor> GetOwnerActor() const;
 		void OnTargetDamageResolved(const DamageContext& context);
-		void ResolvePendingSpread(const Infection& infection);
-		void ApplyTick(Infection& infection, Actor& target);
-		void RemoveInfection(std::size_t index);
+		void ResolvePendingSpread(Infection infection);
+		void ApplyTick(Actor& target);
+		Infection* FindInfection(std::uint64_t id);
+		void RemoveInfectionById(std::uint64_t id);
 		bool HasInfection(const Actor& target) const;
 		void AddPulse(
 			const sf::Vector2f& origin,
@@ -83,11 +92,15 @@ namespace ly
 		int ResolveSpreadTargetCount() const;
 
 		weak_ptr<Actor> mOwner;
-		Actor* mUnmanagedOwner = nullptr;
+		NanoPlagueControllerRegistryActor::Registration mRegistryRegistration;
 		NanoPlaguePresentationProfile mProfile;
 		Settings mSettings;
-		List<Infection> mInfections;
+		// Monotonic id order preserves tick ordering; erase/find are O(log N).
+		std::map<std::uint64_t, Infection> mInfections;
 		List<Pulse> mPulses;
 		float mVisualAge = 0.f;
+		bool mDestroying = false;
+		bool mTicking = false;
+		std::uint64_t mNextInfectionId = 1;
 	};
 }

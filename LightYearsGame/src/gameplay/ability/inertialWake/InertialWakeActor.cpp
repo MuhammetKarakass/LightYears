@@ -397,6 +397,7 @@ namespace ly
 			Destroy();
 			return;
 		}
+		mHitCooldowns.PruneExpired(mElapsed);
 
 		UpdateGeometry();
 		const auto* ship = dynamic_cast<const SpaceShip*>(owner);
@@ -449,13 +450,12 @@ namespace ly
 			{
 				continue;
 			}
-			const auto nextHit = mNextHitTime.find(target.get());
-			if (nextHit != mNextHitTime.end() && nextHit->second > mElapsed)
+			if (mHitCooldowns.IsCoolingDown(*target, mElapsed))
 			{
 				continue;
 			}
 			ApplyWakeHit(*target, speed, effectiveRatio);
-			mNextHitTime[target.get()] = mElapsed + mSameTargetHitCooldown;
+			mHitCooldowns.RecordHit(*target, mElapsed + mSameTargetHitCooldown);
 		}
 	}
 

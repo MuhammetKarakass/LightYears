@@ -125,10 +125,6 @@ namespace ly
 		virtual void SetupCollisionLayers();
 
 		List<GameplayTag> mAttachedLightTags;
-		// TEMPORARY TEST BRIDGE: damage UI currently observes this delegate through
-		// SpaceShip. Move it to the combat/presentation event path before shipping;
-		// the final UI must not remain part of the SpaceShip API.
-		Delegate<SpaceShip*, float, float, float> onDamageTaken;
 
 	protected:
 		virtual float GetMovementSpeedCapMultiplier() const { return 1.f; }

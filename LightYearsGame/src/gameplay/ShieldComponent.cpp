@@ -21,22 +21,25 @@ namespace ly
 
 		const float previousShield = mShield;
 		const float previousMaxShield = mMaxShield;
+		float normalShield = std::min(previousShield, previousMaxShield);
+		const float excessShield = std::max(0.f, previousShield - previousMaxShield);
 		mMaxShield = clampedMaxShield;
-		if (preserveShieldPercent && previousMaxShield > 0.f)
+		if (excessShield > 0.f) normalShield = mMaxShield;
+		else if (preserveShieldPercent && previousMaxShield > 0.f)
 		{
-			mShield = mMaxShield * (previousShield / previousMaxShield);
+			normalShield = mMaxShield * (normalShield / previousMaxShield);
 		}
 		else if (previousMaxShield <= 0.f && mMaxShield > 0.f)
 		{
-			mShield = mMaxShield;
+			normalShield = mMaxShield;
 		}
-		else
-		{
-			mShield = std::min(mShield, mMaxShield);
-		}
+		mShield = std::min(normalShield, mMaxShield) + excessShield;
 		mTemporaryOvershields.Reconcile(mShield, mMaxShield);
 
-		BroadcastShieldChanged(previousShield);
+		if (mShield != previousShield || mMaxShield != previousMaxShield)
+		{
+			onShieldChanged.Broadcast(mShield - previousShield, mShield, mMaxShield);
+		}
 	}
 
 	void ShieldComponent::SetRechargeDelay(float rechargeDelay)
@@ -47,6 +50,10 @@ namespace ly
 	void ShieldComponent::ChangeShield(float amount)
 	{
 		if (amount == 0.f)
+		{
+			return;
+		}
+		if (amount > 0.f && mShield >= mMaxShield)
 		{
 			return;
 		}

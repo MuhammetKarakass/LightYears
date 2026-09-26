@@ -14,7 +14,6 @@ namespace AbilityData::InertialWake
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityOffense };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.InertialWake" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::InertialWake };
 
 	struct State

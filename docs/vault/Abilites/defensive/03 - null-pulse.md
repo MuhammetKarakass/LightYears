@@ -82,7 +82,7 @@ Kendi projectile’larını koruyan bir davranış ileride ayrı bir Evolve veya
 | Ozellik     |                          Deger |
 | ----------- | -----------------------------: |
 | Ability ID  | `Ability.Control.NullPulse.Basic` |
-| Behavior ID | `GameAbilityBehavior.NullPuls` |
+| Behavior type | `AbilityBehaviorType::NullPulse` |
 | Cooldown    |                    10.0 saniye |
 | Base damage |                             10 |
 | Radius      |                      300 birim |

@@ -218,22 +218,26 @@ namespace ly
 
 	void LightYearsAbilitySystemComponent::AddOwnedTag(const GameplayTag& tag)
 	{
-		sas::AbilitySystemComponent::AddOwnedTag(tag);
-
-		if (tag != GameplayTagSchema::BlockPrimaryWeaponFire)
+		if (IsClearPending()) return;
+		return RunOperation([&]()
 		{
-			return;
-		}
+			sas::AbilitySystemComponent::AddOwnedTag(tag);
 
-		// The primary weapon may already be active when another ability grants
-		// this shared lock. EndAbility() runs the primary weapon's EndExecution,
-		// which clears its isFiring state and prevents another projectile from
-		// being emitted on the next frame.
-		GameAbility* primaryWeapon = GetAbility(sas::AbilitySlot::PrimaryFire);
-		if (primaryWeapon && primaryWeapon->IsActive())
-		{
-			primaryWeapon->Cancel(sas::AbilityEndReason::Interrupted);
-		}
+			if (tag != GameplayTagSchema::BlockPrimaryWeaponFire)
+			{
+				return;
+			}
+
+			// The primary weapon may already be active when another ability grants
+			// this shared lock. EndAbility() runs the primary weapon's EndExecution,
+			// which clears its isFiring state and prevents another projectile from
+			// being emitted on the next frame.
+			GameAbility* primaryWeapon = GetAbility(sas::AbilitySlot::PrimaryFire);
+			if (primaryWeapon && primaryWeapon->IsActive())
+			{
+				primaryWeapon->Cancel(sas::AbilityEndReason::Interrupted);
+			}
+		});
 	}
 
 	void LightYearsAbilitySystemComponent::SetAbilitySlotInput(
@@ -241,28 +245,45 @@ namespace ly
 		bool inputHeld
 	)
 	{
-		sas::AbilitySystemComponent::SetAbilitySlotInput(slot, inputHeld);
-		mAbilityInvocationRuntime.SetControlInput(slot, inputHeld);
+		return RunOperation([&]()
+		{
+			sas::AbilitySystemComponent::SetAbilitySlotInput(slot, inputHeld);
+			mAbilityInvocationRuntime.SetControlInput(slot, inputHeld);
+		});
 	}
 
 	void LightYearsAbilitySystemComponent::Tick(float deltaTime)
 	{
-		// Effects are ticked before abilities by the generic runtime. Cancel any
-		// ability that was already stunned on the previous frame, then let the
-		// ability tick guard handle a stun applied during this frame's effect pass.
-		CancelActiveAbilitiesForStun();
-		sas::AbilitySystemComponent::Tick(deltaTime);
-		mAbilityInvocationRuntime.Tick(deltaTime);
-		CancelActiveAbilitiesForStun();
+		if (IsClearPending() || mTicking) return;
+		return RunOperation([&]()
+		{
+			mTicking = true;
+			struct TickScope { bool& ticking; ~TickScope() { ticking = false; } } scope{ mTicking };
+			// Effects are ticked before abilities by the generic runtime. Cancel any
+			// ability that was already stunned on the previous frame, then let the
+			// ability tick guard handle a stun applied during this frame's effect pass.
+			CancelActiveAbilitiesForStun();
+			sas::AbilitySystemComponent::Tick(deltaTime);
+			if (IsClearPending()) return;
+			mAbilityInvocationRuntime.Tick(deltaTime);
+			CancelActiveAbilitiesForStun();
+		});
 	}
 
-	void LightYearsAbilitySystemComponent::Clear()
+	void LightYearsAbilitySystemComponent::ClearAdditionalState()
 	{
-		mAbilityInvocationRuntime.Clear();
+		std::exception_ptr error;
+		try { mAbilityInvocationRuntime.Clear(); }
+		catch (...) { error = std::current_exception(); }
 		mAbilityUseHistory.Clear();
 		mLifecycleDispatcher.Clear();
-		sas::AbilitySystemComponent::Clear();
 		mPrimaryWeaponOverrides.Clear();
+		if (error) std::rethrow_exception(error);
+	}
+
+	void LightYearsAbilitySystemComponent::OnClearCompleted()
+	{
+		if (mOwnerClearCompletion) mOwnerClearCompletion();
 	}
 
 	PrimaryWeaponOverrideHandle LightYearsAbilitySystemComponent::PushPrimaryWeaponOverride(
@@ -271,6 +292,7 @@ namespace ly
 		int priority
 	)
 	{
+		if (IsClearPending()) return {};
 		return mPrimaryWeaponOverrides.Push(sourceId, weaponDefinition, priority);
 	}
 
@@ -302,14 +324,18 @@ namespace ly
 		std::string* failureReason
 	)
 	{
-		return mAbilityInvocationRuntime.Invoke(
-			record,
-			scalingRules,
-			outputMultiplier,
-			controlSlot,
-			inputHeld,
-			failureReason
-		);
+		return RunOperation([&]() -> bool
+		{
+			if (IsClearPending()) return false;
+			return mAbilityInvocationRuntime.Invoke(
+				record,
+				scalingRules,
+				outputMultiplier,
+				controlSlot,
+				inputHeld,
+				failureReason
+			);
+		});
 	}
 
 	AbilityLifecycleObserverHandle
@@ -319,6 +345,7 @@ namespace ly
 			int priority
 		)
 	{
+		if (IsClearPending()) return {};
 		return mLifecycleDispatcher.RegisterObserver(
 			std::move(filter),
 			std::move(callback),
@@ -339,6 +366,7 @@ namespace ly
 			int priority
 		)
 	{
+		if (IsClearPending()) return {};
 		return mLifecycleDispatcher.RegisterActivationGuard(
 			std::move(callback),
 			priority
@@ -479,57 +507,66 @@ namespace ly
 
 	void LightYearsAbilitySystemComponent::RefreshScopedAbilityRules()
 	{
-		for (const sas::AbilityRuntimeSnapshot& snapshot : BuildAbilitySnapshots())
+		return RunOperation([&]()
 		{
-			if (GameAbility* ability = GetAbilityById(snapshot.abilityId))
+			for (const sas::AbilityRuntimeSnapshot& snapshot : BuildAbilitySnapshots())
 			{
-				ability->RefreshScopedConfiguration();
-				NotifyAbilityChanged(ability->GetHandle());
+				if (GameAbility* ability = GetAbilityById(snapshot.abilityId))
+				{
+					ability->RefreshScopedConfiguration();
+					NotifyAbilityChanged(ability->GetHandle());
+				}
 			}
-		}
+		});
 	}
 
 	void LightYearsAbilitySystemComponent::ProcessGameGameplayEvent(
 		const sas::AbilityEvent& event
 	)
 	{
-		if (HasOwnedTag(GameplayTags::State::Effect::Control::Stunned))
+		return RunOperation([&]()
 		{
-			return;
-		}
-
-		mComponentRuntime.HandleGameplayEvent(
-			event,
-			GetOwnedTags(),
-			[](GameAbility& ability, const sas::AbilityEvent& abilityEvent)
+			if (HasOwnedTag(GameplayTags::State::Effect::Control::Stunned))
 			{
-				ability.HandleGameplayEvent(abilityEvent);
-				ability.HandleAttachmentEvent(abilityEvent);
-			},
-			[this](
-				GameAbility& ability,
-				const GameAbilityDefinition& definition,
-				const AbilityTriggerSpec& trigger,
-				const sas::AbilityEvent& abilityEvent
-			)
-			{
-				ExecuteTriggeredActions(
-					*this,
-					ability,
-					definition,
-					trigger,
-					abilityEvent
-				);
+				return;
 			}
-		);
+
+			mComponentRuntime.HandleGameplayEvent(
+				event,
+				GetOwnedTags(),
+				[](GameAbility& ability, const sas::AbilityEvent& abilityEvent)
+				{
+					ability.HandleGameplayEvent(abilityEvent);
+					ability.HandleAttachmentEvent(abilityEvent);
+				},
+				[this](
+					GameAbility& ability,
+					const GameAbilityDefinition& definition,
+					const AbilityTriggerSpec& trigger,
+					const sas::AbilityEvent& abilityEvent
+				)
+				{
+					ExecuteTriggeredActions(
+						*this,
+						ability,
+						definition,
+						trigger,
+						abilityEvent
+					);
+				}
+			);
+		});
 	}
 
 	void LightYearsAbilitySystemComponent::HandleAbilityLifecycleEvent(
 		const sas::AbilityLifecycleEvent& event
 	)
 	{
-		onGameplayEvent.Broadcast(event);
-		ProcessAbilityLifecycleEvent(event);
+		return RunOperation([&]()
+		{
+			onGameplayEvent.Broadcast(event);
+			ProcessAbilityLifecycleEvent(event);
+		});
 	}
 
 	void LightYearsAbilitySystemComponent::ProcessAbilityLifecycleEvent(

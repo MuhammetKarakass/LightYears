@@ -73,7 +73,6 @@ namespace ly
 		void AddOwnedTag(const GameplayTag& tag) override;
 		void SetAbilitySlotInput(sas::AbilitySlot slot, bool inputHeld) override;
 		void Tick(float deltaTime) override;
-		void Clear() override;
 
 		PrimaryWeaponOverrideHandle PushPrimaryWeaponOverride(
 			const sas::ContentId& sourceId,
@@ -131,6 +130,10 @@ namespace ly
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
+		friend class CombatRuntime;
+		void ClearAdditionalState() override;
+		void OnClearCompleted() override;
+		std::function<void()> mOwnerClearCompletion;
 		void ProcessGameGameplayEvent(const sas::AbilityEvent& event);
 		void ProcessAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 		void RecordAbilityActivation(const sas::AbilityLifecycleEvent& event);
@@ -151,7 +154,6 @@ namespace ly
 		AbilityUseHistory mAbilityUseHistory;
 		AbilityInvocationRuntime mAbilityInvocationRuntime;
 		PrimaryWeaponOverrideState mPrimaryWeaponOverrides;
+		bool mTicking = false;
 	};
 }
-
-

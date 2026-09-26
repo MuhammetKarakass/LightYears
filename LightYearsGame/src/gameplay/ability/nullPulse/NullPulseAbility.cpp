@@ -226,28 +226,30 @@ namespace ly
 		{
 			return false;
 		}
+		World* world = context.owner.GetWorld();
+		if (!world)
+		{
+			return false;
+		}
 
 		// Presentation is optional at runtime, but when the typed profile is
 		// registered the pulse gets one feature-local visual actor. The actor has
 		// no collision and cannot affect the gameplay query below.
-		if (World* world = context.owner.GetWorld())
+		if (const NullPulsePresentationProfile* profile =
+			PresentationProfileRegistry<NullPulsePresentationProfile>::Find(
+				NullPulsePresentationIds::PulseBasic
+			))
 		{
-			if (const NullPulsePresentationProfile* profile =
-				PresentationProfileRegistry<NullPulsePresentationProfile>::Find(
-					NullPulsePresentationIds::PulseBasic
-				))
-			{
-				world->SpawnActor<NullPulseVisualActor>(
-					context.owner.GetActorLocation(),
-					radius,
-					*profile
-				);
-			}
+			world->SpawnActor<NullPulseVisualActor>(
+				context.owner.GetActorLocation(),
+				radius,
+				*profile
+			);
 		}
 
 		const List<shared_ptr<AbilityWorldActor>> projectiles =
 			NullPulseTargetQuery::FindClearableProjectiles(
-				*context.owner.GetWorld(), context.owner, radius
+				*world, context.owner, radius
 			);
 		for (const shared_ptr<AbilityWorldActor>& projectile : projectiles)
 		{
@@ -264,7 +266,7 @@ namespace ly
 
 		const List<shared_ptr<Actor>> targets =
 			NullPulseTargetQuery::FindEnemyTargets(
-				*context.owner.GetWorld(), context.owner, radius
+				*world, context.owner, radius
 			);
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);

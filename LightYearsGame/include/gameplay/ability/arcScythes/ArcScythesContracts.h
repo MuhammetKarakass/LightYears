@@ -14,7 +14,6 @@ namespace AbilityData::ArcScythes
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.ArcScythes" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ArcScythes };
 
 	struct State

@@ -276,25 +276,120 @@ namespace ly
 			};
 		}
 
+		bool PrepareEnemyCombatFoundationTestContent()
+		{
+			const std::filesystem::path candidateAssetRoots[] = {
+				"build/LightYearsGame/assets",
+				"LightYearsGame/assets",
+				"assets"
+			};
+			for (const auto& candidate : candidateAssetRoots)
+			{
+				if (std::filesystem::exists(candidate))
+				{
+					AssetManager::GetAssetManager().SetAssetRootDirectory(candidate.generic_string() + "/");
+					break;
+				}
+			}
+			GameContentBootstrap::Register();
+
+			std::filesystem::path weaponPath = "LightYearsGame/assets/content/data/weapons.json";
+			if (!std::filesystem::exists(weaponPath)) weaponPath = "assets/content/data/weapons.json";
+			std::filesystem::path enemyProfilePath = "LightYearsGame/assets/content/data/enemy_combat_profiles.json";
+			if (!std::filesystem::exists(enemyProfilePath)) enemyProfilePath = "assets/content/data/enemy_combat_profiles.json";
+
+			if (!content::WeaponContentCatalog::IsLoaded())
+			{
+				std::string loadError;
+				if (!content::WeaponContentCatalog::LoadFromFile(weaponPath, &loadError))
+					return Fail(("Failed to load weapons.json: " + loadError).c_str());
+			}
+			if (!content::EnemyCombatProfileCatalog::IsLoaded())
+			{
+				std::string loadError;
+				if (!content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath, &loadError))
+					return Fail(("Failed to load enemy_combat_profiles.json: " + loadError).c_str());
+			}
+			return true;
+		}
+
+		int RunEnemyCombatMixedLoadoutTestCase()
+		{
+			std::cout << "[TEST 9B]" << std::endl;
+			// Two weapons and two active abilities share one generic loadout.
+			World world{ nullptr };
+			const shared_ptr<TestCombatant> combatant = world.SpawnActor<TestCombatant>().lock();
+			if (!combatant) return Fail("Mixed loadout test combatant could not be spawned") ? 0 : 1;
+			const weak_ptr<Object> weakCombatant = combatant->GetWeakPtr();
+			if (weakCombatant.expired() || weakCombatant.lock().get() != combatant.get())
+				return Fail("World-spawned mixed-loadout combatant did not retain its shared Object owner") ? 0 : 1;
+			if (&combatant->GetAbilitySystemComponent().GetOwner() != combatant.get())
+				return Fail("Mixed-loadout ability system did not retain its owning Actor") ? 0 : 1;
+			EnemyRuntime enemyRuntime{ combatant->GetCombatRuntime() };
+			EnemyCombatProfile mixedProfile{ "EnemyCombat.Test.MixedLoadout", {}, {}, EnemyPowerScalingPolicy::Allowed, false };
+			mixedProfile.weapons.push_back({ "Weapon.Projectile.EnemyVanguardPulse.Basic", sas::AbilitySlot::PrimaryFire, 1 });
+			mixedProfile.weapons.push_back({ "Weapon.Projectile.EnemyTwinBladeScatter.Basic", sas::AbilitySlot::Ability2, 1 });
+			mixedProfile.abilities.push_back({ "Ability.Movement.Dash.Basic", sas::AbilitySlot::Ability1, 1 });
+			mixedProfile.abilities.push_back({ "Ability.Defense.Shield.Basic", sas::AbilitySlot::Ability3, 1 });
+
+			std::string initError;
+			if (!enemyRuntime.Initialize(mixedProfile, 1.f, &initError)) return Fail(initError.c_str()) ? 0 : 1;
+			const auto& handles = enemyRuntime.GetOwnedLoadoutHandles();
+			if (handles.size() != 4 || handles[0] == handles[1]) return Fail("Mixed loadout did not grant four distinct handles") ? 0 : 1;
+			const GameAbility* firstWeapon = combatant->GetAbilitySystemComponent().GetAbility(handles[0]);
+			const GameAbility* secondWeapon = combatant->GetAbilitySystemComponent().GetAbility(handles[1]);
+			if (!firstWeapon || !secondWeapon || firstWeapon->GetRuntimeSlot() != sas::AbilitySlot::PrimaryFire ||
+				secondWeapon->GetRuntimeSlot() != sas::AbilitySlot::Ability2 ||
+				combatant->GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability1) == nullptr ||
+				combatant->GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability3) == nullptr)
+			{
+				return Fail("Mixed loadout did not bind weapons and abilities to their requested slots") ? 0 : 1;
+			}
+
+			GameAbility* mutableFirstWeapon = combatant->GetAbilitySystemComponent().GetAbility(handles[0]);
+			GameAbility* mutableSecondWeapon = combatant->GetAbilitySystemComponent().GetAbility(handles[1]);
+			mutableFirstWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 3.5f;
+			mutableSecondWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 7.25f;
+			mutableFirstWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 1.25f;
+			if (!NearlyEqual(mutableFirstWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining, 1.25f) ||
+				!NearlyEqual(mutableSecondWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining, 7.25f))
+			{
+				return Fail("Two weapon runtime states are not independent") ? 0 : 1;
+			}
+
+			mutableSecondWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 0.f;
+			const uint64_t primaryFireCount = mutableFirstWeapon->GetPrimaryWeaponRuntime().successfulFireCount;
+			const uint64_t secondaryFireCount = mutableSecondWeapon->GetPrimaryWeaponRuntime().successfulFireCount;
+			const size_t projectileCount = world.GetActorsByType<PrimaryWeaponProjectileActor>().size();
+			combatant->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability2, true);
+			combatant->GetAbilitySystemComponent().Tick(0.01f);
+			world.TickInternal(0.01f);
+			combatant->GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability2, false);
+			combatant->GetAbilitySystemComponent().Tick(0.01f);
+			world.TickInternal(0.01f);
+			if (world.GetActorsByType<PrimaryWeaponProjectileActor>().size() <= projectileCount ||
+				mutableSecondWeapon->GetPrimaryWeaponRuntime().successfulFireCount <= secondaryFireCount ||
+				mutableFirstWeapon->GetPrimaryWeaponRuntime().successfulFireCount != primaryFireCount ||
+				mutableFirstWeapon->GetPrimaryWeaponRuntime().isFiring)
+			{
+				return Fail("Ability2 input did not execute only the secondary weapon") ? 0 : 1;
+			}
+			return 0;
+		}
+
+	}
+
+	int RunEnemyCombatMixedLoadoutTest()
+	{
+		std::cout << std::unitbuf;
+		if (!PrepareEnemyCombatFoundationTestContent()) return 1;
+		return RunEnemyCombatMixedLoadoutTestCase();
 	}
 
 	int RunEnemyCombatFoundationTests()
 	{
 		std::cout << std::unitbuf;
-		const std::filesystem::path candidateAssetRoots[] = {
-			"build/LightYearsGame/assets",
-			"LightYearsGame/assets",
-			"assets"
-		};
-		for (const auto& candidate : candidateAssetRoots)
-		{
-			if (std::filesystem::exists(candidate))
-			{
-				AssetManager::GetAssetManager().SetAssetRootDirectory(candidate.generic_string() + "/");
-				break;
-			}
-		}
-		GameContentBootstrap::Register();
+		if (!PrepareEnemyCombatFoundationTestContent()) return 1;
 
 		std::cout << "[TEST Behavior Contracts]" << std::endl;
 		{
@@ -436,34 +531,6 @@ namespace ly
 			const EnemyBehaviorIntent clearedIntent = behaviorRuntime.Tick(*source, 0.f);
 			for (const EnemySlotCommand& command : clearedIntent.slotCommands)
 				if (command.inputHeld) return Fail("Behavior Clear left a slot command held") ? 0 : 1;
-		}
-
-		std::filesystem::path weaponPath = "LightYearsGame/assets/content/data/weapons.json";
-		if (!std::filesystem::exists(weaponPath))
-		{
-			weaponPath = "assets/content/data/weapons.json";
-		}
-		std::filesystem::path enemyProfilePath = "LightYearsGame/assets/content/data/enemy_combat_profiles.json";
-		if (!std::filesystem::exists(enemyProfilePath))
-		{
-			enemyProfilePath = "assets/content/data/enemy_combat_profiles.json";
-		}
-
-		if (!content::WeaponContentCatalog::IsLoaded())
-		{
-			std::string loadError;
-			if (!content::WeaponContentCatalog::LoadFromFile(weaponPath, &loadError))
-			{
-				return Fail(("Failed to load weapons.json: " + loadError).c_str()) ? 0 : 1;
-			}
-		}
-		if (!content::EnemyCombatProfileCatalog::IsLoaded())
-		{
-			std::string loadError;
-			if (!content::EnemyCombatProfileCatalog::LoadFromFile(enemyProfilePath, &loadError))
-			{
-				return Fail(("Failed to load enemy_combat_profiles.json: " + loadError).c_str()) ? 0 : 1;
-			}
 		}
 
 		const EnemyCombatProfile* vanguardDef =
@@ -731,61 +798,7 @@ namespace ly
 				return Fail("Ability-only profile did not bind its ability to Ability1") ? 0 : 1;
 		}
 
-		std::cout << "[TEST 9B]" << std::endl;
-		// 9B. Two weapons and two active abilities share one generic loadout.
-		{
-			World world{ nullptr };
-			TestCombatant combatant{ &world };
-			EnemyRuntime enemyRuntime{ combatant.GetCombatRuntime() };
-			EnemyCombatProfile mixedProfile{ "EnemyCombat.Test.MixedLoadout", {}, {}, EnemyPowerScalingPolicy::Allowed, false };
-			mixedProfile.weapons.push_back({ "Weapon.Projectile.EnemyVanguardPulse.Basic", sas::AbilitySlot::PrimaryFire, 1 });
-			mixedProfile.weapons.push_back({ "Weapon.Projectile.EnemyTwinBladeScatter.Basic", sas::AbilitySlot::Ability2, 1 });
-			mixedProfile.abilities.push_back({ "Ability.Movement.Dash.Basic", sas::AbilitySlot::Ability1, 1 });
-			mixedProfile.abilities.push_back({ "Ability.Defense.Shield.Basic", sas::AbilitySlot::Ability3, 1 });
-
-			std::string initError;
-			if (!enemyRuntime.Initialize(mixedProfile, 1.f, &initError)) return Fail(initError.c_str()) ? 0 : 1;
-			const auto& handles = enemyRuntime.GetOwnedLoadoutHandles();
-			if (handles.size() != 4 || handles[0] == handles[1]) return Fail("Mixed loadout did not grant four distinct handles") ? 0 : 1;
-			const GameAbility* firstWeapon = combatant.GetAbilitySystemComponent().GetAbility(handles[0]);
-			const GameAbility* secondWeapon = combatant.GetAbilitySystemComponent().GetAbility(handles[1]);
-			if (!firstWeapon || !secondWeapon || firstWeapon->GetRuntimeSlot() != sas::AbilitySlot::PrimaryFire ||
-				secondWeapon->GetRuntimeSlot() != sas::AbilitySlot::Ability2 ||
-				combatant.GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability1) == nullptr ||
-				combatant.GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability3) == nullptr)
-			{
-				return Fail("Mixed loadout did not bind weapons and abilities to their requested slots") ? 0 : 1;
-			}
-
-			GameAbility* mutableFirstWeapon = combatant.GetAbilitySystemComponent().GetAbility(handles[0]);
-			GameAbility* mutableSecondWeapon = combatant.GetAbilitySystemComponent().GetAbility(handles[1]);
-			mutableFirstWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 3.5f;
-			mutableSecondWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 7.25f;
-			mutableFirstWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 1.25f;
-			if (!NearlyEqual(mutableFirstWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining, 1.25f) ||
-				!NearlyEqual(mutableSecondWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining, 7.25f))
-			{
-				return Fail("Two weapon runtime states are not independent") ? 0 : 1;
-			}
-
-			mutableSecondWeapon->GetPrimaryWeaponRuntime().fireIntervalRemaining = 0.f;
-			const uint64_t primaryFireCount = mutableFirstWeapon->GetPrimaryWeaponRuntime().successfulFireCount;
-			const uint64_t secondaryFireCount = mutableSecondWeapon->GetPrimaryWeaponRuntime().successfulFireCount;
-			const size_t projectileCount = world.GetActorsByType<PrimaryWeaponProjectileActor>().size();
-			combatant.GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability2, true);
-			combatant.GetAbilitySystemComponent().Tick(0.01f);
-			world.TickInternal(0.01f);
-			combatant.GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::Ability2, false);
-			combatant.GetAbilitySystemComponent().Tick(0.01f);
-			world.TickInternal(0.01f);
-			if (world.GetActorsByType<PrimaryWeaponProjectileActor>().size() <= projectileCount ||
-				mutableSecondWeapon->GetPrimaryWeaponRuntime().successfulFireCount <= secondaryFireCount ||
-				mutableFirstWeapon->GetPrimaryWeaponRuntime().successfulFireCount != primaryFireCount ||
-				mutableFirstWeapon->GetPrimaryWeaponRuntime().isFiring)
-			{
-				return Fail("Ability2 input did not execute only the secondary weapon") ? 0 : 1;
-			}
-		}
+		if (RunEnemyCombatMixedLoadoutTestCase() != 0) return 1;
 
 		std::cout << "[TEST 9C]" << std::endl;
 		// 9C. Empty loadouts are valid only when contact-only combat is enabled.

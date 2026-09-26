@@ -7,6 +7,7 @@ add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContractRegistry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/GameAbilityContentRegistration.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/energySpear/EnergySpearContentRegistration.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/AbilityBehaviorType.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorType.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/AbilityLifecycleDispatcher.h
@@ -19,6 +20,7 @@ add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIdSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/content/NumericSettingContractRegistry.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/content/GameAbilityContentRegistration.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/energySpear/EnergySpearContentRegistration.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityLifecycleDispatcher.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityUseHistory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/FocusActionLocks.cpp
@@ -170,6 +172,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityLoader.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionJsonParser.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityDefinitionMaterializer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ContentIdSchema.h
@@ -462,6 +465,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/closedCircuit/ClosedCircuitFieldActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/chainLightning/ChainLightningContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/glacialPressure/GlacialPressureContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/glacialPressure/GlacialPressureAbility.h
@@ -501,6 +506,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueAbility.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nanoPlague/NanoPlagueControllerActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crystalBarricade/CrystalBarricadeContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crystalBarricade/CrystalBarricadeAbility.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crystalBarricade/CrystalBarricadeAbility.cpp
@@ -544,7 +551,9 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionParticipant.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionSurface.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionService.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionRegistryActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionService.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionRegistryActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileInterceptionService.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileInterceptionService.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileInterceptionBoundary.h
@@ -557,6 +566,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/portal/PortalTransferParticipant.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/portal/PortalTransferRuntimeActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/portal/PortalTransferService.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeState.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferService.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/VoidGateTags.h
@@ -926,6 +936,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionJsonParser.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
@@ -999,6 +1010,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionJsonParser.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
@@ -1119,6 +1131,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryProjectileActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryostasis/CryostasisAbility.cpp
@@ -1149,6 +1162,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ironcladProtocol/IroncladProtocolAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/arcScythes/ArcScythesBeamActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseVisualActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.cpp
@@ -1165,10 +1179,12 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/DirectionalChargeTelegraphActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileRelayPayload.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionService.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionRegistryActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileInterceptionService.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferService.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeState.h
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/voidGate/VoidGateAbility.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/voidGate/VoidGatePortalActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamActorBase.cpp
@@ -1254,6 +1270,10 @@ if(BUILD_TESTING)
 	add_executable(LightYearsGasLiteTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/EnemyCombatFoundationTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameHUDPlayerRestartTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityLoadoutTransactionTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/PlayerShipLifetimeTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/ChainLightningLifetimeTests.cpp
 		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsGasLiteTests PRIVATE
@@ -1267,6 +1287,162 @@ if(BUILD_TESTING)
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 			nlohmann_json::nlohmann_json
 	)
+	add_test(
+		NAME LightYearsGasLiteMixedLoadout
+		COMMAND LightYearsGasLiteTests --mixed-loadout
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_test(
+		NAME LightYearsAbilityLoadoutTransaction
+		COMMAND LightYearsGasLiteTests --loadout-transaction
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_test(
+		NAME LightYearsPlayerShipLifetime
+		COMMAND LightYearsGasLiteTests --player-lifetime
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_test(
+		NAME LightYearsChainLightningLifetime
+		COMMAND LightYearsGasLiteTests --chain-lightning-lifetime
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+
+	add_executable(LightYearsTemporaryOvercapTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/TemporaryOvercapTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/resource/TemporaryOvercapLedger.cpp
+	)
+	target_include_directories(LightYearsTemporaryOvercapTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsTemporaryOvercapTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+	)
+	add_test(
+		NAME LightYearsTemporaryOvercap
+		COMMAND LightYearsTemporaryOvercapTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+
+	add_executable(LightYearsClosedCircuitInterceptionTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/ClosedCircuitInterceptionTests.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
+	target_include_directories(LightYearsClosedCircuitInterceptionTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsClosedCircuitInterceptionTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsClosedCircuitInterception
+		COMMAND LightYearsClosedCircuitInterceptionTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_executable(LightYearsNanoPlagueRuntimeTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/NanoPlagueRuntimeTests.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
+	target_include_directories(LightYearsNanoPlagueRuntimeTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsNanoPlagueRuntimeTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsNanoPlagueRuntime
+		COMMAND LightYearsNanoPlagueRuntimeTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_executable(LightYearsPortalTransferTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/PortalTransferRuntimeTests.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
+	target_include_directories(LightYearsPortalTransferTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsPortalTransferTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsPortalTransfer
+		COMMAND LightYearsPortalTransferTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_executable(LightYearsActorHitCooldownTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/ActorHitCooldownTests.cpp
+	)
+	target_include_directories(LightYearsActorHitCooldownTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsActorHitCooldownTests PRIVATE
+		${LIGHT_YEARS_ENGINE_TARGET_NAME}
+	)
+	add_test(NAME LightYearsActorHitCooldown COMMAND LightYearsActorHitCooldownTests)
+
+	add_executable(LightYearsProjectileReflectionTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/ProjectileReflectionTests.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
+	target_include_directories(LightYearsProjectileReflectionTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsProjectileReflectionTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsProjectileReflection
+		COMMAND LightYearsProjectileReflectionTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+
+	add_executable(LightYearsStormMarkTimingTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/StormMarkTimingTests.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
+	target_include_directories(LightYearsStormMarkTimingTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsStormMarkTimingTests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsStormMarkTiming
+		COMMAND LightYearsStormMarkTimingTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
 
 	add_executable(LightYearsPrimaryWeaponTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/PrimaryWeaponMagazineTests.cpp
@@ -1275,6 +1451,9 @@ if(BUILD_TESTING)
 	target_include_directories(LightYearsPrimaryWeaponTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsPrimaryWeaponTests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 	)
 	target_link_libraries(LightYearsPrimaryWeaponTests
 		PRIVATE
@@ -1288,6 +1467,70 @@ if(BUILD_TESTING)
 		COMMAND LightYearsPrimaryWeaponTests
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
+	set(LIGHT_YEARS_E2E_ARTIFACT_DIR "${CMAKE_BINARY_DIR}/e2e-artifacts")
+	file(MAKE_DIRECTORY "${LIGHT_YEARS_E2E_ARTIFACT_DIR}")
+	add_executable(LightYearsContinuousBeamWallE2ETests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/ContinuousBeamWallE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityContentRegistrationE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityLoaderPublicLoadE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/TimerManagerSceneE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameHUDDamageEventE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/AuditFixesE2E.cpp
+		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
+	)
+	target_include_directories(LightYearsContinuousBeamWallE2ETests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsContinuousBeamWallE2ETests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	)
+	target_link_libraries(LightYearsContinuousBeamWallE2ETests
+		PRIVATE
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsContinuousBeamWallE2E
+		COMMAND LightYearsContinuousBeamWallE2ETests
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/continuous-beam-wall.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_test(
+		NAME LightYearsAbilityContentRegistrationE2E
+		COMMAND LightYearsContinuousBeamWallE2ETests
+			--ability-content-registration
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ability-content-registration.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_test(
+		NAME LightYearsAbilityLoaderPublicLoadE2E
+		COMMAND LightYearsContinuousBeamWallE2ETests
+			--ability-loader-public-load
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ability-loader-public-load.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	add_test(
+		NAME LightYearsTimerManagerSceneE2E
+		COMMAND LightYearsContinuousBeamWallE2ETests
+			--timer-manager-scene
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/timer-manager-scene.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsTimerManagerSceneE2E PROPERTIES TIMEOUT 60)
+	add_test(
+		NAME LightYearsGameHUDDamageEventE2E
+		COMMAND LightYearsContinuousBeamWallE2ETests
+			--game-hud-damage-event
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/game-hud-damage-event.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsGameHUDDamageEventE2E PROPERTIES TIMEOUT 60)
+	add_test(NAME LightYearsAuditFixesE2E COMMAND LightYearsContinuousBeamWallE2ETests
+		--audit-fixes "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/audit-fixes.json" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+	set_tests_properties(LightYearsAuditFixesE2E PROPERTIES TIMEOUT 60)
 	option(
 		LIGHT_YEARS_BUILD_SPECIALIZED_TESTS
 		"Build small standalone specialist test executables"

@@ -5,70 +5,20 @@
 #include "gameplay/portal/PortalTransferParticipant.h"
 #include "gameplay/portal/PortalTransferRuntimeActor.h"
 #include "gameplay/targeting/SweptGeometry.h"
+#include "PortalTransferRuntimeState.h"
 
 #include <algorithm>
 #include <cmath>
 #include <memory>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace ly
 {
 	namespace
 	{
-		struct Endpoint
-		{
-			weak_ptr<Actor> actor;
-			sf::Vector2f location{};
-		};
-
-		struct Transit
-		{
-			weak_ptr<Actor> actor;
-			bool enteredFirst = true;
-			float remaining = 0.f;
-		};
-
-		struct ReentryLock
-		{
-			weak_ptr<Actor> actor;
-			// A transfer arrives inside its exit portal. Keep it locked until it
-			// physically leaves both portal areas; only then does cooldown begin.
-			bool waitingForExit = true;
-			float cooldownRemaining = 0.f;
-		};
-
-		struct Pair
-		{
-			PortalTransferService::PairId id = 0;
-			Endpoint first;
-			Endpoint second;
-			float radius = 1.f;
-			float transferDuration = 0.25f;
-			float reentryCooldown = 1.f;
-			bool acceptingEntries = true;
-			List<Transit> transits;
-			Dictionary<Actor*, ReentryLock> reentryLocks;
-		};
-
-		struct WorldState
-		{
-			PortalTransferService::PairId nextPairId = 1;
-			List<Pair> pairs;
-			bool runtimeActorRequested = false;
-		};
-
-		Dictionary<World*, WorldState>& GetWorldStates()
-		{
-			static Dictionary<World*, WorldState> states;
-			return states;
-		}
-
-		WorldState& GetWorldState(World& world)
-		{
-			return GetWorldStates()[&world];
-		}
+		using Endpoint = PortalTransferRuntimeState::Endpoint;
+		using Transit = PortalTransferRuntimeState::Transit;
+		using ReentryLock = PortalTransferRuntimeState::ReentryLock;
+		using Pair = PortalTransferRuntimeState::Pair;
 
 		weak_ptr<Actor> MakeWeakActor(Actor& actor)
 		{
@@ -103,9 +53,9 @@ namespace ly
 				effectiveRadius * effectiveRadius;
 		}
 
-		bool IsLocked(const Pair& pair, Actor* actor)
+		bool IsLocked(const Pair& pair, unsigned int actorId)
 		{
-			return pair.reentryLocks.find(actor) != pair.reentryLocks.end();
+			return pair.reentryLocks.find(actorId) != pair.reentryLocks.end();
 		}
 
 		void UpdateEndpointLocations(Pair& pair)
@@ -133,7 +83,7 @@ namespace ly
 				? pair.second
 				: pair.first;
 			participant->CompletePortalTransit(exit.location);
-			pair.reentryLocks[actor.get()] = ReentryLock{
+			pair.reentryLocks[actor->GetUniqueID()] = ReentryLock{
 				MakeWeakActor(*actor),
 				true,
 				0.f
@@ -262,7 +212,8 @@ namespace ly
 				PortalTransferParticipant* participant =
 					dynamic_cast<PortalTransferParticipant*>(actor.get());
 				if (!participant || !participant->CanEnterPortalTransfer() ||
-					participant->IsInPortalTransit() || IsLocked(pair, actor.get()))
+					participant->IsInPortalTransit() ||
+					IsLocked(pair, actor->GetUniqueID()))
 				{
 					continue;
 				}
@@ -303,7 +254,14 @@ namespace ly
 		float reentryCooldown
 	)
 	{
-		WorldState& state = GetWorldState(world);
+		const shared_ptr<PortalTransferRuntimeActor> runtimeActor =
+			FindOrCreateRuntimeActor(world);
+		if (!runtimeActor || !runtimeActor->mRuntimeState)
+		{
+			return 0;
+		}
+
+		PortalTransferRuntimeState& state = *runtimeActor->mRuntimeState;
 		const PairId pairId = state.nextPairId++;
 		state.pairs.push_back(Pair{
 			pairId,
@@ -316,13 +274,18 @@ namespace ly
 			{},
 			{}
 		});
-		EnsureRuntimeActor(world);
 		return pairId;
 	}
 
 	void PortalTransferService::ClosePair(World& world, PairId pairId)
 	{
-		WorldState& state = GetWorldState(world);
+		const shared_ptr<PortalTransferRuntimeActor> runtimeActor = FindRuntimeActor(world);
+		if (!runtimeActor || !runtimeActor->mRuntimeState)
+		{
+			return;
+		}
+
+		PortalTransferRuntimeState& state = *runtimeActor->mRuntimeState;
 		for (Pair& pair : state.pairs)
 		{
 			if (pair.id == pairId)
@@ -336,7 +299,13 @@ namespace ly
 
 	void PortalTransferService::Tick(World& world, float deltaTime)
 	{
-		WorldState& state = GetWorldState(world);
+		const shared_ptr<PortalTransferRuntimeActor> runtimeActor = FindRuntimeActor(world);
+		if (!runtimeActor || !runtimeActor->mRuntimeState)
+		{
+			return;
+		}
+
+		PortalTransferRuntimeState& state = *runtimeActor->mRuntimeState;
 		for (Pair& pair : state.pairs)
 		{
 			ProcessPair(world, pair, deltaTime);
@@ -357,17 +326,38 @@ namespace ly
 
 	void PortalTransferService::EnsureRuntimeActor(World& world)
 	{
-		WorldState& state = GetWorldState(world);
-		if (state.runtimeActorRequested)
-		{
-			return;
-		}
-		state.runtimeActorRequested = true;
-		world.SpawnActor<PortalTransferRuntimeActor>();
+		(void)FindOrCreateRuntimeActor(world);
 	}
 
 	void PortalTransferService::ResetWorld(World& world)
 	{
-		GetWorldStates().erase(&world);
+		if (const shared_ptr<PortalTransferRuntimeActor> runtimeActor = FindRuntimeActor(world))
+		{
+			runtimeActor->mRuntimeState =
+				std::make_unique<PortalTransferRuntimeState>();
+		}
+	}
+
+	shared_ptr<PortalTransferRuntimeActor> PortalTransferService::FindRuntimeActor(World& world)
+	{
+		for (const weak_ptr<PortalTransferRuntimeActor>& runtimeActorWeak :
+			world.GetActorsByTypeIncludingPending<PortalTransferRuntimeActor>())
+		{
+			const shared_ptr<PortalTransferRuntimeActor> runtimeActor = runtimeActorWeak.lock();
+			if (runtimeActor && !runtimeActor->GetIsPendingDestroy() && runtimeActor->mRuntimeState)
+			{
+				return runtimeActor;
+			}
+		}
+		return {};
+	}
+
+	shared_ptr<PortalTransferRuntimeActor> PortalTransferService::FindOrCreateRuntimeActor(World& world)
+	{
+		if (const shared_ptr<PortalTransferRuntimeActor> runtimeActor = FindRuntimeActor(world))
+		{
+			return runtimeActor;
+		}
+		return world.SpawnActor<PortalTransferRuntimeActor>().lock();
 	}
 }

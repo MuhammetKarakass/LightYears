@@ -7,6 +7,9 @@ namespace ly
 {
 	class TextWidget : public Widget
 	{
+		friend struct GameHUDPlayerRestartTestAccess;
+		friend struct GameHUDDamageE2ETestAccess;
+
 	public:
 		TextWidget(const std::string& textStr, const std::string& fontPath="SpaceShooterRedux/Bonus/kenvector_future.ttf",
 			unsigned int characterSize=10);

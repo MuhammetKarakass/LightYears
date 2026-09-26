@@ -9,23 +9,12 @@
 #include <algorithm>
 #include <cstdint>
 #include <cmath>
+#include <exception>
 
 namespace ly
 {
 	namespace
 	{
-		struct ControllerRegistryEntry
-		{
-			weak_ptr<Actor> owner;
-			weak_ptr<NanoPlagueControllerActor> controller;
-		};
-
-		List<ControllerRegistryEntry>& GetControllerRegistry()
-		{
-			static List<ControllerRegistryEntry> registry;
-			return registry;
-		}
-
 		weak_ptr<Actor> MakeWeakActor(Actor& actor)
 		{
 			const shared_ptr<Object> object = actor.GetWeakPtr().lock();
@@ -42,7 +31,6 @@ namespace ly
 	)
 		: Actor(world)
 		, mOwner(owner ? MakeWeakActor(*owner) : weak_ptr<Actor>{})
-		, mUnmanagedOwner(mOwner.expired() ? owner : nullptr)
 		, mProfile(profile)
 	{
 		SetRenderLayer(RenderLayer::World);
@@ -51,9 +39,12 @@ namespace ly
 
 	NanoPlagueControllerActor::~NanoPlagueControllerActor()
 	{
-		for (std::size_t index = mInfections.size(); index > 0; --index)
+		mDestroying = true;
+		mRegistryRegistration.Reset();
+		while (!mInfections.empty())
 		{
-			RemoveInfection(index - 1);
+			try { RemoveInfectionById(mInfections.begin()->first); }
+			catch (...) {} // Destruction must still release every subscription.
 		}
 	}
 
@@ -63,32 +54,33 @@ namespace ly
 		const NanoPlaguePresentationProfile& profile
 	)
 	{
-		List<ControllerRegistryEntry>& registry = GetControllerRegistry();
-		for (std::size_t index = 0; index < registry.size();)
+		if (owner.GetIsPendingDestroy() || owner.GetWorld() != &world)
 		{
-			const shared_ptr<Actor> registeredOwner = registry[index].owner.lock();
-			const shared_ptr<NanoPlagueControllerActor> controller =
-				registry[index].controller.lock();
-			if (!registeredOwner || !controller || controller->GetIsPendingDestroy())
-			{
-				registry.erase(registry.begin() + index);
-				continue;
-			}
-			if (registeredOwner.get() == &owner)
-			{
-				return controller;
-			}
-			++index;
+			return {};
+		}
+
+		const weak_ptr<Actor> ownerWeak = MakeWeakActor(owner);
+		const shared_ptr<Actor> managedOwner = ownerWeak.lock();
+		if (!managedOwner || managedOwner.get() != &owner) return {};
+
+		const shared_ptr<NanoPlagueControllerRegistryActor> registry =
+			NanoPlagueControllerRegistryActor::GetOrCreate(world);
+		if (!registry) return {};
+		if (const shared_ptr<NanoPlagueControllerActor> existing =
+			registry->FindActiveController(owner))
+		{
+			return existing;
 		}
 
 		const shared_ptr<NanoPlagueControllerActor> controller =
 			world.SpawnActor<NanoPlagueControllerActor>(&owner, profile).lock();
-		if (controller)
+		if (!controller) return {};
+
+		controller->mRegistryRegistration = registry->RegisterController(owner, controller);
+		if (!controller->mRegistryRegistration.IsValid())
 		{
-			registry.push_back({
-				MakeWeakActor(owner),
-				weak_ptr<NanoPlagueControllerActor>{ controller }
-			});
+			controller->Destroy();
+			return {};
 		}
 		return controller;
 	}
@@ -100,11 +92,14 @@ namespace ly
 		const sf::Vector2f* visualOrigin
 	)
 	{
-		if (target.GetIsPendingDestroy() ||
+		if (mDestroying || GetIsPendingDestroy() || target.GetIsPendingDestroy() ||
 			dynamic_cast<Combatant*>(&target) == nullptr)
 		{
 			return false;
 		}
+		const shared_ptr<Actor> owner = GetOwnerActor();
+		if (!owner) return false;
+		const sf::Vector2f origin = visualOrigin ? *visualOrigin : owner->GetActorLocation();
 
 		mSettings = settings;
 		mSettings.duration = std::max(0.01f, mSettings.duration);
@@ -115,117 +110,137 @@ namespace ly
 			mSettings.maximumSpreadTargetCount
 		);
 
-		for (Infection& infection : mInfections)
+		for (auto& [id, infection] : mInfections)
 		{
 			if (infection.target.lock().get() != &target)
 			{
 				continue;
 			}
 			infection.remainingDuration = mSettings.duration;
+			++infection.revision;
 			infection.tickAccumulator = 0.f;
 			infection.ticksApplied = 0;
 			// A direct infection must never lose its one spread generation because
 			// a later generation-one application refreshed the same target.
 			infection.generation = std::min(infection.generation, generation);
-			const sf::Vector2f origin = visualOrigin
-				? *visualOrigin
-				: GetOwnerActor()
-					? GetOwnerActor()->GetActorLocation()
-					: target.GetActorLocation();
 			AddPulse(origin, target, generation > 0);
 			return true;
 		}
 
 		Infection infection;
+		infection.id = mNextInfectionId++;
 		infection.target = MakeWeakActor(target);
 		infection.generation = std::max(0, generation);
 		infection.remainingDuration = mSettings.duration;
-		mInfections.push_back(std::move(infection));
-		dynamic_cast<Combatant&>(target).GetAbilitySystemComponent().AddOwnedTag(
-			AbilityData::NanoPlague::State::Infected
-		);
-		dynamic_cast<Combatant&>(target).GetCombatRuntime().onDamageResolved.BindAction(
-			GetWeakPtr(),
-			&NanoPlagueControllerActor::OnTargetDamageResolved
-		);
-		const sf::Vector2f origin = visualOrigin
-			? *visualOrigin
-			: GetOwnerActor()
-				? GetOwnerActor()->GetActorLocation()
-				: target.GetActorLocation();
+		const auto id = infection.id;
+		auto& stored = mInfections.emplace(id, std::move(infection)).first->second;
+		try
+		{
+			stored.damageSubscription = dynamic_cast<Combatant&>(target).GetCombatRuntime().onDamageResolved.BindAction(
+				GetWeakPtr(), &NanoPlagueControllerActor::OnTargetDamageResolved);
+			dynamic_cast<Combatant&>(target).GetAbilitySystemComponent().AddOwnedTag(AbilityData::NanoPlague::State::Infected);
+		}
+		catch (...)
+		{
+			const auto error = std::current_exception();
+			try { RemoveInfectionById(id); } catch (...) {}
+			std::rethrow_exception(error);
+		}
+		if (mDestroying) return false;
 		AddPulse(origin, target, generation > 0);
 		return true;
 	}
 
 	void NanoPlagueControllerActor::Tick(float deltaTime)
 	{
+		if (mDestroying || mTicking || GetIsPendingDestroy()) return;
+		mTicking = true;
+		struct TickScope { bool& ticking; ~TickScope() { ticking = false; } } scope{ mTicking };
 		const float safeDeltaTime = std::max(0.f, deltaTime);
 		mVisualAge += safeDeltaTime;
-		for (std::size_t index = 0; index < mPulses.size();)
+		mPulses.erase(std::remove_if(mPulses.begin(), mPulses.end(), [safeDeltaTime](Pulse& pulse)
 		{
-			mPulses[index].elapsed += safeDeltaTime;
-			if (mPulses[index].elapsed >= mPulses[index].duration ||
-				mPulses[index].target.expired())
+			pulse.elapsed += safeDeltaTime;
+			return pulse.elapsed >= pulse.duration || pulse.target.expired();
+		}), mPulses.end());
+
+		// New infections start aging next Tick. A refresh during damage owns its
+		// new duration/counters; the old tick must not overwrite that new state.
+		std::vector<std::uint64_t> ids;
+		ids.reserve(mInfections.size());
+		for (const auto& [id, infection] : mInfections) ids.push_back(id);
+		for (const std::uint64_t id : ids)
+		{
+			Infection* infection = FindInfection(id);
+			if (!infection) continue;
+			if (infection->pendingSpread)
 			{
-				mPulses.erase(mPulses.begin() + index);
+				ResolvePendingSpread(*infection);
+				if (mDestroying) return;
+				RemoveInfectionById(id);
 				continue;
 			}
-			++index;
-		}
-
-		for (std::size_t index = 0; index < mInfections.size();)
-		{
-			Infection& infection = mInfections[index];
-			if (infection.pendingSpread)
-			{
-				ResolvePendingSpread(infection);
-				RemoveInfection(index);
-				continue;
-			}
-
-			const shared_ptr<Actor> target = infection.target.lock();
+			const shared_ptr<Actor> target = infection->target.lock();
 			if (!target || target->GetIsPendingDestroy())
 			{
-				RemoveInfection(index);
+				RemoveInfectionById(id);
 				continue;
 			}
-
-			infection.remainingDuration -= safeDeltaTime;
-			infection.tickAccumulator += safeDeltaTime;
-			const int maximumTicks = std::max(
-				1,
-				static_cast<int>(std::round(mSettings.duration / mSettings.tickInterval))
-			);
-			while (!infection.pendingSpread &&
-				infection.tickAccumulator >= mSettings.tickInterval &&
-				infection.ticksApplied < maximumTicks)
+			const std::uint64_t revision = infection->revision;
+			const float interval = mSettings.tickInterval;
+			const int maximumTicks = std::max(1, static_cast<int>(std::round(mSettings.duration / interval)));
+			infection->remainingDuration -= safeDeltaTime;
+			infection->tickAccumulator += safeDeltaTime;
+			while (infection && infection->revision == revision && !infection->pendingSpread &&
+				infection->tickAccumulator >= interval && infection->ticksApplied < maximumTicks)
 			{
-				infection.tickAccumulator -= mSettings.tickInterval;
-				ApplyTick(infection, *target);
-				++infection.ticksApplied;
+				infection->tickAccumulator -= interval;
+				++infection->ticksApplied;
+				ApplyTick(*target);
+				if (mDestroying) return;
+				infection = FindInfection(id);
 			}
-
-			if (infection.pendingSpread)
+			if (!infection) continue;
+			if (infection->pendingSpread)
 			{
-				continue;
+				ResolvePendingSpread(*infection);
+				if (mDestroying) return;
+				RemoveInfectionById(id);
 			}
-			if (infection.remainingDuration <= 0.f || infection.ticksApplied >= maximumTicks)
+			else if (infection->revision == revision &&
+				(infection->remainingDuration <= 0.f || infection->ticksApplied >= maximumTicks))
 			{
-				RemoveInfection(index);
-				continue;
+				RemoveInfectionById(id);
 			}
-			++index;
 		}
+		if (mInfections.empty() && mPulses.empty()) Destroy();
+	}
 
-		if (mInfections.empty() && mPulses.empty())
+	NanoPlagueControllerActor::Infection* NanoPlagueControllerActor::FindInfection(std::uint64_t id)
+	{
+		const auto found = mInfections.find(id);
+		return found == mInfections.end() ? nullptr : &found->second;
+	}
+
+	void NanoPlagueControllerActor::RemoveInfectionById(std::uint64_t id)
+	{
+		const auto found = mInfections.find(id);
+		if (found == mInfections.end()) return;
+		const Infection infection = found->second;
+		mInfections.erase(found); // Detach before callbacks can re-infect or destroy.
+		if (const shared_ptr<Actor> target = infection.target.lock())
 		{
-			Destroy();
+			if (Combatant* combatant = dynamic_cast<Combatant*>(target.get()))
+			{
+				combatant->GetCombatRuntime().onDamageResolved.UnbindAction(infection.damageSubscription);
+				combatant->GetAbilitySystemComponent().RemoveOwnedTag(AbilityData::NanoPlague::State::Infected);
+			}
 		}
 	}
 
 	void NanoPlagueControllerActor::Render(sf::RenderWindow& window)
 	{
-		for (const Infection& infection : mInfections)
+		for (const auto& [id, infection] : mInfections)
 		{
 			const shared_ptr<Actor> target = infection.target.lock();
 			if (!target || target->GetIsPendingDestroy())
@@ -272,10 +287,11 @@ namespace ly
 		}
 	}
 
-	Actor* NanoPlagueControllerActor::GetOwnerActor() const
+	shared_ptr<Actor> NanoPlagueControllerActor::GetOwnerActor() const
 	{
 		const shared_ptr<Actor> owner = mOwner.lock();
-		return owner ? owner.get() : mUnmanagedOwner;
+		if (!owner || owner->GetIsPendingDestroy() || owner->GetWorld() != GetWorld()) return {};
+		return owner;
 	}
 
 	void NanoPlagueControllerActor::OnTargetDamageResolved(const DamageContext& context)
@@ -284,7 +300,7 @@ namespace ly
 		{
 			return;
 		}
-		for (Infection& infection : mInfections)
+		for (auto& [id, infection] : mInfections)
 		{
 			if (infection.target.lock().get() != context.target)
 			{
@@ -301,9 +317,9 @@ namespace ly
 		}
 	}
 
-	void NanoPlagueControllerActor::ResolvePendingSpread(const Infection& infection)
+	void NanoPlagueControllerActor::ResolvePendingSpread(Infection infection)
 	{
-		Actor* owner = GetOwnerActor();
+		const shared_ptr<Actor> owner = GetOwnerActor();
 		World* world = GetWorld();
 		if (infection.generation != 0 || !owner || !world)
 		{
@@ -338,11 +354,12 @@ namespace ly
 		}
 	}
 
-	void NanoPlagueControllerActor::ApplyTick(Infection&, Actor& target)
+	void NanoPlagueControllerActor::ApplyTick(Actor& target)
 	{
-		Actor* owner = GetOwnerActor();
+		const Settings settings = mSettings;
+		const shared_ptr<Actor> owner = GetOwnerActor();
 		const Combatant* ownerCombatant = owner
-			? dynamic_cast<const Combatant*>(owner)
+			? dynamic_cast<const Combatant*>(owner.get())
 			: nullptr;
 		if (!owner || !ownerCombatant)
 		{
@@ -354,33 +371,32 @@ namespace ly
 			));
 		ApplyCombatDamage(
 			target,
-			std::max(0.f, mSettings.baseTickDamage + energyPower * mSettings.energyPowerTickScale),
-			owner,
+			std::max(0.f, settings.baseTickDamage + energyPower * settings.energyPowerTickScale),
+			owner.get(),
 			{ DamageTypeSchema::Electric },
 			{},
-			mSettings.sourceAbilityId,
-			mSettings.sourceAbilityTags,
+			settings.sourceAbilityId,
+			settings.sourceAbilityTags,
 			DamageDeliveryType::Area,
 			this
 		);
 	}
 
-	void NanoPlagueControllerActor::RemoveInfection(std::size_t index)
+	void NanoPlagueControllerActor::Destroy()
 	{
-		if (index >= mInfections.size())
+		if (mDestroying) return;
+		mDestroying = true;
+		mRegistryRegistration.Reset();
+		std::exception_ptr error;
+		while (!mInfections.empty())
 		{
-			return;
+			try { RemoveInfectionById(mInfections.rbegin()->first); }
+			catch (...) { if (!error) error = std::current_exception(); }
 		}
-		if (const shared_ptr<Actor> target = mInfections[index].target.lock())
-		{
-			if (Combatant* combatant = dynamic_cast<Combatant*>(target.get()))
-			{
-				combatant->GetAbilitySystemComponent().RemoveOwnedTag(
-					AbilityData::NanoPlague::State::Infected
-				);
-			}
-		}
-		mInfections.erase(mInfections.begin() + index);
+		mPulses.clear();
+		try { Actor::Destroy(); }
+		catch (...) { if (!error) error = std::current_exception(); }
+		if (error) std::rethrow_exception(error);
 	}
 
 	bool NanoPlagueControllerActor::HasInfection(const Actor& target) const
@@ -388,9 +404,9 @@ namespace ly
 		return std::any_of(
 			mInfections.begin(),
 			mInfections.end(),
-			[&target](const Infection& infection)
+			[&target](const auto& entry)
 			{
-				return infection.target.lock().get() == &target;
+				return entry.second.target.lock().get() == &target;
 			}
 		);
 	}
@@ -412,8 +428,8 @@ namespace ly
 
 	int NanoPlagueControllerActor::ResolveSpreadTargetCount() const
 	{
-		const Actor* owner = GetOwnerActor();
-		const Combatant* combatant = owner ? dynamic_cast<const Combatant*>(owner) : nullptr;
+		const shared_ptr<Actor> owner = GetOwnerActor();
+		const Combatant* combatant = owner ? dynamic_cast<const Combatant*>(owner.get()) : nullptr;
 		const float luckFactor = combatant
 			? std::clamp(combatant->GetCombatRuntime().GetCombatLuckFactor(), 0.f, 1.f)
 			: 0.f;

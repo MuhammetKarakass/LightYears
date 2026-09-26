@@ -3,9 +3,7 @@
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/movement/MovementInfluenceTypes.h"
 #include "presentation/ability/lanceDrive/LanceDrivePresentationProfile.h"
-
-#include <unordered_map>
-#include <cstdint>
+#include "gameplay/targeting/ActorHitCooldowns.h"
 
 namespace ly
 {
@@ -40,7 +38,7 @@ namespace ly
 		) const;
 
 		LanceDrivePresentationProfile mPresentationProfile;
-		std::unordered_map<const Actor*, float> mNextHitTime;
+		targeting::ActorHitCooldowns mHitCooldowns;
 		float mBaseDamage = 10.f;
 		float mSpeedDamageConversion = 0.20f;
 		float mEnergyPowerReference = 50.f;

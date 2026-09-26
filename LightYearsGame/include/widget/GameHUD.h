@@ -5,6 +5,7 @@
 #include <widget/ValueGauge.h>
 #include <widget/ImageWidget.h>
 #include <widget/Button.h>
+#include "framework/Delegate.h"
 #include "framework/TimerManager.h"
 #include "gameplay/GameplayWarning.h"
 #include <unordered_set>
@@ -12,13 +13,21 @@
 namespace ly
 {
 	class Actor;
+	class Player;
 	class SpaceShip;
 	class PlayerSpaceShip;
+	struct DamageContext;
+	struct GameHUDPlayerRestartTestAccess;
+	struct GameHUDDamageE2ETestAccess;
 
 	class GameHUD : public HUD
 	{
+		friend struct GameHUDPlayerRestartTestAccess;
+		friend struct GameHUDDamageE2ETestAccess;
+
 	public:
 		GameHUD();
+		~GameHUD() override;
 		virtual void Draw(sf::RenderWindow& windowRef) override;
 		virtual void Tick(float deltaTime) override;
 		virtual bool HandleEvent(const sf::Event& event) override;
@@ -46,12 +55,17 @@ namespace ly
 		void PlayerSpaceShipDestroyed(Actor* actor);
 		void RefreshHealthBarDeferred();
 		void ConnectStatus();
+		void BindStatusToPlayer(Player* player);
+		void UnbindStatusFromPlayer(Player* player);
+		void OnPlayerAboutToBeDestroyed(Player* player);
+		void OnPlayerCreated(Player* player);
+		void DisconnectStatus();
 		void RefreshPlayerHUDState();
 		void PlayerLifeUpdated(int amt);
 		void PlayerScoreUpdated(int amt);
 		void UpdateGameplayWarningVisuals(float deltaTime);
 		void ConnectDamageObservers();
-		void ShipDamageTaken(SpaceShip* ship, float amount, float health, float maxHealth);
+		void ShipDamageResolved(const DamageContext& context);
 		void UpdateDamageNumberVisuals(float deltaTime);
 		void UpdatePlayerSpeed();
 
@@ -98,7 +112,12 @@ namespace ly
 		sf::RenderWindow* mWindowRef{ nullptr };
 
 		float mWidgetSpacingX;
-		bool mIsStatusConnected{ false };
+		bool mIsPlayerManagerObserved{ false };
+		DelegateHandle mPlayerAboutToBeDestroyedHandle;
+		DelegateHandle mPlayerCreatedHandle;
+		unsigned int mObservedPlayerId{ 0 };
+		DelegateHandle mPlayerLifeChangeHandle;
+		DelegateHandle mPlayerScoreChangeHandle;
 		weak_ptr<PlayerSpaceShip> mObservedPlayerSpaceShip;
 		TimerHandle mRefreshHealthBarTimerHandle;
 		bool mHasActiveGameplayWarning{ false };

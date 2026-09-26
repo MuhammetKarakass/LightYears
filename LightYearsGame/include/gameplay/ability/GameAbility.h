@@ -157,6 +157,8 @@ namespace ly
 
 		bool CanActivateContent() const override;
 		bool ActivateContent() override;
+		void AbortActivationContent() override;
+		void OnActivationCommitted() override;
 		void BeginExecution() override;
 		void TickExecution(float deltaTime) override;
 		void EndExecution(sas::AbilityEndReason reason) override;
@@ -211,6 +213,7 @@ namespace ly
 		bool mHasPrimaryWeaponRuntimeResolvedContext = false;
 		AttachmentLoadout mAttachments;
 		unique_ptr<GameAbilityBehavior> mBehavior;
+		bool mBehaviorStarted = false;
 		sas::AbilityActivationOrigin mActivationOrigin =
 			sas::AbilityActivationOrigin::NormalInput;
 		int mInvocationMaximumLevel = 0;

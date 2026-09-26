@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <cstdint>
+#include <unordered_map>
 #include "gameplay/projectile/ProjectileReflectionSurface.h"
 
 namespace ly
@@ -30,6 +32,31 @@ namespace ly
 		virtual bool TryReflectProjectile(
 			const ProjectileReflectionRequest& request
 		) = 0;
+
+		bool IsSurfaceLocked(uint64_t surfaceId) const
+		{
+			return mSurfaceLocks.find(surfaceId) != mSurfaceLocks.end();
+		}
+
+		uint64_t LockSurface(uint64_t surfaceId)
+		{
+			const uint64_t generation = ++mNextSurfaceLockGeneration;
+			mSurfaceLocks[surfaceId] = generation;
+			return generation;
+		}
+
+		void UnlockSurface(uint64_t surfaceId, uint64_t generation)
+		{
+			const auto iterator = mSurfaceLocks.find(surfaceId);
+			if (iterator != mSurfaceLocks.end() && iterator->second == generation)
+			{
+				mSurfaceLocks.erase(iterator);
+			}
+		}
+
+	private:
+		std::unordered_map<uint64_t, uint64_t> mSurfaceLocks;
+		uint64_t mNextSurfaceLockGeneration = 0u;
 	};
 
 }

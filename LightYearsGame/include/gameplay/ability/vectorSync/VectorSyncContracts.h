@@ -11,7 +11,6 @@ namespace AbilityData::VectorSync
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Movement };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.VectorSync" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::VectorSync };
 
 	struct State

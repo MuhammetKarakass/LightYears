@@ -13,7 +13,6 @@ namespace AbilityData::PhaseDrift
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityMovement };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.PhaseDrift" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::PhaseDrift };
 
 	struct State

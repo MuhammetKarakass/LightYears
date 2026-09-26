@@ -172,14 +172,43 @@ namespace ly::targeting::swept
 		const sf::Vector2f& segmentStart,
 		const sf::Vector2f& segmentEnd,
 		const sf::FloatRect& bounds,
-		float expansion
+		float expansion,
+		float& outFraction
 	)
 	{
 		const float safeExpansion = std::max(0.f, expansion);
 		if (bounds.size.x <= 0.f || bounds.size.y <= 0.f)
 		{
-			return DistanceSquaredToSegment(bounds.position, segmentStart, segmentEnd) <=
+			const sf::Vector2f offset = segmentStart - bounds.position;
+			const sf::Vector2f delta = segmentEnd - segmentStart;
+			const float a = delta.x * delta.x + delta.y * delta.y;
+			const float b = 2.f * (offset.x * delta.x + offset.y * delta.y);
+			const float c = offset.x * offset.x + offset.y * offset.y -
 				safeExpansion * safeExpansion;
+			if (a <= 0.00000001f)
+			{
+				if (c > 0.f)
+				{
+					return false;
+				}
+				outFraction = 0.f;
+				return true;
+			}
+
+			const float discriminant = b * b - 4.f * a * c;
+			if (discriminant < 0.f)
+			{
+				return false;
+			}
+			const float root = std::sqrt(discriminant);
+			const float enter = (-b - root) / (2.f * a);
+			const float exit = (-b + root) / (2.f * a);
+			if (exit < 0.f || enter > 1.f)
+			{
+				return false;
+			}
+			outFraction = std::max(0.f, enter);
+			return true;
 		}
 
 		const float left = bounds.position.x - safeExpansion;
@@ -206,7 +235,29 @@ namespace ly::targeting::swept
 			return enter <= exit;
 		};
 
-		return clip(segmentStart.x, delta.x, left, right) &&
-			clip(segmentStart.y, delta.y, top, bottom);
+		if (!clip(segmentStart.x, delta.x, left, right) ||
+			!clip(segmentStart.y, delta.y, top, bottom))
+		{
+			return false;
+		}
+		outFraction = enter;
+		return true;
+	}
+
+	inline bool SegmentIntersectsExpandedBounds(
+		const sf::Vector2f& segmentStart,
+		const sf::Vector2f& segmentEnd,
+		const sf::FloatRect& bounds,
+		float expansion
+	)
+	{
+		float ignoredFraction = 0.f;
+		return SegmentIntersectsExpandedBounds(
+			segmentStart,
+			segmentEnd,
+			bounds,
+			expansion,
+			ignoredFraction
+		);
 	}
 }

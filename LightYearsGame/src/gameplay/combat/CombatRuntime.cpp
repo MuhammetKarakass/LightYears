@@ -21,6 +21,7 @@ namespace ly
 		mAbilitySystemComponent{ owner },
 		mEffectPresentation{ owner }
 	{
+		mAbilitySystemComponent.mOwnerClearCompletion = [this] { CompleteClear(); };
 		sas::AbilitySystemComponent::EffectCallbacks callbacks;
 		callbacks.addStack =
 			[](sas::ActiveGameplayEffect& effect)
@@ -188,12 +189,22 @@ namespace ly
 
 	void CombatRuntime::Clear()
 	{
-		mContactDamageGuardRegistry.Clear();
+		mClearRequested = true;
 		mAbilitySystemComponent.Clear();
-		mEffectPresentation.Clear();
+	}
+
+	void CombatRuntime::CompleteClear()
+	{
+		if (!mClearRequested) return;
+		mClearRequested = false;
+		mContactDamageGuardRegistry.Clear();
+		std::exception_ptr error;
+		try { mEffectPresentation.Clear(); }
+		catch (...) { error = std::current_exception(); }
 		mPendingEffectEvents.clear();
 		mDamageProtections.clear();
 		mRuntimeModifiers.Clear();
+		if (error) std::rethrow_exception(error);
 	}
 
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)

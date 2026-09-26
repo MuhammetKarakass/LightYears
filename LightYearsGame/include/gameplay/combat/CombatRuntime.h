@@ -68,6 +68,8 @@ namespace ly
 		Delegate<const DamageContext&> onDamageResolved;
 
 	private:
+		void CompleteClear();
+		bool mClearRequested = false;
 		void QueueEffectEvent(
 			const sas::GameplayEffectBehaviorEvent& event,
 			const DamageContext* context = nullptr

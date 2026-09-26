@@ -16,9 +16,6 @@ namespace AbilityData::IonStorm
 	inline const ly::GameplayTag CategoryTag{
 		ly::GameplayTagSchema::AbilityOffense
 	};
-	inline const ly::GameplayTag BehaviorTag{
-		"GameAbilityBehavior.IonStorm"
-	};
 	inline const ly::GameplayTag FamilyTag{
 		ly::GameplayTags::Ability::Family::IonStorm
 	};

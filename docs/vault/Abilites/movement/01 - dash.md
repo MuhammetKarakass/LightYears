@@ -34,7 +34,7 @@ tags:
 | Ozellik | Deger |
 |---|---:|
 | Ability ID | `Ability.Movement.Dash.Basic` |
-| Behavior ID | `GameAbilityBehavior.Dash` |
+| Behavior type | `AbilityBehaviorType::Dash` |
 | Cooldown | 2.0 saniye |
 | Duration | 0.24 saniye |
 | Base distance | 260.0 birim |

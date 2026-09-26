@@ -36,15 +36,94 @@ namespace sas
 			std::unique_ptr<AbilityInstance> instance
 		)
 		{
-			if (!handle.IsValid() || abilityId.empty() || !instance ||
+			std::unique_ptr<AbilityInstance> replacedInstance;
+			return RegisterReplacing(
+				handle,
+				abilityId,
+				slot,
+				isPassive,
+				AbilityHandle{},
+				std::move(instance),
+				replacedInstance
+			);
+		}
+
+		bool CanRegisterReplacing(
+			AbilityHandle handle,
+			const std::string& abilityId,
+			AbilitySlot slot,
+			bool isPassive,
+			AbilityHandle replacedHandle
+		) const
+		{
+			if (!handle.IsValid() || abilityId.empty() ||
 				mInstances.find(handle) != mInstances.end() ||
+				mRegistrations.find(handle) != mRegistrations.end() ||
 				mAbilityIds.find(abilityId) != mAbilityIds.end())
 			{
 				return false;
 			}
-			if (!isPassive && mSlotBindings.find(slot) != mSlotBindings.end())
+			if (isPassive)
+			{
+				return !replacedHandle.IsValid();
+			}
+			if (slot == AbilitySlot::None)
 			{
 				return false;
+			}
+
+			const auto targetBinding = mSlotBindings.find(slot);
+			if (!replacedHandle.IsValid())
+			{
+				return targetBinding == mSlotBindings.end();
+			}
+			if (replacedHandle == handle || targetBinding == mSlotBindings.end() ||
+				!(targetBinding->second == replacedHandle))
+			{
+				return false;
+			}
+
+			const auto replacedRegistration = mRegistrations.find(replacedHandle);
+			if (replacedRegistration == mRegistrations.end() ||
+				replacedRegistration->second.isPassive ||
+				replacedRegistration->second.slot != slot ||
+				mInstances.find(replacedHandle) == mInstances.end())
+			{
+				return false;
+			}
+			const auto replacedId = mAbilityIds.find(replacedRegistration->second.abilityId);
+			return replacedId != mAbilityIds.end() && replacedId->second == replacedHandle;
+		}
+
+		bool RegisterReplacing(
+			AbilityHandle handle,
+			const std::string& abilityId,
+			AbilitySlot slot,
+			bool isPassive,
+			AbilityHandle replacedHandle,
+			std::unique_ptr<AbilityInstance> instance,
+			std::unique_ptr<AbilityInstance>& replacedInstance
+		)
+		{
+			if (!instance || replacedInstance ||
+				!CanRegisterReplacing(handle, abilityId, slot, isPassive, replacedHandle))
+			{
+				return false;
+			}
+
+			if (replacedHandle.IsValid())
+			{
+				auto replacedRegistration = mRegistrations.find(replacedHandle);
+				mAbilityIds.erase(replacedRegistration->second.abilityId);
+				auto replaced = mInstances.find(replacedHandle);
+				replacedInstance = std::move(replaced->second);
+				mInstances.erase(replaced);
+				mRegistrations.erase(replacedRegistration);
+				mSlotBindings.find(slot)->second = handle;
+			}
+			else if (!isPassive)
+			{
+				mSlotBindings.emplace(slot, handle);
 			}
 
 			mInstances.emplace(handle, std::move(instance));
@@ -53,10 +132,6 @@ namespace sas
 			if (isPassive)
 			{
 				mPassiveAbilities.push_back(handle);
-			}
-			else
-			{
-				mSlotBindings.emplace(slot, handle);
 			}
 			return true;
 		}
@@ -91,23 +166,95 @@ namespace sas
 
 		bool Rebind(AbilityHandle handle, AbilitySlot newSlot)
 		{
+			std::unique_ptr<AbilityInstance> replacedInstance;
+			return RebindReplacing(handle, newSlot, AbilityHandle{}, replacedInstance);
+		}
+
+		bool CanRebindReplacing(
+			AbilityHandle handle,
+			AbilitySlot newSlot,
+			AbilityHandle replacedHandle
+		) const
+		{
 			const auto registration = mRegistrations.find(handle);
 			if (registration == mRegistrations.end() ||
 				registration->second.isPassive ||
 				newSlot == AbilitySlot::None ||
-				(mSlotBindings.find(newSlot) != mSlotBindings.end() &&
-					!(mSlotBindings.find(newSlot)->second == handle)))
+				mInstances.find(handle) == mInstances.end())
 			{
 				return false;
 			}
 
 			const auto oldBinding = mSlotBindings.find(registration->second.slot);
-			if (oldBinding != mSlotBindings.end() && oldBinding->second == handle)
+			if (oldBinding == mSlotBindings.end() || !(oldBinding->second == handle))
 			{
+				return false;
+			}
+			const auto targetBinding = mSlotBindings.find(newSlot);
+			if (newSlot == registration->second.slot)
+			{
+				return !replacedHandle.IsValid() &&
+					targetBinding != mSlotBindings.end() && targetBinding->second == handle;
+			}
+			if (!replacedHandle.IsValid())
+			{
+				return targetBinding == mSlotBindings.end();
+			}
+			if (replacedHandle == handle || targetBinding == mSlotBindings.end() ||
+				!(targetBinding->second == replacedHandle))
+			{
+				return false;
+			}
+
+			const auto replacedRegistration = mRegistrations.find(replacedHandle);
+			if (replacedRegistration == mRegistrations.end() ||
+				replacedRegistration->second.isPassive ||
+				replacedRegistration->second.slot != newSlot ||
+				mInstances.find(replacedHandle) == mInstances.end())
+			{
+				return false;
+			}
+			const auto replacedId = mAbilityIds.find(replacedRegistration->second.abilityId);
+			return replacedId != mAbilityIds.end() && replacedId->second == replacedHandle;
+		}
+
+		bool RebindReplacing(
+			AbilityHandle handle,
+			AbilitySlot newSlot,
+			AbilityHandle replacedHandle,
+			std::unique_ptr<AbilityInstance>& replacedInstance
+		)
+		{
+			if (replacedInstance ||
+				!CanRebindReplacing(handle, newSlot, replacedHandle))
+			{
+				return false;
+			}
+
+			auto registration = mRegistrations.find(handle);
+			const AbilitySlot oldSlot = registration->second.slot;
+			if (replacedHandle.IsValid())
+			{
+				auto replacedRegistration = mRegistrations.find(replacedHandle);
+				mAbilityIds.erase(replacedRegistration->second.abilityId);
+				auto replaced = mInstances.find(replacedHandle);
+				replacedInstance = std::move(replaced->second);
+				mInstances.erase(replaced);
+				mRegistrations.erase(replacedRegistration);
+				mSlotBindings.find(newSlot)->second = handle;
+				auto oldBinding = mSlotBindings.find(oldSlot);
+				if (oldBinding != mSlotBindings.end() && oldBinding->second == handle)
+				{
+					mSlotBindings.erase(oldBinding);
+				}
+			}
+			else if (oldSlot != newSlot)
+			{
+				const auto oldBinding = mSlotBindings.find(oldSlot);
 				mSlotBindings.erase(oldBinding);
+				mSlotBindings.emplace(newSlot, handle);
 			}
 			registration->second.slot = newSlot;
-			mSlotBindings[newSlot] = handle;
 			return true;
 		}
 

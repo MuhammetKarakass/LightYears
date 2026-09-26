@@ -111,11 +111,32 @@ namespace
 			++replacementCallbackCount;
 		}
 
+		void OnRepeatingTimer()
+		{
+			++repeatingCallbackCount;
+		}
+
+		void CancelRepeatingTimer()
+		{
+			++repeatingCallbackCount;
+			manager->ClearTimer(repeatingTimerHandle);
+		}
+
+		void ReleaseOwnerDuringRepeatingTimer()
+		{
+			++*externalCallbackCount;
+			ownerToRelease->reset();
+		}
+
 		ly::TimerManager* manager{ nullptr };
+		ly::TimerHandle repeatingTimerHandle{};
+		std::shared_ptr<TimerOwner>* ownerToRelease{ nullptr };
+		int* externalCallbackCount{ nullptr };
 		int firstCallbackCount{ 0 };
 		int nestedCallbackCount{ 0 };
 		int clearCallbackCount{ 0 };
 		int replacementCallbackCount{ 0 };
+		int repeatingCallbackCount{ 0 };
 	};
 
 	class PhysicsProbeActor final : public ly::Actor
@@ -351,6 +372,71 @@ int main()
 	if (timerOwner->replacementCallbackCount != 1)
 	{
 		return Fail("TimerManager lost a replacement timer queued after ClearAllTimers");
+	}
+
+	timerManager.ClearAllTimers();
+	timerOwner->repeatingCallbackCount = 0;
+	timerOwner->repeatingTimerHandle = timerManager.SetTimer(timerOwner->GetWeakPtr(), &TimerOwner::OnRepeatingTimer, 0.1f, true);
+	timerManager.UpdateTimer(0.35f);
+	if (timerOwner->repeatingCallbackCount != 3)
+	{
+		return Fail("TimerManager did not catch up repeating timer intervals");
+	}
+	timerManager.UpdateTimer(0.049f);
+	if (timerOwner->repeatingCallbackCount != 3)
+	{
+		return Fail("TimerManager discarded the repeating timer remainder");
+	}
+	timerManager.UpdateTimer(0.002f);
+	if (timerOwner->repeatingCallbackCount != 4)
+	{
+		return Fail("TimerManager did not preserve repeating timer cadence");
+	}
+
+	timerManager.ClearAllTimers();
+	timerOwner->repeatingCallbackCount = 0;
+	timerOwner->repeatingTimerHandle = timerManager.SetTimer(timerOwner->GetWeakPtr(), &TimerOwner::OnRepeatingTimer, 0.1f, true);
+	timerManager.UpdateTimer(1.25f);
+	if (timerOwner->repeatingCallbackCount != 8)
+	{
+		return Fail("TimerManager exceeded the repeating timer catch-up cap");
+	}
+	timerManager.UpdateTimer(0.f);
+	if (timerOwner->repeatingCallbackCount != 12)
+	{
+		return Fail("TimerManager discarded repeating timer debt after the catch-up cap");
+	}
+
+	timerManager.ClearAllTimers();
+	timerOwner->repeatingCallbackCount = 0;
+	timerOwner->repeatingTimerHandle = timerManager.SetTimer(timerOwner->GetWeakPtr(), &TimerOwner::OnRepeatingTimer, 0.f, true);
+	timerManager.UpdateTimer(1.f);
+	timerManager.UpdateTimer(1.f);
+	if (timerOwner->repeatingCallbackCount != 0)
+	{
+		return Fail("TimerManager invoked a zero-duration repeating timer");
+	}
+
+	timerManager.ClearAllTimers();
+	timerOwner->repeatingCallbackCount = 0;
+	timerOwner->repeatingTimerHandle = timerManager.SetTimer(timerOwner->GetWeakPtr(), &TimerOwner::CancelRepeatingTimer, 0.1f, true);
+	timerManager.UpdateTimer(0.35f);
+	if (timerOwner->repeatingCallbackCount != 1)
+	{
+		return Fail("TimerManager invoked a repeating timer after its callback canceled it");
+	}
+
+	timerManager.ClearAllTimers();
+	int lifetimeCallbackCount = 0;
+	std::shared_ptr<TimerOwner> lifetimeOwner = std::make_shared<TimerOwner>();
+	lifetimeOwner->manager = &timerManager;
+	lifetimeOwner->ownerToRelease = &lifetimeOwner;
+	lifetimeOwner->externalCallbackCount = &lifetimeCallbackCount;
+	timerManager.SetTimer(lifetimeOwner->GetWeakPtr(), &TimerOwner::ReleaseOwnerDuringRepeatingTimer, 0.1f, true);
+	timerManager.UpdateTimer(0.35f);
+	if (lifetimeOwner || lifetimeCallbackCount != 1)
+	{
+		return Fail("TimerManager invoked a repeating timer after its owner expired");
 	}
 
 	timerManager.ClearAllTimers();

@@ -21,7 +21,7 @@ namespace ly
 		void ChangeHealth(float amount);
 		void Regenerate(float amount);
 		// Grants health that may exceed the normal maximum. Only the excess is
-		// recorded, so ordinary healing and damage keep their existing semantics.
+		// recorded; ordinary healing preserves it and damage consumes it first.
 		float GrantTemporaryOverhealth(
 			const std::string& sourceId,
 			float amount,

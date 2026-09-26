@@ -34,7 +34,7 @@ tags:
 | Ozellik | Deger |
 |---|---:|
 | Ability ID | `Ability.Shield.Basic` |
-| Behavior ID | `GameAbilityBehavior.Shield` |
+| Behavior type | `AbilityBehaviorType::Shield` |
 | Cooldown | 8.0 saniye |
 | Duration | 5.0 saniye |
 | Max charges | 1 |

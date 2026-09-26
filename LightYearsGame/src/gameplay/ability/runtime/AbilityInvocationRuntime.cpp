@@ -180,15 +180,15 @@ namespace ly
 	{
 		for (std::size_t index = 0; index < mActiveInvocations.size();)
 		{
-			ActiveInvocation& invocation = mActiveInvocations[index];
-			if (!invocation.ability)
+			GameAbility* ability = mActiveInvocations[index].ability.get();
+			if (!ability)
 			{
 				mActiveInvocations.erase(mActiveInvocations.begin() + index);
 				continue;
 			}
 
-			invocation.ability->Tick(deltaTime);
-			if (!invocation.ability->IsActive())
+			ability->Tick(deltaTime);
+			if (!ability->IsActive())
 			{
 				mActiveInvocations.erase(mActiveInvocations.begin() + index);
 				continue;
@@ -199,13 +199,16 @@ namespace ly
 
 	void AbilityInvocationRuntime::Clear()
 	{
+		std::exception_ptr error;
 		for (ActiveInvocation& invocation : mActiveInvocations)
 		{
 			if (invocation.ability)
 			{
-				invocation.ability->Cancel(sas::AbilityEndReason::OwnerDestroyed);
+				try { invocation.ability->Cancel(sas::AbilityEndReason::OwnerDestroyed); }
+				catch (...) { if (!error) error = std::current_exception(); }
 			}
 		}
 		mActiveInvocations.clear();
+		if (error) std::rethrow_exception(error);
 	}
 }

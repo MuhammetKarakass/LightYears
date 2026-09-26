@@ -13,7 +13,6 @@ namespace AbilityData::FrozenThrong
 	};
 
 	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.FrozenThrong" };
 	inline const ly::GameplayTag FamilyTag =
 		ly::GameplayTags::Ability::Family::FrozenThrong;
 

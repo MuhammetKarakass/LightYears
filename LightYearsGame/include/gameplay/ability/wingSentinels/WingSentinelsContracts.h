@@ -12,7 +12,6 @@ namespace AbilityData::WingSentinels
 	};
 
 	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Offense;
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.WingSentinels" };
 	inline const ly::GameplayTag FamilyTag = ly::GameplayTags::Ability::Family::WingSentinels;
 
 	struct State

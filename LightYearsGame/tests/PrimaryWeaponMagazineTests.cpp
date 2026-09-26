@@ -1,6 +1,7 @@
 #include "attributes/AttributeMath.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/Actor.h"
+#include "framework/AssetManager.h"
 #include "framework/World.h"
 #include "gameplay/ability/actions/FireWeaponActionRuntime.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -108,11 +109,14 @@ namespace ly
 	}
 }
 
-int main()
+int main(int argc, char** argv)
 {
 	using namespace ly;
 
 	std::cout << "Starting PrimaryWeaponMagazineTests...\n";
+	AssetManager::GetAssetManager().SetAssetRootDirectory(
+		(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
+	);
 
 	if (!GameContentBootstrap::Register())
 	{
@@ -127,7 +131,6 @@ int main()
 			content::WeaponContentCatalog::LoadFromFile("assets/content/data/weapons.json");
 		}
 	}
-
 	// =========================================================================
 	// SUITE A: Fighter Baseline
 	// =========================================================================

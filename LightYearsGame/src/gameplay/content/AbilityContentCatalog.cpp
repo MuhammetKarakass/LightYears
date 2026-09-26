@@ -61,6 +61,13 @@ namespace ly::content
 		std::string* failureReason
 	)
 	{
+		GetLoadedState() = false;
+		GetDefinitionsStorage().clear();
+		GetDefinitionPointers().clear();
+		GetSettingsStorage().clear();
+		GetActorDefinitionsStorage().clear();
+		GetActorDefinitionPointers().clear();
+
 		const AbilityLoader::Result loaded = AbilityLoader::LoadFromFile(
 			filePath,
 			fallbackDefinitions,

@@ -385,14 +385,5 @@ namespace ly
 		}
 
 		mCombatRuntime.NotifyDamageResolved(context);
-		if (context.appliedDamage > 0.f)
-		{
-			onDamageTaken.Broadcast(
-				this,
-				context.appliedDamage,
-				mHealthComponent.GetHealth(),
-				mHealthComponent.GetMaxHealth()
-			);
-		}
 	}
 }

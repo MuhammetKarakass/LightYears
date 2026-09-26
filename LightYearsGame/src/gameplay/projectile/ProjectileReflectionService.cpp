@@ -1,72 +1,20 @@
 #include "gameplay/projectile/ProjectileReflectionService.h"
 
 #include "gameplay/ability/actors/AbilityWorldActor.h"
+#include "framework/World.h"
 #include "gameplay/projectile/ProjectileReflectionParticipant.h"
+#include "gameplay/projectile/ProjectileReflectionRegistryActor.h"
 #include "framework/MathUtility.h"
 #include "framework/TimerManager.h"
 
 #include <algorithm>
 #include <cmath>
-#include <unordered_map>
+#include <utility>
 
 namespace ly
 {
 	namespace
 	{
-		struct ReflectionEntry
-		{
-			// Weak identity. The key is the monotonic Object id and the entry only ever
-			// reaches the actor through this handle, so a recycled address can never be
-			// mistaken for the actor that registered.
-			weak_ptr<Actor> defender;
-			ProjectileReflectionReceiver* receiver = nullptr;
-			uint64_t generation = 0u;
-		};
-
-		std::unordered_map<unsigned int, ReflectionEntry>& ReflectionEntries()
-		{
-			static std::unordered_map<unsigned int, ReflectionEntry> entries;
-			return entries;
-		}
-
-		uint64_t NextReflectionGeneration()
-		{
-			static uint64_t generation = 0u;
-			return ++generation;
-		}
-
-		weak_ptr<Actor> MakeWeakActorHandle(Actor& actor)
-		{
-			const shared_ptr<Object> object = actor.GetWeakPtr().lock();
-			return object ? std::dynamic_pointer_cast<Actor>(object) : weak_ptr<Actor>{};
-		}
-
-		struct SurfaceLockKey
-		{
-			uint64_t projectileId = 0;
-			uint64_t surfaceId = 0;
-
-			bool operator==(const SurfaceLockKey& other) const
-			{
-				return projectileId == other.projectileId && surfaceId == other.surfaceId;
-			}
-		};
-
-		struct SurfaceLockKeyHash
-		{
-			std::size_t operator()(const SurfaceLockKey& key) const
-			{
-				return std::hash<uint64_t>{}(key.projectileId) ^
-					(std::hash<uint64_t>{}(key.surfaceId) << 1);
-			}
-		};
-
-		std::unordered_map<SurfaceLockKey, bool, SurfaceLockKeyHash>& SurfaceLocks()
-		{
-			static std::unordered_map<SurfaceLockKey, bool, SurfaceLockKeyHash> locks;
-			return locks;
-		}
-
 		sf::Vector2f NormalizeOrFallback(
 			const sf::Vector2f& value,
 			const sf::Vector2f& fallback
@@ -74,31 +22,6 @@ namespace ly
 		{
 			const float length = GetVectorLength(value);
 			return length > 0.001f ? value / length : fallback;
-		}
-
-		float DistanceSquaredToSegment(
-			const sf::Vector2f& point,
-			const sf::Vector2f& start,
-			const sf::Vector2f& end
-		)
-		{
-			const sf::Vector2f segment = end - start;
-			const float segmentLengthSquared =
-				segment.x * segment.x + segment.y * segment.y;
-			if (segmentLengthSquared <= 0.000001f)
-			{
-				const sf::Vector2f offset = point - start;
-				return offset.x * offset.x + offset.y * offset.y;
-			}
-			const sf::Vector2f pointOffset = point - start;
-			const float fraction = std::clamp(
-				(pointOffset.x * segment.x + pointOffset.y * segment.y) /
-					segmentLengthSquared,
-				0.f,
-				1.f
-			);
-			const sf::Vector2f offset = point - (start + segment * fraction);
-			return offset.x * offset.x + offset.y * offset.y;
 		}
 
 		sf::Vector2f ResolveOverlapSurfaceNormal(
@@ -132,10 +55,12 @@ namespace ly
 	}
 
 	ProjectileReflectionService::Registration::Registration(
+		std::weak_ptr<ProjectileReflectionRegistryActor> registry,
 		unsigned int defenderId,
 		uint64_t generation
 	)
-		: mDefenderId(defenderId)
+		: mRegistry(std::move(registry))
+		, mDefenderId(defenderId)
 		, mGeneration(generation)
 	{
 	}
@@ -146,9 +71,11 @@ namespace ly
 	}
 
 	ProjectileReflectionService::Registration::Registration(Registration&& other) noexcept
-		: mDefenderId(other.mDefenderId)
+		: mRegistry(std::move(other.mRegistry))
+		, mDefenderId(other.mDefenderId)
 		, mGeneration(other.mGeneration)
 	{
+		other.mRegistry.reset();
 		other.mDefenderId = 0u;
 		other.mGeneration = 0u;
 	}
@@ -159,8 +86,10 @@ namespace ly
 		if (this != &other)
 		{
 			Reset();
+			mRegistry = std::move(other.mRegistry);
 			mDefenderId = other.mDefenderId;
 			mGeneration = other.mGeneration;
+			other.mRegistry.reset();
 			other.mDefenderId = 0u;
 			other.mGeneration = 0u;
 		}
@@ -174,13 +103,11 @@ namespace ly
 			return;
 		}
 
-		auto& entries = ReflectionEntries();
-		const auto iterator = entries.find(mDefenderId);
-		// The generation check keeps an older token from erasing a newer registration.
-		if (iterator != entries.end() && iterator->second.generation == mGeneration)
+		if (const std::shared_ptr<ProjectileReflectionRegistryActor> registry = mRegistry.lock())
 		{
-			entries.erase(iterator);
+			registry->UnregisterReceiver(mDefenderId, mGeneration);
 		}
+		mRegistry.reset();
 		mDefenderId = 0u;
 		mGeneration = 0u;
 	}
@@ -190,21 +117,24 @@ namespace ly
 		ProjectileReflectionReceiver& receiver
 	)
 	{
+		World* const world = defender.GetWorld();
 		const unsigned int defenderId = defender.GetUniqueID();
-		if (defenderId == 0u)
+		if (!world || defenderId == 0u || defender.GetIsPendingDestroy())
 		{
 			return Registration{};
 		}
 
-		const uint64_t generation = NextReflectionGeneration();
-		// Explicit replace: the newest registration wins and an earlier token for the
-		// same defender becomes inert, instead of silently keeping the old receiver.
-		ReflectionEntries()[defenderId] = ReflectionEntry{
-			MakeWeakActorHandle(defender),
-			&receiver,
-			generation
-		};
-		return Registration{ defenderId, generation };
+		const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
+			FindOrCreateRegistryActor(*world);
+		if (!registry)
+		{
+			return Registration{};
+		}
+
+		const uint64_t generation = registry->RegisterReceiver(defender, receiver);
+		return generation == 0u
+			? Registration{}
+			: Registration{ registry, defenderId, generation };
 	}
 
 	bool ProjectileReflectionService::TryReflectProjectile(
@@ -212,15 +142,16 @@ namespace ly
 		Actor& defender
 	)
 	{
-		const auto iterator = ReflectionEntries().find(defender.GetUniqueID());
-		if (iterator == ReflectionEntries().end())
+		World* const world = defender.GetWorld();
+		if (!world || projectile.GetWorld() != world ||
+			projectile.GetIsPendingDestroy() || defender.GetIsPendingDestroy())
 		{
 			return false;
 		}
 
-		const shared_ptr<Actor> liveDefender = iterator->second.defender.lock();
-		return liveDefender.get() == &defender && iterator->second.receiver &&
-			iterator->second.receiver->TryReflectIncomingProjectile(projectile, defender);
+		const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
+			FindRegistryActor(*world);
+		return registry && registry->TryReflectProjectile(projectile, defender);
 	}
 
 	bool ProjectileReflectionService::TryReflectProjectileAlongPath(
@@ -229,38 +160,15 @@ namespace ly
 		const sf::Vector2f& end
 	)
 	{
-		auto& entries = ReflectionEntries();
-		for (auto iterator = entries.begin(); iterator != entries.end();)
+		World* const world = projectile.GetWorld();
+		if (!world || projectile.GetIsPendingDestroy())
 		{
-			const shared_ptr<Actor> defender = iterator->second.defender.lock();
-			ProjectileReflectionReceiver* receiver = iterator->second.receiver;
-			if (!defender || !receiver || defender->GetIsPendingDestroy())
-			{
-				// Dead entries are pruned here, so a long run cannot accumulate stale
-				// state from destroyed actors or retired worlds.
-				iterator = entries.erase(iterator);
-				continue;
-			}
-
-			// Advance before calling out: the receiver may end its own ability and
-			// invalidate this iterator.
-			++iterator;
-
-			if (defender->GetWorld() != projectile.GetWorld())
-			{
-				continue;
-			}
-
-			const float radius = std::max(0.1f, projectile.GetPhysicsCollisionRadius()) +
-				std::max(0.1f, defender->GetPhysicsCollisionRadius());
-			if (DistanceSquaredToSegment(defender->GetActorLocation(), start, end) <=
-				radius * radius &&
-				receiver->TryReflectIncomingProjectile(projectile, *defender))
-			{
-				return true;
-			}
+			return false;
 		}
-		return false;
+
+		const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
+			FindRegistryActor(*world);
+		return registry && registry->TryReflectProjectileAlongPath(projectile, start, end);
 	}
 
 	bool ProjectileReflectionService::TryReflectFromSurface(
@@ -276,11 +184,8 @@ namespace ly
 			return false;
 		}
 
-		const SurfaceLockKey lockKey{
-			projectile.GetUniqueID(),
-			surface.GetUniqueID()
-		};
-		if (SurfaceLocks().find(lockKey) != SurfaceLocks().end())
+		const uint64_t surfaceId = surface.GetUniqueID();
+		if (participant->IsSurfaceLocked(surfaceId))
 		{
 			return false;
 		}
@@ -328,10 +233,22 @@ namespace ly
 		const float lockDuration = std::max(0.f, response.sameSurfaceLockDuration);
 		if (lockDuration > 0.f)
 		{
-			SurfaceLocks().emplace(lockKey, true);
+			const uint64_t lockGeneration = participant->LockSurface(surfaceId);
 			TimerManager::GetGameTimerManager().SetTimer(
 				projectile.GetWeakPtr(),
-				[lockKey]() { SurfaceLocks().erase(lockKey); },
+				[projectileHandle = projectile.GetWeakPtr(), surfaceId, lockGeneration]() {
+					const shared_ptr<Object> object = projectileHandle.lock();
+					const shared_ptr<Actor> liveProjectile =
+						object ? std::dynamic_pointer_cast<Actor>(object) : shared_ptr<Actor>{};
+					if (liveProjectile && !liveProjectile->GetIsPendingDestroy())
+					{
+						if (auto* liveParticipant =
+							dynamic_cast<ProjectileReflectionParticipant*>(liveProjectile.get()))
+						{
+							liveParticipant->UnlockSurface(surfaceId, lockGeneration);
+						}
+					}
+				},
 				lockDuration,
 				false
 			);
@@ -349,5 +266,24 @@ namespace ly
 			surface,
 			{ projectile.GetActorLocation(), ResolveOverlapSurfaceNormal(projectile, surface) }
 		);
+	}
+
+	std::shared_ptr<ProjectileReflectionRegistryActor>
+	ProjectileReflectionService::FindRegistryActor(World& world)
+	{
+		return world.FindServiceActor<ProjectileReflectionRegistryActor>();
+	}
+
+	std::shared_ptr<ProjectileReflectionRegistryActor>
+	ProjectileReflectionService::FindOrCreateRegistryActor(World& world)
+	{
+		if (const std::shared_ptr<ProjectileReflectionRegistryActor> registry =
+			FindRegistryActor(world))
+		{
+			return registry;
+		}
+		auto registry = world.SpawnActor<ProjectileReflectionRegistryActor>().lock();
+		if (!world.RegisterServiceActor(registry)) return {};
+		return registry;
 	}
 }

@@ -122,7 +122,7 @@ namespace ly
 
         bool MatchesTagExact(const GameplayTag& other) const
         {
-            return GetBaseTag() == other.GetBaseTag();
+            return *this == other;
         }
 
         bool MatchesTag(const GameplayTag& parentTag) const

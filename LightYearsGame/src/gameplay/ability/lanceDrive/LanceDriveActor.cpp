@@ -366,8 +366,7 @@ namespace ly
 			const sf::Vector2f relativeVelocity = target.GetVelocity() - wallVelocity;
 			const float approach = std::max(0.f,
 				-(relativeVelocity.x * worldNormal.x + relativeVelocity.y * worldNormal.y));
-			const auto lastHit = mNextHitTime.find(&target);
-			if (!contacted && (lastHit == mNextHitTime.end() || lastHit->second <= mElapsed))
+			if (!contacted && !mHitCooldowns.IsCoolingDown(target, mElapsed))
 			{
 				movement::MovementInfluenceService::ApplyImpulse(target,
 					{ worldNormal * (approach * 1.35f + mLateralKnockback), 0.15f });
@@ -400,6 +399,7 @@ namespace ly
 			Destroy();
 			return;
 		}
+		mHitCooldowns.PruneExpired(mElapsed);
 		if (SpaceShip* ownerShip = dynamic_cast<SpaceShip*>(owner))
 		{
 			// Lance accelerates continuously in the ship's current forward direction.
@@ -441,13 +441,12 @@ namespace ly
 			{
 				continue;
 			}
-			const auto found = mNextHitTime.find(target);
-			if (found != mNextHitTime.end() && found->second > mElapsed)
+			if (mHitCooldowns.IsCoolingDown(*target, mElapsed))
 			{
 				continue;
 			}
 			ApplyLanceHit(*target, speed);
-			mNextHitTime[target] = mElapsed + mSameTargetHitCooldown;
+			mHitCooldowns.RecordHit(*target, mElapsed + mSameTargetHitCooldown);
 		}
 	}
 

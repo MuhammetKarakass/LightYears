@@ -1,7 +1,15 @@
 #include "framework/TimerManager.h"
 
+#include <cmath>
+#include <limits>
+
 namespace ly
 {
+	namespace
+	{
+		constexpr unsigned int MaxRepeatingTimerCatchUpCallbacks = 8;
+	}
+
 	unsigned int TimerHandle::mTimerKeyCounter = 0;
 	unique_ptr<TimerManager> TimerManager::timerManager{ nullptr };
 	unique_ptr<TimerManager> TimerManager::globalTimerManager{ nullptr };
@@ -170,17 +178,31 @@ namespace ly
 	void Timer::TickTimer(float deltaTime)
 	{
 		if (IsExpired()) return;
+		if (mRepeat && (!(mDuration > 0.f) || !std::isfinite(mDuration)))
+		{
+			SetExpired();
+			return;
+		}
+		if (mRepeat && (!std::isfinite(deltaTime) || deltaTime < 0.f || !std::isfinite(mTimeCounter))) return;
+		if (mRepeat && deltaTime > std::numeric_limits<float>::max() - mTimeCounter) return;
 		mTimeCounter += deltaTime;
 		if (mTimeCounter >= mDuration)
 		{
-			mListener.second();
-
 			if(mRepeat)
 			{
-				mTimeCounter = 0.f;
+				unsigned int callbackCount = 0;
+				while (!IsExpired() && mTimeCounter >= mDuration && callbackCount < MaxRepeatingTimerCatchUpCallbacks)
+				{
+					mTimeCounter -= mDuration;
+					mListener.second();
+					++callbackCount;
+					if (IsExpired()) return;
+				}
+				// Excess elapsed time remains as debt and is consumed at the same cap on later updates.
 			}
 			else
 			{
+				mListener.second();
 				SetExpired();
 			}
 		}

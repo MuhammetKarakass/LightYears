@@ -365,5 +365,80 @@ int main()
 		return Fail("Opt-in capped reapply did not replace spec and runtime attributes");
 	}
 
+	sas::AttributeSystem clearAttributes;
+	ly::GameplayTagContainer clearTags;
+	sas::GameplayEffectSystem clearRuntime{ clearAttributes, clearTags };
+	const sas::GameplayEffectDefinition clearDefinition = MakeRefreshEffect(
+		"Effect.Test.ClearLifecycle"
+	);
+	const sas::GameplayEffectHandle staleHandle = clearRuntime.ApplyEffect(clearDefinition);
+	if (!staleHandle.IsValid())
+	{
+		return Fail("Clear lifecycle effect could not be applied");
+	}
+	std::vector<std::string> clearEvents;
+	sas::GameplayEffectHandle rejectedDuringClear{};
+	sas::GameplayEffectRuntimeCallbacks<sas::ActiveGameplayEffect> clearCallbacks;
+	clearCallbacks.removing = [&clearRuntime, &clearDefinition, &clearEvents,
+		&rejectedDuringClear](sas::ActiveGameplayEffect&)
+	{
+		clearEvents.push_back("removing");
+		rejectedDuringClear = clearRuntime.ApplyEffect(clearDefinition);
+		clearRuntime.Clear();
+	};
+	clearCallbacks.removed = [&clearEvents](sas::GameplayEffectHandle)
+	{
+		clearEvents.push_back("removed");
+	};
+	clearCallbacks.collectionChanged = [&clearEvents]()
+	{
+		clearEvents.push_back("collectionChanged");
+	};
+	clearRuntime.SetCallbacks(std::move(clearCallbacks));
+	clearRuntime.Clear();
+	if (rejectedDuringClear.IsValid() || clearRuntime.FindEffect(staleHandle) ||
+		clearEvents != std::vector<std::string>{ "removing", "removed", "collectionChanged" })
+	{
+		return Fail("Clear did not reject callback application or preserve removal notifications");
+	}
+	const sas::GameplayEffectHandle freshHandle = clearRuntime.ApplyEffect(clearDefinition);
+	if (!freshHandle.IsValid() || freshHandle == staleHandle ||
+		clearRuntime.FindEffect(staleHandle) || !clearRuntime.FindEffect(freshHandle))
+	{
+		return Fail("Clear reused a stale handle or left the runtime unusable");
+	}
+	clearRuntime.Clear();
+
+	sas::AttributeSystem throwingAttributes;
+	ly::GameplayTagContainer throwingTags;
+	sas::GameplayEffectSystem throwingRuntime{ throwingAttributes, throwingTags };
+	const sas::GameplayEffectHandle throwingHandle =
+		throwingRuntime.ApplyEffect(clearDefinition);
+	bool shouldThrow = true;
+	sas::GameplayEffectRuntimeCallbacks<sas::ActiveGameplayEffect> throwingCallbacks;
+	throwingCallbacks.removed = [&shouldThrow](sas::GameplayEffectHandle)
+	{
+		if (shouldThrow)
+		{
+			shouldThrow = false;
+			throw 1;
+		}
+	};
+	throwingRuntime.SetCallbacks(std::move(throwingCallbacks));
+	try
+	{
+		throwingRuntime.Clear();
+		return Fail("Clear callback exception was not propagated");
+	}
+	catch (...)
+	{
+	}
+	if (throwingRuntime.FindEffect(throwingHandle) ||
+		!throwingRuntime.ApplyEffect(clearDefinition).IsValid())
+	{
+		return Fail("Clear guard was not restored after a callback exception");
+	}
+	throwingRuntime.Clear();
+
 	return 0;
 }

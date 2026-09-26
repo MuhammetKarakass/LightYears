@@ -556,7 +556,7 @@ namespace ly
 						? 0.f
 						: static_cast<float>(index) /
 							static_cast<float>(targetCount - 1);
-					const float strikeDelay = focusDuration + strikeDuration * normalizedIndex;
+					const float strikeDelay = strikeDuration * normalizedIndex;
 					const weak_ptr<Actor> targetWeak = target;
 					TimerManager::GetGameTimerManager().SetTimer(
 						timerOwner,

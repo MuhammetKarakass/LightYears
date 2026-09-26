@@ -207,6 +207,148 @@ namespace
 		return 0;
 	}
 
+	int RunFailedReloadContentTests()
+	{
+		const std::filesystem::path dataDirectory =
+			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
+			"LightYearsGame/assets/content/data";
+		const std::filesystem::path abilityPath = dataDirectory / "abilities.json";
+		const std::filesystem::path effectPath = dataDirectory / "effects.json";
+		const std::filesystem::path weaponPath = dataDirectory / "weapons.json";
+		const std::filesystem::path shipPath = dataDirectory / "ships.json";
+		const std::filesystem::path invalidPath =
+			std::filesystem::temp_directory_path() / "lightyears_invalid_catalog_reload.json";
+		const std::filesystem::path missingPath =
+			std::filesystem::temp_directory_path() / "lightyears_missing_catalog_reload.json";
+
+		const auto exerciseReload = [&](const char* catalogName,
+			const std::filesystem::path& validPath,
+			auto load,
+			auto isLoaded,
+			auto hidesStaleRecords,
+			auto exposesRecoveredRecords)
+		{
+			std::string failureReason;
+			if (!load(validPath, &failureReason) || !isLoaded() || !exposesRecoveredRecords())
+			{
+				return Fail((std::string{ catalogName } + " catalog failed its initial load")
+					.c_str());
+			}
+
+			for (const std::filesystem::path& failedPath : { invalidPath, missingPath })
+			{
+				if (failedPath == invalidPath)
+				{
+					std::ofstream invalidFile{ invalidPath };
+					invalidFile << "{ invalid JSON";
+				}
+				else
+				{
+					std::filesystem::remove(missingPath);
+				}
+
+				failureReason.clear();
+				const bool reloaded = load(failedPath, &failureReason);
+				if (failedPath == invalidPath)
+				{
+					std::filesystem::remove(invalidPath);
+				}
+				if (reloaded || failureReason.empty() || isLoaded() || !hidesStaleRecords())
+				{
+					return Fail((std::string{ catalogName } +
+						" catalog exposed stale data after a failed reload")
+						.c_str());
+				}
+				failureReason.clear();
+				if (!load(validPath, &failureReason) || !isLoaded() ||
+					!exposesRecoveredRecords())
+				{
+					return Fail((std::string{ catalogName } +
+						" catalog failed to recover after a failed reload")
+						.c_str());
+				}
+			}
+			return true;
+		};
+
+		const std::string abilityId = "Ability.Offense.AstralSurge.Basic";
+		if (!exerciseReload(
+			"Ability",
+			abilityPath,
+			[](const std::filesystem::path& path, std::string* error)
+			{
+				return ly::content::AbilityContentCatalog::LoadFromFile(
+					path,
+					AbilityData::GetBuiltinShippedAbilityDefinitions(),
+					AbilityData::GetBuiltinAbilityActorDefinitions(),
+					error
+				);
+			},
+			[] { return ly::content::AbilityContentCatalog::IsLoaded(); },
+			[&]
+			{
+				return ly::content::AbilityContentCatalog::FindById(abilityId) == nullptr &&
+					ly::content::AbilityContentCatalog::GetDefinitions().empty();
+			},
+			[&] { return ly::content::AbilityContentCatalog::FindById(abilityId) != nullptr; }
+		)) return 1;
+
+		const std::string effectId = "Effect.Barrier.Basic";
+		if (!exerciseReload(
+			"Effect",
+			effectPath,
+			[](const std::filesystem::path& path, std::string* error)
+			{
+				return ly::content::EffectContentCatalog::LoadFromFile(
+					path,
+					EffectData::GetBuiltinGameplayEffectDefinitions(),
+					error
+				);
+			},
+			[] { return ly::content::EffectContentCatalog::IsLoaded(); },
+			[&]
+			{
+				return ly::content::EffectContentCatalog::FindById(effectId) == nullptr &&
+					ly::content::EffectContentCatalog::GetDefinitions().empty();
+			},
+			[&] { return ly::content::EffectContentCatalog::FindById(effectId) != nullptr; }
+		)) return 1;
+
+		const std::string weaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
+		if (!exerciseReload(
+			"Weapon",
+			weaponPath,
+			[](const std::filesystem::path& path, std::string* error)
+			{
+				return ly::content::WeaponContentCatalog::LoadFromFile(path, error);
+			},
+			[] { return ly::content::WeaponContentCatalog::IsLoaded(); },
+			[&]
+			{
+				return ly::content::WeaponContentCatalog::FindById(weaponId) == nullptr &&
+					!ly::content::WeaponContentCatalog::ResolveAuthoredAttributeAtLevel(
+						weaponId, 1, ly::CommonAttributeIds::Damage).has_value();
+			},
+			[&] { return ly::content::WeaponContentCatalog::FindById(weaponId) != nullptr; }
+		)) return 1;
+
+		const std::string shipId = "Ship.Player.Fighter.Basic";
+		if (!exerciseReload(
+			"Ship",
+			shipPath,
+			[](const std::filesystem::path& path, std::string* error)
+			{
+				return ly::content::ShipContentCatalog::LoadFromFile(path, error);
+			},
+			[] { return ly::content::ShipContentCatalog::IsLoaded(); },
+			[&] { return ly::content::ShipContentCatalog::FindById(shipId) == nullptr; },
+			[&] { return ly::content::ShipContentCatalog::FindById(shipId) != nullptr; }
+		)) return 1;
+
+		std::cout << "[PASS] Failed catalog reload content tests passed successfully\n";
+		return 0;
+	}
+
 	int RunEnemyCombatProfileContentTests()
 	{
 		const std::filesystem::path weaponPath =
@@ -819,6 +961,11 @@ int main()
 	if (damageStatusBalanceResult != 0)
 	{
 		return damageStatusBalanceResult;
+	}
+	const int failedReloadResult = RunFailedReloadContentTests();
+	if (failedReloadResult != 0)
+	{
+		return failedReloadResult;
 	}
 	const int enemyProfileResult = RunEnemyCombatProfileContentTests();
 	if (enemyProfileResult != 0)

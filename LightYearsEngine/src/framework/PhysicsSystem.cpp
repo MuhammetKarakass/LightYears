@@ -1,6 +1,8 @@
 #include "framework/PhysicsSystem.h"
 #include "framework/Actor.h"	
 #include "framework/MathUtility.h"
+#include <cstdint>
+#include <unordered_set>
 
 namespace ly
 {
@@ -331,8 +333,9 @@ namespace ly
 		{
 			void* visitorContext = nullptr;
 			ActorBoundsVisitor visitor = nullptr;
+			std::unordered_set<std::uint64_t> visitedActorIds{};
 		};
-		QueryContext queryContext{ context, visitor };
+		QueryContext queryContext{ context, visitor, {} };
 		const auto callback = [](b2ShapeId shapeId, void* rawContext)
 		{
 			auto* query = static_cast<QueryContext*>(rawContext);
@@ -343,6 +346,10 @@ namespace ly
 			Actor* actor = ResolveActor(shapeId);
 			if (actor && !actor->GetIsPendingDestroy())
 			{
+				if (!query->visitedActorIds.insert(actor->GetUniqueID()).second)
+				{
+					return true;
+				}
 				return query->visitor(query->visitorContext, actor);
 			}
 			return true;

@@ -31,24 +31,30 @@ namespace ly
 
 		const float previousHealth = mHealth;
 		const float previousMaxHealth = mMaxHealth;
+		float normalHealth = std::min(previousHealth, previousMaxHealth);
+		const float excessHealth = std::max(0.f, previousHealth - previousMaxHealth);
 		mMaxHealth = maxHealth;
-		if (preserveHealthPercent && previousMaxHealth > 0.f)
+		// An overcapped resource has a full normal portion. Keep its temporary
+		// excess above the NEW maximum, including its existing decay ledger.
+		if (excessHealth > 0.f) normalHealth = mMaxHealth;
+		else if (preserveHealthPercent && previousMaxHealth > 0.f)
 		{
-			mHealth = mMaxHealth * (previousHealth / previousMaxHealth);
+			normalHealth = mMaxHealth * (normalHealth / previousMaxHealth);
 		}
-		if (mHealth > mMaxHealth)
-		{
-			mHealth = mMaxHealth;
-		}
+		mHealth = std::min(normalHealth, mMaxHealth) + excessHealth;
 		mTemporaryOverhealths.Reconcile(mHealth, mMaxHealth);
 
-		onHealthChanged.Broadcast(mHealth - previousHealth, mHealth, mMaxHealth);
+		if (mHealth != previousHealth || mMaxHealth != previousMaxHealth)
+		{
+			onHealthChanged.Broadcast(mHealth - previousHealth, mHealth, mMaxHealth);
+		}
 	}
 
 	void HealthComponent::ChangeHealth(float amount)
 	{
 		if (amount == 0) return;  
 		if (mHealth == 0) return; 
+		if (amount > 0.f && mHealth >= mMaxHealth) return;
 		const float previousHealth = mHealth;
 		mHealth += amount; 
 
@@ -63,6 +69,10 @@ namespace ly
 		}
 
 		const float actualDelta = mHealth - previousHealth;
+		if (actualDelta == 0.f)
+		{
+			return;
+		}
 		onHealthChanged.Broadcast(actualDelta, mHealth, mMaxHealth);
 
 		if (actualDelta < 0)

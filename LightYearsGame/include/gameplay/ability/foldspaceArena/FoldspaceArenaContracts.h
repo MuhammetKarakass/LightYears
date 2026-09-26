@@ -12,7 +12,6 @@ namespace AbilityData::FoldspaceArena
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Utility };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.FoldspaceArena" };
 	inline const ly::GameplayTag FamilyTag{
 		ly::GameplayTags::Ability::Family::FoldspaceArena
 	};

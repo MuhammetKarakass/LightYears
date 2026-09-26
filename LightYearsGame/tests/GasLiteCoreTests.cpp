@@ -145,7 +145,15 @@
 #include "gameConfigs/combat/AttachmentConfig.h"
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <limits>
+
+int RunGameHUDPlayerRestartTests();
+namespace ly
+{
+	int RunAbilityLoadoutTransactionTests();
+}
+
 namespace
 {
 	bool NearlyEqual(float left, float right)
@@ -713,12 +721,23 @@ namespace
 
 }
 
-int main()
+int RunPlayerShipLifetimeTests();
+int RunChainLightningLifetimeTests();
+
+int main(int argc, char** argv)
 {
 	using namespace ly;
+	if (argc == 2 && std::string{ argv[1] } == "--player-lifetime") return RunPlayerShipLifetimeTests();
+	if (argc == 2 && std::string{ argv[1] } == "--chain-lightning-lifetime") return RunChainLightningLifetimeTests();
+	if (argc == 2 && std::string{ argv[1] } == "--mixed-loadout") return RunEnemyCombatMixedLoadoutTest();
+	if (argc == 2 && std::string{ argv[1] } == "--loadout-transaction") return RunAbilityLoadoutTransactionTests();
 
 	const int enemyFoundationResult = RunEnemyCombatFoundationTests();
 	if (enemyFoundationResult != 0) return enemyFoundationResult;
+	const int gameHUDPlayerRestartResult = RunGameHUDPlayerRestartTests();
+	if (gameHUDPlayerRestartResult != 0) return gameHUDPlayerRestartResult;
+	const int abilityLoadoutTransactionResult = RunAbilityLoadoutTransactionTests();
+	if (abilityLoadoutTransactionResult != 0) return abilityLoadoutTransactionResult;
 
 	{
 		ContactDamageGuardRegistry registry;
@@ -5994,6 +6013,62 @@ int main()
 		reboundHullShock->GetDefinition().slot != sas::AbilitySlot::Ability3)
 	{
 		return Fail("Fresh grant and rebind do not share the runtime loadout-slot contract");
+	}
+	const std::string unknownLoadoutId = "Ability.Test.NotInShippedCatalog";
+	const std::string* occupiedTargetId = defaultLoadoutShip.GetAbilityLoadout()
+		.GetLoadout().FindAbility(sas::AbilitySlot::Ability1);
+	const GameAbility* occupiedTarget = defaultLoadoutShip.GetAbilitySystemComponent()
+		.GetAbility(sas::AbilitySlot::Ability1);
+	const sas::AbilityHandle occupiedTargetHandle = occupiedTarget
+		? occupiedTarget->GetHandle()
+		: sas::AbilityHandle{};
+	const sas::AbilityHandle movingHullShockHandle = reboundHullShock->GetHandle();
+	std::string failedLoadoutReason{ "stale reason" };
+	if (!occupiedTargetId || !occupiedTarget ||
+		defaultLoadoutShip.GetAbilityLoadout().EquipAbility(
+			unknownLoadoutId,
+			sas::AbilitySlot::Ability1,
+			&failedLoadoutReason
+		) ||
+		failedLoadoutReason.empty() ||
+		defaultLoadoutShip.GetAbilityLoadout().GetInventory().Contains(unknownLoadoutId) ||
+		defaultLoadoutShip.GetAbilityLoadout().GetLoadout().FindAbility(sas::AbilitySlot::Ability1) != occupiedTargetId ||
+		defaultLoadoutShip.GetAbilitySystemComponent().GetAbility(occupiedTargetHandle) != occupiedTarget ||
+		defaultLoadoutShip.GetAbilitySystemComponent().GetAbility(movingHullShockHandle) != reboundHullShock)
+	{
+		return Fail("Unknown loadout ID changed an occupied target or granted ownership");
+	}
+	if (defaultLoadoutShip.GetAbilityLoadout().EquipAbility(
+			unknownLoadoutId,
+			sas::AbilitySlot::Ability1,
+			nullptr
+		))
+	{
+		return Fail("Unknown loadout ID with a null failure reason was accepted");
+	}
+	const sas::AbilityHandle retainedCryostasisHandle = defaultLoadoutShip.GetAbilitySystemComponent()
+		.GetAbility(sas::AbilitySlot::Ability4)->GetHandle();
+	if (!defaultLoadoutShip.GetAbilityLoadout().EquipAbility(
+			AbilityData::HullShock::AbilityId::Basic,
+			sas::AbilitySlot::Ability1,
+			&runtimeSlotFailure
+		))
+	{
+		return Fail("Moving an existing loadout ability into a full target slot failed");
+	}
+	const GameAbility* movedHullShockToFullSlot = defaultLoadoutShip.GetAbilitySystemComponent()
+		.GetAbility(movingHullShockHandle);
+	if (!movedHullShockToFullSlot ||
+		movedHullShockToFullSlot->GetDefinition().slot != sas::AbilitySlot::Ability1 ||
+		defaultLoadoutShip.GetAbilitySystemComponent().GetAbility(occupiedTargetHandle) ||
+		defaultLoadoutShip.GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability3) ||
+		!(defaultLoadoutShip.GetAbilitySystemComponent().GetAbility(sas::AbilitySlot::Ability4)->GetHandle() == retainedCryostasisHandle) ||
+		defaultLoadoutShip.GetAbilityLoadout().GetLoadout().FindAbility(sas::AbilitySlot::Ability1) == nullptr ||
+		*defaultLoadoutShip.GetAbilityLoadout().GetLoadout().FindAbility(sas::AbilitySlot::Ability1) !=
+			AbilityData::HullShock::AbilityId::Basic ||
+		defaultLoadoutShip.GetAbilityLoadout().GetLoadout().FindAbility(sas::AbilitySlot::Ability3))
+	{
+		return Fail("Successful replacement did not preserve the moving instance and only replace its target");
 	}
 
 	const GameAbilityDefinition* overdriveDefinition =

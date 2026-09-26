@@ -145,26 +145,27 @@ namespace sas
 
 		bool SetAbilityLevel(AbilityHandle handle, int level) override
 		{
-			Instance* ability = mRuntime.Find(handle);
-			return ability && ability->SetLevel(level);
+			bool changed = false;
+			mRuntime.VisitAbility(handle, [&](Instance& ability) { changed = ability.SetLevel(level); });
+			return changed;
 		}
 
 		bool SetAbilityLevel(AbilitySlot slot, int level) override
 		{
 			Instance* ability = mRuntime.Find(slot);
-			return ability && ability->SetLevel(level);
+			return ability && SetAbilityLevel(ability->GetHandle(), level);
 		}
 
 		bool LevelUpAbility(AbilityHandle handle) override
 		{
 			Instance* ability = mRuntime.Find(handle);
-			return ability && ability->SetLevel(ability->GetLevel() + 1);
+			return ability && SetAbilityLevel(handle, ability->GetLevel() + 1);
 		}
 
 		bool LevelUpAbility(AbilitySlot slot) override
 		{
 			Instance* ability = mRuntime.Find(slot);
-			return ability && ability->SetLevel(ability->GetLevel() + 1);
+			return ability && SetAbilityLevel(ability->GetHandle(), ability->GetLevel() + 1);
 		}
 
 		void ReduceCooldowns(
@@ -186,7 +187,7 @@ namespace sas
 				{
 					continue;
 				}
-				ability->ReduceCooldownRemaining(amount);
+				mRuntime.VisitAbility(handle, [&](Instance& current) { current.ReduceCooldownRemaining(amount); });
 			}
 		}
 
@@ -262,7 +263,7 @@ namespace sas
 					continue;
 				}
 
-				std::invoke(handleInstanceEvent, *ability, event);
+				mRuntime.VisitAbility(handle, [&](Instance& current) { std::invoke(handleInstanceEvent, current, event); });
 				if (!mRuntime.Find(handle))
 				{
 					continue;
@@ -298,13 +299,11 @@ namespace sas
 						continue;
 					}
 
-					std::invoke(
-						executeTrigger,
-						*ability,
-						definition,
-						trigger,
-						event
-					);
+					const bool visited = mRuntime.VisitAbility(handle, [&](Instance& current)
+					{
+						std::invoke(executeTrigger, current, definition, trigger, event);
+					});
+					if (!visited || !mRuntime.Find(handle)) break;
 					if (matchLimit > 0)
 					{
 						++mTriggerMatchCounts[cooldownKey];
@@ -328,9 +327,12 @@ namespace sas
 
 		void Clear() override
 		{
-			mRuntime.Clear();
+			std::exception_ptr error;
+			try { mRuntime.Clear(); }
+			catch (...) { error = std::current_exception(); }
 			mTriggerCooldowns.Clear();
 			mTriggerMatchCounts.clear();
+			if (error) std::rethrow_exception(error);
 		}
 
 	private:

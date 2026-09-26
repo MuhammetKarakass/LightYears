@@ -9,7 +9,6 @@ namespace AbilityData::ClosedCircuit
 {
 	struct AbilityId { inline static constexpr char Basic[] = "Ability.Defense.ClosedCircuit.Basic"; };
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.ClosedCircuit" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ClosedCircuit };
 	struct State { inline static const ly::GameplayTag Deploying{ ly::GameplayTags::State::Ability::ClosedCircuit::Deploying }; };
 	struct Event

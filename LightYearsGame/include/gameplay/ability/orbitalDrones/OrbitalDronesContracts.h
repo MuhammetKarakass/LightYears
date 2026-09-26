@@ -12,7 +12,6 @@ namespace AbilityData::OrbitalDrones
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Offense };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.OrbitalDrones" };
 	inline const ly::GameplayTag FamilyTag{
 		ly::GameplayTags::Ability::Family::OrbitalDrones
 	};

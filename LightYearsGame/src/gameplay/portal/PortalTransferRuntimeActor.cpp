@@ -1,16 +1,20 @@
 #include "gameplay/portal/PortalTransferRuntimeActor.h"
 
 #include "gameplay/portal/PortalTransferService.h"
+#include "PortalTransferRuntimeState.h"
 
 namespace ly
 {
-	PortalTransferRuntimeActor::~PortalTransferRuntimeActor()
+	PortalTransferRuntimeActor::PortalTransferRuntimeActor(World* world)
+		: Actor(world),
+		mRuntimeState(std::make_unique<PortalTransferRuntimeState>())
 	{
-		if (World* world = GetWorld())
-		{
-			PortalTransferService::ResetWorld(*world);
-		}
+		SetCollisionLayer(CollisionLayer::None);
+		SetCollisionMask(CollisionLayer::None);
+		SetTickWhenPaused(true);
 	}
+
+	PortalTransferRuntimeActor::~PortalTransferRuntimeActor() = default;
 
 	void PortalTransferRuntimeActor::Tick(float deltaTime)
 	{
@@ -19,5 +23,11 @@ namespace ly
 			PortalTransferService::Tick(*world, deltaTime);
 		}
 		Actor::Tick(deltaTime);
+	}
+
+	void PortalTransferRuntimeActor::Destroy()
+	{
+		Actor::Destroy();
+		mRuntimeState.reset();
 	}
 }

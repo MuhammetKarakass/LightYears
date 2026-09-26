@@ -7,6 +7,8 @@
 #include "framework/camera/CameraManager.h"
 #include <optional>
 #include <type_traits>
+#include <typeindex>
+#include <unordered_map>
 
 namespace ly
 {
@@ -93,6 +95,27 @@ namespace ly
 		virtual bool DispatchEvent(const sf::Event& event);
 
 		Application* GetApplication() const { return mOwningApp; }
+
+		// Explicitly registered world services: O(1) lookup even when absent.
+		// Actors remain owned by the normal active/pending world collections.
+		template<typename ServiceActor>
+		shared_ptr<ServiceActor> FindServiceActor()
+		{
+			const auto entry = mServiceActors.find(std::type_index(typeid(ServiceActor)));
+			if (entry == mServiceActors.end()) return {};
+			auto service = std::dynamic_pointer_cast<ServiceActor>(entry->second.lock());
+			if (service && !service->GetIsPendingDestroy() && service->GetWorld() == this) return service;
+			mServiceActors.erase(entry);
+			return {};
+		}
+
+		template<typename ServiceActor>
+		bool RegisterServiceActor(const shared_ptr<ServiceActor>& service)
+		{
+			if (!service || service->GetIsPendingDestroy() || service->GetWorld() != this) return false;
+			mServiceActors[std::type_index(typeid(ServiceActor))] = service;
+			return true;
+		}
 		const Application* GetApplicationRef() const { return mOwningApp; }
 
 		template<typename ActorType, typename ...Args>
@@ -134,6 +157,27 @@ namespace ly
 					result.push_back(weak_ptr<ActorType>(std::static_pointer_cast<ActorType>(actor)));
 				}
 			}
+			return result;
+		}
+
+		template<typename ActorType>
+		List<weak_ptr<ActorType>> GetActorsByTypeIncludingPending() const
+		{
+			List<weak_ptr<ActorType>> result;
+			const auto appendMatches = [&result](const List<shared_ptr<Actor>>& actors)
+			{
+				for (const auto& actor : actors)
+				{
+					if (dynamic_cast<ActorType*>(actor.get()))
+					{
+						result.push_back(weak_ptr<ActorType>(
+							std::static_pointer_cast<ActorType>(actor)
+						));
+					}
+				}
+			};
+			appendMatches(mActors);
+			appendMatches(mPendingActors);
 			return result;
 		}
 
@@ -213,6 +257,7 @@ namespace ly
 		) const;
 
 		weak_ptr<Actor> mViewTarget;
+		std::unordered_map<std::type_index, weak_ptr<Actor>> mServiceActors;
 		CameraManager mCameraManager;
 	};
 

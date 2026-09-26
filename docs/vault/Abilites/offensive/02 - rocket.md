@@ -34,7 +34,7 @@ tags:
 | Ozellik | Deger |
 |---|---:|
 | Ability ID | `Ability.Offense.Rocket.Basic` |
-| Behavior ID | `GameAbilityBehavior.Rocket` |
+| Behavior type | `AbilityBehaviorType::Rocket` |
 | Cooldown | 3.0 saniye |
 | Base damage | 55.0 Kinetic AoE |
 | Projectile speed | 1000.0 birim/sn |

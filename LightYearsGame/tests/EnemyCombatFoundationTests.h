@@ -2,5 +2,6 @@
 
 namespace ly
 {
+	int RunEnemyCombatMixedLoadoutTest();
 	int RunEnemyCombatFoundationTests();
 }

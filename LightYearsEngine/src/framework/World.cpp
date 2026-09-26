@@ -7,7 +7,9 @@
 #include "framework/PhysicsSystem.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iterator>
+#include <unordered_set>
 #include <utility>
 
 namespace ly{
@@ -235,14 +237,34 @@ namespace ly{
 	sf::FloatRect World::GetManualSpatialBounds(const Actor& actor)
 	{
 		const float radius = std::max(0.f, actor.GetPhysicsCollisionRadius());
-		if (radius > 0.f)
+		const sf::Vector2f location = actor.GetActorLocation();
+		sf::Vector2f minimum{ location.x - radius, location.y - radius };
+		sf::Vector2f maximum{ location.x + radius, location.y + radius };
+		bool hasShape = radius > 0.f;
+		// Body-less static geometry still has collision boxes. Index their full
+		// bounds, not just the actor origin, so exact edge/end contacts are found.
+		const float rotation = actor.GetActorRotation() * 0.01745329251994329577f;
+		const float cosine = std::cos(rotation);
+		const float sine = std::sin(rotation);
+		for (std::size_t index = 0; index < actor.GetPhysicsCollisionBoxCount(); ++index)
 		{
-			const sf::Vector2f location = actor.GetActorLocation();
-			return {
-				{ location.x - radius, location.y - radius },
-				{ radius * 2.f, radius * 2.f }
-			};
+			const PhysicsCollisionBox box = actor.GetPhysicsCollisionBox(index);
+			if (box.halfExtents.x <= 0.f || box.halfExtents.y <= 0.f) continue;
+			const sf::Vector2f center = location + sf::Vector2f{
+				cosine * box.localCenter.x - sine * box.localCenter.y,
+				sine * box.localCenter.x + cosine * box.localCenter.y };
+			const float angle = rotation + box.localRotationDegrees * 0.01745329251994329577f;
+			const float c = std::abs(std::cos(angle));
+			const float s = std::abs(std::sin(angle));
+			const sf::Vector2f extent{ c * box.halfExtents.x + s * box.halfExtents.y,
+				s * box.halfExtents.x + c * box.halfExtents.y };
+			minimum.x = std::min(minimum.x, center.x - extent.x);
+			minimum.y = std::min(minimum.y, center.y - extent.y);
+			maximum.x = std::max(maximum.x, center.x + extent.x);
+			maximum.y = std::max(maximum.y, center.y + extent.y);
+			hasShape = true;
 		}
+		if (hasShape) return { minimum, maximum - minimum };
 
 		const sf::FloatRect bounds = actor.GetActorGlobalBounds();
 		if (bounds.size.x > 0.f || bounds.size.y > 0.f)
@@ -638,8 +660,11 @@ namespace ly{
 			const World* world = nullptr;
 			void* visitorContext = nullptr;
 			ActorBoundsVisitor visitor = nullptr;
+			std::unordered_set<std::uint64_t>* visitedActorIds = nullptr;
+			bool stopped = false;
 		};
-		PhysicsVisitContext physicsContext{ this, context, visitor };
+		std::unordered_set<std::uint64_t> visitedActorIds;
+		PhysicsVisitContext physicsContext{ this, context, visitor, &visitedActorIds, false };
 		PhysicsSystem::Get().VisitActorsInBounds(
 			bounds,
 			&physicsContext,
@@ -651,9 +676,18 @@ namespace ly{
 				{
 					return true;
 				}
-				return visit->visitor(visit->visitorContext, actor);
+				if (!visit->visitedActorIds->insert(actor->GetUniqueID()).second)
+				{
+					return true;
+				}
+				visit->stopped = !visit->visitor(visit->visitorContext, actor);
+				return !visit->stopped;
 			}
 		);
+		if (physicsContext.stopped)
+		{
+			return;
+		}
 
 		// Swept projectiles deliberately avoid Box2D bodies, but they still need
 		// spatial queries. Traverse only the matching cells of their dedicated
@@ -687,6 +721,10 @@ namespace ly{
 					}
 					actor->mLastManualSpatialQueryStamp = queryStamp;
 					if (!Intersects(GetManualSpatialBounds(*actor), bounds))
+					{
+						continue;
+					}
+					if (!visitedActorIds.insert(actor->GetUniqueID()).second)
 					{
 						continue;
 					}

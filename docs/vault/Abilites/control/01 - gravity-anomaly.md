@@ -36,7 +36,7 @@ tags:
 | Ozellik | Deger |
 |---|---:|
 | Ability ID | `Ability.Control.GravityAnomaly.Basic` |
-| Behavior ID | `GameAbilityBehavior.GravityAnomaly` |
+| Behavior type | `AbilityBehaviorType::GravityAnomaly` |
 | Cooldown | 8.0 saniye |
 | Cast range | 900.0 birim |
 | Projectile speed | 2000.0 birim/sn |

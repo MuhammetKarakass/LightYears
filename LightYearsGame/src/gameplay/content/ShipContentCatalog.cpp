@@ -133,6 +133,9 @@ namespace ly::content
 		const std::filesystem::path& filePath,
 		std::string* failureReason)
 	{
+		GetLoadedState() = false;
+		GetDefinitions().clear();
+
 		const ShipLoader::Result loaded = ShipLoader::LoadFromFile(
 			filePath,
 			ShipData::Ship_Player_Fighter

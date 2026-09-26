@@ -28,6 +28,97 @@ namespace ly::movement
 		}
 	}
 
+	bool FindFirstStaticGeometryHit(
+		const Actor& queryActor,
+		const sf::Vector2f& segmentStart,
+		const sf::Vector2f& segmentEnd,
+		float expansion,
+		StaticGeometrySweepHit& outHit,
+		bool respectCollisionFilters
+	)
+	{
+		const sf::Vector2f offset = segmentEnd - segmentStart;
+		const float segmentLength = GetVectorLength(offset);
+		World* world = queryActor.GetWorld();
+		if (!world || segmentLength <= 0.001f)
+		{
+			return false;
+		}
+
+		StaticGeometrySweepHit earliestHit;
+		bool foundHit = false;
+		const float safeExpansion = std::max(0.f, expansion);
+		for (const weak_ptr<Actor>& candidateWeak : world->GetActorsInBounds(
+			targeting::swept::RadiusBounds(
+				(segmentStart + segmentEnd) * 0.5f,
+				segmentLength * 0.5f + safeExpansion
+			)
+		))
+		{
+			const shared_ptr<Actor> candidate = candidateWeak.lock();
+			if (!candidate || candidate.get() == &queryActor ||
+				candidate->GetIsPendingDestroy() ||
+				candidate->GetPhysicsBodyType() != PhysicsBodyType::Static)
+			{
+				continue;
+			}
+
+			// Movement keeps Box2D's bilateral layer/mask rule; line-of-sight
+			// queries can ignore it so environment walls still occlude weapons.
+			if (respectCollisionFilters &&
+				(static_cast<uint8_t>(candidate->GetCollisionMask() & queryActor.GetCollisionLayer()) == 0 ||
+					static_cast<uint8_t>(queryActor.GetCollisionMask() & candidate->GetCollisionLayer()) == 0))
+			{
+				continue;
+			}
+
+			const float actorRotationRadians =
+				candidate->GetActorRotation() * 0.01745329251994329577f;
+			const float cosine = std::cos(actorRotationRadians);
+			const float sine = std::sin(actorRotationRadians);
+			for (std::size_t boxIndex = 0;
+				boxIndex < candidate->GetPhysicsCollisionBoxCount();
+				++boxIndex)
+			{
+				const PhysicsCollisionBox box = candidate->GetPhysicsCollisionBox(boxIndex);
+				if (box.halfExtents.x <= 0.f || box.halfExtents.y <= 0.f)
+				{
+					continue;
+				}
+
+				const sf::Vector2f boxCenter = candidate->GetActorLocation() + sf::Vector2f{
+					cosine * box.localCenter.x - sine * box.localCenter.y,
+					sine * box.localCenter.x + cosine * box.localCenter.y
+				};
+				float fraction = 1.f;
+				sf::Vector2f surfaceNormal;
+				if (targeting::swept::SegmentIntersectsExpandedOrientedBox(
+					segmentStart,
+					segmentEnd,
+					boxCenter,
+					box.halfExtents,
+					actorRotationRadians +
+						box.localRotationDegrees * 0.01745329251994329577f,
+					safeExpansion,
+					fraction,
+					surfaceNormal
+				) && (!foundHit || fraction < earliestHit.fraction))
+				{
+					foundHit = true;
+					earliestHit.fraction = fraction;
+					earliestHit.surfaceNormal = surfaceNormal;
+				}
+			}
+		}
+
+		if (!foundHit)
+		{
+			return false;
+		}
+		outHit = earliestHit;
+		return true;
+	}
+
 	sf::Vector2f ConstrainMovementAgainstStaticGeometry(
 		Actor& movingActor,
 		const sf::Vector2f& requestedOffset
@@ -47,72 +138,16 @@ namespace ly::movement
 		const sf::Vector2f start = movingActor.GetActorLocation();
 		const sf::Vector2f end = start + requestedOffset;
 		const float movingRadius = ResolveMovingRadius(movingActor);
-		float earliestFraction = 1.f;
-		sf::Vector2f impactNormal{};
-
-		for (const weak_ptr<Actor>& candidateWeak : world->GetActorsInBounds(
-			targeting::swept::RadiusBounds(
-				(start + end) * 0.5f,
-				GetVectorLength(requestedOffset) * 0.5f + movingRadius
-			)
-		))
-		{
-			const shared_ptr<Actor> candidate = candidateWeak.lock();
-			if (!candidate || candidate.get() == &movingActor ||
-				candidate->GetIsPendingDestroy() ||
-				candidate->GetPhysicsBodyType() != PhysicsBodyType::Static)
-			{
-				continue;
-			}
-
-			// Keep the authoritative movement sweep aligned with the physics
-			// system's bilateral layer/mask rule. Lance Drive is Environment ->
-			// Enemy, so it blocks enemies while its Player caster remains free.
-			if (static_cast<uint8_t>(candidate->GetCollisionMask() & movingActor.GetCollisionLayer()) == 0 ||
-				static_cast<uint8_t>(movingActor.GetCollisionMask() & candidate->GetCollisionLayer()) == 0)
-			{
-				continue;
-			}
-
-			const float actorRotationRadians =
-				candidate->GetActorRotation() * 0.01745329251994329577f;
-			const float cosine = std::cos(actorRotationRadians);
-			const float sine = std::sin(actorRotationRadians);
-			for (std::size_t boxIndex = 0;
-				boxIndex < candidate->GetPhysicsCollisionBoxCount();
-				++boxIndex)
-			{
-				const PhysicsCollisionBox box = candidate->GetPhysicsCollisionBox(boxIndex);
-				if (box.halfExtents.x <= 0.f || box.halfExtents.y <= 0.f)
-				{
-					continue;
-				}
-				const sf::Vector2f boxCenter = candidate->GetActorLocation() + sf::Vector2f{
-					cosine * box.localCenter.x - sine * box.localCenter.y,
-					sine * box.localCenter.x + cosine * box.localCenter.y
-				};
-				float fraction = 1.f;
-				sf::Vector2f surfaceNormal;
-				if (targeting::swept::SegmentIntersectsExpandedOrientedBox(
-					start,
-					end,
-					boxCenter,
-					box.halfExtents,
-					actorRotationRadians +
-						box.localRotationDegrees * 0.01745329251994329577f,
-					movingRadius,
-					fraction,
-					surfaceNormal
-				))
-				{
-					if (fraction < earliestFraction)
-					{
-						earliestFraction = fraction;
-						impactNormal = surfaceNormal;
-					}
-				}
-			}
-		}
+		StaticGeometrySweepHit hit;
+		const bool hasHit = FindFirstStaticGeometryHit(
+			movingActor,
+			start,
+			end,
+			movingRadius,
+			hit
+		);
+		const float earliestFraction = hasHit ? hit.fraction : 1.f;
+		const sf::Vector2f impactNormal = hasHit ? hit.surfaceNormal : sf::Vector2f{};
 
 		// Stay just before the contact plane. This prevents resting movement from
 		// alternating between the two sides because of floating-point rounding.

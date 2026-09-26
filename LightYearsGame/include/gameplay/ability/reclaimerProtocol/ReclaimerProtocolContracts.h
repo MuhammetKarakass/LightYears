@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "framework/Core.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -13,7 +13,6 @@ namespace AbilityData::ReclaimerProtocol
 	};
 
 	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Defense;
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.ReclaimerProtocol" };
 	inline const ly::GameplayTag FamilyTag =
 		ly::GameplayTags::Ability::Family::ReclaimerProtocol;
 

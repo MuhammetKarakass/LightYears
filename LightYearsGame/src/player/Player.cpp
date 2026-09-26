@@ -12,8 +12,21 @@ namespace ly
 		mCurrentSpaceShip{}
 	{
 	}
+
+	Player::~Player()
+	{
+		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock())
+		{
+			currentShip->onActorDestroyed.UnbindAction(mCurrentShipDestroyedHandle);
+		}
+	}
 	
 	weak_ptr<PlayerSpaceShip> Player::SpawnSpaceShip(World* world) {
+		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock())
+		{
+			currentShip->onActorDestroyed.UnbindAction(mCurrentShipDestroyedHandle);
+		}
+		mCurrentShipDestroyedHandle.Reset();
 		if (mLifeCount > 0)
 		{
 			--mLifeCount;
@@ -37,7 +50,10 @@ namespace ly
 			}
 			mShipProgression.BindAttributes(ship->GetAbilitySystemComponent().GetAttributes());
 			RestorePurchasedAbilityLevels(*ship);
-			ship->onActorDestroyed.BindAction(this, &Player::OnCurrentShipDestroyed);
+			mCurrentShipDestroyedHandle = ship->onActorDestroyed.BindAction(
+				this,
+				&Player::OnCurrentShipDestroyed
+			);
 
 			ship->SetActorLocation(sf::Vector2f{ windowSize.x / 2.0f, windowSize.y - 100.0f });
 
@@ -197,6 +213,8 @@ namespace ly
 			return;
 		}
 
+		destroyedActor->onActorDestroyed.UnbindAction(mCurrentShipDestroyedHandle);
+		mCurrentShipDestroyedHandle.Reset();
 		mShipProgression.ForgetDestroyedAttributes();
 		mCurrentSpaceShip = weak_ptr<PlayerSpaceShip>{};
 	}

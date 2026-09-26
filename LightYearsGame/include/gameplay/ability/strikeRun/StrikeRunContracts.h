@@ -16,9 +16,6 @@ namespace AbilityData::StrikeRun
 	inline const ly::GameplayTag CategoryTag{
 		ly::GameplayTagSchema::AbilityOffense
 	};
-	inline const ly::GameplayTag BehaviorTag{
-		"GameAbilityBehavior.StrikeRun"
-	};
 	inline const ly::GameplayTag FamilyTag{
 		ly::GameplayTags::Ability::Family::StrikeRun
 	};

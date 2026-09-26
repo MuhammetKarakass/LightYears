@@ -16,9 +16,6 @@ namespace AbilityData::ScorchDrive
 	inline const ly::GameplayTag CategoryTag{
 		ly::GameplayTagSchema::AbilityOffense
 	};
-	inline const ly::GameplayTag BehaviorTag{
-		"GameAbilityBehavior.ScorchDrive"
-	};
 	inline const ly::GameplayTag FamilyTag{
 		ly::GameplayTags::Ability::Family::ScorchDrive
 	};

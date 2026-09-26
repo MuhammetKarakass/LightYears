@@ -6,6 +6,8 @@
 #include "abilities/AbilityRuntimeSnapshot.h"
 
 #include <cstddef>
+#include <exception>
+#include <optional>
 #include <functional>
 #include <algorithm>
 #include <memory>
@@ -32,6 +34,7 @@ namespace sas
 		std::function<void(AbilityHandle)> removed;
 		std::function<void(AbilityHandle)> changed;
 		std::function<void()> cleared;
+		std::function<bool()> canMutate;
 	};
 
 	template <typename Definition, typename Instance>
@@ -60,6 +63,7 @@ namespace sas
 			std::string* failureReason = nullptr
 		)
 		{
+			if (failureReason) failureReason->clear();
 			// Compatibility path for existing callers. New runtime loadout code
 			// must pass an explicit binding instead of relying on content defaults.
 			return GrantAbility(
@@ -75,6 +79,8 @@ namespace sas
 			std::string* failureReason = nullptr
 		)
 		{
+			if (failureReason) failureReason->clear();
+			if (mClearing || (mCallbacks.canMutate && !mCallbacks.canMutate())) return {};
 			if (!IsValidRuntimeBinding(definition, binding, failureReason))
 			{
 				return {};
@@ -84,7 +90,13 @@ namespace sas
 			// effective slot from its runtime definition during this migration.
 			Definition boundDefinition = definition;
 			boundDefinition.slot = binding.slot;
-			return GrantBoundAbility(boundDefinition, failureReason);
+			const AbilityHandle handle = ExecuteMutation([&] { return GrantBoundAbility(boundDefinition, failureReason); });
+			if (handle.IsValid() && !mAbilities.Find(handle))
+			{
+				if (failureReason) *failureReason = "Ability grant was cleared by a callback.";
+				return {};
+			}
+			return handle;
 		}
 
 		bool RebindAbility(
@@ -93,14 +105,30 @@ namespace sas
 			std::string* failureReason = nullptr
 		)
 		{
+			if (mClearing || (mCallbacks.canMutate && !mCallbacks.canMutate())) return false;
+			const bool rebound = ExecuteMutation([&] { return RebindAbilityImpl(handle, binding, failureReason); });
+			const Instance* ability = mAbilities.Find(handle);
+			if (rebound && (!ability || ability->GetDefinition().slot != binding.slot))
+			{
+				if (failureReason) *failureReason = "Ability rebind was cleared by a callback.";
+				return false;
+			}
+			return rebound;
+		}
+
+	private:
+		bool RebindAbilityImpl(AbilityHandle handle, AbilityRuntimeBinding binding, std::string* failureReason)
+		{
+			if (failureReason) failureReason->clear();
+			auto fail = [failureReason](const char* message)
+			{
+				if (failureReason && failureReason->empty()) *failureReason = message;
+				return false;
+			};
 			Instance* ability = mAbilities.Find(handle);
 			if (!ability)
 			{
-				if (failureReason)
-				{
-					*failureReason = "Cannot rebind an unknown ability handle.";
-				}
-				return false;
+				return fail("Cannot rebind an unknown ability handle.");
 			}
 
 			const AbilitySlot currentSlot = ability->GetDefinition().slot;
@@ -111,12 +139,9 @@ namespace sas
 			if (!IsLoadoutAbilitySlot(currentSlot) ||
 				!IsLoadoutAbilitySlot(binding.slot))
 			{
-				if (failureReason)
-				{
-					*failureReason =
-						"Only abilities already bound to Ability1 through Ability4 can be rebound.";
-				}
-				return false;
+				return fail(
+					"Only abilities already bound to Ability1 through Ability4 can be rebound."
+				);
 			}
 
 			// Validation receives the same effective definition that the instance
@@ -128,26 +153,50 @@ namespace sas
 			if (mCallbacks.validate &&
 				!mCallbacks.validate(reboundDefinition, failureReason))
 			{
-				return false;
-			}
-
-			const AbilityHandle occupyingHandle = mAbilities.FindHandle(binding.slot);
-			if (occupyingHandle.IsValid() && !(occupyingHandle == handle))
-			{
-				RemoveAbility(occupyingHandle, AbilityEndReason::Cancelled);
+				return fail("Ability definition validation rejected the rebind.");
 			}
 
 			ability = mAbilities.Find(handle);
-			if (!ability || !mAbilities.Rebind(handle, binding.slot))
+			if (!ability || ability->GetDefinition().slot != currentSlot)
 			{
-				if (failureReason)
-				{
-					*failureReason = "Ability collection rejected the new runtime binding.";
-				}
-				return false;
+				return fail("The ability changed while its rebind was being validated.");
+			}
+			if (IsSlotMutationBlocked(currentSlot) ||
+				IsSlotMutationBlocked(binding.slot) ||
+				IsGrantMutationBlocked(reboundDefinition) ||
+				IsReplacementMutationHandleBlocked(handle))
+			{
+				return fail("Ability rebind conflicts with an active replacement transaction.");
+			}
+
+			const AbilityHandle occupyingHandle = mAbilities.FindHandle(binding.slot);
+			if (!mAbilities.CanRebindReplacing(handle, binding.slot, occupyingHandle))
+			{
+				return fail("Ability collection rejected the new runtime binding.");
+			}
+
+			ReserveGrantMutation(reboundDefinition, true);
+			mGrantMutationSlots.push_back(currentSlot);
+			ReserveReplacementMutationHandle(handle);
+			std::unique_ptr<Instance> replacedInstance;
+			if (!mAbilities.RebindReplacing(
+				handle,
+				binding.slot,
+				occupyingHandle,
+				replacedInstance
+			))
+			{
+				ReleaseReplacementMutationHandle(handle);
+				ReleaseGrantMutationSlot(currentSlot);
+				ReleaseGrantMutation(reboundDefinition, true);
+				return fail("Ability collection rejected the new runtime binding.");
 			}
 			ability->SetRuntimeSlot(binding.slot);
+			NotifyReplacedAbility(occupyingHandle, replacedInstance);
 			if (mCallbacks.changed) mCallbacks.changed(handle);
+			ReleaseReplacementMutationHandle(handle);
+			ReleaseGrantMutationSlot(currentSlot);
+			ReleaseGrantMutation(reboundDefinition, true);
 			return true;
 		}
 
@@ -195,6 +244,10 @@ namespace sas
 			if (mCallbacks.validate &&
 				!mCallbacks.validate(definition, failureReason))
 			{
+				if (failureReason && failureReason->empty())
+				{
+					*failureReason = "Ability definition validation rejected the grant.";
+				}
 				return {};
 			}
 			if (const AbilityHandle existing =
@@ -248,21 +301,34 @@ namespace sas
 				return {};
 			}
 
-			if (!passive)
-			{
-				const AbilityHandle bound = mAbilities.FindHandle(definition.slot);
-				if (bound.IsValid())
-				{
-					RemoveAbility(bound, AbilityEndReason::Cancelled);
-				}
-			}
-
-			if (!mAbilities.Register(
+			const AbilityHandle replacedHandle = passive
+				? AbilityHandle{}
+				: mAbilities.FindHandle(definition.slot);
+			if (!mAbilities.CanRegisterReplacing(
 				handle,
 				definition.abilityId,
 				definition.slot,
 				passive,
-				std::move(instance)
+				replacedHandle
+			))
+			{
+				ReleaseGrantMutation(definition, reserveSlot);
+				if (failureReason && failureReason->empty())
+				{
+					*failureReason = "Ability collection rejected the replacement preflight.";
+				}
+				return {};
+			}
+
+			std::unique_ptr<Instance> replacedInstance;
+			if (!mAbilities.RegisterReplacing(
+				handle,
+				definition.abilityId,
+				definition.slot,
+				passive,
+				replacedHandle,
+				std::move(instance),
+				replacedInstance
 			))
 			{
 				ReleaseGrantMutation(definition, reserveSlot);
@@ -272,10 +338,16 @@ namespace sas
 				}
 				return {};
 			}
-			ReleaseGrantMutation(definition, reserveSlot);
 
+			ReserveReplacementMutationHandle(handle);
+			// Collection state commits before callbacks run. The replaced instance
+			// stays alive for Cancelled cleanup, then notifications preserve the
+			// order: cancel, removed, changed(old), granted, changed(new).
+			NotifyReplacedAbility(replacedHandle, replacedInstance);
 			if (mCallbacks.granted) mCallbacks.granted(handle);
 			if (mCallbacks.changed) mCallbacks.changed(handle);
+			ReleaseReplacementMutationHandle(handle);
+			ReleaseGrantMutation(definition, reserveSlot);
 			return handle;
 		}
 
@@ -286,8 +358,15 @@ namespace sas
 			AbilityEndReason reason = AbilityEndReason::Cancelled
 		)
 		{
+			if (mClearing || (mCallbacks.canMutate && !mCallbacks.canMutate())) return false;
+			return ExecuteMutation([&] { return RemoveAbilityImpl(handle, reason); });
+		}
+
+	private:
+		bool RemoveAbilityImpl(AbilityHandle handle, AbilityEndReason reason)
+		{
 			Instance* ability = mAbilities.Find(handle);
-			if (!ability ||
+			if (!ability || IsReplacementMutationHandleBlocked(handle) ||
 				std::find(
 					mRemovalInProgress.begin(),
 					mRemovalInProgress.end(),
@@ -312,6 +391,7 @@ namespace sas
 			return true;
 		}
 
+	public:
 		void ClearSlot(AbilitySlot slot)
 		{
 			const AbilityHandle bound = mAbilities.FindHandle(slot);
@@ -323,46 +403,69 @@ namespace sas
 
 		void SetSlotInput(AbilitySlot slot, bool inputHeld)
 		{
-			Instance* ability = Find(slot);
-			if (ability && mCallbacks.setInput)
+			VisitAbility(mAbilities.FindHandle(slot), [&](Instance& ability)
 			{
-				mCallbacks.setInput(*ability, inputHeld);
-			}
+				if (mCallbacks.setInput) mCallbacks.setInput(ability, inputHeld);
+			});
+		}
+
+		template<typename Visitor>
+		bool VisitAbility(AbilityHandle handle, Visitor&& visitor)
+		{
+			if (mClearing || mClearRequested) return false;
+			return ExecuteMutation([&]
+			{
+				Instance* ability = mAbilities.Find(handle);
+				if (!ability) return false;
+				ReserveGrantMutation(ability->GetDefinition(), !IsPassiveAbility(ability->GetDefinition()));
+				ReserveReplacementMutationHandle(handle);
+				std::invoke(visitor, *ability);
+				// MutationScope releases both reservations even if the visitor throws.
+				return true;
+			});
 		}
 
 		void Tick(float deltaTime)
 		{
-			if (!mCallbacks.tick)
+			if (mTicking || !mCallbacks.tick)
 			{
 				return;
 			}
+			mTicking = true;
+			struct TickScope { bool& ticking; ~TickScope() { ticking = false; } } scope{ mTicking };
 			for (const AbilityHandle handle : GetHandles())
 			{
-				Instance* ability = mAbilities.Find(handle);
-				if (ability)
-				{
-					mCallbacks.tick(*ability, deltaTime);
-				}
+				VisitAbility(handle, [&](Instance& ability) { mCallbacks.tick(ability, deltaTime); });
 			}
 		}
 
 		void Clear()
 		{
+			if (mClearing) return;
+			if (mMutationDepth != 0)
+			{
+				mClearRequested = true;
+				return;
+			}
+			mClearRequested = false;
+			mClearing = true;
+			struct ClearingScope { bool& flag; ~ClearingScope() { flag = false; } } scope{ mClearing };
+			std::exception_ptr error;
 			if (mCallbacks.cancel)
 			{
 				for (const AbilityHandle handle : GetHandles())
 				{
 					if (Instance* ability = mAbilities.Find(handle))
 					{
-						mCallbacks.cancel(
-							*ability,
-							AbilityEndReason::OwnerDestroyed
-						);
+						try { mCallbacks.cancel(*ability, AbilityEndReason::OwnerDestroyed); }
+						catch (...) { if (!error) error = std::current_exception(); }
 					}
 				}
 			}
 			mAbilities.Clear();
-			if (mCallbacks.cleared) mCallbacks.cleared();
+			try { if (mCallbacks.cleared) mCallbacks.cleared(); }
+			catch (...) { if (!error) error = std::current_exception(); }
+			if (error) std::rethrow_exception(error);
 		}
 
 		Instance* Find(AbilitySlot slot) { return mAbilities.Find(slot); }
@@ -479,11 +582,125 @@ namespace sas
 			}
 		}
 
+	private:
+		// Basic exception guarantee: a committed collection remains committed.
+		// Reservations always unwind; teardown requested by callbacks runs only
+		// after the outermost mutation releases its live instance references.
+		struct MutationScope
+		{
+			AbilityRuntimeSystem& runtime;
+			std::size_t slots, ids, handles, removals;
+			explicit MutationScope(AbilityRuntimeSystem& owner)
+				: runtime(owner), slots(owner.mGrantMutationSlots.size()), ids(owner.mGrantMutationAbilityIds.size()),
+				handles(owner.mReplacementMutationHandles.size()), removals(owner.mRemovalInProgress.size())
+			{
+				++runtime.mMutationDepth;
+			}
+			~MutationScope()
+			{
+				if (runtime.mGrantMutationSlots.size() > slots) runtime.mGrantMutationSlots.resize(slots);
+				if (runtime.mGrantMutationAbilityIds.size() > ids) runtime.mGrantMutationAbilityIds.resize(ids);
+				if (runtime.mReplacementMutationHandles.size() > handles) runtime.mReplacementMutationHandles.resize(handles);
+				if (runtime.mRemovalInProgress.size() > removals) runtime.mRemovalInProgress.resize(removals);
+				--runtime.mMutationDepth;
+			}
+		};
+
+		template<typename Operation>
+		auto ExecuteMutation(Operation&& operation) -> decltype(operation())
+		{
+			std::optional<decltype(operation())> result;
+			std::exception_ptr error;
+			{
+				MutationScope scope{ *this };
+				try { result.emplace(operation()); }
+				catch (...) { error = std::current_exception(); }
+			}
+			if (mMutationDepth == 0 && mClearRequested)
+			{
+				try { Clear(); }
+				catch (...) { if (!error) error = std::current_exception(); }
+			}
+			if (error) std::rethrow_exception(error);
+			return *result;
+		}
+
+		bool IsSlotMutationBlocked(AbilitySlot slot) const
+		{
+			return std::find(
+				mGrantMutationSlots.begin(),
+				mGrantMutationSlots.end(),
+				slot
+			) != mGrantMutationSlots.end();
+		}
+
+		bool IsReplacementMutationHandleBlocked(AbilityHandle handle) const
+		{
+			return std::find(
+				mReplacementMutationHandles.begin(),
+				mReplacementMutationHandles.end(),
+				handle
+			) != mReplacementMutationHandles.end();
+		}
+
+		void ReserveReplacementMutationHandle(AbilityHandle handle)
+		{
+			if (handle.IsValid()) mReplacementMutationHandles.push_back(handle);
+		}
+
+		void ReleaseReplacementMutationHandle(AbilityHandle handle)
+		{
+			const auto found = std::find(
+				mReplacementMutationHandles.begin(),
+				mReplacementMutationHandles.end(),
+				handle
+			);
+			if (found != mReplacementMutationHandles.end())
+			{
+				mReplacementMutationHandles.erase(found);
+			}
+		}
+
+		void ReleaseGrantMutationSlot(AbilitySlot slot)
+		{
+			const auto found = std::find(
+				mGrantMutationSlots.begin(),
+				mGrantMutationSlots.end(),
+				slot
+			);
+			if (found != mGrantMutationSlots.end())
+			{
+				mGrantMutationSlots.erase(found);
+			}
+		}
+
+		void NotifyReplacedAbility(
+			AbilityHandle handle,
+			std::unique_ptr<Instance>& instance
+		)
+		{
+			if (!handle.IsValid() || !instance) return;
+			// The collection commit precedes callbacks. The old instance remains
+			// alive for cancellation, then removed and changed fire in that order.
+			if (mCallbacks.cancel)
+			{
+				mCallbacks.cancel(*instance, AbilityEndReason::Cancelled);
+			}
+			if (mCallbacks.removed) mCallbacks.removed(handle);
+			if (mCallbacks.changed) mCallbacks.changed(handle);
+			instance.reset();
+		}
+
 		std::size_t mMaxPassiveAbilities = 0;
 		Callbacks mCallbacks;
 		Collection mAbilities;
 		std::vector<AbilityHandle> mRemovalInProgress;
 		std::vector<AbilitySlot> mGrantMutationSlots;
 		std::vector<std::string> mGrantMutationAbilityIds;
+		std::vector<AbilityHandle> mReplacementMutationHandles;
+		std::size_t mMutationDepth = 0;
+		bool mClearRequested = false;
+		bool mClearing = false;
+		bool mTicking = false;
 	};
 }

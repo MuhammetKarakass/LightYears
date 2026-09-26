@@ -1,4 +1,5 @@
 #include "gameplay/ability/content/GameAbilityContentRegistration.h"
+#include "gameplay/ability/energySpear/EnergySpearContentRegistration.h"
 
 #include "framework/Core.h"
 #include "gameplay/ability/GameAbility.h"
@@ -31,7 +32,6 @@
 #include "gameplay/ability/aegisReaver/AegisReaverProjectileActor.h"
 #include "gameplay/ability/mineLayer/MineLayerAbility.h"
 #include "gameplay/ability/mineLayer/MineLayerMineActor.h"
-#include "gameplay/ability/energySpear/EnergySpearAbility.h"
 #include "gameplay/ability/scorchDrive/ScorchDriveAbility.h"
 #include "gameplay/ability/scorchDrive/ScorchDriveFireSegmentActor.h"
 #include "gameplay/ability/ionStorm/IonStormAbility.h"
@@ -162,7 +162,7 @@ namespace ly
 				{ "CrescentReaver", [] { return RegisterBehavior<CrescentReaverAbility>(AbilityBehaviorType::CrescentReaver); } },
 				{ "AegisReaver", [] { return RegisterBehavior<AegisReaverAbility>(AbilityBehaviorType::AegisReaver); } },
 				{ "MineLayer", [] { return RegisterBehavior<MineLayerAbility>(AbilityBehaviorType::MineLayer); } },
-				{ "EnergySpear", [] { return RegisterBehavior<EnergySpearAbility>(AbilityBehaviorType::EnergySpear); } },
+				{ "EnergySpear", [] { return RegisterEnergySpearAbilityBehavior(); } },
 				{ "ScorchDrive", [] { return RegisterBehavior<ScorchDriveAbility>(AbilityBehaviorType::ScorchDrive); } },
 				{ "IonStorm", [] { return RegisterBehavior<IonStormAbility>(AbilityBehaviorType::IonStorm); } },
 				{ "ChainLightning", [] { return RegisterBehavior<ChainLightningAbility>(AbilityBehaviorType::ChainLightning); } },

@@ -26,6 +26,25 @@ int main()
 	using namespace ly;
 
 	std::string failureReason;
+	const GameplayTag indexedActionLock = GameplayTagSchema::BlockAbilityActivation.WithIndex(1);
+	const GameplayTag childActionLock{ "State.ActionLock.AbilityActivation.Custom" };
+	const GameplayTag indexedAbilityCategory = GameplayTagSchema::AbilityOffense.WithIndex(1);
+	const GameplayTag childAbilityCategory{ "Ability.Offense.Custom" };
+	if (GameplayTagSchema::IsActionLock(indexedActionLock) ||
+		GameplayTagSchema::IsActionLock(childActionLock) ||
+		GameplayTagSchema::Validate(indexedActionLock, GameplayTagKind::ActionLock, &failureReason) ||
+		GameplayTagSchema::Validate(childActionLock, GameplayTagKind::ActionLock, &failureReason))
+	{
+		return Fail("Action-lock schema accepted a runtime index or child tag");
+	}
+	if (GameplayTagSchema::IsAbilityCategory(indexedAbilityCategory) ||
+		GameplayTagSchema::IsAbilityCategory(childAbilityCategory) ||
+		GameplayTagSchema::Validate(indexedAbilityCategory, GameplayTagKind::AbilityCategory, &failureReason) ||
+		GameplayTagSchema::Validate(childAbilityCategory, GameplayTagKind::AbilityCategory, &failureReason))
+	{
+		return Fail("Ability-category schema accepted a runtime index or child tag");
+	}
+
 	if (!GameplayTagSchema::Validate(
 		GameplayTag{ "Ability.Offense.OverdriveCore" },
 		GameplayTagKind::Ability,

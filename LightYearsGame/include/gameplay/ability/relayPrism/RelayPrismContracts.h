@@ -14,8 +14,7 @@ namespace AbilityData::RelayPrism
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityUtility };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.RelayPrism" };
-	inline const ly::GameplayTag FamilyTag{ "Ability.Utility.RelayPrism" };
+	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::RelayPrism };
 
 	struct Attribute
 	{

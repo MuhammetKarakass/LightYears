@@ -10,6 +10,10 @@ namespace ly
 
 	void PlayerManager::Reset()
 	{
+		for (Player& player : mPlayers)
+		{
+			onPlayerAboutToBeDestroyed.Broadcast(&player);
+		}
 		mPlayers.clear();
 	}
 
@@ -24,8 +28,10 @@ namespace ly
 
 	Player& PlayerManager::CreateNewPlayer()
 	{
-		mPlayers.emplace_back(Player());
-		return mPlayers.back();
+		mPlayers.emplace_back();
+		Player& player = mPlayers.back();
+		onPlayerCreated.Broadcast(&player);
+		return player;
 	}
 	Player* PlayerManager::GetPlayer(int playerIndex)
 	{

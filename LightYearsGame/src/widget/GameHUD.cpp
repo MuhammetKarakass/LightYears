@@ -3,6 +3,7 @@
 #include "player/Player.h"
 #include "player/PlayerManager.h"
 #include "player/PlayerSpaceShip.h"
+#include "gameplay/damage/DamageContext.h"
 #include "framework/TimerManager.h"
 #include <framework/MathUtility.h>
 #include <framework/World.h>
@@ -13,6 +14,17 @@
 
 namespace ly
 {
+	GameHUD::~GameHUD()
+	{
+		DisconnectStatus();
+		if (mIsPlayerManagerObserved)
+		{
+			PlayerManager& playerManager = PlayerManager::GetPlayerManager();
+			playerManager.onPlayerAboutToBeDestroyed.UnbindAction(mPlayerAboutToBeDestroyedHandle);
+			playerManager.onPlayerCreated.UnbindAction(mPlayerCreatedHandle);
+		}
+	}
+
 	GameHUD::GameHUD() :
 		mFrameRateText{ std::in_place, "Frame Rate:" },
 		mPlayerSpeedText{ std::in_place, "Speed:" },
@@ -297,23 +309,83 @@ namespace ly
 
 	void GameHUD::ConnectStatus()
 	{
-		if (mIsStatusConnected)
+		PlayerManager& playerManager = PlayerManager::GetPlayerManager();
+		if (!mIsPlayerManagerObserved)
+		{
+			mPlayerAboutToBeDestroyedHandle = playerManager.onPlayerAboutToBeDestroyed.BindAction(
+				GetWeakPtr(), &GameHUD::OnPlayerAboutToBeDestroyed
+			);
+			mPlayerCreatedHandle = playerManager.onPlayerCreated.BindAction(
+				GetWeakPtr(), &GameHUD::OnPlayerCreated
+			);
+			mIsPlayerManagerObserved = true;
+		}
+
+		BindStatusToPlayer(playerManager.GetPlayer());
+	}
+
+	void GameHUD::BindStatusToPlayer(Player* player)
+	{
+		if (!player || player->GetUniqueID() == mObservedPlayerId)
+		{
+			return;
+		}
+		DisconnectStatus();
+		mObservedPlayerId = player->GetUniqueID();
+
+		mPlayerLifeText->SetString(std::to_string(player->GetLifeCount()));
+		mPlayerScoreText->SetString(std::to_string(player->GetScore()));
+		mPlayerLifeChangeHandle = player->onLifeChange.BindAction(GetWeakPtr(), &GameHUD::PlayerLifeUpdated);
+		mPlayerScoreChangeHandle = player->onScoreChange.BindAction(GetWeakPtr(), &GameHUD::PlayerScoreUpdated);
+	}
+
+	void GameHUD::UnbindStatusFromPlayer(Player* player)
+	{
+		if (!player || player->GetUniqueID() != mObservedPlayerId)
+		{
+			return;
+		}
+		player->onLifeChange.UnbindAction(mPlayerLifeChangeHandle);
+		player->onScoreChange.UnbindAction(mPlayerScoreChangeHandle);
+		mPlayerLifeChangeHandle.Reset();
+		mPlayerScoreChangeHandle.Reset();
+		mObservedPlayerId = 0;
+	}
+
+	void GameHUD::OnPlayerAboutToBeDestroyed(Player* player)
+	{
+		UnbindStatusFromPlayer(player);
+	}
+
+	void GameHUD::OnPlayerCreated(Player* player)
+	{
+		if (player == PlayerManager::GetPlayerManager().GetPlayer())
+		{
+			BindStatusToPlayer(player);
+		}
+	}
+
+	void GameHUD::DisconnectStatus()
+	{
+		if (mObservedPlayerId == 0)
 		{
 			return;
 		}
 
-		Player* player = PlayerManager::GetPlayerManager().GetPlayer();
-		if (!player)
-			return;
-
-		mIsStatusConnected = true;
-
-		int lifeCount = player->GetLifeCount();
-		mPlayerLifeText->SetString(std::to_string(lifeCount));
-		player->onLifeChange.BindAction(GetWeakPtr(), &GameHUD::PlayerLifeUpdated);
-		int scoreCount = player->GetScore();
-		mPlayerScoreText->SetString(std::to_string(scoreCount));
-		player->onScoreChange.BindAction(GetWeakPtr(), &GameHUD::PlayerScoreUpdated);
+		PlayerManager& playerManager = PlayerManager::GetPlayerManager();
+		const size_t playerCount = playerManager.GetPlayers().size();
+		for (size_t index = 0; index < playerCount; ++index)
+		{
+			Player* player = playerManager.GetPlayer(static_cast<int>(index));
+			if (player && player->GetUniqueID() == mObservedPlayerId)
+			{
+				UnbindStatusFromPlayer(player);
+				return;
+			}
+		}
+		mPlayerLifeChangeHandle.Reset();
+		mPlayerScoreChangeHandle.Reset();
+		mObservedPlayerId = 0;
 	}
 
 	void GameHUD::RefreshPlayerHUDState()
@@ -402,16 +474,15 @@ namespace ly
 				continue;
 			}
 
-			ship->onDamageTaken.BindAction(GetWeakPtr(), &GameHUD::ShipDamageTaken);
+			ship->GetCombatRuntime().onDamageResolved.BindAction(GetWeakPtr(), &GameHUD::ShipDamageResolved);
 			mObservedDamageShips.insert(shipId);
 		}
 	}
 
-	void GameHUD::ShipDamageTaken(SpaceShip* ship, float amount, float health, float maxHealth)
+	void GameHUD::ShipDamageResolved(const DamageContext& context)
 	{
-		(void)health;
-		(void)maxHealth;
-		if (!ship || amount <= 0.f || !mWindowRef)
+		SpaceShip* ship = context.target ? dynamic_cast<SpaceShip*>(context.target) : nullptr;
+		if (!ship || context.appliedDamage <= 0.f || !mWindowRef)
 		{
 			return;
 		}
@@ -423,7 +494,7 @@ namespace ly
 			return;
 		}
 
-		const std::string damageText = std::to_string(static_cast<int>(std::round(amount)));
+		const std::string damageText = std::to_string(static_cast<int>(std::round(context.appliedDamage)));
 		weak_ptr<TextWidget> widget = AddWidget<TextWidget>(
 			damageText,
 			"SpaceShooterRedux/Bonus/OrbitronBlack.ttf",

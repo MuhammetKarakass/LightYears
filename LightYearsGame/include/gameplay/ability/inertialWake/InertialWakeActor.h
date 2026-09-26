@@ -2,8 +2,7 @@
 
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "presentation/ability/inertialWake/InertialWakePresentationProfile.h"
-
-#include <unordered_map>
+#include "gameplay/targeting/ActorHitCooldowns.h"
 
 namespace ly
 {
@@ -35,7 +34,7 @@ namespace ly
 		void UpdateGeometry();
 
 		InertialWakePresentationProfile mPresentationProfile;
-		std::unordered_map<const Actor*, float> mNextHitTime;
+		targeting::ActorHitCooldowns mHitCooldowns;
 		float mSpeedDamageConversion = 0.30f;
 		float mEnergyPowerReference = 50.f;
 		float mEnergyPowerConversionPerPoint = 0.0001f;

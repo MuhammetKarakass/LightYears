@@ -35,7 +35,7 @@ tags:
 | Ozellik                |                                Deger |
 | ---------------------- | -----------------------------------: |
 | Ability ID             | `Ability.Offense.SunBeam.Strike.Basic` |
-| Behavior ID            |        `GameAbilityBehavior.SunBeam` |
+| Behavior type          | `AbilityBehaviorType::SunBeam`         |
 | Cooldown               |                           1.0 saniye |
 | Base damage            |                                 40.0 |
 | Radius                 |                           96.0 birim |

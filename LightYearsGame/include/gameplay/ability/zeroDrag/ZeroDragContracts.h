@@ -13,7 +13,6 @@ namespace AbilityData::ZeroDrag
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityMovement };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.ZeroDrag" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ZeroDrag };
 
 	struct State

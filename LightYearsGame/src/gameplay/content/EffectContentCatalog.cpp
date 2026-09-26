@@ -41,6 +41,10 @@ namespace ly::content
 		std::string* failureReason
 	)
 	{
+		GetLoadedState() = false;
+		GetDefinitionsStorage().clear();
+		GetDefinitionPointers().clear();
+
 		const EffectLoader::Result loaded = EffectLoader::LoadFromFile(
 			filePath,
 			fallbackDefinitions

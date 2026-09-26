@@ -4,23 +4,19 @@
 #include "framework/World.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
+#include "gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
 #include <algorithm>
 #include <cmath>
-#include <unordered_map>
+#include <memory>
+#include <utility>
 
 namespace ly
 {
 	namespace
 	{
-		std::unordered_map<unsigned int, weak_ptr<ClosedCircuitFieldActor>>& ActiveFields()
-		{
-			static std::unordered_map<unsigned int, weak_ptr<ClosedCircuitFieldActor>> fields;
-			return fields;
-		}
-
 		class ClosedCircuitFieldActorTypeHandler final : public AbilityActorTypeHandler
 		{
 		public:
@@ -87,10 +83,32 @@ namespace ly
 		mPhase = Phase::Active;
 		const shared_ptr<Actor> owner = LockOwnerActor();
 		if (!owner) return;
-		weak_ptr<ClosedCircuitFieldActor>& current = ActiveFields()[owner->GetUniqueID()];
-		if (const shared_ptr<ClosedCircuitFieldActor> previous = current.lock(); previous && previous.get() != this) previous->Destroy();
-		const shared_ptr<Object> object = GetWeakPtr().lock();
-		current = object ? std::dynamic_pointer_cast<ClosedCircuitFieldActor>(object) : weak_ptr<ClosedCircuitFieldActor>{};
+
+		World* world = GetWorld();
+		const shared_ptr<ClosedCircuitFieldActor> self =
+			std::dynamic_pointer_cast<ClosedCircuitFieldActor>(GetWeakPtr().lock());
+		if (!world || owner->GetIsPendingDestroy() || !self)
+		{
+			Destroy();
+			return;
+		}
+
+		const shared_ptr<ClosedCircuitFieldRegistryActor> registry =
+			ClosedCircuitFieldRegistryActor::GetOrCreate(*world);
+		if (!registry)
+		{
+			Destroy();
+			return;
+		}
+
+		ClosedCircuitFieldRegistryActor::Registration registration =
+			registry->RegisterField(*owner, self);
+		if (!registration.IsValid())
+		{
+			Destroy();
+			return;
+		}
+		mRegistration = std::move(registration);
 	}
 
 	bool ClosedCircuitFieldActor::TryInterceptProjectile(AbilityWorldActor& projectile, const sf::Vector2f& previousLocation)
@@ -105,16 +123,34 @@ namespace ly
 		const sf::Vector2f center = GetActorLocation();
 		const sf::Vector2f end = projectile.GetActorLocation();
 		const sf::Vector2f startOffset = previousLocation - center;
-		const sf::Vector2f endOffset = end - center;
-		const float radiusSquared = mBarrierRadius * mBarrierRadius;
-		if (startOffset.x * startOffset.x + startOffset.y * startOffset.y <= radiusSquared || endOffset.x * endOffset.x + endOffset.y * endOffset.y > radiusSquared) return false;
+		const float radius = mBarrierRadius + std::max(0.f, projectile.GetPhysicsCollisionRadius());
+		if (!std::isfinite(radius) || radius <= 0.f)
+		{
+			return false;
+		}
+		const float radiusSquared = radius * radius;
+		if (startOffset.x * startOffset.x + startOffset.y * startOffset.y <= radiusSquared)
+		{
+			return false;
+		}
 		const sf::Vector2f direction = end - previousLocation;
 		const float a = direction.x * direction.x + direction.y * direction.y;
+		if (a <= 0.001f)
+		{
+			return false;
+		}
 		const float b = 2.f * (startOffset.x * direction.x + startOffset.y * direction.y);
 		const float c = startOffset.x * startOffset.x + startOffset.y * startOffset.y - radiusSquared;
 		const float discriminant = b * b - 4.f * a * c;
-		if (a <= 0.001f || discriminant < 0.f) return false;
-		const float fraction = std::clamp((-b - std::sqrt(discriminant)) / (2.f * a), 0.f, 1.f);
+		if (discriminant < 0.f)
+		{
+			return false;
+		}
+		const float fraction = (-b - std::sqrt(discriminant)) / (2.f * a);
+		if (fraction < 0.f || fraction > 1.f)
+		{
+			return false;
+		}
 		projectile.SetActorLocation(previousLocation + direction * fraction);
 		mRemainingHealth = std::max(0.f, mRemainingHealth - std::max(0.f, projectile.GetDamage()));
 		if (mRemainingHealth <= 0.f) Destroy();
@@ -149,15 +185,7 @@ namespace ly
 			return;
 		}
 
-		if (const shared_ptr<Actor> owner = LockOwnerActor())
-		{
-			auto found = ActiveFields().find(owner->GetUniqueID());
-			if (found != ActiveFields().end())
-			{
-				const shared_ptr<ClosedCircuitFieldActor> active = found->second.lock();
-				if (!active || active.get() == this) ActiveFields().erase(found);
-			}
-		}
+		mRegistration.Reset();
 		AbilityWorldActor::Destroy();
 	}
 

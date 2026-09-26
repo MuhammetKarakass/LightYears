@@ -344,6 +344,25 @@ activation/end, cooldown/duration tick, level değişimi ve snapshot üretimi
 `GameAbility` yalnız owner tag kontrolü, somut behavior/action
 çağrıları ile weapon/attachment bağlamasını uygular.
 
+2026-09-26 lifecycle kontratı: `TryActivate` hazırlık ve commit aşamalarını ayırır.
+Hazırlığa giren content, ret/iptal/exception halinde `AbortActivationContent` ile
+temizlenir; henüz charge/cooldown tüketilmez. Commit sonrası
+`OnActivationCommitted` lifecycle Activated olayını yayınlar; observer artık aktif
+runtime durumunu görür. Bu aşamadaki hata normal Interrupted end/cooldown yoluna
+girer. Başlamamış action execution için EndExecution çağrılmaz. Başlama sırasında
+aynı instance'ın activate/level/tick yeniden girişi reddedilir; Cancel güvenli
+başlangıç sınırında işlenir. İlk hata cleanup hatasıyla değiştirilmez.
+Somut behavior, kısmi başlangıçtan sonra da End ile kaynaklarını bırakmalıdır;
+bu kontrat daha önce verilmiş hasar gibi dünya yan etkilerini geri alma garantisi değildir.
+
+Runtime loadout'un tek sahibi ability runtime'dır. `AbilityLoadoutManager::GetLoadout`
+artık `const AbilityLoadoutView&` döndürür; ikinci bir binding tablosu saklamaz.
+Saklanan view, sonraki sorguda güncel runtime'ı okur ve Clear pending iken boş
+görünür. `FindAbility` sonucundaki string pointer yalnız ilgili runtime definition
+yaşadığı/değişmediği sürece geçerlidir; mutasyonlar arasında ID değerini kopyalayın.
+Inventory sahip olunan içerik bilgisidir, runtime slotlarının kopyası değildir.
+Değer tipi `AbilityLoadout` bağımsız binding verisi için korunmuştur.
+
 Ability 2E diliminde kalan tekrar kullanılabilir runtime mekanikleri grup halinde
 SAS'a alınmıştır. `sas::AbilityBehaviorRegistry<Behavior, Key, Hash>` typed
 behavior factory depolama/üretim kuralını sahiplenir. Oyun tarafındaki
@@ -561,13 +580,16 @@ kendi leaf taglerini kendi feature/config klasöründe tanımlamaya devam eder.
 | Alan | Zorunlu tag ailesi | Sahibi |
 | --- | --- | --- |
 | Ability sınıflandırması | `Ability.<Category>` ve `Ability.<Category>.<Family>` | Feature-local contract/config |
-| Ability behavior | `GameAbilityBehavior.<Family>` | Feature-local behavior contract |
 | Ability lifecycle | `State.Ability.<Family>.<State>` ve `Event.Ability.<Family>.<Event>`; dinlenen dış olaylar `Event.<Producer>.<Event>` | Feature-local behavior contract |
 | Ability actor | `AbilityActor.<Family>.<Role>` | Feature-local actor contract |
 | Effect runtime state | `State.Effect.<Family>.<State>` | Feature-local effect contract/config |
 | Attribute ID | `Common.*`, `Ability.<Category>.<Family>.*`, `<Owner>...` / `<AbilityActor>...` | İlgili sistemin AttributeId kataloğu ve family-local contract |
 | Effect behavior | `EffectBehavior.<Family>[.<Behavior>]` | Feature-local effect behavior |
 | Primary weapon | `PrimaryWeapon.<Family>.<Type>` / `PrimaryWeapon.Feature.<Feature>` | Weapon handler/feature |
+
+Ability behavior dispatch'i bir GameplayTag alanı değildir. Shipped behavior
+seçimini `AbilityBehaviorType` ve kayıtlı behavior factory'leri yapar; aile-local
+contracts dosyalarında `GameAbilityBehavior.<Family>` leaf tag'i tutulmaz.
 | Damage | `Damage.Type.<Type>` | Damage type schema |
 | Attachment capability | `Attachment.Capability.<Capability>` | Attachment schema |
 
@@ -703,8 +725,9 @@ Kimlik ve contract kuralları:
   yalnızca onları üretilecek actor'a iletmek için tüketiyorsa (Gravity Anomaly
   projectile -> field gibi), handler iki role ait dar kökleri açıkça bildirir;
   aile kökü tek başına yetki vermez.
-- Somut shipped ability'nin ID family segmenti behavior contract'ı ile
-  uyumlu olmak zorundadır; yalnız generic `GameAbilityBehavior.Configured` ile
+- Somut shipped ability'nin ID family segmenti feature contract'ı ve declared
+  `AbilityBehaviorType` ile uyumlu olmak zorundadır; yalnız generic
+  `AbilityBehaviorType::Configured` ile
   tanımlanan content-only test/prototype ability'ler bu eşleşmeden muaftır.
   Owner activation koşulları yalnızca kalıcı effect/status/ability/
   ability-state/action-lock domainlerinden seçilir; `Event.*` geçici olduğu için

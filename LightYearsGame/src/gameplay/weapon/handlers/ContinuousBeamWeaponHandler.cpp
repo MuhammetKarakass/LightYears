@@ -7,6 +7,7 @@
 #include "framework/World.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/movement/MovementCollisionService.h"
 #include "gameplay/weapon/visuals/ContinuousBeamVisualActor.h"
 #include "gameplay/targeting/SweptGeometry.h"
 
@@ -149,19 +150,31 @@ namespace ly
 					const float directionRotation =
 						context.owner.GetActorRotation() + muzzle.rotationOffset - 90.f;
 					const sf::Vector2f direction = RotationToVector(directionRotation);
+					const sf::Vector2f fullEnd = start + direction * range;
+					movement::StaticGeometrySweepHit staticHit;
+					const bool blockedByStaticGeometry = movement::FindFirstStaticGeometryHit(
+						context.owner,
+						start,
+						fullEnd,
+						width * 0.5f,
+						staticHit,
+						false
+					);
+					const float effectiveRange = blockedByStaticGeometry
+						? range * staticHit.fraction
+						: range;
 					beam->UpdateBeam(
 						start,
 						directionRotation,
-						range,
+						effectiveRange,
 						width,
 						heatRatio,
 						context.definition.presentationDefinition.pointLightDef.color
 					);
 
-					const sf::Vector2f end = start + direction * range;
 					for (const weak_ptr<Actor>& targetWeak :
 						context.owner.GetWorld()->GetActorsInBounds(
-							targeting::swept::SegmentBounds(start, end, width * 0.5f)
+							targeting::swept::SegmentBounds(start, fullEnd, width * 0.5f)
 						))
 					{
 						const shared_ptr<Actor> target = targetWeak.lock();
@@ -172,12 +185,15 @@ namespace ly
 							continue;
 						}
 
+						float targetHitFraction = 0.f;
 						if (targeting::swept::SegmentIntersectsExpandedBounds(
 							start,
-							end,
+							fullEnd,
 							target->GetActorGlobalBounds(),
-							width * 0.5f
-						))
+							width * 0.5f,
+							targetHitFraction
+						) && (!blockedByStaticGeometry ||
+							targetHitFraction + 0.0001f < staticHit.fraction))
 						{
 							damagedTargets.insert(target.get());
 							ApplyCombatDamage(

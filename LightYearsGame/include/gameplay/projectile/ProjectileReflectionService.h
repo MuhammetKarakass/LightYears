@@ -5,11 +5,14 @@
 #include <SFML/System/Vector2.hpp>
 
 #include <cstdint>
+#include <memory>
 
 namespace ly
 {
 	class Actor;
 	class AbilityWorldActor;
+	class ProjectileReflectionRegistryActor;
+	class World;
 
 	// Active counter abilities implement this policy. The projectile system only
 	// asks whether a defender has a registered policy; it never knows a concrete
@@ -48,8 +51,13 @@ namespace ly
 
 		private:
 			friend class ProjectileReflectionService;
-			Registration(unsigned int defenderId, uint64_t generation);
+			Registration(
+				std::weak_ptr<ProjectileReflectionRegistryActor> registry,
+				unsigned int defenderId,
+				uint64_t generation
+			);
 
+			std::weak_ptr<ProjectileReflectionRegistryActor> mRegistry;
 			unsigned int mDefenderId = 0u;
 			// A newer registration for the same defender bumps the generation, so an
 			// older token can never erase the newer entry.
@@ -91,5 +99,9 @@ namespace ly
 			Actor& projectile,
 			Actor& surface
 		);
+
+	private:
+		static std::shared_ptr<ProjectileReflectionRegistryActor> FindRegistryActor(World& world);
+		static std::shared_ptr<ProjectileReflectionRegistryActor> FindOrCreateRegistryActor(World& world);
 	};
 }

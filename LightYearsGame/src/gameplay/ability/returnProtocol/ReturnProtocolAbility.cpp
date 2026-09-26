@@ -133,16 +133,21 @@ namespace ly
 		// The token owns the registration: releasing it here preserves the explicit
 		// teardown, while its destructor also covers every path that never reaches End().
 		mRegistration.Reset();
-		context.abilitySystem.RemoveOwnedTag(AbilityData::ReturnProtocol::State::Active);
-		if (const shared_ptr<ReturnProtocolVisualActor> visual = mVisualActor.lock())
-		{
-			visual->Destroy();
-		}
+		const auto visual = mVisualActor.lock();
 		mVisualActor.reset();
 		mOwner = nullptr;
 		mReflectDamageMultiplier = 1.f;
 		mActive = false;
-		EmitEvent(context, AbilityData::ReturnProtocol::Event::Ended);
+		std::exception_ptr error;
+		const auto cleanup = [&error](auto&& operation)
+		{
+			try { operation(); }
+			catch (...) { if (!error) error = std::current_exception(); }
+		};
+		cleanup([&] { if (visual) visual->Destroy(); });
+		cleanup([&] { context.abilitySystem.RemoveOwnedTag(AbilityData::ReturnProtocol::State::Active); });
+		cleanup([&] { EmitEvent(context, AbilityData::ReturnProtocol::Event::Ended); });
+		if (error) std::rethrow_exception(error);
 	}
 
 	bool ReturnProtocolAbility::TryReflectIncomingProjectile(

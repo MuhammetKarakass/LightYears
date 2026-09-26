@@ -87,6 +87,9 @@ namespace ly::content
 		const std::filesystem::path& filePath,
 		std::string* failureReason)
 	{
+		GetLoadedState() = false;
+		GetDefinitions().clear();
+
 		const WeaponLoader::Result loaded = WeaponLoader::LoadFromFile(filePath);
 		if (!loaded.Succeeded())
 		{

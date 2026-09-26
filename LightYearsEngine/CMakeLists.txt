@@ -149,6 +149,14 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+    add_executable(LightYearsGameplayTagTests
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayTagTests.cpp
+    )
+    target_link_libraries(LightYearsGameplayTagTests PRIVATE
+        ${LIGHT_YEARS_ENGINE_TARGET_NAME}
+    )
+    add_test(NAME LightYearsGameplayTag COMMAND LightYearsGameplayTagTests)
+
     add_executable(LightYearsEngineLifetimeTests
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/EngineLifetimeTests.cpp
     )
@@ -156,4 +164,12 @@ if(BUILD_TESTING)
         ${LIGHT_YEARS_ENGINE_TARGET_NAME}
     )
     add_test(NAME LightYearsEngineLifetime COMMAND LightYearsEngineLifetimeTests)
+
+    add_executable(LightYearsWorldSpatialQueryTests
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/WorldSpatialQueryTests.cpp
+    )
+    target_link_libraries(LightYearsWorldSpatialQueryTests PRIVATE
+        ${LIGHT_YEARS_ENGINE_TARGET_NAME}
+    )
+    add_test(NAME LightYearsWorldSpatialQuery COMMAND LightYearsWorldSpatialQueryTests)
 endif()

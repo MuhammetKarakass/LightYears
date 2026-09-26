@@ -12,7 +12,6 @@ namespace AbilityData::ShieldGraft
 	};
 
 	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Defense };
-	inline const ly::GameplayTag BehaviorTag{ "GameAbilityBehavior.ShieldGraft" };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::ShieldGraft };
 
 	struct Attribute
