@@ -8,6 +8,7 @@
 #include "attributes/AttributeMath.h"
 
 #include <algorithm>
+#include <exception>
 #include <utility>
 
 namespace ly
@@ -270,20 +271,33 @@ namespace ly
 		});
 	}
 
-	void LightYearsAbilitySystemComponent::ClearAdditionalState()
+	void LightYearsAbilitySystemComponent::ClearAdditionalState(
+		bool preserveRuntimeDependencies
+	)
 	{
 		std::exception_ptr error;
 		try { mAbilityInvocationRuntime.Clear(); }
 		catch (...) { error = std::current_exception(); }
 		mAbilityUseHistory.Clear();
 		mLifecycleDispatcher.Clear();
-		mPrimaryWeaponOverrides.Clear();
+		if (!preserveRuntimeDependencies)
+		{
+			mScopedAbilityRules.clear();
+			mDeferredScopedAbilityRules.clear();
+			mHasDeferredScopedAbilityRules = false;
+			mPrimaryWeaponOverrides.Clear();
+		}
 		if (error) std::rethrow_exception(error);
 	}
 
 	void LightYearsAbilitySystemComponent::OnClearCompleted()
 	{
 		if (mOwnerClearCompletion) mOwnerClearCompletion();
+	}
+
+	void LightYearsAbilitySystemComponent::OnAbilityInstanceOperationsCompleted()
+	{
+		FlushDeferredScopedAbilityRules();
 	}
 
 	PrimaryWeaponOverrideHandle LightYearsAbilitySystemComponent::PushPrimaryWeaponOverride(
@@ -413,8 +427,20 @@ namespace ly
 	)
 	{
 		const std::size_t handle = mNextScopedAbilityRuleHandle++;
+		if (HasAbilityCallbackInProgress() || mRefreshingScopedAbilityRules)
+		{
+			if (!mHasDeferredScopedAbilityRules)
+			{
+				mDeferredScopedAbilityRules = mScopedAbilityRules;
+				mHasDeferredScopedAbilityRules = true;
+			}
+			mDeferredScopedAbilityRules.emplace_back(handle, std::move(rule));
+			return handle;
+		}
+		FlushDeferredScopedAbilityRules();
 		mScopedAbilityRules.emplace_back(handle, std::move(rule));
 		RefreshScopedAbilityRules();
+		FlushDeferredScopedAbilityRules();
 		return handle;
 	}
 
@@ -422,31 +448,51 @@ namespace ly
 		std::size_t ruleHandle
 	)
 	{
+		const bool defer = HasAbilityCallbackInProgress() || mRefreshingScopedAbilityRules;
+		if (!defer) FlushDeferredScopedAbilityRules();
+		if (defer && !mHasDeferredScopedAbilityRules)
+		{
+			mDeferredScopedAbilityRules = mScopedAbilityRules;
+			mHasDeferredScopedAbilityRules = true;
+		}
+		auto& rules = defer ? mDeferredScopedAbilityRules : mScopedAbilityRules;
 		const auto found = std::find_if(
-			mScopedAbilityRules.begin(),
-			mScopedAbilityRules.end(),
+			rules.begin(),
+			rules.end(),
 			[&](const auto& entry)
 			{
 				return entry.first == ruleHandle;
 			}
 		);
-		if (found == mScopedAbilityRules.end())
+		if (found == rules.end())
 		{
 			return false;
 		}
-		mScopedAbilityRules.erase(found);
+		rules.erase(found);
+		if (defer) return true;
 		RefreshScopedAbilityRules();
+		FlushDeferredScopedAbilityRules();
 		return true;
 	}
 
 	void LightYearsAbilitySystemComponent::ClearScopedAbilityRules()
 	{
-		if (mScopedAbilityRules.empty())
+		const bool defer = HasAbilityCallbackInProgress() || mRefreshingScopedAbilityRules;
+		if (!defer) FlushDeferredScopedAbilityRules();
+		if (defer && !mHasDeferredScopedAbilityRules)
+		{
+			mDeferredScopedAbilityRules = mScopedAbilityRules;
+			mHasDeferredScopedAbilityRules = true;
+		}
+		auto& rules = defer ? mDeferredScopedAbilityRules : mScopedAbilityRules;
+		if (rules.empty())
 		{
 			return;
 		}
-		mScopedAbilityRules.clear();
+		rules.clear();
+		if (defer) return;
 		RefreshScopedAbilityRules();
+		FlushDeferredScopedAbilityRules();
 	}
 
 	sas::GameplayAttribute LightYearsAbilitySystemComponent::ApplyScopedAbilityModifiers(
@@ -507,17 +553,67 @@ namespace ly
 
 	void LightYearsAbilitySystemComponent::RefreshScopedAbilityRules()
 	{
-		return RunOperation([&]()
+		if (mRefreshingScopedAbilityRules) return;
+		mRefreshingScopedAbilityRules = true;
+		struct RefreshScope
+		{
+			bool& refreshing;
+			~RefreshScope() { refreshing = false; }
+		} scope{ mRefreshingScopedAbilityRules };
+		std::exception_ptr error;
+		RunOperation([&]()
 		{
 			for (const sas::AbilityRuntimeSnapshot& snapshot : BuildAbilitySnapshots())
 			{
 				if (GameAbility* ability = GetAbilityById(snapshot.abilityId))
 				{
-					ability->RefreshScopedConfiguration();
-					NotifyAbilityChanged(ability->GetHandle());
+					try
+					{
+						ability->RefreshScopedConfiguration();
+						NotifyAbilityChanged(ability->GetHandle());
+					}
+					catch (...)
+					{
+						if (!error) error = std::current_exception();
+					}
 				}
 			}
 		});
+		if (error) std::rethrow_exception(error);
+	}
+
+	bool LightYearsAbilitySystemComponent::HasAbilityCallbackInProgress() const
+	{
+		if (IsExecutingAbilityInstanceOperation()) return true;
+		for (const sas::AbilityRuntimeSnapshot& snapshot : BuildAbilitySnapshots())
+		{
+			if (const GameAbility* ability = GetAbility(snapshot.handle);
+				ability && ability->IsInCallbackScope())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void LightYearsAbilitySystemComponent::FlushDeferredScopedAbilityRules()
+	{
+		if (!mHasDeferredScopedAbilityRules || mRefreshingScopedAbilityRules ||
+			IsClearPending() || HasAbilityCallbackInProgress())
+		{
+			return;
+		}
+		std::exception_ptr error;
+		while (mHasDeferredScopedAbilityRules && !IsClearPending() &&
+			!HasAbilityCallbackInProgress())
+		{
+			mScopedAbilityRules.swap(mDeferredScopedAbilityRules);
+			mDeferredScopedAbilityRules.clear();
+			mHasDeferredScopedAbilityRules = false;
+			try { RefreshScopedAbilityRules(); }
+			catch (...) { if (!error) error = std::current_exception(); }
+		}
+		if (error) std::rethrow_exception(error);
 	}
 
 	void LightYearsAbilitySystemComponent::ProcessGameGameplayEvent(

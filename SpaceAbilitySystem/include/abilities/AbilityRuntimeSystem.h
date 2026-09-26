@@ -376,12 +376,16 @@ namespace sas
 				return false;
 			}
 			mRemovalInProgress.push_back(handle);
+			struct RemovalScope
+			{
+				std::vector<AbilityHandle>& removals;
+				~RemovalScope() { removals.pop_back(); }
+			} removalScope{ mRemovalInProgress };
 			if (mCallbacks.cancel)
 			{
 				mCallbacks.cancel(*ability, reason);
 			}
 			const bool removed = mAbilities.Remove(handle);
-			mRemovalInProgress.pop_back();
 			if (!removed)
 			{
 				return false;
@@ -461,6 +465,10 @@ namespace sas
 						catch (...) { if (!error) error = std::current_exception(); }
 					}
 				}
+			}
+			if (error)
+			{
+				std::rethrow_exception(error);
 			}
 			mAbilities.Clear();
 			try { if (mCallbacks.cleared) mCallbacks.cleared(); }

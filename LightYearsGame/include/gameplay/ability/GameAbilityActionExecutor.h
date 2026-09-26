@@ -8,7 +8,9 @@
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 
 #include <cstdint>
+#include <functional>
 #include <variant>
+#include <vector>
 
 namespace ly
 {
@@ -44,8 +46,11 @@ namespace ly
 	>;
 	using ActiveAbilityAction =
 		sas::ActiveAbilityAction<AbilityActionSpec, AbilityActionRuntimeState>;
-	using GameAbilityExecution =
-		sas::AbilityExecution<ActiveAbilityAction>;
+	struct GameAbilityExecution final
+		: sas::AbilityExecution<ActiveAbilityAction>
+	{
+		std::vector<AbilityActionSpec> actionSpecs;
+	};
 
 	struct AbilityExecutionContext
 	{
@@ -53,6 +58,12 @@ namespace ly
 		const GameAbilityDefinition* definition = nullptr;
 		const sas::AbilityEvent* event = nullptr;
 		GameAbility* instance = nullptr;
+		std::function<bool()> shouldContinue;
+
+		bool ShouldContinue() const
+		{
+			return !shouldContinue || shouldContinue();
+		}
 	};
 
 	class GameAbilityActionExecutor

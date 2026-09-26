@@ -181,11 +181,16 @@ namespace ly
 		if (!context.definition)
 		{
 			execution.actions.clear();
+			execution.actionSpecs.clear();
+			execution.started = false;
+			execution.endActionsDispatched = false;
 			return;
 		}
+		execution.actionSpecs = context.definition->actions;
 		sas::AbilityExecutionLifecycle::Begin(
 			execution,
-			context.definition->actions,
+			execution.actionSpecs,
+			[&] { return context.ShouldContinue(); },
 			[&](ActiveAbilityAction& action)
 			{
 				ExecuteAction(action, context);
@@ -198,6 +203,7 @@ namespace ly
 		sas::AbilityExecutionLifecycle::Tick(
 			execution,
 			deltaTime,
+			[&] { return context.ShouldContinue(); },
 			[&](ActiveAbilityAction& action, float tickDeltaTime)
 			{
 				TickAction(action, context, tickDeltaTime);
@@ -208,13 +214,10 @@ namespace ly
 	void GameAbilityActionExecutor::EndExecution(GameAbilityExecution& execution, AbilityExecutionContext& context, sas::AbilityEndReason reason)
 	{
 		(void)reason;
-		const List<AbilityActionSpec> emptyActions;
-		const List<AbilityActionSpec>& actions = context.definition
-			? context.definition->actions
-			: emptyActions;
 		sas::AbilityExecutionLifecycle::End(
 			execution,
-			actions,
+			execution.actionSpecs,
+			[] { return true; },
 			[&](ActiveAbilityAction& action)
 			{
 				FireWeaponActionRuntime::End(action, context);
@@ -224,11 +227,17 @@ namespace ly
 				ExecuteAction(action, context);
 			}
 		);
+		if (!execution.started)
+		{
+			execution.actionSpecs.clear();
+			execution.endActionsDispatched = false;
+		}
 	}
 
 	void GameAbilityActionExecutor::TickAction(ActiveAbilityAction& action, AbilityExecutionContext& context, float deltaTime)
 	{
-		if (!action.spec || action.spec->phase != sas::AbilityActionPhase::WhileActive)
+		if (!context.ShouldContinue() || !action.spec ||
+			action.spec->phase != sas::AbilityActionPhase::WhileActive)
 		{
 			return;
 		}
@@ -253,6 +262,7 @@ namespace ly
 		))
 		{
 			ExecuteAction(action, context);
+			if (!context.ShouldContinue()) return;
 			const float nextInterval = AbilityActionAttributeResolver::ResolveEffectiveInterval(
 				context,
 				action.spec->interval
@@ -263,7 +273,7 @@ namespace ly
 
 	void GameAbilityActionExecutor::ExecuteAction(ActiveAbilityAction& action, AbilityExecutionContext& context)
 	{
-		if (!action.spec || !context.abilitySystem)
+		if (!context.ShouldContinue() || !action.spec || !context.abilitySystem)
 		{
 			return;
 		}

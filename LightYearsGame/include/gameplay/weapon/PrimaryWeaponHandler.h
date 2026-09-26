@@ -5,6 +5,7 @@
 #include "gameplay/weapon/PrimaryWeaponValidationContract.h"
 
 #include <cstdint>
+#include <functional>
 
 namespace ly
 {
@@ -39,10 +40,22 @@ namespace ly
 		std::string configuredWeaponId;
 		bool isInitialized = false;
 		bool isFiring = false;
+		bool handlerEndFirePending = false;
+		List<uint8_t> featureEndFirePending;
 		uint64_t successfulFireCount = 0;
 		float requestedCooldown = 0.f;
 		float unprocessedSimulationTime = 0.f;
 		float fireIntervalRemaining = 0.f;
+
+		bool HasPendingEndFireCleanup() const
+		{
+			if (handlerEndFirePending) return true;
+			for (const uint8_t pending : featureEndFirePending)
+			{
+				if (pending != 0) return true;
+			}
+			return false;
+		}
 
 		float GetFeatureValue(const sas::AttributeId& key, float fallback = 0.f) const;
 		void SetFeatureValue(const sas::AttributeId& key, float value);
@@ -59,6 +72,12 @@ namespace ly
 		const List<std::string>* abilityUpgradeIds = nullptr;
 		PrimaryWeaponRuntimeState* runtime = nullptr;
 		PrimaryWeaponShotMetadata shotMetadata;
+		std::function<bool()> shouldContinue;
+
+		bool ShouldContinue() const
+		{
+			return !shouldContinue || shouldContinue();
+		}
 
 		bool HasAbilityUpgrade(const std::string& upgradeId) const
 		{

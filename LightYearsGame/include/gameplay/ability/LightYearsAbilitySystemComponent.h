@@ -130,9 +130,13 @@ namespace ly
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
+		friend class GameAbility;
 		friend class CombatRuntime;
-		void ClearAdditionalState() override;
+		void ClearAdditionalState(bool preserveRuntimeDependencies) override;
 		void OnClearCompleted() override;
+		void OnAbilityInstanceOperationsCompleted() override;
+		void FlushDeferredScopedAbilityRules();
+		bool HasAbilityCallbackInProgress() const;
 		std::function<void()> mOwnerClearCompletion;
 		void ProcessGameGameplayEvent(const sas::AbilityEvent& event);
 		void ProcessAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
@@ -149,7 +153,10 @@ namespace ly
 			sas::AbilitySystemRuntime<GameAbilityDefinition, GameAbility>;
 		ComponentRuntime& mComponentRuntime;
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mScopedAbilityRules;
+		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mDeferredScopedAbilityRules;
 		std::size_t mNextScopedAbilityRuleHandle = 1;
+		bool mHasDeferredScopedAbilityRules = false;
+		bool mRefreshingScopedAbilityRules = false;
 		AbilityLifecycleDispatcher mLifecycleDispatcher;
 		AbilityUseHistory mAbilityUseHistory;
 		AbilityInvocationRuntime mAbilityInvocationRuntime;

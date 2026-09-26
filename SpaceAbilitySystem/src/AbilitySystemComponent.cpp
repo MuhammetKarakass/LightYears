@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <exception>
+#include <stdexcept>
 
 namespace sas
 {
@@ -459,11 +460,27 @@ namespace sas
 			catch (...) { if (!error) error = std::current_exception(); }
 		};
 		cleanup([&] { if (mAbilityRuntime) mAbilityRuntime->Clear(); });
-		cleanup([&] { ClearAdditionalState(); });
+		const bool runtimeRetainedAbilities =
+			mAbilityRuntime && mAbilityRuntime->HasAbilityInstances();
+		if (runtimeRetainedAbilities)
+		{
+			if (!error)
+			{
+				error = std::make_exception_ptr(std::runtime_error(
+					"Ability cleanup is incomplete; retry Clear after retained cleanup succeeds."
+				));
+			}
+			cleanup([&] { ClearAdditionalState(true); });
+			mClearing = false;
+			// Keep clear requested and preserve attributes, tags, effects, and the
+			// game-owned weapon override state until retained EndFire debt is drained.
+			std::rethrow_exception(error);
+		}
+		cleanup([&] { ClearAdditionalState(false); });
 		cleanup([&] { mEffects.Clear(); });
 		cleanup([&] { mOwnedTags.Clear(); });
 		cleanup([&] { mAttributes.Clear(); });
-		cleanup([&] { OnClearCompleted(); });
+		if (!error) cleanup([&] { OnClearCompleted(); });
 		mAbilityCooldownTagActive = false;
 		mPrimaryWeaponCooldownTagActive = false;
 		mClearRequested = false;
@@ -491,8 +508,16 @@ namespace sas
 		ExecuteOperation([&]
 		{
 			++mInstanceExecutionDepth;
-			struct Scope { std::size_t& depth; ~Scope() { --depth; } } scope{ mInstanceExecutionDepth };
-			operation();
+			std::exception_ptr error;
+			try { operation(); }
+			catch (...) { error = std::current_exception(); }
+			--mInstanceExecutionDepth;
+			if (mInstanceExecutionDepth == 0)
+			{
+				try { OnAbilityInstanceOperationsCompleted(); }
+				catch (...) { if (!error) error = std::current_exception(); }
+			}
+			if (error) std::rethrow_exception(error);
 		});
 	}
 }

@@ -192,6 +192,10 @@ namespace sas
 			}
 		}
 		bool IsClearPending() const { return mClearRequested || mClearing; }
+		bool IsExecutingAbilityInstanceOperation() const
+		{
+			return mInstanceExecutionDepth != 0;
+		}
 		void NotifyAbilityChanged(AbilityHandle handle);
 
 		template <typename Event, typename Handler>
@@ -320,7 +324,13 @@ namespace sas
 
 	protected:
 		virtual void ClearAdditionalState() {}
+		virtual void ClearAdditionalState(bool preserveRuntimeDependencies)
+		{
+			(void)preserveRuntimeDependencies;
+			ClearAdditionalState();
+		}
 		virtual void OnClearCompleted() {}
+		virtual void OnAbilityInstanceOperationsCompleted() {}
 		template <typename Definition, typename Instance>
 		void ConfigureAbilityRuntime(
 			AbilitySystemRuntime<Definition, Instance>& runtime,

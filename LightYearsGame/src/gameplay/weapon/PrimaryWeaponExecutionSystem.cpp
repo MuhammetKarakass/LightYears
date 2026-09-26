@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <exception>
 
 namespace ly
 {
@@ -215,6 +216,10 @@ namespace ly
 				"Primary weapon runtime cannot be replaced while it is firing."
 			};
 		}
+		if (state.HasPendingEndFireCleanup())
+		{
+			return { false, "Primary weapon runtime has pending EndFire cleanup." };
+		}
 		return InstallRuntime(configuration, state);
 	}
 
@@ -235,6 +240,10 @@ namespace ly
 		if (!validation.isValid)
 		{
 			return validation;
+		}
+		if (state.HasPendingEndFireCleanup())
+		{
+			return { false, "Primary weapon runtime has pending EndFire cleanup." };
 		}
 
 		const bool sameWeapon =
@@ -305,17 +314,23 @@ namespace ly
 		PrimaryWeaponRuntimeState& state
 	)
 	{
-		if (!state.isInitialized || state.isFiring ||
+		if (!context.ShouldContinue() || !state.isInitialized || state.isFiring ||
 			!state.handler || !state.typeState)
 		{
 			return;
 		}
+		state.featureEndFirePending.assign(state.features.size(), uint8_t{ 0 });
 		state.isFiring = true;
+		state.handlerEndFirePending = true;
 		const PrimaryWeaponExecutionContext runtimeContext =
 			WithRuntimeState(context, state);
 		state.handler->BeginFire(runtimeContext, *state.typeState);
-		for (const PrimaryWeaponFeatureHandler* feature : state.features)
+		if (!runtimeContext.ShouldContinue()) return;
+		for (std::size_t index = 0; index < state.features.size(); ++index)
 		{
+			if (!runtimeContext.ShouldContinue()) return;
+			state.featureEndFirePending[index] = 1;
+			const PrimaryWeaponFeatureHandler* feature = state.features[index];
 			feature->BeginFire(runtimeContext, state);
 		}
 	}
@@ -334,7 +349,7 @@ namespace ly
 		PrimaryWeaponRuntimeState& state
 	)
 	{
-		if (!state.isInitialized || !state.isFiring ||
+		if (!context.ShouldContinue() || !state.isInitialized || !state.isFiring ||
 			!state.handler || !state.typeState)
 		{
 			return false;
@@ -379,11 +394,13 @@ namespace ly
 		runtimeContext.shotMetadata = shotMetadata;
 		for (const PrimaryWeaponFeatureHandler* feature : state.features)
 		{
+			if (!runtimeContext.ShouldContinue()) return false;
 			if (!feature->CanFire(runtimeContext, state))
 			{
 				return false;
 			}
 		}
+		if (!runtimeContext.ShouldContinue()) return false;
 
 		const bool success = state.handler->FireOnce(runtimeContext, *state.typeState);
 		if (!success)
@@ -409,6 +426,7 @@ namespace ly
 
 		for (const PrimaryWeaponFeatureHandler* feature : state.features)
 		{
+			if (!runtimeContext.ShouldContinue()) break;
 			feature->AfterFire(runtimeContext, state);
 		}
 		return true;
@@ -420,7 +438,7 @@ namespace ly
 		float deltaTime
 	)
 	{
-		if (!state.isInitialized || !state.isFiring ||
+		if (!context.ShouldContinue() || !state.isInitialized || !state.isFiring ||
 			!state.handler || !state.typeState)
 		{
 			return;
@@ -430,6 +448,7 @@ namespace ly
 		state.handler->TickFire(runtimeContext, *state.typeState, deltaTime);
 		for (const PrimaryWeaponFeatureHandler* feature : state.features)
 		{
+			if (!runtimeContext.ShouldContinue()) return;
 			feature->TickFire(runtimeContext, state, deltaTime);
 		}
 	}
@@ -445,6 +464,7 @@ namespace ly
 		)
 	{
 		ActiveFireSimulationResult result;
+		if (!context.ShouldContinue()) return result;
 		const auto applyRequestedWeaponCooldown = [&]()
 		{
 			const float requestedCooldown = ConsumeRequestedCooldown(state);
@@ -479,7 +499,7 @@ namespace ly
 			constexpr float TimeEpsilon = 1e-5f;
 			int catchUpExecutions = 0;
 
-			while (true)
+			while (context.ShouldContinue())
 			{
 				float timeToReady = 0.f;
 				if (state.magazineState.reloadRemaining > 0.0)
@@ -500,6 +520,11 @@ namespace ly
 					AdvanceMagazineReload(context.definition, state, advanceTime);
 					state.fireIntervalRemaining = std::max(0.f, state.fireIntervalRemaining - advanceTime);
 					TickFire(context, state, advanceTime);
+					if (!context.ShouldContinue())
+					{
+						if (applyRequestedWeaponCooldown()) result.lifecycleInterrupted = true;
+						return result;
+					}
 					availableTime = 0.f;
 					break;
 				}
@@ -516,6 +541,11 @@ namespace ly
 					AdvanceMagazineReload(context.definition, state, stepTime);
 					state.fireIntervalRemaining = std::max(0.f, state.fireIntervalRemaining - stepTime);
 					TickFire(context, state, stepTime);
+					if (!context.ShouldContinue())
+					{
+						if (applyRequestedWeaponCooldown()) result.lifecycleInterrupted = true;
+						return result;
+					}
 					availableTime -= stepTime;
 					if (availableTime < TimeEpsilon)
 					{
@@ -540,10 +570,11 @@ namespace ly
 					++result.executionsProduced;
 					++catchUpExecutions;
 					state.fireIntervalRemaining = fireInterval;
+					if (!context.ShouldContinue()) break;
 				}
 				else
 				{
-					if (availableTime > 0.f)
+					if (availableTime > 0.f && context.ShouldContinue())
 					{
 						TickFire(context, state, availableTime);
 						availableTime = 0.f;
@@ -567,6 +598,11 @@ namespace ly
 			return result;
 		}
 		TickFire(context, state, deltaTime);
+		if (!context.ShouldContinue())
+		{
+			if (applyRequestedWeaponCooldown()) result.lifecycleInterrupted = true;
+			return result;
+		}
 		if (applyRequestedWeaponCooldown())
 		{
 			result.lifecycleInterrupted = true;
@@ -577,7 +613,7 @@ namespace ly
 			return result;
 		}
 		int catchUpExecutions = 0;
-		while (state.fireIntervalRemaining <= 0.f &&
+		while (context.ShouldContinue() && state.fireIntervalRemaining <= 0.f &&
 			catchUpExecutions < time::DefaultMaximumIntervalCatchUp &&
 			(maxExecutions <= 0 || (currentExecutionCount + result.executionsProduced) < maxExecutions))
 		{
@@ -588,6 +624,7 @@ namespace ly
 				++catchUpExecutions;
 			}
 			time::CommitInterval(state.fireIntervalRemaining, fireInterval);
+			if (!context.ShouldContinue()) break;
 			if (!fired)
 			{
 				break;
@@ -606,7 +643,7 @@ namespace ly
 		float deltaTime
 	)
 	{
-		if (!state.isInitialized || state.isFiring || deltaTime <= 0.f)
+		if (!context.ShouldContinue() || !state.isInitialized || state.isFiring || deltaTime <= 0.f)
 		{
 			return;
 		}
@@ -616,6 +653,7 @@ namespace ly
 			WithRuntimeState(context, state);
 		for (const PrimaryWeaponFeatureHandler* feature : state.features)
 		{
+			if (!runtimeContext.ShouldContinue()) return;
 			feature->TickInactive(runtimeContext, state, deltaTime);
 		}
 	}
@@ -638,19 +676,49 @@ namespace ly
 		PrimaryWeaponRuntimeState& state
 	)
 	{
-		if (!state.isInitialized || !state.isFiring ||
-			!state.handler || !state.typeState)
+		if (!state.isInitialized || !state.handler || !state.typeState ||
+			(!state.isFiring && !state.HasPendingEndFireCleanup()))
 		{
 			return;
 		}
+		state.isFiring = false;
 		const PrimaryWeaponExecutionContext runtimeContext =
 			WithRuntimeState(context, state);
-		state.handler->EndFire(runtimeContext, *state.typeState);
-		for (const PrimaryWeaponFeatureHandler* feature : state.features)
+		std::exception_ptr error;
+		if (state.handlerEndFirePending)
 		{
-			feature->EndFire(runtimeContext, state);
+			try
+			{
+				state.handler->EndFire(runtimeContext, *state.typeState);
+				state.handlerEndFirePending = false;
+			}
+			catch (...)
+			{
+				error = std::current_exception();
+			}
 		}
-		state.isFiring = false;
+		for (std::size_t index = 0; index < state.features.size(); ++index)
+		{
+			if (index >= state.featureEndFirePending.size() ||
+				state.featureEndFirePending[index] == 0)
+			{
+				continue;
+			}
+			try
+			{
+				state.features[index]->EndFire(runtimeContext, state);
+				state.featureEndFirePending[index] = 0;
+			}
+			catch (...)
+			{
+				if (!error) error = std::current_exception();
+			}
+		}
+		if (!state.HasPendingEndFireCleanup())
+		{
+			state.featureEndFirePending.clear();
+		}
+		if (error) std::rethrow_exception(error);
 	}
 
 	float PrimaryWeaponExecutionSystem::ConsumeRequestedCooldown(

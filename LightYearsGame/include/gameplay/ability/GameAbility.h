@@ -164,6 +164,7 @@ namespace ly
 		void EndExecution(sas::AbilityEndReason reason) override;
 		void TickInactive(float deltaTime) override;
 		void EndContent(sas::AbilityEndReason reason) override;
+		void OnInstanceOperationCompleted() override;
 		sas::AbilityLifecycleEvent BuildLifecycleEvent(
 			const GameplayTag& eventTag,
 			sas::AbilityEndReason endReason

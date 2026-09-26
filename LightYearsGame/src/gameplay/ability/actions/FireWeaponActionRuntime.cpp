@@ -114,7 +114,10 @@ namespace ly
 				fireAction.weaponDefinition,
 				attributes,
 				ResolveDamageTags(context, fireAction),
-				context.definition ? &context.definition->unlockedUpgradeIds : nullptr
+				context.definition ? &context.definition->unlockedUpgradeIds : nullptr,
+				nullptr,
+				{},
+				context.shouldContinue
 			};
 		}
 
@@ -126,6 +129,7 @@ namespace ly
 			const sas::GameplayAttributeList& attributes
 		)
 		{
+			if (!context.ShouldContinue()) return false;
 			if (!state.initialized)
 			{
 				state.runtimeAttributes = fireAction.weaponDefinition.attributes;
@@ -171,11 +175,11 @@ namespace ly
 			{
 				return true;
 			}
+			state.lifecycleStarted = true;
 			PrimaryWeaponExecutionSystem::BeginFire(
 				MakeExecutionContext(owner, context, fireAction, attributes),
 				weaponRuntime
 			);
-			state.lifecycleStarted = true;
 			return true;
 		}
 
@@ -271,7 +275,8 @@ namespace ly
 		const FireWeaponAction& fireAction = ResolveFireAction(context, authoredAction, overrideAction);
 		FireWeaponRuntimeState& state = GetOrCreateState(action, context, fireAction, false);
 		const sas::GameplayAttributeList& values = ResolveAttributes(context, fireAction, state);
-		if (!EnsureLifecycle(owner, context, fireAction, state, values))
+		if (!EnsureLifecycle(owner, context, fireAction, state, values) ||
+			!context.ShouldContinue())
 		{
 			return;
 		}
@@ -307,7 +312,8 @@ namespace ly
 		FireWeaponRuntimeState& state = GetOrCreateState(action, context, fireAction, true);
 		const sas::GameplayAttributeList& values = ResolveAttributes(context, fireAction, state);
 
-		if (!EnsureLifecycle(owner, context, fireAction, state, values))
+		if (!EnsureLifecycle(owner, context, fireAction, state, values) ||
+			!context.ShouldContinue())
 		{
 			return;
 		}

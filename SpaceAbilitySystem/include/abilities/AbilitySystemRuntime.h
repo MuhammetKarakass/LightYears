@@ -59,6 +59,7 @@ namespace sas
 		virtual const ly::List<AbilityHandle>& GetPassiveAbilities() const = 0;
 		virtual void Tick(float deltaTime) = 0;
 		virtual void Clear() = 0;
+		virtual bool HasAbilityInstances() const = 0;
 	};
 
 	template <typename Definition, typename Instance>
@@ -333,6 +334,11 @@ namespace sas
 			mTriggerCooldowns.Clear();
 			mTriggerMatchCounts.clear();
 			if (error) std::rethrow_exception(error);
+		}
+
+		bool HasAbilityInstances() const override
+		{
+			return !mRuntime.GetAll().empty();
 		}
 
 	private:

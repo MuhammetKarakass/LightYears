@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <exception>
 
 namespace ly
 {
@@ -50,6 +51,7 @@ namespace ly
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
 				const auto spawnBeam = [&](const WeaponMuzzleDefinition&)
 				{
+					if (!context.ShouldContinue()) return;
 					beamState.beams.push_back(
 						world->SpawnActor<ContinuousBeamVisualActor>(&context.owner)
 					);
@@ -61,6 +63,7 @@ namespace ly
 				}
 				for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
 				{
+					if (!context.ShouldContinue()) return;
 					spawnBeam(muzzle);
 				}
 			}
@@ -134,6 +137,7 @@ namespace ly
 				size_t beamIndex = 0;
 				const auto tickBeam = [&](const WeaponMuzzleDefinition& muzzle)
 				{
+					if (!context.ShouldContinue()) return;
 					if (beamIndex >= beamState.beams.size())
 					{
 						return;
@@ -177,6 +181,7 @@ namespace ly
 							targeting::swept::SegmentBounds(start, fullEnd, width * 0.5f)
 						))
 					{
+						if (!context.ShouldContinue()) return;
 						const shared_ptr<Actor> target = targetWeak.lock();
 						if (!target ||
 							damagedTargets.find(target.get()) != damagedTargets.end() ||
@@ -203,6 +208,7 @@ namespace ly
 								context.damageTags,
 								payload
 							);
+							if (!context.ShouldContinue()) return;
 						}
 					}
 				};
@@ -214,6 +220,7 @@ namespace ly
 				}
 				for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
 				{
+					if (!context.ShouldContinue()) return;
 					tickBeam(muzzle);
 				}
 			}
@@ -224,14 +231,25 @@ namespace ly
 			) const override
 			{
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
-				for (const weak_ptr<ContinuousBeamVisualActor>& beamWeak : beamState.beams)
+				std::exception_ptr error;
+				for (auto beam = beamState.beams.begin(); beam != beamState.beams.end();)
 				{
-					if (const shared_ptr<ContinuousBeamVisualActor> beam = beamWeak.lock())
+					const shared_ptr<ContinuousBeamVisualActor> lockedBeam = beam->lock();
+					if (!lockedBeam)
 					{
-						beam->Destroy();
+						beam = beamState.beams.erase(beam);
+						continue;
 					}
+					try { lockedBeam->Destroy(); }
+					catch (...) { if (!error) error = std::current_exception(); }
+					if (!lockedBeam->GetIsPendingDestroy())
+					{
+						++beam;
+						continue;
+					}
+					beam = beamState.beams.erase(beam);
 				}
-				beamState.beams.clear();
+				if (error) std::rethrow_exception(error);
 			}
 		};
 	}

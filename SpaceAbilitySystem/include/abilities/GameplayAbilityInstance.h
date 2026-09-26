@@ -94,6 +94,10 @@ namespace sas
 			return RunInstanceOperation([&]() -> bool
 			{
 				if (mExecutionCallbackDepth != 0 || mActivating || mEnding || (mNotifications.canExecute && !mNotifications.canExecute())) return false;
+				if (!this->mRuntimeState.IsActive() && mExecutionStarted)
+				{
+					RetryFailedExecutionCleanup();
+				}
 				if (!this->mRuntimeState.CanActivate(this->mDefinition.maxCharges)) return false;
 				mActivating = true;
 				mActivationCancelled = false;
@@ -130,7 +134,8 @@ namespace sas
 						mExecutionStarted = true;
 						RunExecutionCallback([&] { BeginExecution(); });
 					}
-					if (!ActivationInterrupted() && mNotifications.activated)
+					if (this->mRuntimeState.IsActive() &&
+						ShouldContinueExecution() && mNotifications.activated)
 						mNotifications.activated(this->mHandle);
 
 					if (mActivationCancelled) EndAbility(mActivationCancelReason);
@@ -170,6 +175,10 @@ namespace sas
 				if (this->mRuntimeState.IsActive())
 				{
 					EndAbility(reason);
+				}
+				else if (mExecutionStarted)
+				{
+					RetryFailedExecutionCleanup();
 				}
 			});
 		}
@@ -242,6 +251,10 @@ namespace sas
 		}
 
 		bool IsActive() const { return this->mRuntimeState.IsActive(); }
+		bool IsInCallbackScope() const
+		{
+			return mActivating || mEnding || mExecutionCallbackDepth != 0;
+		}
 		bool IsOnCooldown() const
 		{
 			return this->mRuntimeState.IsOnCooldown();
@@ -284,12 +297,34 @@ namespace sas
 			// Copy before entry: completing the outer operation can destroy this
 			// instance. Do not read members after the execution boundary returns.
 			const auto execute = mNotifications.execute;
-			if (!execute) return operation();
-			if constexpr (std::is_void_v<decltype(operation())>) execute(operation);
+			auto run = [&]() -> decltype(operation())
+			{
+				std::exception_ptr error;
+				if constexpr (std::is_void_v<decltype(operation())>)
+				{
+					try { operation(); }
+					catch (...) { error = std::current_exception(); }
+					try { OnInstanceOperationCompleted(); }
+					catch (...) { if (!error) error = std::current_exception(); }
+					if (error) std::rethrow_exception(error);
+				}
+				else
+				{
+					std::optional<decltype(operation())> result;
+					try { result.emplace(operation()); }
+					catch (...) { error = std::current_exception(); }
+					try { OnInstanceOperationCompleted(); }
+					catch (...) { if (!error) error = std::current_exception(); }
+					if (error) std::rethrow_exception(error);
+					return std::move(*result);
+				}
+			};
+			if (!execute) return run();
+			if constexpr (std::is_void_v<decltype(operation())>) execute(run);
 			else
 			{
 				std::optional<decltype(operation())> result;
-				execute([&] { result.emplace(operation()); });
+				execute([&] { result.emplace(run()); });
 				return std::move(*result);
 			}
 		}
@@ -307,6 +342,7 @@ namespace sas
 		virtual bool ShouldDeferActiveDurationStart() const { return false; }
 		virtual void EndContent(AbilityEndReason) {}
 		virtual void OnExecutionCallbackCompleted() {}
+		virtual void OnInstanceOperationCompleted() {}
 		virtual int GetMaximumLevel() const = 0;
 		virtual float ResolveCooldownDuration() const = 0;
 		// Behaviors with an explicit end-state reward can override this without
@@ -437,8 +473,16 @@ namespace sas
 			finish([&] { EndContent(reason); });
 			if (mExecutionStarted)
 			{
-				mExecutionStarted = false;
-				finish([&] { RunExecutionCallback([&] { EndExecution(reason); }); });
+				mExecutionEndReason = reason;
+				try
+				{
+					RunExecutionCallback([&] { EndExecution(reason); });
+					mExecutionStarted = false;
+				}
+				catch (...)
+				{
+					if (!error) error = std::current_exception();
+				}
 			}
 			float cooldownOnEnd = this->mRuntimeState.GetCooldownRemaining();
 			finish([&]
@@ -454,6 +498,19 @@ namespace sas
 			if (error) std::rethrow_exception(error);
 		}
 
+		void RetryFailedExecutionCleanup()
+		{
+			if (!mExecutionStarted || this->mRuntimeState.IsActive() ||
+				mExecutionCallbackDepth != 0 || mActivating || mEnding)
+			{
+				return;
+			}
+			mEnding = true;
+			struct EndScope { bool& ending; ~EndScope() { ending = false; } } scope{ mEnding };
+			RunExecutionCallback([&] { EndExecution(mExecutionEndReason); });
+			mExecutionStarted = false;
+		}
+
 		bool RunInputPressedCallback()
 		{
 			bool handled = false;
@@ -467,6 +524,7 @@ namespace sas
 		bool mExecutionStarted = false;
 		bool mActivationCancelled = false;
 		AbilityEndReason mActivationCancelReason = AbilityEndReason::Cancelled;
+		AbilityEndReason mExecutionEndReason = AbilityEndReason::Interrupted;
 		std::size_t mExecutionCallbackDepth = 0;
 		std::optional<AbilityEndReason> mPendingEndReason;
 	};

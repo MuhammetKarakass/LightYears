@@ -392,12 +392,12 @@ namespace ly
 
 	void GameAbility::BeginExecution()
 	{
-		mExecution.actions.clear();
 		AbilityExecutionContext context{
 			&mAbilitySystem,
 			&mDefinition,
 			nullptr,
-			this
+			this,
+			[this] { return ShouldContinueExecution(); }
 		};
 		GameAbilityActionExecutor::BeginExecution(mExecution, context);
 	}
@@ -414,13 +414,15 @@ namespace ly
 			&mAbilitySystem,
 			&mDefinition,
 			nullptr,
-			this
+			this,
+			[this] { return ShouldContinueExecution(); }
 		};
 		GameAbilityActionExecutor::TickExecution(
 			mExecution,
 			context,
 			deltaTime
 		);
+		if (!ShouldContinueExecution()) return;
 		if (mBehavior)
 		{
 			GameAbilityBehaviorContext behaviorContext{
@@ -439,10 +441,15 @@ namespace ly
 			&mAbilitySystem,
 			&mDefinition,
 			nullptr,
-			this
+			this,
+			[] { return true; }
 		};
 		GameAbilityActionExecutor::EndExecution(mExecution, context, reason);
-		mExecution.actions.clear();
+	}
+
+	void GameAbility::OnInstanceOperationCompleted()
+	{
+		mAbilitySystem.FlushDeferredScopedAbilityRules();
 	}
 
 	void GameAbility::TickInactive(float deltaTime)
