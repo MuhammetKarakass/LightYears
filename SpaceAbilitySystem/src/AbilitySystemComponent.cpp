@@ -76,10 +76,20 @@ namespace sas
 		int level
 	)
 	{
+		return SetAbilityLevel(handle, level, nullptr, nullptr);
+	}
+
+	bool AbilitySystemComponent::SetAbilityLevel(
+		AbilityHandle handle,
+		int level,
+		AbilityLevelCommitSink commitSink,
+		void* commitContext
+	)
+	{
 		return RunOperation([&]() -> bool
 		{
 			return mAbilityRuntime &&
-				mAbilityRuntime->SetAbilityLevel(handle, level);
+				mAbilityRuntime->SetAbilityLevel(handle, level, commitSink, commitContext);
 		});
 	}
 

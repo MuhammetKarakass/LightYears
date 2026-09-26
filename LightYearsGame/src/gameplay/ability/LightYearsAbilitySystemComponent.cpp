@@ -553,7 +553,7 @@ namespace ly
 
 	void LightYearsAbilitySystemComponent::RefreshScopedAbilityRules()
 	{
-		if (mRefreshingScopedAbilityRules) return;
+		if (mRefreshingScopedAbilityRules || IsClearPending()) return;
 		mRefreshingScopedAbilityRules = true;
 		struct RefreshScope
 		{
@@ -565,16 +565,21 @@ namespace ly
 		{
 			for (const sas::AbilityRuntimeSnapshot& snapshot : BuildAbilitySnapshots())
 			{
+				if (IsClearPending()) break;
 				if (GameAbility* ability = GetAbilityById(snapshot.abilityId))
 				{
+					const sas::AbilityHandle handle = snapshot.handle;
 					try
 					{
 						ability->RefreshScopedConfiguration();
-						NotifyAbilityChanged(ability->GetHandle());
+						if (IsClearPending()) break;
+						NotifyAbilityChanged(handle);
+						if (IsClearPending()) break;
 					}
 					catch (...)
 					{
 						if (!error) error = std::current_exception();
+						if (IsClearPending()) break;
 					}
 				}
 			}

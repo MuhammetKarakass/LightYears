@@ -9,6 +9,15 @@ namespace ly
 	class PrimaryWeaponExecutionSystem
 	{
 	public:
+		struct PreparedRuntimeConfiguration
+		{
+			PrimaryWeaponRuntimeState replacement;
+			List<const PrimaryWeaponFeatureHandler*> features;
+			Map<sas::AttributeId, float> featureValues;
+			bool replaceRuntime = false;
+			bool updateFeatures = false;
+		};
+
 		static PrimaryWeaponValidationResult ValidateDefinition(
 			const PrimaryWeaponDefinition& definition
 		);
@@ -22,6 +31,16 @@ namespace ly
 			PrimaryWeaponRuntimeState& state,
 			const List<std::string>* unlockedUpgradeIds = nullptr
 		);
+		static PrimaryWeaponValidationResult PrepareRuntimeConfiguration(
+			const PrimaryWeaponDefinition& definition,
+			const PrimaryWeaponRuntimeState& state,
+			const List<std::string>* unlockedUpgradeIds,
+			PreparedRuntimeConfiguration& prepared
+		);
+		static void CommitRuntimeConfiguration(
+			PrimaryWeaponRuntimeState& state,
+			PreparedRuntimeConfiguration&& prepared
+		) noexcept;
 
 		static void BeginFire(
 			const PrimaryWeaponExecutionContext& context,

@@ -40,6 +40,7 @@ namespace sas
 		virtual void ClearSlot(AbilitySlot slot) = 0;
 		virtual void SetSlotInput(AbilitySlot slot, bool inputHeld) = 0;
 		virtual bool SetAbilityLevel(AbilityHandle handle, int level) = 0;
+		virtual bool SetAbilityLevel(AbilityHandle handle, int level, AbilityLevelCommitSink commitSink, void* commitContext) = 0;
 		virtual bool SetAbilityLevel(AbilitySlot slot, int level) = 0;
 		virtual bool LevelUpAbility(AbilityHandle handle) = 0;
 		virtual bool LevelUpAbility(AbilitySlot slot) = 0;
@@ -146,8 +147,21 @@ namespace sas
 
 		bool SetAbilityLevel(AbilityHandle handle, int level) override
 		{
+			return SetAbilityLevel(handle, level, nullptr, nullptr);
+		}
+
+		bool SetAbilityLevel(
+			AbilityHandle handle,
+			int level,
+			AbilityLevelCommitSink commitSink,
+			void* commitContext
+		) override
+		{
 			bool changed = false;
-			mRuntime.VisitAbility(handle, [&](Instance& ability) { changed = ability.SetLevel(level); });
+			mRuntime.VisitAbility(handle, [&](Instance& ability)
+			{
+				changed = ability.SetLevel(level, commitSink, commitContext);
+			});
 			return changed;
 		}
 

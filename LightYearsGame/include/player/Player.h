@@ -4,6 +4,7 @@
 #include <framework/Delegate.h>
 #include "gameplay/progression/ShipProgression.h"
 #include "abilities/AbilityPolicies.h"
+#include "abilities/AbilityHandle.h"
 #include <string>
 
 namespace ly
@@ -42,6 +43,20 @@ namespace ly
 		void OnScoreAwarded(unsigned int scoreAmount);
 
 	private:
+		using PurchasedAbilityLevels = Map<std::string, int>;
+		struct AbilityPurchaseCommitContext
+		{
+			Player& player;
+			unsigned int cost;
+			PurchasedAbilityLevels::node_type purchasedLevel;
+			bool committed = false;
+		};
+
+		static void CommitAbilityLevelPurchase(
+			void* context,
+			sas::AbilityHandle handle,
+			int level
+		) noexcept;
 		void RestorePurchasedAbilityLevels(PlayerSpaceShip& ship);
 		void OnCurrentShipDestroyed(Actor* destroyedActor);
 		void ResetRunProgression();
@@ -49,10 +64,11 @@ namespace ly
 		weak_ptr<PlayerSpaceShip> mCurrentSpaceShip;
 		DelegateHandle mCurrentShipDestroyedHandle;
 		ShipProgression mShipProgression;
-		Map<std::string, int> mPurchasedAbilityLevels;
+		PurchasedAbilityLevels mPurchasedAbilityLevels;
 		unsigned int mLifeCount;
 		unsigned int mScore;
 		unsigned int mScrap;
+		bool mAbilityPurchaseInProgress = false;
 	};
 }
 

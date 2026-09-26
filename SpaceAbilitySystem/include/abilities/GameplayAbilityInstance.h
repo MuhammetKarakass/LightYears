@@ -187,12 +187,17 @@ namespace sas
 			});
 		}
 
-		bool SetLevel(int level)
+		bool SetLevel(
+			int level,
+			AbilityLevelCommitSink commitSink = nullptr,
+			void* commitContext = nullptr
+		)
 		{
 			return RunInstanceOperation([&]() -> bool
 			{
 				if (mExecutionCallbackDepth != 0 || mActivating || mEnding || (mNotifications.canExecute && !mNotifications.canExecute())) return false;
 				EnsurePendingCleanupDrained();
+				if (mNotifications.canExecute && !mNotifications.canExecute()) return false;
 				const int maxLevel = GetMaximumLevel();
 				const int newLevel = AbilityRuntimeState::ClampLevel(level, maxLevel);
 				if (newLevel == this->mRuntimeState.GetLevel())
@@ -204,8 +209,13 @@ namespace sas
 				{
 					EndAbility(AbilityEndReason::Interrupted);
 				}
+				if (mNotifications.canExecute && !mNotifications.canExecute()) return false;
+				const bool hasPreparedDefinition = PrepareDefinitionForLevel(newLevel);
+				if (commitSink && !hasPreparedDefinition) return false;
 				this->mRuntimeState.SetLevel(newLevel, maxLevel);
-				RebuildDefinitionForLevel();
+				if (hasPreparedDefinition) CommitPreparedDefinitionForLevel();
+				else RebuildDefinitionForLevel();
+				if (commitSink) commitSink(commitContext, this->mHandle, newLevel);
 				OnLevelConfigurationChanged();
 				if (mNotifications.levelChanged)
 				{
@@ -369,6 +379,8 @@ namespace sas
 		}
 		virtual float ResolveActiveDuration() const = 0;
 		virtual void RebuildDefinitionForLevel() = 0;
+		virtual bool PrepareDefinitionForLevel(int) { return false; }
+		virtual void CommitPreparedDefinitionForLevel() noexcept {}
 		virtual void OnLevelConfigurationChanged() {}
 
 		void NotifyChanged()

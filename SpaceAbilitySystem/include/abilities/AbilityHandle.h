@@ -10,4 +10,6 @@ namespace sas
 		bool operator==(const AbilityHandle& other) const { return id == other.id; }
 		bool operator<(const AbilityHandle& other) const { return id < other.id; }
 	};
+
+	using AbilityLevelCommitSink = void(*)(void*, AbilityHandle, int) noexcept;
 }

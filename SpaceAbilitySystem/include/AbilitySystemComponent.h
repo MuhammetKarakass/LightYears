@@ -96,6 +96,7 @@ namespace sas
 		void ClearAbilitySlot(AbilitySlot slot);
 		virtual void SetAbilitySlotInput(AbilitySlot slot, bool inputHeld);
 		bool SetAbilityLevel(AbilityHandle handle, int level);
+		bool SetAbilityLevel(AbilityHandle handle, int level, AbilityLevelCommitSink commitSink, void* commitContext);
 		bool SetAbilityLevel(AbilitySlot slot, int level);
 		bool LevelUpAbility(AbilityHandle handle);
 		bool LevelUpAbility(AbilitySlot slot);

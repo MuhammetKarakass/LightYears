@@ -10,6 +10,9 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/attachment/AttachmentLoadout.h"
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
+#include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
+
+#include <optional>
 
 namespace ly
 {
@@ -176,6 +179,8 @@ namespace ly
 		float ResolveCooldownDuration() const override;
 		float ResolveCooldownDurationOnEnd(sas::AbilityEndReason reason) override;
 		float ResolveActiveDuration() const override;
+		bool PrepareDefinitionForLevel(int level) override;
+		void CommitPreparedDefinitionForLevel() noexcept override;
 		void RebuildDefinitionForLevel() override;
 		void OnLevelConfigurationChanged() override;
 		bool HandleInputPressed() override;
@@ -202,9 +207,17 @@ namespace ly
 			const AttachmentEventRule& rule
 		);
 		void TickInactivePrimaryWeaponRuntime(float deltaTime);
+		GameAbilityDefinition BuildDefinitionForLevel(int level) const;
 		void RefreshPrimaryWeaponRuntimeConfiguration();
 		List<GameplayTag> GetAttachmentCapabilities(AttachmentHostKind hostKind) const;
 		size_t GetAttachmentSlotCapacity(AttachmentHostKind hostKind) const;
+		struct PreparedPrimaryWeaponConfiguration
+		{
+			PrimaryWeaponExecutionSystem::PreparedRuntimeConfiguration runtime;
+			sas::GameplayAttributeList attributes;
+			uint64_t attributeRevision = 0;
+			uint64_t attachmentRevision = 0;
+		};
 
 		LightYearsAbilitySystemComponent& mAbilitySystem;
 		PrimaryWeaponRuntimeState mPrimaryWeaponRuntime;
@@ -216,6 +229,8 @@ namespace ly
 		uint64_t mPrimaryWeaponRuntimeConfigurationRevision = 0;
 		bool mHasPrimaryWeaponRuntimeResolvedContext = false;
 		AttachmentLoadout mAttachments;
+		std::optional<GameAbilityDefinition> mPreparedLevelDefinition;
+		std::optional<PreparedPrimaryWeaponConfiguration> mPreparedPrimaryWeaponConfiguration;
 		unique_ptr<GameAbilityBehavior> mBehavior;
 		bool mBehaviorStarted = false;
 		bool mBehaviorCleanupPending = false;

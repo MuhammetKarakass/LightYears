@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <cmath>
 #include <exception>
+#include <type_traits>
+#include <utility>
 
 namespace ly
 {
@@ -230,6 +232,30 @@ namespace ly
 			const List<std::string>* unlockedUpgradeIds
 		)
 	{
+		PreparedRuntimeConfiguration prepared;
+		const PrimaryWeaponValidationResult validation = PrepareRuntimeConfiguration(
+			definition,
+			state,
+			unlockedUpgradeIds,
+			prepared
+		);
+		if (!validation.isValid)
+		{
+			return validation;
+		}
+		CommitRuntimeConfiguration(state, std::move(prepared));
+		return { true, {} };
+	}
+
+	PrimaryWeaponValidationResult
+		PrimaryWeaponExecutionSystem::PrepareRuntimeConfiguration(
+			const PrimaryWeaponDefinition& definition,
+			const PrimaryWeaponRuntimeState& state,
+			const List<std::string>* unlockedUpgradeIds,
+			PreparedRuntimeConfiguration& prepared
+		)
+	{
+		prepared = PreparedRuntimeConfiguration{};
 		RuntimeConfiguration configuration;
 		const PrimaryWeaponValidationResult validation =
 			ResolveRuntimeConfiguration(
@@ -261,7 +287,14 @@ namespace ly
 					"Primary weapon runtime configuration cannot change while firing."
 				};
 			}
-			return InstallRuntime(configuration, state);
+			const PrimaryWeaponValidationResult install =
+				InstallRuntime(configuration, prepared.replacement);
+			if (!install.isValid)
+			{
+				return install;
+			}
+			prepared.replaceRuntime = true;
+			return { true, {} };
 		}
 
 		if (state.configuredMagazine != configuration.magazine)
@@ -302,11 +335,30 @@ namespace ly
 			};
 		}
 
-		Map<sas::AttributeId, float> retainedValues =
+		prepared.featureValues =
 			RetainFeatureValues(state.featureValues, configuration.features);
-		state.features = std::move(configuration.features);
-		state.featureValues = std::move(retainedValues);
+		prepared.features = std::move(configuration.features);
+		prepared.updateFeatures = true;
 		return { true, {} };
+	}
+
+	void PrimaryWeaponExecutionSystem::CommitRuntimeConfiguration(
+		PrimaryWeaponRuntimeState& state,
+		PreparedRuntimeConfiguration&& prepared
+	) noexcept
+	{
+		static_assert(std::is_nothrow_move_assignable_v<PrimaryWeaponRuntimeState>);
+		static_assert(std::is_nothrow_move_assignable_v<decltype(state.features)>);
+		static_assert(std::is_nothrow_move_assignable_v<decltype(state.featureValues)>);
+		if (prepared.replaceRuntime)
+		{
+			state = std::move(prepared.replacement);
+		}
+		else if (prepared.updateFeatures)
+		{
+			state.features = std::move(prepared.features);
+			state.featureValues = std::move(prepared.featureValues);
+		}
 	}
 
 	void PrimaryWeaponExecutionSystem::BeginFire(

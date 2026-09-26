@@ -1,5 +1,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/GameAbility.h"
+
+#include <type_traits>
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "attributes/AttributeMath.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
@@ -665,6 +667,7 @@ namespace ly
 		return RunInstanceOperation([&]()
 		{
 			EnsurePendingCleanupDrained();
+			if (mAbilitySystem.IsClearPending()) return;
 			RebuildDefinitionForLevel();
 			RefreshPrimaryWeaponRuntimeConfiguration();
 		});
@@ -729,14 +732,97 @@ namespace ly
 		mPrimaryWeaponRuntime.fireIntervalRemaining = std::max(0.f, mPrimaryWeaponRuntime.fireIntervalRemaining - deltaTime);
 	}
 
+	bool GameAbility::PrepareDefinitionForLevel(int level)
+	{
+		mPreparedPrimaryWeaponConfiguration.reset();
+		mPreparedLevelDefinition.emplace(BuildDefinitionForLevel(level));
+		if (mPrimaryWeaponRuntime.isInitialized &&
+			!mPrimaryWeaponRuntimeWeaponId.empty())
+		{
+			for (const AbilityActionSpec& action : mPreparedLevelDefinition->actions)
+			{
+				const FireWeaponAction* fireAction =
+					std::get_if<FireWeaponAction>(&action.action);
+				if (!fireAction || fireAction->weaponDefinition.weaponId !=
+					mPrimaryWeaponRuntimeWeaponId)
+				{
+					continue;
+				}
+
+				PreparedPrimaryWeaponConfiguration prepared;
+				const PrimaryWeaponValidationResult validation =
+					PrimaryWeaponExecutionSystem::PrepareRuntimeConfiguration(
+						fireAction->weaponDefinition,
+						mPrimaryWeaponRuntime,
+						&mPreparedLevelDefinition->unlockedUpgradeIds,
+						prepared.runtime
+					);
+				if (!validation.isValid)
+				{
+					mPreparedLevelDefinition.reset();
+					return false;
+				}
+
+				AbilityExecutionContext context{
+					&mAbilitySystem,
+					&*mPreparedLevelDefinition,
+					nullptr,
+					this
+				};
+				prepared.attributes = AbilityActionAttributeResolver::ResolveAttributes(
+					context,
+					&fireAction->weaponDefinition,
+					fireAction->weaponDefinition.attributes,
+					fireAction->weaponDefinition.damageTags
+				);
+				prepared.attributeRevision = mAbilitySystem.GetAttributes().GetRevision();
+				prepared.attachmentRevision = mAttachments.GetRevision();
+				mPreparedPrimaryWeaponConfiguration.emplace(std::move(prepared));
+				break;
+			}
+		}
+		return true;
+	}
+
+	void GameAbility::CommitPreparedDefinitionForLevel() noexcept
+	{
+		static_assert(std::is_nothrow_move_assignable_v<GameAbilityDefinition>);
+		static_assert(std::is_nothrow_move_assignable_v<sas::GameplayAttributeList>);
+		mDefinition = std::move(*mPreparedLevelDefinition);
+		++mConfigurationRevision;
+		if (mPreparedPrimaryWeaponConfiguration)
+		{
+			PreparedPrimaryWeaponConfiguration& prepared =
+				*mPreparedPrimaryWeaponConfiguration;
+			PrimaryWeaponExecutionSystem::CommitRuntimeConfiguration(
+				mPrimaryWeaponRuntime,
+				std::move(prepared.runtime)
+			);
+			mPrimaryWeaponRuntimeAttributes = std::move(prepared.attributes);
+			mPrimaryWeaponRuntimeAttributeRevision = prepared.attributeRevision;
+			mPrimaryWeaponRuntimeAttachmentRevision = prepared.attachmentRevision;
+			mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
+			mHasPrimaryWeaponRuntimeResolvedContext = true;
+		}
+		mPreparedPrimaryWeaponConfiguration.reset();
+		mPreparedLevelDefinition.reset();
+	}
+
 	void GameAbility::RebuildDefinitionForLevel()
 	{
-		mDefinition = mBaseDefinition;
+		GameAbilityDefinition definition = BuildDefinitionForLevel(mRuntimeState.GetLevel());
+		mDefinition = std::move(definition);
+		++mConfigurationRevision;
+	}
+
+	GameAbilityDefinition GameAbility::BuildDefinitionForLevel(int level) const
+	{
+		GameAbilityDefinition definition = mBaseDefinition;
 
 		const int stepsToApply = std::min(
 			std::max(
 				0,
-				mRuntimeState.GetLevel() - 1 +
+				level - 1 +
 					mAbilitySystem.GetScopedAbilityLevelBonus(mBaseDefinition)
 			),
 			static_cast<int>(mBaseDefinition.levelProgression.size())
@@ -747,17 +833,17 @@ namespace ly
 			const AbilityLevelStep& step = mBaseDefinition.levelProgression[stepIndex];
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
-				mDefinition.attributeModifiers.push_back(modifier);
+				definition.attributeModifiers.push_back(modifier);
 			}
 			for (const sas::AttributeScalingRule& scalingRule : step.scalingRules)
 			{
-				mDefinition.levelScalingRules.push_back(scalingRule);
+				definition.levelScalingRules.push_back(scalingRule);
 			}
 			for (const std::string& upgradeId : step.unlockedUpgradeIds)
 			{
 				const bool alreadyUnlocked = std::any_of(
-					mDefinition.unlockedUpgradeIds.begin(),
-					mDefinition.unlockedUpgradeIds.end(),
+					definition.unlockedUpgradeIds.begin(),
+					definition.unlockedUpgradeIds.end(),
 					[&](const std::string& existingUpgradeId)
 					{
 						return existingUpgradeId == upgradeId;
@@ -765,21 +851,21 @@ namespace ly
 				);
 				if (!alreadyUnlocked)
 				{
-					mDefinition.unlockedUpgradeIds.push_back(upgradeId);
+					definition.unlockedUpgradeIds.push_back(upgradeId);
 				}
 			}
-			mDefinition.actions.insert(
-				mDefinition.actions.end(),
+			definition.actions.insert(
+				definition.actions.end(),
 				step.addedActions.begin(),
 				step.addedActions.end()
 			);
-			mDefinition.triggers.insert(
-				mDefinition.triggers.end(),
+			definition.triggers.insert(
+				definition.triggers.end(),
 				step.addedTriggers.begin(),
 				step.addedTriggers.end()
 			);
 		}
-		++mConfigurationRevision;
+		return definition;
 	}
 
 	void GameAbility::RefreshPrimaryWeaponRuntimeConfiguration()

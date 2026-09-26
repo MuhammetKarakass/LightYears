@@ -2,6 +2,8 @@
 #include "player/PlayerSpaceShip.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/World.h>
+#include <exception>
+#include <utility>
 
 namespace ly
 {
@@ -108,6 +110,21 @@ namespace ly
 
 	bool Player::TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason)
 	{
+		if (mAbilityPurchaseInProgress)
+		{
+			if (failureReason)
+			{
+				*failureReason = "Another ability purchase is already in progress.";
+			}
+			return false;
+		}
+		mAbilityPurchaseInProgress = true;
+		struct PurchaseScope
+		{
+			bool& inProgress;
+			~PurchaseScope() { inProgress = false; }
+		} purchaseScope{ mAbilityPurchaseInProgress };
+
 		const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock();
 		if (!ship || ship->GetIsPendingDestroy())
 		{
@@ -162,7 +179,50 @@ namespace ly
 		}
 
 		const std::string abilityId = definition.abilityId;
-		if (!abilities.LevelUpAbility(slot))
+		const sas::AbilityHandle abilityHandle = ability->GetHandle();
+		PurchasedAbilityLevels stagedPurchasedLevels;
+		const auto stagedLevel = stagedPurchasedLevels.emplace(abilityId, targetLevel);
+		AbilityPurchaseCommitContext commit{
+			*this,
+			cost,
+			stagedPurchasedLevels.extract(stagedLevel.first),
+			false
+		};
+
+		std::exception_ptr operationError;
+		try
+		{
+			(void)abilities.SetAbilityLevel(
+				abilityHandle,
+				targetLevel,
+				&Player::CommitAbilityLevelPurchase,
+				&commit
+			);
+		}
+		catch (...)
+		{
+			operationError = std::current_exception();
+		}
+
+		if (commit.committed)
+		{
+			try
+			{
+				onScrapChange.Broadcast(mScrap);
+			}
+			catch (...)
+			{
+				if (!operationError)
+				{
+					operationError = std::current_exception();
+				}
+			}
+		}
+		if (operationError)
+		{
+			std::rethrow_exception(operationError);
+		}
+		if (!commit.committed)
 		{
 			if (failureReason)
 			{
@@ -170,11 +230,28 @@ namespace ly
 			}
 			return false;
 		}
-
-		mScrap -= cost;
-		mPurchasedAbilityLevels[abilityId] = ability->GetLevel();
-		onScrapChange.Broadcast(mScrap);
 		return true;
+	}
+
+	void Player::CommitAbilityLevelPurchase(
+		void* context,
+		sas::AbilityHandle handle,
+		int level
+	) noexcept
+	{
+		(void)handle;
+		AbilityPurchaseCommitContext& commit =
+			*static_cast<AbilityPurchaseCommitContext*>(context);
+		commit.purchasedLevel.mapped() = level;
+		const auto insertion = commit.player.mPurchasedAbilityLevels.insert(
+			std::move(commit.purchasedLevel)
+		);
+		if (!insertion.inserted)
+		{
+			insertion.position->second = level;
+		}
+		commit.player.mScrap -= commit.cost;
+		commit.committed = true;
 	}
 	
 	void Player::OnScoreAwarded(unsigned int scoreAmount)
