@@ -8,6 +8,8 @@
 #include "gameplay/combat/ContactDamageGuardRegistry.h"
 #include "gameplay/combat/CombatRuntimeModifiers.h"
 
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -70,18 +72,50 @@ namespace ly
 	private:
 		void CompleteClear();
 		bool mClearRequested = false;
-		void QueueEffectEvent(
-			const sas::GameplayEffectBehaviorEvent& event,
-			const DamageContext* context = nullptr
-		);
+		struct QueuedEffectEvent
+		{
+			GameplayTag eventTag;
+			float magnitude = 0.f;
+			std::weak_ptr<Actor> source;
+			std::weak_ptr<Actor> target;
+			bool hasSource = false;
+			std::uint64_t generation = 0;
+		};
+		struct DamageDispatchFrame
+		{
+			DamageContext* context = nullptr;
+			std::uint64_t generation = 0;
+			bool capturesEffectEvents = false;
+			List<QueuedEffectEvent> effectEvents;
+			std::shared_ptr<Actor> sourceLifetime;
+			std::shared_ptr<Actor> targetLifetime;
+			std::shared_ptr<Actor> deliveryActorLifetime;
+			std::shared_ptr<Actor> ownerLifetime;
+		};
+		struct ScopedDamageDispatchFrame
+		{
+			ScopedDamageDispatchFrame(CombatRuntime& runtime, DamageDispatchFrame& frame);
+			~ScopedDamageDispatchFrame();
+			CombatRuntime& runtime;
+			DamageDispatchFrame* previousFrame = nullptr;
+		};
+		static std::shared_ptr<Actor> LockActor(Actor* actor);
+		void QueueEffectEvent(const sas::GameplayEffectBehaviorEvent& event);
 		void DispatchPendingEffectEvents();
+		void DispatchDamageEffectEvents(DamageDispatchFrame& frame);
+		void DispatchEffectEvent(
+			const QueuedEffectEvent& queuedEvent,
+			const DamageContext* context,
+			std::uint64_t batchGeneration
+		);
 
 		Actor& mOwner;
 		LightYearsAbilitySystemComponent mAbilitySystemComponent;
 		GameplayEffectPresentationBinding mEffectPresentation;
 		ContactDamageGuardRegistry mContactDamageGuardRegistry;
-		List<sas::AbilityEvent> mPendingEffectEvents;
-		const DamageContext* mProcessingDamageContext = nullptr;
+		List<QueuedEffectEvent> mPendingEffectEvents;
+		DamageDispatchFrame* mCurrentDamageDispatchFrame = nullptr;
+		std::uint64_t mEffectEventGeneration = 1;
 		struct DamageProtection
 		{
 			bool blocksIncomingDamage = false;

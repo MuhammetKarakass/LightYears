@@ -16,6 +16,30 @@
 
 namespace ly
 {
+	std::shared_ptr<Actor> CombatRuntime::LockActor(Actor* actor)
+	{
+		if (!actor)
+		{
+			return {};
+		}
+		return std::static_pointer_cast<Actor>(actor->GetWeakPtr().lock());
+	}
+
+	CombatRuntime::ScopedDamageDispatchFrame::ScopedDamageDispatchFrame(
+		CombatRuntime& runtime,
+		DamageDispatchFrame& frame
+	)
+		: runtime{ runtime },
+		previousFrame{ runtime.mCurrentDamageDispatchFrame }
+	{
+		runtime.mCurrentDamageDispatchFrame = &frame;
+	}
+
+	CombatRuntime::ScopedDamageDispatchFrame::~ScopedDamageDispatchFrame()
+	{
+		runtime.mCurrentDamageDispatchFrame = previousFrame;
+	}
+
 	CombatRuntime::CombatRuntime(Actor& owner)
 		: mOwner{ owner },
 		mAbilitySystemComponent{ owner },
@@ -51,7 +75,7 @@ namespace ly
 		callbacks.behaviorEvent =
 			[this](const sas::GameplayEffectBehaviorEvent& event)
 			{
-				QueueEffectEvent(event, mProcessingDamageContext);
+				QueueEffectEvent(event);
 			};
 		callbacks.activated =
 			[this](sas::ActiveGameplayEffect& effect)
@@ -189,6 +213,8 @@ namespace ly
 
 	void CombatRuntime::Clear()
 	{
+		++mEffectEventGeneration;
+		mPendingEffectEvents.clear();
 		mClearRequested = true;
 		mAbilitySystemComponent.Clear();
 	}
@@ -209,7 +235,19 @@ namespace ly
 
 	void CombatRuntime::ProcessIncomingDamage(DamageContext& context)
 	{
-		mProcessingDamageContext = &context;
+		DamageDispatchFrame frame;
+		frame.context = &context;
+		frame.generation = mEffectEventGeneration;
+		frame.sourceLifetime = LockActor(context.source);
+		frame.targetLifetime = LockActor(context.target);
+		frame.deliveryActorLifetime = LockActor(context.deliveryActor);
+		frame.ownerLifetime = LockActor(&mOwner);
+		ScopedDamageDispatchFrame frameScope{ *this, frame };
+		const auto isFrameCurrent = [this, &frame]
+		{
+			return mEffectEventGeneration == frame.generation;
+		};
+
 		// Capture target identity and location before any status/death callback can
 		// destroy the owning ship. Kill-driven abilities consume this snapshot
 		// instead of dereferencing a possibly invalid event target pointer.
@@ -219,6 +257,7 @@ namespace ly
 		const sf::Vector2f targetLocation = mOwner.GetActorLocation();
 		context.targetLocationAtResolution.x = targetLocation.x;
 		context.targetLocationAtResolution.y = targetLocation.y;
+		frame.capturesEffectEvents = true;
 		mAbilitySystemComponent.ProcessGameplayEffectEvent(
 			context,
 			std::vector<IncomingDamagePhase>{
@@ -244,8 +283,21 @@ namespace ly
 				return damageContext.remainingDamage > 0.f;
 			}
 		);
-		mProcessingDamageContext = nullptr;
+		frame.capturesEffectEvents = false;
+		if (!isFrameCurrent())
+		{
+			return;
+		}
 		DispatchPendingEffectEvents();
+		if (!isFrameCurrent())
+		{
+			return;
+		}
+		DispatchDamageEffectEvents(frame);
+		if (!isFrameCurrent())
+		{
+			return;
+		}
 
 		// Armor is resolved after shield absorption by the owning combatant.
 		// Keep incoming event and status timing above unchanged.
@@ -262,12 +314,20 @@ namespace ly
 		damageEvent.sourceAbilityTags = context.sourceAbilityTags;
 		damageEvent.SetContext(&context);
 		mAbilitySystemComponent.HandleGameplayEvent(damageEvent);
+		if (!isFrameCurrent())
+		{
+			return;
+		}
 
 		const List<GameplayTag> appliedStatuses =
 			DamageTypeSystem::ApplyStatusEffects(
 				mAbilitySystemComponent,
 				context
 			);
+		if (!isFrameCurrent())
+		{
+			return;
+		}
 		// HealthComponent::HealthEmpty can synchronously destroy the ship and
 		// clear its effects. Capture Cryo state now, after this hit's Cryo status
 		// application, so KillConfirmed can still observe it later in the source
@@ -290,6 +350,10 @@ namespace ly
 				event.magnitude = context.remainingDamage;
 				event.SetContext(&context);
 				sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(event);
+				if (!isFrameCurrent())
+				{
+					return;
+				}
 			}
 		}
 		onDamageProcessed.Broadcast(context);
@@ -314,27 +378,120 @@ namespace ly
 	}
 
 	void CombatRuntime::QueueEffectEvent(
-		const sas::GameplayEffectBehaviorEvent& behaviorEvent,
-		const DamageContext* context
+		const sas::GameplayEffectBehaviorEvent& behaviorEvent
 	)
 	{
-		sas::AbilityEvent event;
-		event.eventTag = behaviorEvent.eventTag;
-		event.SetSource(context ? context->source : &mOwner);
-		event.SetTarget(&mOwner);
-		event.magnitude = behaviorEvent.magnitude;
-		event.SetContext(context);
-		mPendingEffectEvents.push_back(event);
+		DamageDispatchFrame* frame = mCurrentDamageDispatchFrame;
+		if (frame && frame->capturesEffectEvents)
+		{
+			if (frame->generation != mEffectEventGeneration)
+			{
+				return;
+			}
+
+			QueuedEffectEvent queuedEvent;
+			queuedEvent.eventTag = behaviorEvent.eventTag;
+			queuedEvent.magnitude = behaviorEvent.magnitude;
+			queuedEvent.hasSource = frame->context->source != nullptr;
+			queuedEvent.source = LockActor(frame->context->source);
+			queuedEvent.target = LockActor(&mOwner);
+			queuedEvent.generation = frame->generation;
+			frame->effectEvents.push_back(std::move(queuedEvent));
+			return;
+		}
+
+		QueuedEffectEvent queuedEvent;
+		queuedEvent.eventTag = behaviorEvent.eventTag;
+		queuedEvent.magnitude = behaviorEvent.magnitude;
+		queuedEvent.hasSource = true;
+		queuedEvent.source = LockActor(&mOwner);
+		queuedEvent.target = LockActor(&mOwner);
+		queuedEvent.generation = mEffectEventGeneration;
+		mPendingEffectEvents.push_back(std::move(queuedEvent));
 	}
 
 	void CombatRuntime::DispatchPendingEffectEvents()
 	{
-		List<sas::AbilityEvent> events = std::move(mPendingEffectEvents);
+		List<QueuedEffectEvent> events = std::move(mPendingEffectEvents);
 		mPendingEffectEvents.clear();
-		for (const sas::AbilityEvent& event : events)
+		const std::uint64_t batchGeneration = mEffectEventGeneration;
+		for (const QueuedEffectEvent& event : events)
 		{
-			mAbilitySystemComponent.HandleGameplayEvent(event);
+			if (mEffectEventGeneration != batchGeneration || event.generation != batchGeneration)
+			{
+				break;
+			}
+			DispatchEffectEvent(event, nullptr, batchGeneration);
+			if (mEffectEventGeneration != batchGeneration)
+			{
+				break;
+			}
 		}
+	}
+
+	void CombatRuntime::DispatchDamageEffectEvents(DamageDispatchFrame& frame)
+	{
+		List<QueuedEffectEvent> events = std::move(frame.effectEvents);
+		frame.effectEvents.clear();
+		for (const QueuedEffectEvent& event : events)
+		{
+			if (mEffectEventGeneration != frame.generation || event.generation != frame.generation)
+			{
+				break;
+			}
+			DispatchEffectEvent(event, frame.context, frame.generation);
+			if (mEffectEventGeneration != frame.generation)
+			{
+				break;
+			}
+		}
+	}
+
+	void CombatRuntime::DispatchEffectEvent(
+		const QueuedEffectEvent& queuedEvent,
+		const DamageContext* context,
+		std::uint64_t batchGeneration
+	)
+	{
+		if (mEffectEventGeneration != batchGeneration || queuedEvent.generation != batchGeneration)
+		{
+			return;
+		}
+
+		const std::shared_ptr<Actor> source = queuedEvent.hasSource ? queuedEvent.source.lock() : nullptr;
+		const std::shared_ptr<Actor> target = queuedEvent.target.lock();
+		if ((queuedEvent.hasSource && !source) || !target)
+		{
+			return;
+		}
+
+		std::shared_ptr<Actor> contextSource;
+		std::shared_ptr<Actor> contextTarget;
+		std::shared_ptr<Actor> contextDeliveryActor;
+		if (context)
+		{
+			contextSource = LockActor(context->source);
+			contextTarget = LockActor(context->target);
+			contextDeliveryActor = LockActor(context->deliveryActor);
+			if ((context->source && !contextSource) ||
+				(context->target && !contextTarget) ||
+				(context->deliveryActor && !contextDeliveryActor))
+			{
+				return;
+			}
+		}
+
+		if (mEffectEventGeneration != batchGeneration)
+		{
+			return;
+		}
+		sas::AbilityEvent event;
+		event.eventTag = queuedEvent.eventTag;
+		event.SetSource(source.get());
+		event.SetTarget(target.get());
+		event.magnitude = queuedEvent.magnitude;
+		event.SetContext(context);
+		mAbilitySystemComponent.HandleGameplayEvent(event);
 	}
 
 	void CombatRuntime::NotifyDamageResolved(const DamageContext& context)
