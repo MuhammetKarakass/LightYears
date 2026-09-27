@@ -5,6 +5,8 @@
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/damage/DamageContext.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"
 #include "gameplay/projectile/ProjectileSweep.h"
@@ -34,6 +36,47 @@ namespace ly
 		constexpr float OutboundDecelerationDuration = 0.45f;
 		constexpr float ReturnAccelerationDuration = 0.45f;
 		constexpr float Pi = 3.14159265358979323846f;
+
+		struct ResolvedDamageCapture
+		{
+			AegisReaverProjectileActor* projectile = nullptr;
+			Actor* target = nullptr;
+			float shieldDamage = 0.f;
+
+			void OnResolved(const DamageContext& context)
+			{
+				if (context.deliveryActor == projectile && context.target == target)
+				{
+					shieldDamage += std::max(0.f, context.shieldDamage);
+				}
+			}
+		};
+
+		struct ScopedResolvedDamageCapture
+		{
+			CombatRuntime& runtime;
+			ResolvedDamageCapture resolvedDamage;
+			DelegateHandle handle;
+
+			ScopedResolvedDamageCapture(
+				CombatRuntime& damageRuntime,
+				AegisReaverProjectileActor* projectile,
+				Actor* target
+			)
+				: runtime{ damageRuntime },
+				  resolvedDamage{ projectile, target, 0.f },
+				  handle{ runtime.onDamageResolved.BindAction(
+					&resolvedDamage,
+					&ResolvedDamageCapture::OnResolved
+				) }
+			{
+			}
+
+			~ScopedResolvedDamageCapture()
+			{
+				runtime.onDamageResolved.UnbindAction(handle);
+			}
+		};
 
 		const List<sas::AttributeId> AegisReaverProjectileCommonAttributes{
 			CommonAttributeIds::Damage,
@@ -205,26 +248,30 @@ namespace ly
 	void AegisReaverProjectileActor::BeginPlay()
 	{
 		AbilityWorldActor::BeginPlay();
-		if (mFlightState)
+		if (mFlightState && mFlightRegistered)
 		{
+			UpdateVelocityAndRotation(GetActorForwardDirection(), mProjectileSpeed);
 			return;
 		}
+		Destroy();
+	}
 
-		auto* owner = dynamic_cast<SpaceShip*>(GetOwnerActor());
-		if (!owner)
+	bool AegisReaverProjectileActor::PrepareFlight(
+		const shared_ptr<AegisReaverFlightState>& flightState,
+		float sacrificedShield
+	)
+	{
+		if (!flightState || mFlightState || mFlightRegistered)
 		{
-			Destroy();
-			return;
+			return false;
 		}
-
-		const float committedShield = std::max(0.f, owner->GetShieldComponent().GetShield());
-		owner->GetShieldComponent().ChangeShield(-committedShield);
-		mReturnShieldPayload = committedShield;
-		SetDamage(GetDamage() + committedShield * mShieldConversionRatio);
-		mFlightState = std::make_shared<AegisReaverFlightState>(*owner);
+		mFlightState = flightState;
 		mFlightState->RegisterProjectile();
 		mFlightRegistered = true;
+		mReturnShieldPayload = 0.f;
+		SetDamage(GetDamage() + std::max(0.f, sacrificedShield) * mShieldConversionRatio);
 		UpdateVelocityAndRotation(GetActorForwardDirection(), mProjectileSpeed);
+		return true;
 	}
 
 	void AegisReaverProjectileActor::ConfigureFromAttributes(
@@ -287,11 +334,7 @@ namespace ly
 
 	void AegisReaverProjectileActor::Destroy()
 	{
-		ReportFlightTerminal(mPhase == Phase::Returning &&
-			GetReturnOwner() &&
-			GetVectorLength(GetReturnOwner()->GetActorLocation() - GetActorLocation()) <=
-				GetPhysicsCollisionRadius() + GetReturnOwner()->GetPhysicsCollisionRadius() +
-				ReturnArrivalPadding);
+		ReportFlightTerminal(false);
 		AbilityWorldActor::Destroy();
 	}
 
@@ -486,17 +529,8 @@ namespace ly
 			return;
 		}
 
-		// Steal reads the shield before damage so the amount represents the target's
-		// current protection, exactly as the design specifies. A Relay only weakens
-		// steals earned after the conversion; carried shield was already split.
-		const float availableShield = std::max(0.f, target.GetShieldComponent().GetShield());
-		const float stolenShield = std::min(
-			availableShield,
-			availableShield * mShieldStealRatio * mPostPrismShieldStealMultiplier
-		);
-		target.GetShieldComponent().ChangeShield(-stolenShield);
-		mReturnShieldPayload += stolenShield;
-
+		CombatRuntime& runtime = target.GetCombatRuntime();
+		ScopedResolvedDamageCapture capture{ runtime, this, &target };
 		ApplyCombatDamage(
 			target,
 			GetDamage(),
@@ -508,6 +542,8 @@ namespace ly
 			DamageDeliveryType::Projectile,
 			this
 		);
+		mReturnShieldPayload += capture.resolvedDamage.shieldDamage *
+			mShieldStealRatio * mPostPrismShieldStealMultiplier;
 	}
 
 	void AegisReaverProjectileActor::BeginReturning()

@@ -3951,22 +3951,16 @@
     },
     {
       "id": "Ability.Offense.RailBurst.Basic",
-      "cooldown": 6.0,
+      "cooldown": 10.0,
       "duration": 0.0,
       "maxCharges": 1,
       "settings": {},
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.AttackPower",
-          "operation": "Add",
-          "coefficient": 1.5
-        },
-        {
-          "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
-          "coefficient": 0.2
+          "coefficient": 1.0
         }
       ],
       "actors": [
@@ -3977,7 +3971,7 @@
           "attributes": [
             {
               "id": "Common.Damage",
-              "baseValue": 80.0,
+              "baseValue": 100.0,
               "minValue": 0.0
             },
             {
@@ -3994,6 +3988,18 @@
               "id": "Collision.Radius",
               "baseValue": 8.0,
               "minValue": 0.1
+            },
+            {
+              "id": "Common.PierceDamageLoss",
+              "baseValue": 0.1,
+              "minValue": 0.0,
+              "maxValue": 0.99
+            },
+            {
+              "id": "AbilityActor.RailBurst.Projectile.MinimumDamageMultiplier",
+              "baseValue": 0.6,
+              "minValue": 0.0,
+              "maxValue": 1.0
             }
           ]
         }
@@ -4018,26 +4024,321 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 6.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.15
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.125
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.125
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.1
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": "Ability.Offense.AstralSurge.Basic",
-      "cooldown": 16.0,
+      "cooldown": 14.0,
       "duration": 1.0,
       "maxCharges": 1,
       "settings": {},
@@ -4046,7 +4347,7 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
-          "coefficient": 0.45
+          "coefficient": 0.6
         }
       ],
       "actors": [
@@ -4057,7 +4358,7 @@
           "attributes": [
             {
               "id": "Common.Damage",
-              "baseValue": 50.0,
+              "baseValue": 70.0,
               "minValue": 0.0
             },
             {
@@ -4105,21 +4406,316 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 5.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.25
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 8.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -4137,7 +4733,7 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.8
+          "coefficient": 0.85
         },
         {
           "targetAttributeId": "AbilityActor.CrescentReaver.Projectile.BounceCount",
@@ -4154,7 +4750,7 @@
           "attributes": [
             {
               "id": "Common.Damage",
-              "baseValue": 26.0,
+              "baseValue": 70.0,
               "minValue": 0.0
             },
             {
@@ -4169,12 +4765,7 @@
             },
             {
               "id": "AbilityActor.CrescentReaver.Projectile.BounceDamageGrowth",
-              "baseValue": 0.15,
-              "minValue": 0.0
-            },
-            {
-              "id": "AbilityActor.CrescentReaver.Projectile.BounceCooldownReduction",
-              "baseValue": 0.3,
+              "baseValue": 0.25,
               "minValue": 0.0
             },
             {
@@ -4205,21 +4796,316 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 3.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.2
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1875
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.15
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.15
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -4236,7 +5122,7 @@
           "attributes": [
             {
               "id": "Common.Damage",
-              "baseValue": 7.5,
+              "baseValue": 20.0,
               "minValue": 0.0
             },
             {
@@ -4256,7 +5142,7 @@
             },
             {
               "id": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
-              "baseValue": 0.2,
+              "baseValue": 0.3,
               "minValue": 0.0
             },
             {
@@ -4293,32 +5179,465 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 1.5
-            },
-            {
-              "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
-              "operation": "Add",
-              "magnitude": 0.005
-            },
-            {
-              "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
-              "operation": "Add",
-              "magnitude": 0.01
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.25
-            }
-          ]
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 3.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              },
+              {
+                "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
+                "operation": "Add",
+                "magnitude": 0.01
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.015
+              }
+            ]
+          }
+        ]
+      },
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.35
         }
-      }
+      ]
     },
     {
       "id": "Ability.Movement.EnergySpear.Basic",
@@ -4458,30 +5777,10 @@
           "minValue": 0.01
         },
         {
-          "id": "Ability.Offense.ScorchDrive.BurnDuration",
-          "baseValue": 3.0,
-          "minValue": 0.01
-        },
-        {
-          "id": "Ability.Offense.ScorchDrive.BurnTickInterval",
-          "baseValue": 0.5,
-          "minValue": 0.01
-        },
-        {
-          "id": "Ability.Offense.ScorchDrive.BurnDamageRatio",
-          "baseValue": 0.5,
+          "id": "Ability.Offense.ScorchDrive.IgniteStacks",
+          "baseValue": 1.0,
           "minValue": 0.0,
-          "maxValue": 1.0
-        },
-        {
-          "id": "Ability.Offense.ScorchDrive.ReferenceMaxHealth",
-          "baseValue": 100.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.ScorchDrive.MaxHealthLifetimeScale",
-          "baseValue": 0.01,
-          "minValue": 0.0
+          "maxValue": 4.0
         }
       ],
       "scalingRules": [
@@ -4531,21 +5830,316 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 2.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.25
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.02
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -4615,15 +6209,9 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.AttackPower",
-          "operation": "Add",
-          "coefficient": 0.12
-        },
-        {
-          "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
-          "coefficient": 0.05
+          "coefficient": 0.15
         }
       ],
       "attributeProfiles": [
@@ -4642,7 +6230,7 @@
             },
             {
               "id": "Common.Damage",
-              "baseValue": 6.0,
+              "baseValue": 12.0,
               "minValue": 0.0
             },
             {
@@ -4669,6 +6257,12 @@
               "id": "AbilityActor.IonStorm.Field.BoundaryPointCount",
               "baseValue": 20.0,
               "minValue": 3.0
+            },
+            {
+              "id": "Damage.Electric.Stacks",
+              "baseValue": 1.0,
+              "minValue": 0.0,
+              "maxValue": 4.0
             }
           ]
         }
@@ -4724,26 +6318,321 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 1.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.2
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.125
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 1.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.125
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": "Ability.Offense.SolarBombardment.Basic",
-      "cooldown": 14.0,
+      "cooldown": 15.0,
       "duration": 0.0,
       "maxCharges": 1,
       "settings": {},
@@ -4752,18 +6641,18 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.8
+          "coefficient": 0.75
         }
       ],
       "actors": [
         {
           "id": "Actor.Ability.SolarBombardment.Projectile.Basic",
-          "lifeTime": 3.0,
+          "lifeTime": 4.0,
           "spawnDistance": 0.0,
           "attributes": [
             {
               "id": "Common.Damage",
-              "baseValue": 45.0,
+              "baseValue": 70.0,
               "minValue": 0.0
             },
             {
@@ -4778,12 +6667,12 @@
             },
             {
               "id": "AbilityActor.SolarBombardment.Projectile.InnerRadius",
-              "baseValue": 150.0,
+              "baseValue": 130.0,
               "minValue": 0.01
             },
             {
               "id": "AbilityActor.SolarBombardment.Projectile.InnerDamageMultiplier",
-              "baseValue": 2.0,
+              "baseValue": 1.5,
               "minValue": 1.0
             },
             {
@@ -4798,17 +6687,22 @@
             },
             {
               "id": "AbilityActor.SolarBombardment.Projectile.MinTravelTime",
-              "baseValue": 0.8,
+              "baseValue": 1.0,
               "minValue": 0.01
             },
             {
               "id": "AbilityActor.SolarBombardment.Projectile.MaxTravelTime",
-              "baseValue": 1.6,
+              "baseValue": 3.4,
               "minValue": 0.01
             },
             {
               "id": "Collision.Radius",
               "baseValue": 1.0,
+              "minValue": 0.0
+            },
+            {
+              "id": "AbilityActor.SolarBombardment.Projectile.OuterDamageMultiplier",
+              "baseValue": 0.75,
               "minValue": 0.0
             }
           ]
@@ -4834,33 +6728,328 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 6.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.25
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.55
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.55
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.55
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.55
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 18.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.AttackPower",
+                "operation": "Add",
+                "coefficient": 0.08
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": "Ability.Offense.ChainLightning.Basic",
-      "cooldown": 7.0,
+      "cooldown": 11.0,
       "duration": 0.0,
       "maxCharges": 1,
       "settings": {},
       "attributes": [
         {
           "id": "Common.Damage",
-          "baseValue": 28.0,
+          "baseValue": 40.0,
           "minValue": 0.0
         },
         {
@@ -4883,11 +7072,11 @@
           "baseValue": 0.22,
           "minValue": 0.01
         },
-            {
-              "id": "Ability.Offense.ChainLightning.ElectricStacks",
-              "baseValue": 1.0,
-              "minValue": 1.0
-            }
+        {
+          "id": "Ability.Offense.ChainLightning.ElectricStacks",
+          "baseValue": 1.0,
+          "minValue": 1.0
+        }
       ],
       "damageTags": [
         "Damage.Type.Electric"
@@ -4909,33 +7098,336 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 4.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.2
-            }
-          ]
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.15
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.15
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.05
+              }
+            ]
+          }
+        ]
+      },
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.5
         }
-      }
+      ]
     },
     {
       "id": "Ability.Offense.StormMark.Basic",
-      "cooldown": 9.0,
+      "cooldown": 11.0,
       "duration": 0.0,
       "maxCharges": 1,
       "settings": {},
       "attributes": [
         {
           "id": "Common.Damage",
-          "baseValue": 25.0,
+          "baseValue": 50.0,
           "minValue": 0.0
         },
         {
@@ -4960,7 +7452,7 @@
         },
         {
           "id": "Ability.Offense.StormMark.LuckPerExtraTarget",
-          "baseValue": 50.0,
+          "baseValue": 20.0,
           "minValue": 0.01
         },
         {
@@ -4974,7 +7466,7 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
-          "coefficient": 0.25
+          "coefficient": 0.3
         }
       ],
       "damageTags": [
@@ -4997,21 +7489,316 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 4.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.2
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.45
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.35
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.25
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.15
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 15.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.15
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.03
+              }
+            ]
+          }
+        ]
       }
     },
     {

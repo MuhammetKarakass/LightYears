@@ -1,6 +1,7 @@
 #include "gameplay/ability/ionStorm/IonStormFieldActor.h"
 
 #include "attributes/AttributeSystem.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "framework/World.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/ionStorm/IonStormContracts.h"
@@ -27,7 +28,8 @@ namespace ly
 		};
 
 		const List<sas::AttributeId> FieldAttributeRoots{
-			AbilityData::IonStorm::Actor::Field::Root
+			AbilityData::IonStorm::Actor::Field::Root,
+			DamageAttributeIds::Root
 		};
 
 		bool IsFiniteVector(const sf::Vector2f& value)
@@ -99,7 +101,8 @@ namespace ly
 					AbilityData::IonStorm::Attribute::InnerCoreRadius,
 					AbilityData::IonStorm::Attribute::OuterMinRadius,
 					AbilityData::IonStorm::Attribute::OuterMaxRadius,
-					AbilityData::IonStorm::Attribute::BoundaryPointCount
+					AbilityData::IonStorm::Attribute::BoundaryPointCount,
+					DamageAttributeIds::ElectricStacks
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -113,6 +116,16 @@ namespace ly
 							"Ion Storm field requires positive damage, lifetime, and boundary attributes."
 						};
 					}
+				}
+				const sas::GameplayAttribute* electricStacks = sas::FindAttribute(
+					definition.attributes,
+					DamageAttributeIds::ElectricStacks
+				);
+				if (!electricStacks || !std::isfinite(electricStacks->baseValue) ||
+					electricStacks->baseValue < 1.f || electricStacks->baseValue > 4.f ||
+					std::round(electricStacks->baseValue) != electricStacks->baseValue)
+				{
+					return { false, "Ion Storm field requires one through four integer Electric stacks." };
 				}
 				if (!definition.presentationProfileId.IsValid() ||
 					PresentationProfileRegistry<

@@ -5,6 +5,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/projectile/ProjectileSweep.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "gameplay/targeting/SweptGeometry.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -30,6 +31,7 @@ namespace ly
 		const List<sas::AttributeId> RailBurstProjectileCommonAttributes{
 			CommonAttributeIds::Damage,
 			CommonAttributeIds::Range,
+			CommonAttributeIds::PierceDamageLoss,
 			CollisionAttributeIds::Radius
 		};
 
@@ -91,8 +93,10 @@ namespace ly
 				for (const sas::AttributeId& required : {
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Range,
+					CommonAttributeIds::PierceDamageLoss,
 					CollisionAttributeIds::Radius,
-					AbilityData::RailBurst::Actor::Projectile::ProjectileSpeed
+					AbilityData::RailBurst::Actor::Projectile::ProjectileSpeed,
+					AbilityData::RailBurst::Actor::Projectile::MinimumDamageMultiplier
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -117,11 +121,22 @@ namespace ly
 				definition.attributes,
 				CommonAttributeIds::Range
 			);
-			if (speed <= 0.f || range <= 0.f)
+			const float pierceLoss = sas::FindAttributeValue(
+				definition.attributes,
+				CommonAttributeIds::PierceDamageLoss
+			);
+			const float minimumDamageMultiplier = sas::FindAttributeValue(
+				definition.attributes,
+				AbilityData::RailBurst::Actor::Projectile::MinimumDamageMultiplier
+			);
+			if (speed <= 0.f || range <= 0.f || !std::isfinite(pierceLoss) ||
+				pierceLoss < 0.f || pierceLoss >= 1.f ||
+				!std::isfinite(minimumDamageMultiplier) ||
+				minimumDamageMultiplier <= 0.f || minimumDamageMultiplier > 1.f)
 			{
 				return {
 					false,
-					"Rail Burst projectile requires positive speed and range."
+					"Rail Burst projectile requires positive speed/range, PierceDamageLoss in [0, 1), and a minimum multiplier in (0, 1]."
 				};
 			}
 			if (definition.lifeTime <= range / speed)
@@ -197,6 +212,24 @@ namespace ly
 				CommonAttributeIds::Range,
 				mMaximumRange
 			)
+		);
+		mPierceDamageLoss = std::clamp(
+			sas::FindAttributeValue(
+				attributes,
+				CommonAttributeIds::PierceDamageLoss,
+				mPierceDamageLoss
+			),
+			0.f,
+			0.999f
+		);
+		mMinimumDamageMultiplier = std::clamp(
+			sas::FindAttributeValue(
+				attributes,
+				AbilityData::RailBurst::Actor::Projectile::MinimumDamageMultiplier,
+				mMinimumDamageMultiplier
+			),
+			0.f,
+			1.f
 		);
 	}
 
@@ -278,12 +311,9 @@ namespace ly
 		}
 
 		const float collisionRadius = std::max(0.f, GetPhysicsCollisionRadius());
+		List<projectile::SweptContact> contacts;
 		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
-			targeting::swept::SegmentBounds(
-				startLocation,
-				endLocation,
-				collisionRadius
-			)
+			targeting::swept::SegmentBounds(startLocation, endLocation, collisionRadius)
 		))
 		{
 			const shared_ptr<Actor> candidate = actorWeak.lock();
@@ -292,35 +322,65 @@ namespace ly
 				continue;
 			}
 
-			if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(candidate.get());
-				captureVolume &&
-				targeting::swept::SegmentIntersectsExpandedBounds(
-					startLocation,
-					endLocation,
-					candidate->GetActorGlobalBounds(),
-					collisionRadius
-				) && captureVolume->TryCaptureProjectile(*this))
+			const bool isCaptureVolume =
+				dynamic_cast<ProjectileCaptureVolume*>(candidate.get()) != nullptr;
+			if (!isCaptureVolume && !IsValidAbilityTarget(candidate.get()))
+			{
+				continue;
+			}
+			if (!targeting::swept::SegmentIntersectsExpandedBounds(
+				startLocation,
+				endLocation,
+				candidate->GetActorGlobalBounds(),
+				collisionRadius
+			))
+			{
+				continue;
+			}
+			const float fraction = targeting::swept::SegmentProjectionFraction(
+				candidate->GetActorLocation(), startLocation, endLocation
+			);
+			contacts.push_back(projectile::SweptContact{
+				candidate.get(),
+				fraction,
+				startLocation + (endLocation - startLocation) * fraction,
+				{},
+				false
+			});
+		}
+		std::sort(
+			contacts.begin(),
+			contacts.end(),
+			[](const auto& left, const auto& right)
+			{
+				return left.fraction < right.fraction;
+			}
+		);
+		for (const projectile::SweptContact& contact : contacts)
+		{
+			Actor* candidate = contact.actor;
+			if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(candidate);
+				captureVolume && captureVolume->TryCaptureProjectile(*this))
 			{
 				return;
 			}
 
-			if (!IsValidAbilityTarget(candidate.get()) ||
-				!targeting::swept::SegmentIntersectsExpandedBounds(
-					startLocation,
-					endLocation,
-					candidate->GetActorGlobalBounds(),
-					collisionRadius
-				))
+			if (!IsValidAbilityTarget(candidate))
 			{
 				continue;
 			}
-			TryHitTarget(candidate.get());
+			TryHitTarget(candidate);
 		}
 	}
 
 	void RailBurstProjectileActor::ApplyPiercingHit(Actor& target)
 	{
-		const float damage = GetDamage();
+		const std::size_t hitIndex = mHitTargets.empty() ? 0 : mHitTargets.size() - 1;
+		const float multiplier = std::max(
+			mMinimumDamageMultiplier,
+			1.f - static_cast<float>(hitIndex) * mPierceDamageLoss
+		);
+		const float damage = GetDamage() * multiplier;
 		ApplyCombatDamage(
 			target,
 			damage,

@@ -7,6 +7,8 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 
+#include <algorithm>
+
 namespace AbilityData::Definitions
 {
 	inline const ly::GameAbilityDefinition ChainLightning_Basic = []
@@ -19,7 +21,7 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = 7.f;
+		definition.cooldown = 11.f;
 		definition.duration = 0.f;
 		definition.maxCharges = 1;
 		definition.abilityTags = {
@@ -29,10 +31,18 @@ namespace AbilityData::Definitions
 		definition.displayName = "Chain Lightning";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 		definition.accentColor = sf::Color{ 90, 230, 255, 255 };
+		definition.scalingRules = {
+			sas::AttributeScalingRule{
+				ly::CommonAttributeIds::Damage,
+				ly::OwnerAttributeIds::EnergyPower,
+				sas::AttributeModifierOperation::Add,
+				0.50f
+			}
+		};
 		definition.attributes = {
 			sas::GameplayAttribute{
 				ly::CommonAttributeIds::Damage,
-				28.f,
+				40.f,
 				0.f
 			},
 			sas::GameplayAttribute{
@@ -67,26 +77,37 @@ namespace AbilityData::Definitions
 		};
 		// The chain traversal owns targeting and delayed impact. There must be no
 		// generic action here that could apply damage immediately on activation.
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.levelProgression.reserve(14);
+		float resolvedCooldown = definition.cooldown;
+		float cooldownReduction = 0.175f + 0.025f * definition.cooldown;
+		const float minimumCooldown = definition.cooldown * 0.20f;
+		for (int level = 0; level < 14; ++level)
+		{
+			const float cooldownDelta = -std::min(
+				cooldownReduction,
+				resolvedCooldown - minimumCooldown
+			);
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						4.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
-					}
+					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 5.f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, cooldownDelta }
 				},
 				{},
 				{},
-				{}
+				{},
+				{
+					{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::EnergyPower,
+						sas::AttributeModifierOperation::Add, 0.05f }
+				}
+			});
+			resolvedCooldown += cooldownDelta;
+			if ((level + 1) % 4 == 0)
+			{
+				cooldownReduction = cooldownReduction >= 0.20f
+					? cooldownReduction - 0.10f
+					: cooldownReduction * 0.80f;
 			}
-		);
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

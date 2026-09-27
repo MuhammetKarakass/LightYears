@@ -12,7 +12,8 @@ namespace AbilityData::IonStorm
 	inline const sas::GameplayAttributeList FieldAttributes{
 		sas::GameplayAttribute{ ly::CommonAttributeIds::Duration, 4.f, 0.01f },
 		sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 335.f, 0.01f },
-		sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 6.f, 0.f },
+		sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 12.f, 0.f },
+		sas::GameplayAttribute{ ly::DamageAttributeIds::ElectricStacks, 1.f, 1.f, 4.f },
 		sas::GameplayAttribute{ Attribute::TickInterval, 0.25f, 0.01f },
 		sas::GameplayAttribute{ Attribute::InnerCoreRadius, 250.f, 0.01f },
 		sas::GameplayAttribute{ Attribute::OuterMinRadius, 250.f, 0.01f },
@@ -92,31 +93,44 @@ namespace AbilityData::Definitions
 		definition.scalingRules = {
 			sas::AttributeScalingRule{
 				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::AttackPower,
+				ly::OwnerAttributeIds::EnergyPower,
 				sas::AttributeModifierOperation::Add,
-				0.12f
+				0.15f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						1.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
-					}
+		float cooldownStep = 0.425f;
+		definition.levelProgression.reserve(14);
+		for (int stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			ly::AbilityLevelStep step;
+			step.attributeModifiers = {
+				sas::AttributeModifier{
+					ly::CommonAttributeIds::Damage,
+					sas::AttributeModifierOperation::Add,
+					1.f
 				},
-				{},
-				{},
-				{}
+				sas::AttributeModifier{
+					ly::CommonAttributeIds::Cooldown,
+					sas::AttributeModifierOperation::Add,
+					-cooldownStep
+				}
+			};
+			step.scalingRules = {
+				sas::AttributeScalingRule{
+					ly::CommonAttributeIds::Damage,
+					ly::OwnerAttributeIds::EnergyPower,
+					sas::AttributeModifierOperation::Add,
+					0.01f
+				}
+			};
+			definition.levelProgression.push_back(std::move(step));
+			if ((stepIndex + 1) % 4 == 0)
+			{
+				cooldownStep = cooldownStep >= 0.20f
+					? cooldownStep - 0.10f
+					: cooldownStep * 0.80f;
 			}
-		);
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

@@ -22,7 +22,6 @@ namespace ly
 	namespace
 	{
 		constexpr float DirectionEpsilonSquared = 0.000001f;
-		constexpr float FirstTravelDistance = 400.f;
 		constexpr float DegreesPerRadian = 57.2957795131f;
 
 		const List<sas::AttributeId> ProjectileCommonAttributes{
@@ -113,6 +112,7 @@ namespace ly
 					CollisionAttributeIds::Radius,
 					AbilityData::SolarBombardment::Attribute::InnerRadius,
 					AbilityData::SolarBombardment::Attribute::InnerDamageMultiplier,
+					AbilityData::SolarBombardment::Attribute::OuterDamageMultiplier,
 					AbilityData::SolarBombardment::Attribute::InnerIgniteStacks,
 					AbilityData::SolarBombardment::Attribute::OuterIgniteStacks,
 					AbilityData::SolarBombardment::Attribute::MinTravelTime,
@@ -146,12 +146,17 @@ namespace ly
 					AbilityData::SolarBombardment::Attribute::MinTravelTime,
 					0.f
 				);
+				const float outerMultiplier = sas::FindAttributeValue(
+					definition.attributes,
+					AbilityData::SolarBombardment::Attribute::OuterDamageMultiplier,
+					0.f
+				);
 				const float maxTravel = sas::FindAttributeValue(
 					definition.attributes,
 					AbilityData::SolarBombardment::Attribute::MaxTravelTime,
 					0.f
 				);
-				if (outerRadius <= innerRadius || innerRadius <= 0.f ||
+				if (outerRadius <= innerRadius || innerRadius <= 0.f || outerMultiplier <= 0.f ||
 					minTravel <= 0.f || maxTravel < minTravel ||
 					definition.lifeTime <= maxTravel ||
 					!definition.presentationProfileId.IsValid() ||
@@ -234,6 +239,11 @@ namespace ly
 			AbilityData::SolarBombardment::Attribute::InnerDamageMultiplier,
 			mInnerDamageMultiplier
 		));
+		mOuterDamageMultiplier = std::max(0.f, sas::FindAttributeValue(
+			attributes,
+			AbilityData::SolarBombardment::Attribute::OuterDamageMultiplier,
+			mOuterDamageMultiplier
+		));
 		mInnerIgniteStacks = std::max(0, static_cast<int>(std::lround(
 			sas::FindAttributeValue(
 				attributes,
@@ -265,14 +275,11 @@ namespace ly
 		ResolveTargetLocation();
 		mStartLocation = GetActorLocation();
 		mTargetDistance = GetVectorLength(mResolvedTargetLocation - mStartLocation);
-		const float normalizedDistance = std::clamp(
-			(mTargetDistance - FirstTravelDistance) /
-				std::max(1.f, mCastRange - FirstTravelDistance),
-			0.f,
-			1.f
+		mTravelDuration = std::clamp(
+			1.f + 0.0012f * mTargetDistance,
+			mMinTravelTime,
+			mMaxTravelTime
 		);
-		mTravelDuration = mMinTravelTime +
-			(mMaxTravelTime - mMinTravelTime) * normalizedDistance;
 		mTravelDuration = std::max(0.01f, mTravelDuration);
 		mTravelAge = 0.f;
 		mExplosionAge = 0.f;
@@ -446,12 +453,23 @@ namespace ly
 
 		const float outerRadiusSquared = mOuterRadius * mOuterRadius;
 		const float innerRadiusSquared = mInnerRadius * mInnerRadius;
-		for (const shared_ptr<Actor>& target : targeting::FindOpposingCombatants(
+		List<shared_ptr<Actor>> targets = targeting::FindOpposingCombatants(
 			*world,
 			*owner,
 			mResolvedTargetLocation,
 			mOuterRadius
-		))
+		);
+		const shared_ptr<Actor> ownerReference = mOwnerReference.lock();
+		if (ownerReference && dynamic_cast<Combatant*>(ownerReference.get()) &&
+			std::find(targets.begin(), targets.end(), ownerReference) == targets.end())
+		{
+			const sf::Vector2f delta = ownerReference->GetActorLocation() - mResolvedTargetLocation;
+			if (delta.x * delta.x + delta.y * delta.y <= outerRadiusSquared)
+			{
+				targets.push_back(ownerReference);
+			}
+		}
+		for (const shared_ptr<Actor>& target : targets)
 		{
 			if (!target || target->GetIsPendingDestroy())
 			{
@@ -472,7 +490,7 @@ namespace ly
 				: mOuterIgniteStacks;
 			const float damageMultiplier = inInnerZone
 				? mInnerDamageMultiplier
-				: 1.f;
+				: mOuterDamageMultiplier;
 			ApplyCombatDamage(
 				*target,
 				GetDamage() * damageMultiplier,

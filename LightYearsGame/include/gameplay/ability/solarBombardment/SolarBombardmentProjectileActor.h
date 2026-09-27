@@ -61,6 +61,7 @@ namespace ly
 		float mInnerRadius = 0.f;
 		float mOuterRadius = 0.f;
 		float mInnerDamageMultiplier = 1.f;
+		float mOuterDamageMultiplier = 1.f;
 		int mInnerIgniteStacks = 0;
 		int mOuterIgniteStacks = 0;
 		float mMinTravelTime = 0.f;

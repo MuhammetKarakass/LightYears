@@ -26,6 +26,9 @@ namespace AbilityData::RailBurst
 			inline static const sas::AttributeId ProjectileSpeed{
 				"AbilityActor.RailBurst.Projectile.ProjectileSpeed"
 			};
+			inline static const sas::AttributeId MinimumDamageMultiplier{
+				"AbilityActor.RailBurst.Projectile.MinimumDamageMultiplier"
+			};
 		};
 	};
 }

@@ -7,6 +7,8 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 
+#include <algorithm>
+
 namespace AbilityData::Definitions
 {
 	inline const ly::GameAbilityDefinition StormMark_Basic = []
@@ -18,7 +20,7 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = 9.f;
+		definition.cooldown = 11.f;
 		definition.duration = 0.f;
 		definition.maxCharges = 1;
 		definition.abilityTags = {
@@ -31,7 +33,7 @@ namespace AbilityData::Definitions
 		definition.attributes = {
 			sas::GameplayAttribute{
 				ly::CommonAttributeIds::Damage,
-				25.f,
+				50.f,
 				0.f
 			},
 			sas::GameplayAttribute{
@@ -56,7 +58,7 @@ namespace AbilityData::Definitions
 			},
 			sas::GameplayAttribute{
 				AbilityData::StormMark::Attribute::LuckPerExtraTarget,
-				50.f,
+				20.f,
 				0.01f
 			},
 			sas::GameplayAttribute{
@@ -75,31 +77,42 @@ namespace AbilityData::Definitions
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::EnergyPower,
 				sas::AttributeModifierOperation::Add,
-				0.25f
+				0.30f
 			}
 		};
 		// Behavior owns focus, target snapshot and delayed strikes. No generic
 		// action is declared because it would execute before the focus completes.
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.levelProgression.reserve(14);
+		float resolvedCooldown = definition.cooldown;
+		float cooldownReduction = 0.175f + 0.025f * definition.cooldown;
+		const float minimumCooldown = definition.cooldown * 0.20f;
+		for (int level = 0; level < 14; ++level)
+		{
+			const float cooldownDelta = -std::min(
+				cooldownReduction,
+				resolvedCooldown - minimumCooldown
+			);
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						4.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
-					}
+					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 15.f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, cooldownDelta }
 				},
 				{},
 				{},
-				{}
+				{},
+				{
+					{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::EnergyPower,
+						sas::AttributeModifierOperation::Add, 0.03f }
+				}
+			});
+			resolvedCooldown += cooldownDelta;
+			if ((level + 1) % 4 == 0)
+			{
+				cooldownReduction = cooldownReduction >= 0.20f
+					? cooldownReduction - 0.10f
+					: cooldownReduction * 0.80f;
 			}
-		);
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

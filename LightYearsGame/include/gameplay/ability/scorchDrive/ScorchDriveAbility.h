@@ -38,11 +38,7 @@ namespace ly
 		float mBaseSegmentLifetime = 5.f;
 		float mFireDamage = 0.f;
 		float mFireTickInterval = 0.25f;
-		float mBurnDuration = 3.f;
-		float mBurnTickInterval = 0.5f;
-		float mBurnDamageRatio = 0.5f;
-		float mReferenceMaxHealth = 100.f;
-		float mMaxHealthLifetimeScale = 0.01f;
+		int mIgniteStacksPerHit = 1;
 		bool mActive = false;
 		bool mOwnerWasInPortalTransit = false;
 	};

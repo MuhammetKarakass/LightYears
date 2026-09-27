@@ -17,11 +17,6 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t RequiredProgressionStepCount = 14;
-		constexpr float BaseCooldown = 14.f;
-		constexpr float AttackPowerScale = 0.80f;
-		constexpr float DamagePerLevel = 6.f;
-		constexpr float CooldownPerLevel = -0.25f;
 		constexpr float Epsilon = 0.0001f;
 
 		bool NearlyEqual(float left, float right)
@@ -51,10 +46,10 @@ namespace ly
 			return hasCategory && hasFamily;
 		}
 
-		bool HasExpectedModifier(
+		bool HasAdditiveModifier(
 			const AbilityLevelStep& step,
 			const sas::AttributeId& attributeId,
-			float magnitude
+			bool positive
 		)
 		{
 			return std::any_of(
@@ -64,9 +59,23 @@ namespace ly
 				{
 					return modifier.attributeId == attributeId &&
 						modifier.operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(modifier.magnitude, magnitude);
+						std::isfinite(modifier.magnitude) &&
+						(positive ? modifier.magnitude > 0.f : modifier.magnitude < 0.f);
 				}
 			);
+		}
+
+		bool HasValidAttackPowerScaling(
+			const List<sas::AttributeScalingRule>& rules,
+			bool requirePositive
+		)
+		{
+			return rules.size() == 1 &&
+				rules.front().targetAttributeId == CommonAttributeIds::Damage &&
+				rules.front().sourceAttributeId == OwnerAttributeIds::AttackPower &&
+				rules.front().operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(rules.front().coefficient) &&
+				(requirePositive ? rules.front().coefficient > 0.f : rules.front().coefficient >= 0.f);
 		}
 	}
 
@@ -89,7 +98,7 @@ namespace ly
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Instant &&
 			definition.maxCharges == 1 &&
 			NearlyEqual(definition.duration, 0.f) &&
-			NearlyEqual(definition.cooldown, BaseCooldown);
+			std::isfinite(definition.cooldown) && definition.cooldown > 0.f;
 		const bool validDamage = definition.damageTags.size() == 1 &&
 			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Thermal);
 
@@ -102,6 +111,7 @@ namespace ly
 				CommonAttributeIds::Range,
 				AbilityData::SolarBombardment::Attribute::InnerRadius,
 				AbilityData::SolarBombardment::Attribute::InnerDamageMultiplier,
+				AbilityData::SolarBombardment::Attribute::OuterDamageMultiplier,
 				AbilityData::SolarBombardment::Attribute::InnerIgniteStacks,
 				AbilityData::SolarBombardment::Attribute::OuterIgniteStacks,
 				AbilityData::SolarBombardment::Attribute::MinTravelTime,
@@ -135,6 +145,11 @@ namespace ly
 				AbilityData::SolarBombardment::Attribute::InnerDamageMultiplier,
 				0.f
 			);
+			const float outerMultiplier = sas::FindAttributeValue(
+				projectile->attributes,
+				AbilityData::SolarBombardment::Attribute::OuterDamageMultiplier,
+				0.f
+			);
 			const float minTravel = sas::FindAttributeValue(
 				projectile->attributes,
 				AbilityData::SolarBombardment::Attribute::MinTravelTime,
@@ -146,7 +161,7 @@ namespace ly
 				0.f
 			);
 			validActor = outerRadius > innerRadius && innerRadius > 0.f &&
-				innerMultiplier >= 1.f && minTravel > 0.f &&
+				innerMultiplier > 0.f && outerMultiplier > 0.f && minTravel > 0.f &&
 				maxTravel >= minTravel && projectile->lifeTime > maxTravel &&
 				sas::FindAttributeValue(
 					projectile->attributes,
@@ -155,22 +170,32 @@ namespace ly
 				) > 0.f;
 		}
 
-		bool validProgression = definition.levelProgression.size() ==
-			RequiredProgressionStepCount;
+		bool validProgression = !definition.levelProgression.empty() &&
+			definition.levelUpgradeScrapCosts.size() == definition.levelProgression.size();
 		if (validProgression)
 		{
 			float resolvedCooldown = definition.cooldown;
 			for (const AbilityLevelStep& step : definition.levelProgression)
 			{
-				if (step.attributeModifiers.size() != 2 ||
-					!HasExpectedModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-					!HasExpectedModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
+				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
+					!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
+					!step.addedTriggers.empty() ||
+					!HasAdditiveModifier(step, CommonAttributeIds::Damage, true) ||
+					!HasAdditiveModifier(step, CommonAttributeIds::Cooldown, false) ||
+					!HasValidAttackPowerScaling(step.scalingRules, false))
 				{
 					validProgression = false;
 					break;
 				}
-				resolvedCooldown += CooldownPerLevel;
-				if (resolvedCooldown <= 0.f)
+				const auto cooldownModifier = std::find_if(
+					step.attributeModifiers.begin(), step.attributeModifiers.end(),
+					[](const sas::AttributeModifier& modifier)
+					{
+						return modifier.attributeId == CommonAttributeIds::Cooldown;
+					}
+				);
+				resolvedCooldown += cooldownModifier->magnitude;
+				if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
 				{
 					validProgression = false;
 					break;
@@ -178,15 +203,7 @@ namespace ly
 			}
 		}
 
-		bool validScaling = definition.scalingRules.size() == 1;
-		if (validScaling)
-		{
-			const sas::AttributeScalingRule& rule = definition.scalingRules.front();
-			validScaling = rule.targetAttributeId == CommonAttributeIds::Damage &&
-				rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
-				rule.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(rule.coefficient, AttackPowerScale);
-		}
+		const bool validScaling = HasValidAttackPowerScaling(definition.scalingRules, true);
 
 		if (!validIdentity || !validLifecycle || !validDamage || !validActor ||
 			!validProgression || !validScaling || !definition.actions.empty())
@@ -194,7 +211,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Solar Bombardment requires a cursor projectile, two valid explosion zones, Thermal damage, and AttackPower scaling.";
+				"Solar Bombardment requires a cursor projectile, two valid explosion zones, Thermal damage, AttackPower scaling, and aligned progression costs.";
 			}
 			return false;
 		}

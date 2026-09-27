@@ -24,7 +24,6 @@ namespace ly
 
 	AegisReaverFlightState::AegisReaverFlightState(SpaceShip& owner)
 		: mOwner{ MakeWeakShip(owner) },
-		  mUnmanagedOwner{ mOwner.expired() ? &owner : nullptr },
 		  mRegenLockSourceId{ "AegisReaver.Flight." +
 			std::to_string(NextFlightId.fetch_add(1)) }
 	{
@@ -79,7 +78,7 @@ namespace ly
 	SpaceShip* AegisReaverFlightState::ResolveOwner() const
 	{
 		const shared_ptr<SpaceShip> owner = mOwner.lock();
-		return owner ? owner.get() : mUnmanagedOwner;
+		return owner.get();
 	}
 
 	void AegisReaverFlightState::CompleteIfFinished()

@@ -57,7 +57,7 @@ namespace ly
 		AstralSurgePresentationProfile mPresentationProfile;
 		float mProjectileSpeed = 0.f;
 		float mProjectileWidth = 0.f;
-		float mPierceDamageLoss = 0.f;
+		float mPierceDamageLoss = 0.05f;
 		float mMinimumDamageMultiplier = 0.40f;
 		sf::Vector2f mLaunchVelocity{};
 		Set<Actor*> mHitTargets;

@@ -35,6 +35,9 @@ namespace AbilityData::SolarBombardment
 		inline static const sas::AttributeId InnerDamageMultiplier{
 			"AbilityActor.SolarBombardment.Projectile.InnerDamageMultiplier"
 		};
+		inline static const sas::AttributeId OuterDamageMultiplier{
+			"AbilityActor.SolarBombardment.Projectile.OuterDamageMultiplier"
+		};
 		inline static const sas::AttributeId InnerIgniteStacks{
 			"AbilityActor.SolarBombardment.Projectile.InnerIgniteStacks"
 		};

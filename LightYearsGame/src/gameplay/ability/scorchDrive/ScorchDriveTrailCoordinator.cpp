@@ -36,9 +36,7 @@ namespace ly
 		Actor* owner,
 		float fireDamage,
 		float fireTickInterval,
-		float burnDuration,
-		float burnTickInterval,
-		float burnDamageRatio,
+		int igniteStacksPerHit,
 		const sas::ContentId& sourceAbilityId,
 		const List<GameplayTag>& sourceAbilityTags,
 		const List<GameplayTag>& damageTags
@@ -47,9 +45,7 @@ namespace ly
 		, mOwner(MakeWeakActor(owner))
 		, mFireDamage(std::max(0.f, fireDamage))
 		, mFireTickInterval(std::max(0.001f, fireTickInterval))
-		, mBurnDuration(std::max(0.f, burnDuration))
-		, mBurnTickInterval(std::max(0.f, burnTickInterval))
-		, mBurnDamageRatio(std::max(0.f, burnDamageRatio))
+		, mIgniteStacksPerHit(std::clamp(igniteStacksPerHit, 0, 4))
 		, mSourceAbilityId(sourceAbilityId)
 		, mSourceAbilityTags(sourceAbilityTags)
 		, mDamageTags(damageTags)
@@ -204,10 +200,7 @@ namespace ly
 		}
 
 		DamagePayload payload = DamageTypeSystem::BuildPayload(mDamageTags);
-		payload.igniteStacks = mBurnDamageRatio > 0.f ? 1 : 0;
-		payload.burnDuration = mBurnDuration;
-		payload.burnTickInterval = mBurnTickInterval;
-		payload.burnDamagePerTick = mFireDamage * mBurnDamageRatio;
+		payload.igniteStacks = mIgniteStacksPerHit;
 
 		for (const shared_ptr<Actor>& target : targets)
 		{

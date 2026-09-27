@@ -56,7 +56,6 @@ namespace ly
 			const sf::Vector2f& endLocation
 		) const;
 		bool TryProcessCollision(const SweepHit& hit);
-		void ReduceSourceAbilityCooldown();
 		void BeginDissipation();
 		void DrawCrescent(
 			sf::RenderWindow& window,
@@ -69,10 +68,9 @@ namespace ly
 		CrescentReaverPresentationProfile mPresentationProfile;
 		float mProjectileSpeed = 0.f;
 		float mInitialDamage = 0.f;
-		int mBounceCountRemaining = 0;
+		int mBounceCountRemaining = 5;
 		int mCompletedBounceCount = 0;
-		float mBounceDamageGrowth = 0.f;
-		float mBounceCooldownReduction = 0.f;
+		float mBounceDamageGrowth = 0.25f;
 		float mSpinDegrees = 0.f;
 		float mDissipationAge = 0.f;
 		sf::Vector2f mLaunchVelocity{};

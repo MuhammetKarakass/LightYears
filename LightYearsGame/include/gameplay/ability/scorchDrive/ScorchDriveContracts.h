@@ -35,20 +35,8 @@ namespace AbilityData::ScorchDrive
 		inline static const sas::AttributeId FireTickInterval{
 			"Ability.Offense.ScorchDrive.FireTickInterval"
 		};
-		inline static const sas::AttributeId BurnDuration{
-			"Ability.Offense.ScorchDrive.BurnDuration"
-		};
-		inline static const sas::AttributeId BurnTickInterval{
-			"Ability.Offense.ScorchDrive.BurnTickInterval"
-		};
-		inline static const sas::AttributeId BurnDamageRatio{
-			"Ability.Offense.ScorchDrive.BurnDamageRatio"
-		};
-		inline static const sas::AttributeId ReferenceMaxHealth{
-			"Ability.Offense.ScorchDrive.ReferenceMaxHealth"
-		};
-		inline static const sas::AttributeId MaxHealthLifetimeScale{
-			"Ability.Offense.ScorchDrive.MaxHealthLifetimeScale"
+		inline static const sas::AttributeId IgniteStacks{
+			"Ability.Offense.ScorchDrive.IgniteStacks"
 		};
 	};
 

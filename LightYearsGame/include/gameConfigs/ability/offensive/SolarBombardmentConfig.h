@@ -8,6 +8,9 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "presentation/ability/solarBombardment/SolarBombardmentPresentationIds.h"
 
+#include <algorithm>
+#include <cstddef>
+
 namespace AbilityData::SolarBombardment
 {
 	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
@@ -15,20 +18,21 @@ namespace AbilityData::SolarBombardment
 		ly::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::SolarBombardmentProjectile;
-		definition.lifeTime = 3.f;
+		definition.lifeTime = 4.f;
 		definition.spawnDistance = 0.f;
 		definition.presentationProfileId =
 			ly::SolarBombardmentPresentationIds::ProjectileBasic;
 		definition.attributes = {
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 45.f, 0.f },
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 70.f, 0.f },
 			sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 350.f, 0.01f },
 			sas::GameplayAttribute{ ly::CommonAttributeIds::Range, 2000.f, 0.01f },
-			sas::GameplayAttribute{ Attribute::InnerRadius, 150.f, 0.01f },
-			sas::GameplayAttribute{ Attribute::InnerDamageMultiplier, 2.f, 1.f },
+			sas::GameplayAttribute{ Attribute::InnerRadius, 130.f, 0.01f },
+			sas::GameplayAttribute{ Attribute::InnerDamageMultiplier, 1.5f, 1.f },
+			sas::GameplayAttribute{ Attribute::OuterDamageMultiplier, 0.75f, 0.01f },
 			sas::GameplayAttribute{ Attribute::InnerIgniteStacks, 4.f, 1.f },
 			sas::GameplayAttribute{ Attribute::OuterIgniteStacks, 2.f, 1.f },
-			sas::GameplayAttribute{ Attribute::MinTravelTime, 0.8f, 0.01f },
-			sas::GameplayAttribute{ Attribute::MaxTravelTime, 1.6f, 0.01f },
+			sas::GameplayAttribute{ Attribute::MinTravelTime, 1.f, 0.01f },
+			sas::GameplayAttribute{ Attribute::MaxTravelTime, 3.4f, 0.01f },
 			sas::GameplayAttribute{ ly::CollisionAttributeIds::Radius, 1.f, 0.f }
 		};
 		return definition;
@@ -46,7 +50,7 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = 14.f;
+		definition.cooldown = 15.f;
 		definition.duration = 0.f;
 		definition.maxCharges = 1;
 		definition.abilityTags = {
@@ -64,29 +68,40 @@ namespace AbilityData::Definitions
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::AttackPower,
 				sas::AttributeModifierOperation::Add,
-				0.80f
+				0.75f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.levelProgression.reserve(14);
+		float resolvedCooldown = definition.cooldown;
+		float cooldownReduction = 0.175f + 0.025f * definition.cooldown;
+		const float minimumCooldown = definition.cooldown * 0.20f;
+		for (int level = 0; level < 14; ++level)
+		{
+			const float cooldownDelta = -std::min(
+				cooldownReduction,
+				resolvedCooldown - minimumCooldown
+			);
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						6.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.25f
-					}
+					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 18.f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, cooldownDelta }
 				},
 				{},
 				{},
-				{}
+				{},
+				{
+					{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::AttackPower,
+						sas::AttributeModifierOperation::Add, 0.08f }
+				}
+			});
+			resolvedCooldown += cooldownDelta;
+			if ((level + 1) % 4 == 0)
+			{
+				cooldownReduction = cooldownReduction >= 0.20f
+					? cooldownReduction - 0.10f
+					: cooldownReduction * 0.80f;
 			}
-		);
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

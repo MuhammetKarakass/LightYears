@@ -210,8 +210,7 @@ namespace ly
 					CollisionAttributeIds::Radius,
 					AbilityData::CrescentReaver::Actor::Projectile::ProjectileSpeed,
 					AbilityData::CrescentReaver::Actor::Projectile::BounceCount,
-					AbilityData::CrescentReaver::Actor::Projectile::BounceDamageGrowth,
-					AbilityData::CrescentReaver::Actor::Projectile::BounceCooldownReduction
+					AbilityData::CrescentReaver::Actor::Projectile::BounceDamageGrowth
 				})
 				{
 					if (!sas::FindAttribute(definition.attributes, required))
@@ -236,17 +235,12 @@ namespace ly
 				definition.attributes,
 				AbilityData::CrescentReaver::Actor::Projectile::BounceDamageGrowth
 			);
-			const float cooldownReduction = sas::FindAttributeValue(
-				definition.attributes,
-				AbilityData::CrescentReaver::Actor::Projectile::BounceCooldownReduction
-			);
 			const float radius = sas::FindAttributeValue(
 				definition.attributes,
 				CollisionAttributeIds::Radius
 			);
 			if (speed <= 0.f || bounceCount < 0.f ||
-				std::round(bounceCount) != bounceCount || damageGrowth < 0.f ||
-				cooldownReduction < 0.f || radius <= 0.f ||
+				std::round(bounceCount) != bounceCount || damageGrowth < 0.f || radius <= 0.f ||
 				!definition.presentationProfileId.IsValid() ||
 				PresentationProfileRegistry<CrescentReaverPresentationProfile>::Find(
 					definition.presentationProfileId.ToString()
@@ -315,14 +309,15 @@ namespace ly
 				mProjectileSpeed
 			)
 		);
+		const float configuredBounceCount = sas::FindAttributeValue(
+			attributes,
+			AbilityData::CrescentReaver::Actor::Projectile::BounceCount,
+			static_cast<float>(mBounceCountRemaining)
+		);
 		mBounceCountRemaining = std::max(
 			0,
-			static_cast<int>(std::round(sas::FindAttributeValue(
-				attributes,
-				AbilityData::CrescentReaver::Actor::Projectile::BounceCount,
-				static_cast<float>(mBounceCountRemaining)
-			))))
-		;
+			static_cast<int>(std::floor(configuredBounceCount))
+		);
 		mCompletedBounceCount = 0;
 		mBounceDamageGrowth = std::max(
 			0.f,
@@ -330,14 +325,6 @@ namespace ly
 				attributes,
 				AbilityData::CrescentReaver::Actor::Projectile::BounceDamageGrowth,
 				mBounceDamageGrowth
-			)
-		);
-		mBounceCooldownReduction = std::max(
-			0.f,
-			sas::FindAttributeValue(
-				attributes,
-				AbilityData::CrescentReaver::Actor::Projectile::BounceCooldownReduction,
-				mBounceCooldownReduction
 			)
 		);
 		mLaunchVelocity = NormalizeOrDefault(GetActorForwardDirection()) *
@@ -567,7 +554,6 @@ namespace ly
 
 		--mBounceCountRemaining;
 		++mCompletedBounceCount;
-		ReduceSourceAbilityCooldown();
 		SetDamage(
 			mInitialDamage * (1.f +
 				static_cast<float>(mCompletedBounceCount) * mBounceDamageGrowth)
@@ -584,14 +570,6 @@ namespace ly
 			57.2957795131f + 90.f);
 		mIgnoredCollisionActor = hit.actor;
 		return true;
-	}
-
-	void CrescentReaverProjectileActor::ReduceSourceAbilityCooldown()
-	{
-		if (GameAbility* ability = GetSourceAbilityInstance())
-		{
-			ability->ReduceCooldownRemaining(mBounceCooldownReduction);
-		}
 	}
 
 	void CrescentReaverProjectileActor::BeginDissipation()

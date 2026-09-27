@@ -38,18 +38,6 @@ namespace AbilityData::Definitions
 		// Reuse an already shipped sprite until Aegis receives its own UI icon.
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
 		definition.accentColor = sf::Color{ 100, 225, 255, 255 };
-		definition.actions = {
-			ly::AbilityActionSpec{
-				sas::AbilityActionPhase::OnActivate,
-				ly::SpawnActorAction{
-					AbilityData::AegisReaver::Actor::Projectile::BasicDefinitionId,
-					sas::AbilitySpawnPolicy::OwnerForward,
-					sas::AbilityDirectionPolicy::MouseWorld
-				},
-				0.f,
-				1
-			}
-		};
 		definition.damageTags = { ly::DamageTypeSchema::Energy };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Damage,

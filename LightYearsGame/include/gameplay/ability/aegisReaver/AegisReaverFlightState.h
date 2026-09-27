@@ -36,7 +36,6 @@ namespace ly
 		void ReleaseRegenLock();
 
 		weak_ptr<SpaceShip> mOwner;
-		SpaceShip* mUnmanagedOwner = nullptr;
 		std::string mRegenLockSourceId;
 		std::unordered_set<std::uint64_t> mOutboundTargets;
 		std::unordered_set<std::uint64_t> mReturnTargets;

@@ -67,30 +67,10 @@ namespace AbilityData::Definitions
 				0.01f
 			},
 			sas::GameplayAttribute{
-				AbilityData::ScorchDrive::Attribute::BurnDuration,
-				3.f,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::ScorchDrive::Attribute::BurnTickInterval,
-				0.5f,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::ScorchDrive::Attribute::BurnDamageRatio,
-				0.5f,
-				0.f,
-				1.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::ScorchDrive::Attribute::ReferenceMaxHealth,
-				100.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::ScorchDrive::Attribute::MaxHealthLifetimeScale,
-				0.01f,
-				0.f
+				AbilityData::ScorchDrive::Attribute::IgniteStacks,
+				1.f,
+				1.f,
+				4.f
 			}
 		};
 		definition.scalingRules = {
@@ -101,26 +81,39 @@ namespace AbilityData::Definitions
 				0.30f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						2.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.25f
-					}
+		float cooldownStep = 0.5f;
+		definition.levelProgression.reserve(14);
+		for (int stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			ly::AbilityLevelStep step;
+			step.attributeModifiers = {
+				sas::AttributeModifier{
+					ly::CommonAttributeIds::Damage,
+					sas::AttributeModifierOperation::Add,
+					2.f
 				},
-				{},
-				{},
-				{}
+				sas::AttributeModifier{
+					ly::CommonAttributeIds::Cooldown,
+					sas::AttributeModifierOperation::Add,
+					-cooldownStep
+				}
+			};
+			step.scalingRules = {
+				sas::AttributeScalingRule{
+					ly::CommonAttributeIds::Damage,
+					ly::OwnerAttributeIds::AttackPower,
+					sas::AttributeModifierOperation::Add,
+					0.02f
+				}
+			};
+			definition.levelProgression.push_back(std::move(step));
+			if ((stepIndex + 1) % 4 == 0)
+			{
+				cooldownStep = cooldownStep >= 0.20f
+					? cooldownStep - 0.10f
+					: cooldownStep * 0.80f;
 			}
-		);
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

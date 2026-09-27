@@ -6,6 +6,8 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/astralSurge/AstralSurgePresentationIds.h"
 
+#include <cstddef>
+
 namespace AbilityData::AstralSurge
 {
 	inline const ly::AbilityActorDefinition ActorProjectileBasic = []
@@ -15,7 +17,7 @@ namespace AbilityData::AstralSurge
 		definition.actorType = ly::AbilityActorType::AstralSurgeProjectile;
 		definition.presentationProfileId = ly::AstralSurgePresentationIds::ProjectileBasic;
 		definition.attributes = {
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 50.f, 0.f },
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 70.f, 0.f },
 			sas::GameplayAttribute{ ly::CommonAttributeIds::PierceDamageLoss, 0.05f, 0.f, 0.99f },
 			sas::GameplayAttribute{ ly::AreaAttributeIds::Width, 280.f, 0.1f },
 			sas::GameplayAttribute{ Actor::Projectile::ProjectileSpeed, 1000.f, 0.01f },
@@ -34,7 +36,7 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability3;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 16.f;
+		definition.cooldown = 14.f;
 		definition.duration = 1.f;
 		definition.maxCharges = 1;
 		definition.abilityTags = {
@@ -49,29 +51,40 @@ namespace AbilityData::Definitions
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::EnergyPower,
 				sas::AttributeModifierOperation::Add,
-				0.45f
+				0.60f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.levelProgression.reserve(14);
+		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			const float cooldownDelta = stepIndex < 4 ? -0.525f :
+				(stepIndex < 8 ? -0.425f : (stepIndex < 12 ? -0.325f : -0.225f));
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
 						sas::AttributeModifierOperation::Add,
-						5.f
+						8.f
 					},
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add,
-						-0.25f
+						cooldownDelta
 					}
 				},
 				{},
 				{},
-				{}
-			}
-		);
+				{},
+				{
+					sas::AttributeScalingRule{
+						ly::CommonAttributeIds::Damage,
+						ly::OwnerAttributeIds::EnergyPower,
+						sas::AttributeModifierOperation::Add,
+						0.05f
+					}
+				}
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

@@ -1,6 +1,7 @@
 #include "gameplay/ability/ionStorm/IonStormProjectileActor.h"
 
 #include "attributes/AttributeSystem.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "framework/World.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
@@ -29,7 +30,8 @@ namespace ly
 
 		const List<sas::AttributeId> ProjectileAttributeRoots{
 			AbilityData::IonStorm::Actor::Projectile::Root,
-			AbilityData::IonStorm::Actor::Field::Root
+			AbilityData::IonStorm::Actor::Field::Root,
+			DamageAttributeIds::Root
 		};
 
 		bool IsFiniteVector(const sf::Vector2f& value)
@@ -103,7 +105,8 @@ namespace ly
 					AbilityData::IonStorm::Attribute::InnerCoreRadius,
 					AbilityData::IonStorm::Attribute::OuterMinRadius,
 					AbilityData::IonStorm::Attribute::OuterMaxRadius,
-					AbilityData::IonStorm::Attribute::BoundaryPointCount
+					AbilityData::IonStorm::Attribute::BoundaryPointCount,
+					DamageAttributeIds::ElectricStacks
 				})
 				{
 					const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -117,6 +120,16 @@ namespace ly
 							"Ion Storm projectile requires positive delivery and field attributes."
 						};
 					}
+				}
+				const sas::GameplayAttribute* electricStacks = sas::FindAttribute(
+					definition.attributes,
+					DamageAttributeIds::ElectricStacks
+				);
+				if (!electricStacks || !std::isfinite(electricStacks->baseValue) ||
+					electricStacks->baseValue < 1.f || electricStacks->baseValue > 4.f ||
+					std::round(electricStacks->baseValue) != electricStacks->baseValue)
+				{
+					return { false, "Ion Storm projectile requires one through four Electric stacks." };
 				}
 				if (!definition.presentationProfileId.IsValid() ||
 					PresentationProfileRegistry<
@@ -213,6 +226,12 @@ namespace ly
 				CommonAttributeIds::Damage,
 				mFieldDamage,
 				0.f
+			},
+			sas::GameplayAttribute{
+				DamageAttributeIds::ElectricStacks,
+				sas::FindAttributeValue(attributes, DamageAttributeIds::ElectricStacks, 1.f),
+				0.f,
+				4.f
 			},
 			sas::GameplayAttribute{
 				AbilityData::IonStorm::Attribute::TickInterval,

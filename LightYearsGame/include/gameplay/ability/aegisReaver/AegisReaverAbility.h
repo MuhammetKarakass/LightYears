@@ -7,6 +7,7 @@ namespace ly
 	class AegisReaverAbility final : public GameAbilityBehavior
 	{
 	public:
+		bool Activate(GameAbilityBehaviorContext& context) override;
 		bool Validate(
 			const GameAbilityDefinition& definition,
 			std::string* failureReason

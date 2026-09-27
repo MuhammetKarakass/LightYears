@@ -1,11 +1,11 @@
 #include "gameplay/ability/chainLightning/ChainLightningAbility.h"
 
 #include "gameConfigs/combat/DamageTypeConfig.h"
+#include "attributes/AttributeSystem.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/chainLightning/ChainLightningContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
-#include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetingTypes.h"
@@ -20,27 +20,26 @@
 #include <algorithm>
 #include <cstddef>
 #include <cmath>
+#include <cstdint>
 #include <limits>
+#include <optional>
 #include <unordered_set>
 #include <vector>
 
 namespace ly
 {
+	class ChainLightningAbilityLifetimeState;
+
 	namespace
 	{
 		constexpr std::size_t RequiredAttributeCount = 6;
-		constexpr std::size_t RequiredProgressionStepCount = 14;
-		constexpr float BaseCooldown = 7.f;
 		constexpr float BaseDuration = 0.f;
-		constexpr float BaseDamage = 28.f;
+		constexpr float BaseDamage = 40.f;
 		constexpr float BaseInitialTargetRange = 700.f;
 		constexpr float BaseBounceRange = 350.f;
 		constexpr float BaseBounceCount = 5.f;
 		constexpr float BaseLinkTravelTime = 0.22f;
 		constexpr float BaseElectricStacks = 1.f;
-		constexpr float DamagePerLevel = 4.f;
-		constexpr float CooldownPerLevel = -0.20f;
-		constexpr int MaximumBonusBounces = 8;
 		constexpr float Epsilon = 0.0001f;
 
 		bool NearlyEqual(float left, float right)
@@ -84,21 +83,6 @@ namespace ly
 				std::round(attribute->baseValue) == attribute->baseValue;
 		}
 
-		float FindValue(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId,
-			float fallback
-		)
-		{
-			const sas::GameplayAttribute* attribute = FindAttribute(
-				definition,
-				attributeId
-			);
-			return attribute && std::isfinite(attribute->baseValue)
-				? attribute->baseValue
-				: fallback;
-		}
-
 		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
 		{
 			if (definition.abilityTags.size() != 2)
@@ -120,30 +104,23 @@ namespace ly
 			return hasCategory && hasFamily;
 		}
 
-		bool HasExpectedModifier(
+		bool HasModifier(
 			const AbilityLevelStep& step,
 			const sas::AttributeId& attributeId,
-			float expectedMagnitude
+			bool positive
 		)
 		{
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == attributeId &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					NearlyEqual(modifier.magnitude, expectedMagnitude))
+					std::isfinite(modifier.magnitude) &&
+					(positive ? modifier.magnitude > 0.f : modifier.magnitude < 0.f))
 				{
 					return true;
 				}
 			}
 			return false;
-		}
-
-		float FindOwnerLuckFactor(const Actor& owner)
-		{
-			const Combatant* combatant = dynamic_cast<const Combatant*>(&owner);
-			return combatant
-				? std::max(0.f, combatant->GetCombatRuntime().GetCombatLuckFactor())
-				: 0.f;
 		}
 
 		weak_ptr<Actor> MakeWeakActor(Actor* actor)
@@ -157,6 +134,22 @@ namespace ly
 				? std::dynamic_pointer_cast<Actor>(object)
 				: weak_ptr<Actor>{};
 		}
+
+		struct ChainLightningTraversalData
+		{
+			weak_ptr<Object> worldLifetime;
+			weak_ptr<ChainLightningAbilityLifetimeState> abilityLifetime;
+			int remainingBounces{ 0 };
+			std::uint64_t currentTargetId{ 0 };
+			float bounceRange{ 0.f };
+			float linkTravelTime{ 0.f };
+			float damage{ 0.f };
+			List<GameplayTag> damageTags;
+			DamagePayload payload;
+			sas::ContentId sourceAbilityId;
+			List<GameplayTag> sourceAbilityTags;
+			sf::Color arcColor = sf::Color::White;
+		};
 
 		class ChainLightningTimerOwnerActor final : public Actor
 		{
@@ -182,14 +175,21 @@ namespace ly
 				return mOwnerDestroyedHandle.IsValid();
 			}
 
-			void SetPendingLinkCount(std::size_t count) { mPendingLinkCount = count; }
-			void TrackTimer(TimerHandle handle) { mTimerHandles.push_back(handle); }
-
-			void CompleteLink()
+			void StartTraversal(
+				ChainLightningTraversalData traversal,
+				const weak_ptr<Actor>& initialTarget
+			)
 			{
-				if (mIsFinished || mPendingLinkCount == 0) return;
-				--mPendingLinkCount;
-				if (mPendingLinkCount == 0) Finish();
+				mTraversal = std::move(traversal);
+				mCurrentTarget = initialTarget;
+				mFirstLinkPending = true;
+				if (const shared_ptr<Actor> target = initialTarget.lock())
+				{
+					mTraversal.currentTargetId = target->GetUniqueID();
+					mLastTargetLocation = target->GetActorLocation();
+					mStruckTargetIds.insert(mTraversal.currentTargetId);
+				}
+				ScheduleNextLink();
 			}
 
 			void Cancel()
@@ -198,6 +198,166 @@ namespace ly
 			}
 
 		private:
+			shared_ptr<Actor> FindNextTarget(
+				World& world,
+				Actor& owner,
+				const sf::Vector2f& origin,
+				bool previouslyStruck
+			) const
+			{
+				targeting::TargetingQuery query;
+				query.source = &owner;
+				query.origin = origin;
+				query.range = mTraversal.bounceRange;
+				query.requiredTargetLayers = owner.GetCollisionLayer() == CollisionLayer::Player
+					? CollisionLayer::Enemy
+					: CollisionLayer::Player;
+				query.requireCollisionCompatibility = true;
+				query.excludeSource = true;
+				query.filter = [this, previouslyStruck](
+					const Actor*,
+					const Actor& candidate,
+					const targeting::TargetingCandidate&
+				)
+				{
+					const std::uint64_t candidateId = const_cast<Actor&>(candidate).GetUniqueID();
+					if (candidateId == mTraversal.currentTargetId)
+					{
+						return false;
+					}
+					const bool wasStruck = mStruckTargetIds.find(candidateId) !=
+						mStruckTargetIds.end();
+					return dynamic_cast<const Combatant*>(&candidate) != nullptr &&
+						wasStruck == previouslyStruck;
+				};
+				query.comparator = [](
+					const targeting::TargetingCandidate& left,
+					const targeting::TargetingCandidate& right
+				)
+				{
+					return left.distanceSquared < right.distanceSquared;
+				};
+
+				const List<targeting::TargetingCandidate> candidates =
+					targeting::AutoTargeting::FindTargets(world, query);
+				return candidates.empty() ? shared_ptr<Actor>{} : candidates.front().actor;
+			}
+
+			void ScheduleNextLink()
+			{
+				if (mIsFinished || GetIsPendingDestroy()) return;
+				const shared_ptr<Object> selfObject = GetWeakPtr().lock();
+				const shared_ptr<ChainLightningTimerOwnerActor> self =
+					std::dynamic_pointer_cast<ChainLightningTimerOwnerActor>(selfObject);
+				if (!self) return;
+				const weak_ptr<ChainLightningTimerOwnerActor> selfWeak = self;
+				const TimerHandle handle = TimerManager::GetGameTimerManager().SetTimer(
+					mTraversal.worldLifetime,
+					[selfWeak]()
+					{
+						if (const shared_ptr<ChainLightningTimerOwnerActor> timerOwner = selfWeak.lock())
+						{
+							timerOwner->AdvanceLink();
+						}
+					},
+					mTraversal.linkTravelTime,
+					false
+				);
+				mScheduledTimerHandle = handle;
+			}
+
+			void AdvanceLink()
+			{
+				if (mIsFinished || GetIsPendingDestroy()) return;
+				mScheduledTimerHandle.reset();
+				if (mTraversal.abilityLifetime.expired())
+				{
+					Finish();
+					return;
+				}
+
+				const shared_ptr<World> world = std::dynamic_pointer_cast<World>(
+					mTraversal.worldLifetime.lock()
+				);
+				const shared_ptr<Actor> owner = mOwner.lock();
+				if (!world || world->GetIsPendingDestroy() || !owner ||
+					owner->GetIsPendingDestroy())
+				{
+					Finish();
+					return;
+				}
+
+				shared_ptr<Actor> target = mCurrentTarget.lock();
+				sf::Vector2f startLocation{};
+				if (mFirstLinkPending)
+				{
+					if (!target || target->GetIsPendingDestroy())
+					{
+						Finish();
+						return;
+					}
+					mFirstLinkPending = false;
+					startLocation = owner->GetActorLocation();
+				}
+				else
+				{
+					if (mTraversal.remainingBounces <= 0)
+					{
+						Finish();
+						return;
+					}
+					startLocation = target && !target->GetIsPendingDestroy()
+						? target->GetActorLocation()
+						: mLastTargetLocation;
+					target = FindNextTarget(*world, *owner, startLocation, false);
+					if (!target)
+					{
+						target = FindNextTarget(*world, *owner, startLocation, true);
+					}
+					if (!target)
+					{
+						Finish();
+						return;
+					}
+					--mTraversal.remainingBounces;
+				}
+
+				if (!target || target->GetIsPendingDestroy())
+				{
+					Finish();
+					return;
+				}
+				const sf::Vector2f targetLocation = target->GetActorLocation();
+				mLastTargetLocation = targetLocation;
+				mCurrentTarget = target;
+				mTraversal.currentTargetId = target->GetUniqueID();
+				mStruckTargetIds.insert(mTraversal.currentTargetId);
+				world->SpawnActor<ElectricArcVisualActor>(
+					startLocation,
+					targetLocation,
+					mTraversal.arcColor
+				);
+				ApplyCombatDamage(
+					*target,
+					mTraversal.damage,
+					owner.get(),
+					mTraversal.damageTags,
+					mTraversal.payload,
+					mTraversal.sourceAbilityId,
+					mTraversal.sourceAbilityTags,
+					DamageDeliveryType::Beam
+				);
+
+				if (mTraversal.remainingBounces > 0 && !mIsFinished && !GetIsPendingDestroy())
+				{
+					ScheduleNextLink();
+				}
+				else
+				{
+					Finish();
+				}
+			}
+
 			void OnOwnerDestroyed(Actor* destroyedOwner)
 			{
 				const shared_ptr<Actor> owner = mOwner.lock();
@@ -225,19 +385,20 @@ namespace ly
 
 			void ClearTimerHandles()
 			{
-				if (mTimerHandles.empty()) return;
+				if (!mScheduledTimerHandle) return;
 				TimerManager& timerManager = TimerManager::GetGameTimerManager();
-				for (const TimerHandle handle : mTimerHandles)
-				{
-					timerManager.ClearTimer(handle);
-				}
-				mTimerHandles.clear();
+				timerManager.ClearTimer(*mScheduledTimerHandle);
+				mScheduledTimerHandle.reset();
 			}
 
 			weak_ptr<Actor> mOwner;
 			DelegateHandle mOwnerDestroyedHandle;
-			std::vector<TimerHandle> mTimerHandles;
-			std::size_t mPendingLinkCount{ 0 };
+			ChainLightningTraversalData mTraversal;
+			weak_ptr<Actor> mCurrentTarget;
+			std::optional<TimerHandle> mScheduledTimerHandle;
+			sf::Vector2f mLastTargetLocation{};
+			std::unordered_set<std::uint64_t> mStruckTargetIds;
+			bool mFirstLinkPending{ false };
 			bool mIsFinished{ false };
 		};
 	}
@@ -299,7 +460,7 @@ namespace ly
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Instant &&
 			definition.maxCharges == 1 &&
-			NearlyEqual(definition.cooldown, BaseCooldown) &&
+			std::isfinite(definition.cooldown) && definition.cooldown > 0.f &&
 			NearlyEqual(definition.duration, BaseDuration);
 
 		const bool validDamageIdentity =
@@ -312,42 +473,18 @@ namespace ly
 			definition.attributes.size() == RequiredAttributeCount &&
 			HasValidAttribute(
 				definition,
-				AbilityData::ChainLightning::Attribute::Damage,
+				CommonAttributeIds::Damage,
 				0.f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::Damage,
-					0.f
-				),
-				BaseDamage
 			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::ChainLightning::Attribute::InitialTargetRange,
 				0.01f
 			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::InitialTargetRange,
-					0.f
-				),
-				BaseInitialTargetRange
-			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::ChainLightning::Attribute::BounceRange,
 				0.01f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::BounceRange,
-					0.f
-				),
-				BaseBounceRange
 			) &&
 			HasValidAttribute(
 				definition,
@@ -355,40 +492,16 @@ namespace ly
 				1.f,
 				true
 			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::BaseBounceCount,
-					0.f
-				),
-				BaseBounceCount
-			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::ChainLightning::Attribute::LinkTravelTime,
 				0.01f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::LinkTravelTime,
-					0.f
-				),
-				BaseLinkTravelTime
 			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::ChainLightning::Attribute::ElectricStacks,
 				1.f,
 				true
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::ChainLightning::Attribute::ElectricStacks,
-					0.f
-				),
-				BaseElectricStacks
 			);
 
 		// Chain Lightning is a behavior-owned traversal. Generic actions would
@@ -396,36 +509,53 @@ namespace ly
 		const bool validRuntimeOwnership =
 			definition.actions.empty() &&
 			definition.triggers.empty() &&
-			definition.effectSpecs.empty() &&
-			definition.scalingRules.empty();
+			definition.effectSpecs.empty();
+		const bool validScaling = definition.scalingRules.size() == 1 &&
+			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
+			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
+			std::isfinite(definition.scalingRules.front().coefficient) &&
+			definition.scalingRules.front().coefficient > 0.f;
 
-		bool validProgression = definition.levelProgression.size() ==
-			RequiredProgressionStepCount;
+		bool validProgression = !definition.levelProgression.empty() &&
+			definition.levelUpgradeScrapCosts.size() == definition.levelProgression.size();
 		float resolvedCooldown = definition.cooldown;
 		if (validProgression)
 		{
 			for (const AbilityLevelStep& step : definition.levelProgression)
 			{
-				if (step.attributeModifiers.size() != 2 ||
+				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
 					!step.unlockedUpgradeIds.empty() ||
 					!step.addedActions.empty() ||
 					!step.addedTriggers.empty() ||
-					!HasExpectedModifier(
+					!HasModifier(
 						step,
 						CommonAttributeIds::Damage,
-						DamagePerLevel
+						true
 					) ||
-					!HasExpectedModifier(
+					!HasModifier(
 						step,
 						CommonAttributeIds::Cooldown,
-						CooldownPerLevel
-					))
+						false
+					) ||
+					step.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
+					step.scalingRules.front().sourceAttributeId != OwnerAttributeIds::EnergyPower ||
+					step.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
+					!std::isfinite(step.scalingRules.front().coefficient) ||
+					step.scalingRules.front().coefficient < 0.f)
 				{
 					validProgression = false;
 					break;
 				}
 
-				resolvedCooldown += CooldownPerLevel;
+				const auto cooldownModifier = std::find_if(
+					step.attributeModifiers.begin(), step.attributeModifiers.end(),
+					[](const sas::AttributeModifier& modifier)
+					{
+						return modifier.attributeId == CommonAttributeIds::Cooldown;
+					}
+				);
+				resolvedCooldown += cooldownModifier->magnitude;
 				if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
 				{
 					validProgression = false;
@@ -435,12 +565,12 @@ namespace ly
 		}
 
 		if (!validIdentity || !validLifecycle || !validDamageIdentity ||
-			!validAttributes || !validRuntimeOwnership || !validProgression)
+			!validAttributes || !validRuntimeOwnership || !validProgression || !validScaling)
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Chain Lightning requires its electric identity, six declared traversal and electric payload attributes, and fourteen damage/cooldown progression steps.";
+				"Chain Lightning requires its electric identity, six declared traversal and electric payload attributes, EnergyPower damage scaling, and aligned progression costs.";
 			}
 			return false;
 		}
@@ -482,14 +612,26 @@ namespace ly
 				BaseBounceRange
 			)
 		);
-		const int baseBounceCount = std::max(
-			0,
-			static_cast<int>(std::lround(sas::FindAttributeValue(
+		const double maximumBounceCount = static_cast<double>(std::numeric_limits<int>::max());
+		const double configuredBounceCount = std::max(
+			0.0,
+			std::round(static_cast<double>(sas::FindAttributeValue(
 				values,
 				AbilityData::ChainLightning::Attribute::BaseBounceCount,
 				BaseBounceCount
 			)))
 		);
+		const int baseBounceCount = static_cast<int>(std::min(configuredBounceCount, maximumBounceCount));
+		const float ownerLuck = context.abilitySystem.GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::Luck
+		);
+		const double bonusBounceCount = std::floor(
+			static_cast<double>(std::isfinite(ownerLuck) ? std::max(0.f, ownerLuck) : 0.f) * 0.05
+		);
+		const int safeBonusBounces = static_cast<int>(std::min(
+			bonusBounceCount,
+			maximumBounceCount - static_cast<double>(baseBounceCount)
+		));
 		const float linkTravelTime = std::max(
 			0.001f,
 			sas::FindAttributeValue(
@@ -550,79 +692,6 @@ namespace ly
 			return false;
 		}
 
-		List<weak_ptr<Actor>> chainTargets;
-		chainTargets.push_back(initialTargets.front().actor);
-		std::unordered_set<Actor*> struckTargets;
-		struckTargets.insert(initialTargets.front().actor.get());
-		shared_ptr<Actor> currentTarget = initialTargets.front().actor;
-		int remainingBaseBounces = baseBounceCount;
-		int remainingBonusBounces = MaximumBonusBounces;
-		const float bonusBounceChance = 0.35f * FindOwnerLuckFactor(context.owner);
-
-		while (currentTarget)
-		{
-			targeting::TargetingQuery bounceQuery;
-			bounceQuery.source = &context.owner;
-			bounceQuery.origin = currentTarget->GetActorLocation();
-			bounceQuery.range = bounceRange;
-			bounceQuery.requiredTargetLayers = opposingLayer;
-			bounceQuery.requireCollisionCompatibility = true;
-			bounceQuery.excludeSource = true;
-			bounceQuery.excludedTargets.push_back(currentTarget.get());
-			for (Actor* struckTarget : struckTargets)
-			{
-				bounceQuery.excludedTargets.push_back(struckTarget);
-			}
-			bounceQuery.filter = [](
-				const Actor*,
-				const Actor& candidate,
-				const targeting::TargetingCandidate&
-			)
-			{
-				return dynamic_cast<const Combatant*>(&candidate) != nullptr;
-			};
-			bounceQuery.comparator = [&struckTargets](
-				const targeting::TargetingCandidate& left,
-				const targeting::TargetingCandidate& right
-			)
-			{
-				const bool leftWasStruck = left.actor &&
-					struckTargets.find(left.actor.get()) != struckTargets.end();
-				const bool rightWasStruck = right.actor &&
-					struckTargets.find(right.actor.get()) != struckTargets.end();
-				if (leftWasStruck != rightWasStruck)
-				{
-					return !leftWasStruck;
-				}
-				return left.distanceSquared < right.distanceSquared;
-			};
-
-			const List<targeting::TargetingCandidate> nextTargets =
-				targeting::AutoTargeting::FindTargets(*world, bounceQuery);
-			if (nextTargets.empty() || !nextTargets.front().actor)
-			{
-				break;
-			}
-
-			if (remainingBaseBounces > 0)
-			{
-				--remainingBaseBounces;
-			}
-			else if (remainingBonusBounces <= 0 ||
-				RandRange(0.f, 1.f) >= bonusBounceChance)
-			{
-				break;
-			}
-			else
-			{
-				--remainingBonusBounces;
-			}
-
-			currentTarget = nextTargets.front().actor;
-			chainTargets.push_back(currentTarget);
-			struckTargets.insert(currentTarget.get());
-		}
-
 		const ChainLightningPresentationProfile* profile =
 			PresentationProfileRegistry<ChainLightningPresentationProfile>::Find(
 				ChainLightningPresentationIds::ArcBasic
@@ -660,102 +729,25 @@ namespace ly
 			return false;
 		}
 		mLifetimeState->RegisterCast(strongTimerOwner);
-		strongTimerOwner->SetPendingLinkCount(chainTargets.size());
-		const weak_ptr<ChainLightningAbilityLifetimeState> abilityLifetime = mLifetimeState;
-		const sf::Vector2f ownerLocation = context.owner.GetActorLocation();
-		const sas::ContentId sourceAbilityId{ context.definition.abilityId };
-		const List<GameplayTag> sourceAbilityTags = context.definition.abilityTags;
+		ChainLightningTraversalData traversal;
+		traversal.worldLifetime = worldLifetime;
+		traversal.abilityLifetime = mLifetimeState;
+		traversal.remainingBounces = baseBounceCount + safeBonusBounces;
+		traversal.bounceRange = bounceRange;
+		traversal.linkTravelTime = linkTravelTime;
+		traversal.damage = damage;
+		traversal.damageTags = damageTags;
+		traversal.payload = payload;
+		traversal.sourceAbilityId = sas::ContentId{ context.definition.abilityId };
+		traversal.sourceAbilityTags = context.definition.abilityTags;
+		traversal.arcColor = profile->outerColor;
 		LY_GAME_INFO(
-			"Chain Lightning: scheduled %zu link(s); first link delay=%.3fs, damage=%.2f.",
-			chainTargets.size(),
+			"Chain Lightning: started live traversal with %d additional bounce(s); link interval=%.3fs, damage=%.2f.",
+			traversal.remainingBounces,
 			linkTravelTime,
 			damage
 		);
-
-		// The timer owns the delayed traversal timeline. ElectricArcVisualActor is
-		// the existing, shared electric-line renderer already used by weapons;
-		// reusing it keeps Chain Lightning's presentation reliable without another
-		// custom world actor lifecycle.
-		for (std::size_t linkIndex = 0; linkIndex < chainTargets.size(); ++linkIndex)
-		{
-			const weak_ptr<Actor> startActor = linkIndex == 0
-				? ownerWeak
-				: chainTargets[linkIndex - 1];
-			const weak_ptr<Actor> targetActor = chainTargets[linkIndex];
-			const float delay = linkTravelTime * static_cast<float>(linkIndex + 1);
-			const weak_ptr<ChainLightningTimerOwnerActor> timerOwnerWeak = timerOwner;
-			const TimerHandle timerHandle = TimerManager::GetGameTimerManager().SetTimer(
-				worldLifetime,
-				[
-					worldLifetime,
-					abilityLifetime,
-					timerOwnerWeak,
-					ownerWeak,
-					startActor,
-					targetActor,
-					ownerLocation,
-					damage,
-					damageTags,
-					payload,
-					sourceAbilityId,
-					sourceAbilityTags,
-					arcColor = profile->outerColor
-				]()
-				{
-					LY_GAME_INFO("Chain Lightning: link timer callback entered.");
-					const shared_ptr<World> activeWorld =
-						std::dynamic_pointer_cast<World>(worldLifetime.lock());
-					const shared_ptr<ChainLightningTimerOwnerActor> timerOwner = timerOwnerWeak.lock();
-					if (!timerOwner || timerOwner->GetIsPendingDestroy()) return;
-					if (abilityLifetime.expired())
-					{
-						timerOwner->Cancel();
-						return;
-					}
-					if (!activeWorld || activeWorld->GetIsPendingDestroy())
-					{
-						timerOwner->Cancel();
-						return;
-					}
-					timerOwner->CompleteLink();
-
-					const shared_ptr<Actor> owner = ownerWeak.lock();
-					const shared_ptr<Actor> target = targetActor.lock();
-					if (!owner || owner->GetIsPendingDestroy() || !target ||
-						target->GetIsPendingDestroy())
-					{
-						LY_GAME_INFO("Chain Lightning: link cancelled because its owner or target no longer exists.");
-						timerOwner->Cancel();
-						return;
-					}
-
-					const shared_ptr<Actor> start = startActor.lock();
-					const sf::Vector2f startLocation = start && !start->GetIsPendingDestroy()
-						? start->GetActorLocation()
-						: ownerLocation;
-					const sf::Vector2f targetLocation = target->GetActorLocation();
-					activeWorld->SpawnActor<ElectricArcVisualActor>(
-						startLocation,
-						targetLocation,
-						arcColor
-					);
-					LY_GAME_INFO("Chain Lightning: arc spawned; applying link damage.");
-					ApplyCombatDamage(
-						*target,
-						damage,
-						owner.get(),
-						damageTags,
-						payload,
-						sourceAbilityId,
-						sourceAbilityTags,
-						DamageDeliveryType::Beam
-					);
-				},
-				delay,
-				false
-			);
-			strongTimerOwner->TrackTimer(timerHandle);
-		}
+		strongTimerOwner->StartTraversal(std::move(traversal), initialTargets.front().actor);
 		return true;
 	}
 }

@@ -364,6 +364,7 @@ namespace ly
 
 		context.target = this;
 
+		context.shieldDamage = 0.f;
 		mCombatRuntime.ProcessIncomingDamage(context);
 		if (context.remainingDamage > 0.f)
 		{
@@ -374,6 +375,7 @@ namespace ly
 			);
 			context.remainingDamage = std::max(0.f, context.remainingDamage - shieldAbsorbedDamage);
 			context.absorbedDamage += shieldAbsorbedDamage;
+			context.shieldDamage = shieldAbsorbedDamage * std::max(0.f, context.payload.shieldDamageMultiplier);
 			mCombatRuntime.ApplyHullDamageMitigation(context);
 
 			const float healthBeforeDamage = mHealthComponent.GetHealth();

@@ -33,6 +33,10 @@ namespace ly
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
 		) override;
+		bool PrepareFlight(
+			const shared_ptr<AegisReaverFlightState>& flightState,
+			float sacrificedShield
+		);
 		bool IsProjectileActor() const override { return true; }
 		bool CanBeReflected() const override { return mPhase == Phase::Outbound; }
 		bool TryReflectProjectile(

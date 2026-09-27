@@ -5,6 +5,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/projectile/ProjectileSweep.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "gameplay/targeting/SweptGeometry.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -304,12 +305,9 @@ namespace ly
 		// Swept geometry owns broad combat detection; physical collision remains
 		// intentionally narrow for generic projectile interactions.
 		const float collisionRadius = std::max(0.f, mProjectileWidth * 0.5f);
+		List<projectile::SweptContact> contacts;
 		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
-			targeting::swept::SegmentBounds(
-				startLocation,
-				endLocation,
-				collisionRadius
-			)
+			targeting::swept::SegmentBounds(startLocation, endLocation, collisionRadius)
 		))
 		{
 			const shared_ptr<Actor> candidate = actorWeak.lock();
@@ -318,29 +316,54 @@ namespace ly
 				continue;
 			}
 
-			if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(candidate.get());
-				captureVolume &&
-				targeting::swept::SegmentIntersectsExpandedBounds(
-					startLocation,
-					endLocation,
-					candidate->GetActorGlobalBounds(),
-					collisionRadius
-				) && captureVolume->TryCaptureProjectile(*this))
+			const bool isCaptureVolume =
+				dynamic_cast<ProjectileCaptureVolume*>(candidate.get()) != nullptr;
+			if (!isCaptureVolume && !IsValidAbilityTarget(candidate.get()))
+			{
+				continue;
+			}
+			if (!targeting::swept::SegmentIntersectsExpandedBounds(
+				startLocation,
+				endLocation,
+				candidate->GetActorGlobalBounds(),
+				collisionRadius
+			))
+			{
+				continue;
+			}
+			const float fraction = targeting::swept::SegmentProjectionFraction(
+				candidate->GetActorLocation(), startLocation, endLocation
+			);
+			contacts.push_back(projectile::SweptContact{
+				candidate.get(),
+				fraction,
+				startLocation + (endLocation - startLocation) * fraction,
+				{},
+				false
+			});
+		}
+		std::sort(
+			contacts.begin(),
+			contacts.end(),
+			[](const auto& left, const auto& right)
+			{
+				return left.fraction < right.fraction;
+			}
+		);
+		for (const projectile::SweptContact& contact : contacts)
+		{
+			Actor* candidate = contact.actor;
+			if (auto* captureVolume = dynamic_cast<ProjectileCaptureVolume*>(candidate);
+				captureVolume && captureVolume->TryCaptureProjectile(*this))
 			{
 				return;
 			}
 
-			if (!IsValidAbilityTarget(candidate.get()) ||
-				!targeting::swept::SegmentIntersectsExpandedBounds(
-					startLocation,
-					endLocation,
-					candidate->GetActorGlobalBounds(),
-					collisionRadius
-				))
+			if (!IsValidAbilityTarget(candidate))
 			{
 				continue;
 			}
-			TryHitTarget(candidate.get());
+			TryHitTarget(candidate);
 		}
 	}
 

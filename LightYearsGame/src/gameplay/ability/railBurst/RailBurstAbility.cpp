@@ -26,38 +26,42 @@ namespace ly
 			return attribute ? std::optional<float>{ attribute->baseValue } : std::nullopt;
 		}
 
-		std::optional<float> FindModifierMagnitude(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId
-		)
+		bool IsEnergyPowerDamageRule(const sas::AttributeScalingRule& rule)
 		{
-			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-			{
-				if (modifier.attributeId == attributeId &&
-					modifier.operation == sas::AttributeModifierOperation::Add)
-				{
-					return modifier.magnitude;
-				}
-			}
-			return std::nullopt;
+			return rule.targetAttributeId == CommonAttributeIds::Damage &&
+				rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+				rule.operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(rule.coefficient) && rule.coefficient > 0.f;
 		}
 
-		bool HasExpectedModifier(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			float magnitude
-		)
+		bool HasValidProgressionStep(const AbilityLevelStep& step, float& cooldownDelta)
 		{
+			int damageModifiers = 0;
+			int cooldownModifiers = 0;
+			cooldownDelta = 0.f;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
-				if (modifier.attributeId == attributeId &&
+				if (modifier.attributeId == CommonAttributeIds::Damage &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
+					std::isfinite(modifier.magnitude) && modifier.magnitude > 0.f)
 				{
-					return true;
+					++damageModifiers;
+				}
+				else if (modifier.attributeId == CommonAttributeIds::Cooldown &&
+					modifier.operation == sas::AttributeModifierOperation::Add &&
+					std::isfinite(modifier.magnitude) && modifier.magnitude <= 0.f)
+				{
+					++cooldownModifiers;
+					cooldownDelta += modifier.magnitude;
+				}
+				else
+				{
+					return false;
 				}
 			}
-			return false;
+			return damageModifiers == 1 && cooldownModifiers <= 1 &&
+				step.scalingRules.size() == 1 &&
+				IsEnergyPowerDamageRule(step.scalingRules.front());
 		}
 
 		bool HasBasicSpawnAction(const GameAbilityDefinition& definition)
@@ -105,16 +109,29 @@ namespace ly
 		const std::optional<float> collisionRadius = actor
 			? FindActorAttribute(*actor, CollisionAttributeIds::Radius)
 			: std::nullopt;
+		const std::optional<float> pierceLoss = actor
+			? FindActorAttribute(*actor, CommonAttributeIds::PierceDamageLoss)
+			: std::nullopt;
+		const std::optional<float> minimumDamageMultiplier = actor
+			? FindActorAttribute(
+				*actor,
+				AbilityData::RailBurst::Actor::Projectile::MinimumDamageMultiplier
+			)
+			: std::nullopt;
 
 		if (!actor || !damage || !speed || !range || !collisionRadius ||
+			!pierceLoss || !minimumDamageMultiplier ||
 			*damage <= 0.f || *speed <= 0.f || *range <= 0.f ||
 			*collisionRadius <= 0.f ||
+			!std::isfinite(*pierceLoss) || *pierceLoss < 0.f || *pierceLoss >= 1.f ||
+			!std::isfinite(*minimumDamageMultiplier) ||
+			*minimumDamageMultiplier <= 0.f || *minimumDamageMultiplier > 1.f ||
 			actor->spawnDistance < 0.f || actor->lifeTime <= *range / *speed)
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Rail Burst actor data requires positive delivery values and cleanup time beyond range.";
+					"Rail Burst actor data requires positive delivery values, valid pierce falloff, and cleanup time beyond range.";
 			}
 			return false;
 		}
@@ -132,31 +149,15 @@ namespace ly
 			return false;
 		}
 
-		const auto hasDamageScaling = [&](const sas::AttributeId& sourceAttributeId,
-			float coefficient)
-		{
-			return std::any_of(
-				definition.scalingRules.begin(),
-				definition.scalingRules.end(),
-				[&](const sas::AttributeScalingRule& rule)
-				{
-					return rule.targetAttributeId == CommonAttributeIds::Damage &&
-						rule.sourceAttributeId == sourceAttributeId &&
-						rule.operation == sas::AttributeModifierOperation::Add &&
-						std::abs(rule.coefficient - coefficient) <= 0.0001f;
-				}
-			);
-		};
 		if (definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Energy ||
-			definition.scalingRules.size() != 2 ||
-			!hasDamageScaling(OwnerAttributeIds::AttackPower, 1.50f) ||
-			!hasDamageScaling(OwnerAttributeIds::EnergyPower, 0.20f))
+			definition.scalingRules.size() != 1 ||
+			!IsEnergyPowerDamageRule(definition.scalingRules.front()))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Rail Burst requires Energy damage plus additive AttackPower and EnergyPower scaling.";
+					"Rail Burst requires Energy damage and additive EnergyPower scaling without AttackPower scaling.";
 			}
 			return false;
 		}
@@ -171,45 +172,21 @@ namespace ly
 			return false;
 		}
 
-		const std::optional<float> damagePerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Damage
-		);
-		const std::optional<float> cooldownReductionPerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Cooldown
-		);
-		if (!damagePerLevel || !cooldownReductionPerLevel ||
-			*damagePerLevel <= 0.f || *cooldownReductionPerLevel >= 0.f)
-		{
-			if (failureReason)
-			{
-				*failureReason =
-					"Rail Burst progression must add damage and reduce cooldown.";
-			}
-			return false;
-		}
-
 		float resolvedCooldown = definition.cooldown;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (step.attributeModifiers.size() != 2 ||
-				!HasExpectedModifier(step, CommonAttributeIds::Damage, *damagePerLevel) ||
-				!HasExpectedModifier(
-					step,
-					CommonAttributeIds::Cooldown,
-					*cooldownReductionPerLevel
-				))
+			float cooldownDelta = 0.f;
+			if (!HasValidProgressionStep(step, cooldownDelta))
 			{
 				if (failureReason)
 				{
 					*failureReason =
-						"Rail Burst progression may only increase damage and reduce cooldown.";
+						"Rail Burst progression must add damage and EnergyPower scaling; cooldown may only stay or decrease.";
 				}
 				return false;
 			}
 
-			resolvedCooldown += *cooldownReductionPerLevel;
+			resolvedCooldown += cooldownDelta;
 			if (resolvedCooldown <= 0.f)
 			{
 				if (failureReason)

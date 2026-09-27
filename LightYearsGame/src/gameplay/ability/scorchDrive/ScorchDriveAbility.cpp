@@ -84,11 +84,7 @@ namespace ly
 			AbilityData::ScorchDrive::Attribute::SegmentSpawnDistance,
 			AbilityData::ScorchDrive::Attribute::BaseSegmentLifetime,
 			AbilityData::ScorchDrive::Attribute::FireTickInterval,
-			AbilityData::ScorchDrive::Attribute::BurnDuration,
-			AbilityData::ScorchDrive::Attribute::BurnTickInterval,
-			AbilityData::ScorchDrive::Attribute::BurnDamageRatio,
-			AbilityData::ScorchDrive::Attribute::ReferenceMaxHealth,
-			AbilityData::ScorchDrive::Attribute::MaxHealthLifetimeScale
+			AbilityData::ScorchDrive::Attribute::IgniteStacks
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -110,23 +106,20 @@ namespace ly
 		{
 			return FindValue(definition.attributes, id, 0.f);
 		};
-		const float burnRatio = value(AbilityData::ScorchDrive::Attribute::BurnDamageRatio);
+		const float igniteStacks = value(AbilityData::ScorchDrive::Attribute::IgniteStacks);
 		if (value(AbilityData::ScorchDrive::Attribute::Damage) < 0.f ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::SegmentSpawnDistance)) ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::BaseSegmentLifetime)) ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::FireTickInterval)) ||
-			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::BurnDuration)) ||
-			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::BurnTickInterval)) ||
-			burnRatio < 0.f || burnRatio > 1.f ||
-			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::ReferenceMaxHealth)) ||
-			value(AbilityData::ScorchDrive::Attribute::MaxHealthLifetimeScale) < 0.f ||
+			igniteStacks < 1.f || igniteStacks > 4.f ||
+			std::round(igniteStacks) != igniteStacks ||
 			definition.levelProgression.size() != 14 ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Thermal)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Scorch Drive contains invalid trail, Burn or progression values.";
+				*failureReason = "Scorch Drive contains invalid trail, Ignite or progression values.";
 			}
 			return false;
 		}
@@ -159,35 +152,15 @@ namespace ly
 			0.01f,
 			FindValue(values, AbilityData::ScorchDrive::Attribute::FireTickInterval, 0.25f)
 		);
-		mBurnDuration = std::max(
-			0.f,
-			FindValue(values, AbilityData::ScorchDrive::Attribute::BurnDuration, 3.f)
-		);
-		mBurnTickInterval = std::max(
-			0.01f,
-			FindValue(values, AbilityData::ScorchDrive::Attribute::BurnTickInterval, 0.5f)
-		);
-		mBurnDamageRatio = std::clamp(
-			FindValue(values, AbilityData::ScorchDrive::Attribute::BurnDamageRatio, 0.5f),
-			0.f,
-			1.f
-		);
-		mReferenceMaxHealth = std::max(
-			0.f,
-			FindValue(values, AbilityData::ScorchDrive::Attribute::ReferenceMaxHealth, 100.f)
-		);
-		mMaxHealthLifetimeScale = std::max(
-			0.f,
-			FindValue(values, AbilityData::ScorchDrive::Attribute::MaxHealthLifetimeScale, 0.01f)
-		);
+		mIgniteStacksPerHit = std::clamp(static_cast<int>(std::round(
+			FindValue(values, AbilityData::ScorchDrive::Attribute::IgniteStacks, 1.f)
+		)), 1, 4);
 
 		mCoordinator = world->SpawnActor<ScorchDriveTrailCoordinatorActor>(
 			&context.owner,
 			mFireDamage,
 			mFireTickInterval,
-			mBurnDuration,
-			mBurnTickInterval,
-			mBurnDamageRatio,
+			mIgniteStacksPerHit,
 			sas::ContentId{ context.definition.abilityId },
 			context.definition.abilityTags,
 			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability)
@@ -327,16 +300,7 @@ namespace ly
 			return;
 		}
 
-		const float maxHealth = std::max(
-			0.f,
-			context.abilitySystem.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::MaxHealth
-			)
-		);
-		const float bonusMaxHealth = std::max(0.f, maxHealth - mReferenceMaxHealth);
-		const float lifetime = mBaseSegmentLifetime +
-			bonusMaxHealth * mMaxHealthLifetimeScale;
-		segment->ConfigureSegment(location, direction, lifetime, mCoordinator);
+		segment->ConfigureSegment(location, direction, mBaseSegmentLifetime, mCoordinator);
 		coordinator->AddSegment(segment);
 	}
 

@@ -17,7 +17,7 @@ namespace ly
 		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 10.f;
 		constexpr float BaseDuration = 4.f;
-		constexpr float BaseDamage = 6.f;
+		constexpr float BaseDamage = 12.f;
 		constexpr float BaseTickInterval = 0.25f;
 		constexpr float BaseCastRange = 900.f;
 		constexpr float BaseProjectileSpeed = 2000.f;
@@ -25,10 +25,6 @@ namespace ly
 		constexpr float BaseOuterMinRadius = 250.f;
 		constexpr float BaseOuterMaxRadius = 335.f;
 		constexpr float BaseBoundaryPointCount = 20.f;
-		constexpr float AttackPowerScale = 0.12f;
-		constexpr float EnergyPowerDamageScale = 0.05f;
-		constexpr float DamagePerLevel = 1.f;
-		constexpr float CooldownPerLevel = -0.20f;
 		constexpr float Epsilon = 0.0001f;
 
 		bool NearlyEqual(float left, float right)
@@ -97,12 +93,11 @@ namespace ly
 
 		bool HasExpectedScaling(const GameAbilityDefinition& definition)
 		{
-			if (definition.scalingRules.size() != 2)
+			if (definition.scalingRules.size() != 1)
 			{
 				return false;
 			}
 
-			bool hasAttackPower = false;
 			bool hasEnergyPower = false;
 			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
 			{
@@ -111,27 +106,24 @@ namespace ly
 				{
 					continue;
 				}
-				hasAttackPower = hasAttackPower ||
-					(rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
-						NearlyEqual(rule.coefficient, AttackPowerScale));
-				hasEnergyPower = hasEnergyPower ||
-					(rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
-						NearlyEqual(rule.coefficient, EnergyPowerDamageScale));
+				hasEnergyPower = rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+					std::isfinite(rule.coefficient) && rule.coefficient > 0.f;
 			}
-			return hasAttackPower && hasEnergyPower;
+			return hasEnergyPower;
 		}
 
-		bool HasExpectedModifier(
+		bool HasModifierWithSign(
 			const AbilityLevelStep& step,
 			const sas::AttributeId& id,
-			float magnitude
+			bool positive
 		)
 		{
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == id &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					NearlyEqual(modifier.magnitude, magnitude))
+					std::isfinite(modifier.magnitude) &&
+					(positive ? modifier.magnitude > 0.f : modifier.magnitude < 0.f))
 				{
 					return true;
 				}
@@ -226,6 +218,8 @@ namespace ly
 				AbilityData::IonStorm::Attribute::Damage,
 				0.f
 			), BaseDamage) &&
+			HasValidAttribute(field->attributes, DamageAttributeIds::ElectricStacks, 1.f, true) &&
+			FindValue(field->attributes, DamageAttributeIds::ElectricStacks, 0.f) <= 4.f &&
 			NearlyEqual(FindValue(
 				field->attributes,
 				AbilityData::IonStorm::Attribute::InnerCoreRadius,
@@ -254,8 +248,14 @@ namespace ly
 		{
 			for (const AbilityLevelStep& step : definition.levelProgression)
 			{
-				if (!HasExpectedModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-					!HasExpectedModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
+				if (!HasModifierWithSign(step, CommonAttributeIds::Damage, true) ||
+					!HasModifierWithSign(step, CommonAttributeIds::Cooldown, false) ||
+					step.scalingRules.size() != 1 ||
+					step.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
+					step.scalingRules.front().sourceAttributeId != OwnerAttributeIds::EnergyPower ||
+					step.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
+					!std::isfinite(step.scalingRules.front().coefficient) ||
+					step.scalingRules.front().coefficient <= 0.f)
 				{
 					validProgression = false;
 					break;
@@ -270,7 +270,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Ion Storm requires a cursor projectile, fixed electric field values, and AttackPower damage scaling.";
+					"Ion Storm requires a cursor projectile, electric field values, and EnergyPower damage scaling.";
 			}
 			return false;
 		}

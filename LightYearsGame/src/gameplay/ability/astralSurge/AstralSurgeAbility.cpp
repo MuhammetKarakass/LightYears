@@ -45,33 +45,42 @@ namespace ly
 			return rule.targetAttributeId == CommonAttributeIds::Damage &&
 				rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 				rule.operation == sas::AttributeModifierOperation::Add &&
-				std::abs(rule.coefficient - 0.45f) <= 0.0001f;
+				std::isfinite(rule.coefficient) && rule.coefficient > 0.f;
 		}
 
 		bool HasExpectedLevelStep(const AbilityLevelStep& step)
 		{
-			if (step.attributeModifiers.size() != 2)
-			{
-				return false;
-			}
-			bool damageStep = false;
-			bool cooldownStep = false;
+			int damageModifiers = 0;
+			int cooldownModifiers = 0;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == CommonAttributeIds::Damage &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude - 5.f) <= 0.0001f)
+					std::isfinite(modifier.magnitude) && modifier.magnitude > 0.f)
 				{
-					damageStep = true;
+					++damageModifiers;
 				}
-				if (modifier.attributeId == CommonAttributeIds::Cooldown &&
+				else if (modifier.attributeId == CommonAttributeIds::Cooldown &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude + 0.25f) <= 0.0001f)
+					std::isfinite(modifier.magnitude) && modifier.magnitude <= 0.f)
 				{
-					cooldownStep = true;
+					++cooldownModifiers;
+				}
+				else
+				{
+					return false;
 				}
 			}
-			return damageStep && cooldownStep;
+			if (damageModifiers != 1 || cooldownModifiers > 1 ||
+				step.scalingRules.size() != 1)
+			{
+				return false;
+			}
+			const sas::AttributeScalingRule& scalingRule = step.scalingRules.front();
+			return scalingRule.targetAttributeId == CommonAttributeIds::Damage &&
+				scalingRule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+				scalingRule.operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(scalingRule.coefficient) && scalingRule.coefficient > 0.f;
 		}
 	}
 
@@ -92,7 +101,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Astral Surge requires a timed OnPressed lifecycle and EnergyPower damage scaling.";
+					"Astral Surge requires a timed OnPressed lifecycle and positive additive EnergyPower damage scaling.";
 			}
 			return false;
 		}
@@ -155,7 +164,7 @@ namespace ly
 		{
 			if (failureReason)
 			{
-				*failureReason = "Astral Surge requires Energy damage and fourteen Damage/Cooldown progression steps.";
+				*failureReason = "Astral Surge requires Energy damage and fourteen positive Damage/EnergyPower progression steps.";
 			}
 			return false;
 		}

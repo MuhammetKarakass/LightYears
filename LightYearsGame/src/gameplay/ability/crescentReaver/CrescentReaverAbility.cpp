@@ -25,38 +25,50 @@ namespace ly
 			return attribute ? std::optional<float>{ attribute->baseValue } : std::nullopt;
 		}
 
-		std::optional<float> FindModifierMagnitude(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId
+		bool IsPositiveAdditiveScalingRule(
+			const sas::AttributeScalingRule& rule,
+			const sas::AttributeId& targetAttributeId,
+			const sas::AttributeId& sourceAttributeId
 		)
 		{
-			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-			{
-				if (modifier.attributeId == attributeId &&
-					modifier.operation == sas::AttributeModifierOperation::Add)
-				{
-					return modifier.magnitude;
-				}
-			}
-			return std::nullopt;
+			return rule.targetAttributeId == targetAttributeId &&
+				rule.sourceAttributeId == sourceAttributeId &&
+				rule.operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(rule.coefficient) && rule.coefficient > 0.f;
 		}
 
-		bool HasExpectedModifier(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			float magnitude
-		)
+		bool HasValidProgressionStep(const AbilityLevelStep& step, float& cooldownDelta)
 		{
+			int damageModifiers = 0;
+			int cooldownModifiers = 0;
+			cooldownDelta = 0.f;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
-				if (modifier.attributeId == attributeId &&
+				if (modifier.attributeId == CommonAttributeIds::Damage &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
+					std::isfinite(modifier.magnitude) && modifier.magnitude > 0.f)
 				{
-					return true;
+					++damageModifiers;
+				}
+				else if (modifier.attributeId == CommonAttributeIds::Cooldown &&
+					modifier.operation == sas::AttributeModifierOperation::Add &&
+					std::isfinite(modifier.magnitude) && modifier.magnitude <= 0.f)
+				{
+					++cooldownModifiers;
+					cooldownDelta += modifier.magnitude;
+				}
+				else
+				{
+					return false;
 				}
 			}
-			return false;
+			return damageModifiers == 1 && cooldownModifiers <= 1 &&
+				step.scalingRules.size() == 1 &&
+				IsPositiveAdditiveScalingRule(
+					step.scalingRules.front(),
+					CommonAttributeIds::Damage,
+					OwnerAttributeIds::AttackPower
+				);
 		}
 
 		const sas::AttributeScalingRule* FindScalingRule(
@@ -125,21 +137,15 @@ namespace ly
 				AbilityData::CrescentReaver::Actor::Projectile::BounceDamageGrowth
 			)
 			: std::nullopt;
-		const std::optional<float> cooldownReduction = actor
-			? FindActorAttribute(
-				*actor,
-				AbilityData::CrescentReaver::Actor::Projectile::BounceCooldownReduction
-			)
-			: std::nullopt;
 		const std::optional<float> collisionRadius = actor
 			? FindActorAttribute(*actor, CollisionAttributeIds::Radius)
 			: std::nullopt;
 
 		if (!actor || !damage || !speed || !bounceCount || !damageGrowth ||
-			!cooldownReduction || !collisionRadius || *damage <= 0.f ||
+			!collisionRadius || *damage <= 0.f ||
 			*speed <= 0.f || *bounceCount < 0.f ||
 			std::round(*bounceCount) != *bounceCount || *damageGrowth < 0.f ||
-			*cooldownReduction < 0.f || *collisionRadius <= 0.f ||
+			*collisionRadius <= 0.f ||
 			actor->spawnDistance < 0.f || actor->lifeTime != 0.f)
 		{
 			if (failureReason)
@@ -174,17 +180,21 @@ namespace ly
 		if (definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Kinetic ||
 			definition.scalingRules.size() != 2 || !damageScaling || !luckScaling ||
-			damageScaling->sourceAttributeId != OwnerAttributeIds::AttackPower ||
-			damageScaling->operation != sas::AttributeModifierOperation::Add ||
-			std::abs(damageScaling->coefficient - 0.80f) > 0.0001f ||
-			luckScaling->sourceAttributeId != OwnerAttributeIds::Luck ||
-			luckScaling->operation != sas::AttributeModifierOperation::Add ||
-			std::abs(luckScaling->coefficient - 0.05f) > 0.0001f)
+			!IsPositiveAdditiveScalingRule(
+				*damageScaling,
+				CommonAttributeIds::Damage,
+				OwnerAttributeIds::AttackPower
+			) ||
+			!IsPositiveAdditiveScalingRule(
+				*luckScaling,
+				AbilityData::CrescentReaver::Actor::Projectile::BounceCount,
+				OwnerAttributeIds::Luck
+			))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Crescent Reaver requires Kinetic damage, AttackPower x0.80 damage scaling, and Luck x0.05 bounce scaling.";
+					"Crescent Reaver requires Kinetic damage, positive additive AttackPower damage scaling, and positive additive Luck bounce scaling.";
 			}
 			return false;
 		}
@@ -199,40 +209,20 @@ namespace ly
 			return false;
 		}
 
-		const std::optional<float> damagePerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Damage
-		);
-		const std::optional<float> cooldownPerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Cooldown
-		);
-		if (!damagePerLevel || !cooldownPerLevel || *damagePerLevel <= 0.f ||
-			*cooldownPerLevel >= 0.f)
-		{
-			if (failureReason)
-			{
-				*failureReason =
-					"Crescent Reaver progression must add damage and reduce cooldown.";
-			}
-			return false;
-		}
-
 		float resolvedCooldown = definition.cooldown;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (step.attributeModifiers.size() != 2 ||
-				!HasExpectedModifier(step, CommonAttributeIds::Damage, *damagePerLevel) ||
-				!HasExpectedModifier(step, CommonAttributeIds::Cooldown, *cooldownPerLevel))
+			float cooldownDelta = 0.f;
+			if (!HasValidProgressionStep(step, cooldownDelta))
 			{
 				if (failureReason)
 				{
 					*failureReason =
-						"Crescent Reaver progression may only increase damage and reduce cooldown.";
+						"Crescent Reaver progression must add damage and AttackPower scaling; cooldown may only stay or decrease.";
 				}
 				return false;
 			}
-			resolvedCooldown += *cooldownPerLevel;
+			resolvedCooldown += cooldownDelta;
 			if (resolvedCooldown <= 0.f)
 			{
 				if (failureReason)

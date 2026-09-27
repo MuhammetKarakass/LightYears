@@ -32,6 +32,8 @@ namespace ly
 
 		float GetProjectileSpeed() const { return mProjectileSpeed; }
 		float GetMaximumRange() const { return mMaximumRange; }
+		float GetPierceDamageLoss() const { return mPierceDamageLoss; }
+		float GetMinimumDamageMultiplier() const { return mMinimumDamageMultiplier; }
 		std::size_t GetHitTargetCount() const { return mHitTargets.size(); }
 
 	private:
@@ -54,6 +56,8 @@ namespace ly
 		RailBurstPresentationProfile mPresentationProfile;
 		float mProjectileSpeed = 0.f;
 		float mMaximumRange = 0.f;
+		float mPierceDamageLoss = 0.10f;
+		float mMinimumDamageMultiplier = 0.60f;
 		float mTravelDistance = 0.f;
 		sf::Vector2f mLaunchVelocity{};
 		Set<Actor*> mHitTargets;

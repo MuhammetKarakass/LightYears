@@ -27,18 +27,14 @@ namespace ly
 	namespace
 	{
 		constexpr std::size_t RequiredAttributeCount = 7;
-		constexpr std::size_t RequiredProgressionStepCount = 14;
-		constexpr float BaseCooldown = 9.f;
 		constexpr float BaseDuration = 0.f;
-		constexpr float BaseDamage = 25.f;
+		constexpr float BaseDamage = 50.f;
 		constexpr float BaseSearchRadius = 600.f;
 		constexpr float BaseTargetCount = 4.f;
 		constexpr float BaseFocusDuration = 0.30f;
 		constexpr float BaseStrikeDuration = 0.20f;
-		constexpr float BaseLuckPerExtraTarget = 50.f;
+		constexpr float BaseLuckPerExtraTarget = 20.f;
 		constexpr float BaseElectricStacks = 1.f;
-		constexpr float DamagePerLevel = 4.f;
-		constexpr float CooldownPerLevel = -0.20f;
 		constexpr float Epsilon = 0.0001f;
 
 		bool NearlyEqual(float left, float right)
@@ -53,21 +49,6 @@ namespace ly
 		)
 		{
 			return sas::FindAttribute(definition.attributes, attributeId);
-		}
-
-		float FindValue(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId,
-			float fallback
-		)
-		{
-			const sas::GameplayAttribute* attribute = FindAttribute(
-				definition,
-				attributeId
-			);
-			return attribute && std::isfinite(attribute->baseValue)
-				? attribute->baseValue
-				: fallback;
 		}
 
 		bool HasValidAttribute(
@@ -118,10 +99,10 @@ namespace ly
 			return hasCategory && hasFamily;
 		}
 
-		bool HasExpectedModifier(
+		bool HasModifier(
 			const AbilityLevelStep& step,
 			const sas::AttributeId& attributeId,
-			float expectedMagnitude
+			bool positive
 		)
 		{
 			return std::any_of(
@@ -131,9 +112,23 @@ namespace ly
 				{
 					return modifier.attributeId == attributeId &&
 						modifier.operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(modifier.magnitude, expectedMagnitude);
+						std::isfinite(modifier.magnitude) &&
+						(positive ? modifier.magnitude > 0.f : modifier.magnitude < 0.f);
 				}
 			);
+		}
+
+		bool HasValidEnergyPowerScaling(
+			const List<sas::AttributeScalingRule>& rules,
+			bool requirePositive
+		)
+		{
+			return rules.size() == 1 &&
+				rules.front().targetAttributeId == CommonAttributeIds::Damage &&
+				rules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+				rules.front().operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(rules.front().coefficient) &&
+				(requirePositive ? rules.front().coefficient > 0.f : rules.front().coefficient >= 0.f);
 		}
 
 		weak_ptr<Actor> MakeWeakActor(Actor* actor)
@@ -214,25 +209,20 @@ namespace ly
 					BaseLuckPerExtraTarget
 				)
 			);
-			const float luckRating = std::max(
-				0.f,
-				ownerAbilitySystem.GetAttributes().GetCurrentValue(
-					OwnerAttributeIds::Luck
-				)
+			const float rawLuckRating = ownerAbilitySystem.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::Luck
 			);
-			const float expectedExtraTargets = luckRating / luckPerExtraTarget;
-			const float safeExtraTargets = std::min(
-				std::max(0.f, expectedExtraTargets),
-				static_cast<float>(std::numeric_limits<int>::max() - baseTargetCount)
+			const double luckRating = std::isfinite(rawLuckRating)
+				? static_cast<double>(std::max(0.f, rawLuckRating))
+				: 0.0;
+			const double extraTargets = std::floor(
+				luckRating / static_cast<double>(luckPerExtraTarget)
 			);
-			const int guaranteedExtraTargets = static_cast<int>(
-				std::floor(safeExtraTargets)
-			);
-			const float fractionalExtraTarget = safeExtraTargets -
-				static_cast<float>(guaranteedExtraTargets);
-			const int randomExtraTarget = RandRange(0.f, 1.f) <
-				fractionalExtraTarget ? 1 : 0;
-			return baseTargetCount + guaranteedExtraTargets + randomExtraTarget;
+			const int safeExtraTargets = static_cast<int>(std::min(
+				extraTargets,
+				static_cast<double>(std::numeric_limits<int>::max() - baseTargetCount)
+			));
+			return baseTargetCount + safeExtraTargets;
 		}
 	}
 
@@ -250,7 +240,7 @@ namespace ly
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Instant &&
 			definition.maxCharges == 1 &&
-			NearlyEqual(definition.cooldown, BaseCooldown) &&
+			std::isfinite(definition.cooldown) && definition.cooldown > 0.f &&
 			NearlyEqual(definition.duration, BaseDuration);
 		const bool validDamageIdentity =
 			definition.damageTags.size() == 1 &&
@@ -259,96 +249,62 @@ namespace ly
 		const bool validAttributes =
 			definition.attributes.size() == RequiredAttributeCount &&
 			HasValidAttribute(definition, CommonAttributeIds::Damage, 0.f) &&
-			NearlyEqual(FindValue(definition, CommonAttributeIds::Damage, 0.f), BaseDamage) &&
 			HasValidAttribute(definition, CommonAttributeIds::Range, 0.01f) &&
-			NearlyEqual(FindValue(definition, CommonAttributeIds::Range, 0.f), BaseSearchRadius) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::StormMark::Attribute::BaseTargetCount,
 				1.f,
 				true
 			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::BaseTargetCount,
-					0.f
-				),
-				BaseTargetCount
-			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::StormMark::Attribute::FocusDuration,
 				0.01f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::FocusDuration,
-					0.f
-				),
-				BaseFocusDuration
 			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::StormMark::Attribute::StrikeDuration,
 				0.01f
 			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::StrikeDuration,
-					0.f
-				),
-				BaseStrikeDuration
-			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::StormMark::Attribute::LuckPerExtraTarget,
 				0.01f
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::LuckPerExtraTarget,
-					0.f
-				),
-				BaseLuckPerExtraTarget
 			) &&
 			HasValidAttribute(
 				definition,
 				AbilityData::StormMark::Attribute::ElectricStacks,
 				1.f,
 				true
-			) &&
-			NearlyEqual(
-				FindValue(
-					definition,
-					AbilityData::StormMark::Attribute::ElectricStacks,
-					0.f
-				),
-				BaseElectricStacks
 			);
 
-		bool validProgression = definition.levelProgression.size() ==
-			RequiredProgressionStepCount;
+		bool validProgression = !definition.levelProgression.empty() &&
+			definition.levelUpgradeScrapCosts.size() == definition.levelProgression.size();
 		float resolvedCooldown = definition.cooldown;
 		if (validProgression)
 		{
 			for (const AbilityLevelStep& step : definition.levelProgression)
 			{
-				if (step.attributeModifiers.size() != 2 ||
+				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
 					!step.unlockedUpgradeIds.empty() ||
 					!step.addedActions.empty() ||
 					!step.addedTriggers.empty() ||
-					!HasExpectedModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-					!HasExpectedModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
+					!HasModifier(step, CommonAttributeIds::Damage, true) ||
+					!HasModifier(step, CommonAttributeIds::Cooldown, false) ||
+					!HasValidEnergyPowerScaling(step.scalingRules, false))
 				{
 					validProgression = false;
 					break;
 				}
 
-				resolvedCooldown += CooldownPerLevel;
+				const auto cooldownModifier = std::find_if(
+					step.attributeModifiers.begin(), step.attributeModifiers.end(),
+					[](const sas::AttributeModifier& modifier)
+					{
+						return modifier.attributeId == CommonAttributeIds::Cooldown;
+					}
+				);
+				resolvedCooldown += cooldownModifier->magnitude;
 				if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
 				{
 					validProgression = false;
@@ -357,11 +313,7 @@ namespace ly
 			}
 		}
 
-		const bool validScaling = definition.scalingRules.size() == 1 &&
-			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
-			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
-			NearlyEqual(definition.scalingRules.front().coefficient, 0.25f);
+		const bool validScaling = HasValidEnergyPowerScaling(definition.scalingRules, true);
 
 		// Target selection, strike timing and status application are owned by this
 		// behavior. Generic actions would fire immediately and break the focus
@@ -378,7 +330,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Storm Mark requires its electric identity, seven target/timing/status attributes, EnergyPower damage scaling, and fourteen damage/cooldown progression steps.";
+					"Storm Mark requires its electric identity, seven target/timing/status attributes, EnergyPower damage scaling, and aligned progression costs.";
 			}
 			return false;
 		}

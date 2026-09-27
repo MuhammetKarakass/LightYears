@@ -18,9 +18,7 @@ namespace ly
 			Actor* owner,
 			float fireDamage,
 			float fireTickInterval,
-			float burnDuration,
-			float burnTickInterval,
-			float burnDamageRatio,
+			int igniteStacksPerHit,
 			const sas::ContentId& sourceAbilityId,
 			const List<GameplayTag>& sourceAbilityTags,
 			const List<GameplayTag>& damageTags
@@ -43,9 +41,7 @@ namespace ly
 		List<weak_ptr<ScorchDriveFireSegmentActor>> mSegments;
 		float mFireDamage = 0.f;
 		float mFireTickInterval = 0.f;
-		float mBurnDuration = 0.f;
-		float mBurnTickInterval = 0.f;
-		float mBurnDamageRatio = 0.f;
+		int mIgniteStacksPerHit = 1;
 		float mTickAccumulator = 0.f;
 		bool mCastActive = true;
 		sas::ContentId mSourceAbilityId;
