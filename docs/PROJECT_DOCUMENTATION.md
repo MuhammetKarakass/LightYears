@@ -1094,8 +1094,29 @@ imzalarını tanımlayan `GameplayEffectBehavior::Hooks` oyun katmanındadır.
 `GameplayEffectBindings` required/blocked application tag gate'ini, Instant
 effect base modifier uygulamasını, active modifier handle ekleme/sökme ve
 granted-tag ekleme/sökme işlemlerini yürütür. `GameplayEffectRuntimeSystem` refresh,
-stack ve removal sırasını; behavior callback, pending DamageContext event ve
-visual lifecycle orkestrasyonunu korur.
+stack ve removal sırasını, behavior callback ve visual lifecycle orkestrasyonunu
+korur. Hasara bağlı effect event'leri `CombatRuntime` içindeki iç içe dispatch
+frame'lerine aittir; `DamageContext` yalnız ilgili senkron çağrı boyunca
+ödünç alınır. Clear generation değişimi eski event batch'inin devamını keser.
+
+Callback sırasında effect/ability kayıtları fiziksel olarak silinmez; bağımsız
+cleanup adımları ilk hatadan sonra da denenir. Tamamlanmayan kaynak borcu,
+granted ability ve invocation sahiplerinde yeniden denemeye kadar korunur.
+Ability execution kendi action-spec snapshot'ını tutar; aktifken scoped tanım
+yenilense de mevcut activation aynı yapısal action listesiyle sona erer.
+Behavior cleanup borcu ile bir kez yayımlanan lifecycle bildirimi ayrıdır.
+Gözlemci exception'ı tek başına cleanup borcu sayılmaz: tamamlanmış kayıtlar
+bırakılır, ilk hata bağımsız temizlik adımlarından sonra yeniden fırlatılır.
+Invocation ve effect borçları bitmeden backing state bırakılmaz; legacy
+additional-state temizliği ile son dependency release ayrı adımlardır.
+
+Player ability satın alımında level tanımı ve primary-weapon konfigürasyonu
+önce hazırlanır. No-throw commit sınırında level/config, satın alınan level
+kaydı ve scrap kesintisi tamamlanır; public level/scrap gözlemcileri bundan
+sonra çalışır. Commit sonrası gözlemci hatası veya Clear satın almayı geri
+almaz; nested satın alma aynı işlem boyunca reddedilir. Bu sınırların E2E
+kanıtı ve kapsamı [Luna kabul raporunda](LUNA_IMPLEMENTATION_ACCEPTANCE_2026-09-26.md)
+tutulur.
 
 `GameplayEffectRuntimeSystem`; instant, duration ve infinite yaşam politikalarını;
 no-stack, refresh-duration, stack ve opt-in stack-decay davranışlarını; modifier/tag ekleme ve

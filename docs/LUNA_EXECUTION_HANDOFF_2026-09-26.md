@@ -1,5 +1,7 @@
 # Luna callback/lifetime çalışması — bağlam devri
 
+> Tarihsel checkpoint: uygulama 2026-09-27 tarihinde yeniden başlatıldı. Güncel tamamlanma durumu, commitler ve açık kabul kapıları [acceptance belgesinin güncel bölümündedir](LUNA_IMPLEMENTATION_ACCEPTANCE_2026-09-26.md). Kullanıcının sonraki Luna max orkestrasyon ve commit talebi bu belgedeki eski çalışma biçiminin yerini alır.
+
 **Tarih:** 2026-09-26
 **Durum:** Kullanıcının durdurduğu checkpoint; plan tamamlanmadı.
 **Amaç:** Yeni bağlamda uygulamaya kaldığı yerden, kanıt sınırlarını koruyarak devam etmek.
