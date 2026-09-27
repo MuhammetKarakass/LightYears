@@ -240,6 +240,23 @@ namespace ly
 		TryDamageTarget(otherActor);
 	}
 
+	void OrbitingDroneActor::OnActorEndOverlap(Actor* otherActor)
+	{
+		AbilityWorldActor::OnActorEndOverlap(otherActor);
+		if (!otherActor)
+		{
+			return;
+		}
+
+		const auto touching = mTouchingTargets.find(otherActor->GetUniqueID());
+		if (touching != mTouchingTargets.end() &&
+			touching->second.lock().get() == otherActor &&
+			!IsTouchingTarget(*otherActor))
+		{
+			mTouchingTargets.erase(touching);
+		}
+	}
+
 	void OrbitingDroneActor::ConfigureFromAttributes(
 		const sas::GameplayAttributeList& attributes
 	)
@@ -353,6 +370,7 @@ namespace ly
 
 	void OrbitingDroneActor::ProcessContactCandidates()
 	{
+		PruneTouchingTargets();
 		World* world = GetWorld();
 		if (!world)
 		{
@@ -379,6 +397,17 @@ namespace ly
 		}
 
 		const unsigned int targetId = target->GetUniqueID();
+		const auto touching = mTouchingTargets.find(targetId);
+		if (touching != mTouchingTargets.end())
+		{
+			if (touching->second.lock().get() == target)
+			{
+				return;
+			}
+			mTouchingTargets.erase(touching);
+		}
+		mTouchingTargets.emplace(targetId, MakeWeakActor(target));
+
 		const auto found = mNextHitAllowedAt.find(targetId);
 		if (found != mNextHitAllowedAt.end() &&
 			mContactClock < found->second.nextAllowedAt)
@@ -444,6 +473,23 @@ namespace ly
 				iter->second.nextAllowedAt + 1.f < mContactClock)
 			{
 				iter = mNextHitAllowedAt.erase(iter);
+			}
+			else
+			{
+				++iter;
+			}
+		}
+	}
+
+	void OrbitingDroneActor::PruneTouchingTargets()
+	{
+		for (auto iter = mTouchingTargets.begin(); iter != mTouchingTargets.end();)
+		{
+			const shared_ptr<Actor> target = iter->second.lock();
+			if (!target || target->GetIsPendingDestroy() ||
+				!IsEligibleCombatant(target.get()) || !IsTouchingTarget(*target))
+			{
+				iter = mTouchingTargets.erase(iter);
 			}
 			else
 			{

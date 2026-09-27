@@ -42,25 +42,15 @@ namespace AbilityData::ExecutionDrive
 
 	struct Attribute
 	{
-		inline static const sas::AttributeId BaseAttackPowerBonus{
-			"Ability.Offense.ExecutionDrive.BaseAttackPowerBonus"
+		inline static const sas::AttributeId FlatAttackPowerBonus{
+			"Ability.Offense.ExecutionDrive.FlatAttackPowerBonus"
 		};
-		inline static const sas::AttributeId AttackPowerPerStack{
-			"Ability.Offense.ExecutionDrive.AttackPowerPerStack"
+		inline static const sas::AttributeId AttackPowerScale{
+			"Ability.Offense.ExecutionDrive.AttackPowerScale"
 		};
-		inline static const sas::AttributeId BaseChaseMovementBonus{
-			"Ability.Offense.ExecutionDrive.BaseChaseMovementBonus"
+		inline static const sas::AttributeId MoveSpeedBonus{
+			"Ability.Offense.ExecutionDrive.MoveSpeedBonus"
 		};
-		inline static const sas::AttributeId ChaseMovementPerStack{
-			"Ability.Offense.ExecutionDrive.ChaseMovementPerStack"
-		};
-		inline static const sas::AttributeId AttackPowerChaseScale{
-			"Ability.Offense.ExecutionDrive.AttackPowerChaseScale"
-		};
-		inline static const sas::AttributeId TargetingRange =
-			ly::CommonAttributeIds::Range;
-		inline static const sas::AttributeId DirectionThreshold{
-			"Ability.Offense.ExecutionDrive.DirectionThreshold"
-		};
+		inline static const sas::AttributeId Range = ly::CommonAttributeIds::Range;
 	};
 }

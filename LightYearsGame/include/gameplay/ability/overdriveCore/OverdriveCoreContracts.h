@@ -23,20 +23,11 @@ namespace AbilityData::OverdriveCore
 		inline static const sas::AttributeId RocketLaunchDuration{
 			"Ability.Offense.OverdriveCore.RocketLaunchDuration"
 		};
-		inline static const sas::AttributeId SameTargetDamageDecay{
-			"Ability.Offense.OverdriveCore.SameTargetDamageDecay"
-		};
 		inline static const sas::AttributeId AttackSpeedBoostDuration{
 			"Ability.Offense.OverdriveCore.AttackSpeedBoostDuration"
 		};
 		inline static const sas::AttributeId AttackSpeedBoostBase{
 			"Ability.Offense.OverdriveCore.AttackSpeedBoostBase"
-		};
-		inline static const sas::AttributeId AttackSpeedBoostPerLevel{
-			"Ability.Offense.OverdriveCore.AttackSpeedBoostPerLevel"
-		};
-		inline static const sas::AttributeId AttackSpeedBoostCriticalChanceScale{
-			"Ability.Offense.OverdriveCore.AttackSpeedBoostCriticalChanceScale"
 		};
 	};
 

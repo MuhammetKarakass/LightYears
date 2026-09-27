@@ -21,19 +21,14 @@ namespace ly
 	namespace
 	{
 		constexpr std::size_t RequiredDroneCount = 4;
-		constexpr std::size_t RequiredAttributeCount = 8;
-		constexpr std::size_t RequiredProgressionStepCount = 14;
-		constexpr float BaseCooldown = 12.f;
+		constexpr std::size_t RequiredAttributeCount = 6;
+		constexpr std::size_t RequiredProgressionStepCount = 24;
 		constexpr float BaseDuration = 6.f;
-		constexpr float BaseOrbitRadius = 200.f;
-		constexpr float BaseDamage = 18.f;
+		constexpr float BaseOrbitRadius = 500.f;
+		constexpr float BaseDamage = 25.f;
 		constexpr float BaseSameTargetHitCooldown = 0.5f;
 		constexpr float BaseAngularSpeed = 2.5f;
 		constexpr float BaseContactRadius = 12.f;
-		constexpr float BaseEnergyReference = 50.f;
-		constexpr float BaseEnergyDurationScale = 0.02f;
-		constexpr float DamagePerLevel = 2.f;
-		constexpr float CooldownPerLevel = -0.25f;
 		constexpr float Epsilon = 0.0001f;
 
 		bool NearlyEqual(float left, float right)
@@ -98,36 +93,47 @@ namespace ly
 			return hasCategory && hasFamily;
 		}
 
-		bool HasExpectedScaling(const GameAbilityDefinition& definition)
+		bool HasAttackPowerDamageScaling(const List<sas::AttributeScalingRule>& rules)
 		{
-			if (definition.scalingRules.size() != 1)
+			if (rules.size() != 1)
 			{
 				return false;
 			}
 
-			const sas::AttributeScalingRule& rule = definition.scalingRules.front();
+			const sas::AttributeScalingRule& rule = rules.front();
 			return rule.targetAttributeId == CommonAttributeIds::Damage &&
 				rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
 				rule.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(rule.coefficient, 0.50f);
+				std::isfinite(rule.coefficient) && rule.coefficient >= 0.f;
 		}
 
-		bool HasExpectedModifier(
+		const sas::AttributeModifier* FindModifier(
 			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			float expectedMagnitude
+			const sas::AttributeId& attributeId
 		)
 		{
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
-				if (modifier.attributeId == attributeId &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					NearlyEqual(modifier.magnitude, expectedMagnitude))
+				if (modifier.attributeId == attributeId)
 				{
-					return true;
+					return &modifier;
 				}
 			}
-			return false;
+			return nullptr;
+		}
+
+		bool HasAttackPowerDamageScaling(const AbilityLevelStep& step)
+		{
+			if (step.scalingRules.size() != 1)
+			{
+				return false;
+			}
+
+			const sas::AttributeScalingRule& rule = step.scalingRules.front();
+			return rule.targetAttributeId == CommonAttributeIds::Damage &&
+				 rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
+				rule.operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(rule.coefficient) && rule.coefficient > 0.f;
 		}
 
 		float FindValue(
@@ -155,37 +161,6 @@ namespace ly
 			);
 		}
 
-		float ResolveEnergyDurationBonus(
-			const GameAbilityBehaviorContext& context,
-			const sas::GameplayAttributeList& values
-		)
-		{
-			const float energyReference = std::max(
-				0.f,
-				FindValue(
-					values,
-					AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
-					BaseEnergyReference
-				)
-			);
-			const float durationScale = std::max(
-				0.f,
-				FindValue(
-					values,
-					AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
-					BaseEnergyDurationScale
-				)
-			);
-			const float energyPower = context.abilitySystem.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::EnergyPower
-			);
-			if (!std::isfinite(energyPower))
-			{
-				return 0.f;
-			}
-
-			return std::max(0.f, energyPower - energyReference) * durationScale;
-		}
 	}
 
 	bool OrbitalDronesAbility::Validate(
@@ -202,8 +177,8 @@ namespace ly
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Duration &&
 			definition.maxCharges == 1 &&
-			NearlyEqual(definition.cooldown, BaseCooldown) &&
-			NearlyEqual(definition.duration, BaseDuration);
+			std::isfinite(definition.cooldown) && definition.cooldown > 0.f &&
+			std::isfinite(definition.duration) && definition.duration > 0.f;
 
 		if (!validIdentity || !validLifecycle)
 		{
@@ -247,35 +222,25 @@ namespace ly
 				definition,
 				AbilityData::OrbitalDrones::Attribute::ContactRadius,
 				0.1f
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
-				0.f
-			) &&
-			HasValidAttribute(
-				definition,
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
-				0.f
 			);
 		if (!validAttributes)
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Orbital Drones must declare exactly its eight shipped runtime attributes.";
+					"Orbital Drones must declare exactly its six shipped runtime attributes.";
 			}
 			return false;
 		}
 
 		if (definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Kinetic ||
-			!HasExpectedScaling(definition))
+			!HasAttackPowerDamageScaling(definition.scalingRules))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Orbital Drones requires Kinetic damage and only Common.Damage + 0.50 Owner.AttackPower scaling.";
+					"Orbital Drones requires Kinetic damage and an additive Owner.AttackPower to Common.Damage scaling rule.";
 			}
 			return false;
 		}
@@ -285,36 +250,49 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Orbital Drones requires fourteen progression steps through level fifteen.";
+					"Orbital Drones requires twenty-four progression steps through level twenty-five.";
 			}
 			return false;
 		}
 
 		float resolvedCooldown = definition.cooldown;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
 		{
+			const AbilityLevelStep& step = definition.levelProgression[index];
+			const sas::AttributeModifier* damageModifier = FindModifier(
+				step,
+				CommonAttributeIds::Damage
+			);
+			const sas::AttributeModifier* cooldownModifier = FindModifier(
+				step,
+				CommonAttributeIds::Cooldown
+			);
 			if (step.attributeModifiers.size() != 2 ||
 				!step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() ||
 				!step.addedTriggers.empty() ||
-				!HasExpectedModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-				!HasExpectedModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
+				!damageModifier ||
+				damageModifier->operation != sas::AttributeModifierOperation::Add ||
+				!std::isfinite(damageModifier->magnitude) || damageModifier->magnitude <= 0.f ||
+				!cooldownModifier ||
+				cooldownModifier->operation != sas::AttributeModifierOperation::Add ||
+				!std::isfinite(cooldownModifier->magnitude) || cooldownModifier->magnitude > 0.f ||
+				!HasAttackPowerDamageScaling(step))
 			{
 				if (failureReason)
 				{
 					*failureReason =
-						"Orbital Drones progression may only add 2 Common.Damage and -0.25 Common.Cooldown per level.";
+						"Orbital Drones progression only allows additive Common.Damage and nonincreasing Common.Cooldown with AttackPower scaling.";
 				}
 				return false;
 			}
 
-			resolvedCooldown += CooldownPerLevel;
-			if (resolvedCooldown <= 0.f)
+			resolvedCooldown += cooldownModifier->magnitude;
+			if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
 			{
 				if (failureReason)
 				{
-					*failureReason =
-						"Orbital Drones progression must keep cooldown positive at every level.";
+					*failureReason = "Orbital Drones progression must keep cooldown positive.";
 				}
 				return false;
 			}
@@ -324,16 +302,11 @@ namespace ly
 	}
 
 	float OrbitalDronesAbility::ResolveActiveDuration(
-		const GameAbilityBehaviorContext& context,
+		const GameAbilityBehaviorContext&,
 		float defaultDuration
 	) const
 	{
-		const sas::GameplayAttributeList values = ResolveAbilityValues(context);
-		const float safeDefaultDuration = std::max(
-			0.f,
-			std::isfinite(defaultDuration) ? defaultDuration : BaseDuration
-		);
-		return safeDefaultDuration + ResolveEnergyDurationBonus(context, values);
+		return std::max(0.f, std::isfinite(defaultDuration) ? defaultDuration : BaseDuration);
 	}
 
 	bool OrbitalDronesAbility::Activate(GameAbilityBehaviorContext& context)
@@ -389,11 +362,14 @@ namespace ly
 				BaseAngularSpeed
 			)
 		);
-		// Angular speed is a family-owned formation value. Orbital Drones does
-		// not declare an Owner.AttackSpeed scaling rule, and the owner attribute
-		// can legitimately be zero before progression is applied. Multiplying by
-		// that value would silently freeze every drone at its spawn phase.
-		const float angularSpeed = baseAngularSpeed;
+		const float ownerAttackSpeed = context.abilitySystem.GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::AttackSpeed
+		);
+		const float attackSpeed = std::isfinite(ownerAttackSpeed) ? ownerAttackSpeed : 0.f;
+		const float angularSpeed = std::max(
+			0.f,
+			baseAngularSpeed * (1.f + attackSpeed / 100.f)
+		);
 		const float contactRadius = std::max(
 			0.f,
 			FindValue(

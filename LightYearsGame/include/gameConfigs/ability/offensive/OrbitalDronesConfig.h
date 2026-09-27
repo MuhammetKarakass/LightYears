@@ -7,6 +7,8 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 
+#include <algorithm>
+
 namespace AbilityData::Definitions
 {
 	inline const ly::GameAbilityDefinition OrbitalDrones_Basic = []
@@ -29,8 +31,8 @@ namespace AbilityData::Definitions
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupRed_bolt.png";
 		definition.accentColor = sf::Color{ 255, 145, 45, 255 };
 		definition.attributes = {
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 200.f, 1.f },
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 18.f, 0.f },
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 500.f, 1.f },
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 25.f, 0.f },
 			sas::GameplayAttribute{
 				AbilityData::OrbitalDrones::Attribute::DroneCount,
 				4.f,
@@ -51,49 +53,35 @@ namespace AbilityData::Definitions
 				12.f,
 				0.1f
 			},
-			sas::GameplayAttribute{
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
-				50.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
-				0.02f,
-				0.f
-			}
 		};
 		definition.scalingRules = {
 			sas::AttributeScalingRule{
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::AttackPower,
 				sas::AttributeModifierOperation::Add,
-				0.50f
+				0.40f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		float resolvedCooldown = definition.cooldown;
+		for (int targetLevel = 2; targetLevel <= 25; ++targetLevel)
+		{
+			const float cooldownReduction = targetLevel <= 5 ? 0.50f :
+				targetLevel <= 9 ? 0.40f :
+				targetLevel <= 13 ? 0.30f :
+				targetLevel <= 17 ? 0.20f :
+				targetLevel <= 21 ? 0.10f : 0.08f;
+			const float nextCooldown = std::max(7.f, resolvedCooldown - cooldownReduction);
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						2.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.25f
-					}
+					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 4.f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, nextCooldown - resolvedCooldown }
 				},
-				{},
-				{},
-				{}
-			}
-		);
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
+				{}, {}, {},
+				{ { ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::AttackPower, sas::AttributeModifierOperation::Add, 0.04f } }
+			});
+			resolvedCooldown = nextCooldown;
+		}
+		definition.levelUpgradeScrapCosts.assign(24, 60);
 		// Physical drone contact uses the established Kinetic damage domain.
 		definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 		definition.attachmentCapabilities = {

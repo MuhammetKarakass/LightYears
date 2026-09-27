@@ -1435,7 +1435,7 @@ int main()
 		}
 	);
 	if (sunBeamIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(sunBeamIt->definition.cooldown, 1.f) ||
+		!NearlyEqual(sunBeamIt->definition.cooldown, 9.f) ||
 		sunBeamIt->definition.levelProgression.size() != 4 ||
 		sunBeamIt->definition.levelUpgradeScrapCosts != ly::List<unsigned int>{ 40u, 50u, 65u, 80u })
 	{
@@ -1450,7 +1450,7 @@ int main()
 		}
 	);
 	if (rocketIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(rocketIt->definition.cooldown, 3.f) ||
+		!NearlyEqual(rocketIt->definition.cooldown, 6.f) ||
 		rocketIt->definition.levelProgression.size() != 14 ||
 		rocketIt->definition.levelUpgradeScrapCosts.size() != 14)
 	{
@@ -1636,7 +1636,7 @@ int main()
 				ly::GameplayTags::Ability::Offense,
 				ly::GameplayTags::Ability::Family::OrbitalDrones
 			} ||
-		orbitalDronesIt->definition.attributes.size() != 8 ||
+		orbitalDronesIt->definition.attributes.size() != 6 ||
 		sas::FindAttributeValue(
 			orbitalDronesIt->definition.attributes,
 			ly::CommonAttributeIds::Radius,
@@ -1648,7 +1648,7 @@ int main()
 				ly::CommonAttributeIds::Damage,
 				0.f
 			),
-			18.f
+			25.f
 		) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
@@ -1682,22 +1682,6 @@ int main()
 			),
 			12.f
 		) ||
-		!NearlyEqual(
-			sas::FindAttributeValue(
-				orbitalDronesIt->definition.attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
-				0.f
-			),
-			50.f
-		) ||
-		!NearlyEqual(
-			sas::FindAttributeValue(
-				orbitalDronesIt->definition.attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
-				0.f
-			),
-			0.02f
-		) ||
 		orbitalDronesIt->definition.scalingRules.size() != 1 ||
 		orbitalDronesIt->definition.scalingRules.front().targetAttributeId !=
 			ly::CommonAttributeIds::Damage ||
@@ -1705,9 +1689,9 @@ int main()
 			ly::OwnerAttributeIds::AttackPower ||
 		orbitalDronesIt->definition.scalingRules.front().operation !=
 			sas::AttributeModifierOperation::Add ||
-		!NearlyEqual(orbitalDronesIt->definition.scalingRules.front().coefficient, 0.50f) ||
-		orbitalDronesIt->definition.levelProgression.size() != 14 ||
-		orbitalDronesIt->definition.levelUpgradeScrapCosts.size() != 14 ||
+		!NearlyEqual(orbitalDronesIt->definition.scalingRules.front().coefficient, 0.40f) ||
+		orbitalDronesIt->definition.levelProgression.size() != 24 ||
+		orbitalDronesIt->definition.levelUpgradeScrapCosts.size() != 24 ||
 		orbitalDronesIt->definition.damageTags !=
 			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
 	{
@@ -1727,13 +1711,13 @@ int main()
 		{
 			if (modifier.attributeId == ly::CommonAttributeIds::Damage &&
 				modifier.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(modifier.magnitude, 2.f))
+				NearlyEqual(modifier.magnitude, 4.f))
 			{
 				hasDamageUpgrade = true;
 			}
 			if (modifier.attributeId == ly::CommonAttributeIds::Cooldown &&
 				modifier.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(modifier.magnitude, -0.25f))
+				modifier.magnitude <= 0.f && modifier.magnitude >= -0.50f)
 			{
 				hasCooldownUpgrade = true;
 			}

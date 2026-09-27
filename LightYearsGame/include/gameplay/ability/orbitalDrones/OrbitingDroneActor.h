@@ -19,7 +19,7 @@ namespace ly
 	public:
 		struct OrbitConfiguration
 		{
-			float radius = 200.f;
+			float radius = 500.f;
 			// Runtime uses radians per second to keep the motion math unambiguous.
 			float angularSpeedRadiansPerSecond = 2.5f;
 			// The behavior supplies one stable value per drone in the formation.
@@ -37,6 +37,7 @@ namespace ly
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderWindow& window) override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
+		void OnActorEndOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
 		) override;
@@ -88,6 +89,7 @@ namespace ly
 		bool IsEligibleCombatant(const Actor* target) const;
 		bool IsTouchingTarget(const Actor& target) const;
 		void PruneHitCooldowns();
+		void PruneTouchingTargets();
 		float ResolveExpiryFade() const;
 		void UpdatePrimitiveGeometry();
 
@@ -100,6 +102,7 @@ namespace ly
 		// Actor addresses become invalid as soon as the World releases them. Keep
 		// a stable runtime identity for lookup and a weak handle for safe pruning.
 		Dictionary<unsigned int, TargetHitCooldown> mNextHitAllowedAt;
+		Dictionary<unsigned int, weak_ptr<Actor>> mTouchingTargets;
 		DamagePayload mDamagePayloadOverride;
 		float mOrbitAngleRadians = 0.f;
 		float mVisualAge = 0.f;

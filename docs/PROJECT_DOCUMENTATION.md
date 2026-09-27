@@ -83,8 +83,8 @@ sahibi olmaya devam eder.
   içindedir.
 - Relay Prism, farenin konumunda ability projectile yakalayıp lineage korumalı
   dost clone'lara dönüştüren fizik dışı bir query actor'dür. Execution Drive,
-  kill-confirmed olayından stack alır; temporary AttackPower effect'i ve düşük
-  canlı hedefe chase movement modifier'ı birlikte yönetir.
+  aktivasyon öncesi AttackPower snapshot'ından geçici AP bonusu hesaplar ve
+  sabit MoveSpeed bonusu uygular; base ability kill stack veya chase içermez.
 - Area telegraph presentation, typed profil sınırını koruyarak sabit/takip,
   zamanlı/external progress ve completion feedback fazlarına ayrılmıştır. Hull
   Shock gerçek alan yarıçapını aynı radial resolver'dan türetir.

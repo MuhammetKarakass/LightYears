@@ -50,12 +50,6 @@ namespace AbilityData::MineLayer
 		inline static const sas::AttributeId MineSpacing{
 			"Ability.Offense.MineLayer.MineSpacing"
 		};
-		// Luck is a rating. This coefficient converts one point of the owner's
-		// Luck rating into the bonus-mine roll value; the fractional remainder is
-		// resolved as one additional proc, so there is no gameplay hard cap.
-		inline static const sas::AttributeId LuckToBonusMineScale{
-			"Ability.Offense.MineLayer.LuckToBonusMineScale"
-		};
 	};
 
 	struct Effect

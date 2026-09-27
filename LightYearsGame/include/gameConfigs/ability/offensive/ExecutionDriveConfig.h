@@ -30,44 +30,43 @@ namespace AbilityData::Definitions
 		definition.accentColor = sf::Color{ 255, 80, 35, 255 };
 		definition.attributes = {
 			sas::GameplayAttribute{
-				AbilityData::ExecutionDrive::Attribute::BaseAttackPowerBonus,
-				10.f,
+				AbilityData::ExecutionDrive::Attribute::FlatAttackPowerBonus,
+				20.f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::ExecutionDrive::Attribute::AttackPowerPerStack,
-				3.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::ExecutionDrive::Attribute::BaseChaseMovementBonus,
+				AbilityData::ExecutionDrive::Attribute::AttackPowerScale,
 				0.10f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::ExecutionDrive::Attribute::ChaseMovementPerStack,
-				0.02f,
+				AbilityData::ExecutionDrive::Attribute::MoveSpeedBonus,
+				0.15f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::ExecutionDrive::Attribute::AttackPowerChaseScale,
-				0.001f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::ExecutionDrive::Attribute::TargetingRange,
+				AbilityData::ExecutionDrive::Attribute::Range,
 				700.f,
-				1.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::ExecutionDrive::Attribute::DirectionThreshold,
-				0.25f,
-				-1.f,
 				1.f
 			}
 		};
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage
+		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
+			14,
+			ly::AbilityLevelStep{
+				{
+					{ AbilityData::ExecutionDrive::Attribute::FlatAttackPowerBonus,
+						sas::AttributeModifierOperation::Add, 2.f },
+					{ AbilityData::ExecutionDrive::Attribute::AttackPowerScale,
+						sas::AttributeModifierOperation::Add, 0.01f },
+					{ AbilityData::ExecutionDrive::Attribute::MoveSpeedBonus,
+						sas::AttributeModifierOperation::Add, 0.01f }
+				},
+				{}, {}, {}
+			}
+		);
+		definition.levelUpgradeScrapCosts = {
+			60, 60, 60, 60, 60, 60, 60,
+			60, 60, 60, 60, 60, 60, 60
 		};
 		definition.behaviorType = ly::AbilityBehaviorType::ExecutionDrive;
 		return definition;

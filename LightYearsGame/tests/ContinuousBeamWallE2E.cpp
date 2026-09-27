@@ -29,6 +29,9 @@ namespace ly
 	int RunTimerManagerSceneE2E(const char* artifactPath, const std::string& setupError);
 	int RunGameHUDDamageEventE2E(const char* artifactPath, const std::string& setupError);
 	int RunAuditFixesE2E(const char* artifactPath, const std::string& setupError);
+	int RunAbilityBalanceFirstThreeE2E(const char* artifactPath, const std::string& setupError);
+	int RunAbilityBalanceSecondThreeE2E(const char* artifactPath, const std::string& setupError);
+	int RunAbilityBalanceThirdThreeE2E(const char* artifactPath, const std::string& setupError);
 
 	namespace
 	{
@@ -585,14 +588,19 @@ int main(int argc, char** argv)
 	const bool gameHUDDamageEventMode = argc == 3 &&
 		std::string{ argv[1] } == "--game-hud-damage-event";
 	const bool auditFixesMode = argc == 3 && std::string{ argv[1] } == "--audit-fixes";
+	const bool balanceFirstMode = argc == 3 && std::string{ argv[1] } == "--ability-balance-first-three";
+	const bool balanceSecondMode = argc == 3 && std::string{ argv[1] } == "--ability-balance-second-three";
+	const bool balanceThirdMode = argc == 3 && std::string{ argv[1] } == "--ability-balance-third-three";
 	if (argc != 2 && !abilityContentRegistrationMode && !abilityLoaderPublicLoadMode &&
-		!timerManagerSceneMode && !gameHUDDamageEventMode && !auditFixesMode)
+		!timerManagerSceneMode && !gameHUDDamageEventMode && !auditFixesMode &&
+		!balanceFirstMode && !balanceSecondMode && !balanceThirdMode)
 	{
 		std::cerr << "Usage: LightYearsContinuousBeamWallE2ETests <artifact-path> | "
 			"--ability-content-registration <artifact-path> | "
 			"--ability-loader-public-load <artifact-path> | "
 			"--timer-manager-scene <artifact-path> | "
-			"--game-hud-damage-event <artifact-path>\n";
+			"--game-hud-damage-event <artifact-path> | "
+			"--ability-balance-{first,second,third}-three <artifact-path>\n";
 		return 2;
 	}
 
@@ -609,6 +617,9 @@ int main(int argc, char** argv)
 		return RunAbilityContentRegistrationE2E(argv[2], setupError);
 	}
 	if (auditFixesMode) return RunAuditFixesE2E(argv[2], setupError);
+	if (balanceFirstMode) return RunAbilityBalanceFirstThreeE2E(argv[2], setupError);
+	if (balanceSecondMode) return RunAbilityBalanceSecondThreeE2E(argv[2], setupError);
+	if (balanceThirdMode) return RunAbilityBalanceThirdThreeE2E(argv[2], setupError);
 	if (abilityLoaderPublicLoadMode)
 	{
 		return RunAbilityLoaderPublicLoadE2E(argv[2], setupError);

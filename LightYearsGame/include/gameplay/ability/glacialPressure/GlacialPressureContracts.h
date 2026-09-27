@@ -56,6 +56,9 @@ namespace AbilityData::GlacialPressure
 		inline static const sas::AttributeId EnergyPowerCollisionScale{
 			"Ability.Offense.GlacialPressure.EnergyPowerCollisionScale"
 		};
+		inline static const sas::AttributeId MaxHealthCollisionScale{
+			"Ability.Offense.GlacialPressure.MaxHealthCollisionScale"
+		};
 		inline static const sas::AttributeId MaxHealthReference{
 			"Ability.Offense.GlacialPressure.MaxHealthReference"
 		};
@@ -97,9 +100,6 @@ namespace AbilityData::GlacialPressure
 	struct SegmentProfile
 	{
 		float damageMultiplier;
-		// Collision damage has its own falloff. It must not reuse pushMultiplier:
-		// designers can tune distance travelled without unintentionally changing
-		// the damage dealt when a pushed ship hits another ship.
 		float collisionDamageMultiplier;
 		float pushMultiplier;
 		int cryoStacks;
@@ -107,11 +107,11 @@ namespace AbilityData::GlacialPressure
 	};
 
 	inline constexpr std::array<SegmentProfile, 5> SegmentProfiles{
-		SegmentProfile{ 1.00f, 1.0000f, 1.00f, 4, true },
-		SegmentProfile{ 0.80f, 0.9000f, 0.85f, 4, false },
-		SegmentProfile{ 0.60f, 0.8000f, 0.70f, 3, false },
-		SegmentProfile{ 0.40f, 0.7333f, 0.55f, 2, false },
-		SegmentProfile{ 0.25f, 0.6667f, 0.40f, 1, false }
+		SegmentProfile{ 1.40f, 1.40f, 1.00f, 4, true },
+		SegmentProfile{ 1.20f, 1.20f, 0.85f, 4, false },
+		SegmentProfile{ 1.00f, 1.00f, 0.70f, 3, false },
+		SegmentProfile{ 0.80f, 0.80f, 0.55f, 2, false },
+		SegmentProfile{ 0.60f, 0.60f, 0.40f, 1, false }
 	};
 
 	inline constexpr float DefaultConeLength = 700.f;
@@ -120,9 +120,5 @@ namespace AbilityData::GlacialPressure
 	inline constexpr float DefaultImpulseWindowDuration = 1.5f;
 	inline constexpr float DefaultPushStunDuration = 1.5f;
 	inline constexpr float DefaultCollisionStunDuration = 2.f;
-	// A collision caused immediately after the impulse is full strength. As the
-	// target slows, impact damage approaches this lower bound smoothly.
-	inline constexpr float MinimumCollisionDamageMultiplier = 0.25f;
-	inline constexpr float MaximumCollisionDamageMultiplier = 1.f;
 	inline constexpr int DefaultSegmentCount = 5;
 }

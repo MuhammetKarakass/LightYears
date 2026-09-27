@@ -66,12 +66,12 @@ namespace AbilityData::Definitions
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
 						sas::AttributeModifierOperation::Add,
-						2.f
+						4.f
 					},
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add,
-						-0.25f
+						-0.20f
 					}
 				},
 				{},

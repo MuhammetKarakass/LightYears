@@ -125,6 +125,7 @@ namespace sas
 		uint64_t GetRevision() const { return mRevision; }
 		float GetBaseValue(const AttributeId& id) const;
 		float GetCurrentValue(const AttributeId& id, float fallback = 0.f) const;
+		float GetCurrentValueExcludingModifiers(const AttributeId& id, const ly::List<AttributeModifierHandle>& excludedHandles, float fallback = 0.f) const;
 		float GetSequentialReductionMultiplier(
 			const AttributeId& id,
 			float minimumMultiplier = 0.05f

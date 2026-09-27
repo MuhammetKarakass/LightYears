@@ -4,7 +4,6 @@
 #include "gameplay/ability/GameAbility.h"
 
 #include <cstddef>
-#include <unordered_map>
 
 namespace ly
 {
@@ -40,12 +39,10 @@ namespace ly
 		void ClearRocketLaunchState(GameAbilityBehaviorContext& context);
 
 		List<weak_ptr<Actor>> mTargetAllocation;
-		std::unordered_map<const Actor*, std::size_t> mSameTargetRocketCounts;
 		sas::GameplayEffectHandle mAttackSpeedBoostEffectHandle;
 		std::size_t mProjectileCount = 0;
 		std::size_t mLaunchedProjectileCount = 0;
 		float mRocketLaunchDuration = 0.f;
-		float mSameTargetDamageDecay = 1.f;
 		float mRocketLaunchElapsed = 0.f;
 		bool mRocketLaunchActive = false;
 		bool mAttackSpeedBoostActive = false;

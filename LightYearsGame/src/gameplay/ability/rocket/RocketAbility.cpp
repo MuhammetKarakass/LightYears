@@ -99,7 +99,11 @@ namespace ly
 			? FindActorAttribute(*actor, CollisionAttributeIds::Radius)
 			: std::nullopt;
 		if (!actor || !baseDamage || !projectileSpeed || !range ||
-			!explosionRadius || !collisionRadius || definition.cooldown <= 0.f ||
+			!explosionRadius || !collisionRadius || !std::isfinite(definition.cooldown) ||
+			!std::isfinite(*baseDamage) || !std::isfinite(*projectileSpeed) ||
+			!std::isfinite(*range) || !std::isfinite(*explosionRadius) ||
+			!std::isfinite(*collisionRadius) || !std::isfinite(actor->spawnDistance) ||
+			!std::isfinite(actor->lifeTime) || definition.cooldown <= 0.f ||
 			*baseDamage <= 0.f || *projectileSpeed <= 0.f || *range <= 0.f ||
 			*explosionRadius <= 0.f || *collisionRadius <= 0.f ||
 			actor->spawnDistance < 0.f || actor->lifeTime <= *range / *projectileSpeed)
@@ -129,11 +133,12 @@ namespace ly
 			definition.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
 			definition.scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
 			definition.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
-			std::abs(definition.scalingRules.front().coefficient - 1.25f) > 0.0001f)
+			!std::isfinite(definition.scalingRules.front().coefficient) ||
+			definition.scalingRules.front().coefficient <= 0.f)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Basic Rocket requires Kinetic damage and AttackPower x1.25 additive scaling.";
+				*failureReason = "Basic Rocket requires Kinetic damage and positive additive AttackPower scaling.";
 			}
 			return false;
 		}
@@ -155,17 +160,13 @@ namespace ly
 			definition.levelProgression.front(),
 			CommonAttributeIds::Cooldown
 		);
-		const std::optional<float> explosionRadiusPerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Radius
-		);
 		if (!damagePerLevel || !cooldownReductionPerLevel ||
-			!explosionRadiusPerLevel || *damagePerLevel <= 0.f ||
-			*cooldownReductionPerLevel >= 0.f || *explosionRadiusPerLevel <= 0.f)
+			!std::isfinite(*damagePerLevel) || !std::isfinite(*cooldownReductionPerLevel) ||
+			*damagePerLevel <= 0.f || *cooldownReductionPerLevel >= 0.f)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Rocket progression must contain positive damage and radius growth with cooldown reduction.";
+				*failureReason = "Rocket progression must contain positive damage growth and cooldown reduction.";
 			}
 			return false;
 		}
@@ -173,20 +174,30 @@ namespace ly
 		float resolvedCooldown = definition.cooldown;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (step.attributeModifiers.size() != 3 ||
+			const std::optional<float> damageMagnitude = FindModifierMagnitude(
+				step,
+				CommonAttributeIds::Damage
+			);
+			const std::optional<float> cooldownReduction = FindModifierMagnitude(
+				step,
+				CommonAttributeIds::Cooldown
+			);
+			if (step.attributeModifiers.size() != 2 ||
 				!HasExpectedModifier(step, CommonAttributeIds::Damage, *damagePerLevel) ||
-				!HasExpectedModifier(step, CommonAttributeIds::Cooldown, *cooldownReductionPerLevel) ||
-				!HasExpectedModifier(step, CommonAttributeIds::Radius, *explosionRadiusPerLevel))
+				!damageMagnitude || !std::isfinite(*damageMagnitude) || *damageMagnitude <= 0.f ||
+				!cooldownReduction ||
+				!std::isfinite(*cooldownReduction) || *cooldownReduction >= 0.f ||
+				!step.scalingRules.empty())
 			{
 				if (failureReason)
 				{
-					*failureReason = "Rocket progression may only increase damage and explosion radius while reducing cooldown.";
+					*failureReason = "Rocket progression may only add damage and cooldown modifiers; AttackPower scaling stays fixed.";
 				}
 				return false;
 			}
 
-			resolvedCooldown += *cooldownReductionPerLevel;
-			if (resolvedCooldown <= 0.f)
+			resolvedCooldown += *cooldownReduction;
+			if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
 			{
 				if (failureReason)
 				{

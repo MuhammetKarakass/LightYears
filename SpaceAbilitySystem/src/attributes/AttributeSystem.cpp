@@ -82,6 +82,23 @@ namespace sas
 		return found != mAttributes.end() ? found->second.attribute.currentValue : fallback;
 	}
 
+	float AttributeSystem::GetCurrentValueExcludingModifiers(const AttributeId& id, const ly::List<AttributeModifierHandle>& excludedHandles, float fallback) const
+	{
+		const auto found = mAttributes.find(id);
+		if (found == mAttributes.end()) return fallback;
+		if (excludedHandles.empty()) return found->second.attribute.currentValue;
+		ly::List<AttributeModifier> modifiers;
+		modifiers.reserve(found->second.modifiers.size());
+		for (const auto& [handleId, modifier] : found->second.modifiers)
+		{
+			if (std::none_of(excludedHandles.begin(), excludedHandles.end(), [handleId](AttributeModifierHandle handle) { return handle.id == handleId; }))
+			{
+				modifiers.push_back(modifier);
+			}
+		}
+		return CalculateModifiedAttributeValue(found->second.attribute, modifiers);
+	}
+
 	float AttributeSystem::GetSequentialReductionMultiplier(
 		const AttributeId& id,
 		float minimumMultiplier

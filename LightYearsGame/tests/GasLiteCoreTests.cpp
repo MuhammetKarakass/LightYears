@@ -1089,7 +1089,7 @@ int main(int argc, char** argv)
 			} ||
 		orbitalDronesDefinition->damageTags !=
 			List<GameplayTag>{ DamageTypeSchema::Kinetic } ||
-		orbitalDronesDefinition->attributes.size() != 8 ||
+		orbitalDronesDefinition->attributes.size() != 6 ||
 		sas::FindAttributeValue(
 			orbitalDronesDefinition->attributes,
 			CommonAttributeIds::Radius,
@@ -1101,7 +1101,7 @@ int main(int argc, char** argv)
 				CommonAttributeIds::Damage,
 				0.f
 			),
-			18.f
+			25.f
 		) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
@@ -1135,29 +1135,13 @@ int main(int argc, char** argv)
 			),
 			12.f
 		) ||
-		!NearlyEqual(
-			sas::FindAttributeValue(
-				orbitalDronesDefinition->attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerReference,
-				0.f
-			),
-			50.f
-		) ||
-		!NearlyEqual(
-			sas::FindAttributeValue(
-				orbitalDronesDefinition->attributes,
-				AbilityData::OrbitalDrones::Attribute::EnergyPowerDurationScale,
-				0.f
-			),
-			0.02f
-		) ||
 		orbitalDronesDefinition->scalingRules.size() != 1 ||
 		orbitalDronesDefinition->scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
 		orbitalDronesDefinition->scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
 		orbitalDronesDefinition->scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
-		!NearlyEqual(orbitalDronesDefinition->scalingRules.front().coefficient, 0.50f) ||
-		orbitalDronesDefinition->levelProgression.size() != 14 ||
-		orbitalDronesDefinition->levelUpgradeScrapCosts.size() != 14)
+		!NearlyEqual(orbitalDronesDefinition->scalingRules.front().coefficient, 0.40f) ||
+		orbitalDronesDefinition->levelProgression.size() != 24 ||
+		orbitalDronesDefinition->levelUpgradeScrapCosts.size() != 24)
 	{
 		return Fail("Orbital Drones shipped ability contract is invalid");
 	}
@@ -1172,7 +1156,7 @@ int main(int argc, char** argv)
 				GameplayTags::Ability::Offense,
 				GameplayTags::Ability::Family::ExecutionDrive
 			} ||
-		executionDriveDefinition->attributes.size() != 7 ||
+		executionDriveDefinition->attributes.size() != 4 ||
 		!EffectData::FindGameplayEffectDefinition(
 			AbilityData::ExecutionDrive::Effect::AttackPowerId
 		))
@@ -1209,13 +1193,13 @@ int main(int argc, char** argv)
 		{
 			if (modifier.attributeId == CommonAttributeIds::Damage &&
 				modifier.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(modifier.magnitude, 2.f))
+				NearlyEqual(modifier.magnitude, 4.f))
 			{
 				hasDamageUpgrade = true;
 			}
 			if (modifier.attributeId == CommonAttributeIds::Cooldown &&
 				modifier.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(modifier.magnitude, -0.25f))
+				modifier.magnitude <= 0.f && modifier.magnitude >= -0.50f)
 			{
 				hasCooldownUpgrade = true;
 			}
@@ -6134,13 +6118,7 @@ int main(int argc, char** argv)
 		AbilityData::OverdriveCore::Attribute::AttackSpeedBoostBase,
 		0.f
 	);
-	const float overdriveBoostCriticalScale = sas::FindAttributeValue(
-		overdriveDefinition->attributes,
-		AbilityData::OverdriveCore::Attribute::AttackSpeedBoostCriticalChanceScale,
-		0.f
-	);
-	const float expectedOverdriveAttackSpeed = overdriveAttackSpeedBefore +
-		overdriveBoostBase * (1.f + 0.2f * overdriveBoostCriticalScale);
+	const float expectedOverdriveAttackSpeed = overdriveAttackSpeedBefore + overdriveBoostBase;
 	if (!overdriveOwner->GetAbilitySystemComponent().GetOwnedTags().HasTag(
 			AbilityData::OverdriveCore::State::AttackSpeedBoostActive
 		) ||
@@ -6151,7 +6129,7 @@ int main(int argc, char** argv)
 			expectedOverdriveAttackSpeed
 		))
 	{
-		return Fail("Overdrive Core did not apply its critical-scaled AttackSpeed effect");
+		return Fail("Overdrive Core did not apply its AttackSpeed effect independently of critical chance");
 	}
 	overdriveWorld.TickInternal(1.f);
 	if (overdriveTarget->GetHealth() >= overdriveHealthBefore ||

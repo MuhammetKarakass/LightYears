@@ -9,7 +9,6 @@
 #include "gameplay/ability/mineLayer/MineLayerContracts.h"
 #include "gameplay/ability/mineLayer/MineLayerMineActor.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "gameplay/combat/Combatant.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
@@ -39,24 +38,6 @@ namespace ly
 		)
 		{
 			return sas::FindAttributeValue(values, attributeId, fallback);
-		}
-
-		bool HasExpectedModifier(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			float magnitude
-		)
-		{
-			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-			{
-				if (modifier.attributeId == attributeId &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
-				{
-					return true;
-				}
-			}
-			return false;
 		}
 
 		std::optional<float> FindModifierMagnitude(
@@ -98,8 +79,7 @@ namespace ly
 
 		for (const sas::AttributeId& required : {
 			AbilityData::MineLayer::Attribute::BaseMineCount,
-			AbilityData::MineLayer::Attribute::MineSpacing,
-			AbilityData::MineLayer::Attribute::LuckToBonusMineScale
+			AbilityData::MineLayer::Attribute::MineSpacing
 		})
 		{
 			const sas::GameplayAttribute* attribute = FindAttribute(definition, required);
@@ -108,7 +88,7 @@ namespace ly
 				if (failureReason)
 				{
 					*failureReason =
-						"Mine Layer must declare all ability-owned placement and Luck attributes.";
+					"Mine Layer must declare its ability-owned placement attributes.";
 				}
 				return false;
 			}
@@ -118,13 +98,12 @@ namespace ly
 			definition,
 			AbilityData::MineLayer::Attribute::BaseMineCount
 		)->baseValue;
-		if (baseMineCount < 1.f || std::round(baseMineCount) != baseMineCount ||
-			FindAttribute(definition, AbilityData::MineLayer::Attribute::MineSpacing)->baseValue <= 0.f ||
-			FindAttribute(definition, AbilityData::MineLayer::Attribute::LuckToBonusMineScale)->baseValue < 0.f)
+		if (baseMineCount != 3.f ||
+			FindAttribute(definition, AbilityData::MineLayer::Attribute::MineSpacing)->baseValue <= 0.f)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Mine Layer has invalid mine count, spacing or Luck scaling.";
+				*failureReason = "Mine Layer requires exactly three mines and positive spacing.";
 			}
 			return false;
 		}
@@ -135,11 +114,12 @@ namespace ly
 			definition.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
 			definition.scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
 			definition.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
-			std::abs(definition.scalingRules.front().coefficient - 0.75f) > 0.0001f)
+			!std::isfinite(definition.scalingRules.front().coefficient) ||
+			definition.scalingRules.front().coefficient <= 0.f)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Mine Layer requires Energy damage and AttackPower x0.75 scaling.";
+				*failureReason = "Mine Layer requires Energy damage and positive AttackPower scaling.";
 			}
 			return false;
 		}
@@ -187,38 +167,35 @@ namespace ly
 			}
 			return false;
 		}
-		const std::optional<float> damagePerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Damage
-		);
-		const std::optional<float> cooldownReductionPerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Cooldown
-		);
-		if (!damagePerLevel || !cooldownReductionPerLevel || *damagePerLevel <= 0.f ||
-			*cooldownReductionPerLevel >= 0.f)
-		{
-			if (failureReason)
-			{
-				*failureReason = "Mine Layer progression must add damage and reduce cooldown.";
-			}
-			return false;
-		}
-
 		float resolvedCooldown = definition.cooldown;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (step.attributeModifiers.size() != 2 ||
-				!HasExpectedModifier(step, CommonAttributeIds::Damage, *damagePerLevel) ||
-				!HasExpectedModifier(step, CommonAttributeIds::Cooldown, *cooldownReductionPerLevel))
+			const std::optional<float> damagePerLevel = FindModifierMagnitude(
+				step,
+				CommonAttributeIds::Damage
+			);
+			const std::optional<float> cooldownReduction = FindModifierMagnitude(
+				step,
+				CommonAttributeIds::Cooldown
+			);
+			const bool hasExpectedAttackPowerScaling = step.scalingRules.size() == 1 &&
+				step.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
+				step.scalingRules.front().sourceAttributeId == OwnerAttributeIds::AttackPower &&
+				step.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(step.scalingRules.front().coefficient) &&
+				step.scalingRules.front().coefficient > 0.f;
+			if (step.attributeModifiers.size() != 2 || !damagePerLevel ||
+				!std::isfinite(*damagePerLevel) || *damagePerLevel <= 0.f ||
+				!cooldownReduction || !std::isfinite(*cooldownReduction) ||
+				*cooldownReduction >= 0.f || !hasExpectedAttackPowerScaling)
 			{
 				if (failureReason)
 				{
-					*failureReason = "Mine Layer progression may only increase damage and reduce cooldown.";
+					*failureReason = "Mine Layer progression must add damage, AttackPower scaling and reduce cooldown.";
 				}
 				return false;
 			}
-			resolvedCooldown += *cooldownReductionPerLevel;
+			resolvedCooldown += *cooldownReduction;
 			if (resolvedCooldown <= 0.f)
 			{
 				if (failureReason)
@@ -254,27 +231,7 @@ namespace ly
 			1.f,
 			FindValue(values, AbilityData::MineLayer::Attribute::MineSpacing, 120.f)
 		);
-		const float luckScale = std::max(
-			0.f,
-			FindValue(values, AbilityData::MineLayer::Attribute::LuckToBonusMineScale, 1.f)
-		);
-
-		float luckRating = 0.f;
-		if (const Combatant* combatant = dynamic_cast<const Combatant*>(&context.owner))
-		{
-			luckRating = std::max(
-				0.f,
-				combatant->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-					OwnerAttributeIds::Luck
-				)
-			);
-		}
-		const float bonusMineValue = luckRating * luckScale;
-		const int guaranteedBonusMines = static_cast<int>(std::floor(bonusMineValue));
-		const float fractionalBonus = bonusMineValue - static_cast<float>(guaranteedBonusMines);
-		const int bonusMines = guaranteedBonusMines +
-			(RandRange(0.f, 1.f) < fractionalBonus ? 1 : 0);
-		const int mineCount = baseMineCount + std::max(0, bonusMines);
+		const int mineCount = baseMineCount;
 
 		// Mine placement is based on the ship's facing, not its velocity. A ship
 		// may be drifting sideways while looking elsewhere, but the mine field must
@@ -304,10 +261,7 @@ namespace ly
 			);
 			if (const shared_ptr<AbilityWorldActor> mine = spawned.lock())
 			{
-				// Triangular row packing keeps bonus mines from becoming another
-				// single-file trail: row r contains r+1 mines. The row start is the
-				// r-th triangular number, so the formula works for any Luck-derived
-				// mine count without adding a gameplay hard cap.
+				// Triangular row packing keeps the fixed three-mine formation compact.
 				int row = 0;
 				int rowStart = 0;
 				while (mineIndex >= rowStart + row + 1)

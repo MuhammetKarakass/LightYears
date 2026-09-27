@@ -60,6 +60,8 @@ namespace AbilityData::OrbitalDrones
 		inline static const sas::AttributeId ContactRadius{
 			"Ability.Offense.OrbitalDrones.ContactRadius"
 		};
+		// Kept as source-compatible IDs; shipped Orbital Drones has fixed duration
+		// and no longer authors EnergyPower attributes.
 		inline static const sas::AttributeId EnergyPowerReference{
 			"Ability.Offense.OrbitalDrones.EnergyPowerReference"
 		};

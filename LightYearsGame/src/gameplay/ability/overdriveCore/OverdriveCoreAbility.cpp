@@ -10,6 +10,7 @@
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetAllocation.h"
+#include "effects/ActiveGameplayEffect.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "framework/Actor.h"
@@ -17,6 +18,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 namespace ly
 {
@@ -30,12 +32,9 @@ namespace ly
 			return sas::FindAttribute(definition.attributes, attributeId);
 		}
 
-		bool HasExpectedScaling(
+		bool HasPositiveAttackPowerScaling(
 			const GameAbilityDefinition& definition,
-			const sas::AttributeId& target,
-			const sas::AttributeId& source,
-			sas::AttributeModifierOperation operation,
-			float coefficient
+			const sas::AttributeId& target
 		)
 		{
 			return std::any_of(
@@ -44,11 +43,44 @@ namespace ly
 				[&](const sas::AttributeScalingRule& rule)
 				{
 					return rule.targetAttributeId == target &&
-						rule.sourceAttributeId == source &&
-						rule.operation == operation &&
-						std::abs(rule.coefficient - coefficient) <= 0.0001f;
+						rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
+						rule.operation == sas::AttributeModifierOperation::Add &&
+						std::isfinite(rule.coefficient) && rule.coefficient > 0.f;
 				}
 			);
+		}
+
+		std::optional<float> FindAddModifierMagnitude(
+			const AbilityLevelStep& step,
+			const sas::AttributeId& attributeId
+		)
+		{
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.attributeId == attributeId &&
+					modifier.operation == sas::AttributeModifierOperation::Add)
+				{
+					return modifier.magnitude;
+				}
+			}
+			return std::nullopt;
+		}
+
+		float ResolveExternalAttackSpeed(
+			const LightYearsAbilitySystemComponent& abilitySystem
+		)
+		{
+			const sas::ActiveGameplayEffect* overdriveBoost =
+				abilitySystem.FindGameplayEffectById(
+					AbilityData::OverdriveCore::Effect::AttackSpeedBoostId
+				);
+			const float attackSpeed = overdriveBoost
+				? abilitySystem.GetAttributes().GetCurrentValueExcludingModifiers(
+					OwnerAttributeIds::AttackSpeed,
+					overdriveBoost->appliedModifierHandles
+				)
+				: abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackSpeed);
+			return std::max(0.f, attackSpeed);
 		}
 
 		float FindActorAttribute(
@@ -99,11 +131,8 @@ namespace ly
 		for (const sas::AttributeId& required : {
 			AbilityData::OverdriveCore::Attribute::ProjectileCount,
 			AbilityData::OverdriveCore::Attribute::RocketLaunchDuration,
-			AbilityData::OverdriveCore::Attribute::SameTargetDamageDecay,
 			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostDuration,
-			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostBase,
-			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostPerLevel,
-			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostCriticalChanceScale
+			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostBase
 		})
 		{
 			const sas::GameplayAttribute* attribute = FindAbilityAttribute(definition, required);
@@ -126,10 +155,6 @@ namespace ly
 			definition,
 			AbilityData::OverdriveCore::Attribute::RocketLaunchDuration
 		);
-		const auto decay = FindAbilityAttribute(
-			definition,
-			AbilityData::OverdriveCore::Attribute::SameTargetDamageDecay
-		);
 		const auto boostDuration = FindAbilityAttribute(
 			definition,
 			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostDuration
@@ -138,21 +163,11 @@ namespace ly
 			definition,
 			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostBase
 		);
-		const auto boostPerLevel = FindAbilityAttribute(
-			definition,
-			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostPerLevel
-		);
-		const auto boostCriticalScale = FindAbilityAttribute(
-			definition,
-			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostCriticalChanceScale
-		);
 		if (!projectileCount || projectileCount->baseValue < 1.f ||
 			std::round(projectileCount->baseValue) != projectileCount->baseValue ||
 			!IsFinitePositive(launchDuration->baseValue) ||
-			decay->baseValue <= 0.f || decay->baseValue > 1.f ||
 			!IsFinitePositive(boostDuration->baseValue) ||
-			boostBase->baseValue < 0.f || boostPerLevel->baseValue < 0.f ||
-			boostCriticalScale->baseValue < 0.f ||
+			boostBase->baseValue < 0.f ||
 			std::abs(definition.duration -
 				(launchDuration->baseValue + boostDuration->baseValue)) > 0.0001f)
 		{
@@ -164,26 +179,48 @@ namespace ly
 			return false;
 		}
 
-		if (!HasExpectedScaling(
-			definition,
-			CommonAttributeIds::ProjectileCount,
-			OwnerAttributeIds::AttackSpeed,
-			sas::AttributeModifierOperation::Multiply,
-			0.5f
-		) || !HasExpectedScaling(
-			definition,
-			CommonAttributeIds::Damage,
-			OwnerAttributeIds::AttackPower,
-			sas::AttributeModifierOperation::Add,
-			0.5f
-		))
+		if (!HasPositiveAttackPowerScaling(definition, CommonAttributeIds::Damage) ||
+			definition.scalingRules.size() != 1 || definition.levelProgression.size() != 4)
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Overdrive Core requires ProjectileCount from AttackSpeed and rocket damage from AttackPower.";
+					"Overdrive Core requires one AttackPower damage rule and four progression steps.";
 			}
 			return false;
+		}
+		for (const AbilityLevelStep& step : definition.levelProgression)
+		{
+			const std::optional<float> damageIncrease = FindAddModifierMagnitude(
+				step,
+				CommonAttributeIds::Damage
+			);
+			const std::optional<float> boostIncrease = FindAddModifierMagnitude(
+				step,
+				AbilityData::OverdriveCore::Attribute::AttackSpeedBoostBase
+			);
+			const std::optional<float> cooldownChange = FindAddModifierMagnitude(
+				step,
+				CommonAttributeIds::Cooldown
+			);
+			const bool hasAttackPowerProgression = step.scalingRules.size() == 1 &&
+				step.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
+				step.scalingRules.front().sourceAttributeId == OwnerAttributeIds::AttackPower &&
+				step.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
+				std::isfinite(step.scalingRules.front().coefficient) &&
+				step.scalingRules.front().coefficient > 0.f;
+			if (step.attributeModifiers.size() != 3 || !damageIncrease ||
+				!std::isfinite(*damageIncrease) || *damageIncrease <= 0.f || !boostIncrease ||
+				!std::isfinite(*boostIncrease) || *boostIncrease < 0.f || !cooldownChange ||
+				!std::isfinite(*cooldownChange) || *cooldownChange >= 0.f ||
+				!hasAttackPowerProgression)
+			{
+				if (failureReason)
+				{
+					*failureReason = "Overdrive Core progression must add damage, AP scaling and attack-speed boost while reducing cooldown.";
+				}
+				return false;
+			}
 		}
 
 		const sas::GameplayEffectDefinition* boostEffect =
@@ -224,31 +261,20 @@ namespace ly
 		};
 		const sas::GameplayAttributeList abilityValues =
 			AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
-		mProjectileCount = static_cast<std::size_t>(std::max(
-			1.f,
-			std::round(sas::FindAttributeValue(
-				abilityValues,
-				AbilityData::OverdriveCore::Attribute::ProjectileCount,
-				1.f
-			))
-		));
+		const float externalAttackSpeed = ResolveExternalAttackSpeed(context.abilitySystem);
+		const float projectileCount = sas::FindAttributeValue(
+			abilityValues,
+			AbilityData::OverdriveCore::Attribute::ProjectileCount,
+			1.f
+		) + std::floor(externalAttackSpeed / 10.f);
+		mProjectileCount = static_cast<std::size_t>(std::max(1.f, std::floor(projectileCount)));
 		mRocketLaunchDuration = sas::FindAttributeValue(
 			abilityValues,
 			AbilityData::OverdriveCore::Attribute::RocketLaunchDuration,
 			0.f
 		);
-		mSameTargetDamageDecay = std::clamp(
-			sas::FindAttributeValue(
-				abilityValues,
-				AbilityData::OverdriveCore::Attribute::SameTargetDamageDecay,
-				1.f
-			),
-			0.f,
-			1.f
-		);
 		mLaunchedProjectileCount = 0;
 		mRocketLaunchElapsed = 0.f;
-		mSameTargetRocketCounts.clear();
 		mTargetAllocation.clear();
 
 		const AbilityActorDefinition* rocketActor =
@@ -367,7 +393,6 @@ namespace ly
 		}
 
 		mTargetAllocation.clear();
-		mSameTargetRocketCounts.clear();
 		mProjectileCount = 0;
 		mLaunchedProjectileCount = 0;
 	}
@@ -399,19 +424,13 @@ namespace ly
 					NormalizeVector(direction);
 				}
 
-				const std::size_t sameTargetIndex =
-					mSameTargetRocketCounts[target.get()]++;
-				const float damageMultiplier = std::pow(
-					mSameTargetDamageDecay,
-					static_cast<float>(sameTargetIndex)
-				);
 				AbilityActorSpawner::SpawnToTarget(
 					AbilityData::OverdriveCore::Actor::Projectile::BasicDefinitionId,
 					executionContext,
 					context.owner,
 					direction,
 					target->GetActorLocation(),
-					damageMultiplier,
+					1.f,
 					target.get()
 				);
 			}
@@ -449,25 +468,7 @@ namespace ly
 			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostBase,
 			0.f
 		);
-		const float boostPerLevel = sas::FindAttributeValue(
-			abilityValues,
-			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostPerLevel,
-			0.f
-		);
-		const float criticalScale = sas::FindAttributeValue(
-			abilityValues,
-			AbilityData::OverdriveCore::Attribute::AttackSpeedBoostCriticalChanceScale,
-			0.f
-		);
-		const float criticalChance = context.abilitySystem.GetAttributes().GetCurrentValue(
-			OwnerAttributeIds::CriticalChance
-		);
-		const float boostMagnitude = std::max(
-			0.f,
-			(boostBase + boostPerLevel * static_cast<float>(
-				std::max(0, context.instance.GetLevel() - 1)
-			)) * (1.f + std::max(0.f, criticalChance) * criticalScale)
-		);
+		const float boostMagnitude = std::max(0.f, boostBase);
 		if (boostDuration <= 0.f || boostMagnitude <= 0.f)
 		{
 			return;

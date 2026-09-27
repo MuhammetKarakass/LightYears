@@ -8,6 +8,7 @@
 #include "gameplay/ability/glacialPressure/GlacialPressurePushMath.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/control/ControlResponse.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/movement/MovementInfluenceService.h"
@@ -102,6 +103,17 @@ namespace ly
 			return payload;
 		}
 
+		int ResolveActiveCryoStacks(const SpaceShip& ship)
+		{
+			const sas::ActiveGameplayEffect* effect =
+				ship.GetAbilitySystemComponent().FindGameplayEffectById(
+					DamageStatusEffectIds::CryoSlowedEffectId
+				);
+			return effect
+				? std::clamp(effect->stackCount, 0, content::DamageStatusBalanceCatalog::Get().cryo.maxStacks)
+				: 0;
+		}
+
 		float ResolveShipCollisionRadius(const SpaceShip& ship)
 		{
 			const float explicitRadius = ship.GetPhysicsCollisionRadius();
@@ -169,6 +181,7 @@ namespace ly
 			AbilityData::GlacialPressure::Attribute::CollisionDamage,
 			AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale,
 			AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale,
+			AbilityData::GlacialPressure::Attribute::MaxHealthCollisionScale,
 			AbilityData::GlacialPressure::Attribute::MaxHealthReference,
 			AbilityData::GlacialPressure::Attribute::MaxHealthPushScale,
 			AbilityData::GlacialPressure::Attribute::PushDistance,
@@ -207,6 +220,7 @@ namespace ly
 			value(AbilityData::GlacialPressure::Attribute::CollisionDamage) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale) < 0.f ||
+			value(AbilityData::GlacialPressure::Attribute::MaxHealthCollisionScale) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::MaxHealthReference) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::MaxHealthPushScale) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::PushDistance) <= 0.f ||
@@ -217,7 +231,7 @@ namespace ly
 			value(AbilityData::GlacialPressure::Attribute::SegmentOneExtraStun) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::PushStunDuration) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::CollisionStunDuration) < 0.f ||
-			definition.levelProgression.size() != 14 ||
+			definition.levelProgression.size() != 24 ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Cryo)
 		{
@@ -411,28 +425,13 @@ namespace ly
 			FindValue(
 				values,
 				AbilityData::GlacialPressure::Attribute::InitialDamage,
-				12.f
+				30.f
 			) + energyPower * std::max(
 				0.f,
 				FindValue(
 					values,
 					AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale,
-					0.05f
-				)
-			)
-		);
-		const float collisionDamage = std::max(
-			0.f,
-			FindValue(
-				values,
-				AbilityData::GlacialPressure::Attribute::CollisionDamage,
-				45.f
-			) + energyPower * std::max(
-				0.f,
-				FindValue(
-					values,
-					AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale,
-					0.25f
+					0.20f
 				)
 			)
 		);
@@ -580,8 +579,7 @@ namespace ly
 			mPushStates.push_back(PushState{
 				target,
 				target->GetActorLocation(),
-				segment.cryoStacks,
-				collisionDamage * segment.collisionDamageMultiplier,
+				segment.collisionDamageMultiplier,
 				collisionStunDuration,
 				mPushDuration,
 				impulseSpeed,
@@ -640,9 +638,6 @@ namespace ly
 			}
 
 			const sf::Vector2f currentLocation = target->GetActorLocation();
-			const float impactSpeed = GetVectorLength(
-				currentLocation - state.previousLocation
-			) / std::max(0.001f, deltaTime);
 			if (state.collisionTimeRemaining > 0.f)
 			{
 			for (const weak_ptr<SpaceShip>& candidateWeak :
@@ -670,9 +665,10 @@ namespace ly
 						continue;
 					}
 
-					const Actor* first = std::min<const Actor*>(target.get(), candidate.get());
-					const Actor* second = std::max<const Actor*>(target.get(), candidate.get());
-					const CollisionPair pair{ first, second };
+					const CollisionPair pair{
+						std::min(target->GetUniqueID(), candidate->GetUniqueID()),
+						std::max(target->GetUniqueID(), candidate->GetUniqueID())
+					};
 					if (!mResolvedCollisionPairs.insert(pair).second)
 					{
 						continue;
@@ -682,8 +678,7 @@ namespace ly
 						context,
 						state,
 						*target,
-						*candidate,
-						impactSpeed
+						*candidate
 					);
 				}
 				state.collisionTimeRemaining = std::max(
@@ -726,38 +721,68 @@ namespace ly
 		GameAbilityBehaviorContext& context,
 		PushState& movingState,
 		SpaceShip& movingTarget,
-		SpaceShip& collidedTarget,
-		float impactSpeed
+		SpaceShip& collidedTarget
 	)
 	{
 		PushState* collidedState = FindPushState(&collidedTarget);
-		const int cryoStacks = std::max(
-			movingState.cryoStacks,
-			collidedState ? collidedState->cryoStacks : 0
+		const int cryoStacks = ResolveActiveCryoStacks(movingTarget);
+		const sas::GameplayAttributeList values = ResolveValues(context);
+		const float energyPower = std::max(
+			0.f,
+			context.abilitySystem.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::EnergyPower
+			)
+		);
+		const auto maxHealth = [](const SpaceShip& ship)
+		{
+			const float value = ship.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::MaxHealth
+			);
+			return std::isfinite(value) ? std::max(0.f, value) : 0.f;
+		};
+		const float collisionHealth = std::hypot(
+			maxHealth(movingTarget),
+			maxHealth(collidedTarget)
 		);
 		const float baseCollisionDamage = std::max(
-			movingState.collisionDamage,
-			collidedState ? collidedState->collisionDamage : 0.f
-		);
-		const float initialImpulseSpeed = std::max(
-			0.001f,
-			movingState.initialImpulseSpeed
-		);
-		const float speedRatio = std::clamp(
-			std::max(0.f, impactSpeed) / initialImpulseSpeed,
 			0.f,
-			1.f
+			FindValue(values, AbilityData::GlacialPressure::Attribute::CollisionDamage, 60.f)
 		);
-		const float collisionDamage = baseCollisionDamage * (
-			AbilityData::GlacialPressure::MinimumCollisionDamageMultiplier +
-			(AbilityData::GlacialPressure::MaximumCollisionDamageMultiplier -
-				AbilityData::GlacialPressure::MinimumCollisionDamageMultiplier) *
-				speedRatio * speedRatio
+		const float collisionHealthScale = std::max(
+			0.f,
+			FindValue(
+				values,
+				AbilityData::GlacialPressure::Attribute::MaxHealthCollisionScale,
+				0.40f
+			)
+		);
+		const float collisionEnergyScale = std::max(
+			0.f,
+			FindValue(
+				values,
+				AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale,
+				0.20f
+			)
+		);
+		const float segmentMultiplier = std::max(
+			movingState.segmentDamageMultiplier,
+			collidedState ? collidedState->segmentDamageMultiplier : 0.f
+		);
+		// If both ships were pushed, one pair may be reached from either state;
+		// preserve the existing strongest-segment rule for the shared impact.
+		const float collisionDamage = std::max(
+			0.f,
+			(baseCollisionDamage + collisionHealth * collisionHealthScale +
+				energyPower * collisionEnergyScale) * segmentMultiplier
 		);
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
-		const sas::GameplayAttributeList values = ResolveValues(context);
-		const DamagePayload payload = BuildCryoPayload(
+		const DamagePayload sourcePayload = BuildCryoPayload(
+			damageTags,
+			values,
+			0
+		);
+		const DamagePayload transferPayload = BuildCryoPayload(
 			damageTags,
 			values,
 			cryoStacks
@@ -773,7 +798,7 @@ namespace ly
 			collisionDamage,
 			owner,
 			damageTags,
-			payload,
+			sourcePayload,
 			sas::ContentId{ context.definition.abilityId },
 			context.definition.abilityTags
 		);
@@ -782,7 +807,7 @@ namespace ly
 			collisionDamage,
 			owner,
 			damageTags,
-			payload,
+			transferPayload,
 			sas::ContentId{ context.definition.abilityId },
 			context.definition.abilityTags
 		);

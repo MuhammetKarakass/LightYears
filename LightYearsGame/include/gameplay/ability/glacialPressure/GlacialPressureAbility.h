@@ -37,8 +37,7 @@ namespace ly
 		{
 			weak_ptr<SpaceShip> target;
 			sf::Vector2f previousLocation{ 0.f, 0.f };
-			int cryoStacks = 0;
-			float collisionDamage = 0.f;
+			float segmentDamageMultiplier = 1.f;
 			float collisionStunDuration = 0.f;
 			float collisionTimeRemaining = 0.f;
 			float initialImpulseSpeed = 0.f;
@@ -47,7 +46,7 @@ namespace ly
 			bool wasInPortalTransit = false;
 		};
 
-		using CollisionPair = std::pair<const Actor*, const Actor*>;
+		using CollisionPair = std::pair<unsigned int, unsigned int>;
 
 		void Discharge(GameAbilityBehaviorContext& context);
 		void TickPushes(GameAbilityBehaviorContext& context, float deltaTime);
@@ -55,8 +54,7 @@ namespace ly
 			GameAbilityBehaviorContext& context,
 			PushState& movingState,
 			SpaceShip& movingTarget,
-			SpaceShip& collidedTarget,
-			float impactSpeed
+			SpaceShip& collidedTarget
 		);
 		void ApplyStun(
 			GameAbilityBehaviorContext& context,

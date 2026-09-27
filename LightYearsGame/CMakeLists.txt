@@ -1476,6 +1476,9 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/TimerManagerSceneE2E.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameHUDDamageEventE2E.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AuditFixesE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceSecondThreeE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceFirstThreeE2E.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceThirdThreeE2E.cpp
 		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsContinuousBeamWallE2ETests PRIVATE
@@ -1531,6 +1534,12 @@ if(BUILD_TESTING)
 	add_test(NAME LightYearsAuditFixesE2E COMMAND LightYearsContinuousBeamWallE2ETests
 		--audit-fixes "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/audit-fixes.json" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 	set_tests_properties(LightYearsAuditFixesE2E PROPERTIES TIMEOUT 60)
+	foreach(BALANCE_GROUP IN ITEMS first second third)
+		add_test(NAME LightYearsAbilityBalance-${BALANCE_GROUP}-E2E COMMAND LightYearsContinuousBeamWallE2ETests
+			--ability-balance-${BALANCE_GROUP}-three "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ability-balance-${BALANCE_GROUP}.json"
+			WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+		set_tests_properties(LightYearsAbilityBalance-${BALANCE_GROUP}-E2E PROPERTIES TIMEOUT 60)
+	endforeach()
 	option(
 		LIGHT_YEARS_BUILD_SPECIALIZED_TESTS
 		"Build small standalone specialist test executables"

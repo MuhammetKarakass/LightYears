@@ -5,15 +5,14 @@
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/content/EffectContentCatalog.h"
-#include "gameplay/damage/DamageContext.h"
-#include "gameplay/ship/ShipRuntimeModifiers.h"
-#include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/EffectConfig.h"
+#include "gameplay/ship/ShipRuntimeModifiers.h"
 #include "spaceShip/SpaceShip.h"
 
-#include <algorithm>
 #include <cmath>
+#include <optional>
+#include <utility>
 
 namespace ly
 {
@@ -47,9 +46,20 @@ namespace ly
 			return AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		}
 
-		bool IsFiniteNonNegative(float value)
+		std::optional<float> FindAddModifierMagnitude(
+			const AbilityLevelStep& step,
+			const sas::AttributeId& attributeId
+		)
 		{
-			return std::isfinite(value) && value >= 0.f;
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.attributeId == attributeId &&
+					modifier.operation == sas::AttributeModifierOperation::Add)
+				{
+					return modifier.magnitude;
+				}
+			}
+			return std::nullopt;
 		}
 	}
 
@@ -61,9 +71,9 @@ namespace ly
 		if (definition.abilityId != AbilityData::ExecutionDrive::AbilityId::Basic ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
-			definition.maxCharges != 1 ||
-			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
-			!std::isfinite(definition.duration) || definition.duration <= 0.f)
+			definition.maxCharges != 1 || !std::isfinite(definition.cooldown) ||
+			definition.cooldown <= 0.f || !std::isfinite(definition.duration) ||
+			definition.duration <= 0.f)
 		{
 			if (failureReason)
 			{
@@ -74,13 +84,10 @@ namespace ly
 		}
 
 		for (const sas::AttributeId& attributeId : {
-			AbilityData::ExecutionDrive::Attribute::BaseAttackPowerBonus,
-			AbilityData::ExecutionDrive::Attribute::AttackPowerPerStack,
-			AbilityData::ExecutionDrive::Attribute::BaseChaseMovementBonus,
-			AbilityData::ExecutionDrive::Attribute::ChaseMovementPerStack,
-			AbilityData::ExecutionDrive::Attribute::AttackPowerChaseScale,
-			AbilityData::ExecutionDrive::Attribute::TargetingRange,
-			AbilityData::ExecutionDrive::Attribute::DirectionThreshold
+			AbilityData::ExecutionDrive::Attribute::FlatAttackPowerBonus,
+			AbilityData::ExecutionDrive::Attribute::AttackPowerScale,
+			AbilityData::ExecutionDrive::Attribute::MoveSpeedBonus,
+			AbilityData::ExecutionDrive::Attribute::Range
 		})
 		{
 			const sas::GameplayAttribute* attribute = FindAttribute(definition, attributeId);
@@ -88,31 +95,61 @@ namespace ly
 			{
 				if (failureReason)
 				{
-					*failureReason = "Execution Drive must declare all runtime attributes.";
+					*failureReason = "Execution Drive must declare finite buff and range attributes.";
 				}
 				return false;
 			}
 		}
 
-		const sas::GameplayAttribute* range = FindAttribute(
-			definition,
-			AbilityData::ExecutionDrive::Attribute::TargetingRange
-		);
-		const sas::GameplayAttribute* threshold = FindAttribute(
-			definition,
-			AbilityData::ExecutionDrive::Attribute::DirectionThreshold
-		);
-		if (!range || range->baseValue <= 0.f ||
-			!threshold || threshold->baseValue < -1.f || threshold->baseValue > 1.f ||
-			!EffectData::FindGameplayEffectDefinition(
-				AbilityData::ExecutionDrive::Effect::AttackPowerId
-			))
+		if (FindAttribute(definition, AbilityData::ExecutionDrive::Attribute::FlatAttackPowerBonus)->baseValue < 0.f ||
+			FindAttribute(definition, AbilityData::ExecutionDrive::Attribute::AttackPowerScale)->baseValue < 0.f ||
+			FindAttribute(definition, AbilityData::ExecutionDrive::Attribute::MoveSpeedBonus)->baseValue < 0.f ||
+			FindAttribute(definition, AbilityData::ExecutionDrive::Attribute::Range)->baseValue <= 0.f ||
+			!EffectData::FindGameplayEffectDefinition(AbilityData::ExecutionDrive::Effect::AttackPowerId))
 		{
 			if (failureReason)
 			{
-				*failureReason = "Execution Drive has invalid targeting or effect configuration.";
+				*failureReason = "Execution Drive has invalid buff, range, or effect configuration.";
 			}
 			return false;
+		}
+
+		if (definition.levelProgression.size() != 14 ||
+			definition.levelUpgradeScrapCosts.size() != definition.levelProgression.size() ||
+			!definition.triggers.empty())
+		{
+			if (failureReason)
+			{
+				*failureReason = "Execution Drive requires fourteen level steps, matching costs, and no kill triggers.";
+			}
+			return false;
+		}
+		for (const AbilityLevelStep& step : definition.levelProgression)
+		{
+			const std::optional<float> flatBonus = FindAddModifierMagnitude(
+				step,
+				AbilityData::ExecutionDrive::Attribute::FlatAttackPowerBonus
+			);
+			const std::optional<float> attackPowerScale = FindAddModifierMagnitude(
+				step,
+				AbilityData::ExecutionDrive::Attribute::AttackPowerScale
+			);
+			const std::optional<float> moveSpeedBonus = FindAddModifierMagnitude(
+				step,
+				AbilityData::ExecutionDrive::Attribute::MoveSpeedBonus
+			);
+			const bool validModifiers = flatBonus && std::isfinite(*flatBonus) && *flatBonus >= 0.f &&
+				attackPowerScale && std::isfinite(*attackPowerScale) && *attackPowerScale >= 0.f &&
+				moveSpeedBonus && std::isfinite(*moveSpeedBonus) && *moveSpeedBonus >= 0.f;
+			if (step.attributeModifiers.size() != 3 || !step.scalingRules.empty() ||
+				!validModifiers)
+			{
+				if (failureReason)
+				{
+					*failureReason = "Execution Drive progression requires three finite additive buff modifiers and no scaling rules.";
+				}
+				return false;
+			}
 		}
 		return true;
 	}
@@ -126,53 +163,56 @@ namespace ly
 		}
 
 		const sas::GameplayAttributeList values = ResolveValues(context);
-		mBaseAttackPowerBonus = std::max(
+		const float preBuffAttackPower = context.abilitySystem.GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::AttackPower
+		);
+		const float flatAttackPowerBonus = std::max(
 			0.f,
-			FindValue(values, AbilityData::ExecutionDrive::Attribute::BaseAttackPowerBonus, 10.f)
+			FindValue(values, AbilityData::ExecutionDrive::Attribute::FlatAttackPowerBonus, 20.f)
 		);
-		mAttackPowerPerStack = std::max(
+		const float attackPowerScale = std::max(
 			0.f,
-			FindValue(values, AbilityData::ExecutionDrive::Attribute::AttackPowerPerStack, 3.f)
+			FindValue(values, AbilityData::ExecutionDrive::Attribute::AttackPowerScale, 0.10f)
 		);
-		mBaseChaseMovementBonus = std::max(
+		const float moveSpeedBonus = std::max(
 			0.f,
-			FindValue(values, AbilityData::ExecutionDrive::Attribute::BaseChaseMovementBonus, 0.10f)
+			FindValue(values, AbilityData::ExecutionDrive::Attribute::MoveSpeedBonus, 0.15f)
 		);
-		mChaseMovementPerStack = std::max(
+		const float totalAttackPowerBonus = std::max(
 			0.f,
-			FindValue(values, AbilityData::ExecutionDrive::Attribute::ChaseMovementPerStack, 0.02f)
+			flatAttackPowerBonus + preBuffAttackPower * attackPowerScale
 		);
-		mAttackPowerChaseScale = std::max(
-			0.f,
-			FindValue(values, AbilityData::ExecutionDrive::Attribute::AttackPowerChaseScale, 0.001f)
-		);
-		mTargetingRange = std::max(
-			0.f,
-			FindValue(values, AbilityData::ExecutionDrive::Attribute::TargetingRange, 700.f)
-		);
-		mDirectionThreshold = std::clamp(
-			FindValue(values, AbilityData::ExecutionDrive::Attribute::DirectionThreshold, 0.25f),
-			-1.f,
-			1.f
-		);
-		mStackCount = 0;
-		mCurrentAttackPowerBonus = mBaseAttackPowerBonus;
 
-		mAbilitySystem = &context.abilitySystem;
-		mShip = ship;
-		RefreshPowerEffect(context);
+		const sas::GameplayEffectDefinition* effectDefinition =
+			EffectData::FindGameplayEffectDefinition(
+				AbilityData::ExecutionDrive::Effect::AttackPowerId
+			);
+		if (!effectDefinition)
+		{
+			return false;
+		}
+
+		sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(*effectDefinition);
+		spec.duration = context.definition.duration;
+		spec.maxStacks = 1;
+		spec.modifiers = {
+			sas::AttributeModifier{
+				OwnerAttributeIds::AttackPower,
+				sas::AttributeModifierOperation::Add,
+				totalAttackPowerBonus
+			}
+		};
+		mAttackPowerEffectHandle = context.abilitySystem.ApplyGameplayEffect(
+			spec,
+			sas::GameplayEffectSourceContext{ &context.owner, &context.instance }
+		);
 		if (!mAttackPowerEffectHandle.IsValid())
 		{
-			mAbilitySystem = nullptr;
-			mShip = nullptr;
 			return false;
 		}
 
 		ShipRuntimeModifier modifier;
-		modifier.movementSpeedResolver = [this](const sf::Vector2f& direction)
-		{
-			return ResolveChaseMovementMultiplier(direction);
-		};
+		modifier.movementSpeedMultiplier = 1.f + moveSpeedBonus;
 		ship->GetRuntimeModifiers().Set(
 			AbilityData::ExecutionDrive::AbilityId::Basic,
 			std::move(modifier)
@@ -184,123 +224,12 @@ namespace ly
 		return true;
 	}
 
-	void ExecutionDriveAbility::OnGameplayEvent(
-		GameAbilityBehaviorContext& context,
-		const sas::AbilityEvent& event
-	)
-	{
-		if (!mActive || event.eventTag != GameplayTags::Event::Combat::KillConfirmed ||
-			event.GetSource<Actor>() != &context.owner)
-		{
-			return;
-		}
-
-		const DamageContext* damageContext = event.GetContext<DamageContext>();
-		Actor* targetActor = event.GetTarget<Actor>();
-		SpaceShip* targetShip = dynamic_cast<SpaceShip*>(targetActor);
-		if (!damageContext || !damageContext->targetWasKilled || !targetShip ||
-			targetShip == mShip ||
-			!HasCollisionLayer(targetShip->GetCollisionLayer(), CollisionLayer::Enemy))
-		{
-			return;
-		}
-
-		++mStackCount;
-		context.instance.RefreshActiveDuration(context.definition.duration);
-		RefreshPowerEffect(context);
-	}
-
-	void ExecutionDriveAbility::RefreshPowerEffect(GameAbilityBehaviorContext& context)
-	{
-		const sas::GameplayEffectDefinition* effectDefinition =
-			EffectData::FindGameplayEffectDefinition(
-				AbilityData::ExecutionDrive::Effect::AttackPowerId
-			);
-		if (!effectDefinition)
-		{
-			return;
-		}
-
-		mCurrentAttackPowerBonus = std::max(
-			0.f,
-			mBaseAttackPowerBonus +
-				mAttackPowerPerStack * static_cast<float>(mStackCount)
-		);
-		sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(*effectDefinition);
-		spec.duration = context.definition.duration;
-		spec.maxStacks = 1;
-		spec.modifiers = {
-			sas::AttributeModifier{
-				OwnerAttributeIds::AttackPower,
-				sas::AttributeModifierOperation::Add,
-				mCurrentAttackPowerBonus
-			}
-		};
-		mAttackPowerEffectHandle = context.abilitySystem.ApplyGameplayEffect(
-			spec,
-			sas::GameplayEffectSourceContext{
-				&context.owner,
-				&context.instance
-			}
-		);
-	}
-
-	float ExecutionDriveAbility::ResolveChaseMovementMultiplier(
-		const sf::Vector2f& movementDirection
-	) const
-	{
-		if (!mActive || !mShip || !mShip->GetWorld() || !mAbilitySystem)
-		{
-			return 1.f;
-		}
-
-		const shared_ptr<Actor> target = targeting::FindBestOpposingDamagedShip(
-			*mShip->GetWorld(),
-			*mShip,
-			movementDirection,
-			mTargetingRange,
-			mDirectionThreshold
-		);
-		const SpaceShip* targetShip = target
-			? dynamic_cast<const SpaceShip*>(target.get())
-			: nullptr;
-		if (!targetShip)
-		{
-			return 1.f;
-		}
-
-		const float maxHealth = targetShip->GetHealthComponent().GetMaxHealth();
-		if (maxHealth <= 0.f)
-		{
-			return 1.f;
-		}
-
-		const float missingHealthRatio = std::clamp(
-			1.f - targetShip->GetHealthComponent().GetHealth() / maxHealth,
-			0.f,
-			1.f
-		);
-		const float totalAttackPower = mAbilitySystem->GetAttributes().GetCurrentValue(
-			OwnerAttributeIds::AttackPower
-		);
-		const float externalAttackPower = std::max(
-			0.f,
-			totalAttackPower - mCurrentAttackPowerBonus
-		);
-		const float potentialBonus =
-			mBaseChaseMovementBonus +
-			mChaseMovementPerStack * static_cast<float>(mStackCount) +
-			externalAttackPower * mAttackPowerChaseScale;
-		return 1.f + std::max(0.f, potentialBonus) * missingHealthRatio;
-	}
-
 	void ExecutionDriveAbility::End(
 		GameAbilityBehaviorContext& context,
-		sas::AbilityEndReason reason
+		sas::AbilityEndReason
 	)
 	{
-		(void)reason;
-		if (!mActive)
+		if (!mActive && !mAttackPowerEffectHandle.IsValid())
 		{
 			return;
 		}
@@ -308,19 +237,13 @@ namespace ly
 		if (mAttackPowerEffectHandle.IsValid())
 		{
 			context.abilitySystem.RemoveGameplayEffect(mAttackPowerEffectHandle);
+			mAttackPowerEffectHandle = {};
 		}
-		if (mShip)
+		if (SpaceShip* ship = dynamic_cast<SpaceShip*>(&context.owner))
 		{
-			mShip->GetRuntimeModifiers().Remove(
-				AbilityData::ExecutionDrive::AbilityId::Basic
-			);
+			ship->GetRuntimeModifiers().Remove(AbilityData::ExecutionDrive::AbilityId::Basic);
 		}
 		context.abilitySystem.RemoveOwnedTag(AbilityData::ExecutionDrive::State::Active);
-		mAttackPowerEffectHandle = {};
-		mStackCount = 0;
-		mCurrentAttackPowerBonus = 0.f;
-		mAbilitySystem = nullptr;
-		mShip = nullptr;
 		mActive = false;
 		EmitEvent(context, AbilityData::ExecutionDrive::Event::Ended);
 	}
