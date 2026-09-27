@@ -1,5 +1,7 @@
 # Luna implementation acceptance — 2026-09-26
 
+> Subsequent source review (2026-09-27): the earlier closure below is limited by three confirmed conditional paths outside the beam endpoint test: a newly introduced no-op scoped-rule refresh loop, an active-fire cleanup retry gap, and a pre-existing status-application continuation after Clear. See [post-implementation review](LUNA_POST_IMPLEMENTATION_REVIEW_2026-09-27.md). R4/scoped refresh, R5/active-fire retry and R7/Clear continuation therefore remain partial; the prior E2E results do not cover those variants.
+
 ## Current continuation — 2026-09-27
 
 **P1–P6 and E01–E18 are verified; P7/E19 remains open because the beam endpoint regression reproduced; this delivery is partial.** This is bounded acceptance of the plan, not a whole-repository correctness claim. The sections under Historical checkpoint preserve the original findings and superseded status.
