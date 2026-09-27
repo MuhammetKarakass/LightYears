@@ -10,6 +10,7 @@
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/weapon/visuals/ContinuousBeamVisualActor.h"
+#include "framework/MathUtility.h"
 #include "spaceShip/SpaceShip.h"
 
 #include <nlohmann/json.hpp>
@@ -19,6 +20,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace ly
 {
@@ -100,6 +102,25 @@ namespace ly
 			}
 		};
 
+		struct EndpointRuntimeSample
+		{
+			int tickIndex = -1;
+			float deltaTime = 0.f;
+			float elapsedSeconds = 0.f;
+			sf::Vector2f ownerLocation{};
+			float ownerRotationDegrees = 0.f;
+			sf::Vector2f targetLocation{};
+			sf::FloatRect targetBounds{};
+			float targetHealth = 0.f;
+			float targetHealthDamageSincePreviousSample = 0.f;
+			std::size_t beamActorCount = 0;
+			bool beamActorFound = false;
+			sf::Vector2f beamActorLocation{};
+			float beamActorRotationDegrees = 0.f;
+			sf::Vector2f observedBeamDirection{};
+			sf::Vector2f observedBeamEnd{};
+		};
+
 		struct ScenarioResult
 		{
 			bool completed = false;
@@ -107,6 +128,7 @@ namespace ly
 			std::size_t beamActorCount = 0;
 			float frontHealthBefore = 0.f;
 			float frontHealthAfter = 0.f;
+			float frontHealthAfterFirstTick = 0.f;
 			float betweenWallsHealthBefore = 0.f;
 			float betweenWallsHealthAfter = 0.f;
 			float betweenWallsHealthAfterFirstTick = 0.f;
@@ -117,6 +139,25 @@ namespace ly
 			bool tieFirstWallToTarget = false;
 			bool movedBetweenWallsTargetAfterFirstTick = false;
 			bool equalContactGeometryMatches = false;
+			bool endpointGeometryMeasured = false;
+			sf::Vector2f endpointOwnerLocationBeforeZeroTick{};
+			float endpointOwnerRotationBeforeZeroTick = 0.f;
+			sf::Vector2f endpointMuzzleOffset{};
+			float endpointMuzzleRotationOffsetDegrees = 0.f;
+			sf::Vector2f endpointMuzzleStart{};
+			sf::Vector2f endpointDirection{};
+			sf::Vector2f endpointBeamEnd{};
+			sf::Vector2f endpointTargetLocationBefore{};
+			sf::Vector2f endpointTargetLocationAfter{};
+			sf::FloatRect endpointTargetBoundsBefore{};
+			sf::FloatRect endpointTargetBounds{};
+			float endpointDirectionRotationDegrees = 0.f;
+			float endpointRange = 0.f;
+			float endpointHalfWidth = 0.f;
+			float endpointPlacementDeltaY = 0.f;
+			float endpointTargetNearEdgeY = 0.f;
+			float endpointExpandedNearEdgeGap = 0.f;
+			std::vector<EndpointRuntimeSample> endpointRuntimeSamples;
 			std::string error;
 		};
 
@@ -170,10 +211,37 @@ namespace ly
 				const float range = sas::FindAttributeValue(weapon.attributes, PrimaryWeaponSchema::Beam::Delivery::Range, 0.f);
 				const float halfWidth = sas::FindAttributeValue(weapon.attributes, PrimaryWeaponSchema::Beam::Delivery::Width, 0.f) * 0.5f;
 				const auto muzzle = weapon.muzzleDefinitions.empty() ? WeaponMuzzleDefinition{} : weapon.muzzleDefinitions.front();
-				const float endpointY = (owner->GetActorLocation() + owner->TransformLocalToWorld(muzzle.offset)).y - range;
+				const sf::Vector2f ownerLocationBeforeZeroTick = owner->GetActorLocation();
+				const float ownerRotationBeforeZeroTick = owner->GetActorRotation();
+				const sf::Vector2f muzzleStart = ownerLocationBeforeZeroTick + owner->TransformLocalToWorld(muzzle.offset);
+				const float directionRotationDegrees = owner->GetActorRotation() + muzzle.rotationOffset - 90.f;
+				const sf::Vector2f direction = RotationToVector(directionRotationDegrees);
+				const sf::Vector2f beamEnd = muzzleStart + direction * range;
+				const float endpointY = muzzleStart.y - range;
 				const auto bounds = frontTarget->GetActorGlobalBounds();
-				frontTarget->SetActorLocation(frontTarget->GetActorLocation() +
-					sf::Vector2f{ 0.f, endpointY - halfWidth - (bounds.position.y + bounds.size.y) });
+				const sf::Vector2f targetLocationBefore = frontTarget->GetActorLocation();
+				const float targetDeltaY = endpointY - halfWidth - (bounds.position.y + bounds.size.y);
+				frontTarget->SetActorLocation(targetLocationBefore + sf::Vector2f{ 0.f, targetDeltaY });
+				const sf::FloatRect endpointTargetBounds = frontTarget->GetActorGlobalBounds();
+				const float targetNearEdgeY = endpointTargetBounds.position.y + endpointTargetBounds.size.y;
+				result.endpointGeometryMeasured = true;
+				result.endpointOwnerLocationBeforeZeroTick = ownerLocationBeforeZeroTick;
+				result.endpointOwnerRotationBeforeZeroTick = ownerRotationBeforeZeroTick;
+				result.endpointMuzzleOffset = muzzle.offset;
+				result.endpointMuzzleRotationOffsetDegrees = muzzle.rotationOffset;
+				result.endpointMuzzleStart = muzzleStart;
+				result.endpointDirection = direction;
+				result.endpointBeamEnd = beamEnd;
+				result.endpointTargetLocationBefore = targetLocationBefore;
+				result.endpointTargetLocationAfter = frontTarget->GetActorLocation();
+				result.endpointTargetBoundsBefore = bounds;
+				result.endpointTargetBounds = endpointTargetBounds;
+				result.endpointDirectionRotationDegrees = directionRotationDegrees;
+				result.endpointRange = range;
+				result.endpointHalfWidth = halfWidth;
+				result.endpointPlacementDeltaY = targetDeltaY;
+				result.endpointTargetNearEdgeY = targetNearEdgeY;
+				result.endpointExpandedNearEdgeGap = targetNearEdgeY + halfWidth - beamEnd.y;
 			}
 			if (wall)
 			{
@@ -193,6 +261,35 @@ namespace ly
 			result.frontHealthBefore = frontTarget->GetHealth();
 			result.betweenWallsHealthBefore = betweenWallsTarget->GetHealth();
 			result.rearHealthBefore = rearTarget->GetHealth();
+			const auto captureEndpointRuntimeSample = [&](int tickIndex, float deltaTime, float elapsedSeconds, float previousTargetHealth)
+			{
+				if (!endpointContact) return;
+				EndpointRuntimeSample sample;
+				sample.tickIndex = tickIndex;
+				sample.deltaTime = deltaTime;
+				sample.elapsedSeconds = elapsedSeconds;
+				sample.ownerLocation = owner->GetActorLocation();
+				sample.ownerRotationDegrees = owner->GetActorRotation();
+				sample.targetLocation = frontTarget->GetActorLocation();
+				sample.targetBounds = frontTarget->GetActorGlobalBounds();
+				sample.targetHealth = frontTarget->GetHealth();
+				sample.targetHealthDamageSincePreviousSample = previousTargetHealth - sample.targetHealth;
+				const auto beamActors = world.GetActorsByType<ContinuousBeamVisualActor>();
+				sample.beamActorCount = beamActors.size();
+				for (const auto& weakBeam : beamActors)
+				{
+					const auto beam = weakBeam.lock();
+					if (!beam) continue;
+					sample.beamActorFound = true;
+					sample.beamActorLocation = beam->GetActorLocation();
+					sample.beamActorRotationDegrees = beam->GetActorRotation();
+					sample.observedBeamDirection = RotationToVector(sample.beamActorRotationDegrees - 90.f);
+					sample.observedBeamEnd = sample.beamActorLocation + sample.observedBeamDirection * result.endpointRange;
+					break;
+				}
+				result.endpointRuntimeSamples.push_back(sample);
+			};
+			captureEndpointRuntimeSample(-1, 0.f, 0.f, result.frontHealthBefore);
 
 			auto& abilitySystem = owner->GetCombatRuntime().GetAbilitySystemComponent();
 			std::string grantFailure;
@@ -208,11 +305,15 @@ namespace ly
 			}
 
 			abilitySystem.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
+			float previousFrontHealth = result.frontHealthBefore;
 			for (int tick = 0; tick < FireTickCount; ++tick)
 			{
 				world.TickInternal(FireTickSeconds);
+				captureEndpointRuntimeSample(tick, FireTickSeconds, (tick + 1) * FireTickSeconds, previousFrontHealth);
+				previousFrontHealth = frontTarget->GetHealth();
 				if (tick == 0)
 				{
+					result.frontHealthAfterFirstTick = frontTarget->GetHealth();
 					result.betweenWallsHealthAfterFirstTick = betweenWallsTarget->GetHealth();
 					if (moveTargetToFrontAfterFirstTick)
 					{
@@ -246,6 +347,53 @@ namespace ly
 				{ "frontTargetNearBoundsY", result.frontTargetNearBoundsY },
 				{ "frontTargetHealthAfter", result.frontHealthAfter },
 				{ "frontTargetHealthBefore", result.frontHealthBefore },
+				{ "frontTargetHealthAfterFirstTick", result.frontHealthAfterFirstTick },
+				{ "frontTargetDamageAfterFirstTick", result.frontHealthBefore - result.frontHealthAfterFirstTick },
+				{ "frontTargetTotalDamage", result.frontHealthBefore - result.frontHealthAfter },
+				{ "endpointGeometryMeasured", result.endpointGeometryMeasured },
+				{ "endpointGeometry", result.endpointGeometryMeasured ? nlohmann::json{
+					{ "ownerLocationBeforeZeroTick", { result.endpointOwnerLocationBeforeZeroTick.x, result.endpointOwnerLocationBeforeZeroTick.y } },
+					{ "ownerRotationBeforeZeroTickDegrees", result.endpointOwnerRotationBeforeZeroTick },
+					{ "muzzleOffset", { result.endpointMuzzleOffset.x, result.endpointMuzzleOffset.y } },
+					{ "muzzleRotationOffsetDegrees", result.endpointMuzzleRotationOffsetDegrees },
+					{ "muzzleStart", { result.endpointMuzzleStart.x, result.endpointMuzzleStart.y } },
+					{ "directionRotationDegrees", result.endpointDirectionRotationDegrees },
+					{ "direction", { result.endpointDirection.x, result.endpointDirection.y } },
+					{ "range", result.endpointRange }, { "halfWidth", result.endpointHalfWidth },
+					{ "beamEnd", { result.endpointBeamEnd.x, result.endpointBeamEnd.y } },
+					{ "targetLocationBefore", { result.endpointTargetLocationBefore.x, result.endpointTargetLocationBefore.y } },
+					{ "targetLocationAfter", { result.endpointTargetLocationAfter.x, result.endpointTargetLocationAfter.y } },
+					{ "targetBoundsBefore", { { "position", { result.endpointTargetBoundsBefore.position.x, result.endpointTargetBoundsBefore.position.y } },
+						{ "size", { result.endpointTargetBoundsBefore.size.x, result.endpointTargetBoundsBefore.size.y } } } },
+					{ "targetBounds", { { "position", { result.endpointTargetBounds.position.x, result.endpointTargetBounds.position.y } },
+						{ "size", { result.endpointTargetBounds.size.x, result.endpointTargetBounds.size.y } } } },
+					{ "targetPlacementDeltaY", result.endpointPlacementDeltaY },
+					{ "targetNearEdgeY", result.endpointTargetNearEdgeY },
+					{ "expandedTargetNearEdgeMinusBeamEndY", result.endpointExpandedNearEdgeGap }
+				} : nlohmann::json(nullptr) },
+				{ "endpointRuntimeSamples", [&result]()
+					{
+						nlohmann::json samples = nlohmann::json::array();
+						for (const EndpointRuntimeSample& sample : result.endpointRuntimeSamples)
+						{
+							samples.push_back({
+								{ "tickIndex", sample.tickIndex }, { "deltaTime", sample.deltaTime }, { "elapsedSeconds", sample.elapsedSeconds },
+								{ "ownerLocation", { sample.ownerLocation.x, sample.ownerLocation.y } },
+								{ "ownerRotationDegrees", sample.ownerRotationDegrees },
+								{ "targetLocation", { sample.targetLocation.x, sample.targetLocation.y } },
+								{ "targetBounds", { { "position", { sample.targetBounds.position.x, sample.targetBounds.position.y } },
+									{ "size", { sample.targetBounds.size.x, sample.targetBounds.size.y } } } },
+								{ "targetHealth", sample.targetHealth },
+								{ "targetHealthDamageSincePreviousSample", sample.targetHealthDamageSincePreviousSample },
+								{ "beamActorCount", sample.beamActorCount }, { "beamActorFound", sample.beamActorFound },
+								{ "beamActorLocation", { sample.beamActorLocation.x, sample.beamActorLocation.y } },
+								{ "beamActorRotationDegrees", sample.beamActorRotationDegrees },
+								{ "observedBeamDirection", { sample.observedBeamDirection.x, sample.observedBeamDirection.y } },
+								{ "observedBeamEnd", { sample.observedBeamEnd.x, sample.observedBeamEnd.y } }
+							});
+						}
+						return samples;
+					}() },
 				{ "primaryFireActive", result.primaryFireActive },
 				{ "rearTargetHealthAfter", result.rearHealthAfter },
 				{ "rearTargetHealthBefore", result.rearHealthBefore },
