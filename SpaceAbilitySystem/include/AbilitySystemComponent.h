@@ -330,6 +330,11 @@ namespace sas
 			(void)preserveRuntimeDependencies;
 			ClearAdditionalState();
 		}
+		virtual std::optional<bool> GetPendingAdditionalCleanup() const
+		{
+			return std::nullopt;
+		}
+		virtual void ReleaseAdditionalRuntimeDependencies() {}
 		virtual void OnClearCompleted() {}
 		virtual void OnAbilityInstanceOperationsCompleted() {}
 		template <typename Definition, typename Instance>

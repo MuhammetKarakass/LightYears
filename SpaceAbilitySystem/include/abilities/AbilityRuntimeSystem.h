@@ -11,6 +11,7 @@
 #include <functional>
 #include <algorithm>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,6 +36,7 @@ namespace sas
 		std::function<void(AbilityHandle)> changed;
 		std::function<void()> cleared;
 		std::function<bool()> canMutate;
+		std::function<bool(const Instance&)> hasPendingCleanup;
 	};
 
 	template <typename Definition, typename Instance>
@@ -455,9 +457,10 @@ namespace sas
 			mClearing = true;
 			struct ClearingScope { bool& flag; ~ClearingScope() { flag = false; } } scope{ mClearing };
 			std::exception_ptr error;
+			const std::vector<AbilityHandle> handles = GetHandles();
 			if (mCallbacks.cancel)
 			{
-				for (const AbilityHandle handle : GetHandles())
+				for (const AbilityHandle handle : handles)
 				{
 					if (Instance* ability = mAbilities.Find(handle))
 					{
@@ -466,13 +469,40 @@ namespace sas
 					}
 				}
 			}
-			if (error)
+			for (const AbilityHandle handle : handles)
 			{
-				std::rethrow_exception(error);
+				Instance* ability = mAbilities.Find(handle);
+				if (!ability)
+				{
+					continue;
+				}
+
+				bool pendingCleanup = static_cast<bool>(error);
+				if (mCallbacks.hasPendingCleanup)
+				{
+					try { pendingCleanup = mCallbacks.hasPendingCleanup(*ability); }
+					catch (...) { pendingCleanup = true; if (!error) error = std::current_exception(); }
+				}
+				if (!pendingCleanup)
+				{
+					mAbilities.Remove(handle);
+				}
 			}
-			mAbilities.Clear();
-			try { if (mCallbacks.cleared) mCallbacks.cleared(); }
-			catch (...) { if (!error) error = std::current_exception(); }
+			if (!mAbilities.GetAll().empty())
+			{
+				if (!error)
+				{
+					error = std::make_exception_ptr(std::runtime_error(
+						"Ability cleanup is incomplete; retry Clear after retained cleanup succeeds."
+					));
+				}
+			}
+			else
+			{
+				mAbilities.Clear();
+				try { if (mCallbacks.cleared) mCallbacks.cleared(); }
+				catch (...) { if (!error) error = std::current_exception(); }
+			}
 			if (error) std::rethrow_exception(error);
 		}
 

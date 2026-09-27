@@ -116,6 +116,10 @@ namespace ly
 		{
 			ability.Cancel(reason);
 		};
+		callbacks.hasPendingCleanup = [](const GameAbility& ability)
+		{
+			return ability.IsActive() || ability.HasPendingCleanup();
+		};
 		callbacks.tick = [](GameAbility& ability, float deltaTime)
 		{
 			ability.Tick(deltaTime);
@@ -280,14 +284,25 @@ namespace ly
 		catch (...) { error = std::current_exception(); }
 		mAbilityUseHistory.Clear();
 		mLifecycleDispatcher.Clear();
-		if (!preserveRuntimeDependencies && !error)
+		if (!preserveRuntimeDependencies &&
+			mAbilityInvocationRuntime.GetActiveInvocationCount() == 0)
 		{
-			mScopedAbilityRules.clear();
-			mDeferredScopedAbilityRules.clear();
-			mHasDeferredScopedAbilityRules = false;
-			mPrimaryWeaponOverrides.Clear();
+			ReleaseAdditionalRuntimeDependencies();
 		}
 		if (error) std::rethrow_exception(error);
+	}
+
+	std::optional<bool> LightYearsAbilitySystemComponent::GetPendingAdditionalCleanup() const
+	{
+		return mAbilityInvocationRuntime.GetActiveInvocationCount() != 0;
+	}
+
+	void LightYearsAbilitySystemComponent::ReleaseAdditionalRuntimeDependencies()
+	{
+		mScopedAbilityRules.clear();
+		mDeferredScopedAbilityRules.clear();
+		mHasDeferredScopedAbilityRules = false;
+		mPrimaryWeaponOverrides.Clear();
 	}
 
 	void LightYearsAbilitySystemComponent::OnClearCompleted()

@@ -486,17 +486,42 @@ namespace sas
 			// game-owned weapon override state until retained EndFire debt is drained.
 			std::rethrow_exception(error);
 		}
-		try { ClearAdditionalState(false); }
-		catch (...)
+		bool additionalStateError = false;
+		try { ClearAdditionalState(true); }
+		catch (...) { additionalStateError = true; if (!error) error = std::current_exception(); }
+		std::optional<bool> pendingAdditionalCleanup;
+		try { pendingAdditionalCleanup = GetPendingAdditionalCleanup(); }
+		catch (...) { additionalStateError = true; if (!error) error = std::current_exception(); }
+		if (pendingAdditionalCleanup.value_or(additionalStateError))
 		{
-			if (!error) error = std::current_exception();
+			if (!error)
+			{
+				error = std::make_exception_ptr(std::runtime_error(
+					"Additional ability cleanup is incomplete; retry Clear after retained cleanup succeeds."
+				));
+			}
 			mClearing = false;
 			std::rethrow_exception(error);
 		}
 		cleanup([&] { mEffects.Clear(); });
+		bool retainedEffects = true;
+		try { retainedEffects = !mEffects.GetHandles().empty(); }
+		catch (...) { if (!error) error = std::current_exception(); }
+		if (retainedEffects)
+		{
+			if (!error)
+			{
+				error = std::make_exception_ptr(std::runtime_error(
+					"Gameplay effect cleanup is incomplete; retry Clear after retained cleanup succeeds."
+				));
+			}
+			mClearing = false;
+			std::rethrow_exception(error);
+		}
+		cleanup([&] { ReleaseAdditionalRuntimeDependencies(); });
 		cleanup([&] { mOwnedTags.Clear(); });
 		cleanup([&] { mAttributes.Clear(); });
-		if (!error) cleanup([&] { OnClearCompleted(); });
+		cleanup([&] { OnClearCompleted(); });
 		mAbilityCooldownTagActive = false;
 		mPrimaryWeaponCooldownTagActive = false;
 		mClearRequested = false;

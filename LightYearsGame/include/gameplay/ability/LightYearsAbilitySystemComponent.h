@@ -9,6 +9,7 @@
 #include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
 
 #include <cstddef>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -133,6 +134,8 @@ namespace ly
 		friend class GameAbility;
 		friend class CombatRuntime;
 		void ClearAdditionalState(bool preserveRuntimeDependencies) override;
+		std::optional<bool> GetPendingAdditionalCleanup() const override;
+		void ReleaseAdditionalRuntimeDependencies() override;
 		void OnClearCompleted() override;
 		void OnAbilityInstanceOperationsCompleted() override;
 		void FlushDeferredScopedAbilityRules();
