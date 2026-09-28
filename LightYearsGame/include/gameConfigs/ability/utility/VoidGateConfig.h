@@ -69,31 +69,35 @@ namespace AbilityData::Definitions
 				0.01f
 			},
 			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::EnergyPowerReference,
-				AbilityData::VoidGate::DefaultEnergyPowerReference,
-				0.f
-			},
-			sas::GameplayAttribute{
 				AbilityData::VoidGate::Attribute::EnergyPowerDurationScale,
 				AbilityData::VoidGate::DefaultEnergyPowerDurationScale,
 				0.f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.levelProgression.reserve(14);
+		for (int step = 0; step < 14; ++step)
+		{
+			const float cooldownDelta = step < 4
+				? -0.475f
+				: step < 8 ? -0.375f : step < 12 ? -0.275f : -0.175f;
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
+					sas::AttributeModifier{
+						ly::CommonAttributeIds::Duration,
+						sas::AttributeModifierOperation::Add,
+						0.15f
+					},
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add,
-						-0.25f
+						cooldownDelta
 					}
 				},
 				{},
 				{},
 				{}
-			}
-		);
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

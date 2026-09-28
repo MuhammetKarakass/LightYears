@@ -14,8 +14,11 @@ namespace ly
 	namespace
 	{
 		constexpr float BaseCooldown = 13.f;
-		constexpr float DamagePerLevel = 4.f;
-		constexpr float CooldownPerLevel = -0.20f;
+		constexpr float BaseDamage = 40.f;
+		constexpr float DamagePerLevel = 10.f;
+		constexpr float BaseEnergyPowerDamageScale = 0.50f;
+		constexpr float EnergyPowerDamageScalePerLevel = 0.06f;
+		constexpr float DirectHitDamageMultiplier = 1.50f;
 
 		bool NearlyEqual(float left, float right)
 		{
@@ -103,6 +106,8 @@ namespace ly
 			CollisionAttributeIds::Radius,
 			AbilityData::CryoBola::Actor::Projectile::ProjectileSpeed,
 			AbilityData::CryoBola::Actor::Projectile::RuptureRadius,
+			AbilityData::CryoBola::Actor::Projectile::EnergyPowerDamageScale,
+			AbilityData::CryoBola::Actor::Projectile::DirectHitDamageMultiplier,
 			DamageAttributeIds::CryoBuildupPerHit
 		})
 		{
@@ -114,31 +119,55 @@ namespace ly
 		}
 
 		bool validProgression = definition.levelProgression.size() == 14;
+		float cooldownReductionPerLevel = 0.175f + 0.025f * BaseCooldown;
+		std::size_t stepIndex = 0;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (!validProgression || step.attributeModifiers.size() != 2 ||
+			if (!validProgression || step.attributeModifiers.size() != 3 ||
 				!HasModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-				!HasModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
+				!HasModifier(step,
+					AbilityData::CryoBola::Actor::Projectile::EnergyPowerDamageScale,
+					EnergyPowerDamageScalePerLevel) ||
+				!HasModifier(step, CommonAttributeIds::Cooldown,
+					-cooldownReductionPerLevel))
 			{
 				validProgression = false;
 				break;
 			}
+			++stepIndex;
+			if (stepIndex % 4 == 0 && stepIndex < definition.levelProgression.size())
+			{
+				cooldownReductionPerLevel = cooldownReductionPerLevel >= 0.20f
+					? cooldownReductionPerLevel - 0.10f
+					: cooldownReductionPerLevel * 0.80f;
+			}
 		}
 
-		const bool validScaling = definition.scalingRules.size() == 1 &&
-			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
-			definition.scalingRules.front().operation ==
-				sas::AttributeModifierOperation::Add &&
-			NearlyEqual(definition.scalingRules.front().coefficient, 0.20f);
+		const bool validProjectileScaling = projectile &&
+			NearlyEqual(sas::FindAttributeValue(
+				projectile->attributes,
+				CommonAttributeIds::Damage,
+				0.f
+			), BaseDamage) &&
+			NearlyEqual(sas::FindAttributeValue(
+				projectile->attributes,
+				AbilityData::CryoBola::Actor::Projectile::EnergyPowerDamageScale,
+				0.f
+			), BaseEnergyPowerDamageScale) &&
+			NearlyEqual(sas::FindAttributeValue(
+				projectile->attributes,
+				AbilityData::CryoBola::Actor::Projectile::DirectHitDamageMultiplier,
+				0.f
+			), DirectHitDamageMultiplier);
 
 		if (!validIdentity || !validLifecycle || !validDamage || !validProjectile ||
-			!validProgression || !validScaling || !HasSpawnAction(definition))
+			!validProgression || !validProjectileScaling ||
+			!definition.scalingRules.empty() || !HasSpawnAction(definition))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Cryo Bola requires one instant owner-forward projectile with Cryo full-stack payload, EnergyPower damage scaling, and its fixed 15-level progression.";
+					"Cryo Bola requires one instant owner-forward projectile with Cryo full-stack payload, its direct-hit EnergyPower formula, and its fixed 14-step progression.";
 			}
 			return false;
 		}

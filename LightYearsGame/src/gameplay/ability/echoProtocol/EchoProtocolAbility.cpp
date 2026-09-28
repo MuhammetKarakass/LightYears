@@ -45,12 +45,8 @@ namespace ly
 		for (const sas::AttributeId& attributeId : {
 			AbilityData::EchoProtocol::Attribute::PowerBase,
 			AbilityData::EchoProtocol::Attribute::PowerPerLevel,
-			AbilityData::EchoProtocol::Attribute::AttackPowerScale,
-			AbilityData::EchoProtocol::Attribute::MaxHealthScale,
 			AbilityData::EchoProtocol::Attribute::EnergyPowerScale,
-			AbilityData::EchoProtocol::Attribute::AttackSpeedScale,
-			AbilityData::EchoProtocol::Attribute::LuckScale,
-			AbilityData::EchoProtocol::Attribute::MovementScale
+			AbilityData::EchoProtocol::Attribute::EnergyPowerScalePerLevel
 		})
 		{
 			const sas::GameplayAttribute* attribute = FindAttribute(definition, attributeId);
@@ -58,7 +54,7 @@ namespace ly
 			{
 				if (failureReason)
 				{
-					*failureReason = "Echo Protocol must declare eight non-negative runtime attributes.";
+					*failureReason = "Echo Protocol must declare four non-negative runtime attributes.";
 				}
 				return false;
 			}
@@ -91,40 +87,6 @@ namespace ly
 		return sas::FindAttributeValue(values, attributeId, fallback);
 	}
 
-	float EchoProtocolAbility::ResolveScalingCoefficient(
-		GameAbilityBehaviorContext& context,
-		const sas::AttributeId& sourceAttributeId
-	) const
-	{
-		using Attribute = AbilityData::EchoProtocol::Attribute;
-		if (sourceAttributeId == OwnerAttributeIds::AttackPower)
-		{
-			return ResolveValue(context, Attribute::AttackPowerScale, 1.30f);
-		}
-		if (sourceAttributeId == OwnerAttributeIds::MaxHealth)
-		{
-			return ResolveValue(context, Attribute::MaxHealthScale, 0.20f);
-		}
-		if (sourceAttributeId == OwnerAttributeIds::EnergyPower)
-		{
-			return ResolveValue(context, Attribute::EnergyPowerScale, 0.10f);
-		}
-		if (sourceAttributeId == OwnerAttributeIds::AttackSpeed)
-		{
-			return ResolveValue(context, Attribute::AttackSpeedScale, 0.20f);
-		}
-		if (sourceAttributeId == OwnerAttributeIds::Luck)
-		{
-			return ResolveValue(context, Attribute::LuckScale, 0.25f);
-		}
-		if (sourceAttributeId == OwnerAttributeIds::MoveSpeedHorizontal ||
-			sourceAttributeId == OwnerAttributeIds::MoveSpeedVertical)
-		{
-			return ResolveValue(context, Attribute::MovementScale, 0.15f);
-		}
-		return 0.f;
-	}
-
 	bool EchoProtocolAbility::Activate(GameAbilityBehaviorContext& context)
 	{
 		AbilityUseHistory& history = context.abilitySystem.GetAbilityUseHistory();
@@ -148,50 +110,33 @@ namespace ly
 			return false;
 		}
 
-		const float echoPower = std::max(
+		const int levelDelta = std::max(0, context.instance.GetLevel() - 1);
+		const float energyPower = std::max(0.f, context.abilitySystem.GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::EnergyPower
+		));
+		const float replayPower = std::max(
 			0.f,
 			ResolveValue(context, AbilityData::EchoProtocol::Attribute::PowerBase, 0.60f) +
-			static_cast<float>(std::max(0, context.instance.GetLevel() - 1)) *
-			ResolveValue(context, AbilityData::EchoProtocol::Attribute::PowerPerLevel, 0.03f)
+			static_cast<float>(levelDelta) * ResolveValue(
+				context, AbilityData::EchoProtocol::Attribute::PowerPerLevel, 0.02f
+			) +
+			(energyPower / 100.f) * (
+				ResolveValue(context, AbilityData::EchoProtocol::Attribute::EnergyPowerScale, 0.12f) +
+				static_cast<float>(levelDelta) * ResolveValue(
+					context,
+					AbilityData::EchoProtocol::Attribute::EnergyPowerScalePerLevel,
+					0.02f
+				)
+			)
 		);
 		List<sas::AttributeScalingRule> scalingRules;
 		for (const AbilityScalingChannel& channel : record->scalingChannels)
 		{
-			// A single Echo coefficient is safe when a source attribute drives one
-			// target. If it drives multiple targets, the source coefficients are
-			// target-specific balance data and must be preserved. Replacing both
-			// Gravity Radius (0.20) and Duration (0.0025) with one MaxHealth scale
-			// would make the field last orders of magnitude too long.
-			const std::size_t sourceChannelCount = std::count_if(
-				record->scalingChannels.begin(),
-				record->scalingChannels.end(),
-				[&](const AbilityScalingChannel& other)
-				{
-					return other.sourceAttributeId == channel.sourceAttributeId;
-				}
-			);
-			const bool sourceAttributeIsShared = sourceChannelCount > 1;
-			const float echoCoefficient = ResolveScalingCoefficient(
-				context,
-				channel.sourceAttributeId
-			);
-			// Echo only declares replacement coefficients for its supported owner
-			// channels. Unsupported channels (for example Armor in Shield) must
-			// retain their source tuning instead of disappearing from the replay.
-			const float coefficient =
-				(sourceAttributeIsShared || echoCoefficient <= 0.f) &&
-				channel.sourceCoefficient > 0.f
-				? channel.sourceCoefficient
-				: echoCoefficient;
-			if (coefficient <= 0.f)
-			{
-				continue;
-			}
 			scalingRules.push_back(sas::AttributeScalingRule{
 				channel.targetAttributeId,
 				channel.sourceAttributeId,
 				channel.operation,
-				coefficient
+				channel.sourceCoefficient
 			});
 		}
 
@@ -199,7 +144,7 @@ namespace ly
 		if (!context.abilitySystem.InvokeRecordedAbility(
 			*record,
 			scalingRules,
-			echoPower,
+			replayPower,
 			context.definition.slot,
 			context.instance.IsInputHeld(),
 			&failureReason

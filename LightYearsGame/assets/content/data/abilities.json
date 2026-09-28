@@ -382,6 +382,9 @@
           "baseValue": 0.8,
           "minValue": 0.0
         }
+      ],
+      "invocationOutputAttributes": [
+        "Ability.Movement.Dash.MoveSpeedScale"
       ]
     },
     {
@@ -1617,6 +1620,10 @@
           "operation": "Add",
           "coefficient": 0.05
         }
+      ],
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Ability.Defense.ShieldHarvest.ShieldPerEnemy"
       ]
     },
     {
@@ -2517,6 +2524,14 @@
       },
       "damageTags": [
         "Damage.Type.Cryo"
+      ],
+      "invocationOutputAttributes": [
+        "Ability.Offense.GlacialPressure.InitialDamage",
+        "Ability.Offense.GlacialPressure.CollisionDamage",
+        "Ability.Offense.GlacialPressure.PushDistance",
+        "Ability.Offense.GlacialPressure.PushStunDuration",
+        "Ability.Offense.GlacialPressure.CollisionStunDuration",
+        "Ability.Offense.GlacialPressure.SegmentOneExtraStun"
       ]
     },
     {
@@ -3495,9 +3510,10 @@
       "maxCharges": 1,
       "settings": {},
       "invocationOutputAttributes": [
-        "Common.Damage",
-        "Common.Radius",
-        "Common.Duration"
+        "Common.Duration",
+        "AbilityActor.GravityAnomaly.Field.PullStrength",
+        "AbilityActor.GravityAnomaly.Field.SlowMagnitude",
+        "AbilityActor.GravityAnomaly.Field.InsideEffectDuration"
       ],
       "scalingRules": [
         {
@@ -3705,7 +3721,7 @@
       ],
       "invocationOutputAttributes": [
         "Common.Damage",
-        "Common.ProjectileCount"
+        "Ability.Offense.OverdriveCore.AttackSpeedBoostBase"
       ],
       "scalingRules": [
         {
@@ -4052,7 +4068,11 @@
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Control.NullPulse.BaseStunDuration",
+        "Ability.Control.NullPulse.BossStaggerDuration"
+      ]
     },
     {
       "id": "Ability.Offense.ExecutionDrive.Basic",
@@ -4119,7 +4139,11 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Offense.ExecutionDrive.FlatAttackPowerBonus",
+        "Ability.Offense.ExecutionDrive.MoveSpeedBonus"
+      ]
     },
     {
       "id": "Ability.Utility.RelayPrism.Basic",
@@ -4134,14 +4158,13 @@
           "minValue": 1.0
         },
         {
-          "id": "Ability.Utility.RelayPrism.DamageTransferRatio",
-          "baseValue": 0.15,
-          "minValue": 0.0,
-          "maxValue": 1.0
+          "id": "Ability.Utility.RelayPrism.BaseTransfer",
+          "baseValue": 0.2,
+          "minValue": 0.0
         },
         {
-          "id": "Ability.Utility.RelayPrism.AttackPowerCoefficient",
-          "baseValue": 0.25,
+          "id": "Ability.Utility.RelayPrism.EnergyPowerScale",
+          "baseValue": 0.04,
           "minValue": 0.0
         },
         {
@@ -4207,206 +4230,280 @@
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.425
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.425
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.425
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.425
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.325
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.325
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.325
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.325
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.225
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.225
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.225
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.225
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.125
               }
             ]
           },
           {
             "attributeModifiers": [
               {
-                "attributeId": "Ability.Utility.RelayPrism.DamageTransferRatio",
+                "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
                 "operation": "Add",
-                "magnitude": 0.01
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.RelayPrism.EnergyPowerScale",
+                "operation": "Add",
+                "magnitude": 0.02
               },
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.2
+                "magnitude": -0.125
               }
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Utility.RelayPrism.BaseTransfer",
+        "Ability.Utility.RelayPrism.EnergyPowerScale"
+      ]
     },
     {
       "id": "Ability.Utility.VoidGate.Basic",
       "cooldown": 12.0,
-      "duration": 6.0,
+      "duration": 7.0,
       "maxCharges": 1,
       "settings": {},
       "attributes": [
@@ -4427,17 +4524,12 @@
         },
         {
           "id": "Ability.Utility.VoidGate.PortalBPlacementTimeout",
-          "baseValue": 4.0,
+          "baseValue": 6.0,
           "minValue": 0.01
         },
         {
-          "id": "Ability.Utility.VoidGate.EnergyPowerReference",
-          "baseValue": 50.0,
-          "minValue": 0.0
-        },
-        {
           "id": "Ability.Utility.VoidGate.EnergyPowerDurationScale",
-          "baseValue": 0.002,
+          "baseValue": 1.0,
           "minValue": 0.0
         }
       ],
@@ -4472,16 +4564,204 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.25
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.475
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.475
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.475
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.475
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.375
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.375
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.375
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.375
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.275
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.275
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.275
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.275
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.175
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Duration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.175
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -4498,37 +4778,17 @@
         },
         {
           "id": "Ability.Utility.EchoProtocol.PowerPerLevel",
-          "baseValue": 0.03,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Utility.EchoProtocol.AttackPowerScale",
-          "baseValue": 1.3,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Utility.EchoProtocol.MaxHealthScale",
-          "baseValue": 0.2,
+          "baseValue": 0.02,
           "minValue": 0.0
         },
         {
           "id": "Ability.Utility.EchoProtocol.EnergyPowerScale",
-          "baseValue": 0.1,
+          "baseValue": 0.12,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Utility.EchoProtocol.AttackSpeedScale",
-          "baseValue": 0.2,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Utility.EchoProtocol.LuckScale",
-          "baseValue": 0.25,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Utility.EchoProtocol.MovementScale",
-          "baseValue": 0.15,
+          "id": "Ability.Utility.EchoProtocol.EnergyPowerScalePerLevel",
+          "baseValue": 0.02,
           "minValue": 0.0
         }
       ],
@@ -4549,16 +4809,134 @@
           80,
           80
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.3
-            }
-          ]
-        }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.625
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.625
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.625
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.625
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -4956,7 +5334,12 @@
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "AbilityActor.MineLayer.Mine.StunDuration",
+        "AbilityActor.MineLayer.Mine.KnockbackStrength"
+      ]
     },
     {
       "id": "Ability.Offense.RailBurst.Basic",
@@ -5734,8 +6117,7 @@
       "maxCharges": 1,
       "settings": {},
       "invocationOutputAttributes": [
-        "Common.Damage",
-        "AbilityActor.CrescentReaver.Projectile.BounceCount"
+        "Common.Damage"
       ],
       "scalingRules": [
         {
@@ -7637,7 +8019,11 @@
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Common.Duration"
+      ]
     },
     {
       "id": "Ability.Offense.SolarBombardment.Basic",
@@ -8056,9 +8442,9 @@
       "maxCharges": 1,
       "settings": {},
       "attributes": [
-        {
-          "id": "Common.Damage",
-          "baseValue": 40.0,
+            {
+              "id": "Common.Damage",
+              "baseValue": 40.0,
           "minValue": 0.0
         },
         {
@@ -8946,7 +9332,16 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Ability.Defense.Cryostasis.BaseIceHealth",
+        "Ability.Defense.Cryostasis.IceHealthMaxHealthScale",
+        "Ability.Defense.Cryostasis.BaseHealthRegenPerSecond",
+        "Ability.Defense.Cryostasis.HealthRegenMaxHealthScale",
+        "Ability.Defense.Cryostasis.BaseAfterburnerRecoveryPerSecond",
+        "Ability.Defense.Cryostasis.AfterburnerRecoveryMaxHealthScale"
+      ]
     },
     {
       "id": "Ability.Control.FrostMaelstrom.Basic",
@@ -10438,7 +10833,11 @@
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "AbilityActor.CombatSentry.Turret.BaseDamage"
+      ]
     },
     {
       "id": "Ability.Offense.NanoPlague.Basic",
@@ -10772,7 +11171,11 @@
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Common.Duration"
+      ]
     },
     {
       "id": "Ability.Defense.ReturnProtocol.Basic",
@@ -10830,7 +11233,10 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Defense.ReturnProtocol.BaseReflectDamageMultiplier"
+      ]
     },
     {
       "id": "Ability.Defense.TemporalRecall.Basic",
@@ -10923,7 +11329,12 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Defense.TemporalRecall.PositiveRecoveryRatio",
+        "Ability.Defense.TemporalRecall.MaxHealthRecoveryScale",
+        "Ability.Defense.TemporalRecall.EnergyPowerRecoveryScale"
+      ]
     },
     {
       "id": "Ability.Defense.TimeSlip.Basic",
@@ -12470,7 +12881,11 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Defense.ClosedCircuit.BaseBarrierHealth",
+        "Ability.Defense.ClosedCircuit.EnergyPowerBarrierHealthScale"
+      ]
     },
     {
       "id": "Ability.Defense.IroncladProtocol.Basic",
@@ -12660,7 +13075,10 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Movement.ZeroDrag.ThrustBonus"
+      ]
     },
     {
       "id": "Ability.Defense.TemporalConvergence.Basic",
@@ -12722,8 +13140,10 @@
         }
       ],
       "invocationOutputAttributes": [
-        "Common.Damage",
-        "Ability.Defense.TemporalConvergence.BaseShield"
+        "Ability.Defense.TemporalConvergence.BaseShield",
+        "Ability.Defense.TemporalConvergence.SlowFraction",
+        "Ability.Defense.TemporalConvergence.StunDuration",
+        "Ability.Defense.TemporalConvergence.FieldDuration"
       ],
       "scalingRules": [
         {
@@ -12796,7 +13216,7 @@
         },
         {
           "id": "Common.Damage",
-          "baseValue": 15.0,
+          "baseValue": 30.0,
           "minValue": 0.0
         },
         {
@@ -12806,28 +13226,21 @@
         },
         {
           "id": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
-          "baseValue": 6.0,
+          "baseValue": 7.0,
           "minValue": 0.01
         },
         {
-          "id": "Ability.Utility.FoldspaceArena.EnergyPowerDurationReference",
-          "baseValue": 50.0,
+          "id": "Ability.Utility.FoldspaceArena.EnergyPowerDurationScale",
+          "baseValue": 0.75,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Utility.FoldspaceArena.EnergyPowerDurationPerPoint",
-          "baseValue": 0.002,
+          "id": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+          "baseValue": 0.2,
           "minValue": 0.0
         }
       ],
-      "scalingRules": [
-        {
-          "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Power",
-          "operation": "Add",
-          "coefficient": 0.08
-        }
-      ],
+      "scalingRules": [],
       "actors": [
         {
           "id": "Actor.Ability.FoldspaceArena.Arena.Basic",
@@ -12887,27 +13300,351 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 2.0
-            },
-            {
-              "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
-              "operation": "Add",
-              "magnitude": 0.1
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.25
-            }
-          ]
-        }
-      }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.6
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.6
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.6
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.6
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.02
+              },
+              {
+                "attributeId": "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+                "operation": "Add",
+                "magnitude": 0.15
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ]
+          }
+        ]
+      },
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "Ability.Utility.FoldspaceArena.EnergyPowerDamageScale",
+        "Ability.Utility.FoldspaceArena.BaseArenaDuration",
+        "Ability.Utility.FoldspaceArena.EnergyPowerDurationScale"
+      ]
     },
     {
       "id": "Ability.Control.CryoBola.Basic",
@@ -12915,14 +13652,7 @@
       "duration": 0.0,
       "maxCharges": 1,
       "settings": {},
-      "scalingRules": [
-        {
-          "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.Energy.Power",
-          "operation": "Add",
-          "coefficient": 0.2
-        }
-      ],
+      "scalingRules": [],
       "actors": [
         {
           "id": "Actor.Ability.CryoBola.Projectile.Basic",
@@ -12931,7 +13661,7 @@
           "attributes": [
             {
               "id": "Common.Damage",
-              "baseValue": 30.0,
+              "baseValue": 40.0,
               "minValue": 0.0
             },
             {
@@ -12952,6 +13682,16 @@
             {
               "id": "AbilityActor.CryoBola.Projectile.RuptureRadius",
               "baseValue": 500.0,
+              "minValue": 1.0
+            },
+            {
+              "id": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+              "baseValue": 0.5,
+              "minValue": 0.0
+            },
+            {
+              "id": "AbilityActor.CryoBola.Projectile.DirectHitDamageMultiplier",
+              "baseValue": 1.5,
               "minValue": 1.0
             },
             {
@@ -12983,22 +13723,279 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Damage",
-              "operation": "Add",
-              "magnitude": 4.0
-            },
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.2
-            }
-          ]
-        }
-      }
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.5
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.4
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale",
+                "operation": "Add",
+                "magnitude": 0.06
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              }
+            ]
+          }
+        ]
+      },
+      "invocationOutputAttributes": [
+        "Common.Damage",
+        "AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale"
+      ]
     },
     {
       "id": "Ability.Offense.LanceDrive.Basic",
@@ -13362,7 +14359,13 @@
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Offense.LanceDrive.BaseDamage",
+        "Ability.Offense.LanceDrive.TopSpeedBonus",
+        "Ability.Offense.LanceDrive.ThrustBonus",
+        "Ability.Offense.LanceDrive.LateralKnockback"
+      ]
     },
     {
       "id": "Ability.Offense.InertialWake.Basic",
@@ -13757,7 +14760,15 @@
             ]
           }
         ]
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Offense.InertialWake.TopSpeedBonus",
+        "Ability.Offense.InertialWake.ThrustBonus",
+        "AbilityActor.InertialWake.Wake.BaseKnockbackSpeed",
+        "AbilityActor.InertialWake.Wake.KnockbackPerEffectiveRatio",
+        "AbilityActor.InertialWake.Wake.BaseStunDuration",
+        "AbilityActor.InertialWake.Wake.StunPerEffectiveRatio"
+      ]
     },
     {
       "id": "Ability.Defense.ShieldGraft.Basic",
@@ -13814,7 +14825,11 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Defense.ShieldGraft.ConversionRatio",
+        "Ability.Defense.ShieldGraft.EnergyPowerScale"
+      ]
     },
     {
       "id": "Ability.Offense.EmberSwarm.Basic",
@@ -14239,7 +15254,10 @@
             }
           ]
         }
-      }
+      },
+      "invocationOutputAttributes": [
+        "Ability.Defense.ReclaimerProtocol.HealRatio"
+      ]
     }
   ]
 }

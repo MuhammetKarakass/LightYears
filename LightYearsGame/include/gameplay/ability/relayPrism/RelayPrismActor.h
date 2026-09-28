@@ -70,8 +70,8 @@ namespace ly
 		sf::ConvexShape mTrail;
 		weak_ptr<AreaTelegraphActor> mTelegraph;
 		float mCaptureRadius = 100.f;
-		float mDamageTransferRatio = 0.15f;
-		float mAttackPowerCoefficient = 0.25f;
+		float mBaseTransfer = 0.20f;
+		float mEnergyPowerScale = 0.04f;
 		float mMinimumScatterAngle = 30.f;
 		float mMaximumScatterAngle = 90.f;
 		float mMaximumBonusProjectileCount = 4.f;

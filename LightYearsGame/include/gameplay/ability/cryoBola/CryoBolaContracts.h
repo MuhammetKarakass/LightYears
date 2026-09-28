@@ -25,13 +25,19 @@ namespace AbilityData::CryoBola
 			inline static const sas::AttributeId Root{
 				"AbilityActor.CryoBola.Projectile"
 			};
-			// Speed and rupture radius belong to the projectile family. Damage,
-			// range and collision radius use the existing common attributes.
+			// Flight, rupture and damage scaling belong to the projectile family.
+			// Base damage, range and collision radius use common attributes.
 			inline static const sas::AttributeId ProjectileSpeed{
 				"AbilityActor.CryoBola.Projectile.ProjectileSpeed"
 			};
 			inline static const sas::AttributeId RuptureRadius{
 				"AbilityActor.CryoBola.Projectile.RuptureRadius"
+			};
+			inline static const sas::AttributeId EnergyPowerDamageScale{
+				"AbilityActor.CryoBola.Projectile.EnergyPowerDamageScale"
+			};
+			inline static const sas::AttributeId DirectHitDamageMultiplier{
+				"AbilityActor.CryoBola.Projectile.DirectHitDamageMultiplier"
 			};
 		};
 	};

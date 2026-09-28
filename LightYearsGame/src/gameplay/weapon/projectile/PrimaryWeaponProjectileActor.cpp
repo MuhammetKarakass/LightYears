@@ -158,6 +158,11 @@ namespace ly
 		{
 			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);
 			spawned->ConfigureRelayClone(request);
+			if (mImpactBehavior)
+			{
+				mImpactBehavior->OnProjectileSpawned();
+				spawned->SetImpactBehavior(mImpactBehavior);
+			}
 			const float speed = sas::FindAttributeValue(
 				request.snapshot.damageAttributes,
 				PrimaryWeaponSchema::Projectile::Delivery::Speed,

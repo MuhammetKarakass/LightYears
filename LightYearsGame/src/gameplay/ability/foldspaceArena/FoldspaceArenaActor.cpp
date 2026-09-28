@@ -195,24 +195,25 @@ namespace ly
 		float ownerEnergyPower
 	)
 	{
-		SetDamage(std::max(0.f, FindValue(
+		const float baseDamage = std::max(0.f, FindValue(
 			values, CommonAttributeIds::Damage, GetDamage()
-		)));
+		));
+		const float energyDamageScale = std::max(0.f, FindValue(
+			values,
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDamageScale,
+			0.20f
+		));
+		SetDamage(baseDamage + std::max(0.f, ownerEnergyPower) * energyDamageScale);
 		const float baseDuration = std::max(0.01f, FindValue(
-			values, AbilityData::FoldspaceArena::Attribute::BaseArenaDuration, 6.f
+			values, AbilityData::FoldspaceArena::Attribute::BaseArenaDuration, 7.f
 		));
-		const float energyReference = std::max(0.f, FindValue(
+		const float energyDurationScale = std::max(0.f, FindValue(
 			values,
-			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationReference,
-			50.f
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationScale,
+			0.75f
 		));
-		const float durationPerEnergy = std::max(0.f, FindValue(
-			values,
-			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationPerPoint,
-			0.002f
-		));
-		mArenaDuration = baseDuration + std::max(0.f, ownerEnergyPower - energyReference) *
-			durationPerEnergy;
+		mArenaDuration = baseDuration + (std::max(0.f, ownerEnergyPower) / 100.f) *
+			energyDurationScale;
 		mPhase = Phase::Travelling;
 		mPhaseElapsed = 0.f;
 		mVisualAge = 0.f;
@@ -223,6 +224,10 @@ namespace ly
 	{
 		mTargetLocation = targetLocation;
 		mTargetConfigured = true;
+		const float travelTime = GetVectorLength(
+			mTargetLocation - GetActorLocation()
+		) / std::max(1.f, mProjectileSpeed);
+		SetLifeTime(mArenaDuration + travelTime + 0.25f);
 	}
 
 	void FoldspaceArenaActor::Tick(float deltaTime)

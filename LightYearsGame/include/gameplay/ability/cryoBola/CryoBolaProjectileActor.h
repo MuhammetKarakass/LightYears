@@ -47,6 +47,9 @@ namespace ly
 		float mProjectileSpeed = 0.f;
 		float mMaximumRange = 0.f;
 		float mRuptureRadius = 0.f;
+		float mEnergyPowerDamageScale = 0.f;
+		float mEnergyPowerAtLaunch = 0.f;
+		float mDirectHitDamageMultiplier = 1.5f;
 		float mTravelDistance = 0.f;
 		float mRuptureAge = 0.f;
 		sf::Vector2f mLaunchVelocity{};

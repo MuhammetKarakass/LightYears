@@ -67,7 +67,6 @@ namespace ly
 			AbilityData::VoidGate::Attribute::TransferDuration,
 			AbilityData::VoidGate::Attribute::ReentryCooldown,
 			AbilityData::VoidGate::Attribute::PortalBPlacementTimeout,
-			AbilityData::VoidGate::Attribute::EnergyPowerReference,
 			AbilityData::VoidGate::Attribute::EnergyPowerDurationScale
 		})
 		{
@@ -94,7 +93,6 @@ namespace ly
 			value(AbilityData::VoidGate::Attribute::TransferDuration) <= 0.f ||
 			value(AbilityData::VoidGate::Attribute::ReentryCooldown) < 0.f ||
 			value(AbilityData::VoidGate::Attribute::PortalBPlacementTimeout) <= 0.f ||
-			value(AbilityData::VoidGate::Attribute::EnergyPowerReference) < 0.f ||
 			value(AbilityData::VoidGate::Attribute::EnergyPowerDurationScale) < 0.f ||
 			definition.levelProgression.size() != 14)
 		{
@@ -136,14 +134,6 @@ namespace ly
 				OwnerAttributeIds::EnergyPower
 			)
 		);
-		const float reference = std::max(
-			0.f,
-			FindValue(
-				values,
-				AbilityData::VoidGate::Attribute::EnergyPowerReference,
-				AbilityData::VoidGate::DefaultEnergyPowerReference
-			)
-		);
 		const float scale = std::max(
 			0.f,
 			FindValue(
@@ -152,8 +142,7 @@ namespace ly
 				AbilityData::VoidGate::DefaultEnergyPowerDurationScale
 			)
 		);
-		return std::max(0.f, defaultDuration) +
-			std::max(0.f, energyPower - reference) * scale;
+		return std::max(0.f, defaultDuration) + (energyPower / 100.f) * scale;
 	}
 
 	bool VoidGateAbility::Activate(GameAbilityBehaviorContext& context)

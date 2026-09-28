@@ -22,11 +22,11 @@ namespace AbilityData::RelayPrism
 		// transforming mechanics too; Relay-specific policy remains family-local.
 		inline static const sas::AttributeId ProjectileCount =
 			ly::CommonAttributeIds::ProjectileCount;
-		inline static const sas::AttributeId DamageTransferRatio{
-			"Ability.Utility.RelayPrism.DamageTransferRatio"
+		inline static const sas::AttributeId BaseTransfer{
+			"Ability.Utility.RelayPrism.BaseTransfer"
 		};
-		inline static const sas::AttributeId AttackPowerCoefficient{
-			"Ability.Utility.RelayPrism.AttackPowerCoefficient"
+		inline static const sas::AttributeId EnergyPowerScale{
+			"Ability.Utility.RelayPrism.EnergyPowerScale"
 		};
 		inline static const sas::AttributeId MinimumScatterAngle{
 			"Ability.Utility.RelayPrism.MinimumScatterAngle"

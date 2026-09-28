@@ -21,10 +21,6 @@ namespace ly
 			const sas::AttributeId& attributeId,
 			float fallback
 		) const;
-		float ResolveScalingCoefficient(
-			GameAbilityBehaviorContext& context,
-			const sas::AttributeId& sourceAttributeId
-		) const;
 		// TODO(EchoProtocol-revision): Revisit this cursor when the future
 		// checkpoint/replay system is designed. For now shared history keeps its
 		// last ten records, while Echo behaves as a one-record memory and may

@@ -26,6 +26,7 @@ namespace ly
 			float ownerEnergyPower
 		);
 		void SetSnapshotTarget(const sf::Vector2f& targetLocation);
+		bool IsArenaActive() const { return mPhase == Phase::Active; }
 
 	private:
 		enum class Phase { Travelling, Active };

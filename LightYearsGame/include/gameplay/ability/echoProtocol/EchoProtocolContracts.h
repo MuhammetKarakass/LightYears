@@ -28,23 +28,11 @@ namespace AbilityData::EchoProtocol
 		inline static const sas::AttributeId PowerPerLevel{
 			"Ability.Utility.EchoProtocol.PowerPerLevel"
 		};
-		inline static const sas::AttributeId AttackPowerScale{
-			"Ability.Utility.EchoProtocol.AttackPowerScale"
-		};
-		inline static const sas::AttributeId MaxHealthScale{
-			"Ability.Utility.EchoProtocol.MaxHealthScale"
-		};
 		inline static const sas::AttributeId EnergyPowerScale{
 			"Ability.Utility.EchoProtocol.EnergyPowerScale"
 		};
-		inline static const sas::AttributeId AttackSpeedScale{
-			"Ability.Utility.EchoProtocol.AttackSpeedScale"
-		};
-		inline static const sas::AttributeId LuckScale{
-			"Ability.Utility.EchoProtocol.LuckScale"
-		};
-		inline static const sas::AttributeId MovementScale{
-			"Ability.Utility.EchoProtocol.MovementScale"
+		inline static const sas::AttributeId EnergyPowerScalePerLevel{
+			"Ability.Utility.EchoProtocol.EnergyPowerScalePerLevel"
 		};
 	};
 }

@@ -15,8 +15,8 @@ namespace AbilityData::FoldspaceArena
 		ly::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Arena::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::FoldspaceArena;
-		// Runtime duration is resolved from EnergyPower. This is only a safe ceiling
-		// so actor cleanup still succeeds if future content is misconfigured.
+		// Runtime duration is resolved from EnergyPower and extended through travel.
+		// This is only the fallback before ability values are applied.
 		definition.lifeTime = 10.f;
 		definition.spawnDistance = 0.f;
 		definition.presentationProfileId = ly::FoldspaceArenaPresentationIds::ArenaBasic;
@@ -41,8 +41,8 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		// The arena ends itself at its resolved 6–8 second lifetime. This is the
-		// outer lifecycle ceiling required by the common duration ability runtime.
+		// The behavior extends this lifecycle through the resolved arena duration
+		// and projectile travel time; this is the safe fallback duration.
 		definition.duration = 10.f;
 		definition.cooldown = 17.f;
 		definition.maxCharges = 1;
@@ -56,54 +56,58 @@ namespace AbilityData::Definitions
 		definition.accentColor = sf::Color{ 145, 215, 255, 255 };
 		definition.attributes = {
 			sas::GameplayAttribute{ ly::CommonAttributeIds::Range, 300.f, 1.f },
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 15.f, 0.f },
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 30.f, 0.f },
 			sas::GameplayAttribute{
 				AbilityData::FoldspaceArena::Attribute::MinimumArenaDuration, 1.f, 0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FoldspaceArena::Attribute::BaseArenaDuration, 6.f, 0.01f
+				AbilityData::FoldspaceArena::Attribute::BaseArenaDuration, 7.f, 0.01f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationReference,
-				50.f,
+				AbilityData::FoldspaceArena::Attribute::EnergyPowerDamageScale,
+				0.20f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationPerPoint,
-				0.002f,
+				AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationScale,
+				0.75f,
 				0.f
 			}
 		};
-		definition.scalingRules = {
-			sas::AttributeScalingRule{
-				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::EnergyPower,
-				sas::AttributeModifierOperation::Add,
-				0.08f
-			}
+		const float cooldownDeltas[] = {
+			-0.600f, -0.600f, -0.600f, -0.600f,
+			-0.500f, -0.500f, -0.500f, -0.500f,
+			-0.400f, -0.400f, -0.400f, -0.400f,
+			-0.300f, -0.300f
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.levelProgression.reserve(14);
+		for (const float cooldownDelta : cooldownDeltas)
+		{
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
 						sas::AttributeModifierOperation::Add,
-						2.f
+						5.f
+					},
+					sas::AttributeModifier{
+						AbilityData::FoldspaceArena::Attribute::EnergyPowerDamageScale,
+						sas::AttributeModifierOperation::Add,
+						0.02f
 					},
 					sas::AttributeModifier{
 						AbilityData::FoldspaceArena::Attribute::BaseArenaDuration,
 						sas::AttributeModifierOperation::Add,
-						0.10f
+						0.15f
 					},
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add,
-						-0.25f
+						cooldownDelta
 					}
 				}, {}, {}, {}
-			}
-		);
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

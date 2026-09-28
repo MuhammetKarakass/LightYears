@@ -648,10 +648,10 @@ namespace ly
 			spawned->mOutboundElapsed = 0.f;
 			spawned->mReturnElapsed = 0.f;
 			spawned->mMaximumRangeHoverElapsed = 0.f;
-			spawned->mReturnShieldPayload = mReturnShieldPayload /
+			const float transferRatio = std::max(0.f, request.transferRatio);
+			spawned->mReturnShieldPayload = mReturnShieldPayload * transferRatio /
 				static_cast<float>(safeCloneCount);
-			spawned->mPostPrismShieldStealMultiplier =
-				mPostPrismShieldStealMultiplier * std::clamp(request.transferRatio, 0.f, 1.f);
+			spawned->mPostPrismShieldStealMultiplier = mPostPrismShieldStealMultiplier;
 			// Prism's converted damage is a total payload. Split it across the
 			// children so conversion creates coverage and trajectories, not a hidden
 			// fourfold Aegis damage multiplier.

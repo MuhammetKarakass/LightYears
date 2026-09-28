@@ -398,6 +398,23 @@ namespace ly
 			spawned->ConfigureRelayClone(request);
 			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);
 			spawned->ConfigureRelayClone(request);
+			const float transferRatio = std::max(0.f, request.transferRatio);
+			spawned->mFieldDuration = mFieldDuration * transferRatio;
+			spawned->mPullStrength = mPullStrength * transferRatio;
+			spawned->mSlowMagnitude = mSlowMagnitude * transferRatio;
+			spawned->mInsideEffectDuration = mInsideEffectDuration * transferRatio;
+			spawned->mFieldAttributes = mFieldAttributes;
+			for (sas::GameplayAttribute& attribute : spawned->mFieldAttributes)
+			{
+				if (attribute.id == CommonAttributeIds::Duration ||
+					attribute.id == AbilityData::GravityAnomaly::Actor::Field::PullStrength ||
+					attribute.id == AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude ||
+					attribute.id == AbilityData::GravityAnomaly::Actor::Field::InsideEffectDuration)
+				{
+					attribute.baseValue *= transferRatio;
+					attribute.currentValue *= transferRatio;
+				}
+			}
 
 			// The source snapshot may have only a fraction of its original
 			// lifetime left. A relay clone starts a new delivery, so it must be

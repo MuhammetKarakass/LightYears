@@ -92,6 +92,8 @@ namespace ly
 					CollisionAttributeIds::Radius,
 					AbilityData::CryoBola::Actor::Projectile::ProjectileSpeed,
 					AbilityData::CryoBola::Actor::Projectile::RuptureRadius,
+					AbilityData::CryoBola::Actor::Projectile::EnergyPowerDamageScale,
+					AbilityData::CryoBola::Actor::Projectile::DirectHitDamageMultiplier,
 					DamageAttributeIds::CryoBuildupPerHit
 				})
 				{
@@ -128,8 +130,20 @@ namespace ly
 						0.f
 					)
 				));
+				const float energyPowerDamageScale = sas::FindAttributeValue(
+					definition.attributes,
+					AbilityData::CryoBola::Actor::Projectile::EnergyPowerDamageScale,
+					0.f
+				);
+				const float directHitDamageMultiplier = sas::FindAttributeValue(
+					definition.attributes,
+					AbilityData::CryoBola::Actor::Projectile::DirectHitDamageMultiplier,
+					0.f
+				);
 				if (speed <= 0.f || range <= 0.f || ruptureRadius <= 0.f ||
-					appliedStacks <= 0 ||
+					!std::isfinite(energyPowerDamageScale) || energyPowerDamageScale < 0.f ||
+					!std::isfinite(directHitDamageMultiplier) ||
+					directHitDamageMultiplier < 1.f || appliedStacks <= 0 ||
 					appliedStacks > content::DamageStatusBalanceCatalog::Get().cryo.maxStacks ||
 					definition.lifeTime <= range / speed ||
 					!definition.presentationProfileId.IsValid() ||
@@ -202,6 +216,29 @@ namespace ly
 			AbilityData::CryoBola::Actor::Projectile::RuptureRadius,
 			mRuptureRadius
 		));
+		mEnergyPowerDamageScale = std::max(0.f, sas::FindAttributeValue(
+			attributes,
+			AbilityData::CryoBola::Actor::Projectile::EnergyPowerDamageScale,
+			mEnergyPowerDamageScale
+		));
+		mDirectHitDamageMultiplier = std::max(1.f, sas::FindAttributeValue(
+			attributes,
+			AbilityData::CryoBola::Actor::Projectile::DirectHitDamageMultiplier,
+			mDirectHitDamageMultiplier
+		));
+		mEnergyPowerAtLaunch = 0.f;
+		if (const shared_ptr<Actor> owner = LockOwnerActor())
+		{
+			if (const auto* combatant = dynamic_cast<const Combatant*>(owner.get()))
+			{
+				const float energyPower = combatant->GetAbilitySystemComponent()
+					.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower, 0.f);
+				if (std::isfinite(energyPower))
+				{
+					mEnergyPowerAtLaunch = std::max(0.f, energyPower);
+				}
+			}
+		}
 	}
 
 	void CryoBolaProjectileActor::Tick(float deltaTime)
@@ -331,11 +368,16 @@ namespace ly
 		const ProjectileReflectionRequest& request
 	)
 	{
-		return !mResolved && ApplyBallisticReflection(
+		if (mResolved || !ApplyBallisticReflection(
 			request,
 			mProjectileSpeed,
 			mLaunchVelocity
-		);
+		))
+		{
+			return false;
+		}
+		mEnergyPowerAtLaunch *= std::max(0.f, request.damageMultiplier);
+		return true;
 	}
 
 	void CryoBolaProjectileActor::ResolveHit(Actor& primaryTarget)
@@ -376,9 +418,11 @@ namespace ly
 
 		// Direct target is resolved exactly once. The target query below explicitly
 		// excludes it so the rupture cannot double damage or double-apply Cryo.
+		const float explosionDamage = std::max(0.f, GetDamage()) +
+			mEnergyPowerAtLaunch * mEnergyPowerDamageScale;
 		ApplyCombatDamage(
 			primaryTarget,
-			GetDamage(),
+			explosionDamage * mDirectHitDamageMultiplier,
 			owner,
 			GetDamageTags(),
 			GetDamagePayload(),
@@ -402,7 +446,7 @@ namespace ly
 			}
 			ApplyCombatDamage(
 				*target,
-				GetDamage(),
+				explosionDamage,
 				owner,
 				GetDamageTags(),
 				GetDamagePayload(),
@@ -522,6 +566,8 @@ namespace ly
 			spawned->ConfigureFromAttributes(request.snapshot.damageAttributes);
 			spawned->ConfigureRelayClone(request);
 			spawned->SetDamage(request.damage);
+			spawned->mEnergyPowerAtLaunch = mEnergyPowerAtLaunch *
+				std::max(0.f, request.transferRatio);
 			spawned->mTravelDistance = 0.f;
 			spawned->mLaunchVelocity = NormalizeOrDefault(request.direction) *
 				spawned->mProjectileSpeed;

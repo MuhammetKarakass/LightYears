@@ -25,9 +25,9 @@ namespace ly
 				std::abs(left - right) <= Epsilon;
 		}
 
-		bool HasExpectedLevelStep(const AbilityLevelStep& step)
+		bool HasExpectedLevelStep(const AbilityLevelStep& step, std::size_t stepIndex)
 		{
-			if (step.attributeModifiers.size() != 3 ||
+			if (step.attributeModifiers.size() != 4 ||
 				!step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() ||
 				!step.addedTriggers.empty())
@@ -36,31 +36,41 @@ namespace ly
 			}
 
 			bool damageStep = false;
+			bool energyDamageStep = false;
 			bool durationStep = false;
 			bool cooldownStep = false;
+			const float cooldownDelta = stepIndex < 4 ? -0.60f :
+				stepIndex < 8 ? -0.50f : stepIndex < 12 ? -0.40f : -0.30f;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == CommonAttributeIds::Damage &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					NearlyEqual(modifier.magnitude, 2.f))
+					NearlyEqual(modifier.magnitude, 5.f))
 				{
 					damageStep = true;
 				}
 				else if (modifier.attributeId ==
+					AbilityData::FoldspaceArena::Attribute::EnergyPowerDamageScale &&
+					modifier.operation == sas::AttributeModifierOperation::Add &&
+					NearlyEqual(modifier.magnitude, 0.02f))
+				{
+					energyDamageStep = true;
+				}
+				else if (modifier.attributeId ==
 					AbilityData::FoldspaceArena::Attribute::BaseArenaDuration &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					NearlyEqual(modifier.magnitude, 0.10f))
+					NearlyEqual(modifier.magnitude, 0.15f))
 				{
 					durationStep = true;
 				}
 				else if (modifier.attributeId == CommonAttributeIds::Cooldown &&
 					modifier.operation == sas::AttributeModifierOperation::Add &&
-					NearlyEqual(modifier.magnitude, -0.25f))
+					NearlyEqual(modifier.magnitude, cooldownDelta))
 				{
 					cooldownStep = true;
 				}
 			}
-			return damageStep && durationStep && cooldownStep;
+			return damageStep && energyDamageStep && durationStep && cooldownStep;
 		}
 
 		bool HasPositiveAttribute(
@@ -115,6 +125,7 @@ namespace ly
 		const bool validLifecycle = sas::IsLoadoutAbilitySlot(definition.slot) &&
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Duration &&
+			definition.cooldownStartPolicy == sas::AbilityCooldownStartPolicy::OnAbilityEnd &&
 			definition.maxCharges == 1 && definition.duration >= 7.f &&
 			definition.cooldown > 0.f;
 		const List<sas::AttributeId> requiredAttributes{
@@ -122,8 +133,8 @@ namespace ly
 			CommonAttributeIds::Damage,
 			AbilityData::FoldspaceArena::Attribute::MinimumArenaDuration,
 			AbilityData::FoldspaceArena::Attribute::BaseArenaDuration,
-			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationReference,
-			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationPerPoint
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDamageScale,
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationScale
 		};
 		const bool validAttributes = std::all_of(
 			requiredAttributes.begin(), requiredAttributes.end(),
@@ -134,17 +145,15 @@ namespace ly
 		);
 		const bool validDamage = definition.damageTags.size() == 1 &&
 			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Photonic);
-		const bool validScaling = definition.scalingRules.size() == 1 &&
-			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
-			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
-			NearlyEqual(definition.scalingRules.front().coefficient, 0.08f);
-		const bool validProgression = definition.levelProgression.size() == 14 &&
-			std::all_of(
-				definition.levelProgression.begin(),
-				definition.levelProgression.end(),
-				HasExpectedLevelStep
+		const bool validScaling = definition.scalingRules.empty();
+		bool validProgression = definition.levelProgression.size() == 14;
+		for (std::size_t index = 0; validProgression &&
+			index < definition.levelProgression.size(); ++index)
+		{
+			validProgression = HasExpectedLevelStep(
+				definition.levelProgression[index], index
 			);
+		}
 		const bool validActor = arena &&
 			arena->actorType == AbilityActorType::FoldspaceArena &&
 			arena->lifeTime >= definition.duration && arena->presentationProfileId.IsValid();
@@ -161,6 +170,56 @@ namespace ly
 			return false;
 		}
 		return true;
+	}
+
+	float FoldspaceArenaAbility::ResolveActiveDuration(
+		const GameAbilityBehaviorContext& context,
+		float defaultDuration
+	) const
+	{
+		GameAbilityBehaviorContext mutableContext{
+			const_cast<LightYearsAbilitySystemComponent&>(context.abilitySystem),
+			const_cast<GameAbility&>(context.instance),
+			const_cast<Actor&>(context.owner),
+			context.definition
+		};
+		const sas::GameplayAttributeList values = ResolveValues(mutableContext);
+		const float baseArenaDuration = std::max(0.01f, sas::FindAttributeValue(
+			values,
+			AbilityData::FoldspaceArena::Attribute::BaseArenaDuration,
+			defaultDuration
+		));
+		const float energyPower = std::max(0.f,
+			context.abilitySystem.GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::EnergyPower
+			));
+		const float durationScale = std::max(0.f, sas::FindAttributeValue(
+			values,
+			AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationScale,
+			0.75f
+		));
+		float travelTime = 0.f;
+		if (World* world = context.owner.GetWorld())
+		{
+			const float castRange = std::max(1.f, sas::FindAttributeValue(
+				values, CommonAttributeIds::Range, 300.f
+			));
+			const sf::Vector2f offset = world->GetMouseWorldPosition() -
+				context.owner.GetActorLocation();
+			const float distance = std::min(GetVectorLength(offset), castRange);
+			const AbilityActorDefinition* actor = AbilityData::FindAbilityActorDefinition(
+				AbilityData::FoldspaceArena::Actor::Arena::BasicDefinitionId
+			);
+			const float projectileSpeed = actor ? std::max(1.f,
+				sas::FindAttributeValue(
+					actor->attributes,
+					AbilityData::FoldspaceArena::Actor::Arena::ProjectileSpeed,
+					1200.f
+				)) : 1200.f;
+			travelTime = distance / projectileSpeed;
+		}
+		return baseArenaDuration + (energyPower / 100.f) * durationScale +
+			travelTime + 0.25f;
 	}
 
 	bool FoldspaceArenaAbility::Activate(GameAbilityBehaviorContext& context)
@@ -255,6 +314,16 @@ namespace ly
 		{
 			return;
 		}
+		const shared_ptr<FoldspaceArenaActor> arena = mArena.lock();
+		if (!arena || arena->GetIsPendingDestroy())
+		{
+			context.instance.Cancel(sas::AbilityEndReason::DurationExpired);
+			return;
+		}
+		if (!arena->IsArenaActive())
+		{
+			return;
+		}
 		mElapsed += std::max(0.f, deltaTime);
 		if (!mCancelAvailable && mElapsed >= mMinimumArenaDuration)
 		{
@@ -263,11 +332,6 @@ namespace ly
 				AbilityData::FoldspaceArena::State::CancelAvailable
 			);
 			EmitEvent(context, AbilityData::FoldspaceArena::Event::CancelAvailable);
-		}
-		if (const shared_ptr<FoldspaceArenaActor> arena = mArena.lock();
-			!arena || arena->GetIsPendingDestroy())
-		{
-			context.instance.Cancel(sas::AbilityEndReason::DurationExpired);
 		}
 	}
 

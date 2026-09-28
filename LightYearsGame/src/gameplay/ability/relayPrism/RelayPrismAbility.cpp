@@ -59,8 +59,8 @@ namespace ly
 
 		for (const sas::AttributeId& attributeId : {
 			AbilityData::RelayPrism::Attribute::ProjectileCount,
-			AbilityData::RelayPrism::Attribute::DamageTransferRatio,
-			AbilityData::RelayPrism::Attribute::AttackPowerCoefficient,
+			AbilityData::RelayPrism::Attribute::BaseTransfer,
+			AbilityData::RelayPrism::Attribute::EnergyPowerScale,
 			AbilityData::RelayPrism::Attribute::MinimumScatterAngle,
 			AbilityData::RelayPrism::Attribute::MaximumScatterAngle,
 			AbilityData::RelayPrism::Attribute::MaximumBonusProjectileCount
@@ -81,9 +81,13 @@ namespace ly
 			definition,
 			AbilityData::RelayPrism::Attribute::ProjectileCount
 		)->baseValue;
-		const float transferRatio = FindAttribute(
+		const float baseTransfer = FindAttribute(
 			definition,
-			AbilityData::RelayPrism::Attribute::DamageTransferRatio
+			AbilityData::RelayPrism::Attribute::BaseTransfer
+		)->baseValue;
+		const float energyPowerScale = FindAttribute(
+			definition,
+			AbilityData::RelayPrism::Attribute::EnergyPowerScale
 		)->baseValue;
 		const float minimumScatter = FindAttribute(
 			definition,
@@ -93,7 +97,7 @@ namespace ly
 			definition,
 			AbilityData::RelayPrism::Attribute::MaximumScatterAngle
 		)->baseValue;
-		if (projectileCount < 1.f || transferRatio < 0.f || transferRatio > 1.f ||
+		if (projectileCount < 1.f || baseTransfer < 0.f || energyPowerScale < 0.f ||
 			minimumScatter < 0.f || maximumScatter < minimumScatter ||
 			maximumScatter > 360.f || definition.levelProgression.size() != 14)
 		{

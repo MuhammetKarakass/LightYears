@@ -15,6 +15,10 @@ namespace ly
 			const GameAbilityDefinition& definition,
 			std::string* failureReason = nullptr
 		) const override;
+		float ResolveActiveDuration(
+			const GameAbilityBehaviorContext& context,
+			float defaultDuration
+		) const override;
 		bool Activate(GameAbilityBehaviorContext& context) override;
 		bool OnInputPressed(GameAbilityBehaviorContext& context) override;
 		void Tick(GameAbilityBehaviorContext& context, float deltaTime) override;

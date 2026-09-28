@@ -335,21 +335,20 @@ namespace ly
 				4.f
 			)))
 		);
-		mDamageTransferRatio = std::clamp(
+		mBaseTransfer = std::max(
+			0.f,
 			sas::FindAttributeValue(
 				values,
-				AbilityData::RelayPrism::Attribute::DamageTransferRatio,
-				0.15f
-			),
-			0.f,
-			1.f
+				AbilityData::RelayPrism::Attribute::BaseTransfer,
+				0.20f
+			)
 		);
-		mAttackPowerCoefficient = std::max(
+		mEnergyPowerScale = std::max(
 			0.f,
 			sas::FindAttributeValue(
 				values,
-				AbilityData::RelayPrism::Attribute::AttackPowerCoefficient,
-				0.25f
+				AbilityData::RelayPrism::Attribute::EnergyPowerScale,
+				0.04f
 			)
 		);
 		mMinimumScatterAngle = std::clamp(
@@ -503,14 +502,14 @@ namespace ly
 			return false;
 		}
 
-		float ownerAttackPower = 0.f;
+		float ownerEnergyPower = 0.f;
 		float luckFactor = 0.f;
 		if (const Combatant* combatant = dynamic_cast<const Combatant*>(GetOwnerActor()))
 		{
-			ownerAttackPower = std::max(
+			ownerEnergyPower = std::max(
 				0.f,
 				combatant->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
-					OwnerAttributeIds::AttackPower
+					OwnerAttributeIds::EnergyPower
 				)
 			);
 			luckFactor = std::clamp(
@@ -520,11 +519,9 @@ namespace ly
 			);
 		}
 
-		const float transferredDamage = std::max(
-			0.f,
-			snapshot.damage * mDamageTransferRatio +
-				ownerAttackPower * mAttackPowerCoefficient
-		);
+		const float transferRatio = mBaseTransfer +
+			(ownerEnergyPower / 100.f) * mEnergyPowerScale;
+		const float transferredDamage = std::max(0.f, snapshot.damage * transferRatio);
 		const float bonusProjectiles = luckFactor * mMaximumBonusProjectileCount;
 		const int guaranteedBonus = static_cast<int>(std::floor(bonusProjectiles));
 		const float fractionalBonus = bonusProjectiles - static_cast<float>(guaranteedBonus);
@@ -543,7 +540,7 @@ namespace ly
 			request.damage = transferredDamage;
 			request.cloneIndex = projectileIndex;
 			request.cloneCount = cloneCount;
-			request.transferRatio = mDamageTransferRatio;
+			request.transferRatio = transferRatio;
 			request.allowFriendlyFire = true;
 			request.snapshot = snapshot;
 			request.snapshot.lineage = lineage;

@@ -34,49 +34,35 @@ namespace AbilityData::Definitions
 			},
 			sas::GameplayAttribute{
 				AbilityData::EchoProtocol::Attribute::PowerPerLevel,
-				0.03f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::EchoProtocol::Attribute::AttackPowerScale,
-				1.30f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::EchoProtocol::Attribute::MaxHealthScale,
-				0.20f,
+				0.02f,
 				0.f
 			},
 			sas::GameplayAttribute{
 				AbilityData::EchoProtocol::Attribute::EnergyPowerScale,
-				0.10f,
+				0.12f,
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::EchoProtocol::Attribute::AttackSpeedScale,
-				0.20f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::EchoProtocol::Attribute::LuckScale,
-				0.25f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::EchoProtocol::Attribute::MovementScale,
-				0.15f,
+				AbilityData::EchoProtocol::Attribute::EnergyPowerScalePerLevel,
+				0.02f,
 				0.f
 			}
 		};
 		definition.levelProgression.reserve(14);
-		for (int index = 0; index < 14; ++index)
+		const float cooldownDeltas[] = {
+			-0.625f, -0.625f, -0.625f, -0.625f,
+			-0.525f, -0.525f, -0.525f, -0.525f,
+			-0.425f, -0.425f, -0.425f, -0.425f,
+			-0.325f, -0.325f
+		};
+		for (const float cooldownDelta : cooldownDeltas)
 		{
 			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add,
-						-0.30f
+						cooldownDelta
 					}
 				},
 				{},
