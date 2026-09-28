@@ -183,33 +183,23 @@ namespace ly
 			firstStep,
 			CommonAttributeIds::Radius
 		);
-		const std::optional<float> pullStrengthPerLevel = FindModifierMagnitude(
-			firstStep,
-			AbilityData::GravityAnomaly::Actor::Field::PullStrength
-		);
 		const std::optional<float> slowMagnitudePerLevel = FindModifierMagnitude(
 			firstStep,
 			AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude
-		);
-		const std::optional<float> projectileSpeedPerLevel = FindModifierMagnitude(
-			firstStep,
-			AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed
 		);
 		const std::optional<float> castRangePerLevel = FindModifierMagnitude(
 			firstStep,
 			CommonAttributeIds::Range
 		);
 		if (!cooldownReductionPerLevel || !durationPerLevel || !radiusPerLevel ||
-			!pullStrengthPerLevel || !slowMagnitudePerLevel ||
-			!projectileSpeedPerLevel || !castRangePerLevel ||
+			!slowMagnitudePerLevel || !castRangePerLevel ||
 			*cooldownReductionPerLevel >= 0.f || *durationPerLevel <= 0.f ||
-			*radiusPerLevel <= 0.f || *pullStrengthPerLevel <= 0.f ||
-			*slowMagnitudePerLevel <= 0.f || *projectileSpeedPerLevel <= 0.f ||
+			*radiusPerLevel <= 0.f || *slowMagnitudePerLevel <= 0.f ||
 			*castRangePerLevel <= 0.f)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Gravity Anomaly progression must contain valid delivery, field, and cooldown increments.";
+				*failureReason = "Gravity Anomaly progression must contain valid cast, field, and cooldown increments.";
 			}
 			return false;
 		}
@@ -217,18 +207,16 @@ namespace ly
 		float cooldown = definition.cooldown;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (step.attributeModifiers.size() != 7 ||
+			if (step.attributeModifiers.size() != 5 ||
 				!HasModifier(step, CommonAttributeIds::Cooldown, *cooldownReductionPerLevel) ||
 				!HasModifier(step, CommonAttributeIds::Duration, *durationPerLevel) ||
 				!HasModifier(step, CommonAttributeIds::Radius, *radiusPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::PullStrength, *pullStrengthPerLevel) ||
 				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude, *slowMagnitudePerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Projectile::ProjectileSpeed, *projectileSpeedPerLevel) ||
 				!HasModifier(step, CommonAttributeIds::Range, *castRangePerLevel))
 			{
 				if (failureReason)
 				{
-					*failureReason = "Gravity Anomaly progression must contain exactly the configured incremental values.";
+					*failureReason = "Gravity Anomaly progression must contain exactly the configured cast, field, and cooldown increments.";
 				}
 				return false;
 			}

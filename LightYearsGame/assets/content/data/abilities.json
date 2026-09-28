@@ -3606,22 +3606,12 @@
             {
               "attributeId": "Common.Radius",
               "operation": "Add",
-              "magnitude": 2.0
-            },
-            {
-              "attributeId": "AbilityActor.GravityAnomaly.Field.PullStrength",
-              "operation": "Add",
-              "magnitude": 20.0
+              "magnitude": 5.0
             },
             {
               "attributeId": "AbilityActor.GravityAnomaly.Field.SlowMagnitude",
               "operation": "Add",
               "magnitude": 0.005
-            },
-            {
-              "attributeId": "AbilityActor.GravityAnomaly.Projectile.ProjectileSpeed",
-              "operation": "Add",
-              "magnitude": 25.0
             },
             {
               "attributeId": "Common.Range",

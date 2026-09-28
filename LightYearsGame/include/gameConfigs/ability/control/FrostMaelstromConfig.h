@@ -16,6 +16,19 @@ namespace AbilityData::Definitions
 		definition.actorDefinitionId =
 			AbilityData::FrostMaelstrom::Actor::Field::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::FrostMaelstromField;
+		definition.lifeTime = AbilityData::FrostMaelstrom::DefaultDuration;
+		definition.attributes = {
+			sas::GameplayAttribute{
+				ly::CommonAttributeIds::Duration,
+				AbilityData::FrostMaelstrom::DefaultDuration,
+				0.01f
+			},
+			sas::GameplayAttribute{
+				AbilityData::FrostMaelstrom::Attribute::TickDamage,
+				AbilityData::FrostMaelstrom::DefaultTickDamage,
+				0.f
+			}
+		};
 		definition.presentationProfileId =
 			ly::FrostMaelstromPresentationIds::FieldBasic;
 		return definition;
