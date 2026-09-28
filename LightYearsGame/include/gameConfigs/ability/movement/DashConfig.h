@@ -27,6 +27,13 @@ namespace AbilityData
 			definition.cooldown = 0.f;
 			definition.duration = 0.f;
 			definition.maxCharges = 0;
+			definition.attributes = {
+				sas::GameplayAttribute{
+					Dash::Attribute::MoveSpeedScale,
+					Dash::DefaultMoveSpeedScale,
+					0.f
+				}
+			};
 			definition.abilityTags = {
 				ly::GameplayTags::Ability::Movement,
 				ly::GameplayTags::Ability::Family::Dash

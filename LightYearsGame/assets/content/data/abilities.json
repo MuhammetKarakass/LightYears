@@ -3,7 +3,7 @@
   "abilities": [
     {
       "id": "Ability.Movement.Dash.Basic",
-      "cooldown": 2.0,
+      "cooldown": 9.0,
       "duration": 0.24,
       "maxCharges": 1,
       "settings": {
@@ -15,7 +15,27 @@
           40,
           50,
           65,
-          80
+          80,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60
         ],
         "levels": [
           {
@@ -23,7 +43,12 @@
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.12
+                "magnitude": -0.4
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
               }
             ]
           },
@@ -32,7 +57,12 @@
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.12
+                "magnitude": -0.4
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
               }
             ]
           },
@@ -41,7 +71,12 @@
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.12
+                "magnitude": -0.4
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
               }
             ]
           },
@@ -50,12 +85,304 @@
               {
                 "attributeId": "Common.Cooldown",
                 "operation": "Add",
-                "magnitude": -0.12
+                "magnitude": -0.4
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.3
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.2
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.1
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.08
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.08
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.08
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.08
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.06
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.06
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.06
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.06
+              },
+              {
+                "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
+                "operation": "Add",
+                "magnitude": 0.1
               }
             ]
           }
         ]
-      }
+      },
+      "attributes": [
+        {
+          "id": "Ability.Movement.Dash.MoveSpeedScale",
+          "baseValue": 0.8,
+          "minValue": 0.0
+        }
+      ]
     },
     {
       "id": "Ability.Defense.Shield.Basic",

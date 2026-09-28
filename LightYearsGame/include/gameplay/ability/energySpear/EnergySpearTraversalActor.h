@@ -85,7 +85,7 @@ namespace ly
 		ContactDamageGuardHandle mContactDamageGuardHandle;
 		float mDistanceTravelled = 0.f;
 		sf::Vector2f mPreservedVelocity{};
-		Set<Actor*> mHitTargets;
+		Set<unsigned int> mHitTargets;
 		List<ImpactPulse> mImpactPulses;
 		bool mFinished = false;
 	};

@@ -413,11 +413,10 @@ namespace ly
 		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
 		const float horizontalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal);
 		const float verticalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical);
-		mResolvedMovementBurstDistance = movement::MovementBurstMath::ResolveDistance(
-			request.baseDistance,
-			horizontalRating,
-			verticalRating
-		);
+		mResolvedMovementBurstDistance = request.useResolvedDistance
+			? request.baseDistance
+			: movement::MovementBurstMath::ResolveDistance(
+				request.baseDistance, horizontalRating, verticalRating);
 		if (mResolvedMovementBurstDistance <= 0.f)
 		{
 			return false;

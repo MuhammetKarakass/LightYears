@@ -205,7 +205,7 @@ namespace ly
 			if (!target || target.get() == owner.get() || target->GetIsPendingDestroy() ||
 				!HasCollisionLayer(target->GetCollisionLayer(), CollisionLayer::Enemy) ||
 				!dynamic_cast<Combatant*>(target.get()) ||
-				mHitTargets.find(target.get()) != mHitTargets.end() ||
+				mHitTargets.find(target->GetUniqueID()) != mHitTargets.end() ||
 				!targeting::swept::SegmentIntersectsExpandedBounds(
 					segmentStart,
 					segmentEnd,
@@ -234,7 +234,7 @@ namespace ly
 				(mEndpointDamageMultiplier - 1.f) * distanceRatio;
 			const float finalDamage = mDamage * mChargeDamageMultiplier * distanceMultiplier;
 
-			mHitTargets.insert(target.get());
+			mHitTargets.insert(target->GetUniqueID());
 			mImpactPulses.push_back({ target->GetActorLocation(), 0.f });
 			ApplyCombatDamage(
 				*target,

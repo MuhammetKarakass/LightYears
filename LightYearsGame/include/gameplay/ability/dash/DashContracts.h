@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/content/NumericSettingContract.h"
 
 namespace AbilityData::Dash
@@ -20,6 +21,16 @@ namespace AbilityData::Dash
 			{ BaseDistance, CameraZoomOutRatio }
 		};
 	};
+
+	struct Attribute
+	{
+		inline static const sas::AttributeId MoveSpeedScale{
+			"Ability.Movement.Dash.MoveSpeedScale"
+		};
+	};
+
+	inline constexpr float DefaultMoveSpeedScale = 0.80f;
+	inline constexpr float MoveSpeedScaleUpgrade = 0.10f;
 
 	enum class DirectionPolicy
 	{

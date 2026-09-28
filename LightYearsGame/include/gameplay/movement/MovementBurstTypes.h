@@ -11,5 +11,6 @@ namespace ly::movement
 		sf::Vector2f direction{ 0.f, 0.f };
 		float baseDistance = 0.f;
 		float duration = 0.f;
+		bool useResolvedDistance = false;
 	};
 }

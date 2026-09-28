@@ -2,20 +2,30 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/dash/DashAbility.h"
 
+#include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameConfigs/ability/movement/DashConfig.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/ability/dash/DashMovementController.h"
+#include "gameplay/ability/dash/DashMovementMath.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "framework/Actor.h"
 
+#include <array>
 #include <cmath>
 
 namespace ly
 {
 	namespace
 	{
+		constexpr std::array<float, 6> CooldownStepDeltas{
+			-0.40f, -0.30f, -0.20f, -0.10f, -0.08f, -0.06f
+		};
+		constexpr std::size_t CooldownStepsPerTier = 4;
+		constexpr std::size_t ExpectedProgressionSteps = CooldownStepDeltas.size() * CooldownStepsPerTier;
+		constexpr float ProgressionTolerance = 0.0001f;
+
 		float ResolveNumericSetting(
 			const std::string& abilityId,
 			const std::string& settingName,
@@ -51,6 +61,22 @@ namespace ly
 			}
 			return result;
 		}
+
+		bool IsExpectedMagnitude(float value, float expected)
+		{
+			return std::isfinite(value) && std::abs(value - expected) <= ProgressionTolerance;
+		}
+
+		sas::GameplayAttributeList ResolveValues(GameAbilityBehaviorContext& context)
+		{
+			AbilityExecutionContext executionContext{
+				&context.abilitySystem,
+				&context.definition,
+				nullptr,
+				&context.instance
+			};
+			return AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
+		}
 	}
 
 	bool DashAbility::Validate(
@@ -67,15 +93,22 @@ namespace ly
 			AbilityData::Dash::Setting::CameraZoomOutRatio,
 			0.f
 		);
-		if (baseDistance <= 0.f || definition.duration <= 0.f ||
-			cameraZoomOutRatio < 0.f || cameraZoomOutRatio > 0.5f ||
-			definition.levelProgression.empty())
+		const sas::GameplayAttribute* moveSpeedScale = sas::FindAttribute(
+			definition.attributes,
+			AbilityData::Dash::Attribute::MoveSpeedScale
+		);
+		if (!std::isfinite(baseDistance) || baseDistance <= 0.f ||
+			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
+			!moveSpeedScale || !std::isfinite(moveSpeedScale->baseValue) || moveSpeedScale->baseValue <= 0.f ||
+			!std::isfinite(definition.duration) || definition.duration <= 0.f ||
+			!std::isfinite(cameraZoomOutRatio) || cameraZoomOutRatio < 0.f || cameraZoomOutRatio > 0.5f ||
+			definition.levelProgression.size() != ExpectedProgressionSteps)
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Dash settings require positive movement values, a camera zoom-out ratio from 0 to 0.5, "
-					"and a JSON-owned cooldown progression.";
+					"Dash requires positive movement, cooldown, and MoveSpeedScale values, a camera zoom-out ratio from 0 to 0.5, "
+					"and twenty-four JSON-owned progression steps.";
 			}
 			return false;
 		}
@@ -93,20 +126,48 @@ namespace ly
 			}
 			return false;
 		}
-		if (definition.levelProgression.size() != 4)
-		{
-			if (failureReason)
-			{
-				*failureReason = "Basic Dash requires four cooldown progression steps.";
-			}
-			return false;
-		}
-
 		float previousCooldown = definition.cooldown;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
 		{
+			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
+			const float expectedCooldownDelta = CooldownStepDeltas[stepIndex / CooldownStepsPerTier];
+			int cooldownModifierCount = 0;
+			int moveSpeedModifierCount = 0;
+			bool progressionMatches = step.attributeModifiers.size() == 2 &&
+				step.unlockedUpgradeIds.empty() && step.addedActions.empty() &&
+				step.addedTriggers.empty() && step.scalingRules.empty();
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.attributeId == CommonAttributeIds::Cooldown)
+				{
+					++cooldownModifierCount;
+					progressionMatches = progressionMatches &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						IsExpectedMagnitude(modifier.magnitude, expectedCooldownDelta);
+				}
+				else if (modifier.attributeId == AbilityData::Dash::Attribute::MoveSpeedScale)
+				{
+					++moveSpeedModifierCount;
+					progressionMatches = progressionMatches &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						IsExpectedMagnitude(
+							modifier.magnitude,
+							AbilityData::Dash::MoveSpeedScaleUpgrade
+						);
+				}
+			}
+			if (!progressionMatches || cooldownModifierCount != 1 || moveSpeedModifierCount != 1)
+			{
+				if (failureReason)
+				{
+					*failureReason =
+						"Basic Dash requires one authored cooldown and MoveSpeedScale addition at each level.";
+				}
+				return false;
+			}
+
 			const float levelCooldown = ApplyCooldownStep(previousCooldown, step);
-			if (levelCooldown <= 0.f || levelCooldown >= previousCooldown)
+			if (!std::isfinite(levelCooldown) || levelCooldown <= 0.f || levelCooldown >= previousCooldown)
 			{
 				if (failureReason)
 				{
@@ -133,10 +194,32 @@ namespace ly
 			AbilityData::Dash::Setting::BaseDistance,
 			0.f
 		);
-		const DashRequest request{
-			movementController->ResolveDashDirection(),
+		const sf::Vector2f direction = movementController->ResolveDashDirection();
+		const sas::AttributeSystem& ownerAttributes = context.abilitySystem.GetAttributes();
+		const float horizontalRating = ownerAttributes.HasAttribute(OwnerAttributeIds::MoveSpeedHorizontal)
+			? ownerAttributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal)
+			: 0.f;
+		const float verticalRating = ownerAttributes.HasAttribute(OwnerAttributeIds::MoveSpeedVertical)
+			? ownerAttributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical)
+			: 0.f;
+		const sas::GameplayAttributeList values = ResolveValues(context);
+		const float moveSpeedScale = sas::FindAttributeValue(
+			values,
+			AbilityData::Dash::Attribute::MoveSpeedScale,
+			AbilityData::Dash::DefaultMoveSpeedScale
+		);
+		const float resolvedDistance = DashMovementMath::ResolveDistanceFromMoveSpeed(
 			baseDistance,
-			context.definition.duration
+			direction,
+			horizontalRating,
+			verticalRating,
+			moveSpeedScale
+		);
+		const DashRequest request{
+			direction,
+			resolvedDistance,
+			context.definition.duration,
+			true
 		};
 		if (!movementController->StartDash(request))
 		{
