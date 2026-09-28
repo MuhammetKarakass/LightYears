@@ -30,7 +30,7 @@ namespace ly
 			const GameplayTag& eventTag
 		) const;
 		static temporal::RateModifierSourceId BuildModifierSourceId(
-			const Actor& owner
+			Actor& owner
 		);
 
 		temporal::RateModifierSourceId mModifierSourceId = 0;

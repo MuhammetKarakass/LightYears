@@ -1,6 +1,7 @@
 #include "gameplay/ability/shield/ShieldAbility.h"
 
 #include "gameConfigs/combat/EffectConfig.h"
+#include "gameplay/ability/shield/ShieldContracts.h"
 
 #include <cmath>
 #include <variant>
@@ -15,10 +16,19 @@ namespace ly
 			EffectData::FindGameplayEffectDefinition(BarrierEffectSchema::BasicEffectId);
 		const AbilityEffectSpecDefinition* barrierSpec =
 			definition.FindEffectSpec(BarrierEffectSchema::BasicEffectId);
-		if (!barrier || !barrierSpec ||
+		if (definition.abilityId != AbilityData::Shield::AbilityId::Basic ||
+			!sas::IsLoadoutAbilitySlot(definition.slot) ||
+			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
+			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
+			definition.maxCharges != 1 ||
+			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
+			!barrier || !barrierSpec || definition.effectSpecs.size() != 1 ||
 			barrier->durationPolicy != sas::GameplayEffectDurationPolicy::Duration ||
+			barrier->stackingPolicy != sas::GameplayEffectStackingPolicy::RefreshDuration ||
+			barrierSpec->maxStacks != 1 || !definition.triggers.empty() ||
 			!barrierSpec->useAbilityDuration ||
-			!std::isfinite(definition.duration) || definition.duration <= 0.f)
+			!std::isfinite(definition.duration) || definition.duration <= 0.f ||
+			definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
 			{
@@ -44,6 +54,18 @@ namespace ly
 				}
 				return false;
 			}
+		}
+		const auto* capacity = sas::FindAttribute(barrierSpec->attributes, BarrierEffectSchema::Capacity);
+		const auto* regeneration = sas::FindAttribute(
+			barrierSpec->attributes, BarrierEffectSchema::RegenerationPerSecond);
+		if (!capacity || !std::isfinite(capacity->baseValue) || capacity->baseValue <= 0.f ||
+			!regeneration || regeneration->baseValue != 0.f)
+		{
+			if (failureReason)
+			{
+				*failureReason = "Shield requires positive capacity and no regeneration.";
+			}
+			return false;
 		}
 
 		for (const AbilityActionSpec& action : definition.actions)

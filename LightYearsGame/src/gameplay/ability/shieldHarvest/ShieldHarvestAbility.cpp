@@ -5,10 +5,14 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/shieldHarvest/ShieldHarvestContracts.h"
+#include "gameConfigs/combat/EffectConfig.h"
+#include "gameplay/combat/Combatant.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/portal/PortalTransferParticipant.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/tags/GameplayTags.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
+#include "gameplay/damage/DamageContext.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/shieldHarvest/ShieldHarvestPresentationIds.h"
 #include "presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.h"
@@ -20,8 +24,22 @@
 
 namespace ly
 {
-	namespace
+namespace
 	{
+		constexpr float BaseCooldown = 14.f;
+		constexpr float FocusDuration = 1.5f;
+		constexpr float PulseStunDuration = 0.25f;
+		constexpr float BaseRadius = 700.f;
+		constexpr float BaseShieldPerEnemy = 20.f;
+		constexpr float BasePulseDamage = 10.f;
+		constexpr float BaseOvershieldHoldDuration = 5.f;
+		constexpr float BaseOvershieldDecayPerSecond = 100.f;
+		constexpr float BaseEnergyPowerShieldScale = 0.10f;
+		constexpr float EnergyPowerShieldScalePerLevel = 0.01f;
+		constexpr float EnergyPowerPulseDamageScale = 0.05f;
+		constexpr float ShieldPerEnemyPerLevel = 5.f;
+		constexpr float PulseDamagePerLevel = 2.f;
+
 		float FindValue(
 			const sas::GameplayAttributeList& values,
 			const sas::AttributeId& attributeId,
@@ -48,6 +66,53 @@ namespace ly
 		{
 			return std::isfinite(value) && value >= 0.f;
 		}
+
+		bool NearlyEqual(float left, float right)
+		{
+			return std::isfinite(left) && std::isfinite(right) &&
+				std::abs(left - right) <= 0.0001f;
+		}
+
+		bool HasExpectedScalingRule(
+			const List<sas::AttributeScalingRule>& scalingRules,
+			const sas::AttributeId& targetAttributeId,
+			const sas::AttributeId& sourceAttributeId,
+			float expectedCoefficient
+		)
+		{
+			return std::any_of(
+				scalingRules.begin(),
+				scalingRules.end(),
+				[&](const sas::AttributeScalingRule& scalingRule)
+				{
+					return scalingRule.targetAttributeId == targetAttributeId &&
+						scalingRule.sourceAttributeId == sourceAttributeId &&
+						scalingRule.operation == sas::AttributeModifierOperation::Add &&
+						NearlyEqual(scalingRule.coefficient, expectedCoefficient);
+				}
+			);
+		}
+
+		bool HasExpectedModifier(
+			const AbilityLevelStep& step,
+			const sas::AttributeId& attributeId,
+			float magnitude
+		)
+		{
+			return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+				[&](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == attributeId &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						NearlyEqual(modifier.magnitude, magnitude);
+				});
+		}
+
+		bool HasExpectedDamageTags(const GameAbilityDefinition& definition)
+		{
+			return definition.damageTags.size() == 1 &&
+				definition.damageTags[0].MatchesTagExact(DamageTypeSchema::Energy);
+		}
 	}
 
 	bool ShieldHarvestAbility::Validate(
@@ -56,17 +121,19 @@ namespace ly
 	) const
 	{
 		if (definition.abilityId != AbilityData::ShieldHarvest::AbilityId::Basic ||
+			definition.behaviorType != AbilityBehaviorType::ShieldHarvest ||
 			!sas::IsLoadoutAbilitySlot(definition.slot) ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 ||
-			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
-			!std::isfinite(definition.duration) || definition.duration <= 0.f)
+			!NearlyEqual(definition.cooldown, BaseCooldown) ||
+			!NearlyEqual(definition.duration, FocusDuration) ||
+			!HasExpectedDamageTags(definition))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Shield Harvest requires a loadout slot, pressed activation, and one charge.";
+					"Shield Harvest requires its authored identity, loadout lifecycle, duration, and Energy damage tag.";
 			}
 			return false;
 		}
@@ -75,7 +142,8 @@ namespace ly
 			AbilityData::ShieldHarvest::Attribute::Radius,
 			AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
 			AbilityData::ShieldHarvest::Attribute::OvershieldHoldDuration,
-			AbilityData::ShieldHarvest::Attribute::OvershieldDecayPerSecond
+			AbilityData::ShieldHarvest::Attribute::OvershieldDecayPerSecond,
+			CommonAttributeIds::Damage
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -108,7 +176,15 @@ namespace ly
 			definition.attributes,
 			AbilityData::ShieldHarvest::Attribute::OvershieldDecayPerSecond
 		);
-		if (radius->baseValue <= 0.f || shieldPerEnemy->baseValue <= 0.f ||
+		const sas::GameplayAttribute* pulseDamage = sas::FindAttribute(
+			definition.attributes,
+			CommonAttributeIds::Damage
+		);
+		if (!NearlyEqual(radius->baseValue, BaseRadius) ||
+			!NearlyEqual(shieldPerEnemy->baseValue, BaseShieldPerEnemy) ||
+			!NearlyEqual(pulseDamage->baseValue, BasePulseDamage) ||
+			!NearlyEqual(holdDuration->baseValue, BaseOvershieldHoldDuration) ||
+			!NearlyEqual(decayPerSecond->baseValue, BaseOvershieldDecayPerSecond) ||
 			!IsFiniteNonNegative(holdDuration->baseValue) ||
 			!IsFiniteNonNegative(decayPerSecond->baseValue))
 		{
@@ -118,12 +194,93 @@ namespace ly
 			}
 			return false;
 		}
+		if (definition.scalingRules.size() != 2 ||
+			!HasExpectedScalingRule(
+				definition.scalingRules,
+				AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
+				OwnerAttributeIds::EnergyPower,
+				BaseEnergyPowerShieldScale
+			) ||
+			!HasExpectedScalingRule(
+				definition.scalingRules,
+				CommonAttributeIds::Damage,
+				OwnerAttributeIds::EnergyPower,
+				EnergyPowerPulseDamageScale
+			))
+		{
+			if (failureReason)
+			{
+				*failureReason = "Shield Harvest requires its authored Energy Power shield and damage scaling rules.";
+			}
+			return false;
+		}
 
 		if (definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
 			{
 				*failureReason = "Shield Harvest requires fourteen level progression steps.";
+			}
+			return false;
+		}
+		float resolvedCooldown = definition.cooldown;
+		float resolvedShieldPerEnemy = shieldPerEnemy->baseValue;
+		float resolvedPulseDamage = pulseDamage->baseValue;
+		for (const AbilityLevelStep& step : definition.levelProgression)
+		{
+			const bool hasValidCooldownModifier = std::any_of(
+				step.attributeModifiers.begin(),
+				step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == CommonAttributeIds::Cooldown &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						std::isfinite(modifier.magnitude) && modifier.magnitude < 0.f;
+				}
+			);
+			if (step.attributeModifiers.size() != 3 || !hasValidCooldownModifier ||
+				!HasExpectedModifier(step, AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy, ShieldPerEnemyPerLevel) ||
+				!HasExpectedModifier(step, CommonAttributeIds::Damage, PulseDamagePerLevel) ||
+				!HasExpectedScalingRule(
+					step.scalingRules,
+					AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
+					OwnerAttributeIds::EnergyPower,
+					EnergyPowerShieldScalePerLevel
+				) ||
+				step.scalingRules.size() != 1)
+			{
+				if (failureReason)
+				{
+					*failureReason = "Shield Harvest progression requires shield, pulse damage, and diminishing cooldown gains.";
+				}
+				return false;
+			}
+			const auto cooldownModifier = std::find_if(
+				step.attributeModifiers.begin(),
+				step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == CommonAttributeIds::Cooldown;
+				}
+			);
+			resolvedCooldown += cooldownModifier->magnitude;
+			resolvedShieldPerEnemy += ShieldPerEnemyPerLevel;
+			resolvedPulseDamage += PulseDamagePerLevel;
+			if (resolvedCooldown <= 0.f)
+			{
+				if (failureReason)
+				{
+					*failureReason = "Shield Harvest cooldown must remain positive through level fifteen.";
+				}
+				return false;
+			}
+		}
+		if (!NearlyEqual(resolvedShieldPerEnemy, BaseShieldPerEnemy + ShieldPerEnemyPerLevel * 14.f) ||
+			!NearlyEqual(resolvedPulseDamage, BasePulseDamage + PulseDamagePerLevel * 14.f))
+		{
+			if (failureReason)
+			{
+				*failureReason = "Shield Harvest level-fifteen values must match the authored progression.";
 			}
 			return false;
 		}
@@ -229,14 +386,29 @@ namespace ly
 			0.f,
 			FindValue(values, AbilityData::ShieldHarvest::Attribute::OvershieldDecayPerSecond, 100.f)
 		);
-		const std::size_t enemyCount = targeting::FindOpposingCombatants(
-			*world,
-			context.owner,
-			radius
-		).size();
+		const float pulseDamage = std::max(0.f,
+			FindValue(values, CommonAttributeIds::Damage, BasePulseDamage));
+		const List<shared_ptr<Actor>> targets = targeting::FindOpposingCombatants(
+			*world, context.owner, context.owner.GetActorLocation(), radius);
+		std::size_t harvestedCount = 0;
+		for (const shared_ptr<Actor>& target : targets)
+		{
+			if (!target || target->GetIsPendingDestroy())
+			{
+				continue;
+			}
+			++harvestedCount;
+			ApplyCombatDamage(*target, pulseDamage, &context.owner,
+				{ DamageTypeSchema::Energy }, DamagePayload{},
+				sas::ContentId{ context.definition.abilityId }, context.definition.abilityTags);
+			if (auto* combatant = dynamic_cast<Combatant*>(target.get()))
+			{
+				ApplyStun(context, *combatant, PulseStunDuration);
+			}
+		}
 		ship->GetShieldComponent().GrantTemporaryOvershield(
 			context.definition.abilityId,
-			static_cast<float>(enemyCount) * shieldPerEnemy,
+			static_cast<float>(harvestedCount) * shieldPerEnemy,
 			holdDuration,
 			decayPerSecond
 		);
@@ -248,6 +420,39 @@ namespace ly
 		}
 		mHarvested = true;
 		EmitEvent(context, AbilityData::ShieldHarvest::Event::Harvested);
+	}
+
+	void ShieldHarvestAbility::ApplyStun(
+		GameAbilityBehaviorContext& context,
+		Combatant& target,
+		float duration
+	) const
+	{
+		if (duration <= 0.f)
+		{
+			return;
+		}
+		const ControlResponse response = target.ResolveControlResponse(
+			GameplayTags::State::Effect::Control::Stunned);
+		if (response.mode == ControlResponseMode::Immune ||
+			response.mode == ControlResponseMode::InterruptOnly)
+		{
+			return;
+		}
+		const sas::GameplayEffectDefinition* definition =
+			EffectData::FindGameplayEffectDefinition(AbilityData::ShieldHarvest::Effect::StunId);
+		if (!definition)
+		{
+			return;
+		}
+		sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(*definition);
+		spec.duration = duration * std::max(0.f, response.durationMultiplier);
+		spec.maxStacks = 1;
+		if (spec.duration > 0.f)
+		{
+			target.GetAbilitySystemComponent().ApplyGameplayEffect(spec,
+				sas::GameplayEffectSourceContext{ &context.owner, &context.instance });
+		}
 	}
 
 	void ShieldHarvestAbility::End(

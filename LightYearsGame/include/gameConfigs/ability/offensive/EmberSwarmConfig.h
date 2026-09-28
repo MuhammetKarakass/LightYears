@@ -28,23 +28,52 @@ namespace AbilityData::Definitions
 		definition.displayName = "Ember Swarm";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupRed_bolt.png";
 		definition.accentColor = sf::Color{ 255, 120, 30, 255 };
-		definition.attributes = {};
-		definition.scalingRules = {};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.attributes = {
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 6.f, 0.f }
+		};
+		definition.scalingRules = {
+			sas::AttributeScalingRule{
+				ly::CommonAttributeIds::Damage,
+				ly::OwnerAttributeIds::EnergyPower,
+				sas::AttributeModifierOperation::Add,
+				0.08f
+			}
+		};
+		definition.damageTags = { ly::DamageTypeSchema::Thermal };
+		const float cooldownDeltas[] = {
+			-0.525f, -0.525f, -0.525f, -0.525f,
+			-0.425f, -0.425f, -0.425f, -0.425f,
+			-0.325f, -0.325f, -0.325f, -0.325f,
+			-0.225f, -0.225f
+		};
+		for (const float cooldownDelta : cooldownDeltas)
+		{
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add,
-						-0.20f
+						cooldownDelta
+					},
+					sas::AttributeModifier{
+						ly::CommonAttributeIds::Damage,
+						sas::AttributeModifierOperation::Add,
+						2.f
 					}
 				},
 				{},
 				{},
-				{}
-			}
-		);
+				{},
+				{
+					sas::AttributeScalingRule{
+						ly::CommonAttributeIds::Damage,
+						ly::OwnerAttributeIds::EnergyPower,
+						sas::AttributeModifierOperation::Add,
+						0.01f
+					}
+				}
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
 
 namespace ly
 {
@@ -44,6 +43,9 @@ namespace ly
 				1.f
 			);
 		}
+
+		constexpr temporal::RateModifierSourceId TimeSlipModifierSourceNamespace =
+			0x54494D4500000000ull;
 	}
 
 	bool TimeSlipAbility::Validate(
@@ -239,13 +241,10 @@ namespace ly
 	}
 
 	temporal::RateModifierSourceId TimeSlipAbility::BuildModifierSourceId(
-		const Actor& owner
+		Actor& owner
 	)
 	{
-		// The address is stable for the ability's lifetime and keeps two owners in
-		// the same world from removing each other's temporal modifier.
-		return static_cast<temporal::RateModifierSourceId>(
-			reinterpret_cast<std::uintptr_t>(&owner)
-		) ^ 0x54494D45534C4950ull;
+		return TimeSlipModifierSourceNamespace |
+			static_cast<temporal::RateModifierSourceId>(owner.GetUniqueID());
 	}
 }

@@ -59,7 +59,7 @@
     },
     {
       "id": "Ability.Defense.Shield.Basic",
-      "cooldown": 8.0,
+      "cooldown": 10.0,
       "duration": 5.0,
       "maxCharges": 1,
       "settings": {},
@@ -71,7 +71,7 @@
           "attributes": [
             {
               "id": "Effect.BarrierCapacity",
-              "baseValue": 30.0,
+              "baseValue": 60.0,
               "minValue": 0.0
             },
             {
@@ -82,35 +82,18 @@
             },
             {
               "id": "Effect.BarrierRegenerationPerSecond",
-              "baseValue": 6.0,
+              "baseValue": 0.0,
               "minValue": 0.0
             },
             {
               "id": "Effect.BarrierRegenerationDelay",
-              "baseValue": 1.5,
+              "baseValue": 0.0,
               "minValue": 0.0
             },
             {
               "id": "Effect.BarrierRegenerationDelayRemaining",
               "baseValue": 0.0,
               "minValue": 0.0
-            }
-          ]
-        },
-        {
-          "effectId": "Effect.Test.BarrierBreak.ThrustBoost",
-          "duration": 2.0,
-          "maxStacks": 1,
-          "modifiers": [
-            {
-              "attributeId": "Owner.MoveSpeedVertical",
-              "operation": "Add",
-              "magnitude": 0.25
-            },
-            {
-              "attributeId": "Owner.MoveSpeedHorizontal",
-              "operation": "Add",
-              "magnitude": 0.2
             }
           ]
         }
@@ -124,14 +107,336 @@
           "sourceAttributeId": "Owner.MaxHealth",
           "operation": "Add",
           "coefficient": 0.2
-        },
-        {
-          "targetAttributeId": "Effect.BarrierCapacity",
-          "sourceAttributeId": "Owner.Armor",
-          "operation": "Add",
-          "coefficient": 50.0
         }
-      ]
+      ],
+      "progression": {
+        "levelUpgradeScrapCosts": [
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60
+        ],
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.125
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Effect.BarrierCapacity",
+                "operation": "Add",
+                "magnitude": 10.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.125
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Effect.BarrierCapacity",
+                "sourceAttributeId": "Owner.MaxHealth",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "Ability.Movement.PhaseDrift.Basic",
@@ -552,7 +857,7 @@
         },
         {
           "id": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
-          "baseValue": 40.0,
+          "baseValue": 20.0,
           "minValue": 0.0
         },
         {
@@ -563,6 +868,11 @@
         {
           "id": "Ability.Defense.ShieldHarvest.OvershieldDecayPerSecond",
           "baseValue": 100.0,
+          "minValue": 0.0
+        },
+        {
+          "id": "Common.Damage",
+          "baseValue": 10.0,
           "minValue": 0.0
         }
       ],
@@ -583,22 +893,404 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.25
-            },
-            {
-              "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
-              "operation": "Add",
-              "magnitude": 5.0
-            }
-          ]
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "operation": "Add",
+                "magnitude": 5.0
+              },
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          }
+        ]
+      },
+      "damageTags": [
+        "Damage.Type.Energy"
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.1
+        },
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.05
         }
-      }
+      ]
     },
     {
       "id": "Ability.Offense.HullShock.Basic",
@@ -7926,11 +8618,6 @@
               "magnitude": 0.75
             },
             {
-              "attributeId": "Ability.Defense.Cryostasis.BaseAfterburnerRecoveryPerSecond",
-              "operation": "Add",
-              "magnitude": 0.25
-            },
-            {
               "attributeId": "Ability.Defense.Cryostasis.BaseBreakDamage",
               "operation": "Add",
               "magnitude": 5.0
@@ -10083,11 +10770,6 @@
         "repeat": {
           "count": 14,
           "attributeModifiers": [
-            {
-              "attributeId": "AbilityActor.CrystalBarricade.Wall.BaseRicochetMultiplier",
-              "operation": "Add",
-              "magnitude": 0.04
-            },
             {
               "attributeId": "AbilityActor.CrystalBarricade.Wall.BaseContactDamage",
               "operation": "Add",
@@ -12841,17 +13523,335 @@
           60,
           60
         ],
-        "repeat": {
-          "count": 14,
-          "attributeModifiers": [
-            {
-              "attributeId": "Common.Cooldown",
-              "operation": "Add",
-              "magnitude": -0.2
-            }
-          ]
+        "levels": [
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.525
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.425
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.325
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          },
+          {
+            "attributeModifiers": [
+              {
+                "attributeId": "Common.Damage",
+                "operation": "Add",
+                "magnitude": 2.0
+              },
+              {
+                "attributeId": "Common.Cooldown",
+                "operation": "Add",
+                "magnitude": -0.225
+              }
+            ],
+            "scalingRules": [
+              {
+                "targetAttributeId": "Common.Damage",
+                "sourceAttributeId": "Owner.Energy.Power",
+                "operation": "Add",
+                "coefficient": 0.01
+              }
+            ]
+          }
+        ]
+      },
+      "damageTags": [
+        "Damage.Type.Thermal"
+      ],
+      "attributes": [
+        {
+          "id": "Common.Damage",
+          "baseValue": 6.0,
+          "minValue": 0.0
         }
-      }
+      ],
+      "scalingRules": [
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.08
+        }
+      ]
     },
     {
       "id": "Ability.Defense.ReclaimerProtocol.Basic",

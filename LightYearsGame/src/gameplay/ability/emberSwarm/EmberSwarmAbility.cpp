@@ -1,6 +1,7 @@
 #include "gameplay/ability/emberSwarm/EmberSwarmAbility.h"
 
 #include "framework/World.h"
+#include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/emberSwarm/EmberDroneActor.h"
 #include "gameplay/ability/emberSwarm/EmberSwarmContracts.h"
@@ -24,7 +25,10 @@ namespace ly
 		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 14.f;
 		constexpr float BaseDuration = 6.f;
-		constexpr float CooldownPerLevel = -0.20f;
+		constexpr float BasePulseDamage = 6.f;
+		constexpr float PulseDamagePerLevel = 2.f;
+		constexpr float BaseEnergyPowerScale = 0.08f;
+		constexpr float EnergyPowerScalePerLevel = 0.01f;
 		constexpr float Epsilon = 0.0001f;
 
 		int GetTrueIgniteStacks(const Actor* target)
@@ -89,6 +93,26 @@ namespace ly
 			}
 			return false;
 		}
+
+		bool HasExpectedScalingRule(
+			const List<sas::AttributeScalingRule>& scalingRules,
+			const sas::AttributeId& targetAttributeId,
+			const sas::AttributeId& sourceAttributeId,
+			float expectedCoefficient
+		)
+		{
+			return scalingRules.size() == 1 &&
+				scalingRules[0].targetAttributeId == targetAttributeId &&
+				scalingRules[0].sourceAttributeId == sourceAttributeId &&
+				scalingRules[0].operation == sas::AttributeModifierOperation::Add &&
+				NearlyEqual(scalingRules[0].coefficient, expectedCoefficient);
+		}
+
+		bool HasExpectedThermalDamageTag(const GameAbilityDefinition& definition)
+		{
+			return definition.damageTags.size() == 1 &&
+				definition.damageTags[0].MatchesTagExact(DamageTypeSchema::Thermal);
+		}
 	}
 
 	bool EmberSwarmAbility::Validate(
@@ -106,13 +130,24 @@ namespace ly
 			definition.maxCharges == 1 &&
 			NearlyEqual(definition.cooldown, BaseCooldown) &&
 			NearlyEqual(definition.duration, BaseDuration);
+		const sas::GameplayAttribute* pulseDamage = sas::FindAttribute(
+			definition.attributes,
+			CommonAttributeIds::Damage
+		);
 
-		if (!validIdentity || !validLifecycle)
+		if (!validIdentity || !validLifecycle || !HasExpectedThermalDamageTag(definition) ||
+			!pulseDamage || !NearlyEqual(pulseDamage->baseValue, BasePulseDamage) ||
+			!HasExpectedScalingRule(
+				definition.scalingRules,
+				CommonAttributeIds::Damage,
+				OwnerAttributeIds::EnergyPower,
+				BaseEnergyPowerScale
+			))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Ember Swarm requires pressed activation, duration lifetime, cooldown 14, duration 6, and maxCharges 1.";
+					"Ember Swarm requires its authored lifecycle, Thermal damage, and Common.Damage Energy Power scaling.";
 			}
 			return false;
 		}
@@ -128,23 +163,49 @@ namespace ly
 		}
 
 		float resolvedCooldown = definition.cooldown;
+		float resolvedPulseDamage = pulseDamage->baseValue;
 		for (const AbilityLevelStep& step : definition.levelProgression)
 		{
-			if (step.attributeModifiers.size() != 1 ||
+			const bool hasValidCooldownModifier = std::any_of(
+				step.attributeModifiers.begin(),
+				step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == CommonAttributeIds::Cooldown &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						std::isfinite(modifier.magnitude) && modifier.magnitude < 0.f;
+				}
+			);
+			if (step.attributeModifiers.size() != 2 || !hasValidCooldownModifier ||
 				!step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() ||
 				!step.addedTriggers.empty() ||
-				!HasExpectedModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
+				!HasExpectedModifier(step, CommonAttributeIds::Damage, PulseDamagePerLevel) ||
+				!HasExpectedScalingRule(
+					step.scalingRules,
+					CommonAttributeIds::Damage,
+					OwnerAttributeIds::EnergyPower,
+					EnergyPowerScalePerLevel
+				))
 			{
 				if (failureReason)
 				{
 					*failureReason =
-						"Ember Swarm progression may only add -0.20 Common.Cooldown per level.";
+						"Ember Swarm progression requires damage and Energy Power gains plus a diminishing cooldown reduction.";
 				}
 				return false;
 			}
 
-			resolvedCooldown += CooldownPerLevel;
+			const auto cooldownModifier = std::find_if(
+				step.attributeModifiers.begin(),
+				step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == CommonAttributeIds::Cooldown;
+				}
+			);
+			resolvedCooldown += cooldownModifier->magnitude;
+			resolvedPulseDamage += PulseDamagePerLevel;
 			if (resolvedCooldown <= 0.f)
 			{
 				if (failureReason)
@@ -154,6 +215,14 @@ namespace ly
 				}
 				return false;
 			}
+		}
+		if (!NearlyEqual(resolvedPulseDamage, BasePulseDamage + PulseDamagePerLevel * RequiredProgressionStepCount))
+		{
+			if (failureReason)
+			{
+				*failureReason = "Ember Swarm pulse damage progression must reach the authored level-fifteen value.";
+			}
+			return false;
 		}
 
 		return true;
@@ -190,6 +259,23 @@ namespace ly
 		{
 			return false;
 		}
+		AbilityExecutionContext executionContext{
+			&context.abilitySystem,
+			&context.definition,
+			nullptr,
+			&context.instance
+		};
+		const sas::GameplayAttributeList resolvedAttributes =
+			AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
+		const float pulseDamage = sas::FindAttributeValue(
+			resolvedAttributes,
+			CommonAttributeIds::Damage,
+			BasePulseDamage
+		);
+		if (!std::isfinite(pulseDamage) || pulseDamage <= 0.f)
+		{
+			return false;
+		}
 
 		mDrones.clear();
 		for (std::size_t droneIndex = 0; droneIndex < DroneCount; ++droneIndex)
@@ -201,6 +287,7 @@ namespace ly
 			config.angularSpeed = 2.0f;
 			config.travelSpeed = 800.f;
 			config.pulseInterval = 0.25f;
+			config.pulseDamage = pulseDamage;
 
 			const weak_ptr<EmberDroneActor> droneWeak =
 				world->SpawnActor<EmberDroneActor>(
@@ -276,9 +363,6 @@ namespace ly
 		}
 
 		const sf::Vector2f ownerLocation = owner.GetActorLocation();
-		constexpr float SearchRadius = 750.f;
-		constexpr float LeashRadius = 1000.f;
-		constexpr float LeashRadiusSq = LeashRadius * LeashRadius;
 
 		// Collect live drones
 		List<shared_ptr<EmberDroneActor>> liveDrones;
@@ -298,10 +382,19 @@ namespace ly
 		{
 			return;
 		}
+		const EmberDroneActor::Configuration& droneConfiguration =
+			liveDrones.front()->GetConfiguration();
+		const float searchRadius = std::isfinite(droneConfiguration.targetAcquireRange)
+			? std::max(0.f, droneConfiguration.targetAcquireRange)
+			: 0.f;
+		const float retainRange = std::isfinite(droneConfiguration.targetRetainRange)
+			? std::max(0.f, droneConfiguration.targetRetainRange)
+			: 0.f;
+		const float retainRangeSq = retainRange * retainRange;
 
-		// 1. Query candidate targets within 750 of owner using shared target query
+		// Acquire candidates within 750; retain existing assignments out to 1000.
 		const List<shared_ptr<Actor>> rawCandidates =
-			targeting::FindOpposingCombatants(*world, owner, ownerLocation, SearchRadius, false);
+			targeting::FindOpposingCombatants(*world, owner, ownerLocation, searchRadius, false);
 
 		List<shared_ptr<Actor>> validCandidates;
 		bool hasUnderCapCandidate = false;
@@ -364,7 +457,7 @@ namespace ly
 				{
 					const sf::Vector2f delta = currentTarget->GetActorLocation() - ownerLocation;
 					const float distSq = delta.x * delta.x + delta.y * delta.y;
-					if (distSq <= LeashRadiusSq)
+					if (distSq <= retainRangeSq)
 					{
 						targetValid = true;
 					}
@@ -494,7 +587,7 @@ namespace ly
 				}
 
 				// 5. stable identity
-				if (candidate.get() < bestCandidate.get())
+				if (candidate->GetUniqueID() < bestCandidate->GetUniqueID())
 				{
 					bestCandidate = candidate;
 					bestUnderCap = candidateUnderCap;

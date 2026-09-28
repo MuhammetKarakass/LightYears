@@ -26,8 +26,11 @@ namespace ly
 			float targetOrbitRadius = 65.f;
 			float angularSpeed = 2.0f;
 			float travelSpeed = 1100.f;
+			float targetAcquireRange = 750.f;
+			float targetRetainRange = 1000.f;
 			float pulseInterval = 0.25f;
 			float pulsePhaseOffset = 0.f;
+			float pulseDamage = 6.f;
 		};
 
 		EmberDroneActor(

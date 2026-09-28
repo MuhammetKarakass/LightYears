@@ -46,33 +46,6 @@ namespace AbilityData
 					1
 				}
 			};
-			definition.triggers = {
-				ly::AbilityTriggerSpec{
-					BarrierEffectSchema::BrokenEventTag,
-					0.f,
-					{},
-					{},
-					{},
-					{},
-					{},
-					{},
-					false,
-					0,
-					{},
-					{},
-					{
-						ly::AbilityActionSpec{
-							sas::AbilityActionPhase::OnActivate,
-							ly::ApplyEffectAction{
-								BarrierEffectSchema::BreakThrustBoostEffectId,
-								sas::AbilityTargetPolicy::Self
-							},
-							0.f,
-							1
-						}
-					}
-				}
-			};
 			definition.behaviorType = ly::AbilityBehaviorType::Shield;
 			return definition;
 		}();

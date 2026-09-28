@@ -5,6 +5,7 @@
 namespace ly
 {
 	class AreaTelegraphActor;
+	class Combatant;
 
 	class ShieldHarvestAbility final : public GameAbilityBehavior
 	{
@@ -23,6 +24,7 @@ namespace ly
 			GameAbilityBehaviorContext& context,
 			const GameplayTag& eventTag
 		) const;
+		void ApplyStun(GameAbilityBehaviorContext& context, Combatant& target, float duration) const;
 
 		weak_ptr<AreaTelegraphActor> mTelegraph;
 		float mFocusElapsed = 0.f;

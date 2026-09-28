@@ -34,6 +34,11 @@ namespace AbilityData::ShieldHarvest
 		};
 	};
 
+	struct Effect
+	{
+		inline static constexpr char StunId[] = "Effect.Control.Stun.Basic";
+	};
+
 	struct Attribute
 	{
 		// Radius is a common spatial concept; the ability only aliases it.

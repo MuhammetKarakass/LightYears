@@ -167,7 +167,7 @@ namespace ly
 			mOrbitAngleRadians + mConfiguration.angularSpeed * safeDeltaTime
 		);
 
-		// Check if target is still valid and within leash (1000 from owner)
+		// Retain assignments out to the catalog's 1000-unit leash.
 		shared_ptr<Actor> target = mTarget.lock();
 		if (target)
 		{
@@ -182,7 +182,10 @@ namespace ly
 			if (targetValid)
 			{
 				const sf::Vector2f delta = target->GetActorLocation() - owner->GetActorLocation();
-				if (delta.x * delta.x + delta.y * delta.y > 1000.f * 1000.f)
+				const float retainRange = std::isfinite(mConfiguration.targetRetainRange)
+					? std::max(0.f, mConfiguration.targetRetainRange)
+					: 0.f;
+				if (delta.x * delta.x + delta.y * delta.y > retainRange * retainRange)
 				{
 					targetValid = false;
 				}
@@ -283,20 +286,7 @@ namespace ly
 
 	void EmberDroneActor::PerformPulse(Actor& owner, Actor& target)
 	{
-		float attackPower = 0.f;
-		if (auto* combatantOwner = dynamic_cast<Combatant*>(&owner))
-		{
-			const sas::AttributeSystem& attributes =
-				combatantOwner->GetCombatRuntime().GetAbilitySystemComponent().GetAttributes();
-			if (attributes.HasAttribute(OwnerAttributeIds::AttackPower))
-			{
-				attackPower = std::max(0.f, attributes.GetCurrentValue(OwnerAttributeIds::AttackPower));
-			}
-		}
-
-		const int level = std::max(1, mAbilityLevel);
-		const float baseDamage = 4.0f + 0.4f * static_cast<float>(level - 1);
-		const float pulseDamage = baseDamage + attackPower * 0.08f;
+		const float pulseDamage = std::max(0.f, mConfiguration.pulseDamage);
 
 		DamagePayload payload;
 		payload.igniteStacks = 1;

@@ -52,7 +52,6 @@ namespace AbilityData::Definitions
 				{ AbilityData::Cryostasis::Attribute::FieldTickDamage, sas::AttributeModifierOperation::Add, 1.f },
 				{ AbilityData::Cryostasis::Attribute::BaseIceHealth, sas::AttributeModifierOperation::Add, 15.f },
 				{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, sas::AttributeModifierOperation::Add, 0.75f },
-				{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, sas::AttributeModifierOperation::Add, 0.25f },
 				{ AbilityData::Cryostasis::Attribute::BaseBreakDamage, sas::AttributeModifierOperation::Add, 5.f },
 				{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -0.4f }
 			}, {}, {}, {} }
