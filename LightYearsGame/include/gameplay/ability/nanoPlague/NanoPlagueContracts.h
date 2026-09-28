@@ -36,18 +36,14 @@ namespace AbilityData::NanoPlague
 		inline static const sas::AttributeId BaseSpreadTargetCount{
 			"Ability.Offense.NanoPlague.BaseSpreadTargetCount"
 		};
-		inline static const sas::AttributeId MaximumSpreadTargetCount{
-			"Ability.Offense.NanoPlague.MaximumSpreadTargetCount"
-		};
 	};
 
 	inline constexpr float DefaultCooldown = 8.f;
-	inline constexpr float DefaultDuration = 3.f;
+	inline constexpr float DefaultDuration = 4.f;
 	inline constexpr float DefaultTickInterval = 0.25f;
-	inline constexpr float DefaultBaseTickDamage = 4.f;
-	inline constexpr float DefaultEnergyPowerTickScale = 0.03f;
+	inline constexpr float DefaultBaseTickDamage = 1.f;
+	inline constexpr float DefaultEnergyPowerTickScale = 0.05f;
 	inline constexpr float DefaultInitialTargetRange = 800.f;
 	inline constexpr float DefaultSpreadRadius = 300.f;
 	inline constexpr int DefaultBaseSpreadTargetCount = 1;
-	inline constexpr int DefaultMaximumSpreadTargetCount = 5;
 }

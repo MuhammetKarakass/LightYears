@@ -36,12 +36,10 @@ namespace ly
 		InertialWakePresentationProfile mPresentationProfile;
 		targeting::ActorHitCooldowns mHitCooldowns;
 		float mSpeedDamageConversion = 0.30f;
-		float mEnergyPowerReference = 50.f;
-		float mEnergyPowerConversionPerPoint = 0.0001f;
+		float mAttackPowerConversionAmplifierPerPoint = 0.004f;
 		float mSameTargetHitCooldown = 2.f;
 		float mMinimumSpeedRatio = 0.20f;
 		float mBaseEdgeThickness = 3.f;
-		float mLengthPerEffectiveRatio = 176.f;
 		float mWidthPerEffectiveRatio = 1.5f;
 		float mOpeningAngleDegrees = 130.f;
 		float mDiminishingStartRatio = 1.5f;
@@ -52,6 +50,7 @@ namespace ly
 		float mStunPerEffectiveRatio = 0.20f;
 		float mCurrentLength = 0.f;
 		float mCurrentWidth = 0.f;
+		float mBaseLength = 220.f;
 		float mElapsed = 0.f;
 	};
 

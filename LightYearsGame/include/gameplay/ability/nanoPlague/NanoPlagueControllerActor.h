@@ -17,13 +17,12 @@ namespace ly
 	public:
 		struct Settings
 		{
-			float baseTickDamage = 4.f;
-			float energyPowerTickScale = 0.03f;
-			float duration = 3.f;
+			float baseTickDamage = 1.f;
+			float energyPowerTickScale = 0.05f;
+			float duration = 4.f;
 			float tickInterval = 0.25f;
 			float spreadRadius = 300.f;
 			int baseSpreadTargetCount = 1;
-			int maximumSpreadTargetCount = 5;
 			sas::ContentId sourceAbilityId;
 			List<GameplayTag> sourceAbilityTags;
 		};
@@ -60,7 +59,7 @@ namespace ly
 			std::uint64_t revision = 0;
 			weak_ptr<Actor> target;
 			DelegateHandle damageSubscription;
-			int generation = 0;
+			std::uint64_t generation = 0;
 			float remainingDuration = 0.f;
 			float tickAccumulator = 0.f;
 			int ticksApplied = 0;
@@ -78,6 +77,12 @@ namespace ly
 		};
 
 		shared_ptr<Actor> GetOwnerActor() const;
+		bool ApplyOrRefreshInfectionInternal(
+			Actor& target,
+			std::uint64_t generation,
+			const Settings& settings,
+			const sf::Vector2f* visualOrigin
+		);
 		void OnTargetDamageResolved(const DamageContext& context);
 		void ResolvePendingSpread(Infection infection);
 		void ApplyTick(Actor& target);
@@ -89,7 +94,7 @@ namespace ly
 			Actor& target,
 			bool isSpread
 		);
-		int ResolveSpreadTargetCount() const;
+		std::uint64_t ResolveSpreadTargetCount() const;
 
 		weak_ptr<Actor> mOwner;
 		NanoPlagueControllerRegistryActor::Registration mRegistryRegistration;

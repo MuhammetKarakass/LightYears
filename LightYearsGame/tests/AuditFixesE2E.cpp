@@ -879,7 +879,6 @@ namespace ly
 			auto controller = NanoPlagueControllerActor::FindOrCreate(world, *owner, NanoPlaguePresentationProfile{});
 			NanoPlagueControllerActor::Settings settings;
 			settings.baseSpreadTargetCount = 4;
-			settings.maximumSpreadTargetCount = 4;
 			settings.baseTickDamage = 0.f;
 			settings.energyPowerTickScale = 0.f;
 			check("nanoApplied", controller->ApplyOrRefreshInfection(*infected, 0, settings));

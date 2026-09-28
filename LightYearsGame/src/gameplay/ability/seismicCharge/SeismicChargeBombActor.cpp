@@ -146,12 +146,14 @@ namespace ly
 					sas::FindAttributeValue(definition.attributes, AbilityData::SeismicCharge::Attribute::DeploymentDuration, 0.f) +
 					sas::FindAttributeValue(definition.attributes, AbilityData::SeismicCharge::Attribute::FuseDuration, 0.f) +
 					sas::FindAttributeValue(definition.attributes, AbilityData::SeismicCharge::Attribute::ShockwaveDuration, 0.f);
-				if (definition.lifeTime < totalDuration || !definition.presentationProfileId.IsValid() ||
+				if (!std::isfinite(definition.lifeTime) || definition.lifeTime < 0.f ||
+					(definition.lifeTime > 0.f && definition.lifeTime < totalDuration) ||
+					!definition.presentationProfileId.IsValid() ||
 					!PresentationProfileRegistry<SeismicChargePresentationProfile>::Find(
 						definition.presentationProfileId.ToString()
 					))
 				{
-					return { false, "Seismic Charge bomb requires sufficient lifetime and a registered typed presentation profile." };
+					return { false, "Seismic Charge bomb requires a phase-owned or sufficient configured lifetime and a registered typed presentation profile." };
 				}
 				return { true, {} };
 			}
@@ -222,7 +224,7 @@ namespace ly
 		mPhase = Phase::Deployment;
 		mPhaseAge = 0.f;
 		mCurrentRadius = 0.f;
-		mHitActors.clear();
+		mHitActorIds.clear();
 		ConfigureCircle(mBombGlow, mPresentationProfile.bombRadius * 1.8f);
 		ConfigureCircle(mBombCore, mPresentationProfile.bombRadius);
 		ConfigureCircle(mMaximumRangeTelegraph, mMaximumRadius);
@@ -237,31 +239,37 @@ namespace ly
 			return;
 		}
 
-		const float safeDeltaTime = std::max(0.f, deltaTime);
-		mPhaseAge += safeDeltaTime;
+		float remainingDeltaTime = std::max(0.f, deltaTime);
 		if (mPhase == Phase::Deployment)
 		{
-			const float progress = std::clamp(mPhaseAge / mDeploymentDuration, 0.f, 1.f);
-			SetActorLocation(mDeploymentStart + (mDropLocation - mDeploymentStart) * progress);
-			if (progress >= 1.f)
+			const float deploymentRemaining = std::max(0.f, mDeploymentDuration - mPhaseAge);
+			if (remainingDeltaTime < deploymentRemaining)
 			{
-				mPhase = Phase::Fuse;
-				mPhaseAge = 0.f;
-				SetActorLocation(mDropLocation);
+				mPhaseAge += remainingDeltaTime;
+				const float progress = std::clamp(mPhaseAge / mDeploymentDuration, 0.f, 1.f);
+				SetActorLocation(mDeploymentStart + (mDropLocation - mDeploymentStart) * progress);
+				return;
 			}
-			return;
+			remainingDeltaTime -= deploymentRemaining;
+			SetActorLocation(mDropLocation);
+			mPhase = Phase::Fuse;
+			mPhaseAge = 0.f;
 		}
 
 		if (mPhase == Phase::Fuse)
 		{
-			if (mPhaseAge >= mFuseDuration)
+			const float fuseRemaining = std::max(0.f, mFuseDuration - mPhaseAge);
+			if (remainingDeltaTime < fuseRemaining)
 			{
-				BeginShockwave();
+				mPhaseAge += remainingDeltaTime;
+				return;
 			}
-			return;
+			remainingDeltaTime -= fuseRemaining;
+			BeginShockwave();
 		}
 
 		const float previousRadius = mCurrentRadius;
+		mPhaseAge += remainingDeltaTime;
 		mCurrentRadius = mMaximumRadius * std::clamp(
 			mPhaseAge / mShockwaveDuration, 0.f, 1.f
 		);
@@ -298,7 +306,7 @@ namespace ly
 		{
 			const shared_ptr<Actor> target = candidate.lock();
 			if (!target || target.get() == this || target->GetIsPendingDestroy() ||
-				mHitActors.find(target.get()) != mHitActors.end() ||
+				mHitActorIds.find(target->GetUniqueID()) != mHitActorIds.end() ||
 				!dynamic_cast<Combatant*>(target.get()) ||
 				!IntersectsShockwaveBand(*target, GetActorLocation(), innerRadius, outerRadius))
 			{
@@ -307,7 +315,7 @@ namespace ly
 
 			// No team filter is applied: the owner, friendly summons and enemies all
 			// receive the same Energy hit when the expanding ring reaches them.
-			mHitActors.insert(target.get());
+			mHitActorIds.insert(target->GetUniqueID());
 			ApplyCombatDamage(
 				*target,
 				GetDamage(),

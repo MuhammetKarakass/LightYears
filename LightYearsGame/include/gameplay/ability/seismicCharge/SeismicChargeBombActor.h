@@ -4,6 +4,7 @@
 #include "presentation/ability/seismicCharge/SeismicChargePresentationProfile.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
+#include <cstdint>
 
 namespace ly
 {
@@ -39,7 +40,7 @@ namespace ly
 		sf::CircleShape mBombCore;
 		sf::CircleShape mMaximumRangeTelegraph;
 		sf::CircleShape mShockwave;
-		Set<Actor*> mHitActors;
+		Set<std::uint64_t> mHitActorIds;
 		float mPhaseAge = 0.f;
 		float mDropOffset = 0.f;
 		float mDeploymentDuration = 0.f;

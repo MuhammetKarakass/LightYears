@@ -30,6 +30,18 @@ namespace ly
 			);
 			return attribute && std::isfinite(attribute->baseValue);
 		}
+
+		float ResolveCryoDamageMultiplier(int stacks)
+		{
+			switch (std::clamp(stacks, 0, 4))
+			{
+			case 0: return 0.75f;
+			case 1: return 1.00f;
+			case 2: return 1.20f;
+			case 3: return 1.40f;
+			default: return 1.70f;
+			}
+		}
 	}
 
 	bool FrozenThrongAbility::Validate(
@@ -125,7 +137,6 @@ namespace ly
 
 		const DamageContext* damageContext = event.GetContext<DamageContext>();
 		if (!damageContext || !damageContext->targetWasKilled ||
-			!damageContext->targetWasCryoAffected ||
 			!damageContext->targetWasEnemyCombatant)
 		{
 			return;
@@ -141,7 +152,8 @@ namespace ly
 			{
 				damageContext->targetLocationAtResolution.x,
 				damageContext->targetLocationAtResolution.y
-			}
+			},
+			damageContext->targetCryoStacksAtResolution
 		);
 	}
 
@@ -162,7 +174,8 @@ namespace ly
 
 	void FrozenThrongAbility::SpawnHusksForKill(
 		GameAbilityBehaviorContext& context,
-		const sf::Vector2f& origin
+		const sf::Vector2f& origin,
+		int targetCryoStacks
 	)
 	{
 		const sas::GameplayAttributeList values = ResolveValues(context);
@@ -184,16 +197,20 @@ namespace ly
 		// Every husk is created as an independent delayed actor. The delay keeps
 		// chain reactions off the current damage call stack, so a dense kill can
 		// produce any number of husks without recursive same-frame damage.
+		const float cryoDamageMultiplier = ResolveCryoDamageMultiplier(
+			targetCryoStacks
+		);
 		for (int index = 0; index < huskCount; ++index)
 		{
-			SpawnHusk(context, origin, values);
+			SpawnHusk(context, origin, values, cryoDamageMultiplier);
 		}
 	}
 
 	void FrozenThrongAbility::SpawnHusk(
 		GameAbilityBehaviorContext& context,
 		const sf::Vector2f& origin,
-		const sas::GameplayAttributeList& values
+		const sas::GameplayAttributeList& values,
+		float cryoDamageMultiplier
 	)
 	{
 		World* world = context.owner.GetWorld();
@@ -255,6 +272,7 @@ namespace ly
 		{
 			return;
 		}
+		husk->SetDamage(husk->GetDamage() * cryoDamageMultiplier);
 
 		husk->SetLaunchDelay(std::max(0.f, sas::FindAttributeValue(
 			values,

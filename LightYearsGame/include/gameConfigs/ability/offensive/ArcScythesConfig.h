@@ -18,7 +18,7 @@ namespace AbilityData::ArcScythes
 		definition.spawnDistance = 0.f;
 		definition.presentationProfileId = ly::ArcScythesPresentationIds::BeamBasic;
 		definition.attributes = {
-			sas::GameplayAttribute{ Attribute::Damage, 5.f, 0.f },
+			sas::GameplayAttribute{ Attribute::Damage, 10.f, 0.f },
 			sas::GameplayAttribute{ Attribute::Range, 700.f, 1.f },
 			sas::GameplayAttribute{ Attribute::CombatTickInterval, 0.25f, 0.01f },
 			sas::GameplayAttribute{ Attribute::BeamHalfThickness, 22.f, 1.f },
@@ -55,7 +55,7 @@ namespace AbilityData::Definitions
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::EnergyPower,
 				sas::AttributeModifierOperation::Add,
-				0.06f
+				0.15f
 			}
 		};
 		definition.actions = {
@@ -76,14 +76,21 @@ namespace AbilityData::Definitions
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
 						sas::AttributeModifierOperation::Add,
-						1.f
+						3.f
 					},
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add,
 						-0.20f
 					}
-				}, {}, {}, {}
+				}, {}, {}, {}, {
+					sas::AttributeScalingRule{
+						ly::CommonAttributeIds::Damage,
+						ly::OwnerAttributeIds::EnergyPower,
+						sas::AttributeModifierOperation::Add,
+						0.02f
+					}
+				}
 			}
 		);
 		definition.levelUpgradeScrapCosts = {

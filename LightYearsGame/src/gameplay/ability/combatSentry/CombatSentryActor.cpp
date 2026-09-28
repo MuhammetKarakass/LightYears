@@ -259,7 +259,8 @@ namespace ly
 
 	float CombatSentryActor::ResolveAttackRate() const
 	{
-		return mBaseAttackRate * GetOwnerAttackSpeedMultiplier();
+		return mBaseAttackRate +
+			1.5f * (std::max(0.f, GetOwnerCombatAttribute(OwnerAttributeIds::AttackSpeed)) / 100.f);
 	}
 
 	void CombatSentryActor::Render(sf::RenderWindow& window)

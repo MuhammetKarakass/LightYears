@@ -71,16 +71,16 @@ namespace AbilityData::CombatSentry
 		};
 	};
 
-	inline constexpr float DefaultDuration = 20.f;
-	inline constexpr float DefaultCooldown = 25.f;
-	inline constexpr float DefaultMaxHealth = 150.f;
+	inline constexpr float DefaultDuration = 12.5f;
+	inline constexpr float DefaultCooldown = 20.f;
+	inline constexpr float DefaultMaxHealth = 180.f;
 	inline constexpr float DefaultOwnerMaxHealthScale = 0.50f;
-	inline constexpr float DefaultArmor = 5.f;
+	inline constexpr float DefaultArmor = 0.f;
 	inline constexpr float DefaultOwnerArmorScale = 0.50f;
-	inline constexpr float DefaultDamage = 14.f;
-	inline constexpr float DefaultOwnerAttackPowerScale = 0.60f;
-	inline constexpr float DefaultAttackRate = 1.25f;
-	inline constexpr float DefaultTargetingRange = 800.f;
-	inline constexpr float DefaultProjectileRange = 800.f;
+	inline constexpr float DefaultDamage = 25.f;
+	inline constexpr float DefaultOwnerAttackPowerScale = 0.20f;
+	inline constexpr float DefaultAttackRate = 1.f;
+	inline constexpr float DefaultTargetingRange = 1300.f;
+	inline constexpr float DefaultProjectileRange = 1300.f;
 	inline constexpr float DefaultProjectileSpeed = 1300.f;
 }

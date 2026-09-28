@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 namespace ly
 {
@@ -76,8 +77,7 @@ namespace ly
 		const List<sas::AttributeId> required{
 			AbilityData::LanceDrive::Attribute::BaseDamage,
 			AbilityData::LanceDrive::Attribute::SpeedDamageConversion,
-			AbilityData::LanceDrive::Attribute::EnergyPowerReference,
-			AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint,
+			AbilityData::LanceDrive::Attribute::EnergyPowerConversionAmplifierPerPoint,
 			AbilityData::LanceDrive::Attribute::TopSpeedBonus,
 			AbilityData::LanceDrive::Attribute::ThrustBonus,
 			AbilityData::LanceDrive::Attribute::TurnCapabilityMultiplier,
@@ -115,8 +115,7 @@ namespace ly
 		};
 		if (value(AbilityData::LanceDrive::Attribute::BaseDamage) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::SpeedDamageConversion) < 0.f ||
-			value(AbilityData::LanceDrive::Attribute::EnergyPowerReference) < 0.f ||
-			value(AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint) < 0.f ||
+			value(AbilityData::LanceDrive::Attribute::EnergyPowerConversionAmplifierPerPoint) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::TopSpeedBonus) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::ThrustBonus) < 0.f ||
 			value(AbilityData::LanceDrive::Attribute::TurnCapabilityMultiplier) <= 0.f ||
@@ -220,6 +219,15 @@ namespace ly
 				return !lance || !lance->ConsumesFrontalContact(source, target);
 			}
 		);
+		const std::uint8_t enemyLayer = static_cast<std::uint8_t>(CollisionLayer::Enemy);
+		const std::uint8_t currentCollisionMask =
+			static_cast<std::uint8_t>(ship->GetCollisionMask());
+		mCollisionMaskSnapshotHasEnemyLayer =
+			(currentCollisionMask & enemyLayer) != 0;
+		mHasCollisionMaskSnapshot = true;
+		ship->SetCollisionMask(static_cast<CollisionLayer>(
+			currentCollisionMask & static_cast<std::uint8_t>(~enemyLayer)
+		));
 		mActive = true;
 		context.abilitySystem.AddOwnedTag(AbilityData::LanceDrive::State::Active);
 		context.abilitySystem.AddOwnedTag(GameplayTags::State::ActionLock::AbilityActivation);
@@ -245,7 +253,7 @@ namespace ly
 
 	void LanceDriveAbility::ClearRuntimeState(GameAbilityBehaviorContext& context)
 	{
-		if (!mActive && !mLance.lock())
+		if (!mActive && !mLance.lock() && !mHasCollisionMaskSnapshot)
 		{
 			return;
 		}
@@ -269,7 +277,29 @@ namespace ly
 		}
 		if (SpaceShip* ship = dynamic_cast<SpaceShip*>(&context.owner))
 		{
+			if (mHasCollisionMaskSnapshot)
+			{
+				const std::uint8_t enemyLayer = static_cast<std::uint8_t>(CollisionLayer::Enemy);
+				std::uint8_t collisionMask =
+					static_cast<std::uint8_t>(ship->GetCollisionMask());
+				if (mCollisionMaskSnapshotHasEnemyLayer)
+				{
+					collisionMask |= enemyLayer;
+				}
+				else
+				{
+					collisionMask &= static_cast<std::uint8_t>(~enemyLayer);
+				}
+				ship->SetCollisionMask(static_cast<CollisionLayer>(collisionMask));
+				mHasCollisionMaskSnapshot = false;
+				mCollisionMaskSnapshotHasEnemyLayer = false;
+			}
 			ship->GetRuntimeModifiers().Remove(context.definition.abilityId);
+		}
+		else
+		{
+			mHasCollisionMaskSnapshot = false;
+			mCollisionMaskSnapshotHasEnemyLayer = false;
 		}
 		movement::MovementPolicyService::ReleasePolicy(
 			context.owner,

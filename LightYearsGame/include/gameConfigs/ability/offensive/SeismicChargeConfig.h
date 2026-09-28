@@ -15,11 +15,11 @@ namespace AbilityData::SeismicCharge
 		ly::AbilityActorDefinition definition;
 		definition.actorDefinitionId = Actor::Bomb::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::SeismicChargeBomb;
-		definition.lifeTime = 5.6f;
+		definition.lifeTime = 0.f;
 		definition.spawnDistance = 0.f;
 		definition.presentationProfileId = ly::SeismicChargePresentationIds::BombBasic;
 		definition.attributes = {
-			sas::GameplayAttribute{ Attribute::Damage, 100.f, 0.f },
+			sas::GameplayAttribute{ Attribute::Damage, 180.f, 0.f },
 			sas::GameplayAttribute{ Attribute::MaximumRadius, 1200.f, 1.f },
 			sas::GameplayAttribute{ Attribute::DropOffset, 250.f, 0.f },
 			sas::GameplayAttribute{ Attribute::DeploymentDuration, 0.50f, 0.01f },
@@ -56,16 +56,22 @@ namespace AbilityData::Definitions
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::EnergyPower,
 				sas::AttributeModifierOperation::Add,
-				0.80f
+				1.00f
 			}
 		};
 		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
 			14,
 			ly::AbilityLevelStep{
 				{
-					sas::AttributeModifier{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 7.f },
-					sas::AttributeModifier{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -0.30f }
-				}, {}, {}, {}
+					sas::AttributeModifier{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 20.f }
+				}, {}, {}, {}, {
+					sas::AttributeScalingRule{
+						ly::CommonAttributeIds::Damage,
+						ly::OwnerAttributeIds::EnergyPower,
+						sas::AttributeModifierOperation::Add,
+						0.10f
+					}
+				}
 			}
 		);
 		definition.levelUpgradeScrapCosts = {

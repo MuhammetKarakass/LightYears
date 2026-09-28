@@ -80,6 +80,7 @@ namespace ly
 		// death callbacks can clear the target's CombatRuntime. This lets global
 		// kill mechanics evaluate Cryo at the actual kill boundary.
 		bool targetWasCryoAffected = false;
+		int targetCryoStacksAtResolution = 0;
 		// Immutable target snapshots keep kill reactions safe when the target's
 		// death callback destroys the actor before the source receives KillConfirmed.
 		bool targetWasEnemyCombatant = false;

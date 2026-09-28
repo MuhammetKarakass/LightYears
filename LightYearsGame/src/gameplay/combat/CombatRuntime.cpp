@@ -332,9 +332,11 @@ namespace ly
 		// clear its effects. Capture Cryo state now, after this hit's Cryo status
 		// application, so KillConfirmed can still observe it later in the source
 		// combatant's notification path.
-		context.targetWasCryoAffected = mAbilitySystemComponent.FindGameplayEffectById(
+		const auto* cryoEffect = mAbilitySystemComponent.FindGameplayEffectById(
 			DamageStatusEffectIds::CryoSlowedEffectId
-		) != nullptr;
+		);
+		context.targetWasCryoAffected = cryoEffect != nullptr;
+		context.targetCryoStacksAtResolution = cryoEffect ? std::max(0, cryoEffect->stackCount) : 0;
 		if (auto* sourceCombatant = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr)
 		{
 			for (const GameplayTag& status : appliedStatuses)

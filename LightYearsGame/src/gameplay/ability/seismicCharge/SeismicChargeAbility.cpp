@@ -51,19 +51,25 @@ namespace ly
 			definition.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
 			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
-			NearlyEqual(definition.scalingRules.front().coefficient, 0.80f);
+			NearlyEqual(definition.scalingRules.front().coefficient, 1.00f);
 		const bool validProgression = definition.levelProgression.size() == 14 &&
 			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
 				[](const AbilityLevelStep& step)
 				{
-					return step.attributeModifiers.size() == 2 &&
+					return step.attributeModifiers.size() == 2 && step.scalingRules.size() == 1 &&
 						step.attributeModifiers[0].attributeId == CommonAttributeIds::Damage &&
-						NearlyEqual(step.attributeModifiers[0].magnitude, 7.f) &&
+						NearlyEqual(step.attributeModifiers[0].magnitude, 20.f) &&
 						step.attributeModifiers[1].attributeId == CommonAttributeIds::Cooldown &&
-						NearlyEqual(step.attributeModifiers[1].magnitude, -0.30f);
+						std::isfinite(step.attributeModifiers[1].magnitude) &&
+						step.attributeModifiers[1].magnitude < 0.f &&
+						step.scalingRules[0].targetAttributeId == CommonAttributeIds::Damage &&
+						step.scalingRules[0].sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+						step.scalingRules[0].operation == sas::AttributeModifierOperation::Add &&
+						NearlyEqual(step.scalingRules[0].coefficient, 0.10f);
 				});
 		const bool validActor = bomb && bomb->actorType == AbilityActorType::SeismicChargeBomb &&
-			bomb->lifeTime >= 5.5f && bomb->presentationProfileId.IsValid();
+			(bomb->lifeTime == 0.f || bomb->lifeTime >= 5.5f) &&
+			bomb->presentationProfileId.IsValid();
 
 		if (!validIdentity || !validLifecycle || !validDamage || !validScaling ||
 			!validProgression || !validActor || !definition.actions.empty())

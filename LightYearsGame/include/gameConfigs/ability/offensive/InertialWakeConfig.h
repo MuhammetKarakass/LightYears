@@ -62,9 +62,9 @@ namespace AbilityData::Definitions
 			ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{ AbilityData::InertialWake::Attribute::TopSpeedBonus,
-						sas::AttributeModifierOperation::Add, 5.f },
+						sas::AttributeModifierOperation::Add, 10.f },
 					sas::AttributeModifier{ AbilityData::InertialWake::Actor::Wake::SpeedDamageConversion,
-						sas::AttributeModifierOperation::Add, 0.01f },
+						sas::AttributeModifierOperation::Add, 0.02f },
 					sas::AttributeModifier{ ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add, -0.25f }
 				}, {}, {}, {}

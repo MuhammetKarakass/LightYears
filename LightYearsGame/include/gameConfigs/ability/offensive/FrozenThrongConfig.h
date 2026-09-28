@@ -117,6 +117,12 @@ namespace AbilityData::Definitions
 				ly::OwnerAttributeIds::AttackPower,
 				sas::AttributeModifierOperation::Add,
 				AbilityData::FrozenThrong::DefaultAttackPowerScale
+			},
+			sas::AttributeScalingRule{
+				ly::CommonAttributeIds::Damage,
+				ly::OwnerAttributeIds::EnergyPower,
+				sas::AttributeModifierOperation::Add,
+				AbilityData::FrozenThrong::DefaultEnergyPowerScale
 			}
 		};
 		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
@@ -126,7 +132,7 @@ namespace AbilityData::Definitions
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
 						sas::AttributeModifierOperation::Add,
-						4.f
+						7.f
 					},
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Cooldown,
@@ -136,7 +142,21 @@ namespace AbilityData::Definitions
 				},
 				{},
 				{},
-				{}
+				{},
+				{
+					sas::AttributeScalingRule{
+						ly::CommonAttributeIds::Damage,
+						ly::OwnerAttributeIds::AttackPower,
+						sas::AttributeModifierOperation::Add,
+						0.015f
+					},
+					sas::AttributeScalingRule{
+						ly::CommonAttributeIds::Damage,
+						ly::OwnerAttributeIds::EnergyPower,
+						sas::AttributeModifierOperation::Add,
+						0.015f
+					}
+				}
 			}
 		);
 		definition.levelUpgradeScrapCosts = {

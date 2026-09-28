@@ -18,7 +18,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t RequiredAttributeCount = 8;
+		constexpr std::size_t RequiredAttributeCount = 7;
 		constexpr std::size_t RequiredProgressionStepCount = 14;
 
 		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
@@ -77,8 +77,7 @@ namespace ly
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::InitialTargetRange, 0.01f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::SpreadRadius, 0.01f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::EnergyPowerTickScale, 0.f) &&
-			HasAttribute(definition, AbilityData::NanoPlague::Attribute::BaseSpreadTargetCount, 1.f) &&
-			HasAttribute(definition, AbilityData::NanoPlague::Attribute::MaximumSpreadTargetCount, 1.f);
+			HasAttribute(definition, AbilityData::NanoPlague::Attribute::BaseSpreadTargetCount, 1.f);
 		const bool validRuntimeOwnership = definition.actions.empty() &&
 			definition.triggers.empty() && definition.effectSpecs.empty() &&
 			definition.scalingRules.empty();
@@ -91,7 +90,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Nano Plague requires an instant electric infection with eight runtime attributes and fourteen progression steps.";
+					"Nano Plague requires an instant electric infection with seven runtime attributes and fourteen progression steps.";
 			}
 			return false;
 		}
@@ -162,10 +161,6 @@ namespace ly
 		settings.baseSpreadTargetCount = std::max(1, static_cast<int>(std::lround(
 			sas::FindAttributeValue(values, AbilityData::NanoPlague::Attribute::BaseSpreadTargetCount,
 				AbilityData::NanoPlague::DefaultBaseSpreadTargetCount))));
-		settings.maximumSpreadTargetCount = std::max(settings.baseSpreadTargetCount,
-			static_cast<int>(std::lround(sas::FindAttributeValue(values,
-				AbilityData::NanoPlague::Attribute::MaximumSpreadTargetCount,
-				AbilityData::NanoPlague::DefaultMaximumSpreadTargetCount))));
 		settings.sourceAbilityId = sas::ContentId{ context.definition.abilityId };
 		settings.sourceAbilityTags = context.definition.abilityTags;
 

@@ -30,12 +30,14 @@ namespace ly
 		) const;
 		void SpawnHusksForKill(
 			GameAbilityBehaviorContext& context,
-			const sf::Vector2f& origin
+			const sf::Vector2f& origin,
+			int targetCryoStacks
 		);
 		void SpawnHusk(
 			GameAbilityBehaviorContext& context,
 			const sf::Vector2f& origin,
-			const sas::GameplayAttributeList& values
+			const sas::GameplayAttributeList& values,
+			float cryoDamageMultiplier
 		);
 		void EmitEvent(
 			GameAbilityBehaviorContext& context,

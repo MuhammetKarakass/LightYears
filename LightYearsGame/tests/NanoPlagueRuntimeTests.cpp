@@ -170,7 +170,6 @@ namespace
 		settings.tickInterval = 0.25f;
 		settings.spreadRadius = 250.f;
 		settings.baseSpreadTargetCount = 1;
-		settings.maximumSpreadTargetCount = 1;
 		if (!Expect(controller->ApplyOrRefreshInfection(*infectedTarget, 0, settings),
 			"Initial Nano Plague infection failed") ||
 			!Expect(HasNanoPlague(*infectedTarget), "Initial infection did not add the Infected tag"))

@@ -39,10 +39,9 @@ namespace ly
 
 		LanceDrivePresentationProfile mPresentationProfile;
 		targeting::ActorHitCooldowns mHitCooldowns;
-		float mBaseDamage = 10.f;
-		float mSpeedDamageConversion = 0.20f;
-		float mEnergyPowerReference = 50.f;
-		float mEnergyPowerConversionPerPoint = 0.0001f;
+		float mBaseDamage = 20.f;
+		float mSpeedDamageConversion = 0.30f;
+		float mEnergyPowerConversionAmplifierPerPoint = 0.002f;
 		float mSameTargetHitCooldown = 0.75f;
 		float mLength = 146.25f;
 		float mEdgeThickness = 6.f;

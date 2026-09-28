@@ -47,13 +47,12 @@ namespace AbilityData::Definitions
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 255, 174, 76, 255 };
 		definition.attributes = {
-			{ AbilityData::LanceDrive::Attribute::BaseDamage, 10.f, 0.f },
-			{ AbilityData::LanceDrive::Attribute::SpeedDamageConversion, 0.20f, 0.f },
-			{ AbilityData::LanceDrive::Attribute::EnergyPowerReference, 50.f, 0.f },
-			{ AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint, 0.0001f, 0.f },
+			{ AbilityData::LanceDrive::Attribute::BaseDamage, 20.f, 0.f },
+			{ AbilityData::LanceDrive::Attribute::SpeedDamageConversion, 0.30f, 0.f },
+			{ AbilityData::LanceDrive::Attribute::EnergyPowerConversionAmplifierPerPoint, 0.002f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::TopSpeedBonus, 300.f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::ThrustBonus, 0.25f, 0.f },
-			{ AbilityData::LanceDrive::Attribute::TurnCapabilityMultiplier, 0.35f, 0.f },
+			{ AbilityData::LanceDrive::Attribute::TurnCapabilityMultiplier, 0.25f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::SameTargetHitCooldown, 0.75f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::Length, 146.25f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::EdgeThickness, 6.f, 0.f },
@@ -65,11 +64,9 @@ namespace AbilityData::Definitions
 			ly::AbilityLevelStep{
 				{
 					{ AbilityData::LanceDrive::Attribute::BaseDamage,
-						sas::AttributeModifierOperation::Add, 2.f },
-					{ AbilityData::LanceDrive::Attribute::TopSpeedBonus,
 						sas::AttributeModifierOperation::Add, 5.f },
 					{ AbilityData::LanceDrive::Attribute::SpeedDamageConversion,
-						sas::AttributeModifierOperation::Add, 0.01f },
+						sas::AttributeModifierOperation::Add, 0.04f },
 					{ ly::CommonAttributeIds::Cooldown,
 						sas::AttributeModifierOperation::Add, -0.25f }
 				},

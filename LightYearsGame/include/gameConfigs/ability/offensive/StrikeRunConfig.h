@@ -23,7 +23,7 @@ namespace AbilityData::StrikeRun
 		definition.presentationProfileId =
 			ly::StrikeRunPresentationIds::BombardmentBasic;
 		definition.attributes = {
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 35.f, 0.f },
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 45.f, 0.f },
 			sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 200.f, 0.01f },
 			sas::GameplayAttribute{ ly::CommonAttributeIds::Range, 2000.f, 0.01f },
 			sas::GameplayAttribute{ Attribute::ImpactCount, 5.f, 1.f },
@@ -66,7 +66,7 @@ namespace AbilityData::Definitions
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::AttackPower,
 				sas::AttributeModifierOperation::Add,
-				0.45f
+				0.30f
 			}
 		};
 		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
@@ -76,17 +76,20 @@ namespace AbilityData::Definitions
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
 						sas::AttributeModifierOperation::Add,
-						4.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.25f
+						6.f
 					}
 				},
 				{},
 				{},
-				{}
+				{},
+				{
+					sas::AttributeScalingRule{
+						ly::CommonAttributeIds::Damage,
+						ly::OwnerAttributeIds::AttackPower,
+						sas::AttributeModifierOperation::Add,
+						0.05f
+					}
+				}
 			}
 		);
 		definition.levelUpgradeScrapCosts = {

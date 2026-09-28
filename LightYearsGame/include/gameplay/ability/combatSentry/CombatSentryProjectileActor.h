@@ -30,7 +30,7 @@ namespace ly
 
 		CombatSentryProjectilePresentationProfile mProfile;
 		float mSpeed = 1300.f;
-		float mMaximumRange = 800.f;
+		float mMaximumRange = 1300.f;
 		float mTravelDistance = 0.f;
 	};
 

@@ -31,6 +31,8 @@ namespace ly
 		weak_ptr<LanceDriveActor> mLance;
 		AbilityActivationGuardHandle mActivationGuard;
 		ContactDamageGuardHandle mContactGuard;
+		bool mCollisionMaskSnapshotHasEnemyLayer = false;
+		bool mHasCollisionMaskSnapshot = false;
 		bool mActive = false;
 	};
 }

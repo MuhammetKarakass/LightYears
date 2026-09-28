@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cmath>
 #include <exception>
+#include <limits>
 
 namespace ly
 {
@@ -92,6 +93,19 @@ namespace ly
 		const sf::Vector2f* visualOrigin
 	)
 	{
+		const std::uint64_t safeGeneration = generation > 0
+			? static_cast<std::uint64_t>(generation)
+			: 0;
+		return ApplyOrRefreshInfectionInternal(target, safeGeneration, settings, visualOrigin);
+	}
+
+	bool NanoPlagueControllerActor::ApplyOrRefreshInfectionInternal(
+		Actor& target,
+		std::uint64_t generation,
+		const Settings& settings,
+		const sf::Vector2f* visualOrigin
+	)
+	{
 		if (mDestroying || GetIsPendingDestroy() || target.GetIsPendingDestroy() ||
 			dynamic_cast<Combatant*>(&target) == nullptr)
 		{
@@ -100,22 +114,28 @@ namespace ly
 		const shared_ptr<Actor> owner = GetOwnerActor();
 		if (!owner) return false;
 		const sf::Vector2f origin = visualOrigin ? *visualOrigin : owner->GetActorLocation();
+		Combatant& targetCombatant = dynamic_cast<Combatant&>(target);
+		auto existing = std::find_if(mInfections.begin(), mInfections.end(), [&target](const auto& entry)
+		{
+			return entry.second.target.lock().get() == &target;
+		});
+		// The owner-local map handles refreshes; this tag excludes other controllers.
+		if (existing == mInfections.end() && targetCombatant.GetAbilitySystemComponent().HasOwnedTag(
+			AbilityData::NanoPlague::State::Infected,
+			true
+		))
+		{
+			return false;
+		}
 
 		mSettings = settings;
 		mSettings.duration = std::max(0.01f, mSettings.duration);
 		mSettings.tickInterval = std::max(0.01f, mSettings.tickInterval);
 		mSettings.baseSpreadTargetCount = std::max(1, mSettings.baseSpreadTargetCount);
-		mSettings.maximumSpreadTargetCount = std::max(
-			mSettings.baseSpreadTargetCount,
-			mSettings.maximumSpreadTargetCount
-		);
 
-		for (auto& [id, infection] : mInfections)
+		if (existing != mInfections.end())
 		{
-			if (infection.target.lock().get() != &target)
-			{
-				continue;
-			}
+			Infection& infection = existing->second;
 			infection.remainingDuration = mSettings.duration;
 			++infection.revision;
 			infection.tickAccumulator = 0.f;
@@ -130,15 +150,15 @@ namespace ly
 		Infection infection;
 		infection.id = mNextInfectionId++;
 		infection.target = MakeWeakActor(target);
-		infection.generation = std::max(0, generation);
+		infection.generation = generation;
 		infection.remainingDuration = mSettings.duration;
 		const auto id = infection.id;
 		auto& stored = mInfections.emplace(id, std::move(infection)).first->second;
 		try
 		{
-			stored.damageSubscription = dynamic_cast<Combatant&>(target).GetCombatRuntime().onDamageResolved.BindAction(
+			stored.damageSubscription = targetCombatant.GetCombatRuntime().onDamageResolved.BindAction(
 				GetWeakPtr(), &NanoPlagueControllerActor::OnTargetDamageResolved);
-			dynamic_cast<Combatant&>(target).GetAbilitySystemComponent().AddOwnedTag(AbilityData::NanoPlague::State::Infected);
+			targetCombatant.GetAbilitySystemComponent().AddOwnedTag(AbilityData::NanoPlague::State::Infected);
 		}
 		catch (...)
 		{
@@ -306,14 +326,11 @@ namespace ly
 			{
 				continue;
 			}
-			if (infection.generation == 0)
-			{
-				infection.pendingSpread = true;
-				infection.deathLocation = {
-					context.targetLocationAtResolution.x,
-					context.targetLocationAtResolution.y
-				};
-			}
+			infection.pendingSpread = true;
+			infection.deathLocation = {
+				context.targetLocationAtResolution.x,
+				context.targetLocationAtResolution.y
+			};
 		}
 	}
 
@@ -321,12 +338,12 @@ namespace ly
 	{
 		const shared_ptr<Actor> owner = GetOwnerActor();
 		World* world = GetWorld();
-		if (infection.generation != 0 || !owner || !world)
+		if (!owner || !world)
 		{
 			return;
 		}
 
-		int remainingTargets = ResolveSpreadTargetCount();
+		std::uint64_t remainingTargets = ResolveSpreadTargetCount();
 		for (const shared_ptr<Actor>& target : targeting::FindOpposingCombatants(
 			*world,
 			*owner,
@@ -342,9 +359,11 @@ namespace ly
 			{
 				continue;
 			}
-			if (ApplyOrRefreshInfection(
+			if (ApplyOrRefreshInfectionInternal(
 				*target,
-				1,
+				infection.generation == std::numeric_limits<std::uint64_t>::max()
+					? infection.generation
+					: infection.generation + 1,
 				mSettings,
 				&infection.deathLocation
 			))
@@ -426,19 +445,25 @@ namespace ly
 		});
 	}
 
-	int NanoPlagueControllerActor::ResolveSpreadTargetCount() const
+	std::uint64_t NanoPlagueControllerActor::ResolveSpreadTargetCount() const
 	{
 		const shared_ptr<Actor> owner = GetOwnerActor();
 		const Combatant* combatant = owner ? dynamic_cast<const Combatant*>(owner.get()) : nullptr;
-		const float luckFactor = combatant
-			? std::clamp(combatant->GetCombatRuntime().GetCombatLuckFactor(), 0.f, 1.f)
+		const float rawLuck = combatant
+			? combatant->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+				OwnerAttributeIds::Luck
+			)
 			: 0.f;
-		int result = mSettings.baseSpreadTargetCount;
-		while (result < mSettings.maximumSpreadTargetCount &&
-			RandRange(0.f, 1.f) < luckFactor)
-		{
-			++result;
-		}
-		return result;
+		const double luck = std::isfinite(rawLuck)
+			? static_cast<double>(std::max(0.f, rawLuck))
+			: 0.0;
+		const std::uint64_t baseCount = static_cast<std::uint64_t>(
+			std::max(1, mSettings.baseSpreadTargetCount)
+		);
+		const std::uint64_t maximumBonus = std::numeric_limits<std::uint64_t>::max() - baseCount;
+		const double bonus = std::floor(luck / 100.0);
+		return bonus >= static_cast<double>(maximumBonus)
+			? std::numeric_limits<std::uint64_t>::max()
+			: baseCount + static_cast<std::uint64_t>(bonus);
 	}
 }

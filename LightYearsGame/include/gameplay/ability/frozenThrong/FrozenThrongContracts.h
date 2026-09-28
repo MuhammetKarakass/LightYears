@@ -69,7 +69,7 @@ namespace AbilityData::FrozenThrong
 
 	inline constexpr float DefaultDuration = 6.f;
 	inline constexpr float DefaultCooldown = 16.f;
-	inline constexpr float DefaultHuskDamage = 24.f;
+	inline constexpr float DefaultHuskDamage = 35.f;
 	inline constexpr float DefaultLuckToHuskScale = 0.01f;
 	inline constexpr float DefaultHuskDelay = 1.f;
 	inline constexpr float DefaultProjectileSpeed = 1100.f;
@@ -77,5 +77,6 @@ namespace AbilityData::FrozenThrong
 	inline constexpr float DefaultDensityRadius = 180.f;
 	inline constexpr float DefaultExplosionRadius = 120.f;
 	inline constexpr float DefaultExplosionCryoStacks = 2.f;
-	inline constexpr float DefaultAttackPowerScale = 0.60f;
+	inline constexpr float DefaultAttackPowerScale = 0.25f;
+	inline constexpr float DefaultEnergyPowerScale = 0.25f;
 }

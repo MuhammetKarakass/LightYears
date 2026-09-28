@@ -6,7 +6,6 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetRelation.h"
-#include "attributes/AttributeMath.h"
 #include "framework/World.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
@@ -53,23 +52,15 @@ namespace ly
 		Actor* owner = GetOwnerActor();
 		World* world = GetWorld();
 		if (!owner || !world) return {};
-		const sf::Vector2f forward = owner->GetActorForwardDirection();
-		const sf::Vector2f right{ -forward.y, forward.x };
-		const float expectedSign = static_cast<float>(mConfiguration.side == Side::Left ? -1 : 1);
 		targeting::TargetingQuery query;
 		query.source = owner;
-		query.origin = owner->GetActorLocation();
+		query.origin = GetActorLocation();
 		query.range = mConfiguration.targetingRange;
 		query.requiredTargetLayers = targeting::ResolveOpposingLayer(*owner);
 		query.requireCollisionCompatibility = true;
-		// AutoTargeting's filter has no origin argument, so capture the ship center
-		// explicitly for the side-dot test.
-		const sf::Vector2f center = owner->GetActorLocation();
-		query.filter = [center, right, expectedSign](const Actor*, const Actor& candidate, const targeting::TargetingCandidate&)
+		query.filter = [](const Actor*, const Actor& candidate, const targeting::TargetingCandidate&)
 		{
-			if (!dynamic_cast<const Combatant*>(&candidate)) return false;
-			const sf::Vector2f delta = candidate.GetActorLocation() - center;
-			return (delta.x * right.x + delta.y * right.y) * expectedSign > 0.f;
+			return dynamic_cast<const Combatant*>(&candidate) != nullptr;
 		};
 		return targeting::AutoTargeting::FindTarget(*world, query).lock();
 	}
@@ -80,9 +71,8 @@ namespace ly
 		const Combatant* combatant = owner ? dynamic_cast<const Combatant*>(owner) : nullptr;
 		if (!combatant) return mConfiguration.baseAttackRate;
 		const float rating = combatant->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackSpeed);
-		// AttackSpeed is a rating across the game. Reuse its established percentage
-		// scale rather than treating a zero rating as a zero attack multiplier.
-		return mConfiguration.baseAttackRate * (1.f + std::max(0.f, rating) / sas::AttributeMath::PercentageRatingScale);
+		return mConfiguration.baseAttackRate +
+			1.5f * std::floor(std::max(0.f, rating) / 40.f);
 	}
 
 	void WingSentinelActor::TryFire(float deltaTime)

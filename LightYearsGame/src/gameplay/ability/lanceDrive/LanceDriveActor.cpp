@@ -151,16 +151,13 @@ namespace ly
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
 		mBaseDamage = std::max(0.f, FindValue(
-			attributes, AbilityData::LanceDrive::Attribute::BaseDamage, 10.f
+			attributes, AbilityData::LanceDrive::Attribute::BaseDamage, 20.f
 		));
 		mSpeedDamageConversion = std::max(0.f, FindValue(
-			attributes, AbilityData::LanceDrive::Attribute::SpeedDamageConversion, 0.20f
+			attributes, AbilityData::LanceDrive::Attribute::SpeedDamageConversion, 0.30f
 		));
-		mEnergyPowerReference = std::max(0.f, FindValue(
-			attributes, AbilityData::LanceDrive::Attribute::EnergyPowerReference, 50.f
-		));
-		mEnergyPowerConversionPerPoint = std::max(0.f, FindValue(
-			attributes, AbilityData::LanceDrive::Attribute::EnergyPowerConversionPerPoint, 0.0001f
+		mEnergyPowerConversionAmplifierPerPoint = std::max(0.f, FindValue(
+			attributes, AbilityData::LanceDrive::Attribute::EnergyPowerConversionAmplifierPerPoint, 0.002f
 		));
 		mSameTargetHitCooldown = std::max(0.01f, FindValue(
 			attributes, AbilityData::LanceDrive::Attribute::SameTargetHitCooldown, 0.75f
@@ -302,8 +299,8 @@ namespace ly
 			energyPower = std::max(0.f, combatant->GetAbilitySystemComponent().GetAttributes()
 				.GetCurrentValue(OwnerAttributeIds::EnergyPower));
 		}
-		const float conversion = mSpeedDamageConversion +
-			std::max(0.f, energyPower - mEnergyPowerReference) * mEnergyPowerConversionPerPoint;
+		const float conversion = mSpeedDamageConversion *
+			(1.f + energyPower * mEnergyPowerConversionAmplifierPerPoint);
 		const float damage = mBaseDamage + std::max(0.f, speed) * conversion;
 
 		ApplyCombatDamage(

@@ -39,10 +39,10 @@ namespace ly
 
 		CombatSentryTurretPresentationProfile mProfile;
 		Configuration mConfiguration;
-		float mTargetingRange = 800.f;
-		float mBaseDamage = 14.f;
-		float mOwnerAttackPowerScale = 0.60f;
-		float mBaseAttackRate = 1.25f;
+		float mTargetingRange = 1300.f;
+		float mBaseDamage = 25.f;
+		float mOwnerAttackPowerScale = 0.20f;
+		float mBaseAttackRate = 1.f;
 		float mFireCooldown = 0.f;
 		float mVisualAge = 0.f;
 	};

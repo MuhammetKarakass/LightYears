@@ -18,7 +18,7 @@ namespace AbilityData::WingSentinels
 		definition.lifeTime = 0.60f;
 		definition.presentationProfileId = ly::WingSentinelsPresentationIds::Basic;
 		definition.attributes = {
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 10.f, 0.f },
+			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 15.f, 0.f },
 			sas::GameplayAttribute{ ly::CommonAttributeIds::Range, 650.f, 1.f },
 			sas::GameplayAttribute{ ly::CollisionAttributeIds::Radius, 5.f, 0.1f },
 			sas::GameplayAttribute{ Actor::Projectile::ProjectileSpeed, 1200.f, 1.f }
@@ -57,16 +57,22 @@ namespace AbilityData::Definitions
 				ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::AttackPower,
 				sas::AttributeModifierOperation::Add,
-				0.30f
+				0.10f
 			}
 		};
 		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
 			14,
 			ly::AbilityLevelStep{ {
-				sas::AttributeModifier{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 2.f },
-				sas::AttributeModifier{ AbilityData::WingSentinels::Attribute::BaseAttackRate, sas::AttributeModifierOperation::Add, 0.025f },
+				sas::AttributeModifier{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 3.f },
 				sas::AttributeModifier{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -0.25f }
-			}, {}, {}, {} }
+			}, {}, {}, {}, {
+				sas::AttributeScalingRule{
+					ly::CommonAttributeIds::Damage,
+					ly::OwnerAttributeIds::AttackPower,
+					sas::AttributeModifierOperation::Add,
+					0.01f
+				}
+			} }
 		);
 		definition.levelUpgradeScrapCosts = { 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60 };
 		definition.attachmentCapabilities = {

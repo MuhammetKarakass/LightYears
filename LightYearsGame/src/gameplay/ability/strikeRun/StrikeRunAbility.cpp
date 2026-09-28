@@ -21,9 +21,8 @@ namespace ly
 		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 16.f;
 		constexpr float BaseDuration = 1.4f;
-		constexpr float AttackPowerScale = 0.45f;
-		constexpr float DamagePerLevel = 4.f;
-		constexpr float CooldownPerLevel = -0.25f;
+		constexpr float AttackPowerScale = 0.30f;
+		constexpr float DamagePerLevel = 6.f;
 		constexpr float Epsilon = 0.0001f;
 
 		bool NearlyEqual(float left, float right)
@@ -179,14 +178,21 @@ namespace ly
 			float resolvedCooldown = definition.cooldown;
 			for (const AbilityLevelStep& step : definition.levelProgression)
 			{
-				if (step.attributeModifiers.size() != 2 ||
+				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
 					!HasExpectedModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-					!HasExpectedModifier(step, CommonAttributeIds::Cooldown, CooldownPerLevel))
+					step.attributeModifiers[1].attributeId != CommonAttributeIds::Cooldown ||
+					step.attributeModifiers[1].operation != sas::AttributeModifierOperation::Add ||
+					!std::isfinite(step.attributeModifiers[1].magnitude) ||
+					step.attributeModifiers[1].magnitude >= 0.f ||
+					step.scalingRules[0].targetAttributeId != CommonAttributeIds::Damage ||
+					step.scalingRules[0].sourceAttributeId != OwnerAttributeIds::AttackPower ||
+					step.scalingRules[0].operation != sas::AttributeModifierOperation::Add ||
+					!NearlyEqual(step.scalingRules[0].coefficient, 0.05f))
 				{
 					validProgression = false;
 					break;
 				}
-				resolvedCooldown += CooldownPerLevel;
+				resolvedCooldown += step.attributeModifiers[1].magnitude;
 				if (resolvedCooldown <= 0.f)
 				{
 					validProgression = false;

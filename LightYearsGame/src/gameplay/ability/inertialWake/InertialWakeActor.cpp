@@ -97,6 +97,7 @@ namespace ly
 					AreaAttributeIds::Length,
 					AreaAttributeIds::Width,
 					AbilityData::InertialWake::Actor::Wake::SpeedDamageConversion,
+					AbilityData::InertialWake::Actor::Wake::AttackPowerConversionAmplifierPerPoint,
 					AbilityData::InertialWake::Actor::Wake::SameTargetHitCooldown
 				})
 				{
@@ -153,25 +154,19 @@ namespace ly
 	)
 	{
 		AbilityWorldActor::ConfigureFromAttributes(attributes);
-		mCurrentLength = std::max(1.f, FindValue(attributes, AreaAttributeIds::Length, 220.f));
+		mBaseLength = std::max(1.f, FindValue(attributes, AreaAttributeIds::Length, 220.f));
 		mBaseEdgeThickness = std::max(1.f, FindValue(attributes, AreaAttributeIds::Width, 3.f));
 		mSpeedDamageConversion = std::max(0.f, FindValue(
 			attributes, AbilityData::InertialWake::Actor::Wake::SpeedDamageConversion, 0.30f
 		));
-		mEnergyPowerReference = std::max(0.f, FindValue(
-			attributes, AbilityData::InertialWake::Actor::Wake::EnergyPowerReference, 50.f
-		));
-		mEnergyPowerConversionPerPoint = std::max(0.f, FindValue(
-			attributes, AbilityData::InertialWake::Actor::Wake::EnergyPowerConversionPerPoint, 0.0001f
+		mAttackPowerConversionAmplifierPerPoint = std::max(0.f, FindValue(
+			attributes, AbilityData::InertialWake::Actor::Wake::AttackPowerConversionAmplifierPerPoint, 0.004f
 		));
 		mSameTargetHitCooldown = std::max(0.01f, FindValue(
 			attributes, AbilityData::InertialWake::Actor::Wake::SameTargetHitCooldown, 2.f
 		));
 		mMinimumSpeedRatio = std::max(0.f, FindValue(
 			attributes, AbilityData::InertialWake::Actor::Wake::MinimumSpeedRatio, 0.20f
-		));
-		mLengthPerEffectiveRatio = std::max(0.f, FindValue(
-			attributes, AbilityData::InertialWake::Actor::Wake::LengthPerEffectiveRatio, 176.f
 		));
 		mWidthPerEffectiveRatio = std::max(0.f, FindValue(
 			attributes, AbilityData::InertialWake::Actor::Wake::WidthPerEffectiveRatio, 1.5f
@@ -327,14 +322,14 @@ namespace ly
 		{
 			return;
 		}
-		float energyPower = 0.f;
+		float attackPower = 0.f;
 		if (const auto* combatantOwner = dynamic_cast<const Combatant*>(owner))
 		{
-			energyPower = std::max(0.f, combatantOwner->GetAbilitySystemComponent()
-				.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower));
+			attackPower = std::max(0.f, combatantOwner->GetAbilitySystemComponent()
+				.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower));
 		}
-		const float conversion = mSpeedDamageConversion +
-			std::max(0.f, energyPower - mEnergyPowerReference) * mEnergyPowerConversionPerPoint;
+		const float conversion = mSpeedDamageConversion *
+			(1.f + attackPower * mAttackPowerConversionAmplifierPerPoint);
 		// The hit samples real velocity here, not an activation snapshot. No upper
 		// limit is applied: high-speed builds retain their full kinetic payoff.
 		ApplyCombatDamage(
@@ -418,7 +413,7 @@ namespace ly
 			return;
 		}
 		const float effectiveRatio = ResolveEffectiveSpeedRatio(speed, normalTopSpeed);
-		mCurrentLength = mLengthPerEffectiveRatio * effectiveRatio;
+		mCurrentLength = mBaseLength * effectiveRatio;
 		mCurrentWidth = mBaseEdgeThickness + mWidthPerEffectiveRatio * effectiveRatio;
 		World* world = GetWorld();
 		if (!world)

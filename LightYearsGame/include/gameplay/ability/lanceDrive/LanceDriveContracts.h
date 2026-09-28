@@ -40,11 +40,8 @@ namespace AbilityData::LanceDrive
 		inline static const sas::AttributeId SpeedDamageConversion{
 			"Ability.Offense.LanceDrive.SpeedDamageConversion"
 		};
-		inline static const sas::AttributeId EnergyPowerReference{
-			"Ability.Offense.LanceDrive.EnergyPowerReference"
-		};
-		inline static const sas::AttributeId EnergyPowerConversionPerPoint{
-			"Ability.Offense.LanceDrive.EnergyPowerConversionPerPoint"
+		inline static const sas::AttributeId EnergyPowerConversionAmplifierPerPoint{
+			"Ability.Offense.LanceDrive.EnergyPowerConversionAmplifierPerPoint"
 		};
 		inline static const sas::AttributeId TopSpeedBonus{
 			"Ability.Offense.LanceDrive.TopSpeedBonus"
