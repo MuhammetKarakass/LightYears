@@ -1,5 +1,11 @@
 # LightYears — Sistem Referansı
 
+> **Son güncelleme: 2026-09-29.** Bu belge runtime SİSTEMLERİNİN nasıl çalıştığını
+> anlatır; ability sayıları, formülleri, seviye başına büyüme ve davranış detayları
+> burada tutulmaz. Tek kaynak: [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md).
+> Seviye/cooldown modeli için bkz. [Seviye ve cooldown modeli](#seviye-ve-cooldown-modeli).
+> Eski tarihli belgeler `archive/2026-09/` altındadır ve tarihsel kabul edilir.
+>
 > 20 Eylül 2026 çalışma ağacı karşılaştırması: [7 Eylül 2026 proje durum raporu](<vault/06 - Status and Plans/2026-09-07 Project Status Review.md>) tarihsel bir source audit'tir. Runtime başlangıç slotlarının tek canonical sahibi [`DefaultAbilityLoadout.cpp`](../LightYearsGame/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp)'dir; bu belge güncel slot tablosunu kopyalamaz. Çalışma ağacı dirty olduğundan bu doküman güncellemesinde build/test çalıştırılmadı; tarihsel teknik kararlar ve doğrulanmamış test iddiaları güncel runtime kanıtı değildir.
 
 
@@ -16,16 +22,14 @@ cleanup bu sınıfta kalır. `DashMovementController` ability ile gemi hareketi
 arasındaki dar kontrattır; `MovementComponent` input-or-mouse yönünü ve fiziksel
 hareketi uygular. `PlayerSpaceShip` içinde Dash davranışı bulunmaz.
 
-Base mesafe 260'dır. Yatay ve dikey movement rating ortalaması `1-exp(-rating/20)`
-eğrisiyle en fazla +%50 mesafeye dönüşür. AttackPower, AttackSpeed, EnergyPower,
-Luck, Critical ve ability level mesafeyi değiştirmez. Level 2-5 yalnızca cooldown'u
-2.0'dan 1.88/1.76/1.64/1.52 saniyeye indirir. Seviye başına düşüş taban
-cooldown progression'da her seviye için authored sabit `-0.12` değeridir;
-otomatik yüzde kuralı değildir. Ability Haste merkezi cooldown çarpanı
-üzerinden en son uygulanır.
+Değerler ve formüller: [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) #43.
+Sistem düzeyinde: mesafe movement rating'ten türetilir; AttackPower, AttackSpeed,
+EnergyPower, Luck, Critical ve ability level mesafeyi değiştirmez. Cooldown
+seviyeyle [Seviye ve cooldown modeli](#seviye-ve-cooldown-modeli) uyarınca küresel
+olarak düşer; Ability Haste merkezi cooldown çarpanı üzerinden en son uygulanır.
 
-Dash impulse hızı `resolvedDistance / 0.24` olarak sabittir ve mevcut velocity
-üzerine eklenir:
+Dash impulse hızı `resolvedDistance / duration` olarak sabit süreye bölünür ve
+mevcut velocity üzerine eklenir:
 
 ~~~text
 dashVelocity = preservedVelocity + normalizedDirection * (resolvedDistance / duration)
@@ -41,24 +45,24 @@ Dash velocity kısa süreli bir displacement impulse kabul edilir ve kameranın
 speed zoom / movement look-ahead girdisine verilmez. Arena kamerası Dash
 boyunca son normal velocity girdisini korur. Kamera merkezi ayrıca geminin her
 Dash-frame displacement'ı kadar taşınarak mevcut kamera–gemi offset'ini korur;
-cursor look-ahead çalışmaya devam eder. Dash'in `0.15` kamera oranı normal
+cursor look-ahead çalışmaya devam eder. Dash'in göreli kamera zoom oranı normal
 speed/afterburner zoom kompozisyonunun üzerine göreli olarak eklenir ve mevcut
 zoom smoothing hattıyla girip çıkar. Böylece kamera Dash başında yaklaşmaz,
 mevcut hız ve arena sınırı davranışını ezmez, ani zoom darbesi üretmez ve
 geminin gerisinde kalıp sonradan yetişmez.
 
 > Amaç: Bu dosya projenin güncel teknik ve oyun tasarımı referansıdır. Kodda bir
-> sistem veya sayı değiştirildiğinde, ilgili bölüm ve
-> [Balance & Roadmap Notebook](BALANCE_AND_ROADMAP_NOTEBOOK.md) birlikte
-> güncellenmelidir.
+> sistem değiştirildiğinde ilgili bölüm güncellenmelidir; ability sayıları
+> için [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) güncellenir.
 > Güncel teknik gerçekler bu belgede tutulur; JSON envanteri
-> [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)'a, tarihli
-> karar ve roadmap ise [Balance & Roadmap Notebook](BALANCE_AND_ROADMAP_NOTEBOOK.md)'a
-> aittir. Etkilenen belgeler arasında bağlantı kurun, aynı tabloyu çoğaltmayın.
+> [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)'a, ability
+> değerleri katalog belgesine aittir. Tarihli karar ve roadmap kaydı
+> [Balance & Roadmap Notebook](archive/2026-09/BALANCE_AND_ROADMAP_NOTEBOOK.md)
+> içindedir (tarihsel/arşiv; güncel kaynak değildir). Etkilenen belgeler arasında bağlantı kurun, aynı tabloyu çoğaltmayın.
 >
 > Kaynak anlık görüntüsü: 7 Eylül 2026 tarihsel kaydı. Bu bölüm, çalışma
-> ağacındaki o tarihteki teknik sınırları açıklar; önerilen fikirler yalnızca notebook dosyasında
-> tutulur. JSON kayıt sayıları için [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)
+> ağacındaki o tarihteki teknik sınırları açıklar; önerilen fikirler yalnızca arşivlenmiş
+> notebook dosyasında tutulmuştur. JSON kayıt sayıları için [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)
 > tek envanterdir.
 
 ## 0. Runtime değişiklikleri (7 Eylül 2026 tarihsel kaynak anlık görüntüsü)
@@ -90,21 +94,19 @@ sahibi olmaya devam eder.
   Shock gerçek alan yarıçapını aynı radial resolver'dan türetir.
 - Shield Harvest'in temporary overshield'ı kalıcı ship shield ve Barrier
   effect'inden ayrı bir runtime katmanıdır.
-- Ion Storm, cursor'a giden hasarsız projectile'ın hedefte 4 saniyelik Electric
-  alan açtığı bir delivery/field family'sidir. Alanın düzensiz sınırı cast başına
-  bir kez üretilir; aynı `IonStormBoundary` hem gameplay hedef filtresinde hem de
-  presentation çiziminde kullanılır. 250 inner core, 250–335 dış sınır, 0.25 sn
-  tick ve 16 tick sabittir; Common.Damage 6 + `Owner.AttackPower × 0.12` ile
-  çözülür ve seviyeler yalnız damage/cooldown'u geliştirir. Presentation tek
-  renkli tek dolu düzensiz şekildir; iç dolgu katmanı ve iç enerji çizgileri yoktur.
+- Ion Storm, cursor'a giden hasarsız projectile'ın hedefte süreli Electric alan
+  açtığı bir delivery/field family'sidir. Alanın düzensiz sınırı cast başına bir
+  kez üretilir; aynı `IonStormBoundary` hem gameplay hedef filtresinde hem de
+  presentation çiziminde kullanılır. Presentation tek renkli tek dolu düzensiz
+  şekildir. Değerler ve formüller:
+  [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) #15.
 - Time Slip, player'ı gerçek zamanda bırakıp `HostileGameplay` actor domain'ini
-  seçici olarak 0.35× yavaşlatan temporal ability'dir. Enemy gemileri ve owner'
-  ından türeyen hostile actor'lar ve tüm player/hostile projectile'lar ortak
-  `ProjectileGameplay` domain'inde aynı 0.35× çarpanı kullanır; player primary
-  fire cadence'i ayrıca 0.35× olurken movement, diğer ability cooldown'ları,
-  camera ve UI gerçek zamanda kalır. Süre L1'de 3.0 sn'dir,
-  level başına +0.10 sn ve cooldown başına -0.20 sn ilerler; `EnergyPower` bonusu
-  `max(0, EnergyPower - 50) × 0.0015` ile uygulanır.
+  seçici olarak yavaşlatan temporal ability'dir. Enemy gemileri, owner'ından
+  türeyen hostile actor'lar ve tüm player/hostile projectile'lar ortak
+  `ProjectileGameplay` domain'inde aynı çarpanı kullanır; player primary fire
+  cadence'i de yavaşlarken movement, diğer ability cooldown'ları, camera ve UI
+  gerçek zamanda kalır. Değerler ve formüller:
+  [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) #36.
 
 Bu bölüm, tarihsel migration notlarının yerine geçmez; eski bölümlerdeki
 "varsayılan loadout" ve "son doğrulama" ifadeleriyle çelişirse bu bölüm ile
@@ -137,14 +139,14 @@ Eksiksiz mevcut içerik, çağrı yolu ve düzenlenebilir alan envanteri için:
 | --- | --- | --- |
 | Genel mimari | LightYearsEngine, SpaceAbilitySystem ve LightYearsGame | Bu dosya, §1 |
 | Mevcut içerik / durum envanteri | Tüm config ve runtime bağlantıları | Current Implementation Catalog |
-| Hasar, zırh, kritik, statüler | gameplay/combat, gameplay/damage, gameplay/effects | §2 ve Notebook §4 |
-| Attribute / ability scaling | gameplay/attributes, gameplay/ability | §3 ve Notebook §2 |
-| Silahlar ve ilerleme | gameConfigs/Weapon*, gameplay/weapon | §4 ve Notebook §3 |
-| Gemi, enerji, shield, XP | gameConfigs/Ship*, gameplay/progression | §5 ve Notebook §4 |
-| Kamera | framework/camera/CameraManager | §6 ve Notebook §5 |
-| Arena / sınır | level/Arena* | §7 ve Notebook §6 |
+| Hasar, zırh, kritik, statüler | gameplay/combat, gameplay/damage, gameplay/effects | §2 (tarihsel: Notebook §4) |
+| Attribute / ability scaling | gameplay/attributes, gameplay/ability | §3; ability değerleri: [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) |
+| Silahlar ve ilerleme | gameConfigs/Weapon*, gameplay/weapon | §4 (tarihsel: Notebook §3) |
+| Gemi, enerji, shield, XP | gameConfigs/Ship*, gameplay/progression | §5 (tarihsel: Notebook §4) |
+| Kamera | framework/camera/CameraManager | §6 (tarihsel: Notebook §5) |
+| Arena / sınır | level/Arena* | §7 (tarihsel: Notebook §6) |
 | Level, dalga ve sunum | level, enemy, VFX, widget | §8 |
-| Yeni özellik ekleme | Bu dosya, §9 | Notebook §7–§9 |
+| Yeni özellik ekleme | Bu dosya, §9 | Karar kaydı: bu dosya / katalog |
 
 ## 1. Proje haritası
 
@@ -428,9 +430,9 @@ ability scaling rule’ları → weapon scaling rule’ları → attribute min/m
 clamp. Bu nedenle aynı statın hem ability hem weapon scale’ında olması
 birikimli çalışır.
 
-Seviye ilerlemesi ve scaling kuralı birikimi (Phase 3B.3):
-`AbilityLevelStep` ve `PrimaryWeaponLevelStep` generic `scalingRules` (`std::vector<sas::AttributeScalingRule>`) taşır. `GameAbility::RebuildDefinitionForLevel()` seçilen seviyeye kadar tüm level step scaling rule'larını `mDefinition.scalingRules` içerisine biriktirir. Add operasyonları için taban silah katsayısı ile seviye katsayıları toplanır (`sas::ApplyAttributeScalings`).
-Ability JSON loader hem `progression.repeat.scalingRules` hem de `progression.levels[].scalingRules` alanlarını aynı ortak attribute JSON parser üzerinden okur. Weapon JSON `progression.rules[].reward.scalingRules` alanını aynı parser'a yönlendirir; iki içerik türü runtime'da `AbilityLevelStep` kontratında birleşir.
+Seviye ilerlemesi ve scaling kuralı birikimi:
+`AbilityLevelStep` ve `PrimaryWeaponLevelStep` generic `scalingRules` (`std::vector<sas::AttributeScalingRule>`) taşır. `GameAbility::BuildDefinitionForLevel()` seçilen seviyeye kadar çözülen (`ResolveLevelStep(i)`) tüm level step scaling rule'larını `mDefinition.scalingRules` içerisine biriktirir. Add operasyonları için taban silah katsayısı ile seviye katsayıları toplanır (`sas::ApplyAttributeScalings`). Seviye kaynağı ve cooldown kuralı için bkz. [Seviye ve cooldown modeli](#seviye-ve-cooldown-modeli).
+Ability JSON loader `progression.steps` alanını (ve içindeki `scalingRules` değerlerini) ortak attribute JSON parser üzerinden okur. Weapon JSON `progression.rules[].reward.scalingRules` alanını aynı parser'a yönlendirir; iki içerik türü runtime'da `AbilityLevelStep` kontratında birleşir.
 Level yeniden kurulduğunda `GameAbility` içindeki monotonik `mConfigurationRevision` artırılır (`GetConfigurationRevision()`). `FireWeaponActionRuntime` resolved attribute cache'inde bu revision'ı denetler; level değiştiğinde resolved stat'lar hemen yenilenir, ancak şarjördeki mermi adedi (`roundsRemaining`), aktif reload (`reloadRemaining`) ve atış kadansı (`successfulFireCount`) sıfırlanmaz.
 
 ### 2.4 Zırh
@@ -947,15 +949,35 @@ Temel şema:
 | behaviorType | Ability behavior registry dispatch enum'u; semantic gameplay tag değildir |
 | actions | Effect uygulama, actor spawn, weapon fire, impulse, event yayma |
 | triggers | Event tabanlı, cooldown/required/blocked tag filtreli eylemler |
-| levelProgression | Level 2’den başlayarak eklenen modifier, upgrade, action, trigger |
+| levelProgression / repeatingLevelProgression | Yazılmış prefix ve sonsuza dek tekrarlanan döngü; bkz. [Seviye ve cooldown modeli](#seviye-ve-cooldown-modeli) |
 | scalingRules | Sahip attribute’undan bu ability attribute’una scale |
 | damageTags | DamagePayload kimliği |
 | attachmentCapabilities / slotCapacity | Uyumlu attachment seti |
 
-`sas::GameplayAbilityInstance` level yükseltirken base definition’ı yeniden kurar ve Level 2
-ile mevcut level arasındaki her progression adımını ekler. Dolayısıyla
-progression modifier’ları birikimlidir; bir level step’i “toplam değer” değil
-“o levelde eklenecek fark” olarak yazılmalıdır.
+#### Seviye ve cooldown modeli
+
+- **Seviyeler sınırsızdır.** Ability için maksimum seviye yoktur.
+  `GameAbilityDefinition` iki liste taşır: `levelProgression` (yazılmış prefix,
+  genelde boştur) ve `repeatingLevelProgression` (sonsuza dek tekrarlanan döngü).
+  `ResolveLevelStep(i)` i. adımı prefix + döngüden çözer; `GetMaxLevel()`
+  `kUnboundedAbilityLevel` döndürür. Level yükseltilirken base definition yeniden
+  kurulur ve Level 2 ile mevcut level arasındaki her adım eklenir; step'ler
+  birikimlidir ve "o levelde eklenecek fark" olarak yazılır.
+- **JSON:** `progression.steps` tek bir tekrar eden step'tir; opsiyonel
+  `firstStep` / `everySteps` kadansı taşır. `count` alanı yoktur.
+- **Cooldown küreseldir.** Step'ler Cooldown modifier'ı içermez; cooldown
+  `GameAbility::BuildDefinitionForLevel` içinde çalışma anında
+  `GetGlobalAbilityCooldownTotalReduction` (`GameAbilityProgression.h`) ile
+  uygulanır: `R0 = 0.175 + 0.025 × BaseCD`; 4 seviyelik kademeler (R >= 0.20 ise
+  -0.10, değilse x0.80); seviye başına azaltma en az 0.02 sn; cooldown hiçbir
+  zaman 1.0 sn altına inmez. Ability Haste bunun üstüne merkezi çarpan olarak biner.
+- **Scrap maliyeti:** yazılmış `levelUpgradeScrapCosts` listesi; listenin ötesindeki
+  seviyeler şimdilik 0 maliyetlidir (maliyet sistemi belirlenmedi); boş liste =
+  satın alınamaz.
+- **Primary weapon:** `maxLevel` yoktur; `WeaponLevelRule` içinde `lastLevel` 0 =
+  açık uçlu. `ResolveProgression()` prefix + döngüyü çözer.
+- Ability başına değerler, büyüme ve formüller:
+  [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md).
 
 #### Runtime sahipliği ve veri sınırı
 
@@ -1001,15 +1023,11 @@ açıklar. Runtime başlangıç slotları ayrı bir sözleşmedir ve
 tarafından sahiplenilir; aşağıdaki content kayıtları güncel slot eşlemesi olarak
 yorumlanmamalıdır.
 
-| Ability ID | Cooldown | Duration | Max charges | Progression |
-| --- | ---: | ---: | ---: | --- |
-| `Ability.Defense.ShieldGraft.Basic` | 12.0 s | 0.0 s | 1 | 14 repeat step; conversion +0.01, cooldown -0.20 |
-| `Ability.Utility.RelayPrism.Basic` | 10.0 s | 4.0 s | 1 | 14 level step; transfer +0.01, cooldown -0.20 |
-| `Ability.Offense.GlacialPressure.Basic` | 12.0 s | 1.0 s | 1 | 14 repeat step; initial damage +1, collision +4, cooldown -0.25 |
-| `Ability.Defense.IroncladProtocol.Basic` | 22.0 s | 10.0 s | 1 | 14 repeat step; minigun damage +2, cooldown -0.35 |
+Ability başına cooldown, süre, charge, progression ve scaling değerleri bu belgede
+tutulmaz: [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) (ör. ShieldGraft #41,
+RelayPrism #52, GlacialPressure #2, IroncladProtocol #39).
 
-Bu tablo yalnız JSON base/progression kaydını gösterir; resolved owner scaling,
-presentation ve uçtan uca oynanış kanıtı değildir. 55 kaydın tam ID envanteri
+JSON kaydı resolved owner scaling, presentation ve uçtan uca oynanış kanıtı değildir. 55 kaydın tam ID envanteri
 ve kapsam sınırı [Current Implementation Catalog](CURRENT_IMPLEMENTATION_CATALOG.md)
 içindedir. Ability definition'ında `behaviorType` dar C++ registry dispatch
 enum'udur; effect definition'ında `behaviorKey` kullanılır. Bunlar semantic
@@ -1017,9 +1035,9 @@ gameplay tag değildir; content ID ve runtime semantic tag ayrımı
 [IDENTITY_AND_CONTRACT_RULES](IDENTITY_AND_CONTRACT_RULES.md)
 ile korunur.
 
-SunBeam strike zamanları: telegraph 0.5 sn, arrival 0.2 sn, impact delay
-0.05 sn, impact visual 0.22 sn. Bunlar `SunBeamConfig.h` içindeki
-`ActorStrikeBasic` tanımındadır.
+SunBeam strike zamanlaması (telegraph, arrival, impact delay, impact visual)
+`SunBeamConfig.h` içindeki `ActorStrikeBasic` tanımındadır. Değerler:
+[ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) #4.
 
 ### 3.3 Attachment kataloğu
 
@@ -1115,7 +1133,7 @@ Player ability satın alımında level tanımı ve primary-weapon konfigürasyon
 kaydı ve scrap kesintisi tamamlanır; public level/scrap gözlemcileri bundan
 sonra çalışır. Commit sonrası gözlemci hatası veya Clear satın almayı geri
 almaz; nested satın alma aynı işlem boyunca reddedilir. Bu sınırların E2E
-kanıtı ve kapsamı [Luna kabul raporunda](LUNA_IMPLEMENTATION_ACCEPTANCE_2026-09-26.md)
+kanıtı ve kapsamı [Luna kabul raporunda](archive/2026-09/LUNA_IMPLEMENTATION_ACCEPTANCE_2026-09-26.md) (tarihsel)
 tutulur.
 
 `GameplayEffectRuntimeSystem`; instant, duration ve infinite yaşam politikalarını;
@@ -1231,7 +1249,7 @@ Düşman foundation modeli `ly::EnemyActor : public SpaceShip` ve composition ta
   1. Profil katalog kaydı doğrulanır.
   2. Birincil silah tanımı katalogda aranır.
   3. Tüm non-primary yetenek tanımları aranır ve `ContentIdSchema::ValidateAbilityId` doğrulaması yapılır.
-  4. Yetenek seviyesi sınırları kontrol edilir (1 ile tanımın `GetMaxLevel()` aralığında olmalıdır).
+  4. Yetenek seviyesi kontrol edilir (en az 1; üst sınır yoktur, `GetMaxLevel()` `kUnboundedAbilityLevel` döndürür).
   5. Slotların kendi aralarında çakışmadığı doğrulanır.
   6. Hedef ASC üzerindeki slotların kullanılabilirliği kontrol edilir: Mevcut `EnemyRuntime`'ın kendi handle'larının işgal ettiği slotlar yeniden kullanıma uygun sayılırken, başka bir sistem tarafından kullanılan hedef slot varsa initialization herhangi bir mutation başlamadan reddedilir.
 - Preflight sonrasında kontrollü rollback transaction'ı uygulanır:
@@ -1415,8 +1433,10 @@ no crit, no armor and 100% hit rate.
 
 ### 4.4 Oyuncu silah progression’ı
 
-Tüm bu profillerde maksimum level 4 ve level 2/3/4 scrap bedelleri
-40 / 50 / 65’tir.
+Primary weapon'larda `maxLevel` yoktur; aşağıdaki L2–L4 kuralları
+`weapons.json` içindeki yazılmış `WeaponLevelRule` prefix'idir (level 2/3/4 scrap
+bedelleri 40 / 50 / 65). `lastLevel` 0 olan kural açık uçludur; `ResolveProgression()`
+prefix + döngüyü çözer. Bkz. [Seviye ve cooldown modeli](#seviye-ve-cooldown-modeli).
 
 | Silah | L2 | L3 | L4 |
 | --- | --- | --- | --- |
@@ -1633,9 +1653,9 @@ sonuç verir, `0.02` ise `%2` anlamına gelmez. Her tüketici bu owner rating'i
 kendi sözleşmesine göre çözer; mevcut primary weapon scaling'i AttackSpeed'i
 FireRate'a doğrudan additive uygular ve bu Phase 3A.1'de yeniden tasarlanmamıştır.
 
-### 5.6 Fighter BasicRapidLaser Seviye (L1–L15) ve Hasar Ölçekleme Modeli (Phase 3B.3)
+### 5.6 Fighter BasicRapidLaser Seviye ve Hasar Ölçekleme Modeli (Phase 3B.3)
 
-Fighter başlangıç silahı `Weapon.Projectile.FighterRapidLaser.Basic`, Phase 3B.3 ile maksimum seviye 15'e genişletilmiştir. Seviye artışı FireRate (4.0 atış/sn), şarjör kapasitesi (48 mermi), reload süresi (2.0 sn) ve kadans modunu değiştirmez; yalnızca hasar ve scaling katsayılarını artırır.
+Fighter başlangıç silahı `Weapon.Projectile.FighterRapidLaser.Basic`, Phase 3B.3 ile tekrarlayan bir seviye kuralı almıştır (maksimum seviye yoktur; bkz. [Seviye ve cooldown modeli](#seviye-ve-cooldown-modeli)). Seviye artışı FireRate (4.0 atış/sn), şarjör kapasitesi (48 mermi), reload süresi (2.0 sn) ve kadans modunu değiştirmez; yalnızca hasar ve scaling katsayılarını artırır.
 
 #### Hasar ve Yuvarlama Kontratı
 
@@ -1648,13 +1668,13 @@ Empowered Final:       ceil(Empowered Raw Damage * resolved Owner.CriticalDamage
 
 Fighter taban `Owner.CriticalDamage` değeri 1.5'tir. Empowered atışlar garantili kritik (`DamageCriticalPolicy::Guaranteed`) uygular ve integer damage convention gereği `ceil` ile yukarı yuvarlanır.
 
-#### Seviye Büyüme Modeli (L2–L15 Recurring Rule)
+#### Seviye Büyüme Modeli (L2+ Recurring Rule)
 
 - Top-level L1: BaseDamage = 12, AP Ratio = 0.40, EmpoweredBaseDamage = 2, EP Ratio = 0.10.
-- Her seviye (L2..L15): Common.Damage +10, PrimaryWeapon.Empowered.BonusDamage +1, AP scaling Add +0.05, EP scaling Add +0.03.
-- Scrap Maliyetleri (14 kademe geçici placeholder): [40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105].
+- Her seviye (L2 ve sonrası): Common.Damage +10, PrimaryWeapon.Empowered.BonusDamage +1, AP scaling Add +0.05, EP scaling Add +0.03.
+- Scrap Maliyetleri: yazılmış 14 kademelik geçici placeholder liste [40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105]; listenin ötesindeki seviyeler şimdilik 0 maliyetlidir.
 
-#### Seviye Karşılaştırma Tablosu
+#### Seviye Karşılaştırma Tablosu (örnek seviyeler)
 
 | Seviye | Base Damage | AP Katsayısı | Empowered Base | EP Katsayısı | Fighter Stat (AP / EP) | Normal Hasar (Raw / Final) | Empowered Hasar (Raw / Final) |
 |---|---:|---:|---:|---:|:---:|:---:|:---:|
@@ -1665,7 +1685,7 @@ Fighter taban `Owner.CriticalDamage` değeri 1.5'tir. Empowered atışlar garant
 
 *Not: L10 tablosunda 185.31 * 1.5 = 277.965 -> ceil 278.*
 
-#### Şarjör ve Sustained Hasar Referansı (L15)
+#### Şarjör ve Sustained Hasar Referansı (L15 örneği)
 
 - 48 mermilik şarjör dağılımı: 35 normal atış + 13 empowered atış.
 - Şarjör toplam hasarı: `35 × 237 + 13 × 429 = 8295 + 5577 = 13872` hasar.
@@ -1795,13 +1815,13 @@ difficultyMultiplier = 1 + (wave / 5) * 0.25
    display ve icon.
 2. Kullanacağı actor/effect varsa ilgili config ve runtime handler.
 3. Attribute ve scaling rule’ları; damage tag’i.
-4. Level progression ve scrap cost’ları.
+4. Level progression (prefix + repeating) ve `levelUpgradeScrapCosts`; cooldown step'e yazılmaz, küresel kural uygulanır.
 5. Attachment capability/slot kararları.
 6. Feature-local typed presentation profile, stable profile ID ve presentation
    content registration.
 7. Missing/unknown profile validation; typed registry isolation; visual actor,
    telegraph, impact ve cleanup testleri.
-8. HUD görünümü, test senaryosu ve Notebook’a denge notu.
+8. HUD görünümü, test senaryosu ve [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md) satırı.
 
 ### Yeni silah
 
@@ -1810,7 +1830,7 @@ difficultyMultiplier = 1 + (wave / 5) * 0.25
 3. PrimaryWeaponDefinition: type, attributes, muzzle, damage tag, scale.
 4. ProgressionProfile ve scrap maliyetleri.
 5. Runtime test: fire rate, target seçimi, hit, status, cooldown/heat.
-6. Notebook’taki silah kartına teorik ve ölçülen DPS’yi yazın.
+6. Teorik ve ölçülen DPS’yi ilgili denge kaydına yazın.
 
 ### Yeni gemi
 
@@ -1824,7 +1844,7 @@ difficultyMultiplier = 1 + (wave / 5) * 0.25
 1. ArenaDefinition ile legal bounds, margin, grace time ve visual ayarlayın.
 2. CreateCameraSettings override’ı gerekiyorsa kamera profilini ekleyin.
 3. Respawn policy, penalty, HUD warning ve test spawnını belirleyin.
-4. Yeni wave/difficulty formülünü Notebook karar kaydına yazın.
+4. Yeni wave/difficulty formülünü bu belgeye yazın.
 
 ## 10. Dokümantasyon bakımı
 
@@ -1833,9 +1853,10 @@ difficultyMultiplier = 1 + (wave / 5) * 0.25
   runtime davranışını, JSON envanterini ve tarihli denge kararını birlikte
   etkiliyorsa ilgili belgeler birbirine bağlantı verir; aynı tabloyu üç kez
   kopyalamayın.
-- Henüz karara bağlanmamış fikirleri yalnızca
-  [Balance & Roadmap Notebook](BALANCE_AND_ROADMAP_NOTEBOOK.md) içinde
-  “Fikir” veya “Deney” statüsünde tutun.
+- Ability değerleri yalnızca [ABILITY_SCALING_CATALOG.md](ABILITY_SCALING_CATALOG.md)
+  içinde güncellenir; bu dosyaya sayı kopyalanmaz.
+- [Balance & Roadmap Notebook](archive/2026-09/BALANCE_AND_ROADMAP_NOTEBOOK.md)
+  arşivlenmiş tarihsel kayıttır; yeni girdi eklenmez.
 - Bir denge değişikliğinde hedef metrik, ölçüm yöntemi, önce/sonra sonucu ve
   test senaryosu yazılmadan sayı değiştirmeyin.
 - Kod yolu değiştiğinde bu dosyadaki kaynak listelerini güncelleyin.
