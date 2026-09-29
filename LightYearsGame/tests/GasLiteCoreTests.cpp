@@ -4437,9 +4437,13 @@ int main(int argc, char** argv)
 	returnProtocolAttacker->SetCollisionLayer(CollisionLayer::Enemy);
 	returnProtocolAttacker->SetCollisionMask(CollisionLayer::PlayerBullet);
 	returnProtocolAttacker->SetActorLocation({ -100.f, 0.f });
-	if (!returnProtocolDefender->GetAbilitySystemComponent().GrantAbility(
-		AbilityData::Definitions::ReturnProtocol_Basic
-	).IsValid())
+	const GameAbilityDefinition* returnProtocolDefinition =
+		AbilityData::FindShippedAbilityDefinition(AbilityData::ReturnProtocol::AbilityId::Basic);
+	if (!returnProtocolDefinition)
+	{
+		return Fail("Return Protocol loaded ability definition could not be found");
+	}
+	if (!returnProtocolDefender->GetAbilitySystemComponent().GrantAbility(*returnProtocolDefinition).IsValid())
 	{
 		return Fail("Return Protocol ability could not be granted");
 	}
