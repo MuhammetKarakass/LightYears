@@ -36,8 +36,6 @@ namespace AbilityData::Definitions
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::OuterIgniteStacks, 2.f, 1.f, 4.f },
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::InnerStunDuration, 1.f, 0.f },
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::OuterStunDuration, 0.5f, 0.f },
-			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::MaxHealthReference, 100.f, 0.f },
-			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::MaxHealthStunScale, 0.0005f, 0.f },
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::MinimumPushInitialSpeed, 240.f, 0.f },
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::MaximumPushInitialSpeed, 760.f, 0.f },
 			sas::GameplayAttribute{ AbilityData::Blastback::Attribute::InnerPushMultiplier, 1.2f, 1.f },

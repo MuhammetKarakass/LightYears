@@ -25,7 +25,6 @@ namespace ly
 		// Keep a controllable outer band around the visible field. Without this
 		// margin, targets standing on the outer edge can remain outside the query
 		// radius and never receive the inward orbital acceleration.
-		inline constexpr float ControlInfluenceRadiusMultiplier = 1.25f;
 
 		const List<sas::AttributeId> FieldCommonAttributes{
 			CommonAttributeIds::Damage,
@@ -323,8 +322,7 @@ namespace ly
 			return;
 		}
 
-		const float controlInfluenceRadius =
-			mCurrentRadius * ControlInfluenceRadiusMultiplier;
+		const float controlInfluenceRadius = mCurrentRadius;
 		for (const shared_ptr<Actor>& candidate : targeting::FindOpposingCombatants(
 			*world,
 			*owner,

@@ -450,6 +450,7 @@ namespace ly
 		Actor* owner = GetOwnerActor();
 		if (!world || !owner)
 		{
+			Destroy();
 			return;
 		}
 		for (const shared_ptr<Actor>& candidate : targeting::FindOpposingCombatants(
@@ -476,6 +477,10 @@ namespace ly
 				mOvershieldDecayPerSecond
 			);
 		}
+
+		// CloseFieldOnTrigger: the field and its slow end immediately. Destroy() is the
+		// same end path used when FieldDuration expires, so slow cleanup runs normally.
+		Destroy();
 	}
 
 	void TemporalConvergenceFieldActor::Destroy()

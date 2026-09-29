@@ -219,7 +219,7 @@ namespace ly
 			},
 			sas::GameplayAttribute{
 				CommonAttributeIds::Radius,
-				sas::FindAttributeValue(attributes, CommonAttributeIds::Radius, 335.f),
+				sas::FindAttributeValue(attributes, CommonAttributeIds::Radius, 350.f),
 				0.01f
 			},
 			sas::GameplayAttribute{
@@ -240,17 +240,17 @@ namespace ly
 			},
 			sas::GameplayAttribute{
 				AbilityData::IonStorm::Attribute::InnerCoreRadius,
-				sas::FindAttributeValue(attributes, AbilityData::IonStorm::Attribute::InnerCoreRadius, 250.f),
+				sas::FindAttributeValue(attributes, AbilityData::IonStorm::Attribute::InnerCoreRadius, 350.f),
 				0.01f
 			},
 			sas::GameplayAttribute{
 				AbilityData::IonStorm::Attribute::OuterMinRadius,
-				sas::FindAttributeValue(attributes, AbilityData::IonStorm::Attribute::OuterMinRadius, 250.f),
+				sas::FindAttributeValue(attributes, AbilityData::IonStorm::Attribute::OuterMinRadius, 350.f),
 				0.01f
 			},
 			sas::GameplayAttribute{
 				AbilityData::IonStorm::Attribute::OuterMaxRadius,
-				sas::FindAttributeValue(attributes, AbilityData::IonStorm::Attribute::OuterMaxRadius, 335.f),
+				sas::FindAttributeValue(attributes, AbilityData::IonStorm::Attribute::OuterMaxRadius, 350.f),
 				0.01f
 		},
 			sas::GameplayAttribute{

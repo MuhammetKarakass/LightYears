@@ -4,6 +4,7 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/crystalBarricade/CrystalBarricadeContracts.h"
 #include "gameplay/tags/GameplayTags.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "presentation/ability/crystalBarricade/CrystalBarricadePresentationIds.h"
 
 namespace AbilityData::CrystalBarricade
@@ -50,6 +51,7 @@ namespace AbilityData::Definitions
 		definition.displayName = "Crystal Barricade";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png";
 		definition.accentColor = sf::Color{ 110, 225, 255, 255 };
+		definition.damageTags = { ly::DamageTypeSchema::Photonic };
 		definition.behaviorType = ly::AbilityBehaviorType::CrystalBarricade;
 		return definition;
 	}();

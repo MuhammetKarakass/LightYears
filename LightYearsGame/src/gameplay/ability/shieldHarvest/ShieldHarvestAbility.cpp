@@ -264,7 +264,7 @@ namespace
 		const float focusDuration = std::max(0.001f, context.definition.duration);
 		mFocusElapsed = 0.f;
 		mHarvested = false;
-		ability::ApplyFocusActionLocks(context.abilitySystem);
+		ability::ApplyFocusActionLocks(context.abilitySystem, false);
 		context.abilitySystem.AddOwnedTag(AbilityData::ShieldHarvest::State::Focusing);
 
 		if (World* world = context.owner.GetWorld())
@@ -423,7 +423,7 @@ namespace
 	)
 	{
 		(void)reason;
-		ability::RemoveFocusActionLocks(context.abilitySystem);
+		ability::RemoveFocusActionLocks(context.abilitySystem, false);
 		context.abilitySystem.RemoveOwnedTag(AbilityData::ShieldHarvest::State::Focusing);
 		if (const shared_ptr<AreaTelegraphActor> telegraph = mTelegraph.lock())
 		{

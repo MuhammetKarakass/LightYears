@@ -89,8 +89,6 @@ namespace ly
 			AbilityData::Blastback::Attribute::OuterIgniteStacks,
 			AbilityData::Blastback::Attribute::InnerStunDuration,
 			AbilityData::Blastback::Attribute::OuterStunDuration,
-			AbilityData::Blastback::Attribute::MaxHealthReference,
-			AbilityData::Blastback::Attribute::MaxHealthStunScale,
 			AbilityData::Blastback::Attribute::MinimumPushInitialSpeed,
 			AbilityData::Blastback::Attribute::MaximumPushInitialSpeed,
 			AbilityData::Blastback::Attribute::InnerPushMultiplier,
@@ -468,24 +466,10 @@ namespace ly
 		{
 			return;
 		}
-		const sas::GameplayAttributeList values = ResolveValues(context);
-		const float maxHealth = std::max(0.f, context.abilitySystem.GetAttributes()
-			.GetCurrentValue(OwnerAttributeIds::MaxHealth));
-		const float reference = std::max(0.f, FindValue(
-			values,
-			AbilityData::Blastback::Attribute::MaxHealthReference,
-			100.f
-		));
-		const float bonus = std::max(0.f, maxHealth - reference) * std::max(
-			0.f,
-			FindValue(
-				values,
-				AbilityData::Blastback::Attribute::MaxHealthStunScale,
-				0.0005f
-			)
-		);
+		// Catalog stun durations are fixed; no owner-stat scaling.
+		(void)context;
 		sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(*stunDefinition);
-		spec.duration = (baseDuration + bonus) * std::max(
+		spec.duration = baseDuration * std::max(
 			0.f,
 			response.durationMultiplier
 		);

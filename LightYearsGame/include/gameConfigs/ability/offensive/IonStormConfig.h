@@ -11,13 +11,13 @@ namespace AbilityData::IonStorm
 {
 	inline const sas::GameplayAttributeList FieldAttributes{
 		sas::GameplayAttribute{ ly::CommonAttributeIds::Duration, 4.f, 0.01f },
-		sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 335.f, 0.01f },
+		sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 350.f, 0.01f },
 		sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 12.f, 0.f },
 		sas::GameplayAttribute{ ly::DamageAttributeIds::ElectricStacks, 1.f, 1.f, 4.f },
 		sas::GameplayAttribute{ Attribute::TickInterval, 0.25f, 0.01f },
-		sas::GameplayAttribute{ Attribute::InnerCoreRadius, 250.f, 0.01f },
-		sas::GameplayAttribute{ Attribute::OuterMinRadius, 250.f, 0.01f },
-		sas::GameplayAttribute{ Attribute::OuterMaxRadius, 335.f, 0.01f },
+		sas::GameplayAttribute{ Attribute::InnerCoreRadius, 350.f, 0.01f },
+		sas::GameplayAttribute{ Attribute::OuterMinRadius, 350.f, 0.01f },
+		sas::GameplayAttribute{ Attribute::OuterMaxRadius, 350.f, 0.01f },
 		sas::GameplayAttribute{ Attribute::BoundaryPointCount, 20.f, 3.f }
 	};
 

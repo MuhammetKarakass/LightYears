@@ -20,9 +20,9 @@ namespace ly
 		constexpr float BaseTickInterval = 0.25f;
 		constexpr float BaseCastRange = 900.f;
 		constexpr float BaseProjectileSpeed = 2000.f;
-		constexpr float BaseInnerCoreRadius = 250.f;
-		constexpr float BaseOuterMinRadius = 250.f;
-		constexpr float BaseOuterMaxRadius = 335.f;
+		constexpr float BaseInnerCoreRadius = 350.f;
+		constexpr float BaseOuterMinRadius = 350.f;
+		constexpr float BaseOuterMaxRadius = 350.f;
 		constexpr float BaseBoundaryPointCount = 20.f;
 		constexpr float Epsilon = 0.0001f;
 

@@ -5,7 +5,10 @@
 
 namespace ly::ability
 {
-	void ApplyFocusActionLocks(sas::AbilitySystemComponent& abilitySystem)
+	void ApplyFocusActionLocks(
+		sas::AbilitySystemComponent& abilitySystem,
+		bool lockMovementInput
+	)
 	{
 		// Do not grant ExternalMovement here. Focus prevents player-issued
 		// translation only; pulls, pushes and other world movement must still be
@@ -16,12 +19,18 @@ namespace ly::ability
 		abilitySystem.AddOwnedTag(
 			GameplayTags::State::ActionLock::PrimaryWeaponFire
 		);
-		abilitySystem.AddOwnedTag(
-			GameplayTags::State::ActionLock::MovementInput
-		);
+		if (lockMovementInput)
+		{
+			abilitySystem.AddOwnedTag(
+				GameplayTags::State::ActionLock::MovementInput
+			);
+		}
 	}
 
-	void RemoveFocusActionLocks(sas::AbilitySystemComponent& abilitySystem)
+	void RemoveFocusActionLocks(
+		sas::AbilitySystemComponent& abilitySystem,
+		bool lockMovementInput
+	)
 	{
 		abilitySystem.RemoveOwnedTag(
 			GameplayTags::State::ActionLock::AbilityActivation
@@ -29,8 +38,11 @@ namespace ly::ability
 		abilitySystem.RemoveOwnedTag(
 			GameplayTags::State::ActionLock::PrimaryWeaponFire
 		);
-		abilitySystem.RemoveOwnedTag(
-			GameplayTags::State::ActionLock::MovementInput
-		);
+		if (lockMovementInput)
+		{
+			abilitySystem.RemoveOwnedTag(
+				GameplayTags::State::ActionLock::MovementInput
+			);
+		}
 	}
 }

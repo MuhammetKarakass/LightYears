@@ -77,6 +77,7 @@ namespace AbilityData::Definitions
 			ly::AttachmentSchema::Capability::Damage,
 			ly::AttachmentSchema::Capability::Projectile
 		};
+		definition.damageTags = { ly::DamageTypeSchema::Photonic };
 		definition.behaviorType = ly::AbilityBehaviorType::WingSentinels;
 		return definition;
 	}();

@@ -58,12 +58,6 @@ namespace AbilityData::Blastback
 		inline static const sas::AttributeId OuterStunDuration{
 			"Ability.Offense.Blastback.OuterStunDuration"
 		};
-		inline static const sas::AttributeId MaxHealthReference{
-			"Ability.Offense.Blastback.MaxHealthReference"
-		};
-		inline static const sas::AttributeId MaxHealthStunScale{
-			"Ability.Offense.Blastback.MaxHealthStunScale"
-		};
 		inline static const sas::AttributeId MinimumPushInitialSpeed{
 			"Ability.Offense.Blastback.MinimumPushInitialSpeed"
 		};

@@ -192,24 +192,24 @@ namespace ly
 		const float radius = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			CommonAttributeIds::Radius,
-			335.f
+			350.f
 		));
 		const float innerCoreRadius = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::IonStorm::Attribute::InnerCoreRadius,
-			250.f
+			350.f
 		));
 		const float outerMinRadius = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::IonStorm::Attribute::OuterMinRadius,
-			250.f
+			350.f
 		));
 		const float outerMaxRadius = std::max(
 			radius,
 			sas::FindAttributeValue(
 				attributes,
 				AbilityData::IonStorm::Attribute::OuterMaxRadius,
-				335.f
+				350.f
 			)
 		);
 		const int boundaryPointCount = std::max(

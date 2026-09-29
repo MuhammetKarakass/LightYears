@@ -1902,11 +1902,6 @@
               "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldConversionRatio",
               "operation": "Add",
               "magnitude": 0.01
-            },
-            {
-              "attributeId": "AbilityActor.AegisReaver.Projectile.ShieldStealRatio",
-              "operation": "Add",
-              "magnitude": 0.01
             }
           ],
           "scalingRules": [
@@ -2216,7 +2211,7 @@
             },
             {
               "id": "Common.Radius",
-              "baseValue": 335.0,
+              "baseValue": 350.0,
               "minValue": 0.01
             },
             {
@@ -2231,17 +2226,17 @@
             },
             {
               "id": "AbilityActor.IonStorm.Field.InnerCoreRadius",
-              "baseValue": 250.0,
+              "baseValue": 350.0,
               "minValue": 0.01
             },
             {
               "id": "AbilityActor.IonStorm.Field.OuterMinRadius",
-              "baseValue": 250.0,
+              "baseValue": 350.0,
               "minValue": 0.01
             },
             {
               "id": "AbilityActor.IonStorm.Field.OuterMaxRadius",
-              "baseValue": 335.0,
+              "baseValue": 350.0,
               "minValue": 0.01
             },
             {
@@ -2998,6 +2993,9 @@
     },
     {
       "id": "Ability.Offense.WingSentinels.Basic",
+      "damageTags": [
+        "Damage.Type.Photonic"
+      ],
       "cooldown": 14.0,
       "duration": 8.0,
       "maxCharges": 1,
@@ -3100,6 +3098,9 @@
     },
     {
       "id": "Ability.Offense.CombatSentry.Basic",
+      "damageTags": [
+        "Damage.Type.Photonic"
+      ],
       "cooldown": 20.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -3553,6 +3554,9 @@
     },
     {
       "id": "Ability.Defense.CrystalBarricade.Basic",
+      "damageTags": [
+        "Damage.Type.Photonic"
+      ],
       "cooldown": 14.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -4000,16 +4004,6 @@
         {
           "id": "Ability.Offense.Blastback.OuterStunDuration",
           "baseValue": 0.5,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.Blastback.MaxHealthReference",
-          "baseValue": 100.0,
-          "minValue": 0.0
-        },
-        {
-          "id": "Ability.Offense.Blastback.MaxHealthStunScale",
-          "baseValue": 0.0005,
           "minValue": 0.0
         },
         {

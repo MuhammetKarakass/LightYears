@@ -23,6 +23,9 @@ namespace ly::DirectionalBarrierEffectBehavior
 			return left.x * right.x + left.y * right.y;
 		}
 
+		// Front arc is +/-60 degrees around facing: cos(60 deg) = 0.5.
+		constexpr float FrontArcHalfAngleCosine = 0.5f;
+
 		bool IsFrontApproach(const Actor& owner, const Actor& projectile)
 		{
 			sf::Vector2f approachDirection = -projectile.GetVelocity();
@@ -36,7 +39,7 @@ namespace ly::DirectionalBarrierEffectBehavior
 			}
 
 			NormalizeVector(approachDirection);
-			return Dot(owner.GetActorForwardDirection(), approachDirection) > 0.f;
+			return Dot(owner.GetActorForwardDirection(), approachDirection) > FrontArcHalfAngleCosine;
 		}
 
 		sas::GameplayEffectBehaviorResult ProcessIncomingDamage(

@@ -30,9 +30,9 @@ namespace ly
 		std::size_t GetControlPointCount() const { return mControlRadii.size(); }
 
 	private:
-		float mInnerCoreRadius = 250.f;
-		float mOuterMinRadius = 250.f;
-		float mOuterMaxRadius = 335.f;
+		float mInnerCoreRadius = 350.f;
+		float mOuterMinRadius = 350.f;
+		float mOuterMaxRadius = 350.f;
 		List<float> mControlRadii;
 	};
 }

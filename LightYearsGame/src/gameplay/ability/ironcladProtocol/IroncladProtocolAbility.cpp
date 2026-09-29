@@ -161,6 +161,10 @@ namespace ly
 		SetBaseValue(minigun.attributes, CommonAttributeIds::Damage,
 			minigunBaseDamage + attackPower * minigunAttackPowerScale);
 		SetBaseValue(minigun.attributes, CommonAttributeIds::FireRate, 8.f);
+		// The catalog formula is the only scaling: the weapon template's owner-stat
+		// rules would apply AttackPower/AttackSpeed a second time. Attack speed is
+		// applied exactly once through the fire-rate modifier below (8 * (1 + AS/200)).
+		minigun.scalingRules.clear();
 		mWeaponOverrideHandle = context.abilitySystem.PushPrimaryWeaponOverride(
 			sas::ContentId{ context.definition.abilityId }, minigun
 		);
