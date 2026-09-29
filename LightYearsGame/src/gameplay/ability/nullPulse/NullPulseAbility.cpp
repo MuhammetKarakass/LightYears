@@ -1,6 +1,7 @@
 #include "gameplay/ability/nullPulse/NullPulseAbility.h"
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
+#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
 #include "gameplay/ability/nullPulse/NullPulseTargetQuery.h"
@@ -37,6 +38,24 @@ namespace ly
 			return std::isfinite(value) && value >= 0.f;
 		}
 
+		bool HasModifier(
+			const AbilityLevelStep& step,
+			const sas::AttributeId& attributeId,
+			float magnitude
+		)
+		{
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.attributeId == attributeId &&
+					modifier.operation == sas::AttributeModifierOperation::Add &&
+					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		float FindValue(
 			const sas::GameplayAttributeList& values,
 			const sas::AttributeId& attributeId,
@@ -46,55 +65,15 @@ namespace ly
 			return sas::FindAttributeValue(values, attributeId, fallback);
 		}
 
-		float ResolveStunDuration(
-			const sas::GameplayAttributeList& values,
-			const Actor& owner
-		)
+		float ResolveEnergyPower(const Actor& owner)
 		{
-			const float baseDuration = std::max(
-				0.f,
-				FindValue(
-					values,
-					AbilityData::NullPulse::Attribute::BaseStunDuration,
-					0.f
-				)
-			);
-			const float maximumBonus = std::max(
-				0.f,
-				FindValue(
-					values,
-					AbilityData::NullPulse::Attribute::MaxBonusStun,
-					0.f
-				)
-			);
-			const float referenceEnergy = std::max(
-				0.f,
-				FindValue(
-					values,
-					AbilityData::NullPulse::Attribute::ReferenceEnergyPower,
-					0.f
-				)
-			);
-			const float energyScale = std::max(
-				0.001f,
-				FindValue(
-					values,
-					AbilityData::NullPulse::Attribute::EnergyScale,
-					1.f
-				)
-			);
-
 			const auto* sourceCombatant = dynamic_cast<const Combatant*>(&owner);
-			const float resolvedEnergyPower = sourceCombatant
+			const float energyPower = sourceCombatant
 				? sourceCombatant->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
 					OwnerAttributeIds::EnergyPower
 				)
-				: referenceEnergy;
-			const float bonusEnergy = std::max(0.f, resolvedEnergyPower - referenceEnergy);
-			const float bonusDuration = maximumBonus * (
-				1.f - std::exp(-bonusEnergy / energyScale)
-			);
-			return std::max(0.f, baseDuration + bonusDuration);
+				: 0.f;
+			return std::max(0.f, energyPower);
 		}
 
 		bool ApplyControlEffect(
@@ -153,10 +132,7 @@ namespace ly
 			AbilityData::NullPulse::Attribute::Radius,
 			AbilityData::NullPulse::Attribute::Damage,
 			AbilityData::NullPulse::Attribute::BaseStunDuration,
-			AbilityData::NullPulse::Attribute::MaxBonusStun,
-			AbilityData::NullPulse::Attribute::ReferenceEnergyPower,
-			AbilityData::NullPulse::Attribute::EnergyScale,
-			AbilityData::NullPulse::Attribute::BossStaggerDuration
+			AbilityData::NullPulse::Attribute::EnergyPowerDamageScale
 		})
 		{
 			const sas::GameplayAttribute* attribute = FindAttribute(definition, required);
@@ -174,10 +150,7 @@ namespace ly
 		if (FindAttribute(definition, AbilityData::NullPulse::Attribute::Radius)->baseValue <= 0.f ||
 			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::Damage)->baseValue) ||
 			FindAttribute(definition, AbilityData::NullPulse::Attribute::BaseStunDuration)->baseValue <= 0.f ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::MaxBonusStun)->baseValue) ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::ReferenceEnergyPower)->baseValue) ||
-			FindAttribute(definition, AbilityData::NullPulse::Attribute::EnergyScale)->baseValue <= 0.f ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::BossStaggerDuration)->baseValue))
+			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::NullPulse::Attribute::EnergyPowerDamageScale)->baseValue))
 		{
 			if (failureReason)
 			{
@@ -186,17 +159,56 @@ namespace ly
 			return false;
 		}
 
-		const sas::GameplayEffectDefinition* stunDefinition =
-			EffectData::FindGameplayEffectDefinition(AbilityData::NullPulse::Effect::StunId);
-		const sas::GameplayEffectDefinition* staggerDefinition =
-			EffectData::FindGameplayEffectDefinition(AbilityData::NullPulse::Effect::StaggerId);
-		if (!stunDefinition || !staggerDefinition ||
-			stunDefinition->durationPolicy != sas::GameplayEffectDurationPolicy::Duration ||
-			staggerDefinition->durationPolicy != sas::GameplayEffectDurationPolicy::Duration)
+		if (definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Null Pulse requires reusable Stun and Stagger effects.";
+				*failureReason = "Null Pulse requires fourteen normal progression steps through level fifteen.";
+			}
+			return false;
+		}
+		float cooldown = definition.cooldown;
+		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+		{
+			const AbilityLevelStep& step = definition.levelProgression[index];
+			const float cooldownReduction = GetGlobalAbilityCooldownStepReduction(
+				definition.cooldown,
+				index
+			);
+			if (step.attributeModifiers.size() != 3 ||
+				!HasModifier(step, CommonAttributeIds::Cooldown, -cooldownReduction) ||
+				!HasModifier(step, CommonAttributeIds::Damage, 5.f) ||
+				!HasModifier(
+					step,
+					AbilityData::NullPulse::Attribute::EnergyPowerDamageScale,
+					0.03f
+				))
+			{
+				if (failureReason)
+				{
+					*failureReason = "Null Pulse progression must contain damage, energy scaling, and cooldown increments.";
+				}
+				return false;
+			}
+			cooldown -= cooldownReduction;
+			if (cooldown <= 0.f)
+			{
+				if (failureReason)
+				{
+					*failureReason = "Null Pulse progression must keep cooldown positive.";
+				}
+				return false;
+			}
+		}
+
+		const sas::GameplayEffectDefinition* stunDefinition =
+			EffectData::FindGameplayEffectDefinition(AbilityData::NullPulse::Effect::StunId);
+		if (!stunDefinition ||
+			stunDefinition->durationPolicy != sas::GameplayEffectDurationPolicy::Duration)
+		{
+			if (failureReason)
+			{
+				*failureReason = "Null Pulse requires the reusable Stun effect.";
 			}
 			return false;
 		}
@@ -218,9 +230,15 @@ namespace ly
 			0.f,
 			FindValue(values, AbilityData::NullPulse::Attribute::Radius, 0.f)
 		);
+		const float energyPower = ResolveEnergyPower(context.owner);
 		const float damage = std::max(
 			0.f,
-			FindValue(values, AbilityData::NullPulse::Attribute::Damage, 0.f)
+			FindValue(values, AbilityData::NullPulse::Attribute::Damage, 0.f) +
+			energyPower * FindValue(
+				values,
+				AbilityData::NullPulse::Attribute::EnergyPowerDamageScale,
+				0.f
+			)
 		);
 		if (radius <= 0.f || damage <= 0.f)
 		{
@@ -271,16 +289,13 @@ namespace ly
 		const List<GameplayTag> damageTags =
 			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags);
-		payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 
 		const sas::GameplayEffectDefinition* stunDefinition =
 			EffectData::FindGameplayEffectDefinition(AbilityData::NullPulse::Effect::StunId);
-		const sas::GameplayEffectDefinition* staggerDefinition =
-			EffectData::FindGameplayEffectDefinition(AbilityData::NullPulse::Effect::StaggerId);
-		const float baseStunDuration = ResolveStunDuration(values, context.owner);
-		const float bossStaggerDuration = std::max(
+		const float stunDuration = std::max(
 			0.f,
-			FindValue(values, AbilityData::NullPulse::Attribute::BossStaggerDuration, 0.f)
+			FindValue(values, AbilityData::NullPulse::Attribute::BaseStunDuration, 0.f) +
+			energyPower * AbilityData::NullPulse::EnergyPowerStunDurationScale
 		);
 
 		for (const shared_ptr<Actor>& target : targets)
@@ -313,19 +328,6 @@ namespace ly
 			}
 			if (response.mode == ControlResponseMode::InterruptOnly)
 			{
-				if (staggerDefinition && response.interruptionAllowed)
-				{
-					ApplyControlEffect(
-						*combatant,
-						context.owner,
-						context.definition,
-						context.instance,
-						*staggerDefinition,
-						std::min(bossStaggerDuration, response.maximumInterruptDuration),
-						0.f,
-						sas::ContentId{ NullPulsePresentationIds::PulseBasic }
-					);
-				}
 				continue;
 			}
 			if (stunDefinition)
@@ -336,7 +338,7 @@ namespace ly
 					context.definition,
 					context.instance,
 					*stunDefinition,
-					baseStunDuration * std::max(0.f, response.durationMultiplier),
+					stunDuration * std::max(0.f, response.durationMultiplier),
 					response.durationMultiplier,
 					sas::ContentId{ NullPulsePresentationIds::PulseBasic }
 				);

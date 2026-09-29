@@ -11,6 +11,7 @@
 #include "framework/World.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace ly
 {
@@ -20,6 +21,32 @@ namespace ly
 		{
 			return content::AbilityContentCatalog::FindNumericSetting(definition.abilityId, name).value_or(fallback);
 		}
+
+		bool HasExpectedProgression(const GameAbilityDefinition& definition)
+		{
+			if (definition.levelProgression.size() != 14) return false;
+			for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+			{
+				const AbilityLevelStep& step = definition.levelProgression[index];
+				if (step.attributeModifiers.size() != 3 || !step.scalingRules.empty()) return false;
+				const auto has = [&step](const sas::AttributeId& id, float magnitude)
+				{
+					return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+						[&id, magnitude](const sas::AttributeModifier& modifier)
+						{
+							return modifier.attributeId == id && modifier.operation == sas::AttributeModifierOperation::Add &&
+								std::abs(modifier.magnitude - magnitude) <= 0.0001f;
+						});
+				};
+				if (!has(AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 12.f) ||
+					!has(AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.06f) ||
+					!has(CommonAttributeIds::Cooldown, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index)))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 
 	bool ClosedCircuitAbility::Validate(const GameAbilityDefinition& definition, std::string* failureReason) const
@@ -28,8 +55,8 @@ namespace ly
 			definition.behaviorType == AbilityBehaviorType::ClosedCircuit &&
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Duration &&
-			definition.maxCharges == 1 && definition.duration > 0.f && definition.cooldown > 0.f &&
-			definition.levelProgression.size() == 14 &&
+			definition.maxCharges == 1 && definition.duration == 0.2f && definition.cooldown == 14.f &&
+			definition.attributes.size() == 2 && HasExpectedProgression(definition) &&
 			AbilityData::FindAbilityActorDefinition(AbilityData::ClosedCircuit::Actor::Delivery::BasicDefinitionId);
 		if (!valid && failureReason)
 		{
@@ -49,22 +76,23 @@ namespace ly
 		if (cursorDistance <= 0.001f) direction = context.owner.GetActorForwardDirection();
 		else NormalizeVector(direction);
 
-		const float range = std::max(1.f, Setting(context.definition, AbilityData::ClosedCircuit::Setting::MaximumDeliveryRange, 200.f));
+		const float range = std::max(1.f, Setting(context.definition, AbilityData::ClosedCircuit::Setting::MaximumDeliveryRange, 450.f));
 		const sf::Vector2f target = ownerLocation + direction * std::min(range, cursorDistance);
 		AbilityExecutionContext executionContext{ &context.abilitySystem, &context.definition, nullptr, &context.instance };
 		const sas::GameplayAttributeList values = AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		const auto* owner = dynamic_cast<const Combatant*>(&context.owner);
 		const float energyPower = owner ? std::max(0.f, owner->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)) : 0.f;
 		const float health = std::max(0.f,
-			sas::FindAttributeValue(values, AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 180.f) +
-			energyPower * std::max(0.f, sas::FindAttributeValue(values, AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.60f))
+			sas::FindAttributeValue(values, AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 160.f) +
+			energyPower * std::max(0.f, sas::FindAttributeValue(values, AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.70f))
 		);
 		mPendingDelivery = {
 			target,
 			Setting(context.definition, AbilityData::ClosedCircuit::Setting::DeliverySpeed, 280.f),
 			Setting(context.definition, AbilityData::ClosedCircuit::Setting::FormationDuration, 0.50f),
 			Setting(context.definition, AbilityData::ClosedCircuit::Setting::BarrierRadius, 250.f),
-			health
+			health,
+			Setting(context.definition, AbilityData::ClosedCircuit::Setting::MaximumActiveDuration, 8.f)
 		};
 		mHasPendingDelivery = true;
 		context.abilitySystem.AddOwnedTag(AbilityData::ClosedCircuit::State::Deploying);
@@ -93,12 +121,13 @@ namespace ly
 					).lock()
 				))
 			{
-				delivery->ConfigureDelivery(
+					delivery->ConfigureDelivery(
 					mPendingDelivery.target,
 					mPendingDelivery.speed,
 					mPendingDelivery.formationDuration,
 					mPendingDelivery.radius,
-					mPendingDelivery.health
+					mPendingDelivery.health,
+					mPendingDelivery.activeDuration
 				);
 			}
 		}

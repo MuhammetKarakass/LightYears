@@ -31,12 +31,12 @@ namespace AbilityData::Definitions
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 		definition.accentColor = sf::Color{ 80, 220, 255, 255 };
 		definition.attributes = {
-			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 180.f, 0.f },
-			{ AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.60f, 0.f },
+			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 160.f, 0.f },
+			{ AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.70f, 0.f },
 		};
 		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(14, ly::AbilityLevelStep{ {
-			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, sas::AttributeModifierOperation::Add, 15.f },
-			{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -0.25f }
+			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, sas::AttributeModifierOperation::Add, 12.f },
+			{ AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, sas::AttributeModifierOperation::Add, 0.06f }
 		}, {}, {}, {} });
 		definition.levelUpgradeScrapCosts = { 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60 };
 		definition.behaviorType = ly::AbilityBehaviorType::ClosedCircuit;

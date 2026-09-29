@@ -115,6 +115,40 @@ namespace ly
 			}
 			return false;
 		}
+		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
+		{
+			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
+			bool durationMatches = false;
+			bool energyScaleMatches = false;
+			bool cooldownMatches = false;
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.operation != sas::AttributeModifierOperation::Add || !std::isfinite(modifier.magnitude))
+				{
+					continue;
+				}
+				if (modifier.attributeId == CommonAttributeIds::Duration)
+				{
+					durationMatches = std::abs(modifier.magnitude - 0.10f) <= 0.0001f;
+				}
+				else if (modifier.attributeId == AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale)
+				{
+					energyScaleMatches = std::abs(modifier.magnitude - 0.05f) <= 0.0001f;
+				}
+				else if (modifier.attributeId == CommonAttributeIds::Cooldown)
+				{
+					const float expected = -GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex);
+					cooldownMatches = std::abs(modifier.magnitude - expected) <= 0.0001f;
+				}
+			}
+			if (step.attributeModifiers.size() != 3 || !durationMatches || !energyScaleMatches || !cooldownMatches ||
+				!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
+				!step.addedTriggers.empty() || !step.scalingRules.empty())
+			{
+				if (failureReason) *failureReason = "Time Slip progression must add duration, EP duration scale, and global cooldown at every level.";
+				return false;
+			}
+		}
 		return true;
 	}
 
@@ -205,20 +239,20 @@ namespace ly
 		GameAbilityBehaviorContext& mutableContext =
 			const_cast<GameAbilityBehaviorContext&>(context);
 		const sas::GameplayAttributeList values = ResolveValues(mutableContext);
-		const float energyReference = FindValue(
+		const float energyReference = std::max(1.f, FindValue(
 			values,
 			AbilityData::TimeSlip::Attribute::EnergyPowerReference,
-			50.f
-		);
+			100.f
+		));
 		const float energyScale = FindValue(
 			values,
 			AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale,
-			0.0015f
+			0.20f
 		);
 		const float energyPower = context.abilitySystem.GetAttributes().GetCurrentValue(
 			AbilityData::TimeSlip::Attribute::DurationScalingSource
 		);
-		const float durationBonus = std::max(0.f, energyPower - energyReference) *
+		const float durationBonus = (std::max(0.f, energyPower) / energyReference) *
 			std::max(0.f, energyScale);
 		const float resolvedDuration = defaultDuration + durationBonus;
 		return std::isfinite(resolvedDuration)

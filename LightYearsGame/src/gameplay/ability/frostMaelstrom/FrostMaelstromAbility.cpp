@@ -2,6 +2,7 @@
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
+#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameplay/ability/frostMaelstrom/FrostMaelstromContracts.h"
 #include "gameplay/ability/frostMaelstrom/FrostMaelstromFieldActor.h"
@@ -45,6 +46,24 @@ namespace ly
 			return attribute && IsFinite(attribute->baseValue);
 		}
 
+		bool HasModifier(
+			const AbilityLevelStep& step,
+			const sas::AttributeId& attributeId,
+			float magnitude
+		)
+		{
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.attributeId == attributeId &&
+					modifier.operation == sas::AttributeModifierOperation::Add &&
+					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		float FindValue(
 			const sas::GameplayAttributeList& values,
 			const sas::AttributeId& id,
@@ -84,11 +103,9 @@ namespace ly
 			AbilityData::FrostMaelstrom::Attribute::TickInterval,
 			AbilityData::FrostMaelstrom::Attribute::CryoStacksPerTick,
 			AbilityData::FrostMaelstrom::Attribute::OrbitalAngularSpeed,
-			AbilityData::FrostMaelstrom::Attribute::InwardForce,
+			AbilityData::FrostMaelstrom::Attribute::PullStrength,
 			AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio,
-			AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference,
 			AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
-			AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale,
 			CommonAttributeIds::Damage
 		})
 		{
@@ -116,12 +133,10 @@ namespace ly
 			value(AbilityData::FrostMaelstrom::Attribute::TickInterval) <= 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::CryoStacksPerTick) != 1.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::OrbitalAngularSpeed) < 0.f ||
-			value(AbilityData::FrostMaelstrom::Attribute::InwardForce) < 0.f ||
+			value(AbilityData::FrostMaelstrom::Attribute::PullStrength) < 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio) <= 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio) > 1.f ||
-			value(AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference) < 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale) < 0.f ||
-			value(AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale) < 0.f ||
 			value(CommonAttributeIds::Damage) < 0.f ||
 			definition.levelProgression.size() != 14 ||
 			definition.damageTags.size() != 1 ||
@@ -133,6 +148,41 @@ namespace ly
 					"Frost Maelstrom contains invalid radius, movement, tick, Cryo, or progression values.";
 			}
 			return false;
+		}
+
+		float cooldown = definition.cooldown;
+		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+		{
+			const AbilityLevelStep& step = definition.levelProgression[index];
+			const float cooldownReduction = GetGlobalAbilityCooldownStepReduction(
+				definition.cooldown,
+				index
+			);
+			if (step.attributeModifiers.size() != 4 ||
+				!HasModifier(step, CommonAttributeIds::Cooldown, -cooldownReduction) ||
+				!HasModifier(step, CommonAttributeIds::Damage, 1.f) ||
+				!HasModifier(
+					step,
+					AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
+					0.01f
+				) ||
+				!HasModifier(step, AbilityData::FrostMaelstrom::Attribute::PullStrength, 25.f))
+			{
+				if (failureReason)
+				{
+					*failureReason = "Frost Maelstrom progression must contain tick damage, energy scaling, pull, and cooldown increments.";
+				}
+				return false;
+			}
+			cooldown -= cooldownReduction;
+			if (cooldown <= 0.f)
+			{
+				if (failureReason)
+				{
+					*failureReason = "Frost Maelstrom progression must keep cooldown positive.";
+				}
+				return false;
+			}
 		}
 
 		if (!AbilityData::FindAbilityActorDefinition(

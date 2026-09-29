@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "gameplay/ability/content/NumericSettingContract.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
 
@@ -39,6 +40,17 @@ namespace AbilityData::ReclaimerProtocol
 		};
 	};
 
+	struct Setting
+	{
+		inline static constexpr char MaxHealthReference[] = "maxHealthReference";
+		inline static constexpr char MaxHealthPerStep[] = "maxHealthPerStep";
+		inline static constexpr char HealRatioPerStep[] = "healRatioPerStep";
+		inline static const ly::content::NumericSettingContract Contract{
+			{ MaxHealthReference, MaxHealthPerStep, HealRatioPerStep },
+			{ MaxHealthReference, MaxHealthPerStep, HealRatioPerStep }
+		};
+	};
+
 	struct Actor
 	{
 		struct RepairKit
@@ -56,7 +68,7 @@ namespace AbilityData::ReclaimerProtocol
 
 	inline constexpr float DefaultDuration = 6.f;
 	inline constexpr float DefaultCooldown = 16.f;
-	inline constexpr float DefaultHealRatio = 0.04f;
+	inline constexpr float DefaultHealRatio = 0.08f;
 	inline constexpr float DefaultKitLifetime = 10.f;
 	inline constexpr float DefaultKitCollisionRadius = 16.f;
 }

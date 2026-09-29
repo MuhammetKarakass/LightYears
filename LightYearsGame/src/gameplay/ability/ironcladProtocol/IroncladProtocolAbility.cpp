@@ -39,14 +39,44 @@ namespace ly
 				attribute->currentValue = value;
 			}
 		}
+
+		bool HasExpectedProgression(const GameAbilityDefinition& definition)
+		{
+			if (definition.levelProgression.size() != 14) return false;
+			for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+			{
+				const AbilityLevelStep& step = definition.levelProgression[index];
+				if (step.attributeModifiers.size() != 5 || !step.scalingRules.empty()) return false;
+				const auto has = [&step](const sas::AttributeId& id, float magnitude)
+				{
+					return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+						[&id, magnitude](const sas::AttributeModifier& modifier)
+						{
+							return modifier.attributeId == id && modifier.operation == sas::AttributeModifierOperation::Add &&
+								std::abs(modifier.magnitude - magnitude) <= 0.0001f;
+						});
+				};
+				if (!has(AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, 6.f) ||
+					!has(AbilityData::IroncladProtocol::Attribute::MinigunAttackPowerScale, 0.04f) ||
+					!has(AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, 0.01f) ||
+					!has(AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale, 0.01f) ||
+					!has(CommonAttributeIds::Cooldown, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index)))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 
 	bool IroncladProtocolAbility::Validate(const GameAbilityDefinition& definition, std::string* failureReason) const
 	{
-		if (!sas::IsLoadoutAbilitySlot(definition.slot) ||
+		if (definition.abilityId != AbilityData::IroncladProtocol::AbilityId::Basic ||
+			!sas::IsLoadoutAbilitySlot(definition.slot) ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
-			definition.maxCharges != 1 || definition.duration <= 1.f || definition.cooldown <= 0.f)
+			definition.maxCharges != 1 || definition.duration != 10.f || definition.cooldown != 22.f ||
+			definition.attributes.size() != 8 || !HasExpectedProgression(definition))
 		{
 			if (failureReason) *failureReason = "Ironclad Protocol requires an OnPressed timed form with a positive cooldown.";
 			return false;
@@ -55,9 +85,10 @@ namespace ly
 			AbilityData::IroncladProtocol::Attribute::MovementSpeedMultiplier,
 			AbilityData::IroncladProtocol::Attribute::MinimumFormDuration,
 			AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage,
+			AbilityData::IroncladProtocol::Attribute::MinigunAttackPowerScale,
 			AbilityData::IroncladProtocol::Attribute::BaseDamageReduction,
 			AbilityData::IroncladProtocol::Attribute::MaxHealthReference,
-			AbilityData::IroncladProtocol::Attribute::MaximumDamageReductionBonus,
+			AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale,
 			AbilityData::IroncladProtocol::Attribute::DamageReductionFalloffHealth })
 		{
 			if (!sas::FindAttribute(definition.attributes, required))
@@ -96,16 +127,16 @@ namespace ly
 		const float falloff = std::max(0.001f, FindValue(values,
 			AbilityData::IroncladProtocol::Attribute::DamageReductionFalloffHealth, 500.f));
 		const float baseReduction = std::clamp(FindValue(values,
-			AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, 0.4f), 0.f, 0.95f);
-		const float maximumBonus = std::clamp(FindValue(values,
-			AbilityData::IroncladProtocol::Attribute::MaximumDamageReductionBonus, 0.2f), 0.f, 0.95f - baseReduction);
-		const float bonus = maximumBonus * (1.f - std::exp(-std::max(0.f, maxHealth - reference) / falloff));
+			AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, 0.25f), 0.f, 0.95f);
+		const float healthScale = std::max(0.f, FindValue(values,
+			AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale, 0.08f));
+		const float bonus = std::max(0.f, maxHealth - reference) / falloff * healthScale;
 
 		sas::GameplayEffectSpec effectSpec = sas::MakeGameplayEffectSpec(*effect);
 		effectSpec.duration = context.definition.duration;
 		effectSpec.maxStacks = 1;
 		effectSpec.attributes = { sas::GameplayAttribute{
-			DamageReductionEffectSchema::Fraction, baseReduction + bonus, 0.f, 0.95f } };
+			DamageReductionEffectSchema::Fraction, std::min(0.95f, baseReduction + bonus), 0.f, 0.95f } };
 		mDamageReductionHandle = context.abilitySystem.ApplyGameplayEffect(
 			effectSpec, sas::GameplayEffectSourceContext{ &context.owner, &context.instance }
 		);
@@ -120,8 +151,15 @@ namespace ly
 		}
 
 		PrimaryWeaponDefinition minigun = *minigunTemplate;
-		SetBaseValue(minigun.attributes, CommonAttributeIds::Damage, std::max(0.f, FindValue(
-			values, AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, 8.f)));
+		const float minigunBaseDamage = std::max(0.f, FindValue(
+			values, AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, 20.f));
+		const float minigunAttackPowerScale = std::max(0.f, FindValue(
+			values, AbilityData::IroncladProtocol::Attribute::MinigunAttackPowerScale, 0.30f));
+		const float attackPower = std::max(0.f,
+			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower));
+		SetBaseValue(minigun.attributes, CommonAttributeIds::Damage,
+			minigunBaseDamage + attackPower * minigunAttackPowerScale);
+		SetBaseValue(minigun.attributes, CommonAttributeIds::FireRate, 8.f);
 		mWeaponOverrideHandle = context.abilitySystem.PushPrimaryWeaponOverride(
 			sas::ContentId{ context.definition.abilityId }, minigun
 		);
@@ -133,6 +171,11 @@ namespace ly
 		}
 
 		ship->GetRuntimeModifiers().Set(context.definition.abilityId, ShipRuntimeModifier{ movementMultiplier });
+		const float attackSpeed = std::max(0.f,
+			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackSpeed));
+		mFireRateModifierSourceId = 0x49524F4E00000000ull |
+			static_cast<temporal::RateModifierSourceId>(context.owner.GetUniqueID());
+		ship->SetPrimaryWeaponFireRateModifier(mFireRateModifierSourceId, 1.f + attackSpeed / 200.f);
 		const std::string ownAbilityId = context.definition.abilityId;
 		mActivationGuard = context.abilitySystem.RegisterAbilityActivationGuard(
 			[ownAbilityId](const sas::AbilityLifecycleEvent& event)
@@ -199,7 +242,9 @@ namespace ly
 		if (SpaceShip* ship = dynamic_cast<SpaceShip*>(&context.owner))
 		{
 			ship->GetRuntimeModifiers().Remove(context.definition.abilityId);
+			ship->RemovePrimaryWeaponFireRateModifier(mFireRateModifierSourceId);
 		}
+		mFireRateModifierSourceId = 0;
 		if (mActivationGuard.IsValid())
 		{
 			context.abilitySystem.UnregisterAbilityActivationGuard(mActivationGuard);

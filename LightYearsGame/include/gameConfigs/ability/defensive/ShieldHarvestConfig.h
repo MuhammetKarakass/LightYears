@@ -53,27 +53,20 @@ namespace AbilityData::Definitions
 			{ ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::EnergyPower, sas::AttributeModifierOperation::Add, 0.05f }
 		};
-		float cooldown = definition.cooldown;
-		float reduction = 0.175f + 0.025f * cooldown;
 		for (int index = 0; index < 14; ++index)
 		{
-			if (index && index % 4 == 0)
-			{
-				reduction = reduction >= 0.20f ? reduction - 0.10f : reduction * 0.80f;
-			}
-			const float nextCooldown = std::max(definition.cooldown * 0.20f, cooldown - reduction);
 			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					{ AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
 						sas::AttributeModifierOperation::Add, 5.f },
 					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 2.f },
 					{ ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add, nextCooldown - cooldown }
+						sas::AttributeModifierOperation::Add,
+						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, index) }
 				}, {}, {}, {},
 				{ { AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
 					ly::OwnerAttributeIds::EnergyPower, sas::AttributeModifierOperation::Add, 0.01f } }
 			});
-			cooldown = nextCooldown;
 		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,

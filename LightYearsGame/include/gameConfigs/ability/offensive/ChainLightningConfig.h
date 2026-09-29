@@ -78,15 +78,9 @@ namespace AbilityData::Definitions
 		// The chain traversal owns targeting and delayed impact. There must be no
 		// generic action here that could apply damage immediately on activation.
 		definition.levelProgression.reserve(14);
-		float resolvedCooldown = definition.cooldown;
-		float cooldownReduction = 0.175f + 0.025f * definition.cooldown;
-		const float minimumCooldown = definition.cooldown * 0.20f;
 		for (int level = 0; level < 14; ++level)
 		{
-			const float cooldownDelta = -std::min(
-				cooldownReduction,
-				resolvedCooldown - minimumCooldown
-			);
+			const float cooldownDelta = -ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, level);
 			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 5.f },
@@ -100,13 +94,6 @@ namespace AbilityData::Definitions
 						sas::AttributeModifierOperation::Add, 0.05f }
 				}
 			});
-			resolvedCooldown += cooldownDelta;
-			if ((level + 1) % 4 == 0)
-			{
-				cooldownReduction = cooldownReduction >= 0.20f
-					? cooldownReduction - 0.10f
-					: cooldownReduction * 0.80f;
-			}
 		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,

@@ -17,7 +17,7 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.cooldown = 12.f;
-		definition.duration = 5.f;
+		definition.duration = 4.5f;
 		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Movement,
@@ -28,32 +28,25 @@ namespace AbilityData::Definitions
 		definition.accentColor = sf::Color{ 150, 230, 255, 255 };
 
 		definition.attributes = {
-			{ AbilityData::ZeroDrag::Attribute::EnergyPowerReference, 50.f, 0.f },
-			{ AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint, 0.002f, 0.f },
-			// Normal damping remains active. This extra drive force lets the player
-			// actually reach the uncapped high-speed state instead of settling near
-			// the normal ship's thrust-versus-damping equilibrium.
-			{ AbilityData::ZeroDrag::Attribute::ThrustBonus, 0.60f, 0.f },
+			{ AbilityData::ZeroDrag::Attribute::EnergyPowerReference, 100.f, 0.f },
+			{ AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale, 0.50f, 0.f },
+			{ AbilityData::ZeroDrag::Attribute::ThrustBonus, 0.80f, 0.f },
+			{ AbilityData::ZeroDrag::Attribute::DampingMultiplier, 0.20f, 0.f },
 			{ AbilityData::ZeroDrag::Attribute::NormalizationDuration, 1.1f, 0.01f }
 		};
 
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Duration,
-						sas::AttributeModifierOperation::Add,
-						0.10f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
-					}
-				}, {}, {}, {}
-			}
-		);
+		for (std::size_t index = 0; index < 14; ++index)
+		{
+			ly::AbilityLevelStep step;
+			step.attributeModifiers = {
+				{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
+				{ AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale, sas::AttributeModifierOperation::Add, 0.05f },
+				{ AbilityData::ZeroDrag::Attribute::ThrustBonus, sas::AttributeModifierOperation::Add, 0.05f },
+				{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
+					-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, index) }
+			};
+			definition.levelProgression.push_back(step);
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

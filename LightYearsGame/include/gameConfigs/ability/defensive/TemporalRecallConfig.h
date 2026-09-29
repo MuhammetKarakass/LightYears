@@ -30,23 +30,28 @@ namespace AbilityData::Definitions
 			{ AbilityData::TemporalRecall::Attribute::RecallWindow, 3.f, 0.01f },
 			{ AbilityData::TemporalRecall::Attribute::FocusDuration, 0.2f, 0.01f },
 			{ AbilityData::TemporalRecall::Attribute::RewindDuration, 0.8f, 0.01f },
-			{ AbilityData::TemporalRecall::Attribute::PositiveRecoveryRatio, 0.60f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::MaxHealthReference, 100.f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale, 0.002f, 0.f },
+			{ AbilityData::TemporalRecall::Attribute::BaseRecovery, 0.45f, 0.f },
+			{ AbilityData::TemporalRecall::Attribute::MaxHealthReference, 500.f, 0.f },
+			{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale, 0.10f, 0.f },
 			{ AbilityData::TemporalRecall::Attribute::EnergyPowerReference, 100.f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale, 0.002f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::OvercapHoldDuration, 4.f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::OvercapDecayPerSecond, 100.f, 0.f }
+			{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale, 0.05f, 0.f }
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{ {
-				{ ly::CommonAttributeIds::Cooldown,
-					sas::AttributeModifierOperation::Add, -0.30f },
-				{ AbilityData::TemporalRecall::Attribute::PositiveRecoveryRatio,
-					sas::AttributeModifierOperation::Add, 0.02f }
-			}, {}, {}, {} }
-		);
+		definition.levelProgression.reserve(14);
+		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
+				{
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
+						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) },
+					{ AbilityData::TemporalRecall::Attribute::BaseRecovery,
+						sas::AttributeModifierOperation::Add, 0.02f },
+					{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale,
+						sas::AttributeModifierOperation::Add, 0.01f },
+					{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale,
+						sas::AttributeModifierOperation::Add, 0.01f }
+				}, {}, {}, {}
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

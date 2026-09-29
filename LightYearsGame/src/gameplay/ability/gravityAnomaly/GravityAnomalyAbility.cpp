@@ -1,5 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 
@@ -171,56 +172,44 @@ namespace ly
 		}
 
 		const AbilityLevelStep& firstStep = definition.levelProgression.front();
-		const std::optional<float> cooldownReductionPerLevel = FindModifierMagnitude(
+		const std::optional<float> pullStrengthPerLevel = FindModifierMagnitude(
 			firstStep,
-			CommonAttributeIds::Cooldown
-		);
-		const std::optional<float> durationPerLevel = FindModifierMagnitude(
-			firstStep,
-			CommonAttributeIds::Duration
-		);
-		const std::optional<float> radiusPerLevel = FindModifierMagnitude(
-			firstStep,
-			CommonAttributeIds::Radius
+			AbilityData::GravityAnomaly::Actor::Field::PullStrength
 		);
 		const std::optional<float> slowMagnitudePerLevel = FindModifierMagnitude(
 			firstStep,
 			AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude
 		);
-		const std::optional<float> castRangePerLevel = FindModifierMagnitude(
-			firstStep,
-			CommonAttributeIds::Range
-		);
-		if (!cooldownReductionPerLevel || !durationPerLevel || !radiusPerLevel ||
-			!slowMagnitudePerLevel || !castRangePerLevel ||
-			*cooldownReductionPerLevel >= 0.f || *durationPerLevel <= 0.f ||
-			*radiusPerLevel <= 0.f || *slowMagnitudePerLevel <= 0.f ||
-			*castRangePerLevel <= 0.f)
+		if (!pullStrengthPerLevel || !slowMagnitudePerLevel ||
+			*pullStrengthPerLevel <= 0.f || *slowMagnitudePerLevel <= 0.f)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Gravity Anomaly progression must contain valid cast, field, and cooldown increments.";
+				*failureReason = "Gravity Anomaly progression must contain positive pull and slow increments.";
 			}
 			return false;
 		}
 
 		float cooldown = definition.cooldown;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
 		{
-			if (step.attributeModifiers.size() != 5 ||
-				!HasModifier(step, CommonAttributeIds::Cooldown, *cooldownReductionPerLevel) ||
-				!HasModifier(step, CommonAttributeIds::Duration, *durationPerLevel) ||
-				!HasModifier(step, CommonAttributeIds::Radius, *radiusPerLevel) ||
-				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude, *slowMagnitudePerLevel) ||
-				!HasModifier(step, CommonAttributeIds::Range, *castRangePerLevel))
+			const AbilityLevelStep& step = definition.levelProgression[index];
+			const float cooldownReduction = GetGlobalAbilityCooldownStepReduction(
+				definition.cooldown,
+				index
+			);
+			if (step.attributeModifiers.size() != 3 ||
+				!HasModifier(step, CommonAttributeIds::Cooldown, -cooldownReduction) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::PullStrength, *pullStrengthPerLevel) ||
+				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude, *slowMagnitudePerLevel))
 			{
 				if (failureReason)
 				{
-					*failureReason = "Gravity Anomaly progression must contain exactly the configured cast, field, and cooldown increments.";
+					*failureReason = "Gravity Anomaly progression must contain exactly pull, slow, and cooldown increments.";
 				}
 				return false;
 			}
-			cooldown += *cooldownReductionPerLevel;
+			cooldown -= cooldownReduction;
 			if (cooldown <= 0.f)
 			{
 				if (failureReason)

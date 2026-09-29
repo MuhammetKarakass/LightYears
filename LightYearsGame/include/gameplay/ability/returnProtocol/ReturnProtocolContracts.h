@@ -38,16 +38,20 @@ namespace AbilityData::ReturnProtocol
 
 	struct Attribute
 	{
-		// MaxHealth remains an owner attribute. These values only describe how
-		// this ability converts that owner stat into reflected damage.
 		inline static const sas::AttributeId BaseReflectDamageMultiplier{
 			"Ability.Defense.ReturnProtocol.BaseReflectDamageMultiplier"
 		};
-		inline static const sas::AttributeId MaxHealthReference{
-			"Ability.Defense.ReturnProtocol.MaxHealthReference"
+		inline static const sas::AttributeId AttackPowerReference{
+			"Ability.Defense.ReturnProtocol.AttackPowerReference"
 		};
-		inline static const sas::AttributeId MaxHealthDamageScale{
-			"Ability.Defense.ReturnProtocol.MaxHealthDamageScale"
+		inline static const sas::AttributeId AttackPowerScale{
+			"Ability.Defense.ReturnProtocol.AttackPowerScale"
+		};
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Defense.ReturnProtocol.EnergyPowerReference"
+		};
+		inline static const sas::AttributeId EnergyPowerScale{
+			"Ability.Defense.ReturnProtocol.EnergyPowerScale"
 		};
 	};
 }

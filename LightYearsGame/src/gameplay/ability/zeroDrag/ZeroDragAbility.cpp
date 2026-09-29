@@ -60,9 +60,10 @@ namespace ly
 			return AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		}
 
-		bool HasExpectedProgressionStep(const AbilityLevelStep& step)
+		bool HasExpectedProgressionStep(const AbilityLevelStep& step, float cooldown, std::size_t index)
 		{
-			if (step.attributeModifiers.size() != 2 ||
+			if (step.attributeModifiers.size() != 4 ||
+				!step.scalingRules.empty() ||
 				!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
 				!step.addedTriggers.empty())
 			{
@@ -83,9 +84,26 @@ namespace ly
 				step.attributeModifiers.end(),
 				[](const sas::AttributeModifier& modifier)
 				{
+					return modifier.attributeId == AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						NearlyEqual(modifier.magnitude, 0.05f);
+				}
+			) && std::any_of(
+				step.attributeModifiers.begin(),
+				step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == AbilityData::ZeroDrag::Attribute::ThrustBonus &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						NearlyEqual(modifier.magnitude, 0.05f);
+				}
+			) && std::any_of(
+				step.attributeModifiers.begin(), step.attributeModifiers.end(),
+				[cooldown, index](const sas::AttributeModifier& modifier)
+				{
 					return modifier.attributeId == CommonAttributeIds::Cooldown &&
 						modifier.operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(modifier.magnitude, -0.20f);
+						NearlyEqual(modifier.magnitude, -GetGlobalAbilityCooldownStepReduction(cooldown, index));
 				}
 			);
 		}
@@ -120,18 +138,19 @@ namespace ly
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Duration &&
 			definition.maxCharges == 1 && NearlyEqual(definition.cooldown, 12.f) &&
-			NearlyEqual(definition.duration, 5.f);
+			NearlyEqual(definition.duration, 4.5f);
 		const bool validProgression = definition.levelProgression.size() == 14 &&
-			std::all_of(
-				definition.levelProgression.begin(),
-				definition.levelProgression.end(),
-				HasExpectedProgressionStep
-			);
+			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
+				[&definition, index = std::size_t{ 0 }](const AbilityLevelStep& step) mutable
+				{
+					return HasExpectedProgressionStep(step, definition.cooldown, index++);
+				});
 
 		const List<sas::AttributeId> requiredAttributes = {
 			AbilityData::ZeroDrag::Attribute::EnergyPowerReference,
-			AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint,
+			AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale,
 			AbilityData::ZeroDrag::Attribute::ThrustBonus,
+			AbilityData::ZeroDrag::Attribute::DampingMultiplier,
 			AbilityData::ZeroDrag::Attribute::NormalizationDuration
 		};
 		const bool validAttributes = definition.attributes.size() == requiredAttributes.size() &&
@@ -150,13 +169,17 @@ namespace ly
 				definition,
 				AbilityData::ZeroDrag::Attribute::EnergyPowerReference
 			)->baseValue;
-			const float durationPerPoint = FindAttribute(
+			const float durationScale = FindAttribute(
 				definition,
-				AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint
+				AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale
 			)->baseValue;
 			const float thrustBonus = FindAttribute(
 				definition,
 				AbilityData::ZeroDrag::Attribute::ThrustBonus
+			)->baseValue;
+			const float dampingMultiplier = FindAttribute(
+				definition,
+				AbilityData::ZeroDrag::Attribute::DampingMultiplier
 			)->baseValue;
 			const float normalization = FindAttribute(
 				definition,
@@ -164,8 +187,9 @@ namespace ly
 			)->baseValue;
 
 			if (!IsFiniteNonNegative(energyReference) ||
-				!IsFiniteNonNegative(durationPerPoint) ||
+				!IsFiniteNonNegative(durationScale) ||
 				!std::isfinite(thrustBonus) || thrustBonus < 0.f ||
+				!std::isfinite(dampingMultiplier) || dampingMultiplier < 0.f || dampingMultiplier > 1.f ||
 				!std::isfinite(normalization) || normalization <= 0.f)
 			{
 				if (failureReason)
@@ -185,7 +209,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Zero Drag requires a movement-only lifecycle, four runtime attributes and fourteen duration/cooldown progression steps.";
+				"Zero Drag requires a movement-only lifecycle, five runtime attributes and fourteen duration progression steps.";
 			}
 			return false;
 		}
@@ -209,17 +233,17 @@ namespace ly
 			0.f,
 			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)
 		);
-		const float energyReference = std::max(
-			0.f,
-			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyPowerReference, 50.f)
+		const float energyPowerReference = std::max(
+			0.001f,
+			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyPowerReference, 100.f)
 		);
-		const float durationPerPoint = std::max(
+		const float energyPowerDurationScale = std::max(
 			0.f,
-			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyPowerDurationPerPoint, 0.002f)
+			FindValue(values, AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale, 0.5f)
 		);
 		return std::max(
 			0.f,
-			defaultDuration + std::max(0.f, energyPower - energyReference) * durationPerPoint
+			defaultDuration + energyPower / energyPowerReference * energyPowerDurationScale
 		);
 	}
 
@@ -244,8 +268,11 @@ namespace ly
 		const sas::GameplayAttributeList values = ResolveValues(context);
 		movement::MovementPolicyRequest policy;
 		policy.sourceId = context.definition.abilityId;
-		// Keep normal damping for responsive steering; only the active speed cap
-		// is removed. MovementComponent remains ability-agnostic.
+		const auto& movementAttributes = ship->GetMovementComponent().GetAttributes();
+		const float normalDampingRetention = std::clamp(movementAttributes.linearDamping.currentValue, 0.f, 1.f);
+		const float dampingMultiplier = std::clamp(
+			FindValue(values, AbilityData::ZeroDrag::Attribute::DampingMultiplier, 0.2f), 0.f, 1.f);
+		policy.dampingRetentionOverride = 1.f - (1.f - normalDampingRetention) * dampingMultiplier;
 		policy.speedCapDisabledOverride = true;
 		if (!movement::MovementPolicyService::SetPolicy(context.owner, policy))
 		{
@@ -256,9 +283,8 @@ namespace ly
 			0.f,
 			FindValue(values, AbilityData::ZeroDrag::Attribute::ThrustBonus, 0.60f)
 		);
-		// The reusable runtime modifier affects thrust, not damping. With Zero
-		// Drag's speed cap disabled, the player keeps high post-afterburner speed
-		// under normal steering input without making the ship frictionless.
+		// The reusable runtime modifier affects thrust; the movement policy owns
+		// the reduced drift damping and disabled speed cap.
 		ShipRuntimeModifier modifier;
 		modifier.thrustBonus = thrustBonus;
 		ship->GetRuntimeModifiers().Set(context.definition.abilityId, std::move(modifier));

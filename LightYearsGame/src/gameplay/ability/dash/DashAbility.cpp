@@ -19,11 +19,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::array<float, 6> CooldownStepDeltas{
-			-0.40f, -0.30f, -0.20f, -0.10f, -0.08f, -0.06f
-		};
-		constexpr std::size_t CooldownStepsPerTier = 4;
-		constexpr std::size_t ExpectedProgressionSteps = CooldownStepDeltas.size() * CooldownStepsPerTier;
+		constexpr std::size_t ExpectedProgressionSteps = 24;
 		constexpr float ProgressionTolerance = 0.0001f;
 
 		float ResolveNumericSetting(
@@ -130,7 +126,10 @@ namespace ly
 		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
 		{
 			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
-			const float expectedCooldownDelta = CooldownStepDeltas[stepIndex / CooldownStepsPerTier];
+			const float expectedCooldownDelta = -GetGlobalAbilityCooldownStepReduction(
+				definition.cooldown,
+				stepIndex
+			);
 			int cooldownModifierCount = 0;
 			int moveSpeedModifierCount = 0;
 			bool progressionMatches = step.attributeModifiers.size() == 2 &&
@@ -167,7 +166,8 @@ namespace ly
 			}
 
 			const float levelCooldown = ApplyCooldownStep(previousCooldown, step);
-			if (!std::isfinite(levelCooldown) || levelCooldown <= 0.f || levelCooldown >= previousCooldown)
+			if (!std::isfinite(levelCooldown) || levelCooldown < 1.f - ProgressionTolerance ||
+				levelCooldown > previousCooldown + ProgressionTolerance)
 			{
 				if (failureReason)
 				{

@@ -4,6 +4,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
+#include "gameplay/temporal/TemporalRateModifierLedger.h"
 
 namespace ly
 {
@@ -23,6 +24,7 @@ namespace ly
 		sas::GameplayEffectHandle mDamageReductionHandle;
 		PrimaryWeaponOverrideHandle mWeaponOverrideHandle = 0;
 		AbilityActivationGuardHandle mActivationGuard;
+		temporal::RateModifierSourceId mFireRateModifierSourceId = 0;
 		float mElapsed = 0.f;
 		float mMinimumDuration = 1.f;
 		bool mCancelAvailable = false;

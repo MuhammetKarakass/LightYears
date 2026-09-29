@@ -59,20 +59,14 @@ namespace AbilityData::FrostMaelstrom
 		inline static const sas::AttributeId OrbitalAngularSpeed{
 			"Ability.Control.FrostMaelstrom.OrbitalAngularSpeed"
 		};
-		inline static const sas::AttributeId InwardForce{
-			"Ability.Control.FrostMaelstrom.InwardForce"
+		inline static const sas::AttributeId PullStrength{
+			"Ability.Control.FrostMaelstrom.PullStrength"
 		};
 		inline static const sas::AttributeId OrbitalRadiusRatio{
 			"Ability.Control.FrostMaelstrom.OrbitalRadiusRatio"
 		};
-		inline static const sas::AttributeId EnergyPowerReference{
-			"Ability.Control.FrostMaelstrom.EnergyPowerReference"
-		};
 		inline static const sas::AttributeId EnergyPowerDamageScale{
 			"Ability.Control.FrostMaelstrom.EnergyPowerDamageScale"
-		};
-		inline static const sas::AttributeId EnergyPowerRadiusScale{
-			"Ability.Control.FrostMaelstrom.EnergyPowerRadiusScale"
 		};
 
 		// Tick damage uses the project-wide Common.Damage identity so normal
@@ -91,7 +85,7 @@ namespace AbilityData::FrostMaelstrom
 	};
 
 	inline constexpr float DefaultDuration = 6.f;
-	inline constexpr float DefaultCooldown = 12.f;
+	inline constexpr float DefaultCooldown = 14.f;
 	inline constexpr float DefaultMinimumRadius = 300.f;
 	inline constexpr float DefaultMaximumRadius = 600.f;
 	inline constexpr float DefaultMinimumMovementSpeed = 200.f;
@@ -101,10 +95,8 @@ namespace AbilityData::FrostMaelstrom
 	// The field must pull targets decisively toward the inner orbit instead of
 	// only nudging them.  Angular speed is expressed in radians per second.
 	inline constexpr float DefaultOrbitalAngularSpeed = 4.5f;
-	inline constexpr float DefaultInwardForce = 1500.f;
+	inline constexpr float DefaultPullStrength = 300.f;
 	inline constexpr float DefaultOrbitalRadiusRatio = 0.42f;
-	inline constexpr float DefaultEnergyPowerReference = 50.f;
-	inline constexpr float DefaultEnergyPowerDamageScale = 0.005f;
-	inline constexpr float DefaultEnergyPowerRadiusScale = 0.20f;
-	inline constexpr float DefaultTickDamage = 2.f;
+	inline constexpr float DefaultEnergyPowerDamageScale = 0.1f;
+	inline constexpr float DefaultTickDamage = 1.f;
 }

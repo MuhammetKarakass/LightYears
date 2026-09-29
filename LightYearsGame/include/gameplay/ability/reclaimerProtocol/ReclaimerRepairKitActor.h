@@ -29,7 +29,7 @@ namespace ly
 
 	private:
 		ReclaimerProtocolPresentationProfile mPresentationProfile;
-		float mResolvedHealRatio = 0.04f;
+		float mResolvedHealRatio = 0.08f;
 		float mFlashTimeRemaining = 0.f;
 		bool mIsCollected = false;
 	};

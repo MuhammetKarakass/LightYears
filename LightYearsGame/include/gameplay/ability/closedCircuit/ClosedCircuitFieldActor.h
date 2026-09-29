@@ -13,7 +13,7 @@ namespace ly
 	{
 	public:
 		ClosedCircuitFieldActor(World* world, Actor* owner, const ClosedCircuitPresentationProfile& profile);
-		void ConfigureDelivery(const sf::Vector2f& target, float speed, float formationDuration, float barrierRadius, float barrierHealth);
+		void ConfigureDelivery(const sf::Vector2f& target, float speed, float formationDuration, float barrierRadius, float barrierHealth, float activeDuration);
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderWindow& window) override;
 		void Destroy() override;
@@ -30,6 +30,8 @@ namespace ly
 		float mDeliverySpeed = 280.f;
 		float mFormationDuration = 0.50f;
 		float mPhaseElapsed = 0.f;
+		float mActiveElapsed = 0.f;
+		float mActiveDuration = 8.f;
 		float mBarrierRadius = 250.f;
 		float mRemainingHealth = 0.f;
 		float mMaximumHealth = 0.f;

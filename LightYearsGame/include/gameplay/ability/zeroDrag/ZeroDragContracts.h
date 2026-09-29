@@ -40,11 +40,14 @@ namespace AbilityData::ZeroDrag
 		inline static const sas::AttributeId EnergyPowerReference{
 			"Ability.Movement.ZeroDrag.EnergyPowerReference"
 		};
-		inline static const sas::AttributeId EnergyPowerDurationPerPoint{
-			"Ability.Movement.ZeroDrag.EnergyPowerDurationPerPoint"
+		inline static const sas::AttributeId EnergyPowerDurationScale{
+			"Ability.Movement.ZeroDrag.EnergyPowerDurationScale"
 		};
 		inline static const sas::AttributeId ThrustBonus{
 			"Ability.Movement.ZeroDrag.ThrustBonus"
+		};
+		inline static const sas::AttributeId DampingMultiplier{
+			"Ability.Movement.ZeroDrag.DampingMultiplier"
 		};
 		inline static const sas::AttributeId NormalizationDuration{
 			"Ability.Movement.ZeroDrag.NormalizationDuration"

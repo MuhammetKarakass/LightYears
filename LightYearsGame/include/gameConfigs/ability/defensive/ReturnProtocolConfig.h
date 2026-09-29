@@ -26,19 +26,28 @@ namespace AbilityData::Definitions
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 105, 225, 255, 235 };
 		definition.attributes = {
-			{ AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier, 0.80f, 0.f },
-			{ AbilityData::ReturnProtocol::Attribute::MaxHealthReference, 100.f, 0.f },
-			{ AbilityData::ReturnProtocol::Attribute::MaxHealthDamageScale, 0.001f, 0.f }
+			{ AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier, 0.90f, 0.f },
+			{ AbilityData::ReturnProtocol::Attribute::AttackPowerReference, 100.f, 0.f },
+			{ AbilityData::ReturnProtocol::Attribute::AttackPowerScale, 0.08f, 0.f },
+			{ AbilityData::ReturnProtocol::Attribute::EnergyPowerReference, 100.f, 0.f },
+			{ AbilityData::ReturnProtocol::Attribute::EnergyPowerScale, 0.12f, 0.f }
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{ {
-				{ AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier,
-					sas::AttributeModifierOperation::Add, 0.03f },
-				{ ly::CommonAttributeIds::Cooldown,
-					sas::AttributeModifierOperation::Add, -0.25f }
-			}, {}, {}, {} }
-		);
+		definition.levelProgression.reserve(14);
+		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
+				{
+					{ AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier,
+						sas::AttributeModifierOperation::Add, 0.04f },
+					{ AbilityData::ReturnProtocol::Attribute::AttackPowerScale,
+						sas::AttributeModifierOperation::Add, 0.01f },
+					{ AbilityData::ReturnProtocol::Attribute::EnergyPowerScale,
+						sas::AttributeModifierOperation::Add, 0.01f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
+						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
+				}, {}, {}, {}
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

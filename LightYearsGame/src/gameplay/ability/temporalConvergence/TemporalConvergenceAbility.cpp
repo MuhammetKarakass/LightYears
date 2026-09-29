@@ -79,7 +79,8 @@ namespace ly
 				AbilityData::TemporalConvergence::Attribute::OvershieldHoldDuration,
 				AbilityData::TemporalConvergence::Attribute::OvershieldDecayPerSecond
 		};
-		const bool validAttributes = std::all_of(
+		const bool validAttributes = definition.attributes.size() == requiredAttributes.size() &&
+			std::all_of(
 			requiredAttributes.begin(), requiredAttributes.end(),
 			[&definition](const sas::AttributeId& id)
 			{
@@ -93,7 +94,35 @@ namespace ly
 			definition.scalingRules.front().operation ==
 				sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 0.60f);
-		const bool validProgression = definition.levelProgression.size() == 14;
+		bool validProgression = definition.levelProgression.size() == 14;
+		for (std::size_t index = 0; validProgression && index < definition.levelProgression.size(); ++index)
+		{
+			const AbilityLevelStep& step = definition.levelProgression[index];
+			const bool hasCooldown = std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+				[&definition, index](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == CommonAttributeIds::Cooldown &&
+						modifier.operation == sas::AttributeModifierOperation::Add &&
+						NearlyEqual(modifier.magnitude, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index));
+				});
+			if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 || !hasCooldown)
+			{
+				validProgression = false;
+				break;
+			}
+			const auto shield = std::find_if(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier)
+				{
+					return modifier.attributeId == AbilityData::TemporalConvergence::Attribute::BaseShield;
+				});
+			const sas::AttributeScalingRule& energyScaling = step.scalingRules.front();
+			validProgression = shield != step.attributeModifiers.end() &&
+				shield->operation == sas::AttributeModifierOperation::Add && NearlyEqual(shield->magnitude, 10.f) &&
+				energyScaling.targetAttributeId == AbilityData::TemporalConvergence::Attribute::BaseShield &&
+				energyScaling.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+				energyScaling.operation == sas::AttributeModifierOperation::Add &&
+				NearlyEqual(energyScaling.coefficient, 0.09f);
+		}
 		const bool validActor = field &&
 			field->actorType == AbilityActorType::TemporalConvergenceField &&
 			field->lifeTime >= 5.6f && field->presentationProfileId.IsValid();

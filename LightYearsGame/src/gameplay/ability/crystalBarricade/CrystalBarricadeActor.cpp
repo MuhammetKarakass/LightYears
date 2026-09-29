@@ -7,7 +7,6 @@
 #include "gameplay/ability/crystalBarricade/CrystalBarricadeContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
-#include "gameplay/targeting/SweptGeometry.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 
 #include <algorithm>
@@ -63,9 +62,7 @@ namespace ly
 					AbilityData::CrystalBarricade::Actor::Wall::BaseRicochetMultiplier,
 					AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetReference,
 					AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetScale,
-					AbilityData::CrystalBarricade::Actor::Wall::SameSurfaceLockDuration,
-					AbilityData::CrystalBarricade::Actor::Wall::MaxHealthDurationReference,
-					AbilityData::CrystalBarricade::Actor::Wall::MaxHealthDurationScale
+					AbilityData::CrystalBarricade::Actor::Wall::SameSurfaceLockDuration
 				})
 				{
 					const sas::GameplayAttribute* value = sas::FindAttribute(definition.attributes, required);
@@ -134,25 +131,19 @@ namespace ly
 		mLength = std::max(1.f, Value(attributes, AreaAttributeIds::Length, mLength));
 		mThickness = std::max(1.f, Value(attributes, AreaAttributeIds::Width, mThickness));
 		const float energyPower = ResolveOwnerAttribute(OwnerAttributeIds::EnergyPower);
-		const float maxHealth = ResolveOwnerAttribute(OwnerAttributeIds::MaxHealth);
-		mRemainingDuration = std::max(0.f,
-			Value(attributes, CommonAttributeIds::Duration, mRemainingDuration) +
-			std::max(0.f, maxHealth - Value(attributes,
-				AbilityData::CrystalBarricade::Actor::Wall::MaxHealthDurationReference, 100.f)) *
-			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::MaxHealthDurationScale, 0.005f)
-		);
+		mRemainingDuration = std::max(0.f, Value(attributes, CommonAttributeIds::Duration, mRemainingDuration));
 		mContactDamage = std::max(0.f,
-			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::BaseContactDamage, 20.f) +
+			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::BaseContactDamage, 75.f) +
 			energyPower * Value(attributes,
-				AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerContactScale, 0.15f)
+				AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerContactScale, 0.60f)
 		);
 		mContactInterval = std::max(0.01f, Value(attributes,
-			AbilityData::CrystalBarricade::Actor::Wall::ContactInterval, 0.5f));
+			AbilityData::CrystalBarricade::Actor::Wall::ContactInterval, 1.5f));
 		mRicochetMultiplier = std::max(0.f,
-			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::BaseRicochetMultiplier, 0.8f) +
-			std::max(0.f, energyPower - Value(attributes,
-				AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetReference, 50.f)) *
-			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetScale, 0.001f)
+			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::BaseRicochetMultiplier, 1.25f) *
+			(1.f + (energyPower / std::max(1.f, Value(attributes,
+				AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetReference, 500.f))) *
+			Value(attributes, AbilityData::CrystalBarricade::Actor::Wall::EnergyPowerRicochetScale, 1.f))
 		);
 		mSameSurfaceLockDuration = std::max(0.f, Value(attributes,
 			AbilityData::CrystalBarricade::Actor::Wall::SameSurfaceLockDuration, 0.12f));
@@ -195,10 +186,6 @@ namespace ly
 			{
 				++iterator;
 			}
-		}
-		if (mRemainingDuration > 0.f)
-		{
-			ApplyPeriodicContactDamage();
 		}
 		AbilityWorldActor::Tick(safeDeltaTime);
 	}
@@ -261,46 +248,10 @@ namespace ly
 			GetDamagePayload(),
 			GetSourceAbilityId(),
 			GetSourceAbilityTags(),
-			DamageDeliveryType::Area,
+			DamageDeliveryType::Contact,
 			this
 		);
 		remainingCooldown = mContactInterval;
-	}
-
-	void CrystalBarricadeActor::ApplyPeriodicContactDamage()
-	{
-		World* world = GetWorld();
-		if (!world)
-		{
-			return;
-		}
-		const float broadphaseRadius = std::sqrt(
-			mLength * mLength + mThickness * mThickness
-		) * 0.5f + 64.f;
-		const float angle = GetActorRotation() * 0.01745329251994329577f;
-		const float cosine = std::cos(angle);
-		const float sine = std::sin(angle);
-		for (const weak_ptr<Actor>& targetWeak : world->GetActorsInBounds(
-			targeting::swept::RadiusBounds(GetActorLocation(), broadphaseRadius)
-		))
-		{
-			const shared_ptr<Actor> target = targetWeak.lock();
-			if (!target || !CanDamageContactTarget(*target))
-			{
-				continue;
-			}
-			const sf::Vector2f offset = target->GetActorLocation() - GetActorLocation();
-			const sf::Vector2f local{
-				cosine * offset.x + sine * offset.y,
-				-sine * offset.x + cosine * offset.y
-			};
-			const float targetRadius = std::max(0.f, target->GetPhysicsCollisionRadius());
-			if (std::abs(local.x) <= mLength * 0.5f + targetRadius &&
-				std::abs(local.y) <= mThickness * 0.5f + targetRadius)
-			{
-				TryApplyContactDamage(*target);
-			}
-		}
 	}
 
 	sf::Vector2f CrystalBarricadeActor::GetPhysicsCollisionBoxHalfExtents() const
@@ -319,7 +270,19 @@ namespace ly
 			return false;
 		}
 		outResponse.newOwner = GetOwnerActor();
-		outResponse.damageMultiplier = mRicochetMultiplier;
+		const uint64_t projectileId = incomingProjectile.GetUniqueID();
+		for (auto iterator = mEmpoweredRicochetProjectiles.begin(); iterator != mEmpoweredRicochetProjectiles.end();)
+		{
+			if (iterator->second.expired()) iterator = mEmpoweredRicochetProjectiles.erase(iterator);
+			else ++iterator;
+		}
+		const bool firstEmpoweredRicochet = mEmpoweredRicochetProjectiles.find(projectileId) ==
+			mEmpoweredRicochetProjectiles.end();
+		if (firstEmpoweredRicochet)
+		{
+			mEmpoweredRicochetProjectiles.emplace(projectileId, incomingProjectile.GetWeakPtr());
+		}
+		outResponse.damageMultiplier = firstEmpoweredRicochet ? mRicochetMultiplier : 1.f;
 		outResponse.sameSurfaceLockDuration = mSameSurfaceLockDuration;
 		outResponse.allowSameOwnerReflection = true;
 		return true;

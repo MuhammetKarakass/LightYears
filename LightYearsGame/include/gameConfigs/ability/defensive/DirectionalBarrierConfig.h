@@ -16,8 +16,8 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::Toggle;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 11.f;
-		definition.duration = 5.f;
+		definition.cooldown = 12.f;
+		definition.duration = 1.5f;
 		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Defense,
@@ -34,36 +34,30 @@ namespace AbilityData::Definitions
 			},
 			sas::GameplayAttribute{
 				AbilityData::DirectionalBarrier::Attribute::MaxHealthDurationScale,
-				0.0025f,
+				0.20f,
 				0.f
 			},
 			sas::GameplayAttribute{
 				AbilityData::DirectionalBarrier::Attribute::MovementSpeedMultiplier,
-				0.80f,
+				0.75f,
 				0.f,
 				1.f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
+		definition.levelProgression.reserve(14);
+		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Duration,
-						sas::AttributeModifierOperation::Add,
-						0.05f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
-					}
+					{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
+					{ AbilityData::DirectionalBarrier::Attribute::MaxHealthDurationScale,
+						sas::AttributeModifierOperation::Add, 0.01f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
+						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
 				},
-				{},
-				{},
-				{}
-			}
-		);
+				{}, {}, {}
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

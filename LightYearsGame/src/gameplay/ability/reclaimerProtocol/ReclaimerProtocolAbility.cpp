@@ -6,6 +6,7 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/damage/DamageContext.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "framework/Actor.h"
@@ -27,7 +28,46 @@ namespace ly
 				definition.attributes,
 				id
 			);
-			return attribute && std::isfinite(attribute->baseValue) && attribute->baseValue > 0.f;
+		return attribute && std::isfinite(attribute->baseValue) && attribute->baseValue > 0.f;
+		}
+
+		float Setting(const GameAbilityDefinition& definition, const char* name, float fallback)
+		{
+			return content::AbilityContentCatalog::FindNumericSetting(definition.abilityId, name).value_or(fallback);
+		}
+
+		bool HasExpectedProgression(const List<AbilityLevelStep>& steps)
+		{
+			if (steps.size() != 14) return false;
+			for (std::size_t index = 0; index < steps.size(); ++index)
+			{
+				const AbilityLevelStep& step = steps[index];
+				const bool appliesAtLevel = index % 2 == 1;
+				if (step.attributeModifiers.size() != (appliesAtLevel ? 2u : 1u) ||
+					!step.scalingRules.empty() || !step.addedActions.empty() || !step.addedTriggers.empty())
+				{
+					return false;
+				}
+				const auto cooldown = std::find_if(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+					[](const sas::AttributeModifier& modifier) { return modifier.attributeId == CommonAttributeIds::Cooldown; });
+				if (cooldown == step.attributeModifiers.end() ||
+					cooldown->operation != sas::AttributeModifierOperation::Add ||
+					std::abs(cooldown->magnitude + GetGlobalAbilityCooldownStepReduction(16.f, index)) > 0.0001f)
+				{
+					return false;
+				}
+				if (appliesAtLevel)
+				{
+					const sas::AttributeModifier& modifier = step.attributeModifiers.front();
+					if (modifier.attributeId != AbilityData::ReclaimerProtocol::Attribute::HealRatio ||
+						modifier.operation != sas::AttributeModifierOperation::Add ||
+						std::abs(modifier.magnitude - 0.01f) > 0.0001f)
+					{
+						return false;
+					}
+				}
+			}
+			return true;
 		}
 	}
 
@@ -42,7 +82,8 @@ namespace ly
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.duration <= 0.f ||
-			definition.cooldown <= 0.f || definition.levelProgression.size() != 14)
+			definition.cooldown <= 0.f || definition.attributes.size() != 1 ||
+			!HasExpectedProgression(definition.levelProgression))
 		{
 			if (failureReason)
 			{
@@ -129,6 +170,16 @@ namespace ly
 			AbilityData::ReclaimerProtocol::Attribute::HealRatio,
 			AbilityData::ReclaimerProtocol::DefaultHealRatio
 		));
+		const float maxHealth = std::max(0.f,
+			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::MaxHealth));
+		const float maxHealthReference = std::max(0.f, Setting(
+			context.definition, AbilityData::ReclaimerProtocol::Setting::MaxHealthReference, 250.f));
+		const float maxHealthPerStep = std::max(0.001f, Setting(
+			context.definition, AbilityData::ReclaimerProtocol::Setting::MaxHealthPerStep, 250.f));
+		const float healRatioPerStep = std::max(0.f, Setting(
+			context.definition, AbilityData::ReclaimerProtocol::Setting::HealRatioPerStep, 0.01f));
+		const float healRatio = snapshottedHealRatio +
+			std::max(0.f, maxHealth - maxHealthReference) / maxHealthPerStep * healRatioPerStep;
 
 		SpawnRepairKitAtLocation(
 			context,
@@ -136,7 +187,7 @@ namespace ly
 				damageContext->targetLocationAtResolution.x,
 				damageContext->targetLocationAtResolution.y
 			},
-			snapshottedHealRatio
+			healRatio
 		);
 	}
 

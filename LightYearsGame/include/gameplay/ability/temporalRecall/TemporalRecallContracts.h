@@ -55,8 +55,8 @@ namespace AbilityData::TemporalRecall
 		inline static const sas::AttributeId RewindDuration{
 			"Ability.Defense.TemporalRecall.RewindDuration"
 		};
-		inline static const sas::AttributeId PositiveRecoveryRatio{
-			"Ability.Defense.TemporalRecall.PositiveRecoveryRatio"
+		inline static const sas::AttributeId BaseRecovery{
+			"Ability.Defense.TemporalRecall.BaseRecovery"
 		};
 		inline static const sas::AttributeId MaxHealthReference{
 			"Ability.Defense.TemporalRecall.MaxHealthReference"
@@ -69,12 +69,6 @@ namespace AbilityData::TemporalRecall
 		};
 		inline static const sas::AttributeId EnergyPowerRecoveryScale{
 			"Ability.Defense.TemporalRecall.EnergyPowerRecoveryScale"
-		};
-		inline static const sas::AttributeId OvercapHoldDuration{
-			"Ability.Defense.TemporalRecall.OvercapHoldDuration"
-		};
-		inline static const sas::AttributeId OvercapDecayPerSecond{
-			"Ability.Defense.TemporalRecall.OvercapDecayPerSecond"
 		};
 
 		// Explicit aliases document that abilities scale from canonical owner stats,

@@ -6,9 +6,6 @@
 #include "gameplay/ability/cryostasis/CryostasisContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
-#include "gameplay/damage/DamageTypeSystem.h"
-#include "gameplay/time/PeriodicTickAccumulator.h"
-#include "gameplay/targeting/CombatantTargetQuery.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/ability/cryostasis/CryostasisVisualActor.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
@@ -27,7 +24,7 @@ namespace ly
 		// Duration and cooldown live in GameAbilityDefinition. Every item below is
 		// a value this family resolves at runtime, so the contract has one source
 		// of truth and cannot duplicate definition-level data.
-		constexpr std::size_t RequiredAttributeCount = 15;
+		constexpr std::size_t RequiredAttributeCount = 7;
 
 		sas::GameplayAttributeList ResolveValues(GameAbilityBehaviorContext& context)
 		{
@@ -51,19 +48,6 @@ namespace ly
 			return sas::FindAttributeValue(values, attributeId, fallback);
 		}
 
-		DamagePayload BuildCryoPayload(
-			const List<GameplayTag>& damageTags,
-			const sas::GameplayAttributeList& values,
-			int stacks
-		)
-		{
-			DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
-			// Cryostasis applies the established Cryo status contract; it only
-			// selects whether this hit contributes one field stack or four break
-			// stacks. Slow mechanics remain in DamageTypeSystem.
-		payload.cryoBuildupPerHit = std::clamp(stacks, 0, 4);
-		return payload;
-		}
 	}
 
 	bool CryostasisAbility::Validate(
@@ -78,33 +62,23 @@ namespace ly
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.duration <= 0.f ||
 			definition.cooldown <= 0.f || definition.attributes.size() != RequiredAttributeCount ||
-			definition.damageTags.size() != 1 ||
-			!definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Cryo) ||
 			definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Cryostasis requires its duration lifecycle, Cryo identity, fifteen runtime attributes, and fourteen progression steps.";
+				*failureReason = "Cryostasis requires its duration lifecycle, seven runtime attributes, and fourteen progression steps.";
 			}
 			return false;
 		}
 
 		for (const sas::AttributeId& required : {
-			AbilityData::Cryostasis::Attribute::Radius,
-			AbilityData::Cryostasis::Attribute::FieldTickDamage,
-			AbilityData::Cryostasis::Attribute::FieldTickInterval,
-			AbilityData::Cryostasis::Attribute::FieldTickDamageMaxHealthScale,
 			AbilityData::Cryostasis::Attribute::BaseIceHealth,
 			AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale,
 			AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond,
 			AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale,
 			AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond,
-			AbilityData::Cryostasis::Attribute::AfterburnerRecoveryMaxHealthScale,
-			AbilityData::Cryostasis::Attribute::BaseBreakDamage,
-			AbilityData::Cryostasis::Attribute::BreakDamageMaxIceHealthScale,
-			AbilityData::Cryostasis::Attribute::FieldCryoStacks,
-			AbilityData::Cryostasis::Attribute::BreakCryoStacks,
-			AbilityData::Cryostasis::Attribute::BreakCooldownMultiplier
+			AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale,
+			AbilityData::Cryostasis::Attribute::EnergyPowerReference
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -143,11 +117,11 @@ namespace ly
 		);
 		mMaximumIceHealth = std::max(
 			1.f,
-			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseIceHealth, 200.f) +
+			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseIceHealth, 150.f) +
 				maximumHealth * std::max(0.f, FindValue(
 					mResolvedValues,
 					AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale,
-					0.40f
+					0.50f
 				))
 		);
 		sas::GameplayEffectSpec shellSpec = sas::MakeGameplayEffectSpec(*shellDefinition);
@@ -170,8 +144,6 @@ namespace ly
 			return false;
 		}
 
-		mDamageTags = context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
-		mFieldTickAccumulator = 0.f;
 		mIceBroken = false;
 		mActive = true;
 		// Cryostasis does not add a second shield-regeneration formula. It removes
@@ -225,13 +197,15 @@ namespace ly
 			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::MaxHealth)
 		);
 		const float healthRegen = std::max(0.f,
-			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, 8.f) +
-				maximumHealth * std::max(0.f, FindValue(mResolvedValues,
-					AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, 0.04f)));
+			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, 5.f) +
+				(maximumHealth / 100.f) * std::max(0.f, FindValue(mResolvedValues,
+					AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, 5.f)));
+		const float energyPower = std::max(0.f, context.abilitySystem.GetAttributes().GetCurrentValue(
+			OwnerAttributeIds::EnergyPower));
 		const float afterburnerRecovery = std::max(0.f,
 			FindValue(mResolvedValues, AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, 4.f) +
-				maximumHealth * std::max(0.f, FindValue(mResolvedValues,
-					AbilityData::Cryostasis::Attribute::AfterburnerRecoveryMaxHealthScale, 0.01f)));
+				energyPower * std::max(0.f, FindValue(mResolvedValues,
+					AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, 0.05f)));
 		ship->GetHealthComponent().Regenerate(healthRegen * safeDeltaTime);
 		ship->GetEnergyComponent().ClearRechargeDelay();
 		ship->GetEnergyComponent().Tick(safeDeltaTime, afterburnerRecovery, true);
@@ -252,21 +226,6 @@ namespace ly
 			}
 			visual->SetIceHealthRatio(iceHealthRatio);
 		}
-
-		const float interval = std::max(0.001f, FindValue(
-			mResolvedValues,
-			AbilityData::Cryostasis::Attribute::FieldTickInterval,
-			0.25f
-		));
-		const int tickCount = time::ConsumePeriodicTicks(
-			mFieldTickAccumulator,
-			safeDeltaTime,
-			interval
-		);
-		for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
-		{
-			ApplyFieldTick(context);
-		}
 	}
 
 	void CryostasisAbility::End(
@@ -278,11 +237,7 @@ namespace ly
 		{
 			return;
 		}
-		if (mIceBroken)
-		{
-			TriggerBreakExplosion(context);
-		}
-		else if (reason == sas::AbilityEndReason::Cancelled)
+		if (reason == sas::AbilityEndReason::Cancelled && !mIceBroken)
 		{
 			EmitEvent(context, AbilityData::Cryostasis::Event::ManuallyEnded);
 		}
@@ -315,108 +270,6 @@ namespace ly
 		context.instance.Cancel(sas::AbilityEndReason::Interrupted);
 	}
 
-	float CryostasisAbility::ResolveCooldownDurationOnEnd(
-		GameAbilityBehaviorContext&,
-		sas::AbilityEndReason,
-		float resolvedCooldown
-	)
-	{
-		return mIceBroken
-			? resolvedCooldown * std::clamp(FindValue(
-				mResolvedValues,
-				AbilityData::Cryostasis::Attribute::BreakCooldownMultiplier,
-				0.5f
-			), 0.f, 1.f)
-			: resolvedCooldown;
-	}
-
-	void CryostasisAbility::ApplyFieldTick(GameAbilityBehaviorContext& context)
-	{
-		World* world = context.owner.GetWorld();
-		if (!world)
-		{
-			return;
-		}
-		const float radius = std::max(0.f, FindValue(
-			mResolvedValues,
-			AbilityData::Cryostasis::Attribute::Radius,
-			300.f
-		));
-		const float maximumHealth = std::max(
-			0.f,
-			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::MaxHealth)
-		);
-		const float damage = std::max(0.f, FindValue(
-			mResolvedValues,
-			AbilityData::Cryostasis::Attribute::FieldTickDamage,
-			4.f
-		) + maximumHealth * std::max(0.f, FindValue(
-			mResolvedValues,
-			AbilityData::Cryostasis::Attribute::FieldTickDamageMaxHealthScale,
-			0.02f
-		)));
-		const int stacks = static_cast<int>(std::lround(FindValue(
-			mResolvedValues,
-			AbilityData::Cryostasis::Attribute::FieldCryoStacks,
-			1.f
-		)));
-		const DamagePayload payload = BuildCryoPayload(mDamageTags, mResolvedValues, stacks);
-		for (const shared_ptr<Actor>& target : targeting::FindOpposingCombatants(
-			*world,
-			context.owner,
-			radius
-		))
-		{
-			if (target && !target->GetIsPendingDestroy())
-			{
-				ApplyCombatDamage(
-					*target, damage, &context.owner, mDamageTags, payload,
-					sas::ContentId{ context.definition.abilityId },
-					context.definition.abilityTags, DamageDeliveryType::Area
-				);
-			}
-		}
-	}
-
-	void CryostasisAbility::TriggerBreakExplosion(GameAbilityBehaviorContext& context)
-	{
-		World* world = context.owner.GetWorld();
-		if (!world)
-		{
-			return;
-		}
-		const float radius = std::max(0.f, FindValue(
-			mResolvedValues, AbilityData::Cryostasis::Attribute::Radius, 300.f
-		));
-		const float damage = std::max(0.f, FindValue(
-			mResolvedValues, AbilityData::Cryostasis::Attribute::BaseBreakDamage, 70.f
-		) + mMaximumIceHealth * std::max(0.f, FindValue(
-			mResolvedValues,
-			AbilityData::Cryostasis::Attribute::BreakDamageMaxIceHealthScale,
-			0.30f
-		)));
-		const int stacks = static_cast<int>(std::lround(FindValue(
-			mResolvedValues, AbilityData::Cryostasis::Attribute::BreakCryoStacks, 4.f
-		)));
-		const DamagePayload payload = BuildCryoPayload(mDamageTags, mResolvedValues, stacks);
-		for (const shared_ptr<Actor>& target : targeting::FindOpposingCombatants(
-			*world, context.owner, radius
-		))
-		{
-			if (target && !target->GetIsPendingDestroy())
-			{
-				ApplyCombatDamage(
-					*target, damage, &context.owner, mDamageTags, payload,
-					sas::ContentId{ context.definition.abilityId },
-					context.definition.abilityTags, DamageDeliveryType::Area
-				);
-			}
-		}
-		// IceBroken is emitted by the shell effect when it consumes the breaking
-		// hit. Re-emitting it here would make this explosion look like a second
-		// break to every gameplay-event listener.
-	}
-
 	void CryostasisAbility::ClearRuntimeState(GameAbilityBehaviorContext& context)
 	{
 		if (mIceShellHandle.IsValid())
@@ -429,7 +282,6 @@ namespace ly
 		context.abilitySystem.RemoveOwnedTag(GameplayTagSchema::BlockPrimaryWeaponFire);
 		context.abilitySystem.RemoveOwnedTag(GameplayTagSchema::BlockMovementInput);
 		context.abilitySystem.RemoveOwnedTag(GameplayTagSchema::BlockExternalMovement);
-		mFieldTickAccumulator = 0.f;
 		mActive = false;
 	}
 

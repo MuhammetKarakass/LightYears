@@ -48,13 +48,6 @@ namespace AbilityData::Cryostasis
 
 	struct Attribute
 	{
-		inline static const sas::AttributeId Radius = ly::CommonAttributeIds::Radius;
-		inline static const sas::AttributeId FieldTickDamage = ly::CommonAttributeIds::Damage;
-		inline static const sas::AttributeId FieldTickInterval = ly::CommonAttributeIds::Interval;
-		inline static const sas::AttributeId FieldTickDamageMaxHealthScale{
-			"Ability.Defense.Cryostasis.FieldTickDamageMaxHealthScale"
-		};
-
 		inline static const sas::AttributeId BaseIceHealth{
 			"Ability.Defense.Cryostasis.BaseIceHealth"
 		};
@@ -70,23 +63,11 @@ namespace AbilityData::Cryostasis
 		inline static const sas::AttributeId BaseAfterburnerRecoveryPerSecond{
 			"Ability.Defense.Cryostasis.BaseAfterburnerRecoveryPerSecond"
 		};
-		inline static const sas::AttributeId AfterburnerRecoveryMaxHealthScale{
-			"Ability.Defense.Cryostasis.AfterburnerRecoveryMaxHealthScale"
+		inline static const sas::AttributeId AfterburnerRecoveryEnergyPowerScale{
+			"Ability.Defense.Cryostasis.AfterburnerRecoveryEnergyPowerScale"
 		};
-		inline static const sas::AttributeId BaseBreakDamage{
-			"Ability.Defense.Cryostasis.BaseBreakDamage"
-		};
-		inline static const sas::AttributeId BreakDamageMaxIceHealthScale{
-			"Ability.Defense.Cryostasis.BreakDamageMaxIceHealthScale"
-		};
-		inline static const sas::AttributeId FieldCryoStacks{
-			"Ability.Defense.Cryostasis.FieldCryoStacks"
-		};
-		inline static const sas::AttributeId BreakCryoStacks{
-			"Ability.Defense.Cryostasis.BreakCryoStacks"
-		};
-		inline static const sas::AttributeId BreakCooldownMultiplier{
-			"Ability.Defense.Cryostasis.BreakCooldownMultiplier"
+		inline static const sas::AttributeId EnergyPowerReference{
+			"Ability.Defense.Cryostasis.EnergyPowerReference"
 		};
 	};
 }

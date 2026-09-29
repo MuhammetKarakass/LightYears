@@ -46,12 +46,15 @@ namespace ly
 		std::string* failureReason
 	) const
 	{
-		if (!sas::IsLoadoutAbilitySlot(definition.slot) ||
+		if (definition.abilityId != AbilityData::DirectionalBarrier::AbilityId::Basic ||
+			definition.behaviorType != AbilityBehaviorType::DirectionalBarrier ||
+			!sas::IsLoadoutAbilitySlot(definition.slot) ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::Toggle ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 ||
 			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
-			!std::isfinite(definition.duration) || definition.duration <= 1.f)
+			!std::isfinite(definition.duration) || definition.duration <= 1.f ||
+			definition.attributes.size() != 3 || definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
 			{
@@ -122,6 +125,41 @@ namespace ly
 			return false;
 		}
 
+		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
+		{
+			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
+			bool durationMatches = false;
+			bool scaleMatches = false;
+			bool cooldownMatches = false;
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.operation != sas::AttributeModifierOperation::Add || !std::isfinite(modifier.magnitude))
+				{
+					continue;
+				}
+				if (modifier.attributeId == CommonAttributeIds::Duration)
+				{
+					durationMatches = std::abs(modifier.magnitude - 0.10f) <= 0.0001f;
+				}
+				else if (modifier.attributeId == AbilityData::DirectionalBarrier::Attribute::MaxHealthDurationScale)
+				{
+					scaleMatches = std::abs(modifier.magnitude - 0.01f) <= 0.0001f;
+				}
+				else if (modifier.attributeId == CommonAttributeIds::Cooldown)
+				{
+					const float expected = -GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex);
+					cooldownMatches = std::abs(modifier.magnitude - expected) <= 0.0001f;
+				}
+			}
+			if (step.attributeModifiers.size() != 3 || !durationMatches || !scaleMatches || !cooldownMatches ||
+				!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
+				!step.addedTriggers.empty() || !step.scalingRules.empty())
+			{
+				if (failureReason) *failureReason = "Directional Barrier progression must add duration, health scale, and global cooldown at every level.";
+				return false;
+			}
+		}
+
 		return true;
 	}
 
@@ -138,7 +176,7 @@ namespace ly
 		};
 		const sas::GameplayAttributeList values = ResolveValues(mutableContext);
 		const float reference = std::max(
-			0.f,
+			1.f,
 			sas::FindAttributeValue(
 				values,
 				AbilityData::DirectionalBarrier::Attribute::MaxHealthReference,
@@ -150,7 +188,7 @@ namespace ly
 			sas::FindAttributeValue(
 				values,
 				AbilityData::DirectionalBarrier::Attribute::MaxHealthDurationScale,
-				0.0025f
+				0.20f
 			)
 		);
 		const float maxHealth = std::max(
@@ -161,7 +199,7 @@ namespace ly
 		);
 		return std::max(
 			0.f,
-			defaultDuration + std::max(0.f, maxHealth - reference) * scale
+			defaultDuration + (maxHealth / reference) * scale
 		);
 	}
 

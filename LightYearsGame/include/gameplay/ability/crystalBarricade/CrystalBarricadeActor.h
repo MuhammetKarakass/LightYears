@@ -29,7 +29,6 @@ namespace ly
 	private:
 		bool CanDamageContactTarget(const Actor& actor) const;
 		void TryApplyContactDamage(Actor& actor);
-		void ApplyPeriodicContactDamage();
 		float ResolveOwnerAttribute(const sas::AttributeId& id) const;
 
 		CrystalBarricadeWallPresentationProfile mProfile;
@@ -38,10 +37,11 @@ namespace ly
 		float mRemainingDuration = 6.f;
 		float mBreakTimeRemaining = 0.f;
 		float mContactDamage = 20.f;
-		float mContactInterval = 0.50f;
+		float mContactInterval = 1.5f;
 		float mRicochetMultiplier = 0.80f;
 		float mSameSurfaceLockDuration = 0.12f;
 		std::unordered_map<uint64_t, float> mNextContactDamageTime;
+		mutable std::unordered_map<uint64_t, weak_ptr<const Object>> mEmpoweredRicochetProjectiles;
 	};
 
 	bool RegisterCrystalBarricadeWallActorType();

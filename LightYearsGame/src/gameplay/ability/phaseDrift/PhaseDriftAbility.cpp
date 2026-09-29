@@ -1,13 +1,10 @@
 #include "gameplay/ability/phaseDrift/PhaseDriftAbility.h"
 
-#include "effects/GameplayEffectSpec.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
-#include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/ship/ShipRuntimeModifiers.h"
 #include "gameplay/tags/GameplayTags.h"
-#include "gameConfigs/combat/EffectConfig.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "presentation/ability/phaseDrift/PhaseDriftPresentationIds.h"
 #include "presentation/ability/phaseDrift/PhaseDriftPresentationProfile.h"
@@ -57,54 +54,6 @@ namespace ly
 			return AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		}
 
-		float ResolveEnergyFactor(
-			const LightYearsAbilitySystemComponent& abilitySystem,
-			const sas::GameplayAttributeList& values
-		)
-		{
-			const float energyScale = std::max(
-				0.001f,
-				FindValue(values, AbilityData::PhaseDrift::Attribute::EnergyScale, 1.f)
-			);
-			const float energyPower = std::max(
-				0.f,
-				abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)
-			);
-			return std::clamp(1.f - std::exp(-energyPower / energyScale), 0.f, 1.f);
-		}
-
-		bool ApplyPolicyEffect(
-			GameAbilityBehaviorContext& context,
-			const char* effectId,
-			float duration,
-			List<sas::GameplayEffectHandle>& handles
-		)
-		{
-			const sas::GameplayEffectDefinition* definition =
-				EffectData::FindGameplayEffectDefinition(effectId);
-			if (!definition)
-			{
-				return false;
-			}
-
-			sas::GameplayEffectSpec spec = sas::MakeGameplayEffectSpec(*definition);
-			spec.duration = duration;
-			spec.maxStacks = 1;
-			const sas::GameplayEffectHandle handle =
-				context.abilitySystem.ApplyGameplayEffect(
-					spec,
-					sas::GameplayEffectSourceContext{
-						&context.owner,
-						&context.instance
-					}
-				);
-			if (!handle.IsValid())
-			{
-				return false;
-			}
-			handles.push_back(handle);
-			return true;
-		}
 	}
 
 	bool PhaseDriftAbility::Validate(
@@ -112,12 +61,35 @@ namespace ly
 		std::string* failureReason
 	) const
 	{
+		std::size_t progressionIndex = 0;
+		const bool validProgression = definition.levelProgression.size() == 14 &&
+			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
+				[&definition, &progressionIndex](const AbilityLevelStep& step)
+				{
+					const std::size_t index = progressionIndex++;
+					if (step.attributeModifiers.size() != 4 || !step.scalingRules.empty()) return false;
+					const auto has = [&step](const sas::AttributeId& id, float magnitude)
+					{
+						return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+							[&id, magnitude](const sas::AttributeModifier& modifier)
+							{
+								return modifier.attributeId == id &&
+									modifier.operation == sas::AttributeModifierOperation::Add &&
+									std::abs(modifier.magnitude - magnitude) <= 0.0001f;
+							});
+					};
+					return has(CommonAttributeIds::Duration, 0.05f) &&
+						has(AbilityData::PhaseDrift::Attribute::EPDurationScale, 0.05f) &&
+						has(AbilityData::PhaseDrift::Attribute::MovementSpeedBonus, 0.02f) &&
+						has(CommonAttributeIds::Cooldown, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index));
+				});
 		if (definition.abilityId != AbilityData::PhaseDrift::AbilityId::Basic ||
 			!sas::IsLoadoutAbilitySlot(definition.slot) ||
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.cooldown <= 0.f ||
-			definition.duration <= 0.f)
+			definition.duration != 3.5f || definition.cooldown != 16.f ||
+			definition.attributes.size() != 2 || !validProgression)
 		{
 			if (failureReason)
 			{
@@ -128,14 +100,8 @@ namespace ly
 		}
 
 		for (const sas::AttributeId& required : {
-			AbilityData::PhaseDrift::Attribute::MaximumMobilityDurationBonus,
-			AbilityData::PhaseDrift::Attribute::MobilityScale,
-			AbilityData::PhaseDrift::Attribute::MovementSpeedBonus,
-			AbilityData::PhaseDrift::Attribute::ShieldRegenBonus,
-			AbilityData::PhaseDrift::Attribute::AfterburnerRegenBonus,
-			AbilityData::PhaseDrift::Attribute::EnergyScale,
-			AbilityData::PhaseDrift::Attribute::MaximumEnergyShieldBonus,
-			AbilityData::PhaseDrift::Attribute::MaximumEnergyAfterburnerBonus
+			AbilityData::PhaseDrift::Attribute::EPDurationScale,
+			AbilityData::PhaseDrift::Attribute::MovementSpeedBonus
 		})
 		{
 			const sas::GameplayAttribute* attribute = FindAttribute(definition, required);
@@ -149,14 +115,8 @@ namespace ly
 			}
 		}
 
-		if (FindAttribute(definition, AbilityData::PhaseDrift::Attribute::MobilityScale)->baseValue <= 0.f ||
-			FindAttribute(definition, AbilityData::PhaseDrift::Attribute::EnergyScale)->baseValue <= 0.f ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::MaximumMobilityDurationBonus)->baseValue) ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::MovementSpeedBonus)->baseValue) ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::ShieldRegenBonus)->baseValue) ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::AfterburnerRegenBonus)->baseValue) ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::MaximumEnergyShieldBonus)->baseValue) ||
-			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::MaximumEnergyAfterburnerBonus)->baseValue))
+		if (!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::EPDurationScale)->baseValue) ||
+			!IsFiniteNonNegative(FindAttribute(definition, AbilityData::PhaseDrift::Attribute::MovementSpeedBonus)->baseValue))
 		{
 			if (failureReason)
 			{
@@ -165,23 +125,6 @@ namespace ly
 			return false;
 		}
 
-		for (const char* effectId : {
-			AbilityData::PhaseDrift::Effect::MovementBoostId,
-			AbilityData::PhaseDrift::Effect::ShieldRecoveryId,
-			AbilityData::PhaseDrift::Effect::AfterburnerRecoveryId
-		})
-		{
-			const sas::GameplayEffectDefinition* effect =
-				EffectData::FindGameplayEffectDefinition(effectId);
-			if (!effect || effect->durationPolicy != sas::GameplayEffectDurationPolicy::Duration)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Phase Drift requires three reusable duration effects.";
-				}
-				return false;
-			}
-		}
 		return true;
 	}
 
@@ -190,30 +133,14 @@ namespace ly
 	) const
 	{
 		const sas::GameplayAttributeList values = ResolveValues(context);
-		const float mobilityScale = std::max(
-			0.001f,
-			FindValue(values, AbilityData::PhaseDrift::Attribute::MobilityScale, 20.f)
-		);
-		const float mobilityRating = std::max(
+		const float energyPower = std::max(
 			0.f,
-			(
-				context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal) +
-				context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical)
-			) * 0.5f
-		);
-		const float mobilityFactor = std::clamp(
-			1.f - std::exp(-mobilityRating / mobilityScale),
-			0.f,
-			1.f
+			context.abilitySystem.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower)
 		);
 		return std::max(
 			0.f,
-			context.definition.duration +
-				FindValue(
-					values,
-					AbilityData::PhaseDrift::Attribute::MaximumMobilityDurationBonus,
-					0.f
-				) * mobilityFactor
+			context.definition.duration + energyPower / 100.f * FindValue(
+				values, AbilityData::PhaseDrift::Attribute::EPDurationScale, 0.40f)
 		);
 	}
 
@@ -241,29 +168,6 @@ namespace ly
 			return false;
 		}
 
-		// Cleanse before applying Phase's own effects so the new beneficial
-		// recovery effects cannot remove themselves.
-		for (const sas::GameplayEffectDisposition disposition : {
-			sas::GameplayEffectDisposition::Beneficial,
-			sas::GameplayEffectDisposition::Harmful
-		})
-		{
-			context.abilitySystem.RemoveGameplayEffectsIf(
-				[disposition](const sas::ActiveGameplayEffect& activeEffect)
-				{
-					const sas::GameplayEffectDefinition& definition = activeEffect.spec.definition;
-					return definition.disposition == disposition && definition.cleanseable;
-				}
-			);
-		}
-
-		const float energyFactor = ResolveEnergyFactor(context.abilitySystem, values);
-		const float shieldMultiplier = 1.f +
-			std::max(0.f, FindValue(values, AbilityData::PhaseDrift::Attribute::ShieldRegenBonus, 0.f)) +
-			std::max(0.f, FindValue(values, AbilityData::PhaseDrift::Attribute::MaximumEnergyShieldBonus, 0.f)) * energyFactor;
-		const float afterburnerMultiplier = 1.f +
-			std::max(0.f, FindValue(values, AbilityData::PhaseDrift::Attribute::AfterburnerRegenBonus, 0.f)) +
-			std::max(0.f, FindValue(values, AbilityData::PhaseDrift::Attribute::MaximumEnergyAfterburnerBonus, 0.f)) * energyFactor;
 		const float movementMultiplier = 1.f + std::max(
 			0.f,
 			FindValue(values, AbilityData::PhaseDrift::Attribute::MovementSpeedBonus, 0.f)
@@ -273,11 +177,7 @@ namespace ly
 		ship->GetEnergyComponent().ClearRechargeDelay();
 		ship->GetRuntimeModifiers().Set(
 			AbilityData::PhaseDrift::AbilityId::Basic,
-			ShipRuntimeModifier{
-				movementMultiplier,
-				shieldMultiplier,
-				afterburnerMultiplier
-			}
+			ShipRuntimeModifier{ movementMultiplier }
 		);
 		ship->GetCombatRuntime().SetDamageProtection(
 			AbilityData::PhaseDrift::AbilityId::Basic,
@@ -292,11 +192,6 @@ namespace ly
 		// enemy ships and enemy projectiles no longer generate collision events.
 		ship->SetCollisionMask(CollisionLayer::Powerup);
 		context.abilitySystem.AddOwnedTag(AbilityData::PhaseDrift::State::Active);
-
-		mAppliedEffectHandles.clear();
-		ApplyPolicyEffect(context, AbilityData::PhaseDrift::Effect::MovementBoostId, mResolvedDuration, mAppliedEffectHandles);
-		ApplyPolicyEffect(context, AbilityData::PhaseDrift::Effect::ShieldRecoveryId, mResolvedDuration, mAppliedEffectHandles);
-		ApplyPolicyEffect(context, AbilityData::PhaseDrift::Effect::AfterburnerRecoveryId, mResolvedDuration, mAppliedEffectHandles);
 
 		if (World* world = context.owner.GetWorld())
 		{
@@ -327,7 +222,6 @@ namespace ly
 			return;
 		}
 
-		RemoveAppliedEffects(context);
 		if (auto* ship = dynamic_cast<SpaceShip*>(&context.owner))
 		{
 			ship->GetCombatRuntime().RemoveDamageProtection(
@@ -360,18 +254,6 @@ namespace ly
 			EmitEvent(context, AbilityData::PhaseDrift::Event::Completed);
 		}
 		EmitEvent(context, AbilityData::PhaseDrift::Event::Ended);
-	}
-
-	void PhaseDriftAbility::RemoveAppliedEffects(GameAbilityBehaviorContext& context)
-	{
-		for (const sas::GameplayEffectHandle handle : mAppliedEffectHandles)
-		{
-			if (handle.IsValid())
-			{
-				context.abilitySystem.RemoveGameplayEffect(handle);
-			}
-		}
-		mAppliedEffectHandles.clear();
 	}
 
 	void PhaseDriftAbility::OnOwnerAbilityActivated(

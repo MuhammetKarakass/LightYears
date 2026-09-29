@@ -14,6 +14,19 @@ namespace AbilityData::CrystalBarricade
 		definition.actorDefinitionId = Actor::Wall::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::CrystalBarricadeWall;
 		definition.presentationProfileId = ly::CrystalBarricadePresentationIds::WallBasic;
+		definition.lifeTime = 6.f;
+		definition.attributes = {
+			{ ly::CommonAttributeIds::Duration, 6.f, 0.01f },
+			{ ly::AreaAttributeIds::Length, 300.f, 1.f },
+			{ ly::AreaAttributeIds::Width, 22.f, 1.f },
+			{ Actor::Wall::SameSurfaceLockDuration, 0.12f, 0.f },
+			{ Actor::Wall::BaseContactDamage, 75.f, 0.f },
+			{ Actor::Wall::EnergyPowerContactScale, 0.60f, 0.f },
+			{ Actor::Wall::ContactInterval, 1.5f, 0.f },
+			{ Actor::Wall::BaseRicochetMultiplier, 1.25f, 0.f },
+			{ Actor::Wall::EnergyPowerRicochetReference, 500.f, 0.f },
+			{ Actor::Wall::EnergyPowerRicochetScale, 1.f, 0.f }
+		};
 		return definition;
 	}();
 }
@@ -35,7 +48,7 @@ namespace AbilityData::Definitions
 			ly::GameplayTags::Ability::Family::CrystalBarricade
 		};
 		definition.displayName = "Crystal Barricade";
-	definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png";
+		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png";
 		definition.accentColor = sf::Color{ 110, 225, 255, 255 };
 		definition.behaviorType = ly::AbilityBehaviorType::CrystalBarricade;
 		return definition;

@@ -27,24 +27,16 @@ namespace AbilityData::NullPulse
 		inline static const sas::AttributeId BaseStunDuration{
 			"Ability.Control.NullPulse.BaseStunDuration"
 		};
-		inline static const sas::AttributeId MaxBonusStun{
-			"Ability.Control.NullPulse.MaxBonusStun"
-		};
-		inline static const sas::AttributeId ReferenceEnergyPower{
-			"Ability.Control.NullPulse.ReferenceEnergyPower"
-		};
-		inline static const sas::AttributeId EnergyScale{
-			"Ability.Control.NullPulse.EnergyScale"
-		};
-		inline static const sas::AttributeId BossStaggerDuration{
-			"Ability.Control.NullPulse.BossStaggerDuration"
+		inline static const sas::AttributeId EnergyPowerDamageScale{
+			"Ability.Control.NullPulse.EnergyPowerDamageScale"
 		};
 	};
+
+	inline constexpr float EnergyPowerStunDurationScale = 0.01f;
 
 	struct Effect
 	{
 		inline static constexpr char StunId[] = "Effect.Control.Stun.Basic";
-		inline static constexpr char StaggerId[] = "Effect.Control.Stagger.Basic";
 	};
 
 	struct Event

@@ -24,15 +24,8 @@ namespace ly
 			GameAbilityBehaviorContext& context,
 			const sas::AbilityEvent& event
 		) override;
-		float ResolveCooldownDurationOnEnd(
-			GameAbilityBehaviorContext& context,
-			sas::AbilityEndReason reason,
-			float resolvedCooldown
-		) override;
 
 	private:
-		void ApplyFieldTick(GameAbilityBehaviorContext& context);
-		void TriggerBreakExplosion(GameAbilityBehaviorContext& context);
 		void ClearRuntimeState(GameAbilityBehaviorContext& context);
 		void EmitEvent(
 			GameAbilityBehaviorContext& context,
@@ -41,9 +34,7 @@ namespace ly
 
 		sas::GameplayEffectHandle mIceShellHandle;
 		sas::GameplayAttributeList mResolvedValues;
-		List<GameplayTag> mDamageTags;
 		float mMaximumIceHealth = 0.f;
-		float mFieldTickAccumulator = 0.f;
 		bool mActive = false;
 		bool mIceBroken = false;
 		weak_ptr<CryostasisVisualActor> mVisualActor;

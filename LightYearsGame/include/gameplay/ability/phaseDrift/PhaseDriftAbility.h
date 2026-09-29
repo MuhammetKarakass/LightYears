@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gameplay/ability/GameAbility.h"
-#include "effects/GameplayEffectRuntimeEntry.h"
 
 namespace ly
 {
@@ -36,9 +35,6 @@ namespace ly
 			GameAbilityBehaviorContext& context,
 			const GameplayTag& eventTag
 		) const;
-		void RemoveAppliedEffects(GameAbilityBehaviorContext& context);
-
-		List<sas::GameplayEffectHandle> mAppliedEffectHandles;
 		weak_ptr<PhaseDriftVisualActor> mVisualActor;
 		CollisionLayer mOriginalCollisionLayer = CollisionLayer::None;
 		CollisionLayer mOriginalCollisionMask = CollisionLayer::None;

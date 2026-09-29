@@ -10,7 +10,6 @@
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
-#include "gameplay/ability/phaseDrift/PhaseDriftContracts.h"
 #include "gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h"
 #include "gameplay/ability/ironcladProtocol/IroncladProtocolContracts.h"
 #include "gameplay/ability/cryostasis/CryostasisContracts.h"
@@ -317,52 +316,6 @@ namespace EffectData
 		return definition;
 	}();
 
-	// Phase Drift owns the actual movement/resource multipliers in the reusable
-	// ship runtime modifier set. These policy effects provide source-scoped
-	// lifecycle records so the ability can track and remove only its own effects.
-	inline const sas::GameplayEffectDefinition PhaseDriftMovementBoostEffect = []
-	{
-		sas::GameplayEffectDefinition definition;
-		definition.effectId = AbilityData::PhaseDrift::Effect::MovementBoostId;
-		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
-		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
-		definition.duration = 6.f;
-		definition.maxStacks = 1;
-		definition.grantedTags = { ly::GameplayTags::State::Effect::Movement::Boost };
-		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
-		definition.category = "Defense.PhaseDrift.Movement";
-		definition.sourceScopedApplication = true;
-		return definition;
-	}();
-
-	inline const sas::GameplayEffectDefinition PhaseDriftShieldRecoveryEffect = []
-	{
-		sas::GameplayEffectDefinition definition;
-		definition.effectId = AbilityData::PhaseDrift::Effect::ShieldRecoveryId;
-		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
-		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
-		definition.duration = 6.f;
-		definition.maxStacks = 1;
-		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
-		definition.category = "Defense.PhaseDrift.ShieldRecovery";
-		definition.sourceScopedApplication = true;
-		return definition;
-	}();
-
-	inline const sas::GameplayEffectDefinition PhaseDriftAfterburnerRecoveryEffect = []
-	{
-		sas::GameplayEffectDefinition definition;
-		definition.effectId = AbilityData::PhaseDrift::Effect::AfterburnerRecoveryId;
-		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
-		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
-		definition.duration = 6.f;
-		definition.maxStacks = 1;
-		definition.disposition = sas::GameplayEffectDisposition::Beneficial;
-		definition.category = "Defense.PhaseDrift.AfterburnerRecovery";
-		definition.sourceScopedApplication = true;
-		return definition;
-	}();
-
 	// Control effects are policy-only definitions. Null Pulse supplies the
 	// resolved duration and target-side response at application time.
 	inline const sas::GameplayEffectDefinition NullPulseStunEffect = []
@@ -378,23 +331,6 @@ namespace EffectData
 		definition.cleanseable = true;
 		definition.category = "Control.Stun";
 		definition.immunityCategory = "Control.Stun";
-		definition.sourceParameterized = true;
-		return definition;
-	}();
-
-	inline const sas::GameplayEffectDefinition NullPulseStaggerEffect = []
-	{
-		sas::GameplayEffectDefinition definition;
-		definition.effectId = AbilityData::NullPulse::Effect::StaggerId;
-		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
-		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
-		definition.grantedTags = {
-			ly::GameplayTags::State::Effect::Control::Staggered
-		};
-		definition.disposition = sas::GameplayEffectDisposition::Harmful;
-		definition.cleanseable = true;
-		definition.category = "Control.Stagger";
-		definition.immunityCategory = "Control.Stagger";
 		definition.sourceParameterized = true;
 		return definition;
 	}();
@@ -461,14 +397,10 @@ namespace EffectData
 			&MovementSlowImmunityEffect,
 			&OverdriveCoreAttackSpeedBoostEffect,
 			&ExecutionDriveAttackPowerEffect,
-			&PhaseDriftMovementBoostEffect,
-			&PhaseDriftShieldRecoveryEffect,
-			&PhaseDriftAfterburnerRecoveryEffect,
 			&NullPulseStunEffect,
-			&NullPulseStaggerEffect
-			,&DirectionalBarrierActiveEffect
-			,&CryostasisIceShellEffect
-			,&IroncladProtocolDamageReductionEffect
+			&DirectionalBarrierActiveEffect,
+			&CryostasisIceShellEffect,
+			&IroncladProtocolDamageReductionEffect
 		};
 		return definitions;
 	}

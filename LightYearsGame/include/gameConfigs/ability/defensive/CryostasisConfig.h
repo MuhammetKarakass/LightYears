@@ -30,37 +30,34 @@ namespace AbilityData::Definitions
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 130, 220, 255, 235 };
 		definition.attributes = {
-			{ AbilityData::Cryostasis::Attribute::Radius, 300.f, 1.f },
-			{ AbilityData::Cryostasis::Attribute::FieldTickDamage, 4.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::FieldTickInterval, 0.25f, 0.01f },
-			{ AbilityData::Cryostasis::Attribute::FieldTickDamageMaxHealthScale, 0.02f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::BaseIceHealth, 200.f, 1.f },
-			{ AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale, 0.40f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, 8.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, 0.04f, 0.f },
+			{ AbilityData::Cryostasis::Attribute::BaseIceHealth, 150.f, 1.f },
+			{ AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale, 0.50f, 0.f },
+			{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, 5.f, 0.f },
+			{ AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, 5.f, 0.f },
 			{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, 4.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryMaxHealthScale, 0.01f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::BaseBreakDamage, 70.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::BreakDamageMaxIceHealthScale, 0.30f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::FieldCryoStacks, 1.f, 1.f, 1.f },
-			{ AbilityData::Cryostasis::Attribute::BreakCryoStacks, 4.f, 4.f, 4.f },
-			{ AbilityData::Cryostasis::Attribute::BreakCooldownMultiplier, 0.50f, 0.f, 1.f }
+			{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, 0.05f, 0.f },
+			{ AbilityData::Cryostasis::Attribute::EnergyPowerReference, 100.f, 0.f }
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{ {
-				{ AbilityData::Cryostasis::Attribute::FieldTickDamage, sas::AttributeModifierOperation::Add, 1.f },
+		definition.levelProgression.reserve(14);
+		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
+				{
 				{ AbilityData::Cryostasis::Attribute::BaseIceHealth, sas::AttributeModifierOperation::Add, 15.f },
-				{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, sas::AttributeModifierOperation::Add, 0.75f },
-				{ AbilityData::Cryostasis::Attribute::BaseBreakDamage, sas::AttributeModifierOperation::Add, 5.f },
-				{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -0.4f }
-			}, {}, {}, {} }
-		);
+				{ AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale, sas::AttributeModifierOperation::Add, 0.03f },
+				{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, sas::AttributeModifierOperation::Add, 1.f },
+				{ AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, sas::AttributeModifierOperation::Add, 0.50f },
+				{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, sas::AttributeModifierOperation::Add, 0.50f },
+				{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, sas::AttributeModifierOperation::Add, 0.01f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
+						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
+				}, {}, {}, {}
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60
 		};
-		definition.damageTags = { ly::DamageTypeSchema::Cryo };
 		definition.behaviorType = ly::AbilityBehaviorType::Cryostasis;
 		return definition;
 	}();

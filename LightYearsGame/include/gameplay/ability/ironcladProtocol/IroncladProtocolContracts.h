@@ -38,14 +38,17 @@ namespace AbilityData::IroncladProtocol
 		inline static const sas::AttributeId MinigunBaseDamage{
 			"Ability.Defense.IroncladProtocol.MinigunBaseDamage"
 		};
+		inline static const sas::AttributeId MinigunAttackPowerScale{
+			"Ability.Defense.IroncladProtocol.MinigunAttackPowerScale"
+		};
 		inline static const sas::AttributeId BaseDamageReduction{
 			"Ability.Defense.IroncladProtocol.BaseDamageReduction"
 		};
+		inline static const sas::AttributeId MaxHealthDamageReductionScale{
+			"Ability.Defense.IroncladProtocol.MaxHealthDamageReductionScale"
+		};
 		inline static const sas::AttributeId MaxHealthReference{
 			"Ability.Defense.IroncladProtocol.MaxHealthReference"
-		};
-		inline static const sas::AttributeId MaximumDamageReductionBonus{
-			"Ability.Defense.IroncladProtocol.MaximumDamageReductionBonus"
 		};
 		inline static const sas::AttributeId DamageReductionFalloffHealth{
 			"Ability.Defense.IroncladProtocol.DamageReductionFalloffHealth"

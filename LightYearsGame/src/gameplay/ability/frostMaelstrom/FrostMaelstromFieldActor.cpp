@@ -219,25 +219,17 @@ namespace ly
 			AbilityData::FrostMaelstrom::Attribute::OrbitalAngularSpeed,
 			AbilityData::FrostMaelstrom::DefaultOrbitalAngularSpeed
 		);
-		mInwardForce = std::max(0.f, find(
-			AbilityData::FrostMaelstrom::Attribute::InwardForce,
-			AbilityData::FrostMaelstrom::DefaultInwardForce
+		mPullStrength = std::max(0.f, find(
+			AbilityData::FrostMaelstrom::Attribute::PullStrength,
+			AbilityData::FrostMaelstrom::DefaultPullStrength
 		));
 		mOrbitalRadiusRatio = std::clamp(find(
 			AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio,
 			AbilityData::FrostMaelstrom::DefaultOrbitalRadiusRatio
 		), 0.1f, 1.f);
-		mEnergyPowerReference = std::max(0.f, find(
-			AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference,
-			AbilityData::FrostMaelstrom::DefaultEnergyPowerReference
-		));
 		mEnergyPowerDamageScale = std::max(0.f, find(
 			AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
 			AbilityData::FrostMaelstrom::DefaultEnergyPowerDamageScale
-		));
-		mEnergyPowerRadiusScale = std::max(0.f, find(
-			AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale,
-			AbilityData::FrostMaelstrom::DefaultEnergyPowerRadiusScale
 		));
 
 		mTickDamage = std::max(0.f, find(
@@ -250,17 +242,7 @@ namespace ly
 			energyPower = combatant->GetAbilitySystemComponent().GetAttributes()
 				.GetCurrentValue(OwnerAttributeIds::EnergyPower);
 		}
-		const float energyBonus = std::max(0.f, energyPower - mEnergyPowerReference);
-		const float radiusBonus = energyBonus * mEnergyPowerRadiusScale;
-		mMinimumRadius = std::min(
-			AbilityData::FrostMaelstrom::DefaultMaximumRadius,
-			mMinimumRadius + radiusBonus
-		);
-		mMaximumRadius = std::min(
-			AbilityData::FrostMaelstrom::DefaultMaximumRadius,
-			mMaximumRadius + radiusBonus
-		);
-		mTickDamage += energyBonus * mEnergyPowerDamageScale;
+		mTickDamage += std::max(0.f, energyPower) * mEnergyPowerDamageScale;
 		mCurrentRadius = mMinimumRadius;
 		mCurrentSpeed = mMinimumSpeed;
 		mFieldAge = 0.f;
@@ -404,7 +386,7 @@ namespace ly
 			-1.f,
 			1.f
 		);
-		const sf::Vector2f radialAcceleration = radial * (-mInwardForce * radiusError);
+		const sf::Vector2f radialAcceleration = radial * (-mPullStrength * radiusError);
 		const sf::Vector2f desiredVelocity =
 			mFieldDirection * mCurrentSpeed +
 			tangent * (mOrbitalAngularSpeed * desiredRadius);

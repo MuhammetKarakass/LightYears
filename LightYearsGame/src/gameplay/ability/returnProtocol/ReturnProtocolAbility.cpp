@@ -52,7 +52,8 @@ namespace ly
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.duration <= 0.f ||
-			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f)
+			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
+			definition.attributes.size() != 5 || definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
 			{
@@ -64,8 +65,10 @@ namespace ly
 
 		for (const sas::AttributeId& attributeId : {
 			AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier,
-			AbilityData::ReturnProtocol::Attribute::MaxHealthReference,
-			AbilityData::ReturnProtocol::Attribute::MaxHealthDamageScale
+			AbilityData::ReturnProtocol::Attribute::AttackPowerReference,
+			AbilityData::ReturnProtocol::Attribute::AttackPowerScale,
+			AbilityData::ReturnProtocol::Attribute::EnergyPowerReference,
+			AbilityData::ReturnProtocol::Attribute::EnergyPowerScale
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -78,6 +81,42 @@ namespace ly
 				{
 					*failureReason = "Return Protocol must declare valid reflection attributes.";
 				}
+				return false;
+			}
+		}
+		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
+		{
+			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
+			bool baseScaleMatches = false;
+			bool attackScaleMatches = false;
+			bool energyScaleMatches = false;
+			bool cooldownMatches = false;
+			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
+			{
+				if (modifier.operation != sas::AttributeModifierOperation::Add || !std::isfinite(modifier.magnitude)) continue;
+				if (modifier.attributeId == AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier)
+				{
+					baseScaleMatches = std::abs(modifier.magnitude - 0.04f) <= 0.0001f;
+				}
+				else if (modifier.attributeId == AbilityData::ReturnProtocol::Attribute::AttackPowerScale)
+				{
+					attackScaleMatches = std::abs(modifier.magnitude - 0.01f) <= 0.0001f;
+				}
+				else if (modifier.attributeId == AbilityData::ReturnProtocol::Attribute::EnergyPowerScale)
+				{
+					energyScaleMatches = std::abs(modifier.magnitude - 0.01f) <= 0.0001f;
+				}
+				else if (modifier.attributeId == CommonAttributeIds::Cooldown)
+				{
+					const float expected = -GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex);
+					cooldownMatches = std::abs(modifier.magnitude - expected) <= 0.0001f;
+				}
+			}
+			if (step.attributeModifiers.size() != 4 || !baseScaleMatches || !attackScaleMatches ||
+				!energyScaleMatches || !cooldownMatches || !step.unlockedUpgradeIds.empty() ||
+				!step.addedActions.empty() || !step.addedTriggers.empty() || !step.scalingRules.empty())
+			{
+				if (failureReason) *failureReason = "Return Protocol progression must add its three damage scalars and global cooldown at every level.";
 				return false;
 			}
 		}
@@ -235,19 +274,31 @@ namespace ly
 			AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier,
 			0.80f
 		));
-		const float reference = std::max(0.f, sas::FindAttributeValue(
+		const float attackPowerReference = std::max(1.f, sas::FindAttributeValue(
 			values,
-			AbilityData::ReturnProtocol::Attribute::MaxHealthReference,
+			AbilityData::ReturnProtocol::Attribute::AttackPowerReference,
 			100.f
 		));
-		const float maxHealthScale = std::max(0.f, sas::FindAttributeValue(
+		const float attackPowerScale = std::max(0.f, sas::FindAttributeValue(
 			values,
-			AbilityData::ReturnProtocol::Attribute::MaxHealthDamageScale,
-			0.001f
+			AbilityData::ReturnProtocol::Attribute::AttackPowerScale,
+			0.08f
 		));
-		const float maxHealth = std::max(0.f, context.abilitySystem.GetAttributes()
-			.GetCurrentValue(OwnerAttributeIds::MaxHealth));
-		return baseMultiplier + std::max(0.f, maxHealth - reference) * maxHealthScale;
+		const float energyPowerReference = std::max(1.f, sas::FindAttributeValue(
+			values,
+			AbilityData::ReturnProtocol::Attribute::EnergyPowerReference,
+			100.f
+		));
+		const float energyPowerScale = std::max(0.f, sas::FindAttributeValue(
+			values,
+			AbilityData::ReturnProtocol::Attribute::EnergyPowerScale,
+			0.12f
+		));
+		const sas::AttributeSystem& ownerAttributes = context.abilitySystem.GetAttributes();
+		const float attackPower = std::max(0.f, ownerAttributes.GetCurrentValue(OwnerAttributeIds::AttackPower));
+		const float energyPower = std::max(0.f, ownerAttributes.GetCurrentValue(OwnerAttributeIds::EnergyPower));
+		return baseMultiplier + (attackPower / attackPowerReference) * attackPowerScale +
+			(energyPower / energyPowerReference) * energyPowerScale;
 	}
 
 	void ReturnProtocolAbility::EmitEvent(

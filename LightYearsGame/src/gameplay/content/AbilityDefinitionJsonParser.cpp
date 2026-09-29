@@ -9,6 +9,7 @@
 #include "gameplay/ability/content/NumericSettingContractRegistry.h"
 #include "gameplay/content/ContentIdSchema.h"
 
+#include <algorithm>
 #include <limits>
 #include <map>
 #include <set>
@@ -161,12 +162,89 @@ namespace ly::content::ability_loader_detail
 			return specs;
 		}
 
+		List<sas::AttributeModifier> ParseProgressionStepModifiers(
+			const Json& values,
+			std::size_t oneBasedStep
+		)
+		{
+			List<sas::AttributeModifier> modifiers;
+			for (const Json& value : values)
+			{
+				const std::size_t firstStep = value.value("firstStep", std::size_t{ 1 });
+				const std::size_t everySteps = value.value("everySteps", std::size_t{ 1 });
+				if (firstStep == 0 || everySteps == 0)
+				{
+					throw std::runtime_error("Progression modifier cadence values must be greater than zero");
+				}
+				if (oneBasedStep < firstStep || (oneBasedStep - firstStep) % everySteps != 0)
+				{
+					continue;
+				}
+
+				float magnitude = 0.f;
+				const Json& magnitudeValue = value.at("magnitude");
+				if (magnitudeValue.is_number())
+				{
+					magnitude = magnitudeValue.get<float>();
+				}
+				else if (magnitudeValue.is_object())
+				{
+					const float start = magnitudeValue.at("start").get<float>();
+					const float perLevel = magnitudeValue.value("perLevel", 0.f);
+					const std::size_t occurrence = (oneBasedStep - firstStep) / everySteps;
+					magnitude = start + static_cast<float>(occurrence) * perLevel;
+				}
+				else
+				{
+					throw std::runtime_error("Progression modifier magnitude must be a number or formula object");
+				}
+
+				modifiers.emplace_back(
+					sas::AttributeId{ ReadRequiredString(value, "attributeId") },
+					AttributeJsonParser::ParseOperation(ReadRequiredString(value, "operation")),
+					magnitude,
+					value.value("priority", 0)
+				);
+			}
+			return modifiers;
+		}
+
 		List<AbilityLevelStep> ParseLevelProgression(
 			const Json& progression,
+			float baseCooldown,
 			const std::string& ownerLabel = ""
 		)
 		{
 			List<AbilityLevelStep> levels;
+			if (progression.contains("steps"))
+			{
+				const Json& steps = progression.at("steps");
+				const std::size_t count = steps.at("count").get<std::size_t>();
+				if (count == 0)
+				{
+					throw std::runtime_error("Ability progression.steps.count must be greater than zero");
+				}
+				const List<sas::AttributeScalingRule> scalingRules = AttributeJsonParser::ParseScalingRules(
+					steps.value("scalingRules", Json::array()),
+					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "progression.steps.scalingRules"
+				);
+				for (std::size_t index = 0; index < count; ++index)
+				{
+					AbilityLevelStep step;
+					step.attributeModifiers = ParseProgressionStepModifiers(
+						steps.value("attributeModifiers", Json::array()),
+						index + 1
+					);
+					step.attributeModifiers.emplace_back(
+						CommonAttributeIds::Cooldown,
+						-GetGlobalAbilityCooldownStepReduction(baseCooldown, index)
+					);
+					step.scalingRules = scalingRules;
+					levels.push_back(std::move(step));
+				}
+				return levels;
+			}
+
 			if (progression.contains("repeat"))
 			{
 				const Json& repeated = progression.at("repeat");
@@ -207,6 +285,24 @@ namespace ly::content::ability_loader_detail
 					step.unlockedUpgradeIds.emplace_back(upgradeId.get<std::string>());
 				}
 				levels.push_back(std::move(step));
+			}
+			const List<sas::AttributeModifier> cooldownModifiers =
+				MakeGlobalAbilityCooldownProgression(baseCooldown, levels.size());
+			for (std::size_t index = 0; index < levels.size(); ++index)
+			{
+				auto& modifiers = levels[index].attributeModifiers;
+				modifiers.erase(
+					std::remove_if(
+						modifiers.begin(),
+						modifiers.end(),
+						[](const sas::AttributeModifier& modifier)
+						{
+							return modifier.attributeId == CommonAttributeIds::Cooldown;
+						}
+					),
+					modifiers.end()
+				);
+				modifiers.push_back(cooldownModifiers[index]);
 			}
 			return levels;
 		}
@@ -426,7 +522,11 @@ namespace ly::content::ability_loader_detail
 			if (object.contains("progression"))
 			{
 				const Json& progression = object.at("progression");
-				loaded.definition.levelProgression = ParseLevelProgression(progression, "Ability '" + loaded.id + "'");
+				loaded.definition.levelProgression = ParseLevelProgression(
+					progression,
+					loaded.definition.cooldown,
+					"Ability '" + loaded.id + "'"
+				);
 				loaded.definition.levelUpgradeScrapCosts = progression.value(
 					"levelUpgradeScrapCosts",
 					List<unsigned int>{}

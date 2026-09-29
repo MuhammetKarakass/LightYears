@@ -38,43 +38,13 @@ namespace AbilityData::PhaseDrift
 		};
 	};
 
-	// These are ability-local runtime values. They are intentionally not JSON
-	// "settings": the behavior resolves them with owner attributes and level.
 	struct Attribute
 	{
-		inline static const sas::AttributeId MaximumMobilityDurationBonus{
-			"Ability.Movement.PhaseDrift.MaximumMobilityDurationBonus"
-		};
-		inline static const sas::AttributeId MobilityScale{
-			"Ability.Movement.PhaseDrift.MobilityScale"
+		inline static const sas::AttributeId EPDurationScale{
+			"Ability.Movement.PhaseDrift.EPDurationScale"
 		};
 		inline static const sas::AttributeId MovementSpeedBonus{
 			"Ability.Movement.PhaseDrift.MovementSpeedBonus"
 		};
-		inline static const sas::AttributeId ShieldRegenBonus{
-			"Ability.Movement.PhaseDrift.ShieldRegenBonus"
-		};
-		inline static const sas::AttributeId AfterburnerRegenBonus{
-			"Ability.Movement.PhaseDrift.AfterburnerRegenBonus"
-		};
-		inline static const sas::AttributeId EnergyScale{
-			"Ability.Movement.PhaseDrift.EnergyScale"
-		};
-		inline static const sas::AttributeId MaximumEnergyShieldBonus{
-			"Ability.Movement.PhaseDrift.MaximumEnergyShieldBonus"
-		};
-		inline static const sas::AttributeId MaximumEnergyAfterburnerBonus{
-			"Ability.Movement.PhaseDrift.MaximumEnergyAfterburnerBonus"
-		};
-	};
-
-	struct Effect
-	{
-		inline static constexpr char MovementBoostId[] =
-			"Effect.PhaseDrift.MovementBoost";
-		inline static constexpr char ShieldRecoveryId[] =
-			"Effect.PhaseDrift.ShieldRecovery";
-		inline static constexpr char AfterburnerRecoveryId[] =
-			"Effect.PhaseDrift.AfterburnerRecovery";
 	};
 }

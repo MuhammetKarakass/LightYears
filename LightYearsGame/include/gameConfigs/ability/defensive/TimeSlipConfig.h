@@ -29,18 +29,22 @@ namespace AbilityData::Definitions
 		definition.attributes = {
 			{ AbilityData::TimeSlip::Attribute::GameplayTimeMultiplier, 0.35f, 0.001f, 1.f },
 			{ AbilityData::TimeSlip::Attribute::PrimaryFireRateMultiplier, 0.35f, 0.001f, 1.f },
-			{ AbilityData::TimeSlip::Attribute::EnergyPowerReference, 50.f, 0.f },
-			{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale, 0.0015f, 0.f }
+			{ AbilityData::TimeSlip::Attribute::EnergyPowerReference, 100.f, 0.f },
+			{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale, 0.20f, 0.f }
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{ {
-				{ ly::CommonAttributeIds::Duration,
-					sas::AttributeModifierOperation::Add, 0.10f },
-				{ ly::CommonAttributeIds::Cooldown,
-					sas::AttributeModifierOperation::Add, -0.20f }
-			}, {}, {}, {} }
-		);
+		definition.levelProgression.reserve(14);
+		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
+		{
+			definition.levelProgression.push_back(ly::AbilityLevelStep{
+				{
+					{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
+					{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale,
+						sas::AttributeModifierOperation::Add, 0.05f },
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
+						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
+				}, {}, {}, {}
+			});
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

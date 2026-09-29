@@ -23,16 +23,19 @@ namespace AbilityData::Definitions
 		definition.attributes = {
 			{ AbilityData::IroncladProtocol::Attribute::MovementSpeedMultiplier, 0.20f, 0.f, 1.f },
 			{ AbilityData::IroncladProtocol::Attribute::MinimumFormDuration, 1.f, 0.f, 10.f },
-			{ AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, 8.f, 0.f },
-			{ AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, 0.40f, 0.f, 0.95f },
+			{ AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, 20.f, 0.f },
+			{ AbilityData::IroncladProtocol::Attribute::MinigunAttackPowerScale, 0.30f, 0.f },
+			{ AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, 0.25f, 0.f, 0.95f },
 			{ AbilityData::IroncladProtocol::Attribute::MaxHealthReference, 100.f, 0.f },
-			{ AbilityData::IroncladProtocol::Attribute::MaximumDamageReductionBonus, 0.20f, 0.f, 0.95f },
+			{ AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale, 0.08f, 0.f },
 			{ AbilityData::IroncladProtocol::Attribute::DamageReductionFalloffHealth, 500.f, 0.01f }
 		};
 		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(14,
 			ly::AbilityLevelStep{ {
-				{ AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, sas::AttributeModifierOperation::Add, 2.f },
-				{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -0.35f }
+				{ AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, sas::AttributeModifierOperation::Add, 6.f },
+				{ AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, sas::AttributeModifierOperation::Add, 0.01f },
+				{ AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale, sas::AttributeModifierOperation::Add, 0.01f },
+				{ AbilityData::IroncladProtocol::Attribute::MinigunAttackPowerScale, sas::AttributeModifierOperation::Add, 0.04f }
 			}, {}, {}, {} });
 		definition.levelUpgradeScrapCosts = { 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60 };
 		definition.behaviorType = ly::AbilityBehaviorType::IroncladProtocol;

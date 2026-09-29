@@ -123,17 +123,6 @@
       "sourceParameterized": true
     },
     {
-      "id": "Effect.Control.Stagger.Basic",
-      "durationPolicy": "Duration",
-      "stackingPolicy": "RefreshDuration",
-      "grantedTags": ["State.Effect.Control.Staggered"],
-      "disposition": "Harmful",
-      "cleanseable": true,
-      "category": "Control.Stagger",
-      "immunityCategory": "Control.Stagger",
-      "sourceParameterized": true
-    },
-    {
       "id": "Effect.Offense.OverdriveCore.AttackSpeedBoost.Basic",
       "durationPolicy": "Duration",
       "stackingPolicy": "RefreshDuration",
@@ -151,40 +140,6 @@
       "category": "Offense.ExecutionDrive.AttackPower",
       "sourceScopedApplication": true,
       "sourceParameterized": true
-    },
-    {
-      "id": "Effect.PhaseDrift.MovementBoost",
-      "durationPolicy": "Duration",
-      "stackingPolicy": "RefreshDuration",
-      "duration": 6.0,
-      "maxStacks": 1,
-      "grantedTags": ["State.Effect.Movement.Boost"],
-      "disposition": "Beneficial",
-      "category": "Defense.PhaseDrift.Movement",
-      "sourceScopedApplication": true,
-      "sourceParameterized": false
-    },
-    {
-      "id": "Effect.PhaseDrift.ShieldRecovery",
-      "durationPolicy": "Duration",
-      "stackingPolicy": "RefreshDuration",
-      "duration": 6.0,
-      "maxStacks": 1,
-      "disposition": "Beneficial",
-      "category": "Defense.PhaseDrift.ShieldRecovery",
-      "sourceScopedApplication": true,
-      "sourceParameterized": false
-    },
-    {
-      "id": "Effect.PhaseDrift.AfterburnerRecovery",
-      "durationPolicy": "Duration",
-      "stackingPolicy": "RefreshDuration",
-      "duration": 6.0,
-      "maxStacks": 1,
-      "disposition": "Beneficial",
-      "category": "Defense.PhaseDrift.AfterburnerRecovery",
-      "sourceScopedApplication": true,
-      "sourceParameterized": false
     },
     {
       "id": "Effect.Defense.DirectionalBarrier.Active.Basic",

@@ -89,8 +89,8 @@ namespace AbilityData::Definitions
 				0.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FrostMaelstrom::Attribute::InwardForce,
-				AbilityData::FrostMaelstrom::DefaultInwardForce,
+				AbilityData::FrostMaelstrom::Attribute::PullStrength,
+				AbilityData::FrostMaelstrom::DefaultPullStrength,
 				0.f
 			},
 			sas::GameplayAttribute{
@@ -100,18 +100,8 @@ namespace AbilityData::Definitions
 				1.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::FrostMaelstrom::Attribute::EnergyPowerReference,
-				AbilityData::FrostMaelstrom::DefaultEnergyPowerReference,
-				0.f
-			},
-			sas::GameplayAttribute{
 				AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
 				AbilityData::FrostMaelstrom::DefaultEnergyPowerDamageScale,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::FrostMaelstrom::Attribute::EnergyPowerRadiusScale,
-				AbilityData::FrostMaelstrom::DefaultEnergyPowerRadiusScale,
 				0.f
 			},
 			sas::GameplayAttribute{
@@ -120,29 +110,30 @@ namespace AbilityData::Definitions
 				0.f
 			}
 		};
-		definition.scalingRules = {
-			sas::AttributeScalingRule{
+		definition.levelProgression.reserve(14);
+		const ly::List<sas::AttributeModifier> cooldownModifiers =
+			ly::MakeGlobalAbilityCooldownProgression(definition.cooldown, 14);
+		for (std::size_t index = 0; index < 14; ++index)
+		{
+			ly::AbilityLevelStep step;
+			step.attributeModifiers = { cooldownModifiers[index] };
+			step.attributeModifiers.emplace_back(
 				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::AttackPower,
 				sas::AttributeModifierOperation::Add,
-				0.03f
-			}
-		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
-			ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
-					}
-				},
-				{},
-				{},
-				{}
-			}
-		);
+				1.f
+			);
+			step.attributeModifiers.emplace_back(
+				AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
+				sas::AttributeModifierOperation::Add,
+				0.01f
+			);
+			step.attributeModifiers.emplace_back(
+				AbilityData::FrostMaelstrom::Attribute::PullStrength,
+				sas::AttributeModifierOperation::Add,
+				25.f
+			);
+			definition.levelProgression.push_back(step);
+		}
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

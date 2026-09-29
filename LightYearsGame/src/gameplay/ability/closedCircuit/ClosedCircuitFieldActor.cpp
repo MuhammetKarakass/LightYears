@@ -44,7 +44,7 @@ namespace ly
 		SetAbilityPhysicsEnabled(false);
 	}
 
-	void ClosedCircuitFieldActor::ConfigureDelivery(const sf::Vector2f& target, float speed, float formationDuration, float barrierRadius, float barrierHealth)
+	void ClosedCircuitFieldActor::ConfigureDelivery(const sf::Vector2f& target, float speed, float formationDuration, float barrierRadius, float barrierHealth, float activeDuration)
 	{
 		mTarget = target;
 		mDeliverySpeed = std::max(1.f, speed);
@@ -52,8 +52,10 @@ namespace ly
 		mBarrierRadius = std::max(1.f, barrierRadius);
 		mRemainingHealth = std::max(0.f, barrierHealth);
 		mMaximumHealth = mRemainingHealth;
+		mActiveDuration = std::max(0.01f, activeDuration);
 		mPhase = Phase::Delivery;
 		mPhaseElapsed = 0.f;
+		mActiveElapsed = 0.f;
 	}
 
 	void ClosedCircuitFieldActor::Tick(float deltaTime)
@@ -75,12 +77,18 @@ namespace ly
 			mPhaseElapsed += safeDelta;
 			if (mPhaseElapsed >= mFormationDuration) ActivateField();
 		}
+		else if (mPhase == Phase::Active)
+		{
+			mActiveElapsed += safeDelta;
+			if (mActiveElapsed >= mActiveDuration) Destroy();
+		}
 		AbilityWorldActor::Tick(safeDelta);
 	}
 
 	void ClosedCircuitFieldActor::ActivateField()
 	{
 		mPhase = Phase::Active;
+		mActiveElapsed = 0.f;
 		const shared_ptr<Actor> owner = LockOwnerActor();
 		if (!owner) return;
 

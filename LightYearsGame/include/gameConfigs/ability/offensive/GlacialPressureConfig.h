@@ -112,11 +112,11 @@ namespace AbilityData::Definitions
 		};
 		for (int targetLevel = 2; targetLevel <= 25; ++targetLevel)
 		{
-			const float cooldownReduction = targetLevel <= 5 ? 0.50f :
-				targetLevel <= 9 ? 0.40f :
-				targetLevel <= 13 ? 0.30f :
-				targetLevel <= 17 ? 0.20f :
-				targetLevel <= 21 ? 0.10f : 0.08f;
+			const std::size_t stepIndex = static_cast<std::size_t>(targetLevel - 2);
+			const float cooldownReduction = ly::GetGlobalAbilityCooldownStepReduction(
+				definition.cooldown,
+				stepIndex
+			);
 			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					{ AbilityData::GlacialPressure::Attribute::InitialDamage, sas::AttributeModifierOperation::Add, 5.f },

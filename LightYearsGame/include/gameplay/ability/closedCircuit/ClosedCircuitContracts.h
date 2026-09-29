@@ -28,8 +28,9 @@ namespace AbilityData::ClosedCircuit
 		inline static constexpr char DeliverySpeed[] = "deliverySpeed";
 		inline static constexpr char FormationDuration[] = "formationDuration";
 		inline static constexpr char BarrierRadius[] = "barrierRadius";
+		inline static constexpr char MaximumActiveDuration[] = "maxDuration";
 		inline static const ly::content::NumericSettingContract Contract{
-			{ MaximumDeliveryRange, DeliverySpeed, FormationDuration, BarrierRadius },
+			{ MaximumDeliveryRange, DeliverySpeed, FormationDuration, BarrierRadius, MaximumActiveDuration },
 			{ MaximumDeliveryRange, DeliverySpeed, FormationDuration, BarrierRadius }
 		};
 	};

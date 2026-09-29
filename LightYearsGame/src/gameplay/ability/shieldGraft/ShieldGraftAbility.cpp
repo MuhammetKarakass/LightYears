@@ -106,7 +106,7 @@ namespace ly
 		);
 
 		if (!IsFinitePositive(conversion->baseValue) ||
-			!IsFiniteNonNegative(energyRef->baseValue) ||
+			!IsFinitePositive(energyRef->baseValue) ||
 			!IsFiniteNonNegative(energyScale->baseValue))
 		{
 			if (failureReason)
@@ -116,11 +116,32 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14)
+		std::size_t progressionIndex = 0;
+		const bool validProgression = definition.levelProgression.size() == 14 &&
+			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
+				[&definition, &progressionIndex](const AbilityLevelStep& step)
+				{
+					const std::size_t index = progressionIndex++;
+					if (step.attributeModifiers.size() != 3 || !step.scalingRules.empty()) return false;
+					const auto has = [&step](const sas::AttributeId& id, float magnitude)
+					{
+						return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+							[&id, magnitude](const sas::AttributeModifier& modifier)
+							{
+								return modifier.attributeId == id &&
+									modifier.operation == sas::AttributeModifierOperation::Add &&
+									std::abs(modifier.magnitude - magnitude) <= 0.0001f;
+							});
+					};
+					return has(AbilityData::ShieldGraft::Attribute::ConversionRatio, 0.015f) &&
+						has(AbilityData::ShieldGraft::Attribute::EnergyPowerScale, 0.01f) &&
+						has(CommonAttributeIds::Cooldown, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index));
+				});
+		if (definition.attributes.size() != 3 || !validProgression)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Shield Graft requires fourteen level progression steps.";
+				*failureReason = "Shield Graft requires three attributes and fourteen conversion progression steps.";
 			}
 			return false;
 		}
@@ -156,7 +177,7 @@ namespace ly
 		const float baseConversion = FindValue(
 			values,
 			AbilityData::ShieldGraft::Attribute::ConversionRatio,
-			0.40f
+			0.55f
 		);
 
 		float ownerEnergyPower = 0.f;
@@ -174,15 +195,15 @@ namespace ly
 		const float energyReference = FindValue(
 			values,
 			AbilityData::ShieldGraft::Attribute::EnergyPowerReference,
-			50.f
+			100.f
 		);
 		const float energyScale = FindValue(
 			values,
 			AbilityData::ShieldGraft::Attribute::EnergyPowerScale,
-			0.0001f
+			0.12f
 		);
 
-		const float energyBonus = std::max(0.f, ownerEnergyPower - energyReference) * energyScale;
+		const float energyBonus = ownerEnergyPower / std::max(energyReference, 0.001f) * energyScale;
 		const float conversion = baseConversion + energyBonus;
 		if (!std::isfinite(conversion) || conversion <= 0.f)
 		{

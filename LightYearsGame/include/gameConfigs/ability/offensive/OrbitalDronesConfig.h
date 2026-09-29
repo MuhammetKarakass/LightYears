@@ -7,8 +7,6 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 
-#include <algorithm>
-
 namespace AbilityData::Definitions
 {
 	inline const ly::GameAbilityDefinition OrbitalDrones_Basic = []
@@ -62,24 +60,21 @@ namespace AbilityData::Definitions
 				0.40f
 			}
 		};
-		float resolvedCooldown = definition.cooldown;
 		for (int targetLevel = 2; targetLevel <= 25; ++targetLevel)
 		{
-			const float cooldownReduction = targetLevel <= 5 ? 0.50f :
-				targetLevel <= 9 ? 0.40f :
-				targetLevel <= 13 ? 0.30f :
-				targetLevel <= 17 ? 0.20f :
-				targetLevel <= 21 ? 0.10f : 0.08f;
-			const float nextCooldown = std::max(7.f, resolvedCooldown - cooldownReduction);
+			const std::size_t stepIndex = static_cast<std::size_t>(targetLevel - 2);
+			const float cooldownReduction = ly::GetGlobalAbilityCooldownStepReduction(
+				definition.cooldown,
+				stepIndex
+			);
 			definition.levelProgression.push_back(ly::AbilityLevelStep{
 				{
 					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 4.f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, nextCooldown - resolvedCooldown }
+					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -cooldownReduction }
 				},
 				{}, {}, {},
 				{ { ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::AttackPower, sas::AttributeModifierOperation::Add, 0.04f } }
 			});
-			resolvedCooldown = nextCooldown;
 		}
 		definition.levelUpgradeScrapCosts.assign(24, 60);
 		// Physical drone contact uses the established Kinetic damage domain.

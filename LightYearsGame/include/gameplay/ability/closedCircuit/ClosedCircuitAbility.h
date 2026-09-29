@@ -19,6 +19,7 @@ namespace ly
 			float formationDuration = 0.50f;
 			float radius = 250.f;
 			float health = 0.f;
+			float activeDuration = 8.f;
 		};
 		PendingDelivery mPendingDelivery;
 		bool mHasPendingDelivery = false;

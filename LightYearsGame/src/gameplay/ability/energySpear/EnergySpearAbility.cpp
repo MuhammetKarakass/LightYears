@@ -68,55 +68,39 @@ namespace ly
 
 		bool HasExpectedScalingRule(const GameAbilityDefinition& definition)
 		{
-			if (definition.scalingRules.size() != 2)
+			if (definition.scalingRules.size() != 1)
 			{
 				return false;
 			}
 
-			bool hasAttackPower = false;
-			bool hasEnergyPower = false;
-			for (const sas::AttributeScalingRule& rule : definition.scalingRules)
-			{
-				if (rule.targetAttributeId != AbilityData::EnergySpear::Attribute::Damage ||
-					rule.operation != sas::AttributeModifierOperation::Add)
-				{
-					continue;
-				}
-				hasAttackPower = hasAttackPower ||
-					(rule.sourceAttributeId == OwnerAttributeIds::AttackPower &&
-						std::abs(rule.coefficient - 1.f) <= 0.0001f);
-				hasEnergyPower = hasEnergyPower ||
-					(rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
-						std::abs(rule.coefficient - 0.20f) <= 0.0001f);
-			}
-			return hasAttackPower && hasEnergyPower;
+			const sas::AttributeScalingRule& rule = definition.scalingRules.front();
+			return rule.targetAttributeId == AbilityData::EnergySpear::Attribute::Damage &&
+				rule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+				rule.operation == sas::AttributeModifierOperation::Add &&
+				std::abs(rule.coefficient - 0.50f) <= 0.0001f;
 		}
 
-		bool HasExpectedLevelStep(const AbilityLevelStep& step)
+		bool HasExpectedLevelStep(const AbilityLevelStep& step, float cooldown, std::size_t index)
 		{
-			if (step.attributeModifiers.size() != 2)
+			if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1)
 			{
 				return false;
 			}
 
-			bool damageStep = false;
-			bool cooldownStep = false;
-			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-			{
-				if (modifier.attributeId == CommonAttributeIds::Damage &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude - 2.f) <= 0.0001f)
-				{
-					damageStep = true;
-				}
-				if (modifier.attributeId == CommonAttributeIds::Cooldown &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude + 0.20f) <= 0.0001f)
-				{
-					cooldownStep = true;
-				}
-			}
-			return damageStep && cooldownStep;
+			const auto damageModifier = std::find_if(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier) { return modifier.attributeId == CommonAttributeIds::Damage; });
+			const auto cooldownModifier = std::find_if(step.attributeModifiers.begin(), step.attributeModifiers.end(),
+				[](const sas::AttributeModifier& modifier) { return modifier.attributeId == CommonAttributeIds::Cooldown; });
+			const sas::AttributeScalingRule& energyScaling = step.scalingRules.front();
+			return damageModifier != step.attributeModifiers.end() && cooldownModifier != step.attributeModifiers.end() &&
+				damageModifier->operation == sas::AttributeModifierOperation::Add &&
+				std::abs(damageModifier->magnitude - 5.f) <= 0.0001f &&
+				cooldownModifier->operation == sas::AttributeModifierOperation::Add &&
+				std::abs(cooldownModifier->magnitude + GetGlobalAbilityCooldownStepReduction(cooldown, index)) <= 0.0001f &&
+				energyScaling.targetAttributeId == AbilityData::EnergySpear::Attribute::Damage &&
+				energyScaling.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+				energyScaling.operation == sas::AttributeModifierOperation::Add &&
+				std::abs(energyScaling.coefficient - 0.10f) <= 0.0001f;
 		}
 	}
 
@@ -131,8 +115,8 @@ namespace ly
 			definition.activationPolicy == sas::AbilityActivationPolicy::WhileHeld &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::WhileInputHeld &&
 			definition.maxCharges == 1 &&
-			IsFinite(definition.cooldown) && definition.cooldown > 0.f &&
-			IsFinite(definition.duration) && definition.duration > 0.f;
+			IsFinite(definition.cooldown) && std::abs(definition.cooldown - 10.f) <= 0.0001f &&
+			IsFinite(definition.duration) && std::abs(definition.duration - 1.5f) <= 0.0001f;
 		if (!validLifecycle || !HasExpectedScalingRule(definition))
 		{
 			if (failureReason)
@@ -155,6 +139,11 @@ namespace ly
 			AbilityData::EnergySpear::Attribute::EnergyPowerDistanceScale,
 			AbilityData::EnergySpear::Attribute::TravelSpeed
 		};
+		if (definition.attributes.size() != requiredAttributes.size())
+		{
+			if (failureReason) *failureReason = "Energy Spear must declare exactly its ten runtime attributes.";
+			return false;
+		}
 		for (const sas::AttributeId& attributeId : requiredAttributes)
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -200,16 +189,16 @@ namespace ly
 		if (definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Energy ||
 			definition.levelProgression.size() != 14 ||
-			!std::all_of(
-				definition.levelProgression.begin(),
-				definition.levelProgression.end(),
-				HasExpectedLevelStep
-			))
+			!std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
+				[&definition, index = std::size_t{ 0 }](const AbilityLevelStep& step) mutable
+				{
+					return HasExpectedLevelStep(step, definition.cooldown, index++);
+				}))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Energy Spear requires Energy damage and fourteen Damage/Cooldown progression steps.";
+					"Energy Spear requires Energy damage and fourteen Damage/EnergyPower progression steps.";
 			}
 			return false;
 		}

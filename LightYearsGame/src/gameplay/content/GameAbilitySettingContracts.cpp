@@ -5,6 +5,7 @@
 #include "gameplay/ability/infernoSpray/InfernoSprayContracts.h"
 #include "gameplay/ability/arcScythes/ArcScythesContracts.h"
 #include "gameplay/ability/closedCircuit/ClosedCircuitContracts.h"
+#include "gameplay/ability/reclaimerProtocol/ReclaimerProtocolContracts.h"
 
 namespace ly::content
 {
@@ -25,6 +26,10 @@ namespace ly::content
 		) && NumericSettingContractRegistry::Register(
 			AbilityBehaviorType::ClosedCircuit,
 			AbilityData::ClosedCircuit::Setting::Contract,
+			failureReason
+		) && NumericSettingContractRegistry::Register(
+			AbilityBehaviorType::ReclaimerProtocol,
+			AbilityData::ReclaimerProtocol::Setting::Contract,
 			failureReason
 		);
 	}

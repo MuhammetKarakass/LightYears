@@ -64,22 +64,20 @@ namespace ly
 		void ConfigureGeometry();
 
 		FrostMaelstromPresentationProfile mPresentationProfile;
-		float mDuration = 8.f;
+		float mDuration = 6.f;
 		float mMinimumRadius = 300.f;
-		float mMaximumRadius = 800.f;
+		float mMaximumRadius = 600.f;
 		float mCurrentRadius = 300.f;
 		float mMinimumSpeed = 200.f;
 		float mMaximumSpeed = 500.f;
 		float mCurrentSpeed = 200.f;
-		float mTickDamage = 2.f;
+		float mTickDamage = 1.f;
 		float mTickInterval = 0.25f;
 		float mCryoStacksPerTick = 1.f;
 		float mOrbitalAngularSpeed = 4.5f;
-		float mInwardForce = 1500.f;
+		float mPullStrength = 300.f;
 		float mOrbitalRadiusRatio = 0.42f;
-		float mEnergyPowerReference = 50.f;
-		float mEnergyPowerDamageScale = 0.005f;
-		float mEnergyPowerRadiusScale = 0.20f;
+		float mEnergyPowerDamageScale = 0.1f;
 		float mFieldAge = 0.f;
 		float mTickAccumulator = 0.f;
 		float mVisualAge = 0.f;

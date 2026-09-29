@@ -50,12 +50,6 @@ namespace AbilityData::CrystalBarricade
 			inline static const sas::AttributeId SameSurfaceLockDuration{
 				"AbilityActor.CrystalBarricade.Wall.SameSurfaceLockDuration"
 			};
-			inline static const sas::AttributeId MaxHealthDurationReference{
-				"AbilityActor.CrystalBarricade.Wall.MaxHealthDurationReference"
-			};
-			inline static const sas::AttributeId MaxHealthDurationScale{
-				"AbilityActor.CrystalBarricade.Wall.MaxHealthDurationScale"
-			};
 		};
 	};
 }

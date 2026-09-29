@@ -46,10 +46,11 @@ namespace ly
 			float perPointScale
 		)
 		{
-			return std::max(
+			return std::clamp(
+				baseRatio + (std::max(0.f, sourceValue) / std::max(1.f, reference)) *
+					std::max(0.f, perPointScale),
 				0.f,
-				baseRatio + std::max(0.f, sourceValue - reference) *
-					std::max(0.f, perPointScale)
+				1.f
 			);
 		}
 	}
@@ -65,7 +66,7 @@ namespace ly
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.cooldown <= 0.f ||
 			definition.duration <= 0.f ||
-			definition.attributes.size() != 10 ||
+			definition.attributes.size() != 8 ||
 			definition.levelProgression.size() != 14)
 		{
 			if (failureReason)
@@ -80,13 +81,11 @@ namespace ly
 			AbilityData::TemporalRecall::Attribute::RecallWindow,
 			AbilityData::TemporalRecall::Attribute::FocusDuration,
 			AbilityData::TemporalRecall::Attribute::RewindDuration,
-			AbilityData::TemporalRecall::Attribute::PositiveRecoveryRatio,
+			AbilityData::TemporalRecall::Attribute::BaseRecovery,
 			AbilityData::TemporalRecall::Attribute::MaxHealthReference,
 			AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale,
 			AbilityData::TemporalRecall::Attribute::EnergyPowerReference,
 			AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale,
-			AbilityData::TemporalRecall::Attribute::OvercapHoldDuration,
-			AbilityData::TemporalRecall::Attribute::OvercapDecayPerSecond
 		})
 		{
 			const sas::GameplayAttribute* attribute = sas::FindAttribute(
@@ -283,8 +282,8 @@ namespace ly
 		const sas::GameplayAttributeList values = ResolveValues(context);
 		const float baseRecoveryRatio = FindValue(
 			values,
-			AbilityData::TemporalRecall::Attribute::PositiveRecoveryRatio,
-			0.6f
+			AbilityData::TemporalRecall::Attribute::BaseRecovery,
+			0.45f
 		);
 		const sas::AttributeSystem& ownerAttributes =
 			context.abilitySystem.GetAttributes();
@@ -304,43 +303,16 @@ namespace ly
 			FindValue(values, AbilityData::TemporalRecall::Attribute::EnergyPowerReference, 100.f),
 			FindValue(values, AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale, 0.f)
 		);
-		const float holdDuration = std::max(
-			0.f,
-			FindValue(values, AbilityData::TemporalRecall::Attribute::OvercapHoldDuration, 4.f)
-		);
-		const float decayPerSecond = std::max(
-			0.f,
-			FindValue(values, AbilityData::TemporalRecall::Attribute::OvercapDecayPerSecond, 100.f)
-		);
-
 		HealthComponent& health = ship->GetHealthComponent();
 		if (mSnapshot.health > health.GetHealth())
 		{
-			health.GrantTemporaryOverhealth(
-				context.definition.abilityId,
-				(mSnapshot.health - health.GetHealth()) * healthRatio,
-				holdDuration,
-				decayPerSecond
-			);
-		}
-		else if (mSnapshot.health < health.GetHealth())
-		{
-			health.ChangeHealth(mSnapshot.health - health.GetHealth());
+			health.ChangeHealth((mSnapshot.health - health.GetHealth()) * healthRatio);
 		}
 
 		ShieldComponent& shield = ship->GetShieldComponent();
 		if (mSnapshot.shield > shield.GetShield())
 		{
-			shield.GrantTemporaryOvershield(
-				context.definition.abilityId,
-				(mSnapshot.shield - shield.GetShield()) * shieldRatio,
-				holdDuration,
-				decayPerSecond
-			);
-		}
-		else if (mSnapshot.shield < shield.GetShield())
-		{
-			shield.ChangeShield(mSnapshot.shield - shield.GetShield());
+			shield.ChangeShield((mSnapshot.shield - shield.GetShield()) * shieldRatio);
 		}
 
 		mPhase = Phase::Completed;
