@@ -35,22 +35,16 @@ namespace ly
 		{
 			return content::AbilityContentCatalog::FindNumericSetting(definition.abilityId, name).value_or(fallback);
 		}
-
-		List<AbilityLevelStep> AllLevelSteps(const GameAbilityDefinition& definition)
+		bool HasExpectedProgression(const GameAbilityDefinition& definition)
 		{
-			List<AbilityLevelStep> steps = definition.levelProgression;
-			steps.insert(steps.end(), definition.repeatingLevelProgression.begin(),
-				definition.repeatingLevelProgression.end());
-			return steps;
-		}
-
-		bool HasExpectedProgression(const List<AbilityLevelStep>& steps)
-		{
-			if (steps.empty()) return false;
-			for (const AbilityLevelStep& step : steps)
+			// Zero-based step index: even = no change, odd = HealRatio +0.01.
+			for (std::size_t i = 0; i < 8u; ++i)
 			{
-				const bool appliesAtLevel = !step.attributeModifiers.empty();
-				if (step.attributeModifiers.size() > 1u ||
+				const AbilityLevelStep* stepPtr = definition.ResolveLevelStep(i);
+				if (!stepPtr) return false;
+				const AbilityLevelStep& step = *stepPtr;
+				const bool appliesAtLevel = (i % 2u) == 1u;
+				if (step.attributeModifiers.size() != (appliesAtLevel ? 1u : 0u) ||
 					!step.scalingRules.empty() || !step.addedActions.empty() || !step.addedTriggers.empty())
 				{
 					return false;
@@ -82,12 +76,12 @@ namespace ly
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.duration <= 0.f ||
 			definition.cooldown <= 0.f || definition.attributes.size() != 1 ||
-			!HasExpectedProgression(AllLevelSteps(definition)))
+			!HasExpectedProgression(definition))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Reclaimer Protocol requires a duration defensive ability with one charge, positive duration and cooldown, and a valid HealRatio progression.";
+					"Reclaimer Protocol requires a duration defensive ability with one charge, positive duration and cooldown, and a HealRatio progression that adds +0.01 on every second upgrade step (steps 2, 4, 6, ...).";
 			}
 			return false;
 		}

@@ -54,8 +54,7 @@ namespace AbilityData::Definitions
 			sas::GameplayAttribute{
 				AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale,
 				0.20f,
-				0.f,
-				0.80f
+				0.f
 			},
 			sas::GameplayAttribute{
 				AbilityData::GlacialPressure::Attribute::MaxHealthCollisionScale,
@@ -115,7 +114,7 @@ namespace AbilityData::Definitions
 				{ AbilityData::GlacialPressure::Attribute::InitialDamage, sas::AttributeModifierOperation::Add, 5.f },
 				{ AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale, sas::AttributeModifierOperation::Add, 0.02f },
 				{ AbilityData::GlacialPressure::Attribute::CollisionDamage, sas::AttributeModifierOperation::Add, 10.f },
-				{ AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale, sas::AttributeModifierOperation::Add, 0.04f }
+				{ AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale, sas::AttributeModifierOperation::Add, 0.02f }
 			},
 			{},
 			{},

@@ -65,20 +65,21 @@ namespace AbilityData::Definitions
 				0.f
 			}
 		};
-		ly::SetRepeatingAbilityLevelStep(definition,
+		definition.repeatingLevelProgression = {
+			ly::AbilityLevelStep{ {}, {}, {}, {} },
 			ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						AbilityData::ReclaimerProtocol::Attribute::HealRatio,
 						sas::AttributeModifierOperation::Add,
-						0.0015f
+						0.01f
 					}
 				},
 				{},
 				{},
 				{}
 			}
-		);
+		};
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

@@ -405,8 +405,7 @@
         {
           "id": "Ability.Offense.GlacialPressure.EnergyPowerCollisionScale",
           "baseValue": 0.2,
-          "minValue": 0.0,
-          "maxValue": 0.8
+          "minValue": 0.0
         },
         {
           "id": "Ability.Offense.GlacialPressure.MaxHealthReference",
@@ -508,7 +507,7 @@
             {
               "attributeId": "Ability.Offense.GlacialPressure.EnergyPowerCollisionScale",
               "operation": "Add",
-              "magnitude": 0.04
+              "magnitude": 0.02
             }
           ]
         }

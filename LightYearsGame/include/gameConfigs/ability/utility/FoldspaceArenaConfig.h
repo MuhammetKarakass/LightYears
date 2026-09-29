@@ -71,6 +71,9 @@ namespace AbilityData::Definitions
 			sas::GameplayAttribute{
 				AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationScale,
 				0.75f,
+				0.f
+			}
+		};
 		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
 			{
 				sas::AttributeModifier{
