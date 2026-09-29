@@ -12,18 +12,19 @@ A high-performance 2D space shooter built from scratch with a custom engine arch
 
 ## Documentation
 
-- [System Reference](docs/PROJECT_DOCUMENTATION.md) — current runtime behavior,
-  data definitions, and game rules.
-- [Implementation Catalog](docs/CURRENT_IMPLEMENTATION_CATALOG.md) — current
-  content and its source locations.
-- [Balance & Roadmap Notebook](docs/BALANCE_AND_ROADMAP_NOTEBOOK.md) — proposed
-  work, design decisions, and playtest records.
-- [Vault Runtime Snapshot](docs/vault/00%20-%20Runtime%20Snapshot.md) — historical
- 7 Eylül source snapshot; current runtime binding is owned by
- `LightYearsGame/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp`.
+- [Ability Scaling Catalog](docs/ABILITY_SCALING_CATALOG.md) — the single source of
+  truth for every ability's values, formulas, per-level growth and behaviour.
+- [System Reference](docs/PROJECT_DOCUMENTATION.md) — how the runtime systems work
+  (engine, ability/effect pipeline, content loading).
+- [Implementation Catalog](docs/CURRENT_IMPLEMENTATION_CATALOG.md) — where content
+  lives in the source tree.
+- [Identity & Contract Rules](docs/IDENTITY_AND_CONTRACT_RULES.md) — id and data
+  contract rules.
 - [Roguelite Design](docs/Designs.md) — long-term product direction.
 - [Presentation Contract](docs/PROJECT_DOCUMENTATION.md#301-ability-presentation-profile-kontratı) — typed
   presentation and VFX integration rules.
+- [Archive](docs/archive/2026-09/README.md) — dated work reports and old snapshots;
+  historical only, not current truth.
 
 ---
 
