@@ -48,7 +48,7 @@ Ana matematik açıklamaları için
 | --- | --- | --- | --- |
 | Uygulama başlangıç dünyası | ✅ ArenaTestLevel yükleniyor | LightYearsGame/src/gameFramework/GameApplication.cpp | Başlangıç test arena; normal LevelOne varsayılan boot yolu değil |
 | Ana menüden oyun | 🟡 MainMenuLevel, StartGame ile LevelOne yükler | LightYearsGame/src/level/MainMenuLevel.cpp | Başlangıç dünyası MainMenuLevel olursa erişilir |
-| Oyuncu spawnı | ✅ Player, Ship_Player_Fighter ile spawn olur | LightYearsGame/src/player/Player.cpp | Player ship ID / respawn politikasına göre değiştirilebilir |
+| Oyuncu spawnı | ✅ Player, Ship.Player.Fighter.Basic ile spawn olur | LightYearsGame/src/player/Player.cpp | Player ship ID / respawn politikasına göre değiştirilebilir |
 | Başlangıç loadout | ✅ Kaynak sahibi `DefaultAbilityLoadout.cpp` | `gameplay/ability/loadout/DefaultAbilityLoadout.cpp`; `player/PlayerSpaceShip.cpp` | Exact slot ataması source owner dosyasından okunur; katalog bunu tekrar etmez. Shipped catalog'daki diğer ability'ler sonradan uygun slota takılabilir |
 | İlk hasar koruması | ✅ Oyuncu 2 sn invulnerable başlar | LightYearsGame/src/player/PlayerSpaceShip.cpp | mInvulnerabilityTime ile değiştirilebilir |
 
@@ -58,30 +58,30 @@ Ana matematik açıklamaları için
 
 | ID | Durum | Runtime davranışı | Kaynak |
 | --- | --- | --- | --- |
-| `Ability.Defense.ShieldHarvest.Basic` | ✅ | 1.5 s alan sayımı; 700 radius içinde her rakip için 40 temporary overshield; 5 s hold, 100/s decay | JSON; `ability/shieldHarvest/` |
-| `Ability.Offense.HullShock.Basic` | ✅ | Hold-to-charge Electric burst; 300→600 radius, 30 base damage, `MaxHealth×0.30`; shared telegraph radial curve | JSON; `ability/hullShock/` |
-| `Ability.Offense.OrbitalDrones.Basic` | ✅ | 6 s boyunca 4 drone, 500 orbit radius, 25 + AP×0.40 Kinetic hasar; tekrar vuruş için çıkış/yeniden temas ve 0.5 s gate | JSON; `ability/orbitalDrones/` |
-| `Ability.Offense.ExecutionDrive.Basic` | ✅ | 5 s boyunca 20 + aktivasyon öncesi AP×0.10 bonus AP ve %15 MoveSpeed; kill stack yok | JSON; `ability/executionDrive/` |
-| `Ability.Utility.RelayPrism.Basic` | ✅ | MouseWorld capture volume; uygun ability projectile'i %15 transfer + `AttackPower×0.25` hasarlı 4+Luck clone'a dönüştürür | JSON; `ability/relayPrism/` |
-| `Ability.Utility.EchoProtocol.Basic` | ✅ | Kayıtlı saldırı echo utility family’si; 0.60 base power ve çoklu owner-stat scale katsayıları | JSON; `ability/echoProtocol/` |
-| `Ability.Offense.MineLayer.Basic` | ✅ | 3 Energy mine; 10 s ömür, 70 + AP×0.70 hasar, 1 s refresh stun ve 300 knockback | JSON; `ability/mineLayer/` |
-| `Ability.Offense.RailBurst.Basic` | ✅ | High-speed swept Energy projectile; farklı hedefleri deler, same-target guard; Crit pierce loss azaltır | JSON; `ability/railBurst/` |
-| `Ability.Offense.CrescentReaver.Basic` | ✅ | Mouse-directed Kinetic ricochet; AttackPower damage ve Luck bounce scaling | JSON; `ability/crescentReaver/` |
-| `Ability.Movement.EnergySpear.Basic` | ✅ | Held-charge hareket/temas Energy saldırısı; distance ve charge multiplier | JSON; `ability/energySpear/` |
-| `Ability.Offense.ScorchDrive.Basic` | ✅ | Thermal fire-segment izi, özel sabit per-tick burn ve MaxHealth lifetime scale | JSON; `ability/scorchDrive/` |
-| `Ability.Offense.IonStorm.Basic` | ✅ | Cursor'a giden hasarsız projectile; hedefte 350 radius circular Electric alan, 4 s, 0.25 s tick | JSON; `ability/ionStorm/`; typed Ion Storm presentation |
+| `Ability.Defense.ShieldHarvest.Basic` | ✅ | Alan sayımı ile rakip başına geçici overshield üretir; Değerler: ABILITY_SCALING_CATALOG.md #31 | JSON; `ability/shieldHarvest/` |
+| `Ability.Offense.HullShock.Basic` | ✅ | Hold-to-charge Electric burst; shared telegraph radial curve kullanır; Değerler: ABILITY_SCALING_CATALOG.md #1 | JSON; `ability/hullShock/` |
+| `Ability.Offense.OrbitalDrones.Basic` | ✅ | Süreli yörüngeli Kinetic drone'lar; tekrar vuruş çıkış/yeniden temas ve zaman kapısıyla sınırlanır; Değerler: ABILITY_SCALING_CATALOG.md #3 | JSON; `ability/orbitalDrones/` |
+| `Ability.Offense.ExecutionDrive.Basic` | ✅ | Süreli bonus AttackPower ve MoveSpeed buff'ı; kill stack yok; Değerler: ABILITY_SCALING_CATALOG.md #8 | JSON; `ability/executionDrive/` |
+| `Ability.Utility.RelayPrism.Basic` | ✅ | MouseWorld capture volume; uygun ability projectile'ini clone'lara dönüştürür; Değerler: ABILITY_SCALING_CATALOG.md #52 | JSON; `ability/relayPrism/` |
+| `Ability.Utility.EchoProtocol.Basic` | ✅ | Kayıtlı saldırı echo utility family'si; Değerler: ABILITY_SCALING_CATALOG.md #54 | JSON; `ability/echoProtocol/` |
+| `Ability.Offense.MineLayer.Basic` | ✅ | Energy mayın yerleştirir; temas stun/knockback uygular; Değerler: ABILITY_SCALING_CATALOG.md #9 | JSON; `ability/mineLayer/` |
+| `Ability.Offense.RailBurst.Basic` | ✅ | High-speed swept Energy projectile; farklı hedefleri deler, same-target guard; Değerler: ABILITY_SCALING_CATALOG.md #10 | JSON; `ability/railBurst/` |
+| `Ability.Offense.CrescentReaver.Basic` | ✅ | Mouse-directed Kinetic ricochet; Değerler: ABILITY_SCALING_CATALOG.md #12 | JSON; `ability/crescentReaver/` |
+| `Ability.Movement.EnergySpear.Basic` | ✅ | Held-charge hareket/temas Energy saldırısı; Değerler: ABILITY_SCALING_CATALOG.md #45 | JSON; `ability/energySpear/` |
+| `Ability.Offense.ScorchDrive.Basic` | ✅ | Thermal fire-segment izi; özel per-tick burn; Değerler: ABILITY_SCALING_CATALOG.md #14 | JSON; `ability/scorchDrive/` |
+| `Ability.Offense.IonStorm.Basic` | ✅ | Cursor'a giden hasarsız projectile; hedefte süreli circular Electric alan; Değerler: ABILITY_SCALING_CATALOG.md #15 | JSON; `ability/ionStorm/`; typed Ion Storm presentation |
 | `sas::AbilityRuntimeBinding` | ✅ | Tanımın content slotundan bağımsız, current equipment slotunu taşır | `SpaceAbilitySystem/include/abilities/AbilityRuntimeBinding.h` |
 
-Önceki tablolar tarihsel ayrıntı içerebilir. Güncel sayısal değerler için
-`abilities.json`, bu kartlar ve vault [[00 - Runtime Snapshot]] birlikte
-okunmalıdır.
+Önceki tablolar tarihsel ayrıntı içerebilir. Sayısal değerler için `ABILITY_SCALING_CATALOG.md`, sahiplik ve dosya konumları için bu kartlar kullanılır. Level modeli: level sınırsızdır, her level per-level adımı yeniden uygular; cooldown ilerlemesi global'dir (catalog "Global Cooldown Progression").
+
+
 
 | Sistem | Durum | Çalışan davranış | Kaynak / düzenleme noktası | Denge veya test notu |
 | --- | --- | --- | --- | --- |
-| Ability.Control.NullPulse.Basic | ✅ | 11 sn cooldown, Instant, 1 charge; radius 500 (+200); Energy damage, projectile cleanup ve Stun/Stagger uygular; Stun yeni/aktif ability ve primary fire yürütmesini, outgoing damage ve trigger aksiyonlarını bloklar. Slot binding bu kartta tutulmaz. | `assets/content/data/abilities.json`; `gameplay/ability/nullPulse/`; `presentation/ability/nullPulse/` | [x] Loader, behavior validation, damage/control, projectile ayrımı, EnergyPower scale, typed visual cleanup ve CTest |
-| Ability.Offense.OverdriveCore.Basic | ✅ | 1 sn salvo + 5 sn AttackSpeed boost; 8 + floor(external AS/10) homing Kinetic projectile. Slot binding bu kartta tutulmaz. | `assets/content/data/abilities.json`; `gameplay/ability/overdriveCore/`; `presentation/ability/overdriveCore/` | [x] Loader, actor/profile validation, homing/damage, gerçek ship/dummy, boost state/effect ve CTest. Değerler: ABILITY_SCALING_CATALOG.md #7 |
-| Ability.Movement.PhaseDrift.Basic | ✅ | Shipped, varsayılan loadout'ta değil; 14 sn cooldown, 6 sn duration; cleanse, damage/collision protection, movement/recovery boost, break-on-action ve typed aura | `assets/content/data/abilities.json`; `gameplay/ability/phaseDrift/`; `presentation/ability/phaseDrift/` | [ ] Loader var; runtime lifecycle, cleanse/protection, collision restoration, break-on-action ve visual cleanup testleri eklenmeli |
-| Ability.Offense.IonStorm.Basic | ✅ | Shipped, varsayılan loadout'ta değil; 900 menzil ve 2000 hızla cursor'a ulaşan hasarsız projectile; hedefte 350 radius Electric alan, 4 sn, 0.25 sn tick | `assets/content/data/abilities.json`; `gameplay/ability/ionStorm/`; `presentation/ability/ionStorm/` | [x] Loader, behavior/actor/profile registration, boundary resolver ve content/runtime başlangıç doğrulaması. Değerler: ABILITY_SCALING_CATALOG.md #15 |
+| Ability.Control.NullPulse.Basic | ✅ | Self-centered Energy pulse; projectile cleanup ve Stun/Stagger uygular; Stun yeni/aktif ability ve primary fire yürütmesini, outgoing damage ve trigger aksiyonlarını bloklar. Slot binding bu kartta tutulmaz. Değerler: ABILITY_SCALING_CATALOG.md #49 | `assets/content/data/abilities.json`; `gameplay/ability/nullPulse/`; `presentation/ability/nullPulse/` | [x] Loader, behavior validation, damage/control, projectile ayrımı, EnergyPower scale, typed visual cleanup ve CTest |
+| Ability.Offense.OverdriveCore.Basic | ✅ | Kısa salvo + AttackSpeed boost; homing Kinetic projectile'lar. Slot binding bu kartta tutulmaz. Değerler: ABILITY_SCALING_CATALOG.md #7 | `assets/content/data/abilities.json`; `gameplay/ability/overdriveCore/`; `presentation/ability/overdriveCore/` | [x] Loader, actor/profile validation, homing/damage, gerçek ship/dummy, boost state/effect ve CTest |
+| Ability.Movement.PhaseDrift.Basic | ✅ | Shipped, varsayılan loadout'ta değil; cleanse, damage/collision protection, movement/recovery boost, break-on-action ve typed aura. Değerler: ABILITY_SCALING_CATALOG.md #44 | `assets/content/data/abilities.json`; `gameplay/ability/phaseDrift/`; `presentation/ability/phaseDrift/` | [ ] Loader var; runtime lifecycle, cleanse/protection, collision restoration, break-on-action ve visual cleanup testleri eklenmeli |
+| Ability.Offense.IonStorm.Basic | ✅ | Shipped, varsayılan loadout'ta değil; cursor'a ulaşan hasarsız projectile ve hedefte süreli Electric alan. Değerler: ABILITY_SCALING_CATALOG.md #15 | `assets/content/data/abilities.json`; `gameplay/ability/ionStorm/`; `presentation/ability/ionStorm/` | [x] Loader, behavior/actor/profile registration, boundary resolver ve content/runtime başlangıç doğrulaması |
 | SpaceAbilitySystem statik kütüphanesi | ✅ Doğrulandı | Attribute, Ability ve Effect generic çekirdeği ile lifecycle kararları `sas` namespace'inde; engine/content/presentation entegrasyonları oyun adaptörlerinde | SpaceAbilitySystem/CMakeLists.txt; SpaceAbilitySystem/include/{attributes,abilities,effects}; SpaceAbilitySystem/src/{attributes,abilities,effects} | Tarihsel kayıt: Debug/Release `SpaceAbilitySystem.lib` ve test executable'ları üretildi; iki konfigürasyonda 2/2 geçti. Bu turda yeniden çalıştırılmadı |
 | sas::AttributeSystem | ✅ Doğrulandı | `GameplayAttribute`, modifier, scaling rule, lookup map, handle map ve delegate kimlikleri `sas::AttributeId` kullanır; Add, Multiply, Override, min/max clamp ve scaling sırası korunur | SpaceAbilitySystem/include/attributes/AttributeSystem.h; SpaceAbilitySystem/include/attributes/GameplayAttribute.h; SpaceAbilitySystem/src/attributes/AttributeSystem.cpp | Davranış test edilmedi; test çalıştırılmadı |
 | sas::AttributeId | Uygulandı | Numeric gameplay attribute kimliği için string-backed, opaque API; equality, validity ve hash desteği; SAS lookup/delegate/spec mutator yolları ve game loader'ları kullanır | SpaceAbilitySystem/include/attributes/AttributeId.h; SpaceAbilitySystem/include/attributes/GameplayAttribute.h; SpaceAbilitySystem/include/effects/GameplayEffectSpec.h | Lookup API'leri `FindAttribute`, `FindAttributeValue`, `HasAttribute`; test çalıştırılmadı |
@@ -130,7 +130,7 @@ okunmalıdır.
 
 | Konu | Mevcut durum | Planlanan sınır |
 | --- | --- | --- |
-| Otoriter shipped content | Weapon/ability/effect/ship sayısal değerleri owner JSON'da; JSON'da 1 attachment kaydı var. C++ fallback attachment tanımları ayrıca `AttachmentConfig.h` içinde tutulur. | Düşman/boss content, attachment bootstrap ve acquisition akışı ayrı bağlanacak; attachment runtime equip/resolve zaten mevcut |
+| Otoriter shipped content | Weapon/ability/effect/ship sayısal değerleri owner JSON'da; `attachments.json`'da 2 attachment kaydı var. C++ fallback attachment tanımları ayrıca `AttachmentConfig.h` içinde tutulur. | Düşman/boss content, attachment bootstrap ve acquisition akışı ayrı bağlanacak; attachment runtime equip/resolve zaten mevcut |
 | JSON / CSV runtime loader | ✅ JSON loader + domain loader/catalog + temel semantic validation | CSV yalnızca balance import/export ve analiz için kullanılacak |
 | C++'da kalacak alanlar | Şema, tag, behavior/action/weapon handler, typed presentation ve runtime state | Aynı sahiplik korunacak; JSON yalnız kayıtlı C++ ID'lerine referans verecek |
 | CSV kullanımı | ❌ Yok | Balance import/export ve analiz; doğrudan oyun runtime kaynağı değil |
@@ -205,23 +205,23 @@ profile kontratı** bölümündedir.
 > kaynağı [`DefaultAbilityLoadout.cpp`](../LightYearsGame/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp)'dir;
 > bu tablo content/runtime kartlarını taşır, binding tablosu değildir.
 
-| ID | Durum | Tarihsel oyuncu-slot notu | Mevcut config | Runtime matematiği | Hedef / test notu |
+| ID | Durum | Tarihsel oyuncu-slot notu | Mevcut config (kısa) | Değerler | Hedef / test notu |
 | --- | --- | --- | --- | --- | --- |
-| Ability.Defense.Shield.Basic | ✅ | Hayır; shipped içerik, PlayerSpaceShip varsayılan grant listesinde değil | 8 sn cooldown; 5 sn duration; Basic Barrier uygular | Barrier capacity = 30 + 0.20×MaxHealth + 50×Armor | [ ] Shield uptime ve break event test edilecek |
-| Ability.Offense.SunBeam.Strike.Basic | ✅ | Evet, Ability2 / E | MouseWorld hedef; 0.5 sn telegraph + 0.2 sn arrival + 0.05 sn impact delay | Base 40 damage; radius 110; EP scale 0.70 | Değerler: ABILITY_SCALING_CATALOG.md #4. Doğrulama: archive/2026-09/ABILITY_BALANCE_BATCH1_2026-09-27.md |
-| Ability.Movement.Dash.Basic | ✅ | Evet, Ability3 / F | 2 sn cooldown; 0.24 sn duration; 1 charge | Base 260 mesafe; mevcut velocity korunur; kamera offset/göreli zoom sürekliliği korunur | Değerler: ABILITY_SCALING_CATALOG.md. [x] Katalog, tuning-safe cooldown, yön, tam momentum, kamera offset/göreli zoom sürekliliği, lifecycle ve cleanup core testleri |
-| Ability.Offense.Rocket.Basic | ✅ | Evet, Ability4 / R | 6 sn cooldown; Instant; 1 charge | Base 55 damage + AP×1.25; Kinetic; radius 55; speed 1000; range 1100 | Değerler: ABILITY_SCALING_CATALOG.md #5. [x] Katalog/actor validation, cursor hedef mesafesi, max-range clamp, tek spawn, owner scaling, Kinetic stack ve cleanup core testleri |
-| Ability.Control.GravityAnomaly.Basic | ✅ | Evet, Ability1 / Q; bu slotta Shield'in varsayılan grant'inin yerini alır | 8 sn cooldown; Instant; 1 charge; 900 cast range, 2000 projectile speed | 220 radius field, 2.5 sn duration; %20 movement slow ve velocity pull uygular | Değerler: ABILITY_SCALING_CATALOG.md. [x] Typed profile/actor validation, varsayılan Ability1/Q loadout, pull/center güvenliği, movement slow, field-source expiry cleanup ve effect visual cleanup |
-| Ability.Offense.GlacialPressure.Basic | ✅ | Evet, Ability4 / R; Rail Burst yerine varsayılan | 10 sn cooldown; 1 sn focus; 700 range, 5 segment | Base push/collision damage; MaxHealth skala uygular; segment multiplier 0.60→1.40 | Değerler: ABILITY_SCALING_CATALOG.md #2. Doğrulama: archive/2026-09/ABILITY_BALANCE_BATCH1_2026-09-27.md |
+| Ability.Defense.Shield.Basic | ✅ | Hayır; shipped içerik, PlayerSpaceShip varsayılan grant listesinde değil | Basic Barrier effect'i uygular | Değerler: ABILITY_SCALING_CATALOG.md #30 | [ ] Shield uptime ve break event test edilecek |
+| Ability.Offense.SunBeam.Strike.Basic | ✅ | Evet, Ability2 / E | MouseWorld hedefli telegraph + impact | Değerler: ABILITY_SCALING_CATALOG.md #4 | Doğrulama: archive/2026-09/ABILITY_BALANCE_BATCH1_2026-09-27.md |
+| Ability.Movement.Dash.Basic | ✅ | Evet, Ability3 / F | Dash movement controller; mevcut velocity ve kamera offset/göreli zoom sürekliliği korunur | Değerler: ABILITY_SCALING_CATALOG.md #43 | [x] Katalog, tuning-safe cooldown, yön, tam momentum, kamera süreklilik, lifecycle ve cleanup core testleri |
+| Ability.Offense.Rocket.Basic | ✅ | Evet, Ability4 / R | Cursor hedefli Kinetic roket projectile | Değerler: ABILITY_SCALING_CATALOG.md #5 | [x] Katalog/actor validation, cursor hedef mesafesi, max-range clamp, tek spawn, owner scaling, Kinetic stack ve cleanup core testleri |
+| Ability.Control.GravityAnomaly.Basic | ✅ | Evet, Ability1 / Q; bu slotta Shield'in varsayılan grant'inin yerini alır | Cursor'a giden projectile; hedefte çekim + slow alanı | Değerler: ABILITY_SCALING_CATALOG.md #48 | [x] Typed profile/actor validation, varsayılan Ability1/Q loadout, pull/center güvenliği, movement slow, field-source expiry cleanup ve effect visual cleanup |
+| Ability.Offense.GlacialPressure.Basic | ✅ | Evet, Ability4 / R; Rail Burst yerine varsayılan | Cone focus, Cryo push ve collision | Değerler: ABILITY_SCALING_CATALOG.md #2 | Doğrulama: archive/2026-09/ABILITY_BALANCE_BATCH1_2026-09-27.md |
 | PrimaryFire üretilmiş ability | ✅ | Evet, Space | Weapon definition’dan slot/action oluşturulur | Level ve scaling weapon profile’dan gelir | [ ] Silah scaling katalogda kayıtlı |
 
 ### 4.2 Effect ve status kayıtları
 
 | ID / status | Durum | Mevcut değer | Matematik / davranış | Hedef / test notu |
 | --- | --- | --- | --- | --- |
-| Effect.Barrier.Basic | ✅ | Capacity 30; ratio 1; regen 6/sn; delay 1.5 sn; duration 5 sn | Kaynak hasar emilimi = capacitySpent / (ratio×shieldMultiplier) | [x] Shield-only Armor etkisizliği, hull taşması, shield’sız summon ve Energy 1.50 doğrulandı |
-| Effect.Test.BarrierBreak.ThrustBoost | ✅ | 2 sn; horizontal +0.20; vertical +0.25 | BarrierBroken trigger ile self’e uygulanır | [ ] “Test” ID’si üretim adlandırmasına taşınacak mı? |
-| Effect.GravityAnomaly.Inside.Basic | ✅ | 2 sn duration, refresh-duration, source-scoped; field başına %20 slow | `AreaGameplayEffectApplicator` hedef içerideyken süreyi sürekli 2 sn'ye resetler. Çıkışta veya field bitiminde pull hemen kapanır; slow ve target visual kalan 2 sn sürer. Ayrı field source scope'ları birbirini korur. | [x] Multi-field izolasyonu, enter/leave/destroy tail, expiry cleanup, gerçek movement slow ve target-following visual doğrulandı |
+| Effect.Barrier.Basic | ✅ | sourceParameterized; değerler Shield ability'sinden gelir (ABILITY_SCALING_CATALOG.md #30) | Kaynak hasar emilimi capacity/ratio/shieldMultiplier üzerinden hesaplanır | [x] Shield-only Armor etkisizliği, hull taşması, shield’sız summon ve Energy shield çarpanı doğrulandı |
+| Effect.Test.BarrierBreak.ThrustBoost | ✅ | Süreli thrust boost; sourceParameterized (`effects.json`) | BarrierBroken trigger ile self’e uygulanır | [ ] “Test” ID’si üretim adlandırmasına taşınacak mı? |
+| Effect.GravityAnomaly.Inside.Basic | ✅ | RefreshDuration, source-scoped; field başına slow (ABILITY_SCALING_CATALOG.md #48) | `AreaGameplayEffectApplicator` hedef içerideyken süreyi sürekli resetler. Çıkışta veya field bitiminde pull hemen kapanır; slow ve target visual kalan süre boyunca sürer. Ayrı field source scope'ları birbirini korur. | [x] Multi-field izolasyonu, enter/leave/destroy tail, expiry cleanup, gerçek movement slow ve target-following visual doğrulandı |
 | Thermal / Ignite | ✅ | 1–4 stack; 1 / 2 / 3 / 5 hasar/sn; 5 sn | İlk stack çalışır; süre bitince ilk stack, sonra her saniye bir stack azalır; `BurnDamagePerTick` özel modu canonical DPS ile çiftlenmez | [x] GasLite canonical DPS, decay, refresh ve özel burn ayrımı |
 | Cryo / Slowed | ✅ | 1–4 stack; %4 / %8 / %12 / %20 slow; 5 sn | Tek yetkili stack effect'i `Cryo.Slowed`; ilk stack çalışır, yeniden uygulama stack ekler ve süreyi yeniler, decay modifier'ı tabloya göre senkronize eder | [x] GasLite slow tablosu, decay ve reapply |
 | Electric | ✅ | 1–4 stack; +%3 / +%6 / +%9 / +%16 alınan hasar; 4 sn | PreMitigation aşamasında mevcut stack'ler vuruşa uygulanır; o vuruşun yeni stack'i sonraki vuruşu etkiler; decay sırasında stack düşer | [x] GasLite taken-damage tablosu, sıra ve decay |
@@ -242,10 +242,10 @@ profile kontratı** bölümündedir.
 
 | Parametre | Mevcut değer / formül | Kaynak | Hedef değer | Ölçülen sonuç | Karar |
 | --- | --- | --- | --- | --- | --- |
-| Crit rating scale | 100 | AttributeMath.h |  |  |  |
-| Crit multiplier | 1.5 varsayılan payload; ileride `1.5 + BonusCriticalDamage` | DamageContext.h |  |  |  |
-| Armor scale | 50 / ln(2) ≈ 72.1348 | AttributeMath.h |  |  |  |
-| Armor penetration üst sınırı | 0.25 | DamageTypeSystem.cpp |  |  |  |
+| Crit rating scale | Değer `AttributeMath.h`'de | AttributeMath.h |  |  |  |
+| Crit multiplier | Owner.CriticalDamage attribute'u; başlangıç değeri ship/owner tanımında | DamageContext.h |  |  |  |
+| Armor eğrisi | Formül `AttributeMath.h`'de (SAS) | AttributeMath.h |  |  |  |
+| Armor penetration üst sınırı | `attachments.json` (`Damage.ArmorPenetration` maxValue) ve `DamageTypeSystem.cpp` | DamageTypeSystem.cpp |  |  |  |
 | Shield damage multiplier | Tür/attribute’a bağlı; Energy 1.50 | DamageTypeSystem.cpp |  |  |  |
 | Damage status stack tabloları | Cryo %4/%8/%12/%20; Electric +%3/+%6/+%9/+%16; Thermal 1/2/3/5 DPS; Kinetic %6/%12/%18/%30 penetration | DamageTypeConfig.h | JSON/C++ tek sahibi |  |  |
 | Damage status süreleri | Cryo/Thermal/Kinetic 5 sn; Electric 4 sn; decay sonrası 1 sn/stack | DamageTypeConfig.h; GameplayEffectRuntimeState.cpp | Seçili dört Stack effect'i |  |  |
@@ -279,10 +279,10 @@ profile kontratı** bölümündedir.
 | Silah | Durum | L2 | L3 | L4 | Scrap 2/3/4 | Ölçülen L4 DPS | Karar |
 | --- | --- | --- | --- | --- | --- | --- |
 | BasicRapidLaser | ✅ | Unbounded: +10 Damage, +1 Empowered Damage, +0.05 AP scaling, +0.03 EP scaling per level | Unbounded progression | Unbounded levels; per-level growth weapons.json'da. Sustained DPS testleri core suite geçti |
-| DualKineticBlaster | ✅ | Unbounded per-level progression | Unbounded progression | Unbounded levels; weapons.json sahibi |
-| ElectricArcLauncher | ✅ | Unbounded per-level progression | Unbounded progression | Unbounded levels; weapons.json sahibi |
-| ContinuousHeatLaser | ✅ | Unbounded per-level progression | Unbounded progression | Unbounded levels; weapons.json sahibi |
-| CryoWaveProjector | ✅ | Unbounded per-level progression | Unbounded progression | Unbounded levels; weapons.json sahibi |
+| DualKineticBlaster | ✅ | Progression kuralları `weapons.json` `progression` alanında | — | Değerler weapons.json sahibi |
+| ElectricArcLauncher | ✅ | Progression kuralları `weapons.json` `progression` alanında | — | Değerler weapons.json sahibi |
+| ContinuousHeatLaser | ✅ | Progression kuralları `weapons.json` `progression` alanında | — | Değerler weapons.json sahibi |
+| CryoWaveProjector | ✅ | Progression kuralları `weapons.json` `progression` alanında | — | Değerler weapons.json sahibi |
 
 ### Silaha özel hesap alanları
 
@@ -294,67 +294,50 @@ profile kontratı** bölümündedir.
 | Beam | DPS = baseDPS × (1+(maxHeatMultiplier-1)×heatRatio) | Ortalama heat ratio: ___ ; sustained DPS: ___ |
 | Wave | Etkin alan, width’in initial→max büyümesi ile değişir | Ortalama hedef/hit: ___ ; DPS: ___ |
 
-### Primary weapon runtime balance verification (2026-07-24)
+### Primary weapon runtime balance verification
 
-`GasLiteCoreTests` resolves the production weapon definitions through
-`LightYearsAbilitySystemComponent`, `GameAbilityActionExecutor` and
-`ShipProgression` at ship levels 1, 10, 25 and 50. Values below
-assume weapon ability level 1, no attachment, no crit, no armor and every shot connects.
-Shotgun values are three pellets on one target; Beam values are base single-target DPS
-before its heat multiplier.
+Sayısal DPS tabloları kaldırıldı; tarihsel test çıktıları güncel JSON ile doğrulanamadığı için
+tekrar edilmez. Değerler `LightYearsGame/assets/content/data/weapons.json` içindedir;
+`GasLiteCoreTests` production weapon tanımlarını `LightYearsAbilitySystemComponent`,
+`GameAbilityActionExecutor` ve `ShipProgression` üzerinden çözer.
 
-| Weapon | L1 | L10 | L25 | L50 | Contract verified |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Rapid Laser | 64.00 | 1513.00 | 7168.00 | 25593.00 | Damage x rate, 1 muzzle |
-| Rapid Shotgun | 67.50 | 1337.18 | 6733.80 | 24840.68 | x1.00 + x0.90 + x0.80 progressive same-target pellet toplamı |
-| Dual Kinetic | 84.00 | 1677.90 | 7250.40 | 24637.90 | Damage x rate x 2 muzzles; L50 < Rapid Laser |
-| Electric Arc (one target) | 42.00 | 687.57 | 3415.92 | 12553.17 | 3 normal chains remain x0.72 falloff |
-| Continuous Heat Laser | 28.00 | 93.25 | 202.00 | 383.25 | AttackSpeed does not add fire rate, tick rate or direct DPS |
-| Cryo Wave | 12.60 | 426.83 | 2332.20 | 8882.83 | Four-hit slow timing: 1.667 / 0.476 / 0.217 / 0.114 sec |
-
-Electric normal-chain total multipliers are 1.00 (one target), 1.72 (two targets), and
-2.611648 (four targets). A fifth valid target can only receive one extra chain after
-the normal four-target sequence. Its chance is `0.35 * CombatRuntime::GetCombatLuckFactor()`;
-the central diminishing curve approaches, but does not exceed, 35 percent. No eligible
-next target means no roll, and the struck-target set prevents duplicates.
-
-For the Beam, AttackSpeed has no heat-gain effect through 50% heat, ramps from 50% to
-75%, and applies up to a 35% diminishing-return heat-gain reduction from 75% to 100%.
-It neither removes overheat nor changes direct Beam damage/ticks; the suite verifies a
-finite overheat cycle and sustained damage over 10 and 30 seconds.
+- Shotgun: aynı hedefe ardışık pellet isabetleri progressive falloff alır (`DamageReductionPerAdditionalHit`, `MinimumDamageMultiplier`).
+- Electric Arc: normal chain toplamı `baseDamage × Σ(DamageMultiplierPerChain^i)`; dördüncü hedeften sonra tek bir bonus chain yalnız şansla ve yalnız uygun hedef varsa denenir; struck-target set tekrarları engeller.
+- Beam: AttackSpeed yalnız yüksek heat bölgesinde heat kazanımını azaltır; overheat'i kaldırmaz, direct Beam hasarını/tick'ini değiştirmez.
+- Cryo Wave: slow tempo `damage_status_balance.json` Cryo tablosuna bağlıdır.
 
 ## 7. Düşman ve boss silah kataloğu
 
 | Silah ID | Durum | Damage / FireRate | Muzzle | Önemli davranış | Hedef / test |
 | --- | --- | --- | --- | --- | --- |
-| Weapon.Projectile.EnemyVanguardPulse.Basic | ✅ | 15 / 1.2 | 1 | ApproachGunner temporary profile; Standard / Energy; speed 700, range 1200 | [x] Runtime ve loader testleri geçti; foundation geçici |
-| Weapon.Projectile.EnemyTwinBladeScatter.Basic | ✅ | 8 / 0.8 | 3 pellet | StrafeSkirmisher temporary profile; Shotgun / Kinetic; spread 12°, range 500 | [x] Runtime ve loader testleri geçti; foundation geçici |
-| Weapon.Wave.EnemyHexagonCryoPulse.Basic | ✅ | 10 / 0.6 | 1 wave | RangeKeeper temporary profile; Expanding Wave / Cryo; width 60→200, speed 500, range 600 | [x] Runtime ve loader testleri geçti; foundation geçici |
+| Weapon.Projectile.EnemyVanguardPulse.Basic | ✅ | 15 / 1.8 | 1 | ApproachGunner temporary profile; Standard / Energy; speed 800, range 1300 | [x] Runtime ve loader testleri geçti; foundation geçici |
+| Weapon.Projectile.EnemyTwinBladeScatter.Basic | ✅ | 8 / 1.2 | 3 pellet | StrafeSkirmisher temporary profile; Shotgun / Kinetic; spread 12°, range 600 | [x] Runtime ve loader testleri geçti; foundation geçici |
+| Weapon.Wave.EnemyHexagonCryoPulse.Basic | ✅ | 10 / 0.9 | 1 wave | RangeKeeper temporary profile; Expanding Wave / Cryo; width 60→200, speed 600, range 1400 | [x] Runtime ve loader testleri geçti; foundation geçici |
 
 ## 8. Ship kataloğu
 
 | Gemi ID | Durum | HP | Collision | Score / Ship XP | Silah | Loot olasılıkları | Hedef / test |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ship_Player_Fighter | ✅ | 250 | 25 | 0 / 0 | Weapon.Projectile.FighterRapidLaser.Basic | Yok | [ ] Varsayılan baseline |
-| Ship.Enemy.ApproachGunner.Basic | ✅ | 60 | 50 | 10 / 10 | `EnemyCombat.ApproachGunner.Basic` → EnemyVanguardPulse | Health .20, Life .05, Shield .08 | [x] Generic EnemyActor/chassis content |
-| Ship.Enemy.StrafeSkirmisher.Basic | ✅ | 60 | 50 | 20 / 20 | `EnemyCombat.StrafeSkirmisher.Basic` → EnemyTwinBladeScatter | Health .25, Life .05, Shield .08 | [x] Generic EnemyActor/chassis content |
-| Ship.Enemy.RangeKeeper.Basic | ✅ | 100 | 60 | 30 / 30 | `EnemyCombat.RangeKeeper.Basic` → EnemyHexagonCryoPulse | Health .30, Life .05, Shield .10 | [x] Generic EnemyActor/chassis content |
+| Ship.Player.Fighter.Basic | ✅ | 250 | 25 | 0 / 0 | Weapon.Projectile.FighterRapidLaser.Basic | Yok | [ ] Varsayılan baseline |
+| Ship.Enemy.ApproachGunner.Basic | ✅ | 60 | 50 | 10 / 1 | `EnemyCombat.ApproachGunner.Basic` → EnemyVanguardPulse | Health .20, Life .05, Shield .08 | [x] Generic EnemyActor/chassis content |
+| Ship.Enemy.StrafeSkirmisher.Basic | ✅ | 60 | 50 | 20 / 2 | `EnemyCombat.StrafeSkirmisher.Basic` → EnemyTwinBladeScatter | Health .25, Life .05, Shield .08 | [x] Generic EnemyActor/chassis content |
+| Ship.Enemy.RangeKeeper.Basic | ✅ | 100 | 60 | 30 / 3 | `EnemyCombat.RangeKeeper.Basic` → EnemyHexagonCryoPulse | Health .30, Life .05, Shield .10 | [x] Generic EnemyActor/chassis content |
 
 ### Player Fighter — doldurulabilir hareket/enerji kartı
 
 | Parametre | Mevcut değer | Hedef değer | Ölçüm / sonuç |
 | --- | --- | --- | --- |
 | Forward / reverse / strafe thrust | 650 / 190 / 270 |  |  |
-| Max speed / damping | 520 / 0.36 |  |  |
+| Max speed / damping | 520 / 0.70 |  |  |
 | Turn speed / responsiveness | 400 / 5 |  |  |
 | Input responsiveness / mouse dead zone | 12 / 32 |  |  |
-| EnergyPower / ReactorBudget | 35 / 70 |  |  |
+| EnergyPower | 35 |  |  |
 | Base shield / full recharge / delay | 115 / 6 sn / 6 sn |  |  |
 | Afterburner base capacity / full recharge / delay | 65 / 6 sn / 1.5 sn |  |  |
 | Afterburner speed / acceleration | 1.55 / 1.80 |  |  |
 | Energy drain | 33 / sn |  |  |
 | Ramp up / down / maneuverability | .22 sn / .45 sn / .90 |  |  |
-| Reactor affinity / final shield / final capacity | 50 / 50 / 150 / 100 |  |  |
+| Shield / afterburner affinity | 0.5 / 0.5 |  |  |
 | XP base / exponent | 100 / 1.25 |  |  |
 
 ### Afterburner matematiği
@@ -372,7 +355,7 @@ turnCapability = lerp(1, afterburnerManeuverabilityMultiplier, intensity)
 ## 9. Attachment kataloğu
 
 C++ fallback kataloğunda 7 attachment tanımı ve runtime resolver desteği vardır.
-Shipped JSON kataloğunda şu an 1 attachment kaydı bulunur; bootstrap JSON'u henüz
+Shipped JSON kataloğunda (`attachments.json`) şu an 2 attachment kaydı (Thermal Converter, Kinetic Bore) bulunur; bootstrap JSON'u henüz
 yüklemediği için fallback tanımları ile shipped content aynı şey değildir.
 Varsayılan Player Fighter loadout’ında hiçbiri otomatik equip edilmez.
 
@@ -383,7 +366,7 @@ Varsayılan Player Fighter loadout’ında hiçbiri otomatik equip edilmez.
 | Kinetic Bore | ⚙️ | Ability/Primary; Damage | JSON'da +0.10 granted `Damage.ArmorPenetration` ve Kinetic koşulunda +0.05 extra; status tablosu %6/%12/%18/%30 ve 5 sn decay policy'den ayrı source bonusudur | [ ] Armor breakpoint |
 | Cryo Conduit | ⚙️ | Ability/Primary; Damage | Cryo hit stack başına canonical %4/%8/%12/%20 slow ve 5 sn decay policy kullanır | [ ] Slow uptime |
 | Electric Conduit | ⚙️ | Ability/Primary; Damage | Electric canonical alınan hasar tablosu +%3/+%6/+%9/+%16 ve 4 sn decay policy kullanır | [ ] Burst combo |
-| Heavy Capacitor | ⚙️ | Ability; Damage+Cooldown | Damage x1.40, Cooldown x1.25 | [ ] Net value |
+| Heavy Capacitor | ⚙️ | Ability; Damage+Cooldown | Damage çarpanı artar, Cooldown çarpanı uzar; değerler `AttachmentConfig.h` | [ ] Net value |
 | Emergency Salvo | ⚙️ | Primary; FireRate+Projectile | FireRate < 4 ise +1 projectile | [ ] Eşik davranışı |
 
 ## 10. Arena, kamera ve level içeriği
@@ -411,7 +394,7 @@ Varsayılan Player Fighter loadout’ında hiçbiri otomatik equip edilmez.
 | Camera shake | ✅ | sinüs ofset + kalan sürenin karesiyle azalma |  |  |
 | LevelOne stage zinciri | 🟡 | Wait → Vanguard → TwinBlade → Hexagon → Chaos |  | Legacy stage yolu; `InfiniteStage` kaldırıldı, ana giriş ArenaTestLevel |
 | Infinite stage | ❌ | `InfiniteStage` kaldırıldı |  | Endless encounter sorumluluğu `EncounterWaveRuntime` içinde |
-| Arena encounter runtime | ✅ | Endless cycle; 3 template, başlangıç hedefi 3 enemy, wave başına +1; her 3 wave'de level-up ve level-up dalgasında bilinçli -2 telafi; level cap 15, active cap 24, deterministic seed | Encounter kompozisyonu ve sayılar vertical-slice test kararıdır | Lifecycle, progression, snapshot ve restart testleri yerel GasLite suite içinde geçti |
+| Arena encounter runtime | ✅ | Endless cycle; 3 template; wave/level-up sayıları `level/` kaynağında; active cap 24, deterministic seed; level cap ve wave sayıları kaynak kodda (`level/`) | Encounter kompozisyonu ve sayılar vertical-slice test kararıdır | Lifecycle, progression, snapshot ve restart testleri yerel GasLite suite içinde geçti |
 | Arena encounter lifecycle | ✅ | `Idle / Running / Completed / Failed`; playerless start fail, player death owned enemy cleanup, restart fresh player + encounter | Completion reward/victory akışı sonra | Runtime lifecycle testi geçti |
 | Encounter snapshot | ✅ | `EncounterWaveSnapshot`: state, wave sayıları, planned/spawned/alive/remaining enemy, inter-wave süre, enemy level | `EncounterHUDController` read-only kontratı tüketiyor | Snapshot kontrat ve HUD entegrasyon yolu mevcut |
 

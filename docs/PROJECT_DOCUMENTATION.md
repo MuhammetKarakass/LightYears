@@ -79,7 +79,7 @@ sahibi olmaya devam eder.
   ekipman slotunu taşır. Runtime başlangıç slotlarının canonical sahibi
   [`DefaultAbilityLoadout.cpp`](../LightYearsGame/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp)'dir;
   bu bölüm slot eşlemesini tekrar etmez.
-- `abilities.json` 55, `effects.json` 19, `weapons.json` 10, `ships.json` 4
+- `abilities.json` 55, `effects.json` 15, `weapons.json` 10, `ships.json` 4
   (1 player + 3 enemy) ve `attachments.json` 2 kayıt içerir. Bu sayılar
   registration envanteridir;
   aktif slot, acquisition UI veya uçtan uca oynanış kanıtı değildir. Tam ID
@@ -509,8 +509,9 @@ sourceDamageAbsorbed = shieldCapacitySpent / (absorptionRatio * shieldDamageMult
 ~~~
 
 Barrier kırılırsa effect kaldırılır ve Event.Owner.BarrierBroken olayı
-gönderilir. Basic Barrier: 30 kapasite, 1.0 absorption ratio, 6/sn
-rejenerasyon, 1.5 sn temel rejenerasyon gecikmesi, 5 sn effect süresi.
+gönderilir. `Ability.Defense.Shield.Basic` (`abilities.json`) ile verilen Basic Barrier: 60
+temel kapasite (+0.20 × Owner.MaxHealth), 1.0 absorption ratio, 0 rejenerasyon ve
+0 gecikme, 5 sn effect süresi. Güncel değerler `abilities.json` içindedir.
 
 **Gemi shield component’i** incoming effect’lerden sonra ve hull Armor’ından
 önce çalışır; aynı shieldDamageMultiplier mantığını kullanır. Energy hasarının
@@ -1289,9 +1290,9 @@ Weapon/ability authored resolution
 
 #### Gerçek Düşman Silah Değerleri (Vertical-Slice Geçici Değerler)
 `weapons.json` dosyasındaki üç geçici combat profile silahı şu generic arketiplere bağlanır:
-- **ApproachGunner** (`Weapon.Projectile.EnemyVanguardPulse.Basic`): Damage 15, FireRate 1.2, Speed 700, Range 1200, `Damage.Type.Energy`.
-- **StrafeSkirmisher** (`Weapon.Projectile.EnemyTwinBladeScatter.Basic`): Damage 8, FireRate 0.8, Range 500, 3 pellet, `Damage.Type.Kinetic`.
-- **RangeKeeper** (`Weapon.Wave.EnemyHexagonCryoPulse.Basic`): Damage 10, FireRate 0.6, Speed 500, Range 1200, InitialWidth 60 -> MaximumWidth 200, `Damage.Type.Cryo`.
+- **ApproachGunner** (`Weapon.Projectile.EnemyVanguardPulse.Basic`): Damage 15, FireRate 1.8, Speed 800, Range 1300, `Damage.Type.Energy`.
+- **StrafeSkirmisher** (`Weapon.Projectile.EnemyTwinBladeScatter.Basic`): Damage 8, FireRate 1.2, Speed 900, Range 600, 3 pellet (spread 12°), `Damage.Type.Kinetic`.
+- **RangeKeeper** (`Weapon.Wave.EnemyHexagonCryoPulse.Basic`): Damage 10, FireRate 0.9, Speed 600, Range 1400, InitialWidth 60 -> MaximumWidth 200, `Damage.Type.Cryo`.
 Bu değerler mimari entegrasyonu doğrulamaya yönelik vertical-slice geçici değerlerdir; production balance aşamasında revize edilebilir.
 
 #### Stage ve içerik sınırı
@@ -1409,42 +1410,31 @@ Damage, fire rate veya tick rate'i değiştirmez: 0–50% heat'te etkisiz, 50–
 arasında doygun eğriyle 0→%35 heat-gain reduction'a çıkar, 75–100%'de en
 fazla %70 heat-gain reduction sağlar.
 
-### 4.3.1 Primary weapon balance runtime checks (2026-07-24)
+### 4.3.1 Primary weapon DPS referansı
 
-> Tarihsel test kaydıdır. 7 Eylül 2026 source review sırasında yeniden
-> çalıştırılmadı; aşağıdaki sonuçlar güncel build/test kanıtı değildir.
-
-`GasLiteCoreTests`, production `LightYearsAbilitySystemComponent`/
-`GameAbilityActionExecutor` attribute resolution
-and current Fighter `ShipProgression` profile at levels 1, 10, 25 and 50. The checks
-cover AP/AS/EnergyPower contribution, muzzle and pellet aggregates, Cryo four-hit tempo,
-Electric 1/2/4/5 target falloff plus high-Luck proc cap, and Beam heat/overheat with
-10- and 30-second sustained windows. All values use weapon level 1, no attachment,
-no crit, no armor and 100% hit rate.
-
-| Weapon | L1 / L10 / L25 / L50 single-target theory DPS |
-| --- | --- |
-| Rapid Laser | 64.00 / 1513.00 / 7168.00 / 25593.00 |
-| Rapid Shotgun (3 same-target pellets) | 60.00 / 1188.60 / 5985.60 / 22080.60 |
-| Dual Kinetic (2 muzzles) | 84.00 / 1677.90 / 7250.40 / 24637.90 |
-| Electric Arc (first target) | 42.00 / 687.57 / 3415.92 / 12553.17 |
-| Continuous Heat Laser (pre-heat multiplier) | 28.00 / 93.25 / 202.00 / 383.25 |
-| Cryo Wave | 12.60 / 426.83 / 2332.20 / 8882.83 |
+Eski tarihli (2026-07-24) L1/L10/L25/L50 teorik DPS tablosu güncel
+`weapons.json` değerleriyle doğrulanamadığı için kaldırıldı. Güncel silah
+değerleri `LightYearsGame/assets/content/data/weapons.json`, Fighter büyüme
+değerleri `ships.json` içindedir; DPS bu değerlerden Damage × FireRate
+(pellet/muzzle sayısı, scaling ve cadence ile) hesaplanır. Fighter Rapid Laser
+için seviye bazlı hasar örnekleri [§5.6](#56-fighter-basicrapidlaser-seviye-ve-hasar-ölçekleme-modeli-phase-3b3)
+içindedir.
 
 ### 4.4 Oyuncu silah progression’ı
 
 Primary weapon'larda `maxLevel` yoktur; aşağıdaki L2–L4 kuralları
-`weapons.json` içindeki yazılmış `WeaponLevelRule` prefix'idir (level 2/3/4 scrap
-bedelleri 40 / 50 / 65). `lastLevel` 0 olan kural açık uçludur; `ResolveProgression()`
+`weapons.json` içindeki yazılmış `WeaponLevelRule` prefix'idir (diğer dört primary için level 2/3/4 scrap
+bedelleri 40 / 50 / 65; FighterRapidLaser için 14 kademelik liste 40, 45, 50 ... 105).
+`lastLevel` verilmeyen kural açık uçludur (FighterRapidLaser L2+ her seviye tekrar eder); `ResolveProgression()`
 prefix + döngüyü çözer. Bkz. [Seviye ve cooldown modeli](#seviye-ve-cooldown-modeli).
 
 | Silah | L2 | L3 | L4 |
 | --- | --- | --- | --- |
-| Basic Rapid Laser | +1 FireRate | +2 Damage, +100 projectile speed | +2 Damage, +1 FireRate, +100 Range |
+| Basic Rapid Laser | Açık uçlu kural (L2 ve sonrası her seviye): +10 Damage, +1 Empowered BonusDamage, +0.05 AttackPower scaling, +0.03 EnergyPower scaling | (aynı kural) | (aynı kural) |
 | Dual Kinetic Blaster | +1.5 FireRate | +1 Damage | +100 Range, +1 FireRate |
 | Electric Arc Launcher | +4 Damage | +1 chain, +80 chain range | +0.4 FireRate, +0.08 chain multiplier |
 | Continuous Heat Laser | +6 Damage | +150 beam range | +0.20 max heat damage multiplier |
-| Cryo Wave Projector | +2 Damage, +30 max width | +100 range, +0.5 cryo buildup duration | +0.3 FireRate, +2 Damage |
+| Cryo Wave Projector | +2 Damage, +30 max width | +100 range | +0.3 FireRate, +2 Damage |
 
 ### 4.5 Magazine, Cadence ve Empowered Shot Sistemi (Phase 3B.1–3B.2)
 
@@ -1529,7 +1519,7 @@ kararlaştırılana kadar Fighter üzerinden ilerler.
 | Başlangıç silahı | Weapon.Projectile.FighterRapidLaser.Basic |
 | Forward / Reverse / Strafe thrust | 650 / 190 / 270 |
 | Angular speed / responsiveness | 400 / 5 |
-| Linear damping | 0.36 |
+| Linear damping | 0.7 |
 | Max speed | 520 |
 | Input responsiveness / mouse dead zone | 12 / 32 |
 | EnergyPower / ReactorBudget | 35 / 70 |
