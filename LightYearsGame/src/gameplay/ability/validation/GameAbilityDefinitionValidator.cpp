@@ -207,11 +207,41 @@ namespace ly
 				}
 				return false;
 			};
+			// Abilities whose C++ behavior spawns its own actors (no SpawnActorAction) may
+			// still publish that actor's attributes. By content convention the attribute
+			// "AbilityActor.<Family>.<Actor>.<Name>" belongs to the family's
+			// "Actor.Ability.<Family>.<Actor>.Basic" definition.
+			const auto ownFamilyActorDeclaresOutput = [&ability](const sas::AttributeId& outputId)
+			{
+				const std::string attributeName{ outputId.GetName() };
+				const std::string actorPrefix = "AbilityActor.";
+				if (attributeName.compare(0, actorPrefix.size(), actorPrefix) != 0)
+				{
+					return false;
+				}
+				const std::size_t familyEnd = attributeName.find('.', actorPrefix.size());
+				const std::size_t actorEnd = familyEnd == std::string::npos
+					? std::string::npos
+					: attributeName.find('.', familyEnd + 1);
+				if (actorEnd == std::string::npos)
+				{
+					return false;
+				}
+				const std::string family = attributeName.substr(actorPrefix.size(), familyEnd - actorPrefix.size());
+				if (ability.abilityId.find("." + family + ".") == std::string::npos)
+				{
+					return false;
+				}
+				const AbilityActorDefinition* actor = AbilityData::FindAbilityActorDefinition(
+					"Actor.Ability." + attributeName.substr(actorPrefix.size(), actorEnd - actorPrefix.size()) + ".Basic");
+				return actor && sas::FindAttribute(actor->attributes, outputId);
+			};
 			List<sas::AttributeId> outputIds;
 			for (const sas::AttributeId& outputId : ability.invocationOutputAttributes)
 			{
 				if (!ValidateAttributeId(outputId, failureReason)) return false;
-				bool declared = sas::FindAttribute(ability.attributes, outputId) || actionsDeclareOutput(ability.actions, outputId);
+				bool declared = sas::FindAttribute(ability.attributes, outputId) || actionsDeclareOutput(ability.actions, outputId) ||
+					ownFamilyActorDeclaresOutput(outputId);
 				for (const AbilityEffectSpecDefinition& effectSpec : ability.effectSpecs)
 				{
 					declared = declared || sas::FindAttribute(effectSpec.attributes, outputId);

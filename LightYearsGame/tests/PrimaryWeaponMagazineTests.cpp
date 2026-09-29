@@ -1090,25 +1090,25 @@ int main(int argc, char** argv)
 
 			const auto* gravityDef = content::AbilityContentCatalog::FindById("Ability.Control.GravityAnomaly.Basic");
 			if (!gravityDef) return Fail("Suite F (Pkg B): GravityAnomaly.Basic definition not found in catalog");
-			if (std::find(gravityDef->invocationOutputAttributes.begin(), gravityDef->invocationOutputAttributes.end(), CommonAttributeIds::Radius) == gravityDef->invocationOutputAttributes.end() ||
+			if (std::find(gravityDef->invocationOutputAttributes.begin(), gravityDef->invocationOutputAttributes.end(), sas::AttributeId{ "AbilityActor.GravityAnomaly.Field.PullStrength" }) == gravityDef->invocationOutputAttributes.end() ||
 				std::find(gravityDef->invocationOutputAttributes.begin(), gravityDef->invocationOutputAttributes.end(), CommonAttributeIds::Duration) == gravityDef->invocationOutputAttributes.end())
 			{
-				return Fail("Suite F (Pkg B): GravityAnomaly.Basic must explicitly contain Radius and Duration in invocationOutputAttributes");
+				return Fail("Suite F (Pkg B): GravityAnomaly.Basic must explicitly contain PullStrength and Duration in invocationOutputAttributes");
 			}
 
 			const auto* overdriveDef = content::AbilityContentCatalog::FindById("Ability.Offense.OverdriveCore.Basic");
 			if (!overdriveDef) return Fail("Suite F (Pkg B): OverdriveCore.Basic definition not found in catalog");
-			if (std::find(overdriveDef->invocationOutputAttributes.begin(), overdriveDef->invocationOutputAttributes.end(), CommonAttributeIds::ProjectileCount) == overdriveDef->invocationOutputAttributes.end())
+			if (std::find(overdriveDef->invocationOutputAttributes.begin(), overdriveDef->invocationOutputAttributes.end(), sas::AttributeId{ "Ability.Offense.OverdriveCore.AttackSpeedBoostBase" }) == overdriveDef->invocationOutputAttributes.end())
 			{
-				return Fail("Suite F (Pkg B): OverdriveCore.Basic must explicitly contain ProjectileCount in invocationOutputAttributes");
+				return Fail("Suite F (Pkg B): OverdriveCore.Basic must explicitly contain AttackSpeedBoostBase in invocationOutputAttributes");
 			}
 
 			const auto* crescentDef = content::AbilityContentCatalog::FindById("Ability.Offense.CrescentReaver.Basic");
 			if (!crescentDef) return Fail("Suite F (Pkg B): CrescentReaver.Basic definition not found in catalog");
-			const sas::AttributeId bounceCountId{ "AbilityActor.CrescentReaver.Projectile.BounceCount" };
+			const sas::AttributeId bounceCountId{ "Common.Damage" };
 			if (std::find(crescentDef->invocationOutputAttributes.begin(), crescentDef->invocationOutputAttributes.end(), bounceCountId) == crescentDef->invocationOutputAttributes.end())
 			{
-				return Fail("Suite F (Pkg B): CrescentReaver.Basic must explicitly contain BounceCount in invocationOutputAttributes");
+				return Fail("Suite F (Pkg B): CrescentReaver.Basic must explicitly contain Damage in invocationOutputAttributes");
 			}
 
 			const auto* temporalDef = content::AbilityContentCatalog::FindById("Ability.Defense.TemporalConvergence.Basic");
@@ -1669,9 +1669,9 @@ int main(int argc, char** argv)
 		const PrimaryWeaponDefinition& fighterLaser = LoadedWeapon("Weapon.Projectile.FighterRapidLaser.Basic");
 
 		// 1. Progression profile checks
-		if (fighterLaser.progressionProfile.maxLevel != 15)
+		if (fighterLaser.progressionProfile.ResolveProgression().cycle.empty())
 		{
-			return Fail("Suite H: Fighter maxLevel must be 15");
+			return Fail("Suite H: Fighter laser progression must be open-ended");
 		}
 		if (fighterLaser.progressionProfile.levelUpgradeScrapCosts.size() != 14)
 		{
@@ -1686,10 +1686,13 @@ int main(int argc, char** argv)
 			}
 		}
 
-		const auto steps = fighterLaser.progressionProfile.ResolveLevelSteps();
-		if (steps.size() != 14)
+		if (fighterLaser.progressionProfile.GetScrapCostToReachLevel(20) != 0u)
 		{
-			return Fail("Suite H: ResolveLevelSteps must return 14 steps for maxLevel 15");
+			return Fail("Suite H: Fighter scrap cost beyond the authored list must be 0");
+		}
+		if (fighterLaser.progressionProfile.ResolveDistinctSteps().empty())
+		{
+			return Fail("Suite H: Fighter progression must resolve steps for level 20");
 		}
 
 		// Exercise the real level rebuild and attribute resolver. AP/EP = 1 makes

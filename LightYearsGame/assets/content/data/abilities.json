@@ -2250,7 +2250,7 @@
               "minValue": 3.0
             },
             {
-              "id": "Damage.Electric.Stacks",
+              "id": "Damage.ElectricStacks",
               "baseValue": 1.0,
               "minValue": 0.0,
               "maxValue": 4.0

@@ -1016,12 +1016,22 @@ int main()
 	{
 		return Fail("Rail Burst JSON definition or projectile actor was not loaded") ? 0 : 1;
 	}
-	if (sas::FindAttribute(
-		railBurstLoaded->actorDefinitions.front().attributes,
-		ly::CommonAttributeIds::PierceDamageLoss
-	))
+	if (!NearlyEqual(
+			sas::FindAttributeValue(
+				railBurstLoaded->actorDefinitions.front().attributes,
+				ly::CommonAttributeIds::PierceDamageLoss,
+				0.f
+			),
+			0.1f) ||
+		!NearlyEqual(
+			sas::FindAttributeValue(
+				railBurstLoaded->actorDefinitions.front().attributes,
+				AbilityData::RailBurst::Actor::Projectile::MinimumDamageMultiplier,
+				0.f
+			),
+			0.6f))
 	{
-		return Fail("Rail Burst still declares removed damage falloff") ? 0 : 1;
+		return Fail("Rail Burst pierce damage falloff or minimum multiplier is invalid") ? 0 : 1;
 	}
 
 	const auto astralSurgeIt = std::find_if(
@@ -1033,14 +1043,14 @@ int main()
 		}
 	);
 	if (astralSurgeIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(astralSurgeIt->definition.cooldown, 16.f) ||
+		!NearlyEqual(astralSurgeIt->definition.cooldown, 14.f) ||
 		!NearlyEqual(astralSurgeIt->definition.duration, 1.f) ||
 		astralSurgeIt->definition.maxCharges != 1 ||
 		astralSurgeIt->definition.scalingRules.size() != 1 ||
 		astralSurgeIt->definition.scalingRules.front().sourceAttributeId !=
 			ly::OwnerAttributeIds::EnergyPower ||
-		!NearlyEqual(astralSurgeIt->definition.scalingRules.front().coefficient, 0.45f) ||
-		astralSurgeIt->definition.levelProgression.size() != 14 ||
+		!NearlyEqual(astralSurgeIt->definition.scalingRules.front().coefficient, 0.6f) ||
+		!astralSurgeIt->definition.ResolveLevelStep(0) ||
 		astralSurgeIt->actorDefinitions.size() != 1 ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
@@ -1107,10 +1117,10 @@ int main()
 		}
 	);
 	if (energySpearIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(energySpearIt->definition.cooldown, 8.f) ||
+		!NearlyEqual(energySpearIt->definition.cooldown, 10.f) ||
 		!NearlyEqual(energySpearIt->definition.duration, 1.5f) ||
 		energySpearIt->definition.attributes.size() != 10 ||
-		energySpearIt->definition.levelProgression.size() != 14 ||
+		!energySpearIt->definition.ResolveLevelStep(0) ||
 		energySpearIt->definition.damageTags !=
 			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } ||
 		!sas::FindAttribute(
@@ -1138,8 +1148,8 @@ int main()
 		}
 	);
 	if (frostMaelstromIt == loadedAbilities.definitions.end() ||
-		frostMaelstromIt->definition.attributes.size() != 13 ||
-		frostMaelstromIt->definition.levelProgression.size() != 14 ||
+		frostMaelstromIt->definition.attributes.size() != 11 ||
+		!frostMaelstromIt->definition.ResolveLevelStep(0) ||
 		!NearlyEqual(frostMaelstromIt->definition.duration, 6.f) ||
 		frostMaelstromIt->definition.damageTags !=
 			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo } ||
@@ -1163,10 +1173,10 @@ int main()
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				frostMaelstromIt->definition.attributes,
-				AbilityData::FrostMaelstrom::Attribute::InwardForce,
+				AbilityData::FrostMaelstrom::Attribute::PullStrength,
 				0.f
 			),
-			1500.f
+			300.f
 		) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
@@ -1388,11 +1398,18 @@ int main()
 	}
 	const auto& dash = loadedAbilities.definitions.front();
 	if (dash.id != "Ability.Movement.Dash.Basic" ||
-		!NearlyEqual(dash.definition.cooldown, 2.f) ||
+		!NearlyEqual(dash.definition.cooldown, 9.f) ||
 		!NearlyEqual(dash.definition.duration, 0.24f) ||
 		dash.definition.maxCharges != 1 ||
-		dash.definition.levelProgression.size() != 4 ||
-		dash.definition.levelUpgradeScrapCosts != ly::List<unsigned int>{ 40u, 50u, 65u, 80u } ||
+		!dash.definition.ResolveLevelStep(0) ||
+		!dash.definition.ResolveLevelStep(30) ||
+		dash.definition.GetMaxLevel() != ly::GameAbilityDefinition::kUnboundedAbilityLevel ||
+		dash.definition.levelUpgradeScrapCosts.size() < 4 ||
+		dash.definition.GetScrapCostToReachLevel(2) != 40u ||
+		dash.definition.GetScrapCostToReachLevel(5) != 80u ||
+		dash.definition.GetScrapCostToReachLevel(20) == 0u ||
+		dash.definition.GetScrapCostToReachLevel(
+			static_cast<int>(dash.definition.levelUpgradeScrapCosts.size()) + 5) != 0u ||
 		dash.numericSettings.at("baseDistance") != 260.f ||
 		dash.numericSettings.at("cameraZoomOutRatio") != 0.15f)
 	{
@@ -1407,21 +1424,21 @@ int main()
 		}
 	);
 	if (shieldIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(shieldIt->definition.cooldown, 8.f) ||
+		!NearlyEqual(shieldIt->definition.cooldown, 10.f) ||
 		!NearlyEqual(shieldIt->definition.duration, 5.f) ||
 		shieldIt->definition.maxCharges != 1 ||
-		shieldIt->definition.scalingRules.size() != 2 ||
+		shieldIt->definition.scalingRules.size() != 1 ||
 		shieldIt->definition.scalingRules.front().targetAttributeId !=
 			BarrierEffectSchema::Capacity ||
 		!NearlyEqual(shieldIt->definition.scalingRules.front().coefficient, 0.2f) ||
-		shieldIt->definition.effectSpecs.size() != 2 ||
+		shieldIt->definition.effectSpecs.size() != 1 ||
 		!shieldIt->definition.effectSpecs.front().useAbilityDuration ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				shieldIt->definition.effectSpecs.front().attributes,
 				BarrierEffectSchema::Capacity
 			),
-			30.f
+			60.f
 		))
 	{
 		return Fail("Shield ability JSON profile is invalid") ? 0 : 1;
@@ -1436,10 +1453,41 @@ int main()
 	);
 	if (sunBeamIt == loadedAbilities.definitions.end() ||
 		!NearlyEqual(sunBeamIt->definition.cooldown, 9.f) ||
-		sunBeamIt->definition.levelProgression.size() != 4 ||
-		sunBeamIt->definition.levelUpgradeScrapCosts != ly::List<unsigned int>{ 40u, 50u, 65u, 80u })
+		!sunBeamIt->definition.ResolveLevelStep(0) ||
+		sunBeamIt->definition.levelUpgradeScrapCosts != ly::List<unsigned int>{ 40u, 50u, 65u, 80u } ||
+		sunBeamIt->definition.GetScrapCostToReachLevel(20) != 0u)
 	{
 		return Fail("Sun Beam ability JSON profile is invalid") ? 0 : 1;
+	}
+	{
+		// Unbounded linear growth: every step index carries the same damage increment.
+		float firstIncrement = 0.f;
+		bool hasFirstIncrement = false;
+		for (const std::size_t stepIndex : { std::size_t{ 0 }, std::size_t{ 3 }, std::size_t{ 23 }, std::size_t{ 98 } })
+		{
+			const ly::AbilityLevelStep* step = sunBeamIt->definition.ResolveLevelStep(stepIndex);
+			if (!step)
+			{
+				return Fail("Sun Beam progression does not resolve a step at every level") ? 0 : 1;
+			}
+			float increment = 0.f;
+			bool foundDamage = false;
+			for (const sas::AttributeModifier& modifier : step->attributeModifiers)
+			{
+				if (modifier.attributeId == ly::CommonAttributeIds::Damage &&
+					modifier.operation == sas::AttributeModifierOperation::Add)
+				{
+					increment = modifier.magnitude;
+					foundDamage = true;
+				}
+			}
+			if (!foundDamage || (hasFirstIncrement && !NearlyEqual(increment, firstIncrement)))
+			{
+				return Fail("Sun Beam per-level damage increment is not constant") ? 0 : 1;
+			}
+			firstIncrement = increment;
+			hasFirstIncrement = true;
+		}
 	}
 	const auto rocketIt = std::find_if(
 		loadedAbilities.definitions.begin(),
@@ -1451,7 +1499,7 @@ int main()
 	);
 	if (rocketIt == loadedAbilities.definitions.end() ||
 		!NearlyEqual(rocketIt->definition.cooldown, 6.f) ||
-		rocketIt->definition.levelProgression.size() != 14 ||
+		!rocketIt->definition.ResolveLevelStep(0) ||
 		rocketIt->definition.levelUpgradeScrapCosts.size() != 14)
 	{
 		return Fail("Rocket ability JSON profile is invalid") ? 0 : 1;
@@ -1465,9 +1513,9 @@ int main()
 		}
 	);
 	if (gravityIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(gravityIt->definition.cooldown, 8.f) ||
-		gravityIt->definition.levelProgression.size() != 14 ||
-		gravityIt->definition.levelProgression.front().attributeModifiers.size() != 7 ||
+		!NearlyEqual(gravityIt->definition.cooldown, 13.f) ||
+		!gravityIt->definition.ResolveLevelStep(0) ||
+		gravityIt->definition.ResolveLevelStep(0)->attributeModifiers.size() != 2 ||
 		gravityIt->definition.levelUpgradeScrapCosts.size() != 14 ||
 		gravityIt->actorDefinitions.size() != 2 ||
 		gravityIt->actorDefinitions.front().attributes.size() != 7 ||
@@ -1506,9 +1554,9 @@ int main()
 		}
 	);
 	if (overdriveIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(overdriveIt->definition.cooldown, 1.f) ||
+		!NearlyEqual(overdriveIt->definition.cooldown, 10.f) ||
 		!NearlyEqual(overdriveIt->definition.duration, 6.f) ||
-		overdriveIt->definition.attributes.size() != 7 ||
+		overdriveIt->definition.attributes.size() != 4 ||
 		overdriveIt->actorDefinitions.size() != 1 ||
 		overdriveIt->actorDefinitions.front().presentationProfileId !=
 			ly::OverdriveCorePresentationIds::ProjectileBasic)
@@ -1524,11 +1572,11 @@ int main()
 		}
 	);
 	if (nullPulseIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(nullPulseIt->definition.cooldown, 11.f) ||
+		!NearlyEqual(nullPulseIt->definition.cooldown, 12.f) ||
 		nullPulseIt->definition.duration != 0.f ||
 		nullPulseIt->definition.maxCharges != 1 ||
-		nullPulseIt->definition.attributes.size() != 7 ||
-		nullPulseIt->definition.levelProgression.size() != 14 ||
+		nullPulseIt->definition.attributes.size() != 4 ||
+		!nullPulseIt->definition.ResolveLevelStep(0) ||
 		nullPulseIt->definition.damageTags !=
 			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy })
 	{
@@ -1543,11 +1591,11 @@ int main()
 		}
 	);
 	if (phaseDriftIt == loadedAbilities.definitions.end() ||
-		!NearlyEqual(phaseDriftIt->definition.cooldown, 14.f) ||
-		!NearlyEqual(phaseDriftIt->definition.duration, 6.f) ||
+		!NearlyEqual(phaseDriftIt->definition.cooldown, 16.f) ||
+		!NearlyEqual(phaseDriftIt->definition.duration, 3.5f) ||
 		phaseDriftIt->definition.maxCharges != 1 ||
-		phaseDriftIt->definition.attributes.size() != 8 ||
-		phaseDriftIt->definition.levelProgression.size() != 14)
+		phaseDriftIt->definition.attributes.size() != 2 ||
+		!phaseDriftIt->definition.ResolveLevelStep(0))
 	{
 		return Fail("Phase Drift ability JSON profile is invalid") ? 0 : 1;
 	}
@@ -1563,8 +1611,8 @@ int main()
 		!NearlyEqual(shieldHarvestIt->definition.cooldown, 14.f) ||
 		!NearlyEqual(shieldHarvestIt->definition.duration, 1.5f) ||
 		shieldHarvestIt->definition.maxCharges != 1 ||
-		shieldHarvestIt->definition.attributes.size() != 4 ||
-		shieldHarvestIt->definition.levelProgression.size() != 14 ||
+		shieldHarvestIt->definition.attributes.size() != 5 ||
+		!shieldHarvestIt->definition.ResolveLevelStep(0) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				shieldHarvestIt->definition.attributes,
@@ -1589,7 +1637,7 @@ int main()
 		hullShockIt->definition.maxCharges != 1 ||
 		hullShockIt->definition.attributes.size() != 6 ||
 		hullShockIt->definition.scalingRules.size() != 1 ||
-		hullShockIt->definition.levelProgression.size() != 14 ||
+		!hullShockIt->definition.ResolveLevelStep(0) ||
 		hullShockIt->definition.damageTags !=
 			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Electric } ||
 		!NearlyEqual(
@@ -1690,42 +1738,33 @@ int main()
 		orbitalDronesIt->definition.scalingRules.front().operation !=
 			sas::AttributeModifierOperation::Add ||
 		!NearlyEqual(orbitalDronesIt->definition.scalingRules.front().coefficient, 0.40f) ||
-		orbitalDronesIt->definition.levelProgression.size() != 24 ||
+		!orbitalDronesIt->definition.ResolveLevelStep(0) ||
 		orbitalDronesIt->definition.levelUpgradeScrapCosts.size() != 24 ||
 		orbitalDronesIt->definition.damageTags !=
 			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
 	{
 		return Fail("Orbital Drones ability JSON profile is invalid") ? 0 : 1;
 	}
-	for (const ly::AbilityLevelStep& step : orbitalDronesIt->definition.levelProgression)
+	for (const std::size_t stepIndex : { std::size_t{ 0 }, std::size_t{ 10 }, std::size_t{ 50 } })
 	{
-		bool hasDamageUpgrade = false;
-		bool hasCooldownUpgrade = false;
-		if (step.attributeModifiers.size() != 2)
+		const ly::AbilityLevelStep* step = orbitalDronesIt->definition.ResolveLevelStep(stepIndex);
+		if (!step || step->attributeModifiers.size() != 1)
 		{
-			return Fail("Orbital Drones level progression does not contain exactly two modifiers")
+			return Fail("Orbital Drones level progression does not contain exactly one modifier")
 				? 0
 				: 1;
 		}
-		for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-		{
-			if (modifier.attributeId == ly::CommonAttributeIds::Damage &&
-				modifier.operation == sas::AttributeModifierOperation::Add &&
-				NearlyEqual(modifier.magnitude, 4.f))
-			{
-				hasDamageUpgrade = true;
-			}
-			if (modifier.attributeId == ly::CommonAttributeIds::Cooldown &&
-				modifier.operation == sas::AttributeModifierOperation::Add &&
-				modifier.magnitude <= 0.f && modifier.magnitude >= -0.50f)
-			{
-				hasCooldownUpgrade = true;
-			}
-		}
-		if (!hasDamageUpgrade || !hasCooldownUpgrade)
+		const sas::AttributeModifier& modifier = step->attributeModifiers.front();
+		if (modifier.attributeId != ly::CommonAttributeIds::Damage ||
+			modifier.operation != sas::AttributeModifierOperation::Add ||
+			!NearlyEqual(modifier.magnitude, 4.f))
 		{
 			return Fail("Orbital Drones level progression has an unexpected modifier") ? 0 : 1;
 		}
+	}
+	if (orbitalDronesIt->definition.GetScrapCostToReachLevel(30) != 0u)
+	{
+		return Fail("Orbital Drones scrap cost beyond the authored list must be 0") ? 0 : 1;
 	}
 
 	const auto relayPrismIt = std::find_if(
@@ -1756,10 +1795,10 @@ int main()
 		!NearlyEqual(
 			sas::FindAttributeValue(
 				relayPrismIt->definition.attributes,
-				AbilityData::RelayPrism::Attribute::DamageTransferRatio,
+				AbilityData::RelayPrism::Attribute::BaseTransfer,
 				0.f
 			),
-			0.15f
+			0.2f
 		) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
@@ -1769,7 +1808,7 @@ int main()
 			),
 			100.f
 		) ||
-		relayPrismIt->definition.levelProgression.size() != 14 ||
+		!relayPrismIt->definition.ResolveLevelStep(0) ||
 		relayPrismIt->definition.levelUpgradeScrapCosts.size() != 14)
 	{
 		return Fail("Relay Prism ability JSON profile is invalid") ? 0 : 1;
@@ -1819,7 +1858,9 @@ int main()
 	if (basicLaser->weaponType != PrimaryWeaponType::ProjectileStandard ||
 		!basicDamage ||
 		!NearlyEqual(basicDamage->baseValue, 12.f) ||
-		basicLaser->progressionProfile.ResolveLevelSteps().size() != 14 ||
+		basicLaser->progressionProfile.ResolveProgression().prefix.size() != 0 ||
+		basicLaser->progressionProfile.ResolveProgression().cycle.size() != 1 ||
+		basicLaser->progressionProfile.GetScrapCostToReachLevel(200) != 0u ||
 		basicLaser->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic })
 	{
 		return Fail("Basic rapid laser JSON profile is invalid") ? 0 : 1;
@@ -1839,7 +1880,7 @@ int main()
 	const PrimaryWeaponDefinition* dual =
 		FindWeapon(loaded.definitions, "Weapon.Projectile.DualKineticBlaster.Basic");
 	if (dual->muzzleDefinitions.size() != 2 ||
-		dual->progressionProfile.ResolveLevelSteps().size() != 3 ||
+		dual->progressionProfile.ResolveDistinctSteps().empty() ||
 		dual->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
 	{
 		return Fail("Dual kinetic blaster JSON profile is invalid") ? 0 : 1;
@@ -1967,7 +2008,7 @@ int main()
 	{
 		return Fail(loadedEffects.error.c_str()) ? 0 : 1;
 	}
-	if (loadedEffects.definitions.size() != 19 ||
+	if (loadedEffects.definitions.size() != 15 ||
 		barrierEffectIt == loadedEffects.definitions.end() ||
 		!barrierEffectIt->definition.sourceParameterized ||
 		!barrierEffectIt->definition.attributes.empty() ||

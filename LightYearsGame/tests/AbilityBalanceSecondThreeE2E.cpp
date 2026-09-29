@@ -4,6 +4,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
+#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayContracts.h"
 #include "gameplay/ability/rocket/RocketContracts.h"
@@ -164,39 +165,46 @@ namespace ly
 			return found == step.attributeModifiers.end() ? nullptr : &*found;
 		}
 
+		bool HasUnboundedSteps(const GameAbilityDefinition& definition)
+		{
+			return definition.ResolveLevelStep(0) && definition.ResolveLevelStep(30);
+		}
+
+		// Steps carry only damage (+ scaling); cooldown reduction is appended globally at
+		// level resolution, so verify the shared formula instead of per-step modifiers.
 		bool MatchesCooldownProgression(
 			const GameAbilityDefinition& definition,
 			float damagePerLevel
 		)
 		{
-			if (definition.levelProgression.empty() || definition.cooldown <= 0.f)
+			if (definition.cooldown <= 1.f)
 			{
 				return false;
 			}
 
-			float cooldown = definition.cooldown;
-			float reduction = 0.175f + 0.025f * definition.cooldown;
-			const float minimumCooldown = definition.cooldown * 0.20f;
-			for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+			for (std::size_t index : { std::size_t{ 0 }, std::size_t{ 30 } })
 			{
-				const AbilityLevelStep& step = definition.levelProgression[index];
-				const sas::AttributeModifier* damage = FindAdditiveModifier(step, CommonAttributeIds::Damage);
-				const sas::AttributeModifier* cooldownModifier = FindAdditiveModifier(step, CommonAttributeIds::Cooldown);
-				const float expectedReduction = std::min(reduction, std::max(0.f, cooldown - minimumCooldown));
-				if (step.attributeModifiers.size() != 2 || !damage || !cooldownModifier ||
-					!NearlyEqual(damage->magnitude, damagePerLevel) ||
-					!NearlyEqual(cooldownModifier->magnitude, -expectedReduction))
+				const AbilityLevelStep* step = definition.ResolveLevelStep(index);
+				const sas::AttributeModifier* damage = step
+					? FindAdditiveModifier(*step, CommonAttributeIds::Damage)
+					: nullptr;
+				if (!step || step->attributeModifiers.size() != 1 || !damage ||
+					FindAdditiveModifier(*step, CommonAttributeIds::Cooldown) ||
+					!NearlyEqual(damage->magnitude, damagePerLevel))
 				{
 					return false;
 				}
-
-				cooldown += cooldownModifier->magnitude;
-				if ((index + 1) % 4 == 0 && index + 1 < definition.levelProgression.size())
-				{
-					reduction = reduction >= 0.20f ? reduction - 0.10f : reduction * 0.80f;
-				}
 			}
-			return true;
+
+			const float firstReduction = 0.175f + 0.025f * definition.cooldown;
+			const float maxReduction = definition.cooldown - 1.f;
+			return NearlyEqual(
+					GetGlobalAbilityCooldownTotalReduction(definition.cooldown, 1),
+					std::min(firstReduction, maxReduction)) &&
+				GetGlobalAbilityCooldownTotalReduction(definition.cooldown, 24) >=
+					GetGlobalAbilityCooldownTotalReduction(definition.cooldown, 23) &&
+				definition.cooldown - GetGlobalAbilityCooldownTotalReduction(definition.cooldown, 24) >=
+					1.f - ValueTolerance;
 		}
 
 		void TickWorld(World& world, int frameCount)
@@ -405,7 +413,7 @@ namespace ly
 		);
 
 		const bool sunBeamContentMatches = sunBeam && sunBeamActor &&
-			NearlyEqual(sunBeam->cooldown, 9.f) && sunBeam->levelProgression.size() == 4 &&
+			NearlyEqual(sunBeam->cooldown, 9.f) && HasUnboundedSteps(*sunBeam) &&
 			NearlyEqual(ReadActorAttribute(sunBeamActor, CommonAttributeIds::Damage), 40.f) &&
 			NearlyEqual(ReadActorAttribute(sunBeamActor, CommonAttributeIds::Radius), 110.f) &&
 			NearlyEqual(ReadActorAttribute(sunBeamActor, AbilityData::SunBeam::Actor::Strike::TelegraphDuration), 0.5f) &&
@@ -417,18 +425,18 @@ namespace ly
 			sunBeam->scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			sunBeam->scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(sunBeam->scalingRules.front().coefficient, 0.7f) &&
-			std::all_of(sunBeam->levelProgression.begin(), sunBeam->levelProgression.end(),
-				[](const AbilityLevelStep& step)
-				{
-					return step.scalingRules.size() == 1 &&
-						step.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
-						step.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
-						step.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(step.scalingRules.front().coefficient, 0.1f);
-				});
+			[&]()
+			{
+				const AbilityLevelStep* step = sunBeam->ResolveLevelStep(0);
+				return step && step->scalingRules.size() == 1 &&
+					step->scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
+					step->scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
+					step->scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
+					NearlyEqual(step->scalingRules.front().coefficient, 0.1f);
+			}();
 
 		const bool rocketContentMatches = rocket && rocketActor &&
-			NearlyEqual(rocket->cooldown, 6.f) && rocket->levelProgression.size() == 14 &&
+			NearlyEqual(rocket->cooldown, 6.f) && HasUnboundedSteps(*rocket) &&
 			NearlyEqual(ReadActorAttribute(rocketActor, CommonAttributeIds::Damage), 55.f) &&
 			NearlyEqual(ReadActorAttribute(rocketActor, CommonAttributeIds::Radius), 55.f) &&
 			NearlyEqual(ReadActorAttribute(rocketActor, CommonAttributeIds::Range), 1100.f) &&
@@ -442,7 +450,8 @@ namespace ly
 
 		const bool infernoContentMatches = inferno && infernoActor &&
 			NearlyEqual(inferno->cooldown, 3.f) && NearlyEqual(inferno->duration, 3.f) &&
-			inferno->levelProgression.empty() &&
+			(!inferno->ResolveLevelStep(0) || inferno->ResolveLevelStep(0)->attributeModifiers.empty()) &&
+			GetGlobalAbilityCooldownTotalReduction(inferno->cooldown, 1) > 0.f &&
 			inferno->scalingRules.empty() &&
 			NearlyEqual(ReadActorAttribute(infernoActor, AbilityData::InfernoSpray::Actor::FlameCone::BaseDPS), 24.f) &&
 			NearlyEqual(ReadActorAttribute(infernoActor, AbilityData::InfernoSpray::Actor::FlameCone::CombatTickInterval), 0.25f) &&

@@ -35,7 +35,7 @@ namespace
 	)
 	{
 		field.SetActorLocation({ 0.f, 0.f });
-		field.ConfigureDelivery({ 0.f, 0.f }, 280.f, 0.5f, barrierRadius, barrierHealth);
+		field.ConfigureDelivery({ 0.f, 0.f }, 280.f, 0.5f, barrierRadius, barrierHealth, 60.f);
 		field.Tick(0.f);
 		if (activate)
 		{
@@ -324,7 +324,7 @@ namespace
 		{
 			return false;
 		}
-		field->ConfigureDelivery({ 0.f, 0.f }, 280.f, 0.5f, 100.f, 15.f);
+		field->ConfigureDelivery({ 0.f, 0.f }, 280.f, 0.5f, 100.f, 15.f, 60.f);
 		world.TickInternal(0.f);
 		world.TickInternal(0.5f);
 

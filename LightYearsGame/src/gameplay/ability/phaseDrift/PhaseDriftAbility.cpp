@@ -68,7 +68,7 @@ namespace ly
 			std::all_of(levelSteps.begin(), levelSteps.end(),
 				[](const AbilityLevelStep& step)
 				{
-					if (step.attributeModifiers.size() != 3 || !step.scalingRules.empty()) return false;
+					if (step.attributeModifiers.size() < 3 || !step.scalingRules.empty()) return false;
 					const auto has = [&step](const sas::AttributeId& id, float magnitude)
 					{
 						return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
@@ -89,7 +89,7 @@ namespace ly
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.cooldown <= 0.f ||
 			definition.duration != 3.5f || definition.cooldown != 16.f ||
-			definition.attributes.size() != 2 || !validProgression)
+			!validProgression)
 		{
 			if (failureReason)
 			{

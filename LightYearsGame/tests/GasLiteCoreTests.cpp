@@ -4,6 +4,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/progression/ShipProgression.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
@@ -933,6 +934,31 @@ int main(int argc, char** argv)
 		}
 	}
 
+	{
+		const auto nearly = [](float actual, float expected)
+		{
+			return std::abs(actual - expected) < 1e-3f;
+		};
+		float previousTotal = 0.f;
+		bool stepsAtLeastMinimum = true;
+		for (std::size_t steps = 1; steps <= 24; ++steps)
+		{
+			const float total = GetGlobalAbilityCooldownTotalReduction(10.f, steps);
+			stepsAtLeastMinimum = stepsAtLeastMinimum && (total - previousTotal) >= 0.02f - 1e-4f;
+			previousTotal = total;
+		}
+		if (!stepsAtLeastMinimum ||
+			!nearly(GetGlobalAbilityCooldownTotalReduction(10.f, 4), 1.7f) ||
+			!nearly(GetGlobalAbilityCooldownTotalReduction(10.f, 24), 5.12f) ||
+			!nearly(10.f - GetGlobalAbilityCooldownTotalReduction(10.f, 24), 4.88f) ||
+			GetGlobalAbilityCooldownTotalReduction(10.f, 150) >= 9.f - 1e-3f ||
+			!nearly(GetGlobalAbilityCooldownTotalReduction(10.f, 300), 9.f) ||
+			!nearly(GetGlobalAbilityCooldownTotalReduction(1.f, 50), 0.f))
+		{
+			return Fail("Global ability cooldown reduction formula did not match the expected schedule");
+		}
+	}
+
 	if (!GameContentBootstrap::Register())
 	{
 		return Fail("Game ability-system content could not be registered");
@@ -954,14 +980,11 @@ int main(int argc, char** argv)
 	const auto* nullPulseStunDefinition = EffectData::FindGameplayEffectDefinition(
 		AbilityData::NullPulse::Effect::StunId
 	);
-	const auto* nullPulseStaggerDefinition = EffectData::FindGameplayEffectDefinition(
-		AbilityData::NullPulse::Effect::StaggerId
-	);
 	const auto* directionalBarrierDefinition = EffectData::FindGameplayEffectDefinition(
 		AbilityData::DirectionalBarrier::Effect::ActiveEffectId
 	);
 	const auto* missingDefinition = EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist");
-	if (shippedEffects.size() != 19 ||
+	if (shippedEffects.size() != 15 ||
 		!shippedEffectsValid ||
 		!barrierDefinition ||
 		barrierDefinition->effectId != "Effect.Barrier.Basic" ||
@@ -974,9 +997,6 @@ int main(int argc, char** argv)
 		!nullPulseStunDefinition ||
 		nullPulseStunDefinition->effectId != AbilityData::NullPulse::Effect::StunId ||
 		!nullPulseStunDefinition->sourceParameterized ||
-		!nullPulseStaggerDefinition ||
-		nullPulseStaggerDefinition->effectId != AbilityData::NullPulse::Effect::StaggerId ||
-		!nullPulseStaggerDefinition->sourceParameterized ||
 		!directionalBarrierDefinition ||
 		directionalBarrierDefinition->effectId !=
 			AbilityData::DirectionalBarrier::Effect::ActiveEffectId ||
@@ -1064,7 +1084,7 @@ int main(int argc, char** argv)
 		lanceDriveDefinition->activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 		!NearlyEqual(lanceDriveDefinition->duration, 6.f) ||
 		!NearlyEqual(lanceDriveDefinition->cooldown, 15.f) ||
-		lanceDriveDefinition->attributes.size() != 12 ||
+		lanceDriveDefinition->attributes.size() != 11 ||
 		lanceDriveDefinition->damageTags != List<GameplayTag>{ DamageTypeSchema::Kinetic } ||
 		!AbilityData::FindAbilityActorDefinition(
 			AbilityData::LanceDrive::Actor::Lance::BasicDefinitionId
@@ -1140,7 +1160,8 @@ int main(int argc, char** argv)
 		orbitalDronesDefinition->scalingRules.front().sourceAttributeId != OwnerAttributeIds::AttackPower ||
 		orbitalDronesDefinition->scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
 		!NearlyEqual(orbitalDronesDefinition->scalingRules.front().coefficient, 0.40f) ||
-		orbitalDronesDefinition->levelProgression.size() != 24 ||
+		orbitalDronesDefinition->ResolveLevelStep(0) == nullptr ||
+		orbitalDronesDefinition->ResolveLevelStep(23) == nullptr ||
 		orbitalDronesDefinition->levelUpgradeScrapCosts.size() != 24)
 	{
 		return Fail("Orbital Drones shipped ability contract is invalid");
@@ -1175,19 +1196,19 @@ int main(int argc, char** argv)
 				GameplayTags::Ability::Utility,
 				GameplayTags::Ability::Family::EchoProtocol
 			} ||
-		echoProtocolDefinition->attributes.size() != 8 ||
-		echoProtocolDefinition->levelProgression.size() != 14 ||
+		echoProtocolDefinition->attributes.size() != 4 ||
+		echoProtocolDefinition->ResolveLevelStep(0) == nullptr ||
 		echoProtocolDefinition->levelUpgradeScrapCosts.size() != 14)
 	{
 		return Fail("Echo Protocol shipped ability contract is invalid");
 	}
-	for (const AbilityLevelStep& step : orbitalDronesDefinition->levelProgression)
+	for (std::size_t stepIndex : { std::size_t{ 0 }, std::size_t{ 23 }, std::size_t{ 100 } })
 	{
+		const AbilityLevelStep& step = *orbitalDronesDefinition->ResolveLevelStep(stepIndex);
 		bool hasDamageUpgrade = false;
-		bool hasCooldownUpgrade = false;
-		if (step.attributeModifiers.size() != 2)
+		if (step.attributeModifiers.size() != 1)
 		{
-			return Fail("Orbital Drones shipped progression does not contain two modifiers per level");
+			return Fail("Orbital Drones shipped progression does not contain one modifier per level");
 		}
 		for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 		{
@@ -1197,14 +1218,12 @@ int main(int argc, char** argv)
 			{
 				hasDamageUpgrade = true;
 			}
-			if (modifier.attributeId == CommonAttributeIds::Cooldown &&
-				modifier.operation == sas::AttributeModifierOperation::Add &&
-				modifier.magnitude <= 0.f && modifier.magnitude >= -0.50f)
+			if (modifier.attributeId == CommonAttributeIds::Cooldown)
 			{
-				hasCooldownUpgrade = true;
+				return Fail("Orbital Drones shipped progression step must not author Cooldown modifiers");
 			}
 		}
-		if (!hasDamageUpgrade || !hasCooldownUpgrade)
+		if (!hasDamageUpgrade)
 		{
 			return Fail("Orbital Drones shipped progression has an unexpected modifier");
 		}
@@ -1261,8 +1280,8 @@ int main(int argc, char** argv)
 			1.f
 		}
 	};
-	ownedPhaseDrift.levelProgression.front().attributeModifiers.emplace_back(
-		AbilityData::PhaseDrift::Attribute::ShieldRegenBonus,
+	ownedPhaseDrift.repeatingLevelProgression.front().attributeModifiers.emplace_back(
+		AbilityData::PhaseDrift::Attribute::EPDurationScale,
 		0.01f
 	);
 	if (!ValidateAbilityDefinition(ownedPhaseDrift, &abilityOwnershipFailure))
@@ -1279,7 +1298,7 @@ int main(int argc, char** argv)
 		sas::AttributeModifierOperation::Add,
 		1.f
 	});
-	commonTargetPhaseDrift.levelProgression.front().attributeModifiers.emplace_back(
+	commonTargetPhaseDrift.repeatingLevelProgression.front().attributeModifiers.emplace_back(
 		commonTestAttribute,
 		0.01f
 	);
@@ -1352,7 +1371,7 @@ int main(int argc, char** argv)
 	}
 
 	GameAbilityDefinition foreignLevelModifier = *phaseDriftDefinition;
-	foreignLevelModifier.levelProgression.front().attributeModifiers.emplace_back(
+	foreignLevelModifier.repeatingLevelProgression.front().attributeModifiers.emplace_back(
 		sas::AttributeId{ "Ability.Offense.OverdriveCore.ForeignValue" },
 		1.f
 	);
@@ -1361,7 +1380,7 @@ int main(int argc, char** argv)
 		return Fail("Ability validator accepted a foreign-family level modifier");
 	}
 	GameAbilityDefinition undeclaredLevelModifier = *phaseDriftDefinition;
-	undeclaredLevelModifier.levelProgression.front().attributeModifiers.emplace_back(
+	undeclaredLevelModifier.repeatingLevelProgression.front().attributeModifiers.emplace_back(
 		sas::AttributeId{ "Ability.Movement.PhaseDrift.UndeclaredValue" },
 		1.f
 	);
@@ -1418,7 +1437,7 @@ int main(int argc, char** argv)
 	nullPulseWorld.TickInternal(0.f);
 	const auto& nullPulseTargetTags =
 		nullPulseTarget->GetAbilitySystemComponent().GetOwnedTags();
-	if (!NearlyEqual(nullPulseTarget->GetHealth(), 990.f) ||
+	if (!NearlyEqual(nullPulseTarget->GetHealth(), 950.f) ||
 		!nullPulseTargetTags.HasTag(GameplayTags::State::Effect::Control::Stunned) ||
 		nullPulseOutsideTarget->GetHealth() != 1000.f ||
 		nullPulseOutsideTarget->GetAbilitySystemComponent().GetOwnedTags().HasTag(
@@ -3300,7 +3319,7 @@ int main(int argc, char** argv)
 	PrimaryWeaponDefinition progressiveHeatWeapon = heatedProjectileWeapon;
 	progressiveHeatWeapon.weaponId = "Weapon.Projectile.ProgressiveHeat.Basic";
 	progressiveHeatWeapon.featureTypes.clear();
-	progressiveHeatWeapon.progressionProfile = WeaponProgressionProfile{ 3 }
+	progressiveHeatWeapon.progressionProfile = WeaponProgressionProfile{}
 		.AtLevel(
 			2,
 			{ sas::AttributeModifier{ CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 5.f } },
@@ -3323,8 +3342,8 @@ int main(int argc, char** argv)
 
 	const GameAbilityDefinition progressivePrimaryAbility =
 		AbilityData::MakePrimaryFireAbilityDefinition(progressiveHeatWeapon);
-	if (progressivePrimaryAbility.GetMaxLevel() != 3 ||
-		progressivePrimaryAbility.levelProgression.size() != 2 ||
+	if (progressivePrimaryAbility.ResolveLevelStep(0) == nullptr ||
+		progressivePrimaryAbility.levelProgression.size() < 2 ||
 		progressivePrimaryAbility.levelProgression[0].unlockedUpgradeIds.size() != 1 ||
 		progressivePrimaryAbility.levelProgression[0].unlockedUpgradeIds.front() != testWeaponUpgrade ||
 		progressivePrimaryAbility.levelProgression[1].unlockedUpgradeIds.size() != 1 ||
@@ -3334,12 +3353,12 @@ int main(int argc, char** argv)
 		return Fail("Primary weapon progression was not preserved during ability conversion");
 	}
 
-	const WeaponProgressionProfile flexibleWeaponProfile = WeaponProgressionProfile{ 7 }
+	const WeaponProgressionProfile flexibleWeaponProfile = WeaponProgressionProfile{}
 		.EveryLevel({ sas::AttributeModifier{ CommonAttributeIds::Damage, 1.f } })
 		.BetweenLevels(3, 5, { sas::AttributeModifier{ CommonAttributeIds::FireRate, 0.25f } })
 		.AtLevel(6, { sas::AttributeModifier{ PrimaryWeaponSchema::Projectile::Delivery::PierceCount, 1.f } })
 		.FromLevel(6, { sas::AttributeModifier{ CommonAttributeIds::Range, 50.f } });
-	const List<PrimaryWeaponLevelStep> flexibleWeaponSteps = flexibleWeaponProfile.ResolveLevelSteps();
+	const List<PrimaryWeaponLevelStep> flexibleWeaponSteps = flexibleWeaponProfile.ResolveDistinctSteps();
 	const auto stepHasModifier = [](const PrimaryWeaponLevelStep& step, const sas::AttributeId& attributeId, float value)
 	{
 		for (const sas::AttributeModifier& modifier : step.attributeModifiers)
@@ -3351,7 +3370,7 @@ int main(int argc, char** argv)
 		}
 		return false;
 	};
-	if (flexibleWeaponSteps.size() != 6 ||
+	if (flexibleWeaponSteps.size() < 6 ||
 		!stepHasModifier(flexibleWeaponSteps[0], CommonAttributeIds::Damage, 1.f) ||
 		stepHasModifier(flexibleWeaponSteps[0], CommonAttributeIds::FireRate, 0.25f) ||
 		!stepHasModifier(flexibleWeaponSteps[1], CommonAttributeIds::FireRate, 0.25f) ||
@@ -3427,7 +3446,7 @@ int main(int argc, char** argv)
 	liveProgressionAbilities.Tick(0.f);
 	if (!liveProgressionAbilities.SetAbilityLevel(
 			liveProgressionHandle,
-			progressivePrimaryAbility.GetMaxLevel()
+			3
 		))
 	{
 		return Fail("Live primary weapon ability could not reach its feature unlock level");
@@ -3465,7 +3484,7 @@ int main(int argc, char** argv)
 	}
 
 	PrimaryWeaponDefinition invalidLevelTargetWeapon = projectileWeapon;
-	invalidLevelTargetWeapon.progressionProfile = WeaponProgressionProfile{ 2 }
+	invalidLevelTargetWeapon.progressionProfile = WeaponProgressionProfile{}
 		.AtLevel(2, {
 		sas::AttributeModifier{ AreaAttributeIds::Radius, sas::AttributeModifierOperation::Add, 10.f }
 		});
@@ -4013,10 +4032,11 @@ int main(int argc, char** argv)
 	{
 		return Fail("Configured Sun Beam ability failed grant validation");
 	}
-	if (shippedSunBeamDefinition->GetMaxLevel() != 5 ||
-		shippedSunBeamDefinition->levelProgression.size() != 4)
+	if (shippedSunBeamDefinition->GetMaxLevel() != GameAbilityDefinition::kUnboundedAbilityLevel ||
+		shippedSunBeamDefinition->ResolveLevelStep(0) == nullptr ||
+		shippedSunBeamDefinition->ResolveLevelStep(1000) == nullptr)
 	{
-		return Fail("Repeated ability level progression produced the wrong level count");
+		return Fail("Repeating ability level progression did not resolve past the authored steps");
 	}
 
 	const std::string firstUpgradeId = "Upgrade.Ability.Test.First";
@@ -4087,7 +4107,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Per-ability level progression failed to grant");
 	}
-	if (!abilitySystem.SetAbilityLevel(progressionHandle, 999))
+	if (!abilitySystem.SetAbilityLevel(progressionHandle, 3))
 	{
 		return Fail("LightYearsAbilitySystemComponent failed to set an ability level");
 	}
@@ -4099,7 +4119,7 @@ int main(int argc, char** argv)
 	);
 	if (progressionInstance->GetLevel() != 3 ||
 		maxLevelSnapshot.level != 3 ||
-		maxLevelSnapshot.maxLevel != 3 ||
+		maxLevelSnapshot.maxLevel != GameAbilityDefinition::kUnboundedAbilityLevel ||
 		!NearlyEqual(progressedDamage, 30.f) ||
 		!NearlyEqual(progressionInstance->GetActiveDuration(), 6.f) ||
 		!maxLevelDefinition.HasUnlockedUpgrade(firstUpgradeId) ||
@@ -4109,9 +4129,9 @@ int main(int argc, char** argv)
 	{
 		return Fail("Per-ability level steps did not compose modifiers, upgrades, actions, and triggers");
 	}
-	if (abilitySystem.LevelUpAbility(progressionHandle))
+	if (!abilitySystem.LevelUpAbility(progressionHandle) || progressionInstance->GetLevel() != 4)
 	{
-		return Fail("LightYearsAbilitySystemComponent leveled an ability beyond its maximum level");
+		return Fail("LightYearsAbilitySystemComponent refused to level an ability beyond its authored steps");
 	}
 	if (!abilitySystem.SetAbilityLevel(sas::AbilitySlot::Ability3, 1))
 	{
@@ -4463,7 +4483,7 @@ int main(int argc, char** argv)
 	if (!NearlyEqual(returnProtocolDefender->GetHealth(), 100.f) ||
 		reflectedProjectile->GetOwnerActor() != returnProtocolDefender.get() ||
 		reflectedProjectile->GetOriginalProjectileOwner() != returnProtocolAttacker.get() ||
-		!NearlyEqual(reflectedProjectile->GetDamage(), 8.f) ||
+		!NearlyEqual(reflectedProjectile->GetDamage(), 9.f) ||
 		reflectedProjectile->GetVelocity().x >= 0.f)
 	{
 		return Fail("Return Protocol did not preserve and reverse the incoming projectile");
@@ -4786,7 +4806,7 @@ int main(int argc, char** argv)
 	const PrimaryWeaponDefinition& basicLaser = LoadedWeapon("Weapon.Projectile.FighterRapidLaser.Basic");
 	if (basicLaser.weaponId != "Weapon.Projectile.FighterRapidLaser.Basic" ||
 		basicLaser.weaponType != PrimaryWeaponType::ProjectileStandard ||
-		basicLaser.progressionProfile.ResolveLevelSteps().size() != 14)
+		basicLaser.progressionProfile.ResolveDistinctSteps().empty())
 	{
 		return Fail("Fighter basic rapid laser has the wrong base profile");
 	}
@@ -5032,15 +5052,17 @@ int main(int argc, char** argv)
 		!basicLaserAbility.HasScrapCostToReachLevel(2) ||
 		basicLaserAbility.GetScrapCostToReachLevel(2) != 40u ||
 		basicLaserAbility.GetScrapCostToReachLevel(4) != 50u ||
-		basicLaserAbility.GetScrapCostToReachLevel(15) != 105u)
+		basicLaserAbility.GetScrapCostToReachLevel(15) != 105u ||
+		basicLaser.progressionProfile.GetScrapCostToReachLevel(16) != 0u ||
+		basicLaserAbility.GetScrapCostToReachLevel(200) != 0u)
 	{
 		return Fail("Primary weapon scrap costs were not preserved during ability conversion");
 	}
 	const sas::AbilityHandle basicLaserHandle = abilitySystem.GrantAbility(basicLaserAbility);
 	if (!basicLaserHandle.IsValid() ||
-		!abilitySystem.SetAbilityLevel(sas::AbilitySlot::PrimaryFire, basicLaserAbility.GetMaxLevel()))
+		!abilitySystem.SetAbilityLevel(sas::AbilitySlot::PrimaryFire, 15))
 	{
-		return Fail("Fighter basic rapid laser could not reach its maximum level");
+		return Fail("Fighter basic rapid laser could not reach level 15");
 	}
 	const GameAbility* basicLaserInstance = abilitySystem.GetAbility(sas::AbilitySlot::PrimaryFire);
 	const sas::GameplayAttribute* basicDamage = sas::FindAttribute(basicLaser.attributes, CommonAttributeIds::Damage);
@@ -5054,7 +5076,7 @@ int main(int argc, char** argv)
 		PrimaryWeaponSchema::Projectile::Delivery::Speed
 	);
 	const sas::GameplayAttribute* basicRange = sas::FindAttribute(basicLaser.attributes, CommonAttributeIds::Range);
-	if (!basicLaserInstance || basicLaserInstance->GetLevel() != basicLaserAbility.GetMaxLevel() ||
+	if (!basicLaserInstance || basicLaserInstance->GetLevel() != 15 ||
 		!basicDamage || !basicEmpoweredDamage || !basicFireRate || !basicSpeed || !basicRange ||
 		sas::CalculateModifiedAttributeValue(
 			*basicDamage,
@@ -5235,7 +5257,7 @@ int main(int argc, char** argv)
 	const auto rocketLevelModifier = [&](const sas::AttributeId& attributeId)
 	{
 		for (const sas::AttributeModifier& modifier :
-			rocketDefinition->levelProgression.front().attributeModifiers)
+			rocketDefinition->ResolveLevelStep(0)->attributeModifiers)
 		{
 			if (modifier.attributeId == attributeId)
 			{
@@ -5254,7 +5276,6 @@ int main(int argc, char** argv)
 		int projectileCount;
 		float spawnDistance;
 		float damagePerLevel;
-		float cooldownReductionPerLevel;
 		float explosionRadiusPerLevel;
 	};
 	const RocketTestSettings rocketSettingsValue{
@@ -5266,15 +5287,14 @@ int main(int argc, char** argv)
 		1,
 		rocketActor.spawnDistance,
 		rocketLevelModifier(CommonAttributeIds::Damage),
-		-rocketLevelModifier(CommonAttributeIds::Cooldown),
 		rocketLevelModifier(CommonAttributeIds::Radius)
 	};
 	const RocketTestSettings* rocketSettings = &rocketSettingsValue;
 	if (rocketSettings->baseDamage <= 0.f || rocketSettings->cooldown <= 0.f ||
 		rocketSettings->projectileSpeed <= 0.f || rocketSettings->range <= 0.f ||
 		rocketSettings->explosionRadius <= 0.f || rocketSettings->projectileCount != 1 ||
-		rocketSettings->damagePerLevel <= 0.f || rocketSettings->cooldownReductionPerLevel <= 0.f ||
-		rocketSettings->explosionRadiusPerLevel <= 0.f)
+		rocketSettings->damagePerLevel <= 0.f ||
+		rocketSettings->explosionRadiusPerLevel < 0.f)
 	{
 		return Fail("Basic Rocket settings are invalid");
 	}
@@ -5471,7 +5491,8 @@ int main(int argc, char** argv)
 			!NearlyEqual(levelRocket->GetMaximumRange(), rocketSettings->range) ||
 			!NearlyEqual(
 				levelInstance->GetCooldownDuration(),
-				rocketSettings->cooldown - levelOffset * rocketSettings->cooldownReductionPerLevel
+				rocketSettings->cooldown -
+					GetGlobalAbilityCooldownTotalReduction(rocketSettings->cooldown, static_cast<std::size_t>(level - 1))
 			))
 		{
 			return Fail("Basic Rocket level progression did not preserve fixed speed/range or cumulative values");
@@ -6741,19 +6762,15 @@ int main(int argc, char** argv)
 		float baseDistance;
 		float duration;
 		float cameraZoomOutRatio;
-		float cooldownReductionPerLevelRatio;
 		AbilityData::Dash::DirectionPolicy directionPolicy;
 	};
-	float cooldownStep = 0.f;
-	if (!dashDefinition->levelProgression.empty())
+	if (dashDefinition->ResolveLevelStep(0))
 	{
-		for (const sas::AttributeModifier& modifier :
-			dashDefinition->levelProgression.front().attributeModifiers)
+		for (const sas::AttributeModifier& modifier : dashDefinition->ResolveLevelStep(0)->attributeModifiers)
 		{
 			if (modifier.attributeId == CommonAttributeIds::Cooldown)
 			{
-				cooldownStep = modifier.magnitude;
-				break;
+				return Fail("Basic Dash level steps must not author Cooldown modifiers");
 			}
 		}
 	}
@@ -6767,15 +6784,12 @@ int main(int argc, char** argv)
 			dashDefinition->abilityId,
 			AbilityData::Dash::Setting::CameraZoomOutRatio
 		).value_or(0.f),
-		dashDefinition->cooldown > 0.f ? -cooldownStep / dashDefinition->cooldown : 0.f,
 		AbilityData::Dash::DirectionPolicy::MovementInputOrMouseWorld
 	};
 	const DashTestSettings* dashSettings = &dashSettingsValue;
 	if (dashSettings->baseDistance <= 0.f ||
 		!NearlyEqual(dashSettings->duration, dashDefinition->duration) ||
 		dashSettings->cameraZoomOutRatio < 0.f || dashSettings->cameraZoomOutRatio > 0.5f ||
-		dashSettings->cooldownReductionPerLevelRatio < 0.f ||
-		dashSettings->cooldownReductionPerLevelRatio >= 0.25f ||
 		dashSettings->directionPolicy != AbilityData::Dash::DirectionPolicy::MovementInputOrMouseWorld ||
 		!GameplayTags::State::Ability::Dash::Active.IsValid() ||
 		!GameplayTags::Event::Ability::Activated.IsValid() ||
@@ -6851,8 +6865,8 @@ int main(int argc, char** argv)
 	for (int level = 1; level <= 5; ++level)
 	{
 		const float expectedDashCooldown =
-			dashDefinition->cooldown *
-			(1.f - dashSettings->cooldownReductionPerLevelRatio * static_cast<float>(level - 1));
+			dashDefinition->cooldown -
+			GetGlobalAbilityCooldownTotalReduction(dashDefinition->cooldown, static_cast<std::size_t>(level - 1));
 		if ((level > 1 && !cooldownDashAbilities.SetAbilityLevel(cooldownDashHandle, level)) ||
 			!cooldownDashAbilities.GetAbility(cooldownDashHandle) ||
 			!NearlyEqual(
@@ -6867,8 +6881,8 @@ int main(int argc, char** argv)
 		sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
 	);
 	const float expectedLevelFiveDashCooldown =
-		dashDefinition->cooldown *
-		(1.f - dashSettings->cooldownReductionPerLevelRatio * 4.f);
+		dashDefinition->cooldown -
+		GetGlobalAbilityCooldownTotalReduction(dashDefinition->cooldown, 4);
 	if (!NearlyEqual(
 		cooldownDashAbilities.GetAbility(cooldownDashHandle)->GetCooldownDuration(),
 		expectedLevelFiveDashCooldown * sas::AttributeMath::GetAbilityCooldownMultiplier(100.f)
@@ -7752,8 +7766,8 @@ int main(int argc, char** argv)
 		});
 		relay->ConfigureFromAbilityValues({
 			sas::GameplayAttribute{ CommonAttributeIds::ProjectileCount, 2.f, 1.f },
-			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::DamageTransferRatio, 0.5f, 0.f, 1.f },
-			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::AttackPowerCoefficient, 0.f, 0.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::BaseTransfer, 0.5f, 0.f, 1.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::EnergyPowerScale, 0.f, 0.f },
 			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MinimumScatterAngle, 60.f, 0.f, 360.f },
 			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumScatterAngle, 60.f, 0.f, 360.f },
 			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumBonusProjectileCount, 0.f, 0.f }
@@ -7964,13 +7978,13 @@ int main(int argc, char** argv)
 		crescentRelay->ConfigureFromAbilityValues({
 			sas::GameplayAttribute{ CommonAttributeIds::ProjectileCount, 4.f, 1.f },
 			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::DamageTransferRatio,
+				AbilityData::RelayPrism::Attribute::BaseTransfer,
 				1.f,
 				0.f,
 				1.f
 			},
 			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::AttackPowerCoefficient,
+				AbilityData::RelayPrism::Attribute::EnergyPowerScale,
 				0.f,
 				0.f
 			},
@@ -8072,8 +8086,8 @@ int main(int argc, char** argv)
 		});
 		rocketRelay->ConfigureFromAbilityValues({
 			sas::GameplayAttribute{ CommonAttributeIds::ProjectileCount, 1.f, 1.f },
-			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::DamageTransferRatio, 1.f, 0.f, 1.f },
-			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::AttackPowerCoefficient, 0.f, 0.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::BaseTransfer, 1.f, 0.f, 1.f },
+			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::EnergyPowerScale, 0.f, 0.f },
 			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MinimumScatterAngle, 0.f, 0.f, 360.f },
 			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumScatterAngle, 0.f, 0.f, 360.f },
 			sas::GameplayAttribute{ AbilityData::RelayPrism::Attribute::MaximumBonusProjectileCount, 0.f, 0.f }
@@ -8173,7 +8187,7 @@ int main(int argc, char** argv)
 					GameplayTags::Ability::Offense,
 					GameplayTags::Ability::Family::EmberSwarm
 				} ||
-			emberSwarmDefinition->levelProgression.size() != 14)
+			emberSwarmDefinition->ResolveLevelStep(0) == nullptr)
 		{
 			return Fail("Ember Swarm definition did not match Milestone 1 contract");
 		}
@@ -8663,7 +8677,7 @@ int main(int argc, char** argv)
 					GameplayTags::Ability::Defense,
 					GameplayTags::Ability::Family::ReclaimerProtocol
 				} ||
-			reclaimerDefinition->levelProgression.size() != 14)
+			reclaimerDefinition->ResolveLevelStep(0) == nullptr)
 		{
 			return Fail("Reclaimer Protocol definition did not match baseline contract");
 		}
@@ -8679,18 +8693,22 @@ int main(int argc, char** argv)
 			reclaimerDefinition->attributes,
 			AbilityData::ReclaimerProtocol::Attribute::HealRatio
 		);
-		if (!healRatioAttr || !NearlyEqual(healRatioAttr->baseValue, 0.04f))
+		if (!healRatioAttr || !NearlyEqual(healRatioAttr->baseValue, 0.08f))
 		{
-			return Fail("Reclaimer Protocol base HealRatio attribute is missing or not 0.04");
+			return Fail("Reclaimer Protocol base HealRatio attribute is missing or not 0.08");
 		}
 
-		// Level progression check: 14 steps, each +.0015 HealRatio and -.25 Cooldown
-		// Level 15 = level 1 + 14 upgrades => HealRatio = 0.04 + 14 * 0.0015 = 0.061, Cooldown = 16 - 14 * 0.25 = 12.5
+		// Level progression check: HealRatio +0.01 on every second upgrade step, never authors Cooldown.
+		// Level 15 = level 1 + 14 upgrades => HealRatio = 0.08 + 7 * 0.01 = 0.15.
 		float simulatedHealRatio = healRatioAttr->baseValue;
-		float simulatedCooldown = reclaimerDefinition->cooldown;
-		for (const auto& step : reclaimerDefinition->levelProgression)
+		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
 		{
-			for (const auto& mod : step.attributeModifiers)
+			const AbilityLevelStep* step = reclaimerDefinition->ResolveLevelStep(stepIndex);
+			if (!step)
+			{
+				return Fail("Reclaimer Protocol level step is missing");
+			}
+			for (const auto& mod : step->attributeModifiers)
 			{
 				if (mod.attributeId == AbilityData::ReclaimerProtocol::Attribute::HealRatio)
 				{
@@ -8698,13 +8716,20 @@ int main(int argc, char** argv)
 				}
 				else if (mod.attributeId == CommonAttributeIds::Cooldown)
 				{
-					simulatedCooldown += mod.magnitude;
+					return Fail("Reclaimer Protocol level step must not author Cooldown modifiers");
 				}
 			}
 		}
-		if (!NearlyEqual(simulatedHealRatio, 0.061f) || !NearlyEqual(simulatedCooldown, 12.5f))
+		if (!NearlyEqual(simulatedHealRatio, 0.15f))
 		{
-			return Fail("Reclaimer Protocol level 15 progression does not match expected 0.061 HealRatio or 12.5 Cooldown");
+			return Fail("Reclaimer Protocol level 15 progression does not match expected 0.15 HealRatio");
+		}
+		const float expectedReclaimerLevel15Cooldown = reclaimerDefinition->cooldown -
+			GetGlobalAbilityCooldownTotalReduction(reclaimerDefinition->cooldown, 14);
+		if (!(expectedReclaimerLevel15Cooldown < reclaimerDefinition->cooldown) ||
+			reclaimerDefinition->ResolveLevelStep(500) == nullptr)
+		{
+			return Fail("Reclaimer Protocol level progression did not continue beyond level 15");
 		}
 
 		// Actor definition check

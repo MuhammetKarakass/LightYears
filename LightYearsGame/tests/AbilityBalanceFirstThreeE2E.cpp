@@ -1,6 +1,7 @@
 #include "attributes/AttributeMath.h"
 #include "framework/World.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/glacialPressure/GlacialPressureContracts.h"
 #include "gameplay/ability/hullShock/HullShockContracts.h"
 #include "gameplay/ability/orbitalDrones/OrbitalDronesContracts.h"
@@ -74,6 +75,33 @@ namespace ly
 				}
 			);
 			return found == step.attributeModifiers.end() ? nullptr : &*found;
+		}
+
+		const sas::AttributeModifier* FindStep0Modifier(
+			const GameAbilityDefinition& definition,
+			const sas::AttributeId& attributeId
+		)
+		{
+			const AbilityLevelStep* step = definition.ResolveLevelStep(0);
+			return step ? FindModifier(*step, attributeId) : nullptr;
+		}
+
+		bool HasUnboundedSteps(const GameAbilityDefinition& definition)
+		{
+			return definition.ResolveLevelStep(0) && definition.ResolveLevelStep(30);
+		}
+
+		// Cooldown reduction is no longer authored in steps; it is appended globally.
+		bool CooldownProgressionMatchesFormula(const GameAbilityDefinition& definition)
+		{
+			const float base = definition.cooldown;
+			const float r0 = 0.175f + 0.025f * base;
+			const float expectedFirst = std::min(std::max(r0, 0.02f), std::max(0.f, base - 1.f));
+			return base > 1.f &&
+				NearlyEqual(GetGlobalAbilityCooldownTotalReduction(base, 1), expectedFirst) &&
+				GetGlobalAbilityCooldownTotalReduction(base, 24) >=
+					GetGlobalAbilityCooldownTotalReduction(base, 23) &&
+				base - GetGlobalAbilityCooldownTotalReduction(base, 24) >= 1.f - ProgressionTolerance;
 		}
 
 		float ResolveAbilityValue(
@@ -162,51 +190,33 @@ namespace ly
 		{
 			try
 			{
-				const sas::AttributeModifier* hullDamageStep = hullDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(hullDefinition->levelProgression.front(), CommonAttributeIds::Damage);
-				const sas::AttributeModifier* hullCooldownStep = hullDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(hullDefinition->levelProgression.front(), CommonAttributeIds::Cooldown);
-				check("hullShockCatalogProgression", hullDefinition->levelProgression.size() == 14 &&
-					hullDefinition->levelUpgradeScrapCosts.size() == 14 && hullDamageStep &&
-					hullCooldownStep && NearlyEqual(hullDamageStep->magnitude, 4.f) &&
-					NearlyEqual(hullCooldownStep->magnitude, -0.20f));
+				const sas::AttributeModifier* hullDamageStep = FindStep0Modifier(*hullDefinition, CommonAttributeIds::Damage);
+				const sas::AttributeModifier* hullCooldownStep = FindStep0Modifier(*hullDefinition, CommonAttributeIds::Cooldown);
+				check("hullShockCatalogProgression", HasUnboundedSteps(*hullDefinition) &&
+					!hullDefinition->levelUpgradeScrapCosts.empty() && hullDamageStep &&
+					NearlyEqual(hullDamageStep->magnitude, 4.f) && !hullCooldownStep &&
+					CooldownProgressionMatchesFormula(*hullDefinition));
 
-				const sas::AttributeModifier* glacialPushDamageStep = glacialDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(glacialDefinition->levelProgression.front(),
+				const sas::AttributeModifier* glacialPushDamageStep = FindStep0Modifier(*glacialDefinition,
 						AbilityData::GlacialPressure::Attribute::InitialDamage);
-				const sas::AttributeModifier* glacialPushEnergyStep = glacialDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(glacialDefinition->levelProgression.front(),
+				const sas::AttributeModifier* glacialPushEnergyStep = FindStep0Modifier(*glacialDefinition,
 						AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale);
-				const sas::AttributeModifier* glacialCollisionDamageStep = glacialDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(glacialDefinition->levelProgression.front(),
+				const sas::AttributeModifier* glacialCollisionDamageStep = FindStep0Modifier(*glacialDefinition,
 						AbilityData::GlacialPressure::Attribute::CollisionDamage);
-				const sas::AttributeModifier* glacialCollisionEnergyStep = glacialDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(glacialDefinition->levelProgression.front(),
+				const sas::AttributeModifier* glacialCollisionEnergyStep = FindStep0Modifier(*glacialDefinition,
 						AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale);
-				const sas::AttributeModifier* glacialCooldownStep = glacialDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(glacialDefinition->levelProgression.front(), CommonAttributeIds::Cooldown);
-				check("glacialPressureCatalogProgression", glacialDefinition->levelProgression.size() == 24 &&
-					glacialDefinition->levelUpgradeScrapCosts.size() == 24 && glacialPushDamageStep &&
+				const sas::AttributeModifier* glacialCooldownStep = FindStep0Modifier(*glacialDefinition, CommonAttributeIds::Cooldown);
+				check("glacialPressureCatalogProgression", HasUnboundedSteps(*glacialDefinition) &&
+					!glacialDefinition->levelUpgradeScrapCosts.empty() && glacialPushDamageStep &&
 					glacialPushEnergyStep && glacialCollisionDamageStep && glacialCollisionEnergyStep &&
-					glacialCooldownStep && NearlyEqual(glacialPushDamageStep->magnitude, 5.f) &&
+					NearlyEqual(glacialPushDamageStep->magnitude, 5.f) &&
 					NearlyEqual(glacialPushEnergyStep->magnitude, 0.02f) &&
 					NearlyEqual(glacialCollisionDamageStep->magnitude, 10.f) &&
-					NearlyEqual(glacialCollisionEnergyStep->magnitude, 0.04f) &&
-					NearlyEqual(glacialCooldownStep->magnitude, -0.50f));
+					NearlyEqual(glacialCollisionEnergyStep->magnitude, 0.02f) &&
+					!glacialCooldownStep && CooldownProgressionMatchesFormula(*glacialDefinition));
 
-				const sas::AttributeModifier* orbitalDamageStep = orbitalDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(orbitalDefinition->levelProgression.front(), CommonAttributeIds::Damage);
-				const sas::AttributeModifier* orbitalCooldownStep = orbitalDefinition->levelProgression.empty()
-					? nullptr
-					: FindModifier(orbitalDefinition->levelProgression.front(), CommonAttributeIds::Cooldown);
+				const sas::AttributeModifier* orbitalDamageStep = FindStep0Modifier(*orbitalDefinition, CommonAttributeIds::Damage);
+				const sas::AttributeModifier* orbitalCooldownStep = FindStep0Modifier(*orbitalDefinition, CommonAttributeIds::Cooldown);
 				const float orbitalBaseDamage = sas::FindAttributeValue(
 					orbitalDefinition->attributes,
 					CommonAttributeIds::Damage,
@@ -222,12 +232,12 @@ namespace ly
 					AbilityData::OrbitalDrones::Attribute::BaseAngularSpeedRadiansPerSecond,
 					0.f
 				);
-				check("orbitalDronesCatalogProgression", orbitalDefinition->levelProgression.size() == 24 &&
-					orbitalDefinition->levelUpgradeScrapCosts.size() == 24 && orbitalDamageStep &&
-					orbitalCooldownStep && NearlyEqual(orbitalBaseDamage, 25.f) &&
+				check("orbitalDronesCatalogProgression", HasUnboundedSteps(*orbitalDefinition) &&
+					!orbitalDefinition->levelUpgradeScrapCosts.empty() && orbitalDamageStep &&
+					NearlyEqual(orbitalBaseDamage, 25.f) &&
 					NearlyEqual(orbitalBaseRadius, 500.f) && NearlyEqual(orbitalAngularSpeed, 2.5f) &&
 					NearlyEqual(orbitalDamageStep->magnitude, 4.f) &&
-					NearlyEqual(orbitalCooldownStep->magnitude, -0.50f));
+					!orbitalCooldownStep && CooldownProgressionMatchesFormula(*orbitalDefinition));
 
 				// Hull Shock exercises the shipped focus/charge path and its real
 				// shared damage resolver against a live opposing SpaceShip.
@@ -250,7 +260,8 @@ namespace ly
 				NearlyEqual(ResolveAbilityValue(hullSystem.GetAbility(hullHandle)->GetDefinition(),
 					CommonAttributeIds::Damage, 0.f), 34.f) &&
 				NearlyEqual(ResolveAbilityValue(hullSystem.GetAbility(hullHandle)->GetDefinition(),
-					CommonAttributeIds::Cooldown, hullSystem.GetAbility(hullHandle)->GetDefinition().cooldown), 11.8f));
+					CommonAttributeIds::Cooldown, hullSystem.GetAbility(hullHandle)->GetDefinition().cooldown),
+						hullDefinition->cooldown - GetGlobalAbilityCooldownTotalReduction(hullDefinition->cooldown, 1)));
 			hullSystem.SetAbilityLevel(hullHandle, 1);
 			const float hullHealthBefore = hullTarget->GetHealth();
 			hullSystem.SetAbilitySlotInput(hullDefinition->slot, true);
@@ -300,7 +311,8 @@ namespace ly
 				NearlyEqual(ResolveAbilityValue(glacialSystem.GetAbility(glacialHandle)->GetDefinition(),
 					AbilityData::GlacialPressure::Attribute::InitialDamage, 0.f), 35.f) &&
 				NearlyEqual(ResolveAbilityValue(glacialSystem.GetAbility(glacialHandle)->GetDefinition(),
-					CommonAttributeIds::Cooldown, glacialSystem.GetAbility(glacialHandle)->GetDefinition().cooldown), 9.5f));
+					CommonAttributeIds::Cooldown, glacialSystem.GetAbility(glacialHandle)->GetDefinition().cooldown),
+					glacialDefinition->cooldown - GetGlobalAbilityCooldownTotalReduction(glacialDefinition->cooldown, 1)));
 			glacialSystem.SetAbilityLevel(glacialHandle, 1);
 			const float glacialInitialHealth = movingTarget->GetHealth();
 			glacialSystem.SetAbilitySlotInput(glacialDefinition->slot, true);
@@ -362,7 +374,8 @@ namespace ly
 				NearlyEqual(ResolveAbilityValue(orbitalSystem.GetAbility(orbitalHandle)->GetDefinition(),
 					CommonAttributeIds::Damage, 0.f), 29.f) &&
 				NearlyEqual(ResolveAbilityValue(orbitalSystem.GetAbility(orbitalHandle)->GetDefinition(),
-					CommonAttributeIds::Cooldown, orbitalSystem.GetAbility(orbitalHandle)->GetDefinition().cooldown), 11.5f) &&
+					CommonAttributeIds::Cooldown, orbitalSystem.GetAbility(orbitalHandle)->GetDefinition().cooldown),
+					orbitalDefinition->cooldown - GetGlobalAbilityCooldownTotalReduction(orbitalDefinition->cooldown, 1)) &&
 				NearlyEqual(ResolveAbilityValue(orbitalSystem.GetAbility(orbitalHandle)->GetDefinition(),
 					CommonAttributeIds::Radius, 0.f), 500.f));
 			orbitalSystem.SetAbilityLevel(orbitalHandle, 1);

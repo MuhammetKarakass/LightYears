@@ -824,7 +824,7 @@ namespace ly
 			EnemyCombatProfile invalid{ "EnemyCombat.Test.InvalidBindings", {}, {}, EnemyPowerScalingPolicy::Allowed, false };
 			invalid.weapons.push_back({ "Weapon.Projectile.DoesNotExist.Basic", sas::AbilitySlot::PrimaryFire, 1 });
 			if (content::EnemyCombatProfileCatalog::ValidateProfile(invalid)) return Fail("Missing weapon ID passed enemy loadout validation") ? 0 : 1;
-			invalid.weapons.front() = { "Weapon.Projectile.EnemyVanguardPulse.Basic", sas::AbilitySlot::PrimaryFire, 999 };
+			invalid.weapons.front() = { "Weapon.Projectile.EnemyVanguardPulse.Basic", sas::AbilitySlot::PrimaryFire, 0 };
 			if (content::EnemyCombatProfileCatalog::ValidateProfile(invalid)) return Fail("Invalid weapon level passed enemy loadout validation") ? 0 : 1;
 			invalid.weapons.front() = { "Weapon.Projectile.EnemyVanguardPulse.Basic", sas::AbilitySlot::Ability1, 1 };
 			invalid.abilities.push_back({ "Ability.Movement.Dash.Basic", sas::AbilitySlot::Ability1, 1 });
