@@ -14,7 +14,6 @@ namespace AbilityData::FoldspaceArena
 		definition.actorDefinitionId = Actor::Arena::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::FoldspaceArena;
 		// Runtime duration is resolved from EnergyPower and extended through travel.
-		// This is only the fallback before ability values are applied.
 		definition.presentationProfileId = ly::FoldspaceArenaPresentationIds::ArenaBasic;
 		return definition;
 	}();
@@ -31,7 +30,7 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		// The behavior extends this lifecycle through the resolved arena duration
-		// and projectile travel time; this is the safe fallback duration.
+		// and projectile travel time.
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Utility,
 			ly::GameplayTags::Ability::Family::FoldspaceArena

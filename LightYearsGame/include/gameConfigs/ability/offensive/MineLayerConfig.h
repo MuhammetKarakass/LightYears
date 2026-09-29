@@ -22,8 +22,7 @@ namespace AbilityData::MineLayer
 namespace AbilityData::Definitions
 {
 	// C++ owns the executable behavior and actor/presentation identity. Numeric
-	// balance is authoritative in abilities.json and is copied here only as a
-	// safe fallback for tests that do not load shipped JSON.
+	// balance lives only in abilities.json.
 	inline const ly::GameAbilityDefinition MineLayer_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
