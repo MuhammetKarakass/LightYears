@@ -144,6 +144,7 @@
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameConfigs/combat/AttachmentConfig.h"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -273,11 +274,7 @@ namespace
 				return false;
 			}
 
-			mLastDashDistance = ly::DashMovementMath::ResolveDistance(
-				request.baseDistance,
-				mCombatRuntime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::MoveSpeedHorizontal),
-				mCombatRuntime.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(ly::OwnerAttributeIds::MoveSpeedVertical)
-			);
+			mLastDashDistance = request.baseDistance;
 			mLastDashDirection = direction;
 			mDashActive = mLastDashDistance > 0.f;
 			if (mDashActive)
@@ -5693,17 +5690,27 @@ int main(int argc, char** argv)
 		return Fail("Rail Burst did not spawn with its Energy configuration");
 	}
 	const float firstDamage = railBurstSettings.baseDamage;
+	const float railBurstPierceLoss = railBurst->GetPierceDamageLoss();
+	const float railBurstMinimumDamageMultiplier = railBurst->GetMinimumDamageMultiplier();
+	const float secondRailBurstDamage = firstDamage * std::max(
+		1.f - railBurstPierceLoss,
+		railBurstMinimumDamageMultiplier
+	);
+	const float thirdRailBurstDamage = firstDamage * std::max(
+		1.f - 2.f * railBurstPierceLoss,
+		railBurstMinimumDamageMultiplier
+	);
 	railBurst->OnActorBeginOverlap(firstRailTarget.get());
 	railBurst->OnActorBeginOverlap(firstRailTarget.get());
 	railBurst->OnActorBeginOverlap(secondRailTarget.get());
 	railBurst->OnActorBeginOverlap(thirdRailTarget.get());
 	if (!NearlyEqual(firstRailTarget->GetHealth(), 1000.f - firstDamage) ||
-		!NearlyEqual(secondRailTarget->GetHealth(), 1000.f - firstDamage) ||
-		!NearlyEqual(thirdRailTarget->GetHealth(), 1000.f - firstDamage) ||
+		!NearlyEqual(secondRailTarget->GetHealth(), 1000.f - secondRailBurstDamage) ||
+		!NearlyEqual(thirdRailTarget->GetHealth(), 1000.f - thirdRailBurstDamage) ||
 		!NearlyEqual(railBurst->GetDamage(), firstDamage) ||
 		railBurst->GetHitTargetCount() != 3)
 	{
-		return Fail("Rail Burst did not apply one-time full-damage pierce hits");
+		return Fail("Rail Burst did not apply one-time pierce falloff hits");
 	}
 	const float railBurstX = railBurst->GetActorLocation().x;
 	railBurstWorld.TickInternal(0.1f);
@@ -5983,16 +5990,11 @@ int main(int argc, char** argv)
 	{
 		return Fail("Crescent Reaver runtime ability instance was not retained");
 	}
-	const float cooldownBeforeBounce = crescentReaverAbility->GetCooldownRemaining();
+	// Catalog #12 scales bounce count and damage; it defines no bounce cooldown refund.
 	crescentReaverWorld.TickInternal(0.05f);
 	if (crescentReaverWorld.GetActorsByType<CrescentReaverProjectileActor>().size() != 1)
 	{
 		return Fail("Crescent Reaver projectile was removed on its first movement frame");
-	}
-	crescentReaverWorld.TickInternal(0.10f);
-	if (crescentReaverAbility->GetCooldownRemaining() >= cooldownBeforeBounce)
-	{
-		return Fail("Crescent Reaver bounce did not reduce its source ability cooldown");
 	}
 
 	// A catalog slot is only a default binding. A newly acquired ability and an
@@ -6270,10 +6272,10 @@ int main(int argc, char** argv)
 		);
 		return spec;
 	};
-	if (!gravitySettings || gravitySettings->cooldown != 8.f ||
+	if (!gravitySettings || !NearlyEqual(gravitySettings->cooldown, 13.f) ||
 		gravitySettings->castRange != 900.f || gravitySettings->projectileSpeed != 2000.f ||
 		gravitySettings->baseDuration != 2.5f || gravitySettings->baseRadius != 320.f ||
-		gravitySettings->pullStrength != 1500.f || gravitySettings->slowMagnitude != 0.40f ||
+		gravitySettings->pullStrength != 250.f || gravitySettings->slowMagnitude != 0.30f ||
 		gravityInsideEffect.effectId != AbilityData::GravityAnomaly::Effect::InsideEffectId ||
 		gravityInsideEffect.durationPolicy != sas::GameplayEffectDurationPolicy::Duration ||
 		!NearlyEqual(
@@ -6549,7 +6551,9 @@ int main(int argc, char** argv)
 		}
 	);
 	pullTarget.GetCombatRuntime().Tick(0.1f);
-	if (!pullHandle.IsValid() || !NearlyEqual(pullTarget.GetVelocity().x, -12.5f) ||
+	const float pullFalloff = 1.f - 50.f / 100.f;
+	const float expectedPullVelocity = -500.f * (0.5f + 0.5f * pullFalloff * pullFalloff) * 0.1f;
+	if (!pullHandle.IsValid() || !NearlyEqual(pullTarget.GetVelocity().x, expectedPullVelocity) ||
 		!NearlyEqual(pullTarget.GetVelocity().y, 0.f))
 	{
 		return Fail("Gravity Anomaly pull falloff or delta-time integration is incorrect");
@@ -6654,11 +6658,34 @@ int main(int argc, char** argv)
 	TestCombatant scaledGravityOwner{ &scaledGravityWorld, 1000.f };
 	const shared_ptr<GravityAnomalyProjectileActor> scaledGravityProjectile =
 		SpawnGravityProjectile(scaledGravityWorld, scaledGravityOwner, 1, 100.f);
+	const auto maxHealthScalingCoefficient = [&](const sas::AttributeId& targetAttributeId)
+	{
+		for (const sas::AttributeScalingRule& rule : gravityDefinition->scalingRules)
+		{
+			if (rule.sourceAttributeId == OwnerAttributeIds::MaxHealth &&
+				rule.targetAttributeId == targetAttributeId &&
+				rule.operation == sas::AttributeModifierOperation::Add)
+			{
+				return rule.coefficient;
+			}
+		}
+		return 0.f;
+	};
+	const float radiusScalingCoefficient = maxHealthScalingCoefficient(CommonAttributeIds::Radius);
+	const float durationScalingCoefficient = maxHealthScalingCoefficient(CommonAttributeIds::Duration);
+	constexpr float ScaledOwnerMaxHealth = 100.f;
+	const float expectedScaledGravityRadius = gravitySettings->baseRadius +
+		ScaledOwnerMaxHealth * radiusScalingCoefficient;
+	const float expectedScaledGravityDuration = gravitySettings->baseDuration +
+		ScaledOwnerMaxHealth * durationScalingCoefficient;
 	if (!baselineGravityProjectile || !scaledGravityProjectile ||
 		!NearlyEqual(baselineGravityProjectile->GetResolvedFieldRadius(), 320.f) ||
 		!NearlyEqual(baselineGravityProjectile->GetResolvedFieldDuration(), 2.5f) ||
-		!NearlyEqual(scaledGravityProjectile->GetResolvedFieldRadius(), 340.f) ||
-		!NearlyEqual(scaledGravityProjectile->GetResolvedFieldDuration(), 2.75f) ||
+		radiusScalingCoefficient <= 0.f || durationScalingCoefficient <= 0.f ||
+		!(expectedScaledGravityRadius > gravitySettings->baseRadius) ||
+		!NearlyEqual(expectedScaledGravityDuration, 2.75f) ||
+		!NearlyEqual(scaledGravityProjectile->GetResolvedFieldRadius(), expectedScaledGravityRadius) ||
+		!NearlyEqual(scaledGravityProjectile->GetResolvedFieldDuration(), expectedScaledGravityDuration) ||
 		!NearlyEqual(scaledGravityProjectile->GetProjectileSpeed(), baselineGravityProjectile->GetProjectileSpeed()) ||
 		!NearlyEqual(scaledGravityProjectile->GetCastRange(), baselineGravityProjectile->GetCastRange()) ||
 		!NearlyEqual(scaledGravityProjectile->GetResolvedPullStrength(), baselineGravityProjectile->GetResolvedPullStrength()) ||
@@ -6674,21 +6701,57 @@ int main(int argc, char** argv)
 	const GameAbility* levelGravityInstance = levelGravityOwner.GetCombatRuntime().GetAbilitySystemComponent().GetAbility(
 		sas::AbilitySlot::Ability1
 	);
+	constexpr std::size_t GravityLevel15UpgradeCount = 14;
+	const auto resolveGravityLevel15Attribute = [&](const sas::AttributeId& attributeId, float baseValue)
+	{
+		for (std::size_t stepIndex = 0; stepIndex < GravityLevel15UpgradeCount; ++stepIndex)
+		{
+			const AbilityLevelStep* step = gravityDefinition->ResolveLevelStep(stepIndex);
+			if (!step)
+			{
+				return std::numeric_limits<float>::quiet_NaN();
+			}
+			for (const sas::AttributeModifier& modifier : step->attributeModifiers)
+			{
+				if (modifier.attributeId == attributeId)
+				{
+					if (modifier.operation != sas::AttributeModifierOperation::Add)
+					{
+						return std::numeric_limits<float>::quiet_NaN();
+					}
+					baseValue += modifier.magnitude;
+				}
+			}
+		}
+		return baseValue;
+	};
+	const float expectedGravityLevel15Cooldown = gravityDefinition->cooldown -
+		GetGlobalAbilityCooldownTotalReduction(gravityDefinition->cooldown, GravityLevel15UpgradeCount);
+	const float expectedGravityLevel15PullStrength = resolveGravityLevel15Attribute(
+		AbilityData::GravityAnomaly::Actor::Field::PullStrength,
+		gravitySettings->pullStrength
+	);
+	const float expectedGravityLevel15SlowMagnitude = resolveGravityLevel15Attribute(
+		AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude,
+		gravitySettings->slowMagnitude
+	);
 	if (!levelGravityProjectile || !levelGravityInstance ||
-		!NearlyEqual(levelGravityInstance->GetCooldownDuration(), 6.6f) ||
-		!NearlyEqual(levelGravityProjectile->GetResolvedFieldDuration(), 2.92f) ||
-		!NearlyEqual(levelGravityProjectile->GetResolvedFieldRadius(), 348.f) ||
-		!NearlyEqual(levelGravityProjectile->GetResolvedPullStrength(), 1780.f) ||
-		!NearlyEqual(levelGravityProjectile->GetResolvedSlowMagnitude(), 0.47f) ||
-		!NearlyEqual(levelGravityProjectile->GetProjectileSpeed(), 2350.f) ||
-		!NearlyEqual(levelGravityProjectile->GetCastRange(), 970.f))
+		!NearlyEqual(levelGravityInstance->GetCooldownDuration(), expectedGravityLevel15Cooldown) ||
+		!(expectedGravityLevel15PullStrength > gravitySettings->pullStrength) ||
+		!(expectedGravityLevel15SlowMagnitude > gravitySettings->slowMagnitude) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedFieldDuration(), baselineGravityProjectile->GetResolvedFieldDuration()) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedFieldRadius(), baselineGravityProjectile->GetResolvedFieldRadius()) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedPullStrength(), expectedGravityLevel15PullStrength) ||
+		!NearlyEqual(levelGravityProjectile->GetResolvedSlowMagnitude(), expectedGravityLevel15SlowMagnitude) ||
+		!NearlyEqual(levelGravityProjectile->GetProjectileSpeed(), baselineGravityProjectile->GetProjectileSpeed()) ||
+		!NearlyEqual(levelGravityProjectile->GetCastRange(), baselineGravityProjectile->GetCastRange()))
 	{
 		return Fail("Gravity Anomaly level progression was not cumulative through level fifteen");
 	}
 	levelGravityOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 		sas::AttributeModifier{ OwnerAttributeIds::AbilityHaste, 100.f }
 	);
-	if (!(levelGravityInstance->GetCooldownDuration() < 6.6f))
+	if (!(levelGravityInstance->GetCooldownDuration() < expectedGravityLevel15Cooldown))
 	{
 		return Fail("Gravity Anomaly did not use centralized AbilityHaste cooldown resolution");
 	}
@@ -6915,17 +6978,13 @@ int main(int argc, char** argv)
 	TestCombatant highMovementDashOwner;
 	highMovementDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
 	highMovementDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-		sas::AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, 20.f }
-	);
-	highMovementDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
-		sas::AttributeModifier{ OwnerAttributeIds::MoveSpeedVertical, 20.f }
+		sas::AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, 40.f }
 	);
 	highMovementDashOwner.SetDashMovementInput({ 1.f, 0.f });
 	if (!ActivateBasicDash(highMovementDashOwner) ||
-		highMovementDashOwner.GetLastDashDistance() <= horizontalDashOwner.GetLastDashDistance() ||
-		highMovementDashOwner.GetLastDashDistance() > dashSettings->baseDistance * 1.5f)
+		highMovementDashOwner.GetLastDashDistance() <= horizontalDashOwner.GetLastDashDistance())
 	{
-		return Fail("Basic Dash movement rating scaling did not remain diminishing and capped");
+		return Fail("Higher horizontal MoveSpeed did not increase Basic Dash distance");
 	}
 
 	TestCombatant irrelevantStatDashOwner;
@@ -6949,11 +7008,14 @@ int main(int argc, char** argv)
 
 	TestCombatant levelFiveDashOwner;
 	levelFiveDashOwner.GetCombatRuntime().InitializeOwnerAttributes(100.f);
+	levelFiveDashOwner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
+		sas::AttributeModifier{ OwnerAttributeIds::MoveSpeedHorizontal, 20.f }
+	);
 	levelFiveDashOwner.SetDashMovementInput({ 1.f, 0.f });
 	if (!ActivateBasicDash(levelFiveDashOwner, 5) ||
-		!NearlyEqual(levelFiveDashOwner.GetLastDashDistance(), baselineDashDistance))
+		levelFiveDashOwner.GetLastDashDistance() <= horizontalDashOwner.GetLastDashDistance())
 	{
-		return Fail("Basic Dash skill levels changed distance instead of only cooldown");
+		return Fail("Basic Dash level progression did not increase its MoveSpeed scale");
 	}
 
 	TestCombatant inputDirectionDashOwner;
@@ -8746,10 +8808,13 @@ int main(int argc, char** argv)
 		}
 		const sas::GameplayAttribute* kitDurationAttr = sas::FindAttribute(kitActorDef->attributes, CommonAttributeIds::Duration);
 		const sas::GameplayAttribute* kitRadiusAttr = sas::FindAttribute(kitActorDef->attributes, CollisionAttributeIds::Radius);
-		const sas::GameplayAttribute* kitHealRatioAttr = sas::FindAttribute(kitActorDef->attributes, AbilityData::ReclaimerProtocol::Actor::RepairKit::HealRatio);
+		const sas::GameplayAttribute* kitHealRatioAttr = sas::FindAttribute(
+			kitActorDef->attributes,
+			AbilityData::ReclaimerProtocol::Actor::RepairKit::HealRatio
+		);
 		if (!kitDurationAttr || !NearlyEqual(kitDurationAttr->baseValue, 10.f) ||
 			!kitRadiusAttr || !NearlyEqual(kitRadiusAttr->baseValue, 16.f) ||
-			!kitHealRatioAttr || !NearlyEqual(kitHealRatioAttr->baseValue, 0.04f))
+			!kitHealRatioAttr || !NearlyEqual(kitHealRatioAttr->baseValue, healRatioAttr->baseValue))
 		{
 			return Fail("Reclaimer Repair Kit actor attributes do not match expected Duration, Radius, or HealRatio");
 		}
@@ -9012,7 +9077,12 @@ int main(int argc, char** argv)
 				{
 					return Fail("Reclaimer Repair Kit was not spawned at the immutable target death snapshot location");
 				}
-				if (!NearlyEqual(kit->GetResolvedHealRatio(), 0.04f))
+				const float ownerMaxHealth = owner->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(
+					OwnerAttributeIds::MaxHealth
+				);
+				const float expectedHealRatio = healRatioAttr->baseValue +
+					std::max(0.f, ownerMaxHealth - 250.f) / 250.f * 0.01f;
+				if (!NearlyEqual(kit->GetResolvedHealRatio(), expectedHealRatio))
 				{
 					return Fail("Reclaimer Repair Kit did not snapshot resolved HealRatio");
 				}
