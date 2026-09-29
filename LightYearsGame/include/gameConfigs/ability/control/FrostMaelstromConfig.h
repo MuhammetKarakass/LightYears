@@ -110,30 +110,23 @@ namespace AbilityData::Definitions
 				0.f
 			}
 		};
-		definition.levelProgression.reserve(14);
-		const ly::List<sas::AttributeModifier> cooldownModifiers =
-			ly::MakeGlobalAbilityCooldownProgression(definition.cooldown, 14);
-		for (std::size_t index = 0; index < 14; ++index)
-		{
-			ly::AbilityLevelStep step;
-			step.attributeModifiers = { cooldownModifiers[index] };
-			step.attributeModifiers.emplace_back(
-				ly::CommonAttributeIds::Damage,
-				sas::AttributeModifierOperation::Add,
-				1.f
-			);
-			step.attributeModifiers.emplace_back(
-				AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
-				sas::AttributeModifierOperation::Add,
-				0.01f
-			);
-			step.attributeModifiers.emplace_back(
-				AbilityData::FrostMaelstrom::Attribute::PullStrength,
-				sas::AttributeModifierOperation::Add,
-				25.f
-			);
-			definition.levelProgression.push_back(step);
-		}
+		ly::AbilityLevelStep step;
+		step.attributeModifiers.emplace_back(
+			ly::CommonAttributeIds::Damage,
+			sas::AttributeModifierOperation::Add,
+			1.f
+		);
+		step.attributeModifiers.emplace_back(
+			AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale,
+			sas::AttributeModifierOperation::Add,
+			0.01f
+		);
+		step.attributeModifiers.emplace_back(
+			AbilityData::FrostMaelstrom::Attribute::PullStrength,
+			sas::AttributeModifierOperation::Add,
+			25.f
+		);
+		ly::SetRepeatingAbilityLevelStep(definition, std::move(step));
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

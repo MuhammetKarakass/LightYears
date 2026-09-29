@@ -19,7 +19,6 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t ExpectedProgressionSteps = 24;
 		constexpr float ProgressionTolerance = 0.0001f;
 
 		float ResolveNumericSetting(
@@ -30,32 +29,6 @@ namespace ly
 		{
 			return content::AbilityContentCatalog::FindNumericSetting(abilityId, settingName)
 				.value_or(fallback);
-		}
-
-		float ApplyCooldownStep(float cooldown, const AbilityLevelStep& step)
-		{
-			float result = cooldown;
-			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-			{
-				if (modifier.attributeId != CommonAttributeIds::Cooldown)
-				{
-					continue;
-				}
-
-				switch (modifier.operation)
-				{
-				case sas::AttributeModifierOperation::Add:
-					result += modifier.magnitude;
-					break;
-				case sas::AttributeModifierOperation::Multiply:
-					result *= modifier.magnitude;
-					break;
-				case sas::AttributeModifierOperation::Override:
-					result = modifier.magnitude;
-					break;
-				}
-			}
-			return result;
 		}
 
 		bool IsExpectedMagnitude(float value, float expected)
@@ -98,13 +71,13 @@ namespace ly
 			!moveSpeedScale || !std::isfinite(moveSpeedScale->baseValue) || moveSpeedScale->baseValue <= 0.f ||
 			!std::isfinite(definition.duration) || definition.duration <= 0.f ||
 			!std::isfinite(cameraZoomOutRatio) || cameraZoomOutRatio < 0.f || cameraZoomOutRatio > 0.5f ||
-			definition.levelProgression.size() != ExpectedProgressionSteps)
+			definition.levelProgression.empty() && definition.repeatingLevelProgression.empty())
 		{
 			if (failureReason)
 			{
 				*failureReason =
 					"Dash requires positive movement, cooldown, and MoveSpeedScale values, a camera zoom-out ratio from 0 to 0.5, "
-					"and twenty-four JSON-owned progression steps.";
+					"and at least one JSON-owned progression step.";
 			}
 			return false;
 		}
@@ -122,29 +95,18 @@ namespace ly
 			}
 			return false;
 		}
-		float previousCooldown = definition.cooldown;
-		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
-			const float expectedCooldownDelta = -GetGlobalAbilityCooldownStepReduction(
-				definition.cooldown,
-				stepIndex
-			);
-			int cooldownModifierCount = 0;
 			int moveSpeedModifierCount = 0;
-			bool progressionMatches = step.attributeModifiers.size() == 2 &&
+			bool progressionMatches = step.attributeModifiers.size() == 1 &&
 				step.unlockedUpgradeIds.empty() && step.addedActions.empty() &&
 				step.addedTriggers.empty() && step.scalingRules.empty();
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
-				if (modifier.attributeId == CommonAttributeIds::Cooldown)
-				{
-					++cooldownModifierCount;
-					progressionMatches = progressionMatches &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						IsExpectedMagnitude(modifier.magnitude, expectedCooldownDelta);
-				}
-				else if (modifier.attributeId == AbilityData::Dash::Attribute::MoveSpeedScale)
+				if (modifier.attributeId == AbilityData::Dash::Attribute::MoveSpeedScale)
 				{
 					++moveSpeedModifierCount;
 					progressionMatches = progressionMatches &&
@@ -155,28 +117,15 @@ namespace ly
 						);
 				}
 			}
-			if (!progressionMatches || cooldownModifierCount != 1 || moveSpeedModifierCount != 1)
+			if (!progressionMatches || moveSpeedModifierCount != 1)
 			{
 				if (failureReason)
 				{
 					*failureReason =
-						"Basic Dash requires one authored cooldown and MoveSpeedScale addition at each level.";
+						"Basic Dash requires one authored MoveSpeedScale addition at each level.";
 				}
 				return false;
 			}
-
-			const float levelCooldown = ApplyCooldownStep(previousCooldown, step);
-			if (!std::isfinite(levelCooldown) || levelCooldown < 1.f - ProgressionTolerance ||
-				levelCooldown > previousCooldown + ProgressionTolerance)
-			{
-				if (failureReason)
-				{
-					*failureReason =
-						"Basic Dash cooldown progression must remain positive and decrease per level.";
-				}
-				return false;
-			}
-			previousCooldown = levelCooldown;
 		}
 		return true;
 	}

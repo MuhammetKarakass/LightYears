@@ -27,19 +27,13 @@ namespace AbilityData::Definitions
 		definition.displayName = "Vector Sync";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 90, 225, 255, 255 };
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Duration,
 						sas::AttributeModifierOperation::Add,
 						0.10f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
 					}
 				}, {}, {}, {}
 			}

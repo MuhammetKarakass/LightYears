@@ -28,7 +28,7 @@ namespace ly
 			barrierSpec->maxStacks != 1 || !definition.triggers.empty() ||
 			!barrierSpec->useAbilityDuration ||
 			!std::isfinite(definition.duration) || definition.duration <= 0.f ||
-			definition.levelProgression.size() != 14)
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{

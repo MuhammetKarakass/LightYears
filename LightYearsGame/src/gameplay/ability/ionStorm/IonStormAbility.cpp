@@ -14,7 +14,6 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 10.f;
 		constexpr float BaseDuration = 4.f;
 		constexpr float BaseDamage = 12.f;
@@ -242,14 +241,15 @@ namespace ly
 				true
 			);
 
-		bool validProgression = definition.levelProgression.size() ==
-			RequiredProgressionStepCount;
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
 		if (validProgression)
 		{
-			for (const AbilityLevelStep& step : definition.levelProgression)
+			for (const AbilityLevelStep& step : levelSteps)
 			{
 				if (!HasModifierWithSign(step, CommonAttributeIds::Damage, true) ||
-					!HasModifierWithSign(step, CommonAttributeIds::Cooldown, false) ||
 					step.scalingRules.size() != 1 ||
 					step.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
 					step.scalingRules.front().sourceAttributeId != OwnerAttributeIds::EnergyPower ||

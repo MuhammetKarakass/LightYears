@@ -85,35 +85,23 @@ namespace AbilityData::Definitions
 				0.f
 			}
 		};
-		definition.levelProgression.reserve(14);
-		for (int step = 0; step < 14; ++step)
-		{
-			const float cooldownDelta = step < 4
-				? -0.425f
-				: step < 8 ? -0.325f : step < 12 ? -0.225f : -0.125f;
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						AbilityData::RelayPrism::Attribute::BaseTransfer,
-						sas::AttributeModifierOperation::Add,
-						0.02f
-					},
-					sas::AttributeModifier{
-						AbilityData::RelayPrism::Attribute::EnergyPowerScale,
-						sas::AttributeModifierOperation::Add,
-						0.02f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						cooldownDelta
-					}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				sas::AttributeModifier{
+					AbilityData::RelayPrism::Attribute::BaseTransfer,
+					sas::AttributeModifierOperation::Add,
+					0.02f
 				},
-				{},
-				{},
-				{}
-			});
-		}
+				sas::AttributeModifier{
+					AbilityData::RelayPrism::Attribute::EnergyPowerScale,
+					sas::AttributeModifierOperation::Add,
+					0.02f
+				}
+			},
+			{},
+			{},
+			{}
+		});
 		definition.levelUpgradeScrapCosts = {
 			40, 50, 65, 80, 100, 125, 155,
 			190, 230, 275, 325, 380, 440, 505

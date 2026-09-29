@@ -138,7 +138,7 @@ namespace ly
 			value(AbilityData::FrostMaelstrom::Attribute::OrbitalRadiusRatio) > 1.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::EnergyPowerDamageScale) < 0.f ||
 			value(CommonAttributeIds::Damage) < 0.f ||
-			definition.levelProgression.size() != 14 ||
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Cryo)
 		{
@@ -150,16 +150,12 @@ namespace ly
 			return false;
 		}
 
-		float cooldown = definition.cooldown;
-		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[index];
-			const float cooldownReduction = GetGlobalAbilityCooldownStepReduction(
-				definition.cooldown,
-				index
-			);
-			if (step.attributeModifiers.size() != 4 ||
-				!HasModifier(step, CommonAttributeIds::Cooldown, -cooldownReduction) ||
+			if (step.attributeModifiers.size() != 3 ||
 				!HasModifier(step, CommonAttributeIds::Damage, 1.f) ||
 				!HasModifier(
 					step,
@@ -170,16 +166,7 @@ namespace ly
 			{
 				if (failureReason)
 				{
-					*failureReason = "Frost Maelstrom progression must contain tick damage, energy scaling, pull, and cooldown increments.";
-				}
-				return false;
-			}
-			cooldown -= cooldownReduction;
-			if (cooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Frost Maelstrom progression must keep cooldown positive.";
+					*failureReason = "Frost Maelstrom progression must contain tick damage, energy scaling, and pull increments.";
 				}
 				return false;
 			}

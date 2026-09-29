@@ -86,19 +86,13 @@ namespace AbilityData::Definitions
 				0.60f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						AbilityData::TemporalConvergence::Attribute::BaseShield,
 						sas::AttributeModifierOperation::Add,
 						10.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.30f
 					}
 				}, {}, {}, {}
 			}

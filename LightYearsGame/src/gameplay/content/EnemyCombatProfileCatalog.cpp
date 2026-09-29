@@ -147,9 +147,9 @@ namespace ly::content
 				return Fail(failureReason, "Weapon '" + binding.weaponId + "' not found in WeaponContentCatalog for profile '" + profile.profileId + "'.");
 			}
 			const GameAbilityDefinition weaponAbility = AbilityData::MakePrimaryFireAbilityDefinition(*weaponDef);
-			if (binding.level < 1 || binding.level > weaponAbility.GetMaxLevel())
+			if (binding.level < 1)
 			{
-				return Fail(failureReason, "Weapon '" + binding.weaponId + "' level " + std::to_string(binding.level) + " out of range [1, " + std::to_string(weaponAbility.GetMaxLevel()) + "] for profile '" + profile.profileId + "'.");
+				return Fail(failureReason, "Weapon '" + binding.weaponId + "' level " + std::to_string(binding.level) + " must be at least 1 for profile '" + profile.profileId + "'.");
 			}
 			weaponDefinitions.push_back(weaponDef);
 		}

@@ -159,24 +159,22 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14)
+		if (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty())
 		{
 			if (failureReason)
 			{
-				*failureReason = "Mine Layer requires fourteen progression steps through level fifteen.";
+				*failureReason = "Mine Layer requires at least one progression step.";
 			}
 			return false;
 		}
-		float resolvedCooldown = definition.cooldown;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
 			const std::optional<float> damagePerLevel = FindModifierMagnitude(
 				step,
 				CommonAttributeIds::Damage
-			);
-			const std::optional<float> cooldownReduction = FindModifierMagnitude(
-				step,
-				CommonAttributeIds::Cooldown
 			);
 			const bool hasExpectedAttackPowerScaling = step.scalingRules.size() == 1 &&
 				step.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
@@ -184,23 +182,13 @@ namespace ly
 				step.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 				std::isfinite(step.scalingRules.front().coefficient) &&
 				step.scalingRules.front().coefficient > 0.f;
-			if (step.attributeModifiers.size() != 2 || !damagePerLevel ||
+			if (step.attributeModifiers.size() != 1 || !damagePerLevel ||
 				!std::isfinite(*damagePerLevel) || *damagePerLevel <= 0.f ||
-				!cooldownReduction || !std::isfinite(*cooldownReduction) ||
-				*cooldownReduction >= 0.f || !hasExpectedAttackPowerScaling)
+				!hasExpectedAttackPowerScaling)
 			{
 				if (failureReason)
 				{
-					*failureReason = "Mine Layer progression must add damage, AttackPower scaling and reduce cooldown.";
-				}
-				return false;
-			}
-			resolvedCooldown += *cooldownReduction;
-			if (resolvedCooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Mine Layer progression must keep cooldown positive at every level.";
+					*failureReason = "Mine Layer progression must add damage, AttackPower scaling.";
 				}
 				return false;
 			}

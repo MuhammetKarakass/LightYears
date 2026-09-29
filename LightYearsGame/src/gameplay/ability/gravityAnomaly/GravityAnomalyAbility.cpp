@@ -162,16 +162,17 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14)
+		const AbilityLevelStep* firstStepPtr = definition.ResolveLevelStep(0);
+		if (!firstStepPtr)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Gravity Anomaly requires fourteen normal progression steps through level fifteen.";
+				*failureReason = "Gravity Anomaly requires at least one progression step.";
 			}
 			return false;
 		}
 
-		const AbilityLevelStep& firstStep = definition.levelProgression.front();
+		const AbilityLevelStep& firstStep = *firstStepPtr;
 		const std::optional<float> pullStrengthPerLevel = FindModifierMagnitude(
 			firstStep,
 			AbilityData::GravityAnomaly::Actor::Field::PullStrength
@@ -190,31 +191,18 @@ namespace ly
 			return false;
 		}
 
-		float cooldown = definition.cooldown;
-		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[index];
-			const float cooldownReduction = GetGlobalAbilityCooldownStepReduction(
-				definition.cooldown,
-				index
-			);
-			if (step.attributeModifiers.size() != 3 ||
-				!HasModifier(step, CommonAttributeIds::Cooldown, -cooldownReduction) ||
+			if (step.attributeModifiers.size() != 2 ||
 				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::PullStrength, *pullStrengthPerLevel) ||
 				!HasModifier(step, AbilityData::GravityAnomaly::Actor::Field::SlowMagnitude, *slowMagnitudePerLevel))
 			{
 				if (failureReason)
 				{
-					*failureReason = "Gravity Anomaly progression must contain exactly pull, slow, and cooldown increments.";
-				}
-				return false;
-			}
-			cooldown -= cooldownReduction;
-			if (cooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Gravity Anomaly progression must keep cooldown positive.";
+					*failureReason = "Gravity Anomaly progression must contain exactly pull and slow increments.";
 				}
 				return false;
 			}

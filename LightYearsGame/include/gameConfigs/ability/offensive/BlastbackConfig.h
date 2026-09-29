@@ -52,19 +52,13 @@ namespace AbilityData::Definitions
 				0.75f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						AbilityData::Blastback::Attribute::Damage,
 						sas::AttributeModifierOperation::Add,
 						3.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.2f
 					}
 				}, {}, {}, {}
 			}

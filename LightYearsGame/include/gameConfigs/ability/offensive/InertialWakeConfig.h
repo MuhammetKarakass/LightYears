@@ -57,16 +57,13 @@ namespace AbilityData::Definitions
 				1
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{ AbilityData::InertialWake::Attribute::TopSpeedBonus,
 						sas::AttributeModifierOperation::Add, 10.f },
 					sas::AttributeModifier{ AbilityData::InertialWake::Actor::Wake::SpeedDamageConversion,
-						sas::AttributeModifierOperation::Add, 0.02f },
-					sas::AttributeModifier{ ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add, -0.25f }
+						sas::AttributeModifierOperation::Add, 0.02f }
 				}, {}, {}, {}
 			}
 		);

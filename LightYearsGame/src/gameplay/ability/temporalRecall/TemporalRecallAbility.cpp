@@ -67,7 +67,7 @@ namespace ly
 			definition.maxCharges != 1 || definition.cooldown <= 0.f ||
 			definition.duration <= 0.f ||
 			definition.attributes.size() != 8 ||
-			definition.levelProgression.size() != 14)
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{

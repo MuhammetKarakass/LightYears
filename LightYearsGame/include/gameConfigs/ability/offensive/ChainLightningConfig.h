@@ -77,24 +77,18 @@ namespace AbilityData::Definitions
 		};
 		// The chain traversal owns targeting and delayed impact. There must be no
 		// generic action here that could apply damage immediately on activation.
-		definition.levelProgression.reserve(14);
-		for (int level = 0; level < 14; ++level)
-		{
-			const float cooldownDelta = -ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, level);
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 5.f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, cooldownDelta }
-				},
-				{},
-				{},
-				{},
-				{
-					{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::EnergyPower,
-						sas::AttributeModifierOperation::Add, 0.05f }
-				}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 5.f }
+			},
+			{},
+			{},
+			{},
+			{
+				{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::EnergyPower,
+					sas::AttributeModifierOperation::Add, 0.05f }
+			}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

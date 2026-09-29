@@ -34,7 +34,7 @@ namespace AbilityData::Definitions
 			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 160.f, 0.f },
 			{ AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.70f, 0.f },
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(14, ly::AbilityLevelStep{ {
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{ {
 			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, sas::AttributeModifierOperation::Add, 12.f },
 			{ AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, sas::AttributeModifierOperation::Add, 0.06f }
 		}, {}, {}, {} });

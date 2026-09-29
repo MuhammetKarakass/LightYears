@@ -36,23 +36,22 @@ namespace ly
 			return content::AbilityContentCatalog::FindNumericSetting(definition.abilityId, name).value_or(fallback);
 		}
 
+		List<AbilityLevelStep> AllLevelSteps(const GameAbilityDefinition& definition)
+		{
+			List<AbilityLevelStep> steps = definition.levelProgression;
+			steps.insert(steps.end(), definition.repeatingLevelProgression.begin(),
+				definition.repeatingLevelProgression.end());
+			return steps;
+		}
+
 		bool HasExpectedProgression(const List<AbilityLevelStep>& steps)
 		{
-			if (steps.size() != 14) return false;
-			for (std::size_t index = 0; index < steps.size(); ++index)
+			if (steps.empty()) return false;
+			for (const AbilityLevelStep& step : steps)
 			{
-				const AbilityLevelStep& step = steps[index];
-				const bool appliesAtLevel = index % 2 == 1;
-				if (step.attributeModifiers.size() != (appliesAtLevel ? 2u : 1u) ||
+				const bool appliesAtLevel = !step.attributeModifiers.empty();
+				if (step.attributeModifiers.size() > 1u ||
 					!step.scalingRules.empty() || !step.addedActions.empty() || !step.addedTriggers.empty())
-				{
-					return false;
-				}
-				const auto cooldown = std::find_if(step.attributeModifiers.begin(), step.attributeModifiers.end(),
-					[](const sas::AttributeModifier& modifier) { return modifier.attributeId == CommonAttributeIds::Cooldown; });
-				if (cooldown == step.attributeModifiers.end() ||
-					cooldown->operation != sas::AttributeModifierOperation::Add ||
-					std::abs(cooldown->magnitude + GetGlobalAbilityCooldownStepReduction(16.f, index)) > 0.0001f)
 				{
 					return false;
 				}
@@ -83,12 +82,12 @@ namespace ly
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.duration <= 0.f ||
 			definition.cooldown <= 0.f || definition.attributes.size() != 1 ||
-			!HasExpectedProgression(definition.levelProgression))
+			!HasExpectedProgression(AllLevelSteps(definition)))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Reclaimer Protocol requires a duration defensive ability with one charge, positive duration and cooldown, and fourteen progression steps.";
+					"Reclaimer Protocol requires a duration defensive ability with one charge, positive duration and cooldown, and a valid HealRatio progression.";
 			}
 			return false;
 		}

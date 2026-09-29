@@ -118,28 +118,20 @@ namespace ly
 			}
 		}
 
-		bool validProgression = definition.levelProgression.size() == 14;
-		float cooldownReductionPerLevel = 0.175f + 0.025f * BaseCooldown;
-		std::size_t stepIndex = 0;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			if (!validProgression || step.attributeModifiers.size() != 3 ||
+			if (!validProgression || step.attributeModifiers.size() != 2 ||
 				!HasModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
 				!HasModifier(step,
 					AbilityData::CryoBola::Actor::Projectile::EnergyPowerDamageScale,
-					EnergyPowerDamageScalePerLevel) ||
-				!HasModifier(step, CommonAttributeIds::Cooldown,
-					-cooldownReductionPerLevel))
+					EnergyPowerDamageScalePerLevel))
 			{
 				validProgression = false;
 				break;
-			}
-			++stepIndex;
-			if (stepIndex % 4 == 0 && stepIndex < definition.levelProgression.size())
-			{
-				cooldownReductionPerLevel = cooldownReductionPerLevel >= 0.20f
-					? cooldownReductionPerLevel - 0.10f
-					: cooldownReductionPerLevel * 0.80f;
 			}
 		}
 

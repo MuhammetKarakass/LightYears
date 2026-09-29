@@ -38,12 +38,10 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 15,
         "levelUpgradeScrapCosts": [40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105],
         "rules": [
           {
             "firstLevel": 2,
-            "lastLevel": 15,
             "levelInterval": 1,
             "reward": {
               "attributeModifiers": [
@@ -139,7 +137,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 1,
         "levelUpgradeScrapCosts": [],
         "rules": []
       },
@@ -199,7 +196,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 4,
         "levelUpgradeScrapCosts": [40, 50, 65],
         "rules": [
           {
@@ -295,7 +291,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 4,
         "levelUpgradeScrapCosts": [40, 50, 65],
         "rules": [
           {
@@ -394,7 +389,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 4,
         "levelUpgradeScrapCosts": [40, 50, 65],
         "rules": [
           {
@@ -495,7 +489,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 4,
         "levelUpgradeScrapCosts": [40, 50, 65],
         "rules": [
           {
@@ -649,7 +642,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 1,
         "levelUpgradeScrapCosts": [],
         "rules": []
       },
@@ -699,7 +691,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 1,
         "levelUpgradeScrapCosts": [],
         "rules": []
       },
@@ -745,7 +736,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "maxLevel": 1,
         "levelUpgradeScrapCosts": [],
         "rules": []
       },

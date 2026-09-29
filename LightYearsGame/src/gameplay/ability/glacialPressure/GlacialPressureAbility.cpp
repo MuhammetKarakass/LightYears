@@ -231,7 +231,7 @@ namespace ly
 			value(AbilityData::GlacialPressure::Attribute::SegmentOneExtraStun) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::PushStunDuration) < 0.f ||
 			value(AbilityData::GlacialPressure::Attribute::CollisionStunDuration) < 0.f ||
-			definition.levelProgression.size() != 24 ||
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Cryo)
 		{

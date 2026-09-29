@@ -18,7 +18,6 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 16.f;
 		constexpr float BaseDuration = 1.4f;
 		constexpr float AttackPowerScale = 0.30f;
@@ -171,29 +170,20 @@ namespace ly
 			}
 		}
 
-		bool validProgression = definition.levelProgression.size() ==
-			RequiredProgressionStepCount;
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
 		if (validProgression)
 		{
-			float resolvedCooldown = definition.cooldown;
-			for (const AbilityLevelStep& step : definition.levelProgression)
+			for (const AbilityLevelStep& step : levelSteps)
 			{
-				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
+				if (step.attributeModifiers.size() != 1 || step.scalingRules.size() != 1 ||
 					!HasExpectedModifier(step, CommonAttributeIds::Damage, DamagePerLevel) ||
-					step.attributeModifiers[1].attributeId != CommonAttributeIds::Cooldown ||
-					step.attributeModifiers[1].operation != sas::AttributeModifierOperation::Add ||
-					!std::isfinite(step.attributeModifiers[1].magnitude) ||
-					step.attributeModifiers[1].magnitude >= 0.f ||
 					step.scalingRules[0].targetAttributeId != CommonAttributeIds::Damage ||
 					step.scalingRules[0].sourceAttributeId != OwnerAttributeIds::AttackPower ||
 					step.scalingRules[0].operation != sas::AttributeModifierOperation::Add ||
 					!NearlyEqual(step.scalingRules[0].coefficient, 0.05f))
-				{
-					validProgression = false;
-					break;
-				}
-				resolvedCooldown += step.attributeModifiers[1].magnitude;
-				if (resolvedCooldown <= 0.f)
 				{
 					validProgression = false;
 					break;

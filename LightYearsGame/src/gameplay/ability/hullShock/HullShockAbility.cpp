@@ -174,7 +174,7 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14 ||
+		if ((definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Electric)
 		{

@@ -278,34 +278,20 @@ namespace ly
 				true
 			);
 
-		bool validProgression = !definition.levelProgression.empty() &&
-			definition.levelUpgradeScrapCosts.size() == definition.levelProgression.size();
-		float resolvedCooldown = definition.cooldown;
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
 		if (validProgression)
 		{
-			for (const AbilityLevelStep& step : definition.levelProgression)
+			for (const AbilityLevelStep& step : levelSteps)
 			{
-				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
+				if (step.attributeModifiers.size() != 1 || step.scalingRules.size() != 1 ||
 					!step.unlockedUpgradeIds.empty() ||
 					!step.addedActions.empty() ||
 					!step.addedTriggers.empty() ||
 					!HasModifier(step, CommonAttributeIds::Damage, true) ||
-					!HasModifier(step, CommonAttributeIds::Cooldown, false) ||
 					!HasValidEnergyPowerScaling(step.scalingRules, false))
-				{
-					validProgression = false;
-					break;
-				}
-
-				const auto cooldownModifier = std::find_if(
-					step.attributeModifiers.begin(), step.attributeModifiers.end(),
-					[](const sas::AttributeModifier& modifier)
-					{
-						return modifier.attributeId == CommonAttributeIds::Cooldown;
-					}
-				);
-				resolvedCooldown += cooldownModifier->magnitude;
-				if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
 				{
 					validProgression = false;
 					break;

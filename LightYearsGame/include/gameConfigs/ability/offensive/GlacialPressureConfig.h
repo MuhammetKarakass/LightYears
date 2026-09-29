@@ -110,27 +110,18 @@ namespace AbilityData::Definitions
 				0.f
 			}
 		};
-		for (int targetLevel = 2; targetLevel <= 25; ++targetLevel)
-		{
-			const std::size_t stepIndex = static_cast<std::size_t>(targetLevel - 2);
-			const float cooldownReduction = ly::GetGlobalAbilityCooldownStepReduction(
-				definition.cooldown,
-				stepIndex
-			);
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ AbilityData::GlacialPressure::Attribute::InitialDamage, sas::AttributeModifierOperation::Add, 5.f },
-					{ AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale, sas::AttributeModifierOperation::Add, 0.02f },
-					{ AbilityData::GlacialPressure::Attribute::CollisionDamage, sas::AttributeModifierOperation::Add, 10.f },
-					{ AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale, sas::AttributeModifierOperation::Add, 0.04f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -cooldownReduction }
-				},
-				{},
-				{},
-				{},
-				{}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ AbilityData::GlacialPressure::Attribute::InitialDamage, sas::AttributeModifierOperation::Add, 5.f },
+				{ AbilityData::GlacialPressure::Attribute::EnergyPowerInitialScale, sas::AttributeModifierOperation::Add, 0.02f },
+				{ AbilityData::GlacialPressure::Attribute::CollisionDamage, sas::AttributeModifierOperation::Add, 10.f },
+				{ AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale, sas::AttributeModifierOperation::Add, 0.04f }
+			},
+			{},
+			{},
+			{},
+			{}
+		});
 		definition.levelUpgradeScrapCosts.assign(24, 60);
 		definition.damageTags = { ly::DamageTypeSchema::Cryo };
 		definition.behaviorType = ly::AbilityBehaviorType::GlacialPressure;

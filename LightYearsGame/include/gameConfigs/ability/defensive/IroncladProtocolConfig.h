@@ -30,7 +30,7 @@ namespace AbilityData::Definitions
 			{ AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale, 0.08f, 0.f },
 			{ AbilityData::IroncladProtocol::Attribute::DamageReductionFalloffHealth, 500.f, 0.01f }
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{ {
 				{ AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, sas::AttributeModifierOperation::Add, 6.f },
 				{ AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, sas::AttributeModifierOperation::Add, 0.01f },

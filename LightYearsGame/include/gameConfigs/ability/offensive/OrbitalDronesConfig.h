@@ -60,22 +60,13 @@ namespace AbilityData::Definitions
 				0.40f
 			}
 		};
-		for (int targetLevel = 2; targetLevel <= 25; ++targetLevel)
-		{
-			const std::size_t stepIndex = static_cast<std::size_t>(targetLevel - 2);
-			const float cooldownReduction = ly::GetGlobalAbilityCooldownStepReduction(
-				definition.cooldown,
-				stepIndex
-			);
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 4.f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, -cooldownReduction }
-				},
-				{}, {}, {},
-				{ { ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::AttackPower, sas::AttributeModifierOperation::Add, 0.04f } }
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 4.f }
+			},
+			{}, {}, {},
+			{ { ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::AttackPower, sas::AttributeModifierOperation::Add, 0.04f } }
+		});
 		definition.levelUpgradeScrapCosts.assign(24, 60);
 		// Physical drone contact uses the established Kinetic damage domain.
 		definition.damageTags = { ly::DamageTypeSchema::Kinetic };

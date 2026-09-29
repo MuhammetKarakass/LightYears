@@ -60,9 +60,9 @@ namespace ly
 			return AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		}
 
-		bool HasExpectedProgressionStep(const AbilityLevelStep& step, float cooldown, std::size_t index)
+		bool HasExpectedProgressionStep(const AbilityLevelStep& step)
 		{
-			if (step.attributeModifiers.size() != 4 ||
+			if (step.attributeModifiers.size() != 3 ||
 				!step.scalingRules.empty() ||
 				!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
 				!step.addedTriggers.empty())
@@ -96,14 +96,6 @@ namespace ly
 					return modifier.attributeId == AbilityData::ZeroDrag::Attribute::ThrustBonus &&
 						modifier.operation == sas::AttributeModifierOperation::Add &&
 						NearlyEqual(modifier.magnitude, 0.05f);
-				}
-			) && std::any_of(
-				step.attributeModifiers.begin(), step.attributeModifiers.end(),
-				[cooldown, index](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(modifier.magnitude, -GetGlobalAbilityCooldownStepReduction(cooldown, index));
 				}
 			);
 		}
@@ -139,12 +131,11 @@ namespace ly
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Duration &&
 			definition.maxCharges == 1 && NearlyEqual(definition.cooldown, 12.f) &&
 			NearlyEqual(definition.duration, 4.5f);
-		const bool validProgression = definition.levelProgression.size() == 14 &&
-			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
-				[&definition, index = std::size_t{ 0 }](const AbilityLevelStep& step) mutable
-				{
-					return HasExpectedProgressionStep(step, definition.cooldown, index++);
-				});
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		const bool validProgression = !levelSteps.empty() &&
+			std::all_of(levelSteps.begin(), levelSteps.end(), HasExpectedProgressionStep);
 
 		const List<sas::AttributeId> requiredAttributes = {
 			AbilityData::ZeroDrag::Attribute::EnergyPowerReference,

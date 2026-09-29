@@ -215,30 +215,20 @@ namespace
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14)
+		if (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty())
 		{
 			if (failureReason)
 			{
-				*failureReason = "Shield Harvest requires fourteen level progression steps.";
+				*failureReason = "Shield Harvest requires at least one level progression step.";
 			}
 			return false;
 		}
-		float resolvedCooldown = definition.cooldown;
-		float resolvedShieldPerEnemy = shieldPerEnemy->baseValue;
-		float resolvedPulseDamage = pulseDamage->baseValue;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const bool hasValidCooldownModifier = std::any_of(
-				step.attributeModifiers.begin(),
-				step.attributeModifiers.end(),
-				[](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						std::isfinite(modifier.magnitude) && modifier.magnitude < 0.f;
-				}
-			);
-			if (step.attributeModifiers.size() != 3 || !hasValidCooldownModifier ||
+			if (step.attributeModifiers.size() != 2 ||
 				!HasExpectedModifier(step, AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy, ShieldPerEnemyPerLevel) ||
 				!HasExpectedModifier(step, CommonAttributeIds::Damage, PulseDamagePerLevel) ||
 				!HasExpectedScalingRule(
@@ -251,38 +241,10 @@ namespace
 			{
 				if (failureReason)
 				{
-					*failureReason = "Shield Harvest progression requires shield, pulse damage, and diminishing cooldown gains.";
+					*failureReason = "Shield Harvest progression requires shield, and pulse damage gains.";
 				}
 				return false;
 			}
-			const auto cooldownModifier = std::find_if(
-				step.attributeModifiers.begin(),
-				step.attributeModifiers.end(),
-				[](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown;
-				}
-			);
-			resolvedCooldown += cooldownModifier->magnitude;
-			resolvedShieldPerEnemy += ShieldPerEnemyPerLevel;
-			resolvedPulseDamage += PulseDamagePerLevel;
-			if (resolvedCooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Shield Harvest cooldown must remain positive through level fifteen.";
-				}
-				return false;
-			}
-		}
-		if (!NearlyEqual(resolvedShieldPerEnemy, BaseShieldPerEnemy + ShieldPerEnemyPerLevel * 14.f) ||
-			!NearlyEqual(resolvedPulseDamage, BasePulseDamage + PulseDamagePerLevel * 14.f))
-		{
-			if (failureReason)
-			{
-				*failureReason = "Shield Harvest level-fifteen values must match the authored progression.";
-			}
-			return false;
 		}
 		return true;
 	}

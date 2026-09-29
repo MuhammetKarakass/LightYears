@@ -51,7 +51,6 @@ namespace ly
 		bool HasExpectedLevelStep(const AbilityLevelStep& step)
 		{
 			int damageModifiers = 0;
-			int cooldownModifiers = 0;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == CommonAttributeIds::Damage &&
@@ -60,18 +59,12 @@ namespace ly
 				{
 					++damageModifiers;
 				}
-				else if (modifier.attributeId == CommonAttributeIds::Cooldown &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::isfinite(modifier.magnitude) && modifier.magnitude <= 0.f)
-				{
-					++cooldownModifiers;
-				}
 				else
 				{
 					return false;
 				}
 			}
-			if (damageModifiers != 1 || cooldownModifiers > 1 ||
+			if (damageModifiers != 1 ||
 				step.scalingRules.size() != 1)
 			{
 				return false;
@@ -155,10 +148,15 @@ namespace ly
 		}
 
 		if (definition.damageTags != List<GameplayTag>{ DamageTypeSchema::Energy } ||
-			definition.levelProgression.size() != 14 ||
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			!std::all_of(
 				definition.levelProgression.begin(),
 				definition.levelProgression.end(),
+				HasExpectedLevelStep
+			) ||
+			!std::all_of(
+				definition.repeatingLevelProgression.begin(),
+				definition.repeatingLevelProgression.end(),
 				HasExpectedLevelStep
 			))
 		{

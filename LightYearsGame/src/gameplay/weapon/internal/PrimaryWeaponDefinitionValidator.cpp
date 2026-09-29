@@ -193,7 +193,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				return { false, "Primary weapon progression profile has an invalid level range." };
 			}
 
-			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
+			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveDistinctSteps())
 			{
 				for (const std::string& upgradeId : step.unlockedUpgradeIds)
 				{
@@ -298,7 +298,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 			const ValidationContext& context
 		)
 		{
-			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
+			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveDistinctSteps())
 			{
 				for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 				{
@@ -368,7 +368,7 @@ namespace ly::PrimaryWeaponDefinitionValidator
 					return result;
 				}
 			}
-			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
+			for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveDistinctSteps())
 			{
 				for (const sas::AttributeScalingRule& scaling : step.scalingRules)
 				{

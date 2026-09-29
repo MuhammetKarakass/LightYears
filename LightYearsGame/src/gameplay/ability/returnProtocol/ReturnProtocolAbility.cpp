@@ -53,7 +53,7 @@ namespace ly
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.duration <= 0.f ||
 			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
-			definition.attributes.size() != 5 || definition.levelProgression.size() != 14)
+			definition.attributes.size() != 5 || (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{
@@ -84,13 +84,14 @@ namespace ly
 				return false;
 			}
 		}
-		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
 			bool baseScaleMatches = false;
 			bool attackScaleMatches = false;
 			bool energyScaleMatches = false;
-			bool cooldownMatches = false;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.operation != sas::AttributeModifierOperation::Add || !std::isfinite(modifier.magnitude)) continue;
@@ -106,17 +107,12 @@ namespace ly
 				{
 					energyScaleMatches = std::abs(modifier.magnitude - 0.01f) <= 0.0001f;
 				}
-				else if (modifier.attributeId == CommonAttributeIds::Cooldown)
-				{
-					const float expected = -GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex);
-					cooldownMatches = std::abs(modifier.magnitude - expected) <= 0.0001f;
-				}
 			}
-			if (step.attributeModifiers.size() != 4 || !baseScaleMatches || !attackScaleMatches ||
-				!energyScaleMatches || !cooldownMatches || !step.unlockedUpgradeIds.empty() ||
+			if (step.attributeModifiers.size() != 3 || !baseScaleMatches || !attackScaleMatches ||
+				!energyScaleMatches || !step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() || !step.addedTriggers.empty() || !step.scalingRules.empty())
 			{
-				if (failureReason) *failureReason = "Return Protocol progression must add its three damage scalars and global cooldown at every level.";
+				if (failureReason) *failureReason = "Return Protocol progression must add its three damage scalars at every level.";
 				return false;
 			}
 		}

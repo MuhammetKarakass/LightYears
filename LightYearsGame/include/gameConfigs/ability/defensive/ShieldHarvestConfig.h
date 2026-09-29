@@ -53,21 +53,15 @@ namespace AbilityData::Definitions
 			{ ly::CommonAttributeIds::Damage,
 				ly::OwnerAttributeIds::EnergyPower, sas::AttributeModifierOperation::Add, 0.05f }
 		};
-		for (int index = 0; index < 14; ++index)
-		{
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
-						sas::AttributeModifierOperation::Add, 5.f },
-					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 2.f },
-					{ ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, index) }
-				}, {}, {}, {},
-				{ { AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
-					ly::OwnerAttributeIds::EnergyPower, sas::AttributeModifierOperation::Add, 0.01f } }
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
+					sas::AttributeModifierOperation::Add, 5.f },
+				{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 2.f }
+			}, {}, {}, {},
+			{ { AbilityData::ShieldHarvest::Attribute::ShieldPerEnemy,
+				ly::OwnerAttributeIds::EnergyPower, sas::AttributeModifierOperation::Add, 0.01f } }
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

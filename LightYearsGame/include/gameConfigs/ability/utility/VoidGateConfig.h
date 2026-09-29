@@ -74,30 +74,18 @@ namespace AbilityData::Definitions
 				0.f
 			}
 		};
-		definition.levelProgression.reserve(14);
-		for (int step = 0; step < 14; ++step)
-		{
-			const float cooldownDelta = step < 4
-				? -0.475f
-				: step < 8 ? -0.375f : step < 12 ? -0.275f : -0.175f;
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Duration,
-						sas::AttributeModifierOperation::Add,
-						0.15f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						cooldownDelta
-					}
-				},
-				{},
-				{},
-				{}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				sas::AttributeModifier{
+					ly::CommonAttributeIds::Duration,
+					sas::AttributeModifierOperation::Add,
+					0.15f
+				}
+			},
+			{},
+			{},
+			{}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

@@ -50,8 +50,7 @@ namespace AbilityData::Definitions
 				1.f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
 					{ AbilityData::ExecutionDrive::Attribute::FlatAttackPowerBonus,

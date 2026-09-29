@@ -170,37 +170,23 @@ namespace ly
 				) > 0.f;
 		}
 
-		bool validProgression = !definition.levelProgression.empty() &&
-			definition.levelUpgradeScrapCosts.size() == definition.levelProgression.size();
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
 		if (validProgression)
 		{
-			float resolvedCooldown = definition.cooldown;
-			for (const AbilityLevelStep& step : definition.levelProgression)
+			for (const AbilityLevelStep& step : levelSteps)
 			{
-				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
+				if (step.attributeModifiers.size() != 1 || step.scalingRules.size() != 1 ||
 					!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
 					!step.addedTriggers.empty() ||
 					!HasAdditiveModifier(step, CommonAttributeIds::Damage, true) ||
-					!HasAdditiveModifier(step, CommonAttributeIds::Cooldown, false) ||
 					!HasValidAttackPowerScaling(step.scalingRules, false))
 				{
 					validProgression = false;
 					break;
-				}
-				const auto cooldownModifier = std::find_if(
-					step.attributeModifiers.begin(), step.attributeModifiers.end(),
-					[](const sas::AttributeModifier& modifier)
-					{
-						return modifier.attributeId == CommonAttributeIds::Cooldown;
-					}
-				);
-				resolvedCooldown += cooldownModifier->magnitude;
-				if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
-				{
-					validProgression = false;
-					break;
-				}
-			}
+				}			}
 		}
 
 		const bool validScaling = HasValidAttackPowerScaling(definition.scalingRules, true);
@@ -211,7 +197,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-				"Solar Bombardment requires a cursor projectile, two valid explosion zones, Thermal damage, AttackPower scaling, and aligned progression costs.";
+				"Solar Bombardment requires a cursor projectile, two valid explosion zones, Thermal damage, AttackPower scaling, and a valid progression.";
 			}
 			return false;
 		}

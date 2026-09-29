@@ -23,7 +23,7 @@ namespace ly
 
 		bool HasExpectedProgressionStep(const AbilityLevelStep& step)
 		{
-			if (step.attributeModifiers.size() != 2 ||
+			if (step.attributeModifiers.size() != 1 ||
 				!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
 				!step.addedTriggers.empty())
 			{
@@ -35,15 +35,7 @@ namespace ly
 					return modifier.attributeId == CommonAttributeIds::Duration &&
 						modifier.operation == sas::AttributeModifierOperation::Add &&
 						NearlyEqual(modifier.magnitude, 0.10f);
-				}) && std::any_of(
-				step.attributeModifiers.begin(), step.attributeModifiers.end(),
-				[](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(modifier.magnitude, -0.20f);
-				}
-			);
+				});
 		}
 	}
 
@@ -72,8 +64,11 @@ namespace ly
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Duration &&
 			definition.maxCharges == 1 && NearlyEqual(definition.cooldown, 10.f) &&
 			NearlyEqual(definition.duration, 5.f);
-		const bool validProgression = definition.levelProgression.size() == 14 &&
-			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		const bool validProgression = !levelSteps.empty() &&
+			std::all_of(levelSteps.begin(), levelSteps.end(),
 				HasExpectedProgressionStep);
 
 		if (!validIdentity || !validLifecycle || !validProgression ||

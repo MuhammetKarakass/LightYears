@@ -105,7 +105,7 @@ namespace ly
 			}
 			if (unlockedUpgradeIds)
 			{
-				for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveLevelSteps())
+				for (const PrimaryWeaponLevelStep& step : definition.progressionProfile.ResolveDistinctSteps())
 				{
 					for (const PrimaryWeaponFeatureType featureType : step.unlockedFeatureTypes)
 					{

@@ -114,17 +114,19 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14 ||
-			definition.levelUpgradeScrapCosts.size() != definition.levelProgression.size() ||
+		if ((definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			!definition.triggers.empty())
 		{
 			if (failureReason)
 			{
-				*failureReason = "Execution Drive requires fourteen level steps, matching costs, and no kill triggers.";
+				*failureReason = "Execution Drive requires at least one level step and no kill triggers.";
 			}
 			return false;
 		}
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
 			const std::optional<float> flatBonus = FindAddModifierMagnitude(
 				step,

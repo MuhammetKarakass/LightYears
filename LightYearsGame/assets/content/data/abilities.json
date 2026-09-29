@@ -38,7 +38,6 @@
           60
         ],
         "steps": {
-          "count": 24,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Movement.Dash.MoveSpeedScale",
@@ -129,7 +128,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Effect.BarrierCapacity",
@@ -184,7 +182,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Duration",
@@ -256,7 +253,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.ShieldHarvest.ShieldPerEnemy",
@@ -369,7 +365,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -494,7 +489,6 @@
           60
         ],
         "steps": {
-          "count": 24,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Offense.GlacialPressure.InitialDamage",
@@ -606,7 +600,6 @@
           60
         ],
         "steps": {
-          "count": 24,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -686,7 +679,6 @@
           80
         ],
         "steps": {
-          "count": 4,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -784,7 +776,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -899,7 +890,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "AbilityActor.GravityAnomaly.Field.PullStrength",
@@ -1055,7 +1045,6 @@
           60
         ],
         "steps": {
-          "count": 4,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -1128,7 +1117,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -1195,7 +1183,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Offense.ExecutionDrive.FlatAttackPowerBonus",
@@ -1302,7 +1289,6 @@
           505
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Utility.RelayPrism.BaseTransfer",
@@ -1387,7 +1373,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Duration",
@@ -1444,7 +1429,6 @@
           80
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": []
         }
       }
@@ -1535,7 +1519,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -1635,7 +1618,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -1725,7 +1707,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -1822,7 +1803,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -1913,7 +1893,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -2038,7 +2017,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -2139,7 +2117,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -2200,7 +2177,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Duration",
@@ -2335,7 +2311,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -2457,7 +2432,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -2535,7 +2509,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -2634,7 +2607,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -2715,7 +2687,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.Cryostasis.BaseIceHealth",
@@ -2865,7 +2836,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -3003,7 +2973,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -3112,7 +3081,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -3243,7 +3211,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "AbilityActor.CombatSentry.Turret.MaxHealth",
@@ -3333,7 +3300,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -3405,7 +3371,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.ReturnProtocol.BaseReflectDamageMultiplier",
@@ -3498,7 +3463,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.TemporalRecall.BaseRecovery",
@@ -3573,7 +3537,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Duration",
@@ -3674,7 +3637,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "AbilityActor.CrystalBarricade.Wall.BaseContactDamage",
@@ -3780,7 +3742,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -3879,7 +3840,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -3970,7 +3930,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -4109,7 +4068,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -4169,7 +4127,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.ClosedCircuit.BaseBarrierHealth",
@@ -4260,7 +4217,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.IroncladProtocol.MinigunBaseDamage",
@@ -4313,7 +4269,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Duration",
@@ -4377,7 +4332,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Duration",
@@ -4508,7 +4462,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.TemporalConvergence.BaseShield",
@@ -4626,7 +4579,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -4731,7 +4683,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -4846,7 +4797,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Offense.LanceDrive.BaseDamage",
@@ -4994,7 +4944,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Offense.InertialWake.TopSpeedBonus",
@@ -5059,7 +5008,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.ShieldGraft.ConversionRatio",
@@ -5104,7 +5052,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Common.Damage",
@@ -5200,7 +5147,6 @@
           60
         ],
         "steps": {
-          "count": 14,
           "attributeModifiers": [
             {
               "attributeId": "Ability.Defense.ReclaimerProtocol.HealRatio",

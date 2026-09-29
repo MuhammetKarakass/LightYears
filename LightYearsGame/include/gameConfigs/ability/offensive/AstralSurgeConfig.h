@@ -54,37 +54,26 @@ namespace AbilityData::Definitions
 				0.60f
 			}
 		};
-		definition.levelProgression.reserve(14);
-		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
-		{
-			const float cooldownDelta = stepIndex < 4 ? -0.525f :
-				(stepIndex < 8 ? -0.425f : (stepIndex < 12 ? -0.325f : -0.225f));
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						8.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						cooldownDelta
-					}
-				},
-				{},
-				{},
-				{},
-				{
-					sas::AttributeScalingRule{
-						ly::CommonAttributeIds::Damage,
-						ly::OwnerAttributeIds::EnergyPower,
-						sas::AttributeModifierOperation::Add,
-						0.05f
-					}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				sas::AttributeModifier{
+					ly::CommonAttributeIds::Damage,
+					sas::AttributeModifierOperation::Add,
+					8.f
 				}
-			});
-		}
+			},
+			{},
+			{},
+			{},
+			{
+				sas::AttributeScalingRule{
+					ly::CommonAttributeIds::Damage,
+					ly::OwnerAttributeIds::EnergyPower,
+					sas::AttributeModifierOperation::Add,
+					0.05f
+				}
+			}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

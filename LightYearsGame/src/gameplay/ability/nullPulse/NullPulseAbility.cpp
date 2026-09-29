@@ -159,24 +159,20 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14)
+		if (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty())
 		{
 			if (failureReason)
 			{
-				*failureReason = "Null Pulse requires fourteen normal progression steps through level fifteen.";
+				*failureReason = "Null Pulse requires at least one progression step.";
 			}
 			return false;
 		}
-		float cooldown = definition.cooldown;
-		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[index];
-			const float cooldownReduction = GetGlobalAbilityCooldownStepReduction(
-				definition.cooldown,
-				index
-			);
-			if (step.attributeModifiers.size() != 3 ||
-				!HasModifier(step, CommonAttributeIds::Cooldown, -cooldownReduction) ||
+			if (step.attributeModifiers.size() != 2 ||
 				!HasModifier(step, CommonAttributeIds::Damage, 5.f) ||
 				!HasModifier(
 					step,
@@ -186,16 +182,7 @@ namespace ly
 			{
 				if (failureReason)
 				{
-					*failureReason = "Null Pulse progression must contain damage, energy scaling, and cooldown increments.";
-				}
-				return false;
-			}
-			cooldown -= cooldownReduction;
-			if (cooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Null Pulse progression must keep cooldown positive.";
+					*failureReason = "Null Pulse progression must contain damage, and energy scaling increments.";
 				}
 				return false;
 			}

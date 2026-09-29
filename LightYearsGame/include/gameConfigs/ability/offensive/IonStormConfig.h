@@ -98,39 +98,23 @@ namespace AbilityData::Definitions
 				0.15f
 			}
 		};
-		float cooldownStep = 0.425f;
-		definition.levelProgression.reserve(14);
-		for (int stepIndex = 0; stepIndex < 14; ++stepIndex)
-		{
-			ly::AbilityLevelStep step;
-			step.attributeModifiers = {
-				sas::AttributeModifier{
-					ly::CommonAttributeIds::Damage,
-					sas::AttributeModifierOperation::Add,
-					1.f
-				},
-				sas::AttributeModifier{
-					ly::CommonAttributeIds::Cooldown,
-					sas::AttributeModifierOperation::Add,
-					-cooldownStep
-				}
-			};
-			step.scalingRules = {
-				sas::AttributeScalingRule{
-					ly::CommonAttributeIds::Damage,
-					ly::OwnerAttributeIds::EnergyPower,
-					sas::AttributeModifierOperation::Add,
-					0.01f
-				}
-			};
-			definition.levelProgression.push_back(std::move(step));
-			if ((stepIndex + 1) % 4 == 0)
-			{
-				cooldownStep = cooldownStep >= 0.20f
-					? cooldownStep - 0.10f
-					: cooldownStep * 0.80f;
+		ly::AbilityLevelStep step;
+		step.attributeModifiers = {
+			sas::AttributeModifier{
+				ly::CommonAttributeIds::Damage,
+				sas::AttributeModifierOperation::Add,
+				1.f
 			}
-		}
+		};
+		step.scalingRules = {
+			sas::AttributeScalingRule{
+				ly::CommonAttributeIds::Damage,
+				ly::OwnerAttributeIds::EnergyPower,
+				sas::AttributeModifierOperation::Add,
+				0.01f
+			}
+		};
+		ly::SetRepeatingAbilityLevelStep(definition, std::move(step));
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

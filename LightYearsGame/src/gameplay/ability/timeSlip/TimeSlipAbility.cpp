@@ -63,7 +63,7 @@ namespace ly
 			!std::isfinite(definition.cooldown) || definition.cooldown <= 0.f ||
 			!std::isfinite(definition.duration) || definition.duration <= 0.f ||
 			definition.attributes.size() != 4 ||
-			definition.levelProgression.size() != 14)
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{
@@ -115,12 +115,13 @@ namespace ly
 			}
 			return false;
 		}
-		for (std::size_t stepIndex = 0; stepIndex < definition.levelProgression.size(); ++stepIndex)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[stepIndex];
 			bool durationMatches = false;
 			bool energyScaleMatches = false;
-			bool cooldownMatches = false;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.operation != sas::AttributeModifierOperation::Add || !std::isfinite(modifier.magnitude))
@@ -135,17 +136,12 @@ namespace ly
 				{
 					energyScaleMatches = std::abs(modifier.magnitude - 0.05f) <= 0.0001f;
 				}
-				else if (modifier.attributeId == CommonAttributeIds::Cooldown)
-				{
-					const float expected = -GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex);
-					cooldownMatches = std::abs(modifier.magnitude - expected) <= 0.0001f;
-				}
 			}
-			if (step.attributeModifiers.size() != 3 || !durationMatches || !energyScaleMatches || !cooldownMatches ||
+			if (step.attributeModifiers.size() != 2 || !durationMatches || !energyScaleMatches ||
 				!step.unlockedUpgradeIds.empty() || !step.addedActions.empty() ||
 				!step.addedTriggers.empty() || !step.scalingRules.empty())
 			{
-				if (failureReason) *failureReason = "Time Slip progression must add duration, EP duration scale, and global cooldown at every level.";
+				if (failureReason) *failureReason = "Time Slip progression must add duration and EP duration scale at every level.";
 				return false;
 			}
 		}

@@ -42,11 +42,13 @@ namespace ly
 
 		bool HasExpectedProgression(const GameAbilityDefinition& definition)
 		{
-			if (definition.levelProgression.size() != 14) return false;
-			for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+			List<AbilityLevelStep> levelSteps = definition.levelProgression;
+			levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+				definition.repeatingLevelProgression.end());
+			if (levelSteps.empty()) return false;
+			for (const AbilityLevelStep& step : levelSteps)
 			{
-				const AbilityLevelStep& step = definition.levelProgression[index];
-				if (step.attributeModifiers.size() != 5 || !step.scalingRules.empty()) return false;
+				if (step.attributeModifiers.size() != 4 || !step.scalingRules.empty()) return false;
 				const auto has = [&step](const sas::AttributeId& id, float magnitude)
 				{
 					return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
@@ -59,8 +61,7 @@ namespace ly
 				if (!has(AbilityData::IroncladProtocol::Attribute::MinigunBaseDamage, 6.f) ||
 					!has(AbilityData::IroncladProtocol::Attribute::MinigunAttackPowerScale, 0.04f) ||
 					!has(AbilityData::IroncladProtocol::Attribute::BaseDamageReduction, 0.01f) ||
-					!has(AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale, 0.01f) ||
-					!has(CommonAttributeIds::Cooldown, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index)))
+					!has(AbilityData::IroncladProtocol::Attribute::MaxHealthDamageReductionScale, 0.01f))
 				{
 					return false;
 				}

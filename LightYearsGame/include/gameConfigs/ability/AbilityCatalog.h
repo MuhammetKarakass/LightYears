@@ -53,22 +53,27 @@ namespace AbilityData
 			const PrimaryWeaponDefinition& weaponDefinition)
 		{
 			const bool automaticFire = weaponDefinition.automaticFire;
-			ly::List<ly::AbilityLevelStep> primaryLevelProgression;
-			for (const PrimaryWeaponLevelStep& weaponLevelStep :
-				weaponDefinition.progressionProfile.ResolveLevelSteps())
+			const auto toAbilitySteps = [](const ly::List<PrimaryWeaponLevelStep>& weaponSteps)
 			{
-				ly::AbilityLevelStep abilityLevelStep;
-				abilityLevelStep.attributeModifiers = weaponLevelStep.attributeModifiers;
-				abilityLevelStep.scalingRules = weaponLevelStep.scalingRules;
-				abilityLevelStep.unlockedUpgradeIds = weaponLevelStep.unlockedUpgradeIds;
-				for (const PrimaryWeaponFeatureType featureType : weaponLevelStep.unlockedFeatureTypes)
+				ly::List<ly::AbilityLevelStep> abilitySteps;
+				for (const PrimaryWeaponLevelStep& weaponLevelStep : weaponSteps)
 				{
-					abilityLevelStep.unlockedUpgradeIds.emplace_back(
-						PrimaryWeaponFeatureUpgradeId(featureType)
-					);
+					ly::AbilityLevelStep abilityLevelStep;
+					abilityLevelStep.attributeModifiers = weaponLevelStep.attributeModifiers;
+					abilityLevelStep.scalingRules = weaponLevelStep.scalingRules;
+					abilityLevelStep.unlockedUpgradeIds = weaponLevelStep.unlockedUpgradeIds;
+					for (const PrimaryWeaponFeatureType featureType : weaponLevelStep.unlockedFeatureTypes)
+					{
+						abilityLevelStep.unlockedUpgradeIds.emplace_back(
+							PrimaryWeaponFeatureUpgradeId(featureType)
+						);
+					}
+					abilitySteps.push_back(abilityLevelStep);
 				}
-				primaryLevelProgression.push_back(abilityLevelStep);
-			}
+				return abilitySteps;
+			};
+			const ResolvedWeaponProgression resolvedProgression =
+				weaponDefinition.progressionProfile.ResolveProgression();
 
 			ly::GameAbilityDefinition definition;
 			definition.abilityId = weaponDefinition.weaponId;
@@ -99,7 +104,8 @@ namespace AbilityData
 					automaticFire ? 0 : 1
 				}
 			};
-			definition.levelProgression = std::move(primaryLevelProgression);
+			definition.levelProgression = toAbilitySteps(resolvedProgression.prefix);
+			definition.repeatingLevelProgression = toAbilitySteps(resolvedProgression.cycle);
 			definition.levelUpgradeScrapCosts =
 				weaponDefinition.progressionProfile.levelUpgradeScrapCosts;
 			definition.damageTags = weaponDefinition.damageTags.empty()

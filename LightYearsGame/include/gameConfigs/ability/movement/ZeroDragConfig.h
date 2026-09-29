@@ -35,18 +35,13 @@ namespace AbilityData::Definitions
 			{ AbilityData::ZeroDrag::Attribute::NormalizationDuration, 1.1f, 0.01f }
 		};
 
-		for (std::size_t index = 0; index < 14; ++index)
-		{
-			ly::AbilityLevelStep step;
-			step.attributeModifiers = {
-				{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
-				{ AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale, sas::AttributeModifierOperation::Add, 0.05f },
-				{ AbilityData::ZeroDrag::Attribute::ThrustBonus, sas::AttributeModifierOperation::Add, 0.05f },
-				{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
-					-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, index) }
-			};
-			definition.levelProgression.push_back(step);
-		}
+		ly::AbilityLevelStep step;
+		step.attributeModifiers = {
+			{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
+			{ AbilityData::ZeroDrag::Attribute::EnergyPowerDurationScale, sas::AttributeModifierOperation::Add, 0.05f },
+			{ AbilityData::ZeroDrag::Attribute::ThrustBonus, sas::AttributeModifierOperation::Add, 0.05f }
+		};
+		ly::SetRepeatingAbilityLevelStep(definition, std::move(step));
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

@@ -28,7 +28,7 @@ namespace ly
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.duration <= 0.f || definition.cooldown <= 0.f || definition.maxCharges != 1 ||
-			definition.levelProgression.size() != 14)
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason) *failureReason = "Wing Sentinels requires the shipped timed OnPressed lifecycle.";
 			return false;

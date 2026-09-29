@@ -34,7 +34,7 @@ namespace ly
 
 		bool HasExpectedProgressionStep(const AbilityLevelStep& step)
 		{
-			if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
+			if (step.attributeModifiers.size() != 1 || step.scalingRules.size() != 1 ||
 				!step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() || !step.addedTriggers.empty())
 			{
@@ -46,15 +46,7 @@ namespace ly
 					return modifier.attributeId == CommonAttributeIds::Damage &&
 						modifier.operation == sas::AttributeModifierOperation::Add &&
 						NearlyEqual(modifier.magnitude, 3.f);
-				}) && std::any_of(
-				step.attributeModifiers.begin(), step.attributeModifiers.end(),
-				[](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						std::isfinite(modifier.magnitude) && modifier.magnitude < 0.f;
-				}
-			) && step.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
+				}) && step.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
 			step.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			step.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(step.scalingRules.front().coefficient, 0.02f);
@@ -103,8 +95,11 @@ namespace ly
 				AbilityData::ArcScythes::Actor::Beam::BasicDefinitionId &&
 			std::get<SpawnActorAction>(definition.actions.front().action).spawnPolicy ==
 				sas::AbilitySpawnPolicy::AtOwner;
-		const bool validProgression = definition.levelProgression.size() == 14 &&
-			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		const bool validProgression = !levelSteps.empty() &&
+			std::all_of(levelSteps.begin(), levelSteps.end(),
 				HasExpectedProgressionStep);
 		const bool validActor = beam &&
 			beam->actorType == AbilityActorType::ArcScythesBeam &&

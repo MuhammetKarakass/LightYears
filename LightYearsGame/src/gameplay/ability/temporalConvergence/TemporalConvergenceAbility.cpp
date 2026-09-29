@@ -94,18 +94,14 @@ namespace ly
 			definition.scalingRules.front().operation ==
 				sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 0.60f);
-		bool validProgression = definition.levelProgression.size() == 14;
-		for (std::size_t index = 0; validProgression && index < definition.levelProgression.size(); ++index)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
+		for (std::size_t index = 0; validProgression && index < levelSteps.size(); ++index)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[index];
-			const bool hasCooldown = std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
-				[&definition, index](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(modifier.magnitude, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index));
-				});
-			if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 || !hasCooldown)
+			const AbilityLevelStep& step = levelSteps[index];
+			if (step.attributeModifiers.size() != 1 || step.scalingRules.size() != 1)
 			{
 				validProgression = false;
 				break;

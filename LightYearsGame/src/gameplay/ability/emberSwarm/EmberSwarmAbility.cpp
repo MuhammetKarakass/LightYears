@@ -22,7 +22,6 @@ namespace ly
 	namespace
 	{
 		constexpr std::size_t DroneCount = 3;
-		constexpr std::size_t RequiredProgressionStepCount = 14;
 		constexpr float BaseCooldown = 14.f;
 		constexpr float BaseDuration = 6.f;
 		constexpr float BasePulseDamage = 6.f;
@@ -152,31 +151,22 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != RequiredProgressionStepCount)
+		if (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty())
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Ember Swarm requires fourteen progression steps through level fifteen.";
+					"Ember Swarm requires at least one progression step.";
 			}
 			return false;
 		}
 
-		float resolvedCooldown = definition.cooldown;
-		float resolvedPulseDamage = pulseDamage->baseValue;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const bool hasValidCooldownModifier = std::any_of(
-				step.attributeModifiers.begin(),
-				step.attributeModifiers.end(),
-				[](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						std::isfinite(modifier.magnitude) && modifier.magnitude < 0.f;
-				}
-			);
-			if (step.attributeModifiers.size() != 2 || !hasValidCooldownModifier ||
+			if (step.attributeModifiers.size() != 1 ||
 				!step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() ||
 				!step.addedTriggers.empty() ||
@@ -191,38 +181,11 @@ namespace ly
 				if (failureReason)
 				{
 					*failureReason =
-						"Ember Swarm progression requires damage and Energy Power gains plus a diminishing cooldown reduction.";
+						"Ember Swarm progression requires damage and Energy Power gains.";
 				}
 				return false;
 			}
 
-			const auto cooldownModifier = std::find_if(
-				step.attributeModifiers.begin(),
-				step.attributeModifiers.end(),
-				[](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == CommonAttributeIds::Cooldown;
-				}
-			);
-			resolvedCooldown += cooldownModifier->magnitude;
-			resolvedPulseDamage += PulseDamagePerLevel;
-			if (resolvedCooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason =
-						"Ember Swarm progression must keep cooldown positive at every level.";
-				}
-				return false;
-			}
-		}
-		if (!NearlyEqual(resolvedPulseDamage, BasePulseDamage + PulseDamagePerLevel * RequiredProgressionStepCount))
-		{
-			if (failureReason)
-			{
-				*failureReason = "Ember Swarm pulse damage progression must reach the authored level-fifteen value.";
-			}
-			return false;
 		}
 
 		return true;

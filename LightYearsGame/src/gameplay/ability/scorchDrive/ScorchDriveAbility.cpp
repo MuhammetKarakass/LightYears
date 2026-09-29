@@ -113,7 +113,7 @@ namespace ly
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::FireTickInterval)) ||
 			igniteStacks < 1.f || igniteStacks > 4.f ||
 			std::round(igniteStacks) != igniteStacks ||
-			definition.levelProgression.size() != 14 ||
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Thermal)
 		{

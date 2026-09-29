@@ -27,7 +27,7 @@ namespace ly
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Instant &&
 			definition.maxCharges == 1 && definition.duration == 0.f &&
-			definition.cooldown > 0.f && definition.levelProgression.size() == 14 &&
+			definition.cooldown > 0.f && (!definition.levelProgression.empty() || !definition.repeatingLevelProgression.empty()) &&
 			wallDefinition && AbilityActorRegistry::ValidateDefinition(*wallDefinition).isValid;
 		if (!valid && failureReason)
 		{

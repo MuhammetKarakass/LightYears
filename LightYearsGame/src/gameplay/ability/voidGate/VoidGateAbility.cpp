@@ -94,7 +94,7 @@ namespace ly
 			value(AbilityData::VoidGate::Attribute::ReentryCooldown) < 0.f ||
 			value(AbilityData::VoidGate::Attribute::PortalBPlacementTimeout) <= 0.f ||
 			value(AbilityData::VoidGate::Attribute::EnergyPowerDurationScale) < 0.f ||
-			definition.levelProgression.size() != 14)
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{

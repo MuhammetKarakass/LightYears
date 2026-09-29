@@ -59,18 +59,12 @@ namespace AbilityData::Definitions
 				0.30f
 			}
 		};
-		definition.levelProgression.reserve(14);
-		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
-		{
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 4.f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
-						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
-				},
-				{}, {}, {}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 4.f }
+			},
+			{}, {}, {}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

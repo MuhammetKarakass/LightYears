@@ -52,16 +52,16 @@ namespace ly
 			definition.scalingRules.front().sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			definition.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 			NearlyEqual(definition.scalingRules.front().coefficient, 1.00f);
-		const bool validProgression = definition.levelProgression.size() == 14 &&
-			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		const bool validProgression = !levelSteps.empty() &&
+			std::all_of(levelSteps.begin(), levelSteps.end(),
 				[](const AbilityLevelStep& step)
 				{
-					return step.attributeModifiers.size() == 2 && step.scalingRules.size() == 1 &&
+					return step.attributeModifiers.size() == 1 && step.scalingRules.size() == 1 &&
 						step.attributeModifiers[0].attributeId == CommonAttributeIds::Damage &&
 						NearlyEqual(step.attributeModifiers[0].magnitude, 20.f) &&
-						step.attributeModifiers[1].attributeId == CommonAttributeIds::Cooldown &&
-						std::isfinite(step.attributeModifiers[1].magnitude) &&
-						step.attributeModifiers[1].magnitude < 0.f &&
 						step.scalingRules[0].targetAttributeId == CommonAttributeIds::Damage &&
 						step.scalingRules[0].sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 						step.scalingRules[0].operation == sas::AttributeModifierOperation::Add &&

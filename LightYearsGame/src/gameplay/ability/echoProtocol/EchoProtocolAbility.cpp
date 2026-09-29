@@ -59,7 +59,7 @@ namespace ly
 				return false;
 			}
 		}
-		if (definition.levelProgression.size() != 14)
+		if ((definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{

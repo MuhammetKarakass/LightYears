@@ -38,22 +38,16 @@ namespace AbilityData::Definitions
 			{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, 0.05f, 0.f },
 			{ AbilityData::Cryostasis::Attribute::EnergyPowerReference, 100.f, 0.f }
 		};
-		definition.levelProgression.reserve(14);
-		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
-		{
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
 				{ AbilityData::Cryostasis::Attribute::BaseIceHealth, sas::AttributeModifierOperation::Add, 15.f },
 				{ AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale, sas::AttributeModifierOperation::Add, 0.03f },
 				{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, sas::AttributeModifierOperation::Add, 1.f },
 				{ AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, sas::AttributeModifierOperation::Add, 0.50f },
 				{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, sas::AttributeModifierOperation::Add, 0.50f },
-				{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, sas::AttributeModifierOperation::Add, 0.01f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
-						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
-				}, {}, {}, {}
-			});
-		}
+				{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, sas::AttributeModifierOperation::Add, 0.01f }
+			}, {}, {}, {}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

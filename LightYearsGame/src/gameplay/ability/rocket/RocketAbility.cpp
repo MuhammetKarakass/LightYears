@@ -143,65 +143,46 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14)
+		const AbilityLevelStep* firstStep = definition.ResolveLevelStep(0);
+		if (!firstStep)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Basic Rocket requires fourteen normal progression steps through level fifteen.";
+				*failureReason = "Basic Rocket requires at least one progression step.";
 			}
 			return false;
 		}
 
 		const std::optional<float> damagePerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
+			*firstStep,
 			CommonAttributeIds::Damage
 		);
-		const std::optional<float> cooldownReductionPerLevel = FindModifierMagnitude(
-			definition.levelProgression.front(),
-			CommonAttributeIds::Cooldown
-		);
-		if (!damagePerLevel || !cooldownReductionPerLevel ||
-			!std::isfinite(*damagePerLevel) || !std::isfinite(*cooldownReductionPerLevel) ||
-			*damagePerLevel <= 0.f || *cooldownReductionPerLevel >= 0.f)
+		if (!damagePerLevel || !std::isfinite(*damagePerLevel) || *damagePerLevel <= 0.f)
 		{
 			if (failureReason)
 			{
-				*failureReason = "Rocket progression must contain positive damage growth and cooldown reduction.";
+				*failureReason = "Rocket progression must contain positive damage growth.";
 			}
 			return false;
 		}
 
-		float resolvedCooldown = definition.cooldown;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
 			const std::optional<float> damageMagnitude = FindModifierMagnitude(
 				step,
 				CommonAttributeIds::Damage
 			);
-			const std::optional<float> cooldownReduction = FindModifierMagnitude(
-				step,
-				CommonAttributeIds::Cooldown
-			);
-			if (step.attributeModifiers.size() != 2 ||
+			if (step.attributeModifiers.size() != 1 ||
 				!HasExpectedModifier(step, CommonAttributeIds::Damage, *damagePerLevel) ||
 				!damageMagnitude || !std::isfinite(*damageMagnitude) || *damageMagnitude <= 0.f ||
-				!cooldownReduction ||
-				!std::isfinite(*cooldownReduction) || *cooldownReduction >= 0.f ||
 				!step.scalingRules.empty())
 			{
 				if (failureReason)
 				{
-					*failureReason = "Rocket progression may only add damage and cooldown modifiers; AttackPower scaling stays fixed.";
-				}
-				return false;
-			}
-
-			resolvedCooldown += *cooldownReduction;
-			if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Rocket progression must keep cooldown positive at every level.";
+					*failureReason = "Rocket progression may only add damage modifiers; AttackPower scaling stays fixed.";
 				}
 				return false;
 			}

@@ -517,14 +517,15 @@ namespace ly
 			std::isfinite(definition.scalingRules.front().coefficient) &&
 			definition.scalingRules.front().coefficient > 0.f;
 
-		bool validProgression = !definition.levelProgression.empty() &&
-			definition.levelUpgradeScrapCosts.size() == definition.levelProgression.size();
-		float resolvedCooldown = definition.cooldown;
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
 		if (validProgression)
 		{
-			for (const AbilityLevelStep& step : definition.levelProgression)
+			for (const AbilityLevelStep& step : levelSteps)
 			{
-				if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1 ||
+				if (step.attributeModifiers.size() != 1 || step.scalingRules.size() != 1 ||
 					!step.unlockedUpgradeIds.empty() ||
 					!step.addedActions.empty() ||
 					!step.addedTriggers.empty() ||
@@ -533,30 +534,11 @@ namespace ly
 						CommonAttributeIds::Damage,
 						true
 					) ||
-					!HasModifier(
-						step,
-						CommonAttributeIds::Cooldown,
-						false
-					) ||
 					step.scalingRules.front().targetAttributeId != CommonAttributeIds::Damage ||
 					step.scalingRules.front().sourceAttributeId != OwnerAttributeIds::EnergyPower ||
 					step.scalingRules.front().operation != sas::AttributeModifierOperation::Add ||
 					!std::isfinite(step.scalingRules.front().coefficient) ||
 					step.scalingRules.front().coefficient < 0.f)
-				{
-					validProgression = false;
-					break;
-				}
-
-				const auto cooldownModifier = std::find_if(
-					step.attributeModifiers.begin(), step.attributeModifiers.end(),
-					[](const sas::AttributeModifier& modifier)
-					{
-						return modifier.attributeId == CommonAttributeIds::Cooldown;
-					}
-				);
-				resolvedCooldown += cooldownModifier->magnitude;
-				if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
 				{
 					validProgression = false;
 					break;
@@ -570,7 +552,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-				"Chain Lightning requires its electric identity, six declared traversal and electric payload attributes, EnergyPower damage scaling, and aligned progression costs.";
+				"Chain Lightning requires its electric identity, six declared traversal and electric payload attributes, EnergyPower damage scaling, and a valid progression.";
 			}
 			return false;
 		}

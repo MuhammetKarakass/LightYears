@@ -25,9 +25,9 @@ namespace ly
 				std::abs(left - right) <= Epsilon;
 		}
 
-		bool HasExpectedLevelStep(const AbilityLevelStep& step, std::size_t stepIndex)
+		bool HasExpectedLevelStep(const AbilityLevelStep& step)
 		{
-			if (step.attributeModifiers.size() != 4 ||
+			if (step.attributeModifiers.size() != 3 ||
 				!step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() ||
 				!step.addedTriggers.empty())
@@ -38,9 +38,6 @@ namespace ly
 			bool damageStep = false;
 			bool energyDamageStep = false;
 			bool durationStep = false;
-			bool cooldownStep = false;
-			const float cooldownDelta = stepIndex < 4 ? -0.60f :
-				stepIndex < 8 ? -0.50f : stepIndex < 12 ? -0.40f : -0.30f;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == CommonAttributeIds::Damage &&
@@ -63,14 +60,8 @@ namespace ly
 				{
 					durationStep = true;
 				}
-				else if (modifier.attributeId == CommonAttributeIds::Cooldown &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					NearlyEqual(modifier.magnitude, cooldownDelta))
-				{
-					cooldownStep = true;
-				}
 			}
-			return damageStep && energyDamageStep && durationStep && cooldownStep;
+			return damageStep && energyDamageStep && durationStep;
 		}
 
 		bool HasPositiveAttribute(
@@ -146,13 +137,13 @@ namespace ly
 		const bool validDamage = definition.damageTags.size() == 1 &&
 			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Photonic);
 		const bool validScaling = definition.scalingRules.empty();
-		bool validProgression = definition.levelProgression.size() == 14;
-		for (std::size_t index = 0; validProgression &&
-			index < definition.levelProgression.size(); ++index)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		bool validProgression = !levelSteps.empty();
+		for (std::size_t index = 0; validProgression && index < levelSteps.size(); ++index)
 		{
-			validProgression = HasExpectedLevelStep(
-				definition.levelProgression[index], index
-			);
+			validProgression = HasExpectedLevelStep(levelSteps[index]);
 		}
 		const bool validActor = arena &&
 			arena->actorType == AbilityActorType::FoldspaceArena &&

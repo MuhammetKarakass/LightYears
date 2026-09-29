@@ -55,7 +55,7 @@ namespace ly
 			definition.activationPolicy != sas::AbilityActivationPolicy::OnPressed ||
 			definition.lifetimePolicy != sas::AbilityLifetimePolicy::Duration ||
 			definition.maxCharges != 1 || definition.duration <= 0.f ||
-			definition.cooldown <= 0.f || definition.levelProgression.size() != 14 ||
+			definition.cooldown <= 0.f || (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Cryo)
 		{

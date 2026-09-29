@@ -36,22 +36,16 @@ namespace AbilityData::Definitions
 			{ AbilityData::TemporalRecall::Attribute::EnergyPowerReference, 100.f, 0.f },
 			{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale, 0.05f, 0.f }
 		};
-		definition.levelProgression.reserve(14);
-		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
-		{
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
-						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) },
-					{ AbilityData::TemporalRecall::Attribute::BaseRecovery,
-						sas::AttributeModifierOperation::Add, 0.02f },
-					{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale,
-						sas::AttributeModifierOperation::Add, 0.01f },
-					{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale,
-						sas::AttributeModifierOperation::Add, 0.01f }
-				}, {}, {}, {}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ AbilityData::TemporalRecall::Attribute::BaseRecovery,
+					sas::AttributeModifierOperation::Add, 0.02f },
+				{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale,
+					sas::AttributeModifierOperation::Add, 0.01f },
+				{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale,
+					sas::AttributeModifierOperation::Add, 0.01f }
+			}, {}, {}, {}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

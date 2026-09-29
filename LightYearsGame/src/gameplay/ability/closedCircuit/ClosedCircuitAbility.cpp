@@ -24,11 +24,13 @@ namespace ly
 
 		bool HasExpectedProgression(const GameAbilityDefinition& definition)
 		{
-			if (definition.levelProgression.size() != 14) return false;
-			for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+			List<AbilityLevelStep> levelSteps = definition.levelProgression;
+			levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+				definition.repeatingLevelProgression.end());
+			if (levelSteps.empty()) return false;
+			for (const AbilityLevelStep& step : levelSteps)
 			{
-				const AbilityLevelStep& step = definition.levelProgression[index];
-				if (step.attributeModifiers.size() != 3 || !step.scalingRules.empty()) return false;
+				if (step.attributeModifiers.size() != 2 || !step.scalingRules.empty()) return false;
 				const auto has = [&step](const sas::AttributeId& id, float magnitude)
 				{
 					return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
@@ -39,8 +41,7 @@ namespace ly
 						});
 				};
 				if (!has(AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 12.f) ||
-					!has(AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.06f) ||
-					!has(CommonAttributeIds::Cooldown, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index)))
+					!has(AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.06f))
 				{
 					return false;
 				}

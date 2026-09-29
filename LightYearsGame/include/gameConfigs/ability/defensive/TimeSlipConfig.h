@@ -32,19 +32,13 @@ namespace AbilityData::Definitions
 			{ AbilityData::TimeSlip::Attribute::EnergyPowerReference, 100.f, 0.f },
 			{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale, 0.20f, 0.f }
 		};
-		definition.levelProgression.reserve(14);
-		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
-		{
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
-					{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale,
-						sas::AttributeModifierOperation::Add, 0.05f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
-						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
-				}, {}, {}, {}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
+				{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale,
+					sas::AttributeModifierOperation::Add, 0.05f }
+			}, {}, {}, {}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

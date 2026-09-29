@@ -14,7 +14,7 @@ Bu doküman, projedeki 55 yeteneğin hedef denge ve davranış sözleşmesini te
 
 | # | Yetenek / ID | Sınıf | Açıklama | Hasar tipi / Base damage | Formal + runtime scaling | Level progression / Effect |
 |---:|---|---|---|---|---|---|
-| 1 | HullShock; Ability.Offense.HullShock.Basic | Offense | Alan elektrik hasarı; basılı tutularak charge edilir; charge arttıkça hasar ve Electric stack artar | Type: Electric; Base: Common.Damage=30 | Formal: Damage + MaxHealth ölçeği; Runtime: charge süresine göre hasar ve `1–4` Electric stack seçilir; mevcut stackler sonraki vuruşu etkiler | Level: 14 seviye; Damage +4/lv; Cooldown level progression uses the global diminishing-CD rule; Effect: Electric `+%3 / +%6 / +%9 / +%16`, 4s; Radius=600; Active=2s; Charges=1 |
+| 1 | HullShock; Ability.Offense.HullShock.Basic | Offense | Alan elektrik hasarı; basılı tutularak charge edilir; charge arttıkça hasar ve Electric stack artar | Type: Electric; Base: Common.Damage=30 | Formal: Damage + MaxHealth ölçeği; Runtime: charge süresine göre hasar ve `1–4` Electric stack seçilir; mevcut stackler sonraki vuruşu etkiler | Level: her seviye Damage +4; Effect: Electric `+%3 / +%6 / +%9 / +%16`, 4s; Radius=600; Active=2s; Charges=1 |
 | 2 | GlacialPressure; Ability.Offense.GlacialPressure.Basic | Offense | Cryo hat/segment; düşük push hasarı, yüksek collision hasarı; collision iki hedefe de hasar + stun verir ve Cryo effect aktarır | Type: Cryo; Base: Ability.Offense.GlacialPressure.PushDamage=30; Ability.Offense.GlacialPressure.CollisionDamage=60 | Formal: PushBase(L) = 30 + 5 × (L - 1); PushEPScale(L) = 0.20 + 0.02 × (L - 1); PushDamage = [PushBase(L) + EP × PushEPScale(L)] × SegmentMultiplier; CollisionBase(L) = 60 + 10 × (L - 1); CollisionEPScale(L) = min(0.20 + 0.04 × (L - 1), 0.80); CollisionHP = sqrt(MaxHP_A² + MaxHP_B²); CollisionDamage = [CollisionBase(L) + CollisionHP × 0.40 + EP × CollisionEPScale(L)] × SegmentMultiplier; Runtime: SegmentMultiplier uzak→yakın = 0.60 / 0.80 / 1.00 / 1.20 / 1.40; collision damage iki düşmana da aynı uygulanır; iki hedef de stun yer; pushed hedefteki Cryo effect collision target'a aktarılır | Level: Push Damage +5/lv; Push EP Scale +0.02/lv; Collision Damage +10/lv; Collision EP Scale +0.04/lv, max 0.80; Cooldown base 10s; cooldown level progression uses the global diminishing-CD rule; Effect: Range=700; SegmentMult=0.60/0.80/1.00/1.20/1.40; CD=10; Active=1; Charges=1; collision: same damage to both targets + stun + Cryo transfer |
 | 3 | OrbitalDrones; Ability.Offense.OrbitalDrones.Basic | Offense | Yörüngeli kinetic drone; temas bazlı sürekli hasar; AP hit damage’i, AttackSpeed yörünge hızını artırır | Type: Kinetic; Base: Common.Damage=25 | Formal: `BaseDamage(L) = 25 + 4 × (L - 1)`; `APScale(L) = 0.40 + 0.04 × (L - 1)`; `DroneHitDamage = BaseDamage(L) + AttackPower × APScale(L)`; Runtime: `OrbitSpeed = 2.5 × (1 + AttackSpeed / 100)`; base 4 drone; duration sabit 6 sn; EP scaling yok; aynı drone aynı hedefe tekrar vurmak için hedeften çıkıp yeniden temas etmeli ve `0.5 sn` re-hit gate geçmeli | Level: Damage `+4/lv`; AP Scale `+0.04/lv`; cooldown level progression uses the global diminishing-CD rule; Effect: DroneCount=4; Radius=500; BaseOrbitSpeed=2.5 rad/s; CD=12; Active=6; Charges=1 |
 | 4 | SunBeam Strike; Ability.Offense.SunBeam.Strike.Basic | Offense | Telegraph sonrası hedefli Photonic impact; basit, yüksek tek-vuruş hasarı; level ve EP yatırımıyla güçlü scale olur | Type: Photonic; Base: Common.Damage=40 | Formal: `BaseDamage(L) = 40 + 10 × (L - 1)`; `EPScale(L) = 0.70 + 0.10 × (L - 1)`; `Damage = BaseDamage(L) + EnergyPower × EPScale(L)`; Runtime: target mouse world position; telegraph `0.5s`; arrival `0.2s`; impact delay `0.05s`; radius sabit `110`; secondary status/effect yok | Level: Damage `+10/lv`; EP Scale `+0.10/lv`; Cooldown base `9s`; global diminishing-CD kuralı uygulanır | Effect: Radius=110; CD=9; Telegraph=0.5; Arrival=0.2; ImpactDelay=0.05; Active=0; Charges=1 |
@@ -78,20 +78,18 @@ Bu doküman, projedeki 55 yeteneğin hedef denge ve davranış sözleşmesini te
 
  ### Global Cooldown Progression
 
-Cooldown seviye artışı tanımlanan her ability ortak **diminishing cooldown** sistemini kullanır. İstisna veya özel cooldown progression kuralı yoktur. InfernoSpray için şu anda seviye adımı tanımlı değildir.
+Seviyelerin üst sınırı yoktur; cooldown progression’ı her ability için istisnasız uygulanır ve kademeler sonsuza kadar 4 seviyede bir devam eder (L2–L5, L6–L9, L10–L13, ...).
 
 Başlangıçtaki level-başına cooldown azaltımı ability’nin temel cooldown değerinden hesaplanır:
 
 `R0 = 0.175 + 0.025 × BaseCD`
 
-Tüm ability’lerin cooldown progression’ı 4 seviyelik kademeler halinde ilerler:
+Kademeler:
 
 - **L2–L5:** `R0`
 - **L6–L9:** `R1`
 - **L10–L13:** `R2`
-- **L14–L17:** `R3`
-- **L18–L21:** `R4`
-- **L22–L25:** `R5`
+- **Sonraki her 4 seviye:** bir sonraki `R` (sonsuza kadar)
 
 Her yeni kademenin level-başına cooldown azaltımı bir önceki kademeden hesaplanır:
 
@@ -99,11 +97,11 @@ Her yeni kademenin level-başına cooldown azaltımı bir önceki kademeden hesa
 
 `Rnext = R × 0.80`, eğer `R < 0.20`
 
-Tüm ability’ler için global cooldown alt sınırı:
+Her level’ın azaltımı en az **0.02s**’dir (`Reduction = max(R, 0.02)`). Tüm ability’ler için global cooldown alt sınırı:
 
 `MinimumCooldown = 1.0s`
 
-Dolayısıyla her level artışında bulunduğu kademenin `R` değeri mevcut cooldown’dan çıkarılır; sonuç hiçbir durumda **1.0 saniyenin altına düşemez**.
+Dolayısıyla her level artışında bulunduğu kademenin azaltımı mevcut cooldown’dan çıkarılır; sonuç hiçbir durumda **1.0 saniyenin altına düşemez**.
 
 Örnek olarak `BaseCD = 10s` için:
 
@@ -117,7 +115,21 @@ Buna göre progression:
 - `L14–L17: -0.125s/lv`
 - `L18–L21: -0.100s/lv`
 - `L22–L25: -0.080s/lv`
+- `L26–L29: -0.064s/lv`
+- `L30–L33: -0.0512s/lv`
+- `L34–L37: -0.04096s/lv`
+- `L38–L41: -0.032768s/lv`
+- `L42–L45: -0.0262144s/lv`
+- `L46–L49: -0.0209715s/lv` (0.02 alt sınırının hemen üzerinde)
+- `L50 ve sonrası: -0.02s/lv` (R×0.8 < 0.02 olduğu için 0.02s alt sınırı etkin)
 
-Cooldown progression hangi level’a ulaşırsa ulaşsın nihai cooldown **1.0s altına inemez**.
+`BaseCD = 10s` için 1.0s tabanına yaklaşık **L196** seviyesinde ulaşılır (kümülatif azaltım 9.0s); sonrasında cooldown 1.0s’de kalır.
 
 Ability satırlarındaki temel cooldown değerleri bu ortak progression’a uygulanır. Ability etkisinin bitişinde cooldown başlatılması gibi lifecycle zamanlamaları bu progression kuralını değiştirmez.
+
+### Seviye modeli
+
+- Ability (ve weapon) seviyelerinin maksimumu yoktur; her seviye, satırda listelenen level-başına artışları tekrar ekler.
+- Örnek SunBeam: `Base(L) = 40 + 10 × (L - 1)`, `EPScale(L) = 0.7 + 0.1 × (L - 1)`; L5 → Base 80, EP scale 1.1.
+- Sabit bir scale (ör. AP 1.0) seviyeyle değişmez.
+- Yazılmış listenin ötesindeki scrap maliyetleri şimdilik 0’dır (maliyet sistemi sonra tasarlanacak).

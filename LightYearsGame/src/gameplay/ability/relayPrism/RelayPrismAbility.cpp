@@ -99,7 +99,7 @@ namespace ly
 		)->baseValue;
 		if (projectileCount < 1.f || baseTransfer < 0.f || energyPowerScale < 0.f ||
 			minimumScatter < 0.f || maximumScatter < minimumScatter ||
-			maximumScatter > 360.f || definition.levelProgression.size() != 14)
+			maximumScatter > 360.f || (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{

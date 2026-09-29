@@ -125,19 +125,13 @@ namespace AbilityData::Definitions
 				AbilityData::FrozenThrong::DefaultEnergyPowerScale
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
 					sas::AttributeModifier{
 						ly::CommonAttributeIds::Damage,
 						sas::AttributeModifierOperation::Add,
 						7.f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.30f
 					}
 				},
 				{},

@@ -41,15 +41,9 @@ namespace AbilityData::Definitions
 				0.f
 			}
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						-0.20f
-					},
 					sas::AttributeModifier{
 						AbilityData::ShieldGraft::Attribute::ConversionRatio,
 						sas::AttributeModifierOperation::Add,

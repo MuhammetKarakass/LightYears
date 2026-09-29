@@ -247,9 +247,8 @@ namespace ly::content
 			const std::string& ownerLabel = ""
 		)
 		{
-			WeaponProgressionProfile profile{
-				object.value("maxLevel", 1)
-			};
+			// Weapon levels are unbounded; any legacy "maxLevel" key is ignored.
+			WeaponProgressionProfile profile;
 			profile.levelUpgradeScrapCosts = object.value(
 				"levelUpgradeScrapCosts",
 				ly::List<unsigned int>{}
@@ -263,7 +262,7 @@ namespace ly::content
 					std::to_string(ruleIndex++) + "].reward";
 				profile.rules.emplace_back(WeaponLevelRule{
 					rule.value("firstLevel", 2),
-					rule.value("lastLevel", 2),
+					rule.value("lastLevel", kOpenEndedWeaponLevel),
 					rule.value("levelInterval", 1),
 					ParseLevelStep(rule.at("reward"), ruleContext)
 				});

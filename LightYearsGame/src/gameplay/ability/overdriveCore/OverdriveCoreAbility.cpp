@@ -180,16 +180,20 @@ namespace ly
 		}
 
 		if (!HasPositiveAttackPowerScaling(definition, CommonAttributeIds::Damage) ||
-			definition.scalingRules.size() != 1 || definition.levelProgression.size() != 4)
+			definition.scalingRules.size() != 1 ||
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()))
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Overdrive Core requires one AttackPower damage rule and four progression steps.";
+					"Overdrive Core requires one AttackPower damage rule and at least one progression step.";
 			}
 			return false;
 		}
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
 			const std::optional<float> damageIncrease = FindAddModifierMagnitude(
 				step,
@@ -199,25 +203,20 @@ namespace ly
 				step,
 				AbilityData::OverdriveCore::Attribute::AttackSpeedBoostBase
 			);
-			const std::optional<float> cooldownChange = FindAddModifierMagnitude(
-				step,
-				CommonAttributeIds::Cooldown
-			);
 			const bool hasAttackPowerProgression = step.scalingRules.size() == 1 &&
 				step.scalingRules.front().targetAttributeId == CommonAttributeIds::Damage &&
 				step.scalingRules.front().sourceAttributeId == OwnerAttributeIds::AttackPower &&
 				step.scalingRules.front().operation == sas::AttributeModifierOperation::Add &&
 				std::isfinite(step.scalingRules.front().coefficient) &&
 				step.scalingRules.front().coefficient > 0.f;
-			if (step.attributeModifiers.size() != 3 || !damageIncrease ||
+			if (step.attributeModifiers.size() != 2 || !damageIncrease ||
 				!std::isfinite(*damageIncrease) || *damageIncrease <= 0.f || !boostIncrease ||
-				!std::isfinite(*boostIncrease) || *boostIncrease < 0.f || !cooldownChange ||
-				!std::isfinite(*cooldownChange) || *cooldownChange >= 0.f ||
+				!std::isfinite(*boostIncrease) || *boostIncrease < 0.f ||
 				!hasAttackPowerProgression)
 			{
 				if (failureReason)
 				{
-					*failureReason = "Overdrive Core progression must add damage, AP scaling and attack-speed boost while reducing cooldown.";
+					*failureReason = "Overdrive Core progression must add damage, AP scaling and attack-speed boost.";
 				}
 				return false;
 			}

@@ -34,11 +34,9 @@ namespace ly
 				std::isfinite(rule.coefficient) && rule.coefficient > 0.f;
 		}
 
-		bool HasValidProgressionStep(const AbilityLevelStep& step, float& cooldownDelta)
+		bool HasValidProgressionStep(const AbilityLevelStep& step)
 		{
 			int damageModifiers = 0;
-			int cooldownModifiers = 0;
-			cooldownDelta = 0.f;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
 				if (modifier.attributeId == CommonAttributeIds::Damage &&
@@ -47,19 +45,12 @@ namespace ly
 				{
 					++damageModifiers;
 				}
-				else if (modifier.attributeId == CommonAttributeIds::Cooldown &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::isfinite(modifier.magnitude) && modifier.magnitude <= 0.f)
-				{
-					++cooldownModifiers;
-					cooldownDelta += modifier.magnitude;
-				}
 				else
 				{
 					return false;
 				}
 			}
-			return damageModifiers == 1 && cooldownModifiers <= 1 &&
+			return damageModifiers == 1 &&
 				step.scalingRules.size() == 1 &&
 				IsEnergyPowerDamageRule(step.scalingRules.front());
 		}
@@ -162,40 +153,31 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != 14)
+		if (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty())
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Rail Burst requires fourteen progression steps through level fifteen.";
+					"Rail Burst requires at least one progression step.";
 			}
 			return false;
 		}
 
-		float resolvedCooldown = definition.cooldown;
-		for (const AbilityLevelStep& step : definition.levelProgression)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			float cooldownDelta = 0.f;
-			if (!HasValidProgressionStep(step, cooldownDelta))
+			if (!HasValidProgressionStep(step))
 			{
 				if (failureReason)
 				{
 					*failureReason =
-						"Rail Burst progression must add damage and EnergyPower scaling; cooldown may only stay or decrease.";
+						"Rail Burst progression must add damage and EnergyPower scaling.";
 				}
 				return false;
 			}
 
-			resolvedCooldown += cooldownDelta;
-			if (resolvedCooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason =
-						"Rail Burst progression must keep cooldown positive at every level.";
-				}
-				return false;
-			}
 		}
 
 		return true;

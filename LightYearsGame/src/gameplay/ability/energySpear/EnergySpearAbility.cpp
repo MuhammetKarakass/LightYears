@@ -80,23 +80,19 @@ namespace ly
 				std::abs(rule.coefficient - 0.50f) <= 0.0001f;
 		}
 
-		bool HasExpectedLevelStep(const AbilityLevelStep& step, float cooldown, std::size_t index)
+		bool HasExpectedLevelStep(const AbilityLevelStep& step)
 		{
-			if (step.attributeModifiers.size() != 2 || step.scalingRules.size() != 1)
+			if (step.attributeModifiers.size() != 1 || step.scalingRules.size() != 1)
 			{
 				return false;
 			}
 
 			const auto damageModifier = std::find_if(step.attributeModifiers.begin(), step.attributeModifiers.end(),
 				[](const sas::AttributeModifier& modifier) { return modifier.attributeId == CommonAttributeIds::Damage; });
-			const auto cooldownModifier = std::find_if(step.attributeModifiers.begin(), step.attributeModifiers.end(),
-				[](const sas::AttributeModifier& modifier) { return modifier.attributeId == CommonAttributeIds::Cooldown; });
 			const sas::AttributeScalingRule& energyScaling = step.scalingRules.front();
-			return damageModifier != step.attributeModifiers.end() && cooldownModifier != step.attributeModifiers.end() &&
+			return damageModifier != step.attributeModifiers.end() &&
 				damageModifier->operation == sas::AttributeModifierOperation::Add &&
 				std::abs(damageModifier->magnitude - 5.f) <= 0.0001f &&
-				cooldownModifier->operation == sas::AttributeModifierOperation::Add &&
-				std::abs(cooldownModifier->magnitude + GetGlobalAbilityCooldownStepReduction(cooldown, index)) <= 0.0001f &&
 				energyScaling.targetAttributeId == AbilityData::EnergySpear::Attribute::Damage &&
 				energyScaling.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 				energyScaling.operation == sas::AttributeModifierOperation::Add &&
@@ -188,12 +184,11 @@ namespace ly
 
 		if (definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Energy ||
-			definition.levelProgression.size() != 14 ||
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			!std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
-				[&definition, index = std::size_t{ 0 }](const AbilityLevelStep& step) mutable
-				{
-					return HasExpectedLevelStep(step, definition.cooldown, index++);
-				}))
+				HasExpectedLevelStep) ||
+			!std::all_of(definition.repeatingLevelProgression.begin(), definition.repeatingLevelProgression.end(),
+				HasExpectedLevelStep))
 		{
 			if (failureReason)
 			{

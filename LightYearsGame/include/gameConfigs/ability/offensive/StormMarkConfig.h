@@ -82,24 +82,18 @@ namespace AbilityData::Definitions
 		};
 		// Behavior owns focus, target snapshot and delayed strikes. No generic
 		// action is declared because it would execute before the focus completes.
-		definition.levelProgression.reserve(14);
-		for (int level = 0; level < 14; ++level)
-		{
-			const float cooldownDelta = -ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, level);
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 15.f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add, cooldownDelta }
-				},
-				{},
-				{},
-				{},
-				{
-					{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::EnergyPower,
-						sas::AttributeModifierOperation::Add, 0.03f }
-				}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 15.f }
+			},
+			{},
+			{},
+			{},
+			{
+				{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::EnergyPower,
+					sas::AttributeModifierOperation::Add, 0.03f }
+			}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

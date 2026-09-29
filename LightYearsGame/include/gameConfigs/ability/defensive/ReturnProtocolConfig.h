@@ -32,22 +32,16 @@ namespace AbilityData::Definitions
 			{ AbilityData::ReturnProtocol::Attribute::EnergyPowerReference, 100.f, 0.f },
 			{ AbilityData::ReturnProtocol::Attribute::EnergyPowerScale, 0.12f, 0.f }
 		};
-		definition.levelProgression.reserve(14);
-		for (std::size_t stepIndex = 0; stepIndex < 14; ++stepIndex)
-		{
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					{ AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier,
-						sas::AttributeModifierOperation::Add, 0.04f },
-					{ AbilityData::ReturnProtocol::Attribute::AttackPowerScale,
-						sas::AttributeModifierOperation::Add, 0.01f },
-					{ AbilityData::ReturnProtocol::Attribute::EnergyPowerScale,
-						sas::AttributeModifierOperation::Add, 0.01f },
-					{ ly::CommonAttributeIds::Cooldown, sas::AttributeModifierOperation::Add,
-						-ly::GetGlobalAbilityCooldownStepReduction(definition.cooldown, stepIndex) }
-				}, {}, {}, {}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				{ AbilityData::ReturnProtocol::Attribute::BaseReflectDamageMultiplier,
+					sas::AttributeModifierOperation::Add, 0.04f },
+				{ AbilityData::ReturnProtocol::Attribute::AttackPowerScale,
+					sas::AttributeModifierOperation::Add, 0.01f },
+				{ AbilityData::ReturnProtocol::Attribute::EnergyPowerScale,
+					sas::AttributeModifierOperation::Add, 0.01f }
+			}, {}, {}, {}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

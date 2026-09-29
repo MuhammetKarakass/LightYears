@@ -59,16 +59,13 @@ namespace AbilityData::Definitions
 			{ AbilityData::LanceDrive::Attribute::OpeningAngleDegrees, 50.f, 0.f },
 			{ AbilityData::LanceDrive::Attribute::LateralKnockback, 75.f, 0.f }
 		};
-		definition.levelProgression = ly::MakeRepeatedAbilityLevelProgression(
-			14,
+		ly::SetRepeatingAbilityLevelStep(definition,
 			ly::AbilityLevelStep{
 				{
 					{ AbilityData::LanceDrive::Attribute::BaseDamage,
 						sas::AttributeModifierOperation::Add, 5.f },
 					{ AbilityData::LanceDrive::Attribute::SpeedDamageConversion,
-						sas::AttributeModifierOperation::Add, 0.04f },
-					{ ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add, -0.25f }
+						sas::AttributeModifierOperation::Add, 0.04f }
 				},
 				{}, {}, {}
 			}

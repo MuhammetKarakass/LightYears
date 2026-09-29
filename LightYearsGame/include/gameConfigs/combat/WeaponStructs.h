@@ -8,6 +8,8 @@
 #include "gameplay/damage/DamageContext.h"
 #include <string>
 #include <optional>
+#include <numeric>
+#include <algorithm>
 
 enum class PrimaryWeaponType
 {
@@ -280,22 +282,37 @@ struct PrimaryWeaponLevelStep
 	ly::List<PrimaryWeaponFeatureType> unlockedFeatureTypes;
 };
 
+// lastLevel == kOpenEndedWeaponLevel means the rule keeps applying forever.
+inline constexpr int kOpenEndedWeaponLevel = 0;
+inline constexpr int kMaxWeaponCycleLength = 64;
+
 // A rule applies its reward to every matching weapon level, inclusively.
 // Weapon level one is the base definition; progression starts at level two.
 struct WeaponLevelRule
 {
 	int firstLevel = 2;
-	int lastLevel = 2;
+	int lastLevel = kOpenEndedWeaponLevel;
 	int levelInterval = 1;
 	PrimaryWeaponLevelStep reward;
+
+	bool IsOpenEnded() const { return lastLevel == kOpenEndedWeaponLevel; }
 
 	bool AppliesAt(int weaponLevel) const
 	{
 		return weaponLevel >= firstLevel &&
-			weaponLevel <= lastLevel &&
+			(IsOpenEnded() || weaponLevel <= lastLevel) &&
 			levelInterval > 0 &&
 			(weaponLevel - firstLevel) % levelInterval == 0;
 	}
+};
+
+// Weapon progression is unbounded: level N re-applies per-level rewards forever.
+// Steps are an authored prefix (index 0 reaches level two) plus a cycle that
+// repeats after the prefix (cycle[0] is the first level after the prefix).
+struct ResolvedWeaponProgression
+{
+	ly::List<PrimaryWeaponLevelStep> prefix;
+	ly::List<PrimaryWeaponLevelStep> cycle;
 };
 
 // Keeps weapon progression declarative without forcing a hand-written step for
@@ -303,16 +320,10 @@ struct WeaponLevelRule
 // for milestones or temporary growth bands.
 struct WeaponProgressionProfile
 {
-	int maxLevel = 1;
 	ly::List<WeaponLevelRule> rules;
-	// Indexed by target level minus two: [0] purchases level two.
-	// An empty list keeps the profile usable for non-purchasable weapons.
+	// Indexed by target level minus two: [0] purchases level two. Levels beyond
+	// the list cost 0 and remain purchasable; an empty list is not purchasable.
 	ly::List<unsigned int> levelUpgradeScrapCosts;
-
-	WeaponProgressionProfile(int inMaxLevel = 1)
-		: maxLevel(inMaxLevel)
-	{
-	}
 
 	WeaponProgressionProfile& EveryLevel(
 		const ly::List<sas::AttributeModifier>& modifiers,
@@ -321,7 +332,7 @@ struct WeaponProgressionProfile
 		const ly::List<sas::AttributeScalingRule>& scalingRules = {}
 	)
 	{
-		return BetweenLevels(2, maxLevel, modifiers, upgradeIds, featureTypes, 1, scalingRules);
+		return BetweenLevels(2, kOpenEndedWeaponLevel, modifiers, upgradeIds, featureTypes, 1, scalingRules);
 	}
 
 	WeaponProgressionProfile& ScrapCosts(const ly::List<unsigned int>& costs)
@@ -341,6 +352,7 @@ struct WeaponProgressionProfile
 		return BetweenLevels(level, level, modifiers, upgradeIds, featureTypes, 1, scalingRules);
 	}
 
+	// lastLevel == kOpenEndedWeaponLevel makes the band open-ended.
 	WeaponProgressionProfile& BetweenLevels(
 		int firstLevel,
 		int lastLevel,
@@ -371,7 +383,7 @@ struct WeaponProgressionProfile
 	{
 		return BetweenLevels(
 			firstLevel,
-			maxLevel,
+			kOpenEndedWeaponLevel,
 			modifiers,
 			upgradeIds,
 			featureTypes,
@@ -382,59 +394,86 @@ struct WeaponProgressionProfile
 
 	bool IsWellFormed() const
 	{
-		if (maxLevel < 1)
-		{
-			return false;
-		}
+		int cycleLength = 1;
 		for (const WeaponLevelRule& rule : rules)
 		{
 			if (rule.firstLevel < 2 ||
-				rule.lastLevel < rule.firstLevel ||
-				rule.lastLevel > maxLevel ||
-				rule.levelInterval <= 0)
+				rule.levelInterval <= 0 ||
+				(!rule.IsOpenEnded() && rule.lastLevel < rule.firstLevel))
 			{
 				return false;
 			}
-		}
-		if (!levelUpgradeScrapCosts.empty())
-		{
-			if (levelUpgradeScrapCosts.size() != static_cast<size_t>(maxLevel - 1))
+			if (rule.IsOpenEnded())
 			{
-				return false;
-			}
-			for (const unsigned int cost : levelUpgradeScrapCosts)
-			{
-				if (cost == 0)
+				cycleLength = std::lcm(cycleLength, rule.levelInterval);
+				if (cycleLength > kMaxWeaponCycleLength)
 				{
 					return false;
 				}
 			}
 		}
+		for (const unsigned int cost : levelUpgradeScrapCosts)
+		{
+			if (cost == 0)
+			{
+				return false;
+			}
+		}
 		return true;
 	}
 
+	// Authored cost, or 0 for levels beyond the list (still purchasable).
 	unsigned int GetScrapCostToReachLevel(int weaponLevel) const
 	{
-		if (weaponLevel < 2 || weaponLevel > maxLevel ||
-			levelUpgradeScrapCosts.size() != static_cast<size_t>(maxLevel - 1))
+		if (weaponLevel < 2)
 		{
 			return 0;
 		}
-		return levelUpgradeScrapCosts[static_cast<size_t>(weaponLevel - 2)];
+		const size_t index = static_cast<size_t>(weaponLevel - 2);
+		return index < levelUpgradeScrapCosts.size() ? levelUpgradeScrapCosts[index] : 0;
 	}
 
-	ly::List<PrimaryWeaponLevelStep> ResolveLevelSteps() const
+	// Every distinct step (prefix followed by one cycle); for validators/scanners.
+	ly::List<PrimaryWeaponLevelStep> ResolveDistinctSteps() const
 	{
-		ly::List<PrimaryWeaponLevelStep> steps;
-		if (!IsWellFormed() || maxLevel <= 1)
+		ResolvedWeaponProgression progression = ResolveProgression();
+		progression.prefix.insert(
+			progression.prefix.end(), progression.cycle.begin(), progression.cycle.end());
+		return progression.prefix;
+	}
+
+	// prefix covers levels 2..P where P = max(highest bounded lastLevel, highest
+	// open-ended firstLevel - 1). Past P only open-ended rules apply, and each one
+	// repeats with its interval, so the rewards are periodic with C = lcm(intervals)
+	// (<= kMaxWeaponCycleLength). cycle[i] holds the rewards for level P + 1 + i.
+	ResolvedWeaponProgression ResolveProgression() const
+	{
+		ResolvedWeaponProgression result;
+		if (!IsWellFormed())
 		{
-			return steps;
+			return result;
 		}
 
-		steps.resize(static_cast<size_t>(maxLevel - 1));
-		for (int level = 2; level <= maxLevel; ++level)
+		int prefixEnd = 1;
+		int cycleLength = 1;
+		bool hasOpenRule = false;
+		for (const WeaponLevelRule& rule : rules)
 		{
-			PrimaryWeaponLevelStep& resolvedStep = steps[static_cast<size_t>(level - 2)];
+			if (rule.IsOpenEnded())
+			{
+				hasOpenRule = true;
+				prefixEnd = std::max(prefixEnd, rule.firstLevel - 1);
+				cycleLength = std::lcm(cycleLength, rule.levelInterval);
+			}
+			else
+			{
+				prefixEnd = std::max(prefixEnd, rule.lastLevel);
+			}
+		}
+
+		const auto resolveLevel = [this](int level)
+		{
+			PrimaryWeaponLevelStep resolvedStep;
 			for (const WeaponLevelRule& rule : rules)
 			{
 				if (!rule.AppliesAt(level))
@@ -462,8 +501,22 @@ struct WeaponProgressionProfile
 					rule.reward.unlockedFeatureTypes.end()
 				);
 			}
+			return resolvedStep;
+		};
+
+		for (int level = 2; level <= prefixEnd; ++level)
+		{
+			result.prefix.push_back(resolveLevel(level));
 		}
-		return steps;
+		if (hasOpenRule)
+		{
+			const int firstCycleLevel = std::max(prefixEnd, 1) + 1;
+			for (int i = 0; i < cycleLength; ++i)
+			{
+				result.cycle.push_back(resolveLevel(firstCycleLevel + i));
+			}
+		}
+		return result;
 	}
 };
 

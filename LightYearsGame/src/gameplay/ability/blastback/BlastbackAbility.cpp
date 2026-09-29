@@ -135,7 +135,7 @@ namespace ly
 			value(AbilityData::Blastback::Attribute::InnerPushMultiplier) < 1.f ||
 			value(AbilityData::Blastback::Attribute::RecoilInitialSpeed) < 0.f ||
 			value(AbilityData::Blastback::Attribute::RecoilDuration) <= 0.f ||
-			definition.levelProgression.size() != 14 ||
+			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
 			definition.damageTags.size() != 1 ||
 			definition.damageTags.front() != DamageTypeSchema::Thermal ||
 			!PresentationProfileRegistry<BlastbackPresentationProfile>::Find(

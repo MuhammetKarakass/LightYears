@@ -71,43 +71,25 @@ namespace AbilityData::Definitions
 			sas::GameplayAttribute{
 				AbilityData::FoldspaceArena::Attribute::EnergyPowerDurationScale,
 				0.75f,
-				0.f
-			}
-		};
-		const float cooldownDeltas[] = {
-			-0.600f, -0.600f, -0.600f, -0.600f,
-			-0.500f, -0.500f, -0.500f, -0.500f,
-			-0.400f, -0.400f, -0.400f, -0.400f,
-			-0.300f, -0.300f
-		};
-		definition.levelProgression.reserve(14);
-		for (const float cooldownDelta : cooldownDeltas)
-		{
-			definition.levelProgression.push_back(ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						5.f
-					},
-					sas::AttributeModifier{
-						AbilityData::FoldspaceArena::Attribute::EnergyPowerDamageScale,
-						sas::AttributeModifierOperation::Add,
-						0.02f
-					},
-					sas::AttributeModifier{
-						AbilityData::FoldspaceArena::Attribute::BaseArenaDuration,
-						sas::AttributeModifierOperation::Add,
-						0.15f
-					},
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Cooldown,
-						sas::AttributeModifierOperation::Add,
-						cooldownDelta
-					}
-				}, {}, {}, {}
-			});
-		}
+		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
+			{
+				sas::AttributeModifier{
+					ly::CommonAttributeIds::Damage,
+					sas::AttributeModifierOperation::Add,
+					5.f
+				},
+				sas::AttributeModifier{
+					AbilityData::FoldspaceArena::Attribute::EnergyPowerDamageScale,
+					sas::AttributeModifierOperation::Add,
+					0.02f
+				},
+				sas::AttributeModifier{
+					AbilityData::FoldspaceArena::Attribute::BaseArenaDuration,
+					sas::AttributeModifierOperation::Add,
+					0.15f
+				}
+			}, {}, {}, {}
+		});
 		definition.levelUpgradeScrapCosts = {
 			60, 60, 60, 60, 60, 60, 60,
 			60, 60, 60, 60, 60, 60, 60

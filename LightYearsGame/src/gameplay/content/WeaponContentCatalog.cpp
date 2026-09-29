@@ -152,10 +152,10 @@ namespace ly::content
 			Fail(failureReason, "Weapon '" + weaponId + "' has an invalid progression profile.");
 			return std::nullopt;
 		}
-		if (weaponLevel < 1 || weaponLevel > weapon->progressionProfile.maxLevel)
+		if (weaponLevel < 1)
 		{
 			Fail(failureReason, "Weapon '" + weaponId + "' level " + std::to_string(weaponLevel) +
-				" is outside the authored range 1.." + std::to_string(weapon->progressionProfile.maxLevel) + ".");
+				" must be at least 1.");
 			return std::nullopt;
 		}
 
@@ -186,10 +186,22 @@ namespace ly::content
 		List<sas::AttributeModifier> modifiers;
 		for (const sas::AttributeModifier& modifier : weapon->attributeModifiers)
 			if (modifier.attributeId == attributeId) modifiers.push_back(modifier);
-		const List<PrimaryWeaponLevelStep> steps = weapon->progressionProfile.ResolveLevelSteps();
+		const ResolvedWeaponProgression progression = weapon->progressionProfile.ResolveProgression();
 		for (int level = 1; level < weaponLevel; ++level)
 		{
-			const PrimaryWeaponLevelStep& step = steps[static_cast<size_t>(level - 1)];
+			// Step reaching level (level + 1): prefix first, then the repeating cycle.
+			const size_t stepIndex = static_cast<size_t>(level - 1);
+			const PrimaryWeaponLevelStep emptyStep;
+			const PrimaryWeaponLevelStep* stepPtr = &emptyStep;
+			if (stepIndex < progression.prefix.size())
+			{
+				stepPtr = &progression.prefix[stepIndex];
+			}
+			else if (!progression.cycle.empty())
+			{
+				stepPtr = &progression.cycle[(stepIndex - progression.prefix.size()) % progression.cycle.size()];
+			}
+			const PrimaryWeaponLevelStep& step = *stepPtr;
 			if (attributeId == CommonAttributeIds::Range)
 			{
 				for (const sas::AttributeScalingRule& rule : step.scalingRules)

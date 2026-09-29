@@ -19,7 +19,6 @@ namespace ly
 	namespace
 	{
 		constexpr std::size_t RequiredAttributeCount = 7;
-		constexpr std::size_t RequiredProgressionStepCount = 14;
 
 		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
 		{
@@ -81,8 +80,8 @@ namespace ly
 		const bool validRuntimeOwnership = definition.actions.empty() &&
 			definition.triggers.empty() && definition.effectSpecs.empty() &&
 			definition.scalingRules.empty();
-		const bool validProgression = definition.levelProgression.size() ==
-			RequiredProgressionStepCount;
+		const bool validProgression = !definition.levelProgression.empty() ||
+			!definition.repeatingLevelProgression.empty();
 
 		if (!validIdentity || !validLifecycle || !validAttributes ||
 			!validRuntimeOwnership || !validProgression)
@@ -90,7 +89,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Nano Plague requires an instant electric infection with seven runtime attributes and fourteen progression steps.";
+					"Nano Plague requires an instant electric infection with seven runtime attributes and at least one progression step.";
 			}
 			return false;
 		}

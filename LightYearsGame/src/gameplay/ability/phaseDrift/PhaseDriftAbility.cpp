@@ -61,13 +61,14 @@ namespace ly
 		std::string* failureReason
 	) const
 	{
-		std::size_t progressionIndex = 0;
-		const bool validProgression = definition.levelProgression.size() == 14 &&
-			std::all_of(definition.levelProgression.begin(), definition.levelProgression.end(),
-				[&definition, &progressionIndex](const AbilityLevelStep& step)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		const bool validProgression = !levelSteps.empty() &&
+			std::all_of(levelSteps.begin(), levelSteps.end(),
+				[](const AbilityLevelStep& step)
 				{
-					const std::size_t index = progressionIndex++;
-					if (step.attributeModifiers.size() != 4 || !step.scalingRules.empty()) return false;
+					if (step.attributeModifiers.size() != 3 || !step.scalingRules.empty()) return false;
 					const auto has = [&step](const sas::AttributeId& id, float magnitude)
 					{
 						return std::any_of(step.attributeModifiers.begin(), step.attributeModifiers.end(),
@@ -80,8 +81,7 @@ namespace ly
 					};
 					return has(CommonAttributeIds::Duration, 0.05f) &&
 						has(AbilityData::PhaseDrift::Attribute::EPDurationScale, 0.05f) &&
-						has(AbilityData::PhaseDrift::Attribute::MovementSpeedBonus, 0.02f) &&
-						has(CommonAttributeIds::Cooldown, -GetGlobalAbilityCooldownStepReduction(definition.cooldown, index));
+						has(AbilityData::PhaseDrift::Attribute::MovementSpeedBonus, 0.02f);
 				});
 		if (definition.abilityId != AbilityData::PhaseDrift::AbilityId::Basic ||
 			!sas::IsLoadoutAbilitySlot(definition.slot) ||

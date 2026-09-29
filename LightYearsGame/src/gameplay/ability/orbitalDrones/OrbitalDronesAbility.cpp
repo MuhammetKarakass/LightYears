@@ -22,7 +22,6 @@ namespace ly
 	{
 		constexpr std::size_t RequiredDroneCount = 4;
 		constexpr std::size_t RequiredAttributeCount = 6;
-		constexpr std::size_t RequiredProgressionStepCount = 24;
 		constexpr float BaseDuration = 6.f;
 		constexpr float BaseOrbitRadius = 500.f;
 		constexpr float BaseDamage = 25.f;
@@ -245,54 +244,38 @@ namespace ly
 			return false;
 		}
 
-		if (definition.levelProgression.size() != RequiredProgressionStepCount)
+		if (definition.levelProgression.empty() && definition.repeatingLevelProgression.empty())
 		{
 			if (failureReason)
 			{
 				*failureReason =
-					"Orbital Drones requires twenty-four progression steps through level twenty-five.";
+					"Orbital Drones requires at least one progression step.";
 			}
 			return false;
 		}
 
-		float resolvedCooldown = definition.cooldown;
-		for (std::size_t index = 0; index < definition.levelProgression.size(); ++index)
+		List<AbilityLevelStep> levelSteps = definition.levelProgression;
+		levelSteps.insert(levelSteps.end(), definition.repeatingLevelProgression.begin(),
+			definition.repeatingLevelProgression.end());
+		for (const AbilityLevelStep& step : levelSteps)
 		{
-			const AbilityLevelStep& step = definition.levelProgression[index];
 			const sas::AttributeModifier* damageModifier = FindModifier(
 				step,
 				CommonAttributeIds::Damage
 			);
-			const sas::AttributeModifier* cooldownModifier = FindModifier(
-				step,
-				CommonAttributeIds::Cooldown
-			);
-			if (step.attributeModifiers.size() != 2 ||
+			if (step.attributeModifiers.size() != 1 ||
 				!step.unlockedUpgradeIds.empty() ||
 				!step.addedActions.empty() ||
 				!step.addedTriggers.empty() ||
 				!damageModifier ||
 				damageModifier->operation != sas::AttributeModifierOperation::Add ||
 				!std::isfinite(damageModifier->magnitude) || damageModifier->magnitude <= 0.f ||
-				!cooldownModifier ||
-				cooldownModifier->operation != sas::AttributeModifierOperation::Add ||
-				!std::isfinite(cooldownModifier->magnitude) || cooldownModifier->magnitude > 0.f ||
 				!HasAttackPowerDamageScaling(step))
 			{
 				if (failureReason)
 				{
 					*failureReason =
-						"Orbital Drones progression only allows additive Common.Damage and nonincreasing Common.Cooldown with AttackPower scaling.";
-				}
-				return false;
-			}
-
-			resolvedCooldown += cooldownModifier->magnitude;
-			if (!std::isfinite(resolvedCooldown) || resolvedCooldown <= 0.f)
-			{
-				if (failureReason)
-				{
-					*failureReason = "Orbital Drones progression must keep cooldown positive.";
+						"Orbital Drones progression only allows additive Common.Damage with AttackPower scaling.";
 				}
 				return false;
 			}
