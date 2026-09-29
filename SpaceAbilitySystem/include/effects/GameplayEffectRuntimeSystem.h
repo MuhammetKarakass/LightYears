@@ -114,12 +114,15 @@ namespace sas
 			ActiveEffect* stackingTarget = mActiveEffects.FindFirst(
 				[&](const ActiveEffect& activeEffect)
 				{
-					return GameplayEffectLifecycleOrchestrator::MatchesStackingTarget(
-						definition,
-						activeEffect.spec.definition.effectId,
-						activeEffect.sourceScope,
-						context.sourceScope
-					);
+					const bool awaitingDeferredRemoval = activeEffect.operationDepth != 0 &&
+						activeEffect.removeRequested && !activeEffect.removalInProgress;
+					return !awaitingDeferredRemoval &&
+						GameplayEffectLifecycleOrchestrator::MatchesStackingTarget(
+							definition,
+							activeEffect.spec.definition.effectId,
+							activeEffect.sourceScope,
+							context.sourceScope
+						);
 				}
 			);
 			applicationKind = GameplayEffectLifecycleOrchestrator::ResolveApplication(
