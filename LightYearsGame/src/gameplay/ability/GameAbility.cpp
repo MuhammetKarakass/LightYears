@@ -556,7 +556,7 @@ namespace ly
 
 		return std::max(
 			1,
-			mBaseDefinition.GetMaxLevel() +
+			GameAbilityDefinition::kUnboundedAbilityLevel +
 				mAbilitySystem.GetScopedAbilityLevelBonus(mBaseDefinition)
 		);
 	}
@@ -819,20 +819,28 @@ namespace ly
 	{
 		GameAbilityDefinition definition = mBaseDefinition;
 
-		const int stepsToApply = std::min(
-			std::max(
-				0,
-				level - 1 +
-					mAbilitySystem.GetScopedAbilityLevelBonus(mBaseDefinition)
-			),
-			static_cast<int>(mBaseDefinition.levelProgression.size())
+		const int stepsToApply = std::max(
+			0,
+			level - 1 + mAbilitySystem.GetScopedAbilityLevelBonus(mBaseDefinition)
 		);
 
 		for (int stepIndex = 0; stepIndex < stepsToApply; ++stepIndex)
 		{
-			const AbilityLevelStep& step = mBaseDefinition.levelProgression[stepIndex];
+			const AbilityLevelStep* stepPtr = mBaseDefinition.ResolveLevelStep(
+				static_cast<std::size_t>(stepIndex)
+			);
+			if (!stepPtr)
+			{
+				// No cycle: no further stat gain (cooldown is added below).
+				break;
+			}
+			const AbilityLevelStep& step = *stepPtr;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
+				if (modifier.attributeId == CommonAttributeIds::Cooldown)
+				{
+					continue;
+				}
 				definition.attributeModifiers.push_back(modifier);
 			}
 			for (const sas::AttributeScalingRule& scalingRule : step.scalingRules)
@@ -863,6 +871,16 @@ namespace ly
 				definition.triggers.end(),
 				step.addedTriggers.begin(),
 				step.addedTriggers.end()
+			);
+		}
+		if (stepsToApply > 0)
+		{
+			definition.attributeModifiers.emplace_back(
+				CommonAttributeIds::Cooldown,
+				-GetGlobalAbilityCooldownTotalReduction(
+					mBaseDefinition.cooldown,
+					static_cast<std::size_t>(stepsToApply)
+				)
 			);
 		}
 		return definition;

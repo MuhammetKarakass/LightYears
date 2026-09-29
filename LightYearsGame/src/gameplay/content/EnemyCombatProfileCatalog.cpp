@@ -75,6 +75,13 @@ namespace ly::content
 					if (UsesPowerScaling(rule)) return true;
 				}
 			}
+			for (const auto& step : ability.repeatingLevelProgression)
+			{
+				for (const auto& rule : step.scalingRules)
+				{
+					if (UsesPowerScaling(rule)) return true;
+				}
+			}
 			return false;
 		}
 
@@ -182,9 +189,9 @@ namespace ly::content
 				return Fail(failureReason, "Ability '" + binding.abilityId + "' not found in AbilityContentCatalog for profile '" + profile.profileId + "'.");
 			}
 
-			if (binding.level < 1 || binding.level > abilityDef->GetMaxLevel())
+			if (binding.level < 1)
 			{
-				return Fail(failureReason, "Ability '" + binding.abilityId + "' level " + std::to_string(binding.level) + " out of range [1, " + std::to_string(abilityDef->GetMaxLevel()) + "] for profile '" + profile.profileId + "'.");
+				return Fail(failureReason, "Ability '" + binding.abilityId + "' level " + std::to_string(binding.level) + " must be at least 1 for profile '" + profile.profileId + "'.");
 			}
 
 			if (profile.powerScalingPolicy == EnemyPowerScalingPolicy::Disabled && AbilityHasPowerScaling(*abilityDef))

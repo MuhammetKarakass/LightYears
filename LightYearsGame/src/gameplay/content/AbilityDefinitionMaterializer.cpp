@@ -45,6 +45,7 @@ namespace ly::content
 		loaded.definition.abilityId = abilityId;
 		loaded.definition.scalingRules.clear();
 		loaded.definition.levelProgression.clear();
+		loaded.definition.repeatingLevelProgression.clear();
 		loaded.definition.levelUpgradeScrapCosts.clear();
 		loaded.definition.effectSpecs.clear();
 		loaded.definition.attributes.clear();

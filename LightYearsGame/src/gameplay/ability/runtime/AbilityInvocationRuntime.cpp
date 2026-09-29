@@ -27,6 +27,7 @@ namespace ly
 	{
 		GameAbilityDefinition definition = sourceDefinition;
 		definition.levelProgression.clear();
+		definition.repeatingLevelProgression.clear();
 		definition.levelUpgradeScrapCosts.clear();
 		definition.attributeModifiers.clear();
 		definition.unlockedUpgradeIds = record.unlockedUpgradeIds;
@@ -40,17 +41,23 @@ namespace ly
 		// when the recorded ability had already been upgraded.
 		definition.actions = sourceDefinition.actions;
 		definition.triggers = sourceDefinition.triggers;
-		const int sourceSteps = std::min(
-			std::max(0, record.level - 1),
-			static_cast<int>(sourceDefinition.levelProgression.size())
-		);
+		const int sourceSteps = std::max(0, record.level - 1);
 		for (int stepIndex = 0; stepIndex < sourceSteps; ++stepIndex)
 		{
-			const AbilityLevelStep& step = sourceDefinition.levelProgression[
+			const AbilityLevelStep* stepPtr = sourceDefinition.ResolveLevelStep(
 				static_cast<std::size_t>(stepIndex)
-			];
+			);
+			if (!stepPtr)
+			{
+				break;
+			}
+			const AbilityLevelStep& step = *stepPtr;
 			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
 			{
+				if (modifier.attributeId == CommonAttributeIds::Cooldown)
+				{
+					continue;
+				}
 				definition.attributeModifiers.push_back(modifier);
 			}
 			for (const std::string& upgradeId : step.unlockedUpgradeIds)
@@ -93,6 +100,16 @@ namespace ly
 				definition.triggers.end(),
 				step.addedTriggers.begin(),
 				step.addedTriggers.end()
+			);
+		}
+		if (sourceSteps > 0)
+		{
+			definition.attributeModifiers.emplace_back(
+				CommonAttributeIds::Cooldown,
+				-GetGlobalAbilityCooldownTotalReduction(
+					sourceDefinition.cooldown,
+					static_cast<std::size_t>(sourceSteps)
+				)
 			);
 		}
 		return definition;

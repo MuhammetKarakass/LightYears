@@ -41,7 +41,11 @@ namespace ly
 		sas::GameplayAttributeList attributes;
 		// Source-owned balance values used to parameterize policy-only effects.
 		List<AbilityEffectSpecDefinition> effectSpecs;
+		// Explicit authored prefix steps (index 0 reaches level two).
 		List<AbilityLevelStep> levelProgression;
+		// Cycle applied after the prefix, repeating forever. Empty = no stat gain
+		// beyond the prefix (global cooldown progression still applies).
+		List<AbilityLevelStep> repeatingLevelProgression;
 		// Indexed by target level minus two: [0] purchases level two.
 		// Empty means this ability cannot be purchased through the run economy.
 		List<unsigned int> levelUpgradeScrapCosts;
@@ -79,24 +83,50 @@ namespace ly
 			return nullptr;
 		}
 
+		static constexpr int kUnboundedAbilityLevel = 1000000;
+
+		const AbilityLevelStep* ResolveLevelStep(std::size_t zeroBasedStepIndex) const
+		{
+			if (zeroBasedStepIndex < levelProgression.size())
+			{
+				return &levelProgression[zeroBasedStepIndex];
+			}
+			if (repeatingLevelProgression.empty())
+			{
+				return nullptr;
+			}
+			return &repeatingLevelProgression[
+				(zeroBasedStepIndex - levelProgression.size()) % repeatingLevelProgression.size()
+			];
+		}
+
+		// Abilities have no maximum level.
 		int GetMaxLevel() const
 		{
-			return 1 + static_cast<int>(levelProgression.size());
+			return kUnboundedAbilityLevel;
+		}
+
+		// Empty cost list = not purchasable. Levels beyond the authored list cost 0.
+		bool IsPurchasableToLevel(int targetLevel) const
+		{
+			return targetLevel >= 2 &&
+				targetLevel <= GetMaxLevel() &&
+				!levelUpgradeScrapCosts.empty();
 		}
 
 		bool HasScrapCostToReachLevel(int targetLevel) const
 		{
-			return targetLevel >= 2 &&
-				targetLevel <= GetMaxLevel() &&
-				levelUpgradeScrapCosts.size() == levelProgression.size() &&
-				levelUpgradeScrapCosts[static_cast<size_t>(targetLevel - 2)] > 0;
+			return IsPurchasableToLevel(targetLevel);
 		}
 
 		unsigned int GetScrapCostToReachLevel(int targetLevel) const
 		{
-			return HasScrapCostToReachLevel(targetLevel)
-				? levelUpgradeScrapCosts[static_cast<size_t>(targetLevel - 2)]
-				: 0;
+			if (!IsPurchasableToLevel(targetLevel))
+			{
+				return 0;
+			}
+			const std::size_t index = static_cast<std::size_t>(targetLevel - 2);
+			return index < levelUpgradeScrapCosts.size() ? levelUpgradeScrapCosts[index] : 0;
 		}
 
 		bool HasUnlockedUpgrade(const std::string& upgradeId) const

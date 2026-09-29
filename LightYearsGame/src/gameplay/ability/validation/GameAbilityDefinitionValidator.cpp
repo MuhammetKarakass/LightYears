@@ -220,12 +220,16 @@ namespace ly
 				{
 					declared = declared || actionsDeclareOutput(trigger.actions, outputId);
 				}
-				for (const AbilityLevelStep& step : ability.levelProgression)
+				for (const List<AbilityLevelStep>* steps :
+					{ &ability.levelProgression, &ability.repeatingLevelProgression })
 				{
-					declared = declared || actionsDeclareOutput(step.addedActions, outputId);
-					for (const AbilityTriggerSpec& trigger : step.addedTriggers)
+					for (const AbilityLevelStep& step : *steps)
 					{
-						declared = declared || actionsDeclareOutput(trigger.actions, outputId);
+						declared = declared || actionsDeclareOutput(step.addedActions, outputId);
+						for (const AbilityTriggerSpec& trigger : step.addedTriggers)
+						{
+							declared = declared || actionsDeclareOutput(trigger.actions, outputId);
+						}
 					}
 				}
 				const bool conventionalDamageOutput = outputId == CommonAttributeIds::Damage;
@@ -398,13 +402,6 @@ namespace ly
 			{
 				return true;
 			}
-			if (definition.levelUpgradeScrapCosts.size() != definition.levelProgression.size())
-			{
-				return Fail(
-					failureReason,
-					"Ability upgrade scrap costs must match the number of level steps."
-				);
-			}
 			for (const unsigned int cost : definition.levelUpgradeScrapCosts)
 			{
 				if (cost == 0)
@@ -531,7 +528,9 @@ namespace ly
 			{
 				return false;
 			}
-			for (const AbilityLevelStep& step : definition.levelProgression)
+			for (const List<AbilityLevelStep>* steps :
+				{ &definition.levelProgression, &definition.repeatingLevelProgression })
+			for (const AbilityLevelStep& step : *steps)
 			{
 				if (!ValidateAndRecordUpgradeIds(
 					step.unlockedUpgradeIds,

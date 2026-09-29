@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <numeric>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -181,90 +182,94 @@ namespace ly::content::ability_loader_detail
 					continue;
 				}
 
-				float magnitude = 0.f;
 				const Json& magnitudeValue = value.at("magnitude");
-				if (magnitudeValue.is_number())
+				if (!magnitudeValue.is_number())
 				{
-					magnitude = magnitudeValue.get<float>();
+					throw std::runtime_error(
+						"Progression modifier magnitude must be a number; "
+						"object-form {start, perLevel} magnitudes are no longer supported"
+					);
 				}
-				else if (magnitudeValue.is_object())
-				{
-					const float start = magnitudeValue.at("start").get<float>();
-					const float perLevel = magnitudeValue.value("perLevel", 0.f);
-					const std::size_t occurrence = (oneBasedStep - firstStep) / everySteps;
-					magnitude = start + static_cast<float>(occurrence) * perLevel;
-				}
-				else
-				{
-					throw std::runtime_error("Progression modifier magnitude must be a number or formula object");
-				}
-
 				modifiers.emplace_back(
 					sas::AttributeId{ ReadRequiredString(value, "attributeId") },
 					AttributeJsonParser::ParseOperation(ReadRequiredString(value, "operation")),
-					magnitude,
+					magnitudeValue.get<float>(),
 					value.value("priority", 0)
 				);
 			}
 			return modifiers;
 		}
 
-		List<AbilityLevelStep> ParseLevelProgression(
+		struct ParsedLevelProgression
+		{
+			List<AbilityLevelStep> prefix;
+			List<AbilityLevelStep> cycle;
+		};
+
+		ParsedLevelProgression ParseLevelProgression(
 			const Json& progression,
-			float baseCooldown,
 			const std::string& ownerLabel = ""
 		)
 		{
-			List<AbilityLevelStep> levels;
+			ParsedLevelProgression result;
 			if (progression.contains("steps"))
 			{
 				const Json& steps = progression.at("steps");
-				const std::size_t count = steps.at("count").get<std::size_t>();
-				if (count == 0)
-				{
-					throw std::runtime_error("Ability progression.steps.count must be greater than zero");
-				}
+				const Json modifierValues = steps.value("attributeModifiers", Json::array());
 				const List<sas::AttributeScalingRule> scalingRules = AttributeJsonParser::ParseScalingRules(
 					steps.value("scalingRules", Json::array()),
 					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "progression.steps.scalingRules"
 				);
-				for (std::size_t index = 0; index < count; ++index)
+				std::size_t maxFirstStep = 1;
+				std::size_t cycleLength = 1;
+				for (const Json& value : modifierValues)
+				{
+					const std::size_t firstStep = value.value("firstStep", std::size_t{ 1 });
+					const std::size_t everySteps = value.value("everySteps", std::size_t{ 1 });
+					if (firstStep == 0 || everySteps == 0)
+					{
+						throw std::runtime_error("Progression modifier cadence values must be greater than zero");
+					}
+					maxFirstStep = std::max(maxFirstStep, firstStep);
+					cycleLength = std::lcm(cycleLength, everySteps);
+					if (cycleLength > 64)
+					{
+						throw std::runtime_error(
+							(ownerLabel.empty() ? "" : ownerLabel + ": ") +
+							"progression.steps cadence cycle length exceeds 64"
+						);
+					}
+				}
+				const std::size_t prefixLength = maxFirstStep - 1;
+				if (prefixLength > 64)
+				{
+					throw std::runtime_error(
+						(ownerLabel.empty() ? "" : ownerLabel + ": ") +
+						"progression.steps firstStep exceeds 65"
+					);
+				}
+				for (std::size_t index = 0; index < prefixLength + cycleLength; ++index)
 				{
 					AbilityLevelStep step;
-					step.attributeModifiers = ParseProgressionStepModifiers(
-						steps.value("attributeModifiers", Json::array()),
-						index + 1
-					);
-					step.attributeModifiers.emplace_back(
-						CommonAttributeIds::Cooldown,
-						-GetGlobalAbilityCooldownStepReduction(baseCooldown, index)
-					);
+					step.attributeModifiers = ParseProgressionStepModifiers(modifierValues, index + 1);
 					step.scalingRules = scalingRules;
-					levels.push_back(std::move(step));
+					(index < prefixLength ? result.prefix : result.cycle).push_back(std::move(step));
 				}
-				return levels;
+				return result;
 			}
 
 			if (progression.contains("repeat"))
 			{
 				const Json& repeated = progression.at("repeat");
-				const List<sas::AttributeModifier> repeatedModifiers = ParseModifiers(
+				AbilityLevelStep step;
+				step.attributeModifiers = ParseModifiers(
 					repeated.value("attributeModifiers", Json::array())
 				);
-				const std::string repeatContext =
-					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "levelProgression.repeat.scalingRules";
-				const List<sas::AttributeScalingRule> repeatedScalingRules = AttributeJsonParser::ParseScalingRules(
+				step.scalingRules = AttributeJsonParser::ParseScalingRules(
 					repeated.value("scalingRules", Json::array()),
-					repeatContext
+					(ownerLabel.empty() ? "" : ownerLabel + ": ") + "levelProgression.repeat.scalingRules"
 				);
-				const std::size_t repeatCount = repeated.at("count").get<std::size_t>();
-				for (std::size_t index = 0; index < repeatCount; ++index)
-				{
-					AbilityLevelStep step;
-					step.attributeModifiers = repeatedModifiers;
-					step.scalingRules = repeatedScalingRules;
-					levels.push_back(std::move(step));
-				}
+				result.cycle.push_back(std::move(step));
 			}
 			std::size_t levelIndex = 0;
 			for (const Json& level : progression.value("levels", Json::array()))
@@ -284,27 +289,9 @@ namespace ly::content::ability_loader_detail
 				{
 					step.unlockedUpgradeIds.emplace_back(upgradeId.get<std::string>());
 				}
-				levels.push_back(std::move(step));
+				result.prefix.push_back(std::move(step));
 			}
-			const List<sas::AttributeModifier> cooldownModifiers =
-				MakeGlobalAbilityCooldownProgression(baseCooldown, levels.size());
-			for (std::size_t index = 0; index < levels.size(); ++index)
-			{
-				auto& modifiers = levels[index].attributeModifiers;
-				modifiers.erase(
-					std::remove_if(
-						modifiers.begin(),
-						modifiers.end(),
-						[](const sas::AttributeModifier& modifier)
-						{
-							return modifier.attributeId == CommonAttributeIds::Cooldown;
-						}
-					),
-					modifiers.end()
-				);
-				modifiers.push_back(cooldownModifiers[index]);
-			}
-			return levels;
+			return result;
 		}
 
 		const AbilityActorDefinition* FindActorFallback(
@@ -522,11 +509,12 @@ namespace ly::content::ability_loader_detail
 			if (object.contains("progression"))
 			{
 				const Json& progression = object.at("progression");
-				loaded.definition.levelProgression = ParseLevelProgression(
+				ParsedLevelProgression parsedProgression = ParseLevelProgression(
 					progression,
-					loaded.definition.cooldown,
 					"Ability '" + loaded.id + "'"
 				);
+				loaded.definition.levelProgression = std::move(parsedProgression.prefix);
+				loaded.definition.repeatingLevelProgression = std::move(parsedProgression.cycle);
 				loaded.definition.levelUpgradeScrapCosts = progression.value(
 					"levelUpgradeScrapCosts",
 					List<unsigned int>{}

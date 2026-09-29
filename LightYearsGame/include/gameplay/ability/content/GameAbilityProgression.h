@@ -27,6 +27,7 @@ namespace ly
 		return List<AbilityLevelStep>(stepCount, step);
 	}
 
+	// Global cooldown progression. Step index 0 is the upgrade that reaches level two.
 	inline float GetGlobalAbilityCooldownStepReduction(
 		float baseCooldown,
 		std::size_t zeroBasedUpgradeIndex
@@ -37,9 +38,34 @@ namespace ly
 			return 0.f;
 		}
 
-		float remainingCooldown = baseCooldown;
 		float reductionPerLevel = 0.175f + 0.025f * baseCooldown;
-		for (std::size_t index = 0; index <= zeroBasedUpgradeIndex; ++index)
+		for (std::size_t index = 1; index <= zeroBasedUpgradeIndex; ++index)
+		{
+			if (index % 4 == 0)
+			{
+				reductionPerLevel = reductionPerLevel >= 0.20f
+					? reductionPerLevel - 0.10f
+					: reductionPerLevel * 0.80f;
+			}
+		}
+		return std::max(reductionPerLevel, 0.02f);
+	}
+
+	// Cumulative reduction after stepsGained upgrades, clamped so the cooldown stays >= 1s.
+	inline float GetGlobalAbilityCooldownTotalReduction(
+		float baseCooldown,
+		std::size_t stepsGained
+	)
+	{
+		if (baseCooldown <= 1.f)
+		{
+			return 0.f;
+		}
+
+		const float maxReduction = baseCooldown - 1.f;
+		float total = 0.f;
+		float reductionPerLevel = 0.175f + 0.025f * baseCooldown;
+		for (std::size_t index = 0; index < stepsGained; ++index)
 		{
 			if (index > 0 && index % 4 == 0)
 			{
@@ -47,31 +73,23 @@ namespace ly
 					? reductionPerLevel - 0.10f
 					: reductionPerLevel * 0.80f;
 			}
-
-			const float reduction = std::min(reductionPerLevel, remainingCooldown - 1.f);
-			if (index == zeroBasedUpgradeIndex)
+			total += std::max(reductionPerLevel, 0.02f);
+			if (total >= maxReduction)
 			{
-				return std::max(0.f, reduction);
+				return maxReduction;
 			}
-			remainingCooldown -= reduction;
 		}
-		return 0.f;
+		return total;
 	}
 
-	inline List<sas::AttributeModifier> MakeGlobalAbilityCooldownProgression(
-		float baseCooldown,
-		std::size_t stepCount
+	// Templated to avoid a circular include with GameAbilityDefinition.h.
+	template <typename DefinitionT>
+	inline void SetRepeatingAbilityLevelStep(
+		DefinitionT& definition,
+		const AbilityLevelStep& step
 	)
 	{
-		List<sas::AttributeModifier> modifiers;
-		modifiers.reserve(stepCount);
-		for (std::size_t index = 0; index < stepCount; ++index)
-		{
-			modifiers.emplace_back(
-				CommonAttributeIds::Cooldown,
-				-GetGlobalAbilityCooldownStepReduction(baseCooldown, index)
-			);
-		}
-		return modifiers;
+		definition.repeatingLevelProgression.clear();
+		definition.repeatingLevelProgression.push_back(step);
 	}
 }
