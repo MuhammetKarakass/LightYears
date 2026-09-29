@@ -21,14 +21,17 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS       OFF)
 
 if(MSVC)
-    # Ninja needs the exact /showIncludes prefix to track header dependencies
-    # such as GameplayConfig.h. vcvars64.bat exports VSLANG=1033, so the toolset
-    # emits English messages even on a Turkish Windows; the previous localized
-    # value ("Not: eklenen dosya:") matched nothing and silently disabled header
-    # dependency tracking, leaving stale objects that never rebuilt.
+    # Ninja needs the exact /showIncludes prefix to track header dependencies.
+    # On a Turkish Windows cl.exe prints "Not: eklenen dosya:" unless VSLANG=1033
+    # is in its environment, and vcvars64.bat does not set it. A mismatch records
+    # zero header dependencies and silently leaves stale objects after header
+    # edits. Launch every compile through `cmake -E env VSLANG=1033` so the
+    # English prefix below holds regardless of the caller's environment.
     set(CMAKE_CL_SHOWINCLUDES_PREFIX "Note: including file:")
     set(CMAKE_C_CL_SHOWINCLUDES_PREFIX "Note: including file:")
     set(CMAKE_CXX_CL_SHOWINCLUDES_PREFIX "Note: including file:")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_COMMAND};-E;env;VSLANG=1033")
+    set(CMAKE_C_COMPILER_LAUNCHER "${CMAKE_COMMAND};-E;env;VSLANG=1033")
 endif()
 
 # Add optimization flags for Release builds
