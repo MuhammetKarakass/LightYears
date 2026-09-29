@@ -8,6 +8,7 @@
 
 namespace AbilityData::Definitions
 {
+	// Numeric balance, progression and costs are authored in abilities.json.
 	inline const ly::GameAbilityDefinition NullPulse_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
@@ -17,9 +18,6 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability2;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = 0.f;
-		definition.duration = 0.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Control,
 			ly::GameplayTags::Ability::Family::NullPulse

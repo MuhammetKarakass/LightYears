@@ -1,9 +1,5 @@
 #pragma once
 
-#include "attributes/AttributeSystem.h"
-
-#include "gameplay/attributes/AttributeIds.h"
-
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/damage/DamageTypeSystem.h"
@@ -34,14 +30,12 @@ namespace AbilityData
 		{
 			ly::GameAbilityDefinition definition;
 			definition.abilityId = Rocket::AbilityId::Basic;
+			// Numeric balance, progression and costs are authored in abilities.json.
 			// Ability3 is the default F binding for the projectile loadout.
 			// Runtime loadout bindings may still move Rocket later.
 			definition.slot = sas::AbilitySlot::Ability3;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-			definition.cooldown = 0.f;
-			definition.duration = 0.f;
-			definition.maxCharges = 0;
 			definition.abilityTags = {
 				ly::GameplayTags::Ability::Offense,
 				ly::GameplayTags::Ability::Family::Rocket

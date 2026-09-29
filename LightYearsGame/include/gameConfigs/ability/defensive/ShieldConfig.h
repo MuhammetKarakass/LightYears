@@ -1,9 +1,5 @@
 #pragma once
 
-#include "attributes/AttributeSystem.h"
-
-#include "gameplay/attributes/AttributeIds.h"
-
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/shield/ShieldContracts.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -18,6 +14,7 @@ namespace AbilityData
 
 	namespace Definitions
 	{
+		// Numeric balance, progression and costs are authored in abilities.json.
 		inline const ly::GameAbilityDefinition Shield_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
@@ -25,9 +22,6 @@ namespace AbilityData
 			definition.slot = sas::AbilitySlot::Ability1;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-			definition.cooldown = 0.f;
-			definition.duration = 0.f;
-			definition.maxCharges = 0;
 			definition.abilityTags = {
 				ly::GameplayTags::Ability::Defense,
 				ly::GameplayTags::Ability::Family::Shield

@@ -6,7 +6,6 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/astralSurge/AstralSurgePresentationIds.h"
 
-#include <cstddef>
 
 namespace AbilityData::AstralSurge
 {
@@ -16,13 +15,6 @@ namespace AbilityData::AstralSurge
 		definition.actorDefinitionId = Actor::Projectile::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::AstralSurgeProjectile;
 		definition.presentationProfileId = ly::AstralSurgePresentationIds::ProjectileBasic;
-		definition.attributes = {
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Damage, 70.f, 0.f },
-			sas::GameplayAttribute{ ly::CommonAttributeIds::PierceDamageLoss, 0.05f, 0.f, 0.99f },
-			sas::GameplayAttribute{ ly::AreaAttributeIds::Width, 280.f, 0.1f },
-			sas::GameplayAttribute{ Actor::Projectile::ProjectileSpeed, 1000.f, 0.01f },
-			sas::GameplayAttribute{ Actor::Projectile::MinimumDamageMultiplier, 0.40f, 0.f, 1.f }
-		};
 		return definition;
 	}();
 }
@@ -33,12 +25,10 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::AstralSurge::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability3;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 14.f;
-		definition.duration = 1.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::AstralSurge
@@ -46,39 +36,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Astral Surge";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 175, 105, 255, 255 };
-		definition.scalingRules = {
-			sas::AttributeScalingRule{
-				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::EnergyPower,
-				sas::AttributeModifierOperation::Add,
-				0.60f
-			}
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				sas::AttributeModifier{
-					ly::CommonAttributeIds::Damage,
-					sas::AttributeModifierOperation::Add,
-					8.f
-				}
-			},
-			{},
-			{},
-			{},
-			{
-				sas::AttributeScalingRule{
-					ly::CommonAttributeIds::Damage,
-					ly::OwnerAttributeIds::EnergyPower,
-					sas::AttributeModifierOperation::Add,
-					0.05f
-				}
-			}
-		});
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
-		definition.damageTags = { ly::DamageTypeSchema::Energy };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Damage,
 			ly::AttachmentSchema::Capability::Projectile

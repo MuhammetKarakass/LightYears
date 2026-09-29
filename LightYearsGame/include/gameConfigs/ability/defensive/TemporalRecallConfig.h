@@ -1,11 +1,11 @@
 #pragma once
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/temporalRecall/TemporalRecallContracts.h"
 
 namespace AbilityData::Definitions
 {
+	// Numeric balance, progression and costs are authored in abilities.json.
 	inline const ly::GameAbilityDefinition TemporalRecall_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
@@ -16,9 +16,6 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.cooldownStartPolicy = sas::AbilityCooldownStartPolicy::OnActivation;
-		definition.cooldown = 18.f;
-		definition.duration = 1.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Defense,
 			ly::GameplayTags::Ability::Family::TemporalRecall
@@ -26,30 +23,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Temporal Recall";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 108, 198, 255, 235 };
-		definition.attributes = {
-			{ AbilityData::TemporalRecall::Attribute::RecallWindow, 3.f, 0.01f },
-			{ AbilityData::TemporalRecall::Attribute::FocusDuration, 0.2f, 0.01f },
-			{ AbilityData::TemporalRecall::Attribute::RewindDuration, 0.8f, 0.01f },
-			{ AbilityData::TemporalRecall::Attribute::BaseRecovery, 0.45f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::MaxHealthReference, 500.f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale, 0.10f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::EnergyPowerReference, 100.f, 0.f },
-			{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale, 0.05f, 0.f }
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				{ AbilityData::TemporalRecall::Attribute::BaseRecovery,
-					sas::AttributeModifierOperation::Add, 0.02f },
-				{ AbilityData::TemporalRecall::Attribute::MaxHealthRecoveryScale,
-					sas::AttributeModifierOperation::Add, 0.01f },
-				{ AbilityData::TemporalRecall::Attribute::EnergyPowerRecoveryScale,
-					sas::AttributeModifierOperation::Add, 0.01f }
-			}, {}, {}, {}
-		});
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::TemporalRecall;
 		return definition;
 	}();

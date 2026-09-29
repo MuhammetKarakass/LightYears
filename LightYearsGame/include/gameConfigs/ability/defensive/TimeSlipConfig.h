@@ -1,11 +1,11 @@
 #pragma once
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/timeSlip/TimeSlipContracts.h"
 
 namespace AbilityData::Definitions
 {
+	// Numeric balance, progression and costs are authored in abilities.json.
 	inline const ly::GameAbilityDefinition TimeSlip_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
@@ -16,9 +16,6 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.cooldownStartPolicy = sas::AbilityCooldownStartPolicy::OnActivation;
-		definition.cooldown = 18.f;
-		definition.duration = 3.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Defense,
 			ly::GameplayTags::Ability::Family::TimeSlip
@@ -26,23 +23,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Time Slip";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 155, 210, 255, 245 };
-		definition.attributes = {
-			{ AbilityData::TimeSlip::Attribute::GameplayTimeMultiplier, 0.35f, 0.001f, 1.f },
-			{ AbilityData::TimeSlip::Attribute::PrimaryFireRateMultiplier, 0.35f, 0.001f, 1.f },
-			{ AbilityData::TimeSlip::Attribute::EnergyPowerReference, 100.f, 0.f },
-			{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale, 0.20f, 0.f }
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
-				{ AbilityData::TimeSlip::Attribute::EnergyPowerDurationScale,
-					sas::AttributeModifierOperation::Add, 0.05f }
-			}, {}, {}, {}
-		});
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::TimeSlip;
 		return definition;
 	}();

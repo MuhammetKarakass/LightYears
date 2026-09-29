@@ -1,13 +1,10 @@
 #pragma once
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/stormMark/StormMarkContracts.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
-#include "gameConfigs/combat/DamageTypeConfig.h"
 
-#include <algorithm>
 
 namespace AbilityData::Definitions
 {
@@ -15,14 +12,12 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::StormMark::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		// Ability1 is only the standalone fallback slot. The runtime loadout
 		// remains the owner of the player's actual binding.
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = 11.f;
-		definition.duration = 0.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::StormMark
@@ -30,74 +25,12 @@ namespace AbilityData::Definitions
 		definition.displayName = "Storm Mark";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 		definition.accentColor = sf::Color{ 65, 190, 255, 255 };
-		definition.attributes = {
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Damage,
-				50.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Range,
-				600.f,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::BaseTargetCount,
-				4.f,
-				1.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::FocusDuration,
-				0.30f,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::StrikeDuration,
-				0.20f,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::LuckPerExtraTarget,
-				20.f,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::StormMark::Attribute::ElectricStacks,
-				1.f,
-				1.f
-			}
-		};
-		definition.damageTags = { ly::DamageTypeSchema::Electric };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Damage,
 			ly::AttachmentSchema::Capability::Area
 		};
-		definition.scalingRules = {
-			sas::AttributeScalingRule{
-				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::EnergyPower,
-				sas::AttributeModifierOperation::Add,
-				0.30f
-			}
-		};
 		// Behavior owns focus, target snapshot and delayed strikes. No generic
 		// action is declared because it would execute before the focus completes.
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				{ ly::CommonAttributeIds::Damage, sas::AttributeModifierOperation::Add, 15.f }
-			},
-			{},
-			{},
-			{},
-			{
-				{ ly::CommonAttributeIds::Damage, ly::OwnerAttributeIds::EnergyPower,
-					sas::AttributeModifierOperation::Add, 0.03f }
-			}
-		});
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::StormMark;
 		return definition;
 	}();

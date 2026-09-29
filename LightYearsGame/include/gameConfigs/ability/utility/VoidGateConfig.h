@@ -15,13 +15,6 @@ namespace AbilityData::Definitions
 			AbilityData::VoidGate::Actor::Portal::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::VoidGatePortal;
 		definition.presentationProfileId = ly::VoidGatePresentationIds::PortalBasic;
-		definition.attributes = {
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Radius,
-				AbilityData::VoidGate::DefaultPortalRadius,
-				1.f
-			}
-		};
 		return definition;
 	}();
 
@@ -29,14 +22,12 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::VoidGate::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		// Ability1 is the default Q slot. Runtime loadout binding may still move
 		// Void Gate to another Ability1-4 slot later.
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = AbilityData::VoidGate::DefaultCooldown;
-		definition.duration = AbilityData::VoidGate::DefaultActiveDuration;
-		definition.maxCharges = 1;
 		// Void Gate needs two positional inputs. Echo replay only has one stored
 		// activation context, so this staged ability explicitly opts out of history.
 		definition.recordInAbilityHistory = false;
@@ -47,49 +38,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Void Gate";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 145, 80, 255, 255 };
-		definition.attributes = {
-			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::PortalRadius,
-				AbilityData::VoidGate::DefaultPortalRadius,
-				1.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::TransferDuration,
-				AbilityData::VoidGate::DefaultTransferDuration,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::ReentryCooldown,
-				AbilityData::VoidGate::DefaultReentryCooldown,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::PortalBPlacementTimeout,
-				AbilityData::VoidGate::DefaultPortalBPlacementTimeout,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				AbilityData::VoidGate::Attribute::EnergyPowerDurationScale,
-				AbilityData::VoidGate::DefaultEnergyPowerDurationScale,
-				0.f
-			}
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				sas::AttributeModifier{
-					ly::CommonAttributeIds::Duration,
-					sas::AttributeModifierOperation::Add,
-					0.15f
-				}
-			},
-			{},
-			{},
-			{}
-		});
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::VoidGate;
 		return definition;
 	}();

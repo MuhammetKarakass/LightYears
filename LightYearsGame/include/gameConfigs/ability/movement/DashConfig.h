@@ -1,9 +1,5 @@
 #pragma once
 
-#include "attributes/AttributeSystem.h"
-
-#include "gameplay/attributes/AttributeIds.h"
-
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/dash/DashContracts.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -12,11 +8,11 @@ namespace AbilityData
 {
 	namespace Dash
 	{
-		// Feature schema only. Numeric tuning lives in abilities.json.
 	}
 
 	namespace Definitions
 	{
+		// Numeric balance, progression and costs are authored in abilities.json.
 		inline const ly::GameAbilityDefinition Dash_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
@@ -24,16 +20,6 @@ namespace AbilityData
 			definition.slot = sas::AbilitySlot::Ability3;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-			definition.cooldown = 0.f;
-			definition.duration = 0.f;
-			definition.maxCharges = 0;
-			definition.attributes = {
-				sas::GameplayAttribute{
-					Dash::Attribute::MoveSpeedScale,
-					Dash::DefaultMoveSpeedScale,
-					0.f
-				}
-			};
 			definition.abilityTags = {
 				ly::GameplayTags::Ability::Movement,
 				ly::GameplayTags::Ability::Family::Dash

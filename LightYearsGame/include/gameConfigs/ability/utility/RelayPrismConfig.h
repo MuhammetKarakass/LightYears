@@ -5,7 +5,6 @@
 #include "gameplay/ability/relayPrism/RelayPrismContracts.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
-#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "presentation/ability/relayPrism/RelayPrismPresentationIds.h"
 
 namespace AbilityData::RelayPrism
@@ -16,16 +15,6 @@ namespace AbilityData::RelayPrism
 		definition.actorDefinitionId = Actor::Relay::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::RelayPrism;
 		definition.presentationProfileId = ly::RelayPrismPresentationIds::RelayBasic;
-		definition.lifeTime = 4.f;
-		definition.attributes = {
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Radius, 100.f, 1.f },
-			sas::GameplayAttribute{ ly::CommonAttributeIds::Range, 600.f, 1.f },
-			sas::GameplayAttribute{
-				Actor::Relay::ProjectileSpeed,
-				450.f,
-				1.f
-			}
-		};
 		return definition;
 	}();
 }
@@ -38,14 +27,12 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::RelayPrism::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		// Ability2 is the default E binding. The runtime loadout can still
 		// rebind this active ability to another player slot later.
 		definition.slot = sas::AbilitySlot::Ability2;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 10.f;
-		definition.duration = 4.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Utility,
 			ly::GameplayTags::Ability::Family::RelayPrism
@@ -53,59 +40,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Relay Prism";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 220, 100, 255, 255 };
-		definition.attributes = {
-			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::ProjectileCount,
-				4.f,
-				1.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::BaseTransfer,
-				0.20f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::EnergyPowerScale,
-				0.04f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::MinimumScatterAngle,
-				30.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::MaximumScatterAngle,
-				90.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::RelayPrism::Attribute::MaximumBonusProjectileCount,
-				4.f,
-				0.f
-			}
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				sas::AttributeModifier{
-					AbilityData::RelayPrism::Attribute::BaseTransfer,
-					sas::AttributeModifierOperation::Add,
-					0.02f
-				},
-				sas::AttributeModifier{
-					AbilityData::RelayPrism::Attribute::EnergyPowerScale,
-					sas::AttributeModifierOperation::Add,
-					0.02f
-				}
-			},
-			{},
-			{},
-			{}
-		});
-		definition.levelUpgradeScrapCosts = {
-			40, 50, 65, 80, 100, 125, 155,
-			190, 230, 275, 325, 380, 440, 505
-		};
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Projectile,
 			ly::AttachmentSchema::Capability::Damage

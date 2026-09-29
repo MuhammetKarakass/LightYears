@@ -12,12 +12,10 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::NanoPlague::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = AbilityData::NanoPlague::DefaultCooldown;
-		definition.duration = 0.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::NanoPlague
@@ -25,7 +23,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Nano Plague";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 90, 215, 255, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Electric };
 		definition.behaviorType = ly::AbilityBehaviorType::NanoPlague;
 		return definition;
 	}();

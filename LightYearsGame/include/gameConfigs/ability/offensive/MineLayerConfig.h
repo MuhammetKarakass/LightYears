@@ -4,7 +4,6 @@
 #include "gameplay/ability/actors/AbilityActorType.h"
 #include "gameplay/ability/mineLayer/MineLayerContracts.h"
 #include "gameplay/attachment/AttachmentDefinition.h"
-#include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/mineLayer/MineLayerPresentationIds.h"
 
@@ -29,13 +28,11 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::MineLayer::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		// Ability1 is the default Q binding; the runtime loadout may still rebind it.
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = 9.f;
-		definition.duration = 0.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::MineLayer
@@ -43,7 +40,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Mine Layer";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 80, 175, 255, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Energy };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Damage,
 			ly::AttachmentSchema::Capability::Cooldown,

@@ -3,7 +3,6 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/actors/AbilityActorType.h"
 #include "gameplay/ability/railBurst/RailBurstContracts.h"
-#include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/railBurst/RailBurstPresentationIds.h"
 
@@ -27,12 +26,10 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::RailBurst::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability4;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = 0.f;
-		definition.duration = 0.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::RailBurst
@@ -52,7 +49,6 @@ namespace AbilityData::Definitions
 				1
 			}
 		};
-		definition.damageTags = { ly::DamageTypeSchema::Energy };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Damage,
 			ly::AttachmentSchema::Capability::Projectile

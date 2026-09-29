@@ -2,7 +2,6 @@
 
 #include "gameplay/ability/closedCircuit/ClosedCircuitContracts.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "presentation/ability/closedCircuit/ClosedCircuitPresentationIds.h"
 
@@ -17,6 +16,7 @@ namespace AbilityData::Definitions
 		return definition;
 	}();
 
+	// Numeric balance, progression and costs are authored in abilities.json.
 	inline const ly::GameAbilityDefinition ClosedCircuit_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
@@ -25,20 +25,10 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.cooldownStartPolicy = sas::AbilityCooldownStartPolicy::OnActivation;
-		definition.cooldown = 14.f; definition.duration = 0.20f; definition.maxCharges = 1;
 		definition.abilityTags = { AbilityData::ClosedCircuit::CategoryTag, AbilityData::ClosedCircuit::FamilyTag };
 		definition.displayName = "Closed Circuit";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 		definition.accentColor = sf::Color{ 80, 220, 255, 255 };
-		definition.attributes = {
-			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, 160.f, 0.f },
-			{ AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, 0.70f, 0.f },
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{ {
-			{ AbilityData::ClosedCircuit::Attribute::BaseBarrierHealth, sas::AttributeModifierOperation::Add, 12.f },
-			{ AbilityData::ClosedCircuit::Attribute::EnergyPowerBarrierHealthScale, sas::AttributeModifierOperation::Add, 0.06f }
-		}, {}, {}, {} });
-		definition.levelUpgradeScrapCosts = { 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60 };
 		definition.behaviorType = ly::AbilityBehaviorType::ClosedCircuit;
 		return definition;
 	}();

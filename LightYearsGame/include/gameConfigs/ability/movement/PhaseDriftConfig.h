@@ -6,6 +6,7 @@
 
 namespace AbilityData::Definitions
 {
+	// Numeric balance, progression and costs are authored in abilities.json.
 	inline const ly::GameAbilityDefinition PhaseDrift_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
@@ -14,9 +15,6 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability3;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 14.f;
-		definition.duration = 6.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Movement,
 			ly::GameplayTags::Ability::Family::PhaseDrift

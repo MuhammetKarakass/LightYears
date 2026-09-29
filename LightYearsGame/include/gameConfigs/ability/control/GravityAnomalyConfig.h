@@ -1,9 +1,5 @@
 #pragma once
 
-#include "attributes/AttributeSystem.h"
-
-#include "gameplay/attributes/AttributeIds.h"
-
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyContracts.h"
@@ -14,8 +10,6 @@ namespace AbilityData
 {
 	namespace GravityAnomaly
 	{
-		// Actor/presentation schema only. Numeric tuning lives in abilities.json.
-
 		inline const ly::AbilityActorDefinition ActorProjectileBasic = []
 		{
 			ly::AbilityActorDefinition definition;
@@ -38,6 +32,7 @@ namespace AbilityData
 
 	namespace Definitions
 	{
+		// Numeric balance, progression and costs are authored in abilities.json.
 		inline const ly::GameAbilityDefinition GravityAnomaly_Basic = []
 		{
 			ly::GameAbilityDefinition definition;
@@ -45,8 +40,6 @@ namespace AbilityData
 			definition.slot = sas::AbilitySlot::Ability1;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-			definition.cooldown = 0.f;
-			definition.maxCharges = 0;
 			definition.abilityTags = {
 				ly::GameplayTags::Ability::Control,
 				ly::GameplayTags::Ability::Family::GravityAnomaly

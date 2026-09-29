@@ -1,10 +1,8 @@
 #pragma once
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/frozenThrong/FrozenThrongContracts.h"
 #include "gameplay/tags/GameplayTags.h"
-#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/actors/AbilityActorType.h"
 #include "presentation/ability/frozenThrong/FrozenThrongPresentationIds.h"
 
@@ -16,46 +14,8 @@ namespace AbilityData::Definitions
 		definition.actorDefinitionId =
 			AbilityData::FrozenThrong::Actor::Husk::BasicDefinitionId;
 		definition.actorType = ly::AbilityActorType::FrozenThrongHusk;
-		definition.lifeTime = 3.f;
 		definition.presentationProfileId =
 			ly::FrozenThrongPresentationIds::HuskBasic;
-		definition.attributes = {
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Damage,
-				AbilityData::FrozenThrong::DefaultHuskDamage,
-				0.f
-			},
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Duration,
-				3.f,
-				0.01f
-			},
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Radius,
-				AbilityData::FrozenThrong::DefaultExplosionRadius,
-				0.f
-			},
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Range,
-				AbilityData::FrozenThrong::DefaultTargetSearchRadius,
-				0.f
-			},
-			sas::GameplayAttribute{
-				ly::CollisionAttributeIds::Radius,
-				12.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::FrozenThrong::Actor::Husk::ProjectileSpeed,
-				AbilityData::FrozenThrong::DefaultProjectileSpeed,
-				0.f
-			},
-			sas::GameplayAttribute{
-				ly::DamageAttributeIds::CryoBuildupPerHit,
-				2.f,
-				1.f
-			}
-		};
 		return definition;
 	}();
 
@@ -63,15 +23,13 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::FrozenThrong::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		// This is only the builtin fallback slot. The runtime loadout owns the
 		// player's actual binding, so Frozen Throng is not added to the default
 		// loadout by declaring this value here.
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = AbilityData::FrozenThrong::DefaultCooldown;
-		definition.duration = AbilityData::FrozenThrong::DefaultDuration;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::FrozenThrong
@@ -79,85 +37,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Frozen Throng";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 150, 225, 255, 255 };
-		definition.attributes = {
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Damage,
-				AbilityData::FrozenThrong::DefaultHuskDamage,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::FrozenThrong::Attribute::LuckToHuskScale,
-				AbilityData::FrozenThrong::DefaultLuckToHuskScale,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::FrozenThrong::Attribute::HuskDelay,
-				AbilityData::FrozenThrong::DefaultHuskDelay,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::FrozenThrong::Attribute::TargetSearchRadius,
-				AbilityData::FrozenThrong::DefaultTargetSearchRadius,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::FrozenThrong::Attribute::DensityRadius,
-				AbilityData::FrozenThrong::DefaultDensityRadius,
-				0.f
-			},
-			sas::GameplayAttribute{
-				ly::CommonAttributeIds::Radius,
-				AbilityData::FrozenThrong::DefaultExplosionRadius,
-				0.f
-			},
-		};
-		definition.scalingRules = {
-			sas::AttributeScalingRule{
-				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::AttackPower,
-				sas::AttributeModifierOperation::Add,
-				AbilityData::FrozenThrong::DefaultAttackPowerScale
-			},
-			sas::AttributeScalingRule{
-				ly::CommonAttributeIds::Damage,
-				ly::OwnerAttributeIds::EnergyPower,
-				sas::AttributeModifierOperation::Add,
-				AbilityData::FrozenThrong::DefaultEnergyPowerScale
-			}
-		};
-		ly::SetRepeatingAbilityLevelStep(definition,
-			ly::AbilityLevelStep{
-				{
-					sas::AttributeModifier{
-						ly::CommonAttributeIds::Damage,
-						sas::AttributeModifierOperation::Add,
-						7.f
-					}
-				},
-				{},
-				{},
-				{},
-				{
-					sas::AttributeScalingRule{
-						ly::CommonAttributeIds::Damage,
-						ly::OwnerAttributeIds::AttackPower,
-						sas::AttributeModifierOperation::Add,
-						0.015f
-					},
-					sas::AttributeScalingRule{
-						ly::CommonAttributeIds::Damage,
-						ly::OwnerAttributeIds::EnergyPower,
-						sas::AttributeModifierOperation::Add,
-						0.015f
-					}
-				}
-			}
-		);
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
-		definition.damageTags = { ly::DamageTypeSchema::Cryo };
 		definition.behaviorType = ly::AbilityBehaviorType::FrozenThrong;
 		return definition;
 	}();

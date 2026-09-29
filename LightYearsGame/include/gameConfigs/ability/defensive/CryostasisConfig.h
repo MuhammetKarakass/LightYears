@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/cryostasis/CryostasisContracts.h"
 #include "gameplay/tags/GameplayTags.h"
 
@@ -9,6 +8,7 @@ namespace AbilityData::Definitions
 {
 	// Fallback/test definition. Shipped balance is loaded from abilities.json;
 	// this preserves the C++ behavior identity when JSON is not loaded yet.
+	// Numeric balance, progression and costs are authored in abilities.json.
 	inline const ly::GameAbilityDefinition Cryostasis_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
@@ -19,9 +19,6 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 22.f;
-		definition.duration = 5.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Defense,
 			ly::GameplayTags::Ability::Family::Cryostasis
@@ -29,29 +26,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Cryostasis";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue.png";
 		definition.accentColor = sf::Color{ 130, 220, 255, 235 };
-		definition.attributes = {
-			{ AbilityData::Cryostasis::Attribute::BaseIceHealth, 150.f, 1.f },
-			{ AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale, 0.50f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, 5.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, 5.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, 4.f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, 0.05f, 0.f },
-			{ AbilityData::Cryostasis::Attribute::EnergyPowerReference, 100.f, 0.f }
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				{ AbilityData::Cryostasis::Attribute::BaseIceHealth, sas::AttributeModifierOperation::Add, 15.f },
-				{ AbilityData::Cryostasis::Attribute::IceHealthMaxHealthScale, sas::AttributeModifierOperation::Add, 0.03f },
-				{ AbilityData::Cryostasis::Attribute::BaseHealthRegenPerSecond, sas::AttributeModifierOperation::Add, 1.f },
-				{ AbilityData::Cryostasis::Attribute::HealthRegenMaxHealthScale, sas::AttributeModifierOperation::Add, 0.50f },
-				{ AbilityData::Cryostasis::Attribute::BaseAfterburnerRecoveryPerSecond, sas::AttributeModifierOperation::Add, 0.50f },
-				{ AbilityData::Cryostasis::Attribute::AfterburnerRecoveryEnergyPowerScale, sas::AttributeModifierOperation::Add, 0.01f }
-			}, {}, {}, {}
-		});
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::Cryostasis;
 		return definition;
 	}();

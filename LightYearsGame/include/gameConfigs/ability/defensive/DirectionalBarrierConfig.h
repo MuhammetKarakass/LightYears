@@ -2,11 +2,11 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h"
-#include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/tags/GameplayTags.h"
 
 namespace AbilityData::Definitions
 {
+	// Numeric balance, progression and costs are authored in abilities.json.
 	inline const ly::GameAbilityDefinition DirectionalBarrier_Basic = []
 	{
 		ly::GameAbilityDefinition definition;
@@ -16,9 +16,6 @@ namespace AbilityData::Definitions
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::Toggle;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 12.f;
-		definition.duration = 1.5f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Defense,
 			ly::GameplayTags::Ability::Family::DirectionalBarrier
@@ -26,36 +23,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Directional Barrier";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/shield_gold.png";
 		definition.accentColor = sf::Color{ 90, 190, 255, 235 };
-		definition.attributes = {
-			sas::GameplayAttribute{
-				AbilityData::DirectionalBarrier::Attribute::MaxHealthReference,
-				100.f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::DirectionalBarrier::Attribute::MaxHealthDurationScale,
-				0.20f,
-				0.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::DirectionalBarrier::Attribute::MovementSpeedMultiplier,
-				0.75f,
-				0.f,
-				1.f
-			}
-		};
-		ly::SetRepeatingAbilityLevelStep(definition, ly::AbilityLevelStep{
-			{
-				{ ly::CommonAttributeIds::Duration, sas::AttributeModifierOperation::Add, 0.10f },
-				{ AbilityData::DirectionalBarrier::Attribute::MaxHealthDurationScale,
-					sas::AttributeModifierOperation::Add, 0.01f }
-			},
-			{}, {}, {}
-		});
-		definition.levelUpgradeScrapCosts = {
-			60, 60, 60, 60, 60, 60, 60,
-			60, 60, 60, 60, 60, 60, 60
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::DirectionalBarrier;
 		return definition;
 	}();

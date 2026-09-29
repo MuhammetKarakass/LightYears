@@ -27,12 +27,10 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::OverdriveCore::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		definition.slot = sas::AbilitySlot::Ability4;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
-		definition.cooldown = 0.f;
-		definition.duration = 0.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::OverdriveCore
@@ -40,7 +38,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Overdrive Core";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
 		definition.accentColor = sf::Color{ 255, 95, 45, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Kinetic };
 		definition.attachmentCapabilities = {
 			ly::AttachmentSchema::Capability::Damage
 		};

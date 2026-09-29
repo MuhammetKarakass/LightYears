@@ -1,9 +1,5 @@
 #pragma once
 
-#include "attributes/AttributeSystem.h"
-
-#include "gameplay/attributes/AttributeIds.h"
-
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/sunBeam/SunBeamContracts.h"
@@ -33,12 +29,10 @@ namespace AbilityData
 		{
 			ly::GameAbilityDefinition definition;
 			definition.abilityId = SunBeam::AbilityId::Strike::Basic;
+			// Numeric balance, progression and costs are authored in abilities.json.
 			definition.slot = sas::AbilitySlot::Ability2;
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-			definition.cooldown = 0.f;
-			definition.duration = 0.f;
-			definition.maxCharges = 0;
 			definition.abilityTags = {
 				ly::GameplayTags::Ability::Offense,
 				ly::GameplayTags::Ability::Family::SunBeam

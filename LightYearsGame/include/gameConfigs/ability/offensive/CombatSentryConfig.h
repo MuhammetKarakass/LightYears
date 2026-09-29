@@ -4,7 +4,6 @@
 #include "gameplay/ability/combatSentry/CombatSentryContracts.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
-#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "presentation/ability/combatSentry/CombatSentryPresentationIds.h"
 
 namespace AbilityData::CombatSentry
@@ -37,13 +36,11 @@ namespace AbilityData::Definitions
 	{
 		ly::GameAbilityDefinition definition;
 		definition.abilityId = AbilityData::CombatSentry::AbilityId::Basic;
+		// Numeric balance, progression and costs are authored in abilities.json.
 		// Only a fallback catalog slot; the player loadout remains runtime-owned.
 		definition.slot = sas::AbilitySlot::Ability1;
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
-		definition.cooldown = AbilityData::CombatSentry::DefaultCooldown;
-		definition.duration = 0.f;
-		definition.maxCharges = 1;
 		definition.abilityTags = {
 			ly::GameplayTags::Ability::Offense,
 			ly::GameplayTags::Ability::Family::CombatSentry
@@ -51,7 +48,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Combat Sentry";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 110, 210, 255, 255 };
-		definition.damageTags = { ly::DamageTypeSchema::Photonic };
 		definition.behaviorType = ly::AbilityBehaviorType::CombatSentry;
 		return definition;
 	}();
