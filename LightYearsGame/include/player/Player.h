@@ -16,7 +16,7 @@ namespace ly
 	class Player : public Object
 	{
 	public:
-		Player();
+		explicit Player(std::string shipId = "Ship.Player.Fighter.Basic");
 		~Player() override;
 
 		weak_ptr<PlayerSpaceShip> SpawnSpaceShip(World* world);
@@ -65,6 +65,7 @@ namespace ly
 		void ResetRunProgression();
 
 		weak_ptr<PlayerSpaceShip> mCurrentSpaceShip;
+		std::string mShipId;
 		DelegateHandle mCurrentShipDestroyedHandle;
 		DelegateHandle mShipLevelChangedHandle;
 		ShipProgression mShipProgression;

@@ -12,6 +12,8 @@ namespace ly::content
 {
 	namespace
 	{
+		constexpr char kPlayerShipIdPrefix[] = "Ship.Player.";
+
 		List<ShipLoader::LoadedDefinition>& GetDefinitions()
 		{
 			static List<ShipLoader::LoadedDefinition> definitions;
@@ -187,6 +189,33 @@ namespace ly::content
 			}
 		}
 		return nullptr;
+	}
+
+	List<std::string> ShipContentCatalog::GetPlayerShipIds()
+	{
+		List<std::string> shipIds;
+		for (const ShipLoader::LoadedDefinition& definition : GetDefinitions())
+		{
+			if (definition.id.rfind(kPlayerShipIdPrefix, 0) == 0)
+			{
+				shipIds.push_back(definition.id);
+			}
+		}
+		return shipIds;
+	}
+
+	const ShipDefinition& ShipContentCatalog::GetPlayerShipDefinition(const std::string& shipId)
+	{
+		if (shipId.rfind(kPlayerShipIdPrefix, 0) == 0)
+		{
+			if (const ShipDefinition* definition = FindById(shipId))
+			{
+				return *definition;
+			}
+		}
+
+		LY_GAME_ERROR("Cannot resolve player ship '%s'; using Fighter.", shipId.c_str());
+		return GetPlayerFighterDefinition();
 	}
 
 	const ShipDefinition& ShipContentCatalog::GetPlayerFighterDefinition()

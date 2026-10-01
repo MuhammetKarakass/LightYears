@@ -1,5 +1,7 @@
 #include "player/PlayerManager.h"
 
+#include <utility>
+
 namespace ly
 {
 	unique_ptr<PlayerManager> PlayerManager::playerManager = nullptr;
@@ -17,6 +19,11 @@ namespace ly
 		mPlayers.clear();
 	}
 
+	void PlayerManager::SetSelectedShipId(std::string shipId)
+	{
+		mSelectedShipId = std::move(shipId);
+	}
+
 	PlayerManager& PlayerManager::GetPlayerManager()
 	{
 		if (!playerManager)
@@ -28,7 +35,7 @@ namespace ly
 
 	Player& PlayerManager::CreateNewPlayer()
 	{
-		mPlayers.emplace_back();
+		mPlayers.emplace_back(mSelectedShipId);
 		Player& player = mPlayers.back();
 		onPlayerCreated.Broadcast(&player);
 		return player;

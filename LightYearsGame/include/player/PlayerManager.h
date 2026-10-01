@@ -3,6 +3,7 @@
 #include <framework/Core.h>
 #include "player/Player.h"
 #include <deque>
+#include <string>
 
 namespace ly
 {
@@ -11,6 +12,8 @@ namespace ly
 	public:
 
 		Player& CreateNewPlayer();
+		void SetSelectedShipId(std::string shipId);
+		const std::string& GetSelectedShipId() const { return mSelectedShipId; }
 		
 		Player* GetPlayer(int playerIndex = 0);
 		const Player* GetPlayer(int playerIndex = 0) const;
@@ -28,6 +31,7 @@ namespace ly
 	private:
 
 		std::deque<Player> mPlayers;
+		std::string mSelectedShipId{ "Ship.Player.Fighter.Basic" };
 		static unique_ptr<PlayerManager> playerManager;
 	};
 }

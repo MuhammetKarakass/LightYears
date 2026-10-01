@@ -15,11 +15,12 @@ namespace ly
 		constexpr bool kAutoLevelAbilitiesForTesting = true;
 	}
 
-	Player::Player():
+	Player::Player(std::string shipId):
+		mCurrentSpaceShip{},
+		mShipId{ std::move(shipId) },
 		mLifeCount{3},
 		mScore{ 0 },
-		mScrap{ 0 },
-		mCurrentSpaceShip{}
+		mScrap{ 0 }
 	{
 		mShipLevelChangedHandle = mShipProgression.onLevelChanged.BindAction(this, &Player::OnShipLevelChanged);
 	}
@@ -44,7 +45,8 @@ namespace ly
 			--mLifeCount;
 			mShipProgression.ForgetDestroyedAttributes();
 			auto windowSize = world->GetWindowSize();
-			mCurrentSpaceShip = world->SpawnActor<PlayerSpaceShip>();
+			const auto& shipDefinition = content::ShipContentCatalog::GetPlayerShipDefinition(mShipId);
+			mCurrentSpaceShip = world->SpawnActor<PlayerSpaceShip>(shipDefinition);
 
 			auto ship = mCurrentSpaceShip.lock();
 			if (!ship)
@@ -56,9 +58,7 @@ namespace ly
 
 			if (!mShipProgression.IsConfigured())
 			{
-				mShipProgression.Configure(
-					content::ShipContentCatalog::GetPlayerFighterDefinition().progressionDefinition
-				);
+				mShipProgression.Configure(shipDefinition.progressionDefinition);
 			}
 			mShipProgression.BindAttributes(ship->GetAbilitySystemComponent().GetAttributes());
 			ship->GetShipRuntime().SetShipLevel(mShipProgression.GetLevel());
