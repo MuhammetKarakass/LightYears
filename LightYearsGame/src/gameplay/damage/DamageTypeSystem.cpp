@@ -2,6 +2,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/content/DamageStatusBalanceCatalog.h"
@@ -9,6 +10,7 @@
 #include "gameplay/time/PeriodicTickAccumulator.h"
 #include "effects/GameplayEffectBindings.h"
 #include <algorithm>
+#include <cmath>
 
 namespace ly
 {
@@ -115,6 +117,14 @@ namespace ly
 			);
 		}
 
+		void EnsureRuntimeAttribute(sas::ActiveGameplayEffect& effect, const sas::AttributeId& id)
+		{
+			if (!sas::FindAttribute(effect.runtimeAttributes, id))
+			{
+				effect.runtimeAttributes.emplace_back(id, 0.f, 0.f);
+			}
+		}
+
 		sas::GameplayEffectBehaviorResult TickIgnite(
 			sas::ActiveGameplayEffect& effect,
 			Actor& owner,
@@ -126,76 +136,48 @@ namespace ly
 				return {};
 			}
 
-			const float damagePerTick = std::max(
-				0.f,
-				sas::FindAttributeValue(
-					effect.runtimeAttributes,
-					DamageAttributeIds::BurnDamagePerTick,
-					0.f
-				)
-			);
-			const float tickInterval = std::max(
-				0.f,
-				sas::FindAttributeValue(
-					effect.runtimeAttributes,
-					DamageAttributeIds::BurnTickInterval,
-					0.f
-				)
-			);
-			if (damagePerTick > 0.f && tickInterval > 0.f)
-			{
-				// Periodic Burn is an explicit source-owned mode. It is independent of
-				// the canonical Thermal DPS table and therefore returns after ticking.
-				sas::GameplayAttribute* accumulator = sas::FindAttribute(
-					effect.runtimeAttributes,
-					DamageAttributeIds::BurnTickAccumulator
-				);
-				if (!accumulator)
-				{
-					effect.runtimeAttributes.emplace_back(
-						DamageAttributeIds::BurnTickAccumulator,
-						0.f,
-						0.f
-					);
-					accumulator = sas::FindAttribute(
-						effect.runtimeAttributes,
-						DamageAttributeIds::BurnTickAccumulator
-					);
-				}
-				if (!accumulator)
-				{
-					return {};
-				}
-
-				const int tickCount = time::ConsumePeriodicTicks(
-					accumulator->currentValue,
-					deltaTime,
-					tickInterval
-				);
-				for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
-				{
-					// Preserve player ownership for periodic effect damage while its
-					// source actor is still available. If the source has already gone
-					// away, the hit remains valid damage but is intentionally unowned.
-					Actor* effectSource = effect.GetSourceObject<Actor>();
-					ApplyCombatDamage(
-						owner,
-						damagePerTick,
-						effectSource,
-						{ DamageTypeSchema::Thermal }
-					);
-				}
-				return {};
-			}
-
+			// Canonical Ignite is authored as damage per second. Integrate it every
+			// slice with the stack count that was active for that slice, but deliver it
+			// once per global combat tick so total damage is unchanged while the hit
+			// cadence matches every other periodic source.
 			const float damagePerSecond = GetDamageStatusBalance().ThermalDamagePerSecond(
 				effect.stackCount
 			);
-			if (damagePerSecond > 0.f)
+			// Adding an attribute can reallocate the vector, so create both before
+			// taking any pointer into it.
+			EnsureRuntimeAttribute(effect, DamageAttributeIds::IgnitePendingDamage);
+			EnsureRuntimeAttribute(effect, DamageAttributeIds::IgniteTickAccumulator);
+			sas::GameplayAttribute* pendingDamage = sas::FindAttribute(
+				effect.runtimeAttributes, DamageAttributeIds::IgnitePendingDamage
+			);
+			sas::GameplayAttribute* tickClock = sas::FindAttribute(
+				effect.runtimeAttributes, DamageAttributeIds::IgniteTickAccumulator
+			);
+			if (!pendingDamage || !tickClock)
 			{
+				return {};
+			}
+
+			pendingDamage->currentValue += std::max(0.f, damagePerSecond) * deltaTime;
+			const int dueTicks = time::ConsumePeriodicTicks(
+				tickClock->currentValue,
+				deltaTime,
+				CombatTick::Interval
+			);
+			// All integrated damage is delivered in one hit, so a hitch must not leave
+			// tick debt behind that would make later frames hit off-cadence.
+			tickClock->currentValue = std::fmod(tickClock->currentValue, CombatTick::Interval);
+			// The last slice of the last stack removes the effect and there is no
+			// remove hook, so deliver the remainder now instead of dropping it.
+			const bool endsAfterThisSlice =
+				effect.stackCount <= 1 && effect.remainingDuration <= deltaTime + 0.0001f;
+			if ((dueTicks > 0 || endsAfterThisSlice) && pendingDamage->currentValue > 0.f)
+			{
+				const float damage = pendingDamage->currentValue;
+				pendingDamage->currentValue = 0.f;
 				ApplyCombatDamage(
 					owner,
-					damagePerSecond * deltaTime,
+					damage,
 					effect.GetSourceObject<Actor>(),
 					{ DamageTypeSchema::Thermal }
 				);
@@ -281,9 +263,6 @@ namespace ly
 		if (HasDamageType(damageTags, DamageTypeSchema::Thermal))
 		{
 			OverrideIntIfDeclared(sourceAttributes, DamageAttributeIds::IgniteStacks, payload.igniteStacks);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDamagePerTick, payload.burnDamagePerTick);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnTickInterval, payload.burnTickInterval);
-			OverrideIfDeclared(sourceAttributes, DamageAttributeIds::BurnDuration, payload.burnDuration);
 		}
 		if (HasDamageType(damageTags, DamageTypeSchema::Cryo))
 		{
@@ -305,9 +284,6 @@ namespace ly
 			0,
 			GetDamageStatusBalance().thermal.maxStacks
 		);
-		payload.burnDamagePerTick = std::max(0.f, payload.burnDamagePerTick);
-		payload.burnTickInterval = std::max(0.f, payload.burnTickInterval);
-		payload.burnDuration = std::max(0.f, payload.burnDuration);
 		payload.cryoBuildupPerHit = std::clamp(
 			payload.cryoBuildupPerHit,
 			0,
@@ -337,14 +313,8 @@ namespace ly
 			return applied;
 		}
 
-		const bool hasPeriodicBurnDamage = context.payload.burnDamagePerTick > 0.f;
-		const bool hasPeriodicBurnInterval = context.payload.burnTickInterval > 0.f;
-		const bool hasPeriodicBurn = hasPeriodicBurnDamage && hasPeriodicBurnInterval;
-		const bool hasInvalidPeriodicBurn =
-			(hasPeriodicBurnDamage || hasPeriodicBurnInterval || context.payload.burnDuration > 0.f) &&
-			!hasPeriodicBurn;
 		if (HasDamageType(context.damageTags, DamageTypeSchema::Thermal) &&
-			context.payload.igniteStacks > 0 && !hasInvalidPeriodicBurn)
+			context.payload.igniteStacks > 0)
 		{
 			const sas::GameplayEffectDefinition* igniteDefinition =
 				EffectData::FindGameplayEffectDefinition("Effect.Status.Damage.Ignite");
@@ -352,30 +322,10 @@ namespace ly
 			{
 				sas::GameplayEffectSpec igniteSpec = MakeStatusEffectSpec(
 					*igniteDefinition,
-					hasPeriodicBurn && context.payload.burnDuration > 0.f
-					? context.payload.burnDuration
-					: GetDamageStatusBalance().thermal.duration,
+					GetDamageStatusBalance().thermal.duration,
 					GetDamageStatusBalance().thermal.maxStacks
 				);
 				igniteSpec.attributes.clear();
-				if (hasPeriodicBurn)
-				{
-					igniteSpec.attributes.emplace_back(
-						DamageAttributeIds::BurnDamagePerTick,
-						context.payload.burnDamagePerTick,
-						0.f
-					);
-					igniteSpec.attributes.emplace_back(
-						DamageAttributeIds::BurnTickInterval,
-						context.payload.burnTickInterval,
-						0.001f
-					);
-					igniteSpec.attributes.emplace_back(
-						DamageAttributeIds::BurnTickAccumulator,
-						0.f,
-						0.f
-					);
-				}
 				if (ApplyCappedStackEffect(
 					targetAbilitySystem,
 					igniteSpec,

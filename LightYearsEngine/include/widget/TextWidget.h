@@ -7,7 +7,6 @@ namespace ly
 {
 	class TextWidget : public Widget
 	{
-		friend struct GameHUDPlayerRestartTestAccess;
 		friend struct GameHUDDamageE2ETestAccess;
 
 	public:
@@ -32,5 +31,6 @@ namespace ly
 
 		shared_ptr<sf::Font> mFont;
 		sf::Text mText;
+		std::uint8_t mAuthoredTextAlpha{ 255 };
 	};
 }

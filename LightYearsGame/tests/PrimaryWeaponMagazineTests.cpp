@@ -1673,22 +1673,23 @@ int main(int argc, char** argv)
 		{
 			return Fail("Suite H: Fighter laser progression must be open-ended");
 		}
-		if (fighterLaser.progressionProfile.levelUpgradeScrapCosts.size() != 14)
+		if (fighterLaser.progressionProfile.scrapCost.base != 40u ||
+			fighterLaser.progressionProfile.scrapCost.step != 5u)
 		{
-			return Fail("Suite H: Fighter levelUpgradeScrapCosts must contain 14 entries");
+			return Fail("Suite H: Fighter scrapCost must be base 40, step 5");
 		}
 		const ly::List<unsigned int> expectedCosts{ 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105 };
 		for (size_t i = 0; i < expectedCosts.size(); ++i)
 		{
-			if (fighterLaser.progressionProfile.levelUpgradeScrapCosts[i] != expectedCosts[i])
+			if (fighterLaser.progressionProfile.GetScrapCostToReachLevel(static_cast<int>(i) + 2) != expectedCosts[i])
 			{
-				return Fail("Suite H: Fighter levelUpgradeScrapCosts mismatch");
+				return Fail("Suite H: Fighter scrap cost formula mismatch");
 			}
 		}
 
-		if (fighterLaser.progressionProfile.GetScrapCostToReachLevel(20) != 0u)
+		if (fighterLaser.progressionProfile.GetScrapCostToReachLevel(20) != 130u)
 		{
-			return Fail("Suite H: Fighter scrap cost beyond the authored list must be 0");
+			return Fail("Suite H: Fighter scrap cost must keep following the linear formula beyond L15");
 		}
 		if (fighterLaser.progressionProfile.ResolveDistinctSteps().empty())
 		{
@@ -1731,16 +1732,16 @@ int main(int argc, char** argv)
 		};
 
 		if (!verifyResolvedLevelStats(1, 12.40f, 2.10f) ||
-			!verifyResolvedLevelStats(5, 52.60f, 6.22f) ||
-			!verifyResolvedLevelStats(10, 102.85f, 11.37f) ||
-			!verifyResolvedLevelStats(15, 153.10f, 16.52f))
+			!verifyResolvedLevelStats(5, 32.60f, 6.22f) ||
+			!verifyResolvedLevelStats(10, 57.85f, 11.37f) ||
+			!verifyResolvedLevelStats(15, 83.10f, 16.52f))
 		{
 			return Fail("Suite H: Resolved L1/L5/L10/L15 progression stats mismatch");
 		}
 
 		// 2. Deterministic damage at L15: AP 77, EP 63
-		// Normal raw: 152 + 77 * 1.10 = 236.7 -> ceil = 237
-		// Empowered raw: 236.7 + 16 + 63 * 0.52 = 285.46 -> crit 1.5 = 428.19 -> ceil = 429
+		// Normal raw: 82 + 77 * 1.10 = 166.7 -> ceil = 167
+		// Empowered raw: 166.7 + 16 + 63 * 0.52 = 215.46 -> crit 1.5 = 323.19 -> ceil = 324
 		{
 			World world{ nullptr };
 			const shared_ptr<TestShipCombatant> ship = world.SpawnActor<TestShipCombatant>().lock();
@@ -1814,9 +1815,9 @@ int main(int argc, char** argv)
 				if (expectedEmpowered)
 				{
 					++empoweredCount;
-					if (!NearlyEqual(actualDamage, 429.f))
+					if (!NearlyEqual(actualDamage, 324.f))
 					{
-						return Fail("Suite H: L15 Empowered damage mismatch: expected 429, got " + std::to_string(actualDamage));
+						return Fail("Suite H: L15 Empowered damage mismatch: expected 324, got " + std::to_string(actualDamage));
 					}
 					if (!target.wasCriticalList.back())
 					{
@@ -1826,9 +1827,9 @@ int main(int argc, char** argv)
 				else
 				{
 					++normalCount;
-					if (!NearlyEqual(actualDamage, 237.f))
+					if (!NearlyEqual(actualDamage, 167.f))
 					{
-						return Fail("Suite H: L15 Normal damage mismatch: expected 237, got " + std::to_string(actualDamage));
+						return Fail("Suite H: L15 Normal damage mismatch: expected 167, got " + std::to_string(actualDamage));
 					}
 				}
 			}
@@ -1837,9 +1838,9 @@ int main(int argc, char** argv)
 			{
 				return Fail("Suite H: Shot count mismatch: expected 35 normal, 13 empowered");
 			}
-			if (!NearlyEqual(totalL15MagazineDamage, 13872.f))
+			if (!NearlyEqual(totalL15MagazineDamage, 10057.f))
 			{
-				return Fail("Suite H: L15 Magazine total damage mismatch: expected 13872, got " + std::to_string(totalL15MagazineDamage));
+				return Fail("Suite H: L15 Magazine total damage mismatch: expected 10057, got " + std::to_string(totalL15MagazineDamage));
 			}
 		}
 
@@ -1895,7 +1896,7 @@ int main(int argc, char** argv)
 				return Fail("Suite H: successfulFireCount reset on level up");
 			}
 
-			// Fire 6th shot: should be EMPOWERED, with L15 damage (429 final)
+			// Fire 6th shot: should be EMPOWERED, with L15 damage (324 final)
 			world.TickInternal(0.25f);
 			world.TickInternal(0.f);
 
@@ -1933,9 +1934,9 @@ int main(int argc, char** argv)
 			if (target.receivedDamages.empty()) return Fail("Suite H: Shot 6 target received no damage");
 
 			const float shot6Damage = target.receivedDamages.back();
-			if (!NearlyEqual(shot6Damage, 429.f))
+			if (!NearlyEqual(shot6Damage, 324.f))
 			{
-				return Fail("Suite H: Cache invalidation failed! Expected L15 empowered damage 429, got " + std::to_string(shot6Damage));
+				return Fail("Suite H: Cache invalidation failed! Expected L15 empowered damage 324, got " + std::to_string(shot6Damage));
 			}
 
 			// 4. Active reload preservation across level up

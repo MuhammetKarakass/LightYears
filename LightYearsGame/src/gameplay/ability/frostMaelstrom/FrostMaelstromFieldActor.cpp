@@ -3,6 +3,7 @@
 #include "attributes/AttributeSystem.h"
 #include "framework/World.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/frostMaelstrom/FrostMaelstromContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -10,6 +11,7 @@
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/movement/MovementInfluenceService.h"
 #include "gameplay/targeting/CombatantTargetQuery.h"
+#include "gameplay/time/PeriodicTickAccumulator.h"
 #include "presentation/ability/PresentationProfileRegistry.h"
 #include "spaceShip/SpaceShip.h"
 
@@ -205,10 +207,6 @@ namespace ly
 		mMaximumSpeed = std::max(mMinimumSpeed, find(
 			AbilityData::FrostMaelstrom::Attribute::MaximumMovementSpeed,
 			AbilityData::FrostMaelstrom::DefaultMaximumMovementSpeed
-		));
-		mTickInterval = std::max(0.001f, find(
-			AbilityData::FrostMaelstrom::Attribute::TickInterval,
-			AbilityData::FrostMaelstrom::DefaultTickInterval
 		));
 		mCryoStacksPerTick = std::clamp(find(
 			AbilityData::FrostMaelstrom::Attribute::CryoStacksPerTick,
@@ -507,11 +505,17 @@ namespace ly
 		AdvanceField(safeDeltaTime);
 		UpdateControlledTargets();
 		ApplyControlForces();
-		mTickAccumulator += safeDeltaTime;
-		while (mTickAccumulator >= mTickInterval && mFieldAge <= mDuration + 0.001f)
+		if (mFieldAge <= mDuration + 0.001f)
 		{
-			mTickAccumulator -= mTickInterval;
-			ApplyCryoTick();
+			const int tickCount = time::ConsumePeriodicTicks(
+				mTickAccumulator,
+				safeDeltaTime,
+				CombatTick::Interval
+			);
+			for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
+			{
+				ApplyCryoTick();
+			}
 		}
 		AbilityWorldActor::Tick(safeDeltaTime);
 	}

@@ -1,6 +1,7 @@
 #include "framework/World.h"
 #include "framework/Core.h"
 #include "framework/Application.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
@@ -454,7 +455,7 @@ namespace ly
 			GetGlobalAbilityCooldownTotalReduction(inferno->cooldown, 1) > 0.f &&
 			inferno->scalingRules.empty() &&
 			NearlyEqual(ReadActorAttribute(infernoActor, AbilityData::InfernoSpray::Actor::FlameCone::BaseDPS), 24.f) &&
-			NearlyEqual(ReadActorAttribute(infernoActor, AbilityData::InfernoSpray::Actor::FlameCone::CombatTickInterval), 0.25f) &&
+			NearlyEqual(CombatTick::Interval, 0.25f) &&
 			NearlyEqual(ReadActorAttribute(infernoActor, DamageAttributeIds::IgniteStacks), 1.f);
 
 		const bool presentationProfilesRegistered =

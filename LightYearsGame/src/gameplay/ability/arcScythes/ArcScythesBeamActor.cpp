@@ -3,6 +3,7 @@
 #include "attributes/AttributeSystem.h"
 #include "framework/World.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/arcScythes/ArcScythesContracts.h"
 #include "gameplay/combat/Combatant.h"
@@ -157,10 +158,9 @@ namespace ly
 				{
 					return baseResult;
 				}
-				const bool validAttributes = definition.attributes.size() == 5 &&
+				const bool validAttributes = definition.attributes.size() == 4 &&
 					HasNonNegativeAttribute(definition, AbilityData::ArcScythes::Attribute::Damage) &&
 					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::Range) &&
-					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::CombatTickInterval) &&
 					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::BeamHalfThickness) &&
 					HasPositiveAttribute(definition, AbilityData::ArcScythes::Attribute::ElectricStacks);
 				if (!validAttributes || definition.lifeTime < 4.f ||
@@ -216,9 +216,6 @@ namespace ly
 		mRange = std::max(1.f, sas::FindAttributeValue(
 			attributes, AbilityData::ArcScythes::Attribute::Range, 700.f
 		));
-		mCombatTickInterval = std::max(0.01f, sas::FindAttributeValue(
-			attributes, AbilityData::ArcScythes::Attribute::CombatTickInterval, 0.25f
-		));
 		mBeamHalfThickness = std::max(1.f, sas::FindAttributeValue(
 			attributes, AbilityData::ArcScythes::Attribute::BeamHalfThickness, 22.f
 		));
@@ -252,7 +249,7 @@ namespace ly
 		SetActorLocation(owner->GetActorLocation());
 		mVisualTime += std::max(0.f, deltaTime);
 		const int tickCount = time::ConsumePeriodicTicks(
-			mCombatTickTimer, deltaTime, mCombatTickInterval
+			mCombatTickTimer, deltaTime, CombatTick::Interval
 		);
 		for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
 		{

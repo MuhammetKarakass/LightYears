@@ -55,9 +55,6 @@ namespace AbilityData::ArcScythes
 
 		// The cadence and collision width belong to this continuous-beam delivery
 		// model, not to every ranged ability in the project.
-		inline static const sas::AttributeId CombatTickInterval{
-			"AbilityActor.ArcScythes.Beam.CombatTickInterval"
-		};
 		inline static const sas::AttributeId BeamHalfThickness{
 			"AbilityActor.ArcScythes.Beam.BeamHalfThickness"
 		};

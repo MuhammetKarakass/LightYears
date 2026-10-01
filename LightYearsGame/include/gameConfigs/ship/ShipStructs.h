@@ -88,6 +88,7 @@ struct ShipProgressionDefinition
 	// Missing entries have zero natural growth. Values are flat bonuses per
 	// completed level; this is not the retired base-growth multiplier model.
 	ly::List<AttributeGrowthEntry> naturalGrowth;
+	float xpPerLevel = 0.f;
 };
 
 struct ShipEnergyAttributes

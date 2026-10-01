@@ -74,7 +74,6 @@ namespace ly
 					ButtonDefault();
 				}
 
-				handled = true;
 			}
 		}
 
@@ -102,6 +101,7 @@ namespace ly
 	void Button::ButtonDefault()
 	{
 		mButtonClicked = false;
+		mButtonHovered = false;
 		mButtonSprite.setColor(mButtonDefaultColor);
 	}
 
@@ -114,11 +114,13 @@ namespace ly
 			1.5f   // Pitch
 		);
 		mButtonClicked = true;
+		mButtonHovered = false;
 		mButtonSprite.setColor(mButtonClickedColor);
 	}
 
 	void Button::ButtonHovered()
 	{
+		mButtonHovered = true;
 		mButtonSprite.setColor(mButtonHoveredColor);
 	}
 

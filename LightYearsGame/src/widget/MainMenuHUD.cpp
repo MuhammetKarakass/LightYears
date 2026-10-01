@@ -1,51 +1,45 @@
 #include "widget/MainMenuHUD.h"
+#include "widget/MenuLayout.h"
+#include "widget/StackPanel.h"
+#include "widget/TextWidget.h"
 
 namespace ly
 {
-	MainMenuHUD::MainMenuHUD():
-		mTitleText{"Light Years"},
-		mStartButton{"Start"},
-		mQuitButton{"Quit"}
+	namespace
 	{
-		mTitleText.SetTextSize(40);
-		mStartButton.SetTextSize(25);
-		mQuitButton.SetTextSize(20);
+		void SetLegacyCenteredTextLayout(TextWidget& text, float centerY)
+		{
+			const sf::FloatRect glyphBounds = text.GetBound();
+			UILayout layout = UILayout::Anchored(UIAnchor::Top, { glyphBounds.position.x, centerY + glyphBounds.position.y });
+			layout.pivot = { .5f, .5f };
+			text.SetLayout(layout);
+		}
 	}
 
-	void MainMenuHUD::Draw(sf::RenderWindow& windowRef)
+	MainMenuHUD::MainMenuHUD()
 	{
-		mTitleText.NativeDraw(windowRef);
-		mStartButton.NativeDraw(windowRef);
-		mQuitButton.NativeDraw(windowRef);
+		auto menuLayer = GetLayer(UILayer::Menu).lock();
+		auto title = menuLayer->AddChild<TextWidget>("Light Years");
+		title.lock()->SetTextSize(40);
+		SetLegacyCenteredTextLayout(*title.lock(), 100.f);
+
+		UILayout columnLayout = UILayout::Anchored(UIAnchor::Center, {});
+		columnLayout.pivot = { .5f, 0.f };
+		auto column = BuildMenuColumn(*menuLayer, columnLayout, 0.f).lock();
+		mStartButton = AddMenuButton(*column, "Start", 25);
+		mQuitButton = AddMenuButton(*column, "Quit", 20);
+		column->SetSpacing(100.f - mStartButton.lock()->GetIntrinsicSize().y);
+		columnLayout.offset.y = -mStartButton.lock()->GetIntrinsicSize().y * .5f;
+		column->SetLayout(columnLayout);
 	}
-	
-	bool MainMenuHUD::HandleEvent(const sf::Event& event)
-	{
-		bool handled = false;
-		handled = mStartButton.HandleEvent(event) || handled;
-		handled = mQuitButton.HandleEvent(event) || handled;
-		return handled || HUD::HandleEvent(event);
-	}
-	
+
 	void MainMenuHUD::Init(sf::RenderWindow& windowRef)
 	{
-		auto windowSize = windowRef.getSize();
-		
-		// ? Origin'leri merkeze al
-		mTitleText.CenterOrigin();
-		mStartButton.CenterOrigin();
-		mQuitButton.CenterOrigin();
-		
-		// Widget pozisyonlarý (artýk merkezden konumlanacaklar)
-		mTitleText.SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, 100.f });
-		mStartButton.SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f });
-		mQuitButton.SetWidgetLocation(sf::Vector2f{ windowSize.x / 2.f, windowSize.y / 2.f + 100.f });
-
-		// Button event'leri
-		mStartButton.onButtonClicked.BindAction(GetWeakPtr(), &MainMenuHUD::StartButtonClicked);
-		mQuitButton.onButtonClicked.BindAction(GetWeakPtr(), &MainMenuHUD::QuitButtonClicked);
+		static_cast<void>(windowRef);
+		if (auto button = mStartButton.lock()) button->onButtonClicked.BindAction(GetWeakPtr(), &MainMenuHUD::StartButtonClicked);
+		if (auto button = mQuitButton.lock()) button->onButtonClicked.BindAction(GetWeakPtr(), &MainMenuHUD::QuitButtonClicked);
 	}
-	
+
 	void MainMenuHUD::StartButtonClicked()
 	{
 		onStartButtonClicked.Broadcast();
@@ -55,6 +49,4 @@ namespace ly
 	{
 		onQuitButtonClicked.Broadcast();
 	}
-
 }
-

@@ -78,7 +78,9 @@ namespace ly
 
 	float ShipProgression::GetXPRequiredForNextLevel() const
 	{
-		return std::max(1.f, mDefinition.baseXP * std::pow(static_cast<float>(mCurrentLevel), mDefinition.xpExponent));
+		const float level = static_cast<float>(mCurrentLevel);
+		return std::max(1.f, mDefinition.baseXP * std::pow(level, mDefinition.xpExponent) +
+			mDefinition.xpPerLevel * (level - 1.f));
 	}
 
 	void ShipProgression::RebuildLevelModifiers()

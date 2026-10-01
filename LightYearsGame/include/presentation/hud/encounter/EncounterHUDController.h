@@ -3,6 +3,7 @@
 #include "framework/Core.h"
 #include "gameplay/encounter/EncounterWaveRuntime.h"
 #include "presentation/hud/HUDController.h"
+#include "presentation/hud/encounter/EncounterHUDPresentation.h"
 
 #include <SFML/System/Vector2.hpp>
 #include <functional>
@@ -11,7 +12,7 @@
 namespace ly
 {
 	class GameHUD;
-	class TextWidget;
+	class EncounterHUDView;
 
 	// Presentation-only projection of an encounter snapshot. Kept next to its controller so the
 	// encounter runtime stays unaware of HUD wording.
@@ -34,29 +35,12 @@ namespace ly
 		~EncounterHUDController() override;
 
 		void Tick(float deltaTime) override;
+		shared_ptr<const EncounterHUDPresentation> GetPresentation() const { return mPresentation; }
 
 	private:
-		void EnsureWidgets();
-		void UpdateWidgets(const EncounterWaveSnapshot& snapshot);
-		void HideWidgets();
-		void RemoveWidgets();
-		void PositionWidgets();
-
 		weak_ptr<GameHUD> mGameHUD;
 		SnapshotProvider mSnapshotProvider;
-		weak_ptr<TextWidget> mWaveText;
-		weak_ptr<TextWidget> mDetailText;
-		bool mWidgetsCreated = false;
-		bool mWidgetsVisible = false;
-		sf::Vector2u mLastWindowSize{ 0u, 0u };
-
-		// Last presented values so unchanged snapshots do not rewrite widget text.
-		EncounterWaveState mLastState = EncounterWaveState::Idle;
-		size_t mLastWaveNumber = 0;
-		EncounterSequenceMode mLastSequenceMode = EncounterSequenceMode::Finite;
-		std::optional<size_t> mLastTotalWaveCount;
-		int mLastThreatCount = -1;
-		int mLastCountdownSecond = -1;
-		int mLastEnemyLevel = -1;
+		shared_ptr<EncounterHUDPresentation> mPresentation;
+		weak_ptr<EncounterHUDView> mView;
 	};
 }

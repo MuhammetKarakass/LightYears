@@ -38,14 +38,14 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105],
+        "scrapCost": { "base": 40, "step": 5 },
         "rules": [
           {
             "firstLevel": 2,
             "levelInterval": 1,
             "reward": {
               "attributeModifiers": [
-                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 10.0 },
+                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 5.0 },
                 { "attributeId": "PrimaryWeapon.Empowered.BonusDamage", "operation": "Add", "magnitude": 1.0 }
               ],
               "scalingRules": [
@@ -137,7 +137,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [],
         "rules": []
       },
       "attributeModifiers": [],
@@ -196,7 +195,7 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [40, 50, 65],
+        "scrapCost": { "base": 40, "step": 10 },
         "rules": [
           {
             "firstLevel": 2,
@@ -291,7 +290,7 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [40, 50, 65],
+        "scrapCost": { "base": 40, "step": 10 },
         "rules": [
           {
             "firstLevel": 2,
@@ -389,7 +388,7 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [40, 50, 65],
+        "scrapCost": { "base": 40, "step": 10 },
         "rules": [
           {
             "firstLevel": 2,
@@ -489,7 +488,7 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [40, 50, 65],
+        "scrapCost": { "base": 40, "step": 10 },
         "rules": [
           {
             "firstLevel": 2,
@@ -642,7 +641,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [],
         "rules": []
       },
       "attributeModifiers": [],
@@ -691,7 +689,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [],
         "rules": []
       },
       "attributeModifiers": [],
@@ -736,7 +733,6 @@
       ],
       "automaticFire": true,
       "progression": {
-        "levelUpgradeScrapCosts": [],
         "rules": []
       },
       "attributeModifiers": [],

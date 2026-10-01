@@ -14,6 +14,7 @@ namespace ly
 		
 	protected:
 		virtual void UpdateOrigin(const sf::Vector2f& origin) override;
+		virtual void ApplyAlpha(float alpha) override;
 		
 	private:
 		virtual void LocationUpdated(const sf::Vector2f& newLocation) override;

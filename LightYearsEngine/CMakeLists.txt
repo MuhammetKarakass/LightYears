@@ -47,6 +47,7 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Delegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Delegate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SubscriptionSet.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/VFX/Particle.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Particle.cpp
@@ -89,6 +90,17 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/widget/Button.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/widget/Button.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/widget/UILayout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/widget/UILayout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/widget/UIViewModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/widget/UIStyle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/widget/UIStyle.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/widget/Panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/widget/Panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/widget/StackPanel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/widget/StackPanel.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/JsonDocumentLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/JsonDocumentLoader.cpp
@@ -172,4 +184,12 @@ if(BUILD_TESTING)
         ${LIGHT_YEARS_ENGINE_TARGET_NAME}
     )
     add_test(NAME LightYearsWorldSpatialQuery COMMAND LightYearsWorldSpatialQueryTests)
+
+    add_executable(LightYearsUIFoundationTests
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/UIFoundationTests.cpp
+    )
+    target_link_libraries(LightYearsUIFoundationTests PRIVATE
+        ${LIGHT_YEARS_ENGINE_TARGET_NAME}
+    )
+    add_test(NAME LightYearsUIFoundation COMMAND LightYearsUIFoundationTests)
 endif()

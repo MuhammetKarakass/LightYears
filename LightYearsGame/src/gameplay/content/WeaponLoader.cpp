@@ -3,6 +3,7 @@
 #include "attributes/AttributeId.h"
 #include "gameplay/content/AttributeJsonParser.h"
 #include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/content/ScrapCostFormulaJson.h"
 
 #include "framework/JsonDocumentLoader.h"
 
@@ -249,9 +250,9 @@ namespace ly::content
 		{
 			// Weapon levels are unbounded; any legacy "maxLevel" key is ignored.
 			WeaponProgressionProfile profile;
-			profile.levelUpgradeScrapCosts = object.value(
-				"levelUpgradeScrapCosts",
-				ly::List<unsigned int>{}
+			profile.scrapCost = ly::ParseScrapCostFormula(
+				object,
+				ownerLabel.empty() ? std::string("Weapon") : ownerLabel
 			);
 
 			std::size_t ruleIndex = 0;

@@ -2,7 +2,6 @@
 
 #include "widget/HUD.h"
 #include "widget/Button.h"
-#include "widget/TextWidget.h"
 
 namespace ly
 {
@@ -10,9 +9,7 @@ namespace ly
 	{
 	public:
 		PauseMenuHUD();
-
-		virtual void Draw(sf::RenderWindow& windowRef) override;
-		virtual bool HandleEvent(const sf::Event& event) override;
+		bool HandleEvent(const sf::Event& event) override;
 
 		Delegate<> onResumeButtonClicked;
 		Delegate<> onRestartButtonClicked;
@@ -20,19 +17,15 @@ namespace ly
 		Delegate<> onMainMenuButtonClicked;
 
 	private:
-		virtual void Init(sf::RenderWindow& windorRef) override;
+		void Init(sf::RenderWindow& windowRef) override;
 		void ResumeButtonClicked();
 		void RestartButtonClicked();
 		void QuitButtonClicked();
 		void MainMenuButtonClicked();
 
-		TextWidget mTitleText;
-		Button mResumeButton;
-		Button mRestartButton;
-		Button mQuitButton;
-		Button mMainMenuButton;
-
-		sf::RectangleShape mOverlay;
+		weak_ptr<Button> mResumeButton;
+		weak_ptr<Button> mRestartButton;
+		weak_ptr<Button> mQuitButton;
+		weak_ptr<Button> mMainMenuButton;
 	};
 }
-

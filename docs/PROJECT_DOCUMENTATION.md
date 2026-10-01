@@ -541,12 +541,32 @@ belirlenir.
 | Cryo | 1–4 stack; slow `%4 / %8 / %12 / %20`; 5 sn | İlk stack’ten itibaren hareket kırma |
 | Electric | 1–4 stack; alınan hasar `+%3 / +%6 / +%9 / +%16`; 4 sn | Hedefi sonraki hasara kontrollü biçimde açık bırakma |
 
+**Global combat tick.** Periyodik ve sürekli hasarın tamamı tek bir aralıkla uygulanır:
+`CombatTick::Interval = 0.25s` ([CombatTick.h](../LightYearsGame/include/gameConfigs/combat/CombatTick.h)).
+Hiçbir ability veya silah özel tick aralığı taşımaz; InfernoSpray, ScorchDrive izi,
+IonStorm, FrostMaelstrom, NanoPlague, ArcScythes, EmberSwarm drone pulse'ları,
+canonical Ignite ve ContinuousHeatLaser aynı ritimde vurur. Tick hasarı olarak
+tanımlı değerler her tick'te olduğu gibi, DPS olarak tanımlı değerler tick başına
+`DPS × 0.25` olarak uygulanır. Sayaçlar `time::ConsumePeriodicTicks` ile çalışır
+(frame başına en fazla 4 tick yakalar, kalan borç sonraki frame'lere taşınır).
+Aynı hedefe tekrar vurma bekleme süreleri (OrbitalDrones 0.5 s, LanceDrive 0.75 s,
+CrystalBarricade temas 1.5 s, InertialWake 2 s) tick değildir ve kendi değerlerini korur.
+
+- **Ignite:** DPS tablosu (`1 / 2 / 3 / 5`) her dilimde o andaki stack ile entegre edilir
+  (`Damage.IgnitePendingDamage`) ve tick başına bir kez uygulanır; efektin son diliminde kalan
+  hasar boşaltıldığı için toplam hasar eski frame başı uygulamayla aynıdır.
+- **ContinuousHeatLaser:** `DPS × ısı çarpanı × dt` her frame hedef başına biriktirilir ve
+  tick başına bir kez uygulanır; ateş bitince kalan birikim uygulanır. Işın görseli her frame güncellenir.
+- Kaynak tarafından sahiplenilen özel periyodik Burn modu (`BurnDamagePerTick` /
+  `BurnTickInterval` / `BurnDuration`) kaldırıldı. ScorchDrive'ın kendi yanma parametreleri
+  katalog güncellemesiyle zaten canonical Ignite tablosuna geçmişti; kalan mekanizma içerikte
+  kullanılmıyordu ve global tick ile çelişiyordu. Ignite'ın tek yolu DPS tablosudur.
+
 Status effect’leri incoming effect aşamasında, `remainingDamage` pozitifse
 uygulanır. Barrier veya başka bir incoming effect hasarı tamamen emerse status
 uygulanmaz. Shield emiliminden sonra kalan kaynak hasarı ortak
 `CombatRuntime::ApplyHullDamageMitigation` hesabına gider; Armor shield-only
-hit'leri değiştirmez. Thermal’in snapshot tabanlı özel periodic Burn modu
-(`BurnDamagePerTick`) korunur ve canonical Thermal DPS ile çift uygulanmaz.
+hit'leri değiştirmez.
 Kinetic status uygulaması bu erken aşamada mevcut stack sayısını snapshot'lar;
 aynı hit'in eklediği stack o hit'in Armor penetration hesabına girmez.
 
@@ -972,9 +992,10 @@ Temel şema:
   uygulanır: `R0 = 0.175 + 0.025 × BaseCD`; 4 seviyelik kademeler (R >= 0.20 ise
   -0.10, değilse x0.80); seviye başına azaltma en az 0.02 sn; cooldown hiçbir
   zaman 1.0 sn altına inmez. Ability Haste bunun üstüne merkezi çarpan olarak biner.
-- **Scrap maliyeti:** yazılmış `levelUpgradeScrapCosts` listesi; listenin ötesindeki
-  seviyeler şimdilik 0 maliyetlidir (maliyet sistemi belirlenmedi); boş liste =
-  satın alınamaz.
+- **Scrap maliyeti:** doğrusal formül `progression.scrapCost { base, step }`;
+  L seviyesine ulaşmak `base + step * (L - 2)` scrap tutar, üst sınır yoktur.
+  `scrapCost` yoksa (base 0) satın alınamaz. Eski `levelUpgradeScrapCosts` listesi
+  kaldırıldı; JSON'da görülürse yükleme hata verir.
 - **Primary weapon:** `maxLevel` yoktur; `WeaponLevelRule` içinde `lastLevel` 0 =
   açık uçlu. `ResolveProgression()` prefix + döngüyü çözer.
 - Ability başına değerler, büyüme ve formüller:
@@ -1179,9 +1200,12 @@ içindir. Effect visual’ları `GameplayEffectVisualRegistry` üzerinden spawn
 edilir, yalnızca synchronize edilmiş effect state okur ve effect kaldırılırken
 normal cleanup yoluyla yok edilir.
 
-`AbilityUIController`, `sas::AbilityRuntimeSnapshot`; effect HUD ise
-`GameplayEffectSnapshot` tüketir. UI, somut ability/effect sınıflarına göre
-branch etmez. `CombatRuntime::Tick` aynı frame’de önce effect’leri, sonra
+`AbilityBarPresenter::Tick`, her slot için ability system'den generic
+`GameAbility` ve definition alanlarını okur; active/cooldown durumunu
+`IsActive()` / `IsOnCooldown()` ve kalan süreyi `GetCooldownRemaining()` ile
+yansıtır. İstatistik metni level, cooldown ve resolved ability attribute'larından
+üretilir. Effect HUD ise `GameplayEffectSnapshot` tüketir. UI, somut
+ability/effect alt sınıflarına göre branch etmez. `CombatRuntime::Tick` aynı frame’de önce effect’leri, sonra
 ability’leri tick eder. `CombatRuntime::Clear()` sırasıyla ability’leri iptal
 eder, effect’leri normal cleanup ile kaldırır, tag’leri siler ve attribute /
 modifier storage’ını temizler; respawn edilmiş gemi yeni runtime alır.
@@ -1400,7 +1424,7 @@ seçilemez; ek uygun hedef yoksa bonus da yoktur.
 ~~~text
 heatRatio = clamp(currentHeat / heatCapacity, 0, 1)
 instantDPS = baseDPS * (1 + (maxHeatMultiplier - 1) * heatRatio)
-tickDamage = instantDPS * deltaTime
+frameDamage = instantDPS * deltaTime   // hedef başına biriktirilir, her 0.25 sn'de bir uygulanır
 ~~~
 
 Mevcut tanımda lazer 28 DPS’den başlar, tam ısıda 49 DPS’ye çıkar. Isı
@@ -1430,7 +1454,7 @@ prefix + döngüyü çözer. Bkz. [Seviye ve cooldown modeli](#seviye-ve-cooldow
 
 | Silah | L2 | L3 | L4 |
 | --- | --- | --- | --- |
-| Basic Rapid Laser | Açık uçlu kural (L2 ve sonrası her seviye): +10 Damage, +1 Empowered BonusDamage, +0.05 AttackPower scaling, +0.03 EnergyPower scaling | (aynı kural) | (aynı kural) |
+| Basic Rapid Laser | Açık uçlu kural (L2 ve sonrası her seviye): +5 Damage, +1 Empowered BonusDamage, +0.05 AttackPower scaling, +0.03 EnergyPower scaling | (aynı kural) | (aynı kural) |
 | Dual Kinetic Blaster | +1.5 FireRate | +1 Damage | +100 Range, +1 FireRate |
 | Electric Arc Launcher | +4 Damage | +1 chain, +80 chain range | +0.4 FireRate, +0.08 chain multiplier |
 | Continuous Heat Laser | +6 Damage | +150 beam range | +0.20 max heat damage multiplier |
@@ -1528,7 +1552,7 @@ kararlaştırılana kadar Fighter üzerinden ilerler.
 | Afterburner speed / acceleration multiplier | 1.55 / 1.80 |
 | Afterburner drain | 33/sn |
 | Afterburner ramp up / down / maneuverability | 0.22 sn / 0.45 sn / x0.90 |
-| XP başlangıcı / üssü | 100 / 1.25 |
+| XP eşiği parametreleri (base / exponent / step) | 6 / 0 / 1 |
 
 Hareket rating katkısı doğrusal değildir:
 
@@ -1579,14 +1603,25 @@ combat akışına ait veriler CombatRuntime'a eklenmelidir.
 ### 5.5 Gemi XP’si
 
 ~~~text
-xpRequiredForNextLevel = max(1, baseXP * currentLevel^xpExponent)
+xpRequiredForNextLevel = max(1, baseXP * currentLevel^xpExponent + xpPerLevel * (currentLevel - 1))
 totalStatBonus = (currentLevel - 1) * perLevel
 ~~~
 
-Ship level 1’den başlar. `ShipProgressionDefinition`, `baseXP`, `xpExponent`
-ve kontrollü `naturalGrowth` listesini taşır. Her liste elemanı doğrudan
+Ship level 1’den başlar. `ShipProgressionDefinition`, `baseXP`, `xpExponent`,
+isteğe bağlı `xpPerLevel` (varsayılan `0`) ve kontrollü `naturalGrowth` listesini taşır. Her liste elemanı doğrudan
 `{ attributeId, perLevel }` tanımlar; merkezi base-growth tablosu ve gemiye
 özel multiplier katmanı kullanılmaz. Listede bulunmayan attribute büyümez.
+
+Her shipped düşman 1 XP verir. Fighter için `baseXP=6`, `xpExponent=0` ve
+`xpPerLevel=1` olduğundan sonraki seviye eşikleri 6, 7, 8, 9 ... XP'dir;
+L2/L3/L4'e ulaşmak için toplam 6/13/21 düşman öldürülür. Seviye aşımındaki XP
+kalanı sonraki eşiğe aktarılır. `xpExponent` ve `xpPerLevel` doğrulaması sonlu
+ve sıfır veya daha büyük değerleri kabul eder.
+Geçici `kAutoLevelAbilitiesForTesting` anahtarı açık olduğunda frame sonundaki
+kuyruk kurulu tüm yetenekleri (primary weapon ve pasifler dahil) bir seviye
+artırır; scrap harcanmaz. Bu yetenek seviyeleri gemi respawn'ında korunur ve yeni
+run başlarken temizlenir. `SetLevel` kullanan seviye değişimi etkin yetenekleri
+`Interrupted` ile sonlandırır.
 
 İzin verilen doğal büyüme hedefleri MaxHealth, AttackPower, EnergyPower,
 Armor, Luck, AttackSpeed, CriticalChance, AbilityHaste,
@@ -1661,26 +1696,26 @@ Fighter taban `Owner.CriticalDamage` değeri 1.5'tir. Empowered atışlar garant
 #### Seviye Büyüme Modeli (L2+ Recurring Rule)
 
 - Top-level L1: BaseDamage = 12, AP Ratio = 0.40, EmpoweredBaseDamage = 2, EP Ratio = 0.10.
-- Her seviye (L2 ve sonrası): Common.Damage +10, PrimaryWeapon.Empowered.BonusDamage +1, AP scaling Add +0.05, EP scaling Add +0.03.
-- Scrap Maliyetleri: yazılmış 14 kademelik geçici placeholder liste [40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105]; listenin ötesindeki seviyeler şimdilik 0 maliyetlidir.
+- Her seviye (L2 ve sonrası): Common.Damage +5, PrimaryWeapon.Empowered.BonusDamage +1, AP scaling Add +0.05, EP scaling Add +0.03.
+- Scrap Maliyeti: doğrusal `scrapCost` base 40, step 5 (L2=40 … L15=105, sonrası aynı formülle devam eder).
 
 #### Seviye Karşılaştırma Tablosu (örnek seviyeler)
 
 | Seviye | Base Damage | AP Katsayısı | Empowered Base | EP Katsayısı | Fighter Stat (AP / EP) | Normal Hasar (Raw / Final) | Empowered Hasar (Raw / Final) |
 |---|---:|---:|---:|---:|:---:|:---:|:---:|
 | L1 | 12 | 0.40 | 2 | 0.10 | 35 / 35 | 26.0 / **26** | 31.5 / **48** |
-| L5 | 52 | 0.60 | 6 | 0.22 | 47 / 43 | 80.2 / **81** | 95.66 / **144** |
-| L10 | 102 | 0.85 | 11 | 0.37 | 62 / 53 | 154.7 / **155** | 185.31 / **278** |
-| L15 | 152 | 1.10 | 16 | 0.52 | 77 / 63 | 236.7 / **237** | 285.46 / **429** |
+| L5 | 32 | 0.60 | 6 | 0.22 | 47 / 43 | 60.2 / **61** | 75.66 / **114** |
+| L10 | 57 | 0.85 | 11 | 0.37 | 62 / 53 | 109.7 / **110** | 140.31 / **211** |
+| L15 | 82 | 1.10 | 16 | 0.52 | 77 / 63 | 166.7 / **167** | 215.46 / **324** |
 
-*Not: L10 tablosunda 185.31 * 1.5 = 277.965 -> ceil 278.*
+*Not: L10 tablosunda 140.31 * 1.5 = 210.465 -> ceil 211.*
 
 #### Şarjör ve Sustained Hasar Referansı (L15 örneği)
 
 - 48 mermilik şarjör dağılımı: 35 normal atış + 13 empowered atış.
-- Şarjör toplam hasarı: `35 × 237 + 13 × 429 = 8295 + 5577 = 13872` hasar.
+- Şarjör toplam hasarı: `35 × 167 + 13 × 324 = 5845 + 4212 = 10057` hasar.
 - Atış süresi: `48 / 4.0 = 12.0` saniye; Reload: `2.0` saniye; Toplam döngü: `14.0` saniye.
-- Sustained döngü DPS: `13872 / 14.0 ≈ 990.86 DPS`.
+- Sustained döngü DPS: `10057 / 14.0 ≈ 718.36 DPS`.
 - Scrap maliyetleri geçici placeholder ekonomi değerleridir.
 - Diğer birincil silahlar Phase 3B.3 kapsamında değiştirilmemiştir.
 
@@ -1791,11 +1826,79 @@ difficultyMultiplier = 1 + (wave / 5) * 0.25
 ### Sunum
 
 - Widget çatısı HUD, gauge, button ve text bileşenlerini sağlar.
-- GameHUD, ability/effect/health/shield/energy gibi gameplay verilerini
-  görünür hale getirir.
-- Gameplay warning HUD, arena sınır ihlalinin geri sayımını gösterir.
+- GameHUD geçici FPS/hız göstergelerini ve hasar sayılarını taşır. Health,
+  shield, energy, life ve score gösterimini `VitalsPresenter`, `VitalsView` ve
+  `VitalsHUDController` sahiplenir.
+- Gameplay warning, dinamik bildirim, encounter/dalga ve ability bar sunumları
+  kendi HUD controller/presenter/view bileşenlerince yönetilir; menü HUD'ları
+  statik View kompozisyonlarıdır.
 - Engine tarafında sprite, point light shader, parallax background, audio ve
   particle/VFX altyapısı bulunur.
+
+### UI tabanı ve vitals sunumu
+
+UI verisi tek yönde akar; gameplay state'in ikinci bir kopyası tutulmaz.
+
+~~~text
+Gameplay modeli ── delegate / poll ──▶ Presenter ── SetIfChanged ──▶ ViewModel
+                                                                        │
+                                                           revision'ı Tick'te okur
+                                                                        ▼
+                                                                      View
+                                                                        │
+                                             niyet delegate'i (ör. onClicked) ──▶ Presenter
+~~~
+
+1. Gameplay modeli yetkili durumun tek sahibidir; ViewModel yalnız sunum için türetilmiş değerleri tutar.
+2. ViewModel düz, widget bağımsız bir struct'tır; alanlar `SetIfChanged` ile yazılır ve her değişen alan `UIRevision`'ı artırır.
+3. ViewModel'den View'a callback gönderilmez; View her `Tick`'te revision'ı tüketir, aradaki değişiklikleri son duruma birleştirir ve widget değerlerini yalnız değişiklikte günceller; revision frame veya olay sayacı değildir, widget'lar normal `Draw` akışında her frame çizilir.
+4. Presenter model bağlantılarını ve yaşam döngüsünü yönetir; abonelikler `SubscriptionSet` ile tutulur.
+5. View yalnız widget kompozisyonu ve input niyetlerini dışarı verme sorumluluğunu taşır; oyun mantığı içermez.
+6. ViewModel sahipliği `shared_ptr<const ViewModel>` biçimindedir; View ham pointer veya referans saklamaz.
+7. Geriye uyumluluk korunur: `HUD::AddWidget` ve `SetWidgetLocation` davranışı değişmez; layout almayan widget'lar mutlak konumla çalışmayı sürdürür.
+8. Dinamik model verisi olmayan statik görünümler (ör. menüler) için ViewModel veya Presenter eklenmez; View ve niyet delegate'leri yeterlidir.
+
+Engine yapı taşları:
+
+- `UILayout` / `UIAnchor`, parent rect ve intrinsic boyuttan anchor, offset ve inset kullanarak resolved rect üretir ([UILayout.h](../LightYearsEngine/include/widget/UILayout.h), [UILayout.cpp](../LightYearsEngine/src/widget/UILayout.cpp)).
+- `Widget`, çocuk ağacını ve layout çözümünü yönetir; `Panel::GetBound()` gerçek şeklin global bounds'unu verir ve `Panel::PlaceAt()` boyutu ayarlayıp temel widget hareketini uygular ([Widget.h](../LightYearsEngine/include/widget/Widget.h), [Panel.cpp](../LightYearsEngine/src/widget/Panel.cpp)).
+- `Panel` çizilebilir arka planlı kutu widget'ıdır; `StackPanel` görünür çocukları yönelim, spacing, padding ve çapraz hizaya göre dizer ([Panel.h](../LightYearsEngine/include/widget/Panel.h), [StackPanel.h](../LightYearsEngine/include/widget/StackPanel.h)).
+- `HUD`, legacy widget listesine ek olarak viewport'a yayılan Hud, Menu, Modal ve Tooltip katmanlarını sunar ([HUD.h](../LightYearsEngine/include/widget/HUD.h)).
+- `SubscriptionSet`, delegate aboneliklerini sahip nesnenin ömrü boyunca saklar ve temizler ([SubscriptionSet.h](../LightYearsEngine/include/framework/SubscriptionSet.h)).
+- `UIRevision` / `SetIfChanged`, yalnız alan değeri değiştiğinde revision artırır; `UIRevisionWatcher` View'ın son revision'ı bir kez işlemesini sağlar ([UIViewModel.h](../LightYearsEngine/include/widget/UIViewModel.h)).
+- `UIStyle`, font, renk ve metin boyutu rollerini merkezi varsayılanlarla sağlar ([UIStyle.h](../LightYearsEngine/include/widget/UIStyle.h)).
+
+Referans uygulamalar ve kaynak yolları:
+
+- Gameplay warning: [GameplayWarningHUDController.h](../LightYearsGame/include/presentation/hud/GameplayWarningHUDController.h), [GameplayWarningView.h](../LightYearsGame/include/presentation/hud/warning/GameplayWarningView.h).
+- Dinamik bildirimler: [NotificationHUDController.h](../LightYearsGame/include/presentation/hud/notification/NotificationHUDController.h), [NotificationPresenter.h](../LightYearsGame/include/presentation/hud/notification/NotificationPresenter.h), [NotificationView.h](../LightYearsGame/include/presentation/hud/notification/NotificationView.h).
+- Encounter/dalga bilgisi: [EncounterHUDController.h](../LightYearsGame/include/presentation/hud/encounter/EncounterHUDController.h), [EncounterHUDView.h](../LightYearsGame/include/presentation/hud/encounter/EncounterHUDView.h).
+- Ability bar: [AbilityBarHUDController.h](../LightYearsGame/include/presentation/hud/ability/AbilityBarHUDController.h), [AbilityBarPresenter.h](../LightYearsGame/include/presentation/hud/ability/AbilityBarPresenter.h), [AbilityBarView.h](../LightYearsGame/include/presentation/hud/ability/AbilityBarView.h).
+- Statik menüler (ViewModel/Presenter olmadan): [MainMenuHUD.cpp](../LightYearsGame/src/widget/MainMenuHUD.cpp), [PauseMenuHUD.cpp](../LightYearsGame/src/widget/PauseMenuHUD.cpp), [GameOverHUD.cpp](../LightYearsGame/src/widget/GameOverHUD.cpp).
+
+Menü görünümleri çocuk ağacını constructor'da kurar; zayıf callback binding'lerini `Init` içinde, HUD `shared_ptr` sahipliği kurulduktan sonra yapar. `Button::HandleEvent` MouseMoved olayında hover durumunu günceller ama olayı tüketmez; bu sayede aynı hareket tüm kardeş butonlara ulaşır ve hover rengi yalnız pointer altındaki butonda değişir. Modal katmanının dış tıklamaları yakalaması ayrı bir capture davranışıdır. Pause menüsü Escape'i `HUD::HandleEvent` sonrasında işler ve resume niyetini yayınlar.
+
+Yeni bir UI elemanı ekleme tarifi:
+
+1. Gösterilecek türetilmiş alanları ve revision'ı taşıyan ViewModel struct'ını oluşturun.
+2. Presenter'da gameplay kaynaklarına güvenli abonelik kurun, poll edilen değerleri okuyun ve tüm VM yazımlarını `SetIfChanged` üzerinden yapın.
+3. `Panel` alt sınıfı View'ı kurun; `shared_ptr<const ViewModel>` saklayın ve `UIRevisionWatcher` değiştiğinde widget değerlerini güncelleyin.
+4. Bir `HUDController` ile Presenter ve View yaşam döngüsünü bağlayıp `HUD::AddToLayer` üzerinden uygun katmana ekleyin.
+5. Kaynakları `LIGHT_YEARS_UI_HUD_SOURCES` listesine bağlayın ve ViewModel, presenter yaşam döngüsü, View güncellemesi ile controller entegrasyonunu test edin.
+
+Referans uygulama [presentation/hud/vitals](../LightYearsGame/include/presentation/hud/vitals/VitalsView.h): `GameLevel::CreateHUDControllers()` Vitals controller'ını ekler; controller HUD `HasInit()` olduktan sonra View'ı oluşturur. VitalsView kökü 510×92 boyutundadır; enerji ve kalkan göstergeleri 220×18, sağlık göstergesi 220×30'dur. Life ve score metinleri `UITextSize::Large` (varsayılan 20) kullanır.
+
+Kurallar ve bilinen tuzaklar (yeni eleman eklerken):
+
+- **Layout'suz çocuk parent'ı izlemez.** `AddChild` ile eklenen ama `SetLayout` almayan widget mutlak konumda kalır; parent taşınınca yerinde durur. Parent'a göre konumlanması gereken her çocuğa bir `UILayout` verin ya da onu bir `StackPanel` içine koyun.
+- **Layout'lu widget'ta `SetWidgetLocation` kalıcı değildir.** Bir sonraki layout çözümü konumu layout'a göre yeniden yazar; konumu layout'un `offset` alanıyla değiştirin.
+- **Boyutu değişen widget `InvalidateLayout()` çağırmalıdır.** `TextWidget::SetString`/`SetTextSize` ve `ImageWidget::SetImage` bunu kendileri yapar. Yeni bir widget türü boyut değiştiriyorsa aynısını yapmalıdır, yoksa `StackPanel` kardeşleri kaydırmaz.
+- **HUD koordinatları pencerenin varsayılan view'ıdır.** `HUD` viewport'u `getDefaultView()` boyutundan alır, çünkü `World` HUD'ı bu view ile çizer. Pencere pikseli ile karıştırmayın.
+- **`SubscriptionSet` listener'ın üyesi olmalıdır.** Guarded `Bind` yalnız delegate'i kaynak nesne sahipleniyorsa güvenlidir. `BindUnguarded` kullanan kod, kaynak silinmeden önce `Clear` çağırmayı garanti etmelidir (ör. Player için `onPlayerAboutToBeDestroyed`). Her iki çağrı da bağlanamazsa `false` döner.
+- **Callback'ler ağacı değiştirebilir, ama silme ertelenir.** Event veya Tick içinde `DestroyWidget`/`RemoveChild` işaretler ve silme Tick sonunda yapılır. Dispatch sırasında eklenen çocuk aynı event'i veya aynı Tick'i almaz. `Draw` override'ları ağacı değiştirmemelidir.
+- **Alpha ağaç boyunca çarpılarak iner.** Parent fade'i tüm alt ağacı etkiler. `ImageWidget` artık alpha uygular; ability ikonlarındaki cooldown soluklaşması bu yüzden görünür.
+
+GameHUD'da kalan geçici test UI'ı FPS, hız ve hasar sayılarıdır. Hasar sayıları bugün geminin dönüştürülmüş ekran konumuna bağlanır; dünya-uzayı anchor'u ancak ileride özellikle istenirse ele alınır. JSON layout da gerekirse sonraki iştir.
 
 ## 9. Yeni özellik ekleme kontrol listesi
 
@@ -1805,7 +1908,7 @@ difficultyMultiplier = 1 + (wave / 5) * 0.25
    display ve icon.
 2. Kullanacağı actor/effect varsa ilgili config ve runtime handler.
 3. Attribute ve scaling rule’ları; damage tag’i.
-4. Level progression (prefix + repeating) ve `levelUpgradeScrapCosts`; cooldown step'e yazılmaz, küresel kural uygulanır.
+4. Level progression (prefix + repeating) ve doğrusal `scrapCost {base, step}`; cooldown step'e yazılmaz, küresel kural uygulanır.
 5. Attachment capability/slot kararları.
 6. Feature-local typed presentation profile, stable profile ID ve presentation
    content registration.

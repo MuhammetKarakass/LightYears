@@ -1,6 +1,7 @@
 #include "gameplay/ability/ionStorm/IonStormFieldActor.h"
 
 #include "attributes/AttributeSystem.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "framework/World.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
@@ -97,7 +98,6 @@ namespace ly
 					CommonAttributeIds::Damage,
 					CommonAttributeIds::Duration,
 					CommonAttributeIds::Radius,
-					AbilityData::IonStorm::Attribute::TickInterval,
 					AbilityData::IonStorm::Attribute::InnerCoreRadius,
 					AbilityData::IonStorm::Attribute::OuterMinRadius,
 					AbilityData::IonStorm::Attribute::OuterMaxRadius,
@@ -184,11 +184,6 @@ namespace ly
 			CommonAttributeIds::Duration,
 			mDuration
 		));
-		mTickInterval = std::max(0.001f, sas::FindAttributeValue(
-			attributes,
-			AbilityData::IonStorm::Attribute::TickInterval,
-			mTickInterval
-		));
 		const float radius = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			CommonAttributeIds::Radius,
@@ -229,7 +224,7 @@ namespace ly
 		);
 		mDuration = std::max(0.f, mDuration);
 		mMaximumTickCount = mDuration > 0.f
-			? std::max(1, static_cast<int>(std::ceil(mDuration / mTickInterval)))
+			? std::max(1, static_cast<int>(std::ceil(mDuration / CombatTick::Interval)))
 			: 0;
 		mTickAccumulator = 0.f;
 		mFieldAge = 0.f;
@@ -262,7 +257,7 @@ namespace ly
 		const int tickCount = time::ConsumePeriodicTicks(
 			mTickAccumulator,
 			safeDeltaTime,
-			mTickInterval,
+			CombatTick::Interval,
 			remainingTicks
 		);
 		for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)

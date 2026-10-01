@@ -134,8 +134,13 @@ namespace ly{
 		};
 
 		if (!mIsPaused) {
+			{
+				LY_PROFILE_SCOPE("World.Promote");
 			promotePendingActors();
+			}
 
+			{
+				LY_PROFILE_SCOPE("World.ActorsTick");
 			for (auto iter = mActors.begin(); iter != mActors.end();)
 			{
 				Actor& actor = *iter->get();
@@ -145,6 +150,7 @@ namespace ly{
 					)
 				);
 				iter++;
+			}
 			}
 
 			if (mCurrentStage != mGameStages.end())
@@ -492,6 +498,8 @@ namespace ly{
 			bucket.clear();
 		}
 
+		{
+			LY_PROFILE_SCOPE("World.RenderCull");
 		for (const shared_ptr<Actor>& actor : mActors)
 		{
 			if (actor->GetIsPendingDestroy())
@@ -516,8 +524,11 @@ namespace ly{
 				++renderSubmitted;
 			}
 		}
+		}
 		ly::perf::SetRenderStats(renderCandidates, renderCulled, renderSubmitted);
 
+		{
+			LY_PROFILE_SCOPE("World.RenderDraw");
 		for (const List<Actor*>& bucket : mRenderBuckets)
 		{
 			for (Actor* actor : bucket)
@@ -525,9 +536,13 @@ namespace ly{
 				actor->Render(window);
 			}
 		}
+		}
 
 		window.setView(window.getDefaultView());
+		{
+			LY_PROFILE_SCOPE("World.RenderHUD");
 		RenderHUD(window);
+		}
 
 		window.setView(previousView);
 	}

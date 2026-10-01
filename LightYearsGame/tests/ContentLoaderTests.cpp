@@ -1148,7 +1148,7 @@ int main()
 		}
 	);
 	if (frostMaelstromIt == loadedAbilities.definitions.end() ||
-		frostMaelstromIt->definition.attributes.size() != 11 ||
+		frostMaelstromIt->definition.attributes.size() != 10 ||
 		!frostMaelstromIt->definition.ResolveLevelStep(0) ||
 		!NearlyEqual(frostMaelstromIt->definition.duration, 6.f) ||
 		frostMaelstromIt->definition.damageTags !=
@@ -1193,14 +1193,6 @@ int main()
 				0.f
 			),
 			0.42f
-		) ||
-		!NearlyEqual(
-			sas::FindAttributeValue(
-				frostMaelstromIt->definition.attributes,
-				AbilityData::FrostMaelstrom::Attribute::TickInterval,
-				0.f
-			),
-			0.25f
 		) ||
 		!NearlyEqual(
 			sas::FindAttributeValue(
@@ -1404,12 +1396,12 @@ int main()
 		!dash.definition.ResolveLevelStep(0) ||
 		!dash.definition.ResolveLevelStep(30) ||
 		dash.definition.GetMaxLevel() != ly::GameAbilityDefinition::kUnboundedAbilityLevel ||
-		dash.definition.levelUpgradeScrapCosts.size() < 4 ||
+		dash.definition.scrapCost.base != 40u ||
+		dash.definition.scrapCost.step != 10u ||
 		dash.definition.GetScrapCostToReachLevel(2) != 40u ||
-		dash.definition.GetScrapCostToReachLevel(5) != 80u ||
-		dash.definition.GetScrapCostToReachLevel(20) == 0u ||
-		dash.definition.GetScrapCostToReachLevel(
-			static_cast<int>(dash.definition.levelUpgradeScrapCosts.size()) + 5) != 0u ||
+		dash.definition.GetScrapCostToReachLevel(5) != 70u ||
+		dash.definition.GetScrapCostToReachLevel(20) != 220u ||
+		dash.definition.GetScrapCostToReachLevel(200) != 2020u ||
 		dash.numericSettings.at("baseDistance") != 260.f ||
 		dash.numericSettings.at("cameraZoomOutRatio") != 0.15f)
 	{
@@ -1454,8 +1446,9 @@ int main()
 	if (sunBeamIt == loadedAbilities.definitions.end() ||
 		!NearlyEqual(sunBeamIt->definition.cooldown, 9.f) ||
 		!sunBeamIt->definition.ResolveLevelStep(0) ||
-		sunBeamIt->definition.levelUpgradeScrapCosts != ly::List<unsigned int>{ 40u, 50u, 65u, 80u } ||
-		sunBeamIt->definition.GetScrapCostToReachLevel(20) != 0u)
+		sunBeamIt->definition.scrapCost.base != 40u ||
+		sunBeamIt->definition.scrapCost.step != 10u ||
+		sunBeamIt->definition.GetScrapCostToReachLevel(20) != 220u)
 	{
 		return Fail("Sun Beam ability JSON profile is invalid") ? 0 : 1;
 	}
@@ -1500,7 +1493,7 @@ int main()
 	if (rocketIt == loadedAbilities.definitions.end() ||
 		!NearlyEqual(rocketIt->definition.cooldown, 6.f) ||
 		!rocketIt->definition.ResolveLevelStep(0) ||
-		rocketIt->definition.levelUpgradeScrapCosts.size() != 14)
+		!rocketIt->definition.scrapCost.IsPurchasable())
 	{
 		return Fail("Rocket ability JSON profile is invalid") ? 0 : 1;
 	}
@@ -1516,7 +1509,7 @@ int main()
 		!NearlyEqual(gravityIt->definition.cooldown, 13.f) ||
 		!gravityIt->definition.ResolveLevelStep(0) ||
 		gravityIt->definition.ResolveLevelStep(0)->attributeModifiers.size() != 2 ||
-		gravityIt->definition.levelUpgradeScrapCosts.size() != 14 ||
+		!gravityIt->definition.scrapCost.IsPurchasable() ||
 		gravityIt->actorDefinitions.size() != 2 ||
 		gravityIt->actorDefinitions.front().attributes.size() != 7 ||
 		gravityIt->actorDefinitions.back().attributes.size() != 5 ||
@@ -1739,7 +1732,7 @@ int main()
 			sas::AttributeModifierOperation::Add ||
 		!NearlyEqual(orbitalDronesIt->definition.scalingRules.front().coefficient, 0.40f) ||
 		!orbitalDronesIt->definition.ResolveLevelStep(0) ||
-		orbitalDronesIt->definition.levelUpgradeScrapCosts.size() != 24 ||
+		orbitalDronesIt->definition.scrapCost.base != 60u ||
 		orbitalDronesIt->definition.damageTags !=
 			ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
 	{
@@ -1762,9 +1755,9 @@ int main()
 			return Fail("Orbital Drones level progression has an unexpected modifier") ? 0 : 1;
 		}
 	}
-	if (orbitalDronesIt->definition.GetScrapCostToReachLevel(30) != 0u)
+	if (orbitalDronesIt->definition.GetScrapCostToReachLevel(30) != 60u)
 	{
-		return Fail("Orbital Drones scrap cost beyond the authored list must be 0") ? 0 : 1;
+		return Fail("Orbital Drones scrap cost must keep following the linear formula at high levels") ? 0 : 1;
 	}
 
 	const auto relayPrismIt = std::find_if(
@@ -1809,7 +1802,7 @@ int main()
 			100.f
 		) ||
 		!relayPrismIt->definition.ResolveLevelStep(0) ||
-		relayPrismIt->definition.levelUpgradeScrapCosts.size() != 14)
+		!relayPrismIt->definition.scrapCost.IsPurchasable())
 	{
 		return Fail("Relay Prism ability JSON profile is invalid") ? 0 : 1;
 	}
@@ -1860,7 +1853,7 @@ int main()
 		!NearlyEqual(basicDamage->baseValue, 12.f) ||
 		basicLaser->progressionProfile.ResolveProgression().prefix.size() != 0 ||
 		basicLaser->progressionProfile.ResolveProgression().cycle.size() != 1 ||
-		basicLaser->progressionProfile.GetScrapCostToReachLevel(200) != 0u ||
+		basicLaser->progressionProfile.GetScrapCostToReachLevel(200) != 1030u ||
 		basicLaser->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic })
 	{
 		return Fail("Basic rapid laser JSON profile is invalid") ? 0 : 1;

@@ -106,8 +106,7 @@ namespace AbilityData
 			};
 			definition.levelProgression = toAbilitySteps(resolvedProgression.prefix);
 			definition.repeatingLevelProgression = toAbilitySteps(resolvedProgression.cycle);
-			definition.levelUpgradeScrapCosts =
-				weaponDefinition.progressionProfile.levelUpgradeScrapCosts;
+			definition.scrapCost = weaponDefinition.progressionProfile.scrapCost;
 			definition.damageTags = weaponDefinition.damageTags.empty()
 				? ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic }
 				: weaponDefinition.damageTags;

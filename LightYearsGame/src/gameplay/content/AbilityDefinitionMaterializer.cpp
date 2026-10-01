@@ -46,7 +46,7 @@ namespace ly::content
 		loaded.definition.scalingRules.clear();
 		loaded.definition.levelProgression.clear();
 		loaded.definition.repeatingLevelProgression.clear();
-		loaded.definition.levelUpgradeScrapCosts.clear();
+		loaded.definition.scrapCost = {};
 		loaded.definition.effectSpecs.clear();
 		loaded.definition.attributes.clear();
 		return loaded;

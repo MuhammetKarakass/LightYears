@@ -6,6 +6,7 @@
 #include "attributes/AttributeSystem.h"
 #include "engineConfigs/EngineStructs.h"
 #include "gameplay/damage/DamageContext.h"
+#include "gameConfigs/combat/ScrapCostFormula.h"
 #include <string>
 #include <optional>
 #include <numeric>
@@ -321,9 +322,8 @@ struct ResolvedWeaponProgression
 struct WeaponProgressionProfile
 {
 	ly::List<WeaponLevelRule> rules;
-	// Indexed by target level minus two: [0] purchases level two. Levels beyond
-	// the list cost 0 and remain purchasable; an empty list is not purchasable.
-	ly::List<unsigned int> levelUpgradeScrapCosts;
+	// Linear price per level; base == 0 is not purchasable.
+	ly::ScrapCostFormula scrapCost;
 
 	WeaponProgressionProfile& EveryLevel(
 		const ly::List<sas::AttributeModifier>& modifiers,
@@ -335,9 +335,9 @@ struct WeaponProgressionProfile
 		return BetweenLevels(2, kOpenEndedWeaponLevel, modifiers, upgradeIds, featureTypes, 1, scalingRules);
 	}
 
-	WeaponProgressionProfile& ScrapCosts(const ly::List<unsigned int>& costs)
+	WeaponProgressionProfile& ScrapCost(unsigned int base, unsigned int step)
 	{
-		levelUpgradeScrapCosts = costs;
+		scrapCost = ly::ScrapCostFormula{ base, step };
 		return *this;
 	}
 
@@ -412,25 +412,12 @@ struct WeaponProgressionProfile
 				}
 			}
 		}
-		for (const unsigned int cost : levelUpgradeScrapCosts)
-		{
-			if (cost == 0)
-			{
-				return false;
-			}
-		}
 		return true;
 	}
 
-	// Authored cost, or 0 for levels beyond the list (still purchasable).
 	unsigned int GetScrapCostToReachLevel(int weaponLevel) const
 	{
-		if (weaponLevel < 2)
-		{
-			return 0;
-		}
-		const size_t index = static_cast<size_t>(weaponLevel - 2);
-		return index < levelUpgradeScrapCosts.size() ? levelUpgradeScrapCosts[index] : 0;
+		return scrapCost.GetCostToReachLevel(weaponLevel);
 	}
 
 	// Every distinct step (prefix followed by one cycle); for validators/scanners.

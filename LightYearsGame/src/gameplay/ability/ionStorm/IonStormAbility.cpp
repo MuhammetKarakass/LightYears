@@ -17,7 +17,6 @@ namespace ly
 		constexpr float BaseCooldown = 10.f;
 		constexpr float BaseDuration = 4.f;
 		constexpr float BaseDamage = 12.f;
-		constexpr float BaseTickInterval = 0.25f;
 		constexpr float BaseCastRange = 900.f;
 		constexpr float BaseProjectileSpeed = 2000.f;
 		constexpr float BaseInnerCoreRadius = 350.f;
@@ -207,11 +206,6 @@ namespace ly
 				AbilityData::IonStorm::Attribute::Duration,
 				0.f
 			), BaseDuration) &&
-			NearlyEqual(FindValue(
-				field->attributes,
-				AbilityData::IonStorm::Attribute::TickInterval,
-				0.f
-			), BaseTickInterval) &&
 			NearlyEqual(FindValue(
 				field->attributes,
 				AbilityData::IonStorm::Attribute::Damage,

@@ -8,6 +8,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/content/NumericSettingContractRegistry.h"
 #include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/content/ScrapCostFormulaJson.h"
 
 #include <algorithm>
 #include <limits>
@@ -515,9 +516,9 @@ namespace ly::content::ability_loader_detail
 				);
 				loaded.definition.levelProgression = std::move(parsedProgression.prefix);
 				loaded.definition.repeatingLevelProgression = std::move(parsedProgression.cycle);
-				loaded.definition.levelUpgradeScrapCosts = progression.value(
-					"levelUpgradeScrapCosts",
-					List<unsigned int>{}
+				loaded.definition.scrapCost = ParseScrapCostFormula(
+					progression,
+					"Ability '" + loaded.id + "'"
 				);
 			}
 

@@ -31,12 +31,6 @@ namespace ly
 		float shieldRegenerationDelay = 0.f;
 		float armorPenetration = 0.f;
 		int igniteStacks = 0;
-		// Optional fixed-period Burn mode. The four selected Thermal stacks use
-		// the loaded damage-status balance catalog for ordinary DPS; Scorch Drive supplies this snapshot
-		// mode explicitly so it does not double with the canonical table.
-		float burnDamagePerTick = 0.f;
-		float burnTickInterval = 0.f;
-		float burnDuration = 0.f;
 		int cryoBuildupPerHit = 0;
 		int electricStacks = 0;
 		int kineticStacks = 1;

@@ -18,7 +18,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr std::size_t RequiredAttributeCount = 7;
+		constexpr std::size_t RequiredAttributeCount = 6;
 
 		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
 		{
@@ -72,7 +72,6 @@ namespace ly
 		const bool validAttributes = definition.attributes.size() == RequiredAttributeCount &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::BaseTickDamage, 0.f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::Duration, 0.01f) &&
-			HasAttribute(definition, AbilityData::NanoPlague::Attribute::TickInterval, 0.01f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::InitialTargetRange, 0.01f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::SpreadRadius, 0.01f) &&
 			HasAttribute(definition, AbilityData::NanoPlague::Attribute::EnergyPowerTickScale, 0.f) &&
@@ -151,9 +150,6 @@ namespace ly
 		settings.duration = std::max(0.01f, sas::FindAttributeValue(
 			values, AbilityData::NanoPlague::Attribute::Duration,
 			AbilityData::NanoPlague::DefaultDuration));
-		settings.tickInterval = std::max(0.01f, sas::FindAttributeValue(
-			values, AbilityData::NanoPlague::Attribute::TickInterval,
-			AbilityData::NanoPlague::DefaultTickInterval));
 		settings.spreadRadius = std::max(0.f, sas::FindAttributeValue(
 			values, AbilityData::NanoPlague::Attribute::SpreadRadius,
 			AbilityData::NanoPlague::DefaultSpreadRadius));

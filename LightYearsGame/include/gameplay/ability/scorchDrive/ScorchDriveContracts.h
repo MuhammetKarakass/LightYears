@@ -32,9 +32,6 @@ namespace AbilityData::ScorchDrive
 		inline static const sas::AttributeId BaseSegmentLifetime{
 			"Ability.Offense.ScorchDrive.BaseSegmentLifetime"
 		};
-		inline static const sas::AttributeId FireTickInterval{
-			"Ability.Offense.ScorchDrive.FireTickInterval"
-		};
 		inline static const sas::AttributeId IgniteStacks{
 			"Ability.Offense.ScorchDrive.IgniteStacks"
 		};

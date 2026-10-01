@@ -249,7 +249,6 @@ namespace ly
 			config.targetOrbitRadius = 65.f;
 			config.angularSpeed = 2.0f;
 			config.travelSpeed = 800.f;
-			config.pulseInterval = 0.25f;
 			config.pulseDamage = pulseDamage;
 
 			const weak_ptr<EmberDroneActor> droneWeak =

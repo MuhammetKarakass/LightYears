@@ -10,15 +10,19 @@ namespace ly
 	void TextWidget::SetString(const std::string& newStr)
 	{
 		mText.setString(newStr);
+		InvalidateLayout();
 	}
 
 	void TextWidget::SetTextSize(unsigned int newSize)
 	{
 		mText.setCharacterSize(newSize);
+		InvalidateLayout();
 	}
 	void TextWidget::SetFillColor(const sf::Color& color)
 	{
+		mAuthoredTextAlpha = color.a;
 		mText.setFillColor(color);
+		ApplyAlpha(GetEffectiveAlpha());
 	}
 	void TextWidget::Draw(sf::RenderWindow& windowRef)
 	{
@@ -45,7 +49,7 @@ namespace ly
 	void TextWidget::ApplyAlpha(float alpha)
 	{
 		sf::Color currentColor = mText.getFillColor();
-		currentColor.a = static_cast<std::uint8_t>(alpha * 255.f);
+		currentColor.a = static_cast<std::uint8_t>(mAuthoredTextAlpha * alpha);
 		mText.setFillColor(currentColor);
 	}
 }

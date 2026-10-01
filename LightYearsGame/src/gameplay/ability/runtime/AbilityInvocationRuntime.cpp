@@ -28,7 +28,7 @@ namespace ly
 		GameAbilityDefinition definition = sourceDefinition;
 		definition.levelProgression.clear();
 		definition.repeatingLevelProgression.clear();
-		definition.levelUpgradeScrapCosts.clear();
+		definition.scrapCost = {};
 		definition.attributeModifiers.clear();
 		definition.unlockedUpgradeIds = record.unlockedUpgradeIds;
 		definition.scalingRules = scalingRules;

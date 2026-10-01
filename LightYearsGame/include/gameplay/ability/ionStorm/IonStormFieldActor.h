@@ -24,7 +24,6 @@ namespace ly
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
 
 		float GetResolvedDuration() const { return mDuration; }
-		float GetResolvedTickInterval() const { return mTickInterval; }
 		int GetTickCount() const { return mTickCount; }
 		const IonStormBoundary& GetBoundary() const { return mBoundary; }
 
@@ -36,7 +35,6 @@ namespace ly
 		std::weak_ptr<Actor> mOwnerReference;
 		IonStormBoundary mBoundary;
 		float mDuration = 4.f;
-		float mTickInterval = 0.25f;
 		float mTickAccumulator = 0.f;
 		float mFieldAge = 0.f;
 		int mTickCount = 0;

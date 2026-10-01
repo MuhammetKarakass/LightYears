@@ -36,9 +36,6 @@ namespace AbilityData::InfernoSpray
 			inline static const sas::AttributeId ConeAngle{
 				"AbilityActor.InfernoSpray.FlameCone.ConeAngle"
 			};
-			inline static const sas::AttributeId CombatTickInterval{
-				"AbilityActor.InfernoSpray.FlameCone.CombatTickInterval"
-			};
 			inline static const sas::AttributeId BaseDPS{
 				"AbilityActor.InfernoSpray.FlameCone.BaseDPS"
 			};

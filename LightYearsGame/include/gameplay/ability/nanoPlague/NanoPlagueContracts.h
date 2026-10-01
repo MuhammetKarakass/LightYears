@@ -25,7 +25,6 @@ namespace AbilityData::NanoPlague
 		// Shared output/delivery channels retain the project-wide meanings.
 		inline static const sas::AttributeId& BaseTickDamage = ly::CommonAttributeIds::Damage;
 		inline static const sas::AttributeId& Duration = ly::CommonAttributeIds::Duration;
-		inline static const sas::AttributeId& TickInterval = ly::CommonAttributeIds::Interval;
 		inline static const sas::AttributeId& InitialTargetRange = ly::CommonAttributeIds::Range;
 		inline static const sas::AttributeId& SpreadRadius = ly::CommonAttributeIds::Radius;
 
@@ -40,7 +39,6 @@ namespace AbilityData::NanoPlague
 
 	inline constexpr float DefaultCooldown = 8.f;
 	inline constexpr float DefaultDuration = 4.f;
-	inline constexpr float DefaultTickInterval = 0.25f;
 	inline constexpr float DefaultBaseTickDamage = 1.f;
 	inline constexpr float DefaultEnergyPowerTickScale = 0.05f;
 	inline constexpr float DefaultInitialTargetRange = 800.f;

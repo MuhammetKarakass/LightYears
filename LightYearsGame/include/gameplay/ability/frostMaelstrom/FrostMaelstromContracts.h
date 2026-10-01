@@ -50,9 +50,6 @@ namespace AbilityData::FrostMaelstrom
 		inline static const sas::AttributeId MaximumMovementSpeed{
 			"Ability.Control.FrostMaelstrom.MaximumMovementSpeed"
 		};
-		inline static const sas::AttributeId TickInterval{
-			"Ability.Control.FrostMaelstrom.TickInterval"
-		};
 		inline static const sas::AttributeId CryoStacksPerTick{
 			"Ability.Control.FrostMaelstrom.CryoStacksPerTick"
 		};
@@ -90,7 +87,6 @@ namespace AbilityData::FrostMaelstrom
 	inline constexpr float DefaultMaximumRadius = 600.f;
 	inline constexpr float DefaultMinimumMovementSpeed = 200.f;
 	inline constexpr float DefaultMaximumMovementSpeed = 500.f;
-	inline constexpr float DefaultTickInterval = 0.25f;
 	inline constexpr float DefaultCryoStacksPerTick = 1.f;
 	// The field must pull targets decisively toward the inner orbit instead of
 	// only nudging them.  Angular speed is expressed in radians per second.

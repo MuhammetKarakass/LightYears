@@ -23,6 +23,7 @@ flash_test.txt
 /beyin/
 /.beyin-runtime.json
 /.beyin-version
+/.beyin-backup/
 /beyin.py
 /Beyni Guncelle.cmd
 /.codebase-memory/

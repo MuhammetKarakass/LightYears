@@ -101,7 +101,6 @@ namespace ly
 					CommonAttributeIds::Radius,
 					CommonAttributeIds::Range,
 					AbilityData::IonStorm::Attribute::ProjectileSpeed,
-					AbilityData::IonStorm::Attribute::TickInterval,
 					AbilityData::IonStorm::Attribute::InnerCoreRadius,
 					AbilityData::IonStorm::Attribute::OuterMinRadius,
 					AbilityData::IonStorm::Attribute::OuterMaxRadius,
@@ -232,11 +231,6 @@ namespace ly
 				sas::FindAttributeValue(attributes, DamageAttributeIds::ElectricStacks, 1.f),
 				0.f,
 				4.f
-			},
-			sas::GameplayAttribute{
-				AbilityData::IonStorm::Attribute::TickInterval,
-				sas::FindAttributeValue(attributes, AbilityData::IonStorm::Attribute::TickInterval, 0.25f),
-				0.01f
 			},
 			sas::GameplayAttribute{
 				AbilityData::IonStorm::Attribute::InnerCoreRadius,

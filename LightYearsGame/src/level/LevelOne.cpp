@@ -8,6 +8,7 @@
 #include <gameplay/WaitStage.h>
 #include "player/PlayerManager.h"
 #include "widget/GameHUD.h"
+#include "presentation/hud/notification/NotificationHUDController.h"
 #include "framework/Application.h"
 #include "enemy/ChaosStage.h"
 #include "framework/BackGroundActor.h"
@@ -114,14 +115,8 @@ namespace ly
 	void LevelOne::ConnectChaosStageToHUD()
 	{
 		if (auto chaosStage = mChaosStage.lock())
-		{			
-			if (auto hud = GetGameHUD().lock())
-			{
-				chaosStage->onNotification.BindAction(hud->GetWeakPtr(), &GameHUD::ShowDynamicNotification);
-				chaosStage->onTotalChaosStarted.BindAction(hud->GetWeakPtr(), &GameHUD::ShowTimer);
-				chaosStage->onChaosTimerUpdated.BindAction(hud->GetWeakPtr(), &GameHUD::UpdateTimer);
-				chaosStage->onTotalChaosEnded.BindAction(hud->GetWeakPtr(), &GameHUD::TimerFinished);
-			}
+		{
+			if (auto notifications = GetNotificationHUD().lock()) notifications->BindChaosStage(chaosStage);
 		}
 	}
 
@@ -199,6 +194,10 @@ namespace ly
 	void LevelOne::Tick(float deltaTime)
 	{
 		World::Tick(deltaTime);
+		if (Player* player = PlayerManager::GetPlayerManager().GetPlayer())
+		{
+			player->FlushPendingTestAbilityLevels(this);
+		}
 	}
 
 	void LevelOne::OnRestartLevel()

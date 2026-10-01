@@ -28,6 +28,7 @@ namespace ly
 		void AddShipXP(float amount);
 		void AwardScrap(unsigned int amount);
 		bool TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason = nullptr);
+		void FlushPendingTestAbilityLevels(World* expectedWorld = nullptr);
 
 		unsigned int GetLifeCount() const { return mLifeCount; };
 		unsigned int GetScore() const { return mScore; };
@@ -57,17 +58,22 @@ namespace ly
 			sas::AbilityHandle handle,
 			int level
 		) noexcept;
+		void OnShipLevelChanged(int previousLevel, int currentLevel);
+		bool QueuePendingTestAbilityLevels(PlayerSpaceShip& ship, int levelCount);
 		void RestorePurchasedAbilityLevels(PlayerSpaceShip& ship);
 		void OnCurrentShipDestroyed(Actor* destroyedActor);
 		void ResetRunProgression();
 
 		weak_ptr<PlayerSpaceShip> mCurrentSpaceShip;
 		DelegateHandle mCurrentShipDestroyedHandle;
+		DelegateHandle mShipLevelChangedHandle;
 		ShipProgression mShipProgression;
 		PurchasedAbilityLevels mPurchasedAbilityLevels;
+		PurchasedAbilityLevels mPendingTestAbilityLevels;
 		unsigned int mLifeCount;
 		unsigned int mScore;
 		unsigned int mScrap;
+		int mPendingTestAbilityLevelUps = 0;
 		bool mAbilityPurchaseInProgress = false;
 	};
 }

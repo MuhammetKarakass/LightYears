@@ -5,6 +5,7 @@
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include <framework/World.h>
 #include <framework/MathUtility.h>
+#include <framework/debug/Profiler.h>
 #include "VFX/Explosion.h" 
 #include <algorithm>
 
@@ -91,7 +92,10 @@ namespace ly
 			GetConditionalMovementSpeedMultiplier(currentMovementDirection)
 		);
 		UpdateBlink(deltaTime);      
-		mCombatRuntime.Tick(deltaTime);
+		{
+			LY_PROFILE_SCOPE("Ship.CombatRuntimeTick");
+			mCombatRuntime.Tick(deltaTime);
+		}
 		UpdateRegeneration(deltaTime);
 		mTemporalStateHistory.AdvanceAndCapture(*this, deltaTime);
 	}

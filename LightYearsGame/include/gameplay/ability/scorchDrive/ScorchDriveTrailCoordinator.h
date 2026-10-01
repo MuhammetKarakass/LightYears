@@ -17,7 +17,6 @@ namespace ly
 			World* world,
 			Actor* owner,
 			float fireDamage,
-			float fireTickInterval,
 			int igniteStacksPerHit,
 			const sas::ContentId& sourceAbilityId,
 			const List<GameplayTag>& sourceAbilityTags,
@@ -40,7 +39,6 @@ namespace ly
 		weak_ptr<Actor> mOwner;
 		List<weak_ptr<ScorchDriveFireSegmentActor>> mSegments;
 		float mFireDamage = 0.f;
-		float mFireTickInterval = 0.f;
 		int mIgniteStacksPerHit = 1;
 		float mTickAccumulator = 0.f;
 		bool mCastActive = true;

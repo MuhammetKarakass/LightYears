@@ -37,7 +37,6 @@ namespace ly
 		float mSegmentSpawnDistance = 60.f;
 		float mBaseSegmentLifetime = 5.f;
 		float mFireDamage = 0.f;
-		float mFireTickInterval = 0.25f;
 		int mIgniteStacksPerHit = 1;
 		bool mActive = false;
 		bool mOwnerWasInPortalTransit = false;

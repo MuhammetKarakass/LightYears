@@ -1,6 +1,7 @@
 #include "gameplay/ability/scorchDrive/ScorchDriveTrailCoordinator.h"
 
 #include "framework/World.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameplay/ability/scorchDrive/ScorchDriveFireSegmentActor.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
@@ -35,7 +36,6 @@ namespace ly
 		World* world,
 		Actor* owner,
 		float fireDamage,
-		float fireTickInterval,
 		int igniteStacksPerHit,
 		const sas::ContentId& sourceAbilityId,
 		const List<GameplayTag>& sourceAbilityTags,
@@ -44,7 +44,6 @@ namespace ly
 		: Actor(world)
 		, mOwner(MakeWeakActor(owner))
 		, mFireDamage(std::max(0.f, fireDamage))
-		, mFireTickInterval(std::max(0.001f, fireTickInterval))
 		, mIgniteStacksPerHit(std::clamp(igniteStacksPerHit, 0, 4))
 		, mSourceAbilityId(sourceAbilityId)
 		, mSourceAbilityTags(sourceAbilityTags)
@@ -120,7 +119,7 @@ namespace ly
 		const int tickCount = time::ConsumePeriodicTicks(
 			mTickAccumulator,
 			deltaTime,
-			mFireTickInterval
+			CombatTick::Interval
 		);
 		for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
 		{

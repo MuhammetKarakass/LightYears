@@ -100,7 +100,6 @@ namespace ly
 			AbilityData::FrostMaelstrom::Attribute::MaximumRadius,
 			AbilityData::FrostMaelstrom::Attribute::MinimumMovementSpeed,
 			AbilityData::FrostMaelstrom::Attribute::MaximumMovementSpeed,
-			AbilityData::FrostMaelstrom::Attribute::TickInterval,
 			AbilityData::FrostMaelstrom::Attribute::CryoStacksPerTick,
 			AbilityData::FrostMaelstrom::Attribute::OrbitalAngularSpeed,
 			AbilityData::FrostMaelstrom::Attribute::PullStrength,
@@ -130,7 +129,6 @@ namespace ly
 			value(AbilityData::FrostMaelstrom::Attribute::MinimumMovementSpeed) < 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::MaximumMovementSpeed) <
 				value(AbilityData::FrostMaelstrom::Attribute::MinimumMovementSpeed) ||
-			value(AbilityData::FrostMaelstrom::Attribute::TickInterval) <= 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::CryoStacksPerTick) != 1.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::OrbitalAngularSpeed) < 0.f ||
 			value(AbilityData::FrostMaelstrom::Attribute::PullStrength) < 0.f ||

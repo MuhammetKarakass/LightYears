@@ -83,7 +83,6 @@ namespace ly
 			AbilityData::ScorchDrive::Attribute::Damage,
 			AbilityData::ScorchDrive::Attribute::SegmentSpawnDistance,
 			AbilityData::ScorchDrive::Attribute::BaseSegmentLifetime,
-			AbilityData::ScorchDrive::Attribute::FireTickInterval,
 			AbilityData::ScorchDrive::Attribute::IgniteStacks
 		})
 		{
@@ -110,7 +109,6 @@ namespace ly
 		if (value(AbilityData::ScorchDrive::Attribute::Damage) < 0.f ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::SegmentSpawnDistance)) ||
 			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::BaseSegmentLifetime)) ||
-			!IsFinitePositive(value(AbilityData::ScorchDrive::Attribute::FireTickInterval)) ||
 			igniteStacks < 1.f || igniteStacks > 4.f ||
 			std::round(igniteStacks) != igniteStacks ||
 			(definition.levelProgression.empty() && definition.repeatingLevelProgression.empty()) ||
@@ -148,10 +146,6 @@ namespace ly
 			0.01f,
 			FindValue(values, AbilityData::ScorchDrive::Attribute::BaseSegmentLifetime, 5.f)
 		);
-		mFireTickInterval = std::max(
-			0.01f,
-			FindValue(values, AbilityData::ScorchDrive::Attribute::FireTickInterval, 0.25f)
-		);
 		mIgniteStacksPerHit = std::clamp(static_cast<int>(std::round(
 			FindValue(values, AbilityData::ScorchDrive::Attribute::IgniteStacks, 1.f)
 		)), 1, 4);
@@ -159,7 +153,6 @@ namespace ly
 		mCoordinator = world->SpawnActor<ScorchDriveTrailCoordinatorActor>(
 			&context.owner,
 			mFireDamage,
-			mFireTickInterval,
 			mIgniteStacksPerHit,
 			sas::ContentId{ context.definition.abilityId },
 			context.definition.abilityTags,

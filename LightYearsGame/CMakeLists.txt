@@ -55,6 +55,37 @@ set(LIGHT_YEARS_ENCOUNTER_HUD_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/encounter/EncounterHUDController.cpp
 )
 
+set(LIGHT_YEARS_UI_HUD_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/MenuLayout.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/MenuLayout.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarViewModel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarPresenter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityBarPresenter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarView.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityBarView.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarHUDController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityBarHUDController.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/encounter/EncounterHUDPresentation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/encounter/EncounterHUDView.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/encounter/EncounterHUDView.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsViewModel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsPresenter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsPresenter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsView.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsView.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsHUDController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsHUDController.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/warning/GameplayWarningViewModel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/warning/GameplayWarningViewModel.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/warning/GameplayWarningView.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/warning/GameplayWarningView.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationViewModel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationPresenter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationPresenter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationView.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationView.cpp
+)
+
 add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameFramework/GameApplication.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp
@@ -287,6 +318,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentLoadout.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageContext.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/CombatTick.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/DamageTypeConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageTypeSystem.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
@@ -901,12 +933,12 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/GameplayWarningHUDController.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/GameplayWarningHUDController.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationHUDController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationHUDController.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/HUDController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityUIViewModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityUIController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityUIController.cpp
 
 	${LIGHT_YEARS_ENCOUNTER_HUD_SOURCES}
+	${LIGHT_YEARS_UI_HUD_SOURCES}
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/gameplay/GameplayConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponStructs.h
@@ -990,8 +1022,9 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/PauseMenuHUD.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameOverHUD.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/GameplayWarningHUDController.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityUIController.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationHUDController.cpp
 		${LIGHT_YEARS_ENCOUNTER_HUD_SOURCES}
+		${LIGHT_YEARS_UI_HUD_SOURCES}
 		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/TwinBladeStage.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/HexagonStage.cpp
@@ -1267,6 +1300,20 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
 	)
 
+	# Shared gameplay sources compiled once; every GAS-lite style test links these objects
+	# instead of recompiling ~230 sources (and emitting a full PDB/ILK) per executable.
+	add_library(LightYearsGasLiteTestObjects OBJECT ${LIGHT_YEARS_GAS_LITE_TEST_SOURCES})
+	target_include_directories(LightYearsGasLiteTestObjects PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_link_libraries(LightYearsGasLiteTestObjects
+		PUBLIC
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
 	add_executable(LightYearsGasLiteTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/EnemyCombatFoundationTests.cpp
@@ -1274,7 +1321,6 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityLoadoutTransactionTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/PlayerShipLifetimeTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/ChainLightningLifetimeTests.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsGasLiteTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1282,6 +1328,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsGasLiteTests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1332,7 +1379,6 @@ if(BUILD_TESTING)
 
 	add_executable(LightYearsClosedCircuitInterceptionTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/ClosedCircuitInterceptionTests.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsClosedCircuitInterceptionTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1340,6 +1386,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsClosedCircuitInterceptionTests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1352,7 +1399,6 @@ if(BUILD_TESTING)
 	)
 	add_executable(LightYearsNanoPlagueRuntimeTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/NanoPlagueRuntimeTests.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsNanoPlagueRuntimeTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1360,6 +1406,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsNanoPlagueRuntimeTests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1372,7 +1419,6 @@ if(BUILD_TESTING)
 	)
 	add_executable(LightYearsPortalTransferTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/PortalTransferRuntimeTests.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsPortalTransferTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1380,6 +1426,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsPortalTransferTests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1404,7 +1451,6 @@ if(BUILD_TESTING)
 
 	add_executable(LightYearsProjectileReflectionTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/ProjectileReflectionTests.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsProjectileReflectionTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1412,6 +1458,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsProjectileReflectionTests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1425,7 +1472,6 @@ if(BUILD_TESTING)
 
 	add_executable(LightYearsStormMarkTimingTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/StormMarkTimingTests.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsStormMarkTimingTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1433,6 +1479,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsStormMarkTimingTests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1446,7 +1493,6 @@ if(BUILD_TESTING)
 
 	add_executable(LightYearsPrimaryWeaponTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/PrimaryWeaponMagazineTests.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsPrimaryWeaponTests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1457,6 +1503,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsPrimaryWeaponTests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1469,6 +1516,104 @@ if(BUILD_TESTING)
 	)
 	set(LIGHT_YEARS_E2E_ARTIFACT_DIR "${CMAKE_BINARY_DIR}/e2e-artifacts")
 	file(MAKE_DIRECTORY "${LIGHT_YEARS_E2E_ARTIFACT_DIR}")
+	add_executable(LightYearsPlayerLevelTestProgressionE2ETests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/PlayerLevelTestProgressionE2E.cpp
+	)
+	target_include_directories(LightYearsPlayerLevelTestProgressionE2ETests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsPlayerLevelTestProgressionE2ETests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	)
+	target_link_libraries(LightYearsPlayerLevelTestProgressionE2ETests
+		PRIVATE
+			LightYearsGasLiteTestObjects
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsPlayerLevelTestProgressionE2E
+		COMMAND LightYearsPlayerLevelTestProgressionE2ETests
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/player-level-test-progression.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsPlayerLevelTestProgressionE2E PROPERTIES TIMEOUT 60)
+	add_executable(LightYearsVitalsHUDTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/VitalsHUDTests.cpp
+	)
+	target_include_directories(LightYearsVitalsHUDTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsVitalsHUDTests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	)
+	target_link_libraries(LightYearsVitalsHUDTests
+		PRIVATE
+			LightYearsGasLiteTestObjects
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsVitalsHUD
+		COMMAND LightYearsVitalsHUDTests
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/vitals-hud.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsVitalsHUD PROPERTIES TIMEOUT 60)
+	add_executable(LightYearsHUDMigrationTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/HUDMigrationTests.cpp
+	)
+	target_include_directories(LightYearsHUDMigrationTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsHUDMigrationTests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	)
+	target_link_libraries(LightYearsHUDMigrationTests
+		PRIVATE
+			LightYearsGasLiteTestObjects
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsHUDMigrationWarning
+		COMMAND LightYearsHUDMigrationTests --warning "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-warning.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsHUDMigrationWarning PROPERTIES TIMEOUT 60)
+	add_test(
+		NAME LightYearsHUDMigrationNotification
+		COMMAND LightYearsHUDMigrationTests --notification "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-notification.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsHUDMigrationNotification PROPERTIES TIMEOUT 60)
+	add_test(
+		NAME LightYearsHUDMigrationEncounter
+		COMMAND LightYearsHUDMigrationTests --encounter "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-encounter.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsHUDMigrationEncounter PROPERTIES TIMEOUT 60)
+	add_test(
+		NAME LightYearsHUDMigrationAbility
+		COMMAND LightYearsHUDMigrationTests --ability "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-ability.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsHUDMigrationAbility PROPERTIES TIMEOUT 60)
+	add_test(
+		NAME LightYearsHUDMigrationMenus
+		COMMAND LightYearsHUDMigrationTests --menus "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-menus.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsHUDMigrationMenus PROPERTIES TIMEOUT 60)
 	add_executable(LightYearsContinuousBeamWallE2ETests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/ContinuousBeamWallE2E.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityContentRegistrationE2E.cpp
@@ -1479,7 +1624,6 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceSecondThreeE2E.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceFirstThreeE2E.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceThirdThreeE2E.cpp
-		${LIGHT_YEARS_GAS_LITE_TEST_SOURCES}
 	)
 	target_include_directories(LightYearsContinuousBeamWallE2ETests PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -1490,6 +1634,7 @@ if(BUILD_TESTING)
 	)
 	target_link_libraries(LightYearsContinuousBeamWallE2ETests
 		PRIVATE
+			LightYearsGasLiteTestObjects
 			${LIGHT_YEARS_ENGINE_TARGET_NAME}
 			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
@@ -1531,6 +1676,8 @@ if(BUILD_TESTING)
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 	set_tests_properties(LightYearsGameHUDDamageEventE2E PROPERTIES TIMEOUT 60)
+	add_test(NAME LightYearsGameHUDPlayerRestart COMMAND LightYearsGasLiteTests --game-hud-player-restart)
+	set_tests_properties(LightYearsGameHUDPlayerRestart PROPERTIES TIMEOUT 60)
 	add_test(NAME LightYearsAuditFixesE2E COMMAND LightYearsContinuousBeamWallE2ETests
 		--audit-fixes "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/audit-fixes.json" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 	set_tests_properties(LightYearsAuditFixesE2E PROPERTIES TIMEOUT 60)
@@ -1597,6 +1744,36 @@ if(BUILD_TESTING)
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 	)
 	add_test(NAME LightYearsMovementPolicy COMMAND LightYearsMovementPolicyTests)
+	endif()
+
+	# Test executables are rebuilt from scratch often; the incremental-link
+	# state (.ilk, ~300 MB each) and full link PDBs (up to ~1.9 GB each) are
+	# pure disk cost for them. FASTLINK keeps debugging working by referencing
+	# the object files' debug info instead of copying it.
+	if(MSVC)
+		foreach(light_years_test_target
+			LightYearsContentTests
+			LightYearsGasLiteTests
+			LightYearsTemporaryOvercapTests
+			LightYearsClosedCircuitInterceptionTests
+			LightYearsNanoPlagueRuntimeTests
+			LightYearsPortalTransferTests
+			LightYearsActorHitCooldownTests
+			LightYearsProjectileReflectionTests
+			LightYearsStormMarkTimingTests
+			LightYearsPrimaryWeaponTests
+			LightYearsPlayerLevelTestProgressionE2ETests
+			LightYearsVitalsHUDTests
+			LightYearsHUDMigrationTests
+			LightYearsContinuousBeamWallE2ETests
+			LightYearsAutoTargetingTests
+			LightYearsGameplayTagSchemaTests
+			LightYearsMovementInfluenceTests
+			LightYearsMovementPolicyTests)
+			if(TARGET ${light_years_test_target})
+				target_link_options(${light_years_test_target} PRIVATE /INCREMENTAL:NO /DEBUG:FASTLINK)
+			endif()
+		endforeach()
 	endif()
 endif()
 

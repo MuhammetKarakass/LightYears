@@ -721,6 +721,7 @@ namespace
 
 int RunPlayerShipLifetimeTests();
 int RunChainLightningLifetimeTests();
+int RunGameHUDPlayerRestartTests();
 
 int main(int argc, char** argv)
 {
@@ -729,6 +730,7 @@ int main(int argc, char** argv)
 	if (argc == 2 && std::string{ argv[1] } == "--chain-lightning-lifetime") return RunChainLightningLifetimeTests();
 	if (argc == 2 && std::string{ argv[1] } == "--mixed-loadout") return RunEnemyCombatMixedLoadoutTest();
 	if (argc == 2 && std::string{ argv[1] } == "--loadout-transaction") return RunAbilityLoadoutTransactionTests();
+	if (argc == 2 && std::string{ argv[1] } == "--game-hud-player-restart") return RunGameHUDPlayerRestartTests();
 
 	const int enemyFoundationResult = RunEnemyCombatFoundationTests();
 	if (enemyFoundationResult != 0) return enemyFoundationResult;
@@ -1159,7 +1161,7 @@ int main(int argc, char** argv)
 		!NearlyEqual(orbitalDronesDefinition->scalingRules.front().coefficient, 0.40f) ||
 		orbitalDronesDefinition->ResolveLevelStep(0) == nullptr ||
 		orbitalDronesDefinition->ResolveLevelStep(23) == nullptr ||
-		orbitalDronesDefinition->levelUpgradeScrapCosts.size() != 24)
+		!orbitalDronesDefinition->scrapCost.IsPurchasable())
 	{
 		return Fail("Orbital Drones shipped ability contract is invalid");
 	}
@@ -1195,7 +1197,7 @@ int main(int argc, char** argv)
 			} ||
 		echoProtocolDefinition->attributes.size() != 4 ||
 		echoProtocolDefinition->ResolveLevelStep(0) == nullptr ||
-		echoProtocolDefinition->levelUpgradeScrapCosts.size() != 14)
+		echoProtocolDefinition->scrapCost.base != 80u)
 	{
 		return Fail("Echo Protocol shipped ability contract is invalid");
 	}
@@ -2624,6 +2626,58 @@ int main(int argc, char** argv)
 		return Fail("Thermal Tick(8) did not match eight Tick(1) calls");
 	}
 
+	// Ignite is authored as DPS but must be delivered on the global combat tick, so the
+	// number of hits must not depend on frame rate and every hit is a whole tick of damage.
+	struct IgniteCadence
+	{
+		int hitCount = 0;
+		float largestHit = 0.f;
+		float totalDamage = 0.f;
+	};
+	const auto measureIgnite = [&](float frameDelta)
+	{
+		TestCombatant cadenceTarget;
+		for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
+		{
+			ApplyCombatDamage(cadenceTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
+		}
+		IgniteCadence result;
+		const float startHealth = cadenceTarget.GetHealth();
+		float previousHealth = startHealth;
+		const int frames = static_cast<int>(std::ceil(8.5f / frameDelta));
+		for (int frame = 0; frame < frames; ++frame)
+		{
+			cadenceTarget.GetCombatRuntime().Tick(frameDelta);
+			const float health = cadenceTarget.GetHealth();
+			if (health < previousHealth)
+			{
+				++result.hitCount;
+				result.largestHit = std::max(result.largestHit, previousHealth - health);
+				previousHealth = health;
+			}
+		}
+		result.totalDamage = startHealth - previousHealth;
+		return result;
+	};
+	const IgniteCadence cadence30 = measureIgnite(1.f / 30.f);
+	const IgniteCadence cadence60 = measureIgnite(1.f / 60.f);
+	const IgniteCadence cadence120 = measureIgnite(1.f / 120.f);
+	for (const IgniteCadence& cadence : { cadence30, cadence60, cadence120 })
+	{
+		// 4 stacks for 5 s, then 3/2/1 stacks for 1 s each = 8 s = 32 ticks of 0.25 s. A hit carries the damage
+		// integrated up to the frame that fires the tick, so at 30 FPS it can exceed one tick by one frame (<= 1.34).
+		if (cadence.hitCount < 30 || cadence.hitCount > 34 ||
+			cadence.largestHit > 1.4f ||
+			std::abs(cadence.totalDamage - 31.f) > 0.05f)
+		{
+			return Fail("Ignite was not delivered on the global 0.25 s combat tick with unchanged total damage");
+		}
+	}
+	if (std::abs(cadence30.hitCount - cadence120.hitCount) > 2)
+	{
+		return Fail("Ignite hit count depended on frame rate");
+	}
+
 	TestCombatant thermalFractionalTarget;
 	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
 	{
@@ -2642,165 +2696,6 @@ int main(int argc, char** argv)
 		return Fail("Fractional Thermal time was not split at the exact stack boundary");
 	}
 
-	TestCombatant thermalSourceA;
-	TestCombatant thermalSourceB;
-	const DamagePayload periodicThermalPayload = DamageTypeSystem::BuildPayload(
-		{ DamageTypeSchema::Thermal },
-		{
-			sas::GameplayAttribute{ DamageAttributeIds::IgniteStacks, 1.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::BurnDamagePerTick, 2.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::BurnTickInterval, 1.f, 0.001f },
-			sas::GameplayAttribute{ DamageAttributeIds::BurnDuration, 5.f, 0.f }
-		}
-	);
-	DamagePayload slicedPeriodicPayload = periodicThermalPayload;
-	slicedPeriodicPayload.burnTickInterval = 0.75f;
-	TestCombatant periodicSliceTarget;
-	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
-	{
-		ApplyCombatDamage(
-			periodicSliceTarget,
-			1.f,
-			nullptr,
-			{ DamageTypeSchema::Thermal },
-			slicedPeriodicPayload
-		);
-	}
-	const float periodicSliceHealth = periodicSliceTarget.GetHealth();
-	periodicSliceTarget.GetCombatRuntime().Tick(5.5f);
-	const sas::ActiveGameplayEffect* periodicSliceIgnite =
-		periodicSliceTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-			DamageStatusEffectIds::IgniteEffectId
-		);
-	if (!NearlyEqual(periodicSliceHealth - periodicSliceTarget.GetHealth(), 14.f) ||
-		!periodicSliceIgnite || periodicSliceIgnite->stackCount != 3 ||
-		!NearlyEqual(periodicSliceIgnite->remainingDuration, 0.5f))
-	{
-		return Fail("Periodic Scorch time did not preserve its accumulator across slices");
-	}
-	TestCombatant generalToPeriodicTarget;
-	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
-	{
-		ApplyCombatDamage(
-			generalToPeriodicTarget,
-			1.f,
-			&thermalSourceA,
-			{ DamageTypeSchema::Thermal },
-			thermalPayload
-		);
-	}
-	ApplyCombatDamage(
-		generalToPeriodicTarget,
-		1.f,
-		&thermalSourceB,
-		{ DamageTypeSchema::Thermal },
-		periodicThermalPayload
-	);
-	const sas::ActiveGameplayEffect* periodicIgnite =
-		generalToPeriodicTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-			DamageStatusEffectIds::IgniteEffectId
-		);
-	if (!periodicIgnite || periodicIgnite->stackCount != damageStatusBalance.thermal.maxStacks ||
-		!NearlyEqual(periodicIgnite->remainingDuration, 5.f) ||
-		periodicIgnite->GetSourceObject<Actor>() != &thermalSourceB ||
-		!NearlyEqual(sas::FindAttributeValue(
-			periodicIgnite->spec.attributes,
-			DamageAttributeIds::BurnDamagePerTick,
-			0.f
-		), 2.f) ||
-		!NearlyEqual(sas::FindAttributeValue(
-			periodicIgnite->runtimeAttributes,
-			DamageAttributeIds::BurnTickAccumulator,
-			-1.f
-		), 0.f))
-	{
-		return Fail("Capped general-to-periodic Ignite reapply did not replace its mode and source");
-	}
-	const float periodicHealthBeforeTick = generalToPeriodicTarget.GetHealth();
-	generalToPeriodicTarget.GetCombatRuntime().Tick(1.f);
-	if (!NearlyEqual(
-		periodicHealthBeforeTick - generalToPeriodicTarget.GetHealth(),
-		2.f
-	))
-	{
-		return Fail("Periodic Ignite reapply used the canonical stack DPS");
-	}
-
-	TestCombatant periodicToGeneralTarget;
-	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
-	{
-		ApplyCombatDamage(
-			periodicToGeneralTarget,
-			1.f,
-			&thermalSourceA,
-			{ DamageTypeSchema::Thermal },
-			periodicThermalPayload
-		);
-	}
-	ApplyCombatDamage(
-		periodicToGeneralTarget,
-		1.f,
-		&thermalSourceB,
-		{ DamageTypeSchema::Thermal },
-		thermalPayload
-	);
-	const sas::ActiveGameplayEffect* generalIgnite =
-		periodicToGeneralTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-			DamageStatusEffectIds::IgniteEffectId
-		);
-	if (!generalIgnite || generalIgnite->stackCount != damageStatusBalance.thermal.maxStacks ||
-		generalIgnite->GetSourceObject<Actor>() != &thermalSourceB ||
-		!generalIgnite->spec.attributes.empty() ||
-		!generalIgnite->runtimeAttributes.empty())
-	{
-		return Fail("Capped periodic-to-general Ignite reapply retained snapshot attributes");
-	}
-	const float generalHealthBeforeTick = periodicToGeneralTarget.GetHealth();
-	periodicToGeneralTarget.GetCombatRuntime().Tick(1.f);
-	if (!NearlyEqual(
-		generalHealthBeforeTick - periodicToGeneralTarget.GetHealth(),
-		damageStatusBalance.ThermalDamagePerSecond(damageStatusBalance.thermal.maxStacks)
-	))
-	{
-		return Fail("General Ignite reapply did not restore canonical stack DPS");
-	}
-
-	TestCombatant samePeriodicTarget;
-	for (int stack = 0; stack < damageStatusBalance.thermal.maxStacks; ++stack)
-	{
-		ApplyCombatDamage(
-			samePeriodicTarget,
-			1.f,
-			&thermalSourceA,
-			{ DamageTypeSchema::Thermal },
-			periodicThermalPayload
-		);
-	}
-	DamagePayload strongerPeriodicPayload = periodicThermalPayload;
-	strongerPeriodicPayload.burnDamagePerTick = 3.f;
-	strongerPeriodicPayload.burnDuration = 6.f;
-	ApplyCombatDamage(
-		samePeriodicTarget,
-		1.f,
-		&thermalSourceB,
-		{ DamageTypeSchema::Thermal },
-		strongerPeriodicPayload
-	);
-	const sas::ActiveGameplayEffect* refreshedPeriodicIgnite =
-		samePeriodicTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-			DamageStatusEffectIds::IgniteEffectId
-		);
-	if (!refreshedPeriodicIgnite || refreshedPeriodicIgnite->stackCount != damageStatusBalance.thermal.maxStacks ||
-		!NearlyEqual(refreshedPeriodicIgnite->remainingDuration, 6.f) ||
-		!NearlyEqual(sas::FindAttributeValue(
-			refreshedPeriodicIgnite->runtimeAttributes,
-			DamageAttributeIds::BurnDamagePerTick,
-			0.f
-		), 3.f))
-	{
-		return Fail("Capped same-mode Ignite reapply did not refresh its snapshot");
-	}
-
 	TestCombatant twoStackGeneralTarget;
 	ApplyCombatDamage(twoStackGeneralTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
 	ApplyCombatDamage(twoStackGeneralTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, thermalPayload);
@@ -2813,41 +2708,6 @@ int main(int argc, char** argv)
 	{
 		return Fail("Two-stack general Ignite did not use its stack table");
 	}
-	TestCombatant twoStackPeriodicTarget;
-	ApplyCombatDamage(twoStackPeriodicTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, periodicThermalPayload);
-	ApplyCombatDamage(twoStackPeriodicTarget, 1.f, nullptr, { DamageTypeSchema::Thermal }, periodicThermalPayload);
-	const float twoStackPeriodicHealth = twoStackPeriodicTarget.GetHealth();
-	twoStackPeriodicTarget.GetCombatRuntime().Tick(1.f);
-	if (!NearlyEqual(
-		twoStackPeriodicHealth - twoStackPeriodicTarget.GetHealth(),
-		2.f
-	))
-	{
-		return Fail("Two-stack periodic Ignite multiplied snapshot damage by stack count");
-	}
-
-	const DamagePayload partialPeriodicPayload = DamageTypeSystem::BuildPayload(
-		{ DamageTypeSchema::Thermal },
-		{
-			sas::GameplayAttribute{ DamageAttributeIds::IgniteStacks, 1.f, 0.f },
-			sas::GameplayAttribute{ DamageAttributeIds::BurnDamagePerTick, 2.f, 0.f }
-		}
-	);
-	TestCombatant partialPeriodicTarget;
-	ApplyCombatDamage(
-		partialPeriodicTarget,
-		1.f,
-		nullptr,
-		{ DamageTypeSchema::Thermal },
-		partialPeriodicPayload
-	);
-	if (partialPeriodicTarget.GetAbilitySystemComponent().FindGameplayEffectById(
-		DamageStatusEffectIds::IgniteEffectId
-	))
-	{
-		return Fail("Partial periodic Ignite payload silently fell back to StackDps");
-	}
-
 	TestCombatant cryoTarget;
 	const DamagePayload cryoStatusPayload = DamageTypeSystem::BuildPayload(
 		{ DamageTypeSchema::Cryo },
@@ -5054,8 +4914,8 @@ int main(int argc, char** argv)
 		basicLaserAbility.GetScrapCostToReachLevel(2) != 40u ||
 		basicLaserAbility.GetScrapCostToReachLevel(4) != 50u ||
 		basicLaserAbility.GetScrapCostToReachLevel(15) != 105u ||
-		basicLaser.progressionProfile.GetScrapCostToReachLevel(16) != 0u ||
-		basicLaserAbility.GetScrapCostToReachLevel(200) != 0u)
+		basicLaser.progressionProfile.GetScrapCostToReachLevel(16) != 110u ||
+		basicLaserAbility.GetScrapCostToReachLevel(200) != 1030u)
 	{
 		return Fail("Primary weapon scrap costs were not preserved during ability conversion");
 	}

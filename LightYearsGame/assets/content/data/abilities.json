@@ -11,32 +11,7 @@
         "cameraZoomOutRatio": 0.15
       },
       "progression": {
-        "levelUpgradeScrapCosts": [
-          40,
-          50,
-          65,
-          80,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 40, "step": 10 },
         "steps": {
           "attributeModifiers": [
             {
@@ -111,22 +86,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -165,22 +125,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -236,22 +181,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -348,22 +278,7 @@
         "Damage.Type.Electric"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -461,32 +376,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -572,32 +462,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -671,12 +536,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          40,
-          50,
-          65,
-          80
-        ],
+        "scrapCost": { "base": 40, "step": 10 },
         "steps": {
           "attributeModifiers": [
             {
@@ -758,22 +618,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -872,22 +717,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -939,10 +769,6 @@
             {
               "id": "AbilityActor.InfernoSpray.FlameCone.ConeAngle",
               "baseValue": 36.0
-            },
-            {
-              "id": "AbilityActor.InfernoSpray.FlameCone.CombatTickInterval",
-              "baseValue": 0.25
             },
             {
               "id": "AbilityActor.InfernoSpray.FlameCone.BaseDPS",
@@ -1037,12 +863,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1099,22 +920,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1165,22 +971,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1271,22 +1062,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          40,
-          50,
-          65,
-          80,
-          100,
-          125,
-          155,
-          190,
-          230,
-          275,
-          325,
-          380,
-          440,
-          505
-        ],
+        "scrapCost": { "base": 40, "step": 10 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1355,22 +1131,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1411,22 +1172,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80,
-          80
-        ],
+        "scrapCost": { "base": 80, "step": 0 },
         "steps": {
           "attributeModifiers": []
         }
@@ -1501,22 +1247,7 @@
         "Damage.Type.Energy"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1600,22 +1331,7 @@
         "Damage.Type.Energy"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1689,22 +1405,7 @@
         "Damage.Type.Energy"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1785,22 +1486,7 @@
         "Damage.Type.Kinetic"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1875,22 +1561,7 @@
         "Damage.Type.Energy"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -1994,22 +1665,7 @@
         "Damage.Type.Energy"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2052,11 +1708,6 @@
           "minValue": 0.01
         },
         {
-          "id": "Ability.Offense.ScorchDrive.FireTickInterval",
-          "baseValue": 0.25,
-          "minValue": 0.01
-        },
-        {
           "id": "Ability.Offense.ScorchDrive.IgniteStacks",
           "baseValue": 1.0,
           "minValue": 0.0,
@@ -2094,22 +1745,7 @@
         "Damage.Type.Thermal"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2154,22 +1790,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2218,11 +1839,6 @@
               "id": "Common.Damage",
               "baseValue": 12.0,
               "minValue": 0.0
-            },
-            {
-              "id": "AbilityActor.IonStorm.Field.TickInterval",
-              "baseValue": 0.25,
-              "minValue": 0.01
             },
             {
               "id": "AbilityActor.IonStorm.Field.InnerCoreRadius",
@@ -2288,22 +1904,7 @@
         "Damage.Type.Electric"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2409,22 +2010,7 @@
         "Damage.Type.Thermal"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2486,22 +2072,7 @@
         "Damage.Type.Electric"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2584,22 +2155,7 @@
         "Damage.Type.Electric"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2664,22 +2220,7 @@
       ],
       "damageTags": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2752,11 +2293,6 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.TickInterval",
-          "baseValue": 0.25,
-          "minValue": 0.01
-        },
-        {
           "id": "Ability.Control.FrostMaelstrom.CryoStacksPerTick",
           "baseValue": 1.0,
           "minValue": 1.0,
@@ -2813,22 +2349,7 @@
         "Damage.Type.Cryo"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -2950,22 +2471,7 @@
         "Damage.Type.Cryo"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3061,22 +2567,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3194,22 +2685,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3253,11 +2729,6 @@
           "minValue": 0.01
         },
         {
-          "id": "Common.Interval",
-          "baseValue": 0.25,
-          "minValue": 0.01
-        },
-        {
           "id": "Common.Range",
           "baseValue": 800.0,
           "minValue": 1.0
@@ -3283,22 +2754,7 @@
         "Damage.Type.Electric"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3354,22 +2810,7 @@
       ],
       "scalingRules": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3446,22 +2887,7 @@
       ],
       "scalingRules": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3520,22 +2946,7 @@
       ],
       "scalingRules": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3623,22 +3034,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3728,22 +3124,7 @@
         "Damage.Type.Kinetic"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3826,22 +3207,7 @@
         "Damage.Type.Energy"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -3895,11 +3261,6 @@
               "minValue": 1.0
             },
             {
-              "id": "AbilityActor.ArcScythes.Beam.CombatTickInterval",
-              "baseValue": 0.25,
-              "minValue": 0.01
-            },
-            {
               "id": "AbilityActor.ArcScythes.Beam.BeamHalfThickness",
               "baseValue": 22.0,
               "minValue": 1.0
@@ -3916,22 +3277,7 @@
         "Damage.Type.Electric"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4044,22 +3390,7 @@
         "Damage.Type.Thermal"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4103,22 +3434,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4193,22 +3509,7 @@
       "scalingRules": [],
       "damageTags": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4245,22 +3546,7 @@
       "scalingRules": [],
       "damageTags": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4308,22 +3594,7 @@
       "scalingRules": [],
       "damageTags": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4438,22 +3709,7 @@
       ],
       "damageTags": [],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4555,22 +3811,7 @@
         "Damage.Type.Photonic"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4659,22 +3900,7 @@
         "Damage.Type.Cryo"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4773,22 +3999,7 @@
         "Damage.Type.Kinetic"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4920,22 +4131,7 @@
         "Damage.Type.Kinetic"
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -4984,22 +4180,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -5028,22 +4209,7 @@
       "recordInAbilityHistory": false,
       "settings": {},
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {
@@ -5123,22 +4289,7 @@
         }
       ],
       "progression": {
-        "levelUpgradeScrapCosts": [
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60,
-          60
-        ],
+        "scrapCost": { "base": 60, "step": 0 },
         "steps": {
           "attributeModifiers": [
             {

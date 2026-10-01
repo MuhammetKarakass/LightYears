@@ -32,9 +32,6 @@ namespace AbilityData::IonStorm
 		inline static const sas::AttributeId ProjectileSpeed{
 			"AbilityActor.IonStorm.Projectile.ProjectileSpeed"
 		};
-		inline static const sas::AttributeId TickInterval{
-			"AbilityActor.IonStorm.Field.TickInterval"
-		};
 		inline static const sas::AttributeId InnerCoreRadius{
 			"AbilityActor.IonStorm.Field.InnerCoreRadius"
 		};

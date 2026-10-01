@@ -6,6 +6,7 @@
 #include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/content/AbilityBehaviorType.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
+#include "gameConfigs/combat/ScrapCostFormula.h"
 #include "abilities/AbilityDefinition.h"
 #include "attributes/AttributeSystem.h"
 #include "content/ContentId.h"
@@ -46,9 +47,9 @@ namespace ly
 		// Cycle applied after the prefix, repeating forever. Empty = no stat gain
 		// beyond the prefix (global cooldown progression still applies).
 		List<AbilityLevelStep> repeatingLevelProgression;
-		// Indexed by target level minus two: [0] purchases level two.
-		// Empty means this ability cannot be purchased through the run economy.
-		List<unsigned int> levelUpgradeScrapCosts;
+		// Linear price per level (see ScrapCostFormula). base == 0 means this
+		// ability cannot be purchased through the run economy.
+		ScrapCostFormula scrapCost;
 		// Damage identity and attachment compatibility are independent from ability tags and level steps.
 		List<GameplayTag> damageTags;
 		List<GameplayTag> attachmentCapabilities;
@@ -106,12 +107,10 @@ namespace ly
 			return kUnboundedAbilityLevel;
 		}
 
-		// Empty cost list = not purchasable. Levels beyond the authored list cost 0.
 		bool IsPurchasableToLevel(int targetLevel) const
 		{
-			return targetLevel >= 2 &&
-				targetLevel <= GetMaxLevel() &&
-				!levelUpgradeScrapCosts.empty();
+			return targetLevel <= GetMaxLevel() &&
+				scrapCost.IsPurchasableToLevel(targetLevel);
 		}
 
 		bool HasScrapCostToReachLevel(int targetLevel) const
@@ -121,12 +120,9 @@ namespace ly
 
 		unsigned int GetScrapCostToReachLevel(int targetLevel) const
 		{
-			if (!IsPurchasableToLevel(targetLevel))
-			{
-				return 0;
-			}
-			const std::size_t index = static_cast<std::size_t>(targetLevel - 2);
-			return index < levelUpgradeScrapCosts.size() ? levelUpgradeScrapCosts[index] : 0;
+			return IsPurchasableToLevel(targetLevel)
+				? scrapCost.GetCostToReachLevel(targetLevel)
+				: 0;
 		}
 
 		bool HasUnlockedUpgrade(const std::string& upgradeId) const

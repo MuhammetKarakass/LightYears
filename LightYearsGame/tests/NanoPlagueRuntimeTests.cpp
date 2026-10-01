@@ -167,7 +167,6 @@ namespace
 		NanoPlagueControllerActor::Settings settings;
 		settings.baseTickDamage = 7.f;
 		settings.duration = 1.f;
-		settings.tickInterval = 0.25f;
 		settings.spreadRadius = 250.f;
 		settings.baseSpreadTargetCount = 1;
 		if (!Expect(controller->ApplyOrRefreshInfection(*infectedTarget, 0, settings),
@@ -207,7 +206,6 @@ namespace
 			NanoPlagueControllerActor::FindOrCreate(world, *owner, profile);
 		NanoPlagueControllerActor::Settings settings;
 		settings.duration = 0.5f;
-		settings.tickInterval = 0.25f;
 		if (!Expect(controller && controller->ApplyOrRefreshInfection(*target, 0, settings),
 			"Could not apply the owner-destruction test infection")) return false;
 

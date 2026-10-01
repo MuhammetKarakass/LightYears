@@ -48,8 +48,9 @@
         "baseAfterburnerManeuverabilityMultiplier": 0.9
       },
       "progression": {
-        "baseXP": 100.0,
-        "xpExponent": 1.25,
+        "baseXP": 6.0,
+        "xpExponent": 0.0,
+        "xpPerLevel": 1.0,
         "naturalGrowth": [
           { "attributeId": "Owner.MaxHealth", "perLevel": 75.0 },
           { "attributeId": "Owner.AttackPower", "perLevel": 3.0 },
@@ -114,7 +115,7 @@
       "speed": [0.0, 0.0],
       "collisionDamage": 50.0,
       "score": 20,
-      "shipXPReward": 2.0,
+      "shipXPReward": 1.0,
       "rewards": [
         { "type": "Health", "weight": 0.25 },
         { "type": "Life", "weight": 0.05 },
@@ -162,7 +163,7 @@
       "speed": [0.0, 0.0],
       "collisionDamage": 60.0,
       "score": 30,
-      "shipXPReward": 3.0,
+      "shipXPReward": 1.0,
       "rewards": [
         { "type": "Health", "weight": 0.3 },
         { "type": "Life", "weight": 0.05 },

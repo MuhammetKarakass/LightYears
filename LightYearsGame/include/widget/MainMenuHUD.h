@@ -1,7 +1,6 @@
 #pragma once
 
 #include "widget/HUD.h"
-#include "widget/TextWidget.h"
 #include "widget/Button.h"
 
 namespace ly
@@ -10,21 +9,15 @@ namespace ly
 	{
 	public:
 		MainMenuHUD();
-
-		virtual void Draw(sf::RenderWindow& windowRef) override;
-		virtual bool HandleEvent(const sf::Event& event) override;
-
 		Delegate<> onStartButtonClicked;
 		Delegate<> onQuitButtonClicked;
-	private:
-		virtual void Init(sf::RenderWindow& windowRef) override;
 
+	private:
+		void Init(sf::RenderWindow& windowRef) override;
 		void StartButtonClicked();
 		void QuitButtonClicked();
 
-		TextWidget mTitleText;
-		Button mStartButton;
-		Button mQuitButton;
+		weak_ptr<Button> mStartButton;
+		weak_ptr<Button> mQuitButton;
 	};
 }
-

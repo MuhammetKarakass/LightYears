@@ -5,11 +5,13 @@
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/movement/MovementCollisionService.h"
 #include "gameplay/weapon/visuals/ContinuousBeamVisualActor.h"
 #include "gameplay/targeting/SweptGeometry.h"
+#include "gameplay/time/PeriodicTickAccumulator.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,10 +21,65 @@ namespace ly
 {
 	namespace
 	{
+		// Beam damage is integrated every frame (DPS * heat multiplier * dt) per target
+		// but delivered once per global combat tick, so a beam hits on the same cadence
+		// as every other periodic damage source without changing total damage.
+		struct PendingBeamHit
+		{
+			unsigned int targetId{ 0 };
+			weak_ptr<Actor> target;
+			float damage{ 0.f };
+		};
+
 		struct ContinuousBeamWeaponRuntimeState final : PrimaryWeaponTypeRuntimeState
 		{
 			List<weak_ptr<ContinuousBeamVisualActor>> beams;
+			List<PendingBeamHit> pendingHits;
+			float tickAccumulator{ 0.f };
 		};
+
+		void AddPendingBeamDamage(
+			ContinuousBeamWeaponRuntimeState& beamState,
+			const shared_ptr<Actor>& target,
+			float damage
+		)
+		{
+			for (PendingBeamHit& hit : beamState.pendingHits)
+			{
+				if (hit.targetId == target->GetUniqueID())
+				{
+					hit.damage += damage;
+					return;
+				}
+			}
+			beamState.pendingHits.push_back(PendingBeamHit{ target->GetUniqueID(), target, damage });
+		}
+
+		void DeliverPendingBeamDamage(
+			const PrimaryWeaponExecutionContext& context,
+			ContinuousBeamWeaponRuntimeState& beamState,
+			const DamagePayload& payload
+		)
+		{
+			List<PendingBeamHit> hits;
+			hits.swap(beamState.pendingHits);
+			for (const PendingBeamHit& hit : hits)
+			{
+				if (!context.ShouldContinue()) return;
+				const shared_ptr<Actor> target = hit.target.lock();
+				if (!target || target->GetIsPendingDestroy() || hit.damage <= 0.f)
+				{
+					continue;
+				}
+				ApplyCombatDamage(
+					*target,
+					hit.damage,
+					&context.owner,
+					context.damageTags,
+					payload
+				);
+			}
+		}
 
 		class ContinuousBeamWeaponHandler final : public PrimaryWeaponHandler
 		{
@@ -201,14 +258,7 @@ namespace ly
 							targetHitFraction + 0.0001f < staticHit.fraction))
 						{
 							damagedTargets.insert(target.get());
-							ApplyCombatDamage(
-								*target,
-								damage,
-								&context.owner,
-								context.damageTags,
-								payload
-							);
-							if (!context.ShouldContinue()) return;
+							AddPendingBeamDamage(beamState, target, damage);
 						}
 					}
 				};
@@ -216,22 +266,49 @@ namespace ly
 				if (context.definition.muzzleDefinitions.empty())
 				{
 					tickBeam(WeaponMuzzleDefinition{});
-					return;
 				}
-				for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
+				else
 				{
-					if (!context.ShouldContinue()) return;
-					tickBeam(muzzle);
+					for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
+					{
+						if (!context.ShouldContinue()) return;
+						tickBeam(muzzle);
+					}
+				}
+
+				if (time::ConsumePeriodicTicks(
+					beamState.tickAccumulator,
+					deltaTime,
+					CombatTick::Interval) > 0)
+				{
+					// Pending damage is delivered in one hit, so drop any tick debt.
+					beamState.tickAccumulator = std::fmod(beamState.tickAccumulator, CombatTick::Interval);
+					DeliverPendingBeamDamage(context, beamState, payload);
 				}
 			}
 
 			void EndFire(
-				const PrimaryWeaponExecutionContext&,
+				const PrimaryWeaponExecutionContext& context,
 				PrimaryWeaponTypeRuntimeState& state
 			) const override
 			{
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
 				std::exception_ptr error;
+				// Damage earned since the last tick must not be lost when firing stops.
+				try
+				{
+					if (!beamState.pendingHits.empty() && context.owner.GetWorld())
+					{
+						DeliverPendingBeamDamage(
+							context,
+							beamState,
+							DamageTypeSystem::BuildPayload(context.damageTags, context.attributes)
+						);
+					}
+				}
+				catch (...) { error = std::current_exception(); }
+				beamState.pendingHits.clear();
+				beamState.tickAccumulator = 0.f;
 				for (auto beam = beamState.beams.begin(); beam != beamState.beams.end();)
 				{
 					const shared_ptr<ContinuousBeamVisualActor> lockedBeam = beam->lock();

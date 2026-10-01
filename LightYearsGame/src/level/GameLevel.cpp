@@ -9,7 +9,9 @@
 #include "player/PlayerManager.h"
 #include "enemy/EnemyActor.h"
 #include "presentation/hud/GameplayWarningHUDController.h"
-#include "presentation/hud/ability/AbilityUIController.h"
+#include "presentation/hud/ability/AbilityBarHUDController.h"
+#include "presentation/hud/vitals/VitalsHUDController.h"
+#include "presentation/hud/notification/NotificationHUDController.h"
 
 namespace ly
 {
@@ -41,6 +43,10 @@ namespace ly
 			}
 		}
 		World::Tick(deltaTime);
+		if (Player* player = PlayerManager::GetPlayerManager().GetPlayer())
+		{
+			player->FlushPendingTestAbilityLevels(this);
+		}
 	}
 
 	bool GameLevel::DispatchEvent(const sf::Event& event)
@@ -109,7 +115,11 @@ namespace ly
 	void GameLevel::CreateHUDControllers()
 	{
 		AddHUDController(std::make_shared<GameplayWarningHUDController>(mGameHUD));
-		AddHUDController(std::make_shared<AbilityUIController>(mGameHUD));
+		AddHUDController(std::make_shared<AbilityBarHUDController>(mGameHUD));
+		AddHUDController(std::make_shared<VitalsHUDController>(mGameHUD));
+		auto notificationController = std::make_shared<NotificationHUDController>(mGameHUD);
+		mNotificationHUD = notificationController;
+		AddHUDController(std::move(notificationController));
 	}
 
 	void GameLevel::AddHUDController(shared_ptr<HUDController> controller)

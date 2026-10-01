@@ -1,30 +1,15 @@
 #include "player/PlayerManager.h"
-#include "widget/GameHUD.h"
+#include "presentation/hud/vitals/VitalsPresenter.h"
 #include <iostream>
-#include <string>
 
 namespace ly
 {
-	struct GameHUDPlayerRestartTestAccess
-	{
-		static void ConnectStatus(GameHUD& hud) { hud.ConnectStatus(); }
-		static std::string GetLifeText(const GameHUD& hud)
-		{
-			return hud.mPlayerLifeText->mText.getString().toAnsiString();
-		}
-		static std::string GetScoreText(const GameHUD& hud)
-		{
-			return hud.mPlayerScoreText->mText.getString().toAnsiString();
-		}
-	};
-
 	namespace
 	{
 		struct PlayerLifecycleProbe
 		{
 			int createdCount{ 0 };
 			int removingCount{ 0 };
-
 			void OnPlayerCreated(Player*) { ++createdCount; }
 			void OnPlayerAboutToBeDestroyed(Player*) { ++removingCount; }
 		};
@@ -33,7 +18,6 @@ namespace ly
 		{
 			Player* expectedPlayer{ nullptr };
 			int calls{ 0 };
-
 			void MutateDuringRemoval(Player* player)
 			{
 				if (player != expectedPlayer) return;
@@ -43,10 +27,16 @@ namespace ly
 			}
 		};
 
-		bool HasStatus(const GameHUD& hud, unsigned int life, unsigned int score)
+	bool HasStatus(const VitalsPresenter& presenter, unsigned int life, unsigned int score)
 		{
-			return GameHUDPlayerRestartTestAccess::GetLifeText(hud) == std::to_string(life) &&
-				GameHUDPlayerRestartTestAccess::GetScoreText(hud) == std::to_string(score);
+			const auto viewModel = presenter.GetViewModel();
+			return viewModel && viewModel->hasPlayer && viewModel->life == life && viewModel->score == score;
+		}
+
+		bool HasClearedStatus(const VitalsPresenter& presenter)
+		{
+			const auto viewModel = presenter.GetViewModel();
+			return viewModel && !viewModel->hasPlayer && viewModel->life == 0 && viewModel->score == 0;
 		}
 
 		int Fail(const char* message)
@@ -64,101 +54,56 @@ int RunGameHUDPlayerRestartTests()
 	playerManager.Reset();
 
 	PlayerLifecycleProbe lifecycleProbe;
-	const DelegateHandle createdProbeHandle = playerManager.onPlayerCreated.BindAction(
-		&lifecycleProbe, &PlayerLifecycleProbe::OnPlayerCreated
-	);
-	const DelegateHandle removingProbeHandle = playerManager.onPlayerAboutToBeDestroyed.BindAction(
-		&lifecycleProbe, &PlayerLifecycleProbe::OnPlayerAboutToBeDestroyed
-	);
+	const DelegateHandle createdProbeHandle = playerManager.onPlayerCreated.BindAction(&lifecycleProbe, &PlayerLifecycleProbe::OnPlayerCreated);
+	const DelegateHandle removingProbeHandle = playerManager.onPlayerAboutToBeDestroyed.BindAction(&lifecycleProbe, &PlayerLifecycleProbe::OnPlayerAboutToBeDestroyed);
 
 	Player& firstPlayer = playerManager.CreateNewPlayer();
-	auto hud = std::make_shared<GameHUD>();
-	GameHUDPlayerRestartTestAccess::ConnectStatus(*hud);
-	if (!HasStatus(*hud, firstPlayer.GetLifeCount(), firstPlayer.GetScore()))
-	{
-		return Fail("first Player life and score values were not synchronized when the HUD connected");
-	}
+	VitalsPresenter presenter;
+	presenter.Tick();
+	if (!HasStatus(presenter, firstPlayer.GetLifeCount(), firstPlayer.GetScore())) return Fail("presenter did not synchronize first Player life and score");
 
 	firstPlayer.AddLifeCount(2);
 	firstPlayer.AddScore(40);
-	if (!HasStatus(*hud, firstPlayer.GetLifeCount(), firstPlayer.GetScore()))
-	{
-		return Fail("first Player life and score changes did not update the HUD");
-	}
+	if (!HasStatus(presenter, firstPlayer.GetLifeCount(), firstPlayer.GetScore())) return Fail("first Player life or score event did not update the view model");
 
 	PlayerRemovalMutation firstRemoval{ &firstPlayer };
-	const unsigned int firstLifeBeforeReset = firstPlayer.GetLifeCount();
-	const unsigned int firstScoreBeforeReset = firstPlayer.GetScore();
-	const DelegateHandle firstRemovalHandle = playerManager.onPlayerAboutToBeDestroyed.BindAction(
-		&firstRemoval, &PlayerRemovalMutation::MutateDuringRemoval
-	);
+	const DelegateHandle firstRemovalHandle = playerManager.onPlayerAboutToBeDestroyed.BindAction(&firstRemoval, &PlayerRemovalMutation::MutateDuringRemoval);
 	playerManager.Reset();
 	playerManager.onPlayerAboutToBeDestroyed.UnbindAction(firstRemovalHandle);
-	if (firstRemoval.calls != 1 || playerManager.GetPlayer() != nullptr ||
-		!HasStatus(*hud, firstLifeBeforeReset, firstScoreBeforeReset))
-	{
-		return Fail("HUD remained subscribed while the first Player was being destroyed");
-	}
+	if (firstRemoval.calls != 1 || playerManager.GetPlayer() != nullptr || !HasClearedStatus(presenter))
+		return Fail("presenter remained subscribed while first Player was being destroyed");
 
 	Player& secondPlayer = playerManager.CreateNewPlayer();
-	if (!HasStatus(*hud, secondPlayer.GetLifeCount(), secondPlayer.GetScore()))
-	{
-		return Fail("HUD did not synchronize the replacement Player immediately after creation");
-	}
-	GameHUDPlayerRestartTestAccess::ConnectStatus(*hud);
-	GameHUDPlayerRestartTestAccess::ConnectStatus(*hud);
+	presenter.Tick();
+	if (!HasStatus(presenter, secondPlayer.GetLifeCount(), secondPlayer.GetScore())) return Fail("presenter did not synchronize replacement Player immediately");
+	presenter.Tick();
+	presenter.Tick();
 	secondPlayer.AddLifeCount(2);
 	secondPlayer.AddScore(20);
-	if (!HasStatus(*hud, secondPlayer.GetLifeCount(), secondPlayer.GetScore()))
-	{
-		return Fail("repeated HUD refreshes changed Player life or score notifications");
-	}
+	if (!HasStatus(presenter, secondPlayer.GetLifeCount(), secondPlayer.GetScore())) return Fail("repeated presenter refreshes changed or missed Player notifications");
 
 	PlayerRemovalMutation secondRemoval{ &secondPlayer };
-	const unsigned int secondLifeBeforeReset = secondPlayer.GetLifeCount();
-	const unsigned int secondScoreBeforeReset = secondPlayer.GetScore();
-	const DelegateHandle secondRemovalHandle = playerManager.onPlayerAboutToBeDestroyed.BindAction(
-		&secondRemoval, &PlayerRemovalMutation::MutateDuringRemoval
-	);
+	const DelegateHandle secondRemovalHandle = playerManager.onPlayerAboutToBeDestroyed.BindAction(&secondRemoval, &PlayerRemovalMutation::MutateDuringRemoval);
 	playerManager.Reset();
 	playerManager.onPlayerAboutToBeDestroyed.UnbindAction(secondRemovalHandle);
-	if (secondRemoval.calls != 1 ||
-		!HasStatus(*hud, secondLifeBeforeReset, secondScoreBeforeReset))
-	{
-		return Fail("HUD did not disconnect exactly once before the second Player destruction");
-	}
+	if (secondRemoval.calls != 1 || !HasClearedStatus(presenter)) return Fail("presenter did not disconnect exactly once before second Player destruction");
 
 	Player& thirdPlayer = playerManager.CreateNewPlayer();
-	if (!HasStatus(*hud, thirdPlayer.GetLifeCount(), thirdPlayer.GetScore()))
-	{
-		return Fail("HUD did not synchronize after the second restart");
-	}
+	presenter.Tick();
+	if (!HasStatus(presenter, thirdPlayer.GetLifeCount(), thirdPlayer.GetScore())) return Fail("presenter did not synchronize after second restart");
 	thirdPlayer.AddLifeCount(1);
 	thirdPlayer.AddScore(9);
-	if (!HasStatus(*hud, thirdPlayer.GetLifeCount(), thirdPlayer.GetScore()))
-	{
-		return Fail("HUD stopped observing life or score after the second restart");
-	}
+	if (!HasStatus(presenter, thirdPlayer.GetLifeCount(), thirdPlayer.GetScore())) return Fail("presenter stopped observing Player life or score after restart");
 
-	const weak_ptr<Object> weakHud = hud->GetWeakPtr();
-	hud.reset();
-	if (!weakHud.expired())
-	{
-		return Fail("HUD remained alive after its final shared owner was released");
-	}
-	thirdPlayer.AddLifeCount(1);
-	thirdPlayer.AddScore(5);
 	playerManager.Reset();
 	Player& fourthPlayer = playerManager.CreateNewPlayer();
+	presenter.Tick();
 	fourthPlayer.AddLifeCount(1);
 	fourthPlayer.AddScore(3);
 	playerManager.Reset();
 	playerManager.onPlayerCreated.UnbindAction(createdProbeHandle);
 	playerManager.onPlayerAboutToBeDestroyed.UnbindAction(removingProbeHandle);
-	if (lifecycleProbe.createdCount != 4 || lifecycleProbe.removingCount != 4)
-	{
-		return Fail("PlayerManager emitted duplicate or missing creation/destruction lifecycle events");
-	}
+	if (lifecycleProbe.createdCount != 4 || lifecycleProbe.removingCount != 4) return Fail("PlayerManager emitted duplicate or missing creation/destruction lifecycle events");
 
 	std::cout << "[C4] GameHUD Player restart lifecycle passed" << std::endl;
 	return 0;

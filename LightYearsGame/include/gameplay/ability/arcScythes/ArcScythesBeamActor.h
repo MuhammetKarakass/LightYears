@@ -27,7 +27,6 @@ namespace ly
 
 		ArcScythesPresentationProfile mPresentationProfile;
 		float mRange = 0.f;
-		float mCombatTickInterval = 0.f;
 		float mBeamHalfThickness = 0.f;
 		float mCombatTickTimer = 0.f;
 		float mVisualTime = 0.f;

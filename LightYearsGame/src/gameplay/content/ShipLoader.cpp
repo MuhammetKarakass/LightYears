@@ -102,6 +102,7 @@ namespace ly::content
 		{
 			progression.baseXP = object.at("baseXP").get<float>();
 			progression.xpExponent = object.at("xpExponent").get<float>();
+			progression.xpPerLevel = object.value("xpPerLevel", 0.f);
 			progression.naturalGrowth.clear();
 			for (const Json& growth : object.value("naturalGrowth", Json::array()))
 			{

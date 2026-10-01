@@ -13,6 +13,7 @@ namespace ly
 	class HUDController;
 	class PauseMenuHUD;
 	class GameOverHUD;
+	class NotificationHUDController;
 	class GameLevel : public World
 	{
 		public:
@@ -22,7 +23,8 @@ namespace ly
 
 			weak_ptr<GameHUD> GetGameHUD()const { return mGameHUD; };
 			weak_ptr<PauseMenuHUD> GetPauseMenuHUD()const { return mPauseMenuHUD; };
-			weak_ptr<GameOverHUD> GetGameOverHUD()const { return mGameOverHUD; };
+		weak_ptr<GameOverHUD> GetGameOverHUD()const { return mGameOverHUD; };
+		weak_ptr<NotificationHUDController> GetNotificationHUD() const { return mNotificationHUD; }
 
 	protected:
 		virtual void BeginPlay() override;
@@ -62,6 +64,7 @@ namespace ly
 		weak_ptr<GameHUD> mGameHUD;
 		weak_ptr<PauseMenuHUD> mPauseMenuHUD;
 		weak_ptr<GameOverHUD> mGameOverHUD;
+		weak_ptr<NotificationHUDController> mNotificationHUD;
 		List<shared_ptr<HUDController>> mHUDControllers;
 
 		bool mIsGamePausedToggle = false;

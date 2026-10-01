@@ -20,7 +20,6 @@ namespace ly
 			float baseTickDamage = 1.f;
 			float energyPowerTickScale = 0.05f;
 			float duration = 4.f;
-			float tickInterval = 0.25f;
 			float spreadRadius = 300.f;
 			int baseSpreadTargetCount = 1;
 			sas::ContentId sourceAbilityId;

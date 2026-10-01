@@ -4,6 +4,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
@@ -114,11 +115,6 @@ namespace ly
 			AbilityData::InfernoSpray::Actor::FlameCone::ConeAngle,
 			0.f
 		), 1.f, 180.f);
-		mCombatTickInterval = std::max(0.05f, sas::FindAttributeValue(
-			attributes,
-			AbilityData::InfernoSpray::Actor::FlameCone::CombatTickInterval,
-			0.f
-		));
 		mBaseDPS = std::max(0.f, sas::FindAttributeValue(
 			attributes,
 			AbilityData::InfernoSpray::Actor::FlameCone::BaseDPS,
@@ -158,7 +154,7 @@ namespace ly
 		const int tickCount = time::ConsumePeriodicTicks(
 			mCombatTickTimer,
 			deltaTime,
-			mCombatTickInterval
+			CombatTick::Interval
 		);
 		for (int tickIndex = 0; tickIndex < tickCount; ++tickIndex)
 		{
@@ -214,7 +210,7 @@ namespace ly
 		}
 
 		const float resolvedDPS = mBaseDPS + attackPower * 0.75f;
-		const float damagePerTick = resolvedDPS * mCombatTickInterval;
+		const float damagePerTick = resolvedDPS * CombatTick::Interval;
 
 		for (const weak_ptr<Actor>& actorWeak : world->GetActorsInBounds(
 			targeting::swept::RadiusBounds(muzzlePos, mRange)

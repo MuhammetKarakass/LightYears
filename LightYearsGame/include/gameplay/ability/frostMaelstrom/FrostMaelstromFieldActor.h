@@ -72,7 +72,6 @@ namespace ly
 		float mMaximumSpeed = 500.f;
 		float mCurrentSpeed = 200.f;
 		float mTickDamage = 1.f;
-		float mTickInterval = 0.25f;
 		float mCryoStacksPerTick = 1.f;
 		float mOrbitalAngularSpeed = 4.5f;
 		float mPullStrength = 300.f;

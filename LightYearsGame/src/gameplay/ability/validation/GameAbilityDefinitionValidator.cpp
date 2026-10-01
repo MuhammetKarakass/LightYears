@@ -423,28 +423,6 @@ namespace ly
 			return true;
 		}
 
-		bool ValidateLevelUpgradeCosts(
-			const GameAbilityDefinition& definition,
-			std::string* failureReason
-		)
-		{
-			if (definition.levelUpgradeScrapCosts.empty())
-			{
-				return true;
-			}
-			for (const unsigned int cost : definition.levelUpgradeScrapCosts)
-			{
-				if (cost == 0)
-				{
-					return Fail(
-						failureReason,
-						"Ability upgrade scrap costs must be greater than zero."
-					);
-				}
-			}
-			return true;
-		}
-
 		bool ValidateAndRecordUpgradeIds(
 			const List<std::string>& upgradeIds,
 			List<std::string>& declaredUpgradeIds,
@@ -545,10 +523,6 @@ namespace ly
 			std::string* failureReason
 		)
 		{
-			if (!ValidateLevelUpgradeCosts(definition, failureReason))
-			{
-				return false;
-			}
 			List<std::string> declaredUpgradeIds;
 			if (!ValidateAndRecordUpgradeIds(
 				definition.unlockedUpgradeIds,

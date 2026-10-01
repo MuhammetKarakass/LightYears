@@ -1,7 +1,24 @@
 #include "framework/AssetManager.h"
+#include "framework/debug/Log.h"
+
+#include <chrono>
 
 namespace ly
 {
+	namespace
+	{
+		// Hitch diagnostics: every cache miss is a synchronous disk read (and, for
+		// shaders, a driver compile) on the game thread. Logging them shows which
+		// assets are reloaded after CleanCycle evicts them.
+		using AssetClock = std::chrono::steady_clock;
+
+		void LogAssetMiss(const char* kind, const std::string& path, AssetClock::time_point start, bool success)
+		{
+			const double ms = std::chrono::duration<double, std::milli>(AssetClock::now() - start).count();
+			LY_CORE_INFO("AssetMiss %s %s %.2fms%s", kind, path.c_str(), ms, success ? "" : " FAILED");
+		}
+	}
+
 	// Singleton deseninin statik (static) örneðini (instance) baþlangýçta null olarak ayarla.
 	// Bu, GetAssetManager ilk çaðrýldýðýnda oluþturulacak.
 	unique_ptr<AssetManager> AssetManager::assetManager = nullptr;
@@ -50,11 +67,14 @@ namespace ly
 		}
 
 		// 3. E?er haritada bulunamad?ysa, yeni bir texture olu?tur.
+		const auto missStart = AssetClock::now();
 		shared_ptr<sf::Texture> newTexture{ new sf::Texture };
 		
 		// 4. Texture'? diskten y?klemeyi dene. K?k dizin + verilen yolu birle?tir.
 		std::string fullPath = mAssetRootDirectory + texturePath;
-		if (newTexture->loadFromFile(fullPath))
+		const bool textureLoaded = newTexture->loadFromFile(fullPath);
+		LogAssetMiss("texture", texturePath, missStart, textureLoaded);
+		if (textureLoaded)
 		{
 			// 5. Y?kleme ba?ar?l?ysa, yeni texture'? haritaya ekle.
 			mLoadedTextureMap.insert({ texturePath, newTexture });
@@ -78,10 +98,13 @@ namespace ly
 			return found->second;
 		}
 
+		const auto missStart = AssetClock::now();
 		shared_ptr<sf::Font> newFont{ new sf::Font };
 
 		std::string fullPath = mAssetRootDirectory + fontPath;
-		if (newFont->openFromFile(fullPath))
+		const bool fontLoaded = newFont->openFromFile(fullPath);
+		LogAssetMiss("font", fontPath, missStart, fontLoaded);
+		if (fontLoaded)
 		{
 			mLoadedFontMap.insert({ fontPath, newFont });
 			return newFont;
@@ -99,9 +122,12 @@ namespace ly
 			return found->second;
 		}
 
+		const auto missStart = AssetClock::now();
 		shared_ptr<sf::SoundBuffer> newSoundBuffer{ new sf::SoundBuffer };
 
-		if (newSoundBuffer->loadFromFile(mAssetRootDirectory + soundPath))
+		const bool soundLoaded = newSoundBuffer->loadFromFile(mAssetRootDirectory + soundPath);
+		LogAssetMiss("sound", soundPath, missStart, soundLoaded);
+		if (soundLoaded)
 		{
 			mLoadedSoundBufferMap.insert({ soundPath, newSoundBuffer });
 			return newSoundBuffer;
@@ -121,6 +147,7 @@ namespace ly
 			return found->second;
 		}
 
+		const auto missStart = AssetClock::now();
 		shared_ptr<sf::Shader> newShader{ new sf::Shader };
 		bool success = false;
 
@@ -133,6 +160,7 @@ namespace ly
 			success = newShader->loadFromFile(mAssetRootDirectory + vertexPath, mAssetRootDirectory + fragmentPath);
 		}
 
+		LogAssetMiss("shader", shaderKey, missStart, success);
 		if (success)
 		{
 			mLoadedShaderMap.insert({ shaderKey, newShader });

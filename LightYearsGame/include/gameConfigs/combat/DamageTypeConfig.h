@@ -30,10 +30,9 @@ namespace ly
 		inline static const sas::AttributeId ArmorPenetration{ "Damage.ArmorPenetration" };
 		inline static const sas::AttributeId KineticStacks{ "Damage.Kinetic.Stacks" };
 		inline static const sas::AttributeId IgniteStacks{ "Damage.IgniteStacks" };
-		inline static const sas::AttributeId BurnDamagePerTick{ "Damage.BurnDamagePerTick" };
-		inline static const sas::AttributeId BurnTickInterval{ "Damage.BurnTickInterval" };
-		inline static const sas::AttributeId BurnTickAccumulator{ "Damage.BurnTickAccumulator" };
-		inline static const sas::AttributeId BurnDuration{ "Damage.BurnDuration" };
+		// Runtime-only state of the canonical Ignite DPS path: time toward the next combat tick and damage integrated since the last one.
+		inline static const sas::AttributeId IgniteTickAccumulator{ "Damage.IgniteTickAccumulator" };
+		inline static const sas::AttributeId IgnitePendingDamage{ "Damage.IgnitePendingDamage" };
 		inline static const sas::AttributeId CryoBuildupPerHit{ "Damage.Cryo.BuildupPerHit" };
 		inline static const sas::AttributeId ElectricStacks{ "Damage.ElectricStacks" };
 	};

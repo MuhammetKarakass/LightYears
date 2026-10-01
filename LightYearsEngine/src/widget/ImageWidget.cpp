@@ -14,6 +14,7 @@ namespace ly
 			return;
 		mTexture = texture;
 		mSprite.setTexture(*mTexture);
+		InvalidateLayout();
 	}
 
 	sf::FloatRect ImageWidget::GetBound() const
@@ -37,5 +38,11 @@ namespace ly
 	void ImageWidget::UpdateOrigin(const sf::Vector2f& origin)
 	{
 		mSprite.setOrigin(origin);
+	}
+	void ImageWidget::ApplyAlpha(float alpha)
+	{
+		sf::Color color = mSprite.getColor();
+		color.a = static_cast<std::uint8_t>(alpha * 255.f);
+		mSprite.setColor(color);
 	}
 }

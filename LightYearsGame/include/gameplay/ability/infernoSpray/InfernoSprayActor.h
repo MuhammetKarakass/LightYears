@@ -29,7 +29,6 @@ namespace ly
 		InfernoSprayPresentationProfile mPresentationProfile;
 		float mRange = 0.f;
 		float mConeAngleDegrees = 0.f;
-		float mCombatTickInterval = 0.f;
 		float mBaseDPS = 0.f;
 		float mCombatTickTimer = 0.f;
 		float mVisualTime = 0.f;

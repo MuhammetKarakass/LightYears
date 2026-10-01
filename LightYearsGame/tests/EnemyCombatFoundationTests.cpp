@@ -250,32 +250,6 @@ namespace ly
 			weak_ptr<PlayerSpaceShip> mTestPlayerShip;
 		};
 
-		// GameHUD keeps its widget list protected, so the encounter HUD checks observe it through this probe.
-		class EncounterHUDTestHUD final : public GameHUD
-		{
-		public:
-			size_t GetWidgetCount() const { return mWidgets.size(); }
-			size_t GetVisibleWidgetCount() const
-			{
-				size_t visibleCount = 0;
-				for (const shared_ptr<Widget>& widget : mWidgets)
-				{
-					if (widget && widget->GetVisibility()) ++visibleCount;
-				}
-				return visibleCount;
-			}
-		};
-
-		// Mirrors the provider ArenaTestLevel registers: a weak level that degrades to a neutral snapshot.
-		EncounterHUDController::SnapshotProvider MakeWeakLevelSnapshotProvider(weak_ptr<ArenaTestLevel> weakLevel)
-		{
-			return [weakLevel]()
-			{
-				if (const shared_ptr<ArenaTestLevel> level = weakLevel.lock()) return level->GetEncounterWaveSnapshot();
-				return EncounterWaveSnapshot{};
-			};
-		}
-
 		bool PrepareEnemyCombatFoundationTestContent()
 		{
 			const std::filesystem::path candidateAssetRoots[] = {
@@ -1786,103 +1760,6 @@ namespace ly
 			if (!restartedPlayerShip || restartedPlayerShip.get() == previousPlayerShip.get() ||
 				restartedPlayerShip->GetIsPendingDestroy() || arena->GetEncounterState() != ArenaEncounterState::Running)
 				return Fail("Arena level restart did not create a fresh running player encounter") ? 0 : 1;
-
-			std::cout << "[TEST Encounter HUD Presentation]" << std::endl;
-			{
-				const shared_ptr<EncounterHUDTestHUD> encounterHUD = std::make_shared<EncounterHUDTestHUD>();
-				encounterHUD->NativeInit(application.GetRenderWindow());
-				const size_t baseWidgetCount = encounterHUD->GetWidgetCount();
-
-				EncounterWaveSnapshot snapshot{};
-				{
-					EncounterHUDController controller{ encounterHUD, [&snapshot]() { return snapshot; } };
-					controller.Tick(0.f);
-
-					// Idle: the encounter widgets exist but present nothing.
-					if (encounterHUD->GetWidgetCount() != baseWidgetCount + 2 || encounterHUD->GetVisibleWidgetCount() != 0)
-						return Fail("Encounter HUD presented widgets while the encounter was idle") ? 0 : 1;
-
-					snapshot.state = EncounterWaveState::Spawning;
-					snapshot.currentWaveNumber = 2;
-					snapshot.totalWaveCount = 3;
-					snapshot.plannedEnemyCount = 4;
-					snapshot.spawnedEnemyCount = 3;
-					snapshot.aliveEnemyCount = 3;
-					snapshot.remainingSpawnCount = 1;
-					snapshot.enemyLevel = 2;
-					const EncounterHUDViewModel spawningModel = BuildEncounterHUDViewModel(snapshot);
-					if (!spawningModel.visible || spawningModel.title != "WAVE 2 / 3" ||
-						spawningModel.detail != "ENEMIES 4  \xE2\x80\xA2  LEVEL 2")
-						return Fail("Encounter HUD did not present the spawning wave and threat count") ? 0 : 1;
-					controller.Tick(0.f);
-					if (encounterHUD->GetVisibleWidgetCount() != 2)
-						return Fail("Encounter HUD did not show both lines for an active wave") ? 0 : 1;
-
-					// WaitingForClear: only spawned-and-alive enemies count toward the remaining threat.
-					snapshot.state = EncounterWaveState::WaitingForClear;
-					snapshot.aliveEnemyCount = 2;
-					snapshot.remainingSpawnCount = 0;
-					if (BuildEncounterHUDViewModel(snapshot).detail != "ENEMIES 2  \xE2\x80\xA2  LEVEL 2")
-						return Fail("Encounter HUD counted enemies that had not spawned yet") ? 0 : 1;
-
-					// Inter-wave: the cleared wave plus an upward-rounded countdown.
-					snapshot.state = EncounterWaveState::InterWaveDelay;
-					snapshot.currentWaveNumber = 1;
-					snapshot.interWaveRemainingTime = 1.2f;
-					const EncounterHUDViewModel interWaveModel = BuildEncounterHUDViewModel(snapshot);
-					if (!interWaveModel.visible || interWaveModel.title != "WAVE 1 CLEARED" ||
-						interWaveModel.detail != "NEXT WAVE IN 2")
-						return Fail("Encounter HUD did not round the inter-wave countdown up") ? 0 : 1;
-					snapshot.interWaveRemainingTime = 2.f;
-					if (BuildEncounterHUDViewModel(snapshot).detail != "NEXT WAVE IN 2")
-						return Fail("Encounter HUD rounded a whole-second countdown up") ? 0 : 1;
-
-					// Completed: a single persistent line with no detail line.
-					snapshot.state = EncounterWaveState::Completed;
-					const EncounterHUDViewModel completedModel = BuildEncounterHUDViewModel(snapshot);
-					if (!completedModel.visible || completedModel.title != "ENCOUNTER COMPLETE" || !completedModel.detail.empty())
-						return Fail("Encounter HUD did not present the completed encounter") ? 0 : 1;
-					controller.Tick(0.f);
-					if (encounterHUD->GetVisibleWidgetCount() != 1)
-						return Fail("Encounter HUD kept its detail line after completion") ? 0 : 1;
-
-					// Failed: the game-over flow owns failure reporting, so the encounter HUD stays silent.
-					snapshot.state = EncounterWaveState::Failed;
-					if (BuildEncounterHUDViewModel(snapshot).visible)
-						return Fail("Encounter HUD exposed a technical failure reason") ? 0 : 1;
-					controller.Tick(0.f);
-					if (encounterHUD->GetVisibleWidgetCount() != 0)
-						return Fail("Encounter HUD presented a failed encounter") ? 0 : 1;
-
-					// Repeated identical snapshots must not grow the widget list.
-					snapshot.state = EncounterWaveState::Spawning;
-					const size_t activeWidgetCount = encounterHUD->GetWidgetCount();
-					for (int frame = 0; frame < 16; ++frame) controller.Tick(1.f / 60.f);
-					if (encounterHUD->GetWidgetCount() != activeWidgetCount || encounterHUD->GetVisibleWidgetCount() != 2)
-						return Fail("Encounter HUD created duplicate widgets for repeated snapshots") ? 0 : 1;
-				}
-
-				// Controller destruction must release the widgets it added.
-				if (encounterHUD->GetWidgetCount() != baseWidgetCount)
-					return Fail("Encounter HUD left dangling widgets behind after controller destruction") ? 0 : 1;
-
-				// A provider bound to a weak level degrades to a neutral snapshot once that level is gone.
-				weak_ptr<ArenaTestLevel> weakLevel;
-				{
-					const shared_ptr<ArenaLifecycleTestLevel> transientLevel =
-						std::make_shared<ArenaLifecycleTestLevel>(nullptr);
-					weakLevel = std::dynamic_pointer_cast<ArenaTestLevel>(transientLevel->GetWeakPtr().lock());
-					if (weakLevel.expired())
-						return Fail("Encounter HUD provider could not observe its arena level") ? 0 : 1;
-				}
-				if (!weakLevel.expired())
-					return Fail("A weak encounter level outlived the level it observed") ? 0 : 1;
-
-				EncounterHUDController detachedController{ encounterHUD, MakeWeakLevelSnapshotProvider(weakLevel) };
-				detachedController.Tick(0.f);
-				if (encounterHUD->GetVisibleWidgetCount() != 0)
-					return Fail("Encounter HUD presented a neutral snapshot for a destroyed level") ? 0 : 1;
-			}
 
 			retainedPlayerShip = restartedPlayerShip;
 		}

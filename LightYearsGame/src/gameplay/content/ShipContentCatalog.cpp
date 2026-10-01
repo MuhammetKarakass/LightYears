@@ -41,7 +41,8 @@ namespace ly::content
 		bool IsValidProgression(const ShipProgressionDefinition& progression)
 		{
 			if (!IsFiniteNonNegative(progression.baseXP) || progression.baseXP <= 0.f ||
-				!std::isfinite(progression.xpExponent) || progression.xpExponent <= 0.f)
+				!std::isfinite(progression.xpExponent) || progression.xpExponent < 0.f ||
+				!IsFiniteNonNegative(progression.xpPerLevel))
 			{
 				return false;
 			}

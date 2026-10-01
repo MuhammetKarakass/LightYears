@@ -1,6 +1,7 @@
 #include "gameplay/ability/nanoPlague/NanoPlagueControllerActor.h"
 
 #include "framework/World.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/combat/Combatant.h"
@@ -130,7 +131,6 @@ namespace ly
 
 		mSettings = settings;
 		mSettings.duration = std::max(0.01f, mSettings.duration);
-		mSettings.tickInterval = std::max(0.01f, mSettings.tickInterval);
 		mSettings.baseSpreadTargetCount = std::max(1, mSettings.baseSpreadTargetCount);
 
 		if (existing != mInfections.end())
@@ -207,7 +207,7 @@ namespace ly
 				continue;
 			}
 			const std::uint64_t revision = infection->revision;
-			const float interval = mSettings.tickInterval;
+			const float interval = CombatTick::Interval;
 			const int maximumTicks = std::max(1, static_cast<int>(std::round(mSettings.duration / interval)));
 			infection->remainingDuration -= safeDeltaTime;
 			infection->tickAccumulator += safeDeltaTime;

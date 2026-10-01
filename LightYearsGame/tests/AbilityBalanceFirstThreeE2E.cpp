@@ -193,7 +193,7 @@ namespace ly
 				const sas::AttributeModifier* hullDamageStep = FindStep0Modifier(*hullDefinition, CommonAttributeIds::Damage);
 				const sas::AttributeModifier* hullCooldownStep = FindStep0Modifier(*hullDefinition, CommonAttributeIds::Cooldown);
 				check("hullShockCatalogProgression", HasUnboundedSteps(*hullDefinition) &&
-					!hullDefinition->levelUpgradeScrapCosts.empty() && hullDamageStep &&
+					hullDefinition->scrapCost.IsPurchasable() && hullDamageStep &&
 					NearlyEqual(hullDamageStep->magnitude, 4.f) && !hullCooldownStep &&
 					CooldownProgressionMatchesFormula(*hullDefinition));
 
@@ -207,7 +207,7 @@ namespace ly
 						AbilityData::GlacialPressure::Attribute::EnergyPowerCollisionScale);
 				const sas::AttributeModifier* glacialCooldownStep = FindStep0Modifier(*glacialDefinition, CommonAttributeIds::Cooldown);
 				check("glacialPressureCatalogProgression", HasUnboundedSteps(*glacialDefinition) &&
-					!glacialDefinition->levelUpgradeScrapCosts.empty() && glacialPushDamageStep &&
+					glacialDefinition->scrapCost.IsPurchasable() && glacialPushDamageStep &&
 					glacialPushEnergyStep && glacialCollisionDamageStep && glacialCollisionEnergyStep &&
 					NearlyEqual(glacialPushDamageStep->magnitude, 5.f) &&
 					NearlyEqual(glacialPushEnergyStep->magnitude, 0.02f) &&
@@ -233,7 +233,7 @@ namespace ly
 					0.f
 				);
 				check("orbitalDronesCatalogProgression", HasUnboundedSteps(*orbitalDefinition) &&
-					!orbitalDefinition->levelUpgradeScrapCosts.empty() && orbitalDamageStep &&
+					orbitalDefinition->scrapCost.IsPurchasable() && orbitalDamageStep &&
 					NearlyEqual(orbitalBaseDamage, 25.f) &&
 					NearlyEqual(orbitalBaseRadius, 500.f) && NearlyEqual(orbitalAngularSpeed, 2.5f) &&
 					NearlyEqual(orbitalDamageStep->magnitude, 4.f) &&

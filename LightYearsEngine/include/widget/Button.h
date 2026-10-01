@@ -16,6 +16,7 @@ namespace ly
 		virtual bool HandleEvent(const sf::Event& event) override;
 		void SetButtonText(const std::string& text);
 		void SetTextSize(unsigned int size);
+		bool IsHovered() const { return mButtonHovered; }
 
 		Delegate<> onButtonClicked;
 		
@@ -45,5 +46,6 @@ namespace ly
 		sf::Color mButtonHoveredColor;
 
 		bool mButtonClicked;
+		bool mButtonHovered{ false };
 	};
 }

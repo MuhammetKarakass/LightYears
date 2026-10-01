@@ -2,21 +2,31 @@
 #include "player/PlayerSpaceShip.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/World.h>
+#include <algorithm>
 #include <exception>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace ly
 {
+	namespace
+	{
+		constexpr bool kAutoLevelAbilitiesForTesting = true;
+	}
+
 	Player::Player():
 		mLifeCount{3},
 		mScore{ 0 },
 		mScrap{ 0 },
 		mCurrentSpaceShip{}
 	{
+		mShipLevelChangedHandle = mShipProgression.onLevelChanged.BindAction(this, &Player::OnShipLevelChanged);
 	}
 
 	Player::~Player()
 	{
+		mShipProgression.onLevelChanged.UnbindAction(mShipLevelChangedHandle);
 		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock())
 		{
 			currentShip->onActorDestroyed.UnbindAction(mCurrentShipDestroyedHandle);
@@ -52,6 +62,11 @@ namespace ly
 			}
 			mShipProgression.BindAttributes(ship->GetAbilitySystemComponent().GetAttributes());
 			RestorePurchasedAbilityLevels(*ship);
+			if (mPendingTestAbilityLevelUps > 0 &&
+				QueuePendingTestAbilityLevels(*ship, mPendingTestAbilityLevelUps))
+			{
+				mPendingTestAbilityLevelUps = 0;
+			}
 			mCurrentShipDestroyedHandle = ship->onActorDestroyed.BindAction(
 				this,
 				&Player::OnCurrentShipDestroyed
@@ -90,6 +105,161 @@ namespace ly
 	void Player::AwardShipXP(float amount)
 	{
 		mShipProgression.AddXP(amount);
+	}
+
+	void Player::OnShipLevelChanged(int previousLevel, int currentLevel)
+	{
+		if (!kAutoLevelAbilitiesForTesting)
+		{
+			return;
+		}
+
+		const int levelCount = currentLevel - previousLevel;
+		if (levelCount <= 0)
+		{
+			return;
+		}
+
+		const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock();
+		if (!ship || ship->GetIsPendingDestroy() ||
+			!QueuePendingTestAbilityLevels(*ship, levelCount))
+		{
+			mPendingTestAbilityLevelUps += levelCount;
+		}
+	}
+
+	bool Player::QueuePendingTestAbilityLevels(PlayerSpaceShip& ship, int levelCount)
+	{
+		if (levelCount <= 0)
+		{
+			return false;
+		}
+
+		sas::AbilitySystemComponent& abilities = ship.GetAbilitySystemComponent();
+		const auto snapshots = abilities.BuildAbilitySnapshots();
+		std::unordered_set<std::string> processedAbilityIds;
+		bool foundAbility = false;
+		for (const sas::AbilityRuntimeSnapshot& snapshot : snapshots)
+		{
+			GameAbility* ability = abilities.FindAbility<GameAbility>(snapshot.handle);
+			if (!ability)
+			{
+				continue;
+			}
+			const std::string& abilityId = snapshot.abilityId;
+			if (abilityId.empty() || !processedAbilityIds.insert(abilityId).second)
+			{
+				continue;
+			}
+			foundAbility = true;
+
+			int baseLevel = ability->GetLevel();
+			if (const auto purchased = mPurchasedAbilityLevels.find(abilityId);
+				purchased != mPurchasedAbilityLevels.end())
+			{
+				baseLevel = std::max(baseLevel, purchased->second);
+			}
+			if (const auto pending = mPendingTestAbilityLevels.find(abilityId);
+				pending != mPendingTestAbilityLevels.end())
+			{
+				baseLevel = std::max(baseLevel, pending->second);
+			}
+
+			const int targetLevel = static_cast<int>(std::min<long long>(
+				ability->GetMaxLevel(),
+				static_cast<long long>(baseLevel) + levelCount
+			));
+			mPurchasedAbilityLevels[abilityId] = targetLevel;
+			if (targetLevel > ability->GetLevel())
+			{
+				mPendingTestAbilityLevels[abilityId] = targetLevel;
+			}
+			else
+			{
+				mPendingTestAbilityLevels.erase(abilityId);
+			}
+		}
+		return foundAbility;
+	}
+
+	void Player::FlushPendingTestAbilityLevels(World* expectedWorld)
+	{
+		if (!kAutoLevelAbilitiesForTesting)
+		{
+			return;
+		}
+
+		const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock();
+		if (!ship || ship->GetIsPendingDestroy() ||
+			(expectedWorld && ship->GetWorld() != expectedWorld))
+		{
+			return;
+		}
+
+		sas::AbilitySystemComponent& abilities = ship->GetAbilitySystemComponent();
+		if (abilities.IsExecutingAbilityInstanceOperation())
+		{
+			return;
+		}
+
+		if (mPendingTestAbilityLevelUps > 0 &&
+			QueuePendingTestAbilityLevels(*ship, mPendingTestAbilityLevelUps))
+		{
+			mPendingTestAbilityLevelUps = 0;
+		}
+
+		std::vector<std::pair<std::string, int>> pendingTargets;
+		pendingTargets.reserve(mPendingTestAbilityLevels.size());
+		for (const auto& pending : mPendingTestAbilityLevels)
+		{
+			pendingTargets.emplace_back(pending.first, pending.second);
+		}
+
+		std::exception_ptr operationError;
+		for (const auto& pending : pendingTargets)
+		{
+			GameAbility* ability = abilities.FindAbilityById<GameAbility>(pending.first);
+			if (!ability)
+			{
+				continue;
+			}
+
+			const sas::AbilityHandle handle = ability->GetHandle();
+			const int targetLevel = std::min(
+				std::max(pending.second, ability->GetLevel()),
+				ability->GetMaxLevel()
+			);
+			mPurchasedAbilityLevels[pending.first] = targetLevel;
+			if (ability->GetLevel() < targetLevel)
+			{
+				try
+				{
+					(void)abilities.SetAbilityLevel(handle, targetLevel);
+				}
+				catch (...)
+				{
+					if (!operationError)
+					{
+						operationError = std::current_exception();
+					}
+				}
+			}
+
+			const GameAbility* updatedAbility =
+				abilities.FindAbilityById<GameAbility>(pending.first);
+			const auto pendingTarget = mPendingTestAbilityLevels.find(pending.first);
+			if (updatedAbility && pendingTarget != mPendingTestAbilityLevels.end() &&
+				updatedAbility->GetLevel() >= pendingTarget->second)
+			{
+				mPurchasedAbilityLevels[pending.first] = updatedAbility->GetLevel();
+				mPendingTestAbilityLevels.erase(pendingTarget);
+			}
+		}
+
+		if (operationError)
+		{
+			std::rethrow_exception(operationError);
+		}
 	}
 
 	void Player::AddShipXP(float amount)
@@ -300,6 +470,8 @@ namespace ly
 	{
 		mShipProgression.ResetForNewRun();
 		mPurchasedAbilityLevels.clear();
+		mPendingTestAbilityLevels.clear();
+		mPendingTestAbilityLevelUps = 0;
 		if (mScrap != 0)
 		{
 			mScrap = 0;

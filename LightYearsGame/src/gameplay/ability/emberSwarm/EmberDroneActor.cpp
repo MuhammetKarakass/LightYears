@@ -2,6 +2,7 @@
 
 #include "framework/MathUtility.h"
 #include "framework/World.h"
+#include "gameConfigs/combat/CombatTick.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
@@ -279,7 +280,7 @@ namespace ly
 				{
 					PerformPulse(*owner, *target);
 				}
-				mNextPulseTime += mConfiguration.pulseInterval;
+				mNextPulseTime += CombatTick::Interval;
 			}
 		}
 	}

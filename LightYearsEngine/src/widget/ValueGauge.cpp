@@ -12,6 +12,7 @@ namespace ly
 		mBackgroundColor(backgroundColor)
 	{
 		mBarFront.setFillColor(mForegroundColor);
+		ApplyAlpha(GetEffectiveAlpha());
 		mBarBack.setFillColor(mBackgroundColor);
 		mBarText.setCharacterSize(20);
 		mBarText.setFillColor(sf::Color::White);
@@ -38,6 +39,7 @@ namespace ly
 	{
 		mForegroundColor = color;
 		mBarFront.setFillColor(mForegroundColor);
+		ApplyAlpha(GetEffectiveAlpha());
 	}
 	
 	void ValueGauge::Draw(sf::RenderWindow& windowRef)
@@ -89,14 +91,12 @@ namespace ly
 	}
 	void ValueGauge::ApplyAlpha(float alpha)
 	{
-		sf::Color currentFrontColor = mBarFront.getFillColor();
-		sf::Color currentBackColor = mBarBack.getFillColor();
-		sf::Color currentTextColor = mBarText.getFillColor();
-
-		currentFrontColor.a = static_cast<std::uint8_t>(alpha * 255.f);
-		currentBackColor.a = static_cast<std::uint8_t>(alpha * 255.f);
-		currentTextColor.a = static_cast<std::uint8_t>(alpha * 255.f);
-
+		sf::Color currentFrontColor = mForegroundColor;
+		sf::Color currentBackColor = mBackgroundColor;
+		sf::Color currentTextColor = sf::Color::White;
+		currentFrontColor.a = static_cast<std::uint8_t>(mForegroundColor.a * alpha);
+		currentBackColor.a = static_cast<std::uint8_t>(mBackgroundColor.a * alpha);
+		currentTextColor.a = static_cast<std::uint8_t>(255.f * alpha);
 		mBarFront.setFillColor(currentFrontColor);
 		mBarBack.setFillColor(currentBackColor);
 		mBarText.setFillColor(currentTextColor);
