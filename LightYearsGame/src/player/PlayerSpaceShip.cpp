@@ -32,8 +32,13 @@ namespace ly
 			}
 		}
 		SetActorRotation(0.f);
-		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
-		mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
+		// Player hulls have a left and a right engine; content validation
+		// requires both for Ship.Player.* entries.
+		if (shipDef.engineMounts.size() >= 2)
+		{
+			mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
+			mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
+		}
 	}
 
 	void PlayerSpaceShip::SetupCollisionLayers()

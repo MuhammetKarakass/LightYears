@@ -165,6 +165,14 @@ namespace ly::content
 					definition.definition.primaryWeaponId + "'"
 				);
 			}
+			if (definition.id.rfind(kPlayerShipIdPrefix, 0) == 0 &&
+				definition.definition.engineMounts.size() != 2)
+			{
+				return Fail(
+					failureReason,
+					"Player ship '" + definition.id + "' must have exactly two engine mounts"
+				);
+			}
 			if (!IsValidShipDefinition(definition.definition))
 			{
 				return Fail(

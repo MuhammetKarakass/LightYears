@@ -215,6 +215,29 @@ namespace ly::content
 			}
 			loaded.definition.health = object.at("health").get<float>();
 			loaded.definition.texturePath = object.value("texturePath", loaded.definition.texturePath);
+			if (object.contains("engineMounts"))
+			{
+				// Offsets come from JSON so each hull places its exhaust lights;
+				// the light style stays the presentation base's engine light.
+				const Json& mounts = object.at("engineMounts");
+				if (!mounts.is_array())
+				{
+					throw std::runtime_error("Ship engineMounts must be an array");
+				}
+				const PointLightDefinition engineLight = presentationBase.engineMounts.empty()
+					? PointLightDefinition{}
+					: presentationBase.engineMounts.front().pointLightDef;
+				loaded.definition.engineMounts.clear();
+				for (const Json& mount : mounts)
+				{
+					const sf::Vector2f offset = ParseVector2(mount.at("offset"));
+					if (!std::isfinite(offset.x) || !std::isfinite(offset.y))
+					{
+						throw std::runtime_error("Ship engine mount offset must be finite");
+					}
+					loaded.definition.engineMounts.push_back(EngineMount{ offset, engineLight });
+				}
+			}
 			loaded.definition.speed = ParseVector2(object.at("speed"));
 			loaded.definition.collisionDamage = object.at("collisionDamage").get<float>();
 			loaded.definition.scoreAmt = object.at("score").get<unsigned int>();

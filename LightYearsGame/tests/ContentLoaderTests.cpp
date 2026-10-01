@@ -1,6 +1,7 @@
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/EffectLoader.h"
 #include "gameplay/content/ShipLoader.h"
+#include "gameConfigs/ship/ShipConfig.h"
 #include "framework/JsonDocumentLoader.h"
 #include "gameplay/content/WeaponLoader.h"
 #include "gameplay/content/WeaponContentCatalog.h"
@@ -369,6 +370,52 @@ namespace
 			if (energy.contains("shieldAffinity") || energy.contains("afterburnerAffinity"))
 			{
 				return Fail("Ship JSON must not contain EP-based defense affinity fields") ? 0 : 1;
+			}
+		}
+
+		// Engine light offsets: the five new hulls place theirs from JSON; Fighter
+		// keeps the presentation base's mounts (this fixture's base has none).
+		const auto mountsAt = [](const ly::List<EngineMount>& mounts, float x, float y)
+		{
+			return mounts.size() == 2 &&
+				NearlyEqual(mounts[0].offset.x, -x) && NearlyEqual(mounts[0].offset.y, y) &&
+				NearlyEqual(mounts[1].offset.x, x) && NearlyEqual(mounts[1].offset.y, y);
+		};
+		for (const auto& loaded : loadedShips.definitions)
+		{
+			if (loaded.id.rfind("Ship.Player.", 0) != 0 || loaded.id == "Ship.Player.Fighter.Basic") continue;
+			if (!mountsAt(loaded.definition.engineMounts, 29.f, -16.f))
+			{
+				return Fail(("Player ship engine mounts are wrong for " + loaded.id).c_str()) ? 0 : 1;
+			}
+		}
+		if (!mountsAt(ShipData::Ship_Player_Fighter.engineMounts, 22.f, -12.f))
+		{
+			return Fail("Fighter presentation base engine mounts changed") ? 0 : 1;
+		}
+
+		{
+			const std::filesystem::path badMountsPath =
+				std::filesystem::temp_directory_path() / "lightyears-bad-engine-mounts.json";
+			std::string badShips = shipDocument.document->dump();
+			const std::string fighterId = "\"id\":\"Ship.Player.Fighter.Basic\"";
+			const std::size_t fighterAt = badShips.find(fighterId);
+			if (fighterAt == std::string::npos)
+			{
+				return Fail("Engine mount fixture could not find the Fighter entry") ? 0 : 1;
+			}
+			badShips.insert(fighterAt + fighterId.size(), ",\"engineMounts\":5");
+			{
+				std::ofstream file{ badMountsPath, std::ios::trunc };
+				file << badShips;
+			}
+			const ly::content::ShipLoader::Result badResult =
+				ly::content::ShipLoader::LoadFromFile(badMountsPath, ShipData::Ship_Player_Fighter);
+			std::error_code removeError;
+			std::filesystem::remove(badMountsPath, removeError);
+			if (badResult.Succeeded() || badResult.error.find("engineMounts must be an array") == std::string::npos)
+			{
+				return Fail("Ship loader accepted a non-array engineMounts value") ? 0 : 1;
 			}
 		}
 

@@ -89,6 +89,7 @@
     {
       "id": "Ship.Player.Breacher.Basic",
       "texturePath": "SpaceShooterRedux/PNG/playerShip2_orange.png",
+      "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 290.0,
       "speed": [
         350.0,
@@ -189,6 +190,7 @@
     {
       "id": "Ship.Player.Interceptor.Basic",
       "texturePath": "SpaceShooterRedux/PNG/playerShip3_red.png",
+      "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 200.0,
       "speed": [
         350.0,
@@ -305,6 +307,7 @@
     {
       "id": "Ship.Player.Conductor.Basic",
       "texturePath": "SpaceShooterRedux/PNG/playerShip3_blue.png",
+      "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 220.0,
       "speed": [
         350.0,
@@ -413,6 +416,7 @@
     {
       "id": "Ship.Player.Aegis.Basic",
       "texturePath": "SpaceShooterRedux/PNG/playerShip2_green.png",
+      "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 270.0,
       "speed": [
         350.0,
@@ -516,6 +520,7 @@
     {
       "id": "Ship.Player.CryoController.Basic",
       "texturePath": "SpaceShooterRedux/PNG/playerShip2_blue.png",
+      "engineMounts": [ { "offset": [-29.0, -16.0] }, { "offset": [29.0, -16.0] } ],
       "health": 250.0,
       "speed": [
         350.0,

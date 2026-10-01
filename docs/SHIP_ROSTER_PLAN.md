@@ -258,7 +258,7 @@ ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYea
 ## 4. Bilinen riskler
 
 1. **Interceptor AttackSpeed ↔ mevcut Dual silahı.** Faz 1 K4 katsayısı geçici olarak `0.12`'ye indirildi. Mevcut `12` atış/sn tabanıyla çözülmüş hız Interceptor L1'de `12.12`, L10'da `13.2` atış/sn olur (AttackSpeed rating'i sırasıyla 1 ve 10). Tasarım kataloğundaki `7 × (1 + %AS)` hedefi Faz 2'de uygulanacaktır.
-2. **Motor ışıkları.** `engineMounts` JSON'dan okunmuyor; yeni gövdeler Fighter'ın motor ışığı konumlarını kullanır ve yanlış yerde görünebilir. Faz 1'de kabul; gerekirse ayrı iş olarak `ShipLoader`'a `engineMounts` desteği eklenir.
+2. **Motor ışıkları — çözüldü (2026-10-02).** `ShipLoader` artık isteğe bağlı `engineMounts` (`[{"offset":[x,y]}]`) okur; ışık stili şablondan gelir. `playerShip2/3` gövdeleri egzoz piksellerinden ölçülen (±29, −16) konumlarını kullanır, Fighter şablondaki (±22, −12)'de kalır. `Ship.Player.*` kayıtları tam iki motor ister (katalog doğrulaması). Oyun içi görsel kontrol kullanıcıda.
 3. **Mevcut silahlar tasarımdan farklı** (ör. Heat Laser'ın AP katsayısı 0.75, Shotgun pellet'li). Faz 1'de denge ölçümü anlamlı değil; gemi seçimi ve stat doğruluğu test edilir, DPS değil.
 4. **F tuşu = restart.** Gemi değiştirmek koşuyu sıfırlar; seviye ve yetenek seviyeleri kaybolur. Test amaçlı kabul edildi.
 
