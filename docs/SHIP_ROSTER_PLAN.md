@@ -8,7 +8,7 @@ Uygulayıcılar için: Sol orkestrasyonu yürütür, her adımı bir Luna uygula
 
 ---
 
-## 0. Mevcut durum (kaynakta doğrulandı)
+## 0. Başlangıç durumu (uygulama öncesi, 2026-10-01'de kaynakta doğrulandı)
 
 | Konu | Durum | Kaynak |
 |---|---|---|
@@ -22,7 +22,7 @@ Uygulayıcılar için: Sol orkestrasyonu yürütür, her adımı bir Luna uygula
 | İzinli temel nitelikler | `baseOwnerAttributes`: AttackPower, Armor, Luck, AttackSpeed, CriticalChance, CriticalDamage, AbilityHaste. **MaxHealth** `health` alanından, **EnergyPower** `energy.baseEnergyPower`'dan gelir | `include/gameplay/progression/ShipProgression.h:56-64`, `src/gameplay/ship/ShipRuntime.cpp:16-27` |
 | İzinli büyüme nitelikleri | MaxHealth, AttackPower, EnergyPower, Armor, Luck, AttackSpeed, CriticalChance, AbilityHaste, MoveSpeedHorizontal/Vertical | `ShipProgression.h:45-54` |
 | AttackSpeed birimi | Rating; `1.0` = **%1**. Silah çarpanı `1 + AS/100` (yalnız `OwnerAttackSpeedPercentage` modundaki silahlarda) | `PrimaryWeaponExecutionSystem.cpp:803-813` |
-| Fighter'ın bugünkü verisi | AP 35, MaxHealth +75/seviye, Armor tabanı yok | `ships.json`, `include/gameConfigs/ship/ShipConfig.h:12-69` |
+| Başlangıç Fighter verisi | AP 35, MaxHealth +75/seviye, Armor tabanı yok | `ships.json`, `include/gameConfigs/ship/ShipConfig.h:12-69` |
 
 ---
 
@@ -206,8 +206,8 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 2. Tuşa basılınca: `PlayerManager::SetSelectedShipId(id)` → mevcut `OnRestartLevel()` akışı. Restart oyuncuyu sıfırlar (`PlayerManager::Reset()`), yeni oyuncu seçili gemiyle doğar. Seviye/XP/satın alınmış yetenek seviyeleri sıfırlanır; bu bilinçli (yeni koşu).
 3. Kısıtlar:
    - Game Over ekranı açıkken ve pause'dayken F tuşları yok sayılır (Escape kuralıyla aynı mantık).
-   - Zaten seçili gemiye basılırsa yine restart eder (hızlı sıfırlama olarak da işe yarar). İstenmezse no-op yapılır — uygulayıcı mevcut kodda hangisi daha sade ise onu seçer ve rapora yazar.
-   - Seçim değişince log: `LY_GAME_LOG` ile "Player ship selected: <id>".
+   - Aynı geminin tuşuna basmak da koşuyu yeniden başlatır.
+   - Seçim kaydı `LY_GAME_INFO` ile yazılır; `LY_GAME_LOG` sembolü mevcut değildir.
 4. Ekranda geçici bilgi: mevcut notification HUD'u kullanılabiliyorsa "Gemi: Breacher" bildirimi gösterilir; yeni widget yazılmaz.
 
 **Kabul:** Build exit 0. Hedefli test (Adım 5) F tuşu → seçim → restart → doğru gemi zincirini doğrular. Oyun içi görsel kontrol kullanıcıya bırakılır.
@@ -231,9 +231,9 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 
 ### Adım 6 — Doküman ve kapanış
 
-1. `docs/Light_Years_Ships_Primary_Weapons_Combined.md` başındaki durum notuna "Faz 1 (gemiler) uygulandı, tarih/commit" ekle. (K2/K3 kararları ve kalkan/AB tablosu dokümana plan aşamasında zaten işlendi.)
-2. `docs/PROJECT_DOCUMENTATION.md`'de gemi/oyuncu bölümü varsa güncelle.
-3. Bu plan dosyasının sonuna "Uygulama sonucu" bölümü: her adımın commit'i, build ve test komutları/sonuçları.
+1. `docs/Light_Years_Ships_Primary_Weapons_Combined.md` durum notu, runtime roster uygulamasını ve Faz 2'ye kalan silah tasarımını ayırır.
+2. `docs/PROJECT_DOCUMENTATION.md`'de oyuncu gemileri, savunma türetmeleri ve Fighter hasar örnekleri güncellenir.
+3. Aşağıdaki uygulama kaydı commit'leri ve doğrulama sonuçlarını içerir.
 
 ---
 
@@ -257,7 +257,7 @@ ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYea
 
 ## 4. Bilinen riskler
 
-1. **Interceptor AttackSpeed ↔ mevcut Dual silahı.** Dual bugün `AuthoredScaling` modunda `FireRate += AttackSpeed × 1.0` kuralı taşıyor. AS rating olduğu için (1.0 = %1), Interceptor L1'de Dual **12 → 13 atış/sn**, L10'da **22 atış/sn** olur. Tasarım: `7 × (1 + %AS)`. Faz 2'de Dual baştan yazılacak. Faz 1 için bkz. **K4**.
+1. **Interceptor AttackSpeed ↔ mevcut Dual silahı.** Faz 1 K4 katsayısı geçici olarak `0.12`'ye indirildi. Mevcut `12` atış/sn tabanıyla çözülmüş hız Interceptor L1'de `12.12`, L10'da `13.2` atış/sn olur (AttackSpeed rating'i sırasıyla 1 ve 10). Tasarım kataloğundaki `7 × (1 + %AS)` hedefi Faz 2'de uygulanacaktır.
 2. **Motor ışıkları.** `engineMounts` JSON'dan okunmuyor; yeni gövdeler Fighter'ın motor ışığı konumlarını kullanır ve yanlış yerde görünebilir. Faz 1'de kabul; gerekirse ayrı iş olarak `ShipLoader`'a `engineMounts` desteği eklenir.
 3. **Mevcut silahlar tasarımdan farklı** (ör. Heat Laser'ın AP katsayısı 0.75, Shotgun pellet'li). Faz 1'de denge ölçümü anlamlı değil; gemi seçimi ve stat doğruluğu test edilir, DPS değil.
 4. **F tuşu = restart.** Gemi değiştirmek koşuyu sıfırlar; seviye ve yetenek seviyeleri kaybolur. Test amaçlı kabul edildi.
@@ -271,5 +271,43 @@ ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYea
 | **K1** | Gemi seçimi nereden yapılır? | ✅ **Karar verildi:** yalnız F1–F6, seçim ekranı yok (Adım 4). |
 | **K2** | Aegis hareket değerleri (tasarımda yok) | ✅ **Karar verildi:** hantal; 480 / 600 / 200 / 240 / 380 / 4.8 |
 | **K3** | Kalkan/afterburner modeli ve değerleri | ✅ **Karar verildi:** EP'den ayrıldı; L1 kalkan Fighter 140, Breacher 110, Interceptor 110, Conductor 130, Aegis 160, Cryo 130; seviye başı 10–30; AB seviye başı +2…+4 (Bölüm 1.3b, Adım 2b). |
-| **K4** | Faz 1'de Interceptor'ın Dual atış hızı | Dual'ın `AttackSpeed` katsayısını geçici olarak **1.0 → 0.12** yap (12/sn tabanın %1'i = AS rating anlamı). Faz 2'de silah yeniden yazılınca kalkar. |
+| **K4** | Faz 1'de Interceptor'ın Dual atış hızı | ✅ **Uygulandı:** Dual'ın `AttackSpeed` katsayısı geçici olarak **1.0 → 0.12**; Faz 2'de silah tasarımı devreye girince kaldırılır. |
 | **K5** | Yer tutucu sprite'lar | Bölüm 1.4'teki atamalar; sonra değiştirilebilir. |
+
+## 6. Uygulama sonucu
+
+### Runtime commit'leri
+
+| Adım | Commit | Sonuç |
+|---|---|---|
+| 1 — Fighter tabanı | `8e048d8` | AP 39, HP büyümesi +40, Armor 2 uygulandı. |
+| 2 — Oyuncu roster verisi | `c03dace` | Breacher, Interceptor, Conductor, Aegis ve Cryo içerikleri eklendi. |
+| 2b — Kalkan / afterburner | `b0b2a1c` | EP affinity kaldırıldı; gemi seviyesi büyümesi eklendi, düşman kalkan yolu korundu. |
+| 3 — Seçili gemi akışı | `02ea0c5` | Manager seçimi yeni oyuncu ve respawn akışına bağlandı; reset seçimi korur. |
+| 4 — F1–F6 | `e455c95` | F1 Fighter, F2 Breacher, F3 Interceptor, F4 Conductor, F5 Aegis, F6 Cryo. Her basış koşuyu yeniden başlatır; pause/Game Over sırasında tuşlar yok sayılır. Gemi değiştirme bildirimi eklenmedi; bu adımda isteğe bağlıydı. Bilinmeyen veya düşman gemisi ID'si Fighter'a düşer. |
+| 5 — Hedefli testler | `c239e33` | Content kontrolleri güncellendi; gerçek player ship selection E2E ve CMake hedefi eklendi. Mevcut progression ve Vitals HUD testleri regresyon için çalıştırıldı. |
+
+### Build ve test kanıtı
+
+Her runtime adımında `LightYearsGame` build'i exit 0 ile tamamlandı. İzole proof build'i 920/920 derleme/link adımıyla exit 0 verdi. Tam komut:
+
+```powershell
+cmd.exe /d /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" && set VSLANG=1033 && cmake --build .tmp/ship-roster-build --target LightYearsGame LightYearsPlayerShipSelectionTests LightYearsContentTests LightYearsPlayerLevelTestProgressionE2ETests LightYearsVitalsHUDTests --parallel 4'
+```
+
+- İzole build sonrasında dört hedefli CTest 4/4 geçti (3.05 sn). Tam komut:
+
+```powershell
+cmd.exe /d /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" && set VSLANG=1033 && ctest --test-dir .tmp/ship-roster-build -j1 --output-on-failure --timeout 60 -R "^(LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYearsPlayerShipSelection|LightYearsVitalsHUD)$"'
+```
+
+  - `LightYearsContent` — geçti.
+  - `LightYearsPlayerLevelTestProgressionE2E` — geçti (99/99 doğrulama).
+  - `LightYearsPlayerShipSelection` — geçti (290/290 doğrulama).
+  - `LightYearsVitalsHUD` — geçti (25/25 doğrulama).
+- Kanıtlar: [izole build log'u](../.tmp/logs/ship-proof-build.log), [CTest log'u](../.tmp/logs/ship-proof-test.log), [gemi seçimi test ayrıntısı](../.tmp/logs/ship-proof-player-ship-selection.json), [seviye ilerleme test ayrıntısı](../.tmp/logs/ship-proof-player-level-test-progression.json), [Vitals HUD test ayrıntısı](../.tmp/logs/ship-proof-vitals-hud.json). Yapılandırma adımları [configure script](../.tmp/logs/ship-proof-configure.cmd), [Unity kapalı reconfigure script](../.tmp/logs/ship-proof-reconfigure.cmd) ve [CMake include](../.tmp/logs/ship-proof-cmake.cmake) içinde.
+- Proof, `e455c95` üzerine yalnız Adım 5 değişiklikleri kopyalanmış izole checkout'ta üretildi; bu snapshot sonradan `c239e33` olarak commit edildi. Yerel dependency cache'i kullanılıp Unity derlemesi kapatıldı. Eşzamanlı AbilityAction değişikliklerini içeren ana karışık worktree için build kanıtı değildir.
+- Eski `GasLiteCoreTests.cpp` kaldırılan affinity alanlarına ve eski Fighter beklentilerine başvurur. Plan gereği bu büyük test onarılmadı ve çalıştırılmadı; tam test paketi için başarı iddia edilmez.
+- JSON ve log kanıtları korundu; geçici proof checkout'u arşivlendi ve `.tmp/ship-roster-build` temizlendi. Yeniden üretim için izole `c239e33` checkout'u ve yukarıdaki yapılandırma adımları gerekir.
+
+Doküman ve hedefli test kapanışı tamamlandı. Push yapılmadı.

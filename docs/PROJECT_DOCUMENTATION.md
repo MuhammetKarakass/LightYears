@@ -1380,7 +1380,7 @@ eklenmelidir. feature tag’leri (örneğin Heat) type’dan bağımsız ek
 | --- | --- | --- | --- |
 | Weapon.Projectile.FighterRapidLaser.Basic | Standard / Photonic | Damage 12, FireRate 4, speed 1100, range 1600, radius 7, 1 muzzle, Mag 48, Reload 2.0s; every 6th and final 6 rounds empowered | Normal damage +0.40 AttackPower; empowered +2 base +0.10 EnergyPower, guaranteed 1.5x crit and final damage ceil; Cadence: OwnerAttackSpeedPercentage (FireRate × (1 + max(0, AS)/100)); Reload = 2.0s / (1 + max(0, AS)/100) |
 | Weapon.Projectile.RapidShotgun.Basic | Shotgun / Thermal | Damage 10, FireRate 2.5, speed 3000, range 400, 3 pellet, spread 8°, floor x0.5 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
-| Weapon.Projectile.DualKineticBlaster.Basic | Standard / Kinetic | Damage 3.5, FireRate 12, speed 3400, range 650, radius 6, 2 muzzle | Damage +0.45 AttackPower; FireRate +1.0 AttackSpeed |
+| Weapon.Projectile.DualKineticBlaster.Basic | Standard / Kinetic | Damage 3.5, FireRate 12, speed 3400, range 650, radius 6, 2 muzzle | Damage +0.45 AttackPower; FireRate +0.12 AttackSpeed (Interceptor için Faz 1 geçici K4 değeri) |
 | Weapon.Arc.ElectricLauncher.Basic | Arc / Electric | Damage 15, FireRate 2.8, range 850, 3 normal chain, chain range 250, x0.72 / chain | Damage +0.85 AttackPower; FireRate +0.60 AttackSpeed; no direct Luck damage |
 | Weapon.Beam.ContinuousHeatLaser.Basic | Continuous beam / Energy | Damage 28 DPS, range 950, width 26, heat 38/sn, cap 100, cool 25/sn, overheat 2.5 sn, max heat x1.75 | Damage +0.75 AttackPower ve +0.50 EnergyPower; AttackSpeed only affects high-heat gain |
 | Weapon.Wave.CryoProjector.Basic | Expanding wave / Cryo | Damage 7, FireRate 1.8, range 780, speed 850, width 80→260, thickness 30 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
@@ -1475,7 +1475,7 @@ Ortak primary weapon altyapısına opsiyonel magazine/reload kontratı, yüzde t
   - Fighter `BasicRapidLaser`, weapon-level `damageRoundingPolicy = CeilFinalDamage` kullanır; normal ve empowered shot'lar aynı tamsayı hasar konvansiyonunu paylaşır.
   - Armor ve shield hesapları float hassasiyetinde kalır.
   - Global olarak bütün ability hasarlarına zorunlu `ceil` uygulanmaz; yalnız shot payload'u talep ederse çalışır.
-- **Fighter L1 normal shot**: `NormalRawDamage = 12 + AttackPower × 0.40`. Fighter AP=35 iken normal shot ceil(12 + 14) = `26` hasar verir. FireRate 4.0 atış/saniye, magazine 48 ve base reload 2.0s'dir. Normal shots random crit kullanır (L1'de CriticalChance=0).
+- **Fighter L1 normal shot**: `NormalRawDamage = 12 + AttackPower × 0.40`. Fighter AP=39 iken normal shot `ceil(12 + 15.6) = 28` hasar verir. FireRate 4.0 atış/saniye, magazine 48 ve base reload 2.0s'dir. Normal shots random crit kullanır (L1'de CriticalChance=0).
 - **Generic Empowered-Shot Tanımı**:
   - `PrimaryWeaponEmpoweredShotDefinition` (`everySuccessfulShots`, `finalMagazineRounds`, `bonusBaseDamage`, `bonusDamageScaling`, `guaranteedCritical`) silaha özgü tanımdır. `bonusDamageScaling` yalnız `sourceAttributeId + coefficient` taşır; runtime'ın kullanmadığı generic target/operation alanları yoktur.
   - Validator kuralları: `everySuccessfulShots > 0`, `finalMagazineRounds >= 0`, magazine yoksa `finalMagazineRounds == 0`, `finalMagazineRounds <= magazine.capacity`, bonus değerleri finite, scaling source attribute canonical (`Owner.*`) ve yalnız interval projectile silahlarda desteklenir.
@@ -1489,19 +1489,19 @@ Ortak primary weapon altyapısına opsiyonel magazine/reload kontratı, yüzde t
   - Hesap başarılı spawn öncesinde yapılır; spawner başarısızsa mermi veya empowered durumu harcanmaz.
   - Reload sonrası capacity geri geldiği için pattern otomatik olarak baştan başlar.
 - **Hasar Hesabı ve AP/EP Ayrımı**:
-  - Normal: `raw = 12 + AP × 0.40`; `final = ceil(raw)` (Fighter L1: `26`).
-  - Empowered: `raw = NormalRaw + 2 + EP × 0.10`; `crit = guaranteed 1.5x`; `final = ceil(raw × 1.5)`. Fighter L1: `ceil((26 + 2 + 3.5) × 1.5) = ceil(47.25) = 48`.
+  - Normal: `raw = 12 + AP × 0.40`; `final = ceil(raw)` (Fighter L1: `ceil(27.6) = 28`).
+  - Empowered: `raw = NormalRaw + 2 + EP × 0.10`; `crit = guaranteed 1.5x`; `final = ceil(raw × 1.5)`. Fighter L1: `ceil((27.6 + 2 + 3.5) × 1.5) = ceil(49.65) = 50`.
   - AP artışı hem normal hem empowered hasarın tabanını artırır. EP artışı ise yalnız empowered bonusunu artırır.
 - **Atış Örüntüsü (Cadence Pattern)**:
-  - Şarjör başında `26 / 26 / 26 / 26 / 26 / 48` döngüsüyle başlar (1–5 normal, 6 empowered).
+  - Şarjör başında `28 / 28 / 28 / 28 / 28 / 50` döngüsüyle başlar (1–5 normal, 6 empowered).
   - 42. atış periyodik kuraldan, 43–48 arası 6 atış son-altı kuralından empowered olur; 42–48 arasında ardışık 7 empowered atış fired edilir.
-  - Magazine toplamı: Tam 48 mermide **35 normal (26 dmg) + 13 empowered (48 dmg)** bulunur.
-  - Toplam deterministik şarjör hasarı: `35 × 26 + 13 × 48 = 910 + 624 = 1534`.
-  - Sustained cycle DPS: 12 saniye atış + 2 saniye reload = 14 saniye döngü; `1534 / 14 ≈ 109.57` (~109.6 DPS).
+  - Magazine toplamı: Tam 48 mermide **35 normal (28 dmg) + 13 empowered (50 dmg)** bulunur.
+  - Toplam deterministik şarjör hasarı: `35 × 28 + 13 × 50 = 980 + 650 = 1630`.
+  - Sustained cycle DPS: 12 saniye atış + 2 saniye reload = 14 saniye döngü; `1630 / 14 ≈ 116.43` DPS.
 - **Hedef TTK Referansları (Fighter L1 vs Sabit Düşman Canı)**:
   - İlk mermi `t=0` anında çıkar; 4 atış/saniye (0.25s aralık).
-  - 180 HP düşman: 5 normal (130) + 1 empowered (48) = 178 hasar (2 HP eksik kalır); 7. atışta (26 dmg) ölür. `t = 1.5 saniye` (7 atış).
-  - 250 HP düşman: 6 atış (178) + 2 normal (52) = 230 hasar; 9. atışta (26 dmg, toplam 256) ölür. `t = 2.0 saniye` (9 atış).
+  - 180 HP düşman: 5 normal (140) + 1 empowered (50) = 190 hasar; 6. atışta ölür. `t = 1.25 saniye`.
+  - 250 HP düşman: ilk 8 atış 246 hasar verir; 9. normal atışta ölür. `t = 2.0 saniye`.
 - **Shot Metadata ve Projectile Presentation**:
   - `PrimaryWeaponShotMetadata` (`isEmpowered`, `criticalPolicy`, `roundFinalDamageUp`) spawner üzerinden mermiye aktarılır ve `proj->IsEmpowered()` / `proj->GetShotMetadata()` ile erişilebilir.
   - Bu aşamada mermi sprite'ı, point light, renk, VFX ve ses efektleri değiştirilmemiştir; sunum katmanı ilerideki aşamalarda bağlanacaktır.
@@ -1528,31 +1528,21 @@ primary weapon, movement, energy ve progression konfigürasyonunu taşır.
 shipXPReward verilmemişse scoreAmt değeri kullanılır; score ve progression
 ödülü böylece ileride birbirinden bağımsız dengelenebilir.
 
-### 5.2 Player Fighter — mevcut değerler
+### 5.2 Player gemi kadrosu — runtime değerleri
 
-Mevcut production player-ship kapsamı yalnız Fighter'dır. Breacher,
-Interceptor, Conductor, Aegis ve Cryo Controller kimlikleri tasarım notu olarak
-korunur; bu aşamada `ShipDefinition`, `ships.json` kaydı, seçim/runtime bağlantısı
-veya balance profili oluşturulmayacaktır. Phase 3A çalışmaları, aksi ayrıca
-kararlaştırılana kadar Fighter üzerinden ilerler.
+Oyuncu kadrosu Fighter, Breacher, Interceptor, Conductor, Aegis ve Cryo
+Controller'dan oluşur. Gemi seçim ekranı yoktur; Arena açılışı ve ana menü akışı
+değişmemiştir. F1–F6 sırasıyla bu gemileri seçip koşuyu baştan başlatır. Aynı
+geminin tuşu da yeniden başlatır; pause ve Game Over sırasında gemi tuşları yok
+sayılır. Seçim player manager reset'inden korunur ve yeni oyuncuya uygulanır. Bilinmeyen ya da düşman
+gemisi kimliği Fighter'a geri düşer.
 
-| Alan | Değer |
-| --- | --- |
-| Health (L1) | 250 |
-| Base Owner Combat Attributes | AttackPower = 35 (`baseOwnerAttributes`), Armor = 0, Luck = 0, AttackSpeed = 0, CriticalChance = 0, CriticalDamage = 1.5, AbilityHaste = 0, MoveSpeedHorizontal = 0, MoveSpeedVertical = 0 |
-| Başlangıç silahı | Weapon.Projectile.FighterRapidLaser.Basic |
-| Forward / Reverse / Strafe thrust | 650 / 190 / 270 |
-| Angular speed / responsiveness | 400 / 5 |
-| Linear damping | 0.7 |
-| Max speed | 520 |
-| Input responsiveness / mouse dead zone | 12 / 32 |
-| EnergyPower / ReactorBudget | 35 / 70 |
-| Base shield / affinity / final shield | 115 / 0.50 / 150; full recharge 6 sn; delay 6 sn |
-| Base afterburner / affinity / final capacity | 65 / 0.50 / 100; full recharge 6 sn; delay 1.5 sn |
-| Afterburner speed / acceleration multiplier | 1.55 / 1.80 |
-| Afterburner drain | 33/sn |
-| Afterburner ramp up / down / maneuverability | 0.22 sn / 0.45 sn / x0.90 |
-| XP eşiği parametreleri (base / exponent / step) | 6 / 0 / 1 |
+Fighter varsayılan gemidir. L1'de HP 250, AttackPower 39, EnergyPower 35 ve
+Armor 2'dir; doğal büyümesi sırasıyla HP +40, AttackPower +3, EnergyPower +2,
+Armor +2 ve Luck +1'dir. Bütün altı geminin kimlik, stat, hareket, enerji ve
+seviye büyüme değerleri tek kanonik içerik kaynağı olan
+[`ships.json`](../LightYearsGame/assets/content/data/ships.json)'da bulunur;
+tasarım karşılaştırmaları [gemi ve primary weapon kataloğundadır](Light_Years_Ships_Primary_Weapons_Combined.md).
 
 Hareket rating katkısı doğrusal değildir:
 
@@ -1567,33 +1557,34 @@ azalır.
 ### 5.3 Enerji türetmeleri
 
 ~~~text
-reactorBudget = EnergyPower * 2
-maxShield = baseMaxShield + reactorBudget * shieldAffinity
+maxShield = baseMaxShield + maxShieldPerLevel * (shipLevel - 1) + shieldContributions
 afterburnerCapacity = baseAfterburnerCapacity +
-                      reactorBudget * afterburnerAffinity
+                      afterburnerCapacityPerLevel * (shipLevel - 1)
 shieldRegenPerSecond = maxShield / shieldFullRechargeDuration
 afterburnerRegenPerSecond = afterburnerCapacity / afterburnerFullRechargeDuration
 healthRegenPerSecond = maxHealth / 1200
 ~~~
 
-`shieldAffinity + afterburnerAffinity = 1.0` ship-profile invariant'ıdır.
-EnergyPower resource scaling tamamen lineerdir: hard cap veya diminishing
-return uygulanmaz. MaxHealth veya EnergyPower değiştiğinde ShipRuntime bu
-değerleri yeniden hesaplar. Mevcut resource miktarı kapasite artışında
-korunur, kapasite düştüğünde yalnız yeni maksimuma clamp edilir.
+Kalkan ve afterburner geminin seviye ile büyüyen sistemleridir; `EnergyPower`
+bu iki kapasiteye katkı sağlamaz. `shieldContributions`, yetenekler gibi
+çalışma zamanı kalkan katkılarını kapsar; düşmanların authored kalkan büyüme
+yolu korunur. Ship level değiştiğinde kalkan ve afterburner yeniden hesaplanır;
+EnergyPower değişikliği bu kapasiteleri değiştirmez. MaxHealth yalnız health
+regen türetmesini etkiler. Mevcut kaynak miktarı kapasite artışında korunur,
+kapasite düştüğünde yeni maksimuma clamp edilir.
 
-> **Aşama 2:** `EnergyPower` tüketilen bir enerji havuzu değil, genel reaktör
-> gücü owner attribute'udur. `EnergyPower Reference = 100` yalnız ortak
-> referanstır; doğrusal resource formülünü normalize etmez.
+`EnergyPower`, yetenek ve enerji silahlarının authored scaling kurallarında
+kullanılan owner attribute'udur; ship kalkanı veya afterburner kaynağı değildir.
 
 ### 5.4 Runtime sınırları
 
 `CombatRuntime`, combat attribute'ları, damage/effect pipeline'ını ve
 ability'leri sahiplenir; ShipDefinition veya ship'e özgü shield/afterburner
 değerlerini bilmez. `SpaceShip`, CombatRuntime'ın owner AttributeSystem'ine
-bağlanan `ShipRuntime`'ı sahiplenir. ShipRuntime, MaxHealth ve EnergyPower
-değiştiğinde shield, health regen ve afterburner kapasite/regen değerlerini
-yeniden çözer.
+bağlanan `ShipRuntime`'ı sahiplenir. ShipRuntime, gemi seviyesi değiştiğinde
+kalkan ve afterburner kapasite/regen değerlerini; MaxHealth değiştiğinde health
+regen değerini yeniden çözer. EnergyPower değişikliği gemi savunma kapasitesini
+değiştirmez.
 
 Bu ayrım, gelecekteki `EncounterRuntime` ve `EnemyRuntime` katmanlarının
 combat sınırını genişletmeden kendi durumlarını sahiplenebilmesi içindir.
@@ -1612,8 +1603,9 @@ isteğe bağlı `xpPerLevel` (varsayılan `0`) ve kontrollü `naturalGrowth` lis
 `{ attributeId, perLevel }` tanımlar; merkezi base-growth tablosu ve gemiye
 özel multiplier katmanı kullanılmaz. Listede bulunmayan attribute büyümez.
 
-Her shipped düşman 1 XP verir. Fighter için `baseXP=6`, `xpExponent=0` ve
-`xpPerLevel=1` olduğundan sonraki seviye eşikleri 6, 7, 8, 9 ... XP'dir;
+Her shipped düşman 1 XP verir. Altı oyuncu gemisinin her birinde `baseXP=6`,
+`xpExponent=0` ve `xpPerLevel=1` olduğundan sonraki seviye eşikleri 6, 7, 8,
+9 ... XP'dir;
 L2/L3/L4'e ulaşmak için toplam 6/13/21 düşman öldürülür. Seviye aşımındaki XP
 kalanı sonraki eşiğe aktarılır. `xpExponent` ve `xpPerLevel` doğrulaması sonlu
 ve sıfır veya daha büyük değerleri kabul eder.
@@ -1630,46 +1622,10 @@ negatif, non-finite veya bu whitelist dışındaki girdiler content validation'd
 reddedilir. Movement için yeni genel attribute oluşturulmaz; iki mevcut eksen
 ayrı ayrı tanımlanır.
 
-Fighter'ın eski migration compatibility growth listesi kaldırılmış ve Phase 3A.3
-ile resmi production Fighter base profili ve natural-growth değerleri devreye alınmıştır.
-Bu aşamada Fighter için L1 base AttackPower 35 değeri kontrollü generic `baseOwnerAttributes`
-alanı üzerinden ship profile tarafından verilir; L1'de progression modifier bonusu sıfırdır.
-
-Fighter gerçek natural-growth profili tam beş attribute taşır:
-- MaxHealth: +75 / level
-- AttackPower: +3 / level
-- EnergyPower: +2 / level
-- Armor: +2 / level
-- Luck: +1 / level
-
-AttackSpeed, CriticalChance, AbilityHaste, MoveSpeedHorizontal ve MoveSpeedVertical
-sistem whitelist'inde kalmaya devam eder fakat Fighter JSON/profile listesinde yer almaz
-ve Fighter'da doğal büyüme almaz.
-
-Bu değerler mevcut Fighter production değeridir; gelecekte playtest ve telemetri
-sonuçlarına göre yeniden tune edilebilir. Bütün gemiler için küresel bir standart
-değildir. Production player ship kapsamı yalnız Fighter'dır; Breacher, Interceptor,
-Conductor, Aegis ve Cryo Controller ertelenmiştir ve altı gemilik nihai karşılaştırma
-yapılmamıştır.
-
-#### Fighter Seviye ve Kaynak Tablosu
-
-| Stat / Kaynak | L1 | L5 | L10 | L15 |
-| --- | ---: | ---: | ---: | ---: |
-| MaxHealth | 250 | 550 | 925 | 1300 |
-| AttackPower | 35 | 47 | 62 | 77 |
-| EnergyPower | 35 | 43 | 53 | 63 |
-| Armor | 0 | 8 | 18 | 28 |
-| Luck | 0 | 4 | 9 | 14 |
-| AttackSpeed | 0 | 0 | 0 | 0 |
-| CriticalChance | 0 | 0 | 0 | 0 |
-| AbilityHaste | 0 | 0 | 0 | 0 |
-| MoveSpeed H/V | 0 | 0 | 0 | 0 |
-| MaxShield | 150 | 158 | 168 | 178 |
-| AfterburnerCapacity | 100 | 108 | 118 | 128 |
-| ShieldRegenPerSecond | 25.0 | ~26.3333 | 28.0 | ~29.6667 |
-| AfterburnerRegenPerSecond | ~16.6667 | 18.0 | ~19.6667 | ~21.3333 |
-| Armor DR | 0% | 8/108 (~7.407%) | 18/118 (~15.254%) | 28/128 (21.875%) |
+Her oyuncu gemisinin ayrı `naturalGrowth` listesi ship tanımında yazılıdır.
+Üretim statlarını ve büyüme değerlerini bu belgede ikinci kez tabloya dökmek
+yerine [kanonik `ships.json`](../LightYearsGame/assets/content/data/ships.json)
+ve [tasarım kataloğuna](Light_Years_Ships_Primary_Weapons_Combined.md) başvurun.
 
 AttackSpeed, CriticalChance ve AbilityHaste `0..1` fraction veya ekranda
 yazılan yüzde değil, ham **rating** birimini kullanır. Ortak rating ölçeği
@@ -1703,19 +1659,20 @@ Fighter taban `Owner.CriticalDamage` değeri 1.5'tir. Empowered atışlar garant
 
 | Seviye | Base Damage | AP Katsayısı | Empowered Base | EP Katsayısı | Fighter Stat (AP / EP) | Normal Hasar (Raw / Final) | Empowered Hasar (Raw / Final) |
 |---|---:|---:|---:|---:|:---:|:---:|:---:|
-| L1 | 12 | 0.40 | 2 | 0.10 | 35 / 35 | 26.0 / **26** | 31.5 / **48** |
-| L5 | 32 | 0.60 | 6 | 0.22 | 47 / 43 | 60.2 / **61** | 75.66 / **114** |
-| L10 | 57 | 0.85 | 11 | 0.37 | 62 / 53 | 109.7 / **110** | 140.31 / **211** |
-| L15 | 82 | 1.10 | 16 | 0.52 | 77 / 63 | 166.7 / **167** | 215.46 / **324** |
+| L1 | 12 | 0.40 | 2 | 0.10 | 39 / 35 | 27.6 / **28** | 33.1 / **50** |
+| L5 | 32 | 0.60 | 6 | 0.22 | 51 / 43 | 62.6 / **63** | 78.06 / **118** |
+| L10 | 57 | 0.85 | 11 | 0.37 | 66 / 53 | 113.1 / **114** | 143.71 / **216** |
+| L15 | 82 | 1.10 | 16 | 0.52 | 81 / 63 | 171.1 / **172** | 219.86 / **330** |
 
-*Not: L10 tablosunda 140.31 * 1.5 = 210.465 -> ceil 211.*
+Raw values use Fighter ship level and weapon level at the same example level;
+the per-level ship values are sourced from [`ships.json`](../LightYearsGame/assets/content/data/ships.json).
 
 #### Şarjör ve Sustained Hasar Referansı (L15 örneği)
 
 - 48 mermilik şarjör dağılımı: 35 normal atış + 13 empowered atış.
-- Şarjör toplam hasarı: `35 × 167 + 13 × 324 = 5845 + 4212 = 10057` hasar.
+- Şarjör toplam hasarı: `35 × 172 + 13 × 330 = 6020 + 4290 = 10310` hasar.
 - Atış süresi: `48 / 4.0 = 12.0` saniye; Reload: `2.0` saniye; Toplam döngü: `14.0` saniye.
-- Sustained döngü DPS: `10057 / 14.0 ≈ 718.36 DPS`.
+- Sustained döngü DPS: `10310 / 14.0 ≈ 736.43 DPS`.
 - Scrap maliyetleri geçici placeholder ekonomi değerleridir.
 - Diğer birincil silahlar Phase 3B.3 kapsamında değiştirilmemiştir.
 

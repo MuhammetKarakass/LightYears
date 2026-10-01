@@ -2,7 +2,8 @@
 
 Bu dosya, yüklenen güncel altı gemi + primary weapon tasarım dosyasının birleştirilmiş halidir.
 
-> **Durum (2026-10-01):** Bu doküman **hedef tasarımdır**; oyun içindeki `ships.json` / `weapons.json` bu davranışa göre güncellenecek. Mevcut veriyle farklar kod tarafında ayrıca izlenir.
+> **Durum (2026-10-01):** Faz 1'in altı gemilik runtime kadrosu ve F1–F6 akışı `e455c95` ile uygulandı; önceki Faz 1 commit'leri ve test durumu [uygulama planında](SHIP_ROSTER_PLAN.md) kayıtlıdır. Sayısal gemi verisinin sahibi [`ships.json`](../LightYearsGame/assets/content/data/ships.json)'dır.
+> Bu katalogdaki birincil silah davranışları Faz 2 hedef tasarımıdır; oyun içi silah değerleri [`weapons.json`](../LightYearsGame/assets/content/data/weapons.json)'da tutulur. Faz 1'in geçici K4 istisnası, Interceptor'ın Dual Kinetic Blaster AttackSpeed katsayısı `0.12`'dir. İzole build ve dört hedefli test geçti; doğrulamanın kapsamı ve kanıt bağlantıları [uygulama planındadır](SHIP_ROSTER_PLAN.md).
 
 ## Seviye kuralı
 
@@ -474,9 +475,9 @@ Interceptor should be the roster's agile skirmisher:
 - Lower durability than Fighter and Breacher
 - Designed to stay attached to a target rather than win through raw initial damage
 
-### Current Movement Draft
+### Phase 1 Runtime Movement
 
-| Movement Stat | Draft Value |
+| Movement Stat | Runtime Value |
 |---|---:|
 | Max Speed | 590 |
 | Forward Thrust | 720 |
@@ -485,7 +486,8 @@ Interceptor should be the roster's agile skirmisher:
 | Turn Speed | 480 |
 | Turn Response | 6.5 |
 
-These movement values are still provisional and can be tuned separately.
+Phase 1 ships these movement values. Any later balance tuning should update the
+runtime content and this design catalog together.
 
 ---
 
