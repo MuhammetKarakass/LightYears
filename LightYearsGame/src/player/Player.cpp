@@ -16,7 +16,7 @@ namespace ly
 	{
 		constexpr bool kAutoLevelAbilitiesForTesting = true;
 		// Temporary playtest switch: the first spawn of a run puts one instance of every
-		// non-default module (smallest variant) into the inventory. Nothing is installed.
+		// size variant of every non-default module into the inventory. Nothing is installed.
 		// Set to false (or delete) once modules drop from gameplay sources.
 		constexpr bool kGrantAllModulesForTesting = true;
 	}
@@ -497,7 +497,10 @@ namespace ly
 			{
 				if (defaultIds.count(definition.moduleId.ToString()) == 0)
 				{
-					mModuleLoadout.AddToInventory(definition.moduleId, 0);
+					for (std::size_t variant = 0; variant < definition.sizeVariants.size(); ++variant)
+					{
+						mModuleLoadout.AddToInventory(definition.moduleId, static_cast<int>(variant));
+					}
 				}
 			}
 		}

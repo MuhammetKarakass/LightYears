@@ -384,7 +384,7 @@ namespace
 		return ids;
 	}
 
-	// kGrantAllModulesForTesting in Player.cpp: one instance of every non-default module at variant 0,
+	// kGrantAllModulesForTesting in Player.cpp: one instance of every size variant of every non-default module,
 	// granted once per run, never installed automatically, kept across respawns.
 	void RunModuleTestGrantChecks(Report& report, ly::Application& application)
 	{
@@ -397,12 +397,15 @@ namespace
 
 		std::size_t standardCount = 0;
 		std::set<std::string> grantable;
+		std::set<std::pair<std::string, int>> grantableVariants;
 		for (const ModuleDefinition& definition : content::ModuleContentCatalog::GetDefinitions())
 		{
 			const std::string id = definition.moduleId.ToString();
 			if (id.size() >= 9 && id.compare(id.size() - 9, 9, ".Standard") == 0) { ++standardCount; continue; }
 			grantable.insert(id);
+			for (std::size_t variant = 0; variant < definition.sizeVariants.size(); ++variant) grantableVariants.insert({ id, static_cast<int>(variant) });
 		}
+		report.Check(grantableVariants.size() > grantable.size(), "test grant: some modules have more than one size variant");
 		report.Check(standardCount == 4 && grantable.size() == 15, "test grant: shipped catalog has four standard and fifteen content modules");
 
 		const std::array<const char*, 6> shipIds{
@@ -420,15 +423,15 @@ namespace
 			level->TickInternal(0.f);
 
 			const std::size_t defaultCount = definition.schematic->defaultModules.size();
-			report.Check(player.GetModuleLoadout().GetInventory().size() == grantable.size(), label + " inventory holds every non-default module",
+			report.Check(player.GetModuleLoadout().GetInventory().size() == grantableVariants.size(), label + " inventory holds every size variant of every non-default module",
 				{ { "actual", player.GetModuleLoadout().GetInventory().size() } });
-			std::set<std::string> granted;
+			std::set<std::pair<std::string, int>> granted;
 			for (const ModulePlacement& item : player.GetModuleLoadout().GetInventory())
 			{
-				granted.insert(item.moduleId.ToString());
-				report.Check(item.variantIndex == 0, label + " grants the smallest variant of " + item.moduleId.ToString());
+				report.Check(granted.insert({ item.moduleId.ToString(), item.variantIndex }).second,
+					label + " grants " + item.moduleId.ToString() + " v" + std::to_string(item.variantIndex) + " only once");
 			}
-			report.Check(granted == grantable, label + " grants each module exactly once");
+			report.Check(granted == grantableVariants, label + " grants each module variant exactly once");
 			report.Check(player.GetModuleLoadout().GetPlacements().size() == defaultCount, label + " installs nothing beyond the defaults");
 			CheckEnergySystems(report, *ship, definition, 1, true, true, label + " granted inventory does not change the ship");
 
@@ -458,7 +461,7 @@ namespace
 
 		const ModulePlacement* armorItem = FindInInventory(player, "Module.Defense.ArmorPlate.Basic");
 		report.Check(armorItem != nullptr, "test grant: Fighter has an Armor Plate in the inventory");
-		report.Check(player.TryInstallModule(armorItem->instanceId, sf::Vector2i{ 2, 5 }, 0) == ModulePlacementFailure::None,
+		report.Check(player.TryInstallModule(armorItem->instanceId, sf::Vector2i{ 2, 6 }, 0) == ModulePlacementFailure::None,
 			"test grant: Armor Plate installs into the Fighter Core");
 		report.Check(NearlyEqual(armor(), baseArmor + 5.f), "test grant: Armor Plate in the matching zone adds +5 armor",
 			{ { "actual", armor() }, { "expected", baseArmor + 5.f } });
@@ -467,7 +470,7 @@ namespace
 		level->TickInternal(0.f);
 		ship = player.SpawnSpaceShip(level.get()).lock();
 		level->TickInternal(0.f);
-		report.Check(player.GetModuleLoadout().GetInventory().size() == grantable.size() - 1 &&
+		report.Check(player.GetModuleLoadout().GetInventory().size() == grantableVariants.size() - 1 &&
 				player.GetModuleLoadout().GetPlacements().size() == defaultCount + 1,
 			"test grant: respawn keeps the installed module and does not regrant it");
 		report.Check(NearlyEqual(armor(), baseArmor + 5.f), "test grant: Armor Plate survives respawn");
@@ -483,7 +486,7 @@ namespace
 			report.Check(player.TryInstallModule(item->instanceId, origin, 0) == ModulePlacementFailure::None, std::string("test grant: installs ") + moduleId);
 		};
 		const sas::AttributeSystem& liveShipAttributes = ship->GetShipRuntime().GetAttributes();
-		swapShield("Module.Defense.ShieldGenerator.FastCharge", sf::Vector2i{ 2, 4 });
+		swapShield("Module.Defense.ShieldGenerator.FastCharge", sf::Vector2i{ 3, 4 });
 		const float fastMax = ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield);
 		const float fastRegen = ReadAttribute(liveShipAttributes, ShipAttributeIds::ShieldRegen);
 		report.Check(NearlyEqual(fastMax, baseShield * 0.8f), "test grant: Fast Charge max shield is 80% (zone bonus does not scale the penalty)",
@@ -493,7 +496,7 @@ namespace
 		report.Check(fastMax / fastRegen < baseShield / baseShieldRegen * 0.6f, "test grant: Fast Charge recharges a full shield in about half the time",
 			{ { "actualSeconds", fastMax / fastRegen }, { "standardSeconds", baseShield / baseShieldRegen } });
 
-		swapShield("Module.Defense.ShieldGenerator.Heavy", sf::Vector2i{ 2, 4 });
+		swapShield("Module.Defense.ShieldGenerator.Heavy", sf::Vector2i{ 1, 5 });
 		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield), baseShield + 75.f), "test grant: Heavy shield adds +75 in the Core",
 			{ { "actual", ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield) }, { "expected", baseShield + 75.f } });
 		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::ShieldRegen), baseShieldRegen), "test grant: Heavy shield keeps the base regen rate");
@@ -501,7 +504,7 @@ namespace
 		const ModulePlacement* afterburner = FindInstalled(player, "Module.Movement.Afterburner.Standard");
 		report.Check(afterburner != nullptr && player.TryUninstallModule(afterburner->instanceId), "test grant: standard afterburner uninstalls");
 		const ModulePlacement* extended = FindInInventory(player, "Module.Movement.Afterburner.Extended");
-		report.Check(extended != nullptr && player.TryInstallModule(extended->instanceId, sf::Vector2i{ 2, 6 }, 0) == ModulePlacementFailure::None,
+		report.Check(extended != nullptr && player.TryInstallModule(extended->instanceId, sf::Vector2i{ 4, 5 }, 0) == ModulePlacementFailure::None,
 			"test grant: Extended afterburner installs into the Engine");
 		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::AfterburnerCapacity), baseCapacity + 62.5f),
 			"test grant: Extended afterburner adds +62.5 capacity in the Engine",
