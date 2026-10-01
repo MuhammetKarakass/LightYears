@@ -3,6 +3,7 @@
 #include "gameConfigs/ship/ShipStructs.h"
 #include "attributes/AttributeSystem.h"
 
+#include <optional>
 #include <unordered_map>
 
 namespace ly
@@ -48,6 +49,7 @@ namespace ly
 		);
 		void RebindBaseOwnerAttributes(const List<OwnerAttributeBaseEntry>& entries);
 		void RebindDerivedOwnerAttributes(const List<OwnerAttributeBaseEntry>& entries);
+		void SetSystemAttribute(const sas::AttributeId& id, float baseValue, bool enabled, const std::optional<bool>& appliedEnabled);
 		void OnOwnerAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue);
 
 		sas::AttributeSystem* mOwnerAttributes = nullptr;
@@ -59,6 +61,9 @@ namespace ly
 		sas::AttributeSystem mAttributeSystem;
 		bool mShieldEnabled = true;
 		bool mAfterburnerEnabled = true;
+		// Which enabled state the attribute max clamps currently reflect; empty after a reset.
+		std::optional<bool> mShieldLimitApplied;
+		std::optional<bool> mAfterburnerLimitApplied;
 		bool mOwnerAttributeCallbackBound = false;
 	};
 }

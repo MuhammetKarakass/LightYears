@@ -2,6 +2,7 @@
 
 #include "gameplay/ability/loadout/DefaultAbilityLoadout.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/content/ModuleContentCatalog.h"
 #include <framework/MathUtility.h>
 
 namespace ly
@@ -49,6 +50,10 @@ namespace ly
 	void PlayerSpaceShip::BeginPlay()
 	{
 		SpaceShip::BeginPlay();
+		// Read-only observation of the combat runtime's resolved-damage boundary: damage taken
+		// fires onDamageResolved here and damage dealt fires onDamageDealt on the source ship.
+		GetCombatRuntime().onDamageResolved.BindAction(GetWeakPtr(), &PlayerSpaceShip::OnCombatDamageObserved);
+		GetCombatRuntime().onDamageDealt.BindAction(GetWeakPtr(), &PlayerSpaceShip::OnCombatDamageObserved);
 		TimerManager::GetGameTimerManager().SetTimer(
 			GetWeakPtr(),
 			&PlayerSpaceShip::StopInvulnerability,
@@ -86,11 +91,19 @@ namespace ly
 	{
 		mPlayerMovement.Tick(deltaTime);
 		SpaceShip::Tick(deltaTime);
+		mCombatWindowRemaining = std::max(0.f, mCombatWindowRemaining - deltaTime);
+		mModuleApplier.Tick(deltaTime);
 
 		if (IsInvulnerable())
 		{
 			UpdateInvulnerability(deltaTime);
 		}
+	}
+
+	void PlayerSpaceShip::OnCombatDamageObserved(const DamageContext& context)
+	{
+		if (context.appliedDamage <= 0.f) return;
+		mCombatWindowRemaining = content::ModuleContentCatalog::GetZoneTable().combatWindowSeconds;
 	}
 
 	void PlayerSpaceShip::Shoot()

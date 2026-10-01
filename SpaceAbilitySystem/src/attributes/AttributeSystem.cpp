@@ -169,6 +169,26 @@ namespace sas
 		Recalculate(id);
 	}
 
+	void AttributeSystem::SetBaseValueAndLimits(const AttributeId& id, float baseValue, float minValue, float maxValue)
+	{
+		if (!id.IsValid())
+		{
+			return;
+		}
+
+		if (!HasAttribute(id))
+		{
+			RegisterAttribute(id, baseValue, minValue, maxValue);
+			return;
+		}
+
+		GameplayAttribute& attribute = mAttributes[id].attribute;
+		attribute.minValue = minValue;
+		attribute.maxValue = maxValue;
+		attribute.baseValue = std::clamp(baseValue, minValue, maxValue);
+		Recalculate(id);
+	}
+
 	void AttributeSystem::ApplyBaseModifier(const AttributeModifier& modifier)
 	{
 		if (!modifier.attributeId.IsValid())

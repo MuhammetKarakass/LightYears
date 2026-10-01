@@ -462,6 +462,254 @@ namespace
 		level->TickInternal(0.f);
 	}
 
+	void RunModuleRebootAndClampChecks(Report& report, ly::Application& application)
+	{
+		using namespace ly;
+		namespace Tags = GameplayTags;
+		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
+		auto level = std::make_shared<HeadlessShipLevel>(&application);
+		level->BeginPlayInternal();
+		shared_ptr<PlayerSpaceShip> ship = level->SpawnActor<PlayerSpaceShip>(definition).lock();
+		shared_ptr<PlayerSpaceShip> dummy = level->SpawnActor<PlayerSpaceShip>(definition).lock();
+		level->TickInternal(0.f);
+		ship->SetInvulnerability(false);
+		dummy->SetInvulnerability(false);
+
+		auto makeModule = [](const char* id, std::initializer_list<std::pair<ModuleAttributeTarget, sas::AttributeModifier>> modifiers)
+		{
+			ModuleDefinition module;
+			module.moduleId = id;
+			module.family = Tags::Ability::Offense;
+			ModuleSizeVariant variant;
+			variant.shape.cells = { { 0, 0 } };
+			for (const auto& [target, modifier] : modifiers)
+			{
+				ModuleAttributeModifier entry;
+				entry.target = target;
+				entry.modifier = modifier;
+				entry.affectedByZoneBonus = false;
+				variant.attributeModifiers.push_back(entry);
+			}
+			module.sizeVariants.push_back(variant);
+			return module;
+		};
+		const ModuleDefinition armorModule = makeModule("Module.Offense.TestArmor.Standard",
+			{ { ModuleAttributeTarget::Owner, sas::AttributeModifier{ OwnerAttributeIds::Armor, 5.f } } });
+		const ModuleDefinition energyModule = makeModule("Module.Offense.TestEnergy.Standard", {
+			{ ModuleAttributeTarget::Ship, sas::AttributeModifier{ ShipAttributeIds::MaxShield, 20.f } },
+			{ ModuleAttributeTarget::Ship, sas::AttributeModifier{ ShipAttributeIds::ShieldRegen, 2.f } },
+			{ ModuleAttributeTarget::Ship, sas::AttributeModifier{ ShipAttributeIds::AfterburnerCapacity, 10.f } },
+			{ ModuleAttributeTarget::Ship, sas::AttributeModifier{ ShipAttributeIds::AfterburnerRegen, 1.f } } });
+		const ModuleRulesContext rules{
+			*definition.schematic,
+			[&](const sas::ContentId& id) -> const ModuleDefinition*
+			{
+				if (id == armorModule.moduleId) return &armorModule;
+				if (id == energyModule.moduleId) return &energyModule;
+				return content::ModuleContentCatalog::FindById(id);
+			},
+			content::ModuleContentCatalog::GetZoneTable()
+		};
+		const float rebootSeconds = rules.zoneTable.rebootDurationSeconds;
+		const float combatWindow = rules.zoneTable.combatWindowSeconds;
+		report.Check(NearlyEqual(rebootSeconds, 1.5f) && NearlyEqual(combatWindow, 3.f), "reboot test reads 1.5 s reboot and 3 s window");
+
+		ModuleLoadout loadout;
+		const std::uint32_t armorId = loadout.AddToInventory(armorModule.moduleId);
+		std::vector<sf::Vector2i> freeCells;
+		for (int y = 0; y < definition.schematic->height; ++y)
+		{
+			for (int x = 0; x < definition.schematic->width; ++x)
+			{
+				ModulePlacement probe;
+				probe.moduleId = armorModule.moduleId;
+				probe.origin = { x, y };
+				if (ModulePlacementRules::CanPlace(rules, loadout, probe) == ModulePlacementFailure::None) freeCells.push_back({ x, y });
+			}
+		}
+		report.Check(freeCells.size() >= 3, "reboot test finds free schematic cells");
+
+		ShipModuleApplier& applier = ship->GetModuleApplier();
+		sas::AttributeSystem& owner = ship->GetAbilitySystemComponent().GetAttributes();
+		const float armorBase = ReadAttribute(owner, OwnerAttributeIds::Armor);
+		auto armorActive = [&]() { return NearlyEqual(ReadAttribute(owner, OwnerAttributeIds::Armor), armorBase + 5.f); };
+		auto apply = [&]() { return applier.Apply(loadout, rules, ship->IsInCombat()); };
+		auto damageShip = [&]() { ApplyCombatDamage(*ship, 1.f, dummy.get()); };
+
+		report.Check(apply(), "reboot test first apply");
+		report.Check(!ship->IsInCombat(), "fresh ship is not in combat");
+
+		// Out of combat: immediate in both directions.
+		report.Check(loadout.Install(rules, armorId, freeCells[0], 0) == ModulePlacementFailure::None, "out-of-combat install");
+		apply();
+		report.Check(armorActive() && !applier.IsRebooting(armorId), "out of combat install is immediate");
+		loadout.Uninstall(armorId);
+		apply();
+		report.Check(!armorActive(), "out of combat uninstall is immediate");
+
+		// In combat: reboot for 1.5 s.
+		damageShip();
+		report.Check(ship->IsInCombat(), "taking damage starts combat");
+		loadout.Install(rules, armorId, freeCells[0], 0);
+		apply();
+		report.Check(!armorActive() && applier.IsRebooting(armorId), "in-combat install enters reboot");
+		report.Check(NearlyEqual(applier.GetRebootRemainingSeconds(armorId), rebootSeconds), "reboot remaining starts at 1.5 s");
+		level->TickInternal(1.4f);
+		report.Check(!armorActive() && applier.IsRebooting(armorId), "module inactive at 1.4 s");
+		report.Check(NearlyEqual(applier.GetRebootRemainingSeconds(armorId), 0.1f), "reboot remaining is 0.1 s at 1.4 s",
+			applier.GetRebootRemainingSeconds(armorId));
+		level->TickInternal(0.11f);
+		report.Check(armorActive() && !applier.IsRebooting(armorId), "module active after 1.5 s");
+
+		// Moving an installed module is not a reboot, even in combat.
+		report.Check(ship->IsInCombat(), "still in combat after 1.51 s");
+		report.Check(loadout.Move(rules, armorId, freeCells[1], 0) == ModulePlacementFailure::None, "move installed module");
+		apply();
+		report.Check(armorActive() && !applier.IsRebooting(armorId), "moving a module in combat does not reboot it");
+
+		// Uninstall in combat is immediate; reinstall reboots again.
+		loadout.Uninstall(armorId);
+		apply();
+		report.Check(!armorActive(), "uninstall during combat is immediate");
+		loadout.Install(rules, armorId, freeCells[2], 0);
+		apply();
+		report.Check(!armorActive() && applier.IsRebooting(armorId), "reinstall during combat reboots again");
+		// An unrelated revision change must not restart or finish the countdown.
+		level->TickInternal(0.5f);
+		const float remainingBefore = applier.GetRebootRemainingSeconds(armorId);
+		loadout.Move(rules, armorId, freeCells[0], 0);
+		apply();
+		report.Check(NearlyEqual(applier.GetRebootRemainingSeconds(armorId), remainingBefore), "revision change keeps the running countdown");
+		loadout.Uninstall(armorId);
+		apply();
+		report.Check(!applier.IsRebooting(armorId), "uninstalling a rebooting module cancels the reboot");
+
+		// Combat window: 3 s after the last damage, damage dealt counts too.
+		level->TickInternal(combatWindow + 0.1f);
+		report.Check(!ship->IsInCombat(), "combat window expires");
+		damageShip();
+		level->TickInternal(2.9f);
+		report.Check(ship->IsInCombat(), "still in combat 2.9 s after damage");
+		level->TickInternal(0.2f);
+		report.Check(!ship->IsInCombat(), "combat ends 3 s after the last damage");
+		ApplyCombatDamage(*dummy, 1.f, ship.get());
+		report.Check(ship->IsInCombat(), "dealing damage starts combat");
+		level->TickInternal(combatWindow + 0.1f);
+		report.Check(!ship->IsInCombat(), "dealt-damage combat window expires");
+		loadout.Install(rules, armorId, freeCells[0], 0);
+		apply();
+		report.Check(armorActive(), "install after the window is immediate");
+		loadout.Uninstall(armorId);
+		apply();
+
+		// First apply on a new ship is immediate even in combat.
+		ModuleLoadout spawnLoadout;
+		const std::uint32_t spawnArmor = spawnLoadout.AddToInventory(armorModule.moduleId);
+		spawnLoadout.Install(rules, spawnArmor, freeCells[0], 0);
+		ShipModuleApplier& freshApplier = dummy->GetModuleApplier();
+		report.Check(!freshApplier.HasApplied(), "dummy ship has not applied yet");
+		freshApplier.Apply(spawnLoadout, rules, true);
+		sas::AttributeSystem& dummyOwner = dummy->GetAbilitySystemComponent().GetAttributes();
+		report.Check(!freshApplier.IsRebooting(spawnArmor) &&
+			NearlyEqual(ReadAttribute(dummyOwner, OwnerAttributeIds::Armor), armorBase + 5.f), "first apply is immediate even in combat");
+
+		// Fix A: removed systems cannot be powered by other modules.
+		ModuleLoadout energyLoadout;
+		report.Check(energyLoadout.SeedDefaults(rules), "default loadout seeds for the clamp test");
+		const std::uint32_t energyId = energyLoadout.AddToInventory(energyModule.moduleId);
+		report.Check(energyLoadout.Install(rules, energyId, freeCells[0], 0) == ModulePlacementFailure::None, "energy test module installs");
+		const sas::AttributeSystem& shipAttributes = ship->GetShipRuntime().GetAttributes();
+		auto read = [&](const sas::AttributeId& id) { return ReadAttribute(shipAttributes, id); };
+		const ShipEnergyAttributes& energy = definition.energyAttributes;
+		const float baseShield = energy.baseMaxShield;
+		const float baseCapacity = energy.baseAfterburnerCapacity;
+		const float shieldRegen = baseShield / std::max(0.001f, energy.shieldFullRechargeDuration);
+		const float afterburnerRegen = baseCapacity / std::max(0.001f, energy.afterburnerFullRechargeDuration);
+		// The ship is level 1, so no growth term applies.
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(read(ShipAttributeIds::MaxShield), baseShield + 20.f), "energy module adds MaxShield", read(ShipAttributeIds::MaxShield));
+		report.Check(NearlyEqual(read(ShipAttributeIds::ShieldRegen), shieldRegen + 2.f), "energy module adds ShieldRegen");
+		report.Check(NearlyEqual(read(ShipAttributeIds::AfterburnerCapacity), baseCapacity + 10.f), "energy module adds AfterburnerCapacity");
+		report.Check(NearlyEqual(read(ShipAttributeIds::AfterburnerRegen), afterburnerRegen + 1.f), "energy module adds AfterburnerRegen");
+
+		auto findInstalled = [&](const char* moduleId) -> ModulePlacement
+		{
+			for (const ModulePlacement& placement : energyLoadout.GetPlacements())
+			{
+				if (placement.moduleId == moduleId) return placement;
+			}
+			return {};
+		};
+		const ModulePlacement shieldGenerator = findInstalled("Module.Defense.ShieldGenerator.Standard");
+		const ModulePlacement afterburnerModule = findInstalled("Module.Movement.Afterburner.Standard");
+		energyLoadout.Uninstall(shieldGenerator.instanceId);
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(read(ShipAttributeIds::MaxShield), 0.f) && NearlyEqual(read(ShipAttributeIds::ShieldRegen), 0.f),
+			"modules cannot power a removed shield generator", read(ShipAttributeIds::MaxShield));
+		report.Check(NearlyEqual(ship->GetShieldComponent().GetMaxShield(), 0.f) && NearlyEqual(ship->GetShieldComponent().GetShield(), 0.f),
+			"removed shield leaves the live shield empty");
+		report.Check(NearlyEqual(read(ShipAttributeIds::AfterburnerCapacity), baseCapacity + 10.f), "afterburner unaffected by shield removal");
+		energyLoadout.Install(rules, shieldGenerator.instanceId, shieldGenerator.origin, shieldGenerator.rotationQuarterTurns);
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(read(ShipAttributeIds::MaxShield), baseShield + 20.f) &&
+			NearlyEqual(read(ShipAttributeIds::ShieldRegen), shieldRegen + 2.f), "reinstalled shield is base plus module",
+			read(ShipAttributeIds::MaxShield));
+		report.Check(NearlyEqual(ship->GetShieldComponent().GetMaxShield(), baseShield + 20.f), "live shield max follows reinstall");
+
+		energyLoadout.Uninstall(afterburnerModule.instanceId);
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(read(ShipAttributeIds::AfterburnerCapacity), 0.f) && NearlyEqual(read(ShipAttributeIds::AfterburnerRegen), 0.f),
+			"modules cannot power a removed afterburner", read(ShipAttributeIds::AfterburnerCapacity));
+		report.Check(NearlyEqual(ship->GetEnergyComponent().GetMaxEnergy(), 0.f), "removed afterburner has no live energy capacity");
+		energyLoadout.Install(rules, afterburnerModule.instanceId, afterburnerModule.origin, afterburnerModule.rotationQuarterTurns);
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(read(ShipAttributeIds::AfterburnerCapacity), baseCapacity + 10.f) &&
+			NearlyEqual(read(ShipAttributeIds::AfterburnerRegen), afterburnerRegen + 1.f), "reinstalled afterburner is base plus module");
+
+		// Fix B: reapply must not clip or refill current shield and afterburner energy.
+		ShieldComponent& shield = ship->GetShieldComponent();
+		EnergyComponent& energyComponent = ship->GetEnergyComponent();
+		const float shieldMax = baseShield + 20.f;
+		const float capacityMax = baseCapacity + 10.f;
+		shield.ChangeShield(-shieldMax * 0.4f);
+		energyComponent.Consume(capacityMax * 0.3f);
+		const float shieldBefore = shield.GetShield();
+		const float energyBefore = energyComponent.GetEnergy();
+		report.Check(shieldBefore > 0.f && shieldBefore < shieldMax && energyBefore > 0.f && energyBefore < capacityMax,
+			"partial shield and energy set up for the reapply test");
+		const std::uint32_t armorTwo = energyLoadout.AddToInventory(armorModule.moduleId);
+		report.Check(energyLoadout.Install(rules, armorTwo, freeCells[1], 0) == ModulePlacementFailure::None, "unrelated module installs");
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(shield.GetShield(), shieldBefore) && NearlyEqual(shield.GetMaxShield(), shieldMax),
+			"unrelated reapply leaves current shield unchanged", shield.GetShield());
+		report.Check(NearlyEqual(energyComponent.GetEnergy(), energyBefore) && NearlyEqual(energyComponent.GetMaxEnergy(), capacityMax),
+			"unrelated reapply leaves afterburner energy unchanged", energyComponent.GetEnergy());
+		energyLoadout.Uninstall(armorTwo);
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(shield.GetShield(), shieldBefore) && NearlyEqual(energyComponent.GetEnergy(), energyBefore),
+			"unrelated uninstall leaves shield and energy unchanged");
+
+		// Lowering max only clamps; raising max never refills.
+		energyLoadout.Uninstall(energyId);
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(shield.GetMaxShield(), baseShield) &&
+			NearlyEqual(shield.GetShield(), std::min(shieldBefore, baseShield)), "lowering max shield only clamps", shield.GetShield());
+		report.Check(NearlyEqual(energyComponent.GetMaxEnergy(), baseCapacity) &&
+			NearlyEqual(energyComponent.GetEnergy(), std::min(energyBefore, baseCapacity)), "lowering max energy only clamps", energyComponent.GetEnergy());
+		const float shieldLowered = shield.GetShield();
+		const float energyLowered = energyComponent.GetEnergy();
+		energyLoadout.Install(rules, energyId, freeCells[0], 0);
+		applier.Apply(energyLoadout, rules, false);
+		report.Check(NearlyEqual(shield.GetShield(), shieldLowered) && NearlyEqual(shield.GetMaxShield(), shieldMax),
+			"raising max shield does not refill", shield.GetShield());
+		report.Check(NearlyEqual(energyComponent.GetEnergy(), energyLowered) && NearlyEqual(energyComponent.GetMaxEnergy(), capacityMax),
+			"raising max energy does not refill", energyComponent.GetEnergy());
+
+		dummy->Destroy();
+		ship->Destroy();
+		level->TickInternal(0.f);
+	}
+
 	void RunSelectionKeyChecks(Report& report, ly::Application& application)
 	{
 		using namespace ly;
@@ -621,6 +869,7 @@ int main(int argc, char** argv)
 		RunEnemyShieldRegression(report, application);
 		RunModuleApplierPlayerChecks(report, application);
 		RunModuleApplierHandleChecks(report, application);
+		RunModuleRebootAndClampChecks(report, application);
 		report.artifact["passed"] = true;
 	}
 	catch (const std::exception& exception)

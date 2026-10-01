@@ -8,6 +8,15 @@
 
 namespace ly
 {
+	namespace
+	{
+		bool SameModifier(const sas::AttributeModifier& a, const sas::AttributeModifier& b)
+		{
+			return a.attributeId == b.attributeId && a.operation == b.operation &&
+				a.magnitude == b.magnitude && a.priority == b.priority;
+		}
+	}
+
 	ShipModuleApplier::ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities)
 		: mShipRuntime{ shipRuntime }
 		, mAbilities{ abilities }
@@ -19,25 +28,92 @@ namespace ly
 		return std::find(mEnabledSystems.begin(), mEnabledSystems.end(), systemTag) != mEnabledSystems.end();
 	}
 
-	bool ShipModuleApplier::Apply(const ModuleLoadout& loadout, const ModuleRulesContext& rules)
+	bool ShipModuleApplier::IsRebooting(std::uint32_t instanceId) const
+	{
+		return GetRebootRemainingSeconds(instanceId) > 0.f;
+	}
+
+	float ShipModuleApplier::GetRebootRemainingSeconds(std::uint32_t instanceId) const
+	{
+		for (const RebootEntry& entry : mReboots)
+		{
+			if (entry.instanceId == instanceId) return entry.remainingSeconds;
+		}
+		return 0.f;
+	}
+
+	bool ShipModuleApplier::Apply(const ModuleLoadout& loadout, const ModuleRulesContext& rules, bool inCombat)
 	{
 		if (mHasApplied && mAppliedRevision == loadout.GetRevision()) return false;
 
-		RemoveAll();
-		mResolved = ModuleResolver::Resolve(rules, loadout.GetPlacements());
+		const float rebootDuration = rules.zoneTable.rebootDurationSeconds;
+		List<RebootEntry> reboots;
+		List<std::uint32_t> knownIds;
+		for (const ModulePlacement& placement : loadout.GetPlacements())
+		{
+			knownIds.push_back(placement.instanceId);
+			const auto running = std::find_if(mReboots.begin(), mReboots.end(),
+				[&placement](const RebootEntry& entry) { return entry.instanceId == placement.instanceId; });
+			if (running != mReboots.end())
+			{
+				reboots.push_back(*running);
+				continue;
+			}
+			const bool isNew = std::find(mKnownIds.begin(), mKnownIds.end(), placement.instanceId) == mKnownIds.end();
+			if (mHasApplied && isNew && inCombat && rebootDuration > 0.f)
+			{
+				reboots.push_back({ placement.instanceId, rebootDuration });
+			}
+		}
 
-		sas::AttributeSystem& ownerAttributes = mAbilities.GetAttributes();
-		for (const sas::AttributeModifier& modifier : mResolved.ownerModifiers)
+		mReboots = std::move(reboots);
+		mKnownIds = std::move(knownIds);
+		mPlacements = loadout.GetPlacements();
+		mSchematic = rules.schematic;
+		mZoneTable = rules.zoneTable;
+		mLookup = rules.lookup;
+		mAppliedRevision = loadout.GetRevision();
+		Rebuild();
+		mHasApplied = true;
+		return true;
+	}
+
+	void ShipModuleApplier::Tick(float deltaSeconds)
+	{
+		if (!mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
+
+		bool anyFinished = false;
+		for (RebootEntry& entry : mReboots) entry.remainingSeconds -= deltaSeconds;
+		const auto finished = std::remove_if(mReboots.begin(), mReboots.end(),
+			[&anyFinished](const RebootEntry& entry)
+			{
+				if (entry.remainingSeconds > 0.f) return false;
+				anyFinished = true;
+				return true;
+			});
+		mReboots.erase(finished, mReboots.end());
+		if (anyFinished) Rebuild();
+	}
+
+	void ShipModuleApplier::Rebuild()
+	{
+		List<ModulePlacement> active;
+		active.reserve(mPlacements.size());
+		for (const ModulePlacement& placement : mPlacements)
 		{
-			const sas::AttributeModifierHandle handle = ownerAttributes.AddModifier(modifier);
-			if (handle.IsValid()) mOwnerHandles.push_back(handle);
+			if (!IsRebooting(placement.instanceId)) active.push_back(placement);
 		}
-		sas::AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
-		for (const sas::AttributeModifier& modifier : mResolved.shipModifiers)
-		{
-			const sas::AttributeModifierHandle handle = shipAttributes.AddModifier(modifier);
-			if (handle.IsValid()) mShipHandles.push_back(handle);
-		}
+
+		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable };
+		mResolved = ModuleResolver::Resolve(rules, active);
+
+		// Modifiers that stay identical keep their handles and new ones are added before
+		// stale ones are removed, so a reapply never dips a max value below both the old
+		// and the new result; the current shield and afterburner energy are not clipped
+		// by an unrelated change.
+		SyncModifiers(mAbilities.GetAttributes(), mResolved.ownerModifiers, mOwnerHandles);
+		SyncModifiers(mShipRuntime.GetAttributes(), mResolved.shipModifiers, mShipHandles);
+		RemoveScopedRules();
 		for (const ScopedAbilityRule& rule : mResolved.abilityRules)
 		{
 			mScopedRuleHandles.push_back(mAbilities.AddScopedAbilityRule(rule));
@@ -46,20 +122,40 @@ namespace ly
 		mEnabledSystems = mResolved.enabledSystems;
 		mShipRuntime.SetSystemEnabled(ShipSystem::Shield, IsSystemEnabled(GameplayTags::Module::System::Shield));
 		mShipRuntime.SetSystemEnabled(ShipSystem::Afterburner, IsSystemEnabled(GameplayTags::Module::System::Afterburner));
-
-		mAppliedRevision = loadout.GetRevision();
-		mHasApplied = true;
-		return true;
 	}
 
-	void ShipModuleApplier::RemoveAll()
+	void ShipModuleApplier::SyncModifiers(
+		sas::AttributeSystem& attributes,
+		const List<sas::AttributeModifier>& desired,
+		List<OwnedModifier>& owned)
 	{
-		sas::AttributeSystem& ownerAttributes = mAbilities.GetAttributes();
-		for (const sas::AttributeModifierHandle handle : mOwnerHandles) ownerAttributes.RemoveModifier(handle);
-		mOwnerHandles.clear();
-		sas::AttributeSystem& shipAttributes = mShipRuntime.GetAttributes();
-		for (const sas::AttributeModifierHandle handle : mShipHandles) shipAttributes.RemoveModifier(handle);
-		mShipHandles.clear();
+		List<OwnedModifier> next;
+		next.reserve(desired.size());
+		List<bool> reused(owned.size(), false);
+		for (const sas::AttributeModifier& modifier : desired)
+		{
+			bool matched = false;
+			for (std::size_t i = 0; i < owned.size(); ++i)
+			{
+				if (reused[i] || !SameModifier(owned[i].modifier, modifier)) continue;
+				reused[i] = true;
+				next.push_back(owned[i]);
+				matched = true;
+				break;
+			}
+			if (matched) continue;
+			const sas::AttributeModifierHandle handle = attributes.AddModifier(modifier);
+			if (handle.IsValid()) next.push_back({ modifier, handle });
+		}
+		for (std::size_t i = 0; i < owned.size(); ++i)
+		{
+			if (!reused[i]) attributes.RemoveModifier(owned[i].handle);
+		}
+		owned = std::move(next);
+	}
+
+	void ShipModuleApplier::RemoveScopedRules()
+	{
 		for (const std::size_t handle : mScopedRuleHandles) mAbilities.RemoveScopedAbilityRule(handle);
 		mScopedRuleHandles.clear();
 	}

@@ -131,6 +131,9 @@ namespace sas
 			float minimumMultiplier = 0.05f
 		) const;
 		void SetBaseValue(const AttributeId& id, float baseValue);
+		// Changes the base value and the clamp range together, then recalculates once, so
+		// listeners never see the new limits applied to the old base (or the reverse).
+		void SetBaseValueAndLimits(const AttributeId& id, float baseValue, float minValue, float maxValue);
 		void ApplyBaseModifier(const AttributeModifier& modifier);
 		AttributeModifierHandle AddModifier(const AttributeModifier& modifier);
 		AttributeModifierHandle AddModifier(

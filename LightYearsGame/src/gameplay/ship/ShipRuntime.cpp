@@ -27,6 +27,8 @@ namespace ly
 			RebindBaseOwnerAttributes(profileAttributes);
 		}
 		mAttributeSystem.Clear();
+		mShieldLimitApplied.reset();
+		mAfterburnerLimitApplied.reset();
 
 		mAttributeSystem.RegisterAttribute(ShipAttributeIds::MaxShield, 0.f);
 		mAttributeSystem.RegisterAttribute(ShipAttributeIds::ShieldRegen, 0.f);
@@ -105,21 +107,39 @@ namespace ly
 		const float afterburnerRegen = afterburnerCapacity /
 			std::max(0.001f, mEnergyAttributes.afterburnerFullRechargeDuration);
 
-		mAttributeSystem.SetBaseValue(ShipAttributeIds::MaxShield, maxShield);
-		mAttributeSystem.SetBaseValue(
+		SetSystemAttribute(ShipAttributeIds::MaxShield, maxShield, mShieldEnabled, mShieldLimitApplied);
+		SetSystemAttribute(
 			ShipAttributeIds::ShieldRegen,
-			maxShield / std::max(0.001f, mEnergyAttributes.shieldFullRechargeDuration)
+			maxShield / std::max(0.001f, mEnergyAttributes.shieldFullRechargeDuration),
+			mShieldEnabled,
+			mShieldLimitApplied
 		);
 		mAttributeSystem.SetBaseValue(
 			ShipAttributeIds::ShieldRechargeDelay,
 			std::max(0.f, mEnergyAttributes.baseShieldRechargeDelay)
 		);
-		mAttributeSystem.SetBaseValue(ShipAttributeIds::AfterburnerCapacity, afterburnerCapacity);
-		mAttributeSystem.SetBaseValue(ShipAttributeIds::AfterburnerRegen, afterburnerRegen);
+		SetSystemAttribute(ShipAttributeIds::AfterburnerCapacity, afterburnerCapacity, mAfterburnerEnabled, mAfterburnerLimitApplied);
+		SetSystemAttribute(ShipAttributeIds::AfterburnerRegen, afterburnerRegen, mAfterburnerEnabled, mAfterburnerLimitApplied);
+		mShieldLimitApplied = mShieldEnabled;
+		mAfterburnerLimitApplied = mAfterburnerEnabled;
 		mAttributeSystem.SetBaseValue(
 			ShipAttributeIds::AfterburnerRechargeDelay,
 			std::max(0.f, mEnergyAttributes.baseAfterburnerRechargeDelay)
 		);
+	}
+
+	void ShipRuntime::SetSystemAttribute(const sas::AttributeId& id, float baseValue, bool enabled, const std::optional<bool>& appliedEnabled)
+	{
+		// A removed system's final value is clamped to 0 whatever modifiers target it. The attribute's
+		// own max clamp is used, and base and limit change in one write so re-enabling cannot publish
+		// an intermediate value (for example modifiers alone) that the ship components would act on.
+		if (appliedEnabled.has_value() && *appliedEnabled == enabled)
+		{
+			mAttributeSystem.SetBaseValue(id, baseValue);
+			return;
+		}
+		mAttributeSystem.SetBaseValueAndLimits(
+			id, baseValue, 0.f, enabled ? std::numeric_limits<float>::max() : 0.f);
 	}
 
 	void ShipRuntime::SetSystemEnabled(ShipSystem system, bool enabled)
@@ -154,6 +174,8 @@ namespace ly
 		RebindBaseOwnerAttributes({});
 		RebindDerivedOwnerAttributes({});
 		mAttributeSystem.Clear();
+		mShieldLimitApplied.reset();
+		mAfterburnerLimitApplied.reset();
 		mEnergyAttributes = ShipEnergyAttributes{};
 		mShipLevel = 1;
 		mShieldEnabled = true;

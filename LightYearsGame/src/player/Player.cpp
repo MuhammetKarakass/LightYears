@@ -481,7 +481,7 @@ namespace ly
 		{
 			LY_GAME_ERROR("Default modules for '%s' are invalid; the ship starts without modules.", mShipId.c_str());
 		}
-		ship.GetModuleApplier().Apply(mModuleLoadout, *rules);
+		ship.GetModuleApplier().Apply(mModuleLoadout, *rules, ship.IsInCombat());
 	}
 
 	std::uint32_t Player::AddModuleToInventory(const sas::ContentId& moduleId, int variantIndex, ModuleRarity rarity)

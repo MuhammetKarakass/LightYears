@@ -29,6 +29,9 @@ namespace ly
 		const ShipModuleApplier& GetModuleApplier() const { return mModuleApplier; }
 		// Enabled module systems, readable for HUD work.
 		const List<GameplayTag>& GetEnabledModuleSystems() const { return mModuleApplier.GetEnabledSystems(); }
+		// True while this ship took or dealt damage within the module combat window.
+		bool IsInCombat() const { return mCombatWindowRemaining > 0.f; }
+		float GetCombatWindowRemaining() const { return mCombatWindowRemaining; }
 		AbilityLoadoutManager& GetAbilityLoadout() { return mAbilityLoadout; }
 		const AbilityLoadoutManager& GetAbilityLoadout() const { return mAbilityLoadout; }
 
@@ -47,11 +50,13 @@ namespace ly
 	private:
 		virtual void Shoot() override;
 		void StopInvulnerability();
+		void OnCombatDamageObserved(const DamageContext& context);
 		void UpdateInvulnerability(float deltaTime);
 
 		AbilityLoadoutManager mAbilityLoadout;
 		PlayerMovementComponent mPlayerMovement;
 		ShipModuleApplier mModuleApplier;
+		float mCombatWindowRemaining = 0.f;
 
 		float mInvulnerabilityTime;
 		TimerHandle mInvulnerabilityTimerHandle;

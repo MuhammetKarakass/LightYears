@@ -68,6 +68,8 @@ namespace ly
 
 		Delegate<const DamageContext&> onDamageProcessed;
 		Delegate<const DamageContext&> onDamageResolved;
+		// Broadcast on the SOURCE combatant's runtime when it dealt applied damage.
+		Delegate<const DamageContext&> onDamageDealt;
 
 	private:
 		void CompleteClear();

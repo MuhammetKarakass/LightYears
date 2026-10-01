@@ -537,6 +537,7 @@ namespace ly
 			combatEvent.sourceAbilityTags = context.sourceAbilityTags;
 			combatEvent.SetContext(&context);
 			sourceCombatant->GetAbilitySystemComponent().HandleGameplayEvent(combatEvent);
+			sourceCombatant->GetCombatRuntime().onDamageDealt.Broadcast(context);
 
 			if (context.targetWasKilled)
 			{
