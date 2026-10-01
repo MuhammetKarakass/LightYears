@@ -177,6 +177,7 @@ namespace ly
 			PrimaryWeaponExecutionSystem::PreparedRuntimeConfiguration runtime;
 			sas::GameplayAttributeList attributes;
 			uint64_t attributeRevision = 0;
+			uint64_t modifierRevision = 0;
 		};
 
 		LightYearsAbilitySystemComponent& mAbilitySystem;
@@ -186,6 +187,7 @@ namespace ly
 		List<GameplayTag> mPrimaryWeaponRuntimeDamageTags;
 		uint64_t mPrimaryWeaponRuntimeAttributeRevision = 0;
 		uint64_t mPrimaryWeaponRuntimeConfigurationRevision = 0;
+		uint64_t mPrimaryWeaponRuntimeModifierRevision = 0;
 		bool mHasPrimaryWeaponRuntimeResolvedContext = false;
 		std::optional<GameAbilityDefinition> mPreparedLevelDefinition;
 		std::optional<PreparedPrimaryWeaponConfiguration> mPreparedPrimaryWeaponConfiguration;

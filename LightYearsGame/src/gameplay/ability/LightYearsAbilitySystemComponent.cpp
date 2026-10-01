@@ -255,6 +255,37 @@ namespace ly
 		mDeferredScopedAbilityRules.clear();
 		mHasDeferredScopedAbilityRules = false;
 		mPrimaryWeaponOverrides.Clear();
+		if (!mPrimaryWeaponModifiers.empty())
+		{
+			mPrimaryWeaponModifiers.clear();
+			++mPrimaryWeaponModifierRevision;
+		}
+	}
+
+	std::size_t LightYearsAbilitySystemComponent::AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier)
+	{
+		const std::size_t handle = mNextPrimaryWeaponModifierHandle++;
+		mPrimaryWeaponModifiers.emplace_back(handle, modifier);
+		++mPrimaryWeaponModifierRevision;
+		return handle;
+	}
+
+	bool LightYearsAbilitySystemComponent::RemovePrimaryWeaponModifier(std::size_t modifierHandle)
+	{
+		const auto found = std::find_if(mPrimaryWeaponModifiers.begin(), mPrimaryWeaponModifiers.end(),
+			[modifierHandle](const auto& entry) { return entry.first == modifierHandle; });
+		if (found == mPrimaryWeaponModifiers.end()) return false;
+		mPrimaryWeaponModifiers.erase(found);
+		++mPrimaryWeaponModifierRevision;
+		return true;
+	}
+
+	float LightYearsAbilitySystemComponent::ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute) const
+	{
+		if (mPrimaryWeaponModifiers.empty()) return attribute.currentValue;
+		List<sas::AttributeModifier> modifiers;
+		for (const auto& entry : mPrimaryWeaponModifiers) modifiers.push_back(entry.second);
+		return sas::CalculateModifiedAttributeValue(attribute, modifiers);
 	}
 
 	void LightYearsAbilitySystemComponent::OnClearCompleted()

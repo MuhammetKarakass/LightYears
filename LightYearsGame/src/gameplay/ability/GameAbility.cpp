@@ -450,6 +450,7 @@ namespace ly
 		mPrimaryWeaponRuntimeDamageTags = damageTags;
 		mPrimaryWeaponRuntimeAttributeRevision = mAbilitySystem.GetAttributes().GetRevision();
 		mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
+		mPrimaryWeaponRuntimeModifierRevision = mAbilitySystem.GetPrimaryWeaponModifierRevision();
 		mHasPrimaryWeaponRuntimeResolvedContext = true;
 	}
 
@@ -535,6 +536,7 @@ namespace ly
 					fireAction->weaponDefinition.attributes
 				);
 				prepared.attributeRevision = mAbilitySystem.GetAttributes().GetRevision();
+				prepared.modifierRevision = mAbilitySystem.GetPrimaryWeaponModifierRevision();
 				mPreparedPrimaryWeaponConfiguration.emplace(std::move(prepared));
 				break;
 			}
@@ -558,6 +560,7 @@ namespace ly
 			);
 			mPrimaryWeaponRuntimeAttributes = std::move(prepared.attributes);
 			mPrimaryWeaponRuntimeAttributeRevision = prepared.attributeRevision;
+			mPrimaryWeaponRuntimeModifierRevision = prepared.modifierRevision;
 			mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
 			mHasPrimaryWeaponRuntimeResolvedContext = true;
 		}
@@ -677,8 +680,10 @@ namespace ly
 					return;
 				}
 			}
+			const uint64_t modifierRevision = mAbilitySystem.GetPrimaryWeaponModifierRevision();
 			if (!configurationChanged &&
-				mPrimaryWeaponRuntimeAttributeRevision == attributeRevision)
+				mPrimaryWeaponRuntimeAttributeRevision == attributeRevision &&
+				mPrimaryWeaponRuntimeModifierRevision == modifierRevision)
 			{
 				return;
 			}
@@ -689,6 +694,7 @@ namespace ly
 				fireAction->weaponDefinition.attributes
 			);
 			mPrimaryWeaponRuntimeAttributeRevision = attributeRevision;
+			mPrimaryWeaponRuntimeModifierRevision = modifierRevision;
 			mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
 			mHasPrimaryWeaponRuntimeResolvedContext = true;
 			return;

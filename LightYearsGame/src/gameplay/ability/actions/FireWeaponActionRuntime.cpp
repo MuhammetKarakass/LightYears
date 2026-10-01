@@ -76,8 +76,12 @@ namespace ly
 			const uint64_t configurationRevision = context.instance
 				? context.instance->GetConfigurationRevision()
 				: 0;
+			const uint64_t primaryModifierRevision = context.abilitySystem
+				? context.abilitySystem->GetPrimaryWeaponModifierRevision()
+				: 0;
 			if (!state.hasResolvedAttributes || state.resolvedAttributeRevision != attributeRevision ||
-				state.resolvedConfigurationRevision != configurationRevision)
+				state.resolvedConfigurationRevision != configurationRevision ||
+				state.resolvedPrimaryModifierRevision != primaryModifierRevision)
 			{
 				state.resolvedAttributes = context.definition
 					? AbilityActionAttributeResolver::ResolveAttributes(
@@ -88,6 +92,7 @@ namespace ly
 					: sas::BuildBaseGameplayAttributes(state.runtimeAttributes);
 				state.resolvedAttributeRevision = attributeRevision;
 				state.resolvedConfigurationRevision = configurationRevision;
+				state.resolvedPrimaryModifierRevision = primaryModifierRevision;
 				state.hasResolvedAttributes = true;
 			}
 			return state.resolvedAttributes;

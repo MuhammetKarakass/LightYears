@@ -113,6 +113,7 @@ namespace ly
 		// by an unrelated change.
 		SyncModifiers(mAbilities.GetAttributes(), mResolved.ownerModifiers, mOwnerHandles);
 		SyncModifiers(mShipRuntime.GetAttributes(), mResolved.shipModifiers, mShipHandles);
+		SyncPrimaryWeaponModifiers();
 		RemoveScopedRules();
 		for (const ScopedAbilityRule& rule : mResolved.abilityRules)
 		{
@@ -152,6 +153,30 @@ namespace ly
 			if (!reused[i]) attributes.RemoveModifier(owned[i].handle);
 		}
 		owned = std::move(next);
+	}
+
+	void ShipModuleApplier::SyncPrimaryWeaponModifiers()
+	{
+		const List<sas::AttributeModifier>& desired = mResolved.primaryWeaponModifiers;
+		List<OwnedPrimaryModifier> next;
+		List<bool> reused(mPrimaryHandles.size(), false);
+		for (const sas::AttributeModifier& modifier : desired)
+		{
+			bool matched = false;
+			for (std::size_t i = 0; i < mPrimaryHandles.size() && !matched; ++i)
+			{
+				if (reused[i] || !SameModifier(mPrimaryHandles[i].modifier, modifier)) continue;
+				reused[i] = true;
+				next.push_back(mPrimaryHandles[i]);
+				matched = true;
+			}
+			if (!matched) next.push_back({ modifier, mAbilities.AddPrimaryWeaponModifier(modifier) });
+		}
+		for (std::size_t i = 0; i < mPrimaryHandles.size(); ++i)
+		{
+			if (!reused[i]) mAbilities.RemovePrimaryWeaponModifier(mPrimaryHandles[i].handle);
+		}
+		mPrimaryHandles = std::move(next);
 	}
 
 	void ShipModuleApplier::RemoveScopedRules()

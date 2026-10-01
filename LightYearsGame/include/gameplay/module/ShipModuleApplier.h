@@ -57,7 +57,7 @@ namespace ly
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
 		std::size_t GetOwnedHandleCount() const
 		{
-			return mOwnerHandles.size() + mShipHandles.size() + mScopedRuleHandles.size();
+			return mOwnerHandles.size() + mShipHandles.size() + mPrimaryHandles.size() + mScopedRuleHandles.size();
 		}
 
 	private:
@@ -67,7 +67,14 @@ namespace ly
 			sas::AttributeModifierHandle handle;
 		};
 
+		struct OwnedPrimaryModifier
+		{
+			sas::AttributeModifier modifier;
+			std::size_t handle = 0;
+		};
+
 		void Rebuild();
+		void SyncPrimaryWeaponModifiers();
 		static void SyncModifiers(
 			sas::AttributeSystem& attributes,
 			const List<sas::AttributeModifier>& desired,
@@ -79,6 +86,7 @@ namespace ly
 		LightYearsAbilitySystemComponent& mAbilities;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
+		List<OwnedPrimaryModifier> mPrimaryHandles;
 		List<std::size_t> mScopedRuleHandles;
 		ResolvedModuleEffects mResolved;
 		List<GameplayTag> mEnabledSystems;

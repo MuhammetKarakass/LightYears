@@ -23,6 +23,7 @@ namespace ly
 		sas::GameplayAttributeList resolvedAttributes;
 		uint64_t resolvedAttributeRevision = 0;
 		uint64_t resolvedConfigurationRevision = 0;
+		uint64_t resolvedPrimaryModifierRevision = 0;
 		bool hasResolvedAttributes = false;
 		int executionCount = 0;
 		bool initialized = false;

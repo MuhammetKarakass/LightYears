@@ -2,6 +2,7 @@
 #include "framework/AssetManager.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/content/ModuleContentCatalog.h"
 #include "gameplay/module/ModuleResolver.h"
@@ -462,6 +463,174 @@ namespace
 		level->TickInternal(0.f);
 	}
 
+	void RunModuleAbilityAndPrimaryRuleChecks(Report& report, ly::Application& application)
+	{
+		using namespace ly;
+		namespace Tags = GameplayTags;
+		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
+		auto level = std::make_shared<HeadlessShipLevel>(&application);
+		level->BeginPlayInternal();
+		shared_ptr<PlayerSpaceShip> ship = level->SpawnActor<PlayerSpaceShip>(definition).lock();
+		report.Check(static_cast<bool>(ship), "ability rule test spawns a player ship");
+		level->TickInternal(0.f);
+
+		auto makeModule = [](const char* id, const GameplayTag& family, bool primaryTarget)
+		{
+			ModuleDefinition module;
+			module.moduleId = id;
+			module.family = family;
+			ModuleSizeVariant variant;
+			variant.shape.cells = { { 0, 0 } };
+			if (primaryTarget)
+			{
+				ModuleAttributeModifier damage;
+				damage.target = ModuleAttributeTarget::PrimaryWeapon;
+				damage.modifier = sas::AttributeModifier{ CommonAttributeIds::Damage, sas::AttributeModifierOperation::Multiply, 1.5f };
+				ModuleAttributeModifier fireRate;
+				fireRate.target = ModuleAttributeTarget::PrimaryWeapon;
+				fireRate.modifier = sas::AttributeModifier{ CommonAttributeIds::FireRate, sas::AttributeModifierOperation::Multiply, 1.2f };
+				variant.attributeModifiers = { damage, fireRate };
+			}
+			else
+			{
+				variant.abilityModifiers = { ModuleAbilityModifier{
+					sas::AttributeModifier{ CommonAttributeIds::Damage, sas::AttributeModifierOperation::Multiply, 1.5f }, true } };
+			}
+			module.sizeVariants.push_back(variant);
+			return module;
+		};
+		const ModuleDefinition offenseModule = makeModule("Module.Offense.TestDamage.Standard", Tags::Ability::Offense, false);
+		const ModuleDefinition primaryModule = makeModule("Module.Primary.TestWeapon.Standard", Tags::Ability::Primary, true);
+		const ModuleRulesContext rules{
+			*definition.schematic,
+			[&](const sas::ContentId& id) -> const ModuleDefinition*
+			{
+				if (id == offenseModule.moduleId) return &offenseModule;
+				if (id == primaryModule.moduleId) return &primaryModule;
+				return content::ModuleContentCatalog::FindById(id);
+			},
+			content::ModuleContentCatalog::GetZoneTable()
+		};
+
+		ModuleLoadout loadout;
+		const std::uint32_t offenseId = loadout.AddToInventory(offenseModule.moduleId);
+		const std::uint32_t primaryId = loadout.AddToInventory(primaryModule.moduleId);
+		auto bestCell = [&](const ModuleDefinition& module, std::uint32_t instanceId)
+		{
+			ModulePlacement probe;
+			probe.moduleId = module.moduleId;
+			sf::Vector2i best{ -1, -1 };
+			float bestBonus = -1.f;
+			for (int y = 0; y < definition.schematic->height; ++y)
+			{
+				for (int x = 0; x < definition.schematic->width; ++x)
+				{
+					probe.origin = { x, y };
+					if (ModulePlacementRules::CanPlace(rules, loadout, probe) != ModulePlacementFailure::None) continue;
+					const float bonus = ModuleResolver::GetZoneBonus(rules, module, probe);
+					if (bonus > bestBonus) { bestBonus = bonus; best = probe.origin; }
+				}
+			}
+			(void)instanceId;
+			return std::make_pair(best, bestBonus);
+		};
+		const auto offenseCell = bestCell(offenseModule, offenseId);
+		const auto primaryCell = bestCell(primaryModule, primaryId);
+		report.Check(offenseCell.first.x >= 0 && primaryCell.first.x >= 0, "ability rule test finds free cells");
+		const float offenseBonus = offenseCell.second;
+		const float primaryBonus = primaryCell.second;
+		report.Check(offenseBonus > 0.f && primaryBonus > 0.f, "ability rule test picks zone-bonus cells", offenseBonus);
+		const float damageMultiplier = 1.f + 0.5f * (1.f + offenseBonus);
+		const float primaryDamageMultiplier = 1.f + 0.5f * (1.f + primaryBonus);
+		const float primaryFireRateMultiplier = 1.f + 0.2f * (1.f + primaryBonus);
+
+		PlayerSpaceShip& target = *ship;
+		ShipModuleApplier& applier = target.GetModuleApplier();
+		LightYearsAbilitySystemComponent& abilities = target.GetAbilitySystemComponent();
+		GameAbility* primary = abilities.GetAbility(sas::AbilitySlot::PrimaryFire);
+		const FireWeaponAction* fireAction = nullptr;
+		if (primary)
+		{
+			for (const AbilityActionSpec& action : primary->GetDefinition().actions)
+			{
+				if ((fireAction = std::get_if<FireWeaponAction>(&action.action))) break;
+			}
+		}
+		report.Check(primary && fireAction, "ability rule test finds the primary fire action");
+		if (!primary || !fireAction) { ship->Destroy(); level->TickInternal(0.f); return; }
+
+		// A scoped refresh rebuilds the ability definition, so keep a copy rather than a pointer into it.
+		const PrimaryWeaponDefinition weaponCopy = fireAction->weaponDefinition;
+		GameAbilityDefinition offenseAbility;
+		offenseAbility.abilityTags.push_back(Tags::Ability::Offense);
+		GameAbilityDefinition utilityAbility;
+		utilityAbility.abilityTags.push_back(Tags::Ability::Utility);
+		GameAbilityDefinition primaryLikeAbility = primary->GetDefinition();
+		const sas::GameplayAttributeList probeAttributes{
+			sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f, 10000.f },
+			sas::GameplayAttribute{ CommonAttributeIds::FireRate, 2.f, 0.f, 10000.f } };
+		auto resolve = [&](GameAbilityDefinition& ability, const PrimaryWeaponDefinition* weapon, const char* attribute)
+		{
+			AbilityExecutionContext context{ &abilities, &ability, nullptr, nullptr };
+			return sas::FindAttributeValue(AbilityActionAttributeResolver::ResolveAttributes(context, weapon, probeAttributes),
+				sas::AttributeId{ attribute }, -1.f);
+		};
+		const char* damageId = "Common.Damage";
+		const char* fireRateId = "Common.FireRate";
+		applier.Apply(loadout, rules);
+		// Module weapon modifiers act on the authored value before owner scaling (like weapon attributeModifiers),
+		// so the additive scaling share (base - 10) stays unscaled.
+		const float primaryDamageBase = resolve(primaryLikeAbility, &weaponCopy, damageId);
+		GameAbilityDefinition offenseWithWeaponProbe = offenseAbility;
+		const float nonPrimaryWeaponBase = resolve(offenseWithWeaponProbe, &weaponCopy, damageId);
+		const float primaryFireRateBase = resolve(primaryLikeAbility, &weaponCopy, fireRateId);
+
+		const std::uint64_t configBefore = primary->GetConfigurationRevision();
+		for (int cycle = 0; cycle < 5; ++cycle)
+		{
+			const std::string label = "ability rule cycle " + std::to_string(cycle);
+			const std::uint64_t modifierRevision = abilities.GetPrimaryWeaponModifierRevision();
+
+			// (a) Offense family scoped rule.
+			report.Check(loadout.Install(rules, offenseId, offenseCell.first, 0) == ModulePlacementFailure::None, label + " installs offense module");
+			report.Check(applier.Apply(loadout, rules), label + " applies offense module");
+			report.Check(NearlyEqual(resolve(offenseAbility, nullptr, damageId), 10.f * damageMultiplier), label + " offense ability damage scaled",
+				resolve(offenseAbility, nullptr, damageId));
+			report.Check(NearlyEqual(resolve(utilityAbility, nullptr, damageId), 10.f), label + " utility ability unaffected");
+			report.Check(NearlyEqual(resolve(primaryLikeAbility, &weaponCopy, damageId), primaryDamageBase),
+				label + " scoped offense rule skips the primary weapon", { { "base", primaryDamageBase },
+					{ "now", resolve(primaryLikeAbility, &weaponCopy, damageId) } });
+			report.Check(primary->GetConfigurationRevision() > configBefore, label + " scoped rule invalidates ability configuration cache");
+			report.Check(abilities.GetPrimaryWeaponModifierRevision() == modifierRevision, label + " offense module leaves primary modifier revision");
+			report.Check(loadout.Uninstall(offenseId) && applier.Apply(loadout, rules), label + " uninstalls offense module");
+			report.Check(NearlyEqual(resolve(offenseAbility, nullptr, damageId), 10.f), label + " offense ability damage restored");
+
+			// (b) Primary family weapon modifiers.
+			report.Check(loadout.Install(rules, primaryId, primaryCell.first, 0) == ModulePlacementFailure::None, label + " installs primary module");
+			report.Check(applier.Apply(loadout, rules), label + " applies primary module");
+			report.Check(abilities.GetPrimaryWeaponModifierRevision() > modifierRevision, label + " primary module bumps modifier revision");
+			report.Check(NearlyEqual(resolve(primaryLikeAbility, &weaponCopy, damageId), 10.f * primaryDamageMultiplier + (primaryDamageBase - 10.f)),
+				label + " primary weapon damage modified without leveling", resolve(primaryLikeAbility, &weaponCopy, damageId));
+			report.Check(NearlyEqual(resolve(primaryLikeAbility, &weaponCopy, fireRateId), primaryFireRateBase * primaryFireRateMultiplier),
+				label + " primary weapon fire rate modified", resolve(primaryLikeAbility, &weaponCopy, fireRateId));
+			report.Check(NearlyEqual(resolve(offenseAbility, nullptr, damageId), 10.f) && NearlyEqual(resolve(utilityAbility, nullptr, damageId), 10.f),
+				label + " primary module does not touch non-primary abilities");
+			GameAbilityDefinition offenseWithWeapon = offenseAbility;
+			report.Check(NearlyEqual(resolve(offenseWithWeapon, &weaponCopy, damageId), nonPrimaryWeaponBase),
+				label + " non-primary-slot weapon branch is untouched");
+			const std::uint64_t installedRevision = abilities.GetPrimaryWeaponModifierRevision();
+			report.Check(!applier.Apply(loadout, rules) && abilities.GetPrimaryWeaponModifierRevision() == installedRevision,
+				label + " no-op apply keeps modifier revision");
+			report.Check(loadout.Uninstall(primaryId) && applier.Apply(loadout, rules), label + " uninstalls primary module");
+			report.Check(abilities.GetPrimaryWeaponModifierRevision() > installedRevision, label + " uninstall bumps modifier revision");
+			report.Check(NearlyEqual(resolve(primaryLikeAbility, &weaponCopy, damageId), primaryDamageBase),
+				label + " primary weapon damage restored");
+			report.Check(applier.GetOwnedHandleCount() == 0, label + " leaves no handles", applier.GetOwnedHandleCount());
+		}
+		ship->Destroy();
+		level->TickInternal(0.f);
+	}
+
 	void RunModuleRebootAndClampChecks(Report& report, ly::Application& application)
 	{
 		using namespace ly;
@@ -870,6 +1039,7 @@ int main(int argc, char** argv)
 		RunModuleApplierPlayerChecks(report, application);
 		RunModuleApplierHandleChecks(report, application);
 		RunModuleRebootAndClampChecks(report, application);
+		RunModuleAbilityAndPrimaryRuleChecks(report, application);
 		report.artifact["passed"] = true;
 	}
 	catch (const std::exception& exception)

@@ -42,6 +42,13 @@ namespace ly
 		int GetScopedAbilityLevelBonus(
 			const GameAbilityDefinition& definition
 		) const;
+		// Owner-level modifiers that enter only the primary-fire weapon branch of the
+		// attribute resolver (module Primary family). The revision is part of every
+		// primary weapon cache key; it changes whenever the modifier set changes.
+		std::size_t AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier);
+		bool RemovePrimaryWeaponModifier(std::size_t modifierHandle);
+		uint64_t GetPrimaryWeaponModifierRevision() const { return mPrimaryWeaponModifierRevision; }
+		float ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute) const;
 		Actor& GetOwner() { return mOwner; }
 
 		// Shared action-lock producers call this entry point. A primary-weapon
@@ -134,6 +141,9 @@ namespace ly
 		ComponentRuntime& mComponentRuntime;
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mScopedAbilityRules;
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mDeferredScopedAbilityRules;
+		std::vector<std::pair<std::size_t, sas::AttributeModifier>> mPrimaryWeaponModifiers;
+		std::size_t mNextPrimaryWeaponModifierHandle = 1;
+		uint64_t mPrimaryWeaponModifierRevision = 0;
 		std::size_t mNextScopedAbilityRuleHandle = 1;
 		bool mHasDeferredScopedAbilityRules = false;
 		bool mRefreshingScopedAbilityRules = false;

@@ -68,6 +68,13 @@ namespace ly::AbilityActionAttributeResolver
 					}
 				).currentValue;
 			}
+			else if (context.definition->slot == sas::AbilitySlot::PrimaryFire)
+			{
+				// Module primary-weapon modifiers enter the weapon branch here only.
+				value = context.abilitySystem->ApplyPrimaryWeaponModifiers(
+					sas::GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue }
+				);
+			}
 			value = sas::ApplyAttributeScalings(
 				value,
 				attribute.id,
