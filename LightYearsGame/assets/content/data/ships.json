@@ -65,6 +65,432 @@
       }
     },
     {
+      "id": "Ship.Player.Breacher.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/playerShip2_orange.png",
+      "health": 290.0,
+      "speed": [
+        350.0,
+        350.0
+      ],
+      "collisionDamage": 25.0,
+      "score": 0,
+      "shipXPReward": 0.0,
+      "primaryWeaponId": "Weapon.Projectile.RapidShotgun.Basic",
+      "baseOwnerAttributes": [
+        {
+          "attributeId": "Owner.AttackPower",
+          "baseValue": 45.0
+        },
+        {
+          "attributeId": "Owner.Armor",
+          "baseValue": 3.0
+        }
+      ],
+      "movement": {
+        "forwardThrust": 750.0,
+        "reverseThrust": 220.0,
+        "strafeThrust": 245.0,
+        "angularTurnSpeed": 450.0,
+        "angularTurnResponsiveness": 6.0,
+        "linearDamping": 0.7,
+        "maxSpeed": 490.0,
+        "inputResponsiveness": 12.0,
+        "mouseAimDeadZone": 32.0,
+        "horizontalRatingToThrust": 60.0,
+        "verticalRatingToThrust": 60.0,
+        "ratingToMaxSpeed": 20.0,
+        "movementRatingDiminishingScale": 20.0
+      },
+      "energy": {
+        "baseEnergyPower": 34.0,
+        "baseMaxShield": 110.0,
+        "shieldFullRechargeDuration": 6.0,
+        "baseShieldRechargeDelay": 6.0,
+        "baseAfterburnerCapacity": 110.0,
+        "afterburnerFullRechargeDuration": 5.0,
+        "baseAfterburnerRechargeDelay": 1.2,
+        "baseAfterburnerSpeedMultiplier": 1.65,
+        "baseAfterburnerAccelerationMultiplier": 2.0,
+        "baseAfterburnerEnergyDrainPerSecond": 33.0,
+        "shieldAffinity": 0.5,
+        "afterburnerAffinity": 0.5,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.45,
+        "baseAfterburnerManeuverabilityMultiplier": 0.9
+      },
+      "progression": {
+        "baseXP": 6.0,
+        "xpExponent": 0.0,
+        "xpPerLevel": 1.0,
+        "naturalGrowth": [
+          {
+            "attributeId": "Owner.MaxHealth",
+            "perLevel": 60.0
+          },
+          {
+            "attributeId": "Owner.AttackPower",
+            "perLevel": 2.0
+          },
+          {
+            "attributeId": "Owner.Armor",
+            "perLevel": 2.0
+          },
+          {
+            "attributeId": "Owner.Luck",
+            "perLevel": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "Ship.Player.Interceptor.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/playerShip3_red.png",
+      "health": 200.0,
+      "speed": [
+        350.0,
+        350.0
+      ],
+      "collisionDamage": 25.0,
+      "score": 0,
+      "shipXPReward": 0.0,
+      "primaryWeaponId": "Weapon.Projectile.DualKineticBlaster.Basic",
+      "baseOwnerAttributes": [
+        {
+          "attributeId": "Owner.AttackPower",
+          "baseValue": 41.0
+        },
+        {
+          "attributeId": "Owner.Armor",
+          "baseValue": 1.0
+        },
+        {
+          "attributeId": "Owner.Luck",
+          "baseValue": 1.0
+        },
+        {
+          "attributeId": "Owner.AttackSpeed",
+          "baseValue": 1.0
+        }
+      ],
+      "movement": {
+        "forwardThrust": 720.0,
+        "reverseThrust": 240.0,
+        "strafeThrust": 340.0,
+        "angularTurnSpeed": 480.0,
+        "angularTurnResponsiveness": 6.5,
+        "linearDamping": 0.7,
+        "maxSpeed": 590.0,
+        "inputResponsiveness": 12.0,
+        "mouseAimDeadZone": 32.0,
+        "horizontalRatingToThrust": 60.0,
+        "verticalRatingToThrust": 60.0,
+        "ratingToMaxSpeed": 20.0,
+        "movementRatingDiminishingScale": 20.0
+      },
+      "energy": {
+        "baseEnergyPower": 28.0,
+        "baseMaxShield": 110.0,
+        "shieldFullRechargeDuration": 6.0,
+        "baseShieldRechargeDelay": 6.0,
+        "baseAfterburnerCapacity": 120.0,
+        "afterburnerFullRechargeDuration": 5.0,
+        "baseAfterburnerRechargeDelay": 1.0,
+        "baseAfterburnerSpeedMultiplier": 1.6,
+        "baseAfterburnerAccelerationMultiplier": 2.0,
+        "baseAfterburnerEnergyDrainPerSecond": 30.0,
+        "shieldAffinity": 0.5,
+        "afterburnerAffinity": 0.5,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.45,
+        "baseAfterburnerManeuverabilityMultiplier": 1.0
+      },
+      "progression": {
+        "baseXP": 6.0,
+        "xpExponent": 0.0,
+        "xpPerLevel": 1.0,
+        "naturalGrowth": [
+          {
+            "attributeId": "Owner.MaxHealth",
+            "perLevel": 30.0
+          },
+          {
+            "attributeId": "Owner.AttackPower",
+            "perLevel": 3.0
+          },
+          {
+            "attributeId": "Owner.Energy.Power",
+            "perLevel": 1.0
+          },
+          {
+            "attributeId": "Owner.Armor",
+            "perLevel": 1.0
+          },
+          {
+            "attributeId": "Owner.Luck",
+            "perLevel": 1.0
+          },
+          {
+            "attributeId": "Owner.AttackSpeed",
+            "perLevel": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "Ship.Player.Conductor.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/playerShip3_blue.png",
+      "health": 220.0,
+      "speed": [
+        350.0,
+        350.0
+      ],
+      "collisionDamage": 25.0,
+      "score": 0,
+      "shipXPReward": 0.0,
+      "primaryWeaponId": "Weapon.Arc.ElectricLauncher.Basic",
+      "baseOwnerAttributes": [
+        {
+          "attributeId": "Owner.AttackPower",
+          "baseValue": 27.0
+        },
+        {
+          "attributeId": "Owner.Armor",
+          "baseValue": 1.0
+        },
+        {
+          "attributeId": "Owner.Luck",
+          "baseValue": 2.0
+        }
+      ],
+      "movement": {
+        "forwardThrust": 620.0,
+        "reverseThrust": 200.0,
+        "strafeThrust": 285.0,
+        "angularTurnSpeed": 410.0,
+        "angularTurnResponsiveness": 5.3,
+        "linearDamping": 0.7,
+        "maxSpeed": 505.0,
+        "inputResponsiveness": 12.0,
+        "mouseAimDeadZone": 32.0,
+        "horizontalRatingToThrust": 60.0,
+        "verticalRatingToThrust": 60.0,
+        "ratingToMaxSpeed": 20.0,
+        "movementRatingDiminishingScale": 20.0
+      },
+      "energy": {
+        "baseEnergyPower": 41.0,
+        "baseMaxShield": 130.0,
+        "shieldFullRechargeDuration": 5.0,
+        "baseShieldRechargeDelay": 5.0,
+        "baseAfterburnerCapacity": 95.0,
+        "afterburnerFullRechargeDuration": 6.0,
+        "baseAfterburnerRechargeDelay": 1.5,
+        "baseAfterburnerSpeedMultiplier": 1.5,
+        "baseAfterburnerAccelerationMultiplier": 1.8,
+        "baseAfterburnerEnergyDrainPerSecond": 33.0,
+        "shieldAffinity": 0.5,
+        "afterburnerAffinity": 0.5,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.45,
+        "baseAfterburnerManeuverabilityMultiplier": 0.9
+      },
+      "progression": {
+        "baseXP": 6.0,
+        "xpExponent": 0.0,
+        "xpPerLevel": 1.0,
+        "naturalGrowth": [
+          {
+            "attributeId": "Owner.MaxHealth",
+            "perLevel": 40.0
+          },
+          {
+            "attributeId": "Owner.AttackPower",
+            "perLevel": 1.0
+          },
+          {
+            "attributeId": "Owner.Energy.Power",
+            "perLevel": 3.0
+          },
+          {
+            "attributeId": "Owner.Armor",
+            "perLevel": 1.0
+          },
+          {
+            "attributeId": "Owner.Luck",
+            "perLevel": 2.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "Ship.Player.Aegis.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/playerShip2_green.png",
+      "health": 270.0,
+      "speed": [
+        350.0,
+        350.0
+      ],
+      "collisionDamage": 25.0,
+      "score": 0,
+      "shipXPReward": 0.0,
+      "primaryWeaponId": "Weapon.Beam.ContinuousHeatLaser.Basic",
+      "baseOwnerAttributes": [
+        {
+          "attributeId": "Owner.AttackPower",
+          "baseValue": 25.0
+        },
+        {
+          "attributeId": "Owner.Armor",
+          "baseValue": 4.0
+        }
+      ],
+      "movement": {
+        "forwardThrust": 600.0,
+        "reverseThrust": 200.0,
+        "strafeThrust": 240.0,
+        "angularTurnSpeed": 380.0,
+        "angularTurnResponsiveness": 4.8,
+        "linearDamping": 0.7,
+        "maxSpeed": 480.0,
+        "inputResponsiveness": 12.0,
+        "mouseAimDeadZone": 32.0,
+        "horizontalRatingToThrust": 60.0,
+        "verticalRatingToThrust": 60.0,
+        "ratingToMaxSpeed": 20.0,
+        "movementRatingDiminishingScale": 20.0
+      },
+      "energy": {
+        "baseEnergyPower": 43.0,
+        "baseMaxShield": 160.0,
+        "shieldFullRechargeDuration": 7.0,
+        "baseShieldRechargeDelay": 4.5,
+        "baseAfterburnerCapacity": 75.0,
+        "afterburnerFullRechargeDuration": 7.0,
+        "baseAfterburnerRechargeDelay": 2.0,
+        "baseAfterburnerSpeedMultiplier": 1.45,
+        "baseAfterburnerAccelerationMultiplier": 1.6,
+        "baseAfterburnerEnergyDrainPerSecond": 36.0,
+        "shieldAffinity": 0.5,
+        "afterburnerAffinity": 0.5,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.45,
+        "baseAfterburnerManeuverabilityMultiplier": 0.85
+      },
+      "progression": {
+        "baseXP": 6.0,
+        "xpExponent": 0.0,
+        "xpPerLevel": 1.0,
+        "naturalGrowth": [
+          {
+            "attributeId": "Owner.MaxHealth",
+            "perLevel": 50.0
+          },
+          {
+            "attributeId": "Owner.AttackPower",
+            "perLevel": 1.0
+          },
+          {
+            "attributeId": "Owner.Energy.Power",
+            "perLevel": 3.0
+          },
+          {
+            "attributeId": "Owner.Armor",
+            "perLevel": 3.0
+          },
+          {
+            "attributeId": "Owner.Luck",
+            "perLevel": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "Ship.Player.CryoController.Basic",
+      "texturePath": "SpaceShooterRedux/PNG/playerShip2_blue.png",
+      "health": 250.0,
+      "speed": [
+        350.0,
+        350.0
+      ],
+      "collisionDamage": 25.0,
+      "score": 0,
+      "shipXPReward": 0.0,
+      "primaryWeaponId": "Weapon.Wave.CryoProjector.Basic",
+      "baseOwnerAttributes": [
+        {
+          "attributeId": "Owner.AttackPower",
+          "baseValue": 27.0
+        },
+        {
+          "attributeId": "Owner.Armor",
+          "baseValue": 2.0
+        },
+        {
+          "attributeId": "Owner.Luck",
+          "baseValue": 1.0
+        }
+      ],
+      "movement": {
+        "forwardThrust": 610.0,
+        "reverseThrust": 210.0,
+        "strafeThrust": 310.0,
+        "angularTurnSpeed": 425.0,
+        "angularTurnResponsiveness": 5.5,
+        "linearDamping": 0.7,
+        "maxSpeed": 520.0,
+        "inputResponsiveness": 12.0,
+        "mouseAimDeadZone": 32.0,
+        "horizontalRatingToThrust": 60.0,
+        "verticalRatingToThrust": 60.0,
+        "ratingToMaxSpeed": 20.0,
+        "movementRatingDiminishingScale": 20.0
+      },
+      "energy": {
+        "baseEnergyPower": 40.0,
+        "baseMaxShield": 130.0,
+        "shieldFullRechargeDuration": 6.0,
+        "baseShieldRechargeDelay": 5.5,
+        "baseAfterburnerCapacity": 95.0,
+        "afterburnerFullRechargeDuration": 6.0,
+        "baseAfterburnerRechargeDelay": 1.5,
+        "baseAfterburnerSpeedMultiplier": 1.5,
+        "baseAfterburnerAccelerationMultiplier": 1.8,
+        "baseAfterburnerEnergyDrainPerSecond": 33.0,
+        "shieldAffinity": 0.5,
+        "afterburnerAffinity": 0.5,
+        "baseAfterburnerRampUpDuration": 0.22,
+        "baseAfterburnerRampDownDuration": 0.45,
+        "baseAfterburnerManeuverabilityMultiplier": 0.9
+      },
+      "progression": {
+        "baseXP": 6.0,
+        "xpExponent": 0.0,
+        "xpPerLevel": 1.0,
+        "naturalGrowth": [
+          {
+            "attributeId": "Owner.MaxHealth",
+            "perLevel": 40.0
+          },
+          {
+            "attributeId": "Owner.AttackPower",
+            "perLevel": 1.0
+          },
+          {
+            "attributeId": "Owner.Energy.Power",
+            "perLevel": 2.0
+          },
+          {
+            "attributeId": "Owner.Armor",
+            "perLevel": 2.0
+          },
+          {
+            "attributeId": "Owner.Luck",
+            "perLevel": 1.0
+          }
+        ]
+      }
+    },
+    {
       "id": "Ship.Enemy.ApproachGunner.Basic",
       "texturePath": "SpaceShooterRedux/PNG/Enemies/enemyBlack1.png",
       "health": 60.0,
