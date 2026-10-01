@@ -92,7 +92,6 @@ namespace ly::content
 		const ShipMovementAttributes& movement = definition.movementAttributes;
 		const ShipEnergyAttributes& energy = definition.energyAttributes;
 		const ShipProgressionDefinition& progression = definition.progressionDefinition;
-		const float affinityTotal = energy.shieldAffinity + energy.afterburnerAffinity;
 		return std::isfinite(definition.health) && definition.health > 0.f &&
 			std::isfinite(definition.speed.x) && std::isfinite(definition.speed.y) &&
 			IsFiniteNonNegative(definition.collisionDamage) &&
@@ -112,17 +111,16 @@ namespace ly::content
 			IsFiniteNonNegative(movement.movementRatingDiminishingScale) &&
 			IsFiniteNonNegative(energy.baseEnergyPower) &&
 			IsFiniteNonNegative(energy.baseMaxShield) &&
+			IsFiniteNonNegative(energy.maxShieldPerLevel) &&
 			IsFiniteNonNegative(energy.shieldFullRechargeDuration) &&
 			IsFiniteNonNegative(energy.baseShieldRechargeDelay) &&
 			IsFiniteNonNegative(energy.baseAfterburnerCapacity) &&
+			IsFiniteNonNegative(energy.afterburnerCapacityPerLevel) &&
 			IsFiniteNonNegative(energy.afterburnerFullRechargeDuration) &&
 			IsFiniteNonNegative(energy.baseAfterburnerRechargeDelay) &&
 			IsFiniteNonNegative(energy.baseAfterburnerSpeedMultiplier) &&
 			IsFiniteNonNegative(energy.baseAfterburnerAccelerationMultiplier) &&
 			IsFiniteNonNegative(energy.baseAfterburnerEnergyDrainPerSecond) &&
-			IsFiniteNonNegative(energy.shieldAffinity) &&
-			IsFiniteNonNegative(energy.afterburnerAffinity) &&
-			std::abs(affinityTotal - 1.f) <= 0.0001f &&
 			IsFiniteNonNegative(energy.baseAfterburnerRampUpDuration) &&
 			IsFiniteNonNegative(energy.baseAfterburnerRampDownDuration) &&
 			IsFiniteNonNegative(energy.baseAfterburnerManeuverabilityMultiplier) &&

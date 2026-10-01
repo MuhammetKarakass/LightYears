@@ -54,16 +54,16 @@ namespace ly::content
 		{
 			energy.baseEnergyPower = object.at("baseEnergyPower").get<float>();
 			energy.baseMaxShield = object.at("baseMaxShield").get<float>();
+			energy.maxShieldPerLevel = object.value("maxShieldPerLevel", 0.f);
 			energy.shieldFullRechargeDuration = object.at("shieldFullRechargeDuration").get<float>();
 			energy.baseShieldRechargeDelay = object.at("baseShieldRechargeDelay").get<float>();
 			energy.baseAfterburnerCapacity = object.at("baseAfterburnerCapacity").get<float>();
+			energy.afterburnerCapacityPerLevel = object.value("afterburnerCapacityPerLevel", 0.f);
 			energy.afterburnerFullRechargeDuration = object.at("afterburnerFullRechargeDuration").get<float>();
 			energy.baseAfterburnerRechargeDelay = object.at("baseAfterburnerRechargeDelay").get<float>();
 			energy.baseAfterburnerSpeedMultiplier = object.at("baseAfterburnerSpeedMultiplier").get<float>();
 			energy.baseAfterburnerAccelerationMultiplier = object.at("baseAfterburnerAccelerationMultiplier").get<float>();
 			energy.baseAfterburnerEnergyDrainPerSecond = object.at("baseAfterburnerEnergyDrainPerSecond").get<float>();
-			energy.shieldAffinity = object.at("shieldAffinity").get<float>();
-			energy.afterburnerAffinity = object.at("afterburnerAffinity").get<float>();
 			energy.baseAfterburnerRampUpDuration = object.at("baseAfterburnerRampUpDuration").get<float>();
 			energy.baseAfterburnerRampDownDuration = object.at("baseAfterburnerRampDownDuration").get<float>();
 			energy.baseAfterburnerManeuverabilityMultiplier = object.at(

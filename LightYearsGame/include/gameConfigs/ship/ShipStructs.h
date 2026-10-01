@@ -94,23 +94,20 @@ struct ShipProgressionDefinition
 struct ShipEnergyAttributes
 {
 	// EnergyPower is an owner attribute, but its level-one value belongs to the
-	// ship profile. It is reactor output, never a consumable resource.
+	// ship profile. It scales abilities and energy weapons, not defenses.
 	float baseEnergyPower = 0.f;
 	float baseMaxShield = 0.f;
+	float maxShieldPerLevel = 0.f;
 	float shieldFullRechargeDuration = 5.5f;
 	float baseShieldRechargeDelay = 3.f;
 
 	float baseAfterburnerCapacity = 0.f;
+	float afterburnerCapacityPerLevel = 0.f;
 	float afterburnerFullRechargeDuration = 8.f;
 	float baseAfterburnerRechargeDelay = 1.5f;
 	float baseAfterburnerSpeedMultiplier = 1.f;
 	float baseAfterburnerAccelerationMultiplier = 1.f;
 	float baseAfterburnerEnergyDrainPerSecond = 15.f;
-
-	// The two closed configuration values split the linear reactor budget.
-	// Content validation requires their sum to equal 1.0.
-	float shieldAffinity = 0.5f;
-	float afterburnerAffinity = 0.5f;
 
 	float baseAfterburnerRampUpDuration = 0.22f;
 	float baseAfterburnerRampDownDuration = 0.20f;

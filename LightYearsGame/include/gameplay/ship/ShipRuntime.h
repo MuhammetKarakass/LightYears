@@ -15,6 +15,7 @@ namespace ly
 		explicit ShipRuntime(sas::AttributeSystem& ownerAttributes);
 
 		void InitializeFromShipDefinition(const ShipDefinition& shipDefinition);
+		void SetShipLevel(int level);
 		void RecalculateAttributes();
 		bool SetBaseMaxShieldContribution(const std::string& sourceId, float value);
 		bool RemoveBaseMaxShieldContribution(const std::string& sourceId);
@@ -45,6 +46,7 @@ namespace ly
 
 		sas::AttributeSystem* mOwnerAttributes = nullptr;
 		ShipEnergyAttributes mEnergyAttributes;
+		int mShipLevel = 1;
 		std::unordered_map<std::string, float> mBaseMaxShieldContributions;
 		List<OwnerAttributeBaseEntry> mAppliedBaseOwnerAttributes;
 		List<OwnerAttributeBaseEntry> mAppliedDerivedOwnerAttributes;

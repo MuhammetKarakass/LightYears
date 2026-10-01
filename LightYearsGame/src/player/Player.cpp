@@ -61,6 +61,7 @@ namespace ly
 				);
 			}
 			mShipProgression.BindAttributes(ship->GetAbilitySystemComponent().GetAttributes());
+			ship->GetShipRuntime().SetShipLevel(mShipProgression.GetLevel());
 			RestorePurchasedAbilityLevels(*ship);
 			if (mPendingTestAbilityLevelUps > 0 &&
 				QueuePendingTestAbilityLevels(*ship, mPendingTestAbilityLevelUps))
@@ -109,6 +110,12 @@ namespace ly
 
 	void Player::OnShipLevelChanged(int previousLevel, int currentLevel)
 	{
+		if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock();
+			ship && !ship->GetIsPendingDestroy())
+		{
+			ship->GetShipRuntime().SetShipLevel(currentLevel);
+		}
+
 		if (!kAutoLevelAbilitiesForTesting)
 		{
 			return;

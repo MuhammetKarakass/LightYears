@@ -15,6 +15,7 @@ namespace ly
 
 	void ShipRuntime::InitializeFromShipDefinition(const ShipDefinition& shipDefinition)
 	{
+		mShipLevel = 1;
 		mEnergyAttributes = shipDefinition.energyAttributes;
 		if (mOwnerAttributes)
 		{
@@ -67,6 +68,14 @@ namespace ly
 		RecalculateAttributes();
 	}
 
+	void ShipRuntime::SetShipLevel(int level)
+	{
+		const int resolvedLevel = std::max(1, level);
+		if (mShipLevel == resolvedLevel) return;
+		mShipLevel = resolvedLevel;
+		RecalculateAttributes();
+	}
+
 	void ShipRuntime::RecalculateAttributes()
 	{
 		if (!mOwnerAttributes)
@@ -75,27 +84,24 @@ namespace ly
 		}
 
 		const float maxHealth = std::max(0.f, mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::MaxHealth));
-		const float energyPower = std::max(
-			0.f,
-			mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::EnergyPower)
-		);
 		RebindDerivedOwnerAttributes({ { OwnerAttributeIds::HealthRegen, maxHealth / 1200.f } });
 
-		constexpr float ReactorBudgetPerEnergyPower = 2.f;
-		const float reactorBudget = energyPower * ReactorBudgetPerEnergyPower;
+		const double levelCount = static_cast<double>(mShipLevel - 1);
 		double shieldContribution = 0.0;
 		for (const auto& [_, value] : mBaseMaxShieldContributions) shieldContribution += static_cast<double>(value);
 		const float safeShieldContribution = static_cast<float>(std::clamp(shieldContribution,
 			-static_cast<double>(std::numeric_limits<float>::max()),
 			static_cast<double>(std::numeric_limits<float>::max())));
 		const double resolvedMaxShield = static_cast<double>(mEnergyAttributes.baseMaxShield) +
-			static_cast<double>(safeShieldContribution) + static_cast<double>(reactorBudget) * mEnergyAttributes.shieldAffinity;
+			levelCount * static_cast<double>(mEnergyAttributes.maxShieldPerLevel) +
+			static_cast<double>(safeShieldContribution);
 		const float maxShield = static_cast<float>(std::clamp(resolvedMaxShield, 0.0,
 			static_cast<double>(std::numeric_limits<float>::max())));
-		const float afterburnerCapacity = std::max(0.f,
-			mEnergyAttributes.baseAfterburnerCapacity +
-				reactorBudget * mEnergyAttributes.afterburnerAffinity
-		);
+		const double resolvedAfterburnerCapacity =
+			static_cast<double>(mEnergyAttributes.baseAfterburnerCapacity) +
+			levelCount * static_cast<double>(mEnergyAttributes.afterburnerCapacityPerLevel);
+		const float afterburnerCapacity = static_cast<float>(std::clamp(
+			resolvedAfterburnerCapacity, 0.0, static_cast<double>(std::numeric_limits<float>::max())));
 		const float afterburnerRegen = afterburnerCapacity /
 			std::max(0.001f, mEnergyAttributes.afterburnerFullRechargeDuration);
 
@@ -136,6 +142,7 @@ namespace ly
 		RebindDerivedOwnerAttributes({});
 		mAttributeSystem.Clear();
 		mEnergyAttributes = ShipEnergyAttributes{};
+		mShipLevel = 1;
 		mBaseMaxShieldContributions.clear();
 	}
 
@@ -233,7 +240,7 @@ namespace ly
 	{
 		(void)previousValue;
 		(void)currentValue;
-		if (attributeId == OwnerAttributeIds::MaxHealth || attributeId == OwnerAttributeIds::EnergyPower)
+		if (attributeId == OwnerAttributeIds::MaxHealth)
 		{
 			RecalculateAttributes();
 		}
