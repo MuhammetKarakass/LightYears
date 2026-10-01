@@ -1486,9 +1486,14 @@ namespace ly
 				reloadHit.originalDamage = 5.f;
 				reloadHit.remainingDamage = 5.f;
 				reloadHit.payload.shieldDamageMultiplier = 1.f;
+				const double totalBeforeHit = arena->GetPlaytestMetrics().totalDamageTaken;
 				playerShip->ReceiveDamage(reloadHit);
-				if (!NearlyEqual(
-					static_cast<float>(arena->GetPlaytestMetrics().damageWhileReloading), 5.f))
+				// The resolved hit depends on the ship's shield and armor, so compare
+				// against what the same hit added to total damage instead of the raw 5.
+				const double resolvedHit = arena->GetPlaytestMetrics().totalDamageTaken - totalBeforeHit;
+				if (resolvedHit <= 0.0 || !NearlyEqual(
+					static_cast<float>(arena->GetPlaytestMetrics().damageWhileReloading),
+					static_cast<float>(resolvedHit)))
 				{
 					return Fail("Playtest telemetry did not accumulate damage taken while reloading") ? 0 : 1;
 				}
@@ -1503,9 +1508,11 @@ namespace ly
 				idleHit.originalDamage = 5.f;
 				idleHit.remainingDamage = 5.f;
 				idleHit.payload.shieldDamageMultiplier = 1.f;
+				const double reloadingDamageBeforeIdleHit = arena->GetPlaytestMetrics().damageWhileReloading;
 				playerShip->ReceiveDamage(idleHit);
 				if (!NearlyEqual(
-					static_cast<float>(arena->GetPlaytestMetrics().damageWhileReloading), 5.f))
+					static_cast<float>(arena->GetPlaytestMetrics().damageWhileReloading),
+					static_cast<float>(reloadingDamageBeforeIdleHit)))
 				{
 					return Fail("Playtest telemetry counted damage while not reloading") ? 0 : 1;
 				}

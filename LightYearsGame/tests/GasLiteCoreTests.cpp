@@ -2171,8 +2171,8 @@ int main(int argc, char** argv)
 	tankEnergyAttributes.baseAfterburnerSpeedMultiplier = 1.4f;
 	tankEnergyAttributes.baseAfterburnerAccelerationMultiplier = 1.8f;
 	tankEnergyAttributes.baseAfterburnerEnergyDrainPerSecond = 12.f;
-	tankEnergyAttributes.shieldAffinity = 0.5f;
-	tankEnergyAttributes.afterburnerAffinity = 0.5f;
+	tankEnergyAttributes.maxShieldPerLevel = 10.f;
+	tankEnergyAttributes.afterburnerCapacityPerLevel = 5.f;
 	tankEnergyAttributes.baseAfterburnerRampUpDuration = 0.18f;
 	tankEnergyAttributes.baseAfterburnerRampDownDuration = 0.25f;
 	tankEnergyAttributes.baseAfterburnerManeuverabilityMultiplier = 0.8f;
@@ -2198,11 +2198,12 @@ int main(int argc, char** argv)
 	energyShipRuntime.InitializeFromShipDefinition(energyTestShip);
 	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, 100.f });
 	const sas::AttributeSystem& shipAttributes = energyShipRuntime.GetAttributes();
-	if (!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::MaxShield), 200.f) ||
-		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen), 40.f) ||
+	// Shield and afterburner are ship systems: EnergyPower must not change them.
+	if (!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::MaxShield), 100.f) ||
+		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen), 20.f) ||
 		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRechargeDelay), 4.f) ||
-		!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 150.f) ||
-		!NearlyEqual(energyShipRuntime.GetAfterburnerRegenPerSecond(), 18.75f) ||
+		!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 50.f) ||
+		!NearlyEqual(energyShipRuntime.GetAfterburnerRegenPerSecond(), 6.25f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerRechargeDelay(), 2.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerEnergyDrainPerSecond(), 12.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerSpeedMultiplier(), 1.4f) ||
@@ -2212,12 +2213,21 @@ int main(int argc, char** argv)
 	{
 		return Fail("Ship energy attributes did not derive shield and afterburner values correctly");
 	}
+	energyShipRuntime.SetShipLevel(3);
+	if (!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::MaxShield), 120.f) ||
+		!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen), 24.f) ||
+		!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 60.f) ||
+		!NearlyEqual(energyShipRuntime.GetAfterburnerRegenPerSecond(), 7.5f))
+	{
+		return Fail("Ship level did not grow shield and afterburner capacity");
+	}
 	energyRuntime.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, 50.f });
-	if (!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 200.f) ||
+	if (!NearlyEqual(shipAttributes.GetCurrentValue(ShipAttributeIds::MaxShield), 120.f) ||
+		!NearlyEqual(energyShipRuntime.GetAfterburnerCapacity(), 60.f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerSpeedMultiplier(), 1.4f) ||
 		!NearlyEqual(energyShipRuntime.GetAfterburnerAccelerationMultiplier(), 1.8f))
 	{
-		return Fail("Energy capacity incorrectly changed afterburner speed or acceleration tuning");
+		return Fail("EnergyPower changed ship shield, afterburner capacity or afterburner tuning");
 	}
 
 	const ShipMovementAttributes movementRatingTest{};
@@ -4704,7 +4714,9 @@ int main(int argc, char** argv)
 		return Fail("Rapid shotgun JSON scaling coefficients are invalid");
 	}
 	if (!hasAdditiveScaling(dualKineticBlaster, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 0.45f) ||
-		!hasAdditiveScaling(dualKineticBlaster, CommonAttributeIds::FireRate, OwnerAttributeIds::AttackSpeed, 1.f))
+		// 0.12 = 1% of the 12/s base per AttackSpeed rating point (temporary until the
+		// phase-2 Dual Kinetic rewrite; Interceptor grows natural AttackSpeed).
+		!hasAdditiveScaling(dualKineticBlaster, CommonAttributeIds::FireRate, OwnerAttributeIds::AttackSpeed, 0.12f))
 	{
 		return Fail("Dual kinetic blaster JSON scaling coefficients are invalid");
 	}
@@ -4803,7 +4815,7 @@ int main(int argc, char** argv)
 			return Fail("Rapid shotgun runtime scaling did not match JSON");
 		}
 		if (!verifiesAttackPower(dualKineticBlaster, 0.45f) ||
-			!verifiesAttackSpeed(dualKineticBlaster, 1.f))
+			!verifiesAttackSpeed(dualKineticBlaster, 0.12f))
 		{
 			return Fail("Dual kinetic blaster runtime scaling did not match JSON");
 		}
