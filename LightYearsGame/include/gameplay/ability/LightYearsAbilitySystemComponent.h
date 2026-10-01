@@ -3,6 +3,7 @@
 #include "AbilitySystemComponent.h"
 #include "abilities/AbilityEvent.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/ScopedAbilityRule.h"
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/ability/runtime/AbilityInvocationRuntime.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
@@ -16,14 +17,6 @@
 namespace ly
 {
 	class Actor;
-
-	struct ScopedAbilityRule
-	{
-		List<GameplayTag> requiredAbilityTags;
-		List<GameplayTag> blockedAbilityTags;
-		List<sas::AttributeModifier> attributeModifiers;
-		int levelBonus = 0;
-	};
 
 	class LightYearsAbilitySystemComponent
 		: public sas::AbilitySystemComponent

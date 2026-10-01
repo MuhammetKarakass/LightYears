@@ -37,6 +37,13 @@ add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipSchematic.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipSchematicValidator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ShipSchematicValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ScopedAbilityRule.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModuleLoadout.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModulePlacementRules.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModuleResolver.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ModuleLoadout.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ModulePlacementRules.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ModuleResolver.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ModuleLoader.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ModuleLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ModuleContentCatalog.h

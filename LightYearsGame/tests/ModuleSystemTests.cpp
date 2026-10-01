@@ -4,10 +4,16 @@
 #include "gameplay/content/ModuleContentCatalog.h"
 #include "gameplay/content/ModuleLoader.h"
 #include "gameplay/content/ShipLoader.h"
+#include "gameplay/module/ModuleLoadout.h"
+#include "gameplay/module/ModulePlacementRules.h"
+#include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/ShipSchematicValidator.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <initializer_list>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -389,6 +395,353 @@ namespace
 		Check(validate(vertical), "a rotated default module that fits the Core should validate");
 	}
 
+	// ---- placement rules, loadout, resolver (hand-built data) ----
+
+	using ly::ModulePlacementFailure;
+	namespace Tags = ly::GameplayTags;
+
+	// 5x4 grid: N nose, W wings, H hull, C core, E engine, S sensor, . void.
+	//   x: 0 1 2 3 4
+	// y0:  N N W W .
+	// y1:  N H H W .
+	// y2:  C C H E E
+	// y3:  S S . E E
+	struct TestWorld
+	{
+		ly::ShipSchematic schematic;
+		ly::ModuleZoneTable zones;
+		ly::List<ly::ModuleDefinition> modules;
+
+		static ly::ModuleDefinition Make(const char* id, const ly::GameplayTag& family, const ly::GameplayTag& system, std::initializer_list<sf::Vector2i> cells)
+		{
+			ly::ModuleDefinition module;
+			module.moduleId = id;
+			module.family = family;
+			module.systemCategory = system;
+			ly::ModuleSizeVariant variant;
+			variant.shape.cells = ly::List<sf::Vector2i>(cells);
+			module.sizeVariants.push_back(variant);
+			return module;
+		}
+
+		TestWorld()
+		{
+			const ly::GameplayTag N = Tags::Module::Zone::Nose, W = Tags::Module::Zone::Wings, H = Tags::Module::Zone::Hull;
+			const ly::GameplayTag C = Tags::Module::Zone::Core, E = Tags::Module::Zone::Engine, S = Tags::Module::Zone::Sensor;
+			const ly::GameplayTag V;
+			schematic.width = 5;
+			schematic.height = 4;
+			schematic.cellZones = { N, N, W, W, V,
+									N, H, H, W, V,
+									C, C, H, E, E,
+									S, S, V, E, E };
+			zones.zones = {
+				{ N, Tags::Ability::Primary, false, 0.25f }, { W, Tags::Ability::Offense, false, 0.25f }, { H, ly::GameplayTag{}, true, 0.10f },
+				{ C, Tags::Ability::Defense, false, 0.25f }, { E, Tags::Ability::Movement, false, 0.25f }, { S, Tags::Ability::Utility, false, 0.25f }
+			};
+			zones.systemZones = { { Tags::Module::System::Shield, C }, { Tags::Module::System::Afterburner, E } };
+
+			const ly::GameplayTag none;
+			modules.push_back(Make("Module.Defense.ShieldGenerator.Standard", Tags::Ability::Defense, Tags::Module::System::Shield, { { 0, 0 }, { 1, 0 } }));
+			modules.push_back(Make("Module.Defense.ShieldGenerator.Other", Tags::Ability::Defense, Tags::Module::System::Shield, { { 0, 0 } }));
+			modules.push_back(Make("Module.Offense.Matrix.Dot", Tags::Ability::Offense, none, { { 0, 0 } }));
+			modules.push_back(Make("Module.Offense.Matrix.L", Tags::Ability::Offense, none, { { 0, 0 }, { 1, 0 }, { 1, 1 } }));
+			modules.push_back(Make("Module.Primary.Barrel.Dot", Tags::Ability::Primary, none, { { 0, 0 } }));
+			modules.push_back(Make("Module.Offense.Matrix.Domino", Tags::Ability::Offense, none, { { 0, 0 }, { 1, 0 } }));
+		}
+
+		ly::ModuleRulesContext Rules() const
+		{
+			return ly::ModuleRulesContext{ schematic, [this](const sas::ContentId& id) -> const ly::ModuleDefinition*
+			{
+				for (const ly::ModuleDefinition& module : modules) if (module.moduleId == id) return &module;
+				return nullptr;
+			}, zones };
+		}
+	};
+
+	ly::ModulePlacement MakePlacement(const char* id, int x, int y, int rotation = 0, int variant = 0, std::uint32_t instance = 99)
+	{
+		ly::ModulePlacement placement;
+		placement.instanceId = instance;
+		placement.moduleId = id;
+		placement.variantIndex = variant;
+		placement.origin = sf::Vector2i{ x, y };
+		placement.rotationQuarterTurns = rotation;
+		return placement;
+	}
+
+	void TestCanPlace()
+	{
+		const TestWorld world;
+		const auto rules = world.Rules();
+		const ly::ModuleLoadout empty;
+		const auto check = [&](const char* label, const ly::ModulePlacement& placement, ModulePlacementFailure expected)
+		{
+			Check(ly::ModulePlacementRules::CanPlace(rules, empty, placement) == expected, std::string("CanPlace: ") + label);
+		};
+		const char* dot = "Module.Offense.Matrix.Dot";
+		const char* lShape = "Module.Offense.Matrix.L";
+		const char* shieldStandard = "Module.Defense.ShieldGenerator.Standard";
+		check("in bounds", MakePlacement(dot, 2, 0), ModulePlacementFailure::None);
+		check("negative origin", MakePlacement(dot, -1, 0), ModulePlacementFailure::OutOfBounds);
+		check("past width", MakePlacement(dot, 5, 0), ModulePlacementFailure::OutOfBounds);
+		check("past height", MakePlacement(dot, 0, 4), ModulePlacementFailure::OutOfBounds);
+		check("void cell", MakePlacement(dot, 4, 0), ModulePlacementFailure::CellBlocked);
+		check("unknown module", MakePlacement("Module.Offense.Nope.Dot", 0, 0), ModulePlacementFailure::UnknownModule);
+		check("bad variant", MakePlacement(dot, 0, 0, 0, 1), ModulePlacementFailure::InvalidVariant);
+		check("negative variant", MakePlacement(dot, 0, 0, 0, -1), ModulePlacementFailure::InvalidVariant);
+		check("bad rotation", MakePlacement(dot, 0, 0, 4), ModulePlacementFailure::InvalidRotation);
+		check("system in its zone", MakePlacement(shieldStandard, 0, 2), ModulePlacementFailure::None);
+		check("system outside its zone", MakePlacement(shieldStandard, 1, 1), ModulePlacementFailure::SystemZoneMismatch);
+		check("system straddles zones", MakePlacement(shieldStandard, 1, 2), ModulePlacementFailure::SystemZoneMismatch);
+
+		// L = {(0,0),(1,0),(1,1)}; each quarter turn drops a different corner of its 2x2 block.
+		// Block at (3,0) is half void, so every rotation hits a void cell.
+		for (int turn = 0; turn < 4; ++turn)
+		{
+			check("L rejected on void block", MakePlacement(lShape, 3, 0, turn), ModulePlacementFailure::CellBlocked);
+			check("L accepted on solid block", MakePlacement(lShape, 0, 2, turn), ModulePlacementFailure::None);
+		}
+		// Block at (2,2) has its only void cell at (2,3): rotation 0 avoids it, the others cover it.
+		check("L rot0 avoids the void corner", MakePlacement(lShape, 2, 2, 0), ModulePlacementFailure::None);
+		for (int turn = 1; turn < 4; ++turn)
+		{
+			check("L rot1-3 cover the void corner", MakePlacement(lShape, 2, 2, turn), ModulePlacementFailure::CellBlocked);
+		}
+		// Block at (1,3) hangs off the bottom edge.
+		check("L rot0 hits void before the edge", MakePlacement(lShape, 1, 3, 0), ModulePlacementFailure::CellBlocked);
+		check("L rot2 leaves the grid", MakePlacement(lShape, 1, 3, 2), ModulePlacementFailure::OutOfBounds);
+		check("L rot3 leaves the grid", MakePlacement(lShape, 1, 3, 3), ModulePlacementFailure::OutOfBounds);
+
+		ly::ModuleLoadout loadout;
+		const std::uint32_t dotId = loadout.AddToInventory(dot);
+		Check(loadout.Install(rules, dotId, sf::Vector2i{ 2, 0 }, 0) == ModulePlacementFailure::None, "install dot");
+		const std::uint32_t shieldId = loadout.AddToInventory(shieldStandard);
+		Check(loadout.Install(rules, shieldId, sf::Vector2i{ 0, 2 }, 0) == ModulePlacementFailure::None, "install shield");
+
+		const auto onLoadout = [&](const ly::ModulePlacement& placement, std::uint32_t ignored = 0)
+		{
+			return ly::ModulePlacementRules::CanPlace(rules, loadout, placement, ignored);
+		};
+		Check(onLoadout(MakePlacement(dot, 2, 0)) == ModulePlacementFailure::Overlap, "overlap with installed dot");
+		Check(onLoadout(MakePlacement(dot, 2, 0), dotId) == ModulePlacementFailure::None, "ignoring the dot itself frees its cell");
+		Check(onLoadout(MakePlacement(dot, 3, 0), dotId) == ModulePlacementFailure::None, "move of the dot to a free cell");
+		Check(onLoadout(MakePlacement("Module.Defense.ShieldGenerator.Other", 0, 2)) == ModulePlacementFailure::Overlap, "overlap with the shield");
+		Check(onLoadout(MakePlacement("Module.Defense.ShieldGenerator.Other", 2, 2)) == ModulePlacementFailure::SystemZoneMismatch, "second shield outside Core");
+		Check(onLoadout(MakePlacement("Module.Defense.ShieldGenerator.Other", 1, 2), shieldId) == ModulePlacementFailure::None, "replacing the shield ignores its own system slot");
+	}
+
+	void TestDuplicateSystem()
+	{
+		TestWorld world;
+		// Widen the Core so a second shield module has a legal cell of its own.
+		world.schematic.cellZones[static_cast<std::size_t>(1 * world.schematic.width + 0)] = Tags::Module::Zone::Core;
+		const auto rules = world.Rules();
+		ly::ModuleLoadout loadout;
+		const std::uint32_t first = loadout.AddToInventory("Module.Defense.ShieldGenerator.Standard");
+		Check(loadout.Install(rules, first, sf::Vector2i{ 0, 2 }, 0) == ModulePlacementFailure::None, "first shield installs");
+		const std::uint32_t second = loadout.AddToInventory("Module.Defense.ShieldGenerator.Other");
+		Check(loadout.Install(rules, second, sf::Vector2i{ 0, 1 }, 0) == ModulePlacementFailure::DuplicateSystem, "second shield of the same system is rejected");
+		Check(loadout.GetPlacements().size() == 1, "duplicate system left placements unchanged");
+	}
+
+	void TestLoadoutMutations()
+	{
+		const TestWorld world;
+		const auto rules = world.Rules();
+		ly::ModuleLoadout loadout;
+		std::uint64_t revision = loadout.GetRevision();
+		const auto bumped = [&](const char* label)
+		{
+			Check(loadout.GetRevision() == revision + 1, std::string("revision should bump once: ") + label);
+			revision = loadout.GetRevision();
+		};
+		const auto unchanged = [&](const char* label)
+		{
+			Check(loadout.GetRevision() == revision, std::string("revision should not change: ") + label);
+		};
+
+		const std::uint32_t a = loadout.AddToInventory("Module.Offense.Matrix.Dot");
+		bumped("add a");
+		const std::uint32_t b = loadout.AddToInventory("Module.Primary.Barrel.Dot");
+		bumped("add b");
+		Check(a != 0 && b > a, "instance ids are monotonic");
+
+		Check(loadout.Install(rules, a, sf::Vector2i{ 4, 0 }, 0) == ModulePlacementFailure::CellBlocked, "illegal install rejected");
+		unchanged("illegal install");
+		Check(loadout.GetPlacements().empty() && loadout.GetInventory().size() == 2, "illegal install left state alone");
+		Check(loadout.Install(rules, 12345, sf::Vector2i{ 2, 0 }, 0) == ModulePlacementFailure::UnknownModule, "unknown instance rejected");
+		unchanged("unknown instance install");
+
+		Check(loadout.Install(rules, a, sf::Vector2i{ 2, 0 }, 0) == ModulePlacementFailure::None, "install a");
+		bumped("install a");
+		Check(loadout.GetPlacements().size() == 1 && loadout.GetInventory().size() == 1 && loadout.FindPlacement(a) != nullptr,
+			"install moves the item out of inventory");
+
+		Check(loadout.Install(rules, b, sf::Vector2i{ 2, 0 }, 0) == ModulePlacementFailure::Overlap, "overlapping install rejected");
+		unchanged("overlapping install");
+		Check(loadout.Install(rules, b, sf::Vector2i{ 0, 0 }, 0) == ModulePlacementFailure::None, "install b");
+		bumped("install b");
+
+		Check(loadout.Move(rules, a, sf::Vector2i{ 0, 0 }, 0) == ModulePlacementFailure::Overlap, "move onto b rejected");
+		unchanged("illegal move");
+		Check(loadout.FindPlacement(a)->origin == sf::Vector2i(2, 0), "illegal move left the origin alone");
+		Check(loadout.Move(rules, a, sf::Vector2i{ 2, 0 }, 0) == ModulePlacementFailure::None, "move onto itself is legal");
+		bumped("move onto itself");
+		Check(loadout.Move(rules, a, sf::Vector2i{ 3, 0 }, 0) == ModulePlacementFailure::None, "move to a free cell");
+		bumped("move");
+		Check(loadout.FindPlacement(a)->origin == sf::Vector2i(3, 0), "move updated the origin");
+		Check(loadout.Move(rules, 777, sf::Vector2i{ 3, 0 }, 0) == ModulePlacementFailure::UnknownModule, "move of an unknown instance");
+		unchanged("unknown move");
+
+		Check(loadout.Uninstall(a), "uninstall a");
+		bumped("uninstall");
+		Check(loadout.FindPlacement(a) == nullptr && loadout.FindInventoryItem(a) != nullptr, "uninstall returns the item to inventory");
+		Check(!loadout.Uninstall(a), "uninstalling an inventory item fails");
+		unchanged("failed uninstall");
+		Check(loadout.Remove(a), "remove from inventory");
+		bumped("remove from inventory");
+		Check(loadout.Remove(b), "remove a placement");
+		bumped("remove a placement");
+		Check(!loadout.Remove(b), "double remove fails");
+		unchanged("failed remove");
+		Check(loadout.AddToInventory("Module.Offense.Matrix.Dot") > b, "instance ids are never reused");
+	}
+
+	void TestDefaultSeeding()
+	{
+		const auto ships = ly::content::ShipLoader::LoadFromFile(DataPath("ships.json"), MakeBaseShip());
+		std::string failure;
+		Check(ships.Succeeded() && ly::content::ModuleContentCatalog::LoadFromFile(DataPath("modules.json"), &failure), "seeding setup failed");
+		if (!ships.Succeeded()) return;
+
+		const auto catalogLookup = [](const sas::ContentId& id) { return ly::content::ModuleContentCatalog::FindById(id); };
+		std::size_t seeded = 0;
+		for (const auto& loaded : ships.definitions)
+		{
+			if (!loaded.definition.schematic) continue;
+			const ly::ShipSchematic& schematic = *loaded.definition.schematic;
+			const ly::ModuleRulesContext rules{ schematic, catalogLookup, ly::content::ModuleContentCatalog::GetZoneTable() };
+			ly::ModuleLoadout loadout;
+			Check(loadout.SeedDefaults(rules), "default seeding failed for " + loaded.id);
+			Check(loadout.GetPlacements().size() == schematic.defaultModules.size() && loadout.GetInventory().empty(), "seeded placement count for " + loaded.id);
+			for (const ly::ModulePlacement& placement : loadout.GetPlacements())
+			{
+				Check(ly::ModulePlacementRules::CanPlace(rules, loadout, placement, placement.instanceId) == ModulePlacementFailure::None,
+					"seeded placement is illegal for " + loaded.id);
+			}
+
+			const ly::ResolvedModuleEffects effects = ly::ModuleResolver::Resolve(rules, loadout.GetPlacements());
+			std::set<std::string> systems;
+			for (const ly::GameplayTag& system : effects.enabledSystems) systems.insert(system.name);
+			Check(effects.enabledSystems.size() == 4 && systems.size() == 4, "default loadout should enable all four systems for " + loaded.id);
+			Check(effects.ownerModifiers.empty() && effects.shipModifiers.empty() && effects.primaryWeaponModifiers.empty() && effects.abilityRules.empty(),
+				"default system modules should add no modifiers for " + loaded.id);
+			++seeded;
+		}
+		Check(seeded == 6, "six player ships should seed");
+
+		// An illegal default leaves the loadout empty.
+		ly::ShipSchematic broken = *ships.definitions[0].definition.schematic;
+		broken.defaultModules[0].origin = sf::Vector2i{ 0, 0 };
+		const ly::ModuleRulesContext rules{ broken, catalogLookup, ly::content::ModuleContentCatalog::GetZoneTable() };
+		ly::ModuleLoadout loadout;
+		Check(!loadout.SeedDefaults(rules), "illegal defaults should fail seeding");
+		Check(loadout.GetPlacements().empty() && loadout.GetInventory().empty(), "failed seeding leaves the loadout empty");
+	}
+
+	ly::ModuleAttributeModifier Attr(ly::ModuleAttributeTarget target, const char* attribute, sas::AttributeModifierOperation operation, float magnitude, bool scaled = true)
+	{
+		ly::ModuleAttributeModifier entry;
+		entry.target = target;
+		entry.modifier.attributeId = sas::AttributeId{ attribute };
+		entry.modifier.operation = operation;
+		entry.modifier.magnitude = magnitude;
+		entry.affectedByZoneBonus = scaled;
+		return entry;
+	}
+
+	bool Near(float a, float b) { return std::abs(a - b) < 1e-5f; }
+
+	void TestResolver()
+	{
+		TestWorld world;
+		using Op = sas::AttributeModifierOperation;
+		using Target = ly::ModuleAttributeTarget;
+
+		// Offense dot carrying every kind of modifier.
+		ly::ModuleSizeVariant& dot = world.modules[2].sizeVariants[0];
+		dot.attributeModifiers = {
+			Attr(Target::Owner, "Owner.A", Op::Add, 10.f),
+			Attr(Target::Ship, "Ship.B", Op::Multiply, 1.12f),
+			Attr(Target::PrimaryWeapon, "Weapon.C", Op::Add, 4.f),
+			Attr(Target::Owner, "Owner.D", Op::Override, 7.f),
+			Attr(Target::Owner, "Owner.E", Op::Add, 10.f, false)
+		};
+		ly::ModuleAbilityModifier abilityModifier;
+		abilityModifier.modifier.attributeId = sas::AttributeId{ "Common.Damage" };
+		abilityModifier.modifier.operation = Op::Multiply;
+		abilityModifier.modifier.magnitude = 1.12f;
+		dot.abilityModifiers = { abilityModifier };
+		world.modules[5].sizeVariants[0].attributeModifiers = { Attr(Target::Owner, "Owner.A", Op::Add, 10.f) };
+
+		const auto rules = world.Rules();
+		const auto resolveAt = [&](int x, int y)
+		{
+			return ly::ModuleResolver::Resolve(rules, { MakePlacement("Module.Offense.Matrix.Dot", x, y, 0, 0, 1) });
+		};
+
+		// Wings match the Offense family: +25%.
+		const auto wings = resolveAt(2, 0);
+		Check(wings.ownerModifiers.size() == 3 && wings.shipModifiers.size() == 1 && wings.primaryWeaponModifiers.size() == 1, "routing per target");
+		if (wings.ownerModifiers.size() == 3 && wings.shipModifiers.size() == 1 && wings.primaryWeaponModifiers.size() == 1)
+		{
+			Check(Near(wings.ownerModifiers[0].magnitude, 12.5f), "matching zone scales Add by 1.25");
+			Check(Near(wings.shipModifiers[0].magnitude, 1.15f), "matching zone scales Multiply 1.12 to 1.15");
+			Check(Near(wings.primaryWeaponModifiers[0].magnitude, 5.f), "matching zone scales weapon Add");
+			Check(Near(wings.ownerModifiers[1].magnitude, 7.f), "Override is never scaled");
+			Check(Near(wings.ownerModifiers[2].magnitude, 10.f), "affectedByZoneBonus=false is not scaled");
+		}
+		Check(wings.abilityRules.size() == 1 && wings.abilityRules[0].requiredAbilityTags.size() == 1 &&
+			wings.abilityRules[0].requiredAbilityTags[0] == Tags::Ability::Offense, "scoped rule requires the module family");
+		Check(wings.abilityRules.size() == 1 && wings.abilityRules[0].attributeModifiers.size() == 1 &&
+			Near(wings.abilityRules[0].attributeModifiers[0].magnitude, 1.15f), "ability modifier is scaled");
+		Check(wings.enabledSystems.empty(), "a non-system module enables nothing");
+
+		// Hull is a wildcard zone: +10%.
+		const auto hull = resolveAt(1, 1);
+		Check(hull.ownerModifiers.size() == 3 && Near(hull.ownerModifiers[0].magnitude, 11.f), "Hull wildcard scales Add by 1.10");
+		Check(hull.shipModifiers.size() == 1 && Near(hull.shipModifiers[0].magnitude, 1.132f), "Hull wildcard scales Multiply");
+
+		// Nose rewards Primary, not Offense: unchanged.
+		const auto nose = resolveAt(0, 0);
+		Check(nose.ownerModifiers.size() == 3 && Near(nose.ownerModifiers[0].magnitude, 10.f) &&
+			nose.shipModifiers.size() == 1 && Near(nose.shipModifiers[0].magnitude, 1.12f), "non-matching zone leaves values unchanged");
+
+		// Domino across Hull (2,1) and Wings (3,1) spans two zones: no bonus.
+		const auto spanning = ly::ModuleResolver::Resolve(rules, { MakePlacement("Module.Offense.Matrix.Domino", 2, 1, 0, 0, 2) });
+		Check(spanning.ownerModifiers.size() == 1 && Near(spanning.ownerModifiers[0].magnitude, 10.f), "spanning two zones gets no bonus");
+		const auto insideWings = ly::ModuleResolver::Resolve(rules, { MakePlacement("Module.Offense.Matrix.Domino", 2, 0, 0, 0, 2) });
+		Check(insideWings.ownerModifiers.size() == 1 && Near(insideWings.ownerModifiers[0].magnitude, 12.5f), "a domino inside Wings gets the bonus");
+		const auto rotated = ly::ModuleResolver::Resolve(rules, { MakePlacement("Module.Offense.Matrix.Domino", 3, 0, 1, 0, 2) });
+		Check(rotated.ownerModifiers.size() == 1 && Near(rotated.ownerModifiers[0].magnitude, 12.5f), "rotated cells determine the zone");
+
+		// Side stats stay unscaled, output follows placement order, systems are listed.
+		ly::ModulePlacement withSides = MakePlacement("Module.Offense.Matrix.Dot", 2, 0, 0, 0, 3);
+		withSides.rarity = ly::ModuleRarity::Rare;
+		withSides.rolledSideStats = { sas::AttributeModifier{ sas::AttributeId{ "Owner.Side" }, 8.f } };
+		const ly::ModulePlacement shield = MakePlacement("Module.Defense.ShieldGenerator.Standard", 0, 2, 0, 0, 4);
+		const auto mixed = ly::ModuleResolver::Resolve(rules, { shield, withSides });
+		Check(mixed.enabledSystems.size() == 1 && mixed.enabledSystems[0] == Tags::Module::System::Shield, "a placed system module is enabled");
+		Check(!mixed.ownerModifiers.empty() && mixed.ownerModifiers.back().attributeId.GetName() == "Owner.Side" &&
+			Near(mixed.ownerModifiers.back().magnitude, 8.f), "side stat is unscaled");
+		Check(mixed.abilityRules.size() == 1, "a module without ability modifiers emits no rule");
+
+		const auto none = ly::ModuleResolver::Resolve(rules, {});
+		Check(none.ownerModifiers.empty() && none.abilityRules.empty() && none.enabledSystems.empty(), "empty placements resolve to nothing");
+	}
+
 	void TestRotation()
 	{
 		using ly::ModuleShapeRules::Rotate;
@@ -432,6 +785,11 @@ int main()
 	TestShipLoaderRejections();
 	TestSchematicValidatorRejections();
 	TestRotation();
+	TestCanPlace();
+	TestDuplicateSystem();
+	TestLoadoutMutations();
+	TestDefaultSeeding();
+	TestResolver();
 
 	if (gFailures != 0)
 	{

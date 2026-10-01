@@ -1,5 +1,8 @@
 #include "gameplay/module/ShipSchematicValidator.h"
 
+#include "gameplay/module/ModuleLoadout.h"
+
+#include <cstdint>
 #include <set>
 #include <utility>
 
@@ -49,59 +52,37 @@ namespace ly
 			++totalCells;
 		}
 
+		const ModuleRulesContext rules{
+			schematic,
+			[&modules](const sas::ContentId& moduleId) { return FindModule(modules, moduleId); },
+			zoneTable
+		};
+		List<ModulePlacement> installed;
 		std::set<std::pair<int, int>> occupied;
-		std::set<std::string> systems;
-		for (const DefaultModulePlacement& placement : schematic.defaultModules)
+		for (const DefaultModulePlacement& defaults : schematic.defaultModules)
 		{
-			const std::string name = placement.moduleId.ToString();
-			const ModuleDefinition* module = FindModule(modules, placement.moduleId);
-			if (!module)
-			{
-				return Fail(failureReason, "Default module is not in the module catalog: " + name);
-			}
-			if (!module->systemCategory.IsValid())
+			const std::string name = defaults.moduleId.ToString();
+			const ModuleDefinition* module = FindModule(modules, defaults.moduleId);
+			if (module && !module->systemCategory.IsValid())
 			{
 				return Fail(failureReason, "Default module must be a system module: " + name);
 			}
-			if (!systems.insert(module->systemCategory.name).second)
+			ModulePlacement placement;
+			placement.instanceId = static_cast<std::uint32_t>(installed.size() + 1);
+			placement.moduleId = defaults.moduleId;
+			placement.variantIndex = defaults.variantIndex;
+			placement.origin = defaults.origin;
+			placement.rotationQuarterTurns = defaults.rotationQuarterTurns;
+			const ModulePlacementFailure failure = ModulePlacementRules::CanPlace(rules, installed, placement);
+			if (failure != ModulePlacementFailure::None)
 			{
-				return Fail(failureReason, "Schematic has more than one default module for " + module->systemCategory.name);
+				return Fail(failureReason, "Default module " + name + " " + ModulePlacementRules::Describe(failure));
 			}
-			if (placement.variantIndex < 0 ||
-				static_cast<std::size_t>(placement.variantIndex) >= module->sizeVariants.size())
+			for (const sf::Vector2i& cell : ModulePlacementRules::GetCoveredCells(*module, placement))
 			{
-				return Fail(failureReason, "Default module has an invalid variant: " + name);
+				occupied.insert({ cell.x, cell.y });
 			}
-			if (placement.rotationQuarterTurns < 0 || placement.rotationQuarterTurns > 3)
-			{
-				return Fail(failureReason, "Default module rotation must be 0..3: " + name);
-			}
-			const GameplayTag* systemZone = zoneTable.FindSystemZone(module->systemCategory);
-			if (!systemZone)
-			{
-				return Fail(failureReason, "System module has no system zone: " + name);
-			}
-			const List<sf::Vector2i> cells = ModuleShapeRules::Rotate(
-				module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].shape.cells,
-				placement.rotationQuarterTurns
-			);
-			for (const sf::Vector2i& offset : cells)
-			{
-				const int x = placement.origin.x + offset.x;
-				const int y = placement.origin.y + offset.y;
-				if (!schematic.IsInBounds(x, y) || !schematic.GetZoneAt(x, y).IsValid())
-				{
-					return Fail(failureReason, "Default module leaves the schematic: " + name);
-				}
-				if (schematic.GetZoneAt(x, y) != *systemZone)
-				{
-					return Fail(failureReason, "Default module is outside its system zone: " + name);
-				}
-				if (!occupied.insert({ x, y }).second)
-				{
-					return Fail(failureReason, "Default modules overlap: " + name);
-				}
-			}
+			installed.push_back(std::move(placement));
 		}
 
 		const int freeCells = totalCells - static_cast<int>(occupied.size());
