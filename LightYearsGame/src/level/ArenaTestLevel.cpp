@@ -2,6 +2,7 @@
 #include "enemy/EnemyActor.h"
 #include "framework/AudioManager.h"
 #include "framework/Actor.h"
+#include "framework/debug/Log.h"
 #include "enemy/DummyEnemy.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
@@ -250,6 +251,35 @@ namespace ly
 		ResetEncounter();
 		ArenaLevel::OnRestartLevel();
 		RestartEncounter();
+	}
+
+	bool ArenaTestLevel::DispatchEvent(const sf::Event& event)
+	{
+		const auto* keyPressed = event.getIf<sf::Event::KeyPressed>();
+		if (keyPressed && !IsPaused() && GetGameOverHUD().expired())
+		{
+			const char* selectedShipId = nullptr;
+			switch (keyPressed->code)
+			{
+			case sf::Keyboard::Key::F1: selectedShipId = "Ship.Player.Fighter.Basic"; break;
+			case sf::Keyboard::Key::F2: selectedShipId = "Ship.Player.Breacher.Basic"; break;
+			case sf::Keyboard::Key::F3: selectedShipId = "Ship.Player.Interceptor.Basic"; break;
+			case sf::Keyboard::Key::F4: selectedShipId = "Ship.Player.Conductor.Basic"; break;
+			case sf::Keyboard::Key::F5: selectedShipId = "Ship.Player.Aegis.Basic"; break;
+			case sf::Keyboard::Key::F6: selectedShipId = "Ship.Player.CryoController.Basic"; break;
+			default: break;
+			}
+
+			if (selectedShipId)
+			{
+				PlayerManager::GetPlayerManager().SetSelectedShipId(selectedShipId);
+				LY_GAME_INFO("Player ship selected: %s", selectedShipId);
+				OnRestartLevel();
+				return true;
+			}
+		}
+
+		return ArenaLevel::DispatchEvent(event);
 	}
 
 	bool ArenaTestLevel::StartEncounter()

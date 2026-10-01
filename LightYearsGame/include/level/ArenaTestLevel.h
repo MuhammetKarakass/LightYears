@@ -106,6 +106,7 @@ namespace ly
 	protected:
 		virtual ArenaDefinition CreateArenaDefinition() const override;
 		virtual PlayerRespawnDefinition CreatePlayerRespawnDefinition() const override;
+		virtual bool DispatchEvent(const sf::Event& event) override;
 		virtual void CreateHUDControllers() override;
 		virtual void Tick(float deltaTime) override;
 		virtual void OnGameStart() override;
@@ -154,5 +155,4 @@ namespace ly
 		static constexpr int MaxPlaytestTerminalFinalizeFrames = 8;
 	};
 }
-
 
