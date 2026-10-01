@@ -52,6 +52,262 @@
       "sizeVariants": [
         { "shape": [[0, 0]] }
       ]
+    },
+    {
+      "id": "Module.Primary.FocusedBarrel.Basic",
+      "displayName": "Odaklı Namlu",
+      "family": "Ability.Primary",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "PrimaryWeapon", "attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.1}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            {"target": "PrimaryWeapon", "attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.14}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Primary.PiercingTip.Basic",
+      "displayName": "Delici Uç",
+      "family": "Ability.Primary",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "PrimaryWeapon", "attributeId": "PrimaryWeapon.Projectile.Delivery.PierceCount", "operation": "Add", "magnitude": 1.0, "affectedByZoneBonus": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Primary.FireRateBooster.Basic",
+      "displayName": "Atış Hızlandırıcı",
+      "family": "Ability.Primary",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "PrimaryWeapon", "attributeId": "Common.FireRate", "operation": "Multiply", "magnitude": 1.1}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [1, 1]],
+          "attributeModifiers": [
+            {"target": "PrimaryWeapon", "attributeId": "Common.FireRate", "operation": "Multiply", "magnitude": 1.14}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.AttackMatrix.Basic",
+      "displayName": "Saldırı Matrisi",
+      "family": "Ability.Offense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "abilityModifiers": [
+            {"attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.12}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "abilityModifiers": [
+            {"attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.16}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.OverloadCore.Basic",
+      "displayName": "Aşırı Yük Çekirdeği",
+      "family": "Ability.Offense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0], [0, 1], [1, 1]],
+          "abilityModifiers": [
+            {"attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.25},
+            {"attributeId": "Common.Cooldown", "operation": "Multiply", "magnitude": 1.1, "affectedByZoneBonus": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ArmorPlate.Basic",
+      "displayName": "Zırh Plakası",
+      "family": "Ability.Defense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.Armor", "operation": "Add", "magnitude": 4.0}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.Armor", "operation": "Add", "magnitude": 5.5}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.HullReinforcement.Basic",
+      "displayName": "Gövde Takviyesi",
+      "family": "Ability.Defense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Add", "magnitude": 40.0}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [1, 1]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Add", "magnitude": 55.0}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.ThrustBooster.Basic",
+      "displayName": "İtki Artırıcı",
+      "family": "Ability.Movement",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": 2.2},
+            {"target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": 2.2}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": 3.0},
+            {"target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": 3.0}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.ManeuverThruster.Basic",
+      "displayName": "Manevra İticisi",
+      "family": "Ability.Movement",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": 0.36}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.CoolingCircuit.Basic",
+      "displayName": "Soğutma Devresi",
+      "family": "Ability.Utility",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.AbilityHaste", "operation": "Add", "magnitude": 8.0}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [1, 1]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.AbilityHaste", "operation": "Add", "magnitude": 11.0}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.EnergyCell.Basic",
+      "displayName": "Enerji Hücresi",
+      "family": "Ability.Utility",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.Energy.Power", "operation": "Add", "magnitude": 10.0}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.Energy.Power", "operation": "Add", "magnitude": 14.0}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.TargetingComputer.Basic",
+      "displayName": "Hedefleme Bilgisayarı",
+      "family": "Ability.Utility",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 3.0}
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 5.0}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ShieldGenerator.FastCharge",
+      "displayName": "Hızlı Şarj Jeneratörü",
+      "family": "Ability.Defense",
+      "systemCategory": "Module.System.Shield",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Multiply", "magnitude": 0.8, "affectedByZoneBonus": false},
+            {"target": "Ship", "attributeId": "Ship.Shield.Regen", "operation": "Multiply", "magnitude": 1.5}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ShieldGenerator.Heavy",
+      "displayName": "Ağır Jeneratör",
+      "family": "Ability.Defense",
+      "systemCategory": "Module.System.Shield",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            {"target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Add", "magnitude": 60.0}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.Afterburner.Extended",
+      "displayName": "Genişletilmiş Afterburner",
+      "family": "Ability.Movement",
+      "systemCategory": "Module.System.Afterburner",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0], [1, 1]],
+          "attributeModifiers": [
+            {"target": "Ship", "attributeId": "Ship.Afterburner.Capacity", "operation": "Add", "magnitude": 50.0}
+          ]
+        }
+      ]
     }
   ]
 }

@@ -30,6 +30,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -365,6 +366,151 @@ namespace
 			ship->Destroy();
 			level->TickInternal(0.f);
 		}
+	}
+
+	const ly::ModulePlacement* FindInInventory(const ly::Player& player, const char* moduleId)
+	{
+		for (const ly::ModulePlacement& item : player.GetModuleLoadout().GetInventory())
+		{
+			if (item.moduleId == moduleId) return &item;
+		}
+		return nullptr;
+	}
+
+	std::set<std::uint32_t> InventoryInstanceIds(const ly::Player& player)
+	{
+		std::set<std::uint32_t> ids;
+		for (const ly::ModulePlacement& item : player.GetModuleLoadout().GetInventory()) ids.insert(item.instanceId);
+		return ids;
+	}
+
+	// kGrantAllModulesForTesting in Player.cpp: one instance of every non-default module at variant 0,
+	// granted once per run, never installed automatically, kept across respawns.
+	void RunModuleTestGrantChecks(Report& report, ly::Application& application)
+	{
+		using namespace ly;
+		PlayerManager& manager = PlayerManager::GetPlayerManager();
+		manager.Reset();
+		PlayerManagerResetGuard resetGuard{ manager };
+		auto level = std::make_shared<HeadlessShipLevel>(&application);
+		level->BeginPlayInternal();
+
+		std::size_t standardCount = 0;
+		std::set<std::string> grantable;
+		for (const ModuleDefinition& definition : content::ModuleContentCatalog::GetDefinitions())
+		{
+			const std::string id = definition.moduleId.ToString();
+			if (id.size() >= 9 && id.compare(id.size() - 9, 9, ".Standard") == 0) { ++standardCount; continue; }
+			grantable.insert(id);
+		}
+		report.Check(standardCount == 4 && grantable.size() == 15, "test grant: shipped catalog has four standard and fifteen content modules");
+
+		const std::array<const char*, 6> shipIds{
+			"Ship.Player.Fighter.Basic", "Ship.Player.Breacher.Basic", "Ship.Player.Interceptor.Basic",
+			"Ship.Player.Conductor.Basic", "Ship.Player.Aegis.Basic", "Ship.Player.CryoController.Basic"
+		};
+		for (const char* shipId : shipIds)
+		{
+			const std::string label = std::string{ shipId } + " test grant:";
+			manager.SetSelectedShipId(shipId);
+			Player& player = manager.CreateNewPlayer();
+			const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition(shipId);
+			report.Check(player.GetModuleLoadout().GetInventory().empty(), label + " inventory is empty before the first spawn");
+			shared_ptr<PlayerSpaceShip> ship = player.SpawnSpaceShip(level.get()).lock();
+			level->TickInternal(0.f);
+
+			const std::size_t defaultCount = definition.schematic->defaultModules.size();
+			report.Check(player.GetModuleLoadout().GetInventory().size() == grantable.size(), label + " inventory holds every non-default module",
+				{ { "actual", player.GetModuleLoadout().GetInventory().size() } });
+			std::set<std::string> granted;
+			for (const ModulePlacement& item : player.GetModuleLoadout().GetInventory())
+			{
+				granted.insert(item.moduleId.ToString());
+				report.Check(item.variantIndex == 0, label + " grants the smallest variant of " + item.moduleId.ToString());
+			}
+			report.Check(granted == grantable, label + " grants each module exactly once");
+			report.Check(player.GetModuleLoadout().GetPlacements().size() == defaultCount, label + " installs nothing beyond the defaults");
+			CheckEnergySystems(report, *ship, definition, 1, true, true, label + " granted inventory does not change the ship");
+
+			const std::set<std::uint32_t> idsBefore = InventoryInstanceIds(player);
+			ship->Destroy();
+			level->TickInternal(0.f);
+			ship = player.SpawnSpaceShip(level.get()).lock();
+			level->TickInternal(0.f);
+			report.Check(static_cast<bool>(ship) && InventoryInstanceIds(player) == idsBefore, label + " respawn does not grant again");
+			ship->Destroy();
+			level->TickInternal(0.f);
+		}
+
+		// Fighter: installs from the granted inventory resolve to the intended numbers and survive respawn.
+		manager.SetSelectedShipId("Ship.Player.Fighter.Basic");
+		Player& player = manager.CreateNewPlayer();
+		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
+		shared_ptr<PlayerSpaceShip> ship = player.SpawnSpaceShip(level.get()).lock();
+		level->TickInternal(0.f);
+		const std::size_t defaultCount = definition.schematic->defaultModules.size();
+		const auto armor = [&ship]() { return ReadAttribute(ship->GetAbilitySystemComponent().GetAttributes(), OwnerAttributeIds::Armor); };
+		const float baseArmor = armor();
+		const float baseShield = definition.energyAttributes.baseMaxShield;
+		const float baseShieldRegen = baseShield / definition.energyAttributes.shieldFullRechargeDuration;
+		const float baseCapacity = definition.energyAttributes.baseAfterburnerCapacity;
+		const float baseCapacityRegen = baseCapacity / definition.energyAttributes.afterburnerFullRechargeDuration;
+
+		const ModulePlacement* armorItem = FindInInventory(player, "Module.Defense.ArmorPlate.Basic");
+		report.Check(armorItem != nullptr, "test grant: Fighter has an Armor Plate in the inventory");
+		report.Check(player.TryInstallModule(armorItem->instanceId, sf::Vector2i{ 2, 5 }, 0) == ModulePlacementFailure::None,
+			"test grant: Armor Plate installs into the Fighter Core");
+		report.Check(NearlyEqual(armor(), baseArmor + 5.f), "test grant: Armor Plate in the matching zone adds +5 armor",
+			{ { "actual", armor() }, { "expected", baseArmor + 5.f } });
+
+		ship->Destroy();
+		level->TickInternal(0.f);
+		ship = player.SpawnSpaceShip(level.get()).lock();
+		level->TickInternal(0.f);
+		report.Check(player.GetModuleLoadout().GetInventory().size() == grantable.size() - 1 &&
+				player.GetModuleLoadout().GetPlacements().size() == defaultCount + 1,
+			"test grant: respawn keeps the installed module and does not regrant it");
+		report.Check(NearlyEqual(armor(), baseArmor + 5.f), "test grant: Armor Plate survives respawn");
+
+		const auto swapShield = [&](const char* moduleId, sf::Vector2i origin)
+		{
+			const ModulePlacement* installed = FindInstalled(player, "Module.Defense.ShieldGenerator.Standard");
+			if (!installed) installed = FindInstalled(player, "Module.Defense.ShieldGenerator.FastCharge");
+			if (!installed) installed = FindInstalled(player, "Module.Defense.ShieldGenerator.Heavy");
+			report.Check(installed != nullptr && player.TryUninstallModule(installed->instanceId), "test grant: current shield generator uninstalls");
+			const ModulePlacement* item = FindInInventory(player, moduleId);
+			report.Check(item != nullptr, std::string("test grant: inventory holds ") + moduleId);
+			report.Check(player.TryInstallModule(item->instanceId, origin, 0) == ModulePlacementFailure::None, std::string("test grant: installs ") + moduleId);
+		};
+		const sas::AttributeSystem& liveShipAttributes = ship->GetShipRuntime().GetAttributes();
+		swapShield("Module.Defense.ShieldGenerator.FastCharge", sf::Vector2i{ 2, 4 });
+		const float fastMax = ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield);
+		const float fastRegen = ReadAttribute(liveShipAttributes, ShipAttributeIds::ShieldRegen);
+		report.Check(NearlyEqual(fastMax, baseShield * 0.8f), "test grant: Fast Charge max shield is 80% (zone bonus does not scale the penalty)",
+			{ { "actual", fastMax }, { "expected", baseShield * 0.8f } });
+		report.Check(NearlyEqual(fastRegen, baseShieldRegen * 1.625f), "test grant: Fast Charge regen is x1.625 of the unmodified rate",
+			{ { "actual", fastRegen }, { "expected", baseShieldRegen * 1.625f } });
+		report.Check(fastMax / fastRegen < baseShield / baseShieldRegen * 0.6f, "test grant: Fast Charge recharges a full shield in about half the time",
+			{ { "actualSeconds", fastMax / fastRegen }, { "standardSeconds", baseShield / baseShieldRegen } });
+
+		swapShield("Module.Defense.ShieldGenerator.Heavy", sf::Vector2i{ 2, 4 });
+		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield), baseShield + 75.f), "test grant: Heavy shield adds +75 in the Core",
+			{ { "actual", ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield) }, { "expected", baseShield + 75.f } });
+		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::ShieldRegen), baseShieldRegen), "test grant: Heavy shield keeps the base regen rate");
+
+		const ModulePlacement* afterburner = FindInstalled(player, "Module.Movement.Afterburner.Standard");
+		report.Check(afterburner != nullptr && player.TryUninstallModule(afterburner->instanceId), "test grant: standard afterburner uninstalls");
+		const ModulePlacement* extended = FindInInventory(player, "Module.Movement.Afterburner.Extended");
+		report.Check(extended != nullptr && player.TryInstallModule(extended->instanceId, sf::Vector2i{ 2, 6 }, 0) == ModulePlacementFailure::None,
+			"test grant: Extended afterburner installs into the Engine");
+		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::AfterburnerCapacity), baseCapacity + 62.5f),
+			"test grant: Extended afterburner adds +62.5 capacity in the Engine",
+			{ { "actual", ReadAttribute(liveShipAttributes, ShipAttributeIds::AfterburnerCapacity) }, { "expected", baseCapacity + 62.5f } });
+		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::AfterburnerRegen), baseCapacityRegen),
+			"test grant: Extended afterburner keeps the base regen rate");
+
+		ship->Destroy();
+		level->TickInternal(0.f);
 	}
 
 	void RunModuleApplierHandleChecks(Report& report, ly::Application& application)
@@ -1037,6 +1183,7 @@ int main(int argc, char** argv)
 		RunPlayerRuntimeChecks(report, application);
 		RunEnemyShieldRegression(report, application);
 		RunModuleApplierPlayerChecks(report, application);
+		RunModuleTestGrantChecks(report, application);
 		RunModuleApplierHandleChecks(report, application);
 		RunModuleRebootAndClampChecks(report, application);
 		RunModuleAbilityAndPrimaryRuleChecks(report, application);

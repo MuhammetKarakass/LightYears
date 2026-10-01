@@ -88,6 +88,7 @@ namespace ly
 		unsigned int mScore;
 		unsigned int mScrap;
 		int mPendingTestAbilityLevelUps = 0;
+		bool mTestModulesGranted = false;
 		bool mAbilityPurchaseInProgress = false;
 	};
 }

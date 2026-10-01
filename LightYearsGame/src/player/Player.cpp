@@ -15,6 +15,10 @@ namespace ly
 	namespace
 	{
 		constexpr bool kAutoLevelAbilitiesForTesting = true;
+		// Temporary playtest switch: the first spawn of a run puts one instance of every
+		// non-default module (smallest variant) into the inventory. Nothing is installed.
+		// Set to false (or delete) once modules drop from gameplay sources.
+		constexpr bool kGrantAllModulesForTesting = true;
 	}
 
 	Player::Player(std::string shipId):
@@ -481,6 +485,22 @@ namespace ly
 		{
 			LY_GAME_ERROR("Default modules for '%s' are invalid; the ship starts without modules.", mShipId.c_str());
 		}
+		if (kGrantAllModulesForTesting && !mTestModulesGranted)
+		{
+			mTestModulesGranted = true;
+			std::unordered_set<std::string> defaultIds;
+			for (const DefaultModulePlacement& placement : rules->schematic.defaultModules)
+			{
+				defaultIds.insert(placement.moduleId.ToString());
+			}
+			for (const ModuleDefinition& definition : content::ModuleContentCatalog::GetDefinitions())
+			{
+				if (defaultIds.count(definition.moduleId.ToString()) == 0)
+				{
+					mModuleLoadout.AddToInventory(definition.moduleId, 0);
+				}
+			}
+		}
 		ship.GetModuleApplier().Apply(mModuleLoadout, *rules, ship.IsInCombat());
 	}
 
@@ -538,6 +558,7 @@ namespace ly
 	{
 		mShipProgression.ResetForNewRun();
 		mModuleLoadout = ModuleLoadout{};
+		mTestModulesGranted = false;
 		mPurchasedAbilityLevels.clear();
 		mPendingTestAbilityLevels.clear();
 		mPendingTestAbilityLevelUps = 0;

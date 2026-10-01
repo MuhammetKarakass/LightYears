@@ -21,6 +21,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace ly
 {
@@ -86,7 +87,7 @@ namespace
 		Check(result.Succeeded(), "shipped modules.json failed to load: " + result.error);
 		if (!result.Succeeded()) return;
 
-		Check(result.definitions.size() == 4, "shipped modules.json should hold the four standard system modules");
+		Check(result.definitions.size() == 19, "shipped modules.json should hold 4 standard system modules and 15 content modules");
 		const ly::ModuleZoneTable& table = result.zoneTable;
 		Check(table.zones.size() == 6, "zone table should hold six zones");
 		Check(table.rebootDurationSeconds == 1.5f && table.combatWindowSeconds == 3.f, "reboot/combat durations mismatch");
@@ -742,6 +743,200 @@ namespace
 		Check(none.ownerModifiers.empty() && none.abilityRules.empty() && none.enabledSystems.empty(), "empty placements resolve to nothing");
 	}
 
+	// ---- first module content ----
+
+	struct ExpectedEffect
+	{
+		enum class Kind { Owner, Ship, Primary, Ability };
+		Kind kind;
+		const char* attribute;
+		sas::AttributeModifierOperation operation;
+		float rawMagnitude;
+		bool scaled;
+	};
+
+	struct ExpectedVariant
+	{
+		const char* id;
+		std::size_t variant;
+		std::size_t cells;
+		// Bonus the best shipped placement must reach; negative accepts the best available.
+		float requiredBonus;
+		std::vector<ExpectedEffect> effects;
+	};
+
+	// Best legal placement of one variant over the given ships, on an empty loadout (so system modules
+	// are restricted only to their zone). Returns false when it fits nowhere.
+	bool FindBestPlacement(
+		const std::vector<const ly::ShipSchematic*>& schematics,
+		const char* id,
+		std::size_t variant,
+		const ly::ShipSchematic*& outSchematic,
+		ly::ModulePlacement& outPlacement,
+		float& outBonus)
+	{
+		outBonus = -1.f;
+		outSchematic = nullptr;
+		const ly::ModuleDefinition* module = ly::content::ModuleContentCatalog::FindById(id);
+		if (!module) return false;
+		for (const ly::ShipSchematic* schematic : schematics)
+		{
+			const ly::ModuleRulesContext rules{ *schematic,
+				[](const sas::ContentId& moduleId) { return ly::content::ModuleContentCatalog::FindById(moduleId); },
+				ly::content::ModuleContentCatalog::GetZoneTable() };
+			for (int rotation = 0; rotation < 4; ++rotation)
+			for (int y = 0; y < schematic->height; ++y)
+			for (int x = 0; x < schematic->width; ++x)
+			{
+				const ly::ModulePlacement candidate = MakePlacement(id, x, y, rotation, static_cast<int>(variant), 1);
+				if (ly::ModulePlacementRules::CanPlace(rules, ly::List<ly::ModulePlacement>{}, candidate) != ModulePlacementFailure::None) continue;
+				const float bonus = ly::ModuleResolver::GetZoneBonus(rules, *module, candidate);
+				if (bonus > outBonus) { outBonus = bonus; outPlacement = candidate; outSchematic = schematic; }
+			}
+		}
+		return outSchematic != nullptr;
+	}
+
+	void TestFirstModuleContent()
+	{
+		using Kind = ExpectedEffect::Kind;
+		using Op = sas::AttributeModifierOperation;
+		const auto ships = ly::content::ShipLoader::LoadFromFile(DataPath("ships.json"), MakeBaseShip());
+		std::string failure;
+		Check(ships.Succeeded() && ly::content::ModuleContentCatalog::LoadFromFile(DataPath("modules.json"), &failure), "content module setup failed");
+		if (!ships.Succeeded()) return;
+
+		std::vector<const ly::ShipSchematic*> allSchematics;
+		std::vector<const ly::ShipSchematic*> fighterSchematic;
+		for (const auto& loaded : ships.definitions)
+		{
+			if (!loaded.definition.schematic) continue;
+			allSchematics.push_back(&*loaded.definition.schematic);
+			if (loaded.id == "Ship.Player.Fighter.Basic") fighterSchematic.push_back(&*loaded.definition.schematic);
+		}
+
+		const std::vector<ExpectedVariant> expected = {
+			{ "Module.Primary.FocusedBarrel.Basic", 0, 2, 0.25f, { { Kind::Primary, "Common.Damage", Op::Multiply, 1.10f, true } } },
+			{ "Module.Primary.FocusedBarrel.Basic", 1, 3, 0.25f, { { Kind::Primary, "Common.Damage", Op::Multiply, 1.14f, true } } },
+			{ "Module.Primary.PiercingTip.Basic", 0, 2, 0.25f, { { Kind::Primary, "PrimaryWeapon.Projectile.Delivery.PierceCount", Op::Add, 1.f, false } } },
+			{ "Module.Primary.FireRateBooster.Basic", 0, 2, 0.25f, { { Kind::Primary, "Common.FireRate", Op::Multiply, 1.10f, true } } },
+			{ "Module.Primary.FireRateBooster.Basic", 1, 3, 0.25f, { { Kind::Primary, "Common.FireRate", Op::Multiply, 1.14f, true } } },
+			{ "Module.Offense.AttackMatrix.Basic", 0, 2, 0.25f, { { Kind::Ability, "Common.Damage", Op::Multiply, 1.12f, true } } },
+			{ "Module.Offense.AttackMatrix.Basic", 1, 3, 0.25f, { { Kind::Ability, "Common.Damage", Op::Multiply, 1.16f, true } } },
+			// No shipped Wings zone holds four cells, so the best placement is never the Wings.
+			{ "Module.Offense.OverloadCore.Basic", 0, 4, -1.f, {
+				{ Kind::Ability, "Common.Damage", Op::Multiply, 1.25f, true },
+				{ Kind::Ability, "Common.Cooldown", Op::Multiply, 1.10f, false } } },
+			{ "Module.Defense.ArmorPlate.Basic", 0, 2, 0.25f, { { Kind::Owner, "Owner.Armor", Op::Add, 4.f, true } } },
+			{ "Module.Defense.ArmorPlate.Basic", 1, 3, 0.25f, { { Kind::Owner, "Owner.Armor", Op::Add, 5.5f, true } } },
+			{ "Module.Defense.HullReinforcement.Basic", 0, 2, 0.25f, { { Kind::Owner, "Owner.MaxHealth", Op::Add, 40.f, true } } },
+			{ "Module.Defense.HullReinforcement.Basic", 1, 3, 0.25f, { { Kind::Owner, "Owner.MaxHealth", Op::Add, 55.f, true } } },
+			{ "Module.Movement.ThrustBooster.Basic", 0, 2, 0.25f, {
+				{ Kind::Owner, "Owner.MoveSpeedHorizontal", Op::Add, 2.2f, true }, { Kind::Owner, "Owner.MoveSpeedVertical", Op::Add, 2.2f, true } } },
+			{ "Module.Movement.ThrustBooster.Basic", 1, 3, 0.25f, {
+				{ Kind::Owner, "Owner.MoveSpeedHorizontal", Op::Add, 3.f, true }, { Kind::Owner, "Owner.MoveSpeedVertical", Op::Add, 3.f, true } } },
+			{ "Module.Movement.ManeuverThruster.Basic", 0, 1, 0.25f, { { Kind::Owner, "Owner.MoveSpeedHorizontal", Op::Add, 0.36f, true } } },
+			{ "Module.Utility.CoolingCircuit.Basic", 0, 2, 0.25f, { { Kind::Owner, "Owner.AbilityHaste", Op::Add, 8.f, true } } },
+			{ "Module.Utility.CoolingCircuit.Basic", 1, 3, 0.25f, { { Kind::Owner, "Owner.AbilityHaste", Op::Add, 11.f, true } } },
+			{ "Module.Utility.EnergyCell.Basic", 0, 2, 0.25f, { { Kind::Owner, "Owner.Energy.Power", Op::Add, 10.f, true } } },
+			{ "Module.Utility.EnergyCell.Basic", 1, 3, 0.25f, { { Kind::Owner, "Owner.Energy.Power", Op::Add, 14.f, true } } },
+			{ "Module.Utility.TargetingComputer.Basic", 0, 1, 0.25f, { { Kind::Owner, "Owner.CriticalChance", Op::Add, 3.f, true } } },
+			{ "Module.Utility.TargetingComputer.Basic", 1, 2, 0.25f, { { Kind::Owner, "Owner.CriticalChance", Op::Add, 5.f, true } } },
+			{ "Module.Defense.ShieldGenerator.FastCharge", 0, 2, 0.25f, {
+				{ Kind::Ship, "Ship.Shield.Max", Op::Multiply, 0.8f, false }, { Kind::Ship, "Ship.Shield.Regen", Op::Multiply, 1.5f, true } } },
+			{ "Module.Defense.ShieldGenerator.Heavy", 0, 3, 0.25f, { { Kind::Ship, "Ship.Shield.Max", Op::Add, 60.f, true } } },
+			{ "Module.Movement.Afterburner.Extended", 0, 3, 0.25f, { { Kind::Ship, "Ship.Afterburner.Capacity", Op::Add, 50.f, true } } }
+		};
+
+		std::set<std::string> covered;
+		for (const ExpectedVariant& entry : expected)
+		{
+			covered.insert(entry.id);
+			const std::string label = std::string(entry.id) + " v" + std::to_string(entry.variant);
+			const ly::ModuleDefinition* module = ly::content::ModuleContentCatalog::FindById(entry.id);
+			Check(module != nullptr && entry.variant < module->sizeVariants.size(), label + " is missing from the catalog");
+			if (!module || entry.variant >= module->sizeVariants.size()) continue;
+			Check(module->sizeVariants[entry.variant].shape.cells.size() == entry.cells, label + " cell count");
+			Check(!module->displayName.empty() && module->displayName != entry.id, label + " carries a display name");
+
+			const ly::ShipSchematic* schematic = nullptr;
+			ly::ModulePlacement best;
+			float bestBonus = -1.f;
+			Check(FindBestPlacement(allSchematics, entry.id, entry.variant, schematic, best, bestBonus), label + " fits no shipped ship");
+			if (!schematic) continue;
+			if (entry.requiredBonus >= 0.f) Check(Near(bestBonus, entry.requiredBonus), label + " reaches its matching zone bonus");
+
+			const ly::ModuleRulesContext rules{ *schematic,
+				[](const sas::ContentId& moduleId) { return ly::content::ModuleContentCatalog::FindById(moduleId); },
+				ly::content::ModuleContentCatalog::GetZoneTable() };
+			const ly::ResolvedModuleEffects effects = ly::ModuleResolver::Resolve(rules, { best });
+			const auto expectedValue = [&](const ExpectedEffect& effect)
+			{
+				if (!effect.scaled) return effect.rawMagnitude;
+				return effect.operation == sas::AttributeModifierOperation::Multiply
+					? 1.f + (effect.rawMagnitude - 1.f) * (1.f + bestBonus) : effect.rawMagnitude * (1.f + bestBonus);
+			};
+			const auto compare = [&](const ly::List<sas::AttributeModifier>& actual, Kind kind)
+			{
+				std::vector<const ExpectedEffect*> wanted;
+				for (const ExpectedEffect& effect : entry.effects) if (effect.kind == kind) wanted.push_back(&effect);
+				Check(actual.size() == wanted.size(), label + " resolved modifier count");
+				if (actual.size() != wanted.size()) return;
+				for (std::size_t i = 0; i < wanted.size(); ++i)
+				{
+					Check(actual[i].attributeId.GetName() == wanted[i]->attribute && actual[i].operation == wanted[i]->operation,
+						label + " resolved modifier identity " + wanted[i]->attribute);
+					Check(Near(actual[i].magnitude, expectedValue(*wanted[i])), label + " resolved magnitude " + wanted[i]->attribute);
+				}
+			};
+			compare(effects.ownerModifiers, Kind::Owner);
+			compare(effects.shipModifiers, Kind::Ship);
+			compare(effects.primaryWeaponModifiers, Kind::Primary);
+			ly::List<sas::AttributeModifier> abilityModifiers;
+			for (const ly::ScopedAbilityRule& rule : effects.abilityRules)
+			{
+				Check(rule.requiredAbilityTags.size() == 1 && rule.requiredAbilityTags[0] == module->family, label + " scoped rule family");
+				for (const auto& modifier : rule.attributeModifiers) abilityModifiers.push_back(modifier);
+			}
+			compare(abilityModifiers, Kind::Ability);
+			Check(effects.enabledSystems.size() == (module->systemCategory.name.empty() ? 0u : 1u), label + " enabled systems");
+		}
+
+		// Hard-coded final values on Fighter, with the matching zone bonus (0.25) applied.
+		const auto resolveOnFighter = [&](const char* id)
+		{
+			const ly::ShipSchematic* schematic = nullptr;
+			ly::ModulePlacement placement;
+			float bonus = 0.f;
+			FindBestPlacement(fighterSchematic, id, 0, schematic, placement, bonus);
+			Check(schematic != nullptr && Near(bonus, 0.25f), std::string(id) + " reaches the matching zone on Fighter");
+			if (!schematic) return ly::ResolvedModuleEffects{};
+			const ly::ModuleRulesContext rules{ *schematic,
+				[](const sas::ContentId& moduleId) { return ly::content::ModuleContentCatalog::FindById(moduleId); },
+				ly::content::ModuleContentCatalog::GetZoneTable() };
+			return ly::ModuleResolver::Resolve(rules, { placement });
+		};
+		const auto armor = resolveOnFighter("Module.Defense.ArmorPlate.Basic");
+		Check(armor.ownerModifiers.size() == 1 && Near(armor.ownerModifiers[0].magnitude, 5.f), "Armor Plate in the Core resolves to +5 armor");
+		const auto heavy = resolveOnFighter("Module.Defense.ShieldGenerator.Heavy");
+		Check(heavy.shipModifiers.size() == 1 && Near(heavy.shipModifiers[0].magnitude, 75.f), "Heavy Shield in the Core resolves to +75 shield");
+		const auto fast = resolveOnFighter("Module.Defense.ShieldGenerator.FastCharge");
+		Check(fast.shipModifiers.size() == 2 && Near(fast.shipModifiers[0].magnitude, 0.8f) && Near(fast.shipModifiers[1].magnitude, 1.625f),
+			"Fast Charge resolves to x0.8 max shield (no zone bonus) and x1.625 regen");
+		const auto barrel = resolveOnFighter("Module.Primary.FocusedBarrel.Basic");
+		Check(barrel.primaryWeaponModifiers.size() == 1 && Near(barrel.primaryWeaponModifiers[0].magnitude, 1.125f), "Focused Barrel in the Nose resolves to x1.125 damage");
+
+		// Every module is either one of the four standard system modules or covered above.
+		std::size_t standardCount = 0;
+		for (const ly::ModuleDefinition& definition : ly::content::ModuleContentCatalog::GetDefinitions())
+		{
+			const std::string id = definition.moduleId.ToString();
+			if (id.size() >= 9 && id.compare(id.size() - 9, 9, ".Standard") == 0) { ++standardCount; continue; }
+			Check(covered.count(id) == 1, "content module has no test expectation: " + id);
+		}
+		Check(standardCount == 4, "four standard modules");
+	}
+
 	void TestRotation()
 	{
 		using ly::ModuleShapeRules::Rotate;
@@ -790,6 +985,7 @@ int main()
 	TestLoadoutMutations();
 	TestDefaultSeeding();
 	TestResolver();
+	TestFirstModuleContent();
 
 	if (gFailures != 0)
 	{
