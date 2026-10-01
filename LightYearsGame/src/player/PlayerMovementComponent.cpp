@@ -57,21 +57,30 @@ namespace ly
 
 	void PlayerMovementComponent::SetInput()
 	{
+		// Device state is global: never read it for a headless world or while the
+		// window is unfocused, otherwise typing elsewhere drives the ship.
+		const World* world = mOwner.GetWorld();
+		const bool hasInputFocus = world && world->HasInputFocus();
+		const auto isKeyPressed = [hasInputFocus](sf::Keyboard::Key key)
+		{
+			return hasInputFocus && sf::Keyboard::isKeyPressed(key);
+		};
+
 		mMoveInput = { 0.f, 0.f };
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
+		if (isKeyPressed(sf::Keyboard::Key::W) || isKeyPressed(sf::Keyboard::Key::Up))
 		{
 			mMoveInput.y = -1.f;
 		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
+		else if (isKeyPressed(sf::Keyboard::Key::S) || isKeyPressed(sf::Keyboard::Key::Down))
 		{
 			mMoveInput.y = 1.f;
 		}
 
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+		if (isKeyPressed(sf::Keyboard::Key::A) || isKeyPressed(sf::Keyboard::Key::Left))
 		{
 			mMoveInput.x = -1.f;
 		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
+		else if (isKeyPressed(sf::Keyboard::Key::D) || isKeyPressed(sf::Keyboard::Key::Right))
 		{
 			mMoveInput.x = 1.f;
 		}
@@ -82,8 +91,8 @@ namespace ly
 		}
 
 		mAfterburnerRequested =
-			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) ||
-			sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
+			isKeyPressed(sf::Keyboard::Key::LShift) ||
+			isKeyPressed(sf::Keyboard::Key::RShift);
 
 		mOwner.GetMovementComponent().SetAbilityWorldMovementInput(
 			ResolveAbilityWorldMovementInput()
@@ -94,7 +103,7 @@ namespace ly
 		{
 			combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
 				binding.slot,
-				sf::Keyboard::isKeyPressed(binding.key)
+				isKeyPressed(binding.key)
 			);
 		}
 

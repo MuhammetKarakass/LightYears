@@ -554,13 +554,27 @@ namespace ly{
 
 	sf::View World::GetWorldView() const
 	{
+		if (!mOwningApp)
+		{
+			return mCameraManager.GetView(sf::View{});
+		}
 		return mCameraManager.GetView(mOwningApp->GetRenderWindow().getDefaultView());
 	}
 
 	sf::Vector2f World::GetMouseWorldPosition() const
 	{
+		if (!mOwningApp)
+		{
+			// No window to read the cursor from; aim at the view center.
+			return GetWorldView().getCenter();
+		}
 		const sf::RenderWindow& window = mOwningApp->GetRenderWindow();
 		return window.mapPixelToCoords(sf::Mouse::getPosition(window), GetWorldView());
+	}
+
+	bool World::HasInputFocus() const
+	{
+		return mOwningApp && mOwningApp->GetRenderWindow().hasFocus();
 	}
 
 
