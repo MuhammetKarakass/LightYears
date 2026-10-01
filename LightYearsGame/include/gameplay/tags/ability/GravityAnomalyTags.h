@@ -4,7 +4,7 @@
 
 namespace ly::GameplayTags::Ability::Family
 {
-	inline const GameplayTag GravityAnomaly{ "Ability.Control.GravityAnomaly" };
+	inline const GameplayTag GravityAnomaly{ "Ability.Utility.GravityAnomaly" };
 }
 
 namespace ly::GameplayTags::State::Effect::GravityAnomaly

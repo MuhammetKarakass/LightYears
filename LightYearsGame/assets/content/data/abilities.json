@@ -631,7 +631,7 @@
       }
     },
     {
-      "id": "Ability.Control.GravityAnomaly.Basic",
+      "id": "Ability.Utility.GravityAnomaly.Basic",
       "cooldown": 13.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -892,7 +892,7 @@
       ]
     },
     {
-      "id": "Ability.Control.NullPulse.Basic",
+      "id": "Ability.Utility.NullPulse.Basic",
       "cooldown": 12.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -909,12 +909,12 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.NullPulse.EnergyPowerDamageScale",
+          "id": "Ability.Utility.NullPulse.EnergyPowerDamageScale",
           "baseValue": 0.25,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.NullPulse.BaseStunDuration",
+          "id": "Ability.Utility.NullPulse.BaseStunDuration",
           "baseValue": 1.0,
           "minValue": 0.0
         }
@@ -929,7 +929,7 @@
               "magnitude": 5.0
             },
             {
-              "attributeId": "Ability.Control.NullPulse.EnergyPowerDamageScale",
+              "attributeId": "Ability.Utility.NullPulse.EnergyPowerDamageScale",
               "operation": "Add",
               "magnitude": 0.03
             }
@@ -937,9 +937,9 @@
         }
       },
       "invocationOutputAttributes": [
-        "Ability.Control.NullPulse.BaseStunDuration",
+        "Ability.Utility.NullPulse.BaseStunDuration",
         "Common.Damage",
-        "Ability.Control.NullPulse.EnergyPowerDamageScale"
+        "Ability.Utility.NullPulse.EnergyPowerDamageScale"
       ]
     },
     {
@@ -1686,7 +1686,7 @@
       }
     },
     {
-      "id": "Ability.Offense.ScorchDrive.Basic",
+      "id": "Ability.Movement.ScorchDrive.Basic",
       "cooldown": 13.0,
       "duration": 5.0,
       "maxCharges": 1,
@@ -1698,17 +1698,17 @@
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.ScorchDrive.SegmentSpawnDistance",
+          "id": "Ability.Movement.ScorchDrive.SegmentSpawnDistance",
           "baseValue": 60.0,
           "minValue": 0.1
         },
         {
-          "id": "Ability.Offense.ScorchDrive.BaseSegmentLifetime",
+          "id": "Ability.Movement.ScorchDrive.BaseSegmentLifetime",
           "baseValue": 5.0,
           "minValue": 0.01
         },
         {
-          "id": "Ability.Offense.ScorchDrive.IgniteStacks",
+          "id": "Ability.Movement.ScorchDrive.IgniteStacks",
           "baseValue": 1.0,
           "minValue": 0.0,
           "maxValue": 4.0
@@ -2266,56 +2266,56 @@
       ]
     },
     {
-      "id": "Ability.Control.FrostMaelstrom.Basic",
+      "id": "Ability.Utility.FrostMaelstrom.Basic",
       "cooldown": 14.0,
       "duration": 6.0,
       "maxCharges": 1,
       "settings": {},
       "attributes": [
         {
-          "id": "Ability.Control.FrostMaelstrom.MinimumRadius",
+          "id": "Ability.Utility.FrostMaelstrom.MinimumRadius",
           "baseValue": 300.0,
           "minValue": 1.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.MaximumRadius",
+          "id": "Ability.Utility.FrostMaelstrom.MaximumRadius",
           "baseValue": 600.0,
           "minValue": 1.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.MinimumMovementSpeed",
+          "id": "Ability.Utility.FrostMaelstrom.MinimumMovementSpeed",
           "baseValue": 200.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.MaximumMovementSpeed",
+          "id": "Ability.Utility.FrostMaelstrom.MaximumMovementSpeed",
           "baseValue": 500.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.CryoStacksPerTick",
+          "id": "Ability.Utility.FrostMaelstrom.CryoStacksPerTick",
           "baseValue": 1.0,
           "minValue": 1.0,
           "maxValue": 1.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.OrbitalAngularSpeed",
+          "id": "Ability.Utility.FrostMaelstrom.OrbitalAngularSpeed",
           "baseValue": 4.5,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.OrbitalRadiusRatio",
+          "id": "Ability.Utility.FrostMaelstrom.OrbitalRadiusRatio",
           "baseValue": 0.42,
           "minValue": 0.01,
           "maxValue": 1.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.EnergyPowerDamageScale",
+          "id": "Ability.Utility.FrostMaelstrom.EnergyPowerDamageScale",
           "baseValue": 0.1,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Control.FrostMaelstrom.PullStrength",
+          "id": "Ability.Utility.FrostMaelstrom.PullStrength",
           "baseValue": 300.0,
           "minValue": 0.0
         },
@@ -2358,12 +2358,12 @@
               "magnitude": 1.0
             },
             {
-              "attributeId": "Ability.Control.FrostMaelstrom.EnergyPowerDamageScale",
+              "attributeId": "Ability.Utility.FrostMaelstrom.EnergyPowerDamageScale",
               "operation": "Add",
               "magnitude": 0.01
             },
             {
-              "attributeId": "Ability.Control.FrostMaelstrom.PullStrength",
+              "attributeId": "Ability.Utility.FrostMaelstrom.PullStrength",
               "operation": "Add",
               "magnitude": 25.0
             }
@@ -3840,7 +3840,7 @@
       ]
     },
     {
-      "id": "Ability.Control.CryoBola.Basic",
+      "id": "Ability.Utility.CryoBola.Basic",
       "cooldown": 13.0,
       "duration": 0.0,
       "maxCharges": 1,
@@ -3922,66 +3922,66 @@
       ]
     },
     {
-      "id": "Ability.Offense.LanceDrive.Basic",
+      "id": "Ability.Movement.LanceDrive.Basic",
       "cooldown": 15.0,
       "duration": 6.0,
       "maxCharges": 1,
       "settings": {},
       "attributes": [
         {
-          "id": "Ability.Offense.LanceDrive.BaseDamage",
+          "id": "Ability.Movement.LanceDrive.BaseDamage",
           "baseValue": 20.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.LanceDrive.SpeedDamageConversion",
+          "id": "Ability.Movement.LanceDrive.SpeedDamageConversion",
           "baseValue": 0.3,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.LanceDrive.TopSpeedBonus",
+          "id": "Ability.Movement.LanceDrive.TopSpeedBonus",
           "baseValue": 300.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.LanceDrive.ThrustBonus",
+          "id": "Ability.Movement.LanceDrive.ThrustBonus",
           "baseValue": 0.25,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.LanceDrive.TurnCapabilityMultiplier",
+          "id": "Ability.Movement.LanceDrive.TurnCapabilityMultiplier",
           "baseValue": 0.25,
           "minValue": 0.0,
           "maxValue": 1.0
         },
         {
-          "id": "Ability.Offense.LanceDrive.SameTargetHitCooldown",
+          "id": "Ability.Movement.LanceDrive.SameTargetHitCooldown",
           "baseValue": 0.75,
           "minValue": 0.01
         },
         {
-          "id": "Ability.Offense.LanceDrive.Length",
+          "id": "Ability.Movement.LanceDrive.Length",
           "baseValue": 146.25,
           "minValue": 0.1
         },
         {
-          "id": "Ability.Offense.LanceDrive.EdgeThickness",
+          "id": "Ability.Movement.LanceDrive.EdgeThickness",
           "baseValue": 6.0,
           "minValue": 0.1
         },
         {
-          "id": "Ability.Offense.LanceDrive.OpeningAngleDegrees",
+          "id": "Ability.Movement.LanceDrive.OpeningAngleDegrees",
           "baseValue": 50.0,
           "minValue": 1.0,
           "maxValue": 179.0
         },
         {
-          "id": "Ability.Offense.LanceDrive.LateralKnockback",
+          "id": "Ability.Movement.LanceDrive.LateralKnockback",
           "baseValue": 75.0,
           "minValue": 0.0
         },
         {
-          "id": "Ability.Offense.LanceDrive.EnergyPowerConversionAmplifierPerPoint",
+          "id": "Ability.Movement.LanceDrive.EnergyPowerConversionAmplifierPerPoint",
           "baseValue": 0.002,
           "minValue": 0.0
         }
@@ -4003,12 +4003,12 @@
         "steps": {
           "attributeModifiers": [
             {
-              "attributeId": "Ability.Offense.LanceDrive.BaseDamage",
+              "attributeId": "Ability.Movement.LanceDrive.BaseDamage",
               "operation": "Add",
               "magnitude": 5.0
             },
             {
-              "attributeId": "Ability.Offense.LanceDrive.SpeedDamageConversion",
+              "attributeId": "Ability.Movement.LanceDrive.SpeedDamageConversion",
               "operation": "Add",
               "magnitude": 0.04
             }
@@ -4016,10 +4016,10 @@
         }
       },
       "invocationOutputAttributes": [
-        "Ability.Offense.LanceDrive.BaseDamage",
-        "Ability.Offense.LanceDrive.TopSpeedBonus",
-        "Ability.Offense.LanceDrive.ThrustBonus",
-        "Ability.Offense.LanceDrive.LateralKnockback"
+        "Ability.Movement.LanceDrive.BaseDamage",
+        "Ability.Movement.LanceDrive.TopSpeedBonus",
+        "Ability.Movement.LanceDrive.ThrustBonus",
+        "Ability.Movement.LanceDrive.LateralKnockback"
       ]
     },
     {

@@ -6,7 +6,7 @@
 
 #include "gameConfigs/combat/EffectStructs.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
@@ -37,7 +37,7 @@ namespace EffectData
 
 	// JSON fallback/test catalog only. Shipped runtime policy comes from
 	// effects.json; source-owned magnitudes and durations come from the weapon,
-	// ability, attachment, enemy or reward that creates GameplayEffectSpec.
+	// ability, enemy or reward that creates GameplayEffectSpec.
 	inline const sas::GameplayEffectDefinition BasicBarrierEffect{
 		BarrierEffectSchema::BasicEffectId,
 		BarrierBehaviorKey,

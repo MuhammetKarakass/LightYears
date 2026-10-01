@@ -412,7 +412,7 @@ namespace ly
 			content::DamageStatusBalanceCatalog::Get().electric.maxStacks
 		);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
 		// Hull Shock deliberately selects 1/2/3/4 stacks from charge instead of
 		// inheriting the one-stack default used by ordinary Electric weapon hits.

@@ -41,7 +41,7 @@ namespace AbilityData
 			definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 			definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 			definition.abilityTags = {
-				ly::GameplayTags::Ability::Control,
+				ly::GameplayTags::Ability::Utility,
 				ly::GameplayTags::Ability::Family::GravityAnomaly
 			};
 			definition.displayName = "Gravity Anomaly";

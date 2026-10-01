@@ -23,9 +23,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Energy Spear";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue01.png";
 		definition.accentColor = sf::Color{ 190, 250, 255, 255 };
-		definition.attachmentCapabilities = {
-			ly::GameplayTags::Attachment::Capability::Damage
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::EnergySpear;
 		return definition;
 	}();

@@ -1,4 +1,3 @@
-#include "gameplay/content/AttachmentLoader.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/EffectLoader.h"
 #include "gameplay/content/ShipLoader.h"
@@ -24,8 +23,8 @@
 #include "gameConfigs/ability/defensive/DirectionalBarrierConfig.h"
 #include "gameConfigs/ability/offensive/SunBeamConfig.h"
 #include "gameConfigs/ability/offensive/RocketConfig.h"
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
-#include "gameConfigs/ability/control/FrostMaelstromConfig.h"
+#include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/utility/FrostMaelstromConfig.h"
 #include "gameConfigs/ability/offensive/FrozenThrongConfig.h"
 #include "gameConfigs/ability/offensive/CombatSentryConfig.h"
 #include "gameConfigs/ability/offensive/NanoPlagueConfig.h"
@@ -33,7 +32,7 @@
 #include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
 #include "gameConfigs/ability/offensive/OrbitalDronesConfig.h"
 #include "gameConfigs/ability/offensive/ExecutionDriveConfig.h"
-#include "gameConfigs/ability/control/NullPulseConfig.h"
+#include "gameConfigs/ability/utility/NullPulseConfig.h"
 #include "gameConfigs/ability/movement/PhaseDriftConfig.h"
 #include "gameConfigs/ability/offensive/HullShockConfig.h"
 #include "gameConfigs/ability/defensive/ShieldHarvestConfig.h"
@@ -47,7 +46,7 @@
 #include "gameConfigs/ability/defensive/ReturnProtocolConfig.h"
 #include "gameConfigs/ability/defensive/CrystalBarricadeConfig.h"
 #include "gameConfigs/ability/offensive/CrescentReaverConfig.h"
-#include "gameConfigs/ability/offensive/ScorchDriveConfig.h"
+#include "gameConfigs/ability/movement/ScorchDriveConfig.h"
 #include "gameConfigs/ability/offensive/IonStormConfig.h"
 #include "gameConfigs/ability/offensive/ChainLightningConfig.h"
 #include "gameConfigs/ability/offensive/GlacialPressureConfig.h"
@@ -1419,7 +1418,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.Control.FrostMaelstrom.Basic";
+			return definition.id == "Ability.Utility.FrostMaelstrom.Basic";
 		}
 	);
 	if (frostMaelstromIt == loadedAbilities.definitions.end() ||
@@ -1777,7 +1776,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.Control.GravityAnomaly.Basic";
+			return definition.id == "Ability.Utility.GravityAnomaly.Basic";
 		}
 	);
 	if (gravityIt == loadedAbilities.definitions.end() ||
@@ -1836,7 +1835,7 @@ int main()
 		loadedAbilities.definitions.end(),
 		[](const ly::content::AbilityLoader::LoadedDefinition& definition)
 		{
-			return definition.id == "Ability.Control.NullPulse.Basic";
+			return definition.id == "Ability.Utility.NullPulse.Basic";
 		}
 	);
 	if (nullPulseIt == loadedAbilities.definitions.end() ||
@@ -2219,43 +2218,6 @@ int main()
 		return 1;
 	}
 
-	const std::filesystem::path attachmentPath =
-		std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
-		"LightYearsGame/assets/content/data/attachments.json";
-	const ly::content::AttachmentLoader::Result loadedAttachments =
-		ly::content::AttachmentLoader::LoadFromFile(attachmentPath);
-	const auto kineticBoreIt = std::find_if(
-		loadedAttachments.definitions.begin(),
-		loadedAttachments.definitions.end(),
-		[](const ly::AttachmentDefinition& definition)
-		{
-			return definition.attachmentId == "Attachment.Kinetic.Bore.Basic";
-		}
-	);
-	if (!loadedAttachments.Succeeded() || loadedAttachments.definitions.size() != 2 ||
-		loadedAttachments.definitions.front().attachmentId !=
-			"Attachment.Thermal.Converter.Basic" ||
-		loadedAttachments.definitions.front().eventRules.size() != 1 ||
-		kineticBoreIt == loadedAttachments.definitions.end() ||
-		!NearlyEqual(
-			sas::FindAttributeValue(
-				kineticBoreIt->grantedAttributes,
-				ly::DamageAttributeIds::ArmorPenetration,
-				0.f
-			),
-			0.10f
-		) ||
-		kineticBoreIt->conditionalAttributeModifiers.size() != 1 ||
-		kineticBoreIt->conditionalAttributeModifiers.front().modifier.attributeId !=
-			ly::DamageAttributeIds::ArmorPenetration ||
-		!NearlyEqual(
-			kineticBoreIt->conditionalAttributeModifiers.front().modifier.magnitude,
-			0.05f
-		))
-	{
-		return Fail("Attachment JSON catalog did not load the expected definition") ? 0 : 1;
-	}
-
 	const std::filesystem::path effectPath =
 		std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 		"LightYearsGame/assets/content/data/effects.json";
@@ -2403,6 +2365,6 @@ int main()
 		return Fail("Effect catalog reintroduced a C++ fallback record missing from JSON") ? 0 : 1;
 	}
 
-	std::cout << "Ability, weapon, ship, attachment, effect, and enemy combat profile content loader tests passed\n";
+	std::cout << "Ability, weapon, ship, effect, and enemy combat profile content loader tests passed\n";
 	return 0;
 }

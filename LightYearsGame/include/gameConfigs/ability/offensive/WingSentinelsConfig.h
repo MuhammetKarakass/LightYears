@@ -2,7 +2,6 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/wingSentinels/WingSentinelsContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/wingSentinels/WingSentinelsPresentationIds.h"
 
@@ -35,10 +34,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Wing Sentinels";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 100, 205, 255, 255 };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage,
-			ly::AttachmentSchema::Capability::Projectile
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::WingSentinels;
 		return definition;
 	}();

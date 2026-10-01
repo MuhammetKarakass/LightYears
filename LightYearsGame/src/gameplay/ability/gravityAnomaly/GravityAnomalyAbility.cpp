@@ -4,7 +4,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
 
 #include <cmath>
 #include <optional>

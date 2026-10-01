@@ -93,17 +93,6 @@ int main()
 	{
 		return Fail("Unregistered shared action lock was accepted");
 	}
-	if (!content::ContentIdSchema::ValidateAttachmentId(
-		"Attachment.Thermal.Converter.Basic",
-		&failureReason
-	) || !GameplayTagSchema::Validate(
-		GameplayTag{ "Attachment.Capability.Damage" },
-		GameplayTagKind::AttachmentCapability,
-		&failureReason
-	))
-	{
-		return Fail("Attachment tag domains were rejected");
-	}
 	if (!GameplayTagSchema::Validate(
 		GameplayTagSchema::AbilityOffense,
 		GameplayTagKind::AbilityCategory,
@@ -145,9 +134,6 @@ int main()
 		) || !content::ContentIdSchema::ValidateShipId(
 			"Ship.Player.Fighter.Basic",
 			&failureReason
-		) || !content::ContentIdSchema::ValidateAttachmentId(
-			"Attachment.Thermal.Converter.Basic",
-			&failureReason
 		) || !content::ContentIdSchema::ValidateGameplayEffectVisualId(
 			"Visual.Effect.Shield.Basic",
 			&failureReason
@@ -172,9 +158,6 @@ int main()
 			&failureReason
 		) || content::ContentIdSchema::ValidateShipId(
 			"Ship.Fighter",
-			&failureReason
-		) || content::ContentIdSchema::ValidateAttachmentId(
-			"Attachment.Thermal.Converter",
 			&failureReason
 		) || content::ContentIdSchema::ValidateGameplayEffectVisualId(
 			"Visual.Shield.Basic",

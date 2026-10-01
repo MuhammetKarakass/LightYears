@@ -3,7 +3,6 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/actors/AbilityActorType.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/overdriveCore/OverdriveCorePresentationIds.h"
 
@@ -38,9 +37,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Overdrive Core";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserRed04.png";
 		definition.accentColor = sf::Color{ 255, 95, 45, 255 };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::OverdriveCore;
 		return definition;
 	}();

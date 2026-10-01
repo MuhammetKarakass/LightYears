@@ -324,13 +324,6 @@ namespace ly::content
 			definition.damageTags = ParseTags(
 				object.value("damageTags", Json::array())
 			);
-			definition.attachmentCapabilities = ParseTags(
-				object.value("attachmentCapabilities", Json::array())
-			);
-			definition.attachmentSlotCapacity = object.value(
-				"attachmentSlotCapacity",
-				static_cast<size_t>(2)
-			);
 
 			if (object.contains("cadenceMode"))
 			{

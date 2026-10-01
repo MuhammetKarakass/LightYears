@@ -104,7 +104,7 @@ namespace ly
 			if (failureReason)
 			{
 				*failureReason =
-					"Lance Drive requires a timed OnPressed lifecycle, offense/family tags, all runtime attributes, and Kinetic damage.";
+					"Lance Drive requires a timed OnPressed lifecycle, movement/family tags, all runtime attributes, and Kinetic damage.";
 			}
 			return false;
 		}

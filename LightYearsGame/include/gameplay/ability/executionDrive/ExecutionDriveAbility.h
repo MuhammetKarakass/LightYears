@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gameplay/ability/GameAbility.h"
+#include "effects/GameplayEffectHandle.h"
 
 namespace ly
 {

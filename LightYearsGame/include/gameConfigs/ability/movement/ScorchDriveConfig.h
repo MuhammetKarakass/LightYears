@@ -31,7 +31,7 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
+			ly::GameplayTags::Ability::Movement,
 			ly::GameplayTags::Ability::Family::ScorchDrive
 		};
 		definition.displayName = "Scorch Drive";

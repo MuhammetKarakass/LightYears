@@ -1,21 +1,20 @@
 #pragma once
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
+#include "gameplay/damage/DamageTypeSystem.h"
 
 namespace ly::AbilityActionAttributeResolver
 {
 	// Shared value resolution for actions. Weapon execution and the generic
-	// scheduler use the same ability scaling and attachment rules.
+	// scheduler use the same ability scaling rules.
 	sas::GameplayAttributeList ResolveAttributes(
 		AbilityExecutionContext& context,
 		const PrimaryWeaponDefinition* weaponDefinition,
-		const sas::GameplayAttributeList& attributes,
-		const List<GameplayTag>& originalDamageTags = {}
+		const sas::GameplayAttributeList& attributes
 	);
 
 	// Resolves the ability definition's own numeric values through the same
-	// level, attachment, owner-scaling, and clamp pipeline used by actions.
+	// level, owner-scaling, and clamp pipeline used by actions.
 	sas::GameplayAttributeList ResolveAbilityAttributes(
 		AbilityExecutionContext& context
 	);
@@ -27,8 +26,5 @@ namespace ly::AbilityActionAttributeResolver
 	);
 
 	List<GameplayTag> BuildBaseDamageTags(const GameAbilityDefinition* definition);
-	List<GameplayTag> ResolveDamageTags(
-		const AbilityExecutionContext& context,
-		AttachmentHostKind hostKind
-	);
+	List<GameplayTag> ResolveDamageTags(const AbilityExecutionContext& context);
 }

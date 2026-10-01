@@ -226,8 +226,7 @@ namespace ly
 			AbilityActionAttributeResolver::ResolveAttributes(
 				executionContext,
 				nullptr,
-				projectile->attributes,
-				context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability)
+				projectile->attributes
 			);
 		const float castRange = std::max(
 			0.f,

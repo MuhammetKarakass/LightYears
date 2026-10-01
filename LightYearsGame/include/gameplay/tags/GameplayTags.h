@@ -67,7 +67,6 @@ namespace ly::GameplayTags
 		inline const GameplayTag Offense{ "Ability.Offense" };
 		inline const GameplayTag Defense{ "Ability.Defense" };
 		inline const GameplayTag Movement{ "Ability.Movement" };
-		inline const GameplayTag Control{ "Ability.Control" };
 		inline const GameplayTag Utility{ "Ability.Utility" };
 
 	}
@@ -189,21 +188,6 @@ namespace ly::GameplayTags
 			inline const GameplayTag Thermal{ "Damage.Type.Thermal" };
 			inline const GameplayTag Cryo{ "Damage.Type.Cryo" };
 			inline const GameplayTag Electric{ "Damage.Type.Electric" };
-		}
-	}
-
-	namespace Attachment
-	{
-		inline const GameplayTag Root{ "Attachment" };
-		namespace Capability
-		{
-			inline const GameplayTag Root{ "Attachment.Capability" };
-			inline const GameplayTag Damage{ "Attachment.Capability.Damage" };
-			inline const GameplayTag Cooldown{ "Attachment.Capability.Cooldown" };
-			inline const GameplayTag FireRate{ "Attachment.Capability.FireRate" };
-			inline const GameplayTag Projectile{ "Attachment.Capability.Projectile" };
-			inline const GameplayTag Beam{ "Attachment.Capability.Beam" };
-			inline const GameplayTag Area{ "Attachment.Capability.Area" };
 		}
 	}
 

@@ -290,8 +290,7 @@ namespace ly
 			AbilityActionAttributeResolver::ResolveAttributes(
 				executionContext,
 				nullptr,
-				rocketActor->attributes,
-				context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability)
+				rocketActor->attributes
 			);
 		const float targetRange = sas::FindAttributeValue(
 			rocketValues,

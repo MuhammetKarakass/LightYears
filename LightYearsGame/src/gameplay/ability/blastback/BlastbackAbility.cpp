@@ -306,7 +306,7 @@ namespace ly
 			FindValue(values, AbilityData::Blastback::Attribute::OuterIgniteStacks, 2.f)
 		)), 1, 4);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 		const sf::Vector2f origin = owner->GetActorLocation();
 		const sf::Vector2f forward = owner->GetActorForwardDirection();
 

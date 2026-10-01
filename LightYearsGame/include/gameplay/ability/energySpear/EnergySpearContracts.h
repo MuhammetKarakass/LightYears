@@ -52,7 +52,7 @@ namespace AbilityData::EnergySpear
 
 		// These values describe Energy Spear's unique charge and movement formula.
 		// They are ability attributes, not JSON settings, so they use the normal
-		// ability level, attachment and runtime resolution pipeline.
+		// ability level and runtime resolution pipeline.
 		inline static const sas::AttributeId MinimumDistance{
 			"Ability.Movement.EnergySpear.MinimumDistance"
 		};

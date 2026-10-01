@@ -10,11 +10,11 @@ namespace AbilityData::ScorchDrive
 	struct AbilityId
 	{
 		inline static constexpr char Basic[] =
-			"Ability.Offense.ScorchDrive.Basic";
+			"Ability.Movement.ScorchDrive.Basic";
 	};
 
 	inline const ly::GameplayTag CategoryTag{
-		ly::GameplayTagSchema::AbilityOffense
+		ly::GameplayTagSchema::AbilityMovement
 	};
 	inline const ly::GameplayTag FamilyTag{
 		ly::GameplayTags::Ability::Family::ScorchDrive
@@ -27,13 +27,13 @@ namespace AbilityData::ScorchDrive
 		inline static const sas::AttributeId SegmentLength = ly::AreaAttributeIds::Length;
 
 		inline static const sas::AttributeId SegmentSpawnDistance{
-			"Ability.Offense.ScorchDrive.SegmentSpawnDistance"
+			"Ability.Movement.ScorchDrive.SegmentSpawnDistance"
 		};
 		inline static const sas::AttributeId BaseSegmentLifetime{
-			"Ability.Offense.ScorchDrive.BaseSegmentLifetime"
+			"Ability.Movement.ScorchDrive.BaseSegmentLifetime"
 		};
 		inline static const sas::AttributeId IgniteStacks{
-			"Ability.Offense.ScorchDrive.IgniteStacks"
+			"Ability.Movement.ScorchDrive.IgniteStacks"
 		};
 	};
 

@@ -3,7 +3,6 @@
 #include "gameplay/ability/actors/AbilityActorType.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/cryoBola/CryoBolaContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/cryoBola/CryoBolaPresentationIds.h"
 
@@ -30,7 +29,7 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Control,
+			ly::GameplayTags::Ability::Utility,
 			ly::GameplayTags::Ability::Family::CryoBola
 		};
 		definition.displayName = "Cryo Bola";
@@ -47,11 +46,6 @@ namespace AbilityData::Definitions
 				0.f,
 				1
 			}
-		};
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage,
-			ly::AttachmentSchema::Capability::Projectile,
-			ly::AttachmentSchema::Capability::Area
 		};
 		definition.behaviorType = ly::AbilityBehaviorType::CryoBola;
 		return definition;

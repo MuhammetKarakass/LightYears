@@ -3,7 +3,7 @@
 #include "gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h"
 
 #include "framework/World.h"
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"

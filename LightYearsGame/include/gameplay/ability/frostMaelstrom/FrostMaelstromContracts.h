@@ -9,10 +9,10 @@ namespace AbilityData::FrostMaelstrom
 	struct AbilityId
 	{
 		inline static constexpr char Basic[] =
-			"Ability.Control.FrostMaelstrom.Basic";
+			"Ability.Utility.FrostMaelstrom.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Control;
+	inline const ly::GameplayTag CategoryTag = ly::GameplayTags::Ability::Utility;
 	inline const ly::GameplayTag FamilyTag =
 		ly::GameplayTags::Ability::Family::FrostMaelstrom;
 
@@ -39,35 +39,35 @@ namespace AbilityData::FrostMaelstrom
 	struct Attribute
 	{
 		inline static const sas::AttributeId MinimumRadius{
-			"Ability.Control.FrostMaelstrom.MinimumRadius"
+			"Ability.Utility.FrostMaelstrom.MinimumRadius"
 		};
 		inline static const sas::AttributeId MaximumRadius{
-			"Ability.Control.FrostMaelstrom.MaximumRadius"
+			"Ability.Utility.FrostMaelstrom.MaximumRadius"
 		};
 		inline static const sas::AttributeId MinimumMovementSpeed{
-			"Ability.Control.FrostMaelstrom.MinimumMovementSpeed"
+			"Ability.Utility.FrostMaelstrom.MinimumMovementSpeed"
 		};
 		inline static const sas::AttributeId MaximumMovementSpeed{
-			"Ability.Control.FrostMaelstrom.MaximumMovementSpeed"
+			"Ability.Utility.FrostMaelstrom.MaximumMovementSpeed"
 		};
 		inline static const sas::AttributeId CryoStacksPerTick{
-			"Ability.Control.FrostMaelstrom.CryoStacksPerTick"
+			"Ability.Utility.FrostMaelstrom.CryoStacksPerTick"
 		};
 		inline static const sas::AttributeId OrbitalAngularSpeed{
-			"Ability.Control.FrostMaelstrom.OrbitalAngularSpeed"
+			"Ability.Utility.FrostMaelstrom.OrbitalAngularSpeed"
 		};
 		inline static const sas::AttributeId PullStrength{
-			"Ability.Control.FrostMaelstrom.PullStrength"
+			"Ability.Utility.FrostMaelstrom.PullStrength"
 		};
 		inline static const sas::AttributeId OrbitalRadiusRatio{
-			"Ability.Control.FrostMaelstrom.OrbitalRadiusRatio"
+			"Ability.Utility.FrostMaelstrom.OrbitalRadiusRatio"
 		};
 		inline static const sas::AttributeId EnergyPowerDamageScale{
-			"Ability.Control.FrostMaelstrom.EnergyPowerDamageScale"
+			"Ability.Utility.FrostMaelstrom.EnergyPowerDamageScale"
 		};
 
 		// Tick damage uses the project-wide Common.Damage identity so normal
-		// AttackPower scaling and damage attachments remain reusable.
+		// AttackPower scaling remains reusable.
 		inline static const sas::AttributeId TickDamage =
 			ly::CommonAttributeIds::Damage;
 	};

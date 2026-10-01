@@ -2,7 +2,6 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/echoProtocol/EchoProtocolContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 
 namespace AbilityData::Definitions
@@ -24,9 +23,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Echo Protocol";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_shield.png";
 		definition.accentColor = sf::Color{ 120, 210, 255, 255 };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Cooldown
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::EchoProtocol;
 		definition.recordInAbilityHistory = false;
 		return definition;

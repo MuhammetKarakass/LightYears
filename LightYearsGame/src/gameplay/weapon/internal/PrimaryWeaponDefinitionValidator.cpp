@@ -574,17 +574,6 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				return { false, "Primary weapon damage tag is invalid: " + tagFailureReason };
 			}
 		}
-		for (const GameplayTag& capability : definition.attachmentCapabilities)
-		{
-			if (!GameplayTagSchema::Validate(
-				capability,
-				GameplayTagKind::AttachmentCapability,
-				&tagFailureReason
-			))
-			{
-				return { false, "Primary weapon attachment capability tag is invalid: " + tagFailureReason };
-			}
-		}
 		const PrimaryWeaponTypeValidationContract* typeContract =
 			PrimaryWeaponValidationContractRegistry::FindType(definition.weaponType);
 		if (!typeContract)

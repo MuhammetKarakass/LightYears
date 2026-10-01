@@ -521,8 +521,6 @@ struct PrimaryWeaponDefinition
 	ly::List<PrimaryWeaponFeatureType> featureTypes;
 	ly::List<HeatGainCurveSegmentDefinition> heatGainCurve;
 	ly::List<ly::GameplayTag> damageTags;
-	ly::List<ly::GameplayTag> attachmentCapabilities;
-	size_t attachmentSlotCapacity = 2;
 	std::optional<PrimaryWeaponMagazineDefinition> magazine;
 	PrimaryWeaponCadenceMode cadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling;
 	PrimaryWeaponDamageRoundingPolicy damageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None;
@@ -543,8 +541,6 @@ struct PrimaryWeaponDefinition
 		const ly::List<PrimaryWeaponFeatureType>& inFeatureTypes = {},
 		const ly::List<HeatGainCurveSegmentDefinition>& inHeatGainCurve = {},
 		const ly::List<ly::GameplayTag>& inDamageTags = {},
-		const ly::List<ly::GameplayTag>& inAttachmentCapabilities = {},
-		size_t inAttachmentSlotCapacity = 2,
 		const std::optional<PrimaryWeaponMagazineDefinition>& inMagazine = std::nullopt,
 		PrimaryWeaponCadenceMode inCadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling,
 		PrimaryWeaponDamageRoundingPolicy inDamageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None,
@@ -562,8 +558,6 @@ struct PrimaryWeaponDefinition
 		, featureTypes(inFeatureTypes)
 		, heatGainCurve(inHeatGainCurve)
 		, damageTags(inDamageTags)
-		, attachmentCapabilities(inAttachmentCapabilities)
-		, attachmentSlotCapacity(inAttachmentSlotCapacity)
 		, magazine(inMagazine)
 		, cadenceMode(inCadenceMode)
 		, damageRoundingPolicy(inDamageRoundingPolicy)

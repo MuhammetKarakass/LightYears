@@ -3,7 +3,6 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/actors/AbilityActorType.h"
 #include "gameplay/ability/relayPrism/RelayPrismContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/relayPrism/RelayPrismPresentationIds.h"
 
@@ -40,10 +39,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Relay Prism";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 220, 100, 255, 255 };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Projectile,
-			ly::AttachmentSchema::Capability::Damage
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::RelayPrism;
 		return definition;
 	}();

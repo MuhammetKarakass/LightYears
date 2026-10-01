@@ -262,18 +262,6 @@ namespace ly::content
 			);
 		}
 
-		static bool ValidateAttachmentId(
-			const std::string& id,
-			std::string* failureReason = nullptr
-		)
-		{
-			return ValidatePrefixedId(
-				id, "Attachment.", 4,
-				"Attachment ID must use Attachment.<Family>.<Name>.<Variant>.",
-				failureReason
-			);
-		}
-
 		static bool ValidateGameplayEffectVisualId(
 			const std::string& id,
 			std::string* failureReason = nullptr
@@ -339,7 +327,6 @@ namespace ly::content
 				category == "Ability.Offense" ||
 				category == "Ability.Defense" ||
 				category == "Ability.Movement" ||
-				category == "Ability.Control" ||
 				category == "Ability.Utility";
 		}
 

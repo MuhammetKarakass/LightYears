@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/ability/rocket/RocketContracts.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -56,7 +55,6 @@ namespace AbilityData
 				}
 			};
 			definition.damageTags = { ly::DamageTypeSchema::Kinetic };
-			definition.attachmentCapabilities = { ly::AttachmentSchema::Capability::Damage };
 			definition.behaviorType = ly::AbilityBehaviorType::Rocket;
 			return definition;
 		}();

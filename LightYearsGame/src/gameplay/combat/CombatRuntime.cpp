@@ -3,9 +3,9 @@
 #include "gameplay/combat/CombatRuntime.h"
 #include "framework/Actor.h"
 #include "abilities/AbilityEvent.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "attributes/AttributeMath.h"
@@ -303,7 +303,7 @@ namespace ly
 		// Keep incoming event and status timing above unchanged.
 
 		// One generic combat event carries the incoming damage context and its
-		// semantic payload tags. Ability/attachment triggers can filter owner
+		// semantic payload tags. Ability triggers can filter owner
 		// status tags and payload damage tags without per-combination event tags.
 		sas::AbilityEvent damageEvent;
 		damageEvent.eventTag = GameplayTags::Event::Combat::DamageReceived;
@@ -346,7 +346,7 @@ namespace ly
 					continue;
 				}
 				sas::AbilityEvent event;
-				event.eventTag = AttachmentSchema::Event::SourceStatusIgniteApplied;
+				event.eventTag = GameplayTags::Event::Source::StatusApplied::Ignite;
 				event.SetSource(context.source);
 				event.SetTarget(context.target);
 				event.magnitude = context.remainingDamage;
@@ -517,7 +517,7 @@ namespace ly
 		if (auto* sourceCombatant = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr)
 		{
 			sas::AbilityEvent sourceEvent;
-			sourceEvent.eventTag = AttachmentSchema::Event::SourceDamageDealt;
+			sourceEvent.eventTag = GameplayTags::Event::Source::DamageDealt;
 			sourceEvent.SetSource(context.source);
 			sourceEvent.SetTarget(context.target);
 			sourceEvent.magnitude = context.appliedDamage;

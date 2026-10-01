@@ -4,7 +4,7 @@
 
 namespace ly::GameplayTags::Ability::Family
 {
-	inline const GameplayTag ScorchDrive{ "Ability.Offense.ScorchDrive" };
+	inline const GameplayTag ScorchDrive{ "Ability.Movement.ScorchDrive" };
 }
 
 namespace ly::GameplayTags::State::Ability::ScorchDrive

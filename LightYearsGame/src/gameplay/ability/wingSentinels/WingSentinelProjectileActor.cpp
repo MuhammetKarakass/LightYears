@@ -3,6 +3,7 @@
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/wingSentinels/WingSentinelsContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/projectile/ProjectileCaptureVolume.h"
 #include "gameplay/projectile/ProjectileReflectionService.h"

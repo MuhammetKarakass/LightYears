@@ -3,6 +3,7 @@
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/ability/astralSurge/AstralSurgeContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/projectile/ProjectileSweep.h"

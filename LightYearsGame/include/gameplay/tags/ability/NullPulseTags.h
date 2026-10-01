@@ -5,8 +5,8 @@
 namespace ly::GameplayTags::Ability::Family
 {
 	// The family tag is the stable semantic identity shared by content,
-	// attachments, progression rules and the C++ behavior registry.
-	inline const GameplayTag NullPulse{ "Ability.Control.NullPulse" };
+	// progression rules and the C++ behavior registry.
+	inline const GameplayTag NullPulse{ "Ability.Utility.NullPulse" };
 }
 
 namespace ly::GameplayTags::State::Effect::Control

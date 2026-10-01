@@ -27,34 +27,19 @@ namespace ly::AbilityActionAttributeResolver
 		float CalculateDefinitionAttributeValue(
 			const sas::GameplayAttribute& attribute,
 			const GameAbilityDefinition& abilityDefinition,
-			const PrimaryWeaponDefinition* weaponDefinition,
-			const GameAbility* instance
+			const PrimaryWeaponDefinition* weaponDefinition
 		)
 		{
 			float value = sas::CalculateModifiedAttributeValue(
 				attribute,
 				abilityDefinition.attributeModifiers
 			);
-			if (instance)
-			{
-				value = instance->ApplyAttachmentModifiers(
-					AttachmentHostKind::Ability,
-					sas::GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue }
-				).currentValue;
-			}
 			if (weaponDefinition)
 			{
 				value = sas::CalculateModifiedAttributeValue(
 					sas::GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue },
 					weaponDefinition->attributeModifiers
 				);
-				if (instance)
-				{
-					value = instance->ApplyAttachmentModifiers(
-						AttachmentHostKind::PrimaryWeapon,
-						sas::GameplayAttribute{ attribute.id, value, attribute.minValue, attribute.maxValue }
-					).currentValue;
-				}
 			}
 			return value;
 		}
@@ -70,12 +55,7 @@ namespace ly::AbilityActionAttributeResolver
 				return std::clamp(attribute.currentValue, attribute.minValue, attribute.maxValue);
 			}
 
-			float value = CalculateDefinitionAttributeValue(
-				attribute,
-				*context.definition,
-				weaponDefinition,
-				context.instance
-			);
+			float value = CalculateDefinitionAttributeValue(attribute, *context.definition, weaponDefinition);
 			if (!weaponDefinition)
 			{
 				value = context.abilitySystem->ApplyScopedAbilityModifiers(
@@ -131,28 +111,11 @@ namespace ly::AbilityActionAttributeResolver
 	sas::GameplayAttributeList ResolveAttributes(
 		AbilityExecutionContext& context,
 		const PrimaryWeaponDefinition* weaponDefinition,
-		const sas::GameplayAttributeList& attributes,
-		const List<GameplayTag>& originalDamageTags
+		const sas::GameplayAttributeList& attributes
 	)
 	{
-		sas::GameplayAttributeList sourceAttributes = attributes;
-		if (context.instance)
-		{
-			sourceAttributes = context.instance->MergeAttachmentAttributes(
-				AttachmentHostKind::Ability,
-				sourceAttributes
-			);
-			if (weaponDefinition)
-			{
-				sourceAttributes = context.instance->MergeAttachmentAttributes(
-					AttachmentHostKind::PrimaryWeapon,
-					sourceAttributes
-				);
-			}
-		}
-
 		sas::GameplayAttributeList values;
-		for (const sas::GameplayAttribute& attribute : sourceAttributes)
+		for (const sas::GameplayAttribute& attribute : attributes)
 		{
 			values.push_back(sas::GameplayAttribute{
 				attribute.id,
@@ -160,22 +123,6 @@ namespace ly::AbilityActionAttributeResolver
 				attribute.minValue,
 				attribute.maxValue
 			});
-		}
-		if (context.instance)
-		{
-			values = context.instance->ApplyAttachmentConditions(
-				AttachmentHostKind::Ability,
-				values,
-				originalDamageTags
-			);
-			if (weaponDefinition)
-			{
-				values = context.instance->ApplyAttachmentConditions(
-					AttachmentHostKind::PrimaryWeapon,
-					values,
-					originalDamageTags
-				);
-			}
 		}
 		return values;
 	}
@@ -222,14 +169,11 @@ namespace ly::AbilityActionAttributeResolver
 		return { DamageTypeSchema::Photonic };
 	}
 
-	List<GameplayTag> ResolveDamageTags(
-		const AbilityExecutionContext& context,
-		AttachmentHostKind hostKind
-	)
+	List<GameplayTag> ResolveDamageTags(const AbilityExecutionContext& context)
 	{
 		if (context.instance)
 		{
-			return context.instance->GetResolvedDamageTags(hostKind);
+			return context.instance->GetResolvedDamageTags();
 		}
 		return BuildBaseDamageTags(context.definition);
 	}

@@ -7,7 +7,7 @@ namespace AbilityData::GravityAnomaly
 {
 	struct AbilityId
 	{
-		inline static constexpr char Basic[] = "Ability.Control.GravityAnomaly.Basic";
+		inline static constexpr char Basic[] = "Ability.Utility.GravityAnomaly.Basic";
 	};
 
 	struct Effect

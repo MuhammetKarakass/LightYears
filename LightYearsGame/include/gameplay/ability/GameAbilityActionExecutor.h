@@ -22,7 +22,6 @@ namespace ly
 		sas::GameplayAttributeList runtimeAttributes;
 		sas::GameplayAttributeList resolvedAttributes;
 		uint64_t resolvedAttributeRevision = 0;
-		uint64_t resolvedAttachmentRevision = 0;
 		uint64_t resolvedConfigurationRevision = 0;
 		bool hasResolvedAttributes = false;
 		int executionCount = 0;

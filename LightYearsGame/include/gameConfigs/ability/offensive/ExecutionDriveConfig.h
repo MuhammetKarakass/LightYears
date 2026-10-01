@@ -2,7 +2,6 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 
 namespace AbilityData::Definitions

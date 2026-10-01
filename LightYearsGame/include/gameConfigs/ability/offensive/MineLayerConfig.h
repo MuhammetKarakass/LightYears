@@ -3,7 +3,6 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/actors/AbilityActorType.h"
 #include "gameplay/ability/mineLayer/MineLayerContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "presentation/ability/mineLayer/MineLayerPresentationIds.h"
 
@@ -39,11 +38,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Mine Layer";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 80, 175, 255, 255 };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage,
-			ly::AttachmentSchema::Capability::Cooldown,
-			ly::AttachmentSchema::Capability::Area
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::MineLayer;
 		return definition;
 	}();

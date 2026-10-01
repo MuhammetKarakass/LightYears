@@ -50,10 +50,8 @@ namespace ly
 		// Linear price per level (see ScrapCostFormula). base == 0 means this
 		// ability cannot be purchased through the run economy.
 		ScrapCostFormula scrapCost;
-		// Damage identity and attachment compatibility are independent from ability tags and level steps.
+		// Damage identity is independent from ability tags and level steps.
 		List<GameplayTag> damageTags;
-		List<GameplayTag> attachmentCapabilities;
-		size_t attachmentSlotCapacity = 2;
 		AbilityBehaviorType behaviorType = AbilityBehaviorType::Configured;
 		// Normal player activations are eligible for the shared ability-use
 		// history by default. System abilities such as Echo can opt out without

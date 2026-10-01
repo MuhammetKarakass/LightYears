@@ -35,7 +35,7 @@ namespace AbilityData::Definitions
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.cooldownStartPolicy = sas::AbilityCooldownStartPolicy::OnActivation;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Offense,
+			ly::GameplayTags::Ability::Movement,
 			ly::GameplayTags::Ability::Family::LanceDrive
 		};
 		definition.displayName = "Lance Drive";

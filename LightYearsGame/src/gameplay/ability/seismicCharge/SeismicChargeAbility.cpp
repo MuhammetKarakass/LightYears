@@ -1,4 +1,5 @@
 #include "gameplay/ability/seismicCharge/SeismicChargeAbility.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 
 #include "attributes/AttributeSystem.h"
 #include "framework/Actor.h"

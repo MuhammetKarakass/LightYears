@@ -1088,7 +1088,7 @@ int main(int argc, char** argv)
 				return Fail("Suite F (Pkg B): Shield.Basic must explicitly contain Effect.BarrierCapacity in invocationOutputAttributes");
 			}
 
-			const auto* gravityDef = content::AbilityContentCatalog::FindById("Ability.Control.GravityAnomaly.Basic");
+			const auto* gravityDef = content::AbilityContentCatalog::FindById("Ability.Utility.GravityAnomaly.Basic");
 			if (!gravityDef) return Fail("Suite F (Pkg B): GravityAnomaly.Basic definition not found in catalog");
 			if (std::find(gravityDef->invocationOutputAttributes.begin(), gravityDef->invocationOutputAttributes.end(), sas::AttributeId{ "AbilityActor.GravityAnomaly.Field.PullStrength" }) == gravityDef->invocationOutputAttributes.end() ||
 				std::find(gravityDef->invocationOutputAttributes.begin(), gravityDef->invocationOutputAttributes.end(), CommonAttributeIds::Duration) == gravityDef->invocationOutputAttributes.end())

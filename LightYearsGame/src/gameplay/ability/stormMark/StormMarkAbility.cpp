@@ -378,7 +378,7 @@ namespace ly
 
 		const int targetLimit = ResolveTargetLimit(values, context.abilitySystem);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
 		payload.electricStacks = std::max(
 			1,

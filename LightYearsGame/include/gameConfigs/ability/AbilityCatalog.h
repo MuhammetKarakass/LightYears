@@ -1,17 +1,17 @@
 #pragma once
 
 #include "gameConfigs/ability/movement/DashConfig.h"
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameConfigs/ability/offensive/OverdriveCoreConfig.h"
 #include "gameConfigs/ability/offensive/RailBurstConfig.h"
 #include "gameConfigs/ability/offensive/CrescentReaverConfig.h"
 #include "gameConfigs/ability/offensive/AegisReaverConfig.h"
 #include "gameConfigs/ability/offensive/MineLayerConfig.h"
-#include "gameConfigs/ability/offensive/ScorchDriveConfig.h"
+#include "gameConfigs/ability/movement/ScorchDriveConfig.h"
 #include "gameConfigs/ability/offensive/IonStormConfig.h"
 #include "gameConfigs/ability/offensive/InertialWakeConfig.h"
-#include "gameConfigs/ability/offensive/LanceDriveConfig.h"
+#include "gameConfigs/ability/movement/LanceDriveConfig.h"
 #include "gameConfigs/ability/offensive/SolarBombardmentConfig.h"
 #include "gameConfigs/ability/offensive/StrikeRunConfig.h"
 #include "gameConfigs/ability/offensive/BlastbackConfig.h"
@@ -42,7 +42,6 @@
 #include "gameConfigs/ability/utility/VoidGateConfig.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameConfigs/combat/WeaponStructs.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 
 namespace AbilityData
@@ -110,9 +109,6 @@ namespace AbilityData
 			definition.damageTags = weaponDefinition.damageTags.empty()
 				? ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic }
 				: weaponDefinition.damageTags;
-			definition.attachmentCapabilities = {
-				ly::AttachmentSchema::Capability::Damage
-			};
 			return definition;
 		}
 	}

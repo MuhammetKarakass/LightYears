@@ -16,8 +16,7 @@ namespace ly
 	{
 		sas::GameplayEffectSpec BuildEffectiveEffectSpec(
 			AbilityExecutionContext& context,
-			const sas::GameplayEffectDefinition& effectDefinition,
-			const List<GameplayTag>& originalDamageTags
+			const sas::GameplayEffectDefinition& effectDefinition
 		)
 		{
 			const GameAbilityDefinition& abilityDefinition = *context.definition;
@@ -43,16 +42,14 @@ namespace ly
 				spec.attributes = AbilityActionAttributeResolver::ResolveAttributes(
 					context,
 					nullptr,
-					sourceSpec->attributes,
-					originalDamageTags
+					sourceSpec->attributes
 				);
 				return spec;
 			}
 			spec.attributes = AbilityActionAttributeResolver::ResolveAttributes(
 				context,
 				nullptr,
-				effectDefinition.attributes,
-				originalDamageTags
+				effectDefinition.attributes
 			);
 			return spec;
 		}
@@ -94,11 +91,7 @@ namespace ly
 
 			const GameAbilityDefinition* abilityDefinition = context.definition;
 			const sas::GameplayEffectSpec effectSpec = abilityDefinition
-				? BuildEffectiveEffectSpec(
-					context,
-					*effectDefinition,
-					AbilityActionAttributeResolver::BuildBaseDamageTags(abilityDefinition)
-				)
+				? BuildEffectiveEffectSpec(context, *effectDefinition)
 				: sas::MakeGameplayEffectSpec(*effectDefinition);
 			sas::AbilitySystemComponent* targetAbilitySystem = ResolveEffectTarget(
 				*context.abilitySystem,

@@ -151,16 +151,12 @@ namespace ly
 			const sas::GameplayAttributeList attributes =
 				BuildAbilityActorAttributes(*actorDefinition);
 			const List<GameplayTag> damageTags =
-				AbilityActionAttributeResolver::ResolveDamageTags(
-					context,
-					AttachmentHostKind::Ability
-				);
+				AbilityActionAttributeResolver::ResolveDamageTags(context);
 			const sas::GameplayAttributeList values =
 				AbilityActionAttributeResolver::ResolveAttributes(
 					context,
 					nullptr,
-					attributes,
-					damageTags
+					attributes
 				);
 			weak_ptr<AbilityWorldActor> spawnedActor = AbilityActorRegistry::Spawn(
 				AbilityActorSpawnContext{

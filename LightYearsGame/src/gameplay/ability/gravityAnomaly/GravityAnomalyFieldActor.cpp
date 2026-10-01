@@ -4,7 +4,7 @@
 
 #include "framework/World.h"
 #include "gameplay/targeting/SweptGeometry.h"
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/ability/actors/AbilityActorRegistry.h"
 #include "gameplay/combat/Combatant.h"

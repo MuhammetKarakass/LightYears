@@ -7,7 +7,7 @@ namespace ly::GameplayTags
 	namespace Ability::Family
 	{
 		inline const GameplayTag FrostMaelstrom{
-			"Ability.Control.FrostMaelstrom"
+			"Ability.Utility.FrostMaelstrom"
 		};
 	}
 

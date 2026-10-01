@@ -1,4 +1,5 @@
 #include "gameplay/ability/solarBombardment/SolarBombardmentProjectileActor.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 
 #include "attributes/AttributeSystem.h"
 #include "framework/World.h"

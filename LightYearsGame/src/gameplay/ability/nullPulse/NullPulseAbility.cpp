@@ -274,7 +274,7 @@ namespace ly
 				*world, context.owner, radius
 			);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 		DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags);
 
 		const sas::GameplayEffectDefinition* stunDefinition =

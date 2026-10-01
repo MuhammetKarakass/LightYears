@@ -1,4 +1,5 @@
 #include "gameplay/ability/nanoPlague/NanoPlagueControllerActor.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 
 #include "framework/World.h"
 #include "gameConfigs/combat/CombatTick.h"

@@ -86,8 +86,6 @@
       "featureTags": [],
       "heatGainCurve": [],
       "damageTags": ["Damage.Type.Photonic"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 2,
       "cadenceMode": "OwnerAttackSpeedPercentage",
       "damageRoundingPolicy": "CeilFinalDamage",
       "magazine": {
@@ -156,9 +154,7 @@
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Thermal"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 2
+      "damageTags": ["Damage.Type.Thermal"]
     },
     {
       "id": "Weapon.Projectile.DualKineticBlaster.Basic",
@@ -253,9 +249,7 @@
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Kinetic"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 2
+      "damageTags": ["Damage.Type.Kinetic"]
     },
     {
       "id": "Weapon.Arc.ElectricLauncher.Basic",
@@ -349,9 +343,7 @@
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Electric"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 2
+      "damageTags": ["Damage.Type.Electric"]
     },
     {
       "id": "Weapon.Beam.ContinuousHeatLaser.Basic",
@@ -450,9 +442,7 @@
         { "endHeatPercentage": 90.0, "gainMultiplier": 0.25 },
         { "endHeatPercentage": 100.0, "gainMultiplier": 0.15 }
       ],
-      "damageTags": ["Damage.Type.Energy"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 2
+      "damageTags": ["Damage.Type.Energy"]
     },
     {
       "id": "Weapon.Wave.CryoProjector.Basic",
@@ -547,9 +537,7 @@
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Cryo"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 2
+      "damageTags": ["Damage.Type.Cryo"]
     },
     {
       "id": "Weapon.Projectile.IroncladMinigun.Basic",
@@ -602,9 +590,7 @@
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Kinetic"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 0
+      "damageTags": ["Damage.Type.Kinetic"]
     },
     {
       "id": "Weapon.Projectile.EnemyVanguardPulse.Basic",
@@ -647,9 +633,7 @@
       "scalingRules": [],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Energy"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 0
+      "damageTags": ["Damage.Type.Energy"]
     },
     {
       "id": "Weapon.Projectile.EnemyTwinBladeScatter.Basic",
@@ -695,9 +679,7 @@
       "scalingRules": [],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Kinetic"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 0
+      "damageTags": ["Damage.Type.Kinetic"]
     },
     {
       "id": "Weapon.Wave.EnemyHexagonCryoPulse.Basic",
@@ -739,9 +721,7 @@
       "scalingRules": [],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Cryo"],
-      "attachmentCapabilities": [],
-      "attachmentSlotCapacity": 0
+      "damageTags": ["Damage.Type.Cryo"]
     }
   ]
 }

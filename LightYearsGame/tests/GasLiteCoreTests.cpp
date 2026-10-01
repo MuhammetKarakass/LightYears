@@ -124,7 +124,7 @@
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/ability/defensive/ReturnProtocolConfig.h"
-#include "gameConfigs/ability/control/GravityAnomalyConfig.h"
+#include "gameConfigs/ability/utility/GravityAnomalyConfig.h"
 #include "gameConfigs/ability/offensive/InfernoSprayConfig.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -140,10 +140,8 @@
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h"
 #include "gameplay/weapon/wave/ExpandingWaveWeaponActor.h"
 #include "gameplay/weapon/visuals/ElectricArcVisualActor.h"
-#include "gameplay/attachment/AttachmentLoadout.h"
 #include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/damage/DamageTypeSystem.h"
-#include "gameConfigs/combat/AttachmentConfig.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -2426,39 +2424,6 @@ int main(int argc, char** argv)
 		return Fail("Barrier did not regenerate after its delay elapsed");
 	}
 
-	AttachmentLoadout energyAttachmentLoadout;
-	if (!energyAttachmentLoadout.TryEquip(
-		AttachmentData::Definitions::EnergyCoupler,
-		AttachmentHostKind::PrimaryWeapon,
-		{ AttachmentSchema::Capability::Damage },
-		1
-	))
-	{
-		return Fail("Energy attachment could not be equipped on a damage host");
-	}
-	const List<GameplayTag> energyAttachmentTags = energyAttachmentLoadout.ResolveDamageTags(
-		AttachmentHostKind::PrimaryWeapon,
-		{ DamageTypeSchema::Photonic }
-	);
-	sas::GameplayAttributeList energyAttachmentAttributes = energyAttachmentLoadout.MergeGrantedAttributes(
-		AttachmentHostKind::PrimaryWeapon,
-		{ sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f } }
-	);
-	energyAttachmentAttributes = energyAttachmentLoadout.ApplyConditionalModifiers(
-		AttachmentHostKind::PrimaryWeapon,
-		energyAttachmentAttributes,
-		energyAttachmentTags
-	);
-	const DamagePayload attachmentEnergyPayload = DamageTypeSystem::BuildPayload(
-		energyAttachmentTags,
-		energyAttachmentAttributes
-	);
-	if (energyAttachmentTags.size() != 1 || energyAttachmentTags.front() != DamageTypeSchema::Energy ||
-		!NearlyEqual(sas::FindAttributeValue(energyAttachmentAttributes, CommonAttributeIds::Damage), 11.5f) ||
-		!NearlyEqual(attachmentEnergyPayload.shieldRegenerationDelay, 0.75f))
-	{
-		return Fail("Damage type attachment did not resolve its converted tag and conditional attributes");
-	}
 	sas::GameplayEffectDefinition smallShield;
 	smallShield.effectId = "Effect.Test.SmallShield";
 	smallShield.behaviorKey = EffectBehaviorKeys::Barrier;
@@ -4963,115 +4928,6 @@ int main(int argc, char** argv)
 		return Fail("Fighter basic rapid laser progression produced the wrong final profile");
 	}
 
-	AttachmentLoadout thermalLoadout;
-	const List<GameplayTag> damageCapabilities{ AttachmentSchema::Capability::Damage };
-	if (!thermalLoadout.TryEquip(
-		AttachmentData::Definitions::ThermalConverter,
-		AttachmentHostKind::PrimaryWeapon,
-		damageCapabilities,
-		2
-	))
-	{
-		return Fail("Thermal attachment could not be equipped on a damage host");
-	}
-	const List<GameplayTag> convertedDamageTags = thermalLoadout.ResolveDamageTags(
-		AttachmentHostKind::PrimaryWeapon,
-		{ DamageTypeSchema::Photonic }
-	);
-	if (convertedDamageTags.size() != 1 || convertedDamageTags.front() != DamageTypeSchema::Thermal)
-	{
-		return Fail("Thermal attachment did not replace the default damage type");
-	}
-	const sas::GameplayAttributeList thermalDamageAttributes = thermalLoadout.ApplyConditionalModifiers(
-		AttachmentHostKind::PrimaryWeapon,
-		{ sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f } },
-		{ DamageTypeSchema::Thermal }
-	);
-	if (!NearlyEqual(sas::FindAttributeValue(thermalDamageAttributes, CommonAttributeIds::Damage), 12.f))
-	{
-		return Fail("Thermal attachment did not grant its already-thermal damage bonus");
-	}
-
-	GameAbilityDefinition attachmentAbility;
-	attachmentAbility.abilityId = "Ability.Offense.Test.AttachmentHost";
-	attachmentAbility.slot = sas::AbilitySlot::Ability4;
-	attachmentAbility.cooldown = 10.f;
-	attachmentAbility.abilityTags = {
-		GameplayTagSchema::AbilityOffense,
-		GameplayTag{ "Ability.Offense.Test" }
-	};
-	const sas::AbilityHandle attachmentAbilityHandle = abilitySystem.GrantAbility(attachmentAbility);
-	if (!attachmentAbilityHandle.IsValid() || !abilitySystem.TryEquipAttachment(
-		attachmentAbilityHandle,
-		AttachmentData::Definitions::HeavyCapacitor,
-		AttachmentHostKind::Ability
-	))
-	{
-		return Fail("Ability-only cooldown attachment could not be equipped on an offensive ability");
-	}
-	const GameAbility* attachmentAbilityInstance = abilitySystem.GetAbility(attachmentAbilityHandle);
-	if (!attachmentAbilityInstance || !NearlyEqual(attachmentAbilityInstance->GetCooldownDuration(), 12.5f))
-	{
-		return Fail("Ability attachment modifiers did not use the shared attribute math");
-	}
-	if (abilitySystem.TryEquipAttachment(
-		attachmentAbilityHandle,
-		AttachmentData::Definitions::EmergencySalvo,
-		AttachmentHostKind::Ability
-	))
-	{
-		return Fail("Primary-weapon-only attachment was accepted by an ability host");
-	}
-
-	World attachmentWeaponWorld{ nullptr };
-	Actor attachmentWeaponOwner{ &attachmentWeaponWorld };
-	LightYearsAbilitySystemComponent attachmentWeaponAbilities{
-		attachmentWeaponOwner
-	};
-	PrimaryWeaponDefinition attachmentWeaponDefinition{
-		"Weapon.Projectile.TestAttachmentSalvo.Basic",
-		PrimaryWeaponType::ProjectileStandard,
-		WeaponPresentationDefinition{},
-		{
-			sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
-			sas::GameplayAttribute{ CommonAttributeIds::FireRate, 3.f, 0.01f },
-			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 100.f, 0.f },
-			sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Lifetime, 10.f, 0.f },
-			sas::GameplayAttribute{ CommonAttributeIds::Range, 10000.f, 0.f },
-			sas::GameplayAttribute{ CollisionAttributeIds::Radius, 7.f, 0.1f }
-		},
-		{},
-		true
-	};
-	if (!attachmentWeaponAbilities.GrantAbility(
-		AbilityData::MakePrimaryFireAbilityDefinition(attachmentWeaponDefinition)
-	).IsValid() || !attachmentWeaponAbilities.TryEquipAttachment(
-		sas::AbilitySlot::PrimaryFire,
-		AttachmentData::Definitions::EmergencySalvo,
-		AttachmentHostKind::PrimaryWeapon
-	) || !attachmentWeaponAbilities.TryEquipAttachment(
-		sas::AbilitySlot::PrimaryFire,
-		AttachmentData::Definitions::ThermalConverter,
-		AttachmentHostKind::PrimaryWeapon
-	))
-	{
-		return Fail("Compatible primary weapon attachments could not be equipped");
-	}
-	const GameAbility* attachmentPrimaryInstance = attachmentWeaponAbilities.GetAbility(sas::AbilitySlot::PrimaryFire);
-	const List<GameplayTag> attachmentPrimaryDamageTags = attachmentPrimaryInstance
-		? attachmentPrimaryInstance->GetResolvedDamageTags(AttachmentHostKind::PrimaryWeapon)
-		: List<GameplayTag>{};
-	if (attachmentPrimaryDamageTags.size() != 1 || attachmentPrimaryDamageTags.front() != DamageTypeSchema::Thermal)
-	{
-		return Fail("Primary weapon attachment damage type was not resolved");
-	}
-	attachmentWeaponAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
-	attachmentWeaponAbilities.Tick(0.f);
-	attachmentWeaponWorld.TickInternal(0.f);
-	if (attachmentWeaponWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 2)
-	{
-		return Fail("Low fire-rate conditional attachment did not add a projectile");
-	}
 
 	std::string rocketValidationFailure;
 	const GameAbilityDefinition* rocketDefinition =

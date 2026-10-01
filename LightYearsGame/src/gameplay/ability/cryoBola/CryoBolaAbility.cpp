@@ -1,4 +1,5 @@
 #include "gameplay/ability/cryoBola/CryoBolaAbility.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 
 #include "attributes/AttributeSystem.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"

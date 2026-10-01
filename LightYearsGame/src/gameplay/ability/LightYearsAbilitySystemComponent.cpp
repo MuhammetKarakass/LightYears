@@ -141,54 +141,6 @@ namespace ly
 		);
 	}
 
-	bool LightYearsAbilitySystemComponent::TryEquipAttachment(
-		sas::AbilityHandle handle,
-		const AttachmentDefinition& definition,
-		AttachmentHostKind hostKind,
-		std::string* failureReason
-	)
-	{
-		GameAbility* ability = GetAbility(handle);
-		if (!ability)
-		{
-			if (failureReason)
-			{
-				*failureReason = "Attachment host ability was not found.";
-			}
-			return false;
-		}
-		return ability->TryEquipAttachment(definition, hostKind, failureReason);
-	}
-
-	bool LightYearsAbilitySystemComponent::TryEquipAttachment(
-		sas::AbilitySlot slot,
-		const AttachmentDefinition& definition,
-		AttachmentHostKind hostKind,
-		std::string* failureReason
-	)
-	{
-		GameAbility* ability = GetAbility(slot);
-		if (!ability)
-		{
-			if (failureReason)
-			{
-				*failureReason = "Attachment host ability was not found.";
-			}
-			return false;
-		}
-		return ability->TryEquipAttachment(definition, hostKind, failureReason);
-	}
-
-	bool LightYearsAbilitySystemComponent::RemoveAttachment(
-		sas::AbilityHandle handle,
-		const std::string& attachmentId,
-		AttachmentHostKind hostKind
-	)
-	{
-		GameAbility* ability = GetAbility(handle);
-		return ability && ability->RemoveAttachment(attachmentId, hostKind);
-	}
-
 	GameAbility* LightYearsAbilitySystemComponent::GetAbility(sas::AbilitySlot slot)
 	{
 		return FindAbility<GameAbility>(slot);
@@ -653,7 +605,6 @@ namespace ly
 				[](GameAbility& ability, const sas::AbilityEvent& abilityEvent)
 				{
 					ability.HandleGameplayEvent(abilityEvent);
-					ability.HandleAttachmentEvent(abilityEvent);
 				},
 				[this](
 					GameAbility& ability,

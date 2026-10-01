@@ -691,17 +691,6 @@ namespace ly
 				return false;
 			}
 		}
-		for (const GameplayTag& capability : definition.attachmentCapabilities)
-		{
-			if (!GameplayTagSchema::Validate(
-				capability,
-				GameplayTagKind::AttachmentCapability,
-				failureReason
-			))
-			{
-				return false;
-			}
-		}
 		if (!AbilityActionValidator::Validate(definition.actions, validateEffect, failureReason) ||
 			!ValidateOwnedEffectSpecs(definition, failureReason) ||
 			!ValidateSourceEffectSpecs(definition, definition.actions, failureReason))

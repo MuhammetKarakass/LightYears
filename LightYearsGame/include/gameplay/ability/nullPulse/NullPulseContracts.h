@@ -9,10 +9,10 @@ namespace AbilityData::NullPulse
 	struct AbilityId
 	{
 		// Ability IDs must include the category, family and variant segments.
-		inline static constexpr char Basic[] = "Ability.Control.NullPulse.Basic";
+		inline static constexpr char Basic[] = "Ability.Utility.NullPulse.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Control };
+	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Utility };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::NullPulse };
 
 	struct Attribute
@@ -25,10 +25,10 @@ namespace AbilityData::NullPulse
 		// Stun tuning is specific to Null Pulse's control formula and therefore
 		// belongs to the ability-scoped attribute list in abilities.json.
 		inline static const sas::AttributeId BaseStunDuration{
-			"Ability.Control.NullPulse.BaseStunDuration"
+			"Ability.Utility.NullPulse.BaseStunDuration"
 		};
 		inline static const sas::AttributeId EnergyPowerDamageScale{
-			"Ability.Control.NullPulse.EnergyPowerDamageScale"
+			"Ability.Utility.NullPulse.EnergyPowerDamageScale"
 		};
 	};
 

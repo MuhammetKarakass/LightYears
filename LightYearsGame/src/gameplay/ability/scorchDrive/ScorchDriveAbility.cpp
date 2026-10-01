@@ -156,7 +156,7 @@ namespace ly
 			mIgniteStacksPerHit,
 			sas::ContentId{ context.definition.abilityId },
 			context.definition.abilityTags,
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability)
+			context.instance.GetResolvedDamageTags()
 		);
 		if (mCoordinator.expired())
 		{

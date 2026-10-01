@@ -61,10 +61,7 @@ namespace ly
 				// equipped weapon's tags.
 				return fireAction.weaponDefinition.damageTags;
 			}
-			return AbilityActionAttributeResolver::ResolveDamageTags(
-				context,
-				AttachmentHostKind::PrimaryWeapon
-			);
+			return AbilityActionAttributeResolver::ResolveDamageTags(context);
 		}
 
 		const sas::GameplayAttributeList& ResolveAttributes(
@@ -76,26 +73,20 @@ namespace ly
 			const uint64_t attributeRevision = context.abilitySystem
 				? context.abilitySystem->GetAttributes().GetRevision()
 				: 0;
-			const uint64_t attachmentRevision = context.instance
-				? context.instance->GetAttachments().GetRevision()
-				: 0;
 			const uint64_t configurationRevision = context.instance
 				? context.instance->GetConfigurationRevision()
 				: 0;
 			if (!state.hasResolvedAttributes || state.resolvedAttributeRevision != attributeRevision ||
-				state.resolvedAttachmentRevision != attachmentRevision ||
 				state.resolvedConfigurationRevision != configurationRevision)
 			{
 				state.resolvedAttributes = context.definition
 					? AbilityActionAttributeResolver::ResolveAttributes(
 						context,
 						&fireAction.weaponDefinition,
-						state.runtimeAttributes,
-						ResolveDamageTags(context, fireAction)
+						state.runtimeAttributes
 					)
 					: sas::BuildBaseGameplayAttributes(state.runtimeAttributes);
 				state.resolvedAttributeRevision = attributeRevision;
-				state.resolvedAttachmentRevision = attachmentRevision;
 				state.resolvedConfigurationRevision = configurationRevision;
 				state.hasResolvedAttributes = true;
 			}

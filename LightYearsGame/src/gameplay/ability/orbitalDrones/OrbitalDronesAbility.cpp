@@ -378,7 +378,7 @@ namespace ly
 			)
 		);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 		const DamagePayload damagePayload = DamageTypeSystem::BuildPayload(
 			damageTags,
 			abilityValues

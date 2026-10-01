@@ -8,7 +8,6 @@
 
 #include "gameplay/ability/GameAbilityActionExecutor.h"
 #include "gameplay/ability/content/GameAbilityDefinition.h"
-#include "gameplay/attachment/AttachmentLoadout.h"
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 
@@ -124,29 +123,8 @@ namespace ly
 			const sas::GameplayAttributeList& attributes,
 			const List<GameplayTag>& damageTags
 		);
-		bool TryEquipAttachment(
-			const AttachmentDefinition& definition,
-			AttachmentHostKind hostKind,
-			std::string* failureReason = nullptr
-		);
-		bool RemoveAttachment(const std::string& attachmentId, AttachmentHostKind hostKind);
-		const AttachmentLoadout& GetAttachments() const { return mAttachments; }
 		uint64_t GetConfigurationRevision() const { return mConfigurationRevision; }
-		sas::GameplayAttributeList MergeAttachmentAttributes(
-			AttachmentHostKind hostKind,
-			const sas::GameplayAttributeList& attributes
-		) const;
-		sas::GameplayAttribute ApplyAttachmentModifiers(
-			AttachmentHostKind hostKind,
-			const sas::GameplayAttribute& attribute
-		) const;
-		sas::GameplayAttributeList ApplyAttachmentConditions(
-			AttachmentHostKind hostKind,
-			const sas::GameplayAttributeList& attributes,
-			const List<GameplayTag>& originalDamageTags
-		) const;
-		List<GameplayTag> GetResolvedDamageTags(AttachmentHostKind hostKind) const;
-		void HandleAttachmentEvent(const sas::AbilityEvent& event);
+		List<GameplayTag> GetResolvedDamageTags() const;
 		void HandleGameplayEvent(const sas::AbilityEvent& event);
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 		void DeferActiveDurationStart()
@@ -191,32 +169,14 @@ namespace ly
 
 		void RefreshScopedConfiguration();
 		void EndBehavior(sas::AbilityEndReason reason);
-		void HandleAttachmentEventInternal(
-			const sas::AbilityEvent& event,
-			const sas::AbilityLifecycleEvent* lifecycleEvent
-		);
-		bool MatchesAttachmentEventRule(
-			const AttachmentEventRule& rule,
-			const sas::AbilityEvent& event,
-			const sas::AbilityLifecycleEvent* lifecycleEvent,
-			const GameplayTagContainer& sourceAbilityTags,
-			const List<GameplayTag>* damageTags
-		) const;
-		bool ExecuteAttachmentEventRule(
-			EquippedAttachment& equipped,
-			const AttachmentEventRule& rule
-		);
 		void TickInactivePrimaryWeaponRuntime(float deltaTime);
 		GameAbilityDefinition BuildDefinitionForLevel(int level) const;
 		void RefreshPrimaryWeaponRuntimeConfiguration();
-		List<GameplayTag> GetAttachmentCapabilities(AttachmentHostKind hostKind) const;
-		size_t GetAttachmentSlotCapacity(AttachmentHostKind hostKind) const;
 		struct PreparedPrimaryWeaponConfiguration
 		{
 			PrimaryWeaponExecutionSystem::PreparedRuntimeConfiguration runtime;
 			sas::GameplayAttributeList attributes;
 			uint64_t attributeRevision = 0;
-			uint64_t attachmentRevision = 0;
 		};
 
 		LightYearsAbilitySystemComponent& mAbilitySystem;
@@ -225,10 +185,8 @@ namespace ly
 		sas::GameplayAttributeList mPrimaryWeaponRuntimeAttributes;
 		List<GameplayTag> mPrimaryWeaponRuntimeDamageTags;
 		uint64_t mPrimaryWeaponRuntimeAttributeRevision = 0;
-		uint64_t mPrimaryWeaponRuntimeAttachmentRevision = 0;
 		uint64_t mPrimaryWeaponRuntimeConfigurationRevision = 0;
 		bool mHasPrimaryWeaponRuntimeResolvedContext = false;
-		AttachmentLoadout mAttachments;
 		std::optional<GameAbilityDefinition> mPreparedLevelDefinition;
 		std::optional<PreparedPrimaryWeaponConfiguration> mPreparedPrimaryWeaponConfiguration;
 		unique_ptr<GameAbilityBehavior> mBehavior;

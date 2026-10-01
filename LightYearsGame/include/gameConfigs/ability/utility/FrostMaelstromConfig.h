@@ -28,7 +28,7 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Duration;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Control,
+			ly::GameplayTags::Ability::Utility,
 			ly::GameplayTags::Ability::Family::FrostMaelstrom
 		};
 		definition.displayName = "Frost Maelstrom";

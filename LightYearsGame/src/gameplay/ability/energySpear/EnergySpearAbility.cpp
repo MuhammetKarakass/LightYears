@@ -450,7 +450,7 @@ namespace ly
 			)
 		);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 		const DamagePayload payload = DamageTypeSystem::BuildPayload(damageTags, values);
 
 		World* world = context.owner.GetWorld();

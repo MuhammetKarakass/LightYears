@@ -1,4 +1,5 @@
 #include "gameplay/ability/aegisReaver/AegisReaverProjectileActor.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/aegisReaver/AegisReaverContracts.h"

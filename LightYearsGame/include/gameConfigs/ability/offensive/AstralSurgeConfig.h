@@ -36,10 +36,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Astral Surge";
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_bolt.png";
 		definition.accentColor = sf::Color{ 175, 105, 255, 255 };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage,
-			ly::AttachmentSchema::Capability::Projectile
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::AstralSurge;
 		return definition;
 	}();

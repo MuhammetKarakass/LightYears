@@ -2,7 +2,6 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/orbitalDrones/OrbitalDronesContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 
 namespace AbilityData::Definitions
@@ -25,9 +24,6 @@ namespace AbilityData::Definitions
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupRed_bolt.png";
 		definition.accentColor = sf::Color{ 255, 145, 45, 255 };
 		// Physical drone contact uses the established Kinetic damage domain.
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::OrbitalDrones;
 		return definition;
 	}();

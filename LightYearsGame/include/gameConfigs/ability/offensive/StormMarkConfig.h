@@ -2,7 +2,6 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/stormMark/StormMarkContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/tags/GameplayTags.h"
 
 
@@ -25,10 +24,6 @@ namespace AbilityData::Definitions
 		definition.displayName = "Storm Mark";
 		definition.iconPath = "SpaceShooterRedux/PNG/Lasers/laserBlue04.png";
 		definition.accentColor = sf::Color{ 65, 190, 255, 255 };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage,
-			ly::AttachmentSchema::Capability::Area
-		};
 		// Behavior owns focus, target snapshot and delayed strikes. No generic
 		// action is declared because it would execute before the focus completes.
 		definition.behaviorType = ly::AbilityBehaviorType::StormMark;

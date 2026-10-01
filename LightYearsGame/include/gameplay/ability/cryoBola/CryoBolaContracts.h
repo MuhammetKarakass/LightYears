@@ -8,10 +8,10 @@ namespace AbilityData::CryoBola
 {
 	struct AbilityId
 	{
-		inline static constexpr char Basic[] = "Ability.Control.CryoBola.Basic";
+		inline static constexpr char Basic[] = "Ability.Utility.CryoBola.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Control };
+	inline const ly::GameplayTag CategoryTag{ ly::GameplayTags::Ability::Utility };
 	inline const ly::GameplayTag FamilyTag{
 		ly::GameplayTags::Ability::Family::CryoBola
 	};

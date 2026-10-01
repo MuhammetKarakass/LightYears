@@ -88,16 +88,10 @@ namespace ly
 				nullptr,
 				&context.instance
 			};
-		const List<GameplayTag> damageTags =
-				AbilityActionAttributeResolver::ResolveDamageTags(
-					executionContext,
-					AttachmentHostKind::Ability
-				);
 			return AbilityActionAttributeResolver::ResolveAttributes(
 				executionContext,
 				nullptr,
-				actorDefinition->attributes,
-				damageTags
+				actorDefinition->attributes
 			);
 		}
 

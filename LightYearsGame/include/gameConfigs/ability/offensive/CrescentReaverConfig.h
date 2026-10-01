@@ -52,11 +52,6 @@ namespace AbilityData::Definitions
 				1
 			}
 		};
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage,
-			ly::AttachmentSchema::Capability::Cooldown,
-			ly::AttachmentSchema::Capability::Projectile
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::CrescentReaver;
 		return definition;
 	}();

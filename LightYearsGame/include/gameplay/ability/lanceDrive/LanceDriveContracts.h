@@ -9,10 +9,10 @@ namespace AbilityData::LanceDrive
 {
 	struct AbilityId
 	{
-		inline static constexpr char Basic[] = "Ability.Offense.LanceDrive.Basic";
+		inline static constexpr char Basic[] = "Ability.Movement.LanceDrive.Basic";
 	};
 
-	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityOffense };
+	inline const ly::GameplayTag CategoryTag{ ly::GameplayTagSchema::AbilityMovement };
 	inline const ly::GameplayTag FamilyTag{ ly::GameplayTags::Ability::Family::LanceDrive };
 
 	struct State
@@ -35,37 +35,37 @@ namespace AbilityData::LanceDrive
 	struct Attribute
 	{
 		inline static const sas::AttributeId BaseDamage{
-			"Ability.Offense.LanceDrive.BaseDamage"
+			"Ability.Movement.LanceDrive.BaseDamage"
 		};
 		inline static const sas::AttributeId SpeedDamageConversion{
-			"Ability.Offense.LanceDrive.SpeedDamageConversion"
+			"Ability.Movement.LanceDrive.SpeedDamageConversion"
 		};
 		inline static const sas::AttributeId EnergyPowerConversionAmplifierPerPoint{
-			"Ability.Offense.LanceDrive.EnergyPowerConversionAmplifierPerPoint"
+			"Ability.Movement.LanceDrive.EnergyPowerConversionAmplifierPerPoint"
 		};
 		inline static const sas::AttributeId TopSpeedBonus{
-			"Ability.Offense.LanceDrive.TopSpeedBonus"
+			"Ability.Movement.LanceDrive.TopSpeedBonus"
 		};
 		inline static const sas::AttributeId ThrustBonus{
-			"Ability.Offense.LanceDrive.ThrustBonus"
+			"Ability.Movement.LanceDrive.ThrustBonus"
 		};
 		inline static const sas::AttributeId TurnCapabilityMultiplier{
-			"Ability.Offense.LanceDrive.TurnCapabilityMultiplier"
+			"Ability.Movement.LanceDrive.TurnCapabilityMultiplier"
 		};
 		inline static const sas::AttributeId SameTargetHitCooldown{
-			"Ability.Offense.LanceDrive.SameTargetHitCooldown"
+			"Ability.Movement.LanceDrive.SameTargetHitCooldown"
 		};
 		inline static const sas::AttributeId Length{
-			"Ability.Offense.LanceDrive.Length"
+			"Ability.Movement.LanceDrive.Length"
 		};
 		inline static const sas::AttributeId EdgeThickness{
-			"Ability.Offense.LanceDrive.EdgeThickness"
+			"Ability.Movement.LanceDrive.EdgeThickness"
 		};
 		inline static const sas::AttributeId OpeningAngleDegrees{
-			"Ability.Offense.LanceDrive.OpeningAngleDegrees"
+			"Ability.Movement.LanceDrive.OpeningAngleDegrees"
 		};
 		inline static const sas::AttributeId LateralKnockback{
-			"Ability.Offense.LanceDrive.LateralKnockback"
+			"Ability.Movement.LanceDrive.LateralKnockback"
 		};
 	};
 

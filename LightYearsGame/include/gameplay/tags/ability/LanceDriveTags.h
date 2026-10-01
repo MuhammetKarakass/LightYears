@@ -4,7 +4,7 @@
 
 namespace ly::GameplayTags::Ability::Family
 {
-	inline const GameplayTag LanceDrive{ "Ability.Offense.LanceDrive" };
+	inline const GameplayTag LanceDrive{ "Ability.Movement.LanceDrive" };
 }
 
 namespace ly::GameplayTags::State::Ability::LanceDrive

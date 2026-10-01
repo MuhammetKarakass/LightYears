@@ -190,8 +190,6 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/CombatantTargetQuery.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetAllocation.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AttachmentLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AttachmentLoader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/WeaponLoader.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AttributeJsonParser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
@@ -256,7 +254,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityCatalog.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/DashConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/control/GravityAnomalyConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/GravityAnomalyConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/InfernoSprayConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/OverdriveCoreConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/OrbitalDronesConfig.h
@@ -267,7 +265,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/CrescentReaverConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/AegisReaverConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/MineLayerConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/ScorchDriveConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/ScorchDriveConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/EnergySpearConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/IonStormConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/SolarBombardmentConfig.h
@@ -278,15 +276,15 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/ChainLightningConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/StormMarkConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/GlacialPressureConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/control/NullPulseConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/control/CryoBolaConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/NullPulseConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/CryoBolaConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/RocketConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ShieldConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/PhaseDriftConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/VectorSyncConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/ZeroDragConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/InertialWakeConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/LanceDriveConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/LanceDriveConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/TemporalConvergenceConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/FoldspaceArenaConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/TemporalRecallConfig.h
@@ -304,7 +302,6 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/NanoPlagueConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/RelayPrismConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/SunBeamConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/AttachmentConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectStructs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/world/EnvironmentConfig.h
@@ -314,9 +311,6 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIdSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/progression/ShipProgression.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attachment/AttachmentLoadout.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageContext.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/CombatTick.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/DamageTypeConfig.h
@@ -608,7 +602,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/voidGate/VoidGatePortalActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/voidGate/VoidGatePortalActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/VoidGateConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/control/FrostMaelstromConfig.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/FrostMaelstromConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/voidGate/VoidGatePresentationIds.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/voidGate/VoidGatePresentationProfile.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/voidGate/VoidGatePresentationProfile.cpp
@@ -962,7 +956,6 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/ContentLoaderTests.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AttachmentLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
@@ -1036,8 +1029,6 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorRuntime.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/attachment/AttachmentLoadout.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AttachmentLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponContentCatalog.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp

@@ -22,7 +22,6 @@ namespace ly
 		EffectState,
 		ActionLock,
 		DamageType,
-		AttachmentCapability,
 		Cooldown
 	};
 
@@ -34,7 +33,6 @@ namespace ly
 		inline static const GameplayTag& AbilityOffense = GameplayTags::Ability::Offense;
 		inline static const GameplayTag& AbilityDefense = GameplayTags::Ability::Defense;
 		inline static const GameplayTag& AbilityMovement = GameplayTags::Ability::Movement;
-		inline static const GameplayTag& AbilityControl = GameplayTags::Ability::Control;
 		inline static const GameplayTag& AbilityUtility = GameplayTags::Ability::Utility;
 		inline static const GameplayTag& AbilityStateRoot = GameplayTags::State::Ability::Root;
 		inline static const GameplayTag& EventRoot = GameplayTags::Event::Root;
@@ -45,8 +43,6 @@ namespace ly
 		inline static const GameplayTag& EffectStateRoot = GameplayTags::State::Effect::Root;
 		inline static const GameplayTag& ActionLockRoot = GameplayTags::State::ActionLock::Root;
 		inline static const GameplayTag& DamageTypeRoot = GameplayTags::Damage::Type::Root;
-		inline static const GameplayTag& AttachmentRoot = GameplayTags::Attachment::Root;
-		inline static const GameplayTag& AttachmentCapabilityRoot = GameplayTags::Attachment::Capability::Root;
 		inline static const GameplayTag& CooldownRoot = GameplayTags::Cooldown::Root;
 
 		// These locks are intentionally shared. A producing ability grants one of
@@ -101,8 +97,6 @@ namespace ly
 					return IsActionLock(tag);
 				case GameplayTagKind::DamageType:
 					return IsChildOf(tag, DamageTypeRoot);
-				case GameplayTagKind::AttachmentCapability:
-					return IsChildOf(tag, AttachmentCapabilityRoot);
 				case GameplayTagKind::Cooldown:
 					return IsChildOf(tag, CooldownRoot);
 				}
@@ -126,7 +120,6 @@ namespace ly
 				tag.MatchesTagExact(AbilityOffense) ||
 				tag.MatchesTagExact(AbilityDefense) ||
 				tag.MatchesTagExact(AbilityMovement) ||
-				tag.MatchesTagExact(AbilityControl) ||
 				tag.MatchesTagExact(AbilityUtility);
 		}
 

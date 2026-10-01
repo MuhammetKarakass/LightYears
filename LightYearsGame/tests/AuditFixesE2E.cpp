@@ -12,7 +12,6 @@
 #include "gameplay/ability/returnProtocol/ReturnProtocolVisualActor.h"
 #include "gameplay/ability/rocket/RocketProjectileActor.h"
 #include "gameplay/ability/cryostasis/CryostasisContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/damage/DamageContext.h"
 #include "gameConfigs/combat/EffectConfig.h"
@@ -543,7 +542,7 @@ namespace ly
 
 			void SourceEvent(const sas::AbilityEvent& event)
 			{
-				if (event.eventTag == AttachmentSchema::Event::SourceStatusIgniteApplied)
+				if (event.eventTag == GameplayTags::Event::Source::StatusApplied::Ignite)
 				{
 					++sourceStatusEvents;
 					order.push_back("stale-source-ignite");
@@ -581,7 +580,7 @@ namespace ly
 
 			void SourceEvent(const sas::AbilityEvent& event)
 			{
-				if (event.eventTag == AttachmentSchema::Event::SourceStatusIgniteApplied) ++sourceStatusEvents;
+				if (event.eventTag == GameplayTags::Event::Source::StatusApplied::Ignite) ++sourceStatusEvents;
 			}
 
 			void DamageProcessed(const DamageContext&)

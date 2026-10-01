@@ -2,7 +2,6 @@
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
-#include "gameplay/attachment/AttachmentDefinition.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/tags/GameplayTags.h"
 
@@ -19,7 +18,7 @@ namespace AbilityData::Definitions
 		definition.activationPolicy = sas::AbilityActivationPolicy::OnPressed;
 		definition.lifetimePolicy = sas::AbilityLifetimePolicy::Instant;
 		definition.abilityTags = {
-			ly::GameplayTags::Ability::Control,
+			ly::GameplayTags::Ability::Utility,
 			ly::GameplayTags::Ability::Family::NullPulse
 		};
 		definition.displayName = "Null Pulse";
@@ -29,10 +28,6 @@ namespace AbilityData::Definitions
 		definition.iconPath = "SpaceShooterRedux/PNG/Power-ups/powerupBlue_star.png";
 		definition.accentColor = sf::Color{ 100, 225, 255, 255 };
 		definition.damageTags = { ly::DamageTypeSchema::Energy };
-		definition.attachmentCapabilities = {
-			ly::AttachmentSchema::Capability::Damage,
-			ly::AttachmentSchema::Capability::Cooldown
-		};
 		definition.behaviorType = ly::AbilityBehaviorType::NullPulse;
 		return definition;
 	}();

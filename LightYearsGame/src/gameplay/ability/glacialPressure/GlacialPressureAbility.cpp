@@ -487,7 +487,7 @@ namespace ly
 			)
 		);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 
 		targeting::TargetingQuery query;
 		query.source = owner;
@@ -776,7 +776,7 @@ namespace ly
 				energyPower * collisionEnergyScale) * segmentMultiplier
 		);
 		const List<GameplayTag> damageTags =
-			context.instance.GetResolvedDamageTags(AttachmentHostKind::Ability);
+			context.instance.GetResolvedDamageTags();
 		const DamagePayload sourcePayload = BuildCryoPayload(
 			damageTags,
 			values,
