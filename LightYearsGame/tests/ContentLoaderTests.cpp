@@ -2,6 +2,7 @@
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/EffectLoader.h"
 #include "gameplay/content/ShipLoader.h"
+#include "framework/JsonDocumentLoader.h"
 #include "gameplay/content/WeaponLoader.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/content/AbilityLoader.h"
@@ -56,6 +57,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -99,6 +101,279 @@ namespace
 			}
 		}
 		return nullptr;
+	}
+
+	struct ExpectedAttributeValue
+	{
+		sas::AttributeId attributeId;
+		float value;
+	};
+
+	struct ExpectedPlayerShip
+	{
+		struct OwnerAttributes
+		{
+			float attackPower;
+			float armor;
+			float luck;
+			float attackSpeed;
+		};
+
+		struct Growth
+		{
+			float maxHealth;
+			float attackPower;
+			float energyPower;
+			float armor;
+			float luck;
+			float attackSpeed;
+		};
+
+		struct Movement
+		{
+			float maxSpeed;
+			float forwardThrust;
+			float reverseThrust;
+			float strafeThrust;
+			float angularTurnSpeed;
+			float angularTurnResponsiveness;
+		};
+
+		struct Energy
+		{
+			float energyPower;
+			float maxShield;
+			float maxShieldPerLevel;
+			float shieldRechargeDuration;
+			float shieldRechargeDelay;
+			float afterburnerCapacity;
+			float afterburnerCapacityPerLevel;
+			float afterburnerRechargeDuration;
+			float afterburnerRechargeDelay;
+			float afterburnerSpeedMultiplier;
+			float afterburnerAccelerationMultiplier;
+			float afterburnerManeuverabilityMultiplier;
+			float afterburnerEnergyDrainPerSecond;
+			float afterburnerRampUpDuration;
+			float afterburnerRampDownDuration;
+		};
+
+		const char* id;
+		const char* texturePath;
+		const char* primaryWeaponId;
+		float health;
+		OwnerAttributes ownerAttributes;
+		Growth growth;
+		Movement movement;
+		Energy energy;
+	};
+
+	int ValidateShippedPlayerRoster(
+		const std::filesystem::path& shipPath,
+		const ly::content::ShipLoader::Result& loadedShips
+	)
+	{
+		const std::array<ExpectedPlayerShip, 6> expectedShips{{
+			{
+				"Ship.Player.Fighter.Basic", "SpaceShooterRedux/PNG/playerShip1_blue.png",
+				"Weapon.Projectile.FighterRapidLaser.Basic", 250.f, { 39.f, 2.f, 0.f, 0.f },
+				{ 40.f, 3.f, 2.f, 2.f, 1.f, 0.f }, { 520.f, 650.f, 190.f, 270.f, 400.f, 5.f },
+				{ 35.f, 140.f, 20.f, 6.f, 6.f, 100.f, 3.f, 6.f, 1.5f, 1.55f, 1.8f, 0.9f, 33.f, 0.22f, 0.45f }
+			},
+			{
+				"Ship.Player.Breacher.Basic", "SpaceShooterRedux/PNG/playerShip2_orange.png",
+				"Weapon.Projectile.RapidShotgun.Basic", 290.f, { 45.f, 3.f, 0.f, 0.f },
+				{ 60.f, 2.f, 0.f, 2.f, 1.f, 0.f }, { 490.f, 750.f, 220.f, 245.f, 450.f, 6.f },
+				{ 34.f, 110.f, 10.f, 6.f, 6.f, 110.f, 2.f, 5.f, 1.2f, 1.65f, 2.f, 0.9f, 33.f, 0.22f, 0.45f }
+			},
+			{
+				"Ship.Player.Interceptor.Basic", "SpaceShooterRedux/PNG/playerShip3_red.png",
+				"Weapon.Projectile.DualKineticBlaster.Basic", 200.f, { 41.f, 1.f, 1.f, 1.f },
+				{ 30.f, 3.f, 1.f, 1.f, 1.f, 1.f }, { 590.f, 720.f, 240.f, 340.f, 480.f, 6.5f },
+				{ 28.f, 110.f, 15.f, 6.f, 6.f, 120.f, 4.f, 5.f, 1.f, 1.6f, 2.f, 1.f, 30.f, 0.22f, 0.45f }
+			},
+			{
+				"Ship.Player.Conductor.Basic", "SpaceShooterRedux/PNG/playerShip3_blue.png",
+				"Weapon.Arc.ElectricLauncher.Basic", 220.f, { 27.f, 1.f, 2.f, 0.f },
+				{ 40.f, 1.f, 3.f, 1.f, 2.f, 0.f }, { 505.f, 620.f, 200.f, 285.f, 410.f, 5.3f },
+				{ 41.f, 130.f, 20.f, 5.f, 5.f, 95.f, 3.f, 6.f, 1.5f, 1.5f, 1.8f, 0.9f, 33.f, 0.22f, 0.45f }
+			},
+			{
+				"Ship.Player.Aegis.Basic", "SpaceShooterRedux/PNG/playerShip2_green.png",
+				"Weapon.Beam.ContinuousHeatLaser.Basic", 270.f, { 25.f, 4.f, 0.f, 0.f },
+				{ 50.f, 1.f, 3.f, 3.f, 1.f, 0.f }, { 480.f, 600.f, 200.f, 240.f, 380.f, 4.8f },
+				{ 43.f, 160.f, 30.f, 7.f, 4.5f, 75.f, 2.f, 7.f, 2.f, 1.45f, 1.6f, 0.85f, 36.f, 0.22f, 0.45f }
+			},
+			{
+				"Ship.Player.CryoController.Basic", "SpaceShooterRedux/PNG/playerShip2_blue.png",
+				"Weapon.Wave.CryoProjector.Basic", 250.f, { 27.f, 2.f, 1.f, 0.f },
+				{ 40.f, 1.f, 2.f, 2.f, 1.f, 0.f }, { 520.f, 610.f, 210.f, 310.f, 425.f, 5.5f },
+				{ 40.f, 130.f, 20.f, 6.f, 5.5f, 95.f, 3.f, 6.f, 1.5f, 1.5f, 1.8f, 0.9f, 33.f, 0.22f, 0.45f }
+			}
+		}};
+		const std::array<const char*, 3> expectedEnemyIds{{
+			"Ship.Enemy.ApproachGunner.Basic",
+			"Ship.Enemy.StrafeSkirmisher.Basic",
+			"Ship.Enemy.RangeKeeper.Basic"
+		}};
+		if (!loadedShips.Succeeded() || loadedShips.definitions.size() != 9)
+		{
+			return Fail("Ship JSON must contain six player ships and three enemy ships") ? 0 : 1;
+		}
+
+		ly::List<std::string> expectedPlayerShipIds;
+		for (const ExpectedPlayerShip& expected : expectedShips)
+		{
+			expectedPlayerShipIds.push_back(expected.id);
+		}
+		if (ly::content::ShipContentCatalog::GetPlayerShipIds() != expectedPlayerShipIds)
+		{
+			return Fail("Player ship catalog IDs do not match the six-ship roster order") ? 0 : 1;
+		}
+
+		const auto entriesMatch = [](
+			const auto& actualEntries,
+			const auto& expectedEntries,
+			const auto& getActualValue
+		)
+		{
+			const std::size_t expectedCount = static_cast<std::size_t>(std::count_if(
+				expectedEntries.begin(), expectedEntries.end(),
+				[](const ExpectedAttributeValue& entry) { return entry.value > 0.f; }
+			));
+			if (actualEntries.size() != expectedCount)
+			{
+				return false;
+			}
+			for (std::size_t index = 0; index < actualEntries.size(); ++index)
+			{
+				const auto& actual = actualEntries[index];
+				const auto expected = std::find_if(
+					expectedEntries.begin(), expectedEntries.end(),
+					[&](const ExpectedAttributeValue& entry) { return entry.attributeId == actual.attributeId; }
+				);
+				if (expected == expectedEntries.end() || expected->value <= 0.f ||
+					!NearlyEqual(getActualValue(actual), expected->value))
+				{
+					return false;
+				}
+				for (std::size_t previous = 0; previous < index; ++previous)
+				{
+					if (actualEntries[previous].attributeId == actual.attributeId)
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		};
+
+		for (std::size_t index = 0; index < expectedShips.size(); ++index)
+		{
+			const ExpectedPlayerShip& expected = expectedShips[index];
+			const ly::content::ShipLoader::LoadedDefinition& loaded = loadedShips.definitions[index];
+			const ShipDefinition& ship = loaded.definition;
+			if (loaded.id != expected.id || ship.texturePath != expected.texturePath ||
+				ship.primaryWeaponId != expected.primaryWeaponId ||
+				!ly::content::WeaponContentCatalog::FindById(expected.primaryWeaponId) ||
+				!NearlyEqual(ship.health, expected.health) ||
+				!NearlyEqual(ship.speed.x, 350.f) || !NearlyEqual(ship.speed.y, 350.f) ||
+				!NearlyEqual(ship.collisionDamage, 25.f) || ship.scoreAmt != 0u ||
+				!NearlyEqual(ship.shipXPReward, 0.f) ||
+				!NearlyEqual(ship.progressionDefinition.baseXP, 6.f) ||
+				!NearlyEqual(ship.progressionDefinition.xpExponent, 0.f) ||
+				!NearlyEqual(ship.progressionDefinition.xpPerLevel, 1.f))
+			{
+				return Fail("Player ship identity, presentation, weapon, or shared stats are invalid") ? 0 : 1;
+			}
+
+			const ExpectedPlayerShip::Movement& movement = expected.movement;
+			const ShipMovementAttributes& actualMovement = ship.movementAttributes;
+			if (!NearlyEqual(actualMovement.maxSpeed.currentValue, movement.maxSpeed) ||
+				!NearlyEqual(actualMovement.forwardThrust.currentValue, movement.forwardThrust) ||
+				!NearlyEqual(actualMovement.reverseThrust.currentValue, movement.reverseThrust) ||
+				!NearlyEqual(actualMovement.strafeThrust.currentValue, movement.strafeThrust) ||
+				!NearlyEqual(actualMovement.angularTurnSpeed.currentValue, movement.angularTurnSpeed) ||
+				!NearlyEqual(actualMovement.angularTurnResponsiveness.currentValue, movement.angularTurnResponsiveness) ||
+				!NearlyEqual(actualMovement.linearDamping.currentValue, 0.70f) ||
+				!NearlyEqual(actualMovement.inputResponsiveness.currentValue, 12.f) ||
+				!NearlyEqual(actualMovement.mouseAimDeadZone.currentValue, 32.f) ||
+				!NearlyEqual(actualMovement.horizontalRatingToThrust, 60.f) ||
+				!NearlyEqual(actualMovement.verticalRatingToThrust, 60.f) ||
+				!NearlyEqual(actualMovement.ratingToMaxSpeed, 20.f) ||
+				!NearlyEqual(actualMovement.movementRatingDiminishingScale, 20.f))
+			{
+				return Fail("Player ship movement does not match its approved profile") ? 0 : 1;
+			}
+
+			const ExpectedPlayerShip::Energy& energy = expected.energy;
+			const ShipEnergyAttributes& actualEnergy = ship.energyAttributes;
+			if (!NearlyEqual(actualEnergy.baseEnergyPower, energy.energyPower) ||
+				!NearlyEqual(actualEnergy.baseMaxShield, energy.maxShield) ||
+				!NearlyEqual(actualEnergy.maxShieldPerLevel, energy.maxShieldPerLevel) ||
+				!NearlyEqual(actualEnergy.shieldFullRechargeDuration, energy.shieldRechargeDuration) ||
+				!NearlyEqual(actualEnergy.baseShieldRechargeDelay, energy.shieldRechargeDelay) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerCapacity, energy.afterburnerCapacity) ||
+				!NearlyEqual(actualEnergy.afterburnerCapacityPerLevel, energy.afterburnerCapacityPerLevel) ||
+				!NearlyEqual(actualEnergy.afterburnerFullRechargeDuration, energy.afterburnerRechargeDuration) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerRechargeDelay, energy.afterburnerRechargeDelay) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerSpeedMultiplier, energy.afterburnerSpeedMultiplier) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerAccelerationMultiplier, energy.afterburnerAccelerationMultiplier) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerManeuverabilityMultiplier, energy.afterburnerManeuverabilityMultiplier) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerEnergyDrainPerSecond, energy.afterburnerEnergyDrainPerSecond) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerRampUpDuration, energy.afterburnerRampUpDuration) ||
+				!NearlyEqual(actualEnergy.baseAfterburnerRampDownDuration, energy.afterburnerRampDownDuration))
+			{
+				return Fail("Player ship shield or afterburner profile is invalid") ? 0 : 1;
+			}
+
+			const std::array<ExpectedAttributeValue, 4> expectedOwnerAttributes{{
+				{ ly::OwnerAttributeIds::AttackPower, expected.ownerAttributes.attackPower },
+				{ ly::OwnerAttributeIds::Armor, expected.ownerAttributes.armor },
+				{ ly::OwnerAttributeIds::Luck, expected.ownerAttributes.luck },
+				{ ly::OwnerAttributeIds::AttackSpeed, expected.ownerAttributes.attackSpeed }
+			}};
+			const std::array<ExpectedAttributeValue, 6> expectedGrowth{{
+				{ ly::OwnerAttributeIds::MaxHealth, expected.growth.maxHealth },
+				{ ly::OwnerAttributeIds::AttackPower, expected.growth.attackPower },
+				{ ly::OwnerAttributeIds::EnergyPower, expected.growth.energyPower },
+				{ ly::OwnerAttributeIds::Armor, expected.growth.armor },
+				{ ly::OwnerAttributeIds::Luck, expected.growth.luck },
+				{ ly::OwnerAttributeIds::AttackSpeed, expected.growth.attackSpeed }
+			}};
+			if (!entriesMatch(ship.baseOwnerAttributes, expectedOwnerAttributes,
+				[](const OwnerAttributeBaseEntry& entry) { return entry.baseValue; }) ||
+				!entriesMatch(ship.progressionDefinition.naturalGrowth, expectedGrowth,
+					[](const AttributeGrowthEntry& entry) { return entry.perLevel; }))
+			{
+				return Fail("Player ship base attributes or natural growth are not minimal and exact") ? 0 : 1;
+			}
+		}
+
+		for (std::size_t index = 0; index < expectedEnemyIds.size(); ++index)
+		{
+			if (loadedShips.definitions[expectedShips.size() + index].id != expectedEnemyIds[index])
+			{
+				return Fail("The three enemy ship definitions must remain after the six player ships") ? 0 : 1;
+			}
+		}
+
+		const ly::JsonDocumentLoader::Result shipDocument =
+			ly::JsonDocumentLoader::LoadFromFile(shipPath);
+		if (!shipDocument.Succeeded())
+		{
+			return Fail("Ship JSON could not be parsed for removed-affinity checks") ? 0 : 1;
+		}
+		for (const auto& ship : shipDocument.document->at("ships"))
+		{
+			const auto& energy = ship.at("energy");
+			if (energy.contains("shieldAffinity") || energy.contains("afterburnerAffinity"))
+			{
+				return Fail("Ship JSON must not contain EP-based defense affinity fields") ? 0 : 1;
+			}
+		}
+
+		return 0;
 	}
 }
 
@@ -1921,7 +2196,7 @@ int main()
 		std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 		"LightYearsGame/assets/content/data/ships.json";
 	const ShipDefinition shipPresentationBase{
-		"",
+		"SpaceShooterRedux/PNG/playerShip1_blue.png",
 		100.f,
 		sf::Vector2f{ 350.f, 350.f },
 		25.f,
@@ -1935,13 +2210,13 @@ int main()
 			shipPath,
 			shipPresentationBase
 		);
-	if (!loadedShips.Succeeded() || loadedShips.definitions.size() != 4 ||
-		loadedShips.definitions.front().id != "Ship.Player.Fighter.Basic" ||
-		loadedShips.definitions.front().definition.primaryWeaponId !=
-			"Weapon.Projectile.FighterRapidLaser.Basic" ||
-		!NearlyEqual(loadedShips.definitions.front().definition.health, 250.f))
+	if (!loadedShips.Succeeded())
 	{
 		return Fail("Ship JSON catalog did not load the player definition") ? 0 : 1;
+	}
+	if (ValidateShippedPlayerRoster(shipPath, loadedShips) != 0)
+	{
+		return 1;
 	}
 
 	const std::filesystem::path attachmentPath =
