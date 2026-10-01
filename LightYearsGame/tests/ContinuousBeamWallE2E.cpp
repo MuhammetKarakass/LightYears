@@ -223,7 +223,11 @@ namespace ly
 				const float endpointY = muzzleStart.y - range;
 				const auto bounds = frontTarget->GetActorGlobalBounds();
 				const sf::Vector2f targetLocationBefore = frontTarget->GetActorLocation();
-				const float targetDeltaY = endpointY - halfWidth - (bounds.position.y + bounds.size.y);
+				// Beam candidates come from the physics shape (a 14-unit circle here),
+				// not the sprite bounds. Make that shape touch the beam's end cap so
+				// the target sits exactly at the beam's reach.
+				const float targetDeltaY =
+					(endpointY - halfWidth - frontTarget->GetPhysicsCollisionRadius()) - targetLocationBefore.y;
 				frontTarget->SetActorLocation(targetLocationBefore + sf::Vector2f{ 0.f, targetDeltaY });
 				const sf::FloatRect endpointTargetBounds = frontTarget->GetActorGlobalBounds();
 				const float targetNearEdgeY = endpointTargetBounds.position.y + endpointTargetBounds.size.y;

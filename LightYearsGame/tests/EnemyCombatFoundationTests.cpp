@@ -1775,10 +1775,6 @@ namespace ly
 
 		std::cout << "[TEST 19]" << std::endl;
 		// 19. Each shipped enemy finds a real target and executes its authored attack through AI.
-		// KNOWN-BUG(ebf-test-19-segfault): Serial GasLiteCore runs terminate inside this real-runtime scenario before any assertion.
-		// Keep it opt-in until the crash is understood and fixed.
-		// Define LY_REPRODUCE_KNOWN_BUG_EBF_TEST_19 locally to reproduce it.
-#if defined(LY_REPRODUCE_KNOWN_BUG_EBF_TEST_19)
 		{
 			const char* enemyIds[] = {
 				EnemyIds::ApproachGunnerBasic,
@@ -1832,7 +1828,6 @@ namespace ly
 					return Fail("A shipped enemy did not clear combat runtime on death") ? 0 : 1;
 			}
 		}
-#endif
 
 		std::cout << "[TEST 11]" << std::endl;
 		// 11. Faz 1: First handle removal failure test (Adapter injection)

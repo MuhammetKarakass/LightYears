@@ -232,6 +232,13 @@ namespace ly
 
 	void PhysicsSystem::RemoveListener(b2BodyId bodyId)
 	{
+		// The body is destroyed on the next Step, but its actor may be freed
+		// before then. Detach the actor now so spatial queries and contact
+		// dispatch in the meantime see no actor instead of a dangling pointer.
+		if (b2Body_IsValid(bodyId))
+		{
+			b2Body_SetUserData(bodyId, nullptr);
+		}
 		mPendingRemoveListeners.push_back(bodyId);
 	}
 

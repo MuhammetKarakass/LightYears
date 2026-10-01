@@ -233,9 +233,14 @@ namespace ly
 						context.definition.presentationDefinition.pointLightDef.color
 					);
 
+					// The physics broadphase works in scaled, rounded coordinates, so a
+					// target touching the beam's edge can fall just outside it. Widen the
+					// candidate query slightly; SegmentIntersectsExpandedBounds below
+					// remains the exact hit rule.
+					constexpr float CandidateQueryMargin = 1.f;
 					for (const weak_ptr<Actor>& targetWeak :
 						context.owner.GetWorld()->GetActorsInBounds(
-							targeting::swept::SegmentBounds(start, fullEnd, width * 0.5f)
+							targeting::swept::SegmentBounds(start, fullEnd, width * 0.5f + CandidateQueryMargin)
 						))
 					{
 						if (!context.ShouldContinue()) return;
