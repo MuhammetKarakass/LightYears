@@ -112,6 +112,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceship.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerMovementComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipModuleApplier.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ShipModuleApplier.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/input/AbilityInputSchema.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/input/AbilityInputSchema.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/OwnedAbilityState.h
@@ -1090,6 +1092,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceShip.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ShipModuleApplier.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/input/AbilityInputSchema.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityInventory.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadout.cpp

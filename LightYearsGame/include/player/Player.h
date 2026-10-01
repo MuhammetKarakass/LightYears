@@ -5,6 +5,8 @@
 #include "gameplay/progression/ShipProgression.h"
 #include "abilities/AbilityPolicies.h"
 #include "abilities/AbilityHandle.h"
+#include "gameplay/module/ModuleLoadout.h"
+#include <optional>
 #include <string>
 
 namespace ly
@@ -29,6 +31,14 @@ namespace ly
 		void AwardScrap(unsigned int amount);
 		bool TryPurchaseAbilityLevel(sas::AbilitySlot slot, std::string* failureReason = nullptr);
 		void FlushPendingTestAbilityLevels(World* expectedWorld = nullptr);
+
+		// Run-state module loadout; survives respawn. Mutations are validated by ModuleLoadout and
+		// pushed to the live ship. Ships without a schematic have no modules.
+		const ModuleLoadout& GetModuleLoadout() const { return mModuleLoadout; }
+		std::uint32_t AddModuleToInventory(const sas::ContentId& moduleId, int variantIndex = 0, ModuleRarity rarity = ModuleRarity::Common);
+		ModulePlacementFailure TryInstallModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
+		ModulePlacementFailure TryMoveModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
+		bool TryUninstallModule(std::uint32_t instanceId);
 
 		unsigned int GetLifeCount() const { return mLifeCount; };
 		unsigned int GetScore() const { return mScore; };
@@ -61,6 +71,8 @@ namespace ly
 		void OnShipLevelChanged(int previousLevel, int currentLevel);
 		bool QueuePendingTestAbilityLevels(PlayerSpaceShip& ship, int levelCount);
 		void RestorePurchasedAbilityLevels(PlayerSpaceShip& ship);
+		std::optional<ModuleRulesContext> BuildModuleRules() const;
+		void ApplyModuleLoadout(PlayerSpaceShip& ship);
 		void OnCurrentShipDestroyed(Actor* destroyedActor);
 		void ResetRunProgression();
 
@@ -71,6 +83,7 @@ namespace ly
 		ShipProgression mShipProgression;
 		PurchasedAbilityLevels mPurchasedAbilityLevels;
 		PurchasedAbilityLevels mPendingTestAbilityLevels;
+		ModuleLoadout mModuleLoadout;
 		unsigned int mLifeCount;
 		unsigned int mScore;
 		unsigned int mScrap;

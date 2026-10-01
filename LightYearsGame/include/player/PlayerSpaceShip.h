@@ -5,6 +5,7 @@
 #include "player/PlayerMovementComponent.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/ability/loadout/AbilityLoadoutManager.h"
+#include "gameplay/module/ShipModuleApplier.h"
 
 namespace ly
 {
@@ -24,6 +25,10 @@ namespace ly
 		virtual void Tick(float deltaTime) override;
 		void SetSpeed(float speed) { mPlayerMovement.SetSpeed(speed); }
 		float GetSpeed() const { return mPlayerMovement.GetSpeed(); }
+		ShipModuleApplier& GetModuleApplier() { return mModuleApplier; }
+		const ShipModuleApplier& GetModuleApplier() const { return mModuleApplier; }
+		// Enabled module systems, readable for HUD work.
+		const List<GameplayTag>& GetEnabledModuleSystems() const { return mModuleApplier.GetEnabledSystems(); }
 		AbilityLoadoutManager& GetAbilityLoadout() { return mAbilityLoadout; }
 		const AbilityLoadoutManager& GetAbilityLoadout() const { return mAbilityLoadout; }
 
@@ -46,6 +51,7 @@ namespace ly
 
 		AbilityLoadoutManager mAbilityLoadout;
 		PlayerMovementComponent mPlayerMovement;
+		ShipModuleApplier mModuleApplier;
 
 		float mInvulnerabilityTime;
 		TimerHandle mInvulnerabilityTimerHandle;

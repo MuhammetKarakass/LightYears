@@ -10,6 +10,7 @@ namespace ly
 		: SpaceShip(owningWorld, shipDef)
 		, mAbilityLoadout(GetAbilitySystemComponent())
 		, mPlayerMovement(*this)
+		, mModuleApplier(GetShipRuntime(), GetAbilitySystemComponent())
 		, mInvulnerabilityTime(2.f)
 		, mInvulnerabilityBlinkInterval(0.4f)
 		, mInvulnerabilityBlinkTimer(0.f)

@@ -2,6 +2,10 @@
 #include "framework/AssetManager.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameplay/ability/GameAbility.h"
+#include "gameplay/ability/content/GameAbilityDefinition.h"
+#include "gameplay/content/ModuleContentCatalog.h"
+#include "gameplay/module/ModuleResolver.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/enemy/EnemyBehaviorProfile.h"
 #include "gameplay/enemy/EnemyCombatProfile.h"
@@ -253,6 +257,211 @@ namespace
 		level->TickInternal(0.f);
 	}
 
+	const ly::ModulePlacement* FindInstalled(const ly::Player& player, const char* moduleId)
+	{
+		for (const ly::ModulePlacement& placement : player.GetModuleLoadout().GetPlacements())
+		{
+			if (placement.moduleId == moduleId) return &placement;
+		}
+		return nullptr;
+	}
+
+	void CheckEnergySystems(
+		Report& report,
+		ly::PlayerSpaceShip& ship,
+		const ShipDefinition& definition,
+		int level,
+		bool shieldOn,
+		bool afterburnerOn,
+		const std::string& label
+	)
+	{
+		const ShipEnergyAttributes& energy = definition.energyAttributes;
+		const float levels = static_cast<float>(level - 1);
+		const float maxShield = shieldOn ? energy.baseMaxShield + energy.maxShieldPerLevel * levels : 0.f;
+		const float capacity = afterburnerOn ? energy.baseAfterburnerCapacity + energy.afterburnerCapacityPerLevel * levels : 0.f;
+		const float shieldRegen = maxShield / std::max(0.001f, energy.shieldFullRechargeDuration);
+		const float afterburnerRegen = capacity / std::max(0.001f, energy.afterburnerFullRechargeDuration);
+		const sas::AttributeSystem& attributes = ship.GetShipRuntime().GetAttributes();
+		auto read = [&attributes](const sas::AttributeId& id) { return ReadAttribute(attributes, id); };
+		report.Check(NearlyEqual(read(ly::ShipAttributeIds::MaxShield), maxShield), label + " MaxShield",
+			{ { "actual", read(ly::ShipAttributeIds::MaxShield) }, { "expected", maxShield } });
+		report.Check(NearlyEqual(read(ly::ShipAttributeIds::ShieldRegen), shieldRegen), label + " ShieldRegen",
+			{ { "actual", read(ly::ShipAttributeIds::ShieldRegen) }, { "expected", shieldRegen } });
+		report.Check(NearlyEqual(read(ly::ShipAttributeIds::AfterburnerCapacity), capacity), label + " AfterburnerCapacity",
+			{ { "actual", read(ly::ShipAttributeIds::AfterburnerCapacity) }, { "expected", capacity } });
+		report.Check(NearlyEqual(read(ly::ShipAttributeIds::AfterburnerRegen), afterburnerRegen), label + " AfterburnerRegen",
+			{ { "actual", read(ly::ShipAttributeIds::AfterburnerRegen) }, { "expected", afterburnerRegen } });
+		report.Check(NearlyEqual(ship.GetShieldComponent().GetMaxShield(), maxShield), label + " live shield max follows");
+		report.Check(NearlyEqual(ship.GetEnergyComponent().GetMaxEnergy(), capacity), label + " live afterburner energy max follows");
+		if (!shieldOn) report.Check(NearlyEqual(ship.GetShieldComponent().GetShield(), 0.f), label + " live shield clamps to 0");
+		if (!afterburnerOn)
+		{
+			report.Check(ship.GetEnergyComponent().Consume(1.f) <= 0.f, label + " afterburner has no energy to consume");
+		}
+	}
+
+	void RunModuleApplierPlayerChecks(Report& report, ly::Application& application)
+	{
+		using namespace ly;
+		const std::array<const char*, 6> shipIds{
+			"Ship.Player.Fighter.Basic", "Ship.Player.Breacher.Basic", "Ship.Player.Interceptor.Basic",
+			"Ship.Player.Conductor.Basic", "Ship.Player.Aegis.Basic", "Ship.Player.CryoController.Basic"
+		};
+		const char* shieldModule = "Module.Defense.ShieldGenerator.Standard";
+		const char* afterburnerModule = "Module.Movement.Afterburner.Standard";
+		PlayerManager& manager = PlayerManager::GetPlayerManager();
+		manager.Reset();
+		PlayerManagerResetGuard resetGuard{ manager };
+		auto level = std::make_shared<HeadlessShipLevel>(&application);
+		level->BeginPlayInternal();
+
+		for (const char* shipId : shipIds)
+		{
+			const std::string label = std::string{ shipId } + " modules:";
+			manager.SetSelectedShipId(shipId);
+			Player& player = manager.CreateNewPlayer();
+			const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition(shipId);
+			report.Check(player.GetModuleLoadout().GetPlacements().empty(), label + " loadout starts empty before first spawn");
+			shared_ptr<PlayerSpaceShip> ship = player.SpawnSpaceShip(level.get()).lock();
+			level->TickInternal(0.f);
+			report.Check(player.GetModuleLoadout().GetPlacements().size() == definition.schematic->defaultModules.size(),
+				label + " first spawn seeds the schematic default modules");
+			report.Check(ship->GetModuleApplier().HasApplied() && ship->GetEnabledModuleSystems().size() == 4,
+				label + " default modules enable four systems");
+			report.Check(ship->GetModuleApplier().GetOwnedHandleCount() == 0, label + " default modules own no handles");
+			CheckEnergySystems(report, *ship, definition, 1, true, true, label + " default loadout level 1");
+
+			player.AwardShipXP(definition.progressionDefinition.baseXP);
+			level->TickInternal(0.f);
+			CheckEnergySystems(report, *ship, definition, 2, true, true, label + " default loadout level 2");
+
+			const ModulePlacement shield = *FindInstalled(player, shieldModule);
+			const ModulePlacement afterburner = *FindInstalled(player, afterburnerModule);
+			const std::uint64_t revisionBefore = player.GetModuleLoadout().GetRevision();
+			report.Check(player.TryUninstallModule(shield.instanceId), label + " shield generator uninstalls");
+			report.Check(player.GetModuleLoadout().GetRevision() > revisionBefore, label + " uninstall bumps revision");
+			CheckEnergySystems(report, *ship, definition, 2, false, true, label + " shield removed");
+			report.Check(player.TryInstallModule(shield.instanceId, shield.origin, shield.rotationQuarterTurns) == ModulePlacementFailure::None,
+				label + " shield generator reinstalls");
+			CheckEnergySystems(report, *ship, definition, 2, true, true, label + " shield restored with level growth");
+
+			report.Check(player.TryUninstallModule(afterburner.instanceId), label + " afterburner uninstalls");
+			CheckEnergySystems(report, *ship, definition, 2, true, false, label + " afterburner removed");
+
+			ship->Destroy();
+			level->TickInternal(0.f);
+			ship = player.SpawnSpaceShip(level.get()).lock();
+			level->TickInternal(0.f);
+			report.Check(static_cast<bool>(ship) && ship->GetModuleApplier().HasApplied(), label + " respawned ship gets the loadout applied");
+			CheckEnergySystems(report, *ship, definition, 2, true, false, label + " respawn keeps the removed afterburner");
+			report.Check(ship->GetModuleApplier().GetAppliedRevision() == player.GetModuleLoadout().GetRevision(),
+				label + " respawned ship tracks the loadout revision");
+			report.Check(player.TryInstallModule(afterburner.instanceId, afterburner.origin, afterburner.rotationQuarterTurns) == ModulePlacementFailure::None,
+				label + " afterburner reinstalls on the new ship");
+			CheckEnergySystems(report, *ship, definition, 2, true, true, label + " all systems restored after respawn");
+
+			ship->Destroy();
+			level->TickInternal(0.f);
+		}
+	}
+
+	void RunModuleApplierHandleChecks(Report& report, ly::Application& application)
+	{
+		using namespace ly;
+		namespace Tags = GameplayTags;
+		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition("Ship.Player.Fighter.Basic");
+		auto level = std::make_shared<HeadlessShipLevel>(&application);
+		level->BeginPlayInternal();
+		shared_ptr<PlayerSpaceShip> ship = level->SpawnActor<PlayerSpaceShip>(definition).lock();
+		report.Check(static_cast<bool>(ship), "applier test spawns a standalone player ship");
+		level->TickInternal(0.f);
+
+		ModuleDefinition test;
+		test.moduleId = "Module.Offense.TestEmitter.Standard";
+		test.family = Tags::Ability::Offense;
+		ModuleSizeVariant variant;
+		variant.shape.cells = { { 0, 0 } };
+		ModuleAttributeModifier ownerModifier;
+		ownerModifier.target = ModuleAttributeTarget::Owner;
+		ownerModifier.modifier = sas::AttributeModifier{ OwnerAttributeIds::Armor, 5.f };
+		ownerModifier.affectedByZoneBonus = false;
+		ModuleAttributeModifier shipModifier;
+		shipModifier.target = ModuleAttributeTarget::Ship;
+		shipModifier.modifier = sas::AttributeModifier{ ShipAttributeIds::AfterburnerEnergyDrainPerSecond, 3.f };
+		shipModifier.affectedByZoneBonus = false;
+		variant.attributeModifiers = { ownerModifier, shipModifier };
+		const sas::AttributeId abilityAttribute{ "Ability.Test.Damage" };
+		variant.abilityModifiers = { ModuleAbilityModifier{ sas::AttributeModifier{ abilityAttribute, 7.f }, false } };
+		test.sizeVariants.push_back(variant);
+
+		const ModuleRulesContext rules{
+			*definition.schematic,
+			[&test](const sas::ContentId& id) -> const ModuleDefinition*
+			{
+				return id == test.moduleId ? &test : content::ModuleContentCatalog::FindById(id);
+			},
+			content::ModuleContentCatalog::GetZoneTable()
+		};
+
+		ModuleLoadout loadout;
+		const std::uint32_t testId = loadout.AddToInventory(test.moduleId);
+		ModulePlacement probe;
+		probe.moduleId = test.moduleId;
+		sf::Vector2i freeCell{ -1, -1 };
+		for (int y = 0; y < definition.schematic->height && freeCell.x < 0; ++y)
+		{
+			for (int x = 0; x < definition.schematic->width; ++x)
+			{
+				probe.origin = { x, y };
+				if (ModulePlacementRules::CanPlace(rules, loadout, probe) == ModulePlacementFailure::None) { freeCell = probe.origin; break; }
+			}
+		}
+		report.Check(freeCell.x >= 0, "applier test finds a free schematic cell");
+
+		PlayerSpaceShip& target = *ship;
+		ShipModuleApplier& applier = target.GetModuleApplier();
+		sas::AttributeSystem& owner = target.GetAbilitySystemComponent().GetAttributes();
+		const sas::AttributeSystem& shipAttributes = target.GetShipRuntime().GetAttributes();
+		GameAbilityDefinition abilityDefinition;
+		abilityDefinition.abilityTags.push_back(Tags::Ability::Offense);
+		auto scopedValue = [&]()
+		{
+			return target.GetAbilitySystemComponent().ApplyScopedAbilityModifiers(
+				abilityDefinition, sas::GameplayAttribute{ abilityAttribute, 10.f }).currentValue;
+		};
+		const float armorBase = ReadAttribute(owner, OwnerAttributeIds::Armor);
+		const float drainBase = ReadAttribute(shipAttributes, ShipAttributeIds::AfterburnerEnergyDrainPerSecond);
+
+		report.Check(applier.Apply(loadout, rules) && applier.GetOwnedHandleCount() == 0, "empty loadout applies with no handles");
+		report.Check(!applier.Apply(loadout, rules), "unchanged revision does not reapply");
+		report.Check(!target.GetShipRuntime().IsSystemEnabled(ShipSystem::Shield) &&
+			!target.GetShipRuntime().IsSystemEnabled(ShipSystem::Afterburner), "empty loadout disables both systems");
+
+		for (int cycle = 0; cycle < 6; ++cycle)
+		{
+			const std::string label = "applier test cycle " + std::to_string(cycle);
+			report.Check(loadout.Install(rules, testId, freeCell, 0) == ModulePlacementFailure::None, label + " installs the test module");
+			report.Check(applier.Apply(loadout, rules), label + " reapplies after install");
+			report.Check(NearlyEqual(ReadAttribute(owner, OwnerAttributeIds::Armor), armorBase + 5.f), label + " owner modifier applied",
+				ReadAttribute(owner, OwnerAttributeIds::Armor));
+			report.Check(NearlyEqual(ReadAttribute(shipAttributes, ShipAttributeIds::AfterburnerEnergyDrainPerSecond), drainBase + 3.f),
+				label + " ship modifier applied");
+			report.Check(NearlyEqual(scopedValue(), 17.f), label + " scoped ability value applied", scopedValue());
+			report.Check(applier.GetOwnedHandleCount() == 3, label + " owns exactly three handles", applier.GetOwnedHandleCount());
+
+			report.Check(loadout.Uninstall(testId), label + " uninstalls the test module");
+			report.Check(applier.Apply(loadout, rules), label + " reapplies after uninstall");
+			report.Check(NearlyEqual(ReadAttribute(owner, OwnerAttributeIds::Armor), armorBase), label + " owner modifier restored");
+			report.Check(NearlyEqual(ReadAttribute(shipAttributes, ShipAttributeIds::AfterburnerEnergyDrainPerSecond), drainBase),
+				label + " ship modifier restored");
+			report.Check(NearlyEqual(scopedValue(), 10.f), label + " scoped ability value restored");
+			report.Check(applier.GetOwnedHandleCount() == 0, label + " leaves no handles");
+		}
+		ship->Destroy();
+		level->TickInternal(0.f);
+	}
+
 	void RunSelectionKeyChecks(Report& report, ly::Application& application)
 	{
 		using namespace ly;
@@ -361,6 +570,22 @@ namespace
 		const bool cleared = enemy->GetEnemyRuntime().Clear();
 		const float afterClear = ReadAttribute(attributes, ShipAttributeIds::MaxShield);
 		report.Check(cleared && NearlyEqual(afterClear, 25.f), "enemy runtime clear removes only its shield growth", afterClear);
+
+		report.Check(enemy->GetShipRuntime().IsSystemEnabled(ShipSystem::Shield) &&
+			enemy->GetShipRuntime().IsSystemEnabled(ShipSystem::Afterburner), "enemy ship systems default to enabled");
+		enemy->GetShipRuntime().InitializeFromShipDefinition(*enemyShip);
+		enemy->GetShipRuntime().SetShipLevel(3);
+		enemy->GetShipRuntime().SetBaseMaxShieldContribution("Test.Source", 4.f);
+		const float withContribution = ReadAttribute(attributes, ShipAttributeIds::MaxShield);
+		enemy->GetShipRuntime().SetSystemEnabled(ShipSystem::Shield, false);
+		const float disabledShield = ReadAttribute(attributes, ShipAttributeIds::MaxShield);
+		const float disabledRegen = ReadAttribute(attributes, ShipAttributeIds::ShieldRegen);
+		enemy->GetShipRuntime().SetSystemEnabled(ShipSystem::Shield, true);
+		const float restoredShield = ReadAttribute(attributes, ShipAttributeIds::MaxShield);
+		report.Check(NearlyEqual(disabledShield, 0.f) && NearlyEqual(disabledRegen, 0.f) &&
+			NearlyEqual(restoredShield, withContribution) && withContribution > 25.f,
+			"disabling the shield zeroes it and re-enabling restores level growth and contributions",
+			{ { "disabled", disabledShield }, { "restored", restoredShield }, { "expected", withContribution } });
 	}
 
 	void WriteArtifact(const std::filesystem::path& path, const Json& artifact)
@@ -394,6 +619,8 @@ int main(int argc, char** argv)
 		RunSelectionKeyChecks(report, application);
 		RunPlayerRuntimeChecks(report, application);
 		RunEnemyShieldRegression(report, application);
+		RunModuleApplierPlayerChecks(report, application);
+		RunModuleApplierHandleChecks(report, application);
 		report.artifact["passed"] = true;
 	}
 	catch (const std::exception& exception)

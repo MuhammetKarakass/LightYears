@@ -7,6 +7,8 @@
 
 namespace ly
 {
+	enum class ShipSystem { Shield, Afterburner };
+
 	// Resolves runtime values that belong to a ship body, independently of combat flow.
 	// It deliberately depends only on owner attributes so future runtime owners can reuse it.
 	class ShipRuntime
@@ -17,6 +19,10 @@ namespace ly
 		void InitializeFromShipDefinition(const ShipDefinition& shipDefinition);
 		void SetShipLevel(int level);
 		void RecalculateAttributes();
+		// Systems default to enabled. Disabling zeroes the system's base values; level growth and
+		// shield contributions are kept and return when the system is enabled again.
+		void SetSystemEnabled(ShipSystem system, bool enabled);
+		bool IsSystemEnabled(ShipSystem system) const noexcept;
 		bool SetBaseMaxShieldContribution(const std::string& sourceId, float value);
 		bool RemoveBaseMaxShieldContribution(const std::string& sourceId);
 		float GetAuthoredBaseMaxShield() const noexcept { return mEnergyAttributes.baseMaxShield; }
@@ -51,6 +57,8 @@ namespace ly
 		List<OwnerAttributeBaseEntry> mAppliedBaseOwnerAttributes;
 		List<OwnerAttributeBaseEntry> mAppliedDerivedOwnerAttributes;
 		sas::AttributeSystem mAttributeSystem;
+		bool mShieldEnabled = true;
+		bool mAfterburnerEnabled = true;
 		bool mOwnerAttributeCallbackBound = false;
 	};
 }

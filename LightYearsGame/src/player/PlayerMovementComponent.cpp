@@ -228,7 +228,8 @@ namespace ly
 	void PlayerMovementComponent::UpdateAfterburnerState(float deltaTime)
 	{
 		mAfterburnerIsActive = false;
-		if (mAfterburnerRequested && deltaTime > 0.f)
+		if (mAfterburnerRequested && deltaTime > 0.f &&
+			mOwner.GetShipRuntime().IsSystemEnabled(ShipSystem::Afterburner))
 		{
 			const float baseDrainPerSecond = std::max(
 				0.f,

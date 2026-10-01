@@ -95,13 +95,13 @@ namespace ly
 		const double resolvedMaxShield = static_cast<double>(mEnergyAttributes.baseMaxShield) +
 			levelCount * static_cast<double>(mEnergyAttributes.maxShieldPerLevel) +
 			static_cast<double>(safeShieldContribution);
-		const float maxShield = static_cast<float>(std::clamp(resolvedMaxShield, 0.0,
-			static_cast<double>(std::numeric_limits<float>::max())));
+		const float maxShield = mShieldEnabled ? static_cast<float>(std::clamp(resolvedMaxShield, 0.0,
+			static_cast<double>(std::numeric_limits<float>::max()))) : 0.f;
 		const double resolvedAfterburnerCapacity =
 			static_cast<double>(mEnergyAttributes.baseAfterburnerCapacity) +
 			levelCount * static_cast<double>(mEnergyAttributes.afterburnerCapacityPerLevel);
-		const float afterburnerCapacity = static_cast<float>(std::clamp(
-			resolvedAfterburnerCapacity, 0.0, static_cast<double>(std::numeric_limits<float>::max())));
+		const float afterburnerCapacity = mAfterburnerEnabled ? static_cast<float>(std::clamp(
+			resolvedAfterburnerCapacity, 0.0, static_cast<double>(std::numeric_limits<float>::max()))) : 0.f;
 		const float afterburnerRegen = afterburnerCapacity /
 			std::max(0.001f, mEnergyAttributes.afterburnerFullRechargeDuration);
 
@@ -120,6 +120,19 @@ namespace ly
 			ShipAttributeIds::AfterburnerRechargeDelay,
 			std::max(0.f, mEnergyAttributes.baseAfterburnerRechargeDelay)
 		);
+	}
+
+	void ShipRuntime::SetSystemEnabled(ShipSystem system, bool enabled)
+	{
+		bool& flag = system == ShipSystem::Shield ? mShieldEnabled : mAfterburnerEnabled;
+		if (flag == enabled) return;
+		flag = enabled;
+		RecalculateAttributes();
+	}
+
+	bool ShipRuntime::IsSystemEnabled(ShipSystem system) const noexcept
+	{
+		return system == ShipSystem::Shield ? mShieldEnabled : mAfterburnerEnabled;
 	}
 
 	bool ShipRuntime::SetBaseMaxShieldContribution(const std::string& sourceId, float value)
@@ -143,6 +156,8 @@ namespace ly
 		mAttributeSystem.Clear();
 		mEnergyAttributes = ShipEnergyAttributes{};
 		mShipLevel = 1;
+		mShieldEnabled = true;
+		mAfterburnerEnabled = true;
 		mBaseMaxShieldContributions.clear();
 	}
 

@@ -1,6 +1,8 @@
 #include "player/Player.h"
 #include "player/PlayerSpaceShip.h"
+#include "gameplay/content/ModuleContentCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/tags/GameplayTags.h"
 #include <framework/World.h>
 #include <algorithm>
 #include <exception>
@@ -63,6 +65,7 @@ namespace ly
 			mShipProgression.BindAttributes(ship->GetAbilitySystemComponent().GetAttributes());
 			ship->GetShipRuntime().SetShipLevel(mShipProgression.GetLevel());
 			RestorePurchasedAbilityLevels(*ship);
+			ApplyModuleLoadout(*ship);
 			if (mPendingTestAbilityLevelUps > 0 &&
 				QueuePendingTestAbilityLevels(*ship, mPendingTestAbilityLevelUps))
 			{
@@ -459,6 +462,64 @@ namespace ly
 		}
 	}
 
+	std::optional<ModuleRulesContext> Player::BuildModuleRules() const
+	{
+		const ShipDefinition& definition = content::ShipContentCatalog::GetPlayerShipDefinition(mShipId);
+		if (!definition.schematic) return std::nullopt;
+		return ModuleRulesContext{
+			*definition.schematic,
+			[](const sas::ContentId& id) { return content::ModuleContentCatalog::FindById(id); },
+			content::ModuleContentCatalog::GetZoneTable()
+		};
+	}
+
+	void Player::ApplyModuleLoadout(PlayerSpaceShip& ship)
+	{
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules) return;
+		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))
+		{
+			LY_GAME_ERROR("Default modules for '%s' are invalid; the ship starts without modules.", mShipId.c_str());
+		}
+		ship.GetModuleApplier().Apply(mModuleLoadout, *rules);
+	}
+
+	std::uint32_t Player::AddModuleToInventory(const sas::ContentId& moduleId, int variantIndex, ModuleRarity rarity)
+	{
+		return mModuleLoadout.AddToInventory(moduleId, variantIndex, rarity);
+	}
+
+	ModulePlacementFailure Player::TryInstallModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns)
+	{
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules) return ModulePlacementFailure::OutOfBounds;
+		const ModulePlacementFailure failure = mModuleLoadout.Install(*rules, instanceId, origin, rotationQuarterTurns);
+		if (failure == ModulePlacementFailure::None)
+		{
+			if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		}
+		return failure;
+	}
+
+	ModulePlacementFailure Player::TryMoveModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns)
+	{
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules) return ModulePlacementFailure::OutOfBounds;
+		const ModulePlacementFailure failure = mModuleLoadout.Move(*rules, instanceId, origin, rotationQuarterTurns);
+		if (failure == ModulePlacementFailure::None)
+		{
+			if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		}
+		return failure;
+	}
+
+	bool Player::TryUninstallModule(std::uint32_t instanceId)
+	{
+		if (!mModuleLoadout.Uninstall(instanceId)) return false;
+		if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		return true;
+	}
+
 	void Player::OnCurrentShipDestroyed(Actor* destroyedActor)
 	{
 		const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock();
@@ -476,6 +537,7 @@ namespace ly
 	void Player::ResetRunProgression()
 	{
 		mShipProgression.ResetForNewRun();
+		mModuleLoadout = ModuleLoadout{};
 		mPurchasedAbilityLevels.clear();
 		mPendingTestAbilityLevels.clear();
 		mPendingTestAbilityLevelUps = 0;
