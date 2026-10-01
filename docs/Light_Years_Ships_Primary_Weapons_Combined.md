@@ -10,6 +10,27 @@ Bu dosya, yüklenen güncel altı gemi + primary weapon tasarım dosyasının bi
 - Örnek ilerleme tabloları (ör. 1–5, 10, 15) yalnız **örnektir**, tavan değildir. Silah tabloları 5. seviyede bitiyorsa aynı formül sonraki seviyelere aynen uzar.
 - `L` gemi seviyesi ve silah seviyesi için aynı mantıkla (seviye başına artış) okunur.
 
+## Kalkan ve Afterburner (tüm gemiler)
+
+Karar (2026-10-01): Kalkan ve afterburner **Energy Power'dan bağımsız** gemi sistemleridir; HP gibi L1 taban + seviye başı sabit artışla büyür. EP yalnız yetenek ve enerji silahı gücüdür; savunmaya katkısı aktif kalkan yetenekleri üzerinden olur.
+
+```text
+MaxShield(L)          = BaseShield + ShieldPerLevel * (L - 1)
+AfterburnerCapacity(L) = BaseAB + ABPerLevel * (L - 1)
+ShieldRegen/s         = MaxShield / ShieldFullRechargeTime
+```
+
+| Ship | Shield L1 | Shield/Level | Shield Full Recharge / Delay | AB L1 | AB/Level | AB Recharge / Delay | AB Speed / Accel | AB Drain |
+|---|---:|---:|---|---:|---:|---|---|---:|
+| Fighter | 140 | +20 | 6 / 6 s | 100 | +3 | 6 / 1.5 s | 1.55 / 1.80 | 33/s |
+| Breacher | 110 | +10 | 6 / 6 s | 110 | +2 | 5 / 1.2 s | 1.65 / 2.00 | 33/s |
+| Interceptor | 110 | +15 | 6 / 6 s | 120 | +4 | 5 / 1.0 s | 1.60 / 2.00 (no maneuver loss) | 30/s |
+| Conductor | 130 | +20 | 5 / 5 s | 95 | +3 | 6 / 1.5 s | 1.50 / 1.80 | 33/s |
+| Aegis | 160 | +30 | 7 / 4.5 s | 75 | +2 | 7 / 2.0 s | 1.45 / 1.60 (maneuver 0.85) | 36/s |
+| Cryo Controller | 130 | +20 | 6 / 5.5 s | 95 | +3 | 6 / 1.5 s | 1.50 / 1.80 | 33/s |
+
+Kalkan seviye başı aralığı: en az 10, en fazla 30. Aegis'in kalkan kimliği büyüklükten çok hızlı toparlanmadan (4.5 s gecikme) gelir; böylece geç oyunda "ölümsüz" olmaz (L20 toplam dayanıklılık Fighter'ın ~%139'u).
+
 ## İçindekiler
 
 1. Fighter + Rapid Laser
@@ -82,22 +103,22 @@ Armor and Luck use diminishing returns. Around 400 rating they reach approximate
 
 | Stat | Value |
 |---|---:|
-| Base Max Shield | 115 |
+| Max Shield (L1) | 140 |
+| Max Shield per Level | +20 |
 | Shield Full Recharge Time | 6 s |
 | Shield Recharge Delay | 6 s |
-| Afterburner Capacity | 65 |
+| Afterburner Capacity (L1) | 100 |
+| Afterburner Capacity per Level | +3 |
 | Afterburner Full Recharge Time | 6 s |
 | Afterburner Recharge Delay | 1.5 s |
 | Afterburner Speed Multiplier | 1.55x |
 | Afterburner Acceleration Multiplier | 1.8x |
 | Energy Consumption | 33/s |
-| Shield Affinity | 0.5 |
-| Afterburner Affinity | 0.5 |
 | Afterburner Engage Time | 0.22 s |
 | Afterburner Disengage Time | 0.45 s |
 | Afterburner Maneuver Multiplier | 0.9 |
 
-Energy Power also contributes to the ship's shield and afterburner systems according to the global Energy system.
+Shield and afterburner are ship systems and do **not** scale with Energy Power. See "Kalkan ve Afterburner" at the top of this document for all ships.
 
 ---
 
@@ -898,7 +919,7 @@ The intended combat loop is:
 **Role:** Heavy Tank / Anchor / Shield-Reactor Specialist  
 **Primary Weapon:** Continuous Heat Laser
 
-Aegis is designed as a durable anchor ship that relies less on raw hull than Breacher and more on Energy Power, Armor scaling, shields, and sustained beam pressure.
+Aegis is designed as a durable anchor ship that relies less on raw hull than Breacher and more on Armor scaling, the largest and fastest-recovering shield, and sustained beam pressure.
 
 ---
 
@@ -933,7 +954,7 @@ Aegis is intentionally different from Breacher:
 - Much higher Energy Power growth.
 - Much stronger Armor growth.
 - Primary weapon does not use AP.
-- Intended to tank through Armor, shield/reactor strength, and sustained positioning.
+- Intended to tank through Armor, the roster's strongest shield (160 +30/level, 4.5 s recharge delay), and sustained positioning.
 - Functions best as a mid-range anchor rather than a point-blank bruiser.
 
 ---
@@ -1078,7 +1099,7 @@ Aegis and Continuous Heat Laser are balanced as one package.
 
 The intended combat loop is:
 
-**Hold position -> maintain beam contact -> build Heat -> enter empowered Energy state -> pressure shields while relying on Armor and EP-driven defenses.**
+**Hold position -> maintain beam contact -> build Heat -> enter empowered Energy state -> pressure shields while relying on Armor and a fast-recovering shield.**
 
 
 ---
@@ -1370,10 +1391,10 @@ Cryo Controller and Cryo Projector are balanced as one package.
 
 - Cryo Controller has lower offensive stats than Fighter and dedicated damage ships.
 - It starts with only 27 AP, keeping Cryo Projector single-target damage low.
-- EP remains strong enough to support empowered waves, shields, afterburner, and control-focused abilities.
+- EP remains strong enough to support empowered waves and control-focused abilities.
 - It has the same top speed as Fighter but better lateral movement and turning.
 - It is slightly more control-oriented and positionally stable than Fighter rather than simply faster.
-- Its durability comes from moderate HP, higher starting Armor, and EP-driven defenses.
+- Its durability comes from moderate HP, higher starting Armor, and a standard shield (130 +20/level).
 - Cryo Projector is intentionally weak in single-target raw DPS because its wave can hit many enemies at once.
 - Its real payoff comes from battlefield coverage, Frost Meter generation, automatic Whiteout windows, and Cryo stack application.
 

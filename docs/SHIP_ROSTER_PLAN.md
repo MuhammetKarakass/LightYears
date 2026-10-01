@@ -75,39 +75,42 @@ Aegis için tasarımda hareket tablosu yoktu; değerler kullanıcı onayıyla (K
 
 ### 1.3b Enerji / kalkan / afterburner
 
-Kalkan ve afterburner, `ShipRuntime::RecalculateAttributes` (`src/gameplay/ship/ShipRuntime.cpp:70-117`) içinde EP'den türetilir:
+**Kullanıcı kararı (K3, 2026-10-01):** Kalkan ve afterburner artık **EP'den türemez**. İkisi de HP gibi geminin kendi sistemidir: L1 taban değer + seviye başı sabit artış. EP yalnız yetenek/enerji silahı gücüdür; savunmaya katkısı aktif kalkan yetenekleri (ShieldHarvest, ShieldGraft vb.) üzerinden olur.
+
+Gerekçe: EP zaten 55 yeteneğin 14'ünü ölçekliyor (29 kural; AP 11 yetenek / 20 kural). Pasif kalkan + afterburner da EP'den gelirse EP her gemi için tek doğru stat olur. Ayrıca bugünkü formülde EP her değiştiğinde (buff/debuff) kalkan tavanı oynuyor ve kalkan seviyeyle neredeyse büyümüyordu (Fighter L1→L20: 150→188).
+
+Yeni formül:
 
 ```
-reaktör          = EP × 2
-Max Kalkan       = baseMaxShield + reaktör × shieldAffinity
-Afterburner kap. = baseAfterburnerCapacity + reaktör × afterburnerAffinity   (shieldAffinity + afterburnerAffinity = 1)
-Kalkan regen/sn  = MaxKalkan / shieldFullRechargeDuration
-AB regen/sn      = ABkap / afterburnerFullRechargeDuration
+MaxKalkan(L)       = baseMaxShield + maxShieldPerLevel × (L − 1)
+ABkapasite(L)      = baseAfterburnerCapacity + afterburnerCapacityPerLevel × (L − 1)
+Kalkan regen/sn    = MaxKalkan / shieldFullRechargeDuration          (değişmez)
+AB regen/sn        = ABkapasite / afterburnerFullRechargeDuration    (değişmez)
 ```
 
-Değerler **öneri — kullanıcı onayı bekliyor (K3)**. Fighter mevcut değerlerini korur.
+`L` = gemi seviyesi, sınırsız. Kalkan seviye başı aralığı kullanıcı kararıyla **en az 10, en fazla 30**.
 
-| Gemi | `baseMaxShield` | `shieldAffinity` / `afterburnerAffinity` | `shieldFullRechargeDuration` | `baseShieldRechargeDelay` | `baseAfterburnerCapacity` | `afterburnerFullRechargeDuration` | `baseAfterburnerRechargeDelay` | `baseAfterburnerSpeedMultiplier` | `baseAfterburnerAccelerationMultiplier` | `baseAfterburnerManeuverabilityMultiplier` | `baseAfterburnerEnergyDrainPerSecond` |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Fighter | 115 | 0.50 / 0.50 | 6.0 | 6.0 | 65 | 6.0 | 1.5 | 1.55 | 1.80 | 0.90 | 33 |
-| Breacher | 90 | 0.40 / 0.60 | 6.0 | 6.0 | 70 | 5.0 | 1.2 | 1.65 | 2.00 | 0.90 | 33 |
-| Interceptor | 90 | 0.35 / 0.65 | 6.0 | 6.0 | 80 | 5.0 | 1.0 | 1.60 | 2.00 | 1.00 | 30 |
-| Conductor | 100 | 0.55 / 0.45 | 5.0 | 5.0 | 60 | 6.0 | 1.5 | 1.50 | 1.80 | 0.90 | 33 |
-| Aegis | 150 | 0.70 / 0.30 | 7.0 | 4.5 | 50 | 7.0 | 2.0 | 1.45 | 1.60 | 0.85 | 36 |
-| Cryo Controller | 110 | 0.55 / 0.45 | 6.0 | 5.5 | 60 | 6.0 | 1.5 | 1.50 | 1.80 | 0.90 | 33 |
+| Gemi | `baseMaxShield` | `maxShieldPerLevel` | `shieldFullRechargeDuration` | `baseShieldRechargeDelay` | `baseAfterburnerCapacity` | `afterburnerCapacityPerLevel` | `afterburnerFullRechargeDuration` | `baseAfterburnerRechargeDelay` | `baseAfterburnerSpeedMultiplier` | `baseAfterburnerAccelerationMultiplier` | `baseAfterburnerManeuverabilityMultiplier` | `baseAfterburnerEnergyDrainPerSecond` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Fighter | 140 | 20 | 6.0 | 6.0 | 100 | 3 | 6.0 | 1.5 | 1.55 | 1.80 | 0.90 | 33 |
+| Breacher | 110 | 10 | 6.0 | 6.0 | 110 | 2 | 5.0 | 1.2 | 1.65 | 2.00 | 0.90 | 33 |
+| Interceptor | 110 | 15 | 6.0 | 6.0 | 120 | 4 | 5.0 | 1.0 | 1.60 | 2.00 | 1.00 | 30 |
+| Conductor | 130 | 20 | 5.0 | 5.0 | 95 | 3 | 6.0 | 1.5 | 1.50 | 1.80 | 0.90 | 33 |
+| Aegis | 160 | 30 | 7.0 | 4.5 | 75 | 2 | 7.0 | 2.0 | 1.45 | 1.60 | 0.85 | 36 |
+| Cryo Controller | 130 | 20 | 6.0 | 5.5 | 95 | 3 | 6.0 | 1.5 | 1.50 | 1.80 | 0.90 | 33 |
 
-`baseAfterburnerRampUpDuration 0.22` ve `baseAfterburnerRampDownDuration 0.45` tüm gemilerde Fighter ile aynı.
+Tüm gemilerde `baseAfterburnerRampUpDuration 0.22`, `baseAfterburnerRampDownDuration 0.45` (Fighter ile aynı). `shieldAffinity` / `afterburnerAffinity` alanları **kalkar** (bkz. Adım 2b).
 
-Sonuç (hesaplanmış):
+Sonuç (hesaplanmış; "dayanıklılık" = HP × (1 + Armor/100) + kalkan; Armor yalnız gövdeye uygulanır, `CombatRuntime::ApplyHullDamageMitigation`):
 
-| Gemi | Kalkan L1 → L10 | AB kapasitesi L1 → L10 | Tam AB süresi L1 |
-|---|---:|---:|---:|
-| Fighter | 150 → 168 | 100 → 118 | 3,0 sn |
-| Breacher | 117 → 117 | 111 → 111 | 3,4 sn |
-| Interceptor | 110 → 116 | 116 → 128 | 3,9 sn |
-| Conductor | 145 → 175 | 97 → 121 | 2,9 sn |
-| Aegis | 210 → 248 | 76 → 92 | 2,1 sn |
-| Cryo Controller | 154 → 174 | 96 → 112 | 2,9 sn |
+| Gemi | Kalkan L1 → L10 → L20 | L20 kalkan/HP | Kalkan regen/sn L20 | Dayanıklılık (Fighter = 100) L1 / L10 / L20 | AB kapasitesi L1 → L10 → L20 | Boost süresi L1 → L20 |
+|---|---|---:|---:|---|---|---|
+| Fighter | 140 → 320 → 520 | %51 | 87 | 100 / 100 / 100 | 100 → 127 → 157 | 3,0 → 4,8 sn |
+| Breacher | 110 → 200 → 300 | %21 | 50 | 103 / 114 / 120 | 110 → 128 → 148 | 3,3 → 4,5 sn |
+| Interceptor | 110 → 245 → 395 | %51 | 66 | 79 / 72 / 68 | 120 → 156 → 196 | 4,0 → 6,5 sn |
+| Conductor | 130 → 310 → 510 | %52 | 102 | 89 / 90 / 87 | 95 → 122 → 152 | 2,9 → 4,6 sn |
+| Aegis | 160 → 430 → 730 | %60 | 104 | 112 / 131 / 139 | 75 → 93 → 113 | 2,1 → 3,1 sn |
+| Cryo Controller | 130 → 310 → 510 | %50 | 85 | 97 / 99 / 99 | 95 → 122 → 152 | 2,9 → 4,6 sn |
 
 ### 1.4 Silah ve görsel
 
@@ -150,6 +153,28 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 
 **Kabul:** Build exit 0; `LightYearsContent` geçer (katalog 6 oyuncu + 3 düşman gemisini yükler, her `primaryWeaponId` çözülür).
 
+### Adım 2b — Kalkan/afterburner'ı EP'den ayır, seviye başı büyüme ekle
+
+**Dosyalar:** `include/gameConfigs/ship/ShipStructs.h`, `include/gameConfigs/ship/ShipConfig.h`, `src/gameplay/content/ShipLoader.cpp`, `src/gameplay/content/ShipContentCatalog.cpp`, `include/gameplay/ship/ShipRuntime.h`, `src/gameplay/ship/ShipRuntime.cpp`, `src/enemy/DummyEnemy.cpp`, `src/player/Player.cpp`, `assets/content/data/ships.json`
+
+1. **`ShipEnergyAttributes`:**
+   - `shieldAffinity` ve `afterburnerAffinity` alanlarını **sil**.
+   - Yeni alanlar: `float maxShieldPerLevel = 0.f;` ve `float afterburnerCapacityPerLevel = 0.f;`. Varsayılan 0, yani düşman gemileri ve eski içerik değişmeden çalışır.
+2. **`ShipLoader::ParseEnergy`:** affinity okumayı kaldır. Yeni iki alanı `object.value("maxShieldPerLevel", 0.f)` / `object.value("afterburnerCapacityPerLevel", 0.f)` ile oku.
+3. **`ShipContentCatalog::IsValidShipDefinition`:** affinity kontrollerini ve "toplam = 1" kuralını kaldır. Yeni iki alan için `IsFiniteNonNegative` ekle.
+4. **`ShipRuntime`:**
+   - `RecalculateAttributes` içindeki EP reaktör terimini (`ReactorBudgetPerEnergyPower`, `reactorBudget × affinity`) **kaldır**. Kalkan = `baseMaxShield + (seviye − 1) × maxShieldPerLevel + mevcut shield contribution'lar`; AB = `baseAfterburnerCapacity + (seviye − 1) × afterburnerCapacityPerLevel`.
+   - Yeni `void SetShipLevel(int level)` (1'den küçükse 1'e kenetle); değişince `RecalculateAttributes()`. `int mShipLevel = 1`. `Clear()` 1'e döndürür.
+   - EP değişince yeniden hesaplama artık gerekmez: `OnOwnerAttributeChanged` yalnız `MaxHealth` için tetiklenir (HealthRegen hâlâ MaxHealth'ten türüyor).
+   - Düşmanların `SetBaseMaxShieldContribution` / `GetAuthoredBaseMaxShield` yolu (`EnemyRuntime.cpp:327-375`) **aynen kalır**; düşman seviye kalkanı oradan gelmeye devam eder.
+5. **`Player`:** gemi doğduktan sonra ve `OnShipLevelChanged`'de geminin `ShipRuntime`'ına `SetShipLevel(mShipProgression.GetLevel())` çağır. Respawn'da da çağrıldığından emin ol (yeni gemi L1'den değil oyuncunun seviyesinden başlar).
+6. **`DummyEnemy.cpp:15-16`:** affinity atamalarını kaldır (alan yok).
+7. **`ships.json`:** altı oyuncu gemisinin `energy` bloğunu Bölüm 1.3b'deki tabloyla yaz; tüm kayıtlardan (düşman gövdeleri dahil) `shieldAffinity` / `afterburnerAffinity` anahtarlarını sil.
+8. **`ShipConfig.h`:** Fighter yedeğinin enerji bloğu JSON ile aynı olsun (140 / +20, AB 100 / +3; affinity'siz kurucu sırası).
+9. EP'nin başka okuyucuları (yetenekler, `SpaceShip.cpp:187`, `CombatRuntime.cpp:111`) **değişmez**.
+
+**Kabul:** Build exit 0. Hedefli test: L1 Fighter kalkan 140 / AB 100; L2'de 160 / 103; L10'da 320 / 127. EP'yi geçici modifier ile değiştirmek kalkan ve AB tavanını **değiştirmez**. Düşman kalkan büyümesi testleri (`EnemyCombatFoundation` içindekiler) geçer. `GasLiteCoreTests.cpp` içinde affinity veya "EP kalkanı artırır" varsayan eski kontroller kırılırsa **düzeltilmez, listelenir** (kullanıcı kuralı).
+
 ### Adım 3 — Gemi seçimini oyuncu akışına bağla (UI'sız)
 
 **Dosyalar:** `include/gameplay/content/ShipContentCatalog.h`, `src/gameplay/content/ShipContentCatalog.cpp`, `include/player/PlayerManager.h`, `src/player/PlayerManager.cpp`, `include/player/Player.h`, `src/player/Player.cpp`
@@ -191,11 +216,13 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 
 1. **`ContentLoaderTests.cpp`** (mevcut, Fighter kontrolünün yanına):
    - 6 oyuncu gemisi yüklenir, `GetPlayerShipIds()` sırası Bölüm 1.1 ile aynı.
-   - Her gemi için `health`, `baseOwnerAttributes` (AP/Armor/Luck/AttackSpeed), `energy.baseEnergyPower`, `naturalGrowth` ve hareket değerleri tablolarla birebir.
+   - Her gemi için `health`, `baseOwnerAttributes` (AP/Armor/Luck/AttackSpeed), `energy.baseEnergyPower`, enerji bloğu (Bölüm 1.3b, `maxShieldPerLevel` / `afterburnerCapacityPerLevel` dahil), `naturalGrowth` ve hareket değerleri tablolarla birebir.
+   - JSON'da `shieldAffinity` / `afterburnerAffinity` anahtarı kalmamış.
    - Her `primaryWeaponId` `WeaponContentCatalog`'da çözülür.
 2. **Yeni `tests/PlayerShipSelectionTests.cpp`** (F1–F6 eşlemesinin doğru ID'yi seçtiği ve restart sonrası o geminin doğduğu da test edilir) (yeni hedef `LightYearsPlayerShipSelectionTests`; `LightYearsGasLiteTestObjects`'e bağlanır, CMake'teki test listesine ve `/INCREMENTAL:NO /DEBUG:FASTLINK` döngüsüne eklenir):
    - Seçim yokken oyuncu Fighter doğurur.
-   - Her gemi için: seçim → yeni oyuncu → doğan geminin owner nitelikleri L1 değerlerine eşit; 1 seviye XP sonrası L2 değerlerine eşit (ör. Breacher L2 HP 350, AP 47, EP 34).
+   - Her gemi için: seçim → yeni oyuncu → doğan geminin owner nitelikleri, max kalkanı ve AB kapasitesi L1 değerlerine eşit; 1 seviye XP sonrası L2 değerlerine eşit (ör. Breacher L2 HP 350, AP 47, EP 34, kalkan 120, AB 112).
+   - Seviye atlamış oyuncu ölüp respawn olunca yeni geminin kalkan/AB'si oyuncunun seviyesine göre (L1'e değil).
    - `PlayerManager::Reset()` sonrası seçim korunur.
    - Bilinmeyen ID → Fighter'a düşer, çökme yok.
 3. Mevcut test listesi: `GameplayTagSchemaTests` geçerli ID örnekleri (gerek yoksa dokunma).
@@ -204,7 +231,7 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 
 ### Adım 6 — Doküman ve kapanış
 
-1. `docs/Light_Years_Ships_Primary_Weapons_Combined.md` başındaki durum notuna "Faz 1 (gemiler) uygulandı, tarih/commit" ekle. Aegis hareket değerleri ve K2/K3 kararları hangi değerle kapandıysa dokümana işle.
+1. `docs/Light_Years_Ships_Primary_Weapons_Combined.md` başındaki durum notuna "Faz 1 (gemiler) uygulandı, tarih/commit" ekle. (K2/K3 kararları ve kalkan/AB tablosu dokümana plan aşamasında zaten işlendi.)
 2. `docs/PROJECT_DOCUMENTATION.md`'de gemi/oyuncu bölümü varsa güncelle.
 3. Bu plan dosyasının sonuna "Uygulama sonucu" bölümü: her adımın commit'i, build ve test komutları/sonuçları.
 
@@ -243,6 +270,6 @@ ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYea
 |---|---|---|
 | **K1** | Gemi seçimi nereden yapılır? | ✅ **Karar verildi:** yalnız F1–F6, seçim ekranı yok (Adım 4). |
 | **K2** | Aegis hareket değerleri (tasarımda yok) | ✅ **Karar verildi:** hantal; 480 / 600 / 200 / 240 / 380 / 4.8 |
-| **K3** | Fighter dışındaki gemilerin kalkan/afterburner değerleri (tasarımda yok) | Bölüm 1.3b'deki rol bazlı enerji profilleri. **Onay bekliyor.** |
+| **K3** | Kalkan/afterburner modeli ve değerleri | ✅ **Karar verildi:** EP'den ayrıldı; L1 kalkan Fighter 140, Breacher 110, Interceptor 110, Conductor 130, Aegis 160, Cryo 130; seviye başı 10–30; AB seviye başı +2…+4 (Bölüm 1.3b, Adım 2b). |
 | **K4** | Faz 1'de Interceptor'ın Dual atış hızı | Dual'ın `AttackSpeed` katsayısını geçici olarak **1.0 → 0.12** yap (12/sn tabanın %1'i = AS rating anlamı). Faz 2'de silah yeniden yazılınca kalkar. |
 | **K5** | Yer tutucu sprite'lar | Bölüm 1.4'teki atamalar; sonra değiştirilebilir. |
