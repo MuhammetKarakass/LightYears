@@ -1,6 +1,14 @@
 # Light Years — Ship & Primary Weapon Design Catalog
 
-Bu dosya, yüklenen güncel altı gemi + primary weapon tasarım dosyasının birleştirilmiş halidir. İçerikler değiştirilmeden korunmuştur.
+Bu dosya, yüklenen güncel altı gemi + primary weapon tasarım dosyasının birleştirilmiş halidir.
+
+> **Durum (2026-10-01):** Bu doküman **hedef tasarımdır**; oyun içindeki `ships.json` / `weapons.json` bu davranışa göre güncellenecek. Mevcut veriyle farklar kod tarafında ayrıca izlenir.
+
+## Seviye kuralı
+
+- Formüllerdeki **`L` = seviye başına ilerleme**. "Per Level" sütunları ve `BaseDamage(L)` gibi formüller **sınırsız** devam eder; seviye için üst sınır yoktur.
+- Örnek ilerleme tabloları (ör. 1–5, 10, 15) yalnız **örnektir**, tavan değildir. Silah tabloları 5. seviyede bitiyorsa aynı formül sonraki seviyelere aynen uzar.
+- `L` gemi seviyesi ve silah seviyesi için aynı mantıkla (seviye başına artış) okunur.
 
 ## İçindekiler
 
@@ -41,13 +49,13 @@ Fighter is the baseline/reference ship. It is intended to be reliable in most si
 
 | Ship Level | Max Health | AP | EP | Armor | Luck |
 |---:|---:|---:|---:|---:|---:|
-| 1 | 250 | 39 | 35 | 0 | 0 |
-| 2 | 295 | 42 | 37 | 2 | 1 |
-| 3 | 340 | 45 | 39 | 4 | 2 |
-| 4 | 385 | 48 | 41 | 6 | 3 |
-| 5 | 430 | 51 | 43 | 8 | 4 |
-| 10 | 655 | 66 | 53 | 18 | 9 |
-| 15 | 880 | 81 | 63 | 28 | 14 |
+| 1 | 250 | 39 | 35 | 2 | 0 |
+| 2 | 290 | 42 | 37 | 4 | 1 |
+| 3 | 330 | 45 | 39 | 6 | 2 |
+| 4 | 370 | 48 | 41 | 8 | 3 |
+| 5 | 410 | 51 | 43 | 10 | 4 |
+| 10 | 610 | 66 | 53 | 20 | 9 |
+| 15 | 810 | 81 | 63 | 30 | 14 |
 
 Armor and Luck use diminishing returns. Around 400 rating they reach approximately 83% effectiveness.
 
@@ -188,7 +196,7 @@ Fighter + Rapid Laser define the roster baseline.
 - Fighter starts with strong but not extreme AP.
 - AP naturally grows by +3 per ship level.
 - EP also grows, keeping the ship broadly useful rather than purely kinetic.
-- Health progression is moderate at +45 per level.
+- Health progression is moderate at +40 per level.
 - Armor and Luck grow naturally but remain far from specialist values.
 - Rapid Laser provides high range and reliable uptime.
 - Its Level 1 normal DPS remains around 104 after increasing Fighter's starting AP from 35 to 39.
@@ -213,7 +221,7 @@ Breacher is designed to force its way into close range, survive contact, and kee
 
 | Stat | Level 1 | Per Level |
 |---|---:|---:|
-| Max Health | 300 | +60 |
+| Max Health | 290 | +60 |
 | Attack Power | 45 | +2 |
 | Energy Power | 34 | +0 |
 | Armor | 3 | +2 |
@@ -264,12 +272,14 @@ The shotgun no longer uses pellets. Each trigger pull creates a short-range cone
 ### Normal Damage
 
 ```text
-BaseDamage(L) = 38 + 8 * (L - 1)
+BaseDamage(L) = 38 + 11 * (L - 1)
 
 APScale(L) = 0.60 + 0.04 * (L - 1)
 
 NormalDamage = BaseDamage(L) + AP * APScale(L)
 ```
+
+> **Denge notu (2026-10-01):** Base hasar artışı eskiden +8/seviye idi. Bu değerle Breacher'ın ortalama DPS'i Fighter'ın L5'ten sonra altına düşüyordu (L10'da ×0,96) ve "ideal menzilde Laser'ı geçmeli" niyetiyle çelişiyordu. +11/seviye ile Breacher/Fighter oranı L1–L20 arasında ~1,11–1,17 bandında kalır (L1 1,17, L5 1,11, L10 1,11, L20 1,14). Yaklaşık değerler; kodda gerçek test ile doğrulanacak.
 
 ### Empowered Trigger
 
@@ -287,7 +297,9 @@ EmpoweredBonus = EP * 0.15 + MaxHealth * 0.03
 EmpoweredDamage = NormalDamage + EmpoweredBonus
 ```
 
-The empowered attack is intended to be the shotgun's heavier special blast. Ignite behavior is not yet locked.
+The empowered attack is intended to be the shotgun's heavier special blast.
+
+**Ignite (öneri — onay bekliyor):** Normal blast Ignite uygulamaz. Yalnız empowered blast, vurduğu her hedefe **+1 Ignite stack** uygular. Gerekçe: Electric Launcher, Dual Kinetic ve Cryo Projector'da da status yalnız empowered vuruşla gelir; her atışta Ignite uygulamak shotgun'ı yakın menzilde fazla güçlü yapar. (Şu anki `weapons.json` her pellet'te `Damage.IgniteStacks = 1` uyguluyor; yeni tasarımda bu kalkar.)
 
 ---
 
@@ -300,6 +312,8 @@ MaxHealth = 290
 AP = 45
 EP = 34
 ```
+
+(Başlangıç HP'si tablodaki 290 ile aynıdır.)
 
 Normal shotgun hit:
 
@@ -659,10 +673,10 @@ Conductor is built around high Energy Power, ability usage, Electric vulnerabili
 
 | Ship Level | HP | AP | EP | Armor | Luck |
 |---:|---:|---:|---:|---:|---:|
-| 1 | 230 | 27 | 41 | 1 | 2 |
-| 5 | 390 | 31 | 53 | 5 | 10 |
-| 10 | 590 | 36 | 68 | 10 | 20 |
-| 15 | 790 | 41 | 83 | 15 | 30 |
+| 1 | 220 | 27 | 41 | 1 | 2 |
+| 5 | 380 | 31 | 53 | 5 | 10 |
+| 10 | 580 | 36 | 68 | 10 | 20 |
+| 15 | 780 | 41 | 83 | 15 | 30 |
 
 Armor and Luck use the global diminishing-return system.
 
@@ -773,6 +787,13 @@ Chain-hit targets also receive +1 Electric stack.
 | 4 | +16% |
 
 Maximum stacks: 4.
+
+### Stack Duration
+
+- Stack'ler **zamanla tek tek düşmez** ve hedef savaştayken (yaşadığı ve sahibinden hasar almaya devam ettiği sürece) **sınırsız** kalır.
+- Hedef, stack'i uygulayan oyuncudan **6 saniye boyunca hiç hasar almazsa** (savaş dışı / menzil dışı) **tüm stack'ler birden** silinir.
+- Sahibin her hasar vuruşu (normal veya empowered) 6 saniyelik sayacı yeniler; yeni stack yalnız empowered ve zincir vuruşlarla gelir.
+- Hedef ölünce stack'ler zaten yok olur. Stack'ler hedefe aittir, başka hedefe taşınmaz.
 
 ---
 
@@ -1202,7 +1223,10 @@ When Frost Meter reaches 4, Whiteout begins automatically.
 
 ```text
 WhiteoutDuration = 4 s
+WhiteoutFireRateMultiplier = 2.0
 ```
+
+During Whiteout the projector fires at **2x its current fire rate** (base: 2.5/s -> 5/s). Cryo Controller has no natural Attack Speed growth, so this multiplier is the ship's own speed-up. Other Attack Speed sources (items, attachments) still stack on top.
 
 During Whiteout, attacks alternate:
 
@@ -1212,11 +1236,13 @@ Empowered -> Normal -> Empowered -> Normal -> ...
 
 Whiteout always begins with an empowered wave.
 
-Attack Speed can increase the number of total waves fired during the Whiteout window.
+At base fire rate a full Whiteout fires 4 s x 5/s = **20 waves** (10 empowered, 10 normal) instead of 10.
 
 Frost Meter is not generated during Whiteout.
 
-A short post-Whiteout Frost Meter lockout is planned; current working value is approximately 3 seconds.
+### Post-Whiteout Lockout
+
+When Whiteout ends, Frost Meter is reset to 0 and **cannot gain any points for 3 seconds**. After the lockout, normal Frost Meter generation resumes. (Önceki "~3 sn planlı" çalışma değeri kesinleştirildi; oyun testinde ayarlanabilir.)
 
 ---
 
@@ -1322,6 +1348,14 @@ Global Cryo stack values:
 | 4 | 20% |
 
 Maximum Cryo stacks: 4.
+
+### Stack Duration
+
+Cryo stack'leri Electric stack'leriyle aynı kuralı izler:
+
+- Hedef savaştayken stack'ler **sınırsız** kalır, zamanla tek tek düşmez.
+- Hedef, Cryo Controller'dan **6 saniye boyunca hiç hasar almazsa** (savaş dışı / menzil dışı) **tüm stack'ler birden** silinir.
+- Normal dalgalar stack uygulamaz ama hasar verdiği için 6 saniyelik sayacı yeniler. Böylece Whiteout + lockout (4 s + 3 s) arasında stack'ler kaybolmaz ve "hedefte önceden Cryo stack var" Frost Meter koşulu çalışır.
 
 ---
 
