@@ -1,10 +1,12 @@
 #include "gameplay/content/ShipLoader.h"
 
 #include "gameplay/content/ContentIdSchema.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 
 #include "framework/JsonDocumentLoader.h"
 
 #include <cmath>
+#include <map>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -113,6 +115,90 @@ namespace ly::content
 			}
 		}
 
+		ShipSchematic ParseSchematic(const Json& object)
+		{
+			if (!object.is_object())
+			{
+				throw std::runtime_error("Ship schematic must be an object");
+			}
+			std::map<char, GameplayTag> legend;
+			for (auto it = object.at("legend").begin(); it != object.at("legend").end(); ++it)
+			{
+				if (it.key().size() != 1 || it.key()[0] == '.')
+				{
+					throw std::runtime_error("Schematic legend keys must be a single character other than '.'");
+				}
+				const GameplayTag zone{ it.value().get<std::string>() };
+				std::string zoneFailure;
+				if (!GameplayTagSchema::Validate(zone, GameplayTagKind::ModuleZone, &zoneFailure))
+				{
+					throw std::runtime_error("Schematic legend '" + it.key() + "': " + zoneFailure);
+				}
+				legend[it.key()[0]] = zone;
+			}
+
+			const Json& rows = object.at("rows");
+			if (!rows.is_array() || rows.empty())
+			{
+				throw std::runtime_error("Schematic rows must be a non-empty array");
+			}
+			ShipSchematic schematic;
+			schematic.height = static_cast<int>(rows.size());
+			schematic.width = static_cast<int>(rows.front().get<std::string>().size());
+			if (schematic.width == 0)
+			{
+				throw std::runtime_error("Schematic rows must not be empty");
+			}
+			for (const Json& rowValue : rows)
+			{
+				const std::string row = rowValue.get<std::string>();
+				if (static_cast<int>(row.size()) != schematic.width)
+				{
+					throw std::runtime_error("Schematic rows must all have the same width");
+				}
+				for (const char cell : row)
+				{
+					if (cell == '.')
+					{
+						schematic.cellZones.push_back(GameplayTag{});
+						continue;
+					}
+					const auto found = legend.find(cell);
+					if (found == legend.end())
+					{
+						throw std::runtime_error(std::string("Schematic uses a character missing from its legend: ") + cell);
+					}
+					schematic.cellZones.push_back(found->second);
+				}
+			}
+
+			for (const Json& entry : object.value("defaultModules", Json::array()))
+			{
+				DefaultModulePlacement placement;
+				const std::string moduleId = entry.at("moduleId").get<std::string>();
+				std::string moduleIdFailure;
+				if (!ContentIdSchema::ValidateModuleId(moduleId, &moduleIdFailure))
+				{
+					throw std::runtime_error(moduleIdFailure);
+				}
+				placement.moduleId = sas::ContentId{ moduleId };
+				placement.variantIndex = entry.at("variant").get<int>();
+				const Json& origin = entry.at("origin");
+				if (!origin.is_array() || origin.size() != 2)
+				{
+					throw std::runtime_error("Default module origin must be [x, y]");
+				}
+				placement.origin = sf::Vector2i{ origin.at(0).get<int>(), origin.at(1).get<int>() };
+				placement.rotationQuarterTurns = entry.at("rotation").get<int>();
+				if (placement.rotationQuarterTurns < 0 || placement.rotationQuarterTurns > 3)
+				{
+					throw std::runtime_error("Default module rotation must be 0..3 quarter turns");
+				}
+				schematic.defaultModules.push_back(std::move(placement));
+			}
+			return schematic;
+		}
+
 		ShipLoader::LoadedDefinition ParseShip(
 			const Json& object,
 			const ShipDefinition& presentationBase
@@ -162,6 +248,11 @@ namespace ly::content
 					sas::AttributeId{ baseAttr.at("attributeId").get<std::string>() },
 					baseAttr.at("baseValue").get<float>()
 				});
+			}
+			loaded.definition.schematic.reset();
+			if (object.contains("schematic"))
+			{
+				loaded.definition.schematic = ParseSchematic(object.at("schematic"));
 			}
 			return loaded;
 		}

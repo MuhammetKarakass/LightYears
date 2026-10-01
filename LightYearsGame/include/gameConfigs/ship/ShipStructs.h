@@ -9,6 +9,8 @@
 #include "player/Reward.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/control/ControlResponse.h"
+#include "gameplay/module/ShipSchematic.h"
+#include <optional>
 
 struct EngineMount
 {
@@ -141,6 +143,8 @@ struct ShipDefinition
 	ShipProgressionDefinition progressionDefinition;
 	ly::ControlTargetClass controlTargetClass = ly::ControlTargetClass::Normal;
 	ly::List<OwnerAttributeBaseEntry> baseOwnerAttributes;
+	// Player ships carry a module schematic; enemies have none.
+	std::optional<ly::ShipSchematic> schematic;
 
 	ShipDefinition
 	(

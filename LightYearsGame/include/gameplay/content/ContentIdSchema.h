@@ -25,6 +25,12 @@ namespace ly::content
 		std::string family;
 	};
 
+	struct ParsedModuleId
+	{
+		// Ability category tag name that mirrors the ID's family segment.
+		std::string family;
+	};
+
 	class ContentIdSchema final
 	{
 	public:
@@ -193,6 +199,42 @@ namespace ly::content
 			}
 			parsed.family = SegmentAt(id, 1);
 			return true;
+		}
+
+		static bool ParseModuleId(
+			const std::string& id,
+			ParsedModuleId& parsed,
+			std::string* failureReason = nullptr
+		)
+		{
+			if (!IsCanonical(id))
+			{
+				return Fail(
+					failureReason,
+					"Content ID must use non-empty dot-separated identifier segments."
+				);
+			}
+			const char* formatError =
+				"Module ID must use Module.<Family>.<Name>.<Variant> with Family in Primary, Offense, Defense, Movement, Utility.";
+			if (id.rfind("Module.", 0) != 0 || SegmentAt(id, 4) != "" || SegmentAt(id, 3).empty())
+			{
+				return Fail(failureReason, formatError);
+			}
+			parsed.family = "Ability." + SegmentAt(id, 1);
+			if (!IsAbilityCategory(parsed.family))
+			{
+				return Fail(failureReason, formatError);
+			}
+			return true;
+		}
+
+		static bool ValidateModuleId(
+			const std::string& id,
+			std::string* failureReason = nullptr
+		)
+		{
+			ParsedModuleId ignored;
+			return ParseModuleId(id, ignored, failureReason);
 		}
 
 		static bool ValidateShipId(

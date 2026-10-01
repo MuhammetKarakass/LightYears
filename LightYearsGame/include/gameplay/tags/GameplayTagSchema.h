@@ -22,7 +22,9 @@ namespace ly
 		EffectState,
 		ActionLock,
 		DamageType,
-		Cooldown
+		Cooldown,
+		ModuleZone,
+		ModuleSystem
 	};
 
 	class GameplayTagSchema final
@@ -99,6 +101,10 @@ namespace ly
 					return IsChildOf(tag, DamageTypeRoot);
 				case GameplayTagKind::Cooldown:
 					return IsChildOf(tag, CooldownRoot);
+				case GameplayTagKind::ModuleZone:
+					return IsModuleZone(tag);
+				case GameplayTagKind::ModuleSystem:
+					return IsModuleSystem(tag);
 				}
 				return false;
 			}();
@@ -121,6 +127,24 @@ namespace ly
 				tag.MatchesTagExact(AbilityDefense) ||
 				tag.MatchesTagExact(AbilityMovement) ||
 				tag.MatchesTagExact(AbilityUtility);
+		}
+
+		static bool IsModuleZone(const GameplayTag& tag)
+		{
+			return tag.MatchesTagExact(GameplayTags::Module::Zone::Nose) ||
+				tag.MatchesTagExact(GameplayTags::Module::Zone::Wings) ||
+				tag.MatchesTagExact(GameplayTags::Module::Zone::Hull) ||
+				tag.MatchesTagExact(GameplayTags::Module::Zone::Core) ||
+				tag.MatchesTagExact(GameplayTags::Module::Zone::Engine) ||
+				tag.MatchesTagExact(GameplayTags::Module::Zone::Sensor);
+		}
+
+		static bool IsModuleSystem(const GameplayTag& tag)
+		{
+			return tag.MatchesTagExact(GameplayTags::Module::System::Shield) ||
+				tag.MatchesTagExact(GameplayTags::Module::System::Afterburner) ||
+				tag.MatchesTagExact(GameplayTags::Module::System::HealthReadout) ||
+				tag.MatchesTagExact(GameplayTags::Module::System::DamageReadout);
 		}
 
 		// Granted effect state is deliberately narrower than arbitrary GameplayTag

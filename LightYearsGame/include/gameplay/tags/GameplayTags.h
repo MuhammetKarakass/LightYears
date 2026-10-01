@@ -191,6 +191,27 @@ namespace ly::GameplayTags
 		}
 	}
 
+	namespace Module
+	{
+		namespace Zone
+		{
+			inline const GameplayTag Nose{ "Module.Zone.Nose" };
+			inline const GameplayTag Wings{ "Module.Zone.Wings" };
+			inline const GameplayTag Hull{ "Module.Zone.Hull" };
+			inline const GameplayTag Core{ "Module.Zone.Core" };
+			inline const GameplayTag Engine{ "Module.Zone.Engine" };
+			inline const GameplayTag Sensor{ "Module.Zone.Sensor" };
+		}
+
+		namespace System
+		{
+			inline const GameplayTag Shield{ "Module.System.Shield" };
+			inline const GameplayTag Afterburner{ "Module.System.Afterburner" };
+			inline const GameplayTag HealthReadout{ "Module.System.HealthReadout" };
+			inline const GameplayTag DamageReadout{ "Module.System.DamageReadout" };
+		}
+	}
+
 	namespace Cooldown
 	{
 		inline const GameplayTag& Root = sas::AbilityCooldownTags::Root;

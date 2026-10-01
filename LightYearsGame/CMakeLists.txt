@@ -33,6 +33,14 @@ add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/GameplayEffectDefinitionValidator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/GameContentBootstrap.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/GameContentBootstrap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModuleDefinition.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipSchematic.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipSchematicValidator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ShipSchematicValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ModuleLoader.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ModuleLoader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ModuleContentCatalog.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ModuleContentCatalog.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/GameAbilitySettingContracts.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/GameAbilitySettingContracts.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/LightYearsEffectBehaviorRuntime.h
@@ -1760,6 +1768,27 @@ if(BUILD_TESTING)
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 	)
 	add_test(NAME LightYearsMovementPolicy COMMAND LightYearsMovementPolicyTests)
+	add_executable(LightYearsModuleSystemTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/ModuleSystemTests.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
+	)
+	target_include_directories(LightYearsModuleSystemTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsModuleSystemTests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	)
+	target_link_libraries(LightYearsModuleSystemTests PRIVATE
+		${LIGHT_YEARS_ENGINE_TARGET_NAME}
+		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+	)
+	add_test(
+		NAME LightYearsModuleSystem
+		COMMAND LightYearsModuleSystemTests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
 	endif()
 
 	# Test executables are rebuilt from scratch often; the incremental-link
@@ -1786,7 +1815,8 @@ if(BUILD_TESTING)
 			LightYearsAutoTargetingTests
 			LightYearsGameplayTagSchemaTests
 			LightYearsMovementInfluenceTests
-			LightYearsMovementPolicyTests)
+			LightYearsMovementPolicyTests
+			LightYearsModuleSystemTests)
 			if(TARGET ${light_years_test_target})
 				target_link_options(${light_years_test_target} PRIVATE /INCREMENTAL:NO /DEBUG:FASTLINK)
 			endif()

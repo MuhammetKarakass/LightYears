@@ -13,9 +13,11 @@
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/EnemyCombatProfileCatalog.h"
 #include "gameplay/content/EnemyContentCatalog.h"
+#include "gameplay/content/ModuleContentCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
+#include "gameplay/module/ShipSchematicValidator.h"
 
 #include <filesystem>
 
@@ -56,6 +58,33 @@ namespace ly
 				IsEffectBehaviorRegistered,
 				failureReason
 			);
+		}
+
+		bool ValidateShipSchematics(std::string* failureReason)
+		{
+			for (const std::string& shipId : content::ShipContentCatalog::GetPlayerShipIds())
+			{
+				const ShipDefinition* ship = content::ShipContentCatalog::FindById(shipId);
+				if (!ship || !ship->schematic)
+				{
+					continue;
+				}
+				std::string schematicFailure;
+				if (!ShipSchematicValidator::Validate(
+					*ship->schematic,
+					content::ModuleContentCatalog::GetDefinitions(),
+					content::ModuleContentCatalog::GetZoneTable(),
+					&schematicFailure
+				))
+				{
+					if (failureReason)
+					{
+						*failureReason = "Ship " + shipId + " schematic: " + schematicFailure;
+					}
+					return false;
+				}
+			}
+			return true;
 		}
 
 		void LogContentLoadFailure(
@@ -102,6 +131,16 @@ namespace ly
 				LogContentLoadFailure("weapon", weaponLoadFailureReason);
 			}
 
+			std::string moduleLoadFailureReason;
+			const bool modulesLoaded = content::ModuleContentCatalog::LoadFromFile(
+				assetRoot / "content/data/modules.json",
+				&moduleLoadFailureReason
+			);
+			if (!modulesLoaded)
+			{
+				LogContentLoadFailure("module", moduleLoadFailureReason);
+			}
+
 			std::string shipLoadFailureReason;
 			const bool shipsLoaded = content::ShipContentCatalog::LoadFromFile(
 				assetRoot / "content/data/ships.json",
@@ -110,6 +149,15 @@ namespace ly
 			if (!shipsLoaded)
 			{
 				LogContentLoadFailure("ship", shipLoadFailureReason);
+			}
+
+			// Schematics reference module IDs, so they validate after both catalogs load.
+			std::string schematicFailureReason;
+			const bool schematicsValidated = modulesLoaded && shipsLoaded &&
+				ValidateShipSchematics(&schematicFailureReason);
+			if (modulesLoaded && shipsLoaded && !schematicsValidated)
+			{
+				LY_GAME_ERROR("Ship schematic validation failed: %s", schematicFailureReason.c_str());
 			}
 
 			std::string abilityLoadFailureReason;
@@ -186,7 +234,8 @@ namespace ly
 				);
 			}
 
-			return damageStatusBalanceLoaded && weaponsLoaded && shipsLoaded &&
+			return damageStatusBalanceLoaded && weaponsLoaded && modulesLoaded && shipsLoaded &&
+				schematicsValidated &&
 				abilitiesLoaded && effectsLoaded &&
 				abilityContentRegistered && abilitiesValidated && effectsValidated &&
 				enemyProfilesLoaded && enemyContentLoaded;

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "zones": [
+    { "zone": "Module.Zone.Nose",   "family": "Ability.Primary",  "bonus": 0.25 },
+    { "zone": "Module.Zone.Wings",  "family": "Ability.Offense",  "bonus": 0.25 },
+    { "zone": "Module.Zone.Hull",   "family": "*",                "bonus": 0.10 },
+    { "zone": "Module.Zone.Core",   "family": "Ability.Defense",  "bonus": 0.25 },
+    { "zone": "Module.Zone.Engine", "family": "Ability.Movement", "bonus": 0.25 },
+    { "zone": "Module.Zone.Sensor", "family": "Ability.Utility",  "bonus": 0.25 }
+  ],
+  "systemZones": {
+    "Module.System.Shield": "Module.Zone.Core",
+    "Module.System.Afterburner": "Module.Zone.Engine",
+    "Module.System.HealthReadout": "Module.Zone.Sensor",
+    "Module.System.DamageReadout": "Module.Zone.Sensor"
+  },
+  "rebootDurationSeconds": 1.5,
+  "combatWindowSeconds": 3.0,
+  "modules": [
+    {
+      "id": "Module.Defense.ShieldGenerator.Standard",
+      "displayName": "Standard Shield Generator",
+      "family": "Ability.Defense",
+      "systemCategory": "Module.System.Shield",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Movement.Afterburner.Standard",
+      "displayName": "Standard Afterburner",
+      "family": "Ability.Movement",
+      "systemCategory": "Module.System.Afterburner",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Utility.HealthReadout.Standard",
+      "displayName": "Health Readout",
+      "family": "Ability.Utility",
+      "systemCategory": "Module.System.HealthReadout",
+      "sizeVariants": [
+        { "shape": [[0, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Utility.DamageReadout.Standard",
+      "displayName": "Damage Readout",
+      "family": "Ability.Utility",
+      "systemCategory": "Module.System.DamageReadout",
+      "sizeVariants": [
+        { "shape": [[0, 0]] }
+      ]
+    }
+  ]
+}
