@@ -52,6 +52,9 @@ namespace ly
 
 		const List<GameplayTag>& GetEnabledSystems() const { return mEnabledSystems; }
 		bool IsSystemEnabled(const GameplayTag& systemTag) const;
+		// Presentation read: a ship that never had a loadout applied (no schematic)
+		// is unmanaged and keeps every readout, so legacy flows behave as before.
+		bool IsReadoutEnabled(const GameplayTag& systemTag) const { return !mHasApplied || IsSystemEnabled(systemTag); }
 		const ResolvedModuleEffects& GetResolvedEffects() const { return mResolved; }
 		bool HasApplied() const { return mHasApplied; }
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }

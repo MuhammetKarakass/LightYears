@@ -255,12 +255,15 @@ void SetSystemEnabled(ShipSystem system, bool enabled);   // varsayılan: açık
 
 ### 6.3 Ana silah (Primary ailesi)
 
-Scoped kurallar ana silaha uygulanmadığı için Primary modülleri ayrı hedef taşır (`ModuleAttributeTarget::PrimaryWeapon`). Uygulama noktası `AbilityActionAttributeResolver` içindeki silah dalıdır. Önbellek anahtarı olarak modül revizyonu `FireWeaponRuntimeState` / `GameAbility` primary önbelleğine eklenir; aksi halde değişim önbelleğe takılır.
+Scoped kurallar ana silaha uygulanmadığı için Primary modülleri ayrı hedef taşır (`ModuleAttributeTarget::PrimaryWeapon`). **Uygulandı:** ASC kendi ana silah değiştirici listesini tutar (`AddPrimaryWeaponModifier` / `RemovePrimaryWeaponModifier`) ve `GetPrimaryWeaponModifierRevision()` ile revizyonunu açar. `AbilityActionAttributeResolver` PrimaryFire dalı bu listeyi sahip ölçeklemesinden **önce** uygular. Revizyon `FireWeaponRuntimeState` ve `GameAbility` primary önbelleğine girer; modül değişimi önbelleğe takılmaz. `ShipModuleApplier` bu listeyi yalnız kendi tutamaçlarıyla yönetir.
 
 ### 6.4 HUD göstergeleri
 
 - `HealthReadout` ve `DamageReadout` sunum sistemleridir. Uygulayıcı `enabledSystems`'i gemide okunur durum olarak tutar.
 - Vitals ve hasar sayısı Presenter'ları bu durumu okur ve View'ı gizler. UI gameplay'e geri yazmaz.
+- **Uygulandı (adım 9):** `ShipModuleApplier::IsReadoutEnabled(tag)` = `!HasApplied() || IsSystemEnabled(tag)`; şematiksiz gemi (düşman, modülsüz akış) göstergeleri korur.
+- `HealthReadout` → `VitalsPresenter::Tick` gemiden okur, `VitalsViewModel::healthReadoutVisible` yazar, `VitalsView` yalnız HP/zırh göstergesini (`displayHealth`, bariyer dahil) gizler. Kalkan ve enerji barları kendi sistemlerine bağlı kalır. Gemi yokken son durum korunur; yeni gemi ilk Tick'te durumu yeniden okur.
+- `DamageReadout` → `GameHUD::ShipDamageResolved` oyuncu gemisi dışındaki hedeflerde (oyuncunun verdiği hasar) sayı üretmez. Oyuncunun aldığı hasar sayısı değişmez; hasarın kendisine dokunulmaz.
 
 ## 7. UI (modül ekranı)
 
@@ -278,6 +281,8 @@ Scoped kurallar ana silaha uygulanmadığı için Primary modülleri ayrı hedef
 ## 9. Uygulama adımları
 
 Her adım derlenir, testler koşar, davranış değişimi yalnız ilgili adımda olur.
+
+**Durum:** adım 1-2 `343c785`, 3-4 `403ae1a`, 5-6 `a3044a5`, 7 `3daba62`, 8 `1844223` ile **tamamlandı**. Adım 9 **sürüyor** (kod ve testler yazıldı, görsel kabul bekliyor). Adım 10-11 başlamadı.
 
 | # | Adım | Kanıt |
 |---|---|---|

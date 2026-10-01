@@ -108,6 +108,18 @@ namespace ly
 			return;
 		}
 
+		// DamageReadout module: numbers on anything but the player's own ship are damage
+		// the player dealt. One-way read of the module state; no ship or no loadout shows them.
+		if (!dynamic_cast<PlayerSpaceShip*>(ship))
+		{
+			Player* player = PlayerManager::GetPlayerManager().GetPlayer();
+			const shared_ptr<PlayerSpaceShip> playerShip = player ? player->GetCurrentSpaceShip().lock() : nullptr;
+			if (playerShip && !playerShip->GetModuleApplier().IsReadoutEnabled(GameplayTags::Module::System::DamageReadout))
+			{
+				return;
+			}
+		}
+
 		DamageNumberEntry entry;
 		entry.ship = std::dynamic_pointer_cast<SpaceShip>(ship->GetWeakPtr().lock());
 		if (entry.ship.expired())

@@ -2,6 +2,14 @@
 #include "framework/AudioManager.h"
 #include "framework/PhysicsSystem.h"
 #include "framework/TimerManager.h"
+#include "enemy/EnemyActor.h"
+#include "gameplay/content/ModuleContentCatalog.h"
+#include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/module/ModuleDefinition.h"
+#include "gameplay/enemy/EnemyBehaviorProfile.h"
+#include "gameplay/enemy/EnemyCombatProfile.h"
+#include "gameplay/enemy/EnemySpawnContext.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "gameplay/damage/DamageContext.h"
 #include "level/ArenaLevel.h"
 #include "player/Player.h"
@@ -104,7 +112,7 @@ namespace ly
 		};
 
 		DamageEventResult ApplyAndObserveDamage(
-			const shared_ptr<PlayerSpaceShip>& ship,
+			const shared_ptr<SpaceShip>& ship,
 			const shared_ptr<GameHUD>& hud,
 			float damage
 		)
@@ -191,6 +199,11 @@ namespace ly
 		bool respawned = false;
 		bool newShipObserved = false;
 		int respawnFrames = 0;
+		bool enemyReadoutOnShown = false;
+		bool enemyReadoutOffHidden = false;
+		bool enemyReadoutBackOnShown = false;
+		bool playerDamageStillShownWhenOff = false;
+		bool readoutsSurviveRespawn = false;
 
 		if (runtimeError.empty())
 		{
@@ -261,6 +274,52 @@ namespace ly
 				);
 				respawnedShip->SetInvulnerability(false);
 				respawnDamage = ApplyAndObserveDamage(respawnedShip, hud, NonlethalDamage);
+
+				// DamageReadout module: damage dealt to non-player ships is gated by the player's module.
+				const ShipDefinition* enemyDefinition = content::ShipContentCatalog::FindById("Ship.Enemy.ApproachGunner.Basic");
+				if (!enemyDefinition) throw std::runtime_error("enemy ship definition missing");
+				EnemyCombatProfile enemyProfile;
+				enemyProfile.profileId = "EnemyCombat.HudTest.DamageReadout";
+				enemyProfile.weapons.push_back({ "Weapon.Projectile.EnemyVanguardPulse.Basic", sas::AbilitySlot::PrimaryFire, 1 });
+				EnemyBehaviorProfile enemyBehavior{ "EnemyBehavior.PlayerShipSelection.ShieldGrowth", 1000.f, 0.2f, 300.f, 0.f, 0.f,
+					EnemyMovementMode::Approach, 1.f, 1.f };
+				const shared_ptr<EnemyActor> enemy = level->SpawnActor<EnemyActor>(
+					*enemyDefinition, "Enemy.HudDamageReadout", enemyProfile, enemyBehavior, 1.5f, EnemySpawnContext{ 1, 0 }
+				).lock();
+				if (!enemy) throw std::runtime_error("enemy did not spawn");
+				enemy->BeginPlay();
+				TickScene(*level, SimulationDeltaSeconds);
+				const unsigned int enemyId = enemy->GetUniqueID();
+				Player* readoutPlayer = playerManager.GetPlayer();
+				const DamageEventResult enemyOn = ApplyAndObserveDamage(enemy, hud, 1.f);
+				enemyReadoutOnShown = enemyOn.displayedNumberCount == 1;
+
+				const ModulePlacement* readoutModule = nullptr;
+				for (const ModulePlacement& placement : readoutPlayer->GetModuleLoadout().GetPlacements())
+				{
+					const ModuleDefinition* definition = content::ModuleContentCatalog::FindById(placement.moduleId);
+					if (definition && definition->systemCategory == GameplayTags::Module::System::DamageReadout) readoutModule = &placement;
+				}
+				if (!readoutModule) throw std::runtime_error("DamageReadout module not installed by default");
+				// Let the combat window lapse so the reinstall below is not held out by a reboot.
+				for (int frame = 0; frame < 240; ++frame) TickScene(*level, SimulationDeltaSeconds);
+				if (respawnedShip->GetIsPendingDestroy()) throw std::runtime_error("player ship died while waiting for combat to lapse");
+				const ModulePlacement readoutPlacement = *readoutModule;
+				if (!readoutPlayer->TryUninstallModule(readoutPlacement.instanceId)) throw std::runtime_error("DamageReadout uninstall failed");
+				const int beforeOff = GameHUDDamageE2ETestAccess::GetDamageNumberCountForShip(*hud, enemyId);
+				const DamageEventResult enemyOff = ApplyAndObserveDamage(enemy, hud, 1.f);
+				enemyReadoutOffHidden = enemyOff.resolvedCount == 1 && enemyOff.displayedNumberCount == beforeOff;
+
+				playerDamageStillShownWhenOff = ApplyAndObserveDamage(respawnedShip, hud, NonlethalDamage).displayedNumberCount >= 1;
+				for (int frame = 0; frame < 240; ++frame) TickScene(*level, SimulationDeltaSeconds);
+				if (respawnedShip->GetIsPendingDestroy()) throw std::runtime_error("player ship died while waiting for combat to lapse");
+				if (readoutPlayer->TryInstallModule(readoutPlacement.instanceId, readoutPlacement.origin,
+					readoutPlacement.rotationQuarterTurns) != ModulePlacementFailure::None)
+					throw std::runtime_error("DamageReadout reinstall failed");
+				const int beforeBack = GameHUDDamageE2ETestAccess::GetDamageNumberCountForShip(*hud, enemyId);
+				const DamageEventResult enemyBack = ApplyAndObserveDamage(enemy, hud, 1.f);
+				enemyReadoutBackOnShown = enemyBack.displayedNumberCount == beforeBack + 1;
+				readoutsSurviveRespawn = respawnedShip->GetModuleApplier().IsReadoutEnabled(GameplayTags::Module::System::DamageReadout);
 			}
 			catch (const std::exception& exception)
 			{
@@ -286,7 +345,8 @@ namespace ly
 			respawnDamage.displayedText == respawnExpectedText;
 		const bool passed = runtimeError.empty() && levelStarted && hudInitialized && initialShipSpawned &&
 			initialDamageNumberCreated && initialShipDestroyed && respawned && newShipObserved &&
-			respawnDamageNumberCreated;
+			respawnDamageNumberCreated && enemyReadoutOnShown && enemyReadoutOffHidden && enemyReadoutBackOnShown &&
+			playerDamageStillShownWhenOff && readoutsSurviveRespawn;
 
 		const Json artifact{
 			{ "assertions", {
@@ -294,6 +354,9 @@ namespace ly
 				{ "initialPlayerShipObservedAndDamaged", initialDamageNumberCreated },
 				{ "playerShipDeathTriggeredRespawn", initialShipDestroyed && respawned },
 				{ "respawnedShipWasObservedAndDamaged", newShipObserved && respawnDamageNumberCreated },
+				{ "damageReadoutGatesPlayerDealtNumbers", enemyReadoutOnShown && enemyReadoutOffHidden && enemyReadoutBackOnShown },
+				{ "damageReadoutKeepsDamageTakenNumbers", playerDamageStillShownWhenOff },
+				{ "damageReadoutReinstallReachesRespawnedShip", readoutsSurviveRespawn },
 				{ "runtimeEventTargetsDamagedShip", initialDamage.targetMatched && respawnDamage.targetMatched },
 				{ "runtimeDamageEventResolvedPositiveHits", initialDamage.resolvedCount == 1 && respawnDamage.resolvedCount == 1 }
 			} },

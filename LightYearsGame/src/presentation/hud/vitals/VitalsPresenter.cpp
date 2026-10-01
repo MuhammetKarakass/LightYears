@@ -172,6 +172,7 @@ namespace ly
 		const ShieldComponent& shield = ship->GetShieldComponent();
 		const EnergyComponent& energy = ship->GetEnergyComponent();
 		SetIfChanged(vm.hasShip, true, vm.revision);
+		SetIfChanged(vm.healthReadoutVisible, ship->GetModuleApplier().IsReadoutEnabled(GameplayTags::Module::System::HealthReadout), vm.revision);
 		SetIfChanged(vm.health, currentHealth, vm.revision);
 		SetIfChanged(vm.healthMax, maxHealth, vm.revision);
 		SetIfChanged(vm.displayHealth, displayHealth, vm.revision);

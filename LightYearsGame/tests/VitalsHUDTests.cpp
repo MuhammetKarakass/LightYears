@@ -1,6 +1,9 @@
 #include "framework/Application.h"
 #include "framework/AssetManager.h"
 #include "gameplay/content/GameContentBootstrap.h"
+#include "gameplay/content/ModuleContentCatalog.h"
+#include "gameplay/module/ModuleDefinition.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "level/GameLevel.h"
 #include "player/Player.h"
 #include "player/PlayerManager.h"
@@ -151,6 +154,44 @@ namespace
 			NearlyEqual(respawned->energy, replacementShip->GetEnergyComponent().GetEnergy()),
 			"respawn binds new ship values without old ship values",
 			{ { "health", respawned->health }, { "shield", respawned->shield }, { "energy", respawned->energy } });
+
+		// HealthReadout module: installed <=> the HP/armor gauge is visible.
+		report.Check(respawned->healthReadoutVisible && replacementShip->GetModuleApplier().HasApplied(),
+			"default loadout shows the health readout");
+		ModulePlacement healthReadout{};
+		for (const ModulePlacement& placement : player.GetModuleLoadout().GetPlacements())
+		{
+			const ModuleDefinition* definition = content::ModuleContentCatalog::FindById(placement.moduleId);
+			if (definition && definition->systemCategory == GameplayTags::Module::System::HealthReadout) healthReadout = placement;
+		}
+		report.Check(healthReadout.instanceId != 0, "default loadout installs a HealthReadout module");
+		VitalsView readoutView{ presenter.GetViewModel() };
+		readoutView.Tick(0.f);
+		const auto readoutGauges = std::dynamic_pointer_cast<StackPanel>(
+			std::dynamic_pointer_cast<StackPanel>(readoutView.GetChildren().front())->GetChildren().front());
+		const auto healthGauge = readoutGauges->GetChildren().back();
+		const auto shieldGauge = readoutGauges->GetChildren()[1];
+		report.Check(healthGauge->GetVisibility(), "health gauge is visible with the readout installed");
+		report.Check(player.TryUninstallModule(healthReadout.instanceId), "HealthReadout uninstalls");
+		presenter.Tick();
+		readoutView.Tick(0.f);
+		report.Check(!presenter.GetViewModel()->healthReadoutVisible && !healthGauge->GetVisibility() &&
+			shieldGauge->GetVisibility(), "uninstalled HealthReadout hides only the HP/armor gauge");
+		replacementShip->Destroy();
+		level->TickInternal(0.f);
+		presenter.Tick();
+		auto readoutRespawn = player.SpawnSpaceShip(level.get()).lock();
+		level->TickInternal(0.f);
+		presenter.Tick();
+		report.Check(readoutRespawn && readoutRespawn != replacementShip && !presenter.GetViewModel()->healthReadoutVisible,
+			"respawn keeps the health readout hidden");
+		report.Check(player.TryInstallModule(healthReadout.instanceId, healthReadout.origin, healthReadout.rotationQuarterTurns) ==
+			ModulePlacementFailure::None, "HealthReadout reinstalls");
+		presenter.Tick();
+		readoutView.Tick(0.f);
+		report.Check(presenter.GetViewModel()->healthReadoutVisible && healthGauge->GetVisibility(),
+			"reinstalled HealthReadout shows the gauge again");
+		replacementShip = readoutRespawn;
 
 		player.AddLifeCount(2);
 		player.AddScore(31);

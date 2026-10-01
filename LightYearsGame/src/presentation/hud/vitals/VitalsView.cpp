@@ -41,6 +41,7 @@ namespace ly
 		if (auto gauge = mShieldGauge.lock()) gauge->UpdateValue(mViewModel->shield, mViewModel->shieldMax);
 		if (auto gauge = mHealthGauge.lock())
 		{
+			gauge->SetVisibility(mViewModel->healthReadoutVisible);
 			gauge->UpdateValue(mViewModel->displayHealth, mViewModel->displayHealthMax);
 			gauge->SetForegroundColor(ComputeHealthBarColor(*mViewModel));
 		}
