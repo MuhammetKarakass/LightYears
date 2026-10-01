@@ -59,7 +59,10 @@ namespace ly
 
 		else if (const auto* mouseMoved = event.getIf<sf::Event::MouseMoved>())
 		{
-			if (!sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+			// Keep the pressed look while this button is held. Use the button's
+			// own event state, not the global mouse state, which also reflects
+			// clicks in other windows.
+			if (!mButtonClicked)
 			{
 				sf::Vector2f mousePos(static_cast<float>(mouseMoved->position.x),
 					static_cast<float>(mouseMoved->position.y));
@@ -135,7 +138,7 @@ namespace ly
 			textBounds.position.y + textBounds.size.y / 2.0f
 			});
 
-		// Text'i widget merkezine yerleþtir
+		// Text'i widget merkezine yerleï¿½tir
 		mButtonText.setPosition(widgetCenter);
 	}
 
