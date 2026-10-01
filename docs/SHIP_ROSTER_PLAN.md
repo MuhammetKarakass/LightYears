@@ -32,7 +32,7 @@ Ortak değerler (tüm oyuncu gemileri, Fighter'dan kopya):
 - `speed: [350, 350]`, `collisionDamage: 25`, `score: 0`, `shipXPReward: 0`
 - `progression.baseXP: 6`, `xpExponent: 0`, `xpPerLevel: 1` (öldürme eşiği 6, 7, 8… kararı korunur)
 - Hareket: `linearDamping 0.70`, `inputResponsiveness 12`, `mouseAimDeadZone 32`, `horizontalRatingToThrust 60`, `verticalRatingToThrust 60`, `ratingToMaxSpeed 20`, `movementRatingDiminishingScale 20`
-- Enerji bloğu: Fighter'ın bloğunun aynısı (`baseEnergyPower` gemiye göre değişir; Breacher'da `baseAfterburnerSpeedMultiplier 1.65`). Tasarım dokümanı diğer gemiler için kalkan/afterburner sayısı vermiyor → bkz. **K3**.
+- Enerji bloğu: gemiye göre, bkz. Bölüm 1.3b (`baseEnergyPower` Bölüm 1.1'den).
 
 ### 1.1 Stat tablosu
 
@@ -68,10 +68,46 @@ Ortak değerler (tüm oyuncu gemileri, Fighter'dan kopya):
 | Breacher | 490 | 750 | 220 | 245 | 450 | 6.0 |
 | Interceptor | 590 | 720 | 240 | 340 | 480 | 6.5 |
 | Conductor | 505 | 620 | 200 | 285 | 410 | 5.3 |
-| Aegis | **480** | **600** | **200** | **240** | **380** | **4.8** |
+| Aegis | 480 | 600 | 200 | 240 | 380 | 4.8 |
 | Cryo Controller | 520 | 610 | 210 | 310 | 425 | 5.5 |
 
-Aegis için tasarımda hareket tablosu yok; kalın değerler **öneridir** (en yavaş ve en hantal gövde, "mid-range anchor") → bkz. **K2**.
+Aegis için tasarımda hareket tablosu yoktu; değerler kullanıcı onayıyla (K2, 2026-10-01) en yavaş ve en hantal gövde olarak belirlendi.
+
+### 1.3b Enerji / kalkan / afterburner
+
+Kalkan ve afterburner, `ShipRuntime::RecalculateAttributes` (`src/gameplay/ship/ShipRuntime.cpp:70-117`) içinde EP'den türetilir:
+
+```
+reaktör          = EP × 2
+Max Kalkan       = baseMaxShield + reaktör × shieldAffinity
+Afterburner kap. = baseAfterburnerCapacity + reaktör × afterburnerAffinity   (shieldAffinity + afterburnerAffinity = 1)
+Kalkan regen/sn  = MaxKalkan / shieldFullRechargeDuration
+AB regen/sn      = ABkap / afterburnerFullRechargeDuration
+```
+
+Değerler **öneri — kullanıcı onayı bekliyor (K3)**. Fighter mevcut değerlerini korur.
+
+| Gemi | `baseMaxShield` | `shieldAffinity` / `afterburnerAffinity` | `shieldFullRechargeDuration` | `baseShieldRechargeDelay` | `baseAfterburnerCapacity` | `afterburnerFullRechargeDuration` | `baseAfterburnerRechargeDelay` | `baseAfterburnerSpeedMultiplier` | `baseAfterburnerAccelerationMultiplier` | `baseAfterburnerManeuverabilityMultiplier` | `baseAfterburnerEnergyDrainPerSecond` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Fighter | 115 | 0.50 / 0.50 | 6.0 | 6.0 | 65 | 6.0 | 1.5 | 1.55 | 1.80 | 0.90 | 33 |
+| Breacher | 90 | 0.40 / 0.60 | 6.0 | 6.0 | 70 | 5.0 | 1.2 | 1.65 | 2.00 | 0.90 | 33 |
+| Interceptor | 90 | 0.35 / 0.65 | 6.0 | 6.0 | 80 | 5.0 | 1.0 | 1.60 | 2.00 | 1.00 | 30 |
+| Conductor | 100 | 0.55 / 0.45 | 5.0 | 5.0 | 60 | 6.0 | 1.5 | 1.50 | 1.80 | 0.90 | 33 |
+| Aegis | 150 | 0.70 / 0.30 | 7.0 | 4.5 | 50 | 7.0 | 2.0 | 1.45 | 1.60 | 0.85 | 36 |
+| Cryo Controller | 110 | 0.55 / 0.45 | 6.0 | 5.5 | 60 | 6.0 | 1.5 | 1.50 | 1.80 | 0.90 | 33 |
+
+`baseAfterburnerRampUpDuration 0.22` ve `baseAfterburnerRampDownDuration 0.45` tüm gemilerde Fighter ile aynı.
+
+Sonuç (hesaplanmış):
+
+| Gemi | Kalkan L1 → L10 | AB kapasitesi L1 → L10 | Tam AB süresi L1 |
+|---|---:|---:|---:|
+| Fighter | 150 → 168 | 100 → 118 | 3,0 sn |
+| Breacher | 117 → 117 | 111 → 111 | 3,4 sn |
+| Interceptor | 110 → 116 | 116 → 128 | 3,9 sn |
+| Conductor | 145 → 175 | 97 → 121 | 2,9 sn |
+| Aegis | 210 → 248 | 76 → 92 | 2,1 sn |
+| Cryo Controller | 154 → 174 | 96 → 112 | 2,9 sn |
 
 ### 1.4 Silah ve görsel
 
@@ -133,19 +169,23 @@ Sprite'ların hepsi `assets/SpaceShooterRedux/PNG/` altında mevcut.
 
 **Kabul:** Build exit 0. Yeni hedefli test (Adım 5) seçilen geminin doğduğunu ve büyümenin o gemiden geldiğini doğrular. Seçim değiştirilmezse davranış bugünküyle aynıdır (Fighter).
 
-### Adım 4 — Gemi seçim arayüzü
+### Adım 4 — F1–F6 ile gemi değiştirme (seçim ekranı yok)
 
-Karar **K1**'e bağlı. Önerilen (A):
+**Kullanıcı kararı (K1, 2026-10-01):** Şimdilik seçim ekranı yapılmaz. Gemi yalnız F tuşlarıyla değişir. Açılış (`GameApplication` → `ArenaTestLevel`) ve ana menü **değişmez**.
 
-1. `GameApplication` açılışta `MainMenuLevel` yükler (bugün `ArenaTestLevel`).
-2. `MainMenuHUD`: başlık altına gemi seçici. `MenuLayout` / `StackPanel` ile yatay ya da dikey 6 düğme (gemi adları: Fighter, Breacher, Interceptor, Conductor, Aegis, Cryo Controller), altında seçili geminin rolü + L1 HP/AP/EP özeti tek satır metin. Seçili düğme görsel olarak işaretli.
-3. Düğme tıklaması `PlayerManager::SetSelectedShipId(...)` çağırır. "Start" → mevcut akış (`MainMenuLevel::StartGame` → `ArenaTestLevel`).
-4. Game Over / Pause'daki "Main Menu" akışı zaten `MainMenuLevel`'e dönüyor; oradan gemi değiştirilip yeniden başlanabilir.
-5. UI kuralları: yeni MVVM/Presenter tabanına ve `docs/UI_MIGRATION_PLAN.md`'deki menü katmanı desenine uy; statik menü olduğu için `Menu` katmanı yeterli.
+**Dosyalar:** `include/level/ArenaTestLevel.h`, `src/level/ArenaTestLevel.cpp` (gerekirse `GameLevel::DispatchEvent` deseni örnek alınır)
 
-Alternatif (B), hızlı test için: `ArenaTestLevel`'de F1–F6 tuşları gemiyi seçip `OnRestartLevel()` çağırır. A seçilse bile B geliştirici kısayolu olarak eklenebilir.
+1. `ArenaTestLevel::DispatchEvent` içinde `KeyPressed`:
+   - **F1** Fighter, **F2** Breacher, **F3** Interceptor, **F4** Conductor, **F5** Aegis, **F6** Cryo Controller.
+   - Eşleme sabit bir tablodan gelir; ID'ler Bölüm 1.1'deki gibi. Tuş sırası `GetPlayerShipIds()` sırasıyla aynı.
+2. Tuşa basılınca: `PlayerManager::SetSelectedShipId(id)` → mevcut `OnRestartLevel()` akışı. Restart oyuncuyu sıfırlar (`PlayerManager::Reset()`), yeni oyuncu seçili gemiyle doğar. Seviye/XP/satın alınmış yetenek seviyeleri sıfırlanır; bu bilinçli (yeni koşu).
+3. Kısıtlar:
+   - Game Over ekranı açıkken ve pause'dayken F tuşları yok sayılır (Escape kuralıyla aynı mantık).
+   - Zaten seçili gemiye basılırsa yine restart eder (hızlı sıfırlama olarak da işe yarar). İstenmezse no-op yapılır — uygulayıcı mevcut kodda hangisi daha sade ise onu seçer ve rapora yazar.
+   - Seçim değişince log: `LY_GAME_LOG` ile "Player ship selected: <id>".
+4. Ekranda geçici bilgi: mevcut notification HUD'u kullanılabiliyorsa "Gemi: Breacher" bildirimi gösterilir; yeni widget yazılmaz.
 
-**Kabul:** Build exit 0; `LightYearsHUDMigrationMenus` geçer (menü düzeni testleri yeni düğmeler için güncellenir). Oyun içi görsel kontrol kullanıcıya bırakılır.
+**Kabul:** Build exit 0. Hedefli test (Adım 5) F tuşu → seçim → restart → doğru gemi zincirini doğrular. Oyun içi görsel kontrol kullanıcıya bırakılır.
 
 ### Adım 5 — Testler
 
@@ -153,7 +193,7 @@ Alternatif (B), hızlı test için: `ArenaTestLevel`'de F1–F6 tuşları gemiyi
    - 6 oyuncu gemisi yüklenir, `GetPlayerShipIds()` sırası Bölüm 1.1 ile aynı.
    - Her gemi için `health`, `baseOwnerAttributes` (AP/Armor/Luck/AttackSpeed), `energy.baseEnergyPower`, `naturalGrowth` ve hareket değerleri tablolarla birebir.
    - Her `primaryWeaponId` `WeaponContentCatalog`'da çözülür.
-2. **Yeni `tests/PlayerShipSelectionTests.cpp`** (yeni hedef `LightYearsPlayerShipSelectionTests`; `LightYearsGasLiteTestObjects`'e bağlanır, CMake'teki test listesine ve `/INCREMENTAL:NO /DEBUG:FASTLINK` döngüsüne eklenir):
+2. **Yeni `tests/PlayerShipSelectionTests.cpp`** (F1–F6 eşlemesinin doğru ID'yi seçtiği ve restart sonrası o geminin doğduğu da test edilir) (yeni hedef `LightYearsPlayerShipSelectionTests`; `LightYearsGasLiteTestObjects`'e bağlanır, CMake'teki test listesine ve `/INCREMENTAL:NO /DEBUG:FASTLINK` döngüsüne eklenir):
    - Seçim yokken oyuncu Fighter doğurur.
    - Her gemi için: seçim → yeni oyuncu → doğan geminin owner nitelikleri L1 değerlerine eşit; 1 seviye XP sonrası L2 değerlerine eşit (ör. Breacher L2 HP 350, AP 47, EP 34).
    - `PlayerManager::Reset()` sonrası seçim korunur.
@@ -179,7 +219,7 @@ cd /d D:\LightYears
 cmake -S . -B build
 cmake --build build
 cd build
-ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYearsPlayerShipSelection|LightYearsHUDMigration|LightYearsVitalsHUD"
+ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYearsPlayerShipSelection|LightYearsVitalsHUD"
 ```
 
 - Log'ları **`.tmp/logs/`** altına yaz, `build/` köküne değil.
@@ -193,7 +233,7 @@ ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYea
 1. **Interceptor AttackSpeed ↔ mevcut Dual silahı.** Dual bugün `AuthoredScaling` modunda `FireRate += AttackSpeed × 1.0` kuralı taşıyor. AS rating olduğu için (1.0 = %1), Interceptor L1'de Dual **12 → 13 atış/sn**, L10'da **22 atış/sn** olur. Tasarım: `7 × (1 + %AS)`. Faz 2'de Dual baştan yazılacak. Faz 1 için bkz. **K4**.
 2. **Motor ışıkları.** `engineMounts` JSON'dan okunmuyor; yeni gövdeler Fighter'ın motor ışığı konumlarını kullanır ve yanlış yerde görünebilir. Faz 1'de kabul; gerekirse ayrı iş olarak `ShipLoader`'a `engineMounts` desteği eklenir.
 3. **Mevcut silahlar tasarımdan farklı** (ör. Heat Laser'ın AP katsayısı 0.75, Shotgun pellet'li). Faz 1'de denge ölçümü anlamlı değil; gemi seçimi ve stat doğruluğu test edilir, DPS değil.
-4. **Açılış değişikliği** (K1-A): oyun artık doğrudan arenaya girmez, menüden başlar.
+4. **F tuşu = restart.** Gemi değiştirmek koşuyu sıfırlar; seviye ve yetenek seviyeleri kaybolur. Test amaçlı kabul edildi.
 
 ---
 
@@ -201,8 +241,8 @@ ctest -j1 -R "LightYearsContent|LightYearsPlayerLevelTestProgressionE2E|LightYea
 
 | # | Karar | Öneri |
 |---|---|---|
-| **K1** | Gemi seçimi nereden yapılır? | **A**: açılışta ana menü + 6 düğmelik seçici. B (F1–F6 kısayolu) geliştirici aracı olarak ek. |
-| **K2** | Aegis hareket değerleri (tasarımda yok) | Bölüm 1.3'teki kalın öneriler: 480 / 600 / 200 / 240 / 380 / 4.8 |
-| **K3** | Fighter dışındaki gemilerin kalkan/afterburner değerleri (tasarımda yok) | Fighter'ın enerji bloğu; yalnız Breacher afterburner hız çarpanı 1.65. EP farkı kalkan/afterburner'ı zaten gemiye göre ölçekler. |
+| **K1** | Gemi seçimi nereden yapılır? | ✅ **Karar verildi:** yalnız F1–F6, seçim ekranı yok (Adım 4). |
+| **K2** | Aegis hareket değerleri (tasarımda yok) | ✅ **Karar verildi:** hantal; 480 / 600 / 200 / 240 / 380 / 4.8 |
+| **K3** | Fighter dışındaki gemilerin kalkan/afterburner değerleri (tasarımda yok) | Bölüm 1.3b'deki rol bazlı enerji profilleri. **Onay bekliyor.** |
 | **K4** | Faz 1'de Interceptor'ın Dual atış hızı | Dual'ın `AttackSpeed` katsayısını geçici olarak **1.0 → 0.12** yap (12/sn tabanın %1'i = AS rating anlamı). Faz 2'de silah yeniden yazılınca kalkar. |
 | **K5** | Yer tutucu sprite'lar | Bölüm 1.4'teki atamalar; sonra değiştirilebilir. |
