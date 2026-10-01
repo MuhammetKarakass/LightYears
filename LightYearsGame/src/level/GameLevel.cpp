@@ -11,6 +11,7 @@
 #include "presentation/hud/GameplayWarningHUDController.h"
 #include "presentation/hud/ability/AbilityBarHUDController.h"
 #include "presentation/hud/vitals/VitalsHUDController.h"
+#include "presentation/hud/modules/ModuleScreenHUDController.h"
 #include "presentation/hud/notification/NotificationHUDController.h"
 
 namespace ly
@@ -61,6 +62,13 @@ namespace ly
 				TogglePause();
 				return true;
 			}
+		}
+
+		// The paused world and overlay menus own all input; controllers only see a running game.
+		if (!IsPaused())
+		{
+			for (const shared_ptr<HUDController>& controller : mHUDControllers)
+				if (controller && controller->HandleEvent(event)) return true;
 		}
 		
 		return World::DispatchEvent(event);
@@ -117,6 +125,7 @@ namespace ly
 		AddHUDController(std::make_shared<GameplayWarningHUDController>(mGameHUD));
 		AddHUDController(std::make_shared<AbilityBarHUDController>(mGameHUD));
 		AddHUDController(std::make_shared<VitalsHUDController>(mGameHUD));
+		AddHUDController(std::make_shared<ModuleScreenHUDController>(mGameHUD));
 		auto notificationController = std::make_shared<NotificationHUDController>(mGameHUD);
 		mNotificationHUD = notificationController;
 		AddHUDController(std::move(notificationController));

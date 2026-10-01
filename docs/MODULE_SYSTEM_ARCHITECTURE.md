@@ -271,6 +271,7 @@ Scoped kurallar ana silaha uygulanmadığı için Primary modülleri ayrı hedef
 - ViewModel: şematik ızgarası, bölge renkleri, yerleşimler, envanter, sürüklenen modülün önizlemesi (`CanPlace` ve bölge bonusu: yeşil +%25 / +%10).
 - Komutlar yalnız `Player::Try*` çağırır. Hata nedeni `ModulePlacementFailure`'dan metne çevrilir.
 - Yeniden başlatılan modül `ShipModuleApplier::IsRebooting` ile yükleme göstergesi alır.
+- **Uygulandı (adım 10):** `presentation/hud/modules/` altında bir ViewModel + Presenter + View + `ModuleScreenHUDController`. **Tab** açar/kapatır (`GameLevel::DispatchEvent` yalnız oyun duraklatılmamışken `HUDController::HandleEvent` çağırır); oyun durmaz. Açıkken fare ekrana gider; ana silah klavyeden (Space) ateşlendiği için tıklamalar ateş etmez, WASD/yetenek tuşları çalışmaya devam eder (bu yüzden döndürme R değil **sağ tık / T / tekerlek**). Sol tık: envanterden/yerleşik modülü al, ızgaraya bırak (kurulum veya taşıma), envanter alanına bırak ya da **Del** ile kaldır; sürükle-bırak da çalışır. Önizleme yeşil/kırmızı `CanPlace`, etiket yalnız bölge bonusu varsa (+%25/+%10). Presenter oyun durumunu tek yönlü okur; komutlar yalnız `Player::TryInstallModule/TryMoveModule/TryUninstallModule` ile gider. Yeniden başlatılan modül kararır, süre ve ilerleme çubuğu gösterir. Şematiksiz gemi "no module slots" mesajı görür. Test: `LightYearsModuleScreen`.
 
 ## 8. Tamamlanan ön temizlik (2026-10-01)
 

@@ -39,6 +39,8 @@ namespace ly
 		ModulePlacementFailure TryInstallModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		ModulePlacementFailure TryMoveModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		bool TryUninstallModule(std::uint32_t instanceId);
+		// Read-only rules for the ship's schematic; empty for ships without one.
+		std::optional<ModuleRulesContext> BuildModuleRules() const;
 
 		unsigned int GetLifeCount() const { return mLifeCount; };
 		unsigned int GetScore() const { return mScore; };
@@ -71,7 +73,6 @@ namespace ly
 		void OnShipLevelChanged(int previousLevel, int currentLevel);
 		bool QueuePendingTestAbilityLevels(PlayerSpaceShip& ship, int levelCount);
 		void RestorePurchasedAbilityLevels(PlayerSpaceShip& ship);
-		std::optional<ModuleRulesContext> BuildModuleRules() const;
 		void ApplyModuleLoadout(PlayerSpaceShip& ship);
 		void OnCurrentShipDestroyed(Actor* destroyedActor);
 		void ResetRunProgression();

@@ -90,6 +90,13 @@ set(LIGHT_YEARS_UI_HUD_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsView.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsHUDController.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsHUDController.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenViewModel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenPresenter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/modules/ModuleScreenPresenter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenView.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/modules/ModuleScreenView.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenHUDController.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/modules/ModuleScreenHUDController.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/warning/GameplayWarningViewModel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/warning/GameplayWarningViewModel.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/warning/GameplayWarningView.h
@@ -1600,6 +1607,31 @@ if(BUILD_TESTING)
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 	set_tests_properties(LightYearsVitalsHUD PROPERTIES TIMEOUT 60)
+	add_executable(LightYearsModuleScreenTests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/ModuleScreenTests.cpp
+	)
+	target_include_directories(LightYearsModuleScreenTests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsModuleScreenTests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	)
+	target_link_libraries(LightYearsModuleScreenTests
+		PRIVATE
+			LightYearsGasLiteTestObjects
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsModuleScreen
+		COMMAND LightYearsModuleScreenTests
+			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/module-screen.json"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsModuleScreen PROPERTIES TIMEOUT 60)
 	add_executable(LightYearsHUDMigrationTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/HUDMigrationTests.cpp
 	)
@@ -1820,6 +1852,7 @@ if(BUILD_TESTING)
 			LightYearsPlayerLevelTestProgressionE2ETests
 			LightYearsPlayerShipSelectionTests
 			LightYearsVitalsHUDTests
+			LightYearsModuleScreenTests
 			LightYearsHUDMigrationTests
 			LightYearsContinuousBeamWallE2ETests
 			LightYearsAutoTargetingTests
