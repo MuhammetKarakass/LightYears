@@ -4,6 +4,7 @@
 #include "level/ArenaLevel.h"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace ly
@@ -115,6 +116,8 @@ namespace ly
 		virtual weak_ptr<PlayerSpaceShip> ResolveEncounterPlayerShip() const;
 
 	private:
+		std::optional<sf::Keyboard::Key> mHeldShipSelectionKey;
+
 		void SpawnDummyTargets();
 		bool BindEncounterPlayerDeath();
 		void UnbindEncounterPlayerDeath();

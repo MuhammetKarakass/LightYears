@@ -56,7 +56,21 @@ namespace
 	public:
 		explicit ShipSelectionArena(ly::Application* application) : ArenaTestLevel{ application } {}
 
+		// A full tap: press then release, as a real key press arrives.
 		bool DispatchKey(sf::Keyboard::Key key)
+		{
+			const bool handled = DispatchKeyPressOnly(key);
+			ReleaseKey(key);
+			return handled;
+		}
+
+		void ReleaseKey(sf::Keyboard::Key key)
+		{
+			DispatchEvent(sf::Event{ sf::Event::KeyReleased{ key } });
+		}
+
+		// A press without release, as OS key repeat delivers while held.
+		bool DispatchKeyPressOnly(sf::Keyboard::Key key)
 		{
 			return DispatchEvent(sf::Event{ sf::Event::KeyPressed{ key } });
 		}
@@ -1091,7 +1105,19 @@ namespace
 			afterSameKey && beforeSameKey->GetUniqueID() != afterSameKey->GetUniqueID(),
 			"pressing the already selected key still restarts the run");
 
-		const shared_ptr<PlayerSpaceShip> beforePause = afterSameKey;
+		level->DispatchKeyPressOnly(sf::Keyboard::Key::F6);
+		level->TickInternal(0.f);
+		const shared_ptr<PlayerSpaceShip> heldShip =
+			manager.GetPlayer() ? manager.GetPlayer()->GetCurrentSpaceShip().lock() : shared_ptr<PlayerSpaceShip>{};
+		level->DispatchKeyPressOnly(sf::Keyboard::Key::F6);
+		level->TickInternal(0.f);
+		const shared_ptr<PlayerSpaceShip> afterRepeat =
+			manager.GetPlayer() ? manager.GetPlayer()->GetCurrentSpaceShip().lock() : shared_ptr<PlayerSpaceShip>{};
+		report.Check(heldShip && afterRepeat == heldShip && !heldShip->GetIsPendingDestroy(),
+			"key repeat while a ship key is held does not restart again");
+		level->ReleaseKey(sf::Keyboard::Key::F6);
+
+		const shared_ptr<PlayerSpaceShip> beforePause = afterRepeat;
 		level->SetPaused(true);
 		level->DispatchKey(sf::Keyboard::Key::F1);
 		player = manager.GetPlayer();

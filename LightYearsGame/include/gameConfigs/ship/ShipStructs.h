@@ -122,6 +122,9 @@ struct OwnerAttributeBaseEntry
 	float baseValue = 0.f;
 };
 
+// The player ship used when nothing else has been selected.
+inline constexpr char DefaultPlayerShipId[] = "Ship.Player.Fighter.Basic";
+
 struct ShipDefinition
 {
 	std::string texturePath;

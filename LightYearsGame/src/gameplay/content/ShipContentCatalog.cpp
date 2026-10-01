@@ -220,7 +220,7 @@ namespace ly::content
 
 	const ShipDefinition& ShipContentCatalog::GetPlayerFighterDefinition()
 	{
-		const ShipDefinition* loaded = FindById("Ship.Player.Fighter.Basic");
+		const ShipDefinition* loaded = FindById(DefaultPlayerShipId);
 		return loaded ? *loaded : ShipData::Ship_Player_Fighter;
 	}
 

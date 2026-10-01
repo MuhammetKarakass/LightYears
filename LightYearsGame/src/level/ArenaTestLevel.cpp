@@ -255,27 +255,41 @@ namespace ly
 
 	bool ArenaTestLevel::DispatchEvent(const sf::Event& event)
 	{
+		if (const auto* keyReleased = event.getIf<sf::Event::KeyReleased>())
+		{
+			if (mHeldShipSelectionKey && *mHeldShipSelectionKey == keyReleased->code)
+			{
+				mHeldShipSelectionKey.reset();
+			}
+		}
+
 		const auto* keyPressed = event.getIf<sf::Event::KeyPressed>();
 		if (keyPressed && !IsPaused() && GetGameOverHUD().expired())
 		{
-			const char* selectedShipId = nullptr;
-			switch (keyPressed->code)
+			// F1..F6 pick the player ships in ships.json order.
+			constexpr sf::Keyboard::Key ShipSelectionKeys[] = {
+				sf::Keyboard::Key::F1, sf::Keyboard::Key::F2, sf::Keyboard::Key::F3,
+				sf::Keyboard::Key::F4, sf::Keyboard::Key::F5, sf::Keyboard::Key::F6
+			};
+			const auto keyIt = std::find(std::begin(ShipSelectionKeys), std::end(ShipSelectionKeys), keyPressed->code);
+			if (keyIt != std::end(ShipSelectionKeys))
 			{
-			case sf::Keyboard::Key::F1: selectedShipId = "Ship.Player.Fighter.Basic"; break;
-			case sf::Keyboard::Key::F2: selectedShipId = "Ship.Player.Breacher.Basic"; break;
-			case sf::Keyboard::Key::F3: selectedShipId = "Ship.Player.Interceptor.Basic"; break;
-			case sf::Keyboard::Key::F4: selectedShipId = "Ship.Player.Conductor.Basic"; break;
-			case sf::Keyboard::Key::F5: selectedShipId = "Ship.Player.Aegis.Basic"; break;
-			case sf::Keyboard::Key::F6: selectedShipId = "Ship.Player.CryoController.Basic"; break;
-			default: break;
-			}
+				// Key repeat while the key is held must not restart the run again.
+				if (mHeldShipSelectionKey && *mHeldShipSelectionKey == keyPressed->code)
+				{
+					return true;
+				}
 
-			if (selectedShipId)
-			{
-				PlayerManager::GetPlayerManager().SetSelectedShipId(selectedShipId);
-				LY_GAME_INFO("Player ship selected: %s", selectedShipId);
-				OnRestartLevel();
-				return true;
+				const std::size_t shipIndex = static_cast<std::size_t>(keyIt - std::begin(ShipSelectionKeys));
+				const List<std::string> shipIds = content::ShipContentCatalog::GetPlayerShipIds();
+				if (shipIndex < shipIds.size())
+				{
+					mHeldShipSelectionKey = keyPressed->code;
+					PlayerManager::GetPlayerManager().SetSelectedShipId(shipIds[shipIndex]);
+					LY_GAME_INFO("Player ship selected: %s", shipIds[shipIndex].c_str());
+					OnRestartLevel();
+					return true;
+				}
 			}
 		}
 

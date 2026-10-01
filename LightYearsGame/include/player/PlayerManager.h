@@ -31,7 +31,7 @@ namespace ly
 	private:
 
 		std::deque<Player> mPlayers;
-		std::string mSelectedShipId{ "Ship.Player.Fighter.Basic" };
+		std::string mSelectedShipId{ DefaultPlayerShipId };
 		static unique_ptr<PlayerManager> playerManager;
 	};
 }

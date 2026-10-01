@@ -18,7 +18,7 @@ namespace ly
 	class Player : public Object
 	{
 	public:
-		explicit Player(std::string shipId = "Ship.Player.Fighter.Basic");
+		explicit Player(std::string shipId = DefaultPlayerShipId);
 		~Player() override;
 
 		weak_ptr<PlayerSpaceShip> SpawnSpaceShip(World* world);
