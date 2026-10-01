@@ -262,12 +262,17 @@ This keeps Breacher slower in normal flight while allowing short, aggressive bre
 ## 2. Rapid Shotgun
 
 **Role:** Bruiser / Off-Tank / Breacher primary  
+**Silah tipi:** Kısa menzilli instant cone blast / hitscan-benzeri wave. **Pellet yok.**  
 **Damage Model:** Instant cone blast / hitscan-like wave  
 **Normal Damage Type:** Photonic  
 **Fire Rate:** 1.75 shots/s  
 **Range:** ~400
 
 The shotgun no longer uses pellets. Each trigger pull creates a short-range cone blast. Every valid target inside the cone receives one damage event.
+
+- Tek tetik çekişte koni içindeki **her geçerli hedef tam bir kez** hasar alır; hedef başına çarpan yoktur (hedef sayısı arttıkça hasar düşmez).
+- Mermi, çarpışma yarıçapı, uçuş hızı ve pellet sayısı/yayılımı kavramları kalkar. Mevcut `weapons.json`'daki `PelletCount`, `SpreadAngle`, `DamageReductionPerAdditionalHit` ve `MinimumDamageMultiplier` bu silah için kullanılmaz.
+- **Koni açısı (öneri — onay bekliyor):** toplam **45°** (burun yönünün iki yanında 22,5°), menzil **400**. Menzildeki sert kesim yerine hasar menzil boyunca sabittir. Koni, duvar/engel kuralları diğer anlık silahlarla aynıdır.
 
 ### Normal Damage
 
