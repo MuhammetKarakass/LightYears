@@ -2,7 +2,7 @@
 
 **Tarih:** 2026-10-02 · **Branch:** `codex/luna-callback-lifetime-checkpoint` · **Kaynak tasarım:** [Light_Years_Ships_Primary_Weapons_Combined.md](Light_Years_Ships_Primary_Weapons_Combined.md) · **Önceki faz:** [SHIP_ROSTER_PLAN.md](SHIP_ROSTER_PLAN.md)
 
-Bu plan altı oyuncu silahını tasarım dokümanındaki davranışa getirir. Uygulayıcılar için: Sol orkestrasyonu yürütür, her adımı bir Luna uygular, derler, test eder ve commitler. Adımlar sırayla yapılır; bir adımın build ve hedefli testleri geçmeden sonrakine geçilmez. `orchestrator.py` kullanılmaz. Uygulamaya başlamadan önce **Bölüm 6'daki kararların** kapanmış olması gerekir.
+Bu plan altı oyuncu silahını tasarım dokümanındaki davranışa getirir. Uygulayıcılar için: Sol orkestrasyonu yürütür, her adımı bir Luna uygular, derler, test eder ve commitler. Adımlar sırayla yapılır; bir adımın build ve hedefli testleri geçmeden sonrakine geçilmez. `orchestrator.py` kullanılmaz. Bölüm 6'daki kararların hepsi **2026-10-02'de kullanıcı onayıyla önerildiği gibi kapandı**; plan uygulamaya hazır.
 
 ---
 
@@ -169,9 +169,11 @@ ctest -j1
 
 ---
 
-## 6. Kullanıcı kararları (uygulamadan önce)
+## 6. Kullanıcı kararları — kapandı (2026-10-02)
 
-| # | Karar | Öneri |
+Kullanıcı "devam" diyerek tüm önerileri onayladı. "Öneri" sütunu artık bağlayıcı karardır; plan metnindeki "öneri" ifadeleri bu kararlara göre okunur.
+
+| # | Karar | Karar (onaylı) |
 |---|---|---|
 | **K1** | Rapid Laser (her 6) ve Dual (her 8) empowered sayacı **atış** mı **isabet** mi? Tasarım "isabet" diyor; kod bugün atış sayıyor. | **İsabet** (atış başına en fazla 1). Dual'ın kimliği "hedefte kalmak". |
 | **K2** | Electric/Cryo "6 s sessizlikte hepsi silinir" kuralı yalnız oyuncu silahlarına mı, tüm Electric/Cryo kaynaklarına (yetenekler, düşmanlar) mı? | **Global** (tek status kuralı); yetenek dengesi sonra gözden geçirilir. |
