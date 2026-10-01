@@ -28,7 +28,7 @@ namespace ShipData
 			270.f,
 			400.f,
 			5.f,
-			0.36f,
+			0.70f,
 			520.f,
 			12.f,
 			32.f
@@ -54,7 +54,7 @@ namespace ShipData
 			100.f,
 			1.25f,
 			{
-				{ ly::OwnerAttributeIds::MaxHealth, 75.f },
+				{ ly::OwnerAttributeIds::MaxHealth, 40.f },
 				{ ly::OwnerAttributeIds::AttackPower, 3.f },
 				{ ly::OwnerAttributeIds::EnergyPower, 2.f },
 				{ ly::OwnerAttributeIds::Armor, 2.f },
@@ -64,7 +64,8 @@ namespace ShipData
 		0.f,
 		ly::ControlTargetClass::Normal,
 		{
-			{ ly::OwnerAttributeIds::AttackPower, 35.f }
+			{ ly::OwnerAttributeIds::AttackPower, 39.f },
+			{ ly::OwnerAttributeIds::Armor, 2.f }
 		}
 	);
 

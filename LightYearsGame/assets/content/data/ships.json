@@ -12,7 +12,11 @@
       "baseOwnerAttributes": [
         {
           "attributeId": "Owner.AttackPower",
-          "baseValue": 35.0
+          "baseValue": 39.0
+        },
+        {
+          "attributeId": "Owner.Armor",
+          "baseValue": 2.0
         }
       ],
       "movement": {
@@ -52,7 +56,7 @@
         "xpExponent": 0.0,
         "xpPerLevel": 1.0,
         "naturalGrowth": [
-          { "attributeId": "Owner.MaxHealth", "perLevel": 75.0 },
+          { "attributeId": "Owner.MaxHealth", "perLevel": 40.0 },
           { "attributeId": "Owner.AttackPower", "perLevel": 3.0 },
           { "attributeId": "Owner.Energy.Power", "perLevel": 2.0 },
           { "attributeId": "Owner.Armor", "perLevel": 2.0 },
