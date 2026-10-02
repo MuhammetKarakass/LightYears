@@ -266,6 +266,22 @@ namespace ly
 			Check(runtime && runtime->successfulFireCount == 4, "charges: the next normal shot after 0.5 s");
 		}
 
+		void TestRapidLaserLevelOne()
+		{
+			// Design: 10 + 5 (L - 1) + AP * 0.41; Fighter L1 AP 39 -> 25.99.
+			WeaponRig rig;
+			Check(rig.Setup(CopyWeapon("Weapon.Projectile.FighterRapidLaser.Basic"), 39.f, 35.f),
+				"laser: rig with the shipped Rapid Laser");
+			if (!rig.ship) return;
+			rig.Hold(true);
+			rig.world.TickInternal(0.f);
+			const auto shots = rig.NewProjectiles();
+			Check(shots.size() == 1 && NearlyEqual(shots[0]->GetDamage(), 25.99f),
+				"laser: Fighter L1 normal shot is 25.99 before rounding");
+			Check(shots.size() == 1 && shots[0]->GetDamagePayload().roundDamageUp,
+				"laser: Rapid Laser still rounds final damage up");
+		}
+
 		int ElectricStacks(SpaceShip& ship)
 		{
 			const sas::ActiveGameplayEffect* effect = ship.GetCombatRuntime().GetAbilitySystemComponent()
@@ -341,6 +357,7 @@ int main()
 	run("stacks", &TestStatusStacksOnlyWhenEmpowered);
 	run("charges", &TestAbilityCastCharges);
 	run("lifetime", &TestSourceSustainedStatusLifetime);
+	run("laser", &TestRapidLaserLevelOne);
 
 	std::cout << (gFailures == 0 ? "[PASS] All weapon phase-2 checks passed\n" : "[FAIL] Weapon phase-2 checks failed\n");
 	return gFailures == 0 ? 0 : 1;

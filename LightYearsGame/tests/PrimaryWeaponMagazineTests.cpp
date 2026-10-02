@@ -33,6 +33,7 @@
 #include <limits>
 #include <memory>
 #include <tuple>
+#include <unordered_set>
 #include <vector>
 
 namespace ly
@@ -184,9 +185,9 @@ int main(int argc, char** argv)
 			CommonAttributeIds::Damage,
 			0.f
 		);
-		if (!NearlyEqual(resolvedDamage, 26.f) ||
-			!NearlyEqual(resolvedDamage * frAttr->baseValue, 104.f) ||
-			!NearlyEqual(1534.f / 14.f, 109.5714f, 0.1f))
+		if (!NearlyEqual(resolvedDamage, 24.35f) ||
+			!NearlyEqual(resolvedDamage * frAttr->baseValue, 97.4f) ||
+			!NearlyEqual(1440.f / 14.f, 102.857f, 0.1f))
 		{
 			return Fail("Suite A: Fighter L1 damage, raw DPS, or sustained cycle DPS is incorrect");
 		}
@@ -1308,7 +1309,7 @@ int main(int argc, char** argv)
 			PrimaryWeaponSchema::Empowered::BonusDamage
 		);
 		const sas::GameplayAttribute* everySuccessfulShotsAttr = sas::FindAttribute(
-			fighterLaser.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulShots);
+			fighterLaser.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulHits);
 		const sas::GameplayAttribute* finalMagazineRoundsAttr = sas::FindAttribute(
 			fighterLaser.attributes, PrimaryWeaponSchema::Empowered::FinalMagazineRounds);
 		if (!empoweredAttr || !NearlyEqual(empoweredAttr->baseValue, 2.0f) ||
@@ -1392,7 +1393,10 @@ int main(int argc, char** argv)
 				return Fail("Suite G: Projectile actor null");
 			}
 
-			const bool expectedEmpowered = (shot % 6 == 0) || (shot >= 43);
+			// Six hits earn the next shot and the empowered shot's own hit counts
+			// toward the next six: shots 7, 13, ..., 37, plus the final-magazine
+			// phase from shot 43.
+			const bool expectedEmpowered = (shot >= 7 && (shot - 7) % 6 == 0) || (shot >= 43);
 			if (proj->IsEmpowered() != expectedEmpowered)
 			{
 				std::cerr << "Mismatch at shot " << shot << ": expected empowered=" << expectedEmpowered << " got=" << proj->IsEmpowered() << '\n';
@@ -1410,15 +1414,16 @@ int main(int argc, char** argv)
 			}
 			const float actualDamage = target.receivedDamages.back();
 			const bool wasCrit = target.wasCriticalList.back();
+			proj->GetShotMetadata().ReportHit();
 
 			if (expectedEmpowered)
 			{
 				++empoweredCount;
-				// Empowered raw: 26 + 2 + 3.5 = 31.5 -> crit 1.5 = 47.25 -> ceil = 48
-				if (!NearlyEqual(actualDamage, 48.f))
+				// Empowered raw: 24.35 + 2 + 3.5 = 29.85 -> crit 1.5 = 44.775 -> ceil = 45
+				if (!NearlyEqual(actualDamage, 45.f))
 				{
 					std::cerr << "Empowered damage mismatch at shot " << shot << ": " << actualDamage << '\n';
-					return Fail("Suite G: Empowered damage must be 48");
+					return Fail("Suite G: Empowered damage must be 45");
 				}
 				if (!wasCrit)
 				{
@@ -1428,11 +1433,11 @@ int main(int argc, char** argv)
 			else
 			{
 				++normalCount;
-				// Normal raw: 26 -> ceil = 26
-				if (!NearlyEqual(actualDamage, 26.f))
+				// Normal raw: 10 + 35 * 0.41 = 24.35 -> ceil = 25
+				if (!NearlyEqual(actualDamage, 25.f))
 				{
 					std::cerr << "Normal damage mismatch at shot " << shot << ": " << actualDamage << '\n';
-					return Fail("Suite G: Normal damage must be 26");
+					return Fail("Suite G: Normal damage must be 25");
 				}
 				if (wasCrit)
 				{
@@ -1444,28 +1449,26 @@ int main(int argc, char** argv)
 			proj->Destroy();
 		}
 
-		// Verify 6th shot is empowered
-		// Verify shots 42-48 are empowered (shot 42 is 42%6==0; shots 43-48 are finalPhase)
-		// Total magazine count: 35 normal + 13 empowered
-		if (normalCount != 35 || empoweredCount != 13)
+		// Hit-earned shots 7..37 (six) plus the final-magazine phase 43-48 (six).
+		if (normalCount != 36 || empoweredCount != 12)
 		{
 			std::cerr << "Count mismatch: normal=" << normalCount << " empowered=" << empoweredCount << '\n';
-			return Fail("Suite G: Magazine must contain exactly 35 normal and 13 empowered shots");
+			return Fail("Suite G: Magazine must contain exactly 36 normal and 12 empowered shots");
 		}
 
-		// Total deterministic damage = 1534
-		if (!NearlyEqual(totalDeterministicDamage, 1534.f))
+		// Total deterministic damage = 36 * 25 + 12 * 45 = 1440
+		if (!NearlyEqual(totalDeterministicDamage, 1440.f))
 		{
 			std::cerr << "Total damage: " << totalDeterministicDamage << '\n';
-			return Fail("Suite G: Total magazine deterministic damage must equal 1534");
+			return Fail("Suite G: Total magazine deterministic damage must equal 1440");
 		}
 
-		// Sustained cycle DPS ≈ 109.6 (1534 / 14.0 = 109.5714...)
+		// Sustained cycle DPS ≈ 102.9 (1440 / 14.0 = 102.857...)
 		const float cycleTime = (48.f / 4.f) + 2.0f; // 12.0s firing + 2.0s reload = 14.0s
 		const float sustainedDPS = totalDeterministicDamage / cycleTime;
-		if (!NearlyEqual(sustainedDPS, 109.5714f, 0.1f))
+		if (!NearlyEqual(sustainedDPS, 102.857f, 0.1f))
 		{
-			return Fail("Suite G: Sustained cycle DPS must be ~109.6");
+			return Fail("Suite G: Sustained cycle DPS must be ~102.9");
 		}
 
 		struct SpawnedShot
@@ -1495,9 +1498,21 @@ int main(int argc, char** argv)
 				return false;
 			}
 			shotShip->GetCombatRuntime().GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
+			// Every earlier shot hits, so EverySuccessfulHits (6) empowers shot 7.
+			std::unordered_set<unsigned int> reportedShots;
 			for (int shot = 1; shot <= shotIndex; ++shot)
 			{
 				shotWorld.TickInternal(shot == 1 ? 0.f : 0.25f);
+				if (shot == shotIndex) break;
+				shotWorld.TickInternal(0.f);
+				for (const auto& weakProjectile : shotWorld.GetActorsByType<PrimaryWeaponProjectileActor>())
+				{
+					const auto projectile = weakProjectile.lock();
+					if (projectile && reportedShots.insert(projectile->GetUniqueID()).second)
+					{
+						projectile->GetShotMetadata().ReportHit();
+					}
+				}
 			}
 			shotWorld.TickInternal(0.f);
 			const auto projectiles = shotWorld.GetActorsByType<PrimaryWeaponProjectileActor>();
@@ -1520,16 +1535,16 @@ int main(int argc, char** argv)
 		{
 			SpawnedShot normal;
 			SpawnedShot empowered;
-			if (!fireFighterShot(35.f, 135.f, 1, normal) || !fireFighterShot(35.f, 135.f, 6, empowered))
+			if (!fireFighterShot(35.f, 135.f, 1, normal) || !fireFighterShot(35.f, 135.f, 7, empowered))
 			{
 				return Fail("Suite G: Failed to spawn EP-scaling verification shots");
 			}
-			if (normal.isEmpowered || !NearlyEqual(normal.damage, 26.f) ||
+			if (normal.isEmpowered || !NearlyEqual(normal.damage, 24.35f) ||
 				normal.payload.criticalPolicy != DamageCriticalPolicy::Random)
 			{
 				return Fail("Suite G: EP must not affect normal projectile damage");
 			}
-			if (!empowered.isEmpowered || !NearlyEqual(empowered.damage, 41.5f) ||
+			if (!empowered.isEmpowered || !NearlyEqual(empowered.damage, 39.85f) ||
 				empowered.payload.criticalPolicy != DamageCriticalPolicy::Guaranteed || !empowered.payload.roundDamageUp)
 			{
 				return Fail("Suite G: EP must scale empowered projectile damage and metadata");
@@ -1540,11 +1555,11 @@ int main(int argc, char** argv)
 		{
 			PrimaryWeaponDefinition cadenceUpgrade = fighterLaser;
 			cadenceUpgrade.attributeModifiers.push_back(sas::AttributeModifier{
-				PrimaryWeaponSchema::Empowered::EverySuccessfulShots, -1.f });
+				PrimaryWeaponSchema::Empowered::EverySuccessfulHits, -1.f });
 			SpawnedShot fifthShot;
-			if (!fireFighterShot(35.f, 35.f, 5, fifthShot, &cadenceUpgrade) || !fifthShot.isEmpowered)
+			if (!fireFighterShot(35.f, 35.f, 6, fifthShot, &cadenceUpgrade) || !fifthShot.isEmpowered)
 			{
-				return Fail("Suite G: Resolved empowered cadence modifier did not make the fifth shot empowered");
+				return Fail("Suite G: Resolved empowered cadence modifier did not make the sixth shot empowered");
 			}
 		}
 
@@ -1552,15 +1567,15 @@ int main(int argc, char** argv)
 		{
 			SpawnedShot normal;
 			SpawnedShot empowered;
-			if (!fireFighterShot(45.f, 35.f, 1, normal) || !fireFighterShot(45.f, 35.f, 6, empowered))
+			if (!fireFighterShot(45.f, 35.f, 1, normal) || !fireFighterShot(45.f, 35.f, 7, empowered))
 			{
 				return Fail("Suite G: Failed to spawn AP-scaling verification shots");
 			}
-			if (normal.isEmpowered || !NearlyEqual(normal.damage, 30.f))
+			if (normal.isEmpowered || !NearlyEqual(normal.damage, 28.45f))
 			{
 				return Fail("Suite G: AP must scale normal projectile damage");
 			}
-			if (!empowered.isEmpowered || !NearlyEqual(empowered.damage, 35.5f))
+			if (!empowered.isEmpowered || !NearlyEqual(empowered.damage, 33.95f))
 			{
 				return Fail("Suite G: AP must scale empowered projectile damage");
 			}
@@ -1611,7 +1626,7 @@ int main(int argc, char** argv)
 		{
 			PrimaryWeaponDefinition invalidEmp = fighterLaser;
 			// everySuccessfulShots <= 0 rejected
-			sas::FindAttribute(invalidEmp.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulShots)->baseValue = 0.f;
+			sas::FindAttribute(invalidEmp.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulHits)->baseValue = 0.f;
 			if (PrimaryWeaponExecutionSystem::ValidateDefinition(invalidEmp).isValid)
 			{
 				return Fail("Suite G: everySuccessfulShots == 0 must be rejected");
@@ -1731,17 +1746,18 @@ int main(int argc, char** argv)
 				NearlyEqual(stats->second, expectedEmpoweredBonus);
 		};
 
-		if (!verifyResolvedLevelStats(1, 12.40f, 2.10f) ||
-			!verifyResolvedLevelStats(5, 32.60f, 6.22f) ||
-			!verifyResolvedLevelStats(10, 57.85f, 11.37f) ||
-			!verifyResolvedLevelStats(15, 83.10f, 16.52f))
+		// Damage: 10 + 5 (L - 1) + 0.41 AP; the AP coefficient no longer grows.
+		if (!verifyResolvedLevelStats(1, 10.41f, 2.10f) ||
+			!verifyResolvedLevelStats(5, 30.41f, 6.22f) ||
+			!verifyResolvedLevelStats(10, 55.41f, 11.37f) ||
+			!verifyResolvedLevelStats(15, 80.41f, 16.52f))
 		{
 			return Fail("Suite H: Resolved L1/L5/L10/L15 progression stats mismatch");
 		}
 
 		// 2. Deterministic damage at L15: AP 77, EP 63
-		// Normal raw: 82 + 77 * 1.10 = 166.7 -> ceil = 167
-		// Empowered raw: 166.7 + 16 + 63 * 0.52 = 215.46 -> crit 1.5 = 323.19 -> ceil = 324
+		// Normal raw: 80 + 77 * 0.41 = 111.57 -> ceil = 112
+		// Empowered raw: 111.57 + 16 + 63 * 0.52 = 160.33 -> crit 1.5 = 240.495 -> ceil = 241
 		{
 			World world{ nullptr };
 			const shared_ptr<TestShipCombatant> ship = world.SpawnActor<TestShipCombatant>().lock();
@@ -1798,7 +1814,7 @@ int main(int argc, char** argv)
 				const shared_ptr<PrimaryWeaponProjectileActor> proj = actors.back().lock();
 				if (!proj) return Fail("Suite H: Projectile null at shot " + std::to_string(shot));
 
-				const bool expectedEmpowered = (shot % 6 == 0) || (shot >= 43);
+				const bool expectedEmpowered = (shot >= 7 && (shot - 7) % 6 == 0) || (shot >= 43);
 				if (proj->IsEmpowered() != expectedEmpowered)
 				{
 					return Fail("Suite H: Empowered mismatch at shot " + std::to_string(shot));
@@ -1811,13 +1827,14 @@ int main(int argc, char** argv)
 				if (target.receivedDamages.empty()) return Fail("Suite H: Target received no damage");
 				const float actualDamage = target.receivedDamages.back();
 				totalL15MagazineDamage += actualDamage;
+				proj->GetShotMetadata().ReportHit();
 
 				if (expectedEmpowered)
 				{
 					++empoweredCount;
-					if (!NearlyEqual(actualDamage, 324.f))
+					if (!NearlyEqual(actualDamage, 241.f))
 					{
-						return Fail("Suite H: L15 Empowered damage mismatch: expected 324, got " + std::to_string(actualDamage));
+						return Fail("Suite H: L15 Empowered damage mismatch: expected 241, got " + std::to_string(actualDamage));
 					}
 					if (!target.wasCriticalList.back())
 					{
@@ -1827,20 +1844,20 @@ int main(int argc, char** argv)
 				else
 				{
 					++normalCount;
-					if (!NearlyEqual(actualDamage, 167.f))
+					if (!NearlyEqual(actualDamage, 112.f))
 					{
-						return Fail("Suite H: L15 Normal damage mismatch: expected 167, got " + std::to_string(actualDamage));
+						return Fail("Suite H: L15 Normal damage mismatch: expected 112, got " + std::to_string(actualDamage));
 					}
 				}
 			}
 
-			if (normalCount != 35 || empoweredCount != 13)
+			if (normalCount != 36 || empoweredCount != 12)
 			{
-				return Fail("Suite H: Shot count mismatch: expected 35 normal, 13 empowered");
+				return Fail("Suite H: Shot count mismatch: expected 36 normal, 12 empowered");
 			}
-			if (!NearlyEqual(totalL15MagazineDamage, 10057.f))
+			if (!NearlyEqual(totalL15MagazineDamage, 6924.f))
 			{
-				return Fail("Suite H: L15 Magazine total damage mismatch: expected 10057, got " + std::to_string(totalL15MagazineDamage));
+				return Fail("Suite H: L15 Magazine total damage mismatch: expected 6924, got " + std::to_string(totalL15MagazineDamage));
 			}
 		}
 
@@ -1865,21 +1882,28 @@ int main(int argc, char** argv)
 			GameAbility* ability = ship->GetCombatRuntime().GetAbilitySystemComponent().GetAbility(handle);
 			if (!ability) return Fail("Suite H: Ability pointer is null");
 
-			// Start at Level 1: fire 5 shots (shots 1 to 5, all normal)
+			// Start at Level 1: fire 6 normal shots that all hit, earning the 7th.
 			ship->GetCombatRuntime().GetAbilitySystemComponent().SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
-			for (int shot = 1; shot <= 5; ++shot)
+			for (int shot = 1; shot <= 6; ++shot)
 			{
 				world.TickInternal(shot == 1 ? 0.f : 0.25f);
 			}
 			world.TickInternal(0.f);
-
-			if (ability->GetPrimaryWeaponRuntime().magazineState.roundsRemaining != 43)
+			for (const auto& weakProjectile : world.GetActorsByType<PrimaryWeaponProjectileActor>())
 			{
-				return Fail("Suite H: Expected 43 rounds remaining after 5 shots");
+				if (const auto projectile = weakProjectile.lock())
+				{
+					projectile->GetShotMetadata().ReportHit();
+				}
 			}
-			if (ability->GetPrimaryWeaponRuntime().successfulFireCount != 5)
+
+			if (ability->GetPrimaryWeaponRuntime().magazineState.roundsRemaining != 42)
 			{
-				return Fail("Suite H: Expected successfulFireCount == 5 after 5 shots");
+				return Fail("Suite H: Expected 42 rounds remaining after 6 shots");
+			}
+			if (ability->GetPrimaryWeaponRuntime().successfulFireCount != 6)
+			{
+				return Fail("Suite H: Expected successfulFireCount == 6 after 6 shots");
 			}
 
 			// Level up to Level 15 mid-fire
@@ -1887,16 +1911,16 @@ int main(int argc, char** argv)
 			if (!levelChanged) return Fail("Suite H: SetAbilityLevel to 15 mid-fire failed");
 
 			// State must be preserved!
-			if (ability->GetPrimaryWeaponRuntime().magazineState.roundsRemaining != 43)
+			if (ability->GetPrimaryWeaponRuntime().magazineState.roundsRemaining != 42)
 			{
 				return Fail("Suite H: Rounds remaining reset or changed on level up");
 			}
-			if (ability->GetPrimaryWeaponRuntime().successfulFireCount != 5)
+			if (ability->GetPrimaryWeaponRuntime().successfulFireCount != 6)
 			{
 				return Fail("Suite H: successfulFireCount reset on level up");
 			}
 
-			// Fire 6th shot: should be EMPOWERED, with L15 damage (324 final)
+			// Fire 7th shot: should be EMPOWERED, with L15 damage (241 final)
 			world.TickInternal(0.25f);
 			world.TickInternal(0.f);
 
@@ -1934,9 +1958,9 @@ int main(int argc, char** argv)
 			if (target.receivedDamages.empty()) return Fail("Suite H: Shot 6 target received no damage");
 
 			const float shot6Damage = target.receivedDamages.back();
-			if (!NearlyEqual(shot6Damage, 324.f))
+			if (!NearlyEqual(shot6Damage, 241.f))
 			{
-				return Fail("Suite H: Cache invalidation failed! Expected L15 empowered damage 324, got " + std::to_string(shot6Damage));
+				return Fail("Suite H: Cache invalidation failed! Expected L15 empowered damage 241, got " + std::to_string(shot6Damage));
 			}
 
 			// 4. Active reload preservation across level up
@@ -1973,7 +1997,7 @@ int main(int argc, char** argv)
 				return Fail("Suite H: FireRate baseValue invariant violation");
 			}
 			if (!NearlyEqual(sas::FindAttributeValue(
-				fighterLaser.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulShots), 6.f) ||
+				fighterLaser.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulHits), 6.f) ||
 				!NearlyEqual(sas::FindAttributeValue(
 					fighterLaser.attributes, PrimaryWeaponSchema::Empowered::FinalMagazineRounds), 6.f))
 			{

@@ -4712,7 +4712,7 @@ int main(int argc, char** argv)
 			}
 		);
 	};
-	if (!hasAdditiveScaling(basicLaser, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 0.40f) ||
+	if (!hasAdditiveScaling(basicLaser, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 0.41f) ||
 		hasAdditiveScaling(basicLaser, CommonAttributeIds::FireRate, OwnerAttributeIds::AttackSpeed, 1.f) ||
 		basicLaser.cadenceMode != PrimaryWeaponCadenceMode::OwnerAttackSpeedPercentage)
 	{
@@ -4815,7 +4815,7 @@ int main(int argc, char** argv)
 				ResolveFighterPrimaryWeaponScaling(weapon, level, withAttackSpeed, 0.f, 1.f) &&
 				NearlyEqual(withAttackSpeed.fireRate - base.fireRate, coefficient);
 		};
-		if (!verifiesAttackPower(basicLaser, 0.40f))
+		if (!verifiesAttackPower(basicLaser, 0.41f))
 		{
 			return Fail("Basic laser runtime scaling did not match JSON");
 		}

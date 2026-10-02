@@ -21,9 +21,9 @@
         "visualScale": 1.0
       },
       "attributes": [
-        { "id": "Common.Damage", "baseValue": 12.0, "minValue": 0.0 },
+        { "id": "Common.Damage", "baseValue": 10.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 2.0, "minValue": 0.0 },
-        { "id": "PrimaryWeapon.Empowered.EverySuccessfulShots", "baseValue": 6.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Empowered.EverySuccessfulHits", "baseValue": 6.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Empowered.FinalMagazineRounds", "baseValue": 6.0, "minValue": 0.0, "maxValue": 48.0 },
         { "id": "Common.FireRate", "baseValue": 4.0, "minValue": 0.01 },
         { "id": "PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 1100.0, "minValue": 0.0 },
@@ -50,12 +50,6 @@
               ],
               "scalingRules": [
                 {
-                  "targetAttributeId": "Common.Damage",
-                  "sourceAttributeId": "Owner.AttackPower",
-                  "operation": "Add",
-                  "coefficient": 0.05
-                },
-                {
                   "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
                   "sourceAttributeId": "Owner.Energy.Power",
                   "operation": "Add",
@@ -74,7 +68,7 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.40
+          "coefficient": 0.41
         },
         {
           "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
@@ -93,7 +87,8 @@
         "baseReloadTime": 2.0
       },
       "empoweredShot": {
-        "guaranteedCritical": true
+        "guaranteedCritical": true,
+        "trigger": "EverySuccessfulHits"
       }
     },
     {

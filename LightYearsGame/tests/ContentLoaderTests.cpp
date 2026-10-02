@@ -2172,7 +2172,9 @@ int main()
 	);
 	if (basicLaser->weaponType != PrimaryWeaponType::ProjectileStandard ||
 		!basicDamage ||
-		!NearlyEqual(basicDamage->baseValue, 12.f) ||
+		!NearlyEqual(basicDamage->baseValue, 10.f) ||
+		!basicLaser->empoweredShot.has_value() ||
+		basicLaser->empoweredShot->trigger != PrimaryWeaponEmpoweredTrigger::EverySuccessfulHits ||
 		basicLaser->progressionProfile.ResolveProgression().prefix.size() != 0 ||
 		basicLaser->progressionProfile.ResolveProgression().cycle.size() != 1 ||
 		basicLaser->progressionProfile.GetScrapCostToReachLevel(200) != 1030u ||
