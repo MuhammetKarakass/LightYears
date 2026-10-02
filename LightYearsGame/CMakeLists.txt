@@ -368,6 +368,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/HeatWeaponFeatureHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/FrostMeterWeaponFeatureHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h
@@ -1311,6 +1312,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/HeatWeaponFeatureHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/FrostMeterWeaponFeatureHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/wave/ExpandingWaveWeaponActor.cpp

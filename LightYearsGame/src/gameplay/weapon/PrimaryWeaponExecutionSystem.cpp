@@ -151,6 +151,7 @@ namespace ly
 			candidate.configuredDamageRoundingPolicy = configuration.damageRoundingPolicy;
 			candidate.configuredEmpoweredShot = configuration.empoweredShot;
 			candidate.hitLedger = std::make_shared<PrimaryWeaponHitLedger>();
+			candidate.frostMeter = std::make_shared<PrimaryWeaponFrostMeterState>();
 			if (configuration.magazine.has_value())
 			{
 				candidate.magazineState.roundsRemaining = configuration.magazine->capacity;
@@ -534,6 +535,13 @@ namespace ly
 			{
 				shotMetadata.hitLedger = state.hitLedger;
 			}
+		}
+		if (state.frostMeter && std::find(context.definition.featureTypes.begin(),
+			context.definition.featureTypes.end(), PrimaryWeaponFeatureType::FrostMeter) !=
+			context.definition.featureTypes.end())
+		{
+			shotMetadata.frostMeter = state.frostMeter;
+			shotMetadata.firedDuringWhiteout = state.frostMeter->IsWhiteout();
 		}
 
 		PrimaryWeaponExecutionContext runtimeContext =

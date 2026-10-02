@@ -97,6 +97,38 @@ struct PrimaryWeaponHitLedger
 	uint64_t hitsSinceEmpowered = 0;
 };
 
+// Cryo Frost Meter shared between a weapon runtime and its in-flight waves,
+// which award meter points as they hit.
+struct PrimaryWeaponFrostMeterState
+{
+	int meter = 0;
+	int maxMeter = 4;
+	float whiteoutDuration = 4.f;
+	float lockoutDuration = 3.f;
+	float whiteoutRemaining = 0.f;
+	float lockoutRemaining = 0.f;
+	bool nextWhiteoutShotEmpowered = false;
+
+	bool IsWhiteout() const { return whiteoutRemaining > 0.f; }
+	bool CanGain() const { return !IsWhiteout() && lockoutRemaining <= 0.f; }
+
+	// Filling the meter starts Whiteout, which always opens with an empowered wave.
+	void Award(int points)
+	{
+		if (points <= 0 || !CanGain())
+		{
+			return;
+		}
+		meter += points;
+		if (meter >= maxMeter)
+		{
+			meter = 0;
+			whiteoutRemaining = whiteoutDuration;
+			nextWhiteoutShotEmpowered = true;
+		}
+	}
+};
+
 struct PrimaryWeaponShotMetadata
 {
 	bool isEmpowered = false;
@@ -106,6 +138,9 @@ struct PrimaryWeaponShotMetadata
 	bool suppressStatusStacks = false;
 	// Set only for EverySuccessfulHits weapons; a shot reports its first hit here.
 	std::weak_ptr<PrimaryWeaponHitLedger> hitLedger;
+	// Set only for Frost Meter weapons; waves fired outside Whiteout award points.
+	std::weak_ptr<PrimaryWeaponFrostMeterState> frostMeter;
+	bool firedDuringWhiteout = false;
 
 	// Records this shot's first hit; returns true if it was counted now.
 	bool ReportHit() const
@@ -279,6 +314,16 @@ struct PrimaryWeaponSchema
 		struct Expanding
 		{
 		};
+
+		// Applied to empowered waves only (Cryo Whiteout).
+		struct Empowered
+		{
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Wave.Empowered" };
+			inline static const sas::AttributeId RangeBonus{ "PrimaryWeapon.Wave.Empowered.RangeBonus" };
+			inline static const sas::AttributeId WidthMultiplier{ "PrimaryWeapon.Wave.Empowered.WidthMultiplier" };
+			// Damage multiplier against a target already at maximum Cryo stacks.
+			inline static const sas::AttributeId FullStackDamageMultiplier{ "PrimaryWeapon.Wave.Empowered.FullStackDamageMultiplier" };
+		};
 	};
 
 	struct Cone
@@ -305,6 +350,15 @@ struct PrimaryWeaponSchema
 			inline static const sas::AttributeId CurrentRuntimeValue{
 				"PrimaryWeapon.Feature.Heat.Current"
 			};
+		};
+
+		struct FrostMeter
+		{
+			inline static const sas::AttributeId Root{ "PrimaryWeapon.Feature.FrostMeter" };
+			inline static const sas::AttributeId Max{ "PrimaryWeapon.Feature.FrostMeter.Max" };
+			inline static const sas::AttributeId WhiteoutDuration{ "PrimaryWeapon.Feature.FrostMeter.WhiteoutDuration" };
+			inline static const sas::AttributeId LockoutDuration{ "PrimaryWeapon.Feature.FrostMeter.LockoutDuration" };
+			inline static const sas::AttributeId WhiteoutFireRateMultiplier{ "PrimaryWeapon.Feature.FrostMeter.WhiteoutFireRateMultiplier" };
 		};
 	};
 

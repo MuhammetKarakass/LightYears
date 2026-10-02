@@ -45,6 +45,7 @@ namespace ly
 		uint64_t successfulFireCount = 0;
 		// Empowered trigger state (see PrimaryWeaponEmpoweredTrigger).
 		std::shared_ptr<PrimaryWeaponHitLedger> hitLedger;
+		std::shared_ptr<PrimaryWeaponFrostMeterState> frostMeter;
 		int empoweredCharges = 0;
 		uint64_t observedAbilityActivationCount = 0;
 		bool abilityActivationCountObserved = false;

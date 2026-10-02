@@ -321,7 +321,7 @@ namespace ly
 		{
 			static const PrimaryWeaponTypeValidationContract contract{
 				PrimaryWeaponType::WaveExpanding,
-				{ PrimaryWeaponSchema::Wave::Delivery::Root },
+				{ PrimaryWeaponSchema::Wave::Delivery::Root, PrimaryWeaponSchema::Wave::Empowered::Root },
 				{},
 				true,
 				&ValidateExpandingWave
@@ -367,6 +367,48 @@ namespace ly
 			return contract;
 		}
 
+		PrimaryWeaponValidationResult ValidateFrostMeter(const PrimaryWeaponDefinition& definition)
+		{
+			if (definition.weaponType != PrimaryWeaponType::WaveExpanding)
+			{
+				return { false, "The Frost Meter feature is only supported for expanding wave weapons." };
+			}
+			for (const sas::AttributeId& required : {
+				PrimaryWeaponSchema::Feature::FrostMeter::Max,
+				PrimaryWeaponSchema::Feature::FrostMeter::WhiteoutDuration,
+				PrimaryWeaponSchema::Feature::FrostMeter::LockoutDuration,
+				PrimaryWeaponSchema::Feature::FrostMeter::WhiteoutFireRateMultiplier
+			})
+			{
+				const PrimaryWeaponValidationResult result = RequireAttribute(definition, required, "Frost Meter feature");
+				if (!result.isValid)
+				{
+					return result;
+				}
+				const float value = FindDefinitionAttribute(definition, required)->baseValue;
+				if (!std::isfinite(value) || value <= 0.f)
+				{
+					return { false, "Frost Meter values must be finite and positive." };
+				}
+			}
+			const float maxMeter = FindDefinitionAttribute(definition, PrimaryWeaponSchema::Feature::FrostMeter::Max)->baseValue;
+			if (std::round(maxMeter) != maxMeter)
+			{
+				return { false, "Frost Meter maximum must be an integer." };
+			}
+			return { true, {} };
+		}
+
+		const PrimaryWeaponFeatureValidationContract& FrostMeterContract()
+		{
+			static const PrimaryWeaponFeatureValidationContract contract{
+				PrimaryWeaponFeatureType::FrostMeter,
+				{ PrimaryWeaponSchema::Feature::FrostMeter::Root },
+				&ValidateFrostMeter
+			};
+			return contract;
+		}
+
 		const PrimaryWeaponFeatureValidationContract& HeatContract()
 		{
 			static const PrimaryWeaponFeatureValidationContract contract{
@@ -400,6 +442,7 @@ namespace ly
 		switch (featureType)
 		{
 		case PrimaryWeaponFeatureType::Heat: contract = &HeatContract(); break;
+		case PrimaryWeaponFeatureType::FrostMeter: contract = &FrostMeterContract(); break;
 		default: return nullptr;
 		}
 		return contract->featureType == featureType ? contract : nullptr;

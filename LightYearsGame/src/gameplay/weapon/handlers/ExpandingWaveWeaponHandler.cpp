@@ -31,6 +31,26 @@ namespace ly
 					return false;
 				}
 
+				// Empowered waves reach further and grow wider.
+				sas::GameplayAttributeList waveAttributes = context.attributes;
+				if (context.shotMetadata.isEmpowered)
+				{
+					const float rangeBonus = sas::FindAttributeValue(
+						waveAttributes, PrimaryWeaponSchema::Wave::Empowered::RangeBonus, 0.f);
+					const float widthMultiplier = std::max(0.f, sas::FindAttributeValue(
+						waveAttributes, PrimaryWeaponSchema::Wave::Empowered::WidthMultiplier, 1.f));
+					const auto scale = [&](const sas::AttributeId& id, float multiplier, float add)
+					{
+						if (sas::GameplayAttribute* attribute = sas::FindAttribute(waveAttributes, id))
+						{
+							attribute->currentValue = attribute->currentValue * multiplier + add;
+						}
+					};
+					scale(CommonAttributeIds::Range, 1.f, rangeBonus);
+					scale(PrimaryWeaponSchema::Wave::Delivery::InitialWidth, widthMultiplier, 0.f);
+					scale(PrimaryWeaponSchema::Wave::Delivery::MaximumWidth, widthMultiplier, 0.f);
+				}
+
 				bool anySpawned = false;
 				const auto spawnFromMuzzle =
 					[&](const WeaponMuzzleDefinition& muzzle) -> bool
@@ -39,7 +59,7 @@ namespace ly
 						world->SpawnActor<ExpandingWaveWeaponActor>(
 							&context.owner,
 							context.definition.presentationDefinition,
-							context.attributes,
+							waveAttributes,
 							context.damageTags
 						);
 					if (const shared_ptr<ExpandingWaveWeaponActor> spawned =

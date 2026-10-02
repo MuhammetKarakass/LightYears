@@ -53,6 +53,7 @@ namespace ly
 			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateExpandingWaveWeaponHandler());
 			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateConeBlastWeaponHandler());
 			registered &= registerFeature(PrimaryWeaponBuiltIns::CreateHeatFeatureHandler());
+			registered &= registerFeature(PrimaryWeaponBuiltIns::CreateFrostMeterFeatureHandler());
 			if (!registered)
 			{
 				std::abort();

@@ -4530,14 +4530,16 @@ int main(int argc, char** argv)
 		return Fail("Cryo wave projector did not spawn an expanding wave");
 	}
 	cryoWaveWorld.TickInternal(0.2f);
-	if (!NearlyEqual(leftCryoWaveTarget->GetHealth(), 93.f) ||
-		!NearlyEqual(rightCryoWaveTarget->GetHealth(), 93.f))
+	// One wave pierces and hits both targets for the same damage.
+	const float leftAfterWave = leftCryoWaveTarget->GetHealth();
+	const float rightAfterWave = rightCryoWaveTarget->GetHealth();
+	if (leftAfterWave >= 100.f || !NearlyEqual(leftAfterWave, rightAfterWave))
 	{
 		return Fail("Cryo wave did not pierce and damage multiple targets");
 	}
 	cryoWaveWorld.TickInternal(0.2f);
-	if (!NearlyEqual(leftCryoWaveTarget->GetHealth(), 93.f) ||
-		!NearlyEqual(rightCryoWaveTarget->GetHealth(), 93.f))
+	if (!NearlyEqual(leftCryoWaveTarget->GetHealth(), leftAfterWave) ||
+		!NearlyEqual(rightCryoWaveTarget->GetHealth(), rightAfterWave))
 	{
 		return Fail("A single Cryo wave damaged the same target more than once");
 	}

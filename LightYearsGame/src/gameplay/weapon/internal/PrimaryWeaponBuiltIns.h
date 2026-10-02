@@ -11,4 +11,5 @@ namespace ly::PrimaryWeaponBuiltIns
 	unique_ptr<PrimaryWeaponHandler> CreateExpandingWaveWeaponHandler();
 	unique_ptr<PrimaryWeaponHandler> CreateConeBlastWeaponHandler();
 	unique_ptr<PrimaryWeaponFeatureHandler> CreateHeatFeatureHandler();
+	unique_ptr<PrimaryWeaponFeatureHandler> CreateFrostMeterFeatureHandler();
 }

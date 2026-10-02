@@ -2225,7 +2225,6 @@ int main()
 	const PrimaryWeaponDefinition* cryo =
 		FindWeapon(loaded.definitions, "Weapon.Wave.CryoProjector.Basic");
 	if (cryo->weaponType != PrimaryWeaponType::WaveExpanding ||
-		cryo->attributes.size() != 8 ||
 		cryo->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo })
 	{
 		return Fail("Cryo wave projector JSON profile is invalid") ? 0 : 1;

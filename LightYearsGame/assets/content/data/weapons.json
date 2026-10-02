@@ -488,13 +488,21 @@
         "visualScale": 1.0
       },
       "attributes": [
-        { "id": "Common.Damage", "baseValue": 7.0, "minValue": 0.0 },
-        { "id": "Common.FireRate", "baseValue": 1.8, "minValue": 0.01 },
+        { "id": "Common.Damage", "baseValue": 20.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 2.5, "minValue": 0.01 },
         { "id": "Common.Range", "baseValue": 780.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Wave.Delivery.Speed", "baseValue": 850.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Wave.Delivery.InitialWidth", "baseValue": 80.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Wave.Delivery.MaximumWidth", "baseValue": 260.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Wave.Delivery.Thickness", "baseValue": 30.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Wave.Empowered.RangeBonus", "baseValue": 250.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Wave.Empowered.WidthMultiplier", "baseValue": 1.5, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Wave.Empowered.FullStackDamageMultiplier", "baseValue": 1.15, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Feature.FrostMeter.Max", "baseValue": 4.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Feature.FrostMeter.WhiteoutDuration", "baseValue": 4.0, "minValue": 0.1 },
+        { "id": "PrimaryWeapon.Feature.FrostMeter.LockoutDuration", "baseValue": 3.0, "minValue": 0.1 },
+        { "id": "PrimaryWeapon.Feature.FrostMeter.WhiteoutFireRateMultiplier", "baseValue": 2.0, "minValue": 0.1 },
+        { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 5.0, "minValue": 0.0 },
         { "id": "Damage.Cryo.BuildupPerHit", "baseValue": 1.0, "minValue": 1.0 }
       ],
       "muzzles": [
@@ -506,37 +514,25 @@
         "rules": [
           {
             "firstLevel": 2,
-            "lastLevel": 2,
             "levelInterval": 1,
             "reward": {
               "attributeModifiers": [
                 { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 },
-                { "attributeId": "PrimaryWeapon.Wave.Delivery.MaximumWidth", "operation": "Add", "magnitude": 30.0 }
+                { "attributeId": "PrimaryWeapon.Empowered.BonusDamage", "operation": "Add", "magnitude": 2.0 }
               ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 3,
-            "lastLevel": 3,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "Common.Range", "operation": "Add", "magnitude": 100.0 }
-              ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 4,
-            "lastLevel": 4,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "Common.FireRate", "operation": "Add", "magnitude": 0.3 },
-                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 }
+              "scalingRules": [
+                {
+                  "targetAttributeId": "Common.Damage",
+                  "sourceAttributeId": "Owner.AttackPower",
+                  "operation": "Add",
+                  "coefficient": 0.02
+                },
+                {
+                  "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+                  "sourceAttributeId": "Owner.Energy.Power",
+                  "operation": "Add",
+                  "coefficient": 0.01
+                }
               ],
               "unlockedUpgradeIds": [],
               "unlockedFeatureTags": []
@@ -550,18 +546,28 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.75
+          "coefficient": 0.3
         },
         {
           "targetAttributeId": "Common.FireRate",
           "sourceAttributeId": "Owner.AttackSpeed",
           "operation": "Add",
           "coefficient": 0.5
+        },
+        {
+          "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.07
         }
       ],
-      "featureTags": [],
+      "featureTags": ["PrimaryWeapon.Feature.FrostMeter"],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Cryo"]
+      "damageTags": ["Damage.Type.Cryo"],
+      "empoweredShot": {
+        "trigger": "Whiteout",
+        "statusStacksOnlyWhenEmpowered": true
+      }
     },
     {
       "id": "Weapon.Projectile.IroncladMinigun.Basic",

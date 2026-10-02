@@ -34,6 +34,7 @@ namespace ly
 			float endWidth
 		);
 		void RebuildGeometry();
+		void AwardFrostMeter(bool targetWasChilled);
 
 		float mSpeed = 0.f;
 		float mMaxTravelDistance = 0.f;
@@ -47,5 +48,9 @@ namespace ly
 		Set<Actor*> mHitTargets;
 		PrimaryWeaponShotMetadata mShotMetadata;
 		bool mShotHitReported = false;
+		float mFullStackDamageMultiplier = 1.f;
+		// Frost Meter points this wave already awarded (each condition once).
+		bool mAwardedMultiTarget = false;
+		bool mAwardedChilledTarget = false;
 	};
 }

@@ -11,6 +11,7 @@
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h"
+#include "gameplay/weapon/wave/ExpandingWaveWeaponActor.h"
 #include "spaceShip/SpaceShip.h"
 
 #include <algorithm>
@@ -487,6 +488,126 @@ namespace ly
 			Check(NearlyEqual(measureTick(85.f), 21.17f * 1.4f, 0.05f), "heat: high heat tick x1.40 (29.64)");
 		}
 
+		int CryoStacks(SpaceShip& ship)
+		{
+			const sas::ActiveGameplayEffect* effect = ship.GetCombatRuntime().GetAbilitySystemComponent()
+				.FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId);
+			return effect ? effect->stackCount : 0;
+		}
+
+		// Cryo Controller L1 (AP 27, EP 40) firing at two enemies side by side.
+		struct CryoRange
+		{
+			WeaponRig rig;
+			shared_ptr<WeaponTestShip> left;
+			shared_ptr<WeaponTestShip> right;
+			std::set<unsigned int> seenWaves;
+
+			bool Setup()
+			{
+				if (!rig.Setup(CopyWeapon("Weapon.Wave.CryoProjector.Basic"), 27.f, 40.f)) return false;
+				rig.ship->SetCollisionLayer(CollisionLayer::Player);
+				const auto spawn = [&](sf::Vector2f location)
+				{
+					const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
+					target->SetActorLocation(location);
+					target->SetCollisionLayer(CollisionLayer::Enemy);
+					target->SetCollisionMask(CollisionLayer::PlayerBullet);
+					return target;
+				};
+				left = spawn({ -30.f, -300.f });
+				right = spawn({ 30.f, -300.f });
+				rig.world.TickInternal(0.f);
+				return left && right;
+			}
+
+			PrimaryWeaponFrostMeterState* Frost()
+			{
+				PrimaryWeaponRuntimeState* runtime = rig.Runtime();
+				return runtime ? runtime->frostMeter.get() : nullptr;
+			}
+
+			// Damage of every wave fired since the last call, in order.
+			List<float> NewWaveDamage()
+			{
+				rig.world.TickInternal(0.f);
+				List<float> damages;
+				for (const auto& weak : rig.world.GetActorsByType<ExpandingWaveWeaponActor>())
+				{
+					const auto wave = weak.lock();
+					if (wave && seenWaves.insert(wave->GetUniqueID()).second)
+					{
+						damages.push_back(wave->GetDamage());
+					}
+				}
+				return damages;
+			}
+
+			void Advance(float seconds)
+			{
+				for (float elapsed = 0.f; elapsed < seconds - 0.0001f; elapsed += 0.05f)
+				{
+					rig.world.TickInternal(std::min(0.05f, seconds - elapsed));
+				}
+			}
+		};
+
+		void TestCryoProjectorLevelOne()
+		{
+			CryoRange range;
+			Check(range.Setup(), "cryo: Cryo Controller L1 range");
+			if (!range.left) return;
+			range.rig.Hold(true);
+			range.rig.world.TickInternal(0.f);
+			const List<float> first = range.NewWaveDamage();
+			Check(first.size() == 1 && NearlyEqual(first[0], 28.1f), "cryo: normal wave 28.1");
+			range.Advance(0.4f);
+			Check(NearlyEqual(250.f - range.left->GetHealthComponent().GetHealth(), 28.1f) &&
+				CryoStacks(*range.left) == 0, "cryo: a normal wave hits without Cryo stacks");
+			Check(range.Frost() && range.Frost()->meter == 1, "cryo: hitting two enemies gains one Frost");
+
+			// Three more two-target waves fill the meter to 4 and start Whiteout.
+			range.Advance(1.2f);
+			range.NewWaveDamage();
+			PrimaryWeaponFrostMeterState* frost = range.Frost();
+			Check(frost && frost->IsWhiteout(), "cryo: a full meter starts Whiteout");
+			range.Advance(0.4f);
+			const List<float> whiteoutWaves = range.NewWaveDamage();
+			Check(whiteoutWaves.size() >= 2 && NearlyEqual(whiteoutWaves[0], 35.9f) &&
+				NearlyEqual(whiteoutWaves[1], 28.1f),
+				"cryo: Whiteout opens with an empowered 35.9 wave, then a normal one");
+			Check(whiteoutWaves.size() >= 2 && whiteoutWaves.size() <= 3, "cryo: Whiteout fires at 5 waves per second");
+			range.Advance(0.3f);
+			Check(CryoStacks(*range.left) >= 1, "cryo: empowered waves apply Cryo");
+			Check(frost && frost->meter == 0, "cryo: no Frost is gained during Whiteout");
+
+			range.Advance(4.f);
+			Check(frost && !frost->IsWhiteout() && frost->lockoutRemaining > 0.f && frost->meter == 0,
+				"cryo: Whiteout ends into a lockout with an empty meter");
+			range.Advance(1.f);
+			Check(frost && frost->meter == 0, "cryo: the lockout blocks Frost gain");
+
+			// Empowered damage against a target already at four Cryo stacks.
+			CryoRange chilled;
+			Check(chilled.Setup(), "cryo: full-stack range");
+			if (!chilled.left) return;
+			DamagePayload fourStacks;
+			fourStacks.cryoBuildupPerHit = 4;
+			ApplyCombatDamage(*chilled.left, 0.01f, chilled.rig.ship.get(), { DamageTypeSchema::Cryo }, fourStacks);
+			Check(CryoStacks(*chilled.left) == 4, "cryo: target prepared with four Cryo stacks");
+			chilled.rig.Hold(true);
+			chilled.rig.world.TickInternal(0.f);
+			chilled.Frost()->Award(4);
+			chilled.Advance(0.45f);
+			chilled.NewWaveDamage();
+			// The empowered wave fired at 0.4 s lands before the next normal wave
+			// (fired at 0.6 s) can reach the target.
+			const float before = chilled.left->GetHealthComponent().GetHealth();
+			chilled.Advance(0.35f);
+			Check(NearlyEqual(before - chilled.left->GetHealthComponent().GetHealth(), 35.9f * 1.15f, 0.05f),
+				"cryo: empowered wave deals 41.3 to a target already at four stacks");
+		}
+
 		void TestSourceSustainedStatusLifetime()
 		{
 			World world{ nullptr };
@@ -560,6 +681,7 @@ int main()
 	run("electric", &TestElectricLauncherLevelOne);
 	run("cone", &TestConeShotgunLevelOne);
 	run("heat", &TestHeatLaserLevelOne);
+	run("cryo", &TestCryoProjectorLevelOne);
 
 	std::cout << (gFailures == 0 ? "[PASS] All weapon phase-2 checks passed\n" : "[FAIL] Weapon phase-2 checks failed\n");
 	return gFailures == 0 ? 0 : 1;

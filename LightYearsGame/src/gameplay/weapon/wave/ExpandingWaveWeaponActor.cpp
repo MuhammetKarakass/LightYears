@@ -3,7 +3,9 @@
 #include "gameplay/weapon/wave/ExpandingWaveWeaponActor.h"
 
 #include "framework/World.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/targeting/SweptGeometry.h"
 
 #include <algorithm>
@@ -70,6 +72,11 @@ namespace ly
 		)));
 		SetDamageAttributes(attributes);
 		SetDamageTags(damageTags);
+		mFullStackDamageMultiplier = std::max(0.f, sas::FindAttributeValue(
+			attributes,
+			PrimaryWeaponSchema::Wave::Empowered::FullStackDamageMultiplier,
+			1.f
+		));
 		SetAbilityPhysicsEnabled(false);
 		ConfigureCollisionFromOwner();
 		if (mSpeed > 0.f && mMaxTravelDistance > 0.f)
@@ -176,13 +183,53 @@ namespace ly
 			{
 				mShotHitReported = mShotMetadata.ReportHit();
 			}
+			// Cryo stacks the target carried before this wave reached it.
+			int priorCryoStacks = 0;
+			if (const auto* combatant = dynamic_cast<const Combatant*>(target.get()))
+			{
+				if (const sas::ActiveGameplayEffect* cryo = combatant->GetAbilitySystemComponent()
+					.FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId))
+				{
+					priorCryoStacks = cryo->stackCount;
+				}
+			}
+			AwardFrostMeter(priorCryoStacks > 0);
+			const bool fullyChilled = priorCryoStacks >=
+				content::DamageStatusBalanceCatalog::Get().cryo.maxStacks;
+			const float damage = mShotMetadata.isEmpowered && fullyChilled
+				? GetDamage() * mFullStackDamageMultiplier
+				: GetDamage();
 			ApplyCombatDamage(
 				*target,
-				GetDamage(),
+				damage,
 				GetOwnerActor(),
 				GetDamageTags(),
 				GetDamagePayload()
 			);
+		}
+	}
+
+	void ExpandingWaveWeaponActor::AwardFrostMeter(bool targetWasChilled)
+	{
+		// Only normal waves fired outside Whiteout build the meter.
+		if (mShotMetadata.isEmpowered || mShotMetadata.firedDuringWhiteout)
+		{
+			return;
+		}
+		const std::shared_ptr<PrimaryWeaponFrostMeterState> frost = mShotMetadata.frostMeter.lock();
+		if (!frost)
+		{
+			return;
+		}
+		if (!mAwardedMultiTarget && mHitTargets.size() >= 2)
+		{
+			mAwardedMultiTarget = true;
+			frost->Award(1);
+		}
+		if (!mAwardedChilledTarget && targetWasChilled)
+		{
+			mAwardedChilledTarget = true;
+			frost->Award(1);
 		}
 	}
 
