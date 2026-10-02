@@ -28,6 +28,9 @@ namespace ly
 	{
 		constexpr int ArenaMaximumConcurrentEnemies = 24;
 		constexpr float EncounterSpawnOffsetSpacing = 50.f;
+		// Encounter waves are kept but switched off for dummy-target testing.
+		// Flip this flag to start the endless wave sequence again.
+		constexpr bool EncounterWavesEnabled = false;
 
 		sf::Vector2f ResolveEncounterSpawnOffset(size_t localSpawnIndex)
 		{
@@ -146,14 +149,18 @@ namespace ly
 			true,
 			1.0f);
 
-		StartEncounter();
+		if (EncounterWavesEnabled)
+		{
+			StartEncounter();
+		}
 	}
 
 	void ArenaTestLevel::SpawnDummyTargets()
 	{
-		// Arena dummy targets are retained for future use but are not spawned.
-		// Flip this flag to re-enable the stationary target layout below.
-		constexpr bool SpawnDummyTargetsEnabled = false;
+		// Stationary dummy targets for weapon testing. Flip these flags to hide the
+		// layout or bring back the 50-health square targets.
+		constexpr bool SpawnDummyTargetsEnabled = true;
+		constexpr bool SpawnSquareDummyTargetsEnabled = false;
 		if (!SpawnDummyTargetsEnabled)
 		{
 			return;
@@ -168,7 +175,7 @@ namespace ly
 			return;
 		}
 		ShipDefinition oldDummyDefinition = *dummySource;
-		oldDummyDefinition.health = 99999.f;
+		oldDummyDefinition.health = 9000.f;
 		oldDummyDefinition.speed = { 0.f, 0.f };
 		oldDummyDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
 
@@ -203,6 +210,10 @@ namespace ly
 		spawnDummy(oldDummyDefinition, 900.f, 450.f);
 
 		// New 50-health stationary targets at the corners of a square around arena center.
+		if (!SpawnSquareDummyTargetsEnabled)
+		{
+			return;
+		}
 		spawnDummy(newDummyDefinition, -squareHalfExtent, -squareHalfExtent);
 		spawnDummy(newDummyDefinition, squareHalfExtent, -squareHalfExtent);
 		spawnDummy(newDummyDefinition, -squareHalfExtent, squareHalfExtent);
@@ -248,9 +259,15 @@ namespace ly
 
 	void ArenaTestLevel::OnRestartLevel()
 	{
+		// An encounter started by hand (tests) restarts even while waves are off.
+		const bool restartEncounter =
+			EncounterWavesEnabled || mEncounterState != ArenaEncounterState::Idle;
 		ResetEncounter();
 		ArenaLevel::OnRestartLevel();
-		RestartEncounter();
+		if (restartEncounter)
+		{
+			RestartEncounter();
+		}
 	}
 
 	bool ArenaTestLevel::DispatchEvent(const sf::Event& event)
