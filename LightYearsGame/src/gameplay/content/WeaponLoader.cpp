@@ -308,6 +308,7 @@ namespace ly::content
 			}
 
 			definition.automaticFire = object.value("automaticFire", true);
+			definition.alternateMuzzles = object.value("alternateMuzzles", false);
 			definition.progressionProfile = ParseProgression(
 				object.value("progression", Json::object()),
 				"Weapon '" + definition.weaponId + "'"

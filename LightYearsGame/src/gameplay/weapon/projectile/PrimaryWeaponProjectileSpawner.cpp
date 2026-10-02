@@ -149,7 +149,14 @@ namespace ly::PrimaryWeaponProjectileSpawner
 			fireFromMuzzle(WeaponMuzzleDefinition{});
 			return spawnedCount;
 		}
-		for (const WeaponMuzzleDefinition& muzzle : context.definition.muzzleDefinitions)
+		const auto& muzzles = context.definition.muzzleDefinitions;
+		if (context.definition.alternateMuzzles && muzzles.size() > 1 && context.runtime)
+		{
+			// One muzzle per shot, in order, so a twin gun keeps one hit per shot.
+			fireFromMuzzle(muzzles[context.runtime->successfulFireCount % muzzles.size()]);
+			return spawnedCount;
+		}
+		for (const WeaponMuzzleDefinition& muzzle : muzzles)
 		{
 			fireFromMuzzle(muzzle);
 		}

@@ -4364,25 +4364,6 @@ int main(int argc, char** argv)
 	}
 	}
 
-	World dualKineticWorld{ nullptr };
-	Actor dualKineticOwner{ &dualKineticWorld };
-	LightYearsAbilitySystemComponent dualKineticAbilities{
-		dualKineticOwner
-	};
-	if (!dualKineticAbilities.GrantAbility(
-		AbilityData::MakePrimaryFireAbilityDefinition(LoadedWeapon("Weapon.Projectile.DualKineticBlaster.Basic"))
-	).IsValid())
-	{
-		return Fail("Dual kinetic blaster ability could not be granted");
-	}
-	dualKineticAbilities.SetAbilitySlotInput(sas::AbilitySlot::PrimaryFire, true);
-	dualKineticAbilities.Tick(0.f);
-	dualKineticWorld.TickInternal(0.f);
-	if (dualKineticWorld.GetActorsByType<PrimaryWeaponProjectileActor>().size() != 2)
-	{
-		return Fail("Dual kinetic blaster did not fire one projectile from each muzzle");
-	}
-
 	World electricArcWorld{ nullptr };
 	Actor electricArcOwner{ &electricArcWorld };
 	electricArcOwner.SetCollisionLayer(CollisionLayer::Player);
@@ -4723,13 +4704,6 @@ int main(int argc, char** argv)
 	{
 		return Fail("Rapid shotgun JSON scaling coefficients are invalid");
 	}
-	if (!hasAdditiveScaling(dualKineticBlaster, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 0.45f) ||
-		// 0.12 = 1% of the 12/s base per AttackSpeed rating point (temporary until the
-		// phase-2 Dual Kinetic rewrite; Interceptor grows natural AttackSpeed).
-		!hasAdditiveScaling(dualKineticBlaster, CommonAttributeIds::FireRate, OwnerAttributeIds::AttackSpeed, 0.12f))
-	{
-		return Fail("Dual kinetic blaster JSON scaling coefficients are invalid");
-	}
 	if (!hasAdditiveScaling(electricArcLauncher, CommonAttributeIds::Damage, OwnerAttributeIds::AttackPower, 0.85f) ||
 		!hasAdditiveScaling(electricArcLauncher, CommonAttributeIds::FireRate, OwnerAttributeIds::AttackSpeed, 0.60f))
 	{
@@ -4823,11 +4797,6 @@ int main(int argc, char** argv)
 			!verifiesAttackSpeed(LoadedWeapon("Weapon.Projectile.RapidShotgun.Basic"), 0.5f))
 		{
 			return Fail("Rapid shotgun runtime scaling did not match JSON");
-		}
-		if (!verifiesAttackPower(dualKineticBlaster, 0.45f) ||
-			!verifiesAttackSpeed(dualKineticBlaster, 0.12f))
-		{
-			return Fail("Dual kinetic blaster runtime scaling did not match JSON");
 		}
 		if (!verifiesAttackPower(electricArcLauncher, 0.85f) ||
 			!verifiesAttackSpeed(electricArcLauncher, 0.60f))

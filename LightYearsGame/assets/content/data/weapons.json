@@ -171,8 +171,10 @@
         "visualScale": 0.9
       },
       "attributes": [
-        { "id": "Common.Damage", "baseValue": 3.5, "minValue": 0.0 },
-        { "id": "Common.FireRate", "baseValue": 12.0, "minValue": 0.01 },
+        { "id": "Common.Damage", "baseValue": 3.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 7.0, "minValue": 0.01 },
+        { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 5.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Empowered.EverySuccessfulHits", "baseValue": 8.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 3400.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
         { "id": "Common.Range", "baseValue": 650.0, "minValue": 1.0 },
@@ -184,42 +186,32 @@
         { "offset": [-18.0, 48.0], "rotationOffset": 0.0 },
         { "offset": [18.0, 48.0], "rotationOffset": 0.0 }
       ],
+      "alternateMuzzles": true,
       "automaticFire": true,
       "progression": {
         "scrapCost": { "base": 40, "step": 10 },
         "rules": [
           {
             "firstLevel": 2,
-            "lastLevel": 2,
             "levelInterval": 1,
             "reward": {
               "attributeModifiers": [
-                { "attributeId": "Common.FireRate", "operation": "Add", "magnitude": 1.5 }
+                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 },
+                { "attributeId": "PrimaryWeapon.Empowered.BonusDamage", "operation": "Add", "magnitude": 2.0 }
               ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 3,
-            "lastLevel": 3,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 1.0 }
-              ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 4,
-            "lastLevel": 4,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "Common.Range", "operation": "Add", "magnitude": 100.0 },
-                { "attributeId": "Common.FireRate", "operation": "Add", "magnitude": 1.0 }
+              "scalingRules": [
+                {
+                  "targetAttributeId": "Common.Damage",
+                  "sourceAttributeId": "Owner.AttackPower",
+                  "operation": "Add",
+                  "coefficient": 0.02
+                },
+                {
+                  "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+                  "sourceAttributeId": "Owner.Energy.Power",
+                  "operation": "Add",
+                  "coefficient": 0.04
+                }
               ],
               "unlockedUpgradeIds": [],
               "unlockedFeatureTags": []
@@ -233,18 +225,30 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.45
+          "coefficient": 0.2
         },
         {
-          "targetAttributeId": "Common.FireRate",
-          "sourceAttributeId": "Owner.AttackSpeed",
+          "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+          "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.12
+          "coefficient": 0.08
+        },
+        {
+          "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.25
         }
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Kinetic"]
+      "damageTags": ["Damage.Type.Kinetic"],
+      "cadenceMode": "OwnerAttackSpeedPercentage",
+      "magazine": { "capacity": 64, "baseReloadTime": 1.5 },
+      "empoweredShot": {
+        "trigger": "EverySuccessfulHits",
+        "statusStacksOnlyWhenEmpowered": true
+      }
     },
     {
       "id": "Weapon.Arc.ElectricLauncher.Basic",

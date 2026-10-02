@@ -602,6 +602,8 @@ struct PrimaryWeaponDefinition
 	PrimaryWeaponCadenceMode cadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling;
 	PrimaryWeaponDamageRoundingPolicy damageRoundingPolicy = PrimaryWeaponDamageRoundingPolicy::None;
 	std::optional<PrimaryWeaponEmpoweredShotDefinition> empoweredShot;
+	// Projectile weapons with several muzzles fire one muzzle per shot, in turn.
+	bool alternateMuzzles = false;
 
 	PrimaryWeaponDefinition(
 		// Empty identifies an ephemeral/test definition. Shipped catalog entries

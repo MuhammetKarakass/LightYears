@@ -282,6 +282,49 @@ namespace ly
 				"laser: Rapid Laser still rounds final damage up");
 		}
 
+		void TestDualKineticLevelOne()
+		{
+			// Design (Interceptor L1: AP 41, EP 28, AttackSpeed +1%):
+			// normal 3 + 41 * 0.20 = 11.2; empowered + 5 + 41 * 0.08 + 28 * 0.25 = 26.48;
+			// fire rate 7 * 1.01 = 7.07/s; one hit per shot; Kinetic stack only when empowered.
+			WeaponRig rig;
+			const PrimaryWeaponDefinition dual = CopyWeapon("Weapon.Projectile.DualKineticBlaster.Basic");
+			Check(rig.Setup(dual, 41.f, 28.f), "dual: rig with the shipped Dual Kinetic Blaster");
+			if (!rig.ship) return;
+			rig.Abilities().GetAttributes().SetBaseValue(OwnerAttributeIds::AttackSpeed, 1.f);
+			Check(dual.magazine.has_value() && dual.magazine->capacity == 64 &&
+				NearlyEqual(dual.magazine->baseReloadTime, 1.5f), "dual: 64-round magazine, 1.5 s reload");
+			rig.Hold(true);
+			rig.world.TickInternal(0.f);
+			const auto first = rig.NewProjectiles();
+			PrimaryWeaponRuntimeState* runtime = rig.Runtime();
+			Check(first.size() == 1, "dual: one projectile per shot");
+			Check(runtime && NearlyEqual(runtime->fireIntervalRemaining, 1.f / 7.07f, 0.001f),
+				"dual: AttackSpeed +1% fires at 7.07/s");
+			if (first.size() != 1) return;
+			Check(NearlyEqual(first[0]->GetDamage(), 11.2f) && first[0]->GetDamagePayload().kineticStacks == 0,
+				"dual: normal shot 11.2 without a Kinetic stack");
+			first[0]->GetShotMetadata().ReportHit();
+
+			float previousX = first[0]->GetActorLocation().x;
+			bool alternates = true;
+			shared_ptr<PrimaryWeaponProjectileActor> ninth;
+			for (int shot = 2; shot <= 9; ++shot)
+			{
+				rig.world.TickInternal(1.f / 7.07f + 0.0001f);
+				const auto fresh = rig.NewProjectiles();
+				if (fresh.size() != 1) { alternates = false; break; }
+				alternates = alternates && (fresh[0]->GetActorLocation().x < 0.f) != (previousX < 0.f);
+				previousX = fresh[0]->GetActorLocation().x;
+				if (shot < 9) fresh[0]->GetShotMetadata().ReportHit();
+				else ninth = fresh[0];
+			}
+			Check(alternates, "dual: muzzles alternate left and right");
+			Check(ninth && ninth->IsEmpowered() && NearlyEqual(ninth->GetDamage(), 26.48f) &&
+				ninth->GetDamagePayload().kineticStacks == 1,
+				"dual: after 8 hits the next shot is 26.48 with one Kinetic stack");
+		}
+
 		int ElectricStacks(SpaceShip& ship)
 		{
 			const sas::ActiveGameplayEffect* effect = ship.GetCombatRuntime().GetAbilitySystemComponent()
@@ -358,6 +401,7 @@ int main()
 	run("charges", &TestAbilityCastCharges);
 	run("lifetime", &TestSourceSustainedStatusLifetime);
 	run("laser", &TestRapidLaserLevelOne);
+	run("dual", &TestDualKineticLevelOne);
 
 	std::cout << (gFailures == 0 ? "[PASS] All weapon phase-2 checks passed\n" : "[FAIL] Weapon phase-2 checks failed\n");
 	return gFailures == 0 ? 0 : 1;

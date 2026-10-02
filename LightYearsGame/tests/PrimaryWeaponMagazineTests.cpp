@@ -803,7 +803,6 @@ int main(int argc, char** argv)
 		// 1. Check non-fighter weapons do NOT have magazine or OwnerAttackSpeedPercentage
 		const char* otherWeapons[] = {
 			"Weapon.Projectile.RapidShotgun.Basic",
-			"Weapon.Projectile.DualKineticBlaster.Basic",
 			"Weapon.Arc.ElectricLauncher.Basic",
 			"Weapon.Beam.ContinuousHeatLaser.Basic",
 			"Weapon.Wave.CryoProjector.Basic"
