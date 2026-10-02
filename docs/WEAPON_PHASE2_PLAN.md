@@ -185,3 +185,26 @@ Kullanıcı "devam" diyerek tüm önerileri onayladı. "Öneri" sütunu artık b
 | **K8** | Tasarımda olmayan sayılar: Electric zincir (3 / 250 / ×0,72), Shotgun AttackSpeed katsayısı 0,5 | **Mevcut değerler korunur.** |
 | **K9** | Dual "normal hits do not apply ArmorPen": normal vuruş mevcut stack'lerin ArmorPen'inden yararlanmasın mı? | Normal vuruş **stack eklemez ama mevcut ArmorPen'den yararlanır** (bugünkü status davranışı; aksi tasarımı anlamsızlaştırır). |
 | **K10** | Frost Meter / Electric şarj HUD göstergesi | Bu fazda **yok**; değerler runtime'da sorgulanabilir, HUD ayrı iş. |
+
+---
+
+## Uygulama sonucu (2026-10-02)
+
+Kullanıcı "sol yapmayacak sen yapacan yap" dedi; tüm adımları Claude doğrudan uyguladı. Test yükü kullanıcı kararıyla hafif tutuldu: yeni davranışın doğrulama kaynağı `LightYearsWeaponPhase2Tests`; eski testlerdeki değişen silaha özel sabit katsayı/sayı kontrolleri güncellenmek yerine silindi ya da değerden bağımsız orana çevrildi.
+
+| Adım | Commit | Özet |
+|---|---|---|
+| 1 | `6e64ec5` | Empowered tetikleyicileri (atış/isabet/yetenek şarjı/Whiteout), isabet defteri, yalnız-empowered stack, tüm işleyicilere atış politikası |
+| 2 | `935cde4` | Electric/Cryo: kaynağın her vuruşu 6 s'yi yeniler, süre dolunca tüm stack'ler birden silinir (global) |
+| 3 | `a47c2fb` | Rapid Laser: 10 + 5/seviye, AP 0,41; empowered 6 isabette bir |
+| 5 | `aae443b` | Dual: 3 + 2/seviye, AP 0,20 + 0,02; 7/s × AttackSpeed %; şarjör 64 / 1,5 s; sıralı namlu; 8 isabette empowered + Kinetic stack |
+| 6 | `b8b06b5` | Electric: `Owner.Offense.Dominant/Secondary` türetilmiş nitelikleri; yetenek kullanımı 2 şarj @4/s; Electric stack yalnız empowered + zincir |
+| 4 | `2ed9423` | Rapid Shotgun → `ConeBlast` tipi (yeni işleyici, kontrat, görsel), 45° / 400, her 3. tetik empowered + Ignite; düşman TwinBlade pellet olarak kaldı |
+| 7 | `59ad26d` | Heat Laser: `heatDamageRegions` (×1,00 / ×1,15 / ×1,40 Energy), yalnız EP ölçeklemesi |
+| 8 | `ee5e608` | Cryo: `FrostMeter` özelliği, Whiteout (×2 hız, dönüşümlü), 3 s kilit, empowered dalga +250 menzil ×1,5 genişlik, 4 stack'e ×1,15 |
+
+**Doğrulama:** vcvars64 + `VSLANG=1033` ile tam build exit 0; `ctest -j1` 44/44 ve iki kez `ctest -j4` 44/44. `LightYearsWeaponPhase2` tüm L1 tasarım değerlerini ölçer: Fighter 25,99; Breacher 65 / 78,8; Interceptor 11,2 / 26,48 / 7,07 atış/sn; Conductor 39,1 / 45,38; Aegis 21,17 / 24,35 / 29,64; Cryo 28,1 / 35,9 / 41,3.
+
+**Uygulama sırasında netleşen ayrıntılar:** Dual iki namludan aynı anda ateşleseydi DPS iki katına çıkacaktı → `alternateMuzzles`. Koni için silah ID'si aile kuralı gereği `Weapon.Cone.RapidShotgun.Basic` oldu (ships.json güncellendi). Empowered atışın kendi isabeti bir sonraki 6/8'lik döngüye sayılır (ilk empowered 7./9. atış, sonra her 6/8 isabette). Koninin empowered atışı Ignite taşıyabilmek için o vuruşa Thermal etiketi ekler.
+
+**Açık:** oyun içi his ve denge kontrolü (kullanıcı); Frost Meter / Electric şarj HUD göstergesi (K10, ayrı iş); global 6 s stack kuralının yeteneklere etkisi (ChainLightning, IonStorm, CryoBola, FrostMaelstrom, Hexagon) gözden geçirilmeli.
