@@ -4,7 +4,7 @@
 //   LightYearsVisualGallery --capture <out.png> [--script <name>] [--frames N] [--size WxH] [--stress] [--assets <dir>]
 //
 // Keys: Tab color script, B bloom, D dither, V virtual resolution, Space energy-budget stress, Up/Down bloom
-// strength, F5 reload assets (files are also polled), Esc quit.
+// strength, F8 reload assets (files are also polled), Esc quit.
 
 #include <algorithm>
 #include <cstdio>
@@ -173,7 +173,7 @@ namespace
 						s.virtualHeight = next;
 						break;
 					}
-					case sf::Keyboard::Key::F5: PrintReport(assets.Reload(true)); break;
+					case sf::Keyboard::Key::F8: PrintReport(assets.Reload(true)); break;
 					default: break;
 					}
 				}

@@ -24,7 +24,7 @@ A script (`assets/palettes/*.json`) holds named ramps (ordered stops, shadow to 
 
 ## Settings and hot reload
 
-`assets/pipeline.json` maps onto `PipelineSettings` (`virtualHeight`, dither, bloom threshold, strength and levels, vignette, flash scale, energy budget, tier caps). `VisualAssets` owns the loaded settings, shaders (`assets/shaders/<name>.frag`) and palettes. `assets.Poll(dt)` checks file timestamps twice a second and `assets.Reload(true)` forces a reload (F5 in the gallery). A file that fails to parse or compile keeps its previous working version and the error text lands in `ReloadReport::errors`. Settings are plain data: edit `assets.Settings()` at runtime; a reload of `pipeline.json` overwrites such edits.
+`assets/pipeline.json` maps onto `PipelineSettings` (`virtualHeight`, dither, bloom threshold, strength and levels, vignette, flash scale, energy budget, tier caps). `VisualAssets` owns the loaded settings, shaders (`assets/shaders/<name>.frag`) and palettes. `assets.Poll(dt)` checks file timestamps twice a second and `assets.Reload(true)` forces a reload (F8 in the gallery). A file that fails to parse or compile keeps its previous working version and the error text lands in `ReloadReport::errors`. Settings are plain data: edit `assets.Settings()` at runtime; a reload of `pipeline.json` overwrites such edits.
 
 ## Gallery
 
@@ -33,6 +33,6 @@ LightYearsVisualGallery [--assets <dir>] [--script <name>]
 LightYearsVisualGallery --capture <out.png> [--script <name>] [--frames N] [--size WxH] [--stress]
 ```
 
-Keys: `Tab` color script, `B` bloom, `D` dither, `V` virtual resolution, `Space` energy-budget stress, `Up`/`Down` bloom strength, `F5` reload, `Esc` quit. The gallery reads the source `assets/` folder directly (`--assets` overrides) so edits hot-reload without rebuilding. Capture mode needs no window: it renders N fixed 1/60 s frames and saves the composited image.
+Keys: `Tab` color script, `B` bloom, `D` dither, `V` virtual resolution, `Space` energy-budget stress, `Up`/`Down` bloom strength, `F8` reload, `Esc` quit. The gallery reads the source `assets/` folder directly (`--assets` overrides) so edits hot-reload without rebuilding. Capture mode needs no window: it renders N fixed 1/60 s frames and saves the composited image.
 
 Build: part of the root CMake project; the gallery is behind `LIGHTYEARS_BUILD_VISUAL_GALLERY` (default ON).
