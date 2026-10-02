@@ -48,6 +48,9 @@ namespace ly
 		std::size_t AddPrimaryWeaponModifier(const sas::AttributeModifier& modifier);
 		bool RemovePrimaryWeaponModifier(std::size_t modifierHandle);
 		uint64_t GetPrimaryWeaponModifierRevision() const { return mPrimaryWeaponModifierRevision; }
+		// Activations of loadout abilities (Ability1-4), never primary fire or
+		// passives. Weapons compare it to grant empowered charges on cast.
+		uint64_t GetLoadoutAbilityActivationCount() const { return mLoadoutAbilityActivationCount; }
 		float ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute) const;
 		Actor& GetOwner() { return mOwner; }
 
@@ -115,6 +118,7 @@ namespace ly
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
+		void HandleAbilityActivated(sas::AbilityHandle handle);
 		friend class GameAbility;
 		friend class CombatRuntime;
 		void ClearAdditionalState(bool preserveRuntimeDependencies) override;
@@ -144,6 +148,7 @@ namespace ly
 		std::vector<std::pair<std::size_t, sas::AttributeModifier>> mPrimaryWeaponModifiers;
 		std::size_t mNextPrimaryWeaponModifierHandle = 1;
 		uint64_t mPrimaryWeaponModifierRevision = 0;
+		uint64_t mLoadoutAbilityActivationCount = 0;
 		std::size_t mNextScopedAbilityRuleHandle = 1;
 		bool mHasDeferredScopedAbilityRules = false;
 		bool mRefreshingScopedAbilityRules = false;

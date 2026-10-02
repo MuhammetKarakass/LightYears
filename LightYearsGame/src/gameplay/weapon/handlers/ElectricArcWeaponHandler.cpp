@@ -37,15 +37,12 @@ namespace ly
 			int additionalChainCount,
 			float targetRange,
 			float chainRange,
-			float damageMultiplierPerChain
+			float damageMultiplierPerChain,
+			bool& hitReported
 		)
 		{
 			World* world = context.owner.GetWorld();
-			const float baseDamage = std::max(0.f, sas::FindAttributeValue(
-				context.attributes,
-				CommonAttributeIds::Damage,
-				0.f
-			));
+			const float baseDamage = ResolvePrimaryWeaponShotDamage(context);
 			if (!world || baseDamage <= 0.f || targetRange <= 0.f)
 			{
 				return;
@@ -109,8 +106,15 @@ namespace ly
 				return;
 			}
 
-			const DamagePayload payload =
+			DamagePayload payload =
 				DamageTypeSystem::BuildPayload(context.damageTags, context.attributes);
+			// Chain targets share the shot's policy, so an empowered arc's status
+			// stacks reach every target it jumps to.
+			ApplyShotMetadataToPayload(payload, context.shotMetadata);
+			if (!hitReported)
+			{
+				hitReported = context.shotMetadata.ReportHit();
+			}
 			sf::Vector2f arcStart = origin;
 			float damage = baseDamage;
 			int remainingNormalChains = std::max(0, additionalChainCount);
@@ -203,6 +207,7 @@ namespace ly
 					CommonAttributeIds::Range,
 					0.f
 				));
+				bool hitReported = false;
 				const auto fireFromMuzzle = [&](const WeaponMuzzleDefinition& muzzle)
 				{
 					const sf::Vector2f origin = context.owner.GetActorLocation() +
@@ -213,7 +218,8 @@ namespace ly
 						chainCount,
 						targetRange,
 						chainRange,
-						damageMultiplier
+						damageMultiplier,
+						hitReported
 					);
 				};
 				if (context.definition.muzzleDefinitions.empty())

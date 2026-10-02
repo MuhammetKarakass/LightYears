@@ -272,8 +272,7 @@ namespace ly
 	{
 		mShotMetadata = metadata;
 		DamagePayload payload = GetDamagePayload();
-		payload.criticalPolicy = metadata.criticalPolicy;
-		payload.roundDamageUp = metadata.roundFinalDamageUp;
+		ApplyShotMetadataToPayload(payload, metadata);
 		SetDamagePayload(payload);
 	}
 
@@ -282,6 +281,10 @@ namespace ly
 		if (mAreaDamageRadius > 0.f)
 		{
 			ApplyAreaDamage();
+			if (IsValidAbilityTarget(directHitActor))
+			{
+				ReportShotHitOnce();
+			}
 			return;
 		}
 
@@ -299,6 +302,16 @@ namespace ly
 				this
 			);
 			LY_GAME_TRACE("Primary weapon projectile damage: %f", GetDamage());
+			ReportShotHitOnce();
+		}
+	}
+
+	void PrimaryWeaponProjectileActor::ReportShotHitOnce()
+	{
+		// A piercing or area shot still counts as one successful hit.
+		if (!mShotHitReported)
+		{
+			mShotHitReported = mShotMetadata.ReportHit();
 		}
 	}
 

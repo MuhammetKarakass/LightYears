@@ -50,6 +50,7 @@ namespace ly
 		void SetVisualScale(float scale);
 		void Move(float deltaTime);
 		void ApplyImpactDamage(Actor* directHitActor);
+		void ReportShotHitOnce();
 		void ApplyAreaDamage();
 
 		float mSpeed;
@@ -64,6 +65,7 @@ namespace ly
 		PrimaryWeaponShotMetadata mShotMetadata;
 		bool mHasLaunchVelocity = false;
 		bool mImpactBehaviorCompleted = false;
+		bool mShotHitReported = false;
 		std::unordered_set<unsigned int> mProcessedImpactTargets;
 	};
 }

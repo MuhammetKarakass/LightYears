@@ -22,6 +22,9 @@ namespace ly
 
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderWindow& window) override;
+		// Applies the firing shot's policy (empowered status stacks, critical)
+		// and lets the wave report its first hit to the weapon.
+		void SetShotMetadata(const PrimaryWeaponShotMetadata& metadata);
 
 	private:
 		void ApplyHits(
@@ -42,5 +45,7 @@ namespace ly
 		sf::Color mColor;
 		sf::VertexArray mWaveStrip{ sf::PrimitiveType::TriangleStrip };
 		Set<Actor*> mHitTargets;
+		PrimaryWeaponShotMetadata mShotMetadata;
+		bool mShotHitReported = false;
 	};
 }

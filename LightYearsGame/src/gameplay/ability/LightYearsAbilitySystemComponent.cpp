@@ -139,6 +139,18 @@ namespace ly
 				ProcessGameGameplayEvent(event);
 			}
 		);
+		// The delegate is a member of this component, so the raw binding cannot
+		// outlive it.
+		onAbilityActivated.BindAction(this, &LightYearsAbilitySystemComponent::HandleAbilityActivated);
+	}
+
+	void LightYearsAbilitySystemComponent::HandleAbilityActivated(sas::AbilityHandle handle)
+	{
+		const GameAbility* ability = GetAbility(handle);
+		if (ability && sas::IsLoadoutAbilitySlot(ability->GetDefinition().slot))
+		{
+			++mLoadoutAbilityActivationCount;
+		}
 	}
 
 	GameAbility* LightYearsAbilitySystemComponent::GetAbility(sas::AbilitySlot slot)

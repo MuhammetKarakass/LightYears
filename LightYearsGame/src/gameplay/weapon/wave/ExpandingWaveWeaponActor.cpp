@@ -172,6 +172,10 @@ namespace ly
 			}
 
 			mHitTargets.insert(target.get());
+			if (!mShotHitReported)
+			{
+				mShotHitReported = mShotMetadata.ReportHit();
+			}
 			ApplyCombatDamage(
 				*target,
 				GetDamage(),
@@ -180,6 +184,14 @@ namespace ly
 				GetDamagePayload()
 			);
 		}
+	}
+
+	void ExpandingWaveWeaponActor::SetShotMetadata(const PrimaryWeaponShotMetadata& metadata)
+	{
+		mShotMetadata = metadata;
+		DamagePayload payload = GetDamagePayload();
+		ApplyShotMetadataToPayload(payload, metadata);
+		SetDamagePayload(payload);
 	}
 
 	void ExpandingWaveWeaponActor::RebuildGeometry()

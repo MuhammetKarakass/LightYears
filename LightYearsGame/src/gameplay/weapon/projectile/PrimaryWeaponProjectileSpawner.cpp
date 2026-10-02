@@ -77,20 +77,7 @@ namespace ly::PrimaryWeaponProjectileSpawner
 				{
 					spawnedProjectile->SetImpactBehavior(impactBehavior);
 				}
-				const float baseDamage = sas::FindAttributeValue(
-					context.attributes,
-					CommonAttributeIds::Damage,
-					0.f
-				);
-				float shotDamage = baseDamage;
-				if (context.shotMetadata.isEmpowered && context.definition.empoweredShot.has_value())
-				{
-					shotDamage += sas::FindAttributeValue(
-						context.attributes,
-						PrimaryWeaponSchema::Empowered::BonusDamage,
-						0.f
-					);
-				}
+				const float shotDamage = ResolvePrimaryWeaponShotDamage(context);
 				spawnedProjectile->SetDamage(shotDamage);
 				spawnedProjectile->SetDamageTags(context.damageTags);
 				spawnedProjectile->SetShotMetadata(context.shotMetadata);

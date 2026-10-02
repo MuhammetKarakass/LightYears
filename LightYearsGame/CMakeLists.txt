@@ -1582,6 +1582,30 @@ if(BUILD_TESTING)
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 	set_tests_properties(LightYearsPlayerShipSelection PROPERTIES TIMEOUT 60)
+	add_executable(LightYearsWeaponPhase2Tests
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/WeaponPhase2Tests.cpp
+	)
+	target_include_directories(LightYearsWeaponPhase2Tests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+	)
+	target_compile_definitions(LightYearsWeaponPhase2Tests PRIVATE
+		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+	)
+	target_link_libraries(LightYearsWeaponPhase2Tests
+		PRIVATE
+			LightYearsGasLiteTestObjects
+			${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			nlohmann_json::nlohmann_json
+	)
+	add_test(
+		NAME LightYearsWeaponPhase2
+		COMMAND LightYearsWeaponPhase2Tests
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	set_tests_properties(LightYearsWeaponPhase2 PROPERTIES TIMEOUT 60)
 	add_executable(LightYearsVitalsHUDTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/VitalsHUDTests.cpp
 	)
@@ -1851,6 +1875,7 @@ if(BUILD_TESTING)
 			LightYearsPrimaryWeaponTests
 			LightYearsPlayerLevelTestProgressionE2ETests
 			LightYearsPlayerShipSelectionTests
+			LightYearsWeaponPhase2Tests
 			LightYearsVitalsHUDTests
 			LightYearsModuleScreenTests
 			LightYearsHUDMigrationTests

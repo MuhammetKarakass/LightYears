@@ -284,7 +284,8 @@ namespace ly
 					weaponRuntime
 				))
 			{
-				weaponRuntime.fireIntervalRemaining = BuildFireInterval(context, fireAction, *action.spec, values);
+				weaponRuntime.fireIntervalRemaining =
+					BuildFireInterval(context, fireAction, *action.spec, values) * weaponRuntime.nextFireIntervalScale;
 			}
 		}
 	}

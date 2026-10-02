@@ -173,6 +173,7 @@ namespace ly::content
 		PrimaryWeaponFeatureType ParseFeatureType(const std::string& value)
 		{
 			if (value == "PrimaryWeapon.Feature.Heat") return PrimaryWeaponFeatureType::Heat;
+			if (value == "PrimaryWeapon.Feature.FrostMeter") return PrimaryWeaponFeatureType::FrostMeter;
 			throw std::runtime_error("Unknown primary weapon feature: " + value);
 		}
 
@@ -182,7 +183,18 @@ namespace ly::content
 			{
 				throw std::runtime_error("Expected an empoweredShot object");
 			}
-			return PrimaryWeaponEmpoweredShotDefinition{ object.value("guaranteedCritical", false) };
+			PrimaryWeaponEmpoweredShotDefinition definition;
+			definition.guaranteedCritical = object.value("guaranteedCritical", false);
+			const std::string trigger = object.value("trigger", std::string{ "EverySuccessfulShots" });
+			if (trigger == "EverySuccessfulShots") definition.trigger = PrimaryWeaponEmpoweredTrigger::EverySuccessfulShots;
+			else if (trigger == "EverySuccessfulHits") definition.trigger = PrimaryWeaponEmpoweredTrigger::EverySuccessfulHits;
+			else if (trigger == "AbilityCastCharges") definition.trigger = PrimaryWeaponEmpoweredTrigger::AbilityCastCharges;
+			else if (trigger == "Whiteout") definition.trigger = PrimaryWeaponEmpoweredTrigger::Whiteout;
+			else throw std::runtime_error("Unknown empoweredShot trigger: " + trigger);
+			definition.statusStacksOnlyWhenEmpowered = object.value("statusStacksOnlyWhenEmpowered", false);
+			definition.chargesPerCast = object.value("chargesPerCast", 0);
+			definition.chargedFireRate = object.value("chargedFireRate", 0.f);
+			return definition;
 		}
 
 		ly::List<PrimaryWeaponFeatureType> ParseFeatureTypes(const Json& values)

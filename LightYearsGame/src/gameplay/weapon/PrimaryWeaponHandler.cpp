@@ -1,4 +1,5 @@
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
+#include "gameplay/attributes/AttributeIds.h"
 
 #include <algorithm>
 
@@ -31,6 +32,20 @@ namespace ly
 		const float cooldown = requestedCooldown;
 		requestedCooldown = 0.f;
 		return cooldown;
+	}
+
+	float ResolvePrimaryWeaponShotDamage(const PrimaryWeaponExecutionContext& context)
+	{
+		float damage = sas::FindAttributeValue(context.attributes, CommonAttributeIds::Damage, 0.f);
+		if (context.shotMetadata.isEmpowered && context.definition.empoweredShot.has_value())
+		{
+			damage += sas::FindAttributeValue(
+				context.attributes,
+				PrimaryWeaponSchema::Empowered::BonusDamage,
+				0.f
+			);
+		}
+		return std::max(0.f, damage);
 	}
 
 	unique_ptr<PrimaryWeaponTypeRuntimeState> PrimaryWeaponHandler::CreateRuntimeState() const

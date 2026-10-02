@@ -45,6 +45,8 @@ namespace ly
 					if (const shared_ptr<ExpandingWaveWeaponActor> spawned =
 						wave.lock())
 					{
+						spawned->SetDamage(ResolvePrimaryWeaponShotDamage(context));
+						spawned->SetShotMetadata(context.shotMetadata);
 						spawned->SetActorLocation(
 							context.owner.GetActorLocation() +
 							context.owner.TransformLocalToWorld(muzzle.offset)

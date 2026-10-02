@@ -9,6 +9,8 @@
 #include "gameConfigs/combat/ScrapCostFormula.h"
 #include <string>
 #include <optional>
+#include <memory>
+#include <cstdint>
 #include <numeric>
 #include <algorithm>
 
@@ -48,13 +50,38 @@ struct PrimaryWeaponMagazineDefinition
 	}
 };
 
+// What makes the next shot empowered.
+enum class PrimaryWeaponEmpoweredTrigger
+{
+	// Every Nth fired shot (PrimaryWeapon.Empowered.EverySuccessfulShots).
+	EverySuccessfulShots,
+	// After N shots that hit (PrimaryWeapon.Empowered.EverySuccessfulHits);
+	// a shot counts at most once however many targets it strikes.
+	EverySuccessfulHits,
+	// A loadout ability activation grants chargesPerCast empowered shots that
+	// fire at chargedFireRate; a new activation refreshes, never adds.
+	AbilityCastCharges,
+	// A weapon feature (Frost Meter Whiteout) decides each shot.
+	Whiteout
+};
+
 struct PrimaryWeaponEmpoweredShotDefinition
 {
 	bool guaranteedCritical = false;
+	PrimaryWeaponEmpoweredTrigger trigger = PrimaryWeaponEmpoweredTrigger::EverySuccessfulShots;
+	// When true, the weapon's damage status stacks (Ignite, Cryo, Electric,
+	// Kinetic) enter the payload only on empowered shots.
+	bool statusStacksOnlyWhenEmpowered = false;
+	int chargesPerCast = 0;
+	float chargedFireRate = 0.f;
 
 	bool operator==(const PrimaryWeaponEmpoweredShotDefinition& other) const
 	{
-		return guaranteedCritical == other.guaranteedCritical;
+		return guaranteedCritical == other.guaranteedCritical &&
+			trigger == other.trigger &&
+			statusStacksOnlyWhenEmpowered == other.statusStacksOnlyWhenEmpowered &&
+			chargesPerCast == other.chargesPerCast &&
+			chargedFireRate == other.chargedFireRate;
 	}
 	bool operator!=(const PrimaryWeaponEmpoweredShotDefinition& other) const
 	{
@@ -62,16 +89,57 @@ struct PrimaryWeaponEmpoweredShotDefinition
 	}
 };
 
+// Shared between a weapon runtime and the shots it fired so delayed hits
+// (projectiles) can advance an EverySuccessfulHits counter.
+struct PrimaryWeaponHitLedger
+{
+	uint64_t hitsSinceEmpowered = 0;
+};
+
 struct PrimaryWeaponShotMetadata
 {
 	bool isEmpowered = false;
 	ly::DamageCriticalPolicy criticalPolicy = ly::DamageCriticalPolicy::Random;
 	bool roundFinalDamageUp = false;
+	// statusStacksOnlyWhenEmpowered on a non-empowered shot.
+	bool suppressStatusStacks = false;
+	// Set only for EverySuccessfulHits weapons; a shot reports its first hit here.
+	std::weak_ptr<PrimaryWeaponHitLedger> hitLedger;
+
+	// Records this shot's first hit; returns true if it was counted now.
+	bool ReportHit() const
+	{
+		if (const std::shared_ptr<PrimaryWeaponHitLedger> ledger = hitLedger.lock())
+		{
+			++ledger->hitsSinceEmpowered;
+			return true;
+		}
+		return false;
+	}
 };
+
+// Applies per-shot policy (critical, rounding, empowered-only status stacks)
+// to a payload already built from the weapon's attributes.
+inline void ApplyShotMetadataToPayload(
+	ly::DamagePayload& payload,
+	const PrimaryWeaponShotMetadata& metadata
+)
+{
+	payload.criticalPolicy = metadata.criticalPolicy;
+	payload.roundDamageUp = metadata.roundFinalDamageUp;
+	if (metadata.suppressStatusStacks)
+	{
+		payload.igniteStacks = 0;
+		payload.cryoBuildupPerHit = 0;
+		payload.electricStacks = 0;
+		payload.kineticStacks = 0;
+	}
+}
 
 enum class PrimaryWeaponFeatureType
 {
-	Heat
+	Heat,
+	FrostMeter
 };
 
 inline const char* PrimaryWeaponTypeName(PrimaryWeaponType type)
@@ -89,14 +157,22 @@ inline const char* PrimaryWeaponTypeName(PrimaryWeaponType type)
 
 inline const char* PrimaryWeaponFeatureName(PrimaryWeaponFeatureType type)
 {
-	return type == PrimaryWeaponFeatureType::Heat ? "Heat" : "Unknown";
+	switch (type)
+	{
+	case PrimaryWeaponFeatureType::Heat: return "Heat";
+	case PrimaryWeaponFeatureType::FrostMeter: return "FrostMeter";
+	}
+	return "Unknown";
 }
 
 inline const char* PrimaryWeaponFeatureUpgradeId(PrimaryWeaponFeatureType type)
 {
-	return type == PrimaryWeaponFeatureType::Heat
-		? "PrimaryWeapon.Feature.Heat"
-		: "";
+	switch (type)
+	{
+	case PrimaryWeaponFeatureType::Heat: return "PrimaryWeapon.Feature.Heat";
+	case PrimaryWeaponFeatureType::FrostMeter: return "PrimaryWeapon.Feature.FrostMeter";
+	}
+	return "";
 }
 
 inline bool IsProjectileWeaponType(PrimaryWeaponType type)
@@ -227,6 +303,7 @@ struct PrimaryWeaponSchema
 		inline static const sas::AttributeId Root{ "PrimaryWeapon.Empowered" };
 		inline static const sas::AttributeId BonusDamage{ "PrimaryWeapon.Empowered.BonusDamage" };
 		inline static const sas::AttributeId EverySuccessfulShots{ "PrimaryWeapon.Empowered.EverySuccessfulShots" };
+		inline static const sas::AttributeId EverySuccessfulHits{ "PrimaryWeapon.Empowered.EverySuccessfulHits" };
 		inline static const sas::AttributeId FinalMagazineRounds{ "PrimaryWeapon.Empowered.FinalMagazineRounds" };
 	};
 };

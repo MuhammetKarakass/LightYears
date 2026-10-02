@@ -480,30 +480,70 @@ namespace ly::PrimaryWeaponDefinitionValidator
 
 			if (definition.empoweredShot.has_value())
 			{
-				if (!context.typeContract.usesIntervalFire || !IsProjectileWeaponType(definition.weaponType))
+				const PrimaryWeaponEmpoweredShotDefinition& emp = *definition.empoweredShot;
+				if (!context.typeContract.usesIntervalFire)
 				{
 					return {
 						false,
-						"Empowered shot configuration is only supported for interval projectile weapons."
+						"Empowered shot configuration is only supported for interval-fire weapons."
 					};
 				}
-				const sas::GameplayAttribute* everySuccessfulShots = sas::FindAttribute(
-					definition.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulShots);
+				const auto requirePositiveInteger = [&](const sas::AttributeId& id, const char* name)
+					-> PrimaryWeaponValidationResult
+				{
+					const sas::GameplayAttribute* attribute = sas::FindAttribute(definition.attributes, id);
+					if (!attribute || attribute->baseValue < 1.f ||
+						std::round(attribute->baseValue) != attribute->baseValue)
+					{
+						return { false, std::string{ "Empowered shot weapons must declare a positive integer " } + name + " attribute." };
+					}
+					return { true, {} };
+				};
+				switch (emp.trigger)
+				{
+				case PrimaryWeaponEmpoweredTrigger::EverySuccessfulShots:
+				{
+					const PrimaryWeaponValidationResult result = requirePositiveInteger(
+						PrimaryWeaponSchema::Empowered::EverySuccessfulShots, "EverySuccessfulShots");
+					if (!result.isValid) return result;
+					break;
+				}
+				case PrimaryWeaponEmpoweredTrigger::EverySuccessfulHits:
+				{
+					const PrimaryWeaponValidationResult result = requirePositiveInteger(
+						PrimaryWeaponSchema::Empowered::EverySuccessfulHits, "EverySuccessfulHits");
+					if (!result.isValid) return result;
+					break;
+				}
+				case PrimaryWeaponEmpoweredTrigger::AbilityCastCharges:
+					if (emp.chargesPerCast < 1 || !std::isfinite(emp.chargedFireRate) || emp.chargedFireRate <= 0.f)
+					{
+						return {
+							false,
+							"AbilityCastCharges empowered shots need chargesPerCast >= 1 and a positive chargedFireRate."
+						};
+					}
+					break;
+				case PrimaryWeaponEmpoweredTrigger::Whiteout:
+					if (std::find(definition.featureTypes.begin(), definition.featureTypes.end(),
+						PrimaryWeaponFeatureType::FrostMeter) == definition.featureTypes.end())
+					{
+						return { false, "Whiteout empowered shots require the Frost Meter feature." };
+					}
+					break;
+				}
 				const sas::GameplayAttribute* finalMagazineRounds = sas::FindAttribute(
 					definition.attributes, PrimaryWeaponSchema::Empowered::FinalMagazineRounds);
-				if (!everySuccessfulShots || everySuccessfulShots->baseValue < 1.f ||
-					std::round(everySuccessfulShots->baseValue) != everySuccessfulShots->baseValue)
+				if (finalMagazineRounds &&
+					(finalMagazineRounds->baseValue < 0.f ||
+						std::round(finalMagazineRounds->baseValue) != finalMagazineRounds->baseValue))
 				{
-					return { false, "Empowered shot weapons must declare a positive integer EverySuccessfulShots attribute." };
+					return { false, "Empowered shot FinalMagazineRounds must be a non-negative integer." };
 				}
-				if (!finalMagazineRounds || finalMagazineRounds->baseValue < 0.f ||
-					std::round(finalMagazineRounds->baseValue) != finalMagazineRounds->baseValue)
-				{
-					return { false, "Empowered shot weapons must declare a non-negative integer FinalMagazineRounds attribute." };
-				}
+				const float finalRounds = finalMagazineRounds ? finalMagazineRounds->baseValue : 0.f;
 				if (!definition.magazine.has_value())
 				{
-					if (finalMagazineRounds->baseValue != 0.f)
+					if (finalRounds != 0.f)
 					{
 						return {
 							false,
@@ -511,21 +551,14 @@ namespace ly::PrimaryWeaponDefinitionValidator
 						};
 					}
 				}
-				else
+				else if (finalRounds > static_cast<float>(definition.magazine->capacity))
 				{
-					if (finalMagazineRounds->baseValue > static_cast<float>(definition.magazine->capacity))
-					{
-						return {
-							false,
-							"Empowered shot finalMagazineRounds cannot exceed magazine capacity."
-						};
-					}
+					return {
+						false,
+						"Empowered shot finalMagazineRounds cannot exceed magazine capacity."
+					};
 				}
-				const sas::GameplayAttribute* empoweredAttr = sas::FindAttribute(
-					definition.attributes,
-					PrimaryWeaponSchema::Empowered::BonusDamage
-				);
-				if (!empoweredAttr)
+				if (!sas::FindAttribute(definition.attributes, PrimaryWeaponSchema::Empowered::BonusDamage))
 				{
 					return {
 						false,

@@ -43,6 +43,16 @@ namespace ly
 		bool handlerEndFirePending = false;
 		List<uint8_t> featureEndFirePending;
 		uint64_t successfulFireCount = 0;
+		// Empowered trigger state (see PrimaryWeaponEmpoweredTrigger).
+		std::shared_ptr<PrimaryWeaponHitLedger> hitLedger;
+		int empoweredCharges = 0;
+		uint64_t observedAbilityActivationCount = 0;
+		bool abilityActivationCountObserved = false;
+		// Set by a feature (Frost Meter Whiteout) to force or scale the next shot.
+		bool featureRequestsEmpoweredShot = false;
+		float featureFireIntervalScale = 1.f;
+		// Multiplier for the interval scheduled after the last successful shot.
+		float nextFireIntervalScale = 1.f;
 		float requestedCooldown = 0.f;
 		float unprocessedSimulationTime = 0.f;
 		float fireIntervalRemaining = 0.f;
@@ -95,6 +105,9 @@ namespace ly
 			return false;
 		}
 	};
+
+	// Base damage plus the empowered bonus when this shot is empowered.
+	float ResolvePrimaryWeaponShotDamage(const PrimaryWeaponExecutionContext& context);
 
 	class PrimaryWeaponHandler
 	{

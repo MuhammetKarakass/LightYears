@@ -2,6 +2,7 @@
 #include "attributes/AttributeSystem.h"
 #include "framework/Actor.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/time/IntervalDebt.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
@@ -149,6 +150,7 @@ namespace ly
 			candidate.configuredCadenceMode = configuration.cadenceMode;
 			candidate.configuredDamageRoundingPolicy = configuration.damageRoundingPolicy;
 			candidate.configuredEmpoweredShot = configuration.empoweredShot;
+			candidate.hitLedger = std::make_shared<PrimaryWeaponHitLedger>();
 			if (configuration.magazine.has_value())
 			{
 				candidate.magazineState.roundsRemaining = configuration.magazine->capacity;
@@ -184,6 +186,107 @@ namespace ly
 				}
 			}
 			return retainedValues;
+		}
+	}
+
+	namespace
+	{
+		int FindIntegerAttribute(const sas::GameplayAttributeList& attributes, const sas::AttributeId& id)
+		{
+			return static_cast<int>(std::round(sas::FindAttributeValue(attributes, id, 0.f)));
+		}
+
+		bool IsFinalMagazinePhase(const PrimaryWeaponExecutionContext& context, const PrimaryWeaponRuntimeState& state)
+		{
+			if (!context.definition.magazine.has_value())
+			{
+				return false;
+			}
+			const int finalMagazineRounds = FindIntegerAttribute(
+				context.attributes, PrimaryWeaponSchema::Empowered::FinalMagazineRounds);
+			return finalMagazineRounds > 0 && state.magazineState.roundsRemaining <= finalMagazineRounds;
+		}
+
+		// Decides whether the shot about to fire is empowered. The only side effect
+		// is refreshing ability-cast charges; consumption happens after a
+		// successful fire (ConsumeEmpoweredShot).
+		bool ResolveEmpoweredShot(const PrimaryWeaponExecutionContext& context, PrimaryWeaponRuntimeState& state)
+		{
+			const PrimaryWeaponEmpoweredShotDefinition& emp = *context.definition.empoweredShot;
+			switch (emp.trigger)
+			{
+			case PrimaryWeaponEmpoweredTrigger::EverySuccessfulShots:
+			{
+				const int every = FindIntegerAttribute(
+					context.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulShots);
+				const bool periodic = every > 0 &&
+					(state.successfulFireCount + 1) % static_cast<uint64_t>(every) == 0;
+				return periodic || IsFinalMagazinePhase(context, state);
+			}
+			case PrimaryWeaponEmpoweredTrigger::EverySuccessfulHits:
+			{
+				const int every = FindIntegerAttribute(
+					context.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulHits);
+				const bool earned = every > 0 && state.hitLedger &&
+					state.hitLedger->hitsSinceEmpowered >= static_cast<uint64_t>(every);
+				return earned || IsFinalMagazinePhase(context, state);
+			}
+			case PrimaryWeaponEmpoweredTrigger::AbilityCastCharges:
+			{
+				if (const auto* combatant = dynamic_cast<const Combatant*>(&context.owner))
+				{
+					const uint64_t activations =
+						combatant->GetAbilitySystemComponent().GetLoadoutAbilityActivationCount();
+					if (!state.abilityActivationCountObserved)
+					{
+						// Casts made before this weapon existed do not charge it.
+						state.observedAbilityActivationCount = activations;
+						state.abilityActivationCountObserved = true;
+					}
+					else if (activations != state.observedAbilityActivationCount)
+					{
+						state.observedAbilityActivationCount = activations;
+						state.empoweredCharges = std::max(0, emp.chargesPerCast);
+					}
+				}
+				return state.empoweredCharges > 0;
+			}
+			case PrimaryWeaponEmpoweredTrigger::Whiteout:
+				return state.featureRequestsEmpoweredShot;
+			}
+			return false;
+		}
+
+		void ConsumeEmpoweredShot(
+			const PrimaryWeaponExecutionContext& context,
+			PrimaryWeaponRuntimeState& state,
+			bool wasEmpowered
+		)
+		{
+			float chargeScale = 1.f;
+			if (context.definition.empoweredShot.has_value())
+			{
+				const PrimaryWeaponEmpoweredShotDefinition& emp = *context.definition.empoweredShot;
+				if (wasEmpowered && state.hitLedger &&
+					emp.trigger == PrimaryWeaponEmpoweredTrigger::EverySuccessfulHits)
+				{
+					state.hitLedger->hitsSinceEmpowered = 0;
+				}
+				if (emp.trigger == PrimaryWeaponEmpoweredTrigger::AbilityCastCharges)
+				{
+					if (wasEmpowered)
+					{
+						state.empoweredCharges = std::max(0, state.empoweredCharges - 1);
+					}
+					if (state.empoweredCharges > 0 && emp.chargedFireRate > 0.f)
+					{
+						const float fireRate = std::max(0.01f, sas::FindAttributeValue(
+							context.attributes, CommonAttributeIds::FireRate, 1.f));
+						chargeScale = fireRate / emp.chargedFireRate;
+					}
+				}
+			}
+			state.nextFireIntervalScale = chargeScale * std::max(0.01f, state.featureFireIntervalScale);
 		}
 	}
 
@@ -421,24 +524,16 @@ namespace ly
 		if (context.definition.empoweredShot.has_value())
 		{
 			const auto& emp = *context.definition.empoweredShot;
-			const int everySuccessfulShots = static_cast<int>(std::round(sas::FindAttributeValue(
-				context.attributes, PrimaryWeaponSchema::Empowered::EverySuccessfulShots, 0.f)));
-			const int finalMagazineRounds = static_cast<int>(std::round(sas::FindAttributeValue(
-				context.attributes, PrimaryWeaponSchema::Empowered::FinalMagazineRounds, 0.f)));
-			bool isEmpowered = false;
-			const uint64_t nextSuccessfulFireCount = state.successfulFireCount + 1;
-			const bool periodic = everySuccessfulShots > 0 && nextSuccessfulFireCount % static_cast<uint64_t>(everySuccessfulShots) == 0;
-			bool finalPhase = false;
-			if (context.definition.magazine.has_value())
-			{
-				const int roundsBeforeFire = state.magazineState.roundsRemaining;
-				finalPhase = finalMagazineRounds > 0 && roundsBeforeFire <= finalMagazineRounds;
-			}
-			isEmpowered = periodic || finalPhase;
+			const bool isEmpowered = ResolveEmpoweredShot(context, state);
 			shotMetadata.isEmpowered = isEmpowered;
 			shotMetadata.criticalPolicy = (isEmpowered && emp.guaranteedCritical)
 				? DamageCriticalPolicy::Guaranteed
 				: DamageCriticalPolicy::Random;
+			shotMetadata.suppressStatusStacks = emp.statusStacksOnlyWhenEmpowered && !isEmpowered;
+			if (emp.trigger == PrimaryWeaponEmpoweredTrigger::EverySuccessfulHits)
+			{
+				shotMetadata.hitLedger = state.hitLedger;
+			}
 		}
 
 		PrimaryWeaponExecutionContext runtimeContext =
@@ -461,6 +556,7 @@ namespace ly
 			return false;
 		}
 		++state.successfulFireCount;
+		ConsumeEmpoweredShot(context, state, shotMetadata.isEmpowered);
 
 		if (context.definition.magazine.has_value())
 		{
@@ -621,7 +717,7 @@ namespace ly
 				{
 					++result.executionsProduced;
 					++catchUpExecutions;
-					state.fireIntervalRemaining = fireInterval;
+					state.fireIntervalRemaining = fireInterval * state.nextFireIntervalScale;
 					if (!context.ShouldContinue()) break;
 				}
 				else
@@ -675,7 +771,7 @@ namespace ly
 				++result.executionsProduced;
 				++catchUpExecutions;
 			}
-			time::CommitInterval(state.fireIntervalRemaining, fireInterval);
+			time::CommitInterval(state.fireIntervalRemaining, fireInterval * state.nextFireIntervalScale);
 			if (!context.ShouldContinue()) break;
 			if (!fired)
 			{
