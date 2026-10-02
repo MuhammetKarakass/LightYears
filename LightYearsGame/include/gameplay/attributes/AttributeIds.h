@@ -20,6 +20,11 @@ namespace ly
 		inline static const sas::AttributeId CriticalChance{ "Owner.CriticalChance" };
 		// Total damage multiplier used when a hit resolves as critical: 1.5 means 150% damage.
 		inline static const sas::AttributeId CriticalDamage{ "Owner.CriticalDamage" };
+		// Derived by ShipRuntime: the higher and the lower of AttackPower and
+		// EnergyPower (ties make EnergyPower dominant). Adaptive weapons scale
+		// from these instead of a fixed offensive stat.
+		inline static const sas::AttributeId OffenseDominant{ "Owner.Offense.Dominant" };
+		inline static const sas::AttributeId OffenseSecondary{ "Owner.Offense.Secondary" };
 	};
 
 	struct ShipAttributeIds

@@ -86,6 +86,10 @@ namespace ly
 				attributes.RegisterAttribute(OwnerAttributeIds::EnergyPower, 0.f);
 				attributes.RegisterAttribute(OwnerAttributeIds::Armor, 0.f);
 			}
+
+			// Sprite-less test ships still need a physics shape to be found by
+			// targeting queries.
+			float GetPhysicsCollisionRadius() const override { return 20.f; }
 		};
 
 		// A headless world with one ship holding the weapon under test.
@@ -332,6 +336,74 @@ namespace ly
 			return effect ? effect->stackCount : 0;
 		}
 
+		struct ElectricShotResult
+		{
+			float damage = 0.f;
+			int electricStacks = 0;
+		};
+
+		// Fires the shipped Electric Launcher at one enemy and reports each shot's
+		// hull damage and the target's Electric stacks afterwards.
+		struct ElectricRange
+		{
+			WeaponRig rig;
+			shared_ptr<WeaponTestShip> target;
+
+			bool Setup(float attackPower, float energyPower)
+			{
+				if (!rig.Setup(CopyWeapon("Weapon.Arc.ElectricLauncher.Basic"), attackPower, energyPower)) return false;
+				rig.ship->SetCollisionLayer(CollisionLayer::Player);
+				target = rig.world.SpawnActor<WeaponTestShip>().lock();
+				if (!target) return false;
+				target->SetActorLocation({ 0.f, -300.f });
+				target->SetCollisionLayer(CollisionLayer::Enemy);
+				target->SetCollisionMask(CollisionLayer::PlayerBullet);
+				rig.world.TickInternal(0.f);
+				return true;
+			}
+
+			float Health() const { return target->GetHealthComponent().GetHealth(); }
+		};
+
+		void TestElectricLauncherLevelOne()
+		{
+			ElectricRange range;
+			Check(range.Setup(27.f, 41.f), "electric: Conductor L1 range");
+			if (!range.target) return;
+			WeaponRig& rig = range.rig;
+			const GameAbilityDefinition* shield = content::AbilityContentCatalog::FindById("Ability.Defense.Shield.Basic");
+			if (shield) rig.Abilities().GrantAbility(*shield, sas::AbilitySlot::Ability1);
+
+			rig.Hold(true);
+			float before = range.Health();
+			rig.world.TickInternal(0.f);
+			Check(NearlyEqual(before - range.Health(), 39.1f), "electric: Conductor L1 normal hit 39.1 (EP dominant)");
+			Check(ElectricStacks(*range.target) == 0, "electric: a normal hit applies no Electric stack");
+
+			rig.Abilities().SetAbilitySlotInput(sas::AbilitySlot::Ability1, true);
+			rig.world.TickInternal(0.f);
+			rig.Abilities().SetAbilitySlotInput(sas::AbilitySlot::Ability1, false);
+			before = range.Health();
+			rig.world.TickInternal(0.5f);
+			Check(NearlyEqual(before - range.Health(), 45.38f), "electric: first empowered hit 45.38");
+			Check(ElectricStacks(*range.target) == 1, "electric: an empowered hit applies one Electric stack");
+			before = range.Health();
+			rig.world.TickInternal(0.25f);
+			Check(NearlyEqual(before - range.Health(), 45.38f * 1.03f, 0.02f),
+				"electric: second empowered hit 0.25 s later, amplified by the first stack");
+			Check(ElectricStacks(*range.target) == 2, "electric: two empowered hits stack twice");
+
+			ElectricRange apDominant;
+			Check(apDominant.Setup(50.f, 10.f), "electric: AP-dominant range");
+			if (!apDominant.target) return;
+			apDominant.rig.Hold(true);
+			before = apDominant.Health();
+			apDominant.rig.world.TickInternal(0.f);
+			Check(NearlyEqual(before - apDominant.Health(), 20.f + 50.f * 0.4f + 10.f * 0.1f),
+				"electric: AP becomes the dominant stat when it is higher (41)");
+		}
+
+
 		void TestSourceSustainedStatusLifetime()
 		{
 			World world{ nullptr };
@@ -402,6 +474,7 @@ int main()
 	run("lifetime", &TestSourceSustainedStatusLifetime);
 	run("laser", &TestRapidLaserLevelOne);
 	run("dual", &TestDualKineticLevelOne);
+	run("electric", &TestElectricLauncherLevelOne);
 
 	std::cout << (gFailures == 0 ? "[PASS] All weapon phase-2 checks passed\n" : "[FAIL] Weapon phase-2 checks failed\n");
 	return gFailures == 0 ? 0 : 1;

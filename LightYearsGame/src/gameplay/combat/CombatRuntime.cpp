@@ -118,6 +118,8 @@ namespace ly
 		attributes.RegisterAttribute(OwnerAttributeIds::Luck, 0.f);
 		attributes.RegisterAttribute(OwnerAttributeIds::CriticalChance, 0.f);
 		attributes.RegisterAttribute(OwnerAttributeIds::CriticalDamage, 1.5f);
+		attributes.RegisterAttribute(OwnerAttributeIds::OffenseDominant, 0.f);
+		attributes.RegisterAttribute(OwnerAttributeIds::OffenseSecondary, 0.f);
 	}
 
 	float CombatRuntime::GetCriticalChance() const

@@ -86,7 +86,14 @@ namespace ly
 		}
 
 		const float maxHealth = std::max(0.f, mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::MaxHealth));
-		RebindDerivedOwnerAttributes({ { OwnerAttributeIds::HealthRegen, maxHealth / 1200.f } });
+		const float attackPower = mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::AttackPower);
+		const float energyPower = mOwnerAttributes->GetCurrentValue(OwnerAttributeIds::EnergyPower);
+		const bool energyDominates = energyPower >= attackPower;
+		RebindDerivedOwnerAttributes({
+			{ OwnerAttributeIds::HealthRegen, maxHealth / 1200.f },
+			{ OwnerAttributeIds::OffenseDominant, energyDominates ? energyPower : attackPower },
+			{ OwnerAttributeIds::OffenseSecondary, energyDominates ? attackPower : energyPower }
+		});
 
 		const double levelCount = static_cast<double>(mShipLevel - 1);
 		double shieldContribution = 0.0;
@@ -277,7 +284,9 @@ namespace ly
 	{
 		(void)previousValue;
 		(void)currentValue;
-		if (attributeId == OwnerAttributeIds::MaxHealth)
+		if (attributeId == OwnerAttributeIds::MaxHealth ||
+			attributeId == OwnerAttributeIds::AttackPower ||
+			attributeId == OwnerAttributeIds::EnergyPower)
 		{
 			RecalculateAttributes();
 		}

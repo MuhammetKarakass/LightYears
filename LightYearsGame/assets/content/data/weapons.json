@@ -270,12 +270,13 @@
         "visualScale": 1.1
       },
       "attributes": [
-        { "id": "Common.Damage", "baseValue": 15.0, "minValue": 0.0 },
-        { "id": "Common.FireRate", "baseValue": 2.8, "minValue": 0.01 },
+        { "id": "Common.Damage", "baseValue": 20.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 2.0, "minValue": 0.01 },
         { "id": "Common.Range", "baseValue": 850.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Arc.Electric.ChainCount", "baseValue": 3.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Arc.Electric.ChainRange", "baseValue": 250.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Arc.Electric.DamageMultiplierPerChain", "baseValue": 0.72, "minValue": 0.01, "maxValue": 1.0 },
+        { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 3.0, "minValue": 0.0 },
         { "id": "Damage.ElectricStacks", "baseValue": 1.0, "minValue": 0.0 }
       ],
       "muzzles": [
@@ -287,37 +288,31 @@
         "rules": [
           {
             "firstLevel": 2,
-            "lastLevel": 2,
             "levelInterval": 1,
             "reward": {
               "attributeModifiers": [
-                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 4.0 }
+                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 },
+                { "attributeId": "PrimaryWeapon.Empowered.BonusDamage", "operation": "Add", "magnitude": 1.0 }
               ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 3,
-            "lastLevel": 3,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "PrimaryWeapon.Arc.Electric.ChainCount", "operation": "Add", "magnitude": 1.0 },
-                { "attributeId": "PrimaryWeapon.Arc.Electric.ChainRange", "operation": "Add", "magnitude": 80.0 }
-              ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 4,
-            "lastLevel": 4,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "Common.FireRate", "operation": "Add", "magnitude": 0.4 },
-                { "attributeId": "PrimaryWeapon.Arc.Electric.DamageMultiplierPerChain", "operation": "Add", "magnitude": 0.08 }
+              "scalingRules": [
+                {
+                  "targetAttributeId": "Common.Damage",
+                  "sourceAttributeId": "Owner.Offense.Dominant",
+                  "operation": "Add",
+                  "coefficient": 0.02
+                },
+                {
+                  "targetAttributeId": "Common.Damage",
+                  "sourceAttributeId": "Owner.Offense.Secondary",
+                  "operation": "Add",
+                  "coefficient": 0.01
+                },
+                {
+                  "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+                  "sourceAttributeId": "Owner.Energy.Power",
+                  "operation": "Add",
+                  "coefficient": 0.02
+                }
               ],
               "unlockedUpgradeIds": [],
               "unlockedFeatureTags": []
@@ -329,20 +324,38 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.AttackPower",
+          "sourceAttributeId": "Owner.Offense.Dominant",
           "operation": "Add",
-          "coefficient": 0.85
+          "coefficient": 0.4
+        },
+        {
+          "targetAttributeId": "Common.Damage",
+          "sourceAttributeId": "Owner.Offense.Secondary",
+          "operation": "Add",
+          "coefficient": 0.1
         },
         {
           "targetAttributeId": "Common.FireRate",
           "sourceAttributeId": "Owner.AttackSpeed",
           "operation": "Add",
           "coefficient": 0.6
+        },
+        {
+          "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.08
         }
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Electric"]
+      "damageTags": ["Damage.Type.Electric"],
+      "empoweredShot": {
+        "trigger": "AbilityCastCharges",
+        "chargesPerCast": 2,
+        "chargedFireRate": 4.0,
+        "statusStacksOnlyWhenEmpowered": true
+      }
     },
     {
       "id": "Weapon.Beam.ContinuousHeatLaser.Basic",
