@@ -256,17 +256,11 @@ namespace ly
 						staticHit,
 						false
 					);
-					const float effectiveRange = blockedByStaticGeometry
-						? range * staticHit.fraction
-						: range;
-					beam->UpdateBeam(
-						start,
-						directionRotation,
-						effectiveRange,
-						width,
-						heatRatio,
-						context.definition.presentationDefinition.pointLightDef.color
-					);
+					// The beam does not pierce: it stops at whichever comes first, static
+					// geometry or the nearest valid target along its direction.
+					float blockingFraction = blockedByStaticGeometry ? staticHit.fraction : 1.f;
+					shared_ptr<Actor> firstTarget;
+					float firstTargetFraction = 1.f;
 
 					// The physics broadphase works in scaled, rounded coordinates, so a
 					// target touching the beam's edge can fall just outside it. Widen the
@@ -280,9 +274,7 @@ namespace ly
 					{
 						if (!context.ShouldContinue()) return;
 						const shared_ptr<Actor> target = targetWeak.lock();
-						if (!target ||
-							damagedTargets.find(target.get()) != damagedTargets.end() ||
-							!beam->IsValidDamageTarget(target.get()))
+						if (!target || !beam->IsValidDamageTarget(target.get()))
 						{
 							continue;
 						}
@@ -294,12 +286,48 @@ namespace ly
 							target->GetActorGlobalBounds(),
 							width * 0.5f,
 							targetHitFraction
-						) && (!blockedByStaticGeometry ||
-							targetHitFraction + 0.0001f < staticHit.fraction))
+						) && targetHitFraction + 0.0001f < blockingFraction)
 						{
-							damagedTargets.insert(target.get());
-							AddPendingBeamDamage(beamState, target, damage);
+							blockingFraction = targetHitFraction;
+							firstTarget = target;
+							firstTargetFraction = targetHitFraction;
 						}
+					}
+
+					float visibleFraction = blockingFraction;
+					if (firstTarget)
+					{
+						// The edge of the beam touches first; draw the core up to the
+						// target's bounds when the centre line reaches them.
+						float centreFraction = 0.f;
+						if (targeting::swept::SegmentIntersectsExpandedBounds(
+							start,
+							fullEnd,
+							firstTarget->GetActorGlobalBounds(),
+							0.f,
+							centreFraction
+						))
+						{
+							visibleFraction = std::max(firstTargetFraction, centreFraction);
+							if (blockedByStaticGeometry)
+							{
+								visibleFraction = std::min(visibleFraction, staticHit.fraction);
+							}
+						}
+					}
+					beam->UpdateBeam(
+						start,
+						directionRotation,
+						range * visibleFraction,
+						width,
+						heatRatio,
+						context.definition.presentationDefinition.pointLightDef.color
+					);
+
+					// Two muzzles converging on one target still deal one beam's damage.
+					if (firstTarget && damagedTargets.insert(firstTarget.get()).second)
+					{
+						AddPendingBeamDamage(beamState, firstTarget, damage);
 					}
 				};
 
