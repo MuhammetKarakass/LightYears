@@ -302,6 +302,34 @@ namespace ly
 		return payload;
 	}
 
+	namespace
+	{
+		// Electric and Cryo stacks stay while their source keeps hitting the
+		// target: any damage from that source, with or without new stacks,
+		// restarts the shared duration. When it runs out every stack clears at
+		// once (the effects carry no per-stack decay).
+		void RefreshSourceSustainedStatuses(
+			sas::AbilitySystemComponent& targetAbilitySystem,
+			const DamageContext& context
+		)
+		{
+			if (!context.source)
+			{
+				return;
+			}
+			for (const char* effectId : {
+				"Effect.Status.Damage.Electric",
+				DamageStatusEffectIds::CryoSlowedEffectId })
+			{
+				const sas::ActiveGameplayEffect* effect = targetAbilitySystem.FindGameplayEffectById(effectId);
+				if (effect && effect->GetSourceObject<Actor>() == context.source)
+				{
+					targetAbilitySystem.RefreshGameplayEffectDuration(effect->handle);
+				}
+			}
+		}
+	}
+
 	List<GameplayTag> DamageTypeSystem::ApplyStatusEffects(
 		sas::AbilitySystemComponent& targetAbilitySystem,
 		DamageContext& context
@@ -312,6 +340,7 @@ namespace ly
 		{
 			return applied;
 		}
+		RefreshSourceSustainedStatuses(targetAbilitySystem, context);
 
 		if (HasDamageType(context.damageTags, DamageTypeSchema::Thermal) &&
 			context.payload.igniteStacks > 0)

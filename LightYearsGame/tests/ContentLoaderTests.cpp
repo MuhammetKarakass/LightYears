@@ -443,7 +443,8 @@ namespace
 			ly::content::DamageStatusBalanceCatalog::Get();
 		if (!NearlyEqual(balance.energyShieldDamageMultiplier, 1.50f) ||
 			balance.cryo.maxStacks != 4 ||
-			!NearlyEqual(balance.cryo.duration, 5.f) ||
+			!NearlyEqual(balance.cryo.duration, 6.f) ||
+			!NearlyEqual(balance.electric.duration, 6.f) ||
 			!NearlyEqual(balance.cryo.values[3], 0.20f) ||
 			balance.electric.maxStacks != 4 ||
 			!NearlyEqual(balance.electric.values[0], 0.03f) ||

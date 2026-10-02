@@ -138,8 +138,8 @@ namespace EffectData
 		"Movement.Slow",
 		"Movement.Slow",
 		"",
-		sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration,
-		1.f
+		sas::GameplayEffectStackLifetimePolicy::None,
+		0.f
 	};
 
 	inline const sas::GameplayEffectDefinition ElectricEffect{
@@ -162,8 +162,8 @@ namespace EffectData
 		"Damage.Electric",
 		"",
 		"",
-		sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration,
-		1.f
+		sas::GameplayEffectStackLifetimePolicy::None,
+		0.f
 	};
 
 	inline const sas::GameplayEffectDefinition KineticEffect{

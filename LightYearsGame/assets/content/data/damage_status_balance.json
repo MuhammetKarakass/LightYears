@@ -3,12 +3,12 @@
   "energyShieldDamageMultiplier": 1.50,
   "statuses": {
     "Cryo": {
-      "duration": 5.0,
+      "duration": 6.0,
       "maxStacks": 4,
       "values": [0.04, 0.08, 0.12, 0.20]
     },
     "Electric": {
-      "duration": 4.0,
+      "duration": 6.0,
       "maxStacks": 4,
       "values": [0.03, 0.06, 0.09, 0.16]
     },

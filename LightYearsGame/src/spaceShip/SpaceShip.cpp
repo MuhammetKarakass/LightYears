@@ -321,7 +321,12 @@ namespace ly
 
 			mBlinkTime = mBlinkTime > 0 ? mBlinkTime : 0.f;
 			
-			GetSprite().value().setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime));
+			// Headless or sprite-less ships still take damage; they just have
+			// nothing to tint.
+			if (GetSprite().has_value())
+			{
+				GetSprite().value().setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime));
+			}
 		}
 	}
 

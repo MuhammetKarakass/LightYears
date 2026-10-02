@@ -6,6 +6,7 @@
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/WeaponContentCatalog.h"
@@ -14,6 +15,10 @@
 
 #include <algorithm>
 #include <cmath>
+#ifdef _WIN32
+#include <crtdbg.h>
+#include <cstdlib>
+#endif
 #include <filesystem>
 #include <functional>
 #include <iostream>
@@ -260,12 +265,58 @@ namespace ly
 			runtime = rig.Runtime();
 			Check(runtime && runtime->successfulFireCount == 4, "charges: the next normal shot after 0.5 s");
 		}
+
+		int ElectricStacks(SpaceShip& ship)
+		{
+			const sas::ActiveGameplayEffect* effect = ship.GetCombatRuntime().GetAbilitySystemComponent()
+				.FindGameplayEffectById("Effect.Status.Damage.Electric");
+			return effect ? effect->stackCount : 0;
+		}
+
+		void TestSourceSustainedStatusLifetime()
+		{
+			World world{ nullptr };
+			const shared_ptr<WeaponTestShip> source = world.SpawnActor<WeaponTestShip>().lock();
+			const shared_ptr<WeaponTestShip> stranger = world.SpawnActor<WeaponTestShip>().lock();
+			const shared_ptr<WeaponTestShip> target = world.SpawnActor<WeaponTestShip>().lock();
+			world.TickInternal(0.f);
+			if (!source || !stranger || !target)
+			{
+				Check(false, "lifetime: actors spawned");
+				return;
+			}
+			const List<GameplayTag> electric{ DamageTypeSchema::Electric };
+			DamagePayload stacking;
+			stacking.electricStacks = 2;
+			DamagePayload plain;
+			plain.electricStacks = 0;
+
+			ApplyCombatDamage(*target, 1.f, source.get(), electric, stacking);
+			Check(ElectricStacks(*target) == 2, "lifetime: two Electric stacks applied");
+			world.TickInternal(5.5f);
+			Check(ElectricStacks(*target) == 2, "lifetime: stacks do not decay one by one");
+			ApplyCombatDamage(*target, 1.f, source.get(), electric, plain);
+			world.TickInternal(5.5f);
+			Check(ElectricStacks(*target) == 2, "lifetime: a stackless hit from the source keeps them");
+			ApplyCombatDamage(*target, 1.f, stranger.get(), electric, plain);
+			world.TickInternal(1.f);
+			Check(ElectricStacks(*target) == 0, "lifetime: 6 s without source damage clears all stacks at once");
+		}
 	}
 }
 
 int main()
 {
 	using namespace ly;
+#ifdef _WIN32
+	// Report debug-CRT assertions on stderr instead of a dialog that would hang
+	// a headless test run until its timeout.
+	_set_error_mode(_OUT_TO_STDERR);
+	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+#endif
 	AssetManager::GetAssetManager().SetAssetRootDirectory(
 		(std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets").generic_string() + "/"
 	);
@@ -275,9 +326,21 @@ int main()
 		return 1;
 	}
 
-	TestEmpoweredOnHits();
-	TestStatusStacksOnlyWhenEmpowered();
-	TestAbilityCastCharges();
+	const auto run = [](const char* name, void (*test)())
+	{
+		try
+		{
+			test();
+		}
+		catch (const std::exception& exception)
+		{
+			Check(false, std::string{ name } + " threw: " + exception.what());
+		}
+	};
+	run("hits", &TestEmpoweredOnHits);
+	run("stacks", &TestStatusStacksOnlyWhenEmpowered);
+	run("charges", &TestAbilityCastCharges);
+	run("lifetime", &TestSourceSustainedStatusLifetime);
 
 	std::cout << (gFailures == 0 ? "[PASS] All weapon phase-2 checks passed\n" : "[FAIL] Weapon phase-2 checks failed\n");
 	return gFailures == 0 ? 0 : 1;

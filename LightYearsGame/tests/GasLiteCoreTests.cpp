@@ -2704,36 +2704,37 @@ int main(int argc, char** argv)
 			return Fail("Cryo did not resolve its first-to-fourth stack slow table");
 		}
 	}
-	cryoTarget.GetCombatRuntime().Tick(damageStatusBalance.cryo.duration);
+	// Cryo stacks are sustained by their source: they never decay one by one,
+	// and the whole stack set clears once the duration runs out unrefreshed.
+	cryoTarget.GetCombatRuntime().Tick(damageStatusBalance.cryo.duration - 0.5f);
 	sas::ActiveGameplayEffect* decayingCryo = cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoSlowedEffectId
 	);
-	if (!decayingCryo || decayingCryo->stackCount != 3 || !NearlyEqual(
+	if (!decayingCryo || decayingCryo->stackCount != damageStatusBalance.cryo.maxStacks || !NearlyEqual(
 		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
-		damageStatusBalance.CryoSlowPercent(3)
+		damageStatusBalance.CryoSlowPercent(damageStatusBalance.cryo.maxStacks)
 	))
 	{
-		return Fail("Cryo did not update its modifier while decaying");
+		return Fail("Cryo stacks decayed before their duration ran out");
 	}
 	cryoTarget.GetCombatRuntime().Tick(1.f);
-	cryoTarget.GetCombatRuntime().Tick(1.f);
-	if (!cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+	if (cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoSlowedEffectId
 	) || !NearlyEqual(
 		cryoTarget.GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MovementSlow),
-		damageStatusBalance.CryoSlowPercent(1)
+		0.f
 	))
 	{
-		return Fail("Cryo did not decay one stack per second");
+		return Fail("Cryo did not clear every stack together when its duration ran out");
 	}
 	ApplyCombatDamage(cryoTarget, 1.f, nullptr, { DamageTypeSchema::Cryo }, cryoStatusPayload);
 	decayingCryo = cryoTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::CryoSlowedEffectId
 	);
-	if (!decayingCryo || decayingCryo->stackCount != 2 ||
+	if (!decayingCryo || decayingCryo->stackCount != 1 ||
 		!NearlyEqual(decayingCryo->remainingDuration, damageStatusBalance.cryo.duration))
 	{
-		return Fail("Cryo reapply did not add and refresh during decay");
+		return Fail("Cryo reapply did not start a fresh stack with a full duration");
 	}
 	if (!NearlyEqual(damageStatusBalance.CryoSlowPercent(0), 0.f) ||
 		!NearlyEqual(damageStatusBalance.ElectricDamageTakenMultiplier(0), 0.f) ||
@@ -2780,22 +2781,31 @@ int main(int argc, char** argv)
 			return Fail("Electric did not resolve its canonical taken-damage multiplier");
 		}
 	}
-	electricTarget.GetCombatRuntime().Tick(damageStatusBalance.electric.duration);
+	// Like Cryo, Electric keeps all stacks until its duration runs out, then
+	// clears them together.
+	electricTarget.GetCombatRuntime().Tick(damageStatusBalance.electric.duration - 0.5f);
 	const sas::ActiveGameplayEffect* decayingElectric = electricTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::ElectricEffectId
 	);
-	if (!decayingElectric || decayingElectric->stackCount != 3)
+	if (!decayingElectric || decayingElectric->stackCount != damageStatusBalance.electric.maxStacks)
 	{
-		return Fail("Electric did not lose its first stack after four seconds");
+		return Fail("Electric stacks decayed before their duration ran out");
 	}
 	ApplyCombatDamage(electricTarget, 1.f, nullptr, { DamageTypeSchema::Electric }, electricStatusPayload);
 	decayingElectric = electricTarget.GetAbilitySystemComponent().FindGameplayEffectById(
 		DamageStatusEffectIds::ElectricEffectId
 	);
-	if (!decayingElectric || decayingElectric->stackCount != 4 ||
+	if (!decayingElectric || decayingElectric->stackCount != damageStatusBalance.electric.maxStacks ||
 		!NearlyEqual(decayingElectric->remainingDuration, damageStatusBalance.electric.duration))
 	{
-		return Fail("Electric reapply did not add and refresh during decay");
+		return Fail("Electric reapply at max stacks did not refresh the duration");
+	}
+	electricTarget.GetCombatRuntime().Tick(damageStatusBalance.electric.duration + 0.1f);
+	if (electricTarget.GetAbilitySystemComponent().FindGameplayEffectById(
+		DamageStatusEffectIds::ElectricEffectId
+	))
+	{
+		return Fail("Electric did not clear every stack together when its duration ran out");
 	}
 
 	TestCombatant genericStackTarget;
