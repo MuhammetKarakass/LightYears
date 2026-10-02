@@ -298,6 +298,44 @@ namespace ly
 			return contract;
 		}
 
+		PrimaryWeaponValidationResult ValidateConeBlast(const PrimaryWeaponDefinition& definition)
+		{
+			for (const sas::AttributeId& required : {
+				CommonAttributeIds::Damage,
+				CommonAttributeIds::Range,
+				PrimaryWeaponSchema::Cone::HalfAngleDegrees
+			})
+			{
+				const PrimaryWeaponValidationResult result = RequireAttribute(definition, required, "Cone blast weapon");
+				if (!result.isValid)
+				{
+					return result;
+				}
+			}
+			const float halfAngle = FindDefinitionAttribute(definition, PrimaryWeaponSchema::Cone::HalfAngleDegrees)->baseValue;
+			if (!std::isfinite(halfAngle) || halfAngle <= 0.f || halfAngle > 90.f)
+			{
+				return { false, "Cone blast half angle must be within (0, 90] degrees." };
+			}
+			if (FindDefinitionAttribute(definition, CommonAttributeIds::Range)->baseValue <= 0.f)
+			{
+				return { false, "Cone blast range must be positive." };
+			}
+			return { true, {} };
+		}
+
+		const PrimaryWeaponTypeValidationContract& ConeBlastContract()
+		{
+			static const PrimaryWeaponTypeValidationContract contract{
+				PrimaryWeaponType::ConeBlast,
+				{ PrimaryWeaponSchema::Cone::Root },
+				{},
+				true,
+				&ValidateConeBlast
+			};
+			return contract;
+		}
+
 		const PrimaryWeaponFeatureValidationContract& HeatContract()
 		{
 			static const PrimaryWeaponFeatureValidationContract contract{
@@ -319,6 +357,7 @@ namespace ly
 		case PrimaryWeaponType::ArcElectric: contract = &ElectricArcContract(); break;
 		case PrimaryWeaponType::BeamContinuous: contract = &ContinuousBeamContract(); break;
 		case PrimaryWeaponType::WaveExpanding: contract = &ExpandingWaveContract(); break;
+		case PrimaryWeaponType::ConeBlast: contract = &ConeBlastContract(); break;
 		default: return nullptr;
 		}
 		return contract->weaponType == weaponType ? contract : nullptr;

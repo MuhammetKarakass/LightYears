@@ -4623,7 +4623,7 @@ int main(int argc, char** argv)
 
 	const List<const PrimaryWeaponDefinition*> configuredWeapons{
 		&LoadedWeapon("Weapon.Projectile.FighterRapidLaser.Basic"),
-		&LoadedWeapon("Weapon.Projectile.RapidShotgun.Basic"),
+		&LoadedWeapon("Weapon.Cone.RapidShotgun.Basic"),
 		&LoadedWeapon("Weapon.Projectile.DualKineticBlaster.Basic"),
 		&LoadedWeapon("Weapon.Arc.ElectricLauncher.Basic"),
 		&LoadedWeapon("Weapon.Beam.ContinuousHeatLaser.Basic"),
@@ -4672,7 +4672,6 @@ int main(int argc, char** argv)
 		return weapon.damageTags.size() == 1 && weapon.damageTags.front() == damageType;
 	};
 	if (!hasSingleDamageType(basicLaser, DamageTypeSchema::Photonic) ||
-		!hasSingleDamageType(LoadedWeapon("Weapon.Projectile.RapidShotgun.Basic"), DamageTypeSchema::Thermal) ||
 		!hasSingleDamageType(LoadedWeapon("Weapon.Beam.ContinuousHeatLaser.Basic"), DamageTypeSchema::Energy) ||
 		!hasSingleDamageType(dualKineticBlaster, DamageTypeSchema::Kinetic) ||
 		!hasSingleDamageType(electricArcLauncher, DamageTypeSchema::Electric) ||
@@ -4737,7 +4736,7 @@ int main(int argc, char** argv)
 		PrimaryWeaponScalingSample beam;
 		PrimaryWeaponScalingSample cryo;
 		if (!ResolveFighterPrimaryWeaponScaling(basicLaser, level, rapid) ||
-			!ResolveFighterPrimaryWeaponScaling(LoadedWeapon("Weapon.Projectile.RapidShotgun.Basic"), level, shotgun) ||
+			!ResolveFighterPrimaryWeaponScaling(LoadedWeapon("Weapon.Cone.RapidShotgun.Basic"), level, shotgun) ||
 			!ResolveFighterPrimaryWeaponScaling(dualKineticBlaster, level, dual) ||
 			!ResolveFighterPrimaryWeaponScaling(electricArcLauncher, level, electric) ||
 			!ResolveFighterPrimaryWeaponScaling(continuousHeatLaser, level, beam) ||

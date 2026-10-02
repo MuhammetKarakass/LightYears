@@ -164,6 +164,7 @@ namespace ly::content
 		{
 			if (value == "PrimaryWeapon.Projectile.Standard") return PrimaryWeaponType::ProjectileStandard;
 			if (value == "PrimaryWeapon.Projectile.Shotgun") return PrimaryWeaponType::ProjectileShotgun;
+			if (value == "PrimaryWeapon.Cone.Blast") return PrimaryWeaponType::ConeBlast;
 			if (value == "PrimaryWeapon.Arc.Electric") return PrimaryWeaponType::ArcElectric;
 			if (value == "PrimaryWeapon.Beam.Continuous") return PrimaryWeaponType::BeamContinuous;
 			if (value == "PrimaryWeapon.Wave.Expanding") return PrimaryWeaponType::WaveExpanding;

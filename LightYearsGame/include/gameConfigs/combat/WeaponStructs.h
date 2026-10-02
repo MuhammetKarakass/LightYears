@@ -20,7 +20,8 @@ enum class PrimaryWeaponType
 	ProjectileShotgun,
 	ArcElectric,
 	BeamContinuous,
-	WaveExpanding
+	WaveExpanding,
+	ConeBlast
 };
 
 enum class PrimaryWeaponCadenceMode
@@ -151,6 +152,7 @@ inline const char* PrimaryWeaponTypeName(PrimaryWeaponType type)
 	case PrimaryWeaponType::ArcElectric: return "ArcElectric";
 	case PrimaryWeaponType::BeamContinuous: return "BeamContinuous";
 	case PrimaryWeaponType::WaveExpanding: return "WaveExpanding";
+	case PrimaryWeaponType::ConeBlast: return "ConeBlast";
 	}
 	return "Unknown";
 }
@@ -195,6 +197,7 @@ inline const char* PrimaryWeaponFamilyName(PrimaryWeaponType type)
 	case PrimaryWeaponType::ArcElectric: return "Arc";
 	case PrimaryWeaponType::BeamContinuous: return "Beam";
 	case PrimaryWeaponType::WaveExpanding: return "Wave";
+	case PrimaryWeaponType::ConeBlast: return "Cone";
 	}
 	return "";
 }
@@ -276,6 +279,13 @@ struct PrimaryWeaponSchema
 		struct Expanding
 		{
 		};
+	};
+
+	struct Cone
+	{
+		inline static const sas::AttributeId Root{ "PrimaryWeapon.Cone" };
+		// Half of the blast's opening angle around the muzzle direction.
+		inline static const sas::AttributeId HalfAngleDegrees{ "PrimaryWeapon.Cone.HalfAngleDegrees" };
 	};
 
 	struct Feature

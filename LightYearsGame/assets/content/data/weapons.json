@@ -92,8 +92,8 @@
       }
     },
     {
-      "id": "Weapon.Projectile.RapidShotgun.Basic",
-      "typeTag": "PrimaryWeapon.Projectile.Shotgun",
+      "id": "Weapon.Cone.RapidShotgun.Basic",
+      "typeTag": "PrimaryWeapon.Cone.Blast",
       "presentation": {
         "texturePath": "SpaceShooterRedux/PNG/Lasers/laserGreen11.png",
         "pointLight": {
@@ -111,18 +111,12 @@
         "visualScale": 1.0
       },
       "attributes": [
-        { "id": "Common.Damage", "baseValue": 10.0, "minValue": 0.0 },
-        { "id": "Common.FireRate", "baseValue": 2.5, "minValue": 0.01 },
-        { "id": "PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 3000.0, "minValue": 0.0 },
-        { "id": "PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
-        { "id": "Common.Range", "baseValue": 400.0, "minValue": 0.0 },
-        { "id": "Collision.Radius", "baseValue": 7.0, "minValue": 0.1 },
-        { "id": "Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
-        { "id": "PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 },
-        { "id": "PrimaryWeapon.Projectile.Shotgun.PelletCount", "baseValue": 3.0, "minValue": 1.0 },
-        { "id": "PrimaryWeapon.Projectile.Shotgun.SpreadAngle", "baseValue": 8.0, "minValue": 0.0 },
-        { "id": "PrimaryWeapon.Projectile.Shotgun.DamageReductionPerAdditionalHit", "baseValue": 0.1, "minValue": 0.0 },
-        { "id": "PrimaryWeapon.Projectile.Shotgun.MinimumDamageMultiplier", "baseValue": 0.5, "minValue": 0.01 },
+        { "id": "Common.Damage", "baseValue": 38.0, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 1.75, "minValue": 0.01 },
+        { "id": "Common.Range", "baseValue": 400.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Cone.HalfAngleDegrees", "baseValue": 22.5, "minValue": 1.0, "maxValue": 90.0 },
+        { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 0.0, "minValue": 0.0 },
+        { "id": "PrimaryWeapon.Empowered.EverySuccessfulShots", "baseValue": 3.0, "minValue": 1.0 },
         { "id": "Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 }
       ],
       "muzzles": [
@@ -130,7 +124,28 @@
       ],
       "automaticFire": true,
       "progression": {
-        "rules": []
+        "scrapCost": { "base": 40, "step": 10 },
+        "rules": [
+          {
+            "firstLevel": 2,
+            "levelInterval": 1,
+            "reward": {
+              "attributeModifiers": [
+                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 11.0 }
+              ],
+              "scalingRules": [
+                {
+                  "targetAttributeId": "Common.Damage",
+                  "sourceAttributeId": "Owner.AttackPower",
+                  "operation": "Add",
+                  "coefficient": 0.04
+                }
+              ],
+              "unlockedUpgradeIds": [],
+              "unlockedFeatureTags": []
+            }
+          }
+        ]
       },
       "attributeModifiers": [],
       "scalingRules": [
@@ -138,18 +153,34 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.75
+          "coefficient": 0.6
         },
         {
           "targetAttributeId": "Common.FireRate",
           "sourceAttributeId": "Owner.AttackSpeed",
           "operation": "Add",
           "coefficient": 0.5
+        },
+        {
+          "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+          "sourceAttributeId": "Owner.Energy.Power",
+          "operation": "Add",
+          "coefficient": 0.15
+        },
+        {
+          "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
+          "sourceAttributeId": "Owner.MaxHealth",
+          "operation": "Add",
+          "coefficient": 0.03
         }
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Thermal"]
+      "damageTags": ["Damage.Type.Photonic"],
+      "empoweredShot": {
+        "trigger": "EverySuccessfulShots",
+        "statusStacksOnlyWhenEmpowered": true
+      }
     },
     {
       "id": "Weapon.Projectile.DualKineticBlaster.Basic",

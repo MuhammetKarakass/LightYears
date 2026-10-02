@@ -117,7 +117,7 @@ Sonuç (hesaplanmış; "dayanıklılık" = HP × (1 + Armor/100) + kalkan; Armor
 | Gemi | `primaryWeaponId` (mevcut kayıt) | `texturePath` (yer tutucu) |
 |---|---|---|
 | Fighter | `Weapon.Projectile.FighterRapidLaser.Basic` | `SpaceShooterRedux/PNG/playerShip1_blue.png` (şablondan) |
-| Breacher | `Weapon.Projectile.RapidShotgun.Basic` | `SpaceShooterRedux/PNG/playerShip2_orange.png` |
+| Breacher | `Weapon.Cone.RapidShotgun.Basic` | `SpaceShooterRedux/PNG/playerShip2_orange.png` |
 | Interceptor | `Weapon.Projectile.DualKineticBlaster.Basic` | `SpaceShooterRedux/PNG/playerShip3_red.png` |
 | Conductor | `Weapon.Arc.ElectricLauncher.Basic` | `SpaceShooterRedux/PNG/playerShip3_blue.png` |
 | Aegis | `Weapon.Beam.ContinuousHeatLaser.Basic` | `SpaceShooterRedux/PNG/playerShip2_green.png` |

@@ -98,7 +98,7 @@
       "collisionDamage": 25.0,
       "score": 0,
       "shipXPReward": 0.0,
-      "primaryWeaponId": "Weapon.Projectile.RapidShotgun.Basic",
+      "primaryWeaponId": "Weapon.Cone.RapidShotgun.Basic",
       "schematic": {
         "legend": {
           "N": "Module.Zone.Nose", "W": "Module.Zone.Wings", "H": "Module.Zone.Hull",

@@ -404,6 +404,60 @@ namespace ly
 		}
 
 
+		bool HasIgnite(SpaceShip& ship)
+		{
+			return ship.GetCombatRuntime().GetAbilitySystemComponent()
+				.FindGameplayEffectById("Effect.Status.Damage.Ignite") != nullptr;
+		}
+
+		void TestConeShotgunLevelOne()
+		{
+			// Design (Breacher L1: AP 45, EP 34, HP 290): every target in the cone
+			// takes 38 + 45 * 0.60 = 65; every 3rd trigger adds 34 * 0.15 + 290 * 0.03.
+			WeaponRig rig;
+			Check(rig.Setup(CopyWeapon("Weapon.Cone.RapidShotgun.Basic"), 45.f, 34.f),
+				"cone: rig with the shipped Rapid Shotgun");
+			if (!rig.ship) return;
+			rig.Abilities().GetAttributes().SetBaseValue(OwnerAttributeIds::MaxHealth, 290.f);
+			rig.ship->SetCollisionLayer(CollisionLayer::Player);
+			const auto spawnTarget = [&](sf::Vector2f location)
+			{
+				const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
+				target->SetActorLocation(location);
+				target->SetCollisionLayer(CollisionLayer::Enemy);
+				target->SetCollisionMask(CollisionLayer::PlayerBullet);
+				return target;
+			};
+			// The ship faces up; the muzzle sits 50 units ahead.
+			const auto ahead = spawnTarget({ 0.f, -300.f });
+			const auto offAxis = spawnTarget({ 60.f, -250.f });
+			const auto tooFar = spawnTarget({ 0.f, -520.f });
+			const auto wide = spawnTarget({ 250.f, -200.f });
+			const auto behind = spawnTarget({ 0.f, 200.f });
+			rig.world.TickInternal(0.f);
+			const auto health = [](const shared_ptr<WeaponTestShip>& ship) { return ship->GetHealthComponent().GetHealth(); };
+
+			rig.Hold(true);
+			rig.world.TickInternal(0.f);
+			Check(NearlyEqual(250.f - health(ahead), 65.f) && NearlyEqual(250.f - health(offAxis), 65.f),
+				"cone: both targets inside the cone take 65 each");
+			Check(NearlyEqual(health(tooFar), 250.f) && NearlyEqual(health(wide), 250.f) && NearlyEqual(health(behind), 250.f),
+				"cone: targets beyond range, outside the angle or behind take nothing");
+			Check(!HasIgnite(*ahead), "cone: a normal blast does not ignite");
+
+			const float interval = 1.f / 1.75f + 0.0001f;
+			rig.world.TickInternal(interval);
+			Check(!HasIgnite(*ahead), "cone: the second blast does not ignite");
+			// Stop just before the third blast, then step onto it so the Ignite it
+			// applies has no time left in the frame to tick.
+			rig.world.TickInternal(interval - 0.01f);
+			const float beforeThird = health(offAxis);
+			rig.world.TickInternal(0.0101f);
+			Check(NearlyEqual(beforeThird - health(offAxis), 78.8f, 0.05f),
+				"cone: the third blast is empowered for 78.8");
+			Check(HasIgnite(*ahead) && HasIgnite(*offAxis), "cone: the empowered blast ignites every target it hits");
+		}
+
 		void TestSourceSustainedStatusLifetime()
 		{
 			World world{ nullptr };
@@ -475,6 +529,7 @@ int main()
 	run("laser", &TestRapidLaserLevelOne);
 	run("dual", &TestDualKineticLevelOne);
 	run("electric", &TestElectricLauncherLevelOne);
+	run("cone", &TestConeShotgunLevelOne);
 
 	std::cout << (gFailures == 0 ? "[PASS] All weapon phase-2 checks passed\n" : "[FAIL] Weapon phase-2 checks failed\n");
 	return gFailures == 0 ? 0 : 1;

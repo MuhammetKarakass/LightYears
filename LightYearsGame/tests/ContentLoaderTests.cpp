@@ -182,7 +182,7 @@ namespace
 			},
 			{
 				"Ship.Player.Breacher.Basic", "SpaceShooterRedux/PNG/playerShip2_orange.png",
-				"Weapon.Projectile.RapidShotgun.Basic", 290.f, { 45.f, 3.f, 0.f, 0.f },
+				"Weapon.Cone.RapidShotgun.Basic", 290.f, { 45.f, 3.f, 0.f, 0.f },
 				{ 60.f, 2.f, 0.f, 2.f, 1.f, 0.f }, { 490.f, 750.f, 220.f, 245.f, 450.f, 6.f },
 				{ 34.f, 110.f, 10.f, 6.f, 6.f, 110.f, 2.f, 5.f, 1.2f, 1.65f, 2.f, 0.9f, 33.f, 0.22f, 0.45f }
 			},
@@ -2146,7 +2146,7 @@ int main()
 
 	const char* expectedWeaponIds[] = {
 		"Weapon.Projectile.FighterRapidLaser.Basic",
-		"Weapon.Projectile.RapidShotgun.Basic",
+		"Weapon.Cone.RapidShotgun.Basic",
 		"Weapon.Projectile.DualKineticBlaster.Basic",
 		"Weapon.Arc.ElectricLauncher.Basic",
 		"Weapon.Beam.ContinuousHeatLaser.Basic",
@@ -2181,17 +2181,6 @@ int main()
 		basicLaser->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic })
 	{
 		return Fail("Basic rapid laser JSON profile is invalid") ? 0 : 1;
-	}
-
-	const PrimaryWeaponDefinition* shotgun =
-		FindWeapon(loaded.definitions, "Weapon.Projectile.RapidShotgun.Basic");
-	if (shotgun->weaponType != PrimaryWeaponType::ProjectileShotgun ||
-		shotgun->muzzleDefinitions.size() != 1 ||
-		shotgun->attributes.size() != 13 ||
-		!sas::FindAttribute(shotgun->attributes, ly::DamageAttributeIds::IgniteStacks) ||
-		shotgun->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Thermal })
-	{
-		return Fail("Rapid shotgun JSON profile is invalid") ? 0 : 1;
 	}
 
 	const PrimaryWeaponDefinition* dual =

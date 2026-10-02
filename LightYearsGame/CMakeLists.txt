@@ -363,6 +363,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ShotgunWeaponHandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ConeBlastWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ElectricArcWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
@@ -380,6 +381,7 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ContinuousBeamVisualActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/visuals/ElectricArcVisualActor.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ConeBlastVisualActor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/CombatRuntime.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/CombatRuntimeModifiers.h
@@ -1304,6 +1306,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ShotgunWeaponHandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ConeBlastWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ElectricArcWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
@@ -1314,6 +1317,7 @@ if(BUILD_TESTING)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/impact/ShotgunVolleyImpactGroup.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ContinuousBeamVisualActor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ConeBlastVisualActor.cpp
 	)
 
 	# Shared gameplay sources compiled once; every GAS-lite style test links these objects

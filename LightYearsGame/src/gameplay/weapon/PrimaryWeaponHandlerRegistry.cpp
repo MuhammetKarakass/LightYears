@@ -51,6 +51,7 @@ namespace ly
 			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateElectricArcWeaponHandler());
 			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateContinuousBeamWeaponHandler());
 			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateExpandingWaveWeaponHandler());
+			registered &= registerHandler(PrimaryWeaponBuiltIns::CreateConeBlastWeaponHandler());
 			registered &= registerFeature(PrimaryWeaponBuiltIns::CreateHeatFeatureHandler());
 			if (!registered)
 			{

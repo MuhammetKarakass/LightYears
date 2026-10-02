@@ -1379,7 +1379,7 @@ eklenmelidir. feature tag’leri (örneğin Heat) type’dan bağımsız ek
 | Silah | Type / tür | Temel değerler | Owner scaling |
 | --- | --- | --- | --- |
 | Weapon.Projectile.FighterRapidLaser.Basic | Standard / Photonic | Damage 12, FireRate 4, speed 1100, range 1600, radius 7, 1 muzzle, Mag 48, Reload 2.0s; every 6th and final 6 rounds empowered | Normal damage +0.40 AttackPower; empowered +2 base +0.10 EnergyPower, guaranteed 1.5x crit and final damage ceil; Cadence: OwnerAttackSpeedPercentage (FireRate × (1 + max(0, AS)/100)); Reload = 2.0s / (1 + max(0, AS)/100) |
-| Weapon.Projectile.RapidShotgun.Basic | Shotgun / Thermal | Damage 10, FireRate 2.5, speed 3000, range 400, 3 pellet, spread 8°, floor x0.5 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
+| Weapon.Cone.RapidShotgun.Basic | Shotgun / Thermal | Damage 10, FireRate 2.5, speed 3000, range 400, 3 pellet, spread 8°, floor x0.5 | Damage +0.75 AttackPower; FireRate +0.5 AttackSpeed |
 | Weapon.Projectile.DualKineticBlaster.Basic | Standard / Kinetic | Damage 3.5, FireRate 12, speed 3400, range 650, radius 6, 2 muzzle | Damage +0.45 AttackPower; FireRate +0.12 AttackSpeed (Interceptor için Faz 1 geçici K4 değeri) |
 | Weapon.Arc.ElectricLauncher.Basic | Arc / Electric | Damage 15, FireRate 2.8, range 850, 3 normal chain, chain range 250, x0.72 / chain | Damage +0.85 AttackPower; FireRate +0.60 AttackSpeed; no direct Luck damage |
 | Weapon.Beam.ContinuousHeatLaser.Basic | Continuous beam / Energy | Damage 28 DPS, range 950, width 26, heat 38/sn, cap 100, cool 25/sn, overheat 2.5 sn, max heat x1.75 | Damage +0.75 AttackPower ve +0.50 EnergyPower; AttackSpeed only affects high-heat gain |
