@@ -6,6 +6,7 @@
 #include "enemy/DummyEnemy.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/content/EnemyFactory.h"
 #include "gameplay/damage/DamageContext.h"
@@ -176,6 +177,8 @@ namespace ly
 		}
 		ShipDefinition oldDummyDefinition = *dummySource;
 		oldDummyDefinition.health = 9000.f;
+		// Armor makes Kinetic armor shred visible on the training targets.
+		oldDummyDefinition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, 20.f });
 		oldDummyDefinition.speed = { 0.f, 0.f };
 		oldDummyDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
 
