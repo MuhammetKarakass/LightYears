@@ -1,0 +1,23 @@
+{
+	"name": "ember_violet",
+	"ramps": {
+		"space":   ["#0a0318", "#14072e", "#240c4a", "#381668"],
+		"violet":  ["#14083f", "#3c1a7e", "#7c3cba", "#c274ea", "#f4ceff"],
+		"magenta": ["#3a0830", "#861a62", "#d03c9a", "#ff86c8", "#ffe0f2"],
+		"mint":    ["#06274a", "#0c6a8c", "#16b49a", "#7aecb4", "#eaffe8"],
+		"amber":   ["#44081c", "#a02218", "#e8621a", "#ffae34", "#ffeeb0"],
+		"crimson": ["#2a0414", "#78102c", "#cc2848", "#ff6a5e", "#ffd2c2"],
+		"hull":    ["#1a1040", "#38307a", "#7a70b8", "#bcb4e4", "#f4f0ff"],
+		"ember":   ["#2c0a2c", "#7a1c3c", "#c8402c", "#f08a30", "#ffe8a0"]
+	},
+	"roles": {
+		"background": "space",
+		"ambient": "violet",
+		"ambient2": "magenta",
+		"combatWarm": "amber",
+		"player": "mint",
+		"enemy": "crimson",
+		"hull": "hull",
+		"planet": "ember"
+	}
+}

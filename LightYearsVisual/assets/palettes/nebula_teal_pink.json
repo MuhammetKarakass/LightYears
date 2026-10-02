@@ -1,0 +1,23 @@
+{
+	"name": "nebula_teal_pink",
+	"ramps": {
+		"space":   ["#03041a", "#070b2e", "#101a4a", "#1d2f6b"],
+		"teal":    ["#0a1a52", "#0d4a7c", "#14868f", "#52cbb2", "#caffee"],
+		"pink":    ["#40092f", "#8f1d58", "#d93f84", "#ff93b8", "#ffe3ec"],
+		"cyan":    ["#052a54", "#0a62a8", "#1aa9dc", "#72e8f2", "#ecffff"],
+		"amber":   ["#4d0a1d", "#a82a1c", "#ec6e1a", "#ffb83c", "#fff1b8"],
+		"crimson": ["#2c0616", "#7e1032", "#d62a4a", "#ff6c62", "#ffd5c6"],
+		"hull":    ["#141a42", "#2c4082", "#5f84bd", "#aac8e4", "#ecf7ff"],
+		"planet":  ["#0b1250", "#1a3d86", "#2a86a0", "#78d4b4", "#f0ffd8"]
+	},
+	"roles": {
+		"background": "space",
+		"ambient": "teal",
+		"ambient2": "pink",
+		"combatWarm": "amber",
+		"player": "cyan",
+		"enemy": "crimson",
+		"hull": "hull",
+		"planet": "planet"
+	}
+}

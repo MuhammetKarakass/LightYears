@@ -50,6 +50,7 @@ set(SPACE_ABILITY_SYSTEM_TARGET_NAME SpaceAbilitySystem)
 set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
 add_subdirectory(LightYearsEngine)
+add_subdirectory(LightYearsVisual)
 add_subdirectory(SpaceAbilitySystem)
 add_subdirectory(LightYearsGame)
 
