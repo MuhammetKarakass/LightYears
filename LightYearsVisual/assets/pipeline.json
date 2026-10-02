@@ -1,14 +1,14 @@
 {
 	"world": {
-		"virtualHeight": 240,
+		"virtualHeight": 360,
 		"dither": true,
 		"ditherSpread": 0.1
 	},
 	"bloom": {
 		"enabled": true,
-		"threshold": 0.55,
-		"strength": 0.9,
-		"levels": 3
+		"threshold": 0.2,
+		"strength": 0.5,
+		"levels": 5
 	},
 	"vignette": {
 		"strength": 0.4,
