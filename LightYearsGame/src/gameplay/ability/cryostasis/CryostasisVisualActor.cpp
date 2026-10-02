@@ -70,7 +70,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void CryostasisVisualActor::Render(sf::RenderWindow& window)
+	void CryostasisVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

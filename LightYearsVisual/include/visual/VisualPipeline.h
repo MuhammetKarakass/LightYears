@@ -88,6 +88,7 @@ namespace ly::visual
 		};
 
 		bool EnsureTargets();
+		void ResetWorldView();
 		float TierScale(LuminanceTier tier, float peak);
 		void FlushEnergy();
 		void DrawBloom(sf::RenderTarget& target);

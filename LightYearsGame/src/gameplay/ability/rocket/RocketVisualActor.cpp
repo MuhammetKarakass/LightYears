@@ -76,7 +76,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void RocketVisualActor::Render(sf::RenderWindow& window)
+	void RocketVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() ||
 			(mPhase == Phase::Flight && !mFlightVisible))
@@ -151,7 +151,7 @@ namespace ly
 		}
 	}
 
-	void RocketVisualActor::DrawFlight(sf::RenderWindow& window)
+	void RocketVisualActor::DrawFlight(sf::RenderTarget& window)
 	{
 		const float pulse = 0.78f
 			+ 0.22f * std::sin(mPhaseAge * std::max(0.f, mDefinition.pulseSpeed));
@@ -172,7 +172,7 @@ namespace ly
 		window.draw(mFlightGlow, additiveStates);
 	}
 
-	void RocketVisualActor::DrawImpact(sf::RenderWindow& window)
+	void RocketVisualActor::DrawImpact(sf::RenderTarget& window)
 	{
 		const float duration = std::max(0.001f, mDefinition.impactVisualDuration);
 		const float progress = Saturate(mPhaseAge / duration);

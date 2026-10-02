@@ -494,7 +494,7 @@ namespace ly
 		AbilityWorldActor::Destroy();
 	}
 
-	void TemporalConvergenceFieldActor::Render(sf::RenderWindow& window)
+	void TemporalConvergenceFieldActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

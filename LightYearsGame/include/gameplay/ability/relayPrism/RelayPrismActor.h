@@ -35,7 +35,7 @@ namespace ly
 		void BeginPortalTransit() override;
 		void RebasePortalDestination(const sf::Vector2f& exitLocation) override;
 		void Destroy() override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		bool IsProjectileActor() const override { return true; }
 
 		void ConfigureFromAttributes(

@@ -252,7 +252,7 @@ namespace ly
 		mEndpointRing.setScale({ scale, scale });
 	}
 
-	void DirectionalChargeTelegraphActor::Render(sf::RenderWindow& window)
+	void DirectionalChargeTelegraphActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

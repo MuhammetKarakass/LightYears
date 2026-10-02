@@ -165,7 +165,7 @@ namespace ly
 		return true;
 	}
 
-	void ClosedCircuitFieldActor::Render(sf::RenderWindow& window)
+	void ClosedCircuitFieldActor::Render(sf::RenderTarget& window)
 	{
 		if (mPhase == Phase::Delivery)
 		{

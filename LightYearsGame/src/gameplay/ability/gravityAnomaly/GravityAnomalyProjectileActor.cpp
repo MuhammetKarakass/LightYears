@@ -473,7 +473,7 @@ namespace ly
 		mTrail.setPoint(3, { -visual.trailWidth * 0.20f, visual.trailLength });
 	}
 
-	void GravityAnomalyProjectileActor::Render(sf::RenderWindow& window)
+	void GravityAnomalyProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

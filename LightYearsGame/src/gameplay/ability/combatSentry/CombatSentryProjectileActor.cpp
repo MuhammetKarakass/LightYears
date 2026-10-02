@@ -227,7 +227,7 @@ namespace ly
 		return ApplyBallisticReflection(request, mSpeed, trajectory);
 	}
 
-	void CombatSentryProjectileActor::Render(sf::RenderWindow& window)
+	void CombatSentryProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

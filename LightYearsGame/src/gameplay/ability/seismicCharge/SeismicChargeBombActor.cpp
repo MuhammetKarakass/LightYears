@@ -337,7 +337,7 @@ namespace ly
 		shape.setOrigin({ safeRadius, safeRadius });
 	}
 
-	void SeismicChargeBombActor::Render(sf::RenderWindow& window)
+	void SeismicChargeBombActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

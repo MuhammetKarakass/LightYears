@@ -120,7 +120,7 @@ namespace ly
 		}
 	}
 
-	void ExpandingWaveWeaponActor::Render(sf::RenderWindow& window)
+	void ExpandingWaveWeaponActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

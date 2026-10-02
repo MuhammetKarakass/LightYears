@@ -19,7 +19,7 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
@@ -58,12 +58,12 @@ namespace ly
 		bool TryProcessCollision(const SweepHit& hit);
 		void BeginDissipation();
 		void DrawCrescent(
-			sf::RenderWindow& window,
+			sf::RenderTarget& window,
 			float opacity = 1.f,
 			float scale = 1.f
 		) const;
-		void DrawDissipation(sf::RenderWindow& window) const;
-		void DrawImpacts(sf::RenderWindow& window) const;
+		void DrawDissipation(sf::RenderTarget& window) const;
+		void DrawImpacts(sf::RenderTarget& window) const;
 
 		CrescentReaverPresentationProfile mPresentationProfile;
 		float mProjectileSpeed = 0.f;

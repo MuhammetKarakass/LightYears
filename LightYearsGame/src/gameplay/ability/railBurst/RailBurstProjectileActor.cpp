@@ -432,7 +432,7 @@ namespace ly
 		return true;
 	}
 
-	void RailBurstProjectileActor::Render(sf::RenderWindow& window)
+	void RailBurstProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{
@@ -443,7 +443,7 @@ namespace ly
 		DrawImpacts(window);
 	}
 
-	void RailBurstProjectileActor::DrawFlight(sf::RenderWindow& window) const
+	void RailBurstProjectileActor::DrawFlight(sf::RenderTarget& window) const
 	{
 		const RailBurstVisualDefinition& visual = mPresentationProfile.visual;
 		const sf::Vector2f location = GetActorLocation();
@@ -569,7 +569,7 @@ namespace ly
 		window.draw(glow, additiveStates);
 	}
 
-	void RailBurstProjectileActor::DrawImpacts(sf::RenderWindow& window) const
+	void RailBurstProjectileActor::DrawImpacts(sf::RenderTarget& window) const
 	{
 		const RailBurstVisualDefinition& visual = mPresentationProfile.visual;
 		const float duration = std::max(0.001f, visual.impactDuration);

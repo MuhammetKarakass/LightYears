@@ -22,7 +22,7 @@ namespace ly
 		);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
 		) override;
@@ -45,9 +45,9 @@ namespace ly
 
 		void RebuildImpactLocations();
 		void DetonateImpact(int index);
-		void RenderTelegraph(sf::RenderWindow& window, float pulse);
-		void RenderExplosions(sf::RenderWindow& window) const;
-		void RenderStrikeCraft(sf::RenderWindow& window);
+		void RenderTelegraph(sf::RenderTarget& window, float pulse);
+		void RenderExplosions(sf::RenderTarget& window) const;
+		void RenderStrikeCraft(sf::RenderTarget& window);
 
 		StrikeRunPresentationProfile mPresentationProfile;
 		std::array<sf::Vector2f, 5> mImpactLocations{};

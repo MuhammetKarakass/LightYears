@@ -609,7 +609,7 @@ namespace ly
 		}
 	}
 
-	void CrescentReaverProjectileActor::Render(sf::RenderWindow& window)
+	void CrescentReaverProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{
@@ -627,7 +627,7 @@ namespace ly
 	}
 
 	void CrescentReaverProjectileActor::DrawCrescent(
-		sf::RenderWindow& window,
+		sf::RenderTarget& window,
 		float opacity,
 		float scale
 	) const
@@ -700,7 +700,7 @@ namespace ly
 		window.draw(blade, additiveStates);
 	}
 
-	void CrescentReaverProjectileActor::DrawDissipation(sf::RenderWindow& window) const
+	void CrescentReaverProjectileActor::DrawDissipation(sf::RenderTarget& window) const
 	{
 		const CrescentReaverVisualDefinition& visual = mPresentationProfile.visual;
 		const float duration = std::max(0.001f, visual.dissipationDuration);
@@ -735,7 +735,7 @@ namespace ly
 		window.draw(flash, additiveStates);
 	}
 
-	void CrescentReaverProjectileActor::DrawImpacts(sf::RenderWindow& window) const
+	void CrescentReaverProjectileActor::DrawImpacts(sf::RenderTarget& window) const
 	{
 		const CrescentReaverVisualDefinition& visual = mPresentationProfile.visual;
 		const float duration = std::max(0.001f, visual.impactDuration);

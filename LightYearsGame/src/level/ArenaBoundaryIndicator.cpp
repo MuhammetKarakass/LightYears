@@ -10,7 +10,7 @@ namespace ly
 	{
 	}
 
-	void ArenaBoundaryIndicator::Render(sf::RenderWindow& window)
+	void ArenaBoundaryIndicator::Render(sf::RenderTarget& window)
 	{
 		if(GetIsPendingDestroy() || !mArenaDefinition.boundaryVisual.enabled)
 			return;
@@ -27,7 +27,7 @@ namespace ly
 	{
 		mWarningActive = active;
 	}
-	void ArenaBoundaryIndicator::RenderDebugRectangle(sf::RenderWindow& window)
+	void ArenaBoundaryIndicator::RenderDebugRectangle(sf::RenderTarget& window)
 	{
 		const ArenaBoundaryVisualDefinition& visualDef = mArenaDefinition.boundaryVisual;
 

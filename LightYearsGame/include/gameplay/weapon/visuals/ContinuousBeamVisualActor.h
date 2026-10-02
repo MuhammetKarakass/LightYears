@@ -11,7 +11,7 @@ namespace ly
 		ContinuousBeamVisualActor(World* world, Actor* owner);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 
 		void UpdateBeam(
 			const sf::Vector2f& start,

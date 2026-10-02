@@ -16,7 +16,7 @@ namespace ly
 			const GravityAnomalyEffectVisualDefinition& definition
 		);
 
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void SynchronizeState(const GameplayEffectVisualStateView& state) override;
 
 	protected:

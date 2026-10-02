@@ -674,7 +674,7 @@ namespace ly
 		return clone;
 	}
 
-	void AegisReaverProjectileActor::Render(sf::RenderWindow& window)
+	void AegisReaverProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

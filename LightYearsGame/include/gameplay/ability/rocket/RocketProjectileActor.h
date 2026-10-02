@@ -26,7 +26,7 @@ namespace ly
 		void Tick(float deltaTime) override;
 		bool IsProjectileActor() const override { return true; }
 		bool CanBeReflected() const override { return true; }
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void Destroy() override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;

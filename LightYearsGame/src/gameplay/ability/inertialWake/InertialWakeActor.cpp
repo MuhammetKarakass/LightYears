@@ -454,7 +454,7 @@ namespace ly
 		}
 	}
 
-	void InertialWakeActor::Render(sf::RenderWindow& window)
+	void InertialWakeActor::Render(sf::RenderTarget& window)
 	{
 		if (!IsRenderEnabled() || mCurrentLength <= 0.f || mCurrentWidth <= 0.f)
 		{

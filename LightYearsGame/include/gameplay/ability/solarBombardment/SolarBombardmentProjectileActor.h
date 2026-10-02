@@ -23,7 +23,7 @@ namespace ly
 		);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
 		) override;
@@ -40,8 +40,8 @@ namespace ly
 		void Detonate();
 		void ApplyExplosionDamage();
 		void ConfigureVisualGeometry();
-		void DrawProjectile(sf::RenderWindow& window);
-		void DrawExplosion(sf::RenderWindow& window);
+		void DrawProjectile(sf::RenderTarget& window);
+		void DrawExplosion(sf::RenderTarget& window);
 
 		SolarBombardmentPresentationProfile mPresentationProfile;
 		std::optional<sf::Vector2f> mRequestedTargetLocation;

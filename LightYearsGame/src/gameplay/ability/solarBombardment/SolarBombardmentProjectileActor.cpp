@@ -519,7 +519,7 @@ namespace ly
 		ConfigureCircle(mExplosionShockwave, 1.f);
 	}
 
-	void SolarBombardmentProjectileActor::DrawProjectile(sf::RenderWindow& window)
+	void SolarBombardmentProjectileActor::DrawProjectile(sf::RenderTarget& window)
 	{
 		const float pulse = 0.88f + 0.12f * std::sin(
 			mVisualAge * mPresentationProfile.projectile.pulseSpeed
@@ -558,7 +558,7 @@ namespace ly
 		window.draw(mProjectileCore);
 	}
 
-	void SolarBombardmentProjectileActor::DrawExplosion(sf::RenderWindow& window)
+	void SolarBombardmentProjectileActor::DrawExplosion(sf::RenderTarget& window)
 	{
 		const float duration = std::max(
 			0.01f,
@@ -609,7 +609,7 @@ namespace ly
 		window.draw(mExplosionShockwave);
 	}
 
-	void SolarBombardmentProjectileActor::Render(sf::RenderWindow& window)
+	void SolarBombardmentProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

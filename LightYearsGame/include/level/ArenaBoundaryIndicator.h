@@ -11,12 +11,12 @@ namespace ly
 	public:
 		ArenaBoundaryIndicator(World* owningWorld, const ArenaDefinition& arenaDefinition);
 
-		virtual void Render(sf::RenderWindow& window) override;
+		virtual void Render(sf::RenderTarget& window) override;
 
 		void SetWarningActive(bool active);
 
 	private:
-		void RenderDebugRectangle(sf::RenderWindow& window);
+		void RenderDebugRectangle(sf::RenderTarget& window);
 
 		ArenaDefinition mArenaDefinition;
 		bool mWarningActive;

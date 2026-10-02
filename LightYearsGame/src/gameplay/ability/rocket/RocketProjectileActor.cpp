@@ -238,7 +238,7 @@ namespace ly
 		AbilityWorldActor::Tick(deltaTime);
 	}
 
-	void RocketProjectileActor::Render(sf::RenderWindow& window)
+	void RocketProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (!mHasExploded && !IsInPortalTransit())
 		{

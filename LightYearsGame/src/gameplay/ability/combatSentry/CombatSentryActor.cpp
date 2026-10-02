@@ -263,7 +263,7 @@ namespace ly
 			1.5f * (std::max(0.f, GetOwnerCombatAttribute(OwnerAttributeIds::AttackSpeed)) / 100.f);
 	}
 
-	void CombatSentryActor::Render(sf::RenderWindow& window)
+	void CombatSentryActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

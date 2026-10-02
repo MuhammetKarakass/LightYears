@@ -1,6 +1,7 @@
 #include "framework/World.h"
 #include "framework/Actor.h"
 #include "framework/Application.h"
+#include "framework/WorldRenderPipeline.h"
 #include "gameplay/GameStage.h"
 #include "widget/HUD.h"
 #include "framework/PerfMonitor.h"
@@ -482,7 +483,19 @@ namespace ly{
 		LY_PROFILE_FUNCTION();
 		sf::View previousView = window.getView();
 		sf::View worldView = GetWorldView();
-		window.setView(worldView);
+		WorldRenderPipeline* pipeline = mOwningApp ? mOwningApp->GetWorldRenderPipeline() : nullptr;
+		if (pipeline && !pipeline->IsActive())
+		{
+			pipeline = nullptr;
+		}
+		if (pipeline)
+		{
+			pipeline->BeginFrame(*this, worldView);
+		}
+		else
+		{
+			window.setView(worldView);
+		}
 		const sf::Vector2f viewSize = worldView.getSize();
 		const sf::Vector2f viewCenter = worldView.getCenter();
 		const sf::FloatRect viewBounds{
@@ -529,15 +542,25 @@ namespace ly{
 
 		{
 			LY_PROFILE_SCOPE("World.RenderDraw");
-		for (const List<Actor*>& bucket : mRenderBuckets)
+		for (std::size_t layerIndex = 0; layerIndex < mRenderBuckets.size(); ++layerIndex)
 		{
-			for (Actor* actor : bucket)
+			const RenderLayer layer = static_cast<RenderLayer>(layerIndex);
+			if (pipeline && pipeline->ReplacesLayer(layer))
 			{
-				actor->Render(window);
+				continue;
+			}
+			sf::RenderTarget& target = pipeline ? pipeline->GetTarget(layer) : static_cast<sf::RenderTarget&>(window);
+			for (Actor* actor : mRenderBuckets[layerIndex])
+			{
+				actor->Render(target);
 			}
 		}
 		}
 
+		if (pipeline)
+		{
+			pipeline->Compose(window);
+		}
 		window.setView(window.getDefaultView());
 		{
 			LY_PROFILE_SCOPE("World.RenderHUD");

@@ -21,7 +21,7 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
 		) override;
@@ -45,8 +45,8 @@ namespace ly
 		void MoveTowardDeploymentTarget(float deltaTime);
 		void Trigger();
 		void ApplyControl(Actor& target);
-		void DrawIdle(sf::RenderWindow& window) const;
-		void DrawExplosion(sf::RenderWindow& window) const;
+		void DrawIdle(sf::RenderTarget& window) const;
+		void DrawExplosion(sf::RenderTarget& window) const;
 
 		MineLayerPresentationProfile mPresentationProfile;
 		float mTriggerRadius = 0.f;

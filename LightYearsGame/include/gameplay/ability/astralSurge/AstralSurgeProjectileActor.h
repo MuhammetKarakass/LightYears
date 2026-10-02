@@ -18,7 +18,7 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
@@ -50,8 +50,8 @@ namespace ly
 		);
 		bool TryHitTarget(Actor* otherActor);
 		void ApplyPiercingHit(Actor& target);
-		void DrawFlight(sf::RenderWindow& window) const;
-		void DrawImpacts(sf::RenderWindow& window) const;
+		void DrawFlight(sf::RenderTarget& window) const;
+		void DrawImpacts(sf::RenderTarget& window) const;
 		bool IsOutsideTechnicalBounds() const;
 
 		AstralSurgePresentationProfile mPresentationProfile;

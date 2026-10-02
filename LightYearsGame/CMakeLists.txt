@@ -112,6 +112,13 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/include/gameFramework/GameApplication.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/GameVisualPipeline.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/GameVisualPipeline.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/ProceduralBackdrop.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/ProceduralBackdrop.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/EnergyLightPresenter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/EnergyLightPresenter.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/include/spaceship/Spaceship.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/spaceship/Spaceship.cpp
 
@@ -975,7 +982,13 @@ target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME}
 		${LIGHT_YEARS_ENGINE_TARGET_NAME}
 		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		LightYearsVisual
 		nlohmann_json::nlohmann_json
+)
+
+# First integration pass: the game reads the visual assets from the source tree so edits hot-reload (F9 forces it).
+target_compile_definitions(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE
+	LY_VISUAL_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets"
 )
 
 if(BUILD_TESTING)

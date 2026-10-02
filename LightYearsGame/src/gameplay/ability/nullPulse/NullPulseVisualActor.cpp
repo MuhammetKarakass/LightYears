@@ -62,7 +62,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void NullPulseVisualActor::Render(sf::RenderWindow& window)
+	void NullPulseVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

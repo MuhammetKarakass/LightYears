@@ -305,7 +305,7 @@ namespace ly
 		}
 	}
 
-	void FrozenThrongHuskActor::Render(sf::RenderWindow& window)
+	void FrozenThrongHuskActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

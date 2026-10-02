@@ -458,7 +458,7 @@ namespace ly
 		}
 	}
 
-	void CryoBolaProjectileActor::Render(sf::RenderWindow& window)
+	void CryoBolaProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{
@@ -474,7 +474,7 @@ namespace ly
 		}
 	}
 
-	void CryoBolaProjectileActor::DrawProjectile(sf::RenderWindow& window) const
+	void CryoBolaProjectileActor::DrawProjectile(sf::RenderTarget& window) const
 	{
 		const CryoBolaVisualDefinition& visual = mPresentationProfile.visual;
 		const sf::Vector2f location = GetActorLocation();
@@ -510,7 +510,7 @@ namespace ly
 		}
 	}
 
-	void CryoBolaProjectileActor::DrawRupture(sf::RenderWindow& window) const
+	void CryoBolaProjectileActor::DrawRupture(sf::RenderTarget& window) const
 	{
 		const CryoBolaVisualDefinition& visual = mPresentationProfile.visual;
 		const float duration = std::max(0.01f, visual.ruptureDuration);

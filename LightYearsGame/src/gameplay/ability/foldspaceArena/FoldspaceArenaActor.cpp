@@ -438,7 +438,7 @@ namespace ly
 		mPreviousOwnerLocation = wrappedLocation;
 	}
 
-	void FoldspaceArenaActor::Render(sf::RenderWindow& window)
+	void FoldspaceArenaActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{
@@ -466,7 +466,7 @@ namespace ly
 		RenderOppositeGhost(window);
 	}
 
-	void FoldspaceArenaActor::RenderArenaBoundary(sf::RenderWindow& window) const
+	void FoldspaceArenaActor::RenderArenaBoundary(sf::RenderTarget& window) const
 	{
 		const float halfWidth = mArenaWidth * 0.5f;
 		const float halfHeight = mArenaHeight * 0.5f;
@@ -518,7 +518,7 @@ namespace ly
 		}
 	}
 
-	void FoldspaceArenaActor::RenderOppositeGhost(sf::RenderWindow& window) const
+	void FoldspaceArenaActor::RenderOppositeGhost(sf::RenderTarget& window) const
 	{
 		const Actor* owner = GetOwnerActor();
 		if (!owner || !IsInsideArena(owner->GetActorLocation()))

@@ -520,7 +520,7 @@ namespace ly
 		AbilityWorldActor::Tick(safeDeltaTime);
 	}
 
-	void FrostMaelstromFieldActor::Render(sf::RenderWindow& window)
+	void FrostMaelstromFieldActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

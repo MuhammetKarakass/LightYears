@@ -311,7 +311,7 @@ namespace ly
 		mHasImpactVisual = true;
 	}
 
-	void EmberDroneActor::Render(sf::RenderWindow& window)
+	void EmberDroneActor::Render(sf::RenderTarget& window)
 	{
 		if (!IsRenderEnabled())
 		{

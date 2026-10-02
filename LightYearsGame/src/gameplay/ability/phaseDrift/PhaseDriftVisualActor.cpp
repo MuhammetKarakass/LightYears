@@ -54,7 +54,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void PhaseDriftVisualActor::Render(sf::RenderWindow& window)
+	void PhaseDriftVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

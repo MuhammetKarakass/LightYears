@@ -290,7 +290,7 @@ namespace ly
 		}
 	}
 
-	void Actor::Render(sf::RenderWindow& window)
+	void Actor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || !mRenderEnabled) return;
 		RenderLights(window);
@@ -299,7 +299,7 @@ namespace ly
 			window.draw(mSprite.value());
 	}
 
-	void Actor::RenderLights(sf::RenderWindow& window)
+	void Actor::RenderLights(sf::RenderTarget& window)
 	{
 		// Allow disabling lights for debugging GPU/driver stalls
 		if (ly::perf::g_disableLights.load(std::memory_order_relaxed))

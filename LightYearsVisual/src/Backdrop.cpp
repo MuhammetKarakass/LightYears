@@ -36,6 +36,26 @@ namespace ly::visual
 		DrawShaderQuad(target, *shader, sf::FloatRect({0.f, 0.f}, sf::Vector2f(target.getSize())));
 	}
 
+	void DrawPlanet(ShaderLibrary& shaders, sf::RenderTarget& target, const ColorRamp& ramp, const PlanetParams& params)
+	{
+		sf::Shader* shader = shaders.Find("planet");
+		if (shader == nullptr)
+		{
+			return;
+		}
+		shader->setUniform("uCenter", params.center);
+		shader->setUniform("uRadius", params.radius);
+		shader->setUniform("uPixel", params.pixelScale);
+		shader->setUniform("uLight", sf::Glsl::Vec3(params.light));
+		shader->setUniform("uRotation", params.rotation);
+		shader->setUniform("uSeed", params.seed);
+		shader->setUniform("uDither", params.dither);
+		shader->setUniform("uBrightness", params.brightness);
+		SetRampUniform(*shader, "uRamp", ramp, 5);
+		sf::Vector2f extent(params.radius, params.radius);
+		DrawShaderQuad(target, *shader, sf::FloatRect(params.center - extent, extent * 2.f));
+	}
+
 	StarField::StarField(unsigned seed, int count)
 	{
 		std::mt19937 rng(seed);

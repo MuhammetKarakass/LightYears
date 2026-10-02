@@ -1,6 +1,6 @@
 # LightYearsVisual
 
-Standalone static library (`LightYearsVisual`, namespace `ly::visual`) for procedural, sprite-free visuals drawn with SFML shapes, vertex arrays and GLSL `#version 120` shaders. It depends only on SFML and nlohmann_json, not on `LightYearsEngine` or the game. Status: V1 foundation, not integrated into the game yet (see `docs/VISUAL_LIBRARY_PLAN.md`).
+Standalone static library (`LightYearsVisual`, namespace `ly::visual`) for procedural, sprite-free visuals drawn with SFML shapes, vertex arrays and GLSL `#version 120` shaders. It depends only on SFML and nlohmann_json, not on `LightYearsEngine` or the game. Status: V1 foundation; first game integration pass done (see "Game integration" below and `docs/VISUAL_LIBRARY_PLAN.md`).
 
 ## Layers
 
@@ -9,7 +9,7 @@ Standalone static library (`LightYearsVisual`, namespace `ly::visual`) for proce
 | Layer | Resolution | Look | Draw with |
 | --- | --- | --- | --- |
 | Background | full | soft, low-frequency nebula, haze, sparse sharp stars, parallax | `DrawGradient`, `DrawNebula`, `StarField` |
-| World | virtual (`virtualHeight`, e.g. 240 rows), upscaled nearest | crisp pixels, hard silhouettes, outlines, optional palette dither | `ShapeBrush` (use `hardEdges`), planet shader |
+| World | virtual (`virtualHeight`, e.g. 240 rows), upscaled nearest | crisp pixels, hard silhouettes, outlines, optional palette dither | `ShapeBrush` (use `hardEdges`), `DrawPlanet` |
 | Energy | full, additive | tiny bright core, limited halo, dark surroundings, bloom source | `SubmitGlow`, `SubmitTrail`, `SubmitFlash` |
 
 Frame: `pipeline.BeginFrame()`, draw into `pipeline.Target(Layer::...)` and submit energy, then `pipeline.Compose(target)`. Call `Resize(size)` when the output size changes.
@@ -36,3 +36,9 @@ LightYearsVisualGallery --capture <out.png> [--script <name>] [--frames N] [--si
 Keys: `Tab` color script, `B` bloom, `D` dither, `V` virtual resolution, `Space` energy-budget stress, `Up`/`Down` bloom strength, `F8` reload, `Esc` quit. The gallery reads the source `assets/` folder directly (`--assets` overrides) so edits hot-reload without rebuilding. Capture mode needs no window: it renders N fixed 1/60 s frames and saves the composited image.
 
 Build: part of the root CMake project; the gallery is behind `LIGHTYEARS_BUILD_VISUAL_GALLERY` (default ON).
+
+## Game integration (pass 1)
+
+The library stays independent of the engine. `LightYearsEngine` only knows the small `WorldRenderPipeline` interface (`framework/WorldRenderPipeline.h`); `LightYearsGame` implements it (`presentation/visual/GameVisualPipeline`) on top of this library. `World::Render` draws `RenderLayer::Background` into the Background layer (the pipeline paints it itself, so old PNG background actors are skipped, not deleted) and every other render layer into the pixel World layer with the same camera view, composes onto the window, then draws the HUD at full resolution. `ProceduralBackdrop` paints nebula, stars and a planet with camera parallax; `EnergyLightPresenter` submits engine and projectile glows from a read-only look at the world.
+
+Keys in the game: `F8` toggles the pipeline (starts ON; a failed asset load keeps it OFF with a log line), `F9` forces an asset reload; files are also polled every frame. The game currently reads `assets/` from the source tree (`LY_VISUAL_ASSETS_DIR`); a packaged copy step can replace that later. Dev command line: `LightYearsGame.exe --visual-capture <png> [--capture-frames N] [--visual-off] [--visual-script <name>]`.

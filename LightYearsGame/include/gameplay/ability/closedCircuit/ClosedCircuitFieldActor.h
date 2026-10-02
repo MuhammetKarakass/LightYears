@@ -15,7 +15,7 @@ namespace ly
 		ClosedCircuitFieldActor(World* world, Actor* owner, const ClosedCircuitPresentationProfile& profile);
 		void ConfigureDelivery(const sf::Vector2f& target, float speed, float formationDuration, float barrierRadius, float barrierHealth, float activeDuration);
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void Destroy() override;
 		bool TryInterceptProjectile(AbilityWorldActor& projectile, const sf::Vector2f& previousLocation) override;
 

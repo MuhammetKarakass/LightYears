@@ -62,7 +62,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void OverdriveCoreVisualActor::Render(sf::RenderWindow& window)
+	void OverdriveCoreVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() ||
 			(mPhase == Phase::Flight && !mFlightVisible))
@@ -121,7 +121,7 @@ namespace ly
 		}
 	}
 
-	void OverdriveCoreVisualActor::DrawFlight(sf::RenderWindow& window)
+	void OverdriveCoreVisualActor::DrawFlight(sf::RenderTarget& window)
 	{
 		const float pulse = 0.75f + 0.25f * std::sin(
 			mPhaseAge * std::max(0.f, mDefinition.pulseSpeed)
@@ -150,7 +150,7 @@ namespace ly
 		window.draw(mBody, additive);
 	}
 
-	void OverdriveCoreVisualActor::DrawImpact(sf::RenderWindow& window)
+	void OverdriveCoreVisualActor::DrawImpact(sf::RenderTarget& window)
 	{
 		const float duration = std::max(0.001f, mDefinition.impactVisualDuration);
 		const float progress = Saturate(mPhaseAge / duration);

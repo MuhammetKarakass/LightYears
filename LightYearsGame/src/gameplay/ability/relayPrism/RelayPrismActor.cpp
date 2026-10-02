@@ -233,7 +233,7 @@ namespace ly
 		AbilityWorldActor::Destroy();
 	}
 
-	void RelayPrismActor::Render(sf::RenderWindow& window)
+	void RelayPrismActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

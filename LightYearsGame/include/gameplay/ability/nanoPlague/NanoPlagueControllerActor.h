@@ -47,7 +47,7 @@ namespace ly
 		);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void Destroy() override;
 
 	private:

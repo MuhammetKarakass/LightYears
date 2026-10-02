@@ -24,7 +24,7 @@ namespace ly
 		WingSentinelActor(World* world, Actor* owner, const WingSentinelsPresentationProfile& profile, Configuration configuration);
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 
 	private:
 		void UpdateFormation();

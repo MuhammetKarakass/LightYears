@@ -20,7 +20,7 @@ namespace ly
 		void SetIceHealthRatio(float ratio);
 		void BeginBreak();
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 
 	private:
 		void UpdateVisuals();

@@ -17,7 +17,7 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) override;
 		sf::Vector2f GetPhysicsCollisionBoxHalfExtents() const override;

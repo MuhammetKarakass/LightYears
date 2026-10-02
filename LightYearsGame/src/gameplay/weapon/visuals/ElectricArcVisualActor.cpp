@@ -48,7 +48,7 @@ namespace ly
 		RebuildGeometry();
 	}
 
-	void ElectricArcVisualActor::Render(sf::RenderWindow& window)
+	void ElectricArcVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

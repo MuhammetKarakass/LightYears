@@ -385,7 +385,7 @@ namespace ly
 	}
 
 	void StrikeRunBombardmentActor::RenderTelegraph(
-		sf::RenderWindow& window,
+		sf::RenderTarget& window,
 		float pulse
 	)
 	{
@@ -424,7 +424,7 @@ namespace ly
 	}
 
 	void StrikeRunBombardmentActor::RenderExplosions(
-		sf::RenderWindow& window
+		sf::RenderTarget& window
 	) const
 	{
 		const auto& visual = mPresentationProfile.explosion;
@@ -481,7 +481,7 @@ namespace ly
 	}
 
 	void StrikeRunBombardmentActor::RenderStrikeCraft(
-		sf::RenderWindow& window
+		sf::RenderTarget& window
 	)
 	{
 		const std::size_t lastImpactIndex = static_cast<std::size_t>(
@@ -512,7 +512,7 @@ namespace ly
 		window.draw(mStrikeCraft, sf::RenderStates{ sf::BlendAdd });
 	}
 
-	void StrikeRunBombardmentActor::Render(sf::RenderWindow& window)
+	void StrikeRunBombardmentActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

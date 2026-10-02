@@ -113,20 +113,12 @@ void GalleryScene::DrawWorld()
 	mBrush.Arc(world, arcCenter, size.y * 1.25f + px * 14.f, px * 2.f, 205.f, 45.f, arc);
 
 	// Procedural planet, lower left, cropped by nothing but its own limb.
-	if (sf::Shader* planet = mAssets.Shaders().Find("planet"))
-	{
-		sf::Vector2f center(size.x * 0.2f, size.y * 0.72f);
-		float radius = size.y * 0.27f;
-		planet->setUniform("uCenter", center);
-		planet->setUniform("uRadius", radius);
-		planet->setUniform("uPixel", px);
-		planet->setUniform("uLight", sf::Glsl::Vec3(0.75f, -0.45f, 0.5f));
-		planet->setUniform("uRotation", mTime * 0.06f);
-		planet->setUniform("uSeed", 3.f);
-		planet->setUniform("uDither", 0.3f);
-		SetRampUniform(*planet, "uRamp", script.Role("planet"), 5);
-		DrawShaderQuad(world, *planet, sf::FloatRect(center - sf::Vector2f(radius, radius), sf::Vector2f(radius, radius) * 2.f));
-	}
+	PlanetParams planet;
+	planet.center = {size.x * 0.2f, size.y * 0.72f};
+	planet.radius = size.y * 0.27f;
+	planet.pixelScale = px;
+	planet.rotation = mTime * 0.06f;
+	DrawPlanet(mAssets.Shaders(), world, script.Role("planet"), planet);
 
 	// Ship: all outlines first so only the silhouette outline survives, then fills, then panel lines.
 	const ColorRamp& hull = script.Role("hull");

@@ -41,7 +41,7 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 
 		// Drone is a summon, not a colliding actor nor projectile.
 		bool IsProjectileActor() const override { return false; }

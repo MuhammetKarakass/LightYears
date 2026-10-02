@@ -190,7 +190,7 @@ namespace ly
 		AbilityWorldActor::Tick(safeDeltaTime);
 	}
 
-	void CrystalBarricadeActor::Render(sf::RenderWindow& window)
+	void CrystalBarricadeActor::Render(sf::RenderTarget& window)
 	{
 		const float duration = std::max(0.001f, mProfile.breakVisualDuration);
 		const float breakAlpha = mBreakTimeRemaining > 0.f ? mBreakTimeRemaining / duration : 0.f;

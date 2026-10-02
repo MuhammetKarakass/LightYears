@@ -71,7 +71,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void BlastbackBurstActor::Render(sf::RenderWindow& window)
+	void BlastbackBurstActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

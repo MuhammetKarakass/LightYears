@@ -183,7 +183,7 @@ namespace ly
 		return IsInCompletionFeedback();
 	}
 
-	void AreaTelegraphActor::Render(sf::RenderWindow& window)
+	void AreaTelegraphActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || !IsRenderEnabled())
 		{

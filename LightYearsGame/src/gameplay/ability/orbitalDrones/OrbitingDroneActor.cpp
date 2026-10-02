@@ -166,7 +166,7 @@ namespace ly
 		ProcessContactCandidates();
 	}
 
-	void OrbitingDroneActor::Render(sf::RenderWindow& window)
+	void OrbitingDroneActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

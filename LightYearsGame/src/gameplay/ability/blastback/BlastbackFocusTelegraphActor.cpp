@@ -51,7 +51,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void BlastbackFocusTelegraphActor::Render(sf::RenderWindow& window)
+	void BlastbackFocusTelegraphActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

@@ -195,7 +195,8 @@ namespace ly
 		{
 			LY_CORE_INFO("ClearStall %.1fms", clearMs);
 		}
-		Render();         
+		Render();
+		AfterRender();
 		const auto displayStart = std::chrono::steady_clock::now();
 		mWindow.display();
 		const double displayMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - displayStart).count();
@@ -219,8 +220,21 @@ namespace ly
 		}
 	}
 	
+	bool Application::HandleApplicationEvent(const sf::Event&)
+	{
+		return false;
+	}
+
+	void Application::AfterRender()
+	{
+	}
+
 	bool Application::DispatchEvent(const std::optional<sf::Event>& event)
 	{
+		if (event.has_value() && HandleApplicationEvent(event.value()))
+		{
+			return true;
+		}
 		if (mCurrentWorld && event.has_value())
 		{
 			return mCurrentWorld->DispatchEvent(event.value());

@@ -458,7 +458,7 @@ namespace ly
 		AbilityWorldActor::Destroy();
 	}
 
-	void LanceDriveActor::Render(sf::RenderWindow& window)
+	void LanceDriveActor::Render(sf::RenderTarget& window)
 	{
 		if (!IsRenderEnabled())
 		{

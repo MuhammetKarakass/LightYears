@@ -50,7 +50,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void ReturnProtocolVisualActor::Render(sf::RenderWindow& window)
+	void ReturnProtocolVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

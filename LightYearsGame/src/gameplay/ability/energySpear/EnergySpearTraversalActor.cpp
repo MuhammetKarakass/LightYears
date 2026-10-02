@@ -346,7 +346,7 @@ namespace ly
 		Finish();
 	}
 
-	void EnergySpearTraversalActor::Render(sf::RenderWindow& window)
+	void EnergySpearTraversalActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{
@@ -355,7 +355,7 @@ namespace ly
 		DrawImpacts(window);
 	}
 
-	void EnergySpearTraversalActor::DrawImpacts(sf::RenderWindow& window) const
+	void EnergySpearTraversalActor::DrawImpacts(sf::RenderTarget& window) const
 	{
 		for (const ImpactPulse& pulse : mImpactPulses)
 		{

@@ -90,7 +90,7 @@ namespace ly
 		mFireCooldown = 1.f / std::max(0.01f, ResolveAttackRate());
 	}
 
-	void WingSentinelActor::Render(sf::RenderWindow& window)
+	void WingSentinelActor::Render(sf::RenderTarget& window)
 	{
 		const float pulse = 0.80f + 0.20f * std::sin(mVisualAge * 9.f);
 		sf::RenderStates additive; additive.blendMode = sf::BlendAdd;

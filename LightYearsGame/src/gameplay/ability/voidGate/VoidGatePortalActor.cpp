@@ -151,7 +151,7 @@ namespace ly
 		mActivationAlpha = std::clamp(alpha, 0.f, 1.f);
 	}
 
-	void VoidGatePortalActor::Render(sf::RenderWindow& window)
+	void VoidGatePortalActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

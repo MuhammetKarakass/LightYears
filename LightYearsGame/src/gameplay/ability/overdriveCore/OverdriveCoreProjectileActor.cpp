@@ -267,7 +267,7 @@ namespace ly
 		AbilityWorldActor::Tick(deltaTime);
 	}
 
-	void OverdriveCoreProjectileActor::Render(sf::RenderWindow& window)
+	void OverdriveCoreProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (!mHasExploded && !IsInPortalTransit())
 		{

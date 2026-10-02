@@ -17,7 +17,7 @@ namespace ly
 		);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
 		) override;
@@ -45,8 +45,8 @@ namespace ly
 		void BeginArena();
 		void ApplyFormationDamage();
 		void UpdateOwnerBoundary(float deltaTime);
-		void RenderArenaBoundary(sf::RenderWindow& window) const;
-		void RenderOppositeGhost(sf::RenderWindow& window) const;
+		void RenderArenaBoundary(sf::RenderTarget& window) const;
+		void RenderOppositeGhost(sf::RenderTarget& window) const;
 
 		FoldspaceArenaPresentationProfile mPresentationProfile;
 		Phase mPhase = Phase::Travelling;

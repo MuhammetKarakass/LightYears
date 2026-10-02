@@ -15,7 +15,7 @@ namespace ly
 		);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes

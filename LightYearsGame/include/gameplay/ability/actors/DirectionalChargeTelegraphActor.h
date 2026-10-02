@@ -28,7 +28,7 @@ namespace ly
 		DirectionalChargeTelegraphActor(World* world, const SpawnParams& params);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void SetDirection(const sf::Vector2f& direction);
 		void SetExternalProgress(float normalizedProgress);
 		void Complete(float normalizedProgress = 1.f);

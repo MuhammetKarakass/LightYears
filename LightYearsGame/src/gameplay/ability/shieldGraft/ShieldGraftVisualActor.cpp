@@ -111,7 +111,7 @@ namespace ly
 		mInnerGlow.setPosition(GetActorLocation());
 	}
 
-	void ShieldGraftVisualActor::Render(sf::RenderWindow& window)
+	void ShieldGraftVisualActor::Render(sf::RenderTarget& window)
 	{
 		window.draw(mContractingRing);
 		window.draw(mInnerGlow);

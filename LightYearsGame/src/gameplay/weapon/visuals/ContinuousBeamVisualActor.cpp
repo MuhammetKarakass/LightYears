@@ -39,7 +39,7 @@ namespace ly
 		}
 	}
 
-	void ContinuousBeamVisualActor::Render(sf::RenderWindow& window)
+	void ContinuousBeamVisualActor::Render(sf::RenderTarget& window)
 	{
 		Actor::Render(window);
 		window.draw(mOuterBeam);

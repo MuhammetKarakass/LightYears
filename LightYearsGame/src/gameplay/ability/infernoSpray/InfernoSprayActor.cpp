@@ -252,7 +252,7 @@ namespace ly
 		}
 	}
 
-	void InfernoSprayActor::Render(sf::RenderWindow& window)
+	void InfernoSprayActor::Render(sf::RenderTarget& window)
 	{
 		if (!IsRenderEnabled())
 		{

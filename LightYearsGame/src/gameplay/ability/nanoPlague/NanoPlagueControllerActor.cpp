@@ -259,7 +259,7 @@ namespace ly
 		}
 	}
 
-	void NanoPlagueControllerActor::Render(sf::RenderWindow& window)
+	void NanoPlagueControllerActor::Render(sf::RenderTarget& window)
 	{
 		for (const auto& [id, infection] : mInfections)
 		{

@@ -461,7 +461,7 @@ namespace ly
 		AbilityWorldActor::Tick(safeDeltaTime);
 	}
 
-	void MineLayerMineActor::DrawIdle(sf::RenderWindow& window) const
+	void MineLayerMineActor::DrawIdle(sf::RenderTarget& window) const
 	{
 		const MineLayerVisualDefinition& visual = mPresentationProfile.visual;
 		const sf::Vector2f location = GetActorLocation();
@@ -491,7 +491,7 @@ namespace ly
 		window.draw(core);
 	}
 
-	void MineLayerMineActor::DrawExplosion(sf::RenderWindow& window) const
+	void MineLayerMineActor::DrawExplosion(sf::RenderTarget& window) const
 	{
 		const MineLayerVisualDefinition& visual = mPresentationProfile.visual;
 		const float duration = std::max(0.001f, visual.explosionDuration);
@@ -515,7 +515,7 @@ namespace ly
 		window.draw(ring);
 	}
 
-	void MineLayerMineActor::Render(sf::RenderWindow& window)
+	void MineLayerMineActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

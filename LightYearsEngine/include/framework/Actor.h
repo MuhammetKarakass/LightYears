@@ -90,7 +90,7 @@
 		void TickInternal(float deltaTime);
 		virtual void Tick(float deltaTime);
 
-		virtual void Render(sf::RenderWindow& window);
+		virtual void Render(sf::RenderTarget& window);
 
 		World* GetWorld() const { return mOwningWorld; }
 		void SetSimulationTimeDomain(SimulationTimeDomain domain)
@@ -219,7 +219,7 @@
 		bool& GetCanCollide() { return mCanCollide; } 
 		void SetCollisionRadius(float radius);
 
-		void RenderLights(sf::RenderWindow& window);
+		void RenderLights(sf::RenderTarget& window);
 
 		sf::Vector2f mVelocity;
 

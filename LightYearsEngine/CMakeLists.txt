@@ -17,6 +17,7 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/engineConfigs/EngineStructs.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/World.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/WorldRenderPipeline.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/World.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SimulationTime.h

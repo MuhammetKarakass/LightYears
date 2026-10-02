@@ -208,7 +208,7 @@ namespace ly
 		SetCollisionMask(CollisionLayer::None);
 	}
 
-	void ReclaimerRepairKitActor::Render(sf::RenderWindow& window)
+	void ReclaimerRepairKitActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

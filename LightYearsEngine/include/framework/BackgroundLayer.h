@@ -39,7 +39,7 @@ namespace ly
 			sf::Color colorTint = sf::Color{ 180, 180, 220, 245 });
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 
 		void SetPaths(const List<std::string>& texturePaths);
 		void SetColorTint(const sf::Color& colorTint);

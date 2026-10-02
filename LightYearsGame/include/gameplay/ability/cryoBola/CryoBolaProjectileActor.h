@@ -19,7 +19,7 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void OnActorBeginOverlap(Actor* otherActor) override;
 		void ConfigureFromAttributes(
 			const sas::GameplayAttributeList& attributes
@@ -40,8 +40,8 @@ namespace ly
 		void ResolveHit(Actor& primaryTarget);
 		void ResolveMiss();
 		void ApplyRupture(Actor& primaryTarget);
-		void DrawProjectile(sf::RenderWindow& window) const;
-		void DrawRupture(sf::RenderWindow& window) const;
+		void DrawProjectile(sf::RenderTarget& window) const;
+		void DrawRupture(sf::RenderTarget& window) const;
 
 		CryoBolaPresentationProfile mPresentationProfile;
 		float mProjectileSpeed = 0.f;

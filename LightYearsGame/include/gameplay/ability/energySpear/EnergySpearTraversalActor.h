@@ -41,7 +41,7 @@ namespace ly
 
 		void BeginPlay() override;
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		void Destroy() override;
 
 		int GetHitTargetCount() const
@@ -65,7 +65,7 @@ namespace ly
 		void Finish();
 		void RegisterContactDamageGuard();
 		void UnregisterContactDamageGuard();
-		void DrawImpacts(sf::RenderWindow& window) const;
+		void DrawImpacts(sf::RenderTarget& window) const;
 
 		weak_ptr<Actor> mOwner;
 		EnergySpearTraversalVisualDefinition mVisual;

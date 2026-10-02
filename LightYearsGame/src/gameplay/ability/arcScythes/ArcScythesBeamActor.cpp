@@ -75,7 +75,7 @@ namespace ly
 		}
 
 		void DrawBeamQuad(
-			sf::RenderWindow& window,
+			sf::RenderTarget& window,
 			const sf::Vector2f& start,
 			const sf::Vector2f& end,
 			float halfThickness,
@@ -103,7 +103,7 @@ namespace ly
 		}
 
 		void DrawElectricArc(
-			sf::RenderWindow& window,
+			sf::RenderTarget& window,
 			const BeamSegment& segment,
 			float visualTime,
 			const ArcScythesPresentationProfile& profile,
@@ -324,7 +324,7 @@ namespace ly
 		}
 	}
 
-	void ArcScythesBeamActor::Render(sf::RenderWindow& window)
+	void ArcScythesBeamActor::Render(sf::RenderTarget& window)
 	{
 		if (!IsRenderEnabled() || GetIsPendingDestroy())
 		{

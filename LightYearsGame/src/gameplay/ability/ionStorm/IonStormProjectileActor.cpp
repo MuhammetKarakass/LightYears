@@ -442,7 +442,7 @@ namespace ly
 		mCore.setOrigin({ mCore.getRadius(), mCore.getRadius() });
 	}
 
-	void IonStormProjectileActor::Render(sf::RenderWindow& window)
+	void IonStormProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || IsInPortalTransit())
 		{

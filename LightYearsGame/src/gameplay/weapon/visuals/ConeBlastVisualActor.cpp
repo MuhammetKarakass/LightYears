@@ -45,7 +45,7 @@ namespace ly
 		RebuildGeometry();
 	}
 
-	void ConeBlastVisualActor::Render(sf::RenderWindow& window)
+	void ConeBlastVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

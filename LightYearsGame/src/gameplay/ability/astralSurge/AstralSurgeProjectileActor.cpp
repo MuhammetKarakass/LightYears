@@ -448,7 +448,7 @@ namespace ly
 			location.y > static_cast<float>(windowSize.y) + TechnicalBoundaryMargin;
 	}
 
-	void AstralSurgeProjectileActor::Render(sf::RenderWindow& window)
+	void AstralSurgeProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{
@@ -459,7 +459,7 @@ namespace ly
 		DrawImpacts(window);
 	}
 
-	void AstralSurgeProjectileActor::DrawFlight(sf::RenderWindow& window) const
+	void AstralSurgeProjectileActor::DrawFlight(sf::RenderTarget& window) const
 	{
 		const AstralSurgeProjectileVisualDefinition& visual =
 			mPresentationProfile.projectile;
@@ -528,7 +528,7 @@ namespace ly
 		);
 	}
 
-	void AstralSurgeProjectileActor::DrawImpacts(sf::RenderWindow& window) const
+	void AstralSurgeProjectileActor::DrawImpacts(sf::RenderTarget& window) const
 	{
 		const AstralSurgeProjectileVisualDefinition& visual =
 			mPresentationProfile.projectile;

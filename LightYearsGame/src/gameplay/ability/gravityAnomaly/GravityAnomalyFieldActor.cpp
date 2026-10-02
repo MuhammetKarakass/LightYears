@@ -334,7 +334,7 @@ namespace ly
 		}
 	}
 
-	void GravityAnomalyFieldActor::Render(sf::RenderWindow& window)
+	void GravityAnomalyFieldActor::Render(sf::RenderTarget& window)
 	{
 		Actor::Render(window);
 		if (GetIsPendingDestroy() || mRadius <= 0.f)

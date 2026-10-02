@@ -41,7 +41,7 @@ namespace ly
 		}
 	}
 
-	void SunBeamActorBase::Render(sf::RenderWindow& window)
+	void SunBeamActorBase::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

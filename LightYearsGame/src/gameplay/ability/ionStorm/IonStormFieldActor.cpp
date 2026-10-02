@@ -322,7 +322,7 @@ namespace ly
 			dynamic_cast<const Combatant*>(&actor) != nullptr;
 	}
 
-	void IonStormFieldActor::Render(sf::RenderWindow& window)
+	void IonStormFieldActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

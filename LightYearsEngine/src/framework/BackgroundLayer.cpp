@@ -77,7 +77,7 @@ namespace ly
 		}
 	}
 
-	void BackgroundLayer::Render(sf::RenderWindow& window)
+	void BackgroundLayer::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 			return;

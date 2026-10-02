@@ -85,9 +85,6 @@ namespace ly::visual
 				return false;
 			}
 			mWorld.setSmooth(false);
-			// The world layer is authored in output pixels; this view maps them onto the low-resolution texture.
-			sf::Vector2f viewSize = sf::Vector2f(mVirtualSize) * mPixelScale;
-			mWorld.setView(sf::View(viewSize * 0.5f, viewSize));
 			mBuiltVirtualHeight = virtualHeight;
 		}
 		int levels = settings.bloomEnabled ? settings.bloomLevels : 0;
@@ -115,9 +112,18 @@ namespace ly::visual
 		return true;
 	}
 
+	// The world layer is authored in output pixels; this view maps them onto the low-resolution texture.
+	// A caller may replace the view during a frame (for example with a game camera); BeginFrame restores it.
+	void VisualPipeline::ResetWorldView()
+	{
+		sf::Vector2f viewSize = sf::Vector2f(mVirtualSize) * mPixelScale;
+		mWorld.setView(sf::View(viewSize * 0.5f, viewSize));
+	}
+
 	void VisualPipeline::BeginFrame()
 	{
 		EnsureTargets();
+		ResetWorldView();
 		mBackground.clear(sf::Color::Black);
 		mWorld.clear(sf::Color::Transparent);
 		mEnergy.clear(sf::Color::Black);

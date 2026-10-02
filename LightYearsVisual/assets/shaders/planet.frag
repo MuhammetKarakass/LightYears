@@ -9,6 +9,7 @@ uniform vec3 uLight;           // surface -> light, scene axes (x right, y down,
 uniform float uRotation;
 uniform float uSeed;
 uniform float uDither;         // 0 = hard bands only, 1 = wide dither
+uniform float uBrightness;     // scales the final color (1 = ramp as authored)
 uniform vec3 uRamp[5];
 
 float bayer4(vec2 p)
@@ -100,5 +101,5 @@ void main()
 	{
 		color = uRamp[4];
 	}
-	gl_FragColor = vec4(color, 1.0);
+	gl_FragColor = vec4(color * uBrightness, 1.0);
 }

@@ -2,10 +2,15 @@
 
 #include "gameplay/content/GameContentBootstrap.h"
 #include "level/ArenaTestLevel.h"
+#include "presentation/visual/GameVisualPipeline.h"
 
 #include <framework/AssetManager.h>
 #include <Config.h>
 #include "framework/PerfMonitor.h"
+
+#include <algorithm>
+#include <cstdlib>
+#include <filesystem>
 
 ly::Application* GetApplication()
 {
@@ -27,12 +32,122 @@ namespace ly
 
 		ly::perf::g_disableLights.store(false);
 
+		mDevOptions = ParseDevOptions();
+		InitializeVisualPipeline();
+
 		LoadWorld<ArenaTestLevel>();
 	}
 
-	void GameApplication::Tick(float)
+	GameApplication::~GameApplication()
 	{
+		SetWorldRenderPipeline(nullptr);
+	}
+
+	GameApplication::DevOptions GameApplication::ParseDevOptions()
+	{
+		DevOptions options;
+#ifdef _MSC_VER
+		for (int i = 1; i < __argc; ++i)
+		{
+			const std::string arg = __argv[i];
+			const bool hasValue = i + 1 < __argc;
+			if (arg == "--visual-off") options.visualOff = true;
+			else if (arg == "--visual-script" && hasValue) options.colorScript = __argv[++i];
+			else if (arg == "--visual-capture" && hasValue) options.capturePath = __argv[++i];
+			else if (arg == "--capture-frames" && hasValue) options.captureFrames = std::max(1, std::atoi(__argv[++i]));
+		}
+#endif
+		return options;
+	}
+
+	void GameApplication::InitializeVisualPipeline()
+	{
+		// First integration pass: read the library assets straight from the source tree so shader, palette and
+		// pipeline.json edits hot-reload without a rebuild. A packaged copy step can replace this later.
+		mVisualPipeline = std::make_unique<GameVisualPipeline>();
+		mVisualPipeline->Initialize(GetRenderWindow(), std::filesystem::path(LY_VISUAL_ASSETS_DIR), mDevOptions.colorScript);
+		mVisualPipeline->SetEnabled(!mDevOptions.visualOff);
+		SetWorldRenderPipeline(mVisualPipeline.get());
+	}
+
+	void GameApplication::Tick(float deltaTime)
+	{
+		if (mVisualPipeline)
+		{
+			mVisualPipeline->Update(deltaTime);
+		}
+	}
+
+	bool GameApplication::HandleApplicationEvent(const sf::Event& event)
+	{
+		if (!mVisualPipeline)
+		{
+			return false;
+		}
+		// F8 toggles the visual pipeline, F9 forces an asset reload. The keys are consumed so levels never see them;
+		// key repeat is ignored so holding a key does not flicker the pipeline.
+		static bool f8Down = false;
+		static bool f9Down = false;
+		if (const auto* pressed = event.getIf<sf::Event::KeyPressed>())
+		{
+			if (pressed->code == sf::Keyboard::Key::F8)
+			{
+				if (!f8Down) mVisualPipeline->Toggle();
+				f8Down = true;
+				return true;
+			}
+			if (pressed->code == sf::Keyboard::Key::F9)
+			{
+				if (!f9Down) mVisualPipeline->ForceReload();
+				f9Down = true;
+				return true;
+			}
+		}
+		else if (const auto* released = event.getIf<sf::Event::KeyReleased>())
+		{
+			if (released->code == sf::Keyboard::Key::F8)
+			{
+				f8Down = false;
+				return true;
+			}
+			if (released->code == sf::Keyboard::Key::F9)
+			{
+				f9Down = false;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void GameApplication::AfterRender()
+	{
+		SaveCaptureIfDue();
+	}
+
+	void GameApplication::SaveCaptureIfDue()
+	{
+		if (mDevOptions.capturePath.empty() || ++mRenderedFrames < mDevOptions.captureFrames)
+		{
+			return;
+		}
+		// Runs before the window is presented, so the back buffer still holds the finished frame including the HUD.
+		sf::RenderWindow& window = GetRenderWindow();
+		sf::Texture texture(window.getSize());
+		texture.update(window);
+		const std::filesystem::path out(mDevOptions.capturePath);
+		if (out.has_parent_path())
+		{
+			std::filesystem::create_directories(out.parent_path());
+		}
+		if (texture.copyToImage().saveToFile(out))
+		{
+			LY_GAME_INFO("Captured %s after %d frames (visual pipeline %s)", out.string().c_str(), mRenderedFrames, mVisualPipeline && mVisualPipeline->IsActive() ? "ON" : "OFF");
+		}
+		else
+		{
+			LY_GAME_ERROR("Cannot write capture %s", out.string().c_str());
+		}
+		mDevOptions.capturePath.clear();
+		QuitApplication();
 	}
 }
-
-

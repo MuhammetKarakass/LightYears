@@ -127,7 +127,7 @@ namespace ly
 		return ApplyBallisticReflection(request, mSpeed, trajectory);
 	}
 
-	void WingSentinelProjectileActor::Render(sf::RenderWindow& window)
+	void WingSentinelProjectileActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy()) return;
 		sf::RenderStates additive; additive.blendMode = sf::BlendAdd;

@@ -186,7 +186,7 @@ namespace ly
 		mVisualAge += std::max(0.f, deltaTime);
 	}
 
-	void ScorchDriveFireSegmentActor::Render(sf::RenderWindow& window)
+	void ScorchDriveFireSegmentActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

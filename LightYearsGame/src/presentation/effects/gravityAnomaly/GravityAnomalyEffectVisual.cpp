@@ -46,7 +46,7 @@ namespace ly
 		mRing.setRotation(sf::degrees(mAge * mDefinition.rotationSpeed));
 	}
 
-	void GravityAnomalyEffectVisual::Render(sf::RenderWindow& window)
+	void GravityAnomalyEffectVisual::Render(sf::RenderTarget& window)
 	{
 		Actor::Render(window);
 		if (GetIsPendingDestroy())

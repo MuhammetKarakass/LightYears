@@ -133,7 +133,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void DirectionalBarrierVisualActor::Render(sf::RenderWindow& window)
+	void DirectionalBarrierVisualActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || !IsRenderEnabled())
 		{

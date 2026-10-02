@@ -14,7 +14,7 @@ namespace ly
 		RocketVisualActor(World* world, const RocketPresentationProfile& profile);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 
 		void SetFlightState(
 			const sf::Vector2f& worldLocation,
@@ -35,8 +35,8 @@ namespace ly
 			Impact
 		};
 
-		void DrawFlight(sf::RenderWindow& window);
-		void DrawImpact(sf::RenderWindow& window);
+		void DrawFlight(sf::RenderTarget& window);
+		void DrawImpact(sf::RenderTarget& window);
 		void ConfigureTrailGeometry(float widthScale);
 
 		RocketVisualDefinition mDefinition;

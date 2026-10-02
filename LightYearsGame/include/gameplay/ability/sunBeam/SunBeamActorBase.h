@@ -18,7 +18,7 @@ namespace ly
 
 		void BeginPlay() final override;
 		void Tick(float deltaTime) final override;
-		void Render(sf::RenderWindow& window) final override;
+		void Render(sf::RenderTarget& window) final override;
 		void ConfigureFromAttributes(const sas::GameplayAttributeList& attributes) final override;
 
 	protected:

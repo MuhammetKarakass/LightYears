@@ -21,7 +21,7 @@ namespace ly
 		);
 
 		void Tick(float deltaTime) override;
-		void Render(sf::RenderWindow& window) override;
+		void Render(sf::RenderTarget& window) override;
 		// Applies the firing shot's policy (empowered status stacks, critical)
 		// and lets the wave report its first hit to the weapon.
 		void SetShotMetadata(const PrimaryWeaponShotMetadata& metadata);

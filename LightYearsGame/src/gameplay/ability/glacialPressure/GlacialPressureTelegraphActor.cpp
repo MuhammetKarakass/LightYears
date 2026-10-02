@@ -66,7 +66,7 @@ namespace ly
 		Actor::Tick(deltaTime);
 	}
 
-	void GlacialPressureTelegraphActor::Render(sf::RenderWindow& window)
+	void GlacialPressureTelegraphActor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy())
 		{

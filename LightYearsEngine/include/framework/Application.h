@@ -6,6 +6,7 @@
 namespace ly
 {
 	class World;
+	class WorldRenderPipeline;
 	class Application
 	{
 	public:
@@ -31,11 +32,22 @@ namespace ly
 			return mWindow;
 		}
 
+		// Non-owning; the derived application owns the pipeline and must outlive the worlds that render with it.
+		WorldRenderPipeline* GetWorldRenderPipeline() const { return mRenderPipeline; }
+		void SetWorldRenderPipeline(WorldRenderPipeline* pipeline) { mRenderPipeline = pipeline; }
+
 		template<typename WorldType>
 		weak_ptr<WorldType> LoadWorld();
 
+	protected:
+		// Runs before the current world sees an event; returning true consumes it.
+		virtual bool HandleApplicationEvent(const sf::Event& event);
+		// Runs after the world and HUD were drawn and before the window is presented.
+		virtual void AfterRender();
+
 	private:
 		sf::RenderWindow mWindow;
+		WorldRenderPipeline* mRenderPipeline = nullptr;
 		float mTargetFrameRate;
 		bool mShouldQuit;
 		bool mQuitRequested;
