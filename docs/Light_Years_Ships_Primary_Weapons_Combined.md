@@ -290,13 +290,14 @@ This keeps Breacher slower in normal flight while allowing short, aggressive bre
 **Damage Model:** Instant cone blast / hitscan-like wave  
 **Normal Damage Type:** Photonic  
 **Fire Rate:** 1.75 shots/s  
-**Range:** ~400
+**Range:** 650  
+**Magazine:** 18 (reload 2,0 s)
 
 The shotgun no longer uses pellets. Each trigger pull creates a short-range cone blast. Every valid target inside the cone receives one damage event.
 
 - Tek tetik çekişte koni içindeki **her geçerli hedef tam bir kez** hasar alır; hedef başına çarpan yoktur (hedef sayısı arttıkça hasar düşmez).
 - Mermi, çarpışma yarıçapı, uçuş hızı ve pellet sayısı/yayılımı kavramları kalkar. Mevcut `weapons.json`'daki `PelletCount`, `SpreadAngle`, `DamageReductionPerAdditionalHit` ve `MinimumDamageMultiplier` bu silah için kullanılmaz.
-- **Koni açısı (öneri — onay bekliyor):** toplam **45°** (burun yönünün iki yanında 22,5°), menzil **400**. Menzildeki sert kesim yerine hasar menzil boyunca sabittir. Koni, duvar/engel kuralları diğer anlık silahlarla aynıdır.
+- **Koni açısı (öneri — onay bekliyor):** toplam **45°** (burun yönünün iki yanında 22,5°), menzil **650** (2026-10-02'de 400'den çıkarıldı). Menzildeki sert kesim yerine hasar menzil boyunca sabittir. Koni, duvar/engel kuralları diğer anlık silahlarla aynıdır.
 
 ### Normal Damage
 
@@ -327,6 +328,8 @@ EmpoweredDamage = NormalDamage + EmpoweredBonus
 ```
 
 The empowered attack is intended to be the shotgun's heavier special blast.
+
+**Şarjör (2026-10-02):** Rapid Laser'a benzer şarjör: 18 atış, her koni patlaması 1 mermi harcar (kaç hedefe çarptığı fark etmez). **Şarjörün son 3 mermisi (16–18) de empowered**, "her 3. atış" kuralıyla birlikte çalışır. 18. atış iki kuralın da kesişimidir; dolu şarjörde 8 ayrı empowered patlama olur (3, 6, 9, 12, 15, 16, 17, 18). Reload 2,0 s (Laser ile aynı; kullanıcı belirtmedi, ayarlanabilir), AttackSpeed'e göre kısalır. Veri: `PrimaryWeapon.Empowered.FinalMagazineRounds = 3` ve `magazine {capacity 18, baseReloadTime 2.0}`.
 
 **Ignite (öneri — onay bekliyor):** Normal blast Ignite uygulamaz. Yalnız empowered blast, vurduğu her hedefe **+1 Ignite stack** uygular. Gerekçe: Electric Launcher, Dual Kinetic ve Cryo Projector'da da status yalnız empowered vuruşla gelir; her atışta Ignite uygulamak shotgun'ı yakın menzilde fazla güçlü yapar. (Şu anki `weapons.json` her pellet'te `Damage.IgniteStacks = 1` uyguluyor; yeni tasarımda bu kalkar.)
 
@@ -497,9 +500,11 @@ runtime content and this design catalog together.
 
 **Role:** Sustained Kinetic pressure / ArmorPen ramp  
 **Damage Type:** Kinetic  
-**Base Fire Rate:** 7 shots/s  
-**Range:** ~650  
+**Base Fire Rate:** 6 shots/s (2026-10-02'de 7'den indi; her atışta iki namlu birden ateşler)  
+**Range:** 900 (650'den çıkarıldı)  
 **Magazine:** 64
+
+> **Ayar (2026-10-02):** İki mermi aynı anda çıktığı için mermi başı normal hasar yarıya indirildi: `BaseDamage(L) = 1.5 + 1 * (L - 1)`, `APScale(L) = 0.10 + 0.01 * (L - 1)`. L1 (AP 41) mermi başı 5,6, çift atış 11,2; AttackSpeed=1 ile 6,06 çift/sn → **normal DPS ≈ 68**. Aşağıdaki formüllerdeki eski "3 + 2(L−1)" / "0,20 + 0,02(L−1)" ve "7 × (1 + AS)" değerleri bu ayarla değişmiştir (`ActualFireRate = 6 × (1 + AS)`). Empowered bonusu aynı kaldı (mermi başı 26,48).
 
 Dual Kinetic Blaster intentionally starts with modest raw damage. Its reward comes from maintaining successful hits on the same target and gradually applying ArmorPen.
 
@@ -736,7 +741,9 @@ Armor and Luck use the global diminishing-return system.
 # 2. Electric Launcher
 
 **Role:** Support / Conductor / Ability-Weaving / Horde  
-**Normal Fire Rate:** 2 shots/s
+**Normal Fire Rate:** 2 shots/s  
+**Range:** 1200 (850'den çıkarıldı)  
+**İlk hedef (2026-10-02):** Oyuncu ateş ederken ilk hedef, menzil içindeki düşmanlar arasından **imlecin dünya konumuna en yakın olandır** (gemiye en yakın değil). Zincir atlamaları eskisi gibi en yakın komşuya gider. İmleç yoksa (AI, pencere yok) en yakın hedef kullanılır; menzil dışındaki düşman imlecin altında olsa da seçilmez.
 
 Electric Launcher deliberately has lower personal raw DPS than dedicated damage primaries. Its main value comes from chain hits, empowered bursts, and Electric vulnerability.
 
@@ -966,6 +973,7 @@ Aegis is intentionally different from Breacher:
 # 2. Continuous Heat Laser
 
 **Role:** EP Heavy Tank / Anchor / Anti-Shield Beam  
+**Range:** 1000 (950'den çıkarıldı)  
 **Damage Tick Interval:** 0.25 s  
 **Damage Ticks:** 4 per second  
 **Primary Damage Stat:** Energy Power  
@@ -1170,6 +1178,7 @@ Armor and Luck use the global diminishing-return system.
 
 **Role:** Controller / Horde Control / Wide-Area Primary  
 **Fire Rate:** 2.5 shots/s  
+**Range:** 1100 (780'den çıkarıldı; empowered dalga +250 ile 1350)  
 **Normal Damage Type:** Cryo
 
 Cryo Projector has intentionally low single-target raw damage because each wave can hit multiple enemies and its real value comes from Frost Meter, Whiteout, Cryo stacks, and area control.

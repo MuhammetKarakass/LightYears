@@ -4,8 +4,10 @@
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/weapon/PrimaryWeaponValidationContract.h"
 
+#include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include <functional>
+#include <optional>
 
 namespace ly
 {
@@ -84,6 +86,9 @@ namespace ly
 		PrimaryWeaponRuntimeState* runtime = nullptr;
 		PrimaryWeaponShotMetadata shotMetadata;
 		std::function<bool()> shouldContinue;
+		// World position of the player's cursor. Empty for AI shooters and for
+		// shots fired without a cursor, so handlers fall back to their own default.
+		std::optional<sf::Vector2f> aimWorldPosition;
 
 		bool ShouldContinue() const
 		{

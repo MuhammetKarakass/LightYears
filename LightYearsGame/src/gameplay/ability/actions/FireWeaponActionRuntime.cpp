@@ -7,9 +7,12 @@
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/time/IntervalDebt.h"
 #include "framework/Actor.h"
+#include "framework/Application.h"
+#include "framework/World.h"
 #include "spaceShip/SpaceShip.h"
 
 #include <algorithm>
+#include <optional>
 
 namespace ly
 {
@@ -98,6 +101,22 @@ namespace ly
 			return state.resolvedAttributes;
 		}
 
+		// Only a player-controlled shooter with a real window has a cursor; AI
+		// shooters and windowless worlds (tools, tests) fire without one.
+		std::optional<sf::Vector2f> ResolveAimWorldPosition(const Actor& owner)
+		{
+			if (owner.GetCollisionLayer() != CollisionLayer::Player)
+			{
+				return std::nullopt;
+			}
+			const World* world = owner.GetWorld();
+			if (!world || !world->GetApplication())
+			{
+				return std::nullopt;
+			}
+			return world->GetMouseWorldPosition();
+		}
+
 		PrimaryWeaponExecutionContext MakeExecutionContext(
 			Actor& owner,
 			AbilityExecutionContext& context,
@@ -113,7 +132,8 @@ namespace ly
 				context.definition ? &context.definition->unlockedUpgradeIds : nullptr,
 				nullptr,
 				{},
-				context.shouldContinue
+				context.shouldContinue,
+				ResolveAimWorldPosition(owner)
 			};
 		}
 

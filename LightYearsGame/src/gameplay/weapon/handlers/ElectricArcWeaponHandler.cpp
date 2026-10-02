@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <unordered_set>
 
 namespace ly
@@ -68,7 +69,8 @@ namespace ly
 			auto findClosestTarget = [&](
 				const sf::Vector2f& searchOrigin,
 				float searchRange,
-				const std::unordered_set<Actor*>& excludedTargets
+				const std::unordered_set<Actor*>& excludedTargets,
+				const std::optional<sf::Vector2f>& preferNearCursor = std::nullopt
 			) -> shared_ptr<Actor>
 			{
 				targeting::TargetingQuery query;
@@ -81,6 +83,36 @@ namespace ly
 				query.comparator = targeting::MakeCombatTargetPriorityComparator(
 					context.owner.GetCollisionLayer()
 				);
+				if (preferNearCursor)
+				{
+					// The range filter above still decides who is reachable from the
+					// muzzle; the cursor only picks among those candidates.
+					const sf::Vector2f cursor = *preferNearCursor;
+					const CollisionLayer sourceLayer = context.owner.GetCollisionLayer();
+					query.comparator = [cursor, sourceLayer](
+						const targeting::TargetingCandidate& left,
+						const targeting::TargetingCandidate& right
+					)
+					{
+						const int leftPriority =
+							targeting::GetCombatTargetPriority(sourceLayer, *left.actor);
+						const int rightPriority =
+							targeting::GetCombatTargetPriority(sourceLayer, *right.actor);
+						if (leftPriority != rightPriority)
+						{
+							return leftPriority < rightPriority;
+						}
+						const sf::Vector2f leftOffset = left.actor->GetActorLocation() - cursor;
+						const sf::Vector2f rightOffset = right.actor->GetActorLocation() - cursor;
+						const float leftCursorDistanceSquared =
+							leftOffset.x * leftOffset.x + leftOffset.y * leftOffset.y;
+						const float rightCursorDistanceSquared =
+							rightOffset.x * rightOffset.x + rightOffset.y * rightOffset.y;
+						return leftCursorDistanceSquared != rightCursorDistanceSquared
+							? leftCursorDistanceSquared < rightCursorDistanceSquared
+							: left.distanceSquared < right.distanceSquared;
+					};
+				}
 				query.excludedTargets.reserve(excludedTargets.size());
 				for (Actor* excludedTarget : excludedTargets)
 				{
@@ -93,7 +125,9 @@ namespace ly
 			shared_ptr<Actor> currentTarget = findClosestTarget(
 				origin,
 				targetRange,
-				struckTargets
+				struckTargets,
+				// Only the first target follows the cursor; chain jumps stay nearest-first.
+				context.aimWorldPosition
 			);
 			if (!currentTarget)
 			{

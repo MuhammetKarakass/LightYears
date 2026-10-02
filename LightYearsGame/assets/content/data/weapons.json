@@ -113,10 +113,11 @@
       "attributes": [
         { "id": "Common.Damage", "baseValue": 38.0, "minValue": 0.0 },
         { "id": "Common.FireRate", "baseValue": 1.75, "minValue": 0.01 },
-        { "id": "Common.Range", "baseValue": 400.0, "minValue": 1.0 },
+        { "id": "Common.Range", "baseValue": 650.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Cone.HalfAngleDegrees", "baseValue": 22.5, "minValue": 1.0, "maxValue": 90.0 },
         { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 0.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Empowered.EverySuccessfulShots", "baseValue": 3.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Empowered.FinalMagazineRounds", "baseValue": 3.0, "minValue": 0.0, "maxValue": 18.0 },
         { "id": "Damage.IgniteStacks", "baseValue": 1.0, "minValue": 0.0 }
       ],
       "muzzles": [
@@ -177,6 +178,10 @@
       "featureTags": [],
       "heatGainCurve": [],
       "damageTags": ["Damage.Type.Photonic"],
+      "magazine": {
+        "capacity": 18,
+        "baseReloadTime": 2.0
+      },
       "empoweredShot": {
         "trigger": "EverySuccessfulShots",
         "statusStacksOnlyWhenEmpowered": true
@@ -202,13 +207,13 @@
         "visualScale": 0.9
       },
       "attributes": [
-        { "id": "Common.Damage", "baseValue": 3.0, "minValue": 0.0 },
-        { "id": "Common.FireRate", "baseValue": 7.0, "minValue": 0.01 },
+        { "id": "Common.Damage", "baseValue": 1.5, "minValue": 0.0 },
+        { "id": "Common.FireRate", "baseValue": 6.0, "minValue": 0.01 },
         { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 5.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Empowered.EverySuccessfulHits", "baseValue": 8.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Projectile.Delivery.Speed", "baseValue": 3400.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Projectile.Delivery.Lifetime", "baseValue": 0.0, "minValue": 0.0 },
-        { "id": "Common.Range", "baseValue": 650.0, "minValue": 1.0 },
+        { "id": "Common.Range", "baseValue": 900.0, "minValue": 1.0 },
         { "id": "Collision.Radius", "baseValue": 6.0, "minValue": 0.1 },
         { "id": "Area.Radius", "baseValue": 0.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Projectile.Delivery.PierceCount", "baseValue": 0.0, "minValue": 0.0 }
@@ -226,7 +231,7 @@
             "levelInterval": 1,
             "reward": {
               "attributeModifiers": [
-                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 2.0 },
+                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 1.0 },
                 { "attributeId": "PrimaryWeapon.Empowered.BonusDamage", "operation": "Add", "magnitude": 2.0 }
               ],
               "scalingRules": [
@@ -234,7 +239,7 @@
                   "targetAttributeId": "Common.Damage",
                   "sourceAttributeId": "Owner.AttackPower",
                   "operation": "Add",
-                  "coefficient": 0.02
+                  "coefficient": 0.01
                 },
                 {
                   "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
@@ -255,7 +260,7 @@
           "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.AttackPower",
           "operation": "Add",
-          "coefficient": 0.2
+          "coefficient": 0.1
         },
         {
           "targetAttributeId": "PrimaryWeapon.Empowered.BonusDamage",
@@ -303,7 +308,7 @@
       "attributes": [
         { "id": "Common.Damage", "baseValue": 20.0, "minValue": 0.0 },
         { "id": "Common.FireRate", "baseValue": 2.0, "minValue": 0.01 },
-        { "id": "Common.Range", "baseValue": 850.0, "minValue": 1.0 },
+        { "id": "Common.Range", "baseValue": 1200.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Arc.Electric.ChainCount", "baseValue": 3.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Arc.Electric.ChainRange", "baseValue": 250.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Arc.Electric.DamageMultiplierPerChain", "baseValue": 0.72, "minValue": 0.01, "maxValue": 1.0 },
@@ -410,7 +415,7 @@
       },
       "attributes": [
         { "id": "Common.Damage", "baseValue": 52.0, "minValue": 0.0 },
-        { "id": "PrimaryWeapon.Beam.Delivery.Range", "baseValue": 950.0, "minValue": 1.0 },
+        { "id": "PrimaryWeapon.Beam.Delivery.Range", "baseValue": 1000.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Beam.Delivery.Width", "baseValue": 26.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Feature.Heat.Gain", "baseValue": 38.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Feature.Heat.Capacity", "baseValue": 100.0, "minValue": 1.0 },
@@ -491,7 +496,7 @@
       "attributes": [
         { "id": "Common.Damage", "baseValue": 20.0, "minValue": 0.0 },
         { "id": "Common.FireRate", "baseValue": 2.5, "minValue": 0.01 },
-        { "id": "Common.Range", "baseValue": 780.0, "minValue": 1.0 },
+        { "id": "Common.Range", "baseValue": 1100.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Wave.Delivery.Speed", "baseValue": 850.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Wave.Delivery.InitialWidth", "baseValue": 80.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Wave.Delivery.MaximumWidth", "baseValue": 260.0, "minValue": 1.0 },
