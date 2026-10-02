@@ -195,6 +195,7 @@ namespace ly::content
 			definition.statusStacksOnlyWhenEmpowered = object.value("statusStacksOnlyWhenEmpowered", false);
 			definition.chargesPerCast = object.value("chargesPerCast", 0);
 			definition.chargedFireRate = object.value("chargedFireRate", 0.f);
+			definition.damageTags = ParseTags(object.value("damageTags", Json::array()));
 			return definition;
 		}
 

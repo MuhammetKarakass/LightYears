@@ -607,6 +607,20 @@ namespace ly::PrimaryWeaponDefinitionValidator
 				return { false, "Primary weapon damage tag is invalid: " + tagFailureReason };
 			}
 		}
+		if (definition.empoweredShot.has_value())
+		{
+			for (const GameplayTag& damageTag : definition.empoweredShot->damageTags)
+			{
+				if (!GameplayTagSchema::Validate(
+					damageTag,
+					GameplayTagKind::DamageType,
+					&tagFailureReason
+				))
+				{
+					return { false, "Primary weapon empowered shot damage tag is invalid: " + tagFailureReason };
+				}
+			}
+		}
 		const PrimaryWeaponTypeValidationContract* typeContract =
 			PrimaryWeaponValidationContractRegistry::FindType(definition.weaponType);
 		if (!typeContract)

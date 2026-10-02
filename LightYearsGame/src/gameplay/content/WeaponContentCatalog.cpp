@@ -36,14 +36,20 @@ namespace ly::content
 
 		bool HasDamageTag(const PrimaryWeaponDefinition& definition, const GameplayTag& tag)
 		{
-			for (const GameplayTag& damageTag : definition.damageTags)
+			const auto matches = [&](const List<GameplayTag>& damageTags)
 			{
-				if (damageTag.MatchesTag(tag))
+				for (const GameplayTag& damageTag : damageTags)
 				{
-					return true;
+					if (damageTag.MatchesTag(tag))
+					{
+						return true;
+					}
 				}
-			}
-			return false;
+				return false;
+			};
+			// Empowered shots may deal a different damage type than normal ones.
+			return matches(definition.damageTags) ||
+				(definition.empoweredShot.has_value() && matches(definition.empoweredShot->damageTags));
 		}
 
 		bool RequireDamageAttributes(

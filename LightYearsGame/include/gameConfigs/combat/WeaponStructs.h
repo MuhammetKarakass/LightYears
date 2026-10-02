@@ -75,6 +75,9 @@ struct PrimaryWeaponEmpoweredShotDefinition
 	bool statusStacksOnlyWhenEmpowered = false;
 	int chargesPerCast = 0;
 	float chargedFireRate = 0.f;
+	// When set, an empowered shot deals these damage types instead of the
+	// weapon's damageTags (e.g. Photonic normal shots, Electric empowered ones).
+	ly::List<ly::GameplayTag> damageTags;
 
 	bool operator==(const PrimaryWeaponEmpoweredShotDefinition& other) const
 	{
@@ -82,7 +85,8 @@ struct PrimaryWeaponEmpoweredShotDefinition
 			trigger == other.trigger &&
 			statusStacksOnlyWhenEmpowered == other.statusStacksOnlyWhenEmpowered &&
 			chargesPerCast == other.chargesPerCast &&
-			chargedFireRate == other.chargedFireRate;
+			chargedFireRate == other.chargedFireRate &&
+			damageTags == other.damageTags;
 	}
 	bool operator!=(const PrimaryWeaponEmpoweredShotDefinition& other) const
 	{

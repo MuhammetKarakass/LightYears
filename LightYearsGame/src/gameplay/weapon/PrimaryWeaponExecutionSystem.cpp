@@ -547,6 +547,12 @@ namespace ly
 		PrimaryWeaponExecutionContext runtimeContext =
 			WithRuntimeState(context, state);
 		runtimeContext.shotMetadata = shotMetadata;
+		// An empowered shot may switch damage type; every handler reads the
+		// shot's tags from the context.
+		if (shotMetadata.isEmpowered && !context.definition.empoweredShot->damageTags.empty())
+		{
+			runtimeContext.damageTags = context.definition.empoweredShot->damageTags;
+		}
 		for (const PrimaryWeaponFeatureHandler* feature : state.features)
 		{
 			if (!runtimeContext.ShouldContinue()) return false;

@@ -2198,8 +2198,7 @@ int main()
 		!sas::FindAttribute(
 			electric->attributes,
 			PrimaryWeaponSchema::Arc::Electric::ChainCount
-		) ||
-		electric->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Electric })
+		))
 	{
 		return Fail("Electric arc launcher JSON profile is invalid") ? 0 : 1;
 	}
@@ -2224,8 +2223,7 @@ int main()
 
 	const PrimaryWeaponDefinition* cryo =
 		FindWeapon(loaded.definitions, "Weapon.Wave.CryoProjector.Basic");
-	if (cryo->weaponType != PrimaryWeaponType::WaveExpanding ||
-		cryo->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Cryo })
+	if (cryo->weaponType != PrimaryWeaponType::WaveExpanding)
 	{
 		return Fail("Cryo wave projector JSON profile is invalid") ? 0 : 1;
 	}

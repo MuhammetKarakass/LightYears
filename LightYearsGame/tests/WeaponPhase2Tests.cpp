@@ -393,6 +393,14 @@ namespace ly
 			Check(NearlyEqual(before - range.Health(), 45.38f * 1.03f, 0.02f),
 				"electric: second empowered hit 0.25 s later, amplified by the first stack");
 			Check(ElectricStacks(*range.target) == 2, "electric: two empowered hits stack twice");
+			before = range.Health();
+			rig.world.TickInternal(0.5f);
+			Check(before > range.Health() && ElectricStacks(*range.target) == 2,
+				"electric: a later normal hit lands without adding an Electric stack");
+			const PrimaryWeaponDefinition shipped = CopyWeapon("Weapon.Arc.ElectricLauncher.Basic");
+			Check(shipped.damageTags == List<GameplayTag>{ DamageTypeSchema::Photonic } &&
+				shipped.empoweredShot && shipped.empoweredShot->damageTags == List<GameplayTag>{ DamageTypeSchema::Electric },
+				"electric: normal arcs are Photonic, empowered arcs Electric");
 
 			ElectricRange apDominant;
 			Check(apDominant.Setup(50.f, 10.f), "electric: AP-dominant range");
@@ -502,6 +510,12 @@ namespace ly
 			shared_ptr<WeaponTestShip> left;
 			shared_ptr<WeaponTestShip> right;
 			std::set<unsigned int> seenWaves;
+			// Waves seen since the last NewWaveDamage call; collected every tick
+			// so short-lived waves are not missed.
+			List<float> pendingDamage;
+			List<List<GameplayTag>> pendingTags;
+			// Damage tags of the waves returned by the last NewWaveDamage call.
+			List<List<GameplayTag>> waveTags;
 
 			bool Setup()
 			{
@@ -527,19 +541,28 @@ namespace ly
 				return runtime ? runtime->frostMeter.get() : nullptr;
 			}
 
-			// Damage of every wave fired since the last call, in order.
-			List<float> NewWaveDamage()
+			void CollectWaves()
 			{
-				rig.world.TickInternal(0.f);
-				List<float> damages;
 				for (const auto& weak : rig.world.GetActorsByType<ExpandingWaveWeaponActor>())
 				{
 					const auto wave = weak.lock();
 					if (wave && seenWaves.insert(wave->GetUniqueID()).second)
 					{
-						damages.push_back(wave->GetDamage());
+						pendingDamage.push_back(wave->GetDamage());
+						pendingTags.push_back(wave->GetDamageTags());
 					}
 				}
+			}
+
+			// Damage of every wave fired since the last call, in order.
+			List<float> NewWaveDamage()
+			{
+				rig.world.TickInternal(0.f);
+				CollectWaves();
+				List<float> damages = std::move(pendingDamage);
+				waveTags = std::move(pendingTags);
+				pendingDamage.clear();
+				pendingTags.clear();
 				return damages;
 			}
 
@@ -548,6 +571,7 @@ namespace ly
 				for (float elapsed = 0.f; elapsed < seconds - 0.0001f; elapsed += 0.05f)
 				{
 					rig.world.TickInternal(std::min(0.05f, seconds - elapsed));
+					CollectWaves();
 				}
 			}
 		};
@@ -561,6 +585,9 @@ namespace ly
 			range.rig.world.TickInternal(0.f);
 			const List<float> first = range.NewWaveDamage();
 			Check(first.size() == 1 && NearlyEqual(first[0], 28.1f), "cryo: normal wave 28.1");
+			const List<GameplayTag> photonic{ DamageTypeSchema::Photonic };
+			const List<GameplayTag> cryo{ DamageTypeSchema::Cryo };
+			Check(range.waveTags.size() == 1 && range.waveTags[0] == photonic, "cryo: a normal wave deals Photonic damage");
 			range.Advance(0.4f);
 			Check(NearlyEqual(250.f - range.left->GetHealthComponent().GetHealth(), 28.1f) &&
 				CryoStacks(*range.left) == 0, "cryo: a normal wave hits without Cryo stacks");
@@ -571,17 +598,25 @@ namespace ly
 			range.NewWaveDamage();
 			PrimaryWeaponFrostMeterState* frost = range.Frost();
 			Check(frost && frost->IsWhiteout(), "cryo: a full meter starts Whiteout");
-			range.Advance(0.4f);
+			// 1 s of Whiteout at the normal 2.5 waves/s is two or three waves
+			// (five if Whiteout still sped the weapon up).
+			range.Advance(1.f);
 			const List<float> whiteoutWaves = range.NewWaveDamage();
 			Check(whiteoutWaves.size() >= 2 && NearlyEqual(whiteoutWaves[0], 35.9f) &&
 				NearlyEqual(whiteoutWaves[1], 28.1f),
 				"cryo: Whiteout opens with an empowered 35.9 wave, then a normal one");
-			Check(whiteoutWaves.size() >= 2 && whiteoutWaves.size() <= 3, "cryo: Whiteout fires at 5 waves per second");
+			Check(range.waveTags.size() >= 2 && range.waveTags[0] == cryo && range.waveTags[1] == photonic,
+				"cryo: empowered Whiteout waves deal Cryo, normal ones Photonic");
+			Check(whiteoutWaves.size() >= 2 && whiteoutWaves.size() <= 3,
+				"cryo: Whiteout keeps the normal 2.5 waves per second (no fire-rate gain)");
+			const PrimaryWeaponRuntimeState* whiteoutRuntime = range.rig.Runtime();
+			Check(whiteoutRuntime && NearlyEqual(whiteoutRuntime->featureFireIntervalScale, 1.f),
+				"cryo: Whiteout leaves the fire interval unscaled");
 			range.Advance(0.3f);
 			Check(CryoStacks(*range.left) >= 1, "cryo: empowered waves apply Cryo");
 			Check(frost && frost->meter == 0, "cryo: no Frost is gained during Whiteout");
 
-			range.Advance(4.f);
+			range.Advance(3.4f);
 			Check(frost && !frost->IsWhiteout() && frost->lockoutRemaining > 0.f && frost->meter == 0,
 				"cryo: Whiteout ends into a lockout with an empty meter");
 			range.Advance(1.f);

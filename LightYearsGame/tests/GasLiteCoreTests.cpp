@@ -4674,9 +4674,7 @@ int main(int argc, char** argv)
 		return weapon.damageTags.size() == 1 && weapon.damageTags.front() == damageType;
 	};
 	if (!hasSingleDamageType(basicLaser, DamageTypeSchema::Photonic) ||
-		!hasSingleDamageType(dualKineticBlaster, DamageTypeSchema::Kinetic) ||
-		!hasSingleDamageType(electricArcLauncher, DamageTypeSchema::Electric) ||
-		!hasSingleDamageType(LoadedWeapon("Weapon.Wave.CryoProjector.Basic"), DamageTypeSchema::Cryo))
+		!hasSingleDamageType(dualKineticBlaster, DamageTypeSchema::Kinetic))
 	{
 		return Fail("Player primary weapon default damage types were not configured correctly");
 	}

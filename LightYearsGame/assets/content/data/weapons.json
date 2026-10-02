@@ -380,12 +380,13 @@
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Electric"],
+      "damageTags": ["Damage.Type.Photonic"],
       "empoweredShot": {
         "trigger": "AbilityCastCharges",
         "chargesPerCast": 2,
         "chargedFireRate": 4.0,
-        "statusStacksOnlyWhenEmpowered": true
+        "statusStacksOnlyWhenEmpowered": true,
+        "damageTags": ["Damage.Type.Electric"]
       }
     },
     {
@@ -501,7 +502,7 @@
         { "id": "PrimaryWeapon.Feature.FrostMeter.Max", "baseValue": 4.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Feature.FrostMeter.WhiteoutDuration", "baseValue": 4.0, "minValue": 0.1 },
         { "id": "PrimaryWeapon.Feature.FrostMeter.LockoutDuration", "baseValue": 3.0, "minValue": 0.1 },
-        { "id": "PrimaryWeapon.Feature.FrostMeter.WhiteoutFireRateMultiplier", "baseValue": 2.0, "minValue": 0.1 },
+        { "id": "PrimaryWeapon.Feature.FrostMeter.WhiteoutFireRateMultiplier", "baseValue": 1.0, "minValue": 0.1 },
         { "id": "PrimaryWeapon.Empowered.BonusDamage", "baseValue": 5.0, "minValue": 0.0 },
         { "id": "Damage.Cryo.BuildupPerHit", "baseValue": 1.0, "minValue": 1.0 }
       ],
@@ -563,10 +564,11 @@
       ],
       "featureTags": ["PrimaryWeapon.Feature.FrostMeter"],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Cryo"],
+      "damageTags": ["Damage.Type.Photonic"],
       "empoweredShot": {
         "trigger": "Whiteout",
-        "statusStacksOnlyWhenEmpowered": true
+        "statusStacksOnlyWhenEmpowered": true,
+        "damageTags": ["Damage.Type.Cryo"]
       }
     },
     {
