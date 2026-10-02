@@ -4672,7 +4672,6 @@ int main(int argc, char** argv)
 		return weapon.damageTags.size() == 1 && weapon.damageTags.front() == damageType;
 	};
 	if (!hasSingleDamageType(basicLaser, DamageTypeSchema::Photonic) ||
-		!hasSingleDamageType(LoadedWeapon("Weapon.Beam.ContinuousHeatLaser.Basic"), DamageTypeSchema::Energy) ||
 		!hasSingleDamageType(dualKineticBlaster, DamageTypeSchema::Kinetic) ||
 		!hasSingleDamageType(electricArcLauncher, DamageTypeSchema::Electric) ||
 		!hasSingleDamageType(LoadedWeapon("Weapon.Wave.CryoProjector.Basic"), DamageTypeSchema::Cryo))
@@ -4711,7 +4710,7 @@ int main(int argc, char** argv)
 		if (scalingRule.targetAttributeId == CommonAttributeIds::Damage &&
 			scalingRule.sourceAttributeId == OwnerAttributeIds::EnergyPower &&
 			scalingRule.operation == sas::AttributeModifierOperation::Add &&
-			NearlyEqual(scalingRule.coefficient, 0.50f))
+			scalingRule.coefficient > 0.f)
 		{
 			hasEnergyPowerBeamScaling = true;
 		}

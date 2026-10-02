@@ -335,6 +335,15 @@ namespace ly::content
 					}
 				);
 			}
+			definition.heatDamageRegions.clear();
+			for (const Json& region : object.value("heatDamageRegions", Json::array()))
+			{
+				HeatDamageRegionDefinition parsed;
+				parsed.upToHeatPercentage = region.value("upToHeatPercentage", 100.f);
+				parsed.damageMultiplier = region.value("damageMultiplier", 1.f);
+				parsed.damageTags = ParseTags(region.value("damageTags", Json::array()));
+				definition.heatDamageRegions.push_back(std::move(parsed));
+			}
 			definition.damageTags = ParseTags(
 				object.value("damageTags", Json::array())
 			);

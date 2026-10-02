@@ -362,6 +362,16 @@ struct HeatGainCurveSegmentDefinition
 	float gainMultiplier = 1.f;
 };
 
+// Discrete heat bands for continuous beams. Each band ends at this
+// percentage of heat capacity (the first starts at zero); its multiplier
+// scales beam damage and its damage tags, when set, replace the weapon's.
+struct HeatDamageRegionDefinition
+{
+	float upToHeatPercentage = 100.f;
+	float damageMultiplier = 1.f;
+	ly::List<ly::GameplayTag> damageTags;
+};
+
 struct PrimaryWeaponLevelStep
 {
 	ly::List<sas::AttributeModifier> attributeModifiers;
@@ -607,6 +617,8 @@ struct PrimaryWeaponDefinition
 	ly::List<sas::AttributeScalingRule> scalingRules;
 	ly::List<PrimaryWeaponFeatureType> featureTypes;
 	ly::List<HeatGainCurveSegmentDefinition> heatGainCurve;
+	// When set, replaces the linear DamageMultiplierAtMaxHeat model.
+	ly::List<HeatDamageRegionDefinition> heatDamageRegions;
 	ly::List<ly::GameplayTag> damageTags;
 	std::optional<PrimaryWeaponMagazineDefinition> magazine;
 	PrimaryWeaponCadenceMode cadenceMode = PrimaryWeaponCadenceMode::AuthoredScaling;

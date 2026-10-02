@@ -2211,7 +2211,8 @@ int main()
 	if (beam->weaponType != PrimaryWeaponType::BeamContinuous ||
 		beam->featureTypes != ly::List<PrimaryWeaponFeatureType>{ PrimaryWeaponFeatureType::Heat } ||
 		beam->heatGainCurve.size() != 4 ||
-		beam->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } ||
+		beam->heatDamageRegions.empty() ||
+		beam->heatDamageRegions.back().damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Energy } ||
 		!enemyEnergy ||
 		sas::FindAttribute(beam->attributes, ly::DamageAttributeIds::ShieldDamageMultiplier) ||
 		sas::FindAttribute(enemyEnergy->attributes, ly::DamageAttributeIds::ShieldDamageMultiplier) ||

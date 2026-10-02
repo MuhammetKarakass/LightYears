@@ -214,9 +214,40 @@ namespace ly
 				}
 			}
 
+			if (!definition.heatDamageRegions.empty())
+			{
+				float previousUpTo = 0.f;
+				for (const HeatDamageRegionDefinition& region : definition.heatDamageRegions)
+				{
+					if (!std::isfinite(region.upToHeatPercentage) || region.upToHeatPercentage <= previousUpTo ||
+						region.upToHeatPercentage > 100.f || !std::isfinite(region.damageMultiplier) ||
+						region.damageMultiplier < 0.f)
+					{
+						return { false, "Heat damage regions must have increasing bounds within zero to one hundred and non-negative multipliers." };
+					}
+					previousUpTo = region.upToHeatPercentage;
+				}
+				if (std::abs(previousUpTo - 100.f) > 0.001f)
+				{
+					return { false, "Heat damage regions must end at one hundred percent heat." };
+				}
+			}
+
 			if (definition.weaponType != PrimaryWeaponType::BeamContinuous)
 			{
 				return { true, {} };
+			}
+			if (!definition.heatDamageRegions.empty())
+			{
+				const PrimaryWeaponValidationResult cooldownResult = RequireAttribute(
+					definition, PrimaryWeaponSchema::Feature::Heat::OverheatCooldown, "Continuous beam heat feature");
+				if (!cooldownResult.isValid)
+				{
+					return cooldownResult;
+				}
+				return FindDefinitionAttribute(definition, PrimaryWeaponSchema::Feature::Heat::OverheatCooldown)->baseValue > 0.f
+					? PrimaryWeaponValidationResult{ true, {} }
+					: PrimaryWeaponValidationResult{ false, "Continuous beam heat cooldown must be positive." };
 			}
 			for (const sas::AttributeId& required : {
 				PrimaryWeaponSchema::Feature::Heat::OverheatCooldown,

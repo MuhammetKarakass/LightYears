@@ -36,7 +36,46 @@ namespace ly
 			List<weak_ptr<ContinuousBeamVisualActor>> beams;
 			List<PendingBeamHit> pendingHits;
 			float tickAccumulator{ 0.f };
+			// Tags of the current heat region; pending damage is delivered with them.
+			List<GameplayTag> damageTags;
 		};
+
+		struct BeamHeatDamage
+		{
+			float multiplier = 1.f;
+			List<GameplayTag> damageTags;
+		};
+
+		// Linear DamageMultiplierAtMaxHeat model, or the discrete heat region the
+		// current heat ratio falls into.
+		BeamHeatDamage ResolveBeamHeatDamage(const PrimaryWeaponExecutionContext& context, float heatRatio)
+		{
+			BeamHeatDamage result{ 1.f, context.damageTags };
+			const List<HeatDamageRegionDefinition>& regions = context.definition.heatDamageRegions;
+			if (regions.empty())
+			{
+				const float maximumDamageMultiplier = std::max(1.f, sas::FindAttributeValue(
+					context.attributes, PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat, 1.f));
+				result.multiplier = 1.f + (maximumDamageMultiplier - 1.f) * heatRatio;
+				return result;
+			}
+			const float heatPercentage = heatRatio * 100.f;
+			const HeatDamageRegionDefinition* region = &regions.back();
+			for (const HeatDamageRegionDefinition& candidate : regions)
+			{
+				if (heatPercentage < candidate.upToHeatPercentage)
+				{
+					region = &candidate;
+					break;
+				}
+			}
+			result.multiplier = region->damageMultiplier;
+			if (!region->damageTags.empty())
+			{
+				result.damageTags = region->damageTags;
+			}
+			return result;
+		}
 
 		void AddPendingBeamDamage(
 			ContinuousBeamWeaponRuntimeState& beamState,
@@ -61,6 +100,9 @@ namespace ly
 			const DamagePayload& payload
 		)
 		{
+			const List<GameplayTag> damageTags = beamState.damageTags.empty()
+				? context.damageTags
+				: beamState.damageTags;
 			List<PendingBeamHit> hits;
 			hits.swap(beamState.pendingHits);
 			for (const PendingBeamHit& hit : hits)
@@ -75,7 +117,7 @@ namespace ly
 					*target,
 					hit.damage,
 					&context.owner,
-					context.damageTags,
+					damageTags,
 					payload
 				);
 			}
@@ -177,19 +219,12 @@ namespace ly
 				const float heatRatio = heatCapacity > 0.f
 					? std::clamp(heat / heatCapacity, 0.f, 1.f)
 					: 0.f;
-				const float maximumDamageMultiplier = std::max(
-					1.f,
-					sas::FindAttributeValue(
-						context.attributes,
-						PrimaryWeaponSchema::Feature::Heat::DamageMultiplierAtMaxHeat,
-						1.f
-					)
-				);
-				const float damage = baseDamagePerSecond *
-					(1.f + (maximumDamageMultiplier - 1.f) * heatRatio) * deltaTime;
+				const BeamHeatDamage heatDamage = ResolveBeamHeatDamage(context, heatRatio);
+				const float damage = baseDamagePerSecond * heatDamage.multiplier * deltaTime;
 				const DamagePayload payload =
-					DamageTypeSystem::BuildPayload(context.damageTags, context.attributes);
+					DamageTypeSystem::BuildPayload(heatDamage.damageTags, context.attributes);
 				auto& beamState = static_cast<ContinuousBeamWeaponRuntimeState&>(state);
+				beamState.damageTags = heatDamage.damageTags;
 				Set<Actor*> damagedTargets;
 				size_t beamIndex = 0;
 				const auto tickBeam = [&](const WeaponMuzzleDefinition& muzzle)
@@ -307,7 +342,9 @@ namespace ly
 						DeliverPendingBeamDamage(
 							context,
 							beamState,
-							DamageTypeSystem::BuildPayload(context.damageTags, context.attributes)
+							DamageTypeSystem::BuildPayload(
+								beamState.damageTags.empty() ? context.damageTags : beamState.damageTags,
+								context.attributes)
 						);
 					}
 				}

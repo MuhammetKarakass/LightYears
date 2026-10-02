@@ -408,14 +408,13 @@
         "visualScale": 1.0
       },
       "attributes": [
-        { "id": "Common.Damage", "baseValue": 28.0, "minValue": 0.0 },
+        { "id": "Common.Damage", "baseValue": 52.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Beam.Delivery.Range", "baseValue": 950.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Beam.Delivery.Width", "baseValue": 26.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Feature.Heat.Gain", "baseValue": 38.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Feature.Heat.Capacity", "baseValue": 100.0, "minValue": 1.0 },
         { "id": "PrimaryWeapon.Feature.Heat.Dissipation", "baseValue": 25.0, "minValue": 0.0 },
         { "id": "PrimaryWeapon.Feature.Heat.OverheatCooldown", "baseValue": 2.5, "minValue": 0.1 },
-        { "id": "PrimaryWeapon.Feature.Heat.DamageMultiplierAtMaxHeat", "baseValue": 1.75, "minValue": 1.0 },
         { "id": "Damage.ShieldRegenerationDelay", "baseValue": 0.75, "minValue": 0.0 }
       ],
       "muzzles": [
@@ -427,35 +426,18 @@
         "rules": [
           {
             "firstLevel": 2,
-            "lastLevel": 2,
             "levelInterval": 1,
             "reward": {
               "attributeModifiers": [
-                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 6.0 }
+                { "attributeId": "Common.Damage", "operation": "Add", "magnitude": 8.0 }
               ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 3,
-            "lastLevel": 3,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "PrimaryWeapon.Beam.Delivery.Range", "operation": "Add", "magnitude": 150.0 }
-              ],
-              "unlockedUpgradeIds": [],
-              "unlockedFeatureTags": []
-            }
-          },
-          {
-            "firstLevel": 4,
-            "lastLevel": 4,
-            "levelInterval": 1,
-            "reward": {
-              "attributeModifiers": [
-                { "attributeId": "PrimaryWeapon.Feature.Heat.DamageMultiplierAtMaxHeat", "operation": "Add", "magnitude": 0.2 }
+              "scalingRules": [
+                {
+                  "targetAttributeId": "Common.Damage",
+                  "sourceAttributeId": "Owner.Energy.Power",
+                  "operation": "Add",
+                  "coefficient": 0.08
+                }
               ],
               "unlockedUpgradeIds": [],
               "unlockedFeatureTags": []
@@ -467,15 +449,9 @@
       "scalingRules": [
         {
           "targetAttributeId": "Common.Damage",
-          "sourceAttributeId": "Owner.AttackPower",
-          "operation": "Add",
-          "coefficient": 0.75
-        },
-        {
-          "targetAttributeId": "Common.Damage",
           "sourceAttributeId": "Owner.Energy.Power",
           "operation": "Add",
-          "coefficient": 0.5
+          "coefficient": 0.76
         }
       ],
       "featureTags": ["PrimaryWeapon.Feature.Heat"],
@@ -485,7 +461,12 @@
         { "endHeatPercentage": 90.0, "gainMultiplier": 0.25 },
         { "endHeatPercentage": 100.0, "gainMultiplier": 0.15 }
       ],
-      "damageTags": ["Damage.Type.Energy"]
+      "heatDamageRegions": [
+        { "upToHeatPercentage": 35.0, "damageMultiplier": 1.0 },
+        { "upToHeatPercentage": 75.0, "damageMultiplier": 1.15 },
+        { "upToHeatPercentage": 100.0, "damageMultiplier": 1.4, "damageTags": ["Damage.Type.Energy"] }
+      ],
+      "damageTags": ["Damage.Type.Photonic"]
     },
     {
       "id": "Weapon.Wave.CryoProjector.Basic",

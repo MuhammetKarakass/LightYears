@@ -458,6 +458,35 @@ namespace ly
 			Check(HasIgnite(*ahead) && HasIgnite(*offAxis), "cone: the empowered blast ignites every target it hits");
 		}
 
+		void TestHeatLaserLevelOne()
+		{
+			// Design (Aegis L1: EP 43): tick damage 13 + 43 * 0.19 = 21.17 every
+			// 0.25 s, x1.15 from 35% heat and x1.40 (Energy) from 75%.
+			const auto measureTick = [](float heat) -> float
+			{
+				WeaponRig rig;
+				if (!rig.Setup(CopyWeapon("Weapon.Beam.ContinuousHeatLaser.Basic"), 0.f, 43.f)) return -1.f;
+				rig.ship->SetCollisionLayer(CollisionLayer::Player);
+				const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
+				target->SetActorLocation({ 0.f, -300.f });
+				target->SetCollisionLayer(CollisionLayer::Enemy);
+				target->SetCollisionMask(CollisionLayer::PlayerBullet);
+				rig.world.TickInternal(0.f);
+				rig.Hold(true);
+				rig.world.TickInternal(0.f);
+				if (PrimaryWeaponRuntimeState* runtime = rig.Runtime())
+				{
+					runtime->SetFeatureValue(PrimaryWeaponSchema::Feature::Heat::CurrentRuntimeValue, heat);
+				}
+				const float before = target->GetHealthComponent().GetHealth();
+				rig.world.TickInternal(0.25f);
+				return before - target->GetHealthComponent().GetHealth();
+			};
+			Check(NearlyEqual(measureTick(10.f), 21.17f, 0.05f), "heat: low heat tick 21.17");
+			Check(NearlyEqual(measureTick(50.f), 21.17f * 1.15f, 0.05f), "heat: mid heat tick x1.15 (24.35)");
+			Check(NearlyEqual(measureTick(85.f), 21.17f * 1.4f, 0.05f), "heat: high heat tick x1.40 (29.64)");
+		}
+
 		void TestSourceSustainedStatusLifetime()
 		{
 			World world{ nullptr };
@@ -530,6 +559,7 @@ int main()
 	run("dual", &TestDualKineticLevelOne);
 	run("electric", &TestElectricLauncherLevelOne);
 	run("cone", &TestConeShotgunLevelOne);
+	run("heat", &TestHeatLaserLevelOne);
 
 	std::cout << (gFailures == 0 ? "[PASS] All weapon phase-2 checks passed\n" : "[FAIL] Weapon phase-2 checks failed\n");
 	return gFailures == 0 ? 0 : 1;
