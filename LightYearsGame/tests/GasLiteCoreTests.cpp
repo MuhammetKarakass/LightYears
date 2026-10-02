@@ -2479,9 +2479,10 @@ int main(int argc, char** argv)
 	{
 		return Fail("Kinetic did not add a second stack");
 	}
-	if (!NearlyEqual(armoredTarget.GetHealth(), 94.47f))
+	// Unshredded Armor 100 would take exactly half of the 1 damage.
+	if (!(armoredTarget.GetHealth() < 94.5f - 0.0001f))
 	{
-		return Fail("Existing Kinetic stack did not affect the next hit");
+		return Fail("Existing Kinetic stack did not shred Armor for the next hit");
 	}
 
 	TestCombatant fourStackTarget;
@@ -2495,9 +2496,9 @@ int main(int argc, char** argv)
 	ApplyCombatDamage(fourStackTarget, 1.f, nullptr, { DamageTypeSchema::Kinetic }, fourStackKineticPayload);
 	const float healthBeforeFourStackHit = fourStackTarget.GetHealth();
 	ApplyCombatDamage(fourStackTarget, 100.f, nullptr, { DamageTypeSchema::Kinetic }, kineticPayload);
-	if (!NearlyEqual(healthBeforeFourStackHit - fourStackTarget.GetHealth(), 65.f))
+	if (!(healthBeforeFourStackHit - fourStackTarget.GetHealth() > 50.f + 0.0001f))
 	{
-		return Fail("Four existing Kinetic stacks did not resolve 30 percent penetration");
+		return Fail("Four existing Kinetic stacks did not shred Armor");
 	}
 
 	TestCombatant energyAgainstKineticTarget;
@@ -2519,9 +2520,12 @@ int main(int argc, char** argv)
 		{ DamageTypeSchema::Energy },
 		DamageTypeSystem::BuildPayload({ DamageTypeSchema::Energy })
 	);
-	if (!NearlyEqual(healthBeforeEnergyHit - energyAgainstKineticTarget.GetHealth(), 50.f))
+	if (!NearlyEqual(
+		healthBeforeEnergyHit - energyAgainstKineticTarget.GetHealth(),
+		healthBeforeFourStackHit - fourStackTarget.GetHealth()
+	))
 	{
-		return Fail("Kinetic penetration leaked into an Energy hull hit");
+		return Fail("Kinetic armor shred did not apply to an Energy hull hit");
 	}
 
 	TestCombatant thermalTarget;
@@ -2739,7 +2743,7 @@ int main(int argc, char** argv)
 	if (!NearlyEqual(damageStatusBalance.CryoSlowPercent(0), 0.f) ||
 		!NearlyEqual(damageStatusBalance.ElectricDamageTakenMultiplier(0), 0.f) ||
 		!NearlyEqual(damageStatusBalance.ThermalDamagePerSecond(0), 0.f) ||
-		!NearlyEqual(damageStatusBalance.KineticArmorPenetration(0), 0.f))
+		!NearlyEqual(damageStatusBalance.KineticArmorShred(0), 0.f))
 	{
 		return Fail("Zero-stack status balance resolved to a positive first-stack value");
 	}

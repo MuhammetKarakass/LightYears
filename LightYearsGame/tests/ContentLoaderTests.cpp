@@ -449,7 +449,7 @@ namespace
 			balance.electric.maxStacks != 4 ||
 			!NearlyEqual(balance.electric.values[0], 0.03f) ||
 			!NearlyEqual(balance.ThermalDamagePerSecond(4), 5.f) ||
-			!NearlyEqual(balance.KineticArmorPenetration(4), 0.30f))
+			!NearlyEqual(balance.KineticArmorShred(4), 0.30f))
 		{
 			return Fail("Damage status balance acceptance values are invalid") ? 0 : 1;
 		}

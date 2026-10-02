@@ -442,7 +442,7 @@ int main(int argc, char** argv)
 			}
 		}
 
-		// Test multi-projectile / shotgun volley: exactly 1 ammo per volley
+		// Multi-muzzle volley: one round per muzzle fired; alternating muzzles spend one.
 		{
 			PrimaryWeaponDefinition multiProjectileDef = fighterLaser;
 			multiProjectileDef.muzzleDefinitions = {
@@ -469,9 +469,29 @@ int main(int argc, char** argv)
 			{
 				return Fail("Suite C: Multi-muzzle FireOnce failed");
 			}
-			if (state.magazineState.roundsRemaining != 47)
+			if (state.magazineState.roundsRemaining != 45)
 			{
-				return Fail("Suite C: Multi-muzzle volley must consume exactly 1 ammo");
+				return Fail("Suite C: Multi-muzzle volley must consume one round per muzzle");
+			}
+
+			// Fewer rounds than muzzles: the full volley fires, the magazine
+			// clamps at zero and reloads.
+			state.magazineState.roundsRemaining = 1;
+			if (!PrimaryWeaponExecutionSystem::FireOnce(ctx, state) ||
+				state.magazineState.roundsRemaining != 0 ||
+				state.magazineState.reloadRemaining <= 0.0)
+			{
+				return Fail("Suite C: Last round must fire the volley, clamp to 0 and reload");
+			}
+
+			multiProjectileDef.alternateMuzzles = true;
+			PrimaryWeaponRuntimeState alternatingState;
+			PrimaryWeaponExecutionSystem::InitializeRuntime(multiProjectileDef, alternatingState);
+			PrimaryWeaponExecutionSystem::BeginFire(ctx, alternatingState);
+			if (!PrimaryWeaponExecutionSystem::FireOnce(ctx, alternatingState) ||
+				alternatingState.magazineState.roundsRemaining != 47)
+			{
+				return Fail("Suite C: Alternating muzzles must consume one round per shot");
 			}
 		}
 	}

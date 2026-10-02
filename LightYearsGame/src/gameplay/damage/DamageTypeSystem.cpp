@@ -201,18 +201,8 @@ namespace ly
 			DamageContext& context
 		)
 		{
-			const sas::ActiveGameplayEffect* active = targetAbilitySystem.FindGameplayEffectById(
-				DamageStatusEffectIds::KineticEffectId
-			);
-			if (active && active->stackCount > 0)
-			{
-				context.payload.armorPenetration = std::clamp(
-					context.payload.armorPenetration +
-					GetDamageStatusBalance().KineticArmorPenetration(active->stackCount),
-					0.f,
-					1.f
-				);
-			}
+			// Kinetic stacks shred the target's Armor for every incoming hit; that
+			// is resolved by ResolveArmorShred, not by this hit's payload.
 			const sas::GameplayEffectDefinition* definition =
 				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::KineticEffectId);
 			if (!definition)
@@ -230,6 +220,24 @@ namespace ly
 				context.payload.kineticStacks
 			);
 		}
+	}
+
+	float DamageTypeSystem::ResolveArmorShred(
+		const sas::AbilitySystemComponent& targetAbilitySystem
+	)
+	{
+		const sas::ActiveGameplayEffect* kinetic = targetAbilitySystem.FindGameplayEffectById(
+			DamageStatusEffectIds::KineticEffectId
+		);
+		if (!kinetic || kinetic->stackCount <= 0)
+		{
+			return 0.f;
+		}
+		return std::clamp(
+			GetDamageStatusBalance().KineticArmorShred(kinetic->stackCount),
+			0.f,
+			1.f
+		);
 	}
 
 	DamagePayload DamageTypeSystem::BuildPayload(

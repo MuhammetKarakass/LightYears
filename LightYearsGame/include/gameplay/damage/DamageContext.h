@@ -84,6 +84,9 @@ namespace ly
 			float y = 0.f;
 		};
 		TargetLocationSnapshot targetLocationAtResolution{};
+		// Armor fraction removed by the target's Kinetic stacks, captured before
+		// this hit applies its own statuses, so a new stack shreds later hits only.
+		float targetArmorShred = 0.f;
 		List<GameplayTag> damageTags;
 		DamagePayload payload;
 	};

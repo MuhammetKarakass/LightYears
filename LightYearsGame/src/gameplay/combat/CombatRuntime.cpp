@@ -259,6 +259,7 @@ namespace ly
 		const sf::Vector2f targetLocation = mOwner.GetActorLocation();
 		context.targetLocationAtResolution.x = targetLocation.x;
 		context.targetLocationAtResolution.y = targetLocation.y;
+		context.targetArmorShred = DamageTypeSystem::ResolveArmorShred(mAbilitySystemComponent);
 		frame.capturesEffectEvents = true;
 		mAbilitySystemComponent.ProcessGameplayEffectEvent(
 			context,
@@ -365,11 +366,14 @@ namespace ly
 
 	void CombatRuntime::ApplyHullDamageMitigation(DamageContext& context)
 	{
-		const float armorDamageMultiplier = sas::AttributeMath::GetArmorDamageMultiplier(
-			mAbilitySystemComponent.GetAttributes().GetCurrentValue(
-				OwnerAttributeIds::Armor
-			)
+		// Kinetic armor shred lowers the target's Armor first (any hit, any damage
+		// type); the hit's own armor penetration then applies to what remains.
+		const float armor = std::max(
+			0.f,
+			mAbilitySystemComponent.GetAttributes().GetCurrentValue(OwnerAttributeIds::Armor)
 		);
+		const float shreddedArmor = armor * (1.f - std::clamp(context.targetArmorShred, 0.f, 1.f));
+		const float armorDamageMultiplier = sas::AttributeMath::GetArmorDamageMultiplier(shreddedArmor);
 		// Preserve the established penetration semantics while resolving from the
 		// multiplier directly. This avoids 1 - reduction cancellation at extreme
 		// but finite Armor values, where float reduction can round to exactly 1.

@@ -300,7 +300,7 @@ namespace ly
 			// Design (Interceptor L1: AP 41, EP 28, AttackSpeed +1%):
 			// normal 3 + 41 * 0.20 = 11.2; empowered + 5 + 41 * 0.08 + 28 * 0.25 = 26.48;
 			// fire rate 7 * 1.01 = 7.07/s. Both muzzles fire every shot; the shot
-			// spends one round and counts one hit. Normal shots are Photonic, the
+			// spends one round per bullet (two) and counts one hit. Normal shots are Photonic, the
 			// empowered shot is Kinetic and carries one Kinetic stack.
 			WeaponRig rig;
 			const PrimaryWeaponDefinition dual = CopyWeapon("Weapon.Projectile.DualKineticBlaster.Basic");
@@ -320,7 +320,7 @@ namespace ly
 			Check(first.size() == 2, "dual: both muzzles fire on one shot");
 			Check(runtime && NearlyEqual(runtime->fireIntervalRemaining, 1.f / 7.07f, 0.001f),
 				"dual: AttackSpeed +1% fires at 7.07/s");
-			Check(runtime && runtime->magazineState.roundsRemaining == 63, "dual: a two-muzzle shot spends one round");
+			Check(runtime && runtime->magazineState.roundsRemaining == 62, "dual: a two-muzzle shot spends two rounds");
 			if (first.size() != 2) return;
 			Check((first[0]->GetActorLocation().x < 0.f) != (first[1]->GetActorLocation().x < 0.f),
 				"dual: the shot leaves the left and the right muzzle");
@@ -349,7 +349,7 @@ namespace ly
 			}
 			runtime = rig.Runtime();
 			Check(ninth.size() == 2, "dual: the ninth shot fires two projectiles");
-			Check(runtime && runtime->magazineState.roundsRemaining == 55, "dual: nine shots spend nine rounds");
+			Check(runtime && runtime->magazineState.roundsRemaining == 46, "dual: nine shots spend eighteen rounds");
 			for (const auto& projectile : ninth)
 			{
 				Check(projectile->IsEmpowered() && NearlyEqual(projectile->GetDamage(), 26.48f) &&
@@ -359,17 +359,28 @@ namespace ly
 			}
 			if (ninth.empty()) return;
 
-			// The empowered hit breaks armor: it applies one Kinetic stack.
+			// The empowered hit breaks armor: it applies one Kinetic stack, and
+			// Kinetic stacks shred the target's Armor for every later hit.
 			const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
 			if (!target) return;
 			target->SetActorLocation({ 5000.f, 5000.f });
+			target->GetCombatRuntime().GetAbilitySystemComponent().GetAttributes()
+				.SetBaseValue(OwnerAttributeIds::Armor, 100.f);
 			rig.world.TickInternal(0.f);
+			const auto health = [&target] { return target->GetHealthComponent().GetHealth(); };
+			float before = health();
 			ApplyCombatDamage(*target, first[0]->GetDamage(), rig.ship.get(),
 				first[0]->GetDamageTags(), first[0]->GetDamagePayload());
+			const float photonicDamageUnshredded = before - health();
 			Check(KineticStacks(*target) == 0, "dual: a normal hit applies no Kinetic stack");
 			ApplyCombatDamage(*target, ninth[0]->GetDamage(), rig.ship.get(),
 				ninth[0]->GetDamageTags(), ninth[0]->GetDamagePayload());
 			Check(KineticStacks(*target) == 1, "dual: an empowered hit applies one Kinetic stack");
+			before = health();
+			ApplyCombatDamage(*target, first[0]->GetDamage(), rig.ship.get(),
+				first[0]->GetDamageTags(), first[0]->GetDamagePayload());
+			Check(before - health() > photonicDamageUnshredded + 0.0001f,
+				"dual: Kinetic stacks shred Armor for a Photonic hit");
 		}
 
 		int ElectricStacks(SpaceShip& ship)

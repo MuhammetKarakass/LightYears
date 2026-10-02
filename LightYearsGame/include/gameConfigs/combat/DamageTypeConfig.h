@@ -79,7 +79,8 @@ namespace ly
 		{
 			return thermal.ValueForStack(stack);
 		}
-		float KineticArmorPenetration(int stack) const
+		// Fraction of the target's Armor removed while it carries Kinetic stacks.
+		float KineticArmorShred(int stack) const
 		{
 			return kinetic.ValueForStack(stack);
 		}

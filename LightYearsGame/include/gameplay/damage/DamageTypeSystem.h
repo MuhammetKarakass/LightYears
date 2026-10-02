@@ -22,6 +22,10 @@ namespace ly
 			DamageContext& context
 		);
 
+		// Fraction of the target's Armor removed by its current Kinetic stacks.
+		// Applies to every incoming hit regardless of source or damage type.
+		float ResolveArmorShred(const sas::AbilitySystemComponent& targetAbilitySystem);
+
 		void SynchronizeStatusEffect(
 			sas::AbilitySystemComponent& targetAbilitySystem,
 			sas::ActiveGameplayEffect& effect

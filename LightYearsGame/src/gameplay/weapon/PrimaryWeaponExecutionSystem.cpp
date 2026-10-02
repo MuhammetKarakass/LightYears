@@ -197,6 +197,19 @@ namespace ly
 			return static_cast<int>(std::round(sas::FindAttributeValue(attributes, id, 0.f)));
 		}
 
+		// A magazine spends one round per bullet: one per muzzle that fires this
+		// shot (a twin gun firing both muzzles spends two, an alternating one
+		// spends one). Extra pellets per muzzle from upgrades cost nothing more.
+		int ResolveRoundsPerShot(const PrimaryWeaponDefinition& definition)
+		{
+			const int muzzleCount = static_cast<int>(definition.muzzleDefinitions.size());
+			if (definition.alternateMuzzles || muzzleCount <= 1)
+			{
+				return 1;
+			}
+			return muzzleCount;
+		}
+
 		bool IsFinalMagazinePhase(const PrimaryWeaponExecutionContext& context, const PrimaryWeaponRuntimeState& state)
 		{
 			if (!context.definition.magazine.has_value())
@@ -575,7 +588,9 @@ namespace ly
 
 		if (context.definition.magazine.has_value())
 		{
-			--state.magazineState.roundsRemaining;
+			// The last rounds still fire a full shot; the magazine clamps at
+			// zero and reloads (e.g. 1 round left on a twin gun fires both).
+			state.magazineState.roundsRemaining -= ResolveRoundsPerShot(context.definition);
 			if (state.magazineState.roundsRemaining <= 0)
 			{
 				state.magazineState.roundsRemaining = 0;
