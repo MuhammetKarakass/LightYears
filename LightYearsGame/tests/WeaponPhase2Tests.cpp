@@ -193,6 +193,7 @@ namespace ly
 			PrimaryWeaponEmpoweredShotDefinition empowered;
 			empowered.trigger = PrimaryWeaponEmpoweredTrigger::EverySuccessfulShots;
 			empowered.statusStacksOnlyWhenEmpowered = true;
+			empowered.damageTags = { DamageTypeSchema::Kinetic };
 			dual.empoweredShot = empowered;
 			SetAttribute(dual, PrimaryWeaponSchema::Empowered::EverySuccessfulShots, 2.f);
 			SetAttribute(dual, PrimaryWeaponSchema::Empowered::FinalMagazineRounds, 0.f);
@@ -287,11 +288,20 @@ namespace ly
 				"laser: Rapid Laser still rounds final damage up");
 		}
 
+		int KineticStacks(SpaceShip& ship)
+		{
+			const sas::ActiveGameplayEffect* effect = ship.GetCombatRuntime().GetAbilitySystemComponent()
+				.FindGameplayEffectById(DamageStatusEffectIds::KineticEffectId);
+			return effect ? effect->stackCount : 0;
+		}
+
 		void TestDualKineticLevelOne()
 		{
 			// Design (Interceptor L1: AP 41, EP 28, AttackSpeed +1%):
 			// normal 3 + 41 * 0.20 = 11.2; empowered + 5 + 41 * 0.08 + 28 * 0.25 = 26.48;
-			// fire rate 7 * 1.01 = 7.07/s; one hit per shot; Kinetic stack only when empowered.
+			// fire rate 7 * 1.01 = 7.07/s. Both muzzles fire every shot; the shot
+			// spends one round and counts one hit. Normal shots are Photonic, the
+			// empowered shot is Kinetic and carries one Kinetic stack.
 			WeaponRig rig;
 			const PrimaryWeaponDefinition dual = CopyWeapon("Weapon.Projectile.DualKineticBlaster.Basic");
 			Check(rig.Setup(dual, 41.f, 28.f), "dual: rig with the shipped Dual Kinetic Blaster");
@@ -299,35 +309,67 @@ namespace ly
 			rig.Abilities().GetAttributes().SetBaseValue(OwnerAttributeIds::AttackSpeed, 1.f);
 			Check(dual.magazine.has_value() && dual.magazine->capacity == 64 &&
 				NearlyEqual(dual.magazine->baseReloadTime, 1.5f), "dual: 64-round magazine, 1.5 s reload");
+			Check(!dual.alternateMuzzles, "dual: muzzles do not alternate");
+			Check(dual.damageTags == List<GameplayTag>{ DamageTypeSchema::Photonic } &&
+				dual.empoweredShot && dual.empoweredShot->damageTags == List<GameplayTag>{ DamageTypeSchema::Kinetic },
+				"dual: normal shots are Photonic, empowered shots Kinetic");
 			rig.Hold(true);
 			rig.world.TickInternal(0.f);
 			const auto first = rig.NewProjectiles();
 			PrimaryWeaponRuntimeState* runtime = rig.Runtime();
-			Check(first.size() == 1, "dual: one projectile per shot");
+			Check(first.size() == 2, "dual: both muzzles fire on one shot");
 			Check(runtime && NearlyEqual(runtime->fireIntervalRemaining, 1.f / 7.07f, 0.001f),
 				"dual: AttackSpeed +1% fires at 7.07/s");
-			if (first.size() != 1) return;
-			Check(NearlyEqual(first[0]->GetDamage(), 11.2f) && first[0]->GetDamagePayload().kineticStacks == 0,
-				"dual: normal shot 11.2 without a Kinetic stack");
-			first[0]->GetShotMetadata().ReportHit();
+			Check(runtime && runtime->magazineState.roundsRemaining == 63, "dual: a two-muzzle shot spends one round");
+			if (first.size() != 2) return;
+			Check((first[0]->GetActorLocation().x < 0.f) != (first[1]->GetActorLocation().x < 0.f),
+				"dual: the shot leaves the left and the right muzzle");
+			for (const auto& projectile : first)
+			{
+				Check(NearlyEqual(projectile->GetDamage(), 11.2f) &&
+					projectile->GetDamageTags() == List<GameplayTag>{ DamageTypeSchema::Photonic } &&
+					projectile->GetDamagePayload().kineticStacks == 0,
+					"dual: normal projectile is Photonic 11.2 without a Kinetic stack");
+				projectile->GetShotMetadata().ReportHit();
+			}
+			Check(runtime && runtime->hitLedger && runtime->hitLedger->hitsSinceEmpowered == 1,
+				"dual: both projectiles hitting count as one hit");
 
-			float previousX = first[0]->GetActorLocation().x;
-			bool alternates = true;
-			shared_ptr<PrimaryWeaponProjectileActor> ninth;
+			List<shared_ptr<PrimaryWeaponProjectileActor>> ninth;
 			for (int shot = 2; shot <= 9; ++shot)
 			{
 				rig.world.TickInternal(1.f / 7.07f + 0.0001f);
 				const auto fresh = rig.NewProjectiles();
-				if (fresh.size() != 1) { alternates = false; break; }
-				alternates = alternates && (fresh[0]->GetActorLocation().x < 0.f) != (previousX < 0.f);
-				previousX = fresh[0]->GetActorLocation().x;
-				if (shot < 9) fresh[0]->GetShotMetadata().ReportHit();
-				else ninth = fresh[0];
+				if (fresh.size() != 2) break;
+				if (shot < 9)
+				{
+					for (const auto& projectile : fresh) projectile->GetShotMetadata().ReportHit();
+				}
+				else ninth = fresh;
 			}
-			Check(alternates, "dual: muzzles alternate left and right");
-			Check(ninth && ninth->IsEmpowered() && NearlyEqual(ninth->GetDamage(), 26.48f) &&
-				ninth->GetDamagePayload().kineticStacks == 1,
-				"dual: after 8 hits the next shot is 26.48 with one Kinetic stack");
+			runtime = rig.Runtime();
+			Check(ninth.size() == 2, "dual: the ninth shot fires two projectiles");
+			Check(runtime && runtime->magazineState.roundsRemaining == 55, "dual: nine shots spend nine rounds");
+			for (const auto& projectile : ninth)
+			{
+				Check(projectile->IsEmpowered() && NearlyEqual(projectile->GetDamage(), 26.48f) &&
+					projectile->GetDamageTags() == List<GameplayTag>{ DamageTypeSchema::Kinetic } &&
+					projectile->GetDamagePayload().kineticStacks == 1,
+					"dual: after 8 hits the next shot is Kinetic 26.48 with one Kinetic stack");
+			}
+			if (ninth.empty()) return;
+
+			// The empowered hit breaks armor: it applies one Kinetic stack.
+			const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
+			if (!target) return;
+			target->SetActorLocation({ 5000.f, 5000.f });
+			rig.world.TickInternal(0.f);
+			ApplyCombatDamage(*target, first[0]->GetDamage(), rig.ship.get(),
+				first[0]->GetDamageTags(), first[0]->GetDamagePayload());
+			Check(KineticStacks(*target) == 0, "dual: a normal hit applies no Kinetic stack");
+			ApplyCombatDamage(*target, ninth[0]->GetDamage(), rig.ship.get(),
+				ninth[0]->GetDamageTags(), ninth[0]->GetDamagePayload());
+			Check(KineticStacks(*target) == 1, "dual: an empowered hit applies one Kinetic stack");
 		}
 
 		int ElectricStacks(SpaceShip& ship)
@@ -673,6 +715,23 @@ namespace ly
 			ApplyCombatDamage(*target, 1.f, stranger.get(), electric, plain);
 			world.TickInternal(1.f);
 			Check(ElectricStacks(*target) == 0, "lifetime: 6 s without same-type source damage clears all stacks at once");
+
+			// Kinetic follows the same rule.
+			const List<GameplayTag> kinetic{ DamageTypeSchema::Kinetic };
+			DamagePayload kineticStacking;
+			kineticStacking.kineticStacks = 2;
+			DamagePayload kineticPlain;
+			kineticPlain.kineticStacks = 0;
+			ApplyCombatDamage(*target, 1.f, source.get(), kinetic, kineticStacking);
+			Check(KineticStacks(*target) == 2, "lifetime: two Kinetic stacks applied");
+			world.TickInternal(5.5f);
+			Check(KineticStacks(*target) == 2, "lifetime: Kinetic stacks do not decay one by one");
+			ApplyCombatDamage(*target, 1.f, source.get(), kinetic, kineticPlain);
+			world.TickInternal(5.5f);
+			Check(KineticStacks(*target) == 2, "lifetime: a stackless Kinetic hit from the source keeps them");
+			ApplyCombatDamage(*target, 1.f, source.get(), { DamageTypeSchema::Photonic }, plain);
+			world.TickInternal(1.f);
+			Check(KineticStacks(*target) == 0, "lifetime: 6 s without Kinetic source damage clears all Kinetic stacks");
 		}
 	}
 }

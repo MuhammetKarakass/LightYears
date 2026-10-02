@@ -217,7 +217,6 @@
         { "offset": [-18.0, 48.0], "rotationOffset": 0.0 },
         { "offset": [18.0, 48.0], "rotationOffset": 0.0 }
       ],
-      "alternateMuzzles": true,
       "automaticFire": true,
       "progression": {
         "scrapCost": { "base": 40, "step": 10 },
@@ -273,12 +272,13 @@
       ],
       "featureTags": [],
       "heatGainCurve": [],
-      "damageTags": ["Damage.Type.Kinetic"],
+      "damageTags": ["Damage.Type.Photonic"],
       "cadenceMode": "OwnerAttackSpeedPercentage",
       "magazine": { "capacity": 64, "baseReloadTime": 1.5 },
       "empoweredShot": {
         "trigger": "EverySuccessfulHits",
-        "statusStacksOnlyWhenEmpowered": true
+        "statusStacksOnlyWhenEmpowered": true,
+        "damageTags": ["Damage.Type.Kinetic"]
       }
     },
     {

@@ -4652,7 +4652,7 @@ int main(int argc, char** argv)
 		dualKineticBlaster.muzzleDefinitions.size() != 2 ||
 		sas::FindAttributeValue(dualKineticBlaster.attributes, CommonAttributeIds::Range) <= 400.f ||
 		dualKineticBlaster.damageTags.size() != 1 ||
-		dualKineticBlaster.damageTags.front() != DamageTypeSchema::Kinetic)
+		dualKineticBlaster.damageTags.front() != DamageTypeSchema::Photonic)
 	{
 		return Fail("Dual kinetic blaster has the wrong primary weapon profile");
 	}
@@ -4674,7 +4674,7 @@ int main(int argc, char** argv)
 		return weapon.damageTags.size() == 1 && weapon.damageTags.front() == damageType;
 	};
 	if (!hasSingleDamageType(basicLaser, DamageTypeSchema::Photonic) ||
-		!hasSingleDamageType(dualKineticBlaster, DamageTypeSchema::Kinetic))
+		!hasSingleDamageType(dualKineticBlaster, DamageTypeSchema::Photonic))
 	{
 		return Fail("Player primary weapon default damage types were not configured correctly");
 	}

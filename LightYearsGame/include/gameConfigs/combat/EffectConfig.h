@@ -186,8 +186,8 @@ namespace EffectData
 		"Damage.Kinetic",
 		"",
 		"",
-		sas::GameplayEffectStackLifetimePolicy::DecayAfterDuration,
-		1.f
+		sas::GameplayEffectStackLifetimePolicy::None,
+		0.f
 	};
 
 	inline const sas::GameplayEffectDefinition GravityAnomalyInsideEffect = []

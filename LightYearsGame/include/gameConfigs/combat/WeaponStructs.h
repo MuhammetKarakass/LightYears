@@ -142,6 +142,9 @@ struct PrimaryWeaponShotMetadata
 	bool suppressStatusStacks = false;
 	// Set only for EverySuccessfulHits weapons; a shot reports its first hit here.
 	std::weak_ptr<PrimaryWeaponHitLedger> hitLedger;
+	// Shared by every projectile of one shot (e.g. both muzzles of a twin gun),
+	// so the shot reaches the ledger at most once.
+	std::shared_ptr<bool> shotHitReported;
 	// Set only for Frost Meter weapons; waves fired outside Whiteout award points.
 	std::weak_ptr<PrimaryWeaponFrostMeterState> frostMeter;
 	bool firedDuringWhiteout = false;
@@ -149,9 +152,17 @@ struct PrimaryWeaponShotMetadata
 	// Records this shot's first hit; returns true if it was counted now.
 	bool ReportHit() const
 	{
+		if (shotHitReported && *shotHitReported)
+		{
+			return false;
+		}
 		if (const std::shared_ptr<PrimaryWeaponHitLedger> ledger = hitLedger.lock())
 		{
 			++ledger->hitsSinceEmpowered;
+			if (shotHitReported)
+			{
+				*shotHitReported = true;
+			}
 			return true;
 		}
 		return false;

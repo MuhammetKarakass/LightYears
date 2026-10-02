@@ -2187,7 +2187,7 @@ int main()
 		FindWeapon(loaded.definitions, "Weapon.Projectile.DualKineticBlaster.Basic");
 	if (dual->muzzleDefinitions.size() != 2 ||
 		dual->progressionProfile.ResolveDistinctSteps().empty() ||
-		dual->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Kinetic })
+		dual->damageTags != ly::List<ly::GameplayTag>{ ly::DamageTypeSchema::Photonic })
 	{
 		return Fail("Dual kinetic blaster JSON profile is invalid") ? 0 : 1;
 	}

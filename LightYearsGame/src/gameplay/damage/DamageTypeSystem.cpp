@@ -305,11 +305,11 @@ namespace ly
 
 	namespace
 	{
-		// Electric and Cryo stacks stay while their source keeps hitting the
-		// target with the same damage type: such a hit, with or without new
-		// stacks, restarts the shared duration. Other damage types from that
-		// source do not. When it runs out every stack clears at once (the
-		// effects carry no per-stack decay).
+		// Electric, Cryo and Kinetic stacks stay while their source keeps
+		// hitting the target with the same damage type: such a hit, with or
+		// without new stacks, restarts the shared duration. Other damage types
+		// from that source do not. When it runs out every stack clears at once
+		// (the effects carry no per-stack decay).
 		void RefreshSourceSustainedStatuses(
 			sas::AbilitySystemComponent& targetAbilitySystem,
 			const DamageContext& context
@@ -321,7 +321,8 @@ namespace ly
 			}
 			const std::pair<GameplayTag, const char*> sustainedStatuses[] = {
 				{ DamageTypeSchema::Electric, "Effect.Status.Damage.Electric" },
-				{ DamageTypeSchema::Cryo, DamageStatusEffectIds::CryoSlowedEffectId }
+				{ DamageTypeSchema::Cryo, DamageStatusEffectIds::CryoSlowedEffectId },
+				{ DamageTypeSchema::Kinetic, DamageStatusEffectIds::KineticEffectId }
 			};
 			for (const auto& [damageType, effectId] : sustainedStatuses)
 			{

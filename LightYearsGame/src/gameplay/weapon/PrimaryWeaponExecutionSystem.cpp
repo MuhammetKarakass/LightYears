@@ -534,6 +534,7 @@ namespace ly
 			if (emp.trigger == PrimaryWeaponEmpoweredTrigger::EverySuccessfulHits)
 			{
 				shotMetadata.hitLedger = state.hitLedger;
+				shotMetadata.shotHitReported = std::make_shared<bool>(false);
 			}
 		}
 		if (state.frostMeter && std::find(context.definition.featureTypes.begin(),
