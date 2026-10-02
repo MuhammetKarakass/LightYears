@@ -633,9 +633,11 @@ namespace ly
 			ApplyCombatDamage(*target, 1.f, source.get(), electric, plain);
 			world.TickInternal(5.5f);
 			Check(ElectricStacks(*target) == 2, "lifetime: a stackless hit from the source keeps them");
+			// Other damage types from the same source do not sustain Electric.
+			ApplyCombatDamage(*target, 1.f, source.get(), { DamageTypeSchema::Photonic }, plain);
 			ApplyCombatDamage(*target, 1.f, stranger.get(), electric, plain);
 			world.TickInternal(1.f);
-			Check(ElectricStacks(*target) == 0, "lifetime: 6 s without source damage clears all stacks at once");
+			Check(ElectricStacks(*target) == 0, "lifetime: 6 s without same-type source damage clears all stacks at once");
 		}
 	}
 }

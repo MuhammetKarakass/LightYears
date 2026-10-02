@@ -195,7 +195,7 @@ Kullanıcı "sol yapmayacak sen yapacan yap" dedi; tüm adımları Claude doğru
 | Adım | Commit | Özet |
 |---|---|---|
 | 1 | `6e64ec5` | Empowered tetikleyicileri (atış/isabet/yetenek şarjı/Whiteout), isabet defteri, yalnız-empowered stack, tüm işleyicilere atış politikası |
-| 2 | `935cde4` | Electric/Cryo: kaynağın her vuruşu 6 s'yi yeniler, süre dolunca tüm stack'ler birden silinir (global) |
+| 2 | `935cde4` | Electric/Cryo: kaynağın her vuruşu 6 s'yi yeniler, süre dolunca tüm stack'ler birden silinir (global); sonradan yalnız aynı türdeki hasarla sınırlandı (aşağıya bkz.) |
 | 3 | `a47c2fb` | Rapid Laser: 10 + 5/seviye, AP 0,41; empowered 6 isabette bir |
 | 5 | `aae443b` | Dual: 3 + 2/seviye, AP 0,20 + 0,02; 7/s × AttackSpeed %; şarjör 64 / 1,5 s; sıralı namlu; 8 isabette empowered + Kinetic stack |
 | 6 | `b8b06b5` | Electric: `Owner.Offense.Dominant/Secondary` türetilmiş nitelikleri; yetenek kullanımı 2 şarj @4/s; Electric stack yalnız empowered + zincir |
@@ -207,4 +207,6 @@ Kullanıcı "sol yapmayacak sen yapacan yap" dedi; tüm adımları Claude doğru
 
 **Uygulama sırasında netleşen ayrıntılar:** Dual iki namludan aynı anda ateşleseydi DPS iki katına çıkacaktı → `alternateMuzzles`. Koni için silah ID'si aile kuralı gereği `Weapon.Cone.RapidShotgun.Basic` oldu (ships.json güncellendi). Empowered atışın kendi isabeti bir sonraki 6/8'lik döngüye sayılır (ilk empowered 7./9. atış, sonra her 6/8 isabette). Koninin empowered atışı Ignite taşıyabilmek için o vuruşa Thermal etiketi ekler.
 
-**Açık:** oyun içi his ve denge kontrolü (kullanıcı); Frost Meter / Electric şarj HUD göstergesi (K10, ayrı iş); global 6 s stack kuralının yeteneklere etkisi (ChainLightning, IonStorm, CryoBola, FrostMaelstrom, Hexagon) gözden geçirilmeli.
+**Açık:** oyun içi his ve denge kontrolü (kullanıcı); Frost Meter / Electric şarj HUD göstergesi (K10, ayrı iş); global 6 s stack kuralının yetenek dengesine kalan etkisi oyunda gözlenmeli.
+
+**Düzeltme (2026-10-02):** İlk uygulamada kaynağın *her* hasarı süreyi yeniliyordu; böylece bir yetenekle konan 4 Electric/Cryo stack'i başka türde silah ateşi veya Ignite tick'leriyle süresiz tutulabiliyordu (ör. StormMark + Rapid Laser → kalıcı +%16 alınan hasar). Kullanıcı amacın "kendi hasar türü kendi effectini" sürdürmesi olduğunu belirtti; yenileme artık yalnız aynı kaynağın aynı türdeki hasarıyla oluyor (`DamageTypeSystem::RefreshSourceSustainedStatuses`).

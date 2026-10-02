@@ -11,6 +11,7 @@
 #include "effects/GameplayEffectBindings.h"
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace ly
 {
@@ -305,9 +306,10 @@ namespace ly
 	namespace
 	{
 		// Electric and Cryo stacks stay while their source keeps hitting the
-		// target: any damage from that source, with or without new stacks,
-		// restarts the shared duration. When it runs out every stack clears at
-		// once (the effects carry no per-stack decay).
+		// target with the same damage type: such a hit, with or without new
+		// stacks, restarts the shared duration. Other damage types from that
+		// source do not. When it runs out every stack clears at once (the
+		// effects carry no per-stack decay).
 		void RefreshSourceSustainedStatuses(
 			sas::AbilitySystemComponent& targetAbilitySystem,
 			const DamageContext& context
@@ -317,10 +319,16 @@ namespace ly
 			{
 				return;
 			}
-			for (const char* effectId : {
-				"Effect.Status.Damage.Electric",
-				DamageStatusEffectIds::CryoSlowedEffectId })
+			const std::pair<GameplayTag, const char*> sustainedStatuses[] = {
+				{ DamageTypeSchema::Electric, "Effect.Status.Damage.Electric" },
+				{ DamageTypeSchema::Cryo, DamageStatusEffectIds::CryoSlowedEffectId }
+			};
+			for (const auto& [damageType, effectId] : sustainedStatuses)
 			{
+				if (!HasDamageType(context.damageTags, damageType))
+				{
+					continue;
+				}
 				const sas::ActiveGameplayEffect* effect = targetAbilitySystem.FindGameplayEffectById(effectId);
 				if (effect && effect->GetSourceObject<Actor>() == context.source)
 				{
