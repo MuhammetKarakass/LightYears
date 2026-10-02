@@ -84,12 +84,19 @@ namespace ly
 		{
 			return false;
 		}
-		// F8 toggles the visual pipeline, F9 forces an asset reload. The keys are consumed so levels never see them;
+		// F7 cycles the color script, F8 toggles the visual pipeline, F9 forces an asset reload. The keys are consumed so levels never see them;
 		// key repeat is ignored so holding a key does not flicker the pipeline.
+		static bool f7Down = false;
 		static bool f8Down = false;
 		static bool f9Down = false;
 		if (const auto* pressed = event.getIf<sf::Event::KeyPressed>())
 		{
+			if (pressed->code == sf::Keyboard::Key::F7)
+			{
+				if (!f7Down) mVisualPipeline->CycleColorScript();
+				f7Down = true;
+				return true;
+			}
 			if (pressed->code == sf::Keyboard::Key::F8)
 			{
 				if (!f8Down) mVisualPipeline->Toggle();
@@ -105,6 +112,11 @@ namespace ly
 		}
 		else if (const auto* released = event.getIf<sf::Event::KeyReleased>())
 		{
+			if (released->code == sf::Keyboard::Key::F7)
+			{
+				f7Down = false;
+				return true;
+			}
 			if (released->code == sf::Keyboard::Key::F8)
 			{
 				f8Down = false;

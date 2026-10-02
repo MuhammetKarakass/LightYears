@@ -1,17 +1,15 @@
 #include "presentation/visual/ProceduralBackdrop.h"
 
+#include "framework/World.h"
+
 #include <visual/LuminanceTier.h>
+
+#include <cmath>
 
 namespace ly
 {
 	namespace
 	{
-		// World-space point the planet is anchored to (the center of the 6000x3000 test arena), and how much of the
-		// camera motion it follows. Far layers move less than near ones, so the planet reads as very distant.
-		const sf::Vector2f PlanetAnchor{ 3000.f, 1500.f };
-		constexpr float PlanetParallax = 0.06f;
-		// The planet is drawn in the pixel world layer, which has no tier cap, so it is dimmed to stay below gameplay.
-		constexpr float PlanetBrightness = 0.7f;
 		constexpr float NebulaFarParallax = 0.12f;
 		constexpr float NebulaNearParallax = 0.25f;
 		constexpr float StarScrollParallax = 0.5f;
@@ -22,11 +20,16 @@ namespace ly
 	{
 	}
 
-	void ProceduralBackdrop::Draw(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const sf::View& worldView, float timeSeconds)
+	void ProceduralBackdrop::Draw(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const World& world, const sf::View& worldView, float timeSeconds)
 	{
 		const sf::Vector2f center = worldView.getCenter();
+		if (mAnchoredWorld != &world)
+		{
+			mAnchoredWorld = &world;
+			mCameraStart = center;
+		}
 		DrawBackground(assets, pipeline, center, timeSeconds);
-		DrawPlanet(assets, pipeline, center, timeSeconds);
+		DrawPlanet(assets, pipeline, center, worldView.getSize().y, timeSeconds);
 	}
 
 	void ProceduralBackdrop::DrawBackground(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float timeSeconds)
@@ -56,16 +59,29 @@ namespace ly
 		mStars.Draw(background, cameraCenter * StarScrollParallax, timeSeconds, script.Role("ambient"), cap);
 	}
 
-	void ProceduralBackdrop::DrawPlanet(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float timeSeconds)
+	void ProceduralBackdrop::DrawPlanet(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, sf::Vector2f cameraCenter, float viewHeight, float timeSeconds)
 	{
+		const visual::PlanetSettings& settings = assets.Settings().planet;
+		if (!settings.enabled || viewHeight <= 0.f)
+		{
+			return;
+		}
 		const sf::Vector2f output(pipeline.OutputSize());
+		const float pixelScale = pipeline.WorldPixelScale();
+		// output pixels per game unit, so the drift does not depend on the window size
+		const float unitsToPixels = output.y / viewHeight;
 		visual::PlanetParams planet;
-		// Upper right (the HUD lives at the bottom), cropped by the screen edges; drifts opposite to the camera.
-		planet.center = sf::Vector2f(output.x * 0.88f, output.y * 0.16f) - (cameraCenter - PlanetAnchor) * PlanetParallax;
-		planet.radius = output.y * 0.32f;
-		planet.brightness = PlanetBrightness;
-		planet.pixelScale = pipeline.WorldPixelScale();
-		planet.rotation = timeSeconds * 0.04f;
+		// Placed relative to the camera start and drifting opposite to the camera (a far layer moves less than a near
+		// one). The center is snapped to the world-layer pixel grid so the limb does not shimmer.
+		sf::Vector2f center = sf::Vector2f(output.x * settings.screenX, output.y * settings.screenY)
+			- (cameraCenter - mCameraStart) * (settings.parallax * unitsToPixels);
+		planet.center = { std::round(center.x / pixelScale) * pixelScale, std::round(center.y / pixelScale) * pixelScale };
+		planet.radius = output.y * settings.radius;
+		planet.brightness = settings.brightness;
+		planet.saturation = settings.saturation;
+		planet.dither = settings.dither;
+		planet.pixelScale = pixelScale;
+		planet.rotation = timeSeconds * settings.rotationSpeed;
 		planet.light = { -0.7f, -0.45f, 0.55f };
 		visual::DrawPlanet(assets.Shaders(), pipeline.Target(visual::Layer::World), assets.Script().Role("planet"), planet);
 	}

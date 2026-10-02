@@ -8,6 +8,23 @@
 
 namespace ly::visual
 {
+	// The backdrop planet (drawn by the game into the dithered World layer). Positions are fractions of the output
+	// size at the camera start; the planet then drifts against camera motion by `parallax`.
+	struct PlanetSettings
+	{
+		bool enabled = true;
+		float screenX = 0.95f;
+		float screenY = 0.14f;
+		// fraction of the output height
+		float radius = 0.15f;
+		// output pixels of drift per output pixel of camera motion (0 = fixed to the screen)
+		float parallax = 0.025f;
+		float brightness = 0.45f;
+		float saturation = 0.55f;
+		float rotationSpeed = 0.03f;
+		float dither = 0.3f;
+	};
+
 	// Every runtime knob of the render pipeline. Loaded from pipeline.json, editable while running.
 	struct PipelineSettings
 	{
@@ -23,6 +40,8 @@ namespace ly::visual
 		float vignetteStrength = 0.4f;
 		float vignetteRadius = 0.7f;
 		float flashScale = 1.f;
+
+		PlanetSettings planet;
 
 		int maxEnergyDraws = 96;
 		float maxEnergyAreaRatio = 1.5f;

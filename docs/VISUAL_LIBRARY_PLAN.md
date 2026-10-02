@@ -17,7 +17,7 @@ Color is organized as a color script of named ramps (shadow to light, shadows hu
 Where: `LightYearsVisual/` (static library `LightYearsVisual`, namespace `ly::visual`) and the viewer `LightYearsVisualGallery` (CMake option `LIGHTYEARS_BUILD_VISUAL_GALLERY`). Depends on SFML and nlohmann_json only. See `LightYearsVisual/README.md` for usage.
 
 - Color script: `ColorRamp`, `ColorScript`, `ColorScriptLibrary`, JSON palettes, runtime switch.
-- Pipeline: `VisualPipeline` with background, world (virtual resolution, nearest upscale, optional palette-snapping Bayer dither), energy (additive), bloom (bright pass plus downsampled separable blur levels), flash, vignette; `PipelineSettings` loadable from JSON and editable at runtime.
+- Pipeline: `VisualPipeline` with background, world (virtual resolution, nearest upscale, optional palette-snapping Bayer dither), sprites (same virtual resolution, undithered, keeps original colors), energy (additive), bloom (bright pass plus downsampled separable blur levels), flash, vignette; `PipelineSettings` loadable from JSON and editable at runtime.
 - Primitives: `ShapeBrush` (SDF circle, ring, capsule, arc with outline and pixel-snapped edges; ear-clipped polygon with outline), `SubmitGlow` and `SubmitTrail` energy primitives, `Backdrop` (gradient, nebula shader, parallax star field).
 - Readability: `LuminanceTier`, per-tier brightness caps, per-frame energy budget (draw count and area) with decorative culled first.
 - Hot reload: `VisualAssets` polls timestamps for shaders, palettes and `pipeline.json`; a failed reload keeps the previous version.

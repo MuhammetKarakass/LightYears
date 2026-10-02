@@ -38,6 +38,8 @@ namespace ly::visual
 		float dither = 0.3f;
 		// scales the final color; lower it so a backdrop planet stays below gameplay in brightness
 		float brightness = 1.f;
+		// 1 = ramp colors as authored, 0 = grayscale
+		float saturation = 1.f;
 	};
 
 	// Procedural shaded planet quantized to a 5-tone ramp. Draw it into the World layer (pixel look).

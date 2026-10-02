@@ -84,7 +84,13 @@ namespace ly::visual
 				std::cerr << "VisualPipeline: cannot create the world texture\n";
 				return false;
 			}
+			if (!mSprites.resize(mVirtualSize))
+			{
+				std::cerr << "VisualPipeline: cannot create the sprite texture\n";
+				return false;
+			}
 			mWorld.setSmooth(false);
+			mSprites.setSmooth(false);
 			mBuiltVirtualHeight = virtualHeight;
 		}
 		int levels = settings.bloomEnabled ? settings.bloomLevels : 0;
@@ -117,7 +123,24 @@ namespace ly::visual
 	void VisualPipeline::ResetWorldView()
 	{
 		sf::Vector2f viewSize = sf::Vector2f(mVirtualSize) * mPixelScale;
-		mWorld.setView(sf::View(viewSize * 0.5f, viewSize));
+		sf::View view(viewSize * 0.5f, viewSize);
+		mWorld.setView(view);
+		mSprites.setView(view);
+	}
+
+	sf::View VisualPipeline::SnapWorldView(const sf::View& gameView) const
+	{
+		const sf::Vector2f size = gameView.getSize();
+		if (mVirtualSize.y == 0 || size.y <= 0.f || gameView.getRotation() != sf::degrees(0.f))
+		{
+			return gameView;
+		}
+		// game units per world-layer pixel
+		const float unit = size.y / static_cast<float>(mVirtualSize.y);
+		sf::Vector2f topLeft = gameView.getCenter() - size * 0.5f;
+		topLeft = {std::round(topLeft.x / unit) * unit, std::round(topLeft.y / unit) * unit};
+		const sf::Vector2f snappedSize = sf::Vector2f(mVirtualSize) * unit;
+		return sf::View(topLeft + snappedSize * 0.5f, snappedSize);
 	}
 
 	void VisualPipeline::BeginFrame()
@@ -126,6 +149,7 @@ namespace ly::visual
 		ResetWorldView();
 		mBackground.clear(sf::Color::Black);
 		mWorld.clear(sf::Color::Transparent);
+		mSprites.clear(sf::Color::Transparent);
 		mEnergy.clear(sf::Color::Black);
 		mEnergyQueue.clear();
 		mStats = {};
@@ -138,6 +162,7 @@ namespace ly::visual
 		{
 		case Layer::Background: return mBackground;
 		case Layer::World: return mWorld;
+		case Layer::Sprites: return mSprites;
 		case Layer::Energy: return mEnergy;
 		}
 		return mWorld;
@@ -279,6 +304,7 @@ namespace ly::visual
 		FlushEnergy();
 		mBackground.display();
 		mWorld.display();
+		mSprites.display();
 		mEnergy.display();
 
 		sf::Vector2f outputSize(mOutputSize);
@@ -306,6 +332,14 @@ namespace ly::visual
 		sf::Sprite world(mWorld.getTexture());
 		world.setScale({mPixelScale, mPixelScale});
 		target.draw(world, worldStates);
+
+		// Sprites keep their own colors. The texture holds premultiplied color (SFML alpha blending onto a transparent
+		// target), so it is composited premultiplied; plain alpha blending would darken soft edges twice.
+		sf::Sprite sprites(mSprites.getTexture());
+		sprites.setScale({mPixelScale, mPixelScale});
+		target.draw(sprites, sf::RenderStates(sf::BlendMode(
+			sf::BlendMode::Factor::One, sf::BlendMode::Factor::OneMinusSrcAlpha, sf::BlendMode::Equation::Add,
+			sf::BlendMode::Factor::One, sf::BlendMode::Factor::OneMinusSrcAlpha, sf::BlendMode::Equation::Add)));
 
 		DrawTexture(target, mEnergy.getTexture(), sf::RenderStates(Additive));
 		DrawBloom(target);

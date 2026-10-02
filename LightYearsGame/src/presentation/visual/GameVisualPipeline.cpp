@@ -71,6 +71,15 @@ namespace ly
 		SetEnabled(!mEnabled);
 	}
 
+	void GameVisualPipeline::CycleColorScript()
+	{
+		if (mReady)
+		{
+			mAssets.Scripts().CycleActive();
+			LY_GAME_INFO("Visual color script: %s", mAssets.Script().Name().c_str());
+		}
+	}
+
 	void GameVisualPipeline::SetEnabled(bool enabled)
 	{
 		mEnabled = enabled;
@@ -84,15 +93,20 @@ namespace ly
 			mPipeline->Resize(mWindow->getSize());
 		}
 		mPipeline->BeginFrame();
-		mBackdrop.Draw(mAssets, *mPipeline, worldView, mTime);
+		// The camera snapped to the world-layer pixel grid. Sprites, backdrop parallax and energy glows all use it so
+		// sub-pixel camera motion neither jitters sprites nor drifts glows off their ships. HUD and game positions
+		// are untouched: the engine keeps using its own unsnapped view.
+		const sf::View snappedView = mPipeline->SnapWorldView(worldView);
+		mBackdrop.Draw(mAssets, *mPipeline, world, snappedView, mTime);
 		// Actors draw with the game camera; the backdrop above used the pipeline's own pixel view.
-		mPipeline->Target(visual::Layer::World).setView(worldView);
-		mLights.Submit(world, worldView, mAssets, *mPipeline);
+		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
+		mLights.Submit(world, snappedView, mAssets, *mPipeline);
 	}
 
 	sf::RenderTarget& GameVisualPipeline::GetTarget(RenderLayer layer)
 	{
-		return mPipeline->Target(layer == RenderLayer::Background ? visual::Layer::Background : visual::Layer::World);
+		// Actors keep their sprite colors; only the procedural backdrop goes through the palette-dithered World layer.
+		return mPipeline->Target(layer == RenderLayer::Background ? visual::Layer::Background : visual::Layer::Sprites);
 	}
 
 	bool GameVisualPipeline::ReplacesLayer(RenderLayer layer) const

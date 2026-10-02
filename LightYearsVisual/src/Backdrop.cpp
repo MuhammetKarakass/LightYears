@@ -51,6 +51,7 @@ namespace ly::visual
 		shader->setUniform("uSeed", params.seed);
 		shader->setUniform("uDither", params.dither);
 		shader->setUniform("uBrightness", params.brightness);
+		shader->setUniform("uSaturation", params.saturation);
 		SetRampUniform(*shader, "uRamp", ramp, 5);
 		sf::Vector2f extent(params.radius, params.radius);
 		DrawShaderQuad(target, *shader, sf::FloatRect(params.center - extent, extent * 2.f));

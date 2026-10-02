@@ -17,6 +17,17 @@
 	"flash": {
 		"scale": 1.0
 	},
+	"planet": {
+		"enabled": true,
+		"screenX": 0.95,
+		"screenY": 0.14,
+		"radius": 0.15,
+		"parallax": 0.025,
+		"brightness": 0.45,
+		"saturation": 0.55,
+		"rotationSpeed": 0.03,
+		"dither": 0.3
+	},
 	"energy": {
 		"maxDraws": 96,
 		"maxAreaRatio": 1.5,

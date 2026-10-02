@@ -22,12 +22,12 @@ namespace ly
 
 		struct Frame
 		{
-			sf::Vector2f viewCenter;
-			sf::Vector2f outputHalf;
+			// world position of output pixel (0, 0)
+			sf::Vector2f origin;
 			// output pixels per world unit
 			float scale = 1.f;
 
-			sf::Vector2f ToPixels(sf::Vector2f worldPosition) const { return (worldPosition - viewCenter) * scale + outputHalf; }
+			sf::Vector2f ToPixels(sf::Vector2f worldPosition) const { return (worldPosition - origin) * scale; }
 		};
 
 		visual::TrailParams MakeTrail(const Frame& frame, sf::Vector2f head, sf::Vector2f direction, float worldLength, int points)
@@ -107,7 +107,8 @@ namespace ly
 			return;
 		}
 		const sf::Vector2f output(pipeline.OutputSize());
-		const Frame frame{ worldView.getCenter(), output * 0.5f, output.y / viewSize.y };
+		// worldView is the pixel-snapped view, so glows line up with the sprites drawn through the same view.
+		const Frame frame{ worldView.getCenter() - viewSize * 0.5f, output.y / viewSize.y };
 		const ColorScript& script = assets.Script();
 		const sf::Color playerShot = script.Role("player").Sample(0.85f);
 		const sf::Color enemyShot = script.Role("enemy").Sample(0.8f);

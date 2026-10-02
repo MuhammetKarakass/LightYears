@@ -13,7 +13,7 @@
 namespace ly
 {
 	// Game-side implementation of the engine's WorldRenderPipeline seam, built on LightYearsVisual.
-	// Background layer -> procedural backdrop; every other render layer -> the pixel world layer; energy glows are
+	// Background layer -> procedural backdrop; every other render layer -> the undithered pixel sprite layer; energy glows are
 	// submitted from a read-only look at the world. Owned by the application; HUD never goes through it.
 	class GameVisualPipeline final : public WorldRenderPipeline
 	{
@@ -28,6 +28,7 @@ namespace ly
 		void Update(float deltaSeconds);
 		void ForceReload();
 		void Toggle();
+		void CycleColorScript();
 		void SetEnabled(bool enabled);
 		bool IsEnabled() const { return mEnabled; }
 

@@ -10,6 +10,7 @@ uniform float uRotation;
 uniform float uSeed;
 uniform float uDither;         // 0 = hard bands only, 1 = wide dither
 uniform float uBrightness;     // scales the final color (1 = ramp as authored)
+uniform float uSaturation;     // 1 = ramp as authored, 0 = grayscale
 uniform vec3 uRamp[5];
 
 float bayer4(vec2 p)
@@ -101,5 +102,6 @@ void main()
 	{
 		color = uRamp[4];
 	}
+	color = mix(vec3(dot(color, vec3(0.299, 0.587, 0.114))), color, uSaturation);
 	gl_FragColor = vec4(color * uBrightness, 1.0);
 }

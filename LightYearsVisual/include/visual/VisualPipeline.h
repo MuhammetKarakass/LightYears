@@ -13,7 +13,10 @@ namespace ly::visual
 	enum class Layer
 	{
 		Background,
+		// Procedural pixel content; palette-dithered when settings.ditherEnabled. Drawn first.
 		World,
+		// Pixel-scaled content that keeps its own colors (sprite actors). Same virtual resolution, drawn over World.
+		Sprites,
 		Energy
 	};
 
@@ -47,8 +50,9 @@ namespace ly::visual
 		float areaRatio = 0.f;
 	};
 
-	// Owns the three layer textures and composites them: background -> world (nearest upscale, optional dither)
-	// -> energy (additive) -> bloom -> flash -> vignette. All coordinates are output pixels.
+	// Owns the layer textures and composites them: background -> world (nearest upscale, optional dither)
+	// -> sprites (nearest upscale, undithered) -> energy (additive) -> bloom -> flash -> vignette.
+	// Coordinates are output pixels unless a layer is given a game view (see SnapWorldView).
 	class VisualPipeline
 	{
 	public:
@@ -72,6 +76,11 @@ namespace ly::visual
 		sf::Vector2u VirtualSize() const { return mVirtualSize; }
 		// Output pixels per world-layer pixel.
 		float WorldPixelScale() const { return mPixelScale; }
+
+		// For a game camera view: the same view with its top-left corner snapped to the virtual pixel grid and its
+		// width widened to the whole virtual texture. Set it on the World/Sprites targets so motion does not jitter,
+		// and derive anything that must line up with those pixels (parallax, energy glows) from it, not from gameView.
+		sf::View SnapWorldView(const sf::View& gameView) const;
 
 	private:
 		struct EnergyItem
@@ -104,6 +113,7 @@ namespace ly::visual
 		sf::Vector2u mBuiltOutputSize;
 		sf::RenderTexture mBackground;
 		sf::RenderTexture mWorld;
+		sf::RenderTexture mSprites;
 		sf::RenderTexture mEnergy;
 		std::vector<BloomLevel> mBloom;
 		std::vector<EnergyItem> mEnergyQueue;
