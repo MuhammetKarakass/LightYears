@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <cctype>
 #include <functional>
 
@@ -94,30 +95,17 @@ namespace ly
         // Remove a numeric runtime index from the tag.
         GameplayTag GetBaseTag() const
         {
-            size_t pos = name.rfind('_');
-            if (pos != std::string::npos)
+            const std::string_view base = GetBaseView();
+            if (base.size() == name.size())
             {
-                std::string suffix = name.substr(pos + 1);
-                bool isNumber = !suffix.empty();
-                for (char c : suffix)
-                {
-                    if (!std::isdigit(static_cast<unsigned char>(c)))
-                    {
-                        isNumber = false;
-                        break;
-                    }
-                }
-                if (isNumber)
-                {
-                    return GameplayTag{ name.substr(0, pos) };
-                }
+                return *this;
             }
-            return *this;
+            return GameplayTag{ std::string{ base } };
         }
 
         bool MatchesBase(const GameplayTag& baseTag) const
         {
-            return GetBaseTag() == baseTag;
+            return GetBaseView() == std::string_view{ baseTag.name };
         }
 
         bool MatchesTagExact(const GameplayTag& other) const
@@ -127,14 +115,33 @@ namespace ly
 
         bool MatchesTag(const GameplayTag& parentTag) const
         {
-            const std::string child = GetBaseTag().name;
-            const std::string parent = parentTag.GetBaseTag().name;
+            const std::string_view child = GetBaseView();
+            const std::string_view parent = parentTag.GetBaseView();
             if (child == parent)
             {
                 return true;
             }
             return !parent.empty() && child.size() > parent.size() &&
                 child.compare(0, parent.size(), parent) == 0 && child[parent.size()] == '.';
+        }
+
+    private:
+        // Name without a trailing "_<digits>" runtime index; never allocates.
+        std::string_view GetBaseView() const
+        {
+            const size_t pos = name.rfind('_');
+            if (pos == std::string::npos || pos + 1 == name.size())
+            {
+                return name;
+            }
+            for (size_t i = pos + 1; i < name.size(); ++i)
+            {
+                if (!std::isdigit(static_cast<unsigned char>(name[i])))
+                {
+                    return name;
+                }
+            }
+            return std::string_view{ name }.substr(0, pos);
         }
     };
 

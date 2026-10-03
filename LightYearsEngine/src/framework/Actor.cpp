@@ -1,9 +1,8 @@
 #include "framework/Actor.h"
-#include "framework/AssetManager.h"
 #include "framework/World.h"
 #include "framework/MathUtility.h"
-#include <framework/PhysicsSystem.h>
-#include "framework/PerfMonitor.h"
+#include "framework/LightComponent.h"
+#include "framework/SpriteComponent.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,24 +12,28 @@ namespace ly
 	Actor::Actor(World* OwningWorld, const std::string& TexturePath)
 		: mOwningWorld{ OwningWorld },
 		mBeganPlay{ false },
-		mSprite{},
-		mTexture{},
 		mActorLocation{ 0.f, 0.f },
 		mActorRotation{ 0.f },
 		mVelocity{},
-		mPhysicsBodyId{},
-		mPhysicsEnabled{ false },
-		mPhysicsBodyType{ PhysicsBodyType::Dynamic },
-		mCollisionLayer{ CollisionLayer::None },
-		mCollisionMask{ CollisionLayer::None },
 		mCanCollide{ false },
 		mTickWhenPaused{ false }
 	{
-		SetTexture(TexturePath);
+		if (!TexturePath.empty())
+		{
+			AddComponent<SpriteComponent>(TexturePath);
+		}
+	}
+
+	void Actor::CacheComponent(ActorComponent& component)
+	{
+		if (!mSprite) mSprite = dynamic_cast<SpriteComponent*>(&component);
+		if (!mCollision) mCollision = dynamic_cast<CollisionComponent*>(&component);
+		if (!mLights) mLights = dynamic_cast<LightComponent*>(&component);
 	}
 	
 	Actor::~Actor()
 	{
+		EndPlayComponents();
 		UnInitializePhysics();
 	}
 	
@@ -38,8 +41,14 @@ namespace ly
 	{
 		if (!mBeganPlay)  
 		{
-			mBeganPlay = true;    
-			BeginPlay();      
+			mBeganPlay = true;
+			// Components begin before the actor so BeginPlay can rely on them. Index
+			// loop: a component added meanwhile is appended and begun here or by AddComponent.
+			for (std::size_t index = 0; index < mComponents.size(); ++index)
+			{
+				mComponents[index]->BeginPlayInternal();
+			}
+			BeginPlay();
 		}
 	}
 	
@@ -58,35 +67,41 @@ namespace ly
 
 	void Actor::Tick(float deltaTime)
 	{
-		for (auto& pair : mLightShaders)
+		TickComponents(deltaTime);
+	}
+
+	void Actor::TickComponents(float deltaTime)
+	{
+		for (std::size_t index = 0; index < mComponents.size(); ++index)
 		{
-			LightData& light = pair.second;
-			if (!light.isEnabled || !light.shouldStretch) continue;
-
-			sf::Vector2f velocity = GetVelocity();
-
-			sf::Vector2f forwardDir = GetActorForwardDirection();
-			float forwardSpeed = (velocity.x * forwardDir.x) + (velocity.y * forwardDir.y);
-
-			float targetStretch = 1.f + (forwardSpeed / 300.f);
-			if (targetStretch > 4.0f) targetStretch = 4.0f;
-
-			light.currentStretchFactor = Lerp(light.currentStretchFactor, targetStretch, deltaTime * 2.f);
-
-			sf::Vector2f rightDir = GetActorRightDirection();
-			float sideSpeed = (velocity.x * rightDir.x) + (velocity.y * rightDir.y);
-
-			float targetRotation = sideSpeed * 0.1f;
-			if (targetRotation > 30.f) targetRotation = 30.f;
-			if (targetRotation < -30.f) targetRotation = -30.f;
-
-			light.currentRotationOffset = Lerp(light.currentRotationOffset, targetRotation, deltaTime * 5.f);
-
-			float flicker = 1.0f + ((rand() % 5) - 3) / 100.0f;
-			light.currentStretchFactor *= flicker;
+			ActorComponent& component = *mComponents[index];
+			if (component.CanEverTick() && component.IsActive() && component.HasBegunPlay())
+			{
+				component.TickComponent(deltaTime);
+			}
 		}
 	}
 	
+	void Actor::EndPlayComponents()
+	{
+		for (std::size_t index = 0; index < mComponents.size(); ++index)
+		{
+			mComponents[index]->EndPlayInternal();
+		}
+	}
+
+	weak_ptr<Actor> Actor::GetWeakActor()
+	{
+		const shared_ptr<Object> object = GetWeakPtr().lock();
+		return object ? std::static_pointer_cast<Actor>(object) : weak_ptr<Actor>{};
+	}
+
+	weak_ptr<const Actor> Actor::GetWeakActor() const
+	{
+		const shared_ptr<const Object> object = GetWeakPtr().lock();
+		return object ? std::static_pointer_cast<const Actor>(object) : weak_ptr<const Actor>{};
+	}
+
 	void Actor::Destroy()
 	{
 		if (GetIsPendingDestroy())
@@ -99,290 +114,25 @@ namespace ly
 			mOwningWorld->RemoveActorSpatialQuery(*this);
 		}
 		UnInitializePhysics();
+		EndPlayComponents();
 		onActorDestroyed.Broadcast(this);
 		Object::Destroy();
-	}
-
-	// =====================================================
-	// LIGHT SYSTEM - GameplayTag Based (Auto-Indexed)
-	// =====================================================
-
-	int Actor::GetNextLightIndex(const GameplayTag& baseTag) const
-	{
-		int maxIndex = -1;
-		
-		for (const auto& pair : mLightShaders)
-		{
-			if (pair.first.MatchesBase(baseTag))
-			{
-				const std::string& tagName = pair.first.ToString();
-				size_t pos = tagName.rfind('_');
-				if (pos != std::string::npos)
-				{
-					std::string suffix = tagName.substr(pos + 1);
-					bool isNumber = !suffix.empty();
-					for (char c : suffix)
-					{
-						if (!std::isdigit(static_cast<unsigned char>(c)))
-						{
-							isNumber = false;
-							break;
-						}
-					}
-					if (isNumber)
-					{
-						int index = std::stoi(suffix);
-						if (index > maxIndex) maxIndex = index;
-					}
-				}
-			}
-		}
-		
-		return maxIndex + 1;
-	}
-
-	void Actor::SetLightEnabled(const GameplayTag& tag, bool enabled)
-	{
-		if (LightData* light = GetLightData(tag))
-		{
-			light->isEnabled = enabled;
-		}
-	}
-
-	void Actor::SetLightColor(const GameplayTag& tag, const sf::Color& color)
-	{
-		if (LightData* light = GetLightData(tag))
-		{
-			light->color = color;
-		}
-	}
-
-	void Actor::SetLightIntensity(const GameplayTag& tag, float intensity)
-	{
-		if (LightData* light = GetLightData(tag))
-		{
-			light->intensity = intensity;
-		}
-	}
-
-	void Actor::SetLightSize(const GameplayTag& tag, const sf::Vector2f& size)
-	{
-		if (LightData* light = GetLightData(tag))
-		{
-			light->size = size;
-		}
-	}
-
-	void Actor::SetLightOffset(const GameplayTag& tag, const sf::Vector2f& offset)
-	{
-		if (LightData* light = GetLightData(tag))
-		{
-			if (light->lightSpace == LightSpace::Local)
-			light->offset = offset;
-		}
-	}
-
-	void Actor::SetLightWorldPosition(const GameplayTag& tag, const sf::Vector2f& worldPosition)
-	{
-		if (LightData* light = GetLightData(tag))
-		{
-			if (light->lightSpace == LightSpace::World)
-			{
-				light->offset = worldPosition;
-			}
-		}
-	}
-
-	GameplayTag Actor::AddLight(const GameplayTag& tag, const std::string& lightPath, sf::Color color, 
-		float intensity, sf::Vector2f size, sf::Vector2f offset, bool shouldStretch,
-		bool useComplexTrail, float taperAmount, float edgeSoftness, float shapeRoundness, LightSpace lightSpace)
-	{
-		GameplayTag finalTag = tag.WithIndex(GetNextLightIndex(tag));
-		
-		LightData lightData;
-		lightData.tag = finalTag;
-		lightData.lightSpace = lightSpace;
-		lightData.shader = AssetManager::GetAssetManager().LoadShader(lightPath);
-		lightData.color = color;
-		lightData.intensity = intensity;
-		lightData.size = size;
-		lightData.offset = offset;
-		lightData.shouldStretch = shouldStretch;
-		lightData.isEnabled = true;
-		lightData.useComplexTrail = useComplexTrail;
-		lightData.taperAmount = taperAmount;
-		lightData.edgeSoftness = edgeSoftness;
-		lightData.shapeRoundness = shapeRoundness;
-
-		mLightShaders[finalTag] = lightData;		
-		return finalTag;
-	}
-
-	GameplayTag Actor::AddLight(const GameplayTag& tag, const PointLightDefinition& def, const sf::Vector2f& offset, LightSpace lightSpace)
-	{
-		return AddLight(tag, def.shaderPath, def.color, def.intensity, def.size, offset,
-			def.shouldStretch, def.complexTrail, def.taperAmount, def.edgeSoftness, def.shapeRoundness,lightSpace);
-	}
-
-	LightData* Actor::GetLightData(const GameplayTag& tag)
-	{
-		auto it = mLightShaders.find(tag);
-		if (it != mLightShaders.end())
-		{
-			return &it->second;
-		}
-		return nullptr;
-	}
-
-	bool Actor::HasLight(const GameplayTag& tag) const
-	{
-		return mLightShaders.find(tag) != mLightShaders.end();
-	}
-
-	void Actor::RemoveLight(const GameplayTag& tag)
-	{
-		mLightShaders.erase(tag);
-	}
-
-	List<GameplayTag> Actor::GetLightsByBaseTag(const GameplayTag& baseTag) const
-	{
-		List<GameplayTag> result;
-		for (const auto& pair : mLightShaders)
-		{
-			if (pair.first.MatchesBase(baseTag))
-			{
-				result.push_back(pair.first);
-			}
-		}
-		return result;
-	}
-
-	void Actor::SetAllLightsEnabled(const GameplayTag& baseTag, bool enabled)
-	{
-		for (auto& pair : mLightShaders)
-		{
-			if (pair.first.MatchesBase(baseTag))
-			{
-				pair.second.isEnabled = enabled;
-			}
-		}
-	}
-
-	void Actor::SetAllLightsColor(const GameplayTag& baseTag, const sf::Color& color)
-	{
-		for (auto& pair : mLightShaders)
-		{
-			if (pair.first.MatchesBase(baseTag))
-			{
-				pair.second.color = color;
-			}
-		}
-	}
-
-	void Actor::SetAllLightsIntensity(const GameplayTag& baseTag, float intensity)
-	{
-		for (auto& pair : mLightShaders)
-		{
-			if (pair.first.MatchesBase(baseTag))
-			{
-				pair.second.intensity = intensity;
-			}
-		}
 	}
 
 	void Actor::Render(sf::RenderTarget& window)
 	{
 		if (GetIsPendingDestroy() || !mRenderEnabled) return;
-		RenderLights(window);
-
-		if(mSprite.has_value())
-			window.draw(mSprite.value());
-	}
-
-	void Actor::RenderLights(sf::RenderTarget& window)
-	{
-		// Allow disabling lights for debugging GPU/driver stalls
-		if (ly::perf::g_disableLights.load(std::memory_order_relaxed))
+		if (mLights)
 		{
-			return;
+			mLights->Render(window);
 		}
 
-		// Early exit if no lights
-		if (mLightShaders.empty()) return;
-
-		for (auto& pair : mLightShaders)
+		if (mSprite)
 		{
-			LightData& light = pair.second;
-
-			if (!light.isEnabled || !light.shader) continue;
-
-			sf::RenderStates lightStates;
-			lightStates.shader = light.shader.get();
-			lightStates.blendMode = sf::BlendAdd;
-
-			sf::Vector2f finalSize = light.size;
-
-			if (light.shouldStretch)
-			{
-				finalSize.y *= light.currentStretchFactor;
-			}
-
-			sf::RectangleShape lightShape(finalSize);
-			if(light.lightSpace == LightSpace::Local)
-			{
-				lightShape.setOrigin({ finalSize.x /2.f,0.f });
-			}
-			if(light.lightSpace == LightSpace::World)
-			{
-				lightShape.setOrigin({ finalSize.x /2.f, finalSize.y /2.f });
-			}
-
-			if(light.lightSpace == LightSpace::World)
-			{
-				lightShape.setPosition(light.offset); 
-			}
-
-			else 
-			{
-				sf::Vector2f worldOffset = TransformLocalToWorld(light.offset);
-				lightShape.setPosition(worldOffset + GetActorLocation());
-			}
-
-			float finalRotation = GetActorRotation();
-
-			if (light.shouldStretch)
-			{
-				finalRotation += light.currentRotationOffset;
-			}
-
-			if (light.lightSpace == LightSpace::Local)
-			{
-				lightShape.setRotation(sf::degrees(finalRotation));
-			}
-
-			// Use texture if available, otherwise use default texture
-			if (mTexture)
-			{
-				lightShape.setTexture(mTexture.get());
-			}
-			else
-			{
-				lightShape.setTexture(AssetManager::GetAssetManager().GetDefaultTexture().get());
-			}
-
-			// Set shader uniforms
-			light.shader->setUniform("lightColor", sf::Glsl::Vec3{ light.color.r /255.f, light.color.g /255.f, light.color.b /255.f });
-			light.shader->setUniform("lightIntensity", light.intensity);
-			light.shader->setUniform("u_stretch", light.currentStretchFactor);
-			light.shader->setUniform("u_is_trail", light.useComplexTrail ?1.f :0.f);
-			light.shader->setUniform("u_taper", light.taperAmount);
-			light.shader->setUniform("u_edge_softness", light.edgeSoftness);
-			light.shader->setUniform("u_roundness", light.shapeRoundness);
-
-			window.draw(lightShape, lightStates);
+			mSprite->Render(window);
 		}
 	}
-	
+
 	bool Actor::IsActorOutOfWindow(float allowance) const
 	{
 		float windowWidth = GetWindowSize().x;   
@@ -410,104 +160,33 @@ namespace ly
 	
 	void Actor::SetEnablePhysics(bool enable)
 	{
-		mPhysicsEnabled = enable;
-
-		if (mPhysicsEnabled)
-		{
-			InitializePhysics();    
-		}
-		else
-		{
-			UnInitializePhysics();  
-		}
-
-		if (mOwningWorld)
-		{
-			mOwningWorld->RefreshActorSpatialQuery(*this);
-		}
+		GetOrAddComponent<CollisionComponent>().SetEnablePhysics(enable);
 	}
-	
-	void Actor::InitializePhysics()
-	{
-		if (!mPhysicsBodyId)  
-		{
-			const b2BodyId bodyId = PhysicsSystem::Get().AddListener(this);
-			// AddListener returns the zero-initialized id when an actor has no
-			// physical shape. Do not pass that sentinel back into Box2D: its
-			// debug validation intentionally asserts on an invalid world id.
-			if (bodyId.index1 != 0)
-			{
-				mPhysicsBodyId = bodyId;
-			}
-		}
-	}
-	
+
 	void Actor::UnInitializePhysics()
 	{
-		if(mPhysicsBodyId)
-		{
-			PhysicsSystem::Get().RemoveListener(*mPhysicsBodyId);
-			mPhysicsBodyId.reset();  
-		}
-	}
-
-	void Actor::UpdatePhysicsTransform()
-	{
-		if (mPhysicsBodyId)
-		{
-			float physicsRate = PhysicsSystem::Get().GetPhysicsRate();
-			sf::Vector2f actorLocation = GetActorLocation();
-			float actorRotation = GetActorRotation();
-			
-			b2Vec2 position{ actorLocation.x * physicsRate, actorLocation.y * physicsRate };
-			b2Rot rotation = b2MakeRot(DegreesToRadians(actorRotation));
-			
-			b2Body_SetTransform(*mPhysicsBodyId, position, rotation);
-		}
+		if (mCollision) mCollision->UnInitializePhysics();
 	}
 
 	void Actor::SetPhysicsBodyType(PhysicsBodyType bodyType)
 	{
-		mPhysicsBodyType = bodyType;
-		if (mPhysicsBodyId)
-		{
-			b2Body_SetType(
-				*mPhysicsBodyId,
-				bodyType == PhysicsBodyType::Static ? b2_staticBody : b2_dynamicBody
-			);
-		}
+		GetOrAddComponent<CollisionComponent>().SetPhysicsBodyType(bodyType);
 	}
 
 	bool Actor::CanCollideWith(const Actor* other) const
 	{
-		if (other == nullptr) return false;
-		return HasCollisionLayer(mCollisionMask, other->GetCollisionLayer());
+		if (mCollision) return mCollision->CanCollideWith(other);
+		return other != nullptr && HasCollisionLayer(CollisionLayer::None, other->GetCollisionLayer());
 	}
 
 	void Actor::SetCollisionLayer(CollisionLayer layer)
 	{
-		mCollisionLayer = layer;
-		if (mPhysicsBodyId)
-		{
-			PhysicsSystem::Get().RefreshCollisionFilter(*mPhysicsBodyId);
-		}
-		if (mOwningWorld)
-		{
-			mOwningWorld->RefreshActorSpatialQuery(*this);
-		}
+		GetOrAddComponent<CollisionComponent>().SetCollisionLayer(layer);
 	}
 
 	void Actor::SetCollisionMask(CollisionLayer mask)
 	{
-		mCollisionMask = mask;
-		if (mPhysicsBodyId)
-		{
-			PhysicsSystem::Get().RefreshCollisionFilter(*mPhysicsBodyId);
-		}
-		if (mOwningWorld)
-		{
-			mOwningWorld->RefreshActorSpatialQuery(*this);
-		}
+		GetOrAddComponent<CollisionComponent>().SetCollisionMask(mask);
 	}
 
 	void Actor::OnActorBeginOverlap(Actor* otherActor)
@@ -539,80 +218,27 @@ namespace ly
 
 	sf::FloatRect Actor::GetActorGlobalBounds() const
 	{
-		return mSprite
-			? mSprite->getGlobalBounds()
+		return mSprite && mSprite->HasSprite()
+			? mSprite->GetGlobalBounds()
 			: sf::FloatRect{ mActorLocation, { 0.f, 0.f } };
 	}
 
 	std::optional<sf::FloatRect> Actor::GetRenderBounds() const
 	{
 		std::optional<sf::FloatRect> result;
-		if (mSprite)
+		if (mSprite && mSprite->HasSprite())
 		{
-			result = mSprite->getGlobalBounds();
+			result = mSprite->GetGlobalBounds();
 		}
 
-		for (const auto& [tag, light] : mLightShaders)
+		if (mLights)
 		{
-			(void)tag;
-			if (!light.isEnabled || !light.shader)
-			{
-				continue;
-			}
-
-			sf::Vector2f size = light.size;
-			if (light.shouldStretch)
-			{
-				size.y *= light.currentStretchFactor;
-			}
-			const float extent = 0.5f * std::sqrt(size.x * size.x + size.y * size.y);
-			const sf::Vector2f center = light.lightSpace == LightSpace::World
-				? light.offset
-				: TransformLocalToWorld(light.offset) + GetActorLocation();
-			const sf::FloatRect lightBounds{
-				{ center.x - extent, center.y - extent },
-				{ extent * 2.f, extent * 2.f }
-			};
-
-			if (!result)
-			{
-				result = lightBounds;
-				continue;
-			}
-
-			const float left = std::min(result->position.x, lightBounds.position.x);
-			const float top = std::min(result->position.y, lightBounds.position.y);
-			const float right = std::max(
-				result->position.x + result->size.x,
-				lightBounds.position.x + lightBounds.size.x
-			);
-			const float bottom = std::max(
-				result->position.y + result->size.y,
-				lightBounds.position.y + lightBounds.size.y
-			);
-			*result = { { left, top }, { right - left, bottom - top } };
+			mLights->ExpandRenderBounds(result);
 		}
 
 		return result;
 	}
 	
-	void Actor::SetTexture(const std::string& texturePath)
-	{
-		if (texturePath.empty()) return;
-		mTexture = AssetManager::GetAssetManager().LoadTexture(texturePath);
-		if (!mTexture) return;  
-
-		mSprite.emplace(*mTexture);
-		mSprite->setPosition(mActorLocation);
-		mSprite->setRotation(sf::degrees(mActorRotation));
-
-		int width = mTexture->getSize().x;
-		int height = mTexture->getSize().y;
-		mSprite->setTextureRect(sf::IntRect{ sf::Vector2i{}, sf::Vector2i{width,height} });
-		
-		CenterPivot();  
-	}
-
 	sf::Vector2u Actor::GetWindowSize() const
 	{
 		return mOwningWorld->GetWindowSize();
@@ -623,9 +249,12 @@ namespace ly
 		mActorLocation = newLoc;
 		if (mSprite)
 		{
-			mSprite->setPosition(newLoc);
+			mSprite->SyncLocation();
 		}
-		UpdatePhysicsTransform(); 
+		if (mCollision)
+		{
+			mCollision->UpdatePhysicsTransform();
+		}
 		if (mOwningWorld)
 		{
 			mOwningWorld->RefreshActorSpatialQuery(*this);
@@ -637,23 +266,18 @@ namespace ly
 		mActorRotation = newRotation;
 		if (mSprite)
 		{
-			mSprite->setRotation(sf::degrees(newRotation));
+			mSprite->SyncRotation();
 		}
-		UpdatePhysicsTransform();  
+		if (mCollision)
+		{
+			mCollision->UpdatePhysicsTransform();
+		}
 		if (mOwningWorld)
 		{
 			mOwningWorld->RefreshActorSpatialQuery(*this);
 		}
 	}
 
-	void Actor::SetTextureRepeated(bool repeated)
-	{
-		if (mTexture)
-		{
-			mTexture->setRepeated(repeated);
-		}
-	}
-	
 	void Actor::AddActorLocationOffset(const sf::Vector2f& offset)
 	{
 		SetActorLocation(GetActorLocation() + offset);  
@@ -662,17 +286,6 @@ namespace ly
 	void Actor::AddActorRotationOffset(float offset)
 	{
 		SetActorRotation(GetActorRotation() + offset);  
-	}
-	
-	void Actor::CenterPivot()
-	{
-		if (!mSprite)
-		{
-			return;
-		}
-
-		const sf::FloatRect rectBounds = mSprite->getGlobalBounds();
-		mSprite->setOrigin(sf::Vector2f{ rectBounds.size.x / 2.f, rectBounds.size.y / 2.f });
 	}
 	
 	sf::Vector2f Actor::GetActorLocation() const
@@ -711,23 +324,13 @@ namespace ly
 	
 	sf::Vector2f Actor::GetActorLocalLocation(const sf::Vector2f& worldLocation) const
 	{
-		sf::Vector2f deltaWorld = worldLocation - GetActorLocation();
-		float rotation = GetActorRotation();
-		float radians = DegreesToRadians(rotation - 90.f);
-		
-		float cosR = std::cos(-radians);
-		float sinR = std::sin(-radians);
-		
-		return sf::Vector2f{
-			deltaWorld.x * cosR - deltaWorld.y * sinR,
-			deltaWorld.x * sinR + deltaWorld.y * cosR
-		};
+		const sf::Vector2f deltaWorld = worldLocation - GetActorLocation();
+		return sf::Vector2f{ deltaWorld.dot(GetActorRightDirection()), deltaWorld.dot(GetActorForwardDirection()) };
 	}
 
 	void Actor::SetCollisionRadius(float radius)
 	{
-		if (!mPhysicsBodyId) return;
-		PhysicsSystem::Get().SetCollisionRadius(*mPhysicsBodyId, radius);
+		if (mCollision) mCollision->SetCollisionRadius(radius);
 	}
 
 	sf::Vector2f Actor::GetVelocity() const

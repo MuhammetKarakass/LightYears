@@ -1,4 +1,5 @@
 ﻿#include "framework/AssetManager.h"
+#include "framework/LightComponent.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
 #include "framework/BackgroundLayer.h"
@@ -72,7 +73,7 @@ namespace ly
 
 			if(element.hasLight)
 			{
-				SetLightWorldPosition(element.lightTag, element.sprite.value().getPosition());
+				if (LightComponent* lights = FindComponent<LightComponent>()) lights->SetLightWorldPosition(element.lightTag, element.sprite.value().getPosition());
 			}
 		}
 	}
@@ -82,7 +83,10 @@ namespace ly
 		if (GetIsPendingDestroy())
 			return;
 
-		RenderLights(window);
+		if (LightComponent* lights = FindComponent<LightComponent>())
+		{
+			lights->Render(window);
+		}
 
 		if (mUseDepthColor)
 		{
@@ -198,7 +202,7 @@ namespace ly
 			{
 				sf::FloatRect globalBounds = element.sprite.value().getGlobalBounds();
 				sf::Vector2f newLightSize = sf::Vector2f{ globalBounds.size.x, globalBounds.size.y } *element.lightScaleRatio;
-				SetLightSize(element.lightTag, newLightSize);
+				if (LightComponent* lights = FindComponent<LightComponent>()) lights->SetLightSize(element.lightTag, newLightSize);
 			}
 
 			if(mUseDepthColor && element.sprite.has_value() && element.sprite.value().getColor().a > 0)
@@ -215,7 +219,7 @@ namespace ly
 		{
 			if (element.hasLight)
 			{
-				RemoveLight(element.lightTag);
+				if (LightComponent* lights = FindComponent<LightComponent>()) lights->RemoveLight(element.lightTag);
 				element.hasLight = false;
 			}
 		}
@@ -235,7 +239,7 @@ namespace ly
 				RandomSpritePosition(*element.sprite, true);
 				if (element.hasLight)
 				{
-					SetLightWorldPosition(element.lightTag, element.sprite->getPosition());
+					if (LightComponent* lights = FindComponent<LightComponent>()) lights->SetLightWorldPosition(element.lightTag, element.sprite->getPosition());
 				}
 			}
 		}
@@ -314,7 +318,7 @@ namespace ly
 	{
 		if(element.hasLight)
 		{
-			RemoveLight(element.lightTag);
+			if (LightComponent* lights = FindComponent<LightComponent>()) lights->RemoveLight(element.lightTag);
 			element.hasLight = false;
 		}
 
@@ -366,7 +370,7 @@ namespace ly
 		}
 		if (element.hasLight)
 		{
-			RemoveLight(element.lightTag);
+			if (LightComponent* lights = FindComponent<LightComponent>()) lights->RemoveLight(element.lightTag);
 			element.hasLight = false;
 		}
 		if (def->hasLight && element.sprite.value().getColor().a > 0)
@@ -380,7 +384,7 @@ namespace ly
 
 			sf::Vector2f spritePos = element.sprite.value().getPosition();
 
-			element.lightTag = AddLight(
+			element.lightTag = GetOrAddComponent<LightComponent>().AddLight(
 				GameTags::Environment::Planet,
 				def->lightDef.shaderPath,
 				def->lightDef.color,

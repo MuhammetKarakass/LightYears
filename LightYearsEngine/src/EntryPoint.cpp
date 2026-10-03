@@ -40,6 +40,4 @@ int main() {
 		ly::debug::Log::Shutdown();
 		return 1;
 	}
-
-	return 0;
 }

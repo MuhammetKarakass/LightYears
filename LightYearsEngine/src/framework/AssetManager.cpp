@@ -196,7 +196,7 @@ namespace ly
 			// .unique(): Bu shared_ptr'ın referans sayısının 1 olup olmadığını kontrol eder.
             // Eğer referans sayısı 1 ise, bu demektir ki texture'ı sadece AssetManager tutuyor,
 			// oyundaki başka hiçbir nesne (gemi, mermi vb.) kullanmıyor.
-            if (iter->second.unique())
+            if (iter->second.use_count() == 1)
 			{
 				// Kullanılmayan texture'ı konsola yazdır.
 				// Haritadan bu texture'ı sil. erase(), silinen elemanın bir sonrakini döndürür.
@@ -211,7 +211,7 @@ namespace ly
 
 		for(auto iter =mLoadedFontMap.begin(); iter != mLoadedFontMap.end();)
 		{
-			if (iter->second.unique())
+			if (iter->second.use_count() == 1)
 			{
 				iter = mLoadedFontMap.erase(iter);
 			}
@@ -223,7 +223,7 @@ namespace ly
 
 		for(auto iter = mLoadedSoundBufferMap.begin(); iter != mLoadedSoundBufferMap.end();)
 		{
-			if (iter->second.unique())
+			if (iter->second.use_count() == 1)
 			{
 				iter = mLoadedSoundBufferMap.erase(iter);
 			}
@@ -235,7 +235,7 @@ namespace ly
 
 		for(auto iter = mLoadedShaderMap.begin(); iter != mLoadedShaderMap.end();)
 		{
-			if (iter->second.unique())
+			if (iter->second.use_count() == 1)
 			{
 				iter = mLoadedShaderMap.erase(iter);
 			}

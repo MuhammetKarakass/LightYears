@@ -1,4 +1,4 @@
-#include "framework/PhysicsSystem.h"
+#include "framework/PhysicsScene.h"
 #include "framework/Actor.h"	
 #include "framework/MathUtility.h"
 #include <cstdint>
@@ -62,41 +62,11 @@ namespace ly
 		}
 	}
 
-	unique_ptr<PhysicsSystem> PhysicsSystem::physicsSystem{ nullptr };
-
-	PhysicsSystem& PhysicsSystem::Get()
+	PhysicsScene::PhysicsScene(b2Vec2 gravity) :
+		mPhysicsWorld{ 0, 0 },
+		mPendingRemoveListeners{},
+		mPhysicsRate{ 0.01f }
 	{
-		if (!physicsSystem)
-		{
-			physicsSystem = std::move(unique_ptr<PhysicsSystem>{new PhysicsSystem});
-		}
-		return *physicsSystem;
-	}
-
-	void PhysicsSystem::ShutdownPhysicsSystem()
-	{
-		if (physicsSystem)
-		{
-			physicsSystem->Cleanup();
-			physicsSystem.reset();
-		}
-	}
-
-	void PhysicsSystem::Step(float deltaTime)
-	{
-		if (mPhysicsWorld.index1 != 0)
-		{
-			ProcessPendingRemoveListeners();
-			b2World_Step(mPhysicsWorld, deltaTime, 4);
-
-			ProcessContactEvents();
-		}
-	}
-
-	void PhysicsSystem::InitializeWorld(b2Vec2 gravity)
-	{
-		Cleanup();
-
 		b2WorldDef worldDef = b2DefaultWorldDef();
 		worldDef.gravity = gravity;
 
@@ -105,7 +75,7 @@ namespace ly
 		b2World_EnableSleeping(mPhysicsWorld, false);
 	}
 
-	void PhysicsSystem::Cleanup()
+	PhysicsScene::~PhysicsScene()
 	{
 		mPendingRemoveListeners.clear();
 
@@ -116,7 +86,18 @@ namespace ly
 		}
 	}
 
-	b2BodyId PhysicsSystem::AddListener(Actor* listener)
+	void PhysicsScene::Step(float deltaTime)
+	{
+		if (mPhysicsWorld.index1 != 0)
+		{
+			ProcessPendingRemoveListeners();
+			b2World_Step(mPhysicsWorld, deltaTime, 4);
+
+			ProcessContactEvents();
+		}
+	}
+
+	b2BodyId PhysicsScene::AddListener(Actor* listener)
 	{
 		if (listener->GetIsPendingDestroy()) return b2BodyId{ 0,0,0 };
 
@@ -157,9 +138,13 @@ namespace ly
 
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 
-		shapeDef.density = 1.0f;
+		// Gameplay uses Box2D only for contact events and AABB queries, so bodies
+		// must never be moved by the solver. Zero density gives the dynamic body
+		// zero mass (invMass == 0), so contact impulses cannot change its velocity
+		// or position while the begin/end touch manifolds stay unchanged.
+		shapeDef.density = 0.0f;
 		shapeDef.material.friction = 0.3f;
-		shapeDef.material.restitution = 0.6f;
+		shapeDef.material.restitution = 0.0f;
 
 		shapeDef.isSensor = false;
 
@@ -211,7 +196,7 @@ namespace ly
 		return bodyId;
 	}
 
-	void PhysicsSystem::ProcessContactEvents()
+	void PhysicsScene::ProcessContactEvents()
 	{
 		if (mPhysicsWorld.index1 == 0) return;
 
@@ -230,7 +215,7 @@ namespace ly
 		}
 	}
 
-	void PhysicsSystem::RemoveListener(b2BodyId bodyId)
+	void PhysicsScene::RemoveListener(b2BodyId bodyId)
 	{
 		// The body is destroyed on the next Step, but its actor may be freed
 		// before then. Detach the actor now so spatial queries and contact
@@ -242,12 +227,12 @@ namespace ly
 		mPendingRemoveListeners.push_back(bodyId);
 	}
 
-	bool PhysicsSystem::IsInitialized() const
+	bool PhysicsScene::IsInitialized() const
 	{
 		return mPhysicsWorld.index1 != 0;
 	}
 
-	void PhysicsSystem::SetCollisionRadius(b2BodyId bodyId, float radius)
+	void PhysicsScene::SetCollisionRadius(b2BodyId bodyId, float radius)
 	{
 		if (!b2Body_IsValid(bodyId))
 		{
@@ -272,9 +257,10 @@ namespace ly
 		}
 
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		shapeDef.density = 1.0f;
+		// Keep bodies massless so the solver never moves them (see AddListener).
+		shapeDef.density = 0.0f;
 		shapeDef.material.friction = 0.3f;
-		shapeDef.material.restitution = 0.1f;
+		shapeDef.material.restitution = 0.0f;
 
 		shapeDef.enableContactEvents = true;
 		shapeDef.invokeContactCreation = true;
@@ -291,7 +277,7 @@ namespace ly
 		b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	}
 
-	void PhysicsSystem::RefreshCollisionFilter(b2BodyId bodyId)
+	void PhysicsScene::RefreshCollisionFilter(b2BodyId bodyId)
 	{
 		if (!b2Body_IsValid(bodyId))
 		{
@@ -324,7 +310,7 @@ namespace ly
 	}
 
 
-	void PhysicsSystem::VisitActorsInBounds(
+	void PhysicsScene::VisitActorsInBounds(
 		const sf::FloatRect& bounds,
 		void* context,
 		ActorBoundsVisitor visitor
@@ -386,7 +372,7 @@ namespace ly
 		);
 	}
 
-	List<Actor*> PhysicsSystem::QueryActorsInBounds(
+	List<Actor*> PhysicsScene::QueryActorsInBounds(
 		const sf::FloatRect& bounds
 	) const
 	{
@@ -403,15 +389,7 @@ namespace ly
 		return actors;
 	}
 
-	PhysicsSystem::PhysicsSystem() :
-		mPhysicsWorld{ 0, 0 },
-		mPhysicsRate{ 0.01f },
-		mPendingRemoveListeners{}
-	{
-		InitializeWorld({ 0.0f, 0.0f });
-	}
-
-	void PhysicsSystem::ProcessPendingRemoveListeners()
+	void PhysicsScene::ProcessPendingRemoveListeners()
 	{
 		for (auto bodyId : mPendingRemoveListeners)
 		{
@@ -421,10 +399,5 @@ namespace ly
 			}
 		}
 		mPendingRemoveListeners.clear();
-	}
-
-	PhysicsSystem::~PhysicsSystem()
-	{
-		Cleanup();
 	}
 }

@@ -11,7 +11,7 @@ namespace ly
 	{
 	public:
 
-		Application(sf::Vector2u Position,unsigned int bit, std::string& Title,uint32_t Style);
+		Application(sf::Vector2u Position,unsigned int bit, const std::string& Title,uint32_t Style);
 		virtual ~Application() = default;
 		void Run();
 

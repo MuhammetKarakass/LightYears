@@ -1,15 +1,22 @@
 #include "framework/Delegate.h"
 #include "framework/Actor.h"
+#include "framework/ActorComponent.h"
+#include "framework/AssetManager.h"
+#include "framework/LightComponent.h"
 #include "framework/Object.h"
-#include "framework/PhysicsSystem.h"
+#include "framework/PhysicsScene.h"
+#include "framework/SpriteComponent.h"
 #include "framework/TimerManager.h"
 #include "framework/World.h"
 #include "framework/debug/Assert.h"
 #include "framework/debug/Log.h"
 #include "framework/debug/Profiler.h"
 
+#include <cmath>
+#include <filesystem>
 #include <iostream>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace
@@ -163,6 +170,58 @@ namespace
 
 		int overlapCount{ 0 };
 	};
+
+	using EventLog = std::vector<std::string>;
+
+	class RecordingComponent : public ly::ActorComponent
+	{
+	public:
+		RecordingComponent(ly::Actor& owner, EventLog* eventLog, std::string componentName, bool ticks)
+			: ActorComponent(owner), log{ eventLog }, name{ std::move(componentName) }
+		{
+			mCanEverTick = ticks;
+		}
+
+		void BeginPlay() override { log->push_back(name + ".BeginPlay"); }
+		void TickComponent(float) override
+		{
+			log->push_back(name + ".Tick");
+			if (spawnOnTick)
+			{
+				ly::Actor& owner = GetOwner();
+				spawnOnTick = false;
+				owner.AddComponent<RecordingComponent>(log, "Spawned", false);
+			}
+		}
+		void EndPlay() override { log->push_back(name + ".EndPlay"); }
+
+		EventLog* log;
+		std::string name;
+		bool spawnOnTick{ false };
+	};
+
+	class ComponentProbeActor final : public ly::Actor
+	{
+	public:
+		ComponentProbeActor(ly::World* world, EventLog* eventLog)
+			: Actor(world), log{ eventLog }
+		{
+		}
+
+		void BeginPlay() override { log->push_back("Actor.BeginPlay"); }
+		void Tick(float deltaTime) override
+		{
+			log->push_back("Actor.Tick");
+			Actor::Tick(deltaTime);
+		}
+
+		EventLog* log;
+	};
+
+	bool Near(float a, float b)
+	{
+		return std::fabs(a - b) < 0.01f;
+	}
 }
 
 int main()
@@ -235,10 +294,9 @@ int main()
 		return Fail("Release build recorded a compile-disabled profile scope");
 	}
 
-	ly::PhysicsSystem& physicsSystem = ly::PhysicsSystem::Get();
-	physicsSystem.InitializeWorld();
 	{
 		ly::World physicsWorld{ nullptr };
+		ly::PhysicsScene& physicsScene = physicsWorld.GetPhysicsScene();
 		PhysicsProbeActor probe{ &physicsWorld };
 		PhysicsProbeActor otherProbe{ &physicsWorld };
 		probe.SetCollisionLayer(CollisionLayer::Player);
@@ -252,7 +310,7 @@ int main()
 			return Fail("Physics probe did not create its explicit-radius body");
 		}
 		bool probeFoundBySpatialQuery = false;
-		for (ly::Actor* actor : physicsSystem.QueryActorsInBounds(
+		for (ly::Actor* actor : physicsScene.QueryActorsInBounds(
 			{ { -2.f, -2.f }, { 4.f, 4.f } }
 		))
 		{
@@ -262,7 +320,7 @@ int main()
 		{
 			return Fail("Spatial query incorrectly applied an actor collision mask");
 		}
-		physicsSystem.Step(1.f / 60.f);
+		physicsScene.Step(1.f / 60.f);
 		if (probe.overlapCount != 0 || otherProbe.overlapCount != 0)
 		{
 			return Fail("Physics emitted an overlap outside the gameplay collision masks");
@@ -270,13 +328,234 @@ int main()
 
 		otherProbe.SetCollisionLayer(CollisionLayer::Enemy);
 		otherProbe.SetCollisionMask(CollisionLayer::Player);
-		physicsSystem.Step(1.f / 60.f);
+		physicsScene.Step(1.f / 60.f);
 		if (probe.overlapCount != 1 || otherProbe.overlapCount != 1)
 		{
 			return Fail("Runtime collision filter update did not create the expected overlap");
 		}
 	}
-	physicsSystem.Cleanup();
+
+	{
+		ly::World componentWorld{ nullptr };
+		EventLog log;
+		ComponentProbeActor actor{ &componentWorld, &log };
+		RecordingComponent& first = actor.AddComponent<RecordingComponent>(&log, "A", true);
+		actor.AddComponent<RecordingComponent>(&log, "B", false);
+		if (actor.FindComponent<RecordingComponent>() != &first || &first.GetOwner() != &actor ||
+			first.GetWorld() != &componentWorld || actor.FindComponent<ly::LightComponent>() != nullptr)
+		{
+			return Fail("Actor component add/find did not return the expected component");
+		}
+		if (&actor.GetOrAddComponent<RecordingComponent>(&log, "X", false) != &first)
+		{
+			return Fail("GetOrAddComponent created a duplicate component");
+		}
+		actor.TickInternal(0.1f);
+		if (!log.empty())
+		{
+			return Fail("Actor ticked before BeginPlay");
+		}
+		actor.BeginPlayInternal();
+		actor.BeginPlayInternal();
+		if (log != EventLog{ "A.BeginPlay", "B.BeginPlay", "Actor.BeginPlay" })
+		{
+			return Fail("Component BeginPlay did not run once, before Actor::BeginPlay");
+		}
+		log.clear();
+		first.spawnOnTick = true;
+		actor.TickInternal(0.1f);
+		if (log != EventLog{ "Actor.Tick", "A.Tick", "Spawned.BeginPlay" })
+		{
+			return Fail("Component tick/add-during-tick order was wrong");
+		}
+		log.clear();
+		first.SetActive(false);
+		actor.TickInternal(0.1f);
+		if (log != EventLog{ "Actor.Tick" })
+		{
+			return Fail("Inactive or non-ticking component ticked");
+		}
+		log.clear();
+		actor.Destroy();
+		actor.Destroy();
+		if (log != EventLog{ "A.EndPlay", "B.EndPlay", "Spawned.EndPlay" })
+		{
+			return Fail("Component EndPlay did not run once, in add order, on Destroy");
+		}
+
+		EventLog neverBegunLog;
+		ComponentProbeActor neverBegun{ &componentWorld, &neverBegunLog };
+		neverBegun.AddComponent<RecordingComponent>(&neverBegunLog, "N", true);
+		neverBegun.Destroy();
+		if (!neverBegunLog.empty())
+		{
+			return Fail("EndPlay ran for a component that never began play");
+		}
+	}
+
+	{
+		ly::World lightWorld{ nullptr };
+		ly::Actor actor{ &lightWorld };
+		actor.SetActorLocation({ 100.f, 50.f });
+		if (actor.GetRenderBounds())
+		{
+			return Fail("Actor without sprite or lights reported render bounds");
+		}
+		ly::LightComponent& lights = actor.GetOrAddComponent<ly::LightComponent>();
+		if (&actor.GetOrAddComponent<ly::LightComponent>() != &lights || actor.FindComponent<ly::LightComponent>() != &lights)
+		{
+			return Fail("LightComponent was not unique per actor");
+		}
+		const ly::GameplayTag base{ "Test.Light" };
+		const ly::GameplayTag light0 = lights.AddLight(base, "", sf::Color::White, 1.f, { 20.f, 20.f }, { 0.f, 0.f }, false, false, 0.f, 1.f);
+		const ly::GameplayTag light1 = lights.AddLight(base, "", sf::Color::White, 1.f, { 20.f, 20.f }, { 200.f, 0.f }, false, false, 0.f, 1.f, 1.f, ly::LightSpace::World);
+		if (light0.ToString() != "Test.Light_0" || light1.ToString() != "Test.Light_1" ||
+			!lights.HasLight(light0) || lights.GetLightsByBaseTag(base).size() != 2u)
+		{
+			return Fail("LightComponent did not auto-index lights as Tag_0, Tag_1");
+		}
+		lights.RemoveLight(light0);
+		if (lights.HasLight(light0) || lights.GetLightsByBaseTag(base).size() != 1u ||
+			lights.AddLight(base, "", sf::Color::White, 1.f, { 20.f, 20.f }, { 0.f, 0.f }, false, false, 0.f, 1.f).ToString() != "Test.Light_2")
+		{
+			return Fail("LightComponent removal or next-index selection was wrong");
+		}
+		lights.SetAllLightsIntensity(base, 2.5f);
+		if (lights.GetLightData(light1)->intensity != 2.5f)
+		{
+			return Fail("SetAllLightsIntensity did not update matching lights");
+		}
+
+		// Bounds only count enabled lights that have a shader; give them a
+		// shader object without needing a GL context or asset files.
+		for (const ly::GameplayTag& tag : lights.GetLightsByBaseTag(base))
+		{
+			lights.GetLightData(tag)->shader = std::make_shared<sf::Shader>();
+		}
+		lights.SetLightEnabled(ly::GameplayTag{ "Test.Light_2" }, false);
+		const std::optional<sf::FloatRect> bounds = actor.GetRenderBounds();
+		const float extent = 0.5f * std::sqrt(20.f * 20.f + 20.f * 20.f);
+		// Remaining light: Test.Light_1, world space at (200, 0).
+		if (!bounds || !Near(bounds->position.x, 200.f - extent) || !Near(bounds->position.y, -extent) ||
+			!Near(bounds->size.x, extent * 2.f))
+		{
+			return Fail("Render bounds did not cover the single enabled light");
+		}
+		lights.SetLightEnabled(ly::GameplayTag{ "Test.Light_2" }, true);
+		const std::optional<sf::FloatRect> unionBounds = actor.GetRenderBounds();
+		// Test.Light_2 is local at the actor (100, 50): union spans x 100-extent .. 200+extent.
+		if (!unionBounds || !Near(unionBounds->position.x, 100.f - extent) || !Near(unionBounds->position.y, -extent) ||
+			!Near(unionBounds->size.x, 100.f + extent * 2.f) || !Near(unionBounds->size.y, 50.f + extent * 2.f))
+		{
+			return Fail("Render bounds did not union every enabled light");
+		}
+		lights.SetActive(false);
+		if (actor.GetRenderBounds())
+		{
+			return Fail("Inactive LightComponent still contributed render bounds");
+		}
+	}
+
+	{
+		// SpriteComponent: the sprite follows the actor transform and the actor
+		// bounds come from it. The texture is a PNG written to a temp directory so
+		// no asset files are needed; if the host cannot create a GL texture the
+		// sprite-dependent checks are skipped (the component then has no sprite).
+		const std::filesystem::path textureDirectory = std::filesystem::temp_directory_path() / "ly_sprite_component_test";
+		std::filesystem::create_directories(textureDirectory);
+		const bool pngWritten = sf::Image{ sf::Vector2u{ 40u, 20u }, sf::Color::White }.saveToFile(textureDirectory / "sprite40x20.png");
+		ly::AssetManager& assets = ly::AssetManager::GetAssetManager();
+		const std::string previousRoot = assets.GetAssetRootDirectory();
+		assets.SetAssetRootDirectory(textureDirectory.generic_string() + "/");
+
+		ly::World spriteWorld{ nullptr };
+		ly::Actor plain{ &spriteWorld };
+		plain.SetActorLocation({ 12.f, 34.f });
+		const sf::FloatRect plainBounds = plain.GetActorGlobalBounds();
+		if (plain.FindComponent<ly::SpriteComponent>() != nullptr || !Near(plainBounds.position.x, 12.f) ||
+			!Near(plainBounds.position.y, 34.f) || plainBounds.size.x != 0.f || plainBounds.size.y != 0.f)
+		{
+			return Fail("Actor without a texture path got a SpriteComponent or non-point bounds");
+		}
+
+		ly::Actor textured{ &spriteWorld, "sprite40x20.png" };
+		ly::SpriteComponent* spriteComponent = textured.FindComponent<ly::SpriteComponent>();
+		if (!spriteComponent)
+		{
+			return Fail("Actor(World*, texturePath) did not create a SpriteComponent");
+		}
+		if (pngWritten && spriteComponent->HasSprite())
+		{
+			sf::Sprite& sprite = *spriteComponent->GetSprite();
+			sf::FloatRect bounds = textured.GetActorGlobalBounds();
+			// Centered pivot at the actor origin: the 40x20 texture spans (-20,-10)..(20,10).
+			if (!Near(bounds.position.x, -20.f) || !Near(bounds.position.y, -10.f) ||
+				!Near(bounds.size.x, 40.f) || !Near(bounds.size.y, 20.f))
+			{
+				return Fail("Textured actor bounds were not the centered texture rect");
+			}
+			textured.SetActorLocation({ 100.f, 50.f });
+			if (!Near(sprite.getPosition().x, 100.f) || !Near(sprite.getPosition().y, 50.f))
+			{
+				return Fail("Sprite did not follow SetActorLocation");
+			}
+			bounds = textured.GetActorGlobalBounds();
+			if (!Near(bounds.position.x, 80.f) || !Near(bounds.position.y, 40.f))
+			{
+				return Fail("Actor bounds did not follow SetActorLocation");
+			}
+			textured.SetActorRotation(90.f);
+			if (!Near(sprite.getRotation().asDegrees(), 90.f))
+			{
+				return Fail("Sprite did not follow SetActorRotation");
+			}
+			bounds = textured.GetActorGlobalBounds();
+			// Rotated a quarter turn the footprint is 20 wide and 40 tall around (100, 50).
+			if (!Near(bounds.size.x, 20.f) || !Near(bounds.size.y, 40.f) ||
+				!Near(bounds.position.x, 90.f) || !Near(bounds.position.y, 30.f))
+			{
+				return Fail("Actor bounds did not follow SetActorRotation");
+			}
+			textured.AddActorLocationOffset({ 10.f, 0.f });
+			if (!Near(sprite.getPosition().x, 110.f))
+			{
+				return Fail("Sprite did not follow AddActorLocationOffset");
+			}
+			const std::optional<sf::FloatRect> renderBounds = textured.GetRenderBounds();
+			if (!renderBounds || !Near(renderBounds->size.x, 20.f) || !Near(renderBounds->size.y, 40.f))
+			{
+				return Fail("Render bounds did not use the sprite bounds");
+			}
+			spriteComponent->SetVisibility(false);
+			if (sprite.getColor() != sf::Color::Transparent)
+			{
+				return Fail("SpriteComponent::SetVisibility(false) did not clear the tint");
+			}
+			spriteComponent->SetVisibility(true);
+			if (sprite.getColor() != sf::Color::White)
+			{
+				return Fail("SpriteComponent::SetVisibility(true) did not restore the tint");
+			}
+			// A late-added component picks up the actor's current transform.
+			ly::Actor late{ &spriteWorld };
+			late.SetActorLocation({ 300.f, 200.f });
+			late.SetActorRotation(45.f);
+			ly::SpriteComponent& lateSprite = late.GetOrAddComponent<ly::SpriteComponent>();
+			if (!lateSprite.SetTexture("sprite40x20.png") || !Near(lateSprite.GetSprite()->getPosition().x, 300.f) ||
+				!Near(lateSprite.GetSprite()->getRotation().asDegrees(), 45.f) || &late.GetOrAddComponent<ly::SpriteComponent>() != &lateSprite)
+			{
+				return Fail("A late-added SpriteComponent did not adopt the actor transform");
+			}
+		}
+		else
+		{
+			std::cout << "SKIP: no GL texture available, sprite transform checks skipped" << std::endl;
+		}
+
+		assets.SetAssetRootDirectory(previousRoot);
+		std::error_code removeError;
+		std::filesystem::remove_all(textureDirectory, removeError);
+	}
 
 	ly::Delegate<int> weakDelegate;
 	std::shared_ptr<WeakListener> weakListener = std::make_shared<WeakListener>();

@@ -3,7 +3,6 @@
 #include "framework/World.h"
 #include "framework/AssetManager.h"
 #include "framework/AudioManager.h"
-#include "framework/PhysicsSystem.h"
 #include "framework/TimerManager.h"
 #include "framework/ShaderManager.h"
 #include "framework/debug/Log.h"
@@ -15,7 +14,13 @@
 
 namespace ly
 {
-	Application::Application(sf::Vector2u Position, unsigned int bit, std::string& Title, uint32_t Style)
+	namespace
+	{
+		// Upper bound for simulated time per frame so a long hitch cannot cause a huge simulation step.
+		constexpr float MaxSimulationDeltaSeconds = 0.1f;
+	}
+
+	Application::Application(sf::Vector2u Position, unsigned int bit, const std::string& Title, uint32_t Style)
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
 		mTargetFrameRate{ 60.f },     
 		mShouldQuit{ false },
@@ -73,7 +78,7 @@ namespace ly
 			}
 			
 			const auto hitchTickStart = std::chrono::steady_clock::now();
-			TickInternal(dt);
+			TickInternal(std::min(dt, MaxSimulationDeltaSeconds));
 			if (mQuitRequested)
 			{
 				ShutdownApplication();
@@ -123,7 +128,6 @@ namespace ly
 		mCurrentWorld.reset();
 		AudioManager::ShutdownAudioManager();
 		TimerManager::ShutdownTimerManagers();
-		PhysicsSystem::ShutdownPhysicsSystem();
 		ShaderManager::ShutdownShaderManager();
 		AssetManager::ShutdownAssetManager();
 		mWindow.close();
@@ -148,9 +152,9 @@ namespace ly
 		if (!isPaused)
 		{
 			TimerManager::GetGameTimerManager().UpdateTimer(deltaTime);
+			if (mCurrentWorld)
 			{
-				LY_PROFILE_SCOPE("Physics.Step");
-				PhysicsSystem::Get().Step(deltaTime);
+				mCurrentWorld->StepPhysics(deltaTime);
 			}
 		}
 
@@ -171,9 +175,6 @@ namespace ly
 
 			TimerManager::GetGameTimerManager().ClearAllTimers();
 			TimerManager::GetGlobalTimerManager().ClearAllTimers();
-
-			PhysicsSystem::Get().Cleanup();
-			PhysicsSystem::Get().InitializeWorld({ 0.f,0.f });
 
 			mCurrentWorld = mPendingWorld;
 			mCurrentWorld->BeginPlayInternal();

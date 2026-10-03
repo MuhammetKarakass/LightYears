@@ -1,6 +1,8 @@
 #include "framework/Actor.h"
-#include "framework/PhysicsSystem.h"
+#include "framework/CollisionComponent.h"
+#include "framework/PhysicsScene.h"
 #include "framework/World.h"
+#include <cmath>
 #include <iostream>
 #include <unordered_set>
 
@@ -50,10 +52,115 @@ namespace
 		float mCollisionRadius = 0.f;
 	};
 
+	// Overlapping physics actors must never be displaced by the Box2D solver and
+	// must still produce exactly one begin-overlap callback.
+	class OverlapProbeActor final : public ly::Actor
+	{
+	public:
+		OverlapProbeActor(ly::World* world, sf::Vector2f location, CollisionLayer layer, CollisionLayer mask)
+			: Actor(world)
+		{
+			SetActorLocation(location);
+			SetCollisionLayer(layer);
+			SetCollisionMask(mask);
+			SetEnablePhysics(true);
+		}
+
+		float GetPhysicsCollisionRadius() const override
+		{
+			return 20.f;
+		}
+
+		void OnActorBeginOverlap(ly::Actor* otherActor) override
+		{
+			Actor::OnActorBeginOverlap(otherActor);
+			++beginCount;
+		}
+
+		void OnActorEndOverlap(ly::Actor* otherActor) override
+		{
+			Actor::OnActorEndOverlap(otherActor);
+			++endCount;
+		}
+
+		int beginCount = 0;
+		int endCount = 0;
+	};
+
+	struct BodyPositionQuery
+	{
+		ly::Actor* actor = nullptr;
+		b2Vec2 position{ 0.f, 0.f };
+		bool found = false;
+	};
+
+	bool CollectBodyPosition(b2ShapeId shapeId, void* context)
+	{
+		auto* query = static_cast<BodyPositionQuery*>(context);
+		const b2BodyId bodyId = b2Shape_GetBody(shapeId);
+		if (static_cast<ly::Actor*>(b2Body_GetUserData(bodyId)) == query->actor)
+		{
+			query->position = b2Body_GetPosition(bodyId);
+			query->found = true;
+		}
+		return true;
+	}
+
+	bool BodyMatchesActor(ly::PhysicsScene& physics, ly::Actor* actor)
+	{
+		BodyPositionQuery query{ actor };
+		const b2AABB everything{ { -1000.f, -1000.f }, { 1000.f, 1000.f } };
+		b2QueryFilter filter = b2DefaultQueryFilter();
+		filter.categoryBits = ~uint64_t{ 0 };
+		b2World_OverlapAABB(physics.GetWorldId(), everything, filter, CollectBodyPosition, &query);
+		const float rate = physics.GetPhysicsRate();
+		const sf::Vector2f location = actor->GetActorLocation();
+		return query.found && std::abs(query.position.x - location.x * rate) < 1e-4f &&
+			std::abs(query.position.y - location.y * rate) < 1e-4f;
+	}
+
+	struct BodyFilterQuery
+	{
+		ly::Actor* actor = nullptr;
+		b2Filter filter = b2DefaultFilter();
+		b2BodyType bodyType = b2_dynamicBody;
+		bool found = false;
+	};
+
+	bool CollectBodyFilter(b2ShapeId shapeId, void* context)
+	{
+		auto* query = static_cast<BodyFilterQuery*>(context);
+		const b2BodyId bodyId = b2Shape_GetBody(shapeId);
+		if (static_cast<ly::Actor*>(b2Body_GetUserData(bodyId)) == query->actor)
+		{
+			query->filter = b2Shape_GetFilter(shapeId);
+			query->bodyType = b2Body_GetType(bodyId);
+			query->found = true;
+		}
+		return true;
+	}
+
+	BodyFilterQuery GetBodyFilter(ly::PhysicsScene& physics, ly::Actor* actor)
+	{
+		BodyFilterQuery query{ actor };
+		const b2AABB everything{ { -1000.f, -1000.f }, { 1000.f, 1000.f } };
+		b2QueryFilter filter = b2DefaultQueryFilter();
+		filter.categoryBits = ~uint64_t{ 0 };
+		b2World_OverlapAABB(physics.GetWorldId(), everything, filter, CollectBodyFilter, &query);
+		return query;
+	}
+
 	bool Fail(const char* message)
 	{
 		std::cerr << message << '\n';
 		return false;
+	}
+
+	// Unlike Fail, yields a non-zero process exit code from main.
+	int FailExit(const char* message)
+	{
+		Fail(message);
+		return 1;
 	}
 
 	bool CountStoppedQuery(void* context, ly::Actor*)
@@ -65,10 +172,125 @@ namespace
 
 int main()
 {
-	ly::PhysicsSystem& physics = ly::PhysicsSystem::Get();
-	physics.InitializeWorld();
+	{
+		// CollisionComponent: created lazily by the first collision setter, defaults
+		// without it, and layer/mask changes refresh the live Box2D filter while the
+		// actor stays in the World spatial index exactly once.
+		ly::World world{ nullptr };
+		ly::PhysicsScene& physics = world.GetPhysicsScene();
+		const auto untouched = world.SpawnActor<ly::Actor>().lock();
+		if (untouched->FindComponent<ly::CollisionComponent>() != nullptr ||
+			untouched->GetCollisionLayer() != CollisionLayer::None || untouched->GetCollisionMask() != CollisionLayer::None ||
+			untouched->IsPhysicsEnabled() || untouched->HasPhysicsBody() ||
+			untouched->GetPhysicsBodyType() != ly::PhysicsBodyType::Dynamic || untouched->CanCollideWith(untouched.get()))
+		{
+			return FailExit("An actor that never touched collision did not report the collision defaults");
+		}
+		untouched->SetCollisionLayer(CollisionLayer::Enemy);
+		ly::CollisionComponent* untouchedCollision = untouched->FindComponent<ly::CollisionComponent>();
+		if (!untouchedCollision || untouched->GetCollisionLayer() != CollisionLayer::Enemy ||
+			untouchedCollision->GetCollisionLayer() != CollisionLayer::Enemy)
+		{
+			return FailExit("SetCollisionLayer did not create the CollisionComponent");
+		}
+
+		const auto probe = world.SpawnActor<OverlapProbeActor>(
+			sf::Vector2f{ 100.f, 100.f }, CollisionLayer::Player, CollisionLayer::Enemy
+		).lock();
+		world.TickInternal(0.f);
+		ly::CollisionComponent* collision = probe->FindComponent<ly::CollisionComponent>();
+		BodyFilterQuery filter = GetBodyFilter(physics, probe.get());
+		if (!collision || !collision->HasPhysicsBody() || !probe->HasPhysicsBody() || !probe->IsPhysicsEnabled() ||
+			!filter.found || filter.filter.categoryBits != static_cast<uint64_t>(CollisionLayer::Player) ||
+			filter.filter.maskBits != static_cast<uint64_t>(CollisionLayer::Enemy))
+		{
+			return FailExit("Physics body did not start with the actor collision layer and mask");
+		}
+
+		probe->SetCollisionLayer(CollisionLayer::PlayerBullet);
+		probe->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Environment);
+		filter = GetBodyFilter(physics, probe.get());
+		if (!filter.found || filter.filter.categoryBits != static_cast<uint64_t>(CollisionLayer::PlayerBullet) ||
+			filter.filter.maskBits != static_cast<uint64_t>(CollisionLayer::Enemy | CollisionLayer::Environment) ||
+			probe->GetCollisionLayer() != CollisionLayer::PlayerBullet ||
+			probe->GetCollisionMask() != (CollisionLayer::Enemy | CollisionLayer::Environment))
+		{
+			return FailExit("Changing collision layer/mask did not refresh the Box2D filter");
+		}
+		if (!probe->CanCollideWith(untouched.get()) || untouched->CanCollideWith(probe.get()))
+		{
+			return FailExit("CanCollideWith did not follow the component mask and layer");
+		}
+
+		int visits = 0;
+		for (const ly::weak_ptr<ly::Actor>& weakActor : world.GetActorsInBounds({ { 60.f, 60.f }, { 80.f, 80.f } }))
+		{
+			if (weakActor.lock().get() == probe.get()) ++visits;
+		}
+		if (visits != 1)
+		{
+			return FailExit("Collision layer change duplicated or dropped the actor in the spatial query");
+		}
+
+		if (GetBodyFilter(physics, probe.get()).bodyType != b2_dynamicBody)
+		{
+			return FailExit("A default physics body was not dynamic");
+		}
+		probe->SetPhysicsBodyType(ly::PhysicsBodyType::Static);
+		if (probe->GetPhysicsBodyType() != ly::PhysicsBodyType::Static || collision->GetPhysicsBodyType() != ly::PhysicsBodyType::Static ||
+			GetBodyFilter(physics, probe.get()).bodyType != b2_staticBody)
+		{
+			return FailExit("SetPhysicsBodyType did not reach the component");
+		}
+
+		probe->SetEnablePhysics(false);
+		if (probe->HasPhysicsBody() || probe->IsPhysicsEnabled() || collision->HasPhysicsBody())
+		{
+			return FailExit("SetEnablePhysics(false) left a physics body behind");
+		}
+		physics.Step(0.f);
+	}
+
 	{
 		ly::World world{ nullptr };
+		ly::PhysicsScene& physics = world.GetPhysicsScene();
+		const auto first = world.SpawnActor<OverlapProbeActor>(
+			sf::Vector2f{ 100.f, 100.f }, CollisionLayer::Player, CollisionLayer::Enemy
+		).lock();
+		const auto second = world.SpawnActor<OverlapProbeActor>(
+			sf::Vector2f{ 110.f, 100.f }, CollisionLayer::Enemy, CollisionLayer::Player
+		).lock();
+		world.TickInternal(0.f);
+		for (int frame = 0; frame < 10; ++frame)
+		{
+			physics.Step(1.f / 60.f);
+		}
+
+		if (!BodyMatchesActor(physics, first.get()) || !BodyMatchesActor(physics, second.get()))
+		{
+			return FailExit("Overlapping physics bodies were moved away from their actors by the solver");
+		}
+		if (first->beginCount != 1 || second->beginCount != 1 || first->endCount != 0 || second->endCount != 0)
+		{
+			return FailExit("Overlapping stationary actors did not produce exactly one begin overlap");
+		}
+
+		// Moving one actor away still ends the overlap exactly once.
+		second->SetActorLocation({ 400.f, 100.f });
+		for (int frame = 0; frame < 5; ++frame)
+		{
+			physics.Step(1.f / 60.f);
+		}
+		if (first->beginCount != 1 || first->endCount != 1 || second->endCount != 1 ||
+			!BodyMatchesActor(physics, first.get()) || !BodyMatchesActor(physics, second.get()))
+		{
+			return FailExit("Separating overlapping actors did not produce exactly one end overlap");
+		}
+	}
+
+	{
+		ly::World world{ nullptr };
+		ly::PhysicsScene& physics = world.GetPhysicsScene();
 		const auto multiShape = world.SpawnActor<BoundsProbeActor>(
 			sf::Vector2f{ 30.f, 30.f }, 2
 		);
@@ -163,6 +385,6 @@ int main()
 
 		physics.Step(0.f);
 	}
-	physics.Cleanup();
+
 	return 0;
 }

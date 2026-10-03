@@ -57,7 +57,7 @@ namespace ly
 
 	sf::Shader* ShaderManager::GetShader(const std::string& name)
 	{
-		for (auto& it = mShader.begin(); it != mShader.end(); ++it)
+		for (auto it = mShader.begin(); it != mShader.end(); ++it)
 		{
 			if (it->first == name)
 			{

@@ -5,13 +5,14 @@
 #include "gameplay/GameStage.h"
 #include "widget/HUD.h"
 #include "framework/PerfMonitor.h"
-#include "framework/PhysicsSystem.h"
+#include "framework/PhysicsScene.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <iterator>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace ly{
 	namespace
@@ -30,6 +31,7 @@ namespace ly{
 	World::World(Application* owningApp):
 		mOwningApp{ owningApp },
 		mBeganPlay{ false },   
+		mPhysicsScene{ std::make_unique<PhysicsScene>() },
 		mPendingActors{},      
 		mActors{},
 		mManualSpatialCells{},
@@ -621,7 +623,26 @@ namespace ly{
 
 	World::~World()
 	{
-		
+		// Release actors while the physics scene is still alive. Actors that
+		// outlive the world through external shared_ptrs must not touch the dead
+		// scene later, so detach their bodies first.
+		for (const shared_ptr<Actor>& actor : mActors)
+		{
+			if (actor) actor->UnInitializePhysics();
+		}
+		for (const shared_ptr<Actor>& actor : mPendingActors)
+		{
+			if (actor) actor->UnInitializePhysics();
+		}
+		mActors.clear();
+		mPendingActors.clear();
+		mPhysicsScene.reset();
+	}
+
+	void World::StepPhysics(float deltaTime)
+	{
+		LY_PROFILE_SCOPE("Physics.Step");
+		mPhysicsScene->Step(deltaTime);
 	}
 
 
@@ -656,6 +677,8 @@ namespace ly{
 
 	void World::NextGameStage()
 	{
+		// Keep the finishing stage alive: this runs inside its onStageFinished broadcast.
+		const shared_ptr<GameStage> finishedStage = *mCurrentStage;
 		mCurrentStage = mGameStages.erase(mCurrentStage);
 		if(mCurrentStage!=mGameStages.end())
 		{
@@ -713,22 +736,21 @@ namespace ly{
 
 		struct PhysicsVisitContext
 		{
-			const World* world = nullptr;
 			void* visitorContext = nullptr;
 			ActorBoundsVisitor visitor = nullptr;
 			std::unordered_set<std::uint64_t>* visitedActorIds = nullptr;
 			bool stopped = false;
 		};
 		std::unordered_set<std::uint64_t> visitedActorIds;
-		PhysicsVisitContext physicsContext{ this, context, visitor, &visitedActorIds, false };
-		PhysicsSystem::Get().VisitActorsInBounds(
+		PhysicsVisitContext physicsContext{ context, visitor, &visitedActorIds, false };
+		mPhysicsScene->VisitActorsInBounds(
 			bounds,
 			&physicsContext,
 			[](void* rawContext, Actor* actor)
 			{
 				auto* visit = static_cast<PhysicsVisitContext*>(rawContext);
-				if (!visit || !actor || actor->GetWorld() != visit->world ||
-					actor->GetIsPendingDestroy() || actor->GetWeakPtr().expired())
+				if (!visit || !actor || actor->GetIsPendingDestroy() ||
+					actor->GetWeakPtr().expired())
 				{
 					return true;
 				}
@@ -757,6 +779,9 @@ namespace ly{
 			queryStamp = ++mManualSpatialQueryStamp;
 		}
 
+		// Collect first: the visitor may destroy or move actors, which mutates the
+		// cell containers being traversed here.
+		std::vector<Actor*> candidates;
 		for (int y = range.minY; y <= range.maxY; ++y)
 		{
 			for (int x = range.minX; x <= range.maxX; ++x)
@@ -784,11 +809,20 @@ namespace ly{
 					{
 						continue;
 					}
-					if (!visitor(context, actor))
-					{
-						return;
-					}
+					candidates.push_back(actor);
 				}
+			}
+		}
+
+		for (Actor* actor : candidates)
+		{
+			if (actor->GetWorld() != this || actor->GetIsPendingDestroy())
+			{
+				continue;
+			}
+			if (!visitor(context, actor))
+			{
+				return;
 			}
 		}
 	}

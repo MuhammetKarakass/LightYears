@@ -8,21 +8,25 @@ namespace ly
 {
 	class Actor;
 
-	class PhysicsSystem
+	// Owns one Box2D world. Each ly::World owns exactly one PhysicsScene (mirrors
+	// Unreal's UWorld/FPhysScene), so a scene's lifetime is the world's lifetime
+	// and bodies from different worlds can never interact.
+	class PhysicsScene
 	{
 	public:
 		using ActorBoundsVisitor = bool(*)(void* context, Actor* actor);
 
-		static PhysicsSystem& Get();
-		static void ShutdownPhysicsSystem();
+		explicit PhysicsScene(b2Vec2 gravity = { 0.0f, 0.0f });
+		~PhysicsScene();
+		PhysicsScene(const PhysicsScene&) = delete;
+		PhysicsScene& operator=(const PhysicsScene&) = delete;
+
 		void Step(float deltaTime);
-		void InitializeWorld(b2Vec2 gravity = {0.0f, 0.0f});
-		void Cleanup();
-		
+
 		// Contact event handling (Box2D v3.x event-based system)
 		void ProcessContactEvents();
-		
-		b2WorldId GetWorld() const { return mPhysicsWorld; }
+
+		b2WorldId GetWorldId() const { return mPhysicsWorld; }
 		float GetPhysicsRate() const { return mPhysicsRate; }
 		b2BodyId AddListener(Actor* listener);
 		void RemoveListener(b2BodyId bodyId);
@@ -43,21 +47,13 @@ namespace ly
 			ActorBoundsVisitor visitor
 		) const;
 		List<Actor*> QueryActorsInBounds(const sf::FloatRect& bounds) const;
-		
-		~PhysicsSystem();  // Public destructor for unique_ptr
-
-	protected:
-		PhysicsSystem();
 
 	private:
-
 		void ProcessPendingRemoveListeners();
 
-		static unique_ptr<PhysicsSystem> physicsSystem;
 		b2WorldId mPhysicsWorld;
 		List<b2BodyId> mPendingRemoveListeners;
 		List<b2ShapeId> mShapeScratchBuffer;
 		float mPhysicsRate;
 	};
 }
-

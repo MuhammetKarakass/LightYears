@@ -1,5 +1,6 @@
 #include "framework/BackGroundActor.h"
 #include "framework/World.h"
+#include "framework/SpriteComponent.h"
 
 namespace ly
 {
@@ -14,9 +15,10 @@ namespace ly
 		SetRenderLayer(RenderLayer::Background);
 		SetEnablePhysics(false);
 		auto windowSize = owningWorld->GetWindowSize();
-		GetSprite().value().setOrigin({0.f,0.f});
-		GetSprite().value().setTextureRect(sf::IntRect{ sf::Vector2i{0,0},sf::Vector2i{(int)windowSize.x,(int)windowSize.y}});
-		SetTextureRepeated(true);
+		SpriteComponent& spriteComponent = *FindComponent<SpriteComponent>();
+		spriteComponent.GetSprite().value().setOrigin({0.f,0.f});
+		spriteComponent.GetSprite().value().setTextureRect(sf::IntRect{ sf::Vector2i{0,0},sf::Vector2i{(int)windowSize.x,(int)windowSize.y}});
+		spriteComponent.SetTextureRepeated(true);
 		SetTickWhenPaused(true);
 		SetVelocity(velocity);
 	}
@@ -28,11 +30,12 @@ namespace ly
 		mLeftShift += mVelocity.x * deltaTime;
 		mTopShift += mVelocity.y * deltaTime;
 
-		sf::IntRect currentRect = GetSprite().value().getTextureRect();
+		SpriteComponent& spriteComponent = *FindComponent<SpriteComponent>();
+		sf::IntRect currentRect = spriteComponent.GetSprite().value().getTextureRect();
 		currentRect.position.x = mLeftShift;
 		currentRect.position.y = mTopShift;
 
-		GetSprite().value().setTextureRect(currentRect);
+		spriteComponent.GetSprite().value().setTextureRect(currentRect);
 	}
 
 	void BackGroundActor::SetPaused(bool paused)

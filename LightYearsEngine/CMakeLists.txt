@@ -28,6 +28,18 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Actor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Actor.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/ActorComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/ActorComponent.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/LightComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/LightComponent.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SpriteComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/SpriteComponent.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/CollisionComponent.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/CollisionComponent.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/BackGroundActor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/BackGroundActor.cpp
 
@@ -43,8 +55,8 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/MathUtility.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/MathUtility.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/PhysicsSystem.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/PhysicsSystem.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/PhysicsScene.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/PhysicsScene.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Delegate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Delegate.cpp

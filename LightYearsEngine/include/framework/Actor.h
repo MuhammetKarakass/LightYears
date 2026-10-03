@@ -1,31 +1,20 @@
 #pragma once
 #include "framework/Object.h"
+#include "framework/ActorComponent.h"
+#include "framework/CollisionComponent.h"
 #include "framework/Core.h"
 #include "framework/SimulationTime.h"
 #include <SFML/Graphics.hpp>
 #include <box2d/box2d.h> 
 #include <cstddef>
 #include <optional>
+#include <type_traits>
+#include <utility>
+#include <vector>
 #include "engineConfigs/EngineStructs.h"
-
-//TODO: : Actor sınıfının destructor'ına (~Actor) UnInitializePhysics() eklemen.  
-// World sınıfının yıkıcı metodunda (~World) o dünyaya ait tüm timerların temizlendiğinden emin olmak daha güvenli olurdu, ama weak_ptr ve BindAction yapın şu an bunu güvenli kılıyor.
-//Çözüm: World yıkıcı metodunda (Destructor) veya LoadWorld ile yeni dünya yüklenirken eski dünyanın temizlendiğinden emin olunmalı. Şu anki C++ shared_ptr yapısı bunu büyük 
-// oranda hallediyor, ancak mPendingActors içindekiler hiç sahneye çıkmadan silinecek. Bu genellikle sorun yaratmaz ama aklında bulunsun.
-
-
 
 	namespace ly
 {
-	// Physics bodies are opt-in by shape and mobility. The default preserves the
-	// existing moving-actor behavior; static boxes are for reusable world
-	// geometry such as barriers, doors, and future map obstacles.
-	enum class PhysicsBodyType : uint8_t
-	{
-		Dynamic,
-		Static
-	};
-
 	enum class RenderLayer : uint8_t
 	{
 		Background,
@@ -37,38 +26,9 @@
 		Count
 	};
 
-	enum class LightSpace : uint8_t
-	{
-		Local =0,
-		World = 1
-	};
-
-	struct LightData
-	{
-		GameplayTag tag;
-		LightSpace lightSpace;
-		shared_ptr<sf::Shader> shader;
-		sf::Color color;
-		float intensity;
-		sf::Vector2f size;
-		sf::Vector2f offset;
-		bool isEnabled;
-		bool shouldStretch;
-		bool useComplexTrail;
-		float currentStretchFactor;
-		float currentRotationOffset;
-		float taperAmount;
-		float edgeSoftness;
-		float shapeRoundness;
-		LightData() :
-			tag{}, color(sf::Color::White), intensity(1.f), size{100.f, 100.f},
-			offset{ 0.f, 0.f }, isEnabled(true), shouldStretch(false), currentStretchFactor(1.f),
-			currentRotationOffset(0.f), useComplexTrail{false}, taperAmount(0.f), edgeSoftness(1.f),
-			shapeRoundness(1.f), lightSpace(LightSpace::Local) {
-		}
-	};
-
 	class World;
+	class LightComponent;
+	class SpriteComponent;
 	// A body-local physical box. Most actors still expose one centered box via
 	// GetPhysicsCollisionBoxHalfExtents(); actors with non-rectangular outlines
 	// can opt into several boxes without owning Box2D fixtures themselves.
@@ -93,6 +53,8 @@
 		virtual void Render(sf::RenderTarget& window);
 
 		World* GetWorld() const { return mOwningWorld; }
+		weak_ptr<Actor> GetWeakActor();
+		weak_ptr<const Actor> GetWeakActor() const;
 		void SetSimulationTimeDomain(SimulationTimeDomain domain)
 		{
 			mSimulationTimeDomain = domain;
@@ -104,12 +66,17 @@
 		bool IsActorOutOfWindow(float allowance=10.f) const;
 
 		//PHYSICS
+		// Collision state lives in CollisionComponent (created on the first setter
+		// call). The accessors below are thin forwarders kept because they are used
+		// by hundreds of call sites; an actor without the component reports the
+		// defaults (layer/mask None, physics disabled, dynamic body, no body).
 		void SetEnablePhysics(bool enable);
-		bool IsPhysicsEnabled() const { return mPhysicsEnabled; }
-		bool HasPhysicsBody() const { return mPhysicsBodyId.has_value(); }
-		void InitializePhysics();
+		bool IsPhysicsEnabled() const { return mCollision && mCollision->IsPhysicsEnabled(); }
+		bool HasPhysicsBody() const { return mCollision && mCollision->HasPhysicsBody(); }
 		void UnInitializePhysics();
-		void UpdatePhysicsTransform();
+		// The shape providers below describe the actor's geometry and are overridden
+		// by many actor subclasses, so they stay virtual on Actor; the physics scene
+		// and the World spatial index query them through the actor.
 		// Actors without a sprite can still participate in physics when they
 		// provide an explicit gameplay collision radius. The default remains zero
 		// so ordinary visual-less actors do not receive an accidental body.
@@ -133,41 +100,57 @@
 				: PhysicsCollisionBox{};
 		}
 		void SetPhysicsBodyType(PhysicsBodyType bodyType);
-		PhysicsBodyType GetPhysicsBodyType() const { return mPhysicsBodyType; }
+		PhysicsBodyType GetPhysicsBodyType() const { return mCollision ? mCollision->GetPhysicsBodyType() : PhysicsBodyType::Dynamic; }
 		bool CanCollideWith(const Actor* other) const;
 		virtual	void OnActorEndOverlap(Actor* otherActor);
 		virtual void OnActorBeginOverlap(Actor* otherActor);
 		virtual void Destroy() override;
-		CollisionLayer GetCollisionLayer() const { return mCollisionLayer; }
-		CollisionLayer GetCollisionMask() const { return mCollisionMask; }
+		CollisionLayer GetCollisionLayer() const { return mCollision ? mCollision->GetCollisionLayer() : CollisionLayer::None; }
+		CollisionLayer GetCollisionMask() const { return mCollision ? mCollision->GetCollisionMask() : CollisionLayer::None; }
 		void SetCollisionLayer(CollisionLayer layer);
 		void SetCollisionMask(CollisionLayer mask);
 
 
-		// LIGHT SYSTEM - GameplayTag Based (Auto-Indexed)
-		void SetLightEnabled(const GameplayTag& tag, bool enabled);
-		void SetLightColor(const GameplayTag& tag, const sf::Color& color);
-		void SetLightIntensity(const GameplayTag& tag, float intensity);
-		void SetLightSize(const GameplayTag& tag, const sf::Vector2f& size);
-		void SetLightOffset(const GameplayTag& tag, const sf::Vector2f& offset);
-		void SetLightWorldPosition(const GameplayTag& tag, const sf::Vector2f& worldPosition);
-
-
-		GameplayTag AddLight(const GameplayTag& tag, const std::string& lightPath, sf::Color color,
-			float intensity, sf::Vector2f size, sf::Vector2f offset, bool shouldStretch,
-			bool useComplexTrail, float taperAmount, float edgeSoftness, float shapeRoundness = 1.f, LightSpace lightSpace = LightSpace::Local);
-		GameplayTag AddLight(const GameplayTag& tag, const PointLightDefinition& def, const sf::Vector2f& offset, LightSpace lightSpace = LightSpace::Local);
-
-		LightData* GetLightData(const GameplayTag& tag);
-		bool HasLight(const GameplayTag& tag) const;
-		void RemoveLight(const GameplayTag& tag);
-
-
-		List<GameplayTag> GetLightsByBaseTag(const GameplayTag& baseTag) const;
-		
-		void SetAllLightsEnabled(const GameplayTag& baseTag, bool enabled);
-		void SetAllLightsColor(const GameplayTag& baseTag, const sf::Color& color);
-		void SetAllLightsIntensity(const GameplayTag& baseTag, float intensity);
+		// COMPONENTS (UE-style). Component BeginPlay runs in BeginPlayInternal before
+		// Actor::BeginPlay; ticking components run from the base Actor::Tick (so derived
+		// Tick overrides must keep calling Actor::Tick first, as they already do for
+		// lights); EndPlay runs from Destroy. Adding a component to an actor that has
+		// already begun play begins it immediately.
+		template<typename T, typename... Args>
+		T& AddComponent(Args&&... args)
+		{
+			static_assert(std::is_base_of<ActorComponent, T>::value, "AddComponent requires an ActorComponent type");
+			std::unique_ptr<T> owned = std::make_unique<T>(*this, std::forward<Args>(args)...);
+			T& component = *owned;
+			mComponents.push_back(std::move(owned));
+			CacheComponent(component);
+			if (mBeganPlay) component.BeginPlayInternal();
+			return component;
+		}
+		template<typename T>
+		T* FindComponent()
+		{
+			for (const auto& component : mComponents)
+			{
+				if (T* typed = dynamic_cast<T*>(component.get())) return typed;
+			}
+			return nullptr;
+		}
+		template<typename T>
+		const T* FindComponent() const
+		{
+			for (const auto& component : mComponents)
+			{
+				if (const T* typed = dynamic_cast<const T*>(component.get())) return typed;
+			}
+			return nullptr;
+		}
+		template<typename T, typename... Args>
+		T& GetOrAddComponent(Args&&... args)
+		{
+			if (T* existing = FindComponent<T>()) return *existing;
+			return AddComponent<T>(std::forward<Args>(args)...);
+		}
 
 		//TICK WHEN PAUSED
 		void SetTickWhenPaused(bool tickWhenPaused) { mTickWhenPaused = tickWhenPaused; }
@@ -183,25 +166,25 @@
 		ActorType* GetActor() { return dynamic_cast<ActorType*>(this); }
 
 		//SPRITE AND TRANSFORM
-		void SetVisibility(bool visible) { if (mSprite) mSprite->setColor(visible ? sf::Color::White : sf::Color::Transparent); }
+		// The sprite lives in SpriteComponent (FindComponent<SpriteComponent>()); the
+		// transform stays here and is pushed into the sprite on every change.
 		// Temporarily suppresses every base-actor render pass without changing a
 		// sprite's authored tint/alpha. Portal transfer uses this instead of
 		// SetVisibility so temporary invisibility cannot overwrite another effect.
 		void SetRenderEnabled(bool enabled) { mRenderEnabled = enabled; }
 		bool IsRenderEnabled() const { return mRenderEnabled; }
-		std::optional<sf::Sprite>& GetSprite() { return mSprite; }
+		// Transform-level convenience that asks the actor's SpriteComponent for its
+		// global bounds; an actor without a sprite yields a zero-size rect at its
+		// location. Used for physics body sizing and out-of-window checks.
 		sf::FloatRect GetActorGlobalBounds() const;
 		// Returns a conservative bounds for the base sprite/light render path.
 		// Actors that render custom geometry without a base sprite or light return
 		// no bounds so World keeps rendering them rather than risking a false cull.
 		virtual std::optional<sf::FloatRect> GetRenderBounds() const;
-		void SetTexture(const std::string& texturePath);
 		void SetActorLocation(const sf::Vector2f& newLoc);
 		void SetActorRotation(float newRotation);
-		void SetTextureRepeated(bool repeated);
 		void AddActorLocationOffset(const sf::Vector2f& offset);
 		void AddActorRotationOffset(float offset);
-		void CenterPivot();
 		sf::Vector2f GetActorLocation() const;
 		float GetActorRotation() const;
 		sf::Vector2f GetActorForwardDirection() const;
@@ -219,12 +202,12 @@
 		bool& GetCanCollide() { return mCanCollide; } 
 		void SetCollisionRadius(float radius);
 
-		void RenderLights(sf::RenderTarget& window);
-
 		sf::Vector2f mVelocity;
 
 	private:
-		int GetNextLightIndex(const GameplayTag& baseTag) const;
+		void CacheComponent(ActorComponent& component);
+		void TickComponents(float deltaTime);
+		void EndPlayComponents();
 
 		World* mOwningWorld;
 		SimulationTimeDomain mSimulationTimeDomain = SimulationTimeDomain::RealTime;
@@ -233,21 +216,19 @@
 		bool mCanCollide;
 		bool mTickWhenPaused;
 
-		std::optional<sf::Sprite> mSprite;
-		shared_ptr<sf::Texture> mTexture;
 		sf::Vector2f mActorLocation{ 0.f, 0.f };
 		float mActorRotation = 0.f;
 
-		bool mPhysicsEnabled;
-		std::optional<b2BodyId> mPhysicsBodyId;
-		PhysicsBodyType mPhysicsBodyType = PhysicsBodyType::Dynamic;
-
-		CollisionLayer mCollisionLayer;
-		CollisionLayer mCollisionMask;
 		RenderLayer mRenderLayer = RenderLayer::World;
 		bool mRenderEnabled = true;
 
-		Dictionary<GameplayTag, LightData, GameplayTagHash> mLightShaders;
+		std::vector<std::unique_ptr<ActorComponent>> mComponents;
+		// First component of each hot-path type, cached by AddComponent so transform
+		// updates, physics queries and Render avoid scanning mComponents with
+		// dynamic_cast. Owned by mComponents; same lifetime as the actor.
+		SpriteComponent* mSprite = nullptr;
+		CollisionComponent* mCollision = nullptr;
+		LightComponent* mLights = nullptr;
 		// World-owned manual spatial queries use this stamp to deduplicate an
 		// actor that overlaps more than one grid cell without allocating a
 		// per-query set.

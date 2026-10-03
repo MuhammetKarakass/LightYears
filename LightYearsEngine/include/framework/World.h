@@ -4,6 +4,7 @@
 #include "framework/Object.h"
 #include "framework/SimulationTime.h"
 #include "framework/PerfMonitor.h"
+#include "framework/PhysicsScene.h"
 #include "framework/camera/CameraManager.h"
 #include <optional>
 #include <type_traits>
@@ -39,6 +40,13 @@ namespace ly
 		float GetSimulationTimeScale(SimulationTimeDomain domain) const;
 		void Render(sf::RenderWindow& window);
 		void CleanCycle();
+
+		// Every world owns its own physics scene (mirrors UWorld/FPhysScene).
+		PhysicsScene& GetPhysicsScene() { return *mPhysicsScene; }
+		const PhysicsScene& GetPhysicsScene() const { return *mPhysicsScene; }
+		// Steps this world's physics scene and dispatches its contact events.
+		// Application calls this after the world tick and timers, only while unpaused.
+		void StepPhysics(float deltaTime);
 
 		void SetPaused(bool paused);
 		bool IsPaused() const { return mIsPaused; }
@@ -224,6 +232,8 @@ namespace ly
 		bool mBeganPlay;
 		bool mIsPaused;
 
+		// Declared before the actor lists so it outlives every actor destructor.
+		unique_ptr<PhysicsScene> mPhysicsScene;
 		List<shared_ptr<Actor>> mActors;
 		List<shared_ptr<Actor>> mPendingActors;
 		// Separate broadphase for actors that deliberately avoid a Box2D body.

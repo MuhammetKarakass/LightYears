@@ -4,7 +4,7 @@
 
 namespace ly
 {
-	const float PI = 3.1415926535;
+	const float PI = 3.1415926535f;
 
 	sf::Vector2f RotationToVector(float rotation)
 	{
