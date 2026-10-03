@@ -319,6 +319,7 @@ namespace ly
 	{
 		mScopedAbilityRules.clear();
 		mDeferredScopedAbilityRules.clear();
+		mScopedAbilityCooldownRules.clear();
 		mHasDeferredScopedAbilityRules = false;
 		mPrimaryWeaponOverrides.Clear();
 		if (!mPrimaryWeaponModifiers.empty())
@@ -557,6 +558,38 @@ namespace ly
 		if (defer) return;
 		RefreshScopedAbilityRules();
 		FlushDeferredScopedAbilityRules();
+	}
+
+	std::size_t LightYearsAbilitySystemComponent::AddScopedAbilityCooldownRule(ScopedAbilityCooldownRule rule)
+	{
+		const std::size_t handle = mNextScopedAbilityCooldownRuleHandle++;
+		mScopedAbilityCooldownRules.emplace_back(handle, std::move(rule));
+		return handle;
+	}
+
+	bool LightYearsAbilitySystemComponent::RemoveScopedAbilityCooldownRule(std::size_t ruleHandle)
+	{
+		const auto found = std::find_if(mScopedAbilityCooldownRules.begin(), mScopedAbilityCooldownRules.end(),
+			[ruleHandle](const auto& entry) { return entry.first == ruleHandle; });
+		if (found == mScopedAbilityCooldownRules.end()) return false;
+		mScopedAbilityCooldownRules.erase(found);
+		return true;
+	}
+
+	float LightYearsAbilitySystemComponent::GetScopedAbilityCooldownMultiplier(
+		const GameAbilityDefinition& definition
+	) const
+	{
+		if (!sas::IsLoadoutAbilitySlot(definition.slot)) return 1.f;
+
+		GameplayTagContainer abilityTags;
+		for (const GameplayTag& tag : definition.abilityTags) abilityTags.AddTag(tag);
+		float multiplier = 1.f;
+		for (const auto& entry : mScopedAbilityCooldownRules)
+		{
+			if (abilityTags.HasAll(entry.second.requiredAbilityTags)) multiplier *= entry.second.multiplier;
+		}
+		return multiplier;
 	}
 
 	sas::GameplayAttribute LightYearsAbilitySystemComponent::ApplyScopedAbilityModifiers(

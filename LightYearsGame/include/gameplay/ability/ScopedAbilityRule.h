@@ -12,4 +12,10 @@ namespace ly
 		List<sas::AttributeModifier> attributeModifiers;
 		int levelBonus = 0;
 	};
+
+	struct ScopedAbilityCooldownRule
+	{
+		List<GameplayTag> requiredAbilityTags;
+		float multiplier = 1.f;
+	};
 }

@@ -121,7 +121,7 @@ namespace sas
 					const float duration = ResolveActiveDuration();
 					const bool deferred = ShouldDeferActiveDurationStart();
 					const float cooldown = this->mDefinition.cooldownStartPolicy == AbilityCooldownStartPolicy::OnActivation
-						? ResolveCooldownDuration() : 0.f;
+						? ResolveCooldownDurationForStart() : 0.f;
 					if (ActivationInterrupted())
 					{
 						contentStarted = false;
@@ -371,6 +371,7 @@ namespace sas
 		}
 		virtual int GetMaximumLevel() const = 0;
 		virtual float ResolveCooldownDuration() const = 0;
+		virtual float ResolveCooldownDurationForStart() const { return ResolveCooldownDuration(); }
 		// Behaviors with an explicit end-state reward can override this without
 		// editing the runtime state after its cooldown has already begun.
 		virtual float ResolveCooldownDurationOnEnd(AbilityEndReason)

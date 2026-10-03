@@ -156,6 +156,7 @@ namespace ly
 		void NotifyOwnerAbilityActivated(const sas::AbilityLifecycleEvent& event);
 		int GetMaximumLevel() const override;
 		float ResolveCooldownDuration() const override;
+		float ResolveCooldownDurationForStart() const override;
 		float ResolveCooldownDurationOnEnd(sas::AbilityEndReason reason) override;
 		float ResolveActiveDuration() const override;
 		bool PrepareDefinitionForLevel(int level) override;
@@ -169,6 +170,7 @@ namespace ly
 		}
 
 		void RefreshScopedConfiguration();
+		float ResolveCooldownDurationWithModuleMultiplier(float moduleMultiplier) const;
 		void EndBehavior(sas::AbilityEndReason reason);
 		void TickInactivePrimaryWeaponRuntime(float deltaTime);
 		GameAbilityDefinition BuildDefinitionForLevel(int level) const;
@@ -176,6 +178,7 @@ namespace ly
 		LightYearsAbilitySystemComponent& mAbilitySystem;
 		PrimaryWeaponAbilityState mPrimaryWeaponState;
 		std::optional<GameAbilityDefinition> mPreparedLevelDefinition;
+		mutable std::optional<float> mCooldownModuleMultiplierSnapshot;
 		unique_ptr<GameAbilityBehavior> mBehavior;
 		bool mBehaviorStarted = false;
 		bool mBehaviorCleanupPending = false;

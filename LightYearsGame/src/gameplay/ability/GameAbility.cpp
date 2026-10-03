@@ -355,6 +355,20 @@ namespace ly
 		 *    curve. Cooldown reduction therefore has diminishing returns and
 		 *    never reaches a zero-second cooldown.
 		 */
+		const float moduleMultiplier = IsOnCooldown() && mCooldownModuleMultiplierSnapshot
+			? *mCooldownModuleMultiplierSnapshot
+			: mAbilitySystem.GetScopedAbilityCooldownMultiplier(mDefinition);
+		return ResolveCooldownDurationWithModuleMultiplier(moduleMultiplier);
+	}
+
+	float GameAbility::ResolveCooldownDurationForStart() const
+	{
+		mCooldownModuleMultiplierSnapshot = mAbilitySystem.GetScopedAbilityCooldownMultiplier(mDefinition);
+		return ResolveCooldownDurationWithModuleMultiplier(*mCooldownModuleMultiplierSnapshot);
+	}
+
+	float GameAbility::ResolveCooldownDurationWithModuleMultiplier(float moduleMultiplier) const
+	{
 		const float leveledCooldown = sas::CalculateModifiedAttributeValue(
 			sas::GameplayAttribute{ CommonAttributeIds::Cooldown, mDefinition.cooldown, 0.f },
 			mDefinition.attributeModifiers
@@ -365,12 +379,12 @@ namespace ly
 					OwnerAttributeIds::AbilityHaste
 				)
 			);
-		return std::max(0.f, leveledCooldown * hasteMultiplier);
+		return std::max(0.f, leveledCooldown * hasteMultiplier * moduleMultiplier);
 	}
 
 	float GameAbility::ResolveCooldownDurationOnEnd(sas::AbilityEndReason reason)
 	{
-		const float baseCooldown = ResolveCooldownDuration();
+		const float baseCooldown = ResolveCooldownDurationForStart();
 		if (!mBehavior)
 		{
 			return baseCooldown;

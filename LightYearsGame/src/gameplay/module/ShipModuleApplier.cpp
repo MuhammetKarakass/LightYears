@@ -36,6 +36,7 @@ namespace ly
 
 	ShipModuleApplier::~ShipModuleApplier()
 	{
+		RemoveScopedCooldownRules();
 		mAbilities.SetModuleSystemGate(nullptr);
 	}
 
@@ -136,6 +137,18 @@ namespace ly
 		{
 			mScopedRuleHandles.push_back(mAbilities.AddScopedAbilityRule(rule));
 		}
+		RemoveScopedCooldownRules();
+		for (const ResolvedModuleCooldownRule& resolved : mResolved.cooldownRules)
+		{
+			ScopedAbilityCooldownRule rule;
+			if (resolved.scope == ModuleCooldownScope::FamilyOfZone)
+			{
+				if (!resolved.family.IsValid()) continue;
+				rule.requiredAbilityTags.push_back(resolved.family);
+			}
+			rule.multiplier = resolved.multiplier;
+			mScopedCooldownRuleHandles.push_back(mAbilities.AddScopedAbilityCooldownRule(std::move(rule)));
+		}
 		if (mTriggerRuntime) mTriggerRuntime->SetRules(mResolved.triggerBuffs);
 
 		mEnabledSystems = mResolved.enabledSystems;
@@ -202,5 +215,14 @@ namespace ly
 	{
 		for (const std::size_t handle : mScopedRuleHandles) mAbilities.RemoveScopedAbilityRule(handle);
 		mScopedRuleHandles.clear();
+	}
+
+	void ShipModuleApplier::RemoveScopedCooldownRules()
+	{
+		for (const std::size_t handle : mScopedCooldownRuleHandles)
+		{
+			mAbilities.RemoveScopedAbilityCooldownRule(handle);
+		}
+		mScopedCooldownRuleHandles.clear();
 	}
 }

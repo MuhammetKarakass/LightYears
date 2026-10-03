@@ -36,6 +36,9 @@ namespace ly
 		std::size_t AddScopedAbilityRule(ScopedAbilityRule rule);
 		bool RemoveScopedAbilityRule(std::size_t ruleHandle);
 		void ClearScopedAbilityRules();
+		std::size_t AddScopedAbilityCooldownRule(ScopedAbilityCooldownRule rule);
+		bool RemoveScopedAbilityCooldownRule(std::size_t ruleHandle);
+		float GetScopedAbilityCooldownMultiplier(const GameAbilityDefinition& definition) const;
 		sas::GameplayAttribute ApplyScopedAbilityModifiers(
 			const GameAbilityDefinition& definition,
 			const sas::GameplayAttribute& attribute
@@ -154,11 +157,13 @@ namespace ly
 		ComponentRuntime& mComponentRuntime;
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mScopedAbilityRules;
 		std::vector<std::pair<std::size_t, ScopedAbilityRule>> mDeferredScopedAbilityRules;
+		std::vector<std::pair<std::size_t, ScopedAbilityCooldownRule>> mScopedAbilityCooldownRules;
 		std::vector<std::pair<std::size_t, sas::AttributeModifier>> mPrimaryWeaponModifiers;
 		std::size_t mNextPrimaryWeaponModifierHandle = 1;
 		uint64_t mPrimaryWeaponModifierRevision = 0;
 		uint64_t mLoadoutAbilityActivationCount = 0;
 		std::size_t mNextScopedAbilityRuleHandle = 1;
+		std::size_t mNextScopedAbilityCooldownRuleHandle = 1;
 		bool mHasDeferredScopedAbilityRules = false;
 		bool mRefreshingScopedAbilityRules = false;
 		AbilityLifecycleDispatcher mLifecycleDispatcher;
