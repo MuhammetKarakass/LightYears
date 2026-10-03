@@ -4,6 +4,7 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueControllerActor.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetingTypes.h"
@@ -19,21 +20,6 @@ namespace ly
 	namespace
 	{
 		constexpr std::size_t RequiredAttributeCount = 6;
-
-		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
-		{
-			return definition.abilityTags.size() == 2 &&
-				std::any_of(definition.abilityTags.begin(), definition.abilityTags.end(),
-					[](const GameplayTag& tag)
-					{
-						return tag.MatchesTagExact(AbilityData::NanoPlague::CategoryTag);
-					}) &&
-				std::any_of(definition.abilityTags.begin(), definition.abilityTags.end(),
-					[](const GameplayTag& tag)
-					{
-						return tag.MatchesTagExact(AbilityData::NanoPlague::FamilyTag);
-					});
-		}
 
 		bool HasAttribute(
 			const GameAbilityDefinition& definition,
@@ -60,7 +46,7 @@ namespace ly
 		const bool validIdentity =
 			definition.abilityId == AbilityData::NanoPlague::AbilityId::Basic &&
 			definition.behaviorType == AbilityBehaviorType::NanoPlague &&
-			HasExactAbilityTags(definition) &&
+			ability_checks::HasExactAbilityTags(definition, AbilityData::NanoPlague::CategoryTag, AbilityData::NanoPlague::FamilyTag) &&
 			definition.damageTags.size() == 1 &&
 			definition.damageTags.front().MatchesTagExact(DamageTypeSchema::Electric);
 		const bool validLifecycle =

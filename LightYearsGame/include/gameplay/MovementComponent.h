@@ -1,5 +1,6 @@
 #pragma once
 
+#include <framework/ActorComponent.h>
 #include <framework/Core.h>
 #include "gameConfigs/ship/ShipStructs.h"
 #include "gameplay/movement/MovementInfluenceController.h"
@@ -25,10 +26,14 @@ namespace ly
 	};
 
 	// Owns the reusable movement state and integration rules for every ship.
-	class MovementComponent
+	// Not ticked automatically (mCanEverTick stays false): Tick takes the ship's
+	// resolved speed-cap multiplier and must run after Actor::Tick and before
+	// UpdateBlink/CombatRuntime, so SpaceShip::Tick drives it explicitly (UE
+	// tick-prerequisite equivalent). The owner must be a SpaceShip.
+	class MovementComponent : public ActorComponent
 	{
 	public:
-		MovementComponent(SpaceShip& owner, const ShipDefinition& shipDef);
+		MovementComponent(Actor& owner, const ShipDefinition& shipDef);
 
 		void Tick(float deltaTime, float speedCapMultiplier = 1.f);
 		void RefreshAttributes();
@@ -106,7 +111,8 @@ namespace ly
 		bool TickMovementBurst(float deltaTime);
 		float GetShortestAngleDelta(float targetAngle, float currentAngle) const;
 
-		SpaceShip& mOwner;
+		SpaceShip& GetShip() const;
+
 		ShipMovementMode mMovementMode;
 		sf::Vector2f mBaseLegacySpeed;
 		ShipMovementAttributes mBaseMovementAttributes;

@@ -4,6 +4,7 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
 #include "gameplay/ability/solarBombardment/SolarBombardmentContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
@@ -17,34 +18,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr float Epsilon = 0.0001f;
-
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
-
-		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
-		{
-			if (definition.abilityTags.size() != 2)
-			{
-				return false;
-			}
-
-			bool hasCategory = false;
-			bool hasFamily = false;
-			for (const GameplayTag& tag : definition.abilityTags)
-			{
-				hasCategory = hasCategory || tag.MatchesTagExact(
-					AbilityData::SolarBombardment::CategoryTag
-				);
-				hasFamily = hasFamily || tag.MatchesTagExact(
-					AbilityData::SolarBombardment::FamilyTag
-				);
-			}
-			return hasCategory && hasFamily;
-		}
+		using ability_checks::NearlyEqual;
 
 		bool HasAdditiveModifier(
 			const AbilityLevelStep& step,
@@ -91,7 +65,7 @@ namespace ly
 		const bool validIdentity =
 			definition.abilityId == AbilityData::SolarBombardment::AbilityId::Basic &&
 			definition.behaviorType == AbilityBehaviorType::SolarBombardment &&
-			HasExactAbilityTags(definition);
+			ability_checks::HasExactAbilityTags(definition, AbilityData::SolarBombardment::CategoryTag, AbilityData::SolarBombardment::FamilyTag);
 		const bool validLifecycle =
 			sas::IsLoadoutAbilitySlot(definition.slot) &&
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&

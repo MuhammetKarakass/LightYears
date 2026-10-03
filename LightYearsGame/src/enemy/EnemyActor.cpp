@@ -2,6 +2,7 @@
 
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/tags/GameplayTags.h"
+#include "framework/LightComponent.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
 
@@ -50,7 +51,7 @@ namespace ly
 		if (!shipDefinition.engineMounts.empty())
 		{
 			const EngineMount& mount = shipDefinition.engineMounts.front();
-			mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Main, mount.pointLightDef, mount.offset));
+			mAttachedLightTags.push_back(GetOrAddComponent<LightComponent>().AddLight(GameTags::Ship::Engine_Main, mount.pointLightDef, mount.offset));
 		}
 	}
 

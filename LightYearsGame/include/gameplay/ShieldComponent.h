@@ -1,5 +1,6 @@
 #pragma once
 
+#include <framework/ActorComponent.h>
 #include <framework/Delegate.h>
 #include "gameplay/resource/TemporaryOvercapLedger.h"
 
@@ -8,10 +9,13 @@
 
 namespace ly
 {
-	class ShieldComponent
+	// Not ticked automatically (mCanEverTick stays false): Tick takes per-frame
+	// arguments and must run at a fixed point of the owner's regeneration step
+	// (UE tick-prerequisite equivalent), so the owning actor drives it explicitly.
+	class ShieldComponent : public ActorComponent
 	{
 	public:
-		explicit ShieldComponent(float shield = 0.f, float maxShield = 0.f, float rechargeDelay = 3.f);
+		explicit ShieldComponent(Actor& owner, float shield = 0.f, float maxShield = 0.f, float rechargeDelay = 3.f);
 
 		float GetShield() const { return mShield; }
 		float GetMaxShield() const { return mMaxShield; }

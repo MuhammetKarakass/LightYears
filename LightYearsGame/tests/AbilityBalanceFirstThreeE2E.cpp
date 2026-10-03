@@ -1,5 +1,6 @@
 #include "attributes/AttributeMath.h"
 #include "framework/World.h"
+#include "framework/SpriteComponent.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/content/GameAbilityProgression.h"
 #include "gameplay/ability/glacialPressure/GlacialPressureContracts.h"
@@ -49,7 +50,7 @@ namespace ly
 			explicit BalanceE2EShip(World* world, float maximumHealth = TestShipHealth)
 				: SpaceShip{ world, MakeShipDefinition(maximumHealth) }
 			{
-				CenterPivot();
+				if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>()) spriteComponent->CenterPivot();
 			}
 
 			float GetPhysicsCollisionRadius() const override { return 14.f; }

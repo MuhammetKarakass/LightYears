@@ -1,13 +1,15 @@
 #pragma once
 
+#include <framework/ActorComponent.h>
 #include <framework/Delegate.h>
 
 namespace ly
 {
-	class EnergyComponent
+	// Not ticked automatically (mCanEverTick stays false): see ShieldComponent.
+	class EnergyComponent : public ActorComponent
 	{
 	public:
-		explicit EnergyComponent(float energy = 0.f, float maxEnergy = 0.f, float rechargeDelay = 2.f);
+		explicit EnergyComponent(Actor& owner, float energy = 0.f, float maxEnergy = 0.f, float rechargeDelay = 2.f);
 
 		float GetEnergy() const { return mEnergy; }
 		float GetMaxEnergy() const { return mMaxEnergy; }

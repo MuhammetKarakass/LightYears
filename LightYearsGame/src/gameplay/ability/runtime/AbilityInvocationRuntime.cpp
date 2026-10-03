@@ -234,7 +234,7 @@ namespace ly
 		}
 	}
 
-	void AbilityInvocationRuntime::Clear()
+	sas::ClearResult AbilityInvocationRuntime::Clear()
 	{
 		std::vector<ActiveInvocation> retained;
 		retained.reserve(mActiveInvocations.size());
@@ -249,17 +249,12 @@ namespace ly
 				catch (...) { if (!error) error = std::current_exception(); }
 				if (invocation.ability->IsActive() || invocation.ability->HasPendingCleanup())
 				{
-					if (!error)
-					{
-						error = std::make_exception_ptr(std::runtime_error(
-							"Ability invocation cleanup is incomplete; retry Clear after cleanup succeeds."
-						));
-					}
 					retained.push_back(std::move(invocation));
 				}
 			}
 		}
-		if (!retained.empty())
+		const bool hasRetained = !retained.empty();
+		if (hasRetained)
 		{
 			if (mActiveInvocations.empty())
 			{
@@ -275,5 +270,6 @@ namespace ly
 			}
 		}
 		if (error) std::rethrow_exception(error);
+		return hasRetained ? sas::ClearResult::Pending : sas::ClearResult::Completed;
 	}
 }

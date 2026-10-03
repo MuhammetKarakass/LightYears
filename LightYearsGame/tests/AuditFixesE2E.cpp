@@ -1,5 +1,5 @@
 #include "framework/Application.h"
-#include "framework/PhysicsSystem.h"
+#include "framework/PhysicsScene.h"
 #include "framework/World.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/content/GameAbilityActions.h"
@@ -67,7 +67,7 @@ namespace ly
 			bool clear = false;
 			void Granted(sas::AbilityHandle)
 			{
-				if (clear) system.Clear();
+				if (clear) static_cast<void>(system.Clear());
 				else throw std::runtime_error("Injected post-commit observer failure");
 			}
 		};
@@ -98,13 +98,13 @@ namespace ly
 				mutationRejected = !system.RemoveAbility(handle) &&
 					!system.RebindAbility(handle, sas::AbilitySlot::Ability2) &&
 					!system.GrantAbility(*AbilityData::FindShippedAbilityDefinition(AbilityData::EnergySpear::AbilityId::Basic), sas::AbilitySlot::Ability1).IsValid();
-				system.Clear();
+				static_cast<void>(system.Clear());
 				liveDuringClear = system.GetAbility(handle) != nullptr && system.GetAttributes().HasAttribute(OwnerAttributeIds::MaxHealth);
 				if (throwAfterClear) throw std::runtime_error("Injected activation failure after Clear");
 			}
 			void Ended(sas::AbilityHandle, sas::AbilityEndReason)
 			{
-				system.Clear();
+				static_cast<void>(system.Clear());
 				system.AddOwnedTag(AbilityData::NanoPlague::State::Infected);
 				additionsRejected = !system.ApplyGameplayEffect(effect).IsValid() &&
 					!system.HasOwnedTag(AbilityData::NanoPlague::State::Infected);
@@ -113,7 +113,7 @@ namespace ly
 			void EffectRemoved(sas::GameplayEffectHandle) { throw std::runtime_error("Injected effect removal failure"); }
 			void GameplayEvent(const sas::AbilityEvent& event)
 			{
-				if (event.eventTag == GameplayTags::Event::Ability::Activated) { visited = true; system.Clear(); }
+				if (event.eventTag == GameplayTags::Event::Ability::Activated) { visited = true; static_cast<void>(system.Clear()); }
 			}
 		};
 		struct AttributeCleanupFault
@@ -210,7 +210,7 @@ namespace ly
 					reentryRejected = !ability->TryActivate() && !ability->SetLevel(2);
 					if (cancel) ability->Cancel(sas::AbilityEndReason::Cancelled);
 				}
-				if (clear) system.Clear();
+				if (clear) static_cast<void>(system.Clear());
 				if (!cancel) throw std::runtime_error("Injected precommit activation fault");
 			}
 		};
@@ -529,7 +529,7 @@ namespace ly
 						context->originalDamage == 20.f;
 					remainingDamageAtBreak = context ? context->remainingDamage : -1.f;
 					order.push_back("barrier-broken-clear-throw");
-					target.GetCombatRuntime().Clear();
+					static_cast<void>(target.GetCombatRuntime().Clear());
 					clearCompleted = true;
 					throw std::runtime_error("Injected E15 Clear callback failure");
 				}
@@ -609,7 +609,7 @@ namespace ly
 				throwOnce = false;
 				order.push_back("component-clear-from-visual-destroy");
 				clearCalledBeforeThrow = true;
-				try { system.Clear(); }
+				try { static_cast<void>(system.Clear()); }
 				catch (const std::runtime_error& error) { clearError = error.what(); }
 				order.push_back("beam-destroy-throws");
 				throw std::runtime_error("Injected E18 beam cleanup failure");
@@ -660,7 +660,7 @@ namespace ly
 				}
 				order.push_back("component-clear");
 				clearCalled = true;
-				try { system.Clear(); }
+				try { static_cast<void>(system.Clear()); }
 				catch (const std::runtime_error& error)
 				{
 					clearThrew = true;
@@ -708,7 +708,7 @@ namespace ly
 				if (clearSystem)
 				{
 					order.push_back("component-clear");
-					try { system.Clear(); }
+					try { static_cast<void>(system.Clear()); }
 					catch (const std::runtime_error& error)
 					{
 						clearThrew = true;
@@ -745,7 +745,7 @@ namespace ly
 				if (clearSystem)
 				{
 					order.push_back("component-clear-during-end");
-					try { system.Clear(); }
+					try { static_cast<void>(system.Clear()); }
 					catch (const std::runtime_error& error)
 					{
 						clearThrew = true;
@@ -836,7 +836,6 @@ namespace ly
 		{
 			if (!setupError.empty()) throw std::runtime_error(setupError);
 			AuditApplication application;
-			PhysicsSystem::Get().InitializeWorld({ 0.f, 0.f });
 			World world{ &application };
 			World otherWorld{ &application };
 			const ShipDefinition definition{ "SpaceShooterRedux/PNG/Enemies/enemyRed5.png", 100.f, {}, 0.f, 0, 0, {}, {} };
@@ -1002,7 +1001,7 @@ namespace ly
 			endedToken = lifecycle.onAbilityEnded.BindAction(&faults, &LifecycleFaultObserver::Ended);
 			auto removedToken = lifecycle.onGameplayEffectRemoved.BindAction(&faults, &LifecycleFaultObserver::EffectRemoved);
 			std::string cleanupError;
-			try { lifecycleOwner->GetCombatRuntime().Clear(); }
+			try { static_cast<void>(lifecycleOwner->GetCombatRuntime().Clear()); }
 			catch (const std::runtime_error& error) { cleanupError = error.what(); }
 			lifecycle.onAbilityEnded.UnbindAction(endedToken);
 			lifecycle.onGameplayEffectRemoved.UnbindAction(removedToken);
@@ -1107,7 +1106,7 @@ namespace ly
 						if (!ability || ability->IsActive() || ability->GetCharges() != 1 || ability->IsOnCooldown() || !ability->TryActivate())
 							throw std::runtime_error("precommit retry failed");
 					}
-					lifecycle.Clear();
+					static_cast<void>(lifecycle.Clear());
 				}
 			}
 			check("precommitFailureMatrix", result["precommitCases"].size() == 4);
@@ -1128,7 +1127,7 @@ namespace ly
 			check("precommitCancelNoChargeOrResources", !cancelledStart && cancelStart.visited && cancelStart.reentryRejected &&
 				countVisuals() == visualBaseline && lifecycle.GetAbility(sas::AbilitySlot::Ability1)->GetCharges() == 1 &&
 				!lifecycle.HasOwnedTag(AbilityData::ReturnProtocol::State::Active));
-			lifecycle.Clear();
+			static_cast<void>(lifecycle.Clear());
 
 			// A retained view always reads the canonical runtime, even across nested Clear.
 			const auto& liveView = lifecycleLoadout.GetLoadout();
@@ -1483,7 +1482,7 @@ namespace ly
 			{
 				stackClearOrder.push_back("add-stack");
 				stackClearOrder.push_back("clear-request");
-				lifecycle.Clear();
+				static_cast<void>(lifecycle.Clear());
 				stackClearOrder.push_back("clear-return");
 				return true;
 			};
@@ -1653,16 +1652,17 @@ namespace ly
 			const float energyBeforeClearCall = lifecycle.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower);
 			const bool tagOwnedBeforeClearCall = lifecycle.HasOwnedTag(retryCleanupTag, true);
 			std::string retryCleanupError;
-			try { lifecycle.Clear(); }
+			try { static_cast<void>(lifecycle.Clear()); }
 			catch (const std::runtime_error& error) { retryCleanupError = error.what(); }
 			const bool cleanupDebtRetained = retryCleanupError == "Injected E05 incomplete presentation cleanup" &&
 				removalAttempts == 1 && lifecycle.BuildGameplayEffectSnapshots().size() == 1 &&
 				!lifecycle.HasOwnedTag(retryCleanupTag, true) &&
 				!lifecycle.ApplyGameplayEffect(retryCleanupEffect).IsValid();
-			lifecycle.Clear();
+			const sas::ClearResult retryCleanupResult = lifecycle.Clear();
 			const auto retryAfterCleanupDebt = lifecycle.ApplyGameplayEffect(retryCleanupEffect);
 			lifecycle.RemoveGameplayEffect(retryAfterCleanupDebt);
 			const bool cleanupDebtRetried = retryCleanupHandle.IsValid() && cleanupDebtRetained &&
+				retryCleanupResult == sas::ClearResult::Completed &&
 				removalAttempts == 3 && retryAfterCleanupDebt.IsValid() &&
 				lifecycle.BuildGameplayEffectSnapshots().empty();
 			recordCase("effectCases", { { "case_id", "E05-clear-retry" },
@@ -2178,15 +2178,17 @@ namespace ly
 				));
 			}
 			std::string firstEndFireError;
-			try { beamSystem.Clear(); }
+			try { static_cast<void>(beamSystem.Clear()); }
 			catch (const std::runtime_error& error) { firstEndFireError = error.what(); }
+			const bool clearStayedRequestedAfterFirstError = beamSystem.IsClearPending();
 			const bool failedBeamRetainedAfterFirstClear = !ownedBeamActors[0]->GetIsPendingDestroy();
 			const bool siblingBeamCleanedAfterFirstError = ownedBeamActors[1]->GetIsPendingDestroy();
 			const bool independentAbilityBeamCleanedAfterFirstError = ownedBeamActors[2]->GetIsPendingDestroy();
 			const bool firstClearEndedBothAbilitiesOnce = firstBeamActionAudit.endCount == 1 &&
 				secondBeamActionAudit.endCount == 1;
 			std::string retryEndFireError;
-			try { beamSystem.Clear(); }
+			sas::ClearResult retryEndFireResult = sas::ClearResult::Pending;
+			try { retryEndFireResult = beamSystem.Clear(); }
 			catch (const std::runtime_error& error) { retryEndFireError = error.what(); }
 			const bool allFirstExecutionVisualsCleaned = std::all_of(
 				ownedBeamActors.begin(), ownedBeamActors.end(),
@@ -2230,7 +2232,7 @@ namespace ly
 				return count;
 			}();
 			std::string reuseClearError;
-			try { beamSystem.Clear(); }
+			try { static_cast<void>(beamSystem.Clear()); }
 			catch (const std::runtime_error& error) { reuseClearError = error.what(); }
 			const std::size_t liveBeamsAfterE11 = [&]
 			{
@@ -2319,8 +2321,9 @@ namespace ly
 				);
 			}
 			std::string firstInvocationClearError;
-			try { beamSystem.Clear(); }
+			try { static_cast<void>(beamSystem.Clear()); }
 			catch (const std::runtime_error& error) { firstInvocationClearError = error.what(); }
+			const bool invocationClearStayedRequestedAfterFailure = beamSystem.IsClearPending();
 			const std::size_t invocationCountAfterFailedClear = beamSystem.GetActiveAbilityInvocationCount();
 			const bool invocationVisualRetainedAfterFailure = !firstInvocationVisuals.empty() &&
 				!firstInvocationVisuals.front()->GetIsPendingDestroy();
@@ -2328,7 +2331,8 @@ namespace ly
 			const std::size_t startedEventsAfterFailedClear = returnEventAudit.startedCount;
 			const std::size_t endedEventsAfterFailedClear = returnEventAudit.endedCount;
 			std::string invocationRetryClearError;
-			try { beamSystem.Clear(); }
+			sas::ClearResult invocationRetryClearResult = sas::ClearResult::Pending;
+			try { invocationRetryClearResult = beamSystem.Clear(); }
 			catch (const std::runtime_error& error) { invocationRetryClearError = error.what(); }
 			const std::size_t invocationCountAfterRetry = beamSystem.GetActiveAbilityInvocationCount();
 			const bool invocationVisualCleanedAfterRetry = !firstInvocationVisuals.empty() &&
@@ -2374,7 +2378,7 @@ namespace ly
 			}
 			const std::size_t invocationCountAfterReuse = beamSystem.GetActiveAbilityInvocationCount();
 			std::string reuseInvocationClearError;
-			try { beamSystem.Clear(); }
+			try { static_cast<void>(beamSystem.Clear()); }
 			catch (const std::runtime_error& error) { reuseInvocationClearError = error.what(); }
 			const std::size_t invocationCountAfterReuseClear = beamSystem.GetActiveAbilityInvocationCount();
 			const bool reusedInvocationVisualCleaned = !reusedInvocationVisuals.empty() &&
@@ -2387,6 +2391,7 @@ namespace ly
 				invocationCountAfterFailedClear == 1 && invocationVisualRetainedAfterFailure &&
 				liveReturnVisualsAfterFailedClear == liveReturnVisualsBefore + 1 &&
 				startedEventsAfterEcho == 1 && startedEventsAfterFailedClear == 1 && endedEventsAfterFailedClear == 0 &&
+				invocationClearStayedRequestedAfterFailure && invocationRetryClearResult == sas::ClearResult::Completed &&
 				invocationRetryClearError.empty() && invocationCountAfterRetry == 0 && invocationVisualCleanedAfterRetry &&
 				liveReturnVisualsAfterRetry == liveReturnVisualsBefore && startedEventsAfterRetry == 1 &&
 				endedEventsAfterRetry == 0 &&
@@ -2399,6 +2404,7 @@ namespace ly
 			const bool e11Passed = firstEndFireError == "Injected E11 first beam EndFire failure" &&
 				failedBeamRetainedAfterFirstClear && siblingBeamCleanedAfterFirstError &&
 				independentAbilityBeamCleanedAfterFirstError && firstClearEndedBothAbilitiesOnce &&
+				clearStayedRequestedAfterFirstError && retryEndFireResult == sas::ClearResult::Completed &&
 				retryEndFireError.empty() && allFirstExecutionVisualsCleaned && bothAbilitiesEndedOnceAfterRetry &&
 				reuseHandle.IsValid() && reuseAbilityActive && liveBeamsAfterReuseActivation == liveBeamsBeforeReuse + 1 &&
 				reuseClearError.empty() && liveBeamsAfterE11 == liveBeamsBeforeActivation && e11InvocationPassed;
@@ -2409,6 +2415,8 @@ namespace ly
 					{ "siblingBeamCleanedAfterFirstError", siblingBeamCleanedAfterFirstError },
 					{ "independentAbilityBeamCleanedAfterFirstError", independentAbilityBeamCleanedAfterFirstError },
 					{ "firstClearEndedBothAbilitiesOnce", firstClearEndedBothAbilitiesOnce },
+					{ "clearStayedRequestedAfterFirstError", clearStayedRequestedAfterFirstError },
+					{ "retryCompleted", retryEndFireResult == sas::ClearResult::Completed },
 					{ "retryError", retryEndFireError },
 					{ "firstExecutionVisualsCleanedAfterRetry", allFirstExecutionVisualsCleaned },
 					{ "bothAbilitiesEndedOnceAfterRetry", bothAbilitiesEndedOnceAfterRetry },
@@ -2434,6 +2442,8 @@ namespace ly
 					{ "startedEventsAfterEcho", startedEventsAfterEcho },
 					{ "startedEventsAfterFailedClear", startedEventsAfterFailedClear },
 					{ "endedEventsAfterFailedClear", endedEventsAfterFailedClear },
+					{ "clearStayedRequestedAfterFailure", invocationClearStayedRequestedAfterFailure },
+					{ "retryCompleted", invocationRetryClearResult == sas::ClearResult::Completed },
 					{ "retryClearError", invocationRetryClearError },
 					{ "invocationsAfterRetry", invocationCountAfterRetry },
 					{ "visualCleanedAfterRetry", invocationVisualCleanedAfterRetry },
@@ -2614,7 +2624,7 @@ namespace ly
 			catch (const std::runtime_error& error) { precommitPurchaseError = error.what(); }
 			precommitPurchaseSystem.onGameplayEvent.UnbindAction(precommitEventToken);
 			std::string precommitRetryClearError;
-			try { precommitPurchaseSystem.Clear(); }
+			try { static_cast<void>(precommitPurchaseSystem.Clear()); }
 			catch (const std::runtime_error& error) { precommitRetryClearError = error.what(); }
 			const unsigned int precommitPurchaseScrapAfter = precommitPurchasePlayer.GetScrap();
 			const std::size_t precommitAbilitiesAfterClear = precommitPurchaseSystem.BuildAbilitySnapshots().size();
@@ -3078,7 +3088,7 @@ namespace ly
 				return count;
 			}();
 			std::string e18ReuseClearError;
-			try { crossFlowSystem.Clear(); }
+			try { static_cast<void>(crossFlowSystem.Clear()); }
 			catch (const std::runtime_error& error) { e18ReuseClearError = error.what(); }
 			const std::size_t e18LiveBeamsAfterReuseClear = [&]
 			{

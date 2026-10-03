@@ -6,6 +6,7 @@
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
 #include "gameplay/ability/seismicCharge/SeismicChargeContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
 
@@ -18,11 +19,7 @@ namespace ly
 	{
 		constexpr float Epsilon = 0.0001f;
 
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
+		using ability_checks::NearlyEqual;
 	}
 
 	bool SeismicChargeAbility::Validate(

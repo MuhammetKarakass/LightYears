@@ -10,6 +10,7 @@
 #include "framework/PerfMonitor.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
+#include "framework/SpriteComponent.h"
 #include <algorithm>
 #include <cmath>
 
@@ -60,9 +61,9 @@ namespace ly
 
 	void PrimaryWeaponProjectileActor::SetVisualScale(float scale)
 	{
-		if (GetSprite())
+		if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
 		{
-			GetSprite().value().setScale({ scale, scale });
+			spriteComponent->GetSprite()->setScale({ scale, scale });
 		}
 	}
 

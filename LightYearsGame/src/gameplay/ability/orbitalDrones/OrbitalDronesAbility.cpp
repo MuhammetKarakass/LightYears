@@ -4,6 +4,7 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/orbitalDrones/OrbitalDronesContracts.h"
 #include "gameplay/ability/orbitalDrones/OrbitingDroneActor.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -28,69 +29,10 @@ namespace ly
 		constexpr float BaseSameTargetHitCooldown = 0.5f;
 		constexpr float BaseAngularSpeed = 2.5f;
 		constexpr float BaseContactRadius = 12.f;
-		constexpr float Epsilon = 0.0001f;
 
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
-
-		const sas::GameplayAttribute* FindAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId
-		)
-		{
-			return sas::FindAttribute(definition.attributes, attributeId);
-		}
-
-		bool HasValidAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId,
-			float minimumBaseValue,
-			bool requireWholeNumber = false
-		)
-		{
-			const sas::GameplayAttribute* attribute = FindAttribute(
-				definition,
-				attributeId
-			);
-			if (!attribute ||
-				!std::isfinite(attribute->baseValue) ||
-				!std::isfinite(attribute->currentValue) ||
-				!std::isfinite(attribute->minValue) ||
-				!std::isfinite(attribute->maxValue) ||
-				attribute->minValue > attribute->maxValue ||
-				attribute->baseValue < minimumBaseValue ||
-				attribute->baseValue < attribute->minValue ||
-				attribute->baseValue > attribute->maxValue)
-			{
-				return false;
-			}
-			return !requireWholeNumber ||
-				std::round(attribute->baseValue) == attribute->baseValue;
-		}
-
-		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
-		{
-			if (definition.abilityTags.size() != 2)
-			{
-				return false;
-			}
-
-			bool hasCategory = false;
-			bool hasFamily = false;
-			for (const GameplayTag& tag : definition.abilityTags)
-			{
-				hasCategory = hasCategory || tag.MatchesTagExact(
-					AbilityData::OrbitalDrones::CategoryTag
-				);
-				hasFamily = hasFamily || tag.MatchesTagExact(
-					AbilityData::OrbitalDrones::FamilyTag
-				);
-			}
-			return hasCategory && hasFamily;
-		}
+		using ability_checks::NearlyEqual;
+		using ability_checks::FindAttribute;
+		using ability_checks::HasValidAttribute;
 
 		bool HasAttackPowerDamageScaling(const List<sas::AttributeScalingRule>& rules)
 		{
@@ -170,7 +112,7 @@ namespace ly
 		const bool validIdentity =
 			definition.abilityId == AbilityData::OrbitalDrones::AbilityId::Basic &&
 			definition.behaviorType == AbilityBehaviorType::OrbitalDrones &&
-			HasExactAbilityTags(definition);
+			ability_checks::HasExactAbilityTags(definition, AbilityData::OrbitalDrones::CategoryTag, AbilityData::OrbitalDrones::FamilyTag);
 		const bool validLifecycle =
 			sas::IsLoadoutAbilitySlot(definition.slot) &&
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&

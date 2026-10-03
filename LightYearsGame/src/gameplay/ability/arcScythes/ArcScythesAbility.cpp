@@ -2,6 +2,7 @@
 
 #include "gameplay/ability/arcScythes/ArcScythesContracts.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/tags/GameplayTags.h"
 
@@ -13,13 +14,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr float Epsilon = 0.0001f;
-
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
+		using ability_checks::NearlyEqual;
 
 		float ResolveArcScythesSetting(
 			const std::string& abilityId,

@@ -16,22 +16,6 @@
 
 namespace ly
 {
-	namespace
-	{
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-	}
-
 	ScorchDriveTrailCoordinatorActor::ScorchDriveTrailCoordinatorActor(
 		World* world,
 		Actor* owner,
@@ -42,7 +26,7 @@ namespace ly
 		const List<GameplayTag>& damageTags
 	)
 		: Actor(world)
-		, mOwner(MakeWeakActor(owner))
+		, mOwner(owner ? owner->GetWeakActor() : weak_ptr<Actor>{})
 		, mFireDamage(std::max(0.f, fireDamage))
 		, mIgniteStacksPerHit(std::clamp(igniteStacksPerHit, 0, 4))
 		, mSourceAbilityId(sourceAbilityId)

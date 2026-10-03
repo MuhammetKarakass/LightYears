@@ -53,18 +53,6 @@ namespace ly
 			};
 		}
 
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-
 		class IonStormProjectileActorTypeHandler final
 			: public AbilityActorTypeHandler
 		{
@@ -172,7 +160,7 @@ namespace ly
 		: AbilityWorldActor(world, owner)
 		, mPresentationProfile(presentationProfile)
 		, mRequestedTargetLocation(std::move(requestedTargetLocation))
-		, mOwnerReference(MakeWeakActor(owner))
+		, mOwnerReference(owner ? owner->GetWeakActor() : weak_ptr<Actor>{})
 		, mGlow(std::max(1.f, presentationProfile.visual.radius * 1.8f), 28)
 		, mCore(std::max(1.f, presentationProfile.visual.radius), 24)
 		, mTrail(sf::PrimitiveType::TriangleStrip, 4)

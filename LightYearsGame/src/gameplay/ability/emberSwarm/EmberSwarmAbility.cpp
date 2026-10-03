@@ -5,6 +5,7 @@
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/ability/emberSwarm/EmberDroneActor.h"
 #include "gameplay/ability/emberSwarm/EmberSwarmContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -28,7 +29,6 @@ namespace ly
 		constexpr float PulseDamagePerLevel = 2.f;
 		constexpr float BaseEnergyPowerScale = 0.08f;
 		constexpr float EnergyPowerScalePerLevel = 0.01f;
-		constexpr float Epsilon = 0.0001f;
 
 		int GetTrueIgniteStacks(const Actor* target)
 		{
@@ -48,32 +48,7 @@ namespace ly
 			return activeIgnite ? activeIgnite->stackCount : 0;
 		}
 
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
-
-		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
-		{
-			if (definition.abilityTags.size() != 2)
-			{
-				return false;
-			}
-
-			bool hasCategory = false;
-			bool hasFamily = false;
-			for (const GameplayTag& tag : definition.abilityTags)
-			{
-				hasCategory = hasCategory || tag.MatchesTagExact(
-					AbilityData::EmberSwarm::CategoryTag
-				);
-				hasFamily = hasFamily || tag.MatchesTagExact(
-					AbilityData::EmberSwarm::FamilyTag
-				);
-			}
-			return hasCategory && hasFamily;
-		}
+		using ability_checks::NearlyEqual;
 
 		bool HasExpectedModifier(
 			const AbilityLevelStep& step,
@@ -122,7 +97,7 @@ namespace ly
 		const bool validIdentity =
 			definition.abilityId == AbilityData::EmberSwarm::AbilityId::Basic &&
 			definition.behaviorType == AbilityBehaviorType::EmberSwarm &&
-			HasExactAbilityTags(definition);
+			ability_checks::HasExactAbilityTags(definition, AbilityData::EmberSwarm::CategoryTag, AbilityData::EmberSwarm::FamilyTag);
 		const bool validLifecycle =
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
 			definition.lifetimePolicy == sas::AbilityLifetimePolicy::Duration &&

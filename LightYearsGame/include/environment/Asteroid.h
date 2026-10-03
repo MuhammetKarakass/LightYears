@@ -35,7 +35,7 @@ namespace ly
 		float mDamage;
 		ExplosionType mExplosionType;
 		List<WeightedReward> mRewards;
-		HealthComponent mHealthComponent;
+		HealthComponent& mHealthComponent;
 		sf::Color mBlinkColor;
 		float mBlinkTime;
 		float mBlinkDuration;

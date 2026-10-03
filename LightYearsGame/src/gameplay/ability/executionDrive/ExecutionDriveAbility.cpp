@@ -3,6 +3,7 @@
 #include "effects/GameplayEffectSpec.h"
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/executionDrive/ExecutionDriveContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -18,13 +19,7 @@ namespace ly
 {
 	namespace
 	{
-		const sas::GameplayAttribute* FindAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId
-		)
-		{
-			return sas::FindAttribute(definition.attributes, attributeId);
-		}
+		using ability_checks::FindAttribute;
 
 		float FindValue(
 			const sas::GameplayAttributeList& values,

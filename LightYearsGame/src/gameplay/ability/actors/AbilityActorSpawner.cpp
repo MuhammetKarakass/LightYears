@@ -49,19 +49,6 @@ namespace ly
 			return std::atan2(direction.y, direction.x) * DegreesPerRadian + 90.f;
 		}
 
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-
 		sf::Vector2f ResolveSpawnLocation(
 			const Actor& owner,
 			const SpawnActorAction& actionData,
@@ -164,7 +151,7 @@ namespace ly
 					*actorDefinition,
 					values,
 					targetLocation,
-					MakeWeakActor(targetActor),
+					targetActor ? targetActor->GetWeakActor() : weak_ptr<Actor>{},
 					context.instance,
 					context.abilitySystem,
 					context.definition

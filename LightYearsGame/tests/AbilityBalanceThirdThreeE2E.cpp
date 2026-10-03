@@ -1,6 +1,7 @@
 #include "attributes/AttributeSystem.h"
 #include "effects/GameplayEffectSpec.h"
 #include "framework/World.h"
+#include "framework/SpriteComponent.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
@@ -56,7 +57,7 @@ namespace ly
 			explicit BalanceE2EShip(World* world)
 				: SpaceShip{ world, MakeBalanceShipDefinition(OwnerHealth) }
 			{
-				CenterPivot();
+				if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>()) spriteComponent->CenterPivot();
 			}
 		};
 
@@ -66,7 +67,7 @@ namespace ly
 			explicit BalanceE2ETarget(World* world)
 				: SpaceShip{ world, MakeBalanceShipDefinition(TargetHealth) }
 			{
-				CenterPivot();
+				if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>()) spriteComponent->CenterPivot();
 			}
 		};
 

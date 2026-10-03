@@ -5,6 +5,7 @@
 #include "gameplay/ability/actors/AbilityActorSpawner.h"
 #include "gameplay/ability/relayPrism/RelayPrismActor.h"
 #include "gameplay/ability/relayPrism/RelayPrismContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameConfigs/ability/utility/RelayPrismConfig.h"
@@ -27,13 +28,7 @@ namespace ly
 			return AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		}
 
-		const sas::GameplayAttribute* FindAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId
-		)
-		{
-			return sas::FindAttribute(definition.attributes, attributeId);
-		}
+		using ability_checks::FindAttribute;
 	}
 
 	bool RelayPrismAbility::Validate(

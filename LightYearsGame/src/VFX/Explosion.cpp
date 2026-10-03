@@ -2,6 +2,7 @@
 #include "framework/World.h"
 #include "VFX/Explosion.h"
 #include "VFX/Particle.h"
+#include "framework/SpriteComponent.h"
 #include "framework/PerfMonitor.h"
 
 namespace ly
@@ -167,8 +168,8 @@ namespace ly
 
 			if (auto particle = newParticle.lock())
 			{
-				std::optional<sf::Sprite>& sprite = particle->GetSprite();
-				if (!sprite)
+				SpriteComponent* spriteComponent = particle->FindComponent<SpriteComponent>();
+				if (!spriteComponent || !spriteComponent->HasSprite())
 				{
 					particle->Destroy();
 					continue;
@@ -179,7 +180,7 @@ namespace ly
 				particle->RandomSize(params.sizeMin, params.sizeMax);
 				particle->RandomVelocity(params.speedMin, params.speedMax);
 
-				sprite->setColor(params.GenerateRandomColor());
+				spriteComponent->GetSprite()->setColor(params.GenerateRandomColor());
 			}
 		}
 	}

@@ -4,8 +4,9 @@
 
 namespace ly
 {
-	ShieldComponent::ShieldComponent(float shield, float maxShield, float rechargeDelay)
-		: mShield{ std::clamp(shield, 0.f, std::max(0.f, maxShield)) }
+	ShieldComponent::ShieldComponent(Actor& owner, float shield, float maxShield, float rechargeDelay)
+		: ActorComponent{ owner }
+		, mShield{ std::clamp(shield, 0.f, std::max(0.f, maxShield)) }
 		, mMaxShield{ std::max(0.f, maxShield) }
 		, mRechargeDelay{ std::max(0.f, rechargeDelay) }
 	{

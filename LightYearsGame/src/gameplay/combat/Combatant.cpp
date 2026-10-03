@@ -111,9 +111,9 @@ namespace ly
 			}
 			else if (payload.criticalPolicy == DamageCriticalPolicy::Random)
 			{
-				if (auto* sourceCombatant = source ? dynamic_cast<Combatant*>(source) : nullptr)
+				if (auto* mutableSourceCombatant = source ? dynamic_cast<Combatant*>(source) : nullptr)
 				{
-					const float criticalChance = sourceCombatant->GetCombatRuntime().GetCriticalChance();
+					const float criticalChance = mutableSourceCombatant->GetCombatRuntime().GetCriticalChance();
 					if (RandRange(0.f, 1.f) < criticalChance)
 					{
 						sourceResolvedDamage *= resolveCriticalMultiplier();

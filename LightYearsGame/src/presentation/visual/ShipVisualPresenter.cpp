@@ -1,6 +1,7 @@
 #include "presentation/visual/ShipVisualPresenter.h"
 
 #include "framework/Actor.h"
+#include "framework/SpriteComponent.h"
 #include "framework/World.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
@@ -122,9 +123,10 @@ namespace ly
 
 		// Fit the design to the sprite's footprint by area, so the visual covers about what the hitbox covers.
 		sf::Vector2f spriteSize = definition->size;
-		if (const std::optional<sf::Sprite>& sprite = ship->GetSprite())
+		if (const SpriteComponent* spriteComponent = ship->FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
 		{
-			spriteSize = sprite->getLocalBounds().size.componentWiseMul(sprite->getScale());
+			const sf::Sprite& sprite = *spriteComponent->GetSprite();
+			spriteSize = sprite.getLocalBounds().size.componentWiseMul(sprite.getScale());
 		}
 		const float fit = std::sqrt(std::max(1.f, std::abs(spriteSize.x * spriteSize.y)) / (definition->size.x * definition->size.y));
 

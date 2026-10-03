@@ -5,6 +5,7 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/shieldHarvest/ShieldHarvestContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -67,11 +68,7 @@ namespace
 			return std::isfinite(value) && value >= 0.f;
 		}
 
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= 0.0001f;
-		}
+		using ability_checks::NearlyEqual;
 
 		bool HasExpectedScalingRule(
 			const List<sas::AttributeScalingRule>& scalingRules,
@@ -261,7 +258,6 @@ namespace
 			1.f,
 			FindValue(values, AbilityData::ShieldHarvest::Attribute::Radius, 700.f)
 		);
-		const float focusDuration = std::max(0.001f, context.definition.duration);
 		mFocusElapsed = 0.f;
 		mHarvested = false;
 		ability::ApplyFocusActionLocks(context.abilitySystem, false);

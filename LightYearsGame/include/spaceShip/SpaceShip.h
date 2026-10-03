@@ -133,13 +133,16 @@ namespace ly
 		sf::Vector2f ResolveLegacyMovementSpeed(const sf::Vector2f& baseSpeed) const;
 
 	private:
-		HealthComponent mHealthComponent;
-		ShieldComponent mShieldComponent;
-		EnergyComponent mEnergyComponent;
+		// Default subobjects: created by AddComponent in the constructor and owned by
+		// the Actor; these references are fast typed access to them. Declaration
+		// order is the construction order and must stay ahead of their dependents.
+		HealthComponent& mHealthComponent;
+		ShieldComponent& mShieldComponent;
+		EnergyComponent& mEnergyComponent;
 		CombatRuntime mCombatRuntime;
 		ShipRuntime mShipRuntime;
 		ShipRuntimeModifiers mRuntimeModifiers;
-		MovementComponent mMovementComponent;
+		MovementComponent& mMovementComponent;
 		TemporalStateHistory mTemporalStateHistory;
 		temporal::TemporalRateModifierLedger mPrimaryWeaponFireRateModifiers;
 		ControlTargetClass mControlTargetClass = ControlTargetClass::Normal;

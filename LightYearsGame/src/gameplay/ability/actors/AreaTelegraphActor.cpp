@@ -6,22 +6,6 @@
 
 namespace ly
 {
-	namespace
-	{
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-	}
-
 	AreaTelegraphActor::AreaTelegraphActor(
 		World* world,
 		const SpawnParams& params
@@ -34,7 +18,7 @@ namespace ly
 		mDuration(std::max(0.f, params.duration)),
 		mAnchor(params.anchor),
 		mProgressDriver(params.progress),
-		mTargetActor(MakeWeakActor(params.targetActor))
+		mTargetActor(params.targetActor ? params.targetActor->GetWeakActor() : weak_ptr<Actor>{})
 	{
 		SetActorLocation(params.targetActor ? params.targetActor->GetActorLocation() : params.location);
 		SetRenderLayer(RenderLayer::GroundDecal);

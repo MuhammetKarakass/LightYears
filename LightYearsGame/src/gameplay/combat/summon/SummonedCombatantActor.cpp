@@ -9,7 +9,7 @@ namespace ly
 {
 	SummonedCombatantActor::SummonedCombatantActor(World* world, Actor* owner)
 		: AbilityWorldActor(world, owner)
-		, mHealthComponent(1.f, 1.f)
+		, mHealthComponent(AddComponent<HealthComponent>(1.f, 1.f))
 		, mCombatRuntime(*this)
 	{
 		mCombatRuntime.InitializeOwnerAttributes(1.f);
@@ -17,7 +17,8 @@ namespace ly
 
 	SummonedCombatantActor::~SummonedCombatantActor()
 	{
-		mCombatRuntime.Clear();
+		// Pending is dropped: the actor is going away and its retained ability state dies with it.
+		static_cast<void>(mCombatRuntime.Clear());
 	}
 
 	void SummonedCombatantActor::BeginPlay()
@@ -157,7 +158,8 @@ namespace ly
 
 	void SummonedCombatantActor::OnHealthEmpty()
 	{
-		mCombatRuntime.Clear();
+		// Same contract as SpaceShip::Blow: Pending does not block destruction.
+		static_cast<void>(mCombatRuntime.Clear());
 		Destroy();
 	}
 }

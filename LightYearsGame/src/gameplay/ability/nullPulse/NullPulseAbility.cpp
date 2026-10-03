@@ -6,6 +6,7 @@
 #include "gameplay/ability/nullPulse/NullPulseContracts.h"
 #include "gameplay/ability/nullPulse/NullPulseTargetQuery.h"
 #include "gameplay/ability/nullPulse/NullPulseVisualActor.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/content/EffectContentCatalog.h"
@@ -25,36 +26,14 @@ namespace ly
 {
 	namespace
 	{
-		const sas::GameplayAttribute* FindAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId
-		)
-		{
-			return sas::FindAttribute(definition.attributes, attributeId);
-		}
+		using ability_checks::FindAttribute;
 
 		bool IsFiniteNonNegative(float value)
 		{
 			return std::isfinite(value) && value >= 0.f;
 		}
 
-		bool HasModifier(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			float magnitude
-		)
-		{
-			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-			{
-				if (modifier.attributeId == attributeId &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
-				{
-					return true;
-				}
-			}
-			return false;
-		}
+		using ability_checks::HasModifier;
 
 		float FindValue(
 			const sas::GameplayAttributeList& values,

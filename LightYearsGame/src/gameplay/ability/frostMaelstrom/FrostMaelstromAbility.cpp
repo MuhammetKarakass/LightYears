@@ -6,6 +6,7 @@
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameplay/ability/frostMaelstrom/FrostMaelstromContracts.h"
 #include "gameplay/ability/frostMaelstrom/FrostMaelstromFieldActor.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "spaceShip/SpaceShip.h"
@@ -46,23 +47,7 @@ namespace ly
 			return attribute && IsFinite(attribute->baseValue);
 		}
 
-		bool HasModifier(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			float magnitude
-		)
-		{
-			for (const sas::AttributeModifier& modifier : step.attributeModifiers)
-			{
-				if (modifier.attributeId == attributeId &&
-					modifier.operation == sas::AttributeModifierOperation::Add &&
-					std::abs(modifier.magnitude - magnitude) <= 0.0001f)
-				{
-					return true;
-				}
-			}
-			return false;
-		}
+		using ability_checks::HasModifier;
 
 		float FindValue(
 			const sas::GameplayAttributeList& values,

@@ -8,6 +8,7 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
+#include "presentation/effects/GameplayEffectPresentationBinding.h"
 #include "attributes/AttributeMath.h"
 #include <algorithm>
 #include <cmath>
@@ -43,7 +44,7 @@ namespace ly
 	CombatRuntime::CombatRuntime(Actor& owner)
 		: mOwner{ owner },
 		mAbilitySystemComponent{ owner },
-		mEffectPresentation{ owner }
+		mEffectPresentation{ std::make_unique<GameplayEffectPresentationBinding>(owner) }
 	{
 		mAbilitySystemComponent.mOwnerClearCompletion = [this] { CompleteClear(); };
 		sas::AbilitySystemComponent::EffectCallbacks callbacks;
@@ -80,12 +81,12 @@ namespace ly
 		callbacks.activated =
 			[this](sas::ActiveGameplayEffect& effect)
 			{
-				mEffectPresentation.Activate(effect);
+				mEffectPresentation->Activate(effect);
 			};
 		callbacks.changed =
 			[this](sas::ActiveGameplayEffect& effect)
 			{
-				mEffectPresentation.Synchronize(effect);
+				mEffectPresentation->Synchronize(effect);
 			};
 		callbacks.stackChanged =
 			[this](sas::ActiveGameplayEffect& effect)
@@ -98,10 +99,12 @@ namespace ly
 		callbacks.removing =
 			[this](sas::ActiveGameplayEffect& effect)
 			{
-				mEffectPresentation.Remove(effect);
+				mEffectPresentation->Remove(effect);
 			};
 		mAbilitySystemComponent.SetEffectRuntimeCallbacks(std::move(callbacks));
 	}
+
+	CombatRuntime::~CombatRuntime() = default;
 
 	void CombatRuntime::InitializeOwnerAttributes(float maxHealth)
 	{
@@ -213,12 +216,12 @@ namespace ly
 		return mRuntimeModifiers.GetOutgoingDamageMultiplier();
 	}
 
-	void CombatRuntime::Clear()
+	sas::ClearResult CombatRuntime::Clear()
 	{
 		++mEffectEventGeneration;
 		mPendingEffectEvents.clear();
 		mClearRequested = true;
-		mAbilitySystemComponent.Clear();
+		return mAbilitySystemComponent.Clear();
 	}
 
 	void CombatRuntime::CompleteClear()
@@ -227,7 +230,7 @@ namespace ly
 		mClearRequested = false;
 		mContactDamageGuardRegistry.Clear();
 		std::exception_ptr error;
-		try { mEffectPresentation.Clear(); }
+		try { mEffectPresentation->Clear(); }
 		catch (...) { error = std::current_exception(); }
 		mPendingEffectEvents.clear();
 		mDamageProtections.clear();

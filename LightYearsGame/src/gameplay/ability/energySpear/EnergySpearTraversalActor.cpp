@@ -16,18 +16,6 @@ namespace ly
 {
 	namespace
 	{
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-
 		sf::Color WithAlpha(const sf::Color& color, float multiplier)
 		{
 			return sf::Color{
@@ -59,7 +47,7 @@ namespace ly
 		const EnergySpearTraversalRequest& request
 	)
 		: Actor(world),
-		mOwner(MakeWeakActor(request.owner)),
+		mOwner(request.owner ? request.owner->GetWeakActor() : weak_ptr<Actor>{}),
 		mVisual(request.visual),
 		mStartLocation(request.startLocation),
 		mDirection(NormalizeOrDefault(request.direction)),

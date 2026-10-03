@@ -1,6 +1,6 @@
 #include "framework/Application.h"
 #include "framework/AudioManager.h"
-#include "framework/PhysicsSystem.h"
+#include "framework/PhysicsScene.h"
 #include "framework/TimerManager.h"
 #include "enemy/EnemyActor.h"
 #include "gameplay/content/ModuleContentCatalog.h"
@@ -144,7 +144,7 @@ namespace ly
 			level.TickInternal(deltaTime);
 			TimerManager::GetGlobalTimerManager().UpdateTimer(deltaTime);
 			if (!level.IsPaused()) TimerManager::GetGameTimerManager().UpdateTimer(deltaTime);
-			PhysicsSystem::Get().Step(deltaTime);
+			level.StepPhysics(deltaTime);
 			AudioManager::GetAudioManager().Update(deltaTime);
 		}
 
@@ -211,7 +211,6 @@ namespace ly
 			{
 				application = std::make_unique<DamageEventApplication>();
 				level = std::make_shared<ArenaLevel>(application.get());
-				PhysicsSystem::Get().InitializeWorld({ 0.f, 0.f });
 				level->BeginPlayInternal();
 				levelStarted = true;
 

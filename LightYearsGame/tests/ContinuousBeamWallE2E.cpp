@@ -1,6 +1,7 @@
 #include "attributes/AttributeMath.h"
 #include "framework/AssetManager.h"
 #include "framework/World.h"
+#include "framework/SpriteComponent.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include "gameConfigs/combat/WeaponStructs.h"
 #include "gameplay/ability/GameAbility.h"
@@ -194,18 +195,22 @@ namespace ly
 				return result;
 			}
 
+			const auto centerPivot = [](Actor& actor)
+			{
+				if (SpriteComponent* spriteComponent = actor.FindComponent<SpriteComponent>()) spriteComponent->CenterPivot();
+			};
 			owner->SetActorLocation(OwnerLocation);
 			owner->SetActorRotation(0.f);
 			owner->SetCollisionLayer(CollisionLayer::Player);
-			frontTarget->CenterPivot();
+			centerPivot(*frontTarget);
 			frontTarget->SetActorLocation(FrontTargetLocation);
 			frontTarget->SetCollisionLayer(CollisionLayer::Enemy);
 			frontTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
-			betweenWallsTarget->CenterPivot();
+			centerPivot(*betweenWallsTarget);
 			betweenWallsTarget->SetActorLocation(BetweenWallsTargetLocation);
 			betweenWallsTarget->SetCollisionLayer(CollisionLayer::Enemy);
 			betweenWallsTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
-			rearTarget->CenterPivot();
+			centerPivot(*rearTarget);
 			rearTarget->SetActorLocation(RearTargetLocation);
 			rearTarget->SetCollisionLayer(CollisionLayer::Enemy);
 			rearTarget->SetCollisionMask(CollisionLayer::PlayerBullet);

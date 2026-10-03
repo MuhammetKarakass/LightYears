@@ -226,7 +226,7 @@ namespace
 	public:
 		explicit TestCombatant(ly::World* world = nullptr, float maximumHealth = 100.f)
 			: Actor{ world }
-			, mHealth{ maximumHealth, maximumHealth }
+			, mHealth{ AddComponent<ly::HealthComponent>(maximumHealth, maximumHealth) }
 			, mCombatRuntime{ *this }
 		{
 			mCombatRuntime.GetAbilitySystemComponent().GetAttributes().RegisterAttribute(ly::OwnerAttributeIds::Armor, 0.f);
@@ -317,7 +317,7 @@ namespace
 			return true;
 		}
 
-		ly::HealthComponent mHealth;
+		ly::HealthComponent& mHealth;
 		ly::CombatRuntime mCombatRuntime;
 		sf::Vector2f mDashMovementInput{ 0.f, 0.f };
 		sf::Vector2f mDashAimDirection{ 0.f, 0.f };
@@ -825,7 +825,7 @@ int main(int argc, char** argv)
 		{
 			return Fail("Contact damage did not query the target combat runtime guard registry");
 		}
-		target.GetCombatRuntime().Clear();
+		static_cast<void>(target.GetCombatRuntime().Clear());
 		if (!CanApplyContactDamage(source, target))
 		{
 			return Fail("Combat runtime Clear did not clear contact damage guards");
@@ -1984,7 +1984,8 @@ int main(int argc, char** argv)
 		return Fail("Sequential haste calculation failed");
 	}
 
-	HealthComponent regeneratingHealth{ 100.f, 100.f };
+	Actor componentOwner{ nullptr };
+	HealthComponent regeneratingHealth{ componentOwner, 100.f, 100.f };
 	regeneratingHealth.ChangeHealth(-60.f);
 	regeneratingHealth.Regenerate((50.f / 600.f) * 600.f);
 	if (!NearlyEqual(regeneratingHealth.GetHealth(), 90.f))
@@ -1992,7 +1993,7 @@ int main(int argc, char** argv)
 		return Fail("Health regeneration did not restore 50 health in 10 minutes");
 	}
 
-	ShieldComponent regeneratingShield{ 100.f, 100.f, 3.f };
+	ShieldComponent regeneratingShield{ componentOwner, 100.f, 100.f, 3.f };
 	if (!NearlyEqual(regeneratingShield.AbsorbDamage(20.f, 1.50f, 0.75f), 20.f) ||
 		!NearlyEqual(regeneratingShield.GetShield(), 70.f))
 	{
@@ -2039,7 +2040,7 @@ int main(int argc, char** argv)
 		}
 	}
 	{
-		ShieldComponent energyShield{ 50.f, 50.f, 3.f };
+		ShieldComponent energyShield{ componentOwner, 50.f, 50.f, 3.f };
 		if (!NearlyEqual(energyShield.AbsorbDamage(100.f, 1.50f, 0.f), 100.f / 3.f) ||
 			!NearlyEqual(energyShield.GetShield(), 0.f))
 		{
@@ -2076,7 +2077,7 @@ int main(int argc, char** argv)
 			return Fail("Shieldless summon did not apply Armor mitigation");
 		}
 	}
-	ShieldComponent frameRateIndependentOvershield{ 150.f, 150.f, 3.f };
+	ShieldComponent frameRateIndependentOvershield{ componentOwner, 150.f, 150.f, 3.f };
 	frameRateIndependentOvershield.GrantTemporaryOvershield(
 		"Test.Overshield",
 		100.f,
@@ -2112,7 +2113,7 @@ int main(int argc, char** argv)
 		return Fail("Ship shield recharged while afterburner recharge blocking was active");
 	}
 
-	EnergyComponent regeneratingEnergy{ 50.f, 50.f, 2.f };
+	EnergyComponent regeneratingEnergy{ componentOwner, 50.f, 50.f, 2.f };
 	if (!NearlyEqual(regeneratingEnergy.Consume(30.f), 30.f) ||
 		!NearlyEqual(regeneratingEnergy.GetEnergy(), 20.f))
 	{
@@ -6773,7 +6774,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Basic Dash could not activate before ability-system cleanup");
 	}
-	clearedDashOwner.GetCombatRuntime().GetAbilitySystemComponent().Clear();
+	static_cast<void>(clearedDashOwner.GetCombatRuntime().GetAbilitySystemComponent().Clear());
 	if (clearedDashOwner.IsDashActive() ||
 		clearedDashOwner.GetAbilitySystemComponent().GetOwnedTags().HasTag(GameplayTags::State::Ability::Dash::Active) ||
 		clearedEvents.events.size() != 2 ||

@@ -20,14 +20,6 @@ namespace ly
 		using ReentryLock = PortalTransferRuntimeState::ReentryLock;
 		using Pair = PortalTransferRuntimeState::Pair;
 
-		weak_ptr<Actor> MakeWeakActor(Actor& actor)
-		{
-			const shared_ptr<Object> object = actor.GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-
 		sf::Vector2f ResolveEndpointLocation(const Endpoint& endpoint)
 		{
 			if (const shared_ptr<Actor> actor = endpoint.actor.lock())
@@ -84,7 +76,7 @@ namespace ly
 				: pair.first;
 			participant->CompletePortalTransit(exit.location);
 			pair.reentryLocks[actor->GetUniqueID()] = ReentryLock{
-				MakeWeakActor(*actor),
+				actor->GetWeakActor(),
 				true,
 				0.f
 			};
@@ -237,7 +229,7 @@ namespace ly
 
 				participant->BeginPortalTransit();
 				pair.transits.push_back(Transit{
-					MakeWeakActor(*actor),
+					actor->GetWeakActor(),
 					enteredFirst,
 					pair.transferDuration
 				});
@@ -265,8 +257,8 @@ namespace ly
 		const PairId pairId = state.nextPairId++;
 		state.pairs.push_back(Pair{
 			pairId,
-			Endpoint{ MakeWeakActor(firstPortal), firstPortal.GetActorLocation() },
-			Endpoint{ MakeWeakActor(secondPortal), secondPortal.GetActorLocation() },
+			Endpoint{ firstPortal.GetWeakActor(), firstPortal.GetActorLocation() },
+			Endpoint{ secondPortal.GetWeakActor(), secondPortal.GetActorLocation() },
 			std::max(1.f, portalRadius),
 			std::max(0.01f, transferDuration),
 			std::max(0.f, reentryCooldown),

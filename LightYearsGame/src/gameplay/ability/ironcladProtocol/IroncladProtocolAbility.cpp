@@ -21,9 +21,8 @@ namespace ly
 	{
 		sas::GameplayAttributeList ResolveValues(GameAbilityBehaviorContext& context)
 		{
-			return AbilityActionAttributeResolver::ResolveAbilityAttributes(
-				AbilityExecutionContext{ &context.abilitySystem, &context.definition, nullptr, &context.instance }
-			);
+			AbilityExecutionContext executionContext{ &context.abilitySystem, &context.definition, nullptr, &context.instance };
+			return AbilityActionAttributeResolver::ResolveAbilityAttributes(executionContext);
 		}
 
 		float FindValue(const sas::GameplayAttributeList& values, const sas::AttributeId& id, float fallback)

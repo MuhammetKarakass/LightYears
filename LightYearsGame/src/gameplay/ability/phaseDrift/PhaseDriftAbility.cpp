@@ -9,6 +9,7 @@
 #include "presentation/ability/phaseDrift/PhaseDriftPresentationIds.h"
 #include "presentation/ability/phaseDrift/PhaseDriftPresentationProfile.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftVisualActor.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "spaceShip/SpaceShip.h"
 #include "framework/World.h"
 
@@ -19,13 +20,7 @@ namespace ly
 {
 	namespace
 	{
-		const sas::GameplayAttribute* FindAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId
-		)
-		{
-			return sas::FindAttribute(definition.attributes, attributeId);
-		}
+		using ability_checks::FindAttribute;
 
 		float FindValue(
 			const sas::GameplayAttributeList& values,

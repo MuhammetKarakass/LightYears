@@ -49,10 +49,39 @@ set(LIGHT_YEARS_ENGINE_TARGET_NAME LightYearsEngine)
 set(SPACE_ABILITY_SYSTEM_TARGET_NAME SpaceAbilitySystem)
 set(LIGHT_YEARS_GAME_TARGET_NAME LightYearsGame)
 
+# Raises the warning level on first-party targets only. Never call this on
+# third-party targets (SFML, box2d, nlohmann_json); /WX is deliberately not set.
+# CMP0092 (NEW since 3.15) keeps CMake from injecting /W3, so /W4 does not
+# trigger D9025 override warnings.
+function(ly_enable_warnings target)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra)
+    endif()
+endfunction()
+
+function(ly_enable_warnings_for_directory dir)
+    get_property(ly_dir_targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(ly_target IN LISTS ly_dir_targets)
+        get_target_property(ly_target_type ${ly_target} TYPE)
+        if(ly_target_type MATCHES "^(STATIC_LIBRARY|OBJECT_LIBRARY|EXECUTABLE)$")
+            ly_enable_warnings(${ly_target})
+        endif()
+    endforeach()
+endfunction()
+
 add_subdirectory(LightYearsEngine)
 add_subdirectory(LightYearsVisual)
 add_subdirectory(SpaceAbilitySystem)
 add_subdirectory(LightYearsGame)
+
+# First-party targets (LightYearsEngine, LightYearsVisual, SpaceAbilitySystem,
+# LightYearsGameplayCore, LightYearsGame and their test executables). Each of
+# these directories lists only its own targets, not the fetched dependencies.
+foreach(ly_warning_dir LightYearsEngine LightYearsVisual SpaceAbilitySystem LightYearsGame)
+    ly_enable_warnings_for_directory("${CMAKE_CURRENT_SOURCE_DIR}/${ly_warning_dir}")
+endforeach()
 
 if(BUILD_TESTING)
 	add_test(

@@ -4,8 +4,9 @@
 
 namespace ly
 {
-	EnergyComponent::EnergyComponent(float energy, float maxEnergy, float rechargeDelay)
-		: mEnergy{ std::clamp(energy, 0.f, std::max(0.f, maxEnergy)) }
+	EnergyComponent::EnergyComponent(Actor& owner, float energy, float maxEnergy, float rechargeDelay)
+		: ActorComponent{ owner }
+		, mEnergy{ std::clamp(energy, 0.f, std::max(0.f, maxEnergy)) }
 		, mMaxEnergy{ std::max(0.f, maxEnergy) }
 		, mRechargeDelay{ std::max(0.f, rechargeDelay) }
 	{

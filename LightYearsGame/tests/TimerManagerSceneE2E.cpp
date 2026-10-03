@@ -1,6 +1,6 @@
 #include "framework/Application.h"
 #include "framework/AudioManager.h"
-#include "framework/PhysicsSystem.h"
+#include "framework/PhysicsScene.h"
 #include "framework/TimerManager.h"
 #include "level/ArenaLevel.h"
 
@@ -510,7 +510,6 @@ namespace ly
 			{ "schemaVersion", 1 }
 		};
 		bool levelStarted = false;
-		bool physicsInitialized = false;
 		int completedFrames = 0;
 
 		if (setupError.empty())
@@ -519,8 +518,6 @@ namespace ly
 			{
 				application = std::make_unique<TimerMeasurementApplication>();
 				level = std::make_shared<ArenaLevel>(application.get());
-				PhysicsSystem::Get().InitializeWorld({ 0.f, 0.f });
-				physicsInitialized = true;
 				level->BeginPlayInternal();
 				levelStarted = true;
 				for (int frame = 0; frame < SimulationFrameCount; ++frame)
@@ -544,7 +541,7 @@ namespace ly
 							TimerManager::GetGameTimerManager().UpdateTimer(SimulationDeltaSeconds);
 						});
 					}
-					PhysicsSystem::Get().Step(SimulationDeltaSeconds);
+					level->StepPhysics(SimulationDeltaSeconds);
 					AudioManager::GetAudioManager().Update(SimulationDeltaSeconds);
 					globalSamples.updateMicroseconds.push_back(globalUpdate);
 					if (gameTimerActive) gameSamples.updateMicroseconds.push_back(gameUpdate);
@@ -658,7 +655,6 @@ namespace ly
 		level.reset();
 		TimerManager::GetGlobalTimerManager().ClearAllTimers();
 		TimerManager::GetGameTimerManager().ClearAllTimers();
-		if (physicsInitialized) PhysicsSystem::Get().Cleanup();
 		application.reset();
 		if (!WriteArtifact(std::filesystem::absolute(artifactPath), artifact))
 		{

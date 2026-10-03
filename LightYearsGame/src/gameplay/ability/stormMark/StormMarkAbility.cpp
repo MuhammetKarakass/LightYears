@@ -6,6 +6,7 @@
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/actors/AreaTelegraphActor.h"
 #include "gameplay/ability/stormMark/StormMarkContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
@@ -35,88 +36,10 @@ namespace ly
 		constexpr float BaseStrikeDuration = 0.20f;
 		constexpr float BaseLuckPerExtraTarget = 20.f;
 		constexpr float BaseElectricStacks = 1.f;
-		constexpr float Epsilon = 0.0001f;
 
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
-
-		const sas::GameplayAttribute* FindAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId
-		)
-		{
-			return sas::FindAttribute(definition.attributes, attributeId);
-		}
-
-		bool HasValidAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId,
-			float minimumBaseValue,
-			bool requireWholeNumber = false
-		)
-		{
-			const sas::GameplayAttribute* attribute = FindAttribute(
-				definition,
-				attributeId
-			);
-			if (!attribute ||
-				!std::isfinite(attribute->baseValue) ||
-				!std::isfinite(attribute->currentValue) ||
-				!std::isfinite(attribute->minValue) ||
-				!std::isfinite(attribute->maxValue) ||
-				attribute->minValue > attribute->maxValue ||
-				attribute->baseValue < minimumBaseValue ||
-				attribute->baseValue < attribute->minValue ||
-				attribute->baseValue > attribute->maxValue)
-			{
-				return false;
-			}
-			return !requireWholeNumber ||
-				std::round(attribute->baseValue) == attribute->baseValue;
-		}
-
-		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
-		{
-			if (definition.abilityTags.size() != 2)
-			{
-				return false;
-			}
-
-			bool hasCategory = false;
-			bool hasFamily = false;
-			for (const GameplayTag& tag : definition.abilityTags)
-			{
-				hasCategory = hasCategory || tag.MatchesTagExact(
-					AbilityData::StormMark::CategoryTag
-				);
-				hasFamily = hasFamily || tag.MatchesTagExact(
-					AbilityData::StormMark::FamilyTag
-				);
-			}
-			return hasCategory && hasFamily;
-		}
-
-		bool HasModifier(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			bool positive
-		)
-		{
-			return std::any_of(
-				step.attributeModifiers.begin(),
-				step.attributeModifiers.end(),
-				[&](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == attributeId &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						std::isfinite(modifier.magnitude) &&
-						(positive ? modifier.magnitude > 0.f : modifier.magnitude < 0.f);
-				}
-			);
-		}
+		using ability_checks::NearlyEqual;
+		using ability_checks::FindAttribute;
+		using ability_checks::HasValidAttribute;
 
 		bool HasValidEnergyPowerScaling(
 			const List<sas::AttributeScalingRule>& rules,
@@ -129,18 +52,6 @@ namespace ly
 				rules.front().operation == sas::AttributeModifierOperation::Add &&
 				std::isfinite(rules.front().coefficient) &&
 				(requirePositive ? rules.front().coefficient > 0.f : rules.front().coefficient >= 0.f);
-		}
-
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
 		}
 
 		CollisionLayer GetOpposingLayer(const Actor& owner)
@@ -234,7 +145,7 @@ namespace ly
 		const bool validIdentity =
 			definition.abilityId == AbilityData::StormMark::AbilityId::Basic &&
 			definition.behaviorType == AbilityBehaviorType::StormMark &&
-			HasExactAbilityTags(definition);
+			ability_checks::HasExactAbilityTags(definition, AbilityData::StormMark::CategoryTag, AbilityData::StormMark::FamilyTag);
 		const bool validLifecycle =
 			sas::IsLoadoutAbilitySlot(definition.slot) &&
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&
@@ -290,7 +201,7 @@ namespace ly
 					!step.unlockedUpgradeIds.empty() ||
 					!step.addedActions.empty() ||
 					!step.addedTriggers.empty() ||
-					!HasModifier(step, CommonAttributeIds::Damage, true) ||
+					!ability_checks::HasSignedModifier(step, CommonAttributeIds::Damage, true) ||
 					!HasValidEnergyPowerScaling(step.scalingRules, false))
 				{
 					validProgression = false;
@@ -429,7 +340,7 @@ namespace ly
 			}
 		);
 
-		const weak_ptr<Actor> ownerWeak = MakeWeakActor(&context.owner);
+		const weak_ptr<Actor> ownerWeak = context.owner.GetWeakActor();
 		const weak_ptr<Object> timerOwner = context.owner.GetWeakPtr();
 		const sas::ContentId sourceAbilityId{ context.definition.abilityId };
 		const List<GameplayTag> sourceAbilityTags = context.definition.abilityTags;

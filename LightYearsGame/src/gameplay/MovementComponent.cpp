@@ -14,8 +14,8 @@
 
 namespace ly
 {
-	MovementComponent::MovementComponent(SpaceShip& owner, const ShipDefinition& shipDef)
-		: mOwner(owner)
+	MovementComponent::MovementComponent(Actor& owner, const ShipDefinition& shipDef)
+		: ActorComponent(owner)
 		, mMovementMode(ShipMovementMode::LegacyVelocity)
 		, mBaseLegacySpeed(shipDef.speed)
 		, mBaseMovementAttributes(shipDef.movementAttributes)
@@ -24,10 +24,15 @@ namespace ly
 	{
 	}
 
+	SpaceShip& MovementComponent::GetShip() const
+	{
+		return static_cast<SpaceShip&>(GetOwner());
+	}
+
 	void MovementComponent::Tick(float deltaTime, float speedCapMultiplier)
 	{
 		mMovementPolicies.Tick(deltaTime);
-		const auto& ownedTags = mOwner.GetAbilitySystemComponent().GetOwnedTags();
+		const auto& ownedTags = GetShip().GetAbilitySystemComponent().GetOwnedTags();
 		const auto applyForcedMovement = [&]()
 		{
 			const sf::Vector2f forcedVelocity =
@@ -47,7 +52,7 @@ namespace ly
 				{
 					EndMovementBurst();
 				}
-				mOwner.SetVelocity({ 0.f, 0.f });
+				GetShip().SetVelocity({ 0.f, 0.f });
 				// Hard stasis discards both new and pre-existing impulses so releasing
 				// the lock cannot produce a delayed knockback.
 				mMovementInfluences.ClearImpulses();
@@ -63,7 +68,7 @@ namespace ly
 				{
 					EndMovementBurst();
 				}
-				mOwner.SetVelocity({ 0.f, 0.f });
+				GetShip().SetVelocity({ 0.f, 0.f });
 				applyForcedMovement();
 				TickInfluenceImpulses(deltaTime);
 				return;
@@ -83,9 +88,9 @@ namespace ly
 				ApplyThrustDriftDamping(deltaTime);
 				ClampThrustDriftVelocity(speedCapMultiplier);
 			}
-			const float movementMultiplier = mOwner.GetAbilitySystemComponent().GetAttributes()
+			const float movementMultiplier = GetShip().GetAbilitySystemComponent().GetAttributes()
 				.GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, 0.05f);
-			MoveOwner(mOwner.GetVelocity() * movementMultiplier * std::max(0.f, deltaTime));
+			MoveOwner(GetShip().GetVelocity() * movementMultiplier * std::max(0.f, deltaTime));
 			TickInfluenceImpulses(deltaTime);
 			return;
 		}
@@ -99,7 +104,7 @@ namespace ly
 			{
 				EndMovementBurst();
 			}
-			mOwner.SetVelocity({ 0.f, 0.f });
+			GetShip().SetVelocity({ 0.f, 0.f });
 			applyForcedMovement();
 			TickInfluenceImpulses(deltaTime);
 			return;
@@ -112,7 +117,7 @@ namespace ly
 			{
 				EndMovementBurst();
 			}
-			mOwner.SetVelocity({ 0.f, 0.f });
+			GetShip().SetVelocity({ 0.f, 0.f });
 			TickInfluenceImpulses(deltaTime);
 			return;
 		}
@@ -130,9 +135,9 @@ namespace ly
 			ClampThrustDriftVelocity(speedCapMultiplier);
 		}
 
-		const float movementMultiplier = mOwner.GetAbilitySystemComponent().GetAttributes()
+		const float movementMultiplier = GetShip().GetAbilitySystemComponent().GetAttributes()
 			.GetSequentialReductionMultiplier(OwnerAttributeIds::MovementSlow, 0.05f);
-		MoveOwner(mOwner.GetVelocity() * movementMultiplier * deltaTime);
+		MoveOwner(GetShip().GetVelocity() * movementMultiplier * deltaTime);
 		TickInfluenceImpulses(deltaTime);
 	}
 
@@ -148,7 +153,7 @@ namespace ly
 		float deltaTime
 	)
 	{
-		mOwner.SetVelocity(mOwner.GetVelocity() + acceleration * std::max(0.f, deltaTime));
+		GetShip().SetVelocity(GetShip().GetVelocity() + acceleration * std::max(0.f, deltaTime));
 	}
 
 	void MovementComponent::SetInfluenceAccelerationSource(
@@ -188,7 +193,7 @@ namespace ly
 		return mMovementPolicies.RemovePolicy(
 			sourceId,
 			releaseMode,
-			GetVectorLength(mOwner.GetVelocity()),
+			GetVectorLength(GetShip().GetVelocity()),
 			normalizationDuration
 		);
 	}
@@ -224,7 +229,7 @@ namespace ly
 
 	void MovementComponent::RefreshAttributes()
 	{
-		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
+		const sas::AttributeSystem& attributes = GetShip().GetAbilitySystemComponent().GetAttributes();
 		mMovementAttributes = mBaseMovementAttributes;
 
 		const float horizontalRating = attributes.HasAttribute(OwnerAttributeIds::MoveSpeedHorizontal)
@@ -281,21 +286,21 @@ namespace ly
 
 	float MovementComponent::ResolveForwardThrust() const
 	{
-		return mMovementAttributes.forwardThrust.currentValue * mOwner.GetThrustMultiplier();
+		return mMovementAttributes.forwardThrust.currentValue * GetShip().GetThrustMultiplier();
 	}
 
 	float MovementComponent::ResolveReverseThrust() const
 	{
 		return HasDirectionalThrustSync()
 			? ResolveForwardThrust()
-			: mMovementAttributes.reverseThrust.currentValue * mOwner.GetThrustMultiplier();
+			: mMovementAttributes.reverseThrust.currentValue * GetShip().GetThrustMultiplier();
 	}
 
 	float MovementComponent::ResolveStrafeThrust() const
 	{
 		return HasDirectionalThrustSync()
 			? ResolveForwardThrust()
-			: mMovementAttributes.strafeThrust.currentValue * mOwner.GetThrustMultiplier();
+			: mMovementAttributes.strafeThrust.currentValue * GetShip().GetThrustMultiplier();
 	}
 
 	float MovementComponent::ResolveCurrentSpeedCap(float speedCapMultiplier) const
@@ -308,7 +313,7 @@ namespace ly
 
 	sf::Vector2f MovementComponent::ResolveLegacySpeed(const sf::Vector2f& baseSpeed) const
 	{
-		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
+		const sas::AttributeSystem& attributes = GetShip().GetAbilitySystemComponent().GetAttributes();
 		const float horizontalRating = attributes.HasAttribute(OwnerAttributeIds::MoveSpeedHorizontal)
 			? std::max(0.f, attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal))
 			: 0.f;
@@ -357,8 +362,8 @@ namespace ly
 		}
 
 		AddWorldAcceleration(
-			mOwner.GetActorRightDirection() * weightedLocalAcceleration.x +
-			mOwner.GetActorForwardDirection() * weightedLocalAcceleration.y,
+			GetShip().GetActorRightDirection() * weightedLocalAcceleration.x +
+			GetShip().GetActorForwardDirection() * weightedLocalAcceleration.y,
 			deltaTime
 		);
 	}
@@ -369,7 +374,7 @@ namespace ly
 		{
 			return;
 		}
-		mOwner.SetVelocity(mOwner.GetVelocity() + worldAcceleration * deltaTime);
+		GetShip().SetVelocity(GetShip().GetVelocity() + worldAcceleration * deltaTime);
 	}
 
 	sf::Vector2f MovementComponent::ResolveMovementBurstDirection() const
@@ -381,9 +386,9 @@ namespace ly
 			return direction;
 		}
 
-		if (const World* world = mOwner.GetWorld())
+		if (const World* world = GetShip().GetWorld())
 		{
-			direction = world->GetMouseWorldPosition() - mOwner.GetActorLocation();
+			direction = world->GetMouseWorldPosition() - GetShip().GetActorLocation();
 			if (GetVectorLength(direction) > 0.001f)
 			{
 				NormalizeVector(direction);
@@ -410,7 +415,7 @@ namespace ly
 		}
 		NormalizeVector(direction);
 
-		const sas::AttributeSystem& attributes = mOwner.GetAbilitySystemComponent().GetAttributes();
+		const sas::AttributeSystem& attributes = GetShip().GetAbilitySystemComponent().GetAttributes();
 		const float horizontalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal);
 		const float verticalRating = attributes.GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical);
 		mResolvedMovementBurstDistance = request.useResolvedDistance
@@ -422,7 +427,7 @@ namespace ly
 			return false;
 		}
 
-		mPreservedMovementBurstVelocity = mOwner.GetVelocity();
+		mPreservedMovementBurstVelocity = GetShip().GetVelocity();
 		mMovementBurstVelocity = movement::MovementBurstMath::ResolveVelocity(
 			direction,
 			mResolvedMovementBurstDistance,
@@ -431,7 +436,7 @@ namespace ly
 		);
 		mMovementBurstTimeRemaining = request.duration;
 		mIsMovementBurstActive = true;
-		mOwner.SetVelocity(mMovementBurstVelocity);
+		GetShip().SetVelocity(mMovementBurstVelocity);
 		return true;
 	}
 
@@ -439,7 +444,7 @@ namespace ly
 	{
 		if (mIsMovementBurstActive)
 		{
-			mOwner.SetVelocity(mPreservedMovementBurstVelocity);
+			GetShip().SetVelocity(mPreservedMovementBurstVelocity);
 		}
 		mIsMovementBurstActive = false;
 		mMovementBurstTimeRemaining = 0.f;
@@ -455,7 +460,7 @@ namespace ly
 			return;
 		}
 
-		sf::Vector2f direction = worldLocation - mOwner.GetActorLocation();
+		sf::Vector2f direction = worldLocation - GetShip().GetActorLocation();
 		const float aimDistance = GetVectorLength(direction);
 		const float mouseAimDeadZone = std::max(0.f, mMovementAttributes.mouseAimDeadZone.currentValue);
 		if (aimDistance <= mouseAimDeadZone)
@@ -466,7 +471,7 @@ namespace ly
 		}
 
 		const float targetAngle = RadiansToDegrees(std::atan2(direction.y, direction.x)) + 90.f;
-		const float currentAngle = mOwner.GetActorRotation();
+		const float currentAngle = GetShip().GetActorRotation();
 		const float angleDelta = GetShortestAngleDelta(targetAngle, currentAngle);
 		const float maneuverability = std::max(0.f, turnCapabilityMultiplier);
 		const float maxTurnSpeed = std::max(0.f, mMovementAttributes.angularTurnSpeed.currentValue) * maneuverability;
@@ -494,7 +499,7 @@ namespace ly
 			mAngularVelocity = 0.f;
 		}
 
-		mOwner.SetActorRotation(currentAngle + turnAmount);
+		GetShip().SetActorRotation(currentAngle + turnAmount);
 	}
 
 	void MovementComponent::ApplyThrustDriftDamping(float deltaTime)
@@ -502,19 +507,19 @@ namespace ly
 		const float dampingCoefficient = mMovementPolicies.ResolveDampingRetention(
 			mMovementAttributes.linearDamping.currentValue
 		);
-		mOwner.SetVelocity(mOwner.GetVelocity() * std::pow(dampingCoefficient, deltaTime));
+		GetShip().SetVelocity(GetShip().GetVelocity() * std::pow(dampingCoefficient, deltaTime));
 	}
 
 	void MovementComponent::ClampThrustDriftVelocity(float speedCapMultiplier)
 	{
 		const float maxSpeed = ResolveCurrentSpeedCap(speedCapMultiplier);
-		const float currentSpeed = GetVectorLength(mOwner.GetVelocity());
+		const float currentSpeed = GetVectorLength(GetShip().GetVelocity());
 		if (maxSpeed <= 0.f || currentSpeed <= maxSpeed)
 		{
 			return;
 		}
 
-		mOwner.SetVelocity(mOwner.GetVelocity() * (maxSpeed / currentSpeed));
+		GetShip().SetVelocity(GetShip().GetVelocity() * (maxSpeed / currentSpeed));
 	}
 
 	bool MovementComponent::TickMovementBurst(float deltaTime)
@@ -528,7 +533,7 @@ namespace ly
 			std::max(0.f, deltaTime),
 			mMovementBurstTimeRemaining
 		);
-		mOwner.SetVelocity(mMovementBurstVelocity);
+		GetShip().SetVelocity(mMovementBurstVelocity);
 		MoveOwner(mMovementBurstVelocity * stepDuration);
 		mMovementBurstTimeRemaining = std::max(
 			0.f,
@@ -543,8 +548,8 @@ namespace ly
 
 	void MovementComponent::MoveOwner(const sf::Vector2f& requestedOffset)
 	{
-		mOwner.AddActorLocationOffset(
-			movement::ConstrainMovementAgainstStaticGeometry(mOwner, requestedOffset)
+		GetShip().AddActorLocationOffset(
+			movement::ConstrainMovementAgainstStaticGeometry(GetShip(), requestedOffset)
 		);
 	}
 

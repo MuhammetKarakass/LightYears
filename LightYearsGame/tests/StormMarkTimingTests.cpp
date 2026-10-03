@@ -24,7 +24,7 @@ namespace
 	{
 	public:
 		explicit TestCombatant(ly::World* world = nullptr)
-			: Actor{ world }, mHealth{ 100.f, 100.f }, mCombatRuntime{ *this }
+			: Actor{ world }, mHealth{ AddComponent<ly::HealthComponent>(100.f, 100.f) }, mCombatRuntime{ *this }
 		{
 			mCombatRuntime.InitializeOwnerAttributes(100.f);
 		}
@@ -41,7 +41,7 @@ namespace
 		}
 
 	private:
-		ly::HealthComponent mHealth;
+		ly::HealthComponent& mHealth;
 		ly::CombatRuntime mCombatRuntime;
 	};
 

@@ -1,12 +1,13 @@
 #include "environment/Asteroid.h"
 #include "gameplay/combat/Combatant.h"
+#include <framework/SpriteComponent.h>
 
 namespace ly
 {
 	Asteroid::Asteroid(World* owningWorld, const sf::Vector2f& velocity, float health, float damage):
 		Actor{owningWorld},
 		mVelocity{ velocity },
-		mHealthComponent{ health, health },
+		mHealthComponent{ AddComponent<HealthComponent>(health, health) },
 		mDamage{ damage },
 		mBlinkColor{ 255, 0, 0, 255 },
 		mBlinkTime{ 0.f },
@@ -21,7 +22,7 @@ namespace ly
 		if (!mTexturePaths.empty())
 		{
 			auto randIndex = RandRange(0, (int)mTexturePaths.size() - 1);
-			SetTexture(mTexturePaths[randIndex]);
+			GetOrAddComponent<SpriteComponent>().SetTexture(mTexturePaths[randIndex]);
 		}	
 		mRewards = 
 		{
@@ -54,9 +55,9 @@ namespace ly
 	}
 	void Asteroid::SetAsteroidScale(float scale)
 	{
-		if (auto& sprite = GetSprite())
+		if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
 		{
-			sprite->setScale({ scale, scale });
+			spriteComponent->GetSprite()->setScale({ scale, scale });
 		}
 	}
 	void Asteroid::Tick(float deltaTime)
@@ -98,7 +99,10 @@ namespace ly
 		{
 			mBlinkTime -= deltaTime;
 			mBlinkTime = mBlinkTime > 0 ? mBlinkTime : 0.f;
-			GetSprite().value().setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime/mBlinkDuration));
+			if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
+			{
+				spriteComponent->GetSprite()->setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime/mBlinkDuration));
+			}
 		}
 	}
 

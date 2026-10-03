@@ -1,4 +1,5 @@
 #include "framework/World.h"
+#include "framework/SpriteComponent.h"
 #include "framework/Core.h"
 #include "framework/Application.h"
 #include "gameConfigs/combat/CombatTick.h"
@@ -86,7 +87,7 @@ namespace ly
 			explicit AbilityBalanceE2EShip(World* world)
 				: SpaceShip{ world, MakeTestShipDefinition() }
 			{
-				CenterPivot();
+				if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>()) spriteComponent->CenterPivot();
 			}
 
 			float GetPhysicsCollisionRadius() const override { return 14.f; }

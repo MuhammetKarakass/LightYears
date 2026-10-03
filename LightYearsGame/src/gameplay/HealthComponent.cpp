@@ -4,8 +4,9 @@
 
 namespace ly
 {
-	HealthComponent::HealthComponent(float health, float maxHealth):
-		mHealth{health},        
+	HealthComponent::HealthComponent(Actor& owner, float health, float maxHealth):
+		ActorComponent{owner},
+		mHealth{health},
 		mMaxHealth{maxHealth}  
 	{
 

@@ -4,6 +4,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/cryoBola/CryoBolaContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 
 #include <algorithm>
@@ -21,29 +22,8 @@ namespace ly
 		constexpr float EnergyPowerDamageScalePerLevel = 0.06f;
 		constexpr float DirectHitDamageMultiplier = 1.50f;
 
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= 0.0001f;
-		}
-
-		bool HasModifier(
-			const AbilityLevelStep& step,
-			const sas::AttributeId& attributeId,
-			float magnitude
-		)
-		{
-			return std::any_of(
-				step.attributeModifiers.begin(),
-				step.attributeModifiers.end(),
-				[&](const sas::AttributeModifier& modifier)
-				{
-					return modifier.attributeId == attributeId &&
-						modifier.operation == sas::AttributeModifierOperation::Add &&
-						NearlyEqual(modifier.magnitude, magnitude);
-				}
-			);
-		}
+		using ability_checks::NearlyEqual;
+		using ability_checks::HasModifier;
 
 		bool HasSpawnAction(const GameAbilityDefinition& definition)
 		{

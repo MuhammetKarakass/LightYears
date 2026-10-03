@@ -1,5 +1,6 @@
 #pragma once
 
+#include <framework/ActorComponent.h>
 #include <framework/Core.h>
 #include <framework/Delegate.h>
 #include "gameplay/resource/TemporaryOvercapLedger.h"
@@ -8,10 +9,13 @@
 
 namespace ly
 {
-	class HealthComponent
+	// Not ticked automatically (mCanEverTick stays false): the owning actor drives
+	// TickTemporaryOverhealths from its own regeneration step so the per-frame
+	// order is unchanged (UE tick-prerequisite equivalent).
+	class HealthComponent : public ActorComponent
 	{
 	public:
-		HealthComponent(float health, float maxHealth);
+		HealthComponent(Actor& owner, float health, float maxHealth);
 
 		float GetHealth() const { return mHealth; };
 		float GetMaxHealth() const { return mMaxHealth; };

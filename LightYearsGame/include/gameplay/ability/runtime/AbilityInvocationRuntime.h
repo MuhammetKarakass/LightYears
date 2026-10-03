@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ClearResult.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
 
@@ -35,7 +36,9 @@ namespace ly
 		// echoed WhileHeld abilities can charge and release like their originals.
 		void SetControlInput(sas::AbilitySlot controlSlot, bool inputHeld);
 		void Tick(float deltaTime);
-		void Clear();
+		// Pending while a cancelled invocation is still active or has retained cleanup; those
+		// invocations stay owned here until a later Clear succeeds.
+		sas::ClearResult Clear();
 
 		std::size_t GetActiveInvocationCount() const
 		{

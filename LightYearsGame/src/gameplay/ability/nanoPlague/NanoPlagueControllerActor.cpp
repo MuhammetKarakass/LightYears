@@ -16,24 +16,13 @@
 
 namespace ly
 {
-	namespace
-	{
-		weak_ptr<Actor> MakeWeakActor(Actor& actor)
-		{
-			const shared_ptr<Object> object = actor.GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-	}
-
 	NanoPlagueControllerActor::NanoPlagueControllerActor(
 		World* world,
 		Actor* owner,
 		const NanoPlaguePresentationProfile& profile
 	)
 		: Actor(world)
-		, mOwner(owner ? MakeWeakActor(*owner) : weak_ptr<Actor>{})
+		, mOwner(owner ? owner->GetWeakActor() : weak_ptr<Actor>{})
 		, mProfile(profile)
 	{
 		SetRenderLayer(RenderLayer::World);
@@ -62,7 +51,7 @@ namespace ly
 			return {};
 		}
 
-		const weak_ptr<Actor> ownerWeak = MakeWeakActor(owner);
+		const weak_ptr<Actor> ownerWeak = owner.GetWeakActor();
 		const shared_ptr<Actor> managedOwner = ownerWeak.lock();
 		if (!managedOwner || managedOwner.get() != &owner) return {};
 
@@ -150,7 +139,7 @@ namespace ly
 
 		Infection infection;
 		infection.id = mNextInfectionId++;
-		infection.target = MakeWeakActor(target);
+		infection.target = target.GetWeakActor();
 		infection.generation = generation;
 		infection.remainingDuration = mSettings.duration;
 		const auto id = infection.id;
@@ -439,7 +428,7 @@ namespace ly
 	{
 		mPulses.push_back(Pulse{
 			origin,
-			MakeWeakActor(target),
+			target.GetWeakActor(),
 			0.f,
 			isSpread ? mProfile.spreadDuration : mProfile.injectionDuration,
 			isSpread

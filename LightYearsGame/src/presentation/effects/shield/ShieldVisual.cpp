@@ -1,5 +1,6 @@
 #include "attributes/AttributeSystem.h"
 #include "presentation/effects/shield/ShieldVisual.h"
+#include <framework/SpriteComponent.h>
 
 #include "gameConfigs/combat/EffectStructs.h"
 
@@ -22,10 +23,10 @@ namespace ly
 	void ShieldVisual::BeginPlay()
 	{
 		Actor::BeginPlay();
-		if (GetSprite())
+		if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
 		{
-			GetSprite()->setColor(mDefinition.color);
-			GetSprite()->setScale({ mDefinition.baseScale, mDefinition.baseScale });
+			spriteComponent->GetSprite()->setColor(mDefinition.color);
+			spriteComponent->GetSprite()->setScale({ mDefinition.baseScale, mDefinition.baseScale });
 		}
 	}
 
@@ -56,10 +57,12 @@ namespace ly
 		AddActorRotationOffset(mDefinition.rotationSpeed * deltaTime);
 		mPulseTime += deltaTime;
 
-		if (!GetSprite())
+		SpriteComponent* spriteComponent = FindComponent<SpriteComponent>();
+		if (!spriteComponent || !spriteComponent->HasSprite())
 		{
 			return;
 		}
+		std::optional<sf::Sprite>& sprite = spriteComponent->GetSprite();
 
 		const float integrityLoss = 1.f - mIntegrityRatio;
 		const float pulseSpeed = mDefinition.pulseSpeed * (
@@ -67,7 +70,7 @@ namespace ly
 		);
 		const float pulse = (std::sin(mPulseTime * pulseSpeed) + 1.f) * 0.5f;
 		const float scale = mDefinition.baseScale + pulse * mDefinition.pulseScaleAmount;
-		GetSprite()->setScale({ scale, scale });
+		sprite->setScale({ scale, scale });
 
 		const float baseAlpha = mDefinition.minimumAlpha
 			+ pulse * (mDefinition.maximumAlpha - mDefinition.minimumAlpha);
@@ -80,7 +83,7 @@ namespace ly
 			0.f,
 			255.f
 		));
-		GetSprite()->setColor(color);
+		sprite->setColor(color);
 	}
 
 }

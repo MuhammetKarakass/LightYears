@@ -2,6 +2,7 @@
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/ability/zeroDrag/ZeroDragContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/movement/MovementPolicyService.h"
@@ -17,26 +18,14 @@ namespace ly
 {
 	namespace
 	{
-		constexpr float Epsilon = 0.0001f;
-
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
+		using ability_checks::NearlyEqual;
 
 		bool IsFiniteNonNegative(float value)
 		{
 			return std::isfinite(value) && value >= 0.f;
 		}
 
-		const sas::GameplayAttribute* FindAttribute(
-			const GameAbilityDefinition& definition,
-			const sas::AttributeId& attributeId
-		)
-		{
-			return sas::FindAttribute(definition.attributes, attributeId);
-		}
+		using ability_checks::FindAttribute;
 
 		float FindValue(
 			const sas::GameplayAttributeList& values,

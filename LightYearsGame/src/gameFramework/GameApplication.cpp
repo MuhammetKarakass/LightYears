@@ -67,6 +67,7 @@ namespace ly
 			else if (arg == "--capture-frames" && hasValue) options.captureFrames = std::max(1, std::atoi(__argv[++i]));
 			else if (arg == "--visual-player-hull" && hasValue) options.playerHull = std::clamp(static_cast<float>(std::atof(__argv[++i])), 0.f, 1.f);
 			else if (arg == "--visual-ship" && hasValue) options.shipIndex = std::atoi(__argv[++i]);
+			else if (arg == "--visual-assets" && hasValue) options.visualAssets = __argv[++i];
 		}
 #endif
 		return options;
@@ -74,10 +75,25 @@ namespace ly
 
 	void GameApplication::InitializeVisualPipeline()
 	{
-		// First integration pass: read the library assets straight from the source tree so shader, palette and
-		// pipeline.json edits hot-reload without a rebuild. A packaged copy step can replace this later.
+		// Order: --visual-assets, the packaged <exe dir>/visual copy (non-Debug builds), then the source tree so debug
+		// builds hot-reload shader, palette and pipeline.json edits without a rebuild.
+		std::filesystem::path assetsDir;
+		const char* origin = "--visual-assets";
+		if (!mDevOptions.visualAssets.empty()) assetsDir = mDevOptions.visualAssets;
+		else
+		{
+			std::error_code error;
+			assetsDir = (std::filesystem::path(getResourceDir()) / ".." / "visual").lexically_normal();
+			origin = "packaged copy";
+			if (!std::filesystem::is_directory(assetsDir, error))
+			{
+				assetsDir = LY_VISUAL_ASSETS_DIR;
+				origin = "source tree";
+			}
+		}
+		LY_GAME_INFO("Visual pipeline assets (%s): %s", origin, assetsDir.string().c_str());
 		mVisualPipeline = std::make_unique<GameVisualPipeline>();
-		mVisualPipeline->Initialize(GetRenderWindow(), std::filesystem::path(LY_VISUAL_ASSETS_DIR), mDevOptions.colorScript);
+		mVisualPipeline->Initialize(GetRenderWindow(), assetsDir, mDevOptions.colorScript);
 		mVisualPipeline->SetEnabled(!mDevOptions.visualOff);
 		if (mDevOptions.playerHull >= 0.f)
 		{

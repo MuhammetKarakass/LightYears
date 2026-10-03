@@ -17,18 +17,6 @@
 
 namespace
 {
-	ly::weak_ptr<ly::Actor> MakeWeakActor(ly::Actor* actor)
-	{
-		if (!actor)
-		{
-			return {};
-		}
-		const ly::shared_ptr<ly::Object> object = actor->GetWeakPtr().lock();
-		return object
-			? std::dynamic_pointer_cast<ly::Actor>(object)
-			: ly::weak_ptr<ly::Actor>{};
-	}
-
 	float DistanceSquaredToActorBounds(
 		const ly::Actor& actor,
 		const sf::Vector2f& point
@@ -73,7 +61,7 @@ namespace ly
 {
 	AbilityWorldActor::AbilityWorldActor(World* world, Actor* owner, const std::string& texturePath)
 		: Actor(world, texturePath),
-		mOwner{ MakeWeakActor(owner) },
+		mOwner{ owner ? owner->GetWeakActor() : weak_ptr<Actor>{} },
 		mUnmanagedOwner{ mOwner.expired() ? owner : nullptr },
 		mDamage{ 0.f },
 		mLifeTime{ 0.f },
@@ -275,7 +263,7 @@ namespace ly
 				: nullptr;
 			mHasOriginalProjectileOwner = true;
 		}
-		mOwner = MakeWeakActor(&newOwner);
+		mOwner = newOwner.GetWeakActor();
 		mUnmanagedOwner = mOwner.expired() ? &newOwner : nullptr;
 		SetSimulationTimeDomain(
 			IsProjectileActor()

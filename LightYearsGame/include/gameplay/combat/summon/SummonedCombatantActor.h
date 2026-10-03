@@ -45,7 +45,7 @@ namespace ly
 		void SynchronizeDynamicOwnerCombatAttributes();
 		void OnHealthEmpty();
 
-		HealthComponent mHealthComponent;
+		HealthComponent& mHealthComponent;
 		CombatRuntime mCombatRuntime;
 		CombatantConfiguration mConfiguration;
 	};

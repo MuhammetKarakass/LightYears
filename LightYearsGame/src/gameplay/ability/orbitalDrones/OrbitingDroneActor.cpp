@@ -20,19 +20,6 @@ namespace ly
 		constexpr float Pi = 3.14159265358979323846f;
 		constexpr float TwoPi = Pi * 2.f;
 
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-
 		float NormalizeAngle(float radians)
 		{
 			if (!std::isfinite(radians))
@@ -90,7 +77,7 @@ namespace ly
 		OrbitConfiguration orbit
 	)
 		: AbilityWorldActor(world, owner),
-		mOwnerActor{ MakeWeakActor(owner) },
+		mOwnerActor{ owner ? owner->GetWeakActor() : weak_ptr<Actor>{} },
 		mPresentationProfile{ presentationProfile },
 		mOrbit{ orbit },
 		mGlow{ std::max(1.f, presentationProfile.visual.glowRadius), 24 },
@@ -406,7 +393,7 @@ namespace ly
 			}
 			mTouchingTargets.erase(touching);
 		}
-		mTouchingTargets.emplace(targetId, MakeWeakActor(target));
+		mTouchingTargets.emplace(targetId, target ? target->GetWeakActor() : weak_ptr<Actor>{});
 
 		const auto found = mNextHitAllowedAt.find(targetId);
 		if (found != mNextHitAllowedAt.end() &&
@@ -435,7 +422,7 @@ namespace ly
 			GetSourceAbilityTags()
 		);
 		mNextHitAllowedAt[targetId] = {
-			MakeWeakActor(target),
+			target ? target->GetWeakActor() : weak_ptr<Actor>{},
 			mContactClock + mSameTargetHitCooldown
 		};
 	}

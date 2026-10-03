@@ -4,7 +4,6 @@
 #include "abilities/AbilityEvent.h"
 #include "gameplay/damage/DamageContext.h"
 #include "framework/Delegate.h"
-#include "presentation/effects/GameplayEffectPresentationBinding.h"
 #include "gameplay/combat/ContactDamageGuardRegistry.h"
 #include "gameplay/combat/CombatRuntimeModifiers.h"
 
@@ -16,18 +15,23 @@
 namespace ly
 {
 	class Actor;
+	class GameplayEffectPresentationBinding;
 
 	class CombatRuntime
 	{
 	public:
 		explicit CombatRuntime(Actor& owner);
+		~CombatRuntime();
 
 		void InitializeOwnerAttributes(float maxHealth);
 		float GetCriticalChance() const;
 		float GetCriticalDamageMultiplier() const;
 		float GetCombatLuckFactor() const;
 		void Tick(float deltaTime);
-		void Clear();
+		// Pending when the owner ability system deferred or could not finish its clear (retained
+		// ability cleanup); it stays requested and retries on its next operation. Callers that are
+		// destroying the owner may drop Pending: the retained state dies with the owner.
+		sas::ClearResult Clear();
 
 		bool SetRuntimeModifier(const std::string& sourceId, CombatRuntimeModifier modifier);
 		bool RemoveRuntimeModifier(const std::string& sourceId);
@@ -113,7 +117,7 @@ namespace ly
 
 		Actor& mOwner;
 		LightYearsAbilitySystemComponent mAbilitySystemComponent;
-		GameplayEffectPresentationBinding mEffectPresentation;
+		std::unique_ptr<GameplayEffectPresentationBinding> mEffectPresentation;
 		ContactDamageGuardRegistry mContactDamageGuardRegistry;
 		List<QueuedEffectEvent> mPendingEffectEvents;
 		DamageDispatchFrame* mCurrentDamageDispatchFrame = nullptr;

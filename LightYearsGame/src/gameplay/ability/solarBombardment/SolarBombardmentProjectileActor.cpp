@@ -37,18 +37,6 @@ namespace ly
 			DamageAttributeIds::Root
 		};
 
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-
 		sf::Color WithAlpha(const sf::Color& color, float multiplier)
 		{
 			sf::Color result = color;
@@ -202,7 +190,7 @@ namespace ly
 		: AbilityWorldActor(world, owner),
 		mPresentationProfile(presentationProfile),
 		mRequestedTargetLocation(std::move(requestedTargetLocation)),
-		mOwnerReference(MakeWeakActor(owner)),
+		mOwnerReference(owner ? owner->GetWeakActor() : weak_ptr<Actor>{}),
 		mProjectileGlow(1.f, 32),
 		mProjectileCore(1.f, 24),
 		mExplosionOuter(1.f, 64),

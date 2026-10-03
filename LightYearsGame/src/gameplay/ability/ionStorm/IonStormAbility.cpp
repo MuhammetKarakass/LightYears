@@ -3,6 +3,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
 #include "gameplay/ability/ionStorm/IonStormContracts.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -23,13 +24,8 @@ namespace ly
 		constexpr float BaseOuterMinRadius = 350.f;
 		constexpr float BaseOuterMaxRadius = 350.f;
 		constexpr float BaseBoundaryPointCount = 20.f;
-		constexpr float Epsilon = 0.0001f;
 
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
+		using ability_checks::NearlyEqual;
 
 		const sas::GameplayAttribute* FindDefinitionAttribute(
 			const List<sas::GameplayAttribute>& attributes,
@@ -66,27 +62,6 @@ namespace ly
 			}
 			return !wholeNumber ||
 				std::round(attribute->baseValue) == attribute->baseValue;
-		}
-
-		bool HasExactAbilityTags(const GameAbilityDefinition& definition)
-		{
-			if (definition.abilityTags.size() != 2)
-			{
-				return false;
-			}
-
-			bool hasCategory = false;
-			bool hasFamily = false;
-			for (const GameplayTag& tag : definition.abilityTags)
-			{
-				hasCategory = hasCategory || tag.MatchesTagExact(
-					AbilityData::IonStorm::CategoryTag
-				);
-				hasFamily = hasFamily || tag.MatchesTagExact(
-					AbilityData::IonStorm::FamilyTag
-				);
-			}
-			return hasCategory && hasFamily;
 		}
 
 		bool HasExpectedScaling(const GameAbilityDefinition& definition)
@@ -164,7 +139,7 @@ namespace ly
 		const bool validIdentity =
 			definition.abilityId == AbilityData::IonStorm::AbilityId::Basic &&
 			definition.behaviorType == AbilityBehaviorType::IonStorm &&
-			HasExactAbilityTags(definition);
+			ability_checks::HasExactAbilityTags(definition, AbilityData::IonStorm::CategoryTag, AbilityData::IonStorm::FamilyTag);
 		const bool validLifecycle =
 			sas::IsLoadoutAbilitySlot(definition.slot) &&
 			definition.activationPolicy == sas::AbilityActivationPolicy::OnPressed &&

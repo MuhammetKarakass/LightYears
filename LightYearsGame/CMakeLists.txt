@@ -1,58 +1,51 @@
 set(LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME LightYearsGameplayCore)
+set(LIGHT_YEARS_GAME_LIB_TARGET_NAME LightYearsGameLib)
 
-# Game-specific reusable gameplay services. This target deliberately depends on
-# SpaceAbilitySystem instead of extending it with LightYears contracts, content,
-# actors, or presentation rules.
-add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContract.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/NumericSettingContractRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/GameAbilityContentRegistration.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/energySpear/EnergySpearContentRegistration.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/AbilityBehaviorType.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorType.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/AbilityLifecycleDispatcher.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/AbilityUseHistory.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/FocusActionLocks.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/temporal/TemporalRateModifierLedger.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementPolicyTypes.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementPolicyController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementPolicyController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIdSchema.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/content/NumericSettingContractRegistry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/content/GameAbilityContentRegistration.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/energySpear/EnergySpearContentRegistration.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityLifecycleDispatcher.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityUseHistory.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/FocusActionLocks.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/temporal/TemporalRateModifierLedger.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/AbilityActionValidator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/AbilityActionValidator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/GameAbilityDefinitionValidator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/GameAbilityDefinitionValidator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/validation/GameplayEffectDefinitionValidator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/validation/GameplayEffectDefinitionValidator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/GameContentBootstrap.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/GameContentBootstrap.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModuleDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipSchematic.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipSchematicValidator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ShipSchematicValidator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ScopedAbilityRule.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModuleLoadout.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModulePlacementRules.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ModuleResolver.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ModuleLoadout.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ModulePlacementRules.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ModuleResolver.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ModuleLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ModuleLoader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ModuleContentCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ModuleContentCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/GameAbilitySettingContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/GameAbilitySettingContracts.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/LightYearsEffectBehaviorRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/LightYearsEffectBehaviorRuntime.cpp
+# Sources are discovered by directory; adding a .cpp/.h under src/ or include/ needs no CMake edit.
+# Every .cpp under src/ is compiled (there are no orphan sources). The sources are split into three
+# groups, each compiled exactly once:
+#   LightYearsGameplayCore - reusable gameplay services that depend only on SpaceAbilitySystem
+#   LightYearsGameLib      - the rest of the game that tests can link without a window or visual pipeline
+#   LightYearsGame         - the executable: app entry (gameFramework/) and the LightYearsVisual presenters
+file(GLOB_RECURSE LY_GAME_CPP CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE LY_GAME_HEADERS CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
+
+# Executable-only code: game application entry and the presenters built on LightYearsVisual.
+set(LY_GAME_APP_DIR_REGEX "/(src|include)/(gameFramework|presentation/visual)/")
+set(LY_GAME_APP_CPP ${LY_GAME_CPP})
+list(FILTER LY_GAME_APP_CPP INCLUDE REGEX "${LY_GAME_APP_DIR_REGEX}")
+set(LY_GAME_APP_HEADERS ${LY_GAME_HEADERS})
+list(FILTER LY_GAME_APP_HEADERS INCLUDE REGEX "${LY_GAME_APP_DIR_REGEX}")
+list(FILTER LY_GAME_CPP EXCLUDE REGEX "${LY_GAME_APP_DIR_REGEX}")
+list(FILTER LY_GAME_HEADERS EXCLUDE REGEX "${LY_GAME_APP_DIR_REGEX}")
+
+# Gameplay core: game-specific reusable services. LightYearsGameplayCore deliberately depends on
+# SpaceAbilitySystem instead of extending it with LightYears contracts, content, actors, or
+# presentation rules, and some tests (e.g. MovementPolicyTests) link only this library. The files
+# do not share a directory, so they are selected by file name.
+set(LY_GAMEPLAY_CORE_FILES
+	MovementPolicyController NumericSettingContractRegistry GameAbilityContentRegistration
+	EnergySpearContentRegistration AbilityLifecycleDispatcher AbilityUseHistory FocusActionLocks
+	TemporalRateModifierLedger AbilityActionValidator GameAbilityDefinitionValidator
+	GameplayEffectDefinitionValidator GameContentBootstrap ShipSchematicValidator ModuleLoadout
+	ModulePlacementRules ModuleResolver ModuleLoader ModuleContentCatalog GameAbilitySettingContracts
+	LightYearsEffectBehaviorRuntime
+)
+string(JOIN "|" LY_GAMEPLAY_CORE_REGEX_BODY ${LY_GAMEPLAY_CORE_FILES})
+set(LY_GAMEPLAY_CORE_REGEX "/src/.*/(${LY_GAMEPLAY_CORE_REGEX_BODY})\\.cpp$")
+set(LY_GAMEPLAY_CORE_CPP ${LY_GAME_CPP})
+list(FILTER LY_GAMEPLAY_CORE_CPP INCLUDE REGEX "${LY_GAMEPLAY_CORE_REGEX}")
+list(FILTER LY_GAME_CPP EXCLUDE REGEX "${LY_GAMEPLAY_CORE_REGEX}")
+list(LENGTH LY_GAMEPLAY_CORE_FILES LY_GAMEPLAY_CORE_FILE_COUNT)
+list(LENGTH LY_GAMEPLAY_CORE_CPP LY_GAMEPLAY_CORE_CPP_COUNT)
+if(NOT LY_GAMEPLAY_CORE_CPP_COUNT EQUAL LY_GAMEPLAY_CORE_FILE_COUNT)
+	message(FATAL_ERROR "LY_GAMEPLAY_CORE_FILES lists ${LY_GAMEPLAY_CORE_FILE_COUNT} files but ${LY_GAMEPLAY_CORE_CPP_COUNT} were found under src/ (renamed, moved, or duplicated?): ${LY_GAMEPLAY_CORE_CPP}")
+endif()
+
+add_library(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME} STATIC ${LY_GAMEPLAY_CORE_CPP})
 target_include_directories(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -64,918 +57,25 @@ target_link_libraries(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		nlohmann_json::nlohmann_json
 )
 
-# Encounter presentation sources, shared by the game and the GasLite test targets.
-set(LIGHT_YEARS_ENCOUNTER_HUD_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/encounter/EncounterHUDController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/encounter/EncounterHUDController.cpp
+# The rest of the game, shared by the executable and every gameplay test. Some objects only register
+# themselves or are reached indirectly, so consumers that need the full game link it whole-archive.
+add_library(${LIGHT_YEARS_GAME_LIB_TARGET_NAME} STATIC ${LY_GAME_CPP} ${LY_GAME_HEADERS})
+target_include_directories(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
+	PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+)
+target_link_libraries(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
+	PUBLIC
+		${LIGHT_YEARS_ENGINE_TARGET_NAME}
+		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		nlohmann_json::nlohmann_json
 )
 
-set(LIGHT_YEARS_UI_HUD_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/MenuLayout.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/MenuLayout.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarViewModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarPresenter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityBarPresenter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarView.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityBarView.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/ability/AbilityBarHUDController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/ability/AbilityBarHUDController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/encounter/EncounterHUDPresentation.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/encounter/EncounterHUDView.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/encounter/EncounterHUDView.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsViewModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsPresenter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsPresenter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsView.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsView.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/vitals/VitalsHUDController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/vitals/VitalsHUDController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenViewModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenPresenter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/modules/ModuleScreenPresenter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenView.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/modules/ModuleScreenView.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/modules/ModuleScreenHUDController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/modules/ModuleScreenHUDController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/warning/GameplayWarningViewModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/warning/GameplayWarningViewModel.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/warning/GameplayWarningView.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/warning/GameplayWarningView.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationViewModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationPresenter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationPresenter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationView.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationView.cpp
-)
+add_executable(${LIGHT_YEARS_GAME_TARGET_NAME} ${LY_GAME_APP_CPP} ${LY_GAME_APP_HEADERS})
 
-add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameFramework/GameApplication.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/GameVisualPipeline.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/GameVisualPipeline.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/ProceduralBackdrop.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/ProceduralBackdrop.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/EnergyLightPresenter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/EnergyLightPresenter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/ShipVisualPresenter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/ShipVisualPresenter.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/spaceship/Spaceship.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/spaceship/Spaceship.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerSpaceship.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceship.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerMovementComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/module/ShipModuleApplier.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ShipModuleApplier.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/input/AbilityInputSchema.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/input/AbilityInputSchema.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/OwnedAbilityState.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/AbilityInventory.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityInventory.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/AbilityLoadout.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadout.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/AbilityLoadoutManager.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadoutManager.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/loadout/DefaultAbilityLoadout.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/HealthComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ShieldComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/resource/TemporaryOvercapLedger.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/resource/TemporaryOvercapLedger.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/temporal/TemporalStateHistory.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/temporal/TemporalStateHistory.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/EnergyComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/MovementComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementBurstTypes.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementBurstMath.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementInfluenceTypes.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementInfluenceController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementInfluenceController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementInfluenceService.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementInfluenceService.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementPolicyService.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementPolicyService.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/movement/MovementCollisionService.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementCollisionService.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ship/ShipRuntimeModifiers.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntimeModifiers.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/GameplayTagSchema.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/GameplayTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/DashTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/GravityAnomalyTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/HullShockTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/InfernoSprayTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/OverdriveCoreTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/NullPulseTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/OrbitalDronesTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/PhaseDriftTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/RelayPrismTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/RailBurstTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/MineLayerTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/EnergySpearTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ScorchDriveTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/CrescentReaverTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/AegisReaverTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/IonStormTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/SolarBombardmentTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/StrikeRunTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/BlastbackTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/SeismicChargeTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ArcScythesTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/VectorSyncTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ZeroDragTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/InertialWakeTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/LanceDriveTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/TemporalConvergenceTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/FoldspaceArenaTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/TemporalRecallTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/TimeSlipTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ChainLightningTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/StormMarkTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/GlacialPressureTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/RocketTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ShieldTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ShieldHarvestTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ShieldGraftTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/EmberSwarmTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/CryostasisTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/CryoBolaTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/FrozenThrongTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ReclaimerProtocolTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/CombatSentryTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/NanoPlagueTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/CrystalBarricadeTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/SunBeamTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/AstralSurgeTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetingTypes.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/AutoTargeting.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/CombatTargetPriority.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/CombatantTargetQuery.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/CombatantTargetQuery.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/targeting/TargetAllocation.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/WeaponLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AttributeJsonParser.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/WeaponContentCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponContentCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ShipLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ShipContentCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionJsonParser.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityDefinitionMaterializer.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/ContentIdSchema.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/EffectBehaviorKeys.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/runtime/PrimaryWeaponOverrideState.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/runtime/PrimaryWeaponOverrideState.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/AbilityContentCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EffectLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EffectContentCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/DamageStatusBalanceLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceLoader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/DamageStatusBalanceCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyCombatProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyRuntime.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyCombatProfileLoader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileLoader.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyCombatProfileCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyContentCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyContentCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/content/EnemyFactory.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyFactory.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/encounter/EncounterWaveRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/encounter/EncounterWaveRuntime.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorProfileValidator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorProfileValidator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorDecision.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorDecision.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/enemy/EnemyBehaviorRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorRuntime.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementMath.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashMovementController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashContracts.h
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/GameplayWarning.h
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/content/GameAbilityDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbilityActionExecutor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actions/AbilityActionAttributeResolver.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actions/FireWeaponActionRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityActorStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/AbilityCatalog.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/DashConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/GravityAnomalyConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/InfernoSprayConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/OverdriveCoreConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/OrbitalDronesConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/ExecutionDriveConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/RailBurstConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/AstralSurgeConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/WingSentinelsConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/CrescentReaverConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/AegisReaverConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/MineLayerConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/ScorchDriveConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/EnergySpearConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/IonStormConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/SolarBombardmentConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/StrikeRunConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/BlastbackConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/SeismicChargeConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/ArcScythesConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/ChainLightningConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/StormMarkConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/GlacialPressureConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/NullPulseConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/CryoBolaConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/RocketConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ShieldConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/PhaseDriftConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/VectorSyncConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/ZeroDragConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/InertialWakeConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/movement/LanceDriveConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/TemporalConvergenceConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/FoldspaceArenaConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/TemporalRecallConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/TimeSlipConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/HullShockConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ShieldHarvestConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ShieldGraftConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/EmberSwarmConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/CryostasisConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ReturnProtocolConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/ReclaimerProtocolConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/defensive/CrystalBarricadeConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/FrozenThrongConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/CombatSentryConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/NanoPlagueConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/RelayPrismConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/offensive/SunBeamConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/EffectConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/world/EnvironmentConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/presentation/PointLightConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ship/ShipConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/attributes/AttributeIdSchema.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/progression/ShipProgression.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageContext.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/CombatTick.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/DamageTypeConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/damage/DamageTypeSystem.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/content/barrier/BarrierEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/barrier/BarrierEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/content/cryostasis/CryostasisIceShellEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/cryostasis/CryostasisIceShellEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/content/damageReduction/DamageReductionEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/damageReduction/DamageReductionEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponHandler.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponHandlerRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandlerRegistry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponValidationContract.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponValidationContract.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/PrimaryWeaponExecutionSystem.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponBuiltIns.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ShotgunWeaponHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ConeBlastWeaponHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ElectricArcWeaponHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/HeatWeaponFeatureHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/FrostMeterWeaponFeatureHandler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/wave/ExpandingWaveWeaponActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/wave/ExpandingWaveWeaponActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/impact/ProjectileImpactBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/impact/ShotgunVolleyImpactGroup.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/impact/ShotgunVolleyImpactGroup.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/visuals/ContinuousBeamVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ContinuousBeamVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/weapon/visuals/ElectricArcVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ConeBlastVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/CombatRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/CombatRuntimeModifiers.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntimeModifiers.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/ContactDamageGuardRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/ContactDamageGuardRegistry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ship/ShipRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/Combatant.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/combat/summon/SummonedCombatantActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/summon/SummonedCombatantActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/control/ControlResponse.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/GameAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/runtime/AbilityInvocationRuntime.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityInvocationRuntime.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/LightYearsAbilitySystemComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityWorldActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityWorldActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorRegistry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AbilityActorSpawner.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorSpawner.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/AreaTelegraphActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/actors/DirectionalChargeTelegraphActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/DirectionalChargeTelegraphActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/energySpear/EnergySpearContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/energySpear/EnergySpearAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/energySpear/EnergySpearAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/energySpear/EnergySpearTraversalActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/energySpear/EnergySpearTraversalActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/scorchDrive/ScorchDriveContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/scorchDrive/ScorchDriveAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/scorchDrive/ScorchDriveAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/scorchDrive/ScorchDriveFireSegmentActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/scorchDrive/ScorchDriveFireSegmentActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crescentReaver/CrescentReaverContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crescentReaver/CrescentReaverAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crescentReaver/CrescentReaverAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crescentReaver/CrescentReaverProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crescentReaver/CrescentReaverProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/aegisReaver/AegisReaverContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/aegisReaver/AegisReaverAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/aegisReaver/AegisReaverAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/aegisReaver/AegisReaverFlightState.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/aegisReaver/AegisReaverFlightState.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/aegisReaver/AegisReaverProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/aegisReaver/AegisReaverProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ionStorm/IonStormContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ionStorm/IonStormAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ionStorm/IonStormBoundary.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormBoundary.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ionStorm/IonStormProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ionStorm/IonStormFieldActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormFieldActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/solarBombardment/SolarBombardmentContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/solarBombardment/SolarBombardmentAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/solarBombardment/SolarBombardmentAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/solarBombardment/SolarBombardmentProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/solarBombardment/SolarBombardmentProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/cryoBola/CryoBolaContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/cryoBola/CryoBolaAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryoBola/CryoBolaAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/cryoBola/CryoBolaProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryoBola/CryoBolaProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/strikeRun/StrikeRunContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/strikeRun/StrikeRunAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/strikeRun/StrikeRunAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/blastback/BlastbackContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/blastback/BlastbackAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/blastback/BlastbackAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/blastback/BlastbackFocusTelegraphActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/blastback/BlastbackFocusTelegraphActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/blastback/BlastbackBurstActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/blastback/BlastbackBurstActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/strikeRun/StrikeRunBombardmentActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/strikeRun/StrikeRunBombardmentActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/seismicCharge/SeismicChargeContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/seismicCharge/SeismicChargeAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/seismicCharge/SeismicChargeAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/seismicCharge/SeismicChargeBombActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/seismicCharge/SeismicChargeBombActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/arcScythes/ArcScythesContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/arcScythes/ArcScythesAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/arcScythes/ArcScythesAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/vectorSync/VectorSyncContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/vectorSync/VectorSyncAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/vectorSync/VectorSyncAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/zeroDrag/ZeroDragContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/zeroDrag/ZeroDragAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/zeroDrag/ZeroDragAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/inertialWake/InertialWakeContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/inertialWake/InertialWakeAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/inertialWake/InertialWakeAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/inertialWake/InertialWakeActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/inertialWake/InertialWakeActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/lanceDrive/LanceDriveContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/lanceDrive/LanceDriveAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/lanceDrive/LanceDriveAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/lanceDrive/LanceDriveActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/lanceDrive/LanceDriveActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/temporalConvergence/TemporalConvergenceContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/temporalConvergence/TemporalConvergenceAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/temporalConvergence/TemporalConvergenceAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/temporalConvergence/TemporalConvergenceFieldActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/temporalConvergence/TemporalConvergenceFieldActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/foldspaceArena/FoldspaceArenaContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/foldspaceArena/FoldspaceArenaAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/foldspaceArena/FoldspaceArenaAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/foldspaceArena/FoldspaceArenaActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/foldspaceArena/FoldspaceArenaActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/temporalRecall/TemporalRecallContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/temporalRecall/TemporalRecallAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/temporalRecall/TemporalRecallAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/timeSlip/TimeSlipContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/timeSlip/TimeSlipAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/timeSlip/TimeSlipAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/arcScythes/ArcScythesBeamActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/arcScythes/ArcScythesBeamActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ironcladProtocol/IroncladProtocolContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/ironcladProtocol/IroncladProtocolAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ironcladProtocol/IroncladProtocolAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/closedCircuit/ClosedCircuitContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/closedCircuit/ClosedCircuitAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/closedCircuit/ClosedCircuitFieldActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/chainLightning/ChainLightningContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/glacialPressure/GlacialPressureContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/glacialPressure/GlacialPressureAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/glacialPressure/GlacialPressureTelegraphActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/frostMaelstrom/FrostMaelstromContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/frostMaelstrom/FrostMaelstromAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/frostMaelstrom/FrostMaelstromFieldActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/frozenThrong/FrozenThrongContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/frozenThrong/FrozenThrongAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/cryostasis/CryostasisContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/cryostasis/CryostasisAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryostasis/CryostasisAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/cryostasis/CryostasisVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryostasis/CryostasisVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/chainLightning/ChainLightningAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/chainLightning/ChainLightningAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/stormMark/StormMarkContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/stormMark/StormMarkAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/stormMark/StormMarkAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/glacialPressure/GlacialPressureAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/glacialPressure/GlacialPressureTelegraphActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frostMaelstrom/FrostMaelstromAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frostMaelstrom/FrostMaelstromFieldActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frozenThrong/FrozenThrongAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/reclaimerProtocol/ReclaimerProtocolContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/reclaimerProtocol/ReclaimerProtocolAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/reclaimerProtocol/ReclaimerProtocolAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/combatSentry/CombatSentryContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/combatSentry/CombatSentryAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/combatSentry/CombatSentryActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/combatSentry/CombatSentryProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nanoPlague/NanoPlagueContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nanoPlague/NanoPlagueAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nanoPlague/NanoPlagueControllerActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crystalBarricade/CrystalBarricadeContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crystalBarricade/CrystalBarricadeAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crystalBarricade/CrystalBarricadeAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/crystalBarricade/CrystalBarricadeActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crystalBarricade/CrystalBarricadeActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/scorchDrive/ScorchDriveTrailCoordinator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/scorchDrive/ScorchDriveTrailCoordinator.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/relayPrism/RelayPrismContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/relayPrism/RelayPrismAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/echoProtocol/EchoProtocolAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/echoProtocol/EchoProtocolAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/relayPrism/RelayPrismActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/railBurst/RailBurstContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/railBurst/RailBurstAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/railBurst/RailBurstAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/railBurst/RailBurstProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/railBurst/RailBurstProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/astralSurge/AstralSurgeContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/astralSurge/AstralSurgeAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/astralSurge/AstralSurgeAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/astralSurge/AstralSurgeProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/astralSurge/AstralSurgeProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/wingSentinels/WingSentinelsContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/wingSentinels/WingSentinelsAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/wingSentinels/WingSentinelsAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/wingSentinels/WingSentinelActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/wingSentinels/WingSentinelActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/wingSentinels/WingSentinelProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/wingSentinels/WingSentinelProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/mineLayer/MineLayerContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/mineLayer/MineLayerAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/mineLayer/MineLayerAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/mineLayer/MineLayerMineActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/mineLayer/MineLayerMineActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileRelayPayload.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileRelayParticipant.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileCaptureVolume.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileRelayPayload.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionParticipant.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionSurface.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionService.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileReflectionRegistryActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionService.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionRegistryActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileInterceptionService.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileInterceptionService.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/projectile/ProjectileInterceptionBoundary.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/ReturnProtocolTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/returnProtocol/ReturnProtocolContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/returnProtocol/ReturnProtocolAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/returnProtocol/ReturnProtocolAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/returnProtocol/ReturnProtocolVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/returnProtocol/ReturnProtocolVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/portal/PortalTransferParticipant.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/portal/PortalTransferRuntimeActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/portal/PortalTransferService.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeState.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferService.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/tags/ability/VoidGateTags.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/voidGate/VoidGateContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/voidGate/VoidGateAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/voidGate/VoidGateAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/voidGate/VoidGatePortalActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/voidGate/VoidGatePortalActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/VoidGateConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ability/utility/FrostMaelstromConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/voidGate/VoidGatePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/voidGate/VoidGatePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/voidGate/VoidGatePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/frostMaelstrom/FrostMaelstromPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/frostMaelstrom/FrostMaelstromPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/frostMaelstrom/FrostMaelstromPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/frozenThrong/FrozenThrongPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/frozenThrong/FrozenThrongPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/frozenThrong/FrozenThrongPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/frozenThrong/FrozenThrongHuskActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frozenThrong/FrozenThrongHuskActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/reclaimerProtocol/ReclaimerRepairKitActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/reclaimerProtocol/ReclaimerRepairKitActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/dash/DashAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/orbitalDrones/OrbitalDronesContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/orbitalDrones/OrbitalDronesAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitalDronesAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/orbitalDrones/OrbitingDroneActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitingDroneActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/executionDrive/ExecutionDriveContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/executionDrive/ExecutionDriveAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/executionDrive/ExecutionDriveAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/phaseDrift/PhaseDriftVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/directionalBarrier/DirectionalBarrierContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/directionalBarrier/DirectionalBarrierAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/directionalBarrier/DirectionalBarrierVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/directionalBarrier/DirectionalBarrierAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/directionalBarrier/DirectionalBarrierVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/hullShock/HullShockContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/hullShock/HullShockAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/hullShock/HullShockAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shieldHarvest/ShieldHarvestContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shieldHarvest/ShieldHarvestAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldHarvest/ShieldHarvestAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shieldGraft/ShieldGraftContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shieldGraft/ShieldGraftAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldGraft/ShieldGraftAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shieldGraft/ShieldGraftVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldGraft/ShieldGraftVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/emberSwarm/EmberSwarmContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/emberSwarm/EmberSwarmAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/emberSwarm/EmberSwarmAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/emberSwarm/EmberDroneActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/emberSwarm/EmberDroneActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseTargetQuery.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseTargetQuery.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/nullPulse/NullPulseVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/overdriveCore/OverdriveCoreVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/infernoSpray/InfernoSprayActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketProjectileActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketProjectileActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/rocket/RocketVisualActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketVisualActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shield/ShieldAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shield/ShieldAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/shield/ShieldContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamAbility.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamAbility.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamContracts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamActorBase.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamActorBase.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamVisual.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamVisual.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/ability/sunBeam/SunBeamStrikeActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamStrikeActor.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/AbilityPresentationContent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/AbilityPresentationContent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/PresentationProfileRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/orbitalDrones/OrbitalDronesPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/combatSentry/CombatSentryPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/nanoPlague/NanoPlaguePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/nanoPlague/NanoPlaguePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/nanoPlague/NanoPlaguePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/common/AreaTelegraphVisualDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/common/DirectionalChargeTelegraphVisualDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/gravityAnomaly/GravityAnomalyPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/infernoSpray/InfernoSprayPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/infernoSpray/InfernoSprayPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/infernoSpray/InfernoSprayPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/rocket/RocketPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/overdriveCore/OverdriveCorePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/overdriveCore/OverdriveCorePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/overdriveCore/OverdriveCorePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/nullPulse/NullPulsePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/nullPulse/NullPulsePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/nullPulse/NullPulsePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/phaseDrift/PhaseDriftPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/hullShock/HullShockPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/hullShock/HullShockPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/hullShock/HullShockPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/shieldHarvest/ShieldHarvestPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/shieldGraft/ShieldGraftPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/shieldGraft/ShieldGraftPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/shieldGraft/ShieldGraftPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/emberSwarm/EmberSwarmPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/emberSwarm/EmberSwarmPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/emberSwarm/EmberSwarmPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/sunBeam/SunBeamPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/relayPrism/RelayPrismPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/relayPrism/RelayPrismPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/relayPrism/RelayPrismPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/railBurst/RailBurstPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/railBurst/RailBurstPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/railBurst/RailBurstPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/astralSurge/AstralSurgePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/astralSurge/AstralSurgePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/astralSurge/AstralSurgePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/wingSentinels/WingSentinelsPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/wingSentinels/WingSentinelsPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/wingSentinels/WingSentinelsPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/returnProtocol/ReturnProtocolPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/returnProtocol/ReturnProtocolPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/returnProtocol/ReturnProtocolPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/crystalBarricade/CrystalBarricadePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/crystalBarricade/CrystalBarricadePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/crystalBarricade/CrystalBarricadePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/mineLayer/MineLayerPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/mineLayer/MineLayerPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/mineLayer/MineLayerPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/energySpear/EnergySpearPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/energySpear/EnergySpearPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/energySpear/EnergySpearPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/scorchDrive/ScorchDrivePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/scorchDrive/ScorchDrivePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/scorchDrive/ScorchDrivePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/inertialWake/InertialWakePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/inertialWake/InertialWakePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/inertialWake/InertialWakePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/lanceDrive/LanceDrivePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/lanceDrive/LanceDrivePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/lanceDrive/LanceDrivePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/directionalBarrier/DirectionalBarrierPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/directionalBarrier/DirectionalBarrierPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/directionalBarrier/DirectionalBarrierPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/crescentReaver/CrescentReaverPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/crescentReaver/CrescentReaverPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/crescentReaver/CrescentReaverPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/aegisReaver/AegisReaverPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/aegisReaver/AegisReaverPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/aegisReaver/AegisReaverPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/ionStorm/IonStormPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/ionStorm/IonStormPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/ionStorm/IonStormPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/solarBombardment/SolarBombardmentPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/solarBombardment/SolarBombardmentPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/solarBombardment/SolarBombardmentPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/strikeRun/StrikeRunPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/strikeRun/StrikeRunPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/strikeRun/StrikeRunPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/blastback/BlastbackPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/blastback/BlastbackPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/blastback/BlastbackPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/seismicCharge/SeismicChargePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/seismicCharge/SeismicChargePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/seismicCharge/SeismicChargePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/arcScythes/ArcScythesPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/arcScythes/ArcScythesPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/arcScythes/ArcScythesPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/temporalConvergence/TemporalConvergencePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/temporalConvergence/TemporalConvergencePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/temporalConvergence/TemporalConvergencePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/foldspaceArena/FoldspaceArenaPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/foldspaceArena/FoldspaceArenaPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/foldspaceArena/FoldspaceArenaPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/closedCircuit/ClosedCircuitPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/glacialPressure/GlacialPressurePresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/glacialPressure/GlacialPressurePresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/glacialPressure/GlacialPressurePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/chainLightning/ChainLightningPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/chainLightning/ChainLightningPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/chainLightning/ChainLightningPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/stormMark/StormMarkPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/stormMark/StormMarkPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/stormMark/StormMarkPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/cryostasis/CryostasisPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/cryostasis/CryostasisPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/cryostasis/CryostasisPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/cryoBola/CryoBolaPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/cryoBola/CryoBolaPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/cryoBola/CryoBolaPresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisual.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectVisualRegistry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/GameplayEffectPresentationBinding.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectPresentationBinding.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualContent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisualContent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisualIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/effects/shield/ShieldVisual.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisual.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/VFX/Explosion.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/EnemyActor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemyActor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/DummyEnemy.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/DummyEnemy.cpp
-
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/LevelOne.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/level/LevelOne.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/MainMenuLevel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/level/MainMenuLevel.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/GameLevel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/level/GameLevel.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaDefinition.h
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaLevel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaLevel.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaBoundaryIndicator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundaryIndicator.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaBoundarySystem.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundarySystem.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/level/ArenaTestLevel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaTestLevel.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerRespawnDefinition.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerRespawnSystem.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerRespawnSystem.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/VanguardStage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
-
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/TwinBladeStage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/TwinBladeStage.cpp
-
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/HexagonStage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/HexagonStage.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/enemy/ChaosStage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/environment/Asteroid.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/environment/Asteroid.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/environment/AsteroidSpawner.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/environment/AsteroidSpawner.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Reward.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
-	
-	${CMAKE_CURRENT_SOURCE_DIR}/include/player/Player.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/player/Player.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/player/PlayerManager.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/GameHUD.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameHUD.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/MainMenuHUD.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/MainMenuHUD.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/PauseMenuHUD.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/PauseMenuHUD.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/widget/GameOverHUD.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameOverHUD.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/GameplayWarningHUDController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/GameplayWarningHUDController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/notification/NotificationHUDController.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationHUDController.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/hud/HUDController.h
-
-	${LIGHT_YEARS_ENCOUNTER_HUD_SOURCES}
-	${LIGHT_YEARS_UI_HUD_SOURCES}
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/gameplay/GameplayConfig.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/combat/WeaponStructs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameConfigs/ship/ShipStructs.h
-)
-
-target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC 
+target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
@@ -986,6 +86,7 @@ target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME}
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		LightYearsVisual
 		nlohmann_json::nlohmann_json
+		$<LINK_LIBRARY:WHOLE_ARCHIVE,${LIGHT_YEARS_GAME_LIB_TARGET_NAME}>
 )
 
 # First integration pass: the game reads the visual assets from the source tree so edits hot-reload (F9 forces it).
@@ -994,888 +95,193 @@ target_compile_definitions(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE
 )
 
 if(BUILD_TESTING)
-	add_executable(LightYearsContentTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ContentLoaderTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionJsonParser.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorDecision.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorProfileValidator.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponValidationContract.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
-	)
-	target_include_directories(LightYearsContentTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${CMAKE_CURRENT_SOURCE_DIR}/src
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsContentTests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsContentTests
-		PRIVATE
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-	)
-	add_test(
-		NAME LightYearsContent
-		COMMAND LightYearsContentTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-
-	set(LIGHT_YEARS_GAS_LITE_TEST_SOURCES
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyRuntime.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyCombatProfileCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EnemyFactory.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/encounter/EncounterWaveRuntime.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/level/GameLevel.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/level/MainMenuLevel.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/level/LevelOne.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaLevel.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundaryIndicator.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaBoundarySystem.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/level/ArenaTestLevel.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerRespawnSystem.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameHUD.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/MainMenuHUD.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/PauseMenuHUD.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/widget/GameOverHUD.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/GameplayWarningHUDController.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/hud/notification/NotificationHUDController.cpp
-		${LIGHT_YEARS_ENCOUNTER_HUD_SOURCES}
-		${LIGHT_YEARS_UI_HUD_SOURCES}
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/VanguardStage.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/TwinBladeStage.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/HexagonStage.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/ChaosStage.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/environment/AsteroidSpawner.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/environment/Asteroid.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorProfileValidator.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorDecision.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/enemy/EnemyBehaviorRuntime.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameConfigs/ability/AbilityCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/progression/ShipProgression.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/WeaponContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionJsonParser.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityDefinitionMaterializer.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/AbilityContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/EffectContentCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceLoader.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/DamageStatusBalanceCatalog.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/damage/DamageTypeSystem.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/resource/TemporaryOvercapLedger.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/temporal/TemporalStateHistory.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/EnergyComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/MovementComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementInfluenceController.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementInfluenceService.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementPolicyService.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/CombatantTargetQuery.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseTargetQuery.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/gravityAnomaly/GravityAnomalyEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/barrier/BarrierEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/directionalBarrier/DirectionalBarrierEffectBehavior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/cryostasis/CryostasisIceShellEffectBehavior.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/effects/content/damageReduction/DamageReductionEffectBehavior.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/Combatant.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntime.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/CombatRuntimeModifiers.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/ContactDamageGuardRegistry.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntime.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ship/ShipRuntimeModifiers.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/spaceShip/SpaceShip.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/EnemyActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/enemy/DummyEnemy.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Reward.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/player/Player.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerManager.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerMovementComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/player/PlayerSpaceShip.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/module/ShipModuleApplier.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/input/AbilityInputSchema.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityInventory.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadout.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/AbilityLoadoutManager.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/loadout/DefaultAbilityLoadout.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/LightYearsAbilitySystemComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/runtime/PrimaryWeaponOverrideState.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/runtime/AbilityInvocationRuntime.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/GameAbilityActionExecutor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/AbilityActionAttributeResolver.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actions/FireWeaponActionRuntime.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/dash/DashAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/gravityAnomaly/GravityAnomalyFieldActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/infernoSpray/InfernoSprayActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/phaseDrift/PhaseDriftVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/zeroDrag/ZeroDragAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/inertialWake/InertialWakeAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/inertialWake/InertialWakeActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/lanceDrive/LanceDriveAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/lanceDrive/LanceDriveActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/returnProtocol/ReturnProtocolAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/returnProtocol/ReturnProtocolVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementCollisionService.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crystalBarricade/CrystalBarricadeAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crystalBarricade/CrystalBarricadeActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/directionalBarrier/DirectionalBarrierAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/directionalBarrier/DirectionalBarrierVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/hullShock/HullShockAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldHarvest/ShieldHarvestAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldGraft/ShieldGraftAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shieldGraft/ShieldGraftVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/emberSwarm/EmberSwarmAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/emberSwarm/EmberDroneActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitalDronesAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/orbitalDrones/OrbitingDroneActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/executionDrive/ExecutionDriveAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/echoProtocol/EchoProtocolAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/relayPrism/RelayPrismActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/railBurst/RailBurstAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/railBurst/RailBurstProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/astralSurge/AstralSurgeAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/astralSurge/AstralSurgeProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/wingSentinels/WingSentinelsAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/wingSentinels/WingSentinelActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/wingSentinels/WingSentinelProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/mineLayer/MineLayerAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/mineLayer/MineLayerMineActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/energySpear/EnergySpearAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/energySpear/EnergySpearTraversalActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/scorchDrive/ScorchDriveAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/scorchDrive/ScorchDriveFireSegmentActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/scorchDrive/ScorchDriveTrailCoordinator.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crescentReaver/CrescentReaverAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/crescentReaver/CrescentReaverProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/aegisReaver/AegisReaverAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/aegisReaver/AegisReaverFlightState.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/aegisReaver/AegisReaverProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/chainLightning/ChainLightningAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/stormMark/StormMarkAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/glacialPressure/GlacialPressureAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/glacialPressure/GlacialPressureTelegraphActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frostMaelstrom/FrostMaelstromAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frostMaelstrom/FrostMaelstromFieldActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frozenThrong/FrozenThrongAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/frozenThrong/FrozenThrongHuskActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/reclaimerProtocol/ReclaimerProtocolAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/reclaimerProtocol/ReclaimerRepairKitActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/combat/summon/SummonedCombatantActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nanoPlague/NanoPlagueControllerRegistryActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/combatSentry/CombatSentryProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryostasis/CryostasisAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryostasis/CryostasisVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormBoundary.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ionStorm/IonStormFieldActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/solarBombardment/SolarBombardmentAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/solarBombardment/SolarBombardmentProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryoBola/CryoBolaAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/cryoBola/CryoBolaProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/strikeRun/StrikeRunAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/strikeRun/StrikeRunBombardmentActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/blastback/BlastbackAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/blastback/BlastbackFocusTelegraphActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/blastback/BlastbackBurstActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/seismicCharge/SeismicChargeAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/seismicCharge/SeismicChargeBombActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/arcScythes/ArcScythesAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/vectorSync/VectorSyncAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/zeroDrag/ZeroDragAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/temporalConvergence/TemporalConvergenceAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/temporalConvergence/TemporalConvergenceFieldActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/foldspaceArena/FoldspaceArenaAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/foldspaceArena/FoldspaceArenaActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/temporalRecall/TemporalRecallAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/timeSlip/TimeSlipAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/ironcladProtocol/IroncladProtocolAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/closedCircuit/ClosedCircuitFieldRegistryActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/arcScythes/ArcScythesBeamActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/nullPulse/NullPulseVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/overdriveCore/OverdriveCoreVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/rocket/RocketVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/shield/ShieldAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityWorldActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorRegistry.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AbilityActorSpawner.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/AreaTelegraphActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/actors/DirectionalChargeTelegraphActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileRelayPayload.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionService.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileReflectionRegistryActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/projectile/ProjectileInterceptionService.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/closedCircuit/ClosedCircuitPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferService.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/portal/PortalTransferRuntimeState.h
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/voidGate/VoidGateAbility.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/voidGate/VoidGatePortalActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamActorBase.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamVisual.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ability/sunBeam/SunBeamStrikeActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/AbilityPresentationContent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/infernoSpray/InfernoSprayPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/rocket/RocketPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/overdriveCore/OverdriveCorePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/nullPulse/NullPulsePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/orbitalDrones/OrbitalDronesPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/combatSentry/CombatSentryPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/nanoPlague/NanoPlaguePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/returnProtocol/ReturnProtocolPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/crystalBarricade/CrystalBarricadePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/phaseDrift/PhaseDriftPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/hullShock/HullShockPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/shieldHarvest/ShieldHarvestPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/shieldGraft/ShieldGraftPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/emberSwarm/EmberSwarmPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/sunBeam/SunBeamPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/relayPrism/RelayPrismPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/railBurst/RailBurstPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/astralSurge/AstralSurgePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/wingSentinels/WingSentinelsPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/mineLayer/MineLayerPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/energySpear/EnergySpearPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/scorchDrive/ScorchDrivePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/inertialWake/InertialWakePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/lanceDrive/LanceDrivePresentationProfile.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/directionalBarrier/DirectionalBarrierPresentationIds.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/directionalBarrier/DirectionalBarrierPresentationProfile.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/directionalBarrier/DirectionalBarrierPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/crescentReaver/CrescentReaverPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/aegisReaver/AegisReaverPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/ionStorm/IonStormPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/solarBombardment/SolarBombardmentPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/strikeRun/StrikeRunPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/blastback/BlastbackPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/seismicCharge/SeismicChargePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/arcScythes/ArcScythesPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/temporalConvergence/TemporalConvergencePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/foldspaceArena/FoldspaceArenaPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/voidGate/VoidGatePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/frostMaelstrom/FrostMaelstromPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/frozenThrong/FrozenThrongPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/reclaimerProtocol/ReclaimerProtocolPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/chainLightning/ChainLightningPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/stormMark/StormMarkPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/glacialPressure/GlacialPressurePresentationIds.h
-		${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/ability/glacialPressure/GlacialPressurePresentationProfile.h
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/glacialPressure/GlacialPressurePresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/cryostasis/CryostasisPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/ability/cryoBola/CryoBolaPresentationProfile.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisual.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectVisualRegistry.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/GameplayEffectPresentationBinding.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisualContent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/gravityAnomaly/GravityAnomalyEffectVisual.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisualContent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/effects/shield/ShieldVisual.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/VFX/Explosion.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponHandlerRegistry.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponValidationContract.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/PrimaryWeaponExecutionSystem.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/internal/PrimaryWeaponDefinitionValidator.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/StandardProjectileWeaponHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ShotgunWeaponHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ConeBlastWeaponHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ElectricArcWeaponHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ContinuousBeamWeaponHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/handlers/ExpandingWaveWeaponHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/HeatWeaponFeatureHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/features/FrostMeterWeaponFeatureHandler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/projectile/PrimaryWeaponProjectileSpawner.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/wave/ExpandingWaveWeaponActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/impact/ShotgunVolleyImpactGroup.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ContinuousBeamVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ElectricArcVisualActor.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/weapon/visuals/ConeBlastVisualActor.cpp
-	)
-
-	# Shared gameplay sources compiled once; every GAS-lite style test links these objects
-	# instead of recompiling ~230 sources (and emitting a full PDB/ILK) per executable.
-	add_library(LightYearsGasLiteTestObjects OBJECT ${LIGHT_YEARS_GAS_LITE_TEST_SOURCES})
-	target_include_directories(LightYearsGasLiteTestObjects PUBLIC
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsGasLiteTestObjects
-		PUBLIC
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_executable(LightYearsGasLiteTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/GasLiteCoreTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/EnemyCombatFoundationTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameHUDPlayerRestartTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityLoadoutTransactionTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/PlayerShipLifetimeTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ChainLightningLifetimeTests.cpp
-	)
-	target_include_directories(LightYearsGasLiteTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsGasLiteTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsGasLiteMixedLoadout
-		COMMAND LightYearsGasLiteTests --mixed-loadout
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_test(
-		NAME LightYearsAbilityLoadoutTransaction
-		COMMAND LightYearsGasLiteTests --loadout-transaction
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_test(
-		NAME LightYearsPlayerShipLifetime
-		COMMAND LightYearsGasLiteTests --player-lifetime
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_test(
-		NAME LightYearsChainLightningLifetime
-		COMMAND LightYearsGasLiteTests --chain-lightning-lifetime
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-
-	add_executable(LightYearsTemporaryOvercapTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/TemporaryOvercapTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/HealthComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/ShieldComponent.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/resource/TemporaryOvercapLedger.cpp
-	)
-	target_include_directories(LightYearsTemporaryOvercapTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsTemporaryOvercapTests
-		PRIVATE
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-	)
-	add_test(
-		NAME LightYearsTemporaryOvercap
-		COMMAND LightYearsTemporaryOvercapTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-
-	add_executable(LightYearsClosedCircuitInterceptionTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ClosedCircuitInterceptionTests.cpp
-	)
-	target_include_directories(LightYearsClosedCircuitInterceptionTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsClosedCircuitInterceptionTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsClosedCircuitInterception
-		COMMAND LightYearsClosedCircuitInterceptionTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_executable(LightYearsNanoPlagueRuntimeTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/NanoPlagueRuntimeTests.cpp
-	)
-	target_include_directories(LightYearsNanoPlagueRuntimeTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsNanoPlagueRuntimeTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsNanoPlagueRuntime
-		COMMAND LightYearsNanoPlagueRuntimeTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_executable(LightYearsPortalTransferTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/PortalTransferRuntimeTests.cpp
-	)
-	target_include_directories(LightYearsPortalTransferTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsPortalTransferTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsPortalTransfer
-		COMMAND LightYearsPortalTransferTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_executable(LightYearsActorHitCooldownTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ActorHitCooldownTests.cpp
-	)
-	target_include_directories(LightYearsActorHitCooldownTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsActorHitCooldownTests PRIVATE
-		${LIGHT_YEARS_ENGINE_TARGET_NAME}
-	)
-	add_test(NAME LightYearsActorHitCooldown COMMAND LightYearsActorHitCooldownTests)
-
-	add_executable(LightYearsProjectileReflectionTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ProjectileReflectionTests.cpp
-	)
-	target_include_directories(LightYearsProjectileReflectionTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsProjectileReflectionTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsProjectileReflection
-		COMMAND LightYearsProjectileReflectionTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-
-	add_executable(LightYearsStormMarkTimingTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/StormMarkTimingTests.cpp
-	)
-	target_include_directories(LightYearsStormMarkTimingTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsStormMarkTimingTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsStormMarkTiming
-		COMMAND LightYearsStormMarkTimingTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-
-	add_executable(LightYearsPrimaryWeaponTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/PrimaryWeaponMagazineTests.cpp
-	)
-	target_include_directories(LightYearsPrimaryWeaponTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsPrimaryWeaponTests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsPrimaryWeaponTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsPrimaryWeapon
-		COMMAND LightYearsPrimaryWeaponTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
 	set(LIGHT_YEARS_E2E_ARTIFACT_DIR "${CMAKE_BINARY_DIR}/e2e-artifacts")
 	file(MAKE_DIRECTORY "${LIGHT_YEARS_E2E_ARTIFACT_DIR}")
-	add_executable(LightYearsPlayerLevelTestProgressionE2ETests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/PlayerLevelTestProgressionE2E.cpp
-	)
-	target_include_directories(LightYearsPlayerLevelTestProgressionE2ETests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsPlayerLevelTestProgressionE2ETests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsPlayerLevelTestProgressionE2ETests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsPlayerLevelTestProgressionE2E
-		COMMAND LightYearsPlayerLevelTestProgressionE2ETests
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/player-level-test-progression.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsPlayerLevelTestProgressionE2E PROPERTIES TIMEOUT 60)
-	add_executable(LightYearsPlayerShipSelectionTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/PlayerShipSelectionTests.cpp
-	)
-	target_include_directories(LightYearsPlayerShipSelectionTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsPlayerShipSelectionTests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsPlayerShipSelectionTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsPlayerShipSelection
-		COMMAND LightYearsPlayerShipSelectionTests
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/player-ship-selection.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsPlayerShipSelection PROPERTIES TIMEOUT 60)
-	add_executable(LightYearsWeaponPhase2Tests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/WeaponPhase2Tests.cpp
-	)
-	target_include_directories(LightYearsWeaponPhase2Tests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsWeaponPhase2Tests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsWeaponPhase2Tests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsWeaponPhase2
-		COMMAND LightYearsWeaponPhase2Tests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsWeaponPhase2 PROPERTIES TIMEOUT 60)
-	add_executable(LightYearsVitalsHUDTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/VitalsHUDTests.cpp
-	)
-	target_include_directories(LightYearsVitalsHUDTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsVitalsHUDTests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsVitalsHUDTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsVitalsHUD
-		COMMAND LightYearsVitalsHUDTests
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/vitals-hud.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsVitalsHUD PROPERTIES TIMEOUT 60)
-	add_executable(LightYearsModuleScreenTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ModuleScreenTests.cpp
-	)
-	target_include_directories(LightYearsModuleScreenTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsModuleScreenTests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsModuleScreenTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsModuleScreen
-		COMMAND LightYearsModuleScreenTests
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/module-screen.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsModuleScreen PROPERTIES TIMEOUT 60)
-	add_executable(LightYearsHUDMigrationTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/HUDMigrationTests.cpp
-	)
-	target_include_directories(LightYearsHUDMigrationTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsHUDMigrationTests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsHUDMigrationTests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsHUDMigrationWarning
-		COMMAND LightYearsHUDMigrationTests --warning "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-warning.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsHUDMigrationWarning PROPERTIES TIMEOUT 60)
-	add_test(
-		NAME LightYearsHUDMigrationNotification
-		COMMAND LightYearsHUDMigrationTests --notification "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-notification.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsHUDMigrationNotification PROPERTIES TIMEOUT 60)
-	add_test(
-		NAME LightYearsHUDMigrationEncounter
-		COMMAND LightYearsHUDMigrationTests --encounter "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-encounter.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsHUDMigrationEncounter PROPERTIES TIMEOUT 60)
-	add_test(
-		NAME LightYearsHUDMigrationAbility
-		COMMAND LightYearsHUDMigrationTests --ability "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-ability.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsHUDMigrationAbility PROPERTIES TIMEOUT 60)
-	add_test(
-		NAME LightYearsHUDMigrationMenus
-		COMMAND LightYearsHUDMigrationTests --menus "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/hud-migration-menus.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsHUDMigrationMenus PROPERTIES TIMEOUT 60)
-	add_executable(LightYearsContinuousBeamWallE2ETests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ContinuousBeamWallE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityContentRegistrationE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityLoaderPublicLoadE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/TimerManagerSceneE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameHUDDamageEventE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AuditFixesE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceSecondThreeE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceFirstThreeE2E.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AbilityBalanceThirdThreeE2E.cpp
-	)
-	target_include_directories(LightYearsContinuousBeamWallE2ETests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsContinuousBeamWallE2ETests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsContinuousBeamWallE2ETests
-		PRIVATE
-			LightYearsGasLiteTestObjects
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-			${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			nlohmann_json::nlohmann_json
-	)
-	add_test(
-		NAME LightYearsContinuousBeamWallE2E
-		COMMAND LightYearsContinuousBeamWallE2ETests
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/continuous-beam-wall.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_test(
-		NAME LightYearsAbilityContentRegistrationE2E
-		COMMAND LightYearsContinuousBeamWallE2ETests
-			--ability-content-registration
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ability-content-registration.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_test(
-		NAME LightYearsAbilityLoaderPublicLoadE2E
-		COMMAND LightYearsContinuousBeamWallE2ETests
-			--ability-loader-public-load
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ability-loader-public-load.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	add_test(
-		NAME LightYearsTimerManagerSceneE2E
-		COMMAND LightYearsContinuousBeamWallE2ETests
-			--timer-manager-scene
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/timer-manager-scene.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsTimerManagerSceneE2E PROPERTIES TIMEOUT 60)
-	add_test(
-		NAME LightYearsGameHUDDamageEventE2E
-		COMMAND LightYearsContinuousBeamWallE2ETests
-			--game-hud-damage-event
-			"${LIGHT_YEARS_E2E_ARTIFACT_DIR}/game-hud-damage-event.json"
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
-	set_tests_properties(LightYearsGameHUDDamageEventE2E PROPERTIES TIMEOUT 60)
-	add_test(NAME LightYearsGameHUDPlayerRestart COMMAND LightYearsGasLiteTests --game-hud-player-restart)
-	set_tests_properties(LightYearsGameHUDPlayerRestart PROPERTIES TIMEOUT 60)
-	add_test(NAME LightYearsAuditFixesE2E COMMAND LightYearsContinuousBeamWallE2ETests
-		--audit-fixes "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/audit-fixes.json" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-	set_tests_properties(LightYearsAuditFixesE2E PROPERTIES TIMEOUT 60)
-	foreach(BALANCE_GROUP IN ITEMS first second third)
-		add_test(NAME LightYearsAbilityBalance-${BALANCE_GROUP}-E2E COMMAND LightYearsContinuousBeamWallE2ETests
-			--ability-balance-${BALANCE_GROUP}-three "${LIGHT_YEARS_E2E_ARTIFACT_DIR}/ability-balance-${BALANCE_GROUP}.json"
-			WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-		set_tests_properties(LightYearsAbilityBalance-${BALANCE_GROUP}-E2E PROPERTIES TIMEOUT 60)
+	set(LY_TEST_TARGETS)
+
+	# ly_add_game_test(<target> SOURCES <files...> [LIBS <libs...>] [INCLUDES <dirs...>] [GAME_WHOLE] [GAME] [PROJECT_DIR])
+	#   GAME_WHOLE   link the full game library whole-archive plus engine/ability/core/json (GAS-lite style tests)
+	#   GAME         link the game library normally; only the members the test references are pulled in
+	#   PROJECT_DIR  define LIGHT_YEARS_PROJECT_SOURCE_DIR
+	function(ly_add_game_test target)
+		cmake_parse_arguments(PARSE_ARGV 1 T "GAME_WHOLE;GAME;PROJECT_DIR" "" "SOURCES;LIBS;INCLUDES")
+		add_executable(${target} ${T_SOURCES})
+		target_include_directories(${target} PRIVATE
+			${CMAKE_CURRENT_SOURCE_DIR}/include
+			${PROJECT_SOURCE_DIR}/LightYearsEngine/include
+			${T_INCLUDES}
+		)
+		if(T_PROJECT_DIR)
+			target_compile_definitions(${target} PRIVATE LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+		endif()
+		set(link_libs ${T_LIBS})
+		if(T_GAME_WHOLE)
+			list(APPEND link_libs
+				$<LINK_LIBRARY:WHOLE_ARCHIVE,${LIGHT_YEARS_GAME_LIB_TARGET_NAME}>
+				${LIGHT_YEARS_ENGINE_TARGET_NAME}
+				${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+				${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+				nlohmann_json::nlohmann_json
+			)
+		elseif(T_GAME)
+			list(APPEND link_libs ${LIGHT_YEARS_GAME_LIB_TARGET_NAME})
+		endif()
+		target_link_libraries(${target} PRIVATE ${link_libs})
+		set(LY_TEST_TARGETS ${LY_TEST_TARGETS} ${target} PARENT_SCOPE)
+	endfunction()
+
+	# ly_add_game_test_case(<ctest name> <target> [ARGS <args...>] [TIMEOUT <s>] [NO_WORKDIR])
+	function(ly_add_game_test_case name target)
+		cmake_parse_arguments(PARSE_ARGV 2 C "NO_WORKDIR" "TIMEOUT" "ARGS")
+		if(C_NO_WORKDIR)
+			add_test(NAME ${name} COMMAND ${target} ${C_ARGS})
+		else()
+			add_test(NAME ${name} COMMAND ${target} ${C_ARGS} WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+		endif()
+		if(C_TIMEOUT)
+			set_tests_properties(${name} PROPERTIES TIMEOUT ${C_TIMEOUT})
+		endif()
+	endfunction()
+
+	set(LY_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+	set(LY_E2E ${LIGHT_YEARS_E2E_ARTIFACT_DIR})
+
+	ly_add_game_test(LightYearsContentTests
+		SOURCES ${LY_TESTS_DIR}/ContentLoaderTests.cpp
+		INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src
+		LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		GAME PROJECT_DIR)
+	ly_add_game_test_case(LightYearsContent LightYearsContentTests)
+
+	ly_add_game_test(LightYearsGasLiteTests GAME_WHOLE
+		SOURCES
+			${LY_TESTS_DIR}/GasLiteCoreTests.cpp
+			${LY_TESTS_DIR}/EnemyCombatFoundationTests.cpp
+			${LY_TESTS_DIR}/GameHUDPlayerRestartTests.cpp
+			${LY_TESTS_DIR}/AbilityLoadoutTransactionTests.cpp
+			${LY_TESTS_DIR}/PlayerShipLifetimeTests.cpp
+			${LY_TESTS_DIR}/ChainLightningLifetimeTests.cpp)
+	ly_add_game_test_case(LightYearsGasLiteMixedLoadout LightYearsGasLiteTests ARGS --mixed-loadout)
+	ly_add_game_test_case(LightYearsAbilityLoadoutTransaction LightYearsGasLiteTests ARGS --loadout-transaction)
+	ly_add_game_test_case(LightYearsPlayerShipLifetime LightYearsGasLiteTests ARGS --player-lifetime)
+	ly_add_game_test_case(LightYearsChainLightningLifetime LightYearsGasLiteTests ARGS --chain-lightning-lifetime)
+	ly_add_game_test_case(LightYearsGameHUDPlayerRestart LightYearsGasLiteTests ARGS --game-hud-player-restart NO_WORKDIR TIMEOUT 60)
+
+	ly_add_game_test(LightYearsTemporaryOvercapTests
+		SOURCES ${LY_TESTS_DIR}/TemporaryOvercapTests.cpp
+		LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		GAME)
+	ly_add_game_test_case(LightYearsTemporaryOvercap LightYearsTemporaryOvercapTests)
+
+	ly_add_game_test(LightYearsClosedCircuitInterceptionTests GAME_WHOLE SOURCES ${LY_TESTS_DIR}/ClosedCircuitInterceptionTests.cpp)
+	ly_add_game_test_case(LightYearsClosedCircuitInterception LightYearsClosedCircuitInterceptionTests)
+
+	ly_add_game_test(LightYearsNanoPlagueRuntimeTests GAME_WHOLE SOURCES ${LY_TESTS_DIR}/NanoPlagueRuntimeTests.cpp)
+	ly_add_game_test_case(LightYearsNanoPlagueRuntime LightYearsNanoPlagueRuntimeTests)
+
+	ly_add_game_test(LightYearsPortalTransferTests GAME_WHOLE SOURCES ${LY_TESTS_DIR}/PortalTransferRuntimeTests.cpp)
+	ly_add_game_test_case(LightYearsPortalTransfer LightYearsPortalTransferTests)
+
+	ly_add_game_test(LightYearsActorHitCooldownTests
+		SOURCES ${LY_TESTS_DIR}/ActorHitCooldownTests.cpp
+		LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	ly_add_game_test_case(LightYearsActorHitCooldown LightYearsActorHitCooldownTests NO_WORKDIR)
+
+	ly_add_game_test(LightYearsProjectileReflectionTests GAME_WHOLE SOURCES ${LY_TESTS_DIR}/ProjectileReflectionTests.cpp)
+	ly_add_game_test_case(LightYearsProjectileReflection LightYearsProjectileReflectionTests)
+
+	ly_add_game_test(LightYearsStormMarkTimingTests GAME_WHOLE SOURCES ${LY_TESTS_DIR}/StormMarkTimingTests.cpp)
+	ly_add_game_test_case(LightYearsStormMarkTiming LightYearsStormMarkTimingTests)
+
+	ly_add_game_test(LightYearsPrimaryWeaponTests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/PrimaryWeaponMagazineTests.cpp)
+	ly_add_game_test_case(LightYearsPrimaryWeapon LightYearsPrimaryWeaponTests)
+
+	ly_add_game_test(LightYearsPlayerLevelTestProgressionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/PlayerLevelTestProgressionE2E.cpp)
+	ly_add_game_test_case(LightYearsPlayerLevelTestProgressionE2E LightYearsPlayerLevelTestProgressionE2ETests
+		ARGS "${LY_E2E}/player-level-test-progression.json" TIMEOUT 60)
+
+	ly_add_game_test(LightYearsPlayerShipSelectionTests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/PlayerShipSelectionTests.cpp)
+	ly_add_game_test_case(LightYearsPlayerShipSelection LightYearsPlayerShipSelectionTests
+		ARGS "${LY_E2E}/player-ship-selection.json" TIMEOUT 60)
+
+	ly_add_game_test(LightYearsWeaponPhase2Tests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/WeaponPhase2Tests.cpp)
+	ly_add_game_test_case(LightYearsWeaponPhase2 LightYearsWeaponPhase2Tests TIMEOUT 60)
+
+	ly_add_game_test(LightYearsVitalsHUDTests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/VitalsHUDTests.cpp)
+	ly_add_game_test_case(LightYearsVitalsHUD LightYearsVitalsHUDTests ARGS "${LY_E2E}/vitals-hud.json" TIMEOUT 60)
+
+	ly_add_game_test(LightYearsModuleScreenTests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleScreenTests.cpp)
+	ly_add_game_test_case(LightYearsModuleScreen LightYearsModuleScreenTests ARGS "${LY_E2E}/module-screen.json" TIMEOUT 60)
+
+	ly_add_game_test(LightYearsHUDMigrationTests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/HUDMigrationTests.cpp)
+	foreach(hud_group IN ITEMS Warning Notification Encounter Ability Menus)
+		string(TOLOWER ${hud_group} hud_arg)
+		ly_add_game_test_case(LightYearsHUDMigration${hud_group} LightYearsHUDMigrationTests
+			ARGS --${hud_arg} "${LY_E2E}/hud-migration-${hud_arg}.json" TIMEOUT 60)
 	endforeach()
+
+	ly_add_game_test(LightYearsContinuousBeamWallE2ETests GAME_WHOLE PROJECT_DIR
+		SOURCES
+			${LY_TESTS_DIR}/ContinuousBeamWallE2E.cpp
+			${LY_TESTS_DIR}/AbilityContentRegistrationE2E.cpp
+			${LY_TESTS_DIR}/AbilityLoaderPublicLoadE2E.cpp
+			${LY_TESTS_DIR}/TimerManagerSceneE2E.cpp
+			${LY_TESTS_DIR}/GameHUDDamageEventE2E.cpp
+			${LY_TESTS_DIR}/AuditFixesE2E.cpp
+			${LY_TESTS_DIR}/AbilityBalanceSecondThreeE2E.cpp
+			${LY_TESTS_DIR}/AbilityBalanceFirstThreeE2E.cpp
+			${LY_TESTS_DIR}/AbilityBalanceThirdThreeE2E.cpp)
+	ly_add_game_test_case(LightYearsContinuousBeamWallE2E LightYearsContinuousBeamWallE2ETests
+		ARGS "${LY_E2E}/continuous-beam-wall.json")
+	ly_add_game_test_case(LightYearsAbilityContentRegistrationE2E LightYearsContinuousBeamWallE2ETests
+		ARGS --ability-content-registration "${LY_E2E}/ability-content-registration.json")
+	ly_add_game_test_case(LightYearsAbilityLoaderPublicLoadE2E LightYearsContinuousBeamWallE2ETests
+		ARGS --ability-loader-public-load "${LY_E2E}/ability-loader-public-load.json")
+	ly_add_game_test_case(LightYearsTimerManagerSceneE2E LightYearsContinuousBeamWallE2ETests
+		ARGS --timer-manager-scene "${LY_E2E}/timer-manager-scene.json" TIMEOUT 60)
+	ly_add_game_test_case(LightYearsGameHUDDamageEventE2E LightYearsContinuousBeamWallE2ETests
+		ARGS --game-hud-damage-event "${LY_E2E}/game-hud-damage-event.json" TIMEOUT 60)
+	ly_add_game_test_case(LightYearsAuditFixesE2E LightYearsContinuousBeamWallE2ETests
+		ARGS --audit-fixes "${LY_E2E}/audit-fixes.json" TIMEOUT 60)
+	foreach(BALANCE_GROUP IN ITEMS first second third)
+		ly_add_game_test_case(LightYearsAbilityBalance-${BALANCE_GROUP}-E2E LightYearsContinuousBeamWallE2ETests
+			ARGS --ability-balance-${BALANCE_GROUP}-three "${LY_E2E}/ability-balance-${BALANCE_GROUP}.json" TIMEOUT 60)
+	endforeach()
+
 	option(
 		LIGHT_YEARS_BUILD_SPECIALIZED_TESTS
 		"Build small standalone specialist test executables"
 		OFF
 	)
 	if(LIGHT_YEARS_BUILD_SPECIALIZED_TESTS)
-	add_executable(LightYearsAutoTargetingTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/AutoTargetingTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/AutoTargeting.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/targeting/TargetAllocation.cpp
-	)
-	target_include_directories(LightYearsAutoTargetingTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsAutoTargetingTests
-		PRIVATE
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-	)
-	add_test(NAME LightYearsAutoTargeting COMMAND LightYearsAutoTargetingTests)
-	add_executable(LightYearsGameplayTagSchemaTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayTagSchemaTests.cpp
-	)
-	target_include_directories(LightYearsGameplayTagSchemaTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsGameplayTagSchemaTests
-		PRIVATE
-			${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-	)
-	add_test(NAME LightYearsGameplayTagSchema COMMAND LightYearsGameplayTagSchemaTests)
-	add_executable(LightYearsMovementInfluenceTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/MovementInfluenceTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/movement/MovementInfluenceController.cpp
-	)
-	target_include_directories(LightYearsMovementInfluenceTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsMovementInfluenceTests PRIVATE
-		${LIGHT_YEARS_ENGINE_TARGET_NAME}
-	)
-	add_test(NAME LightYearsMovementInfluence COMMAND LightYearsMovementInfluenceTests)
-	add_executable(LightYearsMovementPolicyTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/MovementPolicyTests.cpp
-	)
-	target_include_directories(LightYearsMovementPolicyTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_link_libraries(LightYearsMovementPolicyTests PRIVATE
-		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-	)
-	add_test(NAME LightYearsMovementPolicy COMMAND LightYearsMovementPolicyTests)
-	add_executable(LightYearsModuleSystemTests
-		${CMAKE_CURRENT_SOURCE_DIR}/tests/ModuleSystemTests.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/content/ShipLoader.cpp
-	)
-	target_include_directories(LightYearsModuleSystemTests PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
-	)
-	target_compile_definitions(LightYearsModuleSystemTests PRIVATE
-		LIGHT_YEARS_PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-	)
-	target_link_libraries(LightYearsModuleSystemTests PRIVATE
-		${LIGHT_YEARS_ENGINE_TARGET_NAME}
-		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
-		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-	)
-	add_test(
-		NAME LightYearsModuleSystem
-		COMMAND LightYearsModuleSystemTests
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	)
+		ly_add_game_test(LightYearsAutoTargetingTests
+			SOURCES ${LY_TESTS_DIR}/AutoTargetingTests.cpp
+			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			GAME)
+		ly_add_game_test_case(LightYearsAutoTargeting LightYearsAutoTargetingTests NO_WORKDIR)
+
+		ly_add_game_test(LightYearsGameplayTagSchemaTests
+			SOURCES ${LY_TESTS_DIR}/GameplayTagSchemaTests.cpp
+			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME})
+		ly_add_game_test_case(LightYearsGameplayTagSchema LightYearsGameplayTagSchemaTests NO_WORKDIR)
+
+		ly_add_game_test(LightYearsMovementInfluenceTests
+			SOURCES ${LY_TESTS_DIR}/MovementInfluenceTests.cpp
+			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME}
+			GAME)
+		ly_add_game_test_case(LightYearsMovementInfluence LightYearsMovementInfluenceTests NO_WORKDIR)
+
+		# Links only the gameplay core on purpose: proves the core stays independent of the rest of the game.
+		ly_add_game_test(LightYearsMovementPolicyTests
+			SOURCES ${LY_TESTS_DIR}/MovementPolicyTests.cpp
+			LIBS ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME})
+		ly_add_game_test_case(LightYearsMovementPolicy LightYearsMovementPolicyTests NO_WORKDIR)
+
+		ly_add_game_test(LightYearsModuleSystemTests
+			SOURCES ${LY_TESTS_DIR}/ModuleSystemTests.cpp
+			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+			GAME PROJECT_DIR)
+		ly_add_game_test_case(LightYearsModuleSystem LightYearsModuleSystemTests)
 	endif()
 
 	# Test executables are rebuilt from scratch often; the incremental-link
@@ -1883,32 +289,8 @@ if(BUILD_TESTING)
 	# pure disk cost for them. FASTLINK keeps debugging working by referencing
 	# the object files' debug info instead of copying it.
 	if(MSVC)
-		foreach(light_years_test_target
-			LightYearsContentTests
-			LightYearsGasLiteTests
-			LightYearsTemporaryOvercapTests
-			LightYearsClosedCircuitInterceptionTests
-			LightYearsNanoPlagueRuntimeTests
-			LightYearsPortalTransferTests
-			LightYearsActorHitCooldownTests
-			LightYearsProjectileReflectionTests
-			LightYearsStormMarkTimingTests
-			LightYearsPrimaryWeaponTests
-			LightYearsPlayerLevelTestProgressionE2ETests
-			LightYearsPlayerShipSelectionTests
-			LightYearsWeaponPhase2Tests
-			LightYearsVitalsHUDTests
-			LightYearsModuleScreenTests
-			LightYearsHUDMigrationTests
-			LightYearsContinuousBeamWallE2ETests
-			LightYearsAutoTargetingTests
-			LightYearsGameplayTagSchemaTests
-			LightYearsMovementInfluenceTests
-			LightYearsMovementPolicyTests
-			LightYearsModuleSystemTests)
-			if(TARGET ${light_years_test_target})
-				target_link_options(${light_years_test_target} PRIVATE /INCREMENTAL:NO /DEBUG:FASTLINK)
-			endif()
+		foreach(light_years_test_target IN LISTS LY_TEST_TARGETS)
+			target_link_options(${light_years_test_target} PRIVATE /INCREMENTAL:NO /DEBUG:FASTLINK)
 		endforeach()
 	endif()
 endif()
@@ -1919,7 +301,7 @@ if(WIN32)
 			WIN32_EXECUTABLE TRUE
 		)
 	endif()
-	
+
 	target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE sfml-main)
 endif()
 
@@ -1955,6 +337,15 @@ add_custom_target(${LIGHT_YEARS_GAME_ASSET_TARGET} ALL
 	COMMENT "Synchronizing game runtime assets..."
 )
 add_dependencies(${LIGHT_YEARS_GAME_TARGET_NAME} ${LIGHT_YEARS_GAME_ASSET_TARGET})
+
+# Non-Debug builds package the visual pipeline assets next to the executable (<exe dir>/visual); Debug builds keep
+# reading the source tree (LY_VISUAL_ASSETS_DIR) so shader/palette/pipeline.json edits hot-reload.
+add_custom_command(TARGET ${LIGHT_YEARS_GAME_ASSET_TARGET} POST_BUILD
+	COMMAND
+	${CMAKE_COMMAND} -E $<IF:$<CONFIG:Debug>,true,copy_directory>
+	${CMAKE_SOURCE_DIR}/LightYearsVisual/assets
+	$<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>/visual
+)
 
 configure_file(
 	"config.h.in"

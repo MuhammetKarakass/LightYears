@@ -5,6 +5,7 @@
 #include "gameConfigs/ability/AbilityCatalog.h"
 #include <framework/World.h>
 #include <framework/MathUtility.h>
+#include <framework/SpriteComponent.h>
 #include <framework/debug/Profiler.h>
 #include "VFX/Explosion.h" 
 #include <algorithm>
@@ -13,12 +14,12 @@ namespace ly
 {
 	SpaceShip::SpaceShip(World* owningWorld, const ShipDefinition& shipDef):
 		Actor(owningWorld, shipDef.texturePath),
-		mHealthComponent{shipDef.health, shipDef.health},
-		mShieldComponent{},
-		mEnergyComponent{},
+		mHealthComponent{ AddComponent<HealthComponent>(shipDef.health, shipDef.health) },
+		mShieldComponent{ AddComponent<ShieldComponent>() },
+		mEnergyComponent{ AddComponent<EnergyComponent>() },
 		mCombatRuntime{ *this },
 		mShipRuntime{ mCombatRuntime.GetAbilitySystemComponent().GetAttributes() },
-		mMovementComponent{ *this, shipDef },
+		mMovementComponent{ AddComponent<MovementComponent>(shipDef) },
 		mControlTargetClass{ shipDef.controlTargetClass },
 		mBlinkColor{255, 0, 0, 255},
 		mBlinkTime{0.f},
@@ -323,9 +324,9 @@ namespace ly
 			
 			// Headless or sprite-less ships still take damage; they just have
 			// nothing to tint.
-			if (GetSprite().has_value())
+			if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
 			{
-				GetSprite().value().setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime));
+				spriteComponent->GetSprite()->setColor(LerpColor(sf::Color::White, mBlinkColor, mBlinkTime));
 			}
 		}
 	}
@@ -345,7 +346,11 @@ namespace ly
 		Explosion::SpawnExplosion(GetWorld(), GetActorLocation(), Explosion::GetPreset(GetExplosionType()));
 		Blew();
 		mShipRuntime.Clear();
-		mCombatRuntime.Clear();
+		// Pending means the ability system kept retained cleanup (for example EndFire debt) and its
+		// clear stays requested. The ship is destroyed regardless: a destroyed actor is no longer
+		// ticked, so nothing retries the clear and the retained ability state is released by the
+		// combat runtime's destructor with the actor. Callback exceptions still propagate from Clear().
+		static_cast<void>(mCombatRuntime.Clear());
 		Destroy();
 	}
 

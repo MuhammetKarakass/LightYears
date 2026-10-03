@@ -9,7 +9,7 @@
 
 namespace ly
 {
-	class DamageContext;
+	struct DamageContext;
 	class EnemyActor;
 
 	enum class ArenaEncounterState : uint8_t

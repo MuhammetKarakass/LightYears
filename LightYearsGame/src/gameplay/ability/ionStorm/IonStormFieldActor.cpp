@@ -52,18 +52,6 @@ namespace ly
 			};
 		}
 
-		weak_ptr<Actor> MakeWeakActor(Actor* actor)
-		{
-			if (!actor)
-			{
-				return {};
-			}
-			const shared_ptr<Object> object = actor->GetWeakPtr().lock();
-			return object
-				? std::dynamic_pointer_cast<Actor>(object)
-				: weak_ptr<Actor>{};
-		}
-
 		class IonStormFieldActorTypeHandler final
 			: public AbilityActorTypeHandler
 		{
@@ -166,7 +154,7 @@ namespace ly
 	)
 		: AbilityWorldActor(world, owner)
 		, mPresentationProfile(presentationProfile)
-		, mOwnerReference(MakeWeakActor(owner))
+		, mOwnerReference(owner ? owner->GetWeakActor() : weak_ptr<Actor>{})
 	{
 		SetRenderLayer(RenderLayer::GroundDecal);
 		SetAbilityPhysicsEnabled(false);

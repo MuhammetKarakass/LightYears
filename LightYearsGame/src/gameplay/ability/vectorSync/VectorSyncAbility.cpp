@@ -1,6 +1,7 @@
 #include "gameplay/ability/vectorSync/VectorSyncAbility.h"
 
 #include "gameplay/MovementComponent.h"
+#include "gameplay/ability/validation/AbilityDefinitionChecks.h"
 #include "gameplay/ability/vectorSync/VectorSyncContracts.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -13,13 +14,7 @@ namespace ly
 {
 	namespace
 	{
-		constexpr float Epsilon = 0.0001f;
-
-		bool NearlyEqual(float left, float right)
-		{
-			return std::isfinite(left) && std::isfinite(right) &&
-				std::abs(left - right) <= Epsilon;
-		}
+		using ability_checks::NearlyEqual;
 
 		bool HasExpectedProgressionStep(const AbilityLevelStep& step)
 		{
