@@ -7,6 +7,7 @@
 #include "visual/PipelineSettings.h"
 #include "visual/ReloadReport.h"
 #include "visual/ShaderLibrary.h"
+#include "visual/ShipVisual.h"
 
 namespace ly::visual
 {
@@ -25,6 +26,10 @@ namespace ly::visual
 		ShaderLibrary& Shaders() { return mShaders; }
 		ColorScriptLibrary& Scripts() { return mScripts; }
 		const ColorScript& Script() const { return mScripts.Active(); }
+		ShipVisualLibrary& Ships() { return mShips; }
+		const ShipVisualLibrary& Ships() const { return mShips; }
+		// Files that failed to load during Load (a bad ship definition does not stop the rest from loading).
+		const ReloadReport& LoadReport() const { return mLoadReport; }
 
 	private:
 		std::filesystem::path mRoot;
@@ -32,6 +37,8 @@ namespace ly::visual
 		std::filesystem::file_time_type mSettingsStamp;
 		ShaderLibrary mShaders;
 		ColorScriptLibrary mScripts;
+		ShipVisualLibrary mShips;
+		ReloadReport mLoadReport;
 		float mPollTimer = 0.f;
 	};
 }

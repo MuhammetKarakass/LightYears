@@ -1,0 +1,37 @@
+{
+	"id": "conductor",
+	"bindings": ["Ship.Player.Conductor.Basic"],
+	"scale": 1.25,
+	"roles": { "hull": "hull", "plate": "hull", "accent": "ambient", "glass": "ambient2" },
+	"shield": [58, 64],
+	"smoke": [0, 10],
+	"parts": [
+		{ "name": "strut", "mirror": true, "role": "dark", "crack": false, "points": [[12, -2], [26, -6], [26, 14], [12, 18]] },
+		{ "name": "coil", "mirror": true, "role": "accent", "gap": true, "detach": [2, 3], "points": [[24, -14], [36, -14], [38, 18], [24, 24]] },
+		{ "name": "mast", "mirror": true, "role": "dark", "detach": [3, 0], "crack": false, "points": [[1, -34], [6, -34], [10, -56], [6, -56]] },
+		{ "name": "body", "gap": true, "points": [[0, -42], [14, -26], [17, 8], [13, 38], [8, 46], [-8, 46], [-13, 38], [-17, 8], [-14, -26]] },
+		{ "name": "plate", "role": "plate", "detach": 3, "points": [[0, -42], [8, -30], [0, -22], [-8, -30]] },
+		{ "name": "cockpit", "role": "glass", "points": [[0, -22], [6, -14], [0, -2], [-6, -14]] },
+		{ "name": "nozzle", "mirror": true, "role": "dark", "crack": false, "points": [[4, 44], [14, 44], [13, 52], [5, 52]] }
+	],
+	"lines": [
+		{ "part": "coil", "mirror": true, "from": [26, -8], "to": [36, -8] },
+		{ "part": "coil", "mirror": true, "from": [26, -1], "to": [37, -1] },
+		{ "part": "coil", "mirror": true, "from": [25, 6], "to": [37, 6] },
+		{ "part": "coil", "mirror": true, "from": [25, 13], "to": [37, 13] },
+		{ "part": "body", "mirror": true, "from": [8, 6], "to": [9, 38] }
+	],
+	"lights": [
+		{ "pos": [8, -58], "mirror": true, "size": 3, "role": "trim", "blink": 1.0 },
+		{ "pos": [0, 20], "size": 3, "role": "trim", "blink": 0.6 }
+	],
+	"engines": [
+		{ "pos": [9, 50], "mirror": true, "size": 9 }
+	],
+	"ports": [
+		{ "pos": [-31, -4], "size": 7 },
+		{ "pos": [31, -4], "size": 7 },
+		{ "pos": [-31, 12], "size": 7 },
+		{ "pos": [31, 12], "size": 7 }
+	]
+}

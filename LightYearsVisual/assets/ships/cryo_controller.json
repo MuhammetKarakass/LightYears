@@ -1,0 +1,34 @@
+{
+	"id": "cryo_controller",
+	"bindings": ["Ship.Player.CryoController.Basic"],
+	"scale": 1.25,
+	"roles": { "hull": "hull", "plate": "player", "accent": "player", "glass": "ambient" },
+	"shield": [58, 64],
+	"smoke": [0, 12],
+	"parts": [
+		{ "name": "lowerFin", "mirror": true, "gap": true, "points": [[13, 12], [46, 26], [30, 46], [11, 36]] },
+		{ "name": "shard", "mirror": true, "role": "plate", "shade": -1, "detach": [2, 3], "points": [[18, 18], [38, 26], [30, 38], [16, 32]] },
+		{ "name": "upperFin", "mirror": true, "role": "plate", "shade": -1, "gap": true, "detach": [3, 2], "points": [[12, -18], [34, -38], [30, -6], [14, 8]] },
+		{ "name": "nozzle", "mirror": true, "role": "dark", "crack": false, "points": [[5, 40], [12, 40], [11, 50], [6, 50]] },
+		{ "name": "body", "gap": true, "points": [[0, -52], [10, -22], [14, 10], [9, 38], [0, 46], [-9, 38], [-14, 10], [-10, -22]] },
+		{ "name": "crown", "role": "plate", "detach": 3, "points": [[0, -52], [6, -34], [0, -26], [-6, -34]] },
+		{ "name": "core", "role": "glass", "points": [[0, -16], [6, -2], [0, 14], [-6, -2]] }
+	],
+	"lines": [
+		{ "part": "body", "mirror": true, "from": [6, 16], "to": [7, 36] },
+		{ "part": "lowerFin", "mirror": true, "from": [16, 20], "to": [38, 30] },
+		{ "part": "upperFin", "mirror": true, "from": [16, -10], "to": [28, -26] }
+	],
+	"lights": [
+		{ "pos": [32, -34], "mirror": true, "size": 3, "role": "trim", "blink": 0.8 }
+	],
+	"engines": [
+		{ "pos": [8, 48], "mirror": true, "size": 10 }
+	],
+	"ports": [
+		{ "pos": [-22, -12], "size": 7 },
+		{ "pos": [22, -12], "size": 7 },
+		{ "pos": [-24, 26], "size": 7 },
+		{ "pos": [24, 26], "size": 7 }
+	]
+}

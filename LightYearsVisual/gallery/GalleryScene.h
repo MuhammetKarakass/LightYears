@@ -6,10 +6,11 @@
 
 #include "visual/Backdrop.h"
 #include "visual/ShapeBrush.h"
+#include "visual/ShipRenderer.h"
 #include "visual/VisualAssets.h"
 #include "visual/VisualPipeline.h"
 
-// Sample scene that exercises every V1 piece: backdrop, planet, polygon ship, SDF shapes, glows of every tier.
+// Sample scene: backdrop, planet, every ship definition (V3) at full and game size, damage stages, port states, glows of every tier.
 class GalleryScene
 {
 public:
@@ -23,13 +24,13 @@ public:
 private:
 	void DrawBackground();
 	void DrawWorld();
+	void DrawShips();
 	void DrawEnergy();
-	sf::Vector2f ShipToScene(sf::Vector2f local) const;
-	std::vector<sf::Vector2f> ShipToScene(const std::vector<sf::Vector2f>& local) const;
 
 	ly::visual::VisualAssets& mAssets;
 	ly::visual::VisualPipeline& mPipeline;
 	ly::visual::ShapeBrush mBrush;
+	ly::visual::ShipRenderer mShips;
 	ly::visual::StarField mStars;
 	float mTime = 0.f;
 	sf::Vector2f mScroll;

@@ -9,7 +9,8 @@ namespace ly
 	class World;
 
 	// Submits energy glows and short trails to the visual pipeline from a read-only look at the world:
-	// the player ship's engine, player projectiles (Player tier) and enemy projectiles (EnemyProjectile tier).
+	// player projectiles (Player tier) and enemy projectiles (EnemyProjectile tier). The player ship's own lights are
+	// submitted by ShipVisualPresenter.
 	// Stateless: nothing is retained between frames, so no actor identity or lifetime has to be tracked.
 	class EnergyLightPresenter
 	{

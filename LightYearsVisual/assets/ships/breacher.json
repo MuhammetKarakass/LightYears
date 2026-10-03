@@ -1,0 +1,35 @@
+{
+	"id": "breacher",
+	"bindings": ["Ship.Player.Breacher.Basic"],
+	"scale": 1.25,
+	"roles": { "hull": "hull", "plate": "combatWarm", "accent": "combatWarm", "glass": "player" },
+	"shield": [56, 58],
+	"smoke": [0, 8],
+	"parts": [
+		{ "name": "pod", "mirror": true, "gap": true, "points": [[26, -6], [44, 4], [47, 32], [40, 46], [26, 40]] },
+		{ "name": "podPlate", "mirror": true, "role": "plate", "shade": -1, "detach": [2, 3], "points": [[30, 2], [42, 10], [43, 28], [32, 34]] },
+		{ "name": "hull", "gap": true, "points": [[0, -42], [22, -36], [28, -10], [26, 30], [16, 48], [-16, 48], [-26, 30], [-28, -10], [-22, -36]] },
+		{ "name": "ram", "role": "plate", "shade": -2, "gap": true, "detach": 3, "points": [[0, -50], [20, -46], [32, -30], [30, -14], [14, -10], [0, -14], [-14, -10], [-30, -14], [-32, -30], [-20, -46]] },
+		{ "name": "visor", "role": "glass", "points": [[-9, -2], [9, -2], [7, 6], [-7, 6]] },
+		{ "name": "nozzle", "mirror": true, "role": "dark", "crack": false, "points": [[6, 46], [18, 46], [17, 54], [7, 54]] }
+	],
+	"lines": [
+		{ "part": "ram", "mirror": true, "from": [6, -44], "to": [26, -30] },
+		{ "part": "ram", "from": [0, -44], "to": [0, -20] },
+		{ "part": "hull", "mirror": true, "from": [12, 10], "to": [14, 42] }
+	],
+	"lights": [
+		{ "pos": [44, 38], "mirror": true, "size": 3, "role": "trim", "blink": 1.6 },
+		{ "pos": [24, -24], "mirror": true, "size": 3, "role": "trim" }
+	],
+	"engines": [
+		{ "pos": [12, 52], "mirror": true, "size": 12 },
+		{ "pos": [38, 44], "mirror": true, "size": 8 }
+	],
+	"ports": [
+		{ "pos": [-36, 20], "size": 8 },
+		{ "pos": [36, 20], "size": 8 },
+		{ "pos": [-16, 22], "size": 8 },
+		{ "pos": [16, 22], "size": 8 }
+	]
+}

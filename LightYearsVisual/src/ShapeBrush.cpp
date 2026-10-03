@@ -173,7 +173,8 @@ namespace ly::visual
 		shader->setUniform("uOutlineColor", sf::Glsl::Vec4(style.outline));
 		shader->setUniform("uOutline", style.outlineWidth);
 		shader->setUniform("uSoft", soft);
-		DrawShaderQuad(target, *shader, padded);
+		const sf::BlendMode additive(sf::BlendMode::Factor::SrcAlpha, sf::BlendMode::Factor::One);
+		DrawShaderQuad(target, *shader, padded, style.additive ? additive : sf::BlendAlpha);
 	}
 
 	void ShapeBrush::Polygon(sf::RenderTarget& target, const std::vector<sf::Vector2f>& points, sf::Color fill) const

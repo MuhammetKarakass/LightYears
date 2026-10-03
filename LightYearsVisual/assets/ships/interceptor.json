@@ -1,0 +1,33 @@
+{
+	"id": "interceptor",
+	"bindings": ["Ship.Player.Interceptor.Basic"],
+	"scale": 1.25,
+	"roles": { "hull": "hull", "plate": "hull", "accent": "ambient2", "glass": "player" },
+	"shield": [40, 66],
+	"smoke": [0, 16],
+	"parts": [
+		{ "name": "blade", "mirror": true, "gap": true, "points": [[5, -6], [34, 40], [30, 48], [6, 26]] },
+		{ "name": "bladePlate", "mirror": true, "role": "plate", "detach": [2, 3], "points": [[8, 6], [28, 38], [25, 42], [8, 22]] },
+		{ "name": "canard", "mirror": true, "role": "plate", "detach": [3, 0], "points": [[4, -28], [18, -14], [5, -12]] },
+		{ "name": "fuselage", "gap": true, "points": [[0, -56], [5, -36], [7, 8], [9, 40], [5, 50], [-5, 50], [-9, 40], [-7, 8], [-5, -36]] },
+		{ "name": "nose", "role": "accent", "detach": 3, "points": [[0, -56], [3, -44], [0, -40], [-3, -44]] },
+		{ "name": "cockpit", "role": "glass", "points": [[0, -36], [3, -26], [0, -14], [-3, -26]] }
+	],
+	"lines": [
+		{ "part": "fuselage", "from": [0, -10], "to": [0, 44] },
+		{ "part": "blade", "mirror": true, "from": [10, 4], "to": [30, 40] }
+	],
+	"lights": [
+		{ "pos": [32, 44], "mirror": true, "size": 3, "role": "trim", "blink": 2.0 }
+	],
+	"engines": [
+		{ "pos": [0, 50], "size": 9 },
+		{ "pos": [31, 48], "mirror": true, "size": 5 }
+	],
+	"ports": [
+		{ "pos": [-15, 22], "size": 7 },
+		{ "pos": [15, 22], "size": 7 },
+		{ "pos": [0, 0], "size": 6 },
+		{ "pos": [0, 26], "size": 6 }
+	]
+}

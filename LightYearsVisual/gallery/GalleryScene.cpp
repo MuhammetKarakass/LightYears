@@ -1,35 +1,16 @@
 #include "GalleryScene.h"
 
+#include <algorithm>
 #include <cmath>
 #include <random>
 
 using namespace ly::visual;
 
-namespace
-{
-	constexpr float ShipScale = 1.5f;
-
-	// Ship hull in local units (nose up, 1 unit ~ 1 output pixel at 720p). Left side mirrors the right.
-	const std::vector<sf::Vector2f> HullRight = {{0, -74}, {12, -44}, {16, -8}, {14, 40}, {8, 58}, {0, 58}};
-	const std::vector<sf::Vector2f> WingRight = {{14, -6}, {54, 30}, {66, 64}, {40, 58}, {14, 40}};
-	const std::vector<sf::Vector2f> Cockpit = {{0, -50}, {6, -30}, {0, -16}, {-6, -30}};
-	const std::vector<sf::Vector2f> Nozzle = {{-9, 58}, {9, 58}, {7, 68}, {-7, 68}};
-
-	std::vector<sf::Vector2f> Mirror(const std::vector<sf::Vector2f>& points)
-	{
-		std::vector<sf::Vector2f> mirrored;
-		for (auto it = points.rbegin(); it != points.rend(); ++it)
-		{
-			mirrored.push_back({-it->x, it->y});
-		}
-		return mirrored;
-	}
-}
-
 GalleryScene::GalleryScene(VisualAssets& assets, VisualPipeline& pipeline)
 	: mAssets(assets)
 	, mPipeline(pipeline)
 	, mBrush(assets.Shaders())
+	, mShips(assets)
 	, mStars(1337, 280)
 {
 }
@@ -42,29 +23,16 @@ void GalleryScene::Update(float deltaSeconds)
 
 void GalleryScene::Draw()
 {
+	// The showcase draws far more ships than a game frame does, so lift the energy budget it would otherwise hit.
+	if (!mStress)
+	{
+		mAssets.Settings().maxEnergyDraws = std::max(mAssets.Settings().maxEnergyDraws, 400);
+		mAssets.Settings().maxEnergyAreaRatio = std::max(mAssets.Settings().maxEnergyAreaRatio, 4.f);
+	}
 	DrawBackground();
 	DrawWorld();
+	DrawShips();
 	DrawEnergy();
-}
-
-sf::Vector2f GalleryScene::ShipToScene(sf::Vector2f local) const
-{
-	sf::Vector2f size(mPipeline.OutputSize());
-	float k = size.y / 720.f * ShipScale;
-	float angle = 0.05f * std::sin(mTime * 0.9f);
-	sf::Vector2f rotated(local.x * std::cos(angle) - local.y * std::sin(angle), local.x * std::sin(angle) + local.y * std::cos(angle));
-	sf::Vector2f center(size.x * 0.56f, size.y * 0.40f + 7.f * k * std::sin(mTime * 1.3f));
-	return center + rotated * k;
-}
-
-std::vector<sf::Vector2f> GalleryScene::ShipToScene(const std::vector<sf::Vector2f>& local) const
-{
-	std::vector<sf::Vector2f> scene;
-	for (sf::Vector2f p : local)
-	{
-		scene.push_back(ShipToScene(p));
-	}
-	return scene;
 }
 
 void GalleryScene::DrawBackground()
@@ -100,7 +68,7 @@ void GalleryScene::DrawWorld()
 	sf::Vector2f size(mPipeline.OutputSize());
 	float px = mPipeline.WorldPixelScale();
 
-	// Off-screen-cropped giant ring arcs: scale reference and a hard-edged structure in the world layer.
+	// A hard-edged arc as scale reference, and the procedural planet, both far behind the ships.
 	const ColorRamp& ambient = script.Role("ambient");
 	ShapeStyle arc;
 	arc.fill = ambient.Sample(0.5f);
@@ -109,56 +77,145 @@ void GalleryScene::DrawWorld()
 	arc.hardEdges = true;
 	sf::Vector2f arcCenter(size.x * 1.15f, size.y * 1.4f);
 	mBrush.Arc(world, arcCenter, size.y * 1.25f, px * 5.f, 188.f, 74.f, arc);
-	arc.fill = ambient.Sample(0.25f);
-	mBrush.Arc(world, arcCenter, size.y * 1.25f + px * 14.f, px * 2.f, 205.f, 45.f, arc);
 
-	// Procedural planet, lower left, cropped by nothing but its own limb.
 	PlanetParams planet;
-	planet.center = {size.x * 0.2f, size.y * 0.72f};
-	planet.radius = size.y * 0.27f;
+	planet.center = {size.x * 0.1f, size.y * 0.95f};
+	planet.radius = size.y * 0.2f;
 	planet.pixelScale = px;
 	planet.rotation = mTime * 0.06f;
 	DrawPlanet(mAssets.Shaders(), world, script.Role("planet"), planet);
+}
 
-	// Ship: all outlines first so only the silhouette outline survives, then fills, then panel lines.
-	const ColorRamp& hull = script.Role("hull");
-	const ColorRamp& player = script.Role("player");
-	sf::Color outline = hull.Sample(0.f);
-	float outlineWidth = px * 2.f;
-	std::vector<sf::Vector2f> hullR = ShipToScene(HullRight);
-	std::vector<sf::Vector2f> hullL = ShipToScene(Mirror(HullRight));
-	std::vector<sf::Vector2f> wingR = ShipToScene(WingRight);
-	std::vector<sf::Vector2f> wingL = ShipToScene(Mirror(WingRight));
-	for (const auto* part : {&hullR, &hullL, &wingR, &wingL})
+namespace
+{
+	// state: 0 unequipped, 1 cooldown, 2 ready, 3 active
+	ShipPortState Port(AbilityCategory category, int state, float progress = 0.f)
 	{
-		mBrush.PolygonOutline(world, *part, outline, outlineWidth);
+		ShipPortState port;
+		port.equipped = state != 0;
+		port.category = category;
+		port.isReady = state == 2;
+		port.isActive = state == 3;
+		port.cooldownFraction = state == 1 ? progress : 1.f;
+		return port;
 	}
-	mBrush.PolygonOutline(world, ShipToScene(Nozzle), outline, outlineWidth);
-	mBrush.Polygon(world, ShipToScene(Nozzle), hull.Sample(0.f));
-	mBrush.Polygon(world, wingL, hull.Sample(0.25f));
-	mBrush.Polygon(world, wingR, hull.Sample(0.5f));
-	mBrush.Polygon(world, hullL, hull.Sample(0.5f));
-	mBrush.Polygon(world, hullR, hull.Sample(0.75f));
-	mBrush.Polygon(world, ShipToScene(Cockpit), player.Sample(0.85f));
+}
 
-	ShapeStyle panel;
-	panel.fill = hull.Sample(0.f);
-	panel.hardEdges = true;
-	float lineRadius = px * 0.5f;
-	mBrush.Capsule(world, ShipToScene({0.f, -12.f}), ShipToScene({0.f, 52.f}), lineRadius, panel);
-	mBrush.Capsule(world, ShipToScene({22.f, 4.f}), ShipToScene({56.f, 40.f}), lineRadius, panel);
-	mBrush.Capsule(world, ShipToScene({-22.f, 4.f}), ShipToScene({-56.f, 40.f}), lineRadius, panel);
-	mBrush.Capsule(world, ShipToScene({9.f, -30.f}), ShipToScene({10.f, 30.f}), lineRadius, panel);
-	mBrush.Capsule(world, ShipToScene({-9.f, -30.f}), ShipToScene({-10.f, 30.f}), lineRadius, panel);
+void GalleryScene::DrawShips()
+{
+	sf::Vector2f size(mPipeline.OutputSize());
+	const float k = size.y / 720.f;
+	// Roster order first, then anything else the ships folder holds.
+	std::vector<std::string> ids;
+	for (const char* wanted : {"fighter", "breacher", "interceptor", "conductor", "aegis", "cryo_controller"})
+	{
+		if (mAssets.Ships().Find(wanted) != nullptr)
+		{
+			ids.push_back(wanted);
+		}
+	}
+	for (const std::string& id : mAssets.Ships().Ids())
+	{
+		if (std::find(ids.begin(), ids.end(), id) == ids.end())
+		{
+			ids.push_back(id);
+		}
+	}
+	if (ids.empty())
+	{
+		return;
+	}
+	const float fullScale = 0.95f * k;
+	// The game draws a ship at about 0.5 output pixels per unit on a 1080p screen; the bottom strip shows that size.
+	const float gameScale = 0.34f * k;
 
-	// Small SDF shape samples: filled circle with outline and a ring, both pixel-snapped.
-	ShapeStyle dot;
-	dot.fill = script.Role("combatWarm").Sample(0.45f);
-	dot.outline = script.Role("combatWarm").Sample(0.f);
-	dot.outlineWidth = px;
-	dot.hardEdges = true;
-	mBrush.Circle(world, {size.x * 0.88f, size.y * 0.82f}, size.y * 0.045f, dot);
-	mBrush.Ring(world, {size.x * 0.88f, size.y * 0.82f}, size.y * 0.085f, px * 2.f, dot);
+	auto baseState = [&](int index, int count, float rowY, float scale)
+	{
+		ShipVisualState state;
+		state.position = {size.x * (static_cast<float>(index) + 0.5f) / static_cast<float>(count), size.y * rowY};
+		state.scale = scale;
+		state.time = mTime;
+		state.seed = 1u + static_cast<unsigned>(index) * 7919u;
+		state.shieldFraction = 1.f;
+		return state;
+	};
+	auto draw = [&](const std::string& id, const ShipVisualState& state)
+	{
+		if (const ShipVisualDefinition* definition = mAssets.Ships().Find(id))
+		{
+			mShips.Draw(mPipeline, *definition, state);
+		}
+	};
+	// A short hit now and then on one ship of the first row, so the flash and the shield ripple show up in captures.
+	const float hitPhase = std::fmod(mTime, 1.6f);
+	const float hit = hitPhase < 0.3f ? 1.f - hitPhase / 0.3f : 0.f;
+
+	// Row 1: every ship definition, thrusting, shields up, one in afterburner.
+	const int count = static_cast<int>(ids.size());
+	for (int i = 0; i < count; ++i)
+	{
+		ShipVisualState state = baseState(i, count, 0.17f, fullScale);
+		state.thrust = 0.35f + 0.3f * std::sin(mTime * 0.8f + static_cast<float>(i));
+		state.afterburner = i == 1;
+		state.shieldFraction = i == 3 ? 0.35f : 1.f;
+		if (i == static_cast<int>(mTime / 1.6f) % count)
+		{
+			state.hitFlash = hit;
+			state.shieldHit = hit;
+			state.shieldHitAngle = 0.8f * static_cast<float>(i);
+		}
+		for (int p = 0; p < ShipPortCount; ++p)
+		{
+			state.ports[p] = Port(static_cast<AbilityCategory>((i + p) % 5), 2);
+		}
+		draw(ids[static_cast<size_t>(i)], state);
+	}
+
+	// Row 2: the first ship at each damage stage (no shield), then mixed port states on two more ships.
+	const float hull[4] = {1.f, 0.65f, 0.4f, 0.15f};
+	for (int i = 0; i < 4; ++i)
+	{
+		ShipVisualState state = baseState(i, 6, 0.45f, fullScale);
+		state.hullFraction = hull[i];
+		state.shieldFraction = 0.f;
+		state.thrust = 0.4f;
+		draw(ids[0], state);
+	}
+	if (ids.size() > 4)
+	{
+		ShipVisualState state = baseState(4, 6, 0.45f, fullScale);
+		state.shieldFraction = 0.6f;
+		state.ports[0] = Port(AbilityCategory::Offense, 0);
+		state.ports[1] = Port(AbilityCategory::Defense, 1, std::fmod(mTime * 0.25f, 1.f));
+		state.ports[2] = Port(AbilityCategory::Movement, 2);
+		state.ports[3] = Port(AbilityCategory::Utility, 3);
+		draw(ids[3], state);
+
+		state = baseState(5, 6, 0.45f, fullScale);
+		const float phase = std::fmod(mTime, 2.f);
+		const float burst = phase < 0.4f ? 1.f - phase / 0.4f : 0.f;
+		state.ports[0] = Port(AbilityCategory::Primary, 2);
+		state.ports[1] = Port(AbilityCategory::Offense, 2);
+		state.ports[2] = Port(AbilityCategory::Offense, 1, 0.8f);
+		state.ports[3] = Port(AbilityCategory::Defense, 2);
+		state.ports[1].justActivated = burst;
+		state.ports[1].isActive = burst > 0.f;
+		draw(ids[4], state);
+	}
+
+	// Row 3: game-size strip, slightly rotated, alternating damage stages.
+	for (int i = 0; i < count; ++i)
+	{
+		ShipVisualState state = baseState(i, count, 0.78f, gameScale);
+		state.rotationDegrees = 25.f * std::sin(mTime * 0.5f + static_cast<float>(i));
+		state.thrust = 0.5f;
+		state.hullFraction = i % 2 == 0 ? 1.f : 0.45f;
+		for (int p = 0; p < ShipPortCount; ++p)
+		{
+			state.ports[p] = Port(static_cast<AbilityCategory>((i + p) % 5), p == 1 ? 1 : 2, 0.5f);
+		}
+		draw(ids[static_cast<size_t>(i)], state);
+	}
 }
 
 void GalleryScene::DrawEnergy()
@@ -166,52 +223,17 @@ void GalleryScene::DrawEnergy()
 	const ColorScript& script = mAssets.Script();
 	sf::Vector2f size(mPipeline.OutputSize());
 	float k = size.y / 720.f;
-	float ks = k * ShipScale;
 
-	const ColorRamp& player = script.Role("player");
 	const ColorRamp& warm = script.Role("combatWarm");
 	const ColorRamp& enemy = script.Role("enemy");
 	const ColorRamp& ambient = script.Role("ambient");
 	const ColorRamp& ambient2 = script.Role("ambient2");
 
-	// Player engine: tapering trail plus the hottest glow on screen.
-	TrailParams trail;
-	for (int i = 0; i < 14; ++i)
-	{
-		float wobble = std::sin(mTime * 9.f + i * 0.8f) * 1.5f * static_cast<float>(i) / 13.f;
-		trail.points.push_back(ShipToScene({wobble, 66.f + 12.f * static_cast<float>(i)}));
-	}
-	trail.headWidth = 20.f * ks;
-	trail.tailWidth = 1.5f * ks;
-	trail.color = player.Sample(0.8f);
-	trail.intensity = 0.9f;
-	trail.tier = LuminanceTier::Player;
-	mPipeline.SubmitTrail(trail);
-
-	GlowParams engine;
-	engine.position = ShipToScene({0.f, 66.f});
-	engine.coreRadius = 6.f * ks;
-	engine.haloRadius = 48.f * ks;
-	engine.color = player.Sample(0.8f);
-	engine.tier = LuminanceTier::Player;
-	mPipeline.SubmitGlow(engine);
-
-	GlowParams light;
-	light.coreRadius = 2.5f * ks;
-	light.haloRadius = 16.f * ks;
-	light.color = player.Sample(1.f);
-	light.intensity = 0.8f;
-	light.tier = LuminanceTier::Player;
-	light.position = ShipToScene({64.f, 62.f});
-	mPipeline.SubmitGlow(light);
-	light.position = ShipToScene({-64.f, 62.f});
-	mPipeline.SubmitGlow(light);
-
-	// Enemy projectiles: warm, bright but never brighter than the player.
-	for (int i = 0; i < 6; ++i)
+	// Enemy projectiles on the edges: warm, bright but never brighter than the player.
+	for (int i = 0; i < 4; ++i)
 	{
 		float y = std::fmod(mTime * 150.f + static_cast<float>(i) * 137.f, size.y + 240.f) - 120.f;
-		float x = size.x * (0.70f + 0.05f * static_cast<float>(i)) + 14.f * std::sin(mTime * 2.f + i);
+		float x = size.x * (0.015f + 0.012f * static_cast<float>(i)) + 6.f * std::sin(mTime * 2.f + i);
 		sf::Vector2f head(x, y);
 		TrailParams tail;
 		for (int p = 0; p < 7; ++p)
@@ -234,11 +256,11 @@ void GalleryScene::DrawEnergy()
 	}
 
 	// Decorative drifting motes, cool and low in the hierarchy.
-	for (int i = 0; i < 12; ++i)
+	for (int i = 0; i < 10; ++i)
 	{
 		float a = mTime * (0.25f + 0.03f * static_cast<float>(i)) + static_cast<float>(i) * 1.7f;
 		GlowParams mote;
-		mote.position = {size.x * (0.5f + 0.42f * std::sin(a * 0.7f + i)), size.y * (0.5f + 0.38f * std::cos(a * 0.5f + i * 2.f))};
+		mote.position = {size.x * (0.5f + 0.45f * std::sin(a * 0.7f + i)), size.y * (0.5f + 0.45f * std::cos(a * 0.5f + i * 2.f))};
 		mote.coreRadius = 2.5f * k;
 		mote.haloRadius = 34.f * k;
 		mote.color = (i % 2 == 0 ? ambient : ambient2).Sample(0.9f);
@@ -246,16 +268,6 @@ void GalleryScene::DrawEnergy()
 		mote.tier = LuminanceTier::Decorative;
 		mPipeline.SubmitGlow(mote);
 	}
-
-	// Environment light: faint warm rim where the planet catches the sun.
-	GlowParams rim;
-	rim.position = {size.x * 0.2f + size.y * 0.27f * 0.8f, size.y * 0.72f - size.y * 0.27f * 0.5f};
-	rim.coreRadius = 1.f;
-	rim.haloRadius = size.y * 0.16f;
-	rim.color = script.Role("planet").Sample(0.85f);
-	rim.intensity = 0.7f;
-	rim.tier = LuminanceTier::Environment;
-	mPipeline.SubmitGlow(rim);
 
 	if (mStress)
 	{

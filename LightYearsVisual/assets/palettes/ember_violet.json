@@ -8,7 +8,10 @@
 		"amber":   ["#44081c", "#a02218", "#e8621a", "#ffae34", "#ffeeb0"],
 		"crimson": ["#2a0414", "#78102c", "#cc2848", "#ff6a5e", "#ffd2c2"],
 		"hull":    ["#1a1040", "#38307a", "#7a70b8", "#bcb4e4", "#f4f0ff"],
-		"ember":   ["#2c0a2c", "#7a1c3c", "#c8402c", "#f08a30", "#ffe8a0"]
+		"ember":   ["#2c0a2c", "#7a1c3c", "#c8402c", "#f08a30", "#ffe8a0"],
+		"portBlue":   ["#081a5a", "#1a46b8", "#3c82f0", "#8cc0ff", "#e4f2ff"],
+		"portGreen":  ["#06301c", "#0e7a3c", "#2cc460", "#86f0a0", "#e6ffe8"],
+		"portViolet": ["#240c5a", "#5a2cb4", "#9a5cf0", "#cc9cff", "#f4e8ff"]
 	},
 	"roles": {
 		"background": "space",
@@ -18,6 +21,11 @@
 		"player": "mint",
 		"enemy": "crimson",
 		"hull": "hull",
-		"planet": "ember"
+		"planet": "ember",
+		"portPrimary": "mint",
+		"portOffense": "amber",
+		"portDefense": "portBlue",
+		"portMovement": "portGreen",
+		"portUtility": "portViolet"
 	}
 }

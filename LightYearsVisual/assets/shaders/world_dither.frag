@@ -1,10 +1,10 @@
 #version 120
 
 // Ordered dither of the world layer: each pixel snaps to the nearest color of the active script palette
-// after a Bayer offset, so off-palette colors become stippled mixes of ramp colors.
+// after a Bayer offset, so off-palette colors become stippled mixes of ramp colors. Colors already on the palette stay flat.
 uniform sampler2D texture;
 uniform vec2 uTexSize;
-uniform vec3 uPalette[48];
+uniform vec3 uPalette[64];
 uniform int uPaletteCount;
 uniform float uSpread;
 
@@ -30,7 +30,9 @@ void main()
 	vec3 target = c.rgb + vec3((bayer4(pixel) - 0.5) * uSpread);
 	vec3 best = c.rgb;
 	float bestDistance = 1000.0;
-	for (int i = 0; i < 48; i++)
+	float exactDistance = 1000.0;
+	vec3 exact = c.rgb;
+	for (int i = 0; i < 64; i++)
 	{
 		if (i >= uPaletteCount)
 		{
@@ -43,6 +45,14 @@ void main()
 			bestDistance = dist;
 			best = uPalette[i];
 		}
+		vec3 raw = uPalette[i] - c.rgb;
+		float rawDist = dot(raw, raw);
+		if (rawDist < exactDistance)
+		{
+			exactDistance = rawDist;
+			exact = uPalette[i];
+		}
 	}
-	gl_FragColor = vec4(best, 1.0);
+	// A pixel that already is a palette color stays flat (authored ramp stops); only off-palette colors are dithered.
+	gl_FragColor = vec4(exactDistance < 0.00002 ? exact : best, 1.0);
 }

@@ -22,13 +22,16 @@ namespace ly
 	private:
 		virtual void Tick(float deltaTime) override;
 
-		// Dev-only command line: --visual-off, --visual-script <name>, --visual-capture <png> [--capture-frames N].
+		// Dev-only command line: --visual-off, --visual-script <name>, --visual-capture <png> [--capture-frames N],
+		// --visual-player-hull <0..1> (shown hull fraction only), --visual-ship <0..5> (start with that player ship).
 		struct DevOptions
 		{
 			bool visualOff = false;
 			std::string colorScript = "nebula_teal_pink";
 			std::string capturePath;
 			int captureFrames = 180;
+			float playerHull = -1.f;
+			int shipIndex = -1;
 		};
 
 		static DevOptions ParseDevOptions();

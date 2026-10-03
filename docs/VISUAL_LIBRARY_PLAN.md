@@ -1,6 +1,6 @@
 # Visual Library Plan
 
-Status: planning document. Section "V1" describes what exists in the source tree (`LightYearsVisual/`); V2 to V5 are planned and not implemented.
+Status: V1 and V3 are in the source tree (`LightYearsVisual/`), and the first game integration pass and the V3 player-ship integration are done; V2, V4 and V5 are planned and not implemented.
 
 ## Direction
 
@@ -31,11 +31,17 @@ Known limits: layers are 8-bit (no HDR render targets in SFML), so bloom thresho
 - Effects: explosion (flash, shock ring, debris sparks, smoke in the world layer) and light pulse (expanding additive ring with fade), driven by data and the effect budget.
 - Particle emitter on vertex arrays, tier-aware.
 
-## V3: procedural ship from data
+## V3 (done): procedural player ships from data
 
-- A ship is described by data (hull polygons, mirror rules, panel lines, lights, engines) and drawn through `ShapeBrush`, with outline and ramp-based lighting.
-- Damage layers (cracks, scorch, missing panels, flicker) driven by a health fraction.
-- Ability slot ports: named anchor points on the ship where ability visuals attach.
+Where: `include/visual/ShipVisual.h`, `ShipRenderer.h`, `src/ShipVisual.cpp`, `ShipRenderer.cpp`, `assets/ships/*.json` (six player ships), `assets/shaders/shield.frag`; game side `presentation/visual/ShipVisualPresenter`. The data format is in `LightYearsVisual/README.md` ("Ships (V3)").
+
+- A ship is data (hull polygons with mirror rules, panel lines, lights, engine mounts, four ability ports, shield size, per-part damage data) drawn into the dithered World layer with outline and ramp-stop colors; engines, lights, ports and the shield are energy.
+- Damage in four stages from the hull fraction: darkened plates and cracks, sparks and scarred missing plates, then more missing parts, flicker and smoke. Deterministic per seed.
+- Shield bubble following the shield fraction with a hit ripple. Ability ports: dark socket, category-colored light, cooldown pie, ready pulse, activation burst and ring.
+- Library additions it uses: `VisualPipeline::SubmitEnergy` and `TierBrightnessCap`, `ShapeStyle::additive`, `VisualAssets::Ships()`, a dither palette of up to 64 colors with exact palette colors left flat, port ramps and roles in both palettes.
+- The player ship uses it in the game; the sprite is skipped while the pipeline is ON through `WorldRenderPipeline::HidesActor`. Enemies keep their sprites.
+
+Known limits: at game scale a ship is only about 20 to 28 world pixels across, so detail drops with the level of detail rules and port markers read as colored pixels; the visual is scaled 1.25 over the sprite footprint (a data choice); the presenter does not know the hit direction, so the shield ripple angle is a rolling value; the port category comes from the second token of the ability id.
 
 ## V4: black hole, planets, light and darkness
 

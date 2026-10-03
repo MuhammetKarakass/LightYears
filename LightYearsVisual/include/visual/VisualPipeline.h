@@ -65,6 +65,11 @@ namespace ly::visual
 		// Energy draws are queued, tier-capped now and budget-culled in Compose (decorative first).
 		void SubmitGlow(const GlowParams& glow);
 		void SubmitTrail(const TrailParams& trail);
+		// Custom additive energy draw (shield bubble, ring bursts): queued like glows, so it is budget-culled by tier.
+		// area is the covered output area in pixels. The callback draws into the energy target (output pixels); the
+		// caller keeps the brightness at or below TierBrightnessCap(tier).
+		void SubmitEnergy(LuminanceTier tier, float area, std::function<void(sf::RenderTarget&)> draw);
+		float TierBrightnessCap(LuminanceTier tier) const;
 		// Full-screen additive pulse; scaled by settings.flashScale and capped.
 		void SubmitFlash(sf::Color color, float strength);
 

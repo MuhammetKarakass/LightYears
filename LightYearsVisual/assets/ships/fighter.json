@@ -1,0 +1,33 @@
+{
+	"id": "fighter",
+	"bindings": ["Ship.Player.Fighter.Basic"],
+	"scale": 1.25,
+	"roles": { "hull": "hull", "plate": "hull", "accent": "player", "glass": "player" },
+	"shield": [58, 62],
+	"smoke": [0, 12],
+	"parts": [
+		{ "name": "wing", "mirror": true, "gap": true, "points": [[10, -8], [46, 24], [50, 42], [34, 40], [10, 26]] },
+		{ "name": "wingPlate", "mirror": true, "role": "plate", "detach": [2, 3], "points": [[14, 4], [38, 26], [34, 34], [14, 24]] },
+		{ "name": "tip", "mirror": true, "role": "accent", "crack": false, "detach": 3, "points": [[42, 34], [50, 42], [42, 41]] },
+		{ "name": "nozzle", "mirror": true, "role": "dark", "crack": false, "points": [[5, 42], [12, 42], [11, 52], [6, 52]] },
+		{ "name": "fuselage", "gap": true, "points": [[0, -52], [8, -32], [11, 0], [10, 30], [6, 46], [-6, 46], [-10, 30], [-11, 0], [-8, -32]] },
+		{ "name": "nosePlate", "role": "plate", "detach": 3, "points": [[0, -52], [5, -36], [0, -28], [-5, -36]] },
+		{ "name": "cockpit", "role": "glass", "points": [[0, -28], [5, -18], [0, -6], [-5, -18]] }
+	],
+	"lines": [
+		{ "part": "fuselage", "mirror": true, "from": [6, -12], "to": [8, 34] },
+		{ "part": "wing", "mirror": true, "from": [16, 14], "to": [42, 36] }
+	],
+	"lights": [
+		{ "pos": [47, 40], "mirror": true, "size": 3, "role": "trim", "blink": 1.2 }
+	],
+	"engines": [
+		{ "pos": [8, 50], "mirror": true, "size": 10 }
+	],
+	"ports": [
+		{ "pos": [-24, 16], "size": 7 },
+		{ "pos": [24, 16], "size": 7 },
+		{ "pos": [0, 12], "size": 7 },
+		{ "pos": [0, 30], "size": 7 }
+	]
+}

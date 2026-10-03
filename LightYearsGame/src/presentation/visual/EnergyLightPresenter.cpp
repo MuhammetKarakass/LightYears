@@ -3,7 +3,6 @@
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
-#include "player/PlayerSpaceShip.h"
 
 #include <algorithm>
 #include <cmath>
@@ -39,35 +38,6 @@ namespace ly
 				trail.points.push_back(frame.ToPixels(head + direction * (worldLength * t)));
 			}
 			return trail;
-		}
-
-		void SubmitEngine(const Frame& frame, const visual::ColorScript& script, visual::VisualPipeline& pipeline, const Actor& ship)
-		{
-			using namespace visual;
-			const sf::Vector2f forward = ship.GetActorForwardDirection();
-			const sf::Vector2f bounds = ship.GetActorGlobalBounds().size;
-			const float halfLength = std::max(bounds.x, bounds.y) * 0.5f;
-			const float speed = Length(ship.GetVelocity());
-			const float thrust = std::clamp(speed / 500.f, 0.f, 1.f);
-			const sf::Vector2f nozzle = ship.GetActorLocation() - forward * (halfLength * 0.75f);
-			const sf::Color color = script.Role("player").Sample(0.8f);
-
-			TrailParams trail = MakeTrail(frame, nozzle, -forward, halfLength * (0.5f + 1.2f * thrust), 8);
-			trail.headWidth = halfLength * 0.32f * frame.scale;
-			trail.tailWidth = halfLength * 0.04f * frame.scale;
-			trail.color = color;
-			trail.intensity = 0.7f + 0.3f * thrust;
-			trail.tier = LuminanceTier::Player;
-			pipeline.SubmitTrail(trail);
-
-			GlowParams engine;
-			engine.position = frame.ToPixels(nozzle);
-			engine.coreRadius = halfLength * 0.12f * frame.scale;
-			engine.haloRadius = halfLength * (0.7f + 0.3f * thrust) * frame.scale;
-			engine.color = color;
-			engine.intensity = 0.85f + 0.15f * thrust;
-			engine.tier = LuminanceTier::Player;
-			pipeline.SubmitGlow(engine);
 		}
 
 		void SubmitProjectile(const Frame& frame, const Actor& projectile, sf::Color color, float intensity, visual::LuminanceTier tier, visual::VisualPipeline& pipeline)
@@ -123,12 +93,9 @@ namespace ly
 				return;
 			}
 			const CollisionLayer layer = actor.GetCollisionLayer();
+			// The player ship's engine and port lights belong to ShipVisualPresenter, not to this scan.
 			if (layer == CollisionLayer::Player)
 			{
-				if (dynamic_cast<const PlayerSpaceShip*>(&actor))
-				{
-					SubmitEngine(frame, script, pipeline, actor);
-				}
 				return;
 			}
 			if ((layer != CollisionLayer::PlayerBullet && layer != CollisionLayer::EnemyBullet) || projectileGlows >= MaxProjectileGlows)

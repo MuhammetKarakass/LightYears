@@ -1,0 +1,35 @@
+{
+	"id": "aegis",
+	"bindings": ["Ship.Player.Aegis.Basic"],
+	"scale": 1.25,
+	"roles": { "hull": "hull", "plate": "hull", "accent": "ambient", "glass": "player" },
+	"shield": [68, 62],
+	"smoke": [0, 10],
+	"parts": [
+		{ "name": "shoulder", "mirror": true, "gap": true, "points": [[30, -30], [48, -22], [51, 20], [42, 36], [32, 30]] },
+		{ "name": "shoulderPlate", "mirror": true, "role": "plate", "detach": [2, 3], "points": [[34, -24], [46, -16], [48, 16], [36, 28]] },
+		{ "name": "emitter", "mirror": true, "role": "accent", "gap": true, "detach": [0, 3], "points": [[50, -4], [47, 3], [41, 6], [35, 3], [32, -4], [35, -11], [41, -14], [47, -11]] },
+		{ "name": "hull", "gap": true, "points": [[-26, -42], [26, -42], [34, -30], [36, 10], [30, 34], [22, 46], [-22, 46], [-30, 34], [-36, 10], [-34, -30]] },
+		{ "name": "brow", "role": "plate", "gap": true, "detach": 3, "points": [[-20, -42], [20, -42], [26, -32], [-26, -32]] },
+		{ "name": "visor", "role": "glass", "points": [[-13, -26], [13, -26], [11, -17], [-11, -17]] },
+		{ "name": "nozzle", "mirror": true, "role": "dark", "crack": false, "points": [[8, 44], [28, 44], [26, 52], [10, 52]] }
+	],
+	"lines": [
+		{ "part": "hull", "mirror": true, "from": [16, -10], "to": [20, 38] },
+		{ "part": "hull", "mirror": true, "from": [-4, 8], "to": [14, 8] },
+		{ "part": "brow", "mirror": true, "from": [4, -37], "to": [16, -37] }
+	],
+	"lights": [
+		{ "pos": [41, -4], "mirror": true, "size": 5, "role": "trim", "blink": 0.5 }
+	],
+	"engines": [
+		{ "pos": [0, 52], "size": 12 },
+		{ "pos": [19, 52], "mirror": true, "size": 10 }
+	],
+	"ports": [
+		{ "pos": [-22, 12], "size": 8 },
+		{ "pos": [22, 12], "size": 8 },
+		{ "pos": [-10, 30], "size": 8 },
+		{ "pos": [10, 30], "size": 8 }
+	]
+}

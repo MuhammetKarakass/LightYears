@@ -27,6 +27,11 @@ add_library(LightYearsVisual STATIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/VisualPipeline.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/VisualPipeline.cpp
 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ShipVisual.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/ShipVisual.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ShipRenderer.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/ShipRenderer.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/src/FileUtil.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/FileUtil.cpp
 )

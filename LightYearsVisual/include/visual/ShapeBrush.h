@@ -15,6 +15,8 @@ namespace ly::visual
 		float outlineWidth = 0.f;
 		// true gives pixel-snapped edges (no anti-aliasing): use it in the world layer.
 		bool hardEdges = false;
+		// Adds the fill (scaled by its alpha) to the target instead of alpha blending: energy-layer shapes.
+		bool additive = false;
 	};
 
 	// SDF shapes and polygons drawn into any layer target. Positions are output-pixel coordinates.

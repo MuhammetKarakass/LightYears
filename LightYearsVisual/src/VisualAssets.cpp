@@ -21,6 +21,9 @@ namespace ly::visual
 		{
 			return false;
 		}
+		// Ship definitions are optional and never fatal: a bad file lands in the load report.
+		mLoadReport = {};
+		mShips.LoadDirectory(root / "ships", mLoadReport);
 		return true;
 	}
 
@@ -29,6 +32,7 @@ namespace ly::visual
 		ReloadReport report;
 		mShaders.Reload(force, report);
 		mScripts.Reload(force, report);
+		mShips.Reload(force, report);
 
 		std::filesystem::path settingsFile = mRoot / "pipeline.json";
 		auto stamp = FileStamp(settingsFile);

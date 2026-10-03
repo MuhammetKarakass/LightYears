@@ -5,6 +5,7 @@
 
 namespace ly
 {
+	class Actor;
 	class World;
 	enum class RenderLayer : uint8_t;
 
@@ -24,6 +25,9 @@ namespace ly
 		virtual sf::RenderTarget& GetTarget(RenderLayer layer) = 0;
 		// True when the pipeline paints this layer itself, so the world's actors on it are skipped.
 		virtual bool ReplacesLayer(RenderLayer layer) const = 0;
+		// True when the pipeline draws this actor itself, so the world skips the actor's own Render. Purely a draw
+		// decision: the actor keeps ticking, colliding and keeping its own render flags.
+		virtual bool HidesActor(const Actor& actor) const { (void)actor; return false; }
 		// After all actors drew. Leaves the window with the composed scene (default view), ready for the HUD.
 		virtual void Compose(sf::RenderWindow& window) = 0;
 	};

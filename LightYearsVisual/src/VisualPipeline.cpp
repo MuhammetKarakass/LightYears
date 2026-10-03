@@ -264,6 +264,17 @@ namespace ly::visual
 		}});
 	}
 
+	void VisualPipeline::SubmitEnergy(LuminanceTier tier, float area, std::function<void(sf::RenderTarget&)> draw)
+	{
+		++mStats.submitted;
+		mEnergyQueue.push_back({tier, area, std::move(draw)});
+	}
+
+	float VisualPipeline::TierBrightnessCap(LuminanceTier tier) const
+	{
+		return mAssets.Settings().tierMaxBrightness[TierIndex(tier)];
+	}
+
 	void VisualPipeline::SubmitFlash(sf::Color color, float strength)
 	{
 		if (strength > mFlash)
@@ -313,7 +324,7 @@ namespace ly::visual
 
 		sf::RenderStates worldStates(sf::BlendAlpha);
 		sf::Shader* dither = mAssets.Shaders().Find("world_dither");
-		std::vector<sf::Color> palette = mAssets.Script().Palette(48);
+		std::vector<sf::Color> palette = mAssets.Script().Palette(64);
 		if (settings.ditherEnabled && dither != nullptr && palette.size() >= 2)
 		{
 			std::vector<sf::Glsl::Vec3> colors;

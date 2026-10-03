@@ -118,6 +118,8 @@ add_executable(${LIGHT_YEARS_GAME_TARGET_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/ProceduralBackdrop.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/EnergyLightPresenter.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/EnergyLightPresenter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/presentation/visual/ShipVisualPresenter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/visual/ShipVisualPresenter.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/spaceship/Spaceship.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/spaceship/Spaceship.cpp

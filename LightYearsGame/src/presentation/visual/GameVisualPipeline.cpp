@@ -31,6 +31,7 @@ namespace ly
 			mPipeline.reset();
 			return false;
 		}
+		LogReport(mAssets.LoadReport());
 		mReady = true;
 		LY_GAME_INFO("Visual pipeline ready (assets %s, world %ux%u)", assetsDirectory.string().c_str(), mPipeline->VirtualSize().x, mPipeline->VirtualSize().y);
 		return true;
@@ -100,6 +101,7 @@ namespace ly
 		mBackdrop.Draw(mAssets, *mPipeline, world, snappedView, mTime);
 		// Actors draw with the game camera; the backdrop above used the pipeline's own pixel view.
 		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
+		mShips.Draw(world, snappedView, mAssets, *mPipeline, mTime);
 		mLights.Submit(world, snappedView, mAssets, *mPipeline);
 	}
 

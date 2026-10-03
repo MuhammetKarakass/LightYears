@@ -1,7 +1,9 @@
 #include "gameFramework/GameApplication.h"
 
 #include "gameplay/content/GameContentBootstrap.h"
+#include "gameplay/content/ShipContentCatalog.h"
 #include "level/ArenaTestLevel.h"
+#include "player/PlayerManager.h"
 #include "presentation/visual/GameVisualPipeline.h"
 
 #include <framework/AssetManager.h>
@@ -34,6 +36,14 @@ namespace ly
 
 		mDevOptions = ParseDevOptions();
 		InitializeVisualPipeline();
+		if (mDevOptions.shipIndex >= 0)
+		{
+			const List<std::string> shipIds = content::ShipContentCatalog::GetPlayerShipIds();
+			if (static_cast<std::size_t>(mDevOptions.shipIndex) < shipIds.size())
+			{
+				PlayerManager::GetPlayerManager().SetSelectedShipId(shipIds[static_cast<std::size_t>(mDevOptions.shipIndex)]);
+			}
+		}
 
 		LoadWorld<ArenaTestLevel>();
 	}
@@ -55,6 +65,8 @@ namespace ly
 			else if (arg == "--visual-script" && hasValue) options.colorScript = __argv[++i];
 			else if (arg == "--visual-capture" && hasValue) options.capturePath = __argv[++i];
 			else if (arg == "--capture-frames" && hasValue) options.captureFrames = std::max(1, std::atoi(__argv[++i]));
+			else if (arg == "--visual-player-hull" && hasValue) options.playerHull = std::clamp(static_cast<float>(std::atof(__argv[++i])), 0.f, 1.f);
+			else if (arg == "--visual-ship" && hasValue) options.shipIndex = std::atoi(__argv[++i]);
 		}
 #endif
 		return options;
@@ -67,6 +79,10 @@ namespace ly
 		mVisualPipeline = std::make_unique<GameVisualPipeline>();
 		mVisualPipeline->Initialize(GetRenderWindow(), std::filesystem::path(LY_VISUAL_ASSETS_DIR), mDevOptions.colorScript);
 		mVisualPipeline->SetEnabled(!mDevOptions.visualOff);
+		if (mDevOptions.playerHull >= 0.f)
+		{
+			mVisualPipeline->SetPlayerHullOverride(mDevOptions.playerHull);
+		}
 		SetWorldRenderPipeline(mVisualPipeline.get());
 	}
 

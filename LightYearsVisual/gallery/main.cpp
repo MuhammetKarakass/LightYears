@@ -218,6 +218,7 @@ int main(int argc, char** argv)
 		std::cerr << "cannot load assets from " << options.assets.string() << ": " << error << "\n";
 		return 1;
 	}
+	PrintReport(assets.LoadReport());
 	if (!options.script.empty() && !assets.Scripts().SetActive(options.script))
 	{
 		std::cerr << "unknown color script \"" << options.script << "\"\n";

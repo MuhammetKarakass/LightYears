@@ -552,6 +552,10 @@ namespace ly{
 			sf::RenderTarget& target = pipeline ? pipeline->GetTarget(layer) : static_cast<sf::RenderTarget&>(window);
 			for (Actor* actor : mRenderBuckets[layerIndex])
 			{
+				if (pipeline && pipeline->HidesActor(*actor))
+				{
+					continue;
+				}
 				actor->Render(target);
 			}
 		}
