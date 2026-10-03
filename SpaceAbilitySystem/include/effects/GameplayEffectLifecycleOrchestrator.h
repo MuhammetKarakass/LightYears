@@ -2,6 +2,9 @@
 
 #include "effects/GameplayEffectDefinition.h"
 #include "effects/GameplayEffectRuntimeState.h"
+#include "effects/GameplayEffectSpec.h"
+
+#include <string>
 
 namespace sas
 {
@@ -18,11 +21,19 @@ namespace sas
 	{
 		bool changed = false;
 		bool expired = false;
+		bool stackChanged = false;
 	};
 
 	class GameplayEffectLifecycleOrchestrator
 	{
 	public:
+		static bool IsApplicableSpec(const GameplayEffectSpec& spec);
+		static bool IsDecayAfterDuration(const GameplayEffectDefinition& definition);
+		// Immunity categories are a dot-separated hierarchy: a provider of "Control"
+		// blocks "Control.Stun", while "Movement.Slow" stays narrow.
+		static bool GrantsImmunity(const std::string& grantedCategory, const std::string& blockedCategory);
+		// Refreshes the duration-facing spec fields when a capped stack is hit again.
+		static void RefreshCappedSpec(GameplayEffectSpec& activeSpec, const GameplayEffectSpec& incomingSpec);
 		static bool MatchesStackingTarget(
 			const GameplayEffectDefinition& definition,
 			const std::string& activeEffectId,

@@ -1,9 +1,45 @@
 #include "effects/GameplayEffectLifecycleOrchestrator.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace sas
 {
+	bool GameplayEffectLifecycleOrchestrator::IsApplicableSpec(const GameplayEffectSpec& spec)
+	{
+		const GameplayEffectDefinition& definition = spec.definition;
+		const bool durationValid = definition.durationPolicy != GameplayEffectDurationPolicy::Duration ||
+			(std::isfinite(spec.duration) && spec.duration > 0.f);
+		const bool decayValid = definition.stackLifetimePolicy != GameplayEffectStackLifetimePolicy::DecayAfterDuration ||
+			(std::isfinite(definition.stackDecayInterval) && definition.stackDecayInterval > 0.f);
+		return spec.maxStacks >= 1 && durationValid && decayValid;
+	}
+
+	bool GameplayEffectLifecycleOrchestrator::IsDecayAfterDuration(const GameplayEffectDefinition& definition)
+	{
+		return definition.durationPolicy == GameplayEffectDurationPolicy::Duration &&
+			definition.stackLifetimePolicy == GameplayEffectStackLifetimePolicy::DecayAfterDuration;
+	}
+
+	bool GameplayEffectLifecycleOrchestrator::GrantsImmunity(
+		const std::string& grantedCategory,
+		const std::string& blockedCategory
+	)
+	{
+		return grantedCategory == blockedCategory ||
+			(!grantedCategory.empty() && blockedCategory.rfind(grantedCategory + ".", 0) == 0);
+	}
+
+	void GameplayEffectLifecycleOrchestrator::RefreshCappedSpec(
+		GameplayEffectSpec& activeSpec,
+		const GameplayEffectSpec& incomingSpec
+	)
+	{
+		activeSpec.duration = incomingSpec.duration;
+		activeSpec.maxStacks = incomingSpec.maxStacks;
+		activeSpec.sourceAbilityUpgradeIds = incomingSpec.sourceAbilityUpgradeIds;
+	}
+
 	bool GameplayEffectLifecycleOrchestrator::MatchesStackingTarget(
 		const GameplayEffectDefinition& definition,
 		const std::string& activeEffectId,
@@ -78,10 +114,12 @@ namespace sas
 		}
 		if (stackLifetimePolicy == GameplayEffectStackLifetimePolicy::DecayAfterDuration)
 		{
+			const int stackCountBefore = state.stackCount;
 			const bool stackChangedOrExpired = state.TickStackDecay(deltaTime);
 			return GameplayEffectDurationTickResult{
 				stackChangedOrExpired || deltaTime > 0.f,
-				state.stackCount == 0
+				state.stackCount == 0,
+				state.stackCount != stackCountBefore
 			};
 		}
 		return GameplayEffectDurationTickResult{ true, state.TickDuration(deltaTime) };

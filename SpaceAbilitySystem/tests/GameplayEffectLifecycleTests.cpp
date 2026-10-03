@@ -1,3 +1,4 @@
+#include "AbilitySystemComponent.h"
 #include "effects/GameplayEffectDefinitionValidation.h"
 #include "effects/GameplayEffectSystem.h"
 
@@ -378,13 +379,14 @@ int main()
 	}
 	std::vector<std::string> clearEvents;
 	sas::GameplayEffectHandle rejectedDuringClear{};
+	sas::ClearResult clearResultInsideRemoving = sas::ClearResult::Completed;
 	sas::GameplayEffectRuntimeCallbacks<sas::ActiveGameplayEffect> clearCallbacks;
 	clearCallbacks.removing = [&clearRuntime, &clearDefinition, &clearEvents,
-		&rejectedDuringClear](sas::ActiveGameplayEffect&)
+		&rejectedDuringClear, &clearResultInsideRemoving](sas::ActiveGameplayEffect&)
 	{
 		clearEvents.push_back("removing");
 		rejectedDuringClear = clearRuntime.ApplyEffect(clearDefinition);
-		clearRuntime.Clear();
+		clearResultInsideRemoving = clearRuntime.Clear();
 	};
 	clearCallbacks.removed = [&clearEvents](sas::GameplayEffectHandle)
 	{
@@ -395,11 +397,18 @@ int main()
 		clearEvents.push_back("collectionChanged");
 	};
 	clearRuntime.SetCallbacks(std::move(clearCallbacks));
-	clearRuntime.Clear();
+	if (clearRuntime.Clear() != sas::ClearResult::Completed)
+	{
+		return Fail("Clear with removable effects did not report Completed");
+	}
 	if (rejectedDuringClear.IsValid() || clearRuntime.FindEffect(staleHandle) ||
 		clearEvents != std::vector<std::string>{ "removing", "removed", "collectionChanged" })
 	{
 		return Fail("Clear did not reject callback application or preserve removal notifications");
+	}
+	if (clearResultInsideRemoving != sas::ClearResult::Pending)
+	{
+		return Fail("Clear requested from a removal callback did not report Pending");
 	}
 	const sas::GameplayEffectHandle freshHandle = clearRuntime.ApplyEffect(clearDefinition);
 	if (!freshHandle.IsValid() || freshHandle == staleHandle ||
@@ -407,7 +416,10 @@ int main()
 	{
 		return Fail("Clear reused a stale handle or left the runtime unusable");
 	}
-	clearRuntime.Clear();
+	if (clearRuntime.Clear() != sas::ClearResult::Completed)
+	{
+		return Fail("Second Clear did not report Completed");
+	}
 
 	sas::AttributeSystem throwingAttributes;
 	ly::GameplayTagContainer throwingTags;
@@ -427,7 +439,7 @@ int main()
 	throwingRuntime.SetCallbacks(std::move(throwingCallbacks));
 	try
 	{
-		throwingRuntime.Clear();
+		static_cast<void>(throwingRuntime.Clear());
 		return Fail("Clear callback exception was not propagated");
 	}
 	catch (...)
@@ -438,7 +450,186 @@ int main()
 	{
 		return Fail("Clear guard was not restored after a callback exception");
 	}
-	throwingRuntime.Clear();
+	if (throwingRuntime.Clear() != sas::ClearResult::Completed)
+	{
+		return Fail("Clear after a callback exception did not report Completed");
+	}
+
+	// Cross-effect removal requested from a callback is deferred until the running operation finishes.
+	{
+		sas::AttributeSystem deferAttributes;
+		ly::GameplayTagContainer deferTags;
+		sas::GameplayEffectSystem deferRuntime{ deferAttributes, deferTags };
+		const sas::GameplayEffectHandle effectA = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferA"));
+		const sas::GameplayEffectHandle effectB = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferB"));
+		if (!effectA.IsValid() || !effectB.IsValid())
+		{
+			return Fail("Deferred removal effects could not be applied");
+		}
+		std::vector<std::string> deferEvents;
+		bool removalAccepted = false;
+		bool bPresentInsideCallback = false;
+		bool bPresentAfterRequest = false;
+		sas::GameplayEffectRuntimeCallbacks<sas::ActiveGameplayEffect> deferCallbacks;
+		deferCallbacks.changed = [&](sas::ActiveGameplayEffect& effect)
+		{
+			if (effect.handle != effectA) return;
+			deferEvents.push_back("changed:A");
+			bPresentInsideCallback = deferRuntime.FindEffect(effectB) != nullptr;
+			removalAccepted = deferRuntime.RemoveEffect(effectB);
+			bPresentAfterRequest = deferRuntime.FindEffect(effectB) != nullptr;
+		};
+		deferCallbacks.removing = [&](sas::ActiveGameplayEffect& effect)
+		{
+			deferEvents.push_back(effect.handle == effectB ? "removing:B" : "removing:other");
+		};
+		deferCallbacks.removed = [&](sas::GameplayEffectHandle handle)
+		{
+			deferEvents.push_back(handle == effectB ? "removed:B" : "removed:other");
+		};
+		deferCallbacks.collectionChanged = [&]() { deferEvents.push_back("collectionChanged"); };
+		deferRuntime.SetCallbacks(std::move(deferCallbacks));
+		deferRuntime.RefreshEffectDuration(effectA);
+		if (!removalAccepted || !bPresentInsideCallback || !bPresentAfterRequest)
+		{
+			return Fail("Cross-effect removal from a callback was not queued with the target still findable");
+		}
+		if (deferRuntime.FindEffect(effectB) || !deferRuntime.FindEffect(effectA))
+		{
+			return Fail("Deferred cross-effect removal was not applied after the operation completed");
+		}
+		const std::vector<std::string> expectedDeferEvents{ "changed:A", "collectionChanged", "removing:B", "removed:B", "collectionChanged" };
+		if (deferEvents != expectedDeferEvents)
+		{
+			return Fail("Deferred removal notifications did not arrive after the originating operation");
+		}
+	}
+
+	// Clear requested from a callback is applied after the outermost operation and reports Pending meanwhile.
+	{
+		sas::AttributeSystem deferAttributes;
+		ly::GameplayTagContainer deferTags;
+		sas::GameplayEffectSystem deferRuntime{ deferAttributes, deferTags };
+		const sas::GameplayEffectHandle effectA = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferClearA"));
+		const sas::GameplayEffectHandle effectB = deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferClearB"));
+		std::vector<std::string> deferEvents;
+		sas::ClearResult clearResultInsideCallback = sas::ClearResult::Completed;
+		bool bothPresentAfterRequest = false;
+		sas::GameplayEffectRuntimeCallbacks<sas::ActiveGameplayEffect> deferCallbacks;
+		deferCallbacks.changed = [&](sas::ActiveGameplayEffect& effect)
+		{
+			if (effect.handle != effectA) return;
+			deferEvents.push_back("changed:A");
+			clearResultInsideCallback = deferRuntime.Clear();
+			bothPresentAfterRequest = deferRuntime.FindEffect(effectA) && deferRuntime.FindEffect(effectB);
+		};
+		deferCallbacks.removing = [&](sas::ActiveGameplayEffect& effect)
+		{
+			deferEvents.push_back(effect.handle == effectA ? "removing:A" : "removing:B");
+		};
+		deferCallbacks.removed = [&](sas::GameplayEffectHandle handle)
+		{
+			deferEvents.push_back(handle == effectA ? "removed:A" : "removed:B");
+		};
+		deferCallbacks.collectionChanged = [&]() { deferEvents.push_back("collectionChanged"); };
+		deferRuntime.SetCallbacks(std::move(deferCallbacks));
+		deferRuntime.RefreshEffectDuration(effectA);
+		if (clearResultInsideCallback != sas::ClearResult::Pending || !bothPresentAfterRequest)
+		{
+			return Fail("Clear from a callback was not deferred behind the running operation");
+		}
+		if (deferRuntime.FindEffect(effectA) || deferRuntime.FindEffect(effectB) || !deferRuntime.GetHandles().empty())
+		{
+			return Fail("Deferred Clear was not applied after the outermost operation");
+		}
+		const std::vector<std::string> expectedDeferEvents{
+			"changed:A", "removing:A", "removed:A", "collectionChanged", "removing:B", "removed:B", "collectionChanged" };
+		if (deferEvents != expectedDeferEvents)
+		{
+			return Fail("Deferred Clear notifications did not follow the originating operation");
+		}
+		if (deferRuntime.Clear() != sas::ClearResult::Completed ||
+			!deferRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.DeferClearAfter")).IsValid())
+		{
+			return Fail("Runtime was unusable after a deferred Clear");
+		}
+	}
+
+	// A failed removal keeps the effect and the clear requested; the exception propagates and a retry completes.
+	{
+		sas::AttributeSystem retryAttributes;
+		ly::GameplayTagContainer retryTags;
+		sas::GameplayEffectSystem retryRuntime{ retryAttributes, retryTags };
+		const sas::GameplayEffectHandle retryHandle = retryRuntime.ApplyEffect(MakeRefreshEffect("Effect.Test.ClearRetry"));
+		bool failRemoving = true;
+		sas::GameplayEffectRuntimeCallbacks<sas::ActiveGameplayEffect> retryCallbacks;
+		retryCallbacks.removing = [&failRemoving](sas::ActiveGameplayEffect&)
+		{
+			if (!failRemoving) return;
+			failRemoving = false;
+			throw 2;
+		};
+		retryRuntime.SetCallbacks(std::move(retryCallbacks));
+		bool propagated = false;
+		try { static_cast<void>(retryRuntime.Clear()); }
+		catch (int) { propagated = true; }
+		if (!propagated || !retryRuntime.FindEffect(retryHandle))
+		{
+			return Fail("Failed removal did not propagate or did not retain the effect for retry");
+		}
+		if (retryRuntime.Clear() != sas::ClearResult::Completed || retryRuntime.FindEffect(retryHandle))
+		{
+			return Fail("Retried Clear did not complete the retained removal");
+		}
+	}
+
+	// The component reports Pending for a Clear deferred behind an operation and retries it afterwards.
+	{
+		sas::AbilitySystemComponent component;
+		sas::ClearResult clearResultInsideOperation = sas::ClearResult::Completed;
+		bool clearPendingInsideOperation = false;
+		component.RunOperation([&]
+		{
+			clearResultInsideOperation = component.Clear();
+			clearPendingInsideOperation = component.IsClearPending();
+		});
+		if (clearResultInsideOperation != sas::ClearResult::Pending || !clearPendingInsideOperation ||
+			component.IsClearPending())
+		{
+			return Fail("Component Clear inside an operation was not deferred and then completed");
+		}
+
+		// Retained effect cleanup keeps the component clear requested; the next operation retries it.
+		bool failRemoving = true;
+		sas::AbilitySystemComponent::EffectCallbacks componentCallbacks;
+		componentCallbacks.removing = [&failRemoving](sas::ActiveGameplayEffect&)
+		{
+			if (!failRemoving) return;
+			failRemoving = false;
+			throw 3;
+		};
+		component.SetEffectRuntimeCallbacks(std::move(componentCallbacks));
+		if (!component.ApplyGameplayEffect(MakeRefreshEffect("Effect.Test.ComponentClearRetry")).IsValid())
+		{
+			return Fail("Component effect could not be applied");
+		}
+		bool propagated = false;
+		try { static_cast<void>(component.Clear()); }
+		catch (int) { propagated = true; }
+		if (!propagated || !component.IsClearPending() || component.BuildGameplayEffectSnapshots().size() != 1)
+		{
+			return Fail("Component Clear did not retain the effect and stay requested after a failed removal");
+		}
+		component.Tick(0.f);
+		if (component.IsClearPending() || !component.BuildGameplayEffectSnapshots().empty())
+		{
+			return Fail("Component did not retry the pending Clear after the next operation");
+		}
+		if (component.Clear() != sas::ClearResult::Completed)
+		{
+			return Fail("Component Clear after a completed retry did not report Completed");
+		}
+	}
 
 	return 0;
 }

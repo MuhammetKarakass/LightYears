@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ClearResult.h"
 #include "abilities/AbilitySystemRuntime.h"
 #include "abilities/AbilityCooldownTags.h"
 #include "abilities/GameplayAbilityInstance.h"
@@ -321,7 +322,11 @@ namespace sas
 		ly::Delegate<> onGameplayEffectsChanged;
 
 		virtual void Tick(float deltaTime);
-		virtual void Clear();
+		// Completed when everything was torn down. Pending when the clear was deferred behind an open
+		// operation or retained cleanup (EndFire debt, active invocations, effects) remains: the clear
+		// stays requested and is retried after the next outermost operation. Exceptions from user
+		// callbacks still propagate once the pass finishes.
+		virtual ClearResult Clear();
 
 	protected:
 		virtual void ClearAdditionalState() {}

@@ -19,9 +19,15 @@ namespace sas
 		ly::List<AttributeModifierHandle> appliedModifierHandles;
 		ly::List<ly::GameplayTag> appliedGrantedTags;
 		GameplayAttributeList runtimeAttributes;
-		std::size_t operationDepth = 0;
+		// Owned by the runtime system's operation scope; callbacks must not touch these.
+		bool operationActive = false;
 		bool removeRequested = false;
 		bool removalInProgress = false;
+
+		bool IsRemovalPending() const { return removeRequested || removalInProgress; }
+		bool CanBeginOperation() const { return !operationActive && !IsRemovalPending(); }
+		// Removal was requested mid-operation and has not started: applications must not stack onto it.
+		bool IsAwaitingDeferredRemoval() const { return operationActive && removeRequested && !removalInProgress; }
 
 		void Initialize(
 			GameplayEffectHandle newHandle,

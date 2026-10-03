@@ -57,9 +57,10 @@ namespace sas
 			const std::string& abilityId
 		) const = 0;
 		virtual ly::List<AbilityRuntimeSnapshot> BuildSnapshots() const = 0;
+		virtual void GetCooldownActivity(bool& abilityCooldownActive, bool& primaryWeaponCooldownActive) const = 0;
 		virtual const ly::List<AbilityHandle>& GetPassiveAbilities() const = 0;
 		virtual void Tick(float deltaTime) = 0;
-		virtual void Clear() = 0;
+		virtual ClearResult Clear() = 0;
 		virtual bool HasAbilityInstances() const = 0;
 	};
 
@@ -243,6 +244,11 @@ namespace sas
 			return mRuntime.BuildSnapshots();
 		}
 
+		void GetCooldownActivity(bool& abilityCooldownActive, bool& primaryWeaponCooldownActive) const override
+		{
+			mRuntime.GetCooldownActivity(abilityCooldownActive, primaryWeaponCooldownActive);
+		}
+
 		const ly::List<AbilityHandle>& GetPassiveAbilities() const override
 		{
 			return mRuntime.GetPassiveAbilities();
@@ -340,14 +346,16 @@ namespace sas
 			mRuntime.Tick(deltaTime);
 		}
 
-		void Clear() override
+		ClearResult Clear() override
 		{
 			std::exception_ptr error;
-			try { mRuntime.Clear(); }
+			ClearResult result = ClearResult::Pending;
+			try { result = mRuntime.Clear(); }
 			catch (...) { error = std::current_exception(); }
 			mTriggerCooldowns.Clear();
 			mTriggerMatchCounts.clear();
 			if (error) std::rethrow_exception(error);
+			return result;
 		}
 
 		bool HasAbilityInstances() const override

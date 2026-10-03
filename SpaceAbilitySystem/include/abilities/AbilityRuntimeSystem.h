@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ClearResult.h"
 #include "abilities/AbilityCollection.h"
 #include "abilities/AbilityGrantRules.h"
 #include "abilities/AbilityRuntimeBinding.h"
@@ -31,6 +32,8 @@ namespace sas
 		std::function<void(Instance&, float)> tick;
 		std::function<void(Instance&, bool)> setInput;
 		std::function<AbilityRuntimeSnapshot(const Instance&)> snapshot;
+		// Optional allocation-free subset of snapshot (cooldownRemaining and slot).
+		std::function<void(const Instance&, float&, AbilitySlot&)> cooldownState;
 		std::function<void(AbilityHandle)> granted;
 		std::function<void(AbilityHandle)> removed;
 		std::function<void(AbilityHandle)> changed;
@@ -445,13 +448,15 @@ namespace sas
 			}
 		}
 
-		void Clear()
+		// Pending: deferred behind an open mutation, already clearing, or abilities with retained
+		// cleanup remain. Callback exceptions still propagate after the pass completes.
+		ClearResult Clear()
 		{
-			if (mClearing) return;
+			if (mClearing) return ClearResult::Pending;
 			if (mMutationDepth != 0)
 			{
 				mClearRequested = true;
-				return;
+				return ClearResult::Pending;
 			}
 			mClearRequested = false;
 			mClearing = true;
@@ -488,22 +493,15 @@ namespace sas
 					mAbilities.Remove(handle);
 				}
 			}
-			if (!mAbilities.GetAll().empty())
-			{
-				if (!error)
-				{
-					error = std::make_exception_ptr(std::runtime_error(
-						"Ability cleanup is incomplete; retry Clear after retained cleanup succeeds."
-					));
-				}
-			}
-			else
+			const bool retained = !mAbilities.GetAll().empty();
+			if (!retained)
 			{
 				mAbilities.Clear();
 				try { if (mCallbacks.cleared) mCallbacks.cleared(); }
 				catch (...) { if (!error) error = std::current_exception(); }
 			}
 			if (error) std::rethrow_exception(error);
+			return retained ? ClearResult::Pending : ClearResult::Completed;
 		}
 
 		Instance* Find(AbilitySlot slot) { return mAbilities.Find(slot); }
@@ -561,6 +559,53 @@ namespace sas
 				}
 			}
 			return snapshots;
+		}
+
+		// Same result as scanning BuildSnapshots() for cooldownRemaining > 0, without building the list.
+		void GetCooldownActivity(bool& abilityCooldownActive, bool& primaryWeaponCooldownActive) const
+		{
+			abilityCooldownActive = false;
+			primaryWeaponCooldownActive = false;
+			if (!mCallbacks.snapshot)
+			{
+				return;
+			}
+			for (const auto& entry : mAbilities.GetAll())
+			{
+				const Instance* ability = entry.second.get();
+				if (!ability)
+				{
+					continue;
+				}
+				float cooldownRemaining = 0.f;
+				AbilitySlot slot = AbilitySlot::None;
+				if (mCallbacks.cooldownState)
+				{
+					mCallbacks.cooldownState(*ability, cooldownRemaining, slot);
+				}
+				else
+				{
+					const AbilityRuntimeSnapshot snapshot = mCallbacks.snapshot(*ability);
+					cooldownRemaining = snapshot.cooldownRemaining;
+					slot = snapshot.slot;
+				}
+				if (cooldownRemaining <= 0.f)
+				{
+					continue;
+				}
+				if (slot == AbilitySlot::PrimaryFire)
+				{
+					primaryWeaponCooldownActive = true;
+				}
+				else
+				{
+					abilityCooldownActive = true;
+				}
+				if (abilityCooldownActive && primaryWeaponCooldownActive)
+				{
+					return;
+				}
+			}
 		}
 
 		bool IsGrantMutationBlocked(const Definition& definition) const
@@ -656,7 +701,7 @@ namespace sas
 			}
 			if (mMutationDepth == 0 && mClearRequested)
 			{
-				try { Clear(); }
+				try { static_cast<void>(Clear()); }
 				catch (...) { if (!error) error = std::current_exception(); }
 			}
 			if (error) std::rethrow_exception(error);

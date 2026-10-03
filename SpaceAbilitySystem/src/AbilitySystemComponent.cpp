@@ -199,22 +199,7 @@ namespace sas
 		bool primaryWeaponCooldownActive = false;
 		if (mAbilityRuntime)
 		{
-			for (const AbilityRuntimeSnapshot& snapshot :
-				mAbilityRuntime->BuildSnapshots())
-			{
-				if (snapshot.cooldownRemaining <= 0.f)
-				{
-					continue;
-				}
-				if (snapshot.slot == AbilitySlot::PrimaryFire)
-				{
-					primaryWeaponCooldownActive = true;
-				}
-				else
-				{
-					abilityCooldownActive = true;
-				}
-			}
+			mAbilityRuntime->GetCooldownActivity(abilityCooldownActive, primaryWeaponCooldownActive);
 		}
 
 		if (abilityCooldownActive != mAbilityCooldownTagActive)
@@ -457,11 +442,11 @@ namespace sas
 		});
 	}
 
-	void AbilitySystemComponent::Clear()
+	ClearResult AbilitySystemComponent::Clear()
 	{
-		if (mClearing) return;
+		if (mClearing) return ClearResult::Pending;
 		mClearRequested = true;
-		if (mOperationDepth != 0) return;
+		if (mOperationDepth != 0) return ClearResult::Pending;
 		mClearing = true;
 		std::exception_ptr error;
 		const auto cleanup = [&error](auto&& operation)
@@ -469,22 +454,24 @@ namespace sas
 			try { operation(); }
 			catch (...) { if (!error) error = std::current_exception(); }
 		};
-		cleanup([&] { if (mAbilityRuntime) mAbilityRuntime->Clear(); });
-		const bool runtimeRetainedAbilities =
-			mAbilityRuntime && mAbilityRuntime->HasAbilityInstances();
+		// Keeps the clear requested so the next outermost operation retries it. A callback exception
+		// captured on the way still propagates instead of being reported as plain Pending.
+		const auto retainPending = [&]
+		{
+			mClearing = false;
+			if (error) std::rethrow_exception(error);
+			return ClearResult::Pending;
+		};
+		ClearResult abilityResult = ClearResult::Completed;
+		cleanup([&] { if (mAbilityRuntime) abilityResult = mAbilityRuntime->Clear(); });
+		const bool runtimeRetainedAbilities = abilityResult == ClearResult::Pending ||
+			(mAbilityRuntime && mAbilityRuntime->HasAbilityInstances());
 		if (runtimeRetainedAbilities)
 		{
-			if (!error)
-			{
-				error = std::make_exception_ptr(std::runtime_error(
-					"Ability cleanup is incomplete; retry Clear after retained cleanup succeeds."
-				));
-			}
 			cleanup([&] { ClearAdditionalState(true); });
-			mClearing = false;
 			// Keep clear requested and preserve attributes, tags, effects, and the
 			// game-owned weapon override state until retained EndFire debt is drained.
-			std::rethrow_exception(error);
+			return retainPending();
 		}
 		bool additionalStateError = false;
 		try { ClearAdditionalState(true); }
@@ -492,32 +479,13 @@ namespace sas
 		std::optional<bool> pendingAdditionalCleanup;
 		try { pendingAdditionalCleanup = GetPendingAdditionalCleanup(); }
 		catch (...) { additionalStateError = true; if (!error) error = std::current_exception(); }
-		if (pendingAdditionalCleanup.value_or(additionalStateError))
-		{
-			if (!error)
-			{
-				error = std::make_exception_ptr(std::runtime_error(
-					"Additional ability cleanup is incomplete; retry Clear after retained cleanup succeeds."
-				));
-			}
-			mClearing = false;
-			std::rethrow_exception(error);
-		}
-		cleanup([&] { mEffects.Clear(); });
+		if (pendingAdditionalCleanup.value_or(additionalStateError)) return retainPending();
+		ClearResult effectsResult = ClearResult::Completed;
+		cleanup([&] { effectsResult = mEffects.Clear(); });
 		bool retainedEffects = true;
-		try { retainedEffects = !mEffects.GetHandles().empty(); }
+		try { retainedEffects = effectsResult == ClearResult::Pending || !mEffects.GetHandles().empty(); }
 		catch (...) { if (!error) error = std::current_exception(); }
-		if (retainedEffects)
-		{
-			if (!error)
-			{
-				error = std::make_exception_ptr(std::runtime_error(
-					"Gameplay effect cleanup is incomplete; retry Clear after retained cleanup succeeds."
-				));
-			}
-			mClearing = false;
-			std::rethrow_exception(error);
-		}
+		if (retainedEffects) return retainPending();
 		cleanup([&] { ReleaseAdditionalRuntimeDependencies(); });
 		cleanup([&] { mOwnedTags.Clear(); });
 		cleanup([&] { mAttributes.Clear(); });
@@ -527,6 +495,7 @@ namespace sas
 		mClearRequested = false;
 		mClearing = false;
 		if (error) std::rethrow_exception(error);
+		return ClearResult::Completed;
 	}
 
 	void AbilitySystemComponent::ExecuteOperation(const std::function<void()>& operation)
@@ -538,7 +507,7 @@ namespace sas
 		--mOperationDepth;
 		if (mOperationDepth == 0 && mClearRequested && !mClearing)
 		{
-			try { Clear(); }
+			try { static_cast<void>(Clear()); }
 			catch (...) { if (!error) error = std::current_exception(); }
 		}
 		if (error) std::rethrow_exception(error);
