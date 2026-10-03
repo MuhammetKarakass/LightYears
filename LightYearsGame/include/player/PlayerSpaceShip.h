@@ -5,6 +5,7 @@
 #include "player/PlayerMovementComponent.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/ability/loadout/AbilityLoadoutManager.h"
+#include "gameplay/module/ModuleTriggerRuntime.h"
 #include "gameplay/module/ShipModuleApplier.h"
 
 namespace ly
@@ -27,6 +28,8 @@ namespace ly
 		float GetSpeed() const { return mPlayerMovement.GetSpeed(); }
 		ShipModuleApplier& GetModuleApplier() { return mModuleApplier; }
 		const ShipModuleApplier& GetModuleApplier() const { return mModuleApplier; }
+		ModuleTriggerRuntime& GetModuleTriggerRuntime() { return mModuleTriggerRuntime; }
+		const ModuleTriggerRuntime& GetModuleTriggerRuntime() const { return mModuleTriggerRuntime; }
 		// Enabled module systems, readable for HUD work.
 		const List<GameplayTag>& GetEnabledModuleSystems() const { return mModuleApplier.GetEnabledSystems(); }
 		// True while this ship took or dealt damage within the module combat window.
@@ -55,6 +58,7 @@ namespace ly
 
 		AbilityLoadoutManager mAbilityLoadout;
 		PlayerMovementComponent& mPlayerMovement;
+		ModuleTriggerRuntime mModuleTriggerRuntime;
 		ShipModuleApplier mModuleApplier;
 		float mCombatWindowRemaining = 0.f;
 
@@ -66,5 +70,4 @@ namespace ly
 		float mCollisionDamage;
 	};
 }
-
 

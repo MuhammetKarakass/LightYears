@@ -1,6 +1,7 @@
 #include "gameplay/module/ShipModuleApplier.h"
 
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/module/ModuleTriggerRuntime.h"
 #include "gameplay/tags/GameplayTags.h"
 
 #include <algorithm>
@@ -17,9 +18,10 @@ namespace ly
 		}
 	}
 
-	ShipModuleApplier::ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities)
+	ShipModuleApplier::ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities, ModuleTriggerRuntime* triggerRuntime)
 		: mShipRuntime{ shipRuntime }
 		, mAbilities{ abilities }
+		, mTriggerRuntime{ triggerRuntime }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -127,6 +129,7 @@ namespace ly
 		{
 			mScopedRuleHandles.push_back(mAbilities.AddScopedAbilityRule(rule));
 		}
+		if (mTriggerRuntime) mTriggerRuntime->SetRules(mResolved.triggerBuffs);
 
 		mEnabledSystems = mResolved.enabledSystems;
 		mShipRuntime.SetSystemEnabled(ShipSystem::Shield, IsSystemEnabled(GameplayTags::Module::System::Shield));

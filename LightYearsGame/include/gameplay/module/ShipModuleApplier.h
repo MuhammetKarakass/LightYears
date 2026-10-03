@@ -14,6 +14,7 @@
 namespace ly
 {
 	class LightYearsAbilitySystemComponent;
+	class ModuleTriggerRuntime;
 
 	// Turns an installed loadout into live ship state. It owns every handle it
 	// creates and rebuilds from the full desired state on each change. It keeps no
@@ -35,7 +36,7 @@ namespace ly
 			float remainingSeconds = 0.f;
 		};
 
-		ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities);
+		ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities, ModuleTriggerRuntime* triggerRuntime = nullptr);
 		~ShipModuleApplier() override;
 		ShipModuleApplier(const ShipModuleApplier&) = delete;
 		ShipModuleApplier& operator=(const ShipModuleApplier&) = delete;
@@ -92,6 +93,8 @@ namespace ly
 
 		ShipRuntime& mShipRuntime;
 		LightYearsAbilitySystemComponent& mAbilities;
+		// The trigger runtime is owned by the same ship and outlives this applier.
+		ModuleTriggerRuntime* mTriggerRuntime = nullptr;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;

@@ -13,7 +13,8 @@ namespace ly
 		: SpaceShip(owningWorld, shipDef)
 		, mAbilityLoadout(GetAbilitySystemComponent())
 		, mPlayerMovement(AddComponent<PlayerMovementComponent>())
-		, mModuleApplier(GetShipRuntime(), GetAbilitySystemComponent())
+		, mModuleTriggerRuntime(GetAbilitySystemComponent(), GetShipRuntime(), GetRuntimeModifiers())
+		, mModuleApplier(GetShipRuntime(), GetAbilitySystemComponent(), &mModuleTriggerRuntime)
 		, mInvulnerabilityTime(2.f)
 		, mInvulnerabilityBlinkInterval(0.4f)
 		, mInvulnerabilityBlinkTimer(0.f)
@@ -100,6 +101,7 @@ namespace ly
 		SpaceShip::Tick(deltaTime);
 		mCombatWindowRemaining = std::max(0.f, mCombatWindowRemaining - deltaTime);
 		mModuleApplier.Tick(deltaTime);
+		mModuleTriggerRuntime.Tick(deltaTime);
 
 		if (IsInvulnerable())
 		{
