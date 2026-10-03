@@ -131,6 +131,42 @@ namespace ly::content
 			return variant;
 		}
 
+		bool HasAttribute(const ModuleSizeVariant& variant, const std::string& attributeName)
+		{
+			for (const ModuleAttributeModifier& modifier : variant.attributeModifiers)
+				if (modifier.modifier.attributeId.GetName() == attributeName) return true;
+			for (const ModuleAbilityModifier& modifier : variant.abilityModifiers)
+				if (modifier.modifier.attributeId.GetName() == attributeName) return true;
+			return false;
+		}
+
+		void ValidateDescription(const ModuleDefinition& definition, const std::string& context)
+		{
+			std::size_t position = 0;
+			while (true)
+			{
+				const std::size_t open = definition.description.find('{', position);
+				const std::size_t strayClose = definition.description.find('}', position);
+				if (open == std::string::npos)
+				{
+					if (strayClose != std::string::npos) throw std::runtime_error(context + " description has an unmatched closing brace");
+					return;
+				}
+				if (strayClose != std::string::npos && strayClose < open)
+					throw std::runtime_error(context + " description has an unmatched closing brace");
+
+				const std::size_t close = definition.description.find('}', open + 1);
+				if (close == std::string::npos || close == open + 1)
+					throw std::runtime_error(context + " description has an invalid attribute placeholder");
+
+				const std::string attributeName = definition.description.substr(open + 1, close - open - 1);
+				for (const ModuleSizeVariant& variant : definition.sizeVariants)
+					if (!HasAttribute(variant, attributeName))
+						throw std::runtime_error(context + " description references an attribute missing from a size variant: " + attributeName);
+				position = close + 1;
+			}
+		}
+
 		ModuleDefinition ParseModule(const Json& object)
 		{
 			ModuleDefinition definition;
@@ -144,6 +180,11 @@ namespace ly::content
 			}
 			const std::string context = "Module " + id;
 			definition.displayName = object.value("displayName", id);
+			if (object.contains("description"))
+			{
+				if (!object.at("description").is_string()) throw std::runtime_error(context + " description must be a string");
+				definition.description = object.at("description").get<std::string>();
+			}
 			definition.family = ParseTag(object.at("family"), GameplayTagKind::AbilityCategory, context + " family");
 			if (definition.family.name != parsedId.family)
 			{
@@ -169,6 +210,7 @@ namespace ly::content
 					ParseVariant(variant, context + ".sizeVariants[" + std::to_string(index++) + "]")
 				);
 			}
+			ValidateDescription(definition, context);
 			if (definition.systemCategory.IsValid())
 			{
 				if (GameplayTagSchema::IsTwoCellModuleSystem(definition.systemCategory))

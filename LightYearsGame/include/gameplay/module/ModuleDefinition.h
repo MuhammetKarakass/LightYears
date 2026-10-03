@@ -48,6 +48,7 @@ namespace ly
 	{
 		sas::ContentId moduleId;
 		std::string displayName;
+		std::string description;
 		// One of GameplayTags::Ability::{Primary,Offense,Defense,Movement,Utility}.
 		GameplayTag family;
 		// One of GameplayTags::Module::System::*; empty for a normal module.

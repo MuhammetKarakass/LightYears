@@ -164,8 +164,9 @@ namespace ly
 		else if (vm.preview.active && vm.preview.bonusPercent > 0) Label(*root, { GridOrigin.x, infoY }, "+" + std::to_string(vm.preview.bonusPercent) + "% zone bonus", style.TextSize(UITextSize::Body), style.Color(UIColorRole::Positive));
 		else if (heldEntry) Label(*root, { GridOrigin.x, infoY }, "Holding " + heldEntry->name + "  (" + std::to_string(vm.heldRotation * 90) + " deg)", style.TextSize(UITextSize::Body), text);
 		else Label(*root, { GridOrigin.x, infoY }, "Pick a module from the list or click an installed one.", style.TextSize(UITextSize::Body), muted);
+		if (heldEntry) Label(*root, { GridOrigin.x, infoY + 20.f }, heldEntry->description, 11, muted);
 
-		const float legendY = infoY + 36.f;
+		const float legendY = infoY + 42.f;
 		for (std::size_t i = 0; i < vm.legend.size(); ++i)
 		{
 			const sf::Vector2f position{ GridOrigin.x + static_cast<float>(i % 2) * 200.f, legendY + static_cast<float>(i / 2) * 22.f };
@@ -182,7 +183,8 @@ namespace ly
 			const ModuleEntryView& item = vm.inventory[static_cast<std::size_t>(mScroll + row)];
 			const sf::Vector2f position{ InventoryOrigin.x, InventoryOrigin.y + row * InventoryRowHeight };
 			Rect(*root, position, { InventoryWidth, InventoryRowHeight - 2.f }, item.held ? sf::Color{ 58, 96, 160, 255 } : sf::Color{ 30, 33, 44, 255 });
-			Label(*root, position + sf::Vector2f{ 8.f, 5.f }, item.name + "  " + item.family + "  " + std::to_string(item.cellCount) + " cells", 13, item.isSystem ? sf::Color{ 255, 214, 100, 255 } : text);
+			Label(*root, position + sf::Vector2f{ 8.f, 2.f }, item.name + "  " + item.family + "  " + std::to_string(item.cellCount) + " cells", 12, item.isSystem ? sf::Color{ 255, 214, 100, 255 } : text);
+			Label(*root, position + sf::Vector2f{ 8.f, 17.f }, item.description, 9, muted);
 		}
 	}
 

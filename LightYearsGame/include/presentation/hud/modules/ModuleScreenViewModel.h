@@ -15,6 +15,7 @@ namespace ly
 	{
 		std::uint32_t instanceId{ 0 };
 		std::string name, abbreviation, family;
+		std::string description;
 		bool isSystem{ false };
 		int cellCount{ 0 };
 		int variantIndex{ 0 };
@@ -29,7 +30,7 @@ namespace ly
 
 		bool operator==(const ModuleEntryView& o) const
 		{
-			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && isSystem == o.isSystem &&
+			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && description == o.description && isSystem == o.isSystem &&
 				cellCount == o.cellCount && variantIndex == o.variantIndex && cells == o.cells && bonusPercent == o.bonusPercent &&
 				rebooting == o.rebooting && rebootRemaining == o.rebootRemaining && rebootFraction == o.rebootFraction && held == o.held;
 		}

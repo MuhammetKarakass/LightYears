@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
 
 namespace ly
 {
@@ -92,6 +93,38 @@ namespace ly
 			return static_cast<int>(std::lround(bonus * 100.f));
 		}
 
+		std::string FormatMagnitude(float magnitude)
+		{
+			char buffer[32];
+			std::snprintf(buffer, sizeof(buffer), "%g", magnitude);
+			std::string value{ buffer };
+			std::replace(value.begin(), value.end(), '.', ',');
+			return value;
+		}
+
+		void ReplaceAll(std::string& text, const std::string& token, const std::string& replacement)
+		{
+			std::size_t position = 0;
+			while ((position = text.find(token, position)) != std::string::npos)
+			{
+				text.replace(position, token.size(), replacement);
+				position += replacement.size();
+			}
+		}
+
+		std::string FormatDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant)
+		{
+			std::string description = definition.description;
+			const auto replaceModifier = [&description](const sas::AttributeModifier& modifier)
+			{
+				const std::string token = "{" + std::string{ modifier.attributeId.GetName() } + "}";
+				ReplaceAll(description, token, FormatMagnitude(modifier.magnitude));
+			};
+			for (const ModuleAttributeModifier& modifier : variant.attributeModifiers) replaceModifier(modifier.modifier);
+			for (const ModuleAbilityModifier& modifier : variant.abilityModifiers) replaceModifier(modifier.modifier);
+			return description;
+		}
+
 		bool BuildEntry(const ModuleRulesContext& rules, const ModulePlacement& placement, bool installed, const PlayerSpaceShip* ship, float rebootTotal, std::uint32_t heldId, ModuleEntryView& out)
 		{
 			const ModuleDefinition* definition = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
@@ -99,6 +132,7 @@ namespace ly
 			out = {};
 			out.instanceId = placement.instanceId;
 			out.name = definition->displayName;
+			out.description = FormatDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)]);
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
 			out.family = FamilyLabel(definition->family);
 			out.isSystem = definition->systemCategory.IsValid();

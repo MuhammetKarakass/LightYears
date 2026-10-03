@@ -13,8 +13,8 @@ namespace ly
 	{
 	public:
 		static constexpr float CellPitch = 48.f;
-		static constexpr float InventoryRowHeight = 28.f;
-		static constexpr int InventoryVisibleRows = 17;
+		static constexpr float InventoryRowHeight = 32.f;
+		static constexpr int InventoryVisibleRows = 16;
 
 		ModuleScreenView(shared_ptr<const ModuleScreenViewModel> viewModel, weak_ptr<ModuleScreenPresenter> presenter);
 		void Tick(float deltaTime) override;
