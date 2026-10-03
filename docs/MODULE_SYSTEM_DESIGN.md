@@ -1,6 +1,6 @@
 # Modül Sistemi Tasarımı
 
-**Tarih:** 2026-10-01 · **Durum:** Tasarım (kod yok) · **Kaynak:** kullanıcıyla 2026-10-01 tasarım konuşması · **Mimari:** [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md)
+**Tarih:** 2026-10-03 · **Durum:** Modül runtime ve ekranı mevcut; fiziksel sistem genişlemesi · **Kaynak:** kullanıcıyla 2026-10-01 ve 2026-10-03 tasarım konuşmaları · **Mimari:** [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md)
 
 Bu doküman sıfırdan düşünülmüştür; `Designs.md`'deki eski slot/Star fikirleri referans alınmaz. Eski yetenek başına attachment sistemi kaldırıldı; yerine bu modül sistemi gelir. Rakamlar başlangıç önerisidir, prototipte ayarlanır.
 
@@ -23,7 +23,7 @@ Toplam kapasite tüm gemilerde aynıdır.
 | Konu | Karar |
 |---|---|
 | Temel model | Gemi şematiği üzerinde modül sistemi; yeteneğe özel soket **yok** |
-| Kapasite | Varsayılanlar hariç **28 hücre**, tüm gemilerde aynı (Gövde dahil) |
+| Kapasite | Sistemler ve boş alan birlikte **46 hücre**, tüm oyuncu gemilerinde aynı (Gövde dahil). Varsayılan sistemler 20 hücre, başlangıçta boş alan 26 hücre |
 | Bölgeler | 5 aile bölgesi + Gövde (serbest bölge), Tetris şekilli |
 | Aileler | Yetenek kategorileriyle aynı: **Primary, Offense, Defense, Movement, Utility**. Tanklık Defense içindedir |
 | Yerleşim | Her modül her bölgeye girer (sistem modülleri hariç) |
@@ -34,7 +34,7 @@ Toplam kapasite tüm gemilerde aynıdır.
 | Değişim | Her zaman, savaş içi dahil; modül ekranı oyunu **durdurmaz** |
 | Savaş içi değişim | Takılan modül kısa süre **"Sistem yeniden başlatılıyor"** durumunda kalır |
 | Savaş tanımı | Son 3 saniyede hasar alındı ya da verildi |
-| Varsayılan modüller | Kalkan, afterburner, HP/armor göstergesi, hasar göstergesi; sökülebilir, varyantları bulunabilir, **yalnız kendi bölgelerine** takılır |
+| Varsayılan modüller | Life Support, Flight Control, Primary Weapon, Q/E/F/R, kalkan, afterburner, HP/armor ve hasar göstergeleri; sistemler toplam kapasitenin içinde yer tutar |
 | Seviye büyümesi | Kalkan/afterburner seviye artışı gemide kalır, takılı sistem modülünün üstüne eklenir |
 | Boyut | Büyük modül daha çok güç verir; kalite hücre maliyetini **düşürmez** |
 | Boyut türleri | Karma: ölçeklenen, genişleyen, sabit (bkz. §5) |
@@ -66,10 +66,25 @@ Kurallar:
 
 Kalkan, afterburner ve HUD göstergeleri **sistem modülüdür**:
 
-- Yalnız kendi bölgesine takılır (kalkan → Çekirdek, afterburner → Motor, göstergeler → Sensör). Bulunan varyantlar da aynı kurala uyar.
+- Kalkan → Çekirdek, afterburner → Motor, göstergeler → Sensör, Life Support → Gövde, Flight Control → Motor, Primary Weapon → Burun bölgelerine takılır. Bulunan varyantlar da aynı kurala uyar. Q/E/F/R slot modülleri herhangi bir bölgeye yerleşebilir; tuşu yetenek kategorisine sabitlemezler.
 - Her kategoriden gemide en fazla **bir** tane bulunur (iki kalkan jeneratörü takılamaz).
 - Sökülebilir. Söküldüğünde ilgili sistem çalışmaz: kalkan yok, afterburner yok ya da HUD öğesi görünmez.
-- Varsayılanların hücreleri 28'e dahil değildir. Bölgede ayrıca yer tutarlar (toplam ~6 hücre). Söküldüklerinde açılan hücreler o bölgenin normal hücresi olur.
+- Varsayılanların hücreleri toplam 46 hücreye dahildir. Söküldüklerinde açılan hücreler normal modül yerleşimi için kullanılabilir.
+
+### 4.1 Fiziksel yaşam, hareket ve silah/yetenek sistemleri (2026-10-03)
+
+| Sistem | Hücre | Sökülünce |
+|---|---:|---|
+| Life Support Unit | 2 | Oyuncu ölür; taşıma ve ilk kurulum ölüm tetiklemez |
+| Flight Control Unit | 2 | A/S/D hareket girdileri kapanır; W ve aim yönüne dönüş devam eder |
+| Primary Weapon | 2 | Ana silah ateşi kapanır |
+| Q / E / F / R Ability | Her biri 2 | Yalnız ilgili slot kullanımı kapanır |
+
+Yeni sistemler toplam 14 hücredir. Kalkan (2), afterburner (2) ve iki gösterge (1+1) ile 20 hücre doludur; tam donanımlı gemide 26 hücre boş kalır. Bir yeteneği sökmek 2 hücre açar. Life Support dışındaki sistemler kullanım ile alan arasında seçim sunar. Life Support sökme sonucu arayüzde açıkça belirtilmelidir.
+
+Life Support zorunludur: sökülmesi mevcut gemiyi öldürür; yaşam desteği olmayan koşu yerleşimiyle yeni gemi doğamaz. İlk doğuşta varsayılan sistem yerleşimi kurulmadan önce veya bir modül yeniden başlatılırken ölüm tetiklenmez.
+
+Silah/yetenek sistemini söküp takmak öğrenilmiş yetenek seviyesini, cooldown veya şarjörü sıfırlayan bir edinim işlemi değildir. Savaşta yeniden kurulum mevcut 1,5 saniyelik başlatma kuralına uyar. Q/E/F/R tuş slotlarıdır; varsayılan yetenek eşlemesinin sahibi `DefaultAbilityLoadout.cpp` olarak kalır.
 
 Kalkan varyantı örnekleri:
 
@@ -116,9 +131,9 @@ Boyut "ne kadar güç" sorusunu cevaplar, nadirlik "ne kadar ilginç" sorusunu. 
 - Sökülen sistem modülü hemen kapanır. Yeniden takılırsa başlatma süresini bekler; kalkan bu süre boyunca boş kalır.
 - Savaş dışında değişim anında devreye girer.
 
-## 8. Gemi şemaları (örnek)
+## 8. Önceki gemi şemaları (2026-10-01 tarihsel örnek)
 
-Her satır 28 hücredir (Gövde dahil, varsayılanlar hariç). Roller [gemi tasarım dokümanından](Light_Years_Ships_Primary_Weapons_Combined.md) alınmıştır, değerler örnektir.
+Bu bölümün 28 boş hücre ve ek sistem alanı modeli 2026-10-03 kararıyla kaldırıldı. Aşağıdaki dağılım eski tasarım örneğidir; güncel kapasite sistemler dahil 46 hücredir. Güncel bölge şekilleri ve varsayılan yerleşimler `ships.json` içindeki `schematic` alanına aittir. Roller [gemi tasarım dokümanından](Light_Years_Ships_Primary_Weapons_Combined.md) alınmıştır.
 
 | Gemi | Rol | Burun (Primary) | Kanat (Offense) | Gövde (serbest) | Çekirdek (Defense) | Motor (Movement) | Sensör (Utility) |
 |---|---|---|---|---|---|---|---|
@@ -131,7 +146,7 @@ Her satır 28 hücredir (Gövde dahil, varsayılanlar hariç). Roller [gemi tasa
 
 - Hücre sayısının yanında bölgenin **şekli** de kimliktir. Aegis'in Çekirdeği 3×4 ise L modüller rahat oturur, dağınıksa küçük modüller değerlenir.
 - Dar bölge doğal zayıflıktır. Örneğin Breacher'ın 2 hücrelik motoru 3 hücrelik motor modüllerini bonuslu taşıyamaz.
-- Sistem modülleri bu sayıların üstüne eklenir: Çekirdek +2, Motor +2, Sensör +2. Şema toplamı ~34 hücre (yaklaşık 6×6 ızgara).
+- Tarihsel modelde sistem modülleri bu sayıların üstüne ekleniyordu: Çekirdek +2, Motor +2, Sensör +2; toplam 34 hücre. Bu ek kapasite artık yoktur; sistemler toplam 46 hücrenin içindedir.
 
 ## 9. İlk modül listesi önerisi (16)
 

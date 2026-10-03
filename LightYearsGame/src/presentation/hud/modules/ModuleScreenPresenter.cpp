@@ -1,6 +1,9 @@
 #include "presentation/hud/modules/ModuleScreenPresenter.h"
 #include "gameplay/module/ModuleLoadout.h"
 #include "gameplay/module/ModuleResolver.h"
+#include "gameplay/ability/GameAbility.h"
+#include "gameplay/input/AbilityInputSchema.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "player/Player.h"
 #include "player/PlayerManager.h"
@@ -52,6 +55,22 @@ namespace ly
 			return "Module";
 		}
 
+		sas::AbilitySlot AbilitySlotForSystem(const GameplayTag& system)
+		{
+			if (system == GameplayTags::Module::System::AbilitySlot1) return sas::AbilitySlot::Ability1;
+			if (system == GameplayTags::Module::System::AbilitySlot2) return sas::AbilitySlot::Ability2;
+			if (system == GameplayTags::Module::System::AbilitySlot3) return sas::AbilitySlot::Ability3;
+			if (system == GameplayTags::Module::System::AbilitySlot4) return sas::AbilitySlot::Ability4;
+			return sas::AbilitySlot::None;
+		}
+
+		std::string AbilityFamilyLabel(const GameAbilityDefinition& ability)
+		{
+			for (const GameplayTag& tag : ability.abilityTags)
+				if (GameplayTagSchema::IsAbilityCategory(tag)) return FamilyLabel(tag);
+			return "Ability";
+		}
+
 		// "Module.Primary.FocusedBarrel.Basic" -> "FB". ASCII only, so any font can draw it.
 		std::string Abbreviate(const std::string& id)
 		{
@@ -83,13 +102,41 @@ namespace ly
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
 			out.family = FamilyLabel(definition->family);
 			out.isSystem = definition->systemCategory.IsValid();
+			const sas::AbilitySlot abilitySlot = AbilitySlotForSystem(definition->systemCategory);
+			if (abilitySlot != sas::AbilitySlot::None)
+			{
+				const char* inputLabel = AbilityInputSchema::GetLabel(abilitySlot);
+				const GameAbility* ability = ship
+					? ship->GetAbilitySystemComponent().GetAbility(abilitySlot)
+					: nullptr;
+				out.name = inputLabel;
+				out.abbreviation = inputLabel;
+				if (ability)
+				{
+					const GameAbilityDefinition& abilityDefinition = ability->GetDefinition();
+					out.name += ": " + (abilityDefinition.displayName.empty()
+						? abilityDefinition.abilityId
+						: abilityDefinition.displayName);
+					out.abbreviation = Abbreviate(abilityDefinition.abilityId);
+					out.family = AbilityFamilyLabel(abilityDefinition);
+				}
+				else
+				{
+					out.name += " Ability Slot (empty)";
+					out.family = "Ability";
+				}
+			}
+			if (definition->systemCategory == GameplayTags::Module::System::LifeSupport)
+				out.name += " (removal kills player)";
 			out.variantIndex = placement.variantIndex;
 			out.cellCount = static_cast<int>(definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].shape.cells.size());
 			out.held = placement.instanceId == heldId;
 			if (installed)
 			{
 				out.cells = ModulePlacementRules::GetCoveredCells(*definition, placement);
-				out.bonusPercent = ToPercent(ModuleResolver::GetZoneBonus(rules, *definition, placement));
+				out.bonusPercent = AbilitySlotForSystem(definition->systemCategory) == sas::AbilitySlot::None
+					? ToPercent(ModuleResolver::GetZoneBonus(rules, *definition, placement))
+					: 0;
 				if (ship && ship->GetModuleApplier().IsRebooting(placement.instanceId))
 				{
 					const float remaining = ship->GetModuleApplier().GetRebootRemainingSeconds(placement.instanceId);
@@ -285,7 +332,7 @@ namespace ly
 		for (const ModulePlacement& placement : loadout.GetPlacements())
 			if (BuildEntry(*rules, placement, true, livingShip, zoneTable.rebootDurationSeconds, mHeldId, entry)) installed.push_back(entry);
 		for (const ModulePlacement& placement : loadout.GetInventory())
-			if (BuildEntry(*rules, placement, false, nullptr, 0.f, mHeldId, entry)) inventory.push_back(entry);
+			if (BuildEntry(*rules, placement, false, livingShip, 0.f, mHeldId, entry)) inventory.push_back(entry);
 
 		ModulePreviewView preview;
 		const ModuleDefinition* heldDefinition = held && rules->lookup ? rules->lookup(held->moduleId) : nullptr;
@@ -298,8 +345,9 @@ namespace ly
 			preview.active = true;
 			preview.cells = ModulePlacementRules::GetCoveredCells(*heldDefinition, candidate);
 			preview.legal = failure == ModulePlacementFailure::None;
-			if (preview.legal) preview.bonusPercent = ToPercent(ModuleResolver::GetZoneBonus(*rules, *heldDefinition, candidate));
-			else preview.message = ModulePlacementRules::Describe(failure);
+			if (preview.legal && AbilitySlotForSystem(heldDefinition->systemCategory) == sas::AbilitySlot::None)
+				preview.bonusPercent = ToPercent(ModuleResolver::GetZoneBonus(*rules, *heldDefinition, candidate));
+			else if (!preview.legal) preview.message = ModulePlacementRules::Describe(failure);
 		}
 
 		SetIfChanged(vm.hasSchematic, true, vm.revision);

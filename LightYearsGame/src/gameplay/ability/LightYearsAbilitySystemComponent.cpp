@@ -5,6 +5,7 @@
 #include "gameplay/ability/validation/GameplayEffectDefinitionValidator.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "gameplay/tags/GameplayTagSchema.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "attributes/AttributeMath.h"
 
 #include <algorithm>
@@ -132,6 +133,11 @@ namespace ly
 		{
 			return ability.BuildSnapshot();
 		};
+		callbacks.cooldownState = [](const GameAbility& ability, float& cooldownRemaining, sas::AbilitySlot& slot)
+		{
+			cooldownRemaining = ability.GetCooldownRemaining();
+			slot = ability.GetRuntimeSlot();
+		};
 		ConfigureAbilityRuntime(mComponentRuntime, std::move(callbacks));
 		SetGameplayEventHandler<sas::AbilityEvent>(
 			[this](const sas::AbilityEvent& event)
@@ -161,6 +167,53 @@ namespace ly
 	const GameAbility* LightYearsAbilitySystemComponent::GetAbility(sas::AbilitySlot slot) const
 	{
 		return FindAbility<GameAbility>(slot);
+	}
+
+	bool LightYearsAbilitySystemComponent::IsModuleSystemEnabled(const GameplayTag& systemTag) const
+	{
+		return !mModuleSystemGate || mModuleSystemGate->IsModuleSystemEnabled(systemTag);
+	}
+
+	bool LightYearsAbilitySystemComponent::IsModuleAbilityAvailable(const std::string& abilityId) const
+	{
+		const std::pair<sas::AbilitySlot, const GameplayTag*> slots[] = {
+			{ sas::AbilitySlot::Ability1, &GameplayTags::Module::System::AbilitySlot1 },
+			{ sas::AbilitySlot::Ability2, &GameplayTags::Module::System::AbilitySlot2 },
+			{ sas::AbilitySlot::Ability3, &GameplayTags::Module::System::AbilitySlot3 },
+			{ sas::AbilitySlot::Ability4, &GameplayTags::Module::System::AbilitySlot4 }
+		};
+		for (const auto& entry : slots)
+		{
+			const GameAbility* ability = GetAbility(entry.first);
+			if (ability && ability->GetDefinition().abilityId == abilityId)
+			{
+				return IsModuleSystemEnabled(*entry.second);
+			}
+		}
+		return true;
+	}
+
+	void LightYearsAbilitySystemComponent::CancelAbilitiesUnavailableByModules()
+	{
+		if (!IsModuleSystemEnabled(GameplayTags::Module::System::PrimaryWeapon))
+		{
+			if (GameAbility* ability = GetAbility(sas::AbilitySlot::PrimaryFire); ability && ability->IsActive())
+			{
+				ability->Cancel(sas::AbilityEndReason::Interrupted);
+			}
+		}
+
+		for (const sas::AbilitySlot slot : {
+			sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2,
+			sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4
+		})
+		{
+			GameAbility* ability = GetAbility(slot);
+			if (ability && ability->IsActive() && !IsModuleAbilityAvailable(ability->GetDefinition().abilityId))
+			{
+				ability->Cancel(sas::AbilityEndReason::Interrupted);
+			}
+		}
 	}
 
 	GameAbility* LightYearsAbilitySystemComponent::GetAbility(sas::AbilityHandle handle)
@@ -244,7 +297,8 @@ namespace ly
 	)
 	{
 		std::exception_ptr error;
-		try { mAbilityInvocationRuntime.Clear(); }
+		// Retained invocations are reported through GetPendingAdditionalCleanup(); only callback exceptions propagate.
+		try { static_cast<void>(mAbilityInvocationRuntime.Clear()); }
 		catch (...) { error = std::current_exception(); }
 		mAbilityUseHistory.Clear();
 		mLifecycleDispatcher.Clear();

@@ -209,6 +209,13 @@ namespace ly::GameplayTags
 			inline const GameplayTag Afterburner{ "Module.System.Afterburner" };
 			inline const GameplayTag HealthReadout{ "Module.System.HealthReadout" };
 			inline const GameplayTag DamageReadout{ "Module.System.DamageReadout" };
+			inline const GameplayTag LifeSupport{ "Module.System.LifeSupport" };
+			inline const GameplayTag FlightControl{ "Module.System.FlightControl" };
+			inline const GameplayTag PrimaryWeapon{ "Module.System.PrimaryWeapon" };
+			inline const GameplayTag AbilitySlot1{ "Module.System.AbilitySlot1" };
+			inline const GameplayTag AbilitySlot2{ "Module.System.AbilitySlot2" };
+			inline const GameplayTag AbilitySlot3{ "Module.System.AbilitySlot3" };
+			inline const GameplayTag AbilitySlot4{ "Module.System.AbilitySlot4" };
 		}
 	}
 

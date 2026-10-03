@@ -7,6 +7,7 @@
 #include "gameplay/ability/runtime/AbilityLifecycleDispatcher.h"
 #include "gameplay/ability/runtime/AbilityInvocationRuntime.h"
 #include "gameplay/ability/runtime/AbilityUseHistory.h"
+#include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/weapon/runtime/PrimaryWeaponOverrideState.h"
 
 #include <cstddef>
@@ -52,6 +53,13 @@ namespace ly
 		// passives. Weapons compare it to grant empowered charges on cast.
 		uint64_t GetLoadoutAbilityActivationCount() const { return mLoadoutAbilityActivationCount; }
 		float ApplyPrimaryWeaponModifiers(const sas::GameplayAttribute& attribute) const;
+		// The gate is owned by the same ship that owns this component and clears itself on
+		// destruction (see ShipModuleApplier), so the pointer never dangles. Null means
+		// every module system is enabled.
+		void SetModuleSystemGate(const ModuleSystemGate* gate) { mModuleSystemGate = gate; }
+		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const;
+		bool IsModuleAbilityAvailable(const std::string& abilityId) const;
+		void CancelAbilitiesUnavailableByModules();
 		Actor& GetOwner() { return mOwner; }
 
 		// Shared action-lock producers call this entry point. A primary-weapon
@@ -140,6 +148,7 @@ namespace ly
 		) const;
 
 		Actor& mOwner;
+		const ModuleSystemGate* mModuleSystemGate = nullptr;
 		using ComponentRuntime =
 			sas::AbilitySystemRuntime<GameAbilityDefinition, GameAbility>;
 		ComponentRuntime& mComponentRuntime;

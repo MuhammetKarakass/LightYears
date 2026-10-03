@@ -1,8 +1,18 @@
 # Modül Sistemi Mimarisi
 
-**Tarih:** 2026-10-01 · **Durum:** Mimari tasarım (modül kodu yok) · **Oyun tasarımı:** [MODULE_SYSTEM_DESIGN.md](MODULE_SYSTEM_DESIGN.md)
+**Tarih:** 2026-10-03 · **Durum:** Modül runtime ve ekranı mevcut; fiziksel sistem genişlemesi · **Oyun tasarımı:** [MODULE_SYSTEM_DESIGN.md](MODULE_SYSTEM_DESIGN.md)
 
-Bu doküman oyun tasarımındaki kuralların koda nasıl oturacağını tanımlar: sahiplik, veri modeli, akış, mevcut sistemlere bağlantı noktaları ve test sınırları. Kod yolları 2026-10-01 kaynağında doğrulandı.
+Bu doküman sahiplik, veri modeli, akış ve sistem bağlantılarını tanımlar. Aşağıdaki ilk tasarım kod örnekleri ve eski adım kanıtları tarihsel olarak korunur; somut API için güncel kaynak esas alınır.
+
+## 2026-10-03 fiziksel sistem sözleşmesi
+
+- Oyuncu gemisi şematiğinde sistemler dahil toplam **46** kullanılabilir hücre bulunur. Varsayılan Life Support, Flight Control, Primary Weapon ve Q/E/F/R sistemleri ikişer hücre kaplar; önceki kalkan/afterburner/göstergelerle toplam doluluk **20**, boş alan **26** olur.
+- `modules.json` sistem tanımlarının ve bölge kurallarının; `ships.json` şemanın ve varsayılan yerleşimlerin sahibidir. `ModuleLoadout` koşu durumunu, `ShipModuleApplier` uygulanmış sistem/modifier durumunu taşır.
+- Life Support'un açık sökme komutu oyuncunun ölüm yoluna gider. Yaşam desteği olmayan mevcut koşu yerleşimiyle yeniden doğuş reddedilir; mevcut respawn başarısızlık yolu çalışır. İlk doğuş, aynı modülü taşıma ve yeniden başlatma filtresi ölüm nedeni değildir. `Actor::Destroy()` eşzamanlı bildirim yaydığı için yeni geminin dinleyicileri bağlanmadan yok edilmesi kullanılmaz.
+- Flight Control durumu oyuncunun A/S/D hareket taleplerini kapatır; W ve fareye dönüş etkilenmez.
+- Primary ve Q/E/F/R modülleri mevcut yetenek örneklerinin kullanılabilirliğini kontrol eder. Sökme/takma yeteneği yeniden grant ederek seviye, cooldown veya ammo sıfırlamaz. Aktif kullanım kapatılır; daha önce dünyaya bırakılmış atışlar normal ömrünü sürdürür.
+- Varsayılan ability slot eşlemesinin tek sahibi `gameplay/ability/loadout/DefaultAbilityLoadout.cpp` olarak kalır. Modül ekranı takılı slotun gerçek yeteneğini okur.
+- Bu genişlemede kullanıcı isteğiyle test çalıştırılmaz; kaynak/diff incelemesi ve `VSLANG=1033` ile `LightYearsGame` derlemesi doğrulama sınırıdır. Derleme oyun içi kabul değildir.
 
 ---
 
@@ -135,7 +145,7 @@ Izgara ASCII satırlarla yazılır, okunur ve diff'lenir. Örnek biçimi göster
 }
 ```
 
-`.` boş hücredir. Yükleyici şunları doğrular: legend dışında karakter yok, varsayılanlar hariç toplam 28 hücre, varsayılan modüller kurallara uygun yerleşiyor.
+`.` şema dışında kalan hücredir. Yükleyici şunları doğrular: legend dışında karakter yok, sistemler dahil toplam 46 kullanılabilir hücre, varsayılan modüller kurallara uygun yerleşiyor. Üstteki JSON ilk tasarımdaki biçim örneğidir; güncel yerleşimler `ships.json` içindedir.
 
 ### 3.5 `ModuleLoadout` (koşu durumu, `Player` sahibi)
 

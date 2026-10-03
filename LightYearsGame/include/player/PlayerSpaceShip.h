@@ -54,7 +54,7 @@ namespace ly
 		void UpdateInvulnerability(float deltaTime);
 
 		AbilityLoadoutManager mAbilityLoadout;
-		PlayerMovementComponent mPlayerMovement;
+		PlayerMovementComponent& mPlayerMovement;
 		ShipModuleApplier mModuleApplier;
 		float mCombatWindowRemaining = 0.f;
 

@@ -10,6 +10,7 @@
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
+#include "gameplay/weapon/runtime/PrimaryWeaponAbilityState.h"
 
 #include <optional>
 
@@ -111,12 +112,12 @@ namespace ly
 			return mActivationOrigin;
 		}
 
-		float GetWeaponFireIntervalRemaining() const { return mPrimaryWeaponRuntime.fireIntervalRemaining; }
+		float GetWeaponFireIntervalRemaining() const { return mPrimaryWeaponState.runtime.fireIntervalRemaining; }
 		void SetWeaponFireIntervalRemaining(float interval);
-		PrimaryWeaponRuntimeState& GetPrimaryWeaponRuntime() { return mPrimaryWeaponRuntime; }
+		PrimaryWeaponRuntimeState& GetPrimaryWeaponRuntime() { return mPrimaryWeaponState.runtime; }
 		const sas::GameplayAttributeList& GetPrimaryWeaponRuntimeAttributes() const
 		{
-			return mPrimaryWeaponRuntimeAttributes;
+			return mPrimaryWeaponState.attributes;
 		}
 		void UpdatePrimaryWeaponRuntimeContext(
 			const PrimaryWeaponDefinition& weaponDefinition,
@@ -172,25 +173,9 @@ namespace ly
 		void TickInactivePrimaryWeaponRuntime(float deltaTime);
 		GameAbilityDefinition BuildDefinitionForLevel(int level) const;
 		void RefreshPrimaryWeaponRuntimeConfiguration();
-		struct PreparedPrimaryWeaponConfiguration
-		{
-			PrimaryWeaponExecutionSystem::PreparedRuntimeConfiguration runtime;
-			sas::GameplayAttributeList attributes;
-			uint64_t attributeRevision = 0;
-			uint64_t modifierRevision = 0;
-		};
-
 		LightYearsAbilitySystemComponent& mAbilitySystem;
-		PrimaryWeaponRuntimeState mPrimaryWeaponRuntime;
-		std::string mPrimaryWeaponRuntimeWeaponId;
-		sas::GameplayAttributeList mPrimaryWeaponRuntimeAttributes;
-		List<GameplayTag> mPrimaryWeaponRuntimeDamageTags;
-		uint64_t mPrimaryWeaponRuntimeAttributeRevision = 0;
-		uint64_t mPrimaryWeaponRuntimeConfigurationRevision = 0;
-		uint64_t mPrimaryWeaponRuntimeModifierRevision = 0;
-		bool mHasPrimaryWeaponRuntimeResolvedContext = false;
+		PrimaryWeaponAbilityState mPrimaryWeaponState;
 		std::optional<GameAbilityDefinition> mPreparedLevelDefinition;
-		std::optional<PreparedPrimaryWeaponConfiguration> mPreparedPrimaryWeaponConfiguration;
 		unique_ptr<GameAbilityBehavior> mBehavior;
 		bool mBehaviorStarted = false;
 		bool mBehaviorCleanupPending = false;

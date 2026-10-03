@@ -5,6 +5,7 @@
 #include "gameplay/module/ModuleLoadout.h"
 #include "gameplay/module/ModulePlacementRules.h"
 #include "gameplay/module/ModuleResolver.h"
+#include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <cstddef>
@@ -25,7 +26,7 @@ namespace ly
 	//
 	// Reboot: while the ship is in combat, a newly seen placement instanceId is held
 	// out of the resolved effects for the zone table's rebootDurationSeconds.
-	class ShipModuleApplier
+	class ShipModuleApplier final : public ModuleSystemGate
 	{
 	public:
 		struct RebootEntry
@@ -35,6 +36,7 @@ namespace ly
 		};
 
 		ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities);
+		~ShipModuleApplier() override;
 		ShipModuleApplier(const ShipModuleApplier&) = delete;
 		ShipModuleApplier& operator=(const ShipModuleApplier&) = delete;
 
@@ -52,6 +54,9 @@ namespace ly
 
 		const List<GameplayTag>& GetEnabledSystems() const { return mEnabledSystems; }
 		bool IsSystemEnabled(const GameplayTag& systemTag) const;
+		// ModuleSystemGate: a ship that never had a loadout applied is unmanaged and
+		// keeps every system enabled.
+		bool IsModuleSystemEnabled(const GameplayTag& systemTag) const override { return !mHasApplied || IsSystemEnabled(systemTag); }
 		// Presentation read: a ship that never had a loadout applied (no schematic)
 		// is unmanaged and keeps every readout, so legacy flows behave as before.
 		bool IsReadoutEnabled(const GameplayTag& systemTag) const { return !mHasApplied || IsSystemEnabled(systemTag); }

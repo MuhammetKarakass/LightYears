@@ -15,20 +15,27 @@
           "C": "Module.Zone.Core", "E": "Module.Zone.Engine", "S": "Module.Zone.Sensor"
         },
         "rows": [
-          "...NN...",
-          "...NN...",
-          "..SSSS..",
-          ".WWSHHH.",
-          "WWWCCHHH",
-          ".CCCEEH.",
-          "..CCEE..",
-          "...EE..."
+          "..NNNN..",
+          "...NNN..",
+          "SSSSSSSS",
+          "SWWWWWWW",
+          "CWCCCHH.",
+          "CCCCHHHH",
+          "....EEEE",
+          "....EEEE"
         ],
         "defaultModules": [
-          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [3, 4], "rotation": 0 },
-          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [3, 7], "rotation": 0 },
-          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [4, 2], "rotation": 0 },
-          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [5, 2], "rotation": 0 }
+          { "moduleId": "Module.Primary.PrimaryWeapon.Standard", "variant": 0, "origin": [4, 0], "rotation": 0 },
+          { "moduleId": "Module.Utility.LifeSupportUnit.Standard", "variant": 0, "origin": [4, 5], "rotation": 0 },
+          { "moduleId": "Module.Movement.FlightControlUnit.Standard", "variant": 0, "origin": [4, 6], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot1.Standard", "variant": 0, "origin": [4, 1], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot2.Standard", "variant": 0, "origin": [2, 5], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot3.Standard", "variant": 0, "origin": [1, 3], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot4.Standard", "variant": 0, "origin": [3, 3], "rotation": 0 },
+          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [2, 4], "rotation": 0 },
+          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [5, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [2, 2], "rotation": 0 },
+          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [3, 2], "rotation": 0 }
         ]
       },
       "baseOwnerAttributes": [
@@ -105,20 +112,27 @@
           "C": "Module.Zone.Core", "E": "Module.Zone.Engine", "S": "Module.Zone.Sensor"
         },
         "rows": [
-          "..NNNN..",
-          ".SSSNNN.",
-          ".SSHHHH.",
-          ".WWWWHH.",
-          "..WWCC..",
-          "..CCCC..",
-          "...EE...",
-          "...EE..."
+          "..NNNNN.",
+          "..SNNN..",
+          "SSSSSSSS",
+          "WWWWHHHH",
+          ".WWWHHH.",
+          ".CCCCCC.",
+          ".EECCE..",
+          "..EEEE.."
         ],
         "defaultModules": [
-          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [2, 5], "rotation": 0 },
-          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [3, 7], "rotation": 0 },
-          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [1, 1], "rotation": 0 },
-          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [1, 2], "rotation": 0 }
+          { "moduleId": "Module.Primary.PrimaryWeapon.Standard", "variant": 0, "origin": [3, 0], "rotation": 0 },
+          { "moduleId": "Module.Utility.LifeSupportUnit.Standard", "variant": 0, "origin": [4, 3], "rotation": 0 },
+          { "moduleId": "Module.Movement.FlightControlUnit.Standard", "variant": 0, "origin": [2, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot1.Standard", "variant": 0, "origin": [3, 1], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot2.Standard", "variant": 0, "origin": [1, 3], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot3.Standard", "variant": 0, "origin": [3, 6], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot4.Standard", "variant": 0, "origin": [4, 2], "rotation": 0 },
+          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [3, 5], "rotation": 0 },
+          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [4, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [2, 2], "rotation": 0 },
+          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [3, 2], "rotation": 0 }
         ]
       },
       "baseOwnerAttributes": [
@@ -206,20 +220,27 @@
           "C": "Module.Zone.Core", "E": "Module.Zone.Engine", "S": "Module.Zone.Sensor"
         },
         "rows": [
-          "...SN...",
-          "..SSNN..",
-          "..SCCH..",
-          ".WWCCHH.",
-          ".WWCCHH.",
-          "..EEEH..",
-          "..EEEE..",
-          "..EEEE.."
+          "...NNNSS",
+          "..NNSSSS",
+          "WWWWSSS.",
+          ".WWHHHHH",
+          ".CCCCC..",
+          "EEEEEEEE",
+          "..EEEEEE",
+          "......EE"
         ],
         "defaultModules": [
+          { "moduleId": "Module.Primary.PrimaryWeapon.Standard", "variant": 0, "origin": [4, 0], "rotation": 0 },
+          { "moduleId": "Module.Utility.LifeSupportUnit.Standard", "variant": 0, "origin": [3, 3], "rotation": 0 },
+          { "moduleId": "Module.Movement.FlightControlUnit.Standard", "variant": 0, "origin": [4, 5], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot1.Standard", "variant": 0, "origin": [4, 6], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot2.Standard", "variant": 0, "origin": [6, 6], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot3.Standard", "variant": 0, "origin": [6, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot4.Standard", "variant": 0, "origin": [4, 1], "rotation": 0 },
           { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [3, 4], "rotation": 0 },
-          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [4, 6], "rotation": 0 },
-          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [2, 1], "rotation": 0 },
-          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [3, 1], "rotation": 0 }
+          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [6, 5], "rotation": 0 },
+          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [6, 1], "rotation": 0 },
+          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [4, 2], "rotation": 0 }
         ]
       },
       "baseOwnerAttributes": [
@@ -323,20 +344,27 @@
           "C": "Module.Zone.Core", "E": "Module.Zone.Engine", "S": "Module.Zone.Sensor"
         },
         "rows": [
-          "...NN...",
-          "..SSSS..",
-          ".WWSSSS.",
-          ".WWSCCC.",
-          ".HHHHCC.",
-          "..HHCC..",
-          "..HEEE..",
-          "...EE..."
+          "SSNNNN..",
+          "SSSSSS..",
+          "WWSSSSSS",
+          "WWWHHH..",
+          ".HHHHHH.",
+          "..CCCC..",
+          "...CCE..",
+          "EEEEEEE."
         ],
         "defaultModules": [
-          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [4, 5], "rotation": 0 },
-          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [4, 6], "rotation": 0 },
+          { "moduleId": "Module.Primary.PrimaryWeapon.Standard", "variant": 0, "origin": [3, 0], "rotation": 0 },
+          { "moduleId": "Module.Utility.LifeSupportUnit.Standard", "variant": 0, "origin": [3, 3], "rotation": 0 },
+          { "moduleId": "Module.Movement.FlightControlUnit.Standard", "variant": 0, "origin": [3, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot1.Standard", "variant": 0, "origin": [2, 2], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot2.Standard", "variant": 0, "origin": [1, 3], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot3.Standard", "variant": 0, "origin": [2, 4], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot4.Standard", "variant": 0, "origin": [3, 6], "rotation": 0 },
+          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [3, 5], "rotation": 0 },
+          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [5, 7], "rotation": 0 },
           { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [2, 1], "rotation": 0 },
-          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [6, 2], "rotation": 0 }
+          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [3, 1], "rotation": 0 }
         ]
       },
       "baseOwnerAttributes": [
@@ -432,19 +460,27 @@
           "C": "Module.Zone.Core", "E": "Module.Zone.Engine", "S": "Module.Zone.Sensor"
         },
         "rows": [
-          "...NN...",
-          "..SSSS..",
-          ".CSCCWW.",
-          ".CCCCCW.",
-          ".HHCCCC.",
-          ".HHCEEC.",
-          "..EEEE.."
+          "..NNNN..",
+          "SSSSSSS.",
+          "WWWWW...",
+          "..HHHHH.",
+          ".CCCCCCC",
+          "CCCCCCCC",
+          "....CCCC",
+          ".EEEEEE."
         ],
         "defaultModules": [
-          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [1, 3], "rotation": 0 },
-          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [2, 6], "rotation": 0 },
-          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [4, 1], "rotation": 0 },
-          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [5, 1], "rotation": 0 }
+          { "moduleId": "Module.Primary.PrimaryWeapon.Standard", "variant": 0, "origin": [3, 0], "rotation": 0 },
+          { "moduleId": "Module.Utility.LifeSupportUnit.Standard", "variant": 0, "origin": [3, 3], "rotation": 0 },
+          { "moduleId": "Module.Movement.FlightControlUnit.Standard", "variant": 0, "origin": [2, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot1.Standard", "variant": 0, "origin": [5, 4], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot2.Standard", "variant": 0, "origin": [4, 5], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot3.Standard", "variant": 0, "origin": [6, 5], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot4.Standard", "variant": 0, "origin": [5, 6], "rotation": 0 },
+          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [3, 4], "rotation": 0 },
+          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [4, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [2, 1], "rotation": 0 },
+          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [3, 1], "rotation": 0 }
         ]
       },
       "baseOwnerAttributes": [
@@ -536,20 +572,27 @@
           "C": "Module.Zone.Core", "E": "Module.Zone.Engine", "S": "Module.Zone.Sensor"
         },
         "rows": [
-          "...NN...",
-          "...SN...",
-          "..SSSS..",
-          ".SSSSWW.",
-          ".CCHHWW.",
-          ".CCHHHH.",
-          "..CCEE..",
-          "..EEEE.."
+          "SSNNNN..",
+          "SS.NSSSS",
+          "SSSSSSS.",
+          "WWWWWH..",
+          ".HHHHHH.",
+          ".CCCCCC.",
+          ".C...E..",
+          "..EEEEEE"
         ],
         "defaultModules": [
-          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [2, 6], "rotation": 0 },
-          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [2, 7], "rotation": 0 },
-          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [1, 3], "rotation": 0 },
-          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [3, 1], "rotation": 0 }
+          { "moduleId": "Module.Primary.PrimaryWeapon.Standard", "variant": 0, "origin": [4, 0], "rotation": 0 },
+          { "moduleId": "Module.Utility.LifeSupportUnit.Standard", "variant": 0, "origin": [2, 4], "rotation": 0 },
+          { "moduleId": "Module.Movement.FlightControlUnit.Standard", "variant": 0, "origin": [3, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot1.Standard", "variant": 0, "origin": [4, 4], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot2.Standard", "variant": 0, "origin": [5, 5], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot3.Standard", "variant": 0, "origin": [1, 3], "rotation": 0 },
+          { "moduleId": "Module.Utility.AbilitySlot4.Standard", "variant": 0, "origin": [2, 2], "rotation": 0 },
+          { "moduleId": "Module.Defense.ShieldGenerator.Standard", "variant": 0, "origin": [3, 5], "rotation": 0 },
+          { "moduleId": "Module.Movement.Afterburner.Standard", "variant": 0, "origin": [5, 7], "rotation": 0 },
+          { "moduleId": "Module.Utility.HealthReadout.Standard", "variant": 0, "origin": [4, 1], "rotation": 0 },
+          { "moduleId": "Module.Utility.DamageReadout.Standard", "variant": 0, "origin": [5, 1], "rotation": 0 }
         ]
       },
       "baseOwnerAttributes": [

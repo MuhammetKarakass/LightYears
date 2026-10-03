@@ -19,6 +19,19 @@ namespace ly
 		// size variant of every non-default module into the inventory. Nothing is installed.
 		// Set to false (or delete) once modules drop from gameplay sources.
 		constexpr bool kGrantAllModulesForTesting = true;
+
+		bool HasInstalledLifeSupport(const ModuleLoadout& loadout)
+		{
+			for (const ModulePlacement& placement : loadout.GetPlacements())
+			{
+				const ModuleDefinition* definition = content::ModuleContentCatalog::FindById(placement.moduleId);
+				if (definition && definition->systemCategory == GameplayTags::Module::System::LifeSupport)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 
 	Player::Player(std::string shipId):
@@ -41,6 +54,10 @@ namespace ly
 	}
 	
 	weak_ptr<PlayerSpaceShip> Player::SpawnSpaceShip(World* world) {
+		if (mModuleLoadout.GetRevision() > 0 && !HasInstalledLifeSupport(mModuleLoadout))
+		{
+			return weak_ptr<PlayerSpaceShip>{};
+		}
 		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock())
 		{
 			currentShip->onActorDestroyed.UnbindAction(mCurrentShipDestroyedHandle);
@@ -538,8 +555,19 @@ namespace ly
 
 	bool Player::TryUninstallModule(std::uint32_t instanceId)
 	{
+		bool removesLifeSupport = false;
+		if (const ModulePlacement* placement = mModuleLoadout.FindPlacement(instanceId))
+		{
+			const ModuleDefinition* definition = content::ModuleContentCatalog::FindById(placement->moduleId);
+			removesLifeSupport = definition &&
+				definition->systemCategory == GameplayTags::Module::System::LifeSupport;
+		}
 		if (!mModuleLoadout.Uninstall(instanceId)) return false;
-		if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock())
+		{
+			ApplyModuleLoadout(*ship);
+			if (removesLifeSupport) ship->Destroy();
+		}
 		return true;
 	}
 

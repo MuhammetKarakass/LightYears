@@ -9,6 +9,9 @@
     { "zone": "Module.Zone.Sensor", "family": "Ability.Utility",  "bonus": 0.25 }
   ],
   "systemZones": {
+    "Module.System.LifeSupport": "Module.Zone.Hull",
+    "Module.System.FlightControl": "Module.Zone.Engine",
+    "Module.System.PrimaryWeapon": "Module.Zone.Nose",
     "Module.System.Shield": "Module.Zone.Core",
     "Module.System.Afterburner": "Module.Zone.Engine",
     "Module.System.HealthReadout": "Module.Zone.Sensor",
@@ -51,6 +54,69 @@
       "systemCategory": "Module.System.DamageReadout",
       "sizeVariants": [
         { "shape": [[0, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Utility.LifeSupportUnit.Standard",
+      "displayName": "Life Support Unit",
+      "family": "Ability.Utility",
+      "systemCategory": "Module.System.LifeSupport",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Movement.FlightControlUnit.Standard",
+      "displayName": "Flight Control Unit",
+      "family": "Ability.Movement",
+      "systemCategory": "Module.System.FlightControl",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Primary.PrimaryWeapon.Standard",
+      "displayName": "Primary Weapon",
+      "family": "Ability.Primary",
+      "systemCategory": "Module.System.PrimaryWeapon",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Utility.AbilitySlot1.Standard",
+      "displayName": "Q Ability Slot",
+      "family": "Ability.Utility",
+      "systemCategory": "Module.System.AbilitySlot1",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Utility.AbilitySlot2.Standard",
+      "displayName": "E Ability Slot",
+      "family": "Ability.Utility",
+      "systemCategory": "Module.System.AbilitySlot2",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Utility.AbilitySlot3.Standard",
+      "displayName": "F Ability Slot",
+      "family": "Ability.Utility",
+      "systemCategory": "Module.System.AbilitySlot3",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
+      ]
+    },
+    {
+      "id": "Module.Utility.AbilitySlot4.Standard",
+      "displayName": "R Ability Slot",
+      "family": "Ability.Utility",
+      "systemCategory": "Module.System.AbilitySlot4",
+      "sizeVariants": [
+        { "shape": [[0, 0], [1, 0]] }
       ]
     },
     {

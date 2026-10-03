@@ -4,6 +4,7 @@
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/attributes/AttributeIds.h"
+#include "gameplay/tags/GameplayTags.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 #include "gameplay/time/IntervalDebt.h"
 #include "framework/Actor.h"
@@ -18,6 +19,14 @@ namespace ly
 {
 	namespace
 	{
+		bool IsPrimaryWeaponFireAvailable(const AbilityExecutionContext& context)
+		{
+			return !context.definition ||
+				context.definition->slot != sas::AbilitySlot::PrimaryFire ||
+				!context.abilitySystem ||
+				context.abilitySystem->IsModuleSystemEnabled(GameplayTags::Module::System::PrimaryWeapon);
+		}
+
 		const PrimaryWeaponOverrideState::ActiveOverride* FindPrimaryOverride(
 			const AbilityExecutionContext& context
 		)
@@ -285,6 +294,11 @@ namespace ly
 		{
 			return;
 		}
+		if (!IsPrimaryWeaponFireAvailable(context))
+		{
+			End(action, context);
+			return;
+		}
 		Actor& owner = context.abilitySystem->GetOwner();
 		const FireWeaponAction& authoredAction = std::get<FireWeaponAction>(action.spec->action);
 		FireWeaponAction overrideAction;
@@ -320,6 +334,11 @@ namespace ly
 			action.spec->phase != sas::AbilityActionPhase::WhileActive ||
 			!std::holds_alternative<FireWeaponAction>(action.spec->action))
 		{
+			return;
+		}
+		if (!IsPrimaryWeaponFireAvailable(context))
+		{
+			End(action, context);
 			return;
 		}
 		Actor& owner = context.abilitySystem->GetOwner();

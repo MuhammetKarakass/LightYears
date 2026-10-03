@@ -46,7 +46,7 @@ namespace ly
 
 	void GameAbility::SetWeaponFireIntervalRemaining(float interval)
 	{
-		mPrimaryWeaponRuntime.fireIntervalRemaining = std::max(0.f, interval);
+		mPrimaryWeaponState.SetFireIntervalRemaining(interval);
 	}
 
 	List<GameplayTag> GameAbility::GetResolvedDamageTags() const
@@ -109,13 +109,19 @@ namespace ly
 				return tag.MatchesTagExact(GameplayTags::Ability::Movement);
 			}
 		);
-		return mBehavior &&
+		const bool allowedByStandardRules = mBehavior &&
 			mAbilitySystem.HasAllOwnedTags(mDefinition.requiredOwnerTags) &&
 			!mAbilitySystem.HasAnyOwnedTags(mDefinition.blockedOwnerTags) &&
 			!mAbilitySystem.HasOwnedTag(GameplayTags::State::Effect::Control::Stunned) &&
 			!mAbilitySystem.HasOwnedTag(sharedBlockTag) &&
 			(!isMovementAbility ||
 				!mAbilitySystem.HasOwnedTag(GameplayTagSchema::BlockMovementInput));
+		if (!allowedByStandardRules) return false;
+		if (mDefinition.slot == sas::AbilitySlot::PrimaryFire)
+		{
+			return mAbilitySystem.IsModuleSystemEnabled(GameplayTags::Module::System::PrimaryWeapon);
+		}
+		return mAbilitySystem.IsModuleAbilityAvailable(mDefinition.abilityId);
 	}
 
 	bool GameAbility::ActivateContent()
@@ -173,6 +179,15 @@ namespace ly
 
 	void GameAbility::TickExecution(float deltaTime)
 	{
+		const bool primaryWeaponUnavailable = mDefinition.slot == sas::AbilitySlot::PrimaryFire &&
+			!mAbilitySystem.IsModuleSystemEnabled(GameplayTags::Module::System::PrimaryWeapon);
+		const bool loadoutAbilityUnavailable =
+			!mAbilitySystem.IsModuleAbilityAvailable(mDefinition.abilityId);
+		if (primaryWeaponUnavailable || loadoutAbilityUnavailable)
+		{
+			Cancel(sas::AbilityEndReason::Interrupted);
+			return;
+		}
 		if (mAbilitySystem.HasOwnedTag(GameplayTags::State::Effect::Control::Stunned))
 		{
 			Cancel(sas::AbilityEndReason::Interrupted);
@@ -440,38 +455,35 @@ namespace ly
 		const List<GameplayTag>& damageTags
 	)
 	{
-		if (mPrimaryWeaponRuntimeWeaponId != weaponDefinition.weaponId)
-		{
-			mPrimaryWeaponRuntime = PrimaryWeaponRuntimeState{};
-			mPrimaryWeaponRuntimeWeaponId = weaponDefinition.weaponId;
-			mHasPrimaryWeaponRuntimeResolvedContext = false;
-		}
-		mPrimaryWeaponRuntimeAttributes = attributes;
-		mPrimaryWeaponRuntimeDamageTags = damageTags;
-		mPrimaryWeaponRuntimeAttributeRevision = mAbilitySystem.GetAttributes().GetRevision();
-		mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
-		mPrimaryWeaponRuntimeModifierRevision = mAbilitySystem.GetPrimaryWeaponModifierRevision();
-		mHasPrimaryWeaponRuntimeResolvedContext = true;
+		mPrimaryWeaponState.UpdateContext(
+			weaponDefinition,
+			attributes,
+			damageTags,
+			mAbilitySystem.GetAttributes().GetRevision(),
+			mConfigurationRevision,
+			mAbilitySystem.GetPrimaryWeaponModifierRevision()
+		);
 	}
 
 	void GameAbility::TickInactivePrimaryWeaponRuntime(float deltaTime)
 	{
-		if (mPrimaryWeaponRuntime.isInitialized && !mPrimaryWeaponRuntime.isFiring)
+		PrimaryWeaponRuntimeState& weaponRuntime = mPrimaryWeaponState.runtime;
+		if (weaponRuntime.isInitialized && !weaponRuntime.isFiring)
 		{
 			RefreshPrimaryWeaponRuntimeConfiguration();
 		}
-		if (!mPrimaryWeaponRuntime.isInitialized ||
-			mPrimaryWeaponRuntime.isFiring ||
-			mPrimaryWeaponRuntimeWeaponId.empty() || mPrimaryWeaponRuntimeAttributes.empty())
+		if (!weaponRuntime.isInitialized ||
+			weaponRuntime.isFiring ||
+			mPrimaryWeaponState.weaponId.empty() || mPrimaryWeaponState.attributes.empty())
 		{
-			mPrimaryWeaponRuntime.fireIntervalRemaining = std::max(0.f, mPrimaryWeaponRuntime.fireIntervalRemaining - deltaTime);
+			mPrimaryWeaponState.TickFireInterval(deltaTime);
 			return;
 		}
 
 		for (const AbilityActionSpec& action : mDefinition.actions)
 		{
 			const FireWeaponAction* fireAction = std::get_if<FireWeaponAction>(&action.action);
-			if (!fireAction || fireAction->weaponDefinition.weaponId != mPrimaryWeaponRuntimeWeaponId)
+			if (!fireAction || fireAction->weaponDefinition.weaponId != mPrimaryWeaponState.weaponId)
 			{
 				continue;
 			}
@@ -480,41 +492,41 @@ namespace ly
 				PrimaryWeaponExecutionContext{
 					mAbilitySystem.GetOwner(),
 					fireAction->weaponDefinition,
-					mPrimaryWeaponRuntimeAttributes,
-					mPrimaryWeaponRuntimeDamageTags,
+					mPrimaryWeaponState.attributes,
+					mPrimaryWeaponState.damageTags,
 					&mDefinition.unlockedUpgradeIds,
-					&mPrimaryWeaponRuntime
+					&weaponRuntime
 				},
-				mPrimaryWeaponRuntime,
+				weaponRuntime,
 				deltaTime
 			);
 			return;
 		}
-		mPrimaryWeaponRuntime.fireIntervalRemaining = std::max(0.f, mPrimaryWeaponRuntime.fireIntervalRemaining - deltaTime);
+		mPrimaryWeaponState.TickFireInterval(deltaTime);
 	}
 
 	bool GameAbility::PrepareDefinitionForLevel(int level)
 	{
-		mPreparedPrimaryWeaponConfiguration.reset();
+		mPrimaryWeaponState.prepared.reset();
 		mPreparedLevelDefinition.emplace(BuildDefinitionForLevel(level));
-		if (mPrimaryWeaponRuntime.isInitialized &&
-			!mPrimaryWeaponRuntimeWeaponId.empty())
+		if (mPrimaryWeaponState.runtime.isInitialized &&
+			!mPrimaryWeaponState.weaponId.empty())
 		{
 			for (const AbilityActionSpec& action : mPreparedLevelDefinition->actions)
 			{
 				const FireWeaponAction* fireAction =
 					std::get_if<FireWeaponAction>(&action.action);
 				if (!fireAction || fireAction->weaponDefinition.weaponId !=
-					mPrimaryWeaponRuntimeWeaponId)
+					mPrimaryWeaponState.weaponId)
 				{
 					continue;
 				}
 
-				PreparedPrimaryWeaponConfiguration prepared;
+				PrimaryWeaponAbilityState::PreparedConfiguration prepared;
 				const PrimaryWeaponValidationResult validation =
 					PrimaryWeaponExecutionSystem::PrepareRuntimeConfiguration(
 						fireAction->weaponDefinition,
-						mPrimaryWeaponRuntime,
+						mPrimaryWeaponState.runtime,
 						&mPreparedLevelDefinition->unlockedUpgradeIds,
 						prepared.runtime
 					);
@@ -537,7 +549,7 @@ namespace ly
 				);
 				prepared.attributeRevision = mAbilitySystem.GetAttributes().GetRevision();
 				prepared.modifierRevision = mAbilitySystem.GetPrimaryWeaponModifierRevision();
-				mPreparedPrimaryWeaponConfiguration.emplace(std::move(prepared));
+				mPrimaryWeaponState.prepared.emplace(std::move(prepared));
 				break;
 			}
 		}
@@ -550,21 +562,7 @@ namespace ly
 		static_assert(std::is_nothrow_move_assignable_v<sas::GameplayAttributeList>);
 		mDefinition = std::move(*mPreparedLevelDefinition);
 		++mConfigurationRevision;
-		if (mPreparedPrimaryWeaponConfiguration)
-		{
-			PreparedPrimaryWeaponConfiguration& prepared =
-				*mPreparedPrimaryWeaponConfiguration;
-			PrimaryWeaponExecutionSystem::CommitRuntimeConfiguration(
-				mPrimaryWeaponRuntime,
-				std::move(prepared.runtime)
-			);
-			mPrimaryWeaponRuntimeAttributes = std::move(prepared.attributes);
-			mPrimaryWeaponRuntimeAttributeRevision = prepared.attributeRevision;
-			mPrimaryWeaponRuntimeModifierRevision = prepared.modifierRevision;
-			mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
-			mHasPrimaryWeaponRuntimeResolvedContext = true;
-		}
-		mPreparedPrimaryWeaponConfiguration.reset();
+		mPrimaryWeaponState.CommitPrepared(mConfigurationRevision);
 		mPreparedLevelDefinition.reset();
 	}
 
@@ -648,8 +646,8 @@ namespace ly
 
 	void GameAbility::RefreshPrimaryWeaponRuntimeConfiguration()
 	{
-		if (!mPrimaryWeaponRuntime.isInitialized ||
-			mPrimaryWeaponRuntimeWeaponId.empty())
+		if (!mPrimaryWeaponState.runtime.isInitialized ||
+			mPrimaryWeaponState.weaponId.empty())
 		{
 			return;
 		}
@@ -660,19 +658,19 @@ namespace ly
 				std::get_if<FireWeaponAction>(&action.action);
 			if (!fireAction ||
 				fireAction->weaponDefinition.weaponId !=
-					mPrimaryWeaponRuntimeWeaponId)
+					mPrimaryWeaponState.weaponId)
 			{
 				continue;
 			}
 			const uint64_t attributeRevision = mAbilitySystem.GetAttributes().GetRevision();
-			const bool configurationChanged = !mHasPrimaryWeaponRuntimeResolvedContext ||
-				mPrimaryWeaponRuntimeConfigurationRevision != mConfigurationRevision;
+			const bool configurationChanged = !mPrimaryWeaponState.hasResolvedContext ||
+				mPrimaryWeaponState.configurationRevision != mConfigurationRevision;
 			if (configurationChanged)
 			{
 				const PrimaryWeaponValidationResult validation =
 					PrimaryWeaponExecutionSystem::EnsureRuntimeConfigured(
 						fireAction->weaponDefinition,
-						mPrimaryWeaponRuntime,
+						mPrimaryWeaponState.runtime,
 						&mDefinition.unlockedUpgradeIds
 					);
 				if (!validation.isValid)
@@ -682,21 +680,22 @@ namespace ly
 			}
 			const uint64_t modifierRevision = mAbilitySystem.GetPrimaryWeaponModifierRevision();
 			if (!configurationChanged &&
-				mPrimaryWeaponRuntimeAttributeRevision == attributeRevision &&
-				mPrimaryWeaponRuntimeModifierRevision == modifierRevision)
+				mPrimaryWeaponState.attributeRevision == attributeRevision &&
+				mPrimaryWeaponState.modifierRevision == modifierRevision)
 			{
 				return;
 			}
 			AbilityExecutionContext context{ &mAbilitySystem, &mDefinition, nullptr, this };
-			mPrimaryWeaponRuntimeAttributes = AbilityActionAttributeResolver::ResolveAttributes(
-				context,
-				&fireAction->weaponDefinition,
-				fireAction->weaponDefinition.attributes
+			mPrimaryWeaponState.ApplyResolvedAttributes(
+				AbilityActionAttributeResolver::ResolveAttributes(
+					context,
+					&fireAction->weaponDefinition,
+					fireAction->weaponDefinition.attributes
+				),
+				attributeRevision,
+				modifierRevision,
+				mConfigurationRevision
 			);
-			mPrimaryWeaponRuntimeAttributeRevision = attributeRevision;
-			mPrimaryWeaponRuntimeModifierRevision = modifierRevision;
-			mPrimaryWeaponRuntimeConfigurationRevision = mConfigurationRevision;
-			mHasPrimaryWeaponRuntimeResolvedContext = true;
 			return;
 		}
 	}

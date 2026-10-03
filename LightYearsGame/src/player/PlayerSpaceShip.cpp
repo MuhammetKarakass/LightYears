@@ -3,6 +3,8 @@
 #include "gameplay/ability/loadout/DefaultAbilityLoadout.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/content/ModuleContentCatalog.h"
+#include <framework/LightComponent.h>
+#include <framework/SpriteComponent.h>
 #include <framework/MathUtility.h>
 
 namespace ly
@@ -10,7 +12,7 @@ namespace ly
 	PlayerSpaceShip::PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef)
 		: SpaceShip(owningWorld, shipDef)
 		, mAbilityLoadout(GetAbilitySystemComponent())
-		, mPlayerMovement(*this)
+		, mPlayerMovement(AddComponent<PlayerMovementComponent>())
 		, mModuleApplier(GetShipRuntime(), GetAbilitySystemComponent())
 		, mInvulnerabilityTime(2.f)
 		, mInvulnerabilityBlinkInterval(0.4f)
@@ -36,8 +38,8 @@ namespace ly
 		// requires both for Ship.Player.* entries.
 		if (shipDef.engineMounts.size() >= 2)
 		{
-			mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
-			mAttachedLightTags.push_back(AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
+			mAttachedLightTags.push_back(GetOrAddComponent<LightComponent>().AddLight(GameTags::Ship::Engine_Left, shipDef.engineMounts[0].pointLightDef, shipDef.engineMounts[0].offset));
+			mAttachedLightTags.push_back(GetOrAddComponent<LightComponent>().AddLight(GameTags::Ship::Engine_Right, shipDef.engineMounts[1].pointLightDef, shipDef.engineMounts[1].offset));
 		}
 	}
 
@@ -117,10 +119,16 @@ namespace ly
 
 	void PlayerSpaceShip::StopInvulnerability()
 	{
-		GetSprite().value().setColor({ 255, 255, 255, 255 });
+		if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
+		{
+			spriteComponent->GetSprite()->setColor({ 255, 255, 255, 255 });
+		}
 		SetInvulnerability(false);
-		SetAllLightsIntensity(GameTags::Ship::Engine_Left, 1.5f);
-		SetAllLightsIntensity(GameTags::Ship::Engine_Right, 1.5f);
+		if (LightComponent* lights = FindComponent<LightComponent>())
+		{
+			lights->SetAllLightsIntensity(GameTags::Ship::Engine_Left, 1.5f);
+			lights->SetAllLightsIntensity(GameTags::Ship::Engine_Right, 1.5f);
+		}
 	}
 
 	void PlayerSpaceShip::UpdateInvulnerability(float deltaTime)
@@ -132,10 +140,16 @@ namespace ly
 		}
 
 		const float blinkAlpha = mInvulnerabilityBlinkTimer / mInvulnerabilityBlinkInterval;
-		GetSprite().value().setColor(LerpColor({ 255, 255, 255, 96 }, { 255, 255, 255, 160 }, blinkAlpha));
+		if (SpriteComponent* spriteComponent = FindComponent<SpriteComponent>(); spriteComponent && spriteComponent->HasSprite())
+		{
+			spriteComponent->GetSprite()->setColor(LerpColor({ 255, 255, 255, 96 }, { 255, 255, 255, 160 }, blinkAlpha));
+		}
 		const float lightIntensity = 0.3f + (blinkAlpha * 5.f);
-		SetAllLightsIntensity(GameTags::Ship::Engine_Left, lightIntensity);
-		SetAllLightsIntensity(GameTags::Ship::Engine_Right, lightIntensity);
+		if (LightComponent* lights = FindComponent<LightComponent>())
+		{
+			lights->SetAllLightsIntensity(GameTags::Ship::Engine_Left, lightIntensity);
+			lights->SetAllLightsIntensity(GameTags::Ship::Engine_Right, lightIntensity);
+		}
 	}
 
 	void PlayerSpaceShip::OnActorBeginOverlap(Actor* otherActor)

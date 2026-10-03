@@ -1,5 +1,6 @@
 #pragma once
 
+#include <framework/ActorComponent.h>
 #include <SFML/System/Vector2.hpp>
 
 namespace ly
@@ -7,10 +8,14 @@ namespace ly
 	class PlayerSpaceShip;
 
 	// Translates local player controls into movement requests for a ship.
-	class PlayerMovementComponent
+	// Not ticked automatically (mCanEverTick stays false): PlayerSpaceShip::Tick
+	// runs it BEFORE SpaceShip::Tick/Actor::Tick, and automatic component ticking
+	// happens inside Actor::Tick, so the owner drives it explicitly (UE
+	// tick-prerequisite equivalent). The owner must be a PlayerSpaceShip.
+	class PlayerMovementComponent : public ActorComponent
 	{
 	public:
-		explicit PlayerMovementComponent(PlayerSpaceShip& owner);
+		explicit PlayerMovementComponent(Actor& owner);
 
 		void Tick(float deltaTime);
 
@@ -35,7 +40,8 @@ namespace ly
 		sf::Vector2f ResolveAbilityWorldMovementInput() const;
 		void RotateTowardMouseCursor(float deltaTime);
 
-		PlayerSpaceShip& mOwner;
+		PlayerSpaceShip& GetPlayer() const;
+
 		sf::Vector2f mMoveInput{ 0.f, 0.f };
 		sf::Vector2f mSmoothedMoveInput{ 0.f, 0.f };
 		float mAfterburnerIntensity = 0.f;

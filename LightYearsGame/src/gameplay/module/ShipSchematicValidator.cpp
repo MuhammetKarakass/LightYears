@@ -1,7 +1,10 @@
 #include "gameplay/module/ShipSchematicValidator.h"
 
 #include "gameplay/module/ModuleLoadout.h"
+#include "gameplay/tags/GameplayTagSchema.h"
+#include "gameplay/tags/GameplayTags.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <set>
 #include <utility>
@@ -51,6 +54,14 @@ namespace ly
 			}
 			++totalCells;
 		}
+		if (totalCells != kTotalCellCapacity)
+		{
+			return Fail(
+				failureReason,
+				"Schematic must have " + std::to_string(kTotalCellCapacity) +
+				" module cells, found " + std::to_string(totalCells)
+			);
+		}
 
 		const ModuleRulesContext rules{
 			schematic,
@@ -58,6 +69,7 @@ namespace ly
 			zoneTable
 		};
 		List<ModulePlacement> installed;
+		List<GameplayTag> defaultSystems;
 		std::set<std::pair<int, int>> occupied;
 		for (const DefaultModulePlacement& defaults : schematic.defaultModules)
 		{
@@ -78,11 +90,20 @@ namespace ly
 			{
 				return Fail(failureReason, "Default module " + name + " " + ModulePlacementRules::Describe(failure));
 			}
+			defaultSystems.push_back(module->systemCategory);
 			for (const sf::Vector2i& cell : ModulePlacementRules::GetCoveredCells(*module, placement))
 			{
 				occupied.insert({ cell.x, cell.y });
 			}
 			installed.push_back(std::move(placement));
+		}
+
+		for (const GameplayTag* required : GameplayTagSchema::GetRequiredDefaultModuleSystems())
+		{
+			if (std::find(defaultSystems.begin(), defaultSystems.end(), *required) == defaultSystems.end())
+			{
+				return Fail(failureReason, "Default modules are missing " + required->name);
+			}
 		}
 
 		const int freeCells = totalCells - static_cast<int>(occupied.size());

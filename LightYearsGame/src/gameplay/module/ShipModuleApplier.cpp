@@ -21,6 +21,14 @@ namespace ly
 		: mShipRuntime{ shipRuntime }
 		, mAbilities{ abilities }
 	{
+		// The applier and the ability system component belong to the same ship and the
+		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
+		mAbilities.SetModuleSystemGate(this);
+	}
+
+	ShipModuleApplier::~ShipModuleApplier()
+	{
+		mAbilities.SetModuleSystemGate(nullptr);
 	}
 
 	bool ShipModuleApplier::IsSystemEnabled(const GameplayTag& systemTag) const
@@ -123,6 +131,7 @@ namespace ly
 		mEnabledSystems = mResolved.enabledSystems;
 		mShipRuntime.SetSystemEnabled(ShipSystem::Shield, IsSystemEnabled(GameplayTags::Module::System::Shield));
 		mShipRuntime.SetSystemEnabled(ShipSystem::Afterburner, IsSystemEnabled(GameplayTags::Module::System::Afterburner));
+		mAbilities.CancelAbilitiesUnavailableByModules();
 	}
 
 	void ShipModuleApplier::SyncModifiers(

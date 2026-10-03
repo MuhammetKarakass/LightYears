@@ -169,6 +169,19 @@ namespace ly::content
 					ParseVariant(variant, context + ".sizeVariants[" + std::to_string(index++) + "]")
 				);
 			}
+			if (definition.systemCategory.IsValid())
+			{
+				if (GameplayTagSchema::IsTwoCellModuleSystem(definition.systemCategory))
+				{
+					for (const ModuleSizeVariant& variant : definition.sizeVariants)
+					{
+						if (variant.shape.cells.size() != 2)
+						{
+							throw std::runtime_error(context + " must occupy exactly 2 cells in every size variant");
+						}
+					}
+				}
+			}
 			return definition;
 		}
 
@@ -221,6 +234,10 @@ namespace ly::content
 			{
 				ModuleSystemZoneEntry entry;
 				entry.system = ParseTag(Json(it.key()), GameplayTagKind::ModuleSystem, "System zone key");
+				if (GameplayTagSchema::IsModuleAbilitySlotSystem(entry.system))
+				{
+					throw std::runtime_error("Ability slot systems must be installable in any module zone: " + entry.system.name);
+				}
 				entry.zone = ParseTag(it.value(), GameplayTagKind::ModuleZone, "System zone");
 				if (!table.FindZone(entry.zone))
 				{
@@ -228,11 +245,7 @@ namespace ly::content
 				}
 				table.systemZones.push_back(std::move(entry));
 			}
-			const GameplayTag* requiredSystems[] = {
-				&GameplayTags::Module::System::Shield, &GameplayTags::Module::System::Afterburner,
-				&GameplayTags::Module::System::HealthReadout, &GameplayTags::Module::System::DamageReadout
-			};
-			for (const GameplayTag* required : requiredSystems)
+			for (const GameplayTag* required : GameplayTagSchema::GetZonedRequiredModuleSystems())
 			{
 				if (!table.FindSystemZone(*required))
 				{

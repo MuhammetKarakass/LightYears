@@ -1,6 +1,7 @@
 #include "gameplay/module/ModulePlacementRules.h"
 
 #include "gameplay/module/ModuleLoadout.h"
+#include "gameplay/tags/GameplayTagSchema.h"
 
 #include <set>
 #include <utility>
@@ -43,7 +44,8 @@ namespace ly
 
 			const List<sf::Vector2i> cells = GetCoveredCells(*module, candidate);
 			const GameplayTag* systemZone = nullptr;
-			if (module->systemCategory.IsValid())
+			if (module->systemCategory.IsValid() &&
+				!GameplayTagSchema::IsModuleAbilitySlotSystem(module->systemCategory))
 			{
 				systemZone = rules.zoneTable.FindSystemZone(module->systemCategory);
 				if (!systemZone) return ModulePlacementFailure::SystemZoneMismatch;

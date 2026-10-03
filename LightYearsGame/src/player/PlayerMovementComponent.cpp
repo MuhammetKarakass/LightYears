@@ -12,14 +12,19 @@
 
 namespace ly
 {
-	PlayerMovementComponent::PlayerMovementComponent(PlayerSpaceShip& owner)
-		: mOwner(owner)
+	PlayerMovementComponent::PlayerMovementComponent(Actor& owner)
+		: ActorComponent(owner)
 	{
+	}
+
+	PlayerSpaceShip& PlayerMovementComponent::GetPlayer() const
+	{
+		return static_cast<PlayerSpaceShip&>(GetOwner());
 	}
 
 	void PlayerMovementComponent::Tick(float deltaTime)
 	{
-		if (mOwner.IsInPortalTransit())
+		if (GetPlayer().IsInPortalTransit())
 		{
 			mMoveInput = { 0.f, 0.f };
 			mSmoothedMoveInput = { 0.f, 0.f };
@@ -30,7 +35,7 @@ namespace ly
 		}
 
 		SetInput();
-		if (mOwner.GetAbilitySystemComponent().HasOwnedTag(
+		if (GetPlayer().GetAbilitySystemComponent().HasOwnedTag(
 			GameplayTags::State::Effect::Control::Stunned
 		))
 		{
@@ -39,7 +44,7 @@ namespace ly
 			mAfterburnerRequested = false;
 			mAfterburnerIsActive = false;
 			mAfterburnerIntensity = 0.f;
-			mOwner.SetVelocity({ 0.f, 0.f });
+			GetPlayer().SetVelocity({ 0.f, 0.f });
 			return;
 		}
 		ConsumeInput(deltaTime);
@@ -47,19 +52,19 @@ namespace ly
 
 	void PlayerMovementComponent::SetSpeed(float speed)
 	{
-		mOwner.GetMovementComponent().SetLegacySpeed({ speed, speed });
+		GetPlayer().GetMovementComponent().SetLegacySpeed({ speed, speed });
 	}
 
 	float PlayerMovementComponent::GetSpeed() const
 	{
-		return mOwner.GetMovementComponent().GetLegacySpeed().x;
+		return GetPlayer().GetMovementComponent().GetLegacySpeed().x;
 	}
 
 	void PlayerMovementComponent::SetInput()
 	{
 		// Device state is global: never read it for a headless world or while the
 		// window is unfocused, otherwise typing elsewhere drives the ship.
-		const World* world = mOwner.GetWorld();
+		const World* world = GetPlayer().GetWorld();
 		const bool hasInputFocus = world && world->HasInputFocus();
 		const auto isKeyPressed = [hasInputFocus](sf::Keyboard::Key key)
 		{
@@ -71,18 +76,24 @@ namespace ly
 		{
 			mMoveInput.y = -1.f;
 		}
-		else if (isKeyPressed(sf::Keyboard::Key::S) || isKeyPressed(sf::Keyboard::Key::Down))
+		const bool flightControlEnabled = !GetPlayer().GetModuleApplier().HasApplied() ||
+			GetPlayer().GetModuleApplier().IsSystemEnabled(GameplayTags::Module::System::FlightControl);
+		if (flightControlEnabled)
 		{
-			mMoveInput.y = 1.f;
-		}
+			if (mMoveInput.y == 0.f &&
+				(isKeyPressed(sf::Keyboard::Key::S) || isKeyPressed(sf::Keyboard::Key::Down)))
+			{
+				mMoveInput.y = 1.f;
+			}
 
-		if (isKeyPressed(sf::Keyboard::Key::A) || isKeyPressed(sf::Keyboard::Key::Left))
-		{
-			mMoveInput.x = -1.f;
-		}
-		else if (isKeyPressed(sf::Keyboard::Key::D) || isKeyPressed(sf::Keyboard::Key::Right))
-		{
-			mMoveInput.x = 1.f;
+			if (isKeyPressed(sf::Keyboard::Key::A) || isKeyPressed(sf::Keyboard::Key::Left))
+			{
+				mMoveInput.x = -1.f;
+			}
+			else if (isKeyPressed(sf::Keyboard::Key::D) || isKeyPressed(sf::Keyboard::Key::Right))
+			{
+				mMoveInput.x = 1.f;
+			}
 		}
 
 		if (mUseScreenClamp)
@@ -94,11 +105,11 @@ namespace ly
 			isKeyPressed(sf::Keyboard::Key::LShift) ||
 			isKeyPressed(sf::Keyboard::Key::RShift);
 
-		mOwner.GetMovementComponent().SetAbilityWorldMovementInput(
+		GetPlayer().GetMovementComponent().SetAbilityWorldMovementInput(
 			ResolveAbilityWorldMovementInput()
 		);
 
-		CombatRuntime& combatRuntime = mOwner.GetCombatRuntime();
+		CombatRuntime& combatRuntime = GetPlayer().GetCombatRuntime();
 		for (const AbilityInputBinding& binding : AbilityInputSchema::GetBindings())
 		{
 			combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(
@@ -107,7 +118,7 @@ namespace ly
 			);
 		}
 
-		if (mOwner.GetMovementComponent().GetMovementMode() == ShipMovementMode::LegacyVelocity)
+		if (GetPlayer().GetMovementComponent().GetMovementMode() == ShipMovementMode::LegacyVelocity)
 		{
 			NormalizeInput();
 		}
@@ -115,8 +126,8 @@ namespace ly
 
 	void PlayerMovementComponent::ConsumeInput(float deltaTime)
 	{
-		MovementComponent& movement = mOwner.GetMovementComponent();
-		if (mOwner.GetAbilitySystemComponent().HasOwnedTag(
+		MovementComponent& movement = GetPlayer().GetMovementComponent();
+		if (GetPlayer().GetAbilitySystemComponent().HasOwnedTag(
 			GameplayTags::State::ActionLock::MovementInput
 		))
 		{
@@ -161,7 +172,7 @@ namespace ly
 				: movement.ResolveReverseThrust();
 			const float strafeThrust = movement.ResolveStrafeThrust();
 			sf::Vector2f worldAcceleration =
-				mOwner.GetActorForwardDirection() * forwardInput * forwardThrust +
+				GetPlayer().GetActorForwardDirection() * forwardInput * forwardThrust +
 				GetAdaptiveScreenStrafeDirection() * strafeInput * strafeThrust;
 
 			const float dominantAxisMagnitude = std::max(
@@ -173,13 +184,13 @@ namespace ly
 			{
 				worldAcceleration *= dominantAxisMagnitude / accelerationLength;
 			}
-			worldAcceleration *= mOwner.GetConditionalMovementSpeedMultiplier(
+			worldAcceleration *= GetPlayer().GetConditionalMovementSpeedMultiplier(
 				worldAcceleration
 			);
 
 			const float afterburnerAccelerationMultiplier = std::max(
 				1.f,
-				mOwner.GetShipRuntime().GetAfterburnerAccelerationMultiplier()
+				GetPlayer().GetShipRuntime().GetAfterburnerAccelerationMultiplier()
 			);
 			movement.AddWorldAcceleration(
 				worldAcceleration * Lerp(1.f, afterburnerAccelerationMultiplier, mAfterburnerIntensity),
@@ -193,17 +204,17 @@ namespace ly
 			sf::Vector2f movementDirection = mMoveInput;
 			if (GetVectorLength(movementDirection) <= 0.001f && IsAfterburning())
 			{
-				movementDirection = mOwner.GetActorForwardDirection();
+				movementDirection = GetPlayer().GetActorForwardDirection();
 			}
 
 			const float afterburnerSpeedMultiplier = std::max(
 				1.f,
-				mOwner.GetShipRuntime().GetAfterburnerSpeedMultiplier()
+				GetPlayer().GetShipRuntime().GetAfterburnerSpeedMultiplier()
 			);
 			const sf::Vector2f normalSpeed =
 				movement.ResolveLegacySpeed() *
-				mOwner.GetMovementSpeedMultiplier() *
-				mOwner.GetConditionalMovementSpeedMultiplier(movementDirection);
+				GetPlayer().GetMovementSpeedMultiplier() *
+				GetPlayer().GetConditionalMovementSpeedMultiplier(movementDirection);
 			const float speedMultiplier = Lerp(1.f, afterburnerSpeedMultiplier, mAfterburnerIntensity);
 			const sf::Vector2f targetVelocity{
 				movementDirection.x * normalSpeed.x * speedMultiplier,
@@ -214,7 +225,7 @@ namespace ly
 			{
 				const float accelerationMultiplier = std::max(
 					1.f,
-					mOwner.GetShipRuntime().GetAfterburnerAccelerationMultiplier()
+					GetPlayer().GetShipRuntime().GetAfterburnerAccelerationMultiplier()
 				);
 				const float responseRate = std::max(
 					0.f,
@@ -223,11 +234,11 @@ namespace ly
 				const float responseAlpha = responseRate > 0.f
 					? 1.f - std::exp(-responseRate * deltaTime)
 					: 1.f;
-				mOwner.SetVelocity(LerpVector(mOwner.GetVelocity(), targetVelocity, responseAlpha));
+				GetPlayer().SetVelocity(LerpVector(GetPlayer().GetVelocity(), targetVelocity, responseAlpha));
 			}
 			else
 			{
-				mOwner.SetVelocity(targetVelocity);
+				GetPlayer().SetVelocity(targetVelocity);
 			}
 		}
 
@@ -238,20 +249,20 @@ namespace ly
 	{
 		mAfterburnerIsActive = false;
 		if (mAfterburnerRequested && deltaTime > 0.f &&
-			mOwner.GetShipRuntime().IsSystemEnabled(ShipSystem::Afterburner))
+			GetPlayer().GetShipRuntime().IsSystemEnabled(ShipSystem::Afterburner))
 		{
 			const float baseDrainPerSecond = std::max(
 				0.f,
-				mOwner.GetShipRuntime().GetAfterburnerEnergyDrainPerSecond()
+				GetPlayer().GetShipRuntime().GetAfterburnerEnergyDrainPerSecond()
 			);
 			const float drainPerSecond = baseDrainPerSecond * std::max(
 				0.f,
-				mOwner.GetRuntimeModifiers().GetAfterburnerEnergyDrainMultiplier()
+				GetPlayer().GetRuntimeModifiers().GetAfterburnerEnergyDrainMultiplier()
 			);
 			const float requestedEnergy = drainPerSecond * deltaTime;
 			if (requestedEnergy > 0.f)
 			{
-				mAfterburnerIsActive = mOwner.GetEnergyComponent().Consume(requestedEnergy) > 0.f;
+				mAfterburnerIsActive = GetPlayer().GetEnergyComponent().Consume(requestedEnergy) > 0.f;
 			}
 			else
 			{
@@ -263,8 +274,8 @@ namespace ly
 
 		const float targetIntensity = mAfterburnerIsActive ? 1.f : 0.f;
 		const float transitionDuration = targetIntensity > mAfterburnerIntensity
-			? std::max(0.f, mOwner.GetShipRuntime().GetAfterburnerRampUpDuration())
-			: std::max(0.f, mOwner.GetShipRuntime().GetAfterburnerRampDownDuration());
+			? std::max(0.f, GetPlayer().GetShipRuntime().GetAfterburnerRampUpDuration())
+			: std::max(0.f, GetPlayer().GetShipRuntime().GetAfterburnerRampDownDuration());
 		const float intensityStep = transitionDuration > 0.f
 			? std::clamp(deltaTime / transitionDuration, 0.f, 1.f)
 			: 1.f;
@@ -280,20 +291,20 @@ namespace ly
 
 	void PlayerMovementComponent::ClampInputOnEdge()
 	{
-		if (mOwner.GetActorLocation().x - 40.f <= 0.f && mMoveInput.x == -1.f)
+		if (GetPlayer().GetActorLocation().x - 40.f <= 0.f && mMoveInput.x == -1.f)
 		{
 			mMoveInput.x = 0.f;
 		}
-		else if (mOwner.GetActorLocation().x + 40.f >= mOwner.GetWindowSize().x && mMoveInput.x == 1.f)
+		else if (GetPlayer().GetActorLocation().x + 40.f >= GetPlayer().GetWindowSize().x && mMoveInput.x == 1.f)
 		{
 			mMoveInput.x = 0.f;
 		}
 
-		if (mOwner.GetActorLocation().y - 40.f <= 0.f && mMoveInput.y == -1.f)
+		if (GetPlayer().GetActorLocation().y - 40.f <= 0.f && mMoveInput.y == -1.f)
 		{
 			mMoveInput.y = 0.f;
 		}
-		else if (mOwner.GetActorLocation().y + 40.f >= mOwner.GetWindowSize().y && mMoveInput.y == 1.f)
+		else if (GetPlayer().GetActorLocation().y + 40.f >= GetPlayer().GetWindowSize().y && mMoveInput.y == 1.f)
 		{
 			mMoveInput.y = 0.f;
 		}
@@ -303,7 +314,7 @@ namespace ly
 	{
 		const sf::Vector2f screenRight{ 1.f, 0.f };
 		const sf::Vector2f horizontalFacingStrafe{ 0.f, -1.f };
-		const sf::Vector2f shipForward = mOwner.GetActorForwardDirection();
+		const sf::Vector2f shipForward = GetPlayer().GetActorForwardDirection();
 		const float horizontalFacingAmount = std::abs(shipForward.x);
 		const float blendStart = 0.25f;
 		const float blendEnd = 0.85f;
@@ -317,7 +328,7 @@ namespace ly
 
 	sf::Vector2f PlayerMovementComponent::ResolveAbilityWorldMovementInput() const
 	{
-		if (mOwner.GetMovementComponent().GetMovementMode() != ShipMovementMode::ThrustDrift)
+		if (GetPlayer().GetMovementComponent().GetMovementMode() != ShipMovementMode::ThrustDrift)
 		{
 			return mMoveInput;
 		}
@@ -325,15 +336,15 @@ namespace ly
 		const float forwardInput = std::clamp(-mMoveInput.y, -1.f, 1.f);
 		const float strafeInput = std::clamp(mMoveInput.x, -1.f, 1.f);
 		return
-			mOwner.GetActorForwardDirection() * forwardInput +
+			GetPlayer().GetActorForwardDirection() * forwardInput +
 			GetAdaptiveScreenStrafeDirection() * strafeInput;
 	}
 
 	void PlayerMovementComponent::RotateTowardMouseCursor(float deltaTime)
 	{
-		if (World* world = mOwner.GetWorld())
+		if (World* world = GetPlayer().GetWorld())
 		{
-			mOwner.GetMovementComponent().RotateTowardWorldLocation(
+			GetPlayer().GetMovementComponent().RotateTowardWorldLocation(
 				world->GetMouseWorldPosition(),
 				deltaTime,
 				GetMovementTurnCapabilityMultiplier()
@@ -345,7 +356,7 @@ namespace ly
 	{
 		const float afterburnerSpeedMultiplier = std::max(
 			1.f,
-			mOwner.GetShipRuntime().GetAfterburnerSpeedMultiplier()
+			GetPlayer().GetShipRuntime().GetAfterburnerSpeedMultiplier()
 		);
 		return Lerp(1.f, afterburnerSpeedMultiplier, mAfterburnerIntensity);
 	}
@@ -353,12 +364,12 @@ namespace ly
 	float PlayerMovementComponent::GetMovementTurnCapabilityMultiplier() const
 	{
 		const float maneuverabilityMultiplier = std::clamp(
-			mOwner.GetShipRuntime().GetAfterburnerManeuverabilityMultiplier(),
+			GetPlayer().GetShipRuntime().GetAfterburnerManeuverabilityMultiplier(),
 			0.f,
 			1.f
 		);
 		return Lerp(1.f, maneuverabilityMultiplier, mAfterburnerIntensity) *
-			mOwner.GetRuntimeModifiers().GetTurnCapabilityMultiplier();
+			GetPlayer().GetRuntimeModifiers().GetTurnCapabilityMultiplier();
 	}
 
 	bool PlayerMovementComponent::IsAfterburnerRechargeBlocked() const
