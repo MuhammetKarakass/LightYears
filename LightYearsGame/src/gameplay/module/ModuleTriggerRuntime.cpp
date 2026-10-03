@@ -1,6 +1,8 @@
 #include "gameplay/module/ModuleTriggerRuntime.h"
 
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
+#include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/ShieldComponent.h"
 #include "gameplay/tags/GameplayTags.h"
 
 #include <algorithm>
@@ -27,19 +29,25 @@ namespace ly
 	ModuleTriggerRuntime::ModuleTriggerRuntime(
 		LightYearsAbilitySystemComponent& abilities,
 		ShipRuntime& shipRuntime,
-		ShipRuntimeModifiers& runtimeModifiers
+		ShipRuntimeModifiers& runtimeModifiers,
+		CombatRuntime& combatRuntime,
+		ShieldComponent& shield
 	)
 		: mAbilities{ abilities },
 		  mShipRuntime{ shipRuntime },
-		  mRuntimeModifiers{ runtimeModifiers }
+		  mRuntimeModifiers{ runtimeModifiers },
+		  mCombatRuntime{ combatRuntime },
+		  mShield{ shield }
 	{
 		mGameplayEventHandle = mAbilities.onGameplayEvent.BindAction(this, &ModuleTriggerRuntime::OnGameplayEvent);
+		mShieldDamagedHandle = mShield.onShieldDamaged.BindAction(this, &ModuleTriggerRuntime::OnShieldDamaged);
 	}
 
 	ModuleTriggerRuntime::~ModuleTriggerRuntime()
 	{
 		mShuttingDown = true;
 		mAbilities.onGameplayEvent.UnbindAction(mGameplayEventHandle);
+		mShield.onShieldDamaged.UnbindAction(mShieldDamagedHandle);
 		mPendingRules.reset();
 		mPendingEvents.clear();
 		DispatchDepthScope dispatchScope{ mDispatchDepth };
@@ -85,6 +93,13 @@ namespace ly
 		if (mShuttingDown) return;
 		mPendingEvents.push_back({ event.eventTag, event.magnitude, event.sourceAbilityTags, event.payloadTags });
 		ProcessDeferredUpdates();
+	}
+
+	void ModuleTriggerRuntime::OnShieldDamaged(float absorbed, float remainingShield, float maxShield)
+	{
+		(void)maxShield;
+		if (!mShuttingDown && absorbed > 0.f && remainingShield == 0.f)
+			mCombatRuntime.ActivateOutgoingDamageRules(ModuleTriggerKind::ShieldBroken);
 	}
 
 	void ModuleTriggerRuntime::ProcessEvent(const EventSnapshot& event)

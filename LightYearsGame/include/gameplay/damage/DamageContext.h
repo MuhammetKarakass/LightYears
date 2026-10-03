@@ -36,6 +36,8 @@ namespace ly
 		int kineticStacks = 1;
 		DamageCriticalPolicy criticalPolicy = DamageCriticalPolicy::Random;
 		bool roundDamageUp = false;
+		// Prevents an outgoing module bonus from recursively creating more bonus hits.
+		bool skipModuleDamageRules = false;
 	};
 
 	// Delivery kind is shared metadata for incoming-damage defenses. It keeps

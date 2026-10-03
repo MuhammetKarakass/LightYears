@@ -2,6 +2,8 @@
 #include "gameplay/combat/CombatRuntime.h"
 #include "framework/Actor.h"
 #include "framework/MathUtility.h"
+#include "gameplay/HealthComponent.h"
+#include "gameplay/damage/DamageTypeSystem.h"
 
 #include <algorithm>
 #include <cmath>
@@ -94,13 +96,16 @@ namespace ly
 		}
 
 		const auto* sourceCombatant = source ? dynamic_cast<const Combatant*>(source) : nullptr;
+		const CombatRuntime::OutgoingDamagePlan outgoingModulePlan = sourceCombatant && !payload.skipModuleDamageRules
+			? sourceCombatant->GetCombatRuntime().ResolveOutgoingDamagePlan(target, sourceAbilityTags)
+			: CombatRuntime::OutgoingDamagePlan{};
 		const auto resolveCriticalMultiplier = [&]()
 		{
 			return sourceCombatant ? sourceCombatant->GetCombatRuntime().GetCriticalDamageMultiplier() : 1.f;
 		};
 		const float sourceOutgoingDamageMultiplier =
 			sourceCombatant ? sourceCombatant->GetCombatRuntime().GetOutgoingDamageMultiplier() : 1.f;
-		long double sourceResolvedDamage = static_cast<long double>(damage) * sourceOutgoingDamageMultiplier;
+		long double sourceResolvedDamage = static_cast<long double>(damage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier;
 		bool wasCritical = false;
 		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
 		{
@@ -135,6 +140,40 @@ namespace ly
 			resolvedDamage = std::min(std::ceil(resolvedDamage), std::numeric_limits<float>::max());
 		}
 
+		struct BonusHit
+		{
+			float damage = 0.f;
+			List<GameplayTag> damageTags;
+			DamagePayload payload;
+		};
+		List<BonusHit> bonusHits;
+		for (const CombatRuntime::OutgoingDamageBonus& bonus : outgoingModulePlan.bonuses)
+		{
+			const long double bonusRawDamage = static_cast<long double>(damage) * outgoingModulePlan.damageMultiplier * bonus.fraction;
+			const float bonusDamage = std::isfinite(bonusRawDamage) && bonusRawDamage > 0.f
+				? static_cast<float>(std::min(bonusRawDamage, static_cast<long double>(std::numeric_limits<float>::max())))
+				: 0.f;
+			if (bonusDamage <= 0.f) continue;
+			BonusHit hit;
+			hit.damage = bonusDamage;
+			hit.damageTags = { bonus.damageType };
+			hit.payload = DamageTypeSystem::BuildPayload(hit.damageTags);
+			hit.payload.criticalPolicy = DamageCriticalPolicy::Disabled;
+			hit.payload.skipModuleDamageRules = true;
+			bonusHits.push_back(std::move(hit));
+		}
+		const sas::ContentId bonusSourceAbilityId = bonusHits.empty() ? sas::ContentId{} : sourceAbilityId;
+		const List<GameplayTag> bonusSourceAbilityTags = bonusHits.empty() ? List<GameplayTag>{} : sourceAbilityTags;
+		const std::shared_ptr<Actor> sourceLifetime = bonusHits.empty() || !source
+			? std::shared_ptr<Actor>{}
+			: source->GetWeakActor().lock();
+		const std::shared_ptr<Actor> targetLifetime = bonusHits.empty()
+			? std::shared_ptr<Actor>{}
+			: target.GetWeakActor().lock();
+		const std::shared_ptr<Actor> deliveryActorLifetime = bonusHits.empty() || !deliveryActor
+			? std::shared_ptr<Actor>{}
+			: deliveryActor->GetWeakActor().lock();
+
 		if (auto* combatant = dynamic_cast<Combatant*>(&target))
 		{
 			DamageContext context;
@@ -150,9 +189,37 @@ namespace ly
 			context.damageTags = damageTags;
 			context.payload = payload;
 			combatant->ReceiveDamage(context);
-			return;
+		}
+		else
+		{
+			target.ApplyDamage(resolvedDamage);
 		}
 
-		target.ApplyDamage(resolvedDamage);
+		if (bonusHits.empty() || target.GetIsPendingDestroy() || (source && source->GetIsPendingDestroy())) return;
+		if (const HealthComponent* health = target.FindComponent<HealthComponent>(); health && health->GetHealth() <= 0.f) return;
+		if (source)
+		{
+			if (const HealthComponent* health = source->FindComponent<HealthComponent>(); health && health->GetHealth() <= 0.f) return;
+		}
+		for (const BonusHit& hit : bonusHits)
+		{
+			Actor* const bonusSource = sourceLifetime ? sourceLifetime.get() : source;
+			Actor* const bonusDeliveryActor = deliveryActorLifetime ? deliveryActorLifetime.get() : deliveryActor;
+			Actor& bonusTarget = targetLifetime ? *targetLifetime : target;
+			if (bonusSource && bonusSource->GetIsPendingDestroy()) break;
+			ApplyCombatDamage(
+				bonusTarget,
+				hit.damage,
+				bonusSource,
+				hit.damageTags,
+				hit.payload,
+				bonusSourceAbilityId,
+				bonusSourceAbilityTags,
+				deliveryType,
+				bonusDeliveryActor
+			);
+			if (bonusTarget.GetIsPendingDestroy() || (bonusSource && bonusSource->GetIsPendingDestroy())) break;
+			if (const HealthComponent* health = bonusTarget.FindComponent<HealthComponent>(); health && health->GetHealth() <= 0.f) break;
+		}
 	}
 }

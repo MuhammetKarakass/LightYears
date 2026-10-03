@@ -6,7 +6,9 @@
 #include "framework/Delegate.h"
 #include "gameplay/combat/ContactDamageGuardRegistry.h"
 #include "gameplay/combat/CombatRuntimeModifiers.h"
+#include "gameplay/module/ModuleResolver.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -19,7 +21,58 @@ namespace ly
 
 	class CombatRuntime
 	{
+	private:
+		struct ActiveModuleDamageRule
+		{
+			ResolvedModuleDamageRule resolved;
+			float remainingSeconds = 0.f;
+		};
+		struct ModuleDamageRuleRegistrationEntry
+		{
+			std::uint64_t generation = 0;
+			List<ActiveModuleDamageRule> rules;
+		};
+		struct ModuleDamageRuleState
+		{
+			std::uint64_t nextGeneration = 1;
+			List<ModuleDamageRuleRegistrationEntry> registrations;
+		};
+
 	public:
+		struct OutgoingDamageBonus
+		{
+			float fraction = 0.f;
+			GameplayTag damageType;
+		};
+		struct OutgoingDamagePlan
+		{
+			float damageMultiplier = 1.f;
+			List<OutgoingDamageBonus> bonuses;
+		};
+
+		class OutgoingDamageRuleRegistration final
+		{
+		public:
+			OutgoingDamageRuleRegistration() = default;
+			~OutgoingDamageRuleRegistration();
+			OutgoingDamageRuleRegistration(const OutgoingDamageRuleRegistration&) = delete;
+			OutgoingDamageRuleRegistration& operator=(const OutgoingDamageRuleRegistration&) = delete;
+			OutgoingDamageRuleRegistration(OutgoingDamageRuleRegistration&& other) noexcept;
+			OutgoingDamageRuleRegistration& operator=(OutgoingDamageRuleRegistration&& other) noexcept;
+
+			void ReplaceRules(const List<ResolvedModuleDamageRule>& rules);
+			void Reset() noexcept;
+			bool IsValid() const noexcept { return mGeneration != 0 && !mState.expired(); }
+
+		private:
+			friend class CombatRuntime;
+			OutgoingDamageRuleRegistration(std::weak_ptr<ModuleDamageRuleState> state, std::uint64_t generation)
+				: mState{ std::move(state) }, mGeneration{ generation } {}
+
+			std::weak_ptr<ModuleDamageRuleState> mState;
+			std::uint64_t mGeneration = 0;
+		};
+
 		explicit CombatRuntime(Actor& owner);
 		~CombatRuntime();
 
@@ -36,6 +89,12 @@ namespace ly
 		bool SetRuntimeModifier(const std::string& sourceId, CombatRuntimeModifier modifier);
 		bool RemoveRuntimeModifier(const std::string& sourceId);
 		float GetOutgoingDamageMultiplier() const noexcept;
+		OutgoingDamageRuleRegistration RegisterOutgoingDamageRules();
+		void ActivateOutgoingDamageRules(ModuleTriggerKind trigger);
+		OutgoingDamagePlan ResolveOutgoingDamagePlan(
+			const Actor& target,
+			const List<GameplayTag>& sourceAbilityTags
+		) const;
 
 		// Abilities can register temporary, source-owned combat protection
 		// without making ship classes know the ability family that requested it.
@@ -76,6 +135,13 @@ namespace ly
 		Delegate<const DamageContext&> onDamageDealt;
 
 	private:
+		static bool SameDamageRule(const ModuleDamageRule& left, const ModuleDamageRule& right);
+		static void ReplaceRegisteredDamageRules(
+			ModuleDamageRuleState& state,
+			std::uint64_t generation,
+			const List<ResolvedModuleDamageRule>& rules
+		);
+		static void UnregisterDamageRules(ModuleDamageRuleState& state, std::uint64_t generation);
 		void CompleteClear();
 		bool mClearRequested = false;
 		struct QueuedEffectEvent
@@ -129,6 +195,7 @@ namespace ly
 		};
 		std::unordered_map<std::string, DamageProtection> mDamageProtections;
 		CombatRuntimeModifiers mRuntimeModifiers;
+		std::shared_ptr<ModuleDamageRuleState> mModuleDamageRuleState = std::make_shared<ModuleDamageRuleState>();
 	};
 }
 

@@ -5,6 +5,7 @@
 #include "abilities/AbilityEvent.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
+#include "gameplay/HealthComponent.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
@@ -13,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <utility>
 #include <vector>
 
 namespace ly
@@ -106,6 +108,51 @@ namespace ly
 
 	CombatRuntime::~CombatRuntime() = default;
 
+	CombatRuntime::OutgoingDamageRuleRegistration::~OutgoingDamageRuleRegistration()
+	{
+		Reset();
+	}
+
+	CombatRuntime::OutgoingDamageRuleRegistration::OutgoingDamageRuleRegistration(
+		OutgoingDamageRuleRegistration&& other
+	) noexcept
+		: mState{ std::move(other.mState) }, mGeneration{ std::exchange(other.mGeneration, 0) }
+	{
+	}
+
+	CombatRuntime::OutgoingDamageRuleRegistration& CombatRuntime::OutgoingDamageRuleRegistration::operator=(
+		OutgoingDamageRuleRegistration&& other
+	) noexcept
+	{
+		if (this == &other) return *this;
+		Reset();
+		mState = std::move(other.mState);
+		mGeneration = std::exchange(other.mGeneration, 0);
+		return *this;
+	}
+
+	void CombatRuntime::OutgoingDamageRuleRegistration::ReplaceRules(
+		const List<ResolvedModuleDamageRule>& rules
+	)
+	{
+		if (mGeneration == 0) return;
+		if (std::shared_ptr<ModuleDamageRuleState> state = mState.lock())
+		{
+			ReplaceRegisteredDamageRules(*state, mGeneration, rules);
+		}
+	}
+
+	void CombatRuntime::OutgoingDamageRuleRegistration::Reset() noexcept
+	{
+		if (mGeneration == 0) return;
+		if (std::shared_ptr<ModuleDamageRuleState> state = mState.lock())
+		{
+			UnregisterDamageRules(*state, mGeneration);
+		}
+		mState.reset();
+		mGeneration = 0;
+	}
+
 	void CombatRuntime::InitializeOwnerAttributes(float maxHealth)
 	{
 		sas::AttributeSystem& attributes = mAbilitySystemComponent.GetAttributes();
@@ -197,6 +244,17 @@ namespace ly
 
 	void CombatRuntime::Tick(float deltaTime)
 	{
+		if (deltaTime > 0.f)
+		{
+			for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
+			{
+				for (ActiveModuleDamageRule& active : registration.rules)
+				{
+					if (active.resolved.rule.activeWhileTrigger != ModuleTriggerKind::None)
+						active.remainingSeconds = std::max(0.f, active.remainingSeconds - deltaTime);
+				}
+			}
+		}
 		mAbilitySystemComponent.Tick(deltaTime);
 		DispatchPendingEffectEvents();
 	}
@@ -214,6 +272,102 @@ namespace ly
 	float CombatRuntime::GetOutgoingDamageMultiplier() const noexcept
 	{
 		return mRuntimeModifiers.GetOutgoingDamageMultiplier();
+	}
+
+	CombatRuntime::OutgoingDamageRuleRegistration CombatRuntime::RegisterOutgoingDamageRules()
+	{
+		std::uint64_t generation = mModuleDamageRuleState->nextGeneration++;
+		if (generation == 0) generation = mModuleDamageRuleState->nextGeneration++;
+		mModuleDamageRuleState->registrations.push_back({ generation, {} });
+		return OutgoingDamageRuleRegistration{ mModuleDamageRuleState, generation };
+	}
+
+	void CombatRuntime::ActivateOutgoingDamageRules(ModuleTriggerKind trigger)
+	{
+		if (trigger == ModuleTriggerKind::None) return;
+		for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
+		{
+			for (ActiveModuleDamageRule& active : registration.rules)
+			{
+				const ModuleDamageRule& rule = active.resolved.rule;
+				if (rule.activeWhileTrigger == trigger && rule.activeDurationSeconds > 0.f)
+					active.remainingSeconds = rule.activeDurationSeconds;
+			}
+		}
+	}
+
+	CombatRuntime::OutgoingDamagePlan CombatRuntime::ResolveOutgoingDamagePlan(
+		const Actor& target,
+		const List<GameplayTag>& sourceAbilityTags
+	) const
+	{
+		OutgoingDamagePlan plan;
+		const bool isPrimaryShot = std::any_of(sourceAbilityTags.begin(), sourceAbilityTags.end(),
+			[](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Primary); });
+		const HealthComponent* targetHealth = target.FindComponent<HealthComponent>();
+		const float healthFraction = targetHealth && targetHealth->GetMaxHealth() > 0.f
+			? targetHealth->GetHealth() / targetHealth->GetMaxHealth()
+			: 1.f;
+		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
+		{
+			for (const ActiveModuleDamageRule& active : registration.rules)
+			{
+				const ModuleDamageRule& rule = active.resolved.rule;
+				if (rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f) continue;
+				const bool conditionMet = rule.condition == ModuleDamageCondition::PrimaryShotOnly
+					? isPrimaryShot
+					: healthFraction <= rule.conditionValue;
+				if (!conditionMet) continue;
+				plan.damageMultiplier *= rule.damageMultiplier;
+				if (rule.bonusDamageFraction > 0.f && rule.bonusDamageType.IsValid())
+					plan.bonuses.push_back({ rule.bonusDamageFraction, rule.bonusDamageType });
+			}
+		}
+		return plan;
+	}
+
+	bool CombatRuntime::SameDamageRule(const ModuleDamageRule& left, const ModuleDamageRule& right)
+	{
+		return left.condition == right.condition && left.conditionValue == right.conditionValue &&
+			left.damageMultiplier == right.damageMultiplier && left.bonusDamageFraction == right.bonusDamageFraction &&
+			left.bonusDamageType == right.bonusDamageType && left.bonusCriticalPolicy == right.bonusCriticalPolicy &&
+			left.activeWhileTrigger == right.activeWhileTrigger &&
+			left.activeDurationSeconds == right.activeDurationSeconds;
+	}
+
+	void CombatRuntime::ReplaceRegisteredDamageRules(
+		ModuleDamageRuleState& state,
+		std::uint64_t generation,
+		const List<ResolvedModuleDamageRule>& rules
+	)
+	{
+		const auto registration = std::find_if(state.registrations.begin(), state.registrations.end(),
+			[generation](const ModuleDamageRuleRegistrationEntry& entry) { return entry.generation == generation; });
+		if (registration == state.registrations.end()) return;
+
+		List<ActiveModuleDamageRule> nextRules;
+		nextRules.reserve(rules.size());
+		for (const ResolvedModuleDamageRule& resolved : rules)
+		{
+			ActiveModuleDamageRule next{ resolved, 0.f };
+			const auto previous = std::find_if(registration->rules.begin(), registration->rules.end(),
+				[&resolved](const ActiveModuleDamageRule& active)
+				{
+					return active.resolved.instanceId == resolved.instanceId &&
+						active.resolved.ruleIndex == resolved.ruleIndex &&
+						SameDamageRule(active.resolved.rule, resolved.rule);
+				});
+			if (previous != registration->rules.end()) next.remainingSeconds = previous->remainingSeconds;
+			nextRules.push_back(std::move(next));
+		}
+		registration->rules = std::move(nextRules);
+	}
+
+	void CombatRuntime::UnregisterDamageRules(ModuleDamageRuleState& state, std::uint64_t generation)
+	{
+		const auto registration = std::find_if(state.registrations.begin(), state.registrations.end(),
+			[generation](const ModuleDamageRuleRegistrationEntry& entry) { return entry.generation == generation; });
+		if (registration != state.registrations.end()) state.registrations.erase(registration);
 	}
 
 	sas::ClearResult CombatRuntime::Clear()
@@ -235,6 +389,10 @@ namespace ly
 		mPendingEffectEvents.clear();
 		mDamageProtections.clear();
 		mRuntimeModifiers.Clear();
+		for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
+		{
+			for (ActiveModuleDamageRule& active : registration.rules) active.remainingSeconds = 0.f;
+		}
 		if (error) std::rethrow_exception(error);
 	}
 

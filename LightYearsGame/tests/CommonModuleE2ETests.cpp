@@ -153,6 +153,69 @@ namespace
 		bool mRemoved = false;
 	};
 
+	struct CapturedDamage
+	{
+		float originalDamage = 0.f;
+		bool wasCritical = false;
+		ly::List<ly::GameplayTag> damageTags;
+		ly::List<ly::GameplayTag> sourceAbilityTags;
+		bool skippedModuleRules = false;
+	};
+
+	class DamageCapture final
+	{
+	public:
+		void OnDamage(const ly::DamageContext& context)
+		{
+			records.push_back({ context.originalDamage, context.wasCritical, context.damageTags,
+				context.sourceAbilityTags, context.payload.skipModuleDamageRules });
+		}
+
+		ly::List<CapturedDamage> records;
+	};
+
+	class RemoveShatterCurrentOnPrimaryDamage final
+	{
+	public:
+		RemoveShatterCurrentOnPrimaryDamage(ly::ModuleLoadout& loadout, ly::ShipModuleApplier& applier,
+			const ly::ModuleRulesContext& rules, std::uint32_t instanceId)
+			: mLoadout{ loadout }, mApplier{ applier }, mRules{ rules }, mInstanceId{ instanceId }
+		{
+		}
+
+		void OnDamage(const ly::DamageContext& context)
+		{
+			if (mRemoved || context.payload.skipModuleDamageRules ||
+				!std::any_of(context.sourceAbilityTags.begin(), context.sourceAbilityTags.end(),
+					[](const ly::GameplayTag& tag) { return tag.MatchesTag(ly::GameplayTags::Ability::Primary); })) return;
+			mRemoved = mLoadout.Uninstall(mInstanceId) && mApplier.Apply(mLoadout, mRules);
+		}
+
+		bool WasRemoved() const { return mRemoved; }
+
+	private:
+		ly::ModuleLoadout& mLoadout;
+		ly::ShipModuleApplier& mApplier;
+		const ly::ModuleRulesContext& mRules;
+		std::uint32_t mInstanceId;
+		bool mRemoved = false;
+	};
+
+	class DestroyTargetOnPrimaryDamage final
+	{
+	public:
+		explicit DestroyTargetOnPrimaryDamage(ly::Actor& target) : mTarget{ target } {}
+
+		void OnDamage(const ly::DamageContext& context)
+		{
+			if (!context.payload.skipModuleDamageRules && std::any_of(context.sourceAbilityTags.begin(), context.sourceAbilityTags.end(),
+				[](const ly::GameplayTag& tag) { return tag.MatchesTag(ly::GameplayTags::Ability::Primary); })) mTarget.Destroy();
+		}
+
+	private:
+		ly::Actor& mTarget;
+	};
+
 	void RunCommonModuleChecks(Report& report, ly::Application& application)
 	{
 		using namespace ly;
@@ -365,6 +428,193 @@ namespace
 		lifetimeShip.reset();
 		level->TickInternal(0.f);
 		report.Check(expiredShip.expired(), "destroying the buff owner releases the runtime and its callbacks");
+
+		const shared_ptr<PlayerSpaceShip> damageSource = level->SpawnActor<PlayerSpaceShip>(shipDefinition).lock();
+		const shared_ptr<PlayerSpaceShip> damageTarget = level->SpawnActor<PlayerSpaceShip>(shipDefinition).lock();
+		level->TickInternal(0.f);
+		report.Check(damageSource && damageTarget, "damage-rule fixture uses real player ship owners");
+		damageSource->SetActorLocation({ -50000.f, -50000.f });
+		damageTarget->SetActorLocation({ -40000.f, -50000.f });
+		damageSource->SetInvulnerability(false);
+		damageTarget->SetInvulnerability(false);
+		ModuleLoadout damageLoadout;
+		report.Check(damageLoadout.SeedDefaults(rules), "damage-rule fixture loads the shipped default modules");
+		const std::uint32_t shatterId = AddAndInstall(report, damageLoadout, rules, "Module.Defense.ShatterCurrent.Basic");
+		const std::uint32_t finishingId = AddAndInstall(report, damageLoadout, rules, "Module.Offense.FinishingBlow.Basic");
+		AddAndInstall(report, damageLoadout, rules, "Module.Offense.EnergyFeedback.Basic");
+		report.Check(damageSource->GetModuleApplier().Apply(damageLoadout, rules),
+			"Shatter Current, Finishing Blow, and Energy Feedback apply to the real source owner");
+		damageSource->GetCombatRuntime().SetRuntimeModifier("CommonModules.E2E.Outgoing", CombatRuntimeModifier{ 1.5f });
+		DamageCapture damageCapture;
+		const DelegateHandle damageCaptureHandle = damageSource->GetCombatRuntime().onDamageDealt.BindAction(
+			&damageCapture, &DamageCapture::OnDamage);
+		DamagePayload guaranteedCritical;
+		guaranteedCritical.criticalPolicy = DamageCriticalPolicy::Guaranteed;
+		const List<GameplayTag> primaryTags{ GameplayTags::Ability::Primary };
+		const List<GameplayTag> offenseTags{ GameplayTags::Ability::Offense };
+		damageTarget->GetShieldComponent().ChangeShield(-damageTarget->GetShieldComponent().GetShield());
+		damageTarget->GetHealthComponent().SetInitialHealth(260.f, 1000.f);
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			guaranteedCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1, "Finishing Blow does not trigger above 25 percent health",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		report.CheckValue("Finishing Blow leaves a 26 percent target unchanged", 22.5f,
+			damageCapture.records.front().originalDamage, "raw 10 x outgoing 1.5 x guaranteed critical 1.5 at 26 percent");
+		damageCapture.records.clear();
+		damageTarget->GetHealthComponent().SetInitialHealth(250.f, 1000.f);
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			guaranteedCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1, "Finishing Blow boundary hit has no Shatter bonus before shield break",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		report.CheckValue("Finishing Blow activates at exactly 25 percent health", 27.f,
+			damageCapture.records.front().originalDamage, "raw 10 x module 1.2 x outgoing 1.5 x guaranteed critical 1.5 at 25 percent");
+		damageCapture.records.clear();
+		damageTarget->GetHealthComponent().SetInitialHealth(240.f, 1000.f);
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			guaranteedCritical, {}, primaryTags);
+		report.CheckValue("Finishing Blow stays active below its health threshold", 27.f,
+			damageCapture.records.front().originalDamage, "raw 10 x module 1.2 x outgoing 1.5 x guaranteed critical 1.5 at 24 percent");
+
+		ShieldComponent& sourceShield = damageSource->GetShieldComponent();
+		sourceShield.SetMaxShield(100.f);
+		sourceShield.ChangeShield(100.f);
+		sourceShield.ChangeShield(-100.f);
+		damageTarget->GetHealthComponent().SetInitialHealth(800.f, 1000.f);
+		damageCapture.records.clear();
+		DamagePayload nonCritical;
+		nonCritical.criticalPolicy = DamageCriticalPolicy::Disabled;
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1, "ChangeShield to zero does not arm Shatter Current",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		report.CheckValue("manual shield correction adds no Energy damage", 15.f,
+			damageCapture.records.front().originalDamage, "raw 10 x outgoing 1.5; shield set to zero without a damage hit");
+
+		sourceShield.ChangeShield(100.f);
+		ApplyCombatDamage(*damageSource, 101.f, damageTarget.get(), { GameplayTags::Damage::Type::Kinetic }, nonCritical);
+		report.CheckValue("real shield damage breaks the source shield", 0.f, sourceShield.GetShield(), "101 incoming Kinetic against 100 shield");
+		damageTarget->GetHealthComponent().SetInitialHealth(240.f, 1000.f);
+		const float energyPowerBeforeBonus = damageSource->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower);
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			guaranteedCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 2, "a shield break gives the next Primary hit one Energy secondary",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		report.CheckValue("main hit applies Finishing Blow and the source multiplier once", 27.f,
+			damageCapture.records[0].originalDamage, "raw 10 x Finishing Blow 1.2 x outgoing 1.5 x critical 1.5");
+		report.CheckValue("Shatter bonus uses raw damage, Finishing Blow, and outgoing once without critical", 5.4f,
+			damageCapture.records[1].originalDamage, "raw 10 x Finishing Blow 1.2 x bonus 0.30 x outgoing 1.5");
+		report.Check(damageCapture.records[0].wasCritical && !damageCapture.records[1].wasCritical,
+			"the Primary hit can critical while the Energy secondary cannot");
+		report.Check(damageCapture.records[1].damageTags.size() == 1 &&
+			damageCapture.records[1].damageTags.front() == GameplayTags::Damage::Type::Energy &&
+			std::any_of(damageCapture.records[1].sourceAbilityTags.begin(), damageCapture.records[1].sourceAbilityTags.end(),
+				[](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Primary); }) &&
+			damageCapture.records[1].skippedModuleRules,
+			"secondary keeps Primary source tags, carries only Energy damage, and cannot recurse");
+		report.CheckValue("Energy secondary activates Energy Feedback through normal damage events", energyPowerBeforeBonus + 16.f,
+			damageSource->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower),
+			"one positive SourceDamageDealt Energy event");
+
+		damageCapture.records.clear();
+		damageTarget->GetHealthComponent().SetInitialHealth(800.f, 1000.f);
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, offenseTags);
+		report.Check(damageCapture.records.size() == 1 && damageCapture.records.front().damageTags.size() == 1 &&
+			damageCapture.records.front().damageTags.front() == GameplayTags::Damage::Type::Kinetic,
+			"Shatter Current does not add bonus damage to non-Primary hits",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+
+		level->TickInternal(4.5f);
+		const ModuleDefinition* finishingModule = FindModule(rules, "Module.Offense.FinishingBlow.Basic");
+		const ModulePlacement finishingPlacement = FindInstalled(damageLoadout, finishingId);
+		const auto movedFinishing = FindPlacement(rules, damageLoadout, *finishingModule, finishingId,
+			finishingId, finishingPlacement.origin);
+		report.Check(movedFinishing && damageLoadout.Move(rules, finishingId, movedFinishing->first, movedFinishing->second) ==
+			ModulePlacementFailure::None && damageSource->GetModuleApplier().Apply(damageLoadout, rules),
+			"an unrelated Finishing Blow move rebuilds while Shatter Current is active");
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 2,
+			"unchanged Shatter Current preserves its remaining window across an applier rebuild",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		report.CheckValue("preserved Shatter window adds one noncritical Energy hit", 4.5f,
+			damageCapture.records[1].originalDamage, "10 x 0.30 x outgoing 1.5 with 0.5 seconds remaining");
+		level->TickInternal(0.6f);
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1, "Shatter Current window expires after five seconds",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+
+		sourceShield.ChangeShield(100.f);
+		ApplyCombatDamage(*damageSource, 101.f, damageTarget.get(), { GameplayTags::Damage::Type::Kinetic }, nonCritical);
+		RemoveShatterCurrentOnPrimaryDamage removeShatter{ damageLoadout, damageSource->GetModuleApplier(), rules, shatterId };
+		const DelegateHandle removeShatterHandle = damageSource->GetCombatRuntime().onDamageDealt.BindAction(
+			&removeShatter, &RemoveShatterCurrentOnPrimaryDamage::OnDamage);
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		damageSource->GetCombatRuntime().onDamageDealt.UnbindAction(removeShatterHandle);
+		report.Check(removeShatter.WasRemoved() && damageLoadout.FindInventoryItem(shatterId) &&
+			damageCapture.records.size() == 2 && damageCapture.records[1].damageTags.size() == 1 &&
+			damageCapture.records[1].damageTags.front() == GameplayTags::Damage::Type::Energy,
+			"main-hit callback can remove Shatter Current while its copied bonus still resolves");
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1,
+			"removing Shatter Current clears its rule immediately after the in-flight hit");
+
+		const auto rebootShatter = FindPlacement(rules, damageLoadout, *FindModule(rules, "Module.Defense.ShatterCurrent.Basic"), shatterId);
+		report.Check(rebootShatter && damageLoadout.Install(rules, shatterId, rebootShatter->first, rebootShatter->second) ==
+			ModulePlacementFailure::None && damageSource->GetModuleApplier().Apply(damageLoadout, rules, true) &&
+			damageSource->GetModuleApplier().IsRebooting(shatterId),
+			"reinstalling Shatter Current in combat starts its normal reboot");
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1, "reboot suppresses Shatter Current bonus rules immediately",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		level->TickInternal(rules.zoneTable.rebootDurationSeconds + 0.01f);
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1,
+			"finishing a module reboot does not restore a previously active Shatter window");
+
+		report.Check(damageLoadout.Uninstall(shatterId) && damageLoadout.Uninstall(finishingId) &&
+			damageSource->GetModuleApplier().Apply(damageLoadout, rules), "removing both damage-rule modules restores the baseline pipeline");
+		damageCapture.records.clear();
+		damageTarget->GetHealthComponent().SetInitialHealth(800.f, 1000.f);
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			guaranteedCritical, {}, primaryTags);
+		report.Check(damageCapture.records.size() == 1, "no-rule path produces only its original damage event",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		report.CheckValue("no-rule path preserves the original critical and outgoing multiplier", 22.5f,
+			damageCapture.records.front().originalDamage, "raw 10 x outgoing 1.5 x guaranteed critical 1.5");
+
+		const auto destroyFixtureShatter = FindPlacement(rules, damageLoadout,
+			*FindModule(rules, "Module.Defense.ShatterCurrent.Basic"), shatterId);
+		report.Check(destroyFixtureShatter && damageLoadout.Install(rules, shatterId, destroyFixtureShatter->first,
+			destroyFixtureShatter->second) == ModulePlacementFailure::None &&
+			damageSource->GetModuleApplier().Apply(damageLoadout, rules), "Shatter Current can be restored for destruction coverage");
+		sourceShield.ChangeShield(100.f);
+		ApplyCombatDamage(*damageSource, 101.f, damageTarget.get(), { GameplayTags::Damage::Type::Kinetic }, nonCritical);
+		DestroyTargetOnPrimaryDamage destroyTarget{ *damageTarget };
+		const DelegateHandle destroyTargetHandle = damageSource->GetCombatRuntime().onDamageDealt.BindAction(
+			&destroyTarget, &DestroyTargetOnPrimaryDamage::OnDamage);
+		damageCapture.records.clear();
+		ApplyCombatDamage(*damageTarget, 10.f, damageSource.get(), { GameplayTags::Damage::Type::Kinetic },
+			nonCritical, {}, primaryTags);
+		damageSource->GetCombatRuntime().onDamageDealt.UnbindAction(destroyTargetHandle);
+		report.Check(damageTarget->GetIsPendingDestroy() && damageCapture.records.size() == 1,
+			"destroying the hit target from its main-hit callback suppresses the Energy secondary",
+			Json{ { "damageEvents", damageCapture.records.size() } });
+		damageSource->GetCombatRuntime().onDamageDealt.UnbindAction(damageCaptureHandle);
+		damageSource->Destroy();
+		damageTarget->Destroy();
 		(void)rhythmId;
 		(void)escapeId;
 		source->Destroy();

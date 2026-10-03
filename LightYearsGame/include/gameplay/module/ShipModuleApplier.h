@@ -6,6 +6,7 @@
 #include "gameplay/module/ModulePlacementRules.h"
 #include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/ModuleSystemGate.h"
+#include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <cstddef>
@@ -36,7 +37,12 @@ namespace ly
 			float remainingSeconds = 0.f;
 		};
 
-		ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities, ModuleTriggerRuntime* triggerRuntime = nullptr);
+		ShipModuleApplier(
+			ShipRuntime& shipRuntime,
+			LightYearsAbilitySystemComponent& abilities,
+			ModuleTriggerRuntime* triggerRuntime = nullptr,
+			CombatRuntime* combatRuntime = nullptr
+		);
 		~ShipModuleApplier() override;
 		ShipModuleApplier(const ShipModuleApplier&) = delete;
 		ShipModuleApplier& operator=(const ShipModuleApplier&) = delete;
@@ -95,6 +101,7 @@ namespace ly
 		LightYearsAbilitySystemComponent& mAbilities;
 		// The trigger runtime is owned by the same ship and outlives this applier.
 		ModuleTriggerRuntime* mTriggerRuntime = nullptr;
+		CombatRuntime::OutgoingDamageRuleRegistration mDamageRuleRegistration;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;

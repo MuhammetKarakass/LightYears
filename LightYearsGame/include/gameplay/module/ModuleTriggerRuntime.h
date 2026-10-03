@@ -12,6 +12,8 @@
 namespace ly
 {
 	class LightYearsAbilitySystemComponent;
+	class CombatRuntime;
+	class ShieldComponent;
 
 	class ModuleTriggerRuntime final
 	{
@@ -19,7 +21,9 @@ namespace ly
 		ModuleTriggerRuntime(
 			LightYearsAbilitySystemComponent& abilities,
 			ShipRuntime& shipRuntime,
-			ShipRuntimeModifiers& runtimeModifiers
+			ShipRuntimeModifiers& runtimeModifiers,
+			CombatRuntime& combatRuntime,
+			ShieldComponent& shield
 		);
 		~ModuleTriggerRuntime();
 		ModuleTriggerRuntime(const ModuleTriggerRuntime&) = delete;
@@ -59,6 +63,7 @@ namespace ly
 		};
 
 		void OnGameplayEvent(const sas::AbilityEvent& event);
+		void OnShieldDamaged(float absorbed, float remainingShield, float maxShield);
 		void ProcessEvent(const EventSnapshot& event);
 		void ProcessDeferredUpdates();
 		void ReconcileRules(const List<ResolvedModuleTriggerBuff>& rules);
@@ -73,7 +78,10 @@ namespace ly
 		LightYearsAbilitySystemComponent& mAbilities;
 		ShipRuntime& mShipRuntime;
 		ShipRuntimeModifiers& mRuntimeModifiers;
+		CombatRuntime& mCombatRuntime;
+		ShieldComponent& mShield;
 		DelegateHandle mGameplayEventHandle;
+		DelegateHandle mShieldDamagedHandle;
 		List<ResolvedModuleTriggerBuff> mRules;
 		List<ActiveBuff> mActiveBuffs;
 		std::optional<List<ResolvedModuleTriggerBuff>> mPendingRules;

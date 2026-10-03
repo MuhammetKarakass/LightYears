@@ -18,10 +18,16 @@ namespace ly
 		}
 	}
 
-	ShipModuleApplier::ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities, ModuleTriggerRuntime* triggerRuntime)
+	ShipModuleApplier::ShipModuleApplier(
+		ShipRuntime& shipRuntime,
+		LightYearsAbilitySystemComponent& abilities,
+		ModuleTriggerRuntime* triggerRuntime,
+		CombatRuntime* combatRuntime
+	)
 		: mShipRuntime{ shipRuntime }
 		, mAbilities{ abilities }
 		, mTriggerRuntime{ triggerRuntime }
+		, mDamageRuleRegistration{ combatRuntime ? combatRuntime->RegisterOutgoingDamageRules() : CombatRuntime::OutgoingDamageRuleRegistration{} }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -116,6 +122,7 @@ namespace ly
 
 		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable };
 		mResolved = ModuleResolver::Resolve(rules, active);
+		mDamageRuleRegistration.ReplaceRules(mResolved.damageRules);
 
 		// Modifiers that stay identical keep their handles and new ones are added before
 		// stale ones are removed, so a reapply never dips a max value below both the old
