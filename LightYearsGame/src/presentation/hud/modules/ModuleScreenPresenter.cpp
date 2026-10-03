@@ -122,6 +122,28 @@ namespace ly
 			};
 			for (const ModuleAttributeModifier& modifier : variant.attributeModifiers) replaceModifier(modifier.modifier);
 			for (const ModuleAbilityModifier& modifier : variant.abilityModifiers) replaceModifier(modifier.modifier);
+			for (std::size_t i = 0; i < variant.triggerBuffs.size(); ++i)
+			{
+				const ModuleTriggerBuff& buff = variant.triggerBuffs[i];
+				const std::string prefix = "trigger." + std::to_string(i) + ".";
+				ReplaceAll(description, "{" + prefix + "durationSeconds}", FormatMagnitude(buff.durationSeconds));
+				ReplaceAll(description, "{" + prefix + "movementSpeedMultiplier}", FormatMagnitude(buff.movementSpeedMultiplier));
+				for (const ModuleAttributeModifier& modifier : buff.modifiers) replaceModifier(modifier.modifier);
+			}
+			for (std::size_t i = 0; i < variant.damageRules.size(); ++i)
+			{
+				const ModuleDamageRule& rule = variant.damageRules[i];
+				const std::string prefix = "damage." + std::to_string(i) + ".";
+				ReplaceAll(description, "{" + prefix + "damageMultiplier}", FormatMagnitude(rule.damageMultiplier));
+				ReplaceAll(description, "{" + prefix + "conditionPercent}", FormatMagnitude(rule.conditionValue * 100.f));
+				ReplaceAll(description, "{" + prefix + "bonusDamagePercent}", FormatMagnitude(rule.bonusDamageFraction * 100.f));
+				ReplaceAll(description, "{" + prefix + "activeDurationSeconds}", FormatMagnitude(rule.activeDurationSeconds));
+			}
+			for (const ModuleZoneEffect& effect : variant.zoneEffects)
+			{
+				const std::string token = "{cooldown." + effect.zone.name + ".multiplier}";
+				ReplaceAll(description, token, FormatMagnitude(effect.multiplier));
+			}
 			return description;
 		}
 

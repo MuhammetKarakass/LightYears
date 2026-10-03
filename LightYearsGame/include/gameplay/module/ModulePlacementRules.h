@@ -35,7 +35,8 @@ namespace ly
 		DuplicateSystem,
 		UnknownModule,
 		InvalidVariant,
-		InvalidRotation
+		InvalidRotation,
+		DuplicateModule
 	};
 
 	namespace ModulePlacementRules

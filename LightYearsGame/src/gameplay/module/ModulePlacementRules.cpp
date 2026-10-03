@@ -69,6 +69,7 @@ namespace ly
 				if (ignoredInstanceId != 0 && other.instanceId == ignoredInstanceId) continue;
 				const ModuleDefinition* otherModule = rules.lookup(other.moduleId);
 				if (!otherModule) continue;
+				if (other.moduleId == candidate.moduleId) return ModulePlacementFailure::DuplicateModule;
 				for (const sf::Vector2i& cell : GetCoveredCells(*otherModule, other))
 				{
 					if (taken.count({ cell.x, cell.y })) return ModulePlacementFailure::Overlap;
@@ -99,6 +100,7 @@ namespace ly
 			case ModulePlacementFailure::CellBlocked: return "covers a blocked cell";
 			case ModulePlacementFailure::Overlap: return "overlaps another module";
 			case ModulePlacementFailure::SystemZoneMismatch: return "is outside its system zone";
+			case ModulePlacementFailure::DuplicateModule: return "duplicates an installed module";
 			case ModulePlacementFailure::DuplicateSystem: return "duplicates an installed system";
 			case ModulePlacementFailure::UnknownModule: return "is not in the module catalog";
 			case ModulePlacementFailure::InvalidVariant: return "has an invalid variant";

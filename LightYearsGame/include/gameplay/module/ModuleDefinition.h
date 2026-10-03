@@ -3,6 +3,7 @@
 #include "attributes/AttributeSystem.h"
 #include "content/ContentId.h"
 #include "framework/Core.h"
+#include "gameplay/damage/DamageContext.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -23,6 +24,27 @@ namespace ly
 		PrimaryWeapon
 	};
 
+	enum class ModuleTriggerKind
+	{
+		None,
+		AbilityActivated,
+		ShieldBroken,
+		DamageTaken,
+		SourceDamageDealt
+	};
+
+	enum class ModuleDamageCondition
+	{
+		PrimaryShotOnly,
+		TargetHealthAtMost
+	};
+
+	enum class ModuleCooldownScope
+	{
+		FamilyOfZone,
+		AllActiveNonPrimary
+	};
+
 	struct ModuleAttributeModifier
 	{
 		ModuleAttributeTarget target = ModuleAttributeTarget::Owner;
@@ -37,11 +59,42 @@ namespace ly
 		bool affectedByZoneBonus = true;
 	};
 
+	struct ModuleTriggerBuff
+	{
+		ModuleTriggerKind trigger = ModuleTriggerKind::None;
+		List<GameplayTag> requiredEventTags;
+		float durationSeconds = 0.f;
+		List<ModuleAttributeModifier> modifiers;
+		float movementSpeedMultiplier = 1.f;
+	};
+
+	struct ModuleDamageRule
+	{
+		ModuleDamageCondition condition = ModuleDamageCondition::PrimaryShotOnly;
+		float conditionValue = 0.f;
+		float damageMultiplier = 1.f;
+		float bonusDamageFraction = 0.f;
+		GameplayTag bonusDamageType;
+		DamageCriticalPolicy bonusCriticalPolicy = DamageCriticalPolicy::Disabled;
+		ModuleTriggerKind activeWhileTrigger = ModuleTriggerKind::None;
+		float activeDurationSeconds = 0.f;
+	};
+
+	struct ModuleZoneEffect
+	{
+		GameplayTag zone;
+		ModuleCooldownScope scope = ModuleCooldownScope::FamilyOfZone;
+		float multiplier = 1.f;
+	};
+
 	struct ModuleSizeVariant
 	{
 		ModuleShape shape;
 		List<ModuleAttributeModifier> attributeModifiers;
 		List<ModuleAbilityModifier> abilityModifiers;
+		List<ModuleTriggerBuff> triggerBuffs;
+		List<ModuleDamageRule> damageRules;
+		List<ModuleZoneEffect> zoneEffects;
 	};
 
 	struct ModuleDefinition

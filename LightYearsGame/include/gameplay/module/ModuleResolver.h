@@ -2,10 +2,38 @@
 
 #include "framework/Core.h"
 #include "gameplay/ability/ScopedAbilityRule.h"
+#include "gameplay/module/ModuleDefinition.h"
 #include "gameplay/module/ModuleLoadout.h"
+
+#include <cstddef>
+#include <cstdint>
 
 namespace ly
 {
+	struct ResolvedModuleTriggerBuff
+	{
+		std::uint32_t instanceId{ 0 };
+		std::size_t ruleIndex{ 0 };
+		ModuleTriggerBuff rule;
+	};
+
+	struct ResolvedModuleDamageRule
+	{
+		std::uint32_t instanceId{ 0 };
+		std::size_t ruleIndex{ 0 };
+		ModuleDamageRule rule;
+	};
+
+	struct ResolvedModuleCooldownRule
+	{
+		std::uint32_t instanceId{ 0 };
+		std::size_t ruleIndex{ 0 };
+		GameplayTag zone;
+		ModuleCooldownScope scope = ModuleCooldownScope::FamilyOfZone;
+		GameplayTag family;
+		float multiplier = 1.f;
+	};
+
 	struct ResolvedModuleEffects
 	{
 		List<sas::AttributeModifier> ownerModifiers;
@@ -13,6 +41,9 @@ namespace ly
 		List<sas::AttributeModifier> primaryWeaponModifiers;
 		// requiredAbilityTags = { module family }, one rule per placement.
 		List<ScopedAbilityRule> abilityRules;
+		List<ResolvedModuleTriggerBuff> triggerBuffs;
+		List<ResolvedModuleDamageRule> damageRules;
+		List<ResolvedModuleCooldownRule> cooldownRules;
 		List<GameplayTag> enabledSystems;
 	};
 

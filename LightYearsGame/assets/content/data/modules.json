@@ -353,6 +353,124 @@
           ]
         }
       ]
+    },
+    {
+      "id": "Module.Offense.AttackRhythm.Basic",
+      "displayName": "Saldırı Ritmi",
+      "description": "Offense yeteneği kullanınca {trigger.0.durationSeconds} sn saldırı hızına +{Owner.AttackSpeed} rating ekler.",
+      "family": "Ability.Offense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "triggerBuffs": [
+            {
+              "trigger": "AbilityActivated",
+              "requiredEventTags": ["Ability.Offense"],
+              "durationSeconds": 3.0,
+              "modifiers": [
+                {"target": "Owner", "attributeId": "Owner.AttackSpeed", "operation": "Add", "magnitude": 15.0, "affectedByZoneBonus": false}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ShatterCurrent.Basic",
+      "displayName": "Kırılma Akımı",
+      "description": "Kalkan kırılınca {damage.0.activeDurationSeconds} sn Primary atışları hasarın %{damage.0.bonusDamagePercent} kadar ek Energy hasarı verir; kritik uygulanmaz.",
+      "family": "Ability.Defense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "damageRules": [
+            {
+              "condition": "PrimaryShotOnly",
+              "damageMultiplier": 1.0,
+              "bonusDamageFraction": 0.3,
+              "bonusDamageType": "Damage.Type.Energy",
+              "bonusCriticalPolicy": "Disabled",
+              "activeWhileTrigger": "ShieldBroken",
+              "activeDurationSeconds": 5.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.EnergyFeedback.Basic",
+      "displayName": "Enerji Geri Beslemesi",
+      "description": "Energy hasarı verince {trigger.0.durationSeconds} sn enerji gücüne +{Owner.Energy.Power} ekler.",
+      "family": "Ability.Offense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0]],
+          "triggerBuffs": [
+            {
+              "trigger": "SourceDamageDealt",
+              "requiredEventTags": ["Damage.Type.Energy"],
+              "durationSeconds": 4.0,
+              "modifiers": [
+                {"target": "Owner", "attributeId": "Owner.Energy.Power", "operation": "Add", "magnitude": 16.0, "affectedByZoneBonus": false}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.EscapeReflex.Basic",
+      "displayName": "Kaçış Refleksi",
+      "description": "Hasar alınca {trigger.0.durationSeconds} sn hareket hızı x{trigger.0.movementSpeedMultiplier} olur.",
+      "family": "Ability.Movement",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "triggerBuffs": [
+            {
+              "trigger": "DamageTaken",
+              "durationSeconds": 2.0,
+              "movementSpeedMultiplier": 1.25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.FinishingBlow.Basic",
+      "displayName": "Son Darbe",
+      "description": "Hedefin canı %{damage.0.conditionPercent} veya altındayken verdiğin hasar x{damage.0.damageMultiplier} olur.",
+      "family": "Ability.Offense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "damageRules": [
+            {
+              "condition": "TargetHealthAtMost",
+              "conditionValue": 0.25,
+              "damageMultiplier": 1.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.ZoneCooler.Basic",
+      "displayName": "Bölgesel Soğutucu",
+      "description": "Aile cooldown'u x{cooldown.Module.Zone.Wings.multiplier}; Gövde'de Primary dışı x{cooldown.Module.Zone.Hull.multiplier}.",
+      "family": "Ability.Utility",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "zoneEffects": [
+            {"zone": "Module.Zone.Wings", "scope": "FamilyOfZone", "multiplier": 0.79},
+            {"zone": "Module.Zone.Core", "scope": "FamilyOfZone", "multiplier": 0.79},
+            {"zone": "Module.Zone.Engine", "scope": "FamilyOfZone", "multiplier": 0.79},
+            {"zone": "Module.Zone.Sensor", "scope": "FamilyOfZone", "multiplier": 0.79},
+            {"zone": "Module.Zone.Hull", "scope": "AllActiveNonPrimary", "multiplier": 0.9}
+          ]
+        }
+      ]
     }
   ]
 }

@@ -55,6 +55,38 @@ namespace ly::content
 			throw std::runtime_error("Unknown module attribute target: " + value);
 		}
 
+		ModuleTriggerKind ParseTriggerKind(const std::string& value)
+		{
+			if (value == "None") return ModuleTriggerKind::None;
+			if (value == "AbilityActivated") return ModuleTriggerKind::AbilityActivated;
+			if (value == "ShieldBroken") return ModuleTriggerKind::ShieldBroken;
+			if (value == "DamageTaken") return ModuleTriggerKind::DamageTaken;
+			if (value == "SourceDamageDealt") return ModuleTriggerKind::SourceDamageDealt;
+			throw std::runtime_error("Unknown module trigger kind: " + value);
+		}
+
+		ModuleDamageCondition ParseDamageCondition(const std::string& value)
+		{
+			if (value == "PrimaryShotOnly") return ModuleDamageCondition::PrimaryShotOnly;
+			if (value == "TargetHealthAtMost") return ModuleDamageCondition::TargetHealthAtMost;
+			throw std::runtime_error("Unknown module damage condition: " + value);
+		}
+
+		ModuleCooldownScope ParseCooldownScope(const std::string& value)
+		{
+			if (value == "FamilyOfZone") return ModuleCooldownScope::FamilyOfZone;
+			if (value == "AllActiveNonPrimary") return ModuleCooldownScope::AllActiveNonPrimary;
+			throw std::runtime_error("Unknown module cooldown scope: " + value);
+		}
+
+		DamageCriticalPolicy ParseCriticalPolicy(const std::string& value)
+		{
+			if (value == "Random") return DamageCriticalPolicy::Random;
+			if (value == "Guaranteed") return DamageCriticalPolicy::Guaranteed;
+			if (value == "Disabled") return DamageCriticalPolicy::Disabled;
+			throw std::runtime_error("Unknown module bonus critical policy: " + value);
+		}
+
 		sas::AttributeModifier ParseModifier(const Json& object, const std::string& context)
 		{
 			if (!object.is_object())
@@ -72,6 +104,15 @@ namespace ly::content
 			{
 				throw std::runtime_error(context + ": " + failure);
 			}
+			return modifier;
+		}
+
+		ModuleAttributeModifier ParseAttributeModifier(const Json& object, const std::string& context, bool defaultAffectedByZoneBonus)
+		{
+			ModuleAttributeModifier modifier;
+			modifier.target = ParseTarget(object.at("target").get<std::string>());
+			modifier.modifier = ParseModifier(object, context);
+			modifier.affectedByZoneBonus = object.value("affectedByZoneBonus", defaultAffectedByZoneBonus);
 			return modifier;
 		}
 
@@ -113,11 +154,7 @@ namespace ly::content
 			for (const Json& entry : object.value("attributeModifiers", Json::array()))
 			{
 				const std::string entryContext = context + ".attributeModifiers[" + std::to_string(index++) + "]";
-				ModuleAttributeModifier modifier;
-				modifier.target = ParseTarget(entry.at("target").get<std::string>());
-				modifier.modifier = ParseModifier(entry, entryContext);
-				modifier.affectedByZoneBonus = entry.value("affectedByZoneBonus", true);
-				variant.attributeModifiers.push_back(std::move(modifier));
+				variant.attributeModifiers.push_back(ParseAttributeModifier(entry, entryContext, true));
 			}
 			index = 0;
 			for (const Json& entry : object.value("abilityModifiers", Json::array()))
@@ -128,6 +165,116 @@ namespace ly::content
 				modifier.affectedByZoneBonus = entry.value("affectedByZoneBonus", true);
 				variant.abilityModifiers.push_back(std::move(modifier));
 			}
+			index = 0;
+			const Json triggerBuffs = object.value("triggerBuffs", Json::array());
+			if (!triggerBuffs.is_array()) throw std::runtime_error(context + ".triggerBuffs must be an array");
+			for (const Json& entry : triggerBuffs)
+			{
+				const std::string entryContext = context + ".triggerBuffs[" + std::to_string(index++) + "]";
+				if (!entry.is_object()) throw std::runtime_error(entryContext + " must be an object");
+				ModuleTriggerBuff buff;
+				buff.trigger = ParseTriggerKind(entry.at("trigger").get<std::string>());
+				if (buff.trigger == ModuleTriggerKind::None) throw std::runtime_error(entryContext + " trigger must not be None");
+				buff.durationSeconds = ParseFiniteFloat(entry.at("durationSeconds"), entryContext + ".durationSeconds");
+				if (buff.durationSeconds <= 0.f) throw std::runtime_error(entryContext + " durationSeconds must be positive");
+				buff.movementSpeedMultiplier = ParseFiniteFloat(entry.value("movementSpeedMultiplier", Json(1.f)), entryContext + ".movementSpeedMultiplier");
+				if (buff.movementSpeedMultiplier <= 0.f) throw std::runtime_error(entryContext + " movementSpeedMultiplier must be positive");
+				const Json tags = entry.value("requiredEventTags", Json::array());
+				if (!tags.is_array()) throw std::runtime_error(entryContext + ".requiredEventTags must be an array");
+				std::set<std::string> seenTags;
+				for (const Json& tagValue : tags)
+				{
+					const GameplayTagKind kind = buff.trigger == ModuleTriggerKind::AbilityActivated
+						? GameplayTagKind::AbilityCategory
+						: GameplayTagKind::DamageType;
+					if (buff.trigger != ModuleTriggerKind::AbilityActivated && buff.trigger != ModuleTriggerKind::SourceDamageDealt)
+						throw std::runtime_error(entryContext + " does not accept requiredEventTags for this trigger");
+					GameplayTag tag = ParseTag(tagValue, kind, entryContext + ".requiredEventTags");
+					if (!seenTags.insert(tag.name).second) throw std::runtime_error(entryContext + " has a duplicate required event tag: " + tag.name);
+					buff.requiredEventTags.push_back(std::move(tag));
+				}
+				const Json modifiers = entry.value("modifiers", Json::array());
+				if (!modifiers.is_array()) throw std::runtime_error(entryContext + ".modifiers must be an array");
+				std::size_t modifierIndex = 0;
+				for (const Json& modifier : modifiers)
+				{
+					const std::string modifierContext = entryContext + ".modifiers[" + std::to_string(modifierIndex++) + "]";
+					buff.modifiers.push_back(ParseAttributeModifier(modifier, modifierContext, false));
+				}
+				if (buff.modifiers.empty() && buff.movementSpeedMultiplier == 1.f)
+					throw std::runtime_error(entryContext + " must define a modifier or movementSpeedMultiplier");
+				variant.triggerBuffs.push_back(std::move(buff));
+			}
+			index = 0;
+			const Json damageRules = object.value("damageRules", Json::array());
+			if (!damageRules.is_array()) throw std::runtime_error(context + ".damageRules must be an array");
+			for (const Json& entry : damageRules)
+			{
+				const std::string entryContext = context + ".damageRules[" + std::to_string(index++) + "]";
+				if (!entry.is_object()) throw std::runtime_error(entryContext + " must be an object");
+				ModuleDamageRule rule;
+				rule.condition = ParseDamageCondition(entry.at("condition").get<std::string>());
+				if (entry.contains("bonusCriticalPolicy"))
+					rule.bonusCriticalPolicy = ParseCriticalPolicy(entry.at("bonusCriticalPolicy").get<std::string>());
+				rule.conditionValue = entry.contains("conditionValue") ? ParseFiniteFloat(entry.at("conditionValue"), entryContext + ".conditionValue") : 0.f;
+				rule.damageMultiplier = entry.contains("damageMultiplier") ? ParseFiniteFloat(entry.at("damageMultiplier"), entryContext + ".damageMultiplier") : 1.f;
+				rule.bonusDamageFraction = entry.contains("bonusDamageFraction") ? ParseFiniteFloat(entry.at("bonusDamageFraction"), entryContext + ".bonusDamageFraction") : 0.f;
+				if (rule.damageMultiplier <= 0.f) throw std::runtime_error(entryContext + " damageMultiplier must be positive");
+				if (rule.bonusDamageFraction < 0.f || rule.bonusDamageFraction > 1.f)
+					throw std::runtime_error(entryContext + " bonusDamageFraction must be between 0 and 1");
+				if (rule.condition == ModuleDamageCondition::TargetHealthAtMost)
+				{
+					if (!entry.contains("conditionValue") || rule.conditionValue < 0.f || rule.conditionValue > 1.f)
+						throw std::runtime_error(entryContext + " TargetHealthAtMost requires conditionValue in 0..1");
+				}
+				else if (entry.contains("conditionValue") && rule.conditionValue != 0.f)
+				{
+					throw std::runtime_error(entryContext + " PrimaryShotOnly does not accept conditionValue");
+				}
+				if (rule.bonusDamageFraction > 0.f)
+				{
+					if (!entry.contains("bonusDamageType")) throw std::runtime_error(entryContext + " bonusDamageFraction requires bonusDamageType");
+					rule.bonusDamageType = ParseTag(entry.at("bonusDamageType"), GameplayTagKind::DamageType, entryContext + ".bonusDamageType");
+					if (rule.bonusCriticalPolicy != DamageCriticalPolicy::Disabled)
+						throw std::runtime_error(entryContext + " bonus damage critical policy must be Disabled");
+				}
+				else if (entry.contains("bonusDamageType") || entry.contains("bonusCriticalPolicy"))
+				{
+					throw std::runtime_error(entryContext + " bonus damage fields require bonusDamageFraction");
+				}
+				if (entry.contains("activeWhileTrigger"))
+					rule.activeWhileTrigger = ParseTriggerKind(entry.at("activeWhileTrigger").get<std::string>());
+				if (rule.activeWhileTrigger != ModuleTriggerKind::None)
+				{
+					if (!entry.contains("activeDurationSeconds")) throw std::runtime_error(entryContext + " active trigger requires activeDurationSeconds");
+					rule.activeDurationSeconds = ParseFiniteFloat(entry.at("activeDurationSeconds"), entryContext + ".activeDurationSeconds");
+					if (rule.activeDurationSeconds <= 0.f) throw std::runtime_error(entryContext + " activeDurationSeconds must be positive");
+				}
+				else if (entry.contains("activeDurationSeconds"))
+				{
+					throw std::runtime_error(entryContext + " activeDurationSeconds requires activeWhileTrigger");
+				}
+				if (rule.damageMultiplier == 1.f && rule.bonusDamageFraction == 0.f)
+					throw std::runtime_error(entryContext + " must change outgoing damage");
+				variant.damageRules.push_back(std::move(rule));
+			}
+			index = 0;
+			std::set<std::string> seenZones;
+			const Json zoneEffects = object.value("zoneEffects", Json::array());
+			if (!zoneEffects.is_array()) throw std::runtime_error(context + ".zoneEffects must be an array");
+			for (const Json& entry : zoneEffects)
+			{
+				const std::string entryContext = context + ".zoneEffects[" + std::to_string(index++) + "]";
+				if (!entry.is_object()) throw std::runtime_error(entryContext + " must be an object");
+				ModuleZoneEffect effect;
+				effect.zone = ParseTag(entry.at("zone"), GameplayTagKind::ModuleZone, entryContext + ".zone");
+				if (!seenZones.insert(effect.zone.name).second) throw std::runtime_error(entryContext + " duplicates zone effect: " + effect.zone.name);
+				effect.scope = ParseCooldownScope(entry.at("scope").get<std::string>());
+				effect.multiplier = ParseFiniteFloat(entry.at("multiplier"), entryContext + ".multiplier");
+				if (effect.multiplier <= 0.f || effect.multiplier > 1.f)
+					throw std::runtime_error(entryContext + " multiplier must be in (0, 1]");
+				variant.zoneEffects.push_back(std::move(effect));
+			}
 			return variant;
 		}
 
@@ -137,6 +284,31 @@ namespace ly::content
 				if (modifier.modifier.attributeId.GetName() == attributeName) return true;
 			for (const ModuleAbilityModifier& modifier : variant.abilityModifiers)
 				if (modifier.modifier.attributeId.GetName() == attributeName) return true;
+			for (const ModuleTriggerBuff& buff : variant.triggerBuffs)
+				for (const ModuleAttributeModifier& modifier : buff.modifiers)
+					if (modifier.modifier.attributeId.GetName() == attributeName) return true;
+			return false;
+		}
+
+		bool HasDescriptionToken(const ModuleSizeVariant& variant, const std::string& token)
+		{
+			if (HasAttribute(variant, token)) return true;
+			for (std::size_t i = 0; i < variant.triggerBuffs.size(); ++i)
+			{
+				const std::string prefix = "trigger." + std::to_string(i) + ".";
+				if (token == prefix + "durationSeconds" || token == prefix + "movementSpeedMultiplier") return true;
+			}
+			for (std::size_t i = 0; i < variant.damageRules.size(); ++i)
+			{
+				const ModuleDamageRule& rule = variant.damageRules[i];
+				const std::string prefix = "damage." + std::to_string(i) + ".";
+				if (token == prefix + "damageMultiplier") return true;
+				if (token == prefix + "conditionPercent" && rule.condition == ModuleDamageCondition::TargetHealthAtMost) return true;
+				if (token == prefix + "bonusDamagePercent" && rule.bonusDamageFraction > 0.f) return true;
+				if (token == prefix + "activeDurationSeconds" && rule.activeWhileTrigger != ModuleTriggerKind::None) return true;
+			}
+			for (const ModuleZoneEffect& effect : variant.zoneEffects)
+				if (token == "cooldown." + effect.zone.name + ".multiplier") return true;
 			return false;
 		}
 
@@ -159,15 +331,29 @@ namespace ly::content
 				if (close == std::string::npos || close == open + 1)
 					throw std::runtime_error(context + " description has an invalid attribute placeholder");
 
-				const std::string attributeName = definition.description.substr(open + 1, close - open - 1);
+				const std::string token = definition.description.substr(open + 1, close - open - 1);
 				for (const ModuleSizeVariant& variant : definition.sizeVariants)
-					if (!HasAttribute(variant, attributeName))
-						throw std::runtime_error(context + " description references an attribute missing from a size variant: " + attributeName);
+					if (!HasDescriptionToken(variant, token))
+						throw std::runtime_error(context + " description references a missing numeric value: " + token);
 				position = close + 1;
 			}
 		}
 
-		ModuleDefinition ParseModule(const Json& object)
+		void ValidateZoneEffects(const ModuleDefinition& definition, const ModuleZoneTable& zoneTable, const std::string& context)
+		{
+			for (const ModuleSizeVariant& variant : definition.sizeVariants)
+			{
+				for (const ModuleZoneEffect& effect : variant.zoneEffects)
+				{
+					const ModuleZoneEntry* zone = zoneTable.FindZone(effect.zone);
+					if (!zone) throw std::runtime_error(context + " zone effect references an unknown zone: " + effect.zone.name);
+					if (effect.scope == ModuleCooldownScope::FamilyOfZone && (zone->anyFamily || !zone->family.IsValid()))
+						throw std::runtime_error(context + " FamilyOfZone cooldown requires a zone with one family: " + effect.zone.name);
+				}
+			}
+		}
+
+		ModuleDefinition ParseModule(const Json& object, const ModuleZoneTable& zoneTable)
 		{
 			ModuleDefinition definition;
 			const std::string id = object.at("id").get<std::string>();
@@ -211,6 +397,7 @@ namespace ly::content
 				);
 			}
 			ValidateDescription(definition, context);
+			ValidateZoneEffects(definition, zoneTable, context);
 			if (definition.systemCategory.IsValid())
 			{
 				if (GameplayTagSchema::IsTwoCellModuleSystem(definition.systemCategory))
@@ -326,7 +513,7 @@ namespace ly::content
 			std::set<std::string> moduleIds;
 			for (const Json& module : root.at("modules"))
 			{
-				ModuleDefinition definition = ParseModule(module);
+				ModuleDefinition definition = ParseModule(module, result.zoneTable);
 				if (!moduleIds.insert(definition.moduleId.ToString()).second)
 				{
 					throw std::runtime_error("Duplicate module ID: " + definition.moduleId.ToString());
