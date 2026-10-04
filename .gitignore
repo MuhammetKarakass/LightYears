@@ -39,7 +39,7 @@ ORCHESTRATOR.md
 /tests/
 /outputs/
 /.tmp/
-/LightYears.7z
+*.7z
 /LightYears.log
 **/.DS_Store
 

@@ -221,3 +221,32 @@ Tam eski suite bu kapanışta koşulmadı; bilinen eski içerik beklentileri bu 
 6. Rapor biçimi: değişen dosyalar (tam liste), build sonucu, senaryo sonuçları, sapmalar, açık sorular.
 
 **Sol'un faz sonu inceleme listesi:** handle/abonelik sızıntısı, özyineleme koruması, modülsüz yolun değişmemesi, mevcut modifier revizyon yolları ve cooldown başlangıç çarpanı, JSON/C++ uyumu, yalnız izinli dosyaların değişmesi.
+
+---
+
+## 8. Sonraki iş: mimari sadeleştirme (Common sonrası inceleme, 2026-10-04)
+
+Common11 bittikten sonra yapılan kod incelemesinin bulguları. Davranış doğru ve E2E geçiyor; sorun yapı ve genişletilebilirlik.
+
+**Bulgular**
+- B1. `ShieldBroken` iki yerde yaşıyor: `ModuleTriggerRuntime::OnShieldDamaged` yalnız `CombatRuntime::ActivateOutgoingDamageRules` çağırıyor, zamanlı buff hattından geçmiyor. (`MatchesTrigger` ayrıca doğrulanmalı.)
+- B2. `FullMagazineShot` koşulu enum'da ama `ResolveOutgoingDamagePlan` içinde etkisiz; ayrı `ResolveFullMagazineShotMultiplier` yoluyla çözülüyor.
+- B3. Yeni koşul/tetik eklemek enum + loader + `switch` + bazen runtime değişikliği gerektiriyor.
+- B4. `Combatant::ApplyCombatDamage` şişti (`BonusHit`, üç `shared_ptr` ömür koruması, çok erken çıkış).
+- B5. `ShipModuleApplier` dört kural türünün handle ve kayıtlarını tek sınıfta tutuyor; constructor'da null olabilen iki ham pointer.
+- B6. `skipModuleDamageRules` motorun `DamagePayload` yapısına sızdı.
+- B7. Küçükler: string hareket kaynak kimliği, `GameAbility` içinde `mutable` snapshot, tek dosyada 1318 satırlık E2E.
+
+**Zamanlama kararı (öneri):** Şimdi yapılmayacak ve Uncommon uygulaması bitmeden de beklenmeyecek. Sıra:
+1. Uncommon setini **kâğıt üzerinde** tasarla (kod yok, ucuz).
+2. Her Uncommon modülün hangi tetik/koşul/etki türüne ihtiyaç duyduğunu çıkar; tekrar edenleri işaretle.
+3. Sadeleştirmeyi bu liste netleşince **tek faz olarak**, Uncommon uygulamasından önce yap (tahminle soyutlama yapmamak için).
+4. Sonra Uncommon uygulaması.
+
+**Sadeleştirme fazı (R1, Uncommon tasarımı sonrası):**
+- R1a. Tek tetik hattı: `ShieldBroken` dahil tüm tetikler hem zamanlı buff hem hasar kuralı için aynı yoldan geçsin (B1, B2).
+- R1b. `ShipModuleApplier` içinde kural türleri küçük uygulayıcı parçalara bölünsün; her parça kendi handle/kayıt ömrünü taşısın, null pointer seçenekleri kalksın (B5).
+- R1c. Hasar hattı: ek vuruş üretimi `ApplyCombatDamage`'dan ayrı yardımcıya alınsın; bayrak sızıntısı gözden geçirilsin (B4, B6).
+- R1d. E2E dosyası modül grubuna göre bölünsün (B7).
+- Kabul: davranış değişmez; mevcut Common E2E aynen geçer; yeni tetik/koşul eklemek için dokunulacak dosya sayısı azalır.
+- Kural: faz başına tek yazıcı, bağımsız diff/build/E2E (bkz. §7).
