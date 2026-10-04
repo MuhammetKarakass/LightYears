@@ -2,10 +2,15 @@
 
 #include "presentation/hud/modules/ModuleScreenViewModel.h"
 #include <optional>
+#include <string>
 
 namespace ly
 {
 	class Player;
+	struct ModuleDefinition;
+	struct ModuleSizeVariant;
+
+	std::string FormatModuleDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant);
 
 	// Reads the player's loadout one way into the view model each Tick and turns UI intents into
 	// Player::Try* / AddModuleToInventory calls. It never touches gameplay state any other way.

@@ -1,5 +1,8 @@
 #include "framework/Application.h"
 #include "framework/AssetManager.h"
+#include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
+#include "gameplay/ability/content/GameAbilityActions.h"
+#include "gameplay/ability/GameAbility.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/content/GameContentBootstrap.h"
@@ -14,10 +17,14 @@
 #include "gameplay/tags/GameplayTags.h"
 #include "level/GameLevel.h"
 #include "player/PlayerSpaceShip.h"
+#include "presentation/hud/modules/ModuleScreenPresenter.h"
+#include "widget/TextWidget.h"
+#include "widget/UIStyle.h"
 
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -105,6 +112,39 @@ namespace
 			}
 		}
 		return std::nullopt;
+	}
+
+	std::optional<ly::ModulePlacement> FindPlacementWithBestZoneBonus(
+		const ly::ModuleRulesContext& rules,
+		const ly::ModuleLoadout& loadout,
+		const ly::ModuleDefinition& module,
+		std::uint32_t instanceId
+	)
+	{
+		ly::ModulePlacement candidate;
+		candidate.instanceId = instanceId;
+		candidate.moduleId = module.moduleId;
+		std::optional<ly::ModulePlacement> bestPlacement;
+		float bestBonus = -1.f;
+		for (int rotation = 0; rotation < 4; ++rotation)
+		{
+			for (int y = 0; y < rules.schematic.height; ++y)
+			{
+				for (int x = 0; x < rules.schematic.width; ++x)
+				{
+					candidate.origin = { x, y };
+					candidate.rotationQuarterTurns = rotation;
+					if (ly::ModulePlacementRules::CanPlace(rules, loadout, candidate) != ly::ModulePlacementFailure::None) continue;
+					const float bonus = ly::ModuleResolver::GetZoneBonus(rules, module, candidate);
+					if (bonus > bestBonus)
+					{
+						bestBonus = bonus;
+						bestPlacement = candidate;
+					}
+				}
+			}
+		}
+		return bestPlacement;
 	}
 
 	std::optional<std::pair<sf::Vector2i, int>> FindPlacementWithCooldownZone(
@@ -276,6 +316,30 @@ namespace
 			[](const sas::ContentId& moduleId) { return content::ModuleContentCatalog::FindById(moduleId); },
 			content::ModuleContentCatalog::GetZoneTable()
 		};
+		const std::array<const char*, 11> commonModuleIds{
+			"Module.Defense.HeavyArmorPlate.Basic",
+			"Module.Utility.EnergyCoil.Basic",
+			"Module.Primary.FocusedBarrel.Basic",
+			"Module.Movement.ThrustBooster.Basic",
+			"Module.Offense.AttackRhythm.Basic",
+			"Module.Defense.ShatterCurrent.Basic",
+			"Module.Offense.EnergyFeedback.Basic",
+			"Module.Movement.EscapeReflex.Basic",
+			"Module.Offense.FinishingBlow.Basic",
+			"Module.Utility.ZoneCooler.Basic",
+			"Module.Primary.FullMagazine.Basic"
+		};
+		for (const char* moduleId : commonModuleIds)
+		{
+			const ModuleDefinition* module = FindModule(rules, moduleId);
+			report.Check(module && !module->sizeVariants.empty(), std::string{ "Common module has a displayable variant: " } + moduleId);
+			const std::string description = FormatModuleDescription(*module, module->sizeVariants.front());
+			report.Check(description.find('{') == std::string::npos && description.find('}') == std::string::npos,
+				std::string{ "Common card formats all numeric tokens: " } + moduleId);
+			const TextWidget descriptionText{ description, UIStyle::Get().Font(UIFontRole::Body), 9 };
+			const float width = descriptionText.GetBound().size.x;
+			report.Check(width <= 376.f, std::string{ "Common card fits one inventory description line: " } + moduleId, width);
+		}
 		auto level = std::make_shared<HeadlessModuleLevel>(&application);
 		level->BeginPlayInternal();
 		const shared_ptr<PlayerSpaceShip> source = level->SpawnActor<PlayerSpaceShip>(shipDefinition).lock();
@@ -291,10 +355,18 @@ namespace
 		report.Check(sourceLoadout.SeedDefaults(rules) && targetLoadout.SeedDefaults(rules), "real catalog default loadouts seed");
 		const float armorBeforeModules = source->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::Armor);
 		const float energyPowerBeforeModules = source->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower);
+		const float horizontalSpeedBeforeModules = source->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal);
+		const float verticalSpeedBeforeModules = source->GetAbilitySystemComponent().GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical);
 		const std::uint32_t rhythmId = AddAndInstall(report, sourceLoadout, rules, "Module.Offense.AttackRhythm.Basic");
 		const std::uint32_t energyFeedbackId = AddAndInstall(report, sourceLoadout, rules, "Module.Offense.EnergyFeedback.Basic");
 		const std::uint32_t armorId = AddAndInstall(report, sourceLoadout, rules, "Module.Defense.HeavyArmorPlate.Basic");
 		const std::uint32_t coilId = AddAndInstall(report, sourceLoadout, rules, "Module.Utility.EnergyCoil.Basic");
+		const ModuleDefinition* thrustModule = FindModule(rules, "Module.Movement.ThrustBooster.Basic");
+		const std::uint32_t thrustId = sourceLoadout.AddToInventory(thrustModule->moduleId);
+		const auto thrustPlacementCandidate = FindPlacementWithBestZoneBonus(rules, sourceLoadout, *thrustModule, thrustId);
+		report.Check(thrustPlacementCandidate.has_value(), "Thrust Booster finds a legal zone-bonus placement");
+		report.Check(sourceLoadout.Install(rules, thrustId, thrustPlacementCandidate->origin, thrustPlacementCandidate->rotationQuarterTurns) ==
+			ModulePlacementFailure::None, "Thrust Booster installs through canonical placement rules");
 		const std::uint32_t escapeId = AddAndInstall(report, targetLoadout, rules, "Module.Movement.EscapeReflex.Basic");
 		report.Check(source->GetModuleApplier().Apply(sourceLoadout, rules) &&
 			target->GetModuleApplier().Apply(targetLoadout, rules), "resolved loadouts apply to their actual owners");
@@ -302,8 +374,10 @@ namespace
 		LightYearsAbilitySystemComponent& sourceAbilities = source->GetAbilitySystemComponent();
 		const ModuleDefinition* armorModule = FindModule(rules, "Module.Defense.HeavyArmorPlate.Basic");
 		const ModuleDefinition* coilModule = FindModule(rules, "Module.Utility.EnergyCoil.Basic");
+		const ModuleDefinition* focusedBarrelModule = FindModule(rules, "Module.Primary.FocusedBarrel.Basic");
 		ModulePlacement armorPlacement = FindInstalled(sourceLoadout, armorId);
 		const ModulePlacement coilPlacement = FindInstalled(sourceLoadout, coilId);
+		const ModulePlacement thrustPlacement = FindInstalled(sourceLoadout, thrustId);
 		const float armorBase = armorBeforeModules;
 		const float energyPowerBase = energyPowerBeforeModules +
 			24.f * (1.f + ModuleResolver::GetZoneBonus(rules, *coilModule, coilPlacement));
@@ -312,6 +386,68 @@ namespace
 			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::Armor), "Heavy Armor Plate installed in its resolved cell");
 		report.CheckValue("Energy Coil applies its catalog value", energyPowerBase,
 			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower), "Energy Coil installed in its resolved cell");
+		const ModuleSizeVariant& thrustVariant = thrustModule->sizeVariants.front();
+		const auto findOwnerModifier = [&thrustVariant](const sas::AttributeId& attributeId)
+		{
+			return std::find_if(thrustVariant.attributeModifiers.begin(), thrustVariant.attributeModifiers.end(),
+				[&attributeId](const ModuleAttributeModifier& modifier)
+				{
+					return modifier.target == ModuleAttributeTarget::Owner && modifier.modifier.attributeId == attributeId;
+				});
+		};
+		const auto horizontalModifier = findOwnerModifier(OwnerAttributeIds::MoveSpeedHorizontal);
+		const auto verticalModifier = findOwnerModifier(OwnerAttributeIds::MoveSpeedVertical);
+		report.Check(horizontalModifier != thrustVariant.attributeModifiers.end() && verticalModifier != thrustVariant.attributeModifiers.end(),
+			"Thrust Booster exposes both owner movement ratings");
+		const float thrustZoneBonus = ModuleResolver::GetZoneBonus(rules, *thrustModule, thrustPlacement);
+		report.Check(thrustZoneBonus > 0.f, "Thrust Booster resolves a movement or hull zone bonus", thrustZoneBonus);
+		const float thrustZoneScaleHorizontal = horizontalModifier->affectedByZoneBonus ? 1.f + thrustZoneBonus : 1.f;
+		const float thrustZoneScaleVertical = verticalModifier->affectedByZoneBonus ? 1.f + thrustZoneBonus : 1.f;
+		report.CheckValue("Thrust Booster applies horizontal movement rating with its resolved zone",
+			horizontalSpeedBeforeModules + horizontalModifier->modifier.magnitude * thrustZoneScaleHorizontal,
+			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedHorizontal), "Thrust Booster installed at its highest available zone bonus");
+		report.CheckValue("Thrust Booster applies vertical movement rating with its resolved zone",
+			verticalSpeedBeforeModules + verticalModifier->modifier.magnitude * thrustZoneScaleVertical,
+			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::MoveSpeedVertical), "Thrust Booster installed at its highest available zone bonus");
+
+		GameAbility* primaryAbility = sourceAbilities.GetAbility(sas::AbilitySlot::PrimaryFire);
+		const FireWeaponAction* primaryFireAction = nullptr;
+		if (primaryAbility)
+		{
+			for (const AbilityActionSpec& action : primaryAbility->GetDefinition().actions)
+			{
+				if ((primaryFireAction = std::get_if<FireWeaponAction>(&action.action))) break;
+			}
+		}
+		report.Check(primaryAbility && primaryFireAction, "Common module E2E finds the live PrimaryFire weapon action");
+		const PrimaryWeaponDefinition primaryWeaponCopy = primaryFireAction->weaponDefinition;
+		const sas::GameplayAttributeList primaryDamageProbe{
+			sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f, 10000.f }
+		};
+		const auto resolvePrimaryDamage = [&sourceAbilities, primaryAbility, &primaryWeaponCopy, &primaryDamageProbe]()
+		{
+			GameAbilityDefinition abilityDefinition = primaryAbility->GetDefinition();
+			AbilityExecutionContext context{ &sourceAbilities, &abilityDefinition, nullptr, nullptr };
+			return sas::FindAttributeValue(AbilityActionAttributeResolver::ResolveAttributes(context, &primaryWeaponCopy, primaryDamageProbe),
+				CommonAttributeIds::Damage, -1.f);
+		};
+		const float primaryDamageBeforeFocusedBarrel = resolvePrimaryDamage();
+		const std::uint32_t focusedBarrelId = sourceLoadout.AddToInventory(focusedBarrelModule->moduleId);
+		const auto focusedBarrelPlacementCandidate = FindPlacementWithBestZoneBonus(rules, sourceLoadout, *focusedBarrelModule, focusedBarrelId);
+		report.Check(focusedBarrelPlacementCandidate.has_value(), "Focused Barrel finds a legal zone-bonus placement");
+		report.Check(sourceLoadout.Install(rules, focusedBarrelId, focusedBarrelPlacementCandidate->origin,
+			focusedBarrelPlacementCandidate->rotationQuarterTurns) == ModulePlacementFailure::None &&
+			source->GetModuleApplier().Apply(sourceLoadout, rules), "Focused Barrel applies to the real PrimaryFire loadout");
+		const ModulePlacement focusedBarrelPlacement = FindInstalled(sourceLoadout, focusedBarrelId);
+		const ModuleAttributeModifier& focusedBarrelModifier = focusedBarrelModule->sizeVariants.front().attributeModifiers.front();
+		const float focusedBarrelZoneScale = focusedBarrelModifier.affectedByZoneBonus
+			? 1.f + ModuleResolver::GetZoneBonus(rules, *focusedBarrelModule, focusedBarrelPlacement)
+			: 1.f;
+		const float focusedBarrelEffectiveMultiplier = 1.f +
+			(focusedBarrelModifier.modifier.magnitude - 1.f) * focusedBarrelZoneScale;
+		report.CheckValue("Focused Barrel changes resolved PrimaryFire damage by its zone-scaled catalog modifier",
+			primaryDamageBeforeFocusedBarrel + 10.f * (focusedBarrelEffectiveMultiplier - 1.f),
+			resolvePrimaryDamage(), "PrimaryFire FireWeaponAction resolved before and after Focused Barrel install");
 		const float attackSpeedBase = sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackSpeed);
 		GameAbility* offenseAbility = sourceAbilities.GetAbility(sas::AbilitySlot::Ability3);
 		report.Check(offenseAbility && std::any_of(offenseAbility->GetDefinition().abilityTags.begin(),

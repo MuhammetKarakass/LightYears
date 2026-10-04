@@ -168,7 +168,7 @@
     {
       "id": "Module.Primary.FullMagazine.Basic",
       "displayName": "Dolu Şarjör",
-      "description": "Şarjör tamamen doluyken ilk Primary atışın hasarı x{damage.0.damageMultiplier} olur.",
+      "description": "Tam şarjör: ilk Primary hasarı x{damage.0.damageMultiplier}.",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
@@ -374,7 +374,7 @@
     {
       "id": "Module.Offense.AttackRhythm.Basic",
       "displayName": "Saldırı Ritmi",
-      "description": "Offense yeteneği kullanınca {trigger.0.durationSeconds} sn saldırı hızına +{Owner.AttackSpeed} rating ekler.",
+      "description": "Offense kullanınca {trigger.0.durationSeconds} sn: saldırı hızı +{Owner.AttackSpeed}.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -395,7 +395,7 @@
     {
       "id": "Module.Defense.ShatterCurrent.Basic",
       "displayName": "Kırılma Akımı",
-      "description": "Kalkan kırılınca {damage.0.activeDurationSeconds} sn Primary atışları hasarın %{damage.0.bonusDamagePercent} kadar ek Energy hasarı verir; kritik uygulanmaz.",
+      "description": "Kalkan kırılınca {damage.0.activeDurationSeconds} sn: Primary +%{damage.0.bonusDamagePercent} Energy; kritik yok.",
       "family": "Ability.Defense",
       "sizeVariants": [
         {
@@ -456,7 +456,7 @@
     {
       "id": "Module.Offense.FinishingBlow.Basic",
       "displayName": "Son Darbe",
-      "description": "Hedefin canı %{damage.0.conditionPercent} veya altındayken verdiğin hasar x{damage.0.damageMultiplier} olur.",
+      "description": "Hedef canı %{damage.0.conditionPercent} veya az: verdiğin hasar x{damage.0.damageMultiplier}.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -474,7 +474,7 @@
     {
       "id": "Module.Utility.ZoneCooler.Basic",
       "displayName": "Bölgesel Soğutucu",
-      "description": "Aile cooldown'u x{cooldown.Module.Zone.Wings.multiplier}; Gövde'de Primary dışı x{cooldown.Module.Zone.Hull.multiplier}.",
+      "description": "Tek bölge: aile CD x{cooldown.Module.Zone.Wings.multiplier}; Gövde Q/E/F/R x{cooldown.Module.Zone.Hull.multiplier}; Burun yok.",
       "family": "Ability.Utility",
       "sizeVariants": [
         {

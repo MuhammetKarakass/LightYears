@@ -1,8 +1,8 @@
 # Modül Sistemi Tasarımı
 
-**Tarih:** 2026-10-03 · **Durum:** Modül runtime ve ekranı mevcut; fiziksel sistem genişlemesi · **Kaynak:** kullanıcıyla 2026-10-01 ve 2026-10-03 tasarım konuşmaları · **Mimari:** [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md)
+**Tarih:** 2026-10-04 · **Durum:** Modül runtime'ı, ekranı ve Common seti mevcut; fiziksel sistem genişlemesi ayrı kapsamdır · **Mimari:** [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md)
 
-Bu doküman sıfırdan düşünülmüştür; `Designs.md`'deki eski slot/Star fikirleri referans alınmaz. Eski yetenek başına attachment sistemi kaldırıldı; yerine bu modül sistemi gelir. Rakamlar başlangıç önerisidir, prototipte ayarlanır.
+Bu doküman eski slot/Star ve yetenek başına attachment tasarımlarını geçersiz kılar. Güncel 10 çekirdek Common modül ve opsiyonel M11 Dolu Şarjör'ün kimlik/değer sözleşmesi [uygulama planı §2](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ile `modules.json`'dadır. Aşağıdaki §5–§6 arketip/nadirlik örnekleri ve §9'daki 16 modüllük liste tarihsel taslaklardır; güncel içerik veya denge kaynağı değildir.
 
 ---
 
@@ -38,7 +38,7 @@ Toplam kapasite tüm gemilerde aynıdır.
 | Seviye büyümesi | Kalkan/afterburner seviye artışı gemide kalır, takılı sistem modülünün üstüne eklenir |
 | Boyut | Büyük modül daha çok güç verir; kalite hücre maliyetini **düşürmez** |
 | Boyut türleri | Karma: ölçeklenen, genişleyen, sabit (bkz. §5) |
-| Nadirlik | Var (bkz. §6) |
+| Nadirlik | Kimlik değiştirir; etki türünü katı katmanlara ayırmaz. Runtime geliştirmesi bu kapsamın dışında (bkz. §6) |
 | Komşuluk | İlk sürümde yok |
 
 ## 3. Bölgeler ve aileler
@@ -99,7 +99,9 @@ Kural: saf güçlendirme fazladan hücreye mal olur, takas yapan varyantlar ayn�
 
 Varsayılan göstergeler 1 hücredir. Bunları sökmek NieR'deki gibi "son hücreye ihtiyacım var" anı yaratır.
 
-## 5. Modül arketipleri
+## 5. Modül arketipleri (tarihsel tasarım örnekleri)
+
+Bu arketipler ve örnek sayılar ilk modül taslağından kalır. Güncel Common tanımları tek temel varyantla `modules.json` içinde tutulur.
 
 | Arketip | Kural | Örnek |
 |---|---|---|
@@ -110,9 +112,9 @@ Varsayılan göstergeler 1 hücredir. Bunları sökmek NieR'deki gibi "son hücr
 - Modül şekilleri: 1 (tek), 2 (domino), 3 (I veya L), 4 (yalnız özel/legendary modüller).
 - Aynı güçteki iki modülden biri bölgeye sığar, diğeri sığmaz. Şekil boyut kararının parçasıdır.
 
-## 6. Nadirlik
+## 6. Nadirlik (güncel karar ve geçersiz tarihsel taslak)
 
-Boyut "ne kadar güç" sorusunu cevaplar, nadirlik "ne kadar ilginç" sorusunu. Nadirlik hücre sayısını değiştirmez.
+Kullanıcının 2026-10-03 kararı: nadirlik kalite artışı değil kimlik değişimidir; her modülün ayrı fikri vardır, etki türlerine katı nadirlik sınırı yoktur. Boyut nadirlikten bağımsızdır. Bu sistemin ilerleme/loot uygulaması Common kapsamı dışındadır. Aşağıdaki eski kalite/yan stat tablosu bu kararla geçersizdir; yalnız tarihsel kayıt olarak korunur. Güncel Common değerleri uygulama planı §2 ve `modules.json`'dadır.
 
 | Nadirlik | Ne ekler |
 |---|---|
@@ -148,9 +150,9 @@ Bu bölümün 28 boş hücre ve ek sistem alanı modeli 2026-10-03 kararıyla ka
 - Dar bölge doğal zayıflıktır. Örneğin Breacher'ın 2 hücrelik motoru 3 hücrelik motor modüllerini bonuslu taşıyamaz.
 - Tarihsel modelde sistem modülleri bu sayıların üstüne ekleniyordu: Çekirdek +2, Motor +2, Sensör +2; toplam 34 hücre. Bu ek kapasite artık yoktur; sistemler toplam 46 hücrenin içindedir.
 
-## 9. İlk modül listesi önerisi (16)
+## 9. İlk modül listesi önerisi (16; tarihsel taslak, 2026-10-01)
 
-Değerler örnektir. "Aile" sütunu bonus aldığı bölgeyi gösterir.
+Bu tablo ilk 16 modül fikrini ve eski sayısal önerileri kaydeder. Aynı adlı güncel Common modüllerin değerleriyle karıştırılmamalıdır; güncel Common10/11 listesi [uygulama planı §2](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ve `modules.json`'dadır.
 
 | Modül | Aile → Bölge | Arketip | Hücre | Etki |
 |---|---|---|---|---|
@@ -183,7 +185,7 @@ Bugün kalkan ve afterburner **geminin** değerleri. `ships.json` → `energy` b
 
 ## 11. Uygulama sırası
 
-Ayrıntılı adımlar ve kanıtlar: [mimari](MODULE_SYSTEM_ARCHITECTURE.md) §9.
+Common modül uygulama fazları ve güncel doğrulama kanıtı: [uygulama planı](MODULE_COMMON_IMPLEMENTATION_PLAN.md) §4. Mimari belgedeki §9 tablosu önceki fiziksel sistem uygulama adımlarının tarihsel kaydıdır.
 
 ## 12. Açık sorular
 

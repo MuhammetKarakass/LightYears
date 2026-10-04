@@ -1,8 +1,17 @@
 # Modül Sistemi Mimarisi
 
-**Tarih:** 2026-10-03 · **Durum:** Modül runtime ve ekranı mevcut; fiziksel sistem genişlemesi · **Oyun tasarımı:** [MODULE_SYSTEM_DESIGN.md](MODULE_SYSTEM_DESIGN.md)
+**Tarih:** 2026-10-04 · **Durum:** Modül runtime'ı, ekranı ve Common10 + opsiyonel M11 uygulanmış; fiziksel sistem genişlemesi ayrı kapsamdır · **Oyun tasarımı:** [MODULE_SYSTEM_DESIGN.md](MODULE_SYSTEM_DESIGN.md)
 
-Bu doküman sahiplik, veri modeli, akış ve sistem bağlantılarını tanımlar. Aşağıdaki ilk tasarım kod örnekleri ve eski adım kanıtları tarihsel olarak korunur; somut API için güncel kaynak esas alınır.
+Bu doküman sahiplik, veri modeli, akış ve sistem bağlantılarını tanımlar. Güncel Common kimlik/değer/olay sözleşmesi [uygulama planı §2–§3](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ve `modules.json`'dadır. Aşağıdaki ilk tasarım kod örnekleri ile §9'daki eski adım kanıtları tarihsel olarak korunur; somut API için güncel kaynak esas alınır.
+
+## Güncel Common çalışma zamanı (2026-10-04)
+
+- `ModuleDefinition`/loader tipli tetik, hasar ve bölge-cooldown listelerinin sahibidir; JSON sayısal içeriği taşır. Resolver yan etkisizdir; tetik/hasar kimliği `(instanceId, ruleIndex)`'dir.
+- Yerleştirme sahibi `ModulePlacementRules` aynı modül kimliğinin ikinci takılı örneğini `DuplicateModule` ile reddeder; taşıma/envanter kopyası davranışı korunur.
+- `PlayerSpaceShip` tetik runtime'ını sahiplenir; applier kuralları eşitler. Buff refresh yığılmaz, değişmeyen pencere korunur, sökme/reboot temizler.
+- Applier'ın RAII token'ı CombatRuntime hasar kurallarını taşır. Bonus Energy kritiksiz ve özyinelemesizdir; normal SourceDamageDealt bildirimi zincire açıktır. Dolu Şarjör, FireOnce metadata'sına kopyalanır; impact anında yeniden uygulanmaz.
+- ASC ayrı cooldown handle'larını çözer; GameAbility başlangıçta yalnız modül çarpanını yakalar. Seviye/haste canlı kalır; modül taşıma çalışan cooldown'u yeniden kısaltmaz. Primary/pasifler dışlanır.
+- Üretim kart formatter'ı sayıları JSON'dan çözer. Bağımsız final game build exit 0; hedefli Common E2E 317 kontrol geçti. [Plan §5](MODULE_COMMON_IMPLEMENTATION_PLAN.md#5-doğrulama-sonucu-ve-sınırları) komutları ve görsel kabul sınırını kaydeder. Aşağıdaki eski kod örnekleri güncel API sözleşmesinin yerine geçmez.
 
 ## 2026-10-03 fiziksel sistem sözleşmesi
 
@@ -12,7 +21,7 @@ Bu doküman sahiplik, veri modeli, akış ve sistem bağlantılarını tanımlar
 - Flight Control durumu oyuncunun A/S/D hareket taleplerini kapatır; W ve fareye dönüş etkilenmez.
 - Primary ve Q/E/F/R modülleri mevcut yetenek örneklerinin kullanılabilirliğini kontrol eder. Sökme/takma yeteneği yeniden grant ederek seviye, cooldown veya ammo sıfırlamaz. Aktif kullanım kapatılır; daha önce dünyaya bırakılmış atışlar normal ömrünü sürdürür.
 - Varsayılan ability slot eşlemesinin tek sahibi `gameplay/ability/loadout/DefaultAbilityLoadout.cpp` olarak kalır. Modül ekranı takılı slotun gerçek yeteneğini okur.
-- Bu genişlemede kullanıcı isteğiyle test çalıştırılmaz; kaynak/diff incelemesi ve `VSLANG=1033` ile `LightYearsGame` derlemesi doğrulama sınırıdır. Derleme oyun içi kabul değildir.
+- Bu fiziksel sistem genişlemesinin 2026-10-03 doğrulama sınırında test çalıştırılmaması kararı verilmişti. Common modül kapanışında hedefli gerçek-gemi E2E ve `VSLANG=1033` ile `LightYearsGame` derlemesi ayrıca kullanılır; derleme tek başına oyun içi kabul değildir. Güncel kanıt uygulama planı §4 P7'dedir.
 
 ---
 
@@ -289,11 +298,11 @@ Scoped kurallar ana silaha uygulanmadığı için Primary modülleri ayrı hedef
 2. **Yetenek kategorileri:** `Ability.Control` silindi; Cryo Bola, Frost Maelstrom, Gravity Anomaly, Null Pulse → `Ability.Utility.*` (config'ler `gameConfigs/ability/utility/`). Scorch Drive ve Lance Drive → `Ability.Movement.*` (config'ler `gameConfigs/ability/movement/`).
 3. **Doğrulama:** Tam build exit 0 (yalnız Faz 1'den kalan `GasLiteCoreTests.cpp` `shieldAffinity` hatası hariç). `GasLiteCoreTests.cpp`'deki o iki satır geçici olarak devre dışı bırakılıp tüm suite koşuldu: 41 testten 39'u geçti. Kalan iki hata Faz 1 değişikliklerine ait: `LightYearsContent` 4 gemi bekliyor (roster artık 9), `LightYearsGasLiteCore` telemetri testi ham 5 hasar bekliyor (Fighter artık Armor 2). Geçici değişiklik geri alındı.
 
-## 9. Uygulama adımları
+## 9. Önceki uygulama adımları (2026-10-03 tarihsel anlık görüntü)
 
-Her adım derlenir, testler koşar, davranış değişimi yalnız ilgili adımda olur.
+Bu 11 adımlı tablo fiziksel sistem/modül temelinin ilk uygulama sırasını kaydeder. Common10 + M11 fazlarının güncel durumu veya kapsamı değildir; güncel faz/commit kaydı [uygulama planı §4](MODULE_COMMON_IMPLEMENTATION_PLAN.md#4-fazlar-sol-yönetir-luna-uygular) altındadır.
 
-**Durum:** adım 1-2 `343c785`, 3-4 `403ae1a`, 5-6 `a3044a5`, 7 `3daba62`, 8 `1844223` ile **tamamlandı**. Adım 9 **sürüyor** (kod ve testler yazıldı, görsel kabul bekliyor). Adım 10-11 başlamadı.
+**Tarihsel durum (2026-10-03):** adım 1-2 `343c785`, 3-4 `403ae1a`, 5-6 `a3044a5`, 7 `3daba62`, 8 `1844223` ile tamamlandı; adım 9 görsel kabul bekliyordu; 10-11 başlamamıştı. Bu durum satırı güncel faz ilerlemesini göstermez.
 
 | # | Adım | Kanıt |
 |---|---|---|

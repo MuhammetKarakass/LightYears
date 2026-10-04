@@ -112,7 +112,7 @@ namespace ly
 			}
 		}
 
-		std::string FormatDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant)
+		std::string FormatDescriptionImpl(const ModuleDefinition& definition, const ModuleSizeVariant& variant)
 		{
 			std::string description = definition.description;
 			const auto replaceModifier = [&description](const sas::AttributeModifier& modifier)
@@ -154,7 +154,7 @@ namespace ly
 			out = {};
 			out.instanceId = placement.instanceId;
 			out.name = definition->displayName;
-			out.description = FormatDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)]);
+			out.description = FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)]);
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
 			out.family = FamilyLabel(definition->family);
 			out.isSystem = definition->systemCategory.IsValid();
@@ -204,6 +204,11 @@ namespace ly
 			}
 			return true;
 		}
+	}
+
+	std::string FormatModuleDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant)
+	{
+		return FormatDescriptionImpl(definition, variant);
 	}
 
 	ModuleScreenPresenter::ModuleScreenPresenter() : mViewModel{ std::make_shared<ModuleScreenViewModel>() }
