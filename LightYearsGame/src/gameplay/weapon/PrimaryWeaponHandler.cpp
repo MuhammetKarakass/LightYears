@@ -45,7 +45,7 @@ namespace ly
 				0.f
 			);
 		}
-		return std::max(0.f, damage);
+		return std::max(0.f, damage * context.shotMetadata.shotDamageMultiplier);
 	}
 
 	unique_ptr<PrimaryWeaponTypeRuntimeState> PrimaryWeaponHandler::CreateRuntimeState() const

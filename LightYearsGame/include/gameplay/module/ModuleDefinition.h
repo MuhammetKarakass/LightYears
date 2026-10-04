@@ -36,7 +36,8 @@ namespace ly
 	enum class ModuleDamageCondition
 	{
 		PrimaryShotOnly,
-		TargetHealthAtMost
+		TargetHealthAtMost,
+		FullMagazineShot
 	};
 
 	enum class ModuleCooldownScope

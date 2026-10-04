@@ -296,6 +296,22 @@ namespace ly
 		}
 	}
 
+	float CombatRuntime::ResolveFullMagazineShotMultiplier() const
+	{
+		float multiplier = 1.f;
+		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
+		{
+			for (const ActiveModuleDamageRule& active : registration.rules)
+			{
+				const ModuleDamageRule& rule = active.resolved.rule;
+				if (rule.condition != ModuleDamageCondition::FullMagazineShot ||
+					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
+				multiplier *= rule.damageMultiplier;
+			}
+		}
+		return multiplier;
+	}
+
 	CombatRuntime::OutgoingDamagePlan CombatRuntime::ResolveOutgoingDamagePlan(
 		const Actor& target,
 		const List<GameplayTag>& sourceAbilityTags
@@ -314,9 +330,18 @@ namespace ly
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
 				if (rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f) continue;
-				const bool conditionMet = rule.condition == ModuleDamageCondition::PrimaryShotOnly
-					? isPrimaryShot
-					: healthFraction <= rule.conditionValue;
+				bool conditionMet = false;
+				switch (rule.condition)
+				{
+				case ModuleDamageCondition::PrimaryShotOnly:
+					conditionMet = isPrimaryShot;
+					break;
+				case ModuleDamageCondition::TargetHealthAtMost:
+					conditionMet = healthFraction <= rule.conditionValue;
+					break;
+				case ModuleDamageCondition::FullMagazineShot:
+					break;
+				}
 				if (!conditionMet) continue;
 				plan.damageMultiplier *= rule.damageMultiplier;
 				if (rule.bonusDamageFraction > 0.f && rule.bonusDamageType.IsValid())

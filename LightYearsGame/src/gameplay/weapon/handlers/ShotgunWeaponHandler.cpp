@@ -67,11 +67,7 @@ namespace ly
 					PrimaryWeaponSchema::Projectile::Shotgun::MinimumDamageMultiplier,
 					1.f
 				);
-				const float baseDamage = std::max(0.f, sas::FindAttributeValue(
-					context.attributes,
-					CommonAttributeIds::Damage,
-					0.f
-				));
+				const float baseDamage = ResolvePrimaryWeaponShotDamage(context);
 				const shared_ptr<ShotgunVolleyImpactGroup> impactGroup =
 					std::make_shared<ShotgunVolleyImpactGroup>(
 						context.owner,

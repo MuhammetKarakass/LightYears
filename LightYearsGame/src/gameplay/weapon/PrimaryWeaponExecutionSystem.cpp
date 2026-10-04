@@ -4,6 +4,7 @@
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/time/IntervalDebt.h"
 #include "gameplay/weapon/PrimaryWeaponExecutionSystem.h"
 
@@ -535,6 +536,12 @@ namespace ly
 
 		PrimaryWeaponShotMetadata shotMetadata;
 		shotMetadata.roundFinalDamageUp = context.definition.damageRoundingPolicy == PrimaryWeaponDamageRoundingPolicy::CeilFinalDamage;
+		if (context.definition.magazine.has_value() && state.magazineState.reloadRemaining <= 0.0 &&
+			state.magazineState.roundsRemaining == context.definition.magazine->capacity)
+		{
+			if (const Combatant* combatant = dynamic_cast<const Combatant*>(&context.owner))
+				shotMetadata.shotDamageMultiplier = combatant->GetCombatRuntime().ResolveFullMagazineShotMultiplier();
+		}
 		if (context.definition.empoweredShot.has_value())
 		{
 			const auto& emp = *context.definition.empoweredShot;

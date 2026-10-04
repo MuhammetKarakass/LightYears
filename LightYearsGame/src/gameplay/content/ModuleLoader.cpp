@@ -69,6 +69,7 @@ namespace ly::content
 		{
 			if (value == "PrimaryShotOnly") return ModuleDamageCondition::PrimaryShotOnly;
 			if (value == "TargetHealthAtMost") return ModuleDamageCondition::TargetHealthAtMost;
+			if (value == "FullMagazineShot") return ModuleDamageCondition::FullMagazineShot;
 			throw std::runtime_error("Unknown module damage condition: " + value);
 		}
 
@@ -222,14 +223,16 @@ namespace ly::content
 				if (rule.damageMultiplier <= 0.f) throw std::runtime_error(entryContext + " damageMultiplier must be positive");
 				if (rule.bonusDamageFraction < 0.f || rule.bonusDamageFraction > 1.f)
 					throw std::runtime_error(entryContext + " bonusDamageFraction must be between 0 and 1");
+				if (rule.condition == ModuleDamageCondition::FullMagazineShot && rule.bonusDamageFraction > 0.f)
+					throw std::runtime_error(entryContext + " FullMagazineShot supports damageMultiplier only");
 				if (rule.condition == ModuleDamageCondition::TargetHealthAtMost)
 				{
 					if (!entry.contains("conditionValue") || rule.conditionValue < 0.f || rule.conditionValue > 1.f)
 						throw std::runtime_error(entryContext + " TargetHealthAtMost requires conditionValue in 0..1");
 				}
-				else if (entry.contains("conditionValue") && rule.conditionValue != 0.f)
+				else if (entry.contains("conditionValue"))
 				{
-					throw std::runtime_error(entryContext + " PrimaryShotOnly does not accept conditionValue");
+					throw std::runtime_error(entryContext + " this damage condition does not accept conditionValue");
 				}
 				if (rule.bonusDamageFraction > 0.f)
 				{

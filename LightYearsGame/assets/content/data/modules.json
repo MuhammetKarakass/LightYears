@@ -166,6 +166,23 @@
       ]
     },
     {
+      "id": "Module.Primary.FullMagazine.Basic",
+      "displayName": "Dolu Şarjör",
+      "description": "Şarjör tamamen doluyken ilk Primary atışın hasarı x{damage.0.damageMultiplier} olur.",
+      "family": "Ability.Primary",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "damageRules": [
+            {
+              "condition": "FullMagazineShot",
+              "damageMultiplier": 1.4
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "Module.Offense.AttackMatrix.Basic",
       "displayName": "Saldırı Matrisi",
       "family": "Ability.Offense",

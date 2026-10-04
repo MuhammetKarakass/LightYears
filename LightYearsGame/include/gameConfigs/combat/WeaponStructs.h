@@ -136,6 +136,7 @@ struct PrimaryWeaponFrostMeterState
 struct PrimaryWeaponShotMetadata
 {
 	bool isEmpowered = false;
+	float shotDamageMultiplier = 1.f;
 	ly::DamageCriticalPolicy criticalPolicy = ly::DamageCriticalPolicy::Random;
 	bool roundFinalDamageUp = false;
 	// statusStacksOnlyWhenEmpowered on a non-empowered shot.
