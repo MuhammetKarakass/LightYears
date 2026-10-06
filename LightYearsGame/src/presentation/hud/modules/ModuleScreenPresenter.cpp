@@ -135,6 +135,7 @@ namespace ly
 				const ModuleDamageRule& rule = variant.damageRules[i];
 				const std::string prefix = "damage." + std::to_string(i) + ".";
 				ReplaceAll(description, "{" + prefix + "damageMultiplier}", FormatMagnitude(rule.damageMultiplier));
+				ReplaceAll(description, "{" + prefix + "openingShotCount}", std::to_string(rule.openingShotCount));
 				ReplaceAll(description, "{" + prefix + "conditionPercent}", FormatMagnitude(rule.conditionValue * 100.f));
 				ReplaceAll(description, "{" + prefix + "bonusDamagePercent}", FormatMagnitude(rule.bonusDamageFraction * 100.f));
 				ReplaceAll(description, "{" + prefix + "activeDurationSeconds}", FormatMagnitude(rule.activeDurationSeconds));

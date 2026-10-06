@@ -536,11 +536,10 @@ namespace ly
 
 		PrimaryWeaponShotMetadata shotMetadata;
 		shotMetadata.roundFinalDamageUp = context.definition.damageRoundingPolicy == PrimaryWeaponDamageRoundingPolicy::CeilFinalDamage;
-		if (context.definition.magazine.has_value() && state.magazineState.reloadRemaining <= 0.0 &&
-			state.magazineState.roundsRemaining == context.definition.magazine->capacity)
+		if (context.definition.magazine.has_value())
 		{
 			if (const Combatant* combatant = dynamic_cast<const Combatant*>(&context.owner))
-				shotMetadata.shotDamageMultiplier = combatant->GetCombatRuntime().ResolveFullMagazineShotMultiplier();
+				shotMetadata.shotDamageMultiplier = combatant->GetCombatRuntime().ResolveFullMagazineShotMultiplier(state.magazineState.shotsFired);
 		}
 		if (context.definition.empoweredShot.has_value())
 		{
@@ -597,6 +596,7 @@ namespace ly
 		{
 			// The last rounds still fire a full shot; the magazine clamps at
 			// zero and reloads (e.g. 1 round left on a twin gun fires both).
+			++state.magazineState.shotsFired;
 			state.magazineState.roundsRemaining -= ResolveRoundsPerShot(context.definition);
 			if (state.magazineState.roundsRemaining <= 0)
 			{
@@ -853,6 +853,7 @@ namespace ly
 		if (state.magazineState.reloadRemaining <= 0.0)
 		{
 			state.magazineState.roundsRemaining = definition.magazine->capacity;
+			state.magazineState.shotsFired = 0;
 		}
 	}
 

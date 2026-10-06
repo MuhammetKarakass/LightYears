@@ -168,7 +168,7 @@
     {
       "id": "Module.Primary.FullMagazine.Basic",
       "displayName": "Dolu Şarjör",
-      "description": "Tam şarjör: ilk Primary hasarı x{damage.0.damageMultiplier}.",
+      "description": "Şarjörün ilk {damage.0.openingShotCount} Primary atışı: hasar x{damage.0.damageMultiplier}.",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
@@ -176,8 +176,23 @@
           "damageRules": [
             {
               "condition": "FullMagazineShot",
-              "damageMultiplier": 1.4
+              "openingShotCount": 3,
+              "damageMultiplier": 1.3
             }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.AssaultCore.Basic",
+      "displayName": "Hücum Çekirdeği",
+      "description": "Saldırı gücünü +{Owner.AttackPower} artırır.",
+      "family": "Ability.Offense",
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            {"target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": 15.0}
           ]
         }
       ]

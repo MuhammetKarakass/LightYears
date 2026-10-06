@@ -2,7 +2,7 @@
 
 **Tarih:** 2026-10-04 · **Durum:** P0–P7 tamamlandı; faz kapanış commit’i bu belgeyle kaydedilir · **Tasarım:** [MODULE_SYSTEM_DESIGN.md](MODULE_SYSTEM_DESIGN.md), [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md)
 
-Bu belge mevcut Common modül setinin (10 çekirdek + P6'da uygulanabilirliği doğrulanıp eklenen opsiyonel M11) uygulama ve davranış sözleşmesidir. Kimlikler ve ayarlanabilir değerler için güncel kaynak `modules.json` ve §2'dir. P0 başlangıcı ve P1–P6 commit'leri §4'te kayıtlıdır; P7 aynı belge/kart/E2E kapanış commit'idir.
+Bu belge mevcut Common modül setinin (11 standart Common modül) uygulama ve davranış sözleşmesidir. Kimlikler ve ayarlanabilir değerler için güncel kaynak `modules.json` ve §2'dir. P0 başlangıcı ve P1–P6 commit'leri §4'te kayıtlıdır; P7 aynı belge/kart/E2E kapanış commit'idir.
 
 ---
 
@@ -10,14 +10,18 @@ Bu belge mevcut Common modül setinin (10 çekirdek + P6'da uygulanabilirliği d
 
 | Dahil | Hariç (bu plan değil) |
 |---|---|
-| 10 çekirdek Common modül (M01–M10) | Uncommon ve üstü modüller |
-| Opsiyonel M11 Dolu Şarjör (P6 spike'ı uygulanabilirliği doğruladı; şu an şarjörlü üç Primary içerikte çalışır) | Bağlantı modülleri (Yükseltici, Röle, Ayna, Rezonatör, Yankılayıcı) |
+| 11 standart Common modül (M01–M11) | Uncommon ve üstü modüller |
+| Dolu Şarjör: her şarjörün ilk 3 Primary atışı ×1,30; şarjörlü üç Primary içerikte çalışır | Bağlantı modülleri (Yükseltici, Röle, Ayna, Rezonatör, Yankılayıcı) |
 | Tetik/zamanlı buff çalışma zamanı | Çok boyutlu sürümler, Aşırı Yük satırı (bu aşamada tek temel sürüm) |
 | Giden hasar kuralı kancası | Nadirlik, kalite ve Scrap geliştirmesi |
 | Cooldown kural yolu, bölge etkisi | Slot varyantları / Unique sınıfı (Yakıt Hattı, Q varyantları) |
 | Modül açıklama metni ve modül ekranında gösterimi | Yetenek evrimi, loot/düşme, envanter sınırı |
 
 Toparlanma Hattı Common'dan çıkarıldı (Uncommon'a kalır) ve bu planda yok.
+
+### 2026-10-05 içerik güncellemesi
+
+Kullanıcının kararıyla M02 artık **Hücum Çekirdeği**: Offense ailesinde, 2 hücre domino, `Owner.AttackPower` +15. Enerji Bobini (`Module.Utility.EnergyCoil.Basic`, enerji gücü +24) mevcut içerikte korunur; Common11 listesindeki yerini Hücum Çekirdeği alır. M11 **standart Common**'dır: her dolu şarjörün ilk 3 başarılı Primary ateşlemesi ×1,30 hasar verir. Çift namlu/pellet sayısı atış sayısı değildir; başarısız ateşleme ve tuş bırakıp basma pencereyi tüketmez/sıfırlamaz. Sayaç yalnız gerçek şarjör dolumu veya yeni silah runtime'ı ile sıfırlanır. Önceki P1/P6 ve 2026-10-04 doğrulama kayıtları tarihsel sonuçlardır; güncel sözleşme §2–§3'tedir.
 
 ---
 
@@ -49,7 +53,7 @@ Değerler **başlangıç**tır (kullanıcının listesinden). Hepsi `modules.jso
 | # | Kimlik (`Module.<Aile>.<Ad>.Basic`) | Ad | Aile | Şekil | Etki | Mekanizma | Faz |
 |---|---|---|---|---|---|---|---|
 | M01 | `Defense.HeavyArmorPlate` | Ağır Zırh Plakası | Defense | 3 (I) | `Owner.Armor` +30 | Sade owner modifier | P1 |
-| M02 | `Utility.EnergyCoil` | Enerji Bobini | Utility | 2 | `Owner.Energy.Power` +24 | Sade owner modifier | P1 |
+| M02 | `Offense.AssaultCore` | Hücum Çekirdeği | Offense | 2 (domino) | `Owner.AttackPower` +15 | Sade owner modifier | P1 |
 | M03 | `Primary.FocusedBarrel` | Odaklı Namlu | Primary | 2 | Ana silah `Common.Damage` ×1,10 | Mevcut PrimaryWeapon modifier | P1 |
 | M04 | `Movement.ThrustBooster` | İtki Artırıcı | Movement | 2 | `Owner.MoveSpeedHorizontal/Vertical` +2,2 rating | Mevcut owner modifier | P1 |
 | M05 | `Offense.AttackRhythm` | Saldırı Ritmi | Offense | 2 | Offense yeteneği kullanınca 3 sn `Owner.AttackSpeed` +15 rating. Stack yok, süre yenilenir | Tetik → zamanlı owner buff | P3 |
@@ -58,7 +62,7 @@ Değerler **başlangıç**tır (kullanıcının listesinden). Hepsi `modules.jso
 | M08 | `Movement.EscapeReflex` | Kaçış Refleksi | Movement | 2 | Hasar alınca 2 sn hareket hızı ×1,25. Stack yok, süre yenilenir | Tetik → zamanlı gemi çarpanı | P3 |
 | M09 | `Offense.FinishingBlow` | Son Darbe | Offense | 2 | Canı ≤ %25 olan düşmana verdiğin hasar ×1,20 | Giden hasar kuralı (koşullu) | P4 |
 | M10 | `Utility.ZoneCooler` | Bölgesel Soğutucu | Utility | 3 (I) | Bulunduğu bölgenin ailesinin cooldown'u ×0,79. Gövde'de tüm aktif yetenek cooldown'ları ×0,90 | Konuma bağlı kural + yeni cooldown yolu | P5 |
-| M11 (opsiyonel) | `Primary.FullMagazine` | Dolu Şarjör | Primary | 2 | Tam şarjörün ilk Primary atışı ×1,40 hasar; şu an yalnız şarjör kullanan üç Primary içerikte etkin | Atış çözümlemesinde şarjör koşulu | P6 |
+| M11 | `Primary.FullMagazine` | Dolu Şarjör | Primary | 2 | Her şarjörün ilk 3 Primary atışı ×1,30 hasar; şu an yalnız şarjör kullanan üç Primary içerikte etkin | Atış çözümlemesinde şarjör koşulu | P6 |
 
 ### Mekanizma ayrıntıları
 
@@ -68,7 +72,7 @@ Değerler **başlangıç**tır (kullanıcının listesinden). Hepsi `modules.jso
 - **M08:** Tetik = `Event.Owner.DamageTaken` (`appliedDamage > 0`). Etki `ShipRuntimeModifiers::Set` ile, kaynak kimliği modül örneğine özel.
 - **M09:** Hasar anında hedef sağlık oranı kontrol edilir. Hedefin `HealthComponent` sağlık oranı `ApplyCombatDamage` içinde okunur; çarpan hasar kritik çarpanından önce uygulanır.
 - **M10:** Modülün tüm hücreleri tek bölgede olmalıdır; bölgeye göre cooldown kuralı seçilir: Kanat→Offense, Çekirdek→Defense, Motor→Movement, Sensör→Utility ×0,79; Gövde→Primary hariç etkin yetenekler ×0,90. Burun'da cooldown kuralı ve atış hızı bonusu yoktur (kullanıcı kararı, 2026-10-03). Etkiler bölge bonusuyla ayrıca ölçeklenmez.
-- **M11:** P6 spike'ı, tam şarjör koşulunun Primary atış çözümlemesinde mevcut şarjör durumu ile uygulanabildiğini doğruladı. Etki mevcut `weapons.json` şarjörleriyle Fighter Rapid Laser (48), Dual Kinetic Blaster (64) ve Cone Rapid Shotgun (18) üzerinde geçerlidir; şarjörsüz silahlar için koşul oluşmaz.
+- **M11:** `openingShotCount = 3`, `damageMultiplier = 1.30`; `PrimaryWeaponMagazineRuntimeState::shotsFired` başarılı FireOnce başına bir artar ve reload tamamlanınca sıfırlanır. Etki mevcut `weapons.json` şarjörleriyle Fighter Rapid Laser (48), Dual Kinetic Blaster (64) ve Cone Rapid Shotgun (18) üzerinde geçerlidir; şarjörsüz silahlar için koşul oluşmaz.
 
 ---
 
@@ -99,7 +103,7 @@ Değerler **başlangıç**tır (kullanıcının listesinden). Hepsi `modules.jso
 - Applier, `CombatRuntime::RegisterOutgoingDamageRules()` ile move-only `OutgoingDamageRuleRegistration` token'ını sahiplenir; `ReplaceRules` ile listeleri eşitler. Token zayıf kayıt durumu ve generation guard ile eski kaydın yeni kaydı silmesini engeller.
 - `ApplyCombatDamage` hedefin vuruştan önceki sağlık oranından M09 çarpanını ve Primary etiketli vuruş için M06 bonus planını kopyalar. Ana hasar mevcut source-wide/kritik yolundan geçer.
 - Bonus ayrı Energy payload'ı, `DamagePayload::skipModuleDamageRules=true` ve `DamageCriticalPolicy::Disabled` ile uygulanır. Yeni bonus doğurmaz; normal SourceDamageDealt bildirimi M07'yi tetikleyebilir. Kaynak kimliği/etiketleri callback öncesi kopyalanır, callback sonrası aktör ömrü kontrol edilir.
-- M11 genel impact kurallarında uygulanmaz. `ResolveFullMagazineShotMultiplier()` aynı kayıt listesinden atış çarpanını okur; `PrimaryWeaponExecutionSystem::FireOnce` bunu mühimmat tüketiminden önce `PrimaryWeaponShotMetadata::shotDamageMultiplier` içinde yakalar. Ortak primary hasar çözümü bir kez uygular; Shotgun falloff bundan sonra gelir. Eski mermi, modül sökülse veya şarjör değişse de snapshot'ını korur.
+- M11 genel impact kurallarında uygulanmaz. `ResolveFullMagazineShotMultiplier(magazineShotsFired)` aynı kayıt listesindeki `openingShotCount` sınırına göre atış çarpanını okur; `PrimaryWeaponExecutionSystem::FireOnce` bunu mühimmat tüketiminden önce `PrimaryWeaponShotMetadata::shotDamageMultiplier` içinde yakalar. Ortak primary hasar çözümü bir kez uygular; Shotgun falloff bundan sonra gelir. Eski mermi, modül sökülse veya şarjör değişse de snapshot'ını korur.
 
 ### 3.5 Cooldown yolu (ASC)
 
@@ -157,8 +161,8 @@ Değerler **başlangıç**tır (kullanıcının listesinden). Hepsi `modules.jso
 - Yap: §3.5 ve M10. Bölgeye göre etki seçimi.
 - **Kabul (senaryo):** Kanat'a takılı M10 Offense yeteneklerinin cooldown'unu ×0,79 yapar, başka aileleri etkilemez. Gövde'de Primary hariç tüm yetenekler ×0,90. Burun'da ana silah atış hızı değişmez. Yeniden yerleştirme etkiyi bölgeye göre değiştirir. Çalışan cooldown geriye dönük değişmez.
 
-### P6 — Dolu Şarjör spike'ı ve M11 (Luna D, opsiyonel)
-- **Tamamlandı (`396bb78`):** atış çözümlemesi tam şarjör koşulunu destekliyor; M11 ×1,40 ilk atış hasarıyla eklendi. Mevcut `weapons.json` şarjörlerini kullanan üç oyuncu Primary silahına uygulanır; şarjörsüz içerik değiştirilmedi.
+### P6 — Dolu Şarjör spike'ı ve M11 (Luna D, tarihsel faz)
+- **Tarihsel P6 sonucu (2026-10-04, `396bb78`):** atış çözümlemesi tam şarjör koşulunu destekliyor; M11 ×1,40 ilk atış hasarıyla eklendi. Mevcut `weapons.json` şarjörlerini kullanan üç oyuncu Primary silahına uygulanır; şarjörsüz içerik değiştirilmedi.
 
 ### P7 — Sunum, dokümantasyon, kapanış (Luna A + Sol)
 - Üretim presenter biçimlendiricisiyle 11 Common kartın dinamik açıklaması gerçek 9 px gövde fontunda ölçülür; her satır 376 px alanına sığar.
@@ -177,6 +181,10 @@ P3, P4, P5 aynı dosyalara kısmen dokunduğu için **seri** koşar. Okuma taban
 ---
 
 ## 5. Doğrulama sonucu ve sınırları
+
+**2026-10-05 içerik revizyonu:** Hücum Çekirdeği +15 saldırı gücü / 2 hücre ve mevcut Enerji Bobini'nin birlikte korunması gerçek ASC/loadout yolunda doğrulandı. Dolu Şarjör standart Common; Fighter, çift namlulu Dual ve anlık Cone silahlarında ilk üç başarılı ateşleme ×1,30, dördüncü ×1,00; reload pencereyi yeniler. Başarısız ateşleme, ateşi bırakıp yeniden başlatma, şarjörsüz silah ve modül söküldükten sonra eski merminin snapshot'ı da kontrol edildi. Common E2E **358/358 kontrol**, `LightYearsGasLiteMixedLoadout` ile birlikte **2/2 CTest** geçti. 11 kart üretim formatter/fontuyla mevcut satır alanına sığıyor; oyun içi görsel kabul yapılmadı.
+
+Bu makinede `vcvars64.bat` sonrası `set "VSLANG=1033"` ile `cmake --build C:\LightYears\out\build\x64-debug --target LightYearsGame LightYearsCommonModuleE2ETests LightYearsGasLiteTests --parallel 1` **exit 0**. İlk paralel bağlama LNK1356 verdi; `LightYearsGameLib` tek başına oluşturulup aynı hedefler seri bağlanınca geçti. CTest: `ctest --test-dir C:\LightYears\out\build\x64-debug -R "^(LightYearsCommonModuleE2E|LightYearsGasLiteMixedLoadout)$" --output-on-failure` **exit 0**. [Güncel yerel E2E artefaktı](../out/build/x64-debug/e2e-artifacts/common-modules.json); üretim/test değişikliği commit edilmedi. Aşağıdaki 2026-10-04 kanıtı önceki içerik sürümünün tarihsel sonucudur.
 
 2026-10-04: final diff incelemesi ve `git diff --check` temiz. `LightYearsGame` bağımsız build exit 0; hedefli `LightYearsCommonModuleE2E` 1/1, **317 kontrol** geçti. Aynı üretim formatter'ı ve gerçek Body/9 px fontla tüm 11 açıklama 376 px alana sığar (en geniş 368 px). E2E gerçek gemi, loadout, ASC, FireOnce, projectile/impact ve cooldown yollarını çalıştırır; girdiler/sonuçlar [yerel JSON artefaktında](../build-tests/e2e-artifacts/common-modules.json) tutulur. Artefakt Git'e eklenmez; [test kaynağı](../LightYearsGame/tests/CommonModuleE2ETests.cpp) tekrarlanabilirdir.
 

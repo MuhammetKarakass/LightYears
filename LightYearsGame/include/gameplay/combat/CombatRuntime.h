@@ -91,7 +91,7 @@ namespace ly
 		float GetOutgoingDamageMultiplier() const noexcept;
 		OutgoingDamageRuleRegistration RegisterOutgoingDamageRules();
 		void ActivateOutgoingDamageRules(ModuleTriggerKind trigger);
-		float ResolveFullMagazineShotMultiplier() const;
+		float ResolveFullMagazineShotMultiplier(int magazineShotsFired) const;
 		OutgoingDamagePlan ResolveOutgoingDamagePlan(
 			const Actor& target,
 			const List<GameplayTag>& sourceAbilityTags

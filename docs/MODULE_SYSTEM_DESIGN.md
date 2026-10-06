@@ -1,8 +1,8 @@
 # Modül Sistemi Tasarımı
 
-**Tarih:** 2026-10-04 · **Durum:** Modül runtime'ı, ekranı ve Common seti mevcut; fiziksel sistem genişlemesi ayrı kapsamdır · **Mimari:** [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md)
+**Tarih:** 2026-10-05 · **Durum:** Modül runtime'ı, ekranı ve Common seti mevcut; fiziksel sistem genişlemesi ayrı kapsamdır · **Mimari:** [MODULE_SYSTEM_ARCHITECTURE.md](MODULE_SYSTEM_ARCHITECTURE.md)
 
-Bu doküman eski slot/Star ve yetenek başına attachment tasarımlarını geçersiz kılar. Güncel 10 çekirdek Common modül ve opsiyonel M11 Dolu Şarjör'ün kimlik/değer sözleşmesi [uygulama planı §2](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ile `modules.json`'dadır. Aşağıdaki §5–§6 arketip/nadirlik örnekleri ve §9'daki 16 modüllük liste tarihsel taslaklardır; güncel içerik veya denge kaynağı değildir.
+Bu doküman eski slot/Star ve yetenek başına attachment tasarımlarını geçersiz kılar. Oyundaki modül kataloğu ve fikirlerin durumları [modules](modules.md) belgesindedir. Güncel 11 standart Common modülün kimlik/değer sözleşmesi [uygulama planı §2](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ile `modules.json`'dadır. Aşağıdaki §5–§6 arketip/nadirlik örnekleri ve §9'daki 16 modüllük liste tarihsel taslaklardır; güncel içerik veya denge kaynağı değildir.
 
 ---
 
@@ -17,6 +17,12 @@ Gemi kimliği üç şeyden gelir:
 3. Varsayılan sistem modülleri.
 
 Toplam kapasite tüm gemilerde aynıdır.
+
+### 1.1 Genel modül davranışı ilkesi (2026-10-05)
+
+Modüller sayısal değerleri artırabilir, koşullu etkiler ekleyebilir veya mevcut bir davranışı değiştirebilir. Bu tasarım alanı tüm oyun sistemleri için geçerlidir: ana silah, şarjör/yeniden doldurma, yetenek, hareket, kalkan, kaynak kullanımı, hedefleme ve diğer mekanikler. Yeni modül önerileri yalnız effect/status sisteminden üretilmemelidir.
+
+Kullanıcının elektrik stack sınırı/stack başına çarpan ve Ignite yanması yerine eşikte Thermal patlaması örnekleri, mevcut bir davranışı yeniden tanımlamanın mümkün olduğunu anlatır. Bunlar kesinleşmiş içerik, sayısal denge sözleşmesi veya uygulama talebi değildir. Düz stat modülleri de geçerlidir; güçleri nadirliğine uygun seçilir. Davranış değiştiren modüllerin güçlendirme tasarımında hangi değerin veya davranış parçasının geliştiği ayrıca belirtilmelidir; bu ilke bir seviye sayısını ya da ilerleme formülünü kesinleştirmez.
 
 ## 2. Kararlar
 
@@ -38,7 +44,7 @@ Toplam kapasite tüm gemilerde aynıdır.
 | Seviye büyümesi | Kalkan/afterburner seviye artışı gemide kalır, takılı sistem modülünün üstüne eklenir |
 | Boyut | Büyük modül daha çok güç verir; kalite hücre maliyetini **düşürmez** |
 | Boyut türleri | Karma: ölçeklenen, genişleyen, sabit (bkz. §5) |
-| Nadirlik | Kimlik değiştirir; etki türünü katı katmanlara ayırmaz. Runtime geliştirmesi bu kapsamın dışında (bkz. §6) |
+| Nadirlik | Kimlik ve güç basamağıdır; etki türünü katı katmanlara ayırmaz. Düz stat artışı nadirliğine uygun olabilir. Runtime geliştirmesi bu kapsamın dışında (bkz. §6) |
 | Komşuluk | İlk sürümde yok |
 
 ## 3. Bölgeler ve aileler
@@ -114,7 +120,7 @@ Bu arketipler ve örnek sayılar ilk modül taslağından kalır. Güncel Common
 
 ## 6. Nadirlik (güncel karar ve geçersiz tarihsel taslak)
 
-Kullanıcının 2026-10-03 kararı: nadirlik kalite artışı değil kimlik değişimidir; her modülün ayrı fikri vardır, etki türlerine katı nadirlik sınırı yoktur. Boyut nadirlikten bağımsızdır. Bu sistemin ilerleme/loot uygulaması Common kapsamı dışındadır. Aşağıdaki eski kalite/yan stat tablosu bu kararla geçersizdir; yalnız tarihsel kayıt olarak korunur. Güncel Common değerleri uygulama planı §2 ve `modules.json`'dadır.
+Kullanıcının 2026-10-03 kararı ve 2026-10-05 düzeltmesi: nadirlik hem kimlik hem güç basamağıdır; yalnız kaliteyle açıklanmaz ve kalite artışını dışlamaz. Düz stat modülü Uncommon'da da olabilir; artış Uncommon'a uygun olmalıdır. Legendary'de stat artışı varsa Legendary'ye layık olmalıdır. Etki türlerine katı nadirlik sınırı yoktur; davranış değiştirme yalnız belirli nadirliklere veya effect/status sistemine ayrılmaz. Boyut nadirlikten bağımsızdır. Bu sistemin ilerleme/loot uygulaması Common kapsamı dışındadır. Aşağıdaki eski kalite/yan stat tablosu güncel kural değildir; yalnız tarihsel kayıt olarak korunur. Güncel Common değerleri uygulama planı §2 ve `modules.json`'dadır.
 
 | Nadirlik | Ne ekler |
 |---|---|
@@ -152,7 +158,7 @@ Bu bölümün 28 boş hücre ve ek sistem alanı modeli 2026-10-03 kararıyla ka
 
 ## 9. İlk modül listesi önerisi (16; tarihsel taslak, 2026-10-01)
 
-Bu tablo ilk 16 modül fikrini ve eski sayısal önerileri kaydeder. Aynı adlı güncel Common modüllerin değerleriyle karıştırılmamalıdır; güncel Common10/11 listesi [uygulama planı §2](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ve `modules.json`'dadır.
+Bu tablo ilk 16 modül fikrini ve eski sayısal önerileri kaydeder. Aynı adlı güncel Common modüllerin değerleriyle karıştırılmamalıdır; güncel Common11 listesi [uygulama planı §2](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ve `modules.json`'dadır.
 
 | Modül | Aile → Bölge | Arketip | Hücre | Etki |
 |---|---|---|---|---|

@@ -318,7 +318,7 @@ namespace
 		};
 		const std::array<const char*, 11> commonModuleIds{
 			"Module.Defense.HeavyArmorPlate.Basic",
-			"Module.Utility.EnergyCoil.Basic",
+			"Module.Offense.AssaultCore.Basic",
 			"Module.Primary.FocusedBarrel.Basic",
 			"Module.Movement.ThrustBooster.Basic",
 			"Module.Offense.AttackRhythm.Basic",
@@ -386,6 +386,23 @@ namespace
 			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::Armor), "Heavy Armor Plate installed in its resolved cell");
 		report.CheckValue("Energy Coil applies its catalog value", energyPowerBase,
 			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower), "Energy Coil installed in its resolved cell");
+		const float attackPowerBeforeCore = sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower);
+		const ModuleDefinition* assaultCore = FindModule(rules, "Module.Offense.AssaultCore.Basic");
+		report.Check(assaultCore && assaultCore->family == GameplayTags::Ability::Offense &&
+			assaultCore->sizeVariants.size() == 1 && assaultCore->sizeVariants.front().shape.cells.size() == 2,
+			"Assault Core is a two-cell Offense module alongside the retained Energy Coil");
+		const std::uint32_t assaultCoreId = AddAndInstall(report, sourceLoadout, rules, "Module.Offense.AssaultCore.Basic");
+		report.Check(source->GetModuleApplier().Apply(sourceLoadout, rules), "Assault Core installs on the real source");
+		const ModulePlacement assaultCorePlacement = FindInstalled(sourceLoadout, assaultCoreId);
+		report.CheckValue("Assault Core adds zone-scaled +15 attack power",
+			attackPowerBeforeCore + 15.f * (1.f + ModuleResolver::GetZoneBonus(rules, *assaultCore, assaultCorePlacement)),
+			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower), "real ASC owner attribute after module install");
+		report.CheckValue("Assault Core preserves the separate Energy Coil effect", energyPowerBase,
+			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::EnergyPower), "both content identities coexist");
+		report.Check(sourceLoadout.Uninstall(assaultCoreId) && source->GetModuleApplier().Apply(sourceLoadout, rules),
+			"Assault Core uninstalls through the same runtime path");
+		report.CheckValue("Assault Core removal restores attack power", attackPowerBeforeCore,
+			sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackPower), "owner modifier removed");
 		const ModuleSizeVariant& thrustVariant = thrustModule->sizeVariants.front();
 		const auto findOwnerModifier = [&thrustVariant](const sas::AttributeId& attributeId)
 		{
@@ -998,6 +1015,7 @@ namespace
 		target->SetInvulnerability(false);
 		target->SetCollisionLayer(CollisionLayer::Enemy);
 		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target->GetHealthComponent().SetMaxHealth(5000.f, true);
 
 		ModuleLoadout loadout;
 		report.Check(loadout.SeedDefaults(rules), "Full Magazine fixture seeds the real default loadout");
@@ -1009,8 +1027,9 @@ namespace
 		const ModuleDamageRule& rule = module->sizeVariants.front().damageRules.front();
 		report.Check(rule.condition == ModuleDamageCondition::FullMagazineShot,
 			"Full Magazine loader preserves its typed shot condition");
-		report.CheckValue("Full Magazine resolves its authored 1.4 multiplier", 1.4f,
-			source->GetCombatRuntime().ResolveFullMagazineShotMultiplier(), "M11 installed on the real source");
+		report.Check(rule.openingShotCount == 3, "Full Magazine loads a three-shot opening window");
+		report.CheckValue("Full Magazine resolves its authored 1.3 multiplier", 1.3f,
+			source->GetCombatRuntime().ResolveFullMagazineShotMultiplier(0), "M11 installed on the real source");
 		report.CheckValue("generic outgoing rules exclude FullMagazineShot", 1.f,
 			source->GetCombatRuntime().ResolveOutgoingDamagePlan(*target, { GameplayTags::Ability::Primary }).damageMultiplier,
 			"the full-magazine multiplier is snapshotted before impact");
@@ -1035,7 +1054,7 @@ namespace
 		const int fullCapacity = fighter.magazine->capacity;
 		canContinue = false;
 		report.Check(!PrimaryWeaponExecutionSystem::FireOnce(fighterContext, fighterRuntime) &&
-			fighterRuntime.magazineState.roundsRemaining == fullCapacity,
+			fighterRuntime.magazineState.roundsRemaining == fullCapacity && fighterRuntime.magazineState.shotsFired == 0,
 			"failed fire leaves a full magazine eligible for the next shot");
 		canContinue = true;
 
@@ -1055,9 +1074,9 @@ namespace
 		level->TickInternal(0.f);
 		firstProjectile = latestProjectile();
 		report.Check(firstProjectile != nullptr, "full-magazine shot spawns a real delayed projectile");
-		report.CheckValue("first full-magazine projectile snapshots x1.4", 1.4f,
+		report.CheckValue("first full-magazine projectile snapshots x1.3", 1.3f,
 			firstProjectile->GetShotMetadata().shotDamageMultiplier, "48 of 48 rounds before FireOnce debit");
-		report.CheckValue("first full-magazine shot deals 40 percent more damage", fighterBaseDamage * 1.4f,
+		report.CheckValue("first full-magazine shot deals 30 percent more damage", fighterBaseDamage * 1.3f,
 			firstProjectile->GetDamage(), "projectile damage captured at spawn");
 		report.Check(fighterRuntime.magazineState.roundsRemaining == fullCapacity - 1,
 			"successful first shot spends ammo after taking its snapshot");
@@ -1069,15 +1088,29 @@ namespace
 		const shared_ptr<PrimaryWeaponProjectileActor> secondProjectile = latestProjectile();
 		report.Check(projectileCount() == beforeSecondShot + 1 && secondProjectile,
 			"second Fighter shot creates one projectile");
-		report.CheckValue("next shot after leaving full capacity has no bonus", 1.f,
+		report.CheckValue("second opening shot keeps its bonus", 1.3f,
 			secondProjectile->GetShotMetadata().shotDamageMultiplier, "47 of 48 rounds before FireOnce debit");
-		report.CheckValue("next shot retains base damage", fighterBaseDamage,
+		report.CheckValue("second opening shot deals boosted damage", fighterBaseDamage * 1.3f,
 			secondProjectile->GetDamage(), "one round has already been spent");
-		report.CheckValue("delayed first projectile keeps its original snapshot", fighterBaseDamage * 1.4f,
+		report.CheckValue("delayed first projectile keeps its original snapshot", fighterBaseDamage * 1.3f,
 			firstProjectile->GetDamage(), "second shot was fired before first projectile impact");
+		PrimaryWeaponExecutionSystem::EndFire(fighterContext, fighterRuntime);
+		PrimaryWeaponExecutionSystem::BeginFire(fighterContext, fighterRuntime);
+		for (int shot = 3; shot <= 4; ++shot)
+		{
+			report.Check(PrimaryWeaponExecutionSystem::FireOnce(fighterContext, fighterRuntime), "opening-window boundary Fighter shot fires");
+			level->TickInternal(0.f);
+			const auto projectile = latestProjectile();
+			report.Check(projectile != nullptr, "opening-window boundary spawns a real projectile");
+			const float expected = shot == 3 ? 1.3f : 1.f;
+			report.CheckValue("Fighter third boosted and fourth ordinary shot", expected,
+				projectile->GetShotMetadata().shotDamageMultiplier, "shot " + std::to_string(shot) + "; releasing fire did not reset the window");
+			report.CheckValue("Fighter boundary damage matches its shot snapshot", fighterBaseDamage * expected,
+				projectile->GetDamage(), "shot " + std::to_string(shot));
+		}
 
 		bool drained = true;
-		for (int shot = 0; shot < fullCapacity - 2; ++shot)
+		for (int shot = 0; shot < fullCapacity - 4; ++shot)
 		{
 			if (!PrimaryWeaponExecutionSystem::FireOnce(fighterContext, fighterRuntime))
 			{
@@ -1095,14 +1128,21 @@ namespace
 		PrimaryWeaponExecutionSystem::AdvanceMagazineReload(fighter, fighterRuntime,
 			static_cast<float>(fighterRuntime.magazineState.reloadRemaining) + 0.01f);
 		report.Check(fighterRuntime.magazineState.roundsRemaining == fullCapacity &&
-			fighterRuntime.magazineState.reloadRemaining == 0.0,
+			fighterRuntime.magazineState.reloadRemaining == 0.0 && fighterRuntime.magazineState.shotsFired == 0,
 			"completed reload restores the full magazine");
 		report.Check(PrimaryWeaponExecutionSystem::FireOnce(fighterContext, fighterRuntime),
 			"first shot after reload fires through the same runtime");
 		level->TickInternal(0.f);
 		const shared_ptr<PrimaryWeaponProjectileActor> reloadedProjectile = latestProjectile();
-		report.CheckValue("reload makes the next shot full-magazine eligible again", 1.4f,
+		report.CheckValue("reload makes the next shot full-magazine eligible again", 1.3f,
 			reloadedProjectile->GetShotMetadata().shotDamageMultiplier, "rounds restored to magazine capacity");
+		for (int shot = 2; shot <= 4; ++shot)
+		{
+			report.Check(PrimaryWeaponExecutionSystem::FireOnce(fighterContext, fighterRuntime), "reloaded opening-window shot fires");
+			level->TickInternal(0.f);
+			report.CheckValue("reload restores exactly three boosted shots", shot <= 3 ? 1.3f : 1.f,
+				latestProjectile()->GetShotMetadata().shotDamageMultiplier, "reloaded shot " + std::to_string(shot));
+		}
 
 		const PrimaryWeaponDefinition* dualCatalog = content::WeaponContentCatalog::FindById("Weapon.Projectile.DualKineticBlaster.Basic");
 		report.Check(dualCatalog && dualCatalog->magazine.has_value() && dualCatalog->muzzleDefinitions.size() == 2,
@@ -1128,12 +1168,24 @@ namespace
 		{
 			const shared_ptr<PrimaryWeaponProjectileActor> projectile = allProjectilesAfterDual[index].lock();
 			report.Check(projectile != nullptr, "multi-muzzle projectile remains owned by the world");
-			report.CheckValue("both muzzles share the full-magazine shot snapshot", 1.4f,
+			report.CheckValue("both muzzles share the full-magazine shot snapshot", 1.3f,
 				projectile->GetShotMetadata().shotDamageMultiplier, "same FireOnce metadata across muzzles");
-			report.CheckValue("both muzzles apply the multiplier once", dualBaseDamage * 1.4f,
+			report.CheckValue("both muzzles apply the multiplier once", dualBaseDamage * 1.3f,
 				projectile->GetDamage(), "shared per-shot metadata");
 		}
 
+		for (int shot = 2; shot <= 4; ++shot)
+		{
+			const std::size_t beforeShot = projectileCount();
+			report.Check(PrimaryWeaponExecutionSystem::FireOnce(dualContext, dualRuntime), "Dual opening-window boundary fires");
+			level->TickInternal(0.f);
+			const auto projectiles = level->GetActorsByType<PrimaryWeaponProjectileActor>();
+			report.Check(projectiles.size() == beforeShot + 2 && dualRuntime.magazineState.shotsFired == shot,
+				"two muzzles consume one opening-window shot, not two");
+			for (std::size_t index = beforeShot; index < projectiles.size(); ++index)
+				report.CheckValue("Dual first three volleys boosted and fourth ordinary", shot <= 3 ? 1.3f : 1.f,
+					projectiles[index].lock()->GetShotMetadata().shotDamageMultiplier, "volley " + std::to_string(shot));
+		}
 		const PrimaryWeaponDefinition* shotgunCatalog = content::WeaponContentCatalog::FindById("Weapon.Projectile.EnemyTwinBladeScatter.Basic");
 		report.Check(shotgunCatalog && !shotgunCatalog->magazine.has_value(),
 			"shipped shotgun remains a no-magazine weapon");
@@ -1158,7 +1210,7 @@ namespace
 		{
 			const shared_ptr<PrimaryWeaponProjectileActor> projectile = allProjectilesAfterShotgun[index].lock();
 			report.Check(projectile != nullptr, "shotgun pellet remains owned by the world");
-			report.CheckValue("shotgun pellets carry the full-magazine shot metadata", 1.4f,
+			report.CheckValue("shotgun pellets carry the full-magazine shot metadata", 1.3f,
 				projectile->GetShotMetadata().shotDamageMultiplier, "shotgun FireOnce begins with 3 of 3 rounds");
 		}
 		DamageCapture shotgunDamage;
@@ -1175,9 +1227,9 @@ namespace
 		report.Check(shotgunDamage.records.size() == 2,
 			"shared shotgun impact group applies two pellet impacts to one target",
 			Json{ { "damageEvents", shotgunDamage.records.size() } });
-		report.CheckValue("shotgun falloff begins from the 1.4x full-magazine damage once", shotgunBaseDamage * 1.4f,
+		report.CheckValue("shotgun falloff begins from the 1.3x full-magazine damage once", shotgunBaseDamage * 1.3f,
 			shotgunDamage.records[0].originalDamage, "first target pellet, no falloff");
-		report.CheckValue("shotgun falloff applies after the captured multiplier", shotgunBaseDamage * 1.4f * 0.9f,
+		report.CheckValue("shotgun falloff applies after the captured multiplier", shotgunBaseDamage * 1.3f * 0.9f,
 			shotgunDamage.records[1].originalDamage, "second target pellet, 10 percent falloff");
 		level->TickInternal(0.f);
 
@@ -1228,7 +1280,7 @@ namespace
 		report.Check(coneDamage.records.size() == 1,
 			"Cone Rapid Shotgun reaches a real enemy-layer target");
 		const float coneBaseDamage = sas::FindAttributeValue(coneAttributes, CommonAttributeIds::Damage, 0.f);
-		report.CheckValue("Cone Rapid Shotgun full-magazine damage is multiplied once", coneBaseDamage * 1.4f,
+		report.CheckValue("Cone Rapid Shotgun full-magazine damage is multiplied once", coneBaseDamage * 1.3f,
 			coneDamage.records.back().originalDamage, "first instant cone blast from a full magazine");
 		coneDamage.records.clear();
 		report.Check(PrimaryWeaponExecutionSystem::FireOnce(coneContext, coneRuntime) &&
@@ -1236,18 +1288,30 @@ namespace
 			"next Cone Rapid Shotgun shot spends its next round");
 		report.Check(coneDamage.records.size() == 1,
 			"second Cone Rapid Shotgun shot reaches the same real target");
-		report.CheckValue("Cone Rapid Shotgun next-shot damage returns to base", coneBaseDamage,
+		report.CheckValue("Cone Rapid Shotgun second opening shot remains boosted", coneBaseDamage * 1.3f,
 			coneDamage.records.back().originalDamage, "second shot begins below magazine capacity");
+		for (int shot = 3; shot <= 4; ++shot)
+		{
+			coneDamage.records.clear();
+			report.Check(PrimaryWeaponExecutionSystem::FireOnce(coneContext, coneRuntime) && coneDamage.records.size() == 1,
+				"Cone opening-window boundary reaches the real target");
+			report.CheckValue("Cone third boosted and fourth ordinary shot", coneBaseDamage * (shot == 3 ? 1.3f : 1.f),
+				coneDamage.records.back().originalDamage, "cone shot " + std::to_string(shot));
+		}
 		source->GetCombatRuntime().onDamageDealt.UnbindAction(coneDamageHandle);
 
 		report.Check(loadout.Uninstall(fullMagazineId) && source->GetModuleApplier().Apply(loadout, rules),
 			"uninstalling Full Magazine clears its runtime multiplier");
 		report.CheckValue("removed Full Magazine no longer affects future shots", 1.f,
-			source->GetCombatRuntime().ResolveFullMagazineShotMultiplier(), "module instance returned to inventory");
-		report.Check(firstProjectile->GetShotMetadata().shotDamageMultiplier == 1.4f,
+			source->GetCombatRuntime().ResolveFullMagazineShotMultiplier(0), "module instance returned to inventory");
+		report.Check(firstProjectile->GetShotMetadata().shotDamageMultiplier == 1.3f,
 			"uninstall preserves an already-created shot's captured metadata");
+		PrimaryWeaponRuntimeState removalRuntime;
+		report.Check(PrimaryWeaponExecutionSystem::InitializeRuntime(fighter, removalRuntime).isValid,
+			"post-removal fixture starts inside a fresh opening-shot window");
+		PrimaryWeaponExecutionSystem::BeginFire(fighterContext, removalRuntime);
 		const std::size_t beforeAfterRemoval = projectileCount();
-		report.Check(PrimaryWeaponExecutionSystem::FireOnce(fighterContext, fighterRuntime),
+		report.Check(PrimaryWeaponExecutionSystem::FireOnce(fighterContext, removalRuntime),
 			"Fighter fires again after Full Magazine is removed");
 		level->TickInternal(0.f);
 		const shared_ptr<PrimaryWeaponProjectileActor> afterRemovalProjectile = latestProjectile();
@@ -1264,7 +1328,7 @@ namespace
 		source->GetCombatRuntime().onDamageDealt.UnbindAction(delayedImpactHandle);
 		report.Check(delayedImpact.records.size() == 1,
 			"captured projectile applies one real impact after later shots, reload, and module removal");
-		report.CheckValue("delayed impact keeps the captured full-magazine damage once", std::ceil(fighterBaseDamage * 1.4f),
+		report.CheckValue("delayed impact keeps the captured full-magazine damage once", std::ceil(fighterBaseDamage * 1.3f),
 			delayedImpact.records.front().originalDamage, "first projectile impacts after module removal");
 	}
 

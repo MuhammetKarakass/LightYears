@@ -73,6 +73,8 @@ namespace ly
 	{
 		ModuleDamageCondition condition = ModuleDamageCondition::PrimaryShotOnly;
 		float conditionValue = 0.f;
+		// FullMagazineShot applies to this many successful shots at the start of each magazine.
+		int openingShotCount = 1;
 		float damageMultiplier = 1.f;
 		float bonusDamageFraction = 0.f;
 		GameplayTag bonusDamageType;

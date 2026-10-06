@@ -296,15 +296,16 @@ namespace ly
 		}
 	}
 
-	float CombatRuntime::ResolveFullMagazineShotMultiplier() const
+	float CombatRuntime::ResolveFullMagazineShotMultiplier(int magazineShotsFired) const
 	{
+		if (magazineShotsFired < 0) return 1.f;
 		float multiplier = 1.f;
 		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (const ActiveModuleDamageRule& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (rule.condition != ModuleDamageCondition::FullMagazineShot ||
+				if (rule.condition != ModuleDamageCondition::FullMagazineShot || magazineShotsFired >= rule.openingShotCount ||
 					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
 				multiplier *= rule.damageMultiplier;
 			}

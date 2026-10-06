@@ -1,6 +1,6 @@
 # Modül Sistemi Mimarisi
 
-**Tarih:** 2026-10-04 · **Durum:** Modül runtime'ı, ekranı ve Common10 + opsiyonel M11 uygulanmış; fiziksel sistem genişlemesi ayrı kapsamdır · **Oyun tasarımı:** [MODULE_SYSTEM_DESIGN.md](MODULE_SYSTEM_DESIGN.md)
+**Tarih:** 2026-10-04 · **Durum:** Modül runtime'ı, ekranı ve Common11 uygulanmış; fiziksel sistem genişlemesi ayrı kapsamdır · **Oyun tasarımı:** [MODULE_SYSTEM_DESIGN.md](MODULE_SYSTEM_DESIGN.md)
 
 Bu doküman sahiplik, veri modeli, akış ve sistem bağlantılarını tanımlar. Güncel Common kimlik/değer/olay sözleşmesi [uygulama planı §2–§3](MODULE_COMMON_IMPLEMENTATION_PLAN.md#2-modül-şartnamesi) ve `modules.json`'dadır. Aşağıdaki ilk tasarım kod örnekleri ile §9'daki eski adım kanıtları tarihsel olarak korunur; somut API için güncel kaynak esas alınır.
 
@@ -300,7 +300,7 @@ Scoped kurallar ana silaha uygulanmadığı için Primary modülleri ayrı hedef
 
 ## 9. Önceki uygulama adımları (2026-10-03 tarihsel anlık görüntü)
 
-Bu 11 adımlı tablo fiziksel sistem/modül temelinin ilk uygulama sırasını kaydeder. Common10 + M11 fazlarının güncel durumu veya kapsamı değildir; güncel faz/commit kaydı [uygulama planı §4](MODULE_COMMON_IMPLEMENTATION_PLAN.md#4-fazlar-sol-yönetir-luna-uygular) altındadır.
+Bu 11 adımlı tablo fiziksel sistem/modül temelinin ilk uygulama sırasını kaydeder. Common11 fazlarının güncel durumu veya kapsamı değildir; güncel faz/commit kaydı [uygulama planı §4](MODULE_COMMON_IMPLEMENTATION_PLAN.md#4-fazlar-sol-yönetir-luna-uygular) altındadır.
 
 **Tarihsel durum (2026-10-03):** adım 1-2 `343c785`, 3-4 `403ae1a`, 5-6 `a3044a5`, 7 `3daba62`, 8 `1844223` ile tamamlandı; adım 9 görsel kabul bekliyordu; 10-11 başlamamıştı. Bu durum satırı güncel faz ilerlemesini göstermez.
 

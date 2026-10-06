@@ -22,6 +22,8 @@ namespace ly
 	struct PrimaryWeaponMagazineRuntimeState
 	{
 		int roundsRemaining = 0;
+		// Successful firing events since the last completed reload, independent of muzzle/pellet count.
+		int shotsFired = 0;
 		double reloadRemaining = 0.0;
 	};
 

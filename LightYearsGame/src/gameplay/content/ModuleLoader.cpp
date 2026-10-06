@@ -215,6 +215,13 @@ namespace ly::content
 				if (!entry.is_object()) throw std::runtime_error(entryContext + " must be an object");
 				ModuleDamageRule rule;
 				rule.condition = ParseDamageCondition(entry.at("condition").get<std::string>());
+				if (entry.contains("openingShotCount"))
+				{
+					if (rule.condition != ModuleDamageCondition::FullMagazineShot || !entry.at("openingShotCount").is_number_integer())
+						throw std::runtime_error(entryContext + " openingShotCount requires FullMagazineShot and an integer");
+					rule.openingShotCount = entry.at("openingShotCount").get<int>();
+					if (rule.openingShotCount <= 0) throw std::runtime_error(entryContext + " openingShotCount must be positive");
+				}
 				if (entry.contains("bonusCriticalPolicy"))
 					rule.bonusCriticalPolicy = ParseCriticalPolicy(entry.at("bonusCriticalPolicy").get<std::string>());
 				rule.conditionValue = entry.contains("conditionValue") ? ParseFiniteFloat(entry.at("conditionValue"), entryContext + ".conditionValue") : 0.f;
@@ -306,6 +313,7 @@ namespace ly::content
 				const ModuleDamageRule& rule = variant.damageRules[i];
 				const std::string prefix = "damage." + std::to_string(i) + ".";
 				if (token == prefix + "damageMultiplier") return true;
+				if (token == prefix + "openingShotCount" && rule.condition == ModuleDamageCondition::FullMagazineShot) return true;
 				if (token == prefix + "conditionPercent" && rule.condition == ModuleDamageCondition::TargetHealthAtMost) return true;
 				if (token == prefix + "bonusDamagePercent" && rule.bonusDamageFraction > 0.f) return true;
 				if (token == prefix + "activeDurationSeconds" && rule.activeWhileTrigger != ModuleTriggerKind::None) return true;
