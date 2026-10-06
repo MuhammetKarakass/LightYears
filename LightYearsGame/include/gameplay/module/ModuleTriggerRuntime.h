@@ -7,6 +7,7 @@
 #include "gameplay/ship/ShipRuntimeModifiers.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 
 namespace ly
@@ -29,7 +30,9 @@ namespace ly
 		ModuleTriggerRuntime(const ModuleTriggerRuntime&) = delete;
 		ModuleTriggerRuntime& operator=(const ModuleTriggerRuntime&) = delete;
 
-		void SetRules(const List<ResolvedModuleTriggerBuff>& rules);
+		// The returned generation identifies this rule set; ClearRules ignores stale owners.
+		void SetRules(const List<ResolvedModuleTriggerBuff>& rules, std::uint64_t& generation);
+		void ClearRules(std::uint64_t generation);
 		void Tick(float deltaSeconds);
 
 		std::size_t GetActiveBuffCount() const { return mActiveBuffs.size(); }
@@ -38,10 +41,11 @@ namespace ly
 	private:
 		struct EventSnapshot
 		{
-			GameplayTag eventTag;
+			ModuleTriggerKind trigger = ModuleTriggerKind::None;
 			float magnitude = 0.f;
 			List<GameplayTag> sourceAbilityTags;
 			List<GameplayTag> payloadTags;
+			bool moduleGenerated = false;
 		};
 
 		struct OwnedAttributeModifier
@@ -87,6 +91,8 @@ namespace ly
 		std::optional<List<ResolvedModuleTriggerBuff>> mPendingRules;
 		List<EventSnapshot> mPendingEvents;
 		std::size_t mDispatchDepth = 0;
+		std::uint64_t mNextRulesGeneration = 1;
+		std::uint64_t mRulesGeneration = 0;
 		bool mShuttingDown = false;
 	};
 }

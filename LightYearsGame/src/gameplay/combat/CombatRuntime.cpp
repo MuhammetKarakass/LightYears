@@ -282,15 +282,15 @@ namespace ly
 		return OutgoingDamageRuleRegistration{ mModuleDamageRuleState, generation };
 	}
 
-	void CombatRuntime::ActivateOutgoingDamageRules(ModuleTriggerKind trigger)
+	void CombatRuntime::ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event)
 	{
-		if (trigger == ModuleTriggerKind::None) return;
+		if (event.moduleGenerated) return;
 		for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (ActiveModuleDamageRule& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (rule.activeWhileTrigger == trigger && rule.activeDurationSeconds > 0.f)
+				if (MatchesModuleTrigger(rule.activeWhileTrigger, rule.activeWhileEventTags, rule.activeDurationSeconds, event))
 					active.remainingSeconds = rule.activeDurationSeconds;
 			}
 		}
@@ -300,12 +300,15 @@ namespace ly
 	{
 		if (magazineShotsFired < 0) return 1.f;
 		float multiplier = 1.f;
+		ModuleDamageConditionContext conditionContext;
+		conditionContext.magazineShotsFired = magazineShotsFired;
 		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (const ActiveModuleDamageRule& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (rule.condition != ModuleDamageCondition::FullMagazineShot || magazineShotsFired >= rule.openingShotCount ||
+				if (GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Fire ||
+					!MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext) ||
 					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
 				multiplier *= rule.damageMultiplier;
 			}
@@ -325,25 +328,17 @@ namespace ly
 		const float healthFraction = targetHealth && targetHealth->GetMaxHealth() > 0.f
 			? targetHealth->GetHealth() / targetHealth->GetMaxHealth()
 			: 1.f;
+		ModuleDamageConditionContext conditionContext;
+		conditionContext.isPrimaryShot = isPrimaryShot;
+		conditionContext.targetHealthFraction = healthFraction;
 		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (const ActiveModuleDamageRule& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f) continue;
-				bool conditionMet = false;
-				switch (rule.condition)
-				{
-				case ModuleDamageCondition::PrimaryShotOnly:
-					conditionMet = isPrimaryShot;
-					break;
-				case ModuleDamageCondition::TargetHealthAtMost:
-					conditionMet = healthFraction <= rule.conditionValue;
-					break;
-				case ModuleDamageCondition::FullMagazineShot:
-					break;
-				}
-				if (!conditionMet) continue;
+				if (GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Impact ||
+					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
+				if (!MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext)) continue;
 				plan.damageMultiplier *= rule.damageMultiplier;
 				if (rule.bonusDamageFraction > 0.f && rule.bonusDamageType.IsValid())
 					plan.bonuses.push_back({ rule.bonusDamageFraction, rule.bonusDamageType });
@@ -355,9 +350,11 @@ namespace ly
 	bool CombatRuntime::SameDamageRule(const ModuleDamageRule& left, const ModuleDamageRule& right)
 	{
 		return left.condition == right.condition && left.conditionValue == right.conditionValue &&
+			left.openingShotCount == right.openingShotCount &&
 			left.damageMultiplier == right.damageMultiplier && left.bonusDamageFraction == right.bonusDamageFraction &&
 			left.bonusDamageType == right.bonusDamageType && left.bonusCriticalPolicy == right.bonusCriticalPolicy &&
 			left.activeWhileTrigger == right.activeWhileTrigger &&
+			left.activeWhileEventTags == right.activeWhileEventTags &&
 			left.activeDurationSeconds == right.activeDurationSeconds;
 	}
 

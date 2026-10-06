@@ -2,6 +2,7 @@
 
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/damage/DamageContext.h"
 #include "gameplay/ShieldComponent.h"
 #include "gameplay/tags/GameplayTags.h"
 
@@ -55,11 +56,27 @@ namespace ly
 		mRules.clear();
 	}
 
-	void ModuleTriggerRuntime::SetRules(const List<ResolvedModuleTriggerBuff>& rules)
+	void ModuleTriggerRuntime::SetRules(const List<ResolvedModuleTriggerBuff>& rules, std::uint64_t& generationOut)
 	{
-		if (mShuttingDown) return;
-		mPendingRules = rules;
+		if (mShuttingDown)
+		{
+			generationOut = 0;
+			return;
+		}
+		List<ResolvedModuleTriggerBuff> desired = rules;
+		std::uint64_t generation = mNextRulesGeneration++;
+		if (generation == 0) generation = mNextRulesGeneration++;
+		mPendingRules = std::move(desired);
+		mRulesGeneration = generation;
+		generationOut = generation;
 		ProcessDeferredUpdates();
+	}
+
+	void ModuleTriggerRuntime::ClearRules(std::uint64_t generation)
+	{
+		if (mShuttingDown || generation == 0 || generation != mRulesGeneration) return;
+		std::uint64_t clearedGeneration = 0;
+		SetRules({}, clearedGeneration);
 	}
 
 	void ModuleTriggerRuntime::Tick(float deltaSeconds)
@@ -91,7 +108,9 @@ namespace ly
 	void ModuleTriggerRuntime::OnGameplayEvent(const sas::AbilityEvent& event)
 	{
 		if (mShuttingDown) return;
-		mPendingEvents.push_back({ event.eventTag, event.magnitude, event.sourceAbilityTags, event.payloadTags });
+		const DamageContext* damage = event.GetContext<DamageContext>();
+		mPendingEvents.push_back({ ModuleTriggerFromEventTag(event.eventTag), event.magnitude, event.sourceAbilityTags,
+			event.payloadTags, damage && damage->payload.skipModuleDamageRules });
 		ProcessDeferredUpdates();
 	}
 
@@ -99,11 +118,17 @@ namespace ly
 	{
 		(void)maxShield;
 		if (!mShuttingDown && absorbed > 0.f && remainingShield == 0.f)
-			mCombatRuntime.ActivateOutgoingDamageRules(ModuleTriggerKind::ShieldBroken);
+		{
+			mPendingEvents.push_back({ ModuleTriggerKind::ShieldBroken, absorbed, {}, {} });
+			ProcessDeferredUpdates();
+		}
 	}
 
 	void ModuleTriggerRuntime::ProcessEvent(const EventSnapshot& event)
 	{
+		if (!IsModuleTriggerEventEligible(event.trigger, event.magnitude)) return;
+		mCombatRuntime.ActivateOutgoingDamageRules(
+			{ event.trigger, event.magnitude, event.sourceAbilityTags, event.payloadTags, event.moduleGenerated });
 		List<ResolvedModuleTriggerBuff> matchingRules;
 		for (const ResolvedModuleTriggerBuff& resolved : mRules)
 		{
@@ -265,39 +290,8 @@ namespace ly
 		const EventSnapshot& event
 	) const
 	{
-		const List<GameplayTag>* actualTags = nullptr;
-		switch (rule.trigger)
-		{
-		case ModuleTriggerKind::AbilityActivated:
-			if (event.eventTag != GameplayTags::Event::Ability::Activated) return false;
-			if (std::find(rule.requiredEventTags.begin(), rule.requiredEventTags.end(), GameplayTags::Ability::Offense) !=
-				rule.requiredEventTags.end() && std::any_of(event.sourceAbilityTags.begin(), event.sourceAbilityTags.end(),
-				[](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Primary); })) return false;
-			actualTags = &event.sourceAbilityTags;
-			break;
-		case ModuleTriggerKind::DamageTaken:
-			if (event.eventTag != GameplayTags::Event::Owner::DamageTaken || event.magnitude <= 0.f) return false;
-			actualTags = &event.payloadTags;
-			break;
-		case ModuleTriggerKind::SourceDamageDealt:
-			if (event.eventTag != GameplayTags::Event::Source::DamageDealt || event.magnitude <= 0.f) return false;
-			actualTags = &event.payloadTags;
-			break;
-		case ModuleTriggerKind::None:
-		case ModuleTriggerKind::ShieldBroken:
-			return false;
-		}
-		if (!actualTags) return false;
-
-		for (const GameplayTag& requiredTag : rule.requiredEventTags)
-		{
-			if (std::none_of(actualTags->begin(), actualTags->end(), [&requiredTag](const GameplayTag& actualTag)
-				{ return actualTag.MatchesTag(requiredTag); }))
-			{
-				return false;
-			}
-		}
-		return rule.durationSeconds > 0.f;
+		return MatchesModuleTrigger(rule.trigger, rule.requiredEventTags, rule.durationSeconds,
+			{ event.trigger, event.magnitude, event.sourceAbilityTags, event.payloadTags, event.moduleGenerated });
 	}
 
 	bool ModuleTriggerRuntime::SameKey(

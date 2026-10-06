@@ -21,13 +21,15 @@ namespace ly
 	ShipModuleApplier::ShipModuleApplier(
 		ShipRuntime& shipRuntime,
 		LightYearsAbilitySystemComponent& abilities,
-		ModuleTriggerRuntime* triggerRuntime,
-		CombatRuntime* combatRuntime
+		ModuleTriggerRuntime& triggerRuntime,
+		CombatRuntime& combatRuntime
 	)
 		: mShipRuntime{ shipRuntime }
 		, mAbilities{ abilities }
-		, mTriggerRuntime{ triggerRuntime }
-		, mDamageRuleRegistration{ combatRuntime ? combatRuntime->RegisterOutgoingDamageRules() : CombatRuntime::OutgoingDamageRuleRegistration{} }
+		, mAbilityRuleApplier{ abilities }
+		, mTriggerBuffRuleApplier{ triggerRuntime }
+		, mDamageRuleApplier{ combatRuntime }
+		, mCooldownRuleApplier{ abilities }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -36,8 +38,43 @@ namespace ly
 
 	ShipModuleApplier::~ShipModuleApplier()
 	{
-		RemoveScopedCooldownRules();
+		// Removing modifiers broadcasts onAttributeChanged. During ship teardown this is safe
+		// only because SpaceShip binds its listeners through weak_ptr and ShipRuntime outlives
+		// this member; a raw `this` listener on a later PlayerSpaceShip member would dangle.
+		mShuttingDown = true;
 		mAbilities.SetModuleSystemGate(nullptr);
+		mTriggerBuffRuleApplier.Reset();
+		mAbilityRuleApplier.Reset();
+		mCooldownRuleApplier.Reset();
+		mDamageRuleApplier.Reset();
+
+		List<OwnedModifier> ownerHandles = std::move(mOwnerHandles);
+		List<OwnedModifier> shipHandles = std::move(mShipHandles);
+		List<OwnedPrimaryModifier> primaryHandles = std::move(mPrimaryHandles);
+		mOwnerHandles.clear();
+		mShipHandles.clear();
+		mPrimaryHandles.clear();
+		for (const OwnedModifier& owned : ownerHandles)
+		{
+			try { mAbilities.GetAttributes().RemoveModifier(owned.handle); }
+			catch (...) {}
+		}
+		for (const OwnedModifier& owned : shipHandles)
+		{
+			try { mShipRuntime.GetAttributes().RemoveModifier(owned.handle); }
+			catch (...) {}
+		}
+		for (const OwnedPrimaryModifier& owned : primaryHandles)
+		{
+			try { mAbilities.RemovePrimaryWeaponModifier(owned.handle); }
+			catch (...) {}
+		}
+	}
+
+	std::size_t ShipModuleApplier::GetOwnedHandleCount() const
+	{
+		return mOwnerHandles.size() + mShipHandles.size() + mPrimaryHandles.size() +
+			mAbilityRuleApplier.GetOwnedHandleCount() + mCooldownRuleApplier.GetOwnedHandleCount();
 	}
 
 	bool ShipModuleApplier::IsSystemEnabled(const GameplayTag& systemTag) const
@@ -61,6 +98,7 @@ namespace ly
 
 	bool ShipModuleApplier::Apply(const ModuleLoadout& loadout, const ModuleRulesContext& rules, bool inCombat)
 	{
+		if (mShuttingDown) return false;
 		if (mHasApplied && mAppliedRevision == loadout.GetRevision()) return false;
 
 		const float rebootDuration = rules.zoneTable.rebootDurationSeconds;
@@ -97,7 +135,7 @@ namespace ly
 
 	void ShipModuleApplier::Tick(float deltaSeconds)
 	{
-		if (!mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
+		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
 		for (RebootEntry& entry : mReboots) entry.remainingSeconds -= deltaSeconds;
@@ -123,7 +161,7 @@ namespace ly
 
 		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable };
 		mResolved = ModuleResolver::Resolve(rules, active);
-		mDamageRuleRegistration.ReplaceRules(mResolved.damageRules);
+		mDamageRuleApplier.Replace(mResolved.damageRules);
 
 		// Modifiers that stay identical keep their handles and new ones are added before
 		// stale ones are removed, so a reapply never dips a max value below both the old
@@ -132,24 +170,9 @@ namespace ly
 		SyncModifiers(mAbilities.GetAttributes(), mResolved.ownerModifiers, mOwnerHandles);
 		SyncModifiers(mShipRuntime.GetAttributes(), mResolved.shipModifiers, mShipHandles);
 		SyncPrimaryWeaponModifiers();
-		RemoveScopedRules();
-		for (const ScopedAbilityRule& rule : mResolved.abilityRules)
-		{
-			mScopedRuleHandles.push_back(mAbilities.AddScopedAbilityRule(rule));
-		}
-		RemoveScopedCooldownRules();
-		for (const ResolvedModuleCooldownRule& resolved : mResolved.cooldownRules)
-		{
-			ScopedAbilityCooldownRule rule;
-			if (resolved.scope == ModuleCooldownScope::FamilyOfZone)
-			{
-				if (!resolved.family.IsValid()) continue;
-				rule.requiredAbilityTags.push_back(resolved.family);
-			}
-			rule.multiplier = resolved.multiplier;
-			mScopedCooldownRuleHandles.push_back(mAbilities.AddScopedAbilityCooldownRule(std::move(rule)));
-		}
-		if (mTriggerRuntime) mTriggerRuntime->SetRules(mResolved.triggerBuffs);
+		mAbilityRuleApplier.Replace(mResolved.abilityRules);
+		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
+		mTriggerBuffRuleApplier.Replace(mResolved.triggerBuffs);
 
 		mEnabledSystems = mResolved.enabledSystems;
 		mShipRuntime.SetSystemEnabled(ShipSystem::Shield, IsSystemEnabled(GameplayTags::Module::System::Shield));
@@ -211,18 +234,4 @@ namespace ly
 		mPrimaryHandles = std::move(next);
 	}
 
-	void ShipModuleApplier::RemoveScopedRules()
-	{
-		for (const std::size_t handle : mScopedRuleHandles) mAbilities.RemoveScopedAbilityRule(handle);
-		mScopedRuleHandles.clear();
-	}
-
-	void ShipModuleApplier::RemoveScopedCooldownRules()
-	{
-		for (const std::size_t handle : mScopedCooldownRuleHandles)
-		{
-			mAbilities.RemoveScopedAbilityCooldownRule(handle);
-		}
-		mScopedCooldownRuleHandles.clear();
-	}
 }

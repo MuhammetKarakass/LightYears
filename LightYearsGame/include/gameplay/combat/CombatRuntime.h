@@ -90,7 +90,8 @@ namespace ly
 		bool RemoveRuntimeModifier(const std::string& sourceId);
 		float GetOutgoingDamageMultiplier() const noexcept;
 		OutgoingDamageRuleRegistration RegisterOutgoingDamageRules();
-		void ActivateOutgoingDamageRules(ModuleTriggerKind trigger);
+		void ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event);
+		// Product of every active Fire-phase rule (see ModuleDamageRulePhase) for this shot.
 		float ResolveFullMagazineShotMultiplier(int magazineShotsFired) const;
 		OutgoingDamagePlan ResolveOutgoingDamagePlan(
 			const Actor& target,

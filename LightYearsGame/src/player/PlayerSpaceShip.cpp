@@ -14,7 +14,7 @@ namespace ly
 		, mAbilityLoadout(GetAbilitySystemComponent())
 		, mPlayerMovement(AddComponent<PlayerMovementComponent>())
 		, mModuleTriggerRuntime(GetAbilitySystemComponent(), GetShipRuntime(), GetRuntimeModifiers(), GetCombatRuntime(), GetShieldComponent())
-		, mModuleApplier(GetShipRuntime(), GetAbilitySystemComponent(), &mModuleTriggerRuntime, &GetCombatRuntime())
+		, mModuleApplier(GetShipRuntime(), GetAbilitySystemComponent(), mModuleTriggerRuntime, GetCombatRuntime())
 		, mInvulnerabilityTime(2.f)
 		, mInvulnerabilityBlinkInterval(0.4f)
 		, mInvulnerabilityBlinkTimer(0.f)

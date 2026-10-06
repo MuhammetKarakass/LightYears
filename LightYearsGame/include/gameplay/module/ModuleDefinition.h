@@ -4,6 +4,7 @@
 #include "content/ContentId.h"
 #include "framework/Core.h"
 #include "gameplay/damage/DamageContext.h"
+#include "gameplay/module/ModuleRulePredicates.h"
 
 #include <SFML/System/Vector2.hpp>
 
@@ -22,22 +23,6 @@ namespace ly
 		Owner,
 		Ship,
 		PrimaryWeapon
-	};
-
-	enum class ModuleTriggerKind
-	{
-		None,
-		AbilityActivated,
-		ShieldBroken,
-		DamageTaken,
-		SourceDamageDealt
-	};
-
-	enum class ModuleDamageCondition
-	{
-		PrimaryShotOnly,
-		TargetHealthAtMost,
-		FullMagazineShot
 	};
 
 	enum class ModuleCooldownScope
@@ -80,6 +65,8 @@ namespace ly
 		GameplayTag bonusDamageType;
 		DamageCriticalPolicy bonusCriticalPolicy = DamageCriticalPolicy::Disabled;
 		ModuleTriggerKind activeWhileTrigger = ModuleTriggerKind::None;
+		// Same matching as ModuleTriggerBuff::requiredEventTags.
+		List<GameplayTag> activeWhileEventTags;
 		float activeDurationSeconds = 0.f;
 	};
 

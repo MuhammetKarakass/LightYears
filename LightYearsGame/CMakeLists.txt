@@ -204,9 +204,18 @@ if(BUILD_TESTING)
 	ly_add_game_test_case(LightYearsPlayerShipSelection LightYearsPlayerShipSelectionTests
 		ARGS "${LY_E2E}/player-ship-selection.json" TIMEOUT 60)
 
-	ly_add_game_test(LightYearsCommonModuleE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/CommonModuleE2ETests.cpp)
+	ly_add_game_test(LightYearsCommonModuleE2ETests GAME_WHOLE PROJECT_DIR SOURCES
+		${LY_TESTS_DIR}/CommonModuleE2ETests.cpp
+		${LY_TESTS_DIR}/CommonModuleE2E_Core.cpp
+		${LY_TESTS_DIR}/CommonModuleE2E_Cooldown.cpp
+		${LY_TESTS_DIR}/CommonModuleE2E_FullMagazine.cpp)
 	ly_add_game_test_case(LightYearsCommonModuleE2E LightYearsCommonModuleE2ETests
 		ARGS "${LY_E2E}/common-modules.json" TIMEOUT 60)
+
+	ly_add_game_test(LightYearsCommonModuleTriggerLifetimeTests GAME_WHOLE PROJECT_DIR SOURCES
+		${LY_TESTS_DIR}/CommonModuleE2E_TriggerLifetime.cpp)
+	ly_add_game_test_case(LightYearsCommonModuleTriggerLifetime LightYearsCommonModuleTriggerLifetimeTests
+		ARGS "${LY_E2E}/common-module-trigger-lifetime.json" TIMEOUT 60)
 
 	ly_add_game_test(LightYearsWeaponPhase2Tests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/WeaponPhase2Tests.cpp)
 	ly_add_game_test_case(LightYearsWeaponPhase2 LightYearsWeaponPhase2Tests TIMEOUT 60)

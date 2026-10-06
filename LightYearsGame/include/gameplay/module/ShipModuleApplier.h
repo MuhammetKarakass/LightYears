@@ -5,8 +5,8 @@
 #include "gameplay/module/ModuleLoadout.h"
 #include "gameplay/module/ModulePlacementRules.h"
 #include "gameplay/module/ModuleResolver.h"
+#include "gameplay/module/ModuleRuleAppliers.h"
 #include "gameplay/module/ModuleSystemGate.h"
-#include "gameplay/combat/CombatRuntime.h"
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <cstddef>
@@ -15,7 +15,6 @@
 namespace ly
 {
 	class LightYearsAbilitySystemComponent;
-	class ModuleTriggerRuntime;
 
 	// Turns an installed loadout into live ship state. It owns every handle it
 	// creates and rebuilds from the full desired state on each change. It keeps no
@@ -40,8 +39,8 @@ namespace ly
 		ShipModuleApplier(
 			ShipRuntime& shipRuntime,
 			LightYearsAbilitySystemComponent& abilities,
-			ModuleTriggerRuntime* triggerRuntime = nullptr,
-			CombatRuntime* combatRuntime = nullptr
+			ModuleTriggerRuntime& triggerRuntime,
+			CombatRuntime& combatRuntime
 		);
 		~ShipModuleApplier() override;
 		ShipModuleApplier(const ShipModuleApplier&) = delete;
@@ -70,11 +69,7 @@ namespace ly
 		const ResolvedModuleEffects& GetResolvedEffects() const { return mResolved; }
 		bool HasApplied() const { return mHasApplied; }
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
-		std::size_t GetOwnedHandleCount() const
-		{
-			return mOwnerHandles.size() + mShipHandles.size() + mPrimaryHandles.size() +
-				mScopedRuleHandles.size() + mScopedCooldownRuleHandles.size();
-		}
+		std::size_t GetOwnedHandleCount() const;
 
 	private:
 		struct OwnedModifier
@@ -91,24 +86,21 @@ namespace ly
 
 		void Rebuild();
 		void SyncPrimaryWeaponModifiers();
-		void RemoveScopedCooldownRules();
 		static void SyncModifiers(
 			sas::AttributeSystem& attributes,
 			const List<sas::AttributeModifier>& desired,
 			List<OwnedModifier>& owned
 		);
-		void RemoveScopedRules();
 
 		ShipRuntime& mShipRuntime;
 		LightYearsAbilitySystemComponent& mAbilities;
-		// The trigger runtime is owned by the same ship and outlives this applier.
-		ModuleTriggerRuntime* mTriggerRuntime = nullptr;
-		CombatRuntime::OutgoingDamageRuleRegistration mDamageRuleRegistration;
+		ModuleAbilityRuleApplier mAbilityRuleApplier;
+		ModuleTriggerBuffRuleApplier mTriggerBuffRuleApplier;
+		ModuleDamageRuleApplier mDamageRuleApplier;
+		ModuleCooldownRuleApplier mCooldownRuleApplier;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;
-		List<std::size_t> mScopedRuleHandles;
-		List<std::size_t> mScopedCooldownRuleHandles;
 		ResolvedModuleEffects mResolved;
 		List<GameplayTag> mEnabledSystems;
 
@@ -122,5 +114,6 @@ namespace ly
 
 		std::uint64_t mAppliedRevision = 0;
 		bool mHasApplied = false;
+		bool mShuttingDown = false;
 	};
 }

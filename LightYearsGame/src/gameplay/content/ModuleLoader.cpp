@@ -65,6 +65,25 @@ namespace ly::content
 			throw std::runtime_error("Unknown module trigger kind: " + value);
 		}
 
+		List<GameplayTag> ParseRequiredEventTags(const Json& tags, ModuleTriggerKind trigger, const std::string& context)
+		{
+			if (!tags.is_array()) throw std::runtime_error(context + " must be an array");
+			List<GameplayTag> parsed;
+			std::set<std::string> seenTags;
+			for (const Json& tagValue : tags)
+			{
+				if (trigger != ModuleTriggerKind::AbilityActivated && trigger != ModuleTriggerKind::SourceDamageDealt)
+					throw std::runtime_error(context + " is not accepted for this trigger");
+				const GameplayTagKind kind = trigger == ModuleTriggerKind::AbilityActivated
+					? GameplayTagKind::AbilityCategory
+					: GameplayTagKind::DamageType;
+				GameplayTag tag = ParseTag(tagValue, kind, context);
+				if (!seenTags.insert(tag.name).second) throw std::runtime_error(context + " has a duplicate tag: " + tag.name);
+				parsed.push_back(std::move(tag));
+			}
+			return parsed;
+		}
+
 		ModuleDamageCondition ParseDamageCondition(const std::string& value)
 		{
 			if (value == "PrimaryShotOnly") return ModuleDamageCondition::PrimaryShotOnly;
@@ -180,20 +199,8 @@ namespace ly::content
 				if (buff.durationSeconds <= 0.f) throw std::runtime_error(entryContext + " durationSeconds must be positive");
 				buff.movementSpeedMultiplier = ParseFiniteFloat(entry.value("movementSpeedMultiplier", Json(1.f)), entryContext + ".movementSpeedMultiplier");
 				if (buff.movementSpeedMultiplier <= 0.f) throw std::runtime_error(entryContext + " movementSpeedMultiplier must be positive");
-				const Json tags = entry.value("requiredEventTags", Json::array());
-				if (!tags.is_array()) throw std::runtime_error(entryContext + ".requiredEventTags must be an array");
-				std::set<std::string> seenTags;
-				for (const Json& tagValue : tags)
-				{
-					const GameplayTagKind kind = buff.trigger == ModuleTriggerKind::AbilityActivated
-						? GameplayTagKind::AbilityCategory
-						: GameplayTagKind::DamageType;
-					if (buff.trigger != ModuleTriggerKind::AbilityActivated && buff.trigger != ModuleTriggerKind::SourceDamageDealt)
-						throw std::runtime_error(entryContext + " does not accept requiredEventTags for this trigger");
-					GameplayTag tag = ParseTag(tagValue, kind, entryContext + ".requiredEventTags");
-					if (!seenTags.insert(tag.name).second) throw std::runtime_error(entryContext + " has a duplicate required event tag: " + tag.name);
-					buff.requiredEventTags.push_back(std::move(tag));
-				}
+				buff.requiredEventTags = ParseRequiredEventTags(
+					entry.value("requiredEventTags", Json::array()), buff.trigger, entryContext + ".requiredEventTags");
 				const Json modifiers = entry.value("modifiers", Json::array());
 				if (!modifiers.is_array()) throw std::runtime_error(entryContext + ".modifiers must be an array");
 				std::size_t modifierIndex = 0;
@@ -230,8 +237,8 @@ namespace ly::content
 				if (rule.damageMultiplier <= 0.f) throw std::runtime_error(entryContext + " damageMultiplier must be positive");
 				if (rule.bonusDamageFraction < 0.f || rule.bonusDamageFraction > 1.f)
 					throw std::runtime_error(entryContext + " bonusDamageFraction must be between 0 and 1");
-				if (rule.condition == ModuleDamageCondition::FullMagazineShot && rule.bonusDamageFraction > 0.f)
-					throw std::runtime_error(entryContext + " FullMagazineShot supports damageMultiplier only");
+				if (GetModuleDamageConditionPhase(rule.condition) == ModuleDamageRulePhase::Fire && rule.bonusDamageFraction > 0.f)
+					throw std::runtime_error(entryContext + " fire-time conditions support damageMultiplier only");
 				if (rule.condition == ModuleDamageCondition::TargetHealthAtMost)
 				{
 					if (!entry.contains("conditionValue") || rule.conditionValue < 0.f || rule.conditionValue > 1.f)
@@ -259,10 +266,12 @@ namespace ly::content
 					if (!entry.contains("activeDurationSeconds")) throw std::runtime_error(entryContext + " active trigger requires activeDurationSeconds");
 					rule.activeDurationSeconds = ParseFiniteFloat(entry.at("activeDurationSeconds"), entryContext + ".activeDurationSeconds");
 					if (rule.activeDurationSeconds <= 0.f) throw std::runtime_error(entryContext + " activeDurationSeconds must be positive");
+					rule.activeWhileEventTags = ParseRequiredEventTags(
+						entry.value("activeWhileEventTags", Json::array()), rule.activeWhileTrigger, entryContext + ".activeWhileEventTags");
 				}
-				else if (entry.contains("activeDurationSeconds"))
+				else if (entry.contains("activeDurationSeconds") || entry.contains("activeWhileEventTags"))
 				{
-					throw std::runtime_error(entryContext + " activeDurationSeconds requires activeWhileTrigger");
+					throw std::runtime_error(entryContext + " activeDurationSeconds and activeWhileEventTags require activeWhileTrigger");
 				}
 				if (rule.damageMultiplier == 1.f && rule.bonusDamageFraction == 0.f)
 					throw std::runtime_error(entryContext + " must change outgoing damage");
