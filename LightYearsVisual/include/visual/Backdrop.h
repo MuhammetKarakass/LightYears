@@ -22,6 +22,7 @@ namespace ly::visual
 	// Vertical top -> bottom gradient over the whole target, brightness-capped to the background tier.
 	void DrawGradient(sf::RenderTarget& target, sf::Color top, sf::Color bottom, float maxBrightness);
 	// Soft domain-warped cloud layer colored by the ramp (4 samples, shadow -> light).
+	// The quad covers the target view, so it also works with scaled intermediate targets.
 	void DrawNebula(ShaderLibrary& shaders, sf::RenderTarget& target, const ColorRamp& ramp, const NebulaParams& params);
 
 	struct PlanetParams

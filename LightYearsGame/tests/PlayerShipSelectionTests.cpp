@@ -475,7 +475,7 @@ namespace
 
 		const ModulePlacement* armorItem = FindInInventory(player, "Module.Defense.ArmorPlate.Basic");
 		report.Check(armorItem != nullptr, "test grant: Fighter has an Armor Plate in the inventory");
-		report.Check(player.TryInstallModule(armorItem->instanceId, sf::Vector2i{ 2, 6 }, 0) == ModulePlacementFailure::None,
+		report.Check(player.TryInstallModule(armorItem->instanceId, sf::Vector2i{ 2, 3 }, 0) == ModulePlacementFailure::None,
 			"test grant: Armor Plate installs into the Fighter Core");
 		report.Check(NearlyEqual(armor(), baseArmor + 5.f), "test grant: Armor Plate in the matching zone adds +5 armor",
 			{ { "actual", armor() }, { "expected", baseArmor + 5.f } });
@@ -489,7 +489,7 @@ namespace
 			"test grant: respawn keeps the installed module and does not regrant it");
 		report.Check(NearlyEqual(armor(), baseArmor + 5.f), "test grant: Armor Plate survives respawn");
 
-		const auto swapShield = [&](const char* moduleId, sf::Vector2i origin)
+		const auto swapShield = [&](const char* moduleId, sf::Vector2i origin, int rotation = 0)
 		{
 			const ModulePlacement* installed = FindInstalled(player, "Module.Defense.ShieldGenerator.Standard");
 			if (!installed) installed = FindInstalled(player, "Module.Defense.ShieldGenerator.FastCharge");
@@ -497,10 +497,10 @@ namespace
 			report.Check(installed != nullptr && player.TryUninstallModule(installed->instanceId), "test grant: current shield generator uninstalls");
 			const ModulePlacement* item = FindInInventory(player, moduleId);
 			report.Check(item != nullptr, std::string("test grant: inventory holds ") + moduleId);
-			report.Check(player.TryInstallModule(item->instanceId, origin, 0) == ModulePlacementFailure::None, std::string("test grant: installs ") + moduleId);
+			report.Check(player.TryInstallModule(item->instanceId, origin, rotation) == ModulePlacementFailure::None, std::string("test grant: installs ") + moduleId);
 		};
 		const sas::AttributeSystem& liveShipAttributes = ship->GetShipRuntime().GetAttributes();
-		swapShield("Module.Defense.ShieldGenerator.FastCharge", sf::Vector2i{ 3, 4 });
+		swapShield("Module.Defense.ShieldGenerator.FastCharge", sf::Vector2i{ 1, 5 });
 		const float fastMax = ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield);
 		const float fastRegen = ReadAttribute(liveShipAttributes, ShipAttributeIds::ShieldRegen);
 		report.Check(NearlyEqual(fastMax, baseShield * 0.8f), "test grant: Fast Charge max shield is 80% (zone bonus does not scale the penalty)",
@@ -510,7 +510,7 @@ namespace
 		report.Check(fastMax / fastRegen < baseShield / baseShieldRegen * 0.6f, "test grant: Fast Charge recharges a full shield in about half the time",
 			{ { "actualSeconds", fastMax / fastRegen }, { "standardSeconds", baseShield / baseShieldRegen } });
 
-		swapShield("Module.Defense.ShieldGenerator.Heavy", sf::Vector2i{ 1, 5 });
+		swapShield("Module.Defense.ShieldGenerator.Heavy", sf::Vector2i{ 5, 3 }, 1);
 		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield), baseShield + 75.f), "test grant: Heavy shield adds +75 in the Core",
 			{ { "actual", ReadAttribute(liveShipAttributes, ShipAttributeIds::MaxShield) }, { "expected", baseShield + 75.f } });
 		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::ShieldRegen), baseShieldRegen), "test grant: Heavy shield keeps the base regen rate");
@@ -518,7 +518,7 @@ namespace
 		const ModulePlacement* afterburner = FindInstalled(player, "Module.Movement.Afterburner.Standard");
 		report.Check(afterburner != nullptr && player.TryUninstallModule(afterburner->instanceId), "test grant: standard afterburner uninstalls");
 		const ModulePlacement* extended = FindInInventory(player, "Module.Movement.Afterburner.Extended");
-		report.Check(extended != nullptr && player.TryInstallModule(extended->instanceId, sf::Vector2i{ 4, 5 }, 0) == ModulePlacementFailure::None,
+		report.Check(extended != nullptr && player.TryInstallModule(extended->instanceId, sf::Vector2i{ 4, 6 }, 0) == ModulePlacementFailure::None,
 			"test grant: Extended afterburner installs into the Engine");
 		report.Check(NearlyEqual(ReadAttribute(liveShipAttributes, ShipAttributeIds::AfterburnerCapacity), baseCapacity + 62.5f),
 			"test grant: Extended afterburner adds +62.5 capacity in the Engine",

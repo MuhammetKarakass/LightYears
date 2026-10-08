@@ -9,17 +9,6 @@
 
 namespace ly
 {
-	namespace
-	{
-		bool SameAction(const ModuleEventAction& a, const ModuleEventAction& b)
-		{
-			return a.trigger == b.trigger && a.kind == b.kind && a.amount == b.amount && a.chancePerLuck == b.chancePerLuck && a.everyCount == b.everyCount && a.overflowHealthFraction == b.overflowHealthFraction && a.radius == b.radius && a.cooldownSeconds == b.cooldownSeconds && a.targetCount == b.targetCount;
-		}
-		bool SameAttribute(const ModuleOwnerAttributeRule& a, const ModuleOwnerAttributeRule& b)
-		{
-			return a.source == b.source && a.attributeId == b.attributeId && a.healthAtMost == b.healthAtMost && a.amount == b.amount && a.fadeSeconds == b.fadeSeconds && a.target == b.target && a.operation == b.operation;
-		}
-	}
 	ModuleReactiveRuntime::ModuleReactiveRuntime(LightYearsAbilitySystemComponent& abilities) : mAbilities{ abilities }, mShip{ dynamic_cast<SpaceShip*>(&abilities.GetOwner()) }
 	{
 		try
@@ -140,7 +129,7 @@ namespace ly
 		{
 			ActionState next{ resolved, 0 };
 			for (const auto& previous : mActions)
-				if (previous.resolved.instanceId == resolved.instanceId && previous.resolved.ruleIndex == resolved.ruleIndex && SameAction(previous.resolved.rule, resolved.rule))
+				if (previous.resolved.instanceId == resolved.instanceId && previous.resolved.ruleIndex == resolved.ruleIndex && previous.resolved.rule == resolved.rule)
 				{
 					next.count = previous.count;
 					next.cooldownRemaining = previous.cooldownRemaining;
@@ -155,7 +144,7 @@ namespace ly
 			next.resolved = resolved;
 			for (auto& previous : mAttributes)
 			{
-				if (previous.resolved.instanceId != resolved.instanceId || previous.resolved.ruleIndex != resolved.ruleIndex || !SameAttribute(previous.resolved.rule, resolved.rule)) continue;
+				if (previous.resolved.instanceId != resolved.instanceId || previous.resolved.ruleIndex != resolved.ruleIndex || !(previous.resolved.rule == resolved.rule)) continue;
 				next = previous;
 				previous.handle = {};
 				break;

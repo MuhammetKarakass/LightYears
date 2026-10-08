@@ -33,6 +33,7 @@ namespace ly::visual
 
 			const nlohmann::json& world = Section(root, "world");
 			s.virtualHeight = std::clamp(world.value("virtualHeight", s.virtualHeight), 45, 2160);
+			s.nebulaResolutionDivisor = std::clamp(Section(root, "nebula").value("resolutionDivisor", s.nebulaResolutionDivisor), 1, 8);
 			s.ditherEnabled = world.value("dither", s.ditherEnabled);
 			s.ditherSpread = std::clamp(world.value("ditherSpread", s.ditherSpread), 0.f, 1.f);
 

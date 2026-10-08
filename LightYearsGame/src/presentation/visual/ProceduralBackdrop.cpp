@@ -36,6 +36,7 @@ namespace ly
 	{
 		using namespace visual;
 		sf::RenderTarget& background = pipeline.Target(Layer::Background);
+		sf::RenderTarget& nebulaTarget = pipeline.Target(Layer::Nebula);
 		const ColorScript& script = assets.Script();
 		const float cap = assets.Settings().tierMaxBrightness[TierIndex(LuminanceTier::Background)];
 
@@ -47,15 +48,16 @@ namespace ly
 		nebulaFar.intensity = 0.8f;
 		nebulaFar.seed = 1.f;
 		nebulaFar.maxBrightness = cap;
-		DrawNebula(assets.Shaders(), background, script.Role("ambient"), nebulaFar);
+		DrawNebula(assets.Shaders(), nebulaTarget, script.Role("ambient"), nebulaFar);
 
 		NebulaParams nebulaNear = nebulaFar;
 		nebulaNear.scroll = cameraCenter * NebulaNearParallax + sf::Vector2f(400.f, 150.f);
 		nebulaNear.scale = 0.0032f;
 		nebulaNear.intensity = 0.55f;
 		nebulaNear.seed = 6.f;
-		DrawNebula(assets.Shaders(), background, script.Role("ambient2"), nebulaNear);
+		DrawNebula(assets.Shaders(), nebulaTarget, script.Role("ambient2"), nebulaNear);
 
+		pipeline.CompositeNebula();
 		mStars.Draw(background, cameraCenter * StarScrollParallax, timeSeconds, script.Role("ambient"), cap);
 	}
 

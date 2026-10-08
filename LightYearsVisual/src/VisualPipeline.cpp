@@ -60,11 +60,37 @@ namespace ly::visual
 	{
 		if (mOutputSize.x == 0 || mOutputSize.y == 0)
 		{
+			mNebulaFrameReady = false;
 			return false;
 		}
-		const PipelineSettings& settings = mAssets.Settings();
+		PipelineSettings& settings = mAssets.Settings();
+		settings.nebulaResolutionDivisor = std::clamp(settings.nebulaResolutionDivisor, 1, 8);
 		bool outputChanged = mBuiltOutputSize != mOutputSize;
 		int virtualHeight = std::min(settings.virtualHeight, static_cast<int>(mOutputSize.y));
+		if (outputChanged || settings.nebulaResolutionDivisor != mBuiltNebulaResolutionDivisor)
+		{
+			mNebulaTargetAvailable = false;
+			mNebulaFrameReady = false;
+			mBuiltNebulaResolutionDivisor = settings.nebulaResolutionDivisor;
+			if (mBuiltNebulaResolutionDivisor > 1)
+			{
+				unsigned divisor = static_cast<unsigned>(mBuiltNebulaResolutionDivisor);
+				sf::Vector2u nebulaSize{(mOutputSize.x - 1u) / divisor + 1u, (mOutputSize.y - 1u) / divisor + 1u};
+				if (!mNebula.resize(nebulaSize))
+				{
+					if (!mNebulaAllocationWarningShown)
+					{
+						std::cerr << "VisualPipeline: cannot create nebula texture; using the background target\n";
+						mNebulaAllocationWarningShown = true;
+					}
+				}
+				else
+				{
+					mNebula.setSmooth(true);
+					mNebulaTargetAvailable = true;
+				}
+			}
+		}
 
 		if (outputChanged)
 		{
@@ -148,6 +174,14 @@ namespace ly::visual
 		EnsureTargets();
 		ResetWorldView();
 		mBackground.clear(sf::Color::Black);
+		mNebulaFrameReady = false;
+		if (mOutputSize.x > 0 && mOutputSize.y > 0 && mBuiltNebulaResolutionDivisor > 1
+			&& mNebulaTargetAvailable)
+		{
+			mNebula.setView(sf::View(sf::FloatRect({0.f, 0.f}, sf::Vector2f(mOutputSize))));
+			mNebula.clear(sf::Color::Transparent);
+			mNebulaFrameReady = true;
+		}
 		mWorld.clear(sf::Color::Transparent);
 		mSprites.clear(sf::Color::Transparent);
 		mEnergy.clear(sf::Color::Black);
@@ -164,8 +198,26 @@ namespace ly::visual
 		case Layer::World: return mWorld;
 		case Layer::Sprites: return mSprites;
 		case Layer::Energy: return mEnergy;
+		case Layer::Nebula:
+			if (mNebulaFrameReady && mNebulaTargetAvailable && mBuiltNebulaResolutionDivisor > 1)
+			{
+				return mNebula;
+			}
+			return mBackground;
 		}
 		return mWorld;
+	}
+
+	void VisualPipeline::CompositeNebula()
+	{
+		if (mBuiltNebulaResolutionDivisor <= 1 || !mNebulaTargetAvailable || !mNebulaFrameReady)
+		{
+			return;
+		}
+		mNebula.display();
+		DrawTexture(mBackground, mNebula.getTexture(), sf::RenderStates(sf::BlendMode(
+			sf::BlendMode::Factor::One, sf::BlendMode::Factor::OneMinusSrcAlpha, sf::BlendMode::Equation::Add,
+			sf::BlendMode::Factor::One, sf::BlendMode::Factor::OneMinusSrcAlpha, sf::BlendMode::Equation::Add)));
 	}
 
 	float VisualPipeline::TierScale(LuminanceTier tier, float peak)

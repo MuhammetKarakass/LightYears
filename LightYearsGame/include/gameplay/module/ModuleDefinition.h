@@ -9,6 +9,7 @@
 #include <SFML/System/Vector2.hpp>
 
 #include <string>
+#include <tuple>
 #include <utility>
 #include <cstddef>
 
@@ -216,6 +217,8 @@ namespace ly
 		float maxHealthFraction = 0.f;
 		float radius = 0.f;
 		int maxActive = 0;
+		GameplayTag damageType;
+		sas::ContentId presentationId;
 		List<GameplayTag> requiredTargetStatuses;
 		ModuleLevelTable<float> maxHealthFractionByLevel;
 	};
@@ -228,6 +231,16 @@ namespace ly
 		List<ModuleKillExplosionRule> killExplosions;
 		bool Empty() const { return ricochets.empty() && guidedSalvos.empty() && delayedExplosions.empty() && trailMines.empty() && killExplosions.empty(); }
 	};
+	// Rule equality decides whether a runtime keeps its state across a reapply. Each operator binds every
+	// field of the rule structurally, so adding a field without extending the comparison fails to compile.
+	template<typename T> bool operator==(const ModuleLevelTable<T>& left, const ModuleLevelTable<T>& right) { return left.values == right.values; }
+	inline bool operator==(const ModuleRicochetRule& left, const ModuleRicochetRule& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
+	inline bool operator==(const ModuleGuidedSalvoRule& left, const ModuleGuidedSalvoRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
+	inline bool operator==(const ModuleDelayedExplosionRule& left, const ModuleDelayedExplosionRule& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
+	inline bool operator==(const ModuleTrailMineRule& left, const ModuleTrailMineRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9); }
+	inline bool operator==(const ModuleKillExplosionRule& left, const ModuleKillExplosionRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
+	inline bool operator==(const ModuleEventAction& left, const ModuleEventAction& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11); }
+	inline bool operator==(const ModuleOwnerAttributeRule& left, const ModuleOwnerAttributeRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7); }
 	struct ModuleRulePackage
 	{
 		List<ModuleAttributeModifier> attributeModifiers;

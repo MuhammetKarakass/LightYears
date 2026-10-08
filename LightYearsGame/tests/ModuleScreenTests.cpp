@@ -125,7 +125,7 @@ namespace
 		report.Check(model->hasSchematic && model->gridWidth == 8 && model->gridHeight == 8 && model->cellZones.size() == 64, "grid size comes from the schematic");
 		report.Check(model->legend.size() == 6 && model->legend[0].label == "Nose  Primary  +25%" && model->legend[2].label == "Hull  Any  +10%", "legend lists the six zones with bonuses",
 			{ { "nose", model->legend[0].label }, { "hull", model->legend[2].label } });
-		report.Check(model->cellZones[3] == ModuleZoneKind::Nose && model->cellZones[0] == ModuleZoneKind::None && model->cellZones[3 * 8 + 3] == ModuleZoneKind::Sensor, "cell zones map the schematic rows");
+		report.Check(model->cellZones[3] == ModuleZoneKind::Nose && model->cellZones[0] == ModuleZoneKind::None && model->cellZones[3 * 8 + 3] == ModuleZoneKind::Hull, "cell zones map the schematic rows");
 		report.Check(model->installed.size() == loadout.GetPlacements().size() && model->inventory.size() == loadout.GetInventory().size() && !model->inventory.empty(),
 			"installed and inventory lists match the loadout", { { "installed", model->installed.size() }, { "inventory", model->inventory.size() } });
 		bool hasSystem = false;
@@ -136,20 +136,20 @@ namespace
 		const std::uint32_t tipId = FindInventoryId(player, piercingTip);
 		report.Check(tipId != 0, "test inventory holds the piercing tip");
 		presenter->PickUpInventory(tipId);
-		presenter->SetHoverCell(sf::Vector2i{ 3, 0 });
+		presenter->SetHoverCell(sf::Vector2i{ 3, 1 });
 		level->TickInternal(0.f);
 		report.Check(model->heldInstanceId == tipId && model->preview.active && model->preview.legal && model->preview.bonusPercent == 25 && model->preview.message.empty(),
 			"nose cells give a legal preview with +25%", { { "bonus", model->preview.bonusPercent }, { "cells", CellsJson(model->preview.cells) } });
-		report.Check(model->preview.cells == List<sf::Vector2i>{ { 3, 0 }, { 4, 0 } }, "preview shows the unrotated shape", CellsJson(model->preview.cells));
+		report.Check(model->preview.cells == List<sf::Vector2i>{ { 3, 1 }, { 4, 1 } }, "preview shows the unrotated shape", CellsJson(model->preview.cells));
 		presenter->RotateHeld();
 		level->TickInternal(0.f);
-		report.Check(model->heldRotation == 1 && model->preview.cells == List<sf::Vector2i>{ { 3, 0 }, { 3, 1 } } && model->preview.legal, "rotating changes the preview shape",
+		report.Check(model->heldRotation == 1 && model->preview.cells == List<sf::Vector2i>{ { 3, 1 }, { 3, 2 } } && model->preview.legal, "rotating changes the preview shape",
 			CellsJson(model->preview.cells));
 		presenter->RotateHeld(3);
-		presenter->SetHoverCell(sf::Vector2i{ 5, 3 });
+		presenter->SetHoverCell(sf::Vector2i{ 3, 5 });
 		level->TickInternal(0.f);
 		report.Check(model->preview.legal && model->preview.bonusPercent == 10, "hull cells give a +10% preview", { { "bonus", model->preview.bonusPercent } });
-		presenter->SetHoverCell(sf::Vector2i{ 1, 5 });
+		presenter->SetHoverCell(sf::Vector2i{ 5, 5 });
 		level->TickInternal(0.f);
 		report.Check(model->preview.legal && model->preview.bonusPercent == 0 && model->preview.message.empty(), "a legal cell with no bonus has no label and no warning");
 		presenter->SetHoverCell(sf::Vector2i{ 0, 0 });
@@ -168,7 +168,7 @@ namespace
 		ship->SetInvulnerability(false);
 		ship->ApplyDamage(1.f);
 		report.Check(ship->IsInCombat(), "damage puts the ship in combat");
-		presenter->SetHoverCell(sf::Vector2i{ 3, 0 });
+		presenter->SetHoverCell(sf::Vector2i{ 3, 1 });
 		report.Check(presenter->DropOnGrid(), "dropping on a legal nose cell installs through the player");
 		report.Check(player.GetModuleLoadout().FindPlacement(tipId) != nullptr && player.GetModuleLoadout().FindInventoryItem(tipId) == nullptr, "player loadout now holds the module installed");
 		level->TickInternal(0.f);
@@ -188,20 +188,20 @@ namespace
 		report.Check(!installedTip->rebooting, "reboot indicator disappears");
 
 		// Move the installed module.
-		report.Check(presenter->PickUpAtCell({ 4, 0 }), "clicking an installed module picks it up");
-		presenter->SetHoverCell(sf::Vector2i{ 3, 1 });
+		report.Check(presenter->PickUpAtCell({ 4, 1 }), "clicking an installed module picks it up");
+		presenter->SetHoverCell(sf::Vector2i{ 3, 2 });
 		level->TickInternal(0.f);
-		report.Check(model->heldInstanceId == tipId && model->preview.legal && model->preview.cells == List<sf::Vector2i>{ { 3, 1 }, { 4, 1 } }, "moving previews over its own old cells as legal");
+		report.Check(model->heldInstanceId == tipId && model->preview.legal && model->preview.cells == List<sf::Vector2i>{ { 3, 2 }, { 4, 2 } }, "moving previews over its own old cells as legal");
 		report.Check(presenter->DropOnGrid(), "dropping moves through the player");
 		level->TickInternal(0.f);
 		const ModulePlacement* moved = player.GetModuleLoadout().FindPlacement(tipId);
-		report.Check(moved && moved->origin == sf::Vector2i{ 3, 1 }, "player loadout reflects the move");
+		report.Check(moved && moved->origin == sf::Vector2i{ 3, 2 }, "player loadout reflects the move");
 		for (const ModuleEntryView& entry : model->installed) if (entry.instanceId == tipId) installedTip = &entry;
-		report.Check(installedTip->cells == List<sf::Vector2i>{ { 3, 1 }, { 4, 1 } } && !installedTip->rebooting, "moved module shows new cells without rebooting");
+		report.Check(installedTip->cells == List<sf::Vector2i>{ { 3, 2 }, { 4, 2 } } && !installedTip->rebooting, "moved module shows new cells without rebooting");
 
 		// Uninstall by dropping on the inventory, and by key via the view.
 		const std::size_t inventoryBefore = model->inventory.size();
-		report.Check(presenter->PickUpAtCell({ 3, 1 }) && presenter->DropOnInventory(), "dropping an installed module on the inventory uninstalls it");
+		report.Check(presenter->PickUpAtCell({ 3, 2 }) && presenter->DropOnInventory(), "dropping an installed module on the inventory uninstalls it");
 		level->TickInternal(0.f);
 		report.Check(player.GetModuleLoadout().FindInventoryItem(tipId) != nullptr && model->inventory.size() == inventoryBefore + 1 && model->installed.size() == installedBefore,
 			"module returns to the inventory");
@@ -235,17 +235,17 @@ namespace
 		view.HandleEvent(sf::Event{ sf::Event::KeyPressed{ sf::Keyboard::Key::T } });
 		view.HandleEvent(sf::Event{ sf::Event::KeyPressed{ sf::Keyboard::Key::T } });
 		view.HandleEvent(sf::Event{ sf::Event::KeyPressed{ sf::Keyboard::Key::T } });
-		move(view.CellCenter({ 3, 0 }));
+		move(view.CellCenter({ 3, 1 }));
 		tickAll();
 		report.Check(model->heldRotation == 0 && model->preview.legal && model->preview.cells.size() == 2, "T rotates and mouse move sets the hover cell");
-		report.Check(press(sf::Mouse::Button::Left, view.CellCenter({ 3, 0 })), "grid click is handled");
-		release(sf::Mouse::Button::Left, view.CellCenter({ 3, 0 }));
+		report.Check(press(sf::Mouse::Button::Left, view.CellCenter({ 3, 1 })), "grid click is handled");
+		release(sf::Mouse::Button::Left, view.CellCenter({ 3, 1 }));
 		tickAll();
 		report.Check(player.GetModuleLoadout().FindPlacement(tipId) != nullptr && model->heldInstanceId == 0, "clicking the grid installs the held module");
 		report.Check(view.CellAt(view.CellCenter({ 3, 0 })) == sf::Vector2i{ 3, 0 } && !view.CellAt({ 0.f, 0.f }).has_value(), "cell hit testing matches the layout");
 
 		// Drag an installed module back to the inventory.
-		press(sf::Mouse::Button::Left, view.CellCenter({ 3, 0 }));
+		press(sf::Mouse::Button::Left, view.CellCenter({ 3, 1 }));
 		tickAll();
 		report.Check(model->heldInstanceId == tipId, "pressing an installed module picks it up");
 		release(sf::Mouse::Button::Left, view.InventoryRowCenter(0));
@@ -253,7 +253,7 @@ namespace
 		report.Check(player.GetModuleLoadout().FindInventoryItem(tipId) != nullptr, "dragging onto the inventory uninstalls it");
 
 		// Delete key uninstalls the held module.
-		press(sf::Mouse::Button::Left, view.CellCenter({ 4, 2 }));
+		press(sf::Mouse::Button::Left, view.CellCenter({ 2, 1 }));
 		tickAll();
 		const std::uint32_t readoutId = model->heldInstanceId;
 		view.HandleEvent(sf::Event{ sf::Event::KeyPressed{ sf::Keyboard::Key::Delete } });

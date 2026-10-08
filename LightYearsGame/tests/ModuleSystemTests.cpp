@@ -266,12 +266,12 @@ namespace
 
 		struct Expectation { const char* id; int nose, wings, hull, core, engine, sensor; };
 		const Expectation expectations[] = {
-			{ "Ship.Player.Fighter.Basic", 4, 5, 7, 5, 4, 3 },
-			{ "Ship.Player.Breacher.Basic", 7, 6, 6, 4, 2, 3 },
-			{ "Ship.Player.Interceptor.Basic", 3, 4, 6, 4, 9, 2 },
-			{ "Ship.Player.Conductor.Basic", 2, 4, 7, 5, 3, 7 },
-			{ "Ship.Player.Aegis.Basic", 2, 3, 4, 12, 4, 3 },
-			{ "Ship.Player.CryoController.Basic", 3, 4, 6, 4, 4, 7 }
+			{ "Ship.Player.Fighter.Basic", 4, 8, 4, 6, 4, 0 },
+			{ "Ship.Player.Breacher.Basic", 6, 8, 4, 2, 4, 2 },
+			{ "Ship.Player.Interceptor.Basic", 4, 4, 2, 2, 10, 4 },
+			{ "Ship.Player.Conductor.Basic", 2, 6, 6, 4, 4, 4 },
+			{ "Ship.Player.Aegis.Basic", 2, 4, 4, 12, 2, 2 },
+			{ "Ship.Player.CryoController.Basic", 4, 6, 4, 4, 4, 4 }
 		};
 
 		std::size_t shipsWithSchematic = 0;
@@ -331,8 +331,14 @@ namespace
 					std::to_string(counts[zoneOrder[index].name]) + ", expected " + std::to_string(expectedFree[index]));
 				total += counts[zoneOrder[index].name];
 			}
-			Check(total == ly::ShipSchematicValidator::kFreeCellCapacity, std::string(expected.id) + " free cell total is not 28");
+			Check(total == ly::ShipSchematicValidator::kFreeCellCapacity, std::string(expected.id) + " free cell total is not the shipped capacity");
 			Check(schematic.width >= 6 && schematic.width <= 8, std::string(expected.id) + " grid width out of 6..8");
+			// Every shipped schematic is mirror-symmetric about its vertical centre.
+			bool symmetric = true;
+			for (int y = 0; y < schematic.height; ++y)
+				for (int x = 0; x < schematic.width / 2; ++x)
+					if (schematic.GetZoneAt(x, y) != schematic.GetZoneAt(schematic.width - 1 - x, y)) symmetric = false;
+			Check(symmetric, std::string(expected.id) + " schematic rows are mirror-symmetric");
 		}
 	}
 
@@ -378,12 +384,18 @@ namespace
 		expectRejected("invalid variant", [](ly::ShipSchematic& s) { s.defaultModules[0].variantIndex = 1; });
 		expectRejected("negative variant", [](ly::ShipSchematic& s) { s.defaultModules[0].variantIndex = -1; });
 		expectRejected("rotation out of range", [](ly::ShipSchematic& s) { s.defaultModules[0].rotationQuarterTurns = 4; });
-		expectRejected("shield outside Core", [](ly::ShipSchematic& s) { s.defaultModules[0].origin = sf::Vector2i{ 3, 2 }; });
+		const auto shieldIndex = [](const ly::ShipSchematic& s)
+		{
+			for (std::size_t i = 0; i < s.defaultModules.size(); ++i)
+				if (s.defaultModules[i].moduleId.ToString() == "Module.Defense.ShieldGenerator.Standard") return i;
+			return std::size_t{ 0 };
+		};
+		expectRejected("shield outside Core", [&](ly::ShipSchematic& s) { s.defaultModules[shieldIndex(s)].origin = sf::Vector2i{ 3, 2 }; });
 		expectRejected("out of bounds", [](ly::ShipSchematic& s) { s.defaultModules[1].origin = sf::Vector2i{ 6, 7 }; });
 		expectRejected("negative origin", [](ly::ShipSchematic& s) { s.defaultModules[1].origin = sf::Vector2i{ -1, 7 }; });
 		expectRejected("overlap", [](ly::ShipSchematic& s) { s.defaultModules[3].origin = s.defaultModules[2].origin; });
 		expectRejected("duplicate system", [](ly::ShipSchematic& s) { s.defaultModules[3].moduleId = s.defaultModules[2].moduleId; s.defaultModules[3].origin = sf::Vector2i{ 3, 2 }; });
-		expectRejected("rotation leaves zone", [](ly::ShipSchematic& s) { s.defaultModules[1].rotationQuarterTurns = 1; });
+		expectRejected("rotation leaves zone", [&](ly::ShipSchematic& s) { s.defaultModules[shieldIndex(s)].rotationQuarterTurns = 1; });
 		expectRejected("27 free cells", [](ly::ShipSchematic& s) { s.cellZones[static_cast<std::size_t>(0 * s.width + 3)] = ly::GameplayTag{}; });
 		expectRejected("29 free cells", [](ly::ShipSchematic& s) { s.cellZones[0] = ly::GameplayTags::Module::Zone::Nose; });
 		expectRejected("unknown zone in grid", [](ly::ShipSchematic& s) { s.cellZones[2] = ly::GameplayTag{ "Module.Zone.Cockpit" }; });
@@ -391,8 +403,8 @@ namespace
 
 		// A rotated (vertical) shield domino fits when the Core has room below.
 		ly::ShipSchematic vertical = fighter;
-		vertical.defaultModules[0].origin = sf::Vector2i{ 3, 4 };
-		vertical.defaultModules[0].rotationQuarterTurns = 1;
+		vertical.defaultModules[shieldIndex(vertical)].origin = sf::Vector2i{ 5, 4 };
+		vertical.defaultModules[shieldIndex(vertical)].rotationQuarterTurns = 1;
 		Check(validate(vertical), "a rotated default module that fits the Core should validate");
 	}
 
@@ -937,9 +949,9 @@ namespace
 		Check(standardCount == 4, "four standard modules");
 	}
 
-	// Zones are one connected region each and shape matters, not whole module classes: with the default
-	// modules installed, every zone with four or more free cells holds a 2x2 square and every zone with
-	// three or more holds some rotation of the 3-cell L, judged by the real placement rules.
+	// Shape matters, not whole module classes: with the default modules installed, every free pair of adjacent
+	// cells in a zone holds a 2-cell module, judged by the real placement rules. Schematics are mirror-symmetric,
+	// so zones may split into mirrored left and right parts and are not required to be one connected region.
 	void TestShippedZoneShapeFit()
 	{
 		const auto ships = ly::content::ShipLoader::LoadFromFile(DataPath("ships.json"), MakeBaseShip());
@@ -947,13 +959,10 @@ namespace
 		Check(ships.Succeeded() && ly::content::ModuleContentCatalog::LoadFromFile(DataPath("modules.json"), &failure), "zone shape fit setup failed");
 		if (!ships.Succeeded()) return;
 
-		const char* squareId = "Module.Offense.OverloadCore.Basic";
-		const char* lShapeId = "Module.Primary.FireRateBooster.Basic";
-		const ly::ModuleDefinition* square = ly::content::ModuleContentCatalog::FindById(squareId);
-		const ly::ModuleDefinition* lShape = ly::content::ModuleContentCatalog::FindById(lShapeId);
-		Check(square && square->sizeVariants.size() > 0 && square->sizeVariants[0].shape.cells.size() == 4, "2x2 probe module is a four cell shape");
-		Check(lShape && lShape->sizeVariants.size() > 1 && lShape->sizeVariants[1].shape.cells.size() == 3, "L probe module variant 1 is a three cell shape");
-		if (!square || !lShape) return;
+		const char* dominoId = "Module.Offense.AssaultCore.Basic";
+		const ly::ModuleDefinition* domino = ly::content::ModuleContentCatalog::FindById(dominoId);
+		Check(domino && domino->sizeVariants.size() > 0 && domino->sizeVariants[0].shape.cells.size() == 2, "domino probe module is a two cell shape");
+		if (!domino) return;
 
 		const ly::GameplayTag zones[] = {
 			ly::GameplayTags::Module::Zone::Nose, ly::GameplayTags::Module::Zone::Wings, ly::GameplayTags::Module::Zone::Hull,
@@ -985,7 +994,7 @@ namespace
 
 			for (const ly::GameplayTag& zone : zones)
 			{
-				// Free cells and connectivity of the whole zone.
+				// Free cells of the whole zone.
 				std::set<std::pair<int, int>> zoneCells;
 				int freeCount = 0;
 				for (int y = 0; y < schematic.height; ++y)
@@ -996,22 +1005,10 @@ namespace
 					if (occupied.count({ x, y }) == 0) ++freeCount;
 				}
 				const std::string label = loaded.id + " " + zone.name;
-				if (!zoneCells.empty())
-				{
-					std::set<std::pair<int, int>> seen;
-					std::vector<std::pair<int, int>> stack{ *zoneCells.begin() };
-					seen.insert(stack.back());
-					while (!stack.empty())
-					{
-						const auto [x, y] = stack.back();
-						stack.pop_back();
-						for (const std::pair<int, int>& next : { std::pair<int, int>{ x + 1, y }, { x - 1, y }, { x, y + 1 }, { x, y - 1 } })
-						{
-							if (zoneCells.count(next) != 0 && seen.insert(next).second) stack.push_back(next);
-						}
-					}
-					Check(seen.size() == zoneCells.size(), label + " is one connected region");
-				}
+				bool freePairExists = false;
+				for (const std::pair<int, int>& cell : zoneCells)
+					for (const std::pair<int, int>& next : { std::pair<int, int>{ cell.first + 1, cell.second }, { cell.first, cell.second + 1 } })
+						if (zoneCells.count(next) != 0 && occupied.count(cell) == 0 && occupied.count(next) == 0) freePairExists = true;
 
 				const auto fitsAnywhere = [&](const ly::ModuleDefinition& module, int variant, const char* id)
 				{
@@ -1030,8 +1027,7 @@ namespace
 					}
 					return false;
 				};
-				if (freeCount >= 4) Check(fitsAnywhere(*square, 0, squareId), label + " (" + std::to_string(freeCount) + " free) fits a 2x2 square");
-				if (freeCount >= 3) Check(fitsAnywhere(*lShape, 1, lShapeId), label + " (" + std::to_string(freeCount) + " free) fits a 3-cell L");
+				if (freePairExists) Check(fitsAnywhere(*domino, 0, dominoId), label + " (" + std::to_string(freeCount) + " free) fits a 2-cell module");
 			}
 		}
 		Check(shipCount == 6, "zone shape fit covers the six player ships");

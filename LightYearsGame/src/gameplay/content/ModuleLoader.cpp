@@ -689,10 +689,12 @@ namespace ly::content
 			}
 			for (const auto& entry : generated.value("killExplosions", Json::array()))
 			{
-				fields(entry, { "maxHealthFraction", "radius", "maxActive", "requiredTargetStatuses" });
+				fields(entry, { "maxHealthFraction", "radius", "maxActive", "damageType", "presentationId", "requiredTargetStatuses" });
 				ModuleKillExplosionRule rule;
 				rule.maxHealthFraction = fraction(entry, "maxHealthFraction", rule.maxHealthFractionByLevel);
 				rule.radius = number(entry, "radius"); rule.maxActive = count(entry, "maxActive");
+				rule.damageType = ParseTag(entry.at("damageType"), GameplayTagKind::DamageType, context + " kill explosion damageType");
+				rule.presentationId = ParseContentId(entry.at("presentationId"), context + " kill explosion presentationId");
 				const auto& statuses = entry.at("requiredTargetStatuses");
 				if (!statuses.is_array() || statuses.empty()) throw std::runtime_error(context + " kill explosion requires target statuses");
 				for (const auto& tag : statuses) rule.requiredTargetStatuses.push_back(ParseTag(tag, GameplayTagKind::Status, context));

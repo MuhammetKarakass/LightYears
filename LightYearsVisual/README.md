@@ -4,11 +4,12 @@ Standalone static library (`LightYearsVisual`, namespace `ly::visual`) for proce
 
 ## Layers
 
-`VisualPipeline` owns four render textures and composites them in this order: background, world, sprites, energy, bloom, flash, vignette. All drawing coordinates are output pixels; the pipeline maps them onto each layer.
+`VisualPipeline` owns background, world, sprite and energy targets plus a nebula target when `nebula.resolutionDivisor` is above 1. It composites background (gradient, nebula, stars), world, sprites, energy, bloom, flash and vignette in that order. All drawing coordinates are output pixels; the pipeline maps them onto each layer.
 
 | Layer | Resolution | Look | Draw with |
 | --- | --- | --- | --- |
-| Background | full | soft, low-frequency nebula, haze, sparse sharp stars, parallax | `DrawGradient`, `DrawNebula`, `StarField` |
+| Background | full | gradient, haze, sparse sharp stars, parallax; receives the composited nebula | `DrawGradient`, `StarField` |
+| Nebula | `ceil(output / nebula.resolutionDivisor)` | soft, low-frequency clouds, smoothly upscaled and premultiplied over Background | `DrawNebula` on `Target(Layer::Nebula)`, then `CompositeNebula()` |
 | World | virtual (`virtualHeight`, e.g. 240 rows), upscaled nearest | crisp pixels, hard silhouettes, outlines, optional palette dither | `ShapeBrush` (use `hardEdges`), `DrawPlanet` |
 | Sprites | same virtual resolution as World, upscaled nearest, drawn over World | pixel-scaled content that keeps its own colors, never dithered (game sprite actors) | any `RenderTarget` draw |
 | Energy | full, additive | tiny bright core, limited halo, dark surroundings, bloom source | `SubmitGlow`, `SubmitTrail`, `SubmitFlash` |
@@ -17,7 +18,7 @@ Why two world-resolution layers: the palette dither snaps every pixel to the act
 
 Camera jitter: world-layer content shows sub-pixel camera steps as shimmer. `pipeline.SnapWorldView(gameView)` returns the camera view with its top-left corner snapped to the virtual pixel grid and widened to the whole texture; set it on the World/Sprites targets and derive parallax and glow positions from it so everything moves in lock step. Output-pixel layers (Background, Energy) are unaffected.
 
-Frame: `pipeline.BeginFrame()`, draw into `pipeline.Target(Layer::...)` and submit energy, then `pipeline.Compose(target)`. Call `Resize(size)` when the output size changes.
+Frame: `pipeline.BeginFrame()`, draw the gradient into Background, draw both nebula layers into `Target(Layer::Nebula)`, call `CompositeNebula()`, then draw stars into Background. Draw World/Sprites and submit energy before `pipeline.Compose(target)`. Call `Resize(size)` when the output size changes.
 
 ## Color script
 
@@ -29,7 +30,7 @@ A script (`assets/palettes/*.json`) holds named ramps (ordered stops, shadow to 
 
 ## Settings and hot reload
 
-`assets/pipeline.json` maps onto `PipelineSettings` (`virtualHeight`, dither, bloom threshold, strength and levels, vignette, flash scale, energy budget, tier caps, and the `planet` section: `enabled`, `screenX`/`screenY` (fractions of the output at the camera start), `radius` (fraction of output height), `parallax`, `brightness`, `saturation`, `rotationSpeed`, `dither`). `VisualAssets` owns the loaded settings, shaders (`assets/shaders/<name>.frag`) and palettes. `assets.Poll(dt)` checks file timestamps twice a second and `assets.Reload(true)` forces a reload (F8 in the gallery). A file that fails to parse or compile keeps its previous working version and the error text lands in `ReloadReport::errors`. Settings are plain data: edit `assets.Settings()` at runtime; a reload of `pipeline.json` overwrites such edits.
+`assets/pipeline.json` maps onto `PipelineSettings` (`virtualHeight`, `nebula.resolutionDivisor`, dither, bloom threshold, strength and levels, vignette, flash scale, energy budget, tier caps, and the `planet` section: `enabled`, `screenX`/`screenY` (fractions of the output at the camera start), `radius` (fraction of output height), `parallax`, `brightness`, `saturation`, `rotationSpeed`, `dither`). The `PipelineSettings` code default and missing-key fallback for older files are 1; values clamp to 1–8. The shipped `pipeline.json` selects 4 after verification, rendering each nebula axis at one-quarter output resolution. `VisualAssets` owns the loaded settings, shaders (`assets/shaders/<name>.frag`) and palettes. `assets.Poll(dt)` checks file timestamps twice a second and `assets.Reload(true)` forces a reload (F8 in the gallery). A file that fails to parse or compile keeps its previous working version and the error text lands in `ReloadReport::errors`. Settings are plain data: edit `assets.Settings()` at runtime; a reload of `pipeline.json` overwrites such edits.
 
 ## Gallery
 
@@ -38,7 +39,7 @@ LightYearsVisualGallery [--assets <dir>] [--script <name>]
 LightYearsVisualGallery --capture <out.png> [--script <name>] [--frames N] [--size WxH] [--stress]
 ```
 
-The scene shows all six ship definitions at full size (row 1: shields up, one in afterburner, a hit flash and shield ripple cycling through), the first ship at four damage stages plus two ships with mixed port states (row 2: unequipped, cooling down, ready, active, activation burst), and a game-size strip (row 3, about 20 to 28 world pixels across). Keys: `Tab` color script, `B` bloom, `D` dither, `V` virtual resolution, `Space` energy-budget stress, `Up`/`Down` bloom strength, `F8` reload, `Esc` quit. The gallery reads the source `assets/` folder directly (`--assets` overrides) so edits hot-reload without rebuilding. Capture mode needs no window: it renders N fixed 1/60 s frames and saves the composited image.
+The scene shows all six ship definitions at full size (row 1: shields up, one in afterburner, a hit flash and shield ripple cycling through), the first ship at four damage stages plus two ships with mixed port states (row 2: unequipped, cooling down, ready, active, activation burst), and a game-size strip (row 3, about 20 to 28 world pixels across). The window title shows the active nebula scale (`1/1` is full resolution). Keys: `Tab` color script, `B` bloom, `D` dither, `V` virtual resolution, `N` nebula divisor (cycles 1/2/4/8), `Space` energy-budget stress, `Up`/`Down` bloom strength, `F8` reload, `Esc` quit. The gallery reads the source `assets/` folder directly (`--assets` overrides) so edits hot-reload without rebuilding. Capture mode needs no window: it renders N fixed 1/60 s frames and saves the composited image.
 
 Build: part of the root CMake project; the gallery is behind `LIGHTYEARS_BUILD_VISUAL_GALLERY` (default ON).
 

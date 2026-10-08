@@ -3,8 +3,8 @@
 //   LightYearsVisualGallery [--assets <dir>] [--script <name>]
 //   LightYearsVisualGallery --capture <out.png> [--script <name>] [--frames N] [--size WxH] [--stress] [--assets <dir>]
 //
-// Keys: Tab color script, B bloom, D dither, V virtual resolution, Space energy-budget stress, Up/Down bloom
-// strength, F8 reload assets (files are also polled), Esc quit.
+// Keys: Tab color script, B bloom, D dither, V virtual resolution, N nebula divisor (1/2/4/8), Space energy-budget
+// stress, Up/Down bloom strength, F8 reload assets (files are also polled), Esc quit.
 
 #include <algorithm>
 #include <cstdio>
@@ -122,6 +122,7 @@ namespace
 		const EnergyStats& e = pipeline.Stats();
 		window.setTitle("LightYears Visual Gallery | " + assets.Script().Name() + " | world " + std::to_string(pipeline.VirtualSize().x) + "x"
 			+ std::to_string(pipeline.VirtualSize().y) + " | bloom " + (s.bloomEnabled ? "on" : "off") + " | dither " + (s.ditherEnabled ? "on" : "off")
+			+ " | nebula 1/" + std::to_string(s.nebulaResolutionDivisor)
 			+ " | energy " + std::to_string(e.drawn) + "/" + std::to_string(e.submitted) + " culled " + std::to_string(e.culledByBudget)
 			+ " | " + std::to_string(static_cast<int>(fps)) + " fps");
 	}
@@ -139,6 +140,7 @@ namespace
 		sf::Clock clock;
 		float titleTimer = 0.f;
 		const int virtualHeights[] = {120, 180, 240, 360};
+		const int nebulaDivisors[] = {1, 2, 4, 8};
 
 		while (window.isOpen())
 		{
@@ -171,6 +173,19 @@ namespace
 							}
 						}
 						s.virtualHeight = next;
+						break;
+					}
+					case sf::Keyboard::Key::N:
+					{
+						int next = nebulaDivisors[0];
+						for (int i = 0; i < 4; ++i)
+						{
+							if (nebulaDivisors[i] == s.nebulaResolutionDivisor)
+							{
+								next = nebulaDivisors[(i + 1) % 4];
+							}
+						}
+						s.nebulaResolutionDivisor = next;
 						break;
 					}
 					case sf::Keyboard::Key::F8: PrintReport(assets.Reload(true)); break;

@@ -29,6 +29,7 @@ namespace ly::visual
 	struct PipelineSettings
 	{
 		int virtualHeight = 240;
+		int nebulaResolutionDivisor = 1;
 		bool ditherEnabled = true;
 		float ditherSpread = 0.1f;
 

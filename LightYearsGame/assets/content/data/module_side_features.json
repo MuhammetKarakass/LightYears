@@ -498,6 +498,8 @@
               "maxHealthFraction": 0.03,
               "radius": 100,
               "maxActive": 32,
+              "damageType": "Damage.Type.Thermal",
+              "presentationId": "Presentation.Ability.ModuleGenerated.Explosion.Thermal",
               "requiredTargetStatuses": [
                 "Status.Damage.Ignite",
                 "Status.Damage.Cryo.Slowed"

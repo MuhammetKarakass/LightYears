@@ -12,9 +12,9 @@ namespace ly
 	class ModuleScreenView : public Panel
 	{
 	public:
-		static constexpr float CellPitch = 48.f;
-		static constexpr float InventoryRowHeight = 32.f;
-		static constexpr int InventoryVisibleRows = 16;
+		static constexpr float CellPitch = 64.f;
+		static constexpr float InventoryRowHeight = 58.f;
+		static constexpr int InventoryVisibleRows = 12;
 
 		ModuleScreenView(shared_ptr<const ModuleScreenViewModel> viewModel, weak_ptr<ModuleScreenPresenter> presenter);
 		void Tick(float deltaTime) override;
@@ -41,6 +41,8 @@ namespace ly
 		weak_ptr<Panel> mInventoryArea;
 		weak_ptr<Panel> mDynamic;
 		sf::Vector2f mPressPosition{};
+		std::optional<sf::Vector2i> mHoverCell;
+		std::uint32_t mHoverInventoryId{ 0 };
 		unsigned int mRefreshCount{ 0 };
 		int mScroll{ 0 };
 		bool mDragArmed{ false };

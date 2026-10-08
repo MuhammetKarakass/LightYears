@@ -19,11 +19,6 @@ namespace ly
 {
 	namespace
 	{
-		bool Same(const ModuleRicochetRule& a, const ModuleRicochetRule& b) { return std::tie(a.damageFraction, a.range, a.secondaryFraction, a.transferStatus) == std::tie(b.damageFraction, b.range, b.secondaryFraction, b.transferStatus); }
-		bool Same(const ModuleGuidedSalvoRule& a, const ModuleGuidedSalvoRule& b) { return std::tie(a.damageFraction, a.projectileCount, a.speed, a.lifetime, a.targetRange, a.maxActive) == std::tie(b.damageFraction, b.projectileCount, b.speed, b.lifetime, b.targetRange, b.maxActive); }
-		bool Same(const ModuleDelayedExplosionRule& a, const ModuleDelayedExplosionRule& b) { return std::tie(a.damageFraction, a.delaySeconds, a.radius, a.maxActive) == std::tie(b.damageFraction, b.delaySeconds, b.radius, b.maxActive); }
-		bool Same(const ModuleTrailMineRule& a, const ModuleTrailMineRule& b) { return std::tie(a.damage, a.spacing, a.windowSeconds, a.fuseSeconds, a.radius, a.maxActive, a.additionalLimit, a.cryoStacks) == std::tie(b.damage, b.spacing, b.windowSeconds, b.fuseSeconds, b.radius, b.maxActive, b.additionalLimit, b.cryoStacks); }
-		bool Same(const ModuleKillExplosionRule& a, const ModuleKillExplosionRule& b) { return std::tie(a.maxHealthFraction, a.radius, a.maxActive, a.requiredTargetStatuses) == std::tie(b.maxHealthFraction, b.radius, b.maxActive, b.requiredTargetStatuses); }
 		void Merge(ModuleRicochetRule& a, const ModuleRicochetRule& b) { a.damageFraction += b.damageFraction; a.range = std::max(a.range, b.range); a.secondaryFraction += b.secondaryFraction; a.transferStatus = a.transferStatus || b.transferStatus; }
 		void Merge(ModuleGuidedSalvoRule& a, const ModuleGuidedSalvoRule& b) { a.damageFraction += b.damageFraction; a.projectileCount += b.projectileCount; a.speed = std::max(a.speed, b.speed); a.lifetime = std::max(a.lifetime, b.lifetime); a.targetRange = std::max(a.targetRange, b.targetRange); a.maxActive = std::max(a.maxActive, b.maxActive); }
 		void Merge(ModuleTrailMineRule& a, const ModuleTrailMineRule& b)
@@ -32,6 +27,7 @@ namespace ly
 			if (b.fuseSeconds > 0.f) a.fuseSeconds = a.fuseSeconds > 0.f ? std::min(a.fuseSeconds, b.fuseSeconds) : b.fuseSeconds;
 			a.radius = std::max(a.radius, b.radius); a.maxActive = std::max(a.maxActive, b.maxActive); a.additionalLimit += b.additionalLimit; a.cryoStacks += b.cryoStacks;
 		}
+		// Catalog validation rejects a second delayed or kill explosion on one module, so these never merge two rules.
 		void Merge(ModuleDelayedExplosionRule& a, const ModuleDelayedExplosionRule& b) { a = b; }
 		void Merge(ModuleKillExplosionRule& a, const ModuleKillExplosionRule& b) { a = b; }
 		List<shared_ptr<Actor>> Nearest(World& world, Actor& source, const sf::Vector2f& origin, float range)
@@ -89,7 +85,7 @@ namespace ly
 			}
 			for (auto& state : next)
 			{
-				auto previous = std::find_if(current.begin(), current.end(), [&state](const auto& value) { return value.instanceId == state.instanceId && Same(value.rule, state.rule); });
+				auto previous = std::find_if(current.begin(), current.end(), [&state](const auto& value) { return value.instanceId == state.instanceId && value.rule == state.rule; });
 				if (previous != current.end()) { state = *previous; previous->lease.reset(); }
 				else { state.lease = std::make_shared<ModuleGeneratedLease>(); state.lease->key = mNextKey++; }
 			}
@@ -227,7 +223,7 @@ namespace ly
 				if (event.hitGroup->consumedModuleRules.insert({ mShip->GetUniqueID(), state.lease->key }).second) spawn(state, ModuleGeneratedPresentationIds::Explosion, event.damage * state.rule.damageFraction, state.rule.radius, state.rule.delaySeconds, event.damageTags);
 		if (event.tag == GameplayTags::Event::Combat::KillConfirmed)
 			for (auto& state : mKillExplosions)
-				if (std::all_of(state.rule.requiredTargetStatuses.begin(), state.rule.requiredTargetStatuses.end(), [&event](const auto& tag) { return Has(event.targetStatuses, tag); })) spawn(state, ModuleGeneratedPresentationIds::ThermalExplosion, event.targetMaxHealth * state.rule.maxHealthFraction, state.rule.radius, 0.f, { DamageTypeSchema::Thermal });
+				if (std::all_of(state.rule.requiredTargetStatuses.begin(), state.rule.requiredTargetStatuses.end(), [&event](const auto& tag) { return Has(event.targetStatuses, tag); })) spawn(state, state.rule.presentationId, event.targetMaxHealth * state.rule.maxHealthFraction, state.rule.radius, 0.f, { state.rule.damageType });
 	}
 	void ModuleGeneratedRuntime::DropMines(float deltaSeconds)
 	{

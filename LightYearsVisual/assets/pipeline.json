@@ -4,6 +4,9 @@
 		"dither": true,
 		"ditherSpread": 0.1
 	},
+	"nebula": {
+		"resolutionDivisor": 4
+	},
 	"bloom": {
 		"enabled": true,
 		"threshold": 0.2,

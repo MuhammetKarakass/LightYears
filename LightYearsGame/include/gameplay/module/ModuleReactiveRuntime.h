@@ -22,6 +22,8 @@ namespace ly
 		void Replace(const List<ResolvedModuleEventAction>& actions, const List<ResolvedModuleOwnerAttributeRule>& attributes, const List<ResolvedModuleEffects::MovementFade>& fades = {});
 		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mGoldWallet = std::move(wallet); }
 		void Tick(float deltaSeconds);
+		// Luck rolls default to a random seed; tests and replays can pin one.
+		void SetRandomSeed(std::uint32_t seed) { mRandom.seed(seed); }
 		std::size_t GetOwnedHandleCount() const;
 
 	private:

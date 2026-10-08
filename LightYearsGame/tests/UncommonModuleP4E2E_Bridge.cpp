@@ -30,6 +30,7 @@ namespace uncommon_p4_e2e
 			{
 				const auto* definition = f.rules.lookup(placement.moduleId);
 				ModulePlacement neighbor = placement;
+				neighbor.rotationQuarterTurns = 0;
 				if (definition->systemCategory == GameplayTags::Module::System::AbilitySlot1) neighbor.origin = { 4, 1 };
 				else if (definition->systemCategory == GameplayTags::Module::System::AbilitySlot2) neighbor.origin = { 4, 3 };
 				else if (definition->systemCategory == GameplayTags::Module::System::AbilitySlot3) neighbor.origin = { 2, 2 };

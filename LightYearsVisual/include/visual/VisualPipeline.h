@@ -17,7 +17,9 @@ namespace ly::visual
 		World,
 		// Pixel-scaled content that keeps its own colors (sprite actors). Same virtual resolution, drawn over World.
 		Sprites,
-		Energy
+		Energy,
+		// Soft nebula content, drawn into a transparent background-resolution target before composition.
+		Nebula
 	};
 
 	struct GlowParams
@@ -50,8 +52,8 @@ namespace ly::visual
 		float areaRatio = 0.f;
 	};
 
-	// Owns the layer textures and composites them: background -> world (nearest upscale, optional dither)
-	// -> sprites (nearest upscale, undithered) -> energy (additive) -> bloom -> flash -> vignette.
+	// Owns layer textures and composites them: background (gradient -> nebula -> stars) -> world -> sprites
+	// -> energy (additive) -> bloom -> flash -> vignette. World uses nearest upscale and optional dither; sprites stay undithered.
 	// Coordinates are output pixels unless a layer is given a game view (see SnapWorldView).
 	class VisualPipeline
 	{
@@ -61,6 +63,8 @@ namespace ly::visual
 		bool Resize(sf::Vector2u outputSize);
 		void BeginFrame();
 		sf::RenderTarget& Target(Layer layer);
+		// Premultiplied-composites the nebula texture over Background; unavailable or disabled targets are a no-op.
+		void CompositeNebula();
 
 		// Energy draws are queued, tier-capped now and budget-culled in Compose (decorative first).
 		void SubmitGlow(const GlowParams& glow);
@@ -115,14 +119,19 @@ namespace ly::visual
 		float mPixelScale = 1.f;
 		int mBuiltVirtualHeight = 0;
 		int mBuiltBloomLevels = 0;
+		int mBuiltNebulaResolutionDivisor = 0;
 		sf::Vector2u mBuiltOutputSize;
 		sf::RenderTexture mBackground;
+		sf::RenderTexture mNebula;
 		sf::RenderTexture mWorld;
 		sf::RenderTexture mSprites;
 		sf::RenderTexture mEnergy;
 		std::vector<BloomLevel> mBloom;
 		std::vector<EnergyItem> mEnergyQueue;
 		EnergyStats mStats;
+		bool mNebulaTargetAvailable = false;
+		bool mNebulaFrameReady = false;
+		bool mNebulaAllocationWarningShown = false;
 		sf::Color mFlashColor = sf::Color::White;
 		float mFlash = 0.f;
 	};

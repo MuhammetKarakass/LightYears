@@ -233,6 +233,8 @@ if(BUILD_TESTING)
 	ly_add_game_test_case(LightYearsUncommonModuleP5E2E LightYearsUncommonModuleP5E2ETests ARGS "${LY_E2E}/uncommon-module-p5.json" TIMEOUT 120)
 	ly_add_game_test(LightYearsUncommonModuleP6E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP6E2E.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Ricochet.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Actors.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Mines.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Content.cpp)
 	ly_add_game_test_case(LightYearsUncommonModuleP6E2E LightYearsUncommonModuleP6E2ETests ARGS "${LY_E2E}/uncommon-module-p6.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsUncommonModuleP7E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP7E2E.cpp)
+	ly_add_game_test_case(LightYearsUncommonModuleP7E2E LightYearsUncommonModuleP7E2ETests ARGS "${LY_E2E}/uncommon-module-p7.json" TIMEOUT 120)
 	ly_add_game_test(LightYearsUncommonModuleCompletionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleCompletionE2E.cpp ${LY_TESTS_DIR}/UncommonModuleCompletionE2E_Damage.cpp ${LY_TESTS_DIR}/UncommonModuleCompletionE2E_Reactive.cpp ${LY_TESTS_DIR}/UncommonModuleCompletionE2E_Content.cpp)
 	ly_add_game_test_case(LightYearsUncommonModuleCompletionE2E LightYearsUncommonModuleCompletionE2ETests ARGS "${LY_E2E}/uncommon-module-completion.json" TIMEOUT 120)
 

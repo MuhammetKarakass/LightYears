@@ -118,6 +118,14 @@ namespace ly::content
 						throw std::runtime_error("Side feature " + feature.sideFeatureId.ToString() + " is missing from its declared pool");
 				}
 			}
+			// Delayed and kill explosions keep one rule per module instance, so a side feature may not add a second one.
+			const auto rejectSingletonOverlap = [](const ModuleDefinition& module, const ModuleSideFeatureDefinition& feature)
+			{
+				const ModuleGeneratedRules& side = feature.rules.generatedRules;
+				for (const ModuleSizeVariant& variant : module.sizeVariants)
+					if ((!side.delayedExplosions.empty() && !variant.generatedRules.delayedExplosions.empty()) || (!side.killExplosions.empty() && !variant.generatedRules.killExplosions.empty()))
+						throw std::runtime_error("Side feature " + feature.sideFeatureId.ToString() + " duplicates a single-instance generated rule already defined by module " + module.moduleId.ToString());
+			};
 			for (const ModuleDefinition& module : modules.definitions)
 			{
 				for (const sas::ContentId& featureId : module.sideFeatures)
@@ -129,6 +137,7 @@ namespace ly::content
 					if (!ModuleLoader::ValidateRulePackageLevelCount(feature->rules, module.levelCount,
 						"Side feature " + featureId.ToString(), &failure)) throw std::runtime_error(failure);
 					if (feature->levelCount < module.levelCount) throw std::runtime_error("Side feature " + featureId.ToString() + " has fewer levels than module " + module.moduleId.ToString());
+					rejectSingletonOverlap(module, *feature);
 				}
 				for (const ModuleSharedPoolPermission& permission : module.sharedPools)
 				{
@@ -143,6 +152,7 @@ namespace ly::content
 						if (!ModuleLoader::ValidateRulePackageLevelCount(feature->rules, module.levelCount,
 							"Side feature " + featureId.ToString(), &failure)) throw std::runtime_error(failure);
 						if (feature->levelCount < module.levelCount) throw std::runtime_error("Side feature " + featureId.ToString() + " has fewer levels than module " + module.moduleId.ToString());
+						rejectSingletonOverlap(module, *feature);
 					}
 				}
 			}

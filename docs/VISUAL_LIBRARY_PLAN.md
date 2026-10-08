@@ -18,6 +18,7 @@ Where: `LightYearsVisual/` (static library `LightYearsVisual`, namespace `ly::vi
 
 - Color script: `ColorRamp`, `ColorScript`, `ColorScriptLibrary`, JSON palettes, runtime switch.
 - Pipeline: `VisualPipeline` with background, world (virtual resolution, nearest upscale, optional palette-snapping Bayer dither), sprites (same virtual resolution, undithered, keeps original colors), energy (additive), bloom (bright pass plus downsampled separable blur levels), flash, vignette; `PipelineSettings` loadable from JSON and editable at runtime.
+- Optional nebula downsampling uses `nebula.resolutionDivisor` (code default 1, shipped 4, clamped to 1–8): cloud layers draw to a transparent target, composite over Background, then stars draw above them. The gallery `N` key cycles 1, 2, 4 and 8.
 - Primitives: `ShapeBrush` (SDF circle, ring, capsule, arc with outline and pixel-snapped edges; ear-clipped polygon with outline), `SubmitGlow` and `SubmitTrail` energy primitives, `Backdrop` (gradient, nebula shader, parallax star field).
 - Readability: `LuminanceTier`, per-tier brightness caps, per-frame energy budget (draw count and area) with decorative culled first.
 - Hot reload: `VisualAssets` polls timestamps for shaders, palettes and `pipeline.json`; a failed reload keeps the previous version.

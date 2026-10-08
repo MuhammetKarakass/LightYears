@@ -69,6 +69,7 @@ namespace ly
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
 		std::size_t GetOwnedHandleCount() const;
 		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mReactiveRuntime.SetGoldWallet(std::move(wallet)); }
+		void SetRandomSeed(std::uint32_t seed) { mReactiveRuntime.SetRandomSeed(seed); }
 		std::size_t GetGeneratedActorCount() const { return mGeneratedRuntime.GetActiveActorCount(); }
 		std::size_t GetGeneratedRuleCount() const { return mGeneratedRuntime.GetRuleCount(); }
 

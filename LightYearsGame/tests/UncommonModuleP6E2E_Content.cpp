@@ -1,4 +1,5 @@
 #include "UncommonModuleP6E2E.h"
+#include "gameplay/content/ModuleContentCatalog.h"
 
 namespace uncommon_p6_e2e
 {
@@ -29,13 +30,34 @@ namespace uncommon_p6_e2e
 		reject("negative-delay", { { "delayedExplosions", Json::array({ { { "damageFraction", .25f }, { "delaySeconds", -1.f }, { "radius", 100 }, { "maxActive", 32 } } }) } });
 		reject("zero-mine-fuse", { { "trailMines", Json::array({ { { "damage", { 8, 10, 12 } }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 0 }, { "radius", 100 }, { "maxActive", { 12, 14, 16 } } } }) } });
 		reject("short-mine-limit", { { "trailMines", Json::array({ { { "damage", { 8, 10, 12 } }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 1 }, { "radius", 100 }, { "maxActive", { 12, 14 } } } }) } });
-		reject("invalid-kill-status-kind", { { "killExplosions", Json::array({ { { "maxHealthFraction", .03f }, { "radius", 100 }, { "maxActive", 32 }, { "requiredTargetStatuses", { "Ability.Offense" } } } }) } });
+		const Json killBase{ { "maxHealthFraction", .03f }, { "radius", 100 }, { "maxActive", 32 }, { "damageType", "Damage.Type.Thermal" }, { "presentationId", "Presentation.Ability.ModuleGenerated.Explosion.Thermal" }, { "requiredTargetStatuses", { "Status.Damage.Ignite" } } };
+		const auto killWith = [&killBase](const char* key, const Json& value) { Json rule = killBase; if (value.is_null()) rule.erase(key); else rule[key] = value; return Json{ { "killExplosions", Json::array({ rule }) } }; };
+		reject("invalid-kill-status-kind", killWith("requiredTargetStatuses", Json::array({ "Ability.Offense" })));
+		reject("kill-missing-damage-type", killWith("damageType", Json{}));
+		reject("kill-non-damage-type-tag", killWith("damageType", "Status.Damage.Ignite"));
+		reject("kill-missing-presentation-id", killWith("presentationId", Json{}));
+		reject("kill-invalid-presentation-id", killWith("presentationId", "not a content id"));
+		const auto overlap = [&](const char* name, const char* moduleId, const char* key, const Json& rule)
+		{
+			Json changed = modules;
+			for (auto& module : changed["modules"]) if (module["id"] == moduleId) for (auto& variant : module["sizeVariants"]) variant["generatedRules"][key] = Json::array({ rule });
+			const auto path = artifactRoot / (std::string{ name } + ".json");
+			std::ofstream output{ path }; output << changed.dump(2); output.close();
+			std::string reason;
+			const bool accepted = content::ModuleContentCatalog::LoadFromFiles(path, dataPath / "module_side_features.json", &reason);
+			report.Check(!accepted && reason.find("single-instance") != std::string::npos, std::string{ "catalog rejects a side feature that duplicates a single-instance generated rule: " } + name, reason);
+		};
+		overlap("catalog-delayed-overlap", "Module.Offense.ScatterCore.Uncommon", "delayedExplosions", Json{ { "damageFraction", .25f }, { "delaySeconds", 1.f }, { "radius", 100 }, { "maxActive", 32 } });
+		overlap("catalog-kill-overlap", "Module.Offense.ThermalShockCoil.Uncommon", "killExplosions", killBase);
 		const auto loaded = content::ModuleLoader::LoadFromFile(dataPath / "modules.json");
 		report.Check(loaded.Succeeded(), "P6 shipped rules load through the real loader", loaded.error);
 		const auto side = content::ModuleSideFeatureLoader::LoadFromFile(dataPath / "module_side_features.json");
 		report.Check(side.Succeeded(), "P6 generated-only private features use the same validated parser", side.error);
 		report.Check(PresentationProfileRegistry<ModuleGuidedPresentationProfile>::Contains(ModuleGeneratedPresentationIds::Guided.ToString()) && PresentationProfileRegistry<ModuleMinePresentationProfile>::Contains(ModuleGeneratedPresentationIds::Mine.ToString()) && PresentationProfileRegistry<ModuleExplosionPresentationProfile>::Contains(ModuleGeneratedPresentationIds::ThermalExplosion.ToString()), "generated presentation content is registered before spawn");
 		report.Check(!PresentationProfileRegistry<ModuleMinePresentationProfile>::Contains(ModuleGeneratedPresentationIds::Guided.ToString()), "generated profiles are isolated by concrete type");
+		std::size_t killRuleCount = 0; bool killProfilesRegistered = true;
+		for (const auto& feature : side.definitions) for (const auto& rule : feature.rules.generatedRules.killExplosions) { ++killRuleCount; killProfilesRegistered = killProfilesRegistered && PresentationProfileRegistry<ModuleExplosionPresentationProfile>::Contains(rule.presentationId.ToString()) && rule.damageType.IsValid(); }
+		report.Check(killRuleCount > 0 && killProfilesRegistered, "shipped kill explosions declare a damage type and a registered presentation profile in JSON");
 		report.Check(!PresentationProfileRegistry<ModuleGuidedPresentationProfile>::Register({ sas::ContentId{ "Invalid.Profile" } }), "typed profile registry rejects invalid presentation identities");
 		ModuleRulePackage shortTable; ModuleRicochetRule rule; rule.damageFractionByLevel.values = { .25f, .3f }; shortTable.generatedRules.ricochets.push_back(rule);
 		std::string failure;

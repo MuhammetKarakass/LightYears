@@ -38,6 +38,7 @@ void GalleryScene::Draw()
 void GalleryScene::DrawBackground()
 {
 	sf::RenderTarget& bg = mPipeline.Target(Layer::Background);
+	sf::RenderTarget& nebulaTarget = mPipeline.Target(Layer::Nebula);
 	const ColorScript& script = mAssets.Script();
 	float cap = mAssets.Settings().tierMaxBrightness[TierIndex(LuminanceTier::Background)];
 
@@ -49,15 +50,16 @@ void GalleryScene::DrawBackground()
 	far.intensity = 0.8f;
 	far.seed = 1.f;
 	far.maxBrightness = cap;
-	DrawNebula(mAssets.Shaders(), bg, script.Role("ambient"), far);
+	DrawNebula(mAssets.Shaders(), nebulaTarget, script.Role("ambient"), far);
 
 	NebulaParams near = far;
 	near.scroll = mScroll * 0.55f + sf::Vector2f(400.f, 150.f);
 	near.scale = 0.0032f;
 	near.intensity = 0.55f;
 	near.seed = 6.f;
-	DrawNebula(mAssets.Shaders(), bg, script.Role("ambient2"), near);
+	DrawNebula(mAssets.Shaders(), nebulaTarget, script.Role("ambient2"), near);
 
+	mPipeline.CompositeNebula();
 	mStars.Draw(bg, mScroll, mTime, script.Role("ambient"), cap);
 }
 

@@ -33,7 +33,7 @@ namespace ly::visual
 		shader->setUniform("uSeed", params.seed);
 		shader->setUniform("uMaxBrightness", params.maxBrightness);
 		SetRampUniform(*shader, "uRamp", ramp, 4);
-		DrawShaderQuad(target, *shader, sf::FloatRect({0.f, 0.f}, sf::Vector2f(target.getSize())));
+		DrawShaderQuad(target, *shader, sf::FloatRect({0.f, 0.f}, target.getView().getSize()));
 	}
 
 	void DrawPlanet(ShaderLibrary& shaders, sf::RenderTarget& target, const ColorRamp& ramp, const PlanetParams& params)
