@@ -171,14 +171,14 @@ namespace ly
 
 		const auto* sourceCombatant = source ? dynamic_cast<const Combatant*>(source) : nullptr;
 		const CombatRuntime::OutgoingDamagePlan outgoingModulePlan = sourceCombatant && !payload.skipModuleDamageRules
-			? sourceCombatant->GetCombatRuntime().ResolveOutgoingDamagePlan(target, sourceAbilityTags, sourceAbilityId, deliveryType)
+			? sourceCombatant->GetCombatRuntime().ResolveOutgoingDamagePlan(target, sourceAbilityTags, sourceAbilityId, deliveryType, payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed)
 			: CombatRuntime::OutgoingDamagePlan{};
 		const auto resolveCriticalMultiplier = [&]()
 		{
 			return sourceCombatant ? sourceCombatant->GetCombatRuntime().GetCriticalDamageMultiplier() : 1.f;
 		};
 		const float sourceOutgoingDamageMultiplier =
-			sourceCombatant ? sourceCombatant->GetCombatRuntime().GetOutgoingDamageMultiplier() : 1.f;
+			sourceCombatant && payload.sourceScalingPolicy == DamageSourceScalingPolicy::Normal ? sourceCombatant->GetCombatRuntime().GetOutgoingDamageMultiplier() : 1.f;
 		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier;
 		bool wasCritical = false;
 		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
@@ -232,6 +232,9 @@ namespace ly
 			context.wasCritical = wasCritical;
 			context.damageTags = damageTags;
 			context.payload = payload;
+			context.moduleFirstHitClaim = outgoingModulePlan.firstHitClaim;
+			if (!context.payload.hitGroup && sourceCombatant && !sourceAbilityId.ToString().empty())
+				if (const auto* ability = sourceCombatant->GetAbilitySystemComponent().GetAbilityById(sourceAbilityId.ToString())) context.payload.hitGroup = ability->GetDamageHitGroup();
 			combatant->ReceiveDamage(context);
 		}
 		else

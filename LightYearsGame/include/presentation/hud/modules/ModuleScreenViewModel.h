@@ -9,6 +9,7 @@
 namespace ly
 {
 	enum class ModuleZoneKind { None, Nose, Wings, Hull, Core, Engine, Sensor };
+	enum class ModuleSideFeatureViewState { None, Unselected, Locked, Active, Unavailable };
 
 	// One installed placement or inventory item as the screen shows it.
 	struct ModuleEntryView
@@ -16,6 +17,11 @@ namespace ly
 		std::uint32_t instanceId{ 0 };
 		std::string name, abbreviation, family;
 		std::string description;
+		int level{ 1 }, levelCount{ 1 };
+		List<int> sizeLadder;
+		int sideFeatureRequiredCells{ 0 };
+		ModuleSideFeatureViewState sideFeatureState{ ModuleSideFeatureViewState::None };
+		std::string sideFeatureName, sideFeatureDescription;
 		bool isSystem{ false };
 		int cellCount{ 0 };
 		int variantIndex{ 0 };
@@ -31,6 +37,7 @@ namespace ly
 		bool operator==(const ModuleEntryView& o) const
 		{
 			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && description == o.description && isSystem == o.isSystem &&
+				level == o.level && levelCount == o.levelCount && sizeLadder == o.sizeLadder && sideFeatureRequiredCells == o.sideFeatureRequiredCells && sideFeatureState == o.sideFeatureState && sideFeatureName == o.sideFeatureName && sideFeatureDescription == o.sideFeatureDescription &&
 				cellCount == o.cellCount && variantIndex == o.variantIndex && cells == o.cells && bonusPercent == o.bonusPercent &&
 				rebooting == o.rebooting && rebootRemaining == o.rebootRemaining && rebootFraction == o.rebootFraction && held == o.held;
 		}

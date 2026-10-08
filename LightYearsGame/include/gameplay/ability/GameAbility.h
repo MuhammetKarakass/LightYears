@@ -98,6 +98,7 @@ namespace ly
 		);
 
 		void RefundActivationCooldown(float fraction);
+		const std::shared_ptr<DamageHitGroup>& GetDamageHitGroup() const { return mDamageHitGroup; }
 		bool IsInputHeld() const { return this->mRuntimeState.IsInputHeld(); }
 		bool IsPressedThisFrame() const { return this->mRuntimeState.IsPressedThisFrame(); }
 		void SetActivationOrigin(sas::AbilityActivationOrigin origin)
@@ -137,6 +138,7 @@ namespace ly
 	private:
 		friend class LightYearsAbilitySystemComponent;
 		friend class GameAbilityActionExecutor;
+		std::shared_ptr<DamageHitGroup> mDamageHitGroup;
 
 		bool CanActivateContent() const override;
 		bool ActivateContent() override;

@@ -507,13 +507,12 @@
     {
       "id": "Module.Offense.GlassTopCore.Uncommon",
       "displayName": "Glass Cannon Core",
+      "description": "Attack Power +{Owner.AttackPower}; Max Health -{Owner.MaxHealth.reductionPercent}%.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Offense",
-      "sideFeatures": ["Module.SideFeature.GlassTop.ShieldReturn"],
-      "sharedPools": [
-        { "poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O2"] }
-      ],
+      "sideFeatures": ["Module.SideFeature.GlassTop.ShieldReturn", "Module.SideFeature.GlassTop.LowHealthCrit"],
+      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O2", "Module.SideFeature.Shared.O4", "Module.SideFeature.Shared.O5"]}],
       "sizeLadder": [1, 3],
       "sizeVariants": [
         {
@@ -535,6 +534,7 @@
     {
       "id": "Module.Utility.DoubleFeedCore.Uncommon",
       "displayName": "Double Feed Core",
+      "description": "Attack Power +{Owner.AttackPower}; Energy Power +{Owner.Energy.Power}.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Utility",
@@ -553,12 +553,11 @@
       "id": "Module.Offense.SharpScale.Uncommon",
       "sideFeatures": ["Module.SideFeature.SharpScale.CriticalRhythm", "Module.SideFeature.SharpScale.LuckLens"],
       "displayName": "Sharp Scale",
+      "description": "Critical damage +{Owner.CriticalDamage.percent}%; critical chance +{Owner.CriticalChance}%.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Offense",
-      "sharedPools": [
-        { "poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O3"] }
-      ],
+      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O3", "Module.SideFeature.Shared.O5"]}],
       "sizeLadder": [2, 3],
       "sizeVariants": [
         {
@@ -580,6 +579,7 @@
     {
       "id": "Module.Defense.LootShield.Uncommon",
       "displayName": "Loot Shield",
+      "description": "Each kill restores {action.0.amountPercent}% of Max Shield; excess is lost.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Defense",
@@ -677,6 +677,7 @@
     {
       "id": "Module.Utility.HuntClock.Uncommon",
       "displayName": "Hunt Clock",
+      "description": "Each kill removes {action.0.amount}s from Q/E/F/R cooldowns. Excludes Primary.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Utility",
@@ -736,9 +737,7 @@
           ]
         }
       ],
-      "sideFeatures": [
-        "Module.SideFeature.HuntClock.FifthKill"
-      ],
+      "sideFeatures": ["Module.SideFeature.HuntClock.FifthKill", "Module.SideFeature.HuntClock.HuntBounty"],
       "sharedPools": [
         {
           "poolId": "Module.SidePool.General",
@@ -753,6 +752,7 @@
     {
       "id": "Module.Movement.MovementRhythm.Uncommon",
       "displayName": "Movement Rhythm",
+      "description": "Gain +{owner.0.amount} Attack Speed per 100 units of actual speed, including Afterburner. Zero while stationary.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Movement",
@@ -812,9 +812,7 @@
           ]
         }
       ],
-      "sideFeatures": [
-        "Module.SideFeature.MovementRhythm.AdvancedThrust"
-      ],
+      "sideFeatures": ["Module.SideFeature.MovementRhythm.AdvancedThrust", "Module.SideFeature.MovementRhythm.Momentum"],
       "sharedPools": [
         {
           "poolId": "Module.SidePool.General",
@@ -829,6 +827,7 @@
     {
       "id": "Module.Defense.GritYourTeeth.Uncommon",
       "displayName": "Grit Your Teeth",
+      "description": "At {damage.0.conditionPercent}% hull health or less, take {damage.0.reductionPercent}% less damage.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Defense",
@@ -890,9 +889,7 @@
           ]
         }
       ],
-      "sideFeatures": [
-        "Module.SideFeature.GritYourTeeth.CriticalCircuit"
-      ],
+      "sideFeatures": ["Module.SideFeature.GritYourTeeth.CriticalCircuit", "Module.SideFeature.GritYourTeeth.ShieldRegen"],
       "sharedPools": [
         {
           "poolId": "Module.SidePool.Defense",
@@ -907,6 +904,7 @@
     {
       "id": "Module.Utility.LuckyCast.Uncommon",
       "displayName": "Lucky Cast",
+      "description": "Luck +{Owner.Luck}; each Q/E/F/R use has Luck x {action.0.chancePerLuckPercent}% chance to refund {action.0.amountPercent}% cooldown.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Utility",
@@ -952,6 +950,7 @@
     {
       "id": "Module.Offense.ThermalShockCoil.Uncommon",
       "displayName": "Thermal Shock Coil",
+      "description": "Deal {damage.0.bonusPercent}% more damage to enemies with both Ignite and Cryo.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Offense",
@@ -1009,19 +1008,13 @@
           ]
         }
       ],
-      "sharedPools": [
-        {
-          "poolId": "Module.SidePool.Offense",
-          "allowedFeatureIds": [
-            "Module.SideFeature.Shared.O1",
-            "Module.SideFeature.Shared.O2"
-          ]
-        }
-      ]
+      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O2", "Module.SideFeature.Shared.O5"]}],
+      "sideFeatures": ["Module.SideFeature.ThermalShockCoil.LingeringShock", "Module.SideFeature.ThermalShockCoil.DeathBurst"]
     },
     {
       "id": "Module.Defense.ColdRetort.Uncommon",
       "displayName": "Cold Retort",
+      "description": "Taking damage puts {action.0.amount} Cryo on {action.0.targetCount} nearest enemies within {action.0.radius} units; {action.0.cooldownSeconds}s cooldown.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Defense",
@@ -1088,7 +1081,8 @@
         }
       ],
       "sideFeatures": [
-        "Module.SideFeature.ColdRetort.JarringEffect"
+        "Module.SideFeature.ColdRetort.JarringEffect",
+        "Module.SideFeature.ColdRetort.FrozenSpread"
       ],
       "sharedPools": [
         {
@@ -1104,6 +1098,7 @@
     {
       "id": "Module.Primary.PhotonicLens.Uncommon",
       "displayName": "Photonic Lens",
+      "description": "Deal {damage.0.bonusPercent}% more damage to enemies with no status effects.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Primary",
@@ -1134,6 +1129,7 @@
     {
       "id": "Module.Defense.HealthBridge.Uncommon",
       "displayName": "Health Bridge",
+      "description": "Adjacent abilities add {damage.0.maxHealthDamagePercent}% of your Max Health to direct hits. Damage over time is excluded.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Defense",
@@ -1168,6 +1164,7 @@
     {
       "id": "Module.Defense.ReflectionShield.Uncommon",
       "displayName": "Reflection Shield",
+      "description": "After Defense use, reflect {reflection.0.percent}% of shield damage as Energy for {reflection.0.durationSeconds}s. Cannot trigger modules.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Defense",
@@ -1198,6 +1195,332 @@
           ]
         }
       ]
+    },
+    {
+      "id": "Module.Offense.ArcExtender.Uncommon",
+      "displayName": "Arc Extender",
+      "description": "Electric can reach 5 stacks: damage bonuses {electric.0.stack.0.percent}/{electric.0.stack.1.percent}/{electric.0.stack.2.percent}/{electric.0.stack.3.percent}/{electric.0.stack.4.percent}%.",
+      "family": "Ability.Offense",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "sizeLadder": [
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "statusRules": {
+            "electricOverrides": [
+              {
+                "damageTakenByStack": [
+                  0.03,
+                  0.06,
+                  0.09,
+                  0.13,
+                  [
+                    0.19,
+                    0.21,
+                    0.23
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.FrostLock.Uncommon",
+      "displayName": "Frost Lock",
+      "description": "At {freeze.0.threshold} Cryo, stop normal enemies moving and attacking for {freeze.0.durationSeconds}s; clear stacks. Per-target cooldown: {freeze.0.cooldownSeconds}s.",
+      "family": "Ability.Utility",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "statusRules": {
+            "cryoFreezes": [
+              {
+                "threshold": 4,
+                "durationSeconds": [
+                  1,
+                  1.3,
+                  1.6
+                ],
+                "cooldownSeconds": [
+                  8,
+                  7,
+                  6
+                ],
+                "normalTargetsOnly": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Module.Primary.RicochetTip.Uncommon",
+      "displayName": "Ricochet Tip",
+      "description": "Each Primary shot bounces once to another enemy within {ricochet.0.range} units for {ricochet.0.damagePercent}% of its first hit.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Primary",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "ricochets": [
+              {
+                "damageFraction": [
+                  0.25,
+                  0.3,
+                  0.35
+                ],
+                "range": 300
+              }
+            ]
+          }
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "ricochets": [
+              {
+                "damageFraction": [
+                  0.25,
+                  0.3,
+                  0.35
+                ],
+                "range": 300
+              }
+            ]
+          }
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.RicochetTip.StatusTransfer",
+        "Module.SideFeature.RicochetTip.SecondBounce"
+      ],
+      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O2", "Module.SideFeature.Shared.O4", "Module.SideFeature.Shared.O5"]}]
+    },
+    {
+      "id": "Module.Offense.ScatterCore.Uncommon",
+      "displayName": "Scatter Core",
+      "description": "First Offense hit fires {salvo.0.projectileCount} guided missiles at different enemies: {salvo.0.damagePercent}% hit damage each. Speed {salvo.0.speed}, life {salvo.0.lifetime}s.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "guidedSalvos": [
+              {
+                "damageFraction": [
+                  0.15,
+                  0.18,
+                  0.21
+                ],
+                "projectileCount": 3,
+                "speed": 600,
+                "lifetime": 3,
+                "targetRange": 1800,
+                "maxActive": 64
+              }
+            ]
+          }
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "guidedSalvos": [
+              {
+                "damageFraction": [
+                  0.15,
+                  0.18,
+                  0.21
+                ],
+                "projectileCount": 3,
+                "speed": 600,
+                "lifetime": 3,
+                "targetRange": 1800,
+                "maxActive": 64
+              }
+            ]
+          }
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.ScatterCore.Aftershock",
+        "Module.SideFeature.ScatterCore.FourthMissile"
+      ],
+      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O3", "Module.SideFeature.Shared.O4"]}]
+    },
+    {
+      "id": "Module.Movement.TrailMines.Uncommon",
+      "displayName": "Trail Mines",
+      "description": "After Movement, drop a mine every {mine.0.spacing} units for {mine.0.windowSeconds}s: {mine.0.damage} Kinetic damage, {mine.0.radius} radius, {mine.0.fuseSeconds}s fuse. Max {mine.0.maxActive} active.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Movement",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "trailMines": [
+              {
+                "damage": [
+                  8,
+                  10,
+                  12
+                ],
+                "spacing": 50,
+                "windowSeconds": 5,
+                "fuseSeconds": 1,
+                "radius": 100,
+                "maxActive": [
+                  12,
+                  14,
+                  16
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "trailMines": [
+              {
+                "damage": [
+                  8,
+                  10,
+                  12
+                ],
+                "spacing": 50,
+                "windowSeconds": 5,
+                "fuseSeconds": 1,
+                "radius": 100,
+                "maxActive": [
+                  12,
+                  14,
+                  16
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.TrailMines.CryoMines",
+        "Module.SideFeature.TrailMines.QuickFuse"
+      ],
+      "sharedPools": [{"poolId": "Module.SidePool.General", "allowedFeatureIds": ["Module.SideFeature.Shared.G1", "Module.SideFeature.Shared.G3", "Module.SideFeature.Shared.G4"]}]
     }
   ]
 }

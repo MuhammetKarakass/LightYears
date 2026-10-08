@@ -15,6 +15,7 @@ namespace ly
 		double rollWeight = 1.0;
 		int levelCount = 3;
 		ModuleRulePackage rules;
+		std::string description;
 	};
 
 	struct ModuleSideFeatureChoice

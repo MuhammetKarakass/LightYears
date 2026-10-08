@@ -1,3 +1,4 @@
+#include "gameplay/module/ModuleDescriptionValues.h"
 #include "gameplay/content/ModuleLoader.h"
 
 #include "gameplay/attributes/AttributeIdSchema.h"
@@ -8,8 +9,10 @@
 
 #include "framework/JsonDocumentLoader.h"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
+#include <initializer_list>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -179,6 +182,7 @@ namespace ly::content
 			if (value == "PrimaryShotOnly") return ModuleDamageCondition::PrimaryShotOnly;
 			if (value == "TargetHealthAtMost") return ModuleDamageCondition::TargetHealthAtMost;
 			if (value == "FullMagazineShot") return ModuleDamageCondition::FullMagazineShot;
+			if (value == "FirstTargetHit") return ModuleDamageCondition::FirstTargetHit;
 			throw std::runtime_error("Unknown module damage condition: " + value);
 		}
 
@@ -446,6 +450,7 @@ namespace ly::content
 				else if (kind == "ReduceLongestCooldown") action.kind = ModuleEventActionKind::ReduceLongestCooldown;
 				else if (kind == "RefundUsedCooldown") action.kind = ModuleEventActionKind::RefundUsedCooldown;
 				else if (kind == "ApplyNearbyCryo") action.kind = ModuleEventActionKind::ApplyNearbyCryo;
+				else if (kind == "AwardGold") action.kind = ModuleEventActionKind::AwardGold;
 				else throw std::runtime_error(context + " unknown event action: " + kind);
 				const bool refund = action.kind == ModuleEventActionKind::RefundUsedCooldown;
 				const bool cryo = action.kind == ModuleEventActionKind::ApplyNearbyCryo;
@@ -453,7 +458,7 @@ namespace ly::content
 					throw std::runtime_error(context + " incompatible event action trigger");
 				action.amount = ParseLevelFloat(entry.at("amount"), context + ".eventActions.amount", minimumLevelCount, action.amountByLevel);
 				const bool seconds = action.kind == ModuleEventActionKind::ReduceAllCooldowns;
-				const auto validAmount = [seconds, cryo](float value) { return value > 0.f && (cryo ? value <= static_cast<float>(std::numeric_limits<int>::max() / 2) && std::floor(value) == value : seconds || value <= 1.f); };
+				const auto validAmount = [seconds, cryo, gold = action.kind == ModuleEventActionKind::AwardGold](float value) { return value > 0.f && ((cryo || gold) ? value <= static_cast<float>(std::numeric_limits<int>::max() / 2) && std::floor(value) == value : seconds || value <= 1.f); };
 				if (!validAmount(action.amount)) throw std::runtime_error(context + " invalid event action amount");
 				ValidateTable(action.amountByLevel, context, validAmount, "invalid event action amount");
 				action.everyCount = entry.contains("everyCount") ? ParsePositiveInt(entry.at("everyCount"), context) : 1;
@@ -497,7 +502,13 @@ namespace ly::content
 				rule.attributeId = sas::AttributeId{ entry.at("attributeId").get<std::string>() };
 				std::string failure;
 				if (!AttributeIdSchema::Validate(rule.attributeId, &failure)) throw std::runtime_error(context + failure);
-				if (rule.attributeId != OwnerAttributeIds::AttackSpeed && rule.attributeId != OwnerAttributeIds::AttackPower && rule.attributeId != OwnerAttributeIds::EnergyPower && !(rule.source == ModuleOwnerAttributeSource::Luck && rule.attributeId == OwnerAttributeIds::CriticalChance))
+				rule.target = ParseTarget(entry.value("target", std::string{ "Owner" }));
+				rule.operation = AttributeJsonParser::ParseOperation(entry.value("operation", std::string{ "Add" }), context);
+				const bool ownerAttribute = rule.target == ModuleAttributeTarget::Owner && rule.operation == sas::AttributeModifierOperation::Add &&
+					(rule.attributeId == OwnerAttributeIds::AttackSpeed || rule.attributeId == OwnerAttributeIds::AttackPower || rule.attributeId == OwnerAttributeIds::EnergyPower ||
+						((rule.source == ModuleOwnerAttributeSource::Luck || rule.source == ModuleOwnerAttributeSource::HealthThreshold) && rule.attributeId == OwnerAttributeIds::CriticalChance));
+				const bool shipAttribute = rule.target == ModuleAttributeTarget::Ship && rule.operation == sas::AttributeModifierOperation::Multiply && rule.source == ModuleOwnerAttributeSource::HealthThreshold && rule.attributeId == ShipAttributeIds::ShieldRegen;
+				if (!ownerAttribute && !shipAttribute)
 					throw std::runtime_error(context + " unsupported conditional owner attribute");
 				rule.healthAtMost = entry.contains("healthAtMost") ? ParseFiniteFloat(entry.at("healthAtMost"), context) : 1.f;
 				if ((rule.source == ModuleOwnerAttributeSource::MovementSpeed || rule.source == ModuleOwnerAttributeSource::Luck) && entry.contains("healthAtMost"))
@@ -511,6 +522,15 @@ namespace ly::content
 					throw std::runtime_error(context + " invalid movement fade");
 				variant.ownerAttributeRules.push_back(std::move(rule));
 			}
+			const Json fades = object.value("movementFadeRules", Json::array());
+			if (!fades.is_array()) throw std::runtime_error(context + ".movementFadeRules must be an array");
+			for (const Json& entry : fades)
+			{
+				if (!entry.is_object() || entry.size() != 1 || !entry.contains("fadeSeconds")) throw std::runtime_error(context + " invalid movement fade rule");
+				const float seconds = ParseFiniteFloat(entry.at("fadeSeconds"), context);
+				if (seconds <= 0.f) throw std::runtime_error(context + " movement fade must be positive");
+				variant.movementFadeRules.push_back({ seconds });
+			}
 			const Json reflections = object.value("shieldReflections", Json::array());
 			if (!reflections.is_array()) throw std::runtime_error(context + ".shieldReflections must be an array");
 			for (const Json& entry : reflections)
@@ -523,69 +543,168 @@ namespace ly::content
 				ValidateTable(rule.fractionByLevel, context, valid, "invalid shield reflection fraction");
 				variant.shieldReflections.push_back(rule);
 			}
+			const Json statusRules = object.value("statusRules", Json::object());
+			if (!statusRules.is_object()) throw std::runtime_error(context + ".statusRules must be an object");
+			const std::set<std::string> statusKeys{ "electricOverrides", "cryoFreezes", "thermalCryoDurationBonuses", "freezeSpreads", "durationBonuses" };
+			for (const auto& field : statusRules.items())
+				if (!statusKeys.count(field.key()) || !field.value().is_array()) throw std::runtime_error(context + " invalid status rule list: " + field.key());
+			const auto positive = [](float value) { return value > 0.f; };
+			const auto nonnegative = [](float value) { return value >= 0.f; };
+			const auto validateStatusFields = [&context](const Json& entry, std::initializer_list<const char*> allowed)
+			{
+				if (!entry.is_object()) throw std::runtime_error(context + " status rule must be an object");
+				for (const auto& field : entry.items())
+					if (std::none_of(allowed.begin(), allowed.end(), [&field](const char* name) { return field.key() == name; })) throw std::runtime_error(context + " unknown status rule field: " + field.key());
+			};
+			for (const Json& entry : statusRules.value("electricOverrides", Json::array()))
+			{
+				validateStatusFields(entry, { "damageTakenByStack" });
+				ModuleElectricStatusRule rule;
+				const auto& values = entry.at("damageTakenByStack");
+				if (!values.is_array() || values.empty()) throw std::runtime_error(context + " electric stack table must not be empty");
+				for (const auto& value : values)
+				{
+					ModuleLevelTable<float> table;
+					const float base = ParseLevelFloat(value, context + ".electric.damageTakenByStack", minimumLevelCount, table);
+					if (base < 0.f) throw std::runtime_error(context + " invalid electric bonus");
+					ValidateTable(table, context, nonnegative, "invalid electric bonus");
+					rule.damageTakenByStack.push_back(base);
+					rule.damageTakenByStackByLevel.push_back(std::move(table));
+				}
+				variant.statusRules.electricOverrides.push_back(std::move(rule));
+			}
+			for (const Json& entry : statusRules.value("cryoFreezes", Json::array()))
+			{
+				ModuleCryoFreezeRule rule;
+				validateStatusFields(entry, { "threshold", "durationSeconds", "cooldownSeconds", "normalTargetsOnly" });
+				rule.threshold = ParsePositiveInt(entry.at("threshold"), context + ".freeze.threshold");
+				rule.durationSeconds = ParseLevelFloat(entry.at("durationSeconds"), context, minimumLevelCount, rule.durationSecondsByLevel);
+				rule.cooldownSeconds = ParseLevelFloat(entry.at("cooldownSeconds"), context, minimumLevelCount, rule.cooldownSecondsByLevel);
+				rule.normalTargetsOnly = entry.value("normalTargetsOnly", true);
+				if (!positive(rule.durationSeconds) || !positive(rule.cooldownSeconds)) throw std::runtime_error(context + " invalid freeze timing");
+				ValidateTable(rule.durationSecondsByLevel, context, positive, "invalid freeze duration");
+				ValidateTable(rule.cooldownSecondsByLevel, context, positive, "invalid freeze cooldown");
+				variant.statusRules.cryoFreezes.push_back(std::move(rule));
+			}
+			for (const char* key : { "thermalCryoDurationBonuses", "durationBonuses" })
+			{
+				for (const Json& entry : statusRules.value(key, Json::array()))
+				{
+					validateStatusFields(entry, { "bonusSeconds" });
+					ModuleStatusDurationRule rule;
+					rule.bonusSeconds = ParseLevelFloat(entry.at("bonusSeconds"), context, minimumLevelCount, rule.bonusSecondsByLevel);
+					if (!positive(rule.bonusSeconds)) throw std::runtime_error(context + " invalid status duration bonus");
+					ValidateTable(rule.bonusSecondsByLevel, context, positive, "invalid status duration bonus");
+					(std::string{ key } == "durationBonuses" ? variant.statusRules.durationBonuses : variant.statusRules.thermalCryoDurationBonuses).push_back(std::move(rule));
+				}
+			}
+			for (const Json& entry : statusRules.value("freezeSpreads", Json::array()))
+			{
+				validateStatusFields(entry, { "radius", "stacks" });
+				ModuleFreezeSpreadRule rule;
+				rule.radius = ParseFiniteFloat(entry.at("radius"), context);
+				rule.stacks = ParsePositiveInt(entry.at("stacks"), context);
+				if (!positive(rule.radius)) throw std::runtime_error(context + " invalid freeze spread radius");
+				variant.statusRules.freezeSpreads.push_back(rule);
+			}
+			const Json generated = object.value("generatedRules", Json::object());
+			if (!generated.is_object()) throw std::runtime_error(context + ".generatedRules must be an object");
+			const std::set<std::string> generatedKeys{ "ricochets", "guidedSalvos", "delayedExplosions", "trailMines", "killExplosions" };
+			for (const auto& field : generated.items())
+				if (!generatedKeys.count(field.key()) || !field.value().is_array() || field.value().size() > 1) throw std::runtime_error(context + " generated rule lists accept at most one rule per family");
+			const auto fields = [&context](const Json& entry, std::initializer_list<const char*> allowed)
+			{
+				if (!entry.is_object()) throw std::runtime_error(context + " generated rule must be an object");
+				for (const auto& field : entry.items())
+					if (std::none_of(allowed.begin(), allowed.end(), [&field](const char* name) { return field.key() == name; })) throw std::runtime_error(context + " unknown generated rule field: " + field.key());
+			};
+			const auto number = [&context](const Json& entry, const char* key)
+			{
+				if (!entry.contains(key)) return 0.f;
+				const float value = ParseFiniteFloat(entry.at(key), context + ".generatedRules." + key);
+				if (value <= 0.f) throw std::runtime_error(context + " generated value must be positive: " + key);
+				return value;
+			};
+			const auto count = [&context](const Json& entry, const char* key)
+			{
+				const int value = entry.contains(key) ? ParsePositiveInt(entry.at(key), context + ".generatedRules." + key) : 0;
+				if (value > 1024) throw std::runtime_error(context + " generated count exceeds technical ceiling: " + key);
+				return value;
+			};
+			const auto fraction = [&context, minimumLevelCount](const Json& entry, const char* key, ModuleLevelTable<float>& table)
+			{
+				if (!entry.contains(key)) return 0.f;
+				const float value = ParseLevelFloat(entry.at(key), context + ".generatedRules." + key, minimumLevelCount, table);
+				const auto valid = [](float v) { return v > 0.f && v <= 1.f; };
+				if (!valid(value)) throw std::runtime_error(context + " generated damage fraction must be in (0,1]");
+				ValidateTable(table, context, valid, "generated fraction must be in (0,1]");
+				return value;
+			};
+			for (const auto& entry : generated.value("ricochets", Json::array()))
+			{
+				fields(entry, { "damageFraction", "range", "secondaryFraction", "transferStatus" });
+				ModuleRicochetRule rule;
+				rule.damageFraction = fraction(entry, "damageFraction", rule.damageFractionByLevel);
+				rule.range = number(entry, "range");
+				rule.secondaryFraction = number(entry, "secondaryFraction");
+				rule.transferStatus = entry.value("transferStatus", false);
+				if ((rule.damageFraction > 0.f && rule.range <= 0.f) || rule.secondaryFraction > 1.f || (rule.damageFraction <= 0.f && rule.secondaryFraction <= 0.f && !rule.transferStatus)) throw std::runtime_error(context + " incomplete ricochet rule");
+				variant.generatedRules.ricochets.push_back(std::move(rule));
+			}
+			for (const auto& entry : generated.value("guidedSalvos", Json::array()))
+			{
+				fields(entry, { "damageFraction", "projectileCount", "speed", "lifetime", "targetRange", "maxActive" });
+				ModuleGuidedSalvoRule rule;
+				rule.damageFraction = fraction(entry, "damageFraction", rule.damageFractionByLevel);
+				rule.projectileCount = count(entry, "projectileCount"); rule.speed = number(entry, "speed"); rule.lifetime = number(entry, "lifetime"); rule.targetRange = number(entry, "targetRange"); rule.maxActive = count(entry, "maxActive");
+				if (rule.projectileCount <= 0 || (rule.damageFraction > 0.f && (rule.speed <= 0.f || rule.lifetime <= 0.f || rule.targetRange <= 0.f || rule.maxActive <= 0))) throw std::runtime_error(context + " incomplete guided salvo rule");
+				variant.generatedRules.guidedSalvos.push_back(std::move(rule));
+			}
+			for (const auto& entry : generated.value("delayedExplosions", Json::array()))
+			{
+				fields(entry, { "damageFraction", "delaySeconds", "radius", "maxActive" });
+				ModuleDelayedExplosionRule rule;
+				rule.damageFraction = fraction(entry, "damageFraction", rule.damageFractionByLevel);
+				rule.delaySeconds = number(entry, "delaySeconds"); rule.radius = number(entry, "radius"); rule.maxActive = count(entry, "maxActive");
+				if (rule.damageFraction <= 0.f || rule.delaySeconds <= 0.f || rule.radius <= 0.f || rule.maxActive <= 0) throw std::runtime_error(context + " incomplete delayed explosion rule");
+				variant.generatedRules.delayedExplosions.push_back(std::move(rule));
+			}
+			for (const auto& entry : generated.value("trailMines", Json::array()))
+			{
+				fields(entry, { "damage", "spacing", "windowSeconds", "fuseSeconds", "radius", "maxActive", "additionalLimit", "cryoStacks" });
+				ModuleTrailMineRule rule;
+				if (entry.contains("damage"))
+				{
+					rule.damage = ParseLevelFloat(entry.at("damage"), context, minimumLevelCount, rule.damageByLevel);
+					if (!positive(rule.damage)) throw std::runtime_error(context + " mine damage must be positive");
+					ValidateTable(rule.damageByLevel, context, positive, "mine damage must be positive");
+				}
+				rule.spacing = number(entry, "spacing"); rule.windowSeconds = number(entry, "windowSeconds"); rule.fuseSeconds = number(entry, "fuseSeconds"); rule.radius = number(entry, "radius");
+				if (entry.contains("maxActive")) rule.maxActive = ParsePositiveLevelInt(entry.at("maxActive"), context, minimumLevelCount, rule.maxActiveByLevel);
+				rule.additionalLimit = count(entry, "additionalLimit"); rule.cryoStacks = count(entry, "cryoStacks");
+				if ((rule.damage > 0.f && (rule.spacing <= 0.f || rule.windowSeconds <= 0.f || rule.fuseSeconds <= 0.f || rule.radius <= 0.f || rule.maxActive <= 0)) || (rule.damage <= 0.f && rule.additionalLimit <= 0 && rule.cryoStacks <= 0)) throw std::runtime_error(context + " incomplete trail mine rule");
+				if (rule.maxActive > 1024) throw std::runtime_error(context + " mine limit exceeds technical ceiling");
+				ValidateTable(rule.maxActiveByLevel, context, [](int v) { return v <= 1024; }, "mine limit exceeds technical ceiling");
+				variant.generatedRules.trailMines.push_back(std::move(rule));
+			}
+			for (const auto& entry : generated.value("killExplosions", Json::array()))
+			{
+				fields(entry, { "maxHealthFraction", "radius", "maxActive", "requiredTargetStatuses" });
+				ModuleKillExplosionRule rule;
+				rule.maxHealthFraction = fraction(entry, "maxHealthFraction", rule.maxHealthFractionByLevel);
+				rule.radius = number(entry, "radius"); rule.maxActive = count(entry, "maxActive");
+				const auto& statuses = entry.at("requiredTargetStatuses");
+				if (!statuses.is_array() || statuses.empty()) throw std::runtime_error(context + " kill explosion requires target statuses");
+				for (const auto& tag : statuses) rule.requiredTargetStatuses.push_back(ParseTag(tag, GameplayTagKind::Status, context));
+				if (rule.maxHealthFraction <= 0.f || rule.radius <= 0.f || rule.maxActive <= 0) throw std::runtime_error(context + " incomplete kill explosion rule");
+				variant.generatedRules.killExplosions.push_back(std::move(rule));
+			}
 			return variant;
-		}
-
-		bool HasAttribute(const ModuleSizeVariant& variant, const std::string& attributeName)
-		{
-			for (const ModuleAttributeModifier& modifier : variant.attributeModifiers)
-				if (modifier.modifier.attributeId.GetName() == attributeName) return true;
-			for (const ModuleAbilityModifier& modifier : variant.abilityModifiers)
-				if (modifier.modifier.attributeId.GetName() == attributeName) return true;
-			for (const ModuleTriggerBuff& buff : variant.triggerBuffs)
-				for (const ModuleAttributeModifier& modifier : buff.modifiers)
-					if (modifier.modifier.attributeId.GetName() == attributeName) return true;
-			return false;
-		}
-
-		bool HasDescriptionToken(const ModuleSizeVariant& variant, const std::string& token)
-		{
-			if (HasAttribute(variant, token)) return true;
-			for (std::size_t i = 0; i < variant.triggerBuffs.size(); ++i)
-			{
-				const std::string prefix = "trigger." + std::to_string(i) + ".";
-				if (token == prefix + "durationSeconds" || token == prefix + "movementSpeedMultiplier") return true;
-			}
-			for (std::size_t i = 0; i < variant.damageRules.size(); ++i)
-			{
-				const ModuleDamageRule& rule = variant.damageRules[i];
-				const std::string prefix = "damage." + std::to_string(i) + ".";
-				if (token == prefix + "damageMultiplier") return true;
-				if (token == prefix + "openingShotCount" && rule.condition == ModuleDamageCondition::FullMagazineShot) return true;
-				if (token == prefix + "conditionPercent" && rule.condition == ModuleDamageCondition::TargetHealthAtMost) return true;
-				if (token == prefix + "bonusDamagePercent" && rule.bonusDamageFraction > 0.f) return true;
-				if (token == prefix + "activeDurationSeconds" && rule.activeWhileTrigger != ModuleTriggerKind::None) return true;
-			}
-			for (const ModuleZoneEffect& effect : variant.zoneEffects)
-				if (token == "cooldown." + effect.zone.name + ".multiplier") return true;
-			return false;
 		}
 
 		void ValidateDescription(const ModuleDefinition& definition, const std::string& context)
 		{
-			std::size_t position = 0;
-			while (true)
-			{
-				const std::size_t open = definition.description.find('{', position);
-				const std::size_t strayClose = definition.description.find('}', position);
-				if (open == std::string::npos)
-				{
-					if (strayClose != std::string::npos) throw std::runtime_error(context + " description has an unmatched closing brace");
-					return;
-				}
-				if (strayClose != std::string::npos && strayClose < open)
-					throw std::runtime_error(context + " description has an unmatched closing brace");
-
-				const std::size_t close = definition.description.find('}', open + 1);
-				if (close == std::string::npos || close == open + 1)
-					throw std::runtime_error(context + " description has an invalid attribute placeholder");
-
-				const std::string token = definition.description.substr(open + 1, close - open - 1);
-				for (const ModuleSizeVariant& variant : definition.sizeVariants)
-					if (!HasDescriptionToken(variant, token))
-						throw std::runtime_error(context + " description references a missing numeric value: " + token);
-				position = close + 1;
-			}
+			for (const auto& variant : definition.sizeVariants) ValidateModuleDescriptionTemplate(definition.description, variant, context);
 		}
 
 		void ValidateZoneEffects(const ModuleDefinition& definition, const ModuleZoneTable& zoneTable, const std::string& context)
@@ -862,6 +981,21 @@ namespace ly::content
 			if (!hasCoverage(action.amountByLevel, "eventActions.amount") || !hasCoverage(action.chancePerLuckByLevel, "eventActions.chancePerLuck")) return false;
 		for (const ModuleOwnerAttributeRule& rule : rules.ownerAttributeRules)
 			if (!hasCoverage(rule.amountByLevel, "ownerAttributeRules.amount")) return false;
+		for (const auto& rule : rules.statusRules.electricOverrides)
+			for (const auto& table : rule.damageTakenByStackByLevel)
+				if (!hasCoverage(table, "statusRules.electricOverrides.damageTakenByStack")) return false;
+		for (const auto& rule : rules.statusRules.cryoFreezes)
+			if (!hasCoverage(rule.durationSecondsByLevel, "statusRules.cryoFreezes.durationSeconds") ||
+				!hasCoverage(rule.cooldownSecondsByLevel, "statusRules.cryoFreezes.cooldownSeconds")) return false;
+		for (const auto& rule : rules.statusRules.durationBonuses)
+			if (!hasCoverage(rule.bonusSecondsByLevel, "statusRules.durationBonuses.bonusSeconds")) return false;
+		for (const auto& rule : rules.statusRules.thermalCryoDurationBonuses)
+			if (!hasCoverage(rule.bonusSecondsByLevel, "statusRules.thermalCryoDurationBonuses.bonusSeconds")) return false;
+		for (const auto& rule : rules.generatedRules.ricochets) if (!hasCoverage(rule.damageFractionByLevel, "generatedRules.ricochets.damageFraction")) return false;
+		for (const auto& rule : rules.generatedRules.guidedSalvos) if (!hasCoverage(rule.damageFractionByLevel, "generatedRules.guidedSalvos.damageFraction")) return false;
+		for (const auto& rule : rules.generatedRules.delayedExplosions) if (!hasCoverage(rule.damageFractionByLevel, "generatedRules.delayedExplosions.damageFraction")) return false;
+		for (const auto& rule : rules.generatedRules.trailMines) if (!hasCoverage(rule.damageByLevel, "generatedRules.trailMines.damage") || !hasCoverage(rule.maxActiveByLevel, "generatedRules.trailMines.maxActive")) return false;
+		for (const auto& rule : rules.generatedRules.killExplosions) if (!hasCoverage(rule.maxHealthFractionByLevel, "generatedRules.killExplosions.maxHealthFraction")) return false;
 		for (std::size_t index = 0; index < rules.zoneEffects.size(); ++index)
 			if (!hasCoverage(rules.zoneEffects[index].multiplierByLevel,
 				"zoneEffects[" + std::to_string(index) + "].multiplier")) return false;

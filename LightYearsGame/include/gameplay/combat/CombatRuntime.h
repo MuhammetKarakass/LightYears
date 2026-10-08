@@ -49,6 +49,7 @@ namespace ly
 			float damageMultiplier = 1.f;
 			List<OutgoingDamageBonus> bonuses;
 			float additionalDamage = 0.f;
+			std::shared_ptr<ModuleFirstHitHistory::Claim> firstHitClaim;
 		};
 
 		class OutgoingDamageRuleRegistration final
@@ -92,9 +93,12 @@ namespace ly
 		float GetOutgoingDamageMultiplier() const noexcept;
 		OutgoingDamageRuleRegistration RegisterOutgoingDamageRules();
 		void ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event);
+		void SetModuleStatusRules(const ModuleStatusRules& rules) { mModuleStatusRules = rules; }
+		const ModuleStatusRules& GetModuleStatusRules() const { return mModuleStatusRules; }
 		// Product of every active Fire-phase rule (see ModuleDamageRulePhase) for this shot.
 		float ResolveFullMagazineShotMultiplier(int magazineShotsFired) const;
-		OutgoingDamagePlan ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId = {}, DamageDeliveryType deliveryType = DamageDeliveryType::Direct) const;
+		OutgoingDamagePlan ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId = {}, DamageDeliveryType deliveryType = DamageDeliveryType::Direct, bool allowFirstTargetHit = true) const;
+		std::size_t GetModuleFirstHitTargetCount() const { return mModuleFirstHits.GetTargetCount(); }
 
 		// Abilities can register temporary, source-owned combat protection
 		// without making ship classes know the ability family that requested it.
@@ -195,6 +199,8 @@ namespace ly
 		};
 		std::unordered_map<std::string, DamageProtection> mDamageProtections;
 		CombatRuntimeModifiers mRuntimeModifiers;
+		ModuleStatusRules mModuleStatusRules;
+		ModuleFirstHitHistory mModuleFirstHits;
 		std::shared_ptr<ModuleDamageRuleState> mModuleDamageRuleState = std::make_shared<ModuleDamageRuleState>();
 	};
 }

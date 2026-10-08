@@ -1,3 +1,4 @@
+#include "gameplay/module/ModuleDescriptionValues.h"
 #include "gameplay/content/ModuleSideFeatureLoader.h"
 
 #include "gameplay/content/ContentIdSchema.h"
@@ -89,6 +90,11 @@ namespace ly::content
 					definition.displayName = entry.at("displayName").get<std::string>();
 				}
 				else definition.displayName = id;
+				if (entry.contains("description"))
+				{
+					if (!entry.at("description").is_string()) throw std::runtime_error(context + ".description must be a string");
+					definition.description = entry.at("description").get<std::string>();
+				}
 				if (entry.contains("poolId"))
 				{
 					const nlohmann::json& poolValue = entry.at("poolId");
@@ -119,11 +125,12 @@ namespace ly::content
 					definition.levelCount = static_cast<int>(levelCount);
 				}
 				definition.rules = ModuleLoader::ParseRulePackage(entry.at("rules"), context + ".rules", definition.levelCount, false);
+				ValidateModuleDescriptionTemplate(definition.description, definition.rules, context);
 				if (!ModuleLoader::ValidateRulePackageLevelCount(definition.rules, definition.levelCount, context,
 					&failure)) throw std::runtime_error(failure);
 				if (definition.rules.attributeModifiers.empty() && definition.rules.abilityModifiers.empty() &&
 					definition.rules.triggerBuffs.empty() && definition.rules.damageRules.empty() && definition.rules.zoneEffects.empty() &&
-					definition.rules.eventActions.empty() && definition.rules.ownerAttributeRules.empty() && definition.rules.shieldReflections.empty())
+					definition.rules.eventActions.empty() && definition.rules.ownerAttributeRules.empty() && definition.rules.movementFadeRules.empty() && definition.rules.shieldReflections.empty() && definition.rules.statusRules.Empty() && definition.rules.generatedRules.Empty())
 					throw std::runtime_error(context + " rules must not be empty");
 				result.definitions.push_back(std::move(definition));
 			}

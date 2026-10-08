@@ -59,6 +59,13 @@ namespace ly
 		callbacks.cappedReapply =
 			[](sas::ActiveGameplayEffect& effect, const sas::GameplayEffectSpec& incomingSpec)
 			{
+				if (effect.spec.definition.effectId == DamageStatusEffectIds::ElectricEffectId)
+				{
+					// Publish the incoming source profile before effect-change callbacks can re-enter damage.
+					effect.spec.attributes = incomingSpec.attributes;
+					effect.stackCount = std::min(effect.stackCount, incomingSpec.maxStacks);
+					return true;
+				}
 				if (effect.spec.definition.effectId != DamageStatusEffectIds::IgniteEffectId)
 				{
 					return false;
@@ -245,6 +252,7 @@ namespace ly
 
 	void CombatRuntime::Tick(float deltaTime)
 	{
+		mModuleFirstHits.Prune();
 		if (deltaTime > 0.f)
 		{
 			for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
@@ -317,7 +325,7 @@ namespace ly
 		return multiplier;
 	}
 
-	CombatRuntime::OutgoingDamagePlan CombatRuntime::ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId, DamageDeliveryType deliveryType) const
+	CombatRuntime::OutgoingDamagePlan CombatRuntime::ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId, DamageDeliveryType deliveryType, bool allowFirstTargetHit) const
 	{
 		OutgoingDamagePlan plan;
 		const bool isPrimaryShot = std::any_of(sourceAbilityTags.begin(), sourceAbilityTags.end(),
@@ -346,6 +354,12 @@ namespace ly
 				const ModuleDamageRule& rule = active.resolved.rule;
 				if (rule.incoming || GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Impact ||
 					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
+				if (rule.condition == ModuleDamageCondition::FirstTargetHit)
+				{
+					if (!allowFirstTargetHit || !dynamic_cast<const Combatant*>(&target)) continue;
+					if (!plan.firstHitClaim) plan.firstHitClaim = mModuleFirstHits.TryClaim(target);
+					conditionContext.isFirstTargetHit = static_cast<bool>(plan.firstHitClaim);
+				}
 				conditionContext.isAdjacentAbilityDirectHit = false;
 				if (deliveryType != DamageDeliveryType::Periodic && !isPrimaryShot && sourceAbilityId.IsValid())
 					for (const auto& system : active.resolved.adjacentAbilitySystems)
@@ -429,6 +443,8 @@ namespace ly
 		mPendingEffectEvents.clear();
 		mDamageProtections.clear();
 		mRuntimeModifiers.Clear();
+		mModuleStatusRules = {};
+		mModuleFirstHits.Clear();
 		for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (ActiveModuleDamageRule& active : registration.rules) active.remainingSeconds = 0.f;
@@ -462,6 +478,7 @@ namespace ly
 		context.targetLocationAtResolution.y = targetLocation.y;
 		context.targetArmorShred = DamageTypeSystem::ResolveArmorShred(mAbilitySystemComponent);
 		const HealthComponent* health = mOwner.FindComponent<HealthComponent>();
+		context.targetMaxHealthAtResolution = health ? health->GetMaxHealth() : 0.f;
 		ModuleDamageConditionContext conditionContext;
 		conditionContext.ownerHealthFraction = health && health->GetMaxHealth() > 0.f ? health->GetHealth() / health->GetMaxHealth() : 1.f;
 		if (const auto* sourceCombatant = dynamic_cast<const Combatant*>(context.source))
@@ -553,6 +570,14 @@ namespace ly
 		);
 		context.targetWasCryoAffected = cryoEffect != nullptr;
 		context.targetCryoStacksAtResolution = cryoEffect ? std::max(0, cryoEffect->stackCount) : 0;
+		for (const auto* id : { DamageStatusEffectIds::IgniteEffectId, DamageStatusEffectIds::CryoSlowedEffectId, DamageStatusEffectIds::ElectricEffectId, DamageStatusEffectIds::KineticEffectId })
+			if (const auto* effect = mAbilitySystemComponent.FindGameplayEffectById(id))
+			{
+				context.targetStatusEffectsAtResolution.push_back(effect->spec);
+				context.targetStatusEffectsAtResolution.back().duration = effect->remainingDuration;
+				for (const auto& tag : effect->spec.definition.grantedTags)
+					if (tag.MatchesTag(GameplayTags::Status::Root)) context.targetStatusesAtResolution.push_back(tag);
+			}
 		if (auto* sourceCombatant = context.source ? dynamic_cast<Combatant*>(context.source) : nullptr)
 		{
 			for (const GameplayTag& status : appliedStatuses)
@@ -721,6 +746,7 @@ namespace ly
 		{
 			return;
 		}
+		if (const auto claim = context.moduleFirstHitClaim.lock()) claim->Commit();
 
 		sas::AbilityEvent event;
 		event.eventTag = CombatEventSchema::OwnerDamageTaken;

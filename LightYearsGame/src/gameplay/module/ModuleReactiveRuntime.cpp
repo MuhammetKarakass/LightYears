@@ -17,7 +17,7 @@ namespace ly
 		}
 		bool SameAttribute(const ModuleOwnerAttributeRule& a, const ModuleOwnerAttributeRule& b)
 		{
-			return a.source == b.source && a.attributeId == b.attributeId && a.healthAtMost == b.healthAtMost && a.amount == b.amount && a.fadeSeconds == b.fadeSeconds;
+			return a.source == b.source && a.attributeId == b.attributeId && a.healthAtMost == b.healthAtMost && a.amount == b.amount && a.fadeSeconds == b.fadeSeconds && a.target == b.target && a.operation == b.operation;
 		}
 	}
 	ModuleReactiveRuntime::ModuleReactiveRuntime(LightYearsAbilitySystemComponent& abilities) : mAbilities{ abilities }, mShip{ dynamic_cast<SpaceShip*>(&abilities.GetOwner()) }
@@ -44,10 +44,10 @@ namespace ly
 		if (mShip) mShip->GetHealthComponent().onHealthChanged.UnbindAction(mHealthHandle);
 		for (AttributeState& state : mAttributes) Remove(state);
 	}
-	void ModuleReactiveRuntime::Replace(const List<ResolvedModuleEventAction>& actions, const List<ResolvedModuleOwnerAttributeRule>& attributes)
+	void ModuleReactiveRuntime::Replace(const List<ResolvedModuleEventAction>& actions, const List<ResolvedModuleOwnerAttributeRule>& attributes, const List<ResolvedModuleEffects::MovementFade>& fades)
 	{
 		if (mShuttingDown) return;
-		mPending = DesiredRules{ actions, attributes };
+		mPending = DesiredRules{ actions, attributes, fades };
 		Flush();
 	}
 	void ModuleReactiveRuntime::Tick(float deltaSeconds)
@@ -134,6 +134,7 @@ namespace ly
 	}
 	void ModuleReactiveRuntime::Reconcile(DesiredRules desired)
 	{
+		mFades = std::move(desired.fades);
 		List<ActionState> actions;
 		for (const auto& resolved : desired.actions)
 		{
@@ -169,14 +170,14 @@ namespace ly
 		const auto handle = state.handle;
 		state.handle = {};
 		if (!handle.IsValid()) return;
-		try { mAbilities.GetAttributes().RemoveModifier(handle); } catch (...) {}
+		try { (state.resolved.rule.target == ModuleAttributeTarget::Ship ? mShip->GetShipRuntime().GetAttributes() : mAbilities.GetAttributes()).RemoveModifier(handle); } catch (...) {}
 	}
 	void ModuleReactiveRuntime::UpdateAttributes(float deltaSeconds)
 	{
 		if (!mShip || mAttributes.empty()) return;
 		auto& attributes = mAbilities.GetAttributes();
 		List<sas::AttributeModifierHandle> excluded;
-		for (const auto& state : mAttributes) if (state.handle.IsValid()) excluded.push_back(state.handle);
+		for (const auto& state : mAttributes) if (state.handle.IsValid() && state.resolved.rule.target == ModuleAttributeTarget::Owner) excluded.push_back(state.handle);
 		const float attack = attributes.GetCurrentValueExcludingModifiers(OwnerAttributeIds::AttackPower, excluded);
 		const float energy = attributes.GetCurrentValueExcludingModifiers(OwnerAttributeIds::EnergyPower, excluded);
 		const auto& health = mShip->GetHealthComponent();
@@ -192,21 +193,25 @@ namespace ly
 			{
 				const float desired = health.GetHealth() > 0.f ? mShip->GetMovementComponent().GetCurrentMovementSpeed() * rule.amount / 100.f : 0.f;
 				amount = desired;
-				if (rule.fadeSeconds > 0.f)
+				float fadeSeconds = rule.fadeSeconds;
+				for (const auto& fade : mFades) if (fade.instanceId == state.resolved.instanceId) fadeSeconds = std::max(fadeSeconds, fade.rule.fadeSeconds);
+				if (fadeSeconds > 0.f && health.GetHealth() > 0.f)
 				{
 					if (desired < state.previousDesired) { state.fadeStart = state.appliedAmount; state.fadeElapsed = 0.f; }
 					state.fadeElapsed += deltaSeconds;
-					amount = std::max(desired, state.fadeStart * std::max(0.f, 1.f - state.fadeElapsed / rule.fadeSeconds));
+					amount = std::max(desired, state.fadeStart * std::max(0.f, 1.f - state.fadeElapsed / fadeSeconds));
 				}
+				else { state.fadeStart = 0.f; state.fadeElapsed = 0.f; }
 				state.previousDesired = desired;
 			}
 			if (state.appliedAttribute == id && state.appliedAmount == amount) continue;
 			const auto previous = state.handle;
-			const auto next = amount > 0.f ? attributes.AddModifier({ id, sas::AttributeModifierOperation::Add, amount }) : sas::AttributeModifierHandle{};
+			auto& targetAttributes = rule.target == ModuleAttributeTarget::Ship ? mShip->GetShipRuntime().GetAttributes() : attributes;
+			const auto next = amount > 0.f ? targetAttributes.AddModifier({ id, rule.operation, amount }) : sas::AttributeModifierHandle{};
 			state.appliedAttribute = id;
 			state.appliedAmount = amount;
 			state.handle = next;
-			if (previous.IsValid()) attributes.RemoveModifier(previous);
+			if (previous.IsValid()) targetAttributes.RemoveModifier(previous);
 			if (mPending) return;
 		}
 	}
@@ -270,6 +275,7 @@ namespace ly
 				mShip->GetHealthComponent().Regenerate(overflow * conversion);
 			}
 			else if (rule.kind == ModuleEventActionKind::ShieldOverflowToHealth) continue;
+			else if (rule.kind == ModuleEventActionKind::AwardGold) { if (const auto wallet = mGoldWallet.lock()) wallet->Award(static_cast<unsigned int>(rule.amount)); }
 			else if (rule.kind == ModuleEventActionKind::RestoreHealth) mShip->GetHealthComponent().Regenerate(mShip->GetHealthComponent().GetMaxHealth() * rule.amount);
 			else if (rule.kind == ModuleEventActionKind::RestoreAfterburner) mShip->GetEnergyComponent().Restore(mShip->GetEnergyComponent().GetMaxEnergy() * rule.amount);
 			else

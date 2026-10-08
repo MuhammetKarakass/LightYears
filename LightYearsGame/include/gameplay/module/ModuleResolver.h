@@ -47,6 +47,15 @@ namespace ly
 		std::size_t ruleIndex = 0;
 		ModuleOwnerAttributeRule rule;
 	};
+	template<typename Rule> struct ResolvedModuleGeneratedRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; Rule rule; };
+	struct ResolvedModuleGeneratedRules
+	{
+		List<ResolvedModuleGeneratedRule<ModuleRicochetRule>> ricochets;
+		List<ResolvedModuleGeneratedRule<ModuleGuidedSalvoRule>> guidedSalvos;
+		List<ResolvedModuleGeneratedRule<ModuleDelayedExplosionRule>> delayedExplosions;
+		List<ResolvedModuleGeneratedRule<ModuleTrailMineRule>> trailMines;
+		List<ResolvedModuleGeneratedRule<ModuleKillExplosionRule>> killExplosions;
+	};
 	struct ResolvedModuleEffects
 	{
 		List<sas::AttributeModifier> ownerModifiers;
@@ -62,6 +71,10 @@ namespace ly
 		List<ResolvedModuleOwnerAttributeRule> ownerAttributeRules;
 		struct ShieldReflection { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleRulePackage::ShieldReflection rule; };
 		List<ShieldReflection> shieldReflections;
+		ModuleStatusRules statusRules;
+		ResolvedModuleGeneratedRules generatedRules;
+		struct MovementFade { std::uint32_t instanceId = 0; ModuleMovementFadeRule rule; };
+		List<MovementFade> movementFadeRules;
 	};
 
 	namespace ModuleResolver

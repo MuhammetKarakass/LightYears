@@ -335,6 +335,30 @@ namespace EffectData
 		return definition;
 	}();
 
+	inline const sas::GameplayEffectDefinition CryoFrozenEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = ly::DamageStatusEffectIds::CryoFrozenEffectId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.grantedTags = { ly::DamageStatusSchema::CryoFrozen, ly::GameplayTags::State::Effect::Control::Stunned };
+		definition.disposition = sas::GameplayEffectDisposition::Harmful;
+		definition.cleanseable = true;
+		definition.category = "Control.Stun";
+		definition.immunityCategory = "Control.Stun";
+		definition.sourceParameterized = true;
+		return definition;
+	}();
+	inline const sas::GameplayEffectDefinition CryoFreezeCooldownEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = ly::DamageStatusEffectIds::CryoFreezeCooldownEffectId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.category = "Runtime.CryoFreezeCooldown";
+		definition.sourceParameterized = true;
+		return definition;
+	}();
 	inline const sas::GameplayEffectDefinition DirectionalBarrierActiveEffect = []
 	{
 		sas::GameplayEffectDefinition definition;
@@ -398,6 +422,8 @@ namespace EffectData
 			&OverdriveCoreAttackSpeedBoostEffect,
 			&ExecutionDriveAttackPowerEffect,
 			&NullPulseStunEffect,
+			&CryoFrozenEffect,
+			&CryoFreezeCooldownEffect,
 			&DirectionalBarrierActiveEffect,
 			&CryostasisIceShellEffect,
 			&IroncladProtocolDamageReductionEffect

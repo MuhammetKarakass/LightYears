@@ -126,6 +126,7 @@ namespace ly
 
 	bool GameAbility::ActivateContent()
 	{
+		mDamageHitGroup = std::make_shared<DamageHitGroup>();
 		mDeferActiveDurationStart = false;
 		mPendingActivationCooldownMultiplier = 1.f;
 		mEndLifecycleNotificationAttempted = false;

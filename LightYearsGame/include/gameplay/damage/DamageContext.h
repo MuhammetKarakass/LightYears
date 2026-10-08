@@ -3,6 +3,9 @@
 #include "framework/Core.h"
 #include "content/ContentId.h"
 #include "gameplay/tags/GameplayTags.h"
+#include "gameplay/damage/DamageHitGroup.h"
+#include "effects/GameplayEffectSpec.h"
+#include "gameplay/module/ModuleFirstHitHistory.h"
 
 namespace ly
 {
@@ -22,6 +25,7 @@ namespace ly
 		Disabled
 	};
 	enum class DamageModuleTriggerPolicy { Normal, Suppressed };
+	enum class DamageSourceScalingPolicy { Normal, AlreadyResolved };
 
 	// Numeric damage-type behavior is carried with each hit. Values are resolved
 	// once by DamageTypeSystem, so the combat pipeline does not need to know the
@@ -40,6 +44,8 @@ namespace ly
 		// Prevents an outgoing module bonus from recursively creating more bonus hits.
 		bool skipModuleDamageRules = false;
 		DamageModuleTriggerPolicy moduleTriggerPolicy = DamageModuleTriggerPolicy::Normal;
+		DamageSourceScalingPolicy sourceScalingPolicy = DamageSourceScalingPolicy::Normal;
+		std::shared_ptr<DamageHitGroup> hitGroup;
 	};
 
 	// Delivery kind is shared metadata for incoming-damage defenses. It keeps
@@ -89,11 +95,15 @@ namespace ly
 			float y = 0.f;
 		};
 		TargetLocationSnapshot targetLocationAtResolution{};
+		float targetMaxHealthAtResolution = 0.f;
+		List<GameplayTag> targetStatusesAtResolution;
+		List<sas::GameplayEffectSpec> targetStatusEffectsAtResolution;
 		// Armor fraction removed by the target's Kinetic stacks, captured before
 		// this hit applies its own statuses, so a new stack shreds later hits only.
 		float targetArmorShred = 0.f;
 		List<GameplayTag> damageTags;
 		DamagePayload payload;
+		std::weak_ptr<ModuleFirstHitHistory::Claim> moduleFirstHitClaim;
 	};
 }
 

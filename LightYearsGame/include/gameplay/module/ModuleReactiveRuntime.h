@@ -3,6 +3,7 @@
 #include "gameplay/module/ModuleResolver.h"
 #include "abilities/AbilityEvent.h"
 #include "framework/Delegate.h"
+#include "gameplay/progression/RunGold.h"
 #include <optional>
 #include <random>
 
@@ -18,7 +19,8 @@ namespace ly
 		~ModuleReactiveRuntime();
 		ModuleReactiveRuntime(const ModuleReactiveRuntime&) = delete;
 		ModuleReactiveRuntime& operator=(const ModuleReactiveRuntime&) = delete;
-		void Replace(const List<ResolvedModuleEventAction>& actions, const List<ResolvedModuleOwnerAttributeRule>& attributes);
+		void Replace(const List<ResolvedModuleEventAction>& actions, const List<ResolvedModuleOwnerAttributeRule>& attributes, const List<ResolvedModuleEffects::MovementFade>& fades = {});
+		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mGoldWallet = std::move(wallet); }
 		void Tick(float deltaSeconds);
 		std::size_t GetOwnedHandleCount() const;
 
@@ -35,7 +37,7 @@ namespace ly
 			float previousDesired = 0.f;
 		};
 		struct Event { ModuleTriggerKind trigger; sas::ContentId abilityId; };
-		struct DesiredRules { List<ResolvedModuleEventAction> actions; List<ResolvedModuleOwnerAttributeRule> attributes; };
+		struct DesiredRules { List<ResolvedModuleEventAction> actions; List<ResolvedModuleOwnerAttributeRule> attributes; List<ResolvedModuleEffects::MovementFade> fades; };
 		void OnEvent(const sas::AbilityEvent& event);
 		void OnHealth(float amount, float health, float maximum);
 		void OnAttribute(sas::AttributeId id, float previous, float current);
@@ -51,6 +53,8 @@ namespace ly
 		DelegateHandle mAttributeHandle;
 		List<ActionState> mActions;
 		List<AttributeState> mAttributes;
+		List<ResolvedModuleEffects::MovementFade> mFades;
+		std::weak_ptr<RunGold> mGoldWallet;
 		List<Event> mEvents;
 		std::optional<DesiredRules> mPending;
 		std::mt19937 mRandom{ std::random_device{}() };

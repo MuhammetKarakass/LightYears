@@ -5,6 +5,9 @@
 #include "gameConfigs/combat/CombatTick.h"
 #include "gameConfigs/combat/EffectConfig.h"
 #include "gameplay/combat/Combatant.h"
+#include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/targeting/CombatantTargetQuery.h"
+#include "spaceShip/SpaceShip.h"
 #include "gameplay/content/DamageStatusBalanceCatalog.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
 #include "gameplay/time/PeriodicTickAccumulator.h"
@@ -32,6 +35,32 @@ namespace ly
 		const DamageStatusBalance& GetDamageStatusBalance()
 		{
 			return content::DamageStatusBalanceCatalog::Get();
+		}
+
+		ModuleStatusRules SourceStatusRules(const DamageContext& context)
+		{
+			if (context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed || context.payload.skipModuleDamageRules) return {};
+			const auto* source = dynamic_cast<const Combatant*>(context.source);
+			return source ? source->GetCombatRuntime().GetModuleStatusRules() : ModuleStatusRules{};
+		}
+
+		float StatusDurationBonus(const sas::AbilitySystemComponent& target, const ModuleStatusRules& rules)
+		{
+			const auto* thermal = target.FindGameplayEffectById(DamageStatusEffectIds::IgniteEffectId);
+			const auto* cryo = target.FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId);
+			if (!thermal || thermal->stackCount <= 0 || !cryo || cryo->stackCount <= 0) return 0.f;
+			float bonus = 0.f;
+			for (const auto& rule : rules.thermalCryoDurationBonuses) bonus += rule.bonusSeconds;
+			return bonus;
+		}
+
+		const ModuleElectricStatusRule* ElectricRule(const ModuleStatusRules& rules)
+		{
+			const ModuleElectricStatusRule* selected = nullptr;
+			for (const auto& rule : rules.electricOverrides)
+				if (!rule.damageTakenByStack.empty() && (!selected || rule.damageTakenByStack.size() > selected->damageTakenByStack.size() ||
+					(rule.damageTakenByStack.size() == selected->damageTakenByStack.size() && rule.damageTakenByStack.back() > selected->damageTakenByStack.back()))) selected = &rule;
+			return selected;
 		}
 
 		void OverrideIfDeclared(
@@ -79,25 +108,17 @@ namespace ly
 
 		// All selected damage statuses use the ASC's ordinary Stack policy. The
 		// opt-in stack lifetime policy owns decay; this helper only applies hits.
-		bool ApplyCappedStackEffect(
-			sas::AbilitySystemComponent& targetAbilitySystem,
-			const sas::GameplayEffectSpec& spec,
-			Actor* source,
-			int incomingStacks
-		)
+		bool ApplyCappedStackEffect(sas::AbilitySystemComponent& targetAbilitySystem, const sas::GameplayEffectSpec& spec, Actor* source, int incomingStacks)
 		{
 			bool applied = false;
-			for (int stack = 0; stack < std::max(0, incomingStacks); ++stack)
+			for (int stack = 0; stack < std::clamp(incomingStacks, 0, spec.maxStacks); ++stack)
 			{
 				applied = targetAbilitySystem.ApplyGameplayEffect(spec, source).IsValid() || applied;
 			}
 			return applied;
 		}
 
-		bool ApplyCryoStatus(
-			sas::AbilitySystemComponent& targetAbilitySystem,
-			const DamageContext& context
-		)
+		bool ApplyCryoStatus(sas::AbilitySystemComponent& targetAbilitySystem, const DamageContext& context, float durationBonus)
 		{
 			const sas::GameplayEffectDefinition* slowDefinition =
 				EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoSlowedEffectId);
@@ -109,7 +130,7 @@ namespace ly
 				targetAbilitySystem,
 				MakeMovementSlowSpec(
 					*slowDefinition,
-					GetDamageStatusBalance().cryo.duration,
+					GetDamageStatusBalance().cryo.duration + durationBonus,
 					GetDamageStatusBalance().cryo.maxStacks,
 					GetDamageStatusBalance().CryoSlowPercent(1)
 				),
@@ -172,30 +193,31 @@ namespace ly
 			{
 				const float damage = pendingDamage->currentValue;
 				pendingDamage->currentValue = 0.f;
+				DamagePayload payload;
+				if (sas::FindAttributeValue(effect.spec.attributes, DamageAttributeIds::SuppressModuleTriggers, 0.f) > 0.f)
+				{
+					payload.skipModuleDamageRules = true;
+					payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
+					payload.criticalPolicy = DamageCriticalPolicy::Disabled;
+				}
 				ApplyCombatDamage(
 					owner,
 					damage,
 					effect.GetSourceObject<Actor>(),
-					{ DamageTypeSchema::Thermal }, {}, {}, {}, DamageDeliveryType::Periodic
+					{ DamageTypeSchema::Thermal }, payload, {}, {}, DamageDeliveryType::Periodic
 				);
 			}
 			return {};
 		}
 
-		sas::GameplayEffectBehaviorResult ProcessElectricIncomingDamage(
-			sas::ActiveGameplayEffect& effect,
-			DamageContext& context
-		)
+		sas::GameplayEffectBehaviorResult ProcessElectricIncomingDamage(sas::ActiveGameplayEffect& effect, DamageContext& context)
 		{
-			context.remainingDamage *=
-				1.f + GetDamageStatusBalance().ElectricDamageTakenMultiplier(effect.stackCount);
+			const auto* bonus = sas::FindAttribute(effect.spec.attributes, DamageAttributeIds::ElectricDamageTakenBonusForStack(effect.stackCount));
+			context.remainingDamage *= 1.f + (bonus ? bonus->currentValue : GetDamageStatusBalance().ElectricDamageTakenMultiplier(effect.stackCount));
 			return {};
 		}
 
-		bool ApplyKineticStatus(
-			sas::AbilitySystemComponent& targetAbilitySystem,
-			DamageContext& context
-		)
+		bool ApplyKineticStatus(sas::AbilitySystemComponent& targetAbilitySystem, DamageContext& context, float durationBonus)
 		{
 			// Kinetic stacks shred the target's Armor for every incoming hit; that
 			// is resolved by ResolveArmorShred, not by this hit's payload.
@@ -209,7 +231,7 @@ namespace ly
 				targetAbilitySystem,
 				MakeStatusEffectSpec(
 					*definition,
-					GetDamageStatusBalance().kinetic.duration,
+					GetDamageStatusBalance().kinetic.duration + durationBonus,
 					GetDamageStatusBalance().kinetic.maxStacks
 				),
 				context.source,
@@ -236,10 +258,7 @@ namespace ly
 		);
 	}
 
-	DamagePayload DamageTypeSystem::BuildPayload(
-		const List<GameplayTag>& damageTags,
-		const sas::GameplayAttributeList& sourceAttributes
-	)
+	DamagePayload DamageTypeSystem::BuildPayload(const List<GameplayTag>& damageTags, const sas::GameplayAttributeList& sourceAttributes)
 	{
 		DamagePayload payload;
 		// Damage tags provide identity only. Every balance value below is supplied
@@ -294,11 +313,7 @@ namespace ly
 			0,
 			GetDamageStatusBalance().cryo.maxStacks
 		);
-		payload.electricStacks = std::clamp(
-			payload.electricStacks,
-			0,
-			GetDamageStatusBalance().electric.maxStacks
-		);
+		payload.electricStacks = std::max(0, payload.electricStacks);
 		payload.kineticStacks = std::clamp(
 			payload.kineticStacks,
 			0,
@@ -314,10 +329,7 @@ namespace ly
 		// without new stacks, restarts the shared duration. Other damage types
 		// from that source do not. When it runs out every stack clears at once
 		// (the effects carry no per-stack decay).
-		void RefreshSourceSustainedStatuses(
-			sas::AbilitySystemComponent& targetAbilitySystem,
-			const DamageContext& context
-		)
+		void RefreshSourceSustainedStatuses(sas::AbilitySystemComponent& targetAbilitySystem, const DamageContext& context, float durationBonus, float generalBonus)
 		{
 			if (!context.source)
 			{
@@ -334,26 +346,97 @@ namespace ly
 				{
 					continue;
 				}
-				const sas::ActiveGameplayEffect* effect = targetAbilitySystem.FindGameplayEffectById(effectId);
+				sas::ActiveGameplayEffect* effect = targetAbilitySystem.FindGameplayEffectById(effectId);
 				if (effect && effect->GetSourceObject<Actor>() == context.source)
 				{
+					if (damageType == DamageTypeSchema::Cryo) effect->spec.duration = GetDamageStatusBalance().cryo.duration + durationBonus;
+					else if (damageType == DamageTypeSchema::Electric) effect->spec.duration = GetDamageStatusBalance().electric.duration + generalBonus;
+					else effect->spec.duration = GetDamageStatusBalance().kinetic.duration + generalBonus;
 					targetAbilitySystem.RefreshGameplayEffectDuration(effect->handle);
+				}
+			}
+		}
+
+		void SynchronizeElectricProfile(sas::AbilitySystemComponent& target, const ModuleElectricStatusRule* rule)
+		{
+			auto* effect = target.FindGameplayEffectById(DamageStatusEffectIds::ElectricEffectId);
+			if (!effect || effect->stackCount <= 0) return;
+			const int maxStacks = rule ? static_cast<int>(rule->damageTakenByStack.size()) : GetDamageStatusBalance().electric.maxStacks;
+			effect->spec.maxStacks = maxStacks;
+			effect->stackCount = std::min(effect->stackCount, maxStacks);
+			effect->spec.attributes.clear();
+			if (rule)
+				for (int stack = 1; stack <= maxStacks; ++stack)
+				{
+					const float amount = rule->damageTakenByStack[static_cast<std::size_t>(stack - 1)];
+					effect->spec.attributes.emplace_back(DamageAttributeIds::ElectricDamageTakenBonusForStack(stack), amount, amount);
+				}
+		}
+
+		void ApplyCryoFreeze(sas::AbilitySystemComponent& target, DamageContext& context, const ModuleStatusRules& rules, float durationBonus)
+		{
+			if (target.FindGameplayEffectById(DamageStatusEffectIds::CryoFreezeCooldownEffectId)) return;
+			const auto* slowed = target.FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId);
+			if (!slowed) return;
+			const auto* ship = dynamic_cast<const SpaceShip*>(context.target);
+			const ModuleCryoFreezeRule* selected = nullptr;
+			for (const auto& rule : rules.cryoFreezes)
+			{
+				if (rule.threshold <= 0 || slowed->stackCount < rule.threshold ||
+					(rule.normalTargetsOnly && ship && ship->GetControlTargetClass() != ControlTargetClass::Normal)) continue;
+				if (!selected || rule.durationSeconds > selected->durationSeconds) selected = &rule;
+			}
+			if (!selected) return;
+			const auto* definition = EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoFrozenEffectId);
+			const auto* cooldownDefinition = EffectData::FindGameplayEffectDefinition(DamageStatusEffectIds::CryoFreezeCooldownEffectId);
+			if (!definition || !cooldownDefinition) return;
+			const auto sourceLifetime = context.source ? context.source->GetWeakActor().lock() : std::shared_ptr<Actor>{};
+			const auto targetLifetime = context.target ? context.target->GetWeakActor().lock() : std::shared_ptr<Actor>{};
+			const auto slowHandle = slowed->handle;
+			const auto frozen = target.ApplyGameplayEffect(MakeStatusEffectSpec(*definition, selected->durationSeconds + durationBonus, 1), context.source);
+			if (!frozen.IsValid()) return;
+			target.ApplyGameplayEffect(MakeStatusEffectSpec(*cooldownDefinition, selected->cooldownSeconds, 1), context.source);
+			target.RemoveGameplayEffect(slowHandle);
+			if (!sourceLifetime || !targetLifetime || !context.target->GetWorld()) return;
+			for (const auto& spread : rules.freezeSpreads)
+			{
+				const auto targets = targeting::FindOpposingCombatants(*context.target->GetWorld(), *sourceLifetime, context.target->GetActorLocation(), spread.radius, false);
+				for (const auto& actor : targets)
+				{
+					if (actor == targetLifetime || actor->GetIsPendingDestroy()) continue;
+					auto* combatant = dynamic_cast<Combatant*>(actor.get());
+					if (!combatant) continue;
+					DamageContext spreadContext;
+					spreadContext.source = sourceLifetime.get();
+					spreadContext.target = actor.get();
+					spreadContext.remainingDamage = 1.f; // Status only; never resolves a damage hit.
+					spreadContext.damageTags = { DamageTypeSchema::Cryo };
+					spreadContext.payload.cryoBuildupPerHit = spread.stacks;
+					spreadContext.payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
+					DamageTypeSystem::ApplyStatusEffects(combatant->GetAbilitySystemComponent(), spreadContext);
 				}
 			}
 		}
 	}
 
-	List<GameplayTag> DamageTypeSystem::ApplyStatusEffects(
-		sas::AbilitySystemComponent& targetAbilitySystem,
-		DamageContext& context
-	)
+	List<GameplayTag> DamageTypeSystem::ApplyStatusEffects(sas::AbilitySystemComponent& targetAbilitySystem, DamageContext& context)
 	{
 		List<GameplayTag> applied;
 		if (context.remainingDamage <= 0.f)
 		{
 			return applied;
 		}
-		RefreshSourceSustainedStatuses(targetAbilitySystem, context);
+		const ModuleStatusRules rules = SourceStatusRules(context);
+		float generalBonus = 0.f;
+		for (const auto& rule : rules.durationBonuses) generalBonus += rule.bonusSeconds;
+		const float durationBonus = generalBonus + StatusDurationBonus(targetAbilitySystem, rules);
+		const auto* electricRule = ElectricRule(rules);
+		if (HasDamageType(context.damageTags, DamageTypeSchema::Electric) && context.payload.electricStacks == 0)
+		{
+			const auto* existing = targetAbilitySystem.FindGameplayEffectById(DamageStatusEffectIds::ElectricEffectId);
+			if (existing && existing->GetSourceObject<Actor>() == context.source) SynchronizeElectricProfile(targetAbilitySystem, electricRule);
+		}
+		RefreshSourceSustainedStatuses(targetAbilitySystem, context, durationBonus, generalBonus);
 
 		if (HasDamageType(context.damageTags, DamageTypeSchema::Thermal) &&
 			context.payload.igniteStacks > 0)
@@ -364,7 +447,7 @@ namespace ly
 			{
 				sas::GameplayEffectSpec igniteSpec = MakeStatusEffectSpec(
 					*igniteDefinition,
-					GetDamageStatusBalance().thermal.duration,
+					GetDamageStatusBalance().thermal.duration + durationBonus,
 					GetDamageStatusBalance().thermal.maxStacks
 				);
 				igniteSpec.attributes.clear();
@@ -382,9 +465,10 @@ namespace ly
 		if (HasDamageType(context.damageTags, DamageTypeSchema::Cryo) &&
 			context.payload.cryoBuildupPerHit > 0)
 		{
-			if (ApplyCryoStatus(targetAbilitySystem, context))
+			if (ApplyCryoStatus(targetAbilitySystem, context, durationBonus))
 			{
 				applied.push_back(DamageStatusSchema::CryoSlowed);
+				ApplyCryoFreeze(targetAbilitySystem, context, rules, generalBonus);
 			}
 		}
 		if (HasDamageType(context.damageTags, DamageTypeSchema::Electric) &&
@@ -396,10 +480,16 @@ namespace ly
 			{
 				sas::GameplayEffectSpec electricSpec = MakeStatusEffectSpec(
 					*electricDefinition,
-					GetDamageStatusBalance().electric.duration,
-					GetDamageStatusBalance().electric.maxStacks
+					GetDamageStatusBalance().electric.duration + generalBonus,
+					electricRule ? static_cast<int>(electricRule->damageTakenByStack.size()) : GetDamageStatusBalance().electric.maxStacks
 				);
 				electricSpec.attributes.clear();
+				if (electricRule)
+					for (std::size_t stack = 0; stack < electricRule->damageTakenByStack.size(); ++stack)
+					{
+						const float amount = electricRule->damageTakenByStack[stack];
+						electricSpec.attributes.emplace_back(DamageAttributeIds::ElectricDamageTakenBonusForStack(static_cast<int>(stack + 1)), amount, amount);
+					}
 				if (ApplyCappedStackEffect(
 					targetAbilitySystem,
 					electricSpec,
@@ -412,7 +502,7 @@ namespace ly
 			}
 		}
 		if (HasDamageType(context.damageTags, DamageTypeSchema::Kinetic) &&
-			ApplyKineticStatus(targetAbilitySystem, context))
+			ApplyKineticStatus(targetAbilitySystem, context, generalBonus))
 		{
 			applied.push_back(DamageStatusSchema::Kinetic);
 		}

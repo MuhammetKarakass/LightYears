@@ -142,3 +142,22 @@ Ability satırlarındaki temel cooldown değerleri bu ortak progression’a uygu
 - Örnek SunBeam: `Base(L) = 40 + 10 × (L - 1)`, `EPScale(L) = 0.7 + 0.1 × (L - 1)`; L5 → Base 80, EP scale 1.1.
 - Sabit bir scale (ör. AP 1.0) seviyeyle değişmez.
 - Scrap maliyeti doğrusal formüldür: `base + step * (L - 2)`; kayıt başına `progression.scrapCost {base, step}`. Mevcut değerler placeholder: çoğu yetenek 60/0, Dash/SunBeam/RelayPrism ve 3 seviyeli silahlar 40/10, Fighter lazer 40/5.
+
+### Uncommon P6 üretilen hasar
+
+Kullanıcı kararları 2026-10-08: Ricochet 300 birim/atış başına tek ana sekme; aşağıdaki açık Scatter/mayın/patlama değerleri toplu “Bu değerlerle tamamla” yanıtıyla kapandı. Sayılar shipped `modules.json` ve `module_side_features.json` içinde taşınır; bu katalog davranış/formül sahibidir. `H`, tetikleyen kullanımın ilk başarılı isabetinde gerçekten uygulanan hasardır. `M`, ölen hedefin ölümden önce snapshot alınmış MaxHealth değeridir.
+
+| Kural | L1 / L2 / L3 | Zaman, hedef ve sınır |
+|---|---|---|
+| Ricochet Tip | `H × 0.25 / 0.30 / 0.35` | İlk başarılı Primary isabetinden başka en yakın düşmana; önceki hedefin merkezinden 300 birim. Bir atışın mermileri/çoklu hedefleri tek ana sekme bütçesini paylaşır; sürekli beam bir damage step'i tek atış kabul eder. |
+| Ricochet Status Transfer | Bir kanonik damage status'tan bir stack | Var olan status'lar arasından sabit sıra Ignite → Cryo → Electric → Kinetic; snapshot'ın kalan süresi/profili aktarılır. Normal stack cap korunur; hedef zaten stack cap'ine ulaşmışsa mevcut status yenilenmez. Aktarılan Ignite tick'leri modül tetiklemez. |
+| Ricochet Second Bounce | `H × 0.15` | Özel özellik seçilince yalnız bir ek hedef; ilk sekmeden 300 birim, eski hedefe dönmez. |
+| Scatter Core | Her mermi `H × 0.15 / 0.18 / 0.21` | Her Offense kullanımının ilk başarılı hit'i 3 farklı en yakın hedefe birer güdümlü mermi üretir. Az hedefte kalan mermiler üretilmez. 600 birim/sn, 3 sn; arama mesafesi 1800 (hız × ömür). Aynı modül generation'ında en çok 64 aktif mermi. Status/critical yok. |
+| Scatter Fourth Missile | Aynı level fraction ile 4. mermi | Yalnız başka bir farklı hedef varsa üretilir. |
+| Scatter Aftershock | `H × 0.25` | Kullanım başına bir kez, ilk hit'in konumunda 0.8 sn sonra; 100 yarıçap. Generation başına en çok 32 aktif patlama aktörü. |
+| Trail Mines | 8 / 10 / 12 düz hasar; 12 / 14 / 16 aktif mayın | Başarılı Movement kullanımı sonrası 5 sn boyunca gerçek yolun her 50 biriminde bir mayın; durağanda yok. 1 sn fuse, 100 yarıçap. Kaynak damage scaling normal uygulanır. Instant teleport ve portal transit yol sayılmaz. |
+| Cryo Mines | +1 Cryo stack | Mayının diğer modülleri tetiklemesine izin vermez. |
+| Quick Fuse | Limit +4; fuse 0.7 sn | Seviye limitleri 16 / 18 / 20 olur. |
+| Thermal Death Burst | `M × 0.03` Thermal | Thermal Shock Coil'in özel yan özelliği; ölüm snapshot'ında Ignite ve Cryo stack birlikte gerekir. Ölüm konumunda 100 yarıçap; generation başına 32 aktör. |
+
+First-hit/MaxHealth snapshot'ından türeyen miktar ikinci kez kaynak damage bonusu almaz; yeni hedefin kalkan/zırh çözümüne girer. Bütün üretilen hit'ler critical/status olmadan (açık status yan özelliği hariç) diğer modül kurallarını ve tetiklerini bastırır. Teknik JSON count doğrulaması en çok 1024 kabul eder; shipped caps yukarıdadır. Bekleyen aktörler modül sökülünce, kural/seviye değişince veya sahip yıkılınca iptal edilir; aynı rule değerleriyle ilgisiz yeniden çözümleme bunları korur. Sunum ring'inin 0.18 sn sönmesi de aktif actor sayısına dahildir.

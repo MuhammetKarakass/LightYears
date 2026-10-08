@@ -3,6 +3,7 @@
 #include <framework/Object.h>
 #include <framework/Delegate.h>
 #include "gameplay/progression/ShipProgression.h"
+#include "gameplay/progression/RunGold.h"
 #include "abilities/AbilityPolicies.h"
 #include "abilities/AbilityHandle.h"
 #include "gameplay/module/ModuleLoadout.h"
@@ -47,6 +48,7 @@ namespace ly
 		unsigned int GetLifeCount() const { return mLifeCount; };
 		unsigned int GetScore() const { return mScore; };
 		unsigned int GetScrap() const { return mScrap; };
+		unsigned int GetGold() const { return mGold->GetAmount(); }
 		ShipProgression& GetShipProgression() { return mShipProgression; }
 		const ShipProgression& GetShipProgression() const { return mShipProgression; }
 
@@ -90,6 +92,7 @@ namespace ly
 		unsigned int mLifeCount;
 		unsigned int mScore;
 		unsigned int mScrap;
+		std::shared_ptr<RunGold> mGold = std::make_shared<RunGold>();
 		int mPendingTestAbilityLevelUps = 0;
 		bool mTestModulesGranted = false;
 		bool mAbilityPurchaseInProgress = false;

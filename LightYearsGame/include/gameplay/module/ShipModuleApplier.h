@@ -8,6 +8,7 @@
 #include "gameplay/module/ModuleRuleAppliers.h"
 #include "gameplay/module/ModuleReactiveRuntime.h"
 #include "gameplay/module/ModuleShieldReflectionRuntime.h"
+#include "gameplay/module/generated/ModuleGeneratedRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/ship/ShipRuntime.h"
 
@@ -67,6 +68,9 @@ namespace ly
 		bool HasApplied() const { return mHasApplied; }
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
 		std::size_t GetOwnedHandleCount() const;
+		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mReactiveRuntime.SetGoldWallet(std::move(wallet)); }
+		std::size_t GetGeneratedActorCount() const { return mGeneratedRuntime.GetActiveActorCount(); }
+		std::size_t GetGeneratedRuleCount() const { return mGeneratedRuntime.GetRuleCount(); }
 
 	private:
 		struct OwnedModifier
@@ -87,12 +91,14 @@ namespace ly
 
 		ShipRuntime& mShipRuntime;
 		LightYearsAbilitySystemComponent& mAbilities;
+		CombatRuntime& mCombatRuntime;
 		ModuleAbilityRuleApplier mAbilityRuleApplier;
 		ModuleTriggerBuffRuleApplier mTriggerBuffRuleApplier;
 		ModuleDamageRuleApplier mDamageRuleApplier;
 		ModuleCooldownRuleApplier mCooldownRuleApplier;
 		ModuleReactiveRuntime mReactiveRuntime;
 		ModuleShieldReflectionRuntime mShieldReflectionRuntime;
+		ModuleGeneratedRuntime mGeneratedRuntime;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;

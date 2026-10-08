@@ -12,8 +12,7 @@ namespace ly
 			template<typename T>
 			T ValueAtLevel(T baseValue, const ModuleLevelTable<T>& table, int level)
 			{
-				if (level < 1 || static_cast<std::size_t>(level) > table.values.size()) return baseValue;
-				return table.values[static_cast<std::size_t>(level - 1)];
+				return table.ValueAtLevel(baseValue, level);
 			}
 
 			std::size_t NamespacedRuleIndex(std::size_t ruleIndex, bool sideFeature)
@@ -119,11 +118,66 @@ namespace ly
 					rule.amount = ValueAtLevel(rule.amount, rule.amountByLevel, level);
 					effects.ownerAttributeRules.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
+				for (const auto& rule : package.movementFadeRules) effects.movementFadeRules.push_back({ placement.instanceId, rule });
 				for (std::size_t index = 0; index < package.shieldReflections.size(); ++index)
 				{
 					auto rule = package.shieldReflections[index];
 					rule.fraction = ValueAtLevel(rule.fraction, rule.fractionByLevel, level);
 					effects.shieldReflections.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
+				for (auto rule : package.statusRules.electricOverrides)
+				{
+					for (std::size_t index = 0; index < rule.damageTakenByStack.size() && index < rule.damageTakenByStackByLevel.size(); ++index)
+						rule.damageTakenByStack[index] = ValueAtLevel(rule.damageTakenByStack[index], rule.damageTakenByStackByLevel[index], level);
+					effects.statusRules.electricOverrides.push_back(std::move(rule));
+				}
+				for (auto rule : package.statusRules.cryoFreezes)
+				{
+					rule.durationSeconds = ValueAtLevel(rule.durationSeconds, rule.durationSecondsByLevel, level);
+					rule.cooldownSeconds = ValueAtLevel(rule.cooldownSeconds, rule.cooldownSecondsByLevel, level);
+					effects.statusRules.cryoFreezes.push_back(std::move(rule));
+				}
+				for (auto rule : package.statusRules.thermalCryoDurationBonuses)
+				{
+					rule.bonusSeconds = ValueAtLevel(rule.bonusSeconds, rule.bonusSecondsByLevel, level);
+					effects.statusRules.thermalCryoDurationBonuses.push_back(std::move(rule));
+				}
+				for (auto rule : package.statusRules.durationBonuses)
+				{
+					rule.bonusSeconds = ValueAtLevel(rule.bonusSeconds, rule.bonusSecondsByLevel, level);
+					effects.statusRules.durationBonuses.push_back(std::move(rule));
+				}
+				for (const auto& rule : package.statusRules.freezeSpreads) effects.statusRules.freezeSpreads.push_back(rule);
+				for (std::size_t index = 0; index < package.generatedRules.ricochets.size(); ++index)
+				{
+					auto rule = package.generatedRules.ricochets[index];
+					rule.damageFraction = ValueAtLevel(rule.damageFraction, rule.damageFractionByLevel, level);
+					effects.generatedRules.ricochets.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
+				for (std::size_t index = 0; index < package.generatedRules.guidedSalvos.size(); ++index)
+				{
+					auto rule = package.generatedRules.guidedSalvos[index];
+					rule.damageFraction = ValueAtLevel(rule.damageFraction, rule.damageFractionByLevel, level);
+					effects.generatedRules.guidedSalvos.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
+				for (std::size_t index = 0; index < package.generatedRules.delayedExplosions.size(); ++index)
+				{
+					auto rule = package.generatedRules.delayedExplosions[index];
+					rule.damageFraction = ValueAtLevel(rule.damageFraction, rule.damageFractionByLevel, level);
+					effects.generatedRules.delayedExplosions.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
+				for (std::size_t index = 0; index < package.generatedRules.trailMines.size(); ++index)
+				{
+					auto rule = package.generatedRules.trailMines[index];
+					rule.damage = ValueAtLevel(rule.damage, rule.damageByLevel, level);
+					rule.maxActive = ValueAtLevel(rule.maxActive, rule.maxActiveByLevel, level);
+					effects.generatedRules.trailMines.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
+				}
+				for (std::size_t index = 0; index < package.generatedRules.killExplosions.size(); ++index)
+				{
+					auto rule = package.generatedRules.killExplosions[index];
+					rule.maxHealthFraction = ValueAtLevel(rule.maxHealthFraction, rule.maxHealthFractionByLevel, level);
+					effects.generatedRules.killExplosions.push_back({ placement.instanceId, NamespacedRuleIndex(index, sideFeature), std::move(rule) });
 				}
 				if (!placementZone.IsValid()) return;
 				for (std::size_t ruleIndex = 0; ruleIndex < package.zoneEffects.size(); ++ruleIndex)

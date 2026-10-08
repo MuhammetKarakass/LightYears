@@ -9,8 +9,10 @@ namespace ly
 	class Player;
 	struct ModuleDefinition;
 	struct ModuleSizeVariant;
+	struct ModuleSideFeatureDefinition;
 
-	std::string FormatModuleDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant);
+	std::string FormatModuleDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant, int level = 1);
+	std::string FormatModuleSideFeatureDescription(const ModuleSideFeatureDefinition& feature, int level);
 
 	// Reads the player's loadout one way into the view model each Tick and turns UI intents into
 	// Player::Try* / AddModuleToInventory calls. It never touches gameplay state any other way.

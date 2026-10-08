@@ -1,6 +1,6 @@
 # Uncommon Modüller — Sol/Luna Uygulama Planı
 
-**Tarih:** 2026-10-06 · **Durum:** P0/P1/P2 tamamlandı; P3 runtime ve E2E uygulandı (commit edilmedi) · **Tasarım kaynağı:** [modules.md](modules.md) (Planned/Reworking bölümü), [Modül Sistemi Tasarımı](MODULE_SYSTEM_DESIGN.md), [Common uygulama planı](MODULE_COMMON_IMPLEMENTATION_PLAN.md) (§8 sadeleştirme bulguları)
+**Tarih:** 2026-10-06 · **P8 kapanışı:** 2026-10-08 · **Durum:** P0–P8 mevcut runtime dilimi doğrulandı; 18 ana modül + 30 yan özellik ve P7 sunumu mevcut. Oyun build exit 0; hedefli gerçek E2E 10/10. Eksik/onaysız yan özellikler §8'de açık; tam tasarım/ürün kabulü değildir. P2/P3/P4 `da12985` ile commit edildi; P5–P8 için stage/commit/push yapılmadı. · **Tasarım kaynağı:** [modules.md](modules.md), [Modül Sistemi Tasarımı](MODULE_SYSTEM_DESIGN.md), [Common uygulama planı](MODULE_COMMON_IMPLEMENTATION_PLAN.md).
 
 Bu belge, [modules.md](modules.md)'de tasarlanan **18 Uncommon modülün** ve onları taşıyan **boyut merdiveni / yan özellik / modül seviyesi** altyapısının uygulama sözleşmesidir. Değerlerin sahibi modules.md'deki kartlar, sonra `modules.json`'dır; bu belge ikinci bir değer listesi tutmaz.
 
@@ -60,7 +60,7 @@ Bu ilk sürümdür; amaç 18 modülü çalıştırmak kadar, sonraki nadirlikler
 - `ModuleDefinition` genişler: `rarity`; `sizeVariants` ile birlikte **merdiven bildirimi** (hangi varyantlar var, en büyük boyut); `levelCount` (varsayılan 3); `sideFeatures` (özel yan özellik kimlikleri) ve `sharedPools` (kullanılan ortak havuz öğeleri).
 - `ModulePlacement` genişler: `level` (varsayılan 1) ve `sideFeatureId` (boş = yok / tek boyutlu modül). `rolledSideStats` korunur ama yeni sistem onu kullanmaz (eski öznitelik yan stat yolu; ayrı karar).
 - Yeni içerik dosyası **`module_side_features.json`**: yan özellik tanımları (kural paketi + seviye tabloları) ve havuzlar (O/D/G). Yükleyici bilinmeyen kimlik, eksik seviye girdisi, havuzda olmayan özellik ve tek boyutlu modülde yan özellik tanımını **reddeder**.
-- **Seviye tabloları:** bir kuralın sayısal alanı `[v1, v2, v3…]` listesi olabilir; çözümleme `level` ile seçer, liste kısaysa son değeri tutar (veya yükleyici reddeder; P2'de karar). Kural şablonu ile değer tablosu ayrıdır.
+- **Seviye tabloları:** bir kuralın sayısal alanı `[v1, v2, v3…]` listesi olabilir; çözümleme `level` ile seçer. P2 sözleşmesi: liste bildirilen seviye sayısını kapsamalıdır, kısa tablo yüklemede reddedilir; skaler sabittir. Kural şablonu ile değer tablosu ayrıdır.
 
 ### 3.2 Çözümleme
 
@@ -140,21 +140,33 @@ Aynı kural parçası ana özellikte de yan özellikte de kullanılabilir.
 - **Modüller:** Fotonic Mercek (1), Isıl Şok Bobini, Yansıma Kalkanı, Soğuk Karşılık, Can Köprüsü, Keskin Ölçek'in Kritik Ritim ve Luck→kritik yan özellikleri.
 - **Kabul:** modülsüz hasar akışı birebir aynı; koşullar vuruş öncesi durum üzerinden çalışır; yansıyan hasar kritik yapmaz ve modül kuralı tetiklemez.
 
-### P5 — Status kuralı geçersiz kılma (Luna C)
+### P5 — Status kuralı geçersiz kılma (doğrudan Codex)
+- **2026-10-08 kullanıcı kapsamı:** P5 Codex tarafından, Luna/alt ajan kullanılmadan yapılır. Frost Lock hareket ve saldırıyı durdurur; Elite/MiniBoss/Boss muaf, normal hedefler etkilenir. Cold Retort donma yayılımı kullanıcı kararıyla **400 birim**; yalnız büyük varyantta, status-only ve yeni donma/yayılım zinciri üretmez. Thermal Shock Coil'in +2 saniye süre yan özelliği bu status dilimine dahildir; ölüm patlaması P6'da açık kalır.
+- **Sahiplik:** `ModuleRulePackage::statusRules` dört ayrı tipli veri listesi taşır: Electric stack tablosu, Cryo freeze, Thermal+Cryo süre bonusu ve freeze spread. Ana/yan özellik aynı loader ve level resolver yolundan geçer. `ShipModuleApplier` çözülmüş değerleri kendi `CombatRuntime`'ına aktarır, sökme/teardown temizler; global registry yoktur. Global `damage_status_balance.json` değişmez.
+- **Mevcut hedef status'u:** Electric target üzerindeki mevcut tek effect/ortak stack modelini korur. Son başarılı Electric stack uygulaması kendi sahibinin profilini taşır; daha düşük limite dönüşte fazla stack kesilir. Stack eklemeyen vuruş yalnız mevcut sahibin aynı tür vuruşunda süreyi/profili yeniler. Başka tür hasar uygulanmış Electric bonusunu okur; modül sökme mevcut effect'i anında silmez, sonraki kendi uygulaması normal profile döner.
+- **Süre ve bekleme:** Thermal/Cryo süre bonusu vuruş öncesinde ikisi de varsa kendi yeni status uygulamasına/olağan aynı tür yenilemesine eklenir; tekrar +2 birikmez. Freeze stack'leri ve slow modifier'ını temizler; hedef effect'i freeze beklemesini taşır. Muaf veya control-immunity nedeniyle reddedilen donma stack tüketmez. Frozen status'un hareket sahibi `MovementComponent` mevcut stasis yolu üzerinden sürüklenme, burst ve zorunlu hareketi durdurur; saldırı sahibi mevcut ASC stun yoludur. Effect'e yalnız izin verilen `Status.*` ve `State.Effect.*` etiketleri verilir. Yeni davranış kaynakları/fallback effect kayıtları oyun ve E2E bağlantısındadır.
 - Sahip başına max stack ve donma eşiği için `DamageTypeSystem` kancası (global denge dosyası korunur, sahip değeri üstüne biner).
 - **Modüller:** Ark Genişletici (3), Kırağı Kilidi (2).
 - **Kabul:** modülsüz hedefte stack sınırı değişmez; modüllü sahipte 5. Electric stack ve 4 Cryo stack'te donma + bekleme çalışır; modül sökülünce davranış geri döner.
 
-### P6 — Üretilen varlıklar (Luna D)
+- **Kanıt (2026-10-08):** vcvars64 sonrası `VSLANG=1033` ile oyun ve ilgili hedefler build exit 0. Mixed/Common/TriggerLifetime/P2/P3/P4/P5 gerçek runtime E2E **7/7**; P5 **373/373** kontrol. Beş Electric stack ve kaynak değişimi, seviye/reboot/sökme, donmada hareket/zorunlu hareket/saldırı kesme ve geri dönüş, hedef muafiyeti/control immunity, süre bonusu ve 400 birim zincirsiz yayılım, hatalı içerik reddi ve 10 tur temizleme kanıtlı. Global status denge dosyası hash'i aynı. Başlangıçtaki 18 ilgisiz path'in 17'si byte-identical; ModuleScreenView.cpp paralel ekran işiyle değişti, P5 bu dosyaya yazmadı. Stage/commit/push ve manuel görsel kabul yok. [Kesin komutlar ve sonuç kaydı](../beyin/notes/uncommon-p5-2026-10-08.md), [P5 artefaktı](../out/build/x64-debug/e2e-artifacts/uncommon-module-p5.json).
+
+### P6 — Üretilen varlıklar (doğrudan Codex)
 - Güdümlü mermi, sekme, gecikmeli patlama, mayın; zincirleme koruması ve teknik sınırlar (§3.4).
 - **Modüller:** Sekme Ucu, Yayılım Çekirdeği (+ Artçı Darbe yan özelliği), İz Mayınları. Alt fazlar halinde, her biri ayrı commit.
-- **Kabul:** üretilen hasar başka modülü tetiklemez; sınırlar aşılmaz; performans için sahne varlık sayısı ölçülür. Mayın penceresi, mayın hasarı ve sekme menzili modules.md'deki açıklar kapandıktan sonra.
+- **2026-10-08 kullanıcı kararı:** Ricochet 300 birim ve atış başına tek ana sekme. Scatter az hedefte her farklı hedefe tek mermi, 600 birim/sn ve 3 sn ömür; Aftershock 100 yarıçap. Trail Mines, Movement sonrası 5 sn bırakma penceresi, 8/10/12 hasar ve 100 yarıçap. Thermal ölüm patlaması 100 yarıçap. Kullanıcı toplu taslağa “Bu değerlerle tamamla” yanıtını verdi. [Kanonik değerler](ABILITY_SCALING_CATALOG.md#uncommon-p6-üretilen-hasar).
+- **Uygulama:** Üç ana modül, altı özel yan özellik ve Thermal Death Burst; tipli generatedRules + ortak loader/level resolver. Runtime lease, weak aktörler, RAII observer, tek atış/kullanım first-hit bütçesi; gerçek guided/mine/delayed actors. O4/O5/G1 ortak yan özellikleri önceki eksik kapsam olarak açık; JSON yalnız mevcut desteklenen ortak özellikleri açar. Default ability loadout ve global status dengesi değiştirilmez. P7 kart sunumu ayrı.
+- **Kabul:** üretilen hasar ve aktarılan Ignite tick'leri başka modülü tetiklemez; config actor/lifetime sınırları aşılmaz; runtime aktif aktör sayısı E2E'de ölçülür. vcvars64 sonrası `VSLANG=1033` oyun/ilgili hedefler build exit 0; gerçek modül E2E 7/7 + GasLiteMixedLoadout 1/1 = **8/8**, P6 **972/972** kontrol. Üç seviye, gerçek Primary/beam, per-shot/use bütçesi, status transfer, actor cap/lifetime, mine yol/fuse/reboot, ölüm snapshot ve nested/10 tur temizlik kanıtlı. [Kesin komutlar ve sınırlar](../beyin/notes/uncommon-p6-2026-10-08.md), [P6 artefaktı](../out/build/x64-debug/e2e-artifacts/uncommon-module-p6.json). Alt ajan, stage/commit/push ve manuel görsel kabul yok.
 
-### P7 — Sunum (Luna A)
+### P7 — Sunum (doğrudan Codex)
 - Kart metni seviye ve yan özelliği çözer; kilitli yan özellik gösterimi; merdiven boyutları modül ekranında. Türkçe glyph/font ve satır genişliği geçerli formatter/fontla ölçülür (Common P7 yöntemi). **Görsel kabul kullanıcıda.**
+- Uygulama: gerçek modül seviyesi ve toplam seviye, mevcut hücre sayısı/merdiven, seçili yan özellik adı ve açıklaması kartta. Küçük boyutta kilit, en büyük boyutta envanterde hazır/takılıyken etkin, combat reboot sırasında bekleme gösterilir. Envanter satırı seviye ve yan özellik durumunu özetler; üzerine gelmek tam kartı açar.
+- Sayılar `ModuleLevelTable::ValueAtLevel` ile okunur. `ModuleDescriptionValues` tipli kuralların numeric anahtarlarını hem JSON doğrulayıcısına hem formatter'a verir; ana ve yan açıklamalar aynı seviye tablosunu kullanır. İçerikte 18 ana ve 30 yan açıklama İngilizcedir; davranış/sayılar değişmez. Satırlar gerçek SFML font genişliğiyle sarılır; kısa envanter özeti kesilirse üç nokta alır, tam kartın ana/yan açıklaması E2E'de kesilmeden sığmalıdır.
+- **Tamamlandı (2026-10-08):** Doğrudan Codex, alt ajansız. `LightYearsGame` ve ilgili hedefler `vcvars64` sonrası `VSLANG=1033` ile build exit 0. Gerçek P7 E2E 3212/3212: 18 modülün 363 seviye/boyut/yan özellik kombinasyonu, gerçek font ölçümü, Noto Sans Türkçe glyph'leri, loader reddi/geriye uyumluluk, kurma/taşıma/sökme/reboot, seviye ve yan seçim revizyonu, idle yenileme ve 10 tur cleanup. P7 + Common/TriggerLifetime/P2–P6/ModuleScreen/MixedLoadout toplam 10/10 E2E geçti. Yedi gerçek ekran görüntüsü incelendi; kart çerçevesinin alt tuş şeridine değmesi giderildi. [Komutlar ve sınırlar](../beyin/notes/uncommon-p7-2026-10-08.md), [artefakt](../out/build/x64-debug/e2e-artifacts/uncommon-module-p7.json). Stage/commit/push yok; kullanıcı görsel kabulü ve P8 ayrı.
 
-### P8 — Kapanış (Sol)
+### P8 — Kapanış (doğrudan Codex, tamamlandı)
 - E2E dosyaları modül grubuna göre; hedefli E2E ve oyun build bağımsız doğrulanır; modules.md statüleri (Planned → Implemented) ve bu belgenin sonuç bölümü güncellenir.
+- **2026-10-08:** Mevcut ayrılmış E2E dosyaları/CMake bağlantıları incelendi; yeni runtime/test davranışı eklenmedi. Game ve ilgili hedefler vcvars64 sonrası VSLANG=1033 ile build exit 0; Common/TriggerLifetime/P2–P7/ModuleScreen/MixedLoadout seri **10/10** geçti. JSON sayımları ve katalog uzlaştırıldı; 18 ana modül Implemented, eksik yan özellikler ayrı açık. [Kapsam ve kesin komutlar](../beyin/notes/uncommon-p8-2026-10-08.md), [sonuç §8](#8-p8-sonucu--2026-10-08).
 
 ### Bağımlılık
 ```
@@ -179,8 +191,9 @@ P3/P4/P5 aynı dosyalara dokunduğu için seri koşar.
 
 | Konu | Durum |
 |---|---|
-| Kirli çalışma ağacı | P0'da çözülür; Common revizyonu commit edilmeden başlanmaz. |
-| Gold ekonomisi yok | G1 ve Av Saati'nin Av Ödülü yan özelliği engelli; Gold sistemi ayrı kapsamda tasarlanana dek tanımlı ama pasif ya da havuzdan çıkarılır. |
+| Kirli çalışma ağacı | P0 başlangıcı tarihsel olarak kapandı. P8 başlangıcı HEAD da12985; P5–P7 ve paralel görsel/şema işleri hâlâ dirty. P8 yalnız kendi belge/hafıza değişikliklerini yazdı; stage/commit/push yok. |
+| Gold | Koşu içi kapsam kullanıcı tarafından onaylandı ve G1/Hunt Bounty eklendi; mağaza, temel düşüş, harcama ve kalıcılık ayrı. Güncel sonuç §9. |
+| P8 sonrası yanlar | O4/O5/G1 ve dört özel yan tamamlandı; güncel kanıt §9, P8 başlangıcı §8 tarihsel. |
 | Yan özellik çıkış ağırlıkları | Yapılandırma; varsayılan eşit ağırlık. |
 | Yükseltme harcaması ve arayüzü | Kapsam dışı; yalnız `level` ve `sideFeatureId` ayarlama API'si/test kancası. |
 | Seviye sayısı ve formül | Karar yok; tablo uzunluğu serbest, test 3 adımla. |
@@ -198,3 +211,55 @@ Common planı §7 aynen geçerlidir: Sol fazı sırayla başlatır, tek yazıcı
 **Her Luna görevinin metni şunları içerir:** hedef modüller ve modules.md kartları; ilgili §3 bölümü ve **izinli dosya listesi**; kirli, dokunulmayacak dosyalar; proje kuralları (kompakt C++17, tipli kural struct'ları, `weak_ptr`/benzersiz kimlik, RAII kayıt, tek yönlü gameplay→sunum, JSON/C++ sözleşme uyumu); kabul ölçütü ve komutlar; rapor biçimi (değişen dosyalar, build sonucu, senaryo sonuçları, sapmalar, açık sorular).
 
 **Sol'un faz sonu inceleme listesi:** handle/abonelik sızıntısı, özyineleme koruması, modülsüz yolun değişmemesi, `(instanceId, ruleIndex)` anahtarı çakışması, yan özellik ad uzayı, JSON/C++ uyumu, yalnız izinli dosyaların değişmesi.
+
+
+## 8. P8 sonucu — 2026-10-08
+
+> Tarihsel checkpoint: aşağıdaki eksikler P8 bitimindeki durumu gösterir. Kullanıcının kalanları yapma isteği ve koşu içi Gold onayıyla sonraki kapsam §9’da tutulur.
+
+Kullanıcının “p8 ile devam edelim” isteğiyle Codex doğrudan, alt ajansız doğruladı. P8, **mevcut Uncommon runtime diliminin ve sunumunun teknik kapanışıdır**; tüm tasarım yan özelliklerinin, ekonominin veya kullanıcı görsel kabulünün bittiği anlamına gelmez. Katalogdaki 18 ana modül Implemented olarak güncellendi; Rare/Epic tasarım satırları korundu.
+
+### Doğrulanmış kapsam
+
+- JSON'da 52 modül: 34 önceki kayıt + 18 Uncommon. Uncommon 7 tek boyutlu + 11 merdivenli; 30 yan özellik = 12 ortak + 18 özel. Shipped modüller üç seviyeli; altyapı N seviyeli tabloları destekler. İzinli kombinasyonlar ve kaynak kimlikleri mevcut loader/resolver sözleşmesinden gelir.
+- P2 içerik/zar/runtime, P3 sahip durumu/öldürme, P4 hasar/komşuluk/tepki, P5 status/içerik, P6 sekme/aktör/mayın/içerik ayrı E2E dosyalarında; P7 tek 229 satırlık sunum E2E'sidir. En uzun Uncommon E2E .cpp 366 satır; gereksiz dosya bölme veya yeni test ekleme yapılmadı. Mevcut CMake test hedefleri ve game kaynak listesi bağlıdır.
+- `LightYearsGame` ve ilgili 10 test hedefi build **exit 0**. `vcvars64` sonrasında `VSLANG=1033`; seri bağlama. İlk sandbox denemesi CMake glob kontrolünde ilerlemedi ve durduruldu; aynı yerel komut normal ortamda geçti.
+- Common + TriggerLifetime + P2–P7 + ModuleScreen + GasLiteMixedLoadout gerçek E2E **10/10**, **41,03 sn**, exit 0. Unit test eklenmedi/çalıştırılmadı; tam suite/manuel gameplay iddiası yok. Artifact girdileri/çıktıları bağımsız okundu; kaynaklar ve kesin komutlar [P8 kaydında](../beyin/notes/uncommon-p8-2026-10-08.md).
+
+| E2E artefaktı | Geçen kontrol |
+|---|---:|
+| [Common](../out/build/x64-debug/e2e-artifacts/common-modules.json) | 358 |
+| [Trigger/lifetime](../out/build/x64-debug/e2e-artifacts/common-module-trigger-lifetime.json) | 41 |
+| [P2](../out/build/x64-debug/e2e-artifacts/uncommon-modules.json) | 185 |
+| [P3](../out/build/x64-debug/e2e-artifacts/uncommon-module-p3.json) | 385 |
+| [P4](../out/build/x64-debug/e2e-artifacts/uncommon-module-p4.json) | 670 |
+| [P5](../out/build/x64-debug/e2e-artifacts/uncommon-module-p5.json) | 373 |
+| [P6](../out/build/x64-debug/e2e-artifacts/uncommon-module-p6.json) | 972 |
+| [P7](../out/build/x64-debug/e2e-artifacts/uncommon-module-p7.json) | 3212; 363 seviye/boyut/yan kombinasyonu |
+
+ModuleScreen kendi gerçek Player/Presenter/View artefaktını üretir; MixedLoadout ayrıca JSON kontrol sayısı yazdırmaz. Toplam test sayısına ikisi de dahildir.
+
+### Açık kalanlar ve kabul sınırı
+
+| Konu | Güncel sınır / sonraki iş |
+|---|---|
+| Ortak O4/O5 | Status süresi +1 sn ve hedefe ilk vuruş davranışı içerikte/izinlerde yok; ayrı uygulama işi. |
+| Gold / G1 / Hunt Bounty | Gold ekonomisi tasarlanıp uygulanmadan açılamaz; JSON'da yok. |
+| Glass Cannon düşük-canda kritik | Özel yan özellik içerikte yok. Mevcut Shield Return sabit +%6 Max Shield; cezanın yarısının dinamik hesabı değildir. |
+| Grit koşullu shield regen | Ana hasar azaltma + Critical Circuit mevcut; koşullu ×2 regen yan özelliği yok. |
+| Movement Rhythm sönme | 1,5 sn sönme önerisi onaysız; mevcut hız bonusu anlık, Advanced Thrust mevcut. |
+| Loot / upgrade / kalıcılık | Drop dağılımı, harcama/upgrade UI ve serileştirme kapsam dışı; test hibesi loot kanıtı değil. |
+| Son denge / görsel kabul | Tablolar uygulanmıştır, nihai denge kabulü değildir. P7'nin önceki görüntü incelemesi kullanıcı kabulü değildir; P8 yeni estetik kabul iddia etmez. |
+| Simetrik şema ve hologram işi | Ayrı kullanıcı konusu: bonus-bölgesine sığma sorunu açık. P8 şekil/hologram kaynaklarını değiştirmedi. |
+| Git | HEAD da12985; P5–P8 commit edilmedi. Commit için ayrıca açık kullanıcı onayı gerekir. |
+
+Tam tasarım kapsamının bir sonraki teknik işi O4/O5 ve Glass/Grit eksik özel yanlarının ayrı sözleşmeyle uygulanmasıdır; Gold ve sönme tasarım kararlarına bağlı kalır. Runtime, denge, loadout, görsel ve diğer dirty işler P8'de değiştirilmedi. [Dar diff/hash kanıtı](../.tmp/p8/audit.json), [değişiklik sözleşmesi](../.tmp/p8/change-contract.md).
+
+
+## 9. P8 sonrası eksik yanlar — 2026-10-08
+
+Kullanıcı “yarım kalan işleri de yapalım” dedi; Gold için açık seçimi “Bu koşu içi kapsamla uygula.” Codex doğrudan, alt ajansız çalıştı. Kapsam yedi yandır: O4/O5/G1, Glass Desperate Aim, Grit Emergency Recharge, Hunt Bounty ve Movement Lingering Rhythm (1,5 sn). Ana değerler ve mevcut 30 yan korunur. İçerik 37 yan = 15 ortak + 22 özel; 11 merdivenli modülün her biri 2 özel + 3 ortak seçeneğe sahiptir.
+
+Tipli kurallar, loader/level resolver, numeric kart anahtarları, runtime temizliği ve test/CMake bağlantıları birlikte uygulanır. [Sahiplik ve davranış sözleşmeleri](MODULE_SYSTEM_ARCHITECTURE.md), [sınırlandırılmış değişiklik sözleşmesi](../.tmp/uncommon-completion/change-contract.md).
+
+**Teknik doğrulama tamamlandı:** `LightYearsGame` ve ilgili hedefler build exit 0; `vcvars64` sonrasında `VSLANG=1033`. Seri gerçek E2E **11/11**, **46,55 sn**, exit 0; 10 JSON artefaktında **7854** geçen kontrol. Yeni grup **959**, P7 **3860** kontrol ve **435** seviye/boyut/yan kombinasyonu. [Kesin build/test komutları ve kaynaklı sonuç](../beyin/notes/uncommon-completion-2026-10-08.md), [sabitlenmiş artefakt özeti](../.tmp/uncommon-completion/evidence.json), [başlangıca göre dar kapsam denetimi](../.tmp/uncommon-completion/audit.json). [Gruplanmış E2E girişi](../LightYearsGame/tests/UncommonModuleCompletionE2E.cpp) gerçek loadout/ship/damage/Player akışını kullanır. Mağaza, temel Gold düşüşü, loot/upgrade arayüzü, kalıcılık, nihai denge ve kullanıcı görsel kabulü açık; stage/commit/push yok.

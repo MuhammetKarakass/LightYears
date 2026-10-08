@@ -1,4 +1,5 @@
 #include "presentation/ability/AbilityPresentationContent.h"
+#include "presentation/ability/moduleGenerated/ModuleGeneratedPresentationProfile.h"
 
 #include "presentation/ability/gravityAnomaly/GravityAnomalyPresentationProfile.h"
 #include "presentation/ability/infernoSpray/InfernoSprayPresentationProfile.h"
@@ -97,7 +98,8 @@ namespace ly
 			RegisterShieldGraftPresentationProfiles() &&
 			RegisterEmberSwarmPresentationProfiles() &&
 			RegisterLanceDrivePresentationProfiles() &&
-			RegisterReclaimerProtocolPresentationProfiles();
+			RegisterReclaimerProtocolPresentationProfiles() &&
+			RegisterModuleGeneratedPresentationProfiles();
 		return registered;
 	}
 }

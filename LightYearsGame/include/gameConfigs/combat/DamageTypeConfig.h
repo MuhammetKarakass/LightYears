@@ -5,6 +5,7 @@
 
 #include <array>
 #include <algorithm>
+#include <string>
 
 namespace ly
 {
@@ -35,6 +36,8 @@ namespace ly
 		inline static const sas::AttributeId IgnitePendingDamage{ "Damage.IgnitePendingDamage" };
 		inline static const sas::AttributeId CryoBuildupPerHit{ "Damage.Cryo.BuildupPerHit" };
 		inline static const sas::AttributeId ElectricStacks{ "Damage.ElectricStacks" };
+		static sas::AttributeId ElectricDamageTakenBonusForStack(int stack) { return sas::AttributeId{ "Damage.Electric.DamageTakenBonus.Stack" + std::to_string(stack) }; }
+		inline static const sas::AttributeId SuppressModuleTriggers{ "Damage.SuppressModuleTriggers" };
 	};
 
 	struct DamageStatusFamilyBalance
@@ -90,12 +93,15 @@ namespace ly
 	{
 		inline static const GameplayTag& Ignite = GameplayTags::Status::Damage::Ignite;
 		inline static const GameplayTag& CryoSlowed = GameplayTags::Status::Damage::Cryo::Slowed;
+		inline static const GameplayTag& CryoFrozen = GameplayTags::Status::Damage::Cryo::Frozen;
 		inline static const GameplayTag& Electric = GameplayTags::Status::Damage::Electric;
 		inline static const GameplayTag& Kinetic = GameplayTags::Status::Damage::Kinetic;
 	};
 
 	struct DamageStatusEffectIds
 	{
+		inline static constexpr char CryoFrozenEffectId[] = "Effect.Status.Damage.Cryo.Frozen";
+		inline static constexpr char CryoFreezeCooldownEffectId[] = "Effect.Status.Damage.Cryo.FreezeCooldown";
 		inline static constexpr char IgniteEffectId[] =
 			"Effect.Status.Damage.Ignite";
 		inline static constexpr char CryoSlowedEffectId[] =

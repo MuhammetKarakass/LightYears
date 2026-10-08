@@ -135,6 +135,7 @@ struct PrimaryWeaponFrostMeterState
 
 struct PrimaryWeaponShotMetadata
 {
+	std::shared_ptr<ly::DamageHitGroup> moduleHitGroup = std::make_shared<ly::DamageHitGroup>(ly::DamageHitGroup::Kind::PrimaryShot);
 	bool isEmpowered = false;
 	float shotDamageMultiplier = 1.f;
 	ly::DamageCriticalPolicy criticalPolicy = ly::DamageCriticalPolicy::Random;
@@ -172,11 +173,9 @@ struct PrimaryWeaponShotMetadata
 
 // Applies per-shot policy (critical, rounding, empowered-only status stacks)
 // to a payload already built from the weapon's attributes.
-inline void ApplyShotMetadataToPayload(
-	ly::DamagePayload& payload,
-	const PrimaryWeaponShotMetadata& metadata
-)
+inline void ApplyShotMetadataToPayload(ly::DamagePayload& payload, const PrimaryWeaponShotMetadata& metadata)
 {
+	payload.hitGroup = metadata.moduleHitGroup;
 	payload.criticalPolicy = metadata.criticalPolicy;
 	payload.roundDamageUp = metadata.roundFinalDamageUp;
 	if (metadata.suppressStatusStacks)

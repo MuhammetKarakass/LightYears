@@ -6,7 +6,9 @@
       "choices": [
         { "sideFeatureId": "Module.SideFeature.Shared.O1", "weight": 1.0 },
         { "sideFeatureId": "Module.SideFeature.Shared.O2", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.O3", "weight": 1.0 }
+        { "sideFeatureId": "Module.SideFeature.Shared.O3", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.O4", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.O5", "weight": 1.0 }
       ]
     },
     {
@@ -25,7 +27,8 @@
         { "sideFeatureId": "Module.SideFeature.Shared.G2", "weight": 1.0 },
         { "sideFeatureId": "Module.SideFeature.Shared.G3", "weight": 1.0 },
         { "sideFeatureId": "Module.SideFeature.Shared.G4", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.G5", "weight": 1.0 }
+        { "sideFeatureId": "Module.SideFeature.Shared.G5", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.G1", "weight": 1.0 }
       ]
     }
   ],
@@ -33,6 +36,7 @@
     {
       "id": "Module.SideFeature.Shared.O1",
       "displayName": "Offensive O1",
+      "description": "Attack Power +{Owner.AttackPower}.",
       "poolId": "Module.SidePool.Offense",
       "levelCount": 3,
       "rules": {
@@ -44,6 +48,7 @@
     {
       "id": "Module.SideFeature.Shared.O2",
       "displayName": "Offensive O2",
+      "description": "Critical chance +{Owner.CriticalChance}%.",
       "poolId": "Module.SidePool.Offense",
       "levelCount": 3,
       "rules": {
@@ -55,6 +60,7 @@
     {
       "id": "Module.SideFeature.Shared.D1",
       "displayName": "Defensive D1",
+      "description": "Max Health +{Owner.MaxHealth}.",
       "poolId": "Module.SidePool.Defense",
       "levelCount": 3,
       "rules": {
@@ -66,6 +72,7 @@
     {
       "id": "Module.SideFeature.Shared.D5",
       "displayName": "Defensive D5",
+      "description": "Max Shield +{Ship.Shield.Max.bonusPercent}%.",
       "poolId": "Module.SidePool.Defense",
       "levelCount": 3,
       "rules": {
@@ -77,6 +84,7 @@
     {
       "id": "Module.SideFeature.Shared.G2",
       "displayName": "General G2",
+      "description": "Ability Haste +{Owner.AbilityHaste}.",
       "poolId": "Module.SidePool.General",
       "levelCount": 3,
       "rules": {
@@ -88,6 +96,7 @@
     {
       "id": "Module.SideFeature.Shared.G3",
       "displayName": "General G3",
+      "description": "Afterburner capacity +{Ship.Afterburner.Capacity.bonusPercent}%.",
       "poolId": "Module.SidePool.General",
       "levelCount": 3,
       "rules": {
@@ -99,6 +108,7 @@
     {
       "id": "Module.SideFeature.Shared.G4",
       "displayName": "General G4",
+      "description": "Horizontal and vertical movement ratings +{Owner.MoveSpeedHorizontal}.",
       "poolId": "Module.SidePool.General",
       "levelCount": 3,
       "rules": {
@@ -111,6 +121,7 @@
     {
       "id": "Module.SideFeature.Shared.G5",
       "displayName": "General G5",
+      "description": "Luck +{Owner.Luck}.",
       "poolId": "Module.SidePool.General",
       "levelCount": 3,
       "rules": {
@@ -122,6 +133,7 @@
     {
       "id": "Module.SideFeature.GlassTop.ShieldReturn",
       "displayName": "Shield Return",
+      "description": "Max Shield +{Ship.Shield.Max.bonusPercent}%.",
       "rollWeight": 1.0,
       "levelCount": 3,
       "rules": {
@@ -133,6 +145,7 @@
     {
       "id": "Module.SideFeature.Shared.O3",
       "displayName": "Hunt Rhythm",
+      "description": "On kill, Attack Speed +{Owner.AttackSpeed} for {trigger.0.durationSeconds}s.",
       "levelCount": 3,
       "rules": {
         "triggerBuffs": [
@@ -156,6 +169,7 @@
     {
       "id": "Module.SideFeature.Shared.D3",
       "displayName": "Hunt Recovery",
+      "description": "On kill, restore {action.0.amountPercent}% of Max Health.",
       "levelCount": 3,
       "rules": {
         "eventActions": [
@@ -171,6 +185,7 @@
     {
       "id": "Module.SideFeature.LootShield.HuntFuel",
       "displayName": "Hunt Fuel",
+      "description": "On kill, restore {action.0.amountPercent}% of Afterburner capacity.",
       "levelCount": 3,
       "rules": {
         "eventActions": [
@@ -185,6 +200,7 @@
     {
       "id": "Module.SideFeature.LootShield.OverflowRecovery",
       "displayName": "Overflow Recovery",
+      "description": "Convert {action.0.amountPercent}% of excess kill shield recovery into hull health.",
       "levelCount": 3,
       "rules": {
         "eventActions": [
@@ -199,6 +215,7 @@
     {
       "id": "Module.SideFeature.HuntClock.FifthKill",
       "displayName": "Fifth Kill",
+      "description": "Every {action.0.everyCount} kills, reduce the longest cooldown by {action.0.amountPercent}%.",
       "levelCount": 3,
       "rules": {
         "eventActions": [
@@ -214,6 +231,7 @@
     {
       "id": "Module.SideFeature.MovementRhythm.AdvancedThrust",
       "displayName": "Advanced Thrust",
+      "description": "Horizontal and vertical movement ratings +{Owner.MoveSpeedHorizontal}.",
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
@@ -237,6 +255,7 @@
     {
       "id": "Module.SideFeature.GritYourTeeth.CriticalCircuit",
       "displayName": "Critical Circuit",
+      "description": "At {owner.0.healthPercent}% hull or less, add {owner.0.amount} to your higher power stat; Attack Power wins ties.",
       "levelCount": 3,
       "rules": {
         "ownerAttributeRules": [
@@ -252,6 +271,7 @@
     {
       "id": "Module.SideFeature.Shared.D2",
       "displayName": "Damage Guard",
+      "description": "After taking damage, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
       "poolId": "Module.SidePool.Defense",
       "levelCount": 3,
       "rules": {
@@ -274,6 +294,7 @@
     {
       "id": "Module.SideFeature.Shared.D4",
       "displayName": "Shield Recharge",
+      "description": "Shield regeneration +{Ship.Shield.Regen.bonusPercent}%.",
       "poolId": "Module.SidePool.Defense",
       "levelCount": 3,
       "rules": {
@@ -290,6 +311,7 @@
     {
       "id": "Module.SideFeature.SharpScale.CriticalRhythm",
       "displayName": "Critical Rhythm",
+      "description": "On critical hit, Attack Speed +{Owner.AttackSpeed} for {trigger.0.durationSeconds}s.",
       "levelCount": 3,
       "rules": {
         "triggerBuffs": [
@@ -312,6 +334,7 @@
     {
       "id": "Module.SideFeature.SharpScale.LuckLens",
       "displayName": "Luck Lens",
+      "description": "Critical chance +{owner.0.amount}% per point of total Luck.",
       "levelCount": 3,
       "rules": {
         "ownerAttributeRules": [
@@ -326,6 +349,7 @@
     {
       "id": "Module.SideFeature.ColdRetort.JarringEffect",
       "displayName": "Jarring Effect",
+      "description": "Take {damage.0.reductionPercent}% less damage from enemies with a status effect.",
       "levelCount": 3,
       "rules": {
         "damageRules": [
@@ -333,6 +357,261 @@
             "incoming": true,
             "condition": "SourceHasStatus",
             "damageMultiplier": 0.88
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.ThermalShockCoil.LingeringShock",
+      "displayName": "Lingering Shock",
+      "description": "Hits on enemies with Ignite and Cryo extend both durations by {duration.0.bonusSeconds}s.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "thermalCryoDurationBonuses": [
+            {
+              "bonusSeconds": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.ColdRetort.FrozenSpread",
+      "displayName": "Frozen Spread",
+      "description": "When you freeze an enemy, add {spread.0.stacks} Cryo to other enemies within {spread.0.radius} units. No freeze chain.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "freezeSpreads": [
+            {
+              "radius": 400,
+              "stacks": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.RicochetTip.StatusTransfer",
+      "displayName": "Status Transfer",
+      "description": "The bounce copies one stack of one damage status. Transferred damage cannot trigger modules.",
+      "levelCount": 3,
+      "rules": {
+        "generatedRules": {
+          "ricochets": [
+            {
+              "transferStatus": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.RicochetTip.SecondBounce",
+      "displayName": "Second Bounce",
+      "description": "Add one extra bounce for {ricochet.0.secondaryPercent}% of the first hit; no return to previous targets.",
+      "levelCount": 3,
+      "rules": {
+        "generatedRules": {
+          "ricochets": [
+            {
+              "secondaryFraction": 0.15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.ScatterCore.Aftershock",
+      "displayName": "Aftershock",
+      "description": "First Offense hit explodes after {aftershock.0.delaySeconds}s for {aftershock.0.damagePercent}% hit damage in {aftershock.0.radius} radius.",
+      "levelCount": 3,
+      "rules": {
+        "generatedRules": {
+          "delayedExplosions": [
+            {
+              "damageFraction": 0.25,
+              "delaySeconds": 0.8,
+              "radius": 100,
+              "maxActive": 32
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.ScatterCore.FourthMissile",
+      "displayName": "Fourth Missile",
+      "description": "Add {salvo.0.projectileCount} guided missile if another different enemy is available.",
+      "levelCount": 3,
+      "rules": {
+        "generatedRules": {
+          "guidedSalvos": [
+            {
+              "projectileCount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.TrailMines.CryoMines",
+      "displayName": "Cryo Mines",
+      "description": "Mines apply {mine.0.cryoStacks} Cryo stack; they cannot trigger Frost Lock.",
+      "levelCount": 3,
+      "rules": {
+        "generatedRules": {
+          "trailMines": [
+            {
+              "cryoStacks": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.TrailMines.QuickFuse",
+      "displayName": "Quick Fuse",
+      "description": "Mine limit +{mine.0.additionalLimit}; fuse becomes {mine.0.fuseSeconds}s.",
+      "levelCount": 3,
+      "rules": {
+        "generatedRules": {
+          "trailMines": [
+            {
+              "additionalLimit": 4,
+              "fuseSeconds": 0.7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.ThermalShockCoil.DeathBurst",
+      "displayName": "Death Burst",
+      "description": "Kills on enemies with Ignite and Cryo explode for {burst.0.healthPercent}% of enemy Max Health in {burst.0.radius} radius.",
+      "levelCount": 3,
+      "rules": {
+        "generatedRules": {
+          "killExplosions": [
+            {
+              "maxHealthFraction": 0.03,
+              "radius": 100,
+              "maxActive": 32,
+              "requiredTargetStatuses": [
+                "Status.Damage.Ignite",
+                "Status.Damage.Cryo.Slowed"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O4",
+      "displayName": "Lasting Status",
+      "description": "Applied status durations +{statusDuration.0.bonusSeconds}s.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "durationBonuses": [
+            {
+              "bonusSeconds": 1
+            }
+          ]
+        }
+      },
+      "poolId": "Module.SidePool.Offense"
+    },
+    {
+      "id": "Module.SideFeature.Shared.O5",
+      "displayName": "Opening Hit",
+      "description": "First successful hit per enemy deals {damage.0.bonusPercent}% more damage.",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "FirstTargetHit",
+            "damageMultiplier": 1.15
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.Offense"
+    },
+    {
+      "id": "Module.SideFeature.Shared.G1",
+      "displayName": "Hunt Gold",
+      "description": "On kill, gain {action.0.amount} Gold for this run.",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "AwardGold",
+            "amount": 1
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.General"
+    },
+    {
+      "id": "Module.SideFeature.GlassTop.LowHealthCrit",
+      "displayName": "Desperate Aim",
+      "description": "At {owner.0.healthPercent}% hull or less, critical chance +{owner.0.amount}%.",
+      "levelCount": 3,
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "HealthThreshold",
+            "attributeId": "Owner.CriticalChance",
+            "healthAtMost": 0.5,
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.GritYourTeeth.ShieldRegen",
+      "displayName": "Emergency Recharge",
+      "description": "At {owner.0.healthPercent}% hull or less, shield regeneration x{owner.0.amount}.",
+      "levelCount": 3,
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "HealthThreshold",
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Regen",
+            "operation": "Multiply",
+            "healthAtMost": 0.35,
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.HuntClock.HuntBounty",
+      "displayName": "Hunt Bounty",
+      "description": "On kill, gain {action.0.amount} Gold for this run.",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "AwardGold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.MovementRhythm.Momentum",
+      "displayName": "Lingering Rhythm",
+      "description": "Movement Attack Speed bonus fades over {movementFade.0.fadeSeconds}s when speed drops.",
+      "levelCount": 3,
+      "rules": {
+        "movementFadeRules": [
+          {
+            "fadeSeconds": 1.5
           }
         ]
       }

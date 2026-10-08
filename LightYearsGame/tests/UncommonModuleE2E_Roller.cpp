@@ -21,6 +21,7 @@ namespace uncommon_module_e2e
 		report.Check(first && repeated && *first == *repeated && firstSeed == repeatedSeed, "same seed repeats the same eligible side feature");
 
 		std::set<std::string> observed;
+		const std::set<std::string> expected{ "Module.SideFeature.Shared.O2", "Module.SideFeature.Shared.O4", "Module.SideFeature.Shared.O5", "Module.SideFeature.GlassTop.ShieldReturn", "Module.SideFeature.GlassTop.LowHealthCrit" };
 		bool allEligible = true;
 		for (std::uint64_t seed = 0; seed < 512; ++seed)
 		{
@@ -29,11 +30,10 @@ namespace uncommon_module_e2e
 			if (!rolled) { allEligible = false; continue; }
 			const std::string id = rolled->ToString();
 			observed.insert(id);
-			allEligible = allEligible &&
-				(id == "Module.SideFeature.Shared.O2" || id == "Module.SideFeature.GlassTop.ShieldReturn");
+			allEligible = allEligible && expected.count(id) != 0;
 		}
-		report.Check(allEligible && observed.size() == 2, "roller includes both legal Glass Top choices and excludes non-permitted pool members",
-			Json{ { "observed", observed }, { "eligibleCount", 2 } });
+		report.Check(allEligible && observed == expected, "roller includes all five legal Glass Top choices and excludes non-permitted pool members",
+			Json{ { "observed", observed }, { "eligibleCount", expected.size() } });
 
 		ly::List<ly::ModuleSideFeaturePool> weightedPools = pools;
 		for (ly::ModuleSideFeaturePool& pool : weightedPools)

@@ -498,6 +498,7 @@ namespace ly
 
 	void Player::ApplyModuleLoadout(PlayerSpaceShip& ship)
 	{
+		ship.GetModuleApplier().SetGoldWallet(mGold);
 		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
 		if (!rules) return;
 		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))
@@ -619,6 +620,7 @@ namespace ly
 
 	void Player::ResetRunProgression()
 	{
+		mGold = std::make_shared<RunGold>();
 		mShipProgression.ResetForNewRun();
 		mModuleLoadout = ModuleLoadout{};
 		mTestModulesGranted = false;

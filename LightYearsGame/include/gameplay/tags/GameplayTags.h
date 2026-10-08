@@ -171,6 +171,7 @@ namespace ly::GameplayTags
 			namespace Cryo
 			{
 				inline const GameplayTag Slowed{ "Status.Damage.Cryo.Slowed" };
+				inline const GameplayTag Frozen{ "Status.Damage.Cryo.Frozen" };
 			}
 			inline const GameplayTag Electric{ "Status.Damage.Electric" };
 			inline const GameplayTag Kinetic{ "Status.Damage.Kinetic" };

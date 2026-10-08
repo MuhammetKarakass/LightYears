@@ -33,6 +33,7 @@ namespace ly
 	{
 		mStepSeconds = std::max(0.f, deltaTime);
 		mStepDistance = 0.f;
+		mStepStartLocation = GetShip().GetActorLocation();
 		mMovementPolicies.Tick(deltaTime);
 		const auto& ownedTags = GetShip().GetAbilitySystemComponent().GetOwnedTags();
 		const auto applyForcedMovement = [&]()
@@ -44,23 +45,21 @@ namespace ly
 				MoveOwner(forcedVelocity * std::max(0.f, deltaTime));
 			}
 		};
+		if (ownedTags.HasTag(GameplayTags::Status::Damage::Cryo::Frozen) ||
+			(ownedTags.HasTag(GameplayTags::State::ActionLock::MovementInput) && ownedTags.HasTag(GameplayTags::State::ActionLock::ExternalMovement)))
+		{
+			// Frozen status and hard stasis stop existing motion and external influences.
+			if (mIsMovementBurstActive)
+			{
+				EndMovementBurst();
+			}
+			GetShip().SetVelocity({ 0.f, 0.f });
+			mMovementInfluences.ClearImpulses();
+			mMovementInfluences.ClearAccelerationSources();
+			return;
+		}
 		if (ownedTags.HasTag(GameplayTags::State::ActionLock::MovementInput))
 		{
-			if (ownedTags.HasTag(GameplayTags::State::ActionLock::ExternalMovement))
-			{
-				// Hard stasis is the only action lock that stops an already-moving
-				// ship. Focus deliberately does not enter this branch.
-				if (mIsMovementBurstActive)
-				{
-					EndMovementBurst();
-				}
-				GetShip().SetVelocity({ 0.f, 0.f });
-				// Hard stasis discards both new and pre-existing impulses so releasing
-				// the lock cannot produce a delayed knockback.
-				mMovementInfluences.ClearImpulses();
-				mMovementInfluences.ClearAccelerationSources();
-				return;
-			}
 
 			if (mMovementInfluences.HasForcedMovement())
 			{

@@ -94,12 +94,10 @@ namespace ly
 			beamState.pendingHits.push_back(PendingBeamHit{ target->GetUniqueID(), target, damage });
 		}
 
-		void DeliverPendingBeamDamage(
-			const PrimaryWeaponExecutionContext& context,
-			ContinuousBeamWeaponRuntimeState& beamState,
-			const DamagePayload& payload
-		)
+		void DeliverPendingBeamDamage(const PrimaryWeaponExecutionContext& context, ContinuousBeamWeaponRuntimeState& beamState, const DamagePayload& payload)
 		{
+			auto deliveryPayload = payload;
+			deliveryPayload.hitGroup = std::make_shared<DamageHitGroup>(DamageHitGroup::Kind::PrimaryShot);
 			const List<GameplayTag> damageTags = beamState.damageTags.empty()
 				? context.damageTags
 				: beamState.damageTags;
@@ -118,7 +116,7 @@ namespace ly
 					hit.damage,
 					&context.owner,
 					damageTags,
-					payload
+					deliveryPayload
 				);
 			}
 		}
@@ -175,11 +173,7 @@ namespace ly
 				return false;
 			}
 
-			void TickFire(
-				const PrimaryWeaponExecutionContext& context,
-				PrimaryWeaponTypeRuntimeState& state,
-				float deltaTime
-			) const override
+			void TickFire(const PrimaryWeaponExecutionContext& context, PrimaryWeaponTypeRuntimeState& state, float deltaTime) const override
 			{
 				if (deltaTime <= 0.f || !context.owner.GetWorld())
 				{

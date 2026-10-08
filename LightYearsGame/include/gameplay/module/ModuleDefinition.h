@@ -27,6 +27,7 @@ namespace ly
 	struct ModuleLevelTable
 	{
 		List<T> values;
+		T ValueAtLevel(T fallback, int level) const { return level > 0 && static_cast<std::size_t>(level) <= values.size() ? values[static_cast<std::size_t>(level - 1)] : fallback; }
 	};
 
 	// Cell offsets relative to the module's own origin; (0,0)-based.
@@ -107,7 +108,7 @@ namespace ly
 		ModuleLevelTable<float> multiplierByLevel;
 	};
 
-	enum class ModuleEventActionKind { RestoreShield, ShieldOverflowToHealth, RestoreHealth, RestoreAfterburner, ReduceAllCooldowns, ReduceLongestCooldown, RefundUsedCooldown, ApplyNearbyCryo };
+	enum class ModuleEventActionKind { RestoreShield, ShieldOverflowToHealth, RestoreHealth, RestoreAfterburner, ReduceAllCooldowns, ReduceLongestCooldown, RefundUsedCooldown, ApplyNearbyCryo, AwardGold };
 	struct ModuleEventAction
 	{
 		ModuleTriggerKind trigger = ModuleTriggerKind::KillConfirmed;
@@ -132,8 +133,101 @@ namespace ly
 		float amount = 0.f;
 		float fadeSeconds = 0.f;
 		ModuleLevelTable<float> amountByLevel;
+		ModuleAttributeTarget target = ModuleAttributeTarget::Owner;
+		sas::AttributeModifierOperation operation = sas::AttributeModifierOperation::Add;
+	};
+	struct ModuleMovementFadeRule { float fadeSeconds = 0.f; };
+	struct ModuleElectricStatusRule
+	{
+		List<float> damageTakenByStack;
+		List<ModuleLevelTable<float>> damageTakenByStackByLevel;
+	};
+	struct ModuleCryoFreezeRule
+	{
+		int threshold = 0;
+		float durationSeconds = 0.f;
+		float cooldownSeconds = 0.f;
+		bool normalTargetsOnly = true;
+		ModuleLevelTable<float> durationSecondsByLevel;
+		ModuleLevelTable<float> cooldownSecondsByLevel;
+	};
+	struct ModuleStatusDurationRule
+	{
+		float bonusSeconds = 0.f;
+		ModuleLevelTable<float> bonusSecondsByLevel;
+	};
+	struct ModuleFreezeSpreadRule
+	{
+		float radius = 0.f;
+		int stacks = 1;
+	};
+	// Value snapshots owned by one ship's module applier; no global registry.
+	struct ModuleStatusRules
+	{
+		List<ModuleElectricStatusRule> electricOverrides;
+		List<ModuleCryoFreezeRule> cryoFreezes;
+		List<ModuleStatusDurationRule> thermalCryoDurationBonuses;
+		List<ModuleFreezeSpreadRule> freezeSpreads;
+		List<ModuleStatusDurationRule> durationBonuses;
+		bool Empty() const { return electricOverrides.empty() && cryoFreezes.empty() && thermalCryoDurationBonuses.empty() && freezeSpreads.empty() && durationBonuses.empty(); }
 	};
 
+	struct ModuleRicochetRule
+	{
+		float damageFraction = 0.f;
+		float range = 0.f;
+		float secondaryFraction = 0.f;
+		bool transferStatus = false;
+		ModuleLevelTable<float> damageFractionByLevel;
+	};
+	struct ModuleGuidedSalvoRule
+	{
+		float damageFraction = 0.f;
+		int projectileCount = 0;
+		float speed = 0.f;
+		float lifetime = 0.f;
+		float targetRange = 0.f;
+		int maxActive = 0;
+		ModuleLevelTable<float> damageFractionByLevel;
+	};
+	struct ModuleDelayedExplosionRule
+	{
+		float damageFraction = 0.f;
+		float delaySeconds = 0.f;
+		float radius = 0.f;
+		int maxActive = 0;
+		ModuleLevelTable<float> damageFractionByLevel;
+	};
+	struct ModuleTrailMineRule
+	{
+		float damage = 0.f;
+		float spacing = 0.f;
+		float windowSeconds = 0.f;
+		float fuseSeconds = 0.f;
+		float radius = 0.f;
+		int maxActive = 0;
+		int additionalLimit = 0;
+		int cryoStacks = 0;
+		ModuleLevelTable<float> damageByLevel;
+		ModuleLevelTable<int> maxActiveByLevel;
+	};
+	struct ModuleKillExplosionRule
+	{
+		float maxHealthFraction = 0.f;
+		float radius = 0.f;
+		int maxActive = 0;
+		List<GameplayTag> requiredTargetStatuses;
+		ModuleLevelTable<float> maxHealthFractionByLevel;
+	};
+	struct ModuleGeneratedRules
+	{
+		List<ModuleRicochetRule> ricochets;
+		List<ModuleGuidedSalvoRule> guidedSalvos;
+		List<ModuleDelayedExplosionRule> delayedExplosions;
+		List<ModuleTrailMineRule> trailMines;
+		List<ModuleKillExplosionRule> killExplosions;
+		bool Empty() const { return ricochets.empty() && guidedSalvos.empty() && delayedExplosions.empty() && trailMines.empty() && killExplosions.empty(); }
+	};
 	struct ModuleRulePackage
 	{
 		List<ModuleAttributeModifier> attributeModifiers;
@@ -150,6 +244,9 @@ namespace ly
 			ModuleLevelTable<float> fractionByLevel;
 		};
 		List<ShieldReflection> shieldReflections;
+		ModuleStatusRules statusRules;
+		ModuleGeneratedRules generatedRules;
+		List<ModuleMovementFadeRule> movementFadeRules;
 	};
 
 	struct ModuleSizeVariant : ModuleRulePackage
@@ -187,7 +284,18 @@ namespace ly
 			if (!covers(action.amountByLevel) || !covers(action.chancePerLuckByLevel) || !covers(action.targetCountByLevel)) return false;
 		for (const ModuleOwnerAttributeRule& rule : rules.ownerAttributeRules) if (!covers(rule.amountByLevel)) return false;
 		for (const auto& rule : rules.shieldReflections) if (!covers(rule.fractionByLevel)) return false;
+		for (const auto& rule : rules.statusRules.electricOverrides)
+			for (const auto& table : rule.damageTakenByStackByLevel) if (!covers(table)) return false;
+		for (const auto& rule : rules.statusRules.cryoFreezes)
+			if (!covers(rule.durationSecondsByLevel) || !covers(rule.cooldownSecondsByLevel)) return false;
+		for (const auto& rule : rules.statusRules.thermalCryoDurationBonuses) if (!covers(rule.bonusSecondsByLevel)) return false;
+		for (const auto& rule : rules.statusRules.durationBonuses) if (!covers(rule.bonusSecondsByLevel)) return false;
 		for (const ModuleZoneEffect& effect : rules.zoneEffects) if (!covers(effect.multiplierByLevel)) return false;
+		for (const auto& rule : rules.generatedRules.ricochets) if (!covers(rule.damageFractionByLevel)) return false;
+		for (const auto& rule : rules.generatedRules.guidedSalvos) if (!covers(rule.damageFractionByLevel)) return false;
+		for (const auto& rule : rules.generatedRules.delayedExplosions) if (!covers(rule.damageFractionByLevel)) return false;
+		for (const auto& rule : rules.generatedRules.trailMines) if (!covers(rule.damageByLevel) || !covers(rule.maxActiveByLevel)) return false;
+		for (const auto& rule : rules.generatedRules.killExplosions) if (!covers(rule.maxHealthFractionByLevel)) return false;
 		return true;
 	}
 

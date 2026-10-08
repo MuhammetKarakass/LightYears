@@ -86,61 +86,6 @@ namespace ly
 			return static_cast<int>(std::lround(bonus * 100.f));
 		}
 
-		std::string FormatMagnitude(float magnitude)
-		{
-			char buffer[32];
-			std::snprintf(buffer, sizeof(buffer), "%g", magnitude);
-			std::string value{ buffer };
-			std::replace(value.begin(), value.end(), '.', ',');
-			return value;
-		}
-
-		void ReplaceAll(std::string& text, const std::string& token, const std::string& replacement)
-		{
-			std::size_t position = 0;
-			while ((position = text.find(token, position)) != std::string::npos)
-			{
-				text.replace(position, token.size(), replacement);
-				position += replacement.size();
-			}
-		}
-
-		std::string FormatDescriptionImpl(const ModuleDefinition& definition, const ModuleSizeVariant& variant)
-		{
-			std::string description = definition.description;
-			const auto replaceModifier = [&description](const sas::AttributeModifier& modifier)
-			{
-				const std::string token = "{" + std::string{ modifier.attributeId.GetName() } + "}";
-				ReplaceAll(description, token, FormatMagnitude(modifier.magnitude));
-			};
-			for (const ModuleAttributeModifier& modifier : variant.attributeModifiers) replaceModifier(modifier.modifier);
-			for (const ModuleAbilityModifier& modifier : variant.abilityModifiers) replaceModifier(modifier.modifier);
-			for (std::size_t i = 0; i < variant.triggerBuffs.size(); ++i)
-			{
-				const ModuleTriggerBuff& buff = variant.triggerBuffs[i];
-				const std::string prefix = "trigger." + std::to_string(i) + ".";
-				ReplaceAll(description, "{" + prefix + "durationSeconds}", FormatMagnitude(buff.durationSeconds));
-				ReplaceAll(description, "{" + prefix + "movementSpeedMultiplier}", FormatMagnitude(buff.movementSpeedMultiplier));
-				for (const ModuleAttributeModifier& modifier : buff.modifiers) replaceModifier(modifier.modifier);
-			}
-			for (std::size_t i = 0; i < variant.damageRules.size(); ++i)
-			{
-				const ModuleDamageRule& rule = variant.damageRules[i];
-				const std::string prefix = "damage." + std::to_string(i) + ".";
-				ReplaceAll(description, "{" + prefix + "damageMultiplier}", FormatMagnitude(rule.damageMultiplier));
-				ReplaceAll(description, "{" + prefix + "openingShotCount}", std::to_string(rule.openingShotCount));
-				ReplaceAll(description, "{" + prefix + "conditionPercent}", FormatMagnitude(rule.conditionValue * 100.f));
-				ReplaceAll(description, "{" + prefix + "bonusDamagePercent}", FormatMagnitude(rule.bonusDamageFraction * 100.f));
-				ReplaceAll(description, "{" + prefix + "activeDurationSeconds}", FormatMagnitude(rule.activeDurationSeconds));
-			}
-			for (const ModuleZoneEffect& effect : variant.zoneEffects)
-			{
-				const std::string token = "{cooldown." + effect.zone.name + ".multiplier}";
-				ReplaceAll(description, token, FormatMagnitude(effect.multiplier));
-			}
-			return description;
-		}
-
 		bool BuildEntry(const ModuleRulesContext& rules, const ModulePlacement& placement, bool installed, const PlayerSpaceShip* ship, float rebootTotal, std::uint32_t heldId, ModuleEntryView& out)
 		{
 			const ModuleDefinition* definition = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
@@ -148,7 +93,24 @@ namespace ly
 			out = {};
 			out.instanceId = placement.instanceId;
 			out.name = definition->displayName;
-			out.description = FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)]);
+			out.level = placement.level;
+			out.levelCount = definition->levelCount;
+			out.description = FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)], placement.level);
+			for (const auto& variant : definition->sizeVariants) out.sizeLadder.push_back(static_cast<int>(variant.shape.cells.size()));
+			std::sort(out.sizeLadder.begin(), out.sizeLadder.end());
+			out.sizeLadder.erase(std::unique(out.sizeLadder.begin(), out.sizeLadder.end()), out.sizeLadder.end());
+			if (definition->sizeVariants.size() > 1)
+			{
+				out.sideFeatureRequiredCells = static_cast<int>(definition->sizeVariants[static_cast<std::size_t>(GetLargestCellCountVariantIndex(*definition))].shape.cells.size());
+				out.sideFeatureState = ModuleSideFeatureViewState::Unselected;
+				if (placement.sideFeatureId.IsValid())
+				{
+					const auto* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(placement.sideFeatureId) : nullptr;
+					if (feature) { out.sideFeatureName = feature->displayName; out.sideFeatureDescription = FormatModuleSideFeatureDescription(*feature, placement.level); }
+					if (!IsSideFeatureUsableAtLevel(*definition, feature, placement.level)) out.sideFeatureState = ModuleSideFeatureViewState::Unavailable;
+					else out.sideFeatureState = IsLargestCellCountVariant(*definition, placement.variantIndex) ? ModuleSideFeatureViewState::Active : ModuleSideFeatureViewState::Locked;
+				}
+			}
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
 			out.family = FamilyLabel(definition->family);
 			out.isSystem = definition->systemCategory.IsValid();
@@ -193,16 +155,12 @@ namespace ly
 					out.rebooting = true;
 					// Tenths keep the model from changing every frame.
 					out.rebootRemaining = std::round(remaining * 10.f) / 10.f;
-					out.rebootFraction = rebootTotal > 0.f ? std::clamp(1.f - remaining / rebootTotal, 0.f, 1.f) : 0.f;
+					// Quantized so the view model (and the screen rebuild it triggers) changes in steps, not every frame.
+					out.rebootFraction = rebootTotal > 0.f ? std::round(std::clamp(1.f - remaining / rebootTotal, 0.f, 1.f) * 50.f) / 50.f : 0.f;
 				}
 			}
 			return true;
 		}
-	}
-
-	std::string FormatModuleDescription(const ModuleDefinition& definition, const ModuleSizeVariant& variant)
-	{
-		return FormatDescriptionImpl(definition, variant);
 	}
 
 	ModuleScreenPresenter::ModuleScreenPresenter() : mViewModel{ std::make_shared<ModuleScreenViewModel>() }

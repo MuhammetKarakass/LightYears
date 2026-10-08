@@ -22,12 +22,14 @@ namespace ly
 	ShipModuleApplier::ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities, ModuleTriggerRuntime& triggerRuntime, CombatRuntime& combatRuntime)
 		: mShipRuntime{ shipRuntime }
 		, mAbilities{ abilities }
+		, mCombatRuntime{ combatRuntime }
 		, mAbilityRuleApplier{ abilities }
 		, mTriggerBuffRuleApplier{ triggerRuntime }
 		, mDamageRuleApplier{ combatRuntime }
 		, mCooldownRuleApplier{ abilities }
 		, mReactiveRuntime{ abilities }
 		, mShieldReflectionRuntime{ combatRuntime }
+		, mGeneratedRuntime{ abilities }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -41,8 +43,10 @@ namespace ly
 		// this member; a raw `this` listener on a later PlayerSpaceShip member would dangle.
 		mShuttingDown = true;
 		mAbilities.SetModuleSystemGate(nullptr);
+		mCombatRuntime.SetModuleStatusRules({});
 		mReactiveRuntime.Replace({}, {});
 		mShieldReflectionRuntime.Replace({});
+		mGeneratedRuntime.Replace({});
 		mTriggerBuffRuleApplier.Reset();
 		mAbilityRuleApplier.Reset();
 		mCooldownRuleApplier.Reset();
@@ -139,6 +143,7 @@ namespace ly
 	{
 		if (!mShuttingDown) mReactiveRuntime.Tick(deltaSeconds);
 		if (!mShuttingDown) mShieldReflectionRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mGeneratedRuntime.Tick(deltaSeconds);
 		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
@@ -166,6 +171,7 @@ namespace ly
 		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup };
 		mResolved = ModuleResolver::Resolve(rules, active);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
+		mCombatRuntime.SetModuleStatusRules(mResolved.statusRules);
 
 		// Modifiers that stay identical keep their handles and new ones are added before
 		// stale ones are removed, so a reapply never dips a max value below both the old
@@ -181,8 +187,9 @@ namespace ly
 		mAbilityRuleApplier.Replace(mResolved.abilityRules);
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mTriggerBuffRuleApplier.Replace(mResolved.triggerBuffs);
-		mReactiveRuntime.Replace(mResolved.eventActions, mResolved.ownerAttributeRules);
+		mReactiveRuntime.Replace(mResolved.eventActions, mResolved.ownerAttributeRules, mResolved.movementFadeRules);
 		mShieldReflectionRuntime.Replace(mResolved.shieldReflections);
+		mGeneratedRuntime.Replace(mResolved.generatedRules);
 
 		mEnabledSystems = mResolved.enabledSystems;
 		mShipRuntime.SetSystemEnabled(ShipSystem::Shield, IsSystemEnabled(GameplayTags::Module::System::Shield));

@@ -27,7 +27,8 @@ namespace ly
 		TargetWithoutStatus,
 		TargetThermalAndCryo,
 		SourceHasStatus,
-		AdjacentAbilityDirectHit
+		AdjacentAbilityDirectHit,
+		FirstTargetHit
 	};
 
 	// Fire conditions are snapshotted when a primary shot leaves the weapon; impact
@@ -123,6 +124,7 @@ namespace ly
 		bool targetHasThermalAndCryo = false;
 		bool sourceHasStatus = false;
 		bool isAdjacentAbilityDirectHit = false;
+		bool isFirstTargetHit = false;
 	};
 
 	inline bool MatchesModuleDamageCondition(ModuleDamageCondition condition, float conditionValue, int openingShotCount, const ModuleDamageConditionContext& context)
@@ -133,6 +135,7 @@ namespace ly
 		case ModuleDamageCondition::TargetThermalAndCryo: return context.targetHasThermalAndCryo;
 		case ModuleDamageCondition::SourceHasStatus: return context.sourceHasStatus;
 		case ModuleDamageCondition::AdjacentAbilityDirectHit: return context.isAdjacentAbilityDirectHit;
+		case ModuleDamageCondition::FirstTargetHit: return context.isFirstTargetHit;
 		case ModuleDamageCondition::OwnerHealthAtMost:
 			return context.ownerHealthFraction > 0.f && context.ownerHealthFraction <= conditionValue;
 		case ModuleDamageCondition::PrimaryShotOnly:
