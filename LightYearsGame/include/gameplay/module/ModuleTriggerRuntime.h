@@ -19,13 +19,7 @@ namespace ly
 	class ModuleTriggerRuntime final
 	{
 	public:
-		ModuleTriggerRuntime(
-			LightYearsAbilitySystemComponent& abilities,
-			ShipRuntime& shipRuntime,
-			ShipRuntimeModifiers& runtimeModifiers,
-			CombatRuntime& combatRuntime,
-			ShieldComponent& shield
-		);
+		ModuleTriggerRuntime(LightYearsAbilitySystemComponent& abilities, ShipRuntime& shipRuntime, ShipRuntimeModifiers& runtimeModifiers, CombatRuntime& combatRuntime, ShieldComponent& shield);
 		~ModuleTriggerRuntime();
 		ModuleTriggerRuntime(const ModuleTriggerRuntime&) = delete;
 		ModuleTriggerRuntime& operator=(const ModuleTriggerRuntime&) = delete;
@@ -46,6 +40,7 @@ namespace ly
 			List<GameplayTag> sourceAbilityTags;
 			List<GameplayTag> payloadTags;
 			bool moduleGenerated = false;
+			bool suppressModuleTriggers = false;
 		};
 
 		struct OwnedAttributeModifier

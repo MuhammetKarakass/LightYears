@@ -97,6 +97,7 @@ namespace ly
 			bool emitNotifications = true
 		);
 
+		void RefundActivationCooldown(float fraction);
 		bool IsInputHeld() const { return this->mRuntimeState.IsInputHeld(); }
 		bool IsPressedThisFrame() const { return this->mRuntimeState.IsPressedThisFrame(); }
 		void SetActivationOrigin(sas::AbilityActivationOrigin origin)
@@ -180,6 +181,7 @@ namespace ly
 		std::optional<GameAbilityDefinition> mPreparedLevelDefinition;
 		mutable std::optional<float> mCooldownModuleMultiplierSnapshot;
 		unique_ptr<GameAbilityBehavior> mBehavior;
+		float mPendingActivationCooldownMultiplier = 1.f;
 		bool mBehaviorStarted = false;
 		bool mBehaviorCleanupPending = false;
 		bool mEndLifecycleNotificationAttempted = false;

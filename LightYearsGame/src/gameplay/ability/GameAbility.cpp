@@ -127,6 +127,7 @@ namespace ly
 	bool GameAbility::ActivateContent()
 	{
 		mDeferActiveDurationStart = false;
+		mPendingActivationCooldownMultiplier = 1.f;
 		mEndLifecycleNotificationAttempted = false;
 		const sas::AbilityLifecycleEvent lifecycleEvent = BuildLifecycleEvent(
 			GameplayTags::Event::Ability::Activated,
@@ -382,12 +383,21 @@ namespace ly
 		return std::max(0.f, leveledCooldown * hasteMultiplier * moduleMultiplier);
 	}
 
+	void GameAbility::RefundActivationCooldown(float fraction)
+	{
+		const float safeFraction = std::clamp(fraction, 0.f, 1.f);
+		if (mDefinition.cooldownStartPolicy == sas::AbilityCooldownStartPolicy::OnActivation)
+			ReduceCooldownRemaining(GetCooldownRemaining() * safeFraction);
+		else if (IsActive()) mPendingActivationCooldownMultiplier *= 1.f - safeFraction;
+	}
+
 	float GameAbility::ResolveCooldownDurationOnEnd(sas::AbilityEndReason reason)
 	{
 		const float baseCooldown = ResolveCooldownDurationForStart();
+		const float refundMultiplier = std::exchange(mPendingActivationCooldownMultiplier, 1.f);
 		if (!mBehavior)
 		{
-			return baseCooldown;
+			return baseCooldown * refundMultiplier;
 		}
 
 		GameAbilityBehaviorContext behaviorContext{
@@ -403,7 +413,7 @@ namespace ly
 				reason,
 				baseCooldown
 			)
-		);
+		) * refundMultiplier;
 	}
 
 	float GameAbility::ResolveActiveDuration() const

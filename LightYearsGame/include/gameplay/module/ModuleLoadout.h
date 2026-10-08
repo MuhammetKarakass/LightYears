@@ -11,14 +11,6 @@
 
 namespace ly
 {
-	enum class ModuleRarity
-	{
-		Common,
-		Rare,
-		Epic,
-		Legendary
-	};
-
 	// One owned module. Origin and rotation are meaningful only while installed.
 	struct ModulePlacement
 	{
@@ -30,6 +22,8 @@ namespace ly
 		ModuleRarity rarity = ModuleRarity::Common;
 		// Never scaled by zone bonuses.
 		List<sas::AttributeModifier> rolledSideStats;
+		int level = 1;
+		sas::ContentId sideFeatureId;
 	};
 
 	// Installed placements plus the not-installed inventory. Every installing
@@ -52,6 +46,9 @@ namespace ly
 			ModuleRarity rarity = ModuleRarity::Common,
 			List<sas::AttributeModifier> rolledSideStats = {}
 		);
+		std::uint32_t AddToInventory(const ModuleRulesContext& rules, const ModuleDefinition& module, int variantIndex, ModuleRarity rarity, int level, sas::ContentId sideFeatureId = {}, List<sas::AttributeModifier> rolledSideStats = {});
+		bool SetLevel(const ModuleRulesContext& rules, std::uint32_t instanceId, int level);
+		bool SetSideFeature(const ModuleRulesContext& rules, std::uint32_t instanceId, const sas::ContentId& sideFeatureId);
 		ModulePlacementFailure Install(
 			const ModuleRulesContext& rules,
 			std::uint32_t instanceId,
@@ -72,6 +69,8 @@ namespace ly
 		bool SeedDefaults(const ModuleRulesContext& rules);
 
 	private:
+		ModulePlacement* FindOwnedItem(std::uint32_t instanceId);
+
 		List<ModulePlacement> mPlacements;
 		List<ModulePlacement> mInventory;
 		std::uint64_t mRevision = 0;

@@ -1,3 +1,4 @@
+#include "gameplay/module/ModuleAbilitySlots.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 
 #include "gameplay/ability/GameAbility.h"
@@ -176,19 +177,10 @@ namespace ly
 
 	bool LightYearsAbilitySystemComponent::IsModuleAbilityAvailable(const std::string& abilityId) const
 	{
-		const std::pair<sas::AbilitySlot, const GameplayTag*> slots[] = {
-			{ sas::AbilitySlot::Ability1, &GameplayTags::Module::System::AbilitySlot1 },
-			{ sas::AbilitySlot::Ability2, &GameplayTags::Module::System::AbilitySlot2 },
-			{ sas::AbilitySlot::Ability3, &GameplayTags::Module::System::AbilitySlot3 },
-			{ sas::AbilitySlot::Ability4, &GameplayTags::Module::System::AbilitySlot4 }
-		};
-		for (const auto& entry : slots)
+		for (const auto& system : { GameplayTags::Module::System::AbilitySlot1, GameplayTags::Module::System::AbilitySlot2, GameplayTags::Module::System::AbilitySlot3, GameplayTags::Module::System::AbilitySlot4 })
 		{
-			const GameAbility* ability = GetAbility(entry.first);
-			if (ability && ability->GetDefinition().abilityId == abilityId)
-			{
-				return IsModuleSystemEnabled(*entry.second);
-			}
+			const GameAbility* ability = GetAbility(AbilitySlotForModuleSystem(system));
+			if (ability && ability->GetDefinition().abilityId == abilityId) return IsModuleSystemEnabled(system);
 		}
 		return true;
 	}

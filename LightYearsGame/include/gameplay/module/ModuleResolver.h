@@ -22,6 +22,7 @@ namespace ly
 		std::uint32_t instanceId{ 0 };
 		std::size_t ruleIndex{ 0 };
 		ModuleDamageRule rule;
+		List<GameplayTag> adjacentAbilitySystems;
 	};
 
 	struct ResolvedModuleCooldownRule
@@ -34,6 +35,18 @@ namespace ly
 		float multiplier = 1.f;
 	};
 
+	struct ResolvedModuleEventAction
+	{
+		std::uint32_t instanceId = 0;
+		std::size_t ruleIndex = 0;
+		ModuleEventAction rule;
+	};
+	struct ResolvedModuleOwnerAttributeRule
+	{
+		std::uint32_t instanceId = 0;
+		std::size_t ruleIndex = 0;
+		ModuleOwnerAttributeRule rule;
+	};
 	struct ResolvedModuleEffects
 	{
 		List<sas::AttributeModifier> ownerModifiers;
@@ -45,6 +58,10 @@ namespace ly
 		List<ResolvedModuleDamageRule> damageRules;
 		List<ResolvedModuleCooldownRule> cooldownRules;
 		List<GameplayTag> enabledSystems;
+		List<ResolvedModuleEventAction> eventActions;
+		List<ResolvedModuleOwnerAttributeRule> ownerAttributeRules;
+		struct ShieldReflection { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleRulePackage::ShieldReflection rule; };
+		List<ShieldReflection> shieldReflections;
 	};
 
 	namespace ModuleResolver

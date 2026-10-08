@@ -65,6 +65,7 @@ namespace ly
 			case DamageDeliveryType::Beam: return "Beam";
 			case DamageDeliveryType::Area: return "Area";
 			case DamageDeliveryType::Contact: return "Contact";
+			case DamageDeliveryType::Periodic: return "Periodic";
 			}
 			return "Unknown";
 		}
@@ -857,5 +858,4 @@ namespace ly
 		LY_GAME_INFO("%s", summary.c_str());
 	}
 }
-
 

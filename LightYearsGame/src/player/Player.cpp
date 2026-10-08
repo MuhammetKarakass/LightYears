@@ -1,6 +1,7 @@
 #include "player/Player.h"
 #include "player/PlayerSpaceShip.h"
 #include "gameplay/content/ModuleContentCatalog.h"
+#include "gameplay/content/ModuleSideFeatureCatalog.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "gameplay/tags/GameplayTags.h"
 #include <framework/World.h>
@@ -490,7 +491,8 @@ namespace ly
 		return ModuleRulesContext{
 			*definition.schematic,
 			[](const sas::ContentId& id) { return content::ModuleContentCatalog::FindById(id); },
-			content::ModuleContentCatalog::GetZoneTable()
+			content::ModuleContentCatalog::GetZoneTable(),
+			[](const sas::ContentId& id) { return content::ModuleSideFeatureCatalog::FindById(id); }
 		};
 	}
 
@@ -516,7 +518,18 @@ namespace ly
 				{
 					for (std::size_t variant = 0; variant < definition.sizeVariants.size(); ++variant)
 					{
-						mModuleLoadout.AddToInventory(definition.moduleId, static_cast<int>(variant));
+						if (definition.rarity == ModuleRarity::Common)
+						{
+							mModuleLoadout.AddToInventory(definition.moduleId, static_cast<int>(variant));
+							continue;
+						}
+						std::vector<sas::ContentId> sideFeatureIds = definition.sideFeatures;
+						for (const ModuleSharedPoolPermission& permission : definition.sharedPools)
+							for (const sas::ContentId& featureId : permission.allowedFeatureIds)
+								if (std::find(sideFeatureIds.begin(), sideFeatureIds.end(), featureId) == sideFeatureIds.end()) sideFeatureIds.push_back(featureId);
+						mModuleLoadout.AddToInventory(*rules, definition, static_cast<int>(variant), definition.rarity, 1);
+						for (const sas::ContentId& featureId : sideFeatureIds)
+							mModuleLoadout.AddToInventory(*rules, definition, static_cast<int>(variant), definition.rarity, 1, featureId);
 					}
 				}
 			}
@@ -524,9 +537,28 @@ namespace ly
 		ship.GetModuleApplier().Apply(mModuleLoadout, *rules, ship.IsInCombat());
 	}
 
-	std::uint32_t Player::AddModuleToInventory(const sas::ContentId& moduleId, int variantIndex, ModuleRarity rarity)
+	std::uint32_t Player::AddModuleToInventory(const sas::ContentId& moduleId, int variantIndex, ModuleRarity rarity, int level, sas::ContentId sideFeatureId)
 	{
-		return mModuleLoadout.AddToInventory(moduleId, variantIndex, rarity);
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		const ModuleDefinition* definition = content::ModuleContentCatalog::FindById(moduleId);
+		if (!rules || !definition) return 0;
+		return mModuleLoadout.AddToInventory(*rules, *definition, variantIndex, rarity, level, std::move(sideFeatureId));
+	}
+
+	bool Player::SetModuleLevel(std::uint32_t instanceId, int level)
+	{
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules || !mModuleLoadout.SetLevel(*rules, instanceId, level)) return false;
+		if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		return true;
+	}
+
+	bool Player::SetModuleSideFeature(std::uint32_t instanceId, const sas::ContentId& sideFeatureId)
+	{
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules || !mModuleLoadout.SetSideFeature(*rules, instanceId, sideFeatureId)) return false;
+		if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		return true;
 	}
 
 	ModulePlacementFailure Player::TryInstallModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns)

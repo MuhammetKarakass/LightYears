@@ -31,7 +31,7 @@ set(LY_GAMEPLAY_CORE_FILES
 	EnergySpearContentRegistration AbilityLifecycleDispatcher AbilityUseHistory FocusActionLocks
 	TemporalRateModifierLedger AbilityActionValidator GameAbilityDefinitionValidator
 	GameplayEffectDefinitionValidator GameContentBootstrap ShipSchematicValidator ModuleLoadout
-	ModulePlacementRules ModuleResolver ModuleLoader ModuleContentCatalog GameAbilitySettingContracts
+	ModulePlacementRules ModuleResolver ModuleLoader ModuleContentCatalog ModuleSideFeatureLoader ModuleSideFeatureCatalog ModuleRoller GameAbilitySettingContracts
 	LightYearsEffectBehaviorRuntime
 )
 string(JOIN "|" LY_GAMEPLAY_CORE_REGEX_BODY ${LY_GAMEPLAY_CORE_FILES})
@@ -216,6 +216,19 @@ if(BUILD_TESTING)
 		${LY_TESTS_DIR}/CommonModuleE2E_TriggerLifetime.cpp)
 	ly_add_game_test_case(LightYearsCommonModuleTriggerLifetime LightYearsCommonModuleTriggerLifetimeTests
 		ARGS "${LY_E2E}/common-module-trigger-lifetime.json" TIMEOUT 60)
+
+	ly_add_game_test(LightYearsUncommonModuleE2ETests GAME_WHOLE PROJECT_DIR SOURCES
+		${LY_TESTS_DIR}/UncommonModuleE2E.cpp
+		${LY_TESTS_DIR}/UncommonModuleE2E_Content.cpp
+		${LY_TESTS_DIR}/UncommonModuleE2E_Fixture.cpp
+		${LY_TESTS_DIR}/UncommonModuleE2E_Roller.cpp
+		${LY_TESTS_DIR}/UncommonModuleE2E_Runtime.cpp)
+	ly_add_game_test_case(LightYearsUncommonModuleE2E LightYearsUncommonModuleE2ETests
+		ARGS "${LY_E2E}/uncommon-modules.json" TIMEOUT 90)
+	ly_add_game_test(LightYearsUncommonModuleP3E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP3E2E.cpp)
+	ly_add_game_test_case(LightYearsUncommonModuleP3E2E LightYearsUncommonModuleP3E2ETests ARGS "${LY_E2E}/uncommon-module-p3.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsUncommonModuleP4E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP4E2E.cpp ${LY_TESTS_DIR}/UncommonModuleP4E2E_Damage.cpp ${LY_TESTS_DIR}/UncommonModuleP4E2E_Reactions.cpp ${LY_TESTS_DIR}/UncommonModuleP4E2E_Bridge.cpp)
+	ly_add_game_test_case(LightYearsUncommonModuleP4E2E LightYearsUncommonModuleP4E2ETests ARGS "${LY_E2E}/uncommon-module-p4.json" TIMEOUT 120)
 
 	ly_add_game_test(LightYearsWeaponPhase2Tests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/WeaponPhase2Tests.cpp)
 	ly_add_game_test_case(LightYearsWeaponPhase2 LightYearsWeaponPhase2Tests TIMEOUT 60)

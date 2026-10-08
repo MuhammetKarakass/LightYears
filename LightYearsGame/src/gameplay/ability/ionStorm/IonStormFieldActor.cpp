@@ -299,7 +299,8 @@ namespace ly
 				GetDamageTags(),
 				GetDamagePayload(),
 				GetSourceAbilityId(),
-				GetSourceAbilityTags()
+				GetSourceAbilityTags(),
+				DamageDeliveryType::Periodic
 			);
 		}
 	}

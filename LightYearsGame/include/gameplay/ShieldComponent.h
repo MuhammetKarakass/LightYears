@@ -32,7 +32,8 @@ namespace ly
 
 		// Returns source damage consumed by the shield. The multiplier lets damage
 		// types spend more or less shield capacity without leaking extra hull damage.
-		float AbsorbDamage(float sourceDamage, float shieldDamageMultiplier, float extraRechargeDelay);
+		float AbsorbDamage(float sourceDamage, float shieldDamageMultiplier, float extraRechargeDelay, bool moduleGenerated = false);
+		bool IsAbsorbingModuleDamage() const { return mAbsorbingModuleDamage; }
 		// Adds only the portion that reaches above the normal maximum to the
 		// temporary overshield ledger. The normal shield value remains one scalar
 		// so existing damage and recharge rules continue to work unchanged.
@@ -60,6 +61,7 @@ namespace ly
 		void BroadcastShieldChanged(float previousShield);
 
 		float mShield = 0.f;
+		bool mAbsorbingModuleDamage = false;
 		float mMaxShield = 0.f;
 		float mRechargeDelay = 3.f;
 		float mRechargeDelayRemaining = 0.f;

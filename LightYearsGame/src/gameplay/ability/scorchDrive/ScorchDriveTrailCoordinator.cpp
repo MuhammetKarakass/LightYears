@@ -198,7 +198,8 @@ namespace ly
 				mDamageTags,
 				payload,
 				mSourceAbilityId,
-				mSourceAbilityTags
+				mSourceAbilityTags,
+				DamageDeliveryType::Periodic
 			);
 		}
 	}

@@ -1,0 +1,64 @@
+#include "UncommonModuleE2E.h"
+
+#include "gameplay/content/ModuleSideFeatureCatalog.h"
+#include "gameplay/module/ModuleRoller.h"
+
+#include <set>
+
+namespace uncommon_module_e2e
+{
+	void RunUncommonRollerChecks(Report& report)
+	{
+		const ly::ModuleDefinition* glass = ly::content::ModuleContentCatalog::FindById("Module.Offense.GlassTopCore.Uncommon");
+		const auto lookup = [](const sas::ContentId& id) { return ly::content::ModuleSideFeatureCatalog::FindById(id); };
+		const ly::List<ly::ModuleSideFeaturePool>& pools = ly::content::ModuleSideFeatureCatalog::GetPools();
+		report.Check(glass != nullptr, "roller receives the shipped Glass Top definition");
+		if (!glass) return;
+		std::uint64_t firstSeed = 0x123456789abcdef0ull;
+		std::uint64_t repeatedSeed = firstSeed;
+		const auto first = ly::ModuleRoller::RollSideFeatureId(*glass, pools, lookup, firstSeed);
+		const auto repeated = ly::ModuleRoller::RollSideFeatureId(*glass, pools, lookup, repeatedSeed);
+		report.Check(first && repeated && *first == *repeated && firstSeed == repeatedSeed, "same seed repeats the same eligible side feature");
+
+		std::set<std::string> observed;
+		bool allEligible = true;
+		for (std::uint64_t seed = 0; seed < 512; ++seed)
+		{
+			std::uint64_t state = seed;
+			const auto rolled = ly::ModuleRoller::RollSideFeatureId(*glass, pools, lookup, state);
+			if (!rolled) { allEligible = false; continue; }
+			const std::string id = rolled->ToString();
+			observed.insert(id);
+			allEligible = allEligible &&
+				(id == "Module.SideFeature.Shared.O2" || id == "Module.SideFeature.GlassTop.ShieldReturn");
+		}
+		report.Check(allEligible && observed.size() == 2, "roller includes both legal Glass Top choices and excludes non-permitted pool members",
+			Json{ { "observed", observed }, { "eligibleCount", 2 } });
+
+		ly::List<ly::ModuleSideFeaturePool> weightedPools = pools;
+		for (ly::ModuleSideFeaturePool& pool : weightedPools)
+			if (pool.poolId.ToString() == "Module.SidePool.Offense")
+				for (ly::ModuleSideFeatureChoice& choice : pool.choices)
+					if (choice.sideFeatureId.ToString() == "Module.SideFeature.Shared.O2") choice.weight = 100.0;
+		int dominantO2Count = 0;
+		for (std::uint64_t seed = 0; seed < 512; ++seed)
+		{
+			std::uint64_t state = seed;
+			const auto rolled = ly::ModuleRoller::RollSideFeatureId(*glass, weightedPools, lookup, state);
+			if (rolled && rolled->ToString() == "Module.SideFeature.Shared.O2") ++dominantO2Count;
+		}
+	report.Check(dominantO2Count > 450, "configured pool weight changes the deterministic weighted selection distribution",
+			Json{ { "o2Weight", 100.0 }, { "o2RollsOf512", dominantO2Count } });
+
+		ly::ModuleDefinition oneFeature = *glass;
+		oneFeature.sharedPools.clear();
+		oneFeature.sideFeatures = { sas::ContentId{ "Module.SideFeature.GlassTop.ShieldReturn" } };
+		std::uint64_t singleSeed = 7;
+		const auto single = ly::ModuleRoller::RollSideFeatureId(oneFeature, pools, lookup, singleSeed);
+		report.Check(single && single->ToString() == "Module.SideFeature.GlassTop.ShieldReturn", "single eligible weighted choice is safe");
+
+		ly::ModuleDefinition empty;
+		std::uint64_t emptySeed = 7;
+		report.Check(!ly::ModuleRoller::RollSideFeatureId(empty, pools, lookup, emptySeed), "empty side-feature choices are safe");
+	}
+}

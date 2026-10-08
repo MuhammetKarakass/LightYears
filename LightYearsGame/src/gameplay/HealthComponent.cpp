@@ -23,7 +23,7 @@ namespace ly
 		}
 	}
 
-	void HealthComponent::SetMaxHealth(float maxHealth, bool preserveHealthPercent)
+	void HealthComponent::SetMaxHealth(float maxHealth, bool preserveHealthPercent, bool preserveCurrentValue)
 	{
 		if (maxHealth <= 0.f || maxHealth == mMaxHealth)
 		{
@@ -42,7 +42,7 @@ namespace ly
 		{
 			normalHealth = mMaxHealth * (normalHealth / previousMaxHealth);
 		}
-		mHealth = std::min(normalHealth, mMaxHealth) + excessHealth;
+		mHealth = preserveCurrentValue ? std::min(previousHealth, mMaxHealth) : std::min(normalHealth, mMaxHealth) + excessHealth;
 		mTemporaryOverhealths.Reconcile(mHealth, mMaxHealth);
 
 		if (mHealth != previousHealth || mMaxHealth != previousMaxHealth)

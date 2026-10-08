@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "sharedPools": [
+    {
+      "id": "Module.SidePool.Offense",
+      "choices": [
+        { "sideFeatureId": "Module.SideFeature.Shared.O1", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.O2", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.O3", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "Module.SidePool.Defense",
+      "choices": [
+        { "sideFeatureId": "Module.SideFeature.Shared.D1", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.D5", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.D3", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.D2", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.D4", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "Module.SidePool.General",
+      "choices": [
+        { "sideFeatureId": "Module.SideFeature.Shared.G2", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.G3", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.G4", "weight": 1.0 },
+        { "sideFeatureId": "Module.SideFeature.Shared.G5", "weight": 1.0 }
+      ]
+    }
+  ],
+  "sideFeatures": [
+    {
+      "id": "Module.SideFeature.Shared.O1",
+      "displayName": "Offensive O1",
+      "poolId": "Module.SidePool.Offense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [8.0, 8.0, 8.0] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O2",
+      "displayName": "Offensive O2",
+      "poolId": "Module.SidePool.Offense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": [8.0, 8.0, 8.0] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D1",
+      "displayName": "Defensive D1",
+      "poolId": "Module.SidePool.Defense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Add", "magnitude": [25.0, 25.0, 25.0] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D5",
+      "displayName": "Defensive D5",
+      "poolId": "Module.SidePool.Defense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Multiply", "magnitude": [1.08, 1.08, 1.08] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G2",
+      "displayName": "General G2",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Owner", "attributeId": "Owner.AbilityHaste", "operation": "Add", "magnitude": [4.0, 4.0, 4.0] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G3",
+      "displayName": "General G3",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Ship", "attributeId": "Ship.Afterburner.Capacity", "operation": "Multiply", "magnitude": [1.10, 1.10, 1.10] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G4",
+      "displayName": "General G4",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [0.8, 0.8, 0.8] },
+          { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [0.8, 0.8, 0.8] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G5",
+      "displayName": "General G5",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Owner", "attributeId": "Owner.Luck", "operation": "Add", "magnitude": [1.0, 1.0, 1.0] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.GlassTop.ShieldReturn",
+      "displayName": "Shield Return",
+      "rollWeight": 1.0,
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          { "target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Multiply", "magnitude": [1.06, 1.06, 1.06] }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O3",
+      "displayName": "Hunt Rhythm",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "KillConfirmed",
+            "durationSeconds": 2,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.AttackSpeed",
+                "operation": "Add",
+                "magnitude": 10,
+                "affectedByZoneBonus": false
+              }
+            ]
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.Offense"
+    },
+    {
+      "id": "Module.SideFeature.Shared.D3",
+      "displayName": "Hunt Recovery",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "RestoreHealth",
+            "amount": 0.01
+          }
+        ]
+      },
+      "poolId": "Module.SidePool.Defense"
+    },
+    {
+      "id": "Module.SideFeature.LootShield.HuntFuel",
+      "displayName": "Hunt Fuel",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "RestoreAfterburner",
+            "amount": 0.12
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.LootShield.OverflowRecovery",
+      "displayName": "Overflow Recovery",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "ShieldOverflowToHealth",
+            "amount": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.HuntClock.FifthKill",
+      "displayName": "Fifth Kill",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "ReduceLongestCooldown",
+            "amount": 0.2,
+            "everyCount": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.MovementRhythm.AdvancedThrust",
+      "displayName": "Advanced Thrust",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedHorizontal",
+            "operation": "Add",
+            "magnitude": 2.9,
+            "affectedByZoneBonus": false
+          },
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedVertical",
+            "operation": "Add",
+            "magnitude": 2.9,
+            "affectedByZoneBonus": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.GritYourTeeth.CriticalCircuit",
+      "displayName": "Critical Circuit",
+      "levelCount": 3,
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "HigherPower",
+            "attributeId": "Owner.AttackPower",
+            "amount": 35,
+            "healthAtMost": 0.35
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D2",
+      "displayName": "Damage Guard",
+      "poolId": "Module.SidePool.Defense",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "DamageTaken",
+            "durationSeconds": 2,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.Armor",
+                "operation": "Add",
+                "magnitude": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D4",
+      "displayName": "Shield Recharge",
+      "poolId": "Module.SidePool.Defense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Regen",
+            "operation": "Multiply",
+            "magnitude": 1.15
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.SharpScale.CriticalRhythm",
+      "displayName": "Critical Rhythm",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "CriticalHit",
+            "durationSeconds": 2,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.AttackSpeed",
+                "operation": "Add",
+                "magnitude": 15,
+                "affectedByZoneBonus": false
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.SharpScale.LuckLens",
+      "displayName": "Luck Lens",
+      "levelCount": 3,
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "Luck",
+            "attributeId": "Owner.CriticalChance",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.ColdRetort.JarringEffect",
+      "displayName": "Jarring Effect",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "incoming": true,
+            "condition": "SourceHasStatus",
+            "damageMultiplier": 0.88
+          }
+        ]
+      }
+    }
+  ]
+}

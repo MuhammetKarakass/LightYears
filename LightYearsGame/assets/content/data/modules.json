@@ -121,8 +121,8 @@
     },
     {
       "id": "Module.Primary.FocusedBarrel.Basic",
-      "displayName": "Odaklı Namlu",
-      "description": "Ana silah hasar çarpanını x{Common.Damage} yapar.",
+      "displayName": "Focused Barrel",
+      "description": "Sets the Primary weapon damage multiplier to x{Common.Damage}.",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
@@ -135,7 +135,7 @@
     },
     {
       "id": "Module.Primary.PiercingTip.Basic",
-      "displayName": "Delici Uç",
+      "displayName": "Piercing Tip",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
@@ -148,7 +148,7 @@
     },
     {
       "id": "Module.Primary.FireRateBooster.Basic",
-      "displayName": "Atış Hızlandırıcı",
+      "displayName": "Shot Accelerator",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
@@ -167,8 +167,8 @@
     },
     {
       "id": "Module.Primary.FullMagazine.Basic",
-      "displayName": "Dolu Şarjör",
-      "description": "Şarjörün ilk {damage.0.openingShotCount} Primary atışı: hasar x{damage.0.damageMultiplier}.",
+      "displayName": "Full Magazine",
+      "description": "First {damage.0.openingShotCount} Primary shots in each magazine: damage x{damage.0.damageMultiplier}.",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
@@ -185,8 +185,8 @@
     },
     {
       "id": "Module.Offense.AssaultCore.Basic",
-      "displayName": "Hücum Çekirdeği",
-      "description": "Saldırı gücünü +{Owner.AttackPower} artırır.",
+      "displayName": "Assault Core",
+      "description": "Increases Attack Power by +{Owner.AttackPower}.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -199,7 +199,7 @@
     },
     {
       "id": "Module.Offense.AttackMatrix.Basic",
-      "displayName": "Saldırı Matrisi",
+      "displayName": "Attack Matrix",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -218,7 +218,7 @@
     },
     {
       "id": "Module.Offense.OverloadCore.Basic",
-      "displayName": "Aşırı Yük Çekirdeği",
+      "displayName": "Overload Core",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -232,8 +232,8 @@
     },
     {
       "id": "Module.Defense.HeavyArmorPlate.Basic",
-      "displayName": "Ağır Zırh Plakası",
-      "description": "Zırhını +{Owner.Armor} artırır.",
+      "displayName": "Heavy Armor Plate",
+      "description": "Increases Armor by +{Owner.Armor}.",
       "family": "Ability.Defense",
       "sizeVariants": [
         {
@@ -246,7 +246,7 @@
     },
     {
       "id": "Module.Defense.HullReinforcement.Basic",
-      "displayName": "Gövde Takviyesi",
+      "displayName": "Hull Reinforcement",
       "family": "Ability.Defense",
       "sizeVariants": [
         {
@@ -265,8 +265,8 @@
     },
     {
       "id": "Module.Movement.ThrustBooster.Basic",
-      "displayName": "İtki Artırıcı",
-      "description": "Yatay/dikey rating: +{Owner.MoveSpeedHorizontal} / +{Owner.MoveSpeedVertical}.",
+      "displayName": "Thrust Booster",
+      "description": "Horizontal/vertical movement rating: +{Owner.MoveSpeedHorizontal} / +{Owner.MoveSpeedVertical}.",
       "family": "Ability.Movement",
       "sizeVariants": [
         {
@@ -280,7 +280,7 @@
     },
     {
       "id": "Module.Movement.ManeuverThruster.Basic",
-      "displayName": "Manevra İticisi",
+      "displayName": "Maneuver Thruster",
       "family": "Ability.Movement",
       "sizeVariants": [
         {
@@ -293,7 +293,7 @@
     },
     {
       "id": "Module.Utility.CoolingCircuit.Basic",
-      "displayName": "Soğutma Devresi",
+      "displayName": "Cooling Circuit",
       "family": "Ability.Utility",
       "sizeVariants": [
         {
@@ -312,8 +312,8 @@
     },
     {
       "id": "Module.Utility.EnergyCoil.Basic",
-      "displayName": "Enerji Bobini",
-      "description": "Enerji gücünü +{Owner.Energy.Power} artırır.",
+      "displayName": "Energy Coil",
+      "description": "Increases Energy Power by +{Owner.Energy.Power}.",
       "family": "Ability.Utility",
       "sizeVariants": [
         {
@@ -326,7 +326,7 @@
     },
     {
       "id": "Module.Utility.TargetingComputer.Basic",
-      "displayName": "Hedefleme Bilgisayarı",
+      "displayName": "Targeting Computer",
       "family": "Ability.Utility",
       "sizeVariants": [
         {
@@ -345,7 +345,7 @@
     },
     {
       "id": "Module.Defense.ShieldGenerator.FastCharge",
-      "displayName": "Hızlı Şarj Jeneratörü",
+      "displayName": "Fast-Charge Generator",
       "family": "Ability.Defense",
       "systemCategory": "Module.System.Shield",
       "sizeVariants": [
@@ -360,7 +360,7 @@
     },
     {
       "id": "Module.Defense.ShieldGenerator.Heavy",
-      "displayName": "Ağır Jeneratör",
+      "displayName": "Heavy Generator",
       "family": "Ability.Defense",
       "systemCategory": "Module.System.Shield",
       "sizeVariants": [
@@ -374,7 +374,7 @@
     },
     {
       "id": "Module.Movement.Afterburner.Extended",
-      "displayName": "Genişletilmiş Afterburner",
+      "displayName": "Extended Afterburner",
       "family": "Ability.Movement",
       "systemCategory": "Module.System.Afterburner",
       "sizeVariants": [
@@ -388,8 +388,8 @@
     },
     {
       "id": "Module.Offense.AttackRhythm.Basic",
-      "displayName": "Saldırı Ritmi",
-      "description": "Offense kullanınca {trigger.0.durationSeconds} sn: saldırı hızı +{Owner.AttackSpeed}.",
+      "displayName": "Attack Rhythm",
+      "description": "On Offense use, Attack Speed +{Owner.AttackSpeed} for {trigger.0.durationSeconds} sec.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -409,8 +409,8 @@
     },
     {
       "id": "Module.Defense.ShatterCurrent.Basic",
-      "displayName": "Kırılma Akımı",
-      "description": "Kalkan kırılınca {damage.0.activeDurationSeconds} sn: Primary +%{damage.0.bonusDamagePercent} Energy; kritik yok.",
+      "displayName": "Shatter Current",
+      "description": "Shield breaks: Primary +%{damage.0.bonusDamagePercent} Energy for {damage.0.activeDurationSeconds} sec; no crits.",
       "family": "Ability.Defense",
       "sizeVariants": [
         {
@@ -431,8 +431,8 @@
     },
     {
       "id": "Module.Offense.EnergyFeedback.Basic",
-      "displayName": "Enerji Geri Beslemesi",
-      "description": "Energy hasarı verince {trigger.0.durationSeconds} sn enerji gücüne +{Owner.Energy.Power} ekler.",
+      "displayName": "Energy Feedback",
+      "description": "Energy damage dealt: +{Owner.Energy.Power} Energy Power for {trigger.0.durationSeconds} sec.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -452,8 +452,8 @@
     },
     {
       "id": "Module.Movement.EscapeReflex.Basic",
-      "displayName": "Kaçış Refleksi",
-      "description": "Hasar alınca {trigger.0.durationSeconds} sn hareket hızı x{trigger.0.movementSpeedMultiplier} olur.",
+      "displayName": "Escape Reflex",
+      "description": "When hit: movement speed x{trigger.0.movementSpeedMultiplier} for {trigger.0.durationSeconds} sec.",
       "family": "Ability.Movement",
       "sizeVariants": [
         {
@@ -470,8 +470,8 @@
     },
     {
       "id": "Module.Offense.FinishingBlow.Basic",
-      "displayName": "Son Darbe",
-      "description": "Hedef canı %{damage.0.conditionPercent} veya az: verdiğin hasar x{damage.0.damageMultiplier}.",
+      "displayName": "Finishing Blow",
+      "description": "Target at %{damage.0.conditionPercent} health or less: damage x{damage.0.damageMultiplier}.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
@@ -488,8 +488,8 @@
     },
     {
       "id": "Module.Utility.ZoneCooler.Basic",
-      "displayName": "Bölgesel Soğutucu",
-      "description": "Tek bölge: aile CD x{cooldown.Module.Zone.Wings.multiplier}; Gövde Q/E/F/R x{cooldown.Module.Zone.Hull.multiplier}; Burun yok.",
+      "displayName": "Zone Cooler",
+      "description": "Single zone: family CD x{cooldown.Module.Zone.Wings.multiplier}; Hull Q/E/F/R x{cooldown.Module.Zone.Hull.multiplier}; no Nose.",
       "family": "Ability.Utility",
       "sizeVariants": [
         {
@@ -500,6 +500,701 @@
             {"zone": "Module.Zone.Engine", "scope": "FamilyOfZone", "multiplier": 0.79},
             {"zone": "Module.Zone.Sensor", "scope": "FamilyOfZone", "multiplier": 0.79},
             {"zone": "Module.Zone.Hull", "scope": "AllActiveNonPrimary", "multiplier": 0.9}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.GlassTopCore.Uncommon",
+      "displayName": "Glass Cannon Core",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sideFeatures": ["Module.SideFeature.GlassTop.ShieldReturn"],
+      "sharedPools": [
+        { "poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O2"] }
+      ],
+      "sizeLadder": [1, 3],
+      "sizeVariants": [
+        {
+          "shape": [[0, 0]],
+          "attributeModifiers": [
+            { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [12.0, 14.04, 16.4268] },
+            { "target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Multiply", "magnitude": 0.94, "affectedByZoneBonus": false }
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [34.0, 39.78, 46.5426] },
+            { "target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Multiply", "magnitude": 0.84, "affectedByZoneBonus": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.DoubleFeedCore.Uncommon",
+      "displayName": "Double Feed Core",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [3],
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [15.0, 18.0, 21.0] },
+            { "target": "Owner", "attributeId": "Owner.Energy.Power", "operation": "Add", "magnitude": [23.0, 28.0, 33.0] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.SharpScale.Uncommon",
+      "sideFeatures": ["Module.SideFeature.SharpScale.CriticalRhythm", "Module.SideFeature.SharpScale.LuckLens"],
+      "displayName": "Sharp Scale",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sharedPools": [
+        { "poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O3"] }
+      ],
+      "sizeLadder": [2, 3],
+      "sizeVariants": [
+        {
+          "shape": [[0, 0], [1, 0]],
+          "attributeModifiers": [
+            { "target": "Owner", "attributeId": "Owner.CriticalDamage", "operation": "Add", "magnitude": [0.20, 0.25, 0.30] },
+            { "target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 15.0 }
+          ]
+        },
+        {
+          "shape": [[0, 0], [1, 0], [2, 0]],
+          "attributeModifiers": [
+            { "target": "Owner", "attributeId": "Owner.CriticalDamage", "operation": "Add", "magnitude": [0.20, 0.25, 0.30] },
+            { "target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 15.0 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.LootShield.Uncommon",
+      "displayName": "Loot Shield",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "sizeLadder": [
+        1,
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "RestoreShield",
+              "amount": [
+                0.02,
+                0.025,
+                0.03
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "RestoreShield",
+              "amount": [
+                0.03,
+                0.04,
+                0.05
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "RestoreShield",
+              "amount": [
+                0.03,
+                0.04,
+                0.05
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.LootShield.HuntFuel",
+        "Module.SideFeature.LootShield.OverflowRecovery"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Defense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D1",
+            "Module.SideFeature.Shared.D2",
+            "Module.SideFeature.Shared.D4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.HuntClock.Uncommon",
+      "displayName": "Hunt Clock",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceAllCooldowns",
+              "amount": [
+                0.25,
+                0.3,
+                0.35
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceAllCooldowns",
+              "amount": [
+                0.25,
+                0.3,
+                0.35
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.HuntClock.FifthKill"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2",
+            "Module.SideFeature.Shared.G3",
+            "Module.SideFeature.Shared.G5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.MovementRhythm.Uncommon",
+      "displayName": "Movement Rhythm",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Movement",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "ownerAttributeRules": [
+            {
+              "source": "MovementSpeed",
+              "attributeId": "Owner.AttackSpeed",
+              "amount": [
+                3.5,
+                4,
+                4.5
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "ownerAttributeRules": [
+            {
+              "source": "MovementSpeed",
+              "attributeId": "Owner.AttackSpeed",
+              "amount": [
+                3.5,
+                4,
+                4.5
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.MovementRhythm.AdvancedThrust"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2",
+            "Module.SideFeature.Shared.G3",
+            "Module.SideFeature.Shared.G5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.GritYourTeeth.Uncommon",
+      "displayName": "Grit Your Teeth",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "incoming": true,
+              "condition": "OwnerHealthAtMost",
+              "conditionValue": 0.35,
+              "damageMultiplier": [
+                0.8,
+                0.77,
+                0.74
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "incoming": true,
+              "condition": "OwnerHealthAtMost",
+              "conditionValue": 0.35,
+              "damageMultiplier": [
+                0.8,
+                0.77,
+                0.74
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.GritYourTeeth.CriticalCircuit"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Defense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D1",
+            "Module.SideFeature.Shared.D3",
+            "Module.SideFeature.Shared.D4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.LuckyCast.Uncommon",
+      "displayName": "Lucky Cast",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "attributeModifiers": [
+            {
+              "target": "Owner",
+              "attributeId": "Owner.Luck",
+              "operation": "Add",
+              "magnitude": 1,
+              "affectedByZoneBonus": false
+            }
+          ],
+          "eventActions": [
+            {
+              "trigger": "AbilityActivated",
+              "kind": "RefundUsedCooldown",
+              "amount": 0.5,
+              "chancePerLuck": [
+                0.05,
+                0.06,
+                0.07
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.ThermalShockCoil.Uncommon",
+      "displayName": "Thermal Shock Coil",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "TargetThermalAndCryo",
+              "damageMultiplier": [
+                1.22,
+                1.27,
+                1.32
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "TargetThermalAndCryo",
+              "damageMultiplier": [
+                1.22,
+                1.27,
+                1.32
+              ]
+            }
+          ]
+        }
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Offense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O1",
+            "Module.SideFeature.Shared.O2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ColdRetort.Uncommon",
+      "displayName": "Cold Retort",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "DamageTaken",
+              "kind": "ApplyNearbyCryo",
+              "amount": 1,
+              "radius": 300,
+              "cooldownSeconds": 2,
+              "targetCount": [
+                2,
+                3,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "DamageTaken",
+              "kind": "ApplyNearbyCryo",
+              "amount": 1,
+              "radius": 300,
+              "cooldownSeconds": 2,
+              "targetCount": [
+                2,
+                3,
+                4
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.ColdRetort.JarringEffect"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Defense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D2",
+            "Module.SideFeature.Shared.D3",
+            "Module.SideFeature.Shared.D5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Primary.PhotonicLens.Uncommon",
+      "displayName": "Photonic Lens",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Primary",
+      "sizeLadder": [
+        1
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "TargetWithoutStatus",
+              "damageMultiplier": [
+                1.15,
+                1.18,
+                1.21
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.HealthBridge.Uncommon",
+      "displayName": "Health Bridge",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "AdjacentAbilityDirectHit",
+              "maxHealthDamageFraction": [
+                0.03,
+                0.035,
+                0.04
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ReflectionShield.Uncommon",
+      "displayName": "Reflection Shield",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "shieldReflections": [
+            {
+              "fraction": [
+                0.35,
+                0.4,
+                0.45
+              ],
+              "durationSeconds": 5
+            }
           ]
         }
       ]

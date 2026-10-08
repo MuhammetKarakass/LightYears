@@ -21,6 +21,7 @@ namespace ly
 		Guaranteed,
 		Disabled
 	};
+	enum class DamageModuleTriggerPolicy { Normal, Suppressed };
 
 	// Numeric damage-type behavior is carried with each hit. Values are resolved
 	// once by DamageTypeSystem, so the combat pipeline does not need to know the
@@ -38,18 +39,20 @@ namespace ly
 		bool roundDamageUp = false;
 		// Prevents an outgoing module bonus from recursively creating more bonus hits.
 		bool skipModuleDamageRules = false;
+		DamageModuleTriggerPolicy moduleTriggerPolicy = DamageModuleTriggerPolicy::Normal;
 	};
 
 	// Delivery kind is shared metadata for incoming-damage defenses. It keeps
 	// projectile-only protection out of weapon/ability-specific conditionals and
-	// leaves beams, fields, contact, and direct damage distinguishable.
+	// leaves beams, fields, contact, direct damage and periodic ticks distinguishable.
 	enum class DamageDeliveryType
 	{
 		Direct,
 		Projectile,
 		Beam,
 		Area,
-		Contact
+		Contact,
+		Periodic
 	};
 
 	struct DamageContext

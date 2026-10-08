@@ -27,13 +27,7 @@ namespace ly
 		};
 	}
 
-	ModuleTriggerRuntime::ModuleTriggerRuntime(
-		LightYearsAbilitySystemComponent& abilities,
-		ShipRuntime& shipRuntime,
-		ShipRuntimeModifiers& runtimeModifiers,
-		CombatRuntime& combatRuntime,
-		ShieldComponent& shield
-	)
+	ModuleTriggerRuntime::ModuleTriggerRuntime(LightYearsAbilitySystemComponent& abilities, ShipRuntime& shipRuntime, ShipRuntimeModifiers& runtimeModifiers, CombatRuntime& combatRuntime, ShieldComponent& shield)
 		: mAbilities{ abilities },
 		  mShipRuntime{ shipRuntime },
 		  mRuntimeModifiers{ runtimeModifiers },
@@ -109,8 +103,13 @@ namespace ly
 	{
 		if (mShuttingDown) return;
 		const DamageContext* damage = event.GetContext<DamageContext>();
+		if (event.eventTag == GameplayTags::Event::Combat::KillConfirmed &&
+			(!damage || damage->payload.skipModuleDamageRules || damage->source != &mAbilities.GetOwner() || !damage->targetWasKilled || !damage->targetWasEnemyCombatant)) return;
 		mPendingEvents.push_back({ ModuleTriggerFromEventTag(event.eventTag), event.magnitude, event.sourceAbilityTags,
-			event.payloadTags, damage && damage->payload.skipModuleDamageRules });
+			event.payloadTags, damage && damage->payload.skipModuleDamageRules, damage && damage->payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed });
+		if (event.eventTag == GameplayTags::Event::Source::DamageDealt && damage && damage->wasCritical &&
+			damage->source == &mAbilities.GetOwner() && !damage->payload.skipModuleDamageRules && damage->payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed && damage->appliedDamage > 0.f)
+			mPendingEvents.push_back({ ModuleTriggerKind::CriticalHit, event.magnitude, event.sourceAbilityTags, event.payloadTags });
 		ProcessDeferredUpdates();
 	}
 
@@ -119,7 +118,7 @@ namespace ly
 		(void)maxShield;
 		if (!mShuttingDown && absorbed > 0.f && remainingShield == 0.f)
 		{
-			mPendingEvents.push_back({ ModuleTriggerKind::ShieldBroken, absorbed, {}, {} });
+			mPendingEvents.push_back({ ModuleTriggerKind::ShieldBroken, absorbed, {}, {}, mShield.IsAbsorbingModuleDamage(), mShield.IsAbsorbingModuleDamage() });
 			ProcessDeferredUpdates();
 		}
 	}
@@ -128,7 +127,7 @@ namespace ly
 	{
 		if (!IsModuleTriggerEventEligible(event.trigger, event.magnitude)) return;
 		mCombatRuntime.ActivateOutgoingDamageRules(
-			{ event.trigger, event.magnitude, event.sourceAbilityTags, event.payloadTags, event.moduleGenerated });
+			{ event.trigger, event.magnitude, event.sourceAbilityTags, event.payloadTags, event.moduleGenerated, event.suppressModuleTriggers });
 		List<ResolvedModuleTriggerBuff> matchingRules;
 		for (const ResolvedModuleTriggerBuff& resolved : mRules)
 		{
@@ -234,9 +233,7 @@ namespace ly
 		}
 	}
 
-	ModuleTriggerRuntime::ActiveBuff ModuleTriggerRuntime::CreateActiveBuff(
-		const ResolvedModuleTriggerBuff& resolved
-	)
+	ModuleTriggerRuntime::ActiveBuff ModuleTriggerRuntime::CreateActiveBuff(const ResolvedModuleTriggerBuff& resolved)
 	{
 		ActiveBuff buff;
 		buff.instanceId = resolved.instanceId;
@@ -285,19 +282,13 @@ namespace ly
 		return buff;
 	}
 
-	bool ModuleTriggerRuntime::MatchesTrigger(
-		const ModuleTriggerBuff& rule,
-		const EventSnapshot& event
-	) const
+	bool ModuleTriggerRuntime::MatchesTrigger(const ModuleTriggerBuff& rule, const EventSnapshot& event) const
 	{
 		return MatchesModuleTrigger(rule.trigger, rule.requiredEventTags, rule.durationSeconds,
-			{ event.trigger, event.magnitude, event.sourceAbilityTags, event.payloadTags, event.moduleGenerated });
+			{ event.trigger, event.magnitude, event.sourceAbilityTags, event.payloadTags, event.moduleGenerated, event.suppressModuleTriggers });
 	}
 
-	bool ModuleTriggerRuntime::SameKey(
-		const ActiveBuff& active,
-		const ResolvedModuleTriggerBuff& resolved
-	)
+	bool ModuleTriggerRuntime::SameKey(const ActiveBuff& active, const ResolvedModuleTriggerBuff& resolved)
 	{
 		return active.instanceId == resolved.instanceId && active.ruleIndex == resolved.ruleIndex;
 	}

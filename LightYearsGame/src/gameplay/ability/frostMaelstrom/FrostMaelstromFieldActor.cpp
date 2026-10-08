@@ -478,7 +478,7 @@ namespace ly
 				payload,
 				GetSourceAbilityId(),
 				GetSourceAbilityTags(),
-				DamageDeliveryType::Area,
+				DamageDeliveryType::Periodic,
 				this
 			);
 		}

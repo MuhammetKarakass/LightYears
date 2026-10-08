@@ -31,6 +31,8 @@ namespace ly
 
 	void MovementComponent::Tick(float deltaTime, float speedCapMultiplier)
 	{
+		mStepSeconds = std::max(0.f, deltaTime);
+		mStepDistance = 0.f;
 		mMovementPolicies.Tick(deltaTime);
 		const auto& ownedTags = GetShip().GetAbilitySystemComponent().GetOwnedTags();
 		const auto applyForcedMovement = [&]()
@@ -548,9 +550,9 @@ namespace ly
 
 	void MovementComponent::MoveOwner(const sf::Vector2f& requestedOffset)
 	{
-		GetShip().AddActorLocationOffset(
-			movement::ConstrainMovementAgainstStaticGeometry(GetShip(), requestedOffset)
-		);
+		const sf::Vector2f offset = movement::ConstrainMovementAgainstStaticGeometry(GetShip(), requestedOffset);
+		mStepDistance += GetVectorLength(offset);
+		GetShip().AddActorLocationOffset(offset);
 	}
 
 	float MovementComponent::GetShortestAngleDelta(float targetAngle, float currentAngle) const

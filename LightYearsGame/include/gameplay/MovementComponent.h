@@ -55,6 +55,7 @@ namespace ly
 		// enter a constant-speed state without duplicating policy arithmetic.
 		float ResolveCurrentSpeedCap(float speedCapMultiplier = 1.f) const;
 
+		float GetCurrentMovementSpeed() const { return mStepSeconds > 0.f ? mStepDistance / mStepSeconds : 0.f; }
 		void SetLegacySpeed(const sf::Vector2f& speed) { mBaseLegacySpeed = speed; }
 		const sf::Vector2f& GetLegacySpeed() const { return mBaseLegacySpeed; }
 		sf::Vector2f ResolveLegacySpeed() const { return ResolveLegacySpeed(mBaseLegacySpeed); }
@@ -114,6 +115,8 @@ namespace ly
 		SpaceShip& GetShip() const;
 
 		ShipMovementMode mMovementMode;
+		float mStepSeconds = 0.f;
+		float mStepDistance = 0.f;
 		sf::Vector2f mBaseLegacySpeed;
 		ShipMovementAttributes mBaseMovementAttributes;
 		ShipMovementAttributes mMovementAttributes;

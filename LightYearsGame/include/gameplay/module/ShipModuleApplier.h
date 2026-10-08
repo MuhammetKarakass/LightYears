@@ -6,6 +6,8 @@
 #include "gameplay/module/ModulePlacementRules.h"
 #include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/ModuleRuleAppliers.h"
+#include "gameplay/module/ModuleReactiveRuntime.h"
+#include "gameplay/module/ModuleShieldReflectionRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/ship/ShipRuntime.h"
 
@@ -36,12 +38,7 @@ namespace ly
 			float remainingSeconds = 0.f;
 		};
 
-		ShipModuleApplier(
-			ShipRuntime& shipRuntime,
-			LightYearsAbilitySystemComponent& abilities,
-			ModuleTriggerRuntime& triggerRuntime,
-			CombatRuntime& combatRuntime
-		);
+		ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities, ModuleTriggerRuntime& triggerRuntime, CombatRuntime& combatRuntime);
 		~ShipModuleApplier() override;
 		ShipModuleApplier(const ShipModuleApplier&) = delete;
 		ShipModuleApplier& operator=(const ShipModuleApplier&) = delete;
@@ -86,11 +83,7 @@ namespace ly
 
 		void Rebuild();
 		void SyncPrimaryWeaponModifiers();
-		static void SyncModifiers(
-			sas::AttributeSystem& attributes,
-			const List<sas::AttributeModifier>& desired,
-			List<OwnedModifier>& owned
-		);
+		static void SyncModifiers(sas::AttributeSystem& attributes, const List<sas::AttributeModifier>& desired, List<OwnedModifier>& owned);
 
 		ShipRuntime& mShipRuntime;
 		LightYearsAbilitySystemComponent& mAbilities;
@@ -98,6 +91,8 @@ namespace ly
 		ModuleTriggerBuffRuleApplier mTriggerBuffRuleApplier;
 		ModuleDamageRuleApplier mDamageRuleApplier;
 		ModuleCooldownRuleApplier mCooldownRuleApplier;
+		ModuleReactiveRuntime mReactiveRuntime;
+		ModuleShieldReflectionRuntime mShieldReflectionRuntime;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;
@@ -109,6 +104,7 @@ namespace ly
 		ShipSchematic mSchematic;
 		ModuleZoneTable mZoneTable;
 		ModuleLookup mLookup;
+		ModuleSideFeatureLookup mSideFeatureLookup;
 		List<std::uint32_t> mKnownIds;
 		List<RebootEntry> mReboots;
 

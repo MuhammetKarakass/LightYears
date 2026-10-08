@@ -48,6 +48,7 @@ namespace ly
 		{
 			float damageMultiplier = 1.f;
 			List<OutgoingDamageBonus> bonuses;
+			float additionalDamage = 0.f;
 		};
 
 		class OutgoingDamageRuleRegistration final
@@ -93,10 +94,7 @@ namespace ly
 		void ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event);
 		// Product of every active Fire-phase rule (see ModuleDamageRulePhase) for this shot.
 		float ResolveFullMagazineShotMultiplier(int magazineShotsFired) const;
-		OutgoingDamagePlan ResolveOutgoingDamagePlan(
-			const Actor& target,
-			const List<GameplayTag>& sourceAbilityTags
-		) const;
+		OutgoingDamagePlan ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId = {}, DamageDeliveryType deliveryType = DamageDeliveryType::Direct) const;
 
 		// Abilities can register temporary, source-owned combat protection
 		// without making ship classes know the ability family that requested it.

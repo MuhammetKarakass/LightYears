@@ -1,6 +1,7 @@
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
+#include "gameplay/module/ModuleAbilitySlots.h"
 #include "framework/Actor.h"
 #include "abilities/AbilityEvent.h"
 #include "gameplay/combat/Combatant.h"
@@ -284,7 +285,7 @@ namespace ly
 
 	void CombatRuntime::ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event)
 	{
-		if (event.moduleGenerated) return;
+		if (event.moduleGenerated || event.suppressModuleTriggers) return;
 		for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (ActiveModuleDamageRule& active : registration.rules)
@@ -307,7 +308,7 @@ namespace ly
 			for (const ActiveModuleDamageRule& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Fire ||
+				if (rule.incoming || GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Fire ||
 					!MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext) ||
 					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
 				multiplier *= rule.damageMultiplier;
@@ -316,10 +317,7 @@ namespace ly
 		return multiplier;
 	}
 
-	CombatRuntime::OutgoingDamagePlan CombatRuntime::ResolveOutgoingDamagePlan(
-		const Actor& target,
-		const List<GameplayTag>& sourceAbilityTags
-	) const
+	CombatRuntime::OutgoingDamagePlan CombatRuntime::ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId, DamageDeliveryType deliveryType) const
 	{
 		OutgoingDamagePlan plan;
 		const bool isPrimaryShot = std::any_of(sourceAbilityTags.begin(), sourceAbilityTags.end(),
@@ -331,15 +329,33 @@ namespace ly
 		ModuleDamageConditionContext conditionContext;
 		conditionContext.isPrimaryShot = isPrimaryShot;
 		conditionContext.targetHealthFraction = healthFraction;
+		if (const auto* targetCombatant = dynamic_cast<const Combatant*>(&target))
+		{
+			const auto& targetAbilities = targetCombatant->GetAbilitySystemComponent();
+			conditionContext.targetHasStatus = targetAbilities.HasOwnedTag(GameplayTags::Status::Root);
+			const auto* thermal = targetAbilities.FindGameplayEffectById(DamageStatusEffectIds::IgniteEffectId);
+			const auto* cryo = targetAbilities.FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId);
+			conditionContext.targetHasThermalAndCryo = thermal && thermal->stackCount > 0 && cryo && cryo->stackCount > 0;
+		}
+		const HealthComponent* ownerHealth = mOwner.FindComponent<HealthComponent>();
+		conditionContext.ownerHealthFraction = ownerHealth && ownerHealth->GetMaxHealth() > 0.f ? ownerHealth->GetHealth() / ownerHealth->GetMaxHealth() : 1.f;
 		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (const ActiveModuleDamageRule& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Impact ||
+				if (rule.incoming || GetModuleDamageConditionPhase(rule.condition) != ModuleDamageRulePhase::Impact ||
 					(rule.activeWhileTrigger != ModuleTriggerKind::None && active.remainingSeconds <= 0.f)) continue;
+				conditionContext.isAdjacentAbilityDirectHit = false;
+				if (deliveryType != DamageDeliveryType::Periodic && !isPrimaryShot && sourceAbilityId.IsValid())
+					for (const auto& system : active.resolved.adjacentAbilitySystems)
+					{
+						const auto* ability = mAbilitySystemComponent.GetAbility(AbilitySlotForModuleSystem(system));
+						if (ability && ability->GetDefinition().abilityId == sourceAbilityId.ToString()) conditionContext.isAdjacentAbilityDirectHit = true;
+					}
 				if (!MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext)) continue;
 				plan.damageMultiplier *= rule.damageMultiplier;
+				if (ownerHealth) plan.additionalDamage += ownerHealth->GetMaxHealth() * rule.maxHealthDamageFraction;
 				if (rule.bonusDamageFraction > 0.f && rule.bonusDamageType.IsValid())
 					plan.bonuses.push_back({ rule.bonusDamageFraction, rule.bonusDamageType });
 			}
@@ -349,7 +365,8 @@ namespace ly
 
 	bool CombatRuntime::SameDamageRule(const ModuleDamageRule& left, const ModuleDamageRule& right)
 	{
-		return left.condition == right.condition && left.conditionValue == right.conditionValue &&
+		return left.incoming == right.incoming && left.condition == right.condition && left.conditionValue == right.conditionValue &&
+			left.maxHealthDamageFraction == right.maxHealthDamageFraction &&
 			left.openingShotCount == right.openingShotCount &&
 			left.damageMultiplier == right.damageMultiplier && left.bonusDamageFraction == right.bonusDamageFraction &&
 			left.bonusDamageType == right.bonusDamageType && left.bonusCriticalPolicy == right.bonusCriticalPolicy &&
@@ -444,6 +461,18 @@ namespace ly
 		context.targetLocationAtResolution.x = targetLocation.x;
 		context.targetLocationAtResolution.y = targetLocation.y;
 		context.targetArmorShred = DamageTypeSystem::ResolveArmorShred(mAbilitySystemComponent);
+		const HealthComponent* health = mOwner.FindComponent<HealthComponent>();
+		ModuleDamageConditionContext conditionContext;
+		conditionContext.ownerHealthFraction = health && health->GetMaxHealth() > 0.f ? health->GetHealth() / health->GetMaxHealth() : 1.f;
+		if (const auto* sourceCombatant = dynamic_cast<const Combatant*>(context.source))
+			conditionContext.sourceHasStatus = sourceCombatant->GetAbilitySystemComponent().HasOwnedTag(GameplayTags::Status::Root);
+		for (const auto& registration : mModuleDamageRuleState->registrations)
+			for (const auto& active : registration.rules)
+			{
+				const ModuleDamageRule& rule = active.resolved.rule;
+				if (context.payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed && rule.incoming && MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext))
+					context.remainingDamage *= rule.damageMultiplier;
+			}
 		frame.capturesEffectEvents = true;
 		mAbilitySystemComponent.ProcessGameplayEffectEvent(
 			context,

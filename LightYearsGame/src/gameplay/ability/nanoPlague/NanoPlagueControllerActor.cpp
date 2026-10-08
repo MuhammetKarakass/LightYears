@@ -386,7 +386,7 @@ namespace ly
 			{},
 			settings.sourceAbilityId,
 			settings.sourceAbilityTags,
-			DamageDeliveryType::Area,
+			DamageDeliveryType::Periodic,
 			this
 		);
 	}

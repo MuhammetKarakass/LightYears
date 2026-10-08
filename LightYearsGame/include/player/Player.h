@@ -35,7 +35,9 @@ namespace ly
 		// Run-state module loadout; survives respawn. Mutations are validated by ModuleLoadout and
 		// pushed to the live ship. Ships without a schematic have no modules.
 		const ModuleLoadout& GetModuleLoadout() const { return mModuleLoadout; }
-		std::uint32_t AddModuleToInventory(const sas::ContentId& moduleId, int variantIndex = 0, ModuleRarity rarity = ModuleRarity::Common);
+		std::uint32_t AddModuleToInventory(const sas::ContentId& moduleId, int variantIndex = 0, ModuleRarity rarity = ModuleRarity::Common, int level = 1, sas::ContentId sideFeatureId = {});
+		bool SetModuleLevel(std::uint32_t instanceId, int level);
+		bool SetModuleSideFeature(std::uint32_t instanceId, const sas::ContentId& sideFeatureId);
 		ModulePlacementFailure TryInstallModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		ModulePlacementFailure TryMoveModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		bool TryUninstallModule(std::uint32_t instanceId);
@@ -93,5 +95,3 @@ namespace ly
 		bool mAbilityPurchaseInProgress = false;
 	};
 }
-
-

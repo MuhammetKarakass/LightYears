@@ -20,6 +20,7 @@ namespace ly
 		// Clears only the current delay; the configured base delay remains intact.
 		void ClearRechargeDelay() { mRechargeDelayRemaining = 0.f; }
 		float Consume(float amount);
+		void Restore(float amount);
 		// A caller may pause both the recharge delay and regeneration while a system is active.
 		void Tick(float deltaTime, float regenerationPerSecond, bool allowRecharge = true);
 

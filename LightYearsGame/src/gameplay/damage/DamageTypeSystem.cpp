@@ -126,11 +126,7 @@ namespace ly
 			}
 		}
 
-		sas::GameplayEffectBehaviorResult TickIgnite(
-			sas::ActiveGameplayEffect& effect,
-			Actor& owner,
-			float deltaTime
-		)
+		sas::GameplayEffectBehaviorResult TickIgnite(sas::ActiveGameplayEffect& effect, Actor& owner, float deltaTime)
 		{
 			if (deltaTime <= 0.f)
 			{
@@ -180,7 +176,7 @@ namespace ly
 					owner,
 					damage,
 					effect.GetSourceObject<Actor>(),
-					{ DamageTypeSchema::Thermal }
+					{ DamageTypeSchema::Thermal }, {}, {}, {}, DamageDeliveryType::Periodic
 				);
 			}
 			return {};

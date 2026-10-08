@@ -76,7 +76,7 @@ namespace ly
 		BroadcastShieldChanged(previousShield);
 	}
 
-	float ShieldComponent::AbsorbDamage(float sourceDamage, float shieldDamageMultiplier, float extraRechargeDelay)
+	float ShieldComponent::AbsorbDamage(float sourceDamage, float shieldDamageMultiplier, float extraRechargeDelay, bool moduleGenerated)
 	{
 		if (sourceDamage <= 0.f || mMaxShield <= 0.f)
 		{
@@ -97,6 +97,13 @@ namespace ly
 		const float previousShield = mShield;
 		const float previousOvershield = std::max(0.f, previousShield - mMaxShield);
 		const float absorbedShieldDamage = std::min(mShield, sourceDamage * multiplier);
+		struct DamageScope
+		{
+			bool& flag;
+			bool previous;
+			~DamageScope() { flag = previous; }
+		} scope{ mAbsorbingModuleDamage, mAbsorbingModuleDamage };
+		mAbsorbingModuleDamage = moduleGenerated;
 		mShield -= absorbedShieldDamage;
 		const float currentOvershield = std::max(0.f, mShield - mMaxShield);
 		mTemporaryOvershields.Consume(

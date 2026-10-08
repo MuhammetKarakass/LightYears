@@ -59,6 +59,14 @@ namespace ly
 		return consumedEnergy;
 	}
 
+	void EnergyComponent::Restore(float amount)
+	{
+		if (amount <= 0.f) return;
+		const float previousEnergy = mEnergy;
+		mEnergy = std::min(mMaxEnergy, mEnergy + amount);
+		BroadcastEnergyChanged(previousEnergy);
+	}
+
 	void EnergyComponent::Tick(float deltaTime, float regenerationPerSecond, bool allowRecharge)
 	{
 		if (!allowRecharge || deltaTime <= 0.f || mEnergy >= mMaxEnergy)

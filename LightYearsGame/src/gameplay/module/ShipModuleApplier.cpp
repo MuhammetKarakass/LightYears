@@ -3,6 +3,7 @@
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/module/ModuleTriggerRuntime.h"
 #include "gameplay/tags/GameplayTags.h"
+#include "spaceShip/SpaceShip.h"
 
 #include <algorithm>
 #include <utility>
@@ -18,18 +19,15 @@ namespace ly
 		}
 	}
 
-	ShipModuleApplier::ShipModuleApplier(
-		ShipRuntime& shipRuntime,
-		LightYearsAbilitySystemComponent& abilities,
-		ModuleTriggerRuntime& triggerRuntime,
-		CombatRuntime& combatRuntime
-	)
+	ShipModuleApplier::ShipModuleApplier(ShipRuntime& shipRuntime, LightYearsAbilitySystemComponent& abilities, ModuleTriggerRuntime& triggerRuntime, CombatRuntime& combatRuntime)
 		: mShipRuntime{ shipRuntime }
 		, mAbilities{ abilities }
 		, mAbilityRuleApplier{ abilities }
 		, mTriggerBuffRuleApplier{ triggerRuntime }
 		, mDamageRuleApplier{ combatRuntime }
 		, mCooldownRuleApplier{ abilities }
+		, mReactiveRuntime{ abilities }
+		, mShieldReflectionRuntime{ combatRuntime }
 	{
 		// The applier and the ability system component belong to the same ship and the
 		// applier is destroyed first, so clearing the gate here leaves no dangling pointer.
@@ -43,6 +41,8 @@ namespace ly
 		// this member; a raw `this` listener on a later PlayerSpaceShip member would dangle.
 		mShuttingDown = true;
 		mAbilities.SetModuleSystemGate(nullptr);
+		mReactiveRuntime.Replace({}, {});
+		mShieldReflectionRuntime.Replace({});
 		mTriggerBuffRuleApplier.Reset();
 		mAbilityRuleApplier.Reset();
 		mCooldownRuleApplier.Reset();
@@ -54,6 +54,7 @@ namespace ly
 		mOwnerHandles.clear();
 		mShipHandles.clear();
 		mPrimaryHandles.clear();
+		LightYearsAbilitySystemComponent::ModuleAttributeChangeScope moduleScope{ mAbilities };
 		for (const OwnedModifier& owned : ownerHandles)
 		{
 			try { mAbilities.GetAttributes().RemoveModifier(owned.handle); }
@@ -74,7 +75,7 @@ namespace ly
 	std::size_t ShipModuleApplier::GetOwnedHandleCount() const
 	{
 		return mOwnerHandles.size() + mShipHandles.size() + mPrimaryHandles.size() +
-			mAbilityRuleApplier.GetOwnedHandleCount() + mCooldownRuleApplier.GetOwnedHandleCount();
+			mAbilityRuleApplier.GetOwnedHandleCount() + mCooldownRuleApplier.GetOwnedHandleCount() + mReactiveRuntime.GetOwnedHandleCount();
 	}
 
 	bool ShipModuleApplier::IsSystemEnabled(const GameplayTag& systemTag) const
@@ -127,6 +128,7 @@ namespace ly
 		mSchematic = rules.schematic;
 		mZoneTable = rules.zoneTable;
 		mLookup = rules.lookup;
+		mSideFeatureLookup = rules.sideFeatureLookup;
 		mAppliedRevision = loadout.GetRevision();
 		Rebuild();
 		mHasApplied = true;
@@ -135,6 +137,8 @@ namespace ly
 
 	void ShipModuleApplier::Tick(float deltaSeconds)
 	{
+		if (!mShuttingDown) mReactiveRuntime.Tick(deltaSeconds);
+		if (!mShuttingDown) mShieldReflectionRuntime.Tick(deltaSeconds);
 		if (mShuttingDown || !mHasApplied || mReboots.empty() || deltaSeconds <= 0.f) return;
 
 		bool anyFinished = false;
@@ -159,7 +163,7 @@ namespace ly
 			if (!IsRebooting(placement.instanceId)) active.push_back(placement);
 		}
 
-		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable };
+		const ModuleRulesContext rules{ mSchematic, mLookup, mZoneTable, mSideFeatureLookup };
 		mResolved = ModuleResolver::Resolve(rules, active);
 		mDamageRuleApplier.Replace(mResolved.damageRules);
 
@@ -167,12 +171,18 @@ namespace ly
 		// stale ones are removed, so a reapply never dips a max value below both the old
 		// and the new result; the current shield and afterburner energy are not clipped
 		// by an unrelated change.
-		SyncModifiers(mAbilities.GetAttributes(), mResolved.ownerModifiers, mOwnerHandles);
-		SyncModifiers(mShipRuntime.GetAttributes(), mResolved.shipModifiers, mShipHandles);
+		{
+			LightYearsAbilitySystemComponent::ModuleAttributeChangeScope scope{ mAbilities };
+			SyncModifiers(mAbilities.GetAttributes(), mResolved.ownerModifiers, mOwnerHandles);
+			SyncModifiers(mShipRuntime.GetAttributes(), mResolved.shipModifiers, mShipHandles);
+			if (auto* ship = dynamic_cast<SpaceShip*>(&mAbilities.GetOwner())) ship->RefreshMovementAttributesFromRuntime();
+		}
 		SyncPrimaryWeaponModifiers();
 		mAbilityRuleApplier.Replace(mResolved.abilityRules);
 		mCooldownRuleApplier.Replace(mResolved.cooldownRules);
 		mTriggerBuffRuleApplier.Replace(mResolved.triggerBuffs);
+		mReactiveRuntime.Replace(mResolved.eventActions, mResolved.ownerAttributeRules);
+		mShieldReflectionRuntime.Replace(mResolved.shieldReflections);
 
 		mEnabledSystems = mResolved.enabledSystems;
 		mShipRuntime.SetSystemEnabled(ShipSystem::Shield, IsSystemEnabled(GameplayTags::Module::System::Shield));

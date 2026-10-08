@@ -14,6 +14,7 @@ namespace ly::content
 			const std::filesystem::path& filePath,
 			std::string* failureReason = nullptr
 		);
+		static bool LoadFromFiles(const std::filesystem::path& modulesFilePath, const std::filesystem::path& sideFeaturesFilePath, std::string* failureReason = nullptr);
 
 		static const ModuleDefinition* FindById(const sas::ContentId& moduleId);
 		static const List<ModuleDefinition>& GetDefinitions();

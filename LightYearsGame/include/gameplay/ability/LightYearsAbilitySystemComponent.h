@@ -24,6 +24,17 @@ namespace ly
 	{
 	public:
 		static constexpr size_t MaxPassiveAbilities = 2;
+		class ModuleAttributeChangeScope final
+		{
+		public:
+			explicit ModuleAttributeChangeScope(LightYearsAbilitySystemComponent& owner) : mOwner{ owner } { ++mOwner.mModuleAttributeChangeDepth; }
+			~ModuleAttributeChangeScope() { --mOwner.mModuleAttributeChangeDepth; }
+			ModuleAttributeChangeScope(const ModuleAttributeChangeScope&) = delete;
+			ModuleAttributeChangeScope& operator=(const ModuleAttributeChangeScope&) = delete;
+		private:
+			LightYearsAbilitySystemComponent& mOwner;
+		};
+		bool IsApplyingModuleAttributes() const { return mModuleAttributeChangeDepth != 0; }
 
 		explicit LightYearsAbilitySystemComponent(Actor& owner);
 
@@ -151,6 +162,7 @@ namespace ly
 		) const;
 
 		Actor& mOwner;
+		std::size_t mModuleAttributeChangeDepth = 0;
 		const ModuleSystemGate* mModuleSystemGate = nullptr;
 		using ComponentRuntime =
 			sas::AbilitySystemRuntime<GameAbilityDefinition, GameAbility>;

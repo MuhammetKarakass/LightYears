@@ -1,6 +1,7 @@
 #include "presentation/hud/modules/ModuleScreenPresenter.h"
 #include "gameplay/module/ModuleLoadout.h"
 #include "gameplay/module/ModuleResolver.h"
+#include "gameplay/module/ModuleAbilitySlots.h"
 #include "gameplay/ability/GameAbility.h"
 #include "gameplay/input/AbilityInputSchema.h"
 #include "gameplay/tags/GameplayTagSchema.h"
@@ -56,14 +57,6 @@ namespace ly
 			return "Module";
 		}
 
-		sas::AbilitySlot AbilitySlotForSystem(const GameplayTag& system)
-		{
-			if (system == GameplayTags::Module::System::AbilitySlot1) return sas::AbilitySlot::Ability1;
-			if (system == GameplayTags::Module::System::AbilitySlot2) return sas::AbilitySlot::Ability2;
-			if (system == GameplayTags::Module::System::AbilitySlot3) return sas::AbilitySlot::Ability3;
-			if (system == GameplayTags::Module::System::AbilitySlot4) return sas::AbilitySlot::Ability4;
-			return sas::AbilitySlot::None;
-		}
 
 		std::string AbilityFamilyLabel(const GameAbilityDefinition& ability)
 		{
@@ -159,7 +152,7 @@ namespace ly
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
 			out.family = FamilyLabel(definition->family);
 			out.isSystem = definition->systemCategory.IsValid();
-			const sas::AbilitySlot abilitySlot = AbilitySlotForSystem(definition->systemCategory);
+			const sas::AbilitySlot abilitySlot = AbilitySlotForModuleSystem(definition->systemCategory);
 			if (abilitySlot != sas::AbilitySlot::None)
 			{
 				const char* inputLabel = AbilityInputSchema::GetLabel(abilitySlot);
@@ -191,7 +184,7 @@ namespace ly
 			if (installed)
 			{
 				out.cells = ModulePlacementRules::GetCoveredCells(*definition, placement);
-				out.bonusPercent = AbilitySlotForSystem(definition->systemCategory) == sas::AbilitySlot::None
+				out.bonusPercent = AbilitySlotForModuleSystem(definition->systemCategory) == sas::AbilitySlot::None
 					? ToPercent(ModuleResolver::GetZoneBonus(rules, *definition, placement))
 					: 0;
 				if (ship && ship->GetModuleApplier().IsRebooting(placement.instanceId))
@@ -407,7 +400,7 @@ namespace ly
 			preview.active = true;
 			preview.cells = ModulePlacementRules::GetCoveredCells(*heldDefinition, candidate);
 			preview.legal = failure == ModulePlacementFailure::None;
-			if (preview.legal && AbilitySlotForSystem(heldDefinition->systemCategory) == sas::AbilitySlot::None)
+			if (preview.legal && AbilitySlotForModuleSystem(heldDefinition->systemCategory) == sas::AbilitySlot::None)
 				preview.bonusPercent = ToPercent(ModuleResolver::GetZoneBonus(*rules, *heldDefinition, candidate));
 			else if (!preview.legal) preview.message = ModulePlacementRules::Describe(failure);
 		}

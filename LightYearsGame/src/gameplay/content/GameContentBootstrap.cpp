@@ -132,8 +132,9 @@ namespace ly
 			}
 
 			std::string moduleLoadFailureReason;
-			const bool modulesLoaded = content::ModuleContentCatalog::LoadFromFile(
+			const bool modulesLoaded = content::ModuleContentCatalog::LoadFromFiles(
 				assetRoot / "content/data/modules.json",
+				assetRoot / "content/data/module_side_features.json",
 				&moduleLoadFailureReason
 			);
 			if (!modulesLoaded)

@@ -31,6 +31,32 @@ namespace ly
 			return cells;
 		}
 
+		bool SharesCellEdge(const ModuleDefinition& leftModule, const ModulePlacement& left, const ModuleDefinition& rightModule, const ModulePlacement& right)
+		{
+			for (const auto& a : GetCoveredCells(leftModule, left))
+				for (const auto& b : GetCoveredCells(rightModule, right))
+					if (std::abs(a.x - b.x) + std::abs(a.y - b.y) == 1) return true;
+			return false;
+		}
+
+		List<GameplayTag> GetAdjacentAbilitySlotSystems(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& placement, std::size_t maximumCount)
+		{
+			List<GameplayTag> result;
+			const auto* owner = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
+			if (!owner || maximumCount == 0) return result;
+			for (const auto& candidate : installed)
+			{
+				if (candidate.instanceId == placement.instanceId) continue;
+				const auto* module = rules.lookup(candidate.moduleId);
+				if (!module || !GameplayTagSchema::IsModuleAbilitySlotSystem(module->systemCategory) ||
+					!SharesCellEdge(*owner, placement, *module, candidate)) continue;
+				if (std::find(result.begin(), result.end(), module->systemCategory) == result.end()) result.push_back(module->systemCategory);
+			}
+			std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) { return a.name < b.name; });
+			if (result.size() > maximumCount) result.resize(maximumCount);
+			return result;
+		}
+
 		ModulePlacementFailure CanPlace(
 			const ModuleRulesContext& rules,
 			const List<ModulePlacement>& installed,
@@ -40,6 +66,15 @@ namespace ly
 			const ModuleDefinition* module = rules.lookup ? rules.lookup(candidate.moduleId) : nullptr;
 			if (!module) return ModulePlacementFailure::UnknownModule;
 			if (!FindVariant(*module, candidate.variantIndex)) return ModulePlacementFailure::InvalidVariant;
+			if (candidate.level < 1 || candidate.level > module->levelCount ||
+				!HasModuleRulePackageLevelCoverage(module->sizeVariants[static_cast<std::size_t>(candidate.variantIndex)], candidate.level))
+				return ModulePlacementFailure::InvalidLevel;
+			if (candidate.sideFeatureId.IsValid())
+			{
+				const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(candidate.sideFeatureId) : nullptr;
+				if (!IsSideFeatureUsableAtLevel(*module, feature, candidate.level))
+				return ModulePlacementFailure::InvalidSideFeature;
+			}
 			if (candidate.rotationQuarterTurns < 0 || candidate.rotationQuarterTurns > 3) return ModulePlacementFailure::InvalidRotation;
 
 			const List<sf::Vector2i> cells = GetCoveredCells(*module, candidate);
@@ -105,6 +140,8 @@ namespace ly
 			case ModulePlacementFailure::UnknownModule: return "is not in the module catalog";
 			case ModulePlacementFailure::InvalidVariant: return "has an invalid variant";
 			case ModulePlacementFailure::InvalidRotation: return "has a rotation outside 0..3";
+			case ModulePlacementFailure::InvalidLevel: return "has an invalid level";
+			case ModulePlacementFailure::InvalidSideFeature: return "has an invalid side feature";
 			}
 			return "is invalid";
 		}

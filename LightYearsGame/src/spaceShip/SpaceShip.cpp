@@ -160,8 +160,9 @@ namespace ly
 		{
 			const float previousMaxHealth = mHealthComponent.GetMaxHealth();
 			const float resolvedMaxHealth = std::max(1.f, attributes.GetCurrentValue(OwnerAttributeIds::MaxHealth));
-			mHealthComponent.SetMaxHealth(resolvedMaxHealth);
-			if (resolvedMaxHealth > previousMaxHealth)
+			const bool moduleChange = GetAbilitySystemComponent().IsApplyingModuleAttributes();
+			mHealthComponent.SetMaxHealth(resolvedMaxHealth, false, moduleChange);
+			if (!moduleChange && resolvedMaxHealth > previousMaxHealth)
 			{
 				mHealthComponent.Regenerate(resolvedMaxHealth - previousMaxHealth);
 			}
@@ -182,6 +183,7 @@ namespace ly
 
 	void SpaceShip::OnRuntimeAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue)
 	{
+		if (GetAbilitySystemComponent().IsApplyingModuleAttributes()) return;
 		(void)previousValue;
 		(void)currentValue;
 		if (attributeId == OwnerAttributeIds::MaxHealth ||
@@ -195,6 +197,7 @@ namespace ly
 
 	void SpaceShip::OnShipAttributeChanged(sas::AttributeId attributeId, float previousValue, float currentValue)
 	{
+		if (GetAbilitySystemComponent().IsApplyingModuleAttributes()) return;
 		(void)previousValue;
 		(void)currentValue;
 		if (attributeId == ShipAttributeIds::MaxShield ||
@@ -385,7 +388,8 @@ namespace ly
 			const float shieldAbsorbedDamage = mShieldComponent.AbsorbDamage(
 				context.remainingDamage,
 				context.payload.shieldDamageMultiplier,
-				context.payload.shieldRegenerationDelay
+				context.payload.shieldRegenerationDelay,
+				context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed
 			);
 			context.remainingDamage = std::max(0.f, context.remainingDamage - shieldAbsorbedDamage);
 			context.absorbedDamage += shieldAbsorbedDamage;

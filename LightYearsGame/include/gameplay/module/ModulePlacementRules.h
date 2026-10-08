@@ -2,6 +2,7 @@
 
 #include "content/ContentId.h"
 #include "gameplay/module/ModuleDefinition.h"
+#include "gameplay/module/ModuleSideFeature.h"
 #include "gameplay/module/ShipSchematic.h"
 
 #include <SFML/System/Vector2.hpp>
@@ -23,6 +24,7 @@ namespace ly
 		const ShipSchematic& schematic;
 		ModuleLookup lookup;
 		const ModuleZoneTable& zoneTable;
+		ModuleSideFeatureLookup sideFeatureLookup;
 	};
 
 	enum class ModulePlacementFailure
@@ -36,7 +38,9 @@ namespace ly
 		UnknownModule,
 		InvalidVariant,
 		InvalidRotation,
-		DuplicateModule
+		DuplicateModule,
+		InvalidLevel,
+		InvalidSideFeature
 	};
 
 	namespace ModulePlacementRules
@@ -44,6 +48,8 @@ namespace ly
 		// Grid cells the placement covers (rotated shape + origin). Empty when the
 		// variant is invalid.
 		List<sf::Vector2i> GetCoveredCells(const ModuleDefinition& module, const ModulePlacement& placement);
+		bool SharesCellEdge(const ModuleDefinition& leftModule, const ModulePlacement& left, const ModuleDefinition& rightModule, const ModulePlacement& right);
+		List<GameplayTag> GetAdjacentAbilitySlotSystems(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& placement, std::size_t maximumCount = 2);
 
 		// ignoredInstanceId skips one installed placement (a move over itself).
 		ModulePlacementFailure CanPlace(

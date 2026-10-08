@@ -142,17 +142,7 @@ namespace ly
 		);
 	}
 
-	void ApplyCombatDamage(
-		Actor& target,
-		float damage,
-		Actor* source,
-		const List<GameplayTag>& damageTags,
-		const DamagePayload& payload,
-		const sas::ContentId& sourceAbilityId,
-		const List<GameplayTag>& sourceAbilityTags,
-		DamageDeliveryType deliveryType,
-		Actor* deliveryActor
-	)
+	void ApplyCombatDamage(Actor& target, float damage, Actor* source, const List<GameplayTag>& damageTags, const DamagePayload& payload, const sas::ContentId& sourceAbilityId, const List<GameplayTag>& sourceAbilityTags, DamageDeliveryType deliveryType, Actor* deliveryActor)
 	{
 		if (damage <= 0.f)
 		{
@@ -181,7 +171,7 @@ namespace ly
 
 		const auto* sourceCombatant = source ? dynamic_cast<const Combatant*>(source) : nullptr;
 		const CombatRuntime::OutgoingDamagePlan outgoingModulePlan = sourceCombatant && !payload.skipModuleDamageRules
-			? sourceCombatant->GetCombatRuntime().ResolveOutgoingDamagePlan(target, sourceAbilityTags)
+			? sourceCombatant->GetCombatRuntime().ResolveOutgoingDamagePlan(target, sourceAbilityTags, sourceAbilityId, deliveryType)
 			: CombatRuntime::OutgoingDamagePlan{};
 		const auto resolveCriticalMultiplier = [&]()
 		{
@@ -189,7 +179,7 @@ namespace ly
 		};
 		const float sourceOutgoingDamageMultiplier =
 			sourceCombatant ? sourceCombatant->GetCombatRuntime().GetOutgoingDamageMultiplier() : 1.f;
-		long double sourceResolvedDamage = static_cast<long double>(damage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier;
+		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier;
 		bool wasCritical = false;
 		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
 		{
