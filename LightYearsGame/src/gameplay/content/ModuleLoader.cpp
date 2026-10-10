@@ -538,6 +538,7 @@ namespace ly::content
 				ModuleRulePackage::ShieldReflection rule;
 				rule.fraction = ParseLevelFloat(entry.at("fraction"), context + ".reflection.fraction", minimumLevelCount, rule.fractionByLevel);
 				rule.durationSeconds = ParseFiniteFloat(entry.at("durationSeconds"), context + ".reflection.durationSeconds");
+					rule.damageType = ParseTag(entry.at("damageType"), GameplayTagKind::DamageType, context + " shield reflection damageType");
 				const auto valid = [](float value) { return value > 0.f; };
 				if (!valid(rule.fraction) || rule.durationSeconds <= 0.f) throw std::runtime_error(context + " invalid shield reflection");
 				ValidateTable(rule.fractionByLevel, context, valid, "invalid shield reflection fraction");
@@ -653,10 +654,12 @@ namespace ly::content
 			}
 			for (const auto& entry : generated.value("guidedSalvos", Json::array()))
 			{
-				fields(entry, { "damageFraction", "projectileCount", "speed", "lifetime", "targetRange", "maxActive" });
+				fields(entry, { "damageFraction", "projectileCount", "speed", "lifetime", "targetRange", "maxActive", "damageType" });
 				ModuleGuidedSalvoRule rule;
 				rule.damageFraction = fraction(entry, "damageFraction", rule.damageFractionByLevel);
 				rule.projectileCount = count(entry, "projectileCount"); rule.speed = number(entry, "speed"); rule.lifetime = number(entry, "lifetime"); rule.targetRange = number(entry, "targetRange"); rule.maxActive = count(entry, "maxActive");
+				if (rule.damageFraction > 0.f) rule.damageType = ParseTag(entry.at("damageType"), GameplayTagKind::DamageType, context + " guided salvo damageType");
+				else if (entry.contains("damageType")) throw std::runtime_error(context + " guided salvo damageType requires damageFraction");
 				if (rule.projectileCount <= 0 || (rule.damageFraction > 0.f && (rule.speed <= 0.f || rule.lifetime <= 0.f || rule.targetRange <= 0.f || rule.maxActive <= 0))) throw std::runtime_error(context + " incomplete guided salvo rule");
 				variant.generatedRules.guidedSalvos.push_back(std::move(rule));
 			}
@@ -671,7 +674,7 @@ namespace ly::content
 			}
 			for (const auto& entry : generated.value("trailMines", Json::array()))
 			{
-				fields(entry, { "damage", "spacing", "windowSeconds", "fuseSeconds", "radius", "maxActive", "additionalLimit", "cryoStacks" });
+				fields(entry, { "damage", "spacing", "windowSeconds", "fuseSeconds", "radius", "maxActive", "additionalLimit", "cryoStacks", "damageType" });
 				ModuleTrailMineRule rule;
 				if (entry.contains("damage"))
 				{
@@ -682,6 +685,8 @@ namespace ly::content
 				rule.spacing = number(entry, "spacing"); rule.windowSeconds = number(entry, "windowSeconds"); rule.fuseSeconds = number(entry, "fuseSeconds"); rule.radius = number(entry, "radius");
 				if (entry.contains("maxActive")) rule.maxActive = ParsePositiveLevelInt(entry.at("maxActive"), context, minimumLevelCount, rule.maxActiveByLevel);
 				rule.additionalLimit = count(entry, "additionalLimit"); rule.cryoStacks = count(entry, "cryoStacks");
+				if (rule.damage > 0.f) rule.damageType = ParseTag(entry.at("damageType"), GameplayTagKind::DamageType, context + " trail mine damageType");
+				else if (entry.contains("damageType")) throw std::runtime_error(context + " trail mine damageType requires damage");
 				if ((rule.damage > 0.f && (rule.spacing <= 0.f || rule.windowSeconds <= 0.f || rule.fuseSeconds <= 0.f || rule.radius <= 0.f || rule.maxActive <= 0)) || (rule.damage <= 0.f && rule.additionalLimit <= 0 && rule.cryoStacks <= 0)) throw std::runtime_error(context + " incomplete trail mine rule");
 				if (rule.maxActive > 1024) throw std::runtime_error(context + " mine limit exceeds technical ceiling");
 				ValidateTable(rule.maxActiveByLevel, context, [](int v) { return v <= 1024; }, "mine limit exceeds technical ceiling");
@@ -949,59 +954,13 @@ namespace ly::content
 			if (failureReason) *failureReason = context + " levelCount must be positive";
 			return false;
 		}
-		const auto hasCoverage = [levelCount, &context, failureReason](const auto& table, const std::string& field)
+		const std::size_t required = static_cast<std::size_t>(levelCount);
+		return VisitModuleRuleLevelTables(rules, [&](const char* path, std::size_t index, const auto& table)
 		{
-			if (table.values.empty() || table.values.size() >= static_cast<std::size_t>(levelCount)) return true;
-			if (failureReason) *failureReason = context + " " + field + " level table is shorter than levelCount";
+			if (table.values.empty() || table.values.size() >= required) return true;
+			if (failureReason) *failureReason = context + " " + path + " (rule " + std::to_string(index) + ") level table is shorter than levelCount";
 			return false;
-		};
-		for (std::size_t index = 0; index < rules.attributeModifiers.size(); ++index)
-			if (!hasCoverage(rules.attributeModifiers[index].magnitudeByLevel, "attributeModifiers[" + std::to_string(index) + "].magnitude")) return false;
-		for (std::size_t index = 0; index < rules.abilityModifiers.size(); ++index)
-			if (!hasCoverage(rules.abilityModifiers[index].magnitudeByLevel, "abilityModifiers[" + std::to_string(index) + "].magnitude")) return false;
-		for (std::size_t index = 0; index < rules.triggerBuffs.size(); ++index)
-		{
-			const ModuleTriggerBuff& buff = rules.triggerBuffs[index];
-			const std::string prefix = "triggerBuffs[" + std::to_string(index) + "].";
-			if (!hasCoverage(buff.durationSecondsByLevel, prefix + "durationSeconds") ||
-				!hasCoverage(buff.movementSpeedMultiplierByLevel, prefix + "movementSpeedMultiplier")) return false;
-			for (std::size_t modifierIndex = 0; modifierIndex < buff.modifiers.size(); ++modifierIndex)
-				if (!hasCoverage(buff.modifiers[modifierIndex].magnitudeByLevel,
-					prefix + "modifiers[" + std::to_string(modifierIndex) + "].magnitude")) return false;
-		}
-		for (std::size_t index = 0; index < rules.damageRules.size(); ++index)
-		{
-			const ModuleDamageRule& rule = rules.damageRules[index];
-			const std::string prefix = "damageRules[" + std::to_string(index) + "].";
-			if (!hasCoverage(rule.conditionValueByLevel, prefix + "conditionValue") ||
-				!hasCoverage(rule.openingShotCountByLevel, prefix + "openingShotCount") ||
-				!hasCoverage(rule.damageMultiplierByLevel, prefix + "damageMultiplier") ||
-				!hasCoverage(rule.bonusDamageFractionByLevel, prefix + "bonusDamageFraction") ||
-				!hasCoverage(rule.activeDurationSecondsByLevel, prefix + "activeDurationSeconds")) return false;
-		}
-		for (const ModuleEventAction& action : rules.eventActions)
-			if (!hasCoverage(action.amountByLevel, "eventActions.amount") || !hasCoverage(action.chancePerLuckByLevel, "eventActions.chancePerLuck")) return false;
-		for (const ModuleOwnerAttributeRule& rule : rules.ownerAttributeRules)
-			if (!hasCoverage(rule.amountByLevel, "ownerAttributeRules.amount")) return false;
-		for (const auto& rule : rules.statusRules.electricOverrides)
-			for (const auto& table : rule.damageTakenByStackByLevel)
-				if (!hasCoverage(table, "statusRules.electricOverrides.damageTakenByStack")) return false;
-		for (const auto& rule : rules.statusRules.cryoFreezes)
-			if (!hasCoverage(rule.durationSecondsByLevel, "statusRules.cryoFreezes.durationSeconds") ||
-				!hasCoverage(rule.cooldownSecondsByLevel, "statusRules.cryoFreezes.cooldownSeconds")) return false;
-		for (const auto& rule : rules.statusRules.durationBonuses)
-			if (!hasCoverage(rule.bonusSecondsByLevel, "statusRules.durationBonuses.bonusSeconds")) return false;
-		for (const auto& rule : rules.statusRules.thermalCryoDurationBonuses)
-			if (!hasCoverage(rule.bonusSecondsByLevel, "statusRules.thermalCryoDurationBonuses.bonusSeconds")) return false;
-		for (const auto& rule : rules.generatedRules.ricochets) if (!hasCoverage(rule.damageFractionByLevel, "generatedRules.ricochets.damageFraction")) return false;
-		for (const auto& rule : rules.generatedRules.guidedSalvos) if (!hasCoverage(rule.damageFractionByLevel, "generatedRules.guidedSalvos.damageFraction")) return false;
-		for (const auto& rule : rules.generatedRules.delayedExplosions) if (!hasCoverage(rule.damageFractionByLevel, "generatedRules.delayedExplosions.damageFraction")) return false;
-		for (const auto& rule : rules.generatedRules.trailMines) if (!hasCoverage(rule.damageByLevel, "generatedRules.trailMines.damage") || !hasCoverage(rule.maxActiveByLevel, "generatedRules.trailMines.maxActive")) return false;
-		for (const auto& rule : rules.generatedRules.killExplosions) if (!hasCoverage(rule.maxHealthFractionByLevel, "generatedRules.killExplosions.maxHealthFraction")) return false;
-		for (std::size_t index = 0; index < rules.zoneEffects.size(); ++index)
-			if (!hasCoverage(rules.zoneEffects[index].multiplierByLevel,
-				"zoneEffects[" + std::to_string(index) + "].multiplier")) return false;
-		return true;
+		});
 	}
 
 	bool ModuleLoader::ValidateRulePackageZoneEffects(const ModuleRulePackage& rules, const ModuleZoneTable& zoneTable, const std::string& context, std::string* failureReason)

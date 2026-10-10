@@ -25,11 +25,11 @@ namespace uncommon_p6_e2e
 		reject("short-levels", { { "ricochets", Json::array({ { { "damageFraction", { .25f, .3f } }, { "range", 300.f } } }) } });
 		reject("over-one-fraction", { { "ricochets", Json::array({ { { "damageFraction", { .25f, .3f, 1.1f } }, { "range", 300.f } } }) } });
 		reject("empty-augment", { { "ricochets", Json::array({ { { "transferStatus", false } } }) } });
-		reject("missing-guided-lifetime", { { "guidedSalvos", Json::array({ { { "damageFraction", .15f }, { "projectileCount", 3 }, { "speed", 600 }, { "targetRange", 1800 }, { "maxActive", 64 } } }) } });
+		reject("missing-guided-lifetime", { { "guidedSalvos", Json::array({ { { "damageFraction", .15f }, { "projectileCount", 3 }, { "speed", 600 }, { "targetRange", 1800 }, { "maxActive", 64 }, { "damageType", "Damage.Type.Kinetic" } } }) } });
 		reject("fractional-guided-count", { { "guidedSalvos", Json::array({ { { "projectileCount", 1.5f } } }) } });
 		reject("negative-delay", { { "delayedExplosions", Json::array({ { { "damageFraction", .25f }, { "delaySeconds", -1.f }, { "radius", 100 }, { "maxActive", 32 } } }) } });
-		reject("zero-mine-fuse", { { "trailMines", Json::array({ { { "damage", { 8, 10, 12 } }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 0 }, { "radius", 100 }, { "maxActive", { 12, 14, 16 } } } }) } });
-		reject("short-mine-limit", { { "trailMines", Json::array({ { { "damage", { 8, 10, 12 } }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 1 }, { "radius", 100 }, { "maxActive", { 12, 14 } } } }) } });
+		reject("zero-mine-fuse", { { "trailMines", Json::array({ { { "damage", { 8, 10, 12 } }, { "damageType", "Damage.Type.Kinetic" }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 0 }, { "radius", 100 }, { "maxActive", { 12, 14, 16 } } } }) } });
+		reject("short-mine-limit", { { "trailMines", Json::array({ { { "damage", { 8, 10, 12 } }, { "damageType", "Damage.Type.Kinetic" }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 1 }, { "radius", 100 }, { "maxActive", { 12, 14 } } } }) } });
 		const Json killBase{ { "maxHealthFraction", .03f }, { "radius", 100 }, { "maxActive", 32 }, { "damageType", "Damage.Type.Thermal" }, { "presentationId", "Presentation.Ability.ModuleGenerated.Explosion.Thermal" }, { "requiredTargetStatuses", { "Status.Damage.Ignite" } } };
 		const auto killWith = [&killBase](const char* key, const Json& value) { Json rule = killBase; if (value.is_null()) rule.erase(key); else rule[key] = value; return Json{ { "killExplosions", Json::array({ rule }) } }; };
 		reject("invalid-kill-status-kind", killWith("requiredTargetStatuses", Json::array({ "Ability.Offense" })));
@@ -37,6 +37,28 @@ namespace uncommon_p6_e2e
 		reject("kill-non-damage-type-tag", killWith("damageType", "Status.Damage.Ignite"));
 		reject("kill-missing-presentation-id", killWith("presentationId", Json{}));
 		reject("kill-invalid-presentation-id", killWith("presentationId", "not a content id"));
+		const Json guidedBase{ { "damageFraction", .15f }, { "projectileCount", 3 }, { "speed", 600 }, { "lifetime", 3 }, { "targetRange", 1800 }, { "maxActive", 64 }, { "damageType", "Damage.Type.Kinetic" } };
+		const auto guidedWith = [&guidedBase](const char* key, const Json& value) { Json rule = guidedBase; if (value.is_null()) rule.erase(key); else rule[key] = value; return Json{ { "guidedSalvos", Json::array({ rule }) } }; };
+		reject("guided-missing-damage-type", guidedWith("damageType", Json{}));
+		reject("guided-non-damage-type-tag", guidedWith("damageType", "Status.Damage.Ignite"));
+		reject("guided-type-without-damage", guidedWith("damageFraction", Json{}));
+		const Json mineBase{ { "damage", { 8, 10, 12 } }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 1 }, { "radius", 100 }, { "maxActive", { 12, 14, 16 } }, { "damageType", "Damage.Type.Kinetic" } };
+		const auto mineWith = [&mineBase](const char* key, const Json& value) { Json rule = mineBase; if (value.is_null()) rule.erase(key); else rule[key] = value; return Json{ { "trailMines", Json::array({ rule }) } }; };
+		reject("mine-missing-damage-type", mineWith("damageType", Json{}));
+		reject("mine-non-damage-type-tag", mineWith("damageType", "Status.Damage.Ignite"));
+		reject("mine-type-without-damage", Json{ { "trailMines", Json::array({ Json{ { "cryoStacks", 1 }, { "damageType", "Damage.Type.Kinetic" } } }) } });
+		Json sideFile; { std::ifstream sideInput{ dataPath / "module_side_features.json" }; sideInput >> sideFile; }
+		for (auto& feature : sideFile["sideFeatures"])
+			if (feature["rules"].contains("generatedRules") && feature["rules"]["generatedRules"].contains("guidedSalvos"))
+			{
+				Json conflicting = guidedBase; conflicting["damageType"] = "Damage.Type.Energy";
+				feature["rules"]["generatedRules"]["guidedSalvos"] = Json::array({ conflicting });
+			}
+		const auto conflictPath = artifactRoot / "catalog-guided-type-conflict.json";
+		{ std::ofstream conflictOutput{ conflictPath }; conflictOutput << sideFile.dump(2); }
+		std::string conflictReason;
+		const bool conflictAccepted = content::ModuleContentCatalog::LoadFromFiles(dataPath / "modules.json", conflictPath, &conflictReason);
+		report.Check(!conflictAccepted && conflictReason.find("damage type") != std::string::npos, "catalog rejects a side feature that changes the guided salvo damage type", conflictReason);
 		const auto overlap = [&](const char* name, const char* moduleId, const char* key, const Json& rule)
 		{
 			Json changed = modules;

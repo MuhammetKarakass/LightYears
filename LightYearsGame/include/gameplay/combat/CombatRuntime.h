@@ -139,7 +139,6 @@ namespace ly
 		Delegate<const DamageContext&> onDamageDealt;
 
 	private:
-		static bool SameDamageRule(const ModuleDamageRule& left, const ModuleDamageRule& right);
 		static void ReplaceRegisteredDamageRules(
 			ModuleDamageRuleState& state,
 			std::uint64_t generation,

@@ -8,7 +8,7 @@ namespace ly
 	class ModuleGuidedProjectileActor final : public AbilityWorldActor
 	{
 	public:
-		ModuleGuidedProjectileActor(World* world, Actor* source, const ModuleGuidedPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, const weak_ptr<Actor>& target, float speed, float lifetime, float damage);
+		ModuleGuidedProjectileActor(World* world, Actor* source, const ModuleGuidedPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, const weak_ptr<Actor>& target, float speed, float lifetime, float damage, const GameplayTag& damageType);
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderTarget& window) override;
 		void OnActorBeginOverlap(Actor* target) override;

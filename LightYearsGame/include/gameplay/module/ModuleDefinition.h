@@ -189,6 +189,7 @@ namespace ly
 		float lifetime = 0.f;
 		float targetRange = 0.f;
 		int maxActive = 0;
+		GameplayTag damageType;
 		ModuleLevelTable<float> damageFractionByLevel;
 	};
 	struct ModuleDelayedExplosionRule
@@ -209,6 +210,7 @@ namespace ly
 		int maxActive = 0;
 		int additionalLimit = 0;
 		int cryoStacks = 0;
+		GameplayTag damageType;
 		ModuleLevelTable<float> damageByLevel;
 		ModuleLevelTable<int> maxActiveByLevel;
 	};
@@ -234,10 +236,13 @@ namespace ly
 	// Rule equality decides whether a runtime keeps its state across a reapply. Each operator binds every
 	// field of the rule structurally, so adding a field without extending the comparison fails to compile.
 	template<typename T> bool operator==(const ModuleLevelTable<T>& left, const ModuleLevelTable<T>& right) { return left.values == right.values; }
+	inline bool operator==(const ModuleAttributeModifier& left, const ModuleAttributeModifier& right) { const auto& [a0, a1, a2, a3] = left; const auto& [b0, b1, b2, b3] = right; const auto& [am0, am1, am2, am3] = a1; const auto& [bm0, bm1, bm2, bm3] = b1; return std::tie(a0, a2, a3) == std::tie(b0, b2, b3) && std::tie(am0, am1, am2, am3) == std::tie(bm0, bm1, bm2, bm3); }
+	inline bool operator==(const ModuleTriggerBuff& left, const ModuleTriggerBuff& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
+	inline bool operator==(const ModuleDamageRule& left, const ModuleDamageRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17); }
 	inline bool operator==(const ModuleRicochetRule& left, const ModuleRicochetRule& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
-	inline bool operator==(const ModuleGuidedSalvoRule& left, const ModuleGuidedSalvoRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
+	inline bool operator==(const ModuleGuidedSalvoRule& left, const ModuleGuidedSalvoRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7); }
 	inline bool operator==(const ModuleDelayedExplosionRule& left, const ModuleDelayedExplosionRule& right) { const auto& [a0, a1, a2, a3, a4] = left; const auto& [b0, b1, b2, b3, b4] = right; return std::tie(a0, a1, a2, a3, a4) == std::tie(b0, b1, b2, b3, b4); }
-	inline bool operator==(const ModuleTrailMineRule& left, const ModuleTrailMineRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9); }
+	inline bool operator==(const ModuleTrailMineRule& left, const ModuleTrailMineRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10); }
 	inline bool operator==(const ModuleKillExplosionRule& left, const ModuleKillExplosionRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6] = left; const auto& [b0, b1, b2, b3, b4, b5, b6] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6) == std::tie(b0, b1, b2, b3, b4, b5, b6); }
 	inline bool operator==(const ModuleEventAction& left, const ModuleEventAction& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11); }
 	inline bool operator==(const ModuleOwnerAttributeRule& left, const ModuleOwnerAttributeRule& right) { const auto& [a0, a1, a2, a3, a4, a5, a6, a7] = left; const auto& [b0, b1, b2, b3, b4, b5, b6, b7] = right; return std::tie(a0, a1, a2, a3, a4, a5, a6, a7) == std::tie(b0, b1, b2, b3, b4, b5, b6, b7); }
@@ -254,6 +259,7 @@ namespace ly
 		{
 			float fraction = 0.f;
 			float durationSeconds = 0.f;
+			GameplayTag damageType;
 			ModuleLevelTable<float> fractionByLevel;
 		};
 		List<ShieldReflection> shieldReflections;
@@ -261,6 +267,7 @@ namespace ly
 		ModuleGeneratedRules generatedRules;
 		List<ModuleMovementFadeRule> movementFadeRules;
 	};
+	inline bool operator==(const ModuleRulePackage::ShieldReflection& left, const ModuleRulePackage::ShieldReflection& right) { const auto& [a0, a1, a2, a3] = left; const auto& [b0, b1, b2, b3] = right; return std::tie(a0, a1, a2, a3) == std::tie(b0, b1, b2, b3); }
 
 	struct ModuleSizeVariant : ModuleRulePackage
 	{
@@ -275,41 +282,54 @@ namespace ly
 		}
 	};
 
+	// The one traversal of every per-level table in a rule package. The visitor receives the table's field
+	// path, the rule's index and the table, and returns false to stop. A new table is added here only.
+	template<typename Visitor>
+	bool VisitModuleRuleLevelTables(const ModuleRulePackage& rules, Visitor&& visit)
+	{
+		for (std::size_t i = 0; i < rules.attributeModifiers.size(); ++i) if (!visit("attributeModifiers.magnitude", i, rules.attributeModifiers[i].magnitudeByLevel)) return false;
+		for (std::size_t i = 0; i < rules.abilityModifiers.size(); ++i) if (!visit("abilityModifiers.magnitude", i, rules.abilityModifiers[i].magnitudeByLevel)) return false;
+		for (std::size_t i = 0; i < rules.triggerBuffs.size(); ++i)
+		{
+			const ModuleTriggerBuff& buff = rules.triggerBuffs[i];
+			if (!visit("triggerBuffs.durationSeconds", i, buff.durationSecondsByLevel) || !visit("triggerBuffs.movementSpeedMultiplier", i, buff.movementSpeedMultiplierByLevel)) return false;
+			for (const ModuleAttributeModifier& modifier : buff.modifiers) if (!visit("triggerBuffs.modifiers.magnitude", i, modifier.magnitudeByLevel)) return false;
+		}
+		for (std::size_t i = 0; i < rules.damageRules.size(); ++i)
+		{
+			const ModuleDamageRule& rule = rules.damageRules[i];
+			if (!visit("damageRules.conditionValue", i, rule.conditionValueByLevel) || !visit("damageRules.openingShotCount", i, rule.openingShotCountByLevel) ||
+				!visit("damageRules.damageMultiplier", i, rule.damageMultiplierByLevel) || !visit("damageRules.bonusDamageFraction", i, rule.bonusDamageFractionByLevel) ||
+				!visit("damageRules.activeDurationSeconds", i, rule.activeDurationSecondsByLevel) || !visit("damageRules.maxHealthDamageFraction", i, rule.maxHealthDamageFractionByLevel)) return false;
+		}
+		for (std::size_t i = 0; i < rules.eventActions.size(); ++i)
+		{
+			const ModuleEventAction& action = rules.eventActions[i];
+			if (!visit("eventActions.amount", i, action.amountByLevel) || !visit("eventActions.chancePerLuck", i, action.chancePerLuckByLevel) || !visit("eventActions.targetCount", i, action.targetCountByLevel)) return false;
+		}
+		for (std::size_t i = 0; i < rules.ownerAttributeRules.size(); ++i) if (!visit("ownerAttributeRules.amount", i, rules.ownerAttributeRules[i].amountByLevel)) return false;
+		for (std::size_t i = 0; i < rules.shieldReflections.size(); ++i) if (!visit("shieldReflections.fraction", i, rules.shieldReflections[i].fractionByLevel)) return false;
+		for (std::size_t i = 0; i < rules.statusRules.electricOverrides.size(); ++i)
+			for (const auto& table : rules.statusRules.electricOverrides[i].damageTakenByStackByLevel) if (!visit("statusRules.electricOverrides.damageTakenByStack", i, table)) return false;
+		for (std::size_t i = 0; i < rules.statusRules.cryoFreezes.size(); ++i)
+			if (!visit("statusRules.cryoFreezes.durationSeconds", i, rules.statusRules.cryoFreezes[i].durationSecondsByLevel) || !visit("statusRules.cryoFreezes.cooldownSeconds", i, rules.statusRules.cryoFreezes[i].cooldownSecondsByLevel)) return false;
+		for (std::size_t i = 0; i < rules.statusRules.thermalCryoDurationBonuses.size(); ++i) if (!visit("statusRules.thermalCryoDurationBonuses.bonusSeconds", i, rules.statusRules.thermalCryoDurationBonuses[i].bonusSecondsByLevel)) return false;
+		for (std::size_t i = 0; i < rules.statusRules.durationBonuses.size(); ++i) if (!visit("statusRules.durationBonuses.bonusSeconds", i, rules.statusRules.durationBonuses[i].bonusSecondsByLevel)) return false;
+		for (std::size_t i = 0; i < rules.zoneEffects.size(); ++i) if (!visit("zoneEffects.multiplier", i, rules.zoneEffects[i].multiplierByLevel)) return false;
+		for (std::size_t i = 0; i < rules.generatedRules.ricochets.size(); ++i) if (!visit("generatedRules.ricochets.damageFraction", i, rules.generatedRules.ricochets[i].damageFractionByLevel)) return false;
+		for (std::size_t i = 0; i < rules.generatedRules.guidedSalvos.size(); ++i) if (!visit("generatedRules.guidedSalvos.damageFraction", i, rules.generatedRules.guidedSalvos[i].damageFractionByLevel)) return false;
+		for (std::size_t i = 0; i < rules.generatedRules.delayedExplosions.size(); ++i) if (!visit("generatedRules.delayedExplosions.damageFraction", i, rules.generatedRules.delayedExplosions[i].damageFractionByLevel)) return false;
+		for (std::size_t i = 0; i < rules.generatedRules.trailMines.size(); ++i)
+			if (!visit("generatedRules.trailMines.damage", i, rules.generatedRules.trailMines[i].damageByLevel) || !visit("generatedRules.trailMines.maxActive", i, rules.generatedRules.trailMines[i].maxActiveByLevel)) return false;
+		for (std::size_t i = 0; i < rules.generatedRules.killExplosions.size(); ++i) if (!visit("generatedRules.killExplosions.maxHealthFraction", i, rules.generatedRules.killExplosions[i].maxHealthFractionByLevel)) return false;
+		return true;
+	}
+
 	inline bool HasModuleRulePackageLevelCoverage(const ModuleRulePackage& rules, int levelCount)
 	{
 		if (levelCount <= 0) return false;
-		const auto covers = [levelCount](const auto& table)
-		{
-			return table.values.empty() || table.values.size() >= static_cast<std::size_t>(levelCount);
-		};
-		for (const ModuleAttributeModifier& entry : rules.attributeModifiers) if (!covers(entry.magnitudeByLevel)) return false;
-		for (const ModuleAbilityModifier& entry : rules.abilityModifiers) if (!covers(entry.magnitudeByLevel)) return false;
-		for (const ModuleTriggerBuff& buff : rules.triggerBuffs)
-		{
-			if (!covers(buff.durationSecondsByLevel) || !covers(buff.movementSpeedMultiplierByLevel)) return false;
-			for (const ModuleAttributeModifier& modifier : buff.modifiers) if (!covers(modifier.magnitudeByLevel)) return false;
-		}
-		for (const ModuleDamageRule& rule : rules.damageRules)
-			if (!covers(rule.conditionValueByLevel) || !covers(rule.openingShotCountByLevel) ||
-				!covers(rule.damageMultiplierByLevel) || !covers(rule.bonusDamageFractionByLevel) ||
-				!covers(rule.activeDurationSecondsByLevel) || !covers(rule.maxHealthDamageFractionByLevel)) return false;
-		for (const ModuleEventAction& action : rules.eventActions)
-			if (!covers(action.amountByLevel) || !covers(action.chancePerLuckByLevel) || !covers(action.targetCountByLevel)) return false;
-		for (const ModuleOwnerAttributeRule& rule : rules.ownerAttributeRules) if (!covers(rule.amountByLevel)) return false;
-		for (const auto& rule : rules.shieldReflections) if (!covers(rule.fractionByLevel)) return false;
-		for (const auto& rule : rules.statusRules.electricOverrides)
-			for (const auto& table : rule.damageTakenByStackByLevel) if (!covers(table)) return false;
-		for (const auto& rule : rules.statusRules.cryoFreezes)
-			if (!covers(rule.durationSecondsByLevel) || !covers(rule.cooldownSecondsByLevel)) return false;
-		for (const auto& rule : rules.statusRules.thermalCryoDurationBonuses) if (!covers(rule.bonusSecondsByLevel)) return false;
-		for (const auto& rule : rules.statusRules.durationBonuses) if (!covers(rule.bonusSecondsByLevel)) return false;
-		for (const ModuleZoneEffect& effect : rules.zoneEffects) if (!covers(effect.multiplierByLevel)) return false;
-		for (const auto& rule : rules.generatedRules.ricochets) if (!covers(rule.damageFractionByLevel)) return false;
-		for (const auto& rule : rules.generatedRules.guidedSalvos) if (!covers(rule.damageFractionByLevel)) return false;
-		for (const auto& rule : rules.generatedRules.delayedExplosions) if (!covers(rule.damageFractionByLevel)) return false;
-		for (const auto& rule : rules.generatedRules.trailMines) if (!covers(rule.damageByLevel) || !covers(rule.maxActiveByLevel)) return false;
-		for (const auto& rule : rules.generatedRules.killExplosions) if (!covers(rule.maxHealthFractionByLevel)) return false;
-		return true;
+		const std::size_t required = static_cast<std::size_t>(levelCount);
+		return VisitModuleRuleLevelTables(rules, [required](const char*, std::size_t, const auto& table) { return table.values.empty() || table.values.size() >= required; });
 	}
 
 	struct ModuleSharedPoolPermission

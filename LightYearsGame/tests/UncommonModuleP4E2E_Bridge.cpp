@@ -117,8 +117,9 @@ namespace uncommon_p4_e2e
 			catch (const std::exception&) { rejected = true; }
 			report.Check(rejected, "P4 loader rejects malformed numeric/type contracts", json);
 		};
-		rejects({ { "shieldReflections", Json::array({ { { "fraction", { .35f, .4f } }, { "durationSeconds", 5.f } } }) } });
-		rejects({ { "shieldReflections", Json::array({ { { "fraction", .35f }, { "durationSeconds", 0.f } } }) } });
+		rejects({ { "shieldReflections", Json::array({ { { "fraction", { .35f, .4f } }, { "durationSeconds", 5.f }, { "damageType", "Damage.Type.Energy" } } }) } });
+		rejects({ { "shieldReflections", Json::array({ { { "fraction", .35f }, { "durationSeconds", 5.f } } }) } });
+		rejects({ { "shieldReflections", Json::array({ { { "fraction", .35f }, { "durationSeconds", 0.f }, { "damageType", "Damage.Type.Energy" } } }) } });
 		rejects({ { "damageRules", Json::array({ { { "condition", "TargetWithoutStatus" }, { "maxHealthDamageFraction", .03f } } }) } });
 		rejects({ { "eventActions", Json::array({ { { "trigger", "DamageTaken" }, { "kind", "ApplyNearbyCryo" }, { "amount", .5f }, { "radius", 300.f }, { "cooldownSeconds", 2.f }, { "targetCount", { 2, 3, 4 } } } }) } });
 		rejects({ { "eventActions", Json::array({ { { "trigger", "DamageTaken" }, { "kind", "ApplyNearbyCryo" }, { "amount", 1.f }, { "radius", 300.f }, { "cooldownSeconds", 2.f }, { "targetCount", { 2, 3 } } } }) } });

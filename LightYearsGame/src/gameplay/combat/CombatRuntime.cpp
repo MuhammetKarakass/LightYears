@@ -377,18 +377,6 @@ namespace ly
 		return plan;
 	}
 
-	bool CombatRuntime::SameDamageRule(const ModuleDamageRule& left, const ModuleDamageRule& right)
-	{
-		return left.incoming == right.incoming && left.condition == right.condition && left.conditionValue == right.conditionValue &&
-			left.maxHealthDamageFraction == right.maxHealthDamageFraction &&
-			left.openingShotCount == right.openingShotCount &&
-			left.damageMultiplier == right.damageMultiplier && left.bonusDamageFraction == right.bonusDamageFraction &&
-			left.bonusDamageType == right.bonusDamageType && left.bonusCriticalPolicy == right.bonusCriticalPolicy &&
-			left.activeWhileTrigger == right.activeWhileTrigger &&
-			left.activeWhileEventTags == right.activeWhileEventTags &&
-			left.activeDurationSeconds == right.activeDurationSeconds;
-	}
-
 	void CombatRuntime::ReplaceRegisteredDamageRules(
 		ModuleDamageRuleState& state,
 		std::uint64_t generation,
@@ -409,7 +397,7 @@ namespace ly
 				{
 					return active.resolved.instanceId == resolved.instanceId &&
 						active.resolved.ruleIndex == resolved.ruleIndex &&
-						SameDamageRule(active.resolved.rule, resolved.rule);
+						active.resolved.rule == resolved.rule;
 				});
 			if (previous != registration->rules.end()) next.remainingSeconds = previous->remainingSeconds;
 			nextRules.push_back(std::move(next));

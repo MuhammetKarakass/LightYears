@@ -5,7 +5,7 @@
 
 namespace ly
 {
-	ModuleMineActor::ModuleMineActor(World* world, const weak_ptr<Actor>& source, const ModuleMinePresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, float damage, float radius, float fuse, int cryoStacks) : Actor{ world }, mSource{ source }, mProfile{ profile }, mLease{ lease }, mDamage{ damage }, mRadius{ radius }, mFuse{ fuse }, mRemaining{ fuse }, mCryoStacks{ cryoStacks }
+	ModuleMineActor::ModuleMineActor(World* world, const weak_ptr<Actor>& source, const ModuleMinePresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, float damage, float radius, float fuse, int cryoStacks, const GameplayTag& damageType) : Actor{ world }, mSource{ source }, mProfile{ profile }, mLease{ lease }, mDamage{ damage }, mRadius{ radius }, mFuse{ fuse }, mRemaining{ fuse }, mCryoStacks{ cryoStacks }, mDamageType{ damageType }
 	{
 		SetEnablePhysics(false);
 		SetRenderLayer(RenderLayer::GroundDecal);
@@ -20,7 +20,7 @@ namespace ly
 		if (mExploded) { Destroy(); return; }
 		mExploded = true;
 		mRemaining = mProfile.explosionDuration;
-		ApplyModuleGeneratedAreaDamage(*this, *source, lease, GetActorLocation(), mRadius, mDamage, { DamageTypeSchema::Kinetic }, mCryoStacks, DamageSourceScalingPolicy::Normal);
+		ApplyModuleGeneratedAreaDamage(*this, *source, lease, GetActorLocation(), mRadius, mDamage, { mDamageType }, mCryoStacks, DamageSourceScalingPolicy::Normal);
 	}
 	void ModuleMineActor::Render(sf::RenderTarget& window)
 	{

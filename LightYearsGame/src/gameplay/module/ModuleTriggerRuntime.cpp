@@ -189,7 +189,7 @@ namespace ly
 				rules.end(),
 				[&active](const ResolvedModuleTriggerBuff& resolved) { return SameKey(active, resolved); }
 			);
-			if (desired == rules.end() || !SameRule(active.rule, desired->rule))
+			if (desired == rules.end() || !(active.rule == desired->rule))
 			{
 				RemoveActiveBuff(index - 1);
 			}
@@ -291,37 +291,6 @@ namespace ly
 	bool ModuleTriggerRuntime::SameKey(const ActiveBuff& active, const ResolvedModuleTriggerBuff& resolved)
 	{
 		return active.instanceId == resolved.instanceId && active.ruleIndex == resolved.ruleIndex;
-	}
-
-	bool ModuleTriggerRuntime::SameRule(const ModuleTriggerBuff& left, const ModuleTriggerBuff& right)
-	{
-		if (left.trigger != right.trigger || left.durationSeconds != right.durationSeconds ||
-			left.movementSpeedMultiplier != right.movementSpeedMultiplier ||
-			left.requiredEventTags.size() != right.requiredEventTags.size() ||
-			left.modifiers.size() != right.modifiers.size())
-		{
-			return false;
-		}
-
-		for (std::size_t index = 0; index < left.requiredEventTags.size(); ++index)
-		{
-			if (left.requiredEventTags[index] != right.requiredEventTags[index]) return false;
-		}
-		for (std::size_t index = 0; index < left.modifiers.size(); ++index)
-		{
-			const ModuleAttributeModifier& leftModifier = left.modifiers[index];
-			const ModuleAttributeModifier& rightModifier = right.modifiers[index];
-			if (leftModifier.target != rightModifier.target ||
-				leftModifier.affectedByZoneBonus != rightModifier.affectedByZoneBonus ||
-				leftModifier.modifier.attributeId != rightModifier.modifier.attributeId ||
-				leftModifier.modifier.operation != rightModifier.modifier.operation ||
-				leftModifier.modifier.magnitude != rightModifier.modifier.magnitude ||
-				leftModifier.modifier.priority != rightModifier.modifier.priority)
-			{
-				return false;
-			}
-		}
-		return true;
 	}
 
 	std::string ModuleTriggerRuntime::MakeMovementSourceId(std::uint32_t instanceId, std::size_t ruleIndex)

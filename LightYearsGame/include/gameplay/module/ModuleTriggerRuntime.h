@@ -71,7 +71,6 @@ namespace ly
 		ActiveBuff CreateActiveBuff(const ResolvedModuleTriggerBuff& resolved);
 		bool MatchesTrigger(const ModuleTriggerBuff& rule, const EventSnapshot& event) const;
 		static bool SameKey(const ActiveBuff& active, const ResolvedModuleTriggerBuff& resolved);
-		static bool SameRule(const ModuleTriggerBuff& left, const ModuleTriggerBuff& right);
 		static std::string MakeMovementSourceId(std::uint32_t instanceId, std::size_t ruleIndex);
 
 		LightYearsAbilitySystemComponent& mAbilities;

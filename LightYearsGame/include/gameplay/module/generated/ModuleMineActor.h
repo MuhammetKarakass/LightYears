@@ -8,7 +8,7 @@ namespace ly
 	class ModuleMineActor final : public Actor
 	{
 	public:
-		ModuleMineActor(World* world, const weak_ptr<Actor>& source, const ModuleMinePresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, float damage, float radius, float fuse, int cryoStacks);
+		ModuleMineActor(World* world, const weak_ptr<Actor>& source, const ModuleMinePresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, float damage, float radius, float fuse, int cryoStacks, const GameplayTag& damageType);
 		void Tick(float deltaTime) override;
 		void Render(sf::RenderTarget& window) override;
 		bool HasExploded() const { return mExploded; }
@@ -21,6 +21,7 @@ namespace ly
 		float mFuse = 0.f;
 		float mRemaining = 0.f;
 		int mCryoStacks = 0;
+		GameplayTag mDamageType;
 		bool mExploded = false;
 	};
 }

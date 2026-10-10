@@ -20,9 +20,10 @@ namespace ly
 	namespace
 	{
 		void Merge(ModuleRicochetRule& a, const ModuleRicochetRule& b) { a.damageFraction += b.damageFraction; a.range = std::max(a.range, b.range); a.secondaryFraction += b.secondaryFraction; a.transferStatus = a.transferStatus || b.transferStatus; }
-		void Merge(ModuleGuidedSalvoRule& a, const ModuleGuidedSalvoRule& b) { a.damageFraction += b.damageFraction; a.projectileCount += b.projectileCount; a.speed = std::max(a.speed, b.speed); a.lifetime = std::max(a.lifetime, b.lifetime); a.targetRange = std::max(a.targetRange, b.targetRange); a.maxActive = std::max(a.maxActive, b.maxActive); }
+		void Merge(ModuleGuidedSalvoRule& a, const ModuleGuidedSalvoRule& b) { if (!a.damageType.IsValid()) a.damageType = b.damageType; a.damageFraction += b.damageFraction; a.projectileCount += b.projectileCount; a.speed = std::max(a.speed, b.speed); a.lifetime = std::max(a.lifetime, b.lifetime); a.targetRange = std::max(a.targetRange, b.targetRange); a.maxActive = std::max(a.maxActive, b.maxActive); }
 		void Merge(ModuleTrailMineRule& a, const ModuleTrailMineRule& b)
 		{
+			if (!a.damageType.IsValid()) a.damageType = b.damageType;
 			a.damage += b.damage; a.spacing = std::max(a.spacing, b.spacing); a.windowSeconds = std::max(a.windowSeconds, b.windowSeconds);
 			if (b.fuseSeconds > 0.f) a.fuseSeconds = a.fuseSeconds > 0.f ? std::min(a.fuseSeconds, b.fuseSeconds) : b.fuseSeconds;
 			a.radius = std::max(a.radius, b.radius); a.maxActive = std::max(a.maxActive, b.maxActive); a.additionalLimit += b.additionalLimit; a.cryoStacks += b.cryoStacks;
@@ -196,12 +197,12 @@ namespace ly
 		if (!profile) return;
 		for (auto& state : mSalvos)
 		{
-			if (state.rule.damageFraction <= 0.f || !event.hitGroup->consumedModuleRules.insert({ mShip->GetUniqueID(), state.lease->key }).second) continue;
+			if (state.rule.damageFraction <= 0.f || !state.rule.damageType.IsValid() || !event.hitGroup->consumedModuleRules.insert({ mShip->GetUniqueID(), state.lease->key }).second) continue;
 			Prune(state.lease);
 			const auto targets = Nearest(*mShip->GetWorld(), *mShip, mShip->GetActorLocation(), state.rule.targetRange);
 			for (std::size_t index = 0; index < targets.size() && index < static_cast<std::size_t>(state.rule.projectileCount) && state.lease->actors.size() < static_cast<std::size_t>(state.rule.maxActive); ++index)
 			{
-				const auto actor = mShip->GetWorld()->SpawnActor<ModuleGuidedProjectileActor>(mShip, *profile, state.lease, targets[index], state.rule.speed, state.rule.lifetime, event.damage * state.rule.damageFraction).lock();
+				const auto actor = mShip->GetWorld()->SpawnActor<ModuleGuidedProjectileActor>(mShip, *profile, state.lease, targets[index], state.rule.speed, state.rule.lifetime, event.damage * state.rule.damageFraction, state.rule.damageType).lock();
 				if (!actor) continue;
 				actor->SetActorLocation(mShip->GetActorLocation()); state.lease->actors.push_back(actor);
 			}
@@ -236,7 +237,7 @@ namespace ly
 		{
 			const float activeSeconds = std::min(deltaSeconds, state.window);
 			state.window = std::max(0.f, state.window - deltaSeconds);
-			if (activeSeconds <= 0.f || state.rule.damage <= 0.f || state.rule.spacing <= 0.f) continue;
+			if (activeSeconds <= 0.f || state.rule.damage <= 0.f || !state.rule.damageType.IsValid() || state.rule.spacing <= 0.f) continue;
 			const float distance = mShip->IsInPortalTransit() ? 0.f : movement.GetCurrentMovementDistance() * activeSeconds / deltaSeconds;
 			if (distance <= 0.f) continue;
 			Prune(state.lease);
@@ -244,7 +245,7 @@ namespace ly
 			const std::size_t limit = static_cast<std::size_t>(state.rule.maxActive + state.rule.additionalLimit);
 			while (next <= distance && state.lease->actors.size() < limit)
 			{
-				const auto actor = mShip->GetWorld()->SpawnActor<ModuleMineActor>(mShip->GetWeakActor(), *profile, state.lease, state.rule.damage, state.rule.radius, state.rule.fuseSeconds, state.rule.cryoStacks).lock();
+				const auto actor = mShip->GetWorld()->SpawnActor<ModuleMineActor>(mShip->GetWeakActor(), *profile, state.lease, state.rule.damage, state.rule.radius, state.rule.fuseSeconds, state.rule.cryoStacks, state.rule.damageType).lock();
 				if (!actor) break;
 				actor->SetActorLocation(origin + (end - origin) * (next / movement.GetCurrentMovementDistance()));
 				state.lease->actors.push_back(actor); next += state.rule.spacing;

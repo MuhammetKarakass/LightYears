@@ -123,6 +123,14 @@ namespace ly::content
 			{
 				const ModuleGeneratedRules& side = feature.rules.generatedRules;
 				for (const ModuleSizeVariant& variant : module.sizeVariants)
+				{
+					const ModuleGeneratedRules& main = variant.generatedRules;
+					if (!side.guidedSalvos.empty() && !main.guidedSalvos.empty() && side.guidedSalvos.front().damageType.IsValid() && main.guidedSalvos.front().damageType.IsValid() && side.guidedSalvos.front().damageType != main.guidedSalvos.front().damageType)
+						throw std::runtime_error("Side feature " + feature.sideFeatureId.ToString() + " uses a different guided salvo damage type than module " + module.moduleId.ToString());
+					if (!side.trailMines.empty() && !main.trailMines.empty() && side.trailMines.front().damageType.IsValid() && main.trailMines.front().damageType.IsValid() && side.trailMines.front().damageType != main.trailMines.front().damageType)
+						throw std::runtime_error("Side feature " + feature.sideFeatureId.ToString() + " uses a different trail mine damage type than module " + module.moduleId.ToString());
+				}
+				for (const ModuleSizeVariant& variant : module.sizeVariants)
 					if ((!side.delayedExplosions.empty() && !variant.generatedRules.delayedExplosions.empty()) || (!side.killExplosions.empty() && !variant.generatedRules.killExplosions.empty()))
 						throw std::runtime_error("Side feature " + feature.sideFeatureId.ToString() + " duplicates a single-instance generated rule already defined by module " + module.moduleId.ToString());
 			};

@@ -30,7 +30,7 @@ namespace ly
 			State next{ rule };
 			for (const auto& previous : mRules)
 				if (previous.resolved.instanceId == rule.instanceId && previous.resolved.ruleIndex == rule.ruleIndex &&
-					previous.resolved.rule.fraction == rule.rule.fraction && previous.resolved.rule.durationSeconds == rule.rule.durationSeconds) next.remaining = previous.remaining;
+					previous.resolved.rule == rule.rule) next.remaining = previous.remaining;
 			desired.push_back(next);
 		}
 		mRules = std::move(desired);
@@ -72,12 +72,12 @@ namespace ly
 				if (distance < nearestDistance || (distance == nearestDistance && nearest && target->GetUniqueID() < nearest->GetUniqueID())) { nearest = target; nearestDistance = distance; }
 			}
 			if (!nearest) continue;
-			auto payload = DamageTypeSystem::BuildPayload({ DamageTypeSchema::Energy });
+			auto payload = DamageTypeSystem::BuildPayload({ state.resolved.rule.damageType });
 			payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 			payload.kineticStacks = 0;
 			payload.skipModuleDamageRules = true;
 			payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
-			ApplyCombatDamage(*nearest, context.shieldDamage * state.resolved.rule.fraction, mShip, { DamageTypeSchema::Energy }, payload);
+			ApplyCombatDamage(*nearest, context.shieldDamage * state.resolved.rule.fraction, mShip, { state.resolved.rule.damageType }, payload);
 		}
 	}
 }

@@ -9,14 +9,14 @@
 
 namespace ly
 {
-	ModuleGuidedProjectileActor::ModuleGuidedProjectileActor(World* world, Actor* source, const ModuleGuidedPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, const weak_ptr<Actor>& target, float speed, float lifetime, float damage) : AbilityWorldActor{ world, source }, mProfile{ profile }, mLease{ lease }, mTarget{ target }, mSpeed{ speed }
+	ModuleGuidedProjectileActor::ModuleGuidedProjectileActor(World* world, Actor* source, const ModuleGuidedPresentationProfile& profile, const weak_ptr<ModuleGeneratedLease>& lease, const weak_ptr<Actor>& target, float speed, float lifetime, float damage, const GameplayTag& damageType) : AbilityWorldActor{ world, source }, mProfile{ profile }, mLease{ lease }, mTarget{ target }, mSpeed{ speed }
 	{
 		SetRenderLayer(RenderLayer::Projectile);
 		SetAbilityPhysicsEnabled(false);
 		SetAbilityCollisionRadius(profile.radius);
 		ConfigureCollisionFromOwner();
 		SetDamage(damage);
-		SetDamageTags({ DamageTypeSchema::Kinetic });
+		SetDamageTags({ damageType });
 		SetDamagePayload(MakeModuleGeneratedDamagePayload());
 		SetLifeTime(lifetime);
 	}
