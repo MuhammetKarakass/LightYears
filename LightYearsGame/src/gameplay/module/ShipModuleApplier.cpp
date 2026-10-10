@@ -44,6 +44,7 @@ namespace ly
 		mShuttingDown = true;
 		mAbilities.SetModuleSystemGate(nullptr);
 		mCombatRuntime.SetModuleStatusRules({});
+		mCombatRuntime.SetTargetStatusSnapshotRequested(false);
 		mReactiveRuntime.Replace({}, {});
 		mShieldReflectionRuntime.Replace({});
 		mGeneratedRuntime.Replace({});
@@ -190,6 +191,9 @@ namespace ly
 		mReactiveRuntime.Replace(mResolved.eventActions, mResolved.ownerAttributeRules, mResolved.movementFadeRules);
 		mShieldReflectionRuntime.Replace(mResolved.shieldReflections);
 		mGeneratedRuntime.Replace(mResolved.generatedRules);
+		bool needsStatusSnapshot = !mResolved.generatedRules.killExplosions.empty();
+		for (const auto& resolved : mResolved.generatedRules.ricochets) needsStatusSnapshot = needsStatusSnapshot || resolved.rule.transferStatus;
+		mCombatRuntime.SetTargetStatusSnapshotRequested(needsStatusSnapshot);
 
 		mEnabledSystems = mResolved.enabledSystems;
 		mShipRuntime.SetSystemEnabled(ShipSystem::Shield, IsSystemEnabled(GameplayTags::Module::System::Shield));

@@ -558,8 +558,10 @@ namespace ly
 		);
 		context.targetWasCryoAffected = cryoEffect != nullptr;
 		context.targetCryoStacksAtResolution = cryoEffect ? std::max(0, cryoEffect->stackCount) : 0;
+		const auto* snapshotSource = dynamic_cast<const Combatant*>(context.source);
+		const bool captureStatusSnapshot = snapshotSource && snapshotSource->GetCombatRuntime().WantsTargetStatusSnapshot();
 		for (const auto* id : { DamageStatusEffectIds::IgniteEffectId, DamageStatusEffectIds::CryoSlowedEffectId, DamageStatusEffectIds::ElectricEffectId, DamageStatusEffectIds::KineticEffectId })
-			if (const auto* effect = mAbilitySystemComponent.FindGameplayEffectById(id))
+			if (const auto* effect = captureStatusSnapshot ? mAbilitySystemComponent.FindGameplayEffectById(id) : nullptr)
 			{
 				context.targetStatusEffectsAtResolution.push_back(effect->spec);
 				context.targetStatusEffectsAtResolution.back().duration = effect->remainingDuration;

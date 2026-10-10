@@ -22,6 +22,12 @@ namespace
 		throw std::runtime_error{ "Missing projected module " + std::to_string(id) };
 	}
 
+	void CheckMissingFontFallback(Report& report)
+	{
+		const auto layout = ModuleCardText::Wrap("Primary hits add Energy damage for a few seconds after the shield breaks and cannot critically hit.", "fonts/DoesNotExist.ttf", 14, 220.f, 2);
+		report.Check(!layout.text.empty() && layout.lineCount >= 1 && layout.lineCount <= 2 && layout.truncated, "card text wraps approximately instead of throwing when the font is missing", layout.text);
+	}
+
 	void Measure(Report& report, const std::string& text, unsigned int size, float width, unsigned int lines, const std::string& name, bool requireComplete, const std::string& fontPath = ModuleCardText::BodyFont)
 	{
 		const auto layout = ModuleCardText::Wrap(text, fontPath, size, width, lines);
@@ -75,6 +81,7 @@ namespace
 
 	void Run(Report& report, Application& application, const std::filesystem::path& artifacts)
 	{
+		CheckMissingFontFallback(report);
 		auto& manager = PlayerManager::GetPlayerManager(); manager.Reset(); ResetGuard reset;
 		auto level = std::make_shared<common_module_e2e::HeadlessModuleLevel>(&application);
 		auto& player = manager.CreateNewPlayer(); auto ship = player.SpawnSpaceShip(level.get()).lock();

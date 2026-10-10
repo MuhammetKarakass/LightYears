@@ -95,6 +95,9 @@ namespace ly
 		void ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event);
 		void SetModuleStatusRules(const ModuleStatusRules& rules) { mModuleStatusRules = rules; }
 		const ModuleStatusRules& GetModuleStatusRules() const { return mModuleStatusRules; }
+		// Set by the module applier while a generated rule reads the target's statuses at resolution.
+		void SetTargetStatusSnapshotRequested(bool requested) { mTargetStatusSnapshotRequested = requested; }
+		bool WantsTargetStatusSnapshot() const { return mTargetStatusSnapshotRequested; }
 		// Product of every active Fire-phase rule (see ModuleDamageRulePhase) for this shot.
 		float ResolveFullMagazineShotMultiplier(int magazineShotsFired) const;
 		OutgoingDamagePlan ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId = {}, DamageDeliveryType deliveryType = DamageDeliveryType::Direct, bool allowFirstTargetHit = true) const;
@@ -199,6 +202,7 @@ namespace ly
 		std::unordered_map<std::string, DamageProtection> mDamageProtections;
 		CombatRuntimeModifiers mRuntimeModifiers;
 		ModuleStatusRules mModuleStatusRules;
+		bool mTargetStatusSnapshotRequested = false;
 		ModuleFirstHitHistory mModuleFirstHits;
 		std::shared_ptr<ModuleDamageRuleState> mModuleDamageRuleState = std::make_shared<ModuleDamageRuleState>();
 	};
