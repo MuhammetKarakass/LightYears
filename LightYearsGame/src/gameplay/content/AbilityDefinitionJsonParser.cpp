@@ -453,6 +453,14 @@ namespace ly::content::ability_loader_detail
 			// BaseId materialization already supplies inherited values from JSON.
 			loaded.definition.duration = object.value("duration", 0.f);
 			loaded.definition.maxCharges = object.value("maxCharges", 0);
+			if (object.contains("chargeUseInterval") &&
+				(!object.at("chargeUseInterval").is_number() || object.at("chargeUseInterval").get<float>() < 0.f))
+			{
+				throw std::runtime_error(
+					"Ability '" + loaded.id + "': chargeUseInterval must be a non-negative number"
+				);
+			}
+			loaded.definition.chargeUseInterval = object.value("chargeUseInterval", 0.5f);
 			if (object.contains("scalingRules"))
 			{
 				loaded.definition.scalingRules = AttributeJsonParser::ParseScalingRules(

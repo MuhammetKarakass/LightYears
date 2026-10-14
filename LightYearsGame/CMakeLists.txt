@@ -24,7 +24,7 @@ list(FILTER LY_GAME_HEADERS EXCLUDE REGEX "${LY_GAME_APP_DIR_REGEX}")
 
 # Gameplay core: game-specific reusable services. LightYearsGameplayCore deliberately depends on
 # SpaceAbilitySystem instead of extending it with LightYears contracts, content, actors, or
-# presentation rules, and some tests (e.g. MovementPolicyTests) link only this library. The files
+# presentation rules. The files
 # do not share a directory, so they are selected by file name.
 set(LY_GAMEPLAY_CORE_FILES
 	MovementPolicyController NumericSettingContractRegistry GameAbilityContentRegistration
@@ -65,15 +65,23 @@ target_include_directories(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${PROJECT_SOURCE_DIR}/LightYearsEngine/include
 )
+# GalaxyRoute uses the pure-math visual/Astro.h and visual/GalaxyModel.h only; no SFML is pulled in.
 target_link_libraries(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
 	PUBLIC
 		${LIGHT_YEARS_ENGINE_TARGET_NAME}
 		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		LightYearsAstro
 		nlohmann_json::nlohmann_json
 )
 
 add_executable(${LIGHT_YEARS_GAME_TARGET_NAME} ${LY_GAME_APP_CPP} ${LY_GAME_APP_HEADERS})
+
+if(MSVC)
+	# Incremental relinks have left copied inline tag/attribute identities empty at startup.
+	# Use a full link for the game, as for the gameplay test executables below.
+	target_link_options(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE /INCREMENTAL:NO)
+endif()
 
 target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -227,12 +235,81 @@ if(BUILD_TESTING)
 		ARGS "${LY_E2E}/uncommon-modules.json" TIMEOUT 90)
 	ly_add_game_test(LightYearsUncommonModuleP3E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP3E2E.cpp)
 	ly_add_game_test_case(LightYearsUncommonModuleP3E2E LightYearsUncommonModuleP3E2ETests ARGS "${LY_E2E}/uncommon-module-p3.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsControlTargetClassLoadE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ControlTargetClassLoadE2E.cpp)
+	ly_add_game_test_case(LightYearsControlTargetClassLoadE2E LightYearsControlTargetClassLoadE2ETests ARGS "${LY_E2E}/control-target-class-load.json" TIMEOUT 60)
+	ly_add_game_test(LightYearsAbilityChargeRestoreE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/AbilityChargeRestoreE2E.cpp)
+	ly_add_game_test_case(LightYearsAbilityChargeRestoreE2E LightYearsAbilityChargeRestoreE2ETests ARGS "${LY_E2E}/ability-charge-restore.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsAbilityMultiChargeE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/AbilityMultiChargeE2E.cpp)
+	ly_add_game_test_case(LightYearsAbilityMultiChargeE2E LightYearsAbilityMultiChargeE2ETests ARGS "${LY_E2E}/ability-multi-charge.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareDamageConditionsE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareDamageConditionsE2E.cpp)
+	ly_add_game_test_case(LightYearsRareDamageConditionsE2E LightYearsRareDamageConditionsE2ETests ARGS "${LY_E2E}/rare-damage-conditions.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareShieldRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareShieldRulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareShieldRulesE2E LightYearsRareShieldRulesE2ETests ARGS "${LY_E2E}/rare-shield-rules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsModuleConflictE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleConflictE2E.cpp)
+	ly_add_game_test_case(LightYearsModuleConflictE2E LightYearsModuleConflictE2ETests ARGS "${LY_E2E}/module-conflict.json" TIMEOUT 60)
+	ly_add_game_test(LightYearsRareZoneRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareZoneRulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareZoneRulesE2E LightYearsRareZoneRulesE2ETests ARGS "${LY_E2E}/rare-zone-rules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareSingleModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareSingleModulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareSingleModulesE2E LightYearsRareSingleModulesE2ETests ARGS "${LY_E2E}/rare-single-modules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareSpareCapacitorMechanicsE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareSpareCapacitorMechanicsE2E.cpp)
+	ly_add_game_test_case(LightYearsRareSpareCapacitorMechanicsE2E LightYearsRareSpareCapacitorMechanicsE2ETests ARGS "${LY_E2E}/rare-spare-capacitor-mechanics.json" TIMEOUT 240)
+	ly_add_game_test(LightYearsRareSideFeaturesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareSideFeaturesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareSideFeaturesE2E LightYearsRareSideFeaturesE2ETests ARGS "${LY_E2E}/rare-side-features.json" TIMEOUT 180)
+	ly_add_game_test(LightYearsRareStaticDamageRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareStaticDamageRulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareStaticDamageRulesE2E LightYearsRareStaticDamageRulesE2ETests ARGS "${LY_E2E}/rare-static-damage-rules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareMovementRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareMovementRulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareMovementRulesE2E LightYearsRareMovementRulesE2ETests ARGS "${LY_E2E}/rare-movement-rules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareRunCounterE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareRunCounterE2E.cpp)
+	ly_add_game_test_case(LightYearsRareRunCounterE2E LightYearsRareRunCounterE2ETests ARGS "${LY_E2E}/rare-run-counter.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareWave3ModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareWave3ModulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareWave3ModulesE2E LightYearsRareWave3ModulesE2ETests ARGS "${LY_E2E}/rare-wave3-modules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareTrophyCoreMechanicsE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareTrophyCoreMechanicsE2E.cpp)
+	ly_add_game_test_case(LightYearsRareTrophyCoreMechanicsE2E LightYearsRareTrophyCoreMechanicsE2ETests ARGS "${LY_E2E}/rare-trophy-core-mechanics.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareWave4PolishE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareWave4PolishE2E.cpp)
+	ly_add_game_test_case(LightYearsRareWave4PolishE2E LightYearsRareWave4PolishE2ETests ARGS "${LY_E2E}/rare-wave4-polish.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareLadderModulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareLadderModulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareLadderModulesE2E LightYearsRareLadderModulesE2ETests ARGS "${LY_E2E}/rare-ladder-modules.json" TIMEOUT 240)
+	ly_add_game_test(LightYearsRareStatusRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareStatusRulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareStatusRulesE2E LightYearsRareStatusRulesE2ETests ARGS "${LY_E2E}/rare-status-rules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareOwnerBurstE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareOwnerBurstE2E.cpp)
+	ly_add_game_test_case(LightYearsRareOwnerBurstE2E LightYearsRareOwnerBurstE2ETests ARGS "${LY_E2E}/rare-owner-burst.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareDyingStarMechanicsE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareDyingStarMechanicsE2E.cpp)
+	ly_add_game_test_case(LightYearsRareDyingStarMechanicsE2E LightYearsRareDyingStarMechanicsE2ETests ARGS "${LY_E2E}/rare-dying-star-mechanics.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareRatioRulesE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareRatioRulesE2E.cpp)
+	ly_add_game_test_case(LightYearsRareRatioRulesE2E LightYearsRareRatioRulesE2ETests ARGS "${LY_E2E}/rare-ratio-rules.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareSustainedSpeedE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareSustainedSpeedE2E.cpp)
+	ly_add_game_test_case(LightYearsRareSustainedSpeedE2E LightYearsRareSustainedSpeedE2ETests ARGS "${LY_E2E}/rare-sustained-speed.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsRareStatusModifiersE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareStatusModifiersE2E.cpp)
+	ly_add_game_test_case(LightYearsRareStatusModifiersE2E LightYearsRareStatusModifiersE2ETests ARGS "${LY_E2E}/rare-status-modifiers.json" TIMEOUT 240)
+	ly_add_game_test(LightYearsRareWave5ContentE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareWave5ContentE2E.cpp)
+	ly_add_game_test_case(LightYearsRareWave5ContentE2E LightYearsRareWave5ContentE2ETests ARGS "${LY_E2E}/rare-wave5-content.json" TIMEOUT 240)
+	ly_add_game_test(LightYearsRareSlipstreamControlE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareSlipstreamControlE2E.cpp)
+	ly_add_game_test_case(LightYearsRareSlipstreamControlE2E LightYearsRareSlipstreamControlE2ETests ARGS "${LY_E2E}/rare-slipstream-control.json" TIMEOUT 240)
+	ly_add_game_test(LightYearsRareFragmentationE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/RareFragmentationE2E.cpp)
+	ly_add_game_test_case(LightYearsRareFragmentationE2E LightYearsRareFragmentationE2ETests ARGS "${LY_E2E}/rare-fragmentation.json" TIMEOUT 240)
 	ly_add_game_test(LightYearsUncommonModuleP4E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP4E2E.cpp ${LY_TESTS_DIR}/UncommonModuleP4E2E_Damage.cpp ${LY_TESTS_DIR}/UncommonModuleP4E2E_Reactions.cpp ${LY_TESTS_DIR}/UncommonModuleP4E2E_Bridge.cpp)
 	ly_add_game_test_case(LightYearsUncommonModuleP4E2E LightYearsUncommonModuleP4E2ETests ARGS "${LY_E2E}/uncommon-module-p4.json" TIMEOUT 120)
 	ly_add_game_test(LightYearsUncommonModuleP5E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP5E2E.cpp ${LY_TESTS_DIR}/UncommonModuleP5E2E_Status.cpp ${LY_TESTS_DIR}/UncommonModuleP5E2E_Content.cpp)
 	ly_add_game_test_case(LightYearsUncommonModuleP5E2E LightYearsUncommonModuleP5E2ETests ARGS "${LY_E2E}/uncommon-module-p5.json" TIMEOUT 120)
 	ly_add_game_test(LightYearsUncommonModuleP6E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP6E2E.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Ricochet.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Actors.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Mines.cpp ${LY_TESTS_DIR}/UncommonModuleP6E2E_Content.cpp)
 	ly_add_game_test_case(LightYearsUncommonModuleP6E2E LightYearsUncommonModuleP6E2ETests ARGS "${LY_E2E}/uncommon-module-p6.json" TIMEOUT 120)
+	ly_add_game_test_case(LightYearsModuleBalanceE2E LightYearsUncommonModuleP6E2ETests ARGS "${LY_E2E}/module-balance-2026-10-13.json" "balance" TIMEOUT 120)
+	ly_add_game_test(LightYearsModuleRefinementE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleRefinementE2E.cpp)
+	ly_add_game_test(LightYearsModulePlanTransitionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModulePlanTransitionE2E.cpp)
+	ly_add_game_test(LightYearsModuleGoldHullE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleGoldHullE2E.cpp)
+	ly_add_game_test_case(LightYearsModuleGoldHullE2E LightYearsModuleGoldHullE2ETests ARGS "${LY_E2E}/ModuleGoldHull-2026-10-14.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsModulePolarShieldE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModulePolarShieldE2E.cpp)
+	ly_add_game_test_case(LightYearsModulePolarShieldE2E LightYearsModulePolarShieldE2ETests ARGS "${LY_E2E}/ModulePolarShield-2026-10-14.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsModuleReleaseValveE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleReleaseValveE2E.cpp)
+	ly_add_game_test_case(LightYearsModuleReleaseValveE2E LightYearsModuleReleaseValveE2ETests ARGS "${LY_E2E}/module-release-valve-2026-10-14.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsModuleSpeedLanceE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleSpeedLanceE2E.cpp)
+	ly_add_game_test_case(LightYearsModuleSpeedLanceE2E LightYearsModuleSpeedLanceE2ETests ARGS "${LY_E2E}/module-speed-lance-2026-10-13.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsModuleTemperedHullE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleTemperedHullE2E.cpp)
+	ly_add_game_test_case(LightYearsModuleTemperedHullE2E LightYearsModuleTemperedHullE2ETests ARGS "${LY_E2E}/module-tempered-hull-2026-10-13.json" TIMEOUT 120)
+	ly_add_game_test(LightYearsModuleDefenseLayerE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/ModuleDefenseLayerE2E.cpp)
+	ly_add_game_test_case(LightYearsModuleDefenseLayerE2E LightYearsModuleDefenseLayerE2ETests ARGS "${LY_E2E}/module-defense-layer-2026-10-13.json" TIMEOUT 120)
+	ly_add_game_test_case(LightYearsModulePlanTransitionE2E LightYearsModulePlanTransitionE2ETests ARGS "${LY_E2E}/module-plan-transition-2026-10-13.json" TIMEOUT 120)
+	ly_add_game_test_case(LightYearsModuleRefinementE2E LightYearsModuleRefinementE2ETests ARGS "${LY_E2E}/module-refinement-2026-10-13.json" TIMEOUT 120)
 	ly_add_game_test(LightYearsUncommonModuleP7E2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleP7E2E.cpp)
 	ly_add_game_test_case(LightYearsUncommonModuleP7E2E LightYearsUncommonModuleP7E2ETests ARGS "${LY_E2E}/uncommon-module-p7.json" TIMEOUT 120)
 	ly_add_game_test(LightYearsUncommonModuleCompletionE2ETests GAME_WHOLE PROJECT_DIR SOURCES ${LY_TESTS_DIR}/UncommonModuleCompletionE2E.cpp ${LY_TESTS_DIR}/UncommonModuleCompletionE2E_Damage.cpp ${LY_TESTS_DIR}/UncommonModuleCompletionE2E_Reactive.cpp ${LY_TESTS_DIR}/UncommonModuleCompletionE2E_Content.cpp)
@@ -293,30 +370,11 @@ if(BUILD_TESTING)
 			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 			GAME)
 		ly_add_game_test_case(LightYearsAutoTargeting LightYearsAutoTargetingTests NO_WORKDIR)
-
-		ly_add_game_test(LightYearsGameplayTagSchemaTests
-			SOURCES ${LY_TESTS_DIR}/GameplayTagSchemaTests.cpp
-			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME})
-		ly_add_game_test_case(LightYearsGameplayTagSchema LightYearsGameplayTagSchemaTests NO_WORKDIR)
-
-		ly_add_game_test(LightYearsMovementInfluenceTests
-			SOURCES ${LY_TESTS_DIR}/MovementInfluenceTests.cpp
-			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME}
-			GAME)
-		ly_add_game_test_case(LightYearsMovementInfluence LightYearsMovementInfluenceTests NO_WORKDIR)
-
-		# Links only the gameplay core on purpose: proves the core stays independent of the rest of the game.
-		ly_add_game_test(LightYearsMovementPolicyTests
-			SOURCES ${LY_TESTS_DIR}/MovementPolicyTests.cpp
-			LIBS ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME})
-		ly_add_game_test_case(LightYearsMovementPolicy LightYearsMovementPolicyTests NO_WORKDIR)
-
-		ly_add_game_test(LightYearsModuleSystemTests
-			SOURCES ${LY_TESTS_DIR}/ModuleSystemTests.cpp
-			LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
-			GAME PROJECT_DIR)
-		ly_add_game_test_case(LightYearsModuleSystem LightYearsModuleSystemTests)
 	endif()
+
+	# Campaign route data (galaxy_route.json); the test links GAME, which pulls LightYearsVisual via GameLib.
+	ly_add_game_test(LightYearsGalaxyRouteTests GAME PROJECT_DIR SOURCES ${LY_TESTS_DIR}/GalaxyRouteTests.cpp)
+	ly_add_game_test_case(LightYearsGalaxyRoute LightYearsGalaxyRouteTests NO_WORKDIR)
 
 	# Test executables are rebuilt from scratch often; the incremental-link
 	# state (.ilk, ~300 MB each) and full link PDBs (up to ~1.9 GB each) are

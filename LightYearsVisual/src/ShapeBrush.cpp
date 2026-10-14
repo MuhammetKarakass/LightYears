@@ -4,6 +4,8 @@
 #include <array>
 #include <cmath>
 
+#include "visual/UniformWriter.h"
+
 namespace ly::visual
 {
 	namespace
@@ -163,16 +165,19 @@ namespace ly::visual
 		float soft = style.hardEdges ? 0.f : SoftEdgePixels;
 		float margin = style.outlineWidth + soft + 1.f;
 		sf::FloatRect padded({bounds.position.x - margin, bounds.position.y - margin}, {bounds.size.x + margin * 2.f, bounds.size.y + margin * 2.f});
-		shader->setUniform("uShape", params.shapeId);
-		shader->setUniform("uA", sf::Glsl::Vec2(params.a));
-		shader->setUniform("uB", sf::Glsl::Vec2(params.b));
-		shader->setUniform("uRadius", params.radius);
-		shader->setUniform("uThickness", params.thickness);
-		shader->setUniform("uArc", sf::Glsl::Vec2(params.arc));
-		shader->setUniform("uFill", sf::Glsl::Vec4(style.fill));
-		shader->setUniform("uOutlineColor", sf::Glsl::Vec4(style.outline));
-		shader->setUniform("uOutline", style.outlineWidth);
-		shader->setUniform("uSoft", soft);
+		{
+			UniformWriter uniforms(*shader);
+			uniforms.Set("uShape", params.shapeId);
+			uniforms.Set("uA", params.a);
+			uniforms.Set("uB", params.b);
+			uniforms.Set("uRadius", params.radius);
+			uniforms.Set("uThickness", params.thickness);
+			uniforms.Set("uArc", params.arc);
+			uniforms.Set("uFill", sf::Glsl::Vec4(style.fill));
+			uniforms.Set("uOutlineColor", sf::Glsl::Vec4(style.outline));
+			uniforms.Set("uOutline", style.outlineWidth);
+			uniforms.Set("uSoft", soft);
+		}
 		const sf::BlendMode additive(sf::BlendMode::Factor::SrcAlpha, sf::BlendMode::Factor::One);
 		DrawShaderQuad(target, *shader, padded, style.additive ? additive : sf::BlendAlpha);
 	}

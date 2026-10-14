@@ -187,63 +187,45 @@ namespace ly
 		return mDefaultTexture;
 	}
 
+	namespace
+	{
+		// An asset is dropped only after this many clean cycles in a row without an outside owner (about a minute
+		// at the application's 2 s cycle). Effects such as explosion particles let go of their textures between
+		// bursts; evicting them at once meant reading and decoding the same files from disk every few seconds.
+		constexpr int IdleCyclesBeforeEviction = 30;
+
+		template<typename AssetMap>
+		void EvictIdleAssets(AssetMap& assets, Dictionary<std::string, int>& idleCycles)
+		{
+			for (auto iter = assets.begin(); iter != assets.end();)
+			{
+				if (iter->second.use_count() != 1)
+				{
+					idleCycles.erase(iter->first);
+					++iter;
+					continue;
+				}
+				int& idle = idleCycles[iter->first];
+				if (++idle >= IdleCyclesBeforeEviction)
+				{
+					idleCycles.erase(iter->first);
+					iter = assets.erase(iter);
+				}
+				else
+				{
+					++iter;
+				}
+			}
+		}
+	}
+
 	void AssetManager::CleanCycle()
 	{
-		// Yüklenmiþ tüm texture'lar üzerinde döngüye gir.
-		for(auto iter = mLoadedTextureMap.begin(); iter != mLoadedTextureMap.end();)
-		{
-			// iter->second: Texture'ý tutan shared_ptr.
-			// .unique(): Bu shared_ptr'ýn referans sayýsýnýn 1 olup olmadýðýný kontrol eder.
-            // Eðer referans sayýsý 1 ise, bu demektir ki texture'ý sadece AssetManager tutuyor,
-			// oyundaki baþka hiçbir nesne (gemi, mermi vb.) kullanmýyor.
-            if (iter->second.use_count() == 1)
-			{
-				// Kullanýlmayan texture'ý konsola yazdýr.
-				// Haritadan bu texture'ý sil. erase(), silinen elemanýn bir sonrakini döndürür.
-				iter = mLoadedTextureMap.erase(iter);
-			}
-			else
-			{
-				// Eðer texture hala kullanýlýyorsa, bir sonraki elemana geç.
-				++iter;
-			}
-		}
-
-		for(auto iter =mLoadedFontMap.begin(); iter != mLoadedFontMap.end();)
-		{
-			if (iter->second.use_count() == 1)
-			{
-				iter = mLoadedFontMap.erase(iter);
-			}
-			else
-			{
-				++iter;
-			}
-		}
-
-		for(auto iter = mLoadedSoundBufferMap.begin(); iter != mLoadedSoundBufferMap.end();)
-		{
-			if (iter->second.use_count() == 1)
-			{
-				iter = mLoadedSoundBufferMap.erase(iter);
-			}
-			else
-			{
-				++iter;
-			}
-		}
-
-		for(auto iter = mLoadedShaderMap.begin(); iter != mLoadedShaderMap.end();)
-		{
-			if (iter->second.use_count() == 1)
-			{
-				iter = mLoadedShaderMap.erase(iter);
-			}
-			else
-			{
-				++iter;
-			}
-		}
+		// The cache holds one reference; an asset whose count stays at 1 is used by nothing else.
+		EvictIdleAssets(mLoadedTextureMap, mIdleTextureCycles);
+		EvictIdleAssets(mLoadedFontMap, mIdleFontCycles);
+		EvictIdleAssets(mLoadedSoundBufferMap, mIdleSoundBufferCycles);
+		EvictIdleAssets(mLoadedShaderMap, mIdleShaderCycles);
 	}
 	void AssetManager::Shutdown()
 	{
@@ -251,6 +233,10 @@ namespace ly
 		mLoadedTextureMap.clear();
 		mLoadedFontMap.clear();
 		mLoadedSoundBufferMap.clear();
+		mIdleTextureCycles.clear();
+		mIdleFontCycles.clear();
+		mIdleSoundBufferCycles.clear();
+		mIdleShaderCycles.clear();
 		mDefaultTexture.reset();
 	}
 }

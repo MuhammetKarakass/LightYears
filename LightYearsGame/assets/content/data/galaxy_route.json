@@ -1,0 +1,1300 @@
+{
+  "version": 1,
+  "generated": "2026-10-13",
+  "source": "NASA Exoplanet Archive pscomppars",
+  "acknowledgement": "This research has made use of the NASA Exoplanet Archive, which is operated by the California Institute of Technology, under contract with the National Aeronautics and Space Administration under the Exoplanet Exploration Program. Preferred citation: Christiansen et al. (2025).",
+  "stops": [
+    {
+      "id": "sol",
+      "name": "Sol",
+      "real": true,
+      "distancePc": 0.0,
+      "l": 0.0,
+      "b": 0.0,
+      "radiusKpc": 8.2,
+      "heightKpc": 0.02,
+      "azimuthRad": 0.0,
+      "star": {
+        "temperatureK": 5772.0,
+        "luminositySolar": 1.0,
+        "radiusSolar": 1.0,
+        "massSolar": 1.0,
+        "spectralType": "G2V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Earth",
+          "semiMajorAU": 1.0,
+          "radiusEarth": 1.0,
+          "massEarth": 1.0,
+          "eqTempK": 255.0,
+          "method": "Solar System reference"
+        },
+        {
+          "name": "Jupiter",
+          "semiMajorAU": 5.204,
+          "radiusEarth": 11.21,
+          "massEarth": 317.8,
+          "eqTempK": 110.0,
+          "method": "Solar System reference"
+        }
+      ]
+    },
+    {
+      "id": "gj-674",
+      "name": "GJ 674",
+      "real": true,
+      "distancePc": 4.549,
+      "l": -17.0,
+      "b": -6.782,
+      "radiusKpc": 8.196,
+      "heightKpc": 0.01946,
+      "azimuthRad": -0.0001611,
+      "star": {
+        "temperatureK": 3600.0,
+        "luminositySolar": 0.016,
+        "radiusSolar": 0.3646,
+        "massSolar": 0.35,
+        "spectralType": "M2.5",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "GJ 674 b",
+          "semiMajorAU": 0.039,
+          "radiusEarth": 3.33,
+          "massEarth": 11.09,
+          "eqTempK": 530.8,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "gj-682",
+      "name": "GJ 682",
+      "real": true,
+      "distancePc": 5.007,
+      "l": -14.02,
+      "b": -6.634,
+      "radiusKpc": 8.195,
+      "heightKpc": 0.01942,
+      "azimuthRad": -0.000147,
+      "star": {
+        "temperatureK": 3028.0,
+        "luminositySolar": 0.002,
+        "radiusSolar": 0.2983,
+        "massSolar": 0.27,
+        "spectralType": "M3.5 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "GJ 682 b",
+          "semiMajorAU": 0.08,
+          "radiusEarth": 1.93,
+          "massEarth": 4.4,
+          "eqTempK": 281.9,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 682 c",
+          "semiMajorAU": 0.176,
+          "radiusEarth": 2.89,
+          "massEarth": 8.7,
+          "eqTempK": 190.1,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "gj-667-c",
+      "name": "GJ 667 C",
+      "real": true,
+      "distancePc": 7.244,
+      "l": -8.158,
+      "b": 1.41,
+      "radiusKpc": 8.193,
+      "heightKpc": 0.02018,
+      "azimuthRad": -0.0001254,
+      "star": {
+        "temperatureK": 3350.0,
+        "luminositySolar": 0.01371,
+        "radiusSolar": 0.4119,
+        "massSolar": 0.33,
+        "spectralType": "M1.5 V",
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "GJ 667 C b",
+          "semiMajorAU": 0.05043,
+          "radiusEarth": 2.25,
+          "massEarth": 5.68,
+          "eqTempK": null,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 667 C c",
+          "semiMajorAU": 0.125,
+          "radiusEarth": 1.77,
+          "massEarth": 3.8,
+          "eqTempK": null,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 667 C f",
+          "semiMajorAU": 0.156,
+          "radiusEarth": 1.45,
+          "massEarth": 2.7,
+          "eqTempK": null,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 667 C e",
+          "semiMajorAU": 0.213,
+          "radiusEarth": 1.45,
+          "massEarth": 2.7,
+          "eqTempK": null,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 667 C g",
+          "semiMajorAU": 0.549,
+          "radiusEarth": 1.99,
+          "massEarth": 4.6,
+          "eqTempK": null,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "gj-680",
+      "name": "GJ 680",
+      "real": true,
+      "distancePc": 9.673,
+      "l": -17.92,
+      "b": -8.663,
+      "radiusKpc": 8.191,
+      "heightKpc": 0.01854,
+      "azimuthRad": -0.0003592,
+      "star": {
+        "temperatureK": 3563.0,
+        "luminositySolar": 0.03063,
+        "radiusSolar": 0.4593,
+        "massSolar": 0.456,
+        "spectralType": "K5",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "GJ 680 b",
+          "semiMajorAU": 10.14,
+          "radiusEarth": 12.0,
+          "massEarth": 7977.0,
+          "eqTempK": 36.57,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-136352",
+      "name": "HD 136352",
+      "real": true,
+      "distancePc": 14.68,
+      "l": -32.93,
+      "b": 7.381,
+      "radiusKpc": 8.188,
+      "heightKpc": 0.02189,
+      "azimuthRad": -0.0009667,
+      "star": {
+        "temperatureK": 5664.0,
+        "luminositySolar": 1.038,
+        "radiusSolar": 1.058,
+        "massSolar": 0.87,
+        "spectralType": "G4 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 136352 b",
+          "semiMajorAU": 0.0964,
+          "radiusEarth": 1.664,
+          "massEarth": 4.72,
+          "eqTempK": 905.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 136352 c",
+          "semiMajorAU": 0.1721,
+          "radiusEarth": 2.916,
+          "massEarth": 11.24,
+          "eqTempK": 677.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 136352 d",
+          "semiMajorAU": 0.425,
+          "radiusEarth": 2.562,
+          "massEarth": 8.82,
+          "eqTempK": 431.0,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-160691",
+      "name": "HD 160691",
+      "real": true,
+      "distancePc": 15.6,
+      "l": -19.94,
+      "b": -11.5,
+      "radiusKpc": 8.186,
+      "heightKpc": 0.01689,
+      "azimuthRad": -0.0006368,
+      "star": {
+        "temperatureK": 5773.0,
+        "luminositySolar": 1.899,
+        "radiusSolar": 1.33,
+        "massSolar": 1.13,
+        "spectralType": "G3 IV-V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 160691 d",
+          "semiMajorAU": 0.0952,
+          "radiusEarth": 3.23,
+          "massEarth": 10.49,
+          "eqTempK": 900.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 160691 e",
+          "semiMajorAU": 0.96,
+          "radiusEarth": null,
+          "massEarth": 2225.0,
+          "eqTempK": 327.7,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 160691 b",
+          "semiMajorAU": 1.5,
+          "radiusEarth": null,
+          "massEarth": 1367.0,
+          "eqTempK": 262.1,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 160691 c",
+          "semiMajorAU": 4.17,
+          "radiusEarth": null,
+          "massEarth": 1398.0,
+          "eqTempK": 157.2,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "gj-676-a",
+      "name": "GJ 676 A",
+      "real": true,
+      "distancePc": 16.03,
+      "l": -20.9,
+      "b": -9.542,
+      "radiusKpc": 8.185,
+      "heightKpc": 0.01734,
+      "azimuthRad": -0.0006888,
+      "star": {
+        "temperatureK": 3734.0,
+        "luminositySolar": 0.09068,
+        "radiusSolar": 0.69,
+        "massSolar": 0.626,
+        "spectralType": "M0",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "GJ 676 A d",
+          "semiMajorAU": 0.039,
+          "radiusEarth": 1.78,
+          "massEarth": 3.814,
+          "eqTempK": 757.4,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 676 A e",
+          "semiMajorAU": 0.181,
+          "radiusEarth": 2.47,
+          "massEarth": 6.674,
+          "eqTempK": 351.6,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 676 A b",
+          "semiMajorAU": 1.735,
+          "radiusEarth": 12.8,
+          "massEarth": 1841.0,
+          "eqTempK": 113.5,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "GJ 676 A c",
+          "semiMajorAU": 9.726,
+          "radiusEarth": 12.3,
+          "massEarth": 4288.0,
+          "eqTempK": 47.96,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-176986",
+      "name": "HD 176986",
+      "real": true,
+      "distancePc": 27.78,
+      "l": 24.36,
+      "b": -7.572,
+      "radiusKpc": 8.175,
+      "heightKpc": 0.01634,
+      "azimuthRad": 0.00139,
+      "star": {
+        "temperatureK": 4931.0,
+        "luminositySolar": 0.331,
+        "radiusSolar": 0.782,
+        "massSolar": 0.789,
+        "spectralType": "K2.5 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 176986 b",
+          "semiMajorAU": 0.06296,
+          "radiusEarth": null,
+          "massEarth": 1488.0,
+          "eqTempK": 767.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 176986 c",
+          "semiMajorAU": 0.1187,
+          "radiusEarth": null,
+          "massEarth": 2098.0,
+          "eqTempK": 558.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 176986 d",
+          "semiMajorAU": 0.2815,
+          "radiusEarth": 2.49,
+          "massEarth": 6.76,
+          "eqTempK": 363.0,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-147018",
+      "name": "HD 147018",
+      "real": true,
+      "distancePc": 40.43,
+      "l": -34.59,
+      "b": -8.441,
+      "radiusKpc": 8.167,
+      "heightKpc": 0.01407,
+      "azimuthRad": -0.00278,
+      "star": {
+        "temperatureK": 5441.0,
+        "luminositySolar": 0.7119,
+        "radiusSolar": 0.9379,
+        "massSolar": 0.927,
+        "spectralType": "G9 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 147018 b",
+          "semiMajorAU": 0.2388,
+          "radiusEarth": 13.4,
+          "massEarth": 674.0,
+          "eqTempK": 520.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 147018 c",
+          "semiMajorAU": 1.922,
+          "radiusEarth": 12.7,
+          "massEarth": 2080.0,
+          "eqTempK": 183.3,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-168443",
+      "name": "HD 168443",
+      "real": true,
+      "distancePc": 39.62,
+      "l": 20.81,
+      "b": 2.507,
+      "radiusKpc": 8.163,
+      "heightKpc": 0.02173,
+      "azimuthRad": 0.001723,
+      "star": {
+        "temperatureK": 5491.0,
+        "luminositySolar": 2.412,
+        "radiusSolar": 1.711,
+        "massSolar": 0.98,
+        "spectralType": "G5",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 168443 b",
+          "semiMajorAU": 0.292,
+          "radiusEarth": 12.6,
+          "massEarth": 2424.0,
+          "eqTempK": 641.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 168443 c",
+          "semiMajorAU": 2.842,
+          "radiusEarth": 12.2,
+          "massEarth": 5500.0,
+          "eqTempK": 205.5,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-156098",
+      "name": "HD 156098",
+      "real": true,
+      "distancePc": 48.25,
+      "l": -6.48,
+      "b": 3.084,
+      "radiusKpc": 8.152,
+      "heightKpc": 0.0226,
+      "azimuthRad": -0.000667,
+      "star": {
+        "temperatureK": 6419.0,
+        "luminositySolar": 11.63,
+        "radiusSolar": 2.757,
+        "massSolar": 1.29,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 156098 b",
+          "semiMajorAU": 0.167,
+          "radiusEarth": 4.12,
+          "massEarth": 15.89,
+          "eqTempK": 1258.0,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 156098 c",
+          "semiMajorAU": 8.415,
+          "radiusEarth": 12.8,
+          "massEarth": 1662.0,
+          "eqTempK": 177.2,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-159868",
+      "name": "HD 159868",
+      "real": true,
+      "distancePc": 55.85,
+      "l": -12.83,
+      "b": -6.313,
+      "radiusKpc": 8.146,
+      "heightKpc": 0.01386,
+      "azimuthRad": -0.001513,
+      "star": {
+        "temperatureK": 5534.0,
+        "luminositySolar": 3.595,
+        "radiusSolar": 2.13,
+        "massSolar": 1.19,
+        "spectralType": "G5 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 159868 c",
+          "semiMajorAU": 1.032,
+          "radiusEarth": 14.0,
+          "massEarth": 244.1,
+          "eqTempK": 383.4,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 159868 b",
+          "semiMajorAU": 2.32,
+          "radiusEarth": 13.3,
+          "massEarth": 704.9,
+          "eqTempK": 255.7,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-154857",
+      "name": "HD 154857",
+      "real": true,
+      "distancePc": 63.45,
+      "l": -26.71,
+      "b": -10.03,
+      "radiusKpc": 8.144,
+      "heightKpc": 0.008954,
+      "azimuthRad": -0.003448,
+      "star": {
+        "temperatureK": 5605.0,
+        "luminositySolar": 4.599,
+        "radiusSolar": 1.76,
+        "massSolar": 1.718,
+        "spectralType": "G5 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 154857 b",
+          "semiMajorAU": 1.29,
+          "radiusEarth": 13.3,
+          "massEarth": 778.7,
+          "eqTempK": 359.9,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 154857 c",
+          "semiMajorAU": 5.36,
+          "radiusEarth": 13.2,
+          "massEarth": 820.0,
+          "eqTempK": 154.9,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "hd-147873",
+      "name": "HD 147873",
+      "real": true,
+      "distancePc": 109.1,
+      "l": -14.01,
+      "b": 10.85,
+      "radiusKpc": 8.096,
+      "heightKpc": 0.04052,
+      "azimuthRad": -0.003204,
+      "star": {
+        "temperatureK": 5972.0,
+        "luminositySolar": 5.99,
+        "radiusSolar": 2.29,
+        "massSolar": 1.38,
+        "spectralType": "G1 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 147873 b",
+          "semiMajorAU": 0.522,
+          "radiusEarth": 12.8,
+          "massEarth": 1634.0,
+          "eqTempK": 603.2,
+          "method": "Radial Velocity"
+        },
+        {
+          "name": "HD 147873 c",
+          "semiMajorAU": 1.36,
+          "radiusEarth": 13.3,
+          "massEarth": 731.0,
+          "eqTempK": 373.7,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "wispit-2",
+      "name": "WISPIT 2",
+      "real": true,
+      "distancePc": 134.9,
+      "l": 29.64,
+      "b": -10.55,
+      "radiusKpc": 8.085,
+      "heightKpc": -0.004704,
+      "azimuthRad": 0.008114,
+      "star": {
+        "temperatureK": 4530.0,
+        "luminositySolar": 0.6761,
+        "radiusSolar": 1.3,
+        "massSolar": 1.08,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "WISPIT 2 c",
+          "semiMajorAU": 14.0,
+          "radiusEarth": 17.93,
+          "massEarth": 3178.0,
+          "eqTempK": 2050.0,
+          "method": "Imaging"
+        },
+        {
+          "name": "WISPIT 2 b",
+          "semiMajorAU": 57.0,
+          "radiusEarth": 17.93,
+          "massEarth": 1541.0,
+          "eqTempK": 33.46,
+          "method": "Imaging"
+        }
+      ]
+    },
+    {
+      "id": "hd-148797",
+      "name": "HD 148797",
+      "real": true,
+      "distancePc": 172.4,
+      "l": -29.99,
+      "b": -6.011,
+      "radiusKpc": 8.052,
+      "heightKpc": 0.001949,
+      "azimuthRad": -0.01064,
+      "star": {
+        "temperatureK": 6441.0,
+        "luminositySolar": 3.82,
+        "radiusSolar": 1.547,
+        "massSolar": 1.272,
+        "spectralType": "F6",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HD 148797 b",
+          "semiMajorAU": 0.2568,
+          "radiusEarth": 8.25,
+          "massEarth": 39.3,
+          "eqTempK": 762.0,
+          "method": "Transit"
+        },
+        {
+          "name": "HD 148797 c",
+          "semiMajorAU": 0.3536,
+          "radiusEarth": 8.362,
+          "massEarth": 39.6,
+          "eqTempK": 650.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "hat-p-46",
+      "name": "HAT-P-46",
+      "real": true,
+      "distancePc": 290.7,
+      "l": 24.53,
+      "b": 9.64,
+      "radiusKpc": 7.94,
+      "heightKpc": 0.06868,
+      "azimuthRad": 0.01499,
+      "star": {
+        "temperatureK": 6120.0,
+        "luminositySolar": 2.46,
+        "radiusSolar": 1.396,
+        "massSolar": 1.284,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HAT-P-46 b",
+          "semiMajorAU": 0.0577,
+          "radiusEarth": 14.39,
+          "massEarth": 156.7,
+          "eqTempK": 1458.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "hat-p-45",
+      "name": "HAT-P-45",
+      "real": true,
+      "distancePc": 298.6,
+      "l": 26.02,
+      "b": 5.982,
+      "radiusKpc": 7.934,
+      "heightKpc": 0.05112,
+      "azimuthRad": 0.01642,
+      "star": {
+        "temperatureK": 6330.0,
+        "luminositySolar": 2.512,
+        "radiusSolar": 1.319,
+        "massSolar": 1.259,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "HAT-P-45 b",
+          "semiMajorAU": 0.0452,
+          "radiusEarth": 15.98,
+          "massEarth": 283.5,
+          "eqTempK": 1652.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "k2-202",
+      "name": "K2-202",
+      "real": true,
+      "distancePc": 300.4,
+      "l": 12.94,
+      "b": -10.35,
+      "radiusKpc": 7.912,
+      "heightKpc": -0.03396,
+      "azimuthRad": 0.008366,
+      "star": {
+        "temperatureK": 5491.0,
+        "luminositySolar": 0.4622,
+        "radiusSolar": 0.9107,
+        "massSolar": 0.9715,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "K2-202 b",
+          "semiMajorAU": null,
+          "radiusEarth": 2.302,
+          "massEarth": 5.91,
+          "eqTempK": null,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "k2-237",
+      "name": "K2-237",
+      "real": true,
+      "distancePc": 315.0,
+      "l": -6.129,
+      "b": 9.234,
+      "radiusKpc": 7.891,
+      "heightKpc": 0.07054,
+      "azimuthRad": -0.004207,
+      "star": {
+        "temperatureK": 6180.0,
+        "luminositySolar": 2.01,
+        "radiusSolar": 1.236,
+        "massSolar": 1.256,
+        "spectralType": "F9 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "K2-237 b",
+          "semiMajorAU": 0.03552,
+          "radiusEarth": 16.06,
+          "massEarth": 434.2,
+          "eqTempK": 1759.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "toi-3474",
+      "name": "TOI-3474",
+      "real": true,
+      "distancePc": 420.1,
+      "l": -31.03,
+      "b": 6.518,
+      "radiusKpc": 7.845,
+      "heightKpc": 0.06769,
+      "azimuthRad": -0.02743,
+      "star": {
+        "temperatureK": 6020.0,
+        "luminositySolar": 1.86,
+        "radiusSolar": 1.256,
+        "massSolar": 1.121,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "TOI-3474 b",
+          "semiMajorAU": 0.0502,
+          "radiusEarth": 14.67,
+          "massEarth": 193.9,
+          "eqTempK": 1451.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "toi-3464",
+      "name": "TOI-3464",
+      "real": true,
+      "distancePc": 597.8,
+      "l": -28.59,
+      "b": 8.679,
+      "radiusKpc": 7.686,
+      "heightKpc": 0.1102,
+      "azimuthRad": -0.0368,
+      "star": {
+        "temperatureK": 6370.0,
+        "luminositySolar": 3.62,
+        "radiusSolar": 1.56,
+        "massSolar": 1.363,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "TOI-3464 b",
+          "semiMajorAU": 0.0515,
+          "radiusEarth": 13.76,
+          "massEarth": 397.3,
+          "eqTempK": 1693.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "corot-16",
+      "name": "CoRoT-16",
+      "real": true,
+      "distancePc": 732.4,
+      "l": 25.61,
+      "b": 1.101,
+      "radiusKpc": 7.546,
+      "heightKpc": 0.03407,
+      "azimuthRad": 0.04196,
+      "star": {
+        "temperatureK": 5650.0,
+        "luminositySolar": 0.3673,
+        "radiusSolar": 1.19,
+        "massSolar": 1.098,
+        "spectralType": "G5 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "CoRoT-16 b",
+          "semiMajorAU": 0.0618,
+          "radiusEarth": 13.11,
+          "massEarth": 170.0,
+          "eqTempK": 1196.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "ic-4651-9122",
+      "name": "IC 4651 9122",
+      "real": true,
+      "distancePc": 859.3,
+      "l": -19.92,
+      "b": -7.918,
+      "radiusKpc": 7.405,
+      "heightKpc": -0.09837,
+      "azimuthRad": -0.03917,
+      "star": {
+        "temperatureK": 4740.0,
+        "luminositySolar": 43.24,
+        "radiusSolar": 10.27,
+        "massSolar": 2.1,
+        "spectralType": null,
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "IC 4651 9122 b",
+          "semiMajorAU": 2.038,
+          "radiusEarth": 12.7,
+          "massEarth": 2002.0,
+          "eqTempK": 513.0,
+          "method": "Radial Velocity"
+        }
+      ]
+    },
+    {
+      "id": "corot-35",
+      "name": "CoRoT-35",
+      "real": true,
+      "distancePc": 1123.0,
+      "l": 33.4,
+      "b": -7.008,
+      "radiusKpc": 7.295,
+      "heightKpc": -0.117,
+      "azimuthRad": 0.08422,
+      "star": {
+        "temperatureK": 6390.0,
+        "luminositySolar": 2.304,
+        "radiusSolar": 1.65,
+        "massSolar": 1.01,
+        "spectralType": "F6 V",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "CoRoT-35 b",
+          "semiMajorAU": 0.0429,
+          "radiusEarth": 18.83,
+          "massEarth": 349.6,
+          "eqTempK": 1747.0,
+          "method": "Transit"
+        }
+      ]
+    },
+    {
+      "id": "kmt-2020-blg-0414l",
+      "name": "KMT-2020-BLG-0414L",
+      "real": true,
+      "distancePc": 1220.0,
+      "l": 2.816,
+      "b": -3.954,
+      "radiusKpc": 6.985,
+      "heightKpc": -0.06413,
+      "azimuthRad": 0.008561,
+      "star": {
+        "temperatureK": 3762.0,
+        "luminositySolar": 0.05765,
+        "radiusSolar": 0.5651,
+        "massSolar": 0.49,
+        "spectralType": "WD",
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "KMT-2020-BLG-0414L b",
+          "semiMajorAU": 2.07,
+          "radiusEarth": 1.2,
+          "massEarth": 1.87,
+          "eqTempK": null,
+          "method": "Microlensing"
+        },
+        {
+          "name": "KMT-2020-BLG-0414L c",
+          "semiMajorAU": 22.3,
+          "radiusEarth": 11.9,
+          "massEarth": 8581.0,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "ogle-2006-blg-109l",
+      "name": "OGLE-2006-BLG-109L",
+      "real": true,
+      "distancePc": 1510.0,
+      "l": -0.2086,
+      "b": -1.89,
+      "radiusKpc": 6.691,
+      "heightKpc": -0.0298,
+      "azimuthRad": -0.0008214,
+      "star": {
+        "temperatureK": 3854.0,
+        "luminositySolar": 0.06765,
+        "radiusSolar": 0.5835,
+        "massSolar": 0.51,
+        "spectralType": null,
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "OGLE-2006-BLG-109L b",
+          "semiMajorAU": 2.3,
+          "radiusEarth": 14.0,
+          "massEarth": 231.0,
+          "eqTempK": 82.0,
+          "method": "Microlensing"
+        },
+        {
+          "name": "OGLE-2006-BLG-109L c",
+          "semiMajorAU": 4.5,
+          "radiusEarth": 11.1,
+          "massEarth": 86.0,
+          "eqTempK": 59.0,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "moa-2010-blg-477l",
+      "name": "MOA-2010-BLG-477L",
+      "real": true,
+      "distancePc": 2300.0,
+      "l": 0.04598,
+      "b": -5.095,
+      "radiusKpc": 5.909,
+      "heightKpc": -0.1843,
+      "azimuthRad": 0.0003111,
+      "star": {
+        "temperatureK": 5950.0,
+        "luminositySolar": 0.2015,
+        "radiusSolar": 0.7259,
+        "massSolar": 0.67,
+        "spectralType": null,
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "MOA-2010-BLG-477L b",
+          "semiMajorAU": 2.0,
+          "radiusEarth": 13.6,
+          "massEarth": 480.0,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "kmt-2019-blg-1216l",
+      "name": "KMT-2019-BLG-1216L",
+      "real": true,
+      "distancePc": 2740.0,
+      "l": -4.43,
+      "b": -4.686,
+      "radiusKpc": 5.481,
+      "heightKpc": -0.2038,
+      "azimuthRad": -0.03849,
+      "star": {
+        "temperatureK": 3390.0,
+        "luminositySolar": 0.02637,
+        "radiusSolar": 0.4708,
+        "massSolar": 0.39,
+        "spectralType": null,
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "KMT-2019-BLG-1216L b",
+          "semiMajorAU": 2.44,
+          "radiusEarth": 5.98,
+          "massEarth": 29.88,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "ogle-2012-blg-0026l",
+      "name": "OGLE-2012-BLG-0026L",
+      "real": true,
+      "distancePc": 4019.0,
+      "l": 0.1949,
+      "b": 3.067,
+      "radiusKpc": 4.187,
+      "heightKpc": 0.235,
+      "azimuthRad": 0.003261,
+      "star": {
+        "temperatureK": 5977.0,
+        "luminositySolar": 1.262,
+        "radiusSolar": 1.048,
+        "massSolar": 1.06,
+        "spectralType": "G5 V",
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "OGLE-2012-BLG-0026L b",
+          "semiMajorAU": 4.0,
+          "radiusEarth": 7.72,
+          "massEarth": 46.1,
+          "eqTempK": null,
+          "method": "Microlensing"
+        },
+        {
+          "name": "OGLE-2012-BLG-0026L c",
+          "semiMajorAU": 4.8,
+          "radiusEarth": 13.9,
+          "massEarth": 270.0,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "ogle-2019-blg-0468l",
+      "name": "OGLE-2019-BLG-0468L",
+      "real": true,
+      "distancePc": 4400.0,
+      "l": 3.834,
+      "b": 2.336,
+      "radiusKpc": 3.825,
+      "heightKpc": 0.1994,
+      "azimuthRad": 0.07693,
+      "star": {
+        "temperatureK": 5490.0,
+        "luminositySolar": 0.7164,
+        "radiusSolar": 0.9355,
+        "massSolar": 0.92,
+        "spectralType": "G",
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "OGLE-2019-BLG-0468L c",
+          "semiMajorAU": 2.77,
+          "radiusEarth": 12.5,
+          "massEarth": 3248.0,
+          "eqTempK": null,
+          "method": "Microlensing"
+        },
+        {
+          "name": "OGLE-2019-BLG-0468L b",
+          "semiMajorAU": 3.29,
+          "radiusEarth": 13.1,
+          "massEarth": 1090.0,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "kmt-2021-blg-0171l",
+      "name": "KMT-2021-BLG-0171L",
+      "real": true,
+      "distancePc": 4600.0,
+      "l": 0.2661,
+      "b": -2.713,
+      "radiusKpc": 3.605,
+      "heightKpc": -0.1977,
+      "azimuthRad": 0.005919,
+      "star": {
+        "temperatureK": 5200.0,
+        "luminositySolar": 0.3702,
+        "radiusSolar": 0.8197,
+        "massSolar": 0.78,
+        "spectralType": null,
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "KMT-2021-BLG-0171L b",
+          "semiMajorAU": 3.5,
+          "radiusEarth": 3.35,
+          "massEarth": 11.2,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "kmt-2022-blg-1818l",
+      "name": "KMT-2022-BLG-1818L",
+      "real": true,
+      "distancePc": 5300.0,
+      "l": 3.214,
+      "b": -2.604,
+      "radiusKpc": 2.929,
+      "heightKpc": -0.2208,
+      "azimuthRad": 0.1015,
+      "star": {
+        "temperatureK": 5011.0,
+        "luminositySolar": 0.3895,
+        "radiusSolar": 0.8281,
+        "massSolar": 0.79,
+        "spectralType": null,
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "KMT-2022-BLG-1818L b",
+          "semiMajorAU": 2.6,
+          "radiusEarth": 13.0,
+          "massEarth": 1271.0,
+          "eqTempK": null,
+          "method": "Microlensing"
+        },
+        {
+          "name": "KMT-2022-BLG-1818L c",
+          "semiMajorAU": 12.6,
+          "radiusEarth": 13.2,
+          "massEarth": 114.4,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "ogle-2014-blg-1722l",
+      "name": "OGLE-2014-BLG-1722L",
+      "real": true,
+      "distancePc": 6400.0,
+      "l": -1.137,
+      "b": -3.039,
+      "radiusKpc": 1.815,
+      "heightKpc": -0.3194,
+      "azimuthRad": -0.06994,
+      "star": {
+        "temperatureK": 3405.0,
+        "luminositySolar": 0.02796,
+        "radiusSolar": 0.4804,
+        "massSolar": 0.4,
+        "spectralType": null,
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "OGLE-2014-BLG-1722L b",
+          "semiMajorAU": 1.5,
+          "radiusEarth": 8.59,
+          "massEarth": 55.3,
+          "eqTempK": null,
+          "method": "Microlensing"
+        },
+        {
+          "name": "OGLE-2014-BLG-1722L c",
+          "semiMajorAU": 1.7,
+          "radiusEarth": 11.0,
+          "massEarth": 83.7,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    },
+    {
+      "id": "kmt-2024-blg-0404l",
+      "name": "KMT-2024-BLG-0404L",
+      "real": true,
+      "distancePc": 7210.0,
+      "l": 2.953,
+      "b": -3.104,
+      "radiusKpc": 1.076,
+      "heightKpc": -0.3705,
+      "azimuthRad": 0.3519,
+      "star": {
+        "temperatureK": 2623.0,
+        "luminositySolar": 0.0009047,
+        "radiusSolar": 0.1457,
+        "massSolar": 0.09,
+        "spectralType": "M",
+        "estimated": true
+      },
+      "planets": [
+        {
+          "name": "KMT-2024-BLG-0404L b",
+          "semiMajorAU": 0.85,
+          "radiusEarth": 11.9,
+          "massEarth": 8658.0,
+          "eqTempK": null,
+          "method": "Microlensing"
+        },
+        {
+          "name": "KMT-2024-BLG-0404L c",
+          "semiMajorAU": null,
+          "radiusEarth": 4.33,
+          "massEarth": 17.3,
+          "eqTempK": null,
+          "method": "Microlensing"
+        }
+      ]
+    }
+  ]
+}

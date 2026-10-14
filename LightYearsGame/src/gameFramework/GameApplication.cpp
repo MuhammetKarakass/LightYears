@@ -4,6 +4,7 @@
 #include "gameplay/content/ShipContentCatalog.h"
 #include "level/ArenaTestLevel.h"
 #include "player/PlayerManager.h"
+#include "player/PlayerMovementComponent.h"
 #include "presentation/visual/GameVisualPipeline.h"
 
 #include <framework/AssetManager.h>
@@ -35,6 +36,7 @@ namespace ly
 		ly::perf::g_disableLights.store(false);
 
 		mDevOptions = ParseDevOptions();
+		PlayerMovementComponent::SetDevAutoPlay(mDevOptions.perfAutoPlay);
 		InitializeVisualPipeline();
 		if (mDevOptions.shipIndex >= 0)
 		{
@@ -68,6 +70,10 @@ namespace ly
 			else if (arg == "--visual-player-hull" && hasValue) options.playerHull = std::clamp(static_cast<float>(std::atof(__argv[++i])), 0.f, 1.f);
 			else if (arg == "--visual-ship" && hasValue) options.shipIndex = std::atoi(__argv[++i]);
 			else if (arg == "--visual-assets" && hasValue) options.visualAssets = __argv[++i];
+			else if (arg == "--perf-autoplay") options.perfAutoPlay = true;
+			else if (arg == "--galaxy-stop" && hasValue) options.galaxyStop = std::max(0, std::atoi(__argv[++i]));
+			else if (arg == "--orbit-speed-steps" && hasValue) options.orbitSpeedSteps = std::atoi(__argv[++i]);
+			else if (arg == "--warp" && hasValue) options.warpBeta = std::clamp(static_cast<float>(std::atof(__argv[++i])), 0.f, 0.99f);
 		}
 #endif
 		return options;
@@ -95,6 +101,13 @@ namespace ly
 		mVisualPipeline = std::make_unique<GameVisualPipeline>();
 		mVisualPipeline->Initialize(GetRenderWindow(), assetsDir, mDevOptions.colorScript);
 		mVisualPipeline->SetEnabled(!mDevOptions.visualOff);
+		mVisualPipeline->SetRouteStopIndex(static_cast<std::size_t>(mDevOptions.galaxyStop));
+		if (mDevOptions.orbitSpeedSteps != 0) mVisualPipeline->StepOrbitSpeed(mDevOptions.orbitSpeedSteps);
+		if (mDevOptions.warpBeta > 0.f)
+		{
+			// Screen up is the direction of travel for the dev warp; the ease starts from rest.
+			mVisualPipeline->SetWarp(mDevOptions.warpBeta, sf::Vector2f(0.f, -1.f));
+		}
 		if (mDevOptions.playerHull >= 0.f)
 		{
 			mVisualPipeline->SetPlayerHullOverride(mDevOptions.playerHull);
@@ -116,7 +129,7 @@ namespace ly
 		{
 			return false;
 		}
-		// F7 cycles the color script, F8 toggles the visual pipeline, F9 forces an asset reload. The keys are consumed so levels never see them;
+		// F7 cycles the color script, F8 toggles the visual pipeline, F9 forces an asset reload, Ö / Ç cycle the galaxy route stop, + / - the orbit speed. The keys are consumed so levels never see them;
 		// key repeat is ignored so holding a key does not flicker the pipeline.
 		static bool f7Down = false;
 		static bool f8Down = false;
@@ -139,6 +152,32 @@ namespace ly
 			{
 				if (!f9Down) mVisualPipeline->ForceReload();
 				f9Down = true;
+				return true;
+			}
+		}
+		else if (const auto* text = event.getIf<sf::Event::TextEntered>())
+		{
+			// O-umlaut (U+00F6/D6) / C-cedilla (U+00E7/C7) step back / forward along the galaxy route. Read as typed characters: on the Turkish layout these keys
+			// have no sf::Keyboard::Key code of their own.
+			if (text->unicode == 0xF6 || text->unicode == 0xD6)
+			{
+				mVisualPipeline->CycleRouteStop(-1);
+				return true;
+			}
+			if (text->unicode == 0xE7 || text->unicode == 0xC7)
+			{
+				mVisualPipeline->CycleRouteStop(1);
+				return true;
+			}
+			// + / - change the orbit speed of orbit stops. '*' and '=' also speed up: on the Turkish layout '+' needs Shift.
+			if (text->unicode == '+' || text->unicode == '*' || text->unicode == '=')
+			{
+				mVisualPipeline->StepOrbitSpeed(1);
+				return true;
+			}
+			if (text->unicode == '-')
+			{
+				mVisualPipeline->StepOrbitSpeed(-1);
 				return true;
 			}
 		}

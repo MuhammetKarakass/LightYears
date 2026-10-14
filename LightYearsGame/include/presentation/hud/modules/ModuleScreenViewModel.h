@@ -8,14 +8,14 @@
 
 namespace ly
 {
-	enum class ModuleZoneKind { None, Nose, Wings, Hull, Core, Engine, Sensor };
+	enum class ModuleZoneKind { None, Nose, Wings, Hull, Core, Engine, Sensor, AbilityBay };
 	enum class ModuleSideFeatureViewState { None, Unselected, Locked, Active, Unavailable };
 
 	// One installed placement or inventory item as the screen shows it.
 	struct ModuleEntryView
 	{
 		std::uint32_t instanceId{ 0 };
-		std::string name, abbreviation, family;
+		std::string name, abbreviation, family, rarity;
 		std::string description;
 		int level{ 1 }, levelCount{ 1 };
 		List<int> sizeLadder;
@@ -33,13 +33,16 @@ namespace ly
 		// 0 just started, 1 finished.
 		float rebootFraction{ 0.f };
 		bool held{ false };
+			// Installed instance ids whose module conflicts with this one; data only, the view decides how to mark them.
+			List<std::uint32_t> conflictingInstanceIds;
 
 		bool operator==(const ModuleEntryView& o) const
 		{
-			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && description == o.description && isSystem == o.isSystem &&
+			return instanceId == o.instanceId && name == o.name && abbreviation == o.abbreviation && family == o.family && rarity == o.rarity && description == o.description && isSystem == o.isSystem &&
 				level == o.level && levelCount == o.levelCount && sizeLadder == o.sizeLadder && sideFeatureRequiredCells == o.sideFeatureRequiredCells && sideFeatureState == o.sideFeatureState && sideFeatureName == o.sideFeatureName && sideFeatureDescription == o.sideFeatureDescription &&
 				cellCount == o.cellCount && variantIndex == o.variantIndex && cells == o.cells && bonusPercent == o.bonusPercent &&
-				rebooting == o.rebooting && rebootRemaining == o.rebootRemaining && rebootFraction == o.rebootFraction && held == o.held;
+				rebooting == o.rebooting && rebootRemaining == o.rebootRemaining && rebootFraction == o.rebootFraction && held == o.held &&
+					conflictingInstanceIds == o.conflictingInstanceIds;
 		}
 	};
 
@@ -59,10 +62,13 @@ namespace ly
 		// Zone bonus when legal; 0 means "no label" (never a warning).
 		int bonusPercent{ 0 };
 		std::string message;
+			// Installed instance ids that block the held module at the hovered cell (conflicts only).
+			List<std::uint32_t> conflictingInstanceIds;
 
 		bool operator==(const ModulePreviewView& o) const
 		{
-			return active == o.active && cells == o.cells && legal == o.legal && bonusPercent == o.bonusPercent && message == o.message;
+			return active == o.active && cells == o.cells && legal == o.legal && bonusPercent == o.bonusPercent && message == o.message &&
+					conflictingInstanceIds == o.conflictingInstanceIds;
 		}
 	};
 
@@ -73,6 +79,8 @@ namespace ly
 		int gridWidth{ 0 }, gridHeight{ 0 };
 		// Row-major, gridWidth * gridHeight.
 		List<ModuleZoneKind> cellZones;
+		// Row-major like cellZones; locked cells show their zone but take no modules.
+		List<char> cellLocked;
 		List<ModuleLegendEntry> legend;
 		List<ModuleEntryView> installed;
 		List<ModuleEntryView> inventory;
@@ -81,6 +89,9 @@ namespace ly
 		int heldRotation{ 0 };
 		// Last command failure text, shown briefly.
 		std::string statusMessage;
+		// Independent consumers keep cargo and installed labels alive during hover/preview changes.
+		UIRevision inventoryRevision;
+		UIRevision installedRevision;
 		UIRevision revision;
 	};
 }

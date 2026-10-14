@@ -15,7 +15,7 @@ namespace ly
 		constexpr float Bridge = Pitch - Inner - Inset;
 		constexpr float Chamfer = 6.f;
 		constexpr float NoseHeight = 34.f;
-		constexpr float FinOut = 30.f;
+		constexpr float TipOut = 14.f;
 		const sf::Color HoloCyan{ 70, 205, 255, 255 };
 		const sf::Color RimColor{ 180, 235, 255, 255 };
 		const sf::Color WhiteCyan{ 210, 248, 255, 255 };
@@ -170,9 +170,6 @@ namespace ly
 			mRows[i].outlineRight = std::max(mRows[i].right, std::min(mRows[i - 1].right, mRows[i + 1].right));
 		}
 
-		std::size_t finRow = 0;
-		for (std::size_t i = 0; i < mRows.size(); ++i)
-			if (mRows[i].outlineRight - mRows[i].outlineLeft > mRows[finRow].outlineRight - mRows[finRow].outlineLeft + 0.5f) finRow = i;
 
 		const auto buildSide = [&](bool left)
 		{
@@ -193,37 +190,25 @@ namespace ly
 				const float t = static_cast<float>(i) / steps;
 				push(cx + dir * half * t * (1.f + 0.35f * (1.f - t)), first.top - NoseHeight * (1.f - t));
 			}
+			// Swept outline: a row that reaches further out than the one above is joined to it by one straight sweep line
+			// (corner to corner), so wings read as swept surfaces instead of a staircase.
+			const auto outward = [&](std::size_t i) { return i > 0 && (edge(mRows[i]) - edge(mRows[i - 1])) * dir > 0.5f; };
+			const auto inwardNext = [&](std::size_t i) { return i + 1 < mRows.size() && (edge(mRows[i + 1]) - edge(mRows[i])) * dir < -0.5f; };
+			// A row that reaches further out than the one above and is followed by a narrower one is a wing tip: the leading
+			// edge runs straight into a point at mid-row and the trailing edge sweeps back in.
 			for (std::size_t i = 0; i < mRows.size(); ++i)
 			{
 				const RowSpan& r = mRows[i];
 				const float x = edge(r);
-				push(x, r.top);
-				if (i == finRow)
+				if (outward(i) && inwardNext(i)) push(x + dir * TipOut, r.top + (r.bottom - r.top) * 0.5f);
+				else if (i == 0 || outward(i)) push(x, r.top);
+				if (i + 1 == mRows.size())
 				{
-					push(x, r.top + 10.f);
-					push(x + dir * FinOut, r.top + 38.f);
-					push(x, r.top + 50.f);
+					push(x, r.bottom - 8.f);
+					push(x - dir * 8.f, r.bottom);
 				}
-				if (i + 1 < mRows.size())
-				{
-					const RowSpan& n = mRows[i + 1];
-					const float xn = edge(n);
-					if (std::abs(xn - x) < 0.5f) continue;
-					if ((xn - x) * dir > 0.f)
-					{
-						push(x, r.bottom - 28.f);
-						push(xn, n.top);
-					}
-					else
-					{
-						push(x, r.bottom);
-						push(xn, n.top + 28.f);
-					}
-				}
+				else if (!outward(i + 1)) push(x, r.bottom);
 			}
-			const RowSpan& last = mRows.back();
-			push(edge(last), last.bottom - 8.f);
-			push(edge(last) - dir * 8.f, last.bottom);
 			return pts;
 		};
 		mLeftProfile = buildSide(true);
@@ -288,8 +273,39 @@ namespace ly
 				if (!IsActive(x, y)) continue;
 				const float px = x * Pitch, py = y * Pitch;
 				const sf::Color zone = zoneAt(x, y);
-				Rect(mStaticBody, { px + 1.5f, py + 1.5f }, { Pitch - 3.f, Pitch - 3.f }, Alpha(zone, fl(58.f)), Alpha(zone, fl(32.f)));
-				const sf::Color tick = Alpha(Mul(zone, 1.25f), fl(42.f));
+				if (mData.locked.size() == mData.active.size() && mData.locked[static_cast<std::size_t>(y * mData.width + x)] != 0)
+				{
+					// Locked: the zone's color, dimmed, with hatching and a padlock. No module can go here yet.
+					const sf::Color dim = Mul(zone, 0.55f);
+					Rect(mStaticBody, { px + 2.f, py + 2.f }, { Pitch - 4.f, Pitch - 4.f }, Alpha(dim, fl(46.f)), Alpha(dim, fl(26.f)));
+					const sf::Color rim = Alpha(dim, fl(130.f));
+					const float lx0 = px + 2.f, lx1 = px + Pitch - 2.f, ly0 = py + 2.f, ly1 = py + Pitch - 2.f;
+					Seg(mStaticBody, { lx0, ly0 }, { lx1, ly0 }, 1.2f, rim);
+					Seg(mStaticBody, { lx0, ly1 }, { lx1, ly1 }, 1.2f, rim);
+					Seg(mStaticBody, { lx0, ly0 }, { lx0, ly1 }, 1.2f, rim);
+					Seg(mStaticBody, { lx1, ly0 }, { lx1, ly1 }, 1.2f, rim);
+					for (int k = 1; k <= 3; ++k)
+					{
+						const float t = static_cast<float>(k) * Pitch * 0.25f;
+						Seg(mStaticBody, { px + 2.f, py + t }, { px + t, py + 2.f }, 1.f, Alpha(dim, fl(40.f)));
+						Seg(mStaticBody, { px + Pitch - t, py + Pitch - 2.f }, { px + Pitch - 2.f, py + Pitch - t }, 1.f, Alpha(dim, fl(40.f)));
+					}
+					const float cx = px + Pitch * 0.5f, cy = py + Pitch * 0.5f + 3.f;
+					const sf::Color lockColor = Alpha(WhiteCyan, fl(185.f));
+					Rect(mStaticBody, { cx - 8.f, cy - 3.f }, { 16.f, 13.f }, lockColor, Alpha(lockColor, fl(140.f)));
+					Seg(mStaticBody, { cx - 5.f, cy - 3.f }, { cx - 5.f, cy - 10.f }, 2.f, lockColor);
+					Seg(mStaticBody, { cx - 5.f, cy - 10.f }, { cx + 5.f, cy - 10.f }, 2.f, lockColor);
+					Seg(mStaticBody, { cx + 5.f, cy - 10.f }, { cx + 5.f, cy - 3.f }, 2.f, lockColor);
+					continue;
+				}
+				Rect(mStaticBody, { px + 2.f, py + 2.f }, { Pitch - 4.f, Pitch - 4.f }, Alpha(zone, fl(150.f)), Alpha(zone, fl(96.f)));
+				const sf::Color edge = Alpha(Mul(zone, 1.25f), fl(215.f));
+				const float ex0 = px + 2.f, ex1 = px + Pitch - 2.f, ey0 = py + 2.f, ey1 = py + Pitch - 2.f;
+				Seg(mStaticBody, { ex0, ey0 }, { ex1, ey0 }, 1.5f, edge);
+				Seg(mStaticBody, { ex0, ey1 }, { ex1, ey1 }, 1.5f, edge);
+				Seg(mStaticBody, { ex0, ey0 }, { ex0, ey1 }, 1.5f, edge);
+				Seg(mStaticBody, { ex1, ey0 }, { ex1, ey1 }, 1.5f, edge);
+				const sf::Color tick = Alpha(Mul(zone, 1.35f), fl(190.f));
 				const float a = px + 5.f, b = px + Pitch - 5.f, c = py + 5.f, d = py + Pitch - 5.f;
 				Seg(mStaticBody, { a, c }, { a + 6.f, c }, 0.9f, tick);
 				Seg(mStaticBody, { a, c }, { a, c + 6.f }, 0.9f, tick);
@@ -299,8 +315,8 @@ namespace ly
 				Seg(mStaticBody, { a, d }, { a, d - 6.f }, 0.9f, tick);
 				Seg(mStaticBody, { b, d }, { b - 6.f, d }, 0.9f, tick);
 				Seg(mStaticBody, { b, d }, { b, d - 6.f }, 0.9f, tick);
-				if (IsActive(x + 1, y) && zoneAt(x + 1, y) != zone) Line(mStaticBody, { px + Pitch, py + 6.f }, { px + Pitch, py + Pitch - 6.f }, 1.f, Alpha(Lerp(zone, zoneAt(x + 1, y), 0.5f), fl(40.f)));
-				if (IsActive(x, y + 1) && zoneAt(x, y + 1) != zone) Line(mStaticBody, { px + 6.f, py + Pitch }, { px + Pitch - 6.f, py + Pitch }, 1.f, Alpha(Lerp(zone, zoneAt(x, y + 1), 0.5f), fl(40.f)));
+				if (IsActive(x + 1, y) && zoneAt(x + 1, y) != zone) Line(mStaticBody, { px + Pitch, py + 3.f }, { px + Pitch, py + Pitch - 3.f }, 2.f, Alpha(Mul(Lerp(zone, zoneAt(x + 1, y), 0.5f), 1.3f), fl(200.f)));
+				if (IsActive(x, y + 1) && zoneAt(x, y + 1) != zone) Line(mStaticBody, { px + 3.f, py + Pitch }, { px + Pitch - 3.f, py + Pitch }, 2.f, Alpha(Mul(Lerp(zone, zoneAt(x, y + 1), 0.5f), 1.3f), fl(200.f)));
 			}
 
 		// Voids inside a row span stay dark (normal blend, drawn after the additive hull light).
@@ -363,9 +379,12 @@ namespace ly
 		const float pulse = 0.85f + 0.15f * std::sin(t * 2.1f);
 		const auto fl = [flicker](float a) { return a * flicker; };
 
-		sf::VertexArray under{ sf::PrimitiveType::Triangles };
-		sf::VertexArray body{ sf::PrimitiveType::Triangles };
-		sf::VertexArray over{ sf::PrimitiveType::Triangles };
+		auto& under = mAnimatedUnder;
+		auto& body = mAnimatedBody;
+		auto& over = mAnimatedOver;
+		under.clear();
+		body.clear();
+		over.clear();
 
 		const float hullWidth = mHullRight - mHullLeft;
 		const float centerX = (mHullLeft + mHullRight) * 0.5f;
@@ -493,6 +512,7 @@ namespace ly
 
 		sf::RenderStates normal;
 		normal.transform.translate(GetResolvedRect().position);
+		normal.transform.scale({ mData.scale, mData.scale });
 		sf::RenderStates additive = normal;
 		additive.blendMode = sf::BlendAdd;
 		windowRef.draw(under, additive);

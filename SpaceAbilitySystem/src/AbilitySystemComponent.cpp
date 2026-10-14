@@ -123,6 +123,40 @@ namespace sas
 		});
 	}
 
+	bool AbilitySystemComponent::SetAbilityChargeBonus(AbilitySlot slot, int bonus)
+	{
+		return RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->SetAbilityChargeBonus(slot, bonus);
+		});
+	}
+
+	bool AbilitySystemComponent::SetAbilityChargeBonus(const std::string& abilityId, int bonus)
+	{
+		return RunOperation([&]() -> bool
+		{
+			return mAbilityRuntime &&
+				mAbilityRuntime->SetAbilityChargeBonus(abilityId, bonus);
+		});
+	}
+
+	int AbilitySystemComponent::GrantAbilityCharge(AbilitySlot slot, int amount)
+	{
+		return RunOperation([&]() -> int
+		{
+			return mAbilityRuntime ? mAbilityRuntime->GrantAbilityCharge(slot, amount) : 0;
+		});
+	}
+
+	int AbilitySystemComponent::GrantAbilityCharge(const std::string& abilityId, int amount)
+	{
+		return RunOperation([&]() -> int
+		{
+			return mAbilityRuntime ? mAbilityRuntime->GrantAbilityCharge(abilityId, amount) : 0;
+		});
+	}
+
 	void AbilitySystemComponent::ReduceAbilityCooldowns(
 		float amount,
 		bool includePrimaryFire

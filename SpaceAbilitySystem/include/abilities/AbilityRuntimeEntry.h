@@ -39,7 +39,8 @@ namespace sas
 				cooldownDuration,
 				mRuntimeState.GetActiveTimeRemaining(),
 				activeDuration,
-				mRuntimeState.GetCharges()
+				mRuntimeState.GetCharges(),
+				mRuntimeState.GetChargeCapacity(mDefinition.maxCharges)
 			};
 		}
 

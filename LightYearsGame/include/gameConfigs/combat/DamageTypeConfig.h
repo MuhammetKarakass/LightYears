@@ -110,5 +110,8 @@ namespace ly
 			"Effect.Status.Damage.Electric";
 		inline static constexpr char KineticEffectId[] =
 			"Effect.Status.Damage.Kinetic";
+		// Module-owned Armor Rend (Kinetic Breaker): a timed Armor multiplier on the target.
+		inline static constexpr char KineticArmorRendEffectId[] =
+			"Effect.Status.Damage.Kinetic.ArmorRend";
 	};
 }

@@ -2,6 +2,7 @@
 
 #include "gameplay/module/ModuleLoadout.h"
 #include "gameplay/tags/GameplayTagSchema.h"
+#include "gameplay/tags/GameplayTags.h"
 
 #include <set>
 #include <utility>
@@ -12,10 +13,26 @@ namespace ly
 	{
 		namespace
 		{
-			const ModuleSizeVariant* FindVariant(const ModuleDefinition& module, int variantIndex)
+			bool AreConflicting(const ModuleDefinition& left, const ModuleDefinition& right)
+				{
+					for (const sas::ContentId& id : left.conflictsWith) if (id == right.moduleId) return true;
+					for (const sas::ContentId& id : right.conflictsWith) if (id == left.moduleId) return true;
+					return false;
+				}
+
+				const ModuleSizeVariant* FindVariant(const ModuleDefinition& module, int variantIndex)
 			{
 				if (variantIndex < 0 || static_cast<std::size_t>(variantIndex) >= module.sizeVariants.size()) return nullptr;
 				return &module.sizeVariants[static_cast<std::size_t>(variantIndex)];
+			}
+
+			// F1 Parçalama: a placement may split only at the largest size and only while its side feature is the fragmentation switch
+			// that is usable at its level (so Trophy Core and every module without F1 in a shared pool stay whole).
+			bool CanFragment(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement)
+			{
+				if (!IsLargestCellCountVariant(module, placement.variantIndex) || !placement.sideFeatureId.IsValid() || !rules.sideFeatureLookup) return false;
+				const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup(placement.sideFeatureId);
+				return IsFragmentationSideFeature(feature) && IsSideFeatureUsableAtLevel(module, feature, placement.level);
 			}
 		}
 
@@ -23,6 +40,7 @@ namespace ly
 		{
 			const ModuleSizeVariant* variant = FindVariant(module, placement.variantIndex);
 			if (!variant) return {};
+			if (placement.fragmented) return placement.fragmentCells;
 			List<sf::Vector2i> cells = ModuleShapeRules::Rotate(variant->shape.cells, placement.rotationQuarterTurns);
 			for (sf::Vector2i& cell : cells)
 			{
@@ -76,21 +94,25 @@ namespace ly
 				return ModulePlacementFailure::InvalidSideFeature;
 			}
 			if (candidate.rotationQuarterTurns < 0 || candidate.rotationQuarterTurns > 3) return ModulePlacementFailure::InvalidRotation;
+			if (candidate.fragmented && !CanFragment(rules, *module, candidate)) return ModulePlacementFailure::FragmentationNotAllowed;
 
 			const List<sf::Vector2i> cells = GetCoveredCells(*module, candidate);
 			const GameplayTag* systemZone = nullptr;
-			if (module->systemCategory.IsValid() &&
-				!GameplayTagSchema::IsModuleAbilitySlotSystem(module->systemCategory))
+			if (module->systemCategory.IsValid())
 			{
 				systemZone = rules.zoneTable.FindSystemZone(module->systemCategory);
 				if (!systemZone) return ModulePlacementFailure::SystemZoneMismatch;
 			}
+			const bool isAbilitySlot = GameplayTagSchema::IsModuleAbilitySlotSystem(module->systemCategory);
 			for (const sf::Vector2i& cell : cells)
 			{
 				if (!rules.schematic.IsInBounds(cell.x, cell.y)) return ModulePlacementFailure::OutOfBounds;
 				const GameplayTag& zone = rules.schematic.GetZoneAt(cell.x, cell.y);
 				if (!zone.IsValid()) return ModulePlacementFailure::CellBlocked;
+				if (rules.schematic.IsLockedAt(cell.x, cell.y)) return ModulePlacementFailure::CellLocked;
 				if (systemZone && zone != *systemZone) return ModulePlacementFailure::SystemZoneMismatch;
+				// The ability bay is reserved for the Q/E/F/R slot modules.
+				if (!isAbilitySlot && zone == GameplayTags::Module::Zone::AbilityBay) return ModulePlacementFailure::SystemZoneMismatch;
 			}
 
 			std::set<std::pair<int, int>> taken;
@@ -98,6 +120,9 @@ namespace ly
 			{
 				taken.insert({ cell.x, cell.y });
 			}
+			// A fragmented placement needs exactly one distinct cell per fragment, one fragment for each cell of its largest variant.
+			if (candidate.fragmented && (taken.size() != cells.size() || cells.size() != FindVariant(*module, candidate.variantIndex)->shape.cells.size()))
+				return ModulePlacementFailure::InvalidFragmentCells;
 			bool duplicateSystem = false;
 			for (const ModulePlacement& other : installed)
 			{
@@ -105,6 +130,7 @@ namespace ly
 				const ModuleDefinition* otherModule = rules.lookup(other.moduleId);
 				if (!otherModule) continue;
 				if (other.moduleId == candidate.moduleId) return ModulePlacementFailure::DuplicateModule;
+				if (AreConflicting(*module, *otherModule)) return ModulePlacementFailure::ModuleConflict;
 				for (const sf::Vector2i& cell : GetCoveredCells(*otherModule, other))
 				{
 					if (taken.count({ cell.x, cell.y })) return ModulePlacementFailure::Overlap;
@@ -126,6 +152,20 @@ namespace ly
 			return CanPlace(rules, loadout.GetPlacements(), candidate, ignoredInstanceId);
 		}
 
+		List<std::uint32_t> FindConflictingInstances(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& candidate, std::uint32_t ignoredInstanceId)
+		{
+			List<std::uint32_t> conflicts;
+			const ModuleDefinition* module = rules.lookup ? rules.lookup(candidate.moduleId) : nullptr;
+			if (!module) return conflicts;
+			for (const ModulePlacement& other : installed)
+			{
+				if (ignoredInstanceId != 0 && other.instanceId == ignoredInstanceId) continue;
+				const ModuleDefinition* otherModule = rules.lookup ? rules.lookup(other.moduleId) : nullptr;
+				if (otherModule && AreConflicting(*module, *otherModule)) conflicts.push_back(other.instanceId);
+			}
+			return conflicts;
+		}
+
 		const char* Describe(ModulePlacementFailure failure)
 		{
 			switch (failure)
@@ -142,6 +182,11 @@ namespace ly
 			case ModulePlacementFailure::InvalidRotation: return "has a rotation outside 0..3";
 			case ModulePlacementFailure::InvalidLevel: return "has an invalid level";
 			case ModulePlacementFailure::InvalidSideFeature: return "has an invalid side feature";
+			case ModulePlacementFailure::CellLocked: return "covers a locked area";
+			case ModulePlacementFailure::ModuleConflict: return "conflicts with an installed module";
+			case ModulePlacementFailure::FragmentationNotAllowed: return "cannot be split into fragments";
+			case ModulePlacementFailure::InvalidFragmentCells: return "has an invalid fragment layout";
+			case ModulePlacementFailure::FragmentedPlacement: return "is split into fragments; move its fragments instead";
 			}
 			return "is invalid";
 		}

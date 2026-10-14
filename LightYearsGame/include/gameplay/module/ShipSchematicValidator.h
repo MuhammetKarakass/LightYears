@@ -14,11 +14,6 @@ namespace ly
 	class ShipSchematicValidator final
 	{
 	public:
-		// The schematic's total capacity includes installed physical systems.
-		static constexpr int kTotalCellCapacity = 46;
-		// Cells a ship offers to the player, excluding default-module cells.
-		static constexpr int kFreeCellCapacity = 26;
-
 		static bool Validate(
 			const ShipSchematic& schematic,
 			const List<ModuleDefinition>& modules,

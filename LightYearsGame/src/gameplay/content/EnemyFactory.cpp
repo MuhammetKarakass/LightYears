@@ -1,4 +1,5 @@
 #include "gameplay/content/EnemyFactory.h"
+#include "framework/debug/Profiler.h"
 
 #include "enemy/EnemyActor.h"
 #include "framework/World.h"
@@ -22,6 +23,7 @@ namespace ly::content
 		float encounterDamageMultiplier,
 		const EnemySpawnContext& spawnContext)
 	{
+		LY_PROFILE_SCOPE("Enemy.Spawn");
 		if (spawnContext.level < 1)
 		{
 			LY_GAME_ERROR("Cannot spawn enemy '%s': level must be at least one.", enemyId.c_str());

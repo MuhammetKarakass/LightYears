@@ -420,7 +420,7 @@ namespace
 			for (std::size_t variant = 0; variant < definition.sizeVariants.size(); ++variant) grantableVariants.insert({ id, static_cast<int>(variant) });
 		}
 		report.Check(grantableVariants.size() > grantable.size(), "test grant: some modules have more than one size variant");
-		report.Check(standardCount == 4 && grantable.size() == 15, "test grant: shipped catalog has four standard and fifteen content modules");
+		report.Check(standardCount == 11 && grantable.size() == 58, "test grant: shipped catalog has eleven standard and fifty-eight content modules");
 
 		const std::array<const char*, 6> shipIds{
 			"Ship.Player.Fighter.Basic", "Ship.Player.Breacher.Basic", "Ship.Player.Interceptor.Basic",

@@ -136,6 +136,7 @@ namespace ly
 
 	void Explosion::SpawnExplosionWithParams(World* world, const sf::Vector2f& location, const ExplosionParams& params)
 	{
+		LY_PROFILE_SCOPE("VFX.SpawnExplosion");
 		if (!world) return;
 
 		// throttle particle count when many actors are active to avoid spikes

@@ -101,6 +101,14 @@ namespace sas
 		bool SetAbilityLevel(AbilitySlot slot, int level);
 		bool LevelUpAbility(AbilityHandle handle);
 		bool LevelUpAbility(AbilitySlot slot);
+		// Runtime charge capacity added on top of the definition's maxCharges. Unlimited abilities ignore it.
+		bool SetAbilityChargeBonus(AbilitySlot slot, int bonus);
+		bool SetAbilityChargeBonus(const std::string& abilityId, int bonus);
+		bool ClearAbilityChargeBonus(AbilitySlot slot) { return SetAbilityChargeBonus(slot, 0); }
+		bool ClearAbilityChargeBonus(const std::string& abilityId) { return SetAbilityChargeBonus(abilityId, 0); }
+		// Fills missing charges of the ability up to its effective capacity. Returns the charges actually added.
+		int GrantAbilityCharge(AbilitySlot slot, int amount);
+		int GrantAbilityCharge(const std::string& abilityId, int amount);
 		void ReduceAbilityCooldowns(
 			float amount,
 			bool includePrimaryFire = true

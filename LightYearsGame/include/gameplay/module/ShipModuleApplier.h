@@ -6,14 +6,18 @@
 #include "gameplay/module/ModulePlacementRules.h"
 #include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/ModuleRuleAppliers.h"
+#include "gameplay/module/ModuleRunCounterRuntime.h"
 #include "gameplay/module/ModuleReactiveRuntime.h"
 #include "gameplay/module/ModuleShieldReflectionRuntime.h"
 #include "gameplay/module/generated/ModuleGeneratedRuntime.h"
+#include "gameplay/module/generated/ModuleOwnerBurstRuntime.h"
+#include "gameplay/module/generated/ModuleTargetSlowRuntime.h"
 #include "gameplay/module/ModuleSystemGate.h"
 #include "gameplay/ship/ShipRuntime.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 
 namespace ly
 {
@@ -69,9 +73,17 @@ namespace ly
 		std::uint64_t GetAppliedRevision() const { return mAppliedRevision; }
 		std::size_t GetOwnedHandleCount() const;
 		void SetGoldWallet(std::weak_ptr<RunGold> wallet) { mReactiveRuntime.SetGoldWallet(std::move(wallet)); }
+		// Receives the kill credit (stacks, damage ratio) the applier grants to a placement; the caller writes it to the loadout.
+		void SetRunCounterCreditSink(std::function<void(std::uint32_t, double)> sink) { mRunCounterCreditSink = std::move(sink); }
+		void SetKillCreditSink(std::function<void(std::uint32_t, double, double)> sink) { mKillCreditSink = std::move(sink); }
 		void SetRandomSeed(std::uint32_t seed) { mReactiveRuntime.SetRandomSeed(seed); }
+		// Smoldering Remains field from an Ember burst; the reactive runtime owns its lease.
+		void SpawnSmolderingField(const sf::Vector2f& origin, const ModuleThermalBurstRule& rule) { mReactiveRuntime.SpawnSmolderingField(origin, rule); }
+		std::size_t GetSmolderFieldCount() const { return mReactiveRuntime.GetOwnedSmolderFieldCount(); }
 		std::size_t GetGeneratedActorCount() const { return mGeneratedRuntime.GetActiveActorCount(); }
 		std::size_t GetGeneratedRuleCount() const { return mGeneratedRuntime.GetRuleCount(); }
+		std::size_t GetOwnerBurstRuleCount() const { return mOwnerBurstRuntime.GetRuleCount(); }
+		std::size_t GetOwnerBurstEchoCount() const { return mOwnerBurstRuntime.GetPendingEchoCount(); }
 
 	private:
 		struct OwnedModifier
@@ -86,8 +98,19 @@ namespace ly
 			std::size_t handle = 0;
 		};
 
+		struct OwnedChargeBonus
+		{
+			sas::AbilitySlot slot = sas::AbilitySlot::None;
+			int bonus = 0;
+		};
+
 		void Rebuild();
+		void OnOwnerAbilityUse(const List<GameplayTag>& tags);
+		void OnOwnerKill(sas::AbilitySlot slot, ControlTargetClass targetClass);
+		void RefreshKillEffects();
 		void SyncPrimaryWeaponModifiers();
+		// Spare Capacitor: each adjacent ability holds the largest bonus of the placements that credit it, set or cleared through the ASC.
+		void SyncChargeBonuses(const List<ResolvedModuleChargeRule>& rules);
 		static void SyncModifiers(sas::AttributeSystem& attributes, const List<sas::AttributeModifier>& desired, List<OwnedModifier>& owned);
 
 		ShipRuntime& mShipRuntime;
@@ -100,9 +123,13 @@ namespace ly
 		ModuleReactiveRuntime mReactiveRuntime;
 		ModuleShieldReflectionRuntime mShieldReflectionRuntime;
 		ModuleGeneratedRuntime mGeneratedRuntime;
+		ModuleOwnerBurstRuntime mOwnerBurstRuntime;
+		ModuleTargetSlowRuntime mTargetSlowRuntime;
+		ModuleRunCounterRuntime mRunCounterRuntime;
 		List<OwnedModifier> mOwnerHandles;
 		List<OwnedModifier> mShipHandles;
 		List<OwnedPrimaryModifier> mPrimaryHandles;
+		List<OwnedChargeBonus> mChargeBonuses;
 		ResolvedModuleEffects mResolved;
 		List<GameplayTag> mEnabledSystems;
 
@@ -114,6 +141,8 @@ namespace ly
 		ModuleSideFeatureLookup mSideFeatureLookup;
 		List<std::uint32_t> mKnownIds;
 		List<RebootEntry> mReboots;
+		std::function<void(std::uint32_t, double, double)> mKillCreditSink;
+		std::function<void(std::uint32_t, double)> mRunCounterCreditSink;
 
 		std::uint64_t mAppliedRevision = 0;
 		bool mHasApplied = false;

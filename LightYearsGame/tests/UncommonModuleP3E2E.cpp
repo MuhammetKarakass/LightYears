@@ -137,6 +137,43 @@ namespace
 		f.Equal("raising MaxHealth during replacement grants no free healing", beforeMax * .84f, health.GetHealth());
 		f.Remove(batch);
 	}
+	void KillWardChecks(Report& report, Application& application)
+	{
+		for (int level = 1; level <= 3; ++level)
+		{
+			Fixture f{ report, application };
+			const auto* module = f.rules.lookup("Module.Defense.LootShield.Uncommon");
+			report.Check(module && module->sideFeatures.size() == 2 && module->sharedPools.front().allowedFeatureIds.size() == 3, "Loot Shield restores its two-private three-shared choice contract");
+			const auto damage = [&f]()
+			{
+				auto& health = f.ship->GetHealthComponent();
+				health.ChangeHealth(health.GetMaxHealth() - health.GetHealth());
+				f.ship->GetShieldComponent().ChangeShield(-10000.f);
+				DamagePayload payload; payload.criticalPolicy = DamageCriticalPolicy::Disabled; payload.kineticStacks = 0;
+				const float before = health.GetHealth();
+				ApplyCombatDamage(*f.ship, 20.f, nullptr, {}, payload);
+				return before - health.GetHealth();
+			};
+			const float baseline = damage();
+			for (int variant : { 0, 1 })
+			{
+				const auto locked = f.Install("Module.Defense.LootShield.Uncommon", variant, level, "Module.SideFeature.LootShield.KillWard");
+				f.Kill(); f.Equal("Kill Ward remains locked below maximum size", baseline, damage()); f.Remove(locked);
+			}
+			const auto ward = f.Install("Module.Defense.LootShield.Uncommon", 2, level, "Module.SideFeature.LootShield.KillWard");
+			f.Equal("equipping Kill Ward does not start its window", baseline, damage());
+			const auto other = f.level->SpawnActor<PlayerSpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
+			f.Kill(other.get()); f.Equal("another owner's kill does not activate Kill Ward", baseline, damage());
+			f.Kill(); f.Equal("owner kill reduces incoming hull damage ten percent", baseline * .9f, damage());
+			f.ship->GetCombatRuntime().Tick(1.5f);
+			f.Kill(); f.Equal("another kill refreshes rather than stacks Kill Ward", baseline * .9f, damage());
+			f.ship->GetCombatRuntime().Tick(.6f);
+			f.Equal("refreshed Kill Ward survives the original expiry", baseline * .9f, damage());
+			f.ship->GetCombatRuntime().Tick(1.41f);
+			f.Equal("Kill Ward expires two seconds after the latest kill", baseline, damage());
+			f.Kill(); f.Remove(ward); f.Equal("removing active Kill Ward clears its damage reduction", baseline, damage());
+		}
+	}
 	void KillChecks(Report& report, Application& application)
 	{
 		Fixture f{ report, application };
@@ -168,16 +205,12 @@ namespace
 				f.Equal("Loot Shield reads size and level table on owner kill", shield.GetMaxShield() * fraction, shield.GetShield());
 				f.Remove(id);
 			}
-		const auto fuel = f.Install("Module.Defense.LootShield.Uncommon", 0, 1, "Module.SideFeature.LootShield.HuntFuel");
 		auto& energy = f.ship->GetEnergyComponent();
 		energy.Consume(10000.f);
+		const auto noFuel = f.Install("Module.Defense.LootShield.Uncommon", 2, 1);
 		f.Kill();
-		f.Equal("small Loot Shield keeps Hunt Fuel locked", 0.f, energy.GetEnergy());
-		f.Remove(fuel);
-		const auto bigFuel = f.Install("Module.Defense.LootShield.Uncommon", 2, 1, "Module.SideFeature.LootShield.HuntFuel");
-		f.Kill();
-		f.Equal("large Loot Shield restores Afterburner immediately", energy.GetMaxEnergy() * .12f, energy.GetEnergy());
-		f.Remove(bigFuel);
+		f.Equal("Loot Shield kills no longer restore Afterburner", 0.f, energy.GetEnergy());
+		f.Remove(noFuel);
 		const auto overflow = f.Install("Module.Defense.LootShield.Uncommon", 2, 1, "Module.SideFeature.LootShield.OverflowRecovery");
 		shield.ChangeShield(10000.f);
 		auto& health = f.ship->GetHealthComponent();
@@ -198,16 +231,13 @@ namespace
 		f.Remove(overflow);
 		const float speed = f.Owner(OwnerAttributeIds::AttackSpeed);
 		const auto o3 = f.Install("Module.Offense.SharpScale.Uncommon", 1, 1, "Module.SideFeature.Shared.O3");
+		f.Equal("O3 is a flat Attack Speed bonus from the moment it is equipped", speed + 4.f, f.Owner(OwnerAttributeIds::AttackSpeed));
 		f.Kill();
-		f.Equal("O3 uses the shared kill-trigger buff", speed + 10.f, f.Owner(OwnerAttributeIds::AttackSpeed));
-		f.ship->GetModuleTriggerRuntime().Tick(1.f);
-		f.Kill();
-		f.Equal("O3 refreshes instead of stacking", speed + 10.f, f.Owner(OwnerAttributeIds::AttackSpeed));
-		f.ship->GetModuleTriggerRuntime().Tick(1.5f);
-		f.Equal("refreshed O3 is still active before two seconds", speed + 10.f, f.Owner(OwnerAttributeIds::AttackSpeed));
-		f.ship->GetModuleTriggerRuntime().Tick(.6f);
-		f.Equal("O3 expires and releases its modifier", speed, f.Owner(OwnerAttributeIds::AttackSpeed));
+		f.Equal("O3 does not change on kill", speed + 4.f, f.Owner(OwnerAttributeIds::AttackSpeed));
+		f.ship->GetModuleTriggerRuntime().Tick(5.f);
+		f.Equal("O3 does not expire", speed + 4.f, f.Owner(OwnerAttributeIds::AttackSpeed));
 		f.Remove(o3);
+		f.Equal("O3 releases its modifier when removed", speed, f.Owner(OwnerAttributeIds::AttackSpeed));
 		const auto d3 = f.Install("Module.Defense.GritYourTeeth.Uncommon", 1, 1, "Module.SideFeature.Shared.D3");
 		health.ChangeHealth(50.f - health.GetHealth());
 		f.Kill();
@@ -215,7 +245,7 @@ namespace
 		f.Remove(d3);
 		for (int cycle = 0; cycle < 10; ++cycle)
 		{
-			const auto id = f.Install("Module.Offense.SharpScale.Uncommon", 1, 1, "Module.SideFeature.Shared.O3");
+			const auto id = f.Install("Module.Defense.GritYourTeeth.Uncommon", 1, 1, "Module.SideFeature.Shared.D3");
 			f.Kill();
 			f.Remove(id);
 			report.Check(f.ship->GetModuleTriggerRuntime().GetActiveModifierHandleCount() == 0 && f.ship->GetModuleApplier().GetOwnedHandleCount() == baseline, "ten equip/kill/remove cycles leave no extra handles");
@@ -266,7 +296,7 @@ namespace
 			f.ship->SetVelocity({ 300.f, 400.f });
 			f.ship->GetMovementComponent().Tick(.1f);
 			f.ship->GetModuleApplier().Tick(.1f);
-			f.Equal("Movement Rhythm uses actual moved distance including speed boosts", speedBase + 22.5f, f.Owner(OwnerAttributeIds::AttackSpeed));
+			f.Equal("Movement Rhythm uses complete steps above the two-hundred threshold", speedBase + 18.f, f.Owner(OwnerAttributeIds::AttackSpeed));
 			f.ship->SetVelocity({ 0.f, 0.f });
 			f.ship->GetMovementComponent().Tick(.1f);
 			f.ship->GetModuleApplier().Tick(.1f);
@@ -286,16 +316,18 @@ namespace
 		GameAbility* offense = abilities.GetAbility(sas::AbilitySlot::Ability3);
 		GameAbility* defense = abilities.GetAbility(sas::AbilitySlot::Ability4);
 		report.Check(offense && defense, "P3 uses actual Q/E/F/R loadout abilities");
-		const auto clock = f.Install("Module.Utility.HuntClock.Uncommon", 1, 3, "Module.SideFeature.HuntClock.FifthKill");
+		const auto clock = f.Install("Module.Offense.HuntClock.Uncommon", 1, 3, "Module.SideFeature.HuntClock.FifthKill");
 		report.Check(offense->TryActivate(), "real Offense ability activates for Hunt Clock");
 		if (offense->IsActive()) offense->Cancel(sas::AbilityEndReason::Completed);
 		report.Check(defense->TryActivate(), "real Defense ability activates for Hunt Clock");
 		if (defense->IsActive()) defense->Cancel(sas::AbilityEndReason::Completed);
 		for (int count = 1; count <= 5; ++count)
 		{
-			float expectedOffense = std::max(0.f, offense->GetCooldownRemaining() - .35f);
-			float expectedDefense = std::max(0.f, defense->GetCooldownRemaining() - .35f);
-			if (count == 5) { if (expectedOffense >= expectedDefense) expectedOffense *= .8f; else expectedDefense *= .8f; }
+			const bool offenseMatches = ModuleTriggerEventTagsMatch({ GameplayTags::Ability::Offense }, offense->GetDefinition().abilityTags);
+			const bool defenseMatches = ModuleTriggerEventTagsMatch({ GameplayTags::Ability::Offense }, defense->GetDefinition().abilityTags);
+			float expectedOffense = offense->GetCooldownRemaining() * (offenseMatches ? .93f : 1.f);
+			float expectedDefense = defense->GetCooldownRemaining() * (defenseMatches ? .93f : 1.f);
+			if (count == 5) { if (offenseMatches && (!defenseMatches || expectedOffense >= expectedDefense)) expectedOffense *= .8f; else if (defenseMatches) expectedDefense *= .8f; }
 			f.Kill();
 			f.Equal("Hunt Clock reduces pending offense cooldown and fifth-kill reward", expectedOffense, offense->GetCooldownRemaining());
 			f.Equal("Hunt Clock reduces pending defense cooldown and fifth-kill reward", expectedDefense, defense->GetCooldownRemaining());
@@ -337,7 +369,9 @@ namespace
 
 int main(int argc, char** argv)
 {
-	if (argc != 2) return 2;
+	if (argc != 2 && argc != 3) return 2;
+	const bool killsOnly = argc == 3 && std::string{ argv[2] } == "kills";
+	const bool wardOnly = argc == 3 && std::string{ argv[2] } == "killward";
 	Report report;
 	try
 	{
@@ -346,11 +380,13 @@ int main(int argc, char** argv)
 		std::string title = "Uncommon P3 E2E";
 		Application application{ sf::Vector2u{ 64u, 64u }, 32u, title, sf::Style::None };
 		application.GetRenderWindow().setVisible(false);
-		ContentChecks(report);
-		HealthChecks(report, application);
-		KillChecks(report, application);
-		StateChecks(report, application);
-		CooldownChecks(report, application);
+		if (wardOnly) KillWardChecks(report, application);
+		else
+		{
+			if (!killsOnly) { ContentChecks(report); HealthChecks(report, application); }
+			KillChecks(report, application);
+			if (!killsOnly) { KillWardChecks(report, application); StateChecks(report, application); CooldownChecks(report, application); }
+		}
 		report.artifact["passed"] = true;
 	}
 	catch (const std::exception& exception) { report.artifact["error"] = exception.what(); std::cerr << exception.what() << '\n'; }

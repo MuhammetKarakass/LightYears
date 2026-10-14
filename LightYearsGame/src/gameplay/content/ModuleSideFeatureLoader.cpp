@@ -124,13 +124,18 @@ namespace ly::content
 						throw std::runtime_error(context + ".levelCount must be a positive 32-bit integer");
 					definition.levelCount = static_cast<int>(levelCount);
 				}
-				definition.rules = ModuleLoader::ParseRulePackage(entry.at("rules"), context + ".rules", definition.levelCount, false);
+				definition.rules = ModuleLoader::ParseRulePackage(entry.at("rules"), context + ".rules", definition.levelCount, false, true);
+				// Main-package zoneRules feed AmplifierScale and LayoutOutOfZoneMainBonus, which never read side-feature packages.
+				if (!definition.rules.zoneRules.empty()) throw std::runtime_error(context + ".rules.zoneRules is not supported on side features");
+				// Activation bursts may be independent side features; shield and kill bursts patch the main source.
+				if (std::any_of(definition.rules.ownerBurstRules.begin(), definition.rules.ownerBurstRules.end(), [](const ModuleOwnerBurstRule& rule) { return rule.trigger != ModuleTriggerKind::AbilityActivated; })) throw std::runtime_error(context + ".rules.ownerBurstRules side sources require AbilityActivated; other bursts use modifiers");
 				ValidateModuleDescriptionTemplate(definition.description, definition.rules, context);
 				if (!ModuleLoader::ValidateRulePackageLevelCount(definition.rules, definition.levelCount, context,
 					&failure)) throw std::runtime_error(failure);
 				if (definition.rules.attributeModifiers.empty() && definition.rules.abilityModifiers.empty() &&
 					definition.rules.triggerBuffs.empty() && definition.rules.damageRules.empty() && definition.rules.zoneEffects.empty() &&
-					definition.rules.eventActions.empty() && definition.rules.ownerAttributeRules.empty() && definition.rules.movementFadeRules.empty() && definition.rules.shieldReflections.empty() && definition.rules.statusRules.Empty() && definition.rules.generatedRules.Empty())
+					definition.rules.eventActions.empty() && definition.rules.ownerAttributeRules.empty() && definition.rules.movementFadeRules.empty() && definition.rules.conditionalMovementRules.empty() && definition.rules.shieldReflections.empty() && definition.rules.shieldRules.empty() && definition.rules.statusRules.Empty() && definition.rules.generatedRules.Empty() && definition.rules.targetSlowRules.empty() &&
+					definition.rules.killStackCooldownRules.empty() && definition.rules.killStackDamageRules.empty() && definition.rules.sustainedSpeedRules.empty() && definition.rules.ownerBurstRules.empty() && definition.rules.ownerBurstModifiers.empty() && definition.rules.chargeRules.empty() && !definition.rules.fragmentation)
 					throw std::runtime_error(context + " rules must not be empty");
 				result.definitions.push_back(std::move(definition));
 			}

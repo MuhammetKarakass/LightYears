@@ -70,12 +70,14 @@ namespace ly
 		for (const ResolvedModuleCooldownRule& resolved : desired)
 		{
 			ScopedAbilityCooldownRule rule;
-			if (resolved.scope == ModuleCooldownScope::FamilyOfZone)
+			if (resolved.slot != sas::AbilitySlot::None) rule.requiredSlot = resolved.slot;
+			else if (resolved.scope == ModuleCooldownScope::FamilyOfZone)
 			{
 				if (!resolved.family.IsValid()) continue;
 				rule.requiredAbilityTags.push_back(resolved.family);
 			}
 			rule.multiplier = resolved.multiplier;
+			rule.minimumSeconds = resolved.minimumSeconds;
 			const std::size_t handle = mAbilities.AddScopedAbilityCooldownRule(std::move(rule));
 			if (generation != mGeneration)
 			{

@@ -4,31 +4,193 @@
     {
       "id": "Module.SidePool.Offense",
       "choices": [
-        { "sideFeatureId": "Module.SideFeature.Shared.O1", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.O2", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.O3", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.O4", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.O5", "weight": 1.0 }
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O1",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O2",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O3",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O4",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O5",
+          "weight": 1.0
+        }
       ]
     },
     {
       "id": "Module.SidePool.Defense",
       "choices": [
-        { "sideFeatureId": "Module.SideFeature.Shared.D1", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.D5", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.D3", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.D2", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.D4", "weight": 1.0 }
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D1",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D5",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D3",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D2",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D4",
+          "weight": 1.0
+        }
       ]
     },
     {
       "id": "Module.SidePool.General",
       "choices": [
-        { "sideFeatureId": "Module.SideFeature.Shared.G2", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.G3", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.G4", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.G5", "weight": 1.0 },
-        { "sideFeatureId": "Module.SideFeature.Shared.G1", "weight": 1.0 }
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G2",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G3",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G4",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G5",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G1",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.LuckyCast",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.RareOffense",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O1.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O2.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O3.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O4.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.O5.Rare",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.RareDefense",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D1.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D5.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D3.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D2.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.D4.Rare",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.RareGeneral",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G2.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G3.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G4.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G5.Rare",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.G1.Rare",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.RareSpecial",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R1",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R2",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R3",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R4",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R5",
+          "weight": 1.0
+        },
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.R6",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "Module.SidePool.RareFragment",
+      "choices": [
+        {
+          "sideFeatureId": "Module.SideFeature.Shared.F1.Rare",
+          "weight": 1.0
+        }
       ]
     }
   ],
@@ -41,7 +203,16 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [8.0, 8.0, 8.0] }
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AttackPower",
+            "operation": "Add",
+            "magnitude": [
+              8.0,
+              8.0,
+              8.0
+            ]
+          }
         ]
       }
     },
@@ -53,7 +224,16 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": [8.0, 8.0, 8.0] }
+          {
+            "target": "Owner",
+            "attributeId": "Owner.CriticalChance",
+            "operation": "Add",
+            "magnitude": [
+              8.0,
+              8.0,
+              8.0
+            ]
+          }
         ]
       }
     },
@@ -65,7 +245,16 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Add", "magnitude": [25.0, 25.0, 25.0] }
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MaxHealth",
+            "operation": "Add",
+            "magnitude": [
+              25.0,
+              25.0,
+              25.0
+            ]
+          }
         ]
       }
     },
@@ -77,7 +266,16 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Multiply", "magnitude": [1.08, 1.08, 1.08] }
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Max",
+            "operation": "Multiply",
+            "magnitude": [
+              1.08,
+              1.08,
+              1.08
+            ]
+          }
         ]
       }
     },
@@ -89,7 +287,16 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Owner", "attributeId": "Owner.AbilityHaste", "operation": "Add", "magnitude": [4.0, 4.0, 4.0] }
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AbilityHaste",
+            "operation": "Add",
+            "magnitude": [
+              4.0,
+              4.0,
+              4.0
+            ]
+          }
         ]
       }
     },
@@ -101,7 +308,16 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Ship", "attributeId": "Ship.Afterburner.Capacity", "operation": "Multiply", "magnitude": [1.10, 1.10, 1.10] }
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Afterburner.Capacity",
+            "operation": "Multiply",
+            "magnitude": [
+              1.1,
+              1.1,
+              1.1
+            ]
+          }
         ]
       }
     },
@@ -113,8 +329,26 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": [0.8, 0.8, 0.8] },
-          { "target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": [0.8, 0.8, 0.8] }
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedHorizontal",
+            "operation": "Add",
+            "magnitude": [
+              0.8,
+              0.8,
+              0.8
+            ]
+          },
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedVertical",
+            "operation": "Add",
+            "magnitude": [
+              0.8,
+              0.8,
+              0.8
+            ]
+          }
         ]
       }
     },
@@ -126,7 +360,16 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Owner", "attributeId": "Owner.Luck", "operation": "Add", "magnitude": [1.0, 1.0, 1.0] }
+          {
+            "target": "Owner",
+            "attributeId": "Owner.Luck",
+            "operation": "Add",
+            "magnitude": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
         ]
       }
     },
@@ -138,28 +381,34 @@
       "levelCount": 3,
       "rules": {
         "attributeModifiers": [
-          { "target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Multiply", "magnitude": [1.06, 1.06, 1.06] }
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Max",
+            "operation": "Multiply",
+            "magnitude": [
+              1.06,
+              1.06,
+              1.06
+            ]
+          }
         ]
       }
     },
     {
       "id": "Module.SideFeature.Shared.O3",
-      "displayName": "Hunt Rhythm",
-      "description": "On kill, Attack Speed +{Owner.AttackSpeed} for {trigger.0.durationSeconds}s.",
+      "displayName": "Offensive O3",
+      "description": "Attack Speed +{Owner.AttackSpeed}%.",
       "levelCount": 3,
       "rules": {
-        "triggerBuffs": [
+        "attributeModifiers": [
           {
-            "trigger": "KillConfirmed",
-            "durationSeconds": 2,
-            "modifiers": [
-              {
-                "target": "Owner",
-                "attributeId": "Owner.AttackSpeed",
-                "operation": "Add",
-                "magnitude": 10,
-                "affectedByZoneBonus": false
-              }
+            "target": "Owner",
+            "attributeId": "Owner.AttackSpeed",
+            "operation": "Add",
+            "magnitude": [
+              4.0,
+              4.0,
+              4.0
             ]
           }
         ]
@@ -183,16 +432,18 @@
       "poolId": "Module.SidePool.Defense"
     },
     {
-      "id": "Module.SideFeature.LootShield.HuntFuel",
-      "displayName": "Hunt Fuel",
-      "description": "On kill, restore {action.0.amountPercent}% of Afterburner capacity.",
+      "id": "Module.SideFeature.LootShield.KillWard",
+      "displayName": "Kill Ward",
+      "description": "On kill, damage you take is reduced by {damage.0.reductionPercent}% for {damage.0.activeDurationSeconds}s; kills refresh the duration.",
       "levelCount": 3,
       "rules": {
-        "eventActions": [
+        "damageRules": [
           {
-            "trigger": "KillConfirmed",
-            "kind": "RestoreAfterburner",
-            "amount": 0.12
+            "incoming": true,
+            "condition": "Always",
+            "damageMultiplier": 0.9,
+            "activeWhileTrigger": "KillConfirmed",
+            "activeDurationSeconds": 2
           }
         ]
       }
@@ -215,7 +466,7 @@
     {
       "id": "Module.SideFeature.HuntClock.FifthKill",
       "displayName": "Fifth Kill",
-      "description": "Every {action.0.everyCount} kills, reduce the longest cooldown by {action.0.amountPercent}%.",
+      "description": "Every {action.0.everyCount} kills, reduce the longest cooldown in this module's family by {action.0.amountPercent}%.",
       "levelCount": 3,
       "rules": {
         "eventActions": [
@@ -311,7 +562,7 @@
     {
       "id": "Module.SideFeature.SharpScale.CriticalRhythm",
       "displayName": "Critical Rhythm",
-      "description": "On critical hit, Attack Speed +{Owner.AttackSpeed} for {trigger.0.durationSeconds}s.",
+      "description": "On critical hit, Attack Speed +{Owner.AttackSpeed}% for {trigger.0.durationSeconds}s.",
       "levelCount": 3,
       "rules": {
         "triggerBuffs": [
@@ -347,21 +598,6 @@
       }
     },
     {
-      "id": "Module.SideFeature.ColdRetort.JarringEffect",
-      "displayName": "Jarring Effect",
-      "description": "Take {damage.0.reductionPercent}% less damage from enemies with a status effect.",
-      "levelCount": 3,
-      "rules": {
-        "damageRules": [
-          {
-            "incoming": true,
-            "condition": "SourceHasStatus",
-            "damageMultiplier": 0.88
-          }
-        ]
-      }
-    },
-    {
       "id": "Module.SideFeature.ThermalShockCoil.LingeringShock",
       "displayName": "Lingering Shock",
       "description": "Hits on enemies with Ignite and Cryo extend both durations by {duration.0.bonusSeconds}s.",
@@ -371,22 +607,6 @@
           "thermalCryoDurationBonuses": [
             {
               "bonusSeconds": 2
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "Module.SideFeature.ColdRetort.FrozenSpread",
-      "displayName": "Frozen Spread",
-      "description": "When you freeze an enemy, add {spread.0.stacks} Cryo to other enemies within {spread.0.radius} units. No freeze chain.",
-      "levelCount": 3,
-      "rules": {
-        "statusRules": {
-          "freezeSpreads": [
-            {
-              "radius": 400,
-              "stacks": 1
             }
           ]
         }
@@ -443,7 +663,7 @@
     {
       "id": "Module.SideFeature.ScatterCore.FourthMissile",
       "displayName": "Fourth Missile",
-      "description": "Add {salvo.0.projectileCount} guided missile if another different enemy is available.",
+      "description": "Add {salvo.0.projectileCount} guided missile; it can reuse an existing target.",
       "levelCount": 3,
       "rules": {
         "generatedRules": {
@@ -495,8 +715,8 @@
         "generatedRules": {
           "killExplosions": [
             {
-              "maxHealthFraction": 0.03,
-              "radius": 100,
+              "maxHealthFraction": 0.15,
+              "radius": 400,
               "maxActive": 32,
               "damageType": "Damage.Type.Thermal",
               "presentationId": "Presentation.Ability.ModuleGenerated.Explosion.Thermal",
@@ -616,6 +836,802 @@
             "fadeSeconds": 1.5
           }
         ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O1.Rare",
+      "displayName": "Offensive O1 Rare",
+      "description": "Attack Power +{Owner.AttackPower}.",
+      "poolId": "Module.SidePool.RareOffense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AttackPower",
+            "operation": "Add",
+            "magnitude": [
+              14.0,
+              14.0,
+              14.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O2.Rare",
+      "displayName": "Offensive O2 Rare",
+      "description": "Critical chance +{Owner.CriticalChance}%.",
+      "poolId": "Module.SidePool.RareOffense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.CriticalChance",
+            "operation": "Add",
+            "magnitude": [
+              14.0,
+              14.0,
+              14.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O3.Rare",
+      "displayName": "Offensive O3 Rare",
+      "description": "Attack Speed +{Owner.AttackSpeed}%.",
+      "poolId": "Module.SidePool.RareOffense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AttackSpeed",
+            "operation": "Add",
+            "magnitude": [
+              7.0,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O4.Rare",
+      "displayName": "Lasting Status Rare",
+      "description": "Applied status durations +{statusDuration.0.bonusSeconds}s.",
+      "poolId": "Module.SidePool.RareOffense",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "durationBonuses": [
+            {
+              "bonusSeconds": 1.5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.O5.Rare",
+      "displayName": "Opening Hit Rare",
+      "description": "First successful hit per enemy deals {damage.0.bonusPercent}% more damage.",
+      "poolId": "Module.SidePool.RareOffense",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "FirstTargetHit",
+            "damageMultiplier": 1.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D1.Rare",
+      "displayName": "Defensive D1 Rare",
+      "description": "Max Health +{Owner.MaxHealth}.",
+      "poolId": "Module.SidePool.RareDefense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MaxHealth",
+            "operation": "Add",
+            "magnitude": [
+              45.0,
+              45.0,
+              45.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D2.Rare",
+      "displayName": "Damage Guard Rare",
+      "description": "After taking damage, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
+      "poolId": "Module.SidePool.RareDefense",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "DamageTaken",
+            "durationSeconds": 2,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.Armor",
+                "operation": "Add",
+                "magnitude": 20
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D3.Rare",
+      "displayName": "Hunt Recovery Rare",
+      "description": "On kill, restore {action.0.amountPercent}% of Max Health.",
+      "poolId": "Module.SidePool.RareDefense",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "RestoreHealth",
+            "amount": 0.0175
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D4.Rare",
+      "displayName": "Shield Recharge Rare",
+      "description": "Shield regeneration +{Ship.Shield.Regen.bonusPercent}%.",
+      "poolId": "Module.SidePool.RareDefense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Regen",
+            "operation": "Multiply",
+            "magnitude": 1.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.D5.Rare",
+      "displayName": "Defensive D5 Rare",
+      "description": "Max Shield +{Ship.Shield.Max.bonusPercent}%.",
+      "poolId": "Module.SidePool.RareDefense",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Shield.Max",
+            "operation": "Multiply",
+            "magnitude": [
+              1.14,
+              1.14,
+              1.14
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G1.Rare",
+      "displayName": "Hunt Gold Rare",
+      "description": "On kill, gain {action.0.amount} Gold for this run.",
+      "poolId": "Module.SidePool.RareGeneral",
+      "levelCount": 3,
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "KillConfirmed",
+            "kind": "AwardGold",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G2.Rare",
+      "displayName": "Ability Haste Rare",
+      "description": "Ability Haste +{Owner.AbilityHaste}.",
+      "poolId": "Module.SidePool.RareGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.AbilityHaste",
+            "operation": "Add",
+            "magnitude": [
+              7.0,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G3.Rare",
+      "displayName": "Afterburner Rare",
+      "description": "Afterburner capacity +{Ship.Afterburner.Capacity.bonusPercent}%.",
+      "poolId": "Module.SidePool.RareGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Ship",
+            "attributeId": "Ship.Afterburner.Capacity",
+            "operation": "Multiply",
+            "magnitude": [
+              1.18,
+              1.18,
+              1.18
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G4.Rare",
+      "displayName": "General G4 Rare",
+      "description": "Horizontal and vertical movement ratings +{Owner.MoveSpeedHorizontal}.",
+      "poolId": "Module.SidePool.RareGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedHorizontal",
+            "operation": "Add",
+            "magnitude": [
+              1.4,
+              1.4,
+              1.4
+            ]
+          },
+          {
+            "target": "Owner",
+            "attributeId": "Owner.MoveSpeedVertical",
+            "operation": "Add",
+            "magnitude": [
+              1.4,
+              1.4,
+              1.4
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.G5.Rare",
+      "displayName": "General G5 Rare",
+      "description": "Luck +{Owner.Luck}.",
+      "poolId": "Module.SidePool.RareGeneral",
+      "levelCount": 3,
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.Luck",
+            "operation": "Add",
+            "magnitude": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.R1",
+      "displayName": "Guarded Strike",
+      "description": "Using a Defense ability raises your Primary shot damage by {damage.0.bonusPercent}% for {damage.0.activeDurationSeconds}s.",
+      "poolId": "Module.SidePool.RareSpecial",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "PrimaryShotOnly",
+            "damageMultiplier": 1.15,
+            "activeWhileTrigger": "AbilityActivated",
+            "activeWhileEventTags": [
+              "Ability.Defense"
+            ],
+            "activeDurationSeconds": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.R2",
+      "displayName": "Reactive Plating",
+      "description": "When your shield breaks, Armor +{Owner.Armor} for {trigger.0.durationSeconds}s.",
+      "poolId": "Module.SidePool.RareSpecial",
+      "levelCount": 3,
+      "rules": {
+        "triggerBuffs": [
+          {
+            "trigger": "ShieldBroken",
+            "durationSeconds": 4,
+            "modifiers": [
+              {
+                "target": "Owner",
+                "attributeId": "Owner.Armor",
+                "operation": "Add",
+                "magnitude": 30
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.R3",
+      "displayName": "Boss Hunter",
+      "description": "Deal {damage.0.bonusPercent}% more damage to boss-class enemies.",
+      "poolId": "Module.SidePool.RareSpecial",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "TargetIsBossClass",
+            "damageMultiplier": 1.1
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.R4",
+      "displayName": "Full Charge",
+      "description": "While your shield is full, deal {damage.0.bonusPercent}% more damage.",
+      "poolId": "Module.SidePool.RareSpecial",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "OwnerShieldFull",
+            "damageMultiplier": 1.08
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.R5",
+      "displayName": "Status Weaver",
+      "description": "Deal {damage.0.bonusPercent}% more damage to enemies with {damage.0.conditionCount} or more different status effects.",
+      "poolId": "Module.SidePool.RareSpecial",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "condition": "TargetStatusKindsAtLeast",
+            "conditionValue": 2,
+            "damageMultiplier": 1.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.R6",
+      "displayName": "Fleet Guard",
+      "description": "After you use a Movement ability, damage you take is reduced by {damage.0.reductionPercent}% for {damage.0.activeDurationSeconds}s.",
+      "poolId": "Module.SidePool.RareSpecial",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "incoming": true,
+            "condition": "Always",
+            "damageMultiplier": 0.85,
+            "activeWhileTrigger": "AbilityActivated",
+            "activeWhileEventTags": [
+              "Ability.Movement"
+            ],
+            "activeDurationSeconds": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.KineticBreaker.HairTrigger",
+      "displayName": "Hair Trigger",
+      "description": "Normal enemies spend Kinetic stacks at {kinetic.0.normalTargetThreshold} stacks; Elite and boss targets still need 4.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "kineticConsumes": [
+            {
+              "normalTargetThreshold": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.GiantSlayer.Toppler",
+      "displayName": "Toppler",
+      "description": "After your hit, targets with at least {targetSlow.0.minRatio} times your hull MaxHealth slow by {targetSlow.0.slowPercent}% for {targetSlow.0.seconds} sec; bosses by {targetSlow.0.bossSlowPercent}%.",
+      "levelCount": 3,
+      "rules": {
+        "targetSlowRules": [
+          {
+            "minRatio": 2.5,
+            "slowFraction": 0.3,
+            "bossSlowFraction": 0.15,
+            "seconds": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.GiantSlayer.Underdog",
+      "displayName": "Underdog",
+      "description": "Enemies with more MaxHealth than you deal {damage.0.reductionPercent}% less damage to you.",
+      "levelCount": 3,
+      "rules": {
+        "damageRules": [
+          {
+            "incoming": true,
+            "condition": "SourceMaxHealthGreaterThanOwner",
+            "damageMultiplier": 0.92
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.TrophyCore.BountyMark",
+      "displayName": "Bounty Mark",
+      "description": "Each {killCooldown.0.stacksPerStep} kill stacks cut the adjacent ability's cooldown by {killCooldown.0.step.0.percent}%, then {killCooldown.0.step.1.percent}%, {killCooldown.0.step.2.percent}%, {killCooldown.0.step.3.percent}%, and {killCooldown.0.tailPercent}% per step after that. Reductions add up; the cooldown never falls below {killCooldown.0.minimumSeconds} sec.",
+      "levelCount": 3,
+      "rules": {
+        "killStackCooldownRules": [
+          {
+            "stacksPerStep": 25,
+            "reductionPerStep": [
+              0.05,
+              0.04,
+              0.03,
+              0.02
+            ],
+            "tailReduction": 0.01,
+            "minimumSeconds": 1,
+            "adjacentAbilityLimit": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.TrophyCore.TrophyWall",
+      "displayName": "Trophy Wall",
+      "description": "{killDamage.0.percent}% of the kill bonus also applies to every Offense ability on the ship, not only the adjacent one.",
+      "levelCount": 3,
+      "rules": {
+        "killStackDamageRules": [
+          {
+            "family": "Ability.Offense",
+            "fraction": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.DyingStar.CoreCollapse",
+      "displayName": "Core Collapse",
+      "description": "{ownerBurstModifier.0.pullLeadSeconds} sec before the burst, enemies in its radius are pulled toward you with {ownerBurstModifier.0.pullImpulse} impulse. Bosses are not pulled.",
+      "levelCount": 3,
+      "rules": {
+        "ownerBurstModifiers": [
+          {
+            "pullImpulse": 400,
+            "pullLeadSeconds": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.DyingStar.RedGiant",
+      "displayName": "Red Giant",
+      "description": "Kills charge the star from {ownerBurstModifier.0.chargeRadius} units around you.",
+      "levelCount": 3,
+      "rules": {
+        "ownerBurstModifiers": [
+          {
+            "chargeRadius": 450
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.EmberAccumulation.AreaBlast",
+      "displayName": "Area Blast",
+      "description": "The burst also hits enemies within {thermalBurst.0.areaRadius} units of the target for {thermalBurst.0.areaDamagePercent}% of its damage. They get no Thermal stacks.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "thermalBursts": [
+            {
+              "areaRadius": 200,
+              "areaDamageFraction": 0.6
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.EmberAccumulation.SmolderingRemains",
+      "displayName": "Smoldering Remains",
+      "description": "The burst leaves a field for {thermalBurst.0.smolderSeconds} sec within {thermalBurst.0.smolderRadius} units that adds {thermalBurst.0.smolderStacksPerSecond} Thermal stack per second to enemies inside it.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "thermalBursts": [
+            {
+              "smolderSeconds": 3,
+              "smolderRadius": 150,
+              "smolderStacksPerSecond": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.KineticBreaker.ArmorRend",
+      "displayName": "Armor Rend",
+      "description": "After a spend, the target's Armor is reduced by {kinetic.0.rendPercent}% for {kinetic.0.rendSeconds} sec.",
+      "levelCount": 3,
+      "rules": {
+        "statusRules": {
+          "kineticConsumes": [
+            {
+              "rendFraction": 0.25,
+              "rendSeconds": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.EscapeVelocity.Afterglow",
+      "displayName": "Afterglow",
+      "description": "When you slow down, the sonic state lasts {sonic.0.lingerSeconds} sec longer.",
+      "levelCount": 3,
+      "rules": {
+        "sustainedSpeedRules": [
+          {
+            "lingerSeconds": 1.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.F1.Rare",
+      "displayName": "Fragmentation F1 Rare",
+      "description": "Fragmentable: at the largest size the module splits into single-cell fragments that can be placed anywhere. Zone bonus is proportional to the fragments in each zone; neighbours count from every fragment.",
+      "poolId": "Module.SidePool.RareFragment",
+      "levelCount": 3,
+      "rules": {
+        "fragmentation": true
+      }
+    },
+    {
+      "id": "Module.SideFeature.EscapeVelocity.SlipstreamControl",
+      "displayName": "Slipstream Control",
+      "description": "While sonic, turn capability increases by {sonic.0.turnBonusPercent}%.",
+      "levelCount": 3,
+      "rules": {
+        "sustainedSpeedRules": [
+          {
+            "turnCapabilityMultiplier": 1.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.ArcExtender.ArcDischarge",
+      "displayName": "Arc Discharge",
+      "levelCount": 3,
+      "description": "At {electricSpread.0.threshold} Electric stacks, spread {electricSpread.0.stacks} stacks to {electricSpread.0.targetCount} nearest enemies within {electricSpread.0.radius}; {electricSpread.0.cooldownSeconds}s cooldown per target.",
+      "rules": {
+        "statusRules": {
+          "electricSpreads": [
+            {
+              "threshold": 5,
+              "radius": 350,
+              "stacks": 2,
+              "targetCount": 2,
+              "cooldownSeconds": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.ArcExtender.StatusResonator",
+      "displayName": "Status Resonator",
+      "levelCount": 3,
+      "description": "Applied damage status durations +{statusDuration.0.increasePercent}%; includes Frozen, excludes freeze cooldown.",
+      "rules": {
+        "statusRules": {
+          "durationBonuses": [
+            {
+              "durationMultiplier": 1.2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.Shared.LuckyCast",
+      "displayName": "Lucky Cast",
+      "poolId": "Module.SidePool.General",
+      "levelCount": 3,
+      "description": "Luck +{Owner.Luck}; each Q/E/F/R use has Luck x {action.0.chancePerLuckPercent}% chance to refund {action.0.amountPercent}% cooldown.",
+      "rules": {
+        "attributeModifiers": [
+          {
+            "target": "Owner",
+            "attributeId": "Owner.Luck",
+            "operation": "Add",
+            "magnitude": 1,
+            "affectedByZoneBonus": false
+          }
+        ],
+        "eventActions": [
+          {
+            "trigger": "AbilityActivated",
+            "kind": "RefundUsedCooldown",
+            "amount": 0.25,
+            "chancePerLuck": 0.03
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.ArmorConversion.RapidAlloy",
+      "displayName": "Rapid Alloy",
+      "levelCount": 3,
+      "description": "Gain Attack Speed percentage points equal to {owner.0.amountPercent}% of total Armor.",
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "Armor",
+            "attributeId": "Owner.AttackSpeed",
+            "amount": 0.1
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.ArmorConversion.BalancedOutput",
+      "displayName": "Balanced Output",
+      "levelCount": 3,
+      "description": "The lower offensive power also gains {owner.0.amountPercent}% of the main conversion bonus; no feedback stacking.",
+      "rules": {
+        "ownerAttributeRules": [
+          {
+            "source": "ArmorLowerPower",
+            "attributeId": "Owner.Energy.Power",
+            "amount": 0.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.OvershieldLayer.ShieldRush",
+      "displayName": "Shield Rush",
+      "levelCount": 3,
+      "description": "While shield exceeds its normal maximum, movement speed +{conditionalMovement.0.increasePercent}%.",
+      "rules": {
+        "conditionalMovementRules": [
+          {
+            "condition": "OwnerShieldOverMax",
+            "multiplier": 1.2
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.OvershieldLayer.ReserveShell",
+      "displayName": "Reserve Shell",
+      "levelCount": 3,
+      "description": "While shield exceeds its normal maximum, damage taken x{damage.0.damageMultiplier}.",
+      "rules": {
+        "damageRules": [
+          {
+            "incoming": true,
+            "condition": "OwnerShieldOverMax",
+            "damageMultiplier": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.TemperedHull.BastionSlam",
+      "displayName": "Bastion Slam",
+      "levelCount": 3,
+      "description": "Defense use deals {ownerBurst.0.accumulatedArmorPercent}% of this module's accumulated Armor as Energy damage in a {ownerBurst.0.radius} radius. Cooldown: {ownerBurst.0.cooldownSeconds}s.",
+      "rules": {
+        "ownerBurstRules": [
+          {
+            "trigger": "AbilityActivated",
+            "requiredEventTags": [
+              "Ability.Defense"
+            ],
+            "radius": 300,
+            "accumulatedArmorCoefficient": 1.5,
+            "damageType": "Damage.Type.Energy",
+            "cooldownSeconds": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.TemperedHull.FieldMedic",
+      "displayName": "Field Medic",
+      "levelCount": 3,
+      "description": "Defense use heals {action.0.amountPercent}% Max Health over {action.0.durationSeconds}s. Cooldown: {action.0.cooldownSeconds}s.",
+      "rules": {
+        "eventActions": [
+          {
+            "trigger": "AbilityActivated",
+            "requiredEventTags": [
+              "Ability.Defense"
+            ],
+            "kind": "RestoreHealthOverTime",
+            "amount": 0.12,
+            "durationSeconds": 3,
+            "cooldownSeconds": 30
+          }
+        ]
+      }
+    },
+    {
+      "id": "Module.SideFeature.SpeedLance.EchoLance",
+      "displayName": "Echo Lance",
+      "levelCount": 3,
+      "description": "Fire a second lance after {speedLance.0.echoDelaySeconds}s in the same direction, with {speedLance.0.echoPercent}% of the first damage. Uses the original speed sample.",
+      "rules": {
+        "generatedRules": {
+          "speedLances": [
+            {
+              "echoDelaySeconds": 0.4,
+              "echoFraction": 0.5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Module.SideFeature.SpeedLance.ChargedLance",
+      "displayName": "Charged Lance",
+      "levelCount": 3,
+      "description": "The first target hit receives {speedLance.0.firstTargetElectricStacks} Electric stacks; other pierced targets receive none.",
+      "rules": {
+        "generatedRules": {
+          "speedLances": [
+            {
+              "firstTargetElectricStacks": 2
+            }
+          ]
+        }
       }
     }
   ]

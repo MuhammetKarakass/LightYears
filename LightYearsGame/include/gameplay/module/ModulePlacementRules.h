@@ -40,12 +40,17 @@ namespace ly
 		InvalidRotation,
 		DuplicateModule,
 		InvalidLevel,
-		InvalidSideFeature
+		InvalidSideFeature,
+		CellLocked,
+		ModuleConflict,
+		FragmentationNotAllowed,
+		InvalidFragmentCells,
+		FragmentedPlacement
 	};
 
 	namespace ModulePlacementRules
 	{
-		// Grid cells the placement covers (rotated shape + origin). Empty when the
+		// Grid cells the placement covers (rotated shape + origin, or its fragment cells when fragmented). Empty when the
 		// variant is invalid.
 		List<sf::Vector2i> GetCoveredCells(const ModuleDefinition& module, const ModulePlacement& placement);
 		bool SharesCellEdge(const ModuleDefinition& leftModule, const ModulePlacement& left, const ModuleDefinition& rightModule, const ModulePlacement& right);
@@ -64,6 +69,10 @@ namespace ly
 			const ModulePlacement& candidate,
 			std::uint32_t ignoredInstanceId = 0
 		);
+
+		// Installed instance ids whose module conflicts with the candidate's module, in installed order. The
+		// relation is symmetric and ignores geometry. ignoredInstanceId is skipped as in CanPlace.
+		List<std::uint32_t> FindConflictingInstances(const ModuleRulesContext& rules, const List<ModulePlacement>& installed, const ModulePlacement& candidate, std::uint32_t ignoredInstanceId = 0);
 
 		const char* Describe(ModulePlacementFailure failure);
 	}

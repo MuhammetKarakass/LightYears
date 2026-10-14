@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "visual/UniformWriter.h"
+
 namespace ly::visual
 {
 	namespace
@@ -524,14 +526,17 @@ namespace ly::visual
 					{
 						return;
 					}
-					shield->setUniform("uCenter", center);
-					shield->setUniform("uAxis", axis);
-					shield->setUniform("uRadii", radii);
-					shield->setUniform("uColor", sf::Glsl::Vec3(color.r / 255.f, color.g / 255.f, color.b / 255.f));
-					shield->setUniform("uStrength", strength);
-					shield->setUniform("uHit", hit);
-					shield->setUniform("uHitAngle", hitAngle);
-					shield->setUniform("uTime", time);
+					{
+						UniformWriter uniforms(*shield);
+						uniforms.Set("uCenter", center);
+						uniforms.Set("uAxis", axis);
+						uniforms.Set("uRadii", radii);
+						uniforms.Set("uColor", sf::Glsl::Vec3(color.r / 255.f, color.g / 255.f, color.b / 255.f));
+						uniforms.Set("uStrength", strength);
+						uniforms.Set("uHit", hit);
+						uniforms.Set("uHitAngle", hitAngle);
+						uniforms.Set("uTime", time);
+					}
 					const sf::Vector2f half(extent, extent);
 					DrawShaderQuad(target, *shield, sf::FloatRect(center - half, half * 2.f), Additive);
 				});

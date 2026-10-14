@@ -100,6 +100,11 @@ namespace ly
 		mPlayerMovement.Tick(deltaTime);
 		SpaceShip::Tick(deltaTime);
 		mCombatWindowRemaining = std::max(0.f, mCombatWindowRemaining - deltaTime);
+		if (deltaTime > 0.f && !IsInPortalTransit())
+		{
+			const float distance = GetVectorLength(GetVelocity()) * deltaTime;
+			if (distance > 0.f) onRunDistanceTraveled.Broadcast(distance);
+		}
 		mModuleApplier.Tick(deltaTime);
 		mModuleTriggerRuntime.Tick(deltaTime);
 

@@ -48,6 +48,7 @@ namespace ly
 	Player::~Player()
 	{
 		mShipProgression.onLevelChanged.UnbindAction(mShipLevelChangedHandle);
+		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock()) currentShip->onRunDistanceTraveled.UnbindAction(mRunDistanceHandle);
 		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock())
 		{
 			currentShip->onActorDestroyed.UnbindAction(mCurrentShipDestroyedHandle);
@@ -62,8 +63,10 @@ namespace ly
 		if (const shared_ptr<PlayerSpaceShip> currentShip = mCurrentSpaceShip.lock())
 		{
 			currentShip->onActorDestroyed.UnbindAction(mCurrentShipDestroyedHandle);
+			currentShip->onRunDistanceTraveled.UnbindAction(mRunDistanceHandle);
 		}
 		mCurrentShipDestroyedHandle.Reset();
+		mRunDistanceHandle.Reset();
 		if (mLifeCount > 0)
 		{
 			--mLifeCount;
@@ -97,6 +100,7 @@ namespace ly
 				this,
 				&Player::OnCurrentShipDestroyed
 			);
+			mRunDistanceHandle = ship->onRunDistanceTraveled.BindAction(this, &Player::OnRunDistanceTraveled);
 
 			ship->SetActorLocation(sf::Vector2f{ windowSize.x / 2.0f, windowSize.y - 100.0f });
 
@@ -499,6 +503,9 @@ namespace ly
 	void Player::ApplyModuleLoadout(PlayerSpaceShip& ship)
 	{
 		ship.GetModuleApplier().SetGoldWallet(mGold);
+		const weak_ptr<Player> weakPlayer = std::dynamic_pointer_cast<Player>(GetWeakPtr().lock());
+		ship.GetModuleApplier().SetRunCounterCreditSink([weakPlayer](std::uint32_t instanceId, double units) { if (const auto player = weakPlayer.lock(); player && !player->GetIsPendingDestroy()) player->mModuleLoadout.AddRunCounterCredit(instanceId, units); });
+		ship.GetModuleApplier().SetKillCreditSink([this](std::uint32_t instanceId, double stacks, double damageBonus) { mModuleLoadout.AddKillCredit(instanceId, stacks, damageBonus); });
 		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
 		if (!rules) return;
 		if (mModuleLoadout.GetRevision() == 0 && !mModuleLoadout.SeedDefaults(*rules))
@@ -586,6 +593,30 @@ namespace ly
 		return failure;
 	}
 
+	ModulePlacementFailure Player::TryInstallModuleFragments(std::uint32_t instanceId, const List<sf::Vector2i>& cells)
+	{
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules) return ModulePlacementFailure::OutOfBounds;
+		const ModulePlacementFailure failure = mModuleLoadout.InstallFragmented(*rules, instanceId, cells);
+		if (failure == ModulePlacementFailure::None)
+		{
+			if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		}
+		return failure;
+	}
+
+	ModulePlacementFailure Player::TryMoveModuleFragments(std::uint32_t instanceId, const List<sf::Vector2i>& cells)
+	{
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules) return ModulePlacementFailure::OutOfBounds;
+		const ModulePlacementFailure failure = mModuleLoadout.MoveFragments(*rules, instanceId, cells);
+		if (failure == ModulePlacementFailure::None)
+		{
+			if (const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock()) ApplyModuleLoadout(*ship);
+		}
+		return failure;
+	}
+
 	bool Player::TryUninstallModule(std::uint32_t instanceId)
 	{
 		bool removesLifeSupport = false;
@@ -616,6 +647,15 @@ namespace ly
 		mCurrentShipDestroyedHandle.Reset();
 		mShipProgression.ForgetDestroyedAttributes();
 		mCurrentSpaceShip = weak_ptr<PlayerSpaceShip>{};
+	}
+
+	void Player::OnRunDistanceTraveled(float distance)
+	{
+		const shared_ptr<PlayerSpaceShip> ship = mCurrentSpaceShip.lock();
+		if (!ship) return;
+		const std::optional<ModuleRulesContext> rules = BuildModuleRules();
+		if (!rules || !mModuleLoadout.AccrueRunCounters(*rules, distance)) return;
+		ApplyModuleLoadout(*ship);
 	}
 
 	void Player::ResetRunProgression()

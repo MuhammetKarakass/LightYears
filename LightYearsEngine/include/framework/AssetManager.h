@@ -30,6 +30,11 @@ namespace ly
 		Dictionary<std::string, shared_ptr<sf::Font>> mLoadedFontMap;
 		Dictionary<std::string, shared_ptr<sf::SoundBuffer>> mLoadedSoundBufferMap;
 		Dictionary<std::string, shared_ptr<sf::Shader>> mLoadedShaderMap;
+		// Consecutive clean cycles each cached asset has gone without an outside owner, per asset kind.
+		Dictionary<std::string, int> mIdleTextureCycles;
+		Dictionary<std::string, int> mIdleFontCycles;
+		Dictionary<std::string, int> mIdleSoundBufferCycles;
+		Dictionary<std::string, int> mIdleShaderCycles;
 		std::string mAssetRootDirectory;
 
 		shared_ptr<sf::Texture> mDefaultTexture;

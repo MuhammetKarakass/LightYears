@@ -1,6 +1,8 @@
 add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Application.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/FramePacer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/FramePacer.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/EntryPoint.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/EntryPoint.cpp
@@ -141,7 +143,18 @@ FetchContent_Declare(
     URL https://github.com/SFML/SFML/archive/refs/tags/3.1.0.zip
 )
 
+set(CMAKE_CXX_FLAGS_DEBUG "${LY_DEBUG_FLAGS_RENDER}")
 FetchContent_MakeAvailable(${SFML_LIB_NAME})
+set(CMAKE_CXX_FLAGS_DEBUG "${LY_DEBUG_FLAGS_ORIGINAL}")
+
+# SFML defines SFML_DEBUG whenever NDEBUG is missing, and then calls glGetError after every single OpenGL call.
+# That forces a driver round trip per call and made a Debug game run at ~10-20 FPS. Defining NDEBUG for the SFML
+# libraries only keeps our own code fully Debug (CRT, iterator checks, asserts) and leaves the ABI unchanged.
+foreach(ly_sfml_target IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio)
+    if(TARGET ${ly_sfml_target})
+        target_compile_definitions(${ly_sfml_target} PRIVATE $<$<CONFIG:Debug>:NDEBUG>)
+    endif()
+endforeach()
 
 target_link_libraries(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC sfml-graphics)
 target_link_libraries(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC sfml-audio)

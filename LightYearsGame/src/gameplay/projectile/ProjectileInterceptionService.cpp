@@ -12,7 +12,7 @@ namespace ly
 	)
 	{
 		World* world = projectile.GetWorld();
-		if (!world || projectile.GetIsPendingDestroy())
+		if (!world || projectile.GetIsPendingDestroy() || ProjectileInterceptionBoundary::GetLiveCount() == 0)
 		{
 			return false;
 		}

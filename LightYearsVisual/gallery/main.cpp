@@ -1,12 +1,17 @@
 // LightYearsVisualGallery: interactive viewer and headless capture for the LightYearsVisual library.
 //
-//   LightYearsVisualGallery [--assets <dir>] [--script <name>]
-//   LightYearsVisualGallery --capture <out.png> [--script <name>] [--frames N] [--size WxH] [--stress] [--assets <dir>]
+//   LightYearsVisualGallery [--assets <dir>] [--script <name>] [--galaxy <progress>] [--backdrop-only] [--warp <beta>]
+//   LightYearsVisualGallery --capture <out.png> [--script <name>] [--frames N] [--size WxH] [--stress] [--galaxy <progress>]
+//                           [--backdrop-only] [--warp <beta>] [--assets <dir>]
 //
+// --galaxy 0..1 sets the place on the route from the Sun (0) to Sgr A* (1); --backdrop-only draws only the sky.
+// --warp <beta> sets the ship speed (fraction of c, clamped to warp.maxBeta) for the star-field aberration.
 // Keys: Tab color script, B bloom, D dither, V virtual resolution, N nebula divisor (1/2/4/8), Space energy-budget
-// stress, Up/Down bloom strength, F8 reload assets (files are also polled), Esc quit.
+// stress, Up/Down bloom strength, F backdrop only, W warp toggle (0 or 0.9 upward), PageUp/PageDown galaxy progress
+// +-0.05, Home/End +-0.005, F8 reload assets (files are also polled), Esc quit.
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -28,6 +33,9 @@ namespace
 		std::string script;
 		int frames = 120;
 		bool stress = false;
+		bool backdropOnly = false;
+		float galaxy = 0.f;
+		float warp = 0.f;
 		sf::Vector2u size{1280u, 720u};
 	};
 
@@ -41,6 +49,9 @@ namespace
 			else if (arg == "--script" && hasValue) options.script = argv[++i];
 			else if (arg == "--assets" && hasValue) options.assets = argv[++i];
 			else if (arg == "--stress") options.stress = true;
+			else if (arg == "--backdrop-only") options.backdropOnly = true;
+			else if (arg == "--galaxy" && hasValue) options.galaxy = static_cast<float>(std::atof(argv[++i]));
+			else if (arg == "--warp" && hasValue) options.warp = static_cast<float>(std::atof(argv[++i]));
 			else if (arg == "--frames" && hasValue) options.frames = std::max(1, std::atoi(argv[++i]));
 			else if (arg == "--size" && hasValue)
 			{
@@ -74,6 +85,39 @@ namespace
 		}
 	}
 
+	// Digits with a comma every three places, e.g. 17300 -> 17,300.
+	std::string WithThousands(long long value)
+	{
+		const std::string digits = std::to_string(value);
+		std::string out;
+		for (std::size_t i = 0; i < digits.size(); ++i)
+		{
+			if (i > 0 && (digits.size() - i) % 3 == 0)
+			{
+				out += ',';
+			}
+			out += digits[i];
+		}
+		return out;
+	}
+
+	// Shared by the window title and the capture log.
+	std::string GalaxyText(const GalleryScene& scene)
+	{
+		const float progress = scene.GalaxyProgress();
+		const galaxy::GalacticPosition position = galaxy::RoutePosition(progress);
+		char text[64];
+		std::snprintf(text, sizeof text, "%.3f", static_cast<double>(progress));
+		const std::string progressText = text;
+		std::snprintf(text, sizeof text, "%.*f", position.radiusKpc < 0.1f ? 3 : 1, static_cast<double>(position.radiusKpc));
+		const std::string radiusText = text;
+		const long long distanceLy = std::llround(galaxy::DistanceToCenterLy(position));
+		std::snprintf(text, sizeof text, "%.2f", static_cast<double>(scene.WarpTarget()));
+		const std::string warpText = text;
+		return "galaxy p=" + progressText + " R=" + radiusText + " kpc " + WithThousands(distanceLy) + " ly | "
+			+ galaxy::ArmName(scene.Sky().nearestArm) + " | flags " + scene.FeatureFlags() + " | warp " + warpText;
+	}
+
 	int Capture(const Options& options, VisualAssets& assets)
 	{
 		VisualPipeline pipeline(assets);
@@ -86,6 +130,9 @@ namespace
 		{
 			scene.ToggleStress();
 		}
+		scene.SetGalaxyProgress(options.galaxy);
+		scene.SetBackdropOnly(options.backdropOnly);
+		scene.SetWarp(options.warp, sf::Vector2f(0.f, -1.f));
 		sf::RenderTexture target;
 		if (!target.resize(options.size))
 		{
@@ -113,10 +160,11 @@ namespace
 		const EnergyStats& stats = pipeline.Stats();
 		std::cout << "captured " << out.string() << " script=" << assets.Script().Name() << " frames=" << options.frames
 			<< " energy " << stats.drawn << "/" << stats.submitted << " culled=" << stats.culledByBudget << "\n";
+		std::cout << GalaxyText(scene) << "\n";
 		return 0;
 	}
 
-	void UpdateTitle(sf::RenderWindow& window, VisualAssets& assets, const VisualPipeline& pipeline, float fps)
+	void UpdateTitle(sf::RenderWindow& window, VisualAssets& assets, const VisualPipeline& pipeline, const GalleryScene& scene, float fps)
 	{
 		const PipelineSettings& s = assets.Settings();
 		const EnergyStats& e = pipeline.Stats();
@@ -124,7 +172,7 @@ namespace
 			+ std::to_string(pipeline.VirtualSize().y) + " | bloom " + (s.bloomEnabled ? "on" : "off") + " | dither " + (s.ditherEnabled ? "on" : "off")
 			+ " | nebula 1/" + std::to_string(s.nebulaResolutionDivisor)
 			+ " | energy " + std::to_string(e.drawn) + "/" + std::to_string(e.submitted) + " culled " + std::to_string(e.culledByBudget)
-			+ " | " + std::to_string(static_cast<int>(fps)) + " fps");
+			+ " | " + std::to_string(static_cast<int>(fps)) + " fps | " + GalaxyText(scene));
 	}
 
 	int RunWindow(const Options& options, VisualAssets& assets)
@@ -137,6 +185,9 @@ namespace
 			return 1;
 		}
 		GalleryScene scene(assets, pipeline);
+		scene.SetGalaxyProgress(options.galaxy);
+		scene.SetBackdropOnly(options.backdropOnly);
+		scene.SetWarp(options.warp, sf::Vector2f(0.f, -1.f));
 		sf::Clock clock;
 		float titleTimer = 0.f;
 		const int virtualHeights[] = {120, 180, 240, 360};
@@ -160,6 +211,12 @@ namespace
 					case sf::Keyboard::Key::B: s.bloomEnabled = !s.bloomEnabled; break;
 					case sf::Keyboard::Key::D: s.ditherEnabled = !s.ditherEnabled; break;
 					case sf::Keyboard::Key::Space: scene.ToggleStress(); break;
+					case sf::Keyboard::Key::F: scene.SetBackdropOnly(!scene.BackdropOnly()); break;
+					case sf::Keyboard::Key::W: scene.SetWarp(scene.WarpTarget() > 0.f ? 0.f : 0.9f, sf::Vector2f(0.f, -1.f)); break;
+					case sf::Keyboard::Key::PageUp: scene.SetGalaxyProgress(scene.GalaxyProgress() + 0.05f); break;
+					case sf::Keyboard::Key::PageDown: scene.SetGalaxyProgress(scene.GalaxyProgress() - 0.05f); break;
+					case sf::Keyboard::Key::Home: scene.SetGalaxyProgress(scene.GalaxyProgress() + 0.005f); break;
+					case sf::Keyboard::Key::End: scene.SetGalaxyProgress(scene.GalaxyProgress() - 0.005f); break;
 					case sf::Keyboard::Key::Up: s.bloomStrength = std::min(s.bloomStrength + 0.1f, 4.f); break;
 					case sf::Keyboard::Key::Down: s.bloomStrength = std::max(s.bloomStrength - 0.1f, 0.f); break;
 					case sf::Keyboard::Key::V:
@@ -207,7 +264,7 @@ namespace
 			if (titleTimer > 0.4f)
 			{
 				titleTimer = 0.f;
-				UpdateTitle(window, assets, pipeline, dt > 0.f ? 1.f / dt : 0.f);
+				UpdateTitle(window, assets, pipeline, scene, dt > 0.f ? 1.f / dt : 0.f);
 			}
 		}
 		return 0;

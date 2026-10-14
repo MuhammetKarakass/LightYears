@@ -234,19 +234,15 @@ namespace ly
 
 			if (dot >= cosHalfAngle)
 			{
-				if (auto* combatantTarget = dynamic_cast<Combatant*>(target.get()))
+				if (dynamic_cast<Combatant*>(target.get()))
 				{
-					DamageContext context;
-					context.source = owner;
-					context.target = target.get();
-					context.originalDamage = damagePerTick;
-					context.remainingDamage = damagePerTick;
-					context.damageTags = GetDamageTags().empty()
+					const List<GameplayTag> damageTags = GetDamageTags().empty()
 						? List<GameplayTag>{ DamageTypeSchema::Thermal }
 						: GetDamageTags();
-					context.payload = GetDamagePayload();
-
-					combatantTarget->ReceiveDamage(context);
+					DamagePayload payload = GetDamagePayload();
+					// The previous cone tick never rolled critical hits.
+					payload.criticalPolicy = DamageCriticalPolicy::Disabled;
+					ApplyCombatDamage(*target, damagePerTick, owner, damageTags, payload, GetSourceAbilityId(), GetSourceAbilityTags(), DamageDeliveryType::Beam, this);
 				}
 			}
 		}

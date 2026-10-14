@@ -20,6 +20,8 @@ namespace sas
 		float cooldown = 0.f;
 		float duration = 0.f;
 		int maxCharges = 1;
+		// Minimum gap between two charge uses. Applies only while the effective capacity exceeds one.
+		float chargeUseInterval = 0.5f;
 		ly::List<ly::GameplayTag> abilityTags;
 		ly::List<ly::GameplayTag> requiredOwnerTags;
 		ly::List<ly::GameplayTag> blockedOwnerTags;

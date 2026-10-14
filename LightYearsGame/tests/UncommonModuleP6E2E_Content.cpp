@@ -44,6 +44,8 @@ namespace uncommon_p6_e2e
 		reject("guided-type-without-damage", guidedWith("damageFraction", Json{}));
 		const Json mineBase{ { "damage", { 8, 10, 12 } }, { "spacing", 50 }, { "windowSeconds", 5 }, { "fuseSeconds", 1 }, { "radius", 100 }, { "maxActive", { 12, 14, 16 } }, { "damageType", "Damage.Type.Kinetic" } };
 		const auto mineWith = [&mineBase](const char* key, const Json& value) { Json rule = mineBase; if (value.is_null()) rule.erase(key); else rule[key] = value; return Json{ { "trailMines", Json::array({ rule }) } }; };
+		reject("mine-negative-ap-coefficient", mineWith("attackPowerCoefficient", -.1f));
+		reject("mine-short-ap-level-table", mineWith("attackPowerCoefficient", Json::array({ .3f, .35f })));
 		reject("mine-missing-damage-type", mineWith("damageType", Json{}));
 		reject("mine-non-damage-type-tag", mineWith("damageType", "Status.Damage.Ignite"));
 		reject("mine-type-without-damage", Json{ { "trailMines", Json::array({ Json{ { "cryoStacks", 1 }, { "damageType", "Damage.Type.Kinetic" } } }) } });

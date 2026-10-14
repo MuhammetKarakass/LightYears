@@ -21,10 +21,14 @@ namespace ly
 	{
 		int width{ 0 };
 		int height{ 0 };
+		// Screen scale of the 64-unit cell space (the view shrinks big grids to fit its area).
+		float scale{ 1.f };
 		// Row-major, width * height. Inactive cells are void (no slot).
 		std::vector<sf::Color> zoneColors;
 		std::vector<char> active;
 		std::vector<char> engine;
+		// Optional (same size as active): locked cells are drawn dim with a padlock and take no modules.
+		std::vector<char> locked;
 		std::vector<HologramModule> modules;
 		bool previewActive{ false };
 		bool previewLegal{ false };
@@ -76,6 +80,9 @@ namespace ly
 		sf::VertexArray mStaticOver{ sf::PrimitiveType::Triangles };
 		sf::VertexArray mHoles{ sf::PrimitiveType::Triangles };
 		sf::VertexArray mPlates{ sf::PrimitiveType::Triangles };
+		sf::VertexArray mAnimatedUnder{ sf::PrimitiveType::Triangles };
+		sf::VertexArray mAnimatedBody{ sf::PrimitiveType::Triangles };
+		sf::VertexArray mAnimatedOver{ sf::PrimitiveType::Triangles };
 		float mTime{ 0.f };
 	};
 }

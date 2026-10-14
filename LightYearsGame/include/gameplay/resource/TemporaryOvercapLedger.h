@@ -21,6 +21,7 @@ namespace ly
 	public:
 		void Add(const TemporaryOvercapRequest& request);
 		void Consume(float amount);
+		float RemoveSource(const std::string& sourceId);
 		void Reconcile(float currentValue, float normalMaximum);
 		// Returns the amount the owning resource should remove this frame.
 		float Tick(float deltaTime, float currentValue, float normalMaximum);

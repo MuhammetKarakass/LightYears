@@ -8,18 +8,19 @@
 
 namespace ly
 {
-	DamagePayload MakeModuleGeneratedDamagePayload(int cryoStacks, DamageSourceScalingPolicy scaling)
+	DamagePayload MakeModuleGeneratedDamagePayload(int cryoStacks, DamageSourceScalingPolicy scaling, int igniteStacks)
 	{
 		DamagePayload payload;
 		payload.criticalPolicy = DamageCriticalPolicy::Disabled;
 		payload.kineticStacks = 0;
 		payload.cryoBuildupPerHit = cryoStacks;
+		payload.igniteStacks = igniteStacks;
 		payload.skipModuleDamageRules = true;
 		payload.moduleTriggerPolicy = DamageModuleTriggerPolicy::Suppressed;
 		payload.sourceScalingPolicy = scaling;
 		return payload;
 	}
-	void ApplyModuleGeneratedAreaDamage(Actor& delivery, Actor& source, const std::shared_ptr<ModuleGeneratedLease>& lease, const sf::Vector2f& origin, float radius, float damage, const List<GameplayTag>& tags, int cryoStacks, DamageSourceScalingPolicy scaling)
+	void ApplyModuleGeneratedAreaDamage(Actor& delivery, Actor& source, const std::shared_ptr<ModuleGeneratedLease>& lease, const sf::Vector2f& origin, float radius, float damage, const List<GameplayTag>& tags, int cryoStacks, DamageSourceScalingPolicy scaling, int igniteStacks)
 	{
 		if (!source.GetWorld() || !lease || !lease->active) return;
 		const auto targets = targeting::FindOpposingCombatants(*source.GetWorld(), source, origin, radius, false);
@@ -29,7 +30,7 @@ namespace ly
 		{
 			if (!lease->active || source.GetIsPendingDestroy()) break;
 			if (target->GetIsPendingDestroy()) continue;
-			ApplyCombatDamage(*target, damage, &source, damageTags, MakeModuleGeneratedDamagePayload(cryoStacks, scaling), {}, {}, DamageDeliveryType::Area, &delivery);
+			ApplyCombatDamage(*target, damage, &source, damageTags, MakeModuleGeneratedDamagePayload(cryoStacks, scaling, igniteStacks), {}, {}, DamageDeliveryType::Area, &delivery);
 		}
 	}
 }

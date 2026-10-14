@@ -26,6 +26,17 @@ namespace ly::content
 			return { value.at(0).get<float>(), value.at(1).get<float>() };
 		}
 
+		ly::ControlTargetClass ParseControlTargetClass(const Json& value)
+		{
+			if (!value.is_string()) throw std::runtime_error("Ship controlTargetClass must be a string");
+			const std::string name = value.get<std::string>();
+			if (name == "Normal") return ly::ControlTargetClass::Normal;
+			if (name == "Elite") return ly::ControlTargetClass::Elite;
+			if (name == "MiniBoss") return ly::ControlTargetClass::MiniBoss;
+			if (name == "Boss") return ly::ControlTargetClass::Boss;
+			throw std::runtime_error("Unknown ship controlTargetClass: " + name);
+		}
+
 		void ParseMovement(
 			ShipMovementAttributes& movement,
 			const Json& object
@@ -136,6 +147,25 @@ namespace ly::content
 				}
 				legend[it.key()[0]] = zone;
 			}
+			// Optional: characters that mean "this zone, but locked".
+			std::map<char, GameplayTag> lockedLegend;
+			if (object.contains("lockedLegend"))
+			{
+				for (auto it = object.at("lockedLegend").begin(); it != object.at("lockedLegend").end(); ++it)
+				{
+					if (it.key().size() != 1 || it.key()[0] == '.' || legend.count(it.key()[0]))
+					{
+						throw std::runtime_error("Schematic lockedLegend keys must be a single character that is not '.' or in the legend");
+					}
+					const GameplayTag zone{ it.value().get<std::string>() };
+					std::string zoneFailure;
+					if (!GameplayTagSchema::Validate(zone, GameplayTagKind::ModuleZone, &zoneFailure))
+					{
+						throw std::runtime_error("Schematic lockedLegend '" + it.key() + "': " + zoneFailure);
+					}
+					lockedLegend[it.key()[0]] = zone;
+				}
+			}
 
 			const Json& rows = object.at("rows");
 			if (!rows.is_array() || rows.empty())
@@ -161,14 +191,23 @@ namespace ly::content
 					if (cell == '.')
 					{
 						schematic.cellZones.push_back(GameplayTag{});
+						schematic.cellLocked.push_back(0);
 						continue;
 					}
 					const auto found = legend.find(cell);
 					if (found == legend.end())
 					{
-						throw std::runtime_error(std::string("Schematic uses a character missing from its legend: ") + cell);
+						const auto lockedFound = lockedLegend.find(cell);
+						if (lockedFound == lockedLegend.end())
+						{
+							throw std::runtime_error(std::string("Schematic uses a character missing from its legend: ") + cell);
+						}
+						schematic.cellZones.push_back(lockedFound->second);
+						schematic.cellLocked.push_back(1);
+						continue;
 					}
 					schematic.cellZones.push_back(found->second);
+					schematic.cellLocked.push_back(0);
 				}
 			}
 
@@ -263,6 +302,11 @@ namespace ly::content
 			ParseMovement(loaded.definition.movementAttributes, object.at("movement"));
 			ParseEnergy(loaded.definition.energyAttributes, object.at("energy"));
 			ParseProgression(loaded.definition.progressionDefinition, object.at("progression"));
+			loaded.definition.controlTargetClass = ly::ControlTargetClass::Normal;
+			if (object.contains("controlTargetClass"))
+			{
+				loaded.definition.controlTargetClass = ParseControlTargetClass(object.at("controlTargetClass"));
+			}
 			loaded.definition.rewards = ParseRewards(object.value("rewards", Json::array()));
 			loaded.definition.baseOwnerAttributes.clear();
 			for (const Json& baseAttr : object.value("baseOwnerAttributes", Json::array()))

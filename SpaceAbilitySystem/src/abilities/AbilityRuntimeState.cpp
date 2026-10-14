@@ -25,28 +25,54 @@ namespace sas
 		return true;
 	}
 
+	int AbilityRuntimeState::GetChargeCapacity(int maxCharges) const
+	{
+		return maxCharges > 0 ? maxCharges + mChargeBonus : maxCharges;
+	}
+
 	bool AbilityRuntimeState::CanActivate(int maxCharges) const
 	{
-		return !mIsActive &&
-			!IsOnCooldown() &&
-			(maxCharges <= 0 || mCharges > 0);
+		if (mIsActive)
+		{
+			return false;
+		}
+		if (maxCharges <= 0)
+		{
+			return !IsOnCooldown();
+		}
+		if (mCharges <= 0)
+		{
+			return false;
+		}
+		// Single-charge abilities keep the original cooldown gate. Multi-charge
+		// abilities spend available charges without waiting for the recharge
+		// timer, but keep a short gap between uses.
+		if (GetChargeCapacity(maxCharges) > 1)
+		{
+			return mUseIntervalRemaining <= 0.f;
+		}
+		return !IsOnCooldown();
 	}
 
 	void AbilityRuntimeState::BeginActivation(float activeDuration, int maxCharges)
 	{
-		BeginActivation(activeDuration, maxCharges, false);
+		BeginActivation(activeDuration, maxCharges, false, 0.f);
 	}
 
 	void AbilityRuntimeState::BeginActivation(
 		float activeDuration,
 		int maxCharges,
-		bool deferActiveDuration
+		bool deferActiveDuration,
+		float chargeUseInterval
 	)
 	{
 		if (maxCharges > 0 && mCharges > 0)
 		{
 			--mCharges;
 		}
+		mUseIntervalRemaining = maxCharges > 0 && GetChargeCapacity(maxCharges) > 1
+			? std::max(0.f, chargeUseInterval)
+			: 0.f;
 		mIsActive = true;
 		mActiveTimeElapsed = 0.f;
 		mActiveDurationDeferred = deferActiveDuration;
@@ -92,9 +118,19 @@ namespace sas
 		return true;
 	}
 
-	void AbilityRuntimeState::StartCooldown(float cooldownDuration)
+	void AbilityRuntimeState::StartCooldown(float cooldownDuration, int maxCharges)
 	{
-		mCooldownRemaining = std::max(0.f, cooldownDuration);
+		if (maxCharges <= 0)
+		{
+			mCooldownRemaining = std::max(0.f, cooldownDuration);
+			return;
+		}
+		// Starts the single recharge timer only when a charge is missing and no
+		// timer is already running for an earlier spend.
+		if (mCharges < GetChargeCapacity(maxCharges) && mCooldownRemaining <= 0.f)
+		{
+			mCooldownRemaining = std::max(0.f, cooldownDuration);
+		}
 	}
 
 	void AbilityRuntimeState::EndActivation(float cooldownDuration, int maxCharges)
@@ -103,10 +139,68 @@ namespace sas
 		mActiveTimeElapsed = 0.f;
 		mActiveTimeRemaining = 0.f;
 		mActiveDurationDeferred = false;
-		mCooldownRemaining = cooldownDuration;
-		if (mCooldownRemaining <= 0.f && maxCharges > 0)
+		if (maxCharges <= 0)
 		{
-			mCharges = maxCharges;
+			mCooldownRemaining = cooldownDuration;
+			return;
+		}
+
+		const int capacity = GetChargeCapacity(maxCharges);
+		if (cooldownDuration <= 0.f)
+		{
+			// A zero cooldown returns the spent charge at once. A timer that is
+			// already running for other missing charges keeps its time.
+			mCharges = std::min(capacity, mCharges + 1);
+			SyncRecharge(0.f, capacity);
+			return;
+		}
+		SyncRecharge(cooldownDuration, capacity);
+	}
+
+	// Keeps the recharge invariant: a full pool has no timer, and a missing charge
+	// always has a running timer (or is restored at once when no cycle can run).
+	void AbilityRuntimeState::SyncRecharge(float cooldownDuration, int capacity)
+	{
+		if (mCharges >= capacity)
+		{
+			mCharges = capacity;
+			mCooldownRemaining = 0.f;
+			return;
+		}
+		if (mCooldownRemaining > 0.f)
+		{
+			return;
+		}
+		if (cooldownDuration > 0.f)
+		{
+			mCooldownRemaining = cooldownDuration;
+			return;
+		}
+		mCharges = capacity;
+	}
+
+	// Shared by every path that drains the recharge timer (tick, cooldown
+	// reduction, refunds). Each completed cycle restores exactly one charge.
+	void AbilityRuntimeState::AdvanceRecharge(float amount, float cooldownDuration, int maxCharges)
+	{
+		if (maxCharges <= 0)
+		{
+			mCooldownRemaining = std::max(0.f, mCooldownRemaining - amount);
+			return;
+		}
+
+		const int capacity = GetChargeCapacity(maxCharges);
+		float remaining = amount;
+		while (mCooldownRemaining > 0.f && remaining >= mCooldownRemaining)
+		{
+			remaining -= mCooldownRemaining;
+			mCooldownRemaining = 0.f;
+			mCharges = std::min(capacity, mCharges + 1);
+			SyncRecharge(cooldownDuration, capacity);
+		}
+		if (mCooldownRemaining > 0.f)
+		{
+			mCooldownRemaining = std::max(0.f, mCooldownRemaining - remaining);
 		}
 	}
 
@@ -123,13 +217,20 @@ namespace sas
 
 		const float previousCooldownRemaining = mCooldownRemaining;
 		const int previousCharges = mCharges;
-		mCooldownRemaining = std::min(mCooldownRemaining, cooldownDuration);
-		mCooldownRemaining = std::max(0.f, mCooldownRemaining - deltaTime);
-		if (mCooldownRemaining <= 0.f && maxCharges > 0)
-		{
-			mCharges = maxCharges;
-		}
+		// A timer longer than the current duration is clamped down to it. The
+		// clamped time still counts as elapsed, so the clamp cannot strand a charge.
+		const float clampedTime = std::max(0.f, mCooldownRemaining - cooldownDuration);
+		AdvanceRecharge(deltaTime + clampedTime, cooldownDuration, maxCharges);
 		return previousCooldownRemaining != mCooldownRemaining || previousCharges != mCharges;
+	}
+
+	void AbilityRuntimeState::TickUseInterval(float deltaTime)
+	{
+		if (mUseIntervalRemaining <= 0.f)
+		{
+			return;
+		}
+		mUseIntervalRemaining = std::max(0.f, mUseIntervalRemaining - std::max(0.f, deltaTime));
 	}
 
 	bool AbilityRuntimeState::TickActiveDuration(float deltaTime)
@@ -143,14 +244,67 @@ namespace sas
 		return previousActiveTimeRemaining != mActiveTimeRemaining;
 	}
 
-	bool AbilityRuntimeState::ReduceCooldown(float amount)
+	bool AbilityRuntimeState::ReduceCooldown(float amount, float cooldownDuration, int maxCharges)
 	{
 		if (amount <= 0.f || mCooldownRemaining <= 0.f)
 		{
 			return false;
 		}
 		const float previousCooldownRemaining = mCooldownRemaining;
-		mCooldownRemaining = std::max(0.f, mCooldownRemaining - amount);
-		return previousCooldownRemaining != mCooldownRemaining;
+		const int previousCharges = mCharges;
+		AdvanceRecharge(amount, cooldownDuration, maxCharges);
+		return previousCooldownRemaining != mCooldownRemaining || previousCharges != mCharges;
+	}
+
+	bool AbilityRuntimeState::SetChargeBonus(int bonus, float cooldownDuration, int maxCharges)
+	{
+		// Unlimited abilities have no charge capacity to extend.
+		if (maxCharges <= 0)
+		{
+			return false;
+		}
+
+		const int requested = std::max(0, bonus);
+		if (requested == mChargeBonus)
+		{
+			return false;
+		}
+
+		const int previousCapacity = GetChargeCapacity(maxCharges);
+		mChargeBonus = requested;
+		const int capacity = GetChargeCapacity(maxCharges);
+		if (capacity > previousCapacity)
+		{
+			// Charges added by a bonus arrive full instead of waiting on the timer.
+			mCharges += capacity - previousCapacity;
+		}
+		// Removing capacity clips surplus charges; the timer follows the new state.
+		mCharges = std::min(mCharges, capacity);
+		if (capacity <= 1)
+		{
+			mUseIntervalRemaining = 0.f;
+		}
+		SyncRecharge(cooldownDuration, capacity);
+		return true;
+	}
+
+	int AbilityRuntimeState::GrantCharges(int amount, float cooldownDuration, int maxCharges)
+	{
+		// Unlimited abilities have no pool to fill, and a non-positive grant changes nothing.
+		if (maxCharges <= 0 || amount <= 0)
+		{
+			return 0;
+		}
+
+		// A grant only fills missing charges. It never raises capacity, and the running recharge timer keeps its time.
+		const int capacity = GetChargeCapacity(maxCharges);
+		const int granted = std::min(amount, std::max(0, capacity - mCharges));
+		if (granted <= 0)
+		{
+			return 0;
+		}
+		mCharges += granted;
+		SyncRecharge(cooldownDuration, capacity);
+		return granted;
 	}
 }

@@ -46,4 +46,10 @@ namespace ly
 		return module.sizeVariants.size() > 1 && IsModuleSideFeatureAllowed(module, feature) &&
 			feature->levelCount >= level && HasModuleRulePackageLevelCoverage(feature->rules, level);
 	}
+
+	// F1 Parçalama: the side feature's only rule is the layout switch that lets a largest-size placement split into fragments.
+	inline bool IsFragmentationSideFeature(const ModuleSideFeatureDefinition* feature)
+	{
+		return feature && feature->rules.fragmentation;
+	}
 }

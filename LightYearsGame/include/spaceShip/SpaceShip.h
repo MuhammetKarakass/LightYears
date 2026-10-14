@@ -51,6 +51,8 @@ namespace ly
 		ShipRuntimeModifiers& GetRuntimeModifiers() { return mRuntimeModifiers; }
 		const ShipRuntimeModifiers& GetRuntimeModifiers() const { return mRuntimeModifiers; }
 		float GetMovementSpeedMultiplier() const { return mRuntimeModifiers.GetMovementSpeedMultiplier(); }
+		// Public read of the protected cap multiplier (afterburner for the player) for module speed-ratio rules.
+		float ResolveMovementSpeedCapMultiplier() const { return GetMovementSpeedCapMultiplier(); }
 		float GetThrustMultiplier() const
 		{
 			return std::max(0.f, 1.f + mRuntimeModifiers.GetThrustBonus());

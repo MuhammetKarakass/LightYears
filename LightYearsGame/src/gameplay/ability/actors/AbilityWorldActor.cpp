@@ -1,4 +1,5 @@
 #include "attributes/AttributeSystem.h"
+#include "framework/debug/Profiler.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/GameAbility.h"
@@ -485,6 +486,7 @@ namespace ly
 		float damageMultiplier
 	)
 	{
+		LY_PROFILE_SCOPE("Ability.DamageInRadius");
 		World* world = GetWorld();
 		const float effectiveRadius = std::max(0.f, radius);
 		const float damage = std::max(0.f, mDamage * std::max(0.f, damageMultiplier));

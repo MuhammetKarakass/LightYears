@@ -44,6 +44,10 @@ namespace sas
 		virtual bool SetAbilityLevel(AbilitySlot slot, int level) = 0;
 		virtual bool LevelUpAbility(AbilityHandle handle) = 0;
 		virtual bool LevelUpAbility(AbilitySlot slot) = 0;
+		virtual bool SetAbilityChargeBonus(AbilitySlot slot, int bonus) = 0;
+		virtual bool SetAbilityChargeBonus(const std::string& abilityId, int bonus) = 0;
+		virtual int GrantAbilityCharge(AbilitySlot slot, int amount) = 0;
+		virtual int GrantAbilityCharge(const std::string& abilityId, int amount) = 0;
 		virtual void ReduceCooldowns(
 			float amount,
 			bool includePrimaryFire
@@ -182,6 +186,30 @@ namespace sas
 		{
 			Instance* ability = mRuntime.Find(slot);
 			return ability && SetAbilityLevel(ability->GetHandle(), ability->GetLevel() + 1);
+		}
+
+		bool SetAbilityChargeBonus(AbilitySlot slot, int bonus) override
+		{
+			Instance* ability = mRuntime.Find(slot);
+			return ability && SetChargeBonusOnHandle(ability->GetHandle(), bonus);
+		}
+
+		bool SetAbilityChargeBonus(const std::string& abilityId, int bonus) override
+		{
+			Instance* ability = mRuntime.FindById(abilityId);
+			return ability && SetChargeBonusOnHandle(ability->GetHandle(), bonus);
+		}
+
+		int GrantAbilityCharge(AbilitySlot slot, int amount) override
+		{
+			Instance* ability = mRuntime.Find(slot);
+			return ability ? GrantChargeOnHandle(ability->GetHandle(), amount) : 0;
+		}
+
+		int GrantAbilityCharge(const std::string& abilityId, int amount) override
+		{
+			Instance* ability = mRuntime.FindById(abilityId);
+			return ability ? GrantChargeOnHandle(ability->GetHandle(), amount) : 0;
 		}
 
 		void ReduceCooldowns(
@@ -364,6 +392,20 @@ namespace sas
 		}
 
 	private:
+		bool SetChargeBonusOnHandle(AbilityHandle handle, int bonus)
+		{
+			bool changed = false;
+			mRuntime.VisitAbility(handle, [&](Instance& ability) { changed = ability.SetChargeBonus(bonus); });
+			return changed;
+		}
+
+		int GrantChargeOnHandle(AbilityHandle handle, int amount)
+		{
+			int granted = 0;
+			mRuntime.VisitAbility(handle, [&](Instance& ability) { granted = ability.GrantCharge(amount); });
+			return granted;
+		}
+
 		Runtime mRuntime;
 		AbilityCooldownTracker mTriggerCooldowns;
 		std::unordered_map<std::string, int> mTriggerMatchCounts;

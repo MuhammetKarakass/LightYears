@@ -63,6 +63,7 @@ namespace ly
 
 		void OnGameplayEvent(const sas::AbilityEvent& event);
 		void OnShieldDamaged(float absorbed, float remainingShield, float maxShield);
+		void OnShieldChanged(float delta, float remainingShield, float maxShield);
 		void ProcessEvent(const EventSnapshot& event);
 		void ProcessDeferredUpdates();
 		void ReconcileRules(const List<ResolvedModuleTriggerBuff>& rules);
@@ -80,6 +81,9 @@ namespace ly
 		ShieldComponent& mShield;
 		DelegateHandle mGameplayEventHandle;
 		DelegateHandle mShieldDamagedHandle;
+		DelegateHandle mShieldChangedHandle;
+		// Set by a ShieldBroken event while the shield's re-arm fraction is active; cleared on refill.
+		bool mShieldBreakLatched = false;
 		List<ResolvedModuleTriggerBuff> mRules;
 		List<ActiveBuff> mActiveBuffs;
 		std::optional<List<ResolvedModuleTriggerBuff>> mPendingRules;

@@ -44,6 +44,18 @@ else()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native")
 endif()
 
+# Debug builds keep the game code fully unoptimized, but the rendering layers (SFML and LightYearsVisual) are pure
+# per-frame number crunching and GL glue: at /Od /Ob0 /RTC1 they cost several milliseconds per frame and the game
+# runs at 10-20 FPS. Compiling only those with /O2 keeps the Debug CRT, iterator checks and ABI of the rest unchanged
+# (/RTC1 is incompatible with /O2, so it is dropped for them). Turn it off to step through SFML or the visual library.
+option(LY_OPTIMIZE_RENDER_IN_DEBUG "Compile SFML and LightYearsVisual with /O2 in Debug builds (MSVC)" ON)
+set(LY_DEBUG_FLAGS_ORIGINAL "${CMAKE_CXX_FLAGS_DEBUG}")
+set(LY_DEBUG_FLAGS_RENDER "${CMAKE_CXX_FLAGS_DEBUG}")
+if(MSVC AND LY_OPTIMIZE_RENDER_IN_DEBUG)
+    string(REGEX REPLACE "/Od|/Ob[0-9]|/RTC[1csu]+" "" LY_DEBUG_FLAGS_RENDER "${CMAKE_CXX_FLAGS_DEBUG}")
+    set(LY_DEBUG_FLAGS_RENDER "${LY_DEBUG_FLAGS_RENDER} /O2 /Ob2")
+endif()
+
 #creates a variable
 set(LIGHT_YEARS_ENGINE_TARGET_NAME LightYearsEngine)
 set(SPACE_ABILITY_SYSTEM_TARGET_NAME SpaceAbilitySystem)

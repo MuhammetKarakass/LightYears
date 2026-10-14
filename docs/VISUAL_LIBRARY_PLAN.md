@@ -12,6 +12,28 @@ The game gets a procedural visual library instead of sprites: shapes, vertex arr
 
 Color is organized as a color script of named ramps (shadow to light, shadows hue-shifted, never gray) and roles; cool ambient (cyan, violet, magenta) against warm combat (amber, orange, red). Readability and eye comfort are hard requirements, stricter than the reference games (Solfall, Animal Well): luminance tiers, an effect budget, adjustable bloom, flash and vignette strength.
 
+## Background art direction (2026-10-13)
+
+LightYears uses dark space, softly coloured star clouds and crisp combat light. The Milky Way, planetary surfaces and physical star colours keep the setting recognizable; authored colour ramps and broad asymmetrical shapes give it a stylized identity. The background should reward looking at it while letting a player track the ship and incoming threats during fast combat.
+
+- Keep most background detail broad and soft. Small stars can be numerous enough to convey space, but remain points with limited brightness; long flares and a dense carpet of photographic grain do not define the scene.
+- Blend cool indigo/azure light into rose, amber and cream over wide transitions. A faint rose/lavender bridge softens the yellow/blue boundary; it does not recolour every region violet. Preserve darker dust lanes and the distinction between warm old-star light and cool young-star clouds.
+- Use the brightest, sharpest light for combat. Background colour richness comes from hue and large shapes rather than raising all its brightness. Avoid applying background blending to the HUD, ships or projectiles.
+- Give a location a stable composition and slow camera depth. Planet type, band orientation, dust and local celestial features provide variation; continuous flashing, whole-galaxy animation and a repeated symmetric fog frame are outside this direction.
+
+Normal-flight movement is conveyed by distinct depth speeds: dim nearby dust and close stars pass faster, the planet moves moderately, and the galactic band barely moves. Dust drifts gently at rest so the sky is not a frozen image. These cues use the continuous game camera and the existing background `NearField` mote renderer; their brightness and size stay below combat signals. Ship controls and camera-follow behaviour are not changed by this presentation pass.
+
+The reference set includes games outside space shooters and sources outside Steam. Solfall here means the browser MMO at [solfall.online](https://solfall.online/), not the unrelated survival-horror game named SolFall on Steam.
+
+| Reference and evidence | What it contributes to LightYears |
+| --- | --- |
+| [Solfall developer comparison and audience feedback](https://www.reddit.com/r/IndieDev/comments/1v2tgtc/does_the_game_look_better_now/): readers praise the background and pixel art, while others prefer the older version's cohesion and criticize sharpness, mixed pixel scales and battle clutter. | Keep recognizable material surfaces and depth; make the sharp/soft layer split deliberate. Extra detail must not hide gameplay. |
+| [A Short Hike on itch.io](https://adamgryu.itch.io/a-short-hike), with [colour/atmosphere feedback](https://itch.io/t/1189138/a-tiny-and-lifeful-experience-like-a-japanese-garden): a player values its colourful, detailed, relaxing world. This is an exploration game, so its pacing does not transfer to combat. | Colour can be rich and welcoming while large shapes and gentle transitions keep the scene calm. This is an interpretation for our background. |
+| [Animal Well, described by its developer](https://blog.playstation.com/2022/07/20/how-animal-well-taps-into-ps5-hardware-to-elevate-2d-pixel-art-platforming/): pixel art is combined with layered background effects and lighting. | Retain the crisp gameplay layer while soft light and atmospheric depth enrich the background. No new render framework is implied. |
+| [Nova Drift developer retrospective](https://blog.novadrift.io/novadrift-released/) and [player reviews](https://steamcommunity.com/app/858210/reviews/?browsefilter=toprated): deliberate entity/background contrast, audiovisual praise and useful threat cues. [Geometry Wars 3 feedback](https://steamcommunity.com/app/310790/reviews/?browsefilter=toprated) includes criticism of obscured visibility and warnings. | The brightest and clearest information remains the ship, threat and impact. Visual spectacle is judged in motion as well as in a still image. |
+
+This is an art decision informed by a small qualitative sample, not a population survey or a guarantee of appeal. Our chosen treatment is soft, coloured celestial depth around sharply readable combat. The Milky Way blends indigo/azure through a faint rose/lavender transition toward amber/cream, with darker dust preserving structure. Stars regain some density and brightness while the background luminance ceiling stays below combat. The canonical numeric tuning remains in `LightYearsVisual/assets/pipeline.json` and the galaxy colour construction in `assets/shaders/galaxy.frag`.
+
 ## V1 (done): foundation
 
 Where: `LightYearsVisual/` (static library `LightYearsVisual`, namespace `ly::visual`) and the viewer `LightYearsVisualGallery` (CMake option `LIGHTYEARS_BUILD_VISUAL_GALLERY`). Depends on SFML and nlohmann_json only. See `LightYearsVisual/README.md` for usage.

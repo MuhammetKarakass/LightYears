@@ -4,6 +4,7 @@
 #include <string>
 
 #include "visual/ColorScript.h"
+#include "visual/DeepSky.h"
 #include "visual/PipelineSettings.h"
 #include "visual/ReloadReport.h"
 #include "visual/ShaderLibrary.h"
@@ -28,6 +29,8 @@ namespace ly::visual
 		const ColorScript& Script() const { return mScripts.Active(); }
 		ShipVisualLibrary& Ships() { return mShips; }
 		const ShipVisualLibrary& Ships() const { return mShips; }
+		// Per-stop deep-sky objects from deepsky.json (optional: empty when the file is missing).
+		const DeepSkyCatalog& DeepSky() const { return mDeepSky; }
 		// Files that failed to load during Load (a bad ship definition does not stop the rest from loading).
 		const ReloadReport& LoadReport() const { return mLoadReport; }
 
@@ -38,6 +41,8 @@ namespace ly::visual
 		ShaderLibrary mShaders;
 		ColorScriptLibrary mScripts;
 		ShipVisualLibrary mShips;
+		DeepSkyCatalog mDeepSky;
+		std::filesystem::file_time_type mDeepSkyStamp;
 		ReloadReport mLoadReport;
 		float mPollTimer = 0.f;
 	};

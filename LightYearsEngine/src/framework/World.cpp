@@ -7,7 +7,9 @@
 #include "framework/PerfMonitor.h"
 #include "framework/PhysicsScene.h"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <typeinfo>
 #include <cstdint>
 #include <iterator>
 #include <unordered_set>
@@ -26,6 +28,37 @@ namespace ly{
 				first.position.y + first.size.y >= second.position.y &&
 				first.position.y <= second.position.y + second.size.y;
 		}
+
+		// Hitch tracing: an actor whose tick, BeginPlay or render takes a millisecond or more is reported under its
+		// class name, so a slow frame names the actor type responsible.
+		class SlowActorTrace
+		{
+		public:
+			explicit SlowActorTrace(const Actor& actor)
+#if LY_ENABLE_PROFILING
+				: mActor(actor), mStart(std::chrono::steady_clock::now())
+#endif
+			{
+				(void)actor;
+			}
+
+			~SlowActorTrace()
+			{
+#if LY_ENABLE_PROFILING
+				const double elapsed = std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - mStart).count();
+				if (elapsed >= debug::Profiler::FrameEventThresholdMicroseconds)
+				{
+					debug::Profiler::RecordFrameEvent(typeid(mActor).name(), elapsed);
+				}
+#endif
+			}
+
+		private:
+#if LY_ENABLE_PROFILING
+			const Actor& mActor;
+			std::chrono::steady_clock::time_point mStart;
+#endif
+		};
 	}
 
 	World::World(Application* owningApp):
@@ -130,6 +163,7 @@ namespace ly{
 			for (std::size_t index = firstSpawnedActorIndex; index < mActors.size(); ++index)
 			{
 				const shared_ptr<Actor>& actor = mActors[index];
+				const SlowActorTrace trace{ *actor };
 				actor->BeginPlayInternal();
 				RegisterActorSpatialQuery(*actor);
 				OnActorSpawned(actor.get());
@@ -147,6 +181,7 @@ namespace ly{
 			for (auto iter = mActors.begin(); iter != mActors.end();)
 			{
 				Actor& actor = *iter->get();
+				const SlowActorTrace trace{ actor };
 				actor.TickInternal(
 					deltaTime * GetSimulationTimeScale(
 						actor.GetSimulationTimeDomain()
@@ -158,11 +193,13 @@ namespace ly{
 
 			if (mCurrentStage != mGameStages.end())
 			{
+				LY_PROFILE_SCOPE("World.StageTick");
 				mCurrentStage->get()->TickStage(deltaTime);
 			}
 
 			if (mBeganPlay)
 			{
+				LY_PROFILE_SCOPE("World.LevelTick");
 				Tick(deltaTime);
 			}
 		}
@@ -191,6 +228,7 @@ namespace ly{
 
 		if(mHUD)
 		{
+			LY_PROFILE_SCOPE("World.HUDTick");
 			if(!mHUD->HasInit())
 				mHUD->NativeInit(mOwningApp->GetRenderWindow());
 			mHUD->Tick(deltaTime);
@@ -492,6 +530,7 @@ namespace ly{
 		}
 		if (pipeline)
 		{
+			LY_PROFILE_SCOPE("World.PipelineBegin");
 			pipeline->BeginFrame(*this, worldView);
 		}
 		else
@@ -558,6 +597,7 @@ namespace ly{
 				{
 					continue;
 				}
+				const SlowActorTrace trace{ *actor };
 				actor->Render(target);
 			}
 		}
@@ -565,6 +605,7 @@ namespace ly{
 
 		if (pipeline)
 		{
+			LY_PROFILE_SCOPE("World.PipelineCompose");
 			pipeline->Compose(window);
 		}
 		window.setView(window.getDefaultView());

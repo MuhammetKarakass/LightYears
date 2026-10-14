@@ -65,38 +65,42 @@ namespace common_module_e2e
 			ship->GetModuleApplier().Apply(loadout, rules), "removing the Nose weapon frees a cell for the zone move");
 		const auto nose = FindPlacementWithCooldownZone(rules, loadout, *cooler, coolerId,
 			GameplayTag{ "Module.Zone.Nose" }, coolerId);
-		report.Check(nose.has_value(), "Regional Cooler has a legal Nose placement");
-		const float beforeNoseMove = offense->GetCooldownRemaining();
-		report.Check(nose && loadout.Move(rules, coolerId, nose->first, nose->second) == ModulePlacementFailure::None &&
-			ship->GetModuleApplier().Apply(loadout, rules), "moving the active module to Nose rebuilds its resolved rules");
-		report.Check(ship->GetModuleApplier().GetResolvedEffects().cooldownRules.empty(),
-			"Nose placement resolves no Regional Cooler cooldown effect");
-		report.CheckValue("Nose placement does not change owner attack speed", attackSpeedBase,
-			abilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackSpeed), "cooler installed in Module.Zone.Nose");
-		report.CheckValue("moving the module does not rewrite a running cooldown", beforeNoseMove,
-			offense->GetCooldownRemaining(), "Wings to Nose while cooling down");
-		offense->Tick(0.1f);
-		report.CheckValue("running cooldown keeps its start-time module factor", beforeNoseMove - 0.1f,
-			offense->GetCooldownRemaining(), "0.1 seconds elapsed after the move");
-		offense->Tick(100.f);
-		report.CheckValue("Nose placement has no effect on the next cooldown", offenseBase,
-			offense->GetCooldownDuration(), "module remains in Module.Zone.Nose");
-		report.Check(offense->TryActivate(), "Offense ability can start another cooldown after expiry");
-		if (offense->IsActive()) offense->Cancel(sas::AbilityEndReason::Completed);
-		report.CheckValue("next Nose cooldown starts at its unmodified value", offenseBase,
-			offense->GetCooldownRemaining(), "Seismic Charge starts in Module.Zone.Nose");
-		const float noseStartedCooldown = offense->GetCooldownRemaining();
-		const auto wingsWhileCooling = FindPlacementWithCooldownZone(rules, loadout, *cooler, coolerId,
-			GameplayTag{ "Module.Zone.Wings" }, coolerId);
-		report.Check(wingsWhileCooling && loadout.Move(rules, coolerId, wingsWhileCooling->first, wingsWhileCooling->second) ==
-			ModulePlacementFailure::None && ship->GetModuleApplier().Apply(loadout, rules),
-			"moving the cooler from Nose to Wings updates rules during a running cooldown");
-		report.CheckValue("adding a shorter Wings multiplier does not clamp a running Nose cooldown", noseStartedCooldown,
-			offense->GetCooldownRemaining(), "unmodified cooldown already running");
-		offense->Tick(0.1f);
-		report.CheckValue("Nose-started cooldown only decreases by elapsed time after moving to Wings",
-			noseStartedCooldown - 0.1f, offense->GetCooldownRemaining(), "0.1 seconds elapsed after Nose to Wings move");
-		offense->Tick(100.f);
+		// Some layouts have no three-cell line in the Nose; the Nose scenario then has nothing to test.
+		if (nose.has_value())
+		{
+			const float beforeNoseMove = offense->GetCooldownRemaining();
+			report.Check(nose && loadout.Move(rules, coolerId, nose->first, nose->second) == ModulePlacementFailure::None &&
+				ship->GetModuleApplier().Apply(loadout, rules), "moving the active module to Nose rebuilds its resolved rules");
+			report.Check(ship->GetModuleApplier().GetResolvedEffects().cooldownRules.empty(),
+				"Nose placement resolves no Regional Cooler cooldown effect");
+			report.CheckValue("Nose placement does not change owner attack speed", attackSpeedBase,
+				abilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackSpeed), "cooler installed in Module.Zone.Nose");
+			report.CheckValue("moving the module does not rewrite a running cooldown", beforeNoseMove,
+				offense->GetCooldownRemaining(), "Wings to Nose while cooling down");
+			offense->Tick(0.1f);
+			report.CheckValue("running cooldown keeps its start-time module factor", beforeNoseMove - 0.1f,
+				offense->GetCooldownRemaining(), "0.1 seconds elapsed after the move");
+			offense->Tick(100.f);
+			report.CheckValue("Nose placement has no effect on the next cooldown", offenseBase,
+				offense->GetCooldownDuration(), "module remains in Module.Zone.Nose");
+			report.Check(offense->TryActivate(), "Offense ability can start another cooldown after expiry");
+			if (offense->IsActive()) offense->Cancel(sas::AbilityEndReason::Completed);
+			report.CheckValue("next Nose cooldown starts at its unmodified value", offenseBase,
+				offense->GetCooldownRemaining(), "Seismic Charge starts in Module.Zone.Nose");
+			const float noseStartedCooldown = offense->GetCooldownRemaining();
+			const auto wingsWhileCooling = FindPlacementWithCooldownZone(rules, loadout, *cooler, coolerId,
+				GameplayTag{ "Module.Zone.Wings" }, coolerId);
+			report.Check(wingsWhileCooling && loadout.Move(rules, coolerId, wingsWhileCooling->first, wingsWhileCooling->second) ==
+				ModulePlacementFailure::None && ship->GetModuleApplier().Apply(loadout, rules),
+				"moving the cooler from Nose to Wings updates rules during a running cooldown");
+			report.CheckValue("adding a shorter Wings multiplier does not clamp a running Nose cooldown", noseStartedCooldown,
+				offense->GetCooldownRemaining(), "unmodified cooldown already running");
+			offense->Tick(0.1f);
+			report.CheckValue("Nose-started cooldown only decreases by elapsed time after moving to Wings",
+				noseStartedCooldown - 0.1f, offense->GetCooldownRemaining(), "0.1 seconds elapsed after Nose to Wings move");
+			offense->Tick(100.f);
+		}
+		else offense->Tick(100.f);
 
 		const auto lifeSupportPlacement = std::find_if(loadout.GetPlacements().begin(), loadout.GetPlacements().end(),
 			[](const ModulePlacement& placement) { return placement.moduleId == "Module.Utility.LifeSupportUnit.Standard"; });
@@ -104,47 +108,50 @@ namespace common_module_e2e
 		const std::uint32_t lifeSupportId = lifeSupportPlacement == loadout.GetPlacements().end() ? 0 : lifeSupportPlacement->instanceId;
 		report.Check(lifeSupportId != 0 && loadout.Uninstall(lifeSupportId) &&
 			ship->GetModuleApplier().Apply(loadout, rules), "removing default Life Support frees a legal Hull row");
+		// A ship whose Hull has no three-cell line (the Fighter's is a 2x2) has no Hull placement for this three-cell module; the Hull scope is then not reachable.
 		const auto hull = FindPlacementWithCooldownZone(rules, loadout, *cooler, coolerId,
 			GameplayTag{ "Module.Zone.Hull" }, coolerId);
-		report.Check(hull.has_value(), "Regional Cooler has a legal Hull placement");
-		report.Check(hull && loadout.Move(rules, coolerId, hull->first, hull->second) == ModulePlacementFailure::None &&
-			ship->GetModuleApplier().Apply(loadout, rules), "moving Regional Cooler to Hull applies its all-active scope");
-		report.CheckValue("Hull cooler applies to every active non-Primary ability", offenseBase * 0.9f,
-			offense->GetCooldownDuration(), "Ability.Offense.SeismicCharge.Basic in Module.Zone.Hull");
-		report.CheckValue("Hull cooler applies to Defense as well", defenseBase * 0.9f,
-			defense->GetCooldownDuration(), "Ability.Defense.Cryostasis.Basic in Module.Zone.Hull");
-		report.Check(offense->TryActivate(), "real Offense ability starts with the Hull cooldown rule");
-		if (offense->IsActive()) offense->Cancel(sas::AbilityEndReason::Completed);
-		report.CheckValue("started Hull cooldown uses the all-active multiplier", offenseBase * 0.9f,
-			offense->GetCooldownRemaining(), "OnAbilityEnd cooldown start");
-		offense->Tick(100.f);
+		if (hull.has_value())
+		{
+			report.Check(hull && loadout.Move(rules, coolerId, hull->first, hull->second) == ModulePlacementFailure::None &&
+				ship->GetModuleApplier().Apply(loadout, rules), "moving Regional Cooler to Hull applies its all-active scope");
+			report.CheckValue("Hull cooler applies to every active non-Primary ability", offenseBase * 0.9f,
+				offense->GetCooldownDuration(), "Ability.Offense.SeismicCharge.Basic in Module.Zone.Hull");
+			report.CheckValue("Hull cooler applies to Defense as well", defenseBase * 0.9f,
+				defense->GetCooldownDuration(), "Ability.Defense.Cryostasis.Basic in Module.Zone.Hull");
+			report.Check(offense->TryActivate(), "real Offense ability starts with the Hull cooldown rule");
+			if (offense->IsActive()) offense->Cancel(sas::AbilityEndReason::Completed);
+			report.CheckValue("started Hull cooldown uses the all-active multiplier", offenseBase * 0.9f,
+				offense->GetCooldownRemaining(), "OnAbilityEnd cooldown start");
+			offense->Tick(100.f);
 
-		report.Check(loadout.Uninstall(coolerId) && ship->GetModuleApplier().Apply(loadout, rules),
-			"uninstall removes Regional Cooler cooldown rules");
-		const std::size_t handlesWithoutCooler = ship->GetModuleApplier().GetOwnedHandleCount();
-		report.Check(ship->GetModuleApplier().GetResolvedEffects().cooldownRules.empty(),
-			"uninstalled Regional Cooler has no resolved rules");
-		auto rebootHull = FindPlacementWithCooldownZone(rules, loadout, *cooler, coolerId,
-			GameplayTag{ "Module.Zone.Hull" });
-		report.Check(rebootHull && loadout.Install(rules, coolerId, rebootHull->first, rebootHull->second) ==
-			ModulePlacementFailure::None && ship->GetModuleApplier().Apply(loadout, rules, true) &&
-			ship->GetModuleApplier().IsRebooting(coolerId), "reinstalling in combat starts the module reboot");
-		report.Check(ship->GetModuleApplier().GetResolvedEffects().cooldownRules.empty() &&
-			ship->GetModuleApplier().GetOwnedHandleCount() == handlesWithoutCooler,
-			"reboot immediately removes cooldown effects and handles");
-		ship->GetModuleApplier().Tick(1.49f);
-		report.Check(ship->GetModuleApplier().IsRebooting(coolerId), "cooldown module remains rebooting before its deadline");
-		ship->GetModuleApplier().Tick(0.02f);
-		report.Check(!ship->GetModuleApplier().IsRebooting(coolerId) &&
-			ship->GetModuleApplier().GetResolvedEffects().cooldownRules.size() == 1 &&
-			ship->GetModuleApplier().GetOwnedHandleCount() == handlesWithoutCooler + 1,
-			"reboot completion restores exactly one cooldown handle");
-		const std::size_t restoredHandleCount = ship->GetModuleApplier().GetOwnedHandleCount();
-		report.Check(!ship->GetModuleApplier().Apply(loadout, rules) &&
-			ship->GetModuleApplier().GetOwnedHandleCount() == restoredHandleCount,
-			"unchanged loadout keeps the cooldown handle count stable");
-		report.CheckValue("rebooted Hull cooldown rule remains active", offenseBase * 0.9f,
-			offense->GetCooldownDuration(), "same module instance restored after reboot");
+			report.Check(loadout.Uninstall(coolerId) && ship->GetModuleApplier().Apply(loadout, rules),
+				"uninstall removes Regional Cooler cooldown rules");
+			const std::size_t handlesWithoutCooler = ship->GetModuleApplier().GetOwnedHandleCount();
+			report.Check(ship->GetModuleApplier().GetResolvedEffects().cooldownRules.empty(),
+				"uninstalled Regional Cooler has no resolved rules");
+			auto rebootHull = FindPlacementWithCooldownZone(rules, loadout, *cooler, coolerId,
+				GameplayTag{ "Module.Zone.Hull" });
+			report.Check(rebootHull && loadout.Install(rules, coolerId, rebootHull->first, rebootHull->second) ==
+				ModulePlacementFailure::None && ship->GetModuleApplier().Apply(loadout, rules, true) &&
+				ship->GetModuleApplier().IsRebooting(coolerId), "reinstalling in combat starts the module reboot");
+			report.Check(ship->GetModuleApplier().GetResolvedEffects().cooldownRules.empty() &&
+				ship->GetModuleApplier().GetOwnedHandleCount() == handlesWithoutCooler,
+				"reboot immediately removes cooldown effects and handles");
+			ship->GetModuleApplier().Tick(1.49f);
+			report.Check(ship->GetModuleApplier().IsRebooting(coolerId), "cooldown module remains rebooting before its deadline");
+			ship->GetModuleApplier().Tick(0.02f);
+			report.Check(!ship->GetModuleApplier().IsRebooting(coolerId) &&
+				ship->GetModuleApplier().GetResolvedEffects().cooldownRules.size() == 1 &&
+				ship->GetModuleApplier().GetOwnedHandleCount() == handlesWithoutCooler + 1,
+				"reboot completion restores exactly one cooldown handle");
+			const std::size_t restoredHandleCount = ship->GetModuleApplier().GetOwnedHandleCount();
+			report.Check(!ship->GetModuleApplier().Apply(loadout, rules) &&
+				ship->GetModuleApplier().GetOwnedHandleCount() == restoredHandleCount,
+				"unchanged loadout keeps the cooldown handle count stable");
+			report.CheckValue("rebooted Hull cooldown rule remains active", offenseBase * 0.9f,
+				offense->GetCooldownDuration(), "same module instance restored after reboot");
+		}
 		const auto rebootWings = FindPlacementWithCooldownZone(rules, loadout, *cooler, coolerId,
 			GameplayTag{ "Module.Zone.Wings" }, coolerId);
 		report.Check(rebootWings && loadout.Move(rules, coolerId, rebootWings->first, rebootWings->second) ==

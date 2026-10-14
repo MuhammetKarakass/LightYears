@@ -136,7 +136,8 @@ namespace ly
 				tag.MatchesTagExact(GameplayTags::Module::Zone::Hull) ||
 				tag.MatchesTagExact(GameplayTags::Module::Zone::Core) ||
 				tag.MatchesTagExact(GameplayTags::Module::Zone::Engine) ||
-				tag.MatchesTagExact(GameplayTags::Module::Zone::Sensor);
+				tag.MatchesTagExact(GameplayTags::Module::Zone::Sensor) ||
+				tag.MatchesTagExact(GameplayTags::Module::Zone::AbilityBay);
 		}
 
 		static bool IsModuleSystem(const GameplayTag& tag)
@@ -159,8 +160,8 @@ namespace ly
 				tag.MatchesTagExact(GameplayTags::Module::System::AbilitySlot4);
 		}
 
-		// Systems whose modules must occupy exactly two cells in every size variant.
-		static bool IsTwoCellModuleSystem(const GameplayTag& tag)
+		// Systems whose modules must occupy exactly one cell in every size variant.
+		static bool IsOneCellModuleSystem(const GameplayTag& tag)
 		{
 			return tag.MatchesTagExact(GameplayTags::Module::System::LifeSupport) ||
 				tag.MatchesTagExact(GameplayTags::Module::System::FlightControl) ||
@@ -168,33 +169,22 @@ namespace ly
 				IsModuleAbilitySlotSystem(tag);
 		}
 
-		// Systems that every zone table must place in a zone (ability slots are zone-free).
+		// Systems that every zone table must place in a zone (the ability slots live in the ability bay).
 		static const List<const GameplayTag*>& GetZonedRequiredModuleSystems()
 		{
 			static const List<const GameplayTag*> systems = {
 				&GameplayTags::Module::System::Shield, &GameplayTags::Module::System::Afterburner,
 				&GameplayTags::Module::System::HealthReadout, &GameplayTags::Module::System::DamageReadout,
 				&GameplayTags::Module::System::LifeSupport, &GameplayTags::Module::System::FlightControl,
-				&GameplayTags::Module::System::PrimaryWeapon
+				&GameplayTags::Module::System::PrimaryWeapon,
+				&GameplayTags::Module::System::AbilitySlot1, &GameplayTags::Module::System::AbilitySlot2,
+				&GameplayTags::Module::System::AbilitySlot3, &GameplayTags::Module::System::AbilitySlot4
 			};
 			return systems;
 		}
 
-		// Systems that every ship's default modules must provide: the zoned systems
-		// plus the four ability slots.
-		static const List<const GameplayTag*>& GetRequiredDefaultModuleSystems()
-		{
-			static const List<const GameplayTag*> systems = []()
-			{
-				List<const GameplayTag*> all = GetZonedRequiredModuleSystems();
-				all.push_back(&GameplayTags::Module::System::AbilitySlot1);
-				all.push_back(&GameplayTags::Module::System::AbilitySlot2);
-				all.push_back(&GameplayTags::Module::System::AbilitySlot3);
-				all.push_back(&GameplayTags::Module::System::AbilitySlot4);
-				return all;
-			}();
-			return systems;
-		}
+		// Systems that every ship's default modules must provide: every zoned system, ability slots included.
+		static const List<const GameplayTag*>& GetRequiredDefaultModuleSystems() { return GetZonedRequiredModuleSystems(); }
 
 		// Granted effect state is deliberately narrower than arbitrary GameplayTag
 		// data: a gameplay effect may grant a State.Effect.* or Status.* marker.

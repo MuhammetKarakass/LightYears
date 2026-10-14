@@ -6,6 +6,7 @@
 #include <SFML/System/Err.hpp>
 
 #include "FileUtil.h"
+#include "visual/UniformWriter.h"
 
 namespace ly::visual
 {
@@ -86,6 +87,7 @@ namespace ly::visual
 				continue;
 			}
 			mShaders[file.stem().string()] = {file, std::move(shader)};
+			UniformWriter::InvalidateLocations();
 			report.reloaded.push_back("shader " + file.filename().string());
 		}
 	}
@@ -104,7 +106,7 @@ namespace ly::visual
 			sf::Color c = ramp.Sample(count > 1 ? static_cast<float>(i) / static_cast<float>(count - 1) : 0.f);
 			colors.emplace_back(c.r / 255.f, c.g / 255.f, c.b / 255.f);
 		}
-		shader.setUniformArray(name, colors.data(), colors.size());
+		UniformWriter(shader).SetArray(name.c_str(), colors.data(), colors.size());
 	}
 
 	void DrawShaderQuad(sf::RenderTarget& target, sf::Shader& shader, const sf::FloatRect& rect, const sf::BlendMode& blend)

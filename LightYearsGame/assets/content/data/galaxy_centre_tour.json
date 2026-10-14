@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "generated": "2026-10-14",
+  "source": "Fictional Galactic Centre tour (orbit showcase stops after Sgr A*)",
+  "stops": [
+    {
+      "id": "gc-ringed-giant",
+      "name": "Tessaly",
+      "real": false,
+      "distancePc": 7380.0,
+      "radiusKpc": 0.85,
+      "heightKpc": 0.12,
+      "azimuthRad": 0.25,
+      "star": {
+        "temperatureK": 5600.0,
+        "luminositySolar": 0.85,
+        "radiusSolar": 0.95,
+        "massSolar": 0.95,
+        "spectralType": "G",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Tessaly b",
+          "semiMajorAU": 1.6,
+          "radiusEarth": 10.5,
+          "massEarth": 140.0,
+          "eqTempK": 200.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-eclipse",
+      "name": "Ombra",
+      "real": false,
+      "distancePc": 7517.0,
+      "radiusKpc": 0.7,
+      "heightKpc": -0.05,
+      "azimuthRad": 0.21,
+      "star": {
+        "temperatureK": 4800.0,
+        "luminositySolar": 0.28,
+        "radiusSolar": 0.78,
+        "massSolar": 0.8,
+        "spectralType": "K",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Ombra b",
+          "semiMajorAU": 0.55,
+          "radiusEarth": 1.6,
+          "massEarth": 4.1,
+          "eqTempK": 290.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-far-ice",
+      "name": "Hyelle",
+      "real": false,
+      "distancePc": 7623.0,
+      "radiusKpc": 0.6,
+      "heightKpc": 0.45,
+      "azimuthRad": 0.18,
+      "star": {
+        "temperatureK": 3300.0,
+        "luminositySolar": 0.015,
+        "radiusSolar": 0.3,
+        "massSolar": 0.3,
+        "spectralType": "M",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Hyelle b",
+          "semiMajorAU": 0.25,
+          "radiusEarth": 0.9,
+          "massEarth": 0.7,
+          "eqTempK": 150.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-lava-night",
+      "name": "Ferrox",
+      "real": false,
+      "distancePc": 7706.0,
+      "radiusKpc": 0.5,
+      "heightKpc": 0.02,
+      "azimuthRad": 0.15,
+      "star": {
+        "temperatureK": 6500.0,
+        "luminositySolar": 2.5,
+        "radiusSolar": 1.4,
+        "massSolar": 1.3,
+        "spectralType": "F",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Ferrox b",
+          "semiMajorAU": 0.03,
+          "radiusEarth": 1.3,
+          "massEarth": 2.4,
+          "eqTempK": 1900.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-hot-ceiling",
+      "name": "Calyx",
+      "real": false,
+      "distancePc": 7806.0,
+      "radiusKpc": 0.4,
+      "heightKpc": -0.2,
+      "azimuthRad": 0.12,
+      "star": {
+        "temperatureK": 6000.0,
+        "luminositySolar": 1.4,
+        "radiusSolar": 1.15,
+        "massSolar": 1.1,
+        "spectralType": "G",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Calyx b",
+          "semiMajorAU": 0.04,
+          "radiusEarth": 14.0,
+          "massEarth": 300.0,
+          "eqTempK": 1500.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-blue-ice-giant",
+      "name": "Nereth",
+      "real": false,
+      "distancePc": 7901.0,
+      "radiusKpc": 0.3,
+      "heightKpc": 0.0,
+      "azimuthRad": 0.09,
+      "star": {
+        "temperatureK": 15000.0,
+        "luminositySolar": 800.0,
+        "radiusSolar": 3.8,
+        "massSolar": 5.5,
+        "spectralType": "B",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Nereth b",
+          "semiMajorAU": 40.0,
+          "radiusEarth": 4.0,
+          "massEarth": 17.0,
+          "eqTempK": 120.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-moon-transit",
+      "name": "Sabul",
+      "real": false,
+      "distancePc": 8001.0,
+      "radiusKpc": 0.2,
+      "heightKpc": 0.08,
+      "azimuthRad": 0.06,
+      "star": {
+        "temperatureK": 5200.0,
+        "luminositySolar": 0.5,
+        "radiusSolar": 0.85,
+        "massSolar": 0.88,
+        "spectralType": "K",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Sabul b",
+          "semiMajorAU": 0.8,
+          "radiusEarth": 1.1,
+          "massEarth": 1.4,
+          "eqTempK": 330.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-ring-arch",
+      "name": "Vael",
+      "real": false,
+      "distancePc": 8100.0,
+      "radiusKpc": 0.1,
+      "heightKpc": -0.03,
+      "azimuthRad": 0.03,
+      "star": {
+        "temperatureK": 5400.0,
+        "luminositySolar": 0.7,
+        "radiusSolar": 0.9,
+        "massSolar": 0.92,
+        "spectralType": "G",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Vael b",
+          "semiMajorAU": 3.0,
+          "radiusEarth": 9.5,
+          "massEarth": 95.0,
+          "eqTempK": 140.0,
+          "method": "Fictional"
+        }
+      ]
+    },
+    {
+      "id": "gc-red-giant",
+      "name": "Embera",
+      "real": false,
+      "distancePc": 8150.0,
+      "radiusKpc": 0.05,
+      "heightKpc": 0.01,
+      "azimuthRad": 0.01,
+      "star": {
+        "temperatureK": 3900.0,
+        "luminositySolar": 400.0,
+        "radiusSolar": 44.0,
+        "massSolar": 1.2,
+        "spectralType": "K",
+        "estimated": false
+      },
+      "planets": [
+        {
+          "name": "Embera b",
+          "semiMajorAU": 1.5,
+          "radiusEarth": 1.2,
+          "massEarth": 1.8,
+          "eqTempK": 1000.0,
+          "method": "Fictional"
+        }
+      ]
+    }
+  ]
+}

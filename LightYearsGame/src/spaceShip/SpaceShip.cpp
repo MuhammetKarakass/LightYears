@@ -1,3 +1,4 @@
+#include "attributes/AttributeMath.h"
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/content/WeaponContentCatalog.h"
@@ -235,12 +236,36 @@ namespace ly
 		// ticked first so the regular shield rules can resume immediately after
 		// the excess reaches the ship's normal maximum.
 		mShieldComponent.TickTemporaryOvershields(deltaTime);
-		mShieldComponent.Tick(
-			deltaTime,
+		const float normalShieldRegen =
 			std::max(0.f, shipAttributes.GetCurrentValue(ShipAttributeIds::ShieldRegen)) *
-				GetShieldRegenMultiplier(),
-			allowRecharge
-		);
+				GetShieldRegenMultiplier();
+		float shieldRegen = normalShieldRegen;
+		bool allowShieldRecharge = allowRecharge;
+		// Module regen shaping. SpeedScaled replaces passive regen with a speed-proportional rate;
+		// Continuous keeps the normal rate while damaged. Both skip the recharge delay.
+		switch (mShieldComponent.GetModuleBehavior().regenMode)
+		{
+		case ShieldModuleBehavior::RegenMode::Normal:
+			break;
+		case ShieldModuleBehavior::RegenMode::SpeedScaled:
+		{
+			const float speedCap = mMovementComponent.ResolveCurrentSpeedCap(
+				GetMovementSpeedCapMultiplier() * GetMovementSpeedMultiplier());
+			const float speed = GetVectorLength(GetVelocity());
+			const float speedRatio = speed >= mShieldComponent.GetModuleBehavior().minimumSpeed && speedCap > 0.f
+				? std::clamp(speed / speedCap, 0.f, 1.f)
+				: 0.f;
+			shieldRegen = normalShieldRegen * mShieldComponent.GetModuleBehavior().speedMultiplierAtMax * speedRatio;
+			allowShieldRecharge = true;
+			mShieldComponent.ClearRechargeDelay();
+			break;
+		}
+		case ShieldModuleBehavior::RegenMode::Continuous:
+			shieldRegen = normalShieldRegen * mShieldComponent.GetModuleBehavior().continuousRateFraction;
+			mShieldComponent.ClearRechargeDelay();
+			break;
+		}
+		mShieldComponent.Tick(deltaTime, shieldRegen, allowShieldRecharge);
 		mEnergyComponent.Tick(
 			deltaTime,
 			mShipRuntime.GetAfterburnerRegenPerSecond() * GetAfterburnerRegenMultiplier(),
@@ -346,14 +371,24 @@ namespace ly
 	
 	void SpaceShip::Blow()
 	{
+		LY_PROFILE_SCOPE("Ship.Blow");
 		Explosion::SpawnExplosion(GetWorld(), GetActorLocation(), Explosion::GetPreset(GetExplosionType()));
-		Blew();
-		mShipRuntime.Clear();
+		{
+			LY_PROFILE_SCOPE("Ship.Blow.Blew");
+			Blew();
+		}
+		{
+			LY_PROFILE_SCOPE("Ship.Blow.ShipRuntimeClear");
+			mShipRuntime.Clear();
+		}
 		// Pending means the ability system kept retained cleanup (for example EndFire debt) and its
 		// clear stays requested. The ship is destroyed regardless: a destroyed actor is no longer
 		// ticked, so nothing retries the clear and the retained ability state is released by the
 		// combat runtime's destructor with the actor. Callback exceptions still propagate from Clear().
-		static_cast<void>(mCombatRuntime.Clear());
+		{
+			LY_PROFILE_SCOPE("Ship.Blow.CombatRuntimeClear");
+			static_cast<void>(mCombatRuntime.Clear());
+		}
 		Destroy();
 	}
 
@@ -368,6 +403,22 @@ namespace ly
 		context.originalDamage = amt;
 		context.remainingDamage = amt;
 		ReceiveDamage(context);
+	}
+
+	namespace
+	{
+		// Scales the shield's damage multiplier by the Armor reduction that the shield takes with armorShare.
+		// Mirrors CombatRuntime::ApplyHullDamageMitigation (shred, then penetration) without applying it, so the
+		// hull step still applies once to the damage that passes the shield. Factor 1 means no change.
+		float ResolveShieldArmorShareFactor(const DamageContext& context, float armorShare, const sas::AttributeSystem& attributes)
+		{
+			const float armor = std::max(0.f, attributes.GetCurrentValue(OwnerAttributeIds::Armor));
+			const float shreddedArmor = armor * (1.f - std::clamp(context.targetArmorShred, 0.f, 1.f));
+			const float armorDamageMultiplier = sas::AttributeMath::GetArmorDamageMultiplier(shreddedArmor);
+			const float hullDamageMultiplier = armorDamageMultiplier +
+				context.payload.armorPenetration * (1.f - armorDamageMultiplier);
+			return 1.f - std::clamp(armorShare, 0.f, 1.f) * (1.f - std::clamp(hullDamageMultiplier, 0.f, 1.f));
+		}
 	}
 
 	void SpaceShip::ReceiveDamage(DamageContext context)
@@ -385,15 +436,36 @@ namespace ly
 		mCombatRuntime.ProcessIncomingDamage(context);
 		if (context.remainingDamage > 0.f)
 		{
+			float shieldDamageMultiplier = context.payload.shieldDamageMultiplier;
+			if (mShieldComponent.GetModuleBehavior().armorShare > 0.f && mShieldComponent.GetShield() > 0.f)
+			{
+				shieldDamageMultiplier *= ResolveShieldArmorShareFactor(context,
+					mShieldComponent.GetModuleBehavior().armorShare,
+					mCombatRuntime.GetAbilitySystemComponent().GetAttributes());
+			}
+			ShieldImpactSide impactSide = ShieldImpactSide::Shared;
+			if (mShieldComponent.GetModuleBehavior().frontRearSplit)
+			{
+				const Actor* originActor = context.deliveryActor ? context.deliveryActor : context.source;
+				if (originActor)
+				{
+					auto approach = originActor->GetActorLocation() - GetActorLocation();
+					if (context.deliveryType == DamageDeliveryType::Projectile && context.deliveryActor) approach = -context.deliveryActor->GetVelocity();
+					if (approach.x == 0.f && approach.y == 0.f) approach = originActor->GetActorLocation() - GetActorLocation();
+					const auto forward = GetActorForwardDirection();
+					if (approach.x != 0.f || approach.y != 0.f) impactSide = forward.x * approach.x + forward.y * approach.y >= 0.f ? ShieldImpactSide::Front : ShieldImpactSide::Rear;
+				}
+			}
 			const float shieldAbsorbedDamage = mShieldComponent.AbsorbDamage(
 				context.remainingDamage,
-				context.payload.shieldDamageMultiplier,
+				shieldDamageMultiplier,
 				context.payload.shieldRegenerationDelay,
-				context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed
+				context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed,
+				impactSide
 			);
 			context.remainingDamage = std::max(0.f, context.remainingDamage - shieldAbsorbedDamage);
 			context.absorbedDamage += shieldAbsorbedDamage;
-			context.shieldDamage = shieldAbsorbedDamage * std::max(0.f, context.payload.shieldDamageMultiplier);
+			context.shieldDamage = shieldAbsorbedDamage * std::max(0.f, shieldDamageMultiplier);
 			mCombatRuntime.ApplyHullDamageMitigation(context);
 
 			const float healthBeforeDamage = mHealthComponent.GetHealth();

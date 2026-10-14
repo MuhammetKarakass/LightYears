@@ -23,6 +23,14 @@ namespace sas
 			}
 			return false;
 		}
+		if (!(definition.chargeUseInterval >= 0.f))
+		{
+			if (failureReason)
+			{
+				*failureReason = "Ability charge use interval must be non-negative.";
+			}
+			return false;
+		}
 		if (definition.lifetimePolicy == AbilityLifetimePolicy::Duration && definition.duration <= 0.f)
 		{
 			if (failureReason)

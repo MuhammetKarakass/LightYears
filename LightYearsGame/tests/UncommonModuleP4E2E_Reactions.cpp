@@ -68,7 +68,7 @@ namespace uncommon_p4_e2e
 			f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f);
 			const auto cold = f.Install("Module.Defense.ColdRetort.Uncommon", variant, 1, "Module.SideFeature.ColdRetort.JarringEffect");
 			f.Equal("Jarring excludes a source without status", 10.f, Hit(*f.ship, enemy.get(), 10.f, Plain()));
-			f.Equal("Jarring reads status on the source after Cold Retort", variant == 1 ? 8.8f : 10.f, Hit(*f.ship, enemy.get(), 10.f, Plain()));
+			f.Equal("Jarring reads status on the source after Cold Retort", variant == 1 ? 8.2f : 10.f, Hit(*f.ship, enemy.get(), 10.f, Plain()));
 			f.Remove(cold);
 			f.Equal("removing Jarring restores incoming damage", 10.f, Hit(*f.ship, enemy.get(), 10.f, Plain()));
 		}

@@ -1,4 +1,5 @@
 #include "enemy/EnemyActor.h"
+#include "framework/debug/Profiler.h"
 
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/tags/GameplayTags.h"
@@ -195,6 +196,7 @@ namespace ly
 
 	void EnemyActor::Blew()
 	{
+		LY_PROFILE_SCOPE("Enemy.Blew");
 		const bool wasReady = mEnemyRuntime.IsReady();
 		mEnemyRuntime.Clear();
 		if (!wasReady) return;

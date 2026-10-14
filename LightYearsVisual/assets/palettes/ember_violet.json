@@ -11,9 +11,17 @@
 		"ember":   ["#2c0a2c", "#7a1c3c", "#c8402c", "#f08a30", "#ffe8a0"],
 		"portBlue":   ["#081a5a", "#1a46b8", "#3c82f0", "#8cc0ff", "#e4f2ff"],
 		"portGreen":  ["#06301c", "#0e7a3c", "#2cc460", "#86f0a0", "#e6ffe8"],
-		"portViolet": ["#240c5a", "#5a2cb4", "#9a5cf0", "#cc9cff", "#f4e8ff"]
+		"portViolet": ["#240c5a", "#5a2cb4", "#9a5cf0", "#cc9cff", "#f4e8ff"],
+		"bg_halpha":   ["#1e0834", "#5c1450", "#a81e52", "#e8587e", "#ffc6da"],
+		"bg_oiii":     ["#0a1a4e", "#0c5478", "#12a09a", "#6eeab8", "#e8fff2"],
+		"bg_starlight": ["#1a1446", "#7a68aa", "#e8d6bc", "#fff3e0", "#ffffff"],
+		"bg_bulge":    ["#3a0a14", "#8a2a18", "#d0662a", "#f2b040", "#fff0b8"]
 	},
 	"roles": {
+		"emissionRed": "bg_halpha",
+		"emissionTeal": "bg_oiii",
+		"galaxyLight": "bg_starlight",
+		"bulgeLight": "bg_bulge",
 		"background": "space",
 		"ambient": "violet",
 		"ambient2": "magenta",

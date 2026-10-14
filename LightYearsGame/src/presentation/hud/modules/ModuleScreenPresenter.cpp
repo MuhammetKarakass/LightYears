@@ -1,5 +1,6 @@
 #include "presentation/hud/modules/ModuleScreenPresenter.h"
 #include "gameplay/module/ModuleLoadout.h"
+#include "gameplay/content/ModuleContentCatalog.h"
 #include "gameplay/module/ModuleResolver.h"
 #include "gameplay/module/ModuleAbilitySlots.h"
 #include "gameplay/ability/GameAbility.h"
@@ -36,6 +37,7 @@ namespace ly
 				{ ModuleZoneKind::Core, GameplayTags::Module::Zone::Core, "Core" },
 				{ ModuleZoneKind::Engine, GameplayTags::Module::Zone::Engine, "Engine" },
 				{ ModuleZoneKind::Sensor, GameplayTags::Module::Zone::Sensor, "Sensor" },
+				{ ModuleZoneKind::AbilityBay, GameplayTags::Module::Zone::AbilityBay, "Ability Bay" },
 			};
 			return zones;
 		}
@@ -55,6 +57,19 @@ namespace ly
 			if (family == GameplayTags::Ability::Movement) return "Movement";
 			if (family == GameplayTags::Ability::Utility) return "Utility";
 			return "Module";
+		}
+
+		std::string RarityLabel(ModuleRarity rarity)
+		{
+			switch (rarity)
+			{
+			case ModuleRarity::Common: return "Common";
+			case ModuleRarity::Uncommon: return "Uncommon";
+			case ModuleRarity::Rare: return "Rare";
+			case ModuleRarity::Epic: return "Epic";
+			case ModuleRarity::Legendary: return "Legendary";
+			}
+			return {};
 		}
 
 
@@ -86,7 +101,29 @@ namespace ly
 			return static_cast<int>(std::lround(bonus * 100.f));
 		}
 
-		bool BuildEntry(const ModuleRulesContext& rules, const ModulePlacement& placement, bool installed, const PlayerSpaceShip* ship, float rebootTotal, std::uint32_t heldId, ModuleEntryView& out)
+		std::string ConflictText(const ModuleRulesContext& rules, const ModuleLoadout& loadout, std::uint32_t installedInstanceId)
+		{
+			const ModulePlacement* placement = loadout.FindPlacement(installedInstanceId);
+			const ModuleDefinition* definition = placement && rules.lookup ? rules.lookup(placement->moduleId) : nullptr;
+			return definition ? "Conflicts with " + definition->displayName : std::string{ "Conflicts with an installed module" };
+		}
+
+		// Text for a drop the rules refused as a conflict; names the first installed module that blocks it.
+		std::string ConflictMessage(Player& player, std::uint32_t heldId, sf::Vector2i origin, int rotationQuarterTurns)
+		{
+			const ModuleLoadout& loadout = player.GetModuleLoadout();
+			const std::optional<ModuleRulesContext> rules = player.BuildModuleRules();
+			const ModulePlacement* held = loadout.FindPlacement(heldId);
+			if (!held) held = loadout.FindInventoryItem(heldId);
+			if (!rules || !held) return ModulePlacementRules::Describe(ModulePlacementFailure::ModuleConflict);
+			ModulePlacement candidate = *held;
+			candidate.origin = origin;
+			candidate.rotationQuarterTurns = rotationQuarterTurns;
+			const List<std::uint32_t> conflicts = ModulePlacementRules::FindConflictingInstances(*rules, loadout.GetPlacements(), candidate, heldId);
+			return conflicts.empty() ? std::string{ ModulePlacementRules::Describe(ModulePlacementFailure::ModuleConflict) } : ConflictText(*rules, loadout, conflicts.front());
+		}
+
+		bool BuildEntry(const ModuleRulesContext& rules, const ModulePlacement& placement, bool installed, const PlayerSpaceShip* ship, std::uint32_t heldId, const std::string& description, const std::string& sideDescription, ModuleEntryView& out)
 		{
 			const ModuleDefinition* definition = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
 			if (!definition || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= definition->sizeVariants.size()) return false;
@@ -95,7 +132,7 @@ namespace ly
 			out.name = definition->displayName;
 			out.level = placement.level;
 			out.levelCount = definition->levelCount;
-			out.description = FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)], placement.level);
+			out.description = description;
 			for (const auto& variant : definition->sizeVariants) out.sizeLadder.push_back(static_cast<int>(variant.shape.cells.size()));
 			std::sort(out.sizeLadder.begin(), out.sizeLadder.end());
 			out.sizeLadder.erase(std::unique(out.sizeLadder.begin(), out.sizeLadder.end()), out.sizeLadder.end());
@@ -106,18 +143,21 @@ namespace ly
 				if (placement.sideFeatureId.IsValid())
 				{
 					const auto* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(placement.sideFeatureId) : nullptr;
-					if (feature) { out.sideFeatureName = feature->displayName; out.sideFeatureDescription = FormatModuleSideFeatureDescription(*feature, placement.level); }
+					if (feature) { out.sideFeatureName = feature->displayName; out.sideFeatureDescription = sideDescription; }
 					if (!IsSideFeatureUsableAtLevel(*definition, feature, placement.level)) out.sideFeatureState = ModuleSideFeatureViewState::Unavailable;
 					else out.sideFeatureState = IsLargestCellCountVariant(*definition, placement.variantIndex) ? ModuleSideFeatureViewState::Active : ModuleSideFeatureViewState::Locked;
 				}
 			}
 			out.abbreviation = Abbreviate(placement.moduleId.ToString());
 			out.family = FamilyLabel(definition->family);
+			out.rarity = RarityLabel(definition->rarity);
 			out.isSystem = definition->systemCategory.IsValid();
 			const sas::AbilitySlot abilitySlot = AbilitySlotForModuleSystem(definition->systemCategory);
 			if (abilitySlot != sas::AbilitySlot::None)
 			{
 				const char* inputLabel = AbilityInputSchema::GetLabel(abilitySlot);
+				// Every ability slot shares one family (and so one color) whatever ability it holds.
+				out.family = "Ability";
 				const GameAbility* ability = ship
 					? ship->GetAbilitySystemComponent().GetAbility(abilitySlot)
 					: nullptr;
@@ -130,12 +170,10 @@ namespace ly
 						? abilityDefinition.abilityId
 						: abilityDefinition.displayName);
 					out.abbreviation = Abbreviate(abilityDefinition.abilityId);
-					out.family = AbilityFamilyLabel(abilityDefinition);
 				}
 				else
 				{
 					out.name += " Ability Slot (empty)";
-					out.family = "Ability";
 				}
 			}
 			if (definition->systemCategory == GameplayTags::Module::System::LifeSupport)
@@ -149,15 +187,10 @@ namespace ly
 				out.bonusPercent = AbilitySlotForModuleSystem(definition->systemCategory) == sas::AbilitySlot::None
 					? ToPercent(ModuleResolver::GetZoneBonus(rules, *definition, placement))
 					: 0;
-				if (ship && ship->GetModuleApplier().IsRebooting(placement.instanceId))
-				{
-					const float remaining = ship->GetModuleApplier().GetRebootRemainingSeconds(placement.instanceId);
-					out.rebooting = true;
-					// Tenths keep the model from changing every frame.
-					out.rebootRemaining = std::round(remaining * 10.f) / 10.f;
-					// Quantized so the view model (and the screen rebuild it triggers) changes in steps, not every frame.
-					out.rebootFraction = rebootTotal > 0.f ? std::round(std::clamp(1.f - remaining / rebootTotal, 0.f, 1.f) * 50.f) / 50.f : 0.f;
-				}
+				if (ship && AbilitySlotForModuleSystem(definition->systemCategory) == sas::AbilitySlot::None)
+					for (const auto& bonus : ship->GetModuleApplier().GetResolvedEffects().zoneBonuses)
+						if (bonus.instanceId == placement.instanceId) out.bonusPercent = ToPercent(bonus.bonus);
+
 			}
 			return true;
 		}
@@ -177,6 +210,7 @@ namespace ly
 		mOpen = open;
 		if (!open)
 		{
+			mContentValid = false;
 			ClearHold();
 			mHoverCell.reset();
 			mMessage.clear();
@@ -243,7 +277,8 @@ namespace ly
 		const ModulePlacementFailure failure = installed ? player->TryMoveModule(mHeldId, *mHoverCell, mHeldRotation) : player->TryInstallModule(mHeldId, *mHoverCell, mHeldRotation);
 		if (failure != ModulePlacementFailure::None)
 		{
-			ShowFailure(ModulePlacementRules::Describe(failure));
+			const std::string text = failure == ModulePlacementFailure::ModuleConflict ? ConflictMessage(*player, mHeldId, *mHoverCell, mHeldRotation) : std::string{ ModulePlacementRules::Describe(failure) };
+			ShowFailure(text.c_str());
 			return false;
 		}
 		ClearHold();
@@ -301,14 +336,16 @@ namespace ly
 		const std::optional<ModuleRulesContext> rules = player ? player->BuildModuleRules() : std::nullopt;
 		if (!rules)
 		{
+			mContentValid = false;
 			ClearHold();
 			SetIfChanged(vm.hasSchematic, false, vm.revision);
 			SetIfChanged(vm.gridWidth, 0, vm.revision);
 			SetIfChanged(vm.gridHeight, 0, vm.revision);
 			SetIfChanged(vm.cellZones, List<ModuleZoneKind>{}, vm.revision);
+			SetIfChanged(vm.cellLocked, List<char>{}, vm.revision);
 			SetIfChanged(vm.legend, List<ModuleLegendEntry>{}, vm.revision);
-			SetIfChanged(vm.installed, List<ModuleEntryView>{}, vm.revision);
-			SetIfChanged(vm.inventory, List<ModuleEntryView>{}, vm.revision);
+			if (SetIfChanged(vm.installed, List<ModuleEntryView>{}, vm.revision)) vm.installedRevision.Bump();
+			if (SetIfChanged(vm.inventory, List<ModuleEntryView>{}, vm.revision)) vm.inventoryRevision.Bump();
 			SetIfChanged(vm.preview, ModulePreviewView{}, vm.revision);
 			SetIfChanged(vm.heldInstanceId, 0u, vm.revision);
 			SetIfChanged(vm.heldRotation, 0, vm.revision);
@@ -327,25 +364,116 @@ namespace ly
 		if (!held && mHeldId != 0) held = loadout.FindInventoryItem(mHeldId);
 		if (!held) ClearHold();
 
-		List<ModuleZoneKind> zones;
-		zones.reserve(schematic.cellZones.size());
-		for (const GameplayTag& tag : schematic.cellZones) zones.push_back(ZoneKindOf(tag));
-
-		List<ModuleLegendEntry> legend;
-		for (const ZoneInfo& zone : GetZones())
+		const unsigned int playerId = player->GetUniqueID(), shipId = livingShip ? livingShip->GetUniqueID() : 0;
+		const std::uint64_t catalogRevision = content::ModuleContentCatalog::GetRevision();
+		if (mPlayerId != playerId || mCatalogRevision != catalogRevision) mDescriptions.clear();
+		if (!mContentValid || mPlayerId != playerId || mShipId != shipId || mLoadoutRevision != loadout.GetRevision() || mCatalogRevision != catalogRevision)
 		{
-			const ModuleZoneEntry* entry = zoneTable.FindZone(zone.tag);
-			std::string label = zone.name;
-			if (entry) label += "  " + (entry->anyFamily ? std::string{ "Any" } : FamilyLabel(entry->family)) + "  +" + std::to_string(ToPercent(entry->bonus)) + "%";
-			legend.push_back({ zone.kind, label });
+			++mContentBuildCount;
+			List<ModuleZoneKind> zones;
+			zones.reserve(schematic.cellZones.size());
+			for (const GameplayTag& tag : schematic.cellZones) zones.push_back(ZoneKindOf(tag));
+			List<char> locked = schematic.cellLocked; locked.resize(schematic.cellZones.size(), 0);
+
+			List<ModuleLegendEntry> legend;
+			for (const ZoneInfo& zone : GetZones())
+			{
+				const ModuleZoneEntry* entry = zoneTable.FindZone(zone.tag);
+				std::string label = zone.name;
+				if (zone.kind == ModuleZoneKind::AbilityBay) label += "  Q/E/F/R only";
+				else if (entry) label += "  " + (entry->anyFamily ? std::string{ "Any" } : FamilyLabel(entry->family)) + "  +" + std::to_string(ToPercent(entry->bonus)) + "%";
+				legend.push_back({ zone.kind, label });
+			}
+
+			List<ModuleEntryView> installed, inventory;
+			ModuleEntryView entry;
+			const auto build = [&](const ModulePlacement& placement, bool isInstalled, List<ModuleEntryView>& entries)
+			{
+				const ModuleDefinition* definition = rules->lookup(placement.moduleId);
+				if (!definition || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= definition->sizeVariants.size()) return;
+				const DescriptionKey key{ placement.moduleId.ToString(), placement.variantIndex, placement.level, placement.sideFeatureId.ToString() };
+				auto cached = mDescriptions.find(key);
+				if (cached == mDescriptions.end())
+				{
+					++mDescriptionFormatCount;
+					const auto* feature = placement.sideFeatureId.IsValid() && rules->sideFeatureLookup ? rules->sideFeatureLookup(placement.sideFeatureId) : nullptr;
+					cached = mDescriptions.emplace(key, std::make_pair(FormatModuleDescription(*definition, definition->sizeVariants[static_cast<std::size_t>(placement.variantIndex)], placement.level), feature ? FormatModuleSideFeatureDescription(*feature, placement.level) : std::string{})).first;
+				}
+				if (BuildEntry(*rules, placement, isInstalled, livingShip, mHeldId, cached->second.first, cached->second.second, entry)) entries.push_back(entry);
+			};
+			installed.reserve(loadout.GetPlacements().size());
+			inventory.reserve(loadout.GetInventory().size());
+			for (const ModulePlacement& placement : loadout.GetPlacements()) build(placement, true, installed);
+			for (const ModulePlacement& placement : loadout.GetInventory()) build(placement, false, inventory);
+			const auto fillConflicts = [&](List<ModuleEntryView>& entries)
+			{
+				for (ModuleEntryView& view : entries)
+				{
+					const ModulePlacement* item = loadout.FindPlacement(view.instanceId);
+					if (!item) item = loadout.FindInventoryItem(view.instanceId);
+					if (item) view.conflictingInstanceIds = ModulePlacementRules::FindConflictingInstances(*rules, loadout.GetPlacements(), *item, view.instanceId);
+				}
+			};
+			fillConflicts(installed);
+			fillConflicts(inventory);
+
+			SetIfChanged(vm.hasSchematic, true, vm.revision);
+			SetIfChanged(vm.gridWidth, schematic.width, vm.revision);
+			SetIfChanged(vm.gridHeight, schematic.height, vm.revision);
+			if (SetIfChanged(vm.cellZones, zones, vm.revision)) vm.installedRevision.Bump();
+			SetIfChanged(vm.cellLocked, locked, vm.revision);
+			if (SetIfChanged(vm.legend, legend, vm.revision)) vm.inventoryRevision.Bump();
+			if (SetIfChanged(vm.installed, installed, vm.revision)) vm.installedRevision.Bump();
+			if (SetIfChanged(vm.inventory, inventory, vm.revision)) vm.inventoryRevision.Bump();
+			mContentValid = true;
+			mPlayerId = playerId;
+			mShipId = shipId;
+			mLoadoutRevision = loadout.GetRevision();
+			mCatalogRevision = catalogRevision;
 		}
 
-		List<ModuleEntryView> installed, inventory;
-		ModuleEntryView entry;
-		for (const ModulePlacement& placement : loadout.GetPlacements())
-			if (BuildEntry(*rules, placement, true, livingShip, zoneTable.rebootDurationSeconds, mHeldId, entry)) installed.push_back(entry);
-		for (const ModulePlacement& placement : loadout.GetInventory())
-			if (BuildEntry(*rules, placement, false, livingShip, 0.f, mHeldId, entry)) inventory.push_back(entry);
+		bool zoneBonusesDirty = false;
+		const auto update = [&](List<ModuleEntryView>& entries, bool isInstalled, UIRevision& listRevision)
+		{
+			bool changed = false;
+			for (ModuleEntryView& view : entries)
+			{
+				const bool heldChanged = SetIfChanged(view.held, view.instanceId == mHeldId, vm.revision);
+				if (isInstalled) changed |= heldChanged;
+				const bool rebooting = isInstalled && livingShip && livingShip->GetModuleApplier().IsRebooting(view.instanceId);
+				const float remaining = rebooting ? livingShip->GetModuleApplier().GetRebootRemainingSeconds(view.instanceId) : 0.f;
+				zoneBonusesDirty = zoneBonusesDirty || (isInstalled && view.rebooting != rebooting);
+				changed |= SetIfChanged(view.rebooting, rebooting, vm.revision);
+				changed |= SetIfChanged(view.rebootRemaining, std::round(remaining * 10.f) / 10.f, vm.revision);
+				const float fraction = rebooting && zoneTable.rebootDurationSeconds > 0.f ? std::round(std::clamp(1.f - remaining / zoneTable.rebootDurationSeconds, 0.f, 1.f) * 50.f) / 50.f : 0.f;
+				changed |= SetIfChanged(view.rebootFraction, fraction, vm.revision);
+				if (view.family != "Ability") continue;
+				// Abilities can be equipped without mutating the module loadout.
+				const ModulePlacement* placement = isInstalled ? loadout.FindPlacement(view.instanceId) : loadout.FindInventoryItem(view.instanceId);
+				const ModuleDefinition* definition = placement ? rules->lookup(placement->moduleId) : nullptr;
+				const sas::AbilitySlot slot = definition ? AbilitySlotForModuleSystem(definition->systemCategory) : sas::AbilitySlot::None;
+				if (slot != sas::AbilitySlot::None)
+				{
+					const GameAbility* ability = livingShip ? livingShip->GetAbilitySystemComponent().GetAbility(slot) : nullptr;
+					const std::string label = AbilityInputSchema::GetLabel(slot);
+					const std::string name = ability ? label + ": " + (ability->GetDefinition().displayName.empty() ? ability->GetDefinition().abilityId : ability->GetDefinition().displayName) : label + " Ability Slot (empty)";
+					changed |= SetIfChanged(view.name, name, vm.revision);
+					changed |= SetIfChanged(view.abbreviation, ability ? Abbreviate(ability->GetDefinition().abilityId) : label, vm.revision);
+				}
+			}
+			if (changed) listRevision.Bump();
+		};
+		update(vm.installed, true, vm.installedRevision);
+		update(vm.inventory, false, vm.inventoryRevision);
+		if (zoneBonusesDirty && livingShip)
+		{
+			bool changed = false;
+			for (ModuleEntryView& view : vm.installed)
+				if (view.family != "Ability")
+					for (const auto& bonus : livingShip->GetModuleApplier().GetResolvedEffects().zoneBonuses)
+						if (bonus.instanceId == view.instanceId) changed |= SetIfChanged(view.bonusPercent, ToPercent(bonus.bonus), vm.revision);
+			if (changed) vm.installedRevision.Bump();
+		}
 
 		ModulePreviewView preview;
 		const ModuleDefinition* heldDefinition = held && rules->lookup ? rules->lookup(held->moduleId) : nullptr;
@@ -357,19 +485,26 @@ namespace ly
 			const ModulePlacementFailure failure = ModulePlacementRules::CanPlace(*rules, loadout, candidate, heldInstalled ? held->instanceId : 0u);
 			preview.active = true;
 			preview.cells = ModulePlacementRules::GetCoveredCells(*heldDefinition, candidate);
-			preview.legal = failure == ModulePlacementFailure::None;
+			bool swapsSlots = false;
+			if (failure == ModulePlacementFailure::Overlap && heldInstalled && AbilitySlotForModuleSystem(heldDefinition->systemCategory) != sas::AbilitySlot::None)
+				for (const ModulePlacement& other : loadout.GetPlacements())
+				{
+					const ModuleDefinition* otherDefinition = other.instanceId != held->instanceId ? rules->lookup(other.moduleId) : nullptr;
+					if (!otherDefinition || AbilitySlotForModuleSystem(otherDefinition->systemCategory) == sas::AbilitySlot::None) continue;
+					const List<sf::Vector2i> covered = ModulePlacementRules::GetCoveredCells(*otherDefinition, other);
+					if (std::find(covered.begin(), covered.end(), *mHoverCell) != covered.end()) { swapsSlots = true; break; }
+				}
+			preview.legal = failure == ModulePlacementFailure::None || swapsSlots;
 			if (preview.legal && AbilitySlotForModuleSystem(heldDefinition->systemCategory) == sas::AbilitySlot::None)
 				preview.bonusPercent = ToPercent(ModuleResolver::GetZoneBonus(*rules, *heldDefinition, candidate));
+			else if (!preview.legal && failure == ModulePlacementFailure::ModuleConflict)
+			{
+				preview.conflictingInstanceIds = ModulePlacementRules::FindConflictingInstances(*rules, loadout.GetPlacements(), candidate, heldInstalled ? held->instanceId : 0u);
+				preview.message = preview.conflictingInstanceIds.empty() ? std::string{ ModulePlacementRules::Describe(failure) } : ConflictText(*rules, loadout, preview.conflictingInstanceIds.front());
+			}
 			else if (!preview.legal) preview.message = ModulePlacementRules::Describe(failure);
 		}
 
-		SetIfChanged(vm.hasSchematic, true, vm.revision);
-		SetIfChanged(vm.gridWidth, schematic.width, vm.revision);
-		SetIfChanged(vm.gridHeight, schematic.height, vm.revision);
-		SetIfChanged(vm.cellZones, zones, vm.revision);
-		SetIfChanged(vm.legend, legend, vm.revision);
-		SetIfChanged(vm.installed, installed, vm.revision);
-		SetIfChanged(vm.inventory, inventory, vm.revision);
 		SetIfChanged(vm.preview, preview, vm.revision);
 		SetIfChanged(vm.heldInstanceId, mHeldId, vm.revision);
 		SetIfChanged(vm.heldRotation, mHeldRotation, vm.revision);

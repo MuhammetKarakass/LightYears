@@ -15,6 +15,25 @@ namespace uncommon_p6_e2e
 			void Damage(const DamageContext& context) { if (!removed && context.payload.moduleTriggerPolicy == DamageModuleTriggerPolicy::Suppressed) { removed = true; fixture.Remove(module); } }
 		};
 	}
+	void DeathBurstChecks(Report& report, Application& application)
+	{
+		{
+			Fixture f{ report, application }; f.Install("Module.Offense.ThermalShockCoil.Uncommon", 1, 1, "Module.SideFeature.ThermalShockCoil.DeathBurst");
+			const auto first = Enemy(f, 200.f); const auto inside = Enemy(f, 599.f); const auto outside = Enemy(f, 601.f);
+			StatusHit(*first, f.ship.get(), DamageTypeSchema::Thermal); StatusHit(*first, f.ship.get(), DamageTypeSchema::Cryo);
+			DamageObserver observer{ *f.ship };
+			f.ship->GetCombatRuntime().SetRuntimeModifier("P6.double", { 2.f });
+			Hit(*first, f.ship.get(), 10000.f, Plain());
+			report.Check(first->GetIsPendingDestroy() && first->GetCombatRuntime().GetModuleStatusRules().Empty(), "death snapshot survives actual target teardown");
+			const auto bursts = Actors<ModuleDelayedExplosionActor>(f); report.Check(bursts.size() == 1, "dual-status death creates a real Thermal burst");
+			bursts.front()->Tick(0.f); f.Equal("death burst uses fifteen percent target max health and no second source scale", 150.f, 1000.f - inside->GetHealthComponent().GetHealth());
+			f.Equal("death burst respects its configured radius", 1000.f, outside->GetHealthComponent().GetHealth());
+			report.Check(observer.generated == 1 && observer.allSuppressed, "death burst cannot start other module chains");
+			const auto ordinary = Enemy(f, 1000.f); Hit(*ordinary, f.ship.get(), 10000.f, Plain());
+			report.Check(Actors<ModuleDelayedExplosionActor>(f).size() == 1, "ordinary kills cannot create a Thermal burst");
+		}
+	}
+
 	void ActorChecks(Report& report, Application& application)
 	{
 		for (int level = 1; level <= 3; ++level)
@@ -57,14 +76,17 @@ namespace uncommon_p6_e2e
 			Fixture f{ report, application }; f.Install("Module.Offense.ScatterCore.Uncommon", 1, 1, "Module.SideFeature.ScatterCore.FourthMissile");
 			const auto enemy = Enemy(f, 100.f); auto& ability = CastOffense(f);
 			OffenseHit(f, *enemy, ability);
-			report.Check(Actors<ModuleGuidedProjectileActor>(f).size() == 1, "fewer enemies produce one missile per distinct target");
+			report.Check(Actors<ModuleGuidedProjectileActor>(f).size() == 4, "a lone enemy receives all four missiles");
+			const float before = enemy->GetHealthComponent().GetHealth();
+			for (const auto& projectile : Actors<ModuleGuidedProjectileActor>(f)) projectile->Tick(1.f);
+			f.Equal("all four missiles can damage the same target", 60.f, before - enemy->GetHealthComponent().GetHealth());
 			for (int index = 2; index <= 4; ++index) Enemy(f, index * 150.f);
 			CastOffense(f); OffenseHit(f, *enemy, ability);
-			report.Check(Actors<ModuleGuidedProjectileActor>(f).size() == 5, "Fourth Missile adds one distinct guided projectile to the next use");
+			report.Check(Actors<ModuleGuidedProjectileActor>(f).size() == 4, "Fourth Missile prefers distinct targets when four are available");
 		}
 		{
 			Fixture f{ report, application }; const auto module = f.Install("Module.Offense.ScatterCore.Uncommon", 1, 1, "Module.SideFeature.ScatterCore.Aftershock");
-			const auto first = Enemy(f, 200.f); const auto inside = Enemy(f, 299.f); const auto outside = Enemy(f, 301.f);
+			const auto first = Enemy(f, 200.f); const auto inside = Enemy(f, 599.f); const auto outside = Enemy(f, 601.f);
 			auto& ability = CastOffense(f); OffenseHit(f, *first, ability); OffenseHit(f, *outside, ability, 50.f);
 			const auto explosions = Actors<ModuleDelayedExplosionActor>(f);
 			report.Check(explosions.size() == 1, "Aftershock creates one actual delayed actor per use");
@@ -83,7 +105,7 @@ namespace uncommon_p6_e2e
 				if (use > 0) CastOffense(f);
 				OffenseHit(f, *enemy, ability, .1f);
 			}
-			report.Check(f.ship->GetModuleApplier().GetGeneratedActorCount() == 72 && Actors<ModuleDelayedExplosionActor>(f).size() == 32, "pending actor count includes the JSON-capped Aftershock population");
+			report.Check(f.ship->GetModuleApplier().GetGeneratedActorCount() == 96 && Actors<ModuleDelayedExplosionActor>(f).size() == 32, "pending actor count includes capped sixty-four missiles and thirty-two Aftershocks");
 			const auto actor = Actors<ModuleGuidedProjectileActor>(f).front();
 			enemy->SetActorLocation(f.ship->GetActorLocation() + sf::Vector2f{ 10000.f, 0.f });
 			actor->Tick(3.01f); report.Check(actor->GetIsPendingDestroy(), "guided projectile expires at its configured lifetime");
@@ -106,21 +128,7 @@ namespace uncommon_p6_e2e
 			report.Check(removal.removed && f.ship->GetModuleApplier().GetGeneratedRuleCount() == 0, "nested damage callbacks safely replace the rule generation");
 			f.Equal("nested removal cancels the remaining secondary bounce", 1000.f, third->GetHealthComponent().GetHealth());
 		}
-		{
-			Fixture f{ report, application }; f.Install("Module.Offense.ThermalShockCoil.Uncommon", 1, 1, "Module.SideFeature.ThermalShockCoil.DeathBurst");
-			const auto first = Enemy(f, 200.f); const auto inside = Enemy(f, 299.f); const auto outside = Enemy(f, 301.f);
-			StatusHit(*first, f.ship.get(), DamageTypeSchema::Thermal); StatusHit(*first, f.ship.get(), DamageTypeSchema::Cryo);
-			DamageObserver observer{ *f.ship };
-			f.ship->GetCombatRuntime().SetRuntimeModifier("P6.double", { 2.f });
-			Hit(*first, f.ship.get(), 10000.f, Plain());
-			report.Check(first->GetIsPendingDestroy() && first->GetCombatRuntime().GetModuleStatusRules().Empty(), "death snapshot survives actual target teardown");
-			const auto bursts = Actors<ModuleDelayedExplosionActor>(f); report.Check(bursts.size() == 1, "dual-status death creates a real Thermal burst");
-			bursts.front()->Tick(0.f); f.Equal("death burst uses target max health and no second source scale", 30.f, 1000.f - inside->GetHealthComponent().GetHealth());
-			f.Equal("death burst respects its configured radius", 1000.f, outside->GetHealthComponent().GetHealth());
-			report.Check(observer.generated == 1 && observer.allSuppressed, "death burst cannot start other module chains");
-			const auto ordinary = Enemy(f, 1000.f); Hit(*ordinary, f.ship.get(), 10000.f, Plain());
-			report.Check(Actors<ModuleDelayedExplosionActor>(f).size() == 1, "ordinary kills cannot create a Thermal burst");
-		}
+		DeathBurstChecks(report, application);
 		{
 			Fixture f{ report, application }; f.Install("Module.Offense.ScatterCore.Uncommon");
 			const auto first = Enemy(f, 200.f); const auto dying = Enemy(f, 400.f);

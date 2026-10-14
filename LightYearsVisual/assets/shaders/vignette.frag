@@ -11,5 +11,10 @@ void main()
 	uv.x *= uResolution.x / uResolution.y;
 	float d = length(uv) / (uResolution.x / uResolution.y * 0.5 + 0.5);
 	float shade = smoothstep(uRadius * 0.6, uRadius * 1.25, d);
+	// Fully transparent in the middle of the screen: skip the blend there.
+	if (shade * uStrength <= 0.0)
+	{
+		discard;
+	}
 	gl_FragColor = vec4(0.0, 0.0, 0.0, shade * uStrength);
 }

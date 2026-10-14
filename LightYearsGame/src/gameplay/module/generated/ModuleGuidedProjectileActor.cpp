@@ -25,13 +25,13 @@ namespace ly
 		const auto lease = mLease.lock();
 		const auto owner = LockOwnerActor();
 		const auto target = mTarget.lock();
-		if (!lease || !lease->active || !owner || owner->GetIsPendingDestroy() || !target || target->GetIsPendingDestroy()) { Destroy(); return; }
+		if (!lease || !lease->active || !owner || owner->GetIsPendingDestroy() || (!mUnguided && (!target || target->GetIsPendingDestroy()))) { Destroy(); return; }
 		if (IsInPortalTransit()) { AbilityWorldActor::Tick(deltaTime); return; }
 		const auto start = GetActorLocation();
-		const auto offset = target->GetActorLocation() - start;
+		const auto offset = mUnguided ? mUnguidedDirection : target->GetActorLocation() - start;
 		const float distance = GetVectorLength(offset);
 		const float step = std::min(std::max(0.f, deltaTime), std::max(0.f, GetLifeTime() - GetAge()));
-		const auto end = distance > 0.f ? start + offset / distance * std::min(distance, mSpeed * step) : start;
+		const auto end = mUnguided ? start + mUnguidedDirection * mSpeed * step : (distance > 0.f ? start + offset / distance * std::min(distance, mSpeed * step) : start);
 		for (const auto& contact : projectile::FindSweptContacts(*this, start, end, GetPhysicsCollisionRadius()))
 		{
 			SetActorLocation(start + (end - start) * contact.fraction);
@@ -43,7 +43,7 @@ namespace ly
 		SetActorLocation(end);
 		AbilityWorldActor::Tick(deltaTime);
 		// A body-less combatant can still be the selected guided target.
-		if (distance <= mSpeed * step && !GetIsPendingDestroy())
+		if (!mUnguided && distance <= mSpeed * step && !GetIsPendingDestroy())
 		{
 			ApplyCombatDamage(*target, GetDamage(), owner.get(), GetDamageTags(), GetDamagePayload(), {}, {}, DamageDeliveryType::Projectile, this);
 			Destroy();
@@ -52,6 +52,7 @@ namespace ly
 	}
 	void ModuleGuidedProjectileActor::OnActorBeginOverlap(Actor* target)
 	{
+		if (target && std::find(mExcludedTargets.begin(), mExcludedTargets.end(), target->GetUniqueID()) != mExcludedTargets.end()) return;
 		AbilityWorldActor::OnActorBeginOverlap(target);
 		if (GetIsPendingDestroy() || !IsValidAbilityTarget(target)) return;
 		const auto owner = LockOwnerActor();

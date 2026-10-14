@@ -69,10 +69,11 @@ namespace
 		if (dynamic_cast<const TextWidget*>(&widget))
 		{
 			const auto bound = widget.GetBound(); const auto p = bound.position - origin;
-			if (p.y >= 714.f && p.y < 900.f && p.x < 580.f)
+			const sf::Vector2f cardOrigin = ModuleScreenView::CardOrigin, cardExtent = ModuleScreenView::CardExtent;
+			if (p.x >= cardOrigin.x && p.x < cardOrigin.x + cardExtent.x && p.y >= cardOrigin.y + 10.f && p.y < cardOrigin.y + cardExtent.y + 2.f)
 			{
 				++count;
-				report.Check(p.x >= 58.f && p.x + bound.size.x <= 558.1f && p.y + bound.size.y < 900.f, "actual card TextWidget bounds",
+				report.Check(p.x >= cardOrigin.x + 22.f && p.x + bound.size.x <= cardOrigin.x + cardExtent.x - 22.f + 0.1f && p.y + bound.size.y < cardOrigin.y + cardExtent.y + 2.f, "actual card TextWidget bounds",
 					{ { "x", p.x }, { "y", p.y }, { "width", bound.size.x }, { "height", bound.size.y } });
 			}
 		}
@@ -143,7 +144,7 @@ namespace
 						else report.Check(entry.sideFeatureState == (ladder.size() > 1 ? ModuleSideFeatureViewState::Unselected : ModuleSideFeatureViewState::None), name + " unselected state projected");
 					}
 		}
-		report.Check(modules == 18 && combinations > 200, "all shipped Uncommon combinations covered", { { "modules", modules }, { "combinations", combinations } });
+		report.Check(modules == 22 && combinations > 200, "all shipped Uncommon combinations covered", { { "modules", modules }, { "combinations", combinations } });
 		const auto body = AssetManager::GetAssetManager().LoadFont(ModuleCardText::BodyFont);
 		const std::string turkish = u8"\u00c7\u011e\u0130\u00d6\u015e\u00dc\u00e7\u011f\u0131\u00f6\u015f\u00fc";
 		for (const auto codepoint : sf::String::fromUtf8(turkish.begin(), turkish.end())) report.Check(body->hasGlyph(codepoint), "body font has Turkish glyph", static_cast<unsigned int>(codepoint));

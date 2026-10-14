@@ -2,24 +2,237 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <random>
+#include <utility>
 
 using namespace ly::visual;
+
+namespace
+{
+	// Same generator as the game's ProceduralBackdrop (splitmix64): one progress value gives the same features everywhere.
+	class SeededRandom
+	{
+	public:
+		explicit SeededRandom(std::uint64_t seed)
+			: mState(seed)
+		{
+		}
+
+		std::uint64_t NextU64()
+		{
+			mState += 0x9e3779b97f4a7c15ULL;
+			std::uint64_t z = mState;
+			z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+			z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+			return z ^ (z >> 31);
+		}
+
+		// Uniform in [0, 1).
+		float Next01()
+		{
+			return static_cast<float>(NextU64() >> 40) / 16777216.f;
+		}
+
+		float Range(float low, float high)
+		{
+			return low + (high - low) * Next01();
+		}
+
+	private:
+		std::uint64_t mState;
+	};
+
+	constexpr float PlanetLightLift = 0.2f;
+	constexpr float MoonOrbitPerPlanetRadius = 1.6f;
+	// The backdrop planet turns 4x the pipeline's rotationSpeed, as in the game.
+	constexpr float PlanetSpinScale = 4.f;
+	constexpr float SunTemperatureK = 5772.f;
+	// Sgr A* is the final stop of the route: the S2-like star from GalaxyRoute.
+	constexpr float SgrATemperatureK = 22000.f;
+	constexpr float SgrAMassSolar = 20.f;
+	constexpr float PulsarMinProgress = 0.2f;
+	constexpr float LensMinProgress = 0.999f;
+	// The lens sits in the upper right, off the play-area centre, so the swirl stays out of the fight.
+	constexpr float LensCenterX = 0.76f;
+	constexpr float LensCenterY = 0.30f;
+	// Same rules as ProceduralBackdrop: a distant HII region, only in the arms and in ~60% of them.
+	constexpr float EmissionMinArmProximity = 0.45f;
+	constexpr float EmissionChance = 0.6f;
+	constexpr float DustChance = 0.5f;
+
+	std::uint64_t HashProgress(float progress)
+	{
+		std::uint32_t bits = 0;
+		std::memcpy(&bits, &progress, sizeof bits);
+		return SeededRandom(0x9e3779b97f4a7c15ULL ^ bits).NextU64();
+	}
+
+	// Two draws in a fixed order: unsequenced arguments would make the seeded sequence depend on the compiler.
+	sf::Vector2f RandomPoint(SeededRandom& random, float low, float high, float lowY, float highY)
+	{
+		const float x = random.Range(low, high);
+		const float y = random.Range(lowY, highY);
+		return sf::Vector2f(x, y);
+	}
+
+	// Space gradient colour: the region's shadow colour scaled by factor, so the sky stays near black.
+	sf::Color ShadowColor(const SkyPalette& palette, float factor)
+	{
+		auto channel = [factor](float v) { return static_cast<std::uint8_t>(std::clamp(v * factor, 0.f, 1.f) * 255.f); };
+		return sf::Color(channel(palette.shadow.x), channel(palette.shadow.y), channel(palette.shadow.z));
+	}
+
+	sf::Glsl::Vec3 BlackbodyDisplay(float temperatureK)
+	{
+		const astro::Rgb8 rgb = astro::ToSrgb8(astro::BlackbodyColor(temperatureK));
+		return sf::Glsl::Vec3(rgb.r / 255.f, rgb.g / 255.f, rgb.b / 255.f);
+	}
+
+	// Host star of a place. Progress 0 is the Sun and Sgr A* its S2-like star; in between, a class is sampled from the
+	// stellar mix and the radius and luminosity follow the main sequence, as GalaxyRoute does for procedural stops.
+	HostStar HostStarAt(float progress, const galaxy::SkyState& sky, float uClass, float uTemp)
+	{
+		float temperatureK = SunTemperatureK;
+		float massSolar = 1.f;
+		if (progress >= LensMinProgress)
+		{
+			temperatureK = SgrATemperatureK;
+			massSolar = SgrAMassSolar;
+		}
+		else if (progress > 0.f)
+		{
+			temperatureK = astro::SampleStarTemperature(sky.stellarMix, uClass, uTemp);
+			massSolar = std::pow(temperatureK / SunTemperatureK, 1.f / 0.6f);
+		}
+		HostStar star;
+		star.temperatureK = temperatureK;
+		star.luminositySolar = massSolar >= 0.43f ? std::pow(massSolar, 4.f) : 0.23f * std::pow(massSolar, 2.3f);
+		star.radiusSolar = std::pow(massSolar, 0.8f);
+		star.distanceAU = std::sqrt(star.luminositySolar);
+		return star;
+	}
+}
 
 GalleryScene::GalleryScene(VisualAssets& assets, VisualPipeline& pipeline)
 	: mAssets(assets)
 	, mPipeline(pipeline)
 	, mBrush(assets.Shaders())
 	, mShips(assets)
-	, mStars(1337, 280)
+	, mStars(1337)
 {
+	mPosition = galaxy::RoutePosition(mGalaxyProgress);
+	mSky = galaxy::ComputeSky(mPosition);
+}
+
+void GalleryScene::SetGalaxyProgress(float progress)
+{
+	const float clamped = std::clamp(progress, 0.f, 1.f);
+	if (clamped == mGalaxyProgress)
+	{
+		return;
+	}
+	mGalaxyProgress = clamped;
+	mPosition = galaxy::RoutePosition(clamped);
+	mSky = galaxy::ComputeSky(mPosition);
+	mStarsDirty = true;
+	mFeaturesDirty = true;
+	mLocationStart = mTime;
 }
 
 void GalleryScene::Update(float deltaSeconds)
 {
 	mTime += deltaSeconds;
 	mScroll += sf::Vector2f(7.f, 3.f) * deltaSeconds;
+
+	// Warp eases like the game's backdrop: about 98% of the way after warp.rampSeconds.
+	const WarpSettings& warp = mAssets.Settings().warp;
+	const float target = std::min(mWarpTarget, warp.maxBeta);
+	const float dt = std::clamp(deltaSeconds, 0.f, 0.1f);
+	const float rate = 4.f / std::max(warp.rampSeconds, 0.05f);
+	mBeta += (target - mBeta) * (1.f - std::exp(-rate * dt));
 }
+
+void GalleryScene::SetWarp(float targetBeta, sf::Vector2f direction)
+{
+	mWarpTarget = std::clamp(targetBeta, 0.f, 0.99f);
+	const float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+	if (length > 0.f)
+	{
+		mWarpDirection = direction * (1.f / length);
+	}
+}
+
+std::string GalleryScene::FeatureFlags() const
+{
+	std::string flags;
+	const auto add = [&flags](bool on, const char* name)
+	{
+		if (on)
+		{
+			if (!flags.empty())
+			{
+				flags += ' ';
+			}
+			flags += name;
+		}
+	};
+	add(mLocation.emission, "emission");
+	add(mLocation.dust, "dust");
+	add(mLocation.pulsar, "pulsar");
+	add(mLocation.moon.has_value(), "moon");
+	add(mLocation.lens, "lens");
+	return flags.empty() ? "none" : flags;
+}
+
+void GalleryScene::RebuildLocation(const PipelineSettings& settings)
+{
+	const NebulaSettings& nebula = settings.physicalNebula;
+	const AnomalySettings& anomaly = settings.anomalies;
+	const float armProximity = mSky.armProximity;
+	SeededRandom random(HashProgress(mGalaxyProgress));
+
+	Location next;
+	const float uClass = random.Next01();
+	const float uTemp = random.Next01();
+	next.hostStar = HostStarAt(mGalaxyProgress, mSky, uClass, uTemp);
+	// Same draw order as ProceduralBackdrop::RebuildFeatures, so a switched-off feature leaves the others unchanged.
+	next.emissionAt = RandomPoint(random, 0.2f, 0.8f, 0.15f, 0.6f);
+	next.emissionTemperatureK = random.Range(30000.f, 45000.f);
+	next.emissionSeed = random.Range(0.f, 100.f);
+	const bool dustRoll = random.Next01() < DustChance;
+	next.dustAt = RandomPoint(random, 0.15f, 0.85f, 0.15f, 0.85f);
+	next.dustAngleRad = random.Range(-1.5f, 1.5f);
+	next.dustSeed = random.Range(0.f, 100.f);
+	const sf::Vector2f strayAt = RandomPoint(random, 0.1f, 0.9f, 0.1f, 0.9f);
+	const bool pulsarRoll = random.Next01() < anomaly.pulsarChance;
+	next.pulsarAt = RandomPoint(random, 0.1f, 0.9f, 0.1f, 0.9f);
+	next.pulsarPeriodSeconds = random.Range(0.7f, 3.f);
+	const bool moonRoll = random.Next01() < anomaly.shatteredMoonChance;
+	const auto moonSeed = static_cast<std::uint32_t>(random.NextU64());
+	// Drawn last, so the draws above keep their values when this roll changes.
+	const bool emissionRoll = random.Next01() < EmissionChance;
+
+	next.emission = nebula.enabled && armProximity > EmissionMinArmProximity && emissionRoll;
+	next.dust = nebula.enabled && (mSky.dustDensity > 0.8f || armProximity > 0.5f) && dustRoll;
+	next.dustIlluminatorAt = next.emission ? next.emissionAt : strayAt;
+	next.pulsar = pulsarRoll && mGalaxyProgress > PulsarMinProgress;
+	// No route data here: the planet kind and its moon come from the progress seed alone (no draws from the random stream).
+	const auto planetSeed = static_cast<unsigned>(HashProgress(mGalaxyProgress) >> 32);
+	next.planetKind = ClassifyPlanet(0.f, 0.f, planetSeed);
+	next.moonSeed = planetSeed ^ 0x6d2b79f5u;
+	// The gallery has no planets to orbit, so the shattered moon is limited by its chance alone.
+	if (moonRoll)
+	{
+		next.moon.emplace(moonSeed);
+	}
+	next.lens = mGalaxyProgress >= LensMinProgress;
+	mLocation = std::move(next);
+	// Near-field debris belongs to the place: the same seed as the progress gives the same rocks everywhere.
+	mNearField.emplace(static_cast<unsigned>(HashProgress(mGalaxyProgress)));
+}
+
 
 void GalleryScene::Draw()
 {
@@ -30,6 +243,10 @@ void GalleryScene::Draw()
 		mAssets.Settings().maxEnergyAreaRatio = std::max(mAssets.Settings().maxEnergyAreaRatio, 4.f);
 	}
 	DrawBackground();
+	if (mBackdropOnly)
+	{
+		return;
+	}
 	DrawWorld();
 	DrawShips();
 	DrawEnergy();
@@ -39,28 +256,210 @@ void GalleryScene::DrawBackground()
 {
 	sf::RenderTarget& bg = mPipeline.Target(Layer::Background);
 	sf::RenderTarget& nebulaTarget = mPipeline.Target(Layer::Nebula);
+	const PipelineSettings& settings = mAssets.Settings();
 	const ColorScript& script = mAssets.Script();
-	float cap = mAssets.Settings().tierMaxBrightness[TierIndex(LuminanceTier::Background)];
+	const float cap = settings.tierMaxBrightness[TierIndex(LuminanceTier::Background)];
 
-	DrawGradient(bg, script.Role("background").Sample(0.f), script.Role("background").Sample(0.85f), cap);
+	if (mStarsDirty || settings.starField != mBuiltStars || settings.milkyWay != mBuiltMilkyWay)
+	{
+		mStars.Build(mSky, settings.starField, settings.milkyWay);
+		mBuiltStars = settings.starField;
+		mBuiltMilkyWay = settings.milkyWay;
+		mStarsDirty = false;
+	}
+	if (mFeaturesDirty || settings.physicalNebula != mBuiltNebula || settings.anomalies != mBuiltAnomalies)
+	{
+		RebuildLocation(settings);
+		mBuiltNebula = settings.physicalNebula;
+		mBuiltAnomalies = settings.anomalies;
+		mFeaturesDirty = false;
+	}
 
-	NebulaParams far;
-	far.scroll = mScroll * 0.25f;
-	far.scale = 0.0021f;
-	far.intensity = 0.8f;
-	far.seed = 1.f;
-	far.maxBrightness = cap;
-	DrawNebula(mAssets.Shaders(), nebulaTarget, script.Role("ambient"), far);
+	const sf::Vector2f output(mPipeline.OutputSize());
+	// No camera here: the scroll is the drift in output pixels and each body applies its own parallax, as in the game.
+	const sf::Vector2f scroll = mScroll;
+	const float armProximity = mSky.armProximity;
+	const NebulaSettings& nebula = settings.physicalNebula;
+	auto placed = [&output, &scroll](float screenX, float screenY, float parallax)
+	{
+		return sf::Vector2f(output.x * screenX, output.y * screenY) - scroll * parallax;
+	};
 
-	NebulaParams near = far;
-	near.scroll = mScroll * 0.55f + sf::Vector2f(400.f, 150.f);
-	near.scale = 0.0032f;
-	near.intensity = 0.55f;
-	near.seed = 6.f;
-	DrawNebula(mAssets.Shaders(), nebulaTarget, script.Role("ambient2"), near);
+	// Region colour script: the gradient is the region's shadow colour, near black; the sky paint carries the colour.
+	const SkyPalette palette = SkyPaletteFor(mSky);
+	DrawGradient(bg, ShadowColor(palette, 0.6f), ShadowColor(palette, 1.f), cap);
 
+	// The Milky Way, rendered once per location and added with parallax; resolved stars go over it.
+	GalaxyLayer::Params galaxyParams;
+	galaxyParams.sky = mSky;
+	galaxyParams.tint = palette;
+	galaxyParams.settings = settings.milkyWay;
+	galaxyParams.seed = static_cast<unsigned>(HashProgress(mGalaxyProgress));
+	galaxyParams.maxBrightness = cap;
+	mGalaxy.Draw(mAssets.Shaders(), bg, galaxyParams, scroll);
+
+	// Stars right after the gradient: the opaque planet hides the stars behind it, and the clouds sit over distant stars.
+	mStars.SetMotion(mBeta, mWarpDirection, settings.warp.fieldOfViewRad);
+	mStars.Draw(bg, scroll, mTime, cap);
+
+	// The host star and the planet are drawn over the stars and under the clouds (art direction).
+	const HostStarSettings& hostSettings = settings.hostStar;
+	sf::Vector2f lightDirection(-0.84f, -0.54f);
+	if (hostSettings.enabled)
+	{
+		const float irradiance = HostStarIrradiance(mLocation.hostStar);
+		HostStarParams star;
+		star.center = placed(hostSettings.screenX, hostSettings.screenY, hostSettings.parallax);
+		star.radius = std::min(std::max(HostStarApparentRadius(mLocation.hostStar, hostSettings.radiusAt1AU * output.y), 1.5f), 0.018f * output.y);
+		star.glowRadius = std::clamp(hostSettings.glowRadius * output.y * std::sqrt(irradiance), 0.03f * output.y, 0.3f * output.y);
+		star.color = BlackbodyDisplay(mLocation.hostStar.temperatureK);
+		star.intensity = std::max(0.15f, hostSettings.intensity * (1.f - std::exp(-1.5f * irradiance)));
+		star.maxBrightness = cap;
+		DrawHostStar(mAssets.Shaders(), bg, star);
+	}
+
+	const PlanetSettings& planetSettings = settings.planet;
+	sf::Vector2f planetCenter;
+	float planetRadius = 0.f;
+	if (planetSettings.enabled)
+	{
+		PlanetParams planet;
+		planet.center = placed(planetSettings.screenX, planetSettings.screenY, planetSettings.parallax);
+		planet.radius = output.y * planetSettings.radius;
+		planet.brightness = planetSettings.brightness;
+		planet.saturation = planetSettings.saturation;
+		planet.opacity = planetSettings.opacity;
+		planet.dither = planetSettings.dither;
+		planet.pixelScale = 1.f;
+		planet.surfacePixelScale = 1.f;
+		SetPlanetKind(planet, mLocation.planetKind);
+		planet.timeSeconds = mTime;
+		planet.rotation = mTime * planetSettings.rotationSpeed * PlanetSpinScale;
+		planet.light = { -0.7f, -0.45f, 0.55f };
+		if (hostSettings.enabled)
+		{
+			// Light points from the planet to the host star on screen, lifted toward the viewer.
+			const sf::Vector2f toStar = placed(hostSettings.screenX, hostSettings.screenY, hostSettings.parallax) - planet.center;
+			const float length = std::sqrt(toStar.x * toStar.x + toStar.y * toStar.y);
+			if (length > 0.f)
+			{
+				lightDirection = sf::Vector2f(toStar.x / length, toStar.y / length);
+				planet.light = { lightDirection.x, lightDirection.y, PlanetLightLift };
+			}
+			const float irradiance = HostStarIrradiance(mLocation.hostStar);
+			planet.lightColor = BlackbodyDisplay(mLocation.hostStar.temperatureK);
+			planet.lightIntensity = std::clamp(0.4f + 0.6f * (1.f - std::exp(-1.5f * irradiance)), 0.4f, 1.2f);
+		}
+		planetCenter = planet.center;
+		planetRadius = planet.radius;
+		// The orbiting moon is behind the planet in the upper half of its orbit, in front in the lower half.
+		DrawPlanetMoon(mAssets.Shaders(), bg, planet, mLocation.moonSeed, mTime, false);
+		DrawPlanet(mAssets.Shaders(), bg, PlanetRamp(planet.kind), planet);
+		DrawPlanetMoon(mAssets.Shaders(), bg, planet, mLocation.moonSeed, mTime, true);
+	}
+
+	if (mLocation.moon && planetSettings.enabled)
+	{
+		ShatteredMoon::Params moon;
+		moon.planetCenter = planetCenter;
+		moon.orbitRadius = MoonOrbitPerPlanetRadius * planetRadius;
+		moon.ageSeconds = mTime - mLocationStart;
+		moon.lightDirection = lightDirection;
+		moon.maxBrightness = cap;
+		mLocation.moon->Draw(bg, moon);
+	}
+
+	// Lit cloud layers, lit by the host star where it is now (the same position the host star uses).
+	const SkyPaintSettings& skyPaint = settings.skyPaint;
+	if (skyPaint.enabled)
+	{
+		SkyPaintParams paint;
+		paint.scroll = scroll;
+		paint.lightPos = placed(hostSettings.screenX, hostSettings.screenY, hostSettings.parallax);
+		paint.palette = palette;
+		paint.coverage = skyPaint.coverage;
+		paint.intensity = skyPaint.intensity;
+		paint.centerCalm = skyPaint.centerCalm;
+		paint.timeSeconds = mTime;
+		paint.seed = static_cast<float>(HashProgress(mGalaxyProgress) % 97u);
+		paint.maxBrightness = cap;
+		paint.farParallax = skyPaint.farParallax;
+		paint.midParallax = skyPaint.midParallax;
+		paint.nearParallax = skyPaint.nearParallax;
+		DrawSkyPaint(mAssets.Shaders(), nebulaTarget, paint);
+	}
+
+
+	if (nebula.enabled && mLocation.emission)
+	{
+		EmissionNebulaParams emission;
+		emission.center = sf::Vector2f(output.x * mLocation.emissionAt.x, output.y * mLocation.emissionAt.y);
+		emission.radius = nebula.emissionRadius * output.y * (0.6f + 0.8f * armProximity);
+		emission.scroll = scroll;
+		emission.parallax = nebula.parallax;
+		emission.ionizingTemperatureK = mLocation.emissionTemperatureK;
+		emission.density = nebula.emissionDensity * (0.5f + armProximity);
+		emission.seed = mLocation.emissionSeed;
+		emission.palette = nebula.palette;
+		emission.saturation = nebula.saturation;
+		emission.timeSeconds = mTime;
+		emission.maxBrightness = cap;
+		DrawEmissionNebula(mAssets.Shaders(), nebulaTarget, emission);
+	}
 	mPipeline.CompositeNebula();
-	mStars.Draw(bg, mScroll, mTime, script.Role("ambient"), cap);
+
+	if (nebula.enabled && mLocation.dust)
+	{
+		DustCloudParams dust;
+		dust.center = sf::Vector2f(output.x * mLocation.dustAt.x, output.y * mLocation.dustAt.y);
+		dust.size = sf::Vector2f(nebula.dustSize * output.y * 1.2f, nebula.dustSize * output.y * 0.55f);
+		dust.angleRad = mLocation.dustAngleRad;
+		dust.scroll = scroll;
+		dust.parallax = nebula.parallax;
+		dust.opticalDepth = nebula.dustOpticalDepth * std::clamp(mSky.dustDensity, 0.5f, 2.f);
+		dust.reflection = nebula.reflection * armProximity;
+		dust.illuminatorTemperatureK = 15000.f;
+		dust.illuminator = sf::Vector2f(output.x * mLocation.dustIlluminatorAt.x, output.y * mLocation.dustIlluminatorAt.y);
+		dust.seed = mLocation.dustSeed;
+		dust.maxBrightness = cap;
+		dust.stylize = settings.backgroundStyle.enabled;
+		DrawDustCloud(mAssets.Shaders(), bg, dust);
+	}
+
+	if (mLocation.pulsar)
+	{
+		PulsarParams pulsar;
+		pulsar.center = placed(mLocation.pulsarAt.x, mLocation.pulsarAt.y, nebula.parallax);
+		pulsar.periodSeconds = mLocation.pulsarPeriodSeconds;
+		pulsar.beamLength = 0.4f * output.y;
+		pulsar.nebulaRadius = 0.03f * output.y;
+		pulsar.timeSeconds = mTime;
+		pulsar.maxBrightness = cap;
+		DrawPulsar(mAssets.Shaders(), bg, pulsar);
+	}
+
+	// Near field last: sparse rocks and motes with strong parallax, still under the background cap.
+	if (mNearField && settings.nearField.enabled)
+	{
+		NearField::Params debris;
+		debris.scroll = scroll;
+		debris.timeSeconds = mTime;
+		debris.pixelSize = mPipeline.WorldPixelScale();
+		debris.lightDirection = lightDirection;
+		debris.rockRamp = &script.Role("planet");
+		debris.moteRamp = &script.Role("ambient");
+		debris.maxBrightness = cap;
+		debris.density = std::clamp(0.5f + 0.5f * mSky.dustDensity, 0.3f, 1.6f);
+		mNearField->Draw(bg, debris);
+	}
+
+	LensParams lens;
+	lens.enabled = mLocation.lens;
+	lens.center = sf::Vector2f(output.x * LensCenterX, output.y * LensCenterY);
+	lens.einsteinRadius = settings.anomalies.lensEinsteinRadius * output.y;
+	lens.shadowRadius = settings.anomalies.lensShadowRadius * output.y;
+	lens.ringBrightness = settings.anomalies.lensRingBrightness;
+	mPipeline.SetLens(lens);
 }
 
 void GalleryScene::DrawWorld()
@@ -85,6 +484,9 @@ void GalleryScene::DrawWorld()
 	planet.radius = size.y * 0.2f;
 	planet.pixelScale = px;
 	planet.rotation = mTime * 0.06f;
+	// The world planet keeps its plain look: no clouds and no limb glow.
+	planet.cloudAmount = 0.f;
+	planet.atmosphereColor = sf::Glsl::Vec3(0.f, 0.f, 0.f);
 	DrawPlanet(mAssets.Shaders(), world, script.Role("planet"), planet);
 }
 

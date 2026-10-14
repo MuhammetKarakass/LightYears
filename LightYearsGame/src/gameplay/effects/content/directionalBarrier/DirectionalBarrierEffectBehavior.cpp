@@ -90,49 +90,53 @@ namespace ly::DirectionalBarrierEffectBehavior
 			AbilityData::DirectionalBarrier::BarrierRadius + projectileRadius;
 		const float radiusSquared = expandedBarrierRadius * expandedBarrierRadius;
 
-		for (const weak_ptr<Actor>& shipWeak :
-			projectile.GetWorld()->GetActorsInBounds(
-				targeting::swept::SegmentBounds(
-					previousLocation,
-					currentLocation,
-					expandedBarrierRadius
-				)
-			))
-		{
-			const shared_ptr<Actor> actor = shipWeak.lock();
-			const shared_ptr<SpaceShip> ship = std::dynamic_pointer_cast<SpaceShip>(actor);
-			if (!ship || ship->GetIsPendingDestroy() || ship->IsInPortalTransit() ||
-				!ship->GetAbilitySystemComponent().HasOwnedTag(
-					AbilityData::DirectionalBarrier::State::Active
-				) ||
-				!projectile.CanCollideWith(ship.get()) ||
-				!ship->CanCollideWith(&projectile) ||
-				!IsFrontApproach(*ship, projectile))
+		// Runs for every projectile every frame: the callback query neither copies weak pointers nor allocates.
+		bool intercepted = false;
+		projectile.GetWorld()->ForEachActorInBounds(
+			targeting::swept::SegmentBounds(
+				previousLocation,
+				currentLocation,
+				expandedBarrierRadius
+			),
+			[&](Actor& actor)
 			{
-				continue;
-			}
+				if (intercepted)
+				{
+					return;
+				}
+				auto* ship = dynamic_cast<SpaceShip*>(&actor);
+				if (!ship || ship->GetIsPendingDestroy() || ship->IsInPortalTransit() ||
+					!ship->GetAbilitySystemComponent().HasOwnedTag(
+						AbilityData::DirectionalBarrier::State::Active
+					) ||
+					!projectile.CanCollideWith(ship) ||
+					!ship->CanCollideWith(&projectile) ||
+					!IsFrontApproach(*ship, projectile))
+				{
+					return;
+				}
 
-			const sf::Vector2f center = ship->GetActorLocation();
-			const sf::Vector2f previousOffset = previousLocation - center;
-			const sf::Vector2f currentOffset = currentLocation - center;
-			const float previousDistanceSquared = Dot(previousOffset, previousOffset);
-			const float currentDistanceSquared = Dot(currentOffset, currentOffset);
-			const bool crossedOuterEdge =
-				previousDistanceSquared > radiusSquared &&
-				targeting::swept::DistanceSquaredToSegment(
-					center,
-					previousLocation,
-					currentLocation
-				) <= radiusSquared;
-			if (crossedOuterEdge ||
-				(currentDistanceSquared <= radiusSquared &&
-				 previousDistanceSquared > radiusSquared))
-			{
-				return true;
+				const sf::Vector2f center = ship->GetActorLocation();
+				const sf::Vector2f previousOffset = previousLocation - center;
+				const sf::Vector2f currentOffset = currentLocation - center;
+				const float previousDistanceSquared = Dot(previousOffset, previousOffset);
+				const float currentDistanceSquared = Dot(currentOffset, currentOffset);
+				const bool crossedOuterEdge =
+					previousDistanceSquared > radiusSquared &&
+					targeting::swept::DistanceSquaredToSegment(
+						center,
+						previousLocation,
+						currentLocation
+					) <= radiusSquared;
+				if (crossedOuterEdge ||
+					(currentDistanceSquared <= radiusSquared &&
+					 previousDistanceSquared > radiusSquared))
+				{
+					intercepted = true;
+				}
 			}
-		}
-
-		return false;
+		);
+		return intercepted;
 	}
 
 	bool RegisterDirectionalBarrierEffectBehavior()

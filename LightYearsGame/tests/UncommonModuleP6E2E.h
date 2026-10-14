@@ -3,6 +3,7 @@
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/content/ModuleSideFeatureLoader.h"
 #include "gameplay/module/generated/ModuleGuidedProjectileActor.h"
+#include "gameplay/module/generated/ModuleRicochetProjectileActor.h"
 #include "gameplay/module/generated/ModuleMineActor.h"
 #include "gameplay/module/generated/ModuleDelayedExplosionActor.h"
 #include "gameplay/movement/MovementInfluenceService.h"
@@ -36,7 +37,7 @@ namespace uncommon_p6_e2e
 			else ++normal;
 		}
 	};
-	inline shared_ptr<PrimaryWeaponProjectileActor> PrimaryHit(Fixture& f, SpaceShip& target, const PrimaryWeaponShotMetadata& metadata, float damage = 100.f)
+	inline shared_ptr<PrimaryWeaponProjectileActor> PrimaryHit(Fixture& f, SpaceShip& target, const PrimaryWeaponShotMetadata& metadata, float damage = 100.f, bool finishRicochets = true)
 	{
 		const auto* weapon = content::WeaponContentCatalog::FindById("Weapon.Projectile.FighterRapidLaser.Basic");
 		f.report.Check(weapon != nullptr, "P6 primary delivery uses shipped weapon content");
@@ -47,7 +48,11 @@ namespace uncommon_p6_e2e
 		projectile->SetDamagePayload(Plain());
 		projectile->SetShotMetadata(metadata);
 		target.SetCollisionMask(CollisionLayer::PlayerBullet);
+		for (const auto& enemy : Actors<SpaceShip>(f)) if (enemy->GetCollisionLayer() == CollisionLayer::Enemy) enemy->SetCollisionMask(CollisionLayer::PlayerBullet);
 		projectile->OnActorBeginOverlap(&target);
+		if (finishRicochets)
+			for (int step = 0; step < 200; ++step)
+				for (const auto& bounce : Actors<ModuleRicochetProjectileActor>(f)) if (bounce->HasSelectedTarget()) bounce->Tick(.01f);
 		return projectile;
 	}
 	inline GameAbility& CastOffense(Fixture& f)
@@ -93,7 +98,10 @@ namespace uncommon_p6_e2e
 		movement::MovementInfluenceService::RemoveSource(*f.ship, source);
 	}
 	void RicochetChecks(Report& report, Application& application);
+	void BalanceChecks(Report& report, Application& application);
 	void ActorChecks(Report& report, Application& application);
 	void MineChecks(Report& report, Application& application);
+	void DeathBurstChecks(Report& report, Application& application);
+	void SizingChecks(Report& report, Application& application);
 	void ContentChecks(Report& report, const std::filesystem::path& artifactRoot);
 }

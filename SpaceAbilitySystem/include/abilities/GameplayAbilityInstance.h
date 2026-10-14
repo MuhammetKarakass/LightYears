@@ -128,10 +128,10 @@ namespace sas
 						AbortActivationContent();
 						return false;
 					}
-					this->mRuntimeState.BeginActivation(duration, this->mDefinition.maxCharges, deferred);
+					this->mRuntimeState.BeginActivation(duration, this->mDefinition.maxCharges, deferred, this->mDefinition.chargeUseInterval);
 					committed = true;
 					if (this->mDefinition.cooldownStartPolicy == AbilityCooldownStartPolicy::OnActivation)
-						this->mRuntimeState.StartCooldown(cooldown);
+						this->mRuntimeState.StartCooldown(cooldown, this->mDefinition.maxCharges);
 					OnActivationCommitted();
 					if (!ActivationInterrupted())
 					{
@@ -232,10 +232,32 @@ namespace sas
 		{
 			return RunInstanceOperation([&]()
 			{
-				if (this->mRuntimeState.ReduceCooldown(amount))
+				if (this->mRuntimeState.ReduceCooldown(amount, ResolveCooldownDuration(), this->mDefinition.maxCharges))
 				{
 					NotifyChanged();
 				}
+			});
+		}
+
+		// Adds runtime charge capacity on top of the definition's maxCharges. Zero removes it.
+		bool SetChargeBonus(int bonus)
+		{
+			return RunInstanceOperation([&]() -> bool
+			{
+				if (!this->mRuntimeState.SetChargeBonus(bonus, ResolveCooldownDuration(), this->mDefinition.maxCharges)) return false;
+				NotifyChanged();
+				return true;
+			});
+		}
+
+		// Gives charges back up to the effective capacity (never above it). Returns the charges actually added.
+		int GrantCharge(int amount)
+		{
+			return RunInstanceOperation([&]() -> int
+			{
+				const int granted = this->mRuntimeState.GrantCharges(amount, ResolveCooldownDuration(), this->mDefinition.maxCharges);
+				if (granted > 0) NotifyChanged();
+				return granted;
 			});
 		}
 
@@ -296,6 +318,8 @@ namespace sas
 			return ResolveActiveDuration();
 		}
 		int GetCharges() const { return this->mRuntimeState.GetCharges(); }
+		int GetChargeCapacity() const { return this->mRuntimeState.GetChargeCapacity(this->mDefinition.maxCharges); }
+		int GetChargeBonus() const { return this->mRuntimeState.GetChargeBonus(); }
 		int GetLevel() const { return this->mRuntimeState.GetLevel(); }
 		int GetMaxLevel() const { return GetMaximumLevel(); }
 		AbilityHandle GetHandle() const { return this->mHandle; }
@@ -448,6 +472,8 @@ namespace sas
 
 		void UpdateCooldown(float deltaTime)
 		{
+			// The anti-spam gap between charge uses runs regardless of the recharge timer.
+			this->mRuntimeState.TickUseInterval(deltaTime);
 			if (this->mRuntimeState.IsOnCooldown() &&
 				this->mRuntimeState.TickCooldown(
 					deltaTime,

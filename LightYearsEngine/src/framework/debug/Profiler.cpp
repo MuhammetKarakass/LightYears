@@ -3,6 +3,7 @@
 #include "framework/debug/Log.h"
 
 #include <algorithm>
+#include <atomic>
 #include <limits>
 #include <mutex>
 
@@ -11,9 +12,14 @@ namespace ly::debug
 	namespace
 	{
 		std::mutex gProfilerMutex;
-		std::unordered_map<std::string, ProfileAggregate> gAggregates;
+		// Keyed by the name pointer (string literals and typeid names live for the whole run), so recording a
+		// scope neither builds a std::string nor hashes text; BuildSnapshot merges entries that share a name.
+		std::unordered_map<const char*, ProfileAggregate> gAggregates;
 		std::unordered_map<std::string, double> gCounters;
-		bool gProfilerEnabled = false;
+		// Read by every scope; atomic so the check does not take the mutex.
+		std::atomic<bool> gProfilerEnabled{ false };
+		// Main-thread only, like the frame loop that drains it.
+		std::vector<FrameEvent> gFrameEvents;
 	}
 
 	void Profiler::Initialize()
@@ -21,17 +27,17 @@ namespace ly::debug
 		std::lock_guard<std::mutex> lock{ gProfilerMutex };
 		gAggregates.clear();
 		gCounters.clear();
-		gProfilerEnabled = IsCompiledIn();
+		gProfilerEnabled.store(IsCompiledIn());
 	}
 
 	void Profiler::Shutdown()
 	{
 		if (IsEnabled())
 		{
-			LogSummary();
+			LogSummary(40);
 		}
 		std::lock_guard<std::mutex> lock{ gProfilerMutex };
-		gProfilerEnabled = false;
+		gProfilerEnabled.store(false);
 		gAggregates.clear();
 		gCounters.clear();
 	}
@@ -50,14 +56,12 @@ namespace ly::debug
 
 	bool Profiler::IsEnabled()
 	{
-		std::lock_guard<std::mutex> lock{ gProfilerMutex };
-		return gProfilerEnabled;
+		return gProfilerEnabled.load(std::memory_order_relaxed);
 	}
 
 	void Profiler::SetEnabled(bool enabled)
 	{
-		std::lock_guard<std::mutex> lock{ gProfilerMutex };
-		gProfilerEnabled = enabled && IsCompiledIn();
+		gProfilerEnabled.store(enabled && IsCompiledIn());
 	}
 
 	void Profiler::RecordScope(const char* name, double elapsedMicroseconds)
@@ -95,11 +99,26 @@ namespace ly::debug
 	std::vector<ProfileAggregate> Profiler::BuildSnapshot()
 	{
 		std::lock_guard<std::mutex> lock{ gProfilerMutex };
-		std::vector<ProfileAggregate> snapshot;
-		snapshot.reserve(gAggregates.size());
+		// The same name can sit under several pointers (identical literals in different translation units).
+		std::unordered_map<std::string, ProfileAggregate> byName;
 		for (const auto& entry : gAggregates)
 		{
-			snapshot.push_back(entry.second);
+			ProfileAggregate& merged = byName[entry.second.name];
+			if (merged.callCount == 0)
+			{
+				merged = entry.second;
+				continue;
+			}
+			merged.callCount += entry.second.callCount;
+			merged.totalMicroseconds += entry.second.totalMicroseconds;
+			merged.minimumMicroseconds = std::min(merged.minimumMicroseconds, entry.second.minimumMicroseconds);
+			merged.maximumMicroseconds = std::max(merged.maximumMicroseconds, entry.second.maximumMicroseconds);
+		}
+		std::vector<ProfileAggregate> snapshot;
+		snapshot.reserve(byName.size());
+		for (auto& entry : byName)
+		{
+			snapshot.push_back(std::move(entry.second));
 		}
 		std::sort(
 			snapshot.begin(),
@@ -145,6 +164,20 @@ namespace ly::debug
 		}
 	}
 
+	void Profiler::RecordFrameEvent(const char* name, double elapsedMicroseconds)
+	{
+		if (name && elapsedMicroseconds >= FrameEventThresholdMicroseconds && gFrameEvents.size() < 256)
+		{
+			gFrameEvents.push_back({ name, elapsedMicroseconds });
+		}
+	}
+
+	void Profiler::TakeFrameEvents(std::vector<FrameEvent>& out)
+	{
+		out.clear();
+		out.swap(gFrameEvents);
+	}
+
 	ProfileScope::ProfileScope(const char* name)
 		: mName{ name }
 		, mEnabled{ Profiler::IsEnabled() }
@@ -164,5 +197,6 @@ namespace ly::debug
 		const double elapsedMicroseconds =
 			std::chrono::duration<double, std::micro>(end - mStart).count();
 		Profiler::RecordScope(mName, elapsedMicroseconds);
+		Profiler::RecordFrameEvent(mName, elapsedMicroseconds);
 	}
 }

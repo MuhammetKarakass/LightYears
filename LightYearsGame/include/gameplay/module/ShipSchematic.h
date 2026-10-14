@@ -25,11 +25,18 @@ namespace ly
 		int width = 0;
 		int height = 0;
 		List<GameplayTag> cellZones;
+		// Parallel to cellZones; a locked cell belongs to its zone but takes no modules yet. Empty means nothing is locked.
+		List<char> cellLocked;
 		List<DefaultModulePlacement> defaultModules;
 
 		bool IsInBounds(int x, int y) const
 		{
 			return x >= 0 && y >= 0 && x < width && y < height;
+		}
+
+		bool IsLockedAt(int x, int y) const
+		{
+			return IsInBounds(x, y) && static_cast<std::size_t>(y * width + x) < cellLocked.size() && cellLocked[static_cast<std::size_t>(y * width + x)] != 0;
 		}
 
 		// Returns an empty tag outside the grid or on a void cell.

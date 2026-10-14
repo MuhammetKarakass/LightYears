@@ -359,6 +359,17 @@ namespace EffectData
 		definition.sourceParameterized = true;
 		return definition;
 	}();
+	inline const sas::GameplayEffectDefinition KineticArmorRendEffect = []
+	{
+		sas::GameplayEffectDefinition definition;
+		definition.effectId = ly::DamageStatusEffectIds::KineticArmorRendEffectId;
+		definition.durationPolicy = sas::GameplayEffectDurationPolicy::Duration;
+		definition.stackingPolicy = sas::GameplayEffectStackingPolicy::RefreshDuration;
+		definition.category = "Runtime.KineticArmorRend";
+		definition.disposition = sas::GameplayEffectDisposition::Harmful;
+		definition.sourceParameterized = true;
+		return definition;
+	}();
 	inline const sas::GameplayEffectDefinition DirectionalBarrierActiveEffect = []
 	{
 		sas::GameplayEffectDefinition definition;
@@ -424,6 +435,7 @@ namespace EffectData
 			&NullPulseStunEffect,
 			&CryoFrozenEffect,
 			&CryoFreezeCooldownEffect,
+			&KineticArmorRendEffect,
 			&DirectionalBarrierActiveEffect,
 			&CryostasisIceShellEffect,
 			&IroncladProtocolDamageReductionEffect

@@ -25,10 +25,19 @@ namespace ly
 		FullMagazineShot,
 		OwnerHealthAtMost,
 		TargetWithoutStatus,
+		PrimaryTargetWithoutStatus,
 		TargetThermalAndCryo,
 		SourceHasStatus,
 		AdjacentAbilityDirectHit,
-		FirstTargetHit
+		FirstTargetHit,
+		Always,
+		OwnerShieldFull,
+		OwnerShieldOverMax,
+		TargetIsBossClass,
+		TargetStatusKindsAtLeast,
+		AbilityDirectHit,
+		TargetMaxHealthRatioAtLeast,
+		SourceMaxHealthGreaterThanOwner
 	};
 
 	// Fire conditions are snapshotted when a primary shot leaves the weapon; impact
@@ -125,6 +134,17 @@ namespace ly
 		bool sourceHasStatus = false;
 		bool isAdjacentAbilityDirectHit = false;
 		bool isFirstTargetHit = false;
+		bool ownerShieldFull = false;
+		bool ownerShieldOverMax = false;
+		bool targetIsBossClass = false;
+		int targetStatusKindCount = 0;
+		// Outgoing hit from a Q/E/F/R ability slot that is not Primary and not periodic.
+		bool isAbilityDirectHit = false;
+		// Outgoing: target MaxHealth / owner MaxHealth; 0 when the owner MaxHealth is not positive.
+		float targetMaxHealthRatio = 0.f;
+		// Incoming: attacker MaxHealth and the owner (the hit target) MaxHealth at resolution.
+		float sourceMaxHealth = 0.f;
+		float ownerMaxHealth = 0.f;
 	};
 
 	inline bool MatchesModuleDamageCondition(ModuleDamageCondition condition, float conditionValue, int openingShotCount, const ModuleDamageConditionContext& context)
@@ -132,10 +152,19 @@ namespace ly
 		switch (condition)
 		{
 		case ModuleDamageCondition::TargetWithoutStatus: return !context.targetHasStatus;
+		case ModuleDamageCondition::PrimaryTargetWithoutStatus: return context.isPrimaryShot && !context.targetHasStatus;
 		case ModuleDamageCondition::TargetThermalAndCryo: return context.targetHasThermalAndCryo;
 		case ModuleDamageCondition::SourceHasStatus: return context.sourceHasStatus;
 		case ModuleDamageCondition::AdjacentAbilityDirectHit: return context.isAdjacentAbilityDirectHit;
+		case ModuleDamageCondition::AbilityDirectHit: return context.isAbilityDirectHit;
 		case ModuleDamageCondition::FirstTargetHit: return context.isFirstTargetHit;
+		case ModuleDamageCondition::Always: return true;
+		case ModuleDamageCondition::OwnerShieldFull: return context.ownerShieldFull;
+		case ModuleDamageCondition::OwnerShieldOverMax: return context.ownerShieldOverMax;
+		case ModuleDamageCondition::TargetIsBossClass: return context.targetIsBossClass;
+		case ModuleDamageCondition::TargetStatusKindsAtLeast: return static_cast<float>(context.targetStatusKindCount) >= conditionValue;
+		case ModuleDamageCondition::TargetMaxHealthRatioAtLeast: return context.targetMaxHealthRatio >= conditionValue;
+		case ModuleDamageCondition::SourceMaxHealthGreaterThanOwner: return context.ownerMaxHealth > 0.f && context.sourceMaxHealth > context.ownerMaxHealth;
 		case ModuleDamageCondition::OwnerHealthAtMost:
 			return context.ownerHealthFraction > 0.f && context.ownerHealthFraction <= conditionValue;
 		case ModuleDamageCondition::PrimaryShotOnly:

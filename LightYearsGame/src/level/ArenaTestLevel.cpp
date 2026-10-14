@@ -162,7 +162,7 @@ namespace ly
 		// Stationary dummy targets for weapon testing. Flip these flags to hide the
 		// layout or bring back the 50-health square targets.
 		constexpr bool SpawnDummyTargetsEnabled = true;
-		constexpr bool SpawnSquareDummyTargetsEnabled = false;
+		constexpr bool SpawnSquareDummyTargetsEnabled = true;
 		if (!SpawnDummyTargetsEnabled)
 		{
 			return;
@@ -178,13 +178,14 @@ namespace ly
 		}
 		ShipDefinition oldDummyDefinition = *dummySource;
 		oldDummyDefinition.health = 9000.f;
-		// Armor makes Kinetic armor shred visible on the training targets.
-		oldDummyDefinition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, 20.f });
+		// Use 40 Armor on the fighter-based dummy targets for testing.
+		oldDummyDefinition.baseOwnerAttributes.push_back({ OwnerAttributeIds::Armor, 40.f });
 		oldDummyDefinition.speed = { 0.f, 0.f };
 		oldDummyDefinition.primaryWeaponId = "Weapon.Projectile.FighterRapidLaser.Basic";
 
 		ShipDefinition newDummyDefinition = oldDummyDefinition;
 		newDummyDefinition.health = 50.f;
+		newDummyDefinition.primaryWeaponId.clear();
 
 		const sf::FloatRect& arenaBounds = GetArenaDefinition().legalBounds;
 		const sf::Vector2f arenaCenter{
@@ -192,7 +193,6 @@ namespace ly
 			arenaBounds.position.y + arenaBounds.size.y * 0.5f
 		};
 
-		const float squareHalfExtent = 250.f;
 		const auto spawnDummy = [&](const ShipDefinition& definition, float horizontalOffset, float verticalOffset)
 		{
 			const sf::Vector2f dummyLocation{
@@ -213,15 +213,23 @@ namespace ly
 		spawnDummy(oldDummyDefinition, 300.f, 450.f);
 		spawnDummy(oldDummyDefinition, 900.f, 450.f);
 
-		// New 50-health stationary targets at the corners of a square around arena center.
+		// Add 20 new 50-health stationary targets in a 120x90 area around arena center.
 		if (!SpawnSquareDummyTargetsEnabled)
 		{
 			return;
 		}
-		spawnDummy(newDummyDefinition, -squareHalfExtent, -squareHalfExtent);
-		spawnDummy(newDummyDefinition, squareHalfExtent, -squareHalfExtent);
-		spawnDummy(newDummyDefinition, -squareHalfExtent, squareHalfExtent);
-		spawnDummy(newDummyDefinition, squareHalfExtent, squareHalfExtent);
+		constexpr int dummyColumns = 5;
+		constexpr int dummyRows = 4;
+		constexpr float dummySpacing = 30.f;
+		for (int row = 0; row < dummyRows; ++row)
+		{
+			for (int column = 0; column < dummyColumns; ++column)
+			{
+				const float horizontalOffset = (static_cast<float>(column) - (dummyColumns - 1) * 0.5f) * dummySpacing;
+				const float verticalOffset = (static_cast<float>(row) - (dummyRows - 1) * 0.5f) * dummySpacing;
+				spawnDummy(newDummyDefinition, horizontalOffset, verticalOffset);
+			}
+		}
 	}
 
 	void ArenaTestLevel::Tick(float deltaTime)

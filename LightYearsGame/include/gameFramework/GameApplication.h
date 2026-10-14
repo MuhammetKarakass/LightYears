@@ -24,7 +24,8 @@ namespace ly
 
 		// Dev-only command line: --visual-off, --visual-script <name>, --visual-capture <png> [--capture-frames N],
 		// --visual-player-hull <0..1> (shown hull fraction only), --visual-ship <0..5> (start with that player ship),
-		// --visual-assets <dir> (visual pipeline assets; default: <exe dir>/visual if present, else the source tree).
+		// --visual-assets <dir> (visual pipeline assets; default: <exe dir>/visual if present, else the source tree),
+		// --galaxy-stop <index> (backdrop at that route stop, 0 = Sol), --warp <beta> (upward warp, clamped to warp.maxBeta).
 		struct DevOptions
 		{
 			bool visualOff = false;
@@ -34,6 +35,11 @@ namespace ly
 			float playerHull = -1.f;
 			int shipIndex = -1;
 			std::string visualAssets;
+			bool perfAutoPlay = false;
+			int galaxyStop = 0;
+			// Orbit speed steps from x1, as the + / - keys (3 = x8).
+			int orbitSpeedSteps = 0;
+			float warpBeta = 0.f;
 		};
 
 		static DevOptions ParseDevOptions();

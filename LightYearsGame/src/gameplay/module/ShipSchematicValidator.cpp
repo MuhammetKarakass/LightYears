@@ -44,7 +44,6 @@ namespace ly
 			return Fail(failureReason, "Schematic grid dimensions do not match its cells");
 		}
 
-		int totalCells = 0;
 		for (const GameplayTag& zone : schematic.cellZones)
 		{
 			if (!zone.IsValid()) continue;
@@ -52,17 +51,7 @@ namespace ly
 			{
 				return Fail(failureReason, "Schematic uses a zone missing from the zone table: " + zone.name);
 			}
-			++totalCells;
 		}
-		if (totalCells != kTotalCellCapacity)
-		{
-			return Fail(
-				failureReason,
-				"Schematic must have " + std::to_string(kTotalCellCapacity) +
-				" module cells, found " + std::to_string(totalCells)
-			);
-		}
-
 		const ModuleRulesContext rules{
 			schematic,
 			[&modules](const sas::ContentId& moduleId) { return FindModule(modules, moduleId); },
@@ -106,15 +95,6 @@ namespace ly
 			}
 		}
 
-		const int freeCells = totalCells - static_cast<int>(occupied.size());
-		if (freeCells != kFreeCellCapacity)
-		{
-			return Fail(
-				failureReason,
-				"Schematic must have " + std::to_string(kFreeCellCapacity) +
-				" free cells excluding default modules, found " + std::to_string(freeCells)
-			);
-		}
 		return true;
 	}
 }

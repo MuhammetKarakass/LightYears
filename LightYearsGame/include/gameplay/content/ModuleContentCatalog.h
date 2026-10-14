@@ -3,6 +3,7 @@
 #include "gameplay/module/ModuleDefinition.h"
 
 #include <filesystem>
+#include <cstdint>
 #include <string>
 
 namespace ly::content
@@ -19,6 +20,7 @@ namespace ly::content
 		static const ModuleDefinition* FindById(const sas::ContentId& moduleId);
 		static const List<ModuleDefinition>& GetDefinitions();
 		static const ModuleZoneTable& GetZoneTable();
+		static std::uint64_t GetRevision() noexcept;
 		static bool IsLoaded() noexcept;
 	};
 }

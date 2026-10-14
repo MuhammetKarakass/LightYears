@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <memory>
+#include <string>
 #include <vector>
 
 #include <SFML/Graphics.hpp>
@@ -52,8 +54,21 @@ namespace ly::visual
 		float areaRatio = 0.f;
 	};
 
-	// Owns layer textures and composites them: background (gradient -> nebula -> stars) -> world -> sprites
-	// -> energy (additive) -> bloom -> flash -> vignette. World uses nearest upscale and optional dither; sprites stay undithered.
+	// Point-mass lens (Schwarzschild): a ray passing at impact parameter r from the lens on screen is bent so the image at
+	// r shows the source at beta = r - thetaE^2 / r (lens equation). Inside the shadow (~2.6 Schwarzschild radii in
+	// impact parameter) nothing escapes; just outside it the photon ring is brightened. Sgr A* itself is quiet (no
+	// bright disk), so the effect is the distortion of the star field behind it.
+	struct LensParams
+	{
+		sf::Vector2f center;          // output pixels
+		float einsteinRadius = 120.f; // output pixels
+		float shadowRadius = 30.f;    // output pixels
+		float ringBrightness = 0.25f; // photon ring, fraction of the background cap
+		bool enabled = false;
+	};
+
+	// Owns layer textures and composites them: background (gradient -> nebula -> stars, colour graded on composite)
+	// -> world -> sprites -> energy (additive) -> bloom -> flash -> vignette. World uses nearest upscale and optional dither; sprites stay undithered.
 	// Coordinates are output pixels unless a layer is given a game view (see SnapWorldView).
 	class VisualPipeline
 	{
@@ -65,6 +80,17 @@ namespace ly::visual
 		sf::RenderTarget& Target(Layer layer);
 		// Premultiplied-composites the nebula texture over Background; unavailable or disabled targets are a no-op.
 		void CompositeNebula();
+		// Lenses the Background layer only, at Compose time. Persists until changed; disabled by default.
+		void SetLens(const LensParams& lens);
+		// Per-place look of the background on top of pipeline.json: a brighter ceiling and a stronger grade let a stop
+		// carry its own character (for example a neon-warm hot zone). Defaults change nothing.
+		struct BackgroundLook
+		{
+			float capScale = 1.f;
+			float contrast = 0.f;   // 0 = keep backgroundGrade.contrast
+			float saturation = 0.f; // 0 = keep backgroundGrade.saturation
+		};
+		void SetBackgroundLook(const BackgroundLook& look) { mLook = look; }
 
 		// Energy draws are queued, tier-capped now and budget-culled in Compose (decorative first).
 		void SubmitGlow(const GlowParams& glow);
@@ -92,10 +118,26 @@ namespace ly::visual
 		sf::View SnapWorldView(const sf::View& gameView) const;
 
 	private:
+		// Glows and trails are plain data so Compose can draw them in one batch each; everything else is a callback.
+		// All energy draws are additive, so the batched order does not change the result.
+		struct GlowInstance
+		{
+			sf::Vector2f position;
+			float coreRadius = 0.f;
+			float haloRadius = 0.f;
+			sf::Glsl::Vec3 coreColor;
+			sf::Glsl::Vec3 haloColor;
+		};
+
 		struct EnergyItem
 		{
-			LuminanceTier tier;
-			float area;
+			enum class Kind { Custom, Glow, Trail };
+
+			Kind kind = Kind::Custom;
+			LuminanceTier tier = LuminanceTier::Decorative;
+			float area = 0.f;
+			GlowInstance glow;
+			std::vector<sf::Vertex> triangles;
 			std::function<void(sf::RenderTarget&)> draw;
 		};
 
@@ -109,9 +151,13 @@ namespace ly::visual
 		void ResetWorldView();
 		float TierScale(LuminanceTier tier, float peak);
 		void FlushEnergy();
+		void DrawGlowBatch(const std::vector<GlowInstance>& glows, std::size_t first, std::size_t count);
+		const std::vector<sf::Glsl::Vec3>& DitherPalette();
+		const std::vector<sf::Glsl::Vec3>& BackgroundPalette();
 		void DrawBloom(sf::RenderTarget& target);
 		void BlurLevel(BloomLevel& level);
 		void DrawVignette(sf::RenderTarget& target);
+		void LensBackground();
 
 		VisualAssets& mAssets;
 		sf::Vector2u mOutputSize;
@@ -122,12 +168,29 @@ namespace ly::visual
 		int mBuiltNebulaResolutionDivisor = 0;
 		sf::Vector2u mBuiltOutputSize;
 		sf::RenderTexture mBackground;
+		// Scratch copy of the background for the lens; allocated only while a lens is enabled.
+		std::unique_ptr<sf::RenderTexture> mLensScratch;
+		LensParams mLens;
+		BackgroundLook mLook;
 		sf::RenderTexture mNebula;
 		sf::RenderTexture mWorld;
 		sf::RenderTexture mSprites;
 		sf::RenderTexture mEnergy;
 		std::vector<BloomLevel> mBloom;
 		std::vector<EnergyItem> mEnergyQueue;
+		// Scratch buffers reused every frame so the energy flush does not allocate.
+		std::vector<GlowInstance> mGlowBatch;
+		std::vector<sf::Vertex> mGlowVertices;
+		std::vector<sf::Vertex> mTrailVertices;
+		std::vector<sf::Glsl::Vec3> mDitherPalette;
+		std::string mDitherPaletteScript;
+		int mDitherPaletteAge = 0;
+		// Palette of the stylized nebula composite (roles of backgroundStyle, capped to the background tier).
+		std::vector<sf::Glsl::Vec3> mBackgroundPalette;
+		std::string mBackgroundPaletteScript;
+		std::vector<std::string> mBackgroundPaletteRoles;
+		float mBackgroundPaletteCap = -1.f;
+		int mBackgroundPaletteAge = 0;
 		EnergyStats mStats;
 		bool mNebulaTargetAvailable = false;
 		bool mNebulaFrameReady = false;

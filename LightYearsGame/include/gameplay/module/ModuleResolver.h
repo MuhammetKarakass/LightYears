@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 namespace ly
 {
@@ -33,6 +34,56 @@ namespace ly
 		ModuleCooldownScope scope = ModuleCooldownScope::FamilyOfZone;
 		GameplayTag family;
 		float multiplier = 1.f;
+		// Bounty Mark: a loadout slot (None = scope rule) and an absolute cooldown floor in seconds (0 = none).
+		sas::AbilitySlot slot = sas::AbilitySlot::None;
+		float minimumSeconds = 0.f;
+	};
+
+	// Kill credit (Trophy Core): the per-kill damage ratio at the placement's level, the per-class stack weights and the
+	// adjacent ability systems the placement credits.
+	struct ResolvedModuleKillRule
+	{
+		std::uint32_t instanceId{ 0 };
+		std::size_t ruleIndex{ 0 };
+		float damagePerKill{ 0.f };
+		ModuleKillWeights weights;
+		int adjacentAbilityLimit{ 2 };
+		List<GameplayTag> adjacentAbilitySystems;
+	};
+	struct ResolvedModuleKillCooldownRule
+	{
+		std::uint32_t instanceId{ 0 };
+		std::size_t ruleIndex{ 0 };
+		ModuleKillStackCooldownRule rule;
+		List<GameplayTag> adjacentAbilitySystems;
+	};
+	struct ResolvedModuleKillDamageRule
+	{
+		std::uint32_t instanceId{ 0 };
+		std::size_t ruleIndex{ 0 };
+		ModuleKillStackDamageRule rule;
+	};
+	// One scoped outgoing damage multiplier from kill damage. The id is stable per placement, rule and target slot or family.
+	struct ResolvedModuleKillSource
+	{
+		std::string id;
+		sas::AbilitySlot slot = sas::AbilitySlot::None;
+		GameplayTag family;
+		float multiplier = 1.f;
+	};
+
+	// Spare Capacitor charge rule of one placement. chargeBonus is the capacity added to each adjacent ability (0 for a side-feature
+	// entry). slots are the adjacent Q/E/F/R abilities in geometric order, at most neighbourCount (the placement's cell count).
+	struct ResolvedModuleChargeRule
+	{
+		std::uint32_t instanceId = 0;
+		std::size_t ruleIndex = 0;
+		int chargeBonus = 0;
+		bool overflowTransfer = false;
+		float trickleSeconds = 0.f;
+		int trickleCharges = 0;
+		int neighbourCount = 0;
+		List<sas::AbilitySlot> slots;
 	};
 
 	struct ResolvedModuleEventAction
@@ -55,9 +106,15 @@ namespace ly
 		List<ResolvedModuleGeneratedRule<ModuleDelayedExplosionRule>> delayedExplosions;
 		List<ResolvedModuleGeneratedRule<ModuleTrailMineRule>> trailMines;
 		List<ResolvedModuleGeneratedRule<ModuleKillExplosionRule>> killExplosions;
+		List<ResolvedModuleGeneratedRule<ModuleSpeedLanceRule>> speedLances;
+		List<ResolvedModuleGeneratedRule<ModuleAnnularBurstRule>> annularBursts;
 	};
+	struct ResolvedModuleTargetSlowRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleTargetSlowRule rule; };
+	struct ResolvedModuleOwnerBurstRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleOwnerBurstRule rule; float accumulatedArmor = 0.f; };
 	struct ResolvedModuleEffects
 	{
+		struct ZoneBonus { std::uint32_t instanceId; float bonus; };
+		List<ZoneBonus> zoneBonuses;
 		List<sas::AttributeModifier> ownerModifiers;
 		List<sas::AttributeModifier> shipModifiers;
 		List<sas::AttributeModifier> primaryWeaponModifiers;
@@ -69,12 +126,28 @@ namespace ly
 		List<GameplayTag> enabledSystems;
 		List<ResolvedModuleEventAction> eventActions;
 		List<ResolvedModuleOwnerAttributeRule> ownerAttributeRules;
+		struct ConditionalMovement { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleConditionalMovementRule rule; };
+		List<ConditionalMovement> conditionalMovementRules;
 		struct ShieldReflection { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleRulePackage::ShieldReflection rule; };
 		List<ShieldReflection> shieldReflections;
 		ModuleStatusRules statusRules;
 		ResolvedModuleGeneratedRules generatedRules;
+		List<ResolvedModuleTargetSlowRule> targetSlowRules;
 		struct MovementFade { std::uint32_t instanceId = 0; ModuleMovementFadeRule rule; };
 		List<MovementFade> movementFadeRules;
+		struct ShieldRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleShieldRule rule; };
+		List<ShieldRule> shieldRules;
+		struct MovementRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleMovementRule rule; };
+		List<MovementRule> movementRules;
+		struct SustainedSpeedRule { std::uint32_t instanceId = 0; std::size_t ruleIndex = 0; ModuleSustainedSpeedRule rule; };
+		List<SustainedSpeedRule> sustainedSpeedRules;
+		List<ResolvedModuleOwnerBurstRule> ownerBurstRules;
+		// Kill-derived lists. killCooldownRules and killDamageRules are expanded into cooldownRules and killSources after the loop.
+		List<ResolvedModuleKillRule> killRules;
+		List<ResolvedModuleKillCooldownRule> killCooldownRules;
+		List<ResolvedModuleKillDamageRule> killDamageRules;
+		List<ResolvedModuleKillSource> killSources;
+		List<ResolvedModuleChargeRule> chargeRules;
 	};
 
 	namespace ModuleResolver
@@ -83,7 +156,13 @@ namespace ly
 		// one zone that rewards the module's family (or any family), else 0.
 		float GetZoneBonus(const ModuleRulesContext& rules, const ModuleDefinition& module, const ModulePlacement& placement);
 
+		// Usable schematic cells (zone set, not locked) that no placement covers. Derived from the schematic.
+		int CountEmptyCells(const ModuleRulesContext& rules, const List<ModulePlacement>& placements);
+
 		// Output follows the order of activePlacements.
 		ResolvedModuleEffects Resolve(const ModuleRulesContext& rules, const List<ModulePlacement>& activePlacements);
+
+			// Empty-cell and ability-slot counts read layoutPlacements (installed, rebooting included); effects follow activePlacements.
+			ResolvedModuleEffects Resolve(const ModuleRulesContext& rules, const List<ModulePlacement>& activePlacements, const List<ModulePlacement>& layoutPlacements);
 	}
 }

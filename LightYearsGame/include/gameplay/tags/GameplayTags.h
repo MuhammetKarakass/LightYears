@@ -202,6 +202,7 @@ namespace ly::GameplayTags
 			inline const GameplayTag Core{ "Module.Zone.Core" };
 			inline const GameplayTag Engine{ "Module.Zone.Engine" };
 			inline const GameplayTag Sensor{ "Module.Zone.Sensor" };
+			inline const GameplayTag AbilityBay{ "Module.Zone.AbilityBay" };
 		}
 
 		namespace System

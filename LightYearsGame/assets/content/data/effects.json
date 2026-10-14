@@ -191,6 +191,14 @@
       "stackingPolicy": "RefreshDuration",
       "category": "Runtime.CryoFreezeCooldown",
       "sourceParameterized": true
+    },
+    {
+      "id": "Effect.Status.Damage.Kinetic.ArmorRend",
+      "durationPolicy": "Duration",
+      "stackingPolicy": "RefreshDuration",
+      "disposition": "Harmful",
+      "category": "Runtime.KineticArmorRend",
+      "sourceParameterized": true
     }
   ]
 }

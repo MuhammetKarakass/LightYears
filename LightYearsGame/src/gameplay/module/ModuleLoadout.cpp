@@ -1,5 +1,7 @@
 #include "gameplay/module/ModuleLoadout.h"
 
+#include "gameplay/tags/GameplayTagSchema.h"
+
 #include <algorithm>
 #include <utility>
 
@@ -108,6 +110,7 @@ namespace ly
 			const ModuleSideFeatureDefinition* feature = rules.sideFeatureLookup ? rules.sideFeatureLookup(sideFeatureId) : nullptr;
 			if (!IsSideFeatureUsableAtLevel(*module, feature, item->level)) return false;
 		}
+		if (item->fragmented && item->sideFeatureId != sideFeatureId) return false;
 		if (item->sideFeatureId == sideFeatureId) return true;
 		item->sideFeatureId = sideFeatureId;
 		++mRevision;
@@ -143,16 +146,76 @@ namespace ly
 	{
 		const auto found = FindById(mPlacements, instanceId);
 		if (found == mPlacements.end()) return ModulePlacementFailure::UnknownModule;
+		if (found->fragmented) return ModulePlacementFailure::FragmentedPlacement;
 
 		ModulePlacement candidate = *found;
 		candidate.origin = origin;
 		candidate.rotationQuarterTurns = rotationQuarterTurns;
+		const ModulePlacementFailure failure = ModulePlacementRules::CanPlace(rules, mPlacements, candidate, instanceId);
+		if (failure == ModulePlacementFailure::Overlap) return TrySwapAbilitySlots(rules, *found, origin);
+		if (failure != ModulePlacementFailure::None) return failure;
+
+		mPlacements[static_cast<std::size_t>(found - mPlacements.cbegin())] = std::move(candidate);
+		++mRevision;
+		return ModulePlacementFailure::None;
+	}
+
+	ModulePlacementFailure ModuleLoadout::InstallFragmented(const ModuleRulesContext& rules, std::uint32_t instanceId, const List<sf::Vector2i>& cells)
+	{
+		const auto found = FindById(mInventory, instanceId);
+		if (found == mInventory.end()) return ModulePlacementFailure::UnknownModule;
+
+		ModulePlacement candidate = *found;
+		candidate.origin = sf::Vector2i{};
+		candidate.rotationQuarterTurns = 0;
+		candidate.fragmented = true;
+		candidate.fragmentCells = cells;
+		const ModulePlacementFailure failure = ModulePlacementRules::CanPlace(rules, mPlacements, candidate);
+		if (failure != ModulePlacementFailure::None) return failure;
+
+		mInventory.erase(mInventory.begin() + (found - mInventory.cbegin()));
+		mPlacements.push_back(std::move(candidate));
+		++mRevision;
+		return ModulePlacementFailure::None;
+	}
+
+	ModulePlacementFailure ModuleLoadout::MoveFragments(const ModuleRulesContext& rules, std::uint32_t instanceId, const List<sf::Vector2i>& cells)
+	{
+		const auto found = FindById(mPlacements, instanceId);
+		if (found == mPlacements.end()) return ModulePlacementFailure::UnknownModule;
+		if (!found->fragmented) return ModulePlacementFailure::FragmentationNotAllowed;
+
+		ModulePlacement candidate = *found;
+		candidate.fragmentCells = cells;
 		const ModulePlacementFailure failure = ModulePlacementRules::CanPlace(rules, mPlacements, candidate, instanceId);
 		if (failure != ModulePlacementFailure::None) return failure;
 
 		mPlacements[static_cast<std::size_t>(found - mPlacements.cbegin())] = std::move(candidate);
 		++mRevision;
 		return ModulePlacementFailure::None;
+	}
+
+	ModulePlacementFailure ModuleLoadout::TrySwapAbilitySlots(const ModuleRulesContext& rules, ModulePlacement moved, sf::Vector2i destination)
+	{
+		const ModuleDefinition* movedModule = rules.lookup ? rules.lookup(moved.moduleId) : nullptr;
+		if (!movedModule || moved.fragmented || !GameplayTagSchema::IsModuleAbilitySlotSystem(movedModule->systemCategory)) return ModulePlacementFailure::Overlap;
+		for (ModulePlacement& other : mPlacements)
+		{
+			if (other.instanceId == moved.instanceId || other.fragmented) continue;
+			const ModuleDefinition* otherModule = rules.lookup(other.moduleId);
+			if (!otherModule || !GameplayTagSchema::IsModuleAbilitySlotSystem(otherModule->systemCategory)) continue;
+			const List<sf::Vector2i> covered = ModulePlacementRules::GetCoveredCells(*otherModule, other);
+			if (std::find(covered.begin(), covered.end(), destination) == covered.end()) continue;
+			const sf::Vector2i otherOrigin = other.origin;
+			other.origin = moved.origin;
+			for (ModulePlacement& mine : mPlacements)
+			{
+				if (mine.instanceId == moved.instanceId) mine.origin = otherOrigin;
+			}
+			++mRevision;
+			return ModulePlacementFailure::None;
+		}
+		return ModulePlacementFailure::Overlap;
 	}
 
 	bool ModuleLoadout::Uninstall(std::uint32_t instanceId)
@@ -162,6 +225,8 @@ namespace ly
 
 		ModulePlacement item = *found;
 		item.origin = sf::Vector2i{};
+		item.fragmented = false;
+		item.fragmentCells.clear();
 		item.rotationQuarterTurns = 0;
 		mPlacements.erase(mPlacements.begin() + (found - mPlacements.cbegin()));
 		mInventory.push_back(std::move(item));
@@ -186,6 +251,64 @@ namespace ly
 			return true;
 		}
 		return false;
+	}
+
+	bool ModuleLoadout::AccrueRunCounters(const ModuleRulesContext& rules, double units)
+	{
+		if (!(units > 0.0)) return false;
+		bool stacksChanged = false;
+		for (ModulePlacement& placement : mPlacements)
+		{
+			const ModuleDefinition* module = rules.lookup ? rules.lookup(placement.moduleId) : nullptr;
+			if (!module || placement.variantIndex < 0 || static_cast<std::size_t>(placement.variantIndex) >= module->sizeVariants.size()) continue;
+			const List<ModuleRunCounterRule>& counters = module->sizeVariants[static_cast<std::size_t>(placement.variantIndex)].runCounterRules;
+			const bool hasDistanceRule = std::any_of(counters.begin(), counters.end(), [](const ModuleRunCounterRule& rule) { return rule.source == ModuleRunCounterSource::Distance; });
+			if (!hasDistanceRule) continue;
+			for (const ModuleRunCounterRule& rule : counters)
+			{
+				if (rule.source != ModuleRunCounterSource::Distance) continue;
+				if (GetModuleRunCounterStacks(rule, placement.runCounter) != GetModuleRunCounterStacks(rule, placement.runCounter + units)) stacksChanged = true;
+			}
+			placement.runCounter += units;
+		}
+		if (stacksChanged) ++mRevision;
+		return stacksChanged;
+	}
+
+	double ModuleLoadout::GetRunCounter(std::uint32_t instanceId) const
+	{
+		if (const ModulePlacement* placement = FindPlacement(instanceId)) return placement->runCounter;
+		if (const ModulePlacement* item = FindInventoryItem(instanceId)) return item->runCounter;
+		return 0.0;
+	}
+
+	bool ModuleLoadout::AddRunCounterCredit(std::uint32_t instanceId, double units)
+	{
+		auto* placement = FindOwnedItem(instanceId);
+		if (!placement || !(units > 0.0) || !std::isfinite(units)) return false;
+		placement->runCounter += units; ++mRevision; return true;
+	}
+	bool ModuleLoadout::AddKillCredit(std::uint32_t instanceId, double stacks, double damageBonus)
+	{
+		ModulePlacement* placement = FindOwnedItem(instanceId);
+		if (!placement || !(stacks >= 0.0) || !(damageBonus >= 0.0)) return false;
+		placement->killStacks += stacks;
+		placement->killDamageBonus += damageBonus;
+		return true;
+	}
+
+	double ModuleLoadout::GetKillStacks(std::uint32_t instanceId) const
+	{
+		if (const ModulePlacement* placement = FindPlacement(instanceId)) return placement->killStacks;
+		if (const ModulePlacement* item = FindInventoryItem(instanceId)) return item->killStacks;
+		return 0.0;
+	}
+
+	double ModuleLoadout::GetKillDamageBonus(std::uint32_t instanceId) const
+	{
+		if (const ModulePlacement* placement = FindPlacement(instanceId)) return placement->killDamageBonus;
+		if (const ModulePlacement* item = FindInventoryItem(instanceId)) return item->killDamageBonus;
+		return 0.0;
 	}
 
 	bool ModuleLoadout::SeedDefaults(const ModuleRulesContext& rules)

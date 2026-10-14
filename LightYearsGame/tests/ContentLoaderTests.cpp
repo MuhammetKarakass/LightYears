@@ -2275,7 +2275,7 @@ int main()
 	{
 		return Fail(loadedEffects.error.c_str()) ? 0 : 1;
 	}
-	if (loadedEffects.definitions.size() != 17 ||
+	if (loadedEffects.definitions.size() != 18 ||
 		barrierEffectIt == loadedEffects.definitions.end() ||
 		!barrierEffectIt->definition.sourceParameterized ||
 		!barrierEffectIt->definition.attributes.empty() ||

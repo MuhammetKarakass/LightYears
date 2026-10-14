@@ -3,6 +3,8 @@
 #include "presentation/hud/modules/ModuleScreenViewModel.h"
 #include <optional>
 #include <string>
+#include <map>
+#include <tuple>
 
 namespace ly
 {
@@ -24,6 +26,8 @@ namespace ly
 		ModuleScreenPresenter& operator=(const ModuleScreenPresenter&) = delete;
 
 		void Tick(float deltaTime);
+		unsigned int GetContentBuildCount() const { return mContentBuildCount; }
+		unsigned int GetDescriptionFormatCount() const { return mDescriptionFormatCount; }
 		shared_ptr<const ModuleScreenViewModel> GetViewModel() const { return mViewModel; }
 
 		void ToggleOpen();
@@ -53,5 +57,11 @@ namespace ly
 		std::string mMessage;
 		float mMessageRemaining{ 0.f };
 		bool mOpen{ false };
+		bool mContentValid{ false };
+		unsigned int mContentBuildCount{ 0 }, mDescriptionFormatCount{ 0 };
+		unsigned int mPlayerId{ 0 }, mShipId{ 0 };
+		std::uint64_t mLoadoutRevision{ 0 }, mCatalogRevision{ 0 };
+		using DescriptionKey = std::tuple<std::string, int, int, std::string>;
+		std::map<DescriptionKey, std::pair<std::string, std::string>> mDescriptions;
 	};
 }

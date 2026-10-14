@@ -26,6 +26,8 @@ namespace ly
 		virtual void Tick(float deltaTime) override;
 		void SetSpeed(float speed) { mPlayerMovement.SetSpeed(speed); }
 		float GetSpeed() const { return mPlayerMovement.GetSpeed(); }
+		// Units this ship travelled on the last tick (velocity times time; teleports do not count). The Player accrues them into run counters.
+		Delegate<float> onRunDistanceTraveled;
 		ShipModuleApplier& GetModuleApplier() { return mModuleApplier; }
 		const ShipModuleApplier& GetModuleApplier() const { return mModuleApplier; }
 		ModuleTriggerRuntime& GetModuleTriggerRuntime() { return mModuleTriggerRuntime; }

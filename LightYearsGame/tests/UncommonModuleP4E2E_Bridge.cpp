@@ -33,7 +33,7 @@ namespace uncommon_p4_e2e
 				neighbor.rotationQuarterTurns = 0;
 				if (definition->systemCategory == GameplayTags::Module::System::AbilitySlot1) neighbor.origin = { 4, 1 };
 				else if (definition->systemCategory == GameplayTags::Module::System::AbilitySlot2) neighbor.origin = { 4, 3 };
-				else if (definition->systemCategory == GameplayTags::Module::System::AbilitySlot3) neighbor.origin = { 2, 2 };
+				else if (definition->systemCategory == GameplayTags::Module::System::AbilitySlot3) neighbor.origin = { 3, 2 };
 				else if (definition->systemCategory == GameplayTags::Module::System::PrimaryWeapon) neighbor.origin = { 6, 2 };
 				else continue;
 				geometry.push_back(neighbor);

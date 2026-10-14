@@ -215,6 +215,10 @@ namespace ly
 		mHasLaunchVelocity = true;
 		SetVelocity(mLaunchVelocity);
 	}
+	float PrimaryWeaponProjectileActor::GetProjectileSpeed() const
+	{
+		return mHasLaunchVelocity ? GetVectorLength(mLaunchVelocity) : mSpeed;
+	}
 
 	void PrimaryWeaponProjectileActor::Move(float deltaTime)
 	{

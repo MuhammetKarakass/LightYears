@@ -1,6 +1,7 @@
 #include "gameplay/combat/CombatRuntimeModifiers.h"
 #include "gameplay/math/MultiplierMath.h"
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -13,6 +14,7 @@ namespace ly
 			return false;
 		}
 
+		mScopedModifiers.erase(sourceId);
 		mModifiers[sourceId] = multiplier;
 		RecomputeCachedMultiplier();
 		return true;
@@ -20,15 +22,29 @@ namespace ly
 
 	bool CombatRuntimeModifiers::Set(const std::string& sourceId, CombatRuntimeModifier modifier)
 	{
-		return Set(sourceId, modifier.outgoingDamageMultiplier);
+		if (!modifier.IsScoped())
+		{
+			return Set(sourceId, modifier.outgoingDamageMultiplier);
+		}
+		if (sourceId.empty() || !std::isfinite(modifier.outgoingDamageMultiplier) || modifier.outgoingDamageMultiplier < 0.f)
+		{
+			return false;
+		}
+
+		mModifiers.erase(sourceId);
+		mScopedModifiers[sourceId] = ScopedModifier{ modifier.outgoingDamageMultiplier, modifier.sourceSlot, modifier.sourceFamily };
+		RecomputeCachedMultiplier();
+		return true;
 	}
 
 	bool CombatRuntimeModifiers::Remove(const std::string& sourceId)
 	{
+		const bool scopedRemoved = mScopedModifiers.erase(sourceId) > 0;
 		auto it = mModifiers.find(sourceId);
 		if (it == mModifiers.end())
 		{
-			return false;
+			if (scopedRemoved) RecomputeCachedMultiplier();
+			return scopedRemoved;
 		}
 
 		mModifiers.erase(it);
@@ -39,12 +55,26 @@ namespace ly
 	void CombatRuntimeModifiers::Clear()
 	{
 		mModifiers.clear();
+		mScopedModifiers.clear();
 		mCachedMultiplier = 1.f;
+	}
+
+	float CombatRuntimeModifiers::GetScopedOutgoingDamageMultiplier(sas::AbilitySlot sourceSlot, const std::vector<GameplayTag>& sourceTags) const
+	{
+		float multiplier = 1.f;
+		for (const auto& [_, scoped] : mScopedModifiers)
+		{
+			if (scoped.sourceSlot != sas::AbilitySlot::None && scoped.sourceSlot != sourceSlot) continue;
+			if (scoped.sourceFamily.IsValid() && !std::any_of(sourceTags.begin(), sourceTags.end(),
+				[&scoped](const GameplayTag& tag) { return tag.MatchesTag(scoped.sourceFamily); })) continue;
+			multiplier *= scoped.multiplier;
+		}
+		return multiplier;
 	}
 
 	bool CombatRuntimeModifiers::HasModifier(const std::string& sourceId) const
 	{
-		return mModifiers.find(sourceId) != mModifiers.end();
+		return mModifiers.find(sourceId) != mModifiers.end() || mScopedModifiers.find(sourceId) != mScopedModifiers.end();
 	}
 
 	void CombatRuntimeModifiers::RecomputeCachedMultiplier()

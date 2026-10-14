@@ -20,8 +20,10 @@ namespace ly::visual
 		// Missing names return a loud magenta ramp so a broken script is visible instead of silently gray.
 		const ColorRamp& Ramp(const std::string& rampName) const;
 		const ColorRamp& Role(const std::string& roleName) const;
+		bool HasRole(const std::string& roleName) const { return mRoles.find(roleName) != mRoles.end(); }
 		// Every ramp stop of the script, deduplicated, capped at maxColors. Used as the world dither palette.
-		std::vector<sf::Color> Palette(size_t maxColors) const;
+		// Ramps whose name starts with skipPrefix are left out (the "bg_" ramps stay out of the ship dither).
+		std::vector<sf::Color> Palette(size_t maxColors, const std::string& skipPrefix = std::string()) const;
 
 	private:
 		std::string mName;

@@ -41,6 +41,9 @@ namespace ly
 		bool SetModuleSideFeature(std::uint32_t instanceId, const sas::ContentId& sideFeatureId);
 		ModulePlacementFailure TryInstallModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
 		ModulePlacementFailure TryMoveModule(std::uint32_t instanceId, sf::Vector2i origin, int rotationQuarterTurns);
+		// F1 Parçalama: install or move a fragmented placement, one cell per fragment.
+		ModulePlacementFailure TryInstallModuleFragments(std::uint32_t instanceId, const List<sf::Vector2i>& cells);
+		ModulePlacementFailure TryMoveModuleFragments(std::uint32_t instanceId, const List<sf::Vector2i>& cells);
 		bool TryUninstallModule(std::uint32_t instanceId);
 		// Read-only rules for the ship's schematic; empty for ships without one.
 		std::optional<ModuleRulesContext> BuildModuleRules() const;
@@ -79,11 +82,13 @@ namespace ly
 		void RestorePurchasedAbilityLevels(PlayerSpaceShip& ship);
 		void ApplyModuleLoadout(PlayerSpaceShip& ship);
 		void OnCurrentShipDestroyed(Actor* destroyedActor);
+		void OnRunDistanceTraveled(float distance);
 		void ResetRunProgression();
 
 		weak_ptr<PlayerSpaceShip> mCurrentSpaceShip;
 		std::string mShipId;
 		DelegateHandle mCurrentShipDestroyedHandle;
+		DelegateHandle mRunDistanceHandle;
 		DelegateHandle mShipLevelChangedHandle;
 		ShipProgression mShipProgression;
 		PurchasedAbilityLevels mPurchasedAbilityLevels;

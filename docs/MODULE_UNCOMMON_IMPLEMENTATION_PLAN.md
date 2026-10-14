@@ -1,5 +1,7 @@
 # Uncommon Modüller — Sol/Luna Uygulama Planı
 
+**Güncel tasarım geçişi (2026-10-13):** Bu belgedeki dalga sayıları tarihli kanıttır; güncel sahip [modules.md](modules.md). İlk yeni paket ZoneCooler2,Arc merdiven/Discharge/Resonator,Lucky yan dönüşümü,Cold/Shatter kaldırma,Spare yansız,Barrier/Brace; Game build ve [212 kontrol](../build/e2e-artifacts/module-plan-transition-2026-10-13.json) geçti. Yeni ana/yan paketleri ayrı; eski ana-modül senaryoları yeni tasarımın kanıtı sayılmaz.
+
 **Tarih:** 2026-10-06 · **P8 kapanışı:** 2026-10-08 · **Durum:** P0–P8 mevcut runtime dilimi doğrulandı; 18 ana modül + 30 yan özellik ve P7 sunumu mevcut. Oyun build exit 0; hedefli gerçek E2E 10/10. Eksik/onaysız yan özellikler §8'de açık; tam tasarım/ürün kabulü değildir. P2/P3/P4 `da12985` ile commit edildi; P5–P8 için stage/commit/push yapılmadı. · **Tasarım kaynağı:** [modules.md](modules.md), [Modül Sistemi Tasarımı](MODULE_SYSTEM_DESIGN.md), [Common uygulama planı](MODULE_COMMON_IMPLEMENTATION_PLAN.md).
 
 Bu belge, [modules.md](modules.md)'de tasarlanan **18 Uncommon modülün** ve onları taşıyan **boyut merdiveni / yan özellik / modül seviyesi** altyapısının uygulama sözleşmesidir. Değerlerin sahibi modules.md'deki kartlar, sonra `modules.json`'dır; bu belge ikinci bir değer listesi tutmaz.
@@ -23,7 +25,7 @@ Bu ilk sürümdür; amaç 18 modülü çalıştırmak kadar, sonraki nadirlikler
 
 | Dahil | Hariç (bu plan değil) |
 |---|---|
-| 18 Uncommon modül (7 tek boyutlu, 11 merdivenli) | Rare ve üstü modüller (Kor Birikimi, Altın Kaplama, Zırh Dönüşümü, Kırılma Şoku, Kalıcı Etki Rezonatörü, Enerji Kuplörü) |
+| 18 Uncommon modül (7 tek boyutlu, 11 merdivenli) | Rare ve üstü modüller ([Rare uygulama planı](MODULE_RARE_IMPLEMENTATION_PLAN.md); Kor Birikimi = Ember Accumulation, Kırılma Şoku = Shatter Shock). Altın Kaplama, Zırh Dönüşümü, Kalıcı Etki Rezonatörü, Status Primer ve Arc Discharge 2026-10-10'dan beri Uncommon adayıdır ([modules.md](modules.md)), bu planın 18'lik setinde değildir. Enerji Kuplörü reddedildi |
 | Boyut merdiveni (1-2-3, 1-2, 1-3, 2-3) ve en büyük boyutta açılan yan özellik | Loot düşme tabloları ve dağılımı |
 | Yan özellik havuzları (O/D/G, 15 ortak) ve modül başına 2 özel yan özellik | Yükseltme arayüzü ve harcama ekonomisi (yalnız veri/API hazır olur) |
 | Modül seviyesi (gelişim) veri modeli, çözümleme ve test kancası | Gold ekonomisi (bkz. §2 engel) |
@@ -263,3 +265,8 @@ Kullanıcı “yarım kalan işleri de yapalım” dedi; Gold için açık seçi
 Tipli kurallar, loader/level resolver, numeric kart anahtarları, runtime temizliği ve test/CMake bağlantıları birlikte uygulanır. [Sahiplik ve davranış sözleşmeleri](MODULE_SYSTEM_ARCHITECTURE.md), [sınırlandırılmış değişiklik sözleşmesi](../.tmp/uncommon-completion/change-contract.md).
 
 **Teknik doğrulama tamamlandı:** `LightYearsGame` ve ilgili hedefler build exit 0; `vcvars64` sonrasında `VSLANG=1033`. Seri gerçek E2E **11/11**, **46,55 sn**, exit 0; 10 JSON artefaktında **7854** geçen kontrol. Yeni grup **959**, P7 **3860** kontrol ve **435** seviye/boyut/yan kombinasyonu. [Kesin build/test komutları ve kaynaklı sonuç](../beyin/notes/uncommon-completion-2026-10-08.md), [sabitlenmiş artefakt özeti](../.tmp/uncommon-completion/evidence.json), [başlangıca göre dar kapsam denetimi](../.tmp/uncommon-completion/audit.json). [Gruplanmış E2E girişi](../LightYearsGame/tests/UncommonModuleCompletionE2E.cpp) gerçek loadout/ship/damage/Player akışını kullanır. Mağaza, temel Gold düşüşü, loot/upgrade arayüzü, kalıcılık, nihai denge ve kullanıcı görsel kabulü açık; stage/commit/push yok.
+
+
+## 10. Boyut ve hasar takip revizyonu — 2026-10-13
+
+Arc Extender/Double Feed boyutları, Trail Mines AP formülü, Death Burst ve Hunt Fuel kaldırma [katalogdaki güncel karar](modules.md#boyut-ve-denge-revizyonu--2026-10-13) üzerinden uygulandı. Game build exit0; yalnız revision E2E379 ve Loot Shield kills E2E192 kontrol geçti. İkinci Loot Shield özel yanı kullanıcı onayıyla Kill Ward oldu (2026-10-13); eski P3/P8 sonuçları tarihli uygulama geçmişidir. Tam suite/oynanış kabulü değildir.

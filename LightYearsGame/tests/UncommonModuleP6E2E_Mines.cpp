@@ -2,11 +2,28 @@
 
 namespace uncommon_p6_e2e
 {
+	void SizingChecks(Report& report, Application& application)
+	{
+		Fixture f{ report, application };
+		const auto* arc = f.rules.lookup("Module.Offense.ArcExtender.Uncommon");
+		const auto* feed = f.rules.lookup("Module.Utility.DoubleFeedCore.Uncommon");
+		report.Check(arc && arc->sizeVariants.size() == 1 && arc->sizeVariants.front().shape.cells.size() == 1, "Arc Extender occupies one cell");
+		report.Check(feed && feed->sizeVariants.size() == 1 && feed->sizeVariants.front().shape.cells.size() == 2, "Double Feed Core occupies two cells");
+		f.Install("Module.Offense.ArcExtender.Uncommon");
+		const auto target = Enemy(f);
+		StatusHit(*target, f.ship.get(), DamageTypeSchema::Electric, 5);
+		report.Check(Stacks(*target, DamageStatusEffectIds::ElectricEffectId) == 5, "one-cell Arc Extender keeps its five-stack behavior");
+		const float before = f.Owner(OwnerAttributeIds::AttackPower);
+		f.Install("Module.Utility.DoubleFeedCore.Uncommon");
+		report.Check(f.Owner(OwnerAttributeIds::AttackPower) >= before + 15.f, "two-cell Double Feed Core still applies its AP bonus");
+		report.Check(!content::ModuleSideFeatureCatalog::FindById(sas::ContentId{ "Module.SideFeature.LootShield.HuntFuel" }), "removed Hunt Fuel is absent from the live catalog");
+	}
 	void MineChecks(Report& report, Application& application)
 	{
 		for (int level = 1; level <= 3; ++level)
 		{
 			Fixture f{ report, application }; const auto module = f.Install("Module.Movement.TrailMines.Uncommon", 0, level);
+			f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::AttackPower, 100.f);
 			CastMovement(f);
 			f.ship->SetVelocity({}); f.ship->GetMovementComponent().Tick(.1f); f.ship->GetModuleApplier().Tick(.1f);
 			report.Check(Actors<ModuleMineActor>(f).empty(), "stationary Movement use leaves no mines");
@@ -15,9 +32,11 @@ namespace uncommon_p6_e2e
 			const auto mine = Actors<ModuleMineActor>(f).front();
 			const auto enemy = Enemy(f, 99.f); const auto outside = Enemy(f, 101.f);
 			enemy->SetActorLocation(mine->GetActorLocation() + sf::Vector2f{ 99.f, 0.f }); outside->SetActorLocation(mine->GetActorLocation() + sf::Vector2f{ 101.f, 0.f });
+			const float expectedDamage = 25.f + 5.f * level + (.25f + .05f * level) * 100.f;
+			f.ship->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::AttackPower, 300.f);
 			DamageObserver observer{ *f.ship };
 			mine->Tick(.99f); f.Equal("mine waits for its full fuse", 1000.f, enemy->GetHealthComponent().GetHealth());
-			mine->Tick(.011f); f.Equal("mine damage follows its level table", 6.f + 2.f * level, 1000.f - enemy->GetHealthComponent().GetHealth());
+			mine->Tick(.011f); f.Equal("mine uses level base plus AP snapshotted at drop", expectedDamage, 1000.f - enemy->GetHealthComponent().GetHealth());
 			f.Equal("mine excludes the target outside radius", 1000.f, outside->GetHealthComponent().GetHealth());
 			report.Check(observer.generated == 1 && observer.allSuppressed, "mine hit disables critical and module triggers");
 			mine->Tick(.19f); report.Check(mine->GetIsPendingDestroy(), "mine actor expires after its explosion");
@@ -33,7 +52,7 @@ namespace uncommon_p6_e2e
 			const auto mine = Actors<ModuleMineActor>(f).front(); const auto enemy = Enemy(f);
 			enemy->SetActorLocation(mine->GetActorLocation());
 			mine->Tick(.69f); f.Equal("Quick Fuse does not detonate early", 1000.f, enemy->GetHealthComponent().GetHealth());
-			mine->Tick(.011f); f.Equal("Quick Fuse detonates at point-seven seconds", 6.f + 2.f * level, 1000.f - enemy->GetHealthComponent().GetHealth());
+			mine->Tick(.011f); f.Equal("Quick Fuse detonates at point-seven seconds", 25.f + 5.f * level + (.25f + .05f * level) * f.Owner(OwnerAttributeIds::AttackPower), 1000.f - enemy->GetHealthComponent().GetHealth());
 		}
 		{
 			Fixture f{ report, application }; f.Install("Module.Movement.TrailMines.Uncommon", 1, 1, "Module.SideFeature.TrailMines.CryoMines");

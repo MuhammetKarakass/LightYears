@@ -48,6 +48,11 @@ namespace ly
 		// resolver treats it as active until the final source releases it.
 		void SetDirectionalThrustSync(const std::string& sourceId, bool enabled);
 		bool HasDirectionalThrustSync() const { return !mDirectionalThrustSyncSources.empty(); }
+		// Module-owned thrust shaping, kept apart from the ability sync sources above. thrustBonus adds to the
+		// ship thrust multiplier; equalizeDirections makes reverse and strafe follow forward thrust.
+		void SetModuleMovementRule(float thrustBonus, bool equalizeDirections);
+		bool HasModuleDirectionalThrustSync() const { return mModuleDirectionalThrustSync; }
+		float GetModuleThrustBonus() const { return mModuleThrustBonus; }
 		float ResolveForwardThrust() const;
 		float ResolveReverseThrust() const;
 		float ResolveStrafeThrust() const;
@@ -113,6 +118,8 @@ namespace ly
 		void ClampThrustDriftVelocity(float speedCapMultiplier);
 		bool TickMovementBurst(float deltaTime);
 		float GetShortestAngleDelta(float targetAngle, float currentAngle) const;
+		float ResolveThrustMultiplier() const;
+		bool IsDirectionalThrustEqualized() const { return HasDirectionalThrustSync() || mModuleDirectionalThrustSync; }
 
 		SpaceShip& GetShip() const;
 
@@ -133,5 +140,7 @@ namespace ly
 		float mResolvedMovementBurstDistance = 0.f;
 		bool mIsMovementBurstActive = false;
 		std::unordered_set<std::string> mDirectionalThrustSyncSources;
+		float mModuleThrustBonus = 0.f;
+		bool mModuleDirectionalThrustSync = false;
 	};
 }

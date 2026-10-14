@@ -10,11 +10,11 @@ namespace uncommon_p4_e2e
 			const auto enemy = Enemy(f);
 			f.Equal("no module preserves plain damage", 10.f, Hit(*enemy, f.ship.get(), 10.f, Plain()));
 			const auto lens = f.Install("Module.Primary.PhotonicLens.Uncommon", 0, level);
-			const float multiplier = 1.15f + .03f * (level - 1);
-			f.Equal("Photonic Lens applies to non-primary direct damage", 10.f * multiplier, Hit(*enemy, f.ship.get(), 10.f, Plain()));
-			f.Equal("Photonic Lens applies to periodic damage", 10.f * multiplier, Hit(*enemy, f.ship.get(), 10.f, Plain(), {}, {}, DamageDeliveryType::Periodic));
+			const float multiplier = 1.5f + .03f * (level - 1);
+			f.Equal("Photonic Lens excludes non-primary direct damage", 10.f, Hit(*enemy, f.ship.get(), 10.f, Plain()));
+			f.Equal("Photonic Lens excludes periodic damage", 10.f, Hit(*enemy, f.ship.get(), 10.f, Plain(), {}, {}, DamageDeliveryType::Periodic));
 			DamagePayload cryo = Plain(); cryo.cryoBuildupPerHit = 1;
-			f.Equal("Lens checks before the hit applies its first status", 10.f * multiplier, Hit(*enemy, f.ship.get(), 10.f, cryo, {}, {}, DamageDeliveryType::Direct, { DamageTypeSchema::Cryo }));
+			f.Equal("Lens checks before the Primary hit applies its first status", 10.f * multiplier, Hit(*enemy, f.ship.get(), 10.f, cryo, {}, { GameplayTags::Ability::Primary }, DamageDeliveryType::Projectile, { DamageTypeSchema::Cryo }));
 			report.Check(enemy->GetAbilitySystemComponent().HasOwnedTag(DamageStatusSchema::CryoSlowed), "real Cryo status was applied");
 			f.Equal("Lens excludes a target carrying Cryo", 10.f, Hit(*enemy, f.ship.get(), 10.f, Plain()));
 			const auto* status = enemy->GetAbilitySystemComponent().FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId);
@@ -34,7 +34,7 @@ namespace uncommon_p4_e2e
 				DamagePayload cryo = Plain(); cryo.cryoBuildupPerHit = 1;
 				f.Equal("Coil excludes targets without both statuses", 10.f, Hit(*enemy, f.ship.get(), 10.f, thermal, {}, {}, DamageDeliveryType::Direct, { DamageTypeSchema::Thermal }));
 				f.Equal("Coil reads Cryo before this hit adds its first stack", 10.f, Hit(*enemy, f.ship.get(), 10.f, cryo, {}, {}, DamageDeliveryType::Direct, { DamageTypeSchema::Cryo }));
-				const float multiplier = 1.22f + .05f * (level - 1);
+				const float multiplier = 1.3f + .05f * (level - 1);
 				f.Equal("Coil resolves every size and level against real stacks", 10.f * multiplier, Hit(*enemy, f.ship.get(), 10.f, Plain()));
 				f.Equal("Coil applies its all-damage bonus to periodic damage", 10.f * multiplier, Hit(*enemy, f.ship.get(), 10.f, Plain(), {}, {}, DamageDeliveryType::Periodic));
 				DamagePayload generated = Plain(); generated.skipModuleDamageRules = true;

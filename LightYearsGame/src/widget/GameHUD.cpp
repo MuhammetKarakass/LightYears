@@ -39,16 +39,26 @@ namespace ly
 
 	void GameHUD::Tick(float deltaTime)
 	{
+		// Frames counted over half a second and rounded: truncating 1/dt of single frames turned the normal
+		// microsecond jitter of a 16.67 ms frame into a counter that kept flickering between 58 and 60.
 		static int lastFrameRate = 0;
-		int frameRate = deltaTime > 0.f ? int(1.f / deltaTime) : 0;
-
-		if (mFrameRateText.has_value() && frameRate != lastFrameRate)
+		static int sampleFrames = 0;
+		static float sampleSeconds = 0.f;
+		++sampleFrames;
+		sampleSeconds += deltaTime;
+		if (sampleSeconds >= 0.5f)
 		{
-			lastFrameRate = frameRate;
+			const int frameRate = static_cast<int>(std::lround(sampleFrames / sampleSeconds));
+			sampleFrames = 0;
+			sampleSeconds = 0.f;
+			if (mFrameRateText.has_value() && frameRate != lastFrameRate)
+			{
+				lastFrameRate = frameRate;
 
-			static char buffer[32];
-			snprintf(buffer, sizeof(buffer), "Frame Rate: %d", frameRate);
-			mFrameRateText->SetString(buffer);
+				static char buffer[32];
+				snprintf(buffer, sizeof(buffer), "Frame Rate: %d", frameRate);
+				mFrameRateText->SetString(buffer);
+			}
 		}
 
 

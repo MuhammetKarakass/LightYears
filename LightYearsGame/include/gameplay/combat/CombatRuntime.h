@@ -91,9 +91,16 @@ namespace ly
 		bool SetRuntimeModifier(const std::string& sourceId, CombatRuntimeModifier modifier);
 		bool RemoveRuntimeModifier(const std::string& sourceId);
 		float GetOutgoingDamageMultiplier() const noexcept;
+		// Primary-shot-only outgoing multiplier (Escape Velocity sonic state). Applied to the whole Primary hit in
+		// ResolveOutgoingDamagePlan; never to ability hits or periodic ticks.
+		bool SetPrimaryShotModifier(const std::string& sourceId, float multiplier);
+		bool RemovePrimaryShotModifier(const std::string& sourceId);
+		float GetPrimaryShotDamageMultiplier() const noexcept;
 		OutgoingDamageRuleRegistration RegisterOutgoingDamageRules();
 		void ActivateOutgoingDamageRules(const ModuleTriggerEventContext& event);
-		void SetModuleStatusRules(const ModuleStatusRules& rules) { mModuleStatusRules = rules; }
+		void SetModuleStatusRules(const ModuleStatusRules& rules);
+		bool TryActivateElectricSpread(const ModuleElectricSpreadRule& rule, std::uint64_t targetId);
+		bool TryActivateModuleStatusPulse(std::uint32_t instanceId, std::size_t ruleIndex, std::uint64_t targetId, float cooldownSeconds);
 		const ModuleStatusRules& GetModuleStatusRules() const { return mModuleStatusRules; }
 		// Set by the module applier while a generated rule reads the target's statuses at resolution.
 		void SetTargetStatusSnapshotRequested(bool requested) { mTargetStatusSnapshotRequested = requested; }
@@ -201,7 +208,10 @@ namespace ly
 		};
 		std::unordered_map<std::string, DamageProtection> mDamageProtections;
 		CombatRuntimeModifiers mRuntimeModifiers;
+		std::unordered_map<std::string, float> mPrimaryShotModifiers;
 		ModuleStatusRules mModuleStatusRules;
+		struct ModuleStatusPulseCooldown { std::uint32_t instanceId; std::size_t ruleIndex; std::uint64_t targetId; float remaining; };
+		List<ModuleStatusPulseCooldown> mModuleStatusPulseCooldowns;
 		bool mTargetStatusSnapshotRequested = false;
 		ModuleFirstHitHistory mModuleFirstHits;
 		std::shared_ptr<ModuleDamageRuleState> mModuleDamageRuleState = std::make_shared<ModuleDamageRuleState>();

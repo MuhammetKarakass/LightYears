@@ -24,6 +24,14 @@ namespace ly::visual
 		// Ship definitions are optional and never fatal: a bad file lands in the load report.
 		mLoadReport = {};
 		mShips.LoadDirectory(root / "ships", mLoadReport);
+		// The deep-sky catalog is optional too: without it every stop keeps its plain sky.
+		const std::filesystem::path deepSkyFile = root / "deepsky.json";
+		mDeepSkyStamp = FileStamp(deepSkyFile);
+		std::string deepSkyError;
+		if (std::filesystem::exists(deepSkyFile) && !mDeepSky.Load(deepSkyFile, deepSkyError))
+		{
+			mLoadReport.errors.push_back("deepsky.json: " + deepSkyError);
+		}
 		return true;
 	}
 
@@ -54,6 +62,22 @@ namespace ly::visual
 			else
 			{
 				report.errors.push_back("pipeline.json: " + error);
+			}
+		}
+
+		const std::filesystem::path deepSkyFile = mRoot / "deepsky.json";
+		const auto deepSkyStamp = FileStamp(deepSkyFile);
+		if ((force || deepSkyStamp != mDeepSkyStamp) && std::filesystem::exists(deepSkyFile))
+		{
+			mDeepSkyStamp = deepSkyStamp;
+			std::string error;
+			if (mDeepSky.Load(deepSkyFile, error))
+			{
+				report.reloaded.push_back("deepsky.json");
+			}
+			else
+			{
+				report.errors.push_back("deepsky.json: " + error);
 			}
 		}
 		return report;

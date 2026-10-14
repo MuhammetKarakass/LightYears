@@ -324,7 +324,7 @@ Breacher daha fazla bonuslu Primary kapasitesine sahipken Interceptor Movement'a
 
 **Mevcut:** Tab ekranı oyunu durdurmaz. Savaşta, son 3 sn içinde hasar alınmış/verilmişse, yeni takılan modül 1,5 sn yeniden başlatma bekler. Sökülen sistem anında kapanır. Döndürme sağ tık/T/teker, kaldırma Del veya envantere taşıma ile yapılır.
 
-**Tasarım:** Modüller ölçeklenen, yeni özellik açan veya tek boyutlu olabilir. Daha büyük modül daha güçlüdür; hücre başına verimi düşebilir. Nadirlik hücre maliyetini düşürmez: Common ana değer, Rare yaklaşık %10 yüksek ana değer + bir yan stat, Epic + iki yan stat; Legendary benzersiz mekanik ve sonraki kapsamdır. Nadirlik/yan stat altyapısı ile gerçek loot dağılımı ayrı tamamlanma ölçütleridir.
+**Tasarım:** Modüller ölçeklenen, yeni özellik açan veya tek boyutlu olabilir. Daha büyük modül daha güçlüdür; hücre başına verimi düşebilir. Nadirlik hücre maliyetini düşürmez: Common ana değer, Rare yaklaşık %10 yüksek ana değer + yan stat (tek boyutlu Rare'de yan stat yok; merdivenli Rare'de en büyük boyutta bir yan özellik, bkz. [modules.md](modules.md) Rare bölümü), Epic + iki yan stat; Legendary benzersiz mekanik ve sonraki kapsamdır. Nadirlik/yan stat altyapısı ile gerçek loot dağılımı ayrı tamamlanma ölçütleridir.
 
 **Mevcut içerik:** JSON'da 26 tanım: on bir varsayılan sistem, on iki normal modül ve üç sistem varyantı. Tasarımın ilk 16 önerisinin tamamı aynı mekanikle mevcut değildir; Yan Bataryalar, özel Kalkan Takviyesi, Plazma İzi ve Hurda Tarayıcı gibi öneriler için ayrı içerik kabulü gerekir.
 

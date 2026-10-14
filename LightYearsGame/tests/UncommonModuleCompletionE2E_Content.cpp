@@ -8,7 +8,7 @@ namespace uncommon_completion_e2e
 		Json sides; std::ifstream input{ dataPath / "module_side_features.json" }; input >> sides;
 		std::filesystem::create_directories(artifactRoot);
 		const auto loaded = content::ModuleSideFeatureLoader::LoadFromFile(dataPath / "module_side_features.json");
-		report.Check(loaded.Succeeded() && loaded.definitions.size() == 37, "all 37 side definitions load through public loader", loaded.error);
+		report.Check(loaded.Succeeded() && loaded.definitions.size() == 74, "all 74 side definitions load through public loader", loaded.error);
 		const auto reject = [&](const char* name, const char* id, const Json& rules)
 		{
 			Json changed = sides;

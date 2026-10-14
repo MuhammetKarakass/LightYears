@@ -19,6 +19,17 @@ namespace ly
 		});
 	}
 
+	float TemporaryOvercapLedger::RemoveSource(const std::string& sourceId)
+	{
+		float removed = 0.f;
+		mEntries.erase(std::remove_if(mEntries.begin(), mEntries.end(), [&](const Entry& entry)
+		{
+			if (entry.sourceId != sourceId) return false;
+			removed += entry.amount;
+			return true;
+		}), mEntries.end());
+		return removed;
+	}
 	void TemporaryOvercapLedger::Consume(float amount)
 	{
 		float remaining = std::max(0.f, amount);

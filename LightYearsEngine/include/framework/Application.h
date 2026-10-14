@@ -2,6 +2,7 @@
 #include "framework/Core.h"
 #include <SFML/Graphics.hpp>
 #include "framework/TimerManager.h"
+#include "framework/FramePacer.h"
 
 namespace ly
 {
@@ -49,6 +50,7 @@ namespace ly
 		sf::RenderWindow mWindow;
 		WorldRenderPipeline* mRenderPipeline = nullptr;
 		float mTargetFrameRate;
+		FramePacer mFramePacer;
 		bool mShouldQuit;
 		bool mQuitRequested;
 		sf::Clock mTickClock;

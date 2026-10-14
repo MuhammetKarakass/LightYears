@@ -170,8 +170,21 @@ namespace ly
 		}
 
 		const auto* sourceCombatant = source ? dynamic_cast<const Combatant*>(source) : nullptr;
+		// A live Primary projectile hit carries a PrimaryShot hit group but no source ability tags, so PrimaryShotOnly module
+		// rules would never match it. Its outgoing plan is resolved as a Primary hit. Periodic ticks are not shots. Only the
+		// plan lookup sees the added tag; the damage event keeps its own sourceAbilityTags.
+		List<GameplayTag> planSourceTags;
+		const bool primaryShotHit = payload.hitGroup && payload.hitGroup->kind == DamageHitGroup::Kind::PrimaryShot && deliveryType != DamageDeliveryType::Periodic;
+		const bool alreadyPrimary = std::any_of(sourceAbilityTags.begin(), sourceAbilityTags.end(),
+			[](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Primary); });
+		if (primaryShotHit && !alreadyPrimary)
+		{
+			planSourceTags = sourceAbilityTags;
+			planSourceTags.push_back(GameplayTags::Ability::Primary);
+		}
+		const List<GameplayTag>& planTags = planSourceTags.empty() ? sourceAbilityTags : planSourceTags;
 		const CombatRuntime::OutgoingDamagePlan outgoingModulePlan = sourceCombatant && !payload.skipModuleDamageRules
-			? sourceCombatant->GetCombatRuntime().ResolveOutgoingDamagePlan(target, sourceAbilityTags, sourceAbilityId, deliveryType, payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed)
+			? sourceCombatant->GetCombatRuntime().ResolveOutgoingDamagePlan(target, planTags, sourceAbilityId, deliveryType, payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed)
 			: CombatRuntime::OutgoingDamagePlan{};
 		const auto resolveCriticalMultiplier = [&]()
 		{
@@ -179,7 +192,13 @@ namespace ly
 		};
 		const float sourceOutgoingDamageMultiplier =
 			sourceCombatant && payload.sourceScalingPolicy == DamageSourceScalingPolicy::Normal ? sourceCombatant->GetCombatRuntime().GetOutgoingDamageMultiplier() : 1.f;
-		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier;
+		// Primary-shot-only multiplier (Escape Velocity sonic state): the whole Primary hit after AttackPower scaling. Ability
+		// hits and periodic ticks never carry the PrimaryShot hit group, and periodic deliveries are excluded explicitly.
+		const float primaryShotMultiplier = sourceCombatant && deliveryType != DamageDeliveryType::Periodic && payload.hitGroup &&
+			payload.hitGroup->kind == DamageHitGroup::Kind::PrimaryShot
+			? sourceCombatant->GetCombatRuntime().GetPrimaryShotDamageMultiplier()
+			: 1.f;
+		long double sourceResolvedDamage = (static_cast<long double>(damage) + outgoingModulePlan.additionalDamage) * outgoingModulePlan.damageMultiplier * sourceOutgoingDamageMultiplier * primaryShotMultiplier;
 		bool wasCritical = false;
 		if (payload.criticalPolicy != DamageCriticalPolicy::Disabled)
 		{

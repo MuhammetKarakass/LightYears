@@ -25,9 +25,17 @@ namespace ly::debug
 		double maximumMicroseconds = 0.0;
 	};
 
+	// A scope or event that took at least FrameEventThresholdMicroseconds in the current frame.
+	struct FrameEvent
+	{
+		const char* name = nullptr;
+		double microseconds = 0.0;
+	};
+
 	class Profiler
 	{
 	public:
+		static constexpr double FrameEventThresholdMicroseconds = 1000.0;
 		static void Initialize();
 		static void Shutdown();
 		static void Reset();
@@ -41,6 +49,12 @@ namespace ly::debug
 		static std::vector<ProfileAggregate> BuildSnapshot();
 		static std::unordered_map<std::string, double> BuildCounterSnapshot();
 		static void LogSummary(std::size_t maximumEntries = 20u);
+
+		// Hitch tracing: slow scopes of the running frame are kept so a slow frame can be explained afterwards.
+		// name must outlive the frame (string literal or typeid name).
+		static void RecordFrameEvent(const char* name, double elapsedMicroseconds);
+		// Moves the frame's slow events into out and starts a new frame.
+		static void TakeFrameEvents(std::vector<FrameEvent>& out);
 	};
 
 	class ProfileScope

@@ -30,6 +30,10 @@ namespace ly
 		float GetMovementTurnCapabilityMultiplier() const;
 		bool IsAfterburnerRechargeBlocked() const;
 
+		// Development only (--perf-autoplay): the ship circles, holds fire and taps every ability key, so performance runs
+		// cover movement, weapons and abilities without a person at the keyboard.
+		static void SetDevAutoPlay(bool enabled);
+
 	private:
 		void SetInput();
 		void ConsumeInput(float deltaTime);

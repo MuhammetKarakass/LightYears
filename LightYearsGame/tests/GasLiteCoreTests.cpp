@@ -981,7 +981,7 @@ int main(int argc, char** argv)
 		AbilityData::DirectionalBarrier::Effect::ActiveEffectId
 	);
 	const auto* missingDefinition = EffectData::FindGameplayEffectDefinition("Effect.Does.NotExist");
-	if (shippedEffects.size() != 17 ||
+	if (shippedEffects.size() != 18 ||
 		!shippedEffectsValid ||
 		!barrierDefinition ||
 		barrierDefinition->effectId != "Effect.Barrier.Basic" ||

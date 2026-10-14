@@ -1,0 +1,3559 @@
+{
+	"_comment": "Per-stop sky (DeepSky.h). 'band' changes the Milky Way itself: view (center / anticenter / outward), light colours, gas grown inside the band (cloud, cloudAccent, clouds, cloudReach), dust, angle/offset/width/intensityScale. 'skyPaint' puts the ship inside soft lit clouds; 'planet' moves/scales/hides the backdrop planet; 'stars' and 'motes' scale the star count and the near dust. 'objects' are large soft nebulae, haze, clusters, galaxies and belts, rendered inside the band so its dust crosses them. Authored with the backdrop planet top right; a mirrored stop mirrors everything. Stops 0-5 keep the plain sky; 6-15 light, 16-29 medium, 30-41 strong, 42-49 the Galactic Centre. 'orbit' makes the stop a low orbit around one of its planets (planet index, optional kind override): the planet becomes a horizon arc at one screen edge and the whole sky turns past it as one panorama, so the band and the host star set behind it; an orbit stop draws no objects, nebula, skyPaint or asteroids. 'framing': 'disk' instead shows the whole planet at the screen centre (diskRadius) seen from a higher orbit: its phase follows the star, which can pass behind it (eclipse). An orbit may add a 'ring' (inner/outer in planet radii, tiltDeg from the orbit plane, nodeDeg; it opens and closes as we orbit) and a 'moon'. 'spin' is the planet's own rotation over the orbit rate: the ground runs (1 - spin) times as fast as the sky (0 = tidally locked, negative = against the orbit). Stops 50-58 (gc-*) are the Galactic Centre tour after Sgr A* (galaxy_centre_tour.json).",
+	"presets": {},
+	"stops": {
+		"hd-160691": {
+			"band": {
+				"cool": [
+					0.3,
+					0.5,
+					1.0
+				],
+				"cloud": [
+					0.5,
+					0.45,
+					1.0
+				],
+				"tint": 0.5
+			},
+			"objects": [
+				{
+					"kind": "reflection",
+					"at": [
+						0.08,
+						0.3
+					],
+					"size": 0.55,
+					"angleDeg": -25,
+					"colorA": [
+						0.15,
+						0.3,
+						0.95
+					],
+					"colorB": [
+						0.5,
+						0.72,
+						1.0
+					],
+					"colorC": [
+						0.8,
+						0.9,
+						1.0
+					],
+					"intensity": 0.5
+				}
+			],
+			"orbit": {
+				"planet": 2,
+				"kind": "gasGiant",
+				"horizonAngleDeg": -90,
+				"coverage": 0.3,
+				"radius": 2.2,
+				"atmosphere": 0.022,
+				"detail": 1.6,
+				"degreesPerMinute": 8,
+				"spin": 0.3,
+				"startDeg": 0,
+				"starDeg": 21,
+				"starAcrossDeg": 12,
+				"bandTiltDeg": 25,
+				"bandNodeDeg": 0,
+				"centerDeg": 110
+			}
+		},
+		"gj-676-a": {
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.04,
+						0.82
+					],
+					"size": 0.6,
+					"angleDeg": 20,
+					"colorA": [
+						1.0,
+						0.2,
+						0.38
+					],
+					"colorB": [
+						0.3,
+						0.9,
+						0.85
+					],
+					"colorC": [
+						1.0,
+						0.75,
+						0.8
+					],
+					"intensity": 0.55
+				}
+			],
+			"orbit": {
+				"planet": 1,
+				"horizonAngleDeg": -70,
+				"coverage": 0.46,
+				"radius": 2.4,
+				"atmosphere": 0.025,
+				"detail": 2.0,
+				"degreesPerMinute": 8,
+				"spin": 0.02,
+				"startDeg": 0,
+				"starDeg": 18,
+				"starAcrossDeg": -12,
+				"bandTiltDeg": 70,
+				"bandNodeDeg": 20,
+				"centerDeg": 0
+			}
+		},
+		"hd-176986": {
+			"band": {
+				"cloud": [
+					0.35,
+					0.55,
+					1.0
+				],
+				"cloudAccent": [
+					0.3,
+					1.0,
+					0.85
+				],
+				"warm": [
+					1.0,
+					0.72,
+					0.4
+				],
+				"cool": [
+					0.3,
+					0.6,
+					1.0
+				],
+				"clouds": 1.8,
+				"cloudReach": 1.4
+			},
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.85,
+						0.85
+					],
+					"size": 0.75,
+					"colorA": [
+						0.1,
+						0.5,
+						0.5
+					],
+					"colorB": [
+						0.15,
+						0.3,
+						0.75
+					],
+					"colorC": [
+						0.35,
+						0.95,
+						0.8
+					],
+					"intensity": 0.5
+				}
+			],
+			"orbit": {
+				"planet": 0,
+				"kind": "lava",
+				"horizonAngleDeg": -90,
+				"coverage": 0.28,
+				"radius": 2.6,
+				"atmosphere": 0.012,
+				"detail": 2.2,
+				"degreesPerMinute": 8,
+				"spin": 0.0,
+				"startDeg": 0,
+				"starDeg": -25,
+				"starAcrossDeg": 8,
+				"bandTiltDeg": 8,
+				"bandNodeDeg": 0,
+				"centerDeg": -20
+			}
+		},
+		"hd-147018": {
+			"band": {
+				"warm": [
+					1.0,
+					0.8,
+					0.35
+				],
+				"tint": 0.6
+			},
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.3,
+						0.75
+					],
+					"size": 0.9,
+					"aspect": 0.6,
+					"angleDeg": 15,
+					"colorA": [
+						0.75,
+						0.55,
+						0.15
+					],
+					"colorB": [
+						0.45,
+						0.3,
+						0.12
+					],
+					"colorC": [
+						1.0,
+						0.88,
+						0.45
+					],
+					"intensity": 0.42
+				}
+			]
+		},
+		"hd-168443": {
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.0,
+						0.18
+					],
+					"size": 0.62,
+					"angleDeg": -30,
+					"colorA": [
+						1.0,
+						0.18,
+						0.62
+					],
+					"colorB": [
+						0.35,
+						0.75,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						0.75,
+						0.9
+					],
+					"intensity": 0.55
+				}
+			]
+		},
+		"hd-156098": {
+			"band": {
+				"cool": [
+					0.5,
+					0.35,
+					1.0
+				],
+				"cloud": [
+					0.75,
+					0.3,
+					1.0
+				],
+				"tint": 0.6
+			},
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.2,
+						0.4
+					],
+					"size": 0.85,
+					"colorA": [
+						0.4,
+						0.2,
+						0.8
+					],
+					"colorB": [
+						0.15,
+						0.3,
+						0.7
+					],
+					"colorC": [
+						0.4,
+						0.85,
+						1.0
+					],
+					"intensity": 0.42
+				}
+			]
+		},
+		"hd-159868": {
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.8,
+						0.75
+					],
+					"size": 0.7,
+					"colorA": [
+						0.75,
+						0.4,
+						0.12
+					],
+					"colorB": [
+						0.45,
+						0.18,
+						0.1
+					],
+					"colorC": [
+						1.0,
+						0.75,
+						0.35
+					],
+					"intensity": 0.45
+				},
+				{
+					"kind": "dark",
+					"at": [
+						0.82,
+						0.78
+					],
+					"size": 0.4,
+					"aspect": 0.6,
+					"angleDeg": 25,
+					"colorA": [
+						1.0,
+						0.6,
+						0.25
+					],
+					"intensity": 0.85
+				}
+			]
+		},
+		"hd-154857": {
+			"objects": [
+				{
+					"kind": "remnant",
+					"at": [
+						0.12,
+						0.55
+					],
+					"size": 0.75,
+					"angleDeg": 10,
+					"colorA": [
+						1.0,
+						0.25,
+						0.3
+					],
+					"colorB": [
+						0.25,
+						0.85,
+						1.0
+					],
+					"intensity": 0.45
+				}
+			]
+		},
+		"hd-147873": {
+			"_note": "Looking away from the centre: the anticentre band is faint, thin and icy over a deep black sky.",
+			"band": {
+				"view": "anticenter",
+				"warm": [
+					0.8,
+					0.85,
+					1.0
+				],
+				"cool": [
+					0.35,
+					0.5,
+					1.0
+				],
+				"cloud": [
+					0.6,
+					0.45,
+					1.0
+				],
+				"cloudAccent": [
+					0.5,
+					0.85,
+					1.0
+				],
+				"clouds": 0.6,
+				"width": 0.18,
+				"dust": 0.6
+			},
+			"skyTint": [
+				0.05,
+				0.08,
+				0.2
+			],
+			"skyTintStrength": 0.6,
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.25,
+						0.3
+					],
+					"size": 0.8,
+					"colorA": [
+						0.15,
+						0.25,
+						0.6
+					],
+					"colorB": [
+						0.3,
+						0.2,
+						0.55
+					],
+					"colorC": [
+						0.6,
+						0.75,
+						1.0
+					],
+					"intensity": 0.3
+				}
+			]
+		},
+		"wispit-2": {
+			"_note": "WISPIT 2 is a young star with a protoplanetary disc: the dusty nursery it was born in is still around it.",
+			"objects": [
+				{
+					"kind": "reflection",
+					"at": [
+						0.15,
+						0.3
+					],
+					"size": 0.5,
+					"angleDeg": 60,
+					"colorA": [
+						0.3,
+						0.32,
+						0.9
+					],
+					"colorB": [
+						0.75,
+						0.7,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						0.9,
+						0.8
+					],
+					"intensity": 0.5
+				},
+				{
+					"kind": "emission",
+					"at": [
+						0.25,
+						0.7
+					],
+					"size": 0.45,
+					"colorA": [
+						1.0,
+						0.25,
+						0.3
+					],
+					"colorB": [
+						1.0,
+						0.5,
+						0.45
+					],
+					"colorC": [
+						1.0,
+						0.8,
+						0.7
+					],
+					"intensity": 0.45
+				},
+				{
+					"kind": "dark",
+					"at": [
+						0.2,
+						0.5
+					],
+					"size": 0.3,
+					"aspect": 0.45,
+					"angleDeg": 60,
+					"colorA": [
+						1.0,
+						0.6,
+						0.6
+					],
+					"intensity": 0.7
+				}
+			]
+		},
+		"hd-148797": {
+			"band": {
+				"warm": [
+					0.95,
+					0.9,
+					0.4
+				],
+				"cool": [
+					0.25,
+					0.7,
+					0.55
+				],
+				"cloud": [
+					0.35,
+					0.95,
+					0.4
+				],
+				"cloudAccent": [
+					0.9,
+					1.0,
+					0.5
+				],
+				"clouds": 1.5
+			},
+			"skyTint": [
+				0.2,
+				0.7,
+				0.3
+			],
+			"skyTintStrength": 0.5,
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.5,
+						0.5
+					],
+					"size": 1.1,
+					"colorA": [
+						0.2,
+						0.55,
+						0.2
+					],
+					"colorB": [
+						0.45,
+						0.5,
+						0.1
+					],
+					"colorC": [
+						0.8,
+						0.95,
+						0.4
+					],
+					"intensity": 0.45
+				},
+				{
+					"kind": "cluster",
+					"at": [
+						0.14,
+						0.26
+					],
+					"size": 0.3,
+					"variant": 0,
+					"colorA": [
+						1.0,
+						0.82,
+						0.5
+					],
+					"colorC": [
+						0.65,
+						0.8,
+						1.0
+					],
+					"intensity": 0.8
+				}
+			]
+		},
+		"hat-p-46": {
+			"_note": "Lagoon-like: a huge magenta star-forming cloud split by a dark lane.",
+			"band": {
+				"cloud": [
+					1.0,
+					0.2,
+					0.65
+				],
+				"cloudAccent": [
+					0.4,
+					0.8,
+					1.0
+				],
+				"clouds": 1.6,
+				"tint": 0.8
+			},
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.12,
+						0.5
+					],
+					"size": 0.95,
+					"angleDeg": 15,
+					"colorA": [
+						1.0,
+						0.18,
+						0.55
+					],
+					"colorB": [
+						0.4,
+						0.75,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						0.8,
+						0.92
+					],
+					"intensity": 0.55
+				},
+				{
+					"kind": "emission",
+					"at": [
+						0.86,
+						0.82
+					],
+					"size": 0.5,
+					"angleDeg": -20,
+					"colorA": [
+						0.9,
+						0.2,
+						0.45
+					],
+					"colorB": [
+						0.5,
+						0.6,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						0.8,
+						0.9
+					],
+					"intensity": 0.35
+				}
+			]
+		},
+		"hat-p-45": {
+			"_note": "The game's opening look: soft teal and pink clouds all around the ship.",
+			"nebula": [
+				{
+					"ramp": [
+						[
+							0.039,
+							0.102,
+							0.322
+						],
+						[
+							0.051,
+							0.29,
+							0.486
+						],
+						[
+							0.078,
+							0.525,
+							0.561
+						],
+						[
+							0.322,
+							0.796,
+							0.698
+						]
+					],
+					"scale": 1.0,
+					"intensity": 0.8,
+					"parallax": 0.12,
+					"seed": 1
+				},
+				{
+					"ramp": [
+						[
+							0.251,
+							0.035,
+							0.184
+						],
+						[
+							0.561,
+							0.114,
+							0.345
+						],
+						[
+							0.851,
+							0.247,
+							0.518
+						],
+						[
+							1.0,
+							0.576,
+							0.722
+						]
+					],
+					"scale": 1.5,
+					"intensity": 0.55,
+					"parallax": 0.25,
+					"seed": 6
+				}
+			]
+		},
+		"k2-202": {
+			"band": {
+				"warm": [
+					1.0,
+					0.65,
+					0.2
+				],
+				"cloud": [
+					1.0,
+					0.35,
+					0.15
+				],
+				"cloudAccent": [
+					1.0,
+					0.85,
+					0.35
+				],
+				"clouds": 1.4
+			},
+			"skyTint": [
+				1.0,
+				0.5,
+				0.15
+			],
+			"skyTintStrength": 0.4,
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.55,
+						0.45
+					],
+					"size": 1.0,
+					"colorA": [
+						0.85,
+						0.42,
+						0.1
+					],
+					"colorB": [
+						0.65,
+						0.18,
+						0.1
+					],
+					"colorC": [
+						1.0,
+						0.82,
+						0.35
+					],
+					"intensity": 0.42
+				},
+				{
+					"kind": "emission",
+					"at": [
+						0.12,
+						0.7
+					],
+					"size": 0.6,
+					"colorA": [
+						1.0,
+						0.4,
+						0.15
+					],
+					"colorB": [
+						1.0,
+						0.75,
+						0.3
+					],
+					"colorC": [
+						1.0,
+						0.9,
+						0.7
+					],
+					"intensity": 0.45
+				}
+			],
+			"_note": "Eclipse in an orange haze: the planet slides in front of the host star, whose light spills around its limb.",
+			"hostStar": {
+				"at": [
+					0.64,
+					0.06
+				]
+			},
+			"planet": {
+				"at": [
+					0.6,
+					0.38
+				],
+				"scale": 0.8
+			}
+		},
+		"k2-237": {
+			"_note": "On a spiral arm: the band crowded with red H-alpha clouds and blue young clusters.",
+			"band": {
+				"warm": [
+					1.0,
+					0.55,
+					0.45
+				],
+				"cool": [
+					0.35,
+					0.55,
+					1.0
+				],
+				"cloud": [
+					1.0,
+					0.12,
+					0.3
+				],
+				"cloudAccent": [
+					0.35,
+					0.95,
+					0.9
+				],
+				"clouds": 2.6,
+				"cloudReach": 1.8,
+				"width": 0.32
+			},
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.88,
+						0.78
+					],
+					"size": 0.6,
+					"colorA": [
+						1.0,
+						0.15,
+						0.3
+					],
+					"colorB": [
+						0.35,
+						0.9,
+						0.9
+					],
+					"colorC": [
+						1.0,
+						0.7,
+						0.7
+					],
+					"intensity": 0.55
+				},
+				{
+					"kind": "reflection",
+					"at": [
+						0.1,
+						0.25
+					],
+					"size": 0.45,
+					"angleDeg": -15,
+					"colorA": [
+						0.2,
+						0.4,
+						1.0
+					],
+					"colorB": [
+						0.6,
+						0.8,
+						1.0
+					],
+					"colorC": [
+						0.9,
+						0.95,
+						1.0
+					],
+					"intensity": 0.45
+				}
+			]
+		},
+		"toi-3474": {
+			"_note": "The system's asteroid belt streams across the view, lit by the host star.",
+			"band": {
+				"cool": [
+					0.55,
+					0.35,
+					1.0
+				],
+				"warm": [
+					1.0,
+					0.7,
+					0.75
+				],
+				"cloud": [
+					0.8,
+					0.3,
+					1.0
+				],
+				"cloudAccent": [
+					0.4,
+					0.8,
+					1.0
+				],
+				"clouds": 1.3
+			},
+			"skyTint": [
+				0.3,
+				0.12,
+				0.6
+			],
+			"skyTintStrength": 0.45,
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.2,
+						0.3
+					],
+					"size": 0.8,
+					"colorA": [
+						0.45,
+						0.18,
+						0.85
+					],
+					"colorB": [
+						0.2,
+						0.2,
+						0.7
+					],
+					"colorC": [
+						0.85,
+						0.5,
+						1.0
+					],
+					"intensity": 0.38
+				}
+			],
+			"asteroids": {
+				"count": 130,
+				"angleDeg": -14,
+				"center": 0.6,
+				"width": 0.4,
+				"speed": 1.0,
+				"nearest": 0.85,
+				"haze": [
+					0.12,
+					0.07,
+					0.22
+				],
+				"dark": [
+					0.05,
+					0.04,
+					0.06
+				],
+				"mid": [
+					0.4,
+					0.34,
+					0.32
+				],
+				"light": [
+					0.95,
+					0.85,
+					0.72
+				]
+			}
+		},
+		"toi-3464": {
+			"_note": "A Wolf-Rayet wind bubble beside an H-alpha cloud.",
+			"objects": [
+				{
+					"kind": "bubble",
+					"at": [
+						0.22,
+						0.48
+					],
+					"size": 1.0,
+					"colorA": [
+						0.2,
+						0.5,
+						1.0
+					],
+					"colorB": [
+						0.3,
+						1.0,
+						0.85
+					],
+					"colorC": [
+						0.85,
+						0.95,
+						1.0
+					],
+					"intensity": 0.55
+				},
+				{
+					"kind": "emission",
+					"at": [
+						0.9,
+						0.8
+					],
+					"size": 0.55,
+					"colorA": [
+						1.0,
+						0.22,
+						0.3
+					],
+					"colorB": [
+						1.0,
+						0.5,
+						0.4
+					],
+					"colorC": [
+						1.0,
+						0.75,
+						0.6
+					],
+					"intensity": 0.5
+				}
+			]
+		},
+		"corot-16": {
+			"band": {
+				"cloud": [
+					0.25,
+					1.0,
+					0.5
+				],
+				"cloudAccent": [
+					0.6,
+					1.0,
+					0.85
+				],
+				"cool": [
+					0.2,
+					0.6,
+					0.7
+				],
+				"clouds": 2.0,
+				"cloudReach": 1.5
+			},
+			"skyTint": [
+				0.1,
+				0.6,
+				0.35
+			],
+			"skyTintStrength": 0.4,
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.85,
+						0.7
+					],
+					"size": 0.65,
+					"colorA": [
+						0.2,
+						0.95,
+						0.45
+					],
+					"colorB": [
+						0.45,
+						1.0,
+						0.85
+					],
+					"colorC": [
+						0.85,
+						1.0,
+						0.7
+					],
+					"intensity": 0.5
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.2,
+						0.75
+					],
+					"size": 0.75,
+					"colorA": [
+						0.1,
+						0.45,
+						0.3
+					],
+					"colorB": [
+						0.1,
+						0.25,
+						0.4
+					],
+					"colorC": [
+						0.3,
+						0.9,
+						0.6
+					],
+					"intensity": 0.38
+				}
+			]
+		},
+		"ic-4651-9122": {
+			"_note": "IC 4651 is a real old open cluster (about 1.7 Gyr): gold and white stars, no young blue haze.",
+			"band": {
+				"warm": [
+					1.0,
+					0.82,
+					0.5
+				],
+				"tint": 0.6
+			},
+			"stars": 1.5,
+			"objects": [
+				{
+					"kind": "cluster",
+					"at": [
+						0.72,
+						0.66
+					],
+					"size": 0.36,
+					"variant": 1,
+					"colorA": [
+						0.3,
+						0.45,
+						1.0
+					],
+					"colorB": [
+						1.0,
+						0.85,
+						0.6
+					],
+					"colorC": [
+						0.8,
+						0.88,
+						1.0
+					],
+					"intensity": 0.75
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.7,
+						0.62
+					],
+					"size": 0.75,
+					"colorA": [
+						0.55,
+						0.4,
+						0.15
+					],
+					"colorB": [
+						0.3,
+						0.2,
+						0.25
+					],
+					"colorC": [
+						0.95,
+						0.75,
+						0.4
+					],
+					"intensity": 0.35
+				}
+			]
+		},
+		"corot-35": {
+			"_note": "Above the plane looking outward: the Milky Way sinks to the bottom, the sky above is dark with Andromeda.",
+			"band": {
+				"view": "outward",
+				"angleDeg": 4,
+				"offset": 0.4,
+				"width": 0.3,
+				"intensityScale": 1.15,
+				"warm": [
+					1.0,
+					0.8,
+					0.55
+				],
+				"cool": [
+					0.4,
+					0.55,
+					1.0
+				],
+				"clouds": 1.2
+			},
+			"skyTint": [
+				0.04,
+				0.06,
+				0.16
+			],
+			"skyTintStrength": 0.7,
+			"stars": 0.6,
+			"objects": [
+				{
+					"kind": "galaxy",
+					"at": [
+						0.24,
+						0.3
+					],
+					"size": 0.34,
+					"aspect": 0.3,
+					"angleDeg": -32,
+					"colorA": [
+						0.5,
+						0.62,
+						1.0
+					],
+					"colorB": [
+						1.0,
+						0.4,
+						0.6
+					],
+					"colorC": [
+						1.0,
+						0.86,
+						0.65
+					],
+					"intensity": 0.42
+				}
+			]
+		},
+		"kmt-2020-blg-0414l": {
+			"_note": "The host is a white dwarf: the cast-off shells of its death drift around the system.",
+			"band": {
+				"cool": [
+					0.4,
+					0.5,
+					1.0
+				],
+				"cloud": [
+					1.0,
+					0.3,
+					0.55
+				],
+				"tint": 0.6
+			},
+			"objects": [
+				{
+					"kind": "planetary",
+					"at": [
+						0.14,
+						0.4
+					],
+					"size": 0.55,
+					"variant": 1,
+					"angleDeg": 30,
+					"colorA": [
+						1.0,
+						0.28,
+						0.5
+					],
+					"colorB": [
+						0.35,
+						0.7,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.55
+					],
+					"intensity": 0.42
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.2,
+						0.45
+					],
+					"size": 0.8,
+					"colorA": [
+						0.35,
+						0.2,
+						0.6
+					],
+					"colorB": [
+						0.6,
+						0.15,
+						0.35
+					],
+					"colorC": [
+						0.6,
+						0.6,
+						1.0
+					],
+					"intensity": 0.35
+				}
+			]
+		},
+		"ogle-2006-blg-109l": {
+			"band": {
+				"warm": [
+					1.0,
+					0.45,
+					0.4
+				],
+				"cloud": [
+					0.9,
+					0.08,
+					0.15
+				],
+				"cloudAccent": [
+					0.3,
+					0.85,
+					1.0
+				],
+				"clouds": 2.0
+			},
+			"skyTint": [
+				0.85,
+				0.05,
+				0.15
+			],
+			"skyTintStrength": 0.5,
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.4,
+						0.5
+					],
+					"size": 1.1,
+					"colorA": [
+						0.75,
+						0.05,
+						0.12
+					],
+					"colorB": [
+						0.45,
+						0.05,
+						0.3
+					],
+					"colorC": [
+						1.0,
+						0.35,
+						0.3
+					],
+					"intensity": 0.45
+				},
+				{
+					"kind": "remnant",
+					"at": [
+						0.85,
+						0.72
+					],
+					"size": 0.6,
+					"colorA": [
+						1.0,
+						0.2,
+						0.2
+					],
+					"colorB": [
+						0.25,
+						0.9,
+						1.0
+					],
+					"intensity": 0.5
+				}
+			]
+		},
+		"moa-2010-blg-477l": {
+			"_note": "Deep space: the line of sight leaves the plane, the Milky Way is a faint glow below, few stars, a couple of distant galaxies.",
+			"band": {
+				"view": "outward",
+				"offset": 0.75,
+				"width": 0.25,
+				"intensityScale": 0.5,
+				"clouds": 0.4,
+				"cool": [
+					0.3,
+					0.4,
+					0.9
+				],
+				"warm": [
+					0.8,
+					0.75,
+					0.9
+				]
+			},
+			"skyTint": [
+				0.02,
+				0.03,
+				0.1
+			],
+			"skyTintStrength": 0.8,
+			"stars": 0.3,
+			"motes": 0.3,
+			"objects": [
+				{
+					"kind": "galaxy",
+					"at": [
+						0.2,
+						0.32
+					],
+					"size": 0.16,
+					"aspect": 0.6,
+					"angleDeg": 20,
+					"colorA": [
+						0.5,
+						0.6,
+						1.0
+					],
+					"colorB": [
+						1.0,
+						0.4,
+						0.6
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.65
+					],
+					"intensity": 0.35
+				},
+				{
+					"kind": "galaxy",
+					"at": [
+						0.72,
+						0.68
+					],
+					"size": 0.08,
+					"variant": 1,
+					"aspect": 0.7,
+					"angleDeg": -30,
+					"colorA": [
+						1.0,
+						0.75,
+						0.5
+					],
+					"colorC": [
+						1.0,
+						0.9,
+						0.75
+					],
+					"intensity": 0.3
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.5,
+						0.5
+					],
+					"size": 1.0,
+					"colorA": [
+						0.08,
+						0.1,
+						0.3
+					],
+					"colorB": [
+						0.15,
+						0.08,
+						0.25
+					],
+					"colorC": [
+						0.2,
+						0.25,
+						0.5
+					],
+					"intensity": 0.3
+				}
+			]
+		},
+		"kmt-2019-blg-1216l": {
+			"_note": "Carina-like giant star-forming complex: gold and rose glow with dark pillars rising into it.",
+			"band": {
+				"warm": [
+					1.0,
+					0.7,
+					0.35
+				],
+				"cloud": [
+					1.0,
+					0.45,
+					0.2
+				],
+				"cloudAccent": [
+					1.0,
+					0.85,
+					0.4
+				],
+				"clouds": 2.0
+			},
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.15,
+						0.5
+					],
+					"size": 0.8,
+					"colorA": [
+						1.0,
+						0.42,
+						0.15
+					],
+					"colorB": [
+						1.0,
+						0.85,
+						0.35
+					],
+					"colorC": [
+						1.0,
+						0.92,
+						0.75
+					],
+					"intensity": 0.55
+				},
+				{
+					"kind": "dark",
+					"at": [
+						0.1,
+						0.85
+					],
+					"size": 0.32,
+					"aspect": 0.3,
+					"angleDeg": 80,
+					"colorA": [
+						1.0,
+						0.7,
+						0.35
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "dark",
+					"at": [
+						0.26,
+						0.9
+					],
+					"size": 0.25,
+					"aspect": 0.28,
+					"angleDeg": 95,
+					"colorA": [
+						1.0,
+						0.7,
+						0.35
+					],
+					"intensity": 0.9
+				}
+			]
+		},
+		"ogle-2012-blg-0026l": {
+			"_note": "Deep inside a rose emission cloud: one pink hue fills the whole view, very close.",
+			"band": {
+				"cloud": [
+					1.0,
+					0.18,
+					0.42
+				],
+				"cloudAccent": [
+					0.25,
+					0.95,
+					0.85
+				],
+				"warm": [
+					1.0,
+					0.6,
+					0.5
+				],
+				"cool": [
+					0.45,
+					0.4,
+					1.0
+				],
+				"clouds": 3.2,
+				"cloudReach": 4.0,
+				"width": 0.36,
+				"dust": 1.3
+			},
+			"skyTint": [
+				0.5,
+				0.05,
+				0.2
+			],
+			"skyTintStrength": 0.5,
+			"nebula": [
+				{
+					"ramp": [
+						[
+							0.165,
+							0.024,
+							0.125
+						],
+						[
+							0.431,
+							0.078,
+							0.275
+						],
+						[
+							0.761,
+							0.2,
+							0.467
+						],
+						[
+							0.941,
+							0.478,
+							0.659
+						]
+					],
+					"scale": 2.4,
+					"intensity": 0.85,
+					"parallax": 0.18,
+					"seed": 1
+				},
+				{
+					"ramp": [
+						[
+							0.251,
+							0.035,
+							0.184
+						],
+						[
+							0.561,
+							0.114,
+							0.345
+						],
+						[
+							0.851,
+							0.247,
+							0.518
+						],
+						[
+							1.0,
+							0.576,
+							0.722
+						]
+					],
+					"scale": 3.6,
+					"intensity": 0.6,
+					"parallax": 0.32,
+					"seed": 6
+				}
+			]
+		},
+		"ogle-2019-blg-0468l": {
+			"_note": "A rogue planet with no star drifts as a dark silhouette in front of a supernova remnant's shock filaments.",
+			"band": {
+				"cool": [
+					0.3,
+					0.5,
+					1.0
+				],
+				"cloud": [
+					1.0,
+					0.25,
+					0.3
+				],
+				"tint": 0.5,
+				"intensityScale": 0.55
+			},
+			"objects": [
+				{
+					"kind": "remnant",
+					"at": [
+						0.5,
+						0.55
+					],
+					"size": 1.0,
+					"colorA": [
+						1.0,
+						0.2,
+						0.25
+					],
+					"colorB": [
+						0.2,
+						0.9,
+						1.0
+					],
+					"intensity": 0.35
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.5,
+						0.55
+					],
+					"size": 0.9,
+					"colorA": [
+						0.1,
+						0.25,
+						0.45
+					],
+					"colorB": [
+						0.3,
+						0.1,
+						0.25
+					],
+					"colorC": [
+						0.2,
+						0.55,
+						0.65
+					],
+					"intensity": 0.21
+				}
+			],
+			"hostStar": {
+				"hide": true
+			},
+			"planet": {
+				"at": [
+					0.7,
+					0.48
+				],
+				"scale": 1.3
+			},
+			"skyTint": [
+				0.02,
+				0.03,
+				0.08
+			],
+			"skyTintStrength": 0.7
+		},
+		"kmt-2021-blg-0171l": {
+			"_note": "Deep inside an amber dust cloud: one warm hue fills the whole view, very close.",
+			"band": {
+				"intensityScale": 0.45,
+				"dust": 1.8,
+				"warm": [
+					1.0,
+					0.65,
+					0.35
+				],
+				"cool": [
+					0.7,
+					0.45,
+					0.35
+				]
+			},
+			"skyTint": [
+				0.25,
+				0.14,
+				0.06
+			],
+			"skyTintStrength": 0.5,
+			"stars": 0.35,
+			"motes": 3.0,
+			"objects": [],
+			"nebula": [
+				{
+					"ramp": [
+						[
+							0.18,
+							0.039,
+							0.031
+						],
+						[
+							0.478,
+							0.165,
+							0.055
+						],
+						[
+							0.788,
+							0.369,
+							0.078
+						],
+						[
+							0.949,
+							0.627,
+							0.227
+						]
+					],
+					"scale": 2.4,
+					"intensity": 0.85,
+					"parallax": 0.18,
+					"seed": 1
+				},
+				{
+					"ramp": [
+						[
+							0.302,
+							0.039,
+							0.114
+						],
+						[
+							0.659,
+							0.165,
+							0.11
+						],
+						[
+							0.925,
+							0.431,
+							0.102
+						],
+						[
+							1.0,
+							0.722,
+							0.235
+						]
+					],
+					"scale": 3.6,
+					"intensity": 0.6,
+					"parallax": 0.32,
+					"seed": 6
+				}
+			]
+		},
+		"kmt-2022-blg-1818l": {
+			"_note": "Deep in the dusty inner disk: amber starlight torn by heavy dark lanes, almost no gas.",
+			"band": {
+				"warm": [
+					1.0,
+					0.78,
+					0.38
+				],
+				"cool": [
+					1.0,
+					0.5,
+					0.28
+				],
+				"cloud": [
+					1.0,
+					0.4,
+					0.2
+				],
+				"cloudAccent": [
+					1.0,
+					0.85,
+					0.5
+				],
+				"clouds": 0.7,
+				"width": 0.46,
+				"dust": 1.8,
+				"intensityScale": 1.45
+			},
+			"skyTint": [
+				0.2,
+				0.08,
+				0.04
+			],
+			"skyTintStrength": 0.3,
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.2,
+						0.3
+					],
+					"size": 0.85,
+					"colorA": [
+						0.8,
+						0.45,
+						0.12
+					],
+					"colorB": [
+						0.5,
+						0.2,
+						0.1
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.45
+					],
+					"intensity": 0.38
+				}
+			]
+		},
+		"ogle-2014-blg-1722l": {
+			"band": {
+				"cloud": [
+					0.25,
+					1.0,
+					0.55
+				],
+				"cloudAccent": [
+					0.6,
+					1.0,
+					0.85
+				],
+				"cool": [
+					0.5,
+					0.3,
+					1.0
+				],
+				"warm": [
+					1.0,
+					0.75,
+					0.8
+				],
+				"clouds": 3.2,
+				"cloudReach": 2.8,
+				"width": 0.85
+			},
+			"skyTint": [
+				0.5,
+				0.15,
+				0.9
+			],
+			"skyTintStrength": 0.5,
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.272,
+						0.47
+					],
+					"size": 1.512,
+					"colorA": [
+						0.2,
+						0.95,
+						0.5
+					],
+					"colorB": [
+						0.6,
+						1.0,
+						0.85
+					],
+					"colorC": [
+						0.9,
+						1.0,
+						0.85
+					],
+					"intensity": 0.5
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.56,
+						0.65
+					],
+					"size": 1.944,
+					"colorA": [
+						0.45,
+						0.15,
+						0.75
+					],
+					"colorB": [
+						0.15,
+						0.2,
+						0.6
+					],
+					"colorC": [
+						0.8,
+						0.45,
+						1.0
+					],
+					"intensity": 0.38
+				}
+			]
+		},
+		"kmt-2024-blg-0404l": {
+			"_note": "Seen edge-on from just inside the thin disk, the Milky Way is a thin bright line; the planet sits dead centre and hides part of it.",
+			"band": {
+				"angleDeg": -3,
+				"offset": 0.02,
+				"width": 0.035,
+				"intensityScale": 1.5,
+				"dust": 0.6,
+				"clouds": 0.8
+			},
+			"skyTint": [
+				0.03,
+				0.04,
+				0.12
+			],
+			"skyTintStrength": 0.6,
+			"stars": 0.6,
+			"planet": {
+				"at": [
+					0.5,
+					0.78
+				],
+				"scale": 1.6
+			}
+		},
+		"route-37": {
+			"_note": "Crab-like pulsar wind nebula: blue synchrotron glow caged in red filaments.",
+			"band": {
+				"cool": [
+					0.3,
+					0.45,
+					1.0
+				],
+				"cloud": [
+					1.0,
+					0.35,
+					0.3
+				],
+				"tint": 0.5
+			},
+			"objects": [
+				{
+					"kind": "remnant",
+					"at": [
+						0.14,
+						0.4
+					],
+					"size": 0.6,
+					"variant": 1,
+					"aspect": 0.75,
+					"angleDeg": 30,
+					"colorA": [
+						1.0,
+						0.35,
+						0.25
+					],
+					"colorB": [
+						0.35,
+						0.5,
+						1.0
+					],
+					"colorC": [
+						0.9,
+						0.95,
+						1.0
+					],
+					"intensity": 0.5
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.25,
+						0.45
+					],
+					"size": 0.85,
+					"colorA": [
+						0.15,
+						0.2,
+						0.6
+					],
+					"colorB": [
+						0.4,
+						0.15,
+						0.3
+					],
+					"colorC": [
+						0.4,
+						0.5,
+						1.0
+					],
+					"intensity": 0.32
+				}
+			]
+		},
+		"route-38": {
+			"_note": "A dense asteroid belt close by, under a yellow-lit sky.",
+			"band": {
+				"warm": [
+					1.0,
+					0.9,
+					0.4
+				],
+				"cool": [
+					0.3,
+					0.55,
+					1.0
+				],
+				"cloud": [
+					0.3,
+					0.6,
+					1.0
+				],
+				"cloudAccent": [
+					0.4,
+					1.0,
+					0.9
+				],
+				"clouds": 1.4
+			},
+			"skyTint": [
+				1.0,
+				0.8,
+				0.2
+			],
+			"skyTintStrength": 0.3,
+			"motes": 2.0,
+			"objects": [
+				{
+					"kind": "fog",
+					"at": [
+						0.6,
+						0.65
+					],
+					"size": 1.0,
+					"colorA": [
+						0.6,
+						0.5,
+						0.12
+					],
+					"colorB": [
+						0.4,
+						0.28,
+						0.1
+					],
+					"colorC": [
+						1.0,
+						0.9,
+						0.4
+					],
+					"intensity": 0.34
+				}
+			],
+			"asteroids": {
+				"count": 200,
+				"angleDeg": 10,
+				"center": 0.4,
+				"width": 0.6,
+				"speed": 1.3,
+				"nearest": 1.0,
+				"haze": [
+					0.16,
+					0.13,
+					0.06
+				],
+				"dark": [
+					0.06,
+					0.04,
+					0.03
+				],
+				"mid": [
+					0.45,
+					0.36,
+					0.26
+				],
+				"light": [
+					1.0,
+					0.9,
+					0.62
+				]
+			}
+		},
+		"route-39": {
+			"_note": "Inside a violet-lit cloud: one hue, full screen, close.",
+			"band": {
+				"cloud": [
+					0.75,
+					0.35,
+					1.0
+				],
+				"cool": [
+					0.5,
+					0.3,
+					1.0
+				],
+				"tint": 0.8
+			},
+			"nebula": [
+				{
+					"ramp": [
+						[
+							0.055,
+							0.024,
+							0.157
+						],
+						[
+							0.165,
+							0.071,
+							0.376
+						],
+						[
+							0.353,
+							0.165,
+							0.62
+						],
+						[
+							0.604,
+							0.392,
+							0.847
+						]
+					],
+					"scale": 2.0,
+					"intensity": 0.85,
+					"parallax": 0.18,
+					"seed": 1
+				},
+				{
+					"ramp": [
+						[
+							0.086,
+							0.039,
+							0.227
+						],
+						[
+							0.235,
+							0.102,
+							0.478
+						],
+						[
+							0.478,
+							0.235,
+							0.753
+						],
+						[
+							0.753,
+							0.541,
+							0.941
+						]
+					],
+					"scale": 3.0,
+					"intensity": 0.6,
+					"parallax": 0.32,
+					"seed": 6
+				}
+			]
+		},
+		"route-40": {
+			"_note": "Rosette-like: a hollow rose-orange nebula carved by the young blue cluster in its middle.",
+			"band": {
+				"cloud": [
+					1.0,
+					0.4,
+					0.3
+				],
+				"warm": [
+					1.0,
+					0.65,
+					0.4
+				],
+				"clouds": 1.6
+			},
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.82,
+						0.68
+					],
+					"size": 0.75,
+					"variant": 1,
+					"colorA": [
+						1.0,
+						0.4,
+						0.25
+					],
+					"colorB": [
+						1.0,
+						0.25,
+						0.45
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.65
+					],
+					"intensity": 0.55
+				},
+				{
+					"kind": "cluster",
+					"at": [
+						0.82,
+						0.68
+					],
+					"size": 0.22,
+					"variant": 1,
+					"colorA": [
+						0.3,
+						0.45,
+						1.0
+					],
+					"colorB": [
+						0.75,
+						0.88,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"intensity": 0.8
+				}
+			]
+		},
+		"route-41": {
+			"_note": "Inside a crimson cloud: one deep red hue, full screen, close.",
+			"band": {
+				"cloud": [
+					1.0,
+					0.25,
+					0.3
+				],
+				"warm": [
+					1.0,
+					0.55,
+					0.4
+				],
+				"tint": 0.8
+			},
+			"nebula": [
+				{
+					"ramp": [
+						[
+							0.11,
+							0.016,
+							0.055
+						],
+						[
+							0.353,
+							0.047,
+							0.141
+						],
+						[
+							0.659,
+							0.125,
+							0.235
+						],
+						[
+							0.91,
+							0.329,
+							0.329
+						]
+					],
+					"scale": 2.0,
+					"intensity": 0.85,
+					"parallax": 0.18,
+					"seed": 1
+				},
+				{
+					"ramp": [
+						[
+							0.173,
+							0.024,
+							0.086
+						],
+						[
+							0.494,
+							0.063,
+							0.196
+						],
+						[
+							0.839,
+							0.165,
+							0.29
+						],
+						[
+							1.0,
+							0.424,
+							0.384
+						]
+					],
+					"scale": 3.0,
+					"intensity": 0.6,
+					"parallax": 0.32,
+					"seed": 6
+				}
+			]
+		},
+		"route-42": {
+			"_note": "First sight of the Fermi bubbles rising out of the plane ahead.",
+			"band": {
+				"cool": [
+					0.55,
+					0.35,
+					1.0
+				],
+				"cloud": [
+					0.85,
+					0.35,
+					1.0
+				],
+				"tint": 0.6
+			},
+			"skyTint": [
+				0.5,
+				0.25,
+				1.0
+			],
+			"skyTintStrength": 0.4,
+			"objects": [
+				{
+					"kind": "lobes",
+					"at": [
+						0.62,
+						0.45
+					],
+					"size": 0.95,
+					"angleDeg": 12,
+					"colorA": [
+						0.85,
+						0.35,
+						1.0
+					],
+					"colorB": [
+						0.4,
+						0.3,
+						0.9
+					],
+					"intensity": 0.4
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.62,
+						0.45
+					],
+					"size": 0.8,
+					"colorA": [
+						0.4,
+						0.2,
+						0.7
+					],
+					"colorB": [
+						0.2,
+						0.25,
+						0.6
+					],
+					"colorC": [
+						0.7,
+						0.5,
+						1.0
+					],
+					"intensity": 0.3
+				}
+			]
+		},
+		"route-43": {
+			"_note": "Galactic Centre region: violet synchrotron-lit gas and cyan hot clouds, threaded by the radio arc.",
+			"band": {
+				"angleDeg": 8,
+				"warm": [
+					1.0,
+					0.75,
+					0.55
+				],
+				"cool": [
+					0.55,
+					0.35,
+					1.0
+				],
+				"cloud": [
+					0.85,
+					0.25,
+					1.0
+				],
+				"cloudAccent": [
+					0.35,
+					0.9,
+					1.0
+				],
+				"clouds": 2.4,
+				"cloudReach": 2.2,
+				"width": 0.34
+			},
+			"skyTint": [
+				0.25,
+				0.08,
+				0.45
+			],
+			"skyTintStrength": 0.6,
+			"objects": []
+		},
+		"route-44": {
+			"_note": "Inside Sgr B2, the densest molecular cloud of the Galaxy: dark red murk with knots of newborn-star H-alpha.",
+			"band": {
+				"intensityScale": 0.6,
+				"dust": 1.8,
+				"warm": [
+					1.0,
+					0.6,
+					0.4
+				],
+				"cloud": [
+					1.0,
+					0.25,
+					0.3
+				],
+				"clouds": 1.5
+			},
+			"skyTint": [
+				0.3,
+				0.06,
+				0.05
+			],
+			"skyTintStrength": 0.5,
+			"stars": 0.5,
+			"motes": 2.0,
+			"skyPaint": {
+				"coverage": 0.5,
+				"intensity": 0.55,
+				"centerCalm": 0.6,
+				"shadow": [
+					0.06,
+					0.02,
+					0.02
+				],
+				"mid": [
+					0.35,
+					0.08,
+					0.08
+				],
+				"lit": [
+					1.0,
+					0.35,
+					0.3
+				],
+				"accent": [
+					1.0,
+					0.6,
+					0.3
+				]
+			},
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.12,
+						0.45
+					],
+					"size": 0.3,
+					"colorA": [
+						1.0,
+						0.2,
+						0.3
+					],
+					"colorB": [
+						1.0,
+						0.6,
+						0.4
+					],
+					"colorC": [
+						1.0,
+						0.8,
+						0.7
+					],
+					"intensity": 0.6
+				},
+				{
+					"kind": "emission",
+					"at": [
+						0.86,
+						0.75
+					],
+					"size": 0.4,
+					"colorA": [
+						1.0,
+						0.3,
+						0.25
+					],
+					"colorB": [
+						0.3,
+						0.9,
+						0.85
+					],
+					"colorC": [
+						1.0,
+						0.8,
+						0.7
+					],
+					"intensity": 0.5
+				}
+			]
+		},
+		"route-45": {
+			"_note": "Arches cluster: the densest young cluster known, blue-white, inside teal-lit gas.",
+			"band": {
+				"cloud": [
+					0.25,
+					0.85,
+					0.95
+				],
+				"cloudAccent": [
+					0.6,
+					0.7,
+					1.0
+				],
+				"cool": [
+					0.35,
+					0.5,
+					1.0
+				],
+				"clouds": 2.0
+			},
+			"stars": 1.6,
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.15,
+						0.4
+					],
+					"size": 0.75,
+					"variant": 1,
+					"colorA": [
+						0.2,
+						0.8,
+						0.9
+					],
+					"colorB": [
+						0.45,
+						0.6,
+						1.0
+					],
+					"colorC": [
+						0.8,
+						1.0,
+						1.0
+					],
+					"intensity": 0.5
+				},
+				{
+					"kind": "cluster",
+					"at": [
+						0.15,
+						0.4
+					],
+					"size": 0.32,
+					"variant": 1,
+					"colorA": [
+						0.3,
+						0.45,
+						1.0
+					],
+					"colorB": [
+						0.8,
+						0.9,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"intensity": 0.85
+				}
+			]
+		},
+		"route-46": {
+			"_note": "Quintuplet cluster and the Pistol star's LBV bubble in a red-lit region.",
+			"band": {
+				"warm": [
+					1.0,
+					0.55,
+					0.35
+				],
+				"cloud": [
+					1.0,
+					0.25,
+					0.2
+				],
+				"clouds": 2.2,
+				"width": 0.46
+			},
+			"skyTint": [
+				1.0,
+				0.3,
+				0.2
+			],
+			"skyTintStrength": 0.4,
+			"objects": [
+				{
+					"kind": "bubble",
+					"at": [
+						0.25,
+						0.42
+					],
+					"size": 0.85,
+					"aspect": 0.8,
+					"angleDeg": 30,
+					"colorA": [
+						1.0,
+						0.25,
+						0.25
+					],
+					"colorB": [
+						1.0,
+						0.6,
+						0.3
+					],
+					"colorC": [
+						1.0,
+						0.95,
+						0.85
+					],
+					"intensity": 0.55
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.5,
+						0.55
+					],
+					"size": 1.1,
+					"colorA": [
+						0.6,
+						0.15,
+						0.12
+					],
+					"colorB": [
+						0.45,
+						0.25,
+						0.1
+					],
+					"colorC": [
+						1.0,
+						0.5,
+						0.3
+					],
+					"intensity": 0.38
+				}
+			]
+		},
+		"route-47": {
+			"_note": "Between the Fermi bubbles: two giant lobes stand above and below the plane.",
+			"band": {
+				"angleDeg": 0,
+				"offset": 0.0,
+				"intensityScale": 0.95,
+				"warm": [
+					1.0,
+					0.7,
+					0.35
+				],
+				"cool": [
+					0.55,
+					0.2,
+					0.55
+				],
+				"cloud": [
+					1.0,
+					0.3,
+					0.25
+				],
+				"cloudAccent": [
+					0.85,
+					0.4,
+					0.9
+				],
+				"clouds": 1.8,
+				"tint": 1.0
+			},
+			"skyTint": [
+				0.4,
+				0.12,
+				0.25
+			],
+			"skyTintStrength": 0.5,
+			"objects": [
+				{
+					"kind": "lobes",
+					"at": [
+						0.5,
+						0.5
+					],
+					"size": 1.1,
+					"colorA": [
+						0.95,
+						0.4,
+						0.75
+					],
+					"colorB": [
+						0.55,
+						0.22,
+						0.35
+					],
+					"intensity": 0.55
+				}
+			]
+		},
+		"route-48": {
+			"_note": "Near the centre: violet-brown dust and a few newborn-star glows, in the manner of stop 43.",
+			"band": {
+				"intensityScale": 0.7,
+				"dust": 1.7,
+				"warm": [
+					1.0,
+					0.62,
+					0.42
+				],
+				"cool": [
+					0.6,
+					0.35,
+					0.6
+				],
+				"cloud": [
+					0.95,
+					0.3,
+					0.45
+				],
+				"clouds": 1.4,
+				"tint": 1.0
+			},
+			"skyTint": [
+				0.25,
+				0.08,
+				0.2
+			],
+			"skyTintStrength": 0.5,
+			"stars": 0.6,
+			"motes": 1.8,
+			"skyPaint": {
+				"coverage": 0.5,
+				"intensity": 0.5,
+				"centerCalm": 0.4,
+				"shadow": [
+					0.05,
+					0.02,
+					0.05
+				],
+				"mid": [
+					0.3,
+					0.1,
+					0.25
+				],
+				"lit": [
+					0.85,
+					0.4,
+					0.55
+				],
+				"accent": [
+					0.9,
+					0.55,
+					0.3
+				]
+			},
+			"objects": [
+				{
+					"kind": "emission",
+					"at": [
+						0.15,
+						0.4
+					],
+					"size": 0.3,
+					"colorA": [
+						1.0,
+						0.25,
+						0.4
+					],
+					"colorB": [
+						1.0,
+						0.6,
+						0.4
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.75
+					],
+					"intensity": 0.55
+				},
+				{
+					"kind": "emission",
+					"at": [
+						0.82,
+						0.72
+					],
+					"size": 0.36,
+					"colorA": [
+						0.95,
+						0.3,
+						0.5
+					],
+					"colorB": [
+						0.6,
+						0.5,
+						1.0
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.8
+					],
+					"intensity": 0.45
+				}
+			]
+		},
+		"route-49": {
+			"_note": "Inside the nuclear star cluster around Sgr A*: the densest crowd of stars in the Galaxy fills the sky with gold light.",
+			"band": {
+				"warm": [
+					1.0,
+					0.78,
+					0.45
+				],
+				"cool": [
+					0.75,
+					0.55,
+					0.9
+				],
+				"cloud": [
+					1.0,
+					0.5,
+					0.3
+				],
+				"clouds": 0.8,
+				"intensityScale": 0.6
+			},
+			"skyTint": [
+				0.3,
+				0.2,
+				0.08
+			],
+			"skyTintStrength": 0.4,
+			"stars": 3.0,
+			"objects": [
+				{
+					"kind": "cluster",
+					"at": [
+						0.45,
+						0.42
+					],
+					"size": 0.8,
+					"variant": 0,
+					"colorA": [
+						1.0,
+						0.8,
+						0.5
+					],
+					"colorC": [
+						0.7,
+						0.8,
+						1.0
+					],
+					"intensity": 0.95
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.45,
+						0.42
+					],
+					"size": 1.0,
+					"colorA": [
+						0.6,
+						0.42,
+						0.18
+					],
+					"colorB": [
+						0.45,
+						0.3,
+						0.4
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.5
+					],
+					"intensity": 0.3
+				}
+			]
+		},
+		"sgr-a-star": {
+			"_note": "The climax: a closer, wider band behind a bigger black hole.",
+			"mirror": false,
+			"band": {
+				"width": 0.42,
+				"intensityScale": 1.05
+			}
+		},
+		"gj-680": {
+			"_note": "A different angle: the Milky Way arches across the upper sky, as a wide-field view sees it.",
+			"band": {
+				"angleDeg": 0,
+				"offset": -0.18,
+				"width": 0.2,
+				"curve": 3.2,
+				"intensityScale": 1.1
+			}
+		},
+		"hd-136352": {
+			"_note": "The hot zone, with our own character: neon-warm like Hotline Miami, glowing out of deep violet dark like Animal Well. Hot pink flanks, gold core, orange-red gas with yellow hearts, black-violet dust lanes, and sunset-ramp clouds right around the ship.",
+			"band": {
+				"angleDeg": 18,
+				"offset": 0.0,
+				"width": 0.6,
+				"intensityScale": 1.6,
+				"starBoost": 9.0,
+				"curve": 0.4,
+				"dust": 1.1,
+				"warm": [
+					1.0,
+					0.92,
+					0.55
+				],
+				"cool": [
+					1.0,
+					0.5,
+					0.5
+				],
+				"cloud": [
+					1.0,
+					0.58,
+					0.2
+				],
+				"cloudAccent": [
+					1.0,
+					0.95,
+					0.6
+				],
+				"clouds": 2.2,
+				"cloudReach": 2.0,
+				"tint": 1.0
+			},
+			"skyTint": [
+				0.4,
+				0.16,
+				0.05
+			],
+			"skyTintStrength": 0.65,
+			"stars": 6.0,
+			"nebula": [
+				{
+					"ramp": [
+						[
+							0.141,
+							0.035,
+							0.047
+						],
+						[
+							0.541,
+							0.165,
+							0.141
+						],
+						[
+							0.941,
+							0.478,
+							0.227
+						],
+						[
+							1.0,
+							0.784,
+							0.478
+						]
+					],
+					"scale": 4.6,
+					"intensity": 0.19,
+					"parallax": 0.1,
+					"seed": 4
+				},
+				{
+					"ramp": [
+						[
+							0.102,
+							0.024,
+							0.071
+						],
+						[
+							0.478,
+							0.122,
+							0.18
+						],
+						[
+							0.91,
+							0.392,
+							0.227
+						],
+						[
+							1.0,
+							0.753,
+							0.416
+						]
+					],
+					"scale": 2.6,
+					"intensity": 0.21,
+					"parallax": 0.16,
+					"seed": 2
+				},
+				{
+					"ramp": [
+						[
+							0.102,
+							0.039,
+							0.016
+						],
+						[
+							0.541,
+							0.227,
+							0.047
+						],
+						[
+							1.0,
+							0.627,
+							0.188
+						],
+						[
+							1.0,
+							0.941,
+							0.627
+						]
+					],
+					"scale": 3.6,
+					"intensity": 0.225,
+					"parallax": 0.3,
+					"seed": 7
+				}
+			],
+			"grade": {
+				"capScale": 1.35,
+				"contrast": 1.35,
+				"saturation": 1.6
+			},
+			"objects": [
+				{
+					"kind": "reflection",
+					"at": [
+						-0.02,
+						-0.04
+					],
+					"size": 0.95,
+					"angleDeg": 30,
+					"colorA": [
+						1.0,
+						0.5,
+						0.15
+					],
+					"colorB": [
+						1.0,
+						0.8,
+						0.4
+					],
+					"colorC": [
+						1.0,
+						0.9,
+						0.6
+					],
+					"intensity": 0.475
+				},
+				{
+					"kind": "fog",
+					"at": [
+						0.1,
+						0.12
+					],
+					"size": 0.8,
+					"colorA": [
+						1.0,
+						0.55,
+						0.18
+					],
+					"colorB": [
+						0.95,
+						0.38,
+						0.22
+					],
+					"colorC": [
+						1.0,
+						0.85,
+						0.45
+					],
+					"intensity": 0.45
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.13,
+						0.22
+					],
+					"size": 0.1,
+					"angleDeg": 20,
+					"colorA": [
+						0.42,
+						0.6,
+						1.0
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.86,
+						0.58
+					],
+					"size": 0.09,
+					"angleDeg": -15,
+					"colorA": [
+						1.0,
+						0.42,
+						0.28
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.33,
+						0.68
+					],
+					"size": 0.07,
+					"angleDeg": 10,
+					"colorA": [
+						1.0,
+						0.9,
+						0.5
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.62,
+						0.14
+					],
+					"size": 0.08,
+					"angleDeg": 0,
+					"colorA": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.72,
+						0.86
+					],
+					"size": 0.075,
+					"angleDeg": 25,
+					"colorA": [
+						1.0,
+						0.65,
+						0.3
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.07,
+						0.62
+					],
+					"size": 0.06,
+					"angleDeg": -5,
+					"colorA": [
+						1.0,
+						0.5,
+						0.32
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.45,
+						0.35
+					],
+					"size": 0.05,
+					"angleDeg": 15,
+					"colorA": [
+						0.42,
+						0.6,
+						1.0
+					],
+					"intensity": 0.9
+				},
+				{
+					"kind": "star",
+					"at": [
+						0.93,
+						0.3
+					],
+					"size": 0.055,
+					"angleDeg": 5,
+					"colorA": [
+						1.0,
+						0.92,
+						0.65
+					],
+					"intensity": 0.9
+				}
+			]
+		},
+		"gc-ringed-giant": {
+			"_note": "Galactic Centre tour: a ringed gas giant seen whole from a high orbit; the rings open and close as we go round.",
+			"band": {
+				"cool": [
+					0.45,
+					0.35,
+					1.0
+				],
+				"cloud": [
+					0.7,
+					0.35,
+					1.0
+				],
+				"cloudAccent": [
+					0.4,
+					0.8,
+					1.0
+				],
+				"tint": 0.6,
+				"intensityScale": 0.75
+			},
+			"orbit": {
+				"framing": "disk",
+				"kind": "gasGiant",
+				"diskRadius": 0.19,
+				"atmosphere": 0.006,
+				"detail": 1.4,
+				"horizonAngleDeg": -90,
+				"degreesPerMinute": 10,
+				"spin": 0.35,
+				"startDeg": 0,
+				"starDeg": 150,
+				"starAcrossDeg": 25,
+				"bandTiltDeg": 35,
+				"bandNodeDeg": 0,
+				"centerDeg": 60,
+				"ring": {
+					"inner": 1.3,
+					"outer": 2.35,
+					"tiltDeg": 62,
+					"nodeDeg": 40,
+					"opacity": 0.85
+				}
+			}
+		},
+		"gc-eclipse": {
+			"_note": "The host star slides behind an ocean world: a thin crescent, then only the lit ring of its atmosphere, then sunrise.",
+			"band": {
+				"warm": [
+					1.0,
+					0.75,
+					0.45
+				],
+				"cool": [
+					0.4,
+					0.55,
+					1.0
+				],
+				"intensityScale": 0.7
+			},
+			"orbit": {
+				"framing": "disk",
+				"kind": "ocean",
+				"diskRadius": 0.3,
+				"atmosphere": 0.012,
+				"detail": 1.8,
+				"horizonAngleDeg": 180,
+				"degreesPerMinute": 12,
+				"spin": 0.05,
+				"startDeg": -6,
+				"starDeg": 20,
+				"starAcrossDeg": 3,
+				"bandTiltDeg": 50,
+				"bandNodeDeg": 30,
+				"centerDeg": -40
+			}
+		},
+		"gc-far-ice": {
+			"_note": "A small ice world far below, high above the plane: the sky is the scene.",
+			"band": {
+				"cool": [
+					0.35,
+					0.6,
+					1.0
+				],
+				"cloud": [
+					0.4,
+					0.7,
+					1.0
+				],
+				"tint": 0.4
+			},
+			"orbit": {
+				"framing": "disk",
+				"kind": "ice",
+				"diskRadius": 0.1,
+				"fieldOfViewDeg": 85,
+				"atmosphere": 0.003,
+				"detail": 1.2,
+				"horizonAngleDeg": -135,
+				"degreesPerMinute": 6,
+				"spin": 0.05,
+				"startDeg": 0,
+				"starDeg": 120,
+				"starAcrossDeg": 10,
+				"bandTiltDeg": 60,
+				"bandNodeDeg": 0,
+				"centerDeg": 10
+			}
+		},
+		"gc-lava-night": {
+			"_note": "The night side of a lava world, its cracks glowing; the star is behind it.",
+			"band": {
+				"warm": [
+					1.0,
+					0.6,
+					0.3
+				],
+				"cloud": [
+					1.0,
+					0.35,
+					0.2
+				],
+				"cool": [
+					0.6,
+					0.3,
+					0.6
+				],
+				"intensityScale": 0.7
+			},
+			"orbit": {
+				"framing": "disk",
+				"kind": "lava",
+				"diskRadius": 0.27,
+				"atmosphere": 0.004,
+				"detail": 2.2,
+				"horizonAngleDeg": -60,
+				"degreesPerMinute": 9,
+				"spin": 0.0,
+				"startDeg": 0,
+				"starDeg": 30,
+				"starAcrossDeg": -10,
+				"bandTiltDeg": 20,
+				"bandNodeDeg": 0,
+				"centerDeg": 150
+			}
+		},
+		"gc-hot-ceiling": {
+			"_note": "Upside down: a hot Jupiter fills the top of the screen and the sky falls up into it.",
+			"band": {
+				"warm": [
+					1.0,
+					0.7,
+					0.4
+				],
+				"cool": [
+					0.7,
+					0.4,
+					0.8
+				],
+				"intensityScale": 0.75
+			},
+			"orbit": {
+				"framing": "horizon",
+				"kind": "hotJupiter",
+				"horizonAngleDeg": 90,
+				"coverage": 0.34,
+				"radius": 2.0,
+				"atmosphere": 0.02,
+				"detail": 1.4,
+				"degreesPerMinute": 8,
+				"spin": 0.0,
+				"startDeg": 0,
+				"starDeg": 30,
+				"starAcrossDeg": -15,
+				"bandTiltDeg": 15,
+				"bandNodeDeg": 0,
+				"centerDeg": 180
+			}
+		},
+		"gc-blue-ice-giant": {
+			"_note": "An ice giant under a hot blue star, with a thin ring almost edge-on.",
+			"band": {
+				"cool": [
+					0.3,
+					0.55,
+					1.0
+				],
+				"cloud": [
+					0.3,
+					0.8,
+					1.0
+				],
+				"cloudAccent": [
+					0.6,
+					0.4,
+					1.0
+				],
+				"tint": 0.7,
+				"intensityScale": 0.75
+			},
+			"orbit": {
+				"framing": "disk",
+				"kind": "iceGiant",
+				"diskRadius": 0.23,
+				"atmosphere": 0.01,
+				"detail": 1.3,
+				"horizonAngleDeg": -45,
+				"degreesPerMinute": 10,
+				"spin": -0.25,
+				"startDeg": 0,
+				"starDeg": 160,
+				"starAcrossDeg": 20,
+				"bandTiltDeg": 40,
+				"bandNodeDeg": 60,
+				"centerDeg": -90,
+				"ring": {
+					"inner": 1.6,
+					"outer": 2.05,
+					"tiltDeg": 22,
+					"nodeDeg": 0,
+					"opacity": 0.9
+				}
+			}
+		},
+		"gc-moon-transit": {
+			"_note": "A desert world and its moon.",
+			"band": {
+				"warm": [
+					1.0,
+					0.8,
+					0.5
+				],
+				"cloud": [
+					1.0,
+					0.55,
+					0.35
+				],
+				"intensityScale": 0.7
+			},
+			"orbit": {
+				"framing": "disk",
+				"kind": "desert",
+				"moon": true,
+				"diskRadius": 0.25,
+				"atmosphere": 0.006,
+				"detail": 1.6,
+				"horizonAngleDeg": -100,
+				"degreesPerMinute": 8,
+				"spin": 0.1,
+				"startDeg": 0,
+				"starDeg": 110,
+				"starAcrossDeg": 15,
+				"bandTiltDeg": 70,
+				"bandNodeDeg": 20,
+				"centerDeg": 30
+			}
+		},
+		"gc-ring-arch": {
+			"_note": "Low over a ringed giant: the rings rise from the horizon as an arch across the sky.",
+			"band": {
+				"warm": [
+					1.0,
+					0.75,
+					0.5
+				],
+				"cool": [
+					0.5,
+					0.4,
+					0.9
+				],
+				"intensityScale": 0.75
+			},
+			"orbit": {
+				"framing": "horizon",
+				"kind": "gasGiant",
+				"horizonAngleDeg": -90,
+				"coverage": 0.22,
+				"radius": 1.0,
+				"atmosphere": 0.015,
+				"detail": 1.4,
+				"degreesPerMinute": 8,
+				"spin": 0.3,
+				"startDeg": 0,
+				"starDeg": 40,
+				"starAcrossDeg": 20,
+				"bandTiltDeg": 25,
+				"bandNodeDeg": 0,
+				"centerDeg": 100,
+				"ring": {
+					"inner": 1.2,
+					"outer": 2.0,
+					"tiltDeg": 25,
+					"nodeDeg": 180,
+					"opacity": 0.9
+				}
+			}
+		},
+		"gc-red-giant": {
+			"_note": "A swollen red giant rises over a scorched world; the orbit runs backwards so the sky climbs away from the planet.",
+			"band": {
+				"warm": [
+					1.0,
+					0.65,
+					0.35
+				],
+				"cloud": [
+					1.0,
+					0.4,
+					0.25
+				],
+				"intensityScale": 0.65
+			},
+			"orbit": {
+				"framing": "horizon",
+				"kind": "desert",
+				"horizonAngleDeg": -90,
+				"coverage": 0.3,
+				"radius": 2.4,
+				"atmosphere": 0.02,
+				"detail": 2.0,
+				"degreesPerMinute": -12,
+				"spin": 0.0,
+				"startDeg": 0,
+				"starDeg": -26,
+				"starAcrossDeg": 6,
+				"bandTiltDeg": 30,
+				"bandNodeDeg": 0,
+				"centerDeg": 200
+			}
+		}
+	}
+}

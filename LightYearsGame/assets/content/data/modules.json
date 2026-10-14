@@ -1,21 +1,54 @@
 {
   "schemaVersion": 1,
   "zones": [
-    { "zone": "Module.Zone.Nose",   "family": "Ability.Primary",  "bonus": 0.25 },
-    { "zone": "Module.Zone.Wings",  "family": "Ability.Offense",  "bonus": 0.25 },
-    { "zone": "Module.Zone.Hull",   "family": "*",                "bonus": 0.10 },
-    { "zone": "Module.Zone.Core",   "family": "Ability.Defense",  "bonus": 0.25 },
-    { "zone": "Module.Zone.Engine", "family": "Ability.Movement", "bonus": 0.25 },
-    { "zone": "Module.Zone.Sensor", "family": "Ability.Utility",  "bonus": 0.25 }
+    {
+      "zone": "Module.Zone.Nose",
+      "family": "Ability.Primary",
+      "bonus": 0.25
+    },
+    {
+      "zone": "Module.Zone.Wings",
+      "family": "Ability.Offense",
+      "bonus": 0.25
+    },
+    {
+      "zone": "Module.Zone.Hull",
+      "family": "*",
+      "bonus": 0.1
+    },
+    {
+      "zone": "Module.Zone.Core",
+      "family": "Ability.Defense",
+      "bonus": 0.25
+    },
+    {
+      "zone": "Module.Zone.Engine",
+      "family": "Ability.Movement",
+      "bonus": 0.25
+    },
+    {
+      "zone": "Module.Zone.Sensor",
+      "family": "Ability.Utility",
+      "bonus": 0.25
+    },
+    {
+      "zone": "Module.Zone.AbilityBay",
+      "family": "*",
+      "bonus": 0.0
+    }
   ],
   "systemZones": {
-    "Module.System.LifeSupport": "Module.Zone.Hull",
+    "Module.System.LifeSupport": "Module.Zone.Nose",
     "Module.System.FlightControl": "Module.Zone.Engine",
     "Module.System.PrimaryWeapon": "Module.Zone.Nose",
     "Module.System.Shield": "Module.Zone.Core",
     "Module.System.Afterburner": "Module.Zone.Engine",
     "Module.System.HealthReadout": "Module.Zone.Sensor",
-    "Module.System.DamageReadout": "Module.Zone.Sensor"
+    "Module.System.DamageReadout": "Module.Zone.Sensor",
+    "Module.System.AbilitySlot1": "Module.Zone.AbilityBay",
+    "Module.System.AbilitySlot2": "Module.Zone.AbilityBay",
+    "Module.System.AbilitySlot3": "Module.Zone.AbilityBay",
+    "Module.System.AbilitySlot4": "Module.Zone.AbilityBay"
   },
   "rebootDurationSeconds": 1.5,
   "combatWindowSeconds": 3.0,
@@ -23,112 +56,216 @@
     {
       "id": "Module.Defense.ShieldGenerator.Standard",
       "displayName": "Standard Shield Generator",
+      "description": "Provides the shield; removing it leaves you unshielded.",
       "family": "Ability.Defense",
       "systemCategory": "Module.System.Shield",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Movement.Afterburner.Standard",
       "displayName": "Standard Afterburner",
+      "description": "Provides the Afterburner; removing it disables the dash.",
       "family": "Ability.Movement",
       "systemCategory": "Module.System.Afterburner",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Utility.HealthReadout.Standard",
       "displayName": "Health Readout",
+      "description": "Shows the health gauge on the HUD.",
       "family": "Ability.Utility",
       "systemCategory": "Module.System.HealthReadout",
       "sizeVariants": [
-        { "shape": [[0, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Utility.DamageReadout.Standard",
       "displayName": "Damage Readout",
+      "description": "Shows damage numbers dealt to enemies.",
       "family": "Ability.Utility",
       "systemCategory": "Module.System.DamageReadout",
       "sizeVariants": [
-        { "shape": [[0, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Utility.LifeSupportUnit.Standard",
       "displayName": "Life Support Unit",
+      "description": "Keeps the pilot alive. Removing it is fatal.",
       "family": "Ability.Utility",
       "systemCategory": "Module.System.LifeSupport",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Movement.FlightControlUnit.Standard",
       "displayName": "Flight Control Unit",
+      "description": "Enables A/S/D movement; without it only W and aim work.",
       "family": "Ability.Movement",
       "systemCategory": "Module.System.FlightControl",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Primary.PrimaryWeapon.Standard",
       "displayName": "Primary Weapon",
+      "description": "Provides the Primary weapon; removing it disables firing.",
       "family": "Ability.Primary",
       "systemCategory": "Module.System.PrimaryWeapon",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Utility.AbilitySlot1.Standard",
       "displayName": "Q Ability Slot",
+      "description": "Allows using the Q ability; removing it disables it.",
       "family": "Ability.Utility",
       "systemCategory": "Module.System.AbilitySlot1",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Utility.AbilitySlot2.Standard",
       "displayName": "E Ability Slot",
+      "description": "Allows using the E ability; removing it disables it.",
       "family": "Ability.Utility",
       "systemCategory": "Module.System.AbilitySlot2",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Utility.AbilitySlot3.Standard",
       "displayName": "F Ability Slot",
+      "description": "Allows using the F ability; removing it disables it.",
       "family": "Ability.Utility",
       "systemCategory": "Module.System.AbilitySlot3",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Utility.AbilitySlot4.Standard",
       "displayName": "R Ability Slot",
+      "description": "Allows using the R ability; removing it disables it.",
       "family": "Ability.Utility",
       "systemCategory": "Module.System.AbilitySlot4",
       "sizeVariants": [
-        { "shape": [[0, 0], [1, 0]] }
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
       ]
     },
     {
       "id": "Module.Primary.FocusedBarrel.Basic",
       "displayName": "Focused Barrel",
-      "description": "Sets the Primary weapon damage multiplier to x{Common.Damage}.",
+      "description": "Primary damage +{damage.0.bonusPercent}%.",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
-          "attributeModifiers": [
-            {"target": "PrimaryWeapon", "attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.1}
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "PrimaryShotOnly",
+              "damageMultiplier": 1.3
+            }
           ]
         }
       ]
@@ -136,12 +273,28 @@
     {
       "id": "Module.Primary.PiercingTip.Basic",
       "displayName": "Piercing Tip",
+      "description": "Primary projectiles pierce +{PrimaryWeapon.Projectile.Delivery.PierceCount} enemy.",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "PrimaryWeapon", "attributeId": "PrimaryWeapon.Projectile.Delivery.PierceCount", "operation": "Add", "magnitude": 1.0, "affectedByZoneBonus": false}
+            {
+              "target": "PrimaryWeapon",
+              "attributeId": "PrimaryWeapon.Projectile.Delivery.PierceCount",
+              "operation": "Add",
+              "magnitude": 1.0,
+              "affectedByZoneBonus": false
+            }
           ]
         }
       ]
@@ -149,18 +302,51 @@
     {
       "id": "Module.Primary.FireRateBooster.Basic",
       "displayName": "Shot Accelerator",
+      "description": "Primary fire rate +%{Common.FireRate.bonusPercent}.",
       "family": "Ability.Primary",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "PrimaryWeapon", "attributeId": "Common.FireRate", "operation": "Multiply", "magnitude": 1.1}
+            {
+              "target": "PrimaryWeapon",
+              "attributeId": "Common.FireRate",
+              "operation": "Multiply",
+              "magnitude": 1.1
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [1, 1]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "PrimaryWeapon", "attributeId": "Common.FireRate", "operation": "Multiply", "magnitude": 1.14}
+            {
+              "target": "PrimaryWeapon",
+              "attributeId": "Common.FireRate",
+              "operation": "Multiply",
+              "magnitude": 1.14
+            }
           ]
         }
       ]
@@ -172,7 +358,16 @@
       "family": "Ability.Primary",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "damageRules": [
             {
               "condition": "FullMagazineShot",
@@ -190,9 +385,23 @@
       "family": "Ability.Offense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": 15.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.AttackPower",
+              "operation": "Add",
+              "magnitude": 15.0
+            }
           ]
         }
       ]
@@ -200,18 +409,49 @@
     {
       "id": "Module.Offense.AttackMatrix.Basic",
       "displayName": "Attack Matrix",
+      "description": "Ability damage +%{Common.Damage.bonusPercent}.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "abilityModifiers": [
-            {"attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.12}
+            {
+              "attributeId": "Common.Damage",
+              "operation": "Multiply",
+              "magnitude": 1.12
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [2, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
           "abilityModifiers": [
-            {"attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.16}
+            {
+              "attributeId": "Common.Damage",
+              "operation": "Multiply",
+              "magnitude": 1.16
+            }
           ]
         }
       ]
@@ -219,13 +459,40 @@
     {
       "id": "Module.Offense.OverloadCore.Basic",
       "displayName": "Overload Core",
+      "description": "Ability damage +%{Common.Damage.bonusPercent}; cooldown +%{Common.Cooldown.bonusPercent}.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0], [0, 1], [1, 1]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
           "abilityModifiers": [
-            {"attributeId": "Common.Damage", "operation": "Multiply", "magnitude": 1.25},
-            {"attributeId": "Common.Cooldown", "operation": "Multiply", "magnitude": 1.1, "affectedByZoneBonus": false}
+            {
+              "attributeId": "Common.Damage",
+              "operation": "Multiply",
+              "magnitude": 1.25
+            },
+            {
+              "attributeId": "Common.Cooldown",
+              "operation": "Multiply",
+              "magnitude": 1.1,
+              "affectedByZoneBonus": false
+            }
           ]
         }
       ]
@@ -237,9 +504,27 @@
       "family": "Ability.Defense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0], [2, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.Armor", "operation": "Add", "magnitude": 30.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.Armor",
+              "operation": "Add",
+              "magnitude": 30.0
+            }
           ]
         }
       ]
@@ -247,18 +532,51 @@
     {
       "id": "Module.Defense.HullReinforcement.Basic",
       "displayName": "Hull Reinforcement",
+      "description": "Increases Max Health by +{Owner.MaxHealth}.",
       "family": "Ability.Defense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Add", "magnitude": 40.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MaxHealth",
+              "operation": "Add",
+              "magnitude": 40.0
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [1, 1]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Add", "magnitude": 55.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MaxHealth",
+              "operation": "Add",
+              "magnitude": 55.0
+            }
           ]
         }
       ]
@@ -270,10 +588,29 @@
       "family": "Ability.Movement",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": 2.2},
-            {"target": "Owner", "attributeId": "Owner.MoveSpeedVertical", "operation": "Add", "magnitude": 2.2}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MoveSpeedHorizontal",
+              "operation": "Add",
+              "magnitude": 2.2
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MoveSpeedVertical",
+              "operation": "Add",
+              "magnitude": 2.2
+            }
           ]
         }
       ]
@@ -281,12 +618,23 @@
     {
       "id": "Module.Movement.ManeuverThruster.Basic",
       "displayName": "Maneuver Thruster",
+      "description": "Horizontal movement rating: +{Owner.MoveSpeedHorizontal}.",
       "family": "Ability.Movement",
       "sizeVariants": [
         {
-          "shape": [[0, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.MoveSpeedHorizontal", "operation": "Add", "magnitude": 0.36}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MoveSpeedHorizontal",
+              "operation": "Add",
+              "magnitude": 1.5
+            }
           ]
         }
       ]
@@ -294,18 +642,51 @@
     {
       "id": "Module.Utility.CoolingCircuit.Basic",
       "displayName": "Cooling Circuit",
+      "description": "Increases Ability Haste by +{Owner.AbilityHaste}.",
       "family": "Ability.Utility",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.AbilityHaste", "operation": "Add", "magnitude": 8.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.AbilityHaste",
+              "operation": "Add",
+              "magnitude": 8.0
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [1, 1]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.AbilityHaste", "operation": "Add", "magnitude": 11.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.AbilityHaste",
+              "operation": "Add",
+              "magnitude": 11.0
+            }
           ]
         }
       ]
@@ -317,9 +698,23 @@
       "family": "Ability.Utility",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.Energy.Power", "operation": "Add", "magnitude": 24.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.Energy.Power",
+              "operation": "Add",
+              "magnitude": 24.0
+            }
           ]
         }
       ]
@@ -327,18 +722,43 @@
     {
       "id": "Module.Utility.TargetingComputer.Basic",
       "displayName": "Targeting Computer",
+      "description": "Critical Chance +%{Owner.CriticalChance}.",
       "family": "Ability.Utility",
       "sizeVariants": [
         {
-          "shape": [[0, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 3.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.CriticalChance",
+              "operation": "Add",
+              "magnitude": 3.0
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 5.0}
+            {
+              "target": "Owner",
+              "attributeId": "Owner.CriticalChance",
+              "operation": "Add",
+              "magnitude": 5.0
+            }
           ]
         }
       ]
@@ -346,14 +766,35 @@
     {
       "id": "Module.Defense.ShieldGenerator.FastCharge",
       "displayName": "Fast-Charge Generator",
+      "description": "Max Shield -%{Ship.Shield.Max.reductionPercent}; shield regen +%{Ship.Shield.Regen.bonusPercent}.",
       "family": "Ability.Defense",
       "systemCategory": "Module.System.Shield",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Multiply", "magnitude": 0.8, "affectedByZoneBonus": false},
-            {"target": "Ship", "attributeId": "Ship.Shield.Regen", "operation": "Multiply", "magnitude": 1.5}
+            {
+              "target": "Ship",
+              "attributeId": "Ship.Shield.Max",
+              "operation": "Multiply",
+              "magnitude": 0.8,
+              "affectedByZoneBonus": false
+            },
+            {
+              "target": "Ship",
+              "attributeId": "Ship.Shield.Regen",
+              "operation": "Multiply",
+              "magnitude": 1.5
+            }
           ]
         }
       ]
@@ -361,13 +802,46 @@
     {
       "id": "Module.Defense.ShieldGenerator.Heavy",
       "displayName": "Heavy Generator",
+      "description": "Max Shield +{Ship.Shield.Max}; shield regen +{Ship.Shield.Regen.bonusPercent}%; recharge delay {Ship.Shield.RechargeDelay} sec.",
       "family": "Ability.Defense",
       "systemCategory": "Module.System.Shield",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0], [2, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Ship", "attributeId": "Ship.Shield.Max", "operation": "Add", "magnitude": 60.0}
+            {
+              "target": "Ship",
+              "attributeId": "Ship.Shield.Max",
+              "operation": "Add",
+              "magnitude": 60.0
+            },
+            {
+              "target": "Ship",
+              "attributeId": "Ship.Shield.Regen",
+              "operation": "Multiply",
+              "magnitude": 1.3,
+              "affectedByZoneBonus": false
+            },
+            {
+              "target": "Ship",
+              "attributeId": "Ship.Shield.RechargeDelay",
+              "operation": "Add",
+              "magnitude": -2.0,
+              "affectedByZoneBonus": false
+            }
           ]
         }
       ]
@@ -375,13 +849,32 @@
     {
       "id": "Module.Movement.Afterburner.Extended",
       "displayName": "Extended Afterburner",
+      "description": "Increases Afterburner capacity by +{Ship.Afterburner.Capacity}.",
       "family": "Ability.Movement",
       "systemCategory": "Module.System.Afterburner",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0], [1, 1]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ],
           "attributeModifiers": [
-            {"target": "Ship", "attributeId": "Ship.Afterburner.Capacity", "operation": "Add", "magnitude": 50.0}
+            {
+              "target": "Ship",
+              "attributeId": "Ship.Afterburner.Capacity",
+              "operation": "Add",
+              "magnitude": 50.0
+            }
           ]
         }
       ]
@@ -389,18 +882,35 @@
     {
       "id": "Module.Offense.AttackRhythm.Basic",
       "displayName": "Attack Rhythm",
-      "description": "On Offense use, Attack Speed +{Owner.AttackSpeed} for {trigger.0.durationSeconds} sec.",
+      "description": "On Offense use, Attack Speed +{Owner.AttackSpeed}% for {trigger.0.durationSeconds} sec.",
       "family": "Ability.Offense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "triggerBuffs": [
             {
               "trigger": "AbilityActivated",
-              "requiredEventTags": ["Ability.Offense"],
+              "requiredEventTags": [
+                "Ability.Offense"
+              ],
               "durationSeconds": 3.0,
               "modifiers": [
-                {"target": "Owner", "attributeId": "Owner.AttackSpeed", "operation": "Add", "magnitude": 15.0, "affectedByZoneBonus": false}
+                {
+                  "target": "Owner",
+                  "attributeId": "Owner.AttackSpeed",
+                  "operation": "Add",
+                  "magnitude": 15.0,
+                  "affectedByZoneBonus": false
+                }
               ]
             }
           ]
@@ -414,7 +924,16 @@
       "family": "Ability.Defense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "damageRules": [
             {
               "condition": "PrimaryShotOnly",
@@ -436,14 +955,27 @@
       "family": "Ability.Offense",
       "sizeVariants": [
         {
-          "shape": [[0, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
           "triggerBuffs": [
             {
               "trigger": "SourceDamageDealt",
-              "requiredEventTags": ["Damage.Type.Energy"],
+              "requiredEventTags": [
+                "Damage.Type.Energy"
+              ],
               "durationSeconds": 4.0,
               "modifiers": [
-                {"target": "Owner", "attributeId": "Owner.Energy.Power", "operation": "Add", "magnitude": 16.0, "affectedByZoneBonus": false}
+                {
+                  "target": "Owner",
+                  "attributeId": "Owner.Energy.Power",
+                  "operation": "Add",
+                  "magnitude": 16.0,
+                  "affectedByZoneBonus": false
+                }
               ]
             }
           ]
@@ -457,7 +989,16 @@
       "family": "Ability.Movement",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "triggerBuffs": [
             {
               "trigger": "DamageTaken",
@@ -475,7 +1016,16 @@
       "family": "Ability.Offense",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "damageRules": [
             {
               "condition": "TargetHealthAtMost",
@@ -489,17 +1039,46 @@
     {
       "id": "Module.Utility.ZoneCooler.Basic",
       "displayName": "Zone Cooler",
-      "description": "Single zone: family CD x{cooldown.Module.Zone.Wings.multiplier}; Hull Q/E/F/R x{cooldown.Module.Zone.Hull.multiplier}; no Nose.",
+      "description": "Utility module. In Wings/Core/Engine/Sensor: Offense/Defense/Movement/Utility cooldown -{cooldown.Module.Zone.Wings.reductionPercent}%. In Hull: all Q/E/F/R -{cooldown.Module.Zone.Hull.reductionPercent}%. No Nose effect.",
       "family": "Ability.Utility",
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0], [2, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "zoneEffects": [
-            {"zone": "Module.Zone.Wings", "scope": "FamilyOfZone", "multiplier": 0.79},
-            {"zone": "Module.Zone.Core", "scope": "FamilyOfZone", "multiplier": 0.79},
-            {"zone": "Module.Zone.Engine", "scope": "FamilyOfZone", "multiplier": 0.79},
-            {"zone": "Module.Zone.Sensor", "scope": "FamilyOfZone", "multiplier": 0.79},
-            {"zone": "Module.Zone.Hull", "scope": "AllActiveNonPrimary", "multiplier": 0.9}
+            {
+              "zone": "Module.Zone.Wings",
+              "scope": "FamilyOfZone",
+              "multiplier": 0.79
+            },
+            {
+              "zone": "Module.Zone.Core",
+              "scope": "FamilyOfZone",
+              "multiplier": 0.79
+            },
+            {
+              "zone": "Module.Zone.Engine",
+              "scope": "FamilyOfZone",
+              "multiplier": 0.79
+            },
+            {
+              "zone": "Module.Zone.Sensor",
+              "scope": "FamilyOfZone",
+              "multiplier": 0.79
+            },
+            {
+              "zone": "Module.Zone.Hull",
+              "scope": "AllActiveNonPrimary",
+              "multiplier": 0.9
+            }
           ]
         }
       ]
@@ -511,22 +1090,85 @@
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Offense",
-      "sideFeatures": ["Module.SideFeature.GlassTop.ShieldReturn", "Module.SideFeature.GlassTop.LowHealthCrit"],
-      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O2", "Module.SideFeature.Shared.O4", "Module.SideFeature.Shared.O5"]}],
-      "sizeLadder": [1, 3],
+      "sideFeatures": [
+        "Module.SideFeature.GlassTop.ShieldReturn",
+        "Module.SideFeature.GlassTop.LowHealthCrit"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Offense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O2",
+            "Module.SideFeature.Shared.O4",
+            "Module.SideFeature.Shared.O5"
+          ]
+        }
+      ],
+      "sizeLadder": [
+        1,
+        3
+      ],
       "sizeVariants": [
         {
-          "shape": [[0, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [12.0, 14.04, 16.4268] },
-            { "target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Multiply", "magnitude": 0.94, "affectedByZoneBonus": false }
+            {
+              "target": "Owner",
+              "attributeId": "Owner.AttackPower",
+              "operation": "Add",
+              "magnitude": [
+                12.0,
+                14.04,
+                16.4268
+              ]
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MaxHealth",
+              "operation": "Multiply",
+              "magnitude": 0.94,
+              "affectedByZoneBonus": false
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [2, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [34.0, 39.78, 46.5426] },
-            { "target": "Owner", "attributeId": "Owner.MaxHealth", "operation": "Multiply", "magnitude": 0.84, "affectedByZoneBonus": false }
+            {
+              "target": "Owner",
+              "attributeId": "Owner.AttackPower",
+              "operation": "Add",
+              "magnitude": [
+                34.0,
+                39.78,
+                46.5426
+              ]
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.MaxHealth",
+              "operation": "Multiply",
+              "magnitude": 0.84,
+              "affectedByZoneBonus": false
+            }
           ]
         }
       ]
@@ -538,40 +1180,134 @@
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Utility",
-      "sizeLadder": [3],
+      "sizeLadder": [
+        2
+      ],
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0], [2, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            { "target": "Owner", "attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": [15.0, 18.0, 21.0] },
-            { "target": "Owner", "attributeId": "Owner.Energy.Power", "operation": "Add", "magnitude": [23.0, 28.0, 33.0] }
+            {
+              "target": "Owner",
+              "attributeId": "Owner.AttackPower",
+              "operation": "Add",
+              "magnitude": [
+                15.0,
+                18.0,
+                21.0
+              ]
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.Energy.Power",
+              "operation": "Add",
+              "magnitude": [
+                23.0,
+                28.0,
+                33.0
+              ]
+            }
           ]
         }
       ]
     },
     {
       "id": "Module.Offense.SharpScale.Uncommon",
-      "sideFeatures": ["Module.SideFeature.SharpScale.CriticalRhythm", "Module.SideFeature.SharpScale.LuckLens"],
+      "sideFeatures": [
+        "Module.SideFeature.SharpScale.CriticalRhythm",
+        "Module.SideFeature.SharpScale.LuckLens"
+      ],
       "displayName": "Sharp Scale",
       "description": "Critical damage +{Owner.CriticalDamage.percent}%; critical chance +{Owner.CriticalChance}%.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Offense",
-      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O3", "Module.SideFeature.Shared.O5"]}],
-      "sizeLadder": [2, 3],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Offense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O1",
+            "Module.SideFeature.Shared.O3",
+            "Module.SideFeature.Shared.O5"
+          ]
+        }
+      ],
+      "sizeLadder": [
+        2,
+        3
+      ],
       "sizeVariants": [
         {
-          "shape": [[0, 0], [1, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            { "target": "Owner", "attributeId": "Owner.CriticalDamage", "operation": "Add", "magnitude": [0.20, 0.25, 0.30] },
-            { "target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 15.0 }
+            {
+              "target": "Owner",
+              "attributeId": "Owner.CriticalDamage",
+              "operation": "Add",
+              "magnitude": [
+                0.2,
+                0.25,
+                0.3
+              ]
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.CriticalChance",
+              "operation": "Add",
+              "magnitude": 15.0
+            }
           ]
         },
         {
-          "shape": [[0, 0], [1, 0], [2, 0]],
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
           "attributeModifiers": [
-            { "target": "Owner", "attributeId": "Owner.CriticalDamage", "operation": "Add", "magnitude": [0.20, 0.25, 0.30] },
-            { "target": "Owner", "attributeId": "Owner.CriticalChance", "operation": "Add", "magnitude": 15.0 }
+            {
+              "target": "Owner",
+              "attributeId": "Owner.CriticalDamage",
+              "operation": "Add",
+              "magnitude": [
+                0.2,
+                0.25,
+                0.3
+              ]
+            },
+            {
+              "target": "Owner",
+              "attributeId": "Owner.CriticalChance",
+              "operation": "Add",
+              "magnitude": 15.0
+            }
           ]
         }
       ]
@@ -660,7 +1396,7 @@
         }
       ],
       "sideFeatures": [
-        "Module.SideFeature.LootShield.HuntFuel",
+        "Module.SideFeature.LootShield.KillWard",
         "Module.SideFeature.LootShield.OverflowRecovery"
       ],
       "sharedPools": [
@@ -676,8 +1412,8 @@
     },
     {
       "id": "Module.Utility.HuntClock.Uncommon",
-      "displayName": "Hunt Clock",
-      "description": "Each kill removes {action.0.amount}s from Q/E/F/R cooldowns. Excludes Primary.",
+      "displayName": "Hunt Clock: Utility",
+      "description": "Each kill refunds {action.0.amountPercent}% of remaining Utility ability cooldowns. Excludes Primary.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Utility",
@@ -700,12 +1436,13 @@
           "eventActions": [
             {
               "trigger": "KillConfirmed",
-              "kind": "ReduceAllCooldowns",
+              "kind": "ReduceFamilyCooldowns",
               "amount": [
-                0.25,
-                0.3,
-                0.35
-              ]
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Utility"
             }
           ]
         },
@@ -727,24 +1464,268 @@
           "eventActions": [
             {
               "trigger": "KillConfirmed",
-              "kind": "ReduceAllCooldowns",
+              "kind": "ReduceFamilyCooldowns",
               "amount": [
-                0.25,
-                0.3,
-                0.35
-              ]
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Utility"
             }
           ]
         }
       ],
-      "sideFeatures": ["Module.SideFeature.HuntClock.FifthKill", "Module.SideFeature.HuntClock.HuntBounty"],
+      "sideFeatures": [
+        "Module.SideFeature.HuntClock.FifthKill",
+        "Module.SideFeature.HuntClock.HuntBounty"
+      ],
       "sharedPools": [
         {
           "poolId": "Module.SidePool.General",
           "allowedFeatureIds": [
             "Module.SideFeature.Shared.G2",
             "Module.SideFeature.Shared.G3",
-            "Module.SideFeature.Shared.G5"
+            "Module.SideFeature.Shared.LuckyCast"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.HuntClock.Uncommon",
+      "displayName": "Hunt Clock: Offense",
+      "description": "Each kill refunds {action.0.amountPercent}% of remaining Offense ability cooldowns. Excludes Primary.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceFamilyCooldowns",
+              "amount": [
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Offense"
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceFamilyCooldowns",
+              "amount": [
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Offense"
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.HuntClock.FifthKill",
+        "Module.SideFeature.HuntClock.HuntBounty"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2",
+            "Module.SideFeature.Shared.G3",
+            "Module.SideFeature.Shared.LuckyCast"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.HuntClock.Uncommon",
+      "displayName": "Hunt Clock: Defense",
+      "description": "Each kill refunds {action.0.amountPercent}% of remaining Defense ability cooldowns. Excludes Primary.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceFamilyCooldowns",
+              "amount": [
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Defense"
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceFamilyCooldowns",
+              "amount": [
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Defense"
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.HuntClock.FifthKill",
+        "Module.SideFeature.HuntClock.HuntBounty"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2",
+            "Module.SideFeature.Shared.G3",
+            "Module.SideFeature.Shared.LuckyCast"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.HuntClock.Uncommon",
+      "displayName": "Hunt Clock: Movement",
+      "description": "Each kill refunds {action.0.amountPercent}% of remaining Movement ability cooldowns. Excludes Primary.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Movement",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceFamilyCooldowns",
+              "amount": [
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Movement"
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "KillConfirmed",
+              "kind": "ReduceFamilyCooldowns",
+              "amount": [
+                0.05,
+                0.06,
+                0.07
+              ],
+              "abilityFamily": "Ability.Movement"
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.HuntClock.FifthKill",
+        "Module.SideFeature.HuntClock.HuntBounty"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2",
+            "Module.SideFeature.Shared.G3",
+            "Module.SideFeature.Shared.LuckyCast"
           ]
         }
       ]
@@ -752,7 +1733,7 @@
     {
       "id": "Module.Movement.MovementRhythm.Uncommon",
       "displayName": "Movement Rhythm",
-      "description": "Gain +{owner.0.amount} Attack Speed per 100 units of actual speed, including Afterburner. Zero while stationary.",
+      "description": "Gain +{owner.0.amount}% Attack Speed at 200 actual speed, plus the same amount per full 100 above it, including Afterburner. Zero below 200.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Movement",
@@ -775,6 +1756,8 @@
           "ownerAttributeRules": [
             {
               "source": "MovementSpeed",
+              "minimumSpeed": 200,
+              "speedStep": 100,
               "attributeId": "Owner.AttackSpeed",
               "amount": [
                 3.5,
@@ -802,6 +1785,8 @@
           "ownerAttributeRules": [
             {
               "source": "MovementSpeed",
+              "minimumSpeed": 200,
+              "speedStep": 100,
               "attributeId": "Owner.AttackSpeed",
               "amount": [
                 3.5,
@@ -812,7 +1797,10 @@
           ]
         }
       ],
-      "sideFeatures": ["Module.SideFeature.MovementRhythm.AdvancedThrust", "Module.SideFeature.MovementRhythm.Momentum"],
+      "sideFeatures": [
+        "Module.SideFeature.MovementRhythm.AdvancedThrust",
+        "Module.SideFeature.MovementRhythm.Momentum"
+      ],
       "sharedPools": [
         {
           "poolId": "Module.SidePool.General",
@@ -889,7 +1877,10 @@
           ]
         }
       ],
-      "sideFeatures": ["Module.SideFeature.GritYourTeeth.CriticalCircuit", "Module.SideFeature.GritYourTeeth.ShieldRegen"],
+      "sideFeatures": [
+        "Module.SideFeature.GritYourTeeth.CriticalCircuit",
+        "Module.SideFeature.GritYourTeeth.ShieldRegen"
+      ],
       "sharedPools": [
         {
           "poolId": "Module.SidePool.Defense",
@@ -897,52 +1888,6 @@
             "Module.SideFeature.Shared.D1",
             "Module.SideFeature.Shared.D3",
             "Module.SideFeature.Shared.D4"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "Module.Utility.LuckyCast.Uncommon",
-      "displayName": "Lucky Cast",
-      "description": "Luck +{Owner.Luck}; each Q/E/F/R use has Luck x {action.0.chancePerLuckPercent}% chance to refund {action.0.amountPercent}% cooldown.",
-      "rarity": "Uncommon",
-      "levelCount": 3,
-      "family": "Ability.Utility",
-      "sizeLadder": [
-        2
-      ],
-      "sizeVariants": [
-        {
-          "shape": [
-            [
-              0,
-              0
-            ],
-            [
-              1,
-              0
-            ]
-          ],
-          "attributeModifiers": [
-            {
-              "target": "Owner",
-              "attributeId": "Owner.Luck",
-              "operation": "Add",
-              "magnitude": 1,
-              "affectedByZoneBonus": false
-            }
-          ],
-          "eventActions": [
-            {
-              "trigger": "AbilityActivated",
-              "kind": "RefundUsedCooldown",
-              "amount": 0.5,
-              "chancePerLuck": [
-                0.05,
-                0.06,
-                0.07
-              ]
-            }
           ]
         }
       ]
@@ -974,9 +1919,9 @@
             {
               "condition": "TargetThermalAndCryo",
               "damageMultiplier": [
-                1.22,
-                1.27,
-                1.32
+                1.3,
+                1.35,
+                1.4
               ]
             }
           ]
@@ -1000,105 +1945,33 @@
             {
               "condition": "TargetThermalAndCryo",
               "damageMultiplier": [
-                1.22,
-                1.27,
-                1.32
+                1.3,
+                1.35,
+                1.4
               ]
             }
           ]
         }
       ],
-      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O2", "Module.SideFeature.Shared.O5"]}],
-      "sideFeatures": ["Module.SideFeature.ThermalShockCoil.LingeringShock", "Module.SideFeature.ThermalShockCoil.DeathBurst"]
-    },
-    {
-      "id": "Module.Defense.ColdRetort.Uncommon",
-      "displayName": "Cold Retort",
-      "description": "Taking damage puts {action.0.amount} Cryo on {action.0.targetCount} nearest enemies within {action.0.radius} units; {action.0.cooldownSeconds}s cooldown.",
-      "rarity": "Uncommon",
-      "levelCount": 3,
-      "family": "Ability.Defense",
-      "sizeLadder": [
-        2,
-        3
-      ],
-      "sizeVariants": [
+      "sharedPools": [
         {
-          "shape": [
-            [
-              0,
-              0
-            ],
-            [
-              1,
-              0
-            ]
-          ],
-          "eventActions": [
-            {
-              "trigger": "DamageTaken",
-              "kind": "ApplyNearbyCryo",
-              "amount": 1,
-              "radius": 300,
-              "cooldownSeconds": 2,
-              "targetCount": [
-                2,
-                3,
-                4
-              ]
-            }
-          ]
-        },
-        {
-          "shape": [
-            [
-              0,
-              0
-            ],
-            [
-              1,
-              0
-            ],
-            [
-              2,
-              0
-            ]
-          ],
-          "eventActions": [
-            {
-              "trigger": "DamageTaken",
-              "kind": "ApplyNearbyCryo",
-              "amount": 1,
-              "radius": 300,
-              "cooldownSeconds": 2,
-              "targetCount": [
-                2,
-                3,
-                4
-              ]
-            }
+          "poolId": "Module.SidePool.Offense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O1",
+            "Module.SideFeature.Shared.O2",
+            "Module.SideFeature.Shared.O5"
           ]
         }
       ],
       "sideFeatures": [
-        "Module.SideFeature.ColdRetort.JarringEffect",
-        "Module.SideFeature.ColdRetort.FrozenSpread"
-      ],
-      "sharedPools": [
-        {
-          "poolId": "Module.SidePool.Defense",
-          "allowedFeatureIds": [
-            "Module.SideFeature.Shared.D2",
-            "Module.SideFeature.Shared.D3",
-            "Module.SideFeature.Shared.D5"
-          ]
-        }
+        "Module.SideFeature.ThermalShockCoil.LingeringShock",
+        "Module.SideFeature.ThermalShockCoil.DeathBurst"
       ]
     },
     {
       "id": "Module.Primary.PhotonicLens.Uncommon",
       "displayName": "Photonic Lens",
-      "description": "Deal {damage.0.bonusPercent}% more damage to enemies with no status effects.",
+      "description": "Primary hits deal {damage.0.bonusPercent}% more damage to enemies with no status effects.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Primary",
@@ -1115,11 +1988,11 @@
           ],
           "damageRules": [
             {
-              "condition": "TargetWithoutStatus",
+              "condition": "PrimaryTargetWithoutStatus",
               "damageMultiplier": [
-                1.15,
-                1.18,
-                1.21
+                1.5,
+                1.53,
+                1.56
               ]
             }
           ]
@@ -1205,21 +2078,14 @@
       "rarity": "Uncommon",
       "levelCount": 3,
       "sizeLadder": [
-        3
+        1,
+        2
       ],
       "sizeVariants": [
         {
           "shape": [
             [
               0,
-              0
-            ],
-            [
-              1,
-              0
-            ],
-            [
-              2,
               0
             ]
           ],
@@ -1240,6 +2106,49 @@
               }
             ]
           }
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "statusRules": {
+            "electricOverrides": [
+              {
+                "damageTakenByStack": [
+                  0.03,
+                  0.06,
+                  0.09,
+                  0.13,
+                  [
+                    0.19,
+                    0.21,
+                    0.23
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.ArcExtender.ArcDischarge",
+        "Module.SideFeature.ArcExtender.StatusResonator"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Offense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O1",
+            "Module.SideFeature.Shared.O2",
+            "Module.SideFeature.Shared.O5"
+          ]
         }
       ]
     },
@@ -1289,7 +2198,7 @@
     {
       "id": "Module.Primary.RicochetTip.Uncommon",
       "displayName": "Ricochet Tip",
-      "description": "Each Primary shot bounces once to another enemy within {ricochet.0.range} units for {ricochet.0.damagePercent}% of its first hit.",
+      "description": "Each Primary shot bounces once for {ricochet.0.damagePercent}% hit damage: another enemy within {ricochet.0.range} units, or a random direction if none is nearby.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Primary",
@@ -1317,7 +2226,7 @@
                   0.3,
                   0.35
                 ],
-                "range": 300
+                "range": 450
               }
             ]
           }
@@ -1345,7 +2254,7 @@
                   0.3,
                   0.35
                 ],
-                "range": 300
+                "range": 450
               }
             ]
           }
@@ -1355,12 +2264,21 @@
         "Module.SideFeature.RicochetTip.StatusTransfer",
         "Module.SideFeature.RicochetTip.SecondBounce"
       ],
-      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O2", "Module.SideFeature.Shared.O4", "Module.SideFeature.Shared.O5"]}]
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Offense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O2",
+            "Module.SideFeature.Shared.O4",
+            "Module.SideFeature.Shared.O5"
+          ]
+        }
+      ]
     },
     {
       "id": "Module.Offense.ScatterCore.Uncommon",
       "displayName": "Scatter Core",
-      "description": "First Offense hit fires {salvo.0.projectileCount} guided missiles at different enemies: {salvo.0.damagePercent}% hit damage each. Speed {salvo.0.speed}, life {salvo.0.lifetime}s.",
+      "description": "First Offense hit fires {salvo.0.projectileCount} guided missiles: {salvo.0.damagePercent}% hit damage each. Prefer different enemies; reuse targets when fewer are available. Speed {salvo.0.speed}, life {salvo.0.lifetime}s.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Offense",
@@ -1436,12 +2354,21 @@
         "Module.SideFeature.ScatterCore.Aftershock",
         "Module.SideFeature.ScatterCore.FourthMissile"
       ],
-      "sharedPools": [{"poolId": "Module.SidePool.Offense", "allowedFeatureIds": ["Module.SideFeature.Shared.O1", "Module.SideFeature.Shared.O3", "Module.SideFeature.Shared.O4"]}]
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Offense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O1",
+            "Module.SideFeature.Shared.O3",
+            "Module.SideFeature.Shared.O4"
+          ]
+        }
+      ]
     },
     {
       "id": "Module.Movement.TrailMines.Uncommon",
       "displayName": "Trail Mines",
-      "description": "After Movement, drop a mine every {mine.0.spacing} units for {mine.0.windowSeconds}s: {mine.0.damage} Kinetic damage, {mine.0.radius} radius, {mine.0.fuseSeconds}s fuse. Max {mine.0.maxActive} active.",
+      "description": "After Movement, drop a mine every {mine.0.spacing} units for {mine.0.windowSeconds}s: {mine.0.damage} + {mine.0.attackPowerPercent}% Attack Power Kinetic damage, {mine.0.radius} radius, {mine.0.fuseSeconds}s fuse. Max {mine.0.maxActive} active.",
       "rarity": "Uncommon",
       "levelCount": 3,
       "family": "Ability.Movement",
@@ -1466,9 +2393,9 @@
               {
                 "damageType": "Damage.Type.Kinetic",
                 "damage": [
-                  8,
-                  10,
-                  12
+                  30,
+                  35,
+                  40
                 ],
                 "spacing": 50,
                 "windowSeconds": 5,
@@ -1478,6 +2405,11 @@
                   12,
                   14,
                   16
+                ],
+                "attackPowerCoefficient": [
+                  0.3,
+                  0.35,
+                  0.4
                 ]
               }
             ]
@@ -1503,9 +2435,9 @@
               {
                 "damageType": "Damage.Type.Kinetic",
                 "damage": [
-                  8,
-                  10,
-                  12
+                  30,
+                  35,
+                  40
                 ],
                 "spacing": 50,
                 "windowSeconds": 5,
@@ -1515,6 +2447,11 @@
                   12,
                   14,
                   16
+                ],
+                "attackPowerCoefficient": [
+                  0.3,
+                  0.35,
+                  0.4
                 ]
               }
             ]
@@ -1525,7 +2462,1474 @@
         "Module.SideFeature.TrailMines.CryoMines",
         "Module.SideFeature.TrailMines.QuickFuse"
       ],
-      "sharedPools": [{"poolId": "Module.SidePool.General", "allowedFeatureIds": ["Module.SideFeature.Shared.G1", "Module.SideFeature.Shared.G3", "Module.SideFeature.Shared.G4"]}]
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.General",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G1",
+            "Module.SideFeature.Shared.G3",
+            "Module.SideFeature.Shared.G4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.ZoneOverclocker.Rare",
+      "displayName": "Zone Overclocker",
+      "description": "Other modules in this zone get a stronger zone bonus (+{zone.0.bonusPercent}%).",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [
+        1
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "zoneRules": [
+            {
+              "kind": "AmplifyZone",
+              "bonus": [
+                0.5,
+                0.55,
+                0.6
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.MisfitWiring.Rare",
+      "displayName": "Misfit Wiring",
+      "description": "Modules outside their own zone work better (+{zone.0.bonusPercent}% main value).",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [
+        1
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "zoneRules": [
+            {
+              "kind": "OutOfZoneMainBonus",
+              "bonus": [
+                0.25,
+                0.3,
+                0.35
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.MomentumShield.Rare",
+      "displayName": "Momentum Shield",
+      "description": "Above {shield.0.minimumSpeed} speed, your shield recharges from speed, including Afterburner: {shield.0.speedMultiplierAtMax}x normal rate at top speed.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Movement",
+      "conflictsWith": [
+        "Module.Defense.ContinuousFieldGenerator.Rare"
+      ],
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "shieldRules": [
+            {
+              "regenMode": "SpeedScaled",
+              "speedMultiplierAtMax": [
+                0.5,
+                0.7,
+                0.9
+              ],
+              "minimumSpeed": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ContinuousFieldGenerator.Rare",
+      "displayName": "Continuous Field Generator",
+      "description": "Your shield never stops recharging, at {shield.0.continuousRatePercent}% of the normal rate.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "conflictsWith": [
+        "Module.Movement.MomentumShield.Rare"
+      ],
+      "sizeLadder": [
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "shieldRules": [
+            {
+              "regenMode": "Continuous",
+              "continuousRateFraction": [
+                0.2,
+                0.35,
+                0.45
+              ],
+              "breakRearmFraction": 0.25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ImpactRedirector.Rare",
+      "displayName": "Impact Redirector",
+      "description": "Armor also protects your shield ({shield.0.armorSharePercent}% of its reduction).",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Defense",
+      "sizeLadder": [
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "shieldRules": [
+            {
+              "armorShare": [
+                0.5,
+                0.6,
+                0.7
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.TripleCore.Rare",
+      "displayName": "Triple Core",
+      "description": "Leave at least one slot empty to empower the remaining abilities: ability damage x{damage.0.damageMultiplier}.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "AbilityDirectHit",
+              "requiredEmptyAbilitySlots": 1,
+              "damageMultiplier": [
+                1.25,
+                1.3,
+                1.35
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.StrippedHull.Rare",
+      "displayName": "Stripped Hull",
+      "description": "Fly light, hit hard: +{damage.0.perEmptyCellPercent}% damage per empty cell.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [
+        1
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "Always",
+              "perEmptyCellMultiplier": [
+                0.015,
+                0.0175,
+                0.02
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.OmniThrusters.Uncommon",
+      "displayName": "Omni Thrusters",
+      "description": "Same speed in every direction. Thrust and top speed -{movement.0.thrustPenaltyPercent}%.",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "family": "Ability.Movement",
+      "sizeLadder": [
+        2
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "movementRules": [
+            {
+              "thrustMultiplier": [
+                0.7,
+                0.715,
+                0.73
+              ],
+              "equalizeDirections": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.Odometer.Rare",
+      "displayName": "Odometer",
+      "description": "The farther you travel, the stronger you get: per {runCounter.0.unitsPerStack} units +{runCounter.0.damagePerStackPercent}% damage, +{runCounter.0.moveSpeedPerStackPercent}% speed.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Movement",
+      "sizeLadder": [
+        1
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "runCounterRules": [
+            {
+              "source": "Distance",
+              "unitsPerStack": 5000,
+              "damagePerStack": [
+                0.01,
+                0.012,
+                0.014
+              ],
+              "moveSpeedPerStack": [
+                0.01,
+                0.012,
+                0.014
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.EmberAccumulation.Rare",
+      "displayName": "Ember Accumulation",
+      "description": "When Thermal reaches 4 stacks, the target explodes once instead of taking Ignite damage over time: {thermalBurst.0.damagePercent}% of that stack's total 5 sec DoT; stacks are cleared.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "statusRules": {
+            "thermalBursts": [
+              {
+                "stackThreshold": 4,
+                "damageFraction": [
+                  1.3,
+                  1.4,
+                  1.5
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "statusRules": {
+            "thermalBursts": [
+              {
+                "stackThreshold": 4,
+                "damageFraction": [
+                  1.3,
+                  1.4,
+                  1.5
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.EmberAccumulation.AreaBlast",
+        "Module.SideFeature.EmberAccumulation.SmolderingRemains"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O4.Rare",
+            "Module.SideFeature.Shared.O5.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareFragment",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.F1.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.KineticBreaker.Rare",
+      "displayName": "Kinetic Breaker",
+      "description": "While the target has {kinetic.0.stackThreshold} Kinetic stacks, your next direct hit consumes all of them, ignores the target's Armor completely and deals {kinetic.0.bonusPercent}% more damage.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "statusRules": {
+            "kineticConsumes": [
+              {
+                "stackThreshold": 4,
+                "damageMultiplier": [
+                  1.1,
+                  1.15,
+                  1.2
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "statusRules": {
+            "kineticConsumes": [
+              {
+                "stackThreshold": 4,
+                "damageMultiplier": [
+                  1.1,
+                  1.15,
+                  1.2
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.KineticBreaker.HairTrigger",
+        "Module.SideFeature.KineticBreaker.ArmorRend"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O2.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareSpecial",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.R5"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareFragment",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.F1.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.GiantSlayer.Rare",
+      "displayName": "Giant Slayer",
+      "description": "Against a target whose hull MaxHealth is at least 1.5 times yours, your damage is increased by {damage.0.bonusPercent}%, growing by {damage.0.ratioSlope} for every extra time the ratio.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "TargetMaxHealthRatioAtLeast",
+              "conditionValue": 1.5,
+              "damageMultiplier": [
+                1.1,
+                1.15,
+                1.2
+              ],
+              "ratioSlope": 0.05
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "damageRules": [
+            {
+              "condition": "TargetMaxHealthRatioAtLeast",
+              "conditionValue": 1.5,
+              "damageMultiplier": [
+                1.1,
+                1.15,
+                1.2
+              ],
+              "ratioSlope": 0.05
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.GiantSlayer.Toppler",
+        "Module.SideFeature.GiantSlayer.Underdog"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O5.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareSpecial",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.R3"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareFragment",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.F1.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.EscapeVelocity.Rare",
+      "displayName": "Escape Velocity",
+      "description": "Reach top speed and your shots go sonic. After {sonic.0.holdSeconds} sec of uninterrupted flight above {sonic.0.speedPercent}% of max speed, the ship goes sonic: Primary projectiles travel {sonic.0.primarySpeedMultiplier} times as fast, pierce {sonic.0.primaryPierceBonus} more target and deal {sonic.0.primaryDamagePercent}% more damage. Ends when you slow down.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Movement",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "sustainedSpeedRules": [
+            {
+              "speedFraction": 0.9,
+              "holdSeconds": 2,
+              "primarySpeedMultiplier": 2,
+              "primaryPierceBonus": 1,
+              "primaryDamageMultiplier": [
+                1.1,
+                1.15,
+                1.2
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "sustainedSpeedRules": [
+            {
+              "speedFraction": 0.9,
+              "holdSeconds": 2,
+              "primarySpeedMultiplier": 2,
+              "primaryPierceBonus": 1,
+              "primaryDamageMultiplier": [
+                1.1,
+                1.15,
+                1.2
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.EscapeVelocity.Afterglow",
+        "Module.SideFeature.EscapeVelocity.SlipstreamControl"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G4.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareSpecial",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.R6"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareFragment",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.F1.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.TrophyCore.Rare",
+      "displayName": "Trophy Core",
+      "description": "Each enemy killed by the adjacent Q/E/F/R ability permanently adds {runCounter.0.damagePerStackPercent}% damage for the run (elite {runCounter.0.elitePercent}%, boss {runCounter.0.bossPercent}%). Stacks stay with the module, so moving it next to another ability moves the bonus with it.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "runCounterRules": [
+            {
+              "source": "Kill",
+              "damagePerStack": [
+                0.004,
+                0.0045,
+                0.005
+              ],
+              "killWeights": {
+                "normal": 1,
+                "elite": 7.5,
+                "miniboss": 7.5,
+                "boss": 25
+              },
+              "adjacentAbilityLimit": 3
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "runCounterRules": [
+            {
+              "source": "Kill",
+              "damagePerStack": [
+                0.004,
+                0.0045,
+                0.005
+              ],
+              "killWeights": {
+                "normal": 1,
+                "elite": 7.5,
+                "miniboss": 7.5,
+                "boss": 25
+              },
+              "adjacentAbilityLimit": 3
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.TrophyCore.BountyMark",
+        "Module.SideFeature.TrophyCore.TrophyWall"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O1.Rare",
+            "Module.SideFeature.Shared.O3.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G1.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Offense.DyingStar.Rare",
+      "displayName": "Dying Star",
+      "description": "Burst damage adds {ownerBurst.0.energyPowerCoefficient} x Energy Power. Each enemy that dies within {ownerBurst.0.chargeRadius} units of you charges the star. At {ownerBurst.0.chargeKills} charges it explodes in a Thermal blast within {ownerBurst.0.radius} units that deals {ownerBurst.0.damage} damage and applies {ownerBurst.0.igniteStacks} Ignite stacks to each enemy hit, and the charges reset.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Offense",
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "ownerBurstRules": [
+            {
+              "trigger": "KillConfirmed",
+              "radius": 350,
+              "damage": [
+                60,
+                69,
+                78
+              ],
+              "energyPowerCoefficient": 0.4,
+              "damageType": "Damage.Type.Thermal",
+              "igniteStacks": 4,
+              "chargeKills": 10,
+              "chargeRadius": 300
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "ownerBurstRules": [
+            {
+              "trigger": "KillConfirmed",
+              "radius": 350,
+              "damage": [
+                60,
+                69,
+                78
+              ],
+              "energyPowerCoefficient": 0.4,
+              "damageType": "Damage.Type.Thermal",
+              "igniteStacks": 4,
+              "chargeKills": 10,
+              "chargeRadius": 300
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.DyingStar.CoreCollapse",
+        "Module.SideFeature.DyingStar.RedGiant"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareOffense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.O3.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareDefense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D3.Rare"
+          ]
+        },
+        {
+          "poolId": "Module.SidePool.RareFragment",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.F1.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.SpareCapacitor.Rare",
+      "displayName": "Spare Capacitor",
+      "description": "Adjacent abilities gain extra charges: +1 at level 1, +2 at level 2, +3 at level 3. Bigger sizes reach more adjacent abilities (1, 2 or 3). Cooldowns are unchanged.",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "family": "Ability.Utility",
+      "sizeLadder": [
+        1,
+        2,
+        3
+      ],
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ]
+          ],
+          "chargeRules": [
+            {
+              "chargePerLevel": [
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "chargeRules": [
+            {
+              "chargePerLevel": [
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "chargeRules": [
+            {
+              "chargePerLevel": [
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.BarrierRecharge.Basic",
+      "displayName": "Barrier Recharge",
+      "description": "Defense ability use restores {action.0.amountPercent}% of Max Shield; cannot exceed maximum.",
+      "family": "Ability.Defense",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "AbilityActivated",
+              "kind": "RestoreShield",
+              "amount": 0.1,
+              "requiredEventTags": [
+                "Ability.Defense"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.BraceReflex.Basic",
+      "displayName": "Brace Reflex",
+      "description": "Defense ability use grants Armor +25 for 4 seconds; refreshes without stacking.",
+      "family": "Ability.Defense",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "triggerBuffs": [
+            {
+              "trigger": "AbilityActivated",
+              "requiredEventTags": [
+                "Ability.Defense"
+              ],
+              "durationSeconds": 4,
+              "modifiers": [
+                {
+                  "target": "Owner",
+                  "attributeId": "Owner.Armor",
+                  "operation": "Add",
+                  "magnitude": 25
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.ArmorConversion.Uncommon",
+      "displayName": "Armor Conversion",
+      "family": "Ability.Defense",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "description": "Armor grants {owner.0.amountPercent}% of its value to the higher of Attack Power and Energy Power (ties: Attack Power).",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "ownerAttributeRules": [
+            {
+              "source": "ArmorHigherPower",
+              "attributeId": "Owner.AttackPower",
+              "amount": [
+                0.4,
+                0.45,
+                0.5
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "ownerAttributeRules": [
+            {
+              "source": "ArmorHigherPower",
+              "attributeId": "Owner.AttackPower",
+              "amount": [
+                0.4,
+                0.45,
+                0.5
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.ArmorConversion.RapidAlloy",
+        "Module.SideFeature.ArmorConversion.BalancedOutput"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Defense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D1",
+            "Module.SideFeature.Shared.D2",
+            "Module.SideFeature.Shared.D3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.OvershieldLayer.Uncommon",
+      "displayName": "Overshield Layer",
+      "family": "Ability.Defense",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "description": "Defense ability use grants a temporary shield layer equal to {action.0.amountPercent}% of Max Shield; decays over {action.0.durationSeconds}s. Repeat use refreshes without stacking.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "AbilityActivated",
+              "kind": "GrantTemporaryShield",
+              "amount": 0.2,
+              "durationSeconds": 6,
+              "requiredEventTags": [
+                "Ability.Defense"
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "eventActions": [
+            {
+              "trigger": "AbilityActivated",
+              "kind": "GrantTemporaryShield",
+              "amount": 0.2,
+              "durationSeconds": 6,
+              "requiredEventTags": [
+                "Ability.Defense"
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.OvershieldLayer.ShieldRush",
+        "Module.SideFeature.OvershieldLayer.ReserveShell"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.Defense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D1",
+            "Module.SideFeature.Shared.D2",
+            "Module.SideFeature.Shared.D4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Primary.StatusPrimer.Uncommon",
+      "displayName": "Status Primer",
+      "family": "Ability.Primary",
+      "rarity": "Uncommon",
+      "levelCount": 3,
+      "sizeLadder": [
+        2
+      ],
+      "description": "Primary hits add one stack to the most-stacked existing damage status; {statusPrimer.0.cooldownSeconds}s cooldown per target. No effect without a status.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "statusRules": {
+            "primaryStatusPrimers": [
+              {
+                "cooldownSeconds": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.TemperedHull.Rare",
+      "displayName": "Tempered Hull",
+      "family": "Ability.Defense",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "description": "Each Defense use permanently grants {runCounter.0.armorPerStack} Armor this run, up to {runCounter.0.armorCap}.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "runCounterRules": [
+            {
+              "source": "AbilityUses",
+              "requiredFamily": "Ability.Defense",
+              "unitsPerStack": 1,
+              "armorPerStack": 1,
+              "armorCap": [
+                30,
+                40,
+                50
+              ]
+            }
+          ]
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "runCounterRules": [
+            {
+              "source": "AbilityUses",
+              "requiredFamily": "Ability.Defense",
+              "unitsPerStack": 1,
+              "armorPerStack": 1,
+              "armorCap": [
+                30,
+                40,
+                50
+              ]
+            }
+          ]
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.TemperedHull.BastionSlam",
+        "Module.SideFeature.TemperedHull.FieldMedic"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareDefense",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.D1.Rare",
+            "Module.SideFeature.Shared.D3.Rare",
+            "Module.SideFeature.Shared.D4.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Movement.SpeedLance.Rare",
+      "displayName": "Speed Lance",
+      "family": "Ability.Movement",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "sizeLadder": [
+        2,
+        3
+      ],
+      "description": "After a Movement use, sample peak speed for {speedLance.0.sampleSeconds}s and fire a piercing Energy lance: damage = speed x{speedLance.0.speedDamageCoefficient}. Range {speedLance.0.range}, speed {speedLance.0.projectileSpeed}/s. Full damage, once per target.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "speedLances": [
+              {
+                "speedDamageCoefficient": 0.4,
+                "sampleSeconds": 1,
+                "projectileSpeed": 1800,
+                "range": 900
+              }
+            ]
+          }
+        },
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "generatedRules": {
+            "speedLances": [
+              {
+                "speedDamageCoefficient": 0.4,
+                "sampleSeconds": 1,
+                "projectileSpeed": 1800,
+                "range": 900
+              }
+            ]
+          }
+        }
+      ],
+      "sideFeatures": [
+        "Module.SideFeature.SpeedLance.EchoLance",
+        "Module.SideFeature.SpeedLance.ChargedLance"
+      ],
+      "sharedPools": [
+        {
+          "poolId": "Module.SidePool.RareGeneral",
+          "allowedFeatureIds": [
+            "Module.SideFeature.Shared.G2.Rare",
+            "Module.SideFeature.Shared.G3.Rare",
+            "Module.SideFeature.Shared.G4.Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Utility.ReleaseValve.Rare",
+      "displayName": "Release Valve",
+      "family": "Ability.Utility",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "description": "Utility use deals {annularBurst.0.energyPowerPercent}% Energy Power as Energy damage in the {annularBurst.0.innerRadius}-{annularBurst.0.outerRadius} ring. No damage inside, no push.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "generatedRules": {
+            "annularBursts": [
+              {
+                "innerRadius": 600,
+                "outerRadius": 900,
+                "energyPowerCoefficient": 0.4
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.GoldPlating.Rare",
+      "displayName": "Gold Plating",
+      "family": "Ability.Defense",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "description": "Each {owner.0.goldPerArmor} Gold currently held grants one Armor, up to {owner.0.maximumAmount}.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "ownerAttributeRules": [
+            {
+              "source": "Gold",
+              "attributeId": "Owner.Armor",
+              "amount": 0.1,
+              "maximumAmount": [
+                60,
+                75,
+                90
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Module.Defense.PolarShield.Rare",
+      "displayName": "Polar Shield",
+      "family": "Ability.Defense",
+      "rarity": "Rare",
+      "levelCount": 3,
+      "description": "Normal shield capacity is split equally between independent front and rear pools. An empty struck pool exposes the hull. Recharge fills the lower pool first; temporary shield is shared.",
+      "sizeVariants": [
+        {
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "shieldRules": [
+            {
+              "frontRearSplit": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -153,11 +153,15 @@ namespace ly::visual
 		return it == mRoles.end() ? MissingRamp() : Ramp(it->second);
 	}
 
-	std::vector<sf::Color> ColorScript::Palette(size_t maxColors) const
+	std::vector<sf::Color> ColorScript::Palette(size_t maxColors, const std::string& skipPrefix) const
 	{
 		std::vector<sf::Color> colors;
 		for (const auto& [name, ramp] : mRamps)
 		{
+			if (!skipPrefix.empty() && name.compare(0, skipPrefix.size(), skipPrefix) == 0)
+			{
+				continue;
+			}
 			for (const ColorStop& stop : ramp.Stops())
 			{
 				if (std::find(colors.begin(), colors.end(), stop.color) == colors.end())

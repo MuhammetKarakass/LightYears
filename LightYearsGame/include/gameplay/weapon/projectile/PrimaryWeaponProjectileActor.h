@@ -38,6 +38,8 @@ namespace ly
 		) override;
 
 		float GetDamage() const { return AbilityWorldActor::GetDamage(); };
+		const WeaponPresentationDefinition& GetPresentationDefinition() const { return mPresentationDefinition; }
+		float GetProjectileSpeed() const;
 		void SetLaunchVelocity(const sf::Vector2f& launchVelocity);
 		void SetImpactBehavior(
 			const shared_ptr<ProjectileImpactBehavior>& impactBehavior

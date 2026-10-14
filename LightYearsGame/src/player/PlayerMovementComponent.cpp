@@ -8,6 +8,7 @@
 #include <framework/World.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 
 namespace ly
@@ -60,8 +61,39 @@ namespace ly
 		return GetPlayer().GetMovementComponent().GetLegacySpeed().x;
 	}
 
+	namespace
+	{
+		bool gDevAutoPlay = false;
+	}
+
+	void PlayerMovementComponent::SetDevAutoPlay(bool enabled)
+	{
+		gDevAutoPlay = enabled;
+	}
+
 	void PlayerMovementComponent::SetInput()
 	{
+		if (gDevAutoPlay)
+		{
+			static const auto start = std::chrono::steady_clock::now();
+			const float seconds = std::chrono::duration<float>(std::chrono::steady_clock::now() - start).count();
+			mMoveInput = { std::cos(seconds * 0.8f), std::sin(seconds * 0.8f) };
+			mAfterburnerRequested = std::fmod(seconds, 6.f) < 1.f;
+			GetPlayer().GetMovementComponent().SetAbilityWorldMovementInput(ResolveAbilityWorldMovementInput());
+			CombatRuntime& combatRuntime = GetPlayer().GetCombatRuntime();
+			for (const AbilityInputBinding& binding : AbilityInputSchema::GetBindings())
+			{
+				// Primary fire is held; ability keys are tapped so every press is a new activation attempt.
+				const bool pressed = binding.slot == sas::AbilitySlot::PrimaryFire || std::fmod(seconds, 0.4f) < 0.2f;
+				combatRuntime.GetAbilitySystemComponent().SetAbilitySlotInput(binding.slot, pressed);
+			}
+			if (GetPlayer().GetMovementComponent().GetMovementMode() == ShipMovementMode::LegacyVelocity)
+			{
+				NormalizeInput();
+			}
+			return;
+		}
+
 		// Device state is global: never read it for a headless world or while the
 		// window is unfocused, otherwise typing elsewhere drives the ship.
 		const World* world = GetPlayer().GetWorld();

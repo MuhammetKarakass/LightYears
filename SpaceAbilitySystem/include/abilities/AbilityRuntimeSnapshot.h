@@ -20,5 +20,7 @@ namespace sas
 		float activeRemaining = 0.f;
 		float activeDuration = 0.f;
 		int charges = 0;
+		// Effective capacity (definition maxCharges plus runtime bonus); unlimited abilities report their <= 0 value.
+		int chargeCapacity = 0;
 	};
 }

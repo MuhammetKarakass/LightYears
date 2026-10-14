@@ -607,7 +607,8 @@ namespace ly
 			{
 				return Fail(
 					failureReason,
-					"Ability must have exactly one category tag matching its ID."
+					"Ability must have exactly one category tag matching its ID: " + definition.abilityId +
+						" (expected category '" + parsedId.category + "', found " + std::to_string(categoryCount) + " category tags among: " + [&definition]() { std::string names; for (const GameplayTag& tag : definition.abilityTags) names += "'" + tag.name + "' "; return names; }() + ")"
 				);
 			}
 			if (!hasMatchingFamily)

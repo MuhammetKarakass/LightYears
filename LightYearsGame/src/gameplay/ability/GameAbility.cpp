@@ -381,7 +381,10 @@ namespace ly
 					OwnerAttributeIds::AbilityHaste
 				)
 			);
-		return std::max(0.f, leveledCooldown * hasteMultiplier * moduleMultiplier);
+		const float unreducedCooldown = leveledCooldown * hasteMultiplier;
+		// A module reduction never takes the cooldown below its absolute floor, and never raises it above the unreduced value.
+		const float floorSeconds = moduleMultiplier < 1.f ? std::min(unreducedCooldown, mAbilitySystem.GetScopedAbilityCooldownMinimum(mDefinition)) : 0.f;
+		return std::max(floorSeconds, std::max(0.f, unreducedCooldown * moduleMultiplier));
 	}
 
 	void GameAbility::RefundActivationCooldown(float fraction)

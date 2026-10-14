@@ -13,10 +13,14 @@ namespace ly
 		void Render(sf::RenderTarget& window) override;
 		void OnActorBeginOverlap(Actor* target) override;
 		bool IsProjectileActor() const override { return true; }
+		void SetUnguidedDirection(const sf::Vector2f& direction, const List<std::uint64_t>& excludedTargets) { mUnguidedDirection = direction; mExcludedTargets = excludedTargets; mUnguided = true; }
 	private:
 		ModuleGuidedPresentationProfile mProfile;
 		weak_ptr<ModuleGeneratedLease> mLease;
 		weak_ptr<Actor> mTarget;
 		float mSpeed = 0.f;
+		bool mUnguided = false;
+		sf::Vector2f mUnguidedDirection{};
+		List<std::uint64_t> mExcludedTargets;
 	};
 }

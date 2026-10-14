@@ -12,6 +12,16 @@
 #include <chrono>
 #include <fstream>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
 namespace ly
 {
 	namespace
@@ -23,6 +33,7 @@ namespace ly
 	Application::Application(sf::Vector2u Position, unsigned int bit, const std::string& Title, uint32_t Style)
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
 		mTargetFrameRate{ 60.f },     
+		mFramePacer{ mTargetFrameRate },
 		mShouldQuit{ false },
 		mQuitRequested{ false },
 		mTickClock{},   
@@ -30,8 +41,13 @@ namespace ly
 		mCleanCycleClock{},    
 		mCleanCycleTime{2.f}          
 	{		
-		mWindow.setFramerateLimit(60);
+		// The frame rate is held by mFramePacer; SFML's own limiter drifts (see FramePacer.h).
 		mWindow.setVerticalSyncEnabled(false);
+#ifdef _WIN32
+		// Background work at normal priority (indexers, builds, browsers) otherwise takes the cores from the game
+		// thread and the OpenGL driver thread in the middle of a frame, which showed up as 50-300 ms frames.
+		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+#endif
 	}
 	
 	void Application::Run()
@@ -88,6 +104,7 @@ namespace ly
 			const auto hitchRenderStart = std::chrono::steady_clock::now();
 			RenderInternal();
 			const auto hitchEnd = std::chrono::steady_clock::now();
+			mFramePacer.Wait();
 
 			// Hitch diagnostics: report frames whose own work (not the frame-limiter
 			// sleep) exceeded 25 ms, split into tick and render.
@@ -108,10 +125,18 @@ namespace ly
 				statSeconds = statTickMs = statRenderMs = statMaxFrameMs = 0.0;
 				statFrames = statOver20 = statOver33 = 0;
 			}
+			static std::vector<debug::FrameEvent> frameEvents;
+			debug::Profiler::TakeFrameEvents(frameEvents);
 			if (hitchTickMs > 25.0 || hitchRenderMs > 25.0)
 			{
 				LY_CORE_INFO("FrameHitch dt=%.1fms tick=%.1fms render=%.1fms actors=%d particles=%d bullets=%d", dt * 1000.f, hitchTickMs, hitchRenderMs,
 				ly::perf::g_activeActors.load(), ly::perf::g_particles.load(), ly::perf::g_bullets.load());
+				// The slow scopes and actors of this frame; nested scopes each report their own total.
+				std::sort(frameEvents.begin(), frameEvents.end(), [](const debug::FrameEvent& a, const debug::FrameEvent& b) { return a.microseconds > b.microseconds; });
+				for (std::size_t i = 0; i < frameEvents.size() && i < 10; ++i)
+				{
+					LY_CORE_INFO("  HitchPart %s %.1fms", frameEvents[i].name, frameEvents[i].microseconds / 1000.0);
+				}
 			}
 		}
 	}
@@ -138,30 +163,43 @@ namespace ly
 	void Application::TickInternal(float deltaTime)
 	{
 		LY_PROFILE_FUNCTION();
-		Tick(deltaTime);
+		{
+			LY_PROFILE_SCOPE("App.Tick");
+			Tick(deltaTime);
+		}
 		
 		if(mCurrentWorld)
 		{
 			mCurrentWorld->TickInternal(deltaTime);
 		}
 
-		TimerManager::GetGlobalTimerManager().UpdateTimer(deltaTime);
+		{
+			LY_PROFILE_SCOPE("App.GlobalTimers");
+			TimerManager::GetGlobalTimerManager().UpdateTimer(deltaTime);
+		}
 
 		bool isPaused = mCurrentWorld && mCurrentWorld->IsPaused();
 
 		if (!isPaused)
 		{
-			TimerManager::GetGameTimerManager().UpdateTimer(deltaTime);
+			{
+				LY_PROFILE_SCOPE("App.GameTimers");
+				TimerManager::GetGameTimerManager().UpdateTimer(deltaTime);
+			}
 			if (mCurrentWorld)
 			{
 				mCurrentWorld->StepPhysics(deltaTime);
 			}
 		}
 
-		AudioManager::GetAudioManager().Update(deltaTime);
+		{
+			LY_PROFILE_SCOPE("App.Audio");
+			AudioManager::GetAudioManager().Update(deltaTime);
+		}
 		
 		if (mCleanCycleClock.getElapsedTime().asSeconds() > mCleanCycleTime)
 		{
+			LY_PROFILE_SCOPE("App.CleanCycle");
 			mCleanCycleClock.restart();
 			AssetManager::GetAssetManager().CleanCycle();
 			AudioManager::GetAudioManager().CleanCycle();
@@ -201,8 +239,8 @@ namespace ly
 		const auto displayStart = std::chrono::steady_clock::now();
 		mWindow.display();
 		const double displayMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - displayStart).count();
-		// Hitch diagnostics: display() includes the 60 FPS limiter sleep (<= ~17 ms), so only larger values mean a GPU/driver/OS swap stall.
-		if (displayMs > 30.0)
+		// Hitch diagnostics: display() no longer contains the frame limiter sleep, so a long swap means a GPU/driver/OS stall.
+		if (displayMs > 20.0)
 		{
 			LY_CORE_INFO("DisplayStall %.1fms", displayMs);
 		}

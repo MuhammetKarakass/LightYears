@@ -7,6 +7,8 @@
 #include "gameplay/combat/Combatant.h"
 #include "gameplay/damage/DamageTypeSystem.h"
 #include "gameplay/HealthComponent.h"
+#include "gameplay/ShieldComponent.h"
+#include "spaceShip/SpaceShip.h"
 #include "gameplay/tags/GameplayTags.h"
 #include "gameplay/ability/LightYearsAbilitySystemComponent.h"
 #include "gameplay/effects/LightYearsEffectBehaviorRuntime.h"
@@ -250,9 +252,31 @@ namespace ly
 		return false;
 	}
 
+	void CombatRuntime::SetModuleStatusRules(const ModuleStatusRules& rules)
+	{
+		mModuleStatusRules = rules;
+		mModuleStatusPulseCooldowns.erase(std::remove_if(mModuleStatusPulseCooldowns.begin(), mModuleStatusPulseCooldowns.end(), [&rules](const ModuleStatusPulseCooldown& state)
+		{
+			return std::none_of(rules.electricSpreads.begin(), rules.electricSpreads.end(), [&state](const ModuleElectricSpreadRule& rule) { return rule.instanceId == state.instanceId && rule.ruleIndex == state.ruleIndex; }) &&
+				std::none_of(rules.primaryStatusPrimers.begin(), rules.primaryStatusPrimers.end(), [&state](const ModulePrimaryStatusPrimerRule& rule) { return rule.instanceId == state.instanceId && rule.ruleIndex == state.ruleIndex; });
+		}), mModuleStatusPulseCooldowns.end());
+	}
+	bool CombatRuntime::TryActivateElectricSpread(const ModuleElectricSpreadRule& rule, std::uint64_t targetId)
+	{
+		return TryActivateModuleStatusPulse(rule.instanceId, rule.ruleIndex, targetId, rule.cooldownSeconds);
+	}
+	bool CombatRuntime::TryActivateModuleStatusPulse(std::uint32_t instanceId, std::size_t ruleIndex, std::uint64_t targetId, float cooldownSeconds)
+	{
+		for (const auto& state : mModuleStatusPulseCooldowns)
+			if (state.instanceId == instanceId && state.ruleIndex == ruleIndex && state.targetId == targetId) return false;
+		mModuleStatusPulseCooldowns.push_back({ instanceId, ruleIndex, targetId, cooldownSeconds });
+		return true;
+	}
 	void CombatRuntime::Tick(float deltaTime)
 	{
 		mModuleFirstHits.Prune();
+		for (auto& state : mModuleStatusPulseCooldowns) state.remaining -= std::max(0.f, deltaTime);
+		mModuleStatusPulseCooldowns.erase(std::remove_if(mModuleStatusPulseCooldowns.begin(), mModuleStatusPulseCooldowns.end(), [](const ModuleStatusPulseCooldown& state) { return state.remaining <= 0.f; }), mModuleStatusPulseCooldowns.end());
 		if (deltaTime > 0.f)
 		{
 			for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
@@ -281,6 +305,25 @@ namespace ly
 	float CombatRuntime::GetOutgoingDamageMultiplier() const noexcept
 	{
 		return mRuntimeModifiers.GetOutgoingDamageMultiplier();
+	}
+
+	bool CombatRuntime::SetPrimaryShotModifier(const std::string& sourceId, float multiplier)
+	{
+		if (multiplier == 1.f) return mPrimaryShotModifiers.erase(sourceId) > 0;
+		mPrimaryShotModifiers[sourceId] = multiplier;
+		return true;
+	}
+
+	bool CombatRuntime::RemovePrimaryShotModifier(const std::string& sourceId)
+	{
+		return mPrimaryShotModifiers.erase(sourceId) > 0;
+	}
+
+	float CombatRuntime::GetPrimaryShotDamageMultiplier() const noexcept
+	{
+		float multiplier = 1.f;
+		for (const auto& entry : mPrimaryShotModifiers) multiplier *= entry.second;
+		return multiplier;
 	}
 
 	CombatRuntime::OutgoingDamageRuleRegistration CombatRuntime::RegisterOutgoingDamageRules()
@@ -325,10 +368,22 @@ namespace ly
 		return multiplier;
 	}
 
+	// Counts the distinct damage-status kinds (Thermal, Cryo, Electric, Kinetic) present on a combatant.
+	static int CountDamageStatusKinds(const LightYearsAbilitySystemComponent& abilities)
+	{
+		int count = 0;
+		for (const auto* id : { DamageStatusEffectIds::IgniteEffectId, DamageStatusEffectIds::CryoSlowedEffectId, DamageStatusEffectIds::ElectricEffectId, DamageStatusEffectIds::KineticEffectId })
+		{
+			const auto* effect = abilities.FindGameplayEffectById(id);
+			if (effect && effect->stackCount > 0) ++count;
+		}
+		return count;
+	}
+
 	CombatRuntime::OutgoingDamagePlan CombatRuntime::ResolveOutgoingDamagePlan(const Actor& target, const List<GameplayTag>& sourceAbilityTags, const sas::ContentId& sourceAbilityId, DamageDeliveryType deliveryType, bool allowFirstTargetHit) const
 	{
 		OutgoingDamagePlan plan;
-		const bool isPrimaryShot = std::any_of(sourceAbilityTags.begin(), sourceAbilityTags.end(),
+		const bool isPrimaryShot = deliveryType != DamageDeliveryType::Periodic && std::any_of(sourceAbilityTags.begin(), sourceAbilityTags.end(),
 			[](const GameplayTag& tag) { return tag.MatchesTag(GameplayTags::Ability::Primary); });
 		const HealthComponent* targetHealth = target.FindComponent<HealthComponent>();
 		const float healthFraction = targetHealth && targetHealth->GetMaxHealth() > 0.f
@@ -344,9 +399,16 @@ namespace ly
 			const auto* thermal = targetAbilities.FindGameplayEffectById(DamageStatusEffectIds::IgniteEffectId);
 			const auto* cryo = targetAbilities.FindGameplayEffectById(DamageStatusEffectIds::CryoSlowedEffectId);
 			conditionContext.targetHasThermalAndCryo = thermal && thermal->stackCount > 0 && cryo && cryo->stackCount > 0;
+			conditionContext.targetStatusKindCount = CountDamageStatusKinds(targetAbilities);
 		}
 		const HealthComponent* ownerHealth = mOwner.FindComponent<HealthComponent>();
+		conditionContext.targetMaxHealthRatio = targetHealth && ownerHealth && ownerHealth->GetMaxHealth() > 0.f ? targetHealth->GetMaxHealth() / ownerHealth->GetMaxHealth() : 0.f;
 		conditionContext.ownerHealthFraction = ownerHealth && ownerHealth->GetMaxHealth() > 0.f ? ownerHealth->GetHealth() / ownerHealth->GetMaxHealth() : 1.f;
+		const ShieldComponent* ownerShield = mOwner.FindComponent<ShieldComponent>();
+		conditionContext.ownerShieldFull = ownerShield && ownerShield->GetMaxShield() > 0.f && ownerShield->GetShield() >= ownerShield->GetMaxShield();
+		conditionContext.ownerShieldOverMax = ownerShield && ownerShield->GetMaxShield() > 0.f && ownerShield->GetShield() > ownerShield->GetMaxShield();
+		const auto* targetShip = dynamic_cast<const SpaceShip*>(&target);
+		conditionContext.targetIsBossClass = targetShip && (targetShip->GetControlTargetClass() == ControlTargetClass::MiniBoss || targetShip->GetControlTargetClass() == ControlTargetClass::Boss);
 		for (const ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
 			for (const ActiveModuleDamageRule& active : registration.rules)
@@ -367,12 +429,34 @@ namespace ly
 						const auto* ability = mAbilitySystemComponent.GetAbility(AbilitySlotForModuleSystem(system));
 						if (ability && ability->GetDefinition().abilityId == sourceAbilityId.ToString()) conditionContext.isAdjacentAbilityDirectHit = true;
 					}
+				conditionContext.isAbilityDirectHit = false;
+				if (deliveryType != DamageDeliveryType::Periodic && !isPrimaryShot && sourceAbilityId.IsValid())
+					for (const sas::AbilitySlot slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+					{
+						const auto* ability = mAbilitySystemComponent.GetAbility(slot);
+						if (ability && ability->GetDefinition().abilityId == sourceAbilityId.ToString()) conditionContext.isAbilityDirectHit = true;
+					}
 				if (!MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext)) continue;
-				plan.damageMultiplier *= rule.damageMultiplier;
+				// Ratio rules: the authored multiplier is the base and ratioSlope adds per unit of ratio above the threshold.
+				float ruleMultiplier = rule.damageMultiplier;
+				if (rule.condition == ModuleDamageCondition::TargetMaxHealthRatioAtLeast)
+					ruleMultiplier += rule.ratioSlope * (conditionContext.targetMaxHealthRatio - rule.conditionValue);
+				plan.damageMultiplier *= ruleMultiplier;
 				if (ownerHealth) plan.additionalDamage += ownerHealth->GetMaxHealth() * rule.maxHealthDamageFraction;
 				if (rule.bonusDamageFraction > 0.f && rule.bonusDamageType.IsValid())
 					plan.bonuses.push_back({ rule.bonusDamageFraction, rule.bonusDamageType });
 			}
+		}
+		// Scoped runtime modifiers (Trophy Core and Trophy Wall) match the source ability's loadout slot and family.
+		if (sourceAbilityId.IsValid())
+		{
+			sas::AbilitySlot sourceSlot = sas::AbilitySlot::None;
+			for (const sas::AbilitySlot slot : { sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 })
+			{
+				const auto* ability = mAbilitySystemComponent.GetAbility(slot);
+				if (ability && ability->GetDefinition().abilityId == sourceAbilityId.ToString()) { sourceSlot = slot; break; }
+			}
+			plan.damageMultiplier *= mRuntimeModifiers.GetScopedOutgoingDamageMultiplier(sourceSlot, sourceAbilityTags);
 		}
 		return plan;
 	}
@@ -432,6 +516,7 @@ namespace ly
 		mDamageProtections.clear();
 		mRuntimeModifiers.Clear();
 		mModuleStatusRules = {};
+		mModuleStatusPulseCooldowns.clear();
 		mModuleFirstHits.Clear();
 		for (ModuleDamageRuleRegistrationEntry& registration : mModuleDamageRuleState->registrations)
 		{
@@ -469,13 +554,19 @@ namespace ly
 		context.targetMaxHealthAtResolution = health ? health->GetMaxHealth() : 0.f;
 		ModuleDamageConditionContext conditionContext;
 		conditionContext.ownerHealthFraction = health && health->GetMaxHealth() > 0.f ? health->GetHealth() / health->GetMaxHealth() : 1.f;
+		conditionContext.ownerMaxHealth = health ? health->GetMaxHealth() : 0.f;
+		if (const auto* shield = mOwner.FindComponent<ShieldComponent>()) conditionContext.ownerShieldOverMax = shield->GetMaxShield() > 0.f && shield->GetShield() > shield->GetMaxShield();
+		if (const auto* sourceHealth = context.source ? context.source->FindComponent<HealthComponent>() : nullptr)
+			conditionContext.sourceMaxHealth = sourceHealth->GetMaxHealth();
 		if (const auto* sourceCombatant = dynamic_cast<const Combatant*>(context.source))
 			conditionContext.sourceHasStatus = sourceCombatant->GetAbilitySystemComponent().HasOwnedTag(GameplayTags::Status::Root);
 		for (const auto& registration : mModuleDamageRuleState->registrations)
 			for (const auto& active : registration.rules)
 			{
 				const ModuleDamageRule& rule = active.resolved.rule;
-				if (context.payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed && rule.incoming && MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext))
+				if (context.payload.moduleTriggerPolicy != DamageModuleTriggerPolicy::Suppressed && rule.incoming &&
+					(rule.activeWhileTrigger == ModuleTriggerKind::None || active.remainingSeconds > 0.f) &&
+					MatchesModuleDamageCondition(rule.condition, rule.conditionValue, rule.openingShotCount, conditionContext))
 					context.remainingDamage *= rule.damageMultiplier;
 			}
 		frame.capturesEffectEvents = true;

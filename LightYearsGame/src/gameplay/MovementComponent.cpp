@@ -285,29 +285,41 @@ namespace ly
 		}
 	}
 
+	void MovementComponent::SetModuleMovementRule(float thrustBonus, bool equalizeDirections)
+	{
+		mModuleThrustBonus = thrustBonus;
+		mModuleDirectionalThrustSync = equalizeDirections;
+	}
+
+	float MovementComponent::ResolveThrustMultiplier() const
+	{
+		// Same clamp as SpaceShip::GetThrustMultiplier, with the module bonus added before the clamp.
+		return std::max(0.f, 1.f + GetShip().GetRuntimeModifiers().GetThrustBonus() + mModuleThrustBonus);
+	}
+
 	float MovementComponent::ResolveForwardThrust() const
 	{
-		return mMovementAttributes.forwardThrust.currentValue * GetShip().GetThrustMultiplier();
+		return mMovementAttributes.forwardThrust.currentValue * ResolveThrustMultiplier();
 	}
 
 	float MovementComponent::ResolveReverseThrust() const
 	{
-		return HasDirectionalThrustSync()
+		return IsDirectionalThrustEqualized()
 			? ResolveForwardThrust()
-			: mMovementAttributes.reverseThrust.currentValue * GetShip().GetThrustMultiplier();
+			: mMovementAttributes.reverseThrust.currentValue * ResolveThrustMultiplier();
 	}
 
 	float MovementComponent::ResolveStrafeThrust() const
 	{
-		return HasDirectionalThrustSync()
+		return IsDirectionalThrustEqualized()
 			? ResolveForwardThrust()
-			: mMovementAttributes.strafeThrust.currentValue * GetShip().GetThrustMultiplier();
+			: mMovementAttributes.strafeThrust.currentValue * ResolveThrustMultiplier();
 	}
 
 	float MovementComponent::ResolveCurrentSpeedCap(float speedCapMultiplier) const
 	{
 		return mMovementPolicies.ResolveSpeedCap(
-			mMovementAttributes.maxSpeed.currentValue,
+			mMovementAttributes.maxSpeed.currentValue * std::max(0.f, 1.f + mModuleThrustBonus),
 			speedCapMultiplier
 		);
 	}

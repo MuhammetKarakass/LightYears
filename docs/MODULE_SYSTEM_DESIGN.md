@@ -20,6 +20,8 @@ Toplam kapasite tüm gemilerde aynıdır.
 
 ### 1.1 Genel modül davranışı ilkesi (2026-10-05)
 
+**Koşu/yolculuk yönü (kullanıcı, 2026-10-13):** Modüller yalnız savaş build'ini değil, yolculuk boyunca bilgi, rota, keşif ve kaynak kararlarını da etkileyebilir. Kullanıcı Survey Relay ve Silent Running'i özellikle bu gerekçeyle beğendi; LightYears'ın başlangıçtaki yolculuk kimliğine uygun buldu. Bu yön savaş modüllerini dışlamaz ve her modülün iki alanda birden etki vermesini gerektirmez. Harita/Threat/ekonomi bağımlı taslaklar, ilgili sistemler uygulanana kadar plan olarak kalır; nadirlik güç ve etkiye göre ayrıca seçilir.
+
 Modüller sayısal değerleri artırabilir, koşullu etkiler ekleyebilir veya mevcut bir davranışı değiştirebilir. Bu tasarım alanı tüm oyun sistemleri için geçerlidir: ana silah, şarjör/yeniden doldurma, yetenek, hareket, kalkan, kaynak kullanımı, hedefleme ve diğer mekanikler. Yeni modül önerileri yalnız effect/status sisteminden üretilmemelidir.
 
 Kullanıcının elektrik stack sınırı/stack başına çarpan ve Ignite yanması yerine eşikte Thermal patlaması örnekleri, mevcut bir davranışı yeniden tanımlamanın mümkün olduğunu anlatır. Bunlar kesinleşmiş içerik, sayısal denge sözleşmesi veya uygulama talebi değildir. Düz stat modülleri de geçerlidir; güçleri nadirliğine uygun seçilir. Davranış değiştiren modüllerin güçlendirme tasarımında hangi değerin veya davranış parçasının geliştiği ayrıca belirtilmelidir; bu ilke bir seviye sayısını ya da ilerleme formülünü kesinleştirmez.
@@ -49,7 +51,9 @@ Kullanıcının elektrik stack sınırı/stack başına çarpan ve Ignite yanmas
 
 ## 3. Bölgeler ve aileler
 
-Modül aileleri yeteneklerin kategorileriyle **aynıdır**; ayrı bir aile listesi yoktur. Bir modülün ailesi hem bölge bonusunu hem de (yetenek kapsamlı modüllerde) hangi yetenekleri etkilediğini belirler.
+Mevcut runtime'da gemi modülü aileleri yeteneklerin kategorileriyle **aynıdır**: Primary, Offense, Defense, Movement ve Utility. Bir modülün ailesi hem bölge bonusunu hem de (yetenek kapsamlı modüllerde) hangi yetenekleri etkilediğini belirler.
+
+**Planlı sınıf ayrımı (kullanıcı, 2026-10-13):** Combo Sequencer ve Ultimate Protocol, Utility ailesi yerine ayrı **Yetenek modülü** sınıfında izlenir. Bu tasarım sınıfı beş gemi ailesinden ve mevcut Q/E/F/R sistem kabuklarından ayrıdır; yeni bir aktif yetenek ailesi veya runtime enum'u uygulanmış değildir. Yerleşim, bölge bonusu ve yetenek kabuğuna bağlanma kuralları henüz açık. Diğer yetenek odaklı modüller otomatik taşınmaz. Ayrıntılar ve güncel sayım [modül kataloğunda](modules.md#sayısal-envanter--2026-10-13).
 
 | Bölge | Konum | Bonus aldığı aile | Varsayılan modül |
 |---|---|---|---|
@@ -107,6 +111,18 @@ Varsayılan göstergeler 1 hücredir. Bunları sökmek NieR'deki gibi "son hücr
 
 ## 5. Modül arketipleri (tarihsel tasarım örnekleri)
 
+### Güncel aile boyut karakteri — kullanıcı, 2026-10-13
+
+| Aile | Genel hücre yönü |
+|---|---|
+| Offense | Çoğunlukla 2–3 hücre |
+| Defense | Çoğunlukla 2–3 hücre |
+| Utility | Çoğunlukla 1–2 hücre |
+| Movement | Çoğunlukla 1–2 hücre; 3 hücreli seçenek Utility'ye göre daha yaygın olabilir |
+| Primary | Çoğunlukla 1–2 hücre |
+
+Bu kullanıcı genellemesidir, katı boyut yasağı veya otomatik yeniden boyutlandırma değildir: 3 hücreli Utility ve 1 hücreli Defense gibi gerekçeli istisnalar olabilir. Nadirlik tek başına hücre sayısını belirlemez. Boyut merdiveninde ana/yan güç ve şekil birlikte değerlendirilir. Hunt Clock dört aile sürümü olan seri olarak ailelerin özgün çeşitlilik karşılaştırmasında ayrı gösterilir; mevcut aile/bölge ve runtime slot sözleşmeleri değişmez. Kullanıcı Rare Utility sayısını 6–7 aralığına indirmek istiyor; somut aday seçimleri katalog tasarım turunda netleştirilecek. Aşağıdaki arketip örnekleri tarihsel olmaya devam eder.
+
 Bu arketipler ve örnek sayılar ilk modül taslağından kalır. Güncel Common tanımları tek temel varyantla `modules.json` içinde tutulur.
 
 | Arketip | Kural | Örnek |
@@ -120,12 +136,23 @@ Bu arketipler ve örnek sayılar ilk modül taslağından kalır. Güncel Common
 
 ## 6. Nadirlik (güncel karar ve geçersiz tarihsel taslak)
 
+### 6.1 Epic / Legendary ayrımı — kullanıcı kararı, 2026-10-14
+
+- **Epic**, diğer normal nadirlikler gibi modül kurallarını izler. Düz stat, koşullu bonus, tetik veya davranış değişimi içerebilir; kimliği tamamen değiştirmesi zorunlu değildir. Boyut, yan özellik ve bölge bonusu normal modül sözleşmesine göre belirlenir. Epic için otomatik iki yan özellik kuralı yoktur.
+- **Normal nadirlik sürekliliği (kullanıcı netleştirmesi, 2026-10-14):** Uncommon ve Rare için kullanılan tasarım mantığı Epic'te de devam eder; her nadirlik bir öncekinin üst güç/etki basamağıdır. Epic için ayrı bir mekanik tasarım yaklaşımı aranmaz. Bu ilke aynı modülün her nadirlikte kopyasını veya sabit bir yüzde artışını zorunlu kılmaz. Legendary'nin kimlik dönüşümü sözleşmesi ayrı kalır.
+- **Legendary**, oynanış/build kimliğini tamamen değiştiren güçlü bir davranış değişimidir. Her Legendary yalnız **bir sabit boyutta** bulunur; bu, bir hücre demek değildir. Yan özelliği yoktur ve aile bölgesi/Gövde dahil **hiçbir bölge bonusu almaz**. Etkisi birden fazla kategoriyi kapsayabilir; bu kapsam yeni aile veya birden fazla aile kimliği gerektirdiği anlamına gelmez.
+- Bu karar güncel tasarım sözleşmesidir; aşağıdaki tarihsel nadirlik yorumlarından önce gelir. Legendary'nin ilerleme/seviye, birlikte takılma sayısı ve loot kuralları bu kararla belirlenmiş değildir. Runtime değişikliği yapılmış sayılmaz.
+
+### 6.2 Önceki yön ve tarihsel taslak
+
+**Yan özellik taşıyıcısında nadirlik serbestliği (kullanıcı, 2026-10-13):** Bir fikir daha önce Uncommon ana modül diye tasarlanmış olması nedeniyle yalnız Uncommon modüllere bağlanmaz; Rare veya Epic modülde yan olabilir. Önceki ana modülün nadirliği yeni yanın taşıyıcısına sınır koymaz. Bağlantı oynanış ilişkisine göre seçilir; sayılar taşıyıcı ve yan rolü için ayrıca dengelenir. Bu karar tek tek taşıyıcı önerilerinin kabulü değildir.
+
 Kullanıcının 2026-10-03 kararı ve 2026-10-05 düzeltmesi: nadirlik hem kimlik hem güç basamağıdır; yalnız kaliteyle açıklanmaz ve kalite artışını dışlamaz. Düz stat modülü Uncommon'da da olabilir; artış Uncommon'a uygun olmalıdır. Legendary'de stat artışı varsa Legendary'ye layık olmalıdır. Etki türlerine katı nadirlik sınırı yoktur; davranış değiştirme yalnız belirli nadirliklere veya effect/status sistemine ayrılmaz. Boyut nadirlikten bağımsızdır. Bu sistemin ilerleme/loot uygulaması Common kapsamı dışındadır. Aşağıdaki eski kalite/yan stat tablosu güncel kural değildir; yalnız tarihsel kayıt olarak korunur. Güncel Common değerleri uygulama planı §2 ve `modules.json`'dadır.
 
 | Nadirlik | Ne ekler |
 |---|---|
 | **Common** | Yalnız ana değer |
-| **Rare** | Ana değer ~%10 yüksek ve 1 küçük yan stat |
+| **Rare** | Ana değer ~%10 yüksek (genel ilke; Rare modül değerleri [modules.md](modules.md) içinde tek tek tanımlı). Tek boyutlu Rare yan stat taşımaz; merdivenli Rare en büyük boyutta 1 yan özellik açar (kullanıcı, 2026-10-08) |
 | **Epic** | Ana değer ~%10 yüksek ve 2 yan stat |
 | **Legendary** | Sabit, benzersiz bir mekanik; yalnız belli modüllerde çıkar |
 

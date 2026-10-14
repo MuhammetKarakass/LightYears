@@ -5,7 +5,7 @@
 		"ditherSpread": 0.1
 	},
 	"nebula": {
-		"resolutionDivisor": 4
+		"resolutionDivisor": 2
 	},
 	"bloom": {
 		"enabled": true,
@@ -22,21 +22,109 @@
 	},
 	"planet": {
 		"enabled": true,
-		"screenX": 0.95,
-		"screenY": 0.14,
-		"radius": 0.15,
-		"parallax": 0.025,
-		"brightness": 0.45,
-		"saturation": 0.55,
+		"screenX": 0.88,
+		"screenY": 0.0,
+		"radius": 0.32,
+		"parallax": 0.085,
+		"brightness": 0.44,
+		"saturation": 0.85,
+		"opacity": 1.0,
 		"rotationSpeed": 0.03,
-		"dither": 0.3
+		"dither": 0.0
+	},
+	"hostStar": {
+		"enabled": true,
+		"screenX": 0.5,
+		"screenY": 0.05,
+		"radiusAt1AU": 0.006,
+		"glowRadius": 0.22,
+		"intensity": 1.0,
+		"parallax": 0.006
+	},
+	"starField": {
+		"baseCount": 650,
+		"maxCount": 1600,
+		"brightestMagnitude": -1.5,
+		"faintestMagnitude": 6.5,
+		"magnitudeSlope": 0.5,
+		"minLevel": 0.24,
+		"levelGamma": 1.08,
+		"spikeMagnitude": -2.5,
+		"variableFraction": 0.01,
+		"bandFraction": 0.5,
+		"nearFraction": 0.14,
+		"farParallax": 0.035,
+		"nearParallax": 0.5
+	},
+	"milkyWay": {
+		"enabled": true,
+		"angleDeg": 28,
+		"offset": 0.16,
+		"width": 0.27,
+		"intensity": 1.0,
+		"dustLane": 0.8,
+		"parallax": 0.01,
+		"glowIntensity": 0.12
+	},
+	"skyPaint": {
+		"enabled": false,
+		"coverage": 0.36,
+		"intensity": 1.0,
+		"centerCalm": 0.9,
+		"farParallax": 0.015,
+		"midParallax": 0.035,
+		"nearParallax": 0.07
+	},
+	"physicalNebula": {
+		"enabled": false,
+		"emissionRadius": 0.18,
+		"emissionDensity": 0.6,
+		"dustOpticalDepth": 0.9,
+		"dustSize": 0.35,
+		"reflection": 0.5,
+		"parallax": 0.03,
+		"palette": "trueColor",
+		"saturation": 1.35
+	},
+	"anomalies": {
+		"pulsarChance": 0.15,
+		"shatteredMoonChance": 0.2,
+		"cometChance": 0.0,
+		"lensEinsteinRadius": 0.26,
+		"lensShadowRadius": 0.05,
+		"lensRingBrightness": 0.45
+	},
+	"warp": {
+		"maxBeta": 0.92,
+		"rampSeconds": 1.2,
+		"fieldOfViewRad": 3.0
+	},
+	"backgroundGrade": {
+		"enabled": true,
+		"contrast": 1.28,
+		"saturation": 1.6,
+		"blackPoint": 0.012,
+		"shadowTint": [0.55, 0.45, 1.0],
+		"shadowTintStrength": 0.08,
+		"highlightTint": [1.0, 0.88, 0.72],
+		"highlightTintStrength": 0.12
+	},
+	"backgroundStyle": {
+		"enabled": false,
+		"pixelSize": 0,
+		"toneLevels": 5,
+		"ditherSpread": 0.12,
+		"roles": ["background", "emissionRed", "emissionTeal", "galaxyLight", "bulgeLight", "ambient", "ambient2"]
+	},
+	"nearField": {
+		"enabled": true
 	},
 	"energy": {
 		"maxDraws": 96,
 		"maxAreaRatio": 1.5,
 		"tierMaxBrightness": {
-			"background": 0.35,
-			"environment": 0.5,
+			"background": 0.62,
+			"environment": 0.65,
 			"decorative": 0.65,
 			"enemyProjectile": 0.85,
 			"player": 1.0

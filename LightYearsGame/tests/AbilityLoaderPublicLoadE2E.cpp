@@ -48,10 +48,41 @@ namespace ly
 				content::AbilityContentCatalog::GetDefinitions().empty() &&
 				content::AbilityContentCatalog::FindById(ShippedAbilityId) == nullptr;
 		}
+
+		bool HasCanonicalDashTags(const GameAbilityDefinition* definition)
+		{
+			if (!definition || definition->abilityTags.size() != 2) return false;
+			std::size_t categoryCount = 0;
+			bool hasMovement = false;
+			bool hasDash = false;
+			for (const GameplayTag& tag : definition->abilityTags)
+			{
+				categoryCount += GameplayTagSchema::IsAbilityCategory(tag) ? 1 : 0;
+				hasMovement = hasMovement || tag.MatchesTagExact(GameplayTags::Ability::Movement);
+				hasDash = hasDash || tag.MatchesTagExact(GameplayTags::Ability::Family::Dash);
+			}
+			return categoryCount == 1 && hasMovement && hasDash;
+		}
+
+		Json DashTagNames(const GameAbilityDefinition* definition)
+		{
+			Json names = Json::array();
+			if (definition)
+			{
+				for (const GameplayTag& tag : definition->abilityTags) names.push_back(tag.name);
+			}
+			return names;
+		}
 	}
 
 	int RunAbilityLoaderPublicLoadE2E(const char* artifactPath, const std::string& setupError)
 	{
+		const GameAbilityDefinition* builtinDash = nullptr;
+		for (const GameAbilityDefinition* definition : AbilityData::GetBuiltinShippedAbilityDefinitions())
+		{
+			if (definition && definition->abilityId == AbilityData::Dash::AbilityId::Basic) builtinDash = definition;
+		}
+		const bool builtinDashTagsValid = HasCanonicalDashTags(builtinDash);
 		const std::filesystem::path shippedPath =
 			std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } /
 			"LightYearsGame/assets/content/data/abilities.json";
@@ -145,6 +176,9 @@ namespace ly
 			content::AbilityContentCatalog::IsLoaded() &&
 			content::AbilityContentCatalog::GetDefinitions().size() == expectedDefinitionCount &&
 			content::AbilityContentCatalog::FindById(ShippedAbilityId) != nullptr;
+		const GameAbilityDefinition* loadedDash = content::AbilityContentCatalog::FindById(AbilityData::Dash::AbilityId::Basic);
+		const bool loadedDashTagsValid = validLoadSucceeded && HasCanonicalDashTags(loadedDash);
+		const Json loadedDashTagNames = DashTagNames(loadedDash);
 
 		std::string missingFieldFailure;
 		const bool missingFieldLoadSucceeded = fixtureError.empty() &&
@@ -186,13 +220,15 @@ namespace ly
 
 		const bool bootstrapSucceeded = setupError.empty();
 		const bool fixtureCreationSucceeded = fixtureError.empty();
-		const bool passed = bootstrapSucceeded && fixtureCreationSucceeded && validLoadCatalogReady &&
+		const bool passed = bootstrapSucceeded && fixtureCreationSucceeded && validLoadCatalogReady && builtinDashTagsValid && loadedDashTagsValid &&
 			missingFieldRejected && missingFieldFailureClearedCatalog && recoveredAfterMissing &&
 			invalidFieldRejected && invalidFieldFailureClearedCatalog && recoveredAfterInvalid &&
 			missingFileRejected && missingFileFailureClearedCatalog && recoveredAfterMissingFile;
 
 		nlohmann::json result{
 			{ "assertions", {
+				{ "builtinDashHasCanonicalCategoryAndFamilyTags", builtinDashTagsValid },
+				{ "loadedDashPreservesCanonicalCategoryAndFamilyTags", loadedDashTagsValid },
 				{ "validShippedJsonLoadsThroughPublicCatalog", validLoadCatalogReady },
 				{ "missingCooldownFieldRejected", missingFieldRejected },
 				{ "missingFieldFailureClearsCatalog", missingFieldFailureClearedCatalog },
@@ -205,6 +241,8 @@ namespace ly
 				{ "catalogRecoversAfterAbsentFileFailure", recoveredAfterMissingFile }
 			} },
 			{ "input", {
+				{ "dashAbilityId", AbilityData::Dash::AbilityId::Basic },
+				{ "expectedDashTags", { GameplayTags::Ability::Movement.name, GameplayTags::Ability::Family::Dash.name } },
 				{ "catalogEntryPoint", "AbilityContentCatalog::LoadFromFile" },
 				{ "expectedDefinitionCount", expectedDefinitionCount },
 				{ "expectedDefinitionId", ShippedAbilityId },
@@ -214,6 +252,8 @@ namespace ly
 				{ "shippedJson", "LightYearsGame/assets/content/data/abilities.json" }
 			} },
 			{ "outcome", {
+				{ "builtinDashTags", DashTagNames(builtinDash) },
+				{ "loadedDashTags", loadedDashTagNames },
 				{ "abilityCatalogLoadedAtEnd", content::AbilityContentCatalog::IsLoaded() },
 				{ "definitionCountAtInitialLoad", validLoadCatalogReady ? expectedDefinitionCount : 0 },
 				{ "failureReasonsReported", {

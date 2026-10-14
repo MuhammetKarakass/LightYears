@@ -1,6 +1,7 @@
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
 
 #include <utility>
+#include <unordered_map>
 
 namespace ly::content
 {
@@ -18,6 +19,18 @@ namespace ly::content
 			return pools;
 		}
 
+		std::unordered_map<std::string, std::size_t>& MutableIndex()
+		{
+			static std::unordered_map<std::string, std::size_t> index;
+			return index;
+		}
+
+		std::unordered_map<std::string, std::size_t>& MutablePoolIndex()
+		{
+			static std::unordered_map<std::string, std::size_t> index;
+			return index;
+		}
+
 		bool& GetLoadedState()
 		{
 			static bool loaded = false;
@@ -27,16 +40,14 @@ namespace ly::content
 
 	const ModuleSideFeatureDefinition* ModuleSideFeatureCatalog::FindById(const sas::ContentId& sideFeatureId)
 	{
-		for (const ModuleSideFeatureDefinition& definition : MutableDefinitions())
-			if (definition.sideFeatureId == sideFeatureId) return &definition;
-		return nullptr;
+		const auto found = MutableIndex().find(sideFeatureId.ToString());
+		return found != MutableIndex().end() ? &MutableDefinitions()[found->second] : nullptr;
 	}
 
 	const ModuleSideFeaturePool* ModuleSideFeatureCatalog::FindPool(const sas::ContentId& poolId)
 	{
-		for (const ModuleSideFeaturePool& pool : MutablePools())
-			if (pool.poolId == poolId) return &pool;
-		return nullptr;
+		const auto found = MutablePoolIndex().find(poolId.ToString());
+		return found != MutablePoolIndex().end() ? &MutablePools()[found->second] : nullptr;
 	}
 
 	const List<ModuleSideFeatureDefinition>& ModuleSideFeatureCatalog::GetDefinitions() { return MutableDefinitions(); }
@@ -45,7 +56,14 @@ namespace ly::content
 
 	void ModuleSideFeatureCatalog::Commit(List<ModuleSideFeatureDefinition> definitions, List<ModuleSideFeaturePool> pools)
 	{
+		std::unordered_map<std::string, std::size_t> index, poolIndex;
+		index.reserve(definitions.size());
+		poolIndex.reserve(pools.size());
+		for (std::size_t i = 0; i < definitions.size(); ++i) index.emplace(definitions[i].sideFeatureId.ToString(), i);
+		for (std::size_t i = 0; i < pools.size(); ++i) poolIndex.emplace(pools[i].poolId.ToString(), i);
 		MutableDefinitions() = std::move(definitions);
+		MutableIndex() = std::move(index);
+		MutablePoolIndex() = std::move(poolIndex);
 		MutablePools() = std::move(pools);
 		GetLoadedState() = true;
 	}

@@ -579,9 +579,25 @@ namespace ly
 		float multiplier = 1.f;
 		for (const auto& entry : mScopedAbilityCooldownRules)
 		{
+			if (entry.second.requiredSlot != sas::AbilitySlot::None && entry.second.requiredSlot != definition.slot) continue;
 			if (abilityTags.HasAll(entry.second.requiredAbilityTags)) multiplier *= entry.second.multiplier;
 		}
 		return multiplier;
+	}
+
+	float LightYearsAbilitySystemComponent::GetScopedAbilityCooldownMinimum(const GameAbilityDefinition& definition) const
+	{
+		if (!sas::IsLoadoutAbilitySlot(definition.slot)) return 0.f;
+
+		GameplayTagContainer abilityTags;
+		for (const GameplayTag& tag : definition.abilityTags) abilityTags.AddTag(tag);
+		float minimum = 0.f;
+		for (const auto& entry : mScopedAbilityCooldownRules)
+		{
+			if (entry.second.requiredSlot != sas::AbilitySlot::None && entry.second.requiredSlot != definition.slot) continue;
+			if (abilityTags.HasAll(entry.second.requiredAbilityTags)) minimum = std::max(minimum, entry.second.minimumSeconds);
+		}
+		return minimum;
 	}
 
 	sas::GameplayAttribute LightYearsAbilitySystemComponent::ApplyScopedAbilityModifiers(

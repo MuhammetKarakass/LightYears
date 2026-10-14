@@ -13,10 +13,22 @@ namespace ly
 	class ProjectileInterceptionBoundary
 	{
 	public:
-		virtual ~ProjectileInterceptionBoundary() = default;
+		virtual ~ProjectileInterceptionBoundary() { --sLiveBoundaries; }
 		virtual bool TryInterceptProjectile(
 			AbilityWorldActor& projectile,
 			const sf::Vector2f& previousLocation
 		) = 0;
+
+		// Boundaries alive in any world. Every projectile asks the service every frame, so with none alive
+		// (the usual case) the service skips its world scan entirely.
+		static int GetLiveCount() { return sLiveBoundaries; }
+
+	protected:
+		ProjectileInterceptionBoundary() { ++sLiveBoundaries; }
+		ProjectileInterceptionBoundary(const ProjectileInterceptionBoundary&) { ++sLiveBoundaries; }
+		ProjectileInterceptionBoundary& operator=(const ProjectileInterceptionBoundary&) = default;
+
+	private:
+		inline static int sLiveBoundaries = 0;
 	};
 }

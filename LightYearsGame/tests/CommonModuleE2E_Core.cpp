@@ -150,16 +150,8 @@ namespace common_module_e2e
 		report.Check(sourceLoadout.Install(rules, focusedBarrelId, focusedBarrelPlacementCandidate->origin,
 			focusedBarrelPlacementCandidate->rotationQuarterTurns) == ModulePlacementFailure::None &&
 			source->GetModuleApplier().Apply(sourceLoadout, rules), "Focused Barrel applies to the real PrimaryFire loadout");
-		const ModulePlacement focusedBarrelPlacement = FindInstalled(sourceLoadout, focusedBarrelId);
-		const ModuleAttributeModifier& focusedBarrelModifier = focusedBarrelModule->sizeVariants.front().attributeModifiers.front();
-		const float focusedBarrelZoneScale = focusedBarrelModifier.affectedByZoneBonus
-			? 1.f + ModuleResolver::GetZoneBonus(rules, *focusedBarrelModule, focusedBarrelPlacement)
-			: 1.f;
-		const float focusedBarrelEffectiveMultiplier = 1.f +
-			(focusedBarrelModifier.modifier.magnitude - 1.f) * focusedBarrelZoneScale;
-		report.CheckValue("Focused Barrel changes resolved PrimaryFire damage by its zone-scaled catalog modifier",
-			primaryDamageBeforeFocusedBarrel + 10.f * (focusedBarrelEffectiveMultiplier - 1.f),
-			resolvePrimaryDamage(), "PrimaryFire FireWeaponAction resolved before and after Focused Barrel install");
+		report.CheckValue("Focused Barrel preserves pre-impact weapon scaling", primaryDamageBeforeFocusedBarrel, resolvePrimaryDamage(), "whole-hit multiplier is applied at impact");
+		report.CheckValue("Focused Barrel multiplies complete Primary hits", 1.3f, source->GetCombatRuntime().ResolveOutgoingDamagePlan(*target, { GameplayTags::Ability::Primary }).damageMultiplier, "Primary impact plan includes Attack Power scaling");
 		const float attackSpeedBase = sourceAbilities.GetAttributes().GetCurrentValue(OwnerAttributeIds::AttackSpeed);
 		GameAbility* offenseAbility = sourceAbilities.GetAbility(sas::AbilitySlot::Ability3);
 		report.Check(offenseAbility && std::any_of(offenseAbility->GetDefinition().abilityTags.begin(),

@@ -36,6 +36,7 @@ namespace ly
 	{
 		mGameplayEventHandle = mAbilities.onGameplayEvent.BindAction(this, &ModuleTriggerRuntime::OnGameplayEvent);
 		mShieldDamagedHandle = mShield.onShieldDamaged.BindAction(this, &ModuleTriggerRuntime::OnShieldDamaged);
+		mShieldChangedHandle = mShield.onShieldChanged.BindAction(this, &ModuleTriggerRuntime::OnShieldChanged);
 	}
 
 	ModuleTriggerRuntime::~ModuleTriggerRuntime()
@@ -43,6 +44,7 @@ namespace ly
 		mShuttingDown = true;
 		mAbilities.onGameplayEvent.UnbindAction(mGameplayEventHandle);
 		mShield.onShieldDamaged.UnbindAction(mShieldDamagedHandle);
+		mShield.onShieldChanged.UnbindAction(mShieldChangedHandle);
 		mPendingRules.reset();
 		mPendingEvents.clear();
 		DispatchDepthScope dispatchScope{ mDispatchDepth };
@@ -103,6 +105,7 @@ namespace ly
 	{
 		if (mShuttingDown) return;
 		const DamageContext* damage = event.GetContext<DamageContext>();
+		if (event.eventTag == GameplayTags::Event::Owner::DamageTaken && damage && damage->target != &mAbilities.GetOwner()) return;
 		if (event.eventTag == GameplayTags::Event::Combat::KillConfirmed &&
 			(!damage || damage->payload.skipModuleDamageRules || damage->source != &mAbilities.GetOwner() || !damage->targetWasKilled || !damage->targetWasEnemyCombatant)) return;
 		mPendingEvents.push_back({ ModuleTriggerFromEventTag(event.eventTag), event.magnitude, event.sourceAbilityTags,
@@ -118,9 +121,26 @@ namespace ly
 		(void)maxShield;
 		if (!mShuttingDown && absorbed > 0.f && remainingShield == 0.f)
 		{
+			if (mShield.GetModuleBehavior().breakRearmFraction > 0.f)
+			{
+				if (mShieldBreakLatched) return;
+				mShieldBreakLatched = true;
+			}
+			else
+			{
+				mShieldBreakLatched = false;
+			}
 			mPendingEvents.push_back({ ModuleTriggerKind::ShieldBroken, absorbed, {}, {}, mShield.IsAbsorbingModuleDamage(), mShield.IsAbsorbingModuleDamage() });
 			ProcessDeferredUpdates();
 		}
+	}
+
+	void ModuleTriggerRuntime::OnShieldChanged(float delta, float remainingShield, float maxShield)
+	{
+		(void)delta;
+		if (mShuttingDown || !mShieldBreakLatched) return;
+		const float rearmFraction = mShield.GetModuleBehavior().breakRearmFraction;
+		if (rearmFraction <= 0.f || remainingShield >= maxShield * rearmFraction) mShieldBreakLatched = false;
 	}
 
 	void ModuleTriggerRuntime::ProcessEvent(const EventSnapshot& event)

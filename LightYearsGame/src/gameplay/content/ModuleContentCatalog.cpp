@@ -8,6 +8,7 @@
 #include <set>
 #include <stdexcept>
 #include <utility>
+#include <unordered_map>
 
 namespace ly::content
 {
@@ -17,6 +18,26 @@ namespace ly::content
 		{
 			static List<ModuleDefinition> definitions;
 			return definitions;
+		}
+
+		std::unordered_map<std::string, std::size_t>& MutableIndex()
+		{
+			static std::unordered_map<std::string, std::size_t> index;
+			return index;
+		}
+
+		std::uint64_t& MutableRevision()
+		{
+			static std::uint64_t revision = 0;
+			return revision;
+		}
+
+		std::unordered_map<std::string, std::size_t> BuildIndex(const List<ModuleDefinition>& definitions)
+		{
+			std::unordered_map<std::string, std::size_t> index;
+			index.reserve(definitions.size());
+			for (std::size_t i = 0; i < definitions.size(); ++i) index.emplace(definitions[i].moduleId.ToString(), i);
+			return index;
 		}
 
 		ModuleZoneTable& MutableZoneTable()
@@ -32,9 +53,7 @@ namespace ly::content
 		}
 	}
 
-	bool ModuleContentCatalog::LoadFromFile(
-		const std::filesystem::path& filePath,
-		std::string* failureReason)
+	bool ModuleContentCatalog::LoadFromFile(const std::filesystem::path& filePath, std::string* failureReason)
 	{
 		ModuleLoader::Result loaded = ModuleLoader::LoadFromFile(filePath);
 		if (!loaded.Succeeded())
@@ -53,10 +72,13 @@ namespace ly::content
 				if (failureReason) *failureReason = "Module definitions require module_side_features.json";
 				return false;
 			}
+		auto index = BuildIndex(loaded.definitions);
 		MutableDefinitions() = std::move(loaded.definitions);
+		MutableIndex() = std::move(index);
 		MutableZoneTable() = std::move(loaded.zoneTable);
 		ModuleSideFeatureCatalog::Commit({}, {});
 		GetLoadedState() = true;
+		++MutableRevision();
 		return true;
 	}
 
@@ -125,6 +147,7 @@ namespace ly::content
 				for (const ModuleSizeVariant& variant : module.sizeVariants)
 				{
 					const ModuleGeneratedRules& main = variant.generatedRules;
+					if (!side.speedLances.empty() && (main.speedLances.empty() || side.speedLances.front().speedDamageCoefficient > 0.f)) throw std::runtime_error("Speed Lance side features must modify an existing main source: " + feature.sideFeatureId.ToString());
 					if (!side.guidedSalvos.empty() && !main.guidedSalvos.empty() && side.guidedSalvos.front().damageType.IsValid() && main.guidedSalvos.front().damageType.IsValid() && side.guidedSalvos.front().damageType != main.guidedSalvos.front().damageType)
 						throw std::runtime_error("Side feature " + feature.sideFeatureId.ToString() + " uses a different guided salvo damage type than module " + module.moduleId.ToString());
 					if (!side.trailMines.empty() && !main.trailMines.empty() && side.trailMines.front().damageType.IsValid() && main.trailMines.front().damageType.IsValid() && side.trailMines.front().damageType != main.trailMines.front().damageType)
@@ -171,23 +194,20 @@ namespace ly::content
 			return false;
 		}
 
+		auto index = BuildIndex(modules.definitions);
 		MutableDefinitions() = std::move(modules.definitions);
+		MutableIndex() = std::move(index);
 		MutableZoneTable() = std::move(modules.zoneTable);
 		ModuleSideFeatureCatalog::Commit(std::move(sideFeatures.definitions), std::move(sideFeatures.pools));
 		GetLoadedState() = true;
+		++MutableRevision();
 		return true;
 	}
 
 	const ModuleDefinition* ModuleContentCatalog::FindById(const sas::ContentId& moduleId)
 	{
-		for (const ModuleDefinition& definition : MutableDefinitions())
-		{
-			if (definition.moduleId == moduleId)
-			{
-				return &definition;
-			}
-		}
-		return nullptr;
+		const auto found = MutableIndex().find(moduleId.ToString());
+		return found != MutableIndex().end() ? &MutableDefinitions()[found->second] : nullptr;
 	}
 
 	const List<ModuleDefinition>& ModuleContentCatalog::GetDefinitions()
@@ -199,6 +219,8 @@ namespace ly::content
 	{
 		return MutableZoneTable();
 	}
+
+	std::uint64_t ModuleContentCatalog::GetRevision() noexcept { return MutableRevision(); }
 
 	bool ModuleContentCatalog::IsLoaded() noexcept
 	{

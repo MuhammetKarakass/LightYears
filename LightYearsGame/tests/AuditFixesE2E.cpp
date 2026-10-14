@@ -2041,6 +2041,8 @@ namespace ly
 			const bool firstActivationUsedOldSnapshot = firstSnapshotEndMagnitudes == std::vector<int>{ 701 };
 			actionSystem.SetAbilitySlotInput(sas::AbilitySlot::Ability4, false);
 			actionSystem.Tick(0.01f);
+			// Multi-charge uses are separated by the shipped anti-spam gap (AbilityDefinition::chargeUseInterval).
+			actionSystem.Tick(actionSystem.GetAbility(snapshotHandle)->GetDefinition().chargeUseInterval);
 			snapshotAudit.magnitudes.clear();
 			snapshotAudit.order.clear();
 			actionSystem.SetAbilitySlotInput(sas::AbilitySlot::Ability4, true);
