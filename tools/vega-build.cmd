@@ -17,6 +17,11 @@ if not exist "%REPO%\build\build.ninja" (
     for %%N in (box2d flac freetype harfbuzz json libssh2 mbedtls ogg sfml sheenbidi vorbis) do (
       if not exist "%REPO%\build\_deps\%%N-src" robocopy "%LY_DEPS_SEED%\%%N-src" "%REPO%\build\_deps\%%N-src" /E /NFL /NDL /NJH /NJS /NP >nul
     )
+    rem The editor's dependencies are not in the game's seed; fetch the same pinned archives VegaEditor/CMakeLists.txt names.
+    call :fetch_zip imgui https://github.com/ocornut/imgui/archive/refs/tags/v1.91.6-docking.zip imgui-1.91.6-docking
+    if errorlevel 1 exit /b 1
+    call :fetch_zip imgui-sfml https://github.com/SFML/imgui-sfml/archive/e8ee3667f1b1f731e5c9c32be4c544915291f987.zip imgui-sfml-e8ee3667f1b1f731e5c9c32be4c544915291f987
+    if errorlevel 1 exit /b 1
     set "DISCONNECTED=ON"
   )
   cmake -S "%REPO%" -B "%REPO%\build" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DFETCHCONTENT_FULLY_DISCONNECTED=!DISCONNECTED!
@@ -24,3 +29,15 @@ if not exist "%REPO%\build\build.ninja" (
 )
 cmake --build "%REPO%\build" %*
 exit /b %errorlevel%
+
+rem :fetch_zip <name> <url> <top-level folder inside the zip>
+:fetch_zip
+if exist "%REPO%\build\_deps\%~1-src" exit /b 0
+set "FETCH_TMP=%REPO%\build\_deps\%~1-download"
+if exist "%FETCH_TMP%" rmdir /s /q "%FETCH_TMP%"
+mkdir "%FETCH_TMP%"
+curl -sSL -o "%FETCH_TMP%\src.zip" "%~2" || exit /b 1
+tar -xf "%FETCH_TMP%\src.zip" -C "%FETCH_TMP%" || exit /b 1
+move "%FETCH_TMP%\%~3" "%REPO%\build\_deps\%~1-src" >nul || exit /b 1
+rmdir /s /q "%FETCH_TMP%"
+exit /b 0

@@ -88,6 +88,11 @@ add_subdirectory(LightYearsVisual)
 add_subdirectory(SpaceAbilitySystem)
 add_subdirectory(LightYearsGame)
 
+option(VEGA_BUILD_EDITOR "Build the Vega editor" ON)
+if(VEGA_BUILD_EDITOR)
+	add_subdirectory(VegaEditor)
+endif()
+
 # First-party targets (LightYearsEngine, LightYearsVisual, SpaceAbilitySystem,
 # LightYearsGameplayCore, LightYearsGame and their test executables). Each of
 # these directories lists only its own targets, not the fetched dependencies.
