@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include "framework/TimerManager.h"
 #include "framework/FramePacer.h"
+#include "framework/RenderViewport.h"
 
 namespace ly
 {
@@ -33,6 +34,9 @@ namespace ly
 			return mWindow;
 		}
 
+		RenderViewport& GetWindowViewport() { return mWindowViewport; }
+		const RenderViewport& GetWindowViewport() const { return mWindowViewport; }
+
 		// Non-owning; the derived application owns the pipeline and must outlive the worlds that render with it.
 		WorldRenderPipeline* GetWorldRenderPipeline() const { return mRenderPipeline; }
 		void SetWorldRenderPipeline(WorldRenderPipeline* pipeline) { mRenderPipeline = pipeline; }
@@ -48,6 +52,7 @@ namespace ly
 
 	private:
 		sf::RenderWindow mWindow;
+		WindowRenderViewport mWindowViewport;
 		WorldRenderPipeline* mRenderPipeline = nullptr;
 		float mTargetFrameRate;
 		FramePacer mFramePacer;

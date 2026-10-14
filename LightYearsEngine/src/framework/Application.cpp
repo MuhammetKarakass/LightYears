@@ -32,6 +32,7 @@ namespace ly
 
 	Application::Application(sf::Vector2u Position, unsigned int bit, const std::string& Title, uint32_t Style)
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
+		mWindowViewport{ mWindow },
 		mTargetFrameRate{ 60.f },     
 		mFramePacer{ mTargetFrameRate },
 		mShouldQuit{ false },

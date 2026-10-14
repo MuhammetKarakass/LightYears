@@ -2,6 +2,7 @@
 #include "framework/Actor.h"
 #include "framework/Application.h"
 #include "framework/WorldRenderPipeline.h"
+#include "framework/RenderViewport.h"
 #include "gameplay/GameStage.h"
 #include "widget/HUD.h"
 #include "framework/PerfMonitor.h"
@@ -229,14 +230,18 @@ namespace ly{
 		if(mHUD)
 		{
 			LY_PROFILE_SCOPE("World.HUDTick");
-			if(!mHUD->HasInit())
-				mHUD->NativeInit(mOwningApp->GetRenderWindow());
+			if (RenderViewport* viewport = GetRenderViewport(); viewport && !mHUD->HasInit())
+			{
+				mHUD->NativeInit(viewport->GetRenderTarget());
+			}
 			mHUD->Tick(deltaTime);
 		}
 		if(mOverlayHUD)
 		{
-			if(!mOverlayHUD->HasInit())
-				mOverlayHUD->NativeInit(mOwningApp->GetRenderWindow());
+			if (RenderViewport* viewport = GetRenderViewport(); viewport && !mOverlayHUD->HasInit())
+			{
+				mOverlayHUD->NativeInit(viewport->GetRenderTarget());
+			}
 			mOverlayHUD->Tick(deltaTime);
 		}
 
@@ -617,34 +622,52 @@ namespace ly{
 		window.setView(previousView);
 	}
 
+	void World::SetRenderViewport(RenderViewport* viewport)
+	{
+		mRenderViewport = viewport;
+	}
+
+	RenderViewport* World::GetRenderViewport()
+	{
+		return mRenderViewport ? mRenderViewport : (mOwningApp ? &mOwningApp->GetWindowViewport() : nullptr);
+	}
+
+	const RenderViewport* World::GetRenderViewport() const
+	{
+		return mRenderViewport ? mRenderViewport : (mOwningApp ? &mOwningApp->GetWindowViewport() : nullptr);
+	}
+
 	sf::Vector2u World::GetWindowSize()
 	{
-		return mOwningApp->GetWindowSize();
+		const RenderViewport* viewport = GetRenderViewport();
+		return viewport ? viewport->GetSize() : sf::Vector2u{};
 	}
 
 	sf::View World::GetWorldView() const
 	{
-		if (!mOwningApp)
+		const RenderViewport* viewport = GetRenderViewport();
+		if (!viewport)
 		{
 			return mCameraManager.GetView(sf::View{});
 		}
-		return mCameraManager.GetView(mOwningApp->GetRenderWindow().getDefaultView());
+		return mCameraManager.GetView(viewport->GetDefaultView());
 	}
 
 	sf::Vector2f World::GetMouseWorldPosition() const
 	{
-		if (!mOwningApp)
+		const RenderViewport* viewport = GetRenderViewport();
+		if (!viewport)
 		{
-			// No window to read the cursor from; aim at the view center.
+			// No viewport to read the cursor from; aim at the view center.
 			return GetWorldView().getCenter();
 		}
-		const sf::RenderWindow& window = mOwningApp->GetRenderWindow();
-		return window.mapPixelToCoords(sf::Mouse::getPosition(window), GetWorldView());
+		return viewport->MapPixelToCoords(viewport->GetMousePixelPosition(), GetWorldView());
 	}
 
 	bool World::HasInputFocus() const
 	{
-		return mOwningApp && mOwningApp->GetRenderWindow().hasFocus();
+		const RenderViewport* viewport = GetRenderViewport();
+		return viewport && viewport->HasInputFocus();
 	}
 
 
@@ -742,9 +765,9 @@ namespace ly{
 	}
 	void World::UpdateCamera(float deltaTime)
 	{
-		if (mOwningApp)
+		if (const RenderViewport* viewport = GetRenderViewport())
 		{
-			mCameraManager.Update(deltaTime, mOwningApp->GetRenderWindow().getDefaultView());
+			mCameraManager.Update(deltaTime, viewport->GetDefaultView());
 		}
 	}
 

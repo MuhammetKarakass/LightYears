@@ -17,6 +17,7 @@ namespace ly
 	class Application;
 	class GameStage;
 	class HUD;
+	class RenderViewport;
 	class World: public Object
 	{
 	public:
@@ -93,11 +94,15 @@ namespace ly
 			VisitActorsInBounds(bounds, &visitor, invoke);
 		}
 
+		// The viewport owner must outlive this world. Null restores the application window.
+		void SetRenderViewport(RenderViewport* viewport);
+		RenderViewport* GetRenderViewport();
+		const RenderViewport* GetRenderViewport() const;
+
 		sf::Vector2u GetWindowSize();
 		sf::View GetWorldView() const;
 		sf::Vector2f GetMouseWorldPosition() const;
-		// False for worlds without an application window (headless tests) and
-		// while the window is not focused, so device input is never read then.
+		// False without a viewport or while it lacks focus, so device input is never read then.
 		bool HasInputFocus() const;
 
 		virtual ~World();
@@ -229,6 +234,7 @@ namespace ly
 		};
 
 		Application* mOwningApp;
+		RenderViewport* mRenderViewport = nullptr;
 		bool mBeganPlay;
 		bool mIsPaused;
 
