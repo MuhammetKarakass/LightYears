@@ -1,19 +1,20 @@
 set(LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME LightYearsGameplayCore)
 set(LIGHT_YEARS_GAME_LIB_TARGET_NAME LightYearsGameLib)
+set(LIGHT_YEARS_GAME_APP_TARGET_NAME LightYearsGameApp)
 
 # Sources are discovered by directory; adding a .cpp/.h under src/ or include/ needs no CMake edit.
 # Every .cpp under src/ is compiled (there are no orphan sources). The sources are split into three
 # groups, each compiled exactly once:
 #   LightYearsGameplayCore - reusable gameplay services that depend only on SpaceAbilitySystem
 #   LightYearsGameLib      - the rest of the game that tests can link without a window or visual pipeline
-#   LightYearsGame         - the executable: app entry (gameFramework/) and the LightYearsVisual presenters
+#   LightYearsGameApp      - reusable game application (gameFramework/) and LightYearsVisual presenters
 file(GLOB_RECURSE LY_GAME_CPP CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE LY_GAME_HEADERS CONFIGURE_DEPENDS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 
-# Executable-only code: game application entry and the presenters built on LightYearsVisual.
+# Shared application setup and presenters let other executables reuse the game's visual pipeline.
 set(LY_GAME_APP_DIR_REGEX "/(src|include)/(gameFramework|presentation/visual)/")
 set(LY_GAME_APP_CPP ${LY_GAME_CPP})
 list(FILTER LY_GAME_APP_CPP INCLUDE REGEX "${LY_GAME_APP_DIR_REGEX}")
@@ -75,7 +76,11 @@ target_link_libraries(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
 		nlohmann_json::nlohmann_json
 )
 
-add_executable(${LIGHT_YEARS_GAME_TARGET_NAME} ${LY_GAME_APP_CPP} ${LY_GAME_APP_HEADERS})
+add_library(${LIGHT_YEARS_GAME_APP_TARGET_NAME} STATIC ${LY_GAME_APP_CPP} ${LY_GAME_APP_HEADERS})
+
+# Each executable provides its own GetApplication() hook for the engine entry point.
+add_executable(${LIGHT_YEARS_GAME_TARGET_NAME} app/GameMain.cpp)
+target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC ${LIGHT_YEARS_GAME_APP_TARGET_NAME})
 
 if(MSVC)
 	# Incremental relinks have left copied inline tag/attribute identities empty at startup.
@@ -83,11 +88,11 @@ if(MSVC)
 	target_link_options(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE /INCREMENTAL:NO)
 endif()
 
-target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
+target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME}
+target_link_libraries(${LIGHT_YEARS_GAME_APP_TARGET_NAME}
 	PUBLIC
 		${LIGHT_YEARS_ENGINE_TARGET_NAME}
 		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
@@ -98,7 +103,7 @@ target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME}
 )
 
 # First integration pass: the game reads the visual assets from the source tree so edits hot-reload (F9 forces it).
-target_compile_definitions(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE
+target_compile_definitions(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PRIVATE
 	LY_VISUAL_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets"
 )
 
@@ -444,6 +449,6 @@ configure_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/config.h" ESCAPE_QUOTES
 )
 
-target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
+target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PUBLIC
 	${CMAKE_CURRENT_BINARY_DIR}
 )

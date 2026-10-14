@@ -15,11 +15,6 @@
 #include <cstdlib>
 #include <filesystem>
 
-ly::Application* GetApplication()
-{
-	return new ly::GameApplication();
-}
-
 namespace ly
 {
 	GameApplication::GameApplication()

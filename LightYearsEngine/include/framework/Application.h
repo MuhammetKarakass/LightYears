@@ -44,6 +44,9 @@ namespace ly
 		template<typename WorldType>
 		weak_ptr<WorldType> LoadWorld();
 
+		// The world that ticks and renders this frame; a LoadWorld request appears here from the next frame.
+		World* GetCurrentWorld() const { return mCurrentWorld.get(); }
+
 	protected:
 		// Runs before the current world sees an event; returning true consumes it.
 		virtual bool HandleApplicationEvent(const sf::Event& event);
