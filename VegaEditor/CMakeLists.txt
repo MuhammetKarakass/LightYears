@@ -21,8 +21,10 @@ add_executable(VegaEditor
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
 	src/EditorViewport.cpp
+	src/EditorSelection.cpp
 	include/editor/EditorApplication.h
 	include/editor/EditorViewport.h
+	include/editor/EditorSelection.h
 )
 target_include_directories(VegaEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # GameApp carries LightYearsVisual, the whole-archive game library, engine definitions,
@@ -78,4 +80,16 @@ if(BUILD_TESTING)
 		CopyRuntimeLibToTarget(${editor_test_runtime} VegaEditorViewportTests)
 	endforeach()
 	add_test(NAME VegaEditorViewport COMMAND VegaEditorViewportTests)
+
+	add_executable(VegaEditorSelectionTests
+		tests/EditorSelectionTests.cpp
+		src/EditorSelection.cpp
+	)
+	target_include_directories(VegaEditorSelectionTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorSelectionTests PRIVATE LightYearsEngine)
+	ly_enable_warnings(VegaEditorSelectionTests)
+	foreach(editor_selection_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${editor_selection_runtime} VegaEditorSelectionTests)
+	endforeach()
+	add_test(NAME VegaEditorSelection COMMAND VegaEditorSelectionTests)
 endif()
