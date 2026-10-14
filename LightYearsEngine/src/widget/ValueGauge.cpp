@@ -42,7 +42,7 @@ namespace ly
 		ApplyAlpha(GetEffectiveAlpha());
 	}
 	
-	void ValueGauge::Draw(sf::RenderWindow& windowRef)
+	void ValueGauge::Draw(sf::RenderTarget& windowRef)
 	{
 		windowRef.draw(mBarBack);
 		windowRef.draw(mBarFront);

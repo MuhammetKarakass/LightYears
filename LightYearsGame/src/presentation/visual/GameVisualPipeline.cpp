@@ -212,13 +212,13 @@ namespace ly
 		return layer == RenderLayer::Background;
 	}
 
-	void GameVisualPipeline::Compose(sf::RenderWindow& window)
+	void GameVisualPipeline::Compose(sf::RenderTarget& window)
 	{
 		mPipeline->Compose(window);
 		DrawStopLabel(window);
 	}
 
-	void GameVisualPipeline::DrawStopLabel(sf::RenderWindow& window)
+	void GameVisualPipeline::DrawStopLabel(sf::RenderTarget& window)
 	{
 		if (!mStopLabel)
 		{

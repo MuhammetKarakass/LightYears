@@ -45,7 +45,7 @@ namespace ly
 
 	protected:
 		void Tick(float deltaTime) override;
-		void Draw(sf::RenderWindow& windowRef) override;
+		void Draw(sf::RenderTarget& windowRef) override;
 
 	private:
 		struct RowSpan

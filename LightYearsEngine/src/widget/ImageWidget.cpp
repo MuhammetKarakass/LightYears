@@ -30,7 +30,7 @@ namespace ly
 	{
 		mSprite.setRotation(sf::degrees(newRotation));
 	}
-	void ImageWidget::Draw(sf::RenderWindow& windowRef)
+	void ImageWidget::Draw(sf::RenderTarget& windowRef)
 	{
 		windowRef.draw(mSprite);
 	}

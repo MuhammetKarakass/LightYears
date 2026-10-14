@@ -16,7 +16,7 @@ namespace ly
 	protected:
 		void UpdateOrigin(const sf::Vector2f& origin) override;
 		void ApplyAlpha(float alpha) override;
-		void Draw(sf::RenderWindow& windowRef) override;
+		void Draw(sf::RenderTarget& windowRef) override;
 		void LocationUpdated(const sf::Vector2f& newLocation) override;
 		void RotationUpdated(float newRotation) override;
 		void PlaceAt(const UIRect& rect) override;

@@ -33,7 +33,7 @@ namespace ly
 		column->SetLayout(columnLayout);
 	}
 
-	void PauseMenuHUD::Init(sf::RenderWindow& windowRef)
+	void PauseMenuHUD::Init(sf::RenderTarget& windowRef)
 	{
 		static_cast<void>(windowRef);
 		if (auto button = mResumeButton.lock()) button->onButtonClicked.BindAction(GetWeakPtr(), &PauseMenuHUD::ResumeButtonClicked);

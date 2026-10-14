@@ -53,13 +53,13 @@ namespace ly
 		sf::RenderTarget& GetTarget(RenderLayer layer) override;
 		bool ReplacesLayer(RenderLayer layer) const override;
 		bool HidesActor(const Actor& actor) const override { return mShips.HidesActor(actor); }
-		void Compose(sf::RenderWindow& window) override;
+		void Compose(sf::RenderTarget& window) override;
 
 	private:
 		void LogReport(const visual::ReloadReport& report) const;
 		void LoadRoute();
 		void ApplyRouteStop();
-		void DrawStopLabel(sf::RenderWindow& window);
+		void DrawStopLabel(sf::RenderTarget& window);
 
 		sf::RenderWindow* mWindow = nullptr;
 		visual::VisualAssets mAssets;

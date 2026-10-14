@@ -38,7 +38,7 @@ namespace ly
 			SimulationTimeModifierSourceId sourceId
 		);
 		float GetSimulationTimeScale(SimulationTimeDomain domain) const;
-		void Render(sf::RenderWindow& window);
+		void Render(sf::RenderTarget& window);
 		void CleanCycle();
 
 		// Every world owns its own physics scene (mirrors UWorld/FPhysScene).
@@ -257,7 +257,7 @@ namespace ly
 		void NextGameStage();
 		void BeginStages();
 		void UpdateCamera(float deltaTime);
-		void RenderHUD(sf::RenderWindow& window);
+		void RenderHUD(sf::RenderTarget& window);
 		void RegisterActorSpatialQuery(Actor& actor);
 		static bool ShouldUseManualSpatialQuery(const Actor& actor);
 		static sf::FloatRect GetManualSpatialBounds(const Actor& actor);

@@ -50,7 +50,7 @@ namespace ly
 		column->SetLayout(columnLayout);
 	}
 
-	void GameOverHUD::Init(sf::RenderWindow& windowRef)
+	void GameOverHUD::Init(sf::RenderTarget& windowRef)
 	{
 		static_cast<void>(windowRef);
 		if (auto button = mRestartButton.lock()) button->onButtonClicked.BindAction(GetWeakPtr(), &GameOverHUD::RestartButtonClicked);

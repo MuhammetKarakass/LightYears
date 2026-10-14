@@ -15,7 +15,7 @@ namespace ly
 		sf::VertexArray& Additive() { return mAdditive; }
 
 	protected:
-		void Draw(sf::RenderWindow& windowRef) override;
+		void Draw(sf::RenderTarget& windowRef) override;
 
 	private:
 		sf::VertexArray mNormal{ sf::PrimitiveType::Triangles };

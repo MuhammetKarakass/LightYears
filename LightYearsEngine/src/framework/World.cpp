@@ -518,7 +518,7 @@ namespace ly{
 		return weak_ptr<Actor>();
 	}
 
-	void World::Render(sf::RenderWindow& window)
+	void World::Render(sf::RenderTarget& window)
 	{
 		LY_PROFILE_FUNCTION();
 		sf::View previousView = window.getView();
@@ -867,7 +867,7 @@ namespace ly{
 			}
 		}
 	}
-	void World::RenderHUD(sf::RenderWindow& window)
+	void World::RenderHUD(sf::RenderTarget& window)
 	{
 		if(mHUD)
 		{

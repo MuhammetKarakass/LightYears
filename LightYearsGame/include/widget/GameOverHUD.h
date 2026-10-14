@@ -19,7 +19,7 @@ namespace ly
 		Delegate<> onMainMenuButtonClicked;
 
 	private:
-		void Init(sf::RenderWindow& windowRef) override;
+		void Init(sf::RenderTarget& windowRef) override;
 		void RestartButtonClicked();
 		void QuitButtonClicked();
 		void MainMenuButtonClicked();

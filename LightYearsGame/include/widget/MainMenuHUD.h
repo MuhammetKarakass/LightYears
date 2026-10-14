@@ -13,7 +13,7 @@ namespace ly
 		Delegate<> onQuitButtonClicked;
 
 	private:
-		void Init(sf::RenderWindow& windowRef) override;
+		void Init(sf::RenderTarget& windowRef) override;
 		void StartButtonClicked();
 		void QuitButtonClicked();
 

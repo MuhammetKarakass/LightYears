@@ -24,7 +24,7 @@ namespace ly
 		virtual void UpdateOrigin(const sf::Vector2f& origin) override;
 		
 	private:
-		virtual void Draw(sf::RenderWindow& windowRef) override;
+		virtual void Draw(sf::RenderTarget& windowRef) override;
 		virtual void LocationUpdated(const sf::Vector2f& newLocation) override;
 		virtual void RotationUpdated(float newRotation) override;
 

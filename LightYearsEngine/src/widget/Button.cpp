@@ -83,7 +83,7 @@ namespace ly
 		return handled || Widget::HandleEvent(event);
 	}
 	
-	void Button::Draw(sf::RenderWindow& windowRef)
+	void Button::Draw(sf::RenderTarget& windowRef)
 	{
 		windowRef.draw(mButtonSprite);
 		windowRef.draw(mButtonText);

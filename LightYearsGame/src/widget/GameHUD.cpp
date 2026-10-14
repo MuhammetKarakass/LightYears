@@ -24,7 +24,7 @@ namespace ly
 
 	}
 
-	void GameHUD::Draw(sf::RenderWindow& windowRef)
+	void GameHUD::Draw(sf::RenderTarget& windowRef)
 	{
 		mWindowRef = &windowRef;
 
@@ -69,7 +69,7 @@ namespace ly
 
 	}
 
-	void GameHUD::Init(sf::RenderWindow& windowRef)
+	void GameHUD::Init(sf::RenderTarget& windowRef)
 	{
 		mWindowRef = &windowRef;
 		mFrameRateText->SetWidgetLocation(sf::Vector2f{ 20.f, 18.f });

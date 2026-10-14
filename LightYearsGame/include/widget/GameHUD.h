@@ -17,11 +17,11 @@ namespace ly
 	public:
 		GameHUD();
 		~GameHUD() override;
-		virtual void Draw(sf::RenderWindow& windowRef) override;
+		virtual void Draw(sf::RenderTarget& windowRef) override;
 		virtual void Tick(float deltaTime) override;
 
 	private:
-		virtual void Init(sf::RenderWindow& windowRef) override;
+		virtual void Init(sf::RenderTarget& windowRef) override;
 		void ConnectDamageObservers();
 		void ShipDamageResolved(const DamageContext& context);
 		void UpdateDamageNumberVisuals(float deltaTime);
@@ -51,7 +51,7 @@ namespace ly
 		// enemy look already observed and it never received a damage observer.
 		std::unordered_set<unsigned int> mObservedDamageShips;
 
-		sf::RenderWindow* mWindowRef{ nullptr };
+		sf::RenderTarget* mWindowRef{ nullptr };
 
 	};
 }
