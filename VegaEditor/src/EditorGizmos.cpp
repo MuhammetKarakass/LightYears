@@ -13,6 +13,12 @@ namespace vega
 	{
 		auto* world = GetCurrentWorld();
 		const auto actor = mSelection.Get();
+		if (mContext.playMode)
+		{
+			if (mSelectionClickPending && mViewportImageHovered) PickViewportActor();
+			mMoveDragActor.reset();
+			return;
+		}
 		if (!world || (!world->IsPaused() && !world->GetViewOverride())) { mMoveDragActor.reset(); return; }
 		const auto view = world->GetWorldView();
 		const auto mainPos = ImGui::GetMainViewport()->Pos;

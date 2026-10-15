@@ -9,6 +9,7 @@
 namespace vega
 {
 	using Json = nlohmann::ordered_json;
+	bool AtomicWriteText(const std::filesystem::path& path, const std::string& text, std::string& error);
 
 	struct JsonStyle
 	{

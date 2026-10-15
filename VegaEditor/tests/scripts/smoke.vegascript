@@ -1,7 +1,7 @@
 # One command per frame. Capture paths are relative to the editor working directory.
 pause
-select-type PlayerSpaceShip
-expect-selected PlayerSpaceShip
+select-type DummyEnemy
+expect-selected DummyEnemy
 set-prop Actor "Rotation" 45
 expect-prop Actor "Rotation" 45
 undo

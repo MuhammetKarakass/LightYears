@@ -8,9 +8,15 @@
 
 namespace ly
 {
-	SceneLevel::SceneLevel(Application* app, nlohmann::json scene, SettingsApplier applySettings)
-		: ArenaLevel{ app }, mScene(std::move(scene)), mApplySettings{ std::move(applySettings) }
+	SceneLevel::SceneLevel(Application* app, nlohmann::json scene, SettingsApplier applySettings, bool editMode)
+		: ArenaLevel{ app }, mScene(std::move(scene)), mApplySettings{ std::move(applySettings) }, mEditMode{ editMode }
 	{
+		SetPaused(editMode);
+	}
+
+	bool SceneLevel::DispatchEvent(const sf::Event& event)
+	{
+		return mEditMode || ArenaLevel::DispatchEvent(event);
 	}
 
 	void SceneLevel::BeginPlay()
@@ -44,7 +50,7 @@ namespace ly
 		for (const auto& warning : mLoadResult.warnings) LY_GAME_WARN("Scene: %s", warning.c_str());
 		// ArenaLevel owns the exact same player, respawn, HUD and follow-camera
 		// path as ArenaTestLevel. Entities must exist before its system setup.
-		ArenaLevel::BeginPlay();
+		if (!mEditMode) ArenaLevel::BeginPlay();
 	}
 
 	ArenaDefinition SceneLevel::CreateArenaDefinition() const

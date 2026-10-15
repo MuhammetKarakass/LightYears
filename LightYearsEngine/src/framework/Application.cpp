@@ -73,7 +73,8 @@ namespace ly
 			{
 				if (event->is<sf::Event::Closed>())
 				{
-					QuitApplication();
+					// An authoring application may defer closing to resolve unsaved changes.
+					if (!HandleApplicationEvent(*event)) QuitApplication();
 				}
 				else 
 				{

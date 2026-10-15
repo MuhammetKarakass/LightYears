@@ -79,7 +79,7 @@ All four scene types inherit the writable Actor properties `Location`,
 | --- | --- |
 | Asteroid | Writable `Velocity`; constructor defaults: velocity `[0,100]`, health 50, contact damage 20. Health maximum is writable through HealthComponent. Contact damage has no setter and stays at its constructor default. |
 | DummyEnemy | Writable string `Ship`, default `Ship.Enemy.RangeKeeper.Basic`. Construction only: changing it stores the requested catalog ID in SceneEntityComponent::spawnData; reload to rebuild the ship. |
-| PlayerStart | Writable string `Ship`, default `Ship.Player.Fighter.Basic`. No gameplay sprite or automatic player spawn. `IsEditorOnlyMarker()` lets a future editor draw its marker. |
+| PlayerStart | Writable string `Ship`, default `Ship.Player.Fighter.Basic`. No gameplay sprite or automatic player spawn. `IsEditorOnlyMarker()` identifies the editor-only triangle/Ship-label overlay. |
 | SpriteActor | Always owns SpriteComponent, with editable `Texture` and vector `Scale`. |
 
 Reflected components also expose writable inherited `Active`. Explicit component
@@ -98,7 +98,42 @@ and ship. Without a marker, the arena center `[3000,1500]` is used. The game
 application applies `settings.routeStop` to its existing backdrop pipeline
 through SceneLevel's optional settings callback.
 
-## Scripts
+## Editor authoring
+
+VegaEditor opens `scenes/sandbox.scene.json` by default, or
+`--editor-scene <path>`. A missing startup scene produces an empty Edit world.
+SceneLevel's optional `editMode` constructor flag defaults to false for the game;
+Edit skips arena gameplay setup and the World authoring lifecycle suppresses
+actor/component BeginPlay and ticking, including `Tick When Paused`. Actors are
+still promoted for rendering and picking, and the visual pipeline still draws
+the backdrop. PlayerStart markers are drawn by the editor UI only.
+
+Play serializes the edit world and loads a fresh SceneLevel with gameplay enabled.
+Stop reloads the captured JSON, restores the editor camera and selected GUID, and
+keeps undo/redo. Runtime simulation cannot dirty or change the edit snapshot.
+The orange viewport border and PLAYING toolbar identify Play; the Inspector is
+read-only and explains that runtime changes are discarded on Stop. Pause and
+single-frame Step are available during Play.
+
+Hierarchy supports every reflected spawnable Actor through Create, plus
+Duplicate (Ctrl+D), Delete (Del), and inline Rename (F2/double-click). Entities
+have names in Hierarchy and Inspector. All these operations are undoable;
+deletion retains full serialized entity data and recreates the same GUID.
+Commands capture scene GUIDs on execution and use runtime IDs only for actors
+without scene identity. History clears for a different scene or New Scene.
+
+File supports New, Open, Save and Save As. The Open modal lists scene files under
+the editor asset root's `scenes/` and accepts a path. Relative paths use that root;
+absolute paths are accepted. Save writes SceneSerializer JSON through the same
+exclusive temporary sibling/atomic replacement helper as Data Editor. Dirty
+state compares canonical serialized entities against the loaded/saved state;
+undo back to that state removes the title/toolbar `*`. New/Open/Exit prompt
+Save / Discard / Cancel, and Content scene double-click opens the authoring scene.
+
+See [editor script commands](../VegaEditor/tests/scripts/README.md) for automation
+and the `VegaEditorAuthoring` build-tree-only save/capture test.
+
+## Lua scene components
 
 VegaScript's `Overrides()` reads explicit overrides; `SetOverrides()` replaces
 them and can stage values before BeginPlay. `Prepare()` reads declarations
@@ -108,8 +143,7 @@ are evaluated during preparation; `on_create` runs only on BeginPlay and sees
 the authored overrides. Script properties support float, bool, string, and
 Vector2. Paths retain the existing relative `.lua` asset-root restriction.
 
-This change supplies scene data and headless loading. Editor Edit/Play controls,
-arbitrary component creation, and entity-reference remapping are future work.
+The editor opens scene data in Edit mode and uses isolated Play worlds. Arbitrary component creation and entity-reference remapping remain future work.
 
 ## Implementation files
 

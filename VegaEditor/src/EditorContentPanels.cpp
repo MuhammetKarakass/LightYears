@@ -199,7 +199,12 @@ namespace vega
 						{
 							std::error_code error;
 							if (entry.is_directory(error)) { enter = relative; enterFolder = true; }
-							else if (extension == ".json") RequestDocument(relative);
+							else if (extension == ".json")
+							{
+								const auto name = relative.filename().string();
+								if (name.size() >= 11 && name.compare(name.size() - 11, 11, ".scene.json") == 0) RequestScene("open", relative);
+								else RequestDocument(relative);
+							}
 						}
 						const ImVec2 iconPos{ grid ? pos.x + (cellWidth - tile) * .5f : pos.x + 3.f, pos.y + (grid ? 4.f : 3.f) };
 						const auto found = mThumbnails.find(safe);
@@ -299,6 +304,7 @@ namespace vega
 
 	void EditorApplication::BuildDataPanel()
 	{
+		mDataFocused = false;
 		if (mDocument.IsOpen() && mPresentedDocumentID != mDocument.ID())
 		{
 			mShowData = true;
@@ -311,22 +317,23 @@ namespace vega
 			const std::string title = mDocument.Dirty() ? "Data Editor *###DataEditor" : "Data Editor###DataEditor";
 			if (ImGui::Begin(title.c_str(), &show))
 			{
+				mDataFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 				ImGui::TextWrapped("%s", mDocument.IsOpen() ? mDocument.Path().string().c_str() : "Open a JSON file from Content");
 				ImGui::TextUnformatted("Changes apply to the game after restart");
 				if (mDocument.ReadOnly()) ImGui::TextWrapped("%s", mDocument.ReadOnlyReason().c_str());
 				if (!mDocument.Error().empty()) ImGui::TextWrapped("%s", mDocument.Error().c_str());
-				ImGui::BeginDisabled(!mDocument.IsOpen() || mDocument.ReadOnly());
+				ImGui::BeginDisabled(mContext.playMode || !mDocument.IsOpen() || mDocument.ReadOnly());
 				if (ImGui::Button("Save") || (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
 					ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))) mDocument.Save();
 				ImGui::EndDisabled();
 				ImGui::SameLine();
-				ImGui::BeginDisabled(!mDocument.IsOpen());
+				ImGui::BeginDisabled(mContext.playMode || !mDocument.IsOpen());
 				if (ImGui::Button("Revert")) { mDocument.Revert(); mJsonMergeGroup = 0; }
 				ImGui::SameLine();
 				if (ImGui::Button("Close")) show = false;
 				ImGui::EndDisabled();
 				ImGui::Separator();
-				ImGui::BeginDisabled(mDocument.ReadOnly());
+				ImGui::BeginDisabled(mContext.playMode || mDocument.ReadOnly());
 				if (mDocument.IsOpen()) DrawJsonNode(mDocument.Data(), "", "Document");
 				ImGui::EndDisabled();
 			}

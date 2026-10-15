@@ -20,6 +20,7 @@ FetchContent_MakeAvailable(imgui-sfml)
 add_executable(VegaEditor
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
+	src/EditorScenes.cpp
 	src/EditorTheme.cpp
 	src/EditorIcons.cpp
 	src/EditorChrome.cpp
@@ -99,6 +100,10 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	set(VEGA_AUTHORING_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/authoring-temp.scene.json\"")
+	configure_file(tests/scripts/authoring.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/authoring.vegascript @ONLY)
+	add_test(NAME VegaEditorAuthoring COMMAND VegaEditor --editor-script ${CMAKE_CURRENT_BINARY_DIR}/scripts/authoring.vegascript)
+	set_tests_properties(VegaEditorAuthoring PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 60)
 	add_executable(VegaEditorGizmoMathTests tests/GizmoMathTests.cpp src/GizmoMath.cpp)
 	target_include_directories(VegaEditorGizmoMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(VegaEditorGizmoMathTests PRIVATE SFML::System)

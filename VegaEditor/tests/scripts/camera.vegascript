@@ -1,9 +1,9 @@
 pause
-select-type PlayerSpaceShip
+select-type DummyEnemy
 zoom 2
 pan 500 0
 focus
 expect-visible
-play
+play-mode
 expect-camera game
 quit

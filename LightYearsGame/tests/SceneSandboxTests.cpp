@@ -10,6 +10,7 @@
 #include "level/SpriteActor.h"
 #include "environment/Asteroid.h"
 #include "enemy/DummyEnemy.h"
+#include "player/PlayerSpaceShip.h"
 #include "reflection/GameReflection.h"
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/ShipContentCatalog.h"
@@ -95,6 +96,21 @@ int main()
 	level->BeginPlayInternal();
 	Check(applied && level->GetSceneLoadResult().spawned == 7, "SceneLevel did not apply settings/load entities");
 	Check(level->Respawn().spawnLocation == sf::Vector2f{ 960.f, 700.f } && !level->Respawn().useScreenClamp, "SceneLevel did not use PlayerStart/arena respawn defaults");
+	// Edit promotion must not run asteroid randomization, Lua on_create/update,
+	// HUD setup, player spawning, or even explicitly paused-ticking actors.
+	auto editScene = scene;
+	editScene["entities"][6]["properties"]["Tick When Paused"] = true;
+	auto editLevel = std::make_shared<SceneLevel>(nullptr, editScene, SceneLevel::SettingsApplier{}, true);
+	editLevel->BeginPlayInternal();
+	const auto editBefore = SceneSerializer::Save(*editLevel, scene["settings"]);
+	editLevel->TickInternal(1.f);
+	editLevel->SetPaused(false);
+	editLevel->TickInternal(1.f);
+	Check(editLevel->IsEditMode() && editLevel->IsPaused(), "Edit world must remain paused");
+	Check(editLevel->GetActorsByType<PlayerSpaceShip>().empty() && editLevel->GetActorsByType<Actor>().size() == 7, "Edit world must contain only authored entities");
+	Check(SceneSerializer::Save(*editLevel, scene["settings"]) == editBefore, "Edit ticks must preserve all authored state");
+	const auto editSprite = editLevel->GetActorsByType<SpriteActor>()[0].lock();
+	Check(!editSprite->FindComponent<vega::script::ScriptComponent>()->HasBegunPlay(), "Edit world must not start script lifecycles");
 	auto emptyScene = scene;
 	emptyScene["entities"] = Json::array();
 	auto emptyLevel = std::make_shared<HeadlessSceneLevel>(nullptr, emptyScene);

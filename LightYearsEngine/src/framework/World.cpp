@@ -138,8 +138,11 @@ namespace ly{
 		{
 			mBeganPlay = true;
 			BeginPlay();  
-			InitGameStages();
-			BeginStages();
+			if (!IsEditMode())
+			{
+				InitGameStages();
+				BeginStages();
+			}
 		}
 	}
 	void World::TickInternal(float deltaTime)
@@ -165,11 +168,19 @@ namespace ly{
 			{
 				const shared_ptr<Actor>& actor = mActors[index];
 				const SlowActorTrace trace{ *actor };
-				actor->BeginPlayInternal();
+				if (!IsEditMode()) actor->BeginPlayInternal();
 				RegisterActorSpatialQuery(*actor);
-				OnActorSpawned(actor.get());
+				if (!IsEditMode()) OnActorSpawned(actor.get());
 			}
 		};
+
+		if (IsEditMode())
+		{
+			mIsPaused = true;
+			promotePendingActors();
+			CleanCycle();
+			return;
+		}
 
 		if (!mIsPaused) {
 			{
@@ -436,7 +447,7 @@ namespace ly{
 
 	void World::SetPaused(bool paused)
 	{
-		mIsPaused = paused;
+		mIsPaused = IsEditMode() || paused;
 	}
 
 	void World::RemoveOverlayHUD()

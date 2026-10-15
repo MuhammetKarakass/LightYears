@@ -64,6 +64,14 @@ namespace ly::reflect
 		const TypeInfo* Find(const std::string& name) const;
 		const TypeInfo* FindMostDerived(const Actor& actor) const;
 		const TypeInfo* FindMostDerived(const ActorComponent& component) const;
+		std::vector<const TypeInfo*> SpawnableActors() const
+		{
+			std::vector<const TypeInfo*> result;
+			for (const auto& entry : mTypes)
+				if (entry.second->root == TypeRoot::Actor && entry.second->spawnable && entry.second->create)
+					result.push_back(entry.second.get());
+			return result;
+		}
 
 	private:
 		TypeRegistry() = default;

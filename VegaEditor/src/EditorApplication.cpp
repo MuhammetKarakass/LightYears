@@ -3,19 +3,23 @@
 
 #include <framework/World.h>
 #include <framework/Actor.h>
+#include <framework/scene/Scene.h>
+#include <framework/scene/SceneEntityComponent.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui-SFML.h>
 
 #include <cstdlib>
 #include <cmath>
+#include <algorithm>
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 
 namespace vega
 {
 	EditorApplication::EditorApplication()
-		: mViewport{ GetRenderWindow() }
+		: ly::GameApplication{ true }, mViewport{ GetRenderWindow() }
 	{
 		if (!ImGui::SFML::Init(GetRenderWindow()))
 		{
@@ -31,6 +35,7 @@ namespace vega
 		// Image clicks select actors; panel dragging belongs on the title/tab bars.
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
+		std::filesystem::path startupScene{ "scenes/sandbox.scene.json" };
 #ifdef _MSC_VER
 		for (int index = 1; index < __argc; ++index)
 		{
@@ -39,6 +44,10 @@ namespace vega
 				mScript = std::make_unique<EditorScript>(index + 1 < __argc ? __argv[index + 1] : "", mExportLayout);
 				++index;
 			}
+			else if (std::string{ __argv[index] } == "--editor-scene" && index + 1 < __argc)
+			{
+				startupScene = __argv[++index];
+			}
 			else if (std::string{ __argv[index] } == "--asset-root" && index + 1 < __argc)
 			{
 				mDocument = JsonDocument{ __argv[++index] };
@@ -46,6 +55,22 @@ namespace vega
 		}
 #endif
 		mContext.document = &mDocument;
+		mContext.sceneDirty = [this]() { return SceneDirty(); };
+		mContext.sceneAction = [this](const std::string& action, const std::string& path)
+		{
+			if (mContext.transitioning) return false;
+			if (action == "play") return SetPlayMode(true);
+			if (action == "stop") return SetPlayMode(false);
+			if (mContext.playMode) return false;
+			if (action == "save") return SaveScene(std::filesystem::u8path(path));
+			if (SceneDirty()) { mContext.sceneError = "Unsaved scene: save before replacing it"; return false; }
+			if (action == "open") return OpenScene(std::filesystem::u8path(path));
+			if (action == "new") { RequestScene("new"); return true; }
+			return false;
+		};
+		mCamera.SetTextureSize(GetRenderWindow().getSize());
+		mCamera.InitFrom(sf::View{ { 960.f, 540.f }, { 1920.f, 1080.f } });
+		OpenScene(startupScene, true);
 		RefreshContent();
 	}
 
@@ -71,13 +96,27 @@ namespace vega
 		const std::optional<unsigned int> worldID = current ? std::optional<unsigned int>{ current->GetUniqueID() } : std::nullopt;
 		if (mWorldID != worldID)
 		{
-			// LoadWorld becomes current at the end of Tick; invalidate edits before any new UI or script command.
-			mHistory.Clear();
+			// World instances change on Play/Stop; GUID commands remain valid.
 			mSelection.Clear();
 			mMoveDragActor.reset();
 			mDestroyActor.reset();
 			mWorldID = worldID;
-			mContext.cameraPaused.reset();
+			mContext.world = current;
+			mContext.transitioning = false;
+			mContext.cameraPaused = current ? std::optional<bool>{ current->IsPaused() } : std::nullopt;
+			if (current)
+			{
+				current->SetViewOverride(current->IsEditMode() ? std::optional<sf::View>{ mCamera.GetView() } : std::nullopt);
+				if (mBaselineOnLoad)
+				{
+					mBaselineOnLoad = false;
+					mSavedScene = CaptureScene();
+					auto& entities = mSavedScene["entities"];
+					std::sort(entities.begin(), entities.end(), [](const auto& a, const auto& b) { return a.at("guid") < b.at("guid"); });
+				}
+				mSelection.Select(mContext.ResolveGuid(mRestoreSelectionGuid));
+				mRestoreSelectionGuid.clear();
+			}
 			mCameraPanButton.reset();
 		}
 		mContext.world = current;
@@ -126,7 +165,7 @@ namespace vega
 		ImGui::SFML::Update(window, mUIClock.restart());
 		BuildUI();
 		ImGui::SFML::Render(window);
-		if (mScript && mScript->Step(mContext, mHistory, window)) QuitApplication();
+		if (mScript && !mContext.transitioning && mScript->Step(mContext, mHistory, window)) QuitApplication();
 		// The world is drawn into the viewport texture, so the window holds the finished frame only once the UI is on
 		// it (and only then is the window's framebuffer the active one); run the --visual-capture step after that.
 		GameApplication::AfterRender();
@@ -141,7 +180,7 @@ namespace vega
 	{
 		mHistory.PruneInvalidCommands();
 		const ImGuiIO& io = ImGui::GetIO();
-		if (io.KeyCtrl && !io.WantTextInput)
+		if (io.KeyCtrl && !io.WantTextInput && !mContext.playMode)
 		{
 			if (ImGui::IsKeyPressed(ImGuiKey_Z, false))
 			{
@@ -150,17 +189,38 @@ namespace vega
 			}
 			if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) mHistory.Redo();
 		}
+		if (!mContext.playMode && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false) && !mDataFocused) SaveScene();
+		if (!mContext.playMode && !io.WantTextInput)
+		{
+			if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) DuplicateSceneEntity(mContext, mHistory);
+			if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+				if (auto actor = mSelection.Get(); actor && actor->FindComponent<ly::SceneEntityComponent>())
+					mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+			if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) BeginRename();
+		}
+		const std::string sceneTitle = (mScenePath.empty() ? "Untitled" : mScenePath.filename().string()) + (SceneDirty() ? " *" : "");
+		GetRenderWindow().setTitle("Vega Editor - " + sceneTitle + (mContext.playMode ? " - PLAYING" : " - EDIT"));
 		bool resetLayout = false;
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
 			{
+				ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+				if (ImGui::MenuItem("New Scene")) RequestScene("new");
+				if (ImGui::MenuItem("Open Scene...")) mOpenSceneDialog = true;
+				if (ImGui::MenuItem("Save Scene", "Ctrl+S")) SaveScene();
+				if (ImGui::MenuItem("Save Scene As..."))
+				{
+					std::snprintf(mScenePathInput, sizeof(mScenePathInput), "%s", mScenePath.empty() ? "scenes/untitled.scene.json" : mScenePath.generic_string().c_str());
+					mSaveSceneDialog = true;
+				}
+				ImGui::EndDisabled();
+				ImGui::Separator();
 				if (ImGui::MenuItem("Export Game...")) mExportDialogRequested = true;
 				ImGui::Separator();
 				if (ImGui::MenuItem("Exit"))
 				{
-					if (mDocument.Dirty()) { mPendingQuit = true; mConfirmDocument = true; }
-					else QuitApplication();
+					RequestScene("exit");
 				}
 				ImGui::EndMenu();
 			}
@@ -168,8 +228,8 @@ namespace vega
 			{
 				const std::string undoLabel = mHistory.CanUndo() ? "Undo " + mHistory.UndoName() : "Undo";
 				const std::string redoLabel = mHistory.CanRedo() ? "Redo " + mHistory.RedoName() : "Redo";
-				if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, mHistory.CanUndo())) mHistory.Undo();
-				if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y / Ctrl+Shift+Z", false, mHistory.CanRedo())) mHistory.Redo();
+				if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, !mContext.playMode && mHistory.CanUndo())) mHistory.Undo();
+				if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y / Ctrl+Shift+Z", false, !mContext.playMode && mHistory.CanRedo())) mHistory.Redo();
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("View"))
@@ -273,15 +333,15 @@ namespace vega
 		if (mShowContent) BuildContentPanel();
 		BuildDataPanel();
 		BuildExportDialog();
+		BuildSceneDialogs();
 	}
 
 	bool EditorApplication::HandleApplicationEvent(const sf::Event& event)
 	{
 		ImGui::SFML::ProcessEvent(GetRenderWindow(), event);
-		if (event.is<sf::Event::Closed>() && mDocument.Dirty())
+		if (event.is<sf::Event::Closed>())
 		{
-			mPendingQuit = true;
-			mConfirmDocument = true;
+			RequestScene("exit");
 			return true;
 		}
 		const ImGuiIO& io = ImGui::GetIO();

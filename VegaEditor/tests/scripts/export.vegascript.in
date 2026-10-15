@@ -1,3 +1,4 @@
+expect-mode edit
 # Export the game and require its smoke test to pass. CMake fills in the export folder (build tree only).
 export "@VEGA_EXPORT_TEST_DIR@" overwrite
 expect-export-ok

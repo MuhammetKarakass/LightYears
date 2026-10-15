@@ -22,7 +22,7 @@
 
 namespace ly
 {
-	GameApplication::GameApplication()
+	GameApplication::GameApplication(bool editor)
 		: Application({ 1920, 1080}, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
@@ -50,6 +50,8 @@ namespace ly
 			}
 		}
 
+		if (editor) return;
+
 		if (mDevOptions.scenePath.empty()) LoadWorld<ArenaTestLevel>();
 		else
 		{
@@ -63,13 +65,7 @@ namespace ly
 				input >> scene;
 				LoadWorld<SceneLevel>(std::move(scene), [this](const nlohmann::json& settings)
 				{
-					if (settings.contains("routeStop"))
-					{
-						const auto& stop = settings["routeStop"];
-						if (!stop.is_number_integer() || stop.get<double>() < 0 || stop.get<double>() > std::numeric_limits<int>::max())
-							throw std::runtime_error("routeStop must be a nonnegative integer");
-						mVisualPipeline->SetRouteStopIndex(static_cast<std::size_t>(stop.get<int>()));
-					}
+					ApplySceneSettings(settings);
 				});
 			}
 			catch (const std::exception& error)
@@ -84,6 +80,15 @@ namespace ly
 	GameApplication::~GameApplication()
 	{
 		SetWorldRenderPipeline(nullptr);
+	}
+
+	void GameApplication::ApplySceneSettings(const nlohmann::json& settings)
+	{
+		if (!settings.contains("routeStop")) return;
+		const auto& stop = settings["routeStop"];
+		if (!stop.is_number_integer() || stop.get<double>() < 0 || stop.get<double>() > std::numeric_limits<int>::max())
+			throw std::runtime_error("routeStop must be a nonnegative integer");
+		if (mVisualPipeline) mVisualPipeline->SetRouteStopIndex(static_cast<std::size_t>(stop.get<int>()));
 	}
 
 	GameApplication::DevOptions GameApplication::ParseDevOptions()
@@ -161,7 +166,7 @@ namespace ly
 		{
 			return false;
 		}
-		// F7 cycles the color script, F8 toggles the visual pipeline, F9 forces an asset reload, Ö / Ç cycle the galaxy route stop, + / - the orbit speed. The keys are consumed so levels never see them;
+		// F7 cycles the color script, F8 toggles the visual pipeline, F9 forces an asset reload, Ã– / Ã‡ cycle the galaxy route stop, + / - the orbit speed. The keys are consumed so levels never see them;
 		// key repeat is ignored so holding a key does not flicker the pipeline.
 		static bool f7Down = false;
 		static bool f8Down = false;

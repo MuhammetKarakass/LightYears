@@ -1,0 +1,238 @@
+#include "editor/EditorApplication.h"
+#include <level/SceneLevel.h>
+#include <framework/scene/Scene.h>
+#include <framework/scene/SceneEntityComponent.h>
+#include <fstream>
+#include <algorithm>
+#include <cstdio>
+#include <imgui.h>
+
+namespace vega
+{
+	namespace
+	{
+		nlohmann::json EmptyScene()
+		{
+			return { { "format", "vega.scene" }, { "version", 1 }, { "settings", nlohmann::json::object() },
+				{ "entities", nlohmann::json::array() } };
+		}
+		nlohmann::json CanonicalScene(nlohmann::json scene)
+		{
+			// Entity order is not authored state; deletion undo may append the recreated actor.
+			auto& entities = scene["entities"];
+			std::sort(entities.begin(), entities.end(), [](const auto& a, const auto& b) { return a.at("guid") < b.at("guid"); });
+			return scene;
+		}
+	}
+
+	nlohmann::json EditorApplication::CaptureScene() const
+	{
+		return mContext.playMode ? mPlaySnapshot : mContext.world
+			? ly::SceneSerializer::Save(*mContext.world, mSceneSettings) : EmptyScene();
+	}
+
+	bool EditorApplication::SceneDirty() const
+	{
+		return !mBaselineOnLoad && !mSavedScene.is_null() && CanonicalScene(CaptureScene()) != mSavedScene;
+	}
+
+	void EditorApplication::LoadSceneWorld(const nlohmann::json& scene, bool edit)
+	{
+		mMoveDragActor.reset();
+		mRenameGuid.clear();
+		mPauseAfterTick = false;
+		mContext.transitioning = true;
+		LoadWorld<ly::SceneLevel>(scene, [this](const nlohmann::json& settings) { ApplySceneSettings(settings); }, edit);
+	}
+
+	bool EditorApplication::OpenScene(const std::filesystem::path& requested, bool allowMissing)
+	{
+		if (mContext.playMode) return false;
+		try
+		{
+			const auto path = requested.is_absolute() ? requested : mDocument.Root() / requested;
+			nlohmann::json scene = EmptyScene();
+			if (std::ifstream input{ path }; input) input >> scene;
+			else if (!allowMissing) throw std::runtime_error("Cannot open scene: " + path.string());
+			if (!scene.is_object() || scene.value("format", std::string{}) != "vega.scene" ||
+				scene.value("version", 0) != 1 || !scene.contains("entities") || !scene["entities"].is_array() ||
+				!scene.contains("settings") || !scene["settings"].is_object()) throw std::runtime_error("Expected vega.scene version 1");
+			const auto absolutePath = std::filesystem::absolute(path).lexically_normal();
+			const bool differentScene = absolutePath != mScenePath;
+			const auto selected = mSelection.Get();
+			const auto* selectedIdentity = selected ? selected->FindComponent<ly::SceneEntityComponent>() : nullptr;
+			const auto selectedGuid = !differentScene && selectedIdentity ? selectedIdentity->guid : "";
+			mScenePath = absolutePath;
+			mSceneSettings = scene["settings"];
+			if (differentScene) mHistory.Clear();
+			mSelection.Clear();
+			mEditSelectionGuid.clear();
+			mRestoreSelectionGuid = selectedGuid;
+			mBaselineOnLoad = true;
+			mContext.sceneError.clear();
+			LoadSceneWorld(scene, true);
+			return true;
+		}
+		catch (const std::exception& error) { mContext.sceneError = error.what(); return false; }
+	}
+
+	bool EditorApplication::SaveScene(const std::filesystem::path& requested)
+	{
+		if (mContext.transitioning) return false;
+		try
+		{
+			auto path = requested.empty() ? mScenePath : requested;
+			if (path.empty())
+			{
+				std::snprintf(mScenePathInput, sizeof(mScenePathInput), "%s", "scenes/untitled.scene.json");
+				mSaveSceneDialog = true;
+				return false;
+			}
+			if (path.is_relative()) path = mDocument.Root() / path;
+			path = std::filesystem::absolute(path).lexically_normal();
+			const auto scene = CaptureScene();
+			if (!AtomicWriteText(path, scene.dump(1, '\t') + "\n", mContext.sceneError)) return false;
+			mScenePath = path;
+			mSavedScene = CanonicalScene(scene);
+			return true;
+		}
+		catch (const std::exception& error) { mContext.sceneError = error.what(); return false; }
+	}
+
+	bool EditorApplication::SetPlayMode(bool playing)
+	{
+		if (!mContext.world || mContext.transitioning || playing == mContext.playMode) return false;
+		if (playing)
+		{
+			mPlaySnapshot = CaptureScene();
+			mEditCamera = mCamera;
+			const auto actor = mSelection.Get();
+			const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+			mEditSelectionGuid = identity ? identity->guid : "";
+		}
+		mRestoreSelectionGuid = mEditSelectionGuid;
+		mContext.playMode = playing;
+		if (!playing) mCamera = mEditCamera;
+		LoadSceneWorld(mPlaySnapshot, !playing);
+		return true;
+	}
+
+	void EditorApplication::RequestScene(const std::string& action, const std::filesystem::path& path)
+	{
+		if (mContext.transitioning || (mContext.playMode && action != "exit")) return;
+		mPendingSceneAction = action;
+		mPendingScenePath = path;
+		if (SceneDirty()) mConfirmScene = true;
+		else FinishSceneRequest();
+	}
+
+	void EditorApplication::FinishSceneRequest()
+	{
+		const auto action = mPendingSceneAction;
+		const auto path = mPendingScenePath;
+		mPendingSceneAction.clear();
+		mPendingScenePath.clear();
+		if (action == "exit")
+		{
+			if (mDocument.Dirty()) { mPendingQuit = true; mConfirmDocument = true; }
+			else QuitApplication();
+		}
+		else if (action == "open") OpenScene(path);
+		else if (action == "new")
+		{
+			mHistory.Clear();
+			mSelection.Clear();
+			mScenePath.clear();
+			mSceneSettings = nlohmann::json::object();
+			mRestoreSelectionGuid.clear();
+			mEditSelectionGuid.clear();
+			mBaselineOnLoad = true;
+			mContext.sceneError.clear();
+			LoadSceneWorld(EmptyScene(), true);
+		}
+	}
+
+	void EditorApplication::BuildSceneDialogs()
+	{
+		if (mOpenSceneDialog) { ImGui::OpenPopup("Open Scene"); mOpenSceneDialog = false; }
+		if (mSaveSceneDialog) { ImGui::OpenPopup("Save Scene As"); mSaveSceneDialog = false; }
+		for (bool save : { false, true })
+		{
+			ImGui::SetNextWindowSize({ 600.f, 0.f }, ImGuiCond_Appearing);
+			if (!ImGui::BeginPopupModal(save ? "Save Scene As" : "Open Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) continue;
+			if (!save)
+			{
+				std::error_code error;
+				std::vector<std::filesystem::path> scenes;
+				for (std::filesystem::recursive_directory_iterator it{ mDocument.Root() / "scenes", error }, end;
+					!error && it != end; it.increment(error))
+				{
+					const auto name = it->path().filename().string();
+					if (it->is_regular_file(error) && name.size() >= 11 && name.compare(name.size() - 11, 11, ".scene.json") == 0)
+						scenes.push_back(it->path().lexically_relative(mDocument.Root()));
+				}
+				std::sort(scenes.begin(), scenes.end());
+				ImGui::BeginChild("Scenes", { 570.f, 180.f }, ImGuiChildFlags_Borders);
+				for (const auto& path : scenes)
+					if (ImGui::Selectable(path.generic_string().c_str())) std::snprintf(mScenePathInput, sizeof(mScenePathInput), "%s", path.generic_string().c_str());
+				ImGui::EndChild();
+			}
+			ImGui::SetNextItemWidth(570.f);
+			ImGui::InputText("Path", mScenePathInput, sizeof(mScenePathInput));
+			if (!mContext.sceneError.empty()) ImGui::TextWrapped("%s", mContext.sceneError.c_str());
+			if (ImGui::Button(save ? "Save" : "Open"))
+			{
+				if (save)
+				{
+					if (SaveScene(std::filesystem::u8path(mScenePathInput)))
+					{
+						ImGui::CloseCurrentPopup();
+						if (!mPendingSceneAction.empty()) FinishSceneRequest();
+					}
+				}
+				else { RequestScene("open", std::filesystem::u8path(mScenePathInput)); ImGui::CloseCurrentPopup(); }
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel")) { mPendingSceneAction.clear(); ImGui::CloseCurrentPopup(); }
+			ImGui::EndPopup();
+		}
+		if (mConfirmScene) { ImGui::OpenPopup("Unsaved scene changes"); mConfirmScene = false; }
+		if (ImGui::BeginPopupModal("Unsaved scene changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("Save scene changes before continuing?");
+			if (!mContext.sceneError.empty()) ImGui::TextWrapped("%s", mContext.sceneError.c_str());
+			if (ImGui::Button("Save"))
+			{
+				if (SaveScene()) { FinishSceneRequest(); ImGui::CloseCurrentPopup(); }
+				else if (mSaveSceneDialog) ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Discard")) { FinishSceneRequest(); ImGui::CloseCurrentPopup(); }
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel")) { mPendingSceneAction.clear(); ImGui::CloseCurrentPopup(); }
+			ImGui::EndPopup();
+		}
+	}
+
+	void EditorApplication::DrawCreateMenu()
+	{
+		if (ImGui::BeginMenu("Create"))
+		{
+			auto types = ly::reflect::TypeRegistry::Get().SpawnableActors();
+			std::sort(types.begin(), types.end(), [](const auto* a, const auto* b) { return a->name < b->name; });
+			for (const auto* type : types)
+				if (ImGui::MenuItem(type->name.c_str())) CreateSceneEntity(mContext, mHistory, type->name);
+			ImGui::EndMenu();
+		}
+	}
+
+	void EditorApplication::BeginRename()
+	{
+		const auto actor = mSelection.Get();
+		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+		if (!identity || mContext.playMode) return;
+		mRenameGuid = identity->guid;
+		std::snprintf(mRenameInput, sizeof(mRenameInput), "%s", identity->name.c_str());
+		mRenameFocus = true;
+	}
+}

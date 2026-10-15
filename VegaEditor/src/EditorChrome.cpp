@@ -30,7 +30,7 @@ namespace vega
 			if (IconButton("##Rotate", IconKind::Rotate, { 34.f, 34.f }, "Rotate (E)", settings.tool == EditorTool::Rotate)) settings.tool = EditorTool::Rotate;
 			ImGui::EndDisabled();
 			ImGui::SameLine();
-			ImGui::BeginDisabled(!world || mMoveDragActor.has_value());
+			ImGui::BeginDisabled(!world || mContext.transitioning || mMoveDragActor.has_value());
 			const bool editorCamera = world && world->GetViewOverride().has_value();
 			if (IconButton("##Camera", IconKind::Camera, { 34.f, 34.f }, "Editor camera / Game camera\nWheel: zoom   Middle/right drag: pan   F: focus", editorCamera)) mContext.SetEditorCamera(!editorCamera);
 			ImGui::EndDisabled();
@@ -50,10 +50,19 @@ namespace vega
 			// Keep transport controls centred independently of the tools on the left.
 			ImGui::SameLine(viewport->Size.x * .5f - 38.f);
 			ImGui::BeginDisabled(!world || mMoveDragActor.has_value());
-			if (IconButton("##Transport", paused ? IconKind::Play : IconKind::Pause, { 34.f, 34.f }, paused ? "Play" : "Pause", !paused && world))
-				SetPaused{ !paused }.Execute(mContext);
+			if (!mContext.playMode)
+			{
+				if (IconButton("##Transport", IconKind::Play, { 34.f, 34.f }, "Play scene")) SetPlayMode(true);
+			}
+			else
+			{
+				if (ImGui::Button("Stop", { 50.f, 34.f })) SetPlayMode(false);
+				ImGui::SameLine();
+				if (IconButton("##Pause", paused ? IconKind::Play : IconKind::Pause, { 34.f, 34.f }, paused ? "Resume" : "Pause"))
+					SetPaused{ !paused }.Execute(mContext);
+			}
 			ImGui::SameLine();
-			ImGui::BeginDisabled(!paused);
+			ImGui::BeginDisabled(!mContext.playMode || !paused || mContext.transitioning);
 			if (IconButton("##Step", IconKind::Step, { 34.f, 34.f }, "Advance one simulation frame", false))
 			{
 				// Render runs after the next world tick; pause there to include physics and timers.
@@ -64,7 +73,11 @@ namespace vega
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextDisabled("%s", world ? (paused ? "PAUSED" : "LIVE") : "NO WORLD");
+			ImGui::TextColored(mContext.playMode ? ImVec4{ 1.f, .65f, .25f, 1.f } : ImVec4{ .2f, .78f, .79f, 1.f },
+				"%s", mContext.playMode ? (paused ? "PLAYING (PAUSED)" : "PLAYING") : "EDIT");
+			ImGui::SameLine();
+			ImGui::TextDisabled("%s%s", mScenePath.empty() ? "Untitled" : mScenePath.filename().string().c_str(), SceneDirty() ? " *" : "");
+			if (!mContext.sceneError.empty()) { ImGui::SameLine(); ImGui::TextWrapped("%s", mContext.sceneError.c_str()); }
 		}
 		ImGui::End();
 		ImGui::PopStyleVar();

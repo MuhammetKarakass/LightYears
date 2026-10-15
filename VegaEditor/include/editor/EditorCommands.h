@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <string>
 #include <variant>
+#include <nlohmann/json.hpp>
+#include <functional>
 
 namespace vega
 {
@@ -20,11 +22,18 @@ namespace vega
 		std::optional<bool> cameraPaused;
 		JsonDocument* document = nullptr;
 		EditorViewSettings viewSettings;
+		bool playMode = false;
+		bool transitioning = false;
+		std::function<bool(const std::string&, const std::string&)> sceneAction;
+		std::function<bool()> sceneDirty;
+		std::string sceneError;
 		void SyncCamera();
 		bool SetEditorCamera(bool enabled);
 		bool FocusSelection();
 		void ApplyCamera();
 		std::shared_ptr<ly::Actor> Resolve(unsigned int id) const;
+		std::shared_ptr<ly::Actor> Resolve(unsigned int id, std::string& guid) const;
+		std::shared_ptr<ly::Actor> ResolveGuid(const std::string& guid) const;
 	};
 
 	std::string ActorTypeName(const ly::Actor& actor);
@@ -89,6 +98,7 @@ namespace vega
 		bool MergeWith(const EditorCommand&) override;
 	private:
 		unsigned int mID;
+		std::string mGuid;
 		std::size_t mComponentIndex;
 		std::string mProperty;
 		ly::reflect::PropertyValue mAfter;
@@ -108,6 +118,7 @@ namespace vega
 		bool MergeWith(const EditorCommand&) override;
 	private:
 		unsigned int mID;
+		std::string mGuid;
 		std::optional<std::size_t> mComponentIndex;
 		std::string mProperty;
 		ly::reflect::PropertyValue mBefore;
@@ -132,6 +143,7 @@ namespace vega
 	private:
 		void Apply(ly::Actor& actor, const Value& value) const;
 		unsigned int mID;
+		std::string mGuid;
 		Property mProperty;
 		Value mBefore;
 		Value mAfter;
@@ -192,10 +204,27 @@ namespace vega
 	public:
 		explicit DestroyActor(unsigned int id) : mID{ id } {}
 		bool Execute(EditorContext&) override;
-		void Undo(EditorContext&) override {}
+		void Undo(EditorContext&) override;
 		std::string Name() const override { return "Destroy actor #" + std::to_string(mID); }
-		bool IsUndoable() const override { return false; }
+		bool IsUndoable() const override { return !mEntity.is_null(); }
 	private:
 		unsigned int mID;
+		std::string mGuid;
+		nlohmann::json mEntity;
 	};
+
+	class CreateEntity final : public EditorCommand
+	{
+	public:
+		explicit CreateEntity(nlohmann::json entity) : mEntity(std::move(entity)) {}
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		std::string Name() const override { return "Create " + mEntity.value("type", std::string{}); }
+	private:
+		nlohmann::json mEntity;
+	};
+
+	bool CreateSceneEntity(EditorContext&, CommandHistory&, const std::string& type);
+	bool DuplicateSceneEntity(EditorContext&, CommandHistory&);
+	bool RenameSceneEntity(EditorContext&, CommandHistory&, const std::string& name, std::uint64_t group = 0);
 }

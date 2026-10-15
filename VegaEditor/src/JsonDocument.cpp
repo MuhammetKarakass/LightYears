@@ -241,42 +241,51 @@ namespace vega
 			return false;
 		}
 		const auto text = Serialize();
+		if (!AtomicWriteText(mPath, text, mError)) return false;
+		mSavedText = text;
+		mError.clear();
+		return true;
+	}
+
+	bool AtomicWriteText(const std::filesystem::path& path, const std::string& text, std::string& error)
+	{
 		// Reserve a unique sibling exclusively so another process's temporary file is never overwritten.
 		std::filesystem::path temp;
 #ifdef _WIN32
 		HANDLE file = INVALID_HANDLE_VALUE;
 		for (unsigned int attempt = 0; attempt < 100 && file == INVALID_HANDLE_VALUE; ++attempt)
 		{
-			temp = mPath;
+			temp = path;
 			temp += ".vega-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(attempt) + ".tmp";
 			file = CreateFileW(temp.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
 		}
-		if (file == INVALID_HANDLE_VALUE) { mError = "Cannot create temporary save file"; return false; }
+		if (file == INVALID_HANDLE_VALUE) { error = "Cannot create temporary save file"; return false; }
 		DWORD written = 0;
 		const bool wrote = text.size() <= MAXDWORD && WriteFile(file, text.data(), static_cast<DWORD>(text.size()), &written, nullptr) &&
 			written == text.size() && FlushFileBuffers(file);
 		CloseHandle(file);
-		const bool replaced = wrote && ReplaceFileW(mPath.c_str(), temp.c_str(), nullptr, 0, nullptr, nullptr);
+		const bool replaced = wrote && (std::filesystem::exists(path)
+			? ReplaceFileW(path.c_str(), temp.c_str(), nullptr, 0, nullptr, nullptr)
+			: MoveFileExW(temp.c_str(), path.c_str(), MOVEFILE_WRITE_THROUGH));
 #else
-		temp = mPath;
+		temp = path;
 		temp += ".vega.tmp";
-		if (std::filesystem::exists(temp)) { mError = "Temporary save file already exists"; return false; }
+		if (std::filesystem::exists(temp)) { error = "Temporary save file already exists"; return false; }
 		std::ofstream output{ temp, std::ios::binary };
 		output << text;
 		output.close();
-		std::error_code error;
-		if (output) std::filesystem::rename(temp, mPath, error);
-		const bool replaced = output && !error;
+		std::error_code renameError;
+		if (output) std::filesystem::rename(temp, path, renameError);
+		const bool replaced = output && !renameError;
 #endif
 		if (!replaced)
 		{
 			std::error_code cleanup;
 			std::filesystem::remove(temp, cleanup);
-			mError = "Atomic save failed; original file retained";
+			error = "Atomic save failed; original file retained";
 			return false;
 		}
-		mSavedText = text;
-		mError.clear();
+		error.clear();
 		return true;
 	}
 }

@@ -1,5 +1,7 @@
 #include "editor/EditorCommands.h"
 #include <framework/World.h>
+#include <framework/scene/Scene.h>
+#include <framework/scene/SceneEntityComponent.h>
 #include <iostream>
 #include <limits>
 #include <script/ScriptComponent.h>
@@ -9,6 +11,11 @@
 
 namespace
 {
+	class AuthoredActor : public ly::Actor
+	{
+	public:
+		explicit AuthoredActor(ly::World* world) : Actor{ world } { AddComponent<ly::ActorComponent>(); }
+	};
 	int failures = 0;
 	void Check(bool condition, const char* message)
 	{
@@ -243,6 +250,81 @@ namespace
 		context.world = nullptr;
 		Check(!vega::SetPaused{ true }.Execute(context) && !context.Resolve(id), "Null world must fail safely");
 	}
+
+	void TestSceneIdentity()
+	{
+		ly::reflect::RegisterEngineTypes();
+		ly::reflect::Class<AuthoredActor, ly::Actor>("AuthoredActor").Spawnable();
+		ly::World original{ nullptr };
+		vega::EditorSelection selection;
+		vega::EditorContext context{ &original, selection };
+		vega::CommandHistory history{ context };
+		Check(vega::CreateSceneEntity(context, history, "AuthoredActor"), "Scene create failed");
+		auto actor = selection.Get();
+		if (!actor) return;
+		const auto id = actor->GetUniqueID();
+		const auto guid = actor->FindComponent<ly::SceneEntityComponent>()->guid;
+		const auto initialLocation = actor->GetActorLocation();
+		Check(history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 500.f, 400.f })), "Pending scene actor must resolve");
+		Check(vega::RenameSceneEntity(context, history, "Rock A"), "Scene rename failed");
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, 0, "Active", false)), "Component edit failed");
+		const auto snapshot = ly::SceneSerializer::Save(original);
+		ly::World restored{ nullptr };
+		ly::SceneSerializer::Load(restored, snapshot);
+		context.world = &restored;
+		auto replacement = context.ResolveGuid(guid);
+		Check(replacement && replacement->GetUniqueID() != id, "Reload must preserve GUID with a new runtime ID");
+		std::string capturedGuid = guid;
+		Check(!context.Resolve(id) && context.Resolve(id, capturedGuid) == replacement, "GUID resolution must work when the old runtime ID is absent");
+		Check(history.Undo() && replacement->FindComponent<ly::ActorComponent>()->IsActive(), "Component undo must resolve GUID after reload");
+		Check(history.Undo() && replacement->FindComponent<ly::SceneEntityComponent>()->name == "AuthoredActor 1", "Rename undo after reload failed");
+		Check(history.Undo() && replacement->GetActorLocation() == initialLocation, "Move undo after reload failed");
+		Check(history.Redo() && history.Redo() && history.Redo(), "Redo across reload failed");
+		selection.Select(replacement);
+		Check(history.Execute(std::make_unique<vega::DestroyActor>(replacement->GetUniqueID())), "Scene deletion failed");
+		Check(!context.ResolveGuid(guid) && !selection.Get(), "Deleted scene actor must not resolve");
+		Check(history.Undo(), "Scene deletion undo failed");
+		auto recreated = context.ResolveGuid(guid);
+		Check(recreated && recreated->GetUniqueID() != replacement->GetUniqueID() && selection.Get() == recreated, "Delete undo must recreate and select same GUID");
+		Check(ly::SceneSerializer::Save(restored) == snapshot, "Delete undo must restore all serialized entity data");
+		Check(history.Undo() && recreated->FindComponent<ly::ActorComponent>()->IsActive(), "Earlier component edit must reach recreated actor");
+		Check(history.Redo() && history.Redo() && !context.ResolveGuid(guid), "Delete redo must resolve recreated actor");
+		Check(history.Undo(), "Repeated delete undo failed");
+		selection.Select(context.ResolveGuid(guid));
+		Check(vega::DuplicateSceneEntity(context, history), "Duplicate failed");
+		const auto duplicate = selection.Get();
+		Check(duplicate && duplicate->FindComponent<ly::SceneEntityComponent>()->guid != guid &&
+			duplicate->GetActorLocation() == sf::Vector2f{ 532.f, 432.f }, "Duplicate must use new GUID and offset");
+		Check(history.Undo() && history.Redo(), "Duplicate undo/redo failed");
+		context.playMode = true;
+		const auto undoCount = history.UndoCount();
+		Check(!history.Undo() && !vega::CreateSceneEntity(context, history, "AuthoredActor") &&
+			!history.Execute(std::make_unique<vega::DestroyActor>(selection.Get()->GetUniqueID())) &&
+			!vega::RenameSceneEntity(context, history, "Runtime"), "Play must reject authoring commands");
+		Check(history.UndoCount() == undoCount, "Play must preserve history");
+	}
+
+	void TestSceneScriptIdentity()
+	{
+		ly::World original{ nullptr };
+		auto actor = original.SpawnActor<AuthoredActor>().lock();
+		const auto guid = actor->AddComponent<ly::SceneEntityComponent>().guid;
+		auto& script = actor->AddComponent<vega::script::ScriptComponent>("command.lua");
+		Check(script.Prepare(), "Scene script preparation failed");
+		vega::EditorSelection selection;
+		vega::EditorContext context{ &original, selection };
+		vega::CommandHistory history{ context };
+		Check(history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), 2, "speed", 90.f)), "Scene script edit failed");
+		ly::World restored{ nullptr };
+		ly::SceneSerializer::Load(restored, ly::SceneSerializer::Save(original));
+		context.world = &restored;
+		const auto replacement = context.ResolveGuid(guid);
+		const auto* restoredScript = replacement ? replacement->FindComponent<vega::script::ScriptComponent>() : nullptr;
+		Check(restoredScript && std::get<float>(restoredScript->Properties().at("speed")) == 90.f, "Scene script snapshot lost its override");
+		Check(history.Undo() && restoredScript->Overrides().empty() && std::get<float>(restoredScript->Properties().at("speed")) == 12.f,
+			"Script undo must resolve GUID after reload");
+		Check(history.Redo() && std::get<float>(restoredScript->Properties().at("speed")) == 90.f, "Script redo after reload failed");
+	}
 }
 
 int main()
@@ -252,6 +334,8 @@ int main()
 	TestHistory();
 	TestMergeAndDepth();
 	TestDestroyAndResolution();
+	TestSceneIdentity();
+	TestSceneScriptIdentity();
 	if (failures) return 1;
 	std::cout << "Editor command tests passed\n";
 	return 0;

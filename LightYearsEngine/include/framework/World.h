@@ -51,6 +51,8 @@ namespace ly
 
 		void SetPaused(bool paused);
 		bool IsPaused() const { return mIsPaused; }
+		// Authoring worlds promote and render actors without starting gameplay lifecycles.
+		virtual bool IsEditMode() const { return false; }
 		void RemoveOverlayHUD();
 
 		void SetViewTarget(weak_ptr<Actor> target);

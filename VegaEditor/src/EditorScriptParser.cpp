@@ -62,6 +62,46 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "rename" || verb == "select-name")
+		{
+			if (tokens.size() < 2) return bad();
+			for (std::size_t index = 1; index < tokens.size(); ++index)
+			{
+				if (index > 1) command.text += ' ';
+				command.text += tokens[index];
+			}
+			if (command.text.empty()) return bad();
+			command.operation = verb == "rename" ? ScriptOperation::Rename : ScriptOperation::SelectName;
+			return { command, {} };
+		}
+		if (verb == "open-scene" || verb == "save-scene" || verb == "create" || verb == "expect-mode" || verb == "expect-scene-dirty")
+		{
+			if (verb == "save-scene" && tokens.size() == 1)
+			{
+				command.operation = ScriptOperation::SaveScene;
+				return { command, {} };
+			}
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			command.text = tokens[1];
+			if (verb == "expect-mode" && command.text != "edit" && command.text != "play") return bad();
+			if (verb == "expect-scene-dirty" && command.text != "true" && command.text != "false") return bad();
+			command.operation = verb == "open-scene" ? ScriptOperation::OpenScene : verb == "save-scene" ? ScriptOperation::SaveScene :
+				verb == "create" ? ScriptOperation::Create : verb == "expect-mode" ? ScriptOperation::ExpectMode : ScriptOperation::ExpectSceneDirty;
+			return { command, {} };
+		}
+		if (verb == "expect-entity-count")
+		{
+			if (tokens.size() != 2 || !integer(1, command.number)) return bad();
+			command.operation = ScriptOperation::ExpectEntityCount;
+			return { command, {} };
+		}
+		if (verb == "new-scene" || verb == "delete" || verb == "duplicate" || verb == "play-mode" || verb == "stop")
+		{
+			if (tokens.size() != 1) return bad();
+			command.operation = verb == "new-scene" ? ScriptOperation::NewScene : verb == "delete" ? ScriptOperation::Delete :
+				verb == "duplicate" ? ScriptOperation::Duplicate : verb == "play-mode" ? ScriptOperation::PlayMode : ScriptOperation::Stop;
+			return { command, {} };
+		}
 		if (verb == "tool" || verb == "snap" || verb == "grid" || verb == "colliders" || verb == "content-view")
 		{
 			if (tokens.size() != 2) return bad();

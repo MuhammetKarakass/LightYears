@@ -2,6 +2,8 @@
 #include "editor/EditorIcons.h"
 #include <framework/World.h>
 #include <framework/Actor.h>
+#include <framework/scene/SceneEntityComponent.h>
+#include <level/PlayerStart.h>
 #include <script/ScriptComponent.h>
 #include <script/ScriptRuntime.h>
 #include <imgui.h>
@@ -94,6 +96,22 @@ namespace vega
 				ImGui::Image(mViewport.GetTexture(), imageSize);
 				const ImVec2 topLeft = ImGui::GetItemRectMin();
 				const ImVec2 bottomRight = ImGui::GetItemRectMax();
+				auto* draw = ImGui::GetWindowDrawList();
+				if (mContext.playMode) draw->AddRect(topLeft, bottomRight, IM_COL32(255, 158, 56, 255), 0.f, 0, 4.f);
+				if (!mContext.playMode && mContext.world)
+				{
+					draw->PushClipRect(topLeft, bottomRight, true);
+					for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<ly::PlayerStart>())
+					{
+						const auto start = weak.lock();
+						if (!start || start->GetIsPendingDestroy()) continue;
+						const auto pixel = mViewport.GetTexture().mapCoordsToPixel(start->GetActorLocation(), mContext.world->GetWorldView());
+						const ImVec2 p{ topLeft.x + pixel.x * scale, topLeft.y + pixel.y * scale };
+						draw->AddTriangleFilled({ p.x, p.y - 14.f }, { p.x - 11.f, p.y + 10.f }, { p.x + 11.f, p.y + 10.f }, IM_COL32(75, 224, 219, 245));
+						draw->AddText({ p.x + 18.f, p.y - 8.f }, IM_COL32(230, 242, 250, 255), start->GetShip().c_str());
+					}
+					draw->PopClipRect();
+				}
 				mViewportImageRect = { { topLeft.x - mainViewport->Pos.x, topLeft.y - mainViewport->Pos.y },
 					{ bottomRight.x - topLeft.x, bottomRight.y - topLeft.y } };
 				mViewportImageHovered = ImGui::IsItemHovered();
@@ -109,68 +127,75 @@ namespace vega
 	{
 		if (ImGui::Begin("Hierarchy", &mShowHierarchy))
 		{
-			ImGui::InputTextWithHint("##ActorFilter", "Filter by type name", mHierarchyFilter, sizeof(mHierarchyFilter));
+			ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+			if (ImGui::Button("+")) ImGui::OpenPopup("Create entity");
+			if (ImGui::BeginPopup("Create entity")) { DrawCreateMenu(); ImGui::EndPopup(); }
+			ImGui::EndDisabled();
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1.f);
+			ImGui::InputTextWithHint("##ActorFilter", "Filter name or type", mHierarchyFilter, sizeof(mHierarchyFilter));
 			ImGui::Separator();
-			struct Row
-			{
-				std::shared_ptr<ly::Actor> actor;
-				std::string name;
-			};
-			std::vector<Row> rows;
-			if (const ly::World* world = GetCurrentWorld())
-			{
-				const std::string filter = mHierarchyFilter;
-				for (const auto& weakActor : world->GetActorsByType<ly::Actor>())
-				{
-					if (auto actor = weakActor.lock(); actor && !actor->GetIsPendingDestroy())
-					{
-						std::string name = ActorTypeName(*actor);
-						if (filter.empty() || std::search(name.begin(), name.end(), filter.begin(), filter.end(),
-							[](unsigned char first, unsigned char second) { return std::tolower(first) == std::tolower(second); }) != name.end())
-						{
-							rows.push_back({ std::move(actor), std::move(name) });
-						}
-					}
-				}
-			}
-			const auto selected = mSelection.Get();
-			// Filter before clipping: every displayed index must correspond to one visible row.
 			if (ImGui::BeginChild("ActorList"))
 			{
-				ImGuiListClipper clipper;
-				clipper.Begin(static_cast<int>(rows.size()), 27.f + ImGui::GetStyle().ItemSpacing.y);
-				while (clipper.Step())
+				if (mContext.world) for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<ly::Actor>())
 				{
-					for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
+					const auto actor = weak.lock();
+					if (!actor || actor->GetIsPendingDestroy()) continue;
+					const auto* identity = actor->FindComponent<ly::SceneEntityComponent>();
+					const auto type = ActorTypeName(*actor);
+					const auto name = identity ? identity->name : type + " #" + std::to_string(actor->GetUniqueID());
+					const auto searchable = name + " " + type;
+					const std::string filter = mHierarchyFilter;
+					if (!filter.empty() && std::search(searchable.begin(), searchable.end(), filter.begin(), filter.end(),
+						[](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); }) == searchable.end()) continue;
+					ImGui::PushID(static_cast<int>(actor->GetUniqueID()));
+					if (identity && identity->guid == mRenameGuid)
 					{
-						const Row& row = rows[static_cast<std::size_t>(index)];
-						const std::string label = row.name + "  #" + std::to_string(row.actor->GetUniqueID());
-						ImGui::PushID(row.actor.get());
-						const auto pos = ImGui::GetCursorScreenPos();
-						const float height = 27.f;
-						if (index % 2 == 0) ImGui::GetWindowDrawList()->AddRectFilled(pos,
-							{ pos.x + ImGui::GetContentRegionAvail().x, pos.y + height }, IM_COL32(111, 152, 190, 12));
-						if (ImGui::Selectable(("##" + label).c_str(), row.actor == selected, 0, { 0.f, height }))
+						if (mRenameFocus) { ImGui::SetKeyboardFocusHere(); mRenameFocus = false; }
+						const bool enter = ImGui::InputText("##Rename", mRenameInput, sizeof(mRenameInput), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+						if (enter || ImGui::IsItemDeactivatedAfterEdit())
 						{
-							SelectActor{ row.actor->GetUniqueID() }.Execute(mContext);
+							mSelection.Select(actor);
+							RenameSceneEntity(mContext, mHistory, mRenameInput);
+							mRenameGuid.clear();
 						}
-						bool hasScript = false;
-						row.actor->ForEachComponent([&](ly::ActorComponent& component)
-						{
-							if (dynamic_cast<script::ScriptComponent*>(&component)) hasScript = true;
-						});
-						DrawEditorIcon(*ImGui::GetWindowDrawList(), hasScript ? IconKind::Script : IconKind::Actor,
-							{ pos.x + 4.f, pos.y + 3.f }, { 20.f, 20.f }, IM_COL32(73, 198, 204, 255));
-						ImGui::GetWindowDrawList()->AddText({ pos.x + 30.f, pos.y + 3.f }, ImGui::GetColorU32(ImGuiCol_Text), label.c_str());
-						ImGui::PopID();
+						if (ImGui::IsKeyPressed(ImGuiKey_Escape)) mRenameGuid.clear();
 					}
+					else
+					{
+						if (ImGui::Selectable((name + "##Entity").c_str(), mSelection.Get() == actor, ImGuiSelectableFlags_AllowDoubleClick))
+						{
+							mSelection.Select(actor);
+							if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) BeginRename();
+						}
+						if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) ImGui::OpenPopup("Entity actions");
+						ImGui::TextDisabled("%s", type.c_str());
+					}
+					if (ImGui::BeginPopup("Entity actions"))
+					{
+						mSelection.Select(actor);
+						ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+						DrawCreateMenu();
+						if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, identity != nullptr)) DuplicateSceneEntity(mContext, mHistory);
+						if (ImGui::MenuItem("Rename", "F2", false, identity != nullptr)) BeginRename();
+						if (ImGui::MenuItem("Delete", "Del", false, identity != nullptr)) mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+						ImGui::EndDisabled();
+						ImGui::EndPopup();
+					}
+					ImGui::PopID();
+				}
+				if (ImGui::BeginPopupContextWindow("Hierarchy actions", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+				{
+					ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+					DrawCreateMenu();
+					ImGui::EndDisabled();
+					ImGui::EndPopup();
 				}
 			}
 			ImGui::EndChild();
 		}
 		ImGui::End();
 	}
-
 	void EditorApplication::BuildInspectorPanel()
 	{
 		if (ImGui::Begin("Inspector", &mShowInspector))
@@ -179,6 +204,18 @@ namespace vega
 			{
 				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
 				if (ImGui::Button("Focus")) mContext.FocusSelection();
+				if (mContext.playMode) ImGui::TextWrapped("Play inspection only. Runtime changes are discarded on Stop.");
+				ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+				if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>())
+				{
+					ly::reflect::PropertyInfo nameProperty;
+					nameProperty.name = "Name";
+					nameProperty.kind = ly::reflect::PropertyKind::String;
+					ly::reflect::PropertyValue value = identity->name;
+					const bool changed = DrawProperty(nameProperty, value);
+					if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
+					if (changed) RenameSceneEntity(mContext, mHistory, std::get<std::string>(value), mPropertyMergeGroup);
+				}
 				if (ImGui::Button("Add Script")) ImGui::OpenPopup("Add Script");
 				ImGui::SetItemTooltip("Attach a Lua script. Adding a script cannot be undone in this step.");
 				if (ImGui::BeginPopup("Add Script"))
@@ -193,7 +230,7 @@ namespace vega
 					}
 					std::sort(paths.begin(), paths.end());
 					for (const auto& path : paths)
-						if (ImGui::Selectable(path.c_str())) actor->AddComponent<script::ScriptComponent>(path);
+						if (ImGui::Selectable(path.c_str())) actor->AddComponent<script::ScriptComponent>(path).Prepare();
 					if (paths.empty()) ImGui::TextUnformatted("No .lua files under scripts/");
 					ImGui::EndPopup();
 				}
@@ -262,7 +299,9 @@ namespace vega
 				std::size_t componentIndex = 0;
 				actor->ForEachComponent([&](ly::ActorComponent& component)
 				{
-					drawSection({ &component, ly::reflect::TypeRegistry::Get().FindMostDerived(component), componentIndex++ });
+					if (!dynamic_cast<ly::SceneEntityComponent*>(&component))
+						drawSection({ &component, ly::reflect::TypeRegistry::Get().FindMostDerived(component), componentIndex });
+					++componentIndex;
 				});
 				if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
 				{
@@ -279,33 +318,15 @@ namespace vega
 					ImGui::Text("Size: %.2f, %.2f", bounds.size.x, bounds.size.y);
 				}
 				ImGui::Separator();
-				if (ImGui::Button("Destroy"))
-				{
-					mDestroyActor = actor->GetUniqueID();
-					ImGui::OpenPopup("Destroy actor?");
-				}
+				if (ImGui::Button("Delete entity") && actor->FindComponent<ly::SceneEntityComponent>())
+					mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+				ImGui::EndDisabled();
 			}
 			else
 			{
 				ImGui::TextWrapped("Select an actor in the Hierarchy or paused viewport.");
 			}
-			if (ImGui::BeginPopupModal("Destroy actor?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				ImGui::TextUnformatted("Destroy this actor? This cannot be undone.");
-				if (ImGui::Button("Destroy permanently"))
-				{
-					if (mDestroyActor) mHistory.Execute(std::make_unique<DestroyActor>(*mDestroyActor));
-					mDestroyActor.reset();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Cancel"))
-				{
-					mDestroyActor.reset();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
+
 		}
 		ImGui::End();
 	}
@@ -318,13 +339,16 @@ namespace vega
 			return;
 		}
 		const sf::Vector2f point = world->GetMouseWorldPosition();
-		const auto actors = world->GetActorsInBounds({ point - sf::Vector2f{ 2.f, 2.f }, { 4.f, 4.f } });
+		const auto actors = world->GetActorsByTypeIncludingPending<ly::Actor>();
 		std::vector<ActorPickBounds> candidates;
 		for (const auto& weakActor : actors)
 		{
 			if (const auto actor = weakActor.lock(); actor && !actor->GetIsPendingDestroy())
 			{
-				candidates.emplace_back(actor->GetUniqueID(), actor->GetActorGlobalBounds());
+				auto bounds = actor->GetActorGlobalBounds();
+				if (dynamic_cast<ly::PlayerStart*>(actor.get()) && !mContext.playMode)
+					bounds = { actor->GetActorLocation() - sf::Vector2f{ 24.f, 24.f }, { 48.f, 48.f } };
+				candidates.emplace_back(actor->GetUniqueID(), bounds);
 			}
 		}
 		const auto best = PickBestActor(point, candidates);

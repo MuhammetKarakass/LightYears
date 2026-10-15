@@ -19,6 +19,12 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "new-scene", ScriptOperation::NewScene }, { "open-scene scenes/sandbox.scene.json", ScriptOperation::OpenScene },
+		{ "save-scene \"D:/build/temp scene.scene.json\"", ScriptOperation::SaveScene },
+		{ "create Asteroid", ScriptOperation::Create }, { "delete", ScriptOperation::Delete }, { "duplicate", ScriptOperation::Duplicate },
+		{ "play-mode", ScriptOperation::PlayMode }, { "stop", ScriptOperation::Stop },
+		{ "expect-mode edit", ScriptOperation::ExpectMode }, { "expect-mode play", ScriptOperation::ExpectMode },
+		{ "expect-entity-count 7", ScriptOperation::ExpectEntityCount }, { "expect-scene-dirty false", ScriptOperation::ExpectSceneDirty },
 		{ "tool move", ScriptOperation::Tool }, { "tool rotate", ScriptOperation::Tool },
 		{ "snap on", ScriptOperation::Snap }, { "snap off", ScriptOperation::Snap },
 		{ "grid on", ScriptOperation::Grid }, { "grid off", ScriptOperation::Grid },
@@ -82,6 +88,12 @@ int main()
 		Check(!parsed.command && !parsed.error.empty(), std::string{ "Bad command accepted: " } + line);
 	}
 	Check(ParseEditorScriptLine("select 0").command->number == 0, "ID zero must be valid");
+	Check(ParseEditorScriptLine("save-scene").command->operation == ScriptOperation::SaveScene, "Save current scene must parse");
+	Check(ParseEditorScriptLine("rename Rock A # comment").command->text == "Rock A", "Rename must join the rest of the line");
+	Check(ParseEditorScriptLine("select-name \"Rock # A\"").command->text == "Rock # A", "Quoted entity name lost");
+	for (const char* line : { "rename", "rename \"\"", "select-name", "select-name \"\"", "open-scene", "save-scene \"\"",
+		"create", "expect-mode", "expect-mode paused", "expect-entity-count -1", "expect-entity-count 1.5", "expect-scene-dirty 1" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Bad authoring command accepted: " } + line);
 	Check(ParseEditorScriptLine("zoom 2.5").command->factor == 2.5f, "Zoom factor lost");
 	Check(ParseEditorScriptLine("pan -500 20").command->location == sf::Vector2f{ -500.f, 20.f }, "Pan values lost");
 	Check(ParseEditorScriptLine("camera editor").command->text == "editor", "Camera mode lost");

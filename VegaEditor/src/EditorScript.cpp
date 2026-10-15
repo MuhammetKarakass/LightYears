@@ -2,6 +2,7 @@
 #include "editor/EditorCommands.h"
 #include "editor/JsonCommands.h"
 #include <framework/World.h>
+#include <framework/scene/SceneEntityComponent.h>
 #include <script/ScriptComponent.h>
 #include <SFML/Graphics.hpp>
 #include <cmath>
@@ -174,11 +175,55 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::NewScene:
+		case ScriptOperation::OpenScene:
+		case ScriptOperation::SaveScene:
+		case ScriptOperation::PlayMode:
+		case ScriptOperation::Stop:
+		{
+			const std::string action = command.operation == ScriptOperation::NewScene ? "new" : command.operation == ScriptOperation::OpenScene ? "open" :
+				command.operation == ScriptOperation::SaveScene ? "save" : command.operation == ScriptOperation::PlayMode ? "play" : "stop";
+			success = context.sceneAction && context.sceneAction(action, command.text);
+			detail = success ? "Scene " + action : context.sceneError;
+			break;
+		}
+		case ScriptOperation::Create: success = CreateSceneEntity(context, history, command.text); break;
+		case ScriptOperation::Delete:
+			if (actor && actor->FindComponent<ly::SceneEntityComponent>()) success = history.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+			break;
+		case ScriptOperation::Duplicate: success = DuplicateSceneEntity(context, history); break;
+		case ScriptOperation::Rename: success = RenameSceneEntity(context, history, command.text); break;
+		case ScriptOperation::SelectName:
+		case ScriptOperation::ExpectEntityCount:
+		{
+			unsigned int count = 0;
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+			{
+				const auto candidate = weak.lock();
+				const auto* identity = candidate ? candidate->FindComponent<ly::SceneEntityComponent>() : nullptr;
+				if (!identity || candidate->GetIsPendingDestroy()) continue;
+				++count;
+				if (command.operation == ScriptOperation::SelectName && identity->name == command.text)
+				{
+					context.selection.Select(candidate);
+					success = true;
+					break;
+				}
+			}
+			if (command.operation == ScriptOperation::ExpectEntityCount)
+			{
+				success = count == command.number;
+				detail = "count " + std::to_string(count) + " expected " + std::to_string(command.number);
+			}
+			break;
+		}
+		case ScriptOperation::ExpectMode: success = context.playMode == (command.text == "play"); break;
+		case ScriptOperation::ExpectSceneDirty: success = context.sceneDirty && context.sceneDirty() == (command.text == "true"); break;
 		case ScriptOperation::AddScript:
-			if (actor)
+			if (actor && !context.playMode)
 			{
 				auto& script = actor->AddComponent<script::ScriptComponent>(command.text);
-				success = script.LastError().empty();
+				success = script.Prepare();
 				detail = success ? "Script attached (not undoable)" : script.LastError();
 			}
 			break;
@@ -244,11 +289,11 @@ namespace vega
 			break;
 		}
 		case ScriptOperation::JsonSave:
-			success = context.document && context.document->Save();
+			success = !context.playMode && context.document && context.document->Save();
 			if (context.document) detail = context.document->Error();
 			break;
 		case ScriptOperation::JsonRevert:
-			success = context.document && context.document->Revert();
+			success = !context.playMode && context.document && context.document->Revert();
 			if (context.document) detail = context.document->Error();
 			break;
 		case ScriptOperation::ExpectJsonDirty:
@@ -315,7 +360,7 @@ namespace vega
 		case ScriptOperation::SelectType:
 		{
 			unsigned int index = 0;
-			for (const auto& weak : context.world->GetActorsByType<ly::Actor>())
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
 			{
 				if (auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy() && ActorTypeName(*candidate) == command.text)
 				{
@@ -344,7 +389,7 @@ namespace vega
 		case ScriptOperation::ExpectCount:
 		{
 			unsigned int count = 0;
-			for (const auto& weak : context.world->GetActorsByType<ly::Actor>())
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
 			{
 				if (auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy() && ActorTypeName(*candidate) == command.text) ++count;
 			}

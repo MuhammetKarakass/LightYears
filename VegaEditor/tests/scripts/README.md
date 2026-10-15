@@ -1,5 +1,58 @@
 Run the editor script runner from the editor's executable directory.
 
+The editor starts in **Edit** mode with `scenes/sandbox.scene.json`.
+`--editor-scene <path>` selects another startup scene; a missing startup file
+creates an empty scene. Relative scene paths resolve against the editor asset
+root; absolute paths are accepted. Edit always stays paused, uses the editor
+camera, and renders authored entities without gameplay BeginPlay, Lua callbacks,
+players, HUDs, stages or gameplay timers. PlayerStart triangles and Ship labels
+are editor overlays visible only in Edit.
+
+```text
+new-scene
+open-scene <path>
+save-scene [path]
+create <SpawnableType>
+delete
+duplicate
+rename <name...>
+select-name <name...>
+play-mode
+stop
+expect-mode edit|play
+expect-entity-count <non-negative integer>
+expect-scene-dirty true|false
+```
+
+`rename` and `select-name` join the remaining arguments with spaces; the usual
+quoted names and comments work. `create` selects a new entity at the editor
+camera centre with a new GUID and the first unused name `<Type> N`. `duplicate`
+copies serialized entity data, selects the copy, generates a new GUID and adds
+32 world units on both axes. Create, duplicate, delete, rename, transforms,
+reflected properties and Lua property overrides share undo history. Delete undo
+recreates the same GUID; older edits resolve the recreated actor.
+
+`play-mode` captures the edit world with SceneSerializer and loads a fresh Play
+world. `stop` discards gameplay state, restores the snapshot, editor camera and
+pre-Play selection by GUID, and preserves undo/redo. Authoring edits and undo/redo
+are disabled in Play; selection and inspection remain available. `play` and
+`pause` still resume/pause the current mode; Edit cannot be unpaused. Use
+`play-mode` when scripts need actual gameplay or Lua updates.
+
+New/Open script commands refuse unsaved scene changes; save first. UI New/Open/
+Exit offer Save / Discard / Cancel. Save uses an exclusive sibling temporary
+file and atomic replacement, supports new destinations, and retains history.
+Dirty compares serialized authored state with the last loaded/saved state,
+independent of runtime IDs and entity ordering. Ctrl+S saves the scene unless
+Data Editor has focus. Scene double-clicks in Content open the authoring scene.
+
+`VegaEditorAuthoring` runs the configured build-tree copy of
+`authoring.vegascript`. CMake substitutes an absolute build-tree path for
+`@VEGA_AUTHORING_SCENE@`; the test never saves to source assets. It verifies
+Edit/Play/Stop, selection restoration, dirty state and deletion undo, and captures
+`authoring.png` in the editor executable directory. Smoke/UI now inspect a
+DummyEnemy; camera/scripting explicitly enter Play when gameplay is needed.
+
 Lua actor commands (operate on the selected actor's first ScriptComponent):
 
 ```text
@@ -121,7 +174,7 @@ Property targets are `Actor` (including its registered derived properties) or a
 component type name; the first matching component in component order is used.
 Property names are case-sensitive. Use one value for bool (`true`/`false` or
 `1`/`0`), int, float, string (quote strings with spaces), or enum (integer value);
-two floats for Vector2; four integer channels in 0–255 order RGBA for Color.
+two floats for Vector2; four integer channels in 0â€“255 order RGBA for Color.
 `expect-prop` compares floats and vector coordinates using its optional non-negative
 tolerance; bools, integers, enums, colors and strings compare exactly. Property
 arity and value types are validated at execution against the selected descriptor.
@@ -143,7 +196,7 @@ Pausing enters the editor camera from the current game view; playing restores th
 game camera. `camera` switches manually. `focus` enters the editor camera and
 centres the selection, fitting its bounds to about 40% of the view, with a minimum
 1:1 scale for tiny actors. Zoom is world units per texture pixel, clamped to
-0.05–20. `zoom` multiplies that scale at the view centre (2 shows twice as much
+0.05â€“20. `zoom` multiplies that scale at the view centre (2 shows twice as much
 world); `pan` adds world units to the centre. Both enter the editor camera.
 `expect-visible` checks that the selected actor's global bounds intersect the
 current world view. These commands do not change actor transforms or history.
@@ -154,7 +207,7 @@ image; these gestures are consumed before gameplay. F focuses the selection when
 the viewport is hovered or focused and text input is inactive. The Inspector
 Focus button does the same.
 
-The main toolbar provides Play/Pause, a single simulation frame while paused,
+The main toolbar provides Play/Stop, Pause/Resume and a single simulation frame while paused in Play,
 Move (W), Rotate (E), camera mode, and snapping. Drag the red X or green Y arrow
 to constrain movement, or the centre square for both axes. The rotation ring uses
 clockwise screen angles. Handles keep their screen size as the camera zooms.
@@ -172,8 +225,7 @@ working directory.
 Capture paths are relative to the process working directory. The capture copies
 the editor window after ImGui renders; no `--visual-capture` option is needed.
 Existing game dev options remain available. Script runs still require an SFML
-window and graphics context. Actor deletion cannot be undone; UI deletion asks for
-confirmation, executes without adding an undo entry, and invalidates redo.
+window and graphics context. Scene entity deletion is undoable, including its GUID, properties, components and scripts.
 
 ```text
 export <dir> [overwrite]

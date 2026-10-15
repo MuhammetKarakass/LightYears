@@ -1,6 +1,7 @@
 #pragma once
 
 #include <framework/Application.h>
+#include <nlohmann/json.hpp>
 
 #include <memory>
 #include <string>
@@ -12,13 +13,14 @@ namespace ly
 	class GameApplication : public Application
 	{
 	public:
-		GameApplication();
+		explicit GameApplication(bool editor = false);
 		~GameApplication() override;
 		int GetExitCode() const override { return mExitCode; }
 
 	protected:
 		bool HandleApplicationEvent(const sf::Event& event) override;
 		void AfterRender() override;
+		void ApplySceneSettings(const nlohmann::json& settings);
 
 	private:
 		virtual void Tick(float deltaTime) override;

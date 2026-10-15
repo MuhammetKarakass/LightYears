@@ -1,5 +1,7 @@
 #include "editor/EditorCommands.h"
 #include <framework/World.h>
+#include <framework/scene/Scene.h>
+#include <framework/scene/SceneEntityComponent.h>
 #include <script/ScriptComponent.h>
 #include <cmath>
 #include <cstdlib>
@@ -17,7 +19,7 @@ namespace vega
 
 	bool SetScriptPropertyCommand::Execute(EditorContext& context)
 	{
-		const auto actor = context.Resolve(mID);
+		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor) return false;
 		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
 		auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object));
@@ -31,7 +33,7 @@ namespace vega
 	}
 	void SetScriptPropertyCommand::Undo(EditorContext& context)
 	{
-		const auto actor = context.Resolve(mID);
+		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor || !mExecuted) return;
 		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
 		if (auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)))
@@ -90,7 +92,7 @@ namespace vega
 
 	bool SetPropertyCommand::Execute(EditorContext& context)
 	{
-		const auto actor = context.Resolve(mID);
+		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor) return false;
 		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
 		const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr;
@@ -103,7 +105,7 @@ namespace vega
 
 	void SetPropertyCommand::Undo(EditorContext& context)
 	{
-		const auto actor = context.Resolve(mID);
+		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor || !mExecuted) return;
 		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
 		if (const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr)
@@ -133,6 +135,7 @@ namespace vega
 	bool EditorContext::SetEditorCamera(bool enabled)
 	{
 		if (!world || !camera) return false;
+		if (world->IsEditMode()) enabled = true;
 		if (enabled)
 		{
 			if (!world->GetViewOverride()) camera->InitFrom(world->GetWorldView());
@@ -180,7 +183,7 @@ namespace vega
 	std::shared_ptr<ly::Actor> EditorContext::Resolve(unsigned int id) const
 	{
 		if (!world) return {};
-		for (const auto& weak : world->GetActorsByType<ly::Actor>())
+		for (const auto& weak : world->GetActorsByTypeIncludingPending<ly::Actor>())
 		{
 			if (auto actor = weak.lock(); actor && actor->GetUniqueID() == id && !actor->GetIsPendingDestroy())
 			{
@@ -190,13 +193,34 @@ namespace vega
 		return {};
 	}
 
+	std::shared_ptr<ly::Actor> EditorContext::ResolveGuid(const std::string& guid) const
+	{
+		if (!world || guid.empty()) return {};
+		for (const auto& weak : world->GetActorsByTypeIncludingPending<ly::Actor>())
+		{
+			const auto actor = weak.lock();
+			const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+			if (identity && identity->guid == guid && !actor->GetIsPendingDestroy()) return actor;
+		}
+		return {};
+	}
+
+	std::shared_ptr<ly::Actor> EditorContext::Resolve(unsigned int id, std::string& guid) const
+	{
+		// Once captured, GUID is authoritative: a missing entity must not hit an unrelated runtime ID.
+		if (!guid.empty()) return ResolveGuid(guid);
+		const auto actor = Resolve(id);
+		if (const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr) guid = identity->guid;
+		return actor;
+	}
+
 	CommandHistory::CommandHistory(EditorContext& context, std::size_t maxDepth)
 		: mContext{ context }, mMaxDepth{ maxDepth } {}
 
 	bool CommandHistory::Execute(std::unique_ptr<EditorCommand> command)
 	{
 		PruneInvalidCommands();
-		if (!command || !command->Execute(mContext)) return false;
+		if (!command || mContext.transitioning || (mContext.playMode && command->IsUndoable()) || !command->Execute(mContext)) return false;
 		const bool hadRedo = CanRedo();
 		mRedo.clear();
 		if (!command->IsUndoable() || mMaxDepth == 0)
@@ -215,7 +239,7 @@ namespace vega
 	bool CommandHistory::Undo()
 	{
 		PruneInvalidCommands();
-		if (!CanUndo()) return false;
+		if (mContext.playMode || mContext.transitioning || !CanUndo()) return false;
 		mMergeAllowed = false;
 		mUndo.back()->Undo(mContext);
 		mRedo.push_back(std::move(mUndo.back()));
@@ -226,7 +250,7 @@ namespace vega
 	bool CommandHistory::Redo()
 	{
 		PruneInvalidCommands();
-		if (!CanRedo() || !mRedo.back()->Execute(mContext)) return false;
+		if (mContext.playMode || mContext.transitioning || !CanRedo() || !mRedo.back()->Execute(mContext)) return false;
 		mMergeAllowed = false;
 		mUndo.push_back(std::move(mRedo.back()));
 		mRedo.pop_back();
@@ -263,7 +287,7 @@ namespace vega
 
 	bool ActorPropertyCommand::Execute(EditorContext& context)
 	{
-		auto actor = context.Resolve(mID);
+		auto actor = context.Resolve(mID, mGuid);
 		if (!actor) return false;
 		if (mProperty == Property::Location)
 		{
@@ -302,7 +326,7 @@ namespace vega
 	void ActorPropertyCommand::Undo(EditorContext& context)
 	{
 		// Gameplay may remove an actor while its edits remain in history; never resurrect an expired target.
-		if (auto actor = context.Resolve(mID); actor && mExecuted) Apply(*actor, mBefore);
+		if (auto actor = context.Resolve(mID, mGuid); actor && mExecuted) Apply(*actor, mBefore);
 	}
 
 	std::string ActorPropertyCommand::Name() const
@@ -346,10 +370,97 @@ namespace vega
 
 	bool DestroyActor::Execute(EditorContext& context)
 	{
-		auto actor = context.Resolve(mID);
+		if (context.playMode) return false;
+		auto actor = context.Resolve(mID, mGuid);
 		if (!actor) return false;
+		if (!mGuid.empty())
+		{
+			const auto scene = ly::SceneSerializer::Save(*context.world);
+			for (const auto& entity : scene["entities"])
+				if (entity["guid"] == mGuid) { mEntity = entity; break; }
+			if (mEntity.is_null()) return false;
+		}
 		actor->Destroy();
 		if (!context.selection.Get()) context.selection.Clear();
 		return true;
+	}
+
+	namespace
+	{
+		nlohmann::json EntityScene(const nlohmann::json& entity)
+		{
+			return { { "format", "vega.scene" }, { "version", 1 }, { "settings", nlohmann::json::object() },
+				{ "entities", nlohmann::json::array({ entity }) } };
+		}
+	}
+
+	void DestroyActor::Undo(EditorContext& context)
+	{
+		if (mEntity.is_null() || !context.world) return;
+		if (ly::SceneSerializer::Load(*context.world, EntityScene(mEntity)).spawned == 1)
+			context.selection.Select(context.ResolveGuid(mGuid));
+	}
+
+	bool CreateEntity::Execute(EditorContext& context)
+	{
+		if (!context.world || context.playMode) return false;
+		if (ly::SceneSerializer::Load(*context.world, EntityScene(mEntity)).spawned != 1) return false;
+		const auto guid = mEntity.at("guid").get<std::string>();
+		// Constructors may choose random defaults (asteroid textures). Freeze the
+		// realized serialized data so redo recreates exactly the authored entity.
+		const auto scene = ly::SceneSerializer::Save(*context.world);
+		for (const auto& entity : scene["entities"])
+			if (entity["guid"] == guid) { mEntity = entity; break; }
+		context.selection.Select(context.ResolveGuid(guid));
+		return true;
+	}
+
+	void CreateEntity::Undo(EditorContext& context)
+	{
+		if (auto actor = context.ResolveGuid(mEntity.at("guid").get<std::string>())) actor->Destroy();
+		context.selection.Clear();
+	}
+
+	bool CreateSceneEntity(EditorContext& context, CommandHistory& history, const std::string& type)
+	{
+		if (!context.world || context.playMode) return false;
+		const auto* info = ly::reflect::TypeRegistry::Get().Find(type);
+		if (!info || !info->spawnable || !info->create || info->root != ly::reflect::TypeRoot::Actor) return false;
+		const auto scene = ly::SceneSerializer::Save(*context.world);
+		unsigned int number = 1;
+		std::string name;
+		do
+		{
+			name = type + " " + std::to_string(number++);
+		} while (std::any_of(scene["entities"].begin(), scene["entities"].end(), [&](const auto& entity) { return entity["name"] == name; }));
+		const auto centre = context.camera ? context.camera->GetView().getCenter() : context.world->GetWorldView().getCenter();
+		return history.Execute(std::make_unique<CreateEntity>(nlohmann::json{
+			{ "guid", ly::SceneEntityComponent::GenerateGuid() }, { "name", name }, { "type", type },
+			{ "properties", { { "Location", { centre.x, centre.y } } } } }));
+	}
+
+	bool DuplicateSceneEntity(EditorContext& context, CommandHistory& history)
+	{
+		const auto actor = context.selection.Get();
+		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+		if (!identity || !context.world || context.playMode) return false;
+		const auto scene = ly::SceneSerializer::Save(*context.world);
+		for (auto entity : scene["entities"])
+		{
+			if (entity["guid"] != identity->guid) continue;
+			entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
+			const auto location = actor->GetActorLocation() + sf::Vector2f{ 32.f, 32.f };
+			entity["properties"]["Location"] = { location.x, location.y };
+			return history.Execute(std::make_unique<CreateEntity>(std::move(entity)));
+		}
+		return false;
+	}
+
+	bool RenameSceneEntity(EditorContext& context, CommandHistory& history, const std::string& name, std::uint64_t group)
+	{
+		const auto actor = context.selection.Get();
+		if (!actor || context.playMode) return false;
+		const auto target = FindPropertyTarget(*actor, "SceneEntityComponent");
+		return target.object && history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIndex, "Name", name, group));
 	}
 }

@@ -42,6 +42,36 @@ namespace vega
 		void FinishDocumentRequest();
 		void RefreshContent();
 		void PickViewportActor();
+		bool OpenScene(const std::filesystem::path& path, bool allowMissing = false);
+		bool SaveScene(const std::filesystem::path& path = {});
+		bool SetPlayMode(bool playing);
+		bool SceneDirty() const;
+		void LoadSceneWorld(const nlohmann::json& scene, bool edit);
+		void RequestScene(const std::string& action, const std::filesystem::path& path = {});
+		void FinishSceneRequest();
+		void BuildSceneDialogs();
+		void DrawCreateMenu();
+		void BeginRename();
+		nlohmann::json CaptureScene() const;
+
+		std::filesystem::path mScenePath;
+		nlohmann::json mSceneSettings = nlohmann::json::object();
+		nlohmann::json mSavedScene;
+		nlohmann::json mPlaySnapshot;
+		EditorCamera mEditCamera;
+		std::string mEditSelectionGuid;
+		std::string mRestoreSelectionGuid;
+		bool mBaselineOnLoad = false;
+		bool mOpenSceneDialog = false;
+		bool mSaveSceneDialog = false;
+		bool mConfirmScene = false;
+		std::string mPendingSceneAction;
+		std::filesystem::path mPendingScenePath;
+		char mScenePathInput[1024]{ "scenes/sandbox.scene.json" };
+		std::string mRenameGuid;
+		char mRenameInput[512]{};
+		bool mRenameFocus = false;
+		bool mDataFocused = false;
 
 		EditorViewport mViewport;
 		EditorSelection mSelection;

@@ -11,7 +11,9 @@ namespace ly
 		// Presentation is application-owned; a callback applies game settings
 		// without making the headless game library depend on the visual pipeline.
 		using SettingsApplier = std::function<void(const nlohmann::json&)>;
-		SceneLevel(Application* app, nlohmann::json scene, SettingsApplier applySettings = {});
+		SceneLevel(Application* app, nlohmann::json scene, SettingsApplier applySettings = {}, bool editMode = false);
+		bool IsEditMode() const override { return mEditMode; }
+		bool DispatchEvent(const sf::Event& event) override;
 		const SceneLoadResult& GetSceneLoadResult() const { return mLoadResult; }
 	protected:
 		void BeginPlay() override;
@@ -21,5 +23,6 @@ namespace ly
 		nlohmann::json mScene;
 		SettingsApplier mApplySettings;
 		SceneLoadResult mLoadResult;
+		bool mEditMode = false;
 	};
 }
