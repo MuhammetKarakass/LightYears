@@ -1,0 +1,13 @@
+# One command per frame. Capture paths are relative to the editor working directory.
+pause
+select-type PlayerSpaceShip
+expect-selected PlayerSpaceShip
+remember-location
+move 400 300
+expect-location 400 300
+undo
+expect-remembered-location
+redo
+expect-location 400 300
+capture smoke.png
+quit

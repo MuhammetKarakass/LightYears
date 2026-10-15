@@ -1,0 +1,71 @@
+#include "editor/EditorScript.h"
+#include <iostream>
+
+namespace
+{
+	int failures = 0;
+	void Check(bool condition, const std::string& message)
+	{
+		if (!condition)
+		{
+			std::cerr << message << '\n';
+			++failures;
+		}
+	}
+}
+
+int main()
+{
+	using vega::ParseEditorScriptLine;
+	using vega::ScriptOperation;
+	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "pause", ScriptOperation::Pause }, { "play", ScriptOperation::Play },
+		{ "wait 12", ScriptOperation::Wait }, { "select 11", ScriptOperation::Select },
+		{ "select-type PlayerSpaceShip", ScriptOperation::SelectType },
+		{ "select-type Actor 2", ScriptOperation::SelectType },
+		{ "move -2.5 300", ScriptOperation::Move }, { "rotate 90", ScriptOperation::Rotate },
+		{ "undo", ScriptOperation::Undo }, { "redo", ScriptOperation::Redo },
+		{ "expect-selected PlayerSpaceShip", ScriptOperation::ExpectSelected },
+		{ "expect-location 400 300", ScriptOperation::ExpectLocation },
+		{ "expect-location 400 300 0.01", ScriptOperation::ExpectLocation },
+		{ "expect-count Actor 3", ScriptOperation::ExpectCount },
+		{ "capture subdir/smoke.png", ScriptOperation::Capture }, { "quit", ScriptOperation::Quit },
+		{ "remember-location", ScriptOperation::RememberLocation },
+		{ "expect-remembered-location", ScriptOperation::ExpectRememberedLocation }
+	};
+	for (const auto& test : cases)
+	{
+		const auto parsed = ParseEditorScriptLine(test.first);
+		Check(parsed.command && parsed.error.empty() && parsed.command->operation == test.second, std::string{ "Parse failed: " } + test.first);
+		Check(!ParseEditorScriptLine(std::string{ test.first } + " extra").error.empty(), std::string{ "Extra argument accepted: " } + test.first);
+		const auto commented = ParseEditorScriptLine(std::string{ " \t" } + test.first + " # trailing comment\r");
+		Check(commented.command && commented.command->operation == test.second, "Comment or whitespace changed command");
+	}
+	for (const char* line : { "", "   \t\r", "# comment", "  #comment" })
+	{
+		Check(ParseEditorScriptLine(line).IsIgnored(), "Blank/comment must be ignored");
+	}
+	for (const char* line : { "unknown", "Pause", "select", "select -1", "select 4294967296", "select 2x",
+		"select-type", "select-type Actor -1", "wait", "wait -2", "wait 1.5", "move", "move 1", "move 1 abc",
+		"move nan 2", "move inf 2", "move 1e999 2", "move 1x 2", "rotate", "rotate bad",
+		"expect-selected", "expect-location 1", "expect-location 1 2 -1", "expect-location 1 2 nope",
+		"expect-count Actor", "expect-count Actor -1", "capture", "remember-location 1", "quit now" })
+	{
+		const auto parsed = ParseEditorScriptLine(line);
+		Check(!parsed.command && !parsed.error.empty(), std::string{ "Bad command accepted: " } + line);
+	}
+	Check(ParseEditorScriptLine("select 0").command->number == 0, "ID zero must be valid");
+	Check(ParseEditorScriptLine("wait 12").command->number == 12, "Frame count lost");
+	Check(ParseEditorScriptLine("select-type Actor").command->number == 0, "Default type index must be zero");
+	Check(ParseEditorScriptLine("select-type Actor 2").command->number == 2, "Type index lost");
+	Check(ParseEditorScriptLine("select-type Actor").command->text == "Actor", "Type name lost");
+	Check(ParseEditorScriptLine("move -2.5 300").command->location == sf::Vector2f{ -2.5f, 300.f }, "Move values lost");
+	Check(ParseEditorScriptLine("rotate -90").command->degrees == -90.f, "Rotation lost");
+	Check(ParseEditorScriptLine("expect-location 1 2").command->tolerance == 0.5f, "Default tolerance incorrect");
+	Check(ParseEditorScriptLine("expect-location 1 2 0.01").command->tolerance == 0.01f, "Explicit tolerance lost");
+	Check(ParseEditorScriptLine("expect-count Actor 3").command->number == 3, "Expected count lost");
+	Check(ParseEditorScriptLine("capture subdir/smoke.png").command->text == "subdir/smoke.png", "Capture path lost");
+	if (failures) return 1;
+	std::cout << "Editor script parser tests passed\n";
+	return 0;
+}

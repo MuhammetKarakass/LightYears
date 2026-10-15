@@ -16,6 +16,8 @@ namespace ly
 		Application(sf::Vector2u Position,unsigned int bit, const std::string& Title,uint32_t Style);
 		virtual ~Application() = default;
 		void Run();
+		// Read after Run so tools can report failure while still using normal shutdown.
+		virtual int GetExitCode() const { return 0; }
 
 		void QuitApplication();
 

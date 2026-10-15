@@ -6,48 +6,9 @@
 #include <imgui_internal.h>
 #include <imgui-SFML.h>
 
-#include <algorithm>
-#include <cctype>
 #include <cstdlib>
 #include <stdexcept>
 #include <string>
-#include <typeinfo>
-
-#ifdef __GNUG__
-#include <cxxabi.h>
-#endif
-
-namespace
-{
-	std::string ActorTypeName(const ly::Actor& actor)
-	{
-		std::string name = typeid(actor).name();
-#ifdef __GNUG__
-		int status = 0;
-		std::unique_ptr<char, decltype(&std::free)> demangled{
-			abi::__cxa_demangle(name.c_str(), nullptr, nullptr, &status), &std::free };
-		if (status == 0 && demangled)
-		{
-			name = demangled.get();
-		}
-#endif
-		// MSVC RTTI is already demangled, but includes the class/struct keyword.
-		if (name.compare(0, 6, "class ") == 0)
-		{
-			name.erase(0, 6);
-		}
-		if (name.compare(0, 7, "struct ") == 0)
-		{
-			name.erase(0, 7);
-		}
-		const auto scope = name.rfind("::");
-		if (scope != std::string::npos)
-		{
-			name.erase(0, scope + 2);
-		}
-		return name;
-	}
-}
 
 namespace vega
 {
@@ -63,6 +24,16 @@ namespace vega
 		// Image clicks select actors; panel dragging belongs on the title/tab bars.
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
+#ifdef _MSC_VER
+		for (int index = 1; index < __argc; ++index)
+		{
+			if (std::string{ __argv[index] } == "--editor-script")
+			{
+				mScript = std::make_unique<EditorScript>(index + 1 < __argc ? __argv[index + 1] : "");
+				break;
+			}
+		}
+#endif
 	}
 
 	EditorApplication::~EditorApplication()
@@ -77,6 +48,18 @@ namespace vega
 
 	void EditorApplication::Render()
 	{
+		ly::World* current = GetCurrentWorld();
+		const std::optional<unsigned int> worldID = current ? std::optional<unsigned int>{ current->GetUniqueID() } : std::nullopt;
+		if (mWorldID != worldID)
+		{
+			// LoadWorld becomes current at the end of Tick; invalidate edits before any new UI or script command.
+			mHistory.Clear();
+			mSelection.Clear();
+			mMoveDragActor.reset();
+			mDestroyActor.reset();
+			mWorldID = worldID;
+		}
+		mContext.world = current;
 		mViewport.ResizeToWindow();
 		sf::RenderTexture& texture = mViewport.GetTexture();
 		texture.clear(sf::Color::Black);
@@ -101,6 +84,15 @@ namespace vega
 					outline.setOutlineThickness(viewPixels > 0.f ? 2.f * worldView.getSize().x / viewPixels : 2.f);
 					texture.setView(worldView);
 					texture.draw(outline);
+					if (world->IsPaused())
+					{
+						const float handleSize = outline.getOutlineThickness() * 4.f;
+						sf::RectangleShape handle{ { handleSize, handleSize } };
+						handle.setOrigin({ handleSize * 0.5f, handleSize * 0.5f });
+						handle.setPosition(bounds.position + bounds.size * 0.5f);
+						handle.setFillColor(sf::Color{ 74, 210, 255 });
+						texture.draw(handle);
+					}
 					texture.setView(previousView);
 				}
 				else
@@ -119,13 +111,29 @@ namespace vega
 		ImGui::SFML::Update(window, mUIClock.restart());
 		BuildUI();
 		ImGui::SFML::Render(window);
+		if (mScript && mScript->Step(mContext, mHistory, window)) QuitApplication();
 		// The world is drawn into the viewport texture, so the window holds the finished frame only once the UI is on
 		// it (and only then is the window's framebuffer the active one); run the --visual-capture step after that.
 		GameApplication::AfterRender();
 	}
 
+	int EditorApplication::GetExitCode() const
+	{
+		return mScript ? mScript->ExitCode() : 0;
+	}
+
 	void EditorApplication::BuildUI()
 	{
+		const ImGuiIO& io = ImGui::GetIO();
+		if (io.KeyCtrl && !io.WantTextInput)
+		{
+			if (ImGui::IsKeyPressed(ImGuiKey_Z, false))
+			{
+				if (io.KeyShift) mHistory.Redo();
+				else mHistory.Undo();
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) mHistory.Redo();
+		}
 		bool resetLayout = false;
 		if (ImGui::BeginMainMenuBar())
 		{
@@ -135,6 +143,14 @@ namespace vega
 				{
 					QuitApplication();
 				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Edit"))
+			{
+				const std::string undoLabel = mHistory.CanUndo() ? "Undo " + mHistory.UndoName() : "Undo";
+				const std::string redoLabel = mHistory.CanRedo() ? "Redo " + mHistory.RedoName() : "Redo";
+				if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, mHistory.CanUndo())) mHistory.Undo();
+				if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y / Ctrl+Shift+Z", false, mHistory.CanRedo())) mHistory.Redo();
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("View"))
@@ -198,6 +214,7 @@ namespace vega
 		{
 			BuildViewportPanel();
 		}
+		if (mViewportImageRect.size == sf::Vector2f{}) mMoveDragActor.reset();
 		mSelectionClickPending = false;
 		if (mShowHierarchy)
 		{
@@ -211,216 +228,6 @@ namespace vega
 		{
 			BuildStatsPanel();
 		}
-	}
-
-	void EditorApplication::BuildViewportPanel()
-	{
-		const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-		if (ImGui::Begin("Viewport", &mShowViewport))
-		{
-			ly::World* world = GetCurrentWorld();
-			ImGui::BeginDisabled(world == nullptr);
-			const bool paused = world && world->IsPaused();
-			if (ImGui::Button(paused ? "Play" : "Pause") && world)
-			{
-				world->SetPaused(!paused);
-			}
-			ImGui::EndDisabled();
-			ImGui::SameLine();
-			ImGui::TextUnformatted(world ? (world->IsPaused() ? "Paused" : "Playing") : "No world");
-			ImGui::SetItemTooltip("Paused: click an actor in the viewport to select it; the editor consumes the click.\n"
-				"Playing: clicks go to the game; select actors in the Hierarchy.");
-			ImGui::Separator();
-
-			const ImVec2 available = ImGui::GetContentRegionAvail();
-			if (available.x > 0.f && available.y > 0.f)
-			{
-				const sf::Vector2f textureSize{ mViewport.GetSize() };
-				const float scale = std::min(available.x / textureSize.x, available.y / textureSize.y);
-				const sf::Vector2f imageSize = textureSize * scale;
-				const ImVec2 cursor = ImGui::GetCursorScreenPos();
-				ImGui::SetCursorScreenPos({ cursor.x + (available.x - imageSize.x) * 0.5f, cursor.y + (available.y - imageSize.y) * 0.5f });
-				// The RenderTexture overload also flips the UVs to display the image upright.
-				ImGui::Image(mViewport.GetTexture(), imageSize);
-				const ImVec2 topLeft = ImGui::GetItemRectMin();
-				const ImVec2 bottomRight = ImGui::GetItemRectMax();
-				mViewportImageRect = { { topLeft.x - mainViewport->Pos.x, topLeft.y - mainViewport->Pos.y },
-					{ bottomRight.x - topLeft.x, bottomRight.y - topLeft.y } };
-				mViewportImageHovered = ImGui::IsItemHovered();
-				mViewport.SetImagePresentation(mViewportImageRect, mViewportImageHovered, ImGui::IsWindowFocused());
-				if (world && world->IsPaused() && mSelectionClickPending && mViewportImageHovered &&
-					!ImGui::IsAnyItemActive() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-				{
-					PickViewportActor();
-				}
-			}
-		}
-		ImGui::End();
-	}
-
-	void EditorApplication::BuildHierarchyPanel()
-	{
-		if (ImGui::Begin("Hierarchy", &mShowHierarchy))
-		{
-			ImGui::InputTextWithHint("##ActorFilter", "Filter by type name", mHierarchyFilter, sizeof(mHierarchyFilter));
-			ImGui::Separator();
-			struct Row
-			{
-				std::shared_ptr<ly::Actor> actor;
-				std::string name;
-			};
-			std::vector<Row> rows;
-			if (const ly::World* world = GetCurrentWorld())
-			{
-				const std::string filter = mHierarchyFilter;
-				for (const auto& weakActor : world->GetActorsByType<ly::Actor>())
-				{
-					if (auto actor = weakActor.lock(); actor && !actor->GetIsPendingDestroy())
-					{
-						std::string name = ActorTypeName(*actor);
-						if (filter.empty() || std::search(name.begin(), name.end(), filter.begin(), filter.end(),
-							[](unsigned char first, unsigned char second) { return std::tolower(first) == std::tolower(second); }) != name.end())
-						{
-							rows.push_back({ std::move(actor), std::move(name) });
-						}
-					}
-				}
-			}
-			const auto selected = mSelection.Get();
-			// Filter before clipping: every displayed index must correspond to one visible row.
-			if (ImGui::BeginChild("ActorList"))
-			{
-				ImGuiListClipper clipper;
-				clipper.Begin(static_cast<int>(rows.size()));
-				while (clipper.Step())
-				{
-					for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
-					{
-						const Row& row = rows[static_cast<std::size_t>(index)];
-						const std::string label = row.name + "  #" + std::to_string(row.actor->GetUniqueID());
-						ImGui::PushID(row.actor.get());
-						if (ImGui::Selectable(label.c_str(), row.actor == selected))
-						{
-							mSelection.Select(row.actor);
-						}
-						ImGui::PopID();
-					}
-				}
-			}
-			ImGui::EndChild();
-		}
-		ImGui::End();
-	}
-
-	void EditorApplication::BuildInspectorPanel()
-	{
-		if (ImGui::Begin("Inspector", &mShowInspector))
-		{
-			if (const auto actor = mSelection.Get())
-			{
-				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
-				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					const sf::Vector2f location = actor->GetActorLocation();
-					float values[]{ location.x, location.y };
-					if (ImGui::DragFloat2("Location", values, 1.f))
-					{
-						actor->SetActorLocation({ values[0], values[1] });
-					}
-					float rotation = actor->GetActorRotation();
-					if (ImGui::DragFloat("Rotation", &rotation, 0.5f))
-					{
-						actor->SetActorRotation(rotation);
-					}
-					const sf::Vector2f velocity = actor->GetVelocity();
-					ImGui::Text("Velocity: %.2f, %.2f", velocity.x, velocity.y);
-				}
-				if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					static const char* layers[]{ "Background", "GroundDecal", "World", "Projectile", "WorldVfx", "Foreground" };
-					static_assert(IM_ARRAYSIZE(layers) == static_cast<int>(ly::RenderLayer::Count), "Update editor render layers");
-					int layer = static_cast<int>(actor->GetRenderLayer());
-					if (ImGui::Combo("RenderLayer", &layer, layers, IM_ARRAYSIZE(layers)))
-					{
-						actor->SetRenderLayer(static_cast<ly::RenderLayer>(layer));
-					}
-					bool enabled = actor->IsRenderEnabled();
-					if (ImGui::Checkbox("Render enabled", &enabled))
-					{
-						actor->SetRenderEnabled(enabled);
-					}
-				}
-				if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::Text("Physics enabled: %s", actor->IsPhysicsEnabled() ? "Yes" : "No");
-					ImGui::Text("Has body: %s", actor->HasPhysicsBody() ? "Yes" : "No");
-					ImGui::Text("Body type: %s", actor->GetPhysicsBodyType() == ly::PhysicsBodyType::Static ? "Static" : "Dynamic");
-					ImGui::Text("Collision layer: 0x%02X", static_cast<unsigned int>(actor->GetCollisionLayer()));
-					ImGui::Text("Collision mask: 0x%02X", static_cast<unsigned int>(actor->GetCollisionMask()));
-				}
-				if (ImGui::CollapsingHeader("Bounds", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					const sf::FloatRect bounds = actor->GetActorGlobalBounds();
-					ImGui::Text("Position: %.2f, %.2f", bounds.position.x, bounds.position.y);
-					ImGui::Text("Size: %.2f, %.2f", bounds.size.x, bounds.size.y);
-				}
-				ImGui::Separator();
-				if (ImGui::Button("Destroy"))
-				{
-					actor->Destroy();
-					mSelection.Clear();
-					ImGui::TextUnformatted("Pending destroy");
-				}
-			}
-			else
-			{
-				ImGui::TextWrapped("Select an actor in the Hierarchy or paused viewport.");
-			}
-		}
-		ImGui::End();
-	}
-
-	void EditorApplication::PickViewportActor()
-	{
-		ly::World* world = GetCurrentWorld();
-		if (!world)
-		{
-			return;
-		}
-		const sf::Vector2f point = world->GetMouseWorldPosition();
-		const auto actors = world->GetActorsInBounds({ point - sf::Vector2f{ 2.f, 2.f }, { 4.f, 4.f } });
-		std::vector<ActorPickBounds> candidates;
-		for (const auto& weakActor : actors)
-		{
-			if (const auto actor = weakActor.lock(); actor && !actor->GetIsPendingDestroy())
-			{
-				candidates.emplace_back(actor->GetUniqueID(), actor->GetActorGlobalBounds());
-			}
-		}
-		const auto best = PickBestActor(point, candidates);
-		mSelection.Clear();
-		if (best)
-		{
-			for (const auto& weakActor : actors)
-			{
-				if (const auto actor = weakActor.lock(); actor && actor->GetUniqueID() == *best)
-				{
-					mSelection.Select(actor);
-					break;
-				}
-			}
-		}
-	}
-
-	void EditorApplication::BuildStatsPanel()
-	{
-		if (ImGui::Begin("Stats", &mShowStats))
-		{
-			ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-			const ly::World* world = GetCurrentWorld();
-			ImGui::TextWrapped("World: %s", world ? typeid(*world).name() : "None");
-		}
-		ImGui::End();
 	}
 
 	bool EditorApplication::HandleApplicationEvent(const sf::Event& event)
@@ -485,6 +292,9 @@ namespace vega
 		{
 			return true;
 		}
+		if (mouseEvent && mMoveDragActor) return true;
+		if (const auto* pressed = event.getIf<sf::Event::KeyPressed>(); pressed && pressed->control &&
+			!io.WantTextInput && (pressed->code == sf::Keyboard::Key::Z || pressed->code == sf::Keyboard::Key::Y)) return true;
 		// Known limitation: HUD widgets still receive raw window-pixel event coordinates,
 		// so clicking their buttons inside a scaled editor viewport may miss.
 		return GameApplication::HandleApplicationEvent(event);

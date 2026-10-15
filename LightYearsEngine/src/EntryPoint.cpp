@@ -21,10 +21,11 @@ int main() {
 		}
 
 		app->Run();
+		const int exitCode = app->GetExitCode();
 		app.reset();
 		ly::debug::Profiler::Shutdown();
 		ly::debug::Log::Shutdown();
-		std::quick_exit(0);
+		std::quick_exit(exitCode);
 	}
 	catch (const std::exception& exception)
 	{

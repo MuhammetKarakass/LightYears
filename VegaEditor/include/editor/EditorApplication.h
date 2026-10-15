@@ -2,6 +2,8 @@
 
 #include "editor/EditorViewport.h"
 #include "editor/EditorSelection.h"
+#include "editor/EditorCommands.h"
+#include "editor/EditorScript.h"
 #include <gameFramework/GameApplication.h>
 
 namespace vega
@@ -11,6 +13,7 @@ namespace vega
 	public:
 		EditorApplication();
 		~EditorApplication() override;
+		int GetExitCode() const override;
 
 	protected:
 		bool HandleApplicationEvent(const sf::Event& event) override;
@@ -27,6 +30,16 @@ namespace vega
 
 		EditorViewport mViewport;
 		EditorSelection mSelection;
+		EditorContext mContext{ nullptr, mSelection };
+		CommandHistory mHistory{ mContext };
+		std::unique_ptr<EditorScript> mScript;
+		std::optional<unsigned int> mWorldID;
+		std::optional<unsigned int> mMoveDragActor;
+		std::optional<unsigned int> mDestroyActor;
+		sf::Vector2f mMoveDragMouse{};
+		std::uint64_t mMoveMergeGroup = 0;
+		std::uint64_t mLocationMergeGroup = 0;
+		std::uint64_t mRotationMergeGroup = 0;
 		sf::Clock mUIClock;
 		sf::FloatRect mViewportImageRect{};
 		char mHierarchyFilter[128]{};

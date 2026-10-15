@@ -20,9 +20,15 @@ FetchContent_MakeAvailable(imgui-sfml)
 add_executable(VegaEditor
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
+	src/EditorPanels.cpp
+	src/EditorCommands.cpp
+	src/EditorScript.cpp
+	src/EditorScriptParser.cpp
 	src/EditorViewport.cpp
 	src/EditorSelection.cpp
 	include/editor/EditorApplication.h
+	include/editor/EditorCommands.h
+	include/editor/EditorScript.h
 	include/editor/EditorViewport.h
 	include/editor/EditorSelection.h
 )
@@ -92,4 +98,38 @@ if(BUILD_TESTING)
 		CopyRuntimeLibToTarget(${editor_selection_runtime} VegaEditorSelectionTests)
 	endforeach()
 	add_test(NAME VegaEditorSelection COMMAND VegaEditorSelectionTests)
+
+	add_executable(VegaEditorCommandTests
+		tests/EditorCommandTests.cpp
+		src/EditorCommands.cpp
+		src/EditorSelection.cpp
+	)
+	target_include_directories(VegaEditorCommandTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorCommandTests PRIVATE LightYearsEngine)
+	ly_enable_warnings(VegaEditorCommandTests)
+	foreach(editor_command_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${editor_command_runtime} VegaEditorCommandTests)
+	endforeach()
+	add_test(NAME VegaEditorCommand COMMAND VegaEditorCommandTests)
+
+	add_executable(VegaEditorScriptTests
+		tests/EditorScriptTests.cpp
+		src/EditorScriptParser.cpp
+	)
+	target_include_directories(VegaEditorScriptTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorScriptTests PRIVATE SFML::System)
+	ly_enable_warnings(VegaEditorScriptTests)
+	CopyRuntimeLibToTarget(sfml-system VegaEditorScriptTests)
+	add_test(NAME VegaEditorScript COMMAND VegaEditorScriptTests)
+
+	# Run a copy in the build tree: the script writes <script>.report.txt next to itself, which must not land in
+	# the source tree.
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/scripts/smoke.vegascript
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/smoke.vegascript COPYONLY)
+	add_test(NAME VegaEditorSmoke COMMAND VegaEditor --editor-script
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/smoke.vegascript)
+	set_tests_properties(VegaEditorSmoke PROPERTIES
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor>
+		TIMEOUT 60
+	)
 endif()
