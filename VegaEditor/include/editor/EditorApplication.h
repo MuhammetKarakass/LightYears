@@ -25,6 +25,10 @@ namespace vega
 	private:
 		void Render() override;
 		void BuildUI();
+		void BuildToolbar();
+		void BuildStatusBar();
+		void BuildGizmo();
+		void DrawWorldOverlays(sf::RenderTexture& texture, ly::World& world);
 		void BuildViewportPanel();
 		void BuildHierarchyPanel();
 		void BuildInspectorPanel();
@@ -60,6 +64,13 @@ namespace vega
 		std::optional<unsigned int> mMoveDragActor;
 		std::optional<unsigned int> mDestroyActor;
 		sf::Vector2f mMoveDragMouse{};
+		sf::Vector2f mGizmoStartLocation{};
+		float mGizmoStartRotation = 0.f;
+		float mGizmoPreviousAngle = 0.f;
+		float mGizmoRotationDelta = 0.f;
+		GizmoHandle mGizmoHandle = GizmoHandle::None;
+		bool mGizmoDragStarted = false;
+		bool mPauseAfterTick = false;
 		std::uint64_t mMoveMergeGroup = 0;
 		std::uint64_t mPropertyMergeGroup = 0;
 		sf::Clock mUIClock;
@@ -87,6 +98,7 @@ namespace vega
 		std::vector<std::filesystem::directory_entry> mContentEntries;
 		std::string mContentError;
 		char mContentFilter[128]{};
+		float mContentTileSize = 88.f;
 		std::uint64_t mJsonMergeGroup = 0;
 		std::uint64_t mPresentedDocumentID = 0;
 		struct Thumbnail

@@ -17,6 +17,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		Tool, Snap, Grid, Colliders, ContentView,
 		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp,
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
 		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera,

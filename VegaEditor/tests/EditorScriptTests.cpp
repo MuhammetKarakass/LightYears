@@ -19,6 +19,11 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "tool move", ScriptOperation::Tool }, { "tool rotate", ScriptOperation::Tool },
+		{ "snap on", ScriptOperation::Snap }, { "snap off", ScriptOperation::Snap },
+		{ "grid on", ScriptOperation::Grid }, { "grid off", ScriptOperation::Grid },
+		{ "colliders on", ScriptOperation::Colliders }, { "colliders off", ScriptOperation::Colliders },
+		{ "content-view grid", ScriptOperation::ContentView }, { "content-view list", ScriptOperation::ContentView },
 		{ "add-script scripts/spin.lua", ScriptOperation::AddScript },
 		{ "expect-script-error none", ScriptOperation::ExpectScriptError },
 		{ "expect-script-error \"spin.lua:4\"", ScriptOperation::ExpectScriptError },
@@ -64,6 +69,7 @@ int main()
 		Check(ParseEditorScriptLine(line).IsIgnored(), "Blank/comment must be ignored");
 	}
 	for (const char* line : { "unknown", "Pause", "select", "select -1", "select 4294967296", "select 2x",
+		"tool", "tool scale", "tool Move", "snap", "snap true", "grid", "grid 1", "colliders", "colliders yes", "content-view", "content-view tiles",
 		"camera", "camera other", "expect-camera", "expect-camera other", "focus 1", "expect-visible 1",
 		"zoom", "zoom 0", "zoom -1", "zoom nan", "zoom inf", "zoom 1x", "zoom 1e999",
 		"pan", "pan 1", "pan 1 nan", "pan inf 0", "pan 1x 2",

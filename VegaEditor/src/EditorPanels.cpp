@@ -1,4 +1,5 @@
 #include "editor/EditorApplication.h"
+#include "editor/EditorIcons.h"
 #include <framework/World.h>
 #include <framework/Actor.h>
 #include <script/ScriptComponent.h>
@@ -81,27 +82,6 @@ namespace vega
 		const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
 		if (ImGui::Begin("Viewport", &mShowViewport))
 		{
-			ly::World* world = GetCurrentWorld();
-			ImGui::BeginDisabled(world == nullptr);
-			const bool paused = world && world->IsPaused();
-			if (ImGui::Button(paused ? "Play" : "Pause") && world)
-			{
-				SetPaused{ !paused }.Execute(mContext);
-			}
-			ImGui::EndDisabled();
-			ImGui::SameLine();
-			ImGui::BeginDisabled(world == nullptr);
-			const bool editorCamera = world && world->GetViewOverride().has_value();
-			if (ImGui::Button(editorCamera ? "Editor camera" : "Game camera")) mContext.SetEditorCamera(!editorCamera);
-			ImGui::SetItemTooltip("Toggle camera. Editor camera: wheel zooms at cursor; middle/right drag pans. F focuses selection.");
-			ImGui::EndDisabled();
-			ImGui::SameLine();
-			ImGui::TextUnformatted(world ? (world->IsPaused() ? "Paused" : "Playing") : "No world");
-			ImGui::SetItemTooltip("Paused: click an actor in the viewport to select it; the editor consumes the click.\n"
-				"Drag on the selected actor's bounds to move it.\n"
-				"Playing: clicks go to the game; select actors in the Hierarchy.");
-			ImGui::Separator();
-
 			const ImVec2 available = ImGui::GetContentRegionAvail();
 			if (available.x > 0.f && available.y > 0.f)
 			{
@@ -119,36 +99,7 @@ namespace vega
 				mViewportImageHovered = ImGui::IsItemHovered();
 				mViewportWindowFocused = ImGui::IsWindowFocused();
 				mViewport.SetImagePresentation(mViewportImageRect, mViewportImageHovered, ImGui::IsWindowFocused());
-				if (world && world->IsPaused() && mSelectionClickPending && mViewportImageHovered &&
-					!ImGui::IsAnyItemActive() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-				{
-					const auto selected = mSelection.Get();
-					const sf::Vector2f point = world->GetMouseWorldPosition();
-					if (selected && selected->GetActorGlobalBounds().contains(point))
-					{
-						mMoveDragActor = selected->GetUniqueID();
-						mMoveDragMouse = point;
-						mMoveMergeGroup = mHistory.BeginMergeGroup();
-					}
-					else PickViewportActor();
-				}
-				if (mMoveDragActor)
-				{
-					const auto actor = mContext.Resolve(*mMoveDragActor);
-					if (actor && world && world->IsPaused() && mSelection.Get() == actor)
-					{
-						const sf::Vector2f point = world->GetMouseWorldPosition();
-						const sf::Vector2f delta = point - mMoveDragMouse;
-						if (delta != sf::Vector2f{})
-						{
-							mHistory.Execute(std::make_unique<SetActorLocation>(*mMoveDragActor,
-								actor->GetActorLocation() + delta, mMoveMergeGroup));
-						}
-						mMoveDragMouse = point;
-					}
-					else mMoveDragActor.reset();
-					if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) mMoveDragActor.reset();
-				}
+				BuildGizmo();
 			}
 		}
 		ImGui::End();
@@ -187,7 +138,7 @@ namespace vega
 			if (ImGui::BeginChild("ActorList"))
 			{
 				ImGuiListClipper clipper;
-				clipper.Begin(static_cast<int>(rows.size()));
+				clipper.Begin(static_cast<int>(rows.size()), 27.f + ImGui::GetStyle().ItemSpacing.y);
 				while (clipper.Step())
 				{
 					for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
@@ -195,10 +146,22 @@ namespace vega
 						const Row& row = rows[static_cast<std::size_t>(index)];
 						const std::string label = row.name + "  #" + std::to_string(row.actor->GetUniqueID());
 						ImGui::PushID(row.actor.get());
-						if (ImGui::Selectable(label.c_str(), row.actor == selected))
+						const auto pos = ImGui::GetCursorScreenPos();
+						const float height = 27.f;
+						if (index % 2 == 0) ImGui::GetWindowDrawList()->AddRectFilled(pos,
+							{ pos.x + ImGui::GetContentRegionAvail().x, pos.y + height }, IM_COL32(111, 152, 190, 12));
+						if (ImGui::Selectable(("##" + label).c_str(), row.actor == selected, 0, { 0.f, height }))
 						{
 							SelectActor{ row.actor->GetUniqueID() }.Execute(mContext);
 						}
+						bool hasScript = false;
+						row.actor->ForEachComponent([&](ly::ActorComponent& component)
+						{
+							if (dynamic_cast<script::ScriptComponent*>(&component)) hasScript = true;
+						});
+						DrawEditorIcon(*ImGui::GetWindowDrawList(), hasScript ? IconKind::Script : IconKind::Actor,
+							{ pos.x + 4.f, pos.y + 3.f }, { 20.f, 20.f }, IM_COL32(73, 198, 204, 255));
+						ImGui::GetWindowDrawList()->AddText({ pos.x + 30.f, pos.y + 3.f }, ImGui::GetColorU32(ImGuiCol_Text), label.c_str());
 						ImGui::PopID();
 					}
 				}
@@ -424,9 +387,22 @@ namespace vega
 	{
 		if (ImGui::Begin("Stats", &mShowStats))
 		{
-			ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+			ImGui::Text("%.0f FPS", ImGui::GetIO().Framerate);
+			ImGui::SameLine();
+			ImGui::TextDisabled(" / %.2f ms", 1000.f / std::max(1.f, ImGui::GetIO().Framerate));
+			ImGui::Separator();
 			const ly::World* world = GetCurrentWorld();
-			ImGui::TextWrapped("World: %s", world ? typeid(*world).name() : "None");
+			std::string name = world ? typeid(*world).name() : "None";
+			if (const auto scope = name.rfind("::"); scope != std::string::npos) name.erase(0, scope + 2);
+			ImGui::TextWrapped("World: %s", name.c_str());
+			if (world)
+			{
+				std::size_t live = 0;
+				for (const auto& weak : world->GetActorsByType<ly::Actor>())
+					if (const auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy()) ++live;
+				ImGui::Text("Live actors: %zu", live);
+				ImGui::TextDisabled("%s camera", world->GetViewOverride() ? "Editor" : "Game");
+			}
 		}
 		ImGui::End();
 	}

@@ -81,6 +81,11 @@ be finite; IDs, indices, counts and frame counts must be non-negative integers.
 pause
 play
 camera editor|game
+tool move|rotate
+snap on|off
+grid on|off
+colliders on|off
+content-view grid|list
 focus
 zoom <factor>
 pan <dx> <dy>
@@ -148,6 +153,21 @@ the wheel zooms at the cursor and middle/right drag pans only over the viewport
 image; these gestures are consumed before gameplay. F focuses the selection when
 the viewport is hovered or focused and text input is inactive. The Inspector
 Focus button does the same.
+
+The main toolbar provides Play/Pause, a single simulation frame while paused,
+Move (W), Rotate (E), camera mode, and snapping. Drag the red X or green Y arrow
+to constrain movement, or the centre square for both axes. The rotation ring uses
+clockwise screen angles. Handles keep their screen size as the camera zooms.
+Each drag is one undo step. Snapping uses absolute world coordinates (16 units by
+default, editable beside the snap button); rotation snaps to 15 degrees. Holding
+Ctrl temporarily enables snapping. Grid and collider overlays are in the View menu;
+the grid appears only in editor camera mode, with every eighth line emphasized.
+`tool`, `snap`, `grid`, and `colliders` set these same UI options without changing
+actor transforms or history. `content-view` switches the Content panel between
+thumbnail tiles and a list. Double-click folders to enter them and JSON files to
+edit them; breadcrumbs navigate back up. `ui.vegascript` captures both gizmos and
+the content grid as `ui-move.png`, `ui-rotate.png`, and `ui-content.png` in the editor
+working directory.
 
 Capture paths are relative to the process working directory. The capture copies
 the editor window after ImGui renders; no `--visual-capture` option is needed.

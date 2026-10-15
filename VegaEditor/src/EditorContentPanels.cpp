@@ -1,4 +1,5 @@
 #include "editor/EditorApplication.h"
+#include "editor/EditorIcons.h"
 #include "editor/JsonCommands.h"
 #include <imgui.h>
 #include <imgui-SFML.h>
@@ -14,16 +15,16 @@ namespace vega
 			for (char& c : text) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 			return text;
 		}
-		const char* FileLabel(const std::filesystem::directory_entry& entry)
+		IconKind FileIcon(const std::filesystem::directory_entry& entry)
 		{
 			std::error_code error;
-			if (entry.is_directory(error)) return "[Folder]";
+			if (entry.is_directory(error)) return IconKind::Folder;
 			const auto extension = Lower(entry.path().extension().string());
-			if (extension == ".json") return "{JSON}";
-			if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") return "[Texture]";
-			if (extension == ".ogg" || extension == ".wav" || extension == ".flac") return "[Audio]";
-			if (extension == ".ttf" || extension == ".otf") return "[Font]";
-			return "[File]";
+			if (extension == ".json") return IconKind::Json;
+			if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") return IconKind::Image;
+			if (extension == ".ogg" || extension == ".wav" || extension == ".flac") return IconKind::Audio;
+			if (extension == ".lua") return IconKind::Script;
+			return IconKind::File;
 		}
 	}
 
@@ -99,84 +100,125 @@ namespace vega
 		mRetiredThumbnails.clear();
 		if (ImGui::Begin("Content", &mShowContent))
 		{
-			ImGui::TextWrapped("Asset root: %s", mDocument.Root().string().c_str());
 			if (ImGui::Button("Refresh")) { mThumbnails.clear(); RefreshContent(); }
 			ImGui::SameLine();
-			ImGui::InputText("Search", mContentFilter, sizeof(mContentFilter));
-			if (ImGui::BeginChild("Directories", { ImGui::GetContentRegionAvail().x * 0.28f, 0.f }, ImGuiChildFlags_Borders))
-				DrawDirectory({});
+			ImGui::SetNextItemWidth(150.f);
+			ImGui::InputTextWithHint("##SearchAssets", "Search assets...", mContentFilter, sizeof(mContentFilter));
+			ImGui::SameLine();
+			if (ImGui::Button(mContext.viewSettings.contentGrid ? "List view" : "Grid view")) mContext.viewSettings.contentGrid = !mContext.viewSettings.contentGrid;
+			if (mContext.viewSettings.contentGrid)
+			{
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(100.f);
+				ImGui::SliderFloat("Tile", &mContentTileSize, 56.f, 144.f, "%.0f");
+			}
+			ImGui::Separator();
+			std::filesystem::path breadcrumb;
+			std::optional<std::filesystem::path> navigate;
+			if (ImGui::SmallButton("Assets")) navigate = breadcrumb;
+			for (const auto& part : mContentDirectory)
+			{
+				breadcrumb /= part;
+				ImGui::SameLine(); ImGui::TextDisabled("/"); ImGui::SameLine();
+				ImGui::PushID(breadcrumb.generic_string().c_str());
+				if (ImGui::SmallButton(part.string().c_str())) navigate = breadcrumb;
+				ImGui::PopID();
+			}
+			if (navigate) { mContentDirectory = *navigate; RefreshContent(); }
+			if (ImGui::BeginChild("Directories", { ImGui::GetContentRegionAvail().x * .23f, 0.f }, ImGuiChildFlags_Borders)) DrawDirectory({});
 			ImGui::EndChild();
 			ImGui::SameLine();
 			if (ImGui::BeginChild("Entries", {}, ImGuiChildFlags_Borders))
 			{
-				ImGui::TextUnformatted(mContentDirectory.empty() ? "/" : mContentDirectory.generic_string().c_str());
-				if (!mContentDirectory.empty() && ImGui::Selectable("[Folder] ..", false, ImGuiSelectableFlags_AllowDoubleClick) && ImGui::IsMouseDoubleClicked(0))
-				{
-					mContentDirectory = mContentDirectory.parent_path();
-					RefreshContent();
-				}
 				if (!mContentError.empty()) ImGui::TextWrapped("%s", mContentError.c_str());
+				const bool grid = mContext.viewSettings.contentGrid;
+				const float tile = grid ? mContentTileSize : 28.f;
+				const float width = grid ? tile + 18.f : ImGui::GetContentRegionAvail().x;
+				const int columns = grid ? std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / width)) : 1;
 				std::filesystem::path enter;
 				bool enterFolder = false;
-				for (const auto& entry : mContentEntries)
+				if (ImGui::BeginTable("AssetTiles", columns, ImGuiTableFlags_SizingStretchSame))
 				{
-					if (Lower(entry.path().filename().string()).find(Lower(mContentFilter)) == std::string::npos) continue;
-					const auto relative = entry.path().lexically_relative(mDocument.Root());
-					std::filesystem::path safe;
-					if (!mDocument.Resolve(relative, safe)) continue;
-					ImGui::PushID(relative.generic_string().c_str());
-					const auto extension = Lower(entry.path().extension().string());
-					// Only visible rows acquire a texture. A timestamp change invalidates even failed loads.
-					if ((extension == ".png" || extension == ".jpg" || extension == ".jpeg") && ImGui::IsRectVisible({ 32.f, 32.f }))
+					for (const auto& entry : mContentEntries)
 					{
-						std::error_code error;
-						const auto modified = std::filesystem::last_write_time(safe, error);
-						if (!error)
+						if (Lower(entry.path().filename().string()).find(Lower(mContentFilter)) == std::string::npos) continue;
+						const auto relative = entry.path().lexically_relative(mDocument.Root());
+						std::filesystem::path safe;
+						if (!mDocument.Resolve(relative, safe)) continue;
+						ImGui::TableNextColumn();
+						ImGui::PushID(relative.generic_string().c_str());
+						const auto extension = Lower(entry.path().extension().string());
+						// Only visible rows acquire a texture. A timestamp change invalidates even failed loads.
+						if ((extension == ".png" || extension == ".jpg" || extension == ".jpeg") && ImGui::IsRectVisible({ tile, tile }))
 						{
-							auto found = mThumbnails.find(safe);
-							if (found == mThumbnails.end() || found->second.modified != modified)
+							std::error_code error;
+							const auto modified = std::filesystem::last_write_time(safe, error);
+							if (!error)
 							{
-								if (mThumbnails.size() >= 64)
+								auto found = mThumbnails.find(safe);
+								if (found == mThumbnails.end() || found->second.modified != modified)
 								{
-									mRetiredThumbnails.push_back(std::move(mThumbnails.begin()->second.texture));
-									mThumbnails.erase(mThumbnails.begin());
-									found = mThumbnails.find(safe);
+									if (mThumbnails.size() >= 64)
+									{
+										mRetiredThumbnails.push_back(std::move(mThumbnails.begin()->second.texture));
+										mThumbnails.erase(mThumbnails.begin());
+										found = mThumbnails.find(safe);
+									}
+									if (found != mThumbnails.end()) mRetiredThumbnails.push_back(std::move(found->second.texture));
+									Thumbnail thumbnail{ modified, nullptr };
+									// Bound GPU memory as well as entry count by resizing the decoded image.
+									sf::Image image;
+									if (image.loadFromFile(safe))
+									{
+										const auto size = image.getSize();
+										const float scale = std::min(1.f, 128.f / static_cast<float>(std::max(size.x, size.y)));
+										sf::Image small{ sf::Vector2u{ std::max(1u, static_cast<unsigned int>(size.x * scale)), std::max(1u, static_cast<unsigned int>(size.y * scale)) } };
+										for (unsigned int y = 0; y < small.getSize().y; ++y)
+											for (unsigned int x = 0; x < small.getSize().x; ++x)
+												small.setPixel({ x, y }, image.getPixel({ x * size.x / small.getSize().x, y * size.y / small.getSize().y }));
+										thumbnail.texture = std::make_unique<sf::Texture>();
+										if (!thumbnail.texture->loadFromImage(small)) thumbnail.texture.reset();
+									}
+									mThumbnails[safe] = std::move(thumbnail);
 								}
-								if (found != mThumbnails.end()) mRetiredThumbnails.push_back(std::move(found->second.texture));
-								Thumbnail thumbnail{ modified, nullptr };
-								// Bound GPU memory as well as entry count by resizing the decoded image.
-								sf::Image image;
-								if (image.loadFromFile(safe))
-								{
-									const auto size = image.getSize();
-									const float scale = std::min(1.f, 64.f / static_cast<float>(std::max(size.x, size.y)));
-									sf::Image small{ sf::Vector2u{ std::max(1u, static_cast<unsigned int>(size.x * scale)), std::max(1u, static_cast<unsigned int>(size.y * scale)) } };
-									for (unsigned int y = 0; y < small.getSize().y; ++y)
-										for (unsigned int x = 0; x < small.getSize().x; ++x)
-											small.setPixel({ x, y }, image.getPixel({ x * size.x / small.getSize().x, y * size.y / small.getSize().y }));
-									thumbnail.texture = std::make_unique<sf::Texture>();
-									if (!thumbnail.texture->loadFromImage(small)) thumbnail.texture.reset();
-								}
-								mThumbnails[safe] = std::move(thumbnail);
-								found = mThumbnails.find(safe);
-							}
-							if (found->second.texture)
-							{
-								const auto size = found->second.texture->getSize();
-								const float scale = 32.f / static_cast<float>(std::max(size.x, size.y));
-								ImGui::Image(*found->second.texture, sf::Vector2f{ size.x * scale, size.y * scale });
-								ImGui::SameLine();
 							}
 						}
+						const auto pos = ImGui::GetCursorScreenPos();
+						const float cellWidth = ImGui::GetContentRegionAvail().x;
+						const float height = grid ? tile + 48.f : 34.f;
+						auto* draw = ImGui::GetWindowDrawList();
+						draw->AddRectFilled(pos, { pos.x + cellWidth, pos.y + height }, IM_COL32(33, 46, 59, 180), 4.f);
+						const bool clicked = ImGui::Selectable("##AssetTile", false, ImGuiSelectableFlags_AllowDoubleClick, { cellWidth, height });
+						const auto after = ImGui::GetCursorPos();
+						if (ImGui::IsItemHovered())
+						{
+							draw->AddRect(pos, { pos.x + cellWidth, pos.y + height }, IM_COL32(51, 199, 202, 180), 4.f);
+							ImGui::SetTooltip("%s", relative.generic_string().c_str());
+						}
+						if (clicked && ImGui::IsMouseDoubleClicked(0))
+						{
+							std::error_code error;
+							if (entry.is_directory(error)) { enter = relative; enterFolder = true; }
+							else if (extension == ".json") RequestDocument(relative);
+						}
+						const ImVec2 iconPos{ grid ? pos.x + (cellWidth - tile) * .5f : pos.x + 3.f, pos.y + (grid ? 4.f : 3.f) };
+						const auto found = mThumbnails.find(safe);
+						if (found != mThumbnails.end() && found->second.texture)
+						{
+							const auto size = found->second.texture->getSize();
+							const float scale = tile / static_cast<float>(std::max(size.x, size.y));
+							ImGui::SetCursorScreenPos({ iconPos.x + (tile - size.x * scale) * .5f, iconPos.y + (tile - size.y * scale) * .5f });
+							ImGui::Image(*found->second.texture, sf::Vector2f{ size.x * scale, size.y * scale });
+						}
+						else DrawEditorIcon(*draw, FileIcon(entry), iconPos, { tile, tile }, IM_COL32(77, 194, 204, 255));
+						const ImVec2 textPos{ pos.x + (grid ? 6.f : 38.f), pos.y + (grid ? tile + 8.f : 6.f) };
+						const ImVec4 clip{ pos.x + 4.f, textPos.y, pos.x + cellWidth - 4.f, pos.y + height - 3.f };
+						draw->AddText(ImGui::GetFont(), ImGui::GetFontSize(), textPos, ImGui::GetColorU32(ImGuiCol_Text),
+							entry.path().filename().string().c_str(), nullptr, grid ? cellWidth - 12.f : 0.f, &clip);
+						ImGui::SetCursorPos(after);
+						ImGui::PopID();
 					}
-					const auto label = std::string{ FileLabel(entry) } + " " + entry.path().filename().string();
-					if (ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick, { 0.f, 32.f }) && ImGui::IsMouseDoubleClicked(0))
-					{
-						std::error_code error;
-						if (entry.is_directory(error)) { enter = relative; enterFolder = true; }
-						else if (extension == ".json") RequestDocument(relative);
-					}
-					ImGui::PopID();
+					ImGui::EndTable();
 				}
 				if (enterFolder) { mContentDirectory = enter; RefreshContent(); }
 			}

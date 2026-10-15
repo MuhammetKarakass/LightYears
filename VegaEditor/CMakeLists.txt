@@ -20,6 +20,11 @@ FetchContent_MakeAvailable(imgui-sfml)
 add_executable(VegaEditor
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
+	src/EditorTheme.cpp
+	src/EditorIcons.cpp
+	src/EditorChrome.cpp
+	src/EditorGizmos.cpp
+	src/GizmoMath.cpp
 	src/EditorCamera.cpp
 	src/EditorPanels.cpp
 	src/EditorCommands.cpp
@@ -35,6 +40,9 @@ add_executable(VegaEditor
 	include/editor/JsonDocument.h
 	include/editor/JsonCommands.h
 	include/editor/EditorApplication.h
+	include/editor/EditorTheme.h
+	include/editor/EditorIcons.h
+	include/editor/GizmoMath.h
 	include/editor/EditorCamera.h
 	include/editor/EditorCommands.h
 	include/editor/EditorScript.h
@@ -43,6 +51,7 @@ add_executable(VegaEditor
 )
 target_include_directories(VegaEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(VegaEditor PRIVATE VEGA_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsGame/assets")
+target_compile_definitions(VegaEditor PRIVATE VEGA_EDITOR_FONT_PATH="${CMAKE_SOURCE_DIR}/LightYearsGame/assets/fonts/NotoSans-Regular.ttf")
 # Export Game copies the game build output and the visual assets. The dependency builds the game first, so
 # the export never packages a stale or missing LightYearsGame.exe.
 add_dependencies(VegaEditor LightYearsGame)
@@ -90,6 +99,15 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	add_executable(VegaEditorGizmoMathTests tests/GizmoMathTests.cpp src/GizmoMath.cpp)
+	target_include_directories(VegaEditorGizmoMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorGizmoMathTests PRIVATE SFML::System)
+	ly_enable_warnings(VegaEditorGizmoMathTests)
+	CopyRuntimeLibToTarget(sfml-system VegaEditorGizmoMathTests)
+	add_test(NAME VegaEditorGizmoMath COMMAND VegaEditorGizmoMathTests)
+	configure_file(tests/scripts/ui.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/ui.vegascript COPYONLY)
+	add_test(NAME VegaEditorUI COMMAND VegaEditor --editor-script ${CMAKE_CURRENT_BINARY_DIR}/scripts/ui.vegascript)
+	set_tests_properties(VegaEditorUI PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 60)
 	add_executable(VegaEditorViewportTests
 		tests/EditorViewportTests.cpp
 		src/EditorViewport.cpp
