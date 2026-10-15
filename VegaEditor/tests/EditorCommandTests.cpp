@@ -16,6 +16,11 @@ namespace
 	public:
 		explicit AuthoredActor(ly::World* world) : Actor{ world } { AddComponent<ly::ActorComponent>(); }
 	};
+	class ThrowingActor : public ly::Actor
+	{
+	public:
+		using Actor::Actor;
+	};
 	int failures = 0;
 	void Check(bool condition, const char* message)
 	{
@@ -154,6 +159,16 @@ namespace
 		Check(!edit(100, "Active", false) && history.CanRedo(), "Missing component must preserve redo");
 		Check(vega::FindPropertyTarget(*actor, "ActorComponent").componentIndex == 0, "Named component target must use first match");
 		Check(!vega::FindPropertyTarget(*actor, "Missing").object, "Unknown named target must fail");
+		ly::reflect::Class<ThrowingActor, ly::Actor>("ThrowingActor")
+			.Property("Throwing", [](const ThrowingActor& a) { return a.GetActorRotation(); },
+				[](ThrowingActor&, float) { throw std::runtime_error("editor setter refused"); });
+		auto throwingActor = world.SpawnActor<ThrowingActor>().lock();
+		const auto undoCount = history.UndoCount();
+		const auto redoCount = history.RedoCount();
+		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(throwingActor->GetUniqueID(), std::nullopt, "Throwing", 12.f)) &&
+			context.propertyError == "editor setter refused" && context.propertyErrorActor == throwingActor->GetUniqueID() &&
+			context.propertyErrorName == "Throwing" && throwingActor->GetActorRotation() == 0.f &&
+			history.UndoCount() == undoCount && history.RedoCount() == redoCount, "Refused setters must report the reason and preserve values/history");
 		history.Clear();
 		Check(edit({}, "Rotation", 50.f, group) && edit({}, "Render Enabled", false, group), "Mixed property edits failed");
 		history.Undo();

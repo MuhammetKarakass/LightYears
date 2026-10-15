@@ -37,7 +37,7 @@ namespace ly::reflect
 
 		// All erased object pointers are pointers to the registered root, even for
 		// inherited properties. This preserves pointer adjustment with multiple inheritance.
-		bool SetValue(void* objectOfRoot, const PropertyValue& value) const;
+		bool SetValue(void* objectOfRoot, const PropertyValue& value, std::string* error = nullptr) const;
 	};
 
 	enum class TypeRoot { Actor, Component, Other };

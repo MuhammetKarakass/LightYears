@@ -27,6 +27,10 @@ namespace vega
 		std::function<bool(const std::string&, const std::string&)> sceneAction;
 		std::function<bool()> sceneDirty;
 		std::string sceneError;
+		std::string propertyError;
+		unsigned int propertyErrorActor = 0;
+		std::optional<std::size_t> propertyErrorComponent;
+		std::string propertyErrorName;
 		void SyncCamera();
 		bool SetEditorCamera(bool enabled);
 		bool FocusSelection();

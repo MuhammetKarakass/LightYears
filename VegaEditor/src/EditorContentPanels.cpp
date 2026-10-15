@@ -1,6 +1,7 @@
 #include "editor/EditorApplication.h"
 #include "editor/EditorIcons.h"
 #include "editor/JsonCommands.h"
+#include "editor/NumberFormatting.h"
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include <algorithm>
@@ -274,7 +275,7 @@ namespace vega
 			else if (value.is_number_float())
 			{
 				double number = value.get<double>();
-				changed = ImGui::InputDouble(label.c_str(), &number, 0., 0., "%.17g");
+				changed = ImGui::InputDouble(label.c_str(), &number, 0., 0., DoubleInputFormat(number).c_str());
 				after = number;
 			}
 			else if (value.is_string())

@@ -381,8 +381,19 @@ namespace vega
 			{
 				normalized.replace(position, exportedRoot.size(), "<export>/");
 			}
-			if (normalized.find(root) != std::string::npos || normalized.find("d:/vega") != std::string::npos)
-				return { false, "Source-tree path in game log at line " + std::to_string(lineNumber) + ": " + line };
+			for (auto position = normalized.find(root); position != std::string::npos;
+				position = normalized.find(root, position + root.size()))
+			{
+				// A sibling such as Vega-ui is outside a configured Vega root.
+				const auto end = position + root.size();
+				const auto pathCharacter = [](unsigned char c)
+				{
+					return std::isalnum(c) || c == '_' || c == '-' || c == '.' || c == '/' || c == ':';
+				};
+				if ((position == 0 || !pathCharacter(static_cast<unsigned char>(normalized[position - 1]))) &&
+					(end == normalized.size() || normalized[end] == '/' || !pathCharacter(static_cast<unsigned char>(normalized[end]))))
+					return { false, "Source-tree path in game log at line " + std::to_string(lineNumber) + ": " + line };
+			}
 		}
 		if (input.bad()) return { false, "Cannot read game log for portability check" };
 		if (lineNumber == 0) return { false, "Empty game log for portability check" };

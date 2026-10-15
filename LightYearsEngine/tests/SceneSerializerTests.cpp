@@ -15,7 +15,7 @@ namespace
 	{
 		if (!condition) { std::cerr << message << '\n'; ++failures; }
 	}
-	enum class Mode { First = 2, Second = 7 };
+	enum class Mode { First = 2, Second = 7, Unlabelled = 13 };
 	class SceneTestComponent : public ly::ActorComponent
 	{
 	public:
@@ -104,6 +104,25 @@ int main()
 	loaded.TickInternal(0.f);
 	Check(SceneSerializer::Save(loaded, settings) == saved, "Promoting actors must preserve scene identity and properties");
 	Check(loaded.GetActorByType<SceneTestActor>().lock()->GetUniqueID() != actor->GetUniqueID(), "Run IDs should differ across loads");
+	actor->mode = Mode::Unlabelled;
+	const auto unlabelled = SceneSerializer::Save(source, settings);
+	Check(unlabelled["entities"][0]["properties"]["Mode"] == 13, "Unlabelled enum must save as an integer without throwing");
+	World enumWorld{ nullptr };
+	const auto enumResult = SceneSerializer::Load(enumWorld, unlabelled);
+	// Loading must not apply a value outside the labelled set; it warns and keeps the type's default instead.
+	Check(enumResult.warnings.size() == 1 && enumResult.warnings[0].find("Mode") != std::string::npos &&
+		enumWorld.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock()->mode != Mode::Unlabelled,
+		"An unlabelled enum integer must be rejected with a warning on load");
+	actor->mode = Mode::Second;
+	Class<SceneTestActor, Actor>("SceneTestActor")
+		.Property("Throwing", [](const SceneTestActor& a) { return a.count; },
+			[](SceneTestActor&, int) { throw std::runtime_error("scene setter refused"); });
+	auto throwingEntity = Entity("SceneTestActor");
+	throwingEntity["properties"] = { { "Throwing", 99 }, { "Number", 12.f } };
+	World throwingWorld{ nullptr };
+	const auto throwingResult = SceneSerializer::Load(throwingWorld, Scene(Json::array({ throwingEntity })));
+	Check(throwingResult.warnings.size() == 1 && throwingResult.warnings[0].find("scene setter refused") != std::string::npos &&
+		throwingWorld.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock()->number == 12.f, "Scene must report setter reasons and continue loading");
 	Check(SceneSerializer::Load(loaded, saved).spawned == 0, "Duplicate entity GUIDs must be rejected");
 
 	World errors{ nullptr };

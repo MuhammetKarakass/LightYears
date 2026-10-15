@@ -92,13 +92,17 @@ namespace vega
 
 	bool SetPropertyCommand::Execute(EditorContext& context)
 	{
+		context.propertyError.clear();
+		context.propertyErrorActor = mID;
+		context.propertyErrorComponent = mComponentIndex;
+		context.propertyErrorName = mProperty;
 		const auto actor = context.Resolve(mID, mGuid);
-		if (!actor) return false;
+		if (!actor) { context.propertyError = "Property target is unavailable"; return false; }
 		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
 		const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr;
-		if (!property || !property->setter) return false;
+		if (!property) { context.propertyError = "Unknown property"; return false; }
 		const auto before = property->getter(target.object);
-		if (!property->SetValue(target.object, mAfter)) return false;
+		if (!property->SetValue(target.object, mAfter, &context.propertyError)) return false;
 		if (!mExecuted) { mBefore = before; mExecuted = true; }
 		return true;
 	}
@@ -109,7 +113,12 @@ namespace vega
 		if (!actor || !mExecuted) return;
 		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
 		if (const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr)
-			property->SetValue(target.object, mBefore);
+		{
+			context.propertyErrorActor = mID;
+			context.propertyErrorComponent = mComponentIndex;
+			context.propertyErrorName = mProperty;
+			property->SetValue(target.object, mBefore, &context.propertyError);
+		}
 	}
 
 	std::string SetPropertyCommand::Name() const

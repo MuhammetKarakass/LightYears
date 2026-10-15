@@ -1,5 +1,8 @@
 #include "editor/JsonDocument.h"
 #include "editor/JsonCommands.h"
+#include "editor/NumberFormatting.h"
+#include <limits>
+#include <cmath>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -33,6 +36,17 @@ int main()
 {
 	using vega::Json;
 	using vega::JsonDocument;
+	for (double value : { 0.1, 0.7, 1000., 1.234567890123456, std::nextafter(1., 2.),
+		std::numeric_limits<double>::denorm_min(), std::numeric_limits<double>::max() })
+	{
+		char text[64];
+		std::snprintf(text, sizeof(text), vega::DoubleInputFormat(value).c_str(), value);
+		double parsed = 0.;
+		const auto result = std::from_chars(text, text + std::char_traits<char>::length(text), parsed);
+		Check(result.ec == std::errc{} && parsed == value, "Displayed double must round-trip");
+		if (value == 0.1) Check(std::string{ text } == "0.1", "Typing 0.1 must display 0.1");
+		if (value == 1000.) Check(std::string{ text } == "1000", "Prefer shorter fixed notation when it round-trips");
+	}
 	const auto spaces = JsonDocument::DetectStyle("{\r\n    \"x\": 1\r\n}\r\n");
 	Check(spaces.indent == 4 && spaces.indentChar == ' ' && spaces.newline == "\r\n" && spaces.trailingNewline, "CRLF/space style detection failed");
 	const auto tabs = JsonDocument::DetectStyle("{\n\t\"x\": 1\n}");

@@ -30,7 +30,7 @@ namespace ly
 			{
 				for (const auto& label : property.enumLabels)
 					if (label.first == std::get<int>(value)) return label.second;
-				throw std::runtime_error("Enum has no label: " + property.name);
+				return std::get<int>(value);
 			}
 			return std::visit([](const auto& item) -> Json
 			{
@@ -63,6 +63,7 @@ namespace ly
 			case PropertyKind::Float: return Number(value);
 			case PropertyKind::String: return value.get<std::string>();
 			case PropertyKind::Enum:
+				if (value.is_number_integer()) return Integer(value, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 				if (value.is_string())
 					for (const auto& label : property.enumLabels)
 						if (label.second == value.get<std::string>()) return label.first;
@@ -99,7 +100,8 @@ namespace ly
 				try
 				{
 					if (!property || !property->setter) throw std::runtime_error("Unknown or read-only property");
-					if (!property->SetValue(object, Decode(*property, entry.value()))) throw std::runtime_error("Property rejected value");
+					std::string error;
+					if (!property->SetValue(object, Decode(*property, entry.value()), &error)) throw std::runtime_error(error);
 				}
 				catch (const std::exception& error)
 				{

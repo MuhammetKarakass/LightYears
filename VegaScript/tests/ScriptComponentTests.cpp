@@ -21,6 +21,11 @@ namespace
 	private:
 		float power = 1.f;
 	};
+	class ThrowingActor : public ReflectedActor
+	{
+	public:
+		using ReflectedActor::ReflectedActor;
+	};
 	const std::filesystem::path root{ VEGA_SCRIPT_TEST_ROOT };
 	void Check(bool condition, const char* message)
 	{
@@ -173,6 +178,14 @@ function on_destroy(self) assert(not self.actor:is_valid()) end
 	Write("derived.lua", "function on_create(self) assert(self.actor:type()=='ReflectedActor'); assert(self.actor:set('Power',77)); assert(self.actor:get('Power')==77) end");
 	auto& reflected = derived->AddComponent<ScriptComponent>("derived.lua");
 	Check(reflected.LastError().empty() && derived->GetPower() == 77.f, "Lua did not use most-derived reflection");
+	ly::reflect::Class<ThrowingActor, ReflectedActor>("ThrowingActor")
+		.Property("Throwing", &ReflectedActor::GetPower, [](ThrowingActor&, float) { throw std::runtime_error("Lua setter refused"); });
+	auto throwingActor = world.SpawnActor<ThrowingActor>().lock();
+	throwingActor->SetPower(77.f);
+	world.TickInternal(0.f);
+	Write("setter-error.lua", "function on_create(self) local ok, reason = self.actor:set('Throwing', 99); assert(not ok and reason == 'Lua setter refused'); assert(self.actor:get('Power') == 77) end");
+	auto& setterError = throwingActor->AddComponent<ScriptComponent>("setter-error.lua");
+	Check(setterError.LastError().empty(), "Lua must receive a setter failure and its reason without unwinding the callback");
 	Write("create-error.lua", "function on_create(self)\n error('create failure')\nend\nfunction on_update(self,dt) self.actor:set_rotation(999) end");
 	auto& createError = derived->AddComponent<ScriptComponent>("create-error.lua");
 	world.TickInternal(0.f);
@@ -228,6 +241,49 @@ end
 	invalidScene["entities"][0]["scripts"][0]["path"] = "../outside.lua";
 	ly::World invalidPathWorld{ nullptr };
 	Check(!ly::SceneSerializer::Load(invalidPathWorld, invalidScene).warnings.empty(), "Invalid script paths must warn during scene loading");
+	// Keep runaway regressions small; every callback receives a fresh allowance.
+	ScriptRuntime::Get().SetHotReload(false);
+	ScriptRuntime::Get().SetInstructionBudget(10000);
+	ly::World limitedWorld{ nullptr };
+	auto limitedActor = limitedWorld.SpawnActor<ly::Actor>().lock();
+	limitedWorld.TickInternal(0.f);
+	Write("loop-update.lua", "function on_update(self,dt) while true do end end");
+	auto& loopUpdate = limitedActor->AddComponent<ScriptComponent>("loop-update.lua");
+	limitedWorld.TickInternal(0.f);
+	Check(loopUpdate.LastError().find("script exceeded its instruction budget") != std::string::npos, "Infinite update must hit its instruction budget");
+	const auto loopError = loopUpdate.LastError();
+	limitedWorld.TickInternal(0.f);
+	Check(loopUpdate.LastError() == loopError, "Budget failure must suspend the callback");
+	Write("loop-chunk.lua", "while true do end");
+	auto& loopChunk = limitedActor->AddComponent<ScriptComponent>("loop-chunk.lua");
+	Check(loopChunk.LastError().find("script exceeded its instruction budget") != std::string::npos, "Infinite chunk must hit its instruction budget");
+	Write("loop-create.lua", "function on_create(self) while true do end end");
+	auto& loopCreate = limitedActor->AddComponent<ScriptComponent>("loop-create.lua");
+	Check(loopCreate.LastError().find("script exceeded its instruction budget") != std::string::npos, "Infinite create must hit its instruction budget");
+	Write("loop-destroy.lua", "function on_destroy(self) while true do end end");
+	auto& loopDestroy = limitedActor->AddComponent<ScriptComponent>("loop-destroy.lua");
+	Check(!loopDestroy.Reload() && loopDestroy.LastError().find("script exceeded its instruction budget") != std::string::npos, "Infinite teardown must hit its instruction budget");
+	Write("budget-reset.lua", "local function work() local n=0; for i=1,3000 do n=n+i end end\nwork()\nfunction on_create(self) work() end\nfunction on_update(self,dt) work(); self.actor:set_rotation(self.actor:rotation()+1) end\nfunction on_destroy(self) work() end");
+	auto& budgetReset = limitedActor->AddComponent<ScriptComponent>("budget-reset.lua");
+	for (int i = 0; i < 4; ++i) limitedWorld.TickInternal(0.f);
+	Check(budgetReset.LastError().empty() && limitedActor->GetActorRotation() == 4.f, "Instruction allowance must reset between chunk, create and repeated updates");
+	ScriptRuntime::Get().SetInstructionBudget(10000000);
+	ScriptRuntime::Get().SetMemoryLimit(4u * 1024u * 1024u);
+	Write("memory-string.lua", "function on_update(self,dt) local s=string.rep('x', 16*1024*1024) end");
+	auto& memoryString = limitedActor->AddComponent<ScriptComponent>("memory-string.lua");
+	limitedWorld.TickInternal(0.f);
+	Check(memoryString.LastError().find("not enough memory") != std::string::npos, "Runaway string allocation must hit the memory cap");
+	Write("memory-table.lua", "local values={}\nwhile true do values[#values+1]=string.rep('x',1024) end");
+	auto& memoryTable = limitedActor->AddComponent<ScriptComponent>("memory-table.lua");
+	Check(memoryTable.LastError().find("not enough memory") != std::string::npos, "Runaway table growth in a chunk must hit the memory cap");
+	const auto memoryError = memoryString.LastError();
+	limitedWorld.TickInternal(0.f);
+	Check(memoryString.LastError() == memoryError && budgetReset.LastError().empty(), "Memory failure must suspend the offender while other callbacks keep running");
+	ScriptRuntime::Get().SetMemoryLimit(256u * 1024u * 1024u);
+	Write("memory-string.lua", "function on_update(self,dt) self.actor:set_location(12,34) end");
+	Check(memoryString.Reload(), "Script must be recoverable after a memory error");
+	limitedWorld.TickInternal(0.f);
+	Check(limitedActor->GetActorLocation() == sf::Vector2f{12.f,34.f}, "Runtime must keep executing after resource errors");
 	std::cout << "VegaScript component tests: " << failures << " failures\n";
 	return failures ? 1 : 0;
 }

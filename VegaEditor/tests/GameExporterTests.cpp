@@ -1,5 +1,6 @@
 #include "editor/GameExporter.h"
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -238,8 +239,17 @@ int main()
 		WriteFile(log, "Loaded " + source.generic_u8string() + "/assets/test.png\n");
 		Check(!vega::CheckGameLogPortability(log, source).passed, "Configured source tree not detected");
 		WriteFile(log, "Loaded D:/Vega/LightYearsGame/assets/test.png\n");
-		Check(!vega::CheckGameLogPortability(log, source).passed, "Other source worktree not detected");
+		Check(vega::CheckGameLogPortability(log, source).passed, "Unrelated D:/Vega path must be portable");
+		WriteFile(log, "Loaded d:/vega-ui/assets/test.png\n");
+		Check(vega::CheckGameLogPortability(log, "D:/Vega").passed, "Vega-ui is a sibling of a configured Vega root");
+		WriteFile(log, "Loaded " + source.generic_u8string() + "-sibling/assets/test.png\n");
+		Check(vega::CheckGameLogPortability(log, source).passed, "Root prefix must not match a sibling directory");
 		WriteFile(log, "Loaded d:\\VEGA-ui\\LightYearsGame\\assets\\test.png\n");
+		Check(vega::CheckGameLogPortability(log, source).passed, "Unrelated Vega-like path must be portable");
+		auto mixedCase = source.generic_u8string();
+		std::transform(mixedCase.begin(), mixedCase.end(), mixedCase.begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+		std::replace(mixedCase.begin(), mixedCase.end(), '/', '\\');
+		WriteFile(log, "Loaded " + mixedCase + "\\assets\\test.png\n");
 		const auto leaked = vega::CheckGameLogPortability(log, source);
 		Check(!leaked.passed && leaked.detail.find("line 1") != std::string::npos, "Backslash or mixed-case source path not detected");
 		const fs::path nestedLog = source / "build" / "export" / "LightYears.log";

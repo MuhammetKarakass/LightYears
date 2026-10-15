@@ -2,6 +2,8 @@
 
 #include <filesystem>
 #include <memory>
+#include <cstddef>
+#include <cstdint>
 
 namespace vega::script
 {
@@ -14,6 +16,8 @@ namespace vega::script
 		~ScriptRuntime();
 		void SetHotReload(bool enabled);
 		bool HotReload() const;
+		void SetInstructionBudget(std::uint64_t instructions);
+		void SetMemoryLimit(std::size_t bytes);
 		const std::filesystem::path& Root() const;
 	private:
 		ScriptRuntime();

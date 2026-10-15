@@ -112,12 +112,12 @@ namespace vega
 		}
 	}
 
-	void EditorScript::Report(const std::string& line, bool success, const std::string& detail)
+	void EditorScript::Report(const std::string& line, bool success, const std::string& detail, bool handled)
 	{
 		LY_GAME_INFO("Editor script: %s %s -- %s", success ? "OK" : "FAIL", line.c_str(), detail.c_str());
 		mReport << (success ? "OK " : "FAIL ") << line << " -- " << detail << '\n';
 		mReport.flush();
-		if (!success || !mReport) mFailed = true;
+		if ((!success && !handled) || !mReport) mFailed = true;
 	}
 
 	bool EditorScript::Step(EditorContext& context, CommandHistory& history, sf::RenderWindow& window)
@@ -149,6 +149,7 @@ namespace vega
 		{
 			if (mNextLine == mLines.size())
 			{
+				if (mPendingPropertyError) mFailed = true;
 				mFinished = true;
 				return true;
 			}
@@ -161,6 +162,12 @@ namespace vega
 			return false;
 		}
 		const auto& command = *parsed.command;
+		// Only an immediately following assertion may consume a refused property write.
+		if (mPendingPropertyError && command.operation != ScriptOperation::ExpectPropError)
+		{
+			mFailed = true;
+			mPendingPropertyError.reset();
+		}
 		auto actor = context.selection.Get();
 		if (actor && actor->GetWorld() != context.world) actor.reset();
 		bool success = false;
@@ -299,6 +306,11 @@ namespace vega
 		case ScriptOperation::ExpectJsonDirty:
 			success = context.document && context.document->IsOpen() && context.document->Dirty() == (command.text == "true");
 			break;
+		case ScriptOperation::ExpectPropError:
+			success = mPendingPropertyError && mPendingPropertyError->find(command.text) != std::string::npos;
+			detail = mPendingPropertyError.value_or("No failed property write to handle");
+			mPendingPropertyError.reset();
+			break;
 		case ScriptOperation::SetProp:
 		case ScriptOperation::ExpectProp:
 		{
@@ -317,7 +329,8 @@ namespace vega
 			else
 			{
 				success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIndex, property->name, value));
-				detail = success ? "Property set" : "Read-only property or refused value";
+				detail = success ? "Property set" : context.propertyError;
+				if (!success) mPendingPropertyError = detail;
 			}
 			break;
 		}
@@ -449,7 +462,7 @@ namespace vega
 			detail = ActorTypeName(*selected) + " #" + std::to_string(selected->GetUniqueID()) +
 				" at " + std::to_string(location.x) + " " + std::to_string(location.y);
 		}
-		Report(line, success, detail);
+		Report(line, success, detail, mPendingPropertyError.has_value());
 		return mFinished;
 	}
 }

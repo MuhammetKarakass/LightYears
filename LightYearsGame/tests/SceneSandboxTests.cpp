@@ -11,6 +11,7 @@
 #include "environment/Asteroid.h"
 #include "enemy/DummyEnemy.h"
 #include "player/PlayerSpaceShip.h"
+#include "player/PlayerManager.h"
 #include "reflection/GameReflection.h"
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/ShipContentCatalog.h"
@@ -101,7 +102,9 @@ int main()
 	auto editScene = scene;
 	editScene["entities"][6]["properties"]["Tick When Paused"] = true;
 	auto editLevel = std::make_shared<SceneLevel>(nullptr, editScene, SceneLevel::SettingsApplier{}, true);
+	PlayerManager::GetPlayerManager().SetSelectedShipId("edit-mode-sentinel");
 	editLevel->BeginPlayInternal();
+	Check(PlayerManager::GetPlayerManager().GetSelectedShipId() == "edit-mode-sentinel", "Edit mode must not change the global selected ship from settings or PlayerStart");
 	const auto editBefore = SceneSerializer::Save(*editLevel, scene["settings"]);
 	editLevel->TickInternal(1.f);
 	editLevel->SetPaused(false);

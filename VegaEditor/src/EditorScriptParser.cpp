@@ -62,6 +62,13 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "expect-prop-error")
+		{
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			command.operation = ScriptOperation::ExpectPropError;
+			command.text = tokens[1];
+			return { command, {} };
+		}
 		if (verb == "rename" || verb == "select-name")
 		{
 			if (tokens.size() < 2) return bad();

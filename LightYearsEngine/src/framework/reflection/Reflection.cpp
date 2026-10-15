@@ -6,16 +6,33 @@
 
 namespace ly::reflect
 {
-	bool PropertyInfo::SetValue(void* object, const PropertyValue& value) const
+	bool PropertyInfo::SetValue(void* object, const PropertyValue& value, std::string* error) const
 	{
+		if (error) error->clear();
+		const auto fail = [error](const std::string& reason)
+		{
+			if (error) *error = reason;
+			return false;
+		};
 		const std::size_t index = kind == PropertyKind::Enum ? 1u : static_cast<std::size_t>(kind);
-		if (!object || !setter || value.index() != index) return false;
-		if (const auto* number = std::get_if<float>(&value); number && !std::isfinite(*number)) return false;
+		if (!object) return fail("Property target is unavailable");
+		if (!setter) return fail("Read-only property");
+		if (value.index() != index) return fail("Incompatible property value");
+		if (const auto* number = std::get_if<float>(&value); number && !std::isfinite(*number)) return fail("Expected finite number");
 		if (const auto* vector = std::get_if<sf::Vector2f>(&value);
-			vector && (!std::isfinite(vector->x) || !std::isfinite(vector->y))) return false;
+			vector && (!std::isfinite(vector->x) || !std::isfinite(vector->y))) return fail("Expected finite vector");
+		// A labelled enum is a closed set: an unlisted integer (from a hand-edited scene, a script or the
+		// Inspector) could be out of range for the C++ enum and reach code that indexes or switches on it.
+		// Saving still tolerates such a value (written as an integer) so the editor never crashes on save.
 		if (kind == PropertyKind::Enum && !enumLabels.empty() &&
-			std::none_of(enumLabels.begin(), enumLabels.end(), [&](const auto& label) { return label.first == std::get<int>(value); })) return false;
-		setter(object, value);
+			std::none_of(enumLabels.begin(), enumLabels.end(), [&](const auto& label) { return label.first == std::get<int>(value); }))
+			return fail("Value " + std::to_string(std::get<int>(value)) + " is not one of the enum's labels");
+		try
+		{
+			setter(object, value);
+		}
+		catch (const std::exception& failure) { return fail(failure.what()); }
+		catch (...) { return fail("Unknown property setter error"); }
 		return true;
 	}
 

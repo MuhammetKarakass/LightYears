@@ -1,5 +1,6 @@
 #include "editor/EditorApplication.h"
 #include "editor/EditorIcons.h"
+#include "editor/PropertyWidgets.h"
 #include <framework/World.h>
 #include <framework/Actor.h>
 #include <framework/scene/SceneEntityComponent.h>
@@ -47,17 +48,7 @@ namespace vega
 				return changed;
 			}
 			case PropertyKind::String:
-			{
-				auto& text = std::get<std::string>(value);
-				return ImGui::InputText(label, text.data(), text.capacity() + 1, ImGuiInputTextFlags_CallbackResize,
-					[](ImGuiInputTextCallbackData* data)
-					{
-						auto& buffer = *static_cast<std::string*>(data->UserData);
-						buffer.resize(static_cast<std::size_t>(data->BufTextLen));
-						data->Buf = buffer.data();
-						return 0;
-					}, &text);
-			}
+				return InputStringProperty(label, std::get<std::string>(value));
 			case PropertyKind::Enum:
 			{
 				auto& number = std::get<int>(value);
@@ -290,6 +281,13 @@ namespace vega
 								}
 								ImGui::EndDisabled();
 								if (!property->tooltip.empty()) ImGui::SetItemTooltip("%s", property->tooltip.c_str());
+								if (!mContext.propertyError.empty() && mContext.propertyErrorActor == actor->GetUniqueID() &&
+									mContext.propertyErrorComponent == target.componentIndex && mContext.propertyErrorName == property->name)
+								{
+									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.f, 0.3f, 0.3f, 1.f });
+									ImGui::TextWrapped("%s", mContext.propertyError.c_str());
+									ImGui::PopStyleColor();
+								}
 							}
 						}
 					}

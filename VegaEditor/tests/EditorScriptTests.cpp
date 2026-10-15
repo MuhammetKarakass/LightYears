@@ -32,6 +32,7 @@ int main()
 		{ "content-view grid", ScriptOperation::ContentView }, { "content-view list", ScriptOperation::ContentView },
 		{ "add-script scripts/spin.lua", ScriptOperation::AddScript },
 		{ "expect-script-error none", ScriptOperation::ExpectScriptError },
+		{ "expect-prop-error \"Cannot load texture\"", ScriptOperation::ExpectPropError },
 		{ "expect-script-error \"spin.lua:4\"", ScriptOperation::ExpectScriptError },
 		{ "wait-seconds 0.5", ScriptOperation::WaitSeconds },
 		{ "remember-rotation", ScriptOperation::RememberRotation },

@@ -20,7 +20,7 @@ namespace vega
 		NewScene, OpenScene, SaveScene, Create, Delete, Duplicate, Rename, SelectName,
 		PlayMode, Stop, ExpectMode, ExpectEntityCount, ExpectSceneDirty,
 		Tool, Snap, Grid, Colliders, ContentView,
-		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp,
+		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp, ExpectPropError,
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
 		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera,
 		OpenJson, JsonSet, ExpectJson, JsonSave, JsonRevert, ExpectJsonDirty, Export, ExpectExportOk,
@@ -57,7 +57,8 @@ namespace vega
 		bool Step(EditorContext& context, CommandHistory& history, sf::RenderWindow& window);
 		int ExitCode() const { return mFinished && !mFailed ? 0 : 1; }
 	private:
-		void Report(const std::string& line, bool success, const std::string& detail);
+		void Report(const std::string& line, bool success, const std::string& detail, bool handled = false);
+		std::optional<std::string> mPendingPropertyError;
 		std::vector<std::string> mLines;
 		std::ofstream mReport;
 		std::size_t mNextLine = 0;

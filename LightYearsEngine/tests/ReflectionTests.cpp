@@ -91,7 +91,18 @@ int main()
 	const auto* mode = type->FindProperty("Mode");
 	Check(mode->kind == PropertyKind::Enum && mode->enumLabels[1].first == 7 && mode->enumLabels[1].second == "Second", "Enum labels lost");
 	Check(mode->SetValue(root, 7) && actor.GetMode() == Mode::Second && std::get<int>(mode->getter(root)) == 7, "Enum conversion failed");
-	Check(!mode->SetValue(root, 7.f) && !mode->SetValue(root, 3), "Invalid enum writes must fail");
+	std::string enumError;
+	Check(!mode->SetValue(root, 7.f) && !mode->SetValue(root, 3, &enumError) && actor.GetMode() == Mode::Second &&
+		enumError.find("not one of the enum's labels") != std::string::npos,
+		"A labelled enum must reject unlisted integers with a reason and keep its value");
+	PropertyInfo throwing = *number;
+	throwing.setter = [](void*, const PropertyValue&) { throw std::runtime_error("setter refused"); };
+	std::string error;
+	Check(!throwing.SetValue(root, 1.f, &error) && error == "setter refused" && actor.GetNumber() == 9.f,
+		"Setter exceptions must return their reason without escaping or changing the value");
+	throwing.setter = [](void*, const PropertyValue&) { throw 42; };
+	Check(!throwing.SetValue(root, 1.f, &error) && error == "Unknown property setter error", "Nonstandard setter exceptions must be contained");
+	Check(number->SetValue(root, 9.f, &error) && error.empty(), "Successful writes must clear old errors");
 	const auto* readOnly = type->FindProperty("Read Only");
 	Check(!readOnly->setter && !readOnly->SetValue(root, 12.f) && actor.GetNumber() == 9.f, "Read-only write must fail");
 	Check(!type->FindProperty("Missing"), "Missing property must return null");

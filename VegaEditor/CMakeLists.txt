@@ -101,6 +101,23 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	add_executable(VegaEditorPropertyWidgetsTests tests/PropertyWidgetsTests.cpp)
+	target_include_directories(VegaEditorPropertyWidgetsTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorPropertyWidgetsTests PRIVATE ImGui-SFML::ImGui-SFML)
+	ly_enable_warnings(VegaEditorPropertyWidgetsTests)
+	foreach(widget_runtime IN ITEMS sfml-graphics sfml-window sfml-system)
+		CopyRuntimeLibToTarget(${widget_runtime} VegaEditorPropertyWidgetsTests)
+	endforeach()
+	if(editor_imgui_type STREQUAL "SHARED_LIBRARY")
+		CopyRuntimeLibToTarget(ImGui-SFML VegaEditorPropertyWidgetsTests)
+	endif()
+	add_test(NAME VegaEditorPropertyWidgets COMMAND VegaEditorPropertyWidgetsTests)
+	configure_file(tests/scripts/repro-texture.vegascript
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/repro-texture.vegascript COPYONLY)
+	add_test(NAME VegaEditorPropertyError COMMAND VegaEditor --editor-script
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/repro-texture.vegascript)
+	set_tests_properties(VegaEditorPropertyError PROPERTIES
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 60)
 	set(VEGA_AUTHORING_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/authoring-temp.scene.json\"")
 	configure_file(tests/scripts/authoring.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/authoring.vegascript @ONLY)
 	add_test(NAME VegaEditorAuthoring COMMAND VegaEditor --editor-script ${CMAKE_CURRENT_BINARY_DIR}/scripts/authoring.vegascript)

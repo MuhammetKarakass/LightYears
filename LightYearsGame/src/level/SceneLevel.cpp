@@ -33,13 +33,15 @@ namespace ly
 				{
 					const auto ship = settings["playerShip"].get<std::string>();
 					if (ship.rfind("Ship.Player.", 0) == 0 && content::ShipContentCatalog::FindById(ship))
-						PlayerManager::GetPlayerManager().SetSelectedShipId(ship);
+					{
+						if (!mEditMode) PlayerManager::GetPlayerManager().SetSelectedShipId(ship);
+					}
 					else mLoadResult.warnings.push_back("Unknown playerShip setting: " + ship);
 				}
 			}
 			catch (const std::exception& error) { mLoadResult.warnings.push_back(std::string{ "Scene settings: " } + error.what()); }
 		}
-		for (const auto& marker : GetActorsByTypeIncludingPending<PlayerStart>())
+		if (!mEditMode) for (const auto& marker : GetActorsByTypeIncludingPending<PlayerStart>())
 		{
 			if (auto start = marker.lock())
 			{

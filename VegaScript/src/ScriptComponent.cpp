@@ -9,6 +9,9 @@
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <cstdlib>
+#include <algorithm>
+#include <tuple>
 
 namespace vega::script
 {
@@ -16,6 +19,57 @@ namespace vega::script
 	{
 		using Value = ly::reflect::PropertyValue;
 		using Clock = std::chrono::steady_clock;
+		struct RuntimeLimits
+		{
+			std::size_t memoryLimit = 256u * 1024u * 1024u;
+			std::size_t memoryUsed = 0;
+			std::uint64_t instructionBudget = 10000000;
+			std::uint64_t remaining = 0;
+			int hookCount = 1000;
+		};
+		void* Allocate(void* user, void* pointer, std::size_t oldSize, std::size_t newSize)
+		{
+			auto& limits = *static_cast<RuntimeLimits*>(user);
+			// Lua uses oldSize as a type tag for new objects, not an allocation size.
+			if (!pointer) oldSize = 0;
+			if (!newSize)
+			{
+				std::free(pointer);
+				limits.memoryUsed -= oldSize;
+				return nullptr;
+			}
+			if (newSize > oldSize && (limits.memoryUsed >= limits.memoryLimit ||
+				newSize - oldSize > limits.memoryLimit - limits.memoryUsed)) return nullptr;
+			void* result = std::realloc(pointer, newSize);
+			if (result) limits.memoryUsed = limits.memoryUsed - oldSize + newSize;
+			return result;
+		}
+		void InstructionHook(lua_State* state, lua_Debug*)
+		{
+			void* user = nullptr;
+			lua_getallocf(state, &user);
+			auto& limits = *static_cast<RuntimeLimits*>(user);
+			if (limits.remaining <= static_cast<std::uint64_t>(limits.hookCount))
+			{
+				limits.remaining = 0;
+				luaL_error(state, "script exceeded its instruction budget");
+			}
+			limits.remaining -= limits.hookCount;
+		}
+		struct InstructionScope
+		{
+			lua_State* state;
+			explicit InstructionScope(lua_State* lua) : state{ lua }
+			{
+				void* user = nullptr;
+				lua_getallocf(state, &user);
+				auto& limits = *static_cast<RuntimeLimits*>(user);
+				limits.remaining = limits.instructionBudget;
+				limits.hookCount = static_cast<int>(std::min<std::uint64_t>(1000, limits.instructionBudget));
+				lua_sethook(state, InstructionHook, LUA_MASKCOUNT, limits.hookCount);
+			}
+			~InstructionScope() { lua_sethook(state, nullptr, 0, 0); }
+		};
 		struct ActorHandle
 		{
 			std::weak_ptr<ly::Actor> actor;
@@ -78,19 +132,21 @@ namespace vega::script
 			const auto* property = type ? type->FindProperty(name) : nullptr;
 			return object && property ? ToLua(sol::state_view{ state }, property->getter(object)) : sol::make_object(state, sol::nil);
 		}
-		bool WriteProperty(void* object, const ly::reflect::TypeInfo* type, const std::string& name, const sol::object& input)
+		std::tuple<bool, std::string> WriteProperty(void* object, const ly::reflect::TypeInfo* type, const std::string& name, const sol::object& input)
 		{
 			const auto* property = type ? type->FindProperty(name) : nullptr;
 			auto value = FromLua(input);
-			if (!object || !property || !value) return false;
+			if (!object || !property || !value) return { false, "Unknown target/property or incompatible value" };
 			if (property->kind == ly::reflect::PropertyKind::Int || property->kind == ly::reflect::PropertyKind::Enum)
 			{
 				const auto* number = std::get_if<float>(&*value);
 				if (!number || std::trunc(*number) != *number || static_cast<double>(*number) < std::numeric_limits<int>::min() ||
-					static_cast<double>(*number) > std::numeric_limits<int>::max()) return false;
+					static_cast<double>(*number) > std::numeric_limits<int>::max()) return { false, "Expected integer in range" };
 				value = static_cast<int>(*number);
 			}
-			return property->SetValue(object, *value);
+			std::string error;
+			const bool ok = property->SetValue(object, *value, &error);
+			return { ok, std::move(error) };
 		}
 		bool KeyDown(const ActorHandle& handle, const std::string& name)
 		{
@@ -172,7 +228,9 @@ namespace vega::script
 
 	struct ScriptRuntime::Impl
 	{
-		sol::state lua;
+		// The allocator's accounting must outlive the interpreter, including lua_close.
+		RuntimeLimits limits;
+		sol::state lua{ sol::default_at_panic, Allocate, &limits };
 		std::filesystem::path root;
 #ifdef VEGA_SCRIPT_RELEASE
 		bool hotReload = false;
@@ -190,6 +248,8 @@ namespace vega::script
 	ScriptRuntime& ScriptRuntime::Get() { static ScriptRuntime runtime; return runtime; }
 	void ScriptRuntime::SetHotReload(bool enabled) { mImpl->hotReload = enabled; }
 	bool ScriptRuntime::HotReload() const { return mImpl->hotReload; }
+	void ScriptRuntime::SetInstructionBudget(std::uint64_t instructions) { mImpl->limits.instructionBudget = std::max<std::uint64_t>(1, instructions); }
+	void ScriptRuntime::SetMemoryLimit(std::size_t bytes) { mImpl->limits.memoryLimit = bytes; }
 	const std::filesystem::path& ScriptRuntime::Root() const { return mImpl->root; }
 	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get().mImpl->root = std::filesystem::weakly_canonical(root); }
 
@@ -235,6 +295,7 @@ namespace vega::script
 			if (callback.get_type() != sol::type::function) { Fail(std::string{ name } + " must be a function"); return; }
 			calling = true;
 			const sol::protected_function function = callback.as<sol::protected_function>();
+			const InstructionScope budget{ function.lua_state() };
 			const sol::protected_function_result result = dt ? function(self, *dt) : function(self);
 			calling = false;
 			if (!result.valid()) { const sol::error failure = result; Fail(failure.what()); }
@@ -293,6 +354,7 @@ namespace vega::script
 			if (!loaded.valid()) { const sol::error failure = loaded; Fail(failure.what()); return false; }
 			sol::protected_function chunk = loaded;
 			sol::set_environment(environment, chunk);
+			const InstructionScope budget{ lua.lua_state() };
 			const sol::protected_function_result result = chunk();
 			if (!result.valid()) { const sol::error failure = result; Fail(failure.what()); return false; }
 			defaults.clear();
