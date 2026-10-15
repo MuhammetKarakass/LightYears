@@ -11,7 +11,9 @@ write succeeded. Results are logged through `LY_GAME_INFO` and written alongside
 the script to `<file>.report.txt` as `OK|FAIL <source line> -- <detail>`.
 
 Commands are case-sensitive and whitespace-separated. Blank lines and `#`
-comments are ignored. Arguments cannot contain whitespace or `#`. Numbers must
+comments outside double quotes are ignored. Double-quoted arguments can contain
+spaces, `#`, or be empty; `\"` and `\\` escape a quote and backslash inside quotes.
+Other backslashes are literal. Unclosed or adjoining quotes are errors. Numbers must
 be finite; IDs, indices, counts and frame counts must be non-negative integers.
 
 ```text
@@ -28,6 +30,8 @@ select <id>
 select-type <TypeName> [index=0]
 move <x> <y>
 rotate <degrees>
+set-prop <Target> "<Property Name>" <values...>
+expect-prop <Target> "<Property Name>" <values...> [tolerance=0.5]
 undo
 redo
 expect-selected <TypeName>
@@ -46,6 +50,28 @@ separate undo step. `wait N` leaves N complete frames between that command and t
 next command. `expect-location` checks each coordinate with the stated tolerance.
 `remember-location` stores the selected actor's position for a later
 `expect-remembered-location` check (default tolerance 0.5).
+
+Property targets are `Actor` (including its registered derived properties) or a
+component type name; the first matching component in component order is used.
+Property names are case-sensitive. Use one value for bool (`true`/`false` or
+`1`/`0`), int, float, string (quote strings with spaces), or enum (integer value);
+two floats for Vector2; four integer channels in 0–255 order RGBA for Color.
+`expect-prop` compares floats and vector coordinates using its optional non-negative
+tolerance; bools, integers, enums, colors and strings compare exactly. Property
+arity and value types are validated at execution against the selected descriptor.
+Unknown targets/properties, malformed values, and attempts to set read-only
+properties fail the line. Each `set-prop` records one undo step through the same
+generic command as the Inspector. Range metadata guides Inspector drags; runtime
+setters retain their existing validation and side effects.
+
+```text
+set-prop Actor "Rotation" 45
+expect-prop Actor "Rotation" 45 0.01
+set-prop HealthComponent "Max Health" 200
+expect-prop HealthComponent "Max Health" 200
+undo
+redo
+```
 
 Pausing enters the editor camera from the current game view; playing restores the
 game camera. `camera` switches manually. `focus` enters the editor camera and

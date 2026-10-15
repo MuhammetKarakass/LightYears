@@ -75,6 +75,25 @@ int main()
 	Check(ParseEditorScriptLine("expect-location 1 2 0.01").command->tolerance == 0.01f, "Explicit tolerance lost");
 	Check(ParseEditorScriptLine("expect-count Actor 3").command->number == 3, "Expected count lost");
 	Check(ParseEditorScriptLine("capture subdir/smoke.png").command->text == "subdir/smoke.png", "Capture path lost");
+	const auto property = ParseEditorScriptLine("set-prop HealthComponent \"Max Health\" 250");
+	Check(property.command && property.command->operation == ScriptOperation::SetProp &&
+		property.command->text == "HealthComponent" && property.command->property == "Max Health" &&
+		property.command->values == std::vector<std::string>{ "250" }, "Quoted property arguments lost");
+	const auto expect = ParseEditorScriptLine("expect-prop Actor \"Location\" 1 2 0.01 # comment");
+	Check(expect.command && expect.command->operation == ScriptOperation::ExpectProp &&
+		expect.command->values == std::vector<std::string>{ "1", "2", "0.01" }, "Property expectation values lost");
+	const auto hash = ParseEditorScriptLine("set-prop Actor \"Text # label\" \"a \\\"quote\\\" and \\\\ slash\"");
+	Check(hash.command && hash.command->property == "Text # label" &&
+		hash.command->values[0] == "a \"quote\" and \\ slash", "Quoted hashes or escapes lost");
+	const auto empty = ParseEditorScriptLine("set-prop Actor \"Text\" \"\"");
+	Check(empty.command && empty.command->values == std::vector<std::string>{ "" }, "Empty quoted string lost");
+	Check(ParseEditorScriptLine("capture \"path with spaces/image.png\"").command->text == "path with spaces/image.png", "Quoted path lost");
+	for (const char* line : { "set-prop", "set-prop Actor", "set-prop Actor \"Rotation\"", "expect-prop Actor \"Rotation\"",
+		"set-prop \"\" \"Rotation\" 1", "set-prop Actor \"\" 1", "set-prop Actor \"Rotation 1", "capture \"path\"suffix", "capture ab\"cd" })
+	{
+		const auto parsed = ParseEditorScriptLine(line);
+		Check(!parsed.command && !parsed.error.empty(), std::string{ "Bad quoted/property command accepted: " } + line);
+	}
 	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;

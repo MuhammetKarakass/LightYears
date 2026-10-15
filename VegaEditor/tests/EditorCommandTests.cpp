@@ -83,6 +83,47 @@ namespace
 		Check(vega::SelectActor{ std::nullopt }.Execute(context) && !selection.Get(), "Clear selection command failed");
 	}
 
+	void TestReflectedProperties()
+	{
+		ly::reflect::RegisterEngineTypes();
+		ly::World world{ nullptr };
+		auto actor = world.SpawnActor<ly::Actor>().lock();
+		auto& first = actor->AddComponent<ly::ActorComponent>();
+		auto& second = actor->AddComponent<ly::ActorComponent>();
+		world.TickInternal(0.f);
+		vega::EditorSelection selection;
+		vega::EditorContext context{ &world, selection };
+		vega::CommandHistory history{ context };
+		const auto id = actor->GetUniqueID();
+		const auto group = history.BeginMergeGroup();
+		const auto edit = [&](std::optional<std::size_t> index, const char* property, ly::reflect::PropertyValue value, std::uint64_t merge = 0)
+		{
+			return history.Execute(std::make_unique<vega::SetPropertyCommand>(id, index, property, std::move(value), merge));
+		};
+		Check(edit({}, "Rotation", 10.f, group) && edit({}, "Rotation", 45.f, group), "Reflected drag failed");
+		Check(history.Undo() && actor->GetActorRotation() == 0.f && !history.CanUndo(), "Reflected drag must merge and keep first before value");
+		Check(history.Redo() && actor->GetActorRotation() == 45.f, "Reflected merged redo failed");
+		Check(!edit({}, "Rotation", 5) && !edit({}, "Velocity", sf::Vector2f{}) && !edit({}, "Missing", 1.f), "Invalid reflected writes must fail");
+		Check(edit(0, "Active", false, group) && edit(1, "Active", false, group), "Component property edits failed");
+		Check(history.Undo() && !first.IsActive() && second.IsActive(), "Different component indices must not merge");
+		Check(history.Undo() && first.IsActive(), "Component undo failed");
+		Check(history.Redo() && !first.IsActive(), "Component redo failed");
+		Check(!edit(100, "Active", false) && history.CanRedo(), "Missing component must preserve redo");
+		Check(vega::FindPropertyTarget(*actor, "ActorComponent").componentIndex == 0, "Named component target must use first match");
+		Check(!vega::FindPropertyTarget(*actor, "Missing").object, "Unknown named target must fail");
+		history.Clear();
+		Check(edit({}, "Rotation", 50.f, group) && edit({}, "Render Enabled", false, group), "Mixed property edits failed");
+		history.Undo();
+		Check(actor->IsRenderEnabled() && actor->GetActorRotation() == 50.f && history.CanUndo(), "Different properties must not merge");
+		history.Clear();
+		Check(edit({}, "Rotation", 60.f) && edit({}, "Rotation", 70.f), "Discrete reflected edits failed");
+		history.Undo();
+		Check(actor->GetActorRotation() == 60.f && history.CanUndo(), "Discrete reflected edits must not merge");
+		actor->Destroy();
+		history.Undo();
+		Check(actor->GetActorRotation() == 60.f && !history.Redo(), "Destroyed target must not be mutated by reflected history");
+	}
+
 	void TestMergeAndDepth()
 	{
 		ly::World world{ nullptr };
@@ -170,6 +211,7 @@ namespace
 
 int main()
 {
+	TestReflectedProperties();
 	TestHistory();
 	TestMergeAndDepth();
 	TestDestroyAndResolution();

@@ -15,7 +15,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
-		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo,
+		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp,
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
 		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera
 	};
@@ -23,6 +23,8 @@ namespace vega
 	{
 		ScriptOperation operation = ScriptOperation::Quit;
 		std::string text;
+		std::string property;
+		std::vector<std::string> values;
 		unsigned int number = 0;
 		sf::Vector2f location{};
 		float degrees = 0.f;

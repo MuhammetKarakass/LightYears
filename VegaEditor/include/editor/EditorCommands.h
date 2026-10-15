@@ -3,6 +3,7 @@
 #include "editor/EditorSelection.h"
 #include "editor/EditorCamera.h"
 #include <framework/Actor.h>
+#include <framework/reflection/Reflection.h>
 #include <cstdint>
 #include <string>
 #include <variant>
@@ -57,6 +58,35 @@ namespace vega
 		bool mMergeAllowed = false;
 		std::vector<std::unique_ptr<EditorCommand>> mUndo;
 		std::vector<std::unique_ptr<EditorCommand>> mRedo;
+	};
+
+	// Re-resolved for every operation; history never retains actor/component pointers.
+	struct ReflectedTarget
+	{
+		void* object = nullptr;
+		const ly::reflect::TypeInfo* type = nullptr;
+		std::optional<std::size_t> componentIndex;
+	};
+	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<std::size_t> componentIndex);
+	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName);
+
+	class SetPropertyCommand final : public EditorCommand
+	{
+	public:
+		SetPropertyCommand(unsigned int id, std::optional<std::size_t> componentIndex,
+			std::string property, ly::reflect::PropertyValue after, std::uint64_t group = 0);
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		std::string Name() const override;
+		bool MergeWith(const EditorCommand&) override;
+	private:
+		unsigned int mID;
+		std::optional<std::size_t> mComponentIndex;
+		std::string mProperty;
+		ly::reflect::PropertyValue mBefore;
+		ly::reflect::PropertyValue mAfter;
+		std::uint64_t mMergeGroup;
+		bool mExecuted = false;
 	};
 
 	class ActorPropertyCommand : public EditorCommand

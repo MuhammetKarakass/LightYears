@@ -39,8 +39,7 @@ namespace vega
 		std::optional<unsigned int> mDestroyActor;
 		sf::Vector2f mMoveDragMouse{};
 		std::uint64_t mMoveMergeGroup = 0;
-		std::uint64_t mLocationMergeGroup = 0;
-		std::uint64_t mRotationMergeGroup = 0;
+		std::uint64_t mPropertyMergeGroup = 0;
 		sf::Clock mUIClock;
 		sf::FloatRect mViewportImageRect{};
 		char mHierarchyFilter[128]{};

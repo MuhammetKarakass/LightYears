@@ -42,6 +42,7 @@ namespace ly
 		float GetModuleTemporaryShield() const { return mModuleTemporaryShield; }
 		void GrantModuleTemporaryShield(const std::string& sourceId, float amount, float decaySeconds);
 		void RemoveModuleTemporaryShield(const std::string& sourceId);
+		float GetRechargeDelay() const { return mRechargeDelay; }
 		float GetRechargeDelayRemaining() const { return mRechargeDelayRemaining; }
 		void SetModuleBehavior(const ShieldModuleBehavior& behavior);
 		float GetFrontShield() const;

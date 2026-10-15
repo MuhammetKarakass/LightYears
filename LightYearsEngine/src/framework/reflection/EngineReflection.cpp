@@ -1,0 +1,59 @@
+#include "framework/reflection/Reflection.h"
+#include "framework/Actor.h"
+#include "framework/SpriteComponent.h"
+#include "framework/LightComponent.h"
+#include "framework/CollisionComponent.h"
+#include "framework/SoundComponent.h"
+
+namespace ly::reflect
+{
+	void RegisterEngineTypes()
+	{
+		static bool registered = false;
+		if (registered) return;
+		registered = true;
+		Class<Actor>("Actor")
+			.Property("Location", &Actor::GetActorLocation, &Actor::SetActorLocation).Speed(1.f).Category("Transform")
+			.Property("Rotation", &Actor::GetActorRotation, &Actor::SetActorRotation).Speed(0.5f).Category("Transform")
+			.Property("Velocity", &Actor::GetVelocity).Category("Transform")
+			.Property("RenderLayer", &Actor::GetRenderLayer, &Actor::SetRenderLayer).Category("Rendering")
+			.Labels({ { 0, "Background" }, { 1, "GroundDecal" }, { 2, "World" }, { 3, "Projectile" }, { 4, "WorldVfx" }, { 5, "Foreground" } })
+			.Property("Render Enabled", &Actor::IsRenderEnabled, &Actor::SetRenderEnabled).Category("Rendering")
+			.Property("Tick When Paused", &Actor::GetTickWhenPaused, &Actor::SetTickWhenPaused).Category("Tick");
+		Class<ActorComponent>("ActorComponent")
+			.Property("Active", &ActorComponent::IsActive, &ActorComponent::SetActive).Category("Lifecycle")
+			.Property("Can Ever Tick", &ActorComponent::CanEverTick).Category("Lifecycle")
+			.Property("Has Begun Play", &ActorComponent::HasBegunPlay).Category("Lifecycle");
+		Class<SpriteComponent, ActorComponent>("SpriteComponent")
+			.Property("Has Sprite", &SpriteComponent::HasSprite).Category("Sprite");
+		// Light operations need a tag; Phase 1 reflects scalar object properties only.
+		Class<LightComponent, ActorComponent>("LightComponent");
+		EnumLabels collisionLabels;
+		const char* bits[]{ "Player", "PlayerBullet", "Enemy", "EnemyBullet", "Powerup", "Environment", "RelayProjectile", "FriendlySummon" };
+		// Collision masks are flags. Include every combination so the enum widget
+		// preserves authored masks as well as individual layers.
+		for (int mask = 0; mask < 256; ++mask)
+		{
+			std::string label = mask == 0 ? "None" : "";
+			for (int bit = 0; bit < 8; ++bit)
+			{
+				if (!(mask & (1 << bit))) continue;
+				if (!label.empty()) label += " | ";
+				label += bits[bit];
+			}
+			collisionLabels.emplace_back(mask, std::move(label));
+		}
+		Class<CollisionComponent, ActorComponent>("CollisionComponent")
+			.Property("Physics Enabled", &CollisionComponent::IsPhysicsEnabled, &CollisionComponent::SetEnablePhysics).Category("Physics")
+			.Property("Has Physics Body", &CollisionComponent::HasPhysicsBody).Category("Physics")
+			.Property("Body Type", &CollisionComponent::GetPhysicsBodyType, &CollisionComponent::SetPhysicsBodyType).Category("Physics")
+			.Labels({ { 0, "Dynamic" }, { 1, "Static" } })
+			.Property("Collision Layer", &CollisionComponent::GetCollisionLayer, &CollisionComponent::SetCollisionLayer).Labels(collisionLabels).Category("Collision")
+			.Property("Collision Mask", &CollisionComponent::GetCollisionMask, &CollisionComponent::SetCollisionMask).Labels(collisionLabels).Category("Collision");
+		// SoundComponent is independently owned, so it is registered for lookup by
+		// name but does not participate in ActorComponent enumeration or discovery.
+		Class<SoundComponent>("SoundComponent")
+			.Property("Playing", &SoundComponent::IsPlaying)
+			.Property("Stopped", &SoundComponent::IsStopped);
+	}
+}

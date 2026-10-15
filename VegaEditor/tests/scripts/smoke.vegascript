@@ -2,6 +2,16 @@
 pause
 select-type PlayerSpaceShip
 expect-selected PlayerSpaceShip
+set-prop Actor "Rotation" 45
+expect-prop Actor "Rotation" 45
+undo
+redo
+expect-prop Actor "Rotation" 45
+set-prop HealthComponent "Max Health" 200
+expect-prop HealthComponent "Max Health" 200
+undo
+redo
+expect-prop HealthComponent "Max Health" 200
 remember-location
 move 400 300
 expect-location 400 300

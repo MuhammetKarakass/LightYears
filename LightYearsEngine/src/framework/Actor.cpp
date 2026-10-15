@@ -9,6 +9,16 @@
 
 namespace ly
 {
+	void Actor::ForEachComponent(const std::function<void(ActorComponent&)>& visitor)
+	{
+		for (const auto& component : mComponents) visitor(*component);
+	}
+
+	void Actor::ForEachComponent(const std::function<void(const ActorComponent&)>& visitor) const
+	{
+		for (const auto& component : mComponents) visitor(*component);
+	}
+
 	Actor::Actor(World* OwningWorld, const std::string& TexturePath)
 		: mOwningWorld{ OwningWorld },
 		mBeganPlay{ false },

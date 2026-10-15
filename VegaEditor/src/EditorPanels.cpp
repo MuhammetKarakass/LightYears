@@ -9,6 +9,71 @@
 
 namespace vega
 {
+	namespace
+	{
+		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value)
+		{
+			using ly::reflect::PropertyKind;
+			const char* label = property.name.c_str();
+			const float min = property.min.value_or(0.f);
+			const float max = property.max.value_or(0.f);
+			switch (property.kind)
+			{
+			case PropertyKind::Bool: return ImGui::Checkbox(label, &std::get<bool>(value));
+			case PropertyKind::Int: return ImGui::DragInt(label, &std::get<int>(value), property.speed, static_cast<int>(min), static_cast<int>(max));
+			case PropertyKind::Float: return ImGui::DragFloat(label, &std::get<float>(value), property.speed, min, max);
+			case PropertyKind::Vector2:
+			{
+				auto& vector = std::get<sf::Vector2f>(value);
+				float values[]{ vector.x, vector.y };
+				const bool changed = ImGui::DragFloat2(label, values, property.speed, min, max);
+				vector = { values[0], values[1] };
+				return changed;
+			}
+			case PropertyKind::Color:
+			{
+				auto& color = std::get<sf::Color>(value);
+				float channels[]{ color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f };
+				const bool changed = ImGui::ColorEdit4(label, channels);
+				if (changed) color = { static_cast<std::uint8_t>(std::clamp(channels[0], 0.f, 1.f) * 255.f + 0.5f),
+					static_cast<std::uint8_t>(std::clamp(channels[1], 0.f, 1.f) * 255.f + 0.5f),
+					static_cast<std::uint8_t>(std::clamp(channels[2], 0.f, 1.f) * 255.f + 0.5f),
+					static_cast<std::uint8_t>(std::clamp(channels[3], 0.f, 1.f) * 255.f + 0.5f) };
+				return changed;
+			}
+			case PropertyKind::String:
+			{
+				auto& text = std::get<std::string>(value);
+				return ImGui::InputText(label, text.data(), text.capacity() + 1, ImGuiInputTextFlags_CallbackResize,
+					[](ImGuiInputTextCallbackData* data)
+					{
+						auto& buffer = *static_cast<std::string*>(data->UserData);
+						buffer.resize(static_cast<std::size_t>(data->BufTextLen));
+						data->Buf = buffer.data();
+						return 0;
+					}, &text);
+			}
+			case PropertyKind::Enum:
+			{
+				auto& number = std::get<int>(value);
+				std::string preview = std::to_string(number);
+				for (const auto& entry : property.enumLabels) if (entry.first == number) preview = entry.second;
+				bool changed = false;
+				if (ImGui::BeginCombo(label, preview.c_str()))
+				{
+					for (const auto& entry : property.enumLabels)
+					{
+						if (ImGui::Selectable(entry.second.c_str(), number == entry.first)) { number = entry.first; changed = true; }
+					}
+					ImGui::EndCombo();
+				}
+				return changed;
+			}
+			}
+			return false;
+		}
+	}
+
 	void EditorApplication::BuildViewportPanel()
 	{
 		const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
@@ -149,45 +214,48 @@ namespace vega
 			{
 				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
 				if (ImGui::Button("Focus")) mContext.FocusSelection();
-				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+				const auto drawSection = [&](const ReflectedTarget& target)
 				{
-					const sf::Vector2f location = actor->GetActorLocation();
-					float values[]{ location.x, location.y };
-					const bool locationChanged = ImGui::DragFloat2("Location", values, 1.f);
-					// Include the final value committed on deactivation during Ctrl-click text entry.
-					if (ImGui::IsItemActivated()) mLocationMergeGroup = mHistory.BeginMergeGroup();
-					if (locationChanged)
+					if (!target.type) return;
+					ImGui::PushID(target.object);
+					if (ImGui::CollapsingHeader(target.type->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 					{
-						mHistory.Execute(std::make_unique<SetActorLocation>(actor->GetUniqueID(),
-							sf::Vector2f{ values[0], values[1] },
-							(ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mLocationMergeGroup : 0));
+						const auto properties = target.type->AllProperties();
+						std::vector<std::string> categories;
+						for (const auto* property : properties)
+							if (std::find(categories.begin(), categories.end(), property->category) == categories.end()) categories.push_back(property->category);
+						for (const auto& category : categories)
+						{
+							if (!category.empty()) ImGui::SeparatorText(category.c_str());
+							for (const auto* property : properties)
+							{
+								if (property->category != category) continue;
+								auto value = property->getter(target.object);
+								ImGui::BeginDisabled(!property->setter);
+								// Reflected names can be longer than the old fixed labels.
+								const float labelWidth = ImGui::CalcTextSize(property->name.c_str()).x;
+								ImGui::SetNextItemWidth(std::max(100.f,
+									ImGui::GetContentRegionAvail().x - labelWidth - ImGui::GetStyle().ItemInnerSpacing.x));
+								const bool changed = DrawProperty(*property, value);
+								if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
+								if (changed && property->setter)
+								{
+									mHistory.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIndex,
+										property->name, std::move(value), (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
+								}
+								ImGui::EndDisabled();
+								if (!property->tooltip.empty()) ImGui::SetItemTooltip("%s", property->tooltip.c_str());
+							}
+						}
 					}
-					float rotation = actor->GetActorRotation();
-					const bool rotationChanged = ImGui::DragFloat("Rotation", &rotation, 0.5f);
-					if (ImGui::IsItemActivated()) mRotationMergeGroup = mHistory.BeginMergeGroup();
-					if (rotationChanged)
-					{
-						mHistory.Execute(std::make_unique<SetActorRotation>(actor->GetUniqueID(), rotation,
-							(ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mRotationMergeGroup : 0));
-					}
-					const sf::Vector2f velocity = actor->GetVelocity();
-					ImGui::Text("Velocity: %.2f, %.2f", velocity.x, velocity.y);
-				}
-				if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+					ImGui::PopID();
+				};
+				drawSection(ResolvePropertyTarget(*actor, {}));
+				std::size_t componentIndex = 0;
+				actor->ForEachComponent([&](ly::ActorComponent& component)
 				{
-					static const char* layers[]{ "Background", "GroundDecal", "World", "Projectile", "WorldVfx", "Foreground" };
-					static_assert(IM_ARRAYSIZE(layers) == static_cast<int>(ly::RenderLayer::Count), "Update editor render layers");
-					int layer = static_cast<int>(actor->GetRenderLayer());
-					if (ImGui::Combo("RenderLayer", &layer, layers, IM_ARRAYSIZE(layers)))
-					{
-						mHistory.Execute(std::make_unique<SetRenderLayer>(actor->GetUniqueID(), static_cast<ly::RenderLayer>(layer)));
-					}
-					bool enabled = actor->IsRenderEnabled();
-					if (ImGui::Checkbox("Render enabled", &enabled))
-					{
-						mHistory.Execute(std::make_unique<SetRenderEnabled>(actor->GetUniqueID(), enabled));
-					}
-				}
+					drawSection({ &component, ly::reflect::TypeRegistry::Get().FindMostDerived(component), componentIndex++ });
+				});
 				if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::Text("Physics enabled: %s", actor->IsPhysicsEnabled() ? "Yes" : "No");

@@ -1,4 +1,5 @@
 #include "framework/Application.h"
+#include "framework/reflection/Reflection.h"
 #include "framework/Core.h"
 #include "framework/World.h"
 #include "framework/AssetManager.h"
@@ -42,6 +43,7 @@ namespace ly
 		mCleanCycleClock{},    
 		mCleanCycleTime{2.f}          
 	{		
+		reflect::RegisterEngineTypes();
 		// The frame rate is held by mFramePacer; SFML's own limiter drifts (see FramePacer.h).
 		mWindow.setVerticalSyncEnabled(false);
 #ifdef _WIN32

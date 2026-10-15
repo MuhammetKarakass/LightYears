@@ -7,6 +7,7 @@
 #include <SFML/Graphics.hpp>
 #include <box2d/box2d.h> 
 #include <cstddef>
+#include <functional>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -151,6 +152,9 @@
 			if (T* existing = FindComponent<T>()) return *existing;
 			return AddComponent<T>(std::forward<Args>(args)...);
 		}
+
+		void ForEachComponent(const std::function<void(ActorComponent&)>& visitor);
+		void ForEachComponent(const std::function<void(const ActorComponent&)>& visitor) const;
 
 		//TICK WHEN PAUSED
 		void SetTickWhenPaused(bool tickWhenPaused) { mTickWhenPaused = tickWhenPaused; }

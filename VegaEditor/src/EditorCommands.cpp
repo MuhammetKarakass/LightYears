@@ -9,6 +9,82 @@
 
 namespace vega
 {
+	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<std::size_t> componentIndex)
+	{
+		auto& registry = ly::reflect::TypeRegistry::Get();
+		if (!componentIndex) return { &actor, registry.FindMostDerived(actor), {} };
+		ReflectedTarget result;
+		std::size_t index = 0;
+		actor.ForEachComponent([&](ly::ActorComponent& component)
+		{
+			if (index == *componentIndex) result = { &component, registry.FindMostDerived(component), index };
+			++index;
+		});
+		return result;
+	}
+
+	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName)
+	{
+		auto result = ResolvePropertyTarget(actor, {});
+		if (targetName == "Actor") return result;
+		result = {};
+		std::size_t index = 0;
+		actor.ForEachComponent([&](ly::ActorComponent& component)
+		{
+			const auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(component);
+			for (const auto* base = type; base; base = base->base)
+			{
+				if (!result.object && base->name == targetName) result = { &component, type, index };
+			}
+			++index;
+		});
+		return result;
+	}
+
+	SetPropertyCommand::SetPropertyCommand(unsigned int id, std::optional<std::size_t> componentIndex,
+		std::string property, ly::reflect::PropertyValue after, std::uint64_t group)
+		: mID{ id }, mComponentIndex{ componentIndex }, mProperty{ std::move(property) },
+		mAfter{ std::move(after) }, mMergeGroup{ group }
+	{
+	}
+
+	bool SetPropertyCommand::Execute(EditorContext& context)
+	{
+		const auto actor = context.Resolve(mID);
+		if (!actor) return false;
+		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr;
+		if (!property || !property->setter) return false;
+		const auto before = property->getter(target.object);
+		if (!property->SetValue(target.object, mAfter)) return false;
+		if (!mExecuted) { mBefore = before; mExecuted = true; }
+		return true;
+	}
+
+	void SetPropertyCommand::Undo(EditorContext& context)
+	{
+		const auto actor = context.Resolve(mID);
+		if (!actor || !mExecuted) return;
+		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		if (const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr)
+			property->SetValue(target.object, mBefore);
+	}
+
+	std::string SetPropertyCommand::Name() const
+	{
+		return "Set " + mProperty + " #" + std::to_string(mID) +
+			(mComponentIndex ? " component " + std::to_string(*mComponentIndex) : "");
+	}
+
+	bool SetPropertyCommand::MergeWith(const EditorCommand& command)
+	{
+		const auto* next = dynamic_cast<const SetPropertyCommand*>(&command);
+		if (!next || !mMergeGroup || mMergeGroup != next->mMergeGroup || mID != next->mID ||
+			mComponentIndex != next->mComponentIndex || mProperty != next->mProperty) return false;
+		mAfter = next->mAfter;
+		return true;
+	}
+
 	void EditorContext::ApplyCamera()
 	{
 		if (world && camera && world->GetViewOverride()) world->SetViewOverride(camera->GetView());

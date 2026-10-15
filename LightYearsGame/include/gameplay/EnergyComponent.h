@@ -13,6 +13,7 @@ namespace ly
 
 		float GetEnergy() const { return mEnergy; }
 		float GetMaxEnergy() const { return mMaxEnergy; }
+		float GetRechargeDelay() const { return mRechargeDelay; }
 		float GetRechargeDelayRemaining() const { return mRechargeDelayRemaining; }
 
 		void SetMaxEnergy(float maxEnergy, bool preserveEnergyPercent = false);

@@ -1,4 +1,5 @@
 #include "gameFramework/GameApplication.h"
+#include "reflection/GameReflection.h"
 
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/ShipContentCatalog.h"
@@ -21,6 +22,7 @@ namespace ly
 		: Application({ 1920, 1080}, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
+		RegisterGameTypes();
 		if (!GameContentBootstrap::Register())
 		{
 			LY_GAME_ERROR("Failed to register shipped game content; application will not start the game world");
