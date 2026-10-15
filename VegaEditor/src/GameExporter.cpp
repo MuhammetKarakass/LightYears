@@ -1,0 +1,351 @@
+#include "editor/GameExporter.h"
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
+#include <algorithm>
+#include <cctype>
+#include <fstream>
+#include <iomanip>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+namespace vega
+{
+	namespace
+	{
+		// Windows folder names are case-insensitive, so "Build" and "build" must compare as the same folder.
+		std::string ComponentKey(const fs::path& component)
+		{
+			std::string text = component.u8string();
+			std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			return text;
+		}
+
+		fs::path Canonical(const fs::path& path)
+		{
+			// weakly_canonical resolves links and dot segments without requiring the folder to exist yet.
+			fs::path result = fs::weakly_canonical(fs::absolute(path));
+			while (!result.has_filename() && result.has_parent_path() && result != result.root_path())
+			{
+				result = result.parent_path();
+			}
+			return result;
+		}
+
+		// Component-wise comparison, so "D:\Vega2" is not treated as inside "D:\Vega". An empty root contains nothing.
+		bool IsSameOrInside(const fs::path& path, const fs::path& root)
+		{
+			if (root.empty()) return false;
+			auto candidate = path.begin();
+			for (auto rootPart = root.begin(); rootPart != root.end(); ++rootPart, ++candidate)
+			{
+				if (candidate == path.end() || ComponentKey(*candidate) != ComponentKey(*rootPart)) return false;
+			}
+			return true;
+		}
+
+		bool Overlaps(const fs::path& first, const fs::path& second)
+		{
+			return IsSameOrInside(first, second) || IsSameOrInside(second, first);
+		}
+
+		// Manifest entries are relative and cannot climb out of the export folder. A tampered manifest must never
+		// make the export delete files outside the folder.
+		bool IsSafeRelative(const fs::path& relative)
+		{
+			if (relative.empty() || relative.is_absolute() || relative.has_root_directory()) return false;
+			for (const auto& part : relative)
+			{
+				if (part.empty() || part == "..") return false;
+			}
+			return true;
+		}
+
+		std::string Lower(std::string text)
+		{
+			std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			return text;
+		}
+
+		void WriteManifest(const fs::path& outputDir, const std::vector<std::string>& files)
+		{
+			std::ofstream out{ outputDir / kExportManifestName, std::ios::binary | std::ios::trunc };
+			for (const auto& file : files) out << file << '\n';
+			out.flush();
+			if (!out) throw std::runtime_error("Cannot write " + std::string{ kExportManifestName });
+		}
+
+		std::vector<std::string> ReadManifest(const fs::path& outputDir)
+		{
+			std::ifstream in{ outputDir / kExportManifestName };
+			std::vector<std::string> files;
+			for (std::string line; std::getline(in, line);)
+			{
+				if (!line.empty() && line.back() == '\r') line.pop_back();
+				if (!line.empty()) files.push_back(line);
+			}
+			return files;
+		}
+
+		// Removes exactly the files an earlier export recorded, then the folders that only held them. The manifest is
+		// removed last, so a failure part-way leaves it in place to describe what is still there.
+		void ClearPreviousExport(const fs::path& outputDir)
+		{
+			if (!fs::is_regular_file(outputDir / kExportManifestName)) return;
+			std::set<std::string> parents;
+			for (const auto& entry : ReadManifest(outputDir))
+			{
+				const fs::path relative = fs::u8path(entry);
+				if (!IsSafeRelative(relative))
+				{
+					throw std::runtime_error("Export manifest lists a path outside the output folder: " + entry);
+				}
+				std::error_code error;
+				const fs::path file = outputDir / relative;
+				if (fs::is_regular_file(file, error) && !fs::remove(file, error) && error)
+				{
+					throw std::runtime_error("Cannot remove previous export file " + entry + ": " + error.message());
+				}
+				for (fs::path parent = relative.parent_path(); !parent.empty(); parent = parent.parent_path())
+				{
+					parents.insert(parent.generic_u8string());
+				}
+			}
+			// Children sort after their parents, so reverse order removes the deepest folders first.
+			for (auto folder = parents.rbegin(); folder != parents.rend(); ++folder)
+			{
+				std::error_code error;
+				fs::remove(outputDir / fs::u8path(*folder), error);  // fails harmlessly while the folder is not empty
+			}
+			std::error_code error;
+			fs::remove(outputDir / kExportManifestName, error);
+			if (error) throw std::runtime_error("Cannot remove the export manifest: " + error.message());
+		}
+
+		struct CopyState
+		{
+			fs::path outputDir;
+			std::vector<std::string> files;
+			std::uintmax_t bytes = 0;
+		};
+
+		void CopyFileInto(CopyState& state, const fs::path& source, const fs::path& relative)
+		{
+			const fs::path destination = state.outputDir / relative;
+			// A stray file at a destination belongs to the user. Refusing keeps it intact.
+			std::error_code error;
+			if (fs::exists(destination, error) || error)
+			{
+				throw std::runtime_error("Refusing to replace " + relative.generic_u8string() + ", which the export did not create");
+			}
+			fs::create_directories(destination.parent_path());
+			fs::copy_file(source, destination);
+			state.bytes += fs::file_size(destination);
+			state.files.push_back(relative.generic_u8string());
+		}
+
+		void CopyTree(CopyState& state, const fs::path& source, const fs::path& relativeRoot)
+		{
+			for (const auto& entry : fs::recursive_directory_iterator{ source })
+			{
+				if (!entry.is_regular_file()) continue;
+				CopyFileInto(state, entry.path(), relativeRoot / entry.path().lexically_relative(source));
+			}
+		}
+	}
+
+	GameExportResult ExportGame(const GameExportLayout& layout, const GameExportRequest& request)
+	{
+		GameExportResult result;
+		CopyState state;
+		fs::path outputDir;
+		bool copyStarted = false;
+		try
+		{
+			if (request.outputDir.empty()) throw std::runtime_error("No output folder");
+			if (!fs::is_regular_file(layout.gameBuildDir / "LightYearsGame.exe"))
+			{
+				throw std::runtime_error("Game build not found: " + (layout.gameBuildDir / "LightYearsGame.exe").u8string());
+			}
+			if (!fs::is_directory(layout.gameBuildDir / "assets"))
+			{
+				throw std::runtime_error("Game build has no assets folder: " + layout.gameBuildDir.u8string());
+			}
+			if (!fs::is_directory(layout.visualAssetsDir))
+			{
+				throw std::runtime_error("Visual assets folder not found: " + layout.visualAssetsDir.u8string());
+			}
+
+			const fs::path gameDir = Canonical(layout.gameBuildDir);
+			const fs::path visualDir = Canonical(layout.visualAssetsDir);
+			const fs::path sourceRoot = layout.sourceTreeRoot.empty() ? fs::path{} : Canonical(layout.sourceTreeRoot);
+			const fs::path generatedRoot = layout.generatedRoot.empty() ? fs::path{} : Canonical(layout.generatedRoot);
+			outputDir = Canonical(request.outputDir);
+			state.outputDir = outputDir;
+			// Copying a folder into itself, or writing over the inputs, would corrupt both sides.
+			if (Overlaps(outputDir, gameDir)) throw std::runtime_error("The export folder overlaps the game build folder");
+			if (Overlaps(outputDir, visualDir)) throw std::runtime_error("The export folder overlaps the visual assets folder");
+			// The repository stays read-only for exports. Generated output is allowed under the build tree.
+			if (Overlaps(outputDir, sourceRoot) && !IsSameOrInside(outputDir, generatedRoot))
+			{
+				throw std::runtime_error("The export folder is inside the source tree; export under the build folder instead");
+			}
+
+			std::error_code error;
+			if (fs::exists(outputDir, error))
+			{
+				if (!fs::is_directory(outputDir)) throw std::runtime_error("The export target is not a folder");
+				if (!fs::is_empty(outputDir))
+				{
+					if (!request.overwrite) throw std::runtime_error("The output folder is not empty; enable Overwrite to replace a previous export");
+					ClearPreviousExport(outputDir);
+				}
+			}
+			else
+			{
+				fs::create_directories(outputDir);
+			}
+
+			// The game executable and every DLL beside it, in name order so the manifest is stable.
+			std::vector<fs::path> runtimeFiles;
+			for (const auto& entry : fs::directory_iterator{ gameDir })
+			{
+				if (!entry.is_regular_file()) continue;
+				const fs::path name = entry.path().filename();
+				if (name == "LightYearsGame.exe" || Lower(name.extension().u8string()) == ".dll") runtimeFiles.push_back(name);
+			}
+			std::sort(runtimeFiles.begin(), runtimeFiles.end());
+
+			copyStarted = true;
+			for (const auto& name : runtimeFiles) CopyFileInto(state, gameDir / name, name);
+			// Both layouts are kept: the game reads assets/ and visual/ relative to its working directory.
+			CopyTree(state, gameDir / "assets", "assets");
+			CopyTree(state, visualDir, "visual");
+			WriteManifest(outputDir, state.files);
+			result.success = true;
+			result.filesCopied = state.files.size();
+			result.bytes = state.bytes;
+		}
+		catch (const std::exception& error)
+		{
+			result.success = false;
+			result.error = error.what();
+			// Record what this run copied, so the next overwrite can remove it. A failure before copying must not
+			// touch the manifest, which may still describe a previous export that has not been cleared.
+			if (copyStarted && !state.files.empty())
+			{
+				try
+				{
+					WriteManifest(outputDir, state.files);
+				}
+				catch (const std::exception&)
+				{
+				}
+			}
+			return result;
+		}
+
+		if (request.runSmokeTest)
+		{
+			// A log that was already there belongs to the user, so only a log the smoke run created is claimed.
+			std::error_code logError;
+			const bool logExisted = fs::exists(outputDir / kExportGameLogName, logError);
+			const GameSmokeTestResult smoke = RunGameSmokeTest(outputDir);
+			result.smokeTestRan = true;
+			result.smokeTestPassed = smoke.passed;
+			result.smokeTestDetail = smoke.detail;
+			// The capture and the game's log are output too. Listing them lets the next overwrite remove them.
+			try
+			{
+				if (fs::is_regular_file(outputDir / kExportSmokeCaptureName))
+				{
+					state.files.push_back(kExportSmokeCaptureName);
+				}
+				if (!logExisted && fs::is_regular_file(outputDir / kExportGameLogName))
+				{
+					state.files.push_back(kExportGameLogName);
+				}
+				WriteManifest(outputDir, state.files);
+			}
+			catch (const std::exception& error)
+			{
+				result.success = false;
+				result.error = error.what();
+			}
+		}
+		return result;
+	}
+
+	GameSmokeTestResult RunGameSmokeTest(const fs::path& gameDir, unsigned int timeoutMs)
+	{
+		GameSmokeTestResult result;
+		const fs::path executable = gameDir / "LightYearsGame.exe";
+		const fs::path capture = gameDir / kExportSmokeCaptureName;
+		// A capture left by an earlier run must not satisfy this one.
+		std::error_code error;
+		fs::remove(capture, error);
+
+		std::wstring commandLine = L"\"" + executable.wstring() + L"\" --visual-capture \"" + capture.wstring() + L"\" --capture-frames 120";
+		const std::wstring applicationPath = executable.wstring();
+		const std::wstring workingDirectory = gameDir.wstring();
+		STARTUPINFOW startup{};
+		startup.cb = sizeof(startup);
+		PROCESS_INFORMATION process{};
+		// Working directory is the export folder, which is where the game looks for assets/ and visual/.
+		if (!CreateProcessW(applicationPath.c_str(), commandLine.data(), nullptr, nullptr, FALSE, 0, nullptr,
+			workingDirectory.c_str(), &startup, &process))
+		{
+			result.detail = "Cannot start LightYearsGame.exe (Windows error " + std::to_string(GetLastError()) + ")";
+			return result;
+		}
+		CloseHandle(process.hThread);
+
+		const DWORD waited = WaitForSingleObject(process.hProcess, timeoutMs);
+		if (waited == WAIT_TIMEOUT)
+		{
+			TerminateProcess(process.hProcess, 1);
+			WaitForSingleObject(process.hProcess, 5000);
+			CloseHandle(process.hProcess);
+			result.detail = "Timed out after " + std::to_string(timeoutMs / 1000) + " s; the game was terminated";
+			return result;
+		}
+		DWORD exitCode = 1;
+		GetExitCodeProcess(process.hProcess, &exitCode);
+		CloseHandle(process.hProcess);
+		if (exitCode != 0)
+		{
+			result.detail = "The game exited with code " + std::to_string(exitCode);
+			return result;
+		}
+
+		std::error_code sizeError;
+		const bool captured = fs::is_regular_file(capture, sizeError);
+		const std::uintmax_t size = captured ? fs::file_size(capture, sizeError) : 0;
+		if (sizeError || size == 0)
+		{
+			result.detail = std::string{ "The game exited with code 0 but wrote no non-empty " } + kExportSmokeCaptureName;
+			return result;
+		}
+		result.passed = true;
+		result.detail = "exit code 0, capture " + std::to_string(size) + " bytes";
+		return result;
+	}
+
+	std::string DescribeGameExport(const GameExportResult& result)
+	{
+		if (!result.success) return "Export failed: " + result.error;
+		std::ostringstream text;
+		text << "Exported " << result.filesCopied << " files, " << std::fixed << std::setprecision(1)
+			<< static_cast<double>(result.bytes) / (1024.0 * 1024.0) << " MB";
+		if (!result.smokeTestRan) text << ". Smoke test not run";
+		else if (result.smokeTestPassed) text << ". Smoke test OK (" << result.smokeTestDetail << ")";
+		else text << ". Smoke test FAIL: " << result.smokeTestDetail;
+		return text.str();
+	}
+}

@@ -28,8 +28,10 @@ add_executable(VegaEditor
 	src/EditorViewport.cpp
 	src/EditorSelection.cpp
 	src/EditorContentPanels.cpp
+	src/GameExporter.cpp
 	src/JsonDocument.cpp
 	src/JsonCommands.cpp
+	include/editor/GameExporter.h
 	include/editor/JsonDocument.h
 	include/editor/JsonCommands.h
 	include/editor/EditorApplication.h
@@ -41,6 +43,15 @@ add_executable(VegaEditor
 )
 target_include_directories(VegaEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(VegaEditor PRIVATE VEGA_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsGame/assets")
+# Export Game copies the game build output and the visual assets. The dependency builds the game first, so
+# the export never packages a stale or missing LightYearsGame.exe.
+add_dependencies(VegaEditor LightYearsGame)
+target_compile_definitions(VegaEditor PRIVATE
+	VEGA_GAME_BUILD_DIR="$<TARGET_FILE_DIR:LightYearsGame>"
+	VEGA_GAME_VISUAL_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets"
+	VEGA_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
+	VEGA_BUILD_ROOT="${CMAKE_BINARY_DIR}"
+	VEGA_EXPORT_DEFAULT_DIR="${CMAKE_BINARY_DIR}/export/LightYears")
 # GameApp carries LightYearsVisual, the whole-archive game library, engine definitions,
 # and the generated game asset configuration, exactly as for LightYearsGame.
 target_link_libraries(VegaEditor PRIVATE LightYearsGameApp ImGui-SFML::ImGui-SFML)
@@ -171,6 +182,25 @@ if(BUILD_TESTING)
 		CopyRuntimeLibToTarget(${json_test_runtime} VegaEditorJsonDocumentTests)
 	endforeach()
 	add_test(NAME VegaEditorJsonDocument COMMAND VegaEditorJsonDocumentTests)
+
+	# Pure export logic: fake game and source trees under the build tree, no window and no game process.
+	add_executable(VegaEditorGameExporterTests tests/GameExporterTests.cpp src/GameExporter.cpp)
+	target_include_directories(VegaEditorGameExporterTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_compile_definitions(VegaEditorGameExporterTests PRIVATE
+		VEGA_EXPORT_TEST_TEMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/game-export-test")
+	ly_enable_warnings(VegaEditorGameExporterTests)
+	add_test(NAME VegaEditorGameExporter COMMAND VegaEditorGameExporterTests)
+
+	# The script is generated so the export target is absolute. It runs the real game in the build tree.
+	set(VEGA_EXPORT_TEST_DIR "${CMAKE_BINARY_DIR}/export-test/LightYears")
+	configure_file(tests/scripts/export.vegascript.in
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/export.vegascript @ONLY)
+	add_test(NAME VegaEditorExport COMMAND VegaEditor --editor-script
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/export.vegascript)
+	set_tests_properties(VegaEditorExport PROPERTIES
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor>
+		TIMEOUT 180
+	)
 	configure_file(tests/scripts/content.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/content.vegascript COPYONLY)
 	configure_file(tests/RunContentTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunContentTest.cmake @ONLY)
 	add_test(NAME VegaEditorContent COMMAND ${CMAKE_COMMAND}

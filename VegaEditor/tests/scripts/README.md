@@ -126,3 +126,24 @@ the editor window after ImGui renders; no `--visual-capture` option is needed.
 Existing game dev options remain available. Script runs still require an SFML
 window and graphics context. Actor deletion cannot be undone; UI deletion asks for
 confirmation, executes without adding an undo entry, and invalidates redo.
+
+```text
+export <dir> [overwrite]
+expect-export-ok
+```
+
+`File > Export Game...` and `export` run the same export. It copies
+`LightYearsGame.exe`, the DLLs beside it, `assets/` from the game build, and
+`LightYearsVisual/assets` as `visual/` into `<dir>`. The game reads both folders
+relative to its working directory in Release builds. Debug builds read the source
+tree instead, so only a Release export is self-contained. The export always runs the
+game's smoke test here: `LightYearsGame.exe --visual-capture export_smoke.png
+--capture-frames 120` from `<dir>`, which passes on exit code 0 with a non-empty PNG
+and is killed after 60 s. The copy writes `vega_export_manifest.txt`, listing every
+file it wrote. `overwrite` removes only the files that manifest lists. A folder
+outside the build tree, inside the repository, or inside the game build or visual
+assets folder is refused, and an export never replaces a file it did not create.
+The `export` line succeeds when the copy succeeds; `expect-export-ok` checks that
+the last export also ran its smoke test and that the test passed. The dialog's
+"Run smoke test" checkbox is the only way to skip the smoke test. Export paths are
+relative to the process working directory, like capture paths.

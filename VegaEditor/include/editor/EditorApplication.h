@@ -4,6 +4,7 @@
 #include "editor/EditorSelection.h"
 #include "editor/EditorCommands.h"
 #include "editor/EditorScript.h"
+#include "editor/GameExporter.h"
 #include "editor/JsonDocument.h"
 #include <map>
 #include <gameFramework/GameApplication.h>
@@ -30,6 +31,7 @@ namespace vega
 		void BuildStatsPanel();
 		void BuildContentPanel();
 		void BuildDataPanel();
+			void BuildExportDialog();
 		void DrawJsonNode(const Json& value, const std::string& pointer, const std::string& label);
 		void DrawDirectory(const std::filesystem::path& relative, unsigned int depth = 0);
 		void RequestDocument(const std::filesystem::path& relative);
@@ -44,6 +46,16 @@ namespace vega
 		EditorContext mContext{ nullptr, mSelection, &mCamera };
 		CommandHistory mHistory{ mContext };
 		std::unique_ptr<EditorScript> mScript;
+			// Build-tree locations are compile definitions of this target; see VegaEditor/CMakeLists.txt.
+			GameExportLayout mExportLayout{ VEGA_GAME_BUILD_DIR, VEGA_GAME_VISUAL_ASSETS_DIR, VEGA_SOURCE_ROOT, VEGA_BUILD_ROOT };
+			// Export Game dialog. Export runs in two frames so "Exporting..." is on screen before the blocking copy.
+			enum class ExportPhase { Idle, Starting, Running };
+			bool mExportDialogRequested = false;
+			ExportPhase mExportPhase = ExportPhase::Idle;
+			char mExportDirectory[512]{ VEGA_EXPORT_DEFAULT_DIR };
+			bool mExportOverwrite = false;
+			bool mExportSmokeTest = true;
+			std::optional<GameExportResult> mExportResult;
 		std::optional<unsigned int> mWorldID;
 		std::optional<unsigned int> mMoveDragActor;
 		std::optional<unsigned int> mDestroyActor;

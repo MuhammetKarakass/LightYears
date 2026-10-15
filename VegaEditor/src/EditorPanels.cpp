@@ -323,6 +323,58 @@ namespace vega
 		SelectActor{ best }.Execute(mContext);
 	}
 
+	void EditorApplication::BuildExportDialog()
+	{
+		if (mExportDialogRequested)
+		{
+			ImGui::OpenPopup("Export Game");
+			mExportDialogRequested = false;
+		}
+		ImGui::SetNextWindowSize({ 560.f, 0.f }, ImGuiCond_Appearing);
+		if (!ImGui::BeginPopupModal("Export Game", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+		const bool idle = mExportPhase == ExportPhase::Idle;
+		ImGui::BeginDisabled(!idle);
+		ImGui::TextUnformatted("Output folder");
+		ImGui::SetNextItemWidth(420.f);
+		ImGui::InputText("##ExportDirectory", mExportDirectory, sizeof(mExportDirectory));
+		ImGui::Checkbox("Overwrite a previous export", &mExportOverwrite);
+		ImGui::SetItemTooltip("Removes only the files that an earlier export recorded in vega_export_manifest.txt. Other files stay.");
+		ImGui::Checkbox("Run smoke test after export", &mExportSmokeTest);
+		ImGui::EndDisabled();
+
+		// Export is blocking. Its start is deferred one frame so the "Exporting..." line is presented first.
+		if (mExportPhase == ExportPhase::Running)
+		{
+			GameExportRequest request;
+			request.outputDir = std::filesystem::u8path(mExportDirectory);
+			request.overwrite = mExportOverwrite;
+			request.runSmokeTest = mExportSmokeTest;
+			mExportResult = ExportGame(mExportLayout, request);
+			mExportPhase = ExportPhase::Idle;
+		}
+		ImGui::BeginDisabled(!idle || mExportDirectory[0] == '\0');
+		if (ImGui::Button("Export")) mExportPhase = ExportPhase::Starting;
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!idle);
+		if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+		ImGui::EndDisabled();
+		if (mExportPhase == ExportPhase::Starting)
+		{
+			ImGui::TextUnformatted("Exporting...");
+			mExportPhase = ExportPhase::Running;
+		}
+		if (mExportResult)
+		{
+			ImGui::Separator();
+			const bool passed = mExportResult->success && (!mExportResult->smokeTestRan || mExportResult->smokeTestPassed);
+			ImGui::PushStyleColor(ImGuiCol_Text, passed ? ImVec4{ 0.45f, 0.85f, 0.45f, 1.f } : ImVec4{ 0.95f, 0.45f, 0.40f, 1.f });
+			ImGui::TextWrapped("%s", DescribeGameExport(*mExportResult).c_str());
+			ImGui::PopStyleColor();
+		}
+		ImGui::EndPopup();
+	}
+
 	void EditorApplication::BuildStatsPanel()
 	{
 		if (ImGui::Begin("Stats", &mShowStats))

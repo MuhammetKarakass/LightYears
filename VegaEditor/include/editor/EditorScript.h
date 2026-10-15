@@ -1,5 +1,6 @@
 #pragma once
 
+#include "editor/GameExporter.h"
 #include <SFML/System/Vector2.hpp>
 #include <fstream>
 #include <optional>
@@ -18,7 +19,7 @@ namespace vega
 		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp,
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
 		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera,
-		OpenJson, JsonSet, ExpectJson, JsonSave, JsonRevert, ExpectJsonDirty
+		OpenJson, JsonSet, ExpectJson, JsonSave, JsonRevert, ExpectJsonDirty, Export, ExpectExportOk
 	};
 	struct EditorScriptCommand
 	{
@@ -31,6 +32,7 @@ namespace vega
 		float degrees = 0.f;
 		float factor = 1.f;
 		float tolerance = 0.5f;
+		bool overwrite = false;
 	};
 	struct EditorScriptParseResult
 	{
@@ -45,7 +47,7 @@ namespace vega
 	class EditorScript
 	{
 	public:
-		explicit EditorScript(const std::string& path);
+		EditorScript(const std::string& path, GameExportLayout exportLayout);
 		// Called once per completed UI frame; true requests orderly application shutdown.
 		bool Step(EditorContext& context, CommandHistory& history, sf::RenderWindow& window);
 		int ExitCode() const { return mFinished && !mFailed ? 0 : 1; }
@@ -60,5 +62,7 @@ namespace vega
 		bool mFailed = false;
 		bool mFinished = false;
 		bool mWorldReady = false;
+		GameExportLayout mExportLayout;
+		std::optional<GameExportResult> mLastExport;
 	};
 }

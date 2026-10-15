@@ -91,6 +91,16 @@ namespace vega
 			command.text = tokens[1];
 			return { command, {} };
 		}
+		else if (verb == "export")
+		{
+			if (tokens.size() < 2 || tokens.size() > 3 || tokens[1].empty() ||
+				(tokens.size() == 3 && tokens[2] != "overwrite")) return bad();
+			command.operation = ScriptOperation::Export;
+			command.text = tokens[1];
+			command.overwrite = tokens.size() == 3;
+			return { command, {} };
+		}
+		else if (verb == "expect-export-ok") command.operation = ScriptOperation::ExpectExportOk;
 		else if (verb == "json-save") command.operation = ScriptOperation::JsonSave;
 		else if (verb == "json-revert") command.operation = ScriptOperation::JsonRevert;
 		else if (verb == "set-prop" || verb == "expect-prop")

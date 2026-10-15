@@ -34,7 +34,7 @@ namespace vega
 		{
 			if (std::string{ __argv[index] } == "--editor-script")
 			{
-				mScript = std::make_unique<EditorScript>(index + 1 < __argc ? __argv[index + 1] : "");
+				mScript = std::make_unique<EditorScript>(index + 1 < __argc ? __argv[index + 1] : "", mExportLayout);
 				++index;
 			}
 			else if (std::string{ __argv[index] } == "--asset-root" && index + 1 < __argc)
@@ -156,6 +156,8 @@ namespace vega
 		{
 			if (ImGui::BeginMenu("File"))
 			{
+				if (ImGui::MenuItem("Export Game...")) mExportDialogRequested = true;
+				ImGui::Separator();
 				if (ImGui::MenuItem("Exit"))
 				{
 					if (mDocument.Dirty()) { mPendingQuit = true; mConfirmDocument = true; }
@@ -260,6 +262,7 @@ namespace vega
 		}
 		if (mShowContent) BuildContentPanel();
 		BuildDataPanel();
+		BuildExportDialog();
 	}
 
 	bool EditorApplication::HandleApplicationEvent(const sf::Event& event)

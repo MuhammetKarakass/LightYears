@@ -87,8 +87,9 @@ namespace vega
 		}
 	}
 
-	EditorScript::EditorScript(const std::string& path)
+	EditorScript::EditorScript(const std::string& path, GameExportLayout exportLayout)
 		: mReport{ path + ".report.txt", std::ios::trunc }
+		, mExportLayout{ std::move(exportLayout) }
 	{
 		std::ifstream input{ path };
 		if (!input || !mReport)
@@ -318,6 +319,22 @@ namespace vega
 			detail = "capture " + command.text;
 			break;
 		}
+		case ScriptOperation::Export:
+		{
+			// The script always runs the smoke test, so expect-export-ok can check the whole result.
+			GameExportRequest request;
+			request.outputDir = std::filesystem::u8path(command.text);
+			request.overwrite = command.overwrite;
+			request.runSmokeTest = true;
+			mLastExport = ExportGame(mExportLayout, request);
+			success = mLastExport->success;
+			detail = DescribeGameExport(*mLastExport);
+			break;
+		}
+		case ScriptOperation::ExpectExportOk:
+			success = mLastExport && mLastExport->success && mLastExport->smokeTestRan && mLastExport->smokeTestPassed;
+			detail = mLastExport ? DescribeGameExport(*mLastExport) : std::string{ "No export has run" };
+			break;
 		case ScriptOperation::Quit: mFinished = true; success = true; break;
 		}
 		if (detail.empty()) detail = success ? "completed" : "No matching actor, selection, remembered location or history entry";

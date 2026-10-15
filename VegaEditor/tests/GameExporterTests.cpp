@@ -1,0 +1,210 @@
+#include "editor/GameExporter.h"
+#include <algorithm>
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+namespace
+{
+	int failures = 0;
+	void Check(bool condition, const std::string& message)
+	{
+		if (!condition)
+		{
+			std::cerr << message << '\n';
+			++failures;
+		}
+	}
+
+	void WriteFile(const fs::path& path, const std::string& content)
+	{
+		fs::create_directories(path.parent_path());
+		std::ofstream out{ path, std::ios::binary };
+		out << content;
+	}
+
+	std::string ReadFile(const fs::path& path)
+	{
+		std::ifstream in{ path, std::ios::binary };
+		return std::string{ std::istreambuf_iterator<char>{ in }, std::istreambuf_iterator<char>{} };
+	}
+
+	bool Exists(const fs::path& path)
+	{
+		std::error_code error;
+		return fs::exists(path, error);
+	}
+
+	std::vector<std::string> ManifestLines(const fs::path& outputDir)
+	{
+		std::vector<std::string> lines;
+		std::istringstream text{ ReadFile(outputDir / vega::kExportManifestName) };
+		for (std::string line; std::getline(text, line);)
+		{
+			if (!line.empty()) lines.push_back(line);
+		}
+		return lines;
+	}
+
+	// Contents are kept in constants so the expected byte totals come from the same data that was written.
+	const std::string kExe = "exe-bytes";
+	const std::string kDll = "dll-bytes-1234";
+	const std::string kContentJson = "{}";
+	const std::string kBee = "bee";
+	const std::string kPipeline = "{ \"v\": 1 }";
+	const std::string kShader = "void main() {}";
+	const std::string kNotes = "not exported";
+
+	// game/ stands in for the LightYearsGame build output, visual_src/ for LightYearsVisual/assets, tree/ for the
+	// repository and build/ for the generated tree. Exports are expected under build/.
+	struct Fixture
+	{
+		fs::path root;
+		vega::GameExportLayout layout;
+		std::uintmax_t expectedBytes = 0;
+	};
+
+	Fixture MakeFixture(const fs::path& root)
+	{
+		fs::remove_all(root);
+		Fixture fixture;
+		fixture.root = root;
+		WriteFile(root / "game" / "LightYearsGame.exe", kExe);
+		WriteFile(root / "game" / "sfml-graphics-d-3.dll", kDll);
+		WriteFile(root / "game" / "notes.txt", kNotes);
+		WriteFile(root / "game" / "assets" / "content.json", kContentJson);
+		WriteFile(root / "game" / "assets" / "sub" / "b.txt", kBee);
+		WriteFile(root / "visual_src" / "palette" / "pipeline.json", kPipeline);
+		WriteFile(root / "visual_src" / "shader.glsl", kShader);
+		fs::create_directories(root / "tree");
+		fixture.layout = vega::GameExportLayout{ root / "game", root / "visual_src", root / "tree", root / "build" };
+		// Exported: exe, dll, two asset files, two visual files. notes.txt is not part of the game.
+		fixture.expectedBytes = kExe.size() + kDll.size() + kContentJson.size() + kBee.size() + kPipeline.size() + kShader.size();
+		return fixture;
+	}
+
+	vega::GameExportRequest Request(const fs::path& outputDir, bool overwrite = false)
+	{
+		vega::GameExportRequest request;
+		request.outputDir = outputDir;
+		request.overwrite = overwrite;
+		request.runSmokeTest = false;
+		return request;
+	}
+}
+
+int main()
+{
+	const fs::path temp{ VEGA_EXPORT_TEST_TEMP_DIR };
+	fs::remove_all(temp);
+
+	{
+		// Targets in the repository are refused. Nothing may be created there.
+		const Fixture f = MakeFixture(temp / "refuse");
+		Check(!vega::ExportGame(f.layout, Request(f.root / "tree" / "export")).success, "Export into the source tree was accepted");
+		Check(!Exists(f.root / "tree" / "export"), "Refused export into the source tree still created a folder");
+		Check(!vega::ExportGame(f.layout, Request(f.root / "tree")).success, "Export onto the source tree root was accepted");
+		Check(!vega::ExportGame(f.layout, Request(f.root / "TREE" / "export")).success, "Case variant of the source tree was accepted");
+		// Copying a folder into itself, or over the inputs, must be refused too.
+		Check(!vega::ExportGame(f.layout, Request(f.root / "game" / "out")).success, "Export inside the game build folder was accepted");
+		Check(!vega::ExportGame(f.layout, Request(f.root / "visual_src" / "out")).success, "Export inside the visual assets was accepted");
+		Check(!vega::ExportGame(f.layout, Request(f.root)).success, "Export onto a parent of the inputs was accepted");
+		Check(!Exists(f.root / "game" / "out") && !Exists(f.root / "visual_src" / "out"), "Refused export wrote into an input folder");
+		// A sibling whose name starts like the repository is a different folder, not a target inside it.
+		const auto sibling = vega::ExportGame(f.layout, Request(f.root / "tree2" / "export"));
+		Check(sibling.success, "Sibling folder named like the source tree was refused: " + sibling.error);
+		// A missing game build cannot be exported at all.
+		vega::GameExportLayout missing = f.layout;
+		missing.gameBuildDir = f.root / "no-such-build";
+		Check(!vega::ExportGame(missing, Request(f.root / "build" / "export")).success, "Missing game build was accepted");
+	}
+
+	{
+		// Copy: layout, counts, bytes and manifest all match the fixture.
+		const Fixture f = MakeFixture(temp / "copy");
+		const fs::path out = f.root / "build" / "export";
+		const auto result = vega::ExportGame(f.layout, Request(out));
+		Check(result.success, "Copy failed: " + result.error);
+		Check(result.filesCopied == 6, "Expected 6 files, got " + std::to_string(result.filesCopied));
+		Check(result.bytes == f.expectedBytes, "Byte count mismatch");
+		Check(!result.smokeTestRan, "Smoke test ran although it was disabled");
+		Check(ReadFile(out / "LightYearsGame.exe") == kExe, "Executable not copied");
+		Check(ReadFile(out / "sfml-graphics-d-3.dll") == kDll, "DLL not copied");
+		Check(ReadFile(out / "assets" / "sub" / "b.txt") == kBee, "Nested asset not copied");
+		Check(ReadFile(out / "visual" / "palette" / "pipeline.json") == kPipeline, "Visual palette not copied");
+		Check(!Exists(out / "notes.txt"), "Non-runtime file was exported");
+		const auto manifest = ManifestLines(out);
+		Check(manifest.size() == 6, "Manifest should list the 6 exported files");
+		Check(std::find(manifest.begin(), manifest.end(), std::string{ vega::kExportManifestName }) == manifest.end(),
+			"Manifest lists itself");
+		Check(std::find(manifest.begin(), manifest.end(), std::string{ "visual/shader.glsl" }) != manifest.end(),
+			"Manifest misses a visual file");
+		// Existing export without overwrite is refused, and the copy is left as it was.
+		const auto again = vega::ExportGame(f.layout, Request(out));
+		Check(!again.success && !again.error.empty(), "Non-empty folder accepted without overwrite");
+		Check(ReadFile(out / "LightYearsGame.exe") == kExe, "Refused export changed the folder");
+	}
+
+	{
+		// Overwrite removes only what the manifest lists. Stray files and the removed source asset follow the rules.
+		Fixture f = MakeFixture(temp / "overwrite");
+		const fs::path out = f.root / "build" / "export";
+		Check(vega::ExportGame(f.layout, Request(out)).success, "Initial export failed");
+		WriteFile(out / "stray.txt", "mine");
+		WriteFile(out / "assets" / "mine.txt", "mine too");
+		fs::remove(f.root / "game" / "assets" / "sub" / "b.txt");
+		const auto result = vega::ExportGame(f.layout, Request(out, true));
+		Check(result.success, "Overwrite failed: " + result.error);
+		Check(result.filesCopied == 5, "Overwrite should copy 5 files, got " + std::to_string(result.filesCopied));
+		Check(ReadFile(out / "stray.txt") == "mine", "Stray file was removed by overwrite");
+		Check(ReadFile(out / "assets" / "mine.txt") == "mine too", "Stray asset was removed by overwrite");
+		Check(!Exists(out / "assets" / "sub" / "b.txt"), "File removed from the source survived overwrite");
+		Check(!Exists(out / "assets" / "sub"), "Empty folder left behind by overwrite");
+		Check(ManifestLines(out).size() == 5, "Manifest should list the new 5 files");
+	}
+
+	{
+		// A file the export did not create is never replaced, even with overwrite on.
+		const Fixture f = MakeFixture(temp / "collide");
+		const fs::path out = f.root / "build" / "export";
+		WriteFile(out / "LightYearsGame.exe", "mine");
+		const auto result = vega::ExportGame(f.layout, Request(out, true));
+		Check(!result.success && !result.error.empty(), "Export replaced a file it did not create");
+		Check(ReadFile(out / "LightYearsGame.exe") == "mine", "Stray executable was overwritten");
+	}
+
+	{
+		// A manifest that points outside the export folder is refused and nothing outside is deleted.
+		const Fixture f = MakeFixture(temp / "escape");
+		const fs::path out = f.root / "build" / "export";
+		WriteFile(f.root / "build" / "victim.txt", "keep me");
+		WriteFile(out / vega::kExportManifestName, "../victim.txt\n");
+		const auto result = vega::ExportGame(f.layout, Request(out, true));
+		Check(!result.success, "Tampered manifest was accepted");
+		Check(ReadFile(f.root / "build" / "victim.txt") == "keep me", "File outside the export folder was deleted");
+	}
+
+	{
+		// Without a game executable the smoke test fails quickly and says why.
+		const auto smoke = vega::RunGameSmokeTest(temp / "no-game");
+		Check(!smoke.passed, "Smoke test passed without a game");
+		Check(smoke.detail.find("Cannot start") != std::string::npos, "Smoke test detail does not name the start failure: " + smoke.detail);
+		vega::GameExportResult failed;
+		failed.error = "No output folder";
+		Check(vega::DescribeGameExport(failed) == "Export failed: No output folder", "Failure description changed");
+	}
+
+	if (failures)
+	{
+		std::cerr << failures << " GameExporter check(s) failed\n";
+		return 1;
+	}
+	std::cout << "Game exporter tests passed\n";
+	return 0;
+}

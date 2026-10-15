@@ -40,7 +40,10 @@ int main()
 		{ "json-set /ships/0/health 280.0", ScriptOperation::JsonSet },
 		{ "expect-json /flag true", ScriptOperation::ExpectJson },
 		{ "expect-json-dirty false", ScriptOperation::ExpectJsonDirty },
-		{ "json-save", ScriptOperation::JsonSave }, { "json-revert", ScriptOperation::JsonRevert }
+		{ "json-save", ScriptOperation::JsonSave }, { "json-revert", ScriptOperation::JsonRevert },
+		{ "export out/LightYears", ScriptOperation::Export },
+		{ "export \"path with spaces/LightYears\" overwrite", ScriptOperation::Export },
+		{ "expect-export-ok", ScriptOperation::ExpectExportOk }
 	};
 	for (const auto& test : cases)
 	{
@@ -107,8 +110,13 @@ int main()
 	for (const char* line : { "open-json", "open-json \"\"", "json-save extra", "json-revert extra", "json-set /a",
 		"json-set invalid 1", "json-set /bad~2escape 1", "json-set /a null", "json-set /a []", "json-set /a {}",
 		"json-set /a nan", "json-set /a 1e999", "json-set /a unquoted", "json-set /a 01", "json-set /a 1 extra",
-		"expect-json /a", "expect-json /a true extra", "expect-json-dirty", "expect-json-dirty 1", "expect-json-dirty true extra" })
+		"expect-json /a", "expect-json /a true extra", "expect-json-dirty", "expect-json-dirty 1", "expect-json-dirty true extra",
+		"export", "export \"\"", "export out/LightYears maybe", "export out/LightYears overwrite extra",
+		"export out/LightYears overwrite overwrite", "expect-export-ok 1" })
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid JSON command accepted: " } + line);
+	Check(ParseEditorScriptLine("export \"out dir\" overwrite").command->text == "out dir", "Export path lost");
+	Check(ParseEditorScriptLine("export \"out dir\" overwrite").command->overwrite, "Export overwrite flag lost");
+	Check(!ParseEditorScriptLine("export out").command->overwrite, "Export must not overwrite by default");
 	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;
