@@ -463,8 +463,30 @@ namespace vega
 		if (mouseEvent && mMoveDragActor) return true;
 		if (const auto* pressed = event.getIf<sf::Event::KeyPressed>(); pressed && pressed->control &&
 			!io.WantTextInput && (pressed->code == sf::Keyboard::Key::Z || pressed->code == sf::Keyboard::Key::Y)) return true;
-		// Known limitation: HUD widgets still receive raw window-pixel event coordinates,
-		// so clicking their buttons inside a scaled editor viewport may miss.
+		// HUD widgets hit-test the event's own position, but in the editor they are drawn into the scaled viewport
+		// texture. Over the image, send the world a copy whose positions are texture pixels and consume the original,
+		// which Application would otherwise dispatch in window pixels.
+		if (overImage && (event.is<sf::Event::MouseButtonPressed>() || event.is<sf::Event::MouseButtonReleased>() ||
+			event.is<sf::Event::MouseMoved>() || event.is<sf::Event::MouseWheelScrolled>()))
+		{
+			sf::Event remapped = event;
+			const auto toTexture = [this](sf::Vector2i windowPixel)
+			{
+				return MapWindowToTexturePixel(windowPixel, mViewportImageRect, mViewport.GetSize());
+			};
+			if (auto* pressed = remapped.getIf<sf::Event::MouseButtonPressed>()) pressed->position = toTexture(pressed->position);
+			if (auto* released = remapped.getIf<sf::Event::MouseButtonReleased>()) released->position = toTexture(released->position);
+			if (auto* moved = remapped.getIf<sf::Event::MouseMoved>()) moved->position = toTexture(moved->position);
+			if (auto* wheel = remapped.getIf<sf::Event::MouseWheelScrolled>()) wheel->position = toTexture(wheel->position);
+			if (!GameApplication::HandleApplicationEvent(remapped))
+			{
+				if (ly::World* world = GetCurrentWorld())
+				{
+					world->DispatchEvent(remapped);
+				}
+			}
+			return true;
+		}
 		return GameApplication::HandleApplicationEvent(event);
 	}
 }
