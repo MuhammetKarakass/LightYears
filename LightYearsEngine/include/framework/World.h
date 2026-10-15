@@ -137,6 +137,7 @@ namespace ly
 			return true;
 		}
 		const Application* GetApplicationRef() const { return mOwningApp; }
+		std::size_t GetActorCountIncludingPending() const { return mActors.size() + mPendingActors.size(); }
 
 		template<typename ActorType, typename ...Args>
 		weak_ptr<ActorType> SpawnActor(Args... args);

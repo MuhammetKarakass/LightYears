@@ -56,7 +56,8 @@ namespace vega
 
 		std::filesystem::path mScenePath;
 		nlohmann::json mSceneSettings = nlohmann::json::object();
-		nlohmann::json mSavedScene;
+		std::uint64_t mSavedSceneRevision = 0;
+		std::string mWindowTitle;
 		nlohmann::json mPlaySnapshot;
 		EditorCamera mEditCamera;
 		std::string mEditSelectionGuid;
@@ -71,6 +72,7 @@ namespace vega
 		std::string mRenameGuid;
 		char mRenameInput[512]{};
 		bool mRenameFocus = false;
+		std::optional<unsigned int> mHierarchyPopupActor;
 		bool mDataFocused = false;
 
 		EditorViewport mViewport;
@@ -82,10 +84,9 @@ namespace vega
 		std::unique_ptr<EditorScript> mScript;
 			// Build-tree locations are compile definitions of this target; see VegaEditor/CMakeLists.txt.
 			GameExportLayout mExportLayout{ VEGA_GAME_BUILD_DIR, VEGA_GAME_VISUAL_ASSETS_DIR, VEGA_SOURCE_ROOT, VEGA_BUILD_ROOT };
-			// Export Game dialog. Export runs in two frames so "Exporting..." is on screen before the blocking copy.
-			enum class ExportPhase { Idle, Starting, Running };
+			// The worker owns copies of its inputs and never accesses UI or world state.
 			bool mExportDialogRequested = false;
-			ExportPhase mExportPhase = ExportPhase::Idle;
+			std::future<GameExportResult> mExportFuture;
 			char mExportDirectory[512]{ VEGA_EXPORT_DEFAULT_DIR };
 			bool mExportOverwrite = false;
 			bool mExportSmokeTest = true;

@@ -82,6 +82,8 @@ int main()
 	const auto saved = SceneSerializer::Save(source, settings);
 	Check(saved["entities"].size() == 1, "Only scene entities may be saved");
 	const auto& data = saved["entities"][0];
+	Check(SceneSerializer::SaveEntity(*actor) == data, "Entity-only save must preserve the full scene representation");
+	Check(SceneSerializer::SaveEntity(*source.SpawnActor<Actor>().lock()).is_null(), "Runtime actors have no scene representation");
 	Check(data["name"] == "Named actor" && data["guid"] == identity.guid, "Scene identity was not saved");
 	Check(data["properties"]["Mode"] == "Second" && data["properties"]["RenderLayer"] == "World", "Enums must encode labels");
 	Check(data["properties"]["Point"] == Json::array({ 8, -4 }) && data["properties"]["Tint"] == Json::array({ 12, 34, 56, 78 }), "Vector/color encoding is incorrect");

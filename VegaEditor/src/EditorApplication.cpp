@@ -87,6 +87,7 @@ namespace vega
 
 	void EditorApplication::Render()
 	{
+		mContext.ResetActorCache();
 		ly::World* current = GetCurrentWorld();
 		if (mPauseAfterTick)
 		{
@@ -110,9 +111,7 @@ namespace vega
 				if (mBaselineOnLoad)
 				{
 					mBaselineOnLoad = false;
-					mSavedScene = CaptureScene();
-					auto& entities = mSavedScene["entities"];
-					std::sort(entities.begin(), entities.end(), [](const auto& a, const auto& b) { return a.at("guid") < b.at("guid"); });
+					mSavedSceneRevision = mContext.sceneRevision;
 				}
 				mSelection.Select(mContext.ResolveGuid(mRestoreSelectionGuid));
 				mRestoreSelectionGuid.clear();
@@ -199,7 +198,12 @@ namespace vega
 			if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) BeginRename();
 		}
 		const std::string sceneTitle = (mScenePath.empty() ? "Untitled" : mScenePath.filename().string()) + (SceneDirty() ? " *" : "");
-		GetRenderWindow().setTitle("Vega Editor - " + sceneTitle + (mContext.playMode ? " - PLAYING" : " - EDIT"));
+		const std::string title = "Vega Editor - " + sceneTitle + (mContext.playMode ? " - PLAYING" : " - EDIT");
+		if (title != mWindowTitle)
+		{
+			GetRenderWindow().setTitle(title);
+			mWindowTitle = title;
+		}
 		bool resetLayout = false;
 		if (ImGui::BeginMainMenuBar())
 		{

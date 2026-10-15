@@ -17,6 +17,15 @@ namespace fs = std::filesystem;
 
 namespace vega
 {
+	std::future<GameExportResult> ExportGameAsync(GameExportLayout layout, GameExportRequest request)
+	{
+		// No references to editor members: shutdown may wait for this independent job.
+		return std::async(std::launch::async, [layout = std::move(layout), request = std::move(request)]()
+		{
+			return ExportGame(layout, request);
+		});
+	}
+
 	namespace
 	{
 		// Windows folder names are case-insensitive, so "Build" and "build" must compare as the same folder.

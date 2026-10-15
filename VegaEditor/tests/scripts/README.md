@@ -13,6 +13,7 @@ new-scene
 open-scene <path>
 save-scene [path]
 create <SpawnableType>
+create-many <SpawnableType> <0..10000>
 delete
 duplicate
 rename <name...>
@@ -42,8 +43,11 @@ are disabled in Play; selection and inspection remain available. `play` and
 New/Open script commands refuse unsaved scene changes; save first. UI New/Open/
 Exit offer Save / Discard / Cancel. Save uses an exclusive sibling temporary
 file and atomic replacement, supports new destinations, and retains history.
-Dirty compares serialized authored state with the last loaded/saved state,
-independent of runtime IDs and entity ordering. Ctrl+S saves the scene unless
+Scene dirty uses monotonic edit revisions: each scene command, undo/redo and
+script attachment advances the revision. Undoing back to saved content remains
+dirty until Save or Reload; this avoids serializing the world to recognize that
+state. JSON document undo still recognizes its saved text exactly, comparing
+only when edited. Ctrl+S saves the scene unless
 Data Editor has focus. Scene double-clicks in Content open the authoring scene.
 
 `VegaEditorAuthoring` runs the configured build-tree copy of
@@ -247,3 +251,22 @@ The `export` line succeeds when the copy succeeds; `expect-export-ok` checks tha
 the last export also ran its smoke test and that the test passed. The dialog's
 "Run smoke test" checkbox is the only way to skip the smoke test. Export paths are
 relative to the process working directory, like capture paths.
+
+Copy and smoke testing run on a worker that owns its request/layout values.
+The dialog displays an indeterminate progress bar and disables Export/Close
+until completion. The script runner waits by polling once per rendered frame.
+
+`perf.vegascript` is a manual benchmark, not a ctest. Copy it to
+`build/VegaEditor/scripts/`, then run from `build/VegaEditor`:
+
+```text
+VegaEditor.exe --editor-script scripts/perf.vegascript
+```
+
+It opens the sandbox, adds 400 asteroids (407 authored entities total), waits
+120 frames, and captures `perf.png`. `create-many` uses a centred square grid
+with 48-unit spacing and the normal create/move commands. Another 11 seconds
+allows complete five-second FrameStats intervals before `perf-stats.png`.
+Compare settled `avgRender` and `avgTick` samples from `LightYears.log`, excluding
+startup, bulk creation and screenshot frames. Keep the window size, layout and
+build configuration the same for both runs.

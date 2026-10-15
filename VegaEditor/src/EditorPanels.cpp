@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <cctype>
 #include <typeinfo>
+#include <typeindex>
+#include <string_view>
 
 namespace vega
 {
@@ -128,17 +130,65 @@ namespace vega
 			ImGui::Separator();
 			if (ImGui::BeginChild("ActorList"))
 			{
+				struct Row
+				{
+					std::shared_ptr<ly::Actor> actor;
+					const ly::SceneEntityComponent* identity;
+					const std::string* type;
+				};
+				// RTTI names are immutable. Cache once per type, not once per actor/frame.
+				static std::map<std::type_index, std::string> typeNames;
+				std::vector<Row> rows;
+				if (mContext.world) rows.reserve(mContext.world->GetActorCountIncludingPending());
+				const std::string_view filter = mHierarchyFilter;
+				const auto matches = [&](std::string_view name, std::string_view type)
+				{
+					// Search the same "name type" text without allocating a concatenation.
+					const auto character = [&](std::size_t i) { return i < name.size() ? name[i] : i == name.size() ? ' ' : type[i - name.size() - 1]; };
+					const auto length = name.size() + 1 + type.size();
+					for (std::size_t start = 0; start + filter.size() <= length; ++start)
+					{
+						std::size_t i = 0;
+						while (i < filter.size() && std::tolower(static_cast<unsigned char>(character(start + i))) ==
+							std::tolower(static_cast<unsigned char>(filter[i]))) ++i;
+						if (i == filter.size()) return true;
+					}
+					return false;
+				};
 				if (mContext.world) for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<ly::Actor>())
 				{
 					const auto actor = weak.lock();
 					if (!actor || actor->GetIsPendingDestroy()) continue;
 					const auto* identity = actor->FindComponent<ly::SceneEntityComponent>();
-					const auto type = ActorTypeName(*actor);
-					const auto name = identity ? identity->name : type + " #" + std::to_string(actor->GetUniqueID());
-					const auto searchable = name + " " + type;
-					const std::string filter = mHierarchyFilter;
-					if (!filter.empty() && std::search(searchable.begin(), searchable.end(), filter.begin(), filter.end(),
-						[](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); }) == searchable.end()) continue;
+					auto entry = typeNames.find(typeid(*actor));
+					if (entry == typeNames.end()) entry = typeNames.emplace(typeid(*actor), ActorTypeName(*actor)).first;
+					const auto& type = entry->second;
+					if (!filter.empty())
+					{
+						const std::string fallback = identity ? std::string{} : type + " #" + std::to_string(actor->GetUniqueID());
+						if (!matches(identity ? identity->name : fallback, type)) continue;
+					}
+					rows.push_back({ actor, identity, &type });
+				}
+				const float rowHeight = 2.f * ImGui::GetTextLineHeightWithSpacing();
+				ImGuiListClipper clipper;
+				clipper.Begin(static_cast<int>(rows.size()), rowHeight);
+				for (int index = 0; index < static_cast<int>(rows.size()); ++index)
+				{
+					const auto& row = rows[index];
+					// Keep an active rename or context menu alive when scrolling clips its row.
+					if ((row.identity && row.identity->guid == mRenameGuid) || mHierarchyPopupActor == row.actor->GetUniqueID()) clipper.IncludeItemByIndex(index);
+				}
+				while (clipper.Step()) for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; ++index)
+				{
+					const auto& row = rows[index];
+					const auto& actor = row.actor;
+					if (actor->GetIsPendingDestroy()) { ImGui::Dummy({ 0.f, rowHeight - ImGui::GetStyle().ItemSpacing.y }); continue; }
+					const auto* identity = row.identity;
+					const auto& type = *row.type;
+					const std::string fallback = identity ? std::string{} : type + " #" + std::to_string(actor->GetUniqueID());
+					const auto& name = identity ? identity->name : fallback;
+					const float rowStart = ImGui::GetCursorPosY();
 					ImGui::PushID(static_cast<int>(actor->GetUniqueID()));
 					if (identity && identity->guid == mRenameGuid)
 					{
@@ -154,12 +204,16 @@ namespace vega
 					}
 					else
 					{
-						if (ImGui::Selectable((name + "##Entity").c_str(), mSelection.Get() == actor, ImGuiSelectableFlags_AllowDoubleClick))
+						if (ImGui::Selectable(name.c_str(), mSelection.Get() == actor, ImGuiSelectableFlags_AllowDoubleClick))
 						{
 							mSelection.Select(actor);
 							if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) BeginRename();
 						}
-						if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) ImGui::OpenPopup("Entity actions");
+						if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+						{
+							ImGui::OpenPopup("Entity actions");
+							mHierarchyPopupActor = actor->GetUniqueID();
+						}
 						ImGui::TextDisabled("%s", type.c_str());
 					}
 					if (ImGui::BeginPopup("Entity actions"))
@@ -173,7 +227,9 @@ namespace vega
 						ImGui::EndDisabled();
 						ImGui::EndPopup();
 					}
+					if (mHierarchyPopupActor == actor->GetUniqueID() && !ImGui::IsPopupOpen("Entity actions")) mHierarchyPopupActor.reset();
 					ImGui::PopID();
+					ImGui::SetCursorPosY(rowStart + rowHeight);
 				}
 				if (ImGui::BeginPopupContextWindow("Hierarchy actions", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 				{
@@ -221,7 +277,11 @@ namespace vega
 					}
 					std::sort(paths.begin(), paths.end());
 					for (const auto& path : paths)
-						if (ImGui::Selectable(path.c_str())) actor->AddComponent<script::ScriptComponent>(path).Prepare();
+						if (ImGui::Selectable(path.c_str()))
+						{
+							actor->AddComponent<script::ScriptComponent>(path).Prepare();
+							mContext.SceneChanged();
+						}
 					if (paths.empty()) ImGui::TextUnformatted("No .lua files under scripts/");
 					ImGui::EndPopup();
 				}
@@ -355,6 +415,11 @@ namespace vega
 
 	void EditorApplication::BuildExportDialog()
 	{
+		if (mExportFuture.valid() && mExportFuture.wait_for(std::chrono::seconds{ 0 }) == std::future_status::ready)
+		{
+			try { mExportResult = mExportFuture.get(); }
+			catch (const std::exception& error) { mExportResult = GameExportResult{}; mExportResult->error = error.what(); }
+		}
 		if (mExportDialogRequested)
 		{
 			ImGui::OpenPopup("Export Game");
@@ -362,7 +427,7 @@ namespace vega
 		}
 		ImGui::SetNextWindowSize({ 560.f, 0.f }, ImGuiCond_Appearing);
 		if (!ImGui::BeginPopupModal("Export Game", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
-		const bool idle = mExportPhase == ExportPhase::Idle;
+		const bool idle = !mExportFuture.valid();
 		ImGui::BeginDisabled(!idle);
 		ImGui::TextUnformatted("Output folder");
 		ImGui::SetNextItemWidth(420.f);
@@ -372,27 +437,26 @@ namespace vega
 		ImGui::Checkbox("Run smoke test after export", &mExportSmokeTest);
 		ImGui::EndDisabled();
 
-		// Export is blocking. Its start is deferred one frame so the "Exporting..." line is presented first.
-		if (mExportPhase == ExportPhase::Running)
+		ImGui::BeginDisabled(!idle || mExportDirectory[0] == '\0');
+		if (ImGui::Button("Export"))
 		{
 			GameExportRequest request;
 			request.outputDir = std::filesystem::u8path(mExportDirectory);
 			request.overwrite = mExportOverwrite;
 			request.runSmokeTest = mExportSmokeTest;
-			mExportResult = ExportGame(mExportLayout, request);
-			mExportPhase = ExportPhase::Idle;
+			mExportResult.reset();
+			try { mExportFuture = ExportGameAsync(mExportLayout, request); }
+			catch (const std::exception& error) { mExportResult = GameExportResult{}; mExportResult->error = error.what(); }
 		}
-		ImGui::BeginDisabled(!idle || mExportDirectory[0] == '\0');
-		if (ImGui::Button("Export")) mExportPhase = ExportPhase::Starting;
 		ImGui::EndDisabled();
 		ImGui::SameLine();
-		ImGui::BeginDisabled(!idle);
+		ImGui::BeginDisabled(mExportFuture.valid());
 		if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
 		ImGui::EndDisabled();
-		if (mExportPhase == ExportPhase::Starting)
+		if (mExportFuture.valid())
 		{
-			ImGui::TextUnformatted("Exporting...");
-			mExportPhase = ExportPhase::Running;
+			ImGui::TextUnformatted("Exporting\xe2\x80\xa6");
+			ImGui::ProgressBar(-static_cast<float>(ImGui::GetTime()), { -1.f, 0.f }, "");
 		}
 		if (mExportResult)
 		{

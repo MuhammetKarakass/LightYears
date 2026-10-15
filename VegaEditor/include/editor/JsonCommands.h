@@ -13,6 +13,7 @@ namespace vega
 		void Undo(EditorContext& context) override;
 		bool MergeWith(const EditorCommand& command) override;
 		bool IsValid(const EditorContext& context) const override;
+		bool ChangesScene() const override { return false; }
 		std::string Name() const override { return "Set JSON " + mPointer; }
 	private:
 		std::uint64_t mID;

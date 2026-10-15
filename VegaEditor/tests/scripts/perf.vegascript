@@ -1,0 +1,10 @@
+# Manual benchmark, deliberately not registered with ctest.
+open-scene scenes/sandbox.scene.json
+create-many Asteroid 400
+expect-entity-count 407
+wait 120
+capture perf.png
+# Allow a complete five-second FrameStats interval after creation and warmup.
+wait-seconds 11
+capture perf-stats.png
+quit

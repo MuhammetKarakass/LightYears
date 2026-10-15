@@ -17,7 +17,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
-		NewScene, OpenScene, SaveScene, Create, Delete, Duplicate, Rename, SelectName,
+		NewScene, OpenScene, SaveScene, Create, CreateMany, Delete, Duplicate, Rename, SelectName,
 		PlayMode, Stop, ExpectMode, ExpectEntityCount, ExpectSceneDirty,
 		Tool, Snap, Grid, Colliders, ContentView,
 		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp, ExpectPropError,
@@ -72,5 +72,7 @@ namespace vega
 		bool mWorldReady = false;
 		GameExportLayout mExportLayout;
 		std::optional<GameExportResult> mLastExport;
+		std::future<GameExportResult> mExportFuture;
+		std::string mExportLine;
 	};
 }

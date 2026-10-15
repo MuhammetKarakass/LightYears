@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <typeinfo>
 #include <algorithm>
+#include <unordered_set>
+#include <string_view>
 #ifdef __GNUG__
 #include <cxxabi.h>
 #endif
@@ -189,29 +191,64 @@ namespace vega
 		return name;
 	}
 
-	std::shared_ptr<ly::Actor> EditorContext::Resolve(unsigned int id) const
+	void EditorContext::RefreshActorCache() const
 	{
-		if (!world) return {};
+		if (!world)
+		{
+			actorsByID.clear();
+			actorsByGuid.clear();
+			cachedWorldID.reset();
+			return;
+		}
+		const auto count = world->GetActorCountIncludingPending();
+		if (cachedWorldID == world->GetUniqueID() && cachedActorCount == count) return;
+		actorsByID.clear();
+		actorsByGuid.clear();
+		cachedWorldID = world->GetUniqueID();
+		cachedActorCount = count;
 		for (const auto& weak : world->GetActorsByTypeIncludingPending<ly::Actor>())
 		{
-			if (auto actor = weak.lock(); actor && actor->GetUniqueID() == id && !actor->GetIsPendingDestroy())
+			if (const auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy() && actor->GetWorld() == world)
 			{
-				return actor;
+				actorsByID.emplace(actor->GetUniqueID(), actor);
+				if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>())
+					actorsByGuid.emplace(identity->guid, actor);
 			}
 		}
-		return {};
+	}
+
+	std::shared_ptr<ly::Actor> EditorContext::Resolve(unsigned int id) const
+	{
+		RefreshActorCache();
+		auto entry = actorsByID.find(id);
+		// A remove/spawn pair can leave the count unchanged between lookups.
+		if (entry == actorsByID.end() && world)
+		{
+			ResetActorCache();
+			RefreshActorCache();
+			entry = actorsByID.find(id);
+		}
+		const auto actor = entry != actorsByID.end() ? entry->second.lock() : nullptr;
+		return actor && actor->GetWorld() == world && !actor->GetIsPendingDestroy() ? actor : nullptr;
 	}
 
 	std::shared_ptr<ly::Actor> EditorContext::ResolveGuid(const std::string& guid) const
 	{
 		if (!world || guid.empty()) return {};
-		for (const auto& weak : world->GetActorsByTypeIncludingPending<ly::Actor>())
+		RefreshActorCache();
+		const auto find = [&]() -> std::shared_ptr<ly::Actor>
 		{
-			const auto actor = weak.lock();
-			const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
-			if (identity && identity->guid == guid && !actor->GetIsPendingDestroy()) return actor;
-		}
-		return {};
+			const auto entry = actorsByGuid.find(guid);
+			const auto actor = entry != actorsByGuid.end() ? entry->second.lock() : nullptr;
+			if (!actor || actor->GetWorld() != world || actor->GetIsPendingDestroy()) return {};
+			const auto* identity = actor->FindComponent<ly::SceneEntityComponent>();
+			return identity && identity->guid == guid ? actor : nullptr;
+		};
+		if (auto actor = find()) return actor;
+		// Identity components can be attached after spawn, including before the next frame.
+		ResetActorCache();
+		RefreshActorCache();
+		return find();
 	}
 
 	std::shared_ptr<ly::Actor> EditorContext::Resolve(unsigned int id, std::string& guid) const
@@ -230,6 +267,7 @@ namespace vega
 	{
 		PruneInvalidCommands();
 		if (!command || mContext.transitioning || (mContext.playMode && command->IsUndoable()) || !command->Execute(mContext)) return false;
+		if (command->ChangesScene()) mContext.SceneChanged();
 		const bool hadRedo = CanRedo();
 		mRedo.clear();
 		if (!command->IsUndoable() || mMaxDepth == 0)
@@ -251,6 +289,7 @@ namespace vega
 		if (mContext.playMode || mContext.transitioning || !CanUndo()) return false;
 		mMergeAllowed = false;
 		mUndo.back()->Undo(mContext);
+		if (mUndo.back()->ChangesScene()) mContext.SceneChanged();
 		mRedo.push_back(std::move(mUndo.back()));
 		mUndo.pop_back();
 		return true;
@@ -260,6 +299,7 @@ namespace vega
 	{
 		PruneInvalidCommands();
 		if (mContext.playMode || mContext.transitioning || !CanRedo() || !mRedo.back()->Execute(mContext)) return false;
+		if (mRedo.back()->ChangesScene()) mContext.SceneChanged();
 		mMergeAllowed = false;
 		mUndo.push_back(std::move(mRedo.back()));
 		mRedo.pop_back();
@@ -384,9 +424,7 @@ namespace vega
 		if (!actor) return false;
 		if (!mGuid.empty())
 		{
-			const auto scene = ly::SceneSerializer::Save(*context.world);
-			for (const auto& entity : scene["entities"])
-				if (entity["guid"] == mGuid) { mEntity = entity; break; }
+			mEntity = ly::SceneSerializer::SaveEntity(*actor);
 			if (mEntity.is_null()) return false;
 		}
 		actor->Destroy();
@@ -417,10 +455,10 @@ namespace vega
 		const auto guid = mEntity.at("guid").get<std::string>();
 		// Constructors may choose random defaults (asteroid textures). Freeze the
 		// realized serialized data so redo recreates exactly the authored entity.
-		const auto scene = ly::SceneSerializer::Save(*context.world);
-		for (const auto& entity : scene["entities"])
-			if (entity["guid"] == guid) { mEntity = entity; break; }
-		context.selection.Select(context.ResolveGuid(guid));
+		const auto actor = context.ResolveGuid(guid);
+		if (!actor) return false;
+		mEntity = ly::SceneSerializer::SaveEntity(*actor);
+		context.selection.Select(actor);
 		return true;
 	}
 
@@ -435,13 +473,16 @@ namespace vega
 		if (!context.world || context.playMode) return false;
 		const auto* info = ly::reflect::TypeRegistry::Get().Find(type);
 		if (!info || !info->spawnable || !info->create || info->root != ly::reflect::TypeRoot::Actor) return false;
-		const auto scene = ly::SceneSerializer::Save(*context.world);
+		std::unordered_set<std::string_view> names;
+		for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+			if (const auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy())
+				if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>()) names.insert(identity->name);
 		unsigned int number = 1;
 		std::string name;
 		do
 		{
 			name = type + " " + std::to_string(number++);
-		} while (std::any_of(scene["entities"].begin(), scene["entities"].end(), [&](const auto& entity) { return entity["name"] == name; }));
+		} while (names.count(name));
 		const auto centre = context.camera ? context.camera->GetView().getCenter() : context.world->GetWorldView().getCenter();
 		return history.Execute(std::make_unique<CreateEntity>(nlohmann::json{
 			{ "guid", ly::SceneEntityComponent::GenerateGuid() }, { "name", name }, { "type", type },
@@ -452,17 +493,13 @@ namespace vega
 	{
 		const auto actor = context.selection.Get();
 		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
-		if (!identity || !context.world || context.playMode) return false;
-		const auto scene = ly::SceneSerializer::Save(*context.world);
-		for (auto entity : scene["entities"])
-		{
-			if (entity["guid"] != identity->guid) continue;
-			entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
-			const auto location = actor->GetActorLocation() + sf::Vector2f{ 32.f, 32.f };
-			entity["properties"]["Location"] = { location.x, location.y };
-			return history.Execute(std::make_unique<CreateEntity>(std::move(entity)));
-		}
-		return false;
+		if (!identity || !context.world || actor->GetWorld() != context.world || context.playMode) return false;
+		auto entity = ly::SceneSerializer::SaveEntity(*actor);
+		if (entity.is_null()) return false;
+		entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
+		const auto location = actor->GetActorLocation() + sf::Vector2f{ 32.f, 32.f };
+		entity["properties"]["Location"] = { location.x, location.y };
+		return history.Execute(std::make_unique<CreateEntity>(std::move(entity)));
 	}
 
 	bool RenameSceneEntity(EditorContext& context, CommandHistory& history, const std::string& name, std::uint64_t group)

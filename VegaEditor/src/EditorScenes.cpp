@@ -16,13 +16,6 @@ namespace vega
 			return { { "format", "vega.scene" }, { "version", 1 }, { "settings", nlohmann::json::object() },
 				{ "entities", nlohmann::json::array() } };
 		}
-		nlohmann::json CanonicalScene(nlohmann::json scene)
-		{
-			// Entity order is not authored state; deletion undo may append the recreated actor.
-			auto& entities = scene["entities"];
-			std::sort(entities.begin(), entities.end(), [](const auto& a, const auto& b) { return a.at("guid") < b.at("guid"); });
-			return scene;
-		}
 	}
 
 	nlohmann::json EditorApplication::CaptureScene() const
@@ -33,7 +26,7 @@ namespace vega
 
 	bool EditorApplication::SceneDirty() const
 	{
-		return !mBaselineOnLoad && !mSavedScene.is_null() && CanonicalScene(CaptureScene()) != mSavedScene;
+		return !mBaselineOnLoad && mContext.sceneRevision != mSavedSceneRevision;
 	}
 
 	void EditorApplication::LoadSceneWorld(const nlohmann::json& scene, bool edit)
@@ -93,7 +86,7 @@ namespace vega
 			const auto scene = CaptureScene();
 			if (!AtomicWriteText(path, scene.dump(1, '\t') + "\n", mContext.sceneError)) return false;
 			mScenePath = path;
-			mSavedScene = CanonicalScene(scene);
+			mSavedSceneRevision = mContext.sceneRevision;
 			return true;
 		}
 		catch (const std::exception& error) { mContext.sceneError = error.what(); return false; }

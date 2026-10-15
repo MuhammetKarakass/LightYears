@@ -319,6 +319,46 @@ namespace
 		Check(history.UndoCount() == undoCount, "Play must preserve history");
 	}
 
+	void TestActorCacheAndRevisions()
+	{
+		ly::World world{ nullptr };
+		vega::EditorSelection selection;
+		vega::EditorContext context{ &world, selection };
+		vega::CommandHistory history{ context };
+		auto actor = world.SpawnActor<ly::Actor>().lock();
+		const auto id = actor->GetUniqueID();
+		Check(context.Resolve(id) == actor, "Cache must resolve pending actors");
+		const auto guid = actor->AddComponent<ly::SceneEntityComponent>().guid;
+		Check(context.ResolveGuid(guid) == actor, "Cache must discover identities added after its build");
+		Check(history.Execute(std::make_unique<vega::SelectActor>(id)) && context.sceneRevision == 0,
+			"Selection must not revise the scene");
+		Check(history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 1.f, 2.f })) && context.sceneRevision == 1,
+			"Scene command must revise the scene");
+		Check(history.Undo() && context.sceneRevision == 2 && history.Redo() && context.sceneRevision == 3,
+			"Undo and redo must create new scene revisions");
+		Check(!history.Execute(std::make_unique<vega::SetActorLocation>(0, sf::Vector2f{})) && context.sceneRevision == 3,
+			"Failed commands must not revise the scene");
+		world.TickInternal(0.f);
+		Check(context.Resolve(id) == actor, "Promotion must preserve cached resolution");
+		actor->Destroy();
+		Check(!context.Resolve(id) && !context.ResolveGuid(guid), "Cache must reject retained destroyed actors");
+		world.CleanCycle();
+		auto replacement = world.SpawnActor<ly::Actor>().lock();
+		replacement->AddComponent<ly::SceneEntityComponent>(guid, "Replacement");
+		Check(context.ResolveGuid(guid) == replacement && context.Resolve(replacement->GetUniqueID()) == replacement,
+			"Same-count replacement must refresh cached actors");
+		ly::World foreign{ nullptr };
+		context.world = &foreign;
+		Check(!context.Resolve(id) && !context.Resolve(replacement->GetUniqueID()) && !context.ResolveGuid(guid),
+			"Cache must never return an actor from the previous world");
+		context.world = &world;
+		Check(context.ResolveGuid(guid) == replacement, "Returning to a world must refresh the cache");
+		const auto newGuid = ly::SceneEntityComponent::GenerateGuid();
+		replacement->FindComponent<ly::SceneEntityComponent>()->guid = newGuid;
+		Check(!context.ResolveGuid(guid) && context.ResolveGuid(newGuid) == replacement,
+			"Cache hits must validate current GUIDs");
+	}
+
 	void TestSceneScriptIdentity()
 	{
 		ly::World original{ nullptr };
@@ -351,6 +391,7 @@ int main()
 	TestDestroyAndResolution();
 	TestSceneIdentity();
 	TestSceneScriptIdentity();
+	TestActorCacheAndRevisions();
 	if (failures) return 1;
 	std::cout << "Editor command tests passed\n";
 	return 0;

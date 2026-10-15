@@ -10,6 +10,7 @@
 #include <variant>
 #include <nlohmann/json.hpp>
 #include <functional>
+#include <unordered_map>
 
 namespace vega
 {
@@ -31,6 +32,15 @@ namespace vega
 		unsigned int propertyErrorActor = 0;
 		std::optional<std::size_t> propertyErrorComponent;
 		std::string propertyErrorName;
+		// Monotonic edit revisions deliberately keep undo-to-save dirty until Save/Reload.
+		std::uint64_t sceneRevision = 0;
+		void SceneChanged() { ++sceneRevision; }
+		void ResetActorCache() const { cachedWorldID.reset(); }
+		void RefreshActorCache() const;
+		mutable std::optional<unsigned int> cachedWorldID;
+		mutable std::size_t cachedActorCount = 0;
+		mutable std::unordered_map<unsigned int, std::weak_ptr<ly::Actor>> actorsByID;
+		mutable std::unordered_map<std::string, std::weak_ptr<ly::Actor>> actorsByGuid;
 		void SyncCamera();
 		bool SetEditorCamera(bool enabled);
 		bool FocusSelection();
@@ -51,6 +61,7 @@ namespace vega
 		virtual std::string Name() const = 0;
 		virtual bool MergeWith(const EditorCommand&) { return false; }
 		virtual bool IsUndoable() const { return true; }
+		virtual bool ChangesScene() const { return IsUndoable(); }
 		virtual bool IsValid(const EditorContext&) const { return true; }
 	};
 

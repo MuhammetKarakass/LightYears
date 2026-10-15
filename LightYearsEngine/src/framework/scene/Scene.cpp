@@ -130,38 +130,46 @@ namespace ly
 	{
 		reflect::RegisterEngineTypes();
 		Json scene{ { "format", "vega.scene" }, { "version", 1 }, { "settings", std::move(settings) }, { "entities", Json::array() } };
-		auto& registry = TypeRegistry::Get();
-		// Pending actors are live too: saving immediately after Load must not
-		// require a gameplay tick (which could move or destroy authored entities).
+		// Pending actors are authored state too; no gameplay tick is needed to save.
 		for (const auto& weakActor : world.GetActorsByTypeIncludingPending<Actor>())
 		{
-			const auto actor = weakActor.lock();
-			if (!actor || actor->GetIsPendingDestroy()) continue;
-			const auto* identity = actor->FindComponent<SceneEntityComponent>();
-			const auto* type = registry.FindMostDerived(*actor);
-			if (!identity || !type) continue;
-			Json entity{ { "guid", identity->guid }, { "name", identity->name }, { "type", type->name },
-				{ "properties", SaveProperties(*type, actor.get()) }, { "components", Json::array() }, { "scripts", Json::array() } };
-			actor->ForEachComponent([&](const ActorComponent& component)
+			if (const auto actor = weakActor.lock())
 			{
-				if (dynamic_cast<const SceneEntityComponent*>(&component)) return;
-				// Do not mistake an unregistered subclass for the base component.
-				const auto* componentType = registry.Find(typeid(component));
-				if (!componentType) return;
-				const auto hook = ComponentSerializers().find(componentType->name);
-				if (hook != ComponentSerializers().end())
-				{
-					const auto& serializer = hook->second;
-					if (!entity.contains(serializer.array)) entity[serializer.array] = Json::array();
-					entity[serializer.array].push_back(serializer.save(component));
-					return;
-				}
-				Json properties = SaveProperties(*componentType, &component);
-				if (!properties.empty()) entity["components"].push_back({ { "type", componentType->name }, { "properties", std::move(properties) } });
-			});
-			scene["entities"].push_back(std::move(entity));
+				auto entity = SaveEntity(*actor);
+				if (!entity.is_null()) scene["entities"].push_back(std::move(entity));
+			}
 		}
 		return scene;
+	}
+
+	nlohmann::json SceneSerializer::SaveEntity(Actor& actor)
+	{
+		reflect::RegisterEngineTypes();
+		if (actor.GetIsPendingDestroy()) return nullptr;
+		auto& registry = TypeRegistry::Get();
+		const auto* identity = actor.FindComponent<SceneEntityComponent>();
+		const auto* type = registry.FindMostDerived(actor);
+		if (!identity || !type) return nullptr;
+		Json entity{ { "guid", identity->guid }, { "name", identity->name }, { "type", type->name },
+			{ "properties", SaveProperties(*type, &actor) }, { "components", Json::array() }, { "scripts", Json::array() } };
+		actor.ForEachComponent([&](const ActorComponent& component)
+		{
+			if (dynamic_cast<const SceneEntityComponent*>(&component)) return;
+			// Do not mistake an unregistered subclass for the base component.
+			const auto* componentType = registry.Find(typeid(component));
+			if (!componentType) return;
+			const auto hook = ComponentSerializers().find(componentType->name);
+			if (hook != ComponentSerializers().end())
+			{
+				const auto& serializer = hook->second;
+				if (!entity.contains(serializer.array)) entity[serializer.array] = Json::array();
+				entity[serializer.array].push_back(serializer.save(component));
+				return;
+			}
+			Json properties = SaveProperties(*componentType, &component);
+			if (!properties.empty()) entity["components"].push_back({ { "type", componentType->name }, { "properties", std::move(properties) } });
+		});
+		return entity;
 	}
 
 	SceneLoadResult SceneSerializer::Load(World& world, const Json& scene)

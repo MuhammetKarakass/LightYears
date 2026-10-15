@@ -42,6 +42,9 @@ asset root, and absolute paths are accepted. Automated runs must also supply
 * `SceneSerializer::Save(World&, settings)` returns JSON for live scene actors,
   including pending actors and excluding actors pending destruction. Writable
   properties are reflected; runtime IDs and read-only values are omitted.
+* `SceneSerializer::SaveEntity(Actor&)` returns the same representation for one
+  entity, or null for a destroyed/non-scene actor. Create, duplicate and delete
+  use this path so editing one entity never serializes the rest of the scene.
 * `SceneSerializer::Load(World&, json)` appends pending entities and returns
   `SceneLoadResult { spawned, warnings }`. It never ticks the world. Missing
   GUIDs are generated; duplicate GUIDs are rejected, including collisions with
@@ -126,8 +129,12 @@ File supports New, Open, Save and Save As. The Open modal lists scene files unde
 the editor asset root's `scenes/` and accepts a path. Relative paths use that root;
 absolute paths are accepted. Save writes SceneSerializer JSON through the same
 exclusive temporary sibling/atomic replacement helper as Data Editor. Dirty
-state compares canonical serialized entities against the loaded/saved state;
-undo back to that state removes the title/toolbar `*`. New/Open/Exit prompt
+state compares the current edit revision with the loaded/saved revision in O(1).
+Scene commands, undo/redo and script attachment advance a monotonic revision;
+undo back to saved content therefore keeps the title/toolbar `*` until Save or
+Reload. This deliberately avoids serializing the scene to recognize that state.
+Play/Stop preserve both revisions; gameplay cannot mark the edit scene dirty.
+New/Open/Exit prompt
 Save / Discard / Cancel, and Content scene double-click opens the authoring scene.
 
 See [editor script commands](../VegaEditor/tests/scripts/README.md) for automation

@@ -123,6 +123,15 @@ namespace vega
 	bool EditorScript::Step(EditorContext& context, CommandHistory& history, sf::RenderWindow& window)
 	{
 		if (mFinished) return true;
+		if (mExportFuture.valid())
+		{
+			// Wait for script ordering, but return each frame so rendering and input continue.
+			if (mExportFuture.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready) return false;
+			try { mLastExport = mExportFuture.get(); }
+			catch (const std::exception& error) { mLastExport = GameExportResult{}; mLastExport->error = error.what(); }
+			Report(mExportLine, mLastExport->success, DescribeGameExport(*mLastExport));
+			return false;
+		}
 		if (!context.world)
 		{
 			// A failed world startup must not leave an unattended editor running forever.
@@ -195,6 +204,26 @@ namespace vega
 			break;
 		}
 		case ScriptOperation::Create: success = CreateSceneEntity(context, history, command.text); break;
+		case ScriptOperation::CreateMany:
+		{
+			const unsigned int columns = std::max(1u, static_cast<unsigned int>(std::ceil(std::sqrt(command.number))));
+			const auto centre = context.world->GetWorldView().getCenter();
+			success = true;
+			for (unsigned int index = 0; index < command.number; ++index)
+			{
+				if (!CreateSceneEntity(context, history, command.text)) { success = false; break; }
+				const auto created = context.selection.Get();
+				const sf::Vector2f location = centre + sf::Vector2f{
+					(static_cast<float>(index % columns) - (columns - 1) * 0.5f) * 48.f,
+					(static_cast<float>(index / columns) - (columns - 1) * 0.5f) * 48.f };
+				if (!created || !history.Execute(std::make_unique<SetActorLocation>(created->GetUniqueID(), location)))
+				{
+					success = false;
+					break;
+				}
+			}
+			break;
+		}
 		case ScriptOperation::Delete:
 			if (actor && actor->FindComponent<ly::SceneEntityComponent>()) success = history.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
 			break;
@@ -230,6 +259,7 @@ namespace vega
 			if (actor && !context.playMode)
 			{
 				auto& script = actor->AddComponent<script::ScriptComponent>(command.text);
+				context.SceneChanged();
 				success = script.Prepare();
 				detail = success ? "Script attached (not undoable)" : script.LastError();
 			}
@@ -443,9 +473,13 @@ namespace vega
 			request.outputDir = std::filesystem::u8path(command.text);
 			request.overwrite = command.overwrite;
 			request.runSmokeTest = true;
-			mLastExport = ExportGame(mExportLayout, request);
-			success = mLastExport->success;
-			detail = DescribeGameExport(*mLastExport);
+			try
+			{
+				mExportFuture = ExportGameAsync(mExportLayout, request);
+				mExportLine = line;
+				return false;
+			}
+			catch (const std::exception& error) { detail = error.what(); }
 			break;
 		}
 		case ScriptOperation::ExpectExportOk:

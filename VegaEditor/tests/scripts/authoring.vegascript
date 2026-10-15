@@ -26,6 +26,9 @@ expect-entity-count 7
 undo
 select-name Rock A
 expect-location 500 400
+# Revisions are monotonic: undo restores the entity, but Save clears dirty.
+expect-scene-dirty true
+save-scene
 expect-scene-dirty false
 capture authoring.png
 quit

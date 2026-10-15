@@ -22,6 +22,7 @@ int main()
 		{ "new-scene", ScriptOperation::NewScene }, { "open-scene scenes/sandbox.scene.json", ScriptOperation::OpenScene },
 		{ "save-scene \"D:/build/temp scene.scene.json\"", ScriptOperation::SaveScene },
 		{ "create Asteroid", ScriptOperation::Create }, { "delete", ScriptOperation::Delete }, { "duplicate", ScriptOperation::Duplicate },
+		{ "create-many Asteroid 400", ScriptOperation::CreateMany },
 		{ "play-mode", ScriptOperation::PlayMode }, { "stop", ScriptOperation::Stop },
 		{ "expect-mode edit", ScriptOperation::ExpectMode }, { "expect-mode play", ScriptOperation::ExpectMode },
 		{ "expect-entity-count 7", ScriptOperation::ExpectEntityCount }, { "expect-scene-dirty false", ScriptOperation::ExpectSceneDirty },
@@ -76,6 +77,7 @@ int main()
 		Check(ParseEditorScriptLine(line).IsIgnored(), "Blank/comment must be ignored");
 	}
 	for (const char* line : { "unknown", "Pause", "select", "select -1", "select 4294967296", "select 2x",
+		"create-many Asteroid", "create-many Asteroid -1", "create-many Asteroid 1x", "create-many Asteroid 10001",
 		"tool", "tool scale", "tool Move", "snap", "snap true", "grid", "grid 1", "colliders", "colliders yes", "content-view", "content-view tiles",
 		"camera", "camera other", "expect-camera", "expect-camera other", "focus 1", "expect-visible 1",
 		"zoom", "zoom 0", "zoom -1", "zoom nan", "zoom inf", "zoom 1x", "zoom 1e999",

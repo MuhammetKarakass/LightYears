@@ -107,6 +107,7 @@ int main()
 	Check(history.Redo() && *document.Get("/f") == 3.0 && document.Dirty(), "JSON redo failed");
 	Check(document.Save() && history.Undo() && document.Dirty(), "Undo across save must be dirty");
 	Check(history.Redo() && !document.Dirty(), "Redo to saved text must clear dirty");
+	Check(context.sceneRevision == 0, "JSON execute/undo/redo must not dirty the scene");
 	const auto oldID = document.ID();
 	Check(document.Revert() && document.ID() != oldID, "Reload must invalidate document ID");
 	history.PruneInvalidCommands();

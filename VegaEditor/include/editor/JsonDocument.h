@@ -32,7 +32,7 @@ namespace vega
 		bool Set(const std::string& pointer, const Json& value);
 		const Json* Get(const std::string& pointer) const;
 		std::string Serialize() const;
-		bool Dirty() const { return IsOpen() && Serialize() != mSavedText; }
+		bool Dirty() const { return mDirty; }
 		bool IsOpen() const { return !mPath.empty(); }
 		bool ReadOnly() const { return !mReadOnlyReason.empty(); }
 		const std::string& ReadOnlyReason() const { return mReadOnlyReason; }
@@ -63,5 +63,6 @@ namespace vega
 		std::string mError;
 		std::vector<Scalar> mScalars;
 		std::uint64_t mID = 0;
+		bool mDirty = false;
 	};
 }

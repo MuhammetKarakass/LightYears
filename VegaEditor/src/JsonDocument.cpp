@@ -141,6 +141,7 @@ namespace vega
 			mPath = path;
 			mData = std::move(data);
 			mLayoutText = mSavedText = std::move(text);
+			mDirty = false;
 			mStyle = DetectStyle(mLayoutText);
 			mScalars.clear();
 			mReadOnlyReason.clear();
@@ -176,6 +177,7 @@ namespace vega
 		mScalars.clear();
 		mLayoutText.clear();
 		mSavedText.clear();
+		mDirty = false;
 		mReadOnlyReason.clear();
 		mError.clear();
 		++mID;
@@ -208,7 +210,10 @@ namespace vega
 			}
 		}
 		if (before->type() != converted.type() || (converted.is_number_float() && !std::isfinite(converted.get<double>()))) return false;
+		if (*before == converted) return true;
 		mData.at(Json::json_pointer{ pointer }) = std::move(converted);
+		// Compare only on edits, preserving exact clean-state detection after undo.
+		mDirty = Serialize() != mSavedText;
 		return true;
 	}
 
@@ -243,6 +248,7 @@ namespace vega
 		const auto text = Serialize();
 		if (!AtomicWriteText(mPath, text, mError)) return false;
 		mSavedText = text;
+		mDirty = false;
 		mError.clear();
 		return true;
 	}

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <future>
 
 namespace vega
 {
@@ -66,6 +67,7 @@ namespace vega
 	inline constexpr const char* kExportGameLogName = "LightYears.log";
 
 	GameExportResult ExportGame(const GameExportLayout& layout, const GameExportRequest& request);
+	std::future<GameExportResult> ExportGameAsync(GameExportLayout layout, GameExportRequest request);
 	// Runs <gameDir>/LightYearsGame.exe with --visual-capture from that folder. Passes on exit code 0 with a
 	// non-empty PNG; a game that does not finish within the timeout is terminated.
 	GameSmokeTestResult RunGameSmokeTest(const std::filesystem::path& gameDir, unsigned int timeoutMs = 60000);
