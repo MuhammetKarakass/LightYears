@@ -26,6 +26,13 @@ namespace ly
 		}
 		Json Encode(const PropertyInfo& property, const PropertyValue& value)
 		{
+			if (property.kind == PropertyKind::Flags)
+			{
+				Json labels = Json::array();
+				for (const auto& label : property.enumLabels)
+					if ((std::get<int>(value) & label.first) != 0) labels.push_back(label.second);
+				return labels;
+			}
 			if (property.kind == PropertyKind::Enum)
 			{
 				for (const auto& label : property.enumLabels)
@@ -62,6 +69,38 @@ namespace ly
 			case PropertyKind::Int: return Integer(value, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 			case PropertyKind::Float: return Number(value);
 			case PropertyKind::String: return value.get<std::string>();
+			case PropertyKind::Flags:
+			{
+				if (value.is_number_integer()) return Integer(value, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+				Json labels = value;
+				// Older scenes stored pipe-separated combinations in a single enum label.
+				if (value.is_string())
+				{
+					labels = Json::array();
+					const auto text = value.get<std::string>();
+					if (text == "None") return 0;
+					std::size_t begin = 0;
+					do
+					{
+						const auto end = text.find('|', begin);
+						const auto part = text.substr(begin, end == std::string::npos ? end : end - begin);
+						const auto first = part.find_first_not_of(" \t");
+						labels.push_back(first == std::string::npos ? "" : part.substr(first, part.find_last_not_of(" \t") - first + 1));
+						if (end == std::string::npos) break;
+						begin = end + 1;
+					} while (true);
+				}
+				if (!labels.is_array()) throw std::runtime_error("Expected flags label array or integer");
+				int bits = 0;
+				for (const auto& item : labels)
+				{
+					bool found = false;
+					for (const auto& label : property.enumLabels)
+						if (item.is_string() && label.second == item.get<std::string>()) { bits |= label.first; found = true; break; }
+					if (!found) throw std::runtime_error("Unknown flags label");
+				}
+				return bits;
+			}
 			case PropertyKind::Enum:
 				if (value.is_number_integer()) return Integer(value, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 				if (value.is_string())

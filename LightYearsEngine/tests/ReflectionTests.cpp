@@ -1,5 +1,7 @@
 #include "framework/Actor.h"
 #include "framework/reflection/Reflection.h"
+#include "framework/CollisionComponent.h"
+#include "framework/ComponentIdentity.h"
 #include <iostream>
 #include <limits>
 
@@ -57,6 +59,18 @@ int main()
 	static_assert(!std::is_default_constructible_v<TypeRegistry> && !std::is_copy_constructible_v<TypeRegistry> &&
 		!std::is_move_constructible_v<TypeRegistry>, "The registry must remain a singleton");
 	RegisterEngineTypes();
+	Check(KindOf(PropertyValue{true}) == PropertyKind::Bool && KindOf(PropertyValue{2}) == PropertyKind::Int &&
+		KindOf(PropertyValue{2.f}) == PropertyKind::Float && KindOf(PropertyValue{sf::Vector2f{}}) == PropertyKind::Vector2 &&
+		KindOf(PropertyValue{sf::Color{}}) == PropertyKind::Color && KindOf(PropertyValue{std::string{}}) == PropertyKind::String,
+		"KindOf must describe all value alternatives");
+	ly::Actor flagsActor{ nullptr };
+	auto& collision = flagsActor.AddComponent<ly::CollisionComponent>();
+	const auto* flags = TypeRegistry::Get().Find("CollisionComponent")->FindProperty("Collision Mask");
+	Check(flags->kind == PropertyKind::Flags && flags->enumLabels.size() == 8, "Collision flags need eight bit labels");
+	Check(flags->SetValue(&collision, 5) && std::get<int>(flags->getter(&collision)) == 5, "Flags combination failed");
+	Check(!flags->SetValue(&collision, 256) && !flags->SetValue(&collision, -1) && !flags->SetValue(&collision, 5.f) &&
+		std::get<int>(flags->getter(&collision)) == 5, "Flags must reject undeclared bits without mutation");
+	Check(flags->SetValue(&collision, 0) && flags->SetValue(&collision, 255), "Zero/all declared flags must work");
 	auto& registry = TypeRegistry::Get();
 	const auto* actorType = registry.Find("Actor");
 	const auto count = actorType->AllProperties().size();
@@ -117,6 +131,16 @@ int main()
 	static_cast<const ly::Actor&>(actor).ForEachComponent([&](const ly::ActorComponent& component) { visited.push_back(&component); });
 	Check(visited == std::vector<const ly::ActorComponent*>{ &first, &second }, "Const component order changed");
 	Check(registry.FindMostDerived(first)->FindProperty("Active")->SetValue(&first, false) && !first.IsActive(), "Bool property failed");
+	const auto componentID = ly::IdentifyComponent(actor, second);
+	ly::Actor reordered{ nullptr };
+	reordered.AddComponent<ly::CollisionComponent>();
+	reordered.AddComponent<ly::ActorComponent>();
+	auto& sameType = reordered.AddComponent<UnregisteredComponent>();
+	Check(componentID && ly::FindComponentByTypeOccurrence(reordered, *componentID) == &sameType,
+		"Component identity must ignore earlier components of other types");
+	auto& repeated = reordered.AddComponent<UnregisteredComponent>();
+	Check(ly::FindComponentByTypeOccurrence(reordered, { "SampleComponent", 1 }) == &repeated &&
+		!ly::FindComponentByTypeOccurrence(reordered, { "SampleComponent", 2 }), "Type occurrences must distinguish repeated components");
 	if (failures) return 1;
 	std::cout << "Reflection tests passed\n";
 	return 0;

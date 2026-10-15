@@ -232,6 +232,7 @@ if(BUILD_TESTING)
 	set_tests_properties(VegaEditorScripting PROPERTIES
 		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 60)
 	add_executable(VegaEditorGameExporterTests tests/GameExporterTests.cpp src/GameExporter.cpp)
+	target_link_libraries(VegaEditorGameExporterTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	target_include_directories(VegaEditorGameExporterTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_compile_definitions(VegaEditorGameExporterTests PRIVATE
 		VEGA_EXPORT_TEST_TEMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/game-export-test")
@@ -242,8 +243,9 @@ if(BUILD_TESTING)
 	set(VEGA_EXPORT_TEST_DIR "${CMAKE_BINARY_DIR}/export-test/LightYears")
 	configure_file(tests/scripts/export.vegascript.in
 		${CMAKE_CURRENT_BINARY_DIR}/scripts/export.vegascript @ONLY)
-	add_test(NAME VegaEditorExport COMMAND VegaEditor --editor-script
-		${CMAKE_CURRENT_BINARY_DIR}/scripts/export.vegascript)
+	configure_file(tests/RunExportTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunExportTest.cmake @ONLY)
+	add_test(NAME VegaEditorExport COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunExportTest.cmake)
 	set_tests_properties(VegaEditorExport PROPERTIES
 		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor>
 		TIMEOUT 180

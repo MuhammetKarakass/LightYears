@@ -35,6 +35,7 @@ namespace ly
 			std::string colorScript = "nebula_teal_pink";
 			std::string capturePath;
 			std::string scenePath;
+			bool sceneSpecified = false;
 			int captureFrames = 180;
 			float playerHull = -1.f;
 			int shipIndex = -1;

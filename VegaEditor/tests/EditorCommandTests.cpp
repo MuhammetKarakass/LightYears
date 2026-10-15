@@ -2,6 +2,7 @@
 #include <framework/World.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
+#include <framework/SpriteComponent.h>
 #include <iostream>
 #include <limits>
 #include <script/ScriptComponent.h>
@@ -11,10 +12,15 @@
 
 namespace
 {
+	bool prefixComponent = false;
 	class AuthoredActor : public ly::Actor
 	{
 	public:
-		explicit AuthoredActor(ly::World* world) : Actor{ world } { AddComponent<ly::ActorComponent>(); }
+		explicit AuthoredActor(ly::World* world) : Actor{ world }
+		{
+			if (prefixComponent) AddComponent<ly::SpriteComponent>();
+			AddComponent<ly::ActorComponent>();
+		}
 	};
 	class ThrowingActor : public ly::Actor
 	{
@@ -67,31 +73,31 @@ namespace
 		vega::SetPaused{ false }.Execute(context);
 		Check(!world.GetViewOverride(), "Explicit play must clear a manual editor camera");
 		const long owners = actor.use_count();
-		Check(history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 30.f, 40.f })), "Move execute failed");
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 30.f, 40.f })), "Move execute failed");
 		Check(actor.use_count() == owners, "Commands must not own an actor");
 		Check(actor->GetActorLocation() == sf::Vector2f{ 30.f, 40.f }, "Move did not apply");
 		Check(history.UndoName() == "Move Actor #" + std::to_string(id), "Move label lacks actor identity");
 		Check(history.Undo() && actor->GetActorLocation() == sf::Vector2f{ 10.f, 20.f }, "Undo did not restore original location");
 		Check(history.RedoName() == "Move Actor #" + std::to_string(id), "Redo label incorrect");
 		Check(history.Redo() && actor->GetActorLocation() == sf::Vector2f{ 30.f, 40.f }, "Redo did not restore move");
-		history.Execute(std::make_unique<vega::SetActorRotation>(id, 45.f));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", 45.f));
 		Check(actor->GetActorRotation() == 45.f, "Rotation did not apply");
 		Check(history.Undo() && actor->GetActorRotation() == 0.f, "Rotation undo failed");
 		Check(history.Redo() && actor->GetActorRotation() == 45.f, "Rotation redo failed");
-		history.Execute(std::make_unique<vega::SetRenderLayer>(id, ly::RenderLayer::Foreground));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "RenderLayer", static_cast<int>(ly::RenderLayer::Foreground)));
 		Check(actor->GetRenderLayer() == ly::RenderLayer::Foreground, "Layer did not apply");
 		Check(history.Undo() && actor->GetRenderLayer() == ly::RenderLayer::World, "Layer undo failed");
 		Check(history.Redo() && actor->GetRenderLayer() == ly::RenderLayer::Foreground, "Layer redo failed");
-		history.Execute(std::make_unique<vega::SetRenderEnabled>(id, false));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Render Enabled", false));
 		Check(!actor->IsRenderEnabled(), "Render enabled did not apply");
 		Check(history.Undo() && actor->IsRenderEnabled(), "Render enabled undo failed");
 		Check(history.Redo() && !actor->IsRenderEnabled(), "Render enabled redo failed");
 		history.Undo();
-		Check(!history.Execute(std::make_unique<vega::SetActorLocation>(id + 1000, sf::Vector2f{})) && history.CanRedo(),
+		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id + 1000, std::nullopt, "Location", sf::Vector2f{})) && history.CanRedo(),
 			"Failed commands must not invalidate redo");
-		Check(!history.Execute(std::make_unique<vega::SetActorRotation>(id, std::numeric_limits<float>::infinity())), "Nonfinite rotation must fail");
-		Check(!history.Execute(std::make_unique<vega::SetRenderLayer>(id, ly::RenderLayer::Count)), "Invalid render layer must fail");
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{}));
+		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", std::numeric_limits<float>::infinity())), "Nonfinite rotation must fail");
+		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "RenderLayer", static_cast<int>(ly::RenderLayer::Count))), "Invalid render layer must fail");
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{}));
 		Check(!history.CanRedo(), "New edit must invalidate redo");
 		history.Undo();
 		history.Clear();
@@ -116,7 +122,7 @@ namespace
 		const auto group = history.BeginMergeGroup();
 		const auto set = [&](const std::string& name, ly::reflect::PropertyValue value, std::uint64_t merge = 0)
 		{
-			return history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), 0, name, value, merge));
+			return history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), ly::ComponentIdentity{ "ScriptComponent", 0 }, name, value, merge));
 		};
 		Check(set("speed", 30.f, group) && set("speed", 90.f, group), "Script drag refused");
 		Check(history.Undo() && !history.CanUndo() && script.Overrides().empty() && std::get<float>(script.Properties().at("speed")) == 12.f,
@@ -144,7 +150,7 @@ namespace
 		vega::CommandHistory history{ context };
 		const auto id = actor->GetUniqueID();
 		const auto group = history.BeginMergeGroup();
-		const auto edit = [&](std::optional<std::size_t> index, const char* property, ly::reflect::PropertyValue value, std::uint64_t merge = 0)
+		const auto edit = [&](std::optional<ly::ComponentIdentity> index, const char* property, ly::reflect::PropertyValue value, std::uint64_t merge = 0)
 		{
 			return history.Execute(std::make_unique<vega::SetPropertyCommand>(id, index, property, std::move(value), merge));
 		};
@@ -152,12 +158,12 @@ namespace
 		Check(history.Undo() && actor->GetActorRotation() == 0.f && !history.CanUndo(), "Reflected drag must merge and keep first before value");
 		Check(history.Redo() && actor->GetActorRotation() == 45.f, "Reflected merged redo failed");
 		Check(!edit({}, "Rotation", 5) && !edit({}, "Velocity", sf::Vector2f{}) && !edit({}, "Missing", 1.f), "Invalid reflected writes must fail");
-		Check(edit(0, "Active", false, group) && edit(1, "Active", false, group), "Component property edits failed");
+		Check(edit(ly::ComponentIdentity{ "ActorComponent", 0 }, "Active", false, group) && edit(ly::ComponentIdentity{ "ActorComponent", 1 }, "Active", false, group), "Component property edits failed");
 		Check(history.Undo() && !first.IsActive() && second.IsActive(), "Different component indices must not merge");
 		Check(history.Undo() && first.IsActive(), "Component undo failed");
 		Check(history.Redo() && !first.IsActive(), "Component redo failed");
-		Check(!edit(100, "Active", false) && history.CanRedo(), "Missing component must preserve redo");
-		Check(vega::FindPropertyTarget(*actor, "ActorComponent").componentIndex == 0, "Named component target must use first match");
+		Check(!edit(ly::ComponentIdentity{ "ActorComponent", 100 }, "Active", false) && history.CanRedo(), "Missing component must preserve redo");
+		Check(vega::FindPropertyTarget(*actor, "ActorComponent").componentIdentity == ly::ComponentIdentity{ "ActorComponent", 0 }, "Named component target must use first match");
 		Check(!vega::FindPropertyTarget(*actor, "Missing").object, "Unknown named target must fail");
 		ly::reflect::Class<ThrowingActor, ly::Actor>("ThrowingActor")
 			.Property("Throwing", [](const ThrowingActor& a) { return a.GetActorRotation(); },
@@ -193,45 +199,45 @@ namespace
 		vega::EditorContext context{ &world, selection };
 		vega::CommandHistory history{ context, 2 };
 		const auto group = history.BeginMergeGroup();
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 1.f, 2.f }, group));
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 3.f, 4.f }, group));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 1.f, 2.f }, group));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 3.f, 4.f }, group));
 		Check(history.Undo() && actor->GetActorLocation() == sf::Vector2f{} && !history.CanUndo(), "Drag must merge and retain its initial location");
 		Check(history.Redo() && actor->GetActorLocation() == sf::Vector2f{ 3.f, 4.f }, "Merged redo must use final location");
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 4.f, 5.f }, group));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 4.f, 5.f }, group));
 		history.Undo();
 		Check(actor->GetActorLocation() == sf::Vector2f{ 3.f, 4.f } && history.CanUndo(), "Redo must end the previous merge gesture");
 		history.Redo();
 		history.Undo();
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 5.f, 6.f }, history.BeginMergeGroup()));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 5.f, 6.f }, history.BeginMergeGroup()));
 		history.Undo();
 		Check(actor->GetActorLocation() == sf::Vector2f{ 3.f, 4.f } && history.CanUndo(), "Separate drags must remain separate");
 		history.Clear();
 		const auto rotationGroup = history.BeginMergeGroup();
-		history.Execute(std::make_unique<vega::SetActorRotation>(id, 10.f, rotationGroup));
-		history.Execute(std::make_unique<vega::SetActorRotation>(id, 20.f, rotationGroup));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", 10.f, rotationGroup));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", 20.f, rotationGroup));
 		history.Undo();
 		Check(actor->GetActorRotation() == 0.f && !history.CanUndo(), "Rotation drag must merge");
 		history.Clear();
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 1.f, 1.f }, group));
-		history.Execute(std::make_unique<vega::SetActorLocation>(other->GetUniqueID(), sf::Vector2f{ 2.f, 2.f }, group));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 1.f, 1.f }, group));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(other->GetUniqueID(), std::nullopt, "Location", sf::Vector2f{ 2.f, 2.f }, group));
 		history.Undo();
 		Check(history.CanUndo() && actor->GetActorLocation() == sf::Vector2f{ 1.f, 1.f }, "Different actors must not merge");
 		history.Clear();
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 2.f, 2.f }, group));
-		history.Execute(std::make_unique<vega::SetActorRotation>(id, 30.f, group));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 2.f, 2.f }, group));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", 30.f, group));
 		history.Undo();
 		Check(history.CanUndo(), "Different properties must not merge");
 		history.Clear();
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 1.f, 1.f }));
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 2.f, 2.f }));
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 3.f, 3.f }));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 1.f, 1.f }));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 2.f, 2.f }));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 3.f, 3.f }));
 		history.Undo();
 		history.Undo();
 		Check(!history.CanUndo() && actor->GetActorLocation() == sf::Vector2f{ 1.f, 1.f }, "Max depth must discard oldest entry; discrete edits must not merge");
 		Check(history.Redo() && history.Redo(), "Depth-limited entries must redo");
 		history.Clear();
 		vega::CommandHistory zeroDepth{ context, 0 };
-		Check(zeroDepth.Execute(std::make_unique<vega::SetActorRotation>(id, 9.f)) && !zeroDepth.CanUndo(), "Zero depth must execute without storing");
+		Check(zeroDepth.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", 9.f)) && !zeroDepth.CanUndo(), "Zero depth must execute without storing");
 	}
 
 	void TestDestroyAndResolution()
@@ -244,18 +250,18 @@ namespace
 		vega::EditorContext context{ &world, selection };
 		vega::CommandHistory history{ context };
 		vega::SelectActor{ id }.Execute(context);
-		history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 5.f, 6.f }));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 5.f, 6.f }));
 		history.Undo();
 		Check(history.CanRedo(), "Destroy test needs a redo entry");
 		Check(history.Execute(std::make_unique<vega::DestroyActor>(id)), "Destroy execute failed");
 		Check(actor->GetIsPendingDestroy() && !selection.Get(), "Destroy must mark actor and clear selection");
 		Check(!history.CanUndo() && !history.CanRedo(), "Destroy must not record itself and must clear redo");
 		Check(!context.Resolve(id), "Pending destroyed actors must not resolve");
-		Check(!history.Execute(std::make_unique<vega::SetActorRotation>(id, 1.f)), "Destroyed actors must reject edits");
+		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Rotation", 1.f)), "Destroyed actors must reject edits");
 		Check(!vega::SelectActor{ id }.Execute(context), "Destroyed actors must reject selection");
 		auto removed = world.SpawnActor<ly::Actor>().lock();
 		world.TickInternal(0.f);
-		history.Execute(std::make_unique<vega::SetActorLocation>(removed->GetUniqueID(), sf::Vector2f{ 9.f, 10.f }));
+		history.Execute(std::make_unique<vega::SetPropertyCommand>(removed->GetUniqueID(), std::nullopt, "Location", sf::Vector2f{ 9.f, 10.f }));
 		removed->Destroy();
 		history.Undo();
 		Check(removed->GetActorLocation() == sf::Vector2f{ 9.f, 10.f }, "Undo must not edit a retained destroyed actor");
@@ -280,9 +286,9 @@ namespace
 		const auto id = actor->GetUniqueID();
 		const auto guid = actor->FindComponent<ly::SceneEntityComponent>()->guid;
 		const auto initialLocation = actor->GetActorLocation();
-		Check(history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 500.f, 400.f })), "Pending scene actor must resolve");
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 500.f, 400.f })), "Pending scene actor must resolve");
 		Check(vega::RenameSceneEntity(context, history, "Rock A"), "Scene rename failed");
-		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, 0, "Active", false)), "Component edit failed");
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, ly::ComponentIdentity{ "ActorComponent", 0 }, "Active", false)), "Component edit failed");
 		const auto snapshot = ly::SceneSerializer::Save(original);
 		ly::World restored{ nullptr };
 		ly::SceneSerializer::Load(restored, snapshot);
@@ -332,11 +338,11 @@ namespace
 		Check(context.ResolveGuid(guid) == actor, "Cache must discover identities added after its build");
 		Check(history.Execute(std::make_unique<vega::SelectActor>(id)) && context.sceneRevision == 0,
 			"Selection must not revise the scene");
-		Check(history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 1.f, 2.f })) && context.sceneRevision == 1,
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(id, std::nullopt, "Location", sf::Vector2f{ 1.f, 2.f })) && context.sceneRevision == 1,
 			"Scene command must revise the scene");
 		Check(history.Undo() && context.sceneRevision == 2 && history.Redo() && context.sceneRevision == 3,
 			"Undo and redo must create new scene revisions");
-		Check(!history.Execute(std::make_unique<vega::SetActorLocation>(0, sf::Vector2f{})) && context.sceneRevision == 3,
+		Check(!history.Execute(std::make_unique<vega::SetPropertyCommand>(0, std::nullopt, "Location", sf::Vector2f{})) && context.sceneRevision == 3,
 			"Failed commands must not revise the scene");
 		world.TickInternal(0.f);
 		Check(context.Resolve(id) == actor, "Promotion must preserve cached resolution");
@@ -369,13 +375,20 @@ namespace
 		vega::EditorSelection selection;
 		vega::EditorContext context{ &original, selection };
 		vega::CommandHistory history{ context };
-		Check(history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), 2, "speed", 90.f)), "Scene script edit failed");
+		Check(history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), ly::ComponentIdentity{ "ScriptComponent", 0 }, "speed", 90.f)), "Scene script edit failed");
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(actor->GetUniqueID(), ly::ComponentIdentity{ "ActorComponent", 0 }, "Active", false)), "Stable reflected edit failed");
 		ly::World restored{ nullptr };
+		// A new default component precedes both targets in the reconstructed actor.
+		prefixComponent = true;
 		ly::SceneSerializer::Load(restored, ly::SceneSerializer::Save(original));
+		prefixComponent = false;
 		context.world = &restored;
 		const auto replacement = context.ResolveGuid(guid);
 		const auto* restoredScript = replacement ? replacement->FindComponent<vega::script::ScriptComponent>() : nullptr;
 		Check(restoredScript && std::get<float>(restoredScript->Properties().at("speed")) == 90.f, "Scene script snapshot lost its override");
+		const auto* target = ly::FindComponentByTypeOccurrence(*replacement, { "ActorComponent", 0 });
+		Check(history.Undo() && target->IsActive() && replacement->FindComponent<ly::SpriteComponent>()->IsActive(),
+			"Undo must find the same type after an earlier component is added");
 		Check(history.Undo() && restoredScript->Overrides().empty() && std::get<float>(restoredScript->Properties().at("speed")) == 12.f,
 			"Script undo must resolve GUID after reload");
 		Check(history.Redo() && std::get<float>(restoredScript->Properties().at("speed")) == 90.f, "Script redo after reload failed");

@@ -6,9 +6,63 @@
 #include <algorithm>
 #include <cstdio>
 #include <imgui.h>
+#include "editor/PropertyWidgets.h"
 
 namespace vega
 {
+	void EditorApplication::BuildProjectDialog()
+	{
+		if (mProjectDialogRequested)
+		{
+			mProjectDialogRequested = false;
+			mProjectError.clear();
+			try
+			{
+				const auto path = mDocument.Root() / "vega.project.json";
+				mProjectDraft = std::filesystem::exists(path) ? ly::ProjectSettings::Load(path) : ly::ProjectSettings{};
+				mProjectWindowSize[0] = static_cast<int>(mProjectDraft.windowWidth);
+				mProjectWindowSize[1] = static_cast<int>(mProjectDraft.windowHeight);
+			}
+			catch (const std::exception& error) { mProjectError = error.what(); }
+			ImGui::OpenPopup("Project Settings");
+		}
+		ImGui::SetNextWindowSize({ 560.f, 0.f }, ImGuiCond_Appearing);
+		if (!ImGui::BeginPopupModal("Project Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+		InputStringProperty("Name", mProjectDraft.name);
+		if (ImGui::BeginCombo("Startup scene", mProjectDraft.startupScene.empty() ? "Default level" : mProjectDraft.startupScene.c_str()))
+		{
+			if (ImGui::Selectable("Default level", mProjectDraft.startupScene.empty())) mProjectDraft.startupScene.clear();
+			std::error_code error;
+			std::vector<std::string> scenes;
+			for (std::filesystem::recursive_directory_iterator it{ mDocument.Root() / "scenes", error }, end; it != end && !error; it.increment(error))
+			{
+				const auto path = it->path().lexically_relative(mDocument.Root()).generic_string();
+				if (it->is_regular_file(error) && path.size() >= 11 && path.substr(path.size() - 11) == ".scene.json") scenes.push_back(path);
+			}
+			std::sort(scenes.begin(), scenes.end());
+			for (const auto& path : scenes)
+				if (ImGui::Selectable(path.c_str(), path == mProjectDraft.startupScene)) mProjectDraft.startupScene = path;
+			ImGui::EndCombo();
+		}
+		ImGui::InputInt2("Window size", mProjectWindowSize);
+		ImGui::TextDisabled("Window changes apply the next time the game starts.");
+		if (ImGui::Button("Save"))
+		{
+			try
+			{
+				mProjectDraft.windowWidth = static_cast<unsigned int>(mProjectWindowSize[0]);
+				mProjectDraft.windowHeight = static_cast<unsigned int>(mProjectWindowSize[1]);
+				const auto project = ly::ProjectSettings::Parse(mProjectDraft.ToJson());
+				if (AtomicWriteText(mDocument.Root() / "vega.project.json", project.ToJson().dump(2) + "\n", mProjectError)) ImGui::CloseCurrentPopup();
+			}
+			catch (const std::exception& error) { mProjectError = error.what(); }
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel")) ImGui::CloseCurrentPopup();
+		if (!mProjectError.empty()) ImGui::TextWrapped("%s", mProjectError.c_str());
+		ImGui::EndPopup();
+	}
+
 	namespace
 	{
 		nlohmann::json EmptyScene()

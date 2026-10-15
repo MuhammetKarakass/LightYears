@@ -11,6 +11,7 @@
 #include "presentation/visual/GameVisualPipeline.h"
 
 #include <framework/AssetManager.h>
+#include <framework/ProjectSettings.h>
 #include <Config.h>
 #include "framework/PerfMonitor.h"
 
@@ -22,12 +23,36 @@
 
 namespace ly
 {
-	GameApplication::GameApplication(bool editor)
-		: Application({ 1920, 1080}, 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
+	namespace
 	{
-		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
+		std::filesystem::path ResourceRoot(bool allowOverride = true)
+		{
+#ifdef _MSC_VER
+			for (int index = 1; index + 1 < __argc; ++index)
+				if (allowOverride && std::string{ __argv[index] } == "--asset-root") return std::filesystem::u8path(__argv[index + 1]);
+#endif
+			return getResourceDir();
+		}
+		sf::Vector2u ProjectWindowSize(bool editor)
+		{
+			const auto path = ResourceRoot(!editor) / "vega.project.json";
+			if (!std::filesystem::exists(path)) return { 1920, 1080 };
+			try
+			{
+				const auto project = ProjectSettings::Load(path);
+				return { project.windowWidth, project.windowHeight };
+			}
+			catch (const std::exception&) { return { 1920, 1080 }; }
+		}
+	}
+
+	GameApplication::GameApplication(bool editor)
+		: Application(ProjectWindowSize(editor), 64, std::string("LightYears"), sf::Style::Close | sf::Style::Titlebar)
+	{
+		// In the editor --asset-root selects authoring documents; content tests use a partial copy.
+		AssetManager::GetAssetManager().SetAssetRootDirectory(ResourceRoot(!editor).generic_string() + "/");
 		RegisterGameTypes();
-		vega::script::SetScriptRoot(getResourceDir());
+		vega::script::SetScriptRoot(ResourceRoot(!editor));
 		vega::script::RegisterScriptTypes();
 		if (!GameContentBootstrap::Register())
 		{
@@ -39,6 +64,22 @@ namespace ly
 		ly::perf::g_disableLights.store(false);
 
 		mDevOptions = ParseDevOptions();
+		try
+		{
+			const auto path = ResourceRoot(!editor) / "vega.project.json";
+			if (std::filesystem::exists(path))
+			{
+				const auto project = ProjectSettings::Load(path);
+				if (!mDevOptions.sceneSpecified) mDevOptions.scenePath = project.startupScene;
+			}
+		}
+		catch (const std::exception& error)
+		{
+			LY_GAME_ERROR("Project: %s", error.what());
+			mExitCode = 1;
+			QuitApplication();
+			return;
+		}
 		PlayerMovementComponent::SetDevAutoPlay(mDevOptions.perfAutoPlay);
 		InitializeVisualPipeline();
 		if (mDevOptions.shipIndex >= 0)
@@ -58,7 +99,7 @@ namespace ly
 			try
 			{
 				std::filesystem::path path{ mDevOptions.scenePath };
-				if (path.is_relative()) path = std::filesystem::path{ getResourceDir() } / path;
+				if (path.is_relative()) path = ResourceRoot() / path;
 				std::ifstream input{ path };
 				if (!input) throw std::runtime_error("Cannot open scene: " + path.string());
 				nlohmann::json scene;
@@ -67,6 +108,7 @@ namespace ly
 				{
 					ApplySceneSettings(settings);
 				});
+				LY_GAME_INFO("SceneLevel: scene-loaded %s (play mode)", mDevOptions.scenePath.c_str());
 			}
 			catch (const std::exception& error)
 			{
@@ -102,7 +144,11 @@ namespace ly
 			if (arg == "--visual-off") options.visualOff = true;
 			else if (arg == "--visual-script" && hasValue) options.colorScript = __argv[++i];
 			else if (arg == "--visual-capture" && hasValue) options.capturePath = __argv[++i];
-			else if (arg == "--scene" && hasValue) options.scenePath = __argv[++i];
+			else if ((arg == "--scene" || arg == "--editor-scene") && hasValue)
+			{
+				options.sceneSpecified = true;
+				options.scenePath = __argv[++i];
+			}
 			else if (arg == "--capture-frames" && hasValue) options.captureFrames = std::max(1, std::atoi(__argv[++i]));
 			else if (arg == "--visual-player-hull" && hasValue) options.playerHull = std::clamp(static_cast<float>(std::atof(__argv[++i])), 0.f, 1.f);
 			else if (arg == "--visual-ship" && hasValue) options.shipIndex = std::atoi(__argv[++i]);
@@ -126,7 +172,7 @@ namespace ly
 		else
 		{
 			std::error_code error;
-			assetsDir = (std::filesystem::path(getResourceDir()) / ".." / "visual").lexically_normal();
+			assetsDir = (ResourceRoot() / ".." / "visual").lexically_normal();
 			origin = "packaged copy";
 			if (!std::filesystem::is_directory(assetsDir, error))
 			{

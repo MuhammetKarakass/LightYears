@@ -51,6 +51,28 @@ namespace vega
 			}
 			case PropertyKind::String:
 				return InputStringProperty(label, std::get<std::string>(value));
+			case PropertyKind::Flags:
+			{
+				auto& bits = std::get<int>(value);
+				std::string preview;
+				for (const auto& bit : property.enumLabels)
+					if (bits & bit.first) { if (!preview.empty()) preview += " | "; preview += bit.second; }
+				bool changed = false;
+				if (ImGui::BeginCombo(label, preview.empty() ? "None" : preview.c_str()))
+				{
+					for (const auto& bit : property.enumLabels)
+					{
+						bool enabled = (bits & bit.first) != 0;
+						if (ImGui::Checkbox(bit.second.c_str(), &enabled))
+						{
+							bits = enabled ? bits | bit.first : bits & ~bit.first;
+							changed = true;
+						}
+					}
+					ImGui::EndCombo();
+				}
+				return changed;
+			}
 			case PropertyKind::Enum:
 			{
 				auto& number = std::get<int>(value);
@@ -291,7 +313,7 @@ namespace vega
 					ImGui::PushID(target.object);
 					if (ImGui::CollapsingHeader(target.type->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 					{
-						auto* scriptComponent = target.componentIndex
+						auto* scriptComponent = target.componentIdentity
 							? dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)) : nullptr;
 						if (scriptComponent)
 						{
@@ -307,12 +329,12 @@ namespace vega
 							{
 								ly::reflect::PropertyInfo property;
 								property.name = entry.first;
-								property.kind = static_cast<ly::reflect::PropertyKind>(entry.second.index());
+								property.kind = ly::reflect::KindOf(entry.second);
 								auto value = entry.second;
 								const bool changed = DrawProperty(property, value);
 								if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
 								if (changed) mHistory.Execute(std::make_unique<SetScriptPropertyCommand>(actor->GetUniqueID(),
-									*target.componentIndex, entry.first, value, (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
+									*target.componentIdentity, entry.first, value, (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
 							}
 						}
 						const auto properties = target.type->AllProperties();
@@ -336,13 +358,13 @@ namespace vega
 								if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
 								if (changed && property->setter)
 								{
-									mHistory.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIndex,
+									mHistory.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity,
 										property->name, std::move(value), (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
 								}
 								ImGui::EndDisabled();
 								if (!property->tooltip.empty()) ImGui::SetItemTooltip("%s", property->tooltip.c_str());
 								if (!mContext.propertyError.empty() && mContext.propertyErrorActor == actor->GetUniqueID() &&
-									mContext.propertyErrorComponent == target.componentIndex && mContext.propertyErrorName == property->name)
+									mContext.propertyErrorComponent == target.componentIdentity && mContext.propertyErrorName == property->name)
 								{
 									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.f, 0.3f, 0.3f, 1.f });
 									ImGui::TextWrapped("%s", mContext.propertyError.c_str());
@@ -354,12 +376,12 @@ namespace vega
 					ImGui::PopID();
 				};
 				drawSection(ResolvePropertyTarget(*actor, {}));
-				std::size_t componentIndex = 0;
+
 				actor->ForEachComponent([&](ly::ActorComponent& component)
 				{
 					if (!dynamic_cast<ly::SceneEntityComponent*>(&component))
-						drawSection({ &component, ly::reflect::TypeRegistry::Get().FindMostDerived(component), componentIndex });
-					++componentIndex;
+						drawSection({ &component, ly::reflect::TypeRegistry::Get().FindMostDerived(component), ly::IdentifyComponent(*actor, component) });
+
 				});
 				if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
 				{

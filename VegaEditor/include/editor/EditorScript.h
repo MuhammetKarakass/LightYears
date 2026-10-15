@@ -17,6 +17,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		SetProjectStartup, ExpectProjectStartup,
 		NewScene, OpenScene, SaveScene, Create, CreateMany, Delete, Duplicate, Rename, SelectName,
 		PlayMode, Stop, ExpectMode, ExpectEntityCount, ExpectSceneDirty,
 		Tool, Snap, Grid, Colliders, ContentView,

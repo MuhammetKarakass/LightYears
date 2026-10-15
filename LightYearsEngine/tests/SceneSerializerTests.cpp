@@ -37,6 +37,7 @@ namespace
 		sf::Vector2f point{ 8.f, -4.f };
 		std::string text = "scene";
 		Mode mode = Mode::Second;
+		int flags = 5;
 	};
 	class FactoryActor : public ly::Actor
 	{
@@ -72,6 +73,9 @@ int main()
 		.Property("Text", [](const SceneTestActor& a) { return a.text; }, [](SceneTestActor& a, const std::string& v) { a.text = v; })
 		.Property("Mode", [](const SceneTestActor& a) { return a.mode; }, [](SceneTestActor& a, Mode v) { a.mode = v; })
 		.Labels({ { 2, "First" }, { 7, "Second" } });
+	Class<SceneTestActor, Actor>("SceneTestActor")
+		.Property("Flags", [](const SceneTestActor& a) { return a.flags; }, [](SceneTestActor& a, int v) { a.flags = v; })
+		.Flags({ { 1, "Player" }, { 4, "Enemy" } });
 	Class<FactoryActor, Actor>("FactoryActor").Spawnable([](World& world) { return world.SpawnActor<FactoryActor>(42).lock(); });
 	World source{ nullptr };
 	auto actor = source.SpawnActor<SceneTestActor>().lock();
@@ -86,6 +90,32 @@ int main()
 	Check(SceneSerializer::SaveEntity(*source.SpawnActor<Actor>().lock()).is_null(), "Runtime actors have no scene representation");
 	Check(data["name"] == "Named actor" && data["guid"] == identity.guid, "Scene identity was not saved");
 	Check(data["properties"]["Mode"] == "Second" && data["properties"]["RenderLayer"] == "World", "Enums must encode labels");
+	Check(data["properties"]["Flags"] == Json::array({ "Player", "Enemy" }), "Flags must encode a label array");
+	for (const auto& value : { Json(5), Json("Player | Enemy"), Json::array({ "Player", "Enemy" }) })
+	{
+		auto flagsEntity = Entity("SceneTestActor");
+		flagsEntity["properties"]["Flags"] = value;
+		World flagsWorld{ nullptr };
+		const auto flagsResult = SceneSerializer::Load(flagsWorld, Scene(Json::array({ flagsEntity })));
+		Check(flagsResult.warnings.empty() && flagsWorld.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock()->flags == 5,
+			"Flags array, integer and old enum label must load identically");
+	}
+	for (const auto& value : { Json(0), Json("None"), Json::array() })
+	{
+		auto flagsEntity = Entity("SceneTestActor");
+		flagsEntity["properties"]["Flags"] = value;
+		World flagsWorld{ nullptr };
+		Check(SceneSerializer::Load(flagsWorld, Scene(Json::array({ flagsEntity }))).warnings.empty() &&
+			flagsWorld.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock()->flags == 0, "Empty flags must load");
+	}
+	for (const auto& value : { Json(2), Json(-1), Json("Player | Missing"), Json::array({ "Missing" }), Json::array({ 1 }), Json(1.5) })
+	{
+		auto flagsEntity = Entity("SceneTestActor");
+		flagsEntity["properties"]["Flags"] = value;
+		World flagsWorld{ nullptr };
+		Check(SceneSerializer::Load(flagsWorld, Scene(Json::array({ flagsEntity }))).warnings.size() == 1 &&
+			flagsWorld.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock()->flags == 5, "Invalid flags must warn and preserve defaults");
+	}
 	Check(data["properties"]["Point"] == Json::array({ 8, -4 }) && data["properties"]["Tint"] == Json::array({ 12, 34, 56, 78 }), "Vector/color encoding is incorrect");
 	Check(!data["properties"].contains("Velocity"), "Read-only properties must not be saved");
 	Check(data["components"].size() == 2 && data["components"][0]["properties"]["Amount"] == 8 &&

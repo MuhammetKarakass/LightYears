@@ -4,6 +4,7 @@
 #include "editor/EditorCamera.h"
 #include "editor/GizmoMath.h"
 #include <framework/Actor.h>
+#include <framework/ComponentIdentity.h>
 #include <framework/reflection/Reflection.h>
 #include <cstdint>
 #include <string>
@@ -30,7 +31,7 @@ namespace vega
 		std::string sceneError;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
-		std::optional<std::size_t> propertyErrorComponent;
+		std::optional<ly::ComponentIdentity> propertyErrorComponent;
 		std::string propertyErrorName;
 		// Monotonic edit revisions deliberately keep undo-to-save dirty until Save/Reload.
 		std::uint64_t sceneRevision = 0;
@@ -97,15 +98,15 @@ namespace vega
 	{
 		void* object = nullptr;
 		const ly::reflect::TypeInfo* type = nullptr;
-		std::optional<std::size_t> componentIndex;
+		std::optional<ly::ComponentIdentity> componentIdentity;
 	};
-	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<std::size_t> componentIndex);
+	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<ly::ComponentIdentity> componentIdentity);
 	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName);
 
 	class SetScriptPropertyCommand final : public EditorCommand
 	{
 	public:
-		SetScriptPropertyCommand(unsigned int id, std::size_t componentIndex, std::string property,
+		SetScriptPropertyCommand(unsigned int id, ly::ComponentIdentity componentIdentity, std::string property,
 			ly::reflect::PropertyValue value, std::uint64_t group = 0);
 		bool Execute(EditorContext&) override;
 		void Undo(EditorContext&) override;
@@ -114,7 +115,7 @@ namespace vega
 	private:
 		unsigned int mID;
 		std::string mGuid;
-		std::size_t mComponentIndex;
+		ly::ComponentIdentity mComponentIdentity;
 		std::string mProperty;
 		ly::reflect::PropertyValue mAfter;
 		std::optional<ly::reflect::PropertyValue> mBeforeOverride;
@@ -125,7 +126,7 @@ namespace vega
 	class SetPropertyCommand final : public EditorCommand
 	{
 	public:
-		SetPropertyCommand(unsigned int id, std::optional<std::size_t> componentIndex,
+		SetPropertyCommand(unsigned int id, std::optional<ly::ComponentIdentity> componentIdentity,
 			std::string property, ly::reflect::PropertyValue after, std::uint64_t group = 0);
 		bool Execute(EditorContext&) override;
 		void Undo(EditorContext&) override;
@@ -134,62 +135,13 @@ namespace vega
 	private:
 		unsigned int mID;
 		std::string mGuid;
-		std::optional<std::size_t> mComponentIndex;
+		std::optional<ly::ComponentIdentity> mComponentIdentity;
 		std::string mProperty;
+		std::string mActorName;
 		ly::reflect::PropertyValue mBefore;
 		ly::reflect::PropertyValue mAfter;
 		std::uint64_t mMergeGroup;
 		bool mExecuted = false;
-	};
-
-	class ActorPropertyCommand : public EditorCommand
-	{
-	public:
-		bool Execute(EditorContext&) override;
-		void Undo(EditorContext&) override;
-		std::string Name() const override;
-		bool MergeWith(const EditorCommand&) override;
-
-	protected:
-		enum class Property { Location, Rotation, Layer, Enabled };
-		using Value = std::variant<sf::Vector2f, float, ly::RenderLayer, bool>;
-		ActorPropertyCommand(unsigned int id, Property property, Value value, std::uint64_t group = 0);
-
-	private:
-		void Apply(ly::Actor& actor, const Value& value) const;
-		unsigned int mID;
-		std::string mGuid;
-		Property mProperty;
-		Value mBefore;
-		Value mAfter;
-		std::uint64_t mMergeGroup;
-		bool mExecuted = false;
-		std::string mActorName;
-	};
-
-	class SetActorLocation final : public ActorPropertyCommand
-	{
-	public:
-		SetActorLocation(unsigned int id, sf::Vector2f value, std::uint64_t group = 0)
-			: ActorPropertyCommand(id, Property::Location, value, group) {}
-	};
-	class SetActorRotation final : public ActorPropertyCommand
-	{
-	public:
-		SetActorRotation(unsigned int id, float value, std::uint64_t group = 0)
-			: ActorPropertyCommand(id, Property::Rotation, value, group) {}
-	};
-	class SetRenderLayer final : public ActorPropertyCommand
-	{
-	public:
-		SetRenderLayer(unsigned int id, ly::RenderLayer value)
-			: ActorPropertyCommand(id, Property::Layer, value) {}
-	};
-	class SetRenderEnabled final : public ActorPropertyCommand
-	{
-	public:
-		SetRenderEnabled(unsigned int id, bool value)
-			: ActorPropertyCommand(id, Property::Enabled, value) {}
 	};
 
 	class SelectActor final : public EditorCommand

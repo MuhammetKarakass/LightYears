@@ -19,6 +19,10 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "set-project-startup scenes/start.scene.json", ScriptOperation::SetProjectStartup },
+		{ "set-project-startup \"\"", ScriptOperation::SetProjectStartup },
+		{ "expect-project-startup \"\"", ScriptOperation::ExpectProjectStartup },
+		{ "expect-project-startup scenes/start.scene.json", ScriptOperation::ExpectProjectStartup },
 		{ "new-scene", ScriptOperation::NewScene }, { "open-scene scenes/sandbox.scene.json", ScriptOperation::OpenScene },
 		{ "save-scene \"D:/build/temp scene.scene.json\"", ScriptOperation::SaveScene },
 		{ "create Asteroid", ScriptOperation::Create }, { "delete", ScriptOperation::Delete }, { "duplicate", ScriptOperation::Duplicate },

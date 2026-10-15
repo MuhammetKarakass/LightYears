@@ -2,6 +2,7 @@
 #include <script/ScriptRuntime.h>
 #include <framework/Actor.h>
 #include <framework/World.h>
+#include <framework/CollisionComponent.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <chrono>
@@ -152,6 +153,32 @@ end
 	world.TickInternal(0.f);
 	auto& isolated = otherActor->AddComponent<ScriptComponent>("api.lua");
 	Check(isolated.LastError().empty(), "Environments leaked globals/library mutations");
+
+	Write("command-prefix.lua", "properties={}");
+	Write("component-handle.lua", R"(
+local target
+function on_create(self)
+    target = self.actor:component("CollisionComponent")
+    assert(target:get("Collision Mask") == 5)
+end
+function on_update(self, dt)
+    assert(target:set("Collision Mask", 4))
+    assert(not target:set("Collision Mask", 256))
+    assert(target:get("Collision Mask") == 4)
+end
+)");
+	auto stableActor = world.SpawnActor<ly::Actor>().lock();
+	// A script precedes the target; more components arrive after the handle is retained.
+	stableActor->AddComponent<ScriptComponent>("command-prefix.lua");
+	auto& stableCollision = stableActor->AddComponent<ly::CollisionComponent>();
+	stableCollision.SetCollisionMask(static_cast<CollisionLayer>(5));
+	world.TickInternal(0.f);
+	auto& stableScript = stableActor->AddComponent<ScriptComponent>("component-handle.lua");
+	stableActor->AddComponent<ly::ActorComponent>();
+	stableActor->AddComponent<ScriptComponent>("command-prefix.lua");
+	world.TickInternal(0.1f);
+	Check(stableScript.LastError().empty() && static_cast<int>(stableCollision.GetCollisionMask()) == 4,
+		"Retained Lua component handle must target its type after other components are added");
 
 	Write("destroy.lua", R"(
 function on_update(self,dt)

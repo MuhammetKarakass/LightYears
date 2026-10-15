@@ -73,13 +73,13 @@ namespace vega
 					float value = mGizmoStartRotation + mGizmoRotationDelta;
 					if (snap) value = SnapGizmoValue(value, 15.f);
 					if (std::abs(value - target->GetActorRotation()) > .001f)
-						mHistory.Execute(std::make_unique<SetActorRotation>(*mMoveDragActor, value, mMoveMergeGroup));
+						mHistory.Execute(std::make_unique<SetPropertyCommand>(*mMoveDragActor, std::nullopt, "Rotation", value, mMoveMergeGroup));
 				}
 				else if (mGizmoDragStarted)
 				{
 					auto value = mGizmoStartLocation + ProjectGizmoDrag(mouseWorld - mMoveDragMouse, mGizmoHandle);
 					if (snap) value = SnapGizmoPosition(value, mGizmoHandle, mContext.viewSettings.gridSize);
-					if (value != target->GetActorLocation()) mHistory.Execute(std::make_unique<SetActorLocation>(*mMoveDragActor, value, mMoveMergeGroup));
+					if (value != target->GetActorLocation()) mHistory.Execute(std::make_unique<SetPropertyCommand>(*mMoveDragActor, std::nullopt, "Location", value, mMoveMergeGroup));
 				}
 				if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) mMoveDragActor.reset();
 			}

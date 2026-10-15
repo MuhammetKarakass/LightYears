@@ -88,6 +88,13 @@ namespace vega
 			command.operation = verb == "rename" ? ScriptOperation::Rename : ScriptOperation::SelectName;
 			return { command, {} };
 		}
+		if (verb == "set-project-startup" || verb == "expect-project-startup")
+		{
+			if (tokens.size() != 2) return bad();
+			command.operation = verb == "set-project-startup" ? ScriptOperation::SetProjectStartup : ScriptOperation::ExpectProjectStartup;
+			command.text = tokens[1];
+			return { command, {} };
+		}
 		if (verb == "open-scene" || verb == "save-scene" || verb == "create" || verb == "expect-mode" || verb == "expect-scene-dirty")
 		{
 			if (verb == "save-scene" && tokens.size() == 1)

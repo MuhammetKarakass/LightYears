@@ -15,15 +15,15 @@
 
 namespace vega
 {
-	SetScriptPropertyCommand::SetScriptPropertyCommand(unsigned int id, std::size_t index, std::string property,
+	SetScriptPropertyCommand::SetScriptPropertyCommand(unsigned int id, ly::ComponentIdentity index, std::string property,
 		ly::reflect::PropertyValue value, std::uint64_t group)
-		: mID{ id }, mComponentIndex{ index }, mProperty{ std::move(property) }, mAfter{ std::move(value) }, mMergeGroup{ group } {}
+		: mID{ id }, mComponentIdentity{ index }, mProperty{ std::move(property) }, mAfter{ std::move(value) }, mMergeGroup{ group } {}
 
 	bool SetScriptPropertyCommand::Execute(EditorContext& context)
 	{
 		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor) return false;
-		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
 		auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object));
 		if (!script) return false;
 		std::optional<ly::reflect::PropertyValue> before;
@@ -37,7 +37,7 @@ namespace vega
 	{
 		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor || !mExecuted) return;
-		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
 		if (auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)))
 		{
 			if (mBeforeOverride) script->SetProperty(mProperty, *mBeforeOverride);
@@ -48,23 +48,17 @@ namespace vega
 	{
 		const auto* next = dynamic_cast<const SetScriptPropertyCommand*>(&command);
 		if (!next || !mMergeGroup || mMergeGroup != next->mMergeGroup || mID != next->mID ||
-			mComponentIndex != next->mComponentIndex || mProperty != next->mProperty) return false;
+			mComponentIdentity != next->mComponentIdentity || mProperty != next->mProperty) return false;
 		mAfter = next->mAfter;
 		return true;
 	}
 
-	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<std::size_t> componentIndex)
+	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<ly::ComponentIdentity> componentIdentity)
 	{
 		auto& registry = ly::reflect::TypeRegistry::Get();
-		if (!componentIndex) return { &actor, registry.FindMostDerived(actor), {} };
-		ReflectedTarget result;
-		std::size_t index = 0;
-		actor.ForEachComponent([&](ly::ActorComponent& component)
-		{
-			if (index == *componentIndex) result = { &component, registry.FindMostDerived(component), index };
-			++index;
-		});
-		return result;
+		if (!componentIdentity) return { &actor, registry.FindMostDerived(actor), {} };
+		auto* component = ly::FindComponentByTypeOccurrence(actor, *componentIdentity);
+		return component ? ReflectedTarget{ component, registry.FindMostDerived(*component), componentIdentity } : ReflectedTarget{};
 	}
 
 	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName)
@@ -72,22 +66,22 @@ namespace vega
 		auto result = ResolvePropertyTarget(actor, {});
 		if (targetName == "Actor") return result;
 		result = {};
-		std::size_t index = 0;
+		
 		actor.ForEachComponent([&](ly::ActorComponent& component)
 		{
 			const auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(component);
 			for (const auto* base = type; base; base = base->base)
 			{
-				if (!result.object && base->name == targetName) result = { &component, type, index };
+				if (!result.object && base->name == targetName) result = { &component, type, ly::IdentifyComponent(actor, component) };
 			}
-			++index;
+
 		});
 		return result;
 	}
 
-	SetPropertyCommand::SetPropertyCommand(unsigned int id, std::optional<std::size_t> componentIndex,
+	SetPropertyCommand::SetPropertyCommand(unsigned int id, std::optional<ly::ComponentIdentity> componentIdentity,
 		std::string property, ly::reflect::PropertyValue after, std::uint64_t group)
-		: mID{ id }, mComponentIndex{ componentIndex }, mProperty{ std::move(property) },
+		: mID{ id }, mComponentIdentity{ componentIdentity }, mProperty{ std::move(property) },
 		mAfter{ std::move(after) }, mMergeGroup{ group }
 	{
 	}
@@ -96,16 +90,16 @@ namespace vega
 	{
 		context.propertyError.clear();
 		context.propertyErrorActor = mID;
-		context.propertyErrorComponent = mComponentIndex;
+		context.propertyErrorComponent = mComponentIdentity;
 		context.propertyErrorName = mProperty;
 		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor) { context.propertyError = "Property target is unavailable"; return false; }
-		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
 		const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr;
 		if (!property) { context.propertyError = "Unknown property"; return false; }
 		const auto before = property->getter(target.object);
 		if (!property->SetValue(target.object, mAfter, &context.propertyError)) return false;
-		if (!mExecuted) { mBefore = before; mExecuted = true; }
+		if (!mExecuted) { mBefore = before; mActorName = ActorTypeName(*actor); mExecuted = true; }
 		return true;
 	}
 
@@ -113,11 +107,11 @@ namespace vega
 	{
 		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor || !mExecuted) return;
-		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
 		if (const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr)
 		{
 			context.propertyErrorActor = mID;
-			context.propertyErrorComponent = mComponentIndex;
+			context.propertyErrorComponent = mComponentIdentity;
 			context.propertyErrorName = mProperty;
 			property->SetValue(target.object, mBefore, &context.propertyError);
 		}
@@ -125,15 +119,17 @@ namespace vega
 
 	std::string SetPropertyCommand::Name() const
 	{
+		if (!mComponentIdentity && (mProperty == "Location" || mProperty == "Rotation"))
+			return std::string{ mProperty == "Location" ? "Move " : "Rotate " } + mActorName + " #" + std::to_string(mID);
 		return "Set " + mProperty + " #" + std::to_string(mID) +
-			(mComponentIndex ? " component " + std::to_string(*mComponentIndex) : "");
+			(mComponentIdentity ? " component " + mComponentIdentity->typeName + "[" + std::to_string(mComponentIdentity->occurrence) + "]" : "");
 	}
 
 	bool SetPropertyCommand::MergeWith(const EditorCommand& command)
 	{
 		const auto* next = dynamic_cast<const SetPropertyCommand*>(&command);
 		if (!next || !mMergeGroup || mMergeGroup != next->mMergeGroup || mID != next->mID ||
-			mComponentIndex != next->mComponentIndex || mProperty != next->mProperty) return false;
+			mComponentIdentity != next->mComponentIdentity || mProperty != next->mProperty) return false;
 		mAfter = next->mAfter;
 		return true;
 	}
@@ -331,70 +327,6 @@ namespace vega
 		mMergeAllowed = false;
 	}
 
-	ActorPropertyCommand::ActorPropertyCommand(unsigned int id, Property property, Value value, std::uint64_t group)
-		: mID{ id }, mProperty{ property }, mAfter{ value }, mMergeGroup{ group } {}
-
-	bool ActorPropertyCommand::Execute(EditorContext& context)
-	{
-		auto actor = context.Resolve(mID, mGuid);
-		if (!actor) return false;
-		if (mProperty == Property::Location)
-		{
-			const auto value = std::get<sf::Vector2f>(mAfter);
-			if (!std::isfinite(value.x) || !std::isfinite(value.y)) return false;
-		}
-		if (mProperty == Property::Rotation && !std::isfinite(std::get<float>(mAfter))) return false;
-		if (mProperty == Property::Layer && std::get<ly::RenderLayer>(mAfter) >= ly::RenderLayer::Count) return false;
-		if (!mExecuted)
-		{
-			switch (mProperty)
-			{
-			case Property::Location: mBefore = actor->GetActorLocation(); break;
-			case Property::Rotation: mBefore = actor->GetActorRotation(); break;
-			case Property::Layer: mBefore = actor->GetRenderLayer(); break;
-			case Property::Enabled: mBefore = actor->IsRenderEnabled(); break;
-			}
-			mActorName = ActorTypeName(*actor);
-			mExecuted = true;
-		}
-		Apply(*actor, mAfter);
-		return true;
-	}
-
-	void ActorPropertyCommand::Apply(ly::Actor& actor, const Value& value) const
-	{
-		switch (mProperty)
-		{
-		case Property::Location: actor.SetActorLocation(std::get<sf::Vector2f>(value)); break;
-		case Property::Rotation: actor.SetActorRotation(std::get<float>(value)); break;
-		case Property::Layer: actor.SetRenderLayer(std::get<ly::RenderLayer>(value)); break;
-		case Property::Enabled: actor.SetRenderEnabled(std::get<bool>(value)); break;
-		}
-	}
-
-	void ActorPropertyCommand::Undo(EditorContext& context)
-	{
-		// Gameplay may remove an actor while its edits remain in history; never resurrect an expired target.
-		if (auto actor = context.Resolve(mID, mGuid); actor && mExecuted) Apply(*actor, mBefore);
-	}
-
-	std::string ActorPropertyCommand::Name() const
-	{
-		static const char* actions[]{ "Move", "Rotate", "Set render layer", "Set render enabled" };
-		return std::string{ actions[static_cast<int>(mProperty)] } + " " + mActorName + " #" + std::to_string(mID);
-	}
-
-	bool ActorPropertyCommand::MergeWith(const EditorCommand& command)
-	{
-		const auto* next = dynamic_cast<const ActorPropertyCommand*>(&command);
-		if (!next || !mMergeGroup || mMergeGroup != next->mMergeGroup || mID != next->mID || mProperty != next->mProperty)
-		{
-			return false;
-		}
-		mAfter = next->mAfter;
-		return true;
-	}
-
 	bool SelectActor::Execute(EditorContext& context)
 	{
 		if (!mID)
@@ -507,6 +439,6 @@ namespace vega
 		const auto actor = context.selection.Get();
 		if (!actor || context.playMode) return false;
 		const auto target = FindPropertyTarget(*actor, "SceneEntityComponent");
-		return target.object && history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIndex, "Name", name, group));
+		return target.object && history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity, "Name", name, group));
 	}
 }

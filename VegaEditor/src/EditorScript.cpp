@@ -2,6 +2,7 @@
 #include "editor/EditorCommands.h"
 #include "editor/JsonCommands.h"
 #include <framework/World.h>
+#include <framework/ProjectSettings.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <script/ScriptComponent.h>
 #include <SFML/Graphics.hpp>
@@ -41,6 +42,7 @@ namespace vega
 				value = arguments[0] == "true" || arguments[0] == "1";
 				return true;
 			case PropertyKind::Int:
+			case PropertyKind::Flags:
 			case PropertyKind::Enum:
 			{
 				int number = 0;
@@ -216,7 +218,7 @@ namespace vega
 				const sf::Vector2f location = centre + sf::Vector2f{
 					(static_cast<float>(index % columns) - (columns - 1) * 0.5f) * 48.f,
 					(static_cast<float>(index / columns) - (columns - 1) * 0.5f) * 48.f };
-				if (!created || !history.Execute(std::make_unique<SetActorLocation>(created->GetUniqueID(), location)))
+				if (!created || !history.Execute(std::make_unique<SetPropertyCommand>(created->GetUniqueID(), std::nullopt, "Location", location)))
 				{
 					success = false;
 					break;
@@ -280,13 +282,13 @@ namespace vega
 			const auto entry = script->Properties().find(command.property);
 			if (entry == script->Properties().end()) { detail = "Unknown script property"; break; }
 			ly::reflect::PropertyInfo property;
-			property.kind = static_cast<ly::reflect::PropertyKind>(entry->second.index());
+			property.kind = ly::reflect::KindOf(entry->second);
 			ly::reflect::PropertyValue value;
 			float tolerance = command.tolerance;
 			const bool expect = command.operation == ScriptOperation::ExpectScriptProp;
 			if (!ParsePropertyValue(property, command.values, expect, value, tolerance)) detail = "Invalid script property value or tolerance";
 			else if (expect) success = PropertyEquals(entry->second, value, tolerance);
-			else success = history.Execute(std::make_unique<SetScriptPropertyCommand>(actor->GetUniqueID(), *target.componentIndex, command.property, value));
+			else success = history.Execute(std::make_unique<SetScriptPropertyCommand>(actor->GetUniqueID(), *target.componentIdentity, command.property, value));
 			break;
 		}
 		case ScriptOperation::WaitSeconds:
@@ -358,7 +360,7 @@ namespace vega
 			}
 			else
 			{
-				success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIndex, property->name, value));
+				success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity, property->name, value));
 				detail = success ? "Property set" : context.propertyError;
 				if (!success) mPendingPropertyError = detail;
 			}
@@ -417,10 +419,10 @@ namespace vega
 			break;
 		}
 		case ScriptOperation::Move:
-			if (actor) success = history.Execute(std::make_unique<SetActorLocation>(actor->GetUniqueID(), command.location));
+			if (actor) success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), std::nullopt, "Location", command.location));
 			break;
 		case ScriptOperation::Rotate:
-			if (actor) success = history.Execute(std::make_unique<SetActorRotation>(actor->GetUniqueID(), command.degrees));
+			if (actor) success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), std::nullopt, "Rotation", command.degrees));
 			break;
 		case ScriptOperation::Undo: success = history.Undo(); break;
 		case ScriptOperation::Redo: success = history.Redo(); break;
@@ -464,6 +466,25 @@ namespace vega
 				success = texture.copyToImage().saveToFile(path);
 			}
 			detail = "capture " + command.text;
+			break;
+		}
+		case ScriptOperation::SetProjectStartup:
+		case ScriptOperation::ExpectProjectStartup:
+		{
+			try
+			{
+				if (!context.document) throw std::runtime_error("No project asset root");
+				const auto path = context.document->Root() / "vega.project.json";
+				auto project = std::filesystem::exists(path) ? ly::ProjectSettings::Load(path) : ly::ProjectSettings{};
+				if (command.operation == ScriptOperation::ExpectProjectStartup) success = project.startupScene == command.text;
+				else
+				{
+					project.startupScene = command.text;
+					project = ly::ProjectSettings::Parse(project.ToJson());
+					success = AtomicWriteText(path, project.ToJson().dump(2) + "\n", detail);
+				}
+			}
+			catch (const std::exception& error) { detail = error.what(); }
 			break;
 		}
 		case ScriptOperation::Export:

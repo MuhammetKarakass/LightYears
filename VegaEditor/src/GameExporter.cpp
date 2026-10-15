@@ -1,4 +1,5 @@
 #include "editor/GameExporter.h"
+#include <framework/ProjectSettings.h>
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -174,6 +175,7 @@ namespace vega
 		GameExportResult result;
 		CopyState state;
 		fs::path outputDir;
+		std::string executableName;
 		bool copyStarted = false;
 		try
 		{
@@ -196,6 +198,10 @@ namespace vega
 			{
 				throw std::runtime_error("Game build has no assets folder: " + buildDir.u8string());
 			}
+			const fs::path assetRoot = layout.assetRoot.empty() ? buildDir / "assets" : layout.assetRoot;
+			ly::ProjectSettings project;
+			if (fs::exists(assetRoot / "vega.project.json")) project = ly::ProjectSettings::Load(assetRoot / "vega.project.json");
+			executableName = project.ExecutableName();
 			const fs::path visualAssets = release ? buildDir / "visual" : layout.visualAssetsDir;
 			if (!fs::is_directory(visualAssets))
 			{
@@ -210,6 +216,7 @@ namespace vega
 			state.outputDir = outputDir;
 			// Copying a folder into itself, or writing over the inputs, would corrupt both sides.
 			if (Overlaps(outputDir, gameDir)) throw std::runtime_error("The export folder overlaps the game build folder");
+			if (Overlaps(outputDir, Canonical(assetRoot))) throw std::runtime_error("The export folder overlaps the authoring assets");
 			if (Overlaps(outputDir, visualDir)) throw std::runtime_error("The export folder overlaps the visual assets folder");
 			// The repository stays read-only for exports. Generated output is allowed under the build tree.
 			if (Overlaps(outputDir, sourceRoot) && !IsSameOrInside(outputDir, generatedRoot))
@@ -243,9 +250,9 @@ namespace vega
 			std::sort(runtimeFiles.begin(), runtimeFiles.end());
 
 			copyStarted = true;
-			for (const auto& name : runtimeFiles) CopyFileInto(state, gameDir / name, name);
+			for (const auto& name : runtimeFiles) CopyFileInto(state, gameDir / name, name == "LightYearsGame.exe" ? fs::u8path(executableName) : name);
 			// Both layouts are kept: the game reads assets/ and visual/ relative to its working directory.
-			CopyTree(state, gameDir / "assets", "assets");
+			CopyTree(state, assetRoot, "assets");
 			CopyTree(state, visualDir, "visual");
 			WriteManifest(outputDir, state.files);
 			result.success = true;
@@ -311,13 +318,19 @@ namespace vega
 	GameSmokeTestResult RunGameSmokeTest(const fs::path& gameDir, unsigned int timeoutMs)
 	{
 		GameSmokeTestResult result;
-		const fs::path executable = gameDir / "LightYearsGame.exe";
+		ly::ProjectSettings project;
+		try
+		{
+			if (fs::exists(gameDir / "assets/vega.project.json")) project = ly::ProjectSettings::Load(gameDir / "assets/vega.project.json");
+		}
+		catch (const std::exception& error) { result.detail = error.what(); return result; }
+		const fs::path executable = gameDir / fs::u8path(project.ExecutableName());
 		const fs::path capture = gameDir / kExportSmokeCaptureName;
 		// A capture left by an earlier run must not satisfy this one.
 		std::error_code error;
 		fs::remove(capture, error);
 
-		std::wstring commandLine = L"\"" + executable.wstring() + L"\" --visual-capture \"" + capture.wstring() + L"\" --capture-frames 120";
+		std::wstring commandLine = L"\"" + executable.wstring() + L"\" --visual-capture \"" + capture.wstring() + L"\" --capture-frames 120 --asset-root \"" + (gameDir / "assets").wstring() + L"\"";
 		const std::wstring applicationPath = executable.wstring();
 		const std::wstring workingDirectory = gameDir.wstring();
 		STARTUPINFOW startup{};
@@ -327,7 +340,7 @@ namespace vega
 		if (!CreateProcessW(applicationPath.c_str(), commandLine.data(), nullptr, nullptr, FALSE, 0, nullptr,
 			workingDirectory.c_str(), &startup, &process))
 		{
-			result.detail = "Cannot start LightYearsGame.exe (Windows error " + std::to_string(GetLastError()) + ")";
+			result.detail = "Cannot start " + executable.filename().string() + " (Windows error " + std::to_string(GetLastError()) + ")";
 			return result;
 		}
 		CloseHandle(process.hThread);

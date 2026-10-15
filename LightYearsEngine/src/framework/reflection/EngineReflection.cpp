@@ -40,26 +40,14 @@ namespace ly::reflect
 		Class<LightComponent, ActorComponent>("LightComponent");
 		EnumLabels collisionLabels;
 		const char* bits[]{ "Player", "PlayerBullet", "Enemy", "EnemyBullet", "Powerup", "Environment", "RelayProjectile", "FriendlySummon" };
-		// Collision masks are flags. Include every combination so the enum widget
-		// preserves authored masks as well as individual layers.
-		for (int mask = 0; mask < 256; ++mask)
-		{
-			std::string label = mask == 0 ? "None" : "";
-			for (int bit = 0; bit < 8; ++bit)
-			{
-				if (!(mask & (1 << bit))) continue;
-				if (!label.empty()) label += " | ";
-				label += bits[bit];
-			}
-			collisionLabels.emplace_back(mask, std::move(label));
-		}
+		for (int bit = 0; bit < 8; ++bit) collisionLabels.emplace_back(1 << bit, bits[bit]);
 		Class<CollisionComponent, ActorComponent>("CollisionComponent")
 			.Property("Physics Enabled", &CollisionComponent::IsPhysicsEnabled, &CollisionComponent::SetEnablePhysics).Category("Physics")
 			.Property("Has Physics Body", &CollisionComponent::HasPhysicsBody).Category("Physics")
 			.Property("Body Type", &CollisionComponent::GetPhysicsBodyType, &CollisionComponent::SetPhysicsBodyType).Category("Physics")
 			.Labels({ { 0, "Dynamic" }, { 1, "Static" } })
-			.Property("Collision Layer", &CollisionComponent::GetCollisionLayer, &CollisionComponent::SetCollisionLayer).Labels(collisionLabels).Category("Collision")
-			.Property("Collision Mask", &CollisionComponent::GetCollisionMask, &CollisionComponent::SetCollisionMask).Labels(collisionLabels).Category("Collision");
+			.Property("Collision Layer", &CollisionComponent::GetCollisionLayer, &CollisionComponent::SetCollisionLayer).Flags(collisionLabels).Category("Collision")
+			.Property("Collision Mask", &CollisionComponent::GetCollisionMask, &CollisionComponent::SetCollisionMask).Flags(collisionLabels).Category("Collision");
 		// SoundComponent is independently owned, so it is registered for lookup by
 		// name but does not participate in ActorComponent enumeration or discovery.
 		Class<SoundComponent>("SoundComponent")

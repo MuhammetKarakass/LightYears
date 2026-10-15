@@ -19,7 +19,18 @@ namespace ly { class Actor; class ActorComponent; }
 namespace ly::reflect
 {
 	using PropertyValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string>;
-	enum class PropertyKind { Bool, Int, Float, Vector2, Color, String, Enum };
+	enum class PropertyKind { Bool, Int, Float, Vector2, Color, String, Enum, Flags };
+	// The first six kinds describe the variant alternatives; enums and flags use int.
+	static_assert(static_cast<std::size_t>(PropertyKind::Bool) == 0 && std::is_same_v<std::variant_alternative_t<0, PropertyValue>, bool>);
+	static_assert(static_cast<std::size_t>(PropertyKind::Int) == 1 && std::is_same_v<std::variant_alternative_t<1, PropertyValue>, int>);
+	static_assert(static_cast<std::size_t>(PropertyKind::Float) == 2 && std::is_same_v<std::variant_alternative_t<2, PropertyValue>, float>);
+	static_assert(static_cast<std::size_t>(PropertyKind::Vector2) == 3 && std::is_same_v<std::variant_alternative_t<3, PropertyValue>, sf::Vector2f>);
+	static_assert(static_cast<std::size_t>(PropertyKind::Color) == 4 && std::is_same_v<std::variant_alternative_t<4, PropertyValue>, sf::Color>);
+	static_assert(static_cast<std::size_t>(PropertyKind::String) == 5 && std::is_same_v<std::variant_alternative_t<5, PropertyValue>, std::string>);
+	inline PropertyKind KindOf(const PropertyValue& value)
+	{
+		return static_cast<PropertyKind>(value.index());
+	}
 	using EnumLabels = std::vector<std::pair<int, std::string>>;
 
 	struct PropertyInfo
@@ -152,6 +163,7 @@ namespace ly::reflect
 		Class& Tooltip(const std::string& tooltip) { Current().tooltip = tooltip; return *this; }
 		Class& Category(const std::string& category) { Current().category = category; return *this; }
 		Class& Labels(EnumLabels labels) { Current().enumLabels = std::move(labels); return *this; }
+		Class& Flags(EnumLabels labels) { Current().kind = PropertyKind::Flags; Current().enumLabels = std::move(labels); return *this; }
 
 	private:
 		static const TypeInfo* BaseType()

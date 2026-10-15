@@ -1,4 +1,8 @@
 add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
+	include/framework/ProjectSettings.h
+	src/framework/ProjectSettings.cpp
+	include/framework/ComponentIdentity.h
+	src/framework/ComponentIdentity.cpp
 	include/framework/reflection/Reflection.h
 	src/framework/reflection/Reflection.cpp
 	src/framework/reflection/EngineReflection.cpp
@@ -196,6 +200,10 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+	add_executable(LightYearsProjectSettingsTests tests/ProjectSettingsTests.cpp)
+	target_link_libraries(LightYearsProjectSettingsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(LightYearsProjectSettingsTests PRIVATE PROJECT_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/project-test")
+	add_test(NAME LightYearsProjectSettings COMMAND LightYearsProjectSettingsTests)
 	add_executable(LightYearsSceneSerializerTests tests/SceneSerializerTests.cpp)
 	target_link_libraries(LightYearsSceneSerializerTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	foreach(scene_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)

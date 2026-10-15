@@ -1,0 +1,7 @@
+{
+	"format": "vega.project",
+	"version": 1,
+	"name": "LightYears",
+	"startupScene": "",
+	"window": { "width": 1920, "height": 1080 }
+}

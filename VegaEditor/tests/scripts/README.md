@@ -234,15 +234,18 @@ window and graphics context. Scene entity deletion is undoable, including its GU
 ```text
 export <dir> [overwrite]
 expect-export-ok
+set-project-startup <scene-path>
+expect-project-startup <scene-path>
 ```
 
 `File > Export Game...` and `export` run the same export. It copies
-`LightYearsGame.exe`, the DLLs beside it, `assets/` from the game build, and
+the game executable as the sanitized project name (for example `LightYears.exe`),
+the DLLs beside it, the authoring asset root including `vega.project.json`, and
 `LightYearsVisual/assets` as `visual/` into `<dir>`. The game reads both folders
 relative to its working directory in Release builds. Debug builds read the source
 tree instead, so only a Release export is self-contained. The export always runs the
-game's smoke test here: `LightYearsGame.exe --visual-capture export_smoke.png
---capture-frames 120` from `<dir>`, which passes on exit code 0 with a non-empty PNG
+game's smoke test here: `LightYears.exe --visual-capture export_smoke.png
+--capture-frames 120 --asset-root <dir>/assets` from `<dir>`, which passes on exit code 0 with a non-empty PNG
 and is killed after 60 s. The copy writes `vega_export_manifest.txt`, listing every
 file it wrote. `overwrite` removes only the files that manifest lists. A folder
 outside the build tree, inside the repository, or inside the game build or visual
@@ -251,6 +254,11 @@ The `export` line succeeds when the copy succeeds; `expect-export-ok` checks tha
 the last export also ran its smoke test and that the test passed. The dialog's
 "Run smoke test" checkbox is the only way to skip the smoke test. Export paths are
 relative to the process working directory, like capture paths.
+
+Startup paths are relative to the asset root; `""` keeps the default level.
+`export.vegascript` runs against a temporary asset copy supplied by
+`RunExportTest.cmake`, sets a startup scene there, and verifies that the exported
+game loads it in play mode. It never writes the source project file.
 
 Copy and smoke testing run on a worker that owns its request/layout values.
 The dialog displays an indeterminate progress bar and disables Export/Close

@@ -1,6 +1,7 @@
 #include "script/ScriptComponent.h"
 #include "script/ScriptRuntime.h"
 #include <framework/Actor.h>
+#include <framework/ComponentIdentity.h>
 #include <framework/World.h>
 #include <framework/debug/Log.h>
 #include <framework/scene/Scene.h>
@@ -83,16 +84,10 @@ namespace vega::script
 		struct ComponentHandle
 		{
 			ActorHandle owner;
-			std::size_t index;
+			ly::ComponentIdentity identity;
 			ly::ActorComponent* Resolve(const std::shared_ptr<ly::Actor>& actor) const
 			{
-				ly::ActorComponent* result = nullptr;
-				std::size_t current = 0;
-				if (actor) actor->ForEachComponent([&](ly::ActorComponent& component)
-				{
-					if (current++ == index) result = &component;
-				});
-				return result;
+				return actor ? ly::FindComponentByTypeOccurrence(*actor, identity) : nullptr;
 			}
 		};
 		sol::object ToLua(sol::state_view lua, const Value& value)
@@ -137,7 +132,7 @@ namespace vega::script
 			const auto* property = type ? type->FindProperty(name) : nullptr;
 			auto value = FromLua(input);
 			if (!object || !property || !value) return { false, "Unknown target/property or incompatible value" };
-			if (property->kind == ly::reflect::PropertyKind::Int || property->kind == ly::reflect::PropertyKind::Enum)
+			if (property->kind == ly::reflect::PropertyKind::Int || property->kind == ly::reflect::PropertyKind::Enum || property->kind == ly::reflect::PropertyKind::Flags)
 			{
 				const auto* number = std::get_if<float>(&*value);
 				if (!number || std::trunc(*number) != *number || static_cast<double>(*number) < std::numeric_limits<int>::min() ||
@@ -214,12 +209,12 @@ namespace vega::script
 				{
 					const auto a = h.Lock();
 					sol::object result = sol::make_object(s, sol::nil);
-					std::size_t index = 0;
+
 					if (a) a->ForEachComponent([&](ly::ActorComponent& component)
 					{
 						for (auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(component); type; type = type->base)
-							if (result == sol::nil && type->name == name) result = sol::make_object(s, ComponentHandle{ h, index });
-						++index;
+							if (result == sol::nil && type->name == name) result = sol::make_object(s, ComponentHandle{ h, *ly::IdentifyComponent(*a, component) });
+
 					});
 					return result;
 				});

@@ -26,6 +26,8 @@ namespace vega
 #else
 		std::filesystem::path releaseGameBuildDir;
 #endif
+		// Tests and authoring sessions may export a disposable copy of the assets.
+		std::filesystem::path assetRoot;
 	};
 
 	struct ExportOptions
@@ -68,7 +70,7 @@ namespace vega
 
 	GameExportResult ExportGame(const GameExportLayout& layout, const GameExportRequest& request);
 	std::future<GameExportResult> ExportGameAsync(GameExportLayout layout, GameExportRequest request);
-	// Runs <gameDir>/LightYearsGame.exe with --visual-capture from that folder. Passes on exit code 0 with a
+	// Runs the project-named executable in <gameDir> with --visual-capture from that folder. Passes on exit code 0 with a
 	// non-empty PNG; a game that does not finish within the timeout is terminated.
 	GameSmokeTestResult RunGameSmokeTest(const std::filesystem::path& gameDir, unsigned int timeoutMs = 60000);
 	// Missing logs fail closed; Windows separators and letter case are normalized.

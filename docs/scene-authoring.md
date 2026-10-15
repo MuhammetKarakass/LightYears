@@ -62,6 +62,7 @@ asset root, and absolute paths are accepted. Automated runs must also supply
 
 Vectors encode as `[x,y]`, colors as `[r,g,b,a]`, and enums as their reflected
 label strings. Booleans, integers, floats, and strings retain their JSON types.
+Collision flags save as arrays of bit labels; see [project settings and flags](project.md).
 Saving emits complete writable property sets; hand-written sparse inputs gain
 defaults on their first save. Complete supported scenes round-trip exactly,
 including the shipped sandbox. Settings are game-owned and must be passed back

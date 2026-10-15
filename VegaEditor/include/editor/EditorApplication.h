@@ -7,6 +7,7 @@
 #include "editor/GameExporter.h"
 #include "editor/JsonDocument.h"
 #include <map>
+#include <framework/ProjectSettings.h>
 #include <gameFramework/GameApplication.h>
 
 namespace vega
@@ -50,11 +51,16 @@ namespace vega
 		void RequestScene(const std::string& action, const std::filesystem::path& path = {});
 		void FinishSceneRequest();
 		void BuildSceneDialogs();
+		void BuildProjectDialog();
 		void DrawCreateMenu();
 		void BeginRename();
 		nlohmann::json CaptureScene() const;
 
 		std::filesystem::path mScenePath;
+		bool mProjectDialogRequested = false;
+		ly::ProjectSettings mProjectDraft;
+		int mProjectWindowSize[2]{ 1920, 1080 };
+		std::string mProjectError;
 		nlohmann::json mSceneSettings = nlohmann::json::object();
 		std::uint64_t mSavedSceneRevision = 0;
 		std::string mWindowTitle;

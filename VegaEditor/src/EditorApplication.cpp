@@ -36,12 +36,15 @@ namespace vega
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
 		std::filesystem::path startupScene{ "scenes/sandbox.scene.json" };
+		std::string scriptPath;
+		bool scriptRequested = false;
 #ifdef _MSC_VER
 		for (int index = 1; index < __argc; ++index)
 		{
 			if (std::string{ __argv[index] } == "--editor-script")
 			{
-				mScript = std::make_unique<EditorScript>(index + 1 < __argc ? __argv[index + 1] : "", mExportLayout);
+				scriptRequested = true;
+				scriptPath = index + 1 < __argc ? __argv[index + 1] : "";
 				++index;
 			}
 			else if (std::string{ __argv[index] } == "--editor-scene" && index + 1 < __argc)
@@ -54,6 +57,8 @@ namespace vega
 			}
 		}
 #endif
+		mExportLayout.assetRoot = mDocument.Root();
+		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
 		mContext.document = &mDocument;
 		mContext.sceneDirty = [this]() { return SceneDirty(); };
 		mContext.sceneAction = [this](const std::string& action, const std::string& path)
@@ -220,6 +225,7 @@ namespace vega
 				}
 				ImGui::EndDisabled();
 				ImGui::Separator();
+				if (ImGui::MenuItem("Project Settings...")) mProjectDialogRequested = true;
 				if (ImGui::MenuItem("Export Game...")) mExportDialogRequested = true;
 				ImGui::Separator();
 				if (ImGui::MenuItem("Exit"))
@@ -338,6 +344,7 @@ namespace vega
 		BuildDataPanel();
 		BuildExportDialog();
 		BuildSceneDialogs();
+		BuildProjectDialog();
 	}
 
 	bool EditorApplication::HandleApplicationEvent(const sf::Event& event)

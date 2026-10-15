@@ -1,0 +1,23 @@
+# Every write goes to a disposable authoring root; the shipped project remains untouched.
+set(root "@CMAKE_CURRENT_BINARY_DIR@/export-test-assets")
+set(sourceProject "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/vega.project.json")
+file(SHA256 "${sourceProject}" before)
+file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
+configure_file("${sourceProject}" "${root}/vega.project.json" COPYONLY)
+execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+	"@CMAKE_CURRENT_BINARY_DIR@/scripts/export.vegascript" RESULT_VARIABLE result)
+file(SHA256 "${sourceProject}" after)
+if(NOT before STREQUAL after)
+	message(FATAL_ERROR "Export test modified the source project")
+endif()
+if(NOT result EQUAL 0)
+	message(FATAL_ERROR "VegaEditorExport failed: ${result}")
+endif()
+if(NOT EXISTS "@VEGA_EXPORT_TEST_DIR@/LightYears.exe")
+	message(FATAL_ERROR "Project-named executable missing")
+endif()
+file(READ "@VEGA_EXPORT_TEST_DIR@/LightYears.log" log)
+if(NOT log MATCHES "SceneLevel: scene-loaded scenes/export-startup.scene.json [(]play mode[)]" OR
+	NOT log MATCHES "SceneLevel: scene-loaded 1 entities [(]play mode[)]")
+	message(FATAL_ERROR "Export did not start the authored project scene")
+endif()
