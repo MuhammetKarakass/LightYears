@@ -131,6 +131,10 @@ int main()
 		const fs::path out = f.root / "build" / "export";
 		const auto result = vega::ExportGame(f.layout, Request(out));
 		Check(result.success, "Copy failed: " + result.error);
+		Check(result.configuration == vega::GameExportConfiguration::Debug, "Missing Release should select Debug");
+		Check(result.warning == "not portable: reads assets from the source tree", "Debug portability warning missing");
+		Check(vega::DescribeGameExport(result).find("Debug") != std::string::npos &&
+			vega::DescribeGameExport(result).find(result.warning) != std::string::npos, "Debug description omits configuration or warning");
 		Check(result.filesCopied == 6, "Expected 6 files, got " + std::to_string(result.filesCopied));
 		Check(result.bytes == f.expectedBytes, "Byte count mismatch");
 		Check(!result.smokeTestRan, "Smoke test ran although it was disabled");
@@ -188,6 +192,62 @@ int main()
 		const auto result = vega::ExportGame(f.layout, Request(out, true));
 		Check(!result.success, "Tampered manifest was accepted");
 		Check(ReadFile(f.root / "build" / "victim.txt") == "keep me", "File outside the export folder was deleted");
+	}
+
+	{
+		// Selection uses existence, with explicit choices taking precedence over the default.
+		Fixture f = MakeFixture(temp / "configuration");
+		f.layout.releaseGameBuildDir = f.root / "release";
+		auto request = Request(f.root / "build" / "missing-release");
+		request.configuration = vega::GameExportConfiguration::Release;
+		Check(!vega::ExportGame(f.layout, request).success, "Explicit missing Release silently fell back to Debug");
+		WriteFile(f.layout.releaseGameBuildDir / "LightYearsGame.exe", "release-exe");
+		WriteFile(f.layout.releaseGameBuildDir / "sfml-system-3.dll", "release-dll");
+		WriteFile(f.layout.releaseGameBuildDir / "assets" / "scripts" / "test.lua", "return {}");
+		WriteFile(f.layout.releaseGameBuildDir / "visual" / "pipeline.json", "release-visual");
+		const fs::path out = f.root / "build" / "automatic";
+		const auto release = vega::ExportGame(f.layout, Request(out));
+		Check(release.success && release.configuration == vega::GameExportConfiguration::Release, "Default did not choose existing Release");
+		Check(release.warning.empty(), "Release has a Debug warning");
+		Check(vega::DescribeGameExport(release).find("Release") != std::string::npos, "Release description omits configuration");
+		Check(ReadFile(out / "LightYearsGame.exe") == "release-exe", "Release executable not selected");
+		Check(ReadFile(out / "visual" / "pipeline.json") == "release-visual", "Release visual copy came from source tree");
+		Check(ReadFile(out / "assets" / "scripts" / "test.lua") == "return {}", "Release scripts not exported");
+		Check(Exists(out / "sfml-system-3.dll") && !Exists(out / "sfml-graphics-d-3.dll"), "Release DLL selection incorrect");
+		request = Request(f.root / "build" / "explicit-debug");
+		request.configuration = vega::GameExportConfiguration::Debug;
+		const auto debug = vega::ExportGame(f.layout, request);
+		Check(debug.success && debug.configuration == vega::GameExportConfiguration::Debug && !debug.warning.empty(), "Explicit Debug ignored");
+		Check(ReadFile(request.outputDir / "LightYearsGame.exe") == kExe, "Explicit Debug copied Release executable");
+		request = Request(f.root / "build" / "explicit-release");
+		request.configuration = vega::GameExportConfiguration::Release;
+		Check(vega::ExportGame(f.layout, request).success, "Explicit Release failed");
+	}
+
+	{
+		// Fake logs cover both Windows separators, case, other worktrees and unreadable logs.
+		const fs::path log = temp / "logs" / "LightYears.log";
+		const fs::path source = temp / "source-tree";
+		Check(!vega::CheckGameLogPortability(log, source).passed, "Missing portability log accepted");
+		WriteFile(log, "");
+		Check(!vega::CheckGameLogPortability(log, source).passed, "Empty portability log accepted");
+		WriteFile(log, "Loaded assets/scripts/test.lua\nVisual pipeline assets: visual\n");
+		Check(vega::CheckGameLogPortability(log, source).passed, "Portable relative paths refused");
+		WriteFile(log, "Loaded C:/portable/assets/test.png\n");
+		Check(vega::CheckGameLogPortability(log, source).passed, "Portable absolute path refused");
+		WriteFile(log, "Loaded " + source.generic_u8string() + "/assets/test.png\n");
+		Check(!vega::CheckGameLogPortability(log, source).passed, "Configured source tree not detected");
+		WriteFile(log, "Loaded D:/Vega/LightYearsGame/assets/test.png\n");
+		Check(!vega::CheckGameLogPortability(log, source).passed, "Other source worktree not detected");
+		WriteFile(log, "Loaded d:\\VEGA-ui\\LightYearsGame\\assets\\test.png\n");
+		const auto leaked = vega::CheckGameLogPortability(log, source);
+		Check(!leaked.passed && leaked.detail.find("line 1") != std::string::npos, "Backslash or mixed-case source path not detected");
+		const fs::path nestedLog = source / "build" / "export" / "LightYears.log";
+		WriteFile(nestedLog, "Loaded " + nestedLog.parent_path().generic_u8string() + "/assets/test.png\n");
+		Check(vega::CheckGameLogPortability(nestedLog, source).passed, "Export's copied assets under the build tree were refused");
+		WriteFile(nestedLog, "Loaded " + nestedLog.parent_path().generic_u8string() + "/assets/test.png\nLoaded " +
+			source.generic_u8string() + "/LightYearsGame/assets/test.png\n");
+		Check(!vega::CheckGameLogPortability(nestedLog, source).passed, "Valid export path hid a source-tree leak");
 	}
 
 	{

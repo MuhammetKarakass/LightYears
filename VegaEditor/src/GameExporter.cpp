@@ -168,22 +168,33 @@ namespace vega
 		bool copyStarted = false;
 		try
 		{
+			result.configuration = request.configuration;
+			if (result.configuration == GameExportConfiguration::Automatic)
+			{
+				result.configuration = !layout.releaseGameBuildDir.empty() &&
+					fs::is_regular_file(layout.releaseGameBuildDir / "LightYearsGame.exe")
+					? GameExportConfiguration::Release : GameExportConfiguration::Debug;
+			}
+			const bool release = result.configuration == GameExportConfiguration::Release;
+			if (!release) result.warning = "not portable: reads assets from the source tree";
+			const fs::path buildDir = release ? layout.releaseGameBuildDir : layout.gameBuildDir;
 			if (request.outputDir.empty()) throw std::runtime_error("No output folder");
-			if (!fs::is_regular_file(layout.gameBuildDir / "LightYearsGame.exe"))
+			if (buildDir.empty() || !fs::is_regular_file(buildDir / "LightYearsGame.exe"))
 			{
-				throw std::runtime_error("Game build not found: " + (layout.gameBuildDir / "LightYearsGame.exe").u8string());
+				throw std::runtime_error("Game build not found: " + (buildDir / "LightYearsGame.exe").u8string());
 			}
-			if (!fs::is_directory(layout.gameBuildDir / "assets"))
+			if (!fs::is_directory(buildDir / "assets"))
 			{
-				throw std::runtime_error("Game build has no assets folder: " + layout.gameBuildDir.u8string());
+				throw std::runtime_error("Game build has no assets folder: " + buildDir.u8string());
 			}
-			if (!fs::is_directory(layout.visualAssetsDir))
+			const fs::path visualAssets = release ? buildDir / "visual" : layout.visualAssetsDir;
+			if (!fs::is_directory(visualAssets))
 			{
-				throw std::runtime_error("Visual assets folder not found: " + layout.visualAssetsDir.u8string());
+				throw std::runtime_error("Visual assets folder not found: " + visualAssets.u8string());
 			}
 
-			const fs::path gameDir = Canonical(layout.gameBuildDir);
-			const fs::path visualDir = Canonical(layout.visualAssetsDir);
+			const fs::path gameDir = Canonical(buildDir);
+			const fs::path visualDir = Canonical(visualAssets);
 			const fs::path sourceRoot = layout.sourceTreeRoot.empty() ? fs::path{} : Canonical(layout.sourceTreeRoot);
 			const fs::path generatedRoot = layout.generatedRoot.empty() ? fs::path{} : Canonical(layout.generatedRoot);
 			outputDir = Canonical(request.outputDir);
@@ -256,7 +267,13 @@ namespace vega
 			// A log that was already there belongs to the user, so only a log the smoke run created is claimed.
 			std::error_code logError;
 			const bool logExisted = fs::exists(outputDir / kExportGameLogName, logError);
-			const GameSmokeTestResult smoke = RunGameSmokeTest(outputDir);
+			GameSmokeTestResult smoke = RunGameSmokeTest(outputDir);
+			if (smoke.passed && result.configuration == GameExportConfiguration::Release)
+			{
+				const auto portability = CheckGameLogPortability(outputDir / kExportGameLogName, layout.sourceTreeRoot);
+				if (!portability.passed) smoke = portability;
+				else smoke.detail += ", " + portability.detail;
+			}
 			result.smokeTestRan = true;
 			result.smokeTestPassed = smoke.passed;
 			result.smokeTestDetail = smoke.detail;
@@ -307,12 +324,14 @@ namespace vega
 		CloseHandle(process.hThread);
 
 		const DWORD waited = WaitForSingleObject(process.hProcess, timeoutMs);
-		if (waited == WAIT_TIMEOUT)
+		if (waited != WAIT_OBJECT_0)
 		{
 			TerminateProcess(process.hProcess, 1);
 			WaitForSingleObject(process.hProcess, 5000);
 			CloseHandle(process.hProcess);
-			result.detail = "Timed out after " + std::to_string(timeoutMs / 1000) + " s; the game was terminated";
+			result.detail = waited == WAIT_TIMEOUT
+				? "Timed out after " + std::to_string(timeoutMs / 1000) + " s; the game was terminated"
+				: "Cannot wait for the game; it was terminated";
 			return result;
 		}
 		DWORD exitCode = 1;
@@ -337,12 +356,47 @@ namespace vega
 		return result;
 	}
 
+	GameSmokeTestResult CheckGameLogPortability(const fs::path& log, const fs::path& sourceTreeRoot)
+	{
+		std::ifstream input{ log };
+		if (!input) return { false, "Cannot read game log for portability check" };
+		if (sourceTreeRoot.empty()) return { false, "No source tree root for portability check" };
+		// Runtime logs can contain either slash style and arbitrary drive/folder case.
+		auto normalize = [](std::string value)
+		{
+			std::replace(value.begin(), value.end(), '\\', '/');
+			return Lower(std::move(value));
+		};
+		const std::string root = normalize(Canonical(sourceTreeRoot).generic_u8string());
+		const std::string exportedRoot = normalize(Canonical(log.parent_path()).generic_u8string()) + "/";
+		std::size_t lineNumber = 0;
+		for (std::string line; std::getline(input, line);)
+		{
+			++lineNumber;
+			auto normalized = normalize(line);
+			// Integration exports live under build/ inside the repository. Their own copied assets are valid;
+			// only references outside the export to the original source tree indicate a portability leak.
+			for (auto position = normalized.find(exportedRoot); position != std::string::npos;
+				position = normalized.find(exportedRoot, position + 9))
+			{
+				normalized.replace(position, exportedRoot.size(), "<export>/");
+			}
+			if (normalized.find(root) != std::string::npos || normalized.find("d:/vega") != std::string::npos)
+				return { false, "Source-tree path in game log at line " + std::to_string(lineNumber) + ": " + line };
+		}
+		if (input.bad()) return { false, "Cannot read game log for portability check" };
+		if (lineNumber == 0) return { false, "Empty game log for portability check" };
+		return { true, "no source-tree paths in game log" };
+	}
+
 	std::string DescribeGameExport(const GameExportResult& result)
 	{
 		if (!result.success) return "Export failed: " + result.error;
 		std::ostringstream text;
-		text << "Exported " << result.filesCopied << " files, " << std::fixed << std::setprecision(1)
+		text << "Exported " << (result.configuration == GameExportConfiguration::Release ? "Release" : "Debug")
+			<< ": " << result.filesCopied << " files, " << std::fixed << std::setprecision(1)
 			<< static_cast<double>(result.bytes) / (1024.0 * 1024.0) << " MB";
+		if (!result.warning.empty()) text << ". Warning: " << result.warning;
 		if (!result.smokeTestRan) text << ". Smoke test not run";
 		else if (result.smokeTestPassed) text << ". Smoke test OK (" << result.smokeTestDetail << ")";
 		else text << ". Smoke test FAIL: " << result.smokeTestDetail;

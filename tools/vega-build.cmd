@@ -1,5 +1,5 @@
 @echo off
-rem Configures (first run) and builds <repo>\build as Debug with Ninja and MSVC 2022.
+rem Builds <repo>\build as Debug, or build-release with --release, using Ninja and MSVC 2022.
 rem Extra arguments go to "cmake --build", for example: tools\vega-build.cmd --target LightYearsGame
 rem
 rem First configure: when LY_DEPS_SEED (default D:\LightYears\build\_deps) holds already fetched dependency sources,
@@ -11,11 +11,21 @@ set VSLANG=1033
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul
 for %%I in ("%~dp0..") do set "REPO=%%~fI"
 if "%LY_DEPS_SEED%"=="" set "LY_DEPS_SEED=D:\LightYears\build\_deps"
-if not exist "%REPO%\build\build.ninja" (
+set "BUILD_DIR=%REPO%\build"
+set "BUILD_CONFIG=Debug"
+set "BUILD_ARGS=%*"
+if "%~1"=="--release" (
+  set "BUILD_DIR=%REPO%\build-release"
+  set "BUILD_CONFIG=Release"
+  set "BUILD_ARGS=!BUILD_ARGS:~9!"
+  rem Prefer this worktree's fetched sources for a separate Release build.
+  if exist "%REPO%\build\_deps\sfml-src" set "LY_DEPS_SEED=%REPO%\build\_deps"
+)
+if not exist "!BUILD_DIR!\build.ninja" (
   set "DISCONNECTED=OFF"
   if exist "%LY_DEPS_SEED%\sfml-src" (
-    for %%N in (box2d flac freetype harfbuzz json libssh2 mbedtls ogg sfml sheenbidi vorbis) do (
-      if not exist "%REPO%\build\_deps\%%N-src" robocopy "%LY_DEPS_SEED%\%%N-src" "%REPO%\build\_deps\%%N-src" /E /NFL /NDL /NJH /NJS /NP >nul
+    for %%N in (box2d flac freetype harfbuzz json libssh2 mbedtls ogg sfml sheenbidi vorbis imgui imgui-sfml lua sol2) do (
+      if exist "%LY_DEPS_SEED%\%%N-src" if not exist "!BUILD_DIR!\_deps\%%N-src" robocopy "%LY_DEPS_SEED%\%%N-src" "!BUILD_DIR!\_deps\%%N-src" /E /NFL /NDL /NJH /NJS /NP >nul
     )
     rem The editor's dependencies are not in the game's seed; fetch the same pinned archives VegaEditor/CMakeLists.txt names.
     call :fetch_zip imgui https://github.com/ocornut/imgui/archive/refs/tags/v1.91.6-docking.zip imgui-1.91.6-docking
@@ -29,20 +39,20 @@ if not exist "%REPO%\build\build.ninja" (
     if errorlevel 1 exit /b 1
     set "DISCONNECTED=ON"
   )
-  cmake -S "%REPO%" -B "%REPO%\build" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DFETCHCONTENT_FULLY_DISCONNECTED=!DISCONNECTED!
+  cmake -S "%REPO%" -B "!BUILD_DIR!" -G Ninja -DCMAKE_BUILD_TYPE=!BUILD_CONFIG! -DFETCHCONTENT_FULLY_DISCONNECTED=!DISCONNECTED!
   if errorlevel 1 exit /b 1
 )
-cmake --build "%REPO%\build" %*
+cmake --build "!BUILD_DIR!" !BUILD_ARGS!
 exit /b %errorlevel%
 
 rem :fetch_zip <name> <url> <top-level folder inside the zip>
 :fetch_zip
-if exist "%REPO%\build\_deps\%~1-src" exit /b 0
-set "FETCH_TMP=%REPO%\build\_deps\%~1-download"
+if exist "%BUILD_DIR%\_deps\%~1-src" exit /b 0
+set "FETCH_TMP=%BUILD_DIR%\_deps\%~1-download"
 if exist "%FETCH_TMP%" rmdir /s /q "%FETCH_TMP%"
 mkdir "%FETCH_TMP%"
 curl -sSL -o "%FETCH_TMP%\src.zip" "%~2" || exit /b 1
 tar -xf "%FETCH_TMP%\src.zip" -C "%FETCH_TMP%" || exit /b 1
-move "%FETCH_TMP%\%~3" "%REPO%\build\_deps\%~1-src" >nul || exit /b 1
+move "%FETCH_TMP%\%~3" "%BUILD_DIR%\_deps\%~1-src" >nul || exit /b 1
 rmdir /s /q "%FETCH_TMP%"
 exit /b 0
