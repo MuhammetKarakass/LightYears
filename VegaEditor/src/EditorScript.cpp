@@ -257,6 +257,15 @@ namespace vega
 		}
 		case ScriptOperation::ExpectMode: success = context.playMode == (command.text == "play"); break;
 		case ScriptOperation::ExpectSceneDirty: success = context.sceneDirty && context.sceneDirty() == (command.text == "true"); break;
+		case ScriptOperation::AddComponent:
+			if (actor) success = history.Execute(std::make_unique<AddComponentCommand>(actor->GetUniqueID(), command.text));
+			break;
+		case ScriptOperation::RemoveComponent:
+			if (actor) success = history.Execute(std::make_unique<RemoveComponentCommand>(actor->GetUniqueID(), ly::ComponentIdentity{ command.text, command.number }));
+			break;
+		case ScriptOperation::ExpectComponent:
+			if (actor) success = (ly::FindComponentByTypeOccurrence(*actor, { command.text, 0 }) != nullptr) == (command.property == "present");
+			break;
 		case ScriptOperation::AddScript:
 			if (actor && !context.playMode)
 			{

@@ -19,7 +19,7 @@ namespace ly
 	};
 
 	// Optional module extension. Scripts live in their own array and may add
-	// components; ordinary reflected components must already exist on the actor.
+	// components; ordinary reflected components opt into creation through an addable factory.
 	struct ComponentSerializer
 	{
 		std::string array = "scripts";

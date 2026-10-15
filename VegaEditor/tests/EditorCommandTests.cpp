@@ -3,6 +3,7 @@
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <framework/SpriteComponent.h>
+#include <framework/LightComponent.h>
 #include <iostream>
 #include <limits>
 #include <script/ScriptComponent.h>
@@ -21,6 +22,16 @@ namespace
 			if (prefixComponent) AddComponent<ly::SpriteComponent>();
 			AddComponent<ly::ActorComponent>();
 		}
+	};
+	class ComponentActor : public ly::Actor
+	{
+	public:
+		explicit ComponentActor(ly::World* world) : Actor{ world } { AddComponent<ly::SpriteComponent>(); }
+	};
+	class RequiredActor : public ComponentActor
+	{
+	public:
+		using ComponentActor::ComponentActor;
 	};
 	class ThrowingActor : public ly::Actor
 	{
@@ -325,6 +336,56 @@ namespace
 		Check(history.UndoCount() == undoCount, "Play must preserve history");
 	}
 
+	void TestComponentCommands()
+	{
+		using namespace ly;
+		using namespace vega;
+		reflect::Class<ComponentActor, Actor>("ComponentActor").Spawnable();
+		reflect::Class<RequiredActor, ComponentActor>("RequiredActor").Spawnable().RequiresComponent("SpriteComponent");
+		World world{ nullptr };
+		auto actor = world.SpawnActor<ComponentActor>().lock();
+		const auto guid = actor->AddComponent<SceneEntityComponent>("", "Component entity").guid;
+		EditorSelection selection;
+		EditorContext context{ &world, selection };
+		CommandHistory history{ context };
+		selection.Select(actor);
+		const auto before = SceneSerializer::SaveEntity(*actor);
+		Check(history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), std::nullopt, "Rotation", 15.f)), "Component test property setup failed");
+		Check(history.Execute(std::make_unique<AddComponentCommand>(actor->GetUniqueID(), "LightComponent")), "Add component command failed");
+		actor = std::dynamic_pointer_cast<ComponentActor>(context.ResolveGuid(guid));
+		Check(actor && actor->FindComponent<LightComponent>() && selection.Get() == actor, "Add must preserve GUID and selection");
+		const auto added = SceneSerializer::SaveEntity(*actor);
+		Check(history.Undo() && !context.ResolveGuid(guid)->FindComponent<LightComponent>(), "Add undo failed");
+		Check(history.Undo() && SceneSerializer::SaveEntity(*context.ResolveGuid(guid)) == before, "Earlier property undo must resolve recreated GUID");
+		Check(history.Redo() && history.Redo() && SceneSerializer::SaveEntity(*context.ResolveGuid(guid)) == added, "Add redo must restore exact JSON");
+		Check(history.Execute(std::make_unique<RemoveComponentCommand>(selection.Get()->GetUniqueID(), ComponentIdentity{ "SpriteComponent", 0 })), "Remove constructor component failed");
+		const auto removed = SceneSerializer::SaveEntity(*context.ResolveGuid(guid));
+		Check(!selection.Get()->FindComponent<SpriteComponent>() && removed["removed"] == nlohmann::json::array({ "SpriteComponent" }), "Constructor removal must persist in JSON");
+		Check(history.Undo() && SceneSerializer::SaveEntity(*selection.Get()) == added, "Remove undo must restore exact JSON");
+		Check(history.Redo() && SceneSerializer::SaveEntity(*selection.Get()) == removed, "Remove redo must restore exact JSON");
+		Check(history.Execute(std::make_unique<AddComponentCommand>(selection.Get()->GetUniqueID(), "LightComponent")), "Duplicate component addition failed");
+		Check(history.Execute(std::make_unique<RemoveComponentCommand>(selection.Get()->GetUniqueID(), ComponentIdentity{ "LightComponent", 1 })), "Removal must address a repeated component occurrence");
+		Check(history.Undo() && FindComponentByTypeOccurrence(*selection.Get(), { "LightComponent", 1 }), "Repeated component undo lost occurrence");
+		Check(history.Redo() && !FindComponentByTypeOccurrence(*selection.Get(), { "LightComponent", 1 }), "Repeated component redo failed");
+		const auto count = history.UndoCount();
+		const auto stable = SceneSerializer::SaveEntity(*selection.Get());
+		Check(!history.Execute(std::make_unique<AddComponentCommand>(selection.Get()->GetUniqueID(), "Missing")) &&
+			!history.Execute(std::make_unique<AddComponentCommand>(selection.Get()->GetUniqueID(), "ScriptComponent")) &&
+			!history.Execute(std::make_unique<RemoveComponentCommand>(selection.Get()->GetUniqueID(), ComponentIdentity{ "LightComponent", 9 })), "Invalid component operations must fail");
+		Check(history.UndoCount() == count && SceneSerializer::SaveEntity(*selection.Get()) == stable, "Failed component commands must not change entity or history");
+		context.playMode = true;
+		Check(!history.Execute(std::make_unique<AddComponentCommand>(selection.Get()->GetUniqueID(), "LightComponent")) &&
+			!history.Execute(std::make_unique<RemoveComponentCommand>(selection.Get()->GetUniqueID(), ComponentIdentity{ "LightComponent", 0 })), "Play must refuse component edits");
+		context.playMode = false;
+		const auto required = world.SpawnActor<RequiredActor>().lock();
+		required->AddComponent<SceneEntityComponent>();
+		Check(!history.Execute(std::make_unique<RemoveComponentCommand>(required->GetUniqueID(), ComponentIdentity{ "SpriteComponent", 0 })) && required->FindComponent<SpriteComponent>(), "Required component removal must fail without replacing actor");
+		// Editing another entity must preserve the current selection.
+		const auto selected = selection.Get();
+		Check(history.Execute(std::make_unique<AddComponentCommand>(required->GetUniqueID(), "LightComponent")) && selection.Get() == selected,
+			"Component editing must preserve an unrelated selection");
+	}
+
 	void TestActorCacheAndRevisions()
 	{
 		ly::World world{ nullptr };
@@ -405,6 +466,7 @@ int main()
 	TestSceneIdentity();
 	TestSceneScriptIdentity();
 	TestActorCacheAndRevisions();
+	TestComponentCommands();
 	if (failures) return 1;
 	std::cout << "Editor command tests passed\n";
 	return 0;

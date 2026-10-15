@@ -25,6 +25,7 @@ namespace vega
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
 		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera,
 		OpenJson, JsonSet, ExpectJson, JsonSave, JsonRevert, ExpectJsonDirty, Export, ExpectExportOk,
+		AddComponent, RemoveComponent, ExpectComponent,
 		AddScript, SetScriptProp, ExpectScriptProp, ExpectScriptError, WaitSeconds, RememberRotation, ExpectRotationChanged
 	};
 	struct EditorScriptCommand

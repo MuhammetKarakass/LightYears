@@ -180,6 +180,36 @@ namespace vega
 		nlohmann::json mEntity;
 	};
 
+	class ComponentCommand : public EditorCommand
+	{
+	public:
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		std::string Name() const override { return std::string{ mAdding ? "Add " : "Remove " } + mComponent.typeName; }
+	protected:
+		ComponentCommand(unsigned int id, ly::ComponentIdentity component, bool adding)
+			: mID{ id }, mComponent{ std::move(component) }, mAdding{ adding } {}
+	private:
+		bool Restore(EditorContext&, const nlohmann::json&);
+		unsigned int mID;
+		std::string mGuid;
+		ly::ComponentIdentity mComponent;
+		bool mAdding;
+		nlohmann::json mBefore;
+		nlohmann::json mAfter;
+	};
+
+	class AddComponentCommand final : public ComponentCommand
+	{
+	public:
+		AddComponentCommand(unsigned int id, std::string type) : ComponentCommand{ id, { std::move(type), 0 }, true } {}
+	};
+	class RemoveComponentCommand final : public ComponentCommand
+	{
+	public:
+		RemoveComponentCommand(unsigned int id, ly::ComponentIdentity component) : ComponentCommand{ id, std::move(component), false } {}
+	};
+
 	class CreateEntity final : public EditorCommand
 	{
 	public:

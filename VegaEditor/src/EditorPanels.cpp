@@ -285,6 +285,24 @@ namespace vega
 					if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
 					if (changed) RenameSceneEntity(mContext, mHistory, std::get<std::string>(value), mPropertyMergeGroup);
 				}
+				std::unique_ptr<EditorCommand> componentEdit;
+				static ImGuiTextFilter componentFilter;
+				if (ImGui::Button("Add Component"))
+				{
+					componentFilter.Clear();
+					ImGui::OpenPopup("Add Component");
+				}
+				if (ImGui::BeginPopup("Add Component"))
+				{
+					componentFilter.Draw("Search");
+					auto types = ly::reflect::TypeRegistry::Get().AddableComponents();
+					std::sort(types.begin(), types.end(), [](const auto* a, const auto* b) { return a->name < b->name; });
+					for (const auto* type : types)
+						if (componentFilter.PassFilter(type->name.c_str()) && ImGui::Selectable(type->name.c_str()))
+							componentEdit = std::make_unique<AddComponentCommand>(actor->GetUniqueID(), type->name);
+					ImGui::EndPopup();
+				}
+				ImGui::SameLine();
 				if (ImGui::Button("Add Script")) ImGui::OpenPopup("Add Script");
 				ImGui::SetItemTooltip("Attach a Lua script. Adding a script cannot be undone in this step.");
 				if (ImGui::BeginPopup("Add Script"))
@@ -311,7 +329,19 @@ namespace vega
 				{
 					if (!target.type) return;
 					ImGui::PushID(target.object);
-					if (ImGui::CollapsingHeader(target.type->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+					const bool open = ImGui::CollapsingHeader(target.type->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+					if (target.componentIdentity && ImGui::BeginPopupContextItem("Component actions"))
+					{
+						const auto* actorType = ly::reflect::TypeRegistry::Get().FindMostDerived(*actor);
+						const bool required = actorType && actorType->RequiresComponent(target.type->name);
+						const bool removable = target.type->removable && !required;
+						if (ImGui::MenuItem("Remove Component", nullptr, false, removable))
+							componentEdit = std::make_unique<RemoveComponentCommand>(actor->GetUniqueID(), *target.componentIdentity);
+						if (!removable && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+							ImGui::SetTooltip("%s", required ? "Required by this actor type." : "This component is constructor-owned and cannot be removed.");
+						ImGui::EndPopup();
+					}
+					if (open)
 					{
 						auto* scriptComponent = target.componentIdentity
 							? dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)) : nullptr;
@@ -401,6 +431,8 @@ namespace vega
 				if (ImGui::Button("Delete entity") && actor->FindComponent<ly::SceneEntityComponent>())
 					mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
 				ImGui::EndDisabled();
+				// Recreation invalidates the enumerated component pointers; apply after drawing.
+				if (componentEdit) mHistory.Execute(std::move(componentEdit));
 			}
 			else
 			{

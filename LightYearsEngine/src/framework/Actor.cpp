@@ -3,6 +3,7 @@
 #include "framework/MathUtility.h"
 #include "framework/LightComponent.h"
 #include "framework/SpriteComponent.h"
+#include "framework/reflection/Reflection.h"
 
 #include <algorithm>
 #include <cmath>
@@ -32,6 +33,32 @@ namespace ly
 		{
 			AddComponent<SpriteComponent>(TexturePath);
 		}
+	}
+
+	bool Actor::RemoveComponent(ActorComponent& component)
+	{
+		if (GetIsPendingDestroy()) return false;
+		const auto found = std::find_if(mComponents.begin(), mComponents.end(),
+			[&](const auto& owned) { return owned.get() == &component; });
+		if (found == mComponents.end()) return false;
+		const auto& registry = reflect::TypeRegistry::Get();
+		const auto* actorType = registry.FindMostDerived(*this);
+		const auto* componentType = registry.Find(typeid(component));
+		if (componentType && (!componentType->removable || (actorType && actorType->RequiresComponent(componentType->name)))) return false;
+		component.EndPlayInternal();
+		// Physics can be enabled before BeginPlay, including in the edit world.
+		if (auto* collision = dynamic_cast<CollisionComponent*>(&component)) collision->UnInitializePhysics();
+		// EndPlay may append components, invalidating vector iterators.
+		const auto removal = std::find_if(mComponents.begin(), mComponents.end(),
+			[&](const auto& owned) { return owned.get() == &component; });
+		if (removal == mComponents.end()) return false;
+		mComponents.erase(removal);
+		mSprite = nullptr;
+		mCollision = nullptr;
+		mLights = nullptr;
+		for (const auto& remaining : mComponents) CacheComponent(*remaining);
+		if (mOwningWorld) mOwningWorld->RefreshActorSpatialQuery(*this);
+		return true;
 	}
 
 	void Actor::CacheComponent(ActorComponent& component)
@@ -88,6 +115,14 @@ namespace ly
 			if (component.CanEverTick() && component.IsActive() && component.HasBegunPlay())
 			{
 				component.TickComponent(deltaTime);
+				// A callback may remove an earlier component. Continue after this
+				// component's new position instead of skipping the next survivor.
+				if (index >= mComponents.size() || mComponents[index].get() != &component)
+				{
+					const auto current = std::find_if(mComponents.begin(), mComponents.end(),
+						[&](const auto& owned) { return owned.get() == &component; });
+					index = static_cast<std::size_t>(std::distance(mComponents.begin(), current));
+				}
 			}
 		}
 	}

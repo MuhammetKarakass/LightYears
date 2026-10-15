@@ -186,6 +186,11 @@ namespace
 		void TickComponent(float) override
 		{
 			log->push_back(name + ".Tick");
+			if (removeOnTick)
+			{
+				GetOwner().RemoveComponent(*removeOnTick);
+				removeOnTick = nullptr;
+			}
 			if (spawnOnTick)
 			{
 				ly::Actor& owner = GetOwner();
@@ -198,6 +203,22 @@ namespace
 		EventLog* log;
 		std::string name;
 		bool spawnOnTick{ false };
+		ly::ActorComponent* removeOnTick = nullptr;
+	};
+
+	class RemovalLifetimeComponent : public ly::ActorComponent
+	{
+	public:
+		RemovalLifetimeComponent(ly::Actor& owner, EventLog& events) : ActorComponent{ owner }, mEvents{ events } {}
+		~RemovalLifetimeComponent() override { mEvents.push_back("Destroyed"); }
+		void EndPlay() override
+		{
+			mEvents.push_back(GetOwner().FindComponent<RemovalLifetimeComponent>() == this ? "EndPlay while owned" : "EndPlay after removal");
+			// EndPlay can append components and reallocate the owning vector.
+			for (int index = 0; index < 32; ++index) GetOwner().AddComponent<ly::ActorComponent>();
+		}
+	private:
+		EventLog& mEvents;
 	};
 
 	class ComponentProbeActor final : public ly::Actor
@@ -394,6 +415,60 @@ int main()
 	}
 
 	{
+		ly::World world{ nullptr };
+		EventLog events;
+		{
+			ComponentProbeActor actor{ &world, &events };
+			auto& first = actor.AddComponent<RecordingComponent>(&events, "First", true);
+			auto& remaining = actor.AddComponent<RecordingComponent>(&events, "Remaining", true);
+			actor.BeginPlayInternal();
+			events.clear();
+			if (!actor.RemoveComponent(first) || events != EventLog{ "First.EndPlay" } || actor.FindComponent<RecordingComponent>() != &remaining)
+				return Fail("Removal must EndPlay before deleting and leave remaining components intact");
+			actor.TickInternal(0.f);
+			if (events != EventLog{ "First.EndPlay", "Actor.Tick", "Remaining.Tick" })
+				return Fail("Removed component must never tick again");
+			actor.Destroy();
+			if (actor.RemoveComponent(remaining)) return Fail("Pending-destroy actor must refuse component removal");
+		}
+		if (events != EventLog{ "First.EndPlay", "Actor.Tick", "Remaining.Tick", "Remaining.EndPlay" })
+			return Fail("Removed component must not receive EndPlay a second time");
+		ComponentProbeActor neverBegun{ &world, &events };
+		auto& component = neverBegun.AddComponent<RecordingComponent>(&events, "Never", false);
+		events.clear();
+		if (!neverBegun.RemoveComponent(component) || !events.empty()) return Fail("Unbegun removal must not call EndPlay");
+		ly::Actor foreign{ &world };
+		auto& foreignComponent = foreign.AddComponent<ly::ActorComponent>();
+		if (neverBegun.RemoveComponent(foreignComponent)) return Fail("Removal must reject a different owner's component");
+	}
+
+	{
+		ly::World world{ nullptr };
+		EventLog events;
+		ly::Actor actor{ &world };
+		auto& component = actor.AddComponent<RemovalLifetimeComponent>(events);
+		actor.BeginPlayInternal();
+		if (!actor.RemoveComponent(component) || events != EventLog{ "EndPlay while owned", "Destroyed" })
+			return Fail("Removal must run EndPlay before destruction, even if EndPlay reallocates the component vector");
+		actor.Destroy();
+		if (events.size() != 2) return Fail("Removed component must not be ended/destroyed again");
+	}
+	{
+		ly::World world{ nullptr };
+		EventLog events;
+		ly::Actor actor{ &world };
+		auto& earlier = actor.AddComponent<RecordingComponent>(&events, "Earlier", false);
+		auto& current = actor.AddComponent<RecordingComponent>(&events, "Current", true);
+		actor.AddComponent<RecordingComponent>(&events, "Next", true);
+		actor.BeginPlayInternal();
+		events.clear();
+		current.removeOnTick = &earlier;
+		actor.TickInternal(0.f);
+		if (events != EventLog{ "Current.Tick", "Earlier.EndPlay", "Next.Tick" })
+			return Fail("Removing a different component during tick must not skip surviving ticks");
+	}
+
+	{
 		ly::World lightWorld{ nullptr };
 		ly::Actor actor{ &lightWorld };
 		actor.SetActorLocation({ 100.f, 50.f });
@@ -552,6 +627,36 @@ int main()
 			std::cout << "SKIP: no GL texture available, sprite transform checks skipped" << std::endl;
 		}
 
+		ly::Actor removable{ &spriteWorld, "sprite40x20.png" };
+		auto* firstSprite = removable.FindComponent<ly::SpriteComponent>();
+		auto& secondSprite = removable.AddComponent<ly::SpriteComponent>("sprite40x20.png");
+		if (!removable.RemoveComponent(*firstSprite)) return Fail("Sprite removal failed");
+		removable.SetActorLocation({ 15.f, 27.f });
+		if (secondSprite.HasSprite() && secondSprite.GetSprite()->getPosition() != removable.GetActorLocation())
+			return Fail("Sprite cache must select the next remaining sprite");
+		if (!removable.RemoveComponent(secondSprite)) return Fail("Last sprite removal failed");
+		removable.SetActorLocation({ 30.f, 40.f });
+		removable.SetActorRotation(10.f);
+		if (removable.GetActorGlobalBounds() != sf::FloatRect{ { 30.f, 40.f }, { 0.f, 0.f } } || removable.GetRenderBounds())
+			return Fail("Sprite-less actor must report point bounds and no render bounds after removal");
+		auto& collision = removable.AddComponent<ly::CollisionComponent>();
+		collision.SetCollisionLayer(CollisionLayer::Enemy);
+		auto& nextCollision = removable.AddComponent<ly::CollisionComponent>();
+		nextCollision.SetCollisionLayer(CollisionLayer::Player);
+		if (!removable.RemoveComponent(collision) || removable.GetCollisionLayer() != CollisionLayer::Player)
+			return Fail("Collision cache must select the remaining component");
+		if (!removable.RemoveComponent(nextCollision) || removable.GetCollisionLayer() != CollisionLayer::None || removable.HasPhysicsBody())
+			return Fail("Collision removal must clear cached physics accessors");
+		auto& light = removable.AddComponent<ly::LightComponent>();
+		auto& nextLight = removable.AddComponent<ly::LightComponent>();
+		const auto lightTag = nextLight.AddLight(ly::GameplayTag{ "Test.Removal" }, "", sf::Color::White, 1.f, { 20.f, 20.f }, {}, false, false, 0.f, 1.f);
+		nextLight.GetLightData(lightTag)->shader = std::make_shared<sf::Shader>();
+		if (!removable.RemoveComponent(light) || !removable.GetRenderBounds())
+			return Fail("Light cache must select the remaining component");
+		if (!removable.RemoveComponent(nextLight) || removable.FindComponent<ly::LightComponent>() || removable.GetRenderBounds())
+			return Fail("Light removal must clear the render cache");
+		sf::RenderTexture target{ { 32u, 32u } };
+		removable.Render(target);
 		assets.SetAssetRootDirectory(previousRoot);
 		std::error_code removeError;
 		std::filesystem::remove_all(textureDirectory, removeError);

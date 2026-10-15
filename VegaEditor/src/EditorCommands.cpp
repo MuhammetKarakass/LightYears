@@ -380,6 +380,69 @@ namespace vega
 			context.selection.Select(context.ResolveGuid(mGuid));
 	}
 
+	bool ComponentCommand::Restore(EditorContext& context, const nlohmann::json& entity)
+	{
+		if (!context.world || context.playMode || context.transitioning) return false;
+		const auto actor = context.Resolve(mID, mGuid);
+		if (!actor) return false;
+		// Load with a temporary identity so a failed factory/property cannot destroy
+		// the authored entity. Publish the original GUID only once loading succeeds.
+		auto stagedEntity = entity;
+		const auto temporaryGuid = ly::SceneEntityComponent::GenerateGuid();
+		stagedEntity["guid"] = temporaryGuid;
+		const auto result = ly::SceneSerializer::Load(*context.world, EntityScene(stagedEntity));
+		context.ResetActorCache();
+		const auto replacement = context.ResolveGuid(temporaryGuid);
+		if (result.spawned != 1 || !result.warnings.empty() || !replacement)
+		{
+			if (replacement) replacement->Destroy();
+			context.ResetActorCache();
+			return false;
+		}
+		const bool selected = context.selection.Get() == actor;
+		actor->Destroy();
+		replacement->FindComponent<ly::SceneEntityComponent>()->guid = mGuid;
+		context.ResetActorCache();
+		if (selected) context.selection.Select(replacement);
+		return true;
+	}
+
+	bool ComponentCommand::Execute(EditorContext& context)
+	{
+		if (!context.world || context.playMode || context.transitioning) return false;
+		const auto actor = context.Resolve(mID, mGuid);
+		if (!actor || mGuid.empty()) return false;
+		if (!mAfter.is_null()) return Restore(context, mAfter);
+		const auto* info = ly::reflect::TypeRegistry::Get().Find(mComponent.typeName);
+		if (!info || info->root != ly::reflect::TypeRoot::Component) return false;
+		if (mAdding ? !info->addComponent : !info->removable) return false;
+		mBefore = ly::SceneSerializer::SaveEntity(*actor);
+		if (mBefore.is_null()) return false;
+		// Stage the complete entity before replacing it. Factories and removal policy
+		// run in isolation, and history retains only JSON and the stable GUID.
+		ly::World scratch{ nullptr };
+		const auto loaded = ly::SceneSerializer::Load(scratch, EntityScene(mBefore));
+		if (loaded.spawned != 1 || !loaded.warnings.empty()) return false;
+		const auto staged = scratch.GetActorsByTypeIncludingPending<ly::Actor>().front().lock();
+		try
+		{
+			if (mAdding) info->addComponent(*staged);
+			else
+			{
+				auto* component = ly::FindComponentByTypeOccurrence(*staged, mComponent);
+				if (!component || !staged->RemoveComponent(*component)) return false;
+			}
+			mAfter = ly::SceneSerializer::SaveEntity(*staged);
+		}
+		catch (const std::exception&) { return false; }
+		return !mAfter.is_null() && Restore(context, mAfter);
+	}
+
+	void ComponentCommand::Undo(EditorContext& context)
+	{
+		if (!mBefore.is_null()) Restore(context, mBefore);
+	}
+
 	bool CreateEntity::Execute(EditorContext& context)
 	{
 		if (!context.world || context.playMode) return false;

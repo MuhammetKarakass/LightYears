@@ -4,6 +4,7 @@
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "framework/SpriteComponent.h"
+#include "framework/LightComponent.h"
 #include <iostream>
 #include <set>
 
@@ -39,6 +40,15 @@ namespace
 		Mode mode = Mode::Second;
 		int flags = 5;
 	};
+	class ReorderedActor : public ly::Actor
+	{
+	public:
+		explicit ReorderedActor(ly::World* world) : Actor{ world }
+		{
+			AddComponent<ly::SpriteComponent>();
+			AddComponent<ly::LightComponent>();
+		}
+	};
 	class FactoryActor : public ly::Actor
 	{
 	public:
@@ -62,7 +72,7 @@ int main()
 	using namespace ly;
 	using namespace ly::reflect;
 	RegisterEngineTypes();
-	Class<SceneTestComponent, ActorComponent>("SceneTestComponent")
+	Class<SceneTestComponent, ActorComponent>("SceneTestComponent").Addable()
 		.Property("Amount", [](const SceneTestComponent& c) { return c.amount; }, [](SceneTestComponent& c, float v) { c.amount = v; });
 	Class<SceneTestActor, Actor>("SceneTestActor").Spawnable()
 		.Property("Count", [](const SceneTestActor& a) { return a.count; }, [](SceneTestActor& a, int v) { a.count = v; })
@@ -146,6 +156,49 @@ int main()
 		enumWorld.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock()->mode != Mode::Unlabelled,
 		"An unlabelled enum integer must be rejected with a warning on load");
 	actor->mode = Mode::Second;
+	Class<ReorderedActor, Actor>("ReorderedActor").Spawnable();
+	World reorderWorld{ nullptr };
+	const auto reordered = reorderWorld.SpawnActor<ReorderedActor>().lock();
+	reordered->AddComponent<SceneEntityComponent>();
+	reordered->RemoveComponent(*reordered->FindComponent<SpriteComponent>());
+	reordered->AddComponent<SpriteComponent>().SetScale({ 3.f, 4.f });
+	const auto reorderedScene = SceneSerializer::Save(reorderWorld);
+	World reorderRoundTrip{ nullptr };
+	Check(SceneSerializer::Load(reorderRoundTrip, reorderedScene).warnings.empty() && SceneSerializer::Save(reorderRoundTrip) == reorderedScene,
+		"Remove-and-readd edits must save in stable constructor order");
+	// Compare constructor inventories by count, retaining occurrence properties.
+	World edited{ nullptr };
+	const auto editedActor = edited.SpawnActor<SceneTestActor>().lock();
+	editedActor->AddComponent<SceneEntityComponent>();
+	const auto* spriteInfo = TypeRegistry::Get().Find("SpriteComponent");
+	Check(spriteInfo->addComponent && spriteInfo->removable, "Addable reflection must supply factory and removal policy");
+	spriteInfo->addComponent(*editedActor);
+	Check(editedActor->RemoveComponent(*editedActor->FindComponent<SceneTestComponent>()), "Default component removal failed");
+	const auto editedScene = SceneSerializer::Save(edited);
+	Check(editedScene["entities"][0]["removed"] == Json::array({ "SceneTestComponent" }), "Missing constructor occurrence must save as removed");
+	Check(editedScene["entities"][0]["components"][1]["added"] == true, "Non-constructor component must save added marker");
+	World editedRoundTrip{ nullptr };
+	Check(SceneSerializer::Load(editedRoundTrip, editedScene).warnings.empty() && SceneSerializer::Save(editedRoundTrip) == editedScene,
+		"Added and removed components must round trip exactly");
+	const auto addedActor = editedRoundTrip.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock();
+	addedActor->AddComponent<SceneTestComponent>().amount = 72.f;
+	addedActor->AddComponent<SceneTestComponent>().amount = 99.f;
+	const auto duplicates = SceneSerializer::Save(editedRoundTrip);
+	World duplicateWorld{ nullptr };
+	Check(SceneSerializer::Load(duplicateWorld, duplicates).warnings.empty() && SceneSerializer::Save(duplicateWorld) == duplicates,
+		"Repeated added components must preserve occurrence properties");
+	Class<SceneTestActor, Actor>("SceneTestActor").RequiresComponent("SceneTestComponent");
+	Check(!editedActor->RemoveComponent(*editedActor->FindComponent<SceneTestComponent>()), "Required component removal must be refused by Actor");
+	auto refused = Entity("SceneTestActor");
+	refused["removed"] = Json::array({ "SceneTestComponent", "MissingType", "SceneEntityComponent" });
+	refused["components"] = Json::array({ { { "type", "MissingAddable" }, { "added", true } },
+		{ { "type", "ActorComponent" }, { "added", true } } });
+	World refusalWorld{ nullptr };
+	const auto refusalResult = SceneSerializer::Load(refusalWorld, Scene(Json::array({ refused })));
+	Check(refusalResult.spawned == 1 && refusalResult.warnings.size() == 5,
+		"Required/unknown removals and unknown/non-addable additions must warn and continue");
+	Check(refusalWorld.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock()->FindComponent<SceneTestComponent>() != nullptr,
+		"Required constructor component must survive malformed scene removal");
 	Class<SceneTestActor, Actor>("SceneTestActor")
 		.Property("Throwing", [](const SceneTestActor& a) { return a.count; },
 			[](SceneTestActor&, int) { throw std::runtime_error("scene setter refused"); });

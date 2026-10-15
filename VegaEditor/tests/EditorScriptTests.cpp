@@ -160,6 +160,14 @@ int main()
 		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid scripting command accepted");
 	Check(ParseEditorScriptLine("export \"out dir\" overwrite").command->overwrite, "Export overwrite flag lost");
 	Check(!ParseEditorScriptLine("export out").command->overwrite, "Export must not overwrite by default");
+	Check(ParseEditorScriptLine("add-component HealthComponent").command->operation == ScriptOperation::AddComponent, "Add component parsing failed");
+	Check(ParseEditorScriptLine("remove-component SpriteComponent").command->number == 0, "Default component occurrence must be zero");
+	Check(ParseEditorScriptLine("remove-component SpriteComponent 2").command->number == 2, "Component occurrence lost");
+	Check(ParseEditorScriptLine("expect-component HealthComponent present").command->property == "present", "Component presence lost");
+	Check(ParseEditorScriptLine("expect-component HealthComponent absent").command->property == "absent", "Component absence lost");
+	for (const char* line : { "add-component", "add-component \"\"", "add-component HealthComponent extra", "remove-component", "remove-component X -1",
+		"remove-component X 1x", "remove-component X 4294967296", "remove-component X 0 extra", "expect-component X", "expect-component X true", "expect-component X absent extra" })
+		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid component command accepted");
 	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;

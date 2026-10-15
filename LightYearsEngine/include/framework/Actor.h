@@ -153,6 +153,8 @@
 			return AddComponent<T>(std::forward<Args>(args)...);
 		}
 
+		// Do not remove a component from its own TickComponent callback.
+		bool RemoveComponent(ActorComponent& component);
 		void ForEachComponent(const std::function<void(ActorComponent&)>& visitor);
 		void ForEachComponent(const std::function<void(const ActorComponent&)>& visitor) const;
 

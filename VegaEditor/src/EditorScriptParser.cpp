@@ -62,6 +62,28 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "add-component" || verb == "remove-component" || verb == "expect-component")
+		{
+			if (tokens.size() < 2 || tokens[1].empty()) return bad();
+			command.text = tokens[1];
+			if (verb == "add-component")
+			{
+				if (tokens.size() != 2) return bad();
+				command.operation = ScriptOperation::AddComponent;
+			}
+			else if (verb == "remove-component")
+			{
+				if (tokens.size() > 3 || (tokens.size() == 3 && !integer(2, command.number))) return bad();
+				command.operation = ScriptOperation::RemoveComponent;
+			}
+			else
+			{
+				if (tokens.size() != 3 || (tokens[2] != "present" && tokens[2] != "absent")) return bad();
+				command.operation = ScriptOperation::ExpectComponent;
+				command.property = tokens[2];
+			}
+			return { command, {} };
+		}
 		if (verb == "create-many")
 		{
 			if (tokens.size() != 3 || tokens[1].empty() || !integer(2, command.number) || command.number > 10000) return bad();

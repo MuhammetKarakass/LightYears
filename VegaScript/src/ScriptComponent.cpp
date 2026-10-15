@@ -489,7 +489,7 @@ namespace vega::script
 	void RegisterScriptTypes()
 	{
 		ly::reflect::RegisterEngineTypes();
-		ly::reflect::Class<ScriptComponent, ly::ActorComponent>("ScriptComponent")
+		ly::reflect::Class<ScriptComponent, ly::ActorComponent>("ScriptComponent").Removable()
 			.Property("Script", [](const ScriptComponent& c) { return c.ScriptPath(); })
 			.Property("Last Error", [](const ScriptComponent& c) { return c.LastError(); });
 		ly::SceneSerializer::RegisterComponentSerializer("ScriptComponent", {

@@ -24,6 +24,33 @@ namespace ly
 			static std::map<std::string, SceneSerializer::SpawnFactory> factories;
 			return factories;
 		}
+		using ComponentCounts = std::map<std::string, std::size_t>;
+		struct ComponentInventory
+		{
+			ComponentCounts counts;
+			std::vector<std::string> order;
+		};
+		const ComponentInventory& ConstructorComponents(const TypeInfo& type)
+		{
+			static std::map<std::string, ComponentInventory> cache;
+			const auto existing = cache.find(type.name);
+			if (existing != cache.end()) return existing->second;
+			ComponentInventory inventory;
+			// Never begin or tick the throwaway actor: only constructor ownership matters.
+			World scratch{ nullptr };
+			if (type.create)
+				if (const auto actor = type.create(scratch))
+					actor->ForEachComponent([&](const ActorComponent& component)
+					{
+						const auto* info = TypeRegistry::Get().Find(typeid(component));
+						if (info && !dynamic_cast<const SceneEntityComponent*>(&component) && !ComponentSerializers().count(info->name))
+						{
+							++inventory.counts[info->name];
+							inventory.order.push_back(info->name);
+						}
+					});
+			return cache.emplace(type.name, std::move(inventory)).first->second;
+		}
 		Json Encode(const PropertyInfo& property, const PropertyValue& value)
 		{
 			if (property.kind == PropertyKind::Flags)
@@ -191,6 +218,10 @@ namespace ly
 		if (!identity || !type) return nullptr;
 		Json entity{ { "guid", identity->guid }, { "name", identity->name }, { "type", type->name },
 			{ "properties", SaveProperties(*type, &actor) }, { "components", Json::array() }, { "scripts", Json::array() } };
+		const auto& constructor = ConstructorComponents(*type);
+		ComponentCounts occurrences;
+		std::map<std::string, std::vector<Json>> defaults;
+		Json additions = Json::array();
 		actor.ForEachComponent([&](const ActorComponent& component)
 		{
 			if (dynamic_cast<const SceneEntityComponent*>(&component)) return;
@@ -206,8 +237,31 @@ namespace ly
 				return;
 			}
 			Json properties = SaveProperties(*componentType, &component);
-			if (!properties.empty()) entity["components"].push_back({ { "type", componentType->name }, { "properties", std::move(properties) } });
+			const auto occurrence = occurrences[componentType->name]++;
+			const auto baseline = constructor.counts.find(componentType->name);
+			const bool added = baseline == constructor.counts.end() || occurrence >= baseline->second;
+			Json data{ { "type", componentType->name }, { "properties", std::move(properties) } };
+			if (added)
+			{
+				data["added"] = true;
+				additions.push_back(std::move(data));
+			}
+			else defaults[componentType->name].push_back(std::move(data));
 		});
+		// Canonical constructor order also covers remove-and-readd edits: runtime
+		// insertion order must not change the serialized result after a reload.
+		ComponentCounts emitted;
+		for (const auto& componentName : constructor.order)
+		{
+			const auto occurrence = emitted[componentName]++;
+			const auto& entries = defaults[componentName];
+			if (occurrence < entries.size()) entity["components"].push_back(entries[occurrence]);
+		}
+		for (auto& addition : additions) entity["components"].push_back(std::move(addition));
+		Json removed = Json::array();
+		for (const auto& entry : constructor.counts)
+			for (auto count = occurrences[entry.first]; count < entry.second; ++count) removed.push_back(entry.first);
+		if (!removed.empty()) entity["removed"] = std::move(removed);
 		return entity;
 	}
 
@@ -261,6 +315,38 @@ namespace ly
 					identity.name = entityName;
 					guids.insert(guid);
 					++result.spawned;
+					if (entity.contains("removed"))
+					{
+						if (!entity["removed"].is_array()) result.warnings.push_back(name + ": removed must be an array");
+						else for (const auto& removed : entity["removed"])
+						{
+							if (!removed.is_string()) { result.warnings.push_back(name + ": removed type must be a string"); continue; }
+							const auto componentName = removed.get<std::string>();
+							const auto* info = TypeRegistry::Get().Find(componentName);
+							ActorComponent* found = nullptr;
+							actor->ForEachComponent([&](ActorComponent& component)
+							{
+								if (!found && info && TypeRegistry::Get().Find(typeid(component)) == info) found = &component;
+							});
+							if (!info || !info->removable || type->RequiresComponent(componentName) || !found || !actor->RemoveComponent(*found))
+								result.warnings.push_back(name + ": cannot remove unknown, required or unavailable component " + componentName);
+						}
+					}
+					// Create the complete component set before any property setter can query it.
+					if (entity.contains("components") && entity["components"].is_array())
+						for (const auto& data : entity["components"])
+						{
+							try
+							{
+								if (!data.value("added", false)) continue;
+								const auto componentName = data.at("type").get<std::string>();
+								const auto* info = TypeRegistry::Get().Find(componentName);
+								if (!info || !info->addComponent || ComponentSerializers().count(componentName))
+									result.warnings.push_back(name + ": unknown or non-addable component " + componentName);
+								else info->addComponent(*actor);
+							}
+							catch (const std::exception& error) { result.warnings.push_back(name + ": add component: " + error.what()); }
+						}
 					ApplyProperties(*type, actor.get(), properties, result);
 					if (entity.contains("components"))
 					{
@@ -271,6 +357,9 @@ namespace ly
 							try
 							{
 								const auto componentName = componentData.at("type").get<std::string>();
+								const auto* componentType = TypeRegistry::Get().Find(componentName);
+								if (componentData.value("added", false) &&
+									(!componentType || !componentType->addComponent || ComponentSerializers().count(componentName))) continue;
 								const auto occurrence = occurrences[componentName]++;
 								std::size_t matching = 0;
 								ActorComponent* found = nullptr;

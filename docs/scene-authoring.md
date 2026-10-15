@@ -68,11 +68,53 @@ defaults on their first save. Complete supported scenes round-trip exactly,
 including the shipped sandbox. Settings are game-owned and must be passed back
 to Save by its caller.
 
-Ordinary components are only updated if the constructor already supplies them;
-Load does not instantiate arbitrary reflected components. Components created
-only later during gameplay cannot be restored before BeginPlay and produce an
-unavailable-component warning if supplied. Scene identity is represented by the
-entity's `guid` and `name`, not by a duplicate entry in `components`.
+Component composition remains in version 1. Entries without `added` update
+constructor components, preserving old scene behavior. An entry with `"added": true`
+creates an instance through its reflected addable factory. Entity-level
+`"removed": ["TypeName", ...]` removes constructor components before any properties
+are applied. Unknown/non-addable additions and unknown, required, non-removable,
+or unavailable removals warn and are skipped. All added components are created
+before reflected properties are applied. Scene identity stays in `guid` and `name`.
+
+`SaveEntity` compares component counts against a freshly spawned actor in an
+unticked scratch `World{nullptr}`, cached once per actor type. Extra occurrences
+get `added`; missing occurrences produce `removed` (repeated names remove repeated
+occurrences). Component array order supplies each type's zero-based occurrence;
+writable properties preserve the surviving instances' state. Saving emits
+matching components in constructor order, then additions, so removing and
+re-adding a default type cannot change JSON order on reload. Empty `removed`
+arrays and false `added` markers are omitted.
+
+```json
+{
+	"guid": "a0000000000000000000000000000007",
+	"name": "Spinning star",
+	"type": "SpriteActor",
+	"removed": ["SpriteComponent"],
+	"components": [{
+		"type": "HealthComponent",
+		"added": true,
+		"properties": { "Active": true, "Max Health": 42 }
+	}]
+}
+```
+
+Reflection builders expose `.Addable()` for an `Actor&` constructor or
+`.Addable(factory)` for explicit defaults. Addable types are removable by default;
+`.Removable(false)` can opt out. Other types default to non-removable.
+`Class<T>::RequiresComponent("HealthComponent")` declares an inherited actor-type
+requirement, enforced by raw actor removal, scene loading, and editor commands.
+Requirements conservatively protect every occurrence of that component type.
+
+Sprite, Light, Collision, Health, Shield, and Energy are addable. Health starts
+at 100/100; Shield and Energy use their zero-capacity defaults. Collision needs
+only an owner and starts disabled; enabling physics still requires suitable
+actor geometry. Light starts empty; tagged light editing is outside this scalar
+property editor. Movement requires a ship definition; PlayerMovement assumes a
+PlayerSpaceShip owner. Both remain constructor-owned and non-removable. Ships
+require Health, Shield, Energy, and Movement; PlayerSpaceShip also requires
+PlayerMovement. Asteroid requires Health. Scripts use the separate `scripts`
+array and Add Script flow; their removal uses the same undoable component command.
 
 ## Game types
 
@@ -84,7 +126,7 @@ All four scene types inherit the writable Actor properties `Location`,
 | Asteroid | Writable `Velocity`; constructor defaults: velocity `[0,100]`, health 50, contact damage 20. Health maximum is writable through HealthComponent. Contact damage has no setter and stays at its constructor default. |
 | DummyEnemy | Writable string `Ship`, default `Ship.Enemy.RangeKeeper.Basic`. Construction only: changing it stores the requested catalog ID in SceneEntityComponent::spawnData; reload to rebuild the ship. |
 | PlayerStart | Writable string `Ship`, default `Ship.Player.Fighter.Basic`. No gameplay sprite or automatic player spawn. `IsEditorOnlyMarker()` identifies the editor-only triangle/Ship-label overlay. |
-| SpriteActor | Always owns SpriteComponent, with editable `Texture` and vector `Scale`. |
+| SpriteActor | Constructs a removable SpriteComponent, with editable `Texture` and vector `Scale`. |
 
 Reflected components also expose writable inherited `Active`. Explicit component
 properties override constructor defaults, including a dummy's selected ship
@@ -151,7 +193,16 @@ are evaluated during preparation; `on_create` runs only on BeginPlay and sees
 the authored overrides. Script properties support float, bool, string, and
 Vector2. Paths retain the existing relative `.lua` asset-root restriction.
 
-The editor opens scene data in Edit mode and uses isolated Play worlds. Arbitrary component creation and entity-reference remapping remain future work.
+The Inspector's Add Component popup filters addable types by name. Right-click a
+component header for Remove Component; required/non-removable types explain why
+removal is disabled. Both commands are Edit-only, capture entity JSON before and
+after the change, and recreate the same GUID on undo/redo while preserving
+selection. Older property commands continue resolving that GUID. Scripts retain
+their separate Add Script path. Entity-reference remapping remains future work.
+
+`VegaEditorComponents` runs a configured build-tree script and saves only to
+`components-temp.scene.json` in the build tree. It verifies added Health properties,
+constructor Sprite removal/undo, and loading the saved scene.
 
 ## Implementation files
 

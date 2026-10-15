@@ -25,7 +25,7 @@ namespace ly::reflect
 			.Property("Active", &ActorComponent::IsActive, &ActorComponent::SetActive).Category("Lifecycle")
 			.Property("Can Ever Tick", &ActorComponent::CanEverTick).Category("Lifecycle")
 			.Property("Has Begun Play", &ActorComponent::HasBegunPlay).Category("Lifecycle");
-		Class<SpriteComponent, ActorComponent>("SpriteComponent")
+		Class<SpriteComponent, ActorComponent>("SpriteComponent").Addable()
 			.Property("Has Sprite", &SpriteComponent::HasSprite).Category("Sprite")
 			.Property("Texture", &SpriteComponent::GetTexturePath,
 				[](SpriteComponent& sprite, const std::string& path)
@@ -37,11 +37,11 @@ namespace ly::reflect
 			.Property("Name", &SceneEntityComponent::GetName, &SceneEntityComponent::SetName).Category("Scene")
 			.Property("GUID", &SceneEntityComponent::GetGuid).Category("Scene");
 		// Light operations need a tag; Phase 1 reflects scalar object properties only.
-		Class<LightComponent, ActorComponent>("LightComponent");
+		Class<LightComponent, ActorComponent>("LightComponent").Addable();
 		EnumLabels collisionLabels;
 		const char* bits[]{ "Player", "PlayerBullet", "Enemy", "EnemyBullet", "Powerup", "Environment", "RelayProjectile", "FriendlySummon" };
 		for (int bit = 0; bit < 8; ++bit) collisionLabels.emplace_back(1 << bit, bits[bit]);
-		Class<CollisionComponent, ActorComponent>("CollisionComponent")
+		Class<CollisionComponent, ActorComponent>("CollisionComponent").Addable()
 			.Property("Physics Enabled", &CollisionComponent::IsPhysicsEnabled, &CollisionComponent::SetEnablePhysics).Category("Physics")
 			.Property("Has Physics Body", &CollisionComponent::HasPhysicsBody).Category("Physics")
 			.Property("Body Type", &CollisionComponent::GetPhysicsBodyType, &CollisionComponent::SetPhysicsBodyType).Category("Physics")

@@ -1,0 +1,16 @@
+open-scene scenes/sandbox.scene.json
+select-name Spinning star
+add-component HealthComponent
+set-prop HealthComponent "Max Health" 42
+save-scene @VEGA_COMPONENTS_SCENE@
+remove-component SpriteComponent
+expect-component SpriteComponent absent
+undo
+expect-component SpriteComponent present
+# Undo advances the edit revision. Save the restored entity before replacing the scene.
+save-scene @VEGA_COMPONENTS_SCENE@
+open-scene @VEGA_COMPONENTS_SCENE@
+select-name Spinning star
+expect-component HealthComponent present
+expect-prop HealthComponent "Max Health" 42
+quit

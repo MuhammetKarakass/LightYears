@@ -13,6 +13,9 @@ new-scene
 open-scene <path>
 save-scene [path]
 create <SpawnableType>
+add-component <Type>
+remove-component <Type> [occurrence=0]
+expect-component <Type> present|absent
 create-many <SpawnableType> <0..10000>
 delete
 duplicate
@@ -32,6 +35,15 @@ copies serialized entity data, selects the copy, generates a new GUID and adds
 32 world units on both axes. Create, duplicate, delete, rename, transforms,
 reflected properties and Lua property overrides share undo history. Delete undo
 recreates the same GUID; older edits resolve the recreated actor.
+
+Component addition and removal are Edit-only and undoable. Types must opt into
+an addable factory; scripts stay under `add-script`. Removal addresses the exact
+reflected type and zero-based occurrence, and refuses required/non-removable
+components. Presence assertions inspect the selected entity. Commands restore
+entity JSON with the same GUID and preserve selection across recreation.
+`VegaEditorComponents` runs the configured build-tree copy of
+`components.vegascript`, using only `@VEGA_COMPONENTS_SCENE@` for temporary saves.
+It saves again after undo because undo advances the scene's dirty revision.
 
 `play-mode` captures the edit world with SceneSerializer and loads a fresh Play
 world. `stop` discards gameplay state, restores the snapshot, editor camera and

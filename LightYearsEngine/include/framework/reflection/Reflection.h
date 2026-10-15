@@ -61,6 +61,14 @@ namespace ly::reflect
 		std::vector<PropertyInfo> properties;
 		std::function<std::shared_ptr<Actor>(World&)> create;
 		bool spawnable = false;
+		std::function<ActorComponent&(Actor&)> addComponent;
+		bool removable = false;
+		std::vector<std::string> requiredComponents;
+		bool RequiresComponent(const std::string& component) const
+		{
+			for (const auto& required : requiredComponents) if (required == component) return true;
+			return base && base->RequiresComponent(component);
+		}
 		std::vector<const PropertyInfo*> AllProperties() const;
 		const PropertyInfo* FindProperty(const std::string& propertyName) const;
 	};
@@ -80,6 +88,15 @@ namespace ly::reflect
 			std::vector<const TypeInfo*> result;
 			for (const auto& entry : mTypes)
 				if (entry.second->root == TypeRoot::Actor && entry.second->spawnable && entry.second->create)
+					result.push_back(entry.second.get());
+			return result;
+		}
+
+		std::vector<const TypeInfo*> AddableComponents() const
+		{
+			std::vector<const TypeInfo*> result;
+			for (const auto& entry : mTypes)
+				if (entry.second->root == TypeRoot::Component && entry.second->addComponent)
 					result.push_back(entry.second.get());
 			return result;
 		}
@@ -157,6 +174,25 @@ namespace ly::reflect
 		{
 			static_assert(std::is_constructible_v<T, World*>, "Provide a factory for actors with constructor arguments");
 			return Spawnable([](World& world) { return world.SpawnActor<T>().lock(); });
+		}
+		Class& Addable(std::function<ActorComponent&(Actor&)> factory)
+		{
+			static_assert(std::is_base_of_v<ActorComponent, T>, "Only components can be addable");
+			mType.addComponent = std::move(factory);
+			mType.removable = true;
+			return *this;
+		}
+		Class& Addable()
+		{
+			static_assert(std::is_constructible_v<T, Actor&>, "Provide a factory for component constructor arguments");
+			return Addable([](Actor& actor) -> ActorComponent& { return actor.AddComponent<T>(); });
+		}
+		Class& Removable(bool removable = true) { mType.removable = removable; return *this; }
+		Class& RequiresComponent(const std::string& component)
+		{
+			static_assert(std::is_base_of_v<Actor, T>, "Only actors can require components");
+			if (!mType.RequiresComponent(component)) mType.requiredComponents.push_back(component);
+			return *this;
 		}
 		Class& Speed(float speed) { Current().speed = speed; return *this; }
 		Class& Step(float step) { return Speed(step); }

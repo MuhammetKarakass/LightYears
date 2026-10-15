@@ -119,5 +119,28 @@ int main()
 	auto emptyLevel = std::make_shared<HeadlessSceneLevel>(nullptr, emptyScene);
 	emptyLevel->BeginPlayInternal();
 	Check(emptyLevel->Respawn().spawnLocation == sf::Vector2f{ 3000.f, 1500.f }, "No PlayerStart must use the arena default spot");
+	World componentWorld{ nullptr };
+	const auto componentActor = componentWorld.SpawnActor<SpriteActor>().lock();
+	componentActor->AddComponent<SceneEntityComponent>("", "Composition test");
+	for (const auto& name : { "HealthComponent", "ShieldComponent", "EnergyComponent", "LightComponent", "CollisionComponent" })
+	{
+		const auto* info = reflect::TypeRegistry::Get().Find(name);
+		Check(info && info->addComponent && info->removable, "Suitable components must be addable and removable");
+		info->addComponent(*componentActor);
+	}
+	componentActor->FindComponent<HealthComponent>()->SetMaxHealth(42.f);
+	Check(componentActor->RemoveComponent(*componentActor->FindComponent<SpriteComponent>()), "SpriteActor must support sprite removal");
+	const auto composition = SceneSerializer::Save(componentWorld);
+	World compositionRoundTrip{ nullptr };
+	Check(SceneSerializer::Load(compositionRoundTrip, composition).warnings.empty() && SceneSerializer::Save(compositionRoundTrip) == composition,
+		"Game addable components and removed sprite must round trip exactly");
+	for (const auto& name : { "MovementComponent", "PlayerMovementComponent", "ScriptComponent" })
+		Check(!reflect::TypeRegistry::Get().Find(name)->addComponent, "Owner-specific movement and scripts must not be generically addable");
+	const auto* dummyType = reflect::TypeRegistry::Get().Find("DummyEnemy");
+	for (const auto& name : { "HealthComponent", "ShieldComponent", "EnergyComponent", "MovementComponent" })
+		Check(dummyType->RequiresComponent(name), "Ships must inherit required core components");
+	Check(!dummy->RemoveComponent(dummy->GetHealthComponent()), "Ship health removal must be refused");
+	Check(!world.GetActorsByTypeIncludingPending<Asteroid>()[0].lock()->RemoveComponent(
+		*world.GetActorsByTypeIncludingPending<Asteroid>()[0].lock()->FindComponent<HealthComponent>()), "Asteroid health removal must be refused");
 	return failures ? 1 : 0;
 }

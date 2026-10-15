@@ -25,12 +25,15 @@ namespace ly
 		if (registered) return;
 		registered = true;
 		using reflect::Class;
-		Class<Asteroid, Actor>("Asteroid").Spawnable()
+		Class<SpaceShip, Actor>("SpaceShip")
+			.RequiresComponent("HealthComponent").RequiresComponent("ShieldComponent")
+			.RequiresComponent("EnergyComponent").RequiresComponent("MovementComponent");
+		Class<Asteroid, Actor>("Asteroid").Spawnable().RequiresComponent("HealthComponent")
 			.Property("Velocity", &Asteroid::GetAsteroidVelocity, &Asteroid::SetAsteroidVelocity).Category("Asteroid");
 		Class<PlayerStart, Actor>("PlayerStart").Spawnable()
 			.Property("Ship", &PlayerStart::GetShip, &PlayerStart::SetShip).Category("Player Start");
 		Class<SpriteActor, Actor>("SpriteActor").Spawnable();
-		Class<DummyEnemy, Actor>("DummyEnemy")
+		Class<DummyEnemy, SpaceShip>("DummyEnemy")
 			.Spawnable([](World& world)
 			{
 				const auto* ship = content::ShipContentCatalog::FindById("Ship.Enemy.RangeKeeper.Basic");
@@ -57,10 +60,11 @@ namespace ly
 		// Default arguments are not part of a member-function pointer. These
 		// adapters retain the existing default resource adjustment semantics.
 		Class<HealthComponent, ActorComponent>("HealthComponent")
+			.Addable([](Actor& actor) -> ActorComponent& { return actor.AddComponent<HealthComponent>(100.f, 100.f); })
 			.Property("Health", &HealthComponent::GetHealth).Category("Health")
 			.Property("Max Health", &HealthComponent::GetMaxHealth, [](HealthComponent& component, float value) { component.SetMaxHealth(value); })
 			.Range(1.f, 100000.f).Category("Health");
-		Class<ShieldComponent, ActorComponent>("ShieldComponent")
+		Class<ShieldComponent, ActorComponent>("ShieldComponent").Addable()
 			.Property("Shield", &ShieldComponent::GetShield).Category("Shield")
 			.Property("Max Shield", &ShieldComponent::GetMaxShield, [](ShieldComponent& component, float value) { component.SetMaxShield(value); }).Range(0.f, 100000.f).Category("Shield")
 			.Property("Recharge Delay", &ShieldComponent::GetRechargeDelay, &ShieldComponent::SetRechargeDelay).Range(0.f, 1000.f).Speed(0.1f).Category("Shield")
@@ -69,7 +73,7 @@ namespace ly
 			.Property("Front Shield", &ShieldComponent::GetFrontShield).Category("Shield")
 			.Property("Rear Shield", &ShieldComponent::GetRearShield).Category("Shield")
 			.Property("Passive Regen Blocked", &ShieldComponent::IsPassiveRegenBlocked).Category("Shield");
-		Class<EnergyComponent, ActorComponent>("EnergyComponent")
+		Class<EnergyComponent, ActorComponent>("EnergyComponent").Addable()
 			.Property("Energy", &EnergyComponent::GetEnergy).Category("Energy")
 			.Property("Max Energy", &EnergyComponent::GetMaxEnergy, [](EnergyComponent& component, float value) { component.SetMaxEnergy(value); }).Range(0.f, 100000.f).Category("Energy")
 			.Property("Recharge Delay", &EnergyComponent::GetRechargeDelay, &EnergyComponent::SetRechargeDelay).Range(0.f, 1000.f).Speed(0.1f).Category("Energy")
@@ -93,12 +97,13 @@ namespace ly
 			.Property("Speed Cap Multiplier", &PlayerMovementComponent::GetMovementSpeedCapMultiplier).Category("Player Movement")
 			.Property("Turn Capability Multiplier", &PlayerMovementComponent::GetMovementTurnCapabilityMultiplier).Category("Player Movement")
 			.Property("Afterburner Recharge Blocked", &PlayerMovementComponent::IsAfterburnerRechargeBlocked).Category("Player Movement");
-		Class<PlayerSpaceShip, Actor>("PlayerSpaceShip")
+		Class<PlayerSpaceShip, SpaceShip>("PlayerSpaceShip")
+			.RequiresComponent("PlayerMovementComponent")
 			.Property("Speed", &PlayerSpaceShip::GetSpeed, &PlayerSpaceShip::SetSpeed).Range(0.f, 100000.f).Category("Player")
 			.Property("Use Screen Clamp", &PlayerSpaceShip::GetUseScreenClamp, &PlayerSpaceShip::SetUseScreenClamp).Category("Player")
 			.Property("In Combat", &PlayerSpaceShip::IsInCombat).Category("Player")
 			.Property("Combat Window Remaining", &PlayerSpaceShip::GetCombatWindowRemaining).Category("Player");
-		Class<EnemyActor, Actor>("EnemyActor")
+		Class<EnemyActor, SpaceShip>("EnemyActor")
 			.Property("Enemy ID", &EnemyActor::GetEnemyId).Category("Enemy")
 			.Property("Combat Profile ID", &EnemyActor::GetCombatProfileId).Category("Enemy")
 			.Property("Enemy Level", &EnemyActor::GetEnemyLevel).Category("Enemy")

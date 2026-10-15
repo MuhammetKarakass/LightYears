@@ -248,6 +248,9 @@ int main()
 		{
 			return FailExit("SetEnablePhysics(false) left a physics body behind");
 		}
+		probe->SetEnablePhysics(true);
+		if (!probe->HasPhysicsBody() || !probe->RemoveComponent(*collision) || probe->HasPhysicsBody() || GetBodyFilter(physics, probe.get()).found)
+			return FailExit("Removing a collision component must release its live Box2D body");
 		physics.Step(0.f);
 	}
 
