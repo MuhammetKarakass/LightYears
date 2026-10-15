@@ -191,7 +191,8 @@ namespace vega
 		if (value.is_structured())
 		{
 			const auto title = label + " (" + std::to_string(value.size()) + (value.is_object() ? " keys)" : " items)");
-			if (ImGui::TreeNode(title.c_str()))
+			// The document root opens by default so its top-level keys are visible without an extra click.
+			if (ImGui::TreeNodeEx(title.c_str(), pointer.empty() ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 			{
 				for (auto it = value.begin(); it != value.end(); ++it)
 				{

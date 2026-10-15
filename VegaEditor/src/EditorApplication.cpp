@@ -22,6 +22,10 @@ namespace vega
 			throw std::runtime_error("Cannot initialize the editor UI");
 		}
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		// The default dock layout is built only when the saved layout is missing, so panels added later would open
+		// floating over an older layout. Versioning the file name rebuilds the default once; bump it whenever the
+		// default layout gains a panel.
+		ImGui::GetIO().IniFilename = "vega_editor_layout_v2.ini";
 		// Image clicks select actors; panel dragging belongs on the title/tab bars.
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
