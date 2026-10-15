@@ -276,6 +276,15 @@ namespace vega
 			}
 			break;
 		}
+		case ScriptOperation::Tool: context.viewSettings.tool = command.text == "move" ? EditorTool::Move : EditorTool::Rotate; success = true; break;
+		case ScriptOperation::Snap: context.viewSettings.snap = command.text == "on"; success = true; break;
+		case ScriptOperation::Grid: context.viewSettings.grid = command.text == "on"; success = true; break;
+		case ScriptOperation::Colliders: context.viewSettings.colliders = command.text == "on"; success = true; break;
+		case ScriptOperation::ContentView:
+			context.viewSettings.contentGrid = command.text == "grid";
+			context.viewSettings.requestContent = true;
+			success = true;
+			break;
 		case ScriptOperation::Pause: success = SetPaused{ true }.Execute(context); break;
 		case ScriptOperation::Camera: success = context.SetEditorCamera(command.text == "editor"); break;
 		case ScriptOperation::Focus: success = context.FocusSelection(); break;

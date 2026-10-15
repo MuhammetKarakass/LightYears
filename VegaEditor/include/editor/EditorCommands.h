@@ -2,6 +2,7 @@
 
 #include "editor/EditorSelection.h"
 #include "editor/EditorCamera.h"
+#include "editor/GizmoMath.h"
 #include <framework/Actor.h>
 #include <framework/reflection/Reflection.h>
 #include <cstdint>
@@ -18,6 +19,7 @@ namespace vega
 		EditorCamera* camera = nullptr;
 		std::optional<bool> cameraPaused;
 		JsonDocument* document = nullptr;
+		EditorViewSettings viewSettings;
 		void SyncCamera();
 		bool SetEditorCamera(bool enabled);
 		bool FocusSelection();
@@ -48,6 +50,8 @@ namespace vega
 		bool Redo();
 		bool CanUndo() const { return !mUndo.empty(); }
 		bool CanRedo() const { return !mRedo.empty(); }
+		std::size_t UndoCount() const { return mUndo.size(); }
+		std::size_t RedoCount() const { return mRedo.size(); }
 		std::string UndoName() const;
 		std::string RedoName() const;
 		void Clear();

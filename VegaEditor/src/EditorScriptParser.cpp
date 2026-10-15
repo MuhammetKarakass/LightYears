@@ -62,6 +62,27 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "tool" || verb == "snap" || verb == "grid" || verb == "colliders" || verb == "content-view")
+		{
+			if (tokens.size() != 2) return bad();
+			if (verb == "tool")
+			{
+				if (tokens[1] != "move" && tokens[1] != "rotate") return bad();
+				command.operation = ScriptOperation::Tool;
+			}
+			else if (verb == "content-view")
+			{
+				if (tokens[1] != "grid" && tokens[1] != "list") return bad();
+				command.operation = ScriptOperation::ContentView;
+			}
+			else
+			{
+				if (tokens[1] != "on" && tokens[1] != "off") return bad();
+				command.operation = verb == "snap" ? ScriptOperation::Snap : verb == "grid" ? ScriptOperation::Grid : ScriptOperation::Colliders;
+			}
+			command.text = tokens[1];
+			return { command, {} };
+		}
 		if (verb == "add-script" || verb == "expect-script-error")
 		{
 			if (tokens.size() != 2 || tokens[1].empty()) return bad();

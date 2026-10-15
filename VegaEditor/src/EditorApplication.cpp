@@ -1,4 +1,5 @@
 #include "editor/EditorApplication.h"
+#include "editor/EditorTheme.h"
 
 #include <framework/World.h>
 #include <framework/Actor.h>
@@ -22,10 +23,11 @@ namespace vega
 			throw std::runtime_error("Cannot initialize the editor UI");
 		}
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		ApplyEditorTheme();
 		// The default dock layout is built only when the saved layout is missing, so panels added later would open
 		// floating over an older layout. Versioning the file name rebuilds the default once; bump it whenever the
-		// default layout gains a panel.
-		ImGui::GetIO().IniFilename = "vega_editor_layout_v2.ini";
+		// default layout or its reserved toolbar/status area changes.
+		ImGui::GetIO().IniFilename = "vega_editor_layout_v3.ini";
 		// Image clicks select actors; panel dragging belongs on the title/tab bars.
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
@@ -61,6 +63,11 @@ namespace vega
 	void EditorApplication::Render()
 	{
 		ly::World* current = GetCurrentWorld();
+		if (mPauseAfterTick)
+		{
+			if (current) current->SetPaused(true);
+			mPauseAfterTick = false;
+		}
 		const std::optional<unsigned int> worldID = current ? std::optional<unsigned int>{ current->GetUniqueID() } : std::nullopt;
 		if (mWorldID != worldID)
 		{
@@ -84,6 +91,7 @@ namespace vega
 			mCamera.SetTextureSize(mViewport.GetSize());
 			mContext.SyncCamera();
 			world->Render(texture);
+			DrawWorldOverlays(texture, *world);
 			if (const auto actor = mSelection.Get())
 			{
 				if (actor->GetWorld() == world)
@@ -94,21 +102,12 @@ namespace vega
 					sf::RectangleShape outline{ bounds.size };
 					outline.setPosition(bounds.position);
 					outline.setFillColor(sf::Color::Transparent);
-					outline.setOutlineColor(sf::Color{ 74, 210, 255 });
+					outline.setOutlineColor(sf::Color{ 51, 199, 202 });
 					// Compensate for camera zoom to keep the outline two texture pixels wide.
 					const float viewPixels = static_cast<float>(texture.getSize().x) * worldView.getViewport().size.x;
 					outline.setOutlineThickness(viewPixels > 0.f ? 2.f * worldView.getSize().x / viewPixels : 2.f);
 					texture.setView(worldView);
 					texture.draw(outline);
-					if (world->IsPaused())
-					{
-						const float handleSize = outline.getOutlineThickness() * 4.f;
-						sf::RectangleShape handle{ { handleSize, handleSize } };
-						handle.setOrigin({ handleSize * 0.5f, handleSize * 0.5f });
-						handle.setPosition(bounds.position + bounds.size * 0.5f);
-						handle.setFillColor(sf::Color{ 74, 210, 255 });
-						texture.draw(handle);
-					}
 					texture.setView(previousView);
 				}
 				else
@@ -180,6 +179,9 @@ namespace vega
 				ImGui::MenuItem("Inspector", nullptr, &mShowInspector);
 				ImGui::MenuItem("Stats", nullptr, &mShowStats);
 				ImGui::MenuItem("Content", nullptr, &mShowContent);
+				ImGui::Separator();
+				ImGui::MenuItem("Grid overlay", nullptr, &mContext.viewSettings.grid);
+				ImGui::MenuItem("Collider overlay", nullptr, &mContext.viewSettings.colliders);
 				if (ImGui::MenuItem("Data Editor", nullptr, mShowData))
 				{
 					if (mShowData && mDocument.Dirty()) { mPendingClose = true; mConfirmDocument = true; }
@@ -191,6 +193,8 @@ namespace vega
 			}
 			ImGui::EndMainMenuBar();
 		}
+		BuildToolbar();
+		BuildStatusBar();
 		const ImGuiID dockspace = ImHashStr("VegaDockSpace");
 		const auto* viewport = static_cast<ImGuiViewportP*>(ImGui::GetMainViewport());
 		// WorkPos includes menu reservations from the previous frame. The build work
@@ -260,6 +264,12 @@ namespace vega
 		{
 			BuildStatsPanel();
 		}
+		if (mContext.viewSettings.requestContent)
+		{
+			mShowContent = true;
+			ImGui::SetNextWindowFocus();
+			mContext.viewSettings.requestContent = false;
+		}
 		if (mShowContent) BuildContentPanel();
 		BuildDataPanel();
 		BuildExportDialog();
@@ -317,7 +327,9 @@ namespace vega
 			return true;
 		}
 		const bool editorCamera = GetCurrentWorld() && GetCurrentWorld()->GetViewOverride().has_value();
-		if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>(); wheel && editorCamera && overImage)
+		if (const auto* key = event.getIf<sf::Event::KeyPressed>(); key && !io.WantTextInput &&
+			!key->control && (key->code == sf::Keyboard::Key::W || key->code == sf::Keyboard::Key::E)) return true;
+		if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>(); wheel && editorCamera && overImage && !mMoveDragActor)
 		{
 			const auto pixel = MapWindowToTexturePixel(mousePixel, mViewportImageRect, mViewport.GetSize());
 			mCamera.ZoomAt(std::pow(1.1f, -wheel->delta),
@@ -325,7 +337,7 @@ namespace vega
 			mContext.ApplyCamera();
 			return true;
 		}
-		if (const auto* button = event.getIf<sf::Event::MouseButtonPressed>(); button && editorCamera && overImage &&
+		if (const auto* button = event.getIf<sf::Event::MouseButtonPressed>(); button && editorCamera && overImage && !mMoveDragActor &&
 			(button->button == sf::Mouse::Button::Middle || button->button == sf::Mouse::Button::Right))
 		{
 			mCameraPanButton = button->button;
@@ -352,14 +364,18 @@ namespace vega
 			return true;
 		}
 		if (event.is<sf::Event::MouseMovedRaw>() && mCameraPanButton) return true;
-		if (event.is<sf::Event::FocusLost>()) mCameraPanButton.reset();
-		// Selection owns viewport left clicks only while paused. While playing,
-		// gameplay receives them and editor selection is available via Hierarchy.
+		if (event.is<sf::Event::FocusLost>())
+		{
+			mCameraPanButton.reset();
+			mMoveDragActor.reset();
+		}
+		// The paused or editor-camera viewport owns left clicks for selection and gizmos.
+		// The live game camera still passes clicks through to gameplay.
 		// Remember the press so its release is consumed even if the cursor leaves the image.
 		if (const auto* pressed = event.getIf<sf::Event::MouseButtonPressed>())
 		{
 			const ly::World* world = GetCurrentWorld();
-			if (pressed->button == sf::Mouse::Button::Left && world && world->IsPaused() &&
+			if (pressed->button == sf::Mouse::Button::Left && world && (world->IsPaused() || editorCamera) &&
 				overImage)
 			{
 				mConsumeSelectionClick = true;
