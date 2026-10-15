@@ -5,6 +5,7 @@
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include "level/ArenaTestLevel.h"
+#include "level/SceneLevel.h"
 #include "player/PlayerManager.h"
 #include "player/PlayerMovementComponent.h"
 #include "presentation/visual/GameVisualPipeline.h"
@@ -16,6 +17,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
+#include <limits>
 
 namespace ly
 {
@@ -47,7 +50,35 @@ namespace ly
 			}
 		}
 
-		LoadWorld<ArenaTestLevel>();
+		if (mDevOptions.scenePath.empty()) LoadWorld<ArenaTestLevel>();
+		else
+		{
+			try
+			{
+				std::filesystem::path path{ mDevOptions.scenePath };
+				if (path.is_relative()) path = std::filesystem::path{ getResourceDir() } / path;
+				std::ifstream input{ path };
+				if (!input) throw std::runtime_error("Cannot open scene: " + path.string());
+				nlohmann::json scene;
+				input >> scene;
+				LoadWorld<SceneLevel>(std::move(scene), [this](const nlohmann::json& settings)
+				{
+					if (settings.contains("routeStop"))
+					{
+						const auto& stop = settings["routeStop"];
+						if (!stop.is_number_integer() || stop.get<double>() < 0 || stop.get<double>() > std::numeric_limits<int>::max())
+							throw std::runtime_error("routeStop must be a nonnegative integer");
+						mVisualPipeline->SetRouteStopIndex(static_cast<std::size_t>(stop.get<int>()));
+					}
+				});
+			}
+			catch (const std::exception& error)
+			{
+				LY_GAME_ERROR("Scene: %s", error.what());
+				mExitCode = 1;
+				QuitApplication();
+			}
+		}
 	}
 
 	GameApplication::~GameApplication()
@@ -66,6 +97,7 @@ namespace ly
 			if (arg == "--visual-off") options.visualOff = true;
 			else if (arg == "--visual-script" && hasValue) options.colorScript = __argv[++i];
 			else if (arg == "--visual-capture" && hasValue) options.capturePath = __argv[++i];
+			else if (arg == "--scene" && hasValue) options.scenePath = __argv[++i];
 			else if (arg == "--capture-frames" && hasValue) options.captureFrames = std::max(1, std::atoi(__argv[++i]));
 			else if (arg == "--visual-player-hull" && hasValue) options.playerHull = std::clamp(static_cast<float>(std::atof(__argv[++i])), 0.f, 1.f);
 			else if (arg == "--visual-ship" && hasValue) options.shipIndex = std::atoi(__argv[++i]);

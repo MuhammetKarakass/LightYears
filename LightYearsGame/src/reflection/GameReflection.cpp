@@ -8,6 +8,13 @@
 #include "player/PlayerMovementComponent.h"
 #include "player/PlayerSpaceShip.h"
 #include "enemy/EnemyActor.h"
+#include "enemy/DummyEnemy.h"
+#include "environment/Asteroid.h"
+#include "level/PlayerStart.h"
+#include "level/SpriteActor.h"
+#include "gameplay/content/ShipContentCatalog.h"
+#include <framework/scene/Scene.h>
+#include <framework/scene/SceneEntityComponent.h>
 
 namespace ly
 {
@@ -18,6 +25,35 @@ namespace ly
 		if (registered) return;
 		registered = true;
 		using reflect::Class;
+		Class<Asteroid, Actor>("Asteroid").Spawnable()
+			.Property("Velocity", &Asteroid::GetAsteroidVelocity, &Asteroid::SetAsteroidVelocity).Category("Asteroid");
+		Class<PlayerStart, Actor>("PlayerStart").Spawnable()
+			.Property("Ship", &PlayerStart::GetShip, &PlayerStart::SetShip).Category("Player Start");
+		Class<SpriteActor, Actor>("SpriteActor").Spawnable();
+		Class<DummyEnemy, Actor>("DummyEnemy")
+			.Spawnable([](World& world)
+			{
+				const auto* ship = content::ShipContentCatalog::FindById("Ship.Enemy.RangeKeeper.Basic");
+				if (!ship) throw std::runtime_error("Default dummy ship is unavailable");
+				return world.SpawnActor<DummyEnemy>(*ship).lock();
+			})
+			.Property("Ship", [](const DummyEnemy& actor)
+			{
+				const auto* identity = actor.FindComponent<SceneEntityComponent>();
+				return identity ? identity->spawnData.value("Ship", std::string{ "Ship.Enemy.RangeKeeper.Basic" })
+					: std::string{ "Ship.Enemy.RangeKeeper.Basic" };
+			}, [](DummyEnemy& actor, const std::string& ship)
+			{
+				if (!content::ShipContentCatalog::FindById(ship)) throw std::runtime_error("Unknown dummy ship: " + ship);
+				actor.GetOrAddComponent<SceneEntityComponent>().spawnData["Ship"] = ship;
+			}).Category("Dummy").Tooltip("Construction only: reload the scene to apply a changed ship.");
+		SceneSerializer::RegisterSpawnFactory("DummyEnemy", [](World& world, const nlohmann::json& properties)
+		{
+			const auto id = properties.value("Ship", std::string{ "Ship.Enemy.RangeKeeper.Basic" });
+			const auto* ship = content::ShipContentCatalog::FindById(id);
+			if (!ship) throw std::runtime_error("Unknown dummy ship: " + id);
+			return world.SpawnActor<DummyEnemy>(*ship).lock();
+		});
 		// Default arguments are not part of a member-function pointer. These
 		// adapters retain the existing default resource adjustment semantics.
 		Class<HealthComponent, ActorComponent>("HealthComponent")

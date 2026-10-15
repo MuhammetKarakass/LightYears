@@ -2,6 +2,8 @@
 #include <script/ScriptRuntime.h>
 #include <framework/Actor.h>
 #include <framework/World.h>
+#include <framework/scene/Scene.h>
+#include <framework/scene/SceneEntityComponent.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -164,6 +166,7 @@ function on_destroy(self) assert(not self.actor:is_valid()) end
 	Check(!escape.LastError().empty(), "Asset root traversal accepted");
 
 	ly::reflect::Class<ReflectedActor, ly::Actor>("ReflectedActor")
+		.Spawnable()
 		.Property("Power", &ReflectedActor::GetPower, &ReflectedActor::SetPower);
 	auto derived = world.SpawnActor<ReflectedActor>().lock();
 	world.TickInternal(0.f);
@@ -193,6 +196,38 @@ function on_destroy(self) assert(not self.actor:is_valid()) end
 	reloadDestroy.Reload();
 	Check(reloadActor->GetIsPendingDestroy() && reloadDestroy.LastError().empty(), "Reload teardown must not call on_destroy twice");
 	hotActor->Destroy();
+	Write("staged.lua", R"(
+properties = { speed = 1, enabled = true, text = "default", offset = {x=0,y=0} }
+function on_create(self)
+	assert(self.props.speed == 27 and not self.props.enabled)
+	assert(self.props.text == "authored" and self.props.offset.x == 3 and self.props.offset.y == 4)
+	self.actor:set_rotation(self.props.speed)
+end
+)");
+	ly::World stagedWorld{ nullptr };
+	auto stagedActor = stagedWorld.SpawnActor<ReflectedActor>().lock();
+	stagedActor->AddComponent<ly::SceneEntityComponent>("", "Script round trip");
+	auto& staged = stagedActor->AddComponent<ScriptComponent>("staged.lua");
+	Check(staged.SetOverrides({ { "speed", 27.f }, { "enabled", false }, { "text", std::string{ "authored" } },
+		{ "offset", sf::Vector2f{ 3.f, 4.f } } }), "Could not stage pre-BeginPlay overrides");
+	Check(!staged.SetOverrides({ { "invalid", 5 } }), "Unsupported override type was accepted");
+	const auto scene = ly::SceneSerializer::Save(stagedWorld);
+	ly::World restoredWorld{ nullptr };
+	const auto restoredResult = ly::SceneSerializer::Load(restoredWorld, scene);
+	Check(restoredResult.spawned == 1 && restoredResult.warnings.empty(), "Script scene failed to load");
+	Check(ly::SceneSerializer::Save(restoredWorld) == scene, "Script scene round trip changed overrides");
+	const auto restoredActor = restoredWorld.GetActorsByTypeIncludingPending<ReflectedActor>()[0].lock();
+	Check(restoredActor->GetActorRotation() == 0.f, "Preparing declarations invoked on_create before promotion");
+	restoredWorld.TickInternal(0.f);
+	const auto* restoredScript = restoredActor->FindComponent<ScriptComponent>();
+	Check(restoredScript->LastError().empty() && restoredActor->GetActorRotation() == 27.f, "on_create did not see the staged overrides");
+	auto invalidScene = scene;
+	invalidScene["entities"][0]["scripts"][0]["properties"] = { { "missing", 3 }, { "speed", true } };
+	ly::World invalidWorld{ nullptr };
+	Check(ly::SceneSerializer::Load(invalidWorld, invalidScene).warnings.size() == 2, "Unknown/type-mismatched script overrides must warn");
+	invalidScene["entities"][0]["scripts"][0]["path"] = "../outside.lua";
+	ly::World invalidPathWorld{ nullptr };
+	Check(!ly::SceneSerializer::Load(invalidPathWorld, invalidScene).warnings.empty(), "Invalid script paths must warn during scene loading");
 	std::cout << "VegaScript component tests: " << failures << " failures\n";
 	return failures ? 1 : 0;
 }

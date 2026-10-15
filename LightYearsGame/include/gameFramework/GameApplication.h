@@ -14,6 +14,7 @@ namespace ly
 	public:
 		GameApplication();
 		~GameApplication() override;
+		int GetExitCode() const override { return mExitCode; }
 
 	protected:
 		bool HandleApplicationEvent(const sf::Event& event) override;
@@ -31,6 +32,7 @@ namespace ly
 			bool visualOff = false;
 			std::string colorScript = "nebula_teal_pink";
 			std::string capturePath;
+			std::string scenePath;
 			int captureFrames = 180;
 			float playerHull = -1.f;
 			int shipIndex = -1;
@@ -49,5 +51,6 @@ namespace ly
 		DevOptions mDevOptions;
 		std::unique_ptr<GameVisualPipeline> mVisualPipeline;
 		int mRenderedFrames = 0;
+		int mExitCode = 0;
 	};
 }

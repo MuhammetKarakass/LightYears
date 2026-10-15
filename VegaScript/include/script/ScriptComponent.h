@@ -19,10 +19,16 @@ namespace vega::script
 		void TickComponent(float deltaTime) override;
 		void EndPlay() override;
 		bool Reload() noexcept;
+		// Reads declarations without on_create/on_destroy; scene loading can
+		// validate overrides while the actor is still pending.
+		bool Prepare() noexcept;
 		const std::string& ScriptPath() const;
 		const std::string& LastError() const;
 		const ScriptProperties& Properties() const;
 		const ScriptProperties& Overrides() const;
+		// Stages overrides before BeginPlay without executing the script. Loading
+		// validates names/types against its declarations before on_create runs.
+		bool SetOverrides(const ScriptProperties& values) noexcept;
 		bool SetProperty(const std::string& name, const ly::reflect::PropertyValue& value) noexcept;
 		bool ClearOverride(const std::string& name) noexcept;
 	private:

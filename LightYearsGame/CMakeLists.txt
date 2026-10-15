@@ -160,6 +160,11 @@ if(BUILD_TESTING)
 	set(LY_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 	set(LY_E2E ${LIGHT_YEARS_E2E_ARTIFACT_DIR})
 
+	ly_add_game_test(LightYearsSceneSandboxTests GAME PROJECT_DIR
+		SOURCES ${LY_TESTS_DIR}/SceneSandboxTests.cpp LIBS VegaScript)
+	target_compile_definitions(LightYearsSceneSandboxTests PRIVATE SCENE_TEST_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}")
+	ly_add_game_test_case(LightYearsSceneSandbox LightYearsSceneSandboxTests)
+
 	ly_add_game_test(LightYearsContentTests
 		SOURCES ${LY_TESTS_DIR}/ContentLoaderTests.cpp
 		INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src

@@ -3,6 +3,7 @@
 #include <framework/Actor.h>
 #include <framework/World.h>
 #include <framework/debug/Log.h>
+#include <framework/scene/Scene.h>
 #include <sol/sol.hpp>
 #include <chrono>
 #include <cmath>
@@ -269,7 +270,7 @@ namespace vega::script
 			props = lua.create_table();
 			self = lua.create_table_with("actor", handle, "props", props);
 		}
-		bool Load(sol::state& lua)
+		bool Load(sol::state& lua, bool start = true)
 		{
 			if (ended) return false;
 			nextPoll = Clock::now() + std::chrono::milliseconds(500);
@@ -311,8 +312,8 @@ namespace vega::script
 				if (override != overrides.end() && override->second.index() == entry.second.index()) entry.second = override->second;
 				props[entry.first] = ToLua(lua, entry.second);
 			}
-			running = true;
-			Call("on_create");
+			running = start;
+			if (start) Call("on_create");
 			return error.empty();
 		}
 	};
@@ -329,6 +330,45 @@ namespace vega::script
 	const std::string& ScriptComponent::LastError() const { return mImpl->error; }
 	const ScriptProperties& ScriptComponent::Properties() const { return mImpl->properties; }
 	const ScriptProperties& ScriptComponent::Overrides() const { return mImpl->overrides; }
+	bool ScriptComponent::Prepare() noexcept
+	{
+		if (HasBegunPlay()) return false;
+		try { return mImpl->Load(ScriptRuntime::Get().mImpl->lua, false); }
+		catch (const std::exception& error) { mImpl->Fail(error.what()); return false; }
+		catch (...) { mImpl->Fail("Unknown script preparation error"); return false; }
+	}
+	bool ScriptComponent::SetOverrides(const ScriptProperties& values) noexcept
+	{
+		try
+		{
+			for (const auto& entry : values)
+			{
+				const auto& value = entry.second;
+				if (!std::holds_alternative<float>(value) && !std::holds_alternative<bool>(value) &&
+					!std::holds_alternative<std::string>(value) && !std::holds_alternative<sf::Vector2f>(value)) return false;
+				if (const auto* number = std::get_if<float>(&value); number && !std::isfinite(*number)) return false;
+				if (const auto* vector = std::get_if<sf::Vector2f>(&value); vector && (!std::isfinite(vector->x) || !std::isfinite(vector->y))) return false;
+				if (HasBegunPlay())
+				{
+					const auto declared = mImpl->defaults.find(entry.first);
+					if (declared == mImpl->defaults.end() || declared->second.index() != value.index()) return false;
+				}
+			}
+			mImpl->overrides = values;
+			if (HasBegunPlay())
+			{
+				mImpl->properties = mImpl->defaults;
+				for (auto& entry : mImpl->properties)
+				{
+					const auto override = values.find(entry.first);
+					if (override != values.end()) entry.second = override->second;
+					mImpl->props[entry.first] = ToLua(ScriptRuntime::Get().mImpl->lua, entry.second);
+				}
+			}
+			return true;
+		}
+		catch (...) { return false; }
+	}
 	bool ScriptComponent::Reload() noexcept
 	{
 		try { return mImpl->Load(ScriptRuntime::Get().mImpl->lua); }
@@ -395,5 +435,49 @@ namespace vega::script
 		ly::reflect::Class<ScriptComponent, ly::ActorComponent>("ScriptComponent")
 			.Property("Script", [](const ScriptComponent& c) { return c.ScriptPath(); })
 			.Property("Last Error", [](const ScriptComponent& c) { return c.LastError(); });
+		ly::SceneSerializer::RegisterComponentSerializer("ScriptComponent", {
+			"scripts",
+			[](const ly::ActorComponent& base)
+			{
+				const auto& component = dynamic_cast<const ScriptComponent&>(base);
+				nlohmann::json properties = nlohmann::json::object();
+				for (const auto& entry : component.Overrides())
+					properties[entry.first] = std::visit([](const auto& value) -> nlohmann::json
+					{
+						using T = std::decay_t<decltype(value)>;
+						if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ value.x, value.y });
+						else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
+						else return value;
+					}, entry.second);
+				return nlohmann::json{ { "path", component.ScriptPath() }, { "properties", std::move(properties) } };
+			},
+			[](ly::Actor& actor, const nlohmann::json& data, ly::SceneLoadResult& result)
+			{
+				const auto path = data.at("path").get<std::string>();
+				const auto& properties = data.at("properties");
+				if (!properties.is_object()) throw std::runtime_error("Script properties must be an object");
+				auto& component = actor.AddComponent<ScriptComponent>(path);
+				if (!component.Prepare())
+				{
+					result.warnings.push_back(component.LastError());
+					return;
+				}
+				ScriptProperties overrides;
+				for (const auto& entry : properties.items())
+				{
+					const auto& value = entry.value();
+					if (value.is_boolean()) overrides[entry.key()] = value.get<bool>();
+					else if (value.is_string()) overrides[entry.key()] = value.get<std::string>();
+					else if (value.is_number() && std::isfinite(value.get<float>())) overrides[entry.key()] = value.get<float>();
+					else if (value.is_array() && value.size() == 2 && value[0].is_number() && value[1].is_number() &&
+						std::isfinite(value[0].get<float>()) && std::isfinite(value[1].get<float>()))
+						overrides[entry.key()] = sf::Vector2f{ value[0].get<float>(), value[1].get<float>() };
+					else result.warnings.push_back(path + "." + entry.key() + ": unsupported script override");
+				}
+				for (const auto& entry : overrides)
+					if (!component.SetProperty(entry.first, entry.second))
+						result.warnings.push_back(path + "." + entry.first + ": unknown property or incompatible override");
+			}
+		});
 	}
 }

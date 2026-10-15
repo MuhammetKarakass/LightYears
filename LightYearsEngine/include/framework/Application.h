@@ -4,6 +4,7 @@
 #include "framework/TimerManager.h"
 #include "framework/FramePacer.h"
 #include "framework/RenderViewport.h"
+#include <utility>
 
 namespace ly
 {
@@ -43,8 +44,8 @@ namespace ly
 		WorldRenderPipeline* GetWorldRenderPipeline() const { return mRenderPipeline; }
 		void SetWorldRenderPipeline(WorldRenderPipeline* pipeline) { mRenderPipeline = pipeline; }
 
-		template<typename WorldType>
-		weak_ptr<WorldType> LoadWorld();
+		template<typename WorldType, typename... Args>
+		weak_ptr<WorldType> LoadWorld(Args&&... args);
 
 		// The world that ticks and renders this frame; a LoadWorld request appears here from the next frame.
 		World* GetCurrentWorld() const { return mCurrentWorld.get(); }
@@ -83,11 +84,11 @@ namespace ly
 
 	};
 
-	template<typename WorldType>
-	weak_ptr<WorldType> Application::LoadWorld()
+	template<typename WorldType, typename... Args>
+	weak_ptr<WorldType> Application::LoadWorld(Args&&... args)
 	{
 
-        auto newWorld = std::make_shared<WorldType>(this);
+        auto newWorld = std::make_shared<WorldType>(this, std::forward<Args>(args)...);
         mPendingWorld = newWorld;
         return newWorld;
            

@@ -4,6 +4,7 @@
 #include "framework/LightComponent.h"
 #include "framework/CollisionComponent.h"
 #include "framework/SoundComponent.h"
+#include "framework/scene/SceneEntityComponent.h"
 
 namespace ly::reflect
 {
@@ -25,7 +26,16 @@ namespace ly::reflect
 			.Property("Can Ever Tick", &ActorComponent::CanEverTick).Category("Lifecycle")
 			.Property("Has Begun Play", &ActorComponent::HasBegunPlay).Category("Lifecycle");
 		Class<SpriteComponent, ActorComponent>("SpriteComponent")
-			.Property("Has Sprite", &SpriteComponent::HasSprite).Category("Sprite");
+			.Property("Has Sprite", &SpriteComponent::HasSprite).Category("Sprite")
+			.Property("Texture", &SpriteComponent::GetTexturePath,
+				[](SpriteComponent& sprite, const std::string& path)
+				{
+					if (!path.empty() && !sprite.SetTexture(path)) throw std::runtime_error("Cannot load texture: " + path);
+				}).Category("Sprite")
+			.Property("Scale", &SpriteComponent::GetScale, &SpriteComponent::SetScale).Category("Sprite");
+		Class<SceneEntityComponent, ActorComponent>("SceneEntityComponent")
+			.Property("Name", &SceneEntityComponent::GetName, &SceneEntityComponent::SetName).Category("Scene")
+			.Property("GUID", &SceneEntityComponent::GetGuid).Category("Scene");
 		// Light operations need a tag; Phase 1 reflects scalar object properties only.
 		Class<LightComponent, ActorComponent>("LightComponent");
 		EnumLabels collisionLabels;

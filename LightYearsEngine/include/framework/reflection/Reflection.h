@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
+#include "framework/World.h"
 #include <functional>
 #include <memory>
 #include <optional>
@@ -47,6 +48,8 @@ namespace ly::reflect
 		TypeRoot root = TypeRoot::Other;
 		std::function<bool(const void*)> isInstance;
 		std::vector<PropertyInfo> properties;
+		std::function<std::shared_ptr<Actor>(World&)> create;
+		bool spawnable = false;
 		std::vector<const PropertyInfo*> AllProperties() const;
 		const PropertyInfo* FindProperty(const std::string& propertyName) const;
 	};
@@ -124,6 +127,18 @@ namespace ly::reflect
 		}
 
 		Class& Range(float min, float max) { Current().min = min; Current().max = max; return *this; }
+		Class& Spawnable(std::function<std::shared_ptr<Actor>(World&)> factory)
+		{
+			static_assert(std::is_base_of_v<Actor, T>, "Only actors can be spawnable");
+			mType.create = std::move(factory);
+			mType.spawnable = static_cast<bool>(mType.create);
+			return *this;
+		}
+		Class& Spawnable()
+		{
+			static_assert(std::is_constructible_v<T, World*>, "Provide a factory for actors with constructor arguments");
+			return Spawnable([](World& world) { return world.SpawnActor<T>().lock(); });
+		}
 		Class& Speed(float speed) { Current().speed = speed; return *this; }
 		Class& Step(float step) { return Speed(step); }
 		Class& Tooltip(const std::string& tooltip) { Current().tooltip = tooltip; return *this; }

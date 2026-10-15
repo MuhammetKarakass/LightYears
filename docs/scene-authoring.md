@@ -1,0 +1,155 @@
+# Scene data
+
+`LightYearsGame/assets/scenes/sandbox.scene.json` is a runnable version 1
+`vega.scene` example. It contains one PlayerStart, three DummyEnemy actors,
+two Asteroid actors, and a SpriteActor with `scripts/spin.lua` and a `speed`
+override of 45 degrees per second.
+
+```json
+{
+	"format": "vega.scene",
+	"version": 1,
+	"settings": { "routeStop": 0, "playerShip": "Ship.Player.Fighter.Basic" },
+	"entities": [{
+		"guid": "a0000000000000000000000000000007",
+		"name": "Spinning star",
+		"type": "SpriteActor",
+		"properties": { "Location": [960, 950] },
+		"components": [{
+			"type": "SpriteComponent",
+			"properties": {
+				"Texture": "SpaceShooterRedux/PNG/Effects/star3.png",
+				"Scale": [3, 3]
+			}
+		}],
+		"scripts": [{ "path": "scripts/spin.lua", "properties": { "speed": 45 } }]
+	}]
+}
+```
+
+Run with `--scene scenes/sandbox.scene.json`; relative paths resolve against the
+asset root, and absolute paths are accepted. Automated runs must also supply
+`--visual-capture <png> --capture-frames 120` (or use the editor's script runner).
+
+## Engine API
+
+* `reflect::Class<T>::Spawnable()` uses `World::SpawnActor<T>()` when `T` accepts
+  `World*`. `Spawnable(factory)` accepts a custom `shared_ptr<Actor>(World&)`
+  factory. `TypeInfo::spawnable` and `TypeInfo::create` expose the opt-in.
+* `SceneEntityComponent` stores the stable 32-digit random hex GUID, editable
+  name, and construction-only `spawnData`. Reflection exposes writable `Name`
+  and read-only `GUID`. Non-scene actors need no identity component.
+* `SceneSerializer::Save(World&, settings)` returns JSON for live scene actors,
+  including pending actors and excluding actors pending destruction. Writable
+  properties are reflected; runtime IDs and read-only values are omitted.
+* `SceneSerializer::Load(World&, json)` appends pending entities and returns
+  `SceneLoadResult { spawned, warnings }`. It never ticks the world. Missing
+  GUIDs are generated; duplicate GUIDs are rejected, including collisions with
+  entities already in the destination world. Invalid entities/properties warn
+  and do not stop subsequent entities/properties from loading.
+* `RegisterComponentSerializer(typeName, ComponentSerializer)` lets optional
+  modules supply their own array serialization. VegaScript registers
+  `ScriptComponent` in `scripts`, so the engine has no scripting dependency.
+* `RegisterSpawnFactory(typeName, factory)` supplies property-aware constructor
+  arguments for a type that has already opted into reflection spawning.
+* `Application::LoadWorld<T>(args...)` forwards constructor arguments and
+  preserves `LoadWorld<T>()`.
+* `SpriteComponent::GetTexturePath()`, `GetScale()`, and `SetScale()` expose
+  authored sprite data. Scale can be set before the texture loads.
+
+Vectors encode as `[x,y]`, colors as `[r,g,b,a]`, and enums as their reflected
+label strings. Booleans, integers, floats, and strings retain their JSON types.
+Saving emits complete writable property sets; hand-written sparse inputs gain
+defaults on their first save. Complete supported scenes round-trip exactly,
+including the shipped sandbox. Settings are game-owned and must be passed back
+to Save by its caller.
+
+Ordinary components are only updated if the constructor already supplies them;
+Load does not instantiate arbitrary reflected components. Components created
+only later during gameplay cannot be restored before BeginPlay and produce an
+unavailable-component warning if supplied. Scene identity is represented by the
+entity's `guid` and `name`, not by a duplicate entry in `components`.
+
+## Game types
+
+All four scene types inherit the writable Actor properties `Location`,
+`Rotation`, `RenderLayer`, `Render Enabled`, and `Tick When Paused`.
+
+| Type | Additional authored data |
+| --- | --- |
+| Asteroid | Writable `Velocity`; constructor defaults: velocity `[0,100]`, health 50, contact damage 20. Health maximum is writable through HealthComponent. Contact damage has no setter and stays at its constructor default. |
+| DummyEnemy | Writable string `Ship`, default `Ship.Enemy.RangeKeeper.Basic`. Construction only: changing it stores the requested catalog ID in SceneEntityComponent::spawnData; reload to rebuild the ship. |
+| PlayerStart | Writable string `Ship`, default `Ship.Player.Fighter.Basic`. No gameplay sprite or automatic player spawn. `IsEditorOnlyMarker()` lets a future editor draw its marker. |
+| SpriteActor | Always owns SpriteComponent, with editable `Texture` and vector `Scale`. |
+
+Reflected components also expose writable inherited `Active`. Explicit component
+properties override constructor defaults, including a dummy's selected ship
+texture. Clear those overrides when the new ship's defaults should be used.
+Asteroids retain existing gameplay behavior: BeginPlay randomizes their speed
+slightly and ticking rotates them and removes them outside the view. Scene
+saving records current state rather than a frozen copy of initial authoring data.
+
+`SceneLevel` inherits ArenaLevel's player/respawn, HUD controllers, camera, and
+boundary setup. ArenaTestLevel and SceneLevel share the extracted arena and
+respawn defaults in ArenaSandboxSetup; ArenaTestLevel's dummies, encounters, and
+music behavior are unchanged. PlayerStart takes precedence over the
+`settings.playerShip` catalog ID; the first marker chooses the spawn location
+and ship. Without a marker, the arena center `[3000,1500]` is used. The game
+application applies `settings.routeStop` to its existing backdrop pipeline
+through SceneLevel's optional settings callback.
+
+## Scripts
+
+VegaScript's `Overrides()` reads explicit overrides; `SetOverrides()` replaces
+them and can stage values before BeginPlay. `Prepare()` reads declarations
+without lifecycle callbacks, allowing the scene hook to warn about unavailable
+scripts, unknown properties, and incompatible types. Lua top-level declarations
+are evaluated during preparation; `on_create` runs only on BeginPlay and sees
+the authored overrides. Script properties support float, bool, string, and
+Vector2. Paths retain the existing relative `.lua` asset-root restriction.
+
+This change supplies scene data and headless loading. Editor Edit/Play controls,
+arbitrary component creation, and entity-reference remapping are future work.
+
+## Implementation files
+
+* Engine: `include/framework/scene/Scene.h`, `src/framework/scene/Scene.cpp`,
+  `include/framework/scene/SceneEntityComponent.h`,
+  `src/framework/scene/SceneEntityComponent.cpp`,
+  `include/framework/reflection/Reflection.h`,
+  `src/framework/reflection/EngineReflection.cpp`,
+  `include/framework/Application.h`, `include/framework/SpriteComponent.h`,
+  `src/framework/SpriteComponent.cpp`, `tests/SceneSerializerTests.cpp`, and
+  `LightYearsEngine/CMakeLists.txt`.
+* Game: `include/level/SceneLevel.h`, `src/level/SceneLevel.cpp`,
+  `include/level/ArenaSandboxSetup.h`, `src/level/ArenaSandboxSetup.cpp`,
+  `include/level/PlayerStart.h`, `src/level/PlayerStart.cpp`,
+  `include/level/SpriteActor.h`, `src/level/ArenaTestLevel.cpp`,
+  `include/environment/Asteroid.h`, `src/reflection/GameReflection.cpp`,
+  `include/gameFramework/GameApplication.h`,
+  `src/gameFramework/GameApplication.cpp`, `tests/SceneSandboxTests.cpp`,
+  `assets/scenes/sandbox.scene.json`, and `LightYearsGame/CMakeLists.txt`.
+* Scripting: `VegaScript/include/script/ScriptComponent.h`,
+  `VegaScript/src/ScriptComponent.cpp`, and
+  `VegaScript/tests/ScriptComponentTests.cpp`.
+* Documentation: `docs/scene-authoring.md`.
+
+## Verification, 2026-10-15
+
+* `cmd /c tools\vega-build.cmd`: exit 0, including the final runtime asset sync.
+* New CTest entries `LightYearsSceneSerializer` and `LightYearsSceneSandbox`
+  pass. The existing `VegaScriptComponent` test also covers script scene
+  round trips, staged lifecycle timing, and override diagnostics.
+* Full `ctest --output-on-failure` in `build`: exit 8, 79/103 passed, 24 failed,
+  541.88 seconds. Every engine test, VegaScriptComponent, and all twelve
+  VegaEditor tests pass. The failure names exactly match the before-change
+  run: 23 gameplay failures plus `LightYearsRareZoneRulesE2E` timing out at
+  120 seconds. The baseline also had that timeout, so the observed failure
+  count differs from the anticipated 23 without adding a new failure.
+  Logs: `build/scene-baseline-ctest.log` and `build/scene-ctest-final.log`.
+* `LightYearsGame.exe --scene scenes/sandbox.scene.json --visual-capture
+  D:\Vega\build\scene_sandbox.png --capture-frames 120`: exit 0. The PNG exists
+  (1920 x 1080, 1,476,994 bytes) and was visually inspected. It shows the
+  player, HUD, backdrop, three dummies, and scripted sprite; asteroids are not
+  visible in that captured frame. The headless test verifies all seven scene
+  entities, including both asteroids, before gameplay ticking.

@@ -12,10 +12,12 @@ namespace ly
 	bool SpriteComponent::SetTexture(const std::string& texturePath)
 	{
 		if (texturePath.empty()) return false;
-		mTexture = AssetManager::GetAssetManager().LoadTexture(texturePath);
-		if (!mTexture) return false;
+		auto texture = AssetManager::GetAssetManager().LoadTexture(texturePath);
+		if (!texture) return false;
+		mTexture = std::move(texture);
 
 		mSprite.emplace(*mTexture);
+		mTexturePath = texturePath;
 		SyncLocation();
 		SyncRotation();
 
@@ -24,6 +26,7 @@ namespace ly
 		mSprite->setTextureRect(sf::IntRect{ sf::Vector2i{}, sf::Vector2i{width,height} });
 
 		CenterPivot();
+		mSprite->setScale(mScale);
 		return true;
 	}
 
@@ -33,6 +36,12 @@ namespace ly
 		{
 			mTexture->setRepeated(repeated);
 		}
+	}
+
+	void SpriteComponent::SetScale(sf::Vector2f scale)
+	{
+		mScale = scale;
+		if (mSprite) mSprite->setScale(scale);
 	}
 
 	void SpriteComponent::CenterPivot()

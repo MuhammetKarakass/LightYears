@@ -1,0 +1,127 @@
+#include "framework/scene/Scene.h"
+#include "framework/scene/SceneEntityComponent.h"
+#include "framework/reflection/Reflection.h"
+#include "framework/Actor.h"
+#include "framework/World.h"
+#include "framework/SpriteComponent.h"
+#include <iostream>
+#include <set>
+
+namespace
+{
+	using Json = nlohmann::json;
+	int failures = 0;
+	void Check(bool condition, const char* message)
+	{
+		if (!condition) { std::cerr << message << '\n'; ++failures; }
+	}
+	enum class Mode { First = 2, Second = 7 };
+	class SceneTestComponent : public ly::ActorComponent
+	{
+	public:
+		using ActorComponent::ActorComponent;
+		float amount = 8.f;
+	};
+	class SceneTestActor : public ly::Actor
+	{
+	public:
+		explicit SceneTestActor(ly::World* world) : Actor{ world }
+		{
+			AddComponent<SceneTestComponent>();
+			AddComponent<SceneTestComponent>().amount = 31.f;
+		}
+		int count = 4;
+		bool enabled = true;
+		float number = 3.5f;
+		sf::Color tint{ 12, 34, 56, 78 };
+		sf::Vector2f point{ 8.f, -4.f };
+		std::string text = "scene";
+		Mode mode = Mode::Second;
+	};
+	class FactoryActor : public ly::Actor
+	{
+	public:
+		FactoryActor(ly::World* world, int value) : Actor{ world }, argument{ value } {}
+		int argument;
+	};
+
+	Json Entity(const std::string& type)
+	{
+		return { { "guid", ly::SceneEntityComponent::GenerateGuid() }, { "name", "Test" }, { "type", type },
+			{ "properties", Json::object() }, { "components", Json::array() }, { "scripts", Json::array() } };
+	}
+	Json Scene(Json entities)
+	{
+		return { { "format", "vega.scene" }, { "version", 1 }, { "settings", Json::object() }, { "entities", std::move(entities) } };
+	}
+}
+
+int main()
+{
+	using namespace ly;
+	using namespace ly::reflect;
+	RegisterEngineTypes();
+	Class<SceneTestComponent, ActorComponent>("SceneTestComponent")
+		.Property("Amount", [](const SceneTestComponent& c) { return c.amount; }, [](SceneTestComponent& c, float v) { c.amount = v; });
+	Class<SceneTestActor, Actor>("SceneTestActor").Spawnable()
+		.Property("Count", [](const SceneTestActor& a) { return a.count; }, [](SceneTestActor& a, int v) { a.count = v; })
+		.Property("Enabled", [](const SceneTestActor& a) { return a.enabled; }, [](SceneTestActor& a, bool v) { a.enabled = v; })
+		.Property("Number", [](const SceneTestActor& a) { return a.number; }, [](SceneTestActor& a, float v) { a.number = v; })
+		.Property("Tint", [](const SceneTestActor& a) { return a.tint; }, [](SceneTestActor& a, sf::Color v) { a.tint = v; })
+		.Property("Point", [](const SceneTestActor& a) { return a.point; }, [](SceneTestActor& a, sf::Vector2f v) { a.point = v; })
+		.Property("Text", [](const SceneTestActor& a) { return a.text; }, [](SceneTestActor& a, const std::string& v) { a.text = v; })
+		.Property("Mode", [](const SceneTestActor& a) { return a.mode; }, [](SceneTestActor& a, Mode v) { a.mode = v; })
+		.Labels({ { 2, "First" }, { 7, "Second" } });
+	Class<FactoryActor, Actor>("FactoryActor").Spawnable([](World& world) { return world.SpawnActor<FactoryActor>(42).lock(); });
+	World source{ nullptr };
+	auto actor = source.SpawnActor<SceneTestActor>().lock();
+	auto& identity = actor->AddComponent<SceneEntityComponent>("", "Named actor");
+	actor->SetActorLocation({ 100.f, 200.f });
+	source.SpawnActor<Actor>();
+	const Json settings{ { "routeStop", 3 }, { "nested", { { "free", "game data" } } } };
+	const auto saved = SceneSerializer::Save(source, settings);
+	Check(saved["entities"].size() == 1, "Only scene entities may be saved");
+	const auto& data = saved["entities"][0];
+	Check(data["name"] == "Named actor" && data["guid"] == identity.guid, "Scene identity was not saved");
+	Check(data["properties"]["Mode"] == "Second" && data["properties"]["RenderLayer"] == "World", "Enums must encode labels");
+	Check(data["properties"]["Point"] == Json::array({ 8, -4 }) && data["properties"]["Tint"] == Json::array({ 12, 34, 56, 78 }), "Vector/color encoding is incorrect");
+	Check(!data["properties"].contains("Velocity"), "Read-only properties must not be saved");
+	Check(data["components"].size() == 2 && data["components"][0]["properties"]["Amount"] == 8 &&
+		data["components"][1]["properties"]["Amount"] == 31, "Repeated default components must preserve their occurrence order");
+	const auto* identityType = TypeRegistry::Get().Find("SceneEntityComponent");
+	Check(identityType->FindProperty("Name")->setter && !identityType->FindProperty("GUID")->setter, "Identity reflection permissions are incorrect");
+	std::set<std::string> guids;
+	for (int i = 0; i < 1000; ++i)
+	{
+		const auto guid = SceneEntityComponent::GenerateGuid();
+		Check(guid.size() == 32 && guid.find_first_not_of("0123456789abcdef") == std::string::npos && guids.insert(guid).second, "GUID must be unique 128-bit hex");
+	}
+	World loaded{ nullptr };
+	const auto result = SceneSerializer::Load(loaded, saved);
+	Check(result.spawned == 1 && result.warnings.empty(), "Supported scene must load without warnings");
+	Check(loaded.GetActorsByType<Actor>().empty(), "Scene factories must leave actors pending");
+	Check(SceneSerializer::Save(loaded, settings) == saved, "Save(Load(scene)) must preserve supported data exactly");
+	loaded.TickInternal(0.f);
+	Check(SceneSerializer::Save(loaded, settings) == saved, "Promoting actors must preserve scene identity and properties");
+	Check(loaded.GetActorByType<SceneTestActor>().lock()->GetUniqueID() != actor->GetUniqueID(), "Run IDs should differ across loads");
+	Check(SceneSerializer::Load(loaded, saved).spawned == 0, "Duplicate entity GUIDs must be rejected");
+
+	World errors{ nullptr };
+	auto entity = Entity("SceneTestActor");
+	entity["properties"] = { { "Unknown", 5 }, { "Velocity", Json::array({ 1, 2 }) }, { "Number", "bad" },
+		{ "Count", 2147483648LL }, { "Tint", Json::array({ 0, 0, 0, 256 }) }, { "Mode", "Missing" }, { "Point", Json::array({ 1 }) } };
+	entity["components"].push_back({ { "type", "SpriteComponent" }, { "properties", Json::object() } });
+	entity["components"].push_back({ { "type", "SceneTestComponent" }, { "properties", { { "Unknown", true }, { "Amount", 17 } } } });
+	auto bad = Scene(Json::array({ Entity("MissingType"), Entity("Actor"), entity, Entity("FactoryActor") }));
+	const auto badResult = SceneSerializer::Load(errors, bad);
+	Check(badResult.spawned == 2 && badResult.warnings.size() == 11, "Unknown/read-only/invalid properties and non-spawnable types must warn and continue");
+	const auto errorActor = errors.GetActorsByTypeIncludingPending<SceneTestActor>()[0].lock();
+	Check(!errorActor->FindComponent<SpriteComponent>(), "Load must not create arbitrary components");
+	Check(errorActor->FindComponent<SceneTestComponent>()->amount == 17.f, "Invalid properties must not prevent valid properties from loading");
+	Check(errors.GetActorsByTypeIncludingPending<FactoryActor>()[0].lock()->argument == 42, "Custom spawn factory was not used");
+	for (const auto& invalid : { Json{}, Json::array(), Json{ { "version", 2 } }, Json{ { "format", 42 } } })
+		Check(!SceneSerializer::Load(errors, invalid).warnings.empty(), "Malformed documents must warn without throwing");
+	errorActor->Destroy();
+	Check(SceneSerializer::Save(errors)["entities"].size() == 1, "Destroyed entities must not be saved");
+	return failures ? 1 : 0;
+}

@@ -20,6 +20,7 @@ namespace ly
 		ExplosionType GetExplosionType() const { return mExplosionType; }
 		void SetupCollisionLayers();
 		void SetAsteroidVelocity(const sf::Vector2f& velocity) { mVelocity = velocity; }
+		sf::Vector2f GetAsteroidVelocity() const { return mVelocity; }
 		void SetAsteroidScale(float scale);
 	private:
 		virtual void Tick(float deltaTime) override;

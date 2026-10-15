@@ -2,6 +2,10 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 	include/framework/reflection/Reflection.h
 	src/framework/reflection/Reflection.cpp
 	src/framework/reflection/EngineReflection.cpp
+	include/framework/scene/Scene.h
+	src/framework/scene/Scene.cpp
+	include/framework/scene/SceneEntityComponent.h
+	src/framework/scene/SceneEntityComponent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Application.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Application.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/FramePacer.h
@@ -192,6 +196,12 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+	add_executable(LightYearsSceneSerializerTests tests/SceneSerializerTests.cpp)
+	target_link_libraries(LightYearsSceneSerializerTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	foreach(scene_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${scene_runtime} LightYearsSceneSerializerTests)
+	endforeach()
+	add_test(NAME LightYearsSceneSerializer COMMAND LightYearsSceneSerializerTests)
 	add_executable(LightYearsReflectionTests tests/ReflectionTests.cpp)
 	target_link_libraries(LightYearsReflectionTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	if(MSVC)
