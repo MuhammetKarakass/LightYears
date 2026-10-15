@@ -17,7 +17,8 @@ namespace vega
 	{
 		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp,
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
-		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera
+		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera,
+		OpenJson, JsonSet, ExpectJson, JsonSave, JsonRevert, ExpectJsonDirty
 	};
 	struct EditorScriptCommand
 	{

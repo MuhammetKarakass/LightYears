@@ -35,7 +35,12 @@ int main()
 		{ "expect-count Actor 3", ScriptOperation::ExpectCount },
 		{ "capture subdir/smoke.png", ScriptOperation::Capture }, { "quit", ScriptOperation::Quit },
 		{ "remember-location", ScriptOperation::RememberLocation },
-		{ "expect-remembered-location", ScriptOperation::ExpectRememberedLocation }
+		{ "expect-remembered-location", ScriptOperation::ExpectRememberedLocation },
+		{ "open-json content/data/ships.json", ScriptOperation::OpenJson },
+		{ "json-set /ships/0/health 280.0", ScriptOperation::JsonSet },
+		{ "expect-json /flag true", ScriptOperation::ExpectJson },
+		{ "expect-json-dirty false", ScriptOperation::ExpectJsonDirty },
+		{ "json-save", ScriptOperation::JsonSave }, { "json-revert", ScriptOperation::JsonRevert }
 	};
 	for (const auto& test : cases)
 	{
@@ -94,6 +99,16 @@ int main()
 		const auto parsed = ParseEditorScriptLine(line);
 		Check(!parsed.command && !parsed.error.empty(), std::string{ "Bad quoted/property command accepted: " } + line);
 	}
+	const auto jsonString = ParseEditorScriptLine("json-set /name \"a # hash, \\\"quote\\\" and \\n newline\" # comment");
+	Check(jsonString.command && jsonString.command->values[0] == "\"a # hash, \\\"quote\\\" and \\n newline\"", "JSON literal string quotes/escapes lost");
+	Check(ParseEditorScriptLine("json-set \"\" false").command.has_value(), "Empty JSON root pointer must parse");
+	Check(ParseEditorScriptLine("expect-json /a~1b~0c/0 -2").command.has_value(), "Escaped JSON pointer failed");
+	Check(ParseEditorScriptLine("json-set /name \"\"").command.has_value(), "Empty JSON string failed");
+	for (const char* line : { "open-json", "open-json \"\"", "json-save extra", "json-revert extra", "json-set /a",
+		"json-set invalid 1", "json-set /bad~2escape 1", "json-set /a null", "json-set /a []", "json-set /a {}",
+		"json-set /a nan", "json-set /a 1e999", "json-set /a unquoted", "json-set /a 01", "json-set /a 1 extra",
+		"expect-json /a", "expect-json /a true extra", "expect-json-dirty", "expect-json-dirty 1", "expect-json-dirty true extra" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid JSON command accepted: " } + line);
 	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;

@@ -4,12 +4,14 @@
 #include <locale>
 #include <sstream>
 #include <cctype>
+#include <nlohmann/json.hpp>
 
 namespace vega
 {
 	EditorScriptParseResult ParseEditorScriptLine(const std::string& line)
 	{
 		std::vector<std::string> tokens;
+		std::vector<std::string> rawTokens;
 		// Comments only start outside quotes. Quoted arguments preserve spaces,
 		// hashes and empty strings; backslashes are literal except before a quote or backslash.
 		std::size_t cursor = 0;
@@ -17,6 +19,7 @@ namespace vega
 		{
 			if (std::isspace(static_cast<unsigned char>(line[cursor]))) { ++cursor; continue; }
 			if (line[cursor] == '#') break;
+			const auto start = cursor;
 			std::string token;
 			if (line[cursor] == '"')
 			{
@@ -41,6 +44,7 @@ namespace vega
 				}
 			}
 			tokens.push_back(std::move(token));
+			rawTokens.push_back(line.substr(start, cursor - start));
 		}
 		if (tokens.empty()) return {};
 		EditorScriptCommand command;
@@ -58,7 +62,38 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
-		if (verb == "set-prop" || verb == "expect-prop")
+		if (verb == "open-json")
+		{
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			command.operation = ScriptOperation::OpenJson;
+			command.text = tokens[1];
+			return { command, {} };
+		}
+		else if (verb == "json-set" || verb == "expect-json")
+		{
+			if (tokens.size() != 3) return bad();
+			try
+			{
+				const nlohmann::ordered_json::json_pointer pointer{ tokens[1] };
+				const auto value = nlohmann::ordered_json::parse(rawTokens[2]);
+				if (value.is_structured() || value.is_null() || (value.is_number_float() && !std::isfinite(value.get<double>()))) return bad();
+			}
+			catch (const std::exception&) { return bad(); }
+			command.operation = verb == "json-set" ? ScriptOperation::JsonSet : ScriptOperation::ExpectJson;
+			command.text = tokens[1];
+			command.values = { rawTokens[2] };
+			return { command, {} };
+		}
+		else if (verb == "expect-json-dirty")
+		{
+			if (tokens.size() != 2 || (tokens[1] != "true" && tokens[1] != "false")) return bad();
+			command.operation = ScriptOperation::ExpectJsonDirty;
+			command.text = tokens[1];
+			return { command, {} };
+		}
+		else if (verb == "json-save") command.operation = ScriptOperation::JsonSave;
+		else if (verb == "json-revert") command.operation = ScriptOperation::JsonRevert;
+		else if (verb == "set-prop" || verb == "expect-prop")
 		{
 			if (tokens.size() < 4 || tokens[1].empty() || tokens[2].empty()) return bad();
 			command.operation = verb == "set-prop" ? ScriptOperation::SetProp : ScriptOperation::ExpectProp;

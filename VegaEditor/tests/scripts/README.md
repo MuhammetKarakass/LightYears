@@ -4,6 +4,39 @@ Run the editor from its executable directory:
 VegaEditor.exe --editor-script <file>
 ```
 
+The Content panel uses the source `LightYearsGame/assets` directory in every
+configuration. `--asset-root <dir>` overrides only the editor's content root for
+tests; gameplay keeps its normal Debug/source or release/relative runtime root.
+`VegaEditorContent` recopies `ships.json` to a disposable build-tree root before
+each run, so scripted saves never touch source assets.
+
+```text
+open-json <path relative to asset root>
+json-set <json-pointer> <JSON scalar literal>
+expect-json <json-pointer> <JSON scalar literal>
+json-save
+json-revert
+expect-json-dirty true|false
+```
+
+JSON values are literal `true`, `false`, integers, floating point numbers, or
+double-quoted JSON strings (including JSON escapes); retain the quotes, for
+example `json-set /name "Ship #1"`. A float node requires a float literal such as
+`280.0`; integer nodes retain their signed/unsigned type. Objects, arrays, nulls,
+missing nodes, and scalar retyping are rejected. JSON pointers use `/` segments
+and `~0`/`~1` for literal `~`/`/`; a quoted empty pointer refers to the root.
+
+Dirty means serialized bytes differ from the last saved text. Undo to that text
+clears dirty; undo across a save can make it dirty again. Save retains indentation,
+line endings, trailing newline, inline container layout, and unchanged scalar
+spellings. Any file that cannot round-trip exactly opens read-only with a reason.
+The scalar-only serializer preserves the original layout rather than expanding
+inline objects and arrays. Save uses a temporary sibling and atomic replacement.
+Revert reloads disk and removes commands for the old document ID from history. Script
+`open-json` refuses unsaved changes: use `json-save` or `json-revert` first. The UI
+asks Save / Discard / Cancel before closing or replacing a dirty document.
+Changes apply to the game after restart.
+
 The runner waits for the first live world, executes one command per completed UI
 frame, and exits at EOF or `quit`. It continues after failed lines so the report
 can include later checks. Exit code is 0 only when every executed line and report

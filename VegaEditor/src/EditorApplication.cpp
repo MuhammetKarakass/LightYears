@@ -31,10 +31,16 @@ namespace vega
 			if (std::string{ __argv[index] } == "--editor-script")
 			{
 				mScript = std::make_unique<EditorScript>(index + 1 < __argc ? __argv[index + 1] : "");
-				break;
+				++index;
+			}
+			else if (std::string{ __argv[index] } == "--asset-root" && index + 1 < __argc)
+			{
+				mDocument = JsonDocument{ __argv[++index] };
 			}
 		}
 #endif
+		mContext.document = &mDocument;
+		RefreshContent();
 	}
 
 	EditorApplication::~EditorApplication()
@@ -130,6 +136,7 @@ namespace vega
 
 	void EditorApplication::BuildUI()
 	{
+		mHistory.PruneInvalidCommands();
 		const ImGuiIO& io = ImGui::GetIO();
 		if (io.KeyCtrl && !io.WantTextInput)
 		{
@@ -147,7 +154,8 @@ namespace vega
 			{
 				if (ImGui::MenuItem("Exit"))
 				{
-					QuitApplication();
+					if (mDocument.Dirty()) { mPendingQuit = true; mConfirmDocument = true; }
+					else QuitApplication();
 				}
 				ImGui::EndMenu();
 			}
@@ -165,6 +173,12 @@ namespace vega
 				ImGui::MenuItem("Hierarchy", nullptr, &mShowHierarchy);
 				ImGui::MenuItem("Inspector", nullptr, &mShowInspector);
 				ImGui::MenuItem("Stats", nullptr, &mShowStats);
+				ImGui::MenuItem("Content", nullptr, &mShowContent);
+				if (ImGui::MenuItem("Data Editor", nullptr, mShowData))
+				{
+					if (mShowData && mDocument.Dirty()) { mPendingClose = true; mConfirmDocument = true; }
+					else mShowData = !mShowData;
+				}
 				ImGui::Separator();
 				resetLayout = ImGui::MenuItem("Reset Layout");
 				ImGui::EndMenu();
@@ -187,12 +201,17 @@ namespace vega
 			// The second split uses the remaining width, so the right column is 24% overall.
 			ImGuiID right = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Right, 0.24f / 0.82f, nullptr, &centre);
 			const ImGuiID stats = ImGui::DockBuilderSplitNode(right, ImGuiDir_Down, 0.25f, nullptr, &right);
+			const ImGuiID content = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Down, 0.28f, nullptr, &centre);
 			ImGui::DockBuilderDockWindow("Viewport", centre);
 			ImGui::DockBuilderDockWindow("Hierarchy", left);
 			ImGui::DockBuilderDockWindow("Inspector", right);
 			ImGui::DockBuilderDockWindow("Stats", stats);
+			ImGui::DockBuilderDockWindow("Content", content);
+			ImGui::DockBuilderDockWindow("Data Editor###DataEditor", content);
 			ImGui::DockBuilderFinish(dockspace);
 			mShowViewport = mShowHierarchy = mShowInspector = mShowStats = true;
+			mShowContent = true;
+			mShowData = mDocument.IsOpen();
 		}
 		mDockLayoutInitialized = true;
 		ImGui::SetNextWindowPos(workRect.Min);
@@ -235,11 +254,19 @@ namespace vega
 		{
 			BuildStatsPanel();
 		}
+		if (mShowContent) BuildContentPanel();
+		BuildDataPanel();
 	}
 
 	bool EditorApplication::HandleApplicationEvent(const sf::Event& event)
 	{
 		ImGui::SFML::ProcessEvent(GetRenderWindow(), event);
+		if (event.is<sf::Event::Closed>() && mDocument.Dirty())
+		{
+			mPendingQuit = true;
+			mConfirmDocument = true;
+			return true;
+		}
 		const ImGuiIO& io = ImGui::GetIO();
 		sf::Vector2i mousePixel = sf::Mouse::getPosition(GetRenderWindow());
 		if (const auto* pressed = event.getIf<sf::Event::MouseButtonPressed>())

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <typeinfo>
+#include <algorithm>
 #ifdef __GNUG__
 #include <cxxabi.h>
 #endif
@@ -155,6 +156,7 @@ namespace vega
 
 	bool CommandHistory::Execute(std::unique_ptr<EditorCommand> command)
 	{
+		PruneInvalidCommands();
 		if (!command || !command->Execute(mContext)) return false;
 		const bool hadRedo = CanRedo();
 		mRedo.clear();
@@ -173,6 +175,7 @@ namespace vega
 
 	bool CommandHistory::Undo()
 	{
+		PruneInvalidCommands();
 		if (!CanUndo()) return false;
 		mMergeAllowed = false;
 		mUndo.back()->Undo(mContext);
@@ -183,6 +186,7 @@ namespace vega
 
 	bool CommandHistory::Redo()
 	{
+		PruneInvalidCommands();
 		if (!CanRedo() || !mRedo.back()->Execute(mContext)) return false;
 		mMergeAllowed = false;
 		mUndo.push_back(std::move(mRedo.back()));
@@ -192,6 +196,22 @@ namespace vega
 
 	std::string CommandHistory::UndoName() const { return CanUndo() ? mUndo.back()->Name() : ""; }
 	std::string CommandHistory::RedoName() const { return CanRedo() ? mRedo.back()->Name() : ""; }
+	void CommandHistory::PruneInvalidCommands()
+	{
+		// Reload/close invalidates JSON history without discarding unrelated actor edits.
+		const auto prune = [&](auto& stack)
+		{
+			const auto size = stack.size();
+			stack.erase(std::remove_if(stack.begin(), stack.end(), [&](const auto& command)
+			{
+				return !command->IsValid(mContext);
+			}), stack.end());
+			if (stack.size() != size) mMergeAllowed = false;
+		};
+		prune(mUndo);
+		prune(mRedo);
+	}
+
 	void CommandHistory::Clear()
 	{
 		mUndo.clear();

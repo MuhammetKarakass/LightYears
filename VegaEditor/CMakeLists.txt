@@ -27,6 +27,11 @@ add_executable(VegaEditor
 	src/EditorScriptParser.cpp
 	src/EditorViewport.cpp
 	src/EditorSelection.cpp
+	src/EditorContentPanels.cpp
+	src/JsonDocument.cpp
+	src/JsonCommands.cpp
+	include/editor/JsonDocument.h
+	include/editor/JsonCommands.h
 	include/editor/EditorApplication.h
 	include/editor/EditorCamera.h
 	include/editor/EditorCommands.h
@@ -35,6 +40,7 @@ add_executable(VegaEditor
 	include/editor/EditorSelection.h
 )
 target_include_directories(VegaEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(VegaEditor PRIVATE VEGA_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsGame/assets")
 # GameApp carries LightYearsVisual, the whole-archive game library, engine definitions,
 # and the generated game asset configuration, exactly as for LightYearsGame.
 target_link_libraries(VegaEditor PRIVATE LightYearsGameApp ImGui-SFML::ImGui-SFML)
@@ -120,7 +126,7 @@ if(BUILD_TESTING)
 		src/EditorScriptParser.cpp
 	)
 	target_include_directories(VegaEditorScriptTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_link_libraries(VegaEditorScriptTests PRIVATE SFML::System)
+	target_link_libraries(VegaEditorScriptTests PRIVATE SFML::System nlohmann_json::nlohmann_json)
 	ly_enable_warnings(VegaEditorScriptTests)
 	CopyRuntimeLibToTarget(sfml-system VegaEditorScriptTests)
 	add_test(NAME VegaEditorScript COMMAND VegaEditorScriptTests)
@@ -152,4 +158,23 @@ if(BUILD_TESTING)
 		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor>
 		TIMEOUT 60
 	)
+	add_executable(VegaEditorJsonDocumentTests
+		tests/JsonDocumentTests.cpp src/JsonDocument.cpp src/JsonCommands.cpp
+		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+	target_include_directories(VegaEditorJsonDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorJsonDocumentTests PRIVATE LightYearsEngine nlohmann_json::nlohmann_json)
+	target_compile_definitions(VegaEditorJsonDocumentTests PRIVATE
+		VEGA_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/LightYearsGame/assets/content/data"
+		VEGA_TEST_TEMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/json-test-assets")
+	ly_enable_warnings(VegaEditorJsonDocumentTests)
+	foreach(json_test_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${json_test_runtime} VegaEditorJsonDocumentTests)
+	endforeach()
+	add_test(NAME VegaEditorJsonDocument COMMAND VegaEditorJsonDocumentTests)
+	configure_file(tests/scripts/content.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/content.vegascript COPYONLY)
+	configure_file(tests/RunContentTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunContentTest.cmake @ONLY)
+	add_test(NAME VegaEditorContent COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunContentTest.cmake)
+	set_tests_properties(VegaEditorContent PROPERTIES
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 60)
 endif()

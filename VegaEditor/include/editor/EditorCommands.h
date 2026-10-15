@@ -10,12 +10,14 @@
 
 namespace vega
 {
+	class JsonDocument;
 	struct EditorContext
 	{
 		ly::World* world = nullptr;
 		EditorSelection& selection;
 		EditorCamera* camera = nullptr;
 		std::optional<bool> cameraPaused;
+		JsonDocument* document = nullptr;
 		void SyncCamera();
 		bool SetEditorCamera(bool enabled);
 		bool FocusSelection();
@@ -34,6 +36,7 @@ namespace vega
 		virtual std::string Name() const = 0;
 		virtual bool MergeWith(const EditorCommand&) { return false; }
 		virtual bool IsUndoable() const { return true; }
+		virtual bool IsValid(const EditorContext&) const { return true; }
 	};
 
 	class CommandHistory
@@ -48,6 +51,7 @@ namespace vega
 		std::string UndoName() const;
 		std::string RedoName() const;
 		void Clear();
+		void PruneInvalidCommands();
 		// Zero means a discrete edit. Each gesture gets a new token, even on the same property.
 		std::uint64_t BeginMergeGroup() { return ++mNextMergeGroup; }
 

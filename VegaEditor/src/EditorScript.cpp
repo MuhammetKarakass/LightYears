@@ -1,5 +1,6 @@
 #include "editor/EditorScript.h"
 #include "editor/EditorCommands.h"
+#include "editor/JsonCommands.h"
 #include <framework/World.h>
 #include <SFML/Graphics.hpp>
 #include <cmath>
@@ -170,6 +171,38 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::OpenJson:
+			if (context.document && !context.document->Dirty()) success = context.document->Open(command.text);
+			detail = context.document && context.document->Dirty() ? "Unsaved changes: save or revert before open-json" :
+				context.document ? context.document->Error() : "No JSON document service";
+			break;
+		case ScriptOperation::JsonSet:
+		case ScriptOperation::ExpectJson:
+		{
+			const auto* actual = context.document ? context.document->Get(command.text) : nullptr;
+			const auto expected = Json::parse(command.values[0]);
+			if (actual)
+			{
+				if (command.operation == ScriptOperation::JsonSet)
+					success = history.Execute(std::make_unique<SetJsonValueCommand>(context.document->ID(), command.text, *actual, expected));
+				else success = *actual == expected && (actual->type() == expected.type() ||
+					(actual->is_number_integer() && expected.is_number_integer()));
+				detail = "actual " + actual->dump() + " expected " + expected.dump();
+			}
+			else detail = "Unknown JSON pointer or no open document";
+			break;
+		}
+		case ScriptOperation::JsonSave:
+			success = context.document && context.document->Save();
+			if (context.document) detail = context.document->Error();
+			break;
+		case ScriptOperation::JsonRevert:
+			success = context.document && context.document->Revert();
+			if (context.document) detail = context.document->Error();
+			break;
+		case ScriptOperation::ExpectJsonDirty:
+			success = context.document && context.document->IsOpen() && context.document->Dirty() == (command.text == "true");
+			break;
 		case ScriptOperation::SetProp:
 		case ScriptOperation::ExpectProp:
 		{
