@@ -1,4 +1,32 @@
-Run the editor from its executable directory:
+Run the editor script runner from the editor's executable directory.
+
+Lua actor commands (operate on the selected actor's first ScriptComponent):
+
+```text
+add-script scripts/spin.lua
+set-script-prop speed 90
+expect-script-prop speed 90 0.01
+expect-script-error none
+expect-script-error "spin.lua:4"
+remember-rotation
+expect-rotation-changed
+wait-seconds 0.5
+```
+
+`add-script` attaches a component using the game's runtime asset root; attachment
+is not undoable. `set-script-prop` is undoable and accepts one number, bool or
+string, or two floats for a vector. Quote strings containing spaces or `#`.
+`expect-script-prop` accepts the same values and an optional non-negative tolerance
+(default 0.5); scalar types/arity are checked during execution. Error expectations
+require an empty LastError for `none`, otherwise a matching substring.
+`remember-rotation` stores the selected rotation; `expect-rotation-changed` requires
+a change greater than 0.01 degrees modulo 360. `wait-seconds` waits wall time
+(0 through 86400 seconds), including while paused, and continues rendering frames.
+`wait` still counts frames. `VegaEditorScripting` runs a build-tree copy of
+`scripting.vegascript`, verifying property undo/redo and actual rotation after play.
+See [VegaScript API](../../../VegaScript/README.md) for Lua callbacks and handles.
+
+The following invocation starts the runner:
 
 ```text
 VegaEditor.exe --editor-script <file>

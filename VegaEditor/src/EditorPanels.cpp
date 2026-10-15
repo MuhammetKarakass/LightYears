@@ -1,6 +1,8 @@
 #include "editor/EditorApplication.h"
 #include <framework/World.h>
 #include <framework/Actor.h>
+#include <script/ScriptComponent.h>
+#include <script/ScriptRuntime.h>
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include <algorithm>
@@ -214,12 +216,54 @@ namespace vega
 			{
 				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
 				if (ImGui::Button("Focus")) mContext.FocusSelection();
+				if (ImGui::Button("Add Script")) ImGui::OpenPopup("Add Script");
+				ImGui::SetItemTooltip("Attach a Lua script. Adding a script cannot be undone in this step.");
+				if (ImGui::BeginPopup("Add Script"))
+				{
+					std::error_code error;
+					const auto& root = script::ScriptRuntime::Get().Root();
+					std::vector<std::string> paths;
+					for (std::filesystem::recursive_directory_iterator it{ root / "scripts", error }, end; it != end && !error; it.increment(error))
+					{
+						if (it->is_regular_file(error) && it->path().extension() == ".lua")
+							paths.push_back(it->path().lexically_relative(root).generic_string());
+					}
+					std::sort(paths.begin(), paths.end());
+					for (const auto& path : paths)
+						if (ImGui::Selectable(path.c_str())) actor->AddComponent<script::ScriptComponent>(path);
+					if (paths.empty()) ImGui::TextUnformatted("No .lua files under scripts/");
+					ImGui::EndPopup();
+				}
 				const auto drawSection = [&](const ReflectedTarget& target)
 				{
 					if (!target.type) return;
 					ImGui::PushID(target.object);
 					if (ImGui::CollapsingHeader(target.type->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 					{
+						auto* scriptComponent = target.componentIndex
+							? dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)) : nullptr;
+						if (scriptComponent)
+						{
+							ImGui::TextWrapped("Script: %s", scriptComponent->ScriptPath().c_str());
+							if (!scriptComponent->LastError().empty())
+							{
+								ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.f, 0.3f, 0.3f, 1.f });
+								ImGui::TextWrapped("%s", scriptComponent->LastError().c_str());
+								ImGui::PopStyleColor();
+							}
+							if (ImGui::Button("Reload")) scriptComponent->Reload();
+							for (const auto& entry : scriptComponent->Properties())
+							{
+								ly::reflect::PropertyInfo property;
+								property.name = entry.first;
+								property.kind = static_cast<ly::reflect::PropertyKind>(entry.second.index());
+								auto value = entry.second;
+								const bool changed = DrawProperty(property, value);
+								if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
+								if (changed) mHistory.Execute(std::make_unique<SetScriptPropertyCommand>(actor->GetUniqueID(),
+									*target.componentIndex, entry.first, value, (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
+							}
+						}
 						const auto properties = target.type->AllProperties();
 						std::vector<std::string> categories;
 						for (const auto* property : properties)
@@ -230,6 +274,7 @@ namespace vega
 							for (const auto* property : properties)
 							{
 								if (property->category != category) continue;
+								if (scriptComponent && (property->name == "Script" || property->name == "Last Error")) continue;
 								auto value = property->getter(target.object);
 								ImGui::BeginDisabled(!property->setter);
 								// Reflected names can be longer than the old fixed labels.

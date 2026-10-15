@@ -74,6 +74,25 @@ namespace vega
 	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<std::size_t> componentIndex);
 	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName);
 
+	class SetScriptPropertyCommand final : public EditorCommand
+	{
+	public:
+		SetScriptPropertyCommand(unsigned int id, std::size_t componentIndex, std::string property,
+			ly::reflect::PropertyValue value, std::uint64_t group = 0);
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		std::string Name() const override { return "Set script " + mProperty; }
+		bool MergeWith(const EditorCommand&) override;
+	private:
+		unsigned int mID;
+		std::size_t mComponentIndex;
+		std::string mProperty;
+		ly::reflect::PropertyValue mAfter;
+		std::optional<ly::reflect::PropertyValue> mBeforeOverride;
+		std::uint64_t mMergeGroup;
+		bool mExecuted = false;
+	};
+
 	class SetPropertyCommand final : public EditorCommand
 	{
 	public:

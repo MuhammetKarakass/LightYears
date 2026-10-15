@@ -22,6 +22,11 @@ if not exist "%REPO%\build\build.ninja" (
     if errorlevel 1 exit /b 1
     call :fetch_zip imgui-sfml https://github.com/SFML/imgui-sfml/archive/e8ee3667f1b1f731e5c9c32be4c544915291f987.zip imgui-sfml-e8ee3667f1b1f731e5c9c32be4c544915291f987
     if errorlevel 1 exit /b 1
+    rem Scripting dependencies pinned in VegaScript/CMakeLists.txt; tar also unpacks the Lua .tar.gz.
+    call :fetch_zip lua https://www.lua.org/ftp/lua-5.4.7.tar.gz lua-5.4.7
+    if errorlevel 1 exit /b 1
+    call :fetch_zip sol2 https://github.com/ThePhD/sol2/archive/refs/tags/v3.5.0.zip sol2-3.5.0
+    if errorlevel 1 exit /b 1
     set "DISCONNECTED=ON"
   )
   cmake -S "%REPO%" -B "%REPO%\build" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DFETCHCONTENT_FULLY_DISCONNECTED=!DISCONNECTED!

@@ -19,6 +19,12 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "add-script scripts/spin.lua", ScriptOperation::AddScript },
+		{ "expect-script-error none", ScriptOperation::ExpectScriptError },
+		{ "expect-script-error \"spin.lua:4\"", ScriptOperation::ExpectScriptError },
+		{ "wait-seconds 0.5", ScriptOperation::WaitSeconds },
+		{ "remember-rotation", ScriptOperation::RememberRotation },
+		{ "expect-rotation-changed", ScriptOperation::ExpectRotationChanged },
 		{ "camera editor", ScriptOperation::Camera }, { "camera game", ScriptOperation::Camera },
 		{ "focus", ScriptOperation::Focus }, { "zoom 2", ScriptOperation::Zoom },
 		{ "pan -500 0", ScriptOperation::Pan }, { "expect-visible", ScriptOperation::ExpectVisible },
@@ -115,6 +121,18 @@ int main()
 		"export out/LightYears overwrite overwrite", "expect-export-ok 1" })
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid JSON command accepted: " } + line);
 	Check(ParseEditorScriptLine("export \"out dir\" overwrite").command->text == "out dir", "Export path lost");
+	for (const char* line : { "set-script-prop speed 90", "set-script-prop enabled true", "set-script-prop offset 1 2",
+		"set-script-prop color \"#ff8800\"", "expect-script-prop speed 90 0.01", "expect-script-prop offset 1 2 0.1" })
+	{
+		const auto parsed = ParseEditorScriptLine(line);
+		Check(parsed.command && parsed.error.empty() && !parsed.command->property.empty() && !parsed.command->values.empty(), "Script property arguments lost");
+	}
+	const auto scriptString = ParseEditorScriptLine("set-script-prop label \"\"");
+	Check(scriptString.command && scriptString.command->values == std::vector<std::string>{ "" }, "Empty script string lost");
+	for (const char* line : { "add-script", "add-script \"\"", "set-script-prop", "set-script-prop speed", "set-script-prop \"\" 1",
+		"expect-script-prop speed", "expect-script-error", "expect-script-error \"\"", "wait-seconds", "wait-seconds -1",
+		"wait-seconds nan", "wait-seconds inf", "wait-seconds 1x", "wait-seconds 1e999", "wait-seconds 86401" })
+		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid scripting command accepted");
 	Check(ParseEditorScriptLine("export \"out dir\" overwrite").command->overwrite, "Export overwrite flag lost");
 	Check(!ParseEditorScriptLine("export out").command->overwrite, "Export must not overwrite by default");
 	if (failures) return 1;

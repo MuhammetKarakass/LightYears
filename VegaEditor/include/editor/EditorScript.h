@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <chrono>
 
 namespace sf { class RenderWindow; }
 
@@ -19,7 +20,8 @@ namespace vega
 		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo, SetProp, ExpectProp,
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
 		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera,
-		OpenJson, JsonSet, ExpectJson, JsonSave, JsonRevert, ExpectJsonDirty, Export, ExpectExportOk
+		OpenJson, JsonSet, ExpectJson, JsonSave, JsonRevert, ExpectJsonDirty, Export, ExpectExportOk,
+		AddScript, SetScriptProp, ExpectScriptProp, ExpectScriptError, WaitSeconds, RememberRotation, ExpectRotationChanged
 	};
 	struct EditorScriptCommand
 	{
@@ -59,6 +61,8 @@ namespace vega
 		unsigned int mWaitFrames = 0;
 		unsigned int mStartupFrames = 0;
 		std::optional<sf::Vector2f> mRememberedLocation;
+		std::optional<float> mRememberedRotation;
+		std::chrono::steady_clock::time_point mWaitUntil{};
 		bool mFailed = false;
 		bool mFinished = false;
 		bool mWorldReady = false;

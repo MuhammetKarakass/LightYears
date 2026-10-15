@@ -125,7 +125,8 @@ if(BUILD_TESTING)
 		src/EditorSelection.cpp
 	)
 	target_include_directories(VegaEditorCommandTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_link_libraries(VegaEditorCommandTests PRIVATE LightYearsEngine)
+	target_link_libraries(VegaEditorCommandTests PRIVATE VegaScript)
+	target_compile_definitions(VegaEditorCommandTests PRIVATE VEGA_COMMAND_SCRIPT_ROOT="${CMAKE_CURRENT_BINARY_DIR}/command-script-assets")
 	ly_enable_warnings(VegaEditorCommandTests)
 	foreach(editor_command_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
 		CopyRuntimeLibToTarget(${editor_command_runtime} VegaEditorCommandTests)
@@ -173,7 +174,7 @@ if(BUILD_TESTING)
 		tests/JsonDocumentTests.cpp src/JsonDocument.cpp src/JsonCommands.cpp
 		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorJsonDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_link_libraries(VegaEditorJsonDocumentTests PRIVATE LightYearsEngine nlohmann_json::nlohmann_json)
+	target_link_libraries(VegaEditorJsonDocumentTests PRIVATE VegaScript nlohmann_json::nlohmann_json)
 	target_compile_definitions(VegaEditorJsonDocumentTests PRIVATE
 		VEGA_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/LightYearsGame/assets/content/data"
 		VEGA_TEST_TEMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/json-test-assets")
@@ -184,6 +185,11 @@ if(BUILD_TESTING)
 	add_test(NAME VegaEditorJsonDocument COMMAND VegaEditorJsonDocumentTests)
 
 	# Pure export logic: fake game and source trees under the build tree, no window and no game process.
+	configure_file(tests/scripts/scripting.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/scripting.vegascript COPYONLY)
+	add_test(NAME VegaEditorScripting COMMAND VegaEditor --editor-script
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/scripting.vegascript)
+	set_tests_properties(VegaEditorScripting PROPERTIES
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 60)
 	add_executable(VegaEditorGameExporterTests tests/GameExporterTests.cpp src/GameExporter.cpp)
 	target_include_directories(VegaEditorGameExporterTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_compile_definitions(VegaEditorGameExporterTests PRIVATE

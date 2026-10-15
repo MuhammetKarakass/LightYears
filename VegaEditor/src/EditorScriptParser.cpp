@@ -62,6 +62,27 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "add-script" || verb == "expect-script-error")
+		{
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			command.operation = verb == "add-script" ? ScriptOperation::AddScript : ScriptOperation::ExpectScriptError;
+			command.text = tokens[1];
+			return { command, {} };
+		}
+		if (verb == "set-script-prop" || verb == "expect-script-prop")
+		{
+			if (tokens.size() < 3 || tokens[1].empty()) return bad();
+			command.operation = verb == "set-script-prop" ? ScriptOperation::SetScriptProp : ScriptOperation::ExpectScriptProp;
+			command.property = tokens[1];
+			command.values.assign(tokens.begin() + 2, tokens.end());
+			return { command, {} };
+		}
+		if (verb == "wait-seconds")
+		{
+			if (tokens.size() != 2 || !real(1, command.factor) || command.factor < 0.f || command.factor > 86400.f) return bad();
+			command.operation = ScriptOperation::WaitSeconds;
+			return { command, {} };
+		}
 		if (verb == "open-json")
 		{
 			if (tokens.size() != 2 || tokens[1].empty()) return bad();
@@ -140,6 +161,8 @@ namespace vega
 		else if (verb == "redo") command.operation = ScriptOperation::Redo;
 		else if (verb == "quit") command.operation = ScriptOperation::Quit;
 		else if (verb == "remember-location") command.operation = ScriptOperation::RememberLocation;
+		else if (verb == "remember-rotation") command.operation = ScriptOperation::RememberRotation;
+		else if (verb == "expect-rotation-changed") command.operation = ScriptOperation::ExpectRotationChanged;
 		else if (verb == "expect-remembered-location") command.operation = ScriptOperation::ExpectRememberedLocation;
 		else if (verb == "wait" || verb == "select")
 		{

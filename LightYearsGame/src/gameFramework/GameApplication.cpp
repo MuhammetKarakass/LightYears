@@ -1,5 +1,6 @@
 #include "gameFramework/GameApplication.h"
 #include "reflection/GameReflection.h"
+#include <script/ScriptRuntime.h>
 
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/ShipContentCatalog.h"
@@ -23,6 +24,8 @@ namespace ly
 	{
 		AssetManager::GetAssetManager().SetAssetRootDirectory(getResourceDir());
 		RegisterGameTypes();
+		vega::script::SetScriptRoot(getResourceDir());
+		vega::script::RegisterScriptTypes();
 		if (!GameContentBootstrap::Register())
 		{
 			LY_GAME_ERROR("Failed to register shipped game content; application will not start the game world");

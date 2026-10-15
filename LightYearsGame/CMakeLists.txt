@@ -98,6 +98,7 @@ target_link_libraries(${LIGHT_YEARS_GAME_APP_TARGET_NAME}
 		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		LightYearsVisual
+		VegaScript
 		nlohmann_json::nlohmann_json
 		$<LINK_LIBRARY:WHOLE_ARCHIVE,${LIGHT_YEARS_GAME_LIB_TARGET_NAME}>
 )

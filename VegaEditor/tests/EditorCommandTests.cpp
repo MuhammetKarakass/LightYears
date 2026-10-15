@@ -2,6 +2,10 @@
 #include <framework/World.h>
 #include <iostream>
 #include <limits>
+#include <script/ScriptComponent.h>
+#include <script/ScriptRuntime.h>
+#include <filesystem>
+#include <fstream>
 
 namespace
 {
@@ -81,6 +85,38 @@ namespace
 		history.Clear();
 		Check(!history.CanUndo() && !history.CanRedo(), "Clear must empty both stacks");
 		Check(vega::SelectActor{ std::nullopt }.Execute(context) && !selection.Get(), "Clear selection command failed");
+	}
+
+	void TestScriptProperties()
+	{
+		const std::filesystem::path root{ VEGA_COMMAND_SCRIPT_ROOT };
+		std::filesystem::create_directories(root);
+		vega::script::SetScriptRoot(root);
+		vega::script::RegisterScriptTypes();
+		std::ofstream{ root / "command.lua" } << "properties={speed=12,enabled=true,offset={x=1,y=2},label='hello'}";
+		ly::World world{ nullptr };
+		auto actor = world.SpawnActor<ly::Actor>().lock();
+		world.TickInternal(0.f);
+		auto& script = actor->AddComponent<vega::script::ScriptComponent>("command.lua");
+		vega::EditorSelection selection;
+		vega::EditorContext context{ &world, selection };
+		vega::CommandHistory history{ context };
+		const auto group = history.BeginMergeGroup();
+		const auto set = [&](const std::string& name, ly::reflect::PropertyValue value, std::uint64_t merge = 0)
+		{
+			return history.Execute(std::make_unique<vega::SetScriptPropertyCommand>(actor->GetUniqueID(), 0, name, value, merge));
+		};
+		Check(set("speed", 30.f, group) && set("speed", 90.f, group), "Script drag refused");
+		Check(history.Undo() && !history.CanUndo() && script.Overrides().empty() && std::get<float>(script.Properties().at("speed")) == 12.f,
+			"Merged script undo must restore default and remove override");
+		Check(history.Redo() && std::get<float>(script.Properties().at("speed")) == 90.f, "Merged script redo lost final value");
+		Check(script.Reload() && std::get<float>(script.Properties().at("speed")) == 90.f, "Command override did not survive reload");
+		Check(set("speed", 100.f) && history.Undo() && std::get<float>(script.Overrides().at("speed")) == 90.f, "Undo lost an existing override");
+		Check(set("enabled", false) && set("offset", sf::Vector2f{3.f,4.f}) && set("label", std::string{"changed"}), "Script property types refused");
+		Check(!set("speed", true) && !set("missing", 1.f) && !set("speed", std::numeric_limits<float>::infinity()), "Invalid script edits accepted");
+		actor->Destroy();
+		history.Undo();
+		Check(!set("speed", 1.f), "Destroyed actor accepted script edits");
 	}
 
 	void TestReflectedProperties()
@@ -211,6 +247,7 @@ namespace
 
 int main()
 {
+	TestScriptProperties();
 	TestReflectedProperties();
 	TestHistory();
 	TestMergeAndDepth();

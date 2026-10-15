@@ -1,5 +1,6 @@
 #include "editor/EditorCommands.h"
 #include <framework/World.h>
+#include <script/ScriptComponent.h>
 #include <cmath>
 #include <cstdlib>
 #include <typeinfo>
@@ -10,6 +11,44 @@
 
 namespace vega
 {
+	SetScriptPropertyCommand::SetScriptPropertyCommand(unsigned int id, std::size_t index, std::string property,
+		ly::reflect::PropertyValue value, std::uint64_t group)
+		: mID{ id }, mComponentIndex{ index }, mProperty{ std::move(property) }, mAfter{ std::move(value) }, mMergeGroup{ group } {}
+
+	bool SetScriptPropertyCommand::Execute(EditorContext& context)
+	{
+		const auto actor = context.Resolve(mID);
+		if (!actor) return false;
+		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object));
+		if (!script) return false;
+		std::optional<ly::reflect::PropertyValue> before;
+		const auto entry = script->Overrides().find(mProperty);
+		if (entry != script->Overrides().end()) before = entry->second;
+		if (!script->SetProperty(mProperty, mAfter)) return false;
+		if (!mExecuted) { mBeforeOverride = before; mExecuted = true; }
+		return true;
+	}
+	void SetScriptPropertyCommand::Undo(EditorContext& context)
+	{
+		const auto actor = context.Resolve(mID);
+		if (!actor || !mExecuted) return;
+		const auto target = ResolvePropertyTarget(*actor, mComponentIndex);
+		if (auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object)))
+		{
+			if (mBeforeOverride) script->SetProperty(mProperty, *mBeforeOverride);
+			else script->ClearOverride(mProperty);
+		}
+	}
+	bool SetScriptPropertyCommand::MergeWith(const EditorCommand& command)
+	{
+		const auto* next = dynamic_cast<const SetScriptPropertyCommand*>(&command);
+		if (!next || !mMergeGroup || mMergeGroup != next->mMergeGroup || mID != next->mID ||
+			mComponentIndex != next->mComponentIndex || mProperty != next->mProperty) return false;
+		mAfter = next->mAfter;
+		return true;
+	}
+
 	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<std::size_t> componentIndex)
 	{
 		auto& registry = ly::reflect::TypeRegistry::Get();

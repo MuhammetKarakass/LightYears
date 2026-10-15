@@ -86,6 +86,7 @@ endfunction()
 add_subdirectory(LightYearsEngine)
 add_subdirectory(LightYearsVisual)
 add_subdirectory(SpaceAbilitySystem)
+add_subdirectory(VegaScript)
 add_subdirectory(LightYearsGame)
 
 option(VEGA_BUILD_EDITOR "Build the Vega editor" ON)

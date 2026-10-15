@@ -2,6 +2,7 @@
 #include "editor/EditorCommands.h"
 #include "editor/JsonCommands.h"
 #include <framework/World.h>
+#include <script/ScriptComponent.h>
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <filesystem>
@@ -141,6 +142,7 @@ namespace vega
 			return false;
 		}
 		EditorScriptParseResult parsed;
+		if (std::chrono::steady_clock::now() < mWaitUntil) return false;
 		std::string line;
 		do
 		{
@@ -172,6 +174,54 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::AddScript:
+			if (actor)
+			{
+				auto& script = actor->AddComponent<script::ScriptComponent>(command.text);
+				success = script.LastError().empty();
+				detail = success ? "Script attached (not undoable)" : script.LastError();
+			}
+			break;
+		case ScriptOperation::ExpectScriptError:
+			if (auto* script = actor ? actor->FindComponent<script::ScriptComponent>() : nullptr)
+			{
+				success = command.text == "none" ? script->LastError().empty() : script->LastError().find(command.text) != std::string::npos;
+				detail = script->LastError();
+			}
+			break;
+		case ScriptOperation::SetScriptProp:
+		case ScriptOperation::ExpectScriptProp:
+		{
+			const auto target = actor ? FindPropertyTarget(*actor, "ScriptComponent") : ReflectedTarget{};
+			auto* script = dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(target.object));
+			if (!script) { detail = "No ScriptComponent"; break; }
+			const auto entry = script->Properties().find(command.property);
+			if (entry == script->Properties().end()) { detail = "Unknown script property"; break; }
+			ly::reflect::PropertyInfo property;
+			property.kind = static_cast<ly::reflect::PropertyKind>(entry->second.index());
+			ly::reflect::PropertyValue value;
+			float tolerance = command.tolerance;
+			const bool expect = command.operation == ScriptOperation::ExpectScriptProp;
+			if (!ParsePropertyValue(property, command.values, expect, value, tolerance)) detail = "Invalid script property value or tolerance";
+			else if (expect) success = PropertyEquals(entry->second, value, tolerance);
+			else success = history.Execute(std::make_unique<SetScriptPropertyCommand>(actor->GetUniqueID(), *target.componentIndex, command.property, value));
+			break;
+		}
+		case ScriptOperation::WaitSeconds:
+			mWaitUntil = std::chrono::steady_clock::now() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<float>{ command.factor });
+			success = true;
+			break;
+		case ScriptOperation::RememberRotation:
+			if (actor) { mRememberedRotation = actor->GetActorRotation(); success = true; }
+			break;
+		case ScriptOperation::ExpectRotationChanged:
+			if (actor && mRememberedRotation)
+			{
+				const float rotation = actor->GetActorRotation();
+				success = std::abs(std::remainder(rotation - *mRememberedRotation, 360.f)) > 0.01f;
+				detail = "rotation " + std::to_string(rotation) + " before " + std::to_string(*mRememberedRotation);
+			}
+			break;
 		case ScriptOperation::OpenJson:
 			if (context.document && !context.document->Dirty()) success = context.document->Open(command.text);
 			detail = context.document && context.document->Dirty() ? "Unsaved changes: save or revert before open-json" :
