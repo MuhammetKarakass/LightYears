@@ -142,12 +142,12 @@ target_include_directories(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
 target_link_libraries(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
     nlohmann_json::nlohmann_json)
 
+option(LY_WITH_PROFILING "Compile runtime-toggleable profiling (disable for shipping builds)" ON)
 target_compile_definitions(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
     LY_ENABLE_LOGGING=1
     $<$<CONFIG:Debug>:LY_ENABLE_ASSERTS=1>
     $<$<NOT:$<CONFIG:Debug>>:LY_ENABLE_ASSERTS=0>
-    $<$<CONFIG:Debug>:LY_ENABLE_PROFILING=1>
-    $<$<NOT:$<CONFIG:Debug>>:LY_ENABLE_PROFILING=0>
+    LY_ENABLE_PROFILING=$<BOOL:${LY_WITH_PROFILING}>
 )
 
 include(FetchContent)
@@ -202,6 +202,17 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+	add_executable(LightYearsDiagnosticsTests tests/DiagnosticsTests.cpp)
+	target_link_libraries(LightYearsDiagnosticsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	add_test(NAME LightYearsEngineDiagnostics COMMAND LightYearsDiagnosticsTests)
+	# Compile the diagnostics implementation under NDEBUG too, without rebuilding the game in Release.
+	add_executable(LightYearsDiagnosticsNDebugTests tests/DiagnosticsTests.cpp src/framework/debug/Log.cpp src/framework/debug/Profiler.cpp)
+	target_include_directories(LightYearsDiagnosticsNDebugTests PRIVATE include)
+	target_link_libraries(LightYearsDiagnosticsNDebugTests PRIVATE nlohmann_json::nlohmann_json)
+	target_compile_definitions(LightYearsDiagnosticsNDebugTests PRIVATE NDEBUG LY_ENABLE_PROFILING=1)
+	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/diagnostics-ndebug)
+	add_test(NAME LightYearsEngineDiagnosticsNDebug COMMAND LightYearsDiagnosticsNDebugTests)
+	set_tests_properties(LightYearsEngineDiagnosticsNDebug PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/diagnostics-ndebug)
 	add_executable(LightYearsPrefabLibraryTests tests/PrefabLibraryTests.cpp)
 	target_link_libraries(LightYearsPrefabLibraryTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	target_compile_definitions(LightYearsPrefabLibraryTests PRIVATE PREFAB_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/prefab-test-assets")

@@ -62,6 +62,29 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "expect-console")
+		{
+			if (tokens.size() != 3 || tokens[2].empty() || (tokens[1] != "Info" && tokens[1] != "Warning" && tokens[1] != "Error")) return bad();
+			command.operation = ScriptOperation::ExpectConsole;
+			command.property = tokens[1];
+			command.text = tokens[2];
+			return { command, {} };
+		}
+		if (verb == "expect-no-errors" || verb == "clear-console")
+		{
+			if (tokens.size() != 1) return bad();
+			command.operation = verb == "expect-no-errors" ? ScriptOperation::ExpectNoErrors : ScriptOperation::ClearConsole;
+			return { command, {} };
+		}
+		if (verb == "profiler" || verb == "diagnostics" || verb == "expect-profile-scope" || verb == "capture-profile")
+		{
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			if ((verb == "profiler" || verb == "diagnostics") && tokens[1] != "on" && tokens[1] != "off") return bad();
+			command.operation = verb == "profiler" ? ScriptOperation::Profiler : verb == "diagnostics" ? ScriptOperation::Diagnostics :
+				verb == "expect-profile-scope" ? ScriptOperation::ExpectProfileScope : ScriptOperation::CaptureProfile;
+			command.text = tokens[1];
+			return { command, {} };
+		}
 		if (verb == "open-prefab" || verb == "save-prefab" || verb == "close-prefab")
 		{
 			if (tokens.size() != (verb == "open-prefab" ? 2u : 1u)) return bad();

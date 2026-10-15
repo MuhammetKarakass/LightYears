@@ -158,6 +158,7 @@ namespace vega
 		if (!mContext.world || mContext.transitioning || playing == mContext.playMode) return false;
 		if (playing)
 		{
+			if (mDiagnostics.clearOnPlay) mDiagnostics.Clear();
 			mPlaySnapshot = CaptureScene();
 			mEditCamera = mCamera;
 			const auto actor = mSelection.Get();

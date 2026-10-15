@@ -4,6 +4,8 @@
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "framework/reflection/Reflection.h"
+#include <framework/debug/Log.h>
+#include <framework/debug/Profiler.h>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -195,6 +197,7 @@ namespace ly
 
 	nlohmann::json SceneSerializer::Save(World& world, Json settings)
 	{
+		LY_PROFILE_SCOPE("Scene Save");
 		reflect::RegisterEngineTypes();
 		Json scene{ { "format", "vega.scene" }, { "version", 1 }, { "settings", std::move(settings) }, { "entities", Json::array() } };
 		// Pending actors are authored state too; no gameplay tick is needed to save.
@@ -278,6 +281,7 @@ namespace ly
 
 	SceneLoadResult SceneSerializer::Load(World& world, const Json& scene)
 	{
+		LY_PROFILE_SCOPE("Scene Load");
 		reflect::RegisterEngineTypes();
 		SceneLoadResult result;
 		try
@@ -288,6 +292,8 @@ namespace ly
 				!scene.contains("settings") || !scene["settings"].is_object())
 			{
 				result.warnings.push_back("Expected vega.scene version 1 with settings object and entities array");
+				for (const auto& warning : result.warnings)
+					debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
 				return result;
 			}
 			std::set<std::string> guids;
@@ -433,6 +439,8 @@ namespace ly
 		}
 		catch (const std::exception& error) { result.warnings.push_back(std::string{ "Scene: " } + error.what()); }
 		catch (...) { result.warnings.push_back("Scene load failed"); }
+		for (const auto& warning : result.warnings)
+			debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
 		return result;
 	}
 }

@@ -65,6 +65,7 @@ namespace ly
 		
 		while (mWindow.isOpen() && !mShouldQuit)
 		{
+			debug::ProfileFrameScope profileFrame;
 			LY_PROFILE_FRAME();
 			sf::Time deltaTime = mTickClock.restart();
 			float dt = deltaTime.asSeconds();
@@ -108,6 +109,11 @@ namespace ly
 			const auto hitchRenderStart = std::chrono::steady_clock::now();
 			RenderInternal();
 			const auto hitchEnd = std::chrono::steady_clock::now();
+			LY_PROFILE_COUNTER("Actors", perf::g_activeActors.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Bullets", perf::g_bullets.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Particles", perf::g_particles.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Render submitted", perf::g_renderSubmitted.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Render culled", perf::g_renderCulled.load(std::memory_order_relaxed));
 			mFramePacer.Wait();
 
 			// Hitch diagnostics: report frames whose own work (not the frame-limiter

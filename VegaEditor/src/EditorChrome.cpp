@@ -96,6 +96,7 @@ namespace vega
 				mContext.viewSettings.tool == EditorTool::Move ? "Move [W]" : "Rotate [E]",
 				(mContext.viewSettings.snap || ImGui::GetIO().KeyCtrl) ? "on" : "off", mContext.viewSettings.gridSize,
 				mHistory.UndoCount(), mHistory.RedoCount());
+			mDiagnostics.BuildStatus();
 			ImGui::SameLine(ImGui::GetWindowWidth() - 94.f);
 			ImGui::TextDisabled("%.0f FPS", ImGui::GetIO().Framerate);
 		}

@@ -25,6 +25,7 @@ add_executable(VegaEditor
 	src/EditorTheme.cpp
 	src/EditorIcons.cpp
 	src/EditorChrome.cpp
+	src/EditorDiagnostics.cpp
 	src/EditorGizmos.cpp
 	src/GizmoMath.cpp
 	src/EditorCamera.cpp
@@ -102,6 +103,11 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	configure_file(tests/scripts/console-profiler.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/console-profiler.vegascript @ONLY)
+	configure_file(tests/RunConsoleProfilerTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunConsoleProfilerTest.cmake @ONLY)
+	add_test(NAME VegaEditorConsoleProfiler COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunConsoleProfilerTest.cmake)
+	set_tests_properties(VegaEditorConsoleProfiler PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)
 	set(VEGA_PREFABS_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/prefabs-temp.scene.json\"")
 	set(VEGA_PREFABS_CAPTURE "\"${CMAKE_CURRENT_BINARY_DIR}/prefab-inspector.png\"")
 	configure_file(tests/scripts/prefabs.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/prefabs.vegascript @ONLY)

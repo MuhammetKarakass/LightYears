@@ -5,6 +5,7 @@
 #include <framework/CollisionComponent.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
+#include <framework/debug/LogBuffer.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -59,6 +60,30 @@ int main()
 	std::filesystem::create_directories(root);
 	SetScriptRoot(root);
 	RegisterScriptTypes();
+	{
+		ly::debug::LogCapture capture;
+		ly::World diagnosticsWorld{ nullptr };
+		auto diagnosticActor = diagnosticsWorld.SpawnActor<ly::Actor>().lock();
+		diagnosticsWorld.TickInternal(0.f);
+		Write("console-print.lua", "function on_create(self)\n print('unit hello', 42, true)\nend\n");
+		diagnosticActor->AddComponent<ScriptComponent>("console-print.lua");
+		bool printed = false;
+		for (const auto& row : capture.Buffer().Snapshot())
+			if (row.channel == ly::debug::LogChannel::Lua && row.message == "unit hello\t42\ttrue" && row.line == 2 && row.file.find("console-print.lua") != std::string::npos) printed = true;
+		Check(printed, "Lua print must retain arguments and source line");
+		Write("console-runtime.lua", "function on_create(self)\n error('unit runtime failure')\nend\n");
+		diagnosticActor->AddComponent<ScriptComponent>("console-runtime.lua");
+		Write("console-load.lua", "local ok = true\nlocal invalid = )\n");
+		diagnosticActor->AddComponent<ScriptComponent>("console-load.lua");
+		bool runtime = false, load = false;
+		for (const auto& row : capture.Buffer().Snapshot())
+		{
+			if (row.level != ly::debug::LogLevel::Error || row.channel != ly::debug::LogChannel::Lua || row.line != 2) continue;
+			runtime |= row.file == "console-runtime.lua" && row.message.find("unit runtime failure") != std::string::npos;
+			load |= row.file == "console-load.lua";
+		}
+		Check(runtime && load, "Lua runtime/load errors must retain script source line");
+	}
 	ScriptRuntime::Get().SetHotReload(true);
 	ly::World world{ nullptr };
 	auto actor = world.SpawnActor<ly::Actor>().lock();

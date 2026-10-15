@@ -19,6 +19,14 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "expect-console Info \"Lua says hello\"", ScriptOperation::ExpectConsole },
+		{ "expect-console Warning \"missing prefab\"", ScriptOperation::ExpectConsole },
+		{ "expect-console Error \"bad.lua:3\"", ScriptOperation::ExpectConsole },
+		{ "expect-no-errors", ScriptOperation::ExpectNoErrors }, { "clear-console", ScriptOperation::ClearConsole },
+		{ "profiler on", ScriptOperation::Profiler }, { "profiler off", ScriptOperation::Profiler },
+		{ "diagnostics on", ScriptOperation::Diagnostics }, { "diagnostics off", ScriptOperation::Diagnostics },
+		{ "expect-profile-scope \"World Tick\"", ScriptOperation::ExpectProfileScope },
+		{ "capture-profile \"Saved/profile test.json\"", ScriptOperation::CaptureProfile },
 		{ "create-prefab prefabs/BigRock.prefab.json", ScriptOperation::CreatePrefab },
 		{ "place-prefab prefabs/BigRock.prefab.json", ScriptOperation::PlacePrefab },
 		{ "place-prefab prefabs/BigRock.prefab.json 800 400", ScriptOperation::PlacePrefab },
@@ -107,6 +115,11 @@ int main()
 		Check(!parsed.command && !parsed.error.empty(), std::string{ "Bad command accepted: " } + line);
 	}
 	Check(ParseEditorScriptLine("select 0").command->number == 0, "ID zero must be valid");
+	for (const char* line : { "expect-console", "expect-console Debug x", "expect-console info x", "expect-console Error \"\"",
+		"profiler", "profiler true", "diagnostics yes", "expect-profile-scope", "expect-profile-scope \"\"", "capture-profile \"\"", "clear-console extra", "expect-no-errors extra" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid diagnostics command accepted: " } + line);
+	const auto console = ParseEditorScriptLine("expect-console Error \"a.lua:4 # details\"");
+	Check(console.command && console.command->property == "Error" && console.command->text == "a.lua:4 # details", "Console arguments preserved");
 	Check(ParseEditorScriptLine("save-scene").command->operation == ScriptOperation::SaveScene, "Save current scene must parse");
 	Check(ParseEditorScriptLine("rename Rock A # comment").command->text == "Rock A", "Rename must join the rest of the line");
 	Check(ParseEditorScriptLine("select-name \"Rock # A\"").command->text == "Rock # A", "Quoted entity name lost");

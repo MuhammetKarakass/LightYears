@@ -1,3 +1,5 @@
+#include <framework/debug/Log.h>
+#include <framework/debug/Profiler.h>
 #include "framework/scene/PrefabLibrary.h"
 #include "framework/scene/Scene.h"
 #include "framework/scene/SceneEntityComponent.h"
@@ -69,6 +71,13 @@ namespace ly
 	}
 	PrefabResult PrefabLibrary::Resolve(const std::string& path)
 	{
+		LY_PROFILE_SCOPE("Prefab Resolve");
+		const auto report = [](const PrefabResult& result)
+		{
+			for (const auto& warning : result.warnings)
+				debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
+			return result;
+		};
 		std::set<std::filesystem::path> chain;
 		try
 		{
@@ -89,7 +98,7 @@ namespace ly
 						const auto size = std::filesystem::file_size(dependency.first, sizeError);
 						if (timeError || sizeError || modified != dependency.second.first || size != dependency.second.second) current = false;
 					}
-					if (current) return found->second.result;
+					if (current) return report(found->second.result);
 					mResolved.erase(found);
 				}
 				++mResolveCount;
@@ -106,11 +115,11 @@ namespace ly
 					}
 					mResolved[key] = std::move(cached);
 				}
-				return result;
+				return report(result);
 			}
 		}
 		catch (const std::filesystem::filesystem_error&) {}
-		return Resolve(path, chain);
+		return report(Resolve(path, chain));
 	}
 	PrefabResult PrefabLibrary::Resolve(const std::string& path, std::set<std::filesystem::path>& chain)
 	{

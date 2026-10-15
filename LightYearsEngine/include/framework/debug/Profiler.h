@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 #ifndef LY_ENABLE_PROFILING
 	#if defined(NDEBUG)
@@ -23,6 +24,15 @@ namespace ly::debug
 		double totalMicroseconds = 0.0;
 		double minimumMicroseconds = 0.0;
 		double maximumMicroseconds = 0.0;
+		double selfMicroseconds = 0.0;
+	};
+
+	struct ProfileFrame
+	{
+		std::uint64_t id = 0;
+		double milliseconds = 0.0;
+		std::vector<ProfileAggregate> scopes;
+		std::unordered_map<std::string, double> counters;
 	};
 
 	// A scope or event that took at least FrameEventThresholdMicroseconds in the current frame.
@@ -43,6 +53,13 @@ namespace ly::debug
 		static bool IsCompiledIn();
 		static bool IsEnabled();
 		static void SetEnabled(bool enabled);
+		static void BeginFrame();
+		static void EndFrame();
+		static std::vector<ProfileFrame> CaptureFrames();
+		static std::vector<std::pair<std::uint64_t, float>> FrameTimes();
+		static ProfileFrame GetFrame(std::uint64_t id = 0);
+		static bool CaptureToFile(const std::filesystem::path& path, std::string& error);
+		static void RecordCompletedScope(const char* name, double elapsed, double self);
 
 		static void RecordScope(const char* name, double elapsedMicroseconds);
 		static void SetCounter(const char* name, double value);
@@ -70,6 +87,17 @@ namespace ly::debug
 		const char* mName;
 		bool mEnabled;
 		std::chrono::steady_clock::time_point mStart;
+		ProfileScope* mParent = nullptr;
+		double mChildren = 0.0;
+	};
+
+	class ProfileFrameScope
+	{
+	public:
+		ProfileFrameScope() : mEnabled{ Profiler::IsEnabled() } { if (mEnabled) Profiler::BeginFrame(); }
+		~ProfileFrameScope() { if (mEnabled) Profiler::EndFrame(); }
+	private:
+		bool mEnabled;
 	};
 }
 

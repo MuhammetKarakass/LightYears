@@ -6,6 +6,7 @@
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <framework/scene/PrefabLibrary.h>
+#include <script/ScriptRuntime.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui-SFML.h>
@@ -31,11 +32,15 @@ namespace vega
 			throw std::runtime_error("Cannot initialize the editor UI");
 		}
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		mDiagnostics.InstallSettings();
+		if (ly::debug::Log::GetMinimumLevel() > ly::debug::LogLevel::Info)
+			ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Info);
+		ly::debug::Profiler::SetEnabled(false);
 		ApplyEditorTheme();
 		// The default dock layout is built only when the saved layout is missing, so panels added later would open
 		// floating over an older layout. Versioning the file name rebuilds the default once; bump it whenever the
 		// default layout or its reserved toolbar/status area changes.
-		ImGui::GetIO().IniFilename = "vega_editor_layout_v3.ini";
+		ImGui::GetIO().IniFilename = "vega_editor_layout_v4.ini";
 		// Image clicks select actors; panel dragging belongs on the title/tab bars.
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
@@ -62,6 +67,7 @@ namespace vega
 		}
 #endif
 		mExportLayout.assetRoot = mDocument.Root();
+		script::SetScriptRoot(mDocument.Root());
 #ifdef _MSC_VER
 		if (scriptRequested)
 		{
@@ -76,6 +82,13 @@ namespace vega
 		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
 		mContext.document = &mDocument;
+		mContext.console = mPrefabContext.console = &mDiagnostics.capture.Buffer();
+		mContext.clearConsole = mPrefabContext.clearConsole = [this]() { mDiagnostics.Clear(); };
+		mContext.diagnosticsVisible = mPrefabContext.diagnosticsVisible = [this](bool visible)
+		{
+			mDiagnostics.showConsole = mDiagnostics.showProfiler = visible;
+			if (visible) mDiagnostics.FocusConsole();
+		};
 		mContext.contentChanged = [this]() { RefreshContent(); };
 		mPrefabContext.contentChanged = mContext.contentChanged;
 		mContext.prefabAction = [this](const std::string& action, const std::string& path)
@@ -210,6 +223,7 @@ namespace vega
 
 	void EditorApplication::BuildUI()
 	{
+		LY_PROFILE_SCOPE("ImGui Build");
 		auto& activeHistory = mPrefabWorld ? mPrefabHistory : mHistory;
 		mHistory.PruneInvalidCommands();
 		const ImGuiIO& io = ImGui::GetIO();
@@ -280,6 +294,8 @@ namespace vega
 				ImGui::MenuItem("Hierarchy", nullptr, &mShowHierarchy);
 				ImGui::MenuItem("Inspector", nullptr, &mShowInspector);
 				ImGui::MenuItem("Stats", nullptr, &mShowStats);
+				if (ImGui::MenuItem("Console", nullptr, &mDiagnostics.showConsole) && mDiagnostics.showConsole) mDiagnostics.FocusConsole();
+				ImGui::MenuItem("Profiler", nullptr, &mDiagnostics.showProfiler);
 				ImGui::MenuItem("Content", nullptr, &mShowContent);
 				ImGui::Separator();
 				ImGui::MenuItem("Grid overlay", nullptr, &mContext.viewSettings.grid);
@@ -313,7 +329,10 @@ namespace vega
 			// The second split uses the remaining width, so the right column is 24% overall.
 			ImGuiID right = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Right, 0.24f / 0.82f, nullptr, &centre);
 			const ImGuiID stats = ImGui::DockBuilderSplitNode(right, ImGuiDir_Down, 0.25f, nullptr, &right);
-			const ImGuiID content = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Down, 0.28f, nullptr, &centre);
+			ImGuiID content = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Down, 0.42f, nullptr, &centre);
+			const ImGuiID profiler = ImGui::DockBuilderSplitNode(content, ImGuiDir_Right, 0.50f, nullptr, &content);
+			ImGui::DockBuilderDockWindow("Console", content);
+			ImGui::DockBuilderDockWindow("Profiler", profiler);
 			ImGui::DockBuilderDockWindow("Viewport", centre);
 			ImGui::DockBuilderDockWindow("Hierarchy", left);
 			ImGui::DockBuilderDockWindow("Inspector", right);
@@ -373,11 +392,20 @@ namespace vega
 			mContext.viewSettings.requestContent = false;
 		}
 		if (mShowContent) BuildContentPanel();
+		if (mDiagnostics.showConsole) mDiagnostics.BuildConsole();
+		if (mDiagnostics.showProfiler) mDiagnostics.BuildProfiler();
+		mDiagnostics.TrackSettings();
 		BuildDataPanel();
 		BuildExportDialog();
 		BuildSceneDialogs();
 		BuildPrefabDialogs();
 		BuildProjectDialog();
+		mDiagnostics.ReportError("Scene", mContext.sceneError);
+		mDiagnostics.ReportError("Prefab", mPrefabContext.sceneError);
+		mDiagnostics.ReportError("Project", mProjectError);
+		mDiagnostics.ReportError("Content", mContentError);
+		mDiagnostics.ReportError("Document", mDocument.Error());
+		mDiagnostics.ReportError("Export", mExportResult ? mExportResult->error : std::string{});
 	}
 
 	bool EditorApplication::HandleApplicationEvent(const sf::Event& event)

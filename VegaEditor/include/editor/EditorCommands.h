@@ -13,6 +13,7 @@
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include <framework/debug/LogBuffer.h>
 
 namespace vega
 {
@@ -32,6 +33,9 @@ namespace vega
 		std::function<bool()> sceneDirty;
 		std::function<void()> contentChanged;
 		std::string sceneError;
+		ly::debug::LogBuffer* console = nullptr;
+		std::function<void()> clearConsole;
+		std::function<void(bool)> diagnosticsVisible;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
 		std::optional<ly::ComponentIdentity> propertyErrorComponent;

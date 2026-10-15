@@ -97,6 +97,7 @@ namespace vega
 
 	void EditorApplication::BuildViewportPanel()
 	{
+		LY_PROFILE_SCOPE("Editor Viewport");
 		const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
 		if (ImGui::Begin("Viewport", &mShowViewport))
 		{
@@ -152,6 +153,7 @@ namespace vega
 
 	void EditorApplication::BuildHierarchyPanel()
 	{
+		LY_PROFILE_SCOPE("Editor Hierarchy");
 		if (ImGui::Begin("Hierarchy", &mShowHierarchy))
 		{
 			ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
@@ -288,6 +290,7 @@ namespace vega
 	}
 	void EditorApplication::BuildInspectorPanel()
 	{
+		LY_PROFILE_SCOPE("Editor Inspector");
 		auto& context = mPrefabWorld ? mPrefabContext : mContext;
 		auto& selection = mPrefabWorld ? mPrefabSelection : mSelection;
 		auto& history = mPrefabWorld ? mPrefabHistory : mHistory;

@@ -1,4 +1,6 @@
 #include "editor/EditorScript.h"
+#include <framework/debug/Profiler.h>
+#include <algorithm>
 #include "editor/EditorCommands.h"
 #include "editor/JsonCommands.h"
 #include "editor/EditorPrefabs.h"
@@ -194,6 +196,53 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::ClearConsole:
+			if (context.clearConsole) { context.clearConsole(); success = true; }
+			else if (context.console) { context.console->Clear(); success = true; }
+			break;
+		case ScriptOperation::ExpectNoErrors:
+		case ScriptOperation::ExpectConsole:
+			if (context.console)
+			{
+				const auto records = context.console->Snapshot();
+				if (command.operation == ScriptOperation::ExpectNoErrors)
+					success = std::none_of(records.begin(), records.end(), [](const auto& r) { return r.level >= ly::debug::LogLevel::Error; });
+				else success = std::any_of(records.begin(), records.end(), [&](const auto& r)
+				{
+					const auto level = command.property == "Info" ? ly::debug::LogLevel::Info : command.property == "Warning" ? ly::debug::LogLevel::Warning : ly::debug::LogLevel::Error;
+					return (r.level == level || (level == ly::debug::LogLevel::Error && r.level == ly::debug::LogLevel::Fatal)) && r.message.find(command.text) != std::string::npos;
+				});
+			}
+			break;
+		case ScriptOperation::Profiler:
+			ly::debug::Profiler::SetEnabled(command.text == "on");
+			success = ly::debug::Profiler::IsEnabled() == (command.text == "on");
+			break;
+		case ScriptOperation::Diagnostics:
+			if (context.diagnosticsVisible) { context.diagnosticsVisible(command.text == "on"); success = true; }
+			break;
+		case ScriptOperation::ExpectProfileScope:
+			for (const auto& frame : ly::debug::Profiler::CaptureFrames())
+				for (const auto& scope : frame.scopes) if (scope.name == command.text) success = true;
+			break;
+		case ScriptOperation::CaptureProfile:
+		{
+			try
+			{
+				const auto requested = std::filesystem::u8path(command.text);
+				const auto path = std::filesystem::weakly_canonical(requested.is_absolute() ? requested : mExportLayout.generatedRoot / "Saved" / requested);
+				const auto inside = [](const auto& file, const auto& root)
+				{
+					const auto relative = file.lexically_relative(std::filesystem::weakly_canonical(root));
+					return !relative.empty() && *relative.begin() != "..";
+				};
+				if (inside(path, mExportLayout.assetRoot) || inside(path, mExportLayout.sourceTreeRoot / "LightYearsGame/assets") ||
+					inside(path, mExportLayout.visualAssetsDir)) detail = "Profile captures cannot be written into assets";
+				else success = ly::debug::Profiler::CaptureToFile(path, detail);
+			}
+			catch (const std::exception& error) { detail = error.what(); }
+			break;
+		}
 		case ScriptOperation::OpenPrefab:
 		case ScriptOperation::SavePrefab:
 		case ScriptOperation::ClosePrefab:

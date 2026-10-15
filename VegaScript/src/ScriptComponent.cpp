@@ -4,6 +4,7 @@
 #include <framework/ComponentIdentity.h>
 #include <framework/World.h>
 #include <framework/debug/Log.h>
+#include <framework/debug/Profiler.h>
 #include <framework/scene/Scene.h>
 #include <sol/sol.hpp>
 #include <chrono>
@@ -20,6 +21,24 @@ namespace vega::script
 	{
 		using Value = ly::reflect::PropertyValue;
 		using Clock = std::chrono::steady_clock;
+		int LuaPrint(lua_State* state)
+		{
+			std::string message;
+			const int count = lua_gettop(state);
+			for (int index = 1; index <= count; ++index)
+			{
+				std::size_t length = 0;
+				const char* text = luaL_tolstring(state, index, &length);
+				if (index > 1) message += '\t';
+				message.append(text, length);
+				lua_pop(state, 1);
+			}
+			lua_Debug source{};
+			if (lua_getstack(state, 1, &source)) lua_getinfo(state, "Sl", &source);
+			ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Lua,
+				{ source.source && source.source[0] == '@' ? source.source + 1 : "", "print", source.currentline }, std::move(message));
+			return 0;
+		}
 		struct RuntimeLimits
 		{
 			std::size_t memoryLimit = 256u * 1024u * 1024u;
@@ -269,7 +288,11 @@ namespace vega::script
 		{
 			error = path + ": " + message;
 			running = false;
-			LY_CORE_ERROR("Lua %s", error.c_str());
+			const auto marker = message.find(".lua:");
+			int line = 0;
+			if (marker != std::string::npos) line = std::atoi(message.c_str() + marker + 5);
+			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Lua,
+				{ path.c_str(), "Lua", line }, error);
 		}
 		std::filesystem::path FullPath() const
 		{
@@ -305,6 +328,9 @@ namespace vega::script
 		{
 			// No fallback to interpreter globals: even _G and mutable library tables are instance-local.
 			environment = sol::environment{ lua, sol::create };
+			lua_pushcfunction(lua.lua_state(), LuaPrint);
+			environment["print"] = sol::stack::get<sol::function>(lua.lua_state(), -1);
+			lua_pop(lua.lua_state(), 1);
 			for (const char* name : { "assert", "error", "ipairs", "next", "pairs", "pcall", "select", "tonumber", "tostring", "type", "xpcall", "rawequal", "rawget", "rawlen", "rawset", "_VERSION" })
 				environment[name] = lua[name];
 			for (const char* name : { "math", "string", "table" })
@@ -315,7 +341,7 @@ namespace vega::script
 				environment[name] = copy;
 			}
 			environment["_G"] = environment;
-			environment["log"] = [](const std::string& message) { LY_CORE_INFO("Lua: %s", message.c_str()); };
+			environment["log"] = environment["print"];
 			const auto start = created;
 			environment["time"] = [start]() { return std::chrono::duration<double>(Clock::now() - start).count(); };
 			handle = ActorHandle{ component.GetOwner().GetWeakActor() };
@@ -435,6 +461,7 @@ namespace vega::script
 	void ScriptComponent::BeginPlay() { Reload(); }
 	void ScriptComponent::TickComponent(float deltaTime)
 	{
+		LY_PROFILE_SCOPE("Lua Script Tick");
 		try
 		{
 			if (mImpl->ended) return;

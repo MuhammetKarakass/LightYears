@@ -17,6 +17,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		ExpectConsole, ExpectNoErrors, ClearConsole, Profiler, ExpectProfileScope, CaptureProfile, Diagnostics,
 		CreatePrefab, PlacePrefab, CreateVariant, ApplyPrefabProp, RevertPrefabProp, ExpectPrefab, ExpectOverridden, ReloadPrefabs,
 		OpenPrefab, SavePrefab, ClosePrefab,
 		SetProjectStartup, ExpectProjectStartup,

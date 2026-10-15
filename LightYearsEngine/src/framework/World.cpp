@@ -147,7 +147,7 @@ namespace ly{
 	}
 	void World::TickInternal(float deltaTime)
 	{
-		LY_PROFILE_FUNCTION();
+		LY_PROFILE_SCOPE("World Tick");
 		auto promotePendingActors = [this]()
 		{
 			if (mPendingActors.empty())
@@ -536,7 +536,7 @@ namespace ly{
 
 	void World::Render(sf::RenderTarget& window)
 	{
-		LY_PROFILE_FUNCTION();
+		LY_PROFILE_SCOPE("World Render");
 		sf::View previousView = window.getView();
 		sf::View worldView = GetWorldView();
 		WorldRenderPipeline* pipeline = mOwningApp ? mOwningApp->GetWorldRenderPipeline() : nullptr;

@@ -6,6 +6,7 @@
 #include "editor/EditorScript.h"
 #include "editor/GameExporter.h"
 #include "editor/JsonDocument.h"
+#include "editor/EditorDiagnostics.h"
 #include <map>
 #include <framework/ProjectSettings.h>
 #include <gameFramework/GameApplication.h>
@@ -104,6 +105,7 @@ namespace vega
 		bool mDataFocused = false;
 
 		EditorViewport mViewport;
+		EditorDiagnostics mDiagnostics;
 		EditorSelection mSelection;
 		EditorCamera mCamera;
 		JsonDocument mDocument{ VEGA_SOURCE_ASSETS_DIR };
