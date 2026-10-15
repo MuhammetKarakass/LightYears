@@ -1,0 +1,20 @@
+#pragma once
+
+#include <filesystem>
+#include <string>
+#include <framework/debug/Log.h>
+
+inline std::string getResourceDir()
+{
+	// GameApplication shares this root with AssetManager and VegaScript. Resolve it from the
+	// launch folder, never from the build/source tree, and record it even at Release log levels.
+	static const std::string root = []
+	{
+		const auto path = (std::filesystem::current_path() / "@RESOURCE_FOLDER_NAME@").lexically_normal();
+		const std::string directory = path.generic_u8string() + "/";
+		ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Core, {},
+			"Packaged game and script asset root: " + directory);
+		return directory;
+	}();
+	return root;
+}

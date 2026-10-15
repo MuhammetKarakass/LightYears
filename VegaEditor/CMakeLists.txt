@@ -57,7 +57,8 @@ target_compile_definitions(VegaEditor PRIVATE VEGA_EDITOR_FONT_PATH="${CMAKE_SOU
 # the export never packages a stale or missing LightYearsGame.exe.
 add_dependencies(VegaEditor LightYearsGame)
 target_compile_definitions(VegaEditor PRIVATE
-	VEGA_GAME_BUILD_DIR="$<TARGET_FILE_DIR:LightYearsGame>"
+	VEGA_GAME_BUILD_DIR="${CMAKE_SOURCE_DIR}/build/LightYearsGame"
+	VEGA_GAME_RELEASE_BUILD_DIR="${CMAKE_SOURCE_DIR}/build-release/LightYearsGame"
 	VEGA_GAME_VISUAL_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets"
 	VEGA_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
 	VEGA_BUILD_ROOT="${CMAKE_BINARY_DIR}"

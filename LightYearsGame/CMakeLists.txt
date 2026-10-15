@@ -103,9 +103,9 @@ target_link_libraries(${LIGHT_YEARS_GAME_APP_TARGET_NAME}
 		$<LINK_LIBRARY:WHOLE_ARCHIVE,${LIGHT_YEARS_GAME_LIB_TARGET_NAME}>
 )
 
-# First integration pass: the game reads the visual assets from the source tree so edits hot-reload (F9 forces it).
+# Debug reads the source tree for hot reload; packaged builds must never fall back to that tree.
 target_compile_definitions(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PRIVATE
-	LY_VISUAL_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets"
+	LY_VISUAL_ASSETS_DIR="$<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/LightYearsVisual/assets,visual>"
 )
 
 if(BUILD_TESTING)
@@ -441,6 +441,20 @@ add_custom_target(${LIGHT_YEARS_GAME_ASSET_TARGET} ALL
 )
 add_dependencies(${LIGHT_YEARS_GAME_TARGET_NAME} ${LIGHT_YEARS_GAME_ASSET_TARGET})
 
+if(MSVC AND CMAKE_BUILD_TYPE STREQUAL "Release")
+	# A distributable must also work without Visual Studio's C++ runtime installed.
+	set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+	include(InstallRequiredSystemLibraries)
+	if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+		add_custom_command(TARGET ${LIGHT_YEARS_GAME_ASSET_TARGET} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+				$<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>
+			COMMAND_EXPAND_LISTS
+		)
+	endif()
+endif()
+
 # Non-Debug builds package the visual pipeline assets next to the executable (<exe dir>/visual); Debug builds keep
 # reading the source tree (LY_VISUAL_ASSETS_DIR) so shader/palette/pipeline.json edits hot-reload.
 add_custom_command(TARGET ${LIGHT_YEARS_GAME_ASSET_TARGET} POST_BUILD
@@ -450,11 +464,20 @@ add_custom_command(TARGET ${LIGHT_YEARS_GAME_ASSET_TARGET} POST_BUILD
 	$<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>/visual
 )
 
+set(LY_GAME_CONFIG_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+	# Release roots must come from the portable launch folder; Debug keeps source-tree hot reload.
+	set(LY_GAME_CONFIG_TEMPLATE "${CMAKE_SOURCE_DIR}/tools/vega-release-config.h.in")
+endif()
 configure_file(
-	"config.h.in"
+	"${LY_GAME_CONFIG_TEMPLATE}"
 	"${CMAKE_CURRENT_BINARY_DIR}/config.h" ESCAPE_QUOTES
 )
+# Keep runtime-root changes visible to Ninja even when an older MSVC dependency database missed Config.h.
+set_property(SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp" APPEND PROPERTY
+	OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/config.h")
 
-target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PUBLIC
+# The checked-in include/Config.h otherwise shadows this configuration-specific generated header.
+target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} BEFORE PUBLIC
 	${CMAKE_CURRENT_BINARY_DIR}
 )
