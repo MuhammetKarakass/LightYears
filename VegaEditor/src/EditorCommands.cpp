@@ -9,6 +9,41 @@
 
 namespace vega
 {
+	void EditorContext::ApplyCamera()
+	{
+		if (world && camera && world->GetViewOverride()) world->SetViewOverride(camera->GetView());
+	}
+
+	bool EditorContext::SetEditorCamera(bool enabled)
+	{
+		if (!world || !camera) return false;
+		if (enabled)
+		{
+			if (!world->GetViewOverride()) camera->InitFrom(world->GetWorldView());
+			world->SetViewOverride(camera->GetView());
+		}
+		else world->SetViewOverride(std::nullopt);
+		return true;
+	}
+
+	void EditorContext::SyncCamera()
+	{
+		if (!world || !camera) return;
+		const bool paused = world->IsPaused();
+		if (!cameraPaused || *cameraPaused != paused) SetEditorCamera(paused);
+		cameraPaused = paused;
+		ApplyCamera();
+	}
+
+	bool EditorContext::FocusSelection()
+	{
+		const auto actor = selection.Get();
+		if (!actor || actor->GetWorld() != world || !SetEditorCamera(true)) return false;
+		camera->Focus(actor->GetActorGlobalBounds());
+		ApplyCamera();
+		return true;
+	}
+
 	std::string ActorTypeName(const ly::Actor& actor)
 	{
 		std::string name = typeid(actor).name();
@@ -169,6 +204,8 @@ namespace vega
 	{
 		if (!context.world) return false;
 		context.world->SetPaused(mPaused);
+		context.SetEditorCamera(mPaused);
+		context.cameraPaused = mPaused;
 		return true;
 	}
 

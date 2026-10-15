@@ -30,6 +30,27 @@ namespace vega
 		const std::string& verb = tokens[0];
 		if (verb == "pause") command.operation = ScriptOperation::Pause;
 		else if (verb == "play") command.operation = ScriptOperation::Play;
+		else if (verb == "focus") command.operation = ScriptOperation::Focus;
+		else if (verb == "expect-visible") command.operation = ScriptOperation::ExpectVisible;
+		else if (verb == "camera" || verb == "expect-camera")
+		{
+			if (tokens.size() != 2 || (tokens[1] != "editor" && tokens[1] != "game")) return bad();
+			command.text = tokens[1];
+			command.operation = verb == "camera" ? ScriptOperation::Camera : ScriptOperation::ExpectCamera;
+			return { command, {} };
+		}
+		else if (verb == "zoom")
+		{
+			if (tokens.size() != 2 || !real(1, command.factor) || command.factor <= 0.f) return bad();
+			command.operation = ScriptOperation::Zoom;
+			return { command, {} };
+		}
+		else if (verb == "pan")
+		{
+			if (tokens.size() != 3 || !real(1, command.location.x) || !real(2, command.location.y)) return bad();
+			command.operation = ScriptOperation::Pan;
+			return { command, {} };
+		}
 		else if (verb == "undo") command.operation = ScriptOperation::Undo;
 		else if (verb == "redo") command.operation = ScriptOperation::Redo;
 		else if (verb == "quit") command.operation = ScriptOperation::Quit;

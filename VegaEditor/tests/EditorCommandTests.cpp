@@ -32,6 +32,24 @@ namespace
 		Check(vega::SetPaused{ true }.Execute(context) && world.IsPaused(), "Pause command failed");
 		Check(vega::SetPaused{ false }.Execute(context) && !world.IsPaused(), "Play command failed");
 		Check(!history.CanUndo(), "Direct selection/pause must not record history");
+		vega::EditorCamera camera;
+		// The headless default view is 1000x1000, matching this texture size.
+		camera.SetTextureSize({ 1000u, 1000u });
+		context.camera = &camera;
+		const auto gameView = world.GetWorldView();
+		vega::SetPaused{ true }.Execute(context);
+		Check(world.GetViewOverride() && world.GetWorldView().getCenter() == gameView.getCenter() &&
+			world.GetWorldView().getSize() == gameView.getSize(), "Pause must enter editor camera without a jump");
+		context.SetEditorCamera(false);
+		context.SyncCamera();
+		Check(!world.GetViewOverride(), "Manual game camera choice must survive paused frames");
+		Check(context.FocusSelection() && world.GetViewOverride(), "Focus must enter editor camera");
+		vega::SetPaused{ false }.Execute(context);
+		Check(!world.GetViewOverride() && world.GetWorldView().getCenter() == gameView.getCenter(),
+			"Play must restore the game camera");
+		context.SetEditorCamera(true);
+		vega::SetPaused{ false }.Execute(context);
+		Check(!world.GetViewOverride(), "Explicit play must clear a manual editor camera");
 		const long owners = actor.use_count();
 		Check(history.Execute(std::make_unique<vega::SetActorLocation>(id, sf::Vector2f{ 30.f, 40.f })), "Move execute failed");
 		Check(actor.use_count() == owners, "Commands must not own an actor");

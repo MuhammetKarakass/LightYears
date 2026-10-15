@@ -20,6 +20,7 @@ FetchContent_MakeAvailable(imgui-sfml)
 add_executable(VegaEditor
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
+	src/EditorCamera.cpp
 	src/EditorPanels.cpp
 	src/EditorCommands.cpp
 	src/EditorScript.cpp
@@ -27,6 +28,7 @@ add_executable(VegaEditor
 	src/EditorViewport.cpp
 	src/EditorSelection.cpp
 	include/editor/EditorApplication.h
+	include/editor/EditorCamera.h
 	include/editor/EditorCommands.h
 	include/editor/EditorScript.h
 	include/editor/EditorViewport.h
@@ -102,6 +104,7 @@ if(BUILD_TESTING)
 	add_executable(VegaEditorCommandTests
 		tests/EditorCommandTests.cpp
 		src/EditorCommands.cpp
+		src/EditorCamera.cpp
 		src/EditorSelection.cpp
 	)
 	target_include_directories(VegaEditorCommandTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -122,6 +125,15 @@ if(BUILD_TESTING)
 	CopyRuntimeLibToTarget(sfml-system VegaEditorScriptTests)
 	add_test(NAME VegaEditorScript COMMAND VegaEditorScriptTests)
 
+	add_executable(VegaEditorCameraTests tests/EditorCameraTests.cpp src/EditorCamera.cpp)
+	target_include_directories(VegaEditorCameraTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorCameraTests PRIVATE SFML::Graphics)
+	ly_enable_warnings(VegaEditorCameraTests)
+	foreach(camera_test_runtime IN ITEMS sfml-graphics sfml-window sfml-system)
+		CopyRuntimeLibToTarget(${camera_test_runtime} VegaEditorCameraTests)
+	endforeach()
+	add_test(NAME VegaEditorCameraMath COMMAND VegaEditorCameraTests)
+
 	# Run a copy in the build tree: the script writes <script>.report.txt next to itself, which must not land in
 	# the source tree.
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/scripts/smoke.vegascript
@@ -129,6 +141,14 @@ if(BUILD_TESTING)
 	add_test(NAME VegaEditorSmoke COMMAND VegaEditor --editor-script
 		${CMAKE_CURRENT_BINARY_DIR}/scripts/smoke.vegascript)
 	set_tests_properties(VegaEditorSmoke PROPERTIES
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor>
+		TIMEOUT 60
+	)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/scripts/camera.vegascript
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/camera.vegascript COPYONLY)
+	add_test(NAME VegaEditorCamera COMMAND VegaEditor --editor-script
+		${CMAKE_CURRENT_BINARY_DIR}/scripts/camera.vegascript)
+	set_tests_properties(VegaEditorCamera PROPERTIES
 		WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor>
 		TIMEOUT 60
 	)

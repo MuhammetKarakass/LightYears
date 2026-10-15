@@ -1,0 +1,9 @@
+pause
+select-type PlayerSpaceShip
+zoom 2
+pan 500 0
+focus
+expect-visible
+play
+expect-camera game
+quit

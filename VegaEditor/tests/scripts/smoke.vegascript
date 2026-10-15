@@ -9,5 +9,8 @@ undo
 expect-remembered-location
 redo
 expect-location 400 300
+focus
+expect-camera editor
+expect-visible
 capture smoke.png
 quit

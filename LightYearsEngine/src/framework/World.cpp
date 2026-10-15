@@ -645,6 +645,7 @@ namespace ly{
 
 	sf::View World::GetWorldView() const
 	{
+		if (mViewOverride) return *mViewOverride;
 		const RenderViewport* viewport = GetRenderViewport();
 		if (!viewport)
 		{

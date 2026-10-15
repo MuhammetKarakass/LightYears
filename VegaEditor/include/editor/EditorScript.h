@@ -17,7 +17,7 @@ namespace vega
 	{
 		Pause, Play, Wait, Select, SelectType, Move, Rotate, Undo, Redo,
 		ExpectSelected, ExpectLocation, ExpectCount, Capture, Quit,
-		RememberLocation, ExpectRememberedLocation
+		RememberLocation, ExpectRememberedLocation, Camera, Focus, Zoom, Pan, ExpectVisible, ExpectCamera
 	};
 	struct EditorScriptCommand
 	{
@@ -26,6 +26,7 @@ namespace vega
 		unsigned int number = 0;
 		sf::Vector2f location{};
 		float degrees = 0.f;
+		float factor = 1.f;
 		float tolerance = 0.5f;
 	};
 	struct EditorScriptParseResult

@@ -150,6 +150,25 @@ int main()
 		cameraWorld.SetRenderViewport(&viewport);
 		cameraWorld.TickInternal(0.f);
 		const sf::Vector2f initializedCenter = viewport.defaultView.getCenter();
+		const sf::View cameraView = cameraWorld.GetWorldView();
+		const sf::View overrideView{ { 400.f, 300.f }, { 800.f, 600.f } };
+		cameraWorld.SetViewOverride(overrideView);
+		viewport.mouse = { 200, 450 };
+		if (!cameraWorld.GetViewOverride() ||
+			!Near(cameraWorld.GetWorldView().getCenter(), overrideView.getCenter()) ||
+			!Near(cameraWorld.GetWorldView().getSize(), overrideView.getSize()) ||
+			!Near(cameraWorld.GetMouseWorldPosition(), { 200.f, 450.f }))
+		{
+			return Fail("View override did not control world view and mouse mapping");
+		}
+		cameraWorld.SetViewOverride(std::nullopt);
+		if (cameraWorld.GetViewOverride() ||
+			!Near(cameraWorld.GetWorldView().getCenter(), cameraView.getCenter()) ||
+			!Near(cameraWorld.GetWorldView().getSize(), cameraView.getSize()) ||
+			!Near(cameraWorld.GetMouseWorldPosition(), viewport.MapPixelToCoords(viewport.mouse, cameraView)))
+		{
+			return Fail("Clearing the view override did not restore camera and mouse mapping");
+		}
 		viewport.defaultView.setCenter({ 900.f, 700.f });
 		if (!Near(cameraWorld.GetWorldView().getCenter(), initializedCenter))
 		{

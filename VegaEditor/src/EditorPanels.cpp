@@ -23,6 +23,12 @@ namespace vega
 			}
 			ImGui::EndDisabled();
 			ImGui::SameLine();
+			ImGui::BeginDisabled(world == nullptr);
+			const bool editorCamera = world && world->GetViewOverride().has_value();
+			if (ImGui::Button(editorCamera ? "Editor camera" : "Game camera")) mContext.SetEditorCamera(!editorCamera);
+			ImGui::SetItemTooltip("Toggle camera. Editor camera: wheel zooms at cursor; middle/right drag pans. F focuses selection.");
+			ImGui::EndDisabled();
+			ImGui::SameLine();
 			ImGui::TextUnformatted(world ? (world->IsPaused() ? "Paused" : "Playing") : "No world");
 			ImGui::SetItemTooltip("Paused: click an actor in the viewport to select it; the editor consumes the click.\n"
 				"Drag on the selected actor's bounds to move it.\n"
@@ -44,6 +50,7 @@ namespace vega
 				mViewportImageRect = { { topLeft.x - mainViewport->Pos.x, topLeft.y - mainViewport->Pos.y },
 					{ bottomRight.x - topLeft.x, bottomRight.y - topLeft.y } };
 				mViewportImageHovered = ImGui::IsItemHovered();
+				mViewportWindowFocused = ImGui::IsWindowFocused();
 				mViewport.SetImagePresentation(mViewportImageRect, mViewportImageHovered, ImGui::IsWindowFocused());
 				if (world && world->IsPaused() && mSelectionClickPending && mViewportImageHovered &&
 					!ImGui::IsAnyItemActive() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -141,6 +148,7 @@ namespace vega
 			if (const auto actor = mSelection.Get())
 			{
 				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
+				if (ImGui::Button("Focus")) mContext.FocusSelection();
 				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					const sf::Vector2f location = actor->GetActorLocation();

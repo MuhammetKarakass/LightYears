@@ -1,6 +1,7 @@
 #pragma once
 
 #include "editor/EditorSelection.h"
+#include "editor/EditorCamera.h"
 #include <framework/Actor.h>
 #include <cstdint>
 #include <string>
@@ -12,6 +13,12 @@ namespace vega
 	{
 		ly::World* world = nullptr;
 		EditorSelection& selection;
+		EditorCamera* camera = nullptr;
+		std::optional<bool> cameraPaused;
+		void SyncCamera();
+		bool SetEditorCamera(bool enabled);
+		bool FocusSelection();
+		void ApplyCamera();
 		std::shared_ptr<ly::Actor> Resolve(unsigned int id) const;
 	};
 

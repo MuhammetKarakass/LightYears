@@ -101,6 +101,8 @@ namespace ly
 
 		sf::Vector2u GetWindowSize();
 		sf::View GetWorldView() const;
+		void SetViewOverride(std::optional<sf::View> view) { mViewOverride = std::move(view); }
+		const std::optional<sf::View>& GetViewOverride() const { return mViewOverride; }
 		sf::Vector2f GetMouseWorldPosition() const;
 		// False without a viewport or while it lacks focus, so device input is never read then.
 		bool HasInputFocus() const;
@@ -235,6 +237,7 @@ namespace ly
 
 		Application* mOwningApp;
 		RenderViewport* mRenderViewport = nullptr;
+		std::optional<sf::View> mViewOverride;
 		bool mBeganPlay;
 		bool mIsPaused;
 

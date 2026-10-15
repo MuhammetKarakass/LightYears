@@ -30,7 +30,8 @@ namespace vega
 
 		EditorViewport mViewport;
 		EditorSelection mSelection;
-		EditorContext mContext{ nullptr, mSelection };
+		EditorCamera mCamera;
+		EditorContext mContext{ nullptr, mSelection, &mCamera };
 		CommandHistory mHistory{ mContext };
 		std::unique_ptr<EditorScript> mScript;
 		std::optional<unsigned int> mWorldID;
@@ -44,8 +45,12 @@ namespace vega
 		sf::FloatRect mViewportImageRect{};
 		char mHierarchyFilter[128]{};
 		bool mViewportImageHovered = false;
+		bool mViewportWindowFocused = false;
 		bool mConsumeSelectionClick = false;
 		bool mSelectionClickPending = false;
+		std::optional<sf::Mouse::Button> mCameraPanButton;
+		sf::Vector2i mCameraPanPixel{};
+		bool mConsumeFocusKey = false;
 		bool mDockLayoutInitialized = false;
 		bool mShowViewport = true;
 		bool mShowHierarchy = true;

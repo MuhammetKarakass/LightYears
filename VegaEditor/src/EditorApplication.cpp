@@ -7,6 +7,7 @@
 #include <imgui-SFML.h>
 
 #include <cstdlib>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -42,6 +43,7 @@ namespace vega
 		if (ly::World* world = GetCurrentWorld())
 		{
 			world->SetRenderViewport(nullptr);
+			world->SetViewOverride(std::nullopt);
 		}
 		ImGui::SFML::Shutdown();
 	}
@@ -58,6 +60,8 @@ namespace vega
 			mMoveDragActor.reset();
 			mDestroyActor.reset();
 			mWorldID = worldID;
+			mContext.cameraPaused.reset();
+			mCameraPanButton.reset();
 		}
 		mContext.world = current;
 		mViewport.ResizeToWindow();
@@ -67,6 +71,8 @@ namespace vega
 		{
 			// LoadWorld swaps the active world, so rebind the non-owning viewport every frame.
 			world->SetRenderViewport(&mViewport);
+			mCamera.SetTextureSize(mViewport.GetSize());
+			mContext.SyncCamera();
 			world->Render(texture);
 			if (const auto actor = mSelection.Get())
 			{
@@ -206,6 +212,7 @@ namespace vega
 		mViewport.SetImagePresentation({}, false, false);
 		mViewportImageRect = {};
 		mViewportImageHovered = false;
+		mViewportWindowFocused = false;
 		if (const auto actor = mSelection.Get(); actor && actor->GetWorld() != GetCurrentWorld())
 		{
 			mSelection.Clear();
@@ -261,6 +268,57 @@ namespace vega
 		const bool overImage = mViewportImageRect.contains(mousePosition) && hoveredWindow &&
 			hoveredWindow == ImGui::FindWindowByName("Viewport") && !ImGui::IsAnyItemActive() &&
 			!ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel);
+		if (const auto* key = event.getIf<sf::Event::KeyPressed>(); key &&
+			key->code == sf::Keyboard::Key::F && !io.WantTextInput &&
+			(overImage || mViewportWindowFocused))
+		{
+			mContext.FocusSelection();
+			mConsumeFocusKey = true;
+			return true;
+		}
+		if (const auto* key = event.getIf<sf::Event::KeyReleased>(); key &&
+			key->code == sf::Keyboard::Key::F && mConsumeFocusKey)
+		{
+			mConsumeFocusKey = false;
+			return true;
+		}
+		const bool editorCamera = GetCurrentWorld() && GetCurrentWorld()->GetViewOverride().has_value();
+		if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>(); wheel && editorCamera && overImage)
+		{
+			const auto pixel = MapWindowToTexturePixel(mousePixel, mViewportImageRect, mViewport.GetSize());
+			mCamera.ZoomAt(std::pow(1.1f, -wheel->delta),
+				mViewport.MapPixelToCoords(pixel, GetCurrentWorld()->GetWorldView()));
+			mContext.ApplyCamera();
+			return true;
+		}
+		if (const auto* button = event.getIf<sf::Event::MouseButtonPressed>(); button && editorCamera && overImage &&
+			(button->button == sf::Mouse::Button::Middle || button->button == sf::Mouse::Button::Right))
+		{
+			mCameraPanButton = button->button;
+			mCameraPanPixel = mousePixel;
+			return true;
+		}
+		if (const auto* button = event.getIf<sf::Event::MouseButtonReleased>(); button &&
+			mCameraPanButton == button->button)
+		{
+			mCameraPanButton.reset();
+			return true;
+		}
+		if (event.is<sf::Event::MouseMoved>() && mCameraPanButton)
+		{
+			if (editorCamera && overImage)
+			{
+				const auto previous = MapWindowToTexturePixel(mCameraPanPixel, mViewportImageRect, mViewport.GetSize());
+				const auto pixel = MapWindowToTexturePixel(mousePixel, mViewportImageRect, mViewport.GetSize());
+				const auto view = GetCurrentWorld()->GetWorldView();
+				mCamera.Pan(mViewport.MapPixelToCoords(previous, view) - mViewport.MapPixelToCoords(pixel, view));
+				mContext.ApplyCamera();
+			}
+			mCameraPanPixel = mousePixel;
+			return true;
+		}
+		if (event.is<sf::Event::MouseMovedRaw>() && mCameraPanButton) return true;
+		if (event.is<sf::Event::FocusLost>()) mCameraPanButton.reset();
 		// Selection owns viewport left clicks only while paused. While playing,
 		// gameplay receives them and editor selection is available via Hierarchy.
 		// Remember the press so its release is consumed even if the cursor leaves the image.

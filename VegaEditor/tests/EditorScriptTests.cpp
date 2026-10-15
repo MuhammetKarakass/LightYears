@@ -19,6 +19,10 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "camera editor", ScriptOperation::Camera }, { "camera game", ScriptOperation::Camera },
+		{ "focus", ScriptOperation::Focus }, { "zoom 2", ScriptOperation::Zoom },
+		{ "pan -500 0", ScriptOperation::Pan }, { "expect-visible", ScriptOperation::ExpectVisible },
+		{ "expect-camera editor", ScriptOperation::ExpectCamera }, { "expect-camera game", ScriptOperation::ExpectCamera },
 		{ "pause", ScriptOperation::Pause }, { "play", ScriptOperation::Play },
 		{ "wait 12", ScriptOperation::Wait }, { "select 11", ScriptOperation::Select },
 		{ "select-type PlayerSpaceShip", ScriptOperation::SelectType },
@@ -46,6 +50,9 @@ int main()
 		Check(ParseEditorScriptLine(line).IsIgnored(), "Blank/comment must be ignored");
 	}
 	for (const char* line : { "unknown", "Pause", "select", "select -1", "select 4294967296", "select 2x",
+		"camera", "camera other", "expect-camera", "expect-camera other", "focus 1", "expect-visible 1",
+		"zoom", "zoom 0", "zoom -1", "zoom nan", "zoom inf", "zoom 1x", "zoom 1e999",
+		"pan", "pan 1", "pan 1 nan", "pan inf 0", "pan 1x 2",
 		"select-type", "select-type Actor -1", "wait", "wait -2", "wait 1.5", "move", "move 1", "move 1 abc",
 		"move nan 2", "move inf 2", "move 1e999 2", "move 1x 2", "rotate", "rotate bad",
 		"expect-selected", "expect-location 1", "expect-location 1 2 -1", "expect-location 1 2 nope",
@@ -55,6 +62,9 @@ int main()
 		Check(!parsed.command && !parsed.error.empty(), std::string{ "Bad command accepted: " } + line);
 	}
 	Check(ParseEditorScriptLine("select 0").command->number == 0, "ID zero must be valid");
+	Check(ParseEditorScriptLine("zoom 2.5").command->factor == 2.5f, "Zoom factor lost");
+	Check(ParseEditorScriptLine("pan -500 20").command->location == sf::Vector2f{ -500.f, 20.f }, "Pan values lost");
+	Check(ParseEditorScriptLine("camera editor").command->text == "editor", "Camera mode lost");
 	Check(ParseEditorScriptLine("wait 12").command->number == 12, "Frame count lost");
 	Check(ParseEditorScriptLine("select-type Actor").command->number == 0, "Default type index must be zero");
 	Check(ParseEditorScriptLine("select-type Actor 2").command->number == 2, "Type index lost");

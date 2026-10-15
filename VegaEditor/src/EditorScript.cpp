@@ -92,6 +92,29 @@ namespace vega
 		switch (command.operation)
 		{
 		case ScriptOperation::Pause: success = SetPaused{ true }.Execute(context); break;
+		case ScriptOperation::Camera: success = context.SetEditorCamera(command.text == "editor"); break;
+		case ScriptOperation::Focus: success = context.FocusSelection(); break;
+		case ScriptOperation::Zoom:
+		case ScriptOperation::Pan:
+			if (context.SetEditorCamera(true))
+			{
+				if (command.operation == ScriptOperation::Zoom)
+					context.camera->ZoomAt(command.factor, context.world->GetWorldView().getCenter());
+				else context.camera->Pan(command.location);
+				context.ApplyCamera();
+				success = true;
+			}
+			break;
+		case ScriptOperation::ExpectCamera:
+			success = context.world->GetViewOverride().has_value() == (command.text == "editor");
+			break;
+		case ScriptOperation::ExpectVisible:
+		{
+			const auto view = context.world->GetWorldView();
+			success = actor && actor->GetActorGlobalBounds().findIntersection(
+				sf::FloatRect{ view.getCenter() - view.getSize() * 0.5f, view.getSize() }).has_value();
+			break;
+		}
 		case ScriptOperation::Play: success = SetPaused{ false }.Execute(context); break;
 		case ScriptOperation::Wait: mWaitFrames = command.number; success = true; break;
 		case ScriptOperation::Select: success = SelectActor{ command.number }.Execute(context); break;
