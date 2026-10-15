@@ -62,6 +62,56 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "open-prefab" || verb == "save-prefab" || verb == "close-prefab")
+		{
+			if (tokens.size() != (verb == "open-prefab" ? 2u : 1u)) return bad();
+			if (verb == "open-prefab")
+			{
+				if (tokens[1].empty()) return bad();
+				command.text = tokens[1];
+			}
+			command.operation = verb == "open-prefab" ? ScriptOperation::OpenPrefab : verb == "save-prefab" ? ScriptOperation::SavePrefab : ScriptOperation::ClosePrefab;
+			return { command, {} };
+		}
+		if (verb == "create-prefab" || verb == "expect-prefab" || verb == "reload-prefabs" || verb == "place-prefab" || verb == "create-variant" ||
+			verb == "apply-prefab-prop" || verb == "revert-prefab-prop" || verb == "expect-overridden")
+		{
+			if (verb == "reload-prefabs")
+			{
+				if (tokens.size() != 1) return bad();
+				command.operation = ScriptOperation::ReloadPrefabs;
+			}
+			else
+			{
+				if (tokens.size() < 2 || tokens[1].empty()) return bad();
+				command.text = tokens[1];
+				if (verb == "place-prefab")
+				{
+					if (tokens.size() != 2 && tokens.size() != 4) return bad();
+					if (tokens.size() == 4 && (!real(2, command.location.x) || !real(3, command.location.y))) return bad();
+					command.number = tokens.size() == 4 ? 1 : 0;
+					command.operation = ScriptOperation::PlacePrefab;
+				}
+				else if (verb == "create-prefab" || verb == "expect-prefab")
+				{
+					if (tokens.size() != 2) return bad();
+					command.operation = verb == "create-prefab" ? ScriptOperation::CreatePrefab : ScriptOperation::ExpectPrefab;
+				}
+				else
+				{
+					if (tokens.size() != (verb == "expect-overridden" ? 4u : 3u) || tokens[2].empty()) return bad();
+					command.property = tokens[2];
+					if (verb == "expect-overridden")
+					{
+						if (tokens[3] != "true" && tokens[3] != "false") return bad();
+						command.overwrite = tokens[3] == "true";
+						command.operation = ScriptOperation::ExpectOverridden;
+					}
+					else command.operation = verb == "create-variant" ? ScriptOperation::CreateVariant : verb == "apply-prefab-prop" ? ScriptOperation::ApplyPrefabProp : ScriptOperation::RevertPrefabProp;
+				}
+			}
+			return { command, {} };
+		}
 		if (verb == "add-component" || verb == "remove-component" || verb == "expect-component")
 		{
 			if (tokens.size() < 2 || tokens[1].empty()) return bad();

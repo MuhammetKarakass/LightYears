@@ -17,6 +17,8 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		CreatePrefab, PlacePrefab, CreateVariant, ApplyPrefabProp, RevertPrefabProp, ExpectPrefab, ExpectOverridden, ReloadPrefabs,
+		OpenPrefab, SavePrefab, ClosePrefab,
 		SetProjectStartup, ExpectProjectStartup,
 		NewScene, OpenScene, SaveScene, Create, CreateMany, Delete, Duplicate, Rename, SelectName,
 		PlayMode, Stop, ExpectMode, ExpectEntityCount, ExpectSceneDirty,

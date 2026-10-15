@@ -2,6 +2,7 @@
 #include <framework/World.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
+#include <framework/scene/PrefabLibrary.h>
 #include <script/ScriptComponent.h>
 #include <cmath>
 #include <cstdlib>
@@ -441,6 +442,75 @@ namespace vega
 	void ComponentCommand::Undo(EditorContext& context)
 	{
 		if (!mBefore.is_null()) Restore(context, mBefore);
+	}
+
+	bool RestoreSceneEntity(EditorContext& context, const nlohmann::json& entity)
+	{
+		if (!context.world || context.playMode || context.transitioning) return false;
+		const auto guid = entity.at("guid").get<std::string>();
+		const auto actor = context.ResolveGuid(guid);
+		const auto missing = std::find_if(context.world->unresolvedPrefabs.begin(), context.world->unresolvedPrefabs.end(),
+			[&](const auto& data) { return data.value("guid", std::string{}) == guid; });
+		if (!actor && missing == context.world->unresolvedPrefabs.end()) return false;
+		auto staged = entity;
+		const auto eraseMissing = [&]()
+		{
+			if (missing != context.world->unresolvedPrefabs.end()) context.world->unresolvedPrefabs.erase(missing);
+		};
+		if (staged.value("_unresolved", false) || (staged.contains("prefab") && !staged.contains("type") &&
+			!ly::PrefabLibrary::Get().Resolve(staged["prefab"].get<std::string>())))
+		{
+			staged.erase("_unresolved");
+			eraseMissing();
+			context.world->unresolvedPrefabs.push_back(std::move(staged));
+			if (actor) actor->Destroy();
+			context.ResetActorCache();
+			return true;
+		}
+		// Internal undo snapshots contain the full type and values as well as the
+		// prefab link. Load those values directly, then compare to today's baseline.
+		const auto snapshotPrefab = staged.contains("type") ? staged.value("prefab", std::string{}) : std::string{};
+		const auto savedBaseline = staged.value("_prefabBaseline", nlohmann::json::object());
+		staged.erase("_prefabBaseline");
+		if (!snapshotPrefab.empty()) staged.erase("prefab");
+		const auto temporary = ly::SceneEntityComponent::GenerateGuid();
+		staged["guid"] = temporary;
+		const auto loaded = ly::SceneSerializer::Load(*context.world, EntityScene(staged));
+		context.ResetActorCache();
+		const auto replacement = context.ResolveGuid(temporary);
+		if (loaded.spawned != 1 || !replacement) return false;
+		const bool selected = actor && context.selection.Get() == actor;
+		if (actor) actor->Destroy();
+		eraseMissing();
+		replacement->FindComponent<ly::SceneEntityComponent>()->guid = guid;
+		if (!snapshotPrefab.empty())
+		{
+			auto* identity = replacement->FindComponent<ly::SceneEntityComponent>();
+			identity->prefab = snapshotPrefab;
+			const auto resolved = ly::PrefabLibrary::Get().Resolve(snapshotPrefab);
+			identity->prefabBaseline = resolved ? resolved.entity : savedBaseline;
+		}
+		context.ResetActorCache();
+		if (selected) context.selection.Select(replacement);
+		return true;
+	}
+	bool ReplaceEntities::Execute(EditorContext& context)
+	{
+		std::size_t applied = 0;
+		for (const auto& entity : mAfter)
+		{
+			if (!RestoreSceneEntity(context, entity))
+			{
+				while (applied > 0) RestoreSceneEntity(context, mBefore[--applied]);
+				return false;
+			}
+			++applied;
+		}
+		return true;
+	}
+	void ReplaceEntities::Undo(EditorContext& context)
+	{
+		for (const auto& entity : mBefore) RestoreSceneEntity(context, entity);
 	}
 
 	bool CreateEntity::Execute(EditorContext& context)

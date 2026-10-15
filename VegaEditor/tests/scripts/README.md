@@ -290,3 +290,28 @@ allows complete five-second FrameStats intervals before `perf-stats.png`.
 Compare settled `avgRender` and `avgTick` samples from `LightYears.log`, excluding
 startup, bulk creation and screenshot frames. Keep the window size, layout and
 build configuration the same for both runs.
+# Prefab commands
+
+Prefab commands operate on the selection in Edit mode:
+
+| Command | Effect |
+| --- | --- |
+| `create-prefab <path>` | Create an asset from the selection and convert it to an instance; undo restores the entity and leaves the file. |
+| `place-prefab <path> [x y]` | Place and select an instance; omitted coordinates use the camera centre. |
+| `create-variant <parent> <path>` | Create a variant document that inherits the parent prefab. |
+| `apply-prefab-prop <Target> "<Property>"` | Write the selected property to its prefab and refresh instances. |
+| `revert-prefab-prop <Target> "<Property>"` | Restore the selected property from the prefab. |
+| `expect-prefab <path>\|none` | Assert the selection's prefab link. |
+| `expect-overridden <Target> "<Property>" true\|false` | Assert a property differs from the resolved baseline. |
+| `reload-prefabs` | Reload documents and refresh instances while retaining overrides. |
+| `open-prefab <path>` | Edit a temporary prefab instance in the scratch Inspector. |
+| `save-prefab` | Save scratch changes atomically and refresh the edit scene. |
+| `close-prefab` | Return to scene inspection; save changes first. |
+
+Targets use the same names as `set-prop` (`Actor`, `HealthComponent`, etc.).
+`ScriptComponent` addresses the first script's declared properties. Prefab paths
+must be asset-relative `.prefab.json` files under `prefabs/`. Automation must pass
+`--asset-root` with a disposable build-tree copy before any prefab-writing command.
+`VegaEditorPrefabs` configures and runs `prefabs.vegascript` this way. Scene edits
+and refreshes enter undo history; writing an asset is immediate and is not undone.
+

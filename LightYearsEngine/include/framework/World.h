@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <typeindex>
 #include <unordered_map>
+#include <nlohmann/json.hpp>
 
 namespace ly
 {
@@ -23,6 +24,8 @@ namespace ly
 	public:
 
 		World(Application* owningApp);
+		// Missing prefab references have no actor, but remain authored data.
+		nlohmann::json unresolvedPrefabs = nlohmann::json::array();
 
 		void BeginPlayInternal();
 		void TickInternal(float deltaTime);

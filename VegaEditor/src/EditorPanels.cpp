@@ -1,6 +1,7 @@
 #include "editor/EditorApplication.h"
 #include "editor/EditorIcons.h"
 #include "editor/PropertyWidgets.h"
+#include "editor/EditorPrefabs.h"
 #include <framework/World.h>
 #include <framework/Actor.h>
 #include <framework/scene/SceneEntityComponent.h>
@@ -109,6 +110,17 @@ namespace vega
 				ImGui::SetCursorScreenPos({ cursor.x + (available.x - imageSize.x) * 0.5f, cursor.y + (available.y - imageSize.y) * 0.5f });
 				// The RenderTexture overload also flips the UVs to display the image upright.
 				ImGui::Image(mViewport.GetTexture(), imageSize);
+				if (!mContext.playMode && ImGui::BeginDragDropTarget())
+				{
+					if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_PREFAB"))
+					{
+						const auto origin = ImGui::GetItemRectMin();
+						const auto mouse = ImGui::GetMousePos();
+						const sf::Vector2i pixel{ static_cast<int>((mouse.x - origin.x) / scale), static_cast<int>((mouse.y - origin.y) / scale) };
+						PlacePrefab(mContext, mHistory, static_cast<const char*>(payload->Data), mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView()));
+					}
+					ImGui::EndDragDropTarget();
+				}
 				const ImVec2 topLeft = ImGui::GetItemRectMin();
 				const ImVec2 bottomRight = ImGui::GetItemRectMax();
 				auto* draw = ImGui::GetWindowDrawList();
@@ -226,11 +238,14 @@ namespace vega
 					}
 					else
 					{
+						const bool prefab = identity && !identity->prefab.empty();
+						if (prefab) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
 						if (ImGui::Selectable(name.c_str(), mSelection.Get() == actor, ImGuiSelectableFlags_AllowDoubleClick))
 						{
 							mSelection.Select(actor);
 							if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) BeginRename();
 						}
+						if (prefab) ImGui::PopStyleColor();
 						if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 						{
 							ImGui::OpenPopup("Entity actions");
@@ -243,6 +258,12 @@ namespace vega
 						mSelection.Select(actor);
 						ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
 						DrawCreateMenu();
+						if (ImGui::MenuItem("Create Prefab...", nullptr, false, identity != nullptr))
+						{
+							mVariantParent.clear();
+							std::snprintf(mPrefabName, sizeof(mPrefabName), "%s", identity->name.c_str());
+							mCreatePrefabDialog = true;
+						}
 						if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, identity != nullptr)) DuplicateSceneEntity(mContext, mHistory);
 						if (ImGui::MenuItem("Rename", "F2", false, identity != nullptr)) BeginRename();
 						if (ImGui::MenuItem("Delete", "Del", false, identity != nullptr)) mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
@@ -267,14 +288,34 @@ namespace vega
 	}
 	void EditorApplication::BuildInspectorPanel()
 	{
+		auto& context = mPrefabWorld ? mPrefabContext : mContext;
+		auto& selection = mPrefabWorld ? mPrefabSelection : mSelection;
+		auto& history = mPrefabWorld ? mPrefabHistory : mHistory;
 		if (ImGui::Begin("Inspector", &mShowInspector))
 		{
-			if (const auto actor = mSelection.Get())
+			if (mPrefabWorld)
 			{
+				ImGui::Text("Prefab: %s%s", mPrefabPath.generic_string().c_str(), PrefabDirty() ? " *" : "");
+				if (ImGui::Button("Save Prefab")) SavePrefab();
+				ImGui::SameLine();
+				if (ImGui::Button("Back to Scene")) RequestPrefab({});
+			}
+			if (const auto actor = selection.Get())
+			{
+				if (!mPrefabWorld)
+					if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>(); identity && !identity->prefab.empty())
+					{
+						ImGui::Text("Prefab: %s", std::filesystem::path(identity->prefab).stem().stem().string().c_str());
+						ImGui::SameLine();
+						if (ImGui::SmallButton("open")) RequestPrefab(identity->prefab);
+						if (ImGui::SmallButton("Revert all")) ChangeAllPrefab(context, history, false);
+						ImGui::SameLine();
+						if (ImGui::SmallButton("Apply all")) ChangeAllPrefab(context, history, true);
+					}
 				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
-				if (ImGui::Button("Focus")) mContext.FocusSelection();
-				if (mContext.playMode) ImGui::TextWrapped("Play inspection only. Runtime changes are discarded on Stop.");
-				ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+				if (ImGui::Button("Focus")) context.FocusSelection();
+				if (context.playMode) ImGui::TextWrapped("Play inspection only. Runtime changes are discarded on Stop.");
+				ImGui::BeginDisabled(context.playMode || context.transitioning);
 				if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>())
 				{
 					ly::reflect::PropertyInfo nameProperty;
@@ -282,8 +323,8 @@ namespace vega
 					nameProperty.kind = ly::reflect::PropertyKind::String;
 					ly::reflect::PropertyValue value = identity->name;
 					const bool changed = DrawProperty(nameProperty, value);
-					if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
-					if (changed) RenameSceneEntity(mContext, mHistory, std::get<std::string>(value), mPropertyMergeGroup);
+					if (ImGui::IsItemActivated()) mPropertyMergeGroup = history.BeginMergeGroup();
+					if (changed) RenameSceneEntity(context, history, std::get<std::string>(value), mPropertyMergeGroup);
 				}
 				std::unique_ptr<EditorCommand> componentEdit;
 				static ImGuiTextFilter componentFilter;
@@ -320,7 +361,7 @@ namespace vega
 						if (ImGui::Selectable(path.c_str()))
 						{
 							actor->AddComponent<script::ScriptComponent>(path).Prepare();
-							mContext.SceneChanged();
+							context.SceneChanged();
 						}
 					if (paths.empty()) ImGui::TextUnformatted("No .lua files under scripts/");
 					ImGui::EndPopup();
@@ -330,11 +371,16 @@ namespace vega
 					if (!target.type) return;
 					ImGui::PushID(target.object);
 					const bool open = ImGui::CollapsingHeader(target.type->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
-					if (target.componentIdentity && ImGui::BeginPopupContextItem("Component actions"))
+					if (ImGui::BeginPopupContextItem("Component actions"))
 					{
+						if (!mPrefabWorld)
+						{
+							if (ImGui::MenuItem("Revert all")) ChangePrefabSection(context, history, target, false);
+							if (ImGui::MenuItem("Apply all")) ChangePrefabSection(context, history, target, true);
+						}
 						const auto* actorType = ly::reflect::TypeRegistry::Get().FindMostDerived(*actor);
 						const bool required = actorType && actorType->RequiresComponent(target.type->name);
-						const bool removable = target.type->removable && !required;
+						const bool removable = target.componentIdentity && target.type->removable && !required;
 						if (ImGui::MenuItem("Remove Component", nullptr, false, removable))
 							componentEdit = std::make_unique<RemoveComponentCommand>(actor->GetUniqueID(), *target.componentIdentity);
 						if (!removable && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -354,17 +400,25 @@ namespace vega
 								ImGui::TextWrapped("%s", scriptComponent->LastError().c_str());
 								ImGui::PopStyleColor();
 							}
-							if (ImGui::Button("Reload")) scriptComponent->Reload();
+							if (ImGui::Button("Reload"))
+							{
+								scriptComponent->Reload();
+								context.SceneChanged();
+							}
 							for (const auto& entry : scriptComponent->Properties())
 							{
 								ly::reflect::PropertyInfo property;
 								property.name = entry.first;
 								property.kind = ly::reflect::KindOf(entry.second);
 								auto value = entry.second;
+								const bool overridden = !mPrefabWorld && PrefabPropertyOverridden(context, *actor, target, entry.first);
+								if (overridden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
 								const bool changed = DrawProperty(property, value);
-								if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
-								if (changed) mHistory.Execute(std::make_unique<SetScriptPropertyCommand>(actor->GetUniqueID(),
+								if (overridden) ImGui::PopStyleColor();
+								if (ImGui::IsItemActivated()) mPropertyMergeGroup = history.BeginMergeGroup();
+								if (changed) history.Execute(std::make_unique<SetScriptPropertyCommand>(actor->GetUniqueID(),
 									*target.componentIdentity, entry.first, value, (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
+								PrefabPropertyMenu(*actor, target, entry.first);
 							}
 						}
 						const auto properties = target.type->AllProperties();
@@ -377,6 +431,7 @@ namespace vega
 							for (const auto* property : properties)
 							{
 								if (property->category != category) continue;
+								if (mPrefabWorld && !target.componentIdentity && property->name == "Location") continue;
 								if (scriptComponent && (property->name == "Script" || property->name == "Last Error")) continue;
 								auto value = property->getter(target.object);
 								ImGui::BeginDisabled(!property->setter);
@@ -384,20 +439,24 @@ namespace vega
 								const float labelWidth = ImGui::CalcTextSize(property->name.c_str()).x;
 								ImGui::SetNextItemWidth(std::max(100.f,
 									ImGui::GetContentRegionAvail().x - labelWidth - ImGui::GetStyle().ItemInnerSpacing.x));
+								const bool overridden = !mPrefabWorld && PrefabPropertyOverridden(context, *actor, target, property->name);
+								if (overridden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
 								const bool changed = DrawProperty(*property, value);
-								if (ImGui::IsItemActivated()) mPropertyMergeGroup = mHistory.BeginMergeGroup();
+								if (overridden) ImGui::PopStyleColor();
+								if (ImGui::IsItemActivated()) mPropertyMergeGroup = history.BeginMergeGroup();
 								if (changed && property->setter)
 								{
-									mHistory.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity,
+									history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity,
 										property->name, std::move(value), (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
 								}
 								ImGui::EndDisabled();
+								PrefabPropertyMenu(*actor, target, property->name);
 								if (!property->tooltip.empty()) ImGui::SetItemTooltip("%s", property->tooltip.c_str());
-								if (!mContext.propertyError.empty() && mContext.propertyErrorActor == actor->GetUniqueID() &&
-									mContext.propertyErrorComponent == target.componentIdentity && mContext.propertyErrorName == property->name)
+								if (!context.propertyError.empty() && context.propertyErrorActor == actor->GetUniqueID() &&
+									context.propertyErrorComponent == target.componentIdentity && context.propertyErrorName == property->name)
 								{
 									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.f, 0.3f, 0.3f, 1.f });
-									ImGui::TextWrapped("%s", mContext.propertyError.c_str());
+									ImGui::TextWrapped("%s", context.propertyError.c_str());
 									ImGui::PopStyleColor();
 								}
 							}
@@ -429,10 +488,10 @@ namespace vega
 				}
 				ImGui::Separator();
 				if (ImGui::Button("Delete entity") && actor->FindComponent<ly::SceneEntityComponent>())
-					mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+					history.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
 				ImGui::EndDisabled();
 				// Recreation invalidates the enumerated component pointers; apply after drawing.
-				if (componentEdit) mHistory.Execute(std::move(componentEdit));
+				if (componentEdit) history.Execute(std::move(componentEdit));
 			}
 			else
 			{

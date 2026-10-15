@@ -19,6 +19,18 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "create-prefab prefabs/BigRock.prefab.json", ScriptOperation::CreatePrefab },
+		{ "place-prefab prefabs/BigRock.prefab.json", ScriptOperation::PlacePrefab },
+		{ "place-prefab prefabs/BigRock.prefab.json 800 400", ScriptOperation::PlacePrefab },
+		{ "create-variant prefabs/Rock.prefab.json prefabs/BigRock.prefab.json", ScriptOperation::CreateVariant },
+		{ "apply-prefab-prop HealthComponent \"Max Health\"", ScriptOperation::ApplyPrefabProp },
+		{ "revert-prefab-prop Actor Velocity", ScriptOperation::RevertPrefabProp },
+		{ "expect-prefab none", ScriptOperation::ExpectPrefab },
+		{ "expect-overridden Actor Velocity true", ScriptOperation::ExpectOverridden },
+		{ "reload-prefabs", ScriptOperation::ReloadPrefabs },
+		{ "open-prefab prefabs/BigRock.prefab.json", ScriptOperation::OpenPrefab },
+		{ "save-prefab", ScriptOperation::SavePrefab },
+		{ "close-prefab", ScriptOperation::ClosePrefab },
 		{ "set-project-startup scenes/start.scene.json", ScriptOperation::SetProjectStartup },
 		{ "set-project-startup \"\"", ScriptOperation::SetProjectStartup },
 		{ "expect-project-startup \"\"", ScriptOperation::ExpectProjectStartup },
@@ -168,6 +180,11 @@ int main()
 	for (const char* line : { "add-component", "add-component \"\"", "add-component HealthComponent extra", "remove-component", "remove-component X -1",
 		"remove-component X 1x", "remove-component X 4294967296", "remove-component X 0 extra", "expect-component X", "expect-component X true", "expect-component X absent extra" })
 		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid component command accepted");
+	if (failures) return 1;
+	for (const char* line : { "create-prefab", "create-prefab \"\"", "create-prefab p extra", "place-prefab", "place-prefab p 1",
+		"place-prefab p nan 2", "place-prefab p 1 2 extra", "apply-prefab-prop Actor", "revert-prefab-prop Actor P extra",
+		"expect-prefab", "expect-overridden Actor P yes", "expect-overridden Actor P", "reload-prefabs extra", "create-variant p" })
+		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid prefab command accepted");
 	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;

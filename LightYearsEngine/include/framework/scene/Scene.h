@@ -32,7 +32,7 @@ namespace ly
 	public:
 		static nlohmann::json Save(World& world, nlohmann::json settings = nlohmann::json::object());
 		// Null for destroyed actors or actors without a serializable scene identity/type.
-		static nlohmann::json SaveEntity(Actor& actor);
+		static nlohmann::json SaveEntity(Actor& actor, bool expanded = false);
 		static SceneLoadResult Load(World& world, const nlohmann::json& scene);
 		static void RegisterComponentSerializer(const std::string& type, ComponentSerializer serializer);
 		// For actors whose reflected construction-only properties select their

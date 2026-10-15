@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <functional>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace vega
 {
@@ -27,7 +28,9 @@ namespace vega
 		bool playMode = false;
 		bool transitioning = false;
 		std::function<bool(const std::string&, const std::string&)> sceneAction;
+		std::function<bool(const std::string&, const std::string&)> prefabAction;
 		std::function<bool()> sceneDirty;
+		std::function<void()> contentChanged;
 		std::string sceneError;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
@@ -35,6 +38,9 @@ namespace vega
 		std::string propertyErrorName;
 		// Monotonic edit revisions deliberately keep undo-to-save dirty until Save/Reload.
 		std::uint64_t sceneRevision = 0;
+		std::optional<unsigned int> prefabOverrideActor;
+		std::uint64_t prefabOverrideRevision = 0;
+		std::unordered_map<const void*, std::unordered_set<std::string>> prefabOverrides;
 		void SceneChanged() { ++sceneRevision; }
 		void ResetActorCache() const { cachedWorldID.reset(); }
 		void RefreshActorCache() const;
@@ -219,6 +225,21 @@ namespace vega
 		std::string Name() const override { return "Create " + mEntity.value("type", std::string{}); }
 	private:
 		nlohmann::json mEntity;
+	};
+
+	// Whole-entity edits keep GUID-based history valid across prefab refreshes.
+	bool RestoreSceneEntity(EditorContext&, const nlohmann::json&);
+	class ReplaceEntities final : public EditorCommand
+	{
+	public:
+		ReplaceEntities(nlohmann::json before, nlohmann::json after, std::string name)
+			: mBefore(std::move(before)), mAfter(std::move(after)), mName{ std::move(name) } {}
+		bool Execute(EditorContext& context) override;
+		void Undo(EditorContext& context) override;
+		std::string Name() const override { return mName; }
+	private:
+		nlohmann::json mBefore, mAfter;
+		std::string mName;
 	};
 
 	bool CreateSceneEntity(EditorContext&, CommandHistory&, const std::string& type);

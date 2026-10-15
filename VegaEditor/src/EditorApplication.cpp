@@ -5,6 +5,7 @@
 #include <framework/Actor.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
+#include <framework/scene/PrefabLibrary.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui-SFML.h>
@@ -15,6 +16,9 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
+#ifdef _MSC_VER
+#include <crtdbg.h>
+#endif
 
 namespace vega
 {
@@ -58,8 +62,32 @@ namespace vega
 		}
 #endif
 		mExportLayout.assetRoot = mDocument.Root();
+#ifdef _MSC_VER
+		if (scriptRequested)
+		{
+			// An assertion in unattended script mode must report to CTest, not
+			// wait forever for a Windows debug dialog that nobody can dismiss.
+			_set_error_mode(_OUT_TO_STDERR);
+			_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+			_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+			_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+		}
+#endif
+		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
 		mContext.document = &mDocument;
+		mContext.contentChanged = [this]() { RefreshContent(); };
+		mPrefabContext.contentChanged = mContext.contentChanged;
+		mContext.prefabAction = [this](const std::string& action, const std::string& path)
+		{
+			if (mContext.playMode || mContext.transitioning) return false;
+			if (action == "save") return SavePrefab();
+			if (PrefabDirty()) { mContext.sceneError = "Unsaved prefab: save before replacing it"; return false; }
+			if (action == "open") return OpenPrefab(path);
+			if (action == "close") { ClosePrefab(); return true; }
+			return false;
+		};
+		mPrefabContext.prefabAction = mContext.prefabAction;
 		mContext.sceneDirty = [this]() { return SceneDirty(); };
 		mContext.sceneAction = [this](const std::string& action, const std::string& path)
 		{
@@ -169,7 +197,7 @@ namespace vega
 		ImGui::SFML::Update(window, mUIClock.restart());
 		BuildUI();
 		ImGui::SFML::Render(window);
-		if (mScript && !mContext.transitioning && mScript->Step(mContext, mHistory, window)) QuitApplication();
+		if (mScript && !mContext.transitioning && mScript->Step(mPrefabWorld ? mPrefabContext : mContext, mPrefabWorld ? mPrefabHistory : mHistory, window)) QuitApplication();
 		// The world is drawn into the viewport texture, so the window holds the finished frame only once the UI is on
 		// it (and only then is the window's framebuffer the active one); run the --visual-capture step after that.
 		GameApplication::AfterRender();
@@ -182,19 +210,23 @@ namespace vega
 
 	void EditorApplication::BuildUI()
 	{
+		auto& activeHistory = mPrefabWorld ? mPrefabHistory : mHistory;
 		mHistory.PruneInvalidCommands();
 		const ImGuiIO& io = ImGui::GetIO();
 		if (io.KeyCtrl && !io.WantTextInput && !mContext.playMode)
 		{
 			if (ImGui::IsKeyPressed(ImGuiKey_Z, false))
 			{
-				if (io.KeyShift) mHistory.Redo();
-				else mHistory.Undo();
+				if (io.KeyShift) activeHistory.Redo();
+				else activeHistory.Undo();
 			}
-			if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) mHistory.Redo();
+			if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) activeHistory.Redo();
 		}
-		if (!mContext.playMode && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false) && !mDataFocused) SaveScene();
-		if (!mContext.playMode && !io.WantTextInput)
+		if (!mContext.playMode && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false) && !mDataFocused)
+		{
+			if (mPrefabWorld) SavePrefab(); else SaveScene();
+		}
+		if (!mPrefabWorld && !mContext.playMode && !io.WantTextInput)
 		{
 			if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) DuplicateSceneEntity(mContext, mHistory);
 			if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
@@ -236,10 +268,10 @@ namespace vega
 			}
 			if (ImGui::BeginMenu("Edit"))
 			{
-				const std::string undoLabel = mHistory.CanUndo() ? "Undo " + mHistory.UndoName() : "Undo";
-				const std::string redoLabel = mHistory.CanRedo() ? "Redo " + mHistory.RedoName() : "Redo";
-				if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, !mContext.playMode && mHistory.CanUndo())) mHistory.Undo();
-				if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y / Ctrl+Shift+Z", false, !mContext.playMode && mHistory.CanRedo())) mHistory.Redo();
+				const std::string undoLabel = activeHistory.CanUndo() ? "Undo " + activeHistory.UndoName() : "Undo";
+				const std::string redoLabel = activeHistory.CanRedo() ? "Redo " + activeHistory.RedoName() : "Redo";
+				if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, !mContext.playMode && activeHistory.CanUndo())) activeHistory.Undo();
+				if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y / Ctrl+Shift+Z", false, !mContext.playMode && activeHistory.CanRedo())) activeHistory.Redo();
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("View"))
@@ -344,6 +376,7 @@ namespace vega
 		BuildDataPanel();
 		BuildExportDialog();
 		BuildSceneDialogs();
+		BuildPrefabDialogs();
 		BuildProjectDialog();
 	}
 

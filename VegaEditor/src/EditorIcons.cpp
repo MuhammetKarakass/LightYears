@@ -47,6 +47,10 @@ namespace vega
 			else { d.AddCircleFilled(p(.5f, .4f), s * .04f, c); d.AddCircleFilled(p(.5f, .6f), s * .04f, c); } break;
 		case IconKind::Actor:
 			d.AddQuad(p(.5f, .12f), p(.86f, .5f), p(.5f, .88f), p(.14f, .5f), c, 1.8f); break;
+		case IconKind::Prefab:
+			d.AddQuad(p(.5f, .12f), p(.84f, .3f), p(.5f, .5f), p(.16f, .3f), c, 1.8f);
+			line(.16f, .3f, .16f, .7f); line(.84f, .3f, .84f, .7f);
+			line(.16f, .7f, .5f, .9f); line(.84f, .7f, .5f, .9f); line(.5f, .5f, .5f, .9f); break;
 		case IconKind::Snap:
 			for (int i = 0; i < 3; ++i) { const float v = .2f + i * .3f; line(v, .15f, v, .85f); line(.15f, v, .85f, v); } break;
 		default:

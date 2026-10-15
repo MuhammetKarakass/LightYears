@@ -1,10 +1,16 @@
 #include "framework/AssetManager.h"
+#include "framework/scene/PrefabLibrary.h"
 #include "framework/debug/Log.h"
 
 #include <chrono>
 
 namespace ly
 {
+	void AssetManager::SetAssetRootDirectory(const std::string& rootDirectory)
+	{
+		mAssetRootDirectory = rootDirectory;
+		PrefabLibrary::Get().SetRoot(rootDirectory);
+	}
 	namespace
 	{
 		// Hitch diagnostics: every cache miss is a synchronous disk read (and, for

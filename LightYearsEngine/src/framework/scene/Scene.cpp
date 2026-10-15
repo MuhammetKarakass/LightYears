@@ -1,5 +1,6 @@
 #include "framework/scene/Scene.h"
 #include "framework/scene/SceneEntityComponent.h"
+#include "framework/scene/PrefabLibrary.h"
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "framework/reflection/Reflection.h"
@@ -205,10 +206,11 @@ namespace ly
 				if (!entity.is_null()) scene["entities"].push_back(std::move(entity));
 			}
 		}
+		for (const auto& missing : world.unresolvedPrefabs) scene["entities"].push_back(missing);
 		return scene;
 	}
 
-	nlohmann::json SceneSerializer::SaveEntity(Actor& actor)
+	nlohmann::json SceneSerializer::SaveEntity(Actor& actor, bool expanded)
 	{
 		reflect::RegisterEngineTypes();
 		if (actor.GetIsPendingDestroy()) return nullptr;
@@ -262,6 +264,15 @@ namespace ly
 		for (const auto& entry : constructor.counts)
 			for (auto count = occurrences[entry.first]; count < entry.second; ++count) removed.push_back(entry.first);
 		if (!removed.empty()) entity["removed"] = std::move(removed);
+		if (!expanded && !identity->prefab.empty())
+		{
+			auto delta = PrefabLibrary::Diff(entity, identity->prefabBaseline);
+			delta["prefab"] = identity->prefab;
+			delta["guid"] = identity->guid;
+			delta["name"] = identity->name;
+			delta["properties"]["Location"] = entity["properties"]["Location"];
+			return delta;
+		}
 		return entity;
 	}
 
@@ -283,10 +294,30 @@ namespace ly
 			for (const auto& weak : world.GetActorsByTypeIncludingPending<Actor>())
 				if (auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy())
 					if (const auto* identity = actor->FindComponent<SceneEntityComponent>()) guids.insert(identity->guid);
-			for (const auto& entity : scene["entities"])
+			for (const auto& missing : world.unresolvedPrefabs)
+				if (missing.is_object() && missing.contains("guid") && missing["guid"].is_string()) guids.insert(missing["guid"].get<std::string>());
+			for (const auto& authored : scene["entities"])
 			{
 				try
 				{
+					auto entity = authored;
+					Json prefabBaseline;
+					std::string prefab;
+					if (entity.contains("prefab"))
+					{
+						prefab = entity.at("prefab").get<std::string>();
+						auto resolved = PrefabLibrary::Get().Resolve(prefab);
+						result.warnings.insert(result.warnings.end(), resolved.warnings.begin(), resolved.warnings.end());
+						if (!resolved)
+						{
+							const auto guid = entity.value("guid", std::string{});
+							if (!guid.empty() && !guids.insert(guid).second) result.warnings.push_back("Duplicate entity GUID: " + guid);
+							else world.unresolvedPrefabs.push_back(authored);
+							continue;
+						}
+						prefabBaseline = resolved.entity;
+						entity = PrefabLibrary::Merge(std::move(resolved.entity), entity);
+					}
 					const std::string name = entity.at("type").get<std::string>();
 					const auto* type = TypeRegistry::Get().Find(name);
 					if (!type || !type->spawnable || !type->create || type->root != TypeRoot::Actor)
@@ -393,6 +424,8 @@ namespace ly
 					}
 					if (!scriptsHandled && entity.contains("scripts") && !entity["scripts"].empty())
 						result.warnings.push_back(name + ": no script serializer registered");
+					identity.prefab = std::move(prefab);
+					identity.prefabBaseline = std::move(prefabBaseline);
 				}
 				catch (const std::exception& error) { result.warnings.push_back(std::string{ "Entity: " } + error.what()); }
 				catch (...) { result.warnings.push_back("Entity load failed"); }

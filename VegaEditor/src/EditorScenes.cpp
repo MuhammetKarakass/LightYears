@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <imgui.h>
 #include "editor/PropertyWidgets.h"
+#include "editor/EditorPrefabs.h"
 
 namespace vega
 {
@@ -148,6 +149,12 @@ namespace vega
 
 	bool EditorApplication::SetPlayMode(bool playing)
 	{
+		if (playing && PrefabDirty())
+		{
+			mPrefabPendingSceneAction = "play"; mConfirmPrefab = true;
+			return false;
+		}
+		if (playing) ClosePrefab();
 		if (!mContext.world || mContext.transitioning || playing == mContext.playMode) return false;
 		if (playing)
 		{
@@ -166,7 +173,14 @@ namespace vega
 
 	void EditorApplication::RequestScene(const std::string& action, const std::filesystem::path& path)
 	{
+		if (PrefabDirty())
+		{
+			mPrefabPendingSceneAction = action; mPrefabPendingScenePath = path; mConfirmPrefab = true;
+			return;
+		}
+		ClosePrefab();
 		if (mContext.transitioning || (mContext.playMode && action != "exit")) return;
+		if (action == "play") { SetPlayMode(true); return; }
 		mPendingSceneAction = action;
 		mPendingScenePath = path;
 		if (SceneDirty()) mConfirmScene = true;
@@ -265,6 +279,12 @@ namespace vega
 	{
 		if (ImGui::BeginMenu("Create"))
 		{
+			if (ImGui::BeginMenu("Prefabs"))
+			{
+				for (const auto& path : PrefabPaths(mDocument.Root()))
+					if (ImGui::MenuItem(path.c_str())) PlacePrefab(mContext, mHistory, path, mContext.world->GetWorldView().getCenter());
+				ImGui::EndMenu();
+			}
 			auto types = ly::reflect::TypeRegistry::Get().SpawnableActors();
 			std::sort(types.begin(), types.end(), [](const auto* a, const auto* b) { return a->name < b->name; });
 			for (const auto* type : types)

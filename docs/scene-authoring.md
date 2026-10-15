@@ -1,5 +1,11 @@
 # Scene data
 
+Scene entities may also use an asset-relative `"prefab"` in place of `"type"`.
+The loader resolves prefab inheritance before applying instance overrides; saves
+retain only differences plus GUID, name, and Location. Missing prefab instances
+produce warnings, spawn nothing, and preserve their authored JSON on save.
+See [prefabs](prefabs.md) for the format, variants, editor workflow, and API.
+
 `LightYearsGame/assets/scenes/sandbox.scene.json` is a runnable version 1
 `vega.scene` example. It contains one PlayerStart, three DummyEnemy actors,
 two Asteroid actors, and a SpriteActor with `scripts/spin.lua` and a `speed`

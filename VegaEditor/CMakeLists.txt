@@ -21,6 +21,7 @@ add_executable(VegaEditor
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
 	src/EditorScenes.cpp
+	src/EditorPrefabs.cpp
 	src/EditorTheme.cpp
 	src/EditorIcons.cpp
 	src/EditorChrome.cpp
@@ -101,6 +102,13 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	set(VEGA_PREFABS_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/prefabs-temp.scene.json\"")
+	set(VEGA_PREFABS_CAPTURE "\"${CMAKE_CURRENT_BINARY_DIR}/prefab-inspector.png\"")
+	configure_file(tests/scripts/prefabs.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/prefabs.vegascript @ONLY)
+	configure_file(tests/RunPrefabsTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunPrefabsTest.cmake @ONLY)
+	add_test(NAME VegaEditorPrefabs COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunPrefabsTest.cmake)
+	set_tests_properties(VegaEditorPrefabs PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)
 	add_executable(VegaEditorPropertyWidgetsTests tests/PropertyWidgetsTests.cpp)
 	target_include_directories(VegaEditorPropertyWidgetsTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(VegaEditorPropertyWidgetsTests PRIVATE ImGui-SFML::ImGui-SFML)

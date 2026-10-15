@@ -1,6 +1,7 @@
 #include "editor/EditorScript.h"
 #include "editor/EditorCommands.h"
 #include "editor/JsonCommands.h"
+#include "editor/EditorPrefabs.h"
 #include <framework/World.h>
 #include <framework/ProjectSettings.h>
 #include <framework/scene/SceneEntityComponent.h>
@@ -193,6 +194,27 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::OpenPrefab:
+		case ScriptOperation::SavePrefab:
+		case ScriptOperation::ClosePrefab:
+			success = context.prefabAction && context.prefabAction(command.operation == ScriptOperation::OpenPrefab ? "open" : command.operation == ScriptOperation::SavePrefab ? "save" : "close", command.text);
+			break;
+		case ScriptOperation::CreatePrefab: success = CreatePrefab(context, history, command.text); break;
+		case ScriptOperation::PlacePrefab:
+			success = PlacePrefab(context, history, command.text, command.number ? command.location : context.world->GetWorldView().getCenter()); break;
+		case ScriptOperation::CreateVariant: success = CreateVariant(context, command.text, command.property); break;
+		case ScriptOperation::ReloadPrefabs: success = RefreshPrefabs(context, history); break;
+		case ScriptOperation::ExpectPrefab:
+			if (const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr)
+				success = identity->prefab == (command.text == "none" ? "" : command.text);
+			break;
+		case ScriptOperation::ExpectOverridden:
+			if (actor) success = PrefabPropertyOverridden(context, *actor, FindPropertyTarget(*actor, command.text), command.property) == command.overwrite;
+			break;
+		case ScriptOperation::ApplyPrefabProp:
+		case ScriptOperation::RevertPrefabProp:
+			if (actor) success = ChangePrefabProperty(context, history, FindPropertyTarget(*actor, command.text), command.property, command.operation == ScriptOperation::ApplyPrefabProp);
+			break;
 		case ScriptOperation::NewScene:
 		case ScriptOperation::OpenScene:
 		case ScriptOperation::SaveScene:

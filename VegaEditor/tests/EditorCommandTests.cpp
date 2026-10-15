@@ -2,6 +2,7 @@
 #include <framework/World.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
+#include <framework/scene/PrefabLibrary.h>
 #include <framework/SpriteComponent.h>
 #include <framework/LightComponent.h>
 #include <iostream>
@@ -426,6 +427,53 @@ namespace
 			"Cache hits must validate current GUIDs");
 	}
 
+	void TestPrefabReplacements()
+	{
+		using Json = nlohmann::json;
+		ly::World world{ nullptr };
+		auto actor = world.SpawnActor<AuthoredActor>().lock();
+		const auto guid = actor->AddComponent<ly::SceneEntityComponent>("", "Replacement").guid;
+		vega::EditorSelection selection;
+		vega::EditorContext context{ &world, selection };
+		vega::CommandHistory history{ context };
+		selection.Select(actor);
+		const auto before = ly::SceneSerializer::SaveEntity(*actor);
+		auto after = before;
+		after["properties"]["Location"] = { 70, 80 };
+		Check(history.Execute(std::make_unique<vega::ReplaceEntities>(Json::array({ before }), Json::array({ after }), "Replace")), "Replacement entity list must not be nested");
+		Check(selection.Get() == context.ResolveGuid(guid) && selection.Get()->GetActorLocation() == sf::Vector2f{ 70, 80 }, "Replacement must preserve GUID and selection");
+		Check(history.Undo() && ly::SceneSerializer::SaveEntity(*context.ResolveGuid(guid)) == before, "Replacement undo must restore exact values");
+		Check(history.Redo() && context.ResolveGuid(guid)->GetActorLocation() == sf::Vector2f{ 70, 80 }, "Replacement redo must re-resolve GUID");
+		auto missingTarget = after;
+		missingTarget["guid"] = "absent-target";
+		auto changed = after;
+		changed["properties"]["Location"] = { 900, 800 };
+		Check(!history.Execute(std::make_unique<vega::ReplaceEntities>(Json::array({ after, missingTarget }), Json::array({ changed, missingTarget }), "Fail")), "Unavailable replacement must fail");
+		Check(context.ResolveGuid(guid)->GetActorLocation() == sf::Vector2f{ 70, 80 }, "Failed multi-entity replacement must roll back earlier entities");
+		const auto root = std::filesystem::path(VEGA_COMMAND_SCRIPT_ROOT);
+		ly::PrefabLibrary::Get().SetRoot(root);
+		std::filesystem::create_directories(root / "prefabs");
+		const auto path = root / "prefabs/recovered.prefab.json";
+		std::ofstream{ path } << ly::PrefabLibrary::Document(after, "Created").dump();
+		ly::PrefabLibrary::Get().Reload();
+		const Json instance{ { "guid", guid }, { "name", after["name"] }, { "prefab", "prefabs/recovered.prefab.json" },
+			{ "properties", { { "Location", after["properties"]["Location"] } } } };
+		Check(history.Execute(std::make_unique<vega::ReplaceEntities>(Json::array({ after }), Json::array({ instance }), "Create Prefab")),
+			"Create prefab replacement must load its instance");
+		Check(selection.Get() == context.ResolveGuid(guid), "Create prefab must keep GUID and selection");
+		Check(history.Undo() && selection.Get() == context.ResolveGuid(guid) && ly::SceneSerializer::SaveEntity(*selection.Get()) == after,
+			"Undo create prefab must restore the plain entity, GUID and selection");
+		Check(history.Redo() && selection.Get() == context.ResolveGuid(guid) && selection.Get()->FindComponent<ly::SceneEntityComponent>()->prefab == "prefabs/recovered.prefab.json",
+			"Redo create prefab must restore the selected instance");
+		std::filesystem::remove(path);
+		const Json missing{ { "guid", guid }, { "name", "Keep authored" }, { "prefab", "prefabs/recovered.prefab.json" }, { "extra", 42 } };
+		Check(vega::RestoreSceneEntity(context, missing) && !context.ResolveGuid(guid), "Missing refreshed prefab must remove the runtime actor");
+		Check(world.unresolvedPrefabs == Json::array({ missing }), "Missing refreshed prefab must preserve authored JSON");
+		std::ofstream{ path } << Json{ { "format", "vega.prefab" }, { "version", 1 }, { "name", "Recovered" }, { "base", { { "type", "AuthoredActor" } } } }.dump();
+		Check(vega::RestoreSceneEntity(context, missing) && context.ResolveGuid(guid) && world.unresolvedPrefabs.empty(), "Reload must recover a restored prefab file");
+		Check(!selection.Get(), "Recovering a missing prefab must not steal an empty selection");
+	}
+
 	void TestSceneScriptIdentity()
 	{
 		ly::World original{ nullptr };
@@ -467,6 +515,7 @@ int main()
 	TestSceneScriptIdentity();
 	TestActorCacheAndRevisions();
 	TestComponentCommands();
+	TestPrefabReplacements();
 	if (failures) return 1;
 	std::cout << "Editor command tests passed\n";
 	return 0;

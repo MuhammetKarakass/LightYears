@@ -2,6 +2,7 @@
 #include "editor/EditorIcons.h"
 #include "editor/JsonCommands.h"
 #include "editor/NumberFormatting.h"
+#include "editor/EditorPrefabs.h"
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include <algorithm>
@@ -20,6 +21,7 @@ namespace vega
 		{
 			std::error_code error;
 			if (entry.is_directory(error)) return IconKind::Folder;
+			if (IsPrefabPath(entry.path())) return IconKind::Prefab;
 			const auto extension = Lower(entry.path().extension().string());
 			if (extension == ".json") return IconKind::Json;
 			if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") return IconKind::Image;
@@ -191,6 +193,26 @@ namespace vega
 						draw->AddRectFilled(pos, { pos.x + cellWidth, pos.y + height }, IM_COL32(33, 46, 59, 180), 4.f);
 						const bool clicked = ImGui::Selectable("##AssetTile", false, ImGuiSelectableFlags_AllowDoubleClick, { cellWidth, height });
 						const auto after = ImGui::GetCursorPos();
+						if (IsPrefabPath(relative))
+						{
+							if (!mContext.playMode && ImGui::BeginDragDropSource())
+							{
+								const auto path = relative.generic_string();
+								ImGui::SetDragDropPayload("VEGA_PREFAB", path.c_str(), path.size() + 1);
+								ImGui::TextUnformatted(path.c_str());
+								ImGui::EndDragDropSource();
+							}
+							if (ImGui::BeginPopupContextItem("Prefab actions"))
+							{
+								if (ImGui::MenuItem("Create Variant...", nullptr, false, !mContext.playMode))
+								{
+									mVariantParent = relative.generic_string();
+									std::snprintf(mPrefabName, sizeof(mPrefabName), "%s Variant", relative.stem().stem().string().c_str());
+									mCreatePrefabDialog = true;
+								}
+								ImGui::EndPopup();
+							}
+						}
 						if (ImGui::IsItemHovered())
 						{
 							draw->AddRect(pos, { pos.x + cellWidth, pos.y + height }, IM_COL32(51, 199, 202, 180), 4.f);
@@ -204,6 +226,7 @@ namespace vega
 							{
 								const auto name = relative.filename().string();
 								if (name.size() >= 11 && name.compare(name.size() - 11, 11, ".scene.json") == 0) RequestScene("open", relative);
+								else if (IsPrefabPath(relative)) RequestPrefab(relative);
 								else RequestDocument(relative);
 							}
 						}

@@ -8,6 +8,8 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 	src/framework/reflection/EngineReflection.cpp
 	include/framework/scene/Scene.h
 	src/framework/scene/Scene.cpp
+	include/framework/scene/PrefabLibrary.h
+	src/framework/scene/PrefabLibrary.cpp
 	include/framework/scene/SceneEntityComponent.h
 	src/framework/scene/SceneEntityComponent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Application.h
@@ -200,6 +202,13 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+	add_executable(LightYearsPrefabLibraryTests tests/PrefabLibraryTests.cpp)
+	target_link_libraries(LightYearsPrefabLibraryTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(LightYearsPrefabLibraryTests PRIVATE PREFAB_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/prefab-test-assets")
+	foreach(prefab_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${prefab_runtime} LightYearsPrefabLibraryTests)
+	endforeach()
+	add_test(NAME LightYearsPrefabLibrary COMMAND LightYearsPrefabLibraryTests)
 	add_executable(LightYearsProjectSettingsTests tests/ProjectSettingsTests.cpp)
 	target_link_libraries(LightYearsProjectSettingsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	target_compile_definitions(LightYearsProjectSettingsTests PRIVATE PROJECT_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/project-test")

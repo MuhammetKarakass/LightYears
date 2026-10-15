@@ -21,5 +21,8 @@ namespace ly
 		std::string name;
 		// Construction-only properties retain requested values for the next load.
 		nlohmann::json spawnData = nlohmann::json::object();
+		std::string prefab;
+		// Retain the load baseline so refresh preserves overrides after disk changes.
+		nlohmann::json prefabBaseline;
 	};
 }
