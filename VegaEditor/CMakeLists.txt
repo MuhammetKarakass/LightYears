@@ -20,6 +20,11 @@ FetchContent_MakeAvailable(imgui-sfml)
 set(VEGA_EDITOR_CORE_SOURCES
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
+	src/ContentWatch.cpp
+	src/EditorAutosave.cpp
+	src/AutosaveStore.cpp
+	src/AssetOperations.cpp
+	src/EditorAssetOperations.cpp
 	src/EditorScenes.cpp
 	src/EditorWorldSettings.cpp
 	src/EditorPrefabs.cpp
@@ -77,6 +82,28 @@ vega_add_game_editor(VegaEditor MODULE ${VEGA_GAME_MODULE_TARGET}
 	ENTRY "${VEGA_GAME_EDITOR_ENTRY}")
 endif()
 if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
+	add_executable(VegaEditorContentWatchTests tests/ContentWatchTests.cpp src/ContentWatch.cpp src/JsonDocument.cpp)
+	target_include_directories(VegaEditorContentWatchTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorContentWatchTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(VegaEditorContentWatchTests PRIVATE VEGA_CONTENT_WATCH_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/content-watch-test")
+	ly_enable_warnings(VegaEditorContentWatchTests)
+	add_test(NAME VegaEditorContentWatch COMMAND VegaEditorContentWatchTests)
+	add_test(NAME VegaEditorHotReload COMMAND ${CMAKE_COMMAND}
+		-DSOURCE_ROOT=${CMAKE_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/hot-reload-editor-test
+		-DEDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/RunHotReload.cmake)
+	set_tests_properties(VegaEditorHotReload PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 120)
+	add_executable(VegaEditorAssetOperationsTests tests/AssetOperationsTests.cpp src/AssetOperations.cpp src/JsonDocument.cpp)
+	target_include_directories(VegaEditorAssetOperationsTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorAssetOperationsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(VegaEditorAssetOperationsTests PRIVATE VEGA_ASSET_OPERATIONS_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/asset-operations-test")
+	ly_enable_warnings(VegaEditorAssetOperationsTests)
+	add_test(NAME VegaEditorAssetOperations COMMAND VegaEditorAssetOperationsTests)
+	add_executable(VegaEditorAutosaveTests tests/AutosaveTests.cpp src/AutosaveStore.cpp src/JsonDocument.cpp)
+	target_include_directories(VegaEditorAutosaveTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorAutosaveTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(VegaEditorAutosaveTests PRIVATE VEGA_AUTOSAVE_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/autosave-store-test")
+	ly_enable_warnings(VegaEditorAutosaveTests)
+	add_test(NAME VegaEditorAutosaveStore COMMAND VegaEditorAutosaveTests)
 	set(VEGA_PROJECT_TEST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/project-path-tests")
 	add_executable(VegaEditorProjectTests tests/EditorProjectTests.cpp src/EditorProject.cpp)
 	target_include_directories(VegaEditorProjectTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

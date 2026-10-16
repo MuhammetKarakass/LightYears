@@ -3,6 +3,7 @@
 #include <framework/Actor.h>
 #include <framework/World.h>
 #include <framework/RenderViewport.h>
+#include <framework/AudioManager.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <framework/scene/PrefabLibrary.h>
@@ -189,6 +190,58 @@ return {
 		Healthy(script);
 		actor->Destroy();
 		Check(actor->GetVelocity() == sf::Vector2f{ 17, 18 }, "Script table teardown missing");
+	}
+	void Audio()
+	{
+		std::vector<std::int16_t> silence(48000 * 10, 0);
+		sf::SoundBuffer buffer;
+		Check(buffer.loadFromSamples(silence.data(), silence.size(), 1, 48000, { sf::SoundChannel::Mono }) && buffer.saveToFile(root / "silence.wav"), "Cannot generate silent audio fixture");
+		ly::World world{ nullptr };
+		auto actor = Named(world, "Audio");
+		world.TickInternal(0.f);
+		auto& script = Attach(*actor, "audio", R"(
+local handle
+function on_start(self)
+ assert(not pcall(audio.play,'../outside.wav'))
+ assert(not pcall(audio.play,'C:/outside.wav'))
+ assert(not pcall(audio.play,'/outside.wav'))
+ assert(not pcall(audio.play,'missing.wav'))
+ assert(not pcall(audio.play,'silence.wav',0/0))
+ assert(not pcall(audio.play,'silence.wav',20,0))
+ assert(not pcall(music.fade,'silence.wav',-1))
+ local stopped=audio.play('silence.wav',0,1.2)
+ assert(stopped:is_playing()); stopped:stop(); stopped:stop()
+ assert(not stopped:is_playing())
+ handle=audio.play('silence.wav',0)
+ music.play('silence.wav',0)
+ music.fade('silence.wav',0.1,0)
+end
+)");
+		Healthy(script);
+		auto& manager = ly::AudioManager::GetAudioManager();
+		Check(manager.PlayingSoundCount() == 1, "Lua sound handle did not stop its voice");
+		const auto revision = manager.MusicRevision();
+		manager.Update(.2f); manager.Update(.2f);
+		Check(manager.MusicRevision() == revision && manager.IsMusicPlaying(), "Fade continuation lost music ownership");
+		Check(script.Reload(), "Audio script reload failed");
+		Check(manager.PlayingSoundCount() == 1, "Reload leaked an old sound");
+		auto next = Named(world, "Next music owner");
+		world.TickInternal(0.f);
+		auto& nextScript = Attach(*next, "next-music", "function on_start(self) music.play('silence.wav',0) end");
+		Healthy(nextScript);
+		actor->Destroy();
+		Check(manager.PlayingSoundCount() == 0 && manager.IsMusicPlaying(), "Destroy stopped another script's music or leaked its sound");
+		next->Destroy();
+		Check(!manager.IsMusicPlaying(), "Destroy left owned music playing");
+		manager.Update(1.f);
+		Check(!manager.IsMusicPlaying(), "Canceled fade restarted music");
+		manager.CleanCycle();
+		const auto first = manager.PlaySoundTracked((root / "silence.wav").generic_string(), AudioType::SFX_UI, 0.f);
+		manager.StopSound(first); manager.CleanCycle();
+		const auto second = manager.PlaySoundTracked((root / "silence.wav").generic_string(), AudioType::SFX_UI, 0.f);
+		manager.StopSound(first);
+		Check(manager.IsSoundPlaying(second), "Stale handle stopped a reused pooled voice");
+		manager.StopSound(second);
 	}
 	void Timers()
 	{
@@ -392,6 +445,7 @@ int main(int argc, char** argv)
 	else if (group == "Hierarchy") Hierarchy();
 	else if (group == "Events") Events();
 	else if (group == "Timers") Timers();
+	else if (group == "Audio") Audio();
 	else if (group == "Messages") Messages();
 	else if (group == "InputVectors") InputVectors();
 	else if (group == "LuaTypes") LuaTypes();

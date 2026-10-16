@@ -163,10 +163,17 @@ namespace vega
 
 		void CopyTree(CopyState& state, const fs::path& source, const fs::path& relativeRoot)
 		{
-			for (const auto& entry : fs::recursive_directory_iterator{ source })
+			for (auto it = fs::recursive_directory_iterator{ source }; it != fs::recursive_directory_iterator{}; ++it)
 			{
-				if (!entry.is_regular_file()) continue;
-				CopyFileInto(state, entry.path(), relativeRoot / entry.path().lexically_relative(source));
+				// Workspace recovery, Trash and tooling files belong to the editor. In
+				// particular, a live session lock is deliberately not shareable for copy.
+				if (ComponentKey(it->path().filename()) == ".vega")
+				{
+					if (it->is_directory()) it.disable_recursion_pending();
+					continue;
+				}
+				if (!it->is_regular_file()) continue;
+				CopyFileInto(state, it->path(), relativeRoot / it->path().lexically_relative(source));
 			}
 		}
 	}

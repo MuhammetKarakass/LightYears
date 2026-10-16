@@ -14,6 +14,11 @@
 
 #include "gameplay/content/GameContentBootstrap.h"
 #include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/content/ModuleContentCatalog.h"
+#include "gameplay/content/WeaponContentCatalog.h"
+#include "gameConfigs/ability/AbilityCatalog.h"
+#include "gameConfigs/combat/EffectConfig.h"
+#include <framework/content/ContentSchema.h>
 #include "level/ArenaTestLevel.h"
 #include "level/SceneLevel.h"
 #include "player/PlayerManager.h"
@@ -407,6 +412,55 @@ namespace ly
 	void LightYearsGameModule::RegisterTypes()
 	{
 		RegisterGameTypes();
+	}
+
+	void LightYearsGameModule::ReloadContent(const std::vector<std::filesystem::path>& paths)
+	{
+		using namespace content;
+		const auto runtimeRoot = std::filesystem::path{ AssetManager::GetAssetManager().GetAssetRootDirectory() };
+		std::map<std::string, std::filesystem::path> requested;
+		for (const auto& path : paths)
+		{
+			if (path.parent_path().filename() != "data" || path.parent_path().parent_path().filename() != "content") continue;
+			requested[path.filename().string()] = path;
+		}
+		if (requested.empty()) return;
+		const auto root = requested.begin()->second.parent_path().parent_path().parent_path();
+		const auto resolve = [&](const std::string& relative)
+		{
+			const auto candidate = root / relative;
+			return std::filesystem::exists(candidate) ? candidate : runtimeRoot / relative;
+		};
+		ContentDocuments documents;
+		for (const auto& [type, schema] : ContentSchemaRegistry::Get().Types())
+		{
+			std::ifstream input{ resolve(schema.file) };
+			documents[type] = AuthoringJson::parse(input);
+		}
+		// Validate against the candidate documents before replacing any catalog.
+		// Cross-catalog ability/effect and ship/module references see the same disk state.
+		for (const auto& [type, schema] : ContentSchemaRegistry::Get().Types())
+		{
+			if (!requested.count(std::filesystem::path{ schema.file }.filename().string())) continue;
+			if (schema.validate)
+			{
+				const auto error = schema.validate(documents, "");
+				if (!error.empty()) { LY_GAME_ERROR("Content reload rejected (%s): %s", type.c_str(), error.c_str()); return; }
+			}
+		}
+		const auto reload = [&](const char* file, const auto& load)
+		{
+			if (!requested.count(file)) return;
+			std::string error;
+			if (load(error)) LY_GAME_INFO("Reloaded content: %s (future spawns/grants)", requested.at(file).generic_string().c_str());
+			else LY_GAME_ERROR("Content reload rejected (%s): %s", file, error.c_str());
+		};
+		reload("weapons.json", [&](auto& error) { return WeaponContentCatalog::LoadFromFile(resolve("content/data/weapons.json"), &error, true); });
+		if (requested.count("module_side_features.json")) requested["modules.json"] = resolve("content/data/modules.json");
+		reload("modules.json", [&](auto& error) { return ModuleContentCatalog::LoadFromFiles(resolve("content/data/modules.json"), resolve("content/data/module_side_features.json"), &error); });
+		reload("ships.json", [&](auto& error) { return ShipContentCatalog::LoadFromFile(resolve("content/data/ships.json"), &error, true); });
+		reload("effects.json", [&](auto& error) { return EffectContentCatalog::LoadFromFile(resolve("content/data/effects.json"), EffectData::GetBuiltinGameplayEffectDefinitions(), &error, true); });
+		reload("abilities.json", [&](auto& error) { return AbilityContentCatalog::LoadFromFile(resolve("content/data/abilities.json"), AbilityData::GetBuiltinShippedAbilityDefinitions(), AbilityData::GetBuiltinAbilityActorDefinitions(), &error, true); });
 	}
 
 	std::shared_ptr<World> LightYearsGameModule::CreateLevel(Application& application, const nlohmann::json& scene, bool edit)

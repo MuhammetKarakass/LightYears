@@ -23,6 +23,8 @@ namespace vega
 		bool Dirty() const;
 		bool Save();
 		bool Revert();
+		std::map<std::filesystem::path, std::string> DirtyDocuments() const;
+		bool Recover(const std::filesystem::path& path, const std::string& text);
 		bool Open(const std::string& type, const std::string& id);
 		bool Set(CommandHistory&, const std::string& fieldPath, const Json&, std::uint64_t group = 0);
 		bool New(CommandHistory&, const std::string& type, const std::string& source, const std::string& id);

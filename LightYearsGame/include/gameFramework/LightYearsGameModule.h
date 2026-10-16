@@ -14,6 +14,7 @@ namespace ly
 		~LightYearsGameModule() override;
 		const char* Name() const override { return "LightYears"; }
 		void RegisterTypes() override;
+		void ReloadContent(const std::vector<std::filesystem::path>& paths) override;
 		void ConfigureProject(const std::filesystem::path& file) override { mProjectFile = file; }
 		void Initialize(Application& application, bool editor) override;
 		std::shared_ptr<World> CreateLevel(Application& application, const nlohmann::json& scene, bool edit) override;

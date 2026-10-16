@@ -52,6 +52,12 @@ namespace ly
 		}
 		settings.editor = document.value("editor", nlohmann::json::object());
 		if (!settings.editor.is_object()) throw std::runtime_error("Project editor must be an object");
+		if (settings.editor.contains("autosaveSeconds"))
+		{
+			const auto& seconds = settings.editor.at("autosaveSeconds");
+			if (!seconds.is_number_integer() || seconds.get<double>() < 0 || seconds.get<double>() > 86400)
+				throw std::runtime_error("Editor autosaveSeconds must be an integer from 0 to 86400 (0 disables periodic autosave)");
+		}
 		for (const auto* key : { "assetRoot", "font", "visualAssets", "gameBuildDir", "releaseGameBuildDir", "exportDir" })
 			if (settings.editor.contains(key) && !settings.editor[key].is_string())
 				throw std::runtime_error(std::string{ "Project editor " } + key + " must be a path string");

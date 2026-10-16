@@ -400,7 +400,7 @@ namespace vega
 	bool CommandHistory::Execute(std::unique_ptr<EditorCommand> command)
 	{
 		PruneInvalidCommands();
-		if (!command || mContext.transitioning || (mContext.playMode && command->IsUndoable())) return false;
+		if (!command || mContext.transitioning || (mContext.playMode && command->IsUndoable() && command->ChangesScene())) return false;
 		if (!command->Execute(mContext))
 		{
 			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
@@ -428,7 +428,7 @@ namespace vega
 		PruneInvalidCommands();
 		if (mContext.playMode || mContext.transitioning || !CanUndo()) return false;
 		mMergeAllowed = false;
-		mUndo.back()->Undo(mContext);
+		if (!mUndo.back()->TryUndo(mContext)) return false;
 		if (mUndo.back()->ChangesScene()) mContext.SceneChanged();
 		mRedo.push_back(std::move(mUndo.back()));
 		mUndo.pop_back();

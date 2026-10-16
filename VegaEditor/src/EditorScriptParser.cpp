@@ -87,6 +87,28 @@ namespace vega
 		};
 		const std::string& verb = tokens[0];
 		command.extensionName = verb;
+		if (verb == "asset-move" || verb == "asset-rename" || verb == "asset-delete" || verb == "expect-asset")
+		{
+			if (tokens.size() != 3 || tokens[1].empty() || tokens[2].empty()) return bad();
+			if (verb == "expect-asset" && tokens[2] != "true" && tokens[2] != "false") return bad();
+			if (verb == "asset-delete" && tokens[2] != "confirm") return bad();
+			command.operation = verb == "asset-move" ? ScriptOperation::AssetMove : verb == "asset-rename" ? ScriptOperation::AssetRename : verb == "asset-delete" ? ScriptOperation::AssetDelete : ScriptOperation::ExpectAsset;
+			command.text = tokens[1]; command.values = { tokens[2] };
+			return { command, {} };
+		}
+		if (verb == "autosave-now" || verb == "simulate-unclean-exit" || verb == "recover-autosave" || verb == "expect-autosave" || verb == "expect-recovery")
+		{
+			const bool noPath = verb == "autosave-now" || verb == "simulate-unclean-exit";
+			const bool expect = verb == "expect-autosave" || verb == "expect-recovery";
+			if (tokens.size() != (noPath ? 1u : 2u) && !(expect && tokens.size() == 3)) return bad();
+			if (!noPath && tokens[1].empty()) return bad();
+			if (tokens.size() == 3 && tokens[2] != "true" && tokens[2] != "false") return bad();
+			command.operation = verb == "autosave-now" ? ScriptOperation::AutosaveNow : verb == "simulate-unclean-exit" ? ScriptOperation::SimulateUncleanExit :
+				verb == "recover-autosave" ? ScriptOperation::RecoverAutosave : verb == "expect-autosave" ? ScriptOperation::ExpectAutosave : ScriptOperation::ExpectRecovery;
+			if (!noPath) command.text = tokens[1];
+			command.overwrite = tokens.size() != 3 || tokens[2] == "true";
+			return { command, {} };
+		}
 		if (verb == "set-ref" || verb == "expect-ref" || verb == "list-add" || verb == "list-remove" || verb == "list-set" || verb == "expect-list-size")
 		{
 			if (tokens.size() < 4 || tokens[1].empty() || tokens[2].empty()) return bad();
@@ -272,7 +294,8 @@ namespace vega
 				try
 				{
 					const auto value = nlohmann::json::parse(rawTokens[2]);
-					if (value.is_null() || value.is_object()) return bad();
+					// Optional settings use null for their disabled/default state.
+					if (value.is_object()) return bad();
 				}
 				catch (const std::exception&) { return bad(); }
 				command.values = { rawTokens[2] };

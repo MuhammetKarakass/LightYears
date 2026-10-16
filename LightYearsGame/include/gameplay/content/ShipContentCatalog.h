@@ -10,9 +10,11 @@ namespace ly::content
 	class ShipContentCatalog
 	{
 	public:
+		// Live reload preserves the last valid catalog on failure; startup remains fail-closed.
 		static bool LoadFromFile(
 			const std::filesystem::path& filePath,
-			std::string* failureReason = nullptr
+			std::string* failureReason = nullptr,
+			bool preserveExisting = false
 		);
 
 		static const ShipDefinition* FindById(const std::string& shipId);

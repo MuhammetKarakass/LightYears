@@ -22,6 +22,7 @@ namespace vega
 				mProjectDraft = std::filesystem::exists(path) ? ly::ProjectSettings::Load(path) : ly::ProjectSettings{};
 				mProjectWindowSize[0] = static_cast<int>(mProjectDraft.windowWidth);
 				mProjectWindowSize[1] = static_cast<int>(mProjectDraft.windowHeight);
+				mProjectAutosaveSeconds = static_cast<int>(mProjectDraft.AutosaveSeconds());
 			}
 			catch (const std::exception& error) { mProjectError = error.what(); }
 			ImGui::OpenPopup("Project Settings");
@@ -45,6 +46,8 @@ namespace vega
 			ImGui::EndCombo();
 		}
 		ImGui::InputInt2("Window size", mProjectWindowSize);
+		ImGui::InputInt("Autosave interval (seconds)", &mProjectAutosaveSeconds);
+		ImGui::TextDisabled("0 disables periodic autosave. Snapshots never replace authored files.");
 		ImGui::TextDisabled("Window changes apply the next time the game starts.");
 		if (ImGui::Button("Save"))
 		{
@@ -52,8 +55,14 @@ namespace vega
 			{
 				mProjectDraft.windowWidth = static_cast<unsigned int>(mProjectWindowSize[0]);
 				mProjectDraft.windowHeight = static_cast<unsigned int>(mProjectWindowSize[1]);
+				mProjectDraft.editor["autosaveSeconds"] = mProjectAutosaveSeconds;
 				const auto project = ly::ProjectSettings::Parse(mProjectDraft.ToJson());
-				if (AtomicWriteText(mDocument.Root() / "vega.project.json", project.ToJson().dump(2) + "\n", mProjectError)) ImGui::CloseCurrentPopup();
+				if (AtomicWriteText(mDocument.Root() / "vega.project.json", project.ToJson().dump(2) + "\n", mProjectError))
+				{
+					mProject.settings = project;
+					mNextAutosave = std::chrono::steady_clock::now() + std::chrono::seconds{ project.AutosaveSeconds() };
+					ImGui::CloseCurrentPopup();
+				}
 			}
 			catch (const std::exception& error) { mProjectError = error.what(); }
 		}
@@ -85,6 +94,7 @@ namespace vega
 
 	void EditorApplication::LoadSceneWorld(const nlohmann::json& scene, bool edit)
 	{
+		mBoundsCorner = -1;
 		mSettingsPanelRevision.reset();
 		mContext.settingError.clear();
 		mMoveDragActor.reset();
@@ -95,14 +105,15 @@ namespace vega
 		LoadWorld(mModule->CreateLevel(*this, scene, edit));
 	}
 
-	bool EditorApplication::OpenScene(const std::filesystem::path& requested, bool allowMissing)
+	bool EditorApplication::OpenScene(const std::filesystem::path& requested, bool allowMissing, const nlohmann::json* recovered)
 	{
 		if (mContext.playMode) return false;
 		try
 		{
 			const auto path = requested.is_absolute() ? requested : mDocument.Root() / requested;
 			nlohmann::json scene = EmptyScene();
-			if (std::ifstream input{ path }; input) input >> scene;
+			if (recovered) scene = *recovered;
+			else if (std::ifstream input{ path }; input) input >> scene;
 			else if (!allowMissing) throw std::runtime_error("Cannot open scene: " + path.string());
 			if (!scene.is_object() || scene.value("format", std::string{}) != "vega.scene" ||
 				scene.value("version", 0) != 1 || !scene.contains("entities") || !scene["entities"].is_array() ||
@@ -113,11 +124,12 @@ namespace vega
 			if (!differentScene) selected = mSelection;
 			mScenePath = absolutePath;
 			mSceneSettings = scene["settings"];
-			if (differentScene) mHistory.Clear();
+			if (differentScene || recovered) mHistory.Clear();
 			mSelection.Clear();
 			mEditSelection.Clear();
 			mRestoreSelection = selected;
-			mBaselineOnLoad = true;
+			mBaselineOnLoad = !recovered;
+			if (recovered) ++mContext.sceneRevision;
 			mContext.sceneError.clear();
 			LoadSceneWorld(scene, true);
 			return true;

@@ -6,10 +6,14 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <SFML/Graphics/Rect.hpp>
 
 namespace ly
 {
-	enum class SceneSettingType { Bool, Int, Float, String, Enum, CatalogId, Vec2, Color };
+	enum class SceneSettingType { Bool, Int, Float, String, Enum, CatalogId, Vec2, Color, Rect };
+	// Optional world-space [x, y, width, height]. Invalid authored values are
+	// preserved by serialization but have no runtime bounds.
+	std::optional<sf::FloatRect> ReadSceneBounds(const nlohmann::json& settings);
 	struct SceneSettingOption
 	{
 		nlohmann::json value;

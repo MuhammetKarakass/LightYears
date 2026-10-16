@@ -24,6 +24,16 @@
 
 namespace vega
 {
+	namespace
+	{
+		bool Within(const std::filesystem::path& path, const std::filesystem::path& root)
+		{
+			const auto relative = path.lexically_relative(root);
+			if (relative.empty()) return path == root;
+			for (const auto& part : relative) if (part == "..") return false;
+			return !relative.is_absolute();
+		}
+	}
 	EditorApplication::EditorApplication(std::unique_ptr<GameModule> module)
 		: EditorApplication{ std::move(module), EditorProject::FromCommandLine() }
 	{
@@ -35,6 +45,13 @@ namespace vega
 		mModule{ std::move(module) }, mViewport{ GetRenderWindow() }
 	{
 		if (!mModule) throw std::runtime_error("Editor requires a game module");
+		bool unattended = false;
+#ifdef _MSC_VER
+		for (int index = 1; index < __argc; ++index) if (std::string{ __argv[index] } == "--editor-script") unattended = true;
+#endif
+		const bool sourceReadOnly = unattended && Within(mDocument.Root(), VEGA_SOURCE_ROOT) && !Within(mDocument.Root(), VEGA_BUILD_ROOT);
+		if (!sourceReadOnly && AssetMovePlan::RecoverPending(mDocument.Root(), mProject.file, mAssetRecoveryError) && std::filesystem::exists(mProject.file))
+			mProject.settings = ly::ProjectSettings::Load(mProject.file);
 		mModule->ConfigureProject(mProject.file);
 		RegisterGameModule(*mModule, true);
 		mModule->RegisterEditorExtensions(mExtensions);
@@ -106,6 +123,28 @@ namespace vega
 #endif
 		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
+		// Source-root automation stays read-only, just like generated Lua tooling.
+		// Disposable project copies get the complete autosave/recovery lifecycle.
+		const bool sourceAutomation = scriptRequested && Within(mDocument.Root(), VEGA_SOURCE_ROOT) && !Within(mDocument.Root(), VEGA_BUILD_ROOT);
+		if (!sourceAutomation)
+		{
+			if (mAutosaves.Begin(mDocument.Root()))
+			{
+				mRecoveryEntries = mAutosaves.Entries(true);
+				mRecoveryRequested = !mRecoveryEntries.empty();
+			}
+			else mAutosaveError = mAutosaves.Error();
+		}
+		mContentWatch.Begin(mDocument.Root());
+		mNextAutosave = std::chrono::steady_clock::now() + std::chrono::seconds{ mProject.settings.AutosaveSeconds() };
+		mContext.autosaveCommand = mPrefabContext.autosaveCommand = [this](const EditorScriptCommand& command, std::string& detail)
+		{
+			return ExecuteAutosaveCommand(command, detail);
+		};
+		mContext.assetCommand = mPrefabContext.assetCommand = [this](const EditorScriptCommand& command, std::string& detail)
+		{
+			return ExecuteAssetCommand(command, detail);
+		};
 		mContext.document = &mDocument;
 		mContext.contentCommand = [this](const EditorScriptCommand& command, std::string& detail)
 		{
@@ -123,7 +162,11 @@ namespace vega
 				const auto value = ly::SceneSettingsSchema::Get().Value(authored, field.key);
 				effective[field.key] = field.Validate(value).empty() ? value : field.defaultValue;
 			}
-			if (mContext.world) mModule->ApplySceneSettings(effective);
+			if (mContext.world)
+			{
+				mContext.world->SetSceneBounds(ly::ReadSceneBounds(effective));
+				mModule->ApplySceneSettings(effective);
+			}
 		};
 		mContext.console = mPrefabContext.console = &mDiagnostics.capture.Buffer();
 		mContext.clearConsole = mPrefabContext.clearConsole = [this]() { mDiagnostics.Clear(); };
@@ -265,6 +308,8 @@ namespace vega
 		sf::RenderWindow& window = GetRenderWindow();
 		ImGui::SFML::Update(window, mUIClock.restart());
 		BuildUI();
+		PollAutosave();
+		PollContentReload();
 		ImGui::SFML::Render(window);
 		if (mScript && !mContext.transitioning && mScript->Step(mPrefabWorld ? mPrefabContext : mContext, mPrefabWorld ? mPrefabHistory : mHistory, window)) QuitApplication();
 		// The world is drawn into the viewport texture, so the window holds the finished frame only once the UI is on
@@ -282,6 +327,7 @@ namespace vega
 		LY_PROFILE_SCOPE("ImGui Build");
 		auto& activeHistory = mExtensions.History() ? *mExtensions.History() : mPrefabWorld ? mPrefabHistory : mHistory;
 		mHistory.PruneInvalidCommands();
+		if (!mShowContent) mContentFocused = false;
 		const ImGuiIO& io = ImGui::GetIO();
 		if (io.KeyCtrl && !io.WantTextInput && !mContext.playMode)
 		{
@@ -296,7 +342,7 @@ namespace vega
 		{
 			if (mPrefabWorld) SavePrefab(); else SaveScene();
 		}
-		if (!mPrefabWorld && !mContext.playMode && !io.WantTextInput && !mExtensions.Active())
+		if (!mPrefabWorld && !mContext.playMode && !io.WantTextInput && !mExtensions.Active() && !mContentFocused)
 		{
 			if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) DuplicateSceneEntity(mContext, mHistory);
 			if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) DeleteSelection(mContext, mHistory);
@@ -340,6 +386,11 @@ namespace vega
 				ImGui::EndDisabled();
 				ImGui::Separator();
 				if (ImGui::MenuItem("Project Settings...")) mProjectDialogRequested = true;
+				if (ImGui::MenuItem("Recover Autosaves...", nullptr, false, mAutosaves.Enabled()))
+				{
+					mRecoveryEntries = mAutosaves.Entries();
+					mRecoveryRequested = true;
+				}
 				if (ImGui::MenuItem("Export Game...")) mExportDialogRequested = true;
 				ImGui::Separator();
 				if (ImGui::MenuItem("Exit"))
@@ -489,6 +540,10 @@ namespace vega
 		BuildSceneDialogs();
 		BuildPrefabDialogs();
 		BuildProjectDialog();
+		BuildRecoveryDialog();
+		BuildAssetDialogs();
+		mDiagnostics.ReportError("Autosave", mAutosaveError);
+		mDiagnostics.ReportError("Asset recovery", mAssetRecoveryError);
 		mDiagnostics.ReportError("Scene", mContext.sceneError);
 		mDiagnostics.ReportError("Prefab", mPrefabContext.sceneError);
 		mDiagnostics.ReportError("Project", mProjectError);

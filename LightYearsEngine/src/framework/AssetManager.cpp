@@ -4,6 +4,7 @@
 #include "framework/debug/Log.h"
 
 #include <chrono>
+#include <filesystem>
 
 namespace ly
 {
@@ -136,7 +137,7 @@ namespace ly
 		const auto missStart = AssetClock::now();
 		shared_ptr<sf::SoundBuffer> newSoundBuffer{ new sf::SoundBuffer };
 
-		const bool soundLoaded = newSoundBuffer->loadFromFile(mAssetRootDirectory + soundPath);
+		const bool soundLoaded = newSoundBuffer->loadFromFile(std::filesystem::path{ mAssetRootDirectory } / soundPath);
 		LogAssetMiss("sound", soundPath, missStart, soundLoaded);
 		if (soundLoaded)
 		{

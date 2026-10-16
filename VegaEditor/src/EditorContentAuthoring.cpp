@@ -251,8 +251,8 @@ namespace vega
 		if (mFocus) { ImGui::SetNextWindowFocus(); mFocus = false; }
 		if (ImGui::Begin("Content Authoring", &visible))
 		{
-			ImGui::TextUnformatted("Applies on next Play (restart editor for compiled content catalogs)");
-			ImGui::BeginDisabled(context.playMode);
+			ImGui::TextUnformatted("Saved JSON reloads during Play; existing objects may need a new spawn or grant.");
+			ImGui::BeginDisabled(context.transitioning);
 			if (ImGui::Button(mWorkspace.Dirty() ? "Save *" : "Save")) mWorkspace.Save();
 			ImGui::SameLine(); if (ImGui::Button("Reload files")) mWorkspace.Load(root);
 			ImGui::SameLine(); if (ImGui::Button("Undo")) history.Undo();
@@ -280,7 +280,7 @@ namespace vega
 			if (ImGui::BeginChild("Form", {}, ImGuiChildFlags_Borders))
 			{
 				ImGui::TextWrapped("%s", mWorkspace.selectedId.c_str());
-				ImGui::BeginDisabled(context.playMode);
+				ImGui::BeginDisabled(context.transitioning);
 				for (const auto* operation : { "New", "Duplicate", "Rename", "Delete" })
 				{
 					if (ImGui::Button(operation))
@@ -331,7 +331,7 @@ namespace vega
 				RefreshCache();
 				for (const auto& issue : mWorkspace.Validate()) if (issue.type == mWorkspace.selectedType && issue.id == mWorkspace.selectedId)
 					ImGui::TextColored({1.f,.45f,.35f,1.f}, "%s %s", issue.path.c_str(), issue.message.c_str());
-				ImGui::BeginDisabled(context.playMode);
+				ImGui::BeginDisabled(context.transitioning);
 				if (const auto* selected = mWorkspace.Selected()) DrawObject(*selected, "", "", history);
 				ImGui::EndDisabled();
 				if (!mOther.empty() && ImGui::CollapsingHeader("Other (preserved, read-only)"))
@@ -366,7 +366,7 @@ namespace vega
 		if (!mWorkspace.Loaded() && !mWorkspace.Load(root)) { detail = mWorkspace.error; return false; }
 		using Op = ScriptOperation;
 		bool result = false;
-		if (context.playMode && command.operation != Op::ContentOpen && command.operation != Op::ExpectContent && command.operation != Op::ContentValidate) { detail = "Content edits require Edit mode"; return false; }
+		if (context.transitioning) { detail = "Content edits require Edit mode"; return false; }
 		switch (command.operation)
 		{
 		case Op::ContentOpen: result = mWorkspace.Open(command.text, command.property); break;

@@ -27,6 +27,7 @@ namespace vega
 		static JsonStyle DetectStyle(const std::string& text);
 		bool Resolve(const std::filesystem::path& relative, std::filesystem::path& result) const;
 		bool Open(const std::filesystem::path& relative);
+		bool Recover(const std::filesystem::path& relative, const std::string& text);
 		bool Revert();
 		bool Save();
 		void Close();
@@ -71,5 +72,6 @@ namespace vega
 		std::uint64_t mID = 0;
 		std::uint64_t mRevision = 0;
 		bool mDirty = false;
+		bool mSavedExists = true;
 	};
 }

@@ -511,10 +511,10 @@ namespace vega
 		else if (path.empty()) ClosePrefab();
 		else OpenPrefab(path);
 	}
-	bool EditorApplication::SavePrefab()
+	nlohmann::json EditorApplication::CapturePrefab() const
 	{
 		const auto actor = mPrefabContext.ResolveGuid(mPrefabRootGuid);
-		if (!actor) return false;
+		if (!actor) return nullptr;
 		const auto full = ly::SceneSerializer::SaveSubtree(*actor, true);
 		auto authored = full;
 		PreserveNestedReferences(authored, mPrefabDocument);
@@ -522,7 +522,7 @@ namespace vega
 		if (mPrefabDocument["base"].contains("prefab"))
 		{
 			const auto parent = ly::PrefabLibrary::Get().Resolve(mPrefabDocument["base"]["prefab"].get<std::string>());
-			if (!parent) return false;
+			if (!parent) return nullptr;
 			auto localized = full;
 			ly::PrefabLibrary::LocalizeReferences(localized);
 			document = ly::PrefabLibrary::Diff(localized, parent.entity);
@@ -530,9 +530,17 @@ namespace vega
 			document["format"] = "vega.prefab"; document["version"] = 1; document["name"] = full.value("name", std::string{});
 		}
 		document["base"] = mPrefabDocument["base"];
+		return document;
+	}
+	bool EditorApplication::SavePrefab()
+	{
+		const auto actor = mPrefabContext.ResolveGuid(mPrefabRootGuid);
+		if (!actor) return false;
+		auto document = CapturePrefab();
+		if (document.is_null()) return false;
 		if (!WritePrefab(mContext, mPrefabPath.generic_string(), document)) return false;
 		mPrefabDocument = std::move(document);
-		mPrefabSaved = full;
+		mPrefabSaved = ly::SceneSerializer::SaveSubtree(*actor, true);
 		mPrefabDirty = false;
 		mPrefabDirtyRevision = mPrefabContext.sceneRevision;
 		return RefreshPrefabs(mContext, mHistory);

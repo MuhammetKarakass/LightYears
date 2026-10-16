@@ -1,4 +1,5 @@
 #include "gameplay/content/AbilityContentCatalog.h"
+#include "gameplay/content/RetainedContent.h"
 
 #include "gameplay/content/AbilityLoader.h"
 
@@ -66,15 +67,15 @@ namespace ly::content
 		const std::filesystem::path& filePath,
 		const List<const GameAbilityDefinition*>& fallbackDefinitions,
 		const List<const AbilityActorDefinition*>& fallbackActorDefinitions,
-		std::string* failureReason
+		std::string* failureReason, bool preserveExisting
 	)
-	{
-		GetLoadedState() = false;
-		GetDefinitionsStorage().clear();
-		GetDefinitionPointers().clear();
-		GetSettingsStorage().clear();
-		GetActorDefinitionsStorage().clear();
-		GetActorDefinitionPointers().clear();
+	{
+
+		if (!preserveExisting)
+		{
+			GetLoadedState() = false;
+			RetainContent(GetDefinitionsStorage()); GetDefinitionPointers().clear(); GetSettingsStorage().clear(); RetainContent(GetActorDefinitionsStorage()); GetActorDefinitionPointers().clear();
+		}
 
 		const AbilityLoader::Result loaded = AbilityLoader::LoadFromFile(
 			filePath,
@@ -86,10 +87,10 @@ namespace ly::content
 			return Fail(failureReason, loaded.error);
 		}
 
-		GetDefinitionsStorage().clear();
+		RetainContent(GetDefinitionsStorage());
 		GetDefinitionPointers().clear();
 		GetSettingsStorage().clear();
-		GetActorDefinitionsStorage().clear();
+		RetainContent(GetActorDefinitionsStorage());
 		GetActorDefinitionPointers().clear();
 		GetDefinitionsStorage().reserve(loaded.definitions.size());
 		size_t actorDefinitionCount = 0;

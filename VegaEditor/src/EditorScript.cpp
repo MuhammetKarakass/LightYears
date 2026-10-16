@@ -198,6 +198,19 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::AssetMove:
+		case ScriptOperation::AssetRename:
+		case ScriptOperation::AssetDelete:
+		case ScriptOperation::ExpectAsset:
+			success = context.assetCommand && context.assetCommand(command, detail);
+			break;
+		case ScriptOperation::AutosaveNow:
+		case ScriptOperation::ExpectAutosave:
+		case ScriptOperation::RecoverAutosave:
+		case ScriptOperation::ExpectRecovery:
+		case ScriptOperation::SimulateUncleanExit:
+			success = context.autosaveCommand && context.autosaveCommand(command, detail);
+			break;
 		case ScriptOperation::SetRef:
 		case ScriptOperation::ExpectRef:
 		case ScriptOperation::ListAdd:
@@ -627,11 +640,11 @@ namespace vega
 			break;
 		}
 		case ScriptOperation::JsonSave:
-			success = !context.playMode && context.document && context.document->Save();
+			success = context.document && context.document->Save();
 			if (context.document) detail = context.document->Error();
 			break;
 		case ScriptOperation::JsonRevert:
-			success = !context.playMode && context.document && context.document->Revert();
+			success = context.document && context.document->Revert();
 			if (context.document) detail = context.document->Error();
 			break;
 		case ScriptOperation::ExpectJsonDirty:

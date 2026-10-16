@@ -15,6 +15,9 @@
 #include <framework/GameModule.h>
 #include "editor/EditorExtensions.h"
 #include "editor/EditorProject.h"
+#include "editor/AutosaveStore.h"
+#include "editor/ContentWatch.h"
+#include "editor/AssetOperations.h"
 
 namespace vega
 {
@@ -43,6 +46,10 @@ namespace vega
 		void BuildStatusBar();
 		void BuildGizmo();
 		bool BuildPropertyOverlays();
+		bool BuildBoundsOverlay();
+		int mBoundsCorner = -1;
+		nlohmann::json mBoundsStart;
+		std::uint64_t mBoundsMergeGroup = 0;
 		void DrawWorldOverlays(sf::RenderTexture& texture, ly::World& world);
 		void BuildViewportPanel();
 		void BuildHierarchyPanel();
@@ -73,8 +80,21 @@ namespace vega
 		void RequestDocument(const std::filesystem::path& relative);
 		void FinishDocumentRequest();
 		void RefreshContent();
+		void AssetItemActions(const std::filesystem::path& relative, bool folder);
+		void AssetDropTarget(const std::filesystem::path& folder);
+		void BuildAssetDialogs();
+		bool AssetsCanChange() const;
+		void RefreshAfterAssetMove(const std::filesystem::path& from, const std::filesystem::path& to);
+		bool ExecuteAssetCommand(const EditorScriptCommand&, std::string& detail);
+		bool ExecuteAssetDelete(const AssetMovePlan& plan);
+		void RequestAssetMove(const std::filesystem::path& from, const std::filesystem::path& to);
+		std::unique_ptr<AssetMovePlan> mAssetMove;
+		std::filesystem::path mSelectedAsset, mAssetDialogSource;
+		bool mAssetPathDialog = false, mAssetRename = false, mAssetPreview = false, mAssetDelete = false;
+		char mAssetPathInput[1024]{};
+		std::string mAssetRecoveryError;
 		void PickViewportActor();
-		bool OpenScene(const std::filesystem::path& path, bool allowMissing = false);
+		bool OpenScene(const std::filesystem::path& path, bool allowMissing = false, const nlohmann::json* recovered = nullptr);
 		bool SaveScene(const std::filesystem::path& path = {});
 		bool SetPlayMode(bool playing);
 		bool SceneDirty() const;
@@ -88,6 +108,7 @@ namespace vega
 		void RequestPrefab(const std::filesystem::path& path);
 		bool OpenPrefab(const std::filesystem::path& path);
 		bool SavePrefab();
+		nlohmann::json CapturePrefab() const;
 		bool PrefabDirty() const;
 		void ClosePrefab();
 		void BuildPrefabDialogs();
@@ -114,6 +135,7 @@ namespace vega
 		bool mProjectDialogRequested = false;
 		ly::ProjectSettings mProjectDraft;
 		int mProjectWindowSize[2]{ 1920, 1080 };
+		int mProjectAutosaveSeconds = 120;
 		std::string mProjectError;
 		nlohmann::json mSceneSettings = nlohmann::json::object();
 		std::uint64_t mSavedSceneRevision = 0;
@@ -134,6 +156,7 @@ namespace vega
 		bool mRenameFocus = false;
 		std::optional<unsigned int> mHierarchyPopupActor;
 		bool mDataFocused = false;
+		bool mContentFocused = false;
 
 		EditorViewport mViewport;
 		EditorDiagnostics mDiagnostics;
@@ -141,6 +164,19 @@ namespace vega
 		EditorSelection mSelection;
 		EditorCamera mCamera;
 		JsonDocument mDocument{ mProject.assetRoot };
+		AutosaveStore mAutosaves;
+		std::chrono::steady_clock::time_point mNextAutosave;
+		std::vector<AutosaveEntry> mRecoveryEntries;
+		bool mRecoveryRequested = false;
+		std::string mAutosaveError;
+		ContentWatch mContentWatch;
+		std::chrono::steady_clock::time_point mNextContentPoll;
+		void PollContentReload();
+		bool AutosaveNow();
+		void PollAutosave();
+		void BuildRecoveryDialog();
+		bool RecoverAutosave(const AutosaveEntry& entry);
+		bool ExecuteAutosaveCommand(const EditorScriptCommand&, std::string& detail);
 		std::filesystem::path mLuaTypesPath;
 		void RegenerateLuaTypes();
 		EditorContext mContext{ nullptr, mSelection, &mCamera };

@@ -1,4 +1,5 @@
 #include "gameplay/content/WeaponContentCatalog.h"
+#include "gameplay/content/RetainedContent.h"
 
 #include "gameplay/content/WeaponLoader.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
@@ -91,10 +92,14 @@ namespace ly::content
 
 	bool WeaponContentCatalog::LoadFromFile(
 		const std::filesystem::path& filePath,
-		std::string* failureReason)
-	{
-		GetLoadedState() = false;
-		GetDefinitions().clear();
+		std::string* failureReason, bool preserveExisting)
+	{
+
+		if (!preserveExisting)
+		{
+			GetLoadedState() = false;
+			RetainContent(GetDefinitions());
+		}
 
 		const WeaponLoader::Result loaded = WeaponLoader::LoadFromFile(filePath);
 		if (!loaded.Succeeded())
@@ -123,6 +128,7 @@ namespace ly::content
 			}
 		}
 
+		RetainContent(GetDefinitions());
 		GetDefinitions() = loaded.definitions;
 		GetLoadedState() = true;
 		return true;

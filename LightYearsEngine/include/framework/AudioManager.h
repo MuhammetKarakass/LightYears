@@ -3,6 +3,7 @@
 #include "framework/Core.h"
 #include <SFML/Audio.hpp>
 #include "framework/Delegate.h"
+#include <cstdint>
 
 namespace ly
 {
@@ -14,6 +15,12 @@ namespace ly
 		static void ShutdownAudioManager();
 
 		void PlaySound(const std::string& path, AudioType type, float volume = 100.0f, float pitch = 1.0f);
+		std::uint64_t PlaySoundTracked(const std::string& path, AudioType type, float volume = 100.f, float pitch = 1.f);
+		void StopSound(std::uint64_t id);
+		bool IsSoundPlaying(std::uint64_t id) const;
+		std::size_t PlayingSoundCount() const;
+		bool IsMusicPlaying() const { return mMusic && mMusic->getStatus() == sf::Music::Status::Playing; }
+		std::uint64_t MusicRevision() const { return mMusicRevision; }
 		
 		void PlayMusic(const std::string& path, AudioType type, float volume = 100.0f, float pitch = 1.0f, bool loop = true);
 		void StopMusic();
@@ -50,6 +57,7 @@ namespace ly
 
 		struct ActiveSound
 		{
+			std::uint64_t id;
 			sf::Sound* sound;
 			shared_ptr<sf::SoundBuffer> buffer;
 			AudioType type;
@@ -58,6 +66,7 @@ namespace ly
 		};
 		
 		List<ActiveSound> mActiveSounds;
+		std::uint64_t mMusicRevision = 0;
 		
 		List<unique_ptr<sf::Sound>> mSoundPool;
 		static constexpr size_t MAX_POOL_SIZE = 32;

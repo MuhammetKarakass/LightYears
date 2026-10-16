@@ -183,6 +183,12 @@ if(BUILD_TESTING)
 		LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		GAME PROJECT_DIR)
 	ly_add_game_test_case(LightYearsContent LightYearsContentTests)
+	ly_add_game_test(LightYearsContentReloadTests
+		SOURCES ${LY_TESTS_DIR}/ContentReloadTests.cpp
+		LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		GAME PROJECT_DIR)
+	target_compile_definitions(LightYearsContentReloadTests PRIVATE CONTENT_RELOAD_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/content-reload-test")
+	ly_add_game_test_case(LightYearsContentReload LightYearsContentReloadTests)
 
 	ly_add_game_test(LightYearsGasLiteTests GAME_WHOLE
 		SOURCES

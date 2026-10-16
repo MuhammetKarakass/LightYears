@@ -55,6 +55,44 @@ file, independent of the working directory:
 }
 ```
 
+`editor.autosaveSeconds` sets the editor's periodic autosave interval (default
+120 seconds; 0 disables it; maximum 86400). Project Settings exposes this value.
+Snapshots go to `.vega/Autosave` inside the asset root and never replace authored
+files. See [autosave and recovery](autosave.md) for recovery and script commands.
+
+Content Browser supports dragging files/folders onto folders, F2 rename, **Move
+to folder...** and confirmed Delete. Moves preview asset-relative JSON references
+and update them in one undo step; this includes scenes, nested prefabs, attached
+scripts, project startup scenes and content/sky JSON inside the asset root. JSON
+formatting and unrelated values are preserved. Save dirty buffers, close the
+prefab and stop Play first. Clean open documents and the scene refresh afterwards.
+Destinations must exist as folders inside the asset root; overwrites, case-only
+renames, linked assets, malformed JSON and `.vega` paths are refused. Lua source
+code and references outside the asset root (except the selected project file)
+are not rewritten. Registered content catalogs have module-owned fixed filenames;
+moving those files or their containing folders is refused. C++ asset path literals
+are not rewritten; games should use authored asset references for movable assets.
+
+Each rename and reference write is atomic. A pending transaction journal under
+`.vega/AssetTransactions` lets startup roll back an interrupted move before game
+services initialize. A conflicting external edit blocks recovery and further
+file operations, preserving the journal and reporting the conflict in Console.
+Undo/redo validates the reviewed JSON bytes and refuses external changes while
+retaining the undo step. The whole multi-file operation is not an OS-level atomic
+transaction; the journal provides recovery between its individual writes.
+
+Delete refuses assets referenced by other JSON documents and the active scene or
+project file. It moves other assets to `.vega/Trash` with Undo support. Trash is
+retained on disk after undo history expires; no automatic pruning is performed.
+
+Automation supports `asset-move <from> <to>`, `asset-rename <path> <filename>`,
+`asset-delete <path> confirm`, and `expect-asset <path> true|false`. Move and rename
+commands use asset-relative paths and run the same validation as UI previews.
+`VegaEditorAssetMoves` exercises moves, rename, reference updates, Trash undo and
+Play in a disposable Blank project. `VegaEditorAssetOperations` additionally
+covers stale previews, path refusal, interrupted moves and rollback on a locked
+reference file.
+
 These are additional fields in the version 1 project document. Project Settings
 and script startup-scene edits preserve them. Defaults are the project directory
 for assets, ImGui's built-in font, no visual assets, `build/Game` and
@@ -83,3 +121,10 @@ Component references in editor history and Lua handles resolve by reflected
 type name and occurrence within that type. Adding components of other types
 does not change their target; reordering components of the same type changes
 their occurrence.
+
+Content/data JSON and prefabs are watched on a half-second editor cadence,
+including while Play is paused. Saved JSON dispatches to `GameModule::ReloadContent`;
+no restart is needed for LightYears abilities/effects/modules/weapons/ships
+used by future spawns and grants. See [game modules](game-module.md) for the
+remaining restart requirements. Dirty buffers are never silently replaced by
+disk reloads; use Reload files/Revert explicitly to refresh an authoring buffer.

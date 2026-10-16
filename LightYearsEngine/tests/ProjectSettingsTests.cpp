@@ -34,6 +34,19 @@ int main()
 		{ auto bad = configured; bad["editor"]["font"] = 12; Reject(bad); }
 	}
 	const auto parsed = ly::ProjectSettings::Parse(document);
+	Check(parsed.AutosaveSeconds() == 120, "Autosave must default to two minutes");
+	for (const auto seconds : { 0, 1, 120, 86400 })
+	{
+		auto configured = document;
+		configured["editor"]["autosaveSeconds"] = seconds;
+		Check(ly::ProjectSettings::Parse(configured).AutosaveSeconds() == static_cast<unsigned int>(seconds), "Autosave interval did not round-trip");
+	}
+	for (const auto& seconds : { nlohmann::json(-1), nlohmann::json(86401), nlohmann::json(1.5), nlohmann::json("120"), nlohmann::json(true), nlohmann::json(nullptr) })
+	{
+		auto invalid = document;
+		invalid["editor"]["autosaveSeconds"] = seconds;
+		Reject(invalid);
+	}
 	Check(parsed.name == "Game" && parsed.startupScene.empty() && parsed.windowWidth == 1920 && parsed.windowHeight == 1080,
 		"Project defaults changed");
 	document.erase("window");

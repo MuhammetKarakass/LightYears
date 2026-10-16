@@ -13,6 +13,14 @@ namespace vega
 		bool Execute(EditorContext&, CommandHistory&, const std::filesystem::path&, const EditorScriptCommand&, std::string& detail);
 		bool Dirty() const { return mWorkspace.Dirty(); }
 		bool Save() { return mWorkspace.Save(); }
+		std::map<std::filesystem::path, std::string> DirtyDocuments() const { return mWorkspace.DirtyDocuments(); }
+		bool Recover(const std::filesystem::path& root, const std::filesystem::path& path, const std::string& text)
+		{
+			visible = true;
+			return (mWorkspace.Loaded() || mWorkspace.Load(root)) && mWorkspace.Recover(path, text);
+		}
+		const std::string& Error() const { return mWorkspace.error; }
+		void ReloadIfLoaded(const std::filesystem::path& root) { if (mWorkspace.Loaded()) mWorkspace.Load(root); }
 		void RequestExit(std::function<void()> resume) { visible = true; mExit = std::move(resume); mConfirmExit = true; }
 	private:
 		void DrawObject(const Json&, const std::string& path, const std::string& pattern, CommandHistory&);

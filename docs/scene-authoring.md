@@ -1,5 +1,10 @@
 # Scene data
 
+Dirty scenes and prefabs are periodically captured under `.vega/Autosave`,
+including authored scene state during Play. **File > Recover Autosaves...** opens
+recovered state as a dirty buffer for review before Save. See
+[autosave and recovery](autosave.md) for intervals, crash detection and automation.
+
 Reflected actor connections use GUID objects, including null as `{"guid":""}`.
 Lists use JSON arrays with the ordinary scalar encoding for each element (Vec2
 `[x,y]`, Color `[r,g,b,a]`, enum label, or GUID object).
@@ -96,7 +101,7 @@ label strings. Booleans, integers, floats, and strings retain their JSON types.
 Collision flags save as arrays of bit labels; see [project settings and flags](project.md).
 Saving emits complete writable property sets; hand-written sparse inputs gain
 defaults on their first save. Complete supported scenes round-trip exactly,
-including the shipped sandbox. Settings are game-owned and must be passed back
+including the shipped sandbox. Settings include engine bounds and game fields and must be passed back
 to Save by its caller.
 
 Component composition remains in version 1. Entries without `added` update
@@ -333,3 +338,27 @@ Scenes accept optional `parent` GUIDs. Parented Location/Rotation values are rel
 loading resolves forward references, and saving orders parents first. Prefab instances
 retain child overrides by stable child ID. Hierarchy authoring, transform/physics rules,
 format examples and verification are described in [actor hierarchy](hierarchy.md).
+
+## Optional arena bounds
+
+World Settings includes the engine's optional `bounds` rectangle, encoded as
+`"bounds": [x, y, width, height]`. Missing or null disables it. Coordinates must
+be finite and within -1,000,000..1,000,000; width and height must be positive.
+Invalid legacy values remain visible and saveable but have no runtime effect.
+Use the checkbox and four values, or drag the green viewport corner handles.
+Each drag is one undo step; Escape restores the starting rectangle. The outline
+remains visible during Play, with authoring disabled. Reset removes the override.
+
+`ReadSceneBounds(settings)` returns an optional `sf::FloatRect`.
+`SceneSerializer::Load` installs authored bounds on `World`; appending a prefab
+with empty settings preserves them. Games read `World::GetSceneBounds()` and
+choose enforcement. Blank clamps player origins on movement ticks. LightYears
+maps scene bounds into `ArenaDefinition::legalBounds` and size on Play, retaining
+its existing boundary warning and out-of-bounds gameplay rules. Stop before
+changing runtime arena bounds. The engine does not impose collision walls.
+
+Saved content JSON reloads through the game-module hook during Play. Nested
+prefab saves and external edits affect new spawns. Existing prefab instances
+keep their realized state. See [game modules](game-module.md) for supported
+LightYears catalogs and restart requirements. `VegaEditorDailyUse` exercises
+bounds, undo, Play/Stop, nested prefab reload and Lua audio in a Blank project copy.

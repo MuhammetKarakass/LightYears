@@ -24,6 +24,11 @@ namespace ly
 	public:
 
 		World(Application* owningApp);
+		const std::optional<sf::FloatRect>& GetSceneBounds() const { return mSceneBounds; }
+		void SetSceneBounds(std::optional<sf::FloatRect> bounds) { mSceneBounds = std::move(bounds); }
+	private:
+		std::optional<sf::FloatRect> mSceneBounds;
+	public:
 		// Missing prefab references have no actor, but remain authored data.
 		nlohmann::json unresolvedPrefabs = nlohmann::json::array();
 

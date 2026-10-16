@@ -18,6 +18,14 @@ int main()
 {
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
+	for (const char* line : { "asset-move scripts moved/scripts", "asset-rename scripts/spin.lua rotate.lua", "asset-delete data/unused.json confirm", "expect-asset scripts/spin.lua true" })
+		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid asset command refused: " } + line);
+	for (const char* line : { "asset-move one", "asset-rename a b extra", "asset-delete a", "asset-delete a true", "expect-asset a maybe", "expect-asset \"\" true" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid asset command accepted: " } + line);
+	for (const char* line : { "autosave-now", "simulate-unclean-exit", "expect-autosave scenes/main.scene.json", "expect-autosave scenes/main.scene.json false", "expect-recovery scenes/main.scene.json true", "recover-autosave \"scenes/with spaces.scene.json\"" })
+		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid autosave command refused: " } + line);
+	for (const char* line : { "autosave-now extra", "simulate-unclean-exit true", "expect-autosave", "expect-autosave \"\"", "expect-autosave a maybe", "recover-autosave a true", "expect-recovery a true extra" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid autosave command accepted: " } + line);
 	for (const char* line : { "set-ref Actor Target Door", "expect-ref Trigger Target none", "list-add Actor Patrol 10 20", "list-add Actor Names \"a b\"", "list-set Actor Patrol 0 20 30", "list-remove Actor Patrol 0", "expect-list-size Actor Patrol 2" })
 		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid rich property command refused: " } + line);
 	for (const char* line : { "set-ref Actor Target", "set-ref Actor Target none extra", "expect-ref Actor Target \"\"", "list-add Actor Patrol", "list-set Actor Patrol -1 10 20", "list-set Actor Patrol 0", "list-remove Actor Patrol -1", "list-remove Actor Patrol 0 extra", "expect-list-size Actor Patrol -1", "expect-list-size Actor Patrol 1.5" })
@@ -255,10 +263,10 @@ int main()
 		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid prefab command accepted");
 	if (failures) return 1;
 	for (const char* line : { "set-setting \"routeStop\" 1", "expect-setting \"playerShip\" \"Ship.Player.Breacher.Basic\"",
-		"set-setting offset [1,2]", "set-setting color [0,1,2,255]", "set-setting enabled true", "set-setting title \"\"", "reset-setting routeStop" })
+		"set-setting offset [1,2]", "set-setting color [0,1,2,255]", "set-setting enabled true", "set-setting title \"\"", "reset-setting routeStop", "set-setting bounds null", "expect-setting bounds null" })
 		Check(ParseEditorScriptLine(line).command.has_value(), "Valid scene setting command rejected");
 	for (const char* line : { "set-setting", "set-setting routeStop", "set-setting routeStop 1 extra", "set-setting \"\" 1",
-		"set-setting routeStop nan", "set-setting routeStop null", "expect-setting key", "reset-setting", "reset-setting key extra" })
+		"set-setting routeStop nan", "set-setting routeStop {}", "expect-setting key", "reset-setting", "reset-setting key extra" })
 		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid scene setting command accepted");
 	Check(ParseEditorScriptLine("set-setting title \"hello world\"").command->values[0] == "\"hello world\"", "Setting string JSON lost");
 	for (const char* line : { "select-add", "select-add \"\"", "select-add a b", "select-remove", "select-all 1",

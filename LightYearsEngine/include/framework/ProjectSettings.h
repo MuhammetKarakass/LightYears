@@ -14,6 +14,7 @@ namespace ly
 		unsigned int windowHeight = 1080;
 		// Editor input paths are relative to the project file, never to the process cwd.
 		nlohmann::json editor = nlohmann::json::object();
+		unsigned int AutosaveSeconds() const { return editor.value("autosaveSeconds", 120u); }
 		std::string runtimeExecutable = "Game.exe";
 		std::string runtimeAssetDirectory = "assets";
 		std::string runtimeVisualDirectory = "visual";

@@ -3,6 +3,7 @@
 #include <framework/Actor.h>
 #include <framework/ComponentIdentity.h>
 #include <framework/World.h>
+#include <framework/AudioManager.h>
 #include <framework/debug/Log.h>
 #include <framework/debug/Profiler.h>
 #include <framework/reflection/Reflection.h>
@@ -130,6 +131,12 @@ namespace vega::script
 		{
 			std::weak_ptr<bool> active;
 			void Cancel() const { if (auto value = active.lock()) *value = false; }
+		};
+		struct SoundHandle
+		{
+			std::uint64_t id = 0;
+			void Stop() const { if (ly::AudioManager::IsInitialized()) ly::AudioManager::GetAudioManager().StopSound(id); }
+			bool Playing() const { return ly::AudioManager::IsInitialized() && ly::AudioManager::GetAudioManager().IsSoundPlaying(id); }
 		};
 		bool Matches(const ly::Actor& actor, const std::string& name)
 		{
@@ -333,6 +340,8 @@ namespace vega::script
 		}
 		void Bind(sol::state& lua)
 		{
+			lua.new_usertype<SoundHandle>("VegaSoundHandle", sol::no_constructor,
+				"stop", &SoundHandle::Stop, "is_playing", &SoundHandle::Playing);
 			lua.new_usertype<Vector>("VegaVector", sol::no_constructor,
 				"x", &Vector::x, "y", &Vector::y,
 				"length", [](Vector v) { return std::hypot(v.x, v.y); },
@@ -522,6 +531,8 @@ namespace vega::script
 			std::shared_ptr<bool> active;
 		};
 		std::vector<Timer> timers;
+		std::vector<std::uint64_t> sounds;
+		std::uint64_t musicRevision = 0;
 		std::deque<std::pair<std::string, nlohmann::json>> messages;
 		struct KeyState { bool previous = false, current = false; };
 		std::map<std::string, KeyState> keys;
@@ -534,8 +545,10 @@ namespace vega::script
 		bool endRequested = false;
 		std::uint64_t generation = 0;
 		Impl(ScriptComponent& owner, std::string script) : component{ owner }, path{ std::move(script) } {}
+		~Impl() { StopAudio(); }
 		void Fail(const std::string& message)
 		{
+			StopAudio();
 			error = path + ": " + message;
 			running = false;
 			const auto marker = message.find(".lua:");
@@ -562,10 +575,83 @@ namespace vega::script
 		}
 		void CancelWork()
 		{
+			StopAudio();
 			++generation;
 			for (auto& timer : timers) *timer.active = false;
 			timers.clear();
 			messages.clear();
+		}
+		void StopAudio()
+		{
+			if (ly::AudioManager::IsInitialized())
+			{
+				auto& audio = ly::AudioManager::GetAudioManager();
+				for (const auto id : sounds) audio.StopSound(id);
+				if (musicRevision && audio.MusicRevision() == musicRevision) audio.StopMusic();
+			}
+			sounds.clear(); musicRevision = 0;
+		}
+		std::string AudioPath(const std::string& name) const
+		{
+			if (!running || ended || component.GetOwner().GetIsPendingDestroy()) throw std::runtime_error("Audio playback requires a running script callback");
+			const auto& root = ScriptRuntime::Get().Root();
+			const auto relative = std::filesystem::u8path(name);
+			if (name.empty() || relative.is_absolute() || relative.has_root_name() || relative.has_root_directory()) throw std::runtime_error("Audio expects an asset-relative path");
+			for (const auto& part : relative) if (part == "..") throw std::runtime_error("Audio path escapes asset root");
+			const auto full = std::filesystem::weakly_canonical(root / relative);
+			const auto inside = full.lexically_relative(root);
+			if (inside.empty() || inside.is_absolute() || *inside.begin() == ".." || !std::filesystem::is_regular_file(full)) throw std::runtime_error("Audio path is missing or escapes asset root");
+			return full.generic_string();
+		}
+		static void AudioParameters(float volume, float pitch)
+		{
+			if (!std::isfinite(volume) || volume < 0.f || volume > 100.f || !std::isfinite(pitch) || pitch <= 0.f || pitch > 16.f)
+				throw std::runtime_error("Audio volume must be 0..100 and pitch must be greater than 0 and at most 16");
+		}
+		void BindAudio(sol::state& lua)
+		{
+			sol::table audio = lua.create_table();
+			audio["play"] = [this](const std::string& path, sol::optional<float> volume, sol::optional<float> pitch)
+			{
+				const auto v = volume.value_or(100.f), p = pitch.value_or(1.f);
+				AudioParameters(v, p);
+				const auto full = AudioPath(path);
+				auto& manager = ly::AudioManager::GetAudioManager();
+				sounds.erase(std::remove_if(sounds.begin(), sounds.end(), [&](auto id) { return !manager.IsSoundPlaying(id); }), sounds.end());
+				if (sounds.size() >= 128) throw std::runtime_error("Too many simultaneous script sounds");
+				const auto id = manager.PlaySoundTracked(full, AudioType::SFX_World, v, p);
+				if (!id) throw std::runtime_error("Cannot load audio asset: " + path);
+				sounds.push_back(id);
+				return SoundHandle{ id };
+			};
+			environment["audio"] = audio;
+			sol::table music = lua.create_table();
+			music["play"] = [this](const std::string& path, sol::optional<float> volume, sol::optional<float> pitch)
+			{
+				const auto v = volume.value_or(100.f), p = pitch.value_or(1.f);
+				AudioParameters(v, p);
+				const auto full = AudioPath(path);
+				auto& manager = ly::AudioManager::GetAudioManager();
+				manager.PlayMusic(full, AudioType::Music, v, p);
+				musicRevision = manager.MusicRevision();
+			};
+			music["fade"] = [this](const std::string& path, double seconds, sol::optional<float> volume, sol::optional<float> pitch)
+			{
+				const auto v = volume.value_or(100.f), p = pitch.value_or(1.f);
+				AudioParameters(v, p);
+				if (!std::isfinite(seconds) || seconds < 0 || seconds > 86400) throw std::runtime_error("Music fade duration must be 0..86400 seconds");
+				const auto full = AudioPath(path);
+				auto& manager = ly::AudioManager::GetAudioManager();
+				manager.FadeToMusic(full, AudioType::Music, v, p, true, static_cast<float>(seconds));
+				musicRevision = manager.MusicRevision();
+			};
+			music["stop"] = [this]()
+			{
+				if (ly::AudioManager::IsInitialized() && musicRevision && ly::AudioManager::GetAudioManager().MusicRevision() == musicRevision)
+					ly::AudioManager::GetAudioManager().StopMusic();
+				musicRevision = 0;
+			};
+			environment["music"] = music;
 		}
 		template<typename... Args>
 		void Invoke(const sol::protected_function& function, Args&&... args)
@@ -777,6 +863,7 @@ namespace vega::script
 			environment["vec"] = [](float x, float y) { return Vector{ x, y }; };
 			handle = ActorHandle{ component.GetOwner().GetWeakActor() };
 			BindWorld(lua);
+			BindAudio(lua);
 			const ActorHandle inputHandle = handle;
 			sol::table input = lua.create_table();
 			input["key_down"] = [inputHandle](const std::string& name) { return KeyDown(inputHandle, name); };

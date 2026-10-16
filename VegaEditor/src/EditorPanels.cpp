@@ -216,12 +216,13 @@ namespace vega
 							TransformSelection(mContext, mHistory, CaptureSelectionTransform(mSelection), mSelection.Centre(), location - actor->GetActorLocation());
 						}
 					}
-					if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_PREFAB"))
+					if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_ASSET"))
 					{
 						const auto origin = ImGui::GetItemRectMin();
 						const auto mouse = ImGui::GetMousePos();
 						const sf::Vector2i pixel{ static_cast<int>((mouse.x - origin.x) / scale), static_cast<int>((mouse.y - origin.y) / scale) };
-						PlacePrefab(mContext, mHistory, static_cast<const char*>(payload->Data), mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView()));
+						const auto path = static_cast<const char*>(payload->Data);
+						if (IsPrefabPath(path)) PlacePrefab(mContext, mHistory, path, mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView()));
 					}
 					ImGui::EndDragDropTarget();
 				}

@@ -40,6 +40,7 @@ namespace vega
 		std::error_code error;
 		for (std::filesystem::directory_iterator it{ path, error }, end; !error && it != end; it.increment(error))
 		{
+			if (Lower(it->path().filename().string()) == ".vega") continue;
 			std::filesystem::path safe;
 			if (mDocument.Resolve(it->path().lexically_relative(mDocument.Root()), safe)) mContentEntries.push_back(*it);
 		}
@@ -63,6 +64,8 @@ namespace vega
 			(relative.empty() ? ImGuiTreeNodeFlags_DefaultOpen : 0) |
 			(relative == mContentDirectory ? ImGuiTreeNodeFlags_Selected : 0));
 		if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) { mContentDirectory = relative; RefreshContent(); }
+		if (relative.empty()) AssetDropTarget(relative);
+		else AssetItemActions(relative, true);
 		if (open)
 		{
 			// Do not traverse linked directories: cycles and external asset trees have no place here.
@@ -70,6 +73,7 @@ namespace vega
 			std::vector<std::filesystem::path> children;
 			for (std::filesystem::directory_iterator it{ path, error }, end; !error && it != end; it.increment(error))
 			{
+				if (Lower(it->path().filename().string()) == ".vega") continue;
 				std::error_code status;
 				if (depth < 64 && !it->is_symlink(status) && it->is_directory(status))
 					children.push_back(it->path().lexically_relative(mDocument.Root()));
@@ -100,10 +104,12 @@ namespace vega
 
 	void EditorApplication::BuildContentPanel()
 	{
+		mContentFocused = false;
 		LY_PROFILE_SCOPE("Editor Content");
 		mRetiredThumbnails.clear();
 		if (ImGui::Begin("Content", &mShowContent))
 		{
+			mContentFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 			if (ImGui::Button("Refresh")) { mThumbnails.clear(); RefreshContent(); }
 			ImGui::SameLine();
 			if (ImGui::Button("Author definitions")) mContentAuthoring.visible = true;
@@ -194,28 +200,10 @@ namespace vega
 						const float height = grid ? tile + 48.f : 34.f;
 						auto* draw = ImGui::GetWindowDrawList();
 						draw->AddRectFilled(pos, { pos.x + cellWidth, pos.y + height }, IM_COL32(33, 46, 59, 180), 4.f);
-						const bool clicked = ImGui::Selectable("##AssetTile", false, ImGuiSelectableFlags_AllowDoubleClick, { cellWidth, height });
+						const bool clicked = ImGui::Selectable("##AssetTile", mSelectedAsset == relative, ImGuiSelectableFlags_AllowDoubleClick, { cellWidth, height });
 						const auto after = ImGui::GetCursorPos();
-						if (IsPrefabPath(relative))
-						{
-							if (!mContext.playMode && ImGui::BeginDragDropSource())
-							{
-								const auto path = relative.generic_string();
-								ImGui::SetDragDropPayload("VEGA_PREFAB", path.c_str(), path.size() + 1);
-								ImGui::TextUnformatted(path.c_str());
-								ImGui::EndDragDropSource();
-							}
-							if (ImGui::BeginPopupContextItem("Prefab actions"))
-							{
-								if (ImGui::MenuItem("Create Variant...", nullptr, false, !mContext.playMode))
-								{
-									mVariantParent = relative.generic_string();
-									std::snprintf(mPrefabName, sizeof(mPrefabName), "%s Variant", relative.stem().stem().string().c_str());
-									mCreatePrefabDialog = true;
-								}
-								ImGui::EndPopup();
-							}
-						}
+						std::error_code folderError;
+						AssetItemActions(relative, entry.is_directory(folderError));
 						if (ImGui::IsItemHovered())
 						{
 							draw->AddRect(pos, { pos.x + cellWidth, pos.y + height }, IM_COL32(51, 199, 202, 180), 4.f);
@@ -346,21 +334,21 @@ namespace vega
 			{
 				mDataFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 				ImGui::TextWrapped("%s", mDocument.IsOpen() ? mDocument.Path().string().c_str() : "Open a JSON file from Content");
-				ImGui::TextUnformatted("Changes apply to the game after restart");
+				ImGui::TextUnformatted("Saved content reloads through the game module; prefabs affect new spawns.");
 				if (mDocument.ReadOnly()) ImGui::TextWrapped("%s", mDocument.ReadOnlyReason().c_str());
 				if (!mDocument.Error().empty()) ImGui::TextWrapped("%s", mDocument.Error().c_str());
-				ImGui::BeginDisabled(mContext.playMode || !mDocument.IsOpen() || mDocument.ReadOnly());
+				ImGui::BeginDisabled(!mDocument.IsOpen() || mDocument.ReadOnly());
 				if (ImGui::Button("Save") || (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
 					ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))) mDocument.Save();
 				ImGui::EndDisabled();
 				ImGui::SameLine();
-				ImGui::BeginDisabled(mContext.playMode || !mDocument.IsOpen());
+				ImGui::BeginDisabled(!mDocument.IsOpen());
 				if (ImGui::Button("Revert")) { mDocument.Revert(); mJsonMergeGroup = 0; }
 				ImGui::SameLine();
 				if (ImGui::Button("Close")) show = false;
 				ImGui::EndDisabled();
 				ImGui::Separator();
-				ImGui::BeginDisabled(mContext.playMode || mDocument.ReadOnly());
+				ImGui::BeginDisabled(mDocument.ReadOnly());
 				if (mDocument.IsOpen()) DrawJsonNode(mDocument.Data(), "", "Document");
 				ImGui::EndDisabled();
 			}

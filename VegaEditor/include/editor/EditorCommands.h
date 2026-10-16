@@ -45,6 +45,8 @@ namespace vega
 		std::function<void()> clearConsole;
 		std::function<void(bool)> diagnosticsVisible;
 		std::function<bool(const EditorScriptCommand&, std::string&)> contentCommand;
+		std::function<bool(const EditorScriptCommand&, std::string&)> autosaveCommand;
+		std::function<bool(const EditorScriptCommand&, std::string&)> assetCommand;
 		EditorExtensions* extensions = nullptr;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
@@ -79,6 +81,7 @@ namespace vega
 		virtual ~EditorCommand() = default;
 		virtual bool Execute(EditorContext&) = 0;
 		virtual void Undo(EditorContext&) = 0;
+		virtual bool TryUndo(EditorContext& context) { Undo(context); return true; }
 		virtual std::string Name() const = 0;
 		virtual bool MergeWith(const EditorCommand&) { return false; }
 		virtual bool IsUndoable() const { return true; }

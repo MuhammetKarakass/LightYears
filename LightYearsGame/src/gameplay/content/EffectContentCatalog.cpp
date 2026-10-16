@@ -1,4 +1,5 @@
 #include "gameplay/content/EffectContentCatalog.h"
+#include "gameplay/content/RetainedContent.h"
 
 #include "gameplay/content/EffectLoader.h"
 
@@ -38,12 +39,15 @@ namespace ly::content
 	bool EffectContentCatalog::LoadFromFile(
 		const std::filesystem::path& filePath,
 		const List<const sas::GameplayEffectDefinition*>& fallbackDefinitions,
-		std::string* failureReason
+		std::string* failureReason, bool preserveExisting
 	)
-	{
-		GetLoadedState() = false;
-		GetDefinitionsStorage().clear();
-		GetDefinitionPointers().clear();
+	{
+
+		if (!preserveExisting)
+		{
+			GetLoadedState() = false;
+			RetainContent(GetDefinitionsStorage()); GetDefinitionPointers().clear();
+		}
 
 		const EffectLoader::Result loaded = EffectLoader::LoadFromFile(
 			filePath,
@@ -54,7 +58,7 @@ namespace ly::content
 			return Fail(failureReason, loaded.error);
 		}
 
-		GetDefinitionsStorage().clear();
+		RetainContent(GetDefinitionsStorage());
 		GetDefinitionPointers().clear();
 		// The fallback list is used only by EffectLoader to recover the typed
 		// behavior/policy skeleton for each JSON record. It must never add records

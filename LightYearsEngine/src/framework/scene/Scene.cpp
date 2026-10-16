@@ -1,6 +1,7 @@
 #include "framework/scene/Scene.h"
 #include "framework/scene/SceneEntityComponent.h"
 #include "framework/scene/PrefabLibrary.h"
+#include "framework/scene/SceneSettings.h"
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "framework/reflection/Reflection.h"
@@ -426,6 +427,8 @@ namespace ly
 					debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
 				return result;
 			}
+			// Appending a prefab/spawn with empty settings must retain the world's bounds.
+			if (scene["settings"].contains("bounds")) world.SetSceneBounds(ReadSceneBounds(scene["settings"]));
 			std::set<std::string> guids;
 			for (const auto& weak : world.GetActorsByTypeIncludingPending<Actor>())
 				if (auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy())

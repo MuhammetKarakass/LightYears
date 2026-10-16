@@ -28,6 +28,29 @@ returns spawn marker metadata and a label, letting the editor render and pick
 markers without knowing their C++ types. `ApplySceneSettings` and
 `SceneBackdropState` bridge presentation settings.
 
+`ReloadContent(const std::vector<std::filesystem::path>& paths)` is an optional
+default no-op. The editor calls it on the main thread for changed, valid JSON
+files in the selected authoring asset root, including saves during Play. Paths
+are absolute. A half-second poll checks timestamps and sizes; it excludes scenes,
+project files, linked directories and `.vega`. An incomplete JSON write waits
+for the next poll. Deleting a catalog retains its last valid runtime state.
+Prefab caches are invalidated before the hook; nested prefab changes affect
+future instances, while existing instances keep their realized state.
+
+LightYears reloads abilities, effects, modules plus side features, weapons and
+ships. It validates candidate catalog documents, logs each accepted/rejected
+reload in Console, and retains replaced definition generations for the process
+lifetime because active objects can hold definition pointers. New lookups,
+spawns, grants and loadout rebuilds use the current catalogs; active actors,
+already granted abilities and active effect specs keep their copied state.
+Existing behaviors that resolve an effect or numeric setting by ID can observe
+the new value on their next lookup. This is not a migration of a running world.
+
+Restart Play to rebuild existing actors/loadouts consistently. Enemy definitions,
+enemy behavior/combat profiles, damage-status balance, galaxy route data and
+compiled behavior/registration changes still require restarting the editor.
+Sky's separate presentation-root authoring keeps its module-specific reload path.
+
 Continue registering reflection, content schemas, scene settings, GAS debugger
 resolvers and Lua player resolvers through the existing registries from the
 module. LightYears retains those registrations and its existing runtime setup.

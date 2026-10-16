@@ -8,6 +8,7 @@
 #include <script/ScriptRuntime.h>
 #include <cstdlib>
 #include <stdexcept>
+#include <algorithm>
 
 namespace blank
 {
@@ -22,6 +23,13 @@ namespace blank
 		const float x = float(down("D") || down("Right")) - float(down("A") || down("Left"));
 		const float y = float(down("S") || down("Down")) - float(down("W") || down("Up"));
 		GetOwner().AddActorLocationOffset({ x * mSpeed * deltaTime, y * mSpeed * deltaTime });
+		if (const auto& bounds = GetOwner().GetWorld()->GetSceneBounds())
+		{
+			auto position = GetOwner().GetActorLocation();
+			position.x = std::clamp(position.x, bounds->position.x, bounds->position.x + bounds->size.x);
+			position.y = std::clamp(position.y, bounds->position.y, bounds->position.y + bounds->size.y);
+			GetOwner().SetActorLocation(position);
+		}
 	}
 
 	BlankPlayer::BlankPlayer(ly::World* world) : Actor{ world, "textures/tile.png" }

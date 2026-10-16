@@ -105,6 +105,20 @@ namespace vega
 						float v[]{ value[0].get<float>(), value[1].get<float>() };
 						changed = ImGui::DragFloat2(label, v, .1f, min, max); value = { v[0], v[1] }; break;
 					}
+					case Type::Rect:
+					{
+						bool enabled = !value.is_null();
+						changed = ImGui::Checkbox(label, &enabled);
+						if (changed) mSettingMergeGroup = mHistory.BeginMergeGroup();
+						if (changed) value = enabled ? nlohmann::json{ 0.f, 0.f, 1000.f, 1000.f } : nlohmann::json{};
+						if (enabled)
+						{
+							float v[]{ value[0].get<float>(), value[1].get<float>(), value[2].get<float>(), value[3].get<float>() };
+							changed = ImGui::DragFloat4("X / Y / Width / Height", v, 1.f, min, max) || changed;
+							value = { v[0], v[1], v[2], v[3] };
+						}
+						break;
+					}
 					case Type::Color:
 					{
 						float v[4];

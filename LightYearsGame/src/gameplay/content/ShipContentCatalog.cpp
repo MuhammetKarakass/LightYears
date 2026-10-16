@@ -1,4 +1,5 @@
 #include "gameplay/content/ShipContentCatalog.h"
+#include "gameplay/content/RetainedContent.h"
 
 #include "gameConfigs/ship/ShipConfig.h"
 #include "gameplay/content/ShipLoader.h"
@@ -132,10 +133,14 @@ namespace ly::content
 
 	bool ShipContentCatalog::LoadFromFile(
 		const std::filesystem::path& filePath,
-		std::string* failureReason)
-	{
-		GetLoadedState() = false;
-		GetDefinitions().clear();
+		std::string* failureReason, bool preserveExisting)
+	{
+
+		if (!preserveExisting)
+		{
+			GetLoadedState() = false;
+			RetainContent(GetDefinitions());
+		}
 
 		const ShipLoader::Result loaded = ShipLoader::LoadFromFile(
 			filePath,
@@ -182,6 +187,7 @@ namespace ly::content
 			}
 		}
 
+		RetainContent(GetDefinitions());
 		GetDefinitions() = loaded.definitions;
 		GetLoadedState() = true;
 		return true;

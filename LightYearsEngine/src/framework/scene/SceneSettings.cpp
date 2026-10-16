@@ -25,9 +25,13 @@ namespace ly
 		case SceneSettingType::Enum: valid = value.is_string() || number(value, true, false); break;
 		case SceneSettingType::Vec2:
 		case SceneSettingType::Color:
+		case SceneSettingType::Rect:
+			if (type == SceneSettingType::Rect && value.is_null()) return {};
 			valid = value.is_array() && value.size() == (type == SceneSettingType::Vec2 ? 2u : 4u);
 			if (valid) for (const auto& item : value)
 				valid = valid && number(item, type == SceneSettingType::Color, type == SceneSettingType::Color);
+			if (valid && type == SceneSettingType::Rect)
+				valid = value[2].get<double>() > 0 && value[3].get<double>() > 0;
 			break;
 		}
 		if (!valid) return "Invalid type or value outside the allowed range";
@@ -42,8 +46,26 @@ namespace ly
 
 	SceneSettingsSchema& SceneSettingsSchema::Get()
 	{
-		static SceneSettingsSchema schema;
+		static SceneSettingsSchema schema = []()
+		{
+			SceneSettingsSchema value;
+			SceneSettingField bounds;
+			bounds.key = "bounds"; bounds.label = "Arena bounds"; bounds.category = "World";
+			bounds.type = SceneSettingType::Rect; bounds.defaultValue = nullptr;
+			bounds.min = -1000000; bounds.max = 1000000;
+			bounds.tooltip = "Optional [x, y, width, height] in world units. Games choose how to enforce it.";
+			value.Register(std::move(bounds));
+			return value;
+		}();
 		return schema;
+	}
+	std::optional<sf::FloatRect> ReadSceneBounds(const nlohmann::json& settings)
+	{
+		if (!settings.is_object() || !settings.contains("bounds") || settings["bounds"].is_null()) return {};
+		const auto& value = settings["bounds"];
+		const auto* field = SceneSettingsSchema::Get().Find("bounds");
+		if (!field || !field->Validate(value).empty()) return {};
+		return sf::FloatRect{ { value[0].get<float>(), value[1].get<float>() }, { value[2].get<float>(), value[3].get<float>() } };
 	}
 	void SceneSettingsSchema::Register(SceneSettingField field)
 	{

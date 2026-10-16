@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 #include <nlohmann/json.hpp>
 
 namespace vega
@@ -29,6 +30,8 @@ namespace vega
 		virtual void Initialize(ly::Application& application, bool editor) = 0;
 		virtual std::shared_ptr<ly::World> CreateLevel(ly::Application& application,
 			const nlohmann::json& scene, bool edit) = 0;
+		// Absolute paths in the selected authoring root; called on the editor thread.
+		virtual void ReloadContent(const std::vector<std::filesystem::path>&) {}
 		virtual void BeginPlay(ly::World&) {}
 		virtual void EndPlay(ly::World&) {}
 		virtual std::shared_ptr<ly::Actor> PlayerActor(ly::World&) { return {}; }

@@ -1,10 +1,16 @@
 #include "framework/AssetManager.h"
 #include "framework/AudioManager.h"
 #include <memory>
+#include <filesystem>
 
 namespace ly
 {
 	unique_ptr<AudioManager> AudioManager::audioManager = nullptr;
+	static std::uint64_t NextMusicRevision()
+	{
+		static std::uint64_t next = 0;
+		return ++next;
+	}
 
 	AudioManager& AudioManager::GetAudioManager()
 	{
@@ -105,8 +111,13 @@ namespace ly
 
 	void AudioManager::PlaySound(const std::string& path, AudioType type, float volume, float pitch)
 	{
+		PlaySoundTracked(path, type, volume, pitch);
+	}
+
+	std::uint64_t AudioManager::PlaySoundTracked(const std::string& path, AudioType type, float volume, float pitch)
+	{
 		shared_ptr<sf::SoundBuffer> buffer = AssetManager::GetAssetManager().LoadSoundBuffer(path);
-		if (!buffer) return;
+		if (!buffer) return 0;
 
 		sf::Sound* sound = AcquireSoundFromPool();
 		if (sound)
@@ -130,12 +141,36 @@ namespace ly
 		sound->setVolume(effectiveVolume);
 		sound->play();
 
-		mActiveSounds.push_back({ sound, buffer, type, pitch, volume });
+		// IDs never alias a reused pooled voice, including after manager shutdown.
+		static std::uint64_t nextId = 0;
+		const auto id = ++nextId;
+		mActiveSounds.push_back({ id, sound, buffer, type, pitch, volume });
+		return id;
+	}
+
+	void AudioManager::StopSound(std::uint64_t id)
+	{
+		for (auto& active : mActiveSounds) if (active.id == id) { active.sound->stop(); return; }
+	}
+
+	bool AudioManager::IsSoundPlaying(std::uint64_t id) const
+	{
+		for (const auto& active : mActiveSounds) if (active.id == id) return active.sound->getStatus() == sf::Sound::Status::Playing;
+		return false;
+	}
+	std::size_t AudioManager::PlayingSoundCount() const
+	{
+		std::size_t count = 0;
+		for (const auto& active : mActiveSounds) if (active.sound->getStatus() == sf::Sound::Status::Playing) ++count;
+		return count;
 	}
 
 	void AudioManager::PlayMusic(const std::string& path, AudioType type, float volume, float pitch, bool loop)
 	{
+		mMusicRevision = NextMusicRevision();
+		mFadeState = FadeState::None;
 		std::string copyOfPath = path;
+		mNextMusicPath.clear();
 		mPendingLoopPath = "";
 		mIsPlayingIntro = false;
 		if (mMusic)
@@ -144,7 +179,7 @@ namespace ly
 		}
 
 		mMusic = std::make_shared<sf::Music>();
-		std::string fullPath = AssetManager::GetAssetManager().GetAssetRootDirectory() + copyOfPath;
+		const auto fullPath = std::filesystem::path{ AssetManager::GetAssetManager().GetAssetRootDirectory() } / copyOfPath;
 		
 		if (mMusic->openFromFile(fullPath))
 		{
@@ -169,6 +204,13 @@ namespace ly
 
 	void AudioManager::StopMusic()
 	{
+		mMusicRevision = NextMusicRevision();
+		mFadeState = FadeState::None;
+		mNextMusicPath.clear();
+		mPendingLoopPath.clear();
+		mNextPendingLoopPath.clear();
+		mIsPlayingIntro = false;
+		if (mCrossfadeMusic) mCrossfadeMusic->stop();
 		if (mMusic)
 		{
 			mMusic->stop();
@@ -206,6 +248,7 @@ namespace ly
 
 	void AudioManager::FadeToMusic(const std::string& path, AudioType type, float volume, float pitch, bool loop, float fadeDuration)
 	{
+		mMusicRevision = NextMusicRevision();
 		if (mMusic && mMusic->getStatus() != sf::Music::Status::Stopped)
 		{
 			std::string currentPath = mNextMusicPath.empty() ? "" : mNextMusicPath;
@@ -247,7 +290,7 @@ namespace ly
 	{
 		mFadeTimer += deltaTime;
 
-		float progress = std::min(mFadeTimer / mFadeDuration, 1.0f);
+		float progress = mFadeDuration > 0.f ? std::min(mFadeTimer / mFadeDuration, 1.0f) : 1.f;
 		if(mFadeState == FadeState::FadingOut)
 		{
 			float newVolume = mMusicBaseVolume * (1.0f - progress);
@@ -258,7 +301,9 @@ namespace ly
 				mMusic->stop();
 				if(!mNextMusicPath.empty())
 				{
+					const auto revision = mMusicRevision;
 					PlayMusic(mNextMusicPath, mNextMusicType, 0.0f, mNextMusicPitch, mNextMusicLoop);
+					mMusicRevision = revision;
 					if(!mNextPendingLoopPath.empty())
 					{
 						mPendingLoopPath = mNextPendingLoopPath;
@@ -289,7 +334,9 @@ namespace ly
 		}
 		if(mMusic && mIsPlayingIntro && mMusic->getStatus() == sf::Music::Status::Stopped)
 		{
+			const auto revision = mMusicRevision;
 			PlayMusic(mPendingLoopPath, mMusicType, mMusicBaseVolume, mMusicBasePitch, true);
+			mMusicRevision = revision;
 			mIsPlayingIntro = false;
 			mPendingLoopPath = "";
 		}

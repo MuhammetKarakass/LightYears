@@ -11,6 +11,57 @@
 
 namespace vega
 {
+	bool EditorApplication::BuildBoundsOverlay()
+	{
+		const auto bounds = ly::ReadSceneBounds(mSceneSettings);
+		if (!bounds || !mContext.world || mPrefabWorld) { mBoundsCorner = -1; return false; }
+		const auto image = mViewportImageRect;
+		const auto main = ImGui::GetMainViewport()->Pos;
+		const auto screen = [&](sf::Vector2f point)
+		{
+			const auto pixel = mViewport.GetTexture().mapCoordsToPixel(point, mContext.world->GetWorldView());
+			return ImVec2{ main.x + image.position.x + pixel.x * image.size.x / mViewport.GetSize().x,
+				main.y + image.position.y + pixel.y * image.size.y / mViewport.GetSize().y };
+		};
+		auto* draw = ImGui::GetWindowDrawList();
+		draw->PushClipRect({ main.x + image.position.x, main.y + image.position.y },
+			{ main.x + image.position.x + image.size.x, main.y + image.position.y + image.size.y }, true);
+		draw->AddRect(screen(bounds->position), screen(bounds->position + bounds->size), IM_COL32(100, 230, 170, 220), 0.f, 0, 2.f);
+		const auto mouse = ImGui::GetMousePos();
+		for (int corner = 0; corner < 4; ++corner)
+		{
+			const auto p = screen(bounds->position + sf::Vector2f{ (corner & 1) ? bounds->size.x : 0.f, (corner & 2) ? bounds->size.y : 0.f });
+			if (!mContext.playMode)
+			{
+				draw->AddRectFilled({ p.x - 5.f, p.y - 5.f }, { p.x + 5.f, p.y + 5.f }, IM_COL32(100, 230, 170, 255));
+				if (mBoundsCorner < 0 && mViewportImageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && std::hypot(mouse.x - p.x, mouse.y - p.y) < 10.f)
+				{
+					mBoundsCorner = corner; mBoundsStart = mSceneSettings.at("bounds"); mBoundsMergeGroup = mHistory.BeginMergeGroup();
+				}
+			}
+		}
+		draw->PopClipRect();
+		const bool consumed = mBoundsCorner >= 0;
+		if (consumed)
+		{
+			if (mContext.playMode || !ImGui::IsMouseDown(ImGuiMouseButton_Left)) mBoundsCorner = -1;
+			else if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+			{
+				mHistory.Execute(std::make_unique<SetSceneSettingCommand>("bounds", mBoundsStart, mBoundsMergeGroup)); mBoundsCorner = -1;
+			}
+			else if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 3.f))
+			{
+				const auto pixel = MapWindowToTexturePixel({ int(mouse.x - main.x), int(mouse.y - main.y) }, image, mViewport.GetSize());
+				const auto point = mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView());
+				const auto start = ly::ReadSceneBounds(nlohmann::json{ { "bounds", mBoundsStart } }).value();
+				const sf::Vector2f opposite = start.position + sf::Vector2f{ (mBoundsCorner & 1) ? 0.f : start.size.x, (mBoundsCorner & 2) ? 0.f : start.size.y };
+				const nlohmann::json value{ std::min(point.x, opposite.x), std::min(point.y, opposite.y), std::max(1.f, std::abs(point.x - opposite.x)), std::max(1.f, std::abs(point.y - opposite.y)) };
+				if (value != mSceneSettings.at("bounds")) mHistory.Execute(std::make_unique<SetSceneSettingCommand>("bounds", value, mBoundsMergeGroup));
+			}
+		}
+		return consumed;
+	}
+
 	bool EditorApplication::BuildPropertyOverlays()
 	{
 		if (!mContext.world || mContext.playMode || mPrefabWorld) { mPointDrag.reset(); return false; }
@@ -118,7 +169,7 @@ namespace vega
 
 	void EditorApplication::BuildGizmo()
 	{
-		if (BuildPropertyOverlays()) return;
+		if (BuildBoundsOverlay() || BuildPropertyOverlays()) return;
 		auto* world = GetCurrentWorld();
 		const auto actor = mSelection.Get();
 		if (mContext.playMode)

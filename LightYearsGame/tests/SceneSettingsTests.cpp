@@ -31,7 +31,7 @@ int main()
 	auto& schema = SceneSettingsSchema::Get();
 	const auto* route = schema.Find("routeStop");
 	const auto* ship = schema.Find("playerShip");
-	Check(route && ship && schema.Fields().size() == 2, "Game schema registration incomplete");
+	Check(route && ship && schema.Find("bounds") && schema.Fields().size() == 3, "Engine/game schema registration incomplete");
 	if (!route || !ship) return 1;
 	GalaxyRoute galaxy;
 	std::string error;
@@ -91,6 +91,6 @@ int main()
 	try { local.Register(bounded); } catch (const std::invalid_argument&) { rejected = true; }
 	Check(rejected, "Invalid schema default accepted");
 	RegisterGameSceneSettings();
-	Check(schema.Fields().size() == 2, "Repeated registration duplicates fields");
+	Check(schema.Fields().size() == 3, "Repeated registration duplicates fields");
 	return failures ? 1 : 0;
 }

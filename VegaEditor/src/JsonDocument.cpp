@@ -145,6 +145,7 @@ namespace vega
 			mData = std::move(data);
 			mLayoutText = mSavedText = std::move(text);
 			mDirty = false;
+			mSavedExists = true;
 			mStyle = DetectStyle(mLayoutText);
 			mScalars.clear();
 			mSpans.clear();
@@ -165,6 +166,38 @@ namespace vega
 				mReadOnlyReason = "Read-only: " + std::string{ error.what() };
 				mScalars.clear();
 			}
+			return true;
+		}
+		catch (const std::exception& error) { mError = error.what(); return false; }
+	}
+
+	bool JsonDocument::Recover(const std::filesystem::path& relative, const std::string& text)
+	{
+		std::filesystem::path path;
+		if (!Resolve(relative, path)) { mError = "Recovery path escapes the asset root"; return false; }
+		try
+		{
+			// Validate in a fresh document, leaving the active buffer intact on failure.
+			JsonDocument recovered{ mRoot };
+			recovered.mPath = path;
+			recovered.mData = Json::parse(text);
+			recovered.mLayoutText = text;
+			recovered.mStyle = DetectStyle(text);
+			std::size_t cursor = 0;
+			recovered.ScanLayout(cursor, "", recovered.mData);
+			SkipSpace(text, cursor);
+			if (cursor != text.size()) throw std::runtime_error("Invalid recovery JSON layout");
+			recovered.mSavedExists = std::filesystem::exists(path);
+			if (recovered.mSavedExists)
+			{
+				std::ifstream input{ path, std::ios::binary };
+				if (!input) throw std::runtime_error("Cannot read current file before recovery");
+				recovered.mSavedText = { std::istreambuf_iterator<char>{ input }, {} };
+			}
+			recovered.mDirty = true;
+			recovered.mID = mID + 1;
+			recovered.mRevision = mRevision + 1;
+			*this = std::move(recovered);
 			return true;
 		}
 		catch (const std::exception& error) { mError = error.what(); return false; }
@@ -322,12 +355,14 @@ namespace vega
 		// A form and an external editor may both hold this file. Never silently
 		// overwrite a revision saved by another document or process.
 		std::ifstream input{ mPath, std::ios::binary };
-		if (!input) { mError = "Cannot read current file before save"; return false; }
+		if (std::filesystem::exists(mPath) != mSavedExists || (mSavedExists && !input))
+		{ mError = "File changed on disk; reload before saving"; return false; }
 		const std::string current{ std::istreambuf_iterator<char>{ input }, {} };
 		if (current != mSavedText) { mError = "File changed on disk; reload before saving"; return false; }
 		input.close();
 		if (!AtomicWriteText(mPath, text, mError)) return false;
 		mSavedText = text;
+		mSavedExists = true;
 		mDirty = false;
 		mError.clear();
 		return true;

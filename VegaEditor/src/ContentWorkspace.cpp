@@ -88,6 +88,31 @@ namespace vega
 		return false;
 	}
 
+	std::map<std::filesystem::path, std::string> ContentWorkspace::DirtyDocuments() const
+	{
+		std::map<std::filesystem::path, std::string> result;
+		for (const auto& [type, document] : mDocuments)
+			if (document.Dirty()) result.emplace(document.Path(), document.Serialize());
+		return result;
+	}
+
+	bool ContentWorkspace::Recover(const std::filesystem::path& path, const std::string& text)
+	{
+		for (auto& [type, document] : mDocuments)
+		{
+			std::filesystem::path absolute;
+			if (!document.Resolve(path, absolute) || absolute != document.Path()) continue;
+			if (document.Dirty()) { error = "Save or revert content changes before recovery"; return false; }
+			if (!document.Recover(path, text)) { error = document.Error(); return false; }
+			++mGeneration;
+			++mRevision;
+			error.clear();
+			return true;
+		}
+		error = "No loaded content document matches the autosave";
+		return false;
+	}
+
 	bool ContentWorkspace::Open(const std::string& type, const std::string& id)
 	{
 		if (!Definition(type, id)) { error = "Unknown content " + type + " " + id; return false; }

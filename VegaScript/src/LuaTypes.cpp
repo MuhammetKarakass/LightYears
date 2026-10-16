@@ -58,6 +58,29 @@ function VegaVector:dot(other) end
 ---@return VegaVector
 function vec(x, y) end
 
+---@class SoundHandle
+SoundHandle = {}
+function SoundHandle:stop() end
+---@return boolean
+function SoundHandle:is_playing() end
+audio = {}
+---@param path string Asset-relative path; must remain inside the asset root.
+---@param volume? number 0..100, default 100.
+---@param pitch? number Greater than 0 and at most 16, default 1.
+---@return SoundHandle
+function audio.play(path, volume, pitch) end
+music = {}
+---@param path string Asset-relative path; music loops until replaced or stopped.
+---@param volume? number
+---@param pitch? number
+function music.play(path, volume, pitch) end
+function music.stop() end
+---@param path string
+---@param seconds number 0..86400.
+---@param volume? number
+---@param pitch? number
+function music.fade(path, seconds, volume, pitch) end
+
 ---@class TimerHandle
 TimerHandle = {}
 function TimerHandle:cancel() end

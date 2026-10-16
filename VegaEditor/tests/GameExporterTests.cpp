@@ -82,8 +82,11 @@ namespace
 		WriteFile(root / "game" / "notes.txt", kNotes);
 		WriteFile(root / "game" / "assets" / "content.json", kContentJson);
 		WriteFile(root / "game" / "assets" / "sub" / "b.txt", kBee);
+		WriteFile(root / "game" / "assets" / ".vega" / "Autosave" / "session" / "snapshot.json", "private autosave");
+		WriteFile(root / "game" / "assets" / ".vega" / "Trash" / "deleted.json", "deleted asset");
 		WriteFile(root / "visual_src" / "palette" / "pipeline.json", kPipeline);
 		WriteFile(root / "visual_src" / "shader.glsl", kShader);
+		WriteFile(root / "visual_src" / ".vega" / "vega.lua", "private tooling");
 		fs::create_directories(root / "tree");
 		fixture.layout = vega::GameExportLayout{ root / "game", root / "visual_src", root / "tree", root / "build" };
 		// Exported: exe, dll, two asset files, two visual files. notes.txt is not part of the game.
@@ -125,6 +128,7 @@ int main()
 		Check(result.success, "Another game's layout was refused: " + result.error);
 		Check(Exists(output / "Another Game.exe") && Exists(output / "data/level.json") && Exists(output / "art/shader.glsl"),
 			"Exporter assumed the original game's package layout");
+		Check(!Exists(output / "art/.vega"), "Editor workspace metadata must not be exported");
 		Check(!Exists(output / "assets") && !Exists(output / "visual"), "Exporter added unconfigured asset folders");
 		f.layout.visualAssetsDir.clear();
 		Check(vega::ExportGame(f.layout, Request(f.root / "build/no-visuals")).success, "Visual assets must be optional");

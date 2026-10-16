@@ -323,3 +323,39 @@ defaults to keeping world values. `:detach()` preserves world values. World tran
 setters still accept world coordinates. Destroy cascades through descendants, and
 `world.spawn` of a hierarchy prefab creates every child and returns the root.
 Dynamic physical children are refused; see [hierarchy rules](hierarchy.md).
+
+## Audio and music
+
+```lua
+function on_start(self)
+ local sound = audio.play('audio/laser.wav', 60, 1.1)
+ timer.after(0.2, function() sound:stop() end)
+ music.play('audio/ambient.ogg', 35)
+ -- Crossfade to another looping track over two seconds.
+ music.fade('audio/battle.ogg', 2, 45, 1)
+end
+```
+
+`audio.play(path[, volume, pitch])` returns a `SoundHandle` with `:stop()` and
+`:is_playing()`. Volume defaults to 100 (range 0..100); pitch defaults to 1
+(greater than 0, maximum 16). Stopping twice or using a finished handle is safe;
+a pooled voice cannot be stopped by a stale handle. Effects use the engine's
+world sound category and follow its time scale and volume controls.
+
+`music.play(path[, volume, pitch])` starts looping music. `music.fade(path,
+seconds[, volume, pitch])` uses the engine's crossfade, accepting finite durations
+from 0 through 86400 seconds. `music.stop()` stops the requesting script's current
+music. Music is one shared channel: a later script or native request replaces
+ownership. Destroying an earlier script cannot stop that later request.
+
+Paths must be relative to the script asset root. Absolute/rooted paths, parent
+traversal, missing files and symlinks escaping the root are refused. Playback
+requires a running callback; preparation and top-level chunk loading cannot
+start audio. Each script owns at most 128 simultaneous sounds. Destroy, reload
+and script errors stop owned sounds and music, including a pending fade.
+`on_destroy` can stop existing handles but cannot start new audio after destruction.
+
+The engine has no positional audio API, so `audio.play_at` is unavailable.
+`VegaScriptAudio` generates silent audio in the build tree and verifies handles,
+validation, pooling, reload, teardown, fades and music ownership. The generated
+Lua annotations include these APIs; use **Scripts > Regenerate Lua Types**.

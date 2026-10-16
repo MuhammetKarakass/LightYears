@@ -24,6 +24,18 @@ if(BUILD_TESTING)
 	include(Tests/Dependencies.cmake)
 	vega_record_dependencies(BlankGame)
 	if(VEGA_BUILD_EDITOR)
+		add_test(NAME VegaEditorAutosaveRecovery COMMAND ${CMAKE_COMMAND}
+			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/autosave-editor-test
+			-DEDITOR=$<TARGET_FILE:BlankEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunAutosave.cmake)
+		set_tests_properties(VegaEditorAutosaveRecovery PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 180)
+		add_test(NAME VegaEditorDailyUse COMMAND ${CMAKE_COMMAND}
+			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/daily-use-test
+			-DEDITOR=$<TARGET_FILE:BlankEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunDailyUse.cmake)
+		set_tests_properties(VegaEditorDailyUse PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 120)
+		add_test(NAME VegaEditorAssetMoves COMMAND ${CMAKE_COMMAND}
+			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/asset-move-editor-test
+			-DEDITOR=$<TARGET_FILE:BlankEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunAssetMoves.cmake)
+		set_tests_properties(VegaEditorAssetMoves PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 120)
 		add_test(NAME VegaEditorRichProperties COMMAND ${CMAKE_COMMAND}
 			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/properties-editor-test
 			-DEDITOR=$<TARGET_FILE:BlankEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunProperties.cmake)

@@ -5,6 +5,7 @@
 #include "player/PlayerManager.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/debug/Log.h>
+#include <framework/scene/SceneSettings.h>
 
 namespace ly
 {
@@ -60,7 +61,13 @@ namespace ly
 
 	ArenaDefinition SceneLevel::CreateArenaDefinition() const
 	{
-		return CreateSandboxArenaDefinition();
+		auto definition = CreateSandboxArenaDefinition();
+		if (const auto bounds = ReadSceneBounds(mScene.value("settings", nlohmann::json::object())))
+		{
+			definition.legalBounds = *bounds;
+			definition.size = bounds->size;
+		}
+		return definition;
 	}
 
 	PlayerRespawnDefinition SceneLevel::CreatePlayerRespawnDefinition() const

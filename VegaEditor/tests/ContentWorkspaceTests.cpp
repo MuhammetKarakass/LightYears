@@ -68,6 +68,9 @@ int main()
 	Check(!workspace.New(history, "effect", "Timed", "new"), "Duplicate ID accepted");
 	Check(workspace.Open("effect", "new") && workspace.Set(history, "duration", -1.), "Invalid intermediate edit must remain undoable");
 	Check(!workspace.Validate().empty() && !workspace.Save(), "Validator failure did not prevent save");
+	const auto snapshots = workspace.DirtyDocuments();
+	Check(snapshots.size() == 2, "Autosave must include every dirty catalog, even intermediate invalid edits");
+	Check(!workspace.Recover("effects.json", original), "Recovery must refuse an existing dirty content buffer");
 	Check(history.Undo() && workspace.Validate().empty(), "Undo did not clear validation error");
 	Check(workspace.Save() && !workspace.Dirty(), "Save failed");
 	const auto saved = Read(root / "effects.json");
@@ -78,6 +81,10 @@ int main()
 	history.PruneInvalidCommands();
 	Check(!history.CanUndo(), "Reload did not invalidate old history");
 	Check(workspace.Open("effect", "copy") && workspace.Selected()->at("duration") == 3.5, "Saved values were lost");
+	Check(workspace.Recover("effects.json", snapshots.at(std::filesystem::canonical(root / "effects.json"))), "Content recovery failed");
+	Check(workspace.Dirty() && Read(root / "effects.json") == saved, "Content recovery must preserve the authored catalog");
+	Check(!workspace.Validate().empty(), "Recovered invalid content must still be validated before Save");
+	Check(workspace.Revert() && !workspace.Dirty(), "Recovered content revert failed");
 	Check(workspace.Delete(history, "effect", "copy") && !workspace.Definition("effect", "copy"), "Unreferenced deletion failed");
 	Check(history.Undo() && workspace.Definition("effect", "copy"), "Delete undo failed");
 	Check(context.sceneRevision == 0, "Content edits dirtied the scene");
