@@ -1,5 +1,8 @@
 # Scene data
 
+See [reflection](reflection.md) for the runtime model, registration macros, and a
+walkthrough from a new C++ class to Inspector, scene, prefab, and Lua properties.
+
 Scene entities may also use an asset-relative `"prefab"` in place of `"type"`.
 The loader resolves prefab inheritance before applying instance overrides; saves
 retain only differences plus GUID, name, and Location. Missing prefab instances

@@ -6,6 +6,7 @@ namespace ly
 {
 	class DummyEnemy : public SpaceShip
 	{
+		VEGA_CLASS(DummyEnemy)
 	public:
 		DummyEnemy(World* owningWorld, const ShipDefinition& shipDef);
 

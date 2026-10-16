@@ -1,9 +1,19 @@
 #include "gameplay/HealthComponent.h"
+#include <framework/Actor.h>
+#include <framework/reflection/Reflection.h>
 
 #include <algorithm>
 
 namespace ly
 {
+	VEGA_REFLECT(HealthComponent, ActorComponent)
+	{
+		VEGA_ADDABLE(100.f, 100.f);
+		VEGA_CATEGORY("Health");
+		VEGA_READONLY("Health", GetHealth);
+		VEGA_PROPERTY("Max Health", GetMaxHealth, SetMaxHealth).Range(1.f, 100000.f);
+	}
+
 	HealthComponent::HealthComponent(Actor& owner, float health, float maxHealth):
 		ActorComponent{owner},
 		mHealth{health},

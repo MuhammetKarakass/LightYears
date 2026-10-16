@@ -42,6 +42,7 @@
 
 	class Actor : public Object
 	{
+		VEGA_CLASS(Actor)
 	public:
         Actor(World* OwningWorld, const std::string& TexturePath = "");
 		virtual ~Actor();

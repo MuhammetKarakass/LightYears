@@ -9,6 +9,7 @@ namespace ly
 	// this query without creating a gameplay sprite or collision body.
 	class PlayerStart : public Actor
 	{
+		VEGA_CLASS(PlayerStart)
 	public:
 		explicit PlayerStart(World* world) : Actor{ world } {}
 		bool IsEditorOnlyMarker() const { return true; }

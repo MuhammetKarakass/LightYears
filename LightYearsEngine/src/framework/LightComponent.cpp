@@ -4,6 +4,7 @@
 #include "framework/AssetManager.h"
 #include "framework/MathUtility.h"
 #include "framework/PerfMonitor.h"
+#include "framework/reflection/Reflection.h"
 
 #include <algorithm>
 #include <cmath>
@@ -363,5 +364,11 @@ namespace ly
 			);
 			*result = { { left, top }, { right - left, bottom - top } };
 		}
+	}
+
+	// Light operations need a tag; Phase 1 reflects scalar object properties only.
+	VEGA_REFLECT(LightComponent, ActorComponent)
+	{
+		VEGA_ADDABLE();
 	}
 }

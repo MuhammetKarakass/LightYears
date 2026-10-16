@@ -32,6 +32,7 @@ namespace ly
 	// tick-prerequisite equivalent). The owner must be a SpaceShip.
 	class MovementComponent : public ActorComponent
 	{
+		VEGA_CLASS(MovementComponent)
 	public:
 		MovementComponent(Actor& owner, const ShipDefinition& shipDef);
 

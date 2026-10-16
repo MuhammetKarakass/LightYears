@@ -1,5 +1,6 @@
 #include "framework/ActorComponent.h"
 #include "framework/Actor.h"
+#include "framework/reflection/Reflection.h"
 
 namespace ly
 {
@@ -43,5 +44,13 @@ namespace ly
 			mEndedPlay = true;
 			EndPlay();
 		}
+	}
+
+	VEGA_REFLECT_ROOT(ActorComponent)
+	{
+		VEGA_CATEGORY("Lifecycle");
+		VEGA_PROPERTY("Active", IsActive, SetActive);
+		VEGA_READONLY("Can Ever Tick", CanEverTick);
+		VEGA_READONLY("Has Begun Play", HasBegunPlay);
 	}
 }

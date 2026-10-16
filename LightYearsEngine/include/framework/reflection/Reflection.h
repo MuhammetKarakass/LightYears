@@ -83,6 +83,12 @@ namespace ly::reflect
 		const TypeInfo* Find(const std::string& name) const;
 		const TypeInfo* FindMostDerived(const Actor& actor) const;
 		const TypeInfo* FindMostDerived(const ActorComponent& component) const;
+		std::vector<const TypeInfo*> RegisteredTypes() const
+		{
+			std::vector<const TypeInfo*> result;
+			for (const auto& entry : mTypes) result.push_back(entry.second.get());
+			return result;
+		}
 		std::vector<const TypeInfo*> SpawnableActors() const
 		{
 			std::vector<const TypeInfo*> result;
@@ -136,6 +142,7 @@ namespace ly::reflect
 			}
 			PropertyInfo property;
 			property.name = name;
+			property.category = mDefaultCategory;
 			property.kind = Kind<Value>();
 			property.getter = [getter](const void* object) -> PropertyValue
 			{
@@ -198,6 +205,7 @@ namespace ly::reflect
 		Class& Step(float step) { return Speed(step); }
 		Class& Tooltip(const std::string& tooltip) { Current().tooltip = tooltip; return *this; }
 		Class& Category(const std::string& category) { Current().category = category; return *this; }
+		Class& DefaultCategory(std::string category) { mDefaultCategory = std::move(category); return *this; }
 		Class& Labels(EnumLabels labels) { Current().enumLabels = std::move(labels); return *this; }
 		Class& Flags(EnumLabels labels) { Current().kind = PropertyKind::Flags; Current().enumLabels = std::move(labels); return *this; }
 
@@ -231,8 +239,11 @@ namespace ly::reflect
 		}
 		PropertyInfo& Current() { return mType.properties.at(mProperty); }
 		TypeInfo& mType;
+		std::string mDefaultCategory;
 		std::size_t mProperty = 0;
 	};
 
 	void RegisterEngineTypes();
 }
+
+#include "framework/reflection/ReflectionMacros.h"

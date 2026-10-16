@@ -1,6 +1,7 @@
 #include "framework/SpriteComponent.h"
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
+#include "framework/reflection/Reflection.h"
 
 namespace ly
 {
@@ -85,5 +86,18 @@ namespace ly
 		{
 			mSprite->setRotation(sf::degrees(GetOwner().GetActorRotation()));
 		}
+	}
+
+	VEGA_REFLECT(SpriteComponent, ActorComponent)
+	{
+		VEGA_ADDABLE();
+		VEGA_CATEGORY("Sprite");
+		VEGA_READONLY("Has Sprite", HasSprite);
+		type.Property("Texture", &SpriteComponent::GetTexturePath,
+			[](SpriteComponent& sprite, const std::string& path)
+			{
+				if (!path.empty() && !sprite.SetTexture(path)) throw std::runtime_error("Cannot load texture: " + path);
+			});
+		VEGA_PROPERTY("Scale", GetScale, SetScale);
 	}
 }

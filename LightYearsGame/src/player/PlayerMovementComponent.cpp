@@ -1,4 +1,5 @@
 #include "player/PlayerMovementComponent.h"
+#include <framework/reflection/Reflection.h>
 
 #include "player/PlayerSpaceShip.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
@@ -13,6 +14,18 @@
 
 namespace ly
 {
+	VEGA_REFLECT(PlayerMovementComponent, ActorComponent)
+	{
+		VEGA_CATEGORY("Player Movement");
+		VEGA_PROPERTY("Speed", GetSpeed, SetSpeed).Range(0.f, 100000.f);
+		VEGA_PROPERTY("Use Screen Clamp", GetUseScreenClamp, SetUseScreenClamp);
+		VEGA_READONLY("Afterburning", IsAfterburning);
+		VEGA_READONLY("Afterburner Camera Zoom Out", GetAfterburnerCameraZoomOut);
+		VEGA_READONLY("Speed Cap Multiplier", GetMovementSpeedCapMultiplier);
+		VEGA_READONLY("Turn Capability Multiplier", GetMovementTurnCapabilityMultiplier);
+		VEGA_READONLY("Afterburner Recharge Blocked", IsAfterburnerRechargeBlocked);
+	}
+
 	PlayerMovementComponent::PlayerMovementComponent(Actor& owner)
 		: ActorComponent(owner)
 	{

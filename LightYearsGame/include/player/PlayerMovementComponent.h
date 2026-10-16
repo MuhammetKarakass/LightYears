@@ -14,6 +14,7 @@ namespace ly
 	// tick-prerequisite equivalent). The owner must be a PlayerSpaceShip.
 	class PlayerMovementComponent : public ActorComponent
 	{
+		VEGA_CLASS(PlayerMovementComponent)
 	public:
 		explicit PlayerMovementComponent(Actor& owner);
 

@@ -5,6 +5,7 @@
 #include <framework/World.h>
 #include <framework/debug/Log.h>
 #include <framework/debug/Profiler.h>
+#include <framework/reflection/Reflection.h>
 #include <framework/scene/Scene.h>
 #include <sol/sol.hpp>
 #include <chrono>
@@ -513,12 +514,17 @@ namespace vega::script
 		mImpl->overrides.erase(name);
 		return true;
 	}
+	VEGA_REFLECT(ScriptComponent, ly::ActorComponent)
+	{
+		VEGA_REMOVABLE();
+		VEGA_READONLY("Script", ScriptPath);
+		VEGA_READONLY("Last Error", LastError);
+	}
+
 	void RegisterScriptTypes()
 	{
 		ly::reflect::RegisterEngineTypes();
-		ly::reflect::Class<ScriptComponent, ly::ActorComponent>("ScriptComponent").Removable()
-			.Property("Script", [](const ScriptComponent& c) { return c.ScriptPath(); })
-			.Property("Last Error", [](const ScriptComponent& c) { return c.LastError(); });
+		VEGA_REGISTER(ScriptComponent);
 		ly::SceneSerializer::RegisterComponentSerializer("ScriptComponent", {
 			"scripts",
 			[](const ly::ActorComponent& base)

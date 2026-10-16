@@ -387,4 +387,18 @@ namespace ly
 	{
 		mVelocity = velocity;
 	}
+
+	VEGA_REFLECT_ROOT(Actor)
+	{
+		VEGA_CATEGORY("Transform");
+		VEGA_PROPERTY("Location", GetActorLocation, SetActorLocation).Speed(1.f);
+		VEGA_PROPERTY("Rotation", GetActorRotation, SetActorRotation).Speed(0.5f);
+		VEGA_READONLY("Velocity", GetVelocity);
+		VEGA_CATEGORY("Rendering");
+		VEGA_PROPERTY("RenderLayer", GetRenderLayer, SetRenderLayer)
+			.Labels({ { 0, "Background" }, { 1, "GroundDecal" }, { 2, "World" }, { 3, "Projectile" }, { 4, "WorldVfx" }, { 5, "Foreground" } });
+		VEGA_PROPERTY("Render Enabled", IsRenderEnabled, SetRenderEnabled);
+		VEGA_CATEGORY("Tick");
+		VEGA_PROPERTY("Tick When Paused", GetTickWhenPaused, SetTickWhenPaused);
+	}
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "framework/reflection/ReflectionDeclare.h"
+
 namespace ly
 {
 	class Actor;
@@ -16,6 +18,7 @@ namespace ly
 	//   EndPlay        - once, from Actor::Destroy; skipped if never begun.
 	class ActorComponent
 	{
+		VEGA_CLASS(ActorComponent)
 	public:
 		explicit ActorComponent(Actor& owner);
 		virtual ~ActorComponent();

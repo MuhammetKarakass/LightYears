@@ -8,6 +8,7 @@ namespace ly
 	// Not ticked automatically (mCanEverTick stays false): see ShieldComponent.
 	class EnergyComponent : public ActorComponent
 	{
+		VEGA_CLASS(EnergyComponent)
 	public:
 		explicit EnergyComponent(Actor& owner, float energy = 0.f, float maxEnergy = 0.f, float rechargeDelay = 2.f);
 

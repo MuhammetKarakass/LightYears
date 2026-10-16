@@ -158,6 +158,14 @@ if(BUILD_TESTING)
 	endfunction()
 
 	set(LY_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+	ly_add_game_test(LightYearsReflectionRegistryGoldenTests GAME
+		SOURCES ${PROJECT_SOURCE_DIR}/LightYearsEngine/tests/ReflectionRegistryGoldenTests.cpp LIBS VegaScript)
+	target_compile_definitions(LightYearsReflectionRegistryGoldenTests PRIVATE
+		REFLECTION_GOLDEN_PATH="${PROJECT_SOURCE_DIR}/LightYearsEngine/tests/reflection-registry.golden.json")
+	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${runtime} LightYearsReflectionRegistryGoldenTests)
+	endforeach()
+	ly_add_game_test_case(LightYearsReflectionRegistryGolden LightYearsReflectionRegistryGoldenTests)
 	set(LY_E2E ${LIGHT_YEARS_E2E_ARTIFACT_DIR})
 
 	ly_add_game_test(LightYearsSceneSandboxTests GAME PROJECT_DIR

@@ -1,9 +1,17 @@
 #include "environment/Asteroid.h"
 #include "gameplay/combat/Combatant.h"
 #include <framework/SpriteComponent.h>
+#include <framework/reflection/Reflection.h>
 
 namespace ly
 {
+	VEGA_REFLECT(Asteroid, Actor)
+	{
+		VEGA_SPAWNABLE();
+		VEGA_REQUIRES(HealthComponent);
+		VEGA_PROPERTY("Velocity", GetAsteroidVelocity, SetAsteroidVelocity).Category("Asteroid");
+	}
+
 	Asteroid::Asteroid(World* owningWorld, const sf::Vector2f& velocity, float health, float damage):
 		Actor{owningWorld},
 		mVelocity{ velocity },
