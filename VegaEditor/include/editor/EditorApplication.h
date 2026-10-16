@@ -9,6 +9,7 @@
 #include "editor/EditorDiagnostics.h"
 #include "editor/EditorGasDebugger.h"
 #include "editor/EditorContentAuthoring.h"
+#include "editor/EditorSkyEditor.h"
 #include <map>
 #include <framework/scene/SceneSettings.h>
 #include <framework/ProjectSettings.h>
@@ -128,6 +129,7 @@ namespace vega
 		EditorDiagnostics mDiagnostics;
 		EditorGasDebugger mGasDebugger;
 		EditorContentAuthoring mContentAuthoring;
+		EditorSkyEditor mSkyEditor;
 		EditorSelection mSelection;
 		EditorCamera mCamera;
 		JsonDocument mDocument{ VEGA_SOURCE_ASSETS_DIR };

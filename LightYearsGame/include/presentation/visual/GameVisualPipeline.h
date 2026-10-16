@@ -48,6 +48,10 @@ namespace ly
 		// Ship speed as a fraction of light speed and its on-screen direction (y down); eased by the backdrop.
 		void SetWarp(float beta, sf::Vector2f direction) { mBackdrop.SetWarp(beta, direction); }
 		bool IsEnabled() const { return mEnabled; }
+		visual::VisualAssets& EditorAssets() { return mAssets; }
+		const GalaxyRoute& Route() const { return mRoute; }
+		ProceduralBackdrop& EditorBackdrop() { return mBackdrop; }
+		void SetSkyAuthoring(bool enabled) { mSkyAuthoring = enabled; }
 
 		bool IsActive() const override { return mEnabled && mReady; }
 		void BeginFrame(const World& world, const sf::View& worldView) override;
@@ -79,5 +83,6 @@ namespace ly
 		bool mReady = false;
 		bool mEnabled = true;
 		float mTime = 0.f;
+		bool mSkyAuthoring = false;
 	};
 }

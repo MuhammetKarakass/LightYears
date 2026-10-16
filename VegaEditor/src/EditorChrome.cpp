@@ -93,9 +93,9 @@ namespace vega
 			ImGui::Text("%s", actor ? (ActorTypeName(*actor) + "  #" + std::to_string(actor->GetUniqueID())).c_str() : "No selection");
 			ImGui::SameLine();
 			ImGui::TextDisabled(" |  %s  |  Snap %s (%.0f)  |  Undo %zu / Redo %zu",
-				mContext.viewSettings.tool == EditorTool::Move ? "Move [W]" : "Rotate [E]",
+				mSkyEditor.Active() ? "Sky" : mContext.viewSettings.tool == EditorTool::Move ? "Move [W]" : "Rotate [E]",
 				(mContext.viewSettings.snap || ImGui::GetIO().KeyCtrl) ? "on" : "off", mContext.viewSettings.gridSize,
-				mHistory.UndoCount(), mHistory.RedoCount());
+				mSkyEditor.History() ? mSkyEditor.History()->UndoCount() : mHistory.UndoCount(), mSkyEditor.History() ? mSkyEditor.History()->RedoCount() : mHistory.RedoCount());
 			mDiagnostics.BuildStatus();
 			ImGui::SameLine(ImGui::GetWindowWidth() - 94.f);
 			ImGui::TextDisabled("%.0f FPS", ImGui::GetIO().Framerate);

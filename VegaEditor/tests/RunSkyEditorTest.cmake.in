@@ -1,0 +1,21 @@
+set(root "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test")
+file(MAKE_DIRECTORY "${root}")
+file(SHA256 "@CMAKE_SOURCE_DIR@/LightYearsVisual/assets/deepsky.json" source_hash)
+# Fresh copies on every run; no authoring command can reach real asset paths.
+file(COPY "@CMAKE_SOURCE_DIR@/LightYearsVisual/assets/" DESTINATION "${root}/visual")
+file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}/assets")
+execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}/assets" --visual-assets "${root}/visual"
+	--editor-script "@CMAKE_CURRENT_BINARY_DIR@/scripts/sky-editor.vegascript"
+	WORKING_DIRECTORY "@CMAKE_CURRENT_BINARY_DIR@" RESULT_VARIABLE result TIMEOUT 150)
+if(NOT result EQUAL 0)
+	message(FATAL_ERROR "Sky editor script failed: ${result}; see scripts/sky-editor.vegascript.report.txt")
+endif()
+execute_process(COMMAND "${VEGA_SKY_CHECK}" --verify "${root}" RESULT_VARIABLE result OUTPUT_VARIABLE checks)
+message(STATUS "${checks}")
+if(NOT result EQUAL 0)
+	message(FATAL_ERROR "Sky capture / preservation checks failed")
+endif()
+file(SHA256 "@CMAKE_SOURCE_DIR@/LightYearsVisual/assets/deepsky.json" after_hash)
+if(NOT source_hash STREQUAL after_hash)
+	message(FATAL_ERROR "Sky script modified source visual assets")
+endif()

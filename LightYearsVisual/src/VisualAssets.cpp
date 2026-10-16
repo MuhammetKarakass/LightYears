@@ -67,7 +67,7 @@ namespace ly::visual
 
 		const std::filesystem::path deepSkyFile = mRoot / "deepsky.json";
 		const auto deepSkyStamp = FileStamp(deepSkyFile);
-		if ((force || deepSkyStamp != mDeepSkyStamp) && std::filesystem::exists(deepSkyFile))
+		if (!mDeepSkyPreview && (force || deepSkyStamp != mDeepSkyStamp) && std::filesystem::exists(deepSkyFile))
 		{
 			mDeepSkyStamp = deepSkyStamp;
 			std::string error;
@@ -92,5 +92,21 @@ namespace ly::visual
 		}
 		mPollTimer = 0.f;
 		return Reload(false);
+	}
+
+	bool VisualAssets::PreviewDeepSky(const nlohmann::json& data, std::string& error)
+	{
+		if (!mDeepSky.Apply(data, error)) return false;
+		mDeepSkyPreview = true;
+		return true;
+	}
+
+	void VisualAssets::EndDeepSkyPreview()
+	{
+		if (!mDeepSkyPreview) return;
+		mDeepSkyPreview = false;
+		std::string error;
+		mDeepSky.Load(mRoot / "deepsky.json", error);
+		mDeepSkyStamp = FileStamp(mRoot / "deepsky.json");
 	}
 }

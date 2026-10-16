@@ -155,6 +155,11 @@ through SceneLevel's optional settings callback.
 
 ## World Settings
 
+Per-stop procedural backdrop authoring is available in **View > Sky**. Its preview
+picker leaves the scene clean; **Use in scene** applies the chosen `routeStop`
+through World Settings. See [Sky editor](sky-editor.md) for forms, viewport
+handles, presets, comparison, saving and scripted validation.
+
 Open **View > World Settings** or the Hierarchy header button to edit game-owned
 scene settings. Categories, labels, tooltips, typed widgets and validation come
 from the engine's game-agnostic `ly::SceneSettingsSchema` API

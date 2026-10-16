@@ -199,6 +199,13 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::SkyOpen:
+		case ScriptOperation::SkySet:
+		case ScriptOperation::SkyDrag:
+		case ScriptOperation::SkySave:
+		case ScriptOperation::ExpectSky:
+		case ScriptOperation::CaptureSky:
+			success = context.skyCommand && context.skyCommand(command, detail); break;
 		case ScriptOperation::GasSelectPlayer:
 		case ScriptOperation::ExpectAbility:
 		case ScriptOperation::ExpectEffect:
@@ -634,8 +641,8 @@ namespace vega
 		case ScriptOperation::Rotate:
 			if (actor) success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), std::nullopt, "Rotation", command.degrees));
 			break;
-		case ScriptOperation::Undo: success = history.Undo(); break;
-		case ScriptOperation::Redo: success = history.Redo(); break;
+		case ScriptOperation::Undo: success = context.skyActive && context.skyActive() ? context.skyCommand(command, detail) : history.Undo(); break;
+		case ScriptOperation::Redo: success = context.skyActive && context.skyActive() ? context.skyCommand(command, detail) : history.Redo(); break;
 		case ScriptOperation::ExpectSelected:
 			success = actor && ActorTypeName(*actor) == command.text;
 			detail = "selected " + (actor ? ActorTypeName(*actor) : std::string{ "none" });

@@ -1,5 +1,6 @@
 #include "editor/EditorScript.h"
 #include "editor/ContentPath.h"
+#include "editor/SkyHandle.h"
 #include <charconv>
 #include <cmath>
 #include <locale>
@@ -85,6 +86,31 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "sky-open" || verb == "capture-sky" || verb == "sky-save")
+		{
+			if (tokens.size() != (verb == "sky-save" ? 1u : 2u) || (tokens.size() == 2 && tokens[1].empty())) return bad();
+			command.operation = verb == "sky-open" ? ScriptOperation::SkyOpen : verb == "sky-save" ? ScriptOperation::SkySave : ScriptOperation::CaptureSky;
+			if (tokens.size() == 2) command.text = tokens[1];
+			return {command, {}};
+		}
+		if (verb == "sky-set" || verb == "expect-sky")
+		{
+			if (tokens.size() != 3) return bad();
+			try
+			{
+				ContentPointer(tokens[1]);
+				const auto value = nlohmann::json::parse(rawTokens[2]);
+				if (value.is_null() || value.is_object()) return bad();
+			}
+			catch (const std::exception&) { return bad(); }
+			command.operation = verb == "sky-set" ? ScriptOperation::SkySet : ScriptOperation::ExpectSky;
+			command.text = tokens[1]; command.values = {rawTokens[2]}; return {command, {}};
+		}
+		if (verb == "sky-drag")
+		{
+			if (tokens.size() != 4 || !IsSkyHandle(tokens[1]) || !real(2, command.location.x) || !real(3, command.location.y)) return bad();
+			command.operation = ScriptOperation::SkyDrag; command.text = tokens[1]; return {command, {}};
+		}
 		if (verb == "content-validate" || verb == "content-save" || verb == "content-reload")
 		{
 			if (tokens.size() != 1) return bad();

@@ -18,9 +18,19 @@ int main()
 {
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
+	for (const char* line : {"sky-open", "sky-open sol extra", "sky-save extra", "sky-set", "sky-set band.cool [1,2", "sky-set planet.at null", "sky-set band..cool 1", "sky-set band.cool {\"a\":1}", "sky-drag planet 1", "sky-drag bad 1 2", "sky-drag object.-1 0 0", "sky-drag object.0.spin 1 2", "sky-drag planet nan 0", "sky-drag planet 0 inf", "expect-sky band.cool", "capture-sky \"\""})
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{"Invalid sky command accepted: "} + line);
 	for (const char* line : { "gas-filter unknown x", "gas-filter attributes", "gas-filter tags x extra", "gas-select-player extra", "gas-reset-cooldowns extra", "gas-apply-effect", "gas-remove-effect \"\"", "gas-activate", "gas-panel maybe", "expect-ability A blocked", "expect-effect E yes", "expect-tag T 1", "expect-attribute A != 1", "expect-attribute A > nan", "expect-attribute A > inf", "expect-attribute A > 1 extra", "expect-attribute A >" })
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid GAS command accepted: " } + line);
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{"sky-open sol", ScriptOperation::SkyOpen}, {"sky-save", ScriptOperation::SkySave},
+		{"sky-set band.cool [0.2, 0.5, 1.0]", ScriptOperation::SkySet},
+		{"sky-set orbit.framing \"disk\"", ScriptOperation::SkySet},
+		{"expect-sky objects[0].at [0.2,0.7]", ScriptOperation::ExpectSky},
+		{"capture-sky \"Saved/sky test.png\"", ScriptOperation::CaptureSky},
+		{"sky-drag planet -120 60", ScriptOperation::SkyDrag},
+		{"sky-drag object.0.rotate 15 0", ScriptOperation::SkyDrag},
+		{"sky-drag orbit.disk 0 30", ScriptOperation::SkyDrag},
 		{ "gas-select-player", ScriptOperation::GasSelectPlayer },
 		{ "gas-reset-cooldowns", ScriptOperation::GasResetCooldowns },
 		{ "gas-apply-effect Effect.Buff", ScriptOperation::GasApplyEffect },

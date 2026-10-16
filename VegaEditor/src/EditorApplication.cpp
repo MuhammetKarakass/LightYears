@@ -96,6 +96,9 @@ namespace vega
 		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
 		mContext.document = &mDocument;
+		mSkyEditor.Bind(EditorVisualPipeline());
+		mContext.skyCommand = [this](const EditorScriptCommand& command, std::string& detail) { return mSkyEditor.Execute(command, mContext, detail); };
+		mContext.skyActive = [this]() { return mSkyEditor.Active(); };
 		mContext.contentCommand = [this](const EditorScriptCommand& command, std::string& detail)
 		{
 			return mContentAuthoring.Execute(mContext, mHistory, mDocument.Root(), command, detail);
@@ -207,6 +210,7 @@ namespace vega
 		}
 		mContext.world = current;
 		mViewport.ResizeToWindow();
+		mSkyEditor.Update(mContext, mViewport.GetSize(), mContext.playMode || mPrefabWorld != nullptr);
 		sf::RenderTexture& texture = mViewport.GetTexture();
 		texture.clear(sf::Color::Black);
 		if (ly::World* world = GetCurrentWorld())
@@ -266,7 +270,7 @@ namespace vega
 	void EditorApplication::BuildUI()
 	{
 		LY_PROFILE_SCOPE("ImGui Build");
-		auto& activeHistory = mPrefabWorld ? mPrefabHistory : mHistory;
+		auto& activeHistory = mSkyEditor.History() ? *mSkyEditor.History() : mPrefabWorld ? mPrefabHistory : mHistory;
 		mHistory.PruneInvalidCommands();
 		const ImGuiIO& io = ImGui::GetIO();
 		if (io.KeyCtrl && !io.WantTextInput && !mContext.playMode)
@@ -278,11 +282,11 @@ namespace vega
 			}
 			if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) activeHistory.Redo();
 		}
-		if (!mContext.playMode && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false) && !mDataFocused)
+		if (!mContext.playMode && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false) && !mDataFocused && !mSkyEditor.Active())
 		{
 			if (mPrefabWorld) SavePrefab(); else SaveScene();
 		}
-		if (!mPrefabWorld && !mContext.playMode && !io.WantTextInput)
+		if (!mPrefabWorld && !mContext.playMode && !io.WantTextInput && !mSkyEditor.Active())
 		{
 			if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) DuplicateSceneEntity(mContext, mHistory);
 			if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) DeleteSelection(mContext, mHistory);
@@ -353,6 +357,7 @@ namespace vega
 				ImGui::MenuItem("Content", nullptr, &mShowContent);
 				ImGui::Separator();
 				ImGui::MenuItem("World Settings", nullptr, &mShowWorldSettings);
+				if (ImGui::MenuItem("Sky", nullptr, &mSkyEditor.visible) && mSkyEditor.visible) ImGui::SetWindowFocus("Sky###SkyEditor");
 				ImGui::MenuItem("Content Authoring", nullptr, &mContentAuthoring.visible);
 				if (ImGui::MenuItem("Ability System", nullptr, &mGasDebugger.visible)) ImGui::MarkIniSettingsDirty();
 				ImGui::MenuItem("Grid overlay", nullptr, &mContext.viewSettings.grid);
@@ -399,6 +404,7 @@ namespace vega
 			ImGui::DockBuilderDockWindow("Hierarchy", left);
 			ImGui::DockBuilderDockWindow("Inspector", right);
 			ImGui::DockBuilderDockWindow("World Settings", right);
+			ImGui::DockBuilderDockWindow("Sky###SkyEditor", right);
 			ImGui::DockBuilderDockWindow("Ability System", right);
 			ImGui::DockBuilderDockWindow("Stats", stats);
 			ImGui::DockBuilderDockWindow("Content", content);
@@ -448,6 +454,7 @@ namespace vega
 			BuildInspectorPanel();
 		}
 		if (mShowWorldSettings) BuildWorldSettingsPanel();
+		mSkyEditor.Build(mContext, mHistory);
 		if (mGasDebugger.visible) mGasDebugger.Build(mContext);
 		if (mShowWorldSettings != mSavedWorldSettingsVisible)
 		{

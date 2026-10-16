@@ -363,6 +363,26 @@ namespace ly
 		mOrbit.Invalidate();
 	}
 
+	ProceduralBackdrop::SkyGeometry ProceduralBackdrop::EditorGeometry(const visual::VisualAssets& assets, sf::Vector2u output) const
+	{
+		const auto* sky = assets.DeepSky().Find(mStopId);
+		const auto composition = BuildStopComposition(assets.Settings(), mLocationSeed, sky);
+		SkyGeometry result;
+		if (output.x && output.y)
+		{
+			result.planetAt = {mPlanetCenter.x / output.x, mPlanetCenter.y / output.y};
+			result.planetRadius = mPlanetRadius / output.y;
+			const auto drift = (mLastCameraCenter - mCameraStart) * (UnitsToPixels(static_cast<float>(output.y), mAnchoredViewSize.y) * composition.band.parallax);
+			const float margin = static_cast<float>(visual::GalaxyLayer::CacheMargin);
+			result.bandDrift = {std::clamp(drift.x, -margin, margin) / output.x, std::clamp(drift.y, -margin, margin) / output.y};
+		}
+		result.planetBaseScale = BuildBackdropComposition(assets.Settings(), mLocationSeed).planetScale;
+		result.band = composition.band;
+		result.mirrored = composition.mirrored;
+		result.hasPlanet = mHasPlanet && !(sky && sky->planet.hide);
+		return result;
+	}
+
 	void ProceduralBackdrop::SetWarp(float targetBeta, sf::Vector2f direction)
 	{
 		mTargetBeta = std::clamp(targetBeta, 0.f, 0.99f);
@@ -376,6 +396,7 @@ namespace ly
 	void ProceduralBackdrop::Draw(visual::VisualAssets& assets, visual::VisualPipeline& pipeline, const World& world, const sf::View& worldView, float timeSeconds)
 	{
 		const sf::Vector2f center = worldView.getCenter();
+		mLastCameraCenter = center;
 		// A new world, or its camera set up (the first frame still has the default view): parallax counts from here.
 		if (mAnchoredWorld != &world || mAnchoredViewSize != worldView.getSize())
 		{

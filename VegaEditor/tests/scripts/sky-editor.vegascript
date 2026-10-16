@@ -1,0 +1,64 @@
+# The CMake harness supplies disposable game and visual asset roots.
+pause
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/disk-baseline.png"
+sky-open sol
+expect-backdrop sol
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/unchanged-preview.png"
+sky-set planet.at [0.6,0.35]
+sky-set planet.scale 0.6
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/before.png"
+sky-drag planet 0 162
+expect-sky planet.at [0.6,0.5]
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/moved.png"
+sky-set band.cool [0.05,1.0,0.15]
+sky-set band.tint 1.0
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/edited.png"
+undo
+undo
+undo
+expect-sky planet.at [0.6,0.35]
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/restored.png"
+redo
+redo
+redo
+expect-sky planet.at [0.6,0.5]
+expect-sky band.cool [0.05,1.0,0.15]
+expect-scene-dirty false
+sky-save
+sky-open sol
+expect-sky planet.at [0.6,0.5]
+expect-sky band.cool [0.05,1.0,0.15]
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/reopened.png"
+capture "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/editor.png"
+# Orbit edits exercise the debounced panorama path and typed nested fields.
+sky-open hd-160691
+sky-set orbit.framing "disk"
+sky-set orbit.diskRadius 0.28
+sky-set orbit.ring.inner 1.4
+sky-set orbit.ring.outer 2.4
+sky-set orbit.ring.tiltDeg 35
+sky-set orbit.moon true
+sky-drag orbit.disk 0 54
+expect-sky orbit.diskRadius 0.33
+wait-seconds 0.3
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/orbit.png"
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+sky-open hd-147018
+sky-set mirror false
+sky-set objects[0].at [0.3,0.4]
+sky-set objects[0].size 0.2
+sky-set objects[0].angleDeg 0
+sky-drag object.0 0 108
+sky-drag object.0.scale 0 54
+sky-drag object.0.rotate 96 0
+expect-sky objects[0].at [0.3,0.5]
+expect-sky objects[0].size 0.25
+expect-sky objects[0].angleDeg 18
+capture-sky "@CMAKE_CURRENT_BINARY_DIR@/sky-editor-test/objects.png"
+quit

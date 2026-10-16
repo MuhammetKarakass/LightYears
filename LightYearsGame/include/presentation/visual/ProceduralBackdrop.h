@@ -56,6 +56,17 @@ namespace ly
 		float OrbitSpeedScale() const;
 		// Degrees per minute the sky turned at in the last drawn frame, scale included; empty when the stop is not an orbit.
 		std::optional<float> OrbitDegreesPerMinute() const { return mOrbitRate; }
+		struct SkyGeometry
+		{
+			sf::Vector2f planetAt;
+			sf::Vector2f bandDrift;
+			float planetRadius = 0.f;
+			float planetBaseScale = 1.f;
+			visual::MilkyWaySettings band;
+			bool mirrored = false, hasPlanet = false;
+		};
+		// Read the same composition used by Draw; authoring handles must not approximate seeded placement.
+		SkyGeometry EditorGeometry(const visual::VisualAssets& assets, sf::Vector2u output) const;
 
 	private:
 		// Emission and dust clouds and the pulsar, positioned as fractions of the output size.
@@ -166,5 +177,6 @@ namespace ly
 		const World* mAnchoredWorld = nullptr;
 		sf::Vector2f mAnchoredViewSize;
 		sf::Vector2f mCameraStart;
+		sf::Vector2f mLastCameraCenter;
 	};
 }

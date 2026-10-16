@@ -182,7 +182,7 @@ namespace ly
 		const sf::View snappedView = mPipeline->SnapWorldView(worldView);
 		{
 			LY_PROFILE_SCOPE("VP.Backdrop");
-			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mTime);
+			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mSkyAuthoring ? 0.f : mTime);
 		}
 		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
 		{

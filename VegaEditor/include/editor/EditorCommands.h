@@ -43,6 +43,8 @@ namespace vega
 		std::function<void(bool)> diagnosticsVisible;
 		std::function<bool(const EditorScriptCommand&, std::string&)> gasCommand;
 		std::function<bool(const EditorScriptCommand&, std::string&)> contentCommand;
+		std::function<bool(const EditorScriptCommand&, std::string&)> skyCommand;
+		std::function<bool()> skyActive;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
 		std::optional<ly::ComponentIdentity> propertyErrorComponent;

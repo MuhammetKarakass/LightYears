@@ -177,6 +177,11 @@ namespace vega
 
 	void EditorApplication::RequestScene(const std::string& action, const std::filesystem::path& path)
 	{
+		if (action == "exit" && mSkyEditor.Dirty())
+		{
+			mSkyEditor.RequestExit([this]() { RequestScene("exit"); });
+			return;
+		}
 		if (action == "exit" && mContentAuthoring.Dirty())
 		{
 			mContentAuthoring.RequestExit([this]() { RequestScene("exit"); });

@@ -43,6 +43,10 @@ add_executable(VegaEditor
 	src/GameExporter.cpp
 	src/JsonDocument.cpp
 	src/JsonCommands.cpp
+	src/SkyDocument.cpp
+	src/EditorSkyEditor.cpp
+	src/EditorSkyHandles.cpp
+	src/EditorSkyScript.cpp
 	include/editor/GameExporter.h
 	include/editor/JsonDocument.h
 	include/editor/JsonCommands.h
@@ -108,6 +112,24 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	add_executable(VegaEditorSkyDocumentTests tests/SkyDocumentTests.cpp src/SkyDocument.cpp src/JsonDocument.cpp src/JsonCommands.cpp
+		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+	target_include_directories(VegaEditorSkyDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorSkyDocumentTests PRIVATE VegaScript LightYearsVisual)
+	target_compile_definitions(VegaEditorSkyDocumentTests PRIVATE
+		VEGA_SKY_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/sky-document-test"
+		VEGA_SKY_SOURCE="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets")
+	ly_enable_warnings(VegaEditorSkyDocumentTests)
+	foreach(sky_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${sky_runtime} VegaEditorSkyDocumentTests)
+	endforeach()
+	add_test(NAME VegaEditorSkyDocument COMMAND VegaEditorSkyDocumentTests)
+	configure_file(tests/scripts/sky-editor.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/sky-editor.vegascript @ONLY)
+	configure_file(tests/RunSkyEditorTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunSkyEditorTest.cmake @ONLY)
+	add_test(NAME VegaEditorSkyEditor COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -DVEGA_SKY_CHECK=$<TARGET_FILE:VegaEditorSkyDocumentTests>
+		-P ${CMAKE_CURRENT_BINARY_DIR}/RunSkyEditorTest.cmake)
+	set_tests_properties(VegaEditorSkyEditor PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 180)
 	add_executable(VegaEditorContentWorkspaceTests tests/ContentWorkspaceTests.cpp
 		src/ContentWorkspace.cpp src/JsonDocument.cpp src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorContentWorkspaceTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

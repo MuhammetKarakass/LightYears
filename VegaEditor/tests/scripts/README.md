@@ -1,5 +1,31 @@
 Run the editor script runner from the editor's executable directory.
 
+Sky authoring commands (scene Edit mode):
+
+```text
+sky-open <stopId>
+sky-set <field.path> <JSON-value>
+sky-drag <handle> <dx> <dy>
+sky-save
+expect-sky <field.path> <JSON-value>
+capture-sky <path>
+```
+
+Paths accept `planet.at`, `objects[0].size` and JSON pointers. Enum strings use
+JSON quotes; vector/RGB values use arrays. Deltas are viewport texture pixels;
+handles include `planet`, `planet.scale`, `object.0`, `object.0.scale`,
+`object.0.rotate`, `band.angle`, `band.offset`, `orbit.disk`, `orbit.horizon`,
+`orbit.angle` and `orbit.radius`. `undo`/`redo` use Sky history while it is active.
+Captures contain only the time-zero backdrop at 960 x 540. Before `sky-open`,
+`capture-sky` captures the scene's disk sky; afterward it flushes pending edits.
+Unknown fields, invalid enums/types/ranges and invalid handles fail the script.
+
+`VegaEditorSkyEditor` configures `sky-editor.vegascript` and runs it with both
+`--asset-root` and `--visual-assets` pointing at fresh **build-tree copies**.
+Never run a saving Sky test against the real visual asset root. Captures,
+checksums, unchanged-data comparisons and unrelated-stop byte checks live under
+`build/VegaEditor/sky-editor-test`. See [Sky editor](../../../docs/sky-editor.md).
+
 Content authoring commands (Edit mode; values are JSON, including arrays/objects):
 
 ```text

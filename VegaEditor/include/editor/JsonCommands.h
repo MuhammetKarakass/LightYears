@@ -4,6 +4,23 @@
 
 namespace vega
 {
+	// Structural edits share the document's byte-preserving serializer and gesture history.
+	class ReplaceJsonCommand final : public EditorCommand
+	{
+	public:
+		ReplaceJsonCommand(JsonDocument& document, Json after, std::string name, std::uint64_t group = 0);
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		bool MergeWith(const EditorCommand&) override;
+		bool IsValid(const EditorContext&) const override;
+		bool ChangesScene() const override { return false; }
+		std::string Name() const override { return mName; }
+	private:
+		JsonDocument& mDocument;
+		std::uint64_t mID, mGroup;
+		Json mBefore, mAfter;
+		std::string mName;
+	};
 	class SetJsonValueCommand final : public EditorCommand
 	{
 	public:

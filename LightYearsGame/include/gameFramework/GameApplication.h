@@ -22,6 +22,7 @@ namespace ly
 		void AfterRender() override;
 		std::string GetSceneBackdropState() const;
 		void ApplySceneSettings(const nlohmann::json& settings);
+		GameVisualPipeline* EditorVisualPipeline() { return mVisualPipeline.get(); }
 
 	private:
 		virtual void Tick(float deltaTime) override;

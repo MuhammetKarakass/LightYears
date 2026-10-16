@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #include "visual/AsteroidField.h"
 #include "visual/Galaxy.h"
@@ -16,6 +17,20 @@
 
 namespace ly::visual
 {
+	enum class SkyFieldType { Number, Integer, Bool, Color, Position, Enum, Text };
+	struct SkyField
+	{
+		std::string path; // Array elements use *, for example objects.*.size.
+		SkyFieldType type;
+		nlohmann::json defaultValue;
+		std::optional<float> min, max;
+		std::vector<std::string> options;
+	};
+	// Authoring metadata lives beside the parser; its numeric bounds are also used by parsing.
+	const std::vector<SkyField>& DeepSkyFields();
+	constexpr float SkyRingRadiusGap = 0.05f;
+	const SkyField* FindSkyField(const std::string& path);
+	std::string ValidateSkyField(const SkyField& field, const nlohmann::json& value);
 	// Deep-sky objects of one route stop (deepsky.json): each stop can carry its own nebulae, haze, clusters and galaxies,
 	// so the journey changes character from stop to stop. Every kind is a real phenomenon; colours come from its emission
 	// lines or its light (H-alpha red/rose, [O III] teal, [S II] deep red, reflection blue, old-star gold).
@@ -134,13 +149,20 @@ namespace ly::visual
 	{
 	public:
 		bool Load(const std::filesystem::path& file, std::string& error);
+		// Same transactional parser as Load, without file I/O. Failure retains the current catalog/version.
+		bool Apply(const nlohmann::json& root, std::string& error);
+		// Editor transaction: validate changed stops with the same parser; untouched stops keep their compiled data.
+		bool ApplyPatch(const nlohmann::json& fragment, const std::vector<std::string>& removed, std::string& error);
+		void Replace(const DeepSkyCatalog& catalog) { mStops = catalog.mStops; mPresets = catalog.mPresets; ++mVersion; }
 		// nullptr when the stop has no entry (the stop keeps its plain sky).
 		const DeepSkyStop* Find(const std::string& stopId) const;
+		const DeepSkyStop* FindPreset(const std::string& name) const;
 		// Bumped on every successful load, so caches know to re-render.
 		unsigned Version() const { return mVersion; }
 
 	private:
 		std::map<std::string, DeepSkyStop> mStops;
+		std::map<std::string, DeepSkyStop> mPresets;
 		unsigned mVersion = 0;
 	};
 
