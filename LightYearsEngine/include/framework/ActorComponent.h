@@ -31,6 +31,9 @@ namespace ly
 		virtual void BeginPlay();
 		virtual void TickComponent(float deltaTime);
 		virtual void EndPlay();
+		virtual void OnOverlapBegin(Actor*) {}
+		virtual void OnOverlapEnd(Actor*) {}
+		virtual void OnHit(Actor*) {}
 
 		bool CanEverTick() const { return mCanEverTick; }
 		bool HasBegunPlay() const { return mBeganPlay; }

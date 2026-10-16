@@ -45,6 +45,10 @@ namespace ly
 
 			if (isBeginEvent)
 			{
+				if (auto* collision = actorA->FindComponent<CollisionComponent>()) collision->NotifyContact(actorB, true);
+				if (!actorB->GetIsPendingDestroy())
+					if (auto* collision = actorB->FindComponent<CollisionComponent>()) collision->NotifyContact(actorA, true);
+				if (actorA->GetIsPendingDestroy() || actorB->GetIsPendingDestroy()) return;
 				actorA->OnActorBeginOverlap(actorB);
 				if (!actorB->GetIsPendingDestroy())
 				{
@@ -53,6 +57,10 @@ namespace ly
 			}
 			else
 			{
+				if (auto* collision = actorA->FindComponent<CollisionComponent>()) collision->NotifyContact(actorB, false);
+				if (!actorB->GetIsPendingDestroy())
+					if (auto* collision = actorB->FindComponent<CollisionComponent>()) collision->NotifyContact(actorA, false);
+				if (actorA->GetIsPendingDestroy() || actorB->GetIsPendingDestroy()) return;
 				actorA->OnActorEndOverlap(actorB);
 				if (!actorB->GetIsPendingDestroy())
 				{

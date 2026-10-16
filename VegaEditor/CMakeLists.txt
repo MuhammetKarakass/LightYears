@@ -104,6 +104,11 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	configure_file(tests/scripts/lua-api.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/lua-api.vegascript COPYONLY)
+	configure_file(tests/RunLuaApiTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunLuaApiTest.cmake @ONLY)
+	add_test(NAME VegaEditorLuaApi COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunLuaApiTest.cmake)
+	set_tests_properties(VegaEditorLuaApi PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)
 	set(VEGA_SETTINGS_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/settings-source.scene.json")
 	set(VEGA_SETTINGS_SAVED "${CMAKE_CURRENT_BINARY_DIR}/settings-temp.scene.json")
 	set(VEGA_SETTINGS_BEFORE "${CMAKE_CURRENT_BINARY_DIR}/settings-before.png")

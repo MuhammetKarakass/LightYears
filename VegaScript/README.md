@@ -10,7 +10,9 @@ dependency on LightYearsGame.
 One lazily constructed process runtime owns the interpreter. Use it and all
 components on the game/editor thread. Each component gets a separate environment,
 `_G`, copies of math/string/table, and its own `self` and property table. Optional
-callbacks are `on_create(self)`, `on_update(self, dt)` and `on_destroy(self)`.
+callbacks include `on_start(self)` (`on_create` is its legacy fallback),
+`on_update(self, dt)`, `on_destroy`, overlap begin/end, hit and message events.
+Scripts may return a table containing these callbacks and property declarations.
 Creation runs at component BeginPlay (immediately for a live actor); updates use
 the actor's world tick and delta time, including pause/time-domain behavior.
 EndPlay calls teardown once. Destroying the actor within a callback defers its
@@ -38,16 +40,22 @@ Script writes to `self.props` are transient and are not editor overrides.
 | Lua API | Behavior |
 | --- | --- |
 | `self.actor:id()`, `:type()`, `:is_valid()` | Unique ID, most-derived registered reflection name, live status |
-| `:location()`, `:set_location(x,y)` | Position as an `{x,y}` table / world position setter |
+| `:location()`, `:set_location(x,y)` | Position vector userdata with `x,y` / world position setter |
 | `:rotation()`, `:set_rotation(degrees)` | Degrees |
-| `:velocity()`, `:set_velocity(x,y)` | Velocity as an `{x,y}` table / setter |
+| `:velocity()`, `:set_velocity(x,y)` | Velocity vector userdata with `x,y` / setter |
 | `:destroy()` | Destroy the owning actor |
 | `:get(name)`, `:set(name,value)` | Most-derived reflected properties, including inherited descriptors |
 | `:component(typeName)` | First reflected component matching that name or a registered base name, or nil |
 | `component:get(name)`, `component:set(name,value)` | Reflected component properties |
-| `log(message)` | Engine info log; message must be a string |
+| `log(...)`, `print(...)` | Console Lua info log with path and line |
 | `time()` | Wall-clock seconds since component creation; does not reset on reload |
 | `input.key_down(name)` | Held key; false without world input focus or for unknown names |
+
+The level API also provides `world.find/find_all_by_type/find_in_radius/spawn/player`,
+weak-handle name/lifetime/distance/facing/messages, owned cancelable timers,
+input edges/viewport mouse coordinates, and `vec` arithmetic. See
+[Lua API](../docs/lua-api.md) for the reference, examples and generated Lua
+Language Server types (**Scripts > Regenerate Lua Types** in the editor).
 
 Input names: `A` through `Z`, `Space`, `Left`, `Right`, `Up`, `Down`.
 Reflected values support bool, number, string and Vector2 tables. Integer/enum
@@ -61,9 +69,10 @@ for transform/ID/type reads, and ignore transform setters/destroy.
 Only selected base functions and math/string/table libraries are exposed. There
 is no io, os, package, debug, require, load, loadfile, dofile, getmetatable or
 setmetatable. Scripts are loaded by C++ as text-only chunks. Lua cannot open files
-or launch processes through this API. Scripts are trusted game code with respect
-to resource use: there are no instruction/time/memory quotas, so an infinite loop
-can stall the game thread. The math random generator is interpreter-wide.
+or launch processes through this API. Protected chunks/callbacks have an instruction
+budget (10,000,000 by default) and the interpreter has an allocation cap (256 MiB
+by default), configurable through ScriptRuntime. Native scene construction is
+still trusted project work. The math random generator is interpreter-wide.
 
 Hot reload defaults on outside Release. `ScriptRuntime::Get().SetHotReload(true)`
 also enables it in Release; false disables polling. Components check last-write
@@ -77,14 +86,14 @@ path and Lua's source file/line/traceback, stored in LastError, and suspend all
 script callbacks until a changed file or explicit reload retries. A failing old
 on_destroy aborts that reload and waits for another edit/retry. File/path failures
 have a path and diagnostic but no source line. Editing after a failure creates a
-fresh environment, preserving overrides. C++ exceptions at lifecycle boundaries
+fresh environment, preserving overrides. Timers and queued messages are canceled
+on reload/destroy. C++ exceptions at lifecycle boundaries
 are contained as errors as well.
 
 The Inspector lists `.lua` files recursively under the runtime asset root's
 `scripts/`, offers reload/error display, and edits properties with undo/redo and
-drag merging. Attachment itself is not undoable. There is no scene persistence,
-script removal, Lua module loader, coroutine API, or multi-component addressing
-in editor script commands yet. Scripts do not get attached to gameplay actors by
+drag merging. Scripts and overrides persist through scenes and prefabs. There is
+no Lua module loader or coroutine API. Scripts do not get attached to gameplay actors by
 default; `spin.lua` and `bob.lua` are opt-in examples.
 
 Build with `cmd /c tools\vega-build.cmd`; run `ctest --test-dir build`.

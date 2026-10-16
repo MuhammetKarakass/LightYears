@@ -70,6 +70,12 @@ namespace vega
 		}
 #endif
 		mExportLayout.assetRoot = mDocument.Root();
+		mLuaTypesPath = mDocument.Root() / ".vega" / "vega.lua";
+		// Existing automation can read source assets. Generated files still belong
+		// in the build tree when no disposable authoring root was supplied.
+		if (scriptRequested && mDocument.Root() == std::filesystem::weakly_canonical(VEGA_SOURCE_ASSETS_DIR))
+			mLuaTypesPath = std::filesystem::path{ VEGA_BUILD_ROOT } / "VegaEditor/.vega/vega.lua";
+		RegenerateLuaTypes();
 		script::SetScriptRoot(mDocument.Root());
 #ifdef _MSC_VER
 		if (scriptRequested)
@@ -146,6 +152,13 @@ namespace vega
 			world->SetViewOverride(std::nullopt);
 		}
 		ImGui::SFML::Shutdown();
+	}
+
+	void EditorApplication::RegenerateLuaTypes()
+	{
+		std::string error;
+		if (!script::GenerateLuaTypes(mLuaTypesPath, error))
+			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION, error);
 	}
 
 	void EditorApplication::Render()
@@ -325,6 +338,11 @@ namespace vega
 				}
 				ImGui::Separator();
 				resetLayout = ImGui::MenuItem("Reset Layout");
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Scripts"))
+			{
+				if (ImGui::MenuItem("Regenerate Lua Types")) RegenerateLuaTypes();
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();

@@ -7,6 +7,8 @@
 #include <framework/debug/Profiler.h>
 #include <framework/reflection/Reflection.h>
 #include <framework/scene/Scene.h>
+#include <framework/scene/SceneEntityComponent.h>
+#include <framework/scene/PrefabLibrary.h>
 #include <sol/sol.hpp>
 #include <chrono>
 #include <cmath>
@@ -15,6 +17,9 @@
 #include <cstdlib>
 #include <algorithm>
 #include <tuple>
+#include <deque>
+#include <string_view>
+#include <vector>
 
 namespace vega::script
 {
@@ -47,6 +52,7 @@ namespace vega::script
 			std::uint64_t instructionBudget = 10000000;
 			std::uint64_t remaining = 0;
 			int hookCount = 1000;
+			unsigned int depth = 0;
 		};
 		void* Allocate(void* user, void* pointer, std::size_t oldSize, std::size_t newSize)
 		{
@@ -85,11 +91,17 @@ namespace vega::script
 				void* user = nullptr;
 				lua_getallocf(state, &user);
 				auto& limits = *static_cast<RuntimeLimits*>(user);
+				if (limits.depth++ != 0) return;
 				limits.remaining = limits.instructionBudget;
 				limits.hookCount = static_cast<int>(std::min<std::uint64_t>(1000, limits.instructionBudget));
 				lua_sethook(state, InstructionHook, LUA_MASKCOUNT, limits.hookCount);
 			}
-			~InstructionScope() { lua_sethook(state, nullptr, 0, 0); }
+			~InstructionScope()
+			{
+				void* user = nullptr;
+				lua_getallocf(state, &user);
+				if (--static_cast<RuntimeLimits*>(user)->depth == 0) lua_sethook(state, nullptr, 0, 0);
+			}
 		};
 		struct ActorHandle
 		{
@@ -110,19 +122,84 @@ namespace vega::script
 				return actor ? ly::FindComponentByTypeOccurrence(*actor, identity) : nullptr;
 			}
 		};
+		struct Vector
+		{
+			float x = 0.f, y = 0.f;
+		};
+		struct TimerHandle
+		{
+			std::weak_ptr<bool> active;
+			void Cancel() const { if (auto value = active.lock()) *value = false; }
+		};
+		bool Matches(const ly::Actor& actor, const std::string& name)
+		{
+			if (name.empty()) return true;
+			for (auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(actor); type; type = type->base)
+				if (type->name == name) return true;
+			return false;
+		}
+		nlohmann::json MessageData(const sol::object& object, unsigned int& entries, unsigned int depth = 0)
+		{
+			if (++entries > 256 || depth > 8) throw std::runtime_error("Message data exceeds 256 values or 8 levels");
+			switch (object.get_type())
+			{
+			case sol::type::nil: return nullptr;
+			case sol::type::boolean: return object.as<bool>();
+			case sol::type::number:
+			{
+				const double number = object.as<double>();
+				if (!std::isfinite(number)) throw std::runtime_error("Expected finite message number");
+				return number;
+			}
+			case sol::type::string:
+			{
+				const auto value = object.as<std::string>();
+				if (value.size() > 4096) throw std::runtime_error("Message string exceeds 4096 bytes");
+				return value;
+			}
+			case sol::type::table:
+			{
+				nlohmann::json data = nlohmann::json::object();
+				for (const auto& entry : object.as<sol::table>())
+				{
+					if (entry.first.get_type() != sol::type::string) throw std::runtime_error("Message tables require string keys");
+					const auto key = entry.first.as<std::string>();
+					if (key.size() > 256) throw std::runtime_error("Message key exceeds 256 bytes");
+					data[key] = MessageData(entry.second, entries, depth + 1);
+				}
+				return data;
+			}
+			default: throw std::runtime_error("Message data supports nil, booleans, numbers, strings and string-keyed tables");
+			}
+		}
+		sol::object MessageObject(sol::state_view lua, const nlohmann::json& data)
+		{
+			if (data.is_null()) return sol::make_object(lua, sol::nil);
+			if (data.is_boolean()) return sol::make_object(lua, data.get<bool>());
+			if (data.is_number()) return sol::make_object(lua, data.get<double>());
+			if (data.is_string()) return sol::make_object(lua, data.get<std::string>());
+			sol::table table = lua.create_table();
+			for (const auto& entry : data.items()) table[entry.key()] = MessageObject(lua, entry.value());
+			return sol::make_object(lua, table);
+		}
 		sol::object ToLua(sol::state_view lua, const Value& value)
 		{
 			return std::visit([&](const auto& item) -> sol::object
 			{
 				using T = std::decay_t<decltype(item)>;
 				if constexpr (std::is_same_v<T, sf::Vector2f>)
-					return sol::make_object(lua, lua.create_table_with("x", item.x, "y", item.y));
+					return sol::make_object(lua, Vector{ item.x, item.y });
 				else if constexpr (std::is_same_v<T, sf::Color>) return sol::make_object(lua, sol::nil);
 				else return sol::make_object(lua, item);
 			}, value);
 		}
 		std::optional<Value> FromLua(const sol::object& object)
 		{
+			if (object.is<Vector>())
+			{
+				const auto value = object.as<Vector>();
+				if (std::isfinite(value.x) && std::isfinite(value.y)) return Value{ sf::Vector2f{ value.x, value.y } };
+			}
 			if (object.get_type() == sol::type::boolean) return Value{ object.as<bool>() };
 			if (object.get_type() == sol::type::string) return Value{ object.as<std::string>() };
 			if (object.get_type() == sol::type::number)
@@ -167,6 +244,10 @@ namespace vega::script
 		{
 			const auto actor = handle.Lock();
 			if (!actor || !actor->GetWorld() || !actor->GetWorld()->HasInputFocus()) return false;
+			return ScriptRuntime::Get().ReadKey(name);
+		}
+		bool DeviceKey(const std::string& name)
+		{
 			using Key = sf::Keyboard::Key;
 			Key key = Key::Unknown;
 			if (name.size() == 1 && name[0] >= 'A' && name[0] <= 'Z') key = static_cast<Key>(static_cast<int>(Key::A) + name[0] - 'A');
@@ -179,6 +260,19 @@ namespace vega::script
 		}
 		void Bind(sol::state& lua)
 		{
+			lua.new_usertype<Vector>("VegaVector", sol::no_constructor,
+				"x", &Vector::x, "y", &Vector::y,
+				"length", [](Vector v) { return std::hypot(v.x, v.y); },
+				"normalize", [](Vector v) { const float n = std::hypot(v.x, v.y); return n > 0.f ? Vector{ v.x / n, v.y / n } : Vector{}; },
+				"dot", [](Vector a, Vector b) { return a.x * b.x + a.y * b.y; },
+				sol::meta_function::addition, [](Vector a, Vector b) { return Vector{ a.x + b.x, a.y + b.y }; },
+				sol::meta_function::subtraction, [](Vector a, Vector b) { return Vector{ a.x - b.x, a.y - b.y }; },
+				sol::meta_function::multiplication, sol::overload(
+					[](Vector a, float n) { return Vector{ a.x * n, a.y * n }; },
+					[](float n, Vector a) { return Vector{ a.x * n, a.y * n }; }));
+			lua.new_usertype<TimerHandle>("TimerHandle", sol::no_constructor,
+				"cancel", &TimerHandle::Cancel,
+				"is_active", [](const TimerHandle& h) { const auto active = h.active.lock(); return active && *active; });
 			lua.new_usertype<ComponentHandle>("ComponentHandle", sol::no_constructor,
 				"get", [](const ComponentHandle& handle, const std::string& name, sol::this_state state)
 				{
@@ -193,6 +287,48 @@ namespace vega::script
 					return WriteProperty(component, component ? ly::reflect::TypeRegistry::Get().FindMostDerived(*component) : nullptr, name, value);
 				});
 			lua.new_usertype<ActorHandle>("ActorHandle", sol::no_constructor,
+				"is_alive", [](const ActorHandle& h) { return static_cast<bool>(h.Lock()); },
+				"name", [](const ActorHandle& h)
+				{
+					const auto actor = h.Lock();
+					const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+					return identity ? identity->name : std::string{};
+				},
+				"send", [](const ActorHandle& h, const std::string& name, sol::optional<sol::object> value)
+				{
+					const auto actor = h.Lock();
+					if (!actor || name.empty() || name.size() > 256) return false;
+					unsigned int count = 0;
+					const auto data = value ? MessageData(*value, count) : nlohmann::json{};
+					if (data.dump().size() > 65536) throw std::runtime_error("Message data exceeds 65536 bytes");
+					bool sent = false;
+					actor->ForEachComponent([&](ly::ActorComponent& component)
+					{
+						if (auto* script = dynamic_cast<ScriptComponent*>(&component)) sent = script->QueueMessage(name, data) || sent;
+					});
+					return sent;
+				},
+				"distance_to", [](const ActorHandle& a, const ActorHandle& b)
+				{
+					const auto first = a.Lock(), second = b.Lock();
+					if (!first || !second) return std::numeric_limits<float>::infinity();
+					const auto d = first->GetActorLocation() - second->GetActorLocation();
+					return std::hypot(d.x, d.y);
+				},
+				"forward", [](const ActorHandle& h)
+				{
+					const auto actor = h.Lock();
+					const auto v = actor ? actor->GetActorForwardDirection() : sf::Vector2f{};
+					return Vector{ v.x, v.y };
+				},
+				"look_at", [](const ActorHandle& h, float x, float y)
+				{
+					if (auto actor = h.Lock(); actor && std::isfinite(x) && std::isfinite(y))
+					{
+						const auto d = sf::Vector2f{ x, y } - actor->GetActorLocation();
+						if (d.x != 0.f || d.y != 0.f) actor->SetActorRotation(std::atan2(d.y, d.x) * 180.f / 3.141592654f + 90.f);
+					}
+				},
 				"is_valid", [](const ActorHandle& h) { return static_cast<bool>(h.Lock()); },
 				"id", [](const ActorHandle& h) { const auto a = h.Lock(); return a ? a->GetUniqueID() : 0u; },
 				"type", [](const ActorHandle& h)
@@ -247,6 +383,8 @@ namespace vega::script
 		RuntimeLimits limits;
 		sol::state lua{ sol::default_at_panic, Allocate, &limits };
 		std::filesystem::path root;
+		PlayerResolver player;
+		KeyReader keyReader;
 #ifdef VEGA_SCRIPT_RELEASE
 		bool hotReload = false;
 #else
@@ -266,6 +404,14 @@ namespace vega::script
 	void ScriptRuntime::SetInstructionBudget(std::uint64_t instructions) { mImpl->limits.instructionBudget = std::max<std::uint64_t>(1, instructions); }
 	void ScriptRuntime::SetMemoryLimit(std::size_t bytes) { mImpl->limits.memoryLimit = bytes; }
 	const std::filesystem::path& ScriptRuntime::Root() const { return mImpl->root; }
+	void ScriptRuntime::SetPlayerResolver(PlayerResolver resolver) { mImpl->player = std::move(resolver); }
+	std::shared_ptr<ly::Actor> ScriptRuntime::Player(ly::World& world) const
+	{
+		const auto actor = mImpl->player ? mImpl->player(world).lock() : nullptr;
+		return actor && actor->GetWorld() == &world && !actor->GetIsPendingDestroy() ? actor : nullptr;
+	}
+	void ScriptRuntime::SetKeyReader(KeyReader reader) { mImpl->keyReader = std::move(reader); }
+	bool ScriptRuntime::ReadKey(const std::string& key) const { return mImpl->keyReader ? mImpl->keyReader(key) : DeviceKey(key); }
 	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get().mImpl->root = std::filesystem::weakly_canonical(root); }
 
 	struct ScriptComponent::Impl
@@ -277,6 +423,16 @@ namespace vega::script
 		sol::environment environment;
 		sol::table self, props;
 		ActorHandle handle;
+		struct Timer
+		{
+			double remaining, period;
+			sol::protected_function function;
+			std::shared_ptr<bool> active;
+		};
+		std::vector<Timer> timers;
+		std::deque<std::pair<std::string, nlohmann::json>> messages;
+		struct KeyState { bool previous = false, current = false; };
+		std::map<std::string, KeyState> keys;
 		std::filesystem::file_time_type stamp{};
 		Clock::time_point nextPoll{};
 		Clock::time_point created = Clock::now();
@@ -284,6 +440,7 @@ namespace vega::script
 		bool calling = false;
 		bool ended = false;
 		bool endRequested = false;
+		std::uint64_t generation = 0;
 		Impl(ScriptComponent& owner, std::string script) : component{ owner }, path{ std::move(script) } {}
 		void Fail(const std::string& message)
 		{
@@ -306,24 +463,203 @@ namespace vega::script
 			if (inside.empty() || *inside.begin() == "..") throw std::runtime_error("Script path escapes asset root");
 			return full;
 		}
-		void Call(const char* name, std::optional<float> dt = {})
+		sol::object Callback(const char* name)
 		{
-			if (!running) return;
-			const sol::object callback = environment.raw_get<sol::object>(name);
-			if (callback == sol::nil) return;
-			if (callback.get_type() != sol::type::function) { Fail(std::string{ name } + " must be a function"); return; }
+			const auto callback = self.raw_get<sol::object>(name);
+			return callback != sol::nil ? callback : environment.raw_get<sol::object>(name);
+		}
+		void CancelWork()
+		{
+			++generation;
+			for (auto& timer : timers) *timer.active = false;
+			timers.clear();
+			messages.clear();
+		}
+		template<typename... Args>
+		void Invoke(const sol::protected_function& function, Args&&... args)
+		{
 			calling = true;
-			const sol::protected_function function = callback.as<sol::protected_function>();
-			const InstructionScope budget{ function.lua_state() };
-			const sol::protected_function_result result = dt ? function(self, *dt) : function(self);
-			calling = false;
-			if (!result.valid()) { const sol::error failure = result; Fail(failure.what()); }
+			{
+				const InstructionScope budget{ function.lua_state() };
+				const sol::protected_function_result result = function(self, std::forward<Args>(args)...);
+				calling = false;
+				if (!result.valid()) { const sol::error failure = result; Fail(failure.what()); }
+			}
 			if (endRequested)
 			{
 				endRequested = false;
-				if (std::string{ name } != "on_destroy") Call("on_destroy");
+				Call("on_destroy");
 				running = false;
 			}
+		}
+		template<typename... Args>
+		void Call(const char* name, Args&&... args)
+		{
+			if (!running) return;
+			const sol::object callback = Callback(name);
+			if (callback == sol::nil) return;
+			if (callback.get_type() != sol::type::function) { Fail(std::string{ name } + " must be a function"); return; }
+			const sol::protected_function function = callback.as<sol::protected_function>();
+			// Teardown itself may request destruction during a manual reload.
+			if (std::string_view{ name } == "on_destroy")
+			{
+				calling = true;
+				const InstructionScope budget{ function.lua_state() };
+				const sol::protected_function_result result = function(self, std::forward<Args>(args)...);
+				calling = false;
+				if (!result.valid()) { const sol::error failure = result; Fail(failure.what()); }
+				if (endRequested) { endRequested = false; running = false; }
+				return;
+			}
+			Invoke(function, std::forward<Args>(args)...);
+		}
+		void Tick(float dt)
+		{
+			if (!running || ended) return;
+			for (auto& entry : keys)
+			{
+				entry.second.previous = entry.second.current;
+				entry.second.current = KeyDown(handle, entry.first);
+			}
+			const auto version = generation;
+			// Process only work present at entry: callbacks may append more work.
+			const auto messageCount = messages.size();
+			for (std::size_t index = 0; index < messageCount && running && !ended && generation == version; ++index)
+			{
+				auto message = std::move(messages.front());
+				messages.pop_front();
+				Call("on_message", message.first, MessageObject(sol::state_view{ self.lua_state() }, message.second));
+			}
+			const auto count = timers.size();
+			for (std::size_t index = 0; index < count && running && !ended && generation == version; ++index)
+			{
+				auto& timer = timers[index];
+				if (!*timer.active) continue;
+				timer.remaining -= std::max(0.f, dt);
+				if (timer.remaining > 0.) continue;
+				// Copy before invoking: scheduling or destroy can invalidate the vector.
+				const auto function = timer.function;
+				if (timer.period > 0.) timer.remaining = timer.period + std::fmod(timer.remaining, timer.period);
+				else *timer.active = false;
+				Invoke(function);
+			}
+			if (generation != version || ended) return;
+			timers.erase(std::remove_if(timers.begin(), timers.end(), [](const Timer& timer) { return !*timer.active; }), timers.end());
+			if (!component.GetOwner().GetIsPendingDestroy()) Call("on_update", dt);
+		}
+		void Contact(const char* name, ly::Actor* other) noexcept
+		{
+			if (!other || ended || !running) return;
+			try { Call(name, ActorHandle{ other->GetWeakActor() }); }
+			catch (const std::exception& exception) { calling = false; Fail(exception.what()); }
+			catch (...) { calling = false; Fail("Unknown collision callback error"); }
+		}
+		TimerHandle Schedule(double seconds, sol::protected_function function, bool repeat)
+		{
+			if (!std::isfinite(seconds) || seconds < 0. || (repeat && seconds == 0.)) throw std::runtime_error("Invalid timer interval");
+			if (ended || timers.size() >= 1024) throw std::runtime_error("Script timer limit reached or instance destroyed");
+			auto active = std::make_shared<bool>(true);
+			timers.push_back({ seconds, repeat ? seconds : 0., std::move(function), active });
+			return TimerHandle{ active };
+		}
+		void BindWorld(sol::state& lua)
+		{
+			const auto owner = handle;
+			sol::table world = lua.create_table();
+			world["find"] = [owner](const std::string& name, sol::this_state state)
+			{
+				const auto actor = owner.Lock();
+				if (actor && actor->GetWorld())
+					for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<ly::Actor>())
+						if (auto item = weak.lock(); item && !item->GetIsPendingDestroy())
+							if (const auto* identity = item->FindComponent<ly::SceneEntityComponent>(); identity && identity->name == name)
+								return sol::make_object(state, ActorHandle{ item });
+				return sol::make_object(state, sol::nil);
+			};
+			world["player"] = [owner](sol::this_state state)
+			{
+				const auto actor = owner.Lock();
+				const auto player = actor && actor->GetWorld() ? ScriptRuntime::Get().Player(*actor->GetWorld()) : nullptr;
+				return player ? sol::make_object(state, ActorHandle{ player }) : sol::make_object(state, sol::nil);
+			};
+			world["find_all_by_type"] = [owner](const std::string& type, sol::this_state state)
+			{
+				auto result = sol::state_view{ state }.create_table();
+				const auto actor = owner.Lock();
+				int index = 1;
+				if (actor && actor->GetWorld())
+					for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<ly::Actor>())
+						if (auto item = weak.lock(); item && !item->GetIsPendingDestroy() && Matches(*item, type)) result[index++] = ActorHandle{ item };
+				return result;
+			};
+			world["find_in_radius"] = [owner](float x, float y, float radius, sol::optional<std::string> type, sol::this_state state)
+			{
+				auto result = sol::state_view{ state }.create_table();
+				if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(radius) || radius < 0.f || radius > 1000000.f)
+					throw std::runtime_error("Expected finite radius in [0, 1000000]");
+				const auto actor = owner.Lock();
+				int index = 1;
+				const auto filter = type.value_or("");
+				if (actor && actor->GetWorld()) actor->GetWorld()->ForEachActorInBounds({ { x - radius, y - radius }, { radius * 2.f, radius * 2.f } }, [&](ly::Actor& item)
+				{
+					const auto delta = item.GetActorLocation() - sf::Vector2f{ x, y };
+					if (!item.GetIsPendingDestroy() && Matches(item, filter) && std::hypot(delta.x, delta.y) <= radius)
+						result[index++] = ActorHandle{ item.GetWeakActor() };
+					return true;
+				});
+				return result;
+			};
+			world["spawn"] = [owner](const std::string& source, float x, float y, sol::optional<sol::table> properties, sol::this_state state)
+			{
+				const auto actor = owner.Lock();
+				if (!actor || !actor->GetWorld()) return sol::make_object(state, sol::nil);
+				if (!std::isfinite(x) || !std::isfinite(y)) throw std::runtime_error("Expected finite spawn position");
+				const bool prefab = source.size() >= 12 && source.substr(source.size() - 12) == ".prefab.json";
+				if (prefab)
+				{
+					// Runtime failures must not add unresolved authored instances to the scene.
+					const auto resolved = ly::PrefabLibrary::Get().Resolve(source);
+					if (!resolved || !resolved.warnings.empty()) throw std::runtime_error(resolved.warnings.empty() ? "Cannot resolve prefab" : resolved.warnings.front());
+				}
+				const auto guid = ly::SceneEntityComponent::GenerateGuid();
+				nlohmann::json values = nlohmann::json::object();
+				if (properties) for (const auto& entry : *properties)
+				{
+					if (entry.first.get_type() != sol::type::string) throw std::runtime_error("Spawn properties require string keys");
+					const auto value = FromLua(entry.second);
+					if (!value) throw std::runtime_error("Unsupported spawn property value");
+					values[entry.first.as<std::string>()] = std::visit([](const auto& v) -> nlohmann::json
+					{
+						using T = std::decay_t<decltype(v)>;
+						if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ v.x, v.y });
+						else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
+						else if constexpr (std::is_same_v<T, float>)
+						{
+							// Scene enum/flag/int readers distinguish integral JSON values.
+							if (std::trunc(v) == v && static_cast<double>(v) >= std::numeric_limits<int>::min() &&
+								static_cast<double>(v) <= std::numeric_limits<int>::max()) return static_cast<int>(v);
+							return v;
+						}
+						else return v;
+					}, *value);
+				}
+				values["Location"] = { x, y };
+				nlohmann::json entity{ { "guid", guid }, { "name", source }, { "properties", values } };
+				entity[prefab ? "prefab" : "type"] = source;
+				const auto loaded = ly::SceneSerializer::Load(*actor->GetWorld(), { { "format", "vega.scene" }, { "version", 1 },
+					{ "settings", nlohmann::json::object() }, { "entities", nlohmann::json::array({ entity }) } });
+				std::shared_ptr<ly::Actor> spawned;
+				for (const auto& weak : actor->GetWorld()->GetActorsByTypeIncludingPending<ly::Actor>())
+					if (auto item = weak.lock())
+						if (const auto* identity = item->FindComponent<ly::SceneEntityComponent>(); identity && identity->guid == guid) { spawned = item; break; }
+				if (!loaded.warnings.empty())
+				{
+					if (spawned) spawned->Destroy();
+					throw std::runtime_error(loaded.warnings.front());
+				}
+				return spawned ? sol::make_object(state, ActorHandle{ spawned }) : sol::make_object(state, sol::nil);
+			};
+			environment["world"] = world;
 		}
 		void MakeEnvironment(sol::state& lua)
 		{
@@ -345,11 +681,35 @@ namespace vega::script
 			environment["log"] = environment["print"];
 			const auto start = created;
 			environment["time"] = [start]() { return std::chrono::duration<double>(Clock::now() - start).count(); };
+			environment["vec"] = [](float x, float y) { return Vector{ x, y }; };
 			handle = ActorHandle{ component.GetOwner().GetWeakActor() };
+			BindWorld(lua);
 			const ActorHandle inputHandle = handle;
 			sol::table input = lua.create_table();
 			input["key_down"] = [inputHandle](const std::string& name) { return KeyDown(inputHandle, name); };
+			keys.clear();
+			const auto edge = [this](const std::string& name, bool pressed)
+			{
+				if (keys.size() >= 64 && keys.count(name) == 0) throw std::runtime_error("Too many watched input keys");
+				auto entry = keys.find(name);
+				if (entry == keys.end()) entry = keys.emplace(name, KeyState{ false, KeyDown(handle, name) }).first;
+				const auto& value = entry->second;
+				return component.GetWorld() && component.GetWorld()->HasInputFocus() &&
+					(pressed ? value.current && !value.previous : !value.current && value.previous);
+			};
+			input["pressed"] = [edge](const std::string& name) { return edge(name, true); };
+			input["released"] = [edge](const std::string& name) { return edge(name, false); };
+			input["mouse_world"] = [inputHandle]()
+			{
+				const auto actor = inputHandle.Lock();
+				const auto v = actor && actor->GetWorld() ? actor->GetWorld()->GetMouseWorldPosition() : sf::Vector2f{};
+				return Vector{ v.x, v.y };
+			};
 			environment["input"] = input;
+			sol::table timer = lua.create_table();
+			timer["after"] = [this](double seconds, sol::protected_function fn) { return Schedule(seconds, std::move(fn), false); };
+			timer["every"] = [this](double seconds, sol::protected_function fn) { return Schedule(seconds, std::move(fn), true); };
+			environment["timer"] = timer;
 			props = lua.create_table();
 			self = lua.create_table_with("actor", handle, "props", props);
 		}
@@ -362,6 +722,7 @@ namespace vega::script
 			stamp = std::filesystem::last_write_time(full, ec);
 			const bool wasRunning = running;
 			Call("on_destroy");
+			CancelWork();
 			// A failing teardown suspends the component just like a failing update.
 			if (wasRunning && !error.empty()) return false;
 			running = false;
@@ -376,11 +737,20 @@ namespace vega::script
 			if (!loaded.valid()) { const sol::error failure = loaded; Fail(failure.what()); return false; }
 			sol::protected_function chunk = loaded;
 			sol::set_environment(environment, chunk);
-			const InstructionScope budget{ lua.lua_state() };
-			const sol::protected_function_result result = chunk();
+			const sol::protected_function_result result = [&]()
+			{
+				const InstructionScope budget{ lua.lua_state() };
+				return chunk();
+			}();
 			if (!result.valid()) { const sol::error failure = result; Fail(failure.what()); return false; }
+			if (result.return_count() > 0 && result.get_type() == sol::type::table)
+			{
+				self = result.get<sol::table>();
+				self["actor"] = handle;
+				self["props"] = props;
+			}
 			defaults.clear();
-			const sol::object declared = environment.raw_get<sol::object>("properties");
+			const sol::object declared = Callback("properties");
 			if (declared.get_type() == sol::type::table)
 			{
 				for (const auto& entry : declared.as<sol::table>())
@@ -397,7 +767,11 @@ namespace vega::script
 				props[entry.first] = ToLua(lua, entry.second);
 			}
 			running = start;
-			if (start) Call("on_create");
+			if (start)
+			{
+				if (Callback("on_start") != sol::nil) Call("on_start");
+				else Call("on_create");
+			}
 			return error.empty();
 		}
 	};
@@ -473,7 +847,7 @@ namespace vega::script
 				const auto stamp = std::filesystem::last_write_time(mImpl->FullPath(), ec);
 				if (stamp != mImpl->stamp) Reload();
 			}
-			if (!GetOwner().GetIsPendingDestroy() && !mImpl->ended) mImpl->Call("on_update", deltaTime);
+			if (!GetOwner().GetIsPendingDestroy() && !mImpl->ended) mImpl->Tick(deltaTime);
 		}
 		catch (const std::exception& error) { mImpl->calling = false; mImpl->Fail(error.what()); }
 		catch (...) { mImpl->calling = false; mImpl->Fail("Unknown script error"); }
@@ -482,6 +856,7 @@ namespace vega::script
 	{
 		if (mImpl->ended) return;
 		mImpl->ended = true;
+		mImpl->CancelWork();
 		// Actor marks pending-destroy after component teardown; suppress destroy() reentry during that gap.
 		*mImpl->handle.destroying = true;
 		// destroy() inside a callback must finish that callback before on_destroy, without recursive Lua entry.
@@ -490,6 +865,15 @@ namespace vega::script
 		catch (const std::exception& error) { mImpl->Fail(error.what()); }
 		catch (...) { mImpl->Fail("Unknown script error"); }
 		mImpl->running = false;
+	}
+	void ScriptComponent::OnOverlapBegin(ly::Actor* other) { mImpl->Contact("on_overlap_begin", other); }
+	void ScriptComponent::OnOverlapEnd(ly::Actor* other) { mImpl->Contact("on_overlap_end", other); }
+	void ScriptComponent::OnHit(ly::Actor* other) { mImpl->Contact("on_hit", other); }
+	bool ScriptComponent::QueueMessage(const std::string& name, const nlohmann::json& data)
+	{
+		if (!mImpl->running || mImpl->ended || mImpl->messages.size() >= 128 || name.empty() || name.size() > 256) return false;
+		mImpl->messages.emplace_back(name, data);
+		return true;
 	}
 	bool ScriptComponent::SetProperty(const std::string& name, const Value& value) noexcept
 	{

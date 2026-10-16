@@ -127,6 +127,8 @@ namespace vega
 		EditorSelection mSelection;
 		EditorCamera mCamera;
 		JsonDocument mDocument{ VEGA_SOURCE_ASSETS_DIR };
+		std::filesystem::path mLuaTypesPath;
+		void RegenerateLuaTypes();
 		EditorContext mContext{ nullptr, mSelection, &mCamera };
 		CommandHistory mHistory{ mContext };
 		std::unique_ptr<EditorScript> mScript;

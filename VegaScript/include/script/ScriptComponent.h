@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <nlohmann/json.hpp>
 
 namespace vega::script
 {
@@ -32,7 +33,11 @@ namespace vega::script
 		bool SetOverrides(const ScriptProperties& values) noexcept;
 		bool SetProperty(const std::string& name, const ly::reflect::PropertyValue& value) noexcept;
 		bool ClearOverride(const std::string& name) noexcept;
+		bool QueueMessage(const std::string& name, const nlohmann::json& data);
 	private:
+		void OnOverlapBegin(ly::Actor* other) override;
+		void OnOverlapEnd(ly::Actor* other) override;
+		void OnHit(ly::Actor* other) override;
 		struct Impl;
 		std::unique_ptr<Impl> mImpl;
 	};

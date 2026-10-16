@@ -10,6 +10,56 @@ namespace ly
 	CollisionComponent::CollisionComponent(Actor& owner) : ActorComponent{ owner }
 	{
 	}
+	CollisionComponent::~CollisionComponent() { ClearContacts(); }
+	void CollisionComponent::EndPlay() { ClearContacts(); }
+	void CollisionComponent::ClearContacts()
+	{
+		for (const auto& entry : mContacts)
+			if (auto actor = entry.second.actor.lock()) actor->onActorDestroyed.UnbindAction(entry.second.destroyed);
+		mContacts.clear();
+	}
+	void CollisionComponent::OtherDestroyed(Actor* other)
+	{
+		const auto found = mContacts.find(other->GetUniqueID());
+		if (found == mContacts.end()) return;
+		found->second.count = 1;
+		NotifyContact(other, false);
+	}
+
+	void CollisionComponent::NotifyContact(Actor* other, bool begin)
+	{
+		if (!other || GetOwner().GetIsPendingDestroy()) return;
+		const auto id = other->GetUniqueID();
+		if (begin)
+		{
+			// A compound collider can produce several shape contacts for one actor.
+			auto& contact = mContacts[id];
+			if (++contact.count != 1) return;
+			contact.actor = other->GetWeakActor();
+			contact.destroyed = other->onActorDestroyed.BindAction(this, &CollisionComponent::OtherDestroyed);
+			GetOwner().ForEachComponent([&](ActorComponent& component)
+			{
+				if (component.HasBegunPlay() && component.IsActive() && !GetOwner().GetIsPendingDestroy()) component.OnOverlapBegin(other);
+			});
+			// This engine uses contacts without solver impulses. A hit means the
+			// first physical touch, rather than an impulse-threshold notification.
+			GetOwner().ForEachComponent([&](ActorComponent& component)
+			{
+				if (component.HasBegunPlay() && component.IsActive() && !GetOwner().GetIsPendingDestroy()) component.OnHit(other);
+			});
+		}
+		else
+		{
+			const auto found = mContacts.find(id);
+			if (found == mContacts.end() || --found->second.count != 0) return;
+			other->onActorDestroyed.UnbindAction(found->second.destroyed);
+			mContacts.erase(found);
+			GetOwner().ForEachComponent([&](ActorComponent& component)
+			{
+				if (component.HasBegunPlay() && component.IsActive() && !GetOwner().GetIsPendingDestroy()) component.OnOverlapEnd(other);
+			});
+		}
+	}
 
 	void CollisionComponent::RefreshFilterAndSpatialQuery()
 	{

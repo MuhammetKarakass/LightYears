@@ -9,6 +9,7 @@
 #include "level/ArenaTestLevel.h"
 #include "level/SceneLevel.h"
 #include "player/PlayerManager.h"
+#include "player/PlayerSpaceShip.h"
 #include "player/PlayerMovementComponent.h"
 #include "presentation/visual/GameVisualPipeline.h"
 
@@ -56,6 +57,11 @@ namespace ly
 		RegisterGameTypes();
 		vega::script::SetScriptRoot(ResourceRoot(!editor));
 		vega::script::RegisterScriptTypes();
+		vega::script::ScriptRuntime::Get().SetPlayerResolver([](World&) -> std::weak_ptr<Actor>
+		{
+			const auto* player = PlayerManager::GetPlayerManager().GetPlayer();
+			return player ? player->GetCurrentSpaceShip() : std::weak_ptr<PlayerSpaceShip>{};
+		});
 		if (!GameContentBootstrap::Register())
 		{
 			LY_GAME_ERROR("Failed to register shipped game content; application will not start the game world");
