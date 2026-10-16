@@ -10,6 +10,7 @@ namespace ly
 	// authored entity and remains intact when a world is saved and loaded.
 	class SceneEntityComponent : public ActorComponent
 	{
+		VEGA_CLASS(SceneEntityComponent)
 	public:
 		explicit SceneEntityComponent(Actor& owner, std::string guid = {}, std::string name = {});
 		const std::string& GetGuid() const { return guid; }

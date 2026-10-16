@@ -4,6 +4,7 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 	include/framework/ComponentIdentity.h
 	src/framework/ComponentIdentity.cpp
 	include/framework/reflection/Reflection.h
+	include/framework/reflection/ReflectionMacros.h
 	src/framework/reflection/Reflection.cpp
 	src/framework/reflection/EngineReflection.cpp
 	include/framework/scene/Scene.h
@@ -204,6 +205,12 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+	add_executable(LightYearsReflectionMacroTests tests/ReflectionMacroTests.cpp)
+	target_link_libraries(LightYearsReflectionMacroTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${runtime} LightYearsReflectionMacroTests)
+	endforeach()
+	add_test(NAME LightYearsReflectionMacros COMMAND LightYearsReflectionMacroTests)
 	add_executable(LightYearsDiagnosticsTests tests/DiagnosticsTests.cpp)
 	target_link_libraries(LightYearsDiagnosticsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	add_test(NAME LightYearsEngineDiagnostics COMMAND LightYearsDiagnosticsTests)

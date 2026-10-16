@@ -13,6 +13,7 @@ namespace ly
 	class World;
 	class PlayerSpaceShip : public SpaceShip
 	{
+		VEGA_CLASS(PlayerSpaceShip)
 	public:
 
 		PlayerSpaceShip(

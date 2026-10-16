@@ -12,6 +12,7 @@
 #include <functional>
 
 #include "framework/debug/Assert.h"
+#include "framework/reflection/ReflectionDeclare.h"
 #include "framework/debug/Log.h"
 #include "framework/debug/Profiler.h"
 

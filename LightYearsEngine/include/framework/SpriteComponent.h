@@ -17,6 +17,7 @@ namespace ly
 	// texture load), so callers still check HasSprite()/GetSprite().
 	class SpriteComponent : public ActorComponent
 	{
+		VEGA_CLASS(SpriteComponent)
 	public:
 		explicit SpriteComponent(Actor& owner, const std::string& texturePath = "");
 

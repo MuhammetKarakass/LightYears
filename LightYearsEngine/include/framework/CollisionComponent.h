@@ -27,6 +27,7 @@ namespace ly
 	// changes refresh the Box2D filter first and the World spatial index second.
 	class CollisionComponent : public ActorComponent
 	{
+		VEGA_CLASS(CollisionComponent)
 	public:
 		explicit CollisionComponent(Actor& owner);
 

@@ -1,9 +1,25 @@
 #include "gameplay/ShieldComponent.h"
+#include <framework/Actor.h>
+#include <framework/reflection/Reflection.h>
 
 #include <algorithm>
 
 namespace ly
 {
+	VEGA_REFLECT(ShieldComponent, ActorComponent)
+	{
+		VEGA_ADDABLE();
+		VEGA_CATEGORY("Shield");
+		VEGA_READONLY("Shield", GetShield);
+		VEGA_PROPERTY("Max Shield", GetMaxShield, SetMaxShield).Range(0.f, 100000.f);
+		VEGA_PROPERTY("Recharge Delay", GetRechargeDelay, SetRechargeDelay).Range(0.f, 1000.f).Speed(0.1f);
+		VEGA_READONLY("Recharge Delay Remaining", GetRechargeDelayRemaining);
+		VEGA_READONLY("Module Temporary Shield", GetModuleTemporaryShield);
+		VEGA_READONLY("Front Shield", GetFrontShield);
+		VEGA_READONLY("Rear Shield", GetRearShield);
+		VEGA_READONLY("Passive Regen Blocked", IsPassiveRegenBlocked);
+	}
+
 	ShieldComponent::ShieldComponent(Actor& owner, float shield, float maxShield, float rechargeDelay)
 		: ActorComponent{ owner }
 		, mShield{ std::clamp(shield, 0.f, std::max(0.f, maxShield)) }

@@ -3,6 +3,7 @@
 #include "gameplay/MovementComponent.h"
 #include "gameplay/movement/MovementCollisionService.h"
 #include "gameplay/tags/GameplayTags.h"
+#include <framework/reflection/Reflection.h>
 
 #include "gameplay/movement/MovementBurstMath.h"
 #include "spaceShip/SpaceShip.h"
@@ -14,6 +15,21 @@
 
 namespace ly
 {
+	VEGA_REFLECT(MovementComponent, ActorComponent)
+	{
+		VEGA_CATEGORY("Movement");
+		VEGA_PROPERTY("Movement Mode", GetMovementMode, SetMovementMode).Labels({ { 0, "LegacyVelocity" }, { 1, "ThrustDrift" } });
+		VEGA_PROPERTY("Legacy Speed", GetLegacySpeed, SetLegacySpeed);
+		VEGA_READONLY("Current Movement Speed", GetCurrentMovementSpeed);
+		VEGA_READONLY("Current Movement Distance", GetCurrentMovementDistance);
+		VEGA_READONLY("Current Movement Start Location", GetCurrentMovementStartLocation);
+		VEGA_READONLY("Directional Thrust Sync", HasDirectionalThrustSync);
+		VEGA_READONLY("Module Directional Thrust Sync", HasModuleDirectionalThrustSync);
+		VEGA_READONLY("Module Thrust Bonus", GetModuleThrustBonus);
+		VEGA_READONLY("Movement Burst Active", IsMovementBurstActive);
+		VEGA_READONLY("Resolved Movement Burst Distance", GetResolvedMovementBurstDistance);
+	}
+
 	MovementComponent::MovementComponent(Actor& owner, const ShipDefinition& shipDef)
 		: ActorComponent(owner)
 		, mMovementMode(ShipMovementMode::LegacyVelocity)

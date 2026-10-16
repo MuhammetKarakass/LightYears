@@ -1,3 +1,4 @@
+#include "framework/reflection/Reflection.h"
 #include "framework/SoundComponent.h"
 #include "framework/AudioManager.h"
 #include "framework/AssetManager.h"
@@ -126,4 +127,15 @@ namespace ly
     {
          return weak_from_this();
     }
+}
+
+namespace ly
+{
+	// SoundComponent is independently owned, so it is registered for lookup by
+	// name but does not participate in ActorComponent enumeration or discovery.
+	VEGA_REFLECT_ROOT(SoundComponent)
+	{
+		VEGA_READONLY("Playing", IsPlaying);
+		VEGA_READONLY("Stopped", IsStopped);
+	}
 }

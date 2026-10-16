@@ -45,6 +45,7 @@ namespace ly
 	// unions its bounds. Use Actor::GetOrAddComponent<LightComponent>().
 	class LightComponent : public ActorComponent
 	{
+		VEGA_CLASS(LightComponent)
 	public:
 		explicit LightComponent(Actor& owner);
 

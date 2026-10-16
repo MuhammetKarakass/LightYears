@@ -12,6 +12,7 @@ namespace vega::script
 	using ScriptProperties = std::map<std::string, ly::reflect::PropertyValue>;
 	class ScriptComponent final : public ly::ActorComponent
 	{
+		VEGA_CLASS(ScriptComponent)
 	public:
 		ScriptComponent(ly::Actor& owner, std::string path);
 		~ScriptComponent() override;

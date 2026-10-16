@@ -14,6 +14,7 @@ namespace ly
 	// order is unchanged (UE tick-prerequisite equivalent).
 	class HealthComponent : public ActorComponent
 	{
+		VEGA_CLASS(HealthComponent)
 	public:
 		HealthComponent(Actor& owner, float health, float maxHealth);
 

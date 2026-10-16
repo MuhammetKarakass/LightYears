@@ -1,4 +1,5 @@
 #include "framework/scene/SceneEntityComponent.h"
+#include "framework/reflection/Reflection.h"
 #include <random>
 #include <utility>
 
@@ -26,5 +27,12 @@ namespace ly
 				result[half * 16 + digit] = hex[(bits >> (digit * 4)) & 15];
 		}
 		return result;
+	}
+
+	VEGA_REFLECT(SceneEntityComponent, ActorComponent)
+	{
+		VEGA_CATEGORY("Scene");
+		VEGA_PROPERTY("Name", GetName, SetName);
+		VEGA_READONLY("GUID", GetGuid);
 	}
 }
