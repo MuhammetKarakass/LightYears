@@ -172,7 +172,9 @@ ly::Application* GetApplication()
 ```
 
 After adding `VegaEditor`, call `vega_add_game_editor(Name MODULE Target
-RUNTIME RuntimeTarget PROJECT projectFile ENTRY entrySource)` for each game.
+RUNTIME RuntimeTarget PROJECT projectFile ENTRY entrySource [CORE coreTarget])`
+for each game (`CORE` defaults to `VegaEditorCore`; the helper lives in
+`VegaEditor/cmake/VegaGameEditor.cmake`).
 The helper links the game-independent `VegaEditorCore` and configures the host.
 LightYears retains its integration selection in `LightYearsGame/editor.cmake`
 and links the optional Sky and GAS editor extensions to the same core.

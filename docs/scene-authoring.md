@@ -192,8 +192,8 @@ scene settings. Categories, labels, tooltips, typed widgets and validation come
 from the engine's game-agnostic `ly::SceneSettingsSchema` API
 (`framework/scene/SceneSettings.h`). Games register `SceneSettingField` descriptors
 with a key, label, category, type, default, optional bounds and options callback.
-Supported types are bool, int, float, string, enum, catalog ID, vec2 and color
-(RGBA bytes). Registration rejects invalid defaults; `Validate` and `Set` reject
+Supported types are bool, int, float, string, enum, catalog ID, vec2, color
+(RGBA bytes) and rect (`SceneSettingType::Rect`). Registration rejects invalid defaults; `Validate` and `Set` reject
 invalid edits. `Value` reads an effective default without modifying authored JSON.
 
 ```cpp
@@ -282,8 +282,8 @@ component header for Remove Component; required/non-removable types explain why
 removal is disabled. Both commands are Edit-only, capture entity JSON before and
 after the change, and recreate the same GUID on undo/redo while preserving
 selection. Older property commands continue resolving that GUID. Scripts retain
-their separate Add Script path. Parent GUID links are remapped with subtree copies;
-general reflected entity-reference properties remain future work.
+their separate Add Script path. Parent GUID links and reflected actor-reference
+properties (`ActorRef`, see [reflection](reflection.md)) are remapped with subtree copies.
 
 `VegaEditorComponents` runs a configured build-tree script and saves only to
 `components-temp.scene.json` in the build tree. It verifies added Health properties,
