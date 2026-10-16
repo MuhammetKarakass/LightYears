@@ -48,7 +48,7 @@ vega_add_game_editor(MyEditor MODULE MyEditorModule RUNTIME MyGame
     ENTRY "${CMAKE_CURRENT_SOURCE_DIR}/Source/MyEditorMain.cpp")
 ```
 
-Implement `GameModule::RegisterEditorExtensions` in the editor adapter. GAS uses
+Implement `IEditorProvider::RegisterEditorExtensions` in the editor adapter. GAS uses
 `sas::RegisterEditorExtension(extensions)` from `gas/GasEditorExtension.h`.
 It registers its panel, View menu, layout settings, Play recording lifecycle and
 script commands. The game installs actor/player/content resolvers through
@@ -121,5 +121,6 @@ Configure with `VEGA_BUILD_LIGHTYEARS=OFF`, `VEGA_BUILD_SKY=OFF` and
 Enable either module independently to build its runtime/editor targets and
 module tests. `VegaEditorNoGameIncludes` has no exceptions. The core contains
 neither game visual headers nor Sky/GAS tool implementations. The script parser
-retains the existing validated command grammar for compatibility; execution is
-registered by the extensions and fails when the corresponding module is absent.
+uses the same command registry as the extensions. Each module registers its
+schemas and handlers together, retaining the existing validated grammar. A verb
+is unknown when its module is absent; `help` lists only installed commands.

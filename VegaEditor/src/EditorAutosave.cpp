@@ -13,7 +13,7 @@ namespace vega
 		const auto paths = mContentWatch.Poll();
 		if (paths.empty()) return;
 		ly::PrefabLibrary::Get().Reload();
-		try { mModule->ReloadContent(paths); }
+		try { if (auto* reload = QueryCapability<IContentReload>(mModule.get())) reload->ReloadContent(paths); }
 		catch (const std::exception& error)
 		{
 			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
@@ -144,8 +144,8 @@ namespace vega
 	bool EditorApplication::ExecuteAutosaveCommand(const EditorScriptCommand& command, std::string& detail)
 	{
 		bool success = false;
-		if (command.operation == ScriptOperation::AutosaveNow) success = AutosaveNow();
-		else if (command.operation == ScriptOperation::SimulateUncleanExit)
+		if (command.operation == "autosave-now") success = AutosaveNow();
+		else if (command.operation == "simulate-unclean-exit")
 		{
 			success = mAutosaves.Enabled();
 			if (success) mAutosaves.SimulateUncleanExit();
@@ -156,12 +156,12 @@ namespace vega
 			std::filesystem::path absolute;
 			const auto relative = requested.is_absolute() ? requested.lexically_relative(mDocument.Root()) : requested;
 			if (!mDocument.Resolve(relative, absolute)) { detail = "Path escapes the asset root"; return false; }
-			const auto entries = command.operation == ScriptOperation::ExpectRecovery ? mRecoveryEntries : mAutosaves.Entries();
+			const auto entries = command.operation == "expect-recovery" ? mRecoveryEntries : mAutosaves.Entries();
 			const auto found = std::find_if(entries.begin(), entries.end(), [&](const auto& entry)
 			{
 				return mDocument.Root() / entry.source == absolute;
 			});
-			if (command.operation == ScriptOperation::RecoverAutosave)
+			if (command.operation == "recover-autosave")
 				success = found != entries.end() && RecoverAutosave(*found);
 			else success = (found != entries.end()) == command.overwrite;
 		}

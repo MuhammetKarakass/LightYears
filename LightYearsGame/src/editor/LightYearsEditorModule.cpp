@@ -1,3 +1,4 @@
+#include "LightYearsScriptCommands.h"
 #include "editor/LightYearsEditorModule.h"
 #include "gameFramework/LightYearsGameModule.h"
 #include "player/PlayerManager.h"
@@ -67,7 +68,7 @@ namespace ly
 			std::string mRendered;
 		};
 
-		class LightYearsEditorModule final : public LightYearsGameModule
+		class LightYearsEditorModule final : public LightYearsGameModule, public vega::IEditorProvider
 		{
 		public:
 			void RegisterEditorExtensions(vega::EditorExtensions& extensions) override
@@ -78,7 +79,7 @@ namespace ly
 					auto sky = std::make_shared<vega::EditorSkyEditor>(std::make_shared<LightYearsSkyPreview>(*pipeline));
 					sky->Register(extensions, sky);
 				}
-				extensions.AddScriptCommand("expect-player-ship", [](vega::EditorContext& context, vega::CommandHistory&,
+				extensions.AddScriptCommand(PlayerShipScriptCommand( [](vega::EditorContext& context, vega::CommandHistory&,
 					const std::vector<std::string>& arguments, std::string& detail)
 				{
 					if (arguments.size() != 1 || arguments[0].empty()) { detail = "Invalid arguments"; return false; }
@@ -89,7 +90,7 @@ namespace ly
 							return context.playMode && ship->GetWorld() == context.world && player->GetShipId() == arguments[0];
 						}
 					return false;
-				});
+				}));
 			}
 		};
 	}

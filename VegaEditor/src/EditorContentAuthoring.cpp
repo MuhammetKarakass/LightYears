@@ -359,23 +359,31 @@ namespace vega
 		}
 	}
 
-	bool EditorContentAuthoring::Execute(EditorContext& context, CommandHistory& history, const std::filesystem::path& root, const EditorScriptCommand& command, std::string& detail)
+	bool EditorContentAuthoring::Execute(EditorContext& context, CommandHistory& history, const std::filesystem::path& root, const EditorScriptCommand& command,
+										 std::string& detail)
 	{
 		visible = true;
 		mFocus = true;
-		if (!mWorkspace.Loaded() && !mWorkspace.Load(root)) { detail = mWorkspace.error; return false; }
-		using Op = ScriptOperation;
-		bool result = false;
-		if (context.transitioning) { detail = "Content edits require Edit mode"; return false; }
-		switch (command.operation)
+		if (!mWorkspace.Loaded() && !mWorkspace.Load(root))
 		{
-		case Op::ContentOpen: result = mWorkspace.Open(command.text, command.property); break;
-		case Op::ContentSet: result = mWorkspace.Set(history, command.text, Json::parse(command.values.at(0))); break;
-		case Op::ContentNew: result = mWorkspace.New(history, command.text, command.property, command.values.at(0)); break;
-		case Op::ContentRename: result = mWorkspace.Rename(history, command.text, command.property, command.values.at(0)); break;
-		case Op::ContentSave: result = mWorkspace.Save(); break;
-		case Op::ContentReload: result = mWorkspace.Load(root); break;
-		case Op::ContentValidate:
+			detail = mWorkspace.error;
+			return false;
+		}
+
+		bool result = false;
+		if (context.transitioning)
+		{
+			detail = "Content edits require Edit mode";
+			return false;
+		}
+		if (command.operation == "content-open") { result = mWorkspace.Open(command.text, command.property); }
+		else if (command.operation == "content-set") { result = mWorkspace.Set(history, command.text, Json::parse(command.values.at(0))); }
+		else if (command.operation == "content-new") { result = mWorkspace.New(history, command.text, command.property, command.values.at(0)); }
+		else if (command.operation == "content-rename") { result = mWorkspace.Rename(history, command.text, command.property, command.values.at(0)); }
+		else if (command.operation == "content-save") { result = mWorkspace.Save(); }
+		else if (command.operation == "content-reload") { result = mWorkspace.Load(root); }
+		else if (command.operation == "content-validate")
+		{
 			result = true;
 			for (const auto& issue : mWorkspace.Validate())
 			{
@@ -384,22 +392,31 @@ namespace vega
 			}
 			if (detail.empty()) detail = "All content definitions and references validated";
 			return result;
-		case Op::ExpectContent:
+		}
+		else if (command.operation == "expect-content")
+		{
 			try
 			{
 				if (const auto* item = mWorkspace.Definition(command.text, command.property))
 				{
-					const auto& actual = item->at(Json::json_pointer{ ContentWorkspace::Pointer(command.values.at(0)) });
+					const auto& actual = item->at(Json::json_pointer{ContentWorkspace::Pointer(command.values.at(0))});
 					const auto expected = Json::parse(command.values.at(1));
 					result = actual == expected;
 					detail = "actual " + actual.dump() + " expected " + expected.dump();
 				}
 			}
-			catch (const std::exception& exception) { detail = exception.what(); }
+			catch (const std::exception& exception)
+			{
+				detail = exception.what();
+			}
 			return result;
-		default: detail = "Unknown content command"; return false;
+		}
+		else
+		{
+			detail = "Unknown content command";
+			return false;
 		}
 		detail = mWorkspace.error;
 		return result;
 	}
-}
+} // namespace vega

@@ -262,10 +262,10 @@ namespace vega
 {
 	bool EditorGasDebugger::Execute(EditorContext& context, const EditorScriptCommand& command, std::string& detail)
 	{
-		using Op = ScriptOperation;
-		if (command.operation == Op::GasFilter)
+
+		if (command.operation == "gas-filter")
 		{
-			const char* sections[]{ "abilities", "effects", "attributes", "tags", "events" };
+			const char* sections[]{"abilities", "effects", "attributes", "tags", "events"};
 			for (int i = 0; i < 5; ++i)
 				if (command.text == sections[i])
 				{
@@ -275,7 +275,7 @@ namespace vega
 				}
 			return false;
 		}
-		if (command.operation == Op::GasPanel)
+		if (command.operation == "gas-panel")
 		{
 			visible = command.text == "on";
 			mFocus = visible;
@@ -287,31 +287,46 @@ namespace vega
 			detail = "GAS commands require a live Play world";
 			return false;
 		}
-		if (command.operation == Op::GasSelectPlayer)
+		if (command.operation == "gas-select-player")
 		{
 			auto player = sas::AbilitySystemDebugView::player ? sas::AbilitySystemDebugView::player(*context.world) : nullptr;
-			if (!player) { detail = "No player"; return false; }
+			if (!player)
+			{
+				detail = "No player";
+				return false;
+			}
 			context.selection.Select(player);
 			visible = mFocus = true;
 			return true;
 		}
 		auto actor = Target(context);
 		auto* asc = actor && sas::AbilitySystemDebugView::resolve ? sas::AbilitySystemDebugView::resolve(*actor) : nullptr;
-		if (!asc) { detail = "Actor has no ASC"; return false; }
+		if (!asc)
+		{
+			detail = "Actor has no ASC";
+			return false;
+		}
 		const auto snapshot = asc->BuildDebugSnapshot();
 		const bool expected = command.property == "true";
-		switch (command.operation)
+		if (command.operation == "expect-ability")
 		{
-		case Op::ExpectAbility:
 			for (const auto& entry : snapshot.abilities)
-				if (entry.runtime.abilityId == command.text) { detail = entry.State(); return command.property == entry.State(); }
+				if (entry.runtime.abilityId == command.text)
+				{
+					detail = entry.State();
+					return command.property == entry.State();
+				}
 			detail = "Ability not found";
 			return false;
-		case Op::ExpectEffect:
-			return std::any_of(snapshot.effects.begin(), snapshot.effects.end(), [&](const auto& effect) { return effect.effectId == command.text; }) == expected;
-		case Op::ExpectTag:
-			return asc->HasOwnedTag(ly::GameplayTag{ command.text }) == expected;
-		case Op::ExpectAttribute:
+		}
+		else if (command.operation == "expect-effect")
+		{
+			return std::any_of(snapshot.effects.begin(), snapshot.effects.end(), [&](const auto& effect) { return effect.effectId == command.text; }) ==
+			    expected;
+		}
+		else if (command.operation == "expect-tag") { return asc->HasOwnedTag(ly::GameplayTag{command.text}) == expected; }
+		else if (command.operation == "expect-attribute")
+		{
 			for (const auto& attribute : snapshot.attributes)
 			{
 				if (attribute.id.GetName() != command.text) continue;
@@ -325,31 +340,35 @@ namespace vega
 			}
 			detail = "Attribute not found";
 			return false;
-		default: break;
 		}
-		if (context.world->IsPaused()) { detail = "Debug mutations require unpaused Play"; return false; }
-		if (command.operation == Op::GasResetCooldowns)
+		if (context.world->IsPaused())
+		{
+			detail = "Debug mutations require unpaused Play";
+			return false;
+		}
+		if (command.operation == "gas-reset-cooldowns")
 		{
 			asc->ReduceAbilityCooldowns(std::numeric_limits<float>::max());
 			return true;
 		}
-		if (command.operation == Op::GasActivate)
+		if (command.operation == "gas-activate")
 		{
 			for (const auto& entry : snapshot.abilities)
-				if (entry.runtime.abilityId == command.text && !entry.passive)
-				{
-					return asc->DebugActivateAbility(entry.runtime.handle);
-				}
+				if (entry.runtime.abilityId == command.text && !entry.passive) { return asc->DebugActivateAbility(entry.runtime.handle); }
 			return false;
 		}
-		if (command.operation == Op::GasRemoveEffect)
+		if (command.operation == "gas-remove-effect")
 		{
 			bool removed = false;
 			for (const auto& effect : snapshot.effects)
-				if (effect.effectId == command.text) { asc->RemoveGameplayEffect(effect.handle); removed = true; }
+				if (effect.effectId == command.text)
+				{
+					asc->RemoveGameplayEffect(effect.handle);
+					removed = true;
+				}
 			return removed;
 		}
-		if (command.operation == Op::GasApplyEffect && sas::AbilitySystemDebugView::effectDefinitions)
+		if (command.operation == "gas-apply-effect" && sas::AbilitySystemDebugView::effectDefinitions)
 		{
 			for (const auto& spec : sas::AbilitySystemDebugView::effectDefinitions())
 				if (spec.definition.effectId == command.text)
@@ -361,4 +380,4 @@ namespace vega
 		}
 		return false;
 	}
-}
+} // namespace vega

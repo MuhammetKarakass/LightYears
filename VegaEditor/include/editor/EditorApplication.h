@@ -35,9 +35,9 @@ namespace vega
 
 	private:
 		EditorApplication(std::unique_ptr<GameModule> module, EditorProject project);
-		void Tick(float deltaTime) override { mModule->Tick(deltaTime); }
+		void Tick(float deltaTime) override { if (auto* hooks = QueryCapability<IAppLoopHooks>(mModule.get())) hooks->Tick(deltaTime); }
 		void Render() override;
-		void ApplySceneSettings(const nlohmann::json& settings) { mModule->ApplySceneSettings(settings); }
+		void ApplySceneSettings(const nlohmann::json& settings) { if (auto* handler = QueryCapability<ISceneSettingsHandler>(mModule.get())) handler->ApplySceneSettings(settings); }
 		EditorProject mProject;
 		std::unique_ptr<GameModule> mModule;
 		EditorExtensions mExtensions;

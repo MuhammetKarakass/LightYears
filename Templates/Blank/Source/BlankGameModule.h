@@ -35,7 +35,7 @@ namespace blank
 		std::vector<sf::Vector2f> mPatrol;
 	};
 
-	class BlankGameModule final : public vega::GameModule
+	class BlankGameModule final : public vega::GameModule, public vega::IModuleSetup, public vega::IPlayerProvider
 	{
 	public:
 		const char* Name() const override { return "Blank"; }

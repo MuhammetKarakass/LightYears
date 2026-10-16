@@ -237,7 +237,8 @@ namespace vega
 					{
 						const auto start = weak.lock();
 						if (!start || start->GetIsPendingDestroy()) continue;
-						const auto display = mModule->DisplayInfo(*start);
+						const auto* provider = QueryCapability<IActorDisplayInfo>(mModule.get());
+						const auto display = provider ? provider->DisplayInfo(*start) : ActorDisplayInfo{};
 						if (!display.spawnMarker) continue;
 						const auto pixel = mViewport.GetTexture().mapCoordsToPixel(start->GetActorLocation(), mContext.world->GetWorldView());
 						const ImVec2 p{ topLeft.x + pixel.x * scale, topLeft.y + pixel.y * scale };
@@ -765,7 +766,8 @@ namespace vega
 			if (const auto actor = weakActor.lock(); actor && !actor->GetIsPendingDestroy())
 			{
 				auto bounds = actor->GetActorGlobalBounds();
-				if (mModule->DisplayInfo(*actor).spawnMarker && !mContext.playMode)
+				const auto* provider = QueryCapability<IActorDisplayInfo>(mModule.get());
+				if (provider && provider->DisplayInfo(*actor).spawnMarker && !mContext.playMode)
 					bounds = { actor->GetActorLocation() - sf::Vector2f{ 24.f, 24.f }, { 48.f, 48.f } };
 				candidates.emplace_back(actor->GetUniqueID(), bounds);
 			}

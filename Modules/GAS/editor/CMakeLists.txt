@@ -1,4 +1,4 @@
-add_library(VegaGASEditor STATIC src/EditorGasDebugger.cpp src/GasEditorExtension.cpp)
+add_library(VegaGASEditor STATIC src/GasScriptCommands.cpp src/EditorGasDebugger.cpp src/GasEditorExtension.cpp)
 target_include_directories(VegaGASEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(VegaGASEditor PUBLIC VegaEditorCore SpaceAbilitySystem)
 ly_enable_warnings(VegaGASEditor)

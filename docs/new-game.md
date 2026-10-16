@@ -17,7 +17,25 @@ font when the project's `editor.font` is absent.
 2. Add `add_subdirectory(Templates/MyGame)` after the editor is configured in
    the root CMake file. Keep the original template or disable its targets with
    `-DVEGA_BUILD_TEMPLATES=OFF` in your own build configuration.
-3. Implement your module's `RegisterTypes`, `Initialize` and `CreateLevel`.
+3. Implement your module's `Name`, `RegisterTypes` and `CreateLevel`.
+   Add `IModuleSetup` if the game needs project configuration or service
+   initialization; `Initialize` is part of that optional capability. Add
+   `IPlayerProvider` only if hosts need player lookup. Blank uses both;
+   a minimal module needs neither. See the three-method example and optional
+   capability table in [game modules](game-module.md).
+   The minimal declaration is:
+
+   ```cpp
+   class MyGameModule final : public vega::GameModule
+   {
+   public:
+   	const char* Name() const override { return "MyGame"; }
+   	void RegisterTypes() override;
+   	std::shared_ptr<ly::World> CreateLevel(ly::Application& application,
+   		const nlohmann::json& scene, bool edit) override;
+   };
+   ```
+
    Declare types with `VEGA_CLASS` in their headers, describe them with
    `VEGA_REFLECT` in their source files, and explicitly call `VEGA_REGISTER`
    from `RegisterTypes`. Register bases before derived types. Opt actors into
@@ -104,7 +122,7 @@ direct gameplay test hosts call the same function explicitly.
 Blank's default runtime and editor do not link Sky or GAS. Enable modules by
 linking `VegaSky` / `VegaGAS` at runtime and `VegaSkyEditor` /
 `VegaGASEditor` in your editor adapter. Register their editor extensions from
-`RegisterEditorExtensions`; all games share `VegaEditorCore`.
+`IEditorProvider::RegisterEditorExtensions`; all games share `VegaEditorCore`.
 See [engine modules](engine-modules.md) for the complete setup and individual
 sky asset example. For a minimal build, disable `VEGA_BUILD_LIGHTYEARS`,
 `VEGA_BUILD_SKY` and `VEGA_BUILD_GAS`. Each module may also be enabled alone.

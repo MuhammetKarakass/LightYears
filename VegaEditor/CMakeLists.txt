@@ -39,6 +39,27 @@ set(VEGA_EDITOR_CORE_SOURCES
 	src/EditorCommands.cpp
 	src/EditorScript.cpp
 	src/EditorScriptParser.cpp
+	src/ScriptCommandRegistry.cpp
+	src/commands/AssetScriptCommands.cpp
+	src/commands/AutosaveScriptCommands.cpp
+	src/commands/CameraScriptCommands.cpp
+	src/commands/ConsoleScriptCommands.cpp
+	src/commands/ContentScriptCommands.cpp
+	src/commands/CoreScriptCommands.cpp
+	src/commands/ExportScriptCommands.cpp
+	src/commands/HierarchyScriptCommands.cpp
+	src/commands/JsonScriptCommands.cpp
+	src/commands/PrefabScriptCommands.cpp
+	src/commands/ProfilerScriptCommands.cpp
+	src/commands/ProjectScriptCommands.cpp
+	src/commands/PropertyScriptCommands.cpp
+	src/commands/SceneScriptCommands.cpp
+	src/commands/ScriptingScriptCommands.cpp
+	src/commands/ScriptPropertyValues.cpp
+	src/commands/SelectionScriptCommands.cpp
+	src/commands/SessionScriptCommands.cpp
+	src/commands/SettingsScriptCommands.cpp
+	src/commands/ViewScriptCommands.cpp
 	src/EditorViewport.cpp
 	src/EditorSelection.cpp
 	src/EditorContentPanels.cpp
@@ -116,10 +137,9 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 	add_test(NAME VegaEditorProjectDefaults COMMAND VegaEditorProjectTests)
 	add_test(NAME VegaEditorProjectOverrides COMMAND VegaEditorProjectTests
 		--project ${VEGA_PROJECT_TEST_ROOT}/selected/project/vega.project.json --asset-root ${VEGA_PROJECT_TEST_ROOT}/authoring)
-	add_executable(VegaEditorGameModuleTests tests/GameModuleTests.cpp src/EditorScriptParser.cpp
-		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+	add_executable(VegaEditorGameModuleTests tests/GameModuleTests.cpp)
 	target_include_directories(VegaEditorGameModuleTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_link_libraries(VegaEditorGameModuleTests PRIVATE VegaScript)
+	target_link_libraries(VegaEditorGameModuleTests PRIVATE VegaEditorCore)
 	ly_enable_warnings(VegaEditorGameModuleTests)
 	foreach(module_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
 		CopyRuntimeLibToTarget(${module_runtime} VegaEditorGameModuleTests)
@@ -284,15 +304,20 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 	endforeach()
 	add_test(NAME VegaEditorCommand COMMAND VegaEditorCommandTests)
 
-	add_executable(VegaEditorScriptTests
-		tests/EditorScriptTests.cpp
-		src/EditorScriptParser.cpp
-	)
-	target_include_directories(VegaEditorScriptTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_link_libraries(VegaEditorScriptTests PRIVATE SFML::System nlohmann_json::nlohmann_json)
+	add_executable(VegaEditorScriptTests tests/EditorScriptTests.cpp
+		../Modules/Sky/editor/src/SkyScriptCommands.cpp ../Modules/GAS/editor/src/GasScriptCommands.cpp)
+	target_link_libraries(VegaEditorScriptTests PRIVATE VegaEditorCore)
+	target_include_directories(VegaEditorScriptTests PRIVATE
+		${CMAKE_SOURCE_DIR}/Modules/Sky/editor/include ${CMAKE_SOURCE_DIR}/Modules/GAS/editor/include
+		${CMAKE_SOURCE_DIR}/LightYearsGame/src/editor)
+	target_compile_definitions(VegaEditorScriptTests PRIVATE VEGA_COMMAND_DOC="${CMAKE_SOURCE_DIR}/docs/editor-script-commands.md")
 	ly_enable_warnings(VegaEditorScriptTests)
 	CopyRuntimeLibToTarget(sfml-system VegaEditorScriptTests)
 	add_test(NAME VegaEditorScript COMMAND VegaEditorScriptTests)
+	configure_file(tests/scripts/registry.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/registry.vegascript COPYONLY)
+	add_test(NAME VegaEditorScriptRegistry COMMAND VegaEditor --asset-root ${CMAKE_CURRENT_BINARY_DIR}/assets
+		--editor-script ${CMAKE_CURRENT_BINARY_DIR}/scripts/registry.vegascript)
+	set_tests_properties(VegaEditorScriptRegistry PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 60)
 
 	add_executable(VegaEditorCameraTests tests/EditorCameraTests.cpp src/EditorCamera.cpp)
 	target_include_directories(VegaEditorCameraTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

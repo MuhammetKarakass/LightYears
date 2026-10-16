@@ -13,22 +13,22 @@ namespace vega
 		bool success = false;
 		try
 		{
-			using Op = ScriptOperation;
-			if (command.operation == Op::SkyOpen)
+
+			if (command.operation == "sky-open")
 			{
 				mSceneSkyIndex = mPipeline->SceneSelection(scene);
 				success = Open(command.text, true);
 				if (success) mFocusRequested = true;
 			}
-			else if (!mDocument->document.IsOpen() && command.operation != Op::CaptureSky) detail = "sky-open must run first";
-			else if (command.operation == Op::SkySet) success = mDocument->Set(command.text, Json::parse(command.values.at(0)));
-			else if (command.operation == Op::SkyDrag)
+			else if (!mDocument->document.IsOpen() && command.operation != "capture-sky") detail = "sky-open must run first";
+			else if (command.operation == "sky-set") success = mDocument->Set(command.text, Json::parse(command.values.at(0)));
+			else if (command.operation == "sky-drag")
 			{
 				mGeometry = mPipeline->Geometry(mOutput);
 				success = Drag(command.text, {command.location.x / mOutput.x, command.location.y / mOutput.y});
 			}
-			else if (command.operation == Op::SkySave) success = mDocument->Save();
-			else if (command.operation == Op::ExpectSky)
+			else if (command.operation == "sky-save") success = mDocument->Save();
+			else if (command.operation == "expect-sky")
 			{
 				const auto value = mDocument->Value(command.text); const auto expected = Json::parse(command.values.at(0));
 				const auto equals = [&](const auto& self, const Json& a, const Json& b) -> bool
@@ -39,7 +39,7 @@ namespace vega
 				};
 				success = equals(equals, value, expected); detail = "sky " + command.text + " = " + value.dump();
 			}
-			else if (command.operation == Op::CaptureSky && scene.world)
+			else if (command.operation == "capture-sky" && scene.world)
 			{
 				if (mDocument->document.IsOpen()) ApplyPreview(true);
 				else if (scene.sceneSettings)
@@ -55,8 +55,8 @@ namespace vega
 				timing << "capture " << command.text << "; parse=" << mDocument->parseMs << "ms apply=" << mApplyMs << "ms render=" << mRenderMs << "ms";
 				detail = timing.str();
 			}
-			else if (command.operation == Op::Undo) success = mDocument->history.Undo();
-			else if (command.operation == Op::Redo) success = mDocument->history.Redo();
+			else if (command.operation == "undo") success = mDocument->history.Undo();
+			else if (command.operation == "redo") success = mDocument->history.Redo();
 			if (success)
 			{
 				if (mDocument->document.IsOpen()) { mDocument->Refresh(); CacheRows(); }

@@ -126,7 +126,7 @@ namespace vega
 
 	bool EditorApplication::ExecuteAssetCommand(const EditorScriptCommand& command, std::string& detail)
 	{
-		if (command.operation == ScriptOperation::ExpectAsset)
+		if (command.operation == "expect-asset")
 		{
 			std::filesystem::path path;
 			const bool safe = mDocument.Resolve(std::filesystem::u8path(command.text), path);
@@ -135,7 +135,7 @@ namespace vega
 			return safe && exists == (command.values[0] == "true");
 		}
 		const auto from = std::filesystem::u8path(command.text);
-		if (command.operation == ScriptOperation::AssetDelete)
+		if (command.operation == "asset-delete")
 		{
 			AssetMovePlan plan;
 			if (!plan.Prepare(mDocument.Root(), from, ".__vega_delete_preview__", mProject.file)) { detail = plan.Error(); return false; }
@@ -144,7 +144,7 @@ namespace vega
 			return success;
 		}
 		auto to = std::filesystem::u8path(command.values[0]);
-		if (command.operation == ScriptOperation::AssetRename)
+		if (command.operation == "asset-rename")
 		{
 			if (to.has_parent_path() || to.has_root_name()) { detail = "Rename expects a filename"; return false; }
 			to = from.parent_path() / to;

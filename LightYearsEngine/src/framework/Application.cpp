@@ -161,14 +161,14 @@ namespace ly
 	{
 		mGameModule = &module;
 		module.RegisterTypes();
-		module.Initialize(*this, editor);
+		if (auto* setup = vega::QueryCapability<vega::IModuleSetup>(&module)) setup->Initialize(*this, editor);
 	}
 
 	void Application::ShutdownApplication()
 	{
 		LY_PROFILE_FUNCTION();
 		mPendingWorld.reset();
-		if (mGameModule && mCurrentWorld && !mCurrentWorld->IsEditMode()) mGameModule->EndPlay(*mCurrentWorld);
+		if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(mGameModule); hooks && mCurrentWorld && !mCurrentWorld->IsEditMode()) hooks->EndPlay(*mCurrentWorld);
 		mCurrentWorld.reset();
 		AudioManager::ShutdownAudioManager();
 		TimerManager::ShutdownTimerManagers();
@@ -228,7 +228,7 @@ namespace ly
 
 		if(mPendingWorld && mPendingWorld!=mCurrentWorld)
 		{
-			if (mGameModule && mCurrentWorld && !mCurrentWorld->IsEditMode()) mGameModule->EndPlay(*mCurrentWorld);
+			if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(mGameModule); hooks && mCurrentWorld && !mCurrentWorld->IsEditMode()) hooks->EndPlay(*mCurrentWorld);
 			mCurrentWorld = nullptr;
 
 			TimerManager::GetGameTimerManager().ClearAllTimers();
@@ -236,7 +236,7 @@ namespace ly
 
 			mCurrentWorld = mPendingWorld;
 			mCurrentWorld->BeginPlayInternal();
-			if (mGameModule && !mCurrentWorld->IsEditMode()) mGameModule->BeginPlay(*mCurrentWorld);
+			if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(mGameModule); hooks && !mCurrentWorld->IsEditMode()) hooks->BeginPlay(*mCurrentWorld);
 		}
 	}
 	

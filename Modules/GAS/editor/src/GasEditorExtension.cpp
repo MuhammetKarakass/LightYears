@@ -1,9 +1,12 @@
+#include <editor/ScriptExecution.h>
 #include <gas/GasEditorExtension.h>
 #include <gas/GasContentSchemas.h>
 #include <editor/EditorGasDebugger.h>
 #include <editor/EditorExtensions.h>
 #include <editor/EditorScript.h>
 #include <imgui_internal.h>
+
+#include <gas/GasScriptCommands.h>
 
 namespace sas
 {
@@ -38,10 +41,9 @@ namespace sas
 		extensions.AddTool(tool);
 		extensions.inspectorWindows.push_back("Ability System");
 		extensions.AddPanel([tool](vega::EditorContext& context, vega::CommandHistory&) { if (tool->debugger.visible) tool->debugger.Build(context); });
-		for (const auto* name : {"gas-filter", "gas-select-player", "gas-reset-cooldowns", "gas-apply-effect", "gas-remove-effect", "gas-activate", "gas-panel", "expect-ability", "expect-effect", "expect-attribute", "expect-tag"})
-			extensions.AddScriptCommand(name, vega::EditorExtensions::ParsedScript{[tool](vega::EditorContext& context, const vega::EditorScriptCommand& command, std::string& detail)
-			{
-				return tool->debugger.Execute(context, command, detail);
-			}});
+		vega::RegisterGasScriptCommands(extensions.commands, [tool](vega::ScriptExecution& execution, const vega::EditorScriptCommand& command)
+		{
+			execution.success = tool->debugger.Execute(execution.context, command, execution.detail);
+		});
 	}
 }

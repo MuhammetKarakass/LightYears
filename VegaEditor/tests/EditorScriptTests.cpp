@@ -1,5 +1,13 @@
 #include "editor/EditorScript.h"
 #include <iostream>
+#include "editor/ScriptExecution.h"
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <editor/SkyScriptCommands.h>
+#include <gas/GasScriptCommands.h>
+#include <LightYearsScriptCommands.h>
+
 
 namespace
 {
@@ -14,10 +22,14 @@ namespace
 	}
 }
 
-int main()
+int main(int argc, char** argv)
 {
-	using vega::ParseEditorScriptLine;
-	using vega::ScriptOperation;
+	vega::ScriptCommandRegistry registry;
+	vega::RegisterCoreScriptCommands(registry);
+	const auto unused = [](vega::ScriptExecution&, const vega::EditorScriptCommand&) {};
+	vega::RegisterSkyScriptCommands(registry, unused);
+	vega::RegisterGasScriptCommands(registry, unused);
+	const auto ParseEditorScriptLine = [&](const std::string& line) { return vega::ParseEditorScriptLine(line, registry); };
 	for (const char* line : { "asset-move scripts moved/scripts", "asset-rename scripts/spin.lua rotate.lua", "asset-delete data/unused.json confirm", "expect-asset scripts/spin.lua true" })
 		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid asset command refused: " } + line);
 	for (const char* line : { "asset-move one", "asset-rename a b extra", "asset-delete a", "asset-delete a true", "expect-asset a maybe", "expect-asset \"\" true" })
@@ -35,10 +47,12 @@ int main()
 	for (const char* line : { "parent Child", "parent Child Root extra", "unparent", "unparent Child Root", "expect-parent Child", "expect-world-location Child nan 2", "expect-world-location Child 1 2 -1", "expect-world-location Child 1" })
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid hierarchy command accepted: " } + line);
 	{
-		const auto extension = ParseEditorScriptLine("inspect-widget \"with spaces\" 12 # comment",
-			[](const std::string& name) { return name == "inspect-widget"; });
-		Check(extension.command && extension.command->operation == ScriptOperation::Extension &&
-			extension.command->extensionName == "inspect-widget" && extension.command->values == std::vector<std::string>{ "with spaces", "12" },
+		vega::ScriptCommandRegistry extensionRegistry;
+		extensionRegistry.Add(vega::TokenScriptCommand("inspect-widget", vega::Schema("label:text count:uint"), "Test extension.", vega::ScriptMode::Any,
+			[](vega::EditorContext&, vega::CommandHistory&, const std::vector<std::string>&, std::string&) { return true; }));
+		const auto extension = vega::ParseEditorScriptLine("inspect-widget \"with spaces\" 12 # comment", extensionRegistry);
+		Check(extension.command && extension.command->operation == "inspect-widget" &&
+			extension.command->values == std::vector<std::string>{ "with spaces", "12" },
 			"Registered extension must receive decoded arguments");
 		Check(!ParseEditorScriptLine("inspect-widget value").error.empty(), "An unregistered extension must remain unknown");
 	}
@@ -46,116 +60,116 @@ int main()
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{"Invalid sky command accepted: "} + line);
 	for (const char* line : { "gas-filter unknown x", "gas-filter attributes", "gas-filter tags x extra", "gas-select-player extra", "gas-reset-cooldowns extra", "gas-apply-effect", "gas-remove-effect \"\"", "gas-activate", "gas-panel maybe", "expect-ability A blocked", "expect-effect E yes", "expect-tag T 1", "expect-attribute A != 1", "expect-attribute A > nan", "expect-attribute A > inf", "expect-attribute A > 1 extra", "expect-attribute A >" })
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid GAS command accepted: " } + line);
-	const std::pair<const char*, ScriptOperation> cases[]{
-		{"sky-open sol", ScriptOperation::SkyOpen}, {"sky-save", ScriptOperation::SkySave},
-		{"sky-set band.cool [0.2, 0.5, 1.0]", ScriptOperation::SkySet},
-		{"sky-set orbit.framing \"disk\"", ScriptOperation::SkySet},
-		{"expect-sky objects[0].at [0.2,0.7]", ScriptOperation::ExpectSky},
-		{"capture-sky \"Saved/sky test.png\"", ScriptOperation::CaptureSky},
-		{"sky-drag planet -120 60", ScriptOperation::SkyDrag},
-		{"sky-drag object.0.rotate 15 0", ScriptOperation::SkyDrag},
-		{"sky-drag orbit.disk 0 30", ScriptOperation::SkyDrag},
-		{ "gas-select-player", ScriptOperation::GasSelectPlayer },
-		{ "gas-reset-cooldowns", ScriptOperation::GasResetCooldowns },
-		{ "gas-apply-effect Effect.Buff", ScriptOperation::GasApplyEffect },
-		{ "gas-remove-effect Effect.Buff", ScriptOperation::GasRemoveEffect },
-		{ "gas-activate Ability.Test", ScriptOperation::GasActivate },
-		{ "gas-panel on", ScriptOperation::GasPanel },
-		{ "gas-filter attributes MovementSlow", ScriptOperation::GasFilter },
-		{ "gas-filter events \"\"", ScriptOperation::GasFilter },
-		{ "expect-ability Ability.Test ready", ScriptOperation::ExpectAbility },
-		{ "expect-ability Ability.Test cooldown", ScriptOperation::ExpectAbility },
-		{ "expect-ability Ability.Test active", ScriptOperation::ExpectAbility },
-		{ "expect-effect Effect.Buff true", ScriptOperation::ExpectEffect },
-		{ "expect-tag State.Buff false", ScriptOperation::ExpectTag },
-		{ "expect-attribute Owner.Speed == 1", ScriptOperation::ExpectAttribute },
-		{ "expect-attribute Owner.Speed < -1", ScriptOperation::ExpectAttribute },
-		{ "expect-attribute Owner.Speed > 1.25", ScriptOperation::ExpectAttribute },
-		{ "expect-attribute Owner.Speed <= 1", ScriptOperation::ExpectAttribute },
-		{ "expect-attribute Owner.Speed >= 1", ScriptOperation::ExpectAttribute },
-		{ "select-add \"Asteroid left\"", ScriptOperation::SelectAdd },
-		{ "select-remove 42", ScriptOperation::SelectRemove },
-		{ "select-all", ScriptOperation::SelectAll },
-		{ "select-rect -10 20 50 -70", ScriptOperation::SelectRect },
-		{ "expect-selection-count 3", ScriptOperation::ExpectSelectionCount },
-		{ "copy", ScriptOperation::Copy }, { "paste", ScriptOperation::Paste },
-		{ "paste 100 -20", ScriptOperation::Paste },
-		{ "move-selection -10 25", ScriptOperation::MoveSelection },
-		{ "set-prop-all \"Render Enabled\" false", ScriptOperation::SetPropAll },
-		{ "expect-console Info \"Lua says hello\"", ScriptOperation::ExpectConsole },
-		{ "expect-console Warning \"missing prefab\"", ScriptOperation::ExpectConsole },
-		{ "expect-console Error \"bad.lua:3\"", ScriptOperation::ExpectConsole },
-		{ "expect-no-errors", ScriptOperation::ExpectNoErrors }, { "clear-console", ScriptOperation::ClearConsole },
-		{ "profiler on", ScriptOperation::Profiler }, { "profiler off", ScriptOperation::Profiler },
-		{ "diagnostics on", ScriptOperation::Diagnostics }, { "diagnostics off", ScriptOperation::Diagnostics },
-		{ "expect-profile-scope \"World Tick\"", ScriptOperation::ExpectProfileScope },
-		{ "capture-profile \"Saved/profile test.json\"", ScriptOperation::CaptureProfile },
-		{ "create-prefab prefabs/BigRock.prefab.json", ScriptOperation::CreatePrefab },
-		{ "place-prefab prefabs/BigRock.prefab.json", ScriptOperation::PlacePrefab },
-		{ "place-prefab prefabs/BigRock.prefab.json 800 400", ScriptOperation::PlacePrefab },
-		{ "create-variant prefabs/Rock.prefab.json prefabs/BigRock.prefab.json", ScriptOperation::CreateVariant },
-		{ "apply-prefab-prop HealthComponent \"Max Health\"", ScriptOperation::ApplyPrefabProp },
-		{ "revert-prefab-prop Actor Velocity", ScriptOperation::RevertPrefabProp },
-		{ "expect-prefab none", ScriptOperation::ExpectPrefab },
-		{ "expect-overridden Actor Velocity true", ScriptOperation::ExpectOverridden },
-		{ "reload-prefabs", ScriptOperation::ReloadPrefabs },
-		{ "open-prefab prefabs/BigRock.prefab.json", ScriptOperation::OpenPrefab },
-		{ "save-prefab", ScriptOperation::SavePrefab },
-		{ "close-prefab", ScriptOperation::ClosePrefab },
-		{ "set-project-startup scenes/start.scene.json", ScriptOperation::SetProjectStartup },
-		{ "set-project-startup \"\"", ScriptOperation::SetProjectStartup },
-		{ "expect-project-startup \"\"", ScriptOperation::ExpectProjectStartup },
-		{ "expect-project-startup scenes/start.scene.json", ScriptOperation::ExpectProjectStartup },
-		{ "new-scene", ScriptOperation::NewScene }, { "open-scene scenes/sandbox.scene.json", ScriptOperation::OpenScene },
-		{ "save-scene \"D:/build/temp scene.scene.json\"", ScriptOperation::SaveScene },
-		{ "create Asteroid", ScriptOperation::Create }, { "delete", ScriptOperation::Delete }, { "duplicate", ScriptOperation::Duplicate },
-		{ "create-many Asteroid 400", ScriptOperation::CreateMany },
-		{ "play-mode", ScriptOperation::PlayMode }, { "stop", ScriptOperation::Stop },
-		{ "expect-mode edit", ScriptOperation::ExpectMode }, { "expect-mode play", ScriptOperation::ExpectMode },
-		{ "expect-entity-count 7", ScriptOperation::ExpectEntityCount }, { "expect-scene-dirty false", ScriptOperation::ExpectSceneDirty },
-		{ "tool move", ScriptOperation::Tool }, { "tool rotate", ScriptOperation::Tool },
-		{ "snap on", ScriptOperation::Snap }, { "snap off", ScriptOperation::Snap },
-		{ "grid on", ScriptOperation::Grid }, { "grid off", ScriptOperation::Grid },
-		{ "colliders on", ScriptOperation::Colliders }, { "colliders off", ScriptOperation::Colliders },
-		{ "content-view grid", ScriptOperation::ContentView }, { "content-view list", ScriptOperation::ContentView },
-		{ "add-script scripts/spin.lua", ScriptOperation::AddScript },
-		{ "expect-script-error none", ScriptOperation::ExpectScriptError },
-		{ "expect-prop-error \"Cannot load texture\"", ScriptOperation::ExpectPropError },
-		{ "expect-script-error \"spin.lua:4\"", ScriptOperation::ExpectScriptError },
-		{ "wait-seconds 0.5", ScriptOperation::WaitSeconds },
-		{ "remember-rotation", ScriptOperation::RememberRotation },
-		{ "expect-rotation-changed", ScriptOperation::ExpectRotationChanged },
-		{ "camera editor", ScriptOperation::Camera }, { "camera game", ScriptOperation::Camera },
-		{ "focus", ScriptOperation::Focus }, { "zoom 2", ScriptOperation::Zoom },
-		{ "pan -500 0", ScriptOperation::Pan }, { "expect-visible", ScriptOperation::ExpectVisible },
-		{ "expect-camera editor", ScriptOperation::ExpectCamera }, { "expect-camera game", ScriptOperation::ExpectCamera },
-		{ "pause", ScriptOperation::Pause }, { "play", ScriptOperation::Play },
-		{ "wait 12", ScriptOperation::Wait }, { "select 11", ScriptOperation::Select },
-		{ "select-type PlayerSpaceShip", ScriptOperation::SelectType },
-		{ "select-type Actor 2", ScriptOperation::SelectType },
-		{ "move -2.5 300", ScriptOperation::Move }, { "rotate 90", ScriptOperation::Rotate },
-		{ "undo", ScriptOperation::Undo }, { "redo", ScriptOperation::Redo },
-		{ "expect-selected PlayerSpaceShip", ScriptOperation::ExpectSelected },
-		{ "expect-location 400 300", ScriptOperation::ExpectLocation },
-		{ "expect-location 400 300 0.01", ScriptOperation::ExpectLocation },
-		{ "expect-count Actor 3", ScriptOperation::ExpectCount },
-		{ "capture subdir/smoke.png", ScriptOperation::Capture }, { "quit", ScriptOperation::Quit },
-		{ "remember-location", ScriptOperation::RememberLocation },
-		{ "expect-remembered-location", ScriptOperation::ExpectRememberedLocation },
-		{ "open-json content/data/ships.json", ScriptOperation::OpenJson },
-		{ "json-set /ships/0/health 280.0", ScriptOperation::JsonSet },
-		{ "expect-json /flag true", ScriptOperation::ExpectJson },
-		{ "expect-json-dirty false", ScriptOperation::ExpectJsonDirty },
-		{ "json-save", ScriptOperation::JsonSave }, { "json-revert", ScriptOperation::JsonRevert },
-		{ "export out/LightYears", ScriptOperation::Export },
-		{ "export \"path with spaces/LightYears\" overwrite", ScriptOperation::Export },
-		{ "expect-export-ok", ScriptOperation::ExpectExportOk }
+	const std::pair<const char*, std::string> cases[]{
+		{"sky-open sol", "sky-open"}, {"sky-save", "sky-save"},
+		{"sky-set band.cool [0.2, 0.5, 1.0]", "sky-set"},
+		{"sky-set orbit.framing \"disk\"", "sky-set"},
+		{"expect-sky objects[0].at [0.2,0.7]", "expect-sky"},
+		{"capture-sky \"Saved/sky test.png\"", "capture-sky"},
+		{"sky-drag planet -120 60", "sky-drag"},
+		{"sky-drag object.0.rotate 15 0", "sky-drag"},
+		{"sky-drag orbit.disk 0 30", "sky-drag"},
+		{ "gas-select-player", "gas-select-player" },
+		{ "gas-reset-cooldowns", "gas-reset-cooldowns" },
+		{ "gas-apply-effect Effect.Buff", "gas-apply-effect" },
+		{ "gas-remove-effect Effect.Buff", "gas-remove-effect" },
+		{ "gas-activate Ability.Test", "gas-activate" },
+		{ "gas-panel on", "gas-panel" },
+		{ "gas-filter attributes MovementSlow", "gas-filter" },
+		{ "gas-filter events \"\"", "gas-filter" },
+		{ "expect-ability Ability.Test ready", "expect-ability" },
+		{ "expect-ability Ability.Test cooldown", "expect-ability" },
+		{ "expect-ability Ability.Test active", "expect-ability" },
+		{ "expect-effect Effect.Buff true", "expect-effect" },
+		{ "expect-tag State.Buff false", "expect-tag" },
+		{ "expect-attribute Owner.Speed == 1", "expect-attribute" },
+		{ "expect-attribute Owner.Speed < -1", "expect-attribute" },
+		{ "expect-attribute Owner.Speed > 1.25", "expect-attribute" },
+		{ "expect-attribute Owner.Speed <= 1", "expect-attribute" },
+		{ "expect-attribute Owner.Speed >= 1", "expect-attribute" },
+		{ "select-add \"Asteroid left\"", "select-add" },
+		{ "select-remove 42", "select-remove" },
+		{ "select-all", "select-all" },
+		{ "select-rect -10 20 50 -70", "select-rect" },
+		{ "expect-selection-count 3", "expect-selection-count" },
+		{ "copy", "copy" }, { "paste", "paste" },
+		{ "paste 100 -20", "paste" },
+		{ "move-selection -10 25", "move-selection" },
+		{ "set-prop-all \"Render Enabled\" false", "set-prop-all" },
+		{ "expect-console Info \"Lua says hello\"", "expect-console" },
+		{ "expect-console Warning \"missing prefab\"", "expect-console" },
+		{ "expect-console Error \"bad.lua:3\"", "expect-console" },
+		{ "expect-no-errors", "expect-no-errors" }, { "clear-console", "clear-console" },
+		{ "profiler on", "profiler" }, { "profiler off", "profiler" },
+		{ "diagnostics on", "diagnostics" }, { "diagnostics off", "diagnostics" },
+		{ "expect-profile-scope \"World Tick\"", "expect-profile-scope" },
+		{ "capture-profile \"Saved/profile test.json\"", "capture-profile" },
+		{ "create-prefab prefabs/BigRock.prefab.json", "create-prefab" },
+		{ "place-prefab prefabs/BigRock.prefab.json", "place-prefab" },
+		{ "place-prefab prefabs/BigRock.prefab.json 800 400", "place-prefab" },
+		{ "create-variant prefabs/Rock.prefab.json prefabs/BigRock.prefab.json", "create-variant" },
+		{ "apply-prefab-prop HealthComponent \"Max Health\"", "apply-prefab-prop" },
+		{ "revert-prefab-prop Actor Velocity", "revert-prefab-prop" },
+		{ "expect-prefab none", "expect-prefab" },
+		{ "expect-overridden Actor Velocity true", "expect-overridden" },
+		{ "reload-prefabs", "reload-prefabs" },
+		{ "open-prefab prefabs/BigRock.prefab.json", "open-prefab" },
+		{ "save-prefab", "save-prefab" },
+		{ "close-prefab", "close-prefab" },
+		{ "set-project-startup scenes/start.scene.json", "set-project-startup" },
+		{ "set-project-startup \"\"", "set-project-startup" },
+		{ "expect-project-startup \"\"", "expect-project-startup" },
+		{ "expect-project-startup scenes/start.scene.json", "expect-project-startup" },
+		{ "new-scene", "new-scene" }, { "open-scene scenes/sandbox.scene.json", "open-scene" },
+		{ "save-scene \"D:/build/temp scene.scene.json\"", "save-scene" },
+		{ "create Asteroid", "create" }, { "delete", "delete" }, { "duplicate", "duplicate" },
+		{ "create-many Asteroid 400", "create-many" },
+		{ "play-mode", "play-mode" }, { "stop", "stop" },
+		{ "expect-mode edit", "expect-mode" }, { "expect-mode play", "expect-mode" },
+		{ "expect-entity-count 7", "expect-entity-count" }, { "expect-scene-dirty false", "expect-scene-dirty" },
+		{ "tool move", "tool" }, { "tool rotate", "tool" },
+		{ "snap on", "snap" }, { "snap off", "snap" },
+		{ "grid on", "grid" }, { "grid off", "grid" },
+		{ "colliders on", "colliders" }, { "colliders off", "colliders" },
+		{ "content-view grid", "content-view" }, { "content-view list", "content-view" },
+		{ "add-script scripts/spin.lua", "add-script" },
+		{ "expect-script-error none", "expect-script-error" },
+		{ "expect-prop-error \"Cannot load texture\"", "expect-prop-error" },
+		{ "expect-script-error \"spin.lua:4\"", "expect-script-error" },
+		{ "wait-seconds 0.5", "wait-seconds" },
+		{ "remember-rotation", "remember-rotation" },
+		{ "expect-rotation-changed", "expect-rotation-changed" },
+		{ "camera editor", "camera" }, { "camera game", "camera" },
+		{ "focus", "focus" }, { "zoom 2", "zoom" },
+		{ "pan -500 0", "pan" }, { "expect-visible", "expect-visible" },
+		{ "expect-camera editor", "expect-camera" }, { "expect-camera game", "expect-camera" },
+		{ "pause", "pause" }, { "play", "play" },
+		{ "wait 12", "wait" }, { "select 11", "select" },
+		{ "select-type PlayerSpaceShip", "select-type" },
+		{ "select-type Actor 2", "select-type" },
+		{ "move -2.5 300", "move" }, { "rotate 90", "rotate" },
+		{ "undo", "undo" }, { "redo", "redo" },
+		{ "expect-selected PlayerSpaceShip", "expect-selected" },
+		{ "expect-location 400 300", "expect-location" },
+		{ "expect-location 400 300 0.01", "expect-location" },
+		{ "expect-count Actor 3", "expect-count" },
+		{ "capture subdir/smoke.png", "capture" }, { "quit", "quit" },
+		{ "remember-location", "remember-location" },
+		{ "expect-remembered-location", "expect-remembered-location" },
+		{ "open-json content/data/ships.json", "open-json" },
+		{ "json-set /ships/0/health 280.0", "json-set" },
+		{ "expect-json /flag true", "expect-json" },
+		{ "expect-json-dirty false", "expect-json-dirty" },
+		{ "json-save", "json-save" }, { "json-revert", "json-revert" },
+		{ "export out/LightYears", "export" },
+		{ "export \"path with spaces/LightYears\" overwrite", "export" },
+		{ "expect-export-ok", "expect-export-ok" }
 	};
 	for (const auto& test : cases)
 	{
 		const auto parsed = ParseEditorScriptLine(test.first);
 		Check(parsed.command && parsed.error.empty() && parsed.command->operation == test.second, std::string{ "Parse failed: " } + test.first);
-		Check(test.second == ScriptOperation::SetPropAll || !ParseEditorScriptLine(std::string{ test.first } + " extra").error.empty(), std::string{ "Extra argument accepted: " } + test.first);
+		Check(test.second == "set-prop-all" || !ParseEditorScriptLine(std::string{ test.first } + " extra").error.empty(), std::string{ "Extra argument accepted: " } + test.first);
 		const auto commented = ParseEditorScriptLine(std::string{ " \t" } + test.first + " # trailing comment\r");
 		Check(commented.command && commented.command->operation == test.second, "Comment or whitespace changed command");
 	}
@@ -183,7 +197,7 @@ int main()
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid diagnostics command accepted: " } + line);
 	const auto console = ParseEditorScriptLine("expect-console Error \"a.lua:4 # details\"");
 	Check(console.command && console.command->property == "Error" && console.command->text == "a.lua:4 # details", "Console arguments preserved");
-	Check(ParseEditorScriptLine("save-scene").command->operation == ScriptOperation::SaveScene, "Save current scene must parse");
+	Check(ParseEditorScriptLine("save-scene").command->operation == "save-scene", "Save current scene must parse");
 	Check(ParseEditorScriptLine("rename Rock A # comment").command->text == "Rock A", "Rename must join the rest of the line");
 	Check(ParseEditorScriptLine("select-name \"Rock # A\"").command->text == "Rock # A", "Quoted entity name lost");
 	for (const char* line : { "rename", "rename \"\"", "select-name", "select-name \"\"", "open-scene", "save-scene \"\"",
@@ -203,11 +217,11 @@ int main()
 	Check(ParseEditorScriptLine("expect-count Actor 3").command->number == 3, "Expected count lost");
 	Check(ParseEditorScriptLine("capture subdir/smoke.png").command->text == "subdir/smoke.png", "Capture path lost");
 	const auto property = ParseEditorScriptLine("set-prop HealthComponent \"Max Health\" 250");
-	Check(property.command && property.command->operation == ScriptOperation::SetProp &&
+	Check(property.command && property.command->operation == "set-prop" &&
 		property.command->text == "HealthComponent" && property.command->property == "Max Health" &&
 		property.command->values == std::vector<std::string>{ "250" }, "Quoted property arguments lost");
 	const auto expect = ParseEditorScriptLine("expect-prop Actor \"Location\" 1 2 0.01 # comment");
-	Check(expect.command && expect.command->operation == ScriptOperation::ExpectProp &&
+	Check(expect.command && expect.command->operation == "expect-prop" &&
 		expect.command->values == std::vector<std::string>{ "1", "2", "0.01" }, "Property expectation values lost");
 	const auto hash = ParseEditorScriptLine("set-prop Actor \"Text # label\" \"a \\\"quote\\\" and \\\\ slash\"");
 	Check(hash.command && hash.command->property == "Text # label" &&
@@ -248,7 +262,7 @@ int main()
 		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid scripting command accepted");
 	Check(ParseEditorScriptLine("export \"out dir\" overwrite").command->overwrite, "Export overwrite flag lost");
 	Check(!ParseEditorScriptLine("export out").command->overwrite, "Export must not overwrite by default");
-	Check(ParseEditorScriptLine("add-component HealthComponent").command->operation == ScriptOperation::AddComponent, "Add component parsing failed");
+	Check(ParseEditorScriptLine("add-component HealthComponent").command->operation == "add-component", "Add component parsing failed");
 	Check(ParseEditorScriptLine("remove-component SpriteComponent").command->number == 0, "Default component occurrence must be zero");
 	Check(ParseEditorScriptLine("remove-component SpriteComponent 2").command->number == 2, "Component occurrence lost");
 	Check(ParseEditorScriptLine("expect-component HealthComponent present").command->property == "present", "Component presence lost");
@@ -291,6 +305,23 @@ int main()
 	Check(ParseEditorScriptLine(R"(content-set modifiers [{"attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": 2.0}])").command.has_value(), "Composite JSON argument rejected");
 	for (const char* line : { "content-set values [1,", "content-set values [1]x", "content-set values {bad}", "content-set values [{]" })
 		Check(!ParseEditorScriptLine(line).error.empty(), "Malformed composite content JSON accepted");
+	Check(ParseEditorScriptLine("help").command.has_value() && ParseEditorScriptLine("help move").command.has_value(), "Help schema failed");
+	Check(!ParseEditorScriptLine("help move extra").error.empty(), "Help accepted extra arguments");
+	Check(registry.Help().find("sky-drag") != std::string::npos && registry.Help("move").find("x:real") != std::string::npos, "Help must use registry declarations");
+	bool duplicateRejected = false;
+	try { registry.Add(*registry.Find("move")); } catch (const std::invalid_argument&) { duplicateRejected = true; }
+	Check(duplicateRejected, "Duplicate commands must be rejected");
+	registry.Add(ly::PlayerShipScriptCommand(
+		[](vega::EditorContext&, vega::CommandHistory&, const std::vector<std::string>&, std::string&) { return true; }));
+	if (argc == 2 && std::string{argv[1]} == "--write-doc")
+	{
+		std::ofstream document{VEGA_COMMAND_DOC, std::ios::binary};
+		document << registry.Markdown();
+		return document && !failures ? 0 : 1;
+	}
+	std::ifstream document{VEGA_COMMAND_DOC, std::ios::binary};
+	std::ostringstream contents; contents << document.rdbuf();
+	Check(contents.str() == registry.Markdown(), "docs/editor-script-commands.md is out of sync with the registry");
 	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;

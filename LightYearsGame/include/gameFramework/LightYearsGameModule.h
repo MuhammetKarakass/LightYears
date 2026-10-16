@@ -7,7 +7,9 @@ namespace ly
 	class GameVisualPipeline;
 
 	// Runtime services are shared by the standalone application and Play in editor.
-	class LightYearsGameModule : public vega::GameModule
+	class LightYearsGameModule : public vega::GameModule, public vega::IModuleSetup, public vega::IPlayerProvider,
+		public vega::IActorDisplayInfo, public vega::ISceneSettingsHandler,
+		public vega::IAppLoopHooks, public vega::IContentReload
 	{
 	public:
 		LightYearsGameModule();

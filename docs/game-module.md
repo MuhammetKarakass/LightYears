@@ -8,12 +8,16 @@ marker classes.
 
 Each application owns one module. Call
 `application.RegisterGameModule(module, editor)` once before running it. This
-registers types, then initializes services. The module must outlive the worlds.
+registers types, then initializes services through `IModuleSetup` when present.
+The module must outlive the worlds.
 The editor owns the module passed to `vega::CreateEditorApplication` and calls
-`ConfigureProject` with the selected project file before registration. Hosts
-forward tick, events, after-render and exit-code queries through the contract.
+`IModuleSetup::ConfigureProject` with the selected project file before registration.
+Hosts query optional capabilities through `QueryCapability<T>(module)`; a missing
+capability keeps the previous no-op, empty or zero behavior. Queries return
+non-owning pointers, preserve constness and accept null modules. RTTI is confined
+to this helper.
 
-Required methods are `Name`, `RegisterTypes`, `Initialize` and `CreateLevel`.
+Required methods are only `Name`, `RegisterTypes` and `CreateLevel`.
 `CreateLevel(application, sceneJson, edit)` returns an unstarted world. The
 host queues it through `Application::LoadWorld(shared_ptr<World>)`, using the
 same deferred swap as the typed overload. Edit worlds report `IsEditMode()`,
@@ -21,15 +25,51 @@ pause gameplay and load entities without starting gameplay lifecycles. Play
 worlds use the game's normal scene and player setup. Standalone scene loading
 and Play in editor use this same factory.
 
-Optional `BeginPlay` runs after a play world's normal `BeginPlayInternal`;
+| Optional interface | Methods |
+| --- | --- |
+| `IModuleSetup` | `ConfigureProject`, `Initialize` |
+| `IPlayHooks` | `BeginPlay`, `EndPlay` |
+| `IPlayerProvider` | `PlayerActor` |
+| `IActorDisplayInfo` | `DisplayInfo` |
+| `IEditorProvider` | `RegisterEditorExtensions` |
+| `ISceneSettingsHandler` | `ApplySceneSettings`, `SceneBackdropState` |
+| `IAppLoopHooks` | `Tick`, `HandleEvent`, `AfterRender`, `ExitCode` |
+| `IContentReload` | `ReloadContent` |
+
+Implement only the interfaces the game uses, with public multiple inheritance.
+Blank implements `GameModule`, `IModuleSetup` and `IPlayerProvider`. LightYears
+also implements display information, scene settings, app loop and content reload;
+its editor adapter adds `IEditorProvider`. Neither needs `IPlayHooks` today.
+
+```cpp
+class MinimalModule final : public vega::GameModule
+{
+public:
+	const char* Name() const override { return "Minimal"; }
+	void RegisterTypes() override { ly::reflect::RegisterEngineTypes(); }
+	std::shared_ptr<ly::World> CreateLevel(ly::Application& application,
+		const nlohmann::json& scene, bool edit) override
+	{
+		return std::make_shared<MySceneWorld>(&application, scene, edit);
+	}
+};
+
+if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(module))
+	hooks->BeginPlay(world);
+```
+
+`MySceneWorld` is the game's world implementation; its constructor loads the
+scene and records the edit flag, as Blank's `BlankWorld` does.
+
+Optional `IPlayHooks::BeginPlay` runs after a play world's normal `BeginPlayInternal`;
 `EndPlay` runs before replacement or shutdown. Neither runs for edit worlds.
 `PlayerActor` returns an optional actor from the requested world. `DisplayInfo`
 returns spawn marker metadata and a label, letting the editor render and pick
 markers without knowing their C++ types. `ApplySceneSettings` and
 `SceneBackdropState` bridge presentation settings.
 
-`ReloadContent(const std::vector<std::filesystem::path>& paths)` is an optional
-default no-op. The editor calls it on the main thread for changed, valid JSON
+`IContentReload::ReloadContent(const std::vector<std::filesystem::path>& paths)`
+is optional. The editor calls it on the main thread for changed, valid JSON
 files in the selected authoring asset root, including saves during Play. Paths
 are absolute. A half-second poll checks timestamps and sizes; it excludes scenes,
 project files, linked directories and `.vega`. An incomplete JSON write waits
@@ -57,7 +97,7 @@ module. LightYears retains those registrations and its existing runtime setup.
 
 ## Editor extensions
 
-Override `RegisterEditorExtensions(vega::EditorExtensions&)` in the game's
+Implement `IEditorProvider::RegisterEditorExtensions(vega::EditorExtensions&)` in the game's
 editor adapter. Include `editor/EditorExtensions.h` there; standalone games
 need no editor dependency.
 
@@ -67,9 +107,40 @@ need no editor dependency.
   coordinates, texture size, hover state, context and command history. It
   supports overlays and handles; use history commands for authored changes.
 - `AddHierarchyMenu(callback)` emits items in the Hierarchy menus.
-- `AddScriptCommand(name, callback)` adds a verb receiving decoded argument
-  tokens, context, history and a diagnostic string. It validates arguments and
-  returns success. Unregistered verbs remain errors; core verbs have priority.
+- `AddScriptCommand(definition)` adds a verb to the same owned registry used by
+  core and optional modules. A definition supplies its name, argument schema,
+  help, mode requirement, decoder and execution handler. Duplicate names are
+  rejected. Unregistered verbs remain errors.
+
+For decoded token callbacks, `TokenScriptCommand` supplies the decoder and
+execution adapter:
+
+```cpp
+extensions.AddScriptCommand(vega::TokenScriptCommand(
+	"expect-widget", vega::Schema("name:text [count:uint]"),
+	"Assert a widget by name and optional count.", vega::ScriptMode::Any,
+	[](vega::EditorContext& context, vega::CommandHistory& history,
+		const std::vector<std::string>& arguments, std::string& detail)
+	{
+		return CheckWidget(context, arguments, detail);
+	}));
+```
+
+Schemas declare argument counts, types, optional arguments and repeated values.
+`text` requires a nonempty decoded string; `string` permits an empty one. Both
+accept quoted strings. `json` uses the original token spelling. Explicit count
+sets express paired optional coordinates. Custom decoders preserve semantic
+validation such as property-dependent types and JSON pointer rules. Handlers
+keep their original mode checks and diagnostics. `help [command]` uses the live
+registry, so it includes only installed modules and the current game's commands.
+See [the generated command reference](editor-script-commands.md).
+
+`VegaEditorScriptTests --write-doc` regenerates that reference from the core,
+Sky, GAS and LightYears adapter declarations. `VegaEditorScript` checks it is
+byte-for-byte in sync. New commands need no parser branch, operation enum entry
+or central execution switch. Core declarations and handlers live in
+`VegaEditor/src/commands`, grouped by area; module declarations live beside
+their extensions.
 
 Callbacks run on the editor thread. Panels and scripts receive the active scene
 or prefab context; viewport and Hierarchy callbacks receive the scene context.

@@ -52,9 +52,9 @@ namespace vega
 		const bool sourceReadOnly = unattended && Within(mDocument.Root(), VEGA_SOURCE_ROOT) && !Within(mDocument.Root(), VEGA_BUILD_ROOT);
 		if (!sourceReadOnly && AssetMovePlan::RecoverPending(mDocument.Root(), mProject.file, mAssetRecoveryError) && std::filesystem::exists(mProject.file))
 			mProject.settings = ly::ProjectSettings::Load(mProject.file);
-		mModule->ConfigureProject(mProject.file);
+		if (auto* setup = QueryCapability<IModuleSetup>(mModule.get())) setup->ConfigureProject(mProject.file);
 		RegisterGameModule(*mModule, true);
-		mModule->RegisterEditorExtensions(mExtensions);
+		if (auto* provider = QueryCapability<IEditorProvider>(mModule.get())) provider->RegisterEditorExtensions(mExtensions);
 		mContext.extensions = mPrefabContext.extensions = &mExtensions;
 		std::snprintf(mExportDirectory, sizeof(mExportDirectory), "%s", mProject.exportDir.string().c_str());
 		if (!ImGui::SFML::Init(GetRenderWindow()))
@@ -122,7 +122,7 @@ namespace vega
 		}
 #endif
 		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
-		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
+		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout, mExtensions.commands);
 		// Source-root automation stays read-only, just like generated Lua tooling.
 		// Disposable project copies get the complete autosave/recovery lifecycle.
 		const bool sourceAutomation = scriptRequested && Within(mDocument.Root(), VEGA_SOURCE_ROOT) && !Within(mDocument.Root(), VEGA_BUILD_ROOT);
@@ -151,7 +151,7 @@ namespace vega
 			return mContentAuthoring.Execute(mContext, mHistory, mDocument.Root(), command, detail);
 		};
 		mContext.sceneSettings = &mSceneSettings;
-		mContext.backdropState = [this]() { return mModule->SceneBackdropState(); };
+		mContext.backdropState = [this]() { const auto* handler = QueryCapability<ISceneSettingsHandler>(mModule.get()); return handler ? handler->SceneBackdropState() : std::string{}; };
 		mContext.applySettings = [this](const nlohmann::json& authored)
 		{
 			// Invalid legacy values stay visible and serializable. Presentation gets
@@ -165,7 +165,7 @@ namespace vega
 			if (mContext.world)
 			{
 				mContext.world->SetSceneBounds(ly::ReadSceneBounds(effective));
-				mModule->ApplySceneSettings(effective);
+				ApplySceneSettings(effective);
 			}
 		};
 		mContext.console = mPrefabContext.console = &mDiagnostics.capture.Buffer();
@@ -314,12 +314,13 @@ namespace vega
 		if (mScript && !mContext.transitioning && mScript->Step(mPrefabWorld ? mPrefabContext : mContext, mPrefabWorld ? mPrefabHistory : mHistory, window)) QuitApplication();
 		// The world is drawn into the viewport texture, so the window holds the finished frame only once the UI is on
 		// it (and only then is the window's framebuffer the active one); run the --visual-capture step after that.
-		mModule->AfterRender();
+		if (auto* hooks = QueryCapability<IAppLoopHooks>(mModule.get())) hooks->AfterRender();
 	}
 
 	int EditorApplication::GetExitCode() const
 	{
-		return mScript ? mScript->ExitCode() : mModule->ExitCode();
+		const auto* hooks = QueryCapability<IAppLoopHooks>(mModule.get());
+		return mScript ? mScript->ExitCode() : hooks ? hooks->ExitCode() : 0;
 	}
 
 	void EditorApplication::BuildUI()
@@ -695,7 +696,8 @@ namespace vega
 			if (auto* released = remapped.getIf<sf::Event::MouseButtonReleased>()) released->position = toTexture(released->position);
 			if (auto* moved = remapped.getIf<sf::Event::MouseMoved>()) moved->position = toTexture(moved->position);
 			if (auto* wheel = remapped.getIf<sf::Event::MouseWheelScrolled>()) wheel->position = toTexture(wheel->position);
-			if (!mModule->HandleEvent(remapped))
+			auto* hooks = QueryCapability<IAppLoopHooks>(mModule.get());
+			if (!hooks || !hooks->HandleEvent(remapped))
 			{
 				if (ly::World* world = GetCurrentWorld())
 				{
@@ -704,6 +706,7 @@ namespace vega
 			}
 			return true;
 		}
-		return mModule->HandleEvent(event);
+		auto* hooks = QueryCapability<IAppLoopHooks>(mModule.get());
+		return hooks && hooks->HandleEvent(event);
 	}
 }
