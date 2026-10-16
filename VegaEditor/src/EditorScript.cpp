@@ -338,8 +338,72 @@ namespace vega
 			break;
 		}
 		case ScriptOperation::Delete:
-			if (actor && actor->FindComponent<ly::SceneEntityComponent>()) success = history.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+			success = DeleteSelection(context, history);
 			break;
+		case ScriptOperation::SelectAdd:
+		case ScriptOperation::SelectRemove:
+		{
+			std::shared_ptr<ly::Actor> target;
+			unsigned int id = 0;
+			const auto number = std::from_chars(command.text.data(), command.text.data() + command.text.size(), id);
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+			{
+				const auto candidate = weak.lock();
+				if (!candidate || candidate->GetIsPendingDestroy()) continue;
+				const auto* identity = candidate->FindComponent<ly::SceneEntityComponent>();
+				if ((identity && (identity->name == command.text || identity->guid == command.text)) ||
+					(number.ec == std::errc{} && number.ptr == command.text.data() + command.text.size() && candidate->GetUniqueID() == id))
+				{
+					target = candidate;
+					break;
+				}
+			}
+			if (target)
+			{
+				if (command.operation == ScriptOperation::SelectAdd) context.selection.Add(target);
+				else context.selection.Remove(target);
+				success = true;
+			}
+			break;
+		}
+		case ScriptOperation::SelectAll:
+			context.selection.Clear();
+			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>()) context.selection.Add(weak);
+			success = true;
+			break;
+		case ScriptOperation::SelectRect:
+			SelectRectangle(context, command.location, command.rectangleEnd);
+			success = true;
+			break;
+		case ScriptOperation::ExpectSelectionCount:
+			success = context.selection.Count() == command.number;
+			detail = "selection count " + std::to_string(context.selection.Count()) + " expected " + std::to_string(command.number);
+			break;
+		case ScriptOperation::MoveSelection:
+			success = TransformSelection(context, history, CaptureSelectionTransform(context.selection), context.selection.Centre(), command.location);
+			break;
+		case ScriptOperation::Copy: success = CopySelection(context); break;
+		case ScriptOperation::Paste:
+			success = PasteSelection(context, history, command.number ? command.location : context.world->GetWorldView().getCenter());
+			break;
+		case ScriptOperation::SetPropAll:
+		{
+			MultiInspectorCache cache;
+			const auto& rows = cache.Get(context);
+			const CommonProperty* match = nullptr;
+			bool ambiguous = false;
+			for (const auto& row : rows) if (row.property->name == command.property)
+			{
+				if (match) ambiguous = true;
+				match = &row;
+			}
+			ly::reflect::PropertyValue value;
+			float tolerance = command.tolerance;
+			if (!match || ambiguous) detail = "Unknown or ambiguous common property";
+			else if (!ParsePropertyValue(*match->property, command.values, false, value, tolerance)) detail = "Invalid common property value";
+			else success = SetCommonProperty(context, history, *match, value);
+			break;
+		}
 		case ScriptOperation::Duplicate: success = DuplicateSceneEntity(context, history); break;
 		case ScriptOperation::Rename: success = RenameSceneEntity(context, history, command.text); break;
 		case ScriptOperation::SelectName:

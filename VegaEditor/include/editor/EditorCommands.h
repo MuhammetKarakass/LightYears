@@ -49,7 +49,7 @@ namespace vega
 		std::optional<unsigned int> prefabOverrideActor;
 		std::uint64_t prefabOverrideRevision = 0;
 		std::unordered_map<const void*, std::unordered_set<std::string>> prefabOverrides;
-		void SceneChanged() { ++sceneRevision; }
+		void SceneChanged() { ++sceneRevision; selection.Rebind([this](const std::string& guid) { return ResolveGuid(guid); }); }
 		void ResetActorCache() const { cachedWorldID.reset(); }
 		void RefreshActorCache() const;
 		mutable std::optional<unsigned int> cachedWorldID;
@@ -78,6 +78,27 @@ namespace vega
 		virtual bool IsUndoable() const { return true; }
 		virtual bool ChangesScene() const { return IsUndoable(); }
 		virtual bool IsValid(const EditorContext&) const { return true; }
+	};
+
+	// A gesture is atomic: failed children roll back, undo runs in reverse order.
+	class CompoundCommand final : public EditorCommand
+	{
+	public:
+		explicit CompoundCommand(std::string name, std::uint64_t group = 0, bool selectCreated = false)
+			: mName{ std::move(name) }, mGroup{ group }, mSelectCreated{ selectCreated } {}
+		void Add(std::unique_ptr<EditorCommand> command) { mCommands.push_back(std::move(command)); }
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		bool MergeWith(const EditorCommand&) override;
+		bool IsValid(const EditorContext&) const override;
+		std::string Name() const override { return mName; }
+	private:
+		std::string mName;
+		std::uint64_t mGroup;
+		bool mSelectCreated;
+		bool mExecuted = false;
+		EditorSelection mBefore, mAfter;
+		std::vector<std::unique_ptr<EditorCommand>> mCommands;
 	};
 
 	class CommandHistory
@@ -269,4 +290,39 @@ namespace vega
 	bool CreateSceneEntity(EditorContext&, CommandHistory&, const std::string& type);
 	bool DuplicateSceneEntity(EditorContext&, CommandHistory&);
 	bool RenameSceneEntity(EditorContext&, CommandHistory&, const std::string& name, std::uint64_t group = 0);
+	struct SelectionTransform
+	{
+		unsigned int id;
+		sf::Vector2f location;
+		float rotation;
+	};
+	std::vector<SelectionTransform> CaptureSelectionTransform(const EditorSelection&);
+	bool TransformSelection(EditorContext&, CommandHistory&, const std::vector<SelectionTransform>&,
+		sf::Vector2f pivot, sf::Vector2f delta, std::optional<float> angle = {}, std::uint64_t group = 0);
+	bool DeleteSelection(EditorContext&, CommandHistory&);
+	bool CopySelection(EditorContext&);
+	bool PasteSelection(EditorContext&, CommandHistory&, sf::Vector2f centre);
+	void SelectRectangle(EditorContext&, sf::Vector2f first, sf::Vector2f last, bool add = false, bool remove = false);
+
+	struct CommonProperty
+	{
+		std::string section;
+		const ly::reflect::PropertyInfo* property;
+		std::vector<std::optional<ly::ComponentIdentity>> targets;
+		ly::reflect::PropertyValue value;
+		bool mixed = false;
+	};
+	// Values/descriptors only; never JSON or object pointers. Rebuilt after a scene/selection edit.
+	class MultiInspectorCache
+	{
+	public:
+		const std::vector<CommonProperty>& Get(EditorContext&);
+	private:
+		std::optional<std::uint64_t> mSceneRevision, mSelectionRevision;
+		std::optional<unsigned int> mWorld;
+		std::vector<CommonProperty> mProperties;
+	};
+	bool SetCommonProperty(EditorContext&, CommandHistory&, const CommonProperty&,
+		const ly::reflect::PropertyValue&, std::uint64_t group = 0);
+
 }

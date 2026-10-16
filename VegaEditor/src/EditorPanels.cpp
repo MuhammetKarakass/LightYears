@@ -9,6 +9,7 @@
 #include <script/ScriptComponent.h>
 #include <script/ScriptRuntime.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui-SFML.h>
 #include <algorithm>
 #include <cctype>
@@ -20,7 +21,7 @@ namespace vega
 {
 	namespace
 	{
-		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value)
+		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed = false)
 		{
 			using ly::reflect::PropertyKind;
 			const char* label = property.name.c_str();
@@ -29,13 +30,13 @@ namespace vega
 			switch (property.kind)
 			{
 			case PropertyKind::Bool: return ImGui::Checkbox(label, &std::get<bool>(value));
-			case PropertyKind::Int: return ImGui::DragInt(label, &std::get<int>(value), property.speed, static_cast<int>(min), static_cast<int>(max));
-			case PropertyKind::Float: return ImGui::DragFloat(label, &std::get<float>(value), property.speed, min, max);
+			case PropertyKind::Int: return ImGui::DragInt(label, &std::get<int>(value), property.speed, static_cast<int>(min), static_cast<int>(max), mixed ? "\xe2\x80\x94" : "%d");
+			case PropertyKind::Float: return ImGui::DragFloat(label, &std::get<float>(value), property.speed, min, max, mixed ? "\xe2\x80\x94" : "%.3f");
 			case PropertyKind::Vector2:
 			{
 				auto& vector = std::get<sf::Vector2f>(value);
 				float values[]{ vector.x, vector.y };
-				const bool changed = ImGui::DragFloat2(label, values, property.speed, min, max);
+				const bool changed = ImGui::DragFloat2(label, values, property.speed, min, max, mixed ? "\xe2\x80\x94" : "%.3f");
 				vector = { values[0], values[1] };
 				return changed;
 			}
@@ -43,7 +44,10 @@ namespace vega
 			{
 				auto& color = std::get<sf::Color>(value);
 				float channels[]{ color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f };
-				const bool changed = ImGui::ColorEdit4(label, channels);
+				// ColorEdit has no mixed numeric format; keep a stable ID while the
+				// mixed preview hides channels and labels its swatch with a dash.
+				const std::string colorLabel = (mixed ? std::string{ "\xe2\x80\x94  " } : std::string{}) + property.name + "###" + property.name;
+				const bool changed = ImGui::ColorEdit4(colorLabel.c_str(), channels, mixed ? ImGuiColorEditFlags_NoInputs : ImGuiColorEditFlags_None);
 				if (changed) color = { static_cast<std::uint8_t>(std::clamp(channels[0], 0.f, 1.f) * 255.f + 0.5f),
 					static_cast<std::uint8_t>(std::clamp(channels[1], 0.f, 1.f) * 255.f + 0.5f),
 					static_cast<std::uint8_t>(std::clamp(channels[2], 0.f, 1.f) * 255.f + 0.5f),
@@ -51,7 +55,7 @@ namespace vega
 				return changed;
 			}
 			case PropertyKind::String:
-				return InputStringProperty(label, std::get<std::string>(value));
+				return InputStringProperty(label, std::get<std::string>(value), mixed);
 			case PropertyKind::Flags:
 			{
 				auto& bits = std::get<int>(value);
@@ -59,7 +63,7 @@ namespace vega
 				for (const auto& bit : property.enumLabels)
 					if (bits & bit.first) { if (!preview.empty()) preview += " | "; preview += bit.second; }
 				bool changed = false;
-				if (ImGui::BeginCombo(label, preview.empty() ? "None" : preview.c_str()))
+				if (ImGui::BeginCombo(label, mixed ? "\xe2\x80\x94" : preview.empty() ? "None" : preview.c_str()))
 				{
 					for (const auto& bit : property.enumLabels)
 					{
@@ -80,7 +84,7 @@ namespace vega
 				std::string preview = std::to_string(number);
 				for (const auto& entry : property.enumLabels) if (entry.first == number) preview = entry.second;
 				bool changed = false;
-				if (ImGui::BeginCombo(label, preview.c_str()))
+				if (ImGui::BeginCombo(label, mixed ? "\xe2\x80\x94" : preview.c_str()))
 				{
 					for (const auto& entry : property.enumLabels)
 					{
@@ -113,6 +117,18 @@ namespace vega
 				ImGui::Image(mViewport.GetTexture(), imageSize);
 				if (!mContext.playMode && ImGui::BeginDragDropTarget())
 				{
+					if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_ACTOR"))
+					{
+						const auto actor = mContext.Resolve(*static_cast<const unsigned int*>(payload->Data));
+						if (actor)
+						{
+							const auto origin = ImGui::GetItemRectMin();
+							const auto mouse = ImGui::GetMousePos();
+							const sf::Vector2i pixel{ static_cast<int>((mouse.x - origin.x) / scale), static_cast<int>((mouse.y - origin.y) / scale) };
+							const auto location = mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView());
+							TransformSelection(mContext, mHistory, CaptureSelectionTransform(mSelection), mSelection.Centre(), location - actor->GetActorLocation());
+						}
+					}
 					if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_PREFAB"))
 					{
 						const auto origin = ImGui::GetItemRectMin();
@@ -208,6 +224,11 @@ namespace vega
 					}
 					rows.push_back({ actor, identity, &type });
 				}
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::GetIO().WantTextInput && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A, false))
+				{
+					mSelection.Clear();
+					for (const auto& row : rows) mSelection.Add(row.actor);
+				}
 				const float rowHeight = 2.f * ImGui::GetTextLineHeightWithSpacing();
 				ImGuiListClipper clipper;
 				clipper.Begin(static_cast<int>(rows.size()), rowHeight);
@@ -244,12 +265,33 @@ namespace vega
 					{
 						const bool prefab = identity && !identity->prefab.empty();
 						if (prefab) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
-						if (ImGui::Selectable(name.c_str(), mSelection.Get() == actor, ImGuiSelectableFlags_AllowDoubleClick))
+						if (ImGui::Selectable(name.c_str(), mSelection.Contains(actor), ImGuiSelectableFlags_AllowDoubleClick))
 						{
-							mSelection.Select(actor);
-							if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) BeginRename();
+							const auto& io = ImGui::GetIO();
+							if (io.KeyShift && mHierarchyAnchor)
+							{
+								const auto anchor = std::find_if(rows.begin(), rows.end(), [&](const Row& entry) { return entry.actor->GetUniqueID() == *mHierarchyAnchor; });
+								if (!io.KeyCtrl) mSelection.Clear();
+								const int start = anchor == rows.end() ? index : static_cast<int>(anchor - rows.begin());
+								for (int i = std::min(start, index); i <= std::max(start, index); ++i) mSelection.Add(rows[i].actor);
+								mSelection.Add(actor);
+							}
+							else
+							{
+								if (io.KeyCtrl) mSelection.Toggle(actor); else mSelection.Select(actor);
+								mHierarchyAnchor = actor->GetUniqueID();
+							}
+							if (mSelection.Count() == 1 && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) BeginRename();
 						}
 						if (prefab) ImGui::PopStyleColor();
+						if (!mContext.playMode && ImGui::BeginDragDropSource())
+						{
+							if (!mSelection.Contains(actor)) mSelection.Select(actor); else mSelection.Add(actor);
+							const auto id = actor->GetUniqueID();
+							ImGui::SetDragDropPayload("VEGA_ACTOR", &id, sizeof(id));
+							ImGui::TextUnformatted(name.c_str());
+							ImGui::EndDragDropSource();
+						}
 						if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 						{
 							ImGui::OpenPopup("Entity actions");
@@ -259,7 +301,7 @@ namespace vega
 					}
 					if (ImGui::BeginPopup("Entity actions"))
 					{
-						mSelection.Select(actor);
+						if (!mSelection.Contains(actor)) mSelection.Select(actor);
 						ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
 						DrawCreateMenu();
 						if (ImGui::MenuItem("Create Prefab...", nullptr, false, identity != nullptr))
@@ -270,7 +312,7 @@ namespace vega
 						}
 						if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, identity != nullptr)) DuplicateSceneEntity(mContext, mHistory);
 						if (ImGui::MenuItem("Rename", "F2", false, identity != nullptr)) BeginRename();
-						if (ImGui::MenuItem("Delete", "Del", false, identity != nullptr)) mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+						if (ImGui::MenuItem("Delete", "Del", false, identity != nullptr)) DeleteSelection(mContext, mHistory);
 						ImGui::EndDisabled();
 						ImGui::EndPopup();
 					}
@@ -305,7 +347,34 @@ namespace vega
 				ImGui::SameLine();
 				if (ImGui::Button("Back to Scene")) RequestPrefab({});
 			}
-			if (const auto actor = selection.Get())
+			if (selection.Count() > 1)
+			{
+				ImGui::Text("%zu actors selected", selection.Count());
+				ImGui::TextDisabled("multiple prefabs");
+				if (ImGui::Button("Focus")) context.FocusSelection();
+				ImGui::BeginDisabled(context.playMode || context.transitioning);
+				std::string section;
+				int index = 0;
+				for (const auto& row : mMultiInspector.Get(context))
+				{
+					if (row.section != section) { section = row.section; ImGui::SeparatorText(section.c_str()); }
+					ImGui::PushID(index++);
+					auto value = row.value;
+					ImGui::BeginDisabled(!row.property->setter);
+					ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, row.mixed);
+					const bool changed = DrawProperty(*row.property, value, row.mixed);
+					ImGui::PopItemFlag();
+					if (ImGui::IsItemActivated()) mPropertyMergeGroup = history.BeginMergeGroup();
+					if (changed) SetCommonProperty(context, history, row, value,
+						(ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0);
+					ImGui::EndDisabled();
+					ImGui::PopID();
+				}
+				if (!context.propertyError.empty()) ImGui::TextWrapped("%s", context.propertyError.c_str());
+				if (ImGui::Button("Delete selection")) DeleteSelection(context, history);
+				ImGui::EndDisabled();
+			}
+			else if (const auto actor = selection.Get())
 			{
 				if (!mPrefabWorld)
 					if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>(); identity && !identity->prefab.empty())
@@ -514,7 +583,10 @@ namespace vega
 		{
 			return;
 		}
-		const sf::Vector2f point = world->GetMouseWorldPosition();
+		const auto mouse = ImGui::GetMousePos();
+		const auto mainPos = ImGui::GetMainViewport()->Pos;
+		const auto pixel = MapWindowToTexturePixel({ static_cast<int>(mouse.x - mainPos.x), static_cast<int>(mouse.y - mainPos.y) }, mViewportImageRect, mViewport.GetSize());
+		const sf::Vector2f point = mViewport.MapPixelToCoords(pixel, world->GetWorldView());
 		const auto actors = world->GetActorsByTypeIncludingPending<ly::Actor>();
 		std::vector<ActorPickBounds> candidates;
 		for (const auto& weakActor : actors)
@@ -528,7 +600,27 @@ namespace vega
 			}
 		}
 		const auto best = PickBestActor(point, candidates);
-		SelectActor{ best }.Execute(mContext);
+		const auto& io = ImGui::GetIO();
+		if (best)
+		{
+			const auto actor = mContext.Resolve(*best);
+			if (io.KeyCtrl) mSelection.Toggle(actor);
+			else if (io.KeyShift) mSelection.Add(actor);
+			else if (!mSelection.Contains(actor)) mSelection.Select(actor);
+			else mSelection.Add(actor);
+		}
+		else
+		{
+			if (!io.KeyCtrl && !io.KeyShift) mSelection.Clear();
+			if (!mContext.playMode)
+			{
+				mMarquee = true;
+				mMarqueeStart = point;
+				mMarqueeScreen = { mouse.x, mouse.y };
+				mMarqueeAdd = io.KeyShift;
+				mMarqueeRemove = io.KeyCtrl;
+			}
+		}
 	}
 
 	void EditorApplication::BuildExportDialog()

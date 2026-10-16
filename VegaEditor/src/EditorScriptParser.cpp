@@ -62,6 +62,51 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "select-add" || verb == "select-remove")
+		{
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			command.operation = verb == "select-add" ? ScriptOperation::SelectAdd : ScriptOperation::SelectRemove;
+			command.text = tokens[1];
+			return { command, {} };
+		}
+		if (verb == "select-all" || verb == "copy")
+		{
+			if (tokens.size() != 1) return bad();
+			command.operation = verb == "copy" ? ScriptOperation::Copy : ScriptOperation::SelectAll;
+			return { command, {} };
+		}
+		if (verb == "expect-selection-count")
+		{
+			if (tokens.size() != 2 || !integer(1, command.number)) return bad();
+			command.operation = ScriptOperation::ExpectSelectionCount;
+			return { command, {} };
+		}
+		if (verb == "select-rect")
+		{
+			if (tokens.size() != 5 || !real(1, command.location.x) || !real(2, command.location.y) ||
+				!real(3, command.rectangleEnd.x) || !real(4, command.rectangleEnd.y)) return bad();
+			command.operation = ScriptOperation::SelectRect;
+			return { command, {} };
+		}
+		if (verb == "move-selection" || verb == "paste")
+		{
+			if (verb == "paste" && tokens.size() == 1) command.number = 0;
+			else
+			{
+				if (tokens.size() != 3 || !real(1, command.location.x) || !real(2, command.location.y)) return bad();
+				command.number = 1;
+			}
+			command.operation = verb == "paste" ? ScriptOperation::Paste : ScriptOperation::MoveSelection;
+			return { command, {} };
+		}
+		if (verb == "set-prop-all")
+		{
+			if (tokens.size() < 3 || tokens[1].empty()) return bad();
+			command.operation = ScriptOperation::SetPropAll;
+			command.property = tokens[1];
+			command.values.assign(tokens.begin() + 2, tokens.end());
+			return { command, {} };
+		}
 		if (verb == "set-setting" || verb == "expect-setting" || verb == "reset-setting")
 		{
 			const bool reset = verb == "reset-setting";

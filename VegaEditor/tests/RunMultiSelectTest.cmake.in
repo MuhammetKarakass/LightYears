@@ -1,0 +1,9 @@
+# All authoring and generated Lua metadata stay in this dedicated build-tree root.
+set(root "@CMAKE_CURRENT_BINARY_DIR@/multi-select-assets")
+file(MAKE_DIRECTORY "${root}")
+file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
+execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+	"@CMAKE_CURRENT_BINARY_DIR@/scripts/multi-select.vegascript" RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+	message(FATAL_ERROR "VegaEditorMultiSelect failed: ${result}")
+endif()

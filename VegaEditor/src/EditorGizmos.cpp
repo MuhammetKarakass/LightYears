@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <imgui.h>
 #include <cmath>
+#include <algorithm>
 #include <cstdio>
 #include <unordered_set>
 
@@ -37,7 +38,7 @@ namespace vega
 		GizmoHandle hover = GizmoHandle::None;
 		if (actor && actor->GetWorld() == world && mViewportImageHovered)
 		{
-			const auto origin = screen(actor->GetActorLocation());
+			const auto origin = screen(mSelection.Centre());
 			hover = mContext.viewSettings.tool == EditorTool::Move ? HitMoveHandle(mouseScreen, origin) : HitRotateHandle(mouseScreen, origin);
 		}
 		if (mSelectionClickPending && mViewportImageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -47,7 +48,8 @@ namespace vega
 				mMoveDragActor = actor->GetUniqueID();
 				mGizmoHandle = hover;
 				mMoveDragMouse = mouseWorld;
-				mGizmoStartLocation = actor->GetActorLocation();
+				mGizmoStartLocation = mSelection.Centre();
+				mGizmoStarts = CaptureSelectionTransform(mSelection);
 				mGizmoStartRotation = actor->GetActorRotation();
 				mGizmoPreviousAngle = GizmoAngle(mouseScreen, screen(mGizmoStartLocation));
 				mGizmoRotationDelta = 0.f;
@@ -73,20 +75,38 @@ namespace vega
 					float value = mGizmoStartRotation + mGizmoRotationDelta;
 					if (snap) value = SnapGizmoValue(value, 15.f);
 					if (std::abs(value - target->GetActorRotation()) > .001f)
-						mHistory.Execute(std::make_unique<SetPropertyCommand>(*mMoveDragActor, std::nullopt, "Rotation", value, mMoveMergeGroup));
+						TransformSelection(mContext, mHistory, mGizmoStarts, mGizmoStartLocation, {}, value - mGizmoStartRotation, mMoveMergeGroup);
 				}
 				else if (mGizmoDragStarted)
 				{
 					auto value = mGizmoStartLocation + ProjectGizmoDrag(mouseWorld - mMoveDragMouse, mGizmoHandle);
 					if (snap) value = SnapGizmoPosition(value, mGizmoHandle, mContext.viewSettings.gridSize);
-					if (value != target->GetActorLocation()) mHistory.Execute(std::make_unique<SetPropertyCommand>(*mMoveDragActor, std::nullopt, "Location", value, mMoveMergeGroup));
+					TransformSelection(mContext, mHistory, mGizmoStarts, mGizmoStartLocation, value - mGizmoStartLocation, {}, mMoveMergeGroup);
 				}
 				if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) mMoveDragActor.reset();
 			}
 		}
+		if (mMarquee)
+		{
+			auto* draw = ImGui::GetWindowDrawList();
+			draw->PushClipRect({ image.position.x + mainPos.x, image.position.y + mainPos.y },
+				{ image.position.x + mainPos.x + image.size.x, image.position.y + mainPos.y + image.size.y }, true);
+			const ImVec2 low{ std::min(mMarqueeScreen.x, mouse.x), std::min(mMarqueeScreen.y, mouse.y) };
+			const ImVec2 high{ std::max(mMarqueeScreen.x, mouse.x), std::max(mMarqueeScreen.y, mouse.y) };
+			draw->AddRectFilled(low, high, IM_COL32(51, 199, 202, 35));
+			draw->AddRect(low, high, IM_COL32(51, 199, 202, 230));
+			draw->PopClipRect();
+			if (!GetRenderWindow().hasFocus()) mMarquee = false;
+			else if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+			{
+				if (std::abs(mouse.x - mMarqueeScreen.x) + std::abs(mouse.y - mMarqueeScreen.y) > 3.f)
+					SelectRectangle(mContext, mMarqueeStart, mouseWorld, mMarqueeAdd, mMarqueeRemove);
+				mMarquee = false;
+			}
+		}
 		const auto selected = mSelection.Get();
 		if (!selected || selected->GetWorld() != world) return;
-		const auto origin = screen(selected->GetActorLocation());
+		const auto origin = screen(mSelection.Centre());
 		const ImVec2 o{ origin.x, origin.y };
 		auto* d = ImGui::GetWindowDrawList();
 		d->PushClipRect({ image.position.x + mainPos.x, image.position.y + mainPos.y },

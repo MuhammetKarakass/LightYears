@@ -6,13 +6,13 @@
 
 namespace vega
 {
-	inline bool InputStringProperty(const char* label, std::string& value)
+	inline bool InputStringProperty(const char* label, std::string& value, bool mixed = false)
 	{
 		// Retain the draft across frames without writing a partially typed asset path.
 		static std::map<ImGuiID, std::string> drafts;
 		const auto id = ImGui::GetID(label);
-		auto& draft = drafts.try_emplace(id, value).first->second;
-		const bool enter = ImGui::InputText(label, draft.data(), draft.capacity() + 1,
+		auto& draft = drafts.try_emplace(id, mixed ? std::string{} : value).first->second;
+		const bool enter = ImGui::InputTextWithHint(label, mixed ? "\xe2\x80\x94" : "", draft.data(), draft.capacity() + 1,
 			ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_EnterReturnsTrue,
 			[](ImGuiInputTextCallbackData* data)
 			{

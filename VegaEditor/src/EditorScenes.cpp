@@ -89,6 +89,7 @@ namespace vega
 		mSettingsPanelRevision.reset();
 		mContext.settingError.clear();
 		mMoveDragActor.reset();
+		mMarquee = false;
 		mRenameGuid.clear();
 		mPauseAfterTick = false;
 		mContext.transitioning = true;
@@ -109,15 +110,14 @@ namespace vega
 				!scene.contains("settings") || !scene["settings"].is_object()) throw std::runtime_error("Expected vega.scene version 1");
 			const auto absolutePath = std::filesystem::absolute(path).lexically_normal();
 			const bool differentScene = absolutePath != mScenePath;
-			const auto selected = mSelection.Get();
-			const auto* selectedIdentity = selected ? selected->FindComponent<ly::SceneEntityComponent>() : nullptr;
-			const auto selectedGuid = !differentScene && selectedIdentity ? selectedIdentity->guid : "";
+			EditorSelection selected;
+			if (!differentScene) selected = mSelection;
 			mScenePath = absolutePath;
 			mSceneSettings = scene["settings"];
 			if (differentScene) mHistory.Clear();
 			mSelection.Clear();
-			mEditSelectionGuid.clear();
-			mRestoreSelectionGuid = selectedGuid;
+			mEditSelection.Clear();
+			mRestoreSelection = selected;
 			mBaselineOnLoad = true;
 			mContext.sceneError.clear();
 			LoadSceneWorld(scene, true);
@@ -163,11 +163,9 @@ namespace vega
 			if (mDiagnostics.clearOnPlay) mDiagnostics.Clear();
 			mPlaySnapshot = CaptureScene();
 			mEditCamera = mCamera;
-			const auto actor = mSelection.Get();
-			const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
-			mEditSelectionGuid = identity ? identity->guid : "";
+			mEditSelection = mSelection;
 		}
-		mRestoreSelectionGuid = mEditSelectionGuid;
+		mRestoreSelection = mEditSelection;
 		mContext.playMode = playing;
 		if (!playing) mCamera = mEditCamera;
 		LoadSceneWorld(mPlaySnapshot, !playing);
@@ -208,8 +206,8 @@ namespace vega
 			mSelection.Clear();
 			mScenePath.clear();
 			mSceneSettings = nlohmann::json::object();
-			mRestoreSelectionGuid.clear();
-			mEditSelectionGuid.clear();
+			mRestoreSelection.Clear();
+			mEditSelection.Clear();
 			mBaselineOnLoad = true;
 			mContext.sceneError.clear();
 			LoadSceneWorld(EmptyScene(), true);

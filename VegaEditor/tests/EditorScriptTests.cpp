@@ -19,6 +19,15 @@ int main()
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "select-add \"Asteroid left\"", ScriptOperation::SelectAdd },
+		{ "select-remove 42", ScriptOperation::SelectRemove },
+		{ "select-all", ScriptOperation::SelectAll },
+		{ "select-rect -10 20 50 -70", ScriptOperation::SelectRect },
+		{ "expect-selection-count 3", ScriptOperation::ExpectSelectionCount },
+		{ "copy", ScriptOperation::Copy }, { "paste", ScriptOperation::Paste },
+		{ "paste 100 -20", ScriptOperation::Paste },
+		{ "move-selection -10 25", ScriptOperation::MoveSelection },
+		{ "set-prop-all \"Render Enabled\" false", ScriptOperation::SetPropAll },
 		{ "expect-console Info \"Lua says hello\"", ScriptOperation::ExpectConsole },
 		{ "expect-console Warning \"missing prefab\"", ScriptOperation::ExpectConsole },
 		{ "expect-console Error \"bad.lua:3\"", ScriptOperation::ExpectConsole },
@@ -92,7 +101,7 @@ int main()
 	{
 		const auto parsed = ParseEditorScriptLine(test.first);
 		Check(parsed.command && parsed.error.empty() && parsed.command->operation == test.second, std::string{ "Parse failed: " } + test.first);
-		Check(!ParseEditorScriptLine(std::string{ test.first } + " extra").error.empty(), std::string{ "Extra argument accepted: " } + test.first);
+		Check(test.second == ScriptOperation::SetPropAll || !ParseEditorScriptLine(std::string{ test.first } + " extra").error.empty(), std::string{ "Extra argument accepted: " } + test.first);
 		const auto commented = ParseEditorScriptLine(std::string{ " \t" } + test.first + " # trailing comment\r");
 		Check(commented.command && commented.command->operation == test.second, "Comment or whitespace changed command");
 	}
@@ -206,6 +215,15 @@ int main()
 		"set-setting routeStop nan", "set-setting routeStop null", "expect-setting key", "reset-setting", "reset-setting key extra" })
 		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid scene setting command accepted");
 	Check(ParseEditorScriptLine("set-setting title \"hello world\"").command->values[0] == "\"hello world\"", "Setting string JSON lost");
+	for (const char* line : { "select-add", "select-add \"\"", "select-add a b", "select-remove", "select-all 1",
+		"expect-selection-count -1", "expect-selection-count 4294967296", "expect-selection-count 1x", "expect-selection-count",
+		"select-rect 1 2 3", "select-rect 1 2 3 nan", "select-rect 1 2 3 4 extra", "select-rect inf 1 2 3",
+		"paste 1", "paste 1 2 extra", "paste 1 nan", "copy extra", "move-selection 1", "move-selection inf 0",
+		"set-prop-all", "set-prop-all P", "set-prop-all \"\" true" })
+		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid multi-selection command accepted");
+	const auto rectangle = ParseEditorScriptLine("select-rect -10 20 50 -70").command;
+	Check(rectangle && rectangle->location == sf::Vector2f{ -10.f, 20.f } && rectangle->rectangleEnd == sf::Vector2f{ 50.f, -70.f }, "Rectangle endpoints lost");
+	Check(ParseEditorScriptLine("paste").command->number == 0 && ParseEditorScriptLine("paste 0 0").command->number == 1, "Paste origin must differ from omitted position");
 	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;

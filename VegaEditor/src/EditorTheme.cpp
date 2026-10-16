@@ -68,7 +68,9 @@ namespace vega
 		std::error_code error;
 		if (std::filesystem::is_regular_file(VEGA_EDITOR_FONT_PATH, error))
 		{
-			if (auto* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(VEGA_EDITOR_FONT_PATH, 16.f))
+			// Mixed Inspector values use an em dash outside the default Latin glyph range.
+			static const ImWchar glyphs[]{ 0x0020, 0x00ff, 0x2014, 0x2014, 0 };
+			if (auto* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(VEGA_EDITOR_FONT_PATH, 16.f, nullptr, glyphs))
 			{
 				ImGui::GetIO().FontDefault = font;
 				if (!ImGui::SFML::UpdateFontTexture()) ImGui::GetIO().FontDefault = nullptr;

@@ -17,6 +17,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		SelectAdd, SelectRemove, SelectAll, SelectRect, ExpectSelectionCount, Copy, Paste, MoveSelection, SetPropAll,
 		ExpectConsole, ExpectNoErrors, ClearConsole, Profiler, ExpectProfileScope, CaptureProfile, Diagnostics,
 		CreatePrefab, PlacePrefab, CreateVariant, ApplyPrefabProp, RevertPrefabProp, ExpectPrefab, ExpectOverridden, ReloadPrefabs,
 		OpenPrefab, SavePrefab, ClosePrefab,
@@ -40,6 +41,7 @@ namespace vega
 		std::vector<std::string> values;
 		unsigned int number = 0;
 		sf::Vector2f location{};
+		sf::Vector2f rectangleEnd{};
 		float degrees = 0.f;
 		float factor = 1.f;
 		float tolerance = 0.5f;

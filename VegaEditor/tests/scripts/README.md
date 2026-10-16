@@ -331,3 +331,58 @@ Values use JSON scalars or compact arrays such as `[1,2]` and `[255,128,0,255]`;
 setting, verifies route set/undo/redo/reset against backdrop state, captures both
 backdrops, removes PlayerStart to exercise the world ship default, plays a different
 catalog ship, then saves/reopens the temporary scene. No source assets are written.
+
+
+### Multiple selection
+
+The selection is an ordered set of weak actor references; the last clicked actor
+is primary. Existing single-target commands inspect/edit that primary. GUIDs
+restore all selected actors after undo/redo, component replacement, scene reload,
+and Play/Stop. Delete, duplicate, paste, group transforms and multi-property edits
+each occupy one undo step. Duplicate/paste select their copies, and undo restores
+the previous ordered selection.
+
+In the Hierarchy, Ctrl+click toggles a row, Shift+click selects a range from the
+anchor, Ctrl+Shift adds the range, Ctrl+A selects the filtered rows, and Esc clears.
+In the viewport, Ctrl+click toggles and Shift+click adds. Drag empty space for a
+marquee: Shift adds hits, Ctrl removes hits. Marquees intersect world bounds.
+Every selected actor has an outline; the primary outline is gold. Move/rotate
+handles use the selection centre; rotation also orbits actor positions. Snap
+settings (or Ctrl during a drag) apply to the group pivot/angle. Focus frames the
+union of all selected bounds. Ctrl+D duplicates, Ctrl+C copies JSON to the system
+clipboard, and Ctrl+V pastes at the viewport mouse or camera centre.
+
+The multi Inspector shows reflected properties on the common actor base and
+components present in every selected actor. Mixed fields show an em dash and use
+ImGui's mixed-value flag. Edits write every target, preserving individual old
+values for undo. Per-actor prefab override actions/markers are replaced with a
+"multiple prefabs" header. Its descriptors and mixed values are cached by world,
+scene revision and selection revision; drawing does not serialize actors.
+
+```text
+select-add <Target>
+select-remove <Target>
+select-all
+select-rect x0 y0 x1 y1
+expect-selection-count N
+move-selection dx dy
+set-prop-all "Property" <value...>
+duplicate
+copy
+paste [x y]
+```
+
+Targets accept an exact quoted entity name, GUID, or runtime ID. Adding an already
+selected target promotes it to primary. Script rectangles replace selection and
+accept either endpoint order, in world coordinates. select-all includes every
+live row (the script has no Hierarchy filter). move-selection is a relative delta;
+legacy move remains an absolute primary edit. set-prop-all requires a unique
+common writable reflected property name and uses the same scalar/vector/color
+syntax as set-prop. paste without coordinates uses the camera centre.
+
+VegaEditorMultiSelect runs multi-select.vegascript with a dedicated build-tree
+asset root, temporary scene and Inspector capture. It checks three-actor move
+undo, shared Render Enabled edits, duplicate/copy/paste, group selection/history,
+save/reopen, marquee, select-all and group delete undo. VegaEditorMultiSelectionCommands
+covers atomic rollback, merged transforms, pivot rotation, common-base/mixed
+properties, focus bounds, GUID rebinding and component replacement without a UI.

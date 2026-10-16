@@ -104,6 +104,22 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	set(VEGA_MULTI_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/multi-select-temp.scene.json\"")
+	set(VEGA_MULTI_CAPTURE "\"${CMAKE_CURRENT_BINARY_DIR}/multi-select-inspector.png\"")
+	configure_file(tests/scripts/multi-select.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/multi-select.vegascript @ONLY)
+	configure_file(tests/RunMultiSelectTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunMultiSelectTest.cmake @ONLY)
+	add_test(NAME VegaEditorMultiSelect COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunMultiSelectTest.cmake)
+	set_tests_properties(VegaEditorMultiSelect PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)
+	add_executable(VegaEditorMultiSelectionTests tests/MultiSelectionTests.cpp
+		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+	target_include_directories(VegaEditorMultiSelectionTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorMultiSelectionTests PRIVATE VegaScript)
+	ly_enable_warnings(VegaEditorMultiSelectionTests)
+	foreach(multi_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${multi_runtime} VegaEditorMultiSelectionTests)
+	endforeach()
+	add_test(NAME VegaEditorMultiSelectionCommands COMMAND VegaEditorMultiSelectionTests)
 	configure_file(tests/scripts/lua-api.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/lua-api.vegascript COPYONLY)
 	configure_file(tests/RunLuaApiTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunLuaApiTest.cmake @ONLY)
 	add_test(NAME VegaEditorLuaApi COMMAND ${CMAKE_COMMAND}

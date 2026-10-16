@@ -6,6 +6,7 @@
 #include <framework/scene/PrefabLibrary.h>
 #include <script/ScriptComponent.h>
 #include <cmath>
+#include <SFML/Window/Clipboard.hpp>
 #include <cstdlib>
 #include <typeinfo>
 #include <algorithm>
@@ -210,7 +211,7 @@ namespace vega
 	{
 		const auto actor = selection.Get();
 		if (!actor || actor->GetWorld() != world || !SetEditorCamera(true)) return false;
-		camera->Focus(actor->GetActorGlobalBounds());
+		camera->Focus(*selection.Bounds());
 		ApplyCamera();
 		return true;
 	}
@@ -411,7 +412,7 @@ namespace vega
 			if (mEntity.is_null()) return false;
 		}
 		actor->Destroy();
-		if (!context.selection.Get()) context.selection.Clear();
+		context.selection.Remove(actor);
 		return true;
 	}
 
@@ -450,11 +451,11 @@ namespace vega
 			context.ResetActorCache();
 			return false;
 		}
-		const bool selected = context.selection.Get() == actor;
+		const bool selected = context.selection.Contains(actor);
 		actor->Destroy();
 		replacement->FindComponent<ly::SceneEntityComponent>()->guid = mGuid;
 		context.ResetActorCache();
-		if (selected) context.selection.Select(replacement);
+		if (selected) context.selection.Replace(actor, replacement);
 		return true;
 	}
 
@@ -529,7 +530,7 @@ namespace vega
 		context.ResetActorCache();
 		const auto replacement = context.ResolveGuid(temporary);
 		if (loaded.spawned != 1 || !replacement) return false;
-		const bool selected = actor && context.selection.Get() == actor;
+		const bool selected = actor && context.selection.Contains(actor);
 		if (actor) actor->Destroy();
 		eraseMissing();
 		replacement->FindComponent<ly::SceneEntityComponent>()->guid = guid;
@@ -541,7 +542,7 @@ namespace vega
 			identity->prefabBaseline = resolved ? resolved.entity : savedBaseline;
 		}
 		context.ResetActorCache();
-		if (selected) context.selection.Select(replacement);
+		if (selected) context.selection.Replace(actor, replacement);
 		return true;
 	}
 	bool ReplaceEntities::Execute(EditorContext& context)
@@ -606,15 +607,21 @@ namespace vega
 
 	bool DuplicateSceneEntity(EditorContext& context, CommandHistory& history)
 	{
-		const auto actor = context.selection.Get();
-		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
-		if (!identity || !context.world || actor->GetWorld() != context.world || context.playMode) return false;
-		auto entity = ly::SceneSerializer::SaveEntity(*actor);
-		if (entity.is_null()) return false;
-		entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
-		const auto location = actor->GetActorLocation() + sf::Vector2f{ 32.f, 32.f };
-		entity["properties"]["Location"] = { location.x, location.y };
-		return history.Execute(std::make_unique<CreateEntity>(std::move(entity)));
+		if (!context.world || context.playMode || context.transitioning) return false;
+		auto command = std::make_unique<CompoundCommand>("Duplicate selection", 0, true);
+		const auto actors = context.selection.GetAll();
+		if (actors.empty()) return false;
+		for (const auto& actor : actors)
+		{
+			if (actor->GetWorld() != context.world || !actor->FindComponent<ly::SceneEntityComponent>()) return false;
+			auto entity = ly::SceneSerializer::SaveEntity(*actor);
+			if (entity.is_null()) return false;
+			entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
+			const auto location = actor->GetActorLocation() + sf::Vector2f{ 32.f, 32.f };
+			entity["properties"]["Location"] = { location.x, location.y };
+			command->Add(std::make_unique<CreateEntity>(std::move(entity)));
+		}
+		return history.Execute(std::move(command));
 	}
 
 	bool RenameSceneEntity(EditorContext& context, CommandHistory& history, const std::string& name, std::uint64_t group)
@@ -624,4 +631,248 @@ namespace vega
 		const auto target = FindPropertyTarget(*actor, "SceneEntityComponent");
 		return target.object && history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity, "Name", name, group));
 	}
+	bool CompoundCommand::Execute(EditorContext& context)
+	{
+		if (mCommands.empty() || context.playMode || context.transitioning) return false;
+		const auto before = context.selection;
+		EditorSelection created;
+		std::size_t applied = 0;
+		for (auto& command : mCommands)
+		{
+			if (!command->Execute(context))
+			{
+				const auto error = context.propertyError;
+				while (applied > 0) mCommands[--applied]->Undo(context);
+				context.selection.Restore(before);
+				context.selection.Rebind([&](const std::string& guid) { return context.ResolveGuid(guid); });
+				context.propertyError = error;
+				return false;
+			}
+			++applied;
+			if (mSelectCreated) created.Add(context.selection.Get());
+		}
+		if (!mExecuted)
+		{
+			mBefore = before;
+			if (mSelectCreated) context.selection.Restore(created);
+			mAfter = context.selection;
+			mExecuted = true;
+		}
+		else context.selection.Restore(mAfter);
+		context.selection.Rebind([&](const std::string& guid) { return context.ResolveGuid(guid); });
+		return true;
+	}
+
+	void CompoundCommand::Undo(EditorContext& context)
+	{
+		for (auto it = mCommands.rbegin(); it != mCommands.rend(); ++it) (*it)->Undo(context);
+		context.selection.Restore(mBefore);
+		context.selection.Rebind([&](const std::string& guid) { return context.ResolveGuid(guid); });
+	}
+
+	bool CompoundCommand::MergeWith(const EditorCommand& command)
+	{
+		const auto* next = dynamic_cast<const CompoundCommand*>(&command);
+		if (!next || !mGroup || next->mGroup != mGroup || next->mName != mName || next->mCommands.size() != mCommands.size()) return false;
+		for (std::size_t i = 0; i < mCommands.size(); ++i)
+			if (mCommands[i]->Name() != next->mCommands[i]->Name() || typeid(*mCommands[i]) != typeid(*next->mCommands[i])) return false;
+		for (std::size_t i = 0; i < mCommands.size(); ++i)
+			if (!mCommands[i]->MergeWith(*next->mCommands[i])) return false;
+		mAfter = next->mAfter;
+		return true;
+	}
+
+	bool CompoundCommand::IsValid(const EditorContext& context) const
+	{
+		return std::all_of(mCommands.begin(), mCommands.end(), [&](const auto& command) { return command->IsValid(context); });
+	}
+
+	bool DeleteSelection(EditorContext& context, CommandHistory& history)
+	{
+		auto command = std::make_unique<CompoundCommand>("Delete selection");
+		for (const auto& actor : context.selection.GetAll())
+		{
+			if (!actor->FindComponent<ly::SceneEntityComponent>() || actor->GetWorld() != context.world) return false;
+			command->Add(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+		}
+		return history.Execute(std::move(command));
+	}
+
+	std::vector<SelectionTransform> CaptureSelectionTransform(const EditorSelection& selection)
+	{
+		std::vector<SelectionTransform> result;
+		for (const auto& actor : selection.GetAll()) result.push_back({ actor->GetUniqueID(), actor->GetActorLocation(), actor->GetActorRotation() });
+		return result;
+	}
+
+	bool TransformSelection(EditorContext& context, CommandHistory& history, const std::vector<SelectionTransform>& starts,
+		sf::Vector2f pivot, sf::Vector2f delta, std::optional<float> angle, std::uint64_t group)
+	{
+		auto command = std::make_unique<CompoundCommand>(angle ? "Rotate selection" : "Move selection", group);
+		const float radians = angle.value_or(0.f) * 3.141592654f / 180.f;
+		bool changed = false;
+		for (const auto& start : starts)
+		{
+			const auto actor = context.Resolve(start.id);
+			if (!actor || !context.selection.Contains(actor)) return false;
+			const auto offset = start.location - pivot;
+			const sf::Vector2f location = pivot + delta + sf::Vector2f{
+				offset.x * std::cos(radians) - offset.y * std::sin(radians),
+				offset.x * std::sin(radians) + offset.y * std::cos(radians) };
+			changed = changed || location != actor->GetActorLocation() || (angle && start.rotation + *angle != actor->GetActorRotation());
+			command->Add(std::make_unique<SetPropertyCommand>(start.id, std::nullopt, "Location", location, group));
+			if (angle) command->Add(std::make_unique<SetPropertyCommand>(start.id, std::nullopt, "Rotation", start.rotation + *angle, group));
+		}
+		return changed && history.Execute(std::move(command));
+	}
+
+	void SelectRectangle(EditorContext& context, sf::Vector2f first, sf::Vector2f last, bool add, bool remove)
+	{
+		if (!context.world) return;
+		const sf::Vector2f low{ std::min(first.x, last.x), std::min(first.y, last.y) };
+		const sf::Vector2f high{ std::max(first.x, last.x), std::max(first.y, last.y) };
+		const sf::FloatRect rectangle{ low, high - low };
+		if (!add && !remove) context.selection.Clear();
+		for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+		{
+			const auto actor = weak.lock();
+			if (!actor || actor->GetIsPendingDestroy()) continue;
+			if (rectangle.findIntersection(actor->GetActorGlobalBounds()) || rectangle.contains(actor->GetActorLocation()))
+			{
+				if (remove) context.selection.Remove(actor); else context.selection.Add(actor);
+			}
+		}
+	}
+
+	bool CopySelection(EditorContext& context)
+	{
+		nlohmann::json entities = nlohmann::json::array();
+		for (const auto& actor : context.selection.GetAll())
+		{
+			if (actor->GetWorld() != context.world) return false;
+			auto entity = ly::SceneSerializer::SaveEntity(*actor);
+			if (entity.is_null()) return false;
+			entities.push_back(std::move(entity));
+		}
+		if (entities.empty()) return false;
+		const auto text = nlohmann::json{ { "format", "vega.selection" }, { "version", 1 }, { "entities", entities } }.dump();
+		sf::Clipboard::setString(sf::String::fromUtf8(text.begin(), text.end()));
+		return true;
+	}
+
+	bool PasteSelection(EditorContext& context, CommandHistory& history, sf::Vector2f centre)
+	{
+		if (!context.world || context.playMode || context.transitioning) return false;
+		try
+		{
+			const auto bytes = sf::Clipboard::getString().toUtf8();
+			const auto data = nlohmann::json::parse(bytes.begin(), bytes.end());
+			if (data.at("format") != "vega.selection" || data.at("version") != 1) return false;
+			auto entities = data.at("entities");
+			if (!entities.is_array() || entities.empty() || entities.size() > 10000) return false;
+			sf::Vector2f pivot{};
+			for (const auto& entity : entities)
+			{
+				const auto& location = entity.at("properties").at("Location");
+				const sf::Vector2f point{ location.at(0).get<float>(), location.at(1).get<float>() };
+				if (!std::isfinite(point.x) || !std::isfinite(point.y)) return false;
+				pivot += point;
+			}
+			pivot /= static_cast<float>(entities.size());
+			auto command = std::make_unique<CompoundCommand>("Paste selection", 0, true);
+			for (auto& entity : entities)
+			{
+				entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
+				auto& location = entity["properties"]["Location"];
+				location = { location[0].get<float>() + centre.x - pivot.x, location[1].get<float>() + centre.y - pivot.y };
+				command->Add(std::make_unique<CreateEntity>(std::move(entity)));
+			}
+			return history.Execute(std::move(command));
+		}
+		catch (const std::exception&) { return false; }
+	}
+
+	const std::vector<CommonProperty>& MultiInspectorCache::Get(EditorContext& context)
+	{
+		const auto world = context.world ? std::optional<unsigned int>{ context.world->GetUniqueID() } : std::nullopt;
+		if (mWorld == world && mSceneRevision == context.sceneRevision && mSelectionRevision == context.selection.Revision()) return mProperties;
+		mWorld = world;
+		mSceneRevision = context.sceneRevision;
+		mSelectionRevision = context.selection.Revision();
+		mProperties.clear();
+		const auto actors = context.selection.GetAll();
+		if (actors.empty()) return mProperties;
+		const auto collect = [&](std::vector<ReflectedTarget> targets)
+		{
+			const auto* common = targets.front().type;
+			for (const auto& target : targets)
+				while (common && (!target.object || !common->isInstance(target.object))) common = common->base;
+			if (!common) return;
+			for (const auto* property : common->AllProperties())
+			{
+				// A derived descriptor shadows a property of the same name on its base.
+				if (common->FindProperty(property->name) != property) continue;
+				CommonProperty row{ common->name, property, {}, property->getter(targets.front().object), false };
+				for (const auto& target : targets)
+				{
+					row.targets.push_back(target.componentIdentity);
+					row.mixed = row.mixed || property->getter(target.object) != row.value;
+				}
+				mProperties.push_back(std::move(row));
+			}
+		};
+		std::vector<ReflectedTarget> roots;
+		for (const auto& actor : actors) roots.push_back(ResolvePropertyTarget(*actor, {}));
+		collect(std::move(roots));
+		std::unordered_set<std::string> componentSets;
+		actors.front()->ForEachComponent([&](ly::ActorComponent& component)
+		{
+			const auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(component);
+			// Match occurrences within a reflected component chain. Unrelated sibling
+			// components do not become common merely by inheriting ActorComponent.
+			for (const auto* base = type; base && (base == type || base->name != "ActorComponent"); base = base->base)
+			{
+				std::size_t occurrence = 0;
+				bool reached = false;
+				actors.front()->ForEachComponent([&](ly::ActorComponent& entry)
+				{
+					if (&entry == &component) reached = true;
+					if (!reached && base->isInstance(&entry)) ++occurrence;
+				});
+				std::vector<ReflectedTarget> targets;
+				std::string key;
+				for (const auto& actor : actors)
+				{
+					std::size_t index = 0;
+					ReflectedTarget target;
+					actor->ForEachComponent([&](ly::ActorComponent& entry)
+					{
+						if (base->isInstance(&entry) && index++ == occurrence)
+							target = { &entry, base, ly::IdentifyComponent(*actor, entry) };
+					});
+					if (!target.object || !target.componentIdentity) break;
+					key += target.componentIdentity->typeName + ":" + std::to_string(target.componentIdentity->occurrence) + ";";
+					targets.push_back(std::move(target));
+				}
+				if (targets.size() == actors.size())
+				{
+					if (componentSets.insert(key).second) collect(std::move(targets));
+					break;
+				}
+			}
+		});
+		return mProperties;
+	}
+
+	bool SetCommonProperty(EditorContext& context, CommandHistory& history, const CommonProperty& row,
+		const ly::reflect::PropertyValue& value, std::uint64_t group)
+	{
+		const auto actors = context.selection.GetAll();
+		if (!row.property || !row.property->setter || actors.size() != row.targets.size()) return false;
+		auto command = std::make_unique<CompoundCommand>("Set selection " + row.section + "/" + row.property->name, group);
+		for (std::size_t i = 0; i < actors.size(); ++i)
+			command->Add(std::make_unique<SetPropertyCommand>(actors[i]->GetUniqueID(), row.targets[i], row.property->name, value, group));
+		return history.Execute(std::move(command));
+	}
+
 }

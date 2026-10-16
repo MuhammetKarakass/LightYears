@@ -48,6 +48,33 @@ namespace
 		Check(!selection.Get(), "An empty weak pointer must clear the accessible selection");
 	}
 
+	void TestMultiple()
+	{
+		ly::World world{ nullptr };
+		const auto a = world.SpawnActor<ly::Actor>().lock();
+		const auto b = world.SpawnActor<ly::Actor>().lock();
+		const auto c = world.SpawnActor<ly::Actor>().lock();
+		vega::EditorSelection selection;
+		const auto owners = a.use_count();
+		selection.Add(a);
+		selection.Add(b);
+		selection.Add(c);
+		Check(selection.Count() == 3 && selection.Get() == c, "Ordered selection must make the last actor primary");
+		selection.Add(a);
+		Check(selection.Count() == 3 && selection.GetAll()[0] == b && selection.Get() == a, "Adding an existing actor must preserve the set and change primary");
+		Check(a.use_count() == owners, "Multiple selection must retain only weak pointers");
+		selection.Toggle(a);
+		Check(selection.Count() == 2 && selection.Get() == c, "Removing primary must promote the preceding actor");
+		const auto revision = selection.Revision();
+		selection.Remove(a);
+		Check(selection.Revision() == revision, "Removing an absent actor must not invalidate the inspector cache");
+		selection.Toggle(a);
+		b->Destroy();
+		Check(selection.Count() == 2 && !selection.Contains(b), "Destroyed secondary selections must be inaccessible");
+		selection.Select(c);
+		Check(selection.Count() == 1 && selection.Get() == c, "Legacy Select must replace the complete set");
+	}
+
 	void TestExpiry()
 	{
 		vega::EditorSelection selection;
@@ -92,6 +119,7 @@ int main()
 {
 	TestSelection();
 	TestExpiry();
+	TestMultiple();
 	TestPicking();
 	if (failures != 0)
 	{

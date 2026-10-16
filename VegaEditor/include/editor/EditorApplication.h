@@ -107,8 +107,8 @@ namespace vega
 		std::string mWindowTitle;
 		nlohmann::json mPlaySnapshot;
 		EditorCamera mEditCamera;
-		std::string mEditSelectionGuid;
-		std::string mRestoreSelectionGuid;
+		EditorSelection mEditSelection;
+		EditorSelection mRestoreSelection;
 		bool mBaselineOnLoad = false;
 		bool mOpenSceneDialog = false;
 		bool mSaveSceneDialog = false;
@@ -154,6 +154,11 @@ namespace vega
 		bool mPauseAfterTick = false;
 		std::uint64_t mMoveMergeGroup = 0;
 		std::uint64_t mPropertyMergeGroup = 0;
+		MultiInspectorCache mMultiInspector;
+		std::optional<unsigned int> mHierarchyAnchor;
+		std::vector<SelectionTransform> mGizmoStarts;
+		bool mMarquee = false, mMarqueeAdd = false, mMarqueeRemove = false;
+		sf::Vector2f mMarqueeStart{}, mMarqueeScreen{};
 		sf::Clock mUIClock;
 		sf::FloatRect mViewportImageRect{};
 		char mHierarchyFilter[128]{};

@@ -189,8 +189,9 @@ namespace vega
 					mBaselineOnLoad = false;
 					mSavedSceneRevision = mContext.sceneRevision;
 				}
-				mSelection.Select(mContext.ResolveGuid(mRestoreSelectionGuid));
-				mRestoreSelectionGuid.clear();
+				mSelection.Restore(mRestoreSelection);
+				mSelection.Rebind([this](const std::string& guid) { return mContext.ResolveGuid(guid); });
+				mRestoreSelection.Clear();
 			}
 			mCameraPanButton.reset();
 		}
@@ -206,7 +207,8 @@ namespace vega
 			mContext.SyncCamera();
 			world->Render(texture);
 			DrawWorldOverlays(texture, *world);
-			if (const auto actor = mSelection.Get())
+			const auto primary = mSelection.Get();
+			for (const auto& actor : mSelection.GetAll())
 			{
 				if (actor->GetWorld() == world)
 				{
@@ -216,7 +218,7 @@ namespace vega
 					sf::RectangleShape outline{ bounds.size };
 					outline.setPosition(bounds.position);
 					outline.setFillColor(sf::Color::Transparent);
-					outline.setOutlineColor(sf::Color{ 51, 199, 202 });
+					outline.setOutlineColor(actor == primary ? sf::Color{ 255, 222, 116 } : sf::Color{ 51, 199, 202 });
 					// Compensate for camera zoom to keep the outline two texture pixels wide.
 					const float viewPixels = static_cast<float>(texture.getSize().x) * worldView.getViewport().size.x;
 					outline.setOutlineThickness(viewPixels > 0.f ? 2.f * worldView.getSize().x / viewPixels : 2.f);
@@ -273,9 +275,21 @@ namespace vega
 		if (!mPrefabWorld && !mContext.playMode && !io.WantTextInput)
 		{
 			if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) DuplicateSceneEntity(mContext, mHistory);
-			if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
-				if (auto actor = mSelection.Get(); actor && actor->FindComponent<ly::SceneEntityComponent>())
-					mHistory.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
+			if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) DeleteSelection(mContext, mHistory);
+			if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false)) CopySelection(mContext);
+			if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V, false) && mContext.world)
+				{
+				const auto mouse = ImGui::GetMousePos();
+				const auto origin = ImGui::GetMainViewport()->Pos;
+				const auto pixel = MapWindowToTexturePixel({ static_cast<int>(mouse.x - origin.x), static_cast<int>(mouse.y - origin.y) }, mViewportImageRect, mViewport.GetSize());
+				PasteSelection(mContext, mHistory, mViewportImageHovered ? mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView()) : mCamera.GetView().getCenter());
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+			{
+				mSelection.Clear();
+				mMarquee = false;
+				mMoveDragActor.reset();
+			}
 			if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) BeginRename();
 		}
 		const std::string sceneTitle = (mScenePath.empty() ? "Untitled" : mScenePath.filename().string()) + (SceneDirty() ? " *" : "");
@@ -408,7 +422,7 @@ namespace vega
 		{
 			BuildViewportPanel();
 		}
-		if (mViewportImageRect.size == sf::Vector2f{}) mMoveDragActor.reset();
+		if (mViewportImageRect.size == sf::Vector2f{}) { mMoveDragActor.reset(); mMarquee = false; }
 		mSelectionClickPending = false;
 		if (mShowHierarchy)
 		{
@@ -543,6 +557,7 @@ namespace vega
 		{
 			mCameraPanButton.reset();
 			mMoveDragActor.reset();
+			mMarquee = false;
 		}
 		// The paused or editor-camera viewport owns left clicks for selection and gizmos.
 		// The live game camera still passes clicks through to gameplay.
