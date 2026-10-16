@@ -1,5 +1,27 @@
 # Scene data
 
+Reflected actor connections use GUID objects, including null as `{"guid":""}`.
+Lists use JSON arrays with the ordinary scalar encoding for each element (Vec2
+`[x,y]`, Color `[r,g,b,a]`, enum label, or GUID object).
+
+```json
+"properties": {"Target":{"guid":"door"},"Patrol":[[300,230],[340,230],[300,270]]}
+```
+
+Forward references resolve after loading all entities. Missing targets warn and
+remain saveable; deleting a target makes runtime access return null. Duplicate
+and paste remap links within the copied set, including list elements and children,
+and preserve outside connections. The Inspector picker searches and filters by
+required type. Pick in viewport connects a clicked actor, Select target changes
+selection, and dashed lines show connections. Vec2 lists display draggable
+world-space points in Edit mode. Add/remove/reorder each create one undo step;
+a point drag creates one undo step. Unequal lists in multi-selection show one em dash.
+
+Templates/Blank demonstrates BlankPlayer's Target and Patrol fields. Left Tile
+follows its Lua patrol and changes Right Tile's Size after the last point.
+`VegaEditorRichProperties` authors the behavior through script mode, plays it,
+saves/reopens it, and checks prefab/copy connections in a build-tree asset root.
+
 See [reflection](reflection.md) for the runtime model, registration macros, and a
 walkthrough from a new C++ class to Inspector, scene, prefab, and Lua properties.
 

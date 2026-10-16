@@ -1,0 +1,86 @@
+new-scene
+wait 3
+create BlankPlayer
+rename Door
+move 620 270
+create BlankPlayer
+rename Trigger
+move 480 270
+set-ref Actor Target Door
+expect-ref Actor Target Door
+set-ref Actor Target none
+expect-ref Actor Target none
+undo
+expect-ref Actor Target Door
+list-add Actor Patrol 490 270
+list-add Actor Patrol 500 270
+list-add Actor Patrol 520 270
+expect-list-size Actor Patrol 3
+list-set Actor Patrol 0 495 270
+list-remove Actor Patrol 1
+expect-list-size Actor Patrol 2
+undo
+expect-list-size Actor Patrol 3
+redo
+expect-list-size Actor Patrol 2
+add-script scripts/patrol.lua
+save-scene scenes/properties.scene.json
+play-mode
+wait 90
+expect-world-location Trigger 520 270 0.01
+select-name Door
+expect-prop Actor Size 0.5
+expect-no-errors
+stop
+wait 3
+expect-world-location Trigger 480 270 0.01
+open-scene scenes/properties.scene.json
+wait 3
+select-name Trigger
+expect-ref Actor Target Door
+expect-list-size Actor Patrol 2
+parent Door Trigger
+focus
+capture ../properties-editor-test/properties.png
+create-prefab prefabs/Connected.prefab.json
+expect-ref Actor Target Door
+select-name Door
+rename OriginalDoor
+place-prefab prefabs/Connected.prefab.json 700 270
+rename TriggerTwo
+select-name Door
+rename DoorTwo
+expect-ref TriggerTwo Target DoorTwo
+select-name TriggerTwo
+expect-overridden Actor Target false
+expect-overridden Actor Patrol false
+list-add Actor Patrol 800 270
+expect-overridden Actor Patrol true
+revert-prefab-prop Actor Patrol
+expect-list-size Actor Patrol 2
+expect-overridden Actor Patrol false
+copy
+select-name DoorTwo
+rename OriginalDoorTwo
+select-name TriggerTwo
+paste 900 270
+rename TriggerThree
+select-name DoorTwo
+rename DoorThree
+expect-ref TriggerThree Target DoorThree
+select-name TriggerThree
+duplicate
+rename TriggerFour
+select-name DoorThree
+rename OriginalDoorThree
+select-name DoorThree
+rename DoorFour
+expect-ref TriggerFour Target DoorFour
+save-scene scenes/properties.scene.json
+open-scene scenes/properties.scene.json
+wait 3
+expect-ref TriggerTwo Target OriginalDoorTwo
+expect-ref TriggerThree Target OriginalDoorThree
+expect-ref TriggerFour Target DoorFour
+expect-no-errors
+quit

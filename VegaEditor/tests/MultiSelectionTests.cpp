@@ -14,6 +14,8 @@ namespace
 		using Actor::Actor;
 		bool reject = false;
 		int value = 0;
+		std::vector<sf::Vector2f> points;
+		ly::ActorRef target;
 	};
 	class SharedComponent : public ly::ActorComponent
 	{
@@ -183,6 +185,40 @@ namespace
 		cache.Get(context);
 		Check(replacement.use_count() == ownerCount, "Inspector cache must not retain actors/components");
 	}
+	void TestRichProperties()
+	{
+		using namespace vega;
+		ly::World world{ nullptr };
+		EditorSelection selection;
+		EditorContext context{ &world, selection };
+		CommandHistory history{context};
+		auto a = world.SpawnActor<MultiActor>().lock(), b = world.SpawnActor<MultiActor>().lock();
+		a->AddComponent<ly::SceneEntityComponent>("rich-a", "A"); b->AddComponent<ly::SceneEntityComponent>("rich-b", "B");
+		a->points = {{1,2}}; b->points = {{3,4}};
+		selection.Add(a); selection.Add(b);
+		MultiInspectorCache cache;
+		const auto find = [&]() -> CommonProperty
+		{
+			for (const auto& row : cache.Get(context)) if (row.property->name == "Points") return row;
+			throw std::runtime_error("Missing list inspector row");
+		};
+		Check(find().mixed, "Different lists must mark the entire common property mixed");
+		Check(SetCommonProperty(context, history, find(), ly::reflect::PropertyList{sf::Vector2f{8,9}}) && history.UndoCount() == 1, "Common list edit must be one undo step");
+		Check(!find().mixed && a->points == b->points, "Common list cache must refresh by revision");
+		Check(history.Undo() && find().mixed && a->points[0].x == 1 && b->points[0].x == 3, "Undo must restore each complete list");
+		history.Clear();
+		const auto group = history.BeginMergeGroup();
+		for (float x : {10.f,20.f,30.f}) history.Execute(std::make_unique<SetPropertyCommand>(a->GetUniqueID(), std::nullopt, "Points", ly::reflect::PropertyList{sf::Vector2f{x,2}}, group));
+		Check(history.UndoCount() == 1 && history.Undo() && a->points[0].x == 1, "Point drag updates must merge into one undo gesture");
+		a->target = ly::ActorRef{*b}; b->target = ly::ActorRef{*a};
+		Check(DuplicateSceneEntity(context, history), "Connected multi-selection must duplicate");
+		const auto copies = selection.GetAll();
+		if (copies.size() == 2)
+		{
+			const auto first = std::dynamic_pointer_cast<MultiActor>(copies[0]), second = std::dynamic_pointer_cast<MultiActor>(copies[1]);
+			Check(first->target.Resolve(world) == second && second->target.Resolve(world) == first, "Cross-root copied references must link the copied set");
+		}
+	}
 
 }
 
@@ -196,11 +232,15 @@ int main()
 			if (actor.reject) throw std::runtime_error("Rejected test value");
 			actor.value = value;
 		});
+	ly::reflect::Class<MultiActor, ly::Actor>("MultiActor")
+		.Property("Points", [](const MultiActor& a) { return a.points; }, [](MultiActor& a, const std::vector<sf::Vector2f>& v) { a.points = v; })
+		.Property("Target", [](const MultiActor& a) { return a.target; }, [](MultiActor& a, const ly::ActorRef& v) { a.target = v; });
 	ly::reflect::Class<SharedComponent, ly::ActorComponent>("SharedComponent")
 		.Property("Strength", [](const SharedComponent& component) { return component.strength; }, [](SharedComponent& component, int value) { component.strength = value; });
 	ly::reflect::Class<FirstComponent, SharedComponent>("FirstComponent").Addable();
 	ly::reflect::Class<SecondComponent, SharedComponent>("SecondComponent").Addable();
 	TestMultiCommands();
 	TestSelectionInvalidation();
+	TestRichProperties();
 	return failures ? 1 : 0;
 }

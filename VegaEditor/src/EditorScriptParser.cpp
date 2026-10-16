@@ -87,6 +87,30 @@ namespace vega
 		};
 		const std::string& verb = tokens[0];
 		command.extensionName = verb;
+		if (verb == "set-ref" || verb == "expect-ref" || verb == "list-add" || verb == "list-remove" || verb == "list-set" || verb == "expect-list-size")
+		{
+			if (tokens.size() < 4 || tokens[1].empty() || tokens[2].empty()) return bad();
+			command.text = tokens[1]; command.property = tokens[2];
+			if (verb == "set-ref" || verb == "expect-ref")
+			{
+				if (tokens.size() != 4 || tokens[3].empty()) return bad();
+				command.operation = verb == "set-ref" ? ScriptOperation::SetRef : ScriptOperation::ExpectRef;
+				command.values = { tokens[3] };
+			}
+			else if (verb == "list-remove" || verb == "expect-list-size")
+			{
+				if (tokens.size() != 4 || !integer(3, command.number)) return bad();
+				command.operation = verb == "list-remove" ? ScriptOperation::ListRemove : ScriptOperation::ExpectListSize;
+			}
+			else
+			{
+				const auto begin = verb == "list-set" ? 4 : 3;
+				if (verb == "list-set" && (tokens.size() < 5 || !integer(3, command.number))) return bad();
+				command.operation = verb == "list-set" ? ScriptOperation::ListSet : ScriptOperation::ListAdd;
+				command.values.assign(tokens.begin() + begin, tokens.end());
+			}
+			return { command, {} };
+		}
 		if (verb == "sky-open" || verb == "capture-sky" || verb == "sky-save")
 		{
 			if (tokens.size() != (verb == "sky-save" ? 1u : 2u) || (tokens.size() == 2 && tokens[1].empty())) return bad();

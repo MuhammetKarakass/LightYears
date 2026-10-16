@@ -3,9 +3,22 @@
 #include <imgui.h>
 #include <map>
 #include <string>
+#include <utility>
 
 namespace vega
 {
+	// Report one structural edit; the caller submits the complete list as one command.
+	template<typename List>
+	bool ListRowActions(List& list, std::size_t index)
+	{
+		if (ImGui::SmallButton("Remove")) { list.erase(list.begin() + index); return true; }
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Up") && index > 0) { std::swap(list[index], list[index - 1]); return true; }
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Down") && index + 1 < list.size()) { std::swap(list[index], list[index + 1]); return true; }
+		return false;
+	}
+
 	inline bool InputStringProperty(const char* label, std::string& value, bool mixed = false)
 	{
 		// Retain the draft across frames without writing a partially typed asset path.

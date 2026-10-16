@@ -54,6 +54,25 @@ scene instances spawn nothing and retain their original JSON for the next save.
 
 ## Overrides and composition
 
+Lists are one property value: changing, adding, removing or reordering an element
+overrides the complete array. Apply/Revert operates on the complete list; no
+per-index merge is attempted. This also applies to ActorRef lists.
+
+Actor references retain `{"guid":"..."}` encoding. Creating a prefab converts
+references within its subtree to stable addresses: `$prefab:` names the root,
+`$prefab:/door` names child id `door`, and `$prefab:/arm/lamp` names a nested child.
+These strings are reserved inside prefab documents. Placement resolves them to
+that instance's scene GUIDs, including variants and nested prefabs. Scenes save
+actual GUIDs. Outside references retain their GUIDs; absent targets warn when
+loading a scene. Null is `{"guid":""}`. Duplicate/paste remap internal references
+and preserve outside ones.
+
+```json
+{"format":"vega.prefab","version":1,"base":{"type":"BlankPlayer"},
+ "properties":{"Target":{"guid":"$prefab:/door"},"Patrol":[[100,200],[200,200]]},
+ "children":[{"id":"door","type":"BlankPlayer","properties":{"Target":{"guid":"$prefab:"}}}]}
+```
+
 `SceneEntityComponent` retains the prefab path and the realized load baseline.
 Saving compares current writable properties with that baseline, omitting equal
 values. GUID, entity name, and Location always belong to the instance. Values

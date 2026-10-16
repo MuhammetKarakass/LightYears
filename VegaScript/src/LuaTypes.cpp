@@ -24,7 +24,9 @@ namespace vega::script
 			case PropertyKind::Bool: return "boolean";
 			case PropertyKind::String: return "string";
 			case PropertyKind::Vector2: return "VegaVector";
-			case PropertyKind::Color: return "nil";
+			case PropertyKind::Color: return "table";
+			case PropertyKind::ActorRef: return "ActorHandle|nil";
+			case PropertyKind::List: return "table";
 			default: return "number";
 			}
 		}

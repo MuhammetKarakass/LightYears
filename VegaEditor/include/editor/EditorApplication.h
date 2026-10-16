@@ -9,6 +9,7 @@
 #include "editor/EditorDiagnostics.h"
 #include "editor/EditorContentAuthoring.h"
 #include <map>
+#include <tuple>
 #include <framework/scene/SceneSettings.h>
 #include <framework/ProjectSettings.h>
 #include <framework/GameModule.h>
@@ -41,6 +42,7 @@ namespace vega
 		void BuildToolbar();
 		void BuildStatusBar();
 		void BuildGizmo();
+		bool BuildPropertyOverlays();
 		void DrawWorldOverlays(sf::RenderTexture& texture, ly::World& world);
 		void BuildViewportPanel();
 		void BuildHierarchyPanel();
@@ -167,6 +169,28 @@ namespace vega
 		std::uint64_t mMoveMergeGroup = 0;
 		std::uint64_t mPropertyMergeGroup = 0;
 		MultiInspectorCache mMultiInspector;
+		std::optional<std::tuple<unsigned int, std::uint64_t, std::uint64_t>> mInspectorCacheRevision;
+		std::map<std::pair<void*, const ly::reflect::PropertyInfo*>, ly::reflect::PropertyValue> mInspectorValues;
+		struct ReferencePick
+		{
+			unsigned int actor;
+			std::optional<ly::ComponentIdentity> component;
+			std::string property;
+			int index = -1;
+		};
+		std::optional<ReferencePick> mReferencePick;
+		struct AuthoringProperty
+		{
+			unsigned int actor;
+			std::optional<ly::ComponentIdentity> component;
+			const ly::reflect::PropertyInfo* property;
+			ly::reflect::PropertyValue value;
+		};
+		std::vector<AuthoringProperty> mAuthoringProperties;
+		std::optional<std::uint64_t> mAuthoringRevision, mAuthoringSelection;
+		unsigned int mAuthoringWorld = 0;
+		std::optional<std::pair<std::size_t, std::size_t>> mPointDrag;
+		std::uint64_t mPointMergeGroup = 0;
 		std::optional<unsigned int> mHierarchyAnchor;
 		std::vector<SelectionTransform> mGizmoStarts;
 		bool mMarquee = false, mMarqueeAdd = false, mMarqueeRemove = false;

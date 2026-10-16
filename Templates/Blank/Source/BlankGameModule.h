@@ -3,6 +3,7 @@
 #include <framework/GameModule.h>
 #include <framework/Actor.h>
 #include <framework/ActorComponent.h>
+#include <framework/ActorRef.h>
 
 namespace blank
 {
@@ -25,6 +26,13 @@ namespace blank
 		explicit BlankPlayer(ly::World* world);
 		float GetSize() const;
 		void SetSize(float size);
+		const ly::ActorRef& GetTarget() const { return mTarget; }
+		void SetTarget(const ly::ActorRef& value) { mTarget = value; }
+		const std::vector<sf::Vector2f>& GetPatrol() const { return mPatrol; }
+		void SetPatrol(const std::vector<sf::Vector2f>& value) { mPatrol = value; }
+	private:
+		ly::ActorRef mTarget;
+		std::vector<sf::Vector2f> mPatrol;
 	};
 
 	class BlankGameModule final : public vega::GameModule

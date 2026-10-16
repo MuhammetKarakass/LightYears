@@ -141,6 +141,8 @@ namespace ly
 		}
 		const Application* GetApplicationRef() const { return mOwningApp; }
 		std::size_t GetActorCountIncludingPending() const { return mActors.size() + mPendingActors.size(); }
+		std::uint64_t ActorReferenceRevision() const { return mActorReferenceRevision; }
+		void InvalidateActorReferences() { ++mActorReferenceRevision; }
 
 		template<typename ActorType, typename ...Args>
 		weak_ptr<ActorType> SpawnActor(Args... args);
@@ -285,6 +287,7 @@ namespace ly
 		) const;
 
 		weak_ptr<Actor> mViewTarget;
+		std::uint64_t mActorReferenceRevision = 0;
 		std::unordered_map<std::type_index, weak_ptr<Actor>> mServiceActors;
 		CameraManager mCameraManager;
 	};
@@ -294,6 +297,7 @@ namespace ly
 	{
 		shared_ptr<ActorType> newActor = std::make_shared<ActorType>(this, args...);
 		mPendingActors.push_back(newActor);
+		InvalidateActorReferences();
 		ly::perf::IncActiveActors();
 		return newActor;
 	}

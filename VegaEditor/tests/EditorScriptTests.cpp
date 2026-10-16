@@ -18,6 +18,10 @@ int main()
 {
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
+	for (const char* line : { "set-ref Actor Target Door", "expect-ref Trigger Target none", "list-add Actor Patrol 10 20", "list-add Actor Names \"a b\"", "list-set Actor Patrol 0 20 30", "list-remove Actor Patrol 0", "expect-list-size Actor Patrol 2" })
+		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid rich property command refused: " } + line);
+	for (const char* line : { "set-ref Actor Target", "set-ref Actor Target none extra", "expect-ref Actor Target \"\"", "list-add Actor Patrol", "list-set Actor Patrol -1 10 20", "list-set Actor Patrol 0", "list-remove Actor Patrol -1", "list-remove Actor Patrol 0 extra", "expect-list-size Actor Patrol -1", "expect-list-size Actor Patrol 1.5" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid rich property command accepted: " } + line);
 	for (const char* line : { "parent Child Root", "unparent Child", "expect-parent Child Root", "expect-parent Child none", "expect-world-location Child 10 -20 0.01" })
 		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid hierarchy command refused: " } + line);
 	for (const char* line : { "parent Child", "parent Child Root extra", "unparent", "unparent Child Root", "expect-parent Child", "expect-world-location Child nan 2", "expect-world-location Child 1 2 -1", "expect-world-location Child 1" })

@@ -1,5 +1,21 @@
 Run the editor script runner from the editor's executable directory.
 
+Reflected connections and lists:
+
+* `set-ref <Target> "<Property>" <OtherTarget>|none`
+* `expect-ref <Target> "<Property>" <OtherTarget>|none`
+* `list-add <Target> "<Property>" <value>`
+* `list-remove <Target> "<Property>" <index>`
+* `list-set <Target> "<Property>" <index> <value>`
+* `expect-list-size <Target> "<Property>" N`
+
+Target is `Actor` or a component type on the selection, or a scene actor name/GUID.
+OtherTarget is a scene actor name/GUID. List indices are zero-based. Values use
+set-prop scalar syntax: Vec2 `x y`, Color `r g b a`, enum integer, quoted strings;
+ActorRef elements use a name/GUID or `none`. Each mutation is one undo step.
+`Templates/Blank/Tests/properties.vegascript` exercises the Lua patrol/target demo,
+save/reopen, and prefab/copy connections in `VegaEditorRichProperties`.
+
 Sky authoring commands (scene Edit mode):
 
 ```text

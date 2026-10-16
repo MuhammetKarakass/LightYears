@@ -26,7 +26,7 @@ an independent Other root outside actor-component discovery.
 drag speed, tooltip, category, and enum/flag labels. Erased pointers must point
 to the registered root (Actor or ActorComponent), allowing pointer adjustment
 even under multiple inheritance. `PropertyValue` holds bool, int, float,
-Vector2f, Color, or string; enums and flags travel as int. `SetValue` checks
+Vector2f, Color, string, ActorRef, or PropertyList; enums and flags travel as int. `SetValue` checks
 the value kind, finite numbers, declared enum labels/flag bits, and catches
 setter exceptions. Read-only properties have no setter. Ranges describe UI
 controls; setters enforce domain rules, including clamping.
@@ -52,6 +52,8 @@ function. Its braces form the body of `Describe(Builder& type)`.
 | `VEGA_REGISTER(Type)` | Register a type through argument-dependent lookup (ADL). Include its header and register bases first. Explicit references retain static-library objects that the linker could otherwise discard. |
 | `VEGA_PROPERTY("Name", Getter, Setter)` | Call `o.Getter()` and `o.Setter(v)` through lambdas; overloaded/default-argument setters work normally. |
 | `VEGA_READONLY("Name", Getter)` | Register a getter without a setter. |
+| `VEGA_ACTOR_REF("Target", Getter, Setter)` | Register an `ly::ActorRef`. Append `.RequiredType("Door")` to filter types, including subclasses. |
+| `VEGA_LIST("Patrol", Getter, Setter)` | Register a `std::vector<T>`. Element metadata is inferred; enum lists support `.Labels(...)`. |
 | `VEGA_CATEGORY("Group")` | Set the default category for subsequent properties, including direct `type.Property` calls. |
 | `VEGA_SPAWNABLE()` | Use the `World*` constructor through `World::SpawnActor<Self>()`. |
 | `VEGA_SPAWNABLE(factory)` | Supply a `shared_ptr<Actor>(World&)` factory for constructor arguments. |
@@ -192,6 +194,51 @@ through a reflected base. Handles resolve the actor and component again on
 access. Unknown reads return nil; writes return success and an error string,
 including read-only or incompatible-value errors. Reflection always uses the
 setter. Lua enum/flag values use integers; scene JSON uses labels.
+
+## Actor references and lists
+
+`ly::ActorRef` persists a scene GUID and caches a weak actor pointer. It never
+owns its target. `ref.Resolve(world)` returns a live actor for the duration of a
+call, or null for an empty, destroyed or missing target. Construct from `Actor&`
+to capture scene identity, or from a GUID string for authored data. Failed lookups
+are cached by the world's actor reference revision. Code directly changing a
+public scene GUID must call `world.InvalidateActorReferences()`.
+
+```cpp
+ly::ActorRef GetTarget() const { return mTarget; }
+void SetTarget(const ly::ActorRef& value) { mTarget = value; }
+const std::vector<sf::Vector2f>& GetPatrol() const { return mPatrol; }
+void SetPatrol(const std::vector<sf::Vector2f>& value) { mPatrol = value; }
+// Inside VEGA_REFLECT:
+VEGA_ACTOR_REF("Target", GetTarget, SetTarget).RequiredType("BlankPlayer");
+VEGA_LIST("Patrol", GetPatrol, SetPatrol).Speed(1.f);
+```
+
+`PropertyKind::ActorRef` and `PropertyKind::List` extend the existing kind IDs
+without changing them. `PropertyList` holds non-list `ScalarValue` elements.
+Supported vector elements are bool, int, float, Vector2f, Color, string, enum and
+ActorRef. Lists are homogeneous, limited to 4,096 elements, and validated in full
+before calling the setter. Wrong kinds, non-finite numbers and unlabelled enum
+values refuse the complete edit. `.RequiredType(...)` also filters ActorRef lists.
+Load resolves references after all entities exist; dangling GUIDs warn and survive
+saving, while runtime reads remain null-safe.
+
+The Inspector offers searchable, type-filtered choices, Pick in viewport (Esc
+cancels), and Select target. Selected actors show dashed reference lines. Lists
+have Add, Remove, Up and Down controls. Structural edits use one undo command;
+value drags and Vec2 viewport point drags merge per gesture. Mixed lists show a
+single em dash. Vec2 points use world coordinates. Property/overlay caches refresh
+on scene/selection revisions, without per-frame JSON. Viewport handles operate
+in scene Edit mode; prefab isolation offers the picker dropdown. Plain reflected
+structs and nested lists are deferred to keep the variant/persistence schema small.
+
+```json
+{"Target":{"guid":"door-guid"},"Patrol":[[100,200],[300,200]],"Spawn List":[{"guid":"enemy-a"},{"guid":""}]}
+```
+
+The registry golden now records `elementKind` (null on scalar properties) and
+`requiredType` (empty when unrestricted). Existing order, kind IDs, labels and
+other metadata remain identical.
 
 ## Compatibility checks
 

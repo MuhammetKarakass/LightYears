@@ -7,11 +7,118 @@
 #include <algorithm>
 #include <cstdio>
 #include <unordered_set>
+#include <framework/scene/SceneEntityComponent.h>
 
 namespace vega
 {
+	bool EditorApplication::BuildPropertyOverlays()
+	{
+		if (!mContext.world || mContext.playMode || mPrefabWorld) { mPointDrag.reset(); return false; }
+		if (mReferencePick)
+		{
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape)) mReferencePick.reset();
+			else
+			{
+				ImGui::SetTooltip("Pick a target actor in the viewport (Esc cancels)");
+				if (mSelectionClickPending && mViewportImageHovered) PickViewportActor();
+				return true;
+			}
+		}
+		// Cache property values and descriptors by edit/selection revision. No scene JSON
+		// or repeated list getter copies are needed while merely drawing the viewport.
+		if (mAuthoringRevision != mContext.sceneRevision || mAuthoringSelection != mSelection.Revision() || mAuthoringWorld != mContext.world->GetUniqueID())
+		{
+			if (mAuthoringSelection != mSelection.Revision() || mAuthoringWorld != mContext.world->GetUniqueID()) mPointDrag.reset();
+			mAuthoringProperties.clear();
+			for (const auto& actor : mSelection.GetAll())
+			{
+				const auto collect = [&](const ReflectedTarget& target)
+				{
+					if (!target.type) return;
+					for (const auto* property : target.type->AllProperties())
+						if (property->kind == ly::reflect::PropertyKind::ActorRef || property->kind == ly::reflect::PropertyKind::List)
+							mAuthoringProperties.push_back({ actor->GetUniqueID(), target.componentIdentity, property, property->getter(target.object) });
+				};
+				collect(ResolvePropertyTarget(*actor, {}));
+				actor->ForEachComponent([&](ly::ActorComponent& component) { collect(ResolvePropertyTarget(*actor, ly::IdentifyComponent(*actor, component))); });
+			}
+			mAuthoringRevision = mContext.sceneRevision; mAuthoringSelection = mSelection.Revision(); mAuthoringWorld = mContext.world->GetUniqueID();
+		}
+		const auto main = ImGui::GetMainViewport()->Pos;
+		const auto image = mViewportImageRect;
+		const auto screen = [&](sf::Vector2f point)
+		{
+			const auto pixel = mViewport.GetTexture().mapCoordsToPixel(point, mContext.world->GetWorldView());
+			return ImVec2{ image.position.x + main.x + pixel.x * image.size.x / mViewport.GetSize().x,
+				image.position.y + main.y + pixel.y * image.size.y / mViewport.GetSize().y };
+		};
+		auto* draw = ImGui::GetWindowDrawList();
+		draw->PushClipRect({ image.position.x + main.x, image.position.y + main.y }, { image.position.x + main.x + image.size.x, image.position.y + main.y + image.size.y }, true);
+		const auto mouse = ImGui::GetMousePos();
+		bool consumed = mPointDrag.has_value();
+		for (std::size_t row = 0; row < mAuthoringProperties.size(); ++row)
+		{
+			auto& entry = mAuthoringProperties[row];
+			const auto actor = mContext.Resolve(entry.actor);
+			if (!actor) continue;
+			const auto line = [&](const ly::ActorRef& ref)
+			{
+				const auto target = ref.Resolve(*mContext.world);
+				if (!target) return;
+				const auto a = screen(actor->GetActorLocation()), b = screen(target->GetActorLocation());
+				const float distance = std::hypot(b.x - a.x, b.y - a.y);
+				for (float d = 0; d < distance; d += 12.f)
+				{
+					const float end = std::min(d + 6.f, distance);
+					draw->AddLine({ a.x + (b.x - a.x) * d / distance, a.y + (b.y - a.y) * d / distance },
+						{ a.x + (b.x - a.x) * end / distance, a.y + (b.y - a.y) * end / distance }, IM_COL32(100, 210, 245, 230), 1.5f);
+				}
+			};
+			if (entry.property->kind == ly::reflect::PropertyKind::ActorRef) line(std::get<ly::ActorRef>(entry.value));
+			else
+			{
+				auto& list = std::get<ly::reflect::PropertyList>(entry.value);
+				for (std::size_t i = 0; i < list.size(); ++i)
+				{
+					if (const auto* ref = std::get_if<ly::ActorRef>(&list[i])) line(*ref);
+					if (const auto* point = std::get_if<sf::Vector2f>(&list[i]))
+					{
+						const auto p = screen(*point);
+						if (i) { const auto previous = screen(std::get<sf::Vector2f>(list[i - 1])); draw->AddLine(previous, p, IM_COL32(245, 195, 70, 180)); }
+						draw->AddCircleFilled(p, 5.f, IM_COL32(245, 195, 70, 240));
+						if (!mPointDrag && entry.property->setter && mViewportImageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && std::hypot(mouse.x - p.x, mouse.y - p.y) < 9.f)
+						{
+							mPointDrag = { { row, i } }; mPointMergeGroup = mHistory.BeginMergeGroup(); consumed = true;
+						}
+					}
+				}
+			}
+		}
+		draw->PopClipRect();
+		if (mPointDrag)
+		{
+			const auto [row, index] = *mPointDrag;
+			if (row >= mAuthoringProperties.size() || !ImGui::IsMouseDown(ImGuiMouseButton_Left) || ImGui::IsKeyPressed(ImGuiKey_Escape)) mPointDrag.reset();
+			else if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 3.f))
+			{
+				auto& entry = mAuthoringProperties[row];
+				auto value = entry.value;
+				auto& list = std::get<ly::reflect::PropertyList>(value);
+				if (index >= list.size()) mPointDrag.reset();
+				else
+				{
+					const auto pixel = MapWindowToTexturePixel({ int(mouse.x - main.x), int(mouse.y - main.y) }, image, mViewport.GetSize());
+					list[index] = mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView());
+					if (value != entry.value) mHistory.Execute(std::make_unique<SetPropertyCommand>(entry.actor, entry.component, entry.property->name, value, mPointMergeGroup));
+				}
+			}
+		}
+		return consumed;
+	}
+
 	void EditorApplication::BuildGizmo()
 	{
+		if (BuildPropertyOverlays()) return;
 		auto* world = GetCurrentWorld();
 		const auto actor = mSelection.Get();
 		if (mContext.playMode)

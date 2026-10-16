@@ -156,7 +156,7 @@ namespace ly
 				result.entity = SceneSerializer::SaveEntity(*scratch.GetActorsByTypeIncludingPending<Actor>().front().lock(), true);
 			}
 			result.entity = Merge(std::move(result.entity), document);
-			const auto resolveChildren = [&](auto&& self, Json& node, unsigned depth) -> void
+			const auto resolveChildren = [&](auto&& self, Json& node, unsigned depth, const std::string& address) -> void
 			{
 				if (depth > 128) throw std::runtime_error("Prefab hierarchy depth limit");
 				if (!node.contains("children")) return;
@@ -171,13 +171,23 @@ namespace ly
 						auto nested = Resolve(child["prefab"].get<std::string>(), chain, dependencies);
 						result.warnings.insert(result.warnings.end(), nested.warnings.begin(), nested.warnings.end());
 						if (!nested) throw std::runtime_error("Cannot resolve nested prefab");
+						const auto rebase = [&](auto&& visit, Json& value) -> void
+						{
+							if (value.is_object() && value.size() == 1 && value.contains("guid") && value["guid"].is_string())
+							{
+								const auto guid = value["guid"].get<std::string>();
+								if (guid.rfind("$prefab:", 0) == 0) value["guid"] = "$prefab:" + address + "/" + id + guid.substr(8);
+							}
+							else if (value.is_structured()) for (auto& item : value) visit(visit, item);
+						};
+						rebase(rebase, nested.entity);
 						child = Merge(std::move(nested.entity), child);
 						child.erase("prefab");
 					}
-					self(self, child, depth + 1);
+					self(self, child, depth + 1, address + "/" + id);
 				}
 			};
-			resolveChildren(resolveChildren, result.entity, 0);
+			resolveChildren(resolveChildren, result.entity, 0, {});
 			result.entity.erase("guid");
 			result.entity.erase("name");
 			result.entity["properties"].erase("Location");
@@ -187,9 +197,11 @@ namespace ly
 			World scratch{ nullptr };
 			const auto loaded = SceneSerializer::Load(scratch, { { "format", "vega.scene" }, { "version", 1 },
 				{ "settings", Json::object() }, { "entities", Json::array({ result.entity }) } });
-			result.warnings.insert(result.warnings.end(), loaded.warnings.begin(), loaded.warnings.end());
+			for (const auto& warning : loaded.warnings)
+				if (warning.find("Dangling actor reference:") == std::string::npos) result.warnings.push_back(warning);
 			if (loaded.spawned < 1) { result.entity = nullptr; return result; }
 			result.entity = SceneSerializer::SaveSubtree(*scratch.GetActorsByTypeIncludingPending<Actor>().front().lock(), true);
+			LocalizeReferences(result.entity);
 			const auto clean = [&](auto&& self, Json& node) -> void
 			{
 				node.erase("guid"); node.erase("parent");
@@ -368,8 +380,21 @@ namespace ly
 		}
 		return result;
 	}
+	void PrefabLibrary::LocalizeReferences(Json& entity)
+	{
+		std::map<std::string, std::string> references;
+		const auto collect = [&](auto&& self, const Json& node, const std::string& address) -> void
+		{
+			if (node.contains("guid") && node["guid"].is_string()) references[node["guid"].get<std::string>()] = "$prefab:" + address;
+			if (node.contains("children")) for (const auto& child : node["children"]) self(self, child, address + "/" + child.at("id").get<std::string>());
+		};
+		collect(collect, entity, {});
+		SceneSerializer::RemapReferences(entity, references);
+	}
+
 	Json PrefabLibrary::Document(Json entity, const std::string& name)
 	{
+		LocalizeReferences(entity);
 		const auto clean = [&](auto&& self, Json& node) -> void
 		{
 			node.erase("guid"); node.erase("parent");

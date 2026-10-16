@@ -42,6 +42,8 @@ namespace blank
 		VEGA_REQUIRES(SpriteComponent);
 		VEGA_REQUIRES(BlankMovement);
 		VEGA_PROPERTY("Size", GetSize, SetSize).Range(0.1f, 10.f);
+		VEGA_ACTOR_REF("Target", GetTarget, SetTarget).RequiredType("BlankPlayer");
+		VEGA_LIST("Patrol", GetPatrol, SetPatrol).Speed(1.f);
 	}
 
 	namespace

@@ -6,7 +6,7 @@
 
 namespace ly::reflect
 {
-	bool PropertyInfo::SetValue(void* object, const PropertyValue& value, std::string* error) const
+	bool PropertyInfo::ValidateValue(const PropertyValue& value, std::string* error) const
 	{
 		if (error) error->clear();
 		const auto fail = [error](const std::string& reason)
@@ -15,9 +15,14 @@ namespace ly::reflect
 			return false;
 		};
 		const auto valueKind = (kind == PropertyKind::Enum || kind == PropertyKind::Flags) ? PropertyKind::Int : kind;
-		if (!object) return fail("Property target is unavailable");
-		if (!setter) return fail("Read-only property");
 		if (KindOf(value) != valueKind) return fail("Incompatible property value");
+		if (kind == PropertyKind::List)
+		{
+			if (std::get<PropertyList>(value).size() > 4096) return fail("List exceeds 4096 elements");
+			const auto element = Element();
+			for (const auto& item : std::get<PropertyList>(value))
+				if (!element.ValidateValue(ToValue(item), error)) return false;
+		}
 		if (const auto* number = std::get_if<float>(&value); number && !std::isfinite(*number)) return fail("Expected finite number");
 		if (const auto* vector = std::get_if<sf::Vector2f>(&value);
 			vector && (!std::isfinite(vector->x) || !std::isfinite(vector->y))) return fail("Expected finite vector");
@@ -33,13 +38,63 @@ namespace ly::reflect
 			for (const auto& label : enumLabels) allowed |= label.first;
 			if ((std::get<int>(value) & ~allowed) != 0) return fail("Flags contain undeclared bits");
 		}
+		return true;
+	}
+
+	bool PropertyInfo::SetValue(void* object, const PropertyValue& value, std::string* error) const
+	{
+		if (!object || !setter)
+		{
+			if (error) *error = object ? "Read-only property" : "Property target is unavailable";
+			return false;
+		}
+		if (!ValidateValue(value, error)) return false;
+		const auto* ownerWorld = world ? world(object) : nullptr;
+		if (ownerWorld && !requiredType.empty())
+		{
+			const auto accepts = [&](const ly::ActorRef& ref)
+			{
+				const auto actor = ref.Resolve(*const_cast<World*>(ownerWorld));
+				const auto* filter = TypeRegistry::Get().Find(requiredType);
+				return !actor || (filter && filter->root == TypeRoot::Actor && filter->isInstance(actor.get()));
+			};
+			bool accepted = true;
+			if (kind == PropertyKind::ActorRef) accepted = accepts(std::get<ly::ActorRef>(value));
+			if (kind == PropertyKind::List && elementKind == PropertyKind::ActorRef)
+				for (const auto& item : std::get<PropertyList>(value)) accepted = accepts(std::get<ly::ActorRef>(item)) && accepted;
+			if (!accepted) { if (error) *error = "Actor reference requires " + requiredType; return false; }
+		}
 		try
 		{
 			setter(object, value);
 		}
-		catch (const std::exception& failure) { return fail(failure.what()); }
-		catch (...) { return fail("Unknown property setter error"); }
+		catch (const std::exception& failure) { if (error) *error = failure.what(); return false; }
+		catch (...) { if (error) *error = "Unknown property setter error"; return false; }
 		return true;
+	}
+
+	bool PropertyInfo::ResolveReferences(void* object, World& world, std::string* error) const
+	{
+		if (!setter || (kind != PropertyKind::ActorRef && !(kind == PropertyKind::List && elementKind == PropertyKind::ActorRef))) return true;
+		auto value = getter(object);
+		bool valid = true;
+		const auto bind = [&](ly::ActorRef& ref)
+		{
+			if (ref.Guid().empty()) return;
+			const auto actor = ref.Resolve(world);
+			if (!actor) { valid = false; if (error) *error = "Dangling actor reference: " + ref.Guid(); return; }
+			const auto* filter = requiredType.empty() ? nullptr : TypeRegistry::Get().Find(requiredType);
+			if (!requiredType.empty() && (!filter || filter->root != TypeRoot::Actor || !filter->isInstance(actor.get())))
+			{
+				valid = false;
+				if (error) *error = "Actor reference requires " + requiredType;
+				ref = ly::ActorRef{};
+			}
+		};
+		if (kind == PropertyKind::ActorRef) bind(std::get<ly::ActorRef>(value));
+		else for (auto& item : std::get<PropertyList>(value)) bind(std::get<ly::ActorRef>(item));
+		setter(object, value);
+		return valid;
 	}
 
 	std::vector<const PropertyInfo*> TypeInfo::AllProperties() const

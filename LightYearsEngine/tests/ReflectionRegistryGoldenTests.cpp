@@ -21,7 +21,9 @@ namespace
 					{ "min", property.min ? nlohmann::json(*property.min) : nlohmann::json(nullptr) },
 					{ "max", property.max ? nlohmann::json(*property.max) : nlohmann::json(nullptr) },
 					{ "speed", property.speed }, { "tooltip", property.tooltip },
-					{ "category", property.category }, { "labels", property.enumLabels }
+					{ "category", property.category }, { "labels", property.enumLabels },
+					{ "elementKind", property.kind == ly::reflect::PropertyKind::List ? nlohmann::json(static_cast<int>(property.elementKind)) : nlohmann::json(nullptr) },
+					{ "requiredType", property.requiredType }
 				});
 			}
 			types.push_back({

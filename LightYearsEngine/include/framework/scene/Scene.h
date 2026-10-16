@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace ly
 {
@@ -36,6 +37,7 @@ namespace ly
 		static nlohmann::json SaveSubtree(Actor& root, bool expanded = false);
 		// Remap nested instance/subtree GUIDs and internal parent links together.
 		static void RemapGuids(nlohmann::json& entities);
+		static void RemapReferences(nlohmann::json& data, const std::map<std::string, std::string>& guids);
 		static SceneLoadResult Load(World& world, const nlohmann::json& scene);
 		static void RegisterComponentSerializer(const std::string& type, ComponentSerializer serializer);
 		// For actors whose reflected construction-only properties select their

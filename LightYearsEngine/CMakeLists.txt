@@ -1,4 +1,6 @@
 add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
+	include/framework/ActorRef.h
+	src/framework/ActorRef.cpp
 	include/framework/ProjectSettings.h
 	src/framework/ProjectSettings.cpp
 	include/framework/ComponentIdentity.h

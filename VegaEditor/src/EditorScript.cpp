@@ -198,6 +198,65 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::SetRef:
+		case ScriptOperation::ExpectRef:
+		case ScriptOperation::ListAdd:
+		case ScriptOperation::ListRemove:
+		case ScriptOperation::ListSet:
+		case ScriptOperation::ExpectListSize:
+		{
+			const auto find = [&](const std::string& name) -> std::shared_ptr<ly::Actor>
+			{
+				if (const auto found = context.ResolveGuid(name)) return found;
+				for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+					if (const auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy())
+						if (const auto* identity = candidate->FindComponent<ly::SceneEntityComponent>(); identity && identity->name == name) return candidate;
+				return {};
+			};
+			auto owner = actor;
+			auto target = actor ? FindPropertyTarget(*actor, command.text) : ReflectedTarget{};
+			if (!target.object) { owner = find(command.text); if (owner) target = ResolvePropertyTarget(*owner, {}); }
+			const auto* property = target.type ? target.type->FindProperty(command.property) : nullptr;
+			if (!property) { detail = "Unknown target or property"; break; }
+			auto value = property->getter(target.object);
+			const auto parse = [&](const ly::reflect::PropertyInfo& descriptor, ly::reflect::PropertyValue& parsed)
+			{
+				if (descriptor.kind == ly::reflect::PropertyKind::ActorRef)
+				{
+					if (command.values.size() != 1) return false;
+					const auto other = find(command.values[0]);
+					if (!other && command.values[0] != "none") return false;
+					parsed = other ? ly::ActorRef{ *other } : ly::ActorRef{};
+					return true;
+				}
+				float tolerance = 0.f;
+				return ParsePropertyValue(descriptor, command.values, false, parsed, tolerance);
+			};
+			if (command.operation == ScriptOperation::SetRef || command.operation == ScriptOperation::ExpectRef)
+			{
+				if (property->kind != ly::reflect::PropertyKind::ActorRef || !parse(*property, value)) { detail = "Expected actor reference and live target or none"; break; }
+				if (command.operation == ScriptOperation::ExpectRef) { success = property->getter(target.object) == value; break; }
+			}
+			else
+			{
+				if (property->kind != ly::reflect::PropertyKind::List) { detail = "Expected list property"; break; }
+				auto& list = std::get<ly::reflect::PropertyList>(value);
+				if (command.operation == ScriptOperation::ExpectListSize) { success = list.size() == command.number; detail = "size " + std::to_string(list.size()); break; }
+				if (command.operation != ScriptOperation::ListAdd && command.number >= list.size()) { detail = "List index out of range (zero-based)"; break; }
+				if (command.operation == ScriptOperation::ListRemove) list.erase(list.begin() + command.number);
+				else
+				{
+					ly::reflect::PropertyValue item;
+					if (!parse(property->Element(), item)) { detail = "Invalid list element"; break; }
+					if (command.operation == ScriptOperation::ListAdd) list.push_back(ly::reflect::ToScalar(item));
+					else list[command.number] = ly::reflect::ToScalar(item);
+				}
+			}
+			success = history.Execute(std::make_unique<SetPropertyCommand>(owner->GetUniqueID(), target.componentIdentity, property->name, value));
+			detail = success ? "Property set" : context.propertyError;
+			if (!success) mPendingPropertyError = detail;
+			break;
+		}
 		case ScriptOperation::Parent:
 		case ScriptOperation::Unparent:
 		case ScriptOperation::ExpectParent:

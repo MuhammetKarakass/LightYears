@@ -545,7 +545,8 @@ namespace vega
 		ly::World scratch{ nullptr };
 		auto stagedBefore = mBefore; stagedBefore.erase("parent");
 		const auto loaded = ly::SceneSerializer::Load(scratch, EntityScene(stagedBefore));
-		if (loaded.spawned < 1 || !loaded.warnings.empty()) return false;
+		if (loaded.spawned < 1 || std::any_of(loaded.warnings.begin(), loaded.warnings.end(), [](const auto& warning)
+			{ return warning.find("Dangling actor reference:") == std::string::npos; })) return false;
 		const auto staged = scratch.GetActorsByTypeIncludingPending<ly::Actor>().front().lock();
 		try
 		{
@@ -596,15 +597,17 @@ namespace vega
 		if (!snapshotPrefab.empty()) staged.erase("prefab");
 		// Stage with fresh identities so the old subtree stays intact until creation succeeds.
 		std::map<std::string, std::string> publish;
+		std::map<std::string, std::string> staging;
 		const auto stage = [&](auto&& self, nlohmann::json& node) -> void
 		{
 			const auto old = node.value("guid", std::string{});
 			const auto temporary = ly::SceneEntityComponent::GenerateGuid();
-			if (!old.empty()) publish[temporary] = old;
+			if (!old.empty()) { publish[temporary] = old; staging[old] = temporary; }
 			node["guid"] = temporary;
 			if (node.contains("children")) for (auto& child : node["children"]) self(self, child);
 		};
 		stage(stage, staged);
+		ly::SceneSerializer::RemapReferences(staged, staging);
 		const auto temporary = staged.at("guid").get<std::string>();
 		const auto loaded = ly::SceneSerializer::Load(*context.world, EntityScene(staged));
 		context.ResetActorCache();
@@ -636,7 +639,12 @@ namespace vega
 			auto* identity = current.FindComponent<ly::SceneEntityComponent>();
 			const auto found = publish.find(identity->guid);
 			if (found != publish.end()) identity->guid = found->second;
-			else if (identity->guid.compare(0, temporary.size(), temporary) == 0) identity->guid = guid + identity->guid.substr(temporary.size());
+			else if (identity->guid.compare(0, temporary.size(), temporary) == 0)
+			{
+				const auto old = identity->guid;
+				identity->guid = guid + identity->guid.substr(temporary.size());
+				publish[old] = identity->guid;
+			}
 			if (identity->prefabRootGuid == temporary) identity->prefabRootGuid = guid;
 			if (!snapshotPrefab.empty())
 			{
@@ -655,6 +663,45 @@ namespace vega
 		auto baseline = savedBaseline;
 		if (!snapshotPrefab.empty()) if (const auto resolved = ly::PrefabLibrary::Get().Resolve(snapshotPrefab)) baseline = resolved.entity;
 		publishTree(publishTree, *replacement, baseline);
+		// Staging changes identities twice. Publish property GUIDs and prefab baselines
+		// together so undo/refresh never retain references to throwaway identities.
+		const auto addresses = [&](auto&& self, ly::Actor& current, const std::string& address) -> void
+		{
+			publish["$prefab:" + address] = current.FindComponent<ly::SceneEntityComponent>()->guid;
+			for (auto* child : current.GetChildren()) self(self, *child, address + "/" + child->FindComponent<ly::SceneEntityComponent>()->childId);
+		};
+		addresses(addresses, *replacement, {});
+		context.world->InvalidateActorReferences();
+		const auto references = [&](auto&& self, ly::Actor& current) -> void
+		{
+			auto* identity = current.FindComponent<ly::SceneEntityComponent>();
+			ly::SceneSerializer::RemapReferences(identity->prefabBaseline, publish);
+			const auto remap = [&](const ReflectedTarget& target)
+			{
+				if (!target.type) return;
+				for (const auto* property : target.type->AllProperties())
+				{
+					if (!property->setter) continue;
+					auto value = property->getter(target.object);
+					const auto update = [&](ly::ActorRef& ref)
+					{
+						const auto found = publish.find(ref.Guid());
+						if (found != publish.end()) ref = ly::ActorRef{found->second};
+					};
+					if (auto* ref = std::get_if<ly::ActorRef>(&value)) update(*ref);
+					else if (auto* list = std::get_if<ly::reflect::PropertyList>(&value))
+					{
+						for (auto& item : *list) if (auto* ref = std::get_if<ly::ActorRef>(&item)) update(*ref);
+					}
+					else continue;
+					property->SetValue(target.object, value);
+				}
+			};
+			remap(ResolvePropertyTarget(current, {}));
+			current.ForEachComponent([&](ly::ActorComponent& component) { remap(ResolvePropertyTarget(current, ly::IdentifyComponent(current, component))); });
+			for (auto* child : current.GetChildren()) self(self, *child);
+		};
+		references(references, *replacement);
 		for (const auto& survivor : survivors)
 		{
 			survivor.actor->AttachTo(replacement.get());

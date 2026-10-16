@@ -14,8 +14,9 @@
 			"guid": "blank-left",
 			"name": "Left Tile",
 			"type": "BlankPlayer",
-			"properties": { "Location": [300, 270] },
-			"components": [{ "type": "BlankMovement", "properties": { "Speed": 0 } }]
+			"properties": { "Location": [300, 270], "Target": { "guid": "blank-right" }, "Patrol": [[300, 230], [340, 230], [300, 270]] },
+			"components": [{ "type": "BlankMovement", "properties": { "Speed": 0 } }],
+			"scripts": [{ "path": "scripts/patrol.lua", "properties": {} }]
 		},
 		{
 			"guid": "blank-right",

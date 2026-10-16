@@ -24,6 +24,10 @@ if(BUILD_TESTING)
 	include(Tests/Dependencies.cmake)
 	vega_record_dependencies(BlankGame)
 	if(VEGA_BUILD_EDITOR)
+		add_test(NAME VegaEditorRichProperties COMMAND ${CMAKE_COMMAND}
+			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/properties-editor-test
+			-DEDITOR=$<TARGET_FILE:BlankEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunProperties.cmake)
+		set_tests_properties(VegaEditorRichProperties PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 180)
 		vega_record_dependencies(BlankEditor)
 	endif()
 	get_property(graph GLOBAL PROPERTY BLANK_DEPENDENCY_GRAPH)

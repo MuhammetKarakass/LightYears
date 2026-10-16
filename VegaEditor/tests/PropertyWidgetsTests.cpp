@@ -1,5 +1,6 @@
 #include "editor/PropertyWidgets.h"
 #include <iostream>
+#include <vector>
 
 int main()
 {
@@ -69,6 +70,33 @@ int main()
 	check(value == longPath && commits == 2, "Focus loss must commit the full resized draft once");
 	frame();
 	check(commits == 2, "Idle frames must not repeat a commit");
+	std::vector<int> list{10,20,30};
+	int listCommits = 0;
+	const auto listFrame = [&]()
+	{
+		ImGui::NewFrame();
+		ImGui::SetNextWindowPos({0,0});
+		ImGui::SetNextWindowSize({700,500});
+		ImGui::Begin("List operations");
+		if (list.size() > 1 && vega::ListRowActions(list, 1)) ++listCommits;
+		ImGui::End();
+		ImGui::Render();
+	};
+	listFrame();
+	const auto listClick = [&](float x)
+	{
+		io.AddMousePosEvent(x, 35.f); io.AddMouseButtonEvent(0,true); listFrame();
+		io.AddMouseButtonEvent(0,false); listFrame();
+	};
+	// The fixed test window uses the default font/style: buttons begin at x=8,y=27.
+	listClick(100.f);
+	check(list == std::vector<int>({10,30,20}) && listCommits == 1, "Down must reorder one row and commit once");
+	listClick(75.f);
+	check(list == std::vector<int>({30,10,20}) && listCommits == 2, "Up must reorder one row and commit once");
+	listClick(25.f);
+	check(list == std::vector<int>({30,20}) && listCommits == 3, "Remove must erase one row and commit once");
+	listFrame();
+	check(listCommits == 3, "Idle list widgets must not repeat operations");
 	ImGui::DestroyContext();
 	return failures ? 1 : 0;
 }

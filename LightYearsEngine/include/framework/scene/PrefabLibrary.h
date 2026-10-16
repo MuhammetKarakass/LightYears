@@ -32,6 +32,7 @@ namespace ly
 		static nlohmann::json Merge(nlohmann::json base, const nlohmann::json& overrides);
 		static nlohmann::json Diff(const nlohmann::json& entity, const nlohmann::json& baseline);
 		static nlohmann::json Document(nlohmann::json entity, const std::string& name);
+		static void LocalizeReferences(nlohmann::json& entity);
 	private:
 		PrefabResult Resolve(const std::string& path, std::set<std::filesystem::path>& chain, std::set<std::filesystem::path>& dependencies);
 		struct Cached

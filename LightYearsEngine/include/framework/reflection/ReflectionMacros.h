@@ -33,6 +33,8 @@
 		[](Self& o, const auto& v) { o.Setter(v); })
 #define VEGA_READONLY(Name, Getter) \
 	type.Property(Name, [](const Self& o) { return o.Getter(); })
+#define VEGA_ACTOR_REF(Name, Getter, Setter) VEGA_PROPERTY(Name, Getter, Setter)
+#define VEGA_LIST(Name, Getter, Setter) VEGA_PROPERTY(Name, Getter, Setter)
 #define VEGA_CATEGORY(Name) type.DefaultCategory(Name)
 #define VEGA_SPAWNABLE(...) type.Spawnable(__VA_ARGS__)
 #define VEGA_ADDABLE(...) \

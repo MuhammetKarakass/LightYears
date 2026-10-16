@@ -57,6 +57,12 @@ namespace ly
 		}
 		Json Encode(const PropertyInfo& property, const PropertyValue& value)
 		{
+			if (property.kind == PropertyKind::List)
+			{
+				Json list = Json::array();
+				for (const auto& item : std::get<PropertyList>(value)) list.push_back(Encode(property.Element(), ToValue(item)));
+				return list;
+			}
 			if (property.kind == PropertyKind::Flags)
 			{
 				Json labels = Json::array();
@@ -75,6 +81,8 @@ namespace ly
 				using T = std::decay_t<decltype(item)>;
 				if constexpr (std::is_same_v<T, sf::Vector2f>) return Json::array({ item.x, item.y });
 				else if constexpr (std::is_same_v<T, sf::Color>) return Json::array({ item.r, item.g, item.b, item.a });
+				else if constexpr (std::is_same_v<T, ly::ActorRef>) return Json{ { "guid", item.Guid() } };
+				else if constexpr (std::is_same_v<T, PropertyList>) return nullptr;
 				else return item;
 			}, value);
 		}
@@ -96,6 +104,16 @@ namespace ly
 		{
 			switch (property.kind)
 			{
+			case PropertyKind::ActorRef:
+				if (!value.is_object() || !value.contains("guid") || !value["guid"].is_string()) throw std::runtime_error("Expected {guid: string}");
+				return ly::ActorRef{ value["guid"].get<std::string>() };
+			case PropertyKind::List:
+			{
+				if (!value.is_array() || value.size() > 4096) throw std::runtime_error("Expected array with at most 4096 elements");
+				PropertyList list;
+				for (const auto& item : value) list.push_back(ToScalar(Decode(property.Element(), item)));
+				return list;
+			}
 			case PropertyKind::Bool: return value.get<bool>();
 			case PropertyKind::Int: return Integer(value, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 			case PropertyKind::Float: return Number(value);
@@ -374,6 +392,21 @@ namespace ly
 		};
 		visit(visit, entities, true);
 		visit(visit, entities, false);
+		RemapReferences(entities, remap);
+	}
+
+	void SceneSerializer::RemapReferences(Json& data, const std::map<std::string, std::string>& remap)
+	{
+		const auto refs = [&](auto&& self, Json& node) -> void
+		{
+			if (node.is_object() && node.size() == 1 && node.contains("guid") && node["guid"].is_string())
+			{
+				const auto found = remap.find(node["guid"].get<std::string>());
+				if (found != remap.end()) node["guid"] = found->second;
+			}
+			else if (node.is_structured()) for (auto& child : node) self(self, child);
+		};
+		refs(refs, data);
 	}
 
 	SceneLoadResult SceneSerializer::Load(World& world, const Json& scene)
@@ -421,6 +454,25 @@ namespace ly
 					entity = PrefabLibrary::Merge(std::move(resolved.entity), entity);
 				}
 				if (!entity.contains("guid")) entity["guid"] = SceneEntityComponent::GenerateGuid();
+				if (entity.contains("prefab") || (parent.empty() && prefabPath.empty()))
+				{
+					std::map<std::string, std::string> references;
+					const auto assign = [&](auto&& visit, Json& node, const std::string& address, const std::string& fallback, unsigned level) -> void
+					{
+						if (level > 128) throw std::runtime_error("Hierarchy depth limit");
+						if (!node.contains("guid")) node["guid"] = fallback;
+						const auto identity = node.at("guid").get<std::string>();
+						references["$prefab:" + address] = identity;
+						if (node.contains("children") && node["children"].is_array()) for (auto& child : node["children"])
+						{
+							const auto id = child.at("id").get<std::string>();
+							visit(visit, child, address + "/" + id, identity + "/" + id, level + 1);
+						}
+					};
+					assign(assign, entity, {}, entity.at("guid").get<std::string>(), 0);
+					RemapReferences(entity, references);
+					RemapReferences(baseline, references);
+				}
 				const auto guid = entity.at("guid").get<std::string>();
 				if (!parent.empty()) entity["parent"] = parent;
 				if (!path.empty() && root.empty()) root = guid;
@@ -578,6 +630,22 @@ namespace ly
 				}
 				catch (const std::exception& error) { result.warnings.push_back(std::string{ "Entity: " } + error.what()); }
 				catch (...) { result.warnings.push_back("Entity load failed"); }
+			}
+			// References resolve only after all actors and their identities exist.
+			world.InvalidateActorReferences();
+			for (const auto& entry : actors)
+			{
+				const auto resolve = [&](const TypeInfo* type, void* object)
+				{
+					if (!type) return;
+					for (const auto* property : type->AllProperties())
+					{
+						std::string error;
+						if (!property->ResolveReferences(object, world, &error)) result.warnings.push_back(type->name + "." + property->name + ": " + error);
+					}
+				};
+				resolve(TypeRegistry::Get().FindMostDerived(*entry.second), entry.second.get());
+				entry.second->ForEachComponent([&](ActorComponent& component) { resolve(TypeRegistry::Get().FindMostDerived(component), &component); });
 			}
 			for (const auto& link : attachments)
 			{

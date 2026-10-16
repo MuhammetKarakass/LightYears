@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "framework/World.h"
+#include "framework/ActorRef.h"
 #include <functional>
 #include <memory>
 #include <optional>
@@ -18,8 +19,24 @@ namespace ly { class Actor; class ActorComponent; }
 
 namespace ly::reflect
 {
-	using PropertyValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string>;
-	enum class PropertyKind { Bool, Int, Float, Vector2, Color, String, Enum, Flags };
+	using ScalarValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string, ly::ActorRef>;
+	using PropertyList = std::vector<ScalarValue>;
+	using PropertyValue = std::variant<bool, int, float, sf::Vector2f, sf::Color, std::string, ly::ActorRef, PropertyList>;
+	enum class PropertyKind { Bool, Int, Float, Vector2, Color, String, Enum, Flags, ActorRef, List };
+	template<typename T> struct ListTraits { static constexpr bool value = false; };
+	template<typename T> struct ListTraits<std::vector<T>> { static constexpr bool value = true; using Element = T; };
+	inline PropertyValue ToValue(const ScalarValue& value)
+	{
+		return std::visit([](const auto& item) -> PropertyValue { return item; }, value);
+	}
+	inline ScalarValue ToScalar(const PropertyValue& value)
+	{
+		return std::visit([](const auto& item) -> ScalarValue
+		{
+			if constexpr (std::is_same_v<std::decay_t<decltype(item)>, PropertyList>) throw std::logic_error("Nested lists are unsupported");
+			else return item;
+		}, value);
+	}
 	// The first six kinds describe the variant alternatives; enums and flags use int.
 	static_assert(static_cast<std::size_t>(PropertyKind::Bool) == 0 && std::is_same_v<std::variant_alternative_t<0, PropertyValue>, bool>);
 	static_assert(static_cast<std::size_t>(PropertyKind::Int) == 1 && std::is_same_v<std::variant_alternative_t<1, PropertyValue>, int>);
@@ -29,7 +46,7 @@ namespace ly::reflect
 	static_assert(static_cast<std::size_t>(PropertyKind::String) == 5 && std::is_same_v<std::variant_alternative_t<5, PropertyValue>, std::string>);
 	inline PropertyKind KindOf(const PropertyValue& value)
 	{
-		return static_cast<PropertyKind>(value.index());
+		return value.index() == 6 ? PropertyKind::ActorRef : value.index() == 7 ? PropertyKind::List : static_cast<PropertyKind>(value.index());
 	}
 	using EnumLabels = std::vector<std::pair<int, std::string>>;
 
@@ -39,12 +56,24 @@ namespace ly::reflect
 		PropertyKind kind = PropertyKind::Bool;
 		std::function<PropertyValue(const void*)> getter;
 		std::function<void(void*, const PropertyValue&)> setter;
+		std::function<World*(const void*)> world;
 		std::optional<float> min;
 		std::optional<float> max;
 		float speed = 1.f;
 		std::string tooltip;
 		EnumLabels enumLabels;
 		std::string category;
+		PropertyKind elementKind = PropertyKind::Bool;
+		std::string requiredType;
+		PropertyInfo Element() const
+		{
+			auto element = *this;
+			element.kind = elementKind;
+			return element;
+		}
+		bool ValidateValue(const PropertyValue& value, std::string* error = nullptr) const;
+		// Bind weak caches after the entire scene exists, including forward references.
+		bool ResolveReferences(void* object, World& world, std::string* error = nullptr) const;
 
 		// All erased object pointers are pointers to the registered root, even for
 		// inherited properties. This preserves pointer adjustment with multiple inheritance.
@@ -144,10 +173,24 @@ namespace ly::reflect
 			property.name = name;
 			property.category = mDefaultCategory;
 			property.kind = Kind<Value>();
+			if constexpr (std::is_base_of_v<Actor, T> || std::is_base_of_v<ActorComponent, T>)
+				property.world = [](const void* object) { return dynamic_cast<const T*>(static_cast<const Root*>(object))->GetWorld(); };
+			if constexpr (ListTraits<Value>::value) property.elementKind = Kind<typename ListTraits<Value>::Element>();
 			property.getter = [getter](const void* object) -> PropertyValue
 			{
 				const T& instance = *dynamic_cast<const T*>(static_cast<const Root*>(object));
 				if constexpr (std::is_enum_v<Value>) return static_cast<int>(std::invoke(getter, instance));
+				else if constexpr (ListTraits<Value>::value)
+				{
+					PropertyList list;
+					for (const auto& item : std::invoke(getter, instance))
+					{
+						using E = typename ListTraits<Value>::Element;
+						if constexpr (std::is_enum_v<E>) list.emplace_back(static_cast<int>(item));
+						else list.emplace_back(static_cast<E>(item));
+					}
+					return list;
+				}
 				else return std::invoke(getter, instance);
 			};
 			mType.properties.push_back(std::move(property));
@@ -164,6 +207,17 @@ namespace ly::reflect
 			{
 				T& instance = *dynamic_cast<T*>(static_cast<Root*>(object));
 				if constexpr (std::is_enum_v<Value>) std::invoke(setter, instance, static_cast<Value>(std::get<int>(value)));
+				else if constexpr (ListTraits<Value>::value)
+				{
+					Value list;
+					using E = typename ListTraits<Value>::Element;
+					for (const auto& item : std::get<PropertyList>(value))
+					{
+						if constexpr (std::is_enum_v<E>) list.push_back(static_cast<E>(std::get<int>(item)));
+						else list.push_back(std::get<E>(item));
+					}
+					std::invoke(setter, instance, list);
+				}
 				else std::invoke(setter, instance, std::get<Value>(value));
 			};
 			return *this;
@@ -207,6 +261,7 @@ namespace ly::reflect
 		Class& Category(const std::string& category) { Current().category = category; return *this; }
 		Class& DefaultCategory(std::string category) { mDefaultCategory = std::move(category); return *this; }
 		Class& Labels(EnumLabels labels) { Current().enumLabels = std::move(labels); return *this; }
+		Class& RequiredType(const std::string& name) { Current().requiredType = name; return *this; }
 		Class& Flags(EnumLabels labels) { Current().kind = PropertyKind::Flags; Current().enumLabels = std::move(labels); return *this; }
 
 	private:
@@ -230,6 +285,8 @@ namespace ly::reflect
 		template<typename V> static constexpr PropertyKind Kind()
 		{
 			if constexpr (std::is_enum_v<V>) return PropertyKind::Enum;
+			else if constexpr (ListTraits<V>::value) return PropertyKind::List;
+			else if constexpr (std::is_same_v<V, ly::ActorRef>) return PropertyKind::ActorRef;
 			else if constexpr (std::is_same_v<V, bool>) return PropertyKind::Bool;
 			else if constexpr (std::is_same_v<V, int>) return PropertyKind::Int;
 			else if constexpr (std::is_same_v<V, float>) return PropertyKind::Float;

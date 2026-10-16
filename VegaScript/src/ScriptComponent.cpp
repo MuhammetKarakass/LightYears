@@ -182,14 +182,31 @@ namespace vega::script
 			for (const auto& entry : data.items()) table[entry.key()] = MessageObject(lua, entry.value());
 			return sol::make_object(lua, table);
 		}
-		sol::object ToLua(sol::state_view lua, const Value& value)
+		sol::object ToLua(sol::state_view lua, const Value& value, ly::World* world = nullptr)
 		{
 			return std::visit([&](const auto& item) -> sol::object
 			{
 				using T = std::decay_t<decltype(item)>;
 				if constexpr (std::is_same_v<T, sf::Vector2f>)
 					return sol::make_object(lua, Vector{ item.x, item.y });
-				else if constexpr (std::is_same_v<T, sf::Color>) return sol::make_object(lua, sol::nil);
+				else if constexpr (std::is_same_v<T, sf::Color>)
+				{
+					sol::table color = lua.create_table();
+					color["r"] = item.r; color["g"] = item.g; color["b"] = item.b; color["a"] = item.a;
+					return sol::make_object(lua, color);
+				}
+				else if constexpr (std::is_same_v<T, ly::ActorRef>)
+				{
+					const auto actor = world ? item.Resolve(*world) : nullptr;
+					return actor ? sol::make_object(lua, ActorHandle{ actor }) : sol::make_object(lua, sol::nil);
+				}
+				else if constexpr (std::is_same_v<T, ly::reflect::PropertyList>)
+				{
+					sol::table list = lua.create_table();
+					list["n"] = item.size();
+					for (std::size_t i = 0; i < item.size(); ++i) list[i + 1] = ToLua(lua, ly::reflect::ToValue(item[i]), world);
+					return sol::make_object(lua, list);
+				}
 				else return sol::make_object(lua, item);
 			}, value);
 		}
@@ -222,20 +239,76 @@ namespace vega::script
 		sol::object ReadProperty(sol::this_state state, const void* object, const ly::reflect::TypeInfo* type, const std::string& name)
 		{
 			const auto* property = type ? type->FindProperty(name) : nullptr;
-			return object && property ? ToLua(sol::state_view{ state }, property->getter(object)) : sol::make_object(state, sol::nil);
+			return object && property ? ToLua(sol::state_view{ state }, property->getter(object), property->world ? property->world(object) : nullptr) : sol::make_object(state, sol::nil);
+		}
+		std::optional<Value> FromPropertyLua(const ly::reflect::PropertyInfo& property, const sol::object& input, ly::World* world)
+		{
+			using ly::reflect::PropertyKind;
+			if (property.kind == PropertyKind::ActorRef)
+			{
+				if (input == sol::nil) return ly::ActorRef{};
+				if (!input.is<ActorHandle>()) return {};
+				const auto actor = input.as<ActorHandle>().Lock();
+				if (!actor || actor->GetWorld() != world) return {};
+				return ly::ActorRef{ *actor };
+			}
+			if (property.kind == PropertyKind::List)
+			{
+				if (input.get_type() != sol::type::table) return {};
+				const auto table = input.as<sol::table>();
+				const auto length = table.raw_get<sol::object>("n");
+				if (length != sol::nil && (!length.is<int>() || length.as<int>() < 0)) return {};
+				const auto size = length == sol::nil ? table.size() : static_cast<std::size_t>(length.as<int>());
+				if (size > 4096) return {};
+				std::size_t count = 0;
+				for (const auto& entry : table)
+				{
+					if (entry.first.get_type() == sol::type::string && entry.first.as<std::string>() == "n") continue;
+					if (!entry.first.is<int>()) return {};
+					const int index = entry.first.as<int>();
+					if (index < 1 || static_cast<std::size_t>(index) > size) return {};
+					++count;
+				}
+				if (count != size && property.elementKind != PropertyKind::ActorRef) return {};
+				ly::reflect::PropertyList list;
+				for (std::size_t i = 1; i <= size; ++i)
+				{
+					auto value = FromPropertyLua(property.Element(), table.raw_get<sol::object>(i), world);
+					if (!value) return {};
+					list.push_back(ly::reflect::ToScalar(*value));
+				}
+				return list;
+			}
+			if (property.kind == PropertyKind::Color)
+			{
+				if (input.get_type() != sol::type::table) return {};
+				const auto table = input.as<sol::table>();
+				int channels[4]{};
+				const char* names[]{ "r", "g", "b", "a" };
+				for (int i = 0; i < 4; ++i)
+				{
+					const auto channel = table.raw_get<sol::object>(names[i]);
+					if (!channel.is<int>()) return {};
+					channels[i] = channel.as<int>();
+					if (channels[i] < 0 || channels[i] > 255) return {};
+				}
+				return sf::Color{ static_cast<std::uint8_t>(channels[0]), static_cast<std::uint8_t>(channels[1]), static_cast<std::uint8_t>(channels[2]), static_cast<std::uint8_t>(channels[3]) };
+			}
+			auto value = FromLua(input);
+			if (property.kind == PropertyKind::Int || property.kind == PropertyKind::Enum || property.kind == PropertyKind::Flags)
+			{
+				if (input.get_type() != sol::type::number) return {};
+				const double number = input.as<double>();
+				if (!std::isfinite(number) || std::trunc(number) != number || number < std::numeric_limits<int>::min() || number > std::numeric_limits<int>::max()) return {};
+				value = static_cast<int>(number);
+			}
+			return value;
 		}
 		std::tuple<bool, std::string> WriteProperty(void* object, const ly::reflect::TypeInfo* type, const std::string& name, const sol::object& input)
 		{
 			const auto* property = type ? type->FindProperty(name) : nullptr;
-			auto value = FromLua(input);
+			auto value = object && property ? FromPropertyLua(*property, input, property->world ? property->world(object) : nullptr) : std::optional<Value>{};
 			if (!object || !property || !value) return { false, "Unknown target/property or incompatible value" };
-			if (property->kind == ly::reflect::PropertyKind::Int || property->kind == ly::reflect::PropertyKind::Enum || property->kind == ly::reflect::PropertyKind::Flags)
-			{
-				const auto* number = std::get_if<float>(&*value);
-				if (!number || std::trunc(*number) != *number || static_cast<double>(*number) < std::numeric_limits<int>::min() ||
-					static_cast<double>(*number) > std::numeric_limits<int>::max()) return { false, "Expected integer in range" };
-				value = static_cast<int>(*number);
-			}
 			std::string error;
 			const bool ok = property->SetValue(object, *value, &error);
 			return { ok, std::move(error) };
@@ -652,6 +725,7 @@ namespace vega::script
 						using T = std::decay_t<decltype(v)>;
 						if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ v.x, v.y });
 						else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
+						else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList>) return nullptr;
 						else if constexpr (std::is_same_v<T, float>)
 						{
 							// Scene enum/flag/int readers distinguish integral JSON values.
@@ -940,6 +1014,7 @@ namespace vega::script
 						using T = std::decay_t<decltype(value)>;
 						if constexpr (std::is_same_v<T, sf::Vector2f>) return nlohmann::json::array({ value.x, value.y });
 						else if constexpr (std::is_same_v<T, sf::Color>) return nullptr;
+						else if constexpr (std::is_same_v<T, ly::ActorRef> || std::is_same_v<T, ly::reflect::PropertyList>) return nullptr;
 						else return value;
 					}, entry.second);
 				return nlohmann::json{ { "path", component.ScriptPath() }, { "properties", std::move(properties) } };

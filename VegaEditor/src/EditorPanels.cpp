@@ -20,7 +20,11 @@ namespace vega
 {
 	namespace
 	{
-		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed = false)
+		struct PropertyGesture { bool activated = false; bool continuous = false; };
+		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed = false,
+			EditorContext* context = nullptr, const std::function<void(int)>& pick = {}, PropertyGesture* gesture = nullptr);
+		bool DrawPropertyBody(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
+			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture)
 		{
 			using ly::reflect::PropertyKind;
 			const char* label = property.name.c_str();
@@ -28,6 +32,79 @@ namespace vega
 			const float max = property.max.value_or(0.f);
 			switch (property.kind)
 			{
+			case PropertyKind::ActorRef:
+			{
+				auto& ref = std::get<ly::ActorRef>(value);
+				const auto target = context && context->world ? ref.Resolve(*context->world) : nullptr;
+				const auto* identity = target ? target->FindComponent<ly::SceneEntityComponent>() : nullptr;
+				const auto preview = mixed ? std::string{ "\xe2\x80\x94" } : identity ? identity->name : ref.Guid().empty() ? "None" : "Missing: " + ref.Guid();
+				bool changed = false;
+				ImGui::PushID(label);
+				if (ImGui::BeginCombo(label, preview.c_str()))
+				{
+					static ImGuiTextFilter filter;
+					filter.Draw("Search");
+					if (ImGui::Selectable("None", ref.Guid().empty())) { ref = ly::ActorRef{}; changed = true; }
+					if (context && context->world) for (const auto& weak : context->world->GetActorsByTypeIncludingPending<ly::Actor>())
+					{
+						const auto actor = weak.lock();
+						if (!actor || actor->GetIsPendingDestroy()) continue;
+						const auto* data = actor->FindComponent<ly::SceneEntityComponent>();
+						const auto* type = property.requiredType.empty() ? nullptr : ly::reflect::TypeRegistry::Get().Find(property.requiredType);
+						if (!data || (!property.requiredType.empty() && (!type || type->root != ly::reflect::TypeRoot::Actor || !type->isInstance(actor.get()))) || !filter.PassFilter(data->name.c_str())) continue;
+						ImGui::PushID(data->guid.c_str());
+						if (ImGui::Selectable(data->name.c_str(), ref.Guid() == data->guid)) { ref = ly::ActorRef{ *actor }; changed = true; }
+						ImGui::PopID();
+					}
+					ImGui::EndCombo();
+				}
+				if (pick && ImGui::SmallButton("Pick in viewport")) pick(-1);
+				ImGui::SameLine();
+				ImGui::BeginDisabled(!target);
+				if (ImGui::SmallButton("Select target") && context) context->selection.Select(target);
+				ImGui::EndDisabled();
+				ImGui::PopID();
+				return changed;
+			}
+			case PropertyKind::List:
+			{
+				ImGui::PushID(label);
+				if (mixed) { ImGui::Text("%s: \xe2\x80\x94", label); ImGui::PopID(); return false; }
+				auto& list = std::get<ly::reflect::PropertyList>(value);
+				bool changed = false;
+				if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					for (std::size_t i = 0; i < list.size(); ++i)
+					{
+						ImGui::PushID(static_cast<int>(i));
+						auto element = property.Element(); element.name = "[" + std::to_string(i) + "]";
+						auto item = ly::reflect::ToValue(list[i]);
+						if (DrawProperty(element, item, false, context, pick ? std::function<void(int)>{ [&, i](int) { pick(static_cast<int>(i)); } } : std::function<void(int)>{}, gesture))
+						{ list[i] = ly::reflect::ToScalar(item); changed = true; }
+						if (ListRowActions(list, i)) { changed = true; if (gesture) *gesture = {}; ImGui::PopID(); break; }
+						ImGui::PopID();
+					}
+					if (ImGui::SmallButton("Add") && list.size() < 4096)
+					{
+						if (gesture) *gesture = {};
+						switch (property.elementKind)
+						{
+						case PropertyKind::Bool: list.emplace_back(false); break;
+						case PropertyKind::Int: case PropertyKind::Flags: case PropertyKind::Enum: list.emplace_back(property.enumLabels.empty() ? 0 : property.enumLabels.front().first); break;
+						case PropertyKind::Float: list.emplace_back(0.f); break;
+						case PropertyKind::Vector2: list.emplace_back(sf::Vector2f{}); break;
+						case PropertyKind::Color: list.emplace_back(sf::Color::White); break;
+						case PropertyKind::String: list.emplace_back(std::string{}); break;
+						case PropertyKind::ActorRef: list.emplace_back(ly::ActorRef{}); break;
+						default: break;
+						}
+						changed = true;
+					}
+					ImGui::TreePop();
+				}
+				ImGui::PopID();
+				return changed;
+			}
 			case PropertyKind::Bool: return ImGui::Checkbox(label, &std::get<bool>(value));
 			case PropertyKind::Int: return ImGui::DragInt(label, &std::get<int>(value), property.speed, static_cast<int>(min), static_cast<int>(max), mixed ? "\xe2\x80\x94" : "%d");
 			case PropertyKind::Float: return ImGui::DragFloat(label, &std::get<float>(value), property.speed, min, max, mixed ? "\xe2\x80\x94" : "%.3f");
@@ -95,6 +172,17 @@ namespace vega
 			}
 			}
 			return false;
+		}
+		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
+			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture)
+		{
+			const bool changed = DrawPropertyBody(property, value, mixed, context, pick, gesture);
+			if (gesture && property.kind != ly::reflect::PropertyKind::List && (changed || ImGui::IsItemActivated()))
+			{
+				gesture->activated = ImGui::IsItemActivated();
+				gesture->continuous = property.kind != ly::reflect::PropertyKind::ActorRef && (ImGui::IsItemActive() || ImGui::IsItemDeactivated());
+			}
+			return changed;
 		}
 	}
 
@@ -282,6 +370,7 @@ namespace vega
 					const float rowStart = ImGui::GetCursorPosY();
 					ImGui::PushID(static_cast<int>(actor->GetUniqueID()));
 					if (row.depth) ImGui::Indent(row.depth * 16.f);
+					const float labelX = ImGui::GetCursorPosX() + ImGui::GetTreeNodeToLabelSpacing();
 					if (identity && identity->guid == mRenameGuid)
 					{
 						if (mRenameFocus) { ImGui::SetKeyboardFocusHere(); mRenameFocus = false; }
@@ -345,6 +434,7 @@ namespace vega
 							ImGui::OpenPopup("Entity actions");
 							mHierarchyPopupActor = actor->GetUniqueID();
 						}
+						ImGui::SetCursorPosX(labelX);
 						ImGui::TextDisabled("%s", type.c_str());
 					}
 					if (ImGui::BeginPopup("Entity actions"))
@@ -427,11 +517,12 @@ namespace vega
 					auto value = row.value;
 					ImGui::BeginDisabled(!row.property->setter);
 					ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, row.mixed);
-					const bool changed = DrawProperty(*row.property, value, row.mixed);
+					PropertyGesture gesture;
+					const bool changed = DrawProperty(*row.property, value, row.mixed, &context, {}, &gesture);
 					ImGui::PopItemFlag();
-					if (ImGui::IsItemActivated()) mPropertyMergeGroup = history.BeginMergeGroup();
+					if (gesture.activated) mPropertyMergeGroup = history.BeginMergeGroup();
 					if (changed) SetCommonProperty(context, history, row, value,
-						(ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0);
+						gesture.continuous ? mPropertyMergeGroup : 0);
 					ImGui::EndDisabled();
 					ImGui::PopID();
 				}
@@ -575,7 +666,12 @@ namespace vega
 								if (property->category != category) continue;
 								if (mPrefabWorld && !target.componentIdentity && property->name == "Location") continue;
 								if (scriptComponent && (property->name == "Script" || property->name == "Last Error")) continue;
-								auto value = property->getter(target.object);
+								const auto cacheRevision = std::make_tuple(context.world->GetUniqueID(), context.sceneRevision, selection.Revision());
+								if (mInspectorCacheRevision != cacheRevision || context.playMode) { mInspectorValues.clear(); mInspectorCacheRevision = cacheRevision; }
+								const auto key = std::make_pair(target.object, property);
+								auto cached = mInspectorValues.find(key);
+								if (cached == mInspectorValues.end()) cached = mInspectorValues.emplace(key, property->getter(target.object)).first;
+								auto value = cached->second;
 								if (context.relativeTransforms && !target.componentIdentity && property->name == "Location") value = actor->GetRelativeLocation();
 								if (context.relativeTransforms && !target.componentIdentity && property->name == "Rotation") value = actor->GetRelativeRotation();
 								ImGui::BeginDisabled(!property->setter);
@@ -585,13 +681,17 @@ namespace vega
 									ImGui::GetContentRegionAvail().x - labelWidth - ImGui::GetStyle().ItemInnerSpacing.x));
 								const bool overridden = !mPrefabWorld && PrefabPropertyOverridden(context, *actor, target, property->name);
 								if (overridden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
-								const bool changed = DrawProperty(*property, value);
+								PropertyGesture gesture;
+								const bool changed = DrawProperty(*property, value, false, &context, [&](int index)
+								{
+									mReferencePick = ReferencePick{ actor->GetUniqueID(), target.componentIdentity, property->name, index };
+								}, &gesture);
 								if (overridden) ImGui::PopStyleColor();
-								if (ImGui::IsItemActivated()) mPropertyMergeGroup = history.BeginMergeGroup();
+								if (gesture.activated) mPropertyMergeGroup = history.BeginMergeGroup();
 								if (changed && property->setter)
 								{
 									history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity,
-										property->name, std::move(value), (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0, context.relativeTransforms));
+										property->name, std::move(value), gesture.continuous ? mPropertyMergeGroup : 0, context.relativeTransforms));
 								}
 								ImGui::EndDisabled();
 								PrefabPropertyMenu(*actor, target, property->name);
@@ -670,6 +770,26 @@ namespace vega
 			}
 		}
 		const auto best = PickBestActor(point, candidates);
+		if (mReferencePick)
+		{
+			const auto request = *mReferencePick;
+			mReferencePick.reset();
+			const auto owner = mContext.Resolve(request.actor), targetActor = best ? mContext.Resolve(*best) : nullptr;
+			if (!owner || !targetActor) return;
+			const auto target = ResolvePropertyTarget(*owner, request.component);
+			const auto* property = target.type ? target.type->FindProperty(request.property) : nullptr;
+			if (!property) return;
+			auto value = property->getter(target.object);
+			if (request.index < 0) value = ly::ActorRef{ *targetActor };
+			else
+			{
+				auto* list = std::get_if<ly::reflect::PropertyList>(&value);
+				if (!list || static_cast<std::size_t>(request.index) >= list->size()) return;
+				(*list)[request.index] = ly::ActorRef{ *targetActor };
+			}
+			mHistory.Execute(std::make_unique<SetPropertyCommand>(request.actor, request.component, request.property, value));
+			return;
+		}
 		const auto& io = ImGui::GetIO();
 		if (best)
 		{

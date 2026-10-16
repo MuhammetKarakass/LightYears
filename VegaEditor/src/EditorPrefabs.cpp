@@ -102,12 +102,13 @@ namespace vega
 			const auto document = ly::PrefabLibrary::Get().Load(identity->prefab, warnings);
 			if (document.is_null()) return false;
 			PrefabJson authored = updated;
+			ly::PrefabLibrary::LocalizeReferences(authored);
 			if (document["base"].contains("type")) PreserveNestedReferences(authored, document);
 			if (document["base"].contains("prefab"))
 			{
 				const auto parent = ly::PrefabLibrary::Get().Resolve(document["base"]["prefab"].get<std::string>());
 				if (!parent) return false;
-				authored = ly::PrefabLibrary::Diff(updated, parent.entity);
+				authored = ly::PrefabLibrary::Diff(authored, parent.entity);
 			}
 			for (const char* key : { "guid", "name", "type" }) authored.erase(key);
 			if (authored.contains("properties")) authored["properties"].erase("Location");
@@ -308,6 +309,14 @@ namespace vega
 		ly::PrefabLibrary::Get().Reload();
 		PrefabJson after{ { "prefab", path }, { "guid", before["guid"] }, { "name", before["name"] },
 			{ "properties", { { "Location", before["properties"]["Location"] } } } };
+		const auto identities = [&](auto&& self, const PrefabJson& source) -> PrefabJson
+		{
+			PrefabJson node;
+			for (const char* key : { "id", "guid", "name" }) if (source.contains(key)) node[key] = source[key];
+			if (source.contains("children")) for (const auto& child : source["children"]) node["children"].push_back(self(self, child));
+			return node;
+		};
+		if (before.contains("children")) for (const auto& child : before["children"]) after["children"].push_back(identities(identities, child));
 		if (before.contains("parent")) after["parent"] = before["parent"];
 		return history.Execute(std::make_unique<ReplaceEntities>(PrefabJson::array({ before }), PrefabJson::array({ after }), "Create Prefab"));
 	}
@@ -514,7 +523,9 @@ namespace vega
 		{
 			const auto parent = ly::PrefabLibrary::Get().Resolve(mPrefabDocument["base"]["prefab"].get<std::string>());
 			if (!parent) return false;
-			document = ly::PrefabLibrary::Diff(full, parent.entity);
+			auto localized = full;
+			ly::PrefabLibrary::LocalizeReferences(localized);
+			document = ly::PrefabLibrary::Diff(localized, parent.entity);
 			if (document.contains("properties")) document["properties"].erase("Location");
 			document["format"] = "vega.prefab"; document["version"] = 1; document["name"] = full.value("name", std::string{});
 		}

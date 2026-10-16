@@ -19,6 +19,7 @@ namespace vega
 	enum class ScriptOperation
 	{
 		Extension,
+		SetRef, ExpectRef, ListAdd, ListRemove, ListSet, ExpectListSize,
 		Parent, Unparent, ExpectParent, ExpectWorldLocation,
 		SkyOpen, SkySet, SkyDrag, SkySave, ExpectSky, CaptureSky,
 		ContentOpen, ContentSet, ContentNew, ContentRename, ContentValidate, ContentSave, ContentReload, ExpectContent,

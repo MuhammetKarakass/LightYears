@@ -94,7 +94,7 @@ Components expose `:get(name)` and `:set(name,value)`. Property names are the
 registered display names, including spaces, such as `"Max Health"`. Numbers for
 integer/enum/flag setters must be integral and in range. Missing reads return nil;
 invalid writes return false and a reason. Read-only setters refuse writes.
-Colors remain unsupported. Dead handles return empty/zero defaults for basic
+Colors use `{r=...,g=...,b=...,a=...}` with integral channels in 0..255. Dead handles return empty/zero defaults for basic
 reads, nil for property/component reads, and ignore transform setters/destroy.
 There is no actor gameplay tag system, so no tag API is added.
 
@@ -290,6 +290,30 @@ Implementation files:
 * Coverage/examples: `VegaScript/tests/LuaApiTests.cpp` and
   `VegaScript/examples/{trigger,spinning-hazard,message-receiver}.lua`.
 * Reference and setup: this document.
+
+## Reflected connections and lists
+
+`actor:get("Target")` returns an ActorHandle or nil for null, destroyed or dangling
+targets. `actor:set("Target", handle)` and `actor:set("Target", nil)` connect/clear
+through the setter. Other-world handles and incompatible required types are
+refused. Components support the same kinds.
+
+Lists get/set Lua tables of existing scalar representations. Enums use integers;
+Vec2 elements accept `vec(x,y)` or `{x=...,y=...}`. Reads allocate a new table;
+cache a constant patrol/spawn list in `on_start`. All elements are validated before
+the setter. Tables use one-based integer keys with a 4,096 element limit; invalid
+writes leave the list unchanged. Returned tables include `n`, their explicit
+length. ActorRef lists may contain nil entries: retain `n` when writing back so
+holes and trailing nulls survive. Holes in other lists are refused.
+
+```lua
+function on_start(self)
+	local target = self.actor:get("Target")
+	if target then target:set("Size", 0.5) end
+	self.actor:set("Patrol", {vec(100,200), vec(300,200)})
+	self.actor:set("Target", nil)
+end
+```
 
 ## Actor attachment
 
