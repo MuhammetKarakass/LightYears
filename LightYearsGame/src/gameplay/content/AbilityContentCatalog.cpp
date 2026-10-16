@@ -8,6 +8,7 @@ namespace ly::content
 {
 	namespace
 	{
+		thread_local const List<AbilityLoader::LoadedDefinition>* validationDefinitions = nullptr;
 		List<GameAbilityDefinition>& GetDefinitionsStorage()
 		{
 			static List<GameAbilityDefinition> definitions;
@@ -53,6 +54,13 @@ namespace ly::content
 			return false;
 		}
 	}
+
+	ScopedAbilityValidationView::ScopedAbilityValidationView(const List<AbilityLoader::LoadedDefinition>& definitions)
+		: mPrevious{ validationDefinitions }
+	{
+		validationDefinitions = &definitions;
+	}
+	ScopedAbilityValidationView::~ScopedAbilityValidationView() { validationDefinitions = mPrevious; }
 
 	bool AbilityContentCatalog::LoadFromFile(
 		const std::filesystem::path& filePath,
@@ -109,6 +117,8 @@ namespace ly::content
 		const std::string& abilityId
 	)
 	{
+		if (validationDefinitions) for (const auto& loaded : *validationDefinitions)
+			if (loaded.id == abilityId) return &loaded.definition;
 		for (const GameAbilityDefinition* definition : GetDefinitionPointers())
 		{
 			if (definition && definition->abilityId == abilityId)
@@ -123,6 +133,8 @@ namespace ly::content
 		const std::string& actorDefinitionId
 	)
 	{
+		if (validationDefinitions) for (const auto& loaded : *validationDefinitions)
+			for (const auto& actor : loaded.actorDefinitions) if (actor.actorDefinitionId.ToString() == actorDefinitionId) return &actor;
 		for (const AbilityActorDefinition* definition : GetActorDefinitionPointers())
 		{
 			if (definition && definition->actorDefinitionId.ToString() == actorDefinitionId)
@@ -143,6 +155,11 @@ namespace ly::content
 		const std::string& settingName
 	)
 	{
+		if (validationDefinitions) for (const auto& loaded : *validationDefinitions) if (loaded.id == abilityId)
+		{
+			const auto setting = loaded.numericSettings.find(settingName);
+			return setting == loaded.numericSettings.end() ? std::nullopt : std::optional<float>{ setting->second };
+		}
 		const auto abilityIt = GetSettingsStorage().find(abilityId);
 		if (abilityIt == GetSettingsStorage().end())
 		{

@@ -279,13 +279,14 @@ namespace ly
 
 		bool ValidateOwnedEffectSpecs(
 			const GameAbilityDefinition& ability,
-			std::string* failureReason
+			std::string* failureReason,
+			const AbilityActionValidator::EffectLookup& findEffect
 		)
 		{
 			for (const AbilityEffectSpecDefinition& spec : ability.effectSpecs)
 			{
 				const sas::GameplayEffectDefinition* effect =
-					EffectData::FindGameplayEffectDefinition(spec.effectId.ToString());
+					(findEffect ? findEffect(spec.effectId.ToString()) : EffectData::FindGameplayEffectDefinition(spec.effectId.ToString()));
 				if (!effect)
 				{
 					return Fail(failureReason, "Ability effectSpecs references an unknown effect.");
@@ -324,7 +325,8 @@ namespace ly
 		bool ValidateSourceEffectSpecs(
 			const GameAbilityDefinition& ability,
 			const List<AbilityActionSpec>& actions,
-			std::string* failureReason
+			std::string* failureReason,
+			const AbilityActionValidator::EffectLookup& findEffect
 		)
 		{
 			for (const AbilityActionSpec& action : actions)
@@ -335,7 +337,7 @@ namespace ly
 					continue;
 				}
 				const sas::GameplayEffectDefinition* effect =
-					EffectData::FindGameplayEffectDefinition(applyEffect->effectId.ToString());
+					(findEffect ? findEffect(applyEffect->effectId.ToString()) : EffectData::FindGameplayEffectDefinition(applyEffect->effectId.ToString()));
 				if (effect && effect->sourceParameterized &&
 					!ability.FindEffectSpec(applyEffect->effectId))
 				{
@@ -448,7 +450,8 @@ namespace ly
 		bool ValidateAbilityLevelTrigger(
 			const AbilityTriggerSpec& trigger,
 			const AbilityActionValidator::EffectValidationFunction& validateEffect,
-			std::string* failureReason
+			std::string* failureReason,
+			const AbilityActionValidator::EffectLookup& findEffect
 		)
 		{
 			if (!GameplayTagSchema::Validate(
@@ -471,7 +474,7 @@ namespace ly
 			return AbilityActionValidator::Validate(
 				trigger.actions,
 				validateEffect,
-				failureReason
+				failureReason, findEffect
 			);
 		}
 
@@ -480,7 +483,8 @@ namespace ly
 			std::string_view familyNamespace,
 			const AbilityLevelStep& step,
 			const AbilityActionValidator::EffectValidationFunction& validateEffect,
-			std::string* failureReason
+			std::string* failureReason,
+			const AbilityActionValidator::EffectLookup& findEffect
 		)
 		{
 			if (!ValidateAbilityAttributeModifiers(
@@ -501,14 +505,14 @@ namespace ly
 			if (!AbilityActionValidator::Validate(
 				step.addedActions,
 				validateEffect,
-				failureReason
+				failureReason, findEffect
 			))
 			{
 				return false;
 			}
 			for (const AbilityTriggerSpec& trigger : step.addedTriggers)
 			{
-				if (!ValidateAbilityLevelTrigger(trigger, validateEffect, failureReason))
+				if (!ValidateAbilityLevelTrigger(trigger, validateEffect, failureReason, findEffect))
 				{
 					return false;
 				}
@@ -520,7 +524,8 @@ namespace ly
 			const GameAbilityDefinition& definition,
 			std::string_view familyNamespace,
 			const AbilityActionValidator::EffectValidationFunction& validateEffect,
-			std::string* failureReason
+			std::string* failureReason,
+			const AbilityActionValidator::EffectLookup& findEffect
 		)
 		{
 			List<std::string> declaredUpgradeIds;
@@ -546,7 +551,7 @@ namespace ly
 						familyNamespace,
 						step,
 						validateEffect,
-						failureReason
+						failureReason, findEffect
 					))
 				{
 					return false;
@@ -559,7 +564,8 @@ namespace ly
 	bool GameAbilityDefinitionValidator::Validate(
 		const GameAbilityDefinition& definition,
 		const AbilityActionValidator::EffectValidationFunction& validateEffect,
-		std::string* failureReason
+		std::string* failureReason,
+			const AbilityActionValidator::EffectLookup& findEffect
 	)
 	{
 		if (!sas::ValidateAbilityDefinition(definition, failureReason))
@@ -692,9 +698,9 @@ namespace ly
 				return false;
 			}
 		}
-		if (!AbilityActionValidator::Validate(definition.actions, validateEffect, failureReason) ||
-			!ValidateOwnedEffectSpecs(definition, failureReason) ||
-			!ValidateSourceEffectSpecs(definition, definition.actions, failureReason))
+		if (!AbilityActionValidator::Validate(definition.actions, validateEffect, failureReason, findEffect) ||
+			!ValidateOwnedEffectSpecs(definition, failureReason, findEffect) ||
+			!ValidateSourceEffectSpecs(definition, definition.actions, failureReason, findEffect))
 		{
 			return false;
 		}
@@ -707,7 +713,7 @@ namespace ly
 			) || !AbilityActionValidator::Validate(
 				trigger.actions,
 				validateEffect,
-				failureReason
+				failureReason, findEffect
 			))
 			{
 				if (failureReason && failureReason->empty())
@@ -728,7 +734,7 @@ namespace ly
 			{
 				return false;
 			}
-			if (!ValidateSourceEffectSpecs(definition, trigger.actions, failureReason))
+			if (!ValidateSourceEffectSpecs(definition, trigger.actions, failureReason, findEffect))
 			{
 				return false;
 			}
@@ -737,7 +743,7 @@ namespace ly
 			definition,
 			familyNamespace,
 			validateEffect,
-			failureReason
+			failureReason, findEffect
 		))
 		{
 			return false;

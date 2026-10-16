@@ -337,9 +337,14 @@ namespace ly::content
 			return Result{ {}, documentResult.error };
 		}
 
+		return LoadFromJson(*documentResult.document, presentationBase);
+	}
+
+	ShipLoader::Result ShipLoader::LoadFromJson(const nlohmann::json& root, const ShipDefinition& presentationBase, const std::string& selectedId)
+	{
 		try
 		{
-			const Json& root = *documentResult.document;
+
 			if (root.at("schemaVersion").get<int>() != 1)
 			{
 				return Result{ {}, "Unsupported ship schema version" };
@@ -349,6 +354,7 @@ namespace ly::content
 			std::set<std::string> shipIds;
 			for (const Json& ship : root.at("ships"))
 			{
+				if (!selectedId.empty() && ship.value("id", std::string{}) != selectedId) continue;
 				LoadedDefinition definition = ParseShip(ship, presentationBase);
 				if (definition.id.empty())
 				{
@@ -368,7 +374,7 @@ namespace ly::content
 		{
 			return Result{
 				{},
-				"Failed to load ships from '" + filePath.string() + "': " + exception.what()
+				"Failed to load ships from '" + std::string{ "content document" } + "': " + exception.what()
 			};
 		}
 	}

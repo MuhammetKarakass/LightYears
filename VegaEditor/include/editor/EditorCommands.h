@@ -42,6 +42,7 @@ namespace vega
 		std::function<void()> clearConsole;
 		std::function<void(bool)> diagnosticsVisible;
 		std::function<bool(const EditorScriptCommand&, std::string&)> gasCommand;
+		std::function<bool(const EditorScriptCommand&, std::string&)> contentCommand;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
 		std::optional<ly::ComponentIdentity> propertyErrorComponent;

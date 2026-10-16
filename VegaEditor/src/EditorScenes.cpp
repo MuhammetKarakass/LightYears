@@ -177,6 +177,11 @@ namespace vega
 
 	void EditorApplication::RequestScene(const std::string& action, const std::filesystem::path& path)
 	{
+		if (action == "exit" && mContentAuthoring.Dirty())
+		{
+			mContentAuthoring.RequestExit([this]() { RequestScene("exit"); });
+			return;
+		}
 		if (PrefabDirty())
 		{
 			mPrefabPendingSceneAction = action; mPrefabPendingScenePath = path; mConfirmPrefab = true;

@@ -1,4 +1,5 @@
 #include "editor/EditorScript.h"
+#include "editor/ContentPath.h"
 #include <charconv>
 #include <cmath>
 #include <locale>
@@ -35,6 +36,28 @@ namespace vega
 				if (!closed || (cursor < line.size() && !std::isspace(static_cast<unsigned char>(line[cursor])) && line[cursor] != '#'))
 					return { {}, "Invalid quoted argument" };
 			}
+			else if (line[cursor] == '[' || line[cursor] == '{')
+			{
+				// Composite JSON is one argument, including spaces and quoted keys.
+				// JSON parsing below checks matching delimiters and scalar validity.
+				int depth = 0;
+				bool quoted = false, escaped = false;
+				do
+				{
+					const char c = line[cursor++];
+					token += c;
+					if (quoted)
+					{
+						if (escaped) escaped = false;
+						else if (c == '\\') escaped = true;
+						else if (c == '"') quoted = false;
+					}
+					else if (c == '"') quoted = true;
+					else if (c == '[' || c == '{') ++depth;
+					else if (c == ']' || c == '}') --depth;
+				} while (cursor < line.size() && (depth > 0 || quoted));
+				if (depth != 0 || quoted || (cursor < line.size() && !std::isspace(static_cast<unsigned char>(line[cursor])) && line[cursor] != '#')) return { {}, "Invalid JSON argument" };
+			}
 			else
 			{
 				while (cursor < line.size() && !std::isspace(static_cast<unsigned char>(line[cursor])) && line[cursor] != '#')
@@ -62,6 +85,42 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "content-validate" || verb == "content-save" || verb == "content-reload")
+		{
+			if (tokens.size() != 1) return bad();
+			command.operation = verb == "content-validate" ? ScriptOperation::ContentValidate : verb == "content-save" ? ScriptOperation::ContentSave : ScriptOperation::ContentReload;
+			return { command, {} };
+		}
+		if (verb == "content-open" || verb == "content-new" || verb == "content-rename" || verb == "expect-content" || verb == "content-set")
+		{
+			const std::size_t arity = verb == "expect-content" ? 5 : verb == "content-new" || verb == "content-rename" ? 4 : 3;
+			if (tokens.size() != arity) return bad();
+			for (std::size_t i = 1; i < tokens.size(); ++i) if (tokens[i].empty() && !(verb == "content-set" && i == 2) && !(verb == "expect-content" && i == 4)) return bad();
+			if (verb != "content-set")
+				for (unsigned char c : tokens[1]) if (!std::isalnum(c) && c != '_' && c != '-') return bad();
+			if (verb == "content-set" || verb == "expect-content")
+			{
+				const std::size_t index = verb == "content-set" ? 1 : 3;
+				try
+				{
+					ContentPointer(tokens[index]);
+					const auto value = nlohmann::ordered_json::parse(rawTokens[index + 1]);
+					if (value.is_null()) return bad();
+				}
+				catch (const std::exception&) { return bad(); }
+				command.operation = verb == "content-set" ? ScriptOperation::ContentSet : ScriptOperation::ExpectContent;
+				command.text = tokens[1];
+				if (verb == "expect-content") { command.property = tokens[2]; command.values = { tokens[3], rawTokens[4] }; }
+				else command.values = { rawTokens[2] };
+			}
+			else
+			{
+				command.operation = verb == "content-open" ? ScriptOperation::ContentOpen : verb == "content-new" ? ScriptOperation::ContentNew : ScriptOperation::ContentRename;
+				command.text = tokens[1]; command.property = tokens[2];
+				if (tokens.size() == 4) command.values = { tokens[3] };
+			}
+			return { command, {} };
+		}
 		if (verb == "gas-filter")
 		{
 			if (tokens.size() != 3 || (tokens[1] != "abilities" && tokens[1] != "effects" && tokens[1] != "attributes" && tokens[1] != "tags" && tokens[1] != "events")) return bad();

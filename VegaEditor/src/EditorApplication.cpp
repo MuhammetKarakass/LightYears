@@ -72,6 +72,9 @@ namespace vega
 		}
 #endif
 		mExportLayout.assetRoot = mDocument.Root();
+		// Unattended scripts share an executable directory, but must neither race
+		// each other's layout writes nor replace the user's saved workspace.
+		if (scriptRequested) ImGui::GetIO().IniFilename = nullptr;
 		mLuaTypesPath = mDocument.Root() / ".vega" / "vega.lua";
 		// Existing automation can read source assets. Generated files still belong
 		// in the build tree when no disposable authoring root was supplied.
@@ -93,6 +96,10 @@ namespace vega
 		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
 		mContext.document = &mDocument;
+		mContext.contentCommand = [this](const EditorScriptCommand& command, std::string& detail)
+		{
+			return mContentAuthoring.Execute(mContext, mHistory, mDocument.Root(), command, detail);
+		};
 		mContext.sceneSettings = &mSceneSettings;
 		mContext.backdropState = [this]() { return GetSceneBackdropState(); };
 		mContext.applySettings = [this](const nlohmann::json& authored)
@@ -346,6 +353,7 @@ namespace vega
 				ImGui::MenuItem("Content", nullptr, &mShowContent);
 				ImGui::Separator();
 				ImGui::MenuItem("World Settings", nullptr, &mShowWorldSettings);
+				ImGui::MenuItem("Content Authoring", nullptr, &mContentAuthoring.visible);
 				if (ImGui::MenuItem("Ability System", nullptr, &mGasDebugger.visible)) ImGui::MarkIniSettingsDirty();
 				ImGui::MenuItem("Grid overlay", nullptr, &mContext.viewSettings.grid);
 				ImGui::MenuItem("Collider overlay", nullptr, &mContext.viewSettings.colliders);
@@ -395,6 +403,8 @@ namespace vega
 			ImGui::DockBuilderDockWindow("Stats", stats);
 			ImGui::DockBuilderDockWindow("Content", content);
 			ImGui::DockBuilderDockWindow("Data Editor###DataEditor", content);
+			ImGui::DockBuilderDockWindow("Content Authoring", centre);
+			ImGui::DockBuilderDockWindow("Content validation", content);
 			ImGui::DockBuilderFinish(dockspace);
 			mShowViewport = mShowHierarchy = mShowInspector = mShowStats = true;
 			mShowContent = true;
@@ -459,6 +469,7 @@ namespace vega
 		if (mDiagnostics.showProfiler) mDiagnostics.BuildProfiler();
 		mDiagnostics.TrackSettings();
 		BuildDataPanel();
+		mContentAuthoring.Build(mContext, mHistory, mDocument.Root());
 		BuildExportDialog();
 		BuildSceneDialogs();
 		BuildPrefabDialogs();

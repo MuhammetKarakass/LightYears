@@ -14,6 +14,7 @@ namespace ly
 	class AbilityActionValidator final
 	{
 	public:
+		using EffectLookup = std::function<const sas::GameplayEffectDefinition*(const std::string&)>;
 		using EffectValidationFunction = std::function<bool(
 			const sas::GameplayEffectDefinition&,
 			std::string*
@@ -22,7 +23,8 @@ namespace ly
 		static bool Validate(
 			const List<AbilityActionSpec>& actions,
 			const EffectValidationFunction& validateEffect,
-			std::string* failureReason = nullptr
+			std::string* failureReason = nullptr,
+			const EffectLookup& findEffect = {}
 		);
 	};
 }

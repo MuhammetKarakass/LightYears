@@ -504,6 +504,19 @@ namespace vega
 			}
 			break;
 		case ScriptOperation::OpenJson:
+		case ScriptOperation::ContentOpen:
+		case ScriptOperation::ContentSet:
+		case ScriptOperation::ContentNew:
+		case ScriptOperation::ContentRename:
+		case ScriptOperation::ContentSave:
+		case ScriptOperation::ContentValidate:
+		case ScriptOperation::ContentReload:
+		case ScriptOperation::ExpectContent:
+			if (command.operation != ScriptOperation::OpenJson)
+			{
+				success = context.contentCommand && context.contentCommand(command, detail);
+				break;
+			}
 			if (context.document && !context.document->Dirty()) success = context.document->Open(command.text);
 			detail = context.document && context.document->Dirty() ? "Unsaved changes: save or revert before open-json" :
 				context.document ? context.document->Error() : "No JSON document service";

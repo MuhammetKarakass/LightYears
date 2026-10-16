@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace vega
 {
@@ -30,6 +31,8 @@ namespace vega
 		bool Save();
 		void Close();
 		bool Set(const std::string& pointer, const Json& value);
+		bool Replace(const Json& value);
+		std::uint64_t Revision() const { return mRevision; }
 		const Json* Get(const std::string& pointer) const;
 		std::string Serialize() const;
 		bool Dirty() const { return mDirty; }
@@ -53,6 +56,9 @@ namespace vega
 			Json original;
 		};
 		void ScanLayout(std::size_t& cursor, const std::string& pointer, const Json& value);
+		std::string RenderValue(const std::string& pointer, const Json& value, unsigned int depth) const;
+		struct Span { std::size_t start, end; Json original; };
+		std::map<std::string, Span> mSpans;
 		std::filesystem::path mRoot;
 		std::filesystem::path mPath;
 		Json mData;
@@ -63,6 +69,7 @@ namespace vega
 		std::string mError;
 		std::vector<Scalar> mScalars;
 		std::uint64_t mID = 0;
+		std::uint64_t mRevision = 0;
 		bool mDirty = false;
 	};
 }

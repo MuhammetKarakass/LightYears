@@ -1,0 +1,6 @@
+# A loaded runtime catalog still contains a valid positive distance. Validation
+# must inspect this unsaved candidate through the existing Dash validator.
+content-open ability Ability.Movement.Dash.Basic
+content-set settings.baseDistance -1.0
+content-validate
+quit

@@ -38,6 +38,8 @@ add_executable(VegaEditor
 	src/EditorViewport.cpp
 	src/EditorSelection.cpp
 	src/EditorContentPanels.cpp
+	src/EditorContentAuthoring.cpp
+	src/ContentWorkspace.cpp
 	src/GameExporter.cpp
 	src/JsonDocument.cpp
 	src/JsonCommands.cpp
@@ -106,6 +108,23 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	add_executable(VegaEditorContentWorkspaceTests tests/ContentWorkspaceTests.cpp
+		src/ContentWorkspace.cpp src/JsonDocument.cpp src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+	target_include_directories(VegaEditorContentWorkspaceTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorContentWorkspaceTests PRIVATE VegaScript)
+	target_compile_definitions(VegaEditorContentWorkspaceTests PRIVATE VEGA_CONTENT_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/content-workspace-tests")
+	ly_enable_warnings(VegaEditorContentWorkspaceTests)
+	foreach(content_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${content_runtime} VegaEditorContentWorkspaceTests)
+	endforeach()
+	add_test(NAME VegaEditorContentWorkspace COMMAND VegaEditorContentWorkspaceTests)
+	configure_file(tests/scripts/gas-content.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-content.vegascript COPYONLY)
+	configure_file(tests/scripts/gas-content-invalid.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-content-invalid.vegascript COPYONLY)
+	configure_file(tests/RunGasContentTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunGasContentTest.cmake @ONLY)
+	add_test(NAME VegaEditorGasContent COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -DVEGA_CONTENT_LOADER=$<TARGET_FILE:LightYearsContentTests>
+		-P ${CMAKE_CURRENT_BINARY_DIR}/RunGasContentTest.cmake)
+	set_tests_properties(VegaEditorGasContent PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 120)
 	configure_file(tests/scripts/gas-debugger.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-debugger.vegascript @ONLY)
 	add_test(NAME VegaEditorGasDebugger COMMAND VegaEditor --asset-root ${CMAKE_CURRENT_BINARY_DIR}/assets --editor-script ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-debugger.vegascript)
 	set_tests_properties(VegaEditorGasDebugger PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)

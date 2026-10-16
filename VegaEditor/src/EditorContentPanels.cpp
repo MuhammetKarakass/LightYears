@@ -106,6 +106,8 @@ namespace vega
 		{
 			if (ImGui::Button("Refresh")) { mThumbnails.clear(); RefreshContent(); }
 			ImGui::SameLine();
+			if (ImGui::Button("Author definitions")) mContentAuthoring.visible = true;
+			ImGui::SameLine();
 			ImGui::SetNextItemWidth(150.f);
 			ImGui::InputTextWithHint("##SearchAssets", "Search assets...", mContentFilter, sizeof(mContentFilter));
 			ImGui::SameLine();

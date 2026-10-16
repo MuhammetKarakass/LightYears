@@ -1,0 +1,25 @@
+# Disposable --asset-root is installed by RunGasContentTest.cmake.
+content-new effect TimedModifier Effect.Authoring.Test.Template
+content-new effect Effect.Authoring.Test.Template Effect.Authoring.Test.Copy
+content-set duration 3.5
+content-set modifiers[0].magnitude 9.0
+content-new ability Ability.Movement.Dash.Basic Ability.Movement.Dash.Authoring
+content-set effectSpecs[0].effectId "Effect.Authoring.Test.Copy"
+content-rename effect Effect.Authoring.Test.Copy Effect.Authoring.Test.Renamed
+expect-content ability Ability.Movement.Dash.Authoring effectSpecs[0].effectId "Effect.Authoring.Test.Renamed"
+undo
+expect-content ability Ability.Movement.Dash.Authoring effectSpecs[0].effectId "Effect.Authoring.Test.Copy"
+redo
+expect-content ability Ability.Movement.Dash.Authoring effectSpecs[0].effectId "Effect.Authoring.Test.Renamed"
+content-validate
+content-save
+content-reload
+content-open effect Effect.Authoring.Test.Renamed
+expect-content effect Effect.Authoring.Test.Renamed duration 3.5
+expect-content effect Effect.Authoring.Test.Renamed modifiers[0].magnitude 9.0
+content-open ability Ability.Movement.Dash.Authoring
+expect-content ability Ability.Movement.Dash.Authoring baseId "Ability.Movement.Dash.Basic"
+expect-content ability Ability.Movement.Dash.Authoring effectSpecs[0].effectId "Effect.Authoring.Test.Renamed"
+content-validate
+capture gas-content.png
+quit

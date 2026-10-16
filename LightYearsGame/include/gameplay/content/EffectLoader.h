@@ -1,4 +1,5 @@
 #pragma once
+#include <nlohmann/json.hpp>
 
 #include "effects/GameplayEffectDefinition.h"
 
@@ -26,6 +27,8 @@ namespace ly::content
 				return error.empty();
 			}
 		};
+
+		static Result LoadFromJson(const nlohmann::json& root, const List<const sas::GameplayEffectDefinition*>& fallbackDefinitions, const std::string& selectedId = {});
 
 		static Result LoadFromFile(
 			const std::filesystem::path& filePath,

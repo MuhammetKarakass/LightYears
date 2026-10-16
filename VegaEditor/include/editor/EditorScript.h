@@ -17,6 +17,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		ContentOpen, ContentSet, ContentNew, ContentRename, ContentValidate, ContentSave, ContentReload, ExpectContent,
 		GasSelectPlayer, ExpectAbility, ExpectEffect, ExpectAttribute, ExpectTag,
 		GasApplyEffect, GasRemoveEffect, GasResetCooldowns, GasActivate, GasPanel, GasFilter,
 		SelectAdd, SelectRemove, SelectAll, SelectRect, ExpectSelectionCount, Copy, Paste, MoveSelection, SetPropAll,

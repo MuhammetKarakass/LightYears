@@ -6,6 +6,7 @@
 #include "gameplay/content/WeaponLoader.h"
 #include "gameplay/content/WeaponContentCatalog.h"
 #include "gameplay/content/AbilityLoader.h"
+#include "gameplay/content/ModuleLoader.h"
 #include "gameplay/content/EnemyCombatProfileLoader.h"
 #include "gameplay/content/EnemyCombatProfileCatalog.h"
 #include "gameplay/content/EnemyContentCatalog.h"
@@ -1277,8 +1278,26 @@ namespace
 	}
 }
 
-int main()
+int main(int argc, char** argv)
 {
+	// The editor's acceptance test shares the production loaders without touching
+	// source assets or replacing process-global runtime content catalogs.
+	if (argc == 3 && std::string{ argv[1] } == "--content-root")
+	{
+		const auto data = std::filesystem::path{ argv[2] } / "content/data";
+		const auto effects = ly::content::EffectLoader::LoadFromFile(data / "effects.json", EffectData::GetBuiltinGameplayEffectDefinitions());
+		const auto abilities = ly::content::AbilityLoader::LoadFromFile(data / "abilities.json", AbilityData::GetBuiltinShippedAbilityDefinitions(), AbilityData::GetBuiltinAbilityActorDefinitions());
+		const auto modules = ly::content::ModuleLoader::LoadFromFile(data / "modules.json");
+		for (const auto& error : { effects.error, abilities.error, modules.error }) if (!error.empty()) return Fail(error.c_str()) ? 0 : 1;
+		bool editedEffect = false, editedAbility = false;
+		for (const auto& effect : effects.definitions) if (effect.id == "Effect.Authoring.Test.Renamed")
+			editedEffect = NearlyEqual(effect.definition.duration, 3.5f) && !effect.definition.modifiers.empty() && NearlyEqual(effect.definition.modifiers.front().magnitude, 9.f);
+		for (const auto& ability : abilities.definitions) if (ability.id == "Ability.Movement.Dash.Authoring")
+			editedAbility = !ability.definition.effectSpecs.empty() && ability.definition.effectSpecs.front().effectId.ToString() == "Effect.Authoring.Test.Renamed";
+		if (!editedEffect || !editedAbility) return Fail("Authored definitions did not reach the game loader") ? 0 : 1;
+		std::cout << "Authored ability, effect and module files accepted by game loaders\n";
+		return 0;
+	}
 	const int damageStatusBalanceResult = RunDamageStatusBalanceContentTests();
 	if (damageStatusBalanceResult != 0)
 	{

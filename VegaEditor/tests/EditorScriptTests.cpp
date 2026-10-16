@@ -245,6 +245,19 @@ int main()
 	Check(rectangle && rectangle->location == sf::Vector2f{ -10.f, 20.f } && rectangle->rectangleEnd == sf::Vector2f{ 50.f, -70.f }, "Rectangle endpoints lost");
 	Check(ParseEditorScriptLine("paste").command->number == 0 && ParseEditorScriptLine("paste 0 0").command->number == 1, "Paste origin must differ from omitted position");
 	if (failures) return 1;
+	for (const char* line : { "content-open ability Ability.Movement.Dash.Basic", "content-new effect TimedModifier Effect.Test.Copy.Basic",
+		"content-rename effect Effect.Test.Copy.Basic Effect.Test.Renamed.Basic", "content-set duration 3.5", "content-set modifiers[0].magnitude -4.25",
+		"content-set /modifiers/0/attributeId \"Owner.AttackPower\"", "expect-content effect Effect.Test.Copy.Basic duration 3.5", "content-validate", "content-save", "content-reload" })
+		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid content command rejected: " } + line);
+	for (const char* line : { "content-open", "content-open bad/type id", "content-open effect", "content-new effect x", "content-rename effect x",
+		"content-set", "content-set duration nan", "content-set duration 1e999", "content-set duration 2 extra", "content-set x..y 1", "content-set x[no] 1",
+		"content-set /x~2 1", "content-set x. 1", "content-set x null", "expect-content effect id duration", "content-save extra", "content-validate extra" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid content command accepted: " } + line);
+	Check(ParseEditorScriptLine("content-set name \"hello world\"").command->values[0] == "\"hello world\"", "Content string spelling lost");
+	Check(ParseEditorScriptLine(R"(content-set modifiers [{"attributeId": "Owner.AttackPower", "operation": "Add", "magnitude": 2.0}])").command.has_value(), "Composite JSON argument rejected");
+	for (const char* line : { "content-set values [1,", "content-set values [1]x", "content-set values {bad}", "content-set values [{]" })
+		Check(!ParseEditorScriptLine(line).error.empty(), "Malformed composite content JSON accepted");
+	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;
 }

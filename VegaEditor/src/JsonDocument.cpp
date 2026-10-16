@@ -91,12 +91,14 @@ namespace vega
 	void JsonDocument::ScanLayout(std::size_t& cursor, const std::string& pointer, const Json& value)
 	{
 		SkipSpace(mLayoutText, cursor);
+		const auto start = cursor;
 		if (!value.is_structured())
 		{
 			const auto end = TokenEnd(mLayoutText, cursor);
 			const Json original = Json::parse(mLayoutText.substr(cursor, end - cursor));
 			if (original.type() != value.type() || original != value) throw std::runtime_error("Scalar representation mismatch");
 			mScalars.push_back({ pointer, cursor, end, original });
+			mSpans[pointer] = { cursor, end, value };
 			cursor = end;
 			return;
 		}
@@ -125,6 +127,7 @@ namespace vega
 		}
 		if (count != value.size()) throw std::runtime_error("Container representation mismatch");
 		++cursor;
+		mSpans[pointer] = { start, cursor, value };
 	}
 
 	bool JsonDocument::Open(const std::filesystem::path& relative)
@@ -144,9 +147,11 @@ namespace vega
 			mDirty = false;
 			mStyle = DetectStyle(mLayoutText);
 			mScalars.clear();
+			mSpans.clear();
 			mReadOnlyReason.clear();
 			mError.clear();
 			++mID;
+			++mRevision;
 			try
 			{
 				std::size_t cursor = 0;
@@ -175,12 +180,14 @@ namespace vega
 		mPath.clear();
 		mData = nullptr;
 		mScalars.clear();
+		mSpans.clear();
 		mLayoutText.clear();
 		mSavedText.clear();
 		mDirty = false;
 		mReadOnlyReason.clear();
 		mError.clear();
 		++mID;
+		++mRevision;
 	}
 
 	const Json* JsonDocument::Get(const std::string& pointer) const
@@ -212,28 +219,94 @@ namespace vega
 		if (before->type() != converted.type() || (converted.is_number_float() && !std::isfinite(converted.get<double>()))) return false;
 		if (*before == converted) return true;
 		mData.at(Json::json_pointer{ pointer }) = std::move(converted);
+		++mRevision;
 		// Compare only on edits, preserving exact clean-state detection after undo.
 		mDirty = Serialize() != mSavedText;
 		return true;
 	}
 
+	bool JsonDocument::Replace(const Json& value)
+	{
+		if (!IsOpen() || ReadOnly() || !value.is_structured()) return false;
+		mData = value;
+		++mRevision;
+		mDirty = Serialize() != mSavedText;
+		return true;
+	}
+
+	std::string JsonDocument::RenderValue(const std::string& pointer, const Json& value, unsigned int depth) const
+	{
+		const auto span = mSpans.find(pointer);
+		if (span == mSpans.end()) return value.dump(mStyle.indent, mStyle.indentChar);
+		const auto& original = span->second.original;
+		if (value == original) return mLayoutText.substr(span->second.start, span->second.end - span->second.start);
+		if (!value.is_structured() || value.type() != original.type()) return value.dump();
+		bool sameShape = value.size() == original.size();
+		if (sameShape && value.is_object())
+			for (auto it = original.begin(); it != original.end(); ++it) if (!value.contains(it.key())) sameShape = false;
+		if (sameShape)
+		{
+			std::string result;
+			auto cursor = span->second.start;
+			for (auto it = original.begin(); it != original.end(); ++it)
+			{
+				const auto key = original.is_object() ? it.key() : std::to_string(it - original.begin());
+				const auto child = pointer + "/" + EscapePointer(key);
+				const auto& layout = mSpans.at(child);
+				result.append(mLayoutText, cursor, layout.start - cursor);
+				result += RenderValue(child, value.is_object() ? value.at(key) : value.at(it - original.begin()), depth + 1);
+				cursor = layout.end;
+			}
+			result.append(mLayoutText, cursor, span->second.end - cursor);
+			return result;
+		}
+		// Only the changed container gets new separators. Existing definition bodies
+		// keep their original spelling, including inline arrays and numeric lexemes.
+		std::string result;
+		const std::string indent((depth + 1) * mStyle.indent, mStyle.indentChar);
+		result += value.is_object() ? "{" : "[";
+		for (auto it = value.begin(); it != value.end(); ++it)
+		{
+			if (it != value.begin()) result += ',';
+			result += mStyle.newline + indent;
+			std::string source;
+			if (value.is_object())
+			{
+				result += Json(it.key()).dump() + ": ";
+				if (original.contains(it.key())) source = pointer + "/" + EscapePointer(it.key());
+			}
+			else if (it->is_object() && it->contains("id"))
+			{
+				for (std::size_t i = 0; i < original.size(); ++i)
+					if (original[i].is_object() && original[i].value("id", Json{}) == it->at("id")) { source = pointer + "/" + std::to_string(i); break; }
+				// A rename followed by an insertion still owns the original body.
+				// Match its old position only when that original ID disappeared.
+				const auto index = static_cast<std::size_t>(it - value.begin());
+				if (source.empty() && index < original.size() && original[index].is_object() && original[index].contains("id"))
+				{
+					bool retained = false;
+					for (const auto& item : value) if (item.is_object() && item.value("id", Json{}) == original[index].at("id")) retained = true;
+					if (!retained) source = pointer + "/" + std::to_string(index);
+				}
+			}
+			else if (static_cast<std::size_t>(it - value.begin()) < original.size()) source = pointer + "/" + std::to_string(it - value.begin());
+			if (!source.empty()) result += RenderValue(source, it.value(), depth + 1);
+			else
+			{
+				auto text = it->dump(mStyle.indent, mStyle.indentChar);
+				for (char c : text) { if (c == '\n') result += mStyle.newline + indent; else result += c; }
+			}
+		}
+		if (!value.empty()) result += mStyle.newline + std::string(depth * mStyle.indent, mStyle.indentChar);
+		result += value.is_object() ? "}" : "]";
+		return result;
+	}
+
 	std::string JsonDocument::Serialize() const
 	{
-		// Scalar-only edits let us retain inline containers, escapes, numeric spellings,
-		// indentation, line endings and the trailing newline instead of reformatting a file.
-		std::string result;
-		std::size_t cursor = 0;
-		for (const auto& scalar : mScalars)
-		{
-			result.append(mLayoutText, cursor, scalar.start - cursor);
-			const auto& value = mData.at(Json::json_pointer{ scalar.pointer });
-			if (value.type() == scalar.original.type() && value == scalar.original)
-				result.append(mLayoutText, scalar.start, scalar.end - scalar.start);
-			else result += value.dump();
-			cursor = scalar.end;
-		}
-		result.append(mLayoutText, cursor, std::string::npos);
-		return result;
+		const auto root = mSpans.find("");
+		if (root == mSpans.end()) return mLayoutText;
+		return mLayoutText.substr(0, root->second.start) + RenderValue("", mData, 0) + mLayoutText.substr(root->second.end);
 	}
 
 	bool JsonDocument::Save()
@@ -246,6 +319,13 @@ namespace vega
 			return false;
 		}
 		const auto text = Serialize();
+		// A form and an external editor may both hold this file. Never silently
+		// overwrite a revision saved by another document or process.
+		std::ifstream input{ mPath, std::ios::binary };
+		if (!input) { mError = "Cannot read current file before save"; return false; }
+		const std::string current{ std::istreambuf_iterator<char>{ input }, {} };
+		if (current != mSavedText) { mError = "File changed on disk; reload before saving"; return false; }
+		input.close();
 		if (!AtomicWriteText(mPath, text, mError)) return false;
 		mSavedText = text;
 		mDirty = false;

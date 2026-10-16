@@ -1,5 +1,35 @@
 Run the editor script runner from the editor's executable directory.
 
+Content authoring commands (Edit mode; values are JSON, including arrays/objects):
+
+```text
+content-open <ability|effect|module|ship|weapon> <id>
+content-set <field.path> <value>
+content-new <type> <template-or-source-id> <newId>
+content-rename <type> <oldId> <newId>
+content-validate
+content-save
+content-reload
+expect-content <type> <id> <field.path> <value>
+```
+
+Paths accept `modifiers[0].magnitude`, `modifiers.0.magnitude`, or JSON pointers
+such as `/modifiers/0/magnitude`. Quote string values as JSON strings. Composite
+values may contain spaces: `content-set modifiers [{"attributeId":"Owner.AttackPower",
+"operation":"Add","magnitude":4.0}]` (keep each command on one line).
+`content-new` accepts the game's `TimedModifier` effect template or an existing
+definition ID. Duplication uses the same command. `undo`/`redo` include reference
+updates in a rename as one operation. Unknown fields and direct ID edits are
+refused. `content-validate` reports all definitions and fails the script on errors;
+`content-save` validates before atomically replacing changed files. Reload refuses
+unsaved changes and invalidates old content history. Root ability IDs selecting
+compiled behavior cannot be renamed; duplicate a data variant first.
+
+`VegaEditorGasContent` runs `gas-content.vegascript` on reset build-tree copies
+using `--asset-root`, checks rename undo/redo, saves and reopens, and invokes the
+existing `LightYearsContentTests --content-root` loader path on the result. The
+runner verifies source hashes remain unchanged. See [content authoring](../../../docs/gas-content-editor.md).
+
 Ability System inspection commands (Play and Pause):
 
 ```text

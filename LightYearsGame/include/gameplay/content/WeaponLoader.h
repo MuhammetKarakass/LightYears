@@ -1,4 +1,5 @@
 #pragma once
+#include <nlohmann/json.hpp>
 
 #include "gameConfigs/combat/WeaponStructs.h"
 
@@ -20,6 +21,8 @@ namespace ly::content
 				return error.empty();
 			}
 		};
+
+		static Result LoadFromJson(const nlohmann::json& root, const std::string& selectedId = {});
 
 		static Result LoadFromFile(
 			const std::filesystem::path& filePath

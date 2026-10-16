@@ -103,6 +103,11 @@ namespace vega
 	{
 		LY_PROFILE_SCOPE("Editor Ability System");
 		ImGui::SetNextWindowSize({ 720.f, 760.f }, ImGuiCond_FirstUseEver);
+		// Older layouts may predate this panel. Dock only its first appearance;
+		// an authored floating/docked window setting always takes precedence.
+		if (!ImGui::FindWindowSettingsByID(ImHashStr("Ability System")))
+			if (const auto* inspector = ImGui::FindWindowByName("Inspector"); inspector && inspector->DockId)
+				ImGui::SetNextWindowDockID(inspector->DockId, ImGuiCond_FirstUseEver);
 		if (mFocus) { ImGui::SetNextWindowFocus(); mFocus = false; }
 		const bool wasVisible = visible;
 		if (ImGui::Begin("Ability System", &visible))
