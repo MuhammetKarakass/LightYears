@@ -11,12 +11,40 @@ namespace ly
 	{
 	}
 	CollisionComponent::~CollisionComponent() { ClearContacts(); }
-	void CollisionComponent::EndPlay() { ClearContacts(); }
-	void CollisionComponent::ClearContacts()
+	void CollisionComponent::EndPlay() { ClearContacts(true); }
+	void CollisionComponent::ClearContacts(bool notify)
 	{
-		for (const auto& entry : mContacts)
-			if (auto actor = entry.second.actor.lock()) actor->onActorDestroyed.UnbindAction(entry.second.destroyed);
+		// Move first: overlap callbacks can change filters, disable bodies or destroy actors.
+		auto contacts = std::move(mContacts);
 		mContacts.clear();
+		for (const auto& entry : contacts)
+		{
+			if (auto actor = entry.second.actor.lock())
+			{
+				actor->onActorDestroyed.UnbindAction(entry.second.destroyed);
+				if (!notify) continue;
+				if (auto* collision = actor->FindComponent<CollisionComponent>()) collision->OtherDestroyed(&GetOwner());
+				GetOwner().ForEachComponent([&](ActorComponent& component)
+				{
+					if (component.HasBegunPlay() && component.IsActive() && !GetOwner().GetIsPendingDestroy()) component.OnOverlapEnd(actor.get());
+				});
+			}
+		}
+	}
+	void CollisionComponent::ClearInvalidContacts()
+	{
+		std::vector<weak_ptr<Actor>> invalid;
+		for (const auto& entry : mContacts)
+			if (auto actor = entry.second.actor.lock(); actor &&
+				(!GetOwner().CanCollideWith(actor.get()) || !actor->CanCollideWith(&GetOwner()))) invalid.push_back(actor);
+		for (const auto& weak : invalid)
+		{
+			if (auto actor = weak.lock())
+			{
+				OtherDestroyed(actor.get());
+				if (auto* collision = actor->FindComponent<CollisionComponent>()) collision->OtherDestroyed(&GetOwner());
+			}
+		}
 	}
 	void CollisionComponent::OtherDestroyed(Actor* other)
 	{
@@ -76,13 +104,17 @@ namespace ly
 
 	void CollisionComponent::SetCollisionLayer(CollisionLayer layer)
 	{
+		if (mCollisionLayer == layer) return;
 		mCollisionLayer = layer;
+		ClearInvalidContacts();
 		RefreshFilterAndSpatialQuery();
 	}
 
 	void CollisionComponent::SetCollisionMask(CollisionLayer mask)
 	{
+		if (mCollisionMask == mask) return;
 		mCollisionMask = mask;
+		ClearInvalidContacts();
 		RefreshFilterAndSpatialQuery();
 	}
 
@@ -130,6 +162,7 @@ namespace ly
 
 	void CollisionComponent::UnInitializePhysics()
 	{
+		ClearContacts(true);
 		if (mPhysicsBodyId)
 		{
 			if (World* world = GetWorld())

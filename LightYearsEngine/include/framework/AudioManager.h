@@ -22,6 +22,7 @@ namespace ly
 		bool IsSoundPlaying(std::uint64_t id) const;
 		std::size_t PlayingSoundCount() const;
 		bool IsMusicPlaying() const { return mMusic && mMusic->getStatus() == sf::Music::Status::Playing; }
+		sf::Time MusicPlayingOffset() const { return mMusic ? mMusic->getPlayingOffset() : sf::Time::Zero; }
 		std::uint64_t MusicRevision() const { return mMusicRevision; }
 		
 		void PlayMusic(const std::string& path, AudioType type, float volume = 100.0f, float pitch = 1.0f, bool loop = true);

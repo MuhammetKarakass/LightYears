@@ -63,7 +63,7 @@ namespace vega
 			if (relative.empty()) return false;
 			for (const auto& part : relative)
 			{
-				auto name = part.string();
+				auto name = part.u8string();
 				std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 				if (name == ".." || name == ".vega") return false;
 			}
@@ -122,7 +122,7 @@ namespace vega
 			if (!SafeSource(resolver, source, absolute)) throw std::runtime_error("Autosave source must stay inside the asset root and outside .vega");
 			const auto parsed = Json::parse(text);
 			(void)parsed;
-			const auto relative = absolute.lexically_relative(mRoot).generic_string();
+			const auto relative = absolute.lexically_relative(mRoot).generic_u8string();
 			const auto key = kind + ":" + relative;
 			if (!mFiles.count(key)) mFiles[key] = mSession / ("snapshot-" + std::to_string(mFiles.size()) + ".json");
 			std::filesystem::path safe;
@@ -156,7 +156,7 @@ namespace vega
 				if (uncleanOnly && !unclean) continue;
 				for (const auto& file : std::filesystem::directory_iterator{ safe })
 				{
-					if (file.is_symlink() || !file.is_regular_file() || file.path().filename().string().find("snapshot-") != 0 || file.path().extension() != ".json") continue;
+					if (file.is_symlink() || !file.is_regular_file() || file.path().filename().u8string().find("snapshot-") != 0 || file.path().extension() != ".json") continue;
 					try
 					{
 						const auto snapshot = Json::parse(Read(file.path()));
@@ -177,7 +177,7 @@ namespace vega
 					catch (const std::exception&) { /* A damaged snapshot must not hide the remaining recovery files. */ }
 				}
 			}
-			std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) { return a.snapshot.generic_string() > b.snapshot.generic_string(); });
+			std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) { return a.snapshot.generic_u8string() > b.snapshot.generic_u8string(); });
 			mError.clear();
 		}
 		catch (const std::exception& error) { mError = error.what(); }

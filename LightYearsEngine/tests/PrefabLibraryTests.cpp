@@ -5,6 +5,7 @@
 #include "framework/reflection/Reflection.h"
 #include "framework/Actor.h"
 #include "framework/World.h"
+#include <framework/debug/LogBuffer.h>
 #include <fstream>
 #include <chrono>
 #include <iostream>
@@ -54,7 +55,7 @@ int main()
 	Class<Rock, Actor>("PrefabRock").Spawnable()
 		.Property("Size", [](const Rock& p) { return p.size; }, [](Rock& p, int v) { p.size = v; });
 	std::filesystem::create_directories(std::filesystem::path(PREFAB_TEST_ROOT) / "prefabs");
-	auto& library = PrefabLibrary::Get();
+	auto& library = engineContext.Prefabs();
 	library.SetRoot(PREFAB_TEST_ROOT);
 	auto rock = Prefab({ { "type", "PrefabRock" } });
 	rock["properties"] = { { "Size", 3 } };
@@ -83,11 +84,18 @@ int main()
 	auto warningPrefab = rock;
 	warningPrefab["components"].push_back({ { "type", "UnavailablePart" } });
 	Write("Warning", warningPrefab);
+	debug::LogCapture warningCapture;
 	const auto warningResult = library.Resolve("prefabs/Warning.prefab.json");
 	const auto warningCount = library.ResolveCount();
 	const auto warningAgain = library.Resolve("prefabs/Warning.prefab.json");
 	Check(warningResult && !warningResult.warnings.empty() && warningAgain.warnings == warningResult.warnings && library.ResolveCount() == warningCount,
-		"Cached successful resolutions must report their warnings on every use");
+		"Cached resolutions retain warning data without logging it");
+	Check(warningCapture.Buffer().Snapshot().empty(), "Direct and cached prefab resolves must leave warning logging to the scene caller");
+	{
+		World warningWorld{ engineContext };
+		const auto warningScene = SceneSerializer::Load(warningWorld, Scene(Json::array({ { { "prefab", "prefabs/Warning.prefab.json" } } })));
+		Check(warningCapture.Buffer().Snapshot().size() == warningScene.warnings.size(), "Scene warnings must be logged exactly once");
+	}
 	Json instance{ { "guid", "test-guid" }, { "name", "Instance" }, { "prefab", "prefabs/BigRock.prefab.json" },
 		{ "properties", { { "Size", 7 }, { "Location", { 20, 40 } } } } };
 	World world{ nullptr };
@@ -135,6 +143,25 @@ int main()
 	Write("CycleB", Prefab({ { "prefab", "prefabs/./CycleA.prefab.json" } }));
 	const auto cycle = library.Resolve("prefabs/CycleA.prefab.json");
 	Check(!cycle && !cycle.warnings.empty(), "Canonicalized cycle must warn without throwing");
+	const auto nestedBase = [&](const std::string& child)
+	{
+		return Prefab(Json{ { "type", "PrefabRock" }, { "children", Json::array({ { { "id", "child" }, { "prefab", child } } }) } });
+	};
+	Write("SelfChild", nestedBase("prefabs/SelfChild.prefab.json"));
+	Write("MutualChildA", nestedBase("prefabs/MutualChildB.prefab.json"));
+	Write("MutualChildB", nestedBase("prefabs/MutualChildA.prefab.json"));
+	for (const auto* path : { "prefabs/SelfChild.prefab.json", "prefabs/MutualChildA.prefab.json" })
+	{
+		const auto nestedCycle = library.Resolve(path);
+		Check(!nestedCycle && std::any_of(nestedCycle.warnings.begin(), nestedCycle.warnings.end(), [](const auto& warning)
+			{ return warning.find("Prefab cycle or depth limit") != std::string::npos; }), "Base-child cycle must warn and stop");
+		World survivors{ engineContext };
+		const auto scene = SceneSerializer::Load(survivors, Scene(Json::array({ { { "prefab", path } }, { { "type", "PrefabRock" }, { "guid", "survivor" } } })));
+		Check(scene.spawned == 1 && !scene.warnings.empty(), "A cyclic prefab must not prevent unrelated entities from loading");
+	}
+	// Standalone libraries must keep their own chain even when the context has another root.
+	PrefabLibrary standalone{ engineContext, PREFAB_TEST_ROOT };
+	Check(!standalone.Resolve("prefabs/SelfChild.prefab.json"), "Standalone staging must re-enter the same library");
 	Write("Unknown", Prefab({ { "type", "MissingType" } }));
 	Check(!library.Resolve("prefabs/Unknown.prefab.json"), "Unknown base must not resolve");
 	Write("Invalid", Json{ { "base", 7 } });

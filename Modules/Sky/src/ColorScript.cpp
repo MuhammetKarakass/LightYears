@@ -94,14 +94,14 @@ namespace vega::sky
 		std::string text;
 		if (!ReadTextFile(file, text))
 		{
-			error = "cannot read " + file.string();
+			error = "cannot read " + file.u8string();
 			return false;
 		}
 		try
 		{
 			nlohmann::json json = nlohmann::json::parse(text);
 			ColorScript script;
-			script.mName = json.value("name", file.stem().string());
+			script.mName = json.value("name", file.stem().u8string());
 			if (!json.contains("ramps") || !json["ramps"].is_object() || json["ramps"].empty())
 			{
 				error = "missing \"ramps\" object";
@@ -191,7 +191,7 @@ namespace vega::sky
 		Reload(true, report);
 		if (mEntries.empty())
 		{
-			error = "no color script loaded from " + dir.string();
+			error = "no color script loaded from " + dir.u8string();
 			for (const std::string& e : report.errors)
 			{
 				error += "\n  " + e;
@@ -229,7 +229,7 @@ namespace vega::sky
 			std::string error;
 			if (!ColorScript::LoadFromFile(file, script, error))
 			{
-				report.errors.push_back("palette " + file.filename().string() + ": " + error);
+				report.errors.push_back("palette " + file.filename().u8string() + ": " + error);
 				continue;
 			}
 			auto entry = std::find_if(mEntries.begin(), mEntries.end(), [&](const Entry& e) { return e.file == file; });
@@ -241,7 +241,7 @@ namespace vega::sky
 			{
 				entry->script = std::move(script);
 			}
-			report.reloaded.push_back("palette " + file.filename().string());
+			report.reloaded.push_back("palette " + file.filename().u8string());
 		}
 
 		mEntries.erase(std::remove_if(mEntries.begin(), mEntries.end(), [&](const Entry& e) {

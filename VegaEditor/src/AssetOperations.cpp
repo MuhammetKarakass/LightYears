@@ -36,12 +36,12 @@ namespace vega
 		std::string Read(const std::filesystem::path& path)
 		{
 			std::ifstream input{ path, std::ios::binary };
-			if (!input) throw std::runtime_error("Cannot read " + path.generic_string());
+			if (!input) throw std::runtime_error("Cannot read " + path.generic_u8string());
 			return { std::istreambuf_iterator<char>{ input }, {} };
 		}
 		std::string Key(const std::filesystem::path& path)
 		{
-			auto key = path.lexically_normal().generic_string();
+			auto key = path.lexically_normal().generic_u8string();
 #ifdef _WIN32
 			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 #endif
@@ -74,8 +74,8 @@ namespace vega
 	std::filesystem::path AssetMovePlan::Remap(const std::filesystem::path& path, const std::filesystem::path& from, const std::filesystem::path& to)
 	{
 		if (!Contains(from, path)) return path;
-		const auto suffix = path.generic_string().substr(from.generic_string().size());
-		return std::filesystem::u8path(to.generic_string() + suffix);
+		const auto suffix = path.generic_u8string().substr(from.generic_u8string().size());
+		return std::filesystem::u8path(to.generic_u8string() + suffix);
 	}
 
 	bool AssetMovePlan::Prepare(const std::filesystem::path& root, const std::filesystem::path& from,
@@ -89,7 +89,7 @@ namespace vega
 			JsonDocument resolver{ root };
 			mRoot = resolver.Root();
 			mFrom = from.lexically_normal(); mTo = to.lexically_normal();
-			for (const auto& [type, schema] : ly::content::ContentSchemaRegistry::Get().Types())
+			for (const auto& [type, schema] : mContext->ContentSchemas().Types())
 				if (Contains(mFrom, std::filesystem::u8path(schema.file)))
 					throw std::runtime_error("The game module owns the fixed catalog path " + schema.file + "; move its references instead");
 			std::filesystem::path source, target;
@@ -114,7 +114,7 @@ namespace vega
 				const bool external = !Contains(mRoot, file);
 				JsonDocument document{ external ? file.parent_path() : mRoot };
 				if (!document.Open(external ? file.filename() : file.lexically_relative(mRoot)) || document.ReadOnly())
-					throw std::runtime_error("Cannot safely inspect " + file.generic_string() + ": " + document.Error() + document.ReadOnlyReason());
+					throw std::runtime_error("Cannot safely inspect " + file.generic_u8string() + ": " + document.Error() + document.ReadOnlyReason());
 				auto after = document.Data();
 				const auto start = mReferences.size();
 				const auto visit = [&](auto&& self, Json& value, const std::string& pointer) -> void
@@ -138,7 +138,7 @@ namespace vega
 						else if (AssetPath(path) && Contains(mFrom, path.lexically_normal())) changed = Remap(path.lexically_normal(), mFrom, mTo);
 						if (changed != path)
 						{
-							value = changed.generic_string();
+							value = changed.generic_u8string();
 							mReferences.push_back({ file, pointer, before, value.get<std::string>() });
 						}
 					}
@@ -202,12 +202,12 @@ namespace vega
 		if (!lock.Valid()) { mError = "Another editor is changing assets"; return false; }
 		const auto journalPath = directory / "pending.json";
 		if (std::filesystem::exists(journalPath)) { mError = "An interrupted asset move needs recovery; restart the editor"; return false; }
-		Json journal{ { "format", "vega.asset-transaction" }, { "version", 1 }, { "from", (forward ? mFrom : mTo).generic_string() },
-			{ "to", (forward ? mTo : mFrom).generic_string() }, { "committed", false }, { "documents", Json::array() } };
+		Json journal{ { "format", "vega.asset-transaction" }, { "version", 1 }, { "from", (forward ? mFrom : mTo).generic_u8string() },
+			{ "to", (forward ? mTo : mFrom).generic_u8string() }, { "committed", false }, { "documents", Json::array() } };
 		for (const auto& document : mDocuments)
 		{
-			journal["documents"].push_back({ { "beforePath", (forward ? document.beforePath : document.afterPath).generic_string() },
-				{ "afterPath", (forward ? document.afterPath : document.beforePath).generic_string() },
+			journal["documents"].push_back({ { "beforePath", (forward ? document.beforePath : document.afterPath).generic_u8string() },
+				{ "afterPath", (forward ? document.afterPath : document.beforePath).generic_u8string() },
 				{ "before", forward ? document.before : document.after }, { "after", forward ? document.after : document.before } });
 		}
 		if (!AtomicWriteText(journalPath, journal.dump(1, '\t') + "\n", mError)) return false;
@@ -220,7 +220,7 @@ namespace vega
 				if (document.before == document.after) { ++written; continue; }
 				const auto& path = forward ? document.afterPath : document.beforePath;
 				const auto& before = forward ? document.before : document.after;
-				if (Read(path) != before) throw std::runtime_error("Reference file changed during move: " + path.generic_string());
+				if (Read(path) != before) throw std::runtime_error("Reference file changed during move: " + path.generic_u8string());
 				if (!AtomicWriteText(path, forward ? document.after : document.before, mError)) throw std::runtime_error(mError);
 				++written;
 			}
@@ -246,7 +246,7 @@ namespace vega
 					std::string rollbackError;
 					if (Read(path) != (forward ? document.after : document.before) ||
 						!AtomicWriteText(path, forward ? document.before : document.after, rollbackError))
-						throw std::runtime_error("Reference rollback blocked: " + path.generic_string());
+						throw std::runtime_error("Reference rollback blocked: " + path.generic_u8string());
 				}
 				if (std::filesystem::exists(target) && !std::filesystem::exists(source)) std::filesystem::rename(target, source);
 				std::filesystem::remove(journalPath);
@@ -289,7 +289,7 @@ namespace vega
 				const auto path = moved ? afterPath : beforePath;
 				if (std::filesystem::weakly_canonical(path) != path || (!external && !NoLinks(resolver.Root(), path))) throw std::runtime_error("Asset recovery path changed");
 				const auto current = Read(path), before = document.at("before").get<std::string>(), after = document.at("after").get<std::string>();
-				if (current != before && current != after) throw std::runtime_error("Asset recovery preserves an external edit in " + path.generic_string());
+				if (current != before && current != after) throw std::runtime_error("Asset recovery preserves an external edit in " + path.generic_u8string());
 				if (current != before) restores.emplace_back(path, before);
 			}
 			for (const auto& [path, text] : restores) if (!AtomicWriteText(path, text, error)) throw std::runtime_error(error);

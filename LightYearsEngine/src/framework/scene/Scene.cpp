@@ -18,6 +18,26 @@ namespace ly
 	namespace
 	{
 		using Json = nlohmann::json;
+		void SaveChildren(Actor& actor, Json& entity, bool expanded)
+		{
+			entity["children"] = Json::array();
+			std::set<std::string> ids;
+			for (Actor* child : actor.GetChildren())
+			{
+				auto data = SceneSerializer::SaveSubtree(*child, expanded);
+				if (data.is_null()) continue;
+				if (!data.contains("id")) data["id"] = data["guid"];
+				if (!ids.insert(data["id"].get<std::string>()).second)
+				{
+					auto id = data["guid"].get<std::string>();
+					std::replace(id.begin(), id.end(), '/', '_');
+					while (!ids.insert(id).second) id += '_';
+					data["id"] = id;
+				}
+				entity["children"].push_back(std::move(data));
+			}
+		}
+
 		using namespace reflect;
 		std::map<std::string, ComponentSerializer>& ComponentSerializers(EngineContext& context)
 		{
@@ -304,22 +324,7 @@ namespace ly
 		if (!removed.empty()) entity["removed"] = std::move(removed);
 		if (!identity->prefab.empty() && identity->prefabRootGuid.empty())
 		{
-			entity["children"] = Json::array();
-			std::set<std::string> ids;
-			for (Actor* child : actor.GetChildren())
-			{
-				auto data = SaveSubtree(*child, true);
-				if (data.is_null()) continue;
-				if (!data.contains("id")) data["id"] = data["guid"];
-				if (!ids.insert(data["id"].get<std::string>()).second)
-				{
-					auto id = data["guid"].get<std::string>();
-					std::replace(id.begin(), id.end(), '/', '_');
-					while (!ids.insert(id).second) id += '_';
-					data["id"] = id;
-				}
-				entity["children"].push_back(std::move(data));
-			}
+			SaveChildren(actor, entity, true);
 		}
 		if (!expanded && !identity->prefab.empty() && identity->prefabRootGuid.empty())
 		{
@@ -342,22 +347,7 @@ namespace ly
 		if (!expanded && identity && !identity->prefab.empty() && identity->prefabRootGuid.empty()) return entity;
 		if (!root.GetChildren().empty())
 		{
-			entity["children"] = Json::array();
-			std::set<std::string> ids;
-			for (Actor* child : root.GetChildren())
-			{
-				auto data = SaveSubtree(*child, expanded);
-				if (data.is_null()) continue;
-				if (!data.contains("id")) data["id"] = data["guid"];
-				if (!ids.insert(data["id"].get<std::string>()).second)
-				{
-					auto id = data["guid"].get<std::string>();
-					std::replace(id.begin(), id.end(), '/', '_');
-					while (!ids.insert(id).second) id += '_';
-					data["id"] = id;
-				}
-				entity["children"].push_back(std::move(data));
-			}
+			SaveChildren(root, entity, expanded);
 		}
 		return entity;
 	}
@@ -403,7 +393,7 @@ namespace ly
 		refs(refs, data);
 	}
 
-	SceneLoadResult SceneSerializer::Load(World& world, const Json& scene)
+	SceneLoadResult SceneSerializer::Load(World& world, const Json& scene, PrefabLibrary* prefabs, bool logWarnings)
 	{
 		LY_PROFILE_SCOPE("Scene Load");
 		reflect::RegisterEngineTypes(world.GetEngineContext().Types());
@@ -416,7 +406,7 @@ namespace ly
 				!scene.contains("settings") || !scene["settings"].is_object())
 			{
 				result.warnings.push_back("Expected vega.scene version 1 with settings object and entities array");
-				for (const auto& warning : result.warnings)
+				if (logWarnings) for (const auto& warning : result.warnings)
 					debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
 				return result;
 			}
@@ -437,7 +427,7 @@ namespace ly
 				if (entity.contains("prefab"))
 				{
 					path = entity.at("prefab").get<std::string>();
-					auto resolved = world.GetEngineContext().Prefabs().Resolve(path);
+					auto resolved = (prefabs ? *prefabs : world.GetEngineContext().Prefabs()).Resolve(path);
 					result.warnings.insert(result.warnings.end(), resolved.warnings.begin(), resolved.warnings.end());
 					if (!resolved)
 					{
@@ -657,7 +647,7 @@ namespace ly
 		}
 		catch (const std::exception& error) { result.warnings.push_back(std::string{ "Scene: " } + error.what()); }
 		catch (...) { result.warnings.push_back("Scene load failed"); }
-		for (const auto& warning : result.warnings)
+		if (logWarnings) for (const auto& warning : result.warnings)
 			debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
 		return result;
 	}

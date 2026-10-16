@@ -23,6 +23,15 @@ int main()
 	std::filesystem::create_directories(root / "data");
 	const auto original = root / "data/test.json";
 	std::ofstream{ original, std::ios::binary } << "{\"value\":1}\n";
+	{
+		const auto unicode = std::filesystem::path{ L"data/\u6f22\u5b57-\U0001f680.json" };
+		std::ofstream{ root / unicode } << "{}";
+		AutosaveStore unicodeStore;
+		Check(unicodeStore.Begin(root) && unicodeStore.Write(unicode, "json", "{\"value\":2}"), "Unicode autosave must write without throwing");
+		const auto entries = unicodeStore.Entries();
+		Check(entries.size() == 1 && entries.front().source == unicode, "Unicode autosave source must round trip");
+		for (const auto& entry : entries) Check(unicodeStore.Discard(entry), "Unicode snapshot discard failed");
+	}
 	std::filesystem::path crashed;
 	{
 		AutosaveStore first, second;

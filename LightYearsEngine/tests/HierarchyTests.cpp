@@ -52,6 +52,24 @@ int main()
 	ly::reflect::RegisterEngineTypes();
 	ly::reflect::Class<HierarchyActor, ly::Actor>("HierarchyActor").Spawnable();
 	{
+		ly::World world{ engineContext };
+		auto root = world.SpawnActor<HierarchyActor>().lock();
+		auto& identity = root->AddComponent<ly::SceneEntityComponent>("root", "Root");
+		identity.prefab = "prefabs/unused.prefab.json";
+		for (const auto* guid : { "first", "b/c", "b_c" })
+		{
+			auto child = world.SpawnActor<HierarchyActor>().lock();
+			child->AddComponent<ly::SceneEntityComponent>(guid, guid).childId = "same";
+			Check(child->AttachTo(root.get()), "Serialization fixture attachment failed");
+		}
+		const auto subtree = ly::SceneSerializer::SaveSubtree(*root, true);
+		Check(subtree["children"].dump() == ly::SceneSerializer::SaveEntity(*root, true)["children"].dump(), "SaveEntity and SaveSubtree child bytes must match");
+		Check(subtree["children"][0]["id"] == "same" && subtree["children"][1]["id"] == "b_c" && subtree["children"][2]["id"] == "b_c_", "Child ID collision spelling must remain byte-identical");
+		ly::World copy{ engineContext };
+		Check(ly::SceneSerializer::Load(copy, Scene(Json::array({ subtree }))).warnings.empty(), "Child ID round trip load failed");
+		Check(ly::SceneSerializer::SaveSubtree(*Find(copy, "root"), true).dump() == subtree.dump(), "Child ID round trip bytes changed");
+	}
+	{
 		ly::World world{ nullptr }, other{ nullptr };
 		auto parent = world.SpawnActor<HierarchyActor>().lock();
 		auto child = world.SpawnActor<HierarchyActor>().lock();

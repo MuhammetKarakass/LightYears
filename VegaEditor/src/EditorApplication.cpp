@@ -57,7 +57,7 @@ namespace vega
 		if (auto* provider = QueryCapability<IEditorProvider>(mModule.get())) provider->RegisterEditorExtensions(mExtensions);
 		mContext.services = mPrefabContext.services = &GetEngineContext();
 		mContext.extensions = mPrefabContext.extensions = &mExtensions;
-		std::snprintf(mExportDirectory, sizeof(mExportDirectory), "%s", mProject.exportDir.string().c_str());
+		std::snprintf(mExportDirectory, sizeof(mExportDirectory), "%s", mProject.exportDir.u8string().c_str());
 		if (!ImGui::SFML::Init(GetRenderWindow()))
 		{
 			ImGui::SFML::Shutdown();
@@ -364,7 +364,7 @@ namespace vega
 			}
 			if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) BeginRename();
 		}
-		const std::string sceneTitle = (mScenePath.empty() ? "Untitled" : mScenePath.filename().string()) + (SceneDirty() ? " *" : "");
+		const std::string sceneTitle = (mScenePath.empty() ? "Untitled" : mScenePath.filename().u8string()) + (SceneDirty() ? " *" : "");
 		const std::string title = "Vega Editor - " + sceneTitle + (mContext.playMode ? " - PLAYING" : " - EDIT");
 		if (title != mWindowTitle)
 		{
@@ -382,7 +382,7 @@ namespace vega
 				if (ImGui::MenuItem("Save Scene", "Ctrl+S")) SaveScene();
 				if (ImGui::MenuItem("Save Scene As..."))
 				{
-					std::snprintf(mScenePathInput, sizeof(mScenePathInput), "%s", mScenePath.empty() ? "scenes/untitled.scene.json" : mScenePath.generic_string().c_str());
+					std::snprintf(mScenePathInput, sizeof(mScenePathInput), "%s", mScenePath.empty() ? "scenes/untitled.scene.json" : mScenePath.generic_u8string().c_str());
 					mSaveSceneDialog = true;
 				}
 				ImGui::EndDisabled();

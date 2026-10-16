@@ -168,6 +168,12 @@ if(BUILD_TESTING)
 	endforeach()
 	ly_add_game_test_case(LightYearsReflectionRegistryGolden LightYearsReflectionRegistryGoldenTests)
 	set(LY_E2E ${LIGHT_YEARS_E2E_ARTIFACT_DIR})
+	add_test(NAME LightYearsContentBootstrapFailure COMMAND ${CMAKE_COMMAND}
+		-DSOURCE_ROOT=${CMAKE_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/bootstrap-failure-test
+		-DRUNTIME=$<TARGET_FILE:${LIGHT_YEARS_GAME_TARGET_NAME}>
+		-P ${CMAKE_CURRENT_SOURCE_DIR}/tests/RunBootstrapFailure.cmake)
+	set_tests_properties(LightYearsContentBootstrapFailure PROPERTIES
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}> TIMEOUT 60)
 
 	ly_add_game_test(LightYearsSceneSettingsTests GAME PROJECT_DIR SOURCES ${LY_TESTS_DIR}/SceneSettingsTests.cpp)
 	ly_add_game_test_case(LightYearsSceneSettings LightYearsSceneSettingsTests)

@@ -57,7 +57,9 @@ namespace ly
 	private:
 		void RefreshFilterAndSpatialQuery();
 		void OtherDestroyed(Actor* other);
-		void ClearContacts();
+		// Teardown unbinds silently; filter/body changes end both sides explicitly.
+		void ClearContacts(bool notify = false);
+		void ClearInvalidContacts();
 
 		bool mPhysicsEnabled = false;
 		std::optional<b2BodyId> mPhysicsBodyId;

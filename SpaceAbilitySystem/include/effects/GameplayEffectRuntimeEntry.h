@@ -52,8 +52,14 @@ namespace sas
 		{
 			auto snapshot = BuildSnapshot(spec.definition.effectId);
 			snapshot.handle = handle;
-			snapshot.source = sourceObject ? std::to_string(reinterpret_cast<std::uintptr_t>(sourceObject)) : "unspecified";
 			snapshot.infinite = spec.definition.durationPolicy == GameplayEffectDurationPolicy::Infinite;
+			return snapshot;
+		}
+
+		GameplayEffectRuntimeSnapshot BuildDebugSnapshot() const
+		{
+			auto snapshot = BuildRuntimeSnapshot();
+			snapshot.source = sourceObject ? std::to_string(reinterpret_cast<std::uintptr_t>(sourceObject)) : "unspecified";
 			snapshot.modifiers = spec.modifiers;
 			snapshot.grantedTags = spec.definition.grantedTags;
 			return snapshot;

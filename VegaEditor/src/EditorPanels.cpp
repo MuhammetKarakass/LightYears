@@ -485,7 +485,7 @@ namespace vega
 		{
 			if (mPrefabWorld)
 			{
-				ImGui::Text("Prefab: %s%s", mPrefabPath.generic_string().c_str(), PrefabDirty() ? " *" : "");
+				ImGui::Text("Prefab: %s%s", mPrefabPath.generic_u8string().c_str(), PrefabDirty() ? " *" : "");
 				if (ImGui::Button("Save Prefab")) SavePrefab();
 				ImGui::SameLine();
 				if (ImGui::Button("Back to Scene")) RequestPrefab({});
@@ -537,7 +537,7 @@ namespace vega
 				if (!mPrefabWorld)
 					if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>(); identity && !identity->prefab.empty())
 					{
-						ImGui::Text("Prefab: %s", std::filesystem::path(identity->prefab).stem().stem().string().c_str());
+						ImGui::Text("Prefab: %s", std::filesystem::path(identity->prefab).stem().stem().u8string().c_str());
 						ImGui::SameLine();
 						if (ImGui::SmallButton("open")) RequestPrefab(identity->prefab);
 						if (ImGui::SmallButton("Revert all")) ChangeAllPrefab(context, history, false);
@@ -589,7 +589,7 @@ namespace vega
 					for (std::filesystem::recursive_directory_iterator it{ root / "scripts", error }, end; it != end && !error; it.increment(error))
 					{
 						if (it->is_regular_file(error) && it->path().extension() == ".lua")
-							paths.push_back(it->path().lexically_relative(root).generic_string());
+							paths.push_back(it->path().lexically_relative(root).generic_u8string());
 					}
 					std::sort(paths.begin(), paths.end());
 					for (const auto& path : paths)

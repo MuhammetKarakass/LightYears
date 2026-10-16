@@ -152,6 +152,7 @@ namespace ly
 		mMusicRevision = NextMusicRevision();
 		mFadeState = FadeState::None;
 		std::string copyOfPath = path;
+		mCurrentMusicPath.clear();
 		mNextMusicPath.clear();
 		mPendingLoopPath = "";
 		mIsPlayingIntro = false;
@@ -165,6 +166,7 @@ namespace ly
 		
 		if (mMusic->openFromFile(fullPath))
 		{
+			mCurrentMusicPath = copyOfPath;
 			mMusicType = type;
 			mMusicBasePitch = pitch;
 			mMusicBaseVolume = volume;
@@ -230,15 +232,10 @@ namespace ly
 
 	void AudioManager::FadeToMusic(const std::string& path, AudioType type, float volume, float pitch, bool loop, float fadeDuration)
 	{
+		// Even an unchanged track can be claimed by a new Lua script owner.
 		mMusicRevision = NextMusicRevision();
-		if (mMusic && mMusic->getStatus() != sf::Music::Status::Stopped)
-		{
-			std::string currentPath = mNextMusicPath.empty() ? "" : mNextMusicPath;
-			if(path == currentPath)
-			{
-				return;
-			}
-		}
+		if (mMusic && mMusic->getStatus() != sf::Music::Status::Stopped &&
+			path == (mFadeState == FadeState::FadingOut ? mNextMusicPath : mCurrentMusicPath)) return;
 
 		mNextMusicPath = path;
 		mNextMusicType = type;

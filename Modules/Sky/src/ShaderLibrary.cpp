@@ -18,7 +18,7 @@ namespace vega::sky
 			std::string source;
 			if (!ReadTextFile(file, source))
 			{
-				error = "cannot read " + file.string();
+				error = "cannot read " + file.u8string();
 				return false;
 			}
 			std::ostringstream captured;
@@ -47,7 +47,7 @@ namespace vega::sky
 		Reload(true, report);
 		if (mShaders.empty() || !report.errors.empty())
 		{
-			error = "shader load from " + dir.string() + " failed";
+			error = "shader load from " + dir.u8string() + " failed";
 			for (const std::string& e : report.errors)
 			{
 				error += "\n  " + e;
@@ -83,12 +83,12 @@ namespace vega::sky
 			std::string error;
 			if (!CompileFragment(file, *shader, error))
 			{
-				report.errors.push_back("shader " + file.filename().string() + ": " + error);
+				report.errors.push_back("shader " + file.filename().u8string() + ": " + error);
 				continue;
 			}
-			mShaders[file.stem().string()] = {file, std::move(shader)};
+			mShaders[file.stem().u8string()] = {file, std::move(shader)};
 			UniformWriter::InvalidateLocations();
-			report.reloaded.push_back("shader " + file.filename().string());
+			report.reloaded.push_back("shader " + file.filename().u8string());
 		}
 	}
 

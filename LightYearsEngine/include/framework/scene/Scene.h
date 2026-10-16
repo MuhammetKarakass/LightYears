@@ -13,6 +13,7 @@ namespace ly
 	class Actor;
 	class ActorComponent;
 	class World;
+	class PrefabLibrary;
 
 	struct SceneLoadResult
 	{
@@ -39,7 +40,8 @@ namespace ly
 		// Remap nested instance/subtree GUIDs and internal parent links together.
 		static void RemapGuids(nlohmann::json& entities);
 		static void RemapReferences(nlohmann::json& data, const std::map<std::string, std::string>& guids);
-		static SceneLoadResult Load(World& world, const nlohmann::json& scene);
+		// Staging loads use their library and leave warning emission to the caller.
+		static SceneLoadResult Load(World& world, const nlohmann::json& scene, PrefabLibrary* prefabs = nullptr, bool logWarnings = true);
 		static void RegisterComponentSerializer(const std::string& type, ComponentSerializer serializer,
 			EngineContext& context = EngineContext::Current());
 		// For actors whose reflected construction-only properties select their

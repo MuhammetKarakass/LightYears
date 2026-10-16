@@ -150,6 +150,12 @@ namespace ly::content
 					if (!loaded.Succeeded()) return loaded.error;
 					const auto modules = ModuleLoader::LoadFromJson(documents.at("module"));
 					if (!modules.Succeeded()) return modules.error;
+					const auto weapons = WeaponLoader::LoadFromJson(documents.at("weapon"));
+					if (!weapons.Succeeded()) return weapons.error;
+					for (const auto& ship : loaded.definitions)
+						if (!ship.definition.primaryWeaponId.empty() && std::none_of(weapons.definitions.begin(), weapons.definitions.end(),
+							[&](const auto& weapon) { return weapon.weaponId == ship.definition.primaryWeaponId; }))
+							return std::string{ "Unknown primary weapon: " } + ship.definition.primaryWeaponId;
 					std::string error;
 					for (const auto& ship : loaded.definitions) if (ship.definition.schematic && !ShipSchematicValidator::Validate(*ship.definition.schematic, modules.definitions, modules.zoneTable, &error)) return error;
 					return error;

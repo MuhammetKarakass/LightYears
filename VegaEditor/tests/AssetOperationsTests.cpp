@@ -31,6 +31,15 @@ int main()
 	std::filesystem::create_directories(root / "scripts");
 	std::filesystem::create_directories(root / "destination");
 	Write(root / "scripts/start.lua", "return {}\n");
+	const auto unicode = std::filesystem::path{ L"\u6f22\u5b57-\U0001f680.png" };
+	Write(root / unicode, "image");
+	Write(root / "unicode.json", Json{ { "texture", unicode.generic_u8string() } }.dump());
+	AssetMovePlan unicodeMove{ engineContext };
+	Check(unicodeMove.Prepare(root, unicode, std::filesystem::path{ "destination" } / unicode) && unicodeMove.Apply(), "Unicode asset move must preserve references without throwing");
+	Check(Json::parse(Read(root / "unicode.json"))["texture"] == (std::filesystem::path{ "destination" } / unicode).generic_u8string(), "Unicode reference must remain UTF-8");
+	Check(unicodeMove.Apply(false) && std::filesystem::exists(root / unicode), "Unicode asset undo must restore its native filename");
+	std::filesystem::remove(root / unicode);
+	std::filesystem::remove(root / "unicode.json");
 	const std::string original = "{\r\n\t\"scripts\":[{\"path\":\"scripts/start.lua\"}], \"opaque\":0.70, \"children\":[{\"prefab\":\"scripts/nested.prefab.json\"}]\r\n}\r\n";
 	Write(root / "a.json", original);
 	Write(root / "z.json", "{\"file\":\"scripts/start.lua\"}\n");

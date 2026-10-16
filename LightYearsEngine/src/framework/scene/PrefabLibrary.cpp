@@ -71,13 +71,10 @@ namespace ly
 	PrefabResult PrefabLibrary::Resolve(const std::string& path)
 	{
 		LY_PROFILE_SCOPE("Prefab Resolve");
-		const auto report = [](const PrefabResult& result)
-		{
-			for (const auto& warning : result.warnings)
-				debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
-			return result;
-		};
-		std::set<std::filesystem::path> chain, dependencies;
+		if (!mResolveChain.empty()) return Resolve(path, mResolveChain, mResolveDependencies);
+		mResolveDependencies.clear();
+		auto& chain = mResolveChain;
+		auto& dependencies = mResolveDependencies;
 		try
 		{
 			const auto relative = std::filesystem::u8path(path);
@@ -97,7 +94,7 @@ namespace ly
 						const auto size = std::filesystem::file_size(dependency.first, sizeError);
 						if (timeError || sizeError || modified != dependency.second.first || size != dependency.second.second) current = false;
 					}
-					if (current) return report(found->second.result);
+					if (current) return found->second.result;
 					mResolved.erase(found);
 				}
 				++mResolveCount;
@@ -114,11 +111,11 @@ namespace ly
 					}
 					mResolved[key] = std::move(cached);
 				}
-				return report(result);
+				return result;
 			}
 		}
 		catch (const std::filesystem::filesystem_error&) {}
-		return report(Resolve(path, chain, dependencies));
+		return Resolve(path, chain, dependencies);
 	}
 	PrefabResult PrefabLibrary::Resolve(const std::string& path, std::set<std::filesystem::path>& chain, std::set<std::filesystem::path>& dependencies)
 	{
@@ -149,10 +146,10 @@ namespace ly
 				// Realize constructor defaults through the scene path, including game factories.
 				World scratch{ *mContext };
 				const auto loaded = SceneSerializer::Load(scratch, { { "format", "vega.scene" }, { "version", 1 },
-					{ "settings", Json::object() }, { "entities", Json::array({ base }) } });
+					{ "settings", Json::object() }, { "entities", Json::array({ base }) } }, this, false);
 				result.warnings.insert(result.warnings.end(), loaded.warnings.begin(), loaded.warnings.end());
-				if (loaded.spawned != 1) return result;
-				result.entity = SceneSerializer::SaveEntity(*scratch.GetActorsByTypeIncludingPending<Actor>().front().lock(), true);
+				if (loaded.spawned < 1 || !scratch.unresolvedPrefabs.empty()) return result;
+				result.entity = SceneSerializer::SaveSubtree(*scratch.GetActorsByTypeIncludingPending<Actor>().front().lock(), true);
 			}
 			result.entity = Merge(std::move(result.entity), document);
 			const auto resolveChildren = [&](auto&& self, Json& node, unsigned depth, const std::string& address) -> void
@@ -195,7 +192,7 @@ namespace ly
 			// Normalize setter side effects and canonical composition before diffing.
 			World scratch{ *mContext };
 			const auto loaded = SceneSerializer::Load(scratch, { { "format", "vega.scene" }, { "version", 1 },
-				{ "settings", Json::object() }, { "entities", Json::array({ result.entity }) } });
+				{ "settings", Json::object() }, { "entities", Json::array({ result.entity }) } }, this, false);
 			for (const auto& warning : loaded.warnings)
 				if (warning.find("Dangling actor reference:") == std::string::npos) result.warnings.push_back(warning);
 			if (loaded.spawned < 1) { result.entity = nullptr; return result; }

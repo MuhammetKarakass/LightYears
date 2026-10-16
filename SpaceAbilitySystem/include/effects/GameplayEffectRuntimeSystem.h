@@ -187,6 +187,14 @@ namespace sas
 			return snapshots;
 		}
 
+		std::vector<GameplayEffectRuntimeSnapshot> BuildDebugSnapshots() const
+		{
+			std::vector<GameplayEffectRuntimeSnapshot> snapshots;
+			snapshots.reserve(mActiveEffects.GetAll().size());
+			for (const ActiveEffect& effect : mActiveEffects.GetAll()) snapshots.push_back(effect.BuildDebugSnapshot());
+			return snapshots;
+		}
+
 		bool CanApplyEffect(const GameplayEffectDefinition& definition) const
 		{
 			if (!ShouldContinueGlobal() || !CanApplyGameplayEffect(definition, mOwnedTags)) return false;

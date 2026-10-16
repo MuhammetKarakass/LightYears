@@ -84,7 +84,7 @@ namespace ly::content
 		return true;
 	}
 
-	bool ModuleContentCatalog::LoadFromFiles(const std::filesystem::path& modulesFilePath, const std::filesystem::path& sideFeaturesFilePath, std::string* failureReason)
+	bool ModuleContentCatalog::LoadFromFiles(const std::filesystem::path& modulesFilePath, const std::filesystem::path& sideFeaturesFilePath, std::string* failureReason, bool validateOnly)
 	{
 		ModuleLoader::Result modules = ModuleLoader::LoadFromFile(modulesFilePath);
 		if (!modules.Succeeded())
@@ -196,6 +196,7 @@ namespace ly::content
 			return false;
 		}
 
+		if (validateOnly) return true;
 		auto index = BuildIndex(modules.definitions);
 		RetainContent(MutableDefinitions());
 		MutableDefinitions() = std::move(modules.definitions);

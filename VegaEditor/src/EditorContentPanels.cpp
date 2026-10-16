@@ -22,7 +22,7 @@ namespace vega
 			std::error_code error;
 			if (entry.is_directory(error)) return IconKind::Folder;
 			if (IsPrefabPath(entry.path())) return IconKind::Prefab;
-			const auto extension = Lower(entry.path().extension().string());
+			const auto extension = Lower(entry.path().extension().u8string());
 			if (extension == ".json") return IconKind::Json;
 			if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") return IconKind::Image;
 			if (extension == ".ogg" || extension == ".wav" || extension == ".flac") return IconKind::Audio;
@@ -40,7 +40,7 @@ namespace vega
 		std::error_code error;
 		for (std::filesystem::directory_iterator it{ path, error }, end; !error && it != end; it.increment(error))
 		{
-			if (Lower(it->path().filename().string()) == ".vega") continue;
+			if (Lower(it->path().filename().u8string()) == ".vega") continue;
 			std::filesystem::path safe;
 			if (mDocument.Resolve(it->path().lexically_relative(mDocument.Root()), safe)) mContentEntries.push_back(*it);
 		}
@@ -49,7 +49,7 @@ namespace vega
 		{
 			std::error_code ae, be;
 			const bool ad = a.is_directory(ae), bd = b.is_directory(be);
-			return ad != bd ? ad : Lower(a.path().filename().string()) < Lower(b.path().filename().string());
+			return ad != bd ? ad : Lower(a.path().filename().u8string()) < Lower(b.path().filename().u8string());
 		});
 	}
 
@@ -57,9 +57,9 @@ namespace vega
 	{
 		std::filesystem::path path;
 		if (!mDocument.Resolve(relative, path)) return;
-		const auto key = relative.generic_string();
+		const auto key = relative.generic_u8string();
 		ImGui::PushID(key.c_str());
-		const auto name = relative.empty() ? "Assets" : relative.filename().string();
+		const auto name = relative.empty() ? "Assets" : relative.filename().u8string();
 		const bool open = ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_OpenOnArrow |
 			(relative.empty() ? ImGuiTreeNodeFlags_DefaultOpen : 0) |
 			(relative == mContentDirectory ? ImGuiTreeNodeFlags_Selected : 0));
@@ -73,7 +73,7 @@ namespace vega
 			std::vector<std::filesystem::path> children;
 			for (std::filesystem::directory_iterator it{ path, error }, end; !error && it != end; it.increment(error))
 			{
-				if (Lower(it->path().filename().string()) == ".vega") continue;
+				if (Lower(it->path().filename().u8string()) == ".vega") continue;
 				std::error_code status;
 				if (depth < 64 && !it->is_symlink(status) && it->is_directory(status))
 					children.push_back(it->path().lexically_relative(mDocument.Root()));
@@ -132,8 +132,8 @@ namespace vega
 			{
 				breadcrumb /= part;
 				ImGui::SameLine(); ImGui::TextDisabled("/"); ImGui::SameLine();
-				ImGui::PushID(breadcrumb.generic_string().c_str());
-				if (ImGui::SmallButton(part.string().c_str())) navigate = breadcrumb;
+				ImGui::PushID(breadcrumb.generic_u8string().c_str());
+				if (ImGui::SmallButton(part.u8string().c_str())) navigate = breadcrumb;
 				ImGui::PopID();
 			}
 			if (navigate) { mContentDirectory = *navigate; RefreshContent(); }
@@ -153,13 +153,13 @@ namespace vega
 				{
 					for (const auto& entry : mContentEntries)
 					{
-						if (Lower(entry.path().filename().string()).find(Lower(mContentFilter)) == std::string::npos) continue;
+						if (Lower(entry.path().filename().u8string()).find(Lower(mContentFilter)) == std::string::npos) continue;
 						const auto relative = entry.path().lexically_relative(mDocument.Root());
 						std::filesystem::path safe;
 						if (!mDocument.Resolve(relative, safe)) continue;
 						ImGui::TableNextColumn();
-						ImGui::PushID(relative.generic_string().c_str());
-						const auto extension = Lower(entry.path().extension().string());
+						ImGui::PushID(relative.generic_u8string().c_str());
+						const auto extension = Lower(entry.path().extension().u8string());
 						// Only visible rows acquire a texture. A timestamp change invalidates even failed loads.
 						if ((extension == ".png" || extension == ".jpg" || extension == ".jpeg") && ImGui::IsRectVisible({ tile, tile }))
 						{
@@ -207,7 +207,7 @@ namespace vega
 						if (ImGui::IsItemHovered())
 						{
 							draw->AddRect(pos, { pos.x + cellWidth, pos.y + height }, IM_COL32(51, 199, 202, 180), 4.f);
-							ImGui::SetTooltip("%s", relative.generic_string().c_str());
+							ImGui::SetTooltip("%s", relative.generic_u8string().c_str());
 						}
 						if (clicked && ImGui::IsMouseDoubleClicked(0))
 						{
@@ -215,7 +215,7 @@ namespace vega
 							if (entry.is_directory(error)) { enter = relative; enterFolder = true; }
 							else if (extension == ".json")
 							{
-								const auto name = relative.filename().string();
+								const auto name = relative.filename().u8string();
 								if (name.size() >= 11 && name.compare(name.size() - 11, 11, ".scene.json") == 0) RequestScene("open", relative);
 								else if (IsPrefabPath(relative)) RequestPrefab(relative);
 								else RequestDocument(relative);
@@ -234,7 +234,7 @@ namespace vega
 						const ImVec2 textPos{ pos.x + (grid ? 6.f : 38.f), pos.y + (grid ? tile + 8.f : 6.f) };
 						const ImVec4 clip{ pos.x + 4.f, textPos.y, pos.x + cellWidth - 4.f, pos.y + height - 3.f };
 						draw->AddText(ImGui::GetFont(), ImGui::GetFontSize(), textPos, ImGui::GetColorU32(ImGuiCol_Text),
-							entry.path().filename().string().c_str(), nullptr, grid ? cellWidth - 12.f : 0.f, &clip);
+							entry.path().filename().u8string().c_str(), nullptr, grid ? cellWidth - 12.f : 0.f, &clip);
 						ImGui::SetCursorPos(after);
 						ImGui::PopID();
 					}
@@ -333,7 +333,7 @@ namespace vega
 			if (ImGui::Begin(title.c_str(), &show))
 			{
 				mDataFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-				ImGui::TextWrapped("%s", mDocument.IsOpen() ? mDocument.Path().string().c_str() : "Open a JSON file from Content");
+				ImGui::TextWrapped("%s", mDocument.IsOpen() ? mDocument.Path().u8string().c_str() : "Open a JSON file from Content");
 				ImGui::TextUnformatted("Saved content reloads through the game module; prefabs affect new spawns.");
 				if (mDocument.ReadOnly()) ImGui::TextWrapped("%s", mDocument.ReadOnlyReason().c_str());
 				if (!mDocument.Error().empty()) ImGui::TextWrapped("%s", mDocument.Error().c_str());

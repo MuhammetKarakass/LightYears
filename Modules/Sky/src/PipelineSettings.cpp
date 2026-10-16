@@ -158,7 +158,7 @@ namespace vega::sky
 		std::string text;
 		if (!ReadTextFile(file, text))
 		{
-			error = "cannot read " + file.string();
+			error = "cannot read " + file.u8string();
 			return false;
 		}
 		try

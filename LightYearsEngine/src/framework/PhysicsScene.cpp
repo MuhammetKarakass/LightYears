@@ -37,14 +37,14 @@ namespace ly
 			Actor* actorA = ResolveActor(shapeIdA);
 			Actor* actorB = ResolveActor(shapeIdB);
 			if (!actorA || !actorB || actorA->GetIsPendingDestroy() ||
-				actorB->GetIsPendingDestroy() || !actorA->CanCollideWith(actorB) ||
-				!actorB->CanCollideWith(actorA))
+				actorB->GetIsPendingDestroy())
 			{
 				return;
 			}
 
 			if (isBeginEvent)
 			{
+				if (!actorA->CanCollideWith(actorB) || !actorB->CanCollideWith(actorA)) return;
 				if (auto* collision = actorA->FindComponent<CollisionComponent>()) collision->NotifyContact(actorB, true);
 				if (!actorB->GetIsPendingDestroy())
 					if (auto* collision = actorB->FindComponent<CollisionComponent>()) collision->NotifyContact(actorA, true);

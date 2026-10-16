@@ -37,7 +37,7 @@ namespace vega
 			std::vector<std::string> scenes;
 			for (std::filesystem::recursive_directory_iterator it{ mDocument.Root() / "scenes", error }, end; it != end && !error; it.increment(error))
 			{
-				const auto path = it->path().lexically_relative(mDocument.Root()).generic_string();
+				const auto path = it->path().lexically_relative(mDocument.Root()).generic_u8string();
 				if (it->is_regular_file(error) && path.size() >= 11 && path.substr(path.size() - 11) == ".scene.json") scenes.push_back(path);
 			}
 			std::sort(scenes.begin(), scenes.end());
@@ -114,7 +114,7 @@ namespace vega
 			nlohmann::json scene = EmptyScene();
 			if (recovered) scene = *recovered;
 			else if (std::ifstream input{ path }; input) input >> scene;
-			else if (!allowMissing) throw std::runtime_error("Cannot open scene: " + path.string());
+			else if (!allowMissing) throw std::runtime_error("Cannot open scene: " + path.u8string());
 			if (!scene.is_object() || scene.value("format", std::string{}) != "vega.scene" ||
 				scene.value("version", 0) != 1 || !scene.contains("entities") || !scene["entities"].is_array() ||
 				!scene.contains("settings") || !scene["settings"].is_object()) throw std::runtime_error("Expected vega.scene version 1");
@@ -251,14 +251,14 @@ namespace vega
 				for (std::filesystem::recursive_directory_iterator it{ mDocument.Root() / "scenes", error }, end;
 					!error && it != end; it.increment(error))
 				{
-					const auto name = it->path().filename().string();
+					const auto name = it->path().filename().u8string();
 					if (it->is_regular_file(error) && name.size() >= 11 && name.compare(name.size() - 11, 11, ".scene.json") == 0)
 						scenes.push_back(it->path().lexically_relative(mDocument.Root()));
 				}
 				std::sort(scenes.begin(), scenes.end());
 				ImGui::BeginChild("Scenes", { 570.f, 180.f }, ImGuiChildFlags_Borders);
 				for (const auto& path : scenes)
-					if (ImGui::Selectable(path.generic_string().c_str())) std::snprintf(mScenePathInput, sizeof(mScenePathInput), "%s", path.generic_string().c_str());
+					if (ImGui::Selectable(path.generic_u8string().c_str())) std::snprintf(mScenePathInput, sizeof(mScenePathInput), "%s", path.generic_u8string().c_str());
 				ImGui::EndChild();
 			}
 			ImGui::SetNextItemWidth(570.f);

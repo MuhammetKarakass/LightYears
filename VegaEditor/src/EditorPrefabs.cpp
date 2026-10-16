@@ -273,7 +273,7 @@ namespace vega
 	}
 	bool IsPrefabPath(const std::filesystem::path& path)
 	{
-		const auto name = path.generic_string();
+		const auto name = path.generic_u8string();
 		return name.size() >= 12 && name.substr(name.size() - 12) == ".prefab.json";
 	}
 	std::vector<std::string> PrefabPaths(const std::filesystem::path& root)
@@ -281,7 +281,7 @@ namespace vega
 		std::vector<std::string> paths;
 		std::error_code error;
 		for (std::filesystem::recursive_directory_iterator it{ root / "prefabs", error }, end; !error && it != end; it.increment(error))
-			if (it->is_regular_file(error) && IsPrefabPath(it->path())) paths.push_back(it->path().lexically_relative(root).generic_string());
+			if (it->is_regular_file(error) && IsPrefabPath(it->path())) paths.push_back(it->path().lexically_relative(root).generic_u8string());
 		std::sort(paths.begin(), paths.end());
 		return paths;
 	}
@@ -304,7 +304,7 @@ namespace vega
 		const auto actor = context.selection.Get();
 		if (!actor || !actor->FindComponent<ly::SceneEntityComponent>()) return false;
 		const auto before = ly::SceneSerializer::SaveSubtree(*actor);
-		const auto document = ly::PrefabLibrary::Document(before, std::filesystem::path(path).stem().stem().string());
+		const auto document = ly::PrefabLibrary::Document(before, std::filesystem::path(path).stem().stem().u8string());
 		if (!WritePrefab(context, path, document, false)) return false;
 		context.Engine().Prefabs().Reload();
 		PrefabJson after{ { "prefab", path }, { "guid", before["guid"] }, { "name", before["name"] },
@@ -324,13 +324,13 @@ namespace vega
 	{
 		if (!context.Engine().Prefabs().Resolve(parent)) return false;
 		return WritePrefab(context, path, { { "format", "vega.prefab" }, { "version", 1 },
-			{ "name", std::filesystem::path(path).stem().stem().string() }, { "base", { { "prefab", parent } } } }, false);
+			{ "name", std::filesystem::path(path).stem().stem().u8string() }, { "base", { { "prefab", parent } } } }, false);
 	}
 	bool PlacePrefab(EditorContext& context, CommandHistory& history, const std::string& path, sf::Vector2f location)
 	{
 		if (!context.Engine().Prefabs().Resolve(path)) return false;
 		return history.Execute(std::make_unique<CreateEntity>(PrefabJson{ { "prefab", path }, { "guid", ly::SceneEntityComponent::GenerateGuid() },
-			{ "name", std::filesystem::path(path).stem().stem().string() }, { "properties", { { "Location", { location.x, location.y } } } } }));
+			{ "name", std::filesystem::path(path).stem().stem().u8string() }, { "properties", { { "Location", { location.x, location.y } } } } }));
 	}
 	bool RefreshPrefabs(EditorContext& context, CommandHistory& history)
 	{
@@ -480,10 +480,10 @@ namespace vega
 	bool EditorApplication::OpenPrefab(const std::filesystem::path& path)
 	{
 		if (mContext.playMode) return false;
-		auto result = GetEngineContext().Prefabs().Resolve(path.generic_string());
+		auto result = GetEngineContext().Prefabs().Resolve(path.generic_u8string());
 		if (!result) { mContext.sceneError = result.warnings.empty() ? "Cannot resolve prefab" : result.warnings.front(); return false; }
 		std::vector<std::string> warnings;
-		auto document = GetEngineContext().Prefabs().Load(path.generic_string(), warnings);
+		auto document = GetEngineContext().Prefabs().Load(path.generic_u8string(), warnings);
 		if (document.is_null()) return false;
 		auto world = std::make_unique<ly::World>(GetEngineContext());
 		result.entity["name"] = document.value("name", std::string{});
@@ -538,7 +538,7 @@ namespace vega
 		if (!actor) return false;
 		auto document = CapturePrefab();
 		if (document.is_null()) return false;
-		if (!WritePrefab(mContext, mPrefabPath.generic_string(), document)) return false;
+		if (!WritePrefab(mContext, mPrefabPath.generic_u8string(), document)) return false;
 		mPrefabDocument = std::move(document);
 		mPrefabSaved = ly::SceneSerializer::SaveSubtree(*actor, true);
 		mPrefabDirty = false;

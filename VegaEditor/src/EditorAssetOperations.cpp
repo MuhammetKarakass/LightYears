@@ -118,7 +118,7 @@ namespace vega
 		mContentError.clear();
 		mAssetMove.reset();
 		if (!AssetsCanChange()) { mContentError = "Save dirty documents, close the prefab and stop Play before changing assets"; return; }
-		auto plan = std::make_unique<AssetMovePlan>();
+		auto plan = std::make_unique<AssetMovePlan>(GetEngineContext());
 		if (!plan->Prepare(mDocument.Root(), from, to, mProject.file)) { mContentError = plan->Error(); return; }
 		mAssetMove = std::move(plan);
 		mAssetPreview = true;
@@ -131,13 +131,13 @@ namespace vega
 			std::filesystem::path path;
 			const bool safe = mDocument.Resolve(std::filesystem::u8path(command.text), path);
 			const bool exists = safe && std::filesystem::exists(path);
-			detail = safe ? path.generic_string() : "Path escapes the asset root";
+			detail = safe ? path.generic_u8string() : "Path escapes the asset root";
 			return safe && exists == (command.values[0] == "true");
 		}
 		const auto from = std::filesystem::u8path(command.text);
 		if (command.operation == "asset-delete")
 		{
-			AssetMovePlan plan;
+			AssetMovePlan plan{ GetEngineContext() };
 			if (!plan.Prepare(mDocument.Root(), from, ".__vega_delete_preview__", mProject.file)) { detail = plan.Error(); return false; }
 			const bool success = ExecuteAssetDelete(plan);
 			detail = success ? "Asset moved to Trash" : mContentError;
@@ -150,7 +150,7 @@ namespace vega
 			to = from.parent_path() / to;
 		}
 		if (!AssetsCanChange()) { detail = "Save dirty documents, close the prefab and stop Play before changing assets"; return false; }
-		AssetMovePlan plan;
+		AssetMovePlan plan{ GetEngineContext() };
 		if (!plan.Prepare(mDocument.Root(), from, to, mProject.file)) { detail = plan.Error(); return false; }
 		detail = std::to_string(plan.References().size()) + " references updated";
 		return mHistory.Execute(std::make_unique<MoveAsset>(std::move(plan), [this]() { return AssetsCanChange(); },
@@ -163,7 +163,7 @@ namespace vega
 		if (!AssetsCanChange()) { mContentError = "Save dirty documents and close the prefab before deleting assets"; return false; }
 		if (AssetMovePlan::Contains(source, mScenePath) || AssetMovePlan::Contains(source, mProject.file)) { mContentError = "Cannot delete the open scene or project"; return false; }
 		for (const auto& ref : plan.References()) if (!AssetMovePlan::Contains(source, ref.file))
-		{ mContentError = "Cannot delete an asset referenced by " + ref.file.generic_string() + " " + ref.pointer; return false; }
+		{ mContentError = "Cannot delete an asset referenced by " + ref.file.generic_u8string() + " " + ref.pointer; return false; }
 		std::filesystem::path trash;
 		const auto name = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
 		if (!mDocument.Resolve(std::filesystem::path{ ".vega/Trash" } / name, trash)) { mContentError = "Trash escapes the asset root"; return false; }
@@ -193,7 +193,7 @@ namespace vega
 		if (ImGui::IsItemClicked()) mSelectedAsset = relative;
 		if (!mContext.playMode && ImGui::BeginDragDropSource())
 		{
-			const auto path = relative.generic_string();
+			const auto path = relative.generic_u8string();
 			ImGui::SetDragDropPayload("VEGA_ASSET", path.c_str(), path.size() + 1);
 			ImGui::TextUnformatted(path.c_str());
 			ImGui::EndDragDropSource();
@@ -210,8 +210,8 @@ namespace vega
 			remove = ImGui::MenuItem("Delete...");
 			if (IsPrefabPath(relative) && ImGui::MenuItem("Create Variant...", nullptr, false, !mContext.playMode))
 			{
-				mVariantParent = relative.generic_string();
-				std::snprintf(mPrefabName, sizeof(mPrefabName), "%s Variant", relative.stem().stem().string().c_str());
+				mVariantParent = relative.generic_u8string();
+				std::snprintf(mPrefabName, sizeof(mPrefabName), "%s Variant", relative.stem().stem().u8string().c_str());
 				mCreatePrefabDialog = true;
 			}
 			ImGui::EndPopup();
@@ -221,7 +221,7 @@ namespace vega
 			mAssetDialogSource = relative;
 			mAssetRename = rename;
 			mAssetDelete = false;
-			std::snprintf(mAssetPathInput, sizeof(mAssetPathInput), "%s", (rename ? relative.filename() : relative.parent_path()).generic_string().c_str());
+			std::snprintf(mAssetPathInput, sizeof(mAssetPathInput), "%s", (rename ? relative.filename() : relative.parent_path()).generic_u8string().c_str());
 			mAssetPathDialog = true;
 		}
 		if (remove)
@@ -266,12 +266,12 @@ namespace vega
 				blocked = AssetMovePlan::Contains(root / mAssetMove->From(), mScenePath) || AssetMovePlan::Contains(root / mAssetMove->From(), mProject.file);
 				for (const auto& ref : refs) if (!AssetMovePlan::Contains(root / mAssetMove->From(), ref.file)) blocked = true;
 			}
-			ImGui::TextWrapped("%s %s%s%s", mAssetDelete ? "Delete" : "Move", mAssetMove->From().generic_string().c_str(),
-				mAssetDelete ? "" : " -> ", mAssetDelete ? "" : mAssetMove->To().generic_string().c_str());
+			ImGui::TextWrapped("%s %s%s%s", mAssetDelete ? "Delete" : "Move", mAssetMove->From().generic_u8string().c_str(),
+				mAssetDelete ? "" : " -> ", mAssetDelete ? "" : mAssetMove->To().generic_u8string().c_str());
 			ImGui::TextWrapped("%s", mAssetDelete ? "Deleted assets go to .vega/Trash and can be restored with Undo. Referenced assets and the open scene/project cannot be deleted." : "The following JSON references will change in one undo step:");
 			ImGui::BeginChild("References", { 0.f, -90.f });
 			for (const auto& ref : refs)
-				ImGui::TextWrapped("%s %s\n%s -> %s", ref.file.lexically_relative(root).generic_string().c_str(), ref.pointer.c_str(), ref.before.c_str(), ref.after.c_str());
+				ImGui::TextWrapped("%s %s\n%s -> %s", ref.file.lexically_relative(root).generic_u8string().c_str(), ref.pointer.c_str(), ref.before.c_str(), ref.after.c_str());
 			if (refs.empty()) ImGui::TextDisabled("No JSON references found.");
 			ImGui::EndChild();
 			ImGui::BeginDisabled(blocked || !AssetsCanChange());

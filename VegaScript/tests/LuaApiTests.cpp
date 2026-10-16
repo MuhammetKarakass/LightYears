@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <thread>
 
 namespace
 {
@@ -177,6 +178,32 @@ return {
 		other->SetActorLocation({ 300, 0 });
 		for (int i = 0; i < 3; ++i) world.StepPhysics(1.f/60.f);
 		Check(actor->GetActorLocation() == sf::Vector2f{ 1, 1 }, "Physical end must fire once");
+		// Filters and body removal may prevent Box2D from delivering an end event.
+		for (bool disable : { false, true })
+		{
+			const auto begins = actor->GetActorRotation() - 10.f;
+			other->SetActorLocation({ 5, 0 });
+			for (int i = 0; i < 3; ++i) world.StepPhysics(1.f/60.f);
+			const auto touching = actor->GetActorLocation();
+			Check(actor->GetActorRotation() == begins + 11.f, "Retouch begin/hit did not fire");
+			if (disable) other->SetEnablePhysics(false);
+			else other->SetCollisionMask(CollisionLayer::None);
+			Check(actor->GetActorLocation().y == touching.y + 1, "Invalidating a contact must end the other component's overlap");
+			other->SetActorLocation({ 300, 0 });
+			for (int i = 0; i < 3; ++i) world.StepPhysics(1.f/60.f);
+			if (disable) other->SetEnablePhysics(true);
+			else other->SetCollisionMask(CollisionLayer::Player);
+			other->SetActorLocation({ 5, 0 });
+			for (int i = 0; i < 3; ++i) world.StepPhysics(1.f/60.f);
+			Check(actor->GetActorRotation() == begins + 12.f, "Restored filter/body must fire begin/hit again");
+			other->SetActorLocation({ 300, 0 });
+			for (int i = 0; i < 3; ++i) world.StepPhysics(1.f/60.f);
+		}
+		// Reset this fixture's script counters before compound-contact checks.
+		Check(script.Reload(), "Event fixture reload failed");
+		auto* resetCollision = actor->FindComponent<ly::CollisionComponent>();
+		resetCollision->NotifyContact(other.get(), true);
+		resetCollision->NotifyContact(other.get(), false);
 		// Simulate the multiple shape contacts emitted by compound bodies.
 		auto* collision = actor->FindComponent<ly::CollisionComponent>();
 		collision->NotifyContact(other.get(), true);
@@ -219,7 +246,7 @@ function on_start(self)
 end
 )");
 		Healthy(script);
-		auto& manager = ly::AudioManager::GetAudioManager();
+		auto& manager = actor->GetEngineContext().Audio();
 		Check(manager.PlayingSoundCount() == 1, "Lua sound handle did not stop its voice");
 		const auto revision = manager.MusicRevision();
 		manager.Update(.2f); manager.Update(.2f);
@@ -228,7 +255,7 @@ end
 		Check(manager.PlayingSoundCount() == 1, "Reload leaked an old sound");
 		auto next = Named(world, "Next music owner");
 		world.TickInternal(0.f);
-		auto& nextScript = Attach(*next, "next-music", "function on_start(self) music.play('silence.wav',0) end");
+		auto& nextScript = Attach(*next, "next-music", "function on_start(self) music.fade('silence.wav',0.1,0) end");
 		Healthy(nextScript);
 		actor->Destroy();
 		Check(manager.PlayingSoundCount() == 0 && manager.IsMusicPlaying(), "Destroy stopped another script's music or leaked its sound");
@@ -237,6 +264,18 @@ end
 		manager.Update(1.f);
 		Check(!manager.IsMusicPlaying(), "Canceled fade restarted music");
 		manager.CleanCycle();
+		manager.FadeToMusic((root / "silence.wav").generic_u8string(), AudioType::Music, 0.f);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		const auto offset = manager.MusicPlayingOffset();
+		Check(offset > sf::Time::Zero, "Music playback must advance before the repeat-fade check");
+		manager.Update(.2f);
+		manager.FadeToMusic((root / "silence.wav").generic_u8string(), AudioType::Music, 0.f);
+		const auto fadeRevision = manager.MusicRevision();
+		manager.Update(5.f);
+		Check(manager.MusicPlayingOffset() >= offset && manager.IsMusicPlaying(), "Same-track fade-in must not restart playback");
+		manager.FadeToMusic((root / "silence.wav").generic_u8string(), AudioType::Music, 0.f);
+		Check(manager.MusicRevision() != fadeRevision && manager.MusicPlayingOffset() >= offset, "Unchanged music must transfer Lua ownership without restarting");
+		manager.StopMusic();
 		const auto first = manager.PlaySoundTracked((root / "silence.wav").generic_string(), AudioType::SFX_UI, 0.f);
 		manager.StopSound(first); manager.CleanCycle();
 		const auto second = manager.PlaySoundTracked((root / "silence.wav").generic_string(), AudioType::SFX_UI, 0.f);

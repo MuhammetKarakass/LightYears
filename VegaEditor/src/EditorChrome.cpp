@@ -76,7 +76,7 @@ namespace vega
 			ImGui::TextColored(mContext.playMode ? ImVec4{ 1.f, .65f, .25f, 1.f } : ImVec4{ .2f, .78f, .79f, 1.f },
 				"%s", mContext.playMode ? (paused ? "PLAYING (PAUSED)" : "PLAYING") : "EDIT");
 			ImGui::SameLine();
-			ImGui::TextDisabled("%s%s", mScenePath.empty() ? "Untitled" : mScenePath.filename().string().c_str(), SceneDirty() ? " *" : "");
+			ImGui::TextDisabled("%s%s", mScenePath.empty() ? "Untitled" : mScenePath.filename().u8string().c_str(), SceneDirty() ? " *" : "");
 			if (!mContext.sceneError.empty()) { ImGui::SameLine(); ImGui::TextWrapped("%s", mContext.sceneError.c_str()); }
 		}
 		ImGui::End();

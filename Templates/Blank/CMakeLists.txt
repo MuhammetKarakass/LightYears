@@ -22,6 +22,15 @@ endif()
 
 if(BUILD_TESTING)
 	include(Tests/Dependencies.cmake)
+	set(blank_samples_editor)
+	if(VEGA_BUILD_EDITOR)
+		set(blank_samples_editor -DEDITOR=$<TARGET_FILE:BlankEditor>)
+	endif()
+	add_test(NAME BlankSamplesLoad COMMAND ${CMAKE_COMMAND}
+		-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/blank-samples-test
+		-DRUNTIME=$<TARGET_FILE:BlankGame> ${blank_samples_editor}
+		-P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunSamples.cmake)
+	set_tests_properties(BlankSamplesLoad PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 240)
 	vega_record_dependencies(BlankGame)
 	if(VEGA_BUILD_EDITOR)
 		add_test(NAME VegaEditorAutosaveRecovery COMMAND ${CMAKE_COMMAND}

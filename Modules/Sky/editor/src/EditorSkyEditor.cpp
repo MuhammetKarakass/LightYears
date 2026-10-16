@@ -361,7 +361,7 @@ namespace vega
 		if (mConfirmClose) { ImGui::OpenPopup("Unsaved sky"); mConfirmClose = false; }
 		if (ImGui::BeginPopupModal("Unsaved sky", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Text("Save changes to %s?", mPipeline->DocumentFile().generic_string().c_str());
+			ImGui::Text("Save changes to %s?", mPipeline->DocumentFile().generic_u8string().c_str());
 			bool finish = false;
 			if (ImGui::Button("Save")) finish = mDocument->Save();
 			ImGui::SameLine();

@@ -21,7 +21,7 @@ namespace vega
 		}
 		for (const auto& path : paths)
 			ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
-				"Content change dispatched: " + path.lexically_relative(mDocument.Root()).generic_string());
+				"Content change dispatched: " + path.lexically_relative(mDocument.Root()).generic_u8string());
 	}
 
 	bool EditorApplication::AutosaveNow()
@@ -35,7 +35,7 @@ namespace vega
 			if (!mAutosaves.Write(path, kind, text))
 			{
 				success = false;
-				mAutosaveError += path.generic_string() + ": " + mAutosaves.Error() + "\n";
+				mAutosaveError += path.generic_u8string() + ": " + mAutosaves.Error() + "\n";
 			}
 		};
 		try
@@ -134,7 +134,7 @@ namespace vega
 				if (!mAutosaves.Write(entry.source, entry.kind, entry.text)) mAutosaveError = mAutosaves.Error();
 				else if (entry.snapshot.parent_path() != mAutosaves.Session() && !mAutosaves.Acknowledge(entry)) mAutosaveError = mAutosaves.Error();
 				ly::debug::Log::Write(ly::debug::LogLevel::Info, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION,
-					"Recovered into an unsaved editor buffer: " + entry.source.generic_string());
+					"Recovered into an unsaved editor buffer: " + entry.source.generic_u8string());
 			}
 			return success;
 		}
@@ -186,8 +186,8 @@ namespace vega
 			const auto& entry = mRecoveryEntries[index];
 			ImGui::PushID(static_cast<int>(index));
 			ImGui::Separator();
-			ImGui::TextWrapped("%s (%s)%s", entry.source.generic_string().c_str(), entry.kind.c_str(), entry.unclean ? " - unclean exit" : "");
-			ImGui::TextDisabled("Session: %s", entry.snapshot.parent_path().filename().string().c_str());
+			ImGui::TextWrapped("%s (%s)%s", entry.source.generic_u8string().c_str(), entry.kind.c_str(), entry.unclean ? " - unclean exit" : "");
+			ImGui::TextDisabled("Session: %s", entry.snapshot.parent_path().filename().u8string().c_str());
 			ImGui::TextWrapped("%s", entry.summary.c_str());
 			ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
 			if (ImGui::Button("Recover") && RecoverAutosave(entry))

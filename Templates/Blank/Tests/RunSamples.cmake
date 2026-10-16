@@ -1,0 +1,50 @@
+# All authoring and runtime writes belong to this test's build-tree asset copy.
+file(MAKE_DIRECTORY "${TEST_ROOT}")
+file(COPY "${TEMPLATE_ROOT}/Assets/" DESTINATION "${TEST_ROOT}/assets")
+file(GLOB_RECURSE scenes RELATIVE "${TEST_ROOT}/assets" "${TEST_ROOT}/assets/scenes/*.scene.json")
+if(NOT scenes)
+	message(FATAL_ERROR "No Blank sample scenes found")
+endif()
+
+function(check_run name)
+	file(WRITE "${TEST_ROOT}/${name}.log" "${output}\n${errors}")
+	if(NOT result EQUAL 0 OR "${output}\n${errors}" MATCHES "\\[(WARN|ERROR|FATAL)\\]")
+		message(FATAL_ERROR "${name} failed (${result}); see ${TEST_ROOT}/${name}.log\n${output}\n${errors}")
+	endif()
+endfunction()
+
+foreach(scene IN LISTS scenes)
+	get_filename_component(name "${scene}" NAME_WE)
+	set(capture "${TEST_ROOT}/${name}.png")
+	file(REMOVE "${capture}")
+	execute_process(COMMAND "${RUNTIME}" --asset-root "${TEST_ROOT}/assets" --scene "${scene}"
+		--visual-capture "${capture}" --capture-frames 180
+		RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE errors TIMEOUT 45)
+	check_run("${name}-game")
+	if(NOT EXISTS "${capture}")
+		message(FATAL_ERROR "Missing sample capture: ${capture}")
+	endif()
+	if(EDITOR)
+		set(script "${TEST_ROOT}/${name}.vegascript")
+		set(commands "")
+		if(scene MATCHES "trigger.scene.json$")
+			# Author the initial overlap before Play; scene-history moves require edit mode.
+			string(APPEND commands "select-name Player\nmove 480 270\n")
+		endif()
+		string(APPEND commands "play-mode\nwait 180\nexpect-no-errors\n")
+		if(scene MATCHES "trigger.scene.json$")
+			# Exercise overlap, messaging, prefab spawning, audio and timer cleanup.
+			string(APPEND commands "expect-console Info \"trigger fired\"\nexpect-console Info \"timers started\"\nwait-seconds 5\nexpect-count BlankPlayer 3\n")
+		elseif(scene MATCHES "hierarchy.scene.json$")
+			string(APPEND commands "wait-seconds 9\nexpect-console Info \"re-attached\"\n")
+		elseif(scene MATCHES "patrol.scene.json$")
+			string(APPEND commands "wait-seconds 12\nexpect-console Info \"laps completed:\"\n")
+		endif()
+		string(APPEND commands "expect-no-errors\nstop\nwait 3\nexpect-no-errors\nquit\n")
+		file(WRITE "${script}" "${commands}")
+		execute_process(COMMAND "${EDITOR}" --project "${TEST_ROOT}/assets/vega.project.json"
+			--asset-root "${TEST_ROOT}/assets" --editor-scene "${TEST_ROOT}/assets/${scene}" --editor-script "${script}"
+			RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE errors TIMEOUT 60)
+		check_run("${name}-editor")
+	endif()
+endforeach()

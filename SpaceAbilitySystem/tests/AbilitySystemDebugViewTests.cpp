@@ -18,6 +18,8 @@ int main()
 	definition.grantedTags.emplace_back("State.Buff.Speed");
 	sas::AbilitySystemDebugView::BeginPlay();
 	const auto handle = asc.ApplyGameplayEffect(definition);
+	const auto gameplay = asc.BuildGameplayEffectSnapshots();
+	check(gameplay.size() == 1 && gameplay[0].source.empty() && gameplay[0].modifiers.empty() && gameplay[0].grantedTags.empty(), "Gameplay snapshots must omit debug allocations");
 	auto frozen = asc.BuildDebugSnapshot();
 	check(frozen.effects.size() == 1 && frozen.effects[0].handle == handle, "Active handle missing");
 	check(frozen.effects[0].modifiers.size() == 1 && frozen.effects[0].grantedTags.size() == 1, "Effect detail missing");

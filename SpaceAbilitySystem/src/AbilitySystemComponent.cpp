@@ -661,7 +661,7 @@ namespace sas
 			DescribeDebugAbility(entry);
 			result.abilities.push_back(std::move(entry));
 		}
-		result.effects = BuildGameplayEffectSnapshots();
+		result.effects = mEffects.BuildDebugSnapshots();
 		result.attributes = mAttributes.BuildSnapshot();
 		result.tags = mOwnedTags.BuildCountSnapshot();
 		std::sort(result.tags.begin(), result.tags.end(), [](const auto& a, const auto& b) { return a.first.name < b.first.name; });

@@ -38,6 +38,8 @@ namespace ly
 		static void LocalizeReferences(nlohmann::json& entity);
 	private:
 		EngineContext* mContext;
+		// Scene realization can re-enter the public resolver on this same library.
+		std::set<std::filesystem::path> mResolveChain, mResolveDependencies;
 		PrefabResult Resolve(const std::string& path, std::set<std::filesystem::path>& chain, std::set<std::filesystem::path>& dependencies);
 		struct Cached
 		{

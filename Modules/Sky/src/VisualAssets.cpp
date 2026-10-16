@@ -30,7 +30,7 @@ namespace vega::sky
 		std::string deepSkyError;
 		if (std::filesystem::exists(deepSkyFile) && !mDeepSky.Load(deepSkyFile, deepSkyError))
 		{
-			mLoadReport.errors.push_back(mSkyFile.generic_string() + ": " + deepSkyError);
+			mLoadReport.errors.push_back(mSkyFile.generic_u8string() + ": " + deepSkyError);
 		}
 		return true;
 	}
@@ -72,11 +72,11 @@ namespace vega::sky
 			std::string error;
 			if (mDeepSky.Load(deepSkyFile, error))
 			{
-				report.reloaded.push_back(mSkyFile.generic_string());
+				report.reloaded.push_back(mSkyFile.generic_u8string());
 			}
 			else
 			{
-				report.errors.push_back(mSkyFile.generic_string() + ": " + error);
+				report.errors.push_back(mSkyFile.generic_u8string() + ": " + error);
 			}
 		}
 		return report;
