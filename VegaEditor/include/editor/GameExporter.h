@@ -13,21 +13,20 @@ namespace vega
 	// Where the export reads from, and the trees it must never write into.
 	struct GameExportLayout
 	{
-		// LightYearsGame build output: LightYearsGame.exe, the DLLs next to it and the built assets folder.
+		// Runtime executable, adjacent DLLs and built assets.
 		std::filesystem::path gameBuildDir;
-		// LightYearsVisual/assets in the source tree, exported as <output>/visual.
+		// Optional presentation assets from the project.
 		std::filesystem::path visualAssetsDir;
 		// The repository. Exports may not touch it, except inside generatedRoot (the build tree).
 		std::filesystem::path sourceTreeRoot;
 		std::filesystem::path generatedRoot;
 		// A path only: the editor does not require a Release build to exist.
-#ifdef VEGA_GAME_RELEASE_BUILD_DIR
-		std::filesystem::path releaseGameBuildDir = VEGA_GAME_RELEASE_BUILD_DIR;
-#else
 		std::filesystem::path releaseGameBuildDir;
-#endif
 		// Tests and authoring sessions may export a disposable copy of the assets.
 		std::filesystem::path assetRoot;
+		std::filesystem::path sourceAssetRoot;
+		std::string runtimeExecutable = "Game.exe";
+		std::string assetDirectory = "assets", visualDirectory = "visual", gameLogName = "Game.log";
 	};
 
 	struct ExportOptions
@@ -66,13 +65,13 @@ namespace vega
 	inline constexpr const char* kExportManifestName = "vega_export_manifest.txt";
 	inline constexpr const char* kExportSmokeCaptureName = "export_smoke.png";
 	// The game writes this log into its working directory, which is the export folder during the smoke test.
-	inline constexpr const char* kExportGameLogName = "LightYears.log";
+	inline constexpr const char* kExportGameLogName = "Game.log";
 
 	GameExportResult ExportGame(const GameExportLayout& layout, const GameExportRequest& request);
 	std::future<GameExportResult> ExportGameAsync(GameExportLayout layout, GameExportRequest request);
 	// Runs the project-named executable in <gameDir> with --visual-capture from that folder. Passes on exit code 0 with a
 	// non-empty PNG; a game that does not finish within the timeout is terminated.
-	GameSmokeTestResult RunGameSmokeTest(const std::filesystem::path& gameDir, unsigned int timeoutMs = 60000);
+	GameSmokeTestResult RunGameSmokeTest(const std::filesystem::path& gameDir, unsigned int timeoutMs = 60000, const std::string& assetDirectory = "assets");
 	// Missing logs fail closed; Windows separators and letter case are normalized.
 	GameSmokeTestResult CheckGameLogPortability(const std::filesystem::path& log, const std::filesystem::path& sourceTreeRoot);
 	// One line for the editor dialog and the script report.

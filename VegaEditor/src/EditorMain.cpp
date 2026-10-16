@@ -1,6 +1,6 @@
 #include "editor/EditorApplication.h"
 
-ly::Application* GetApplication()
+ly::Application* vega::CreateEditorApplication(std::unique_ptr<GameModule> module)
 {
-	return new vega::EditorApplication();
+	return new EditorApplication(std::move(module));
 }

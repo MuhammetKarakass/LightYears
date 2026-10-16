@@ -9,6 +9,7 @@ set(LIGHT_YEARS_GAME_APP_TARGET_NAME LightYearsGameApp)
 #   LightYearsGameLib      - the rest of the game that tests can link without a window or visual pipeline
 #   LightYearsGameApp      - reusable game application (gameFramework/) and LightYearsVisual presenters
 file(GLOB_RECURSE LY_GAME_CPP CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+list(FILTER LY_GAME_CPP EXCLUDE REGEX "/src/editor/")
 file(GLOB_RECURSE LY_GAME_HEADERS CONFIGURE_DEPENDS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
@@ -485,7 +486,7 @@ configure_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/config.h" ESCAPE_QUOTES
 )
 # Keep runtime-root changes visible to Ninja even when an older MSVC dependency database missed Config.h.
-set_property(SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/GameApplication.cpp" APPEND PROPERTY
+set_property(SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/LightYearsGameModule.cpp" APPEND PROPERTY
 	OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/config.h")
 
 # The checked-in include/Config.h otherwise shadows this configuration-specific generated header.

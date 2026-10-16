@@ -18,7 +18,9 @@ set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "Use the existing SFML targets" FORCE)
 FetchContent_MakeAvailable(imgui-sfml)
 
 add_executable(VegaEditor
+	${VEGA_GAME_EDITOR_ENTRY}
 	src/EditorMain.cpp
+	src/EditorProject.cpp
 	src/EditorApplication.cpp
 	src/EditorScenes.cpp
 	src/EditorWorldSettings.cpp
@@ -62,21 +64,13 @@ add_executable(VegaEditor
 	include/editor/EditorSelection.h
 )
 target_include_directories(VegaEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_definitions(VegaEditor PRIVATE VEGA_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsGame/assets")
-target_compile_definitions(VegaEditor PRIVATE VEGA_EDITOR_FONT_PATH="${CMAKE_SOURCE_DIR}/LightYearsGame/assets/fonts/NotoSans-Regular.ttf")
-# Export Game copies the game build output and the visual assets. The dependency builds the game first, so
-# the export never packages a stale or missing LightYearsGame.exe.
-add_dependencies(VegaEditor LightYearsGame)
+# The parent selects one game module target and entry point. Core sources know only the contract.
+add_dependencies(VegaEditor ${VEGA_GAME_RUNTIME_TARGET})
 target_compile_definitions(VegaEditor PRIVATE
-	VEGA_GAME_BUILD_DIR="${CMAKE_SOURCE_DIR}/build/LightYearsGame"
-	VEGA_GAME_RELEASE_BUILD_DIR="${CMAKE_SOURCE_DIR}/build-release/LightYearsGame"
-	VEGA_GAME_VISUAL_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets"
+	VEGA_DEFAULT_PROJECT_FILE="${VEGA_DEFAULT_PROJECT_FILE}"
 	VEGA_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
-	VEGA_BUILD_ROOT="${CMAKE_BINARY_DIR}"
-	VEGA_EXPORT_DEFAULT_DIR="${CMAKE_BINARY_DIR}/export/LightYears")
-# GameApp carries LightYearsVisual, the whole-archive game library, engine definitions,
-# and the generated game asset configuration, exactly as for LightYearsGame.
-target_link_libraries(VegaEditor PRIVATE LightYearsGameApp ImGui-SFML::ImGui-SFML)
+	VEGA_BUILD_ROOT="${CMAKE_BINARY_DIR}")
+target_link_libraries(VegaEditor PRIVATE ${VEGA_GAME_MODULE_TARGET} ImGui-SFML::ImGui-SFML)
 ly_enable_warnings(VegaEditor)
 
 if(MSVC)
@@ -100,25 +94,48 @@ endif()
 # Run even when only content changes, matching the game's runtime synchronization.
 add_custom_target(VegaEditorAssets ALL
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
-		${CMAKE_SOURCE_DIR}/LightYearsGame/assets
+		${VEGA_EDITOR_ASSET_ROOT}
 		$<TARGET_FILE_DIR:VegaEditor>/assets
 	COMMENT "Synchronizing editor runtime assets..."
 )
 add_dependencies(VegaEditor VegaEditorAssets)
 add_custom_command(TARGET VegaEditorAssets POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E $<IF:$<CONFIG:Debug>,true,copy_directory>
-		${CMAKE_SOURCE_DIR}/LightYearsVisual/assets
+		${VEGA_EDITOR_VISUAL_ASSETS}
 		$<TARGET_FILE_DIR:VegaEditor>/visual
 )
 
 if(BUILD_TESTING)
+	set(VEGA_PROJECT_TEST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/project-path-tests")
+	add_executable(VegaEditorProjectTests tests/EditorProjectTests.cpp src/EditorProject.cpp)
+	target_include_directories(VegaEditorProjectTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorProjectTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(VegaEditorProjectTests PRIVATE
+		VEGA_PROJECT_TEST_ROOT="${VEGA_PROJECT_TEST_ROOT}"
+		VEGA_DEFAULT_PROJECT_FILE="${VEGA_PROJECT_TEST_ROOT}/default/vega.project.json"
+		VEGA_SOURCE_ROOT="${VEGA_PROJECT_TEST_ROOT}" VEGA_BUILD_ROOT="${VEGA_PROJECT_TEST_ROOT}/build")
+	ly_enable_warnings(VegaEditorProjectTests)
+	add_test(NAME VegaEditorProjectDefaults COMMAND VegaEditorProjectTests)
+	add_test(NAME VegaEditorProjectOverrides COMMAND VegaEditorProjectTests
+		--project ${VEGA_PROJECT_TEST_ROOT}/selected/project/vega.project.json --asset-root ${VEGA_PROJECT_TEST_ROOT}/authoring)
+	add_executable(VegaEditorGameModuleTests tests/GameModuleTests.cpp src/EditorScriptParser.cpp
+		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
+	target_include_directories(VegaEditorGameModuleTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorGameModuleTests PRIVATE VegaScript)
+	ly_enable_warnings(VegaEditorGameModuleTests)
+	foreach(module_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${module_runtime} VegaEditorGameModuleTests)
+	endforeach()
+	add_test(NAME VegaEditorGameModule COMMAND VegaEditorGameModuleTests)
+	add_test(NAME VegaEditorNoGameIncludes COMMAND ${CMAKE_COMMAND}
+		-DSOURCE_ROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/NoGameIncludes.cmake)
 	add_executable(VegaEditorSkyDocumentTests tests/SkyDocumentTests.cpp src/SkyDocument.cpp src/JsonDocument.cpp src/JsonCommands.cpp
 		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorSkyDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_link_libraries(VegaEditorSkyDocumentTests PRIVATE VegaScript LightYearsVisual)
+	target_link_libraries(VegaEditorSkyDocumentTests PRIVATE VegaScript ${VEGA_EDITOR_VISUAL_TARGET})
 	target_compile_definitions(VegaEditorSkyDocumentTests PRIVATE
 		VEGA_SKY_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/sky-document-test"
-		VEGA_SKY_SOURCE="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets")
+		VEGA_SKY_SOURCE="${VEGA_EDITOR_VISUAL_ASSETS}")
 	ly_enable_warnings(VegaEditorSkyDocumentTests)
 	foreach(sky_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
 		CopyRuntimeLibToTarget(${sky_runtime} VegaEditorSkyDocumentTests)
@@ -144,7 +161,7 @@ if(BUILD_TESTING)
 	configure_file(tests/scripts/gas-content-invalid.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-content-invalid.vegascript COPYONLY)
 	configure_file(tests/RunGasContentTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunGasContentTest.cmake @ONLY)
 	add_test(NAME VegaEditorGasContent COMMAND ${CMAKE_COMMAND}
-		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -DVEGA_CONTENT_LOADER=$<TARGET_FILE:LightYearsContentTests>
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -DVEGA_CONTENT_LOADER=$<TARGET_FILE:${VEGA_CONTENT_LOADER_TARGET}>
 		-P ${CMAKE_CURRENT_BINARY_DIR}/RunGasContentTest.cmake)
 	set_tests_properties(VegaEditorGasContent PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 120)
 	configure_file(tests/scripts/gas-debugger.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-debugger.vegascript @ONLY)
@@ -312,7 +329,7 @@ if(BUILD_TESTING)
 	target_include_directories(VegaEditorJsonDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(VegaEditorJsonDocumentTests PRIVATE VegaScript nlohmann_json::nlohmann_json)
 	target_compile_definitions(VegaEditorJsonDocumentTests PRIVATE
-		VEGA_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/LightYearsGame/assets/content/data"
+		VEGA_TEST_DATA_DIR="${VEGA_EDITOR_ASSET_ROOT}/content/data"
 		VEGA_TEST_TEMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/json-test-assets")
 	ly_enable_warnings(VegaEditorJsonDocumentTests)
 	foreach(json_test_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
@@ -335,7 +352,7 @@ if(BUILD_TESTING)
 	add_test(NAME VegaEditorGameExporter COMMAND VegaEditorGameExporterTests)
 
 	# The script is generated so the export target is absolute. It runs the real game in the build tree.
-	set(VEGA_EXPORT_TEST_DIR "${CMAKE_BINARY_DIR}/export-test/LightYears")
+	set(VEGA_EXPORT_TEST_DIR "${CMAKE_BINARY_DIR}/export-test/${VEGA_EXPORT_NAME}")
 	configure_file(tests/scripts/export.vegascript.in
 		${CMAKE_CURRENT_BINARY_DIR}/scripts/export.vegascript @ONLY)
 	configure_file(tests/RunExportTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunExportTest.cmake @ONLY)

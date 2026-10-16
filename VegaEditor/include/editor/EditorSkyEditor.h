@@ -10,7 +10,7 @@ namespace vega
 	class EditorSkyEditor
 	{
 	public:
-		void Bind(ly::GameVisualPipeline* pipeline);
+		void Bind(ly::WorldRenderPipeline* pipeline);
 		void Update(EditorContext& scene, sf::Vector2u output, bool suspended);
 		void Build(EditorContext& scene, CommandHistory& sceneHistory);
 		void Handles(const sf::FloatRect& image, sf::Vector2u textureSize, bool hovered);

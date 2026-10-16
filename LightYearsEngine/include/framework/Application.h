@@ -6,6 +6,8 @@
 #include "framework/RenderViewport.h"
 #include <utility>
 
+namespace vega { class GameModule; }
+
 namespace ly
 {
 	class World;
@@ -21,6 +23,9 @@ namespace ly
 		virtual int GetExitCode() const { return 0; }
 
 		void QuitApplication();
+		// Non-owning: the host retains the module until worlds have shut down.
+		void RegisterGameModule(vega::GameModule& module, bool editor);
+		void UnregisterGameModule() { mGameModule = nullptr; }
 
 		sf::Vector2u GetWindowSize() const
 		{
@@ -49,6 +54,8 @@ namespace ly
 
 		// The world that ticks and renders this frame; a LoadWorld request appears here from the next frame.
 		World* GetCurrentWorld() const { return mCurrentWorld.get(); }
+		// Factories supplied by game modules use the same deferred swap as LoadWorld<T>.
+		void LoadWorld(std::shared_ptr<World> world) { mPendingWorld = std::move(world); }
 
 	protected:
 		// Runs before the current world sees an event; returning true consumes it.
@@ -70,6 +77,7 @@ namespace ly
 		float mCleanCycleTime;
 
 		shared_ptr<World> mCurrentWorld;
+		vega::GameModule* mGameModule = nullptr;
 		shared_ptr<World> mPendingWorld;
 
 		void TickInternal(float deltaTime);

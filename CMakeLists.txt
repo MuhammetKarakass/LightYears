@@ -91,6 +91,7 @@ add_subdirectory(LightYearsGame)
 
 option(VEGA_BUILD_EDITOR "Build the Vega editor" ON)
 if(VEGA_BUILD_EDITOR)
+	include(LightYearsGame/editor.cmake)
 	add_subdirectory(VegaEditor)
 endif()
 

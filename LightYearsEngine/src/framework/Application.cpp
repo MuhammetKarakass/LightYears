@@ -1,4 +1,5 @@
 #include "framework/Application.h"
+#include "framework/GameModule.h"
 #include "framework/reflection/Reflection.h"
 #include "framework/Core.h"
 #include "framework/World.h"
@@ -156,10 +157,18 @@ namespace ly
 		mQuitRequested = true;
 	}
 
+	void Application::RegisterGameModule(vega::GameModule& module, bool editor)
+	{
+		mGameModule = &module;
+		module.RegisterTypes();
+		module.Initialize(*this, editor);
+	}
+
 	void Application::ShutdownApplication()
 	{
 		LY_PROFILE_FUNCTION();
 		mPendingWorld.reset();
+		if (mGameModule && mCurrentWorld && !mCurrentWorld->IsEditMode()) mGameModule->EndPlay(*mCurrentWorld);
 		mCurrentWorld.reset();
 		AudioManager::ShutdownAudioManager();
 		TimerManager::ShutdownTimerManagers();
@@ -219,6 +228,7 @@ namespace ly
 
 		if(mPendingWorld && mPendingWorld!=mCurrentWorld)
 		{
+			if (mGameModule && mCurrentWorld && !mCurrentWorld->IsEditMode()) mGameModule->EndPlay(*mCurrentWorld);
 			mCurrentWorld = nullptr;
 
 			TimerManager::GetGameTimerManager().ClearAllTimers();
@@ -226,6 +236,7 @@ namespace ly
 
 			mCurrentWorld = mPendingWorld;
 			mCurrentWorld->BeginPlayInternal();
+			if (mGameModule && !mCurrentWorld->IsEditMode()) mGameModule->BeginPlay(*mCurrentWorld);
 		}
 	}
 	

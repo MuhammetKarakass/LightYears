@@ -1,5 +1,4 @@
 #include "editor/EditorApplication.h"
-#include <level/SceneLevel.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <fstream>
@@ -93,7 +92,7 @@ namespace vega
 		mRenameGuid.clear();
 		mPauseAfterTick = false;
 		mContext.transitioning = true;
-		LoadWorld<ly::SceneLevel>(scene, [this](const nlohmann::json& settings) { ApplySceneSettings(settings); }, edit);
+		LoadWorld(mModule->CreateLevel(*this, scene, edit));
 	}
 
 	bool EditorApplication::OpenScene(const std::filesystem::path& requested, bool allowMissing)
@@ -305,6 +304,7 @@ namespace vega
 				if (ImGui::MenuItem(type->name.c_str())) CreateSceneEntity(mContext, mHistory, type->name);
 			ImGui::EndMenu();
 		}
+		for (const auto& menu : mExtensions.hierarchyMenus) menu(mContext, mHistory);
 	}
 
 	void EditorApplication::BeginRename()

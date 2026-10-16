@@ -1,6 +1,7 @@
 #pragma once
+#include <filesystem>
 
 namespace vega
 {
-	void ApplyEditorTheme();
+	void ApplyEditorTheme(const std::filesystem::path& font = {});
 }

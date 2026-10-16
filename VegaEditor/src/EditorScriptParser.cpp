@@ -10,7 +10,7 @@
 
 namespace vega
 {
-	EditorScriptParseResult ParseEditorScriptLine(const std::string& line)
+	EditorScriptParseResult ParseEditorScriptLine(const std::string& line, const std::function<bool(const std::string&)>& isExtension)
 	{
 		std::vector<std::string> tokens;
 		std::vector<std::string> rawTokens;
@@ -254,10 +254,10 @@ namespace vega
 			}
 			return { command, {} };
 		}
-		if (verb == "expect-backdrop" || verb == "expect-player-ship")
+		if (verb == "expect-backdrop")
 		{
 			if (tokens.size() != 2 || tokens[1].empty()) return bad();
-			command.operation = verb == "expect-backdrop" ? ScriptOperation::ExpectBackdrop : ScriptOperation::ExpectPlayerShip;
+			command.operation = ScriptOperation::ExpectBackdrop;
 			command.text = tokens[1];
 			return { command, {} };
 		}
@@ -580,7 +580,14 @@ namespace vega
 			else command.operation = verb == "capture" ? ScriptOperation::Capture : ScriptOperation::ExpectSelected;
 			return { command, {} };
 		}
-		else return { {}, "Unknown command: " + verb };
+		else
+		{
+			if (!isExtension || !isExtension(verb)) return { {}, "Unknown command: " + verb };
+			command.operation = ScriptOperation::Extension;
+			command.extensionName = verb;
+			command.values.assign(tokens.begin() + 1, tokens.end());
+			return { command, {} };
+		}
 		if (tokens.size() != 1) return bad();
 		return { command, {} };
 	}

@@ -179,37 +179,43 @@ namespace vega
 		bool copyStarted = false;
 		try
 		{
+			// Layouts also come from tools and tests; validate package destinations
+			// before copying or clearing an earlier export.
+			auto contract = ly::ProjectSettings{}.ToJson();
+			contract["runtime"] = { { "executable", layout.runtimeExecutable }, { "assetDirectory", layout.assetDirectory },
+				{ "visualDirectory", layout.visualDirectory }, { "log", layout.gameLogName } };
+			ly::ProjectSettings::Parse(contract);
 			result.configuration = request.configuration;
 			if (result.configuration == GameExportConfiguration::Automatic)
 			{
 				result.configuration = !layout.releaseGameBuildDir.empty() &&
-					fs::is_regular_file(layout.releaseGameBuildDir / "LightYearsGame.exe")
+					fs::is_regular_file(layout.releaseGameBuildDir / layout.runtimeExecutable)
 					? GameExportConfiguration::Release : GameExportConfiguration::Debug;
 			}
 			const bool release = result.configuration == GameExportConfiguration::Release;
 			if (!release) result.warning = "not portable: reads assets from the source tree";
 			const fs::path buildDir = release ? layout.releaseGameBuildDir : layout.gameBuildDir;
 			if (request.outputDir.empty()) throw std::runtime_error("No output folder");
-			if (buildDir.empty() || !fs::is_regular_file(buildDir / "LightYearsGame.exe"))
+			if (buildDir.empty() || !fs::is_regular_file(buildDir / layout.runtimeExecutable))
 			{
-				throw std::runtime_error("Game build not found: " + (buildDir / "LightYearsGame.exe").u8string());
+				throw std::runtime_error("Game build not found: " + (buildDir / layout.runtimeExecutable).u8string());
 			}
-			if (!fs::is_directory(buildDir / "assets"))
+			if (!fs::is_directory(buildDir / layout.assetDirectory))
 			{
 				throw std::runtime_error("Game build has no assets folder: " + buildDir.u8string());
 			}
-			const fs::path assetRoot = layout.assetRoot.empty() ? buildDir / "assets" : layout.assetRoot;
+			const fs::path assetRoot = layout.assetRoot.empty() ? buildDir / layout.assetDirectory : layout.assetRoot;
 			ly::ProjectSettings project;
 			if (fs::exists(assetRoot / "vega.project.json")) project = ly::ProjectSettings::Load(assetRoot / "vega.project.json");
 			executableName = project.ExecutableName();
-			const fs::path visualAssets = release ? buildDir / "visual" : layout.visualAssetsDir;
-			if (!fs::is_directory(visualAssets))
+			const fs::path visualAssets = layout.visualAssetsDir.empty() ? fs::path{} : release ? buildDir / layout.visualDirectory : layout.visualAssetsDir;
+			if (!visualAssets.empty() && !fs::is_directory(visualAssets))
 			{
 				throw std::runtime_error("Visual assets folder not found: " + visualAssets.u8string());
 			}
 
 			const fs::path gameDir = Canonical(buildDir);
-			const fs::path visualDir = Canonical(visualAssets);
+			const fs::path visualDir = visualAssets.empty() ? fs::path{} : Canonical(visualAssets);
 			const fs::path sourceRoot = layout.sourceTreeRoot.empty() ? fs::path{} : Canonical(layout.sourceTreeRoot);
 			const fs::path generatedRoot = layout.generatedRoot.empty() ? fs::path{} : Canonical(layout.generatedRoot);
 			outputDir = Canonical(request.outputDir);
@@ -217,7 +223,7 @@ namespace vega
 			// Copying a folder into itself, or writing over the inputs, would corrupt both sides.
 			if (Overlaps(outputDir, gameDir)) throw std::runtime_error("The export folder overlaps the game build folder");
 			if (Overlaps(outputDir, Canonical(assetRoot))) throw std::runtime_error("The export folder overlaps the authoring assets");
-			if (Overlaps(outputDir, visualDir)) throw std::runtime_error("The export folder overlaps the visual assets folder");
+			if (!visualDir.empty() && Overlaps(outputDir, visualDir)) throw std::runtime_error("The export folder overlaps the visual assets folder");
 			// The repository stays read-only for exports. Generated output is allowed under the build tree.
 			if (Overlaps(outputDir, sourceRoot) && !IsSameOrInside(outputDir, generatedRoot))
 			{
@@ -245,15 +251,15 @@ namespace vega
 			{
 				if (!entry.is_regular_file()) continue;
 				const fs::path name = entry.path().filename();
-				if (name == "LightYearsGame.exe" || Lower(name.extension().u8string()) == ".dll") runtimeFiles.push_back(name);
+				if (name == layout.runtimeExecutable || Lower(name.extension().u8string()) == ".dll") runtimeFiles.push_back(name);
 			}
 			std::sort(runtimeFiles.begin(), runtimeFiles.end());
 
 			copyStarted = true;
-			for (const auto& name : runtimeFiles) CopyFileInto(state, gameDir / name, name == "LightYearsGame.exe" ? fs::u8path(executableName) : name);
+			for (const auto& name : runtimeFiles) CopyFileInto(state, gameDir / name, name == layout.runtimeExecutable ? fs::u8path(executableName) : name);
 			// Both layouts are kept: the game reads assets/ and visual/ relative to its working directory.
-			CopyTree(state, assetRoot, "assets");
-			CopyTree(state, visualDir, "visual");
+			CopyTree(state, assetRoot, layout.assetDirectory);
+			if (!visualDir.empty()) CopyTree(state, visualDir, layout.visualDirectory);
 			WriteManifest(outputDir, state.files);
 			result.success = true;
 			result.filesCopied = state.files.size();
@@ -282,11 +288,11 @@ namespace vega
 		{
 			// A log that was already there belongs to the user, so only a log the smoke run created is claimed.
 			std::error_code logError;
-			const bool logExisted = fs::exists(outputDir / kExportGameLogName, logError);
-			GameSmokeTestResult smoke = RunGameSmokeTest(outputDir);
+			const bool logExisted = fs::exists(outputDir / layout.gameLogName, logError);
+			GameSmokeTestResult smoke = RunGameSmokeTest(outputDir, 60000, layout.assetDirectory);
 			if (smoke.passed && result.configuration == GameExportConfiguration::Release)
 			{
-				const auto portability = CheckGameLogPortability(outputDir / kExportGameLogName, layout.sourceTreeRoot);
+				const auto portability = CheckGameLogPortability(outputDir / layout.gameLogName, layout.sourceTreeRoot);
 				if (!portability.passed) smoke = portability;
 				else smoke.detail += ", " + portability.detail;
 			}
@@ -300,9 +306,9 @@ namespace vega
 				{
 					state.files.push_back(kExportSmokeCaptureName);
 				}
-				if (!logExisted && fs::is_regular_file(outputDir / kExportGameLogName))
+				if (!logExisted && fs::is_regular_file(outputDir / layout.gameLogName))
 				{
-					state.files.push_back(kExportGameLogName);
+					state.files.push_back(layout.gameLogName);
 				}
 				WriteManifest(outputDir, state.files);
 			}
@@ -315,13 +321,13 @@ namespace vega
 		return result;
 	}
 
-	GameSmokeTestResult RunGameSmokeTest(const fs::path& gameDir, unsigned int timeoutMs)
+	GameSmokeTestResult RunGameSmokeTest(const fs::path& gameDir, unsigned int timeoutMs, const std::string& assetDirectory)
 	{
 		GameSmokeTestResult result;
 		ly::ProjectSettings project;
 		try
 		{
-			if (fs::exists(gameDir / "assets/vega.project.json")) project = ly::ProjectSettings::Load(gameDir / "assets/vega.project.json");
+			if (fs::exists(gameDir / assetDirectory / "vega.project.json")) project = ly::ProjectSettings::Load(gameDir / assetDirectory / "vega.project.json");
 		}
 		catch (const std::exception& error) { result.detail = error.what(); return result; }
 		const fs::path executable = gameDir / fs::u8path(project.ExecutableName());
@@ -330,7 +336,7 @@ namespace vega
 		std::error_code error;
 		fs::remove(capture, error);
 
-		std::wstring commandLine = L"\"" + executable.wstring() + L"\" --visual-capture \"" + capture.wstring() + L"\" --capture-frames 120 --asset-root \"" + (gameDir / "assets").wstring() + L"\"";
+		std::wstring commandLine = L"\"" + executable.wstring() + L"\" --visual-capture \"" + capture.wstring() + L"\" --capture-frames 120 --asset-root \"" + (gameDir / assetDirectory).wstring() + L"\"";
 		const std::wstring applicationPath = executable.wstring();
 		const std::wstring workingDirectory = gameDir.wstring();
 		STARTUPINFOW startup{};

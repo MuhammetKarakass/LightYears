@@ -50,13 +50,36 @@ namespace ly
 			settings.windowWidth = dimension("width", settings.windowWidth);
 			settings.windowHeight = dimension("height", settings.windowHeight);
 		}
+		settings.editor = document.value("editor", nlohmann::json::object());
+		if (!settings.editor.is_object()) throw std::runtime_error("Project editor must be an object");
+		for (const auto* key : { "assetRoot", "font", "visualAssets", "gameBuildDir", "releaseGameBuildDir", "exportDir" })
+			if (settings.editor.contains(key) && !settings.editor[key].is_string())
+				throw std::runtime_error(std::string{ "Project editor " } + key + " must be a path string");
+		const auto runtime = document.value("runtime", nlohmann::json::object());
+		if (!runtime.is_object()) throw std::runtime_error("Project runtime must be an object");
+		settings.runtimeExecutable = runtime.value("executable", settings.runtimeExecutable);
+		settings.runtimeAssetDirectory = runtime.value("assetDirectory", settings.runtimeAssetDirectory);
+		settings.runtimeVisualDirectory = runtime.value("visualDirectory", settings.runtimeVisualDirectory);
+		settings.runtimeLog = runtime.value("log", settings.runtimeLog);
+		for (const auto& value : { settings.runtimeExecutable, settings.runtimeAssetDirectory, settings.runtimeVisualDirectory, settings.runtimeLog })
+		{
+			const auto path = std::filesystem::u8path(value);
+			if (path.empty() || path.is_absolute() || path.has_root_name() || path.has_root_directory() || value.find('\\') != std::string::npos)
+				throw std::runtime_error("Runtime paths must be nonempty package-relative paths");
+			for (const auto& part : path)
+				if (part == ".." || part == ".") throw std::runtime_error("Runtime paths cannot leave the package");
+		}
+		if (std::filesystem::u8path(settings.runtimeExecutable).has_parent_path() || std::filesystem::u8path(settings.runtimeLog).has_parent_path())
+			throw std::runtime_error("Runtime executable and log must be filenames");
 		return settings;
 	}
 
 	nlohmann::json ProjectSettings::ToJson() const
 	{
 		return { { "format", "vega.project" }, { "version", 1 }, { "name", name }, { "startupScene", startupScene },
-			{ "window", { { "width", windowWidth }, { "height", windowHeight } } } };
+			{ "window", { { "width", windowWidth }, { "height", windowHeight } } }, { "editor", editor },
+			{ "runtime", { { "executable", runtimeExecutable }, { "assetDirectory", runtimeAssetDirectory },
+				{ "visualDirectory", runtimeVisualDirectory }, { "log", runtimeLog } } } };
 	}
 
 	std::string ProjectSettings::ExecutableName() const

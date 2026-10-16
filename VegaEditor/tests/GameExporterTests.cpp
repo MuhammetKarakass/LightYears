@@ -77,7 +77,7 @@ namespace
 		fs::remove_all(root);
 		Fixture fixture;
 		fixture.root = root;
-		WriteFile(root / "game" / "LightYearsGame.exe", kExe);
+		WriteFile(root / "game" / "Game.exe", kExe);
 		WriteFile(root / "game" / "sfml-graphics-d-3.dll", kDll);
 		WriteFile(root / "game" / "notes.txt", kNotes);
 		WriteFile(root / "game" / "assets" / "content.json", kContentJson);
@@ -106,6 +106,33 @@ int main()
 	const fs::path temp{ VEGA_EXPORT_TEST_TEMP_DIR };
 	fs::remove_all(temp);
 	{
+		auto f = MakeFixture(temp / "another-game");
+		f.layout.runtimeExecutable = "AnotherRuntime.exe";
+		f.layout.assetDirectory = "data";
+		f.layout.visualDirectory = "art";
+		f.layout.gameLogName = "Another.log";
+		fs::rename(f.layout.gameBuildDir / "Game.exe", f.layout.gameBuildDir / f.layout.runtimeExecutable);
+		WriteFile(f.layout.gameBuildDir / "data/level.json", "another game");
+		ly::ProjectSettings project;
+		project.name = "Another Game";
+		project.runtimeExecutable = f.layout.runtimeExecutable;
+		project.runtimeAssetDirectory = f.layout.assetDirectory;
+		project.runtimeVisualDirectory = f.layout.visualDirectory;
+		project.runtimeLog = f.layout.gameLogName;
+		WriteFile(f.layout.gameBuildDir / "data/vega.project.json", project.ToJson().dump());
+		const auto output = f.root / "build/other";
+		const auto result = vega::ExportGame(f.layout, Request(output));
+		Check(result.success, "Another game's layout was refused: " + result.error);
+		Check(Exists(output / "Another Game.exe") && Exists(output / "data/level.json") && Exists(output / "art/shader.glsl"),
+			"Exporter assumed the original game's package layout");
+		Check(!Exists(output / "assets") && !Exists(output / "visual"), "Exporter added unconfigured asset folders");
+		f.layout.visualAssetsDir.clear();
+		Check(vega::ExportGame(f.layout, Request(f.root / "build/no-visuals")).success, "Visual assets must be optional");
+		f.layout.assetDirectory = "../escape";
+		Check(!vega::ExportGame(f.layout, Request(output, true)).success && Exists(output / "Another Game.exe"),
+			"Unsafe package layout must fail before touching a previous export");
+	}
+	{
 		const auto f = MakeFixture(temp / "project");
 		auto layout = f.layout;
 		layout.assetRoot = f.root / "authoring-assets";
@@ -116,7 +143,7 @@ int main()
 		WriteFile(layout.assetRoot / "scenes/custom.scene.json", "{}");
 		const auto out = f.root / "build/export";
 		Check(vega::ExportGame(layout, Request(out)).success, "Project override export failed");
-		Check(ReadFile(out / "My_Game.exe") == kExe && !Exists(out / "LightYearsGame.exe"), "Project executable was not sanitized and renamed");
+		Check(ReadFile(out / "My_Game.exe") == kExe && !Exists(out / "Game.exe"), "Project executable was not sanitized and renamed");
 		Check(ReadFile(out / "assets/vega.project.json") == project.ToJson().dump() && Exists(out / "assets/scenes/custom.scene.json"),
 			"Export did not copy the authoring project's assets");
 		Check(!Exists(f.layout.gameBuildDir / "assets/vega.project.json"), "Override export changed the built project");
@@ -163,7 +190,7 @@ int main()
 		Check(result.filesCopied == 6, "Expected 6 files, got " + std::to_string(result.filesCopied));
 		Check(result.bytes == f.expectedBytes, "Byte count mismatch");
 		Check(!result.smokeTestRan, "Smoke test ran although it was disabled");
-		Check(ReadFile(out / "LightYears.exe") == kExe, "Executable not copied");
+		Check(ReadFile(out / "Game.exe") == kExe, "Executable not copied");
 		Check(ReadFile(out / "sfml-graphics-d-3.dll") == kDll, "DLL not copied");
 		Check(ReadFile(out / "assets" / "sub" / "b.txt") == kBee, "Nested asset not copied");
 		Check(ReadFile(out / "visual" / "palette" / "pipeline.json") == kPipeline, "Visual palette not copied");
@@ -177,7 +204,7 @@ int main()
 		// Existing export without overwrite is refused, and the copy is left as it was.
 		const auto again = vega::ExportGame(f.layout, Request(out));
 		Check(!again.success && !again.error.empty(), "Non-empty folder accepted without overwrite");
-		Check(ReadFile(out / "LightYears.exe") == kExe, "Refused export changed the folder");
+		Check(ReadFile(out / "Game.exe") == kExe, "Refused export changed the folder");
 	}
 
 	{
@@ -202,10 +229,10 @@ int main()
 		// A file the export did not create is never replaced, even with overwrite on.
 		const Fixture f = MakeFixture(temp / "collide");
 		const fs::path out = f.root / "build" / "export";
-		WriteFile(out / "LightYears.exe", "mine");
+		WriteFile(out / "Game.exe", "mine");
 		const auto result = vega::ExportGame(f.layout, Request(out, true));
 		Check(!result.success && !result.error.empty(), "Export replaced a file it did not create");
-		Check(ReadFile(out / "LightYears.exe") == "mine", "Stray executable was overwritten");
+		Check(ReadFile(out / "Game.exe") == "mine", "Stray executable was overwritten");
 	}
 
 	{
@@ -226,7 +253,7 @@ int main()
 		auto request = Request(f.root / "build" / "missing-release");
 		request.configuration = vega::GameExportConfiguration::Release;
 		Check(!vega::ExportGame(f.layout, request).success, "Explicit missing Release silently fell back to Debug");
-		WriteFile(f.layout.releaseGameBuildDir / "LightYearsGame.exe", "release-exe");
+		WriteFile(f.layout.releaseGameBuildDir / "Game.exe", "release-exe");
 		WriteFile(f.layout.releaseGameBuildDir / "sfml-system-3.dll", "release-dll");
 		WriteFile(f.layout.releaseGameBuildDir / "assets" / "scripts" / "test.lua", "return {}");
 		WriteFile(f.layout.releaseGameBuildDir / "visual" / "pipeline.json", "release-visual");
@@ -235,7 +262,7 @@ int main()
 		Check(release.success && release.configuration == vega::GameExportConfiguration::Release, "Default did not choose existing Release");
 		Check(release.warning.empty(), "Release has a Debug warning");
 		Check(vega::DescribeGameExport(release).find("Release") != std::string::npos, "Release description omits configuration");
-		Check(ReadFile(out / "LightYears.exe") == "release-exe", "Release executable not selected");
+		Check(ReadFile(out / "Game.exe") == "release-exe", "Release executable not selected");
 		Check(ReadFile(out / "visual" / "pipeline.json") == "release-visual", "Release visual copy came from source tree");
 		Check(ReadFile(out / "assets" / "scripts" / "test.lua") == "return {}", "Release scripts not exported");
 		Check(Exists(out / "sfml-system-3.dll") && !Exists(out / "sfml-graphics-d-3.dll"), "Release DLL selection incorrect");
@@ -243,7 +270,7 @@ int main()
 		request.configuration = vega::GameExportConfiguration::Debug;
 		const auto debug = vega::ExportGame(f.layout, request);
 		Check(debug.success && debug.configuration == vega::GameExportConfiguration::Debug && !debug.warning.empty(), "Explicit Debug ignored");
-		Check(ReadFile(request.outputDir / "LightYears.exe") == kExe, "Explicit Debug copied Release executable");
+		Check(ReadFile(request.outputDir / "Game.exe") == kExe, "Explicit Debug copied Release executable");
 		request = Request(f.root / "build" / "explicit-release");
 		request.configuration = vega::GameExportConfiguration::Release;
 		Check(vega::ExportGame(f.layout, request).success, "Explicit Release failed");

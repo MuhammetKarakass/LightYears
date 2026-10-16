@@ -18,6 +18,7 @@
 namespace vega
 {
 	struct EditorScriptCommand;
+	class EditorExtensions;
 	class JsonDocument;
 	struct EditorContext
 	{
@@ -45,6 +46,7 @@ namespace vega
 		std::function<bool(const EditorScriptCommand&, std::string&)> contentCommand;
 		std::function<bool(const EditorScriptCommand&, std::string&)> skyCommand;
 		std::function<bool()> skyActive;
+		EditorExtensions* extensions = nullptr;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
 		std::optional<ly::ComponentIdentity> propertyErrorComponent;

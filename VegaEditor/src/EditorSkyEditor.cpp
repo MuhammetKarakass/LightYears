@@ -22,10 +22,10 @@ namespace vega
 		std::string BlockKind(const std::string& path) { return path.find("objects.") == 0 ? "object" : path; }
 	}
 
-	void EditorSkyEditor::Bind(ly::GameVisualPipeline* pipeline)
+	void EditorSkyEditor::Bind(ly::WorldRenderPipeline* pipeline)
 	{
-		mPipeline = pipeline;
-		if (pipeline) mDocument = std::make_unique<SkyDocument>(pipeline->EditorAssets().Root());
+		mPipeline = dynamic_cast<ly::GameVisualPipeline*>(pipeline);
+		if (mPipeline) mDocument = std::make_unique<SkyDocument>(mPipeline->EditorAssets().Root());
 	}
 
 	bool EditorSkyEditor::Open(const std::string& stop, bool reopen)

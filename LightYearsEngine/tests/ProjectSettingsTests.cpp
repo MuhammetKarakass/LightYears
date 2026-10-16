@@ -20,8 +20,21 @@ int main()
 {
 	ly::ProjectSettings defaults;
 	auto document = defaults.ToJson();
+	{
+		auto configured = document;
+		configured["editor"] = { { "assetRoot", "content" }, { "font", "ui/font.ttf" }, { "visualAssets", "art" },
+			{ "gameBuildDir", "../../output" }, { "releaseGameBuildDir", "../../release" }, { "exportDir", "../../exports" } };
+		configured["runtime"] = { { "executable", "AnotherRuntime.exe" }, { "assetDirectory", "data" }, { "visualDirectory", "art" }, { "log", "Another.log" } };
+		const auto other = ly::ProjectSettings::Parse(configured);
+		Check(other.ToJson() == configured && other.runtimeExecutable == "AnotherRuntime.exe", "Project layout must survive settings saves");
+		for (const auto& key : { "executable", "assetDirectory", "visualDirectory", "log" })
+		{
+			auto bad = configured; bad["runtime"][key] = "../escape"; Reject(bad);
+		}
+		{ auto bad = configured; bad["editor"]["font"] = 12; Reject(bad); }
+	}
 	const auto parsed = ly::ProjectSettings::Parse(document);
-	Check(parsed.name == "LightYears" && parsed.startupScene.empty() && parsed.windowWidth == 1920 && parsed.windowHeight == 1080,
+	Check(parsed.name == "Game" && parsed.startupScene.empty() && parsed.windowWidth == 1920 && parsed.windowHeight == 1080,
 		"Project defaults changed");
 	document.erase("window");
 	Check(ly::ProjectSettings::Parse(document).windowWidth == 1920, "Missing window must use defaults");

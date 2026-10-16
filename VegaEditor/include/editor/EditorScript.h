@@ -3,6 +3,7 @@
 #include "editor/GameExporter.h"
 #include <SFML/System/Vector2.hpp>
 #include <fstream>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -17,6 +18,7 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		Extension,
 		SkyOpen, SkySet, SkyDrag, SkySave, ExpectSky, CaptureSky,
 		ContentOpen, ContentSet, ContentNew, ContentRename, ContentValidate, ContentSave, ContentReload, ExpectContent,
 		GasSelectPlayer, ExpectAbility, ExpectEffect, ExpectAttribute, ExpectTag,
@@ -25,7 +27,7 @@ namespace vega
 		ExpectConsole, ExpectNoErrors, ClearConsole, Profiler, ExpectProfileScope, CaptureProfile, Diagnostics,
 		CreatePrefab, PlacePrefab, CreateVariant, ApplyPrefabProp, RevertPrefabProp, ExpectPrefab, ExpectOverridden, ReloadPrefabs,
 		OpenPrefab, SavePrefab, ClosePrefab,
-		SetSetting, ExpectSetting, ResetSetting, ExpectBackdrop, ExpectPlayerShip,
+		SetSetting, ExpectSetting, ResetSetting, ExpectBackdrop,
 		SetProjectStartup, ExpectProjectStartup,
 		NewScene, OpenScene, SaveScene, Create, CreateMany, Delete, Duplicate, Rename, SelectName,
 		PlayMode, Stop, ExpectMode, ExpectEntityCount, ExpectSceneDirty,
@@ -41,6 +43,7 @@ namespace vega
 	{
 		ScriptOperation operation = ScriptOperation::Quit;
 		std::string text;
+		std::string extensionName;
 		std::string property;
 		std::vector<std::string> values;
 		unsigned int number = 0;
@@ -59,7 +62,7 @@ namespace vega
 	};
 
 	// Pure parsing: no world, file, logging, UI or window access.
-	EditorScriptParseResult ParseEditorScriptLine(const std::string& line);
+	EditorScriptParseResult ParseEditorScriptLine(const std::string& line, const std::function<bool(const std::string&)>& isExtension = {});
 
 	class EditorScript
 	{

@@ -13,14 +13,17 @@
 #include <map>
 #include <framework/scene/SceneSettings.h>
 #include <framework/ProjectSettings.h>
-#include <gameFramework/GameApplication.h>
+#include <framework/GameModule.h>
+#include "editor/EditorExtensions.h"
+#include "editor/EditorProject.h"
 
 namespace vega
 {
-	class EditorApplication : public ly::GameApplication
+	ly::Application* CreateEditorApplication(std::unique_ptr<GameModule> module);
+	class EditorApplication : public ly::Application
 	{
 	public:
-		EditorApplication();
+		explicit EditorApplication(std::unique_ptr<GameModule> module);
 		~EditorApplication() override;
 		int GetExitCode() const override;
 
@@ -29,7 +32,13 @@ namespace vega
 		void AfterRender() override;
 
 	private:
+		EditorApplication(std::unique_ptr<GameModule> module, EditorProject project);
+		void Tick(float deltaTime) override { mModule->Tick(deltaTime); }
 		void Render() override;
+		void ApplySceneSettings(const nlohmann::json& settings) { mModule->ApplySceneSettings(settings); }
+		EditorProject mProject;
+		std::unique_ptr<GameModule> mModule;
+		EditorExtensions mExtensions;
 		void BuildUI();
 		void BuildToolbar();
 		void BuildStatusBar();
@@ -132,18 +141,18 @@ namespace vega
 		EditorSkyEditor mSkyEditor;
 		EditorSelection mSelection;
 		EditorCamera mCamera;
-		JsonDocument mDocument{ VEGA_SOURCE_ASSETS_DIR };
+		JsonDocument mDocument{ mProject.assetRoot };
 		std::filesystem::path mLuaTypesPath;
 		void RegenerateLuaTypes();
 		EditorContext mContext{ nullptr, mSelection, &mCamera };
 		CommandHistory mHistory{ mContext };
 		std::unique_ptr<EditorScript> mScript;
-			// Build-tree locations are compile definitions of this target; see VegaEditor/CMakeLists.txt.
-			GameExportLayout mExportLayout{ VEGA_GAME_BUILD_DIR, VEGA_GAME_VISUAL_ASSETS_DIR, VEGA_SOURCE_ROOT, VEGA_BUILD_ROOT };
+			// Runtime and authoring paths come from the project file.
+			GameExportLayout mExportLayout{ mProject.exportLayout };
 			// The worker owns copies of its inputs and never accesses UI or world state.
 			bool mExportDialogRequested = false;
 			std::future<GameExportResult> mExportFuture;
-			char mExportDirectory[512]{ VEGA_EXPORT_DEFAULT_DIR };
+			char mExportDirectory[512]{};
 			bool mExportOverwrite = false;
 			bool mExportSmokeTest = true;
 			std::optional<GameExportResult> mExportResult;

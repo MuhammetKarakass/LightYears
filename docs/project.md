@@ -30,6 +30,47 @@ tests pass `--asset-root` with a disposable copy, keeping the source project
 unchanged. In the editor this option selects authoring documents; in the game it
 selects runtime assets, including the project file.
 
+The editor's default project is selected by the game's CMake integration.
+`--project <file>` chooses another project; `--asset-root` still overrides the
+authoring root (partial disposable roots need not contain runtime content).
+Paths in the optional `editor` object resolve relative to the selected project
+file, independent of the working directory:
+
+```json
+{
+	"editor": {
+		"assetRoot": ".",
+		"font": "fonts/NotoSans-Regular.ttf",
+		"visualAssets": "../../MyVisuals/assets",
+		"gameBuildDir": "../../build/MyGame",
+		"releaseGameBuildDir": "../../build-release/MyGame",
+		"exportDir": "../../build/export/MyGame"
+	},
+	"runtime": {
+		"executable": "MyRuntime.exe",
+		"assetDirectory": "assets",
+		"visualDirectory": "visual",
+		"log": "MyGame.log"
+	}
+}
+```
+
+These are additional fields in the version 1 project document. Project Settings
+and script startup-scene edits preserve them. Defaults are the project directory
+for assets, ImGui's built-in font, no visual assets, `build/Game` and
+`build-release/Game` for runtime builds, and `build/export/<Name>` for exports.
+Runtime defaults are `Game.exe`, `assets`, `visual` and `Game.log`. Package paths
+must stay inside the export; executable and log names must be plain filenames.
+`--visual-assets` continues to override the game's presentation asset source.
+
+Export copies the configured runtime executable and adjacent DLLs, renames the
+executable using the project name, copies authoring assets to `assetDirectory`,
+and optionally copies presentation assets to `visualDirectory`. Release uses
+the built presentation copy; Debug uses the configured source. Smoke testing
+passes the configured asset directory with `--asset-root` and checks the
+configured runtime log. See [game modules](game-module.md) for game registration
+and the remaining Sky integration planned for B4.
+
 Collision layer and mask use reflected **Flags** with eight labels: Player,
 PlayerBullet, Enemy, EnemyBullet, Powerup, Environment, RelayProjectile, and
 FriendlySummon. The Inspector popup has one checkbox per bit. Scenes save flags

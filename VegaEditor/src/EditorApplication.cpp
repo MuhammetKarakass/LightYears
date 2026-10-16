@@ -5,7 +5,6 @@
 #include <framework/Actor.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneSettings.h>
-#include <level/SceneLevel.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <framework/scene/PrefabLibrary.h>
 #include <script/ScriptRuntime.h>
@@ -25,9 +24,22 @@
 
 namespace vega
 {
-	EditorApplication::EditorApplication()
-		: ly::GameApplication{ true }, mViewport{ GetRenderWindow() }
+	EditorApplication::EditorApplication(std::unique_ptr<GameModule> module)
+		: EditorApplication{ std::move(module), EditorProject::FromCommandLine() }
 	{
+	}
+
+	EditorApplication::EditorApplication(std::unique_ptr<GameModule> module, EditorProject project)
+		: ly::Application{ { project.settings.windowWidth, project.settings.windowHeight }, 64, "Vega Editor", sf::Style::Close | sf::Style::Titlebar },
+		mProject{ std::move(project) },
+		mModule{ std::move(module) }, mViewport{ GetRenderWindow() }
+	{
+		if (!mModule) throw std::runtime_error("Editor requires a game module");
+		mModule->ConfigureProject(mProject.file);
+		RegisterGameModule(*mModule, true);
+		mModule->RegisterEditorExtensions(mExtensions);
+		mContext.extensions = mPrefabContext.extensions = &mExtensions;
+		std::snprintf(mExportDirectory, sizeof(mExportDirectory), "%s", mProject.exportDir.string().c_str());
 		if (!ImGui::SFML::Init(GetRenderWindow()))
 		{
 			ImGui::SFML::Shutdown();
@@ -41,7 +53,7 @@ namespace vega
 		if (ly::debug::Log::GetMinimumLevel() > ly::debug::LogLevel::Info)
 			ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Info);
 		ly::debug::Profiler::SetEnabled(false);
-		ApplyEditorTheme();
+		ApplyEditorTheme(mProject.font);
 		// The default dock layout is built only when the saved layout is missing, so panels added later would open
 		// floating over an older layout. Versioning the file name rebuilds the default once; bump it whenever the
 		// default layout or its reserved toolbar/status area changes.
@@ -78,7 +90,7 @@ namespace vega
 		mLuaTypesPath = mDocument.Root() / ".vega" / "vega.lua";
 		// Existing automation can read source assets. Generated files still belong
 		// in the build tree when no disposable authoring root was supplied.
-		if (scriptRequested && mDocument.Root() == std::filesystem::weakly_canonical(VEGA_SOURCE_ASSETS_DIR))
+		if (scriptRequested && mDocument.Root() == mProject.sourceAssetRoot)
 			mLuaTypesPath = std::filesystem::path{ VEGA_BUILD_ROOT } / "VegaEditor/.vega/vega.lua";
 		RegenerateLuaTypes();
 		script::SetScriptRoot(mDocument.Root());
@@ -96,7 +108,7 @@ namespace vega
 		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
 		mContext.document = &mDocument;
-		mSkyEditor.Bind(EditorVisualPipeline());
+		mSkyEditor.Bind(GetWorldRenderPipeline());
 		mContext.skyCommand = [this](const EditorScriptCommand& command, std::string& detail) { return mSkyEditor.Execute(command, mContext, detail); };
 		mContext.skyActive = [this]() { return mSkyEditor.Active(); };
 		mContext.contentCommand = [this](const EditorScriptCommand& command, std::string& detail)
@@ -104,7 +116,7 @@ namespace vega
 			return mContentAuthoring.Execute(mContext, mHistory, mDocument.Root(), command, detail);
 		};
 		mContext.sceneSettings = &mSceneSettings;
-		mContext.backdropState = [this]() { return GetSceneBackdropState(); };
+		mContext.backdropState = [this]() { return mModule->SceneBackdropState(); };
 		mContext.applySettings = [this](const nlohmann::json& authored)
 		{
 			// Invalid legacy values stay visible and serializable. Presentation gets
@@ -115,7 +127,7 @@ namespace vega
 				const auto value = ly::SceneSettingsSchema::Get().Value(authored, field.key);
 				effective[field.key] = field.Validate(value).empty() ? value : field.defaultValue;
 			}
-			if (auto* level = dynamic_cast<ly::SceneLevel*>(mContext.world)) level->ApplySettings(effective);
+			if (mContext.world) mModule->ApplySceneSettings(effective);
 		};
 		mContext.console = mPrefabContext.console = &mDiagnostics.capture.Buffer();
 		mContext.clearConsole = mPrefabContext.clearConsole = [this]() { mDiagnostics.Clear(); };
@@ -157,6 +169,7 @@ namespace vega
 
 	EditorApplication::~EditorApplication()
 	{
+		UnregisterGameModule();
 		sas::AbilitySystemDebugView::recording = false;
 		// The base application can still own a world when editor members are destroyed.
 		if (ly::World* world = GetCurrentWorld())
@@ -259,12 +272,12 @@ namespace vega
 		if (mScript && !mContext.transitioning && mScript->Step(mPrefabWorld ? mPrefabContext : mContext, mPrefabWorld ? mPrefabHistory : mHistory, window)) QuitApplication();
 		// The world is drawn into the viewport texture, so the window holds the finished frame only once the UI is on
 		// it (and only then is the window's framebuffer the active one); run the --visual-capture step after that.
-		GameApplication::AfterRender();
+		mModule->AfterRender();
 	}
 
 	int EditorApplication::GetExitCode() const
 	{
-		return mScript ? mScript->ExitCode() : 0;
+		return mScript ? mScript->ExitCode() : mModule->ExitCode();
 	}
 
 	void EditorApplication::BuildUI()
@@ -455,6 +468,7 @@ namespace vega
 		}
 		if (mShowWorldSettings) BuildWorldSettingsPanel();
 		mSkyEditor.Build(mContext, mHistory);
+		for (const auto& panel : mExtensions.panels) panel(mPrefabWorld ? mPrefabContext : mContext, mPrefabWorld ? mPrefabHistory : mHistory);
 		if (mGasDebugger.visible) mGasDebugger.Build(mContext);
 		if (mShowWorldSettings != mSavedWorldSettingsVisible)
 		{
@@ -632,7 +646,7 @@ namespace vega
 			if (auto* released = remapped.getIf<sf::Event::MouseButtonReleased>()) released->position = toTexture(released->position);
 			if (auto* moved = remapped.getIf<sf::Event::MouseMoved>()) moved->position = toTexture(moved->position);
 			if (auto* wheel = remapped.getIf<sf::Event::MouseWheelScrolled>()) wheel->position = toTexture(wheel->position);
-			if (!GameApplication::HandleApplicationEvent(remapped))
+			if (!mModule->HandleEvent(remapped))
 			{
 				if (ly::World* world = GetCurrentWorld())
 				{
@@ -641,6 +655,6 @@ namespace vega
 			}
 			return true;
 		}
-		return GameApplication::HandleApplicationEvent(event);
+		return mModule->HandleEvent(event);
 	}
 }

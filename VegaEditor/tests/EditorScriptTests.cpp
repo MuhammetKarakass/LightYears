@@ -18,6 +18,14 @@ int main()
 {
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
+	{
+		const auto extension = ParseEditorScriptLine("inspect-widget \"with spaces\" 12 # comment",
+			[](const std::string& name) { return name == "inspect-widget"; });
+		Check(extension.command && extension.command->operation == ScriptOperation::Extension &&
+			extension.command->extensionName == "inspect-widget" && extension.command->values == std::vector<std::string>{ "with spaces", "12" },
+			"Registered extension must receive decoded arguments");
+		Check(!ParseEditorScriptLine("inspect-widget value").error.empty(), "An unregistered extension must remain unknown");
+	}
 	for (const char* line : {"sky-open", "sky-open sol extra", "sky-save extra", "sky-set", "sky-set band.cool [1,2", "sky-set planet.at null", "sky-set band..cool 1", "sky-set band.cool {\"a\":1}", "sky-drag planet 1", "sky-drag bad 1 2", "sky-drag object.-1 0 0", "sky-drag object.0.spin 1 2", "sky-drag planet nan 0", "sky-drag planet 0 inf", "expect-sky band.cool", "capture-sky \"\""})
 		Check(!ParseEditorScriptLine(line).error.empty(), std::string{"Invalid sky command accepted: "} + line);
 	for (const char* line : { "gas-filter unknown x", "gas-filter attributes", "gas-filter tags x extra", "gas-select-player extra", "gas-reset-cooldowns extra", "gas-apply-effect", "gas-remove-effect \"\"", "gas-activate", "gas-panel maybe", "expect-ability A blocked", "expect-effect E yes", "expect-tag T 1", "expect-attribute A != 1", "expect-attribute A > nan", "expect-attribute A > inf", "expect-attribute A > 1 extra", "expect-attribute A >" })

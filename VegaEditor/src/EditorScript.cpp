@@ -1,7 +1,6 @@
 #include "editor/EditorScript.h"
+#include "editor/EditorExtensions.h"
 #include <framework/scene/SceneSettings.h>
-#include <player/PlayerManager.h>
-#include <player/PlayerSpaceShip.h>
 #include <framework/debug/Profiler.h>
 #include <algorithm>
 #include "editor/EditorCommands.h"
@@ -171,7 +170,7 @@ namespace vega
 				return true;
 			}
 			line = mLines[mNextLine++];
-			parsed = ParseEditorScriptLine(line);
+			parsed = ParseEditorScriptLine(line, [&](const std::string& name) { return context.extensions && context.extensions->HasScriptCommand(name); });
 		} while (parsed.IsIgnored());
 		if (!parsed.error.empty())
 		{
@@ -256,10 +255,11 @@ namespace vega
 				const auto path = std::filesystem::weakly_canonical(requested.is_absolute() ? requested : mExportLayout.generatedRoot / "Saved" / requested);
 				const auto inside = [](const auto& file, const auto& root)
 				{
+					if (root.empty()) return false;
 					const auto relative = file.lexically_relative(std::filesystem::weakly_canonical(root));
 					return !relative.empty() && *relative.begin() != "..";
 				};
-				if (inside(path, mExportLayout.assetRoot) || inside(path, mExportLayout.sourceTreeRoot / "LightYearsGame/assets") ||
+				if (inside(path, mExportLayout.assetRoot) || inside(path, mExportLayout.sourceAssetRoot) ||
 					inside(path, mExportLayout.visualAssetsDir)) detail = "Profile captures cannot be written into assets";
 				else success = ly::debug::Profiler::CaptureToFile(path, detail);
 			}
@@ -295,13 +295,8 @@ namespace vega
 				detail = "Procedural backdrop stop = " + actual;
 			}
 			break;
-		case ScriptOperation::ExpectPlayerShip:
-			if (const auto* player = ly::PlayerManager::GetPlayerManager().GetPlayer())
-				if (const auto ship = player->GetCurrentSpaceShip().lock())
-				{
-					success = context.playMode && ship->GetWorld() == context.world && player->GetShipId() == command.text;
-					detail = "Spawned player ship = " + player->GetShipId();
-				}
+		case ScriptOperation::Extension:
+			success = context.extensions && context.extensions->Execute(command.extensionName, context, history, command.values, detail);
 			break;
 		case ScriptOperation::OpenPrefab:
 		case ScriptOperation::SavePrefab:

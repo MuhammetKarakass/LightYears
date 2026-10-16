@@ -5,7 +5,6 @@
 #include <framework/World.h>
 #include <framework/Actor.h>
 #include <framework/scene/SceneEntityComponent.h>
-#include <level/PlayerStart.h>
 #include <script/ScriptComponent.h>
 #include <script/ScriptRuntime.h>
 #include <imgui.h>
@@ -145,14 +144,16 @@ namespace vega
 				if (!mContext.playMode && mContext.world)
 				{
 					draw->PushClipRect(topLeft, bottomRight, true);
-					for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<ly::PlayerStart>())
+					for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<ly::Actor>())
 					{
 						const auto start = weak.lock();
 						if (!start || start->GetIsPendingDestroy()) continue;
+						const auto display = mModule->DisplayInfo(*start);
+						if (!display.spawnMarker) continue;
 						const auto pixel = mViewport.GetTexture().mapCoordsToPixel(start->GetActorLocation(), mContext.world->GetWorldView());
 						const ImVec2 p{ topLeft.x + pixel.x * scale, topLeft.y + pixel.y * scale };
 						draw->AddTriangleFilled({ p.x, p.y - 14.f }, { p.x - 11.f, p.y + 10.f }, { p.x + 11.f, p.y + 10.f }, IM_COL32(75, 224, 219, 245));
-						draw->AddText({ p.x + 18.f, p.y - 8.f }, IM_COL32(230, 242, 250, 255), start->GetShip().c_str());
+						draw->AddText({ p.x + 18.f, p.y - 8.f }, IM_COL32(230, 242, 250, 255), display.label.c_str());
 					}
 					draw->PopClipRect();
 				}
@@ -161,6 +162,9 @@ namespace vega
 				mViewportImageHovered = ImGui::IsItemHovered();
 				mViewportWindowFocused = ImGui::IsWindowFocused();
 				mViewport.SetImagePresentation(mViewportImageRect, mViewportImageHovered, ImGui::IsWindowFocused());
+				EditorViewportExtensionContext extensionContext{ mContext, mHistory,
+					{ { topLeft.x, topLeft.y }, { bottomRight.x - topLeft.x, bottomRight.y - topLeft.y } }, mViewport.GetSize(), mViewportImageHovered };
+				for (const auto& drawExtension : mExtensions.viewports) drawExtension(extensionContext);
 				if (mSkyEditor.Active()) mSkyEditor.Handles(mViewportImageRect, mViewport.GetSize(), mViewportImageHovered);
 				else BuildGizmo();
 			}
@@ -177,7 +181,11 @@ namespace vega
 			ImGui::SameLine();
 			ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
 			if (ImGui::Button("+")) ImGui::OpenPopup("Create entity");
-			if (ImGui::BeginPopup("Create entity")) { DrawCreateMenu(); ImGui::EndPopup(); }
+			if (ImGui::BeginPopup("Create entity"))
+			{
+				DrawCreateMenu();
+				ImGui::EndPopup();
+			}
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(-1.f);
@@ -609,7 +617,7 @@ namespace vega
 			if (const auto actor = weakActor.lock(); actor && !actor->GetIsPendingDestroy())
 			{
 				auto bounds = actor->GetActorGlobalBounds();
-				if (dynamic_cast<ly::PlayerStart*>(actor.get()) && !mContext.playMode)
+				if (mModule->DisplayInfo(*actor).spawnMarker && !mContext.playMode)
 					bounds = { actor->GetActorLocation() - sf::Vector2f{ 24.f, 24.f }, { 48.f, 48.f } };
 				candidates.emplace_back(actor->GetUniqueID(), bounds);
 			}
