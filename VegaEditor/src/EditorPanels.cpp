@@ -156,6 +156,8 @@ namespace vega
 		LY_PROFILE_SCOPE("Editor Hierarchy");
 		if (ImGui::Begin("Hierarchy", &mShowHierarchy))
 		{
+			if (ImGui::Button("World Settings")) { mShowWorldSettings = true; ImGui::SetWindowFocus("World Settings"); }
+			ImGui::SameLine();
 			ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
 			if (ImGui::Button("+")) ImGui::OpenPopup("Create entity");
 			if (ImGui::BeginPopup("Create entity")) { DrawCreateMenu(); ImGui::EndPopup(); }

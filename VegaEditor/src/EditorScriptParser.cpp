@@ -62,6 +62,31 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "set-setting" || verb == "expect-setting" || verb == "reset-setting")
+		{
+			const bool reset = verb == "reset-setting";
+			if (tokens.size() != (reset ? 2u : 3u) || tokens[1].empty()) return bad();
+			command.operation = reset ? ScriptOperation::ResetSetting : verb == "set-setting" ? ScriptOperation::SetSetting : ScriptOperation::ExpectSetting;
+			command.text = tokens[1];
+			if (!reset)
+			{
+				try
+				{
+					const auto value = nlohmann::json::parse(rawTokens[2]);
+					if (value.is_null() || value.is_object()) return bad();
+				}
+				catch (const std::exception&) { return bad(); }
+				command.values = { rawTokens[2] };
+			}
+			return { command, {} };
+		}
+		if (verb == "expect-backdrop" || verb == "expect-player-ship")
+		{
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			command.operation = verb == "expect-backdrop" ? ScriptOperation::ExpectBackdrop : ScriptOperation::ExpectPlayerShip;
+			command.text = tokens[1];
+			return { command, {} };
+		}
 		if (verb == "expect-console")
 		{
 			if (tokens.size() != 3 || tokens[2].empty() || (tokens[1] != "Info" && tokens[1] != "Warning" && tokens[1] != "Error")) return bad();

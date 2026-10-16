@@ -315,3 +315,19 @@ must be asset-relative `.prefab.json` files under `prefabs/`. Automation must pa
 `VegaEditorPrefabs` configures and runs `prefabs.vegascript` this way. Scene edits
 and refreshes enter undo history; writing an asset is immediate and is not undone.
 
+
+Scene settings commands:
+
+- `set-setting "<key>" <JSON-value>` validates and writes an undoable Edit-mode override.
+- `expect-setting "<key>" <JSON-value>` compares an authored value or its schema default; unknown keys can be inspected.
+- `reset-setting "<key>"` removes the override through undo history.
+- `expect-backdrop "<stop-id>"` checks the procedural backdrop's actual stop state.
+- `expect-player-ship "<catalog-id>"` requires a live player ship in the Play world and checks the Player's construction catalog ID.
+
+Values use JSON scalars or compact arrays such as `[1,2]` and `[255,128,0,255]`; quote strings, including empty strings. Unknown keys are read-only.
+
+`scene-settings.vegascript` is configured into the build tree and registered as
+`VegaEditorSceneSettings`. Its CMake runner creates a sandbox copy with an unknown
+setting, verifies route set/undo/redo/reset against backdrop state, captures both
+backdrops, removes PlayerStart to exercise the world ship default, plays a different
+catalog ship, then saves/reopens the temporary scene. No source assets are written.

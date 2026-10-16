@@ -20,6 +20,7 @@ namespace ly
 	protected:
 		bool HandleApplicationEvent(const sf::Event& event) override;
 		void AfterRender() override;
+		std::string GetSceneBackdropState() const;
 		void ApplySceneSettings(const nlohmann::json& settings);
 
 	private:

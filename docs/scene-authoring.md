@@ -150,6 +150,49 @@ and ship. Without a marker, the arena center `[3000,1500]` is used. The game
 application applies `settings.routeStop` to its existing backdrop pipeline
 through SceneLevel's optional settings callback.
 
+## World Settings
+
+Open **View > World Settings** or the Hierarchy header button to edit game-owned
+scene settings. Categories, labels, tooltips, typed widgets and validation come
+from the engine's game-agnostic `ly::SceneSettingsSchema` API
+(`framework/scene/SceneSettings.h`). Games register `SceneSettingField` descriptors
+with a key, label, category, type, default, optional bounds and options callback.
+Supported types are bool, int, float, string, enum, catalog ID, vec2 and color
+(RGBA bytes). Registration rejects invalid defaults; `Validate` and `Set` reject
+invalid edits. `Value` reads an effective default without modifying authored JSON.
+
+```cpp
+ly::SceneSettingField exposure;
+exposure.key = "exposure";
+exposure.label = "Exposure";
+exposure.category = "Lighting";
+exposure.type = ly::SceneSettingType::Float;
+exposure.defaultValue = 1.0;
+exposure.min = 0.0;
+exposure.max = 4.0;
+ly::SceneSettingsSchema::Get().Register(std::move(exposure));
+```
+
+LightYears registers `routeStop` from the complete galaxy route (including generated
+stops and the centre tour) and `playerShip` from the player ship catalog, in
+`level/GameSceneSettings.cpp`, called after content startup. Route changes apply
+immediately through SceneLevel's settings callback, including undo and reset.
+Player ship changes apply on Play; PlayerStart retains precedence over this
+world default. The panel is read-only during Play and prefab editing.
+
+Each edit/reset is undoable and marks the scene dirty. Missing defaults are never
+materialized by viewing, saving or playing; Reset removes an override. Existing
+explicit defaults stay in old files until reset. Unknown keys are shown read-only
+under **Other** and retained verbatim, including structured JSON. Invalid legacy
+values remain visible with warnings and can be corrected or reset. Panel rows,
+validation and option previews are cached by scene/schema revision.
+
+Editor scripts support `set-setting "routeStop" 1`,
+`expect-setting "playerShip" "Ship.Player.Breacher.Basic"` and
+`reset-setting "routeStop"`. Values use JSON syntax; vectors/colors use compact
+arrays. `VegaEditorSceneSettings` verifies live backdrop state, undo/reset,
+player spawning, and build-tree save/reopen with unknown settings preserved.
+
 ## Editor authoring
 
 VegaEditor opens `scenes/sandbox.scene.json` by default, or

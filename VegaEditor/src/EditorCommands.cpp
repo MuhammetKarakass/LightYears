@@ -1,4 +1,5 @@
 #include "editor/EditorCommands.h"
+#include <framework/scene/SceneSettings.h>
 #include <framework/World.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
@@ -16,6 +17,49 @@
 
 namespace vega
 {
+	bool SetSceneSettingCommand::Execute(EditorContext& context)
+	{
+		if (!context.sceneSettings || context.playMode || context.transitioning) return false;
+		context.settingErrorKey = mKey;
+		auto& settings = *context.sceneSettings;
+		std::optional<nlohmann::json> before;
+		if (settings.contains(mKey)) before = settings.at(mKey);
+		if (before == mAfter) return false;
+		const auto* field = ly::SceneSettingsSchema::Get().Find(mKey);
+		if (!before && mAfter && field && *mAfter == field->defaultValue) return false;
+		if (!ly::SceneSettingsSchema::Get().Set(settings, mKey, mAfter, context.settingError)) return false;
+		try
+		{
+			if (context.applySettings) context.applySettings(settings);
+		}
+		catch (const std::exception& error)
+		{
+			if (before) settings[mKey] = *before;
+			else settings.erase(mKey);
+			context.settingError = error.what();
+			return false;
+		}
+		if (!mExecuted) { mBefore = std::move(before); mExecuted = true; }
+		return true;
+	}
+	void SetSceneSettingCommand::Undo(EditorContext& context)
+	{
+		if (!context.sceneSettings || !mExecuted) return;
+		// Restore raw authored data, including a previously invalid value.
+		auto& settings = *context.sceneSettings;
+		if (mBefore) settings[mKey] = *mBefore;
+		else settings.erase(mKey);
+		context.settingError.clear();
+		if (context.applySettings) context.applySettings(settings);
+	}
+	bool SetSceneSettingCommand::MergeWith(const EditorCommand& command)
+	{
+		const auto* next = dynamic_cast<const SetSceneSettingCommand*>(&command);
+		if (!next || !mGroup || next->mGroup != mGroup || next->mKey != mKey) return false;
+		mAfter = next->mAfter;
+		return true;
+	}
+
 	SetScriptPropertyCommand::SetScriptPropertyCommand(unsigned int id, ly::ComponentIdentity index, std::string property,
 		ly::reflect::PropertyValue value, std::uint64_t group)
 		: mID{ id }, mComponentIdentity{ index }, mProperty{ std::move(property) }, mAfter{ std::move(value) }, mMergeGroup{ group } {}

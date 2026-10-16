@@ -4,6 +4,8 @@
 #include <framework/World.h>
 #include <framework/Actor.h>
 #include <framework/scene/Scene.h>
+#include <framework/scene/SceneSettings.h>
+#include <level/SceneLevel.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <framework/scene/PrefabLibrary.h>
 #include <script/ScriptRuntime.h>
@@ -33,6 +35,7 @@ namespace vega
 		}
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		mDiagnostics.InstallSettings();
+		InstallWorldSettingsLayout();
 		if (ly::debug::Log::GetMinimumLevel() > ly::debug::LogLevel::Info)
 			ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Info);
 		ly::debug::Profiler::SetEnabled(false);
@@ -40,7 +43,7 @@ namespace vega
 		// The default dock layout is built only when the saved layout is missing, so panels added later would open
 		// floating over an older layout. Versioning the file name rebuilds the default once; bump it whenever the
 		// default layout or its reserved toolbar/status area changes.
-		ImGui::GetIO().IniFilename = "vega_editor_layout_v4.ini";
+		ImGui::GetIO().IniFilename = "vega_editor_layout_v5.ini";
 		// Image clicks select actors; panel dragging belongs on the title/tab bars.
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
@@ -82,6 +85,20 @@ namespace vega
 		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout);
 		mContext.document = &mDocument;
+		mContext.sceneSettings = &mSceneSettings;
+		mContext.backdropState = [this]() { return GetSceneBackdropState(); };
+		mContext.applySettings = [this](const nlohmann::json& authored)
+		{
+			// Invalid legacy values stay visible and serializable. Presentation gets
+			// safe effective values so undo and reset can always restore the document.
+			auto effective = authored;
+			for (const auto& field : ly::SceneSettingsSchema::Get().Fields())
+			{
+				const auto value = ly::SceneSettingsSchema::Get().Value(authored, field.key);
+				effective[field.key] = field.Validate(value).empty() ? value : field.defaultValue;
+			}
+			if (auto* level = dynamic_cast<ly::SceneLevel*>(mContext.world)) level->ApplySettings(effective);
+		};
 		mContext.console = mPrefabContext.console = &mDiagnostics.capture.Buffer();
 		mContext.clearConsole = mPrefabContext.clearConsole = [this]() { mDiagnostics.Clear(); };
 		mContext.diagnosticsVisible = mPrefabContext.diagnosticsVisible = [this](bool visible)
@@ -298,6 +315,7 @@ namespace vega
 				ImGui::MenuItem("Profiler", nullptr, &mDiagnostics.showProfiler);
 				ImGui::MenuItem("Content", nullptr, &mShowContent);
 				ImGui::Separator();
+				ImGui::MenuItem("World Settings", nullptr, &mShowWorldSettings);
 				ImGui::MenuItem("Grid overlay", nullptr, &mContext.viewSettings.grid);
 				ImGui::MenuItem("Collider overlay", nullptr, &mContext.viewSettings.colliders);
 				if (ImGui::MenuItem("Data Editor", nullptr, mShowData))
@@ -336,6 +354,7 @@ namespace vega
 			ImGui::DockBuilderDockWindow("Viewport", centre);
 			ImGui::DockBuilderDockWindow("Hierarchy", left);
 			ImGui::DockBuilderDockWindow("Inspector", right);
+			ImGui::DockBuilderDockWindow("World Settings", right);
 			ImGui::DockBuilderDockWindow("Stats", stats);
 			ImGui::DockBuilderDockWindow("Content", content);
 			ImGui::DockBuilderDockWindow("Data Editor###DataEditor", content);
@@ -380,6 +399,12 @@ namespace vega
 		if (mShowInspector)
 		{
 			BuildInspectorPanel();
+		}
+		if (mShowWorldSettings) BuildWorldSettingsPanel();
+		if (mShowWorldSettings != mSavedWorldSettingsVisible)
+		{
+			mSavedWorldSettingsVisible = mShowWorldSettings;
+			ImGui::MarkIniSettingsDirty();
 		}
 		if (mShowStats)
 		{

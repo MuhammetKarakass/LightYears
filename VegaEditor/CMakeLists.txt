@@ -21,6 +21,7 @@ add_executable(VegaEditor
 	src/EditorMain.cpp
 	src/EditorApplication.cpp
 	src/EditorScenes.cpp
+	src/EditorWorldSettings.cpp
 	src/EditorPrefabs.cpp
 	src/EditorTheme.cpp
 	src/EditorIcons.cpp
@@ -103,6 +104,15 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	set(VEGA_SETTINGS_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/settings-source.scene.json")
+	set(VEGA_SETTINGS_SAVED "${CMAKE_CURRENT_BINARY_DIR}/settings-temp.scene.json")
+	set(VEGA_SETTINGS_BEFORE "${CMAKE_CURRENT_BINARY_DIR}/settings-before.png")
+	set(VEGA_SETTINGS_AFTER "${CMAKE_CURRENT_BINARY_DIR}/settings-after.png")
+	configure_file(tests/scripts/scene-settings.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/scene-settings.vegascript @ONLY)
+	configure_file(tests/RunSceneSettingsTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunSceneSettingsTest.cmake @ONLY)
+	add_test(NAME VegaEditorSceneSettings COMMAND ${CMAKE_COMMAND}
+		-DVEGA_EDITOR=$<TARGET_FILE:VegaEditor> -P ${CMAKE_CURRENT_BINARY_DIR}/RunSceneSettingsTest.cmake)
+	set_tests_properties(VegaEditorSceneSettings PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)
 	configure_file(tests/scripts/console-profiler.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/console-profiler.vegascript @ONLY)
 	configure_file(tests/RunConsoleProfilerTest.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/RunConsoleProfilerTest.cmake @ONLY)
 	add_test(NAME VegaEditorConsoleProfiler COMMAND ${CMAKE_COMMAND}

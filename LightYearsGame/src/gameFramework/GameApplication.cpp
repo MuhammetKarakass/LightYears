@@ -1,4 +1,6 @@
 #include "gameFramework/GameApplication.h"
+#include "level/GameSceneSettings.h"
+#include <framework/scene/SceneSettings.h>
 #include "reflection/GameReflection.h"
 #include <script/ScriptRuntime.h>
 
@@ -60,6 +62,8 @@ namespace ly
 			QuitApplication();
 			return;
 		}
+
+		RegisterGameSceneSettings();
 
 		ly::perf::g_disableLights.store(false);
 
@@ -124,10 +128,14 @@ namespace ly
 		SetWorldRenderPipeline(nullptr);
 	}
 
+	std::string GameApplication::GetSceneBackdropState() const
+	{
+		return mVisualPipeline ? mVisualPipeline->BackdropStopId() : std::string{};
+	}
+
 	void GameApplication::ApplySceneSettings(const nlohmann::json& settings)
 	{
-		if (!settings.contains("routeStop")) return;
-		const auto& stop = settings["routeStop"];
+		const auto stop = SceneSettingsSchema::Get().Value(settings, "routeStop");
 		if (!stop.is_number_integer() || stop.get<double>() < 0 || stop.get<double>() > std::numeric_limits<int>::max())
 			throw std::runtime_error("routeStop must be a nonnegative integer");
 		if (mVisualPipeline) mVisualPipeline->SetRouteStopIndex(static_cast<std::size_t>(stop.get<int>()));

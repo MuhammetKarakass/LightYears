@@ -1,4 +1,7 @@
 #include "editor/EditorScript.h"
+#include <framework/scene/SceneSettings.h>
+#include <player/PlayerManager.h>
+#include <player/PlayerSpaceShip.h>
 #include <framework/debug/Profiler.h>
 #include <algorithm>
 #include "editor/EditorCommands.h"
@@ -243,6 +246,43 @@ namespace vega
 			catch (const std::exception& error) { detail = error.what(); }
 			break;
 		}
+		case ScriptOperation::SetSetting:
+		case ScriptOperation::ResetSetting:
+		{
+			const auto value = command.operation == ScriptOperation::ResetSetting ? std::optional<nlohmann::json>{} :
+				std::optional<nlohmann::json>{ nlohmann::json::parse(command.values[0]) };
+			const auto& schema = ly::SceneSettingsSchema::Get();
+			const auto* field = schema.Find(command.text);
+			const bool noChange = context.sceneSettings && field &&
+				(value ? field->Validate(*value).empty() && schema.Value(*context.sceneSettings, command.text) == *value : !context.sceneSettings->contains(command.text));
+			success = !context.playMode && !context.transitioning && (noChange || history.Execute(std::make_unique<SetSceneSettingCommand>(command.text, value)));
+			detail = success ? "Setting updated" : context.settingError;
+			break;
+		}
+		case ScriptOperation::ExpectSetting:
+			if (context.sceneSettings)
+			{
+				const auto actual = ly::SceneSettingsSchema::Get().Value(*context.sceneSettings, command.text);
+				success = actual == nlohmann::json::parse(command.values[0]);
+				detail = "Setting " + command.text + " = " + actual.dump();
+			}
+			break;
+		case ScriptOperation::ExpectBackdrop:
+			if (context.backdropState)
+			{
+				const auto actual = context.backdropState();
+				success = actual == command.text;
+				detail = "Procedural backdrop stop = " + actual;
+			}
+			break;
+		case ScriptOperation::ExpectPlayerShip:
+			if (const auto* player = ly::PlayerManager::GetPlayerManager().GetPlayer())
+				if (const auto ship = player->GetCurrentSpaceShip().lock())
+				{
+					success = context.playMode && ship->GetWorld() == context.world && player->GetShipId() == command.text;
+					detail = "Spawned player ship = " + player->GetShipId();
+				}
+			break;
 		case ScriptOperation::OpenPrefab:
 		case ScriptOperation::SavePrefab:
 		case ScriptOperation::ClosePrefab:

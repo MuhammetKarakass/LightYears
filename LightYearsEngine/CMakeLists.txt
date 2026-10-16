@@ -8,6 +8,8 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 	src/framework/reflection/EngineReflection.cpp
 	include/framework/scene/Scene.h
 	src/framework/scene/Scene.cpp
+	src/framework/scene/SceneSettings.cpp
+	include/framework/scene/SceneSettings.h
 	include/framework/scene/PrefabLibrary.h
 	src/framework/scene/PrefabLibrary.cpp
 	include/framework/scene/SceneEntityComponent.h

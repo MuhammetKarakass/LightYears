@@ -199,6 +199,14 @@ int main()
 		"expect-prefab", "expect-overridden Actor P yes", "expect-overridden Actor P", "reload-prefabs extra", "create-variant p" })
 		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid prefab command accepted");
 	if (failures) return 1;
+	for (const char* line : { "set-setting \"routeStop\" 1", "expect-setting \"playerShip\" \"Ship.Player.Breacher.Basic\"",
+		"set-setting offset [1,2]", "set-setting color [0,1,2,255]", "set-setting enabled true", "set-setting title \"\"", "reset-setting routeStop" })
+		Check(ParseEditorScriptLine(line).command.has_value(), "Valid scene setting command rejected");
+	for (const char* line : { "set-setting", "set-setting routeStop", "set-setting routeStop 1 extra", "set-setting \"\" 1",
+		"set-setting routeStop nan", "set-setting routeStop null", "expect-setting key", "reset-setting", "reset-setting key extra" })
+		Check(!ParseEditorScriptLine(line).error.empty(), "Invalid scene setting command accepted");
+	Check(ParseEditorScriptLine("set-setting title \"hello world\"").command->values[0] == "\"hello world\"", "Setting string JSON lost");
+	if (failures) return 1;
 	std::cout << "Editor script parser tests passed\n";
 	return 0;
 }

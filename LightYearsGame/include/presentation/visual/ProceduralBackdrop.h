@@ -48,6 +48,7 @@ namespace ly
 		// warp.rampSeconds and is clamped to warp.maxBeta; a zero direction keeps the previous one.
 		void SetWarp(float targetBeta, sf::Vector2f direction);
 
+		const std::string& StopId() const { return mStopId; }
 		const visual::galaxy::SkyState& Sky() const { return mSky; }
 
 		// Dev-only: steps the orbit speed multiplier of orbit stops (+1 faster, -1 slower) through a fixed list, 0 pauses.

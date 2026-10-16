@@ -86,6 +86,8 @@ namespace vega
 
 	void EditorApplication::LoadSceneWorld(const nlohmann::json& scene, bool edit)
 	{
+		mSettingsPanelRevision.reset();
+		mContext.settingError.clear();
 		mMoveDragActor.reset();
 		mRenameGuid.clear();
 		mPauseAfterTick = false;

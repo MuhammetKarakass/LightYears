@@ -6,6 +6,7 @@
 #include <framework/SpriteComponent.h>
 #include <framework/LightComponent.h>
 #include <iostream>
+#include <framework/scene/SceneSettings.h>
 #include <limits>
 #include <script/ScriptComponent.h>
 #include <script/ScriptRuntime.h>
@@ -504,8 +505,53 @@ namespace
 	}
 }
 
+
+namespace
+{
+	void TestSceneSettingsCommands()
+	{
+		using Json = nlohmann::json;
+		ly::SceneSettingField field;
+		field.key = "testSetting";
+		field.type = ly::SceneSettingType::Int;
+		field.defaultValue = 0;
+		field.min = 0; field.max = 10;
+		ly::SceneSettingsSchema::Get().Register(field);
+		vega::EditorSelection selection;
+		vega::EditorContext context{ nullptr, selection };
+		vega::CommandHistory history{ context };
+		Json settings = { { "unknown", { { "deep", { 1, false } } } } };
+		const auto original = settings;
+		context.sceneSettings = &settings;
+		int applied = -1;
+		context.applySettings = [&](const Json& authored)
+		{
+			applied = ly::SceneSettingsSchema::Get().Value(authored, "testSetting").get<int>();
+		};
+		Check(history.Execute(std::make_unique<vega::SetSceneSettingCommand>("testSetting", Json(2))), "Setting command failed");
+		Check(applied == 2 && context.sceneRevision == 1, "Setting did not apply live or mark revision");
+		Check(history.Undo() && applied == 0 && settings == original, "Undo did not restore missing override");
+		Check(history.Redo() && applied == 2, "Setting redo failed");
+		const auto revision = context.sceneRevision;
+		Check(!history.Execute(std::make_unique<vega::SetSceneSettingCommand>("testSetting", Json(11))) && context.sceneRevision == revision && applied == 2, "Invalid setting dirtied or applied");
+		Check(!history.Execute(std::make_unique<vega::SetSceneSettingCommand>("unknown", Json(1))), "Unknown setting was writable");
+		Check(history.Execute(std::make_unique<vega::SetSceneSettingCommand>("testSetting", std::nullopt)) && settings == original && applied == 0, "Reset failed");
+		Check(history.Undo() && settings["testSetting"] == 2 && applied == 2, "Reset undo failed");
+		context.playMode = true;
+		Check(!history.Execute(std::make_unique<vega::SetSceneSettingCommand>("testSetting", Json(3))) && !history.Undo(), "Play allowed settings edits");
+		context.playMode = false;
+		history.Clear();
+		const auto group = history.BeginMergeGroup();
+		Check(history.Execute(std::make_unique<vega::SetSceneSettingCommand>("testSetting", Json(3), group)) &&
+			history.Execute(std::make_unique<vega::SetSceneSettingCommand>("testSetting", Json(4), group)) && history.UndoCount() == 1, "Gesture did not merge");
+		Check(history.Undo() && settings["testSetting"] == 2, "Merged undo lost initial value");
+		Check(settings["unknown"] == original["unknown"], "Command dropped unknown data");
+	}
+}
+
 int main()
 {
+	TestSceneSettingsCommands();
 	TestScriptProperties();
 	TestReflectedProperties();
 	TestHistory();

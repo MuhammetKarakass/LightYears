@@ -1,4 +1,5 @@
 #include "presentation/visual/GameVisualPipeline.h"
+#include "level/GameSceneSettings.h"
 
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
@@ -10,13 +11,6 @@
 
 namespace ly
 {
-	namespace
-	{
-		// Procedural stops after the real hosts, all from one fixed seed so the campaign is the same every run.
-		constexpr int RouteProceduralStopCount = 14;
-		constexpr unsigned RouteProceduralSeed = 7u;
-	}
-
 	bool GameVisualPipeline::Initialize(sf::RenderWindow& window, const std::filesystem::path& assetsDirectory, const std::string& colorScript)
 	{
 		mReady = false;

@@ -12,6 +12,7 @@ namespace ly
 		// without making the headless game library depend on the visual pipeline.
 		using SettingsApplier = std::function<void(const nlohmann::json&)>;
 		SceneLevel(Application* app, nlohmann::json scene, SettingsApplier applySettings = {}, bool editMode = false);
+		void ApplySettings(const nlohmann::json& settings) { if (mApplySettings) mApplySettings(settings); }
 		bool IsEditMode() const override { return mEditMode; }
 		bool DispatchEvent(const sf::Event& event) override;
 		const SceneLoadResult& GetSceneLoadResult() const { return mLoadResult; }

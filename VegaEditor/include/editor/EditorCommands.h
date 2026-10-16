@@ -33,6 +33,10 @@ namespace vega
 		std::function<bool()> sceneDirty;
 		std::function<void()> contentChanged;
 		std::string sceneError;
+		nlohmann::json* sceneSettings = nullptr;
+		std::function<void(const nlohmann::json&)> applySettings;
+		std::function<std::string()> backdropState;
+		std::string settingErrorKey, settingError;
 		ly::debug::LogBuffer* console = nullptr;
 		std::function<void()> clearConsole;
 		std::function<void(bool)> diagnosticsVisible;
@@ -112,6 +116,22 @@ namespace vega
 	};
 	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<ly::ComponentIdentity> componentIdentity);
 	ReflectedTarget FindPropertyTarget(ly::Actor& actor, const std::string& targetName);
+
+	class SetSceneSettingCommand final : public EditorCommand
+	{
+	public:
+		SetSceneSettingCommand(std::string key, std::optional<nlohmann::json> value, std::uint64_t group = 0)
+			: mKey{ std::move(key) }, mAfter{ std::move(value) }, mGroup{ group } {}
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		bool MergeWith(const EditorCommand&) override;
+		std::string Name() const override { return (mAfter ? "Set " : "Reset ") + mKey; }
+	private:
+		std::string mKey;
+		std::optional<nlohmann::json> mBefore, mAfter;
+		std::uint64_t mGroup;
+		bool mExecuted = false;
+	};
 
 	class SetScriptPropertyCommand final : public EditorCommand
 	{

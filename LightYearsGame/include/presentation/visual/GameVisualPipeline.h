@@ -40,6 +40,7 @@ namespace ly
 		void SetPlayerHullOverride(std::optional<float> hullFraction) { mShips.SetHullOverride(hullFraction); }
 		// Places the backdrop at a stop of the campaign route (0 = Sol). The index is clamped to the route.
 		void SetRouteStopIndex(std::size_t index);
+		const std::string& BackdropStopId() const { return mBackdrop.StopId(); }
 		// Dev-only: moves to the next (+1) or previous (-1) route stop, wrapping around both ends.
 		void CycleRouteStop(int step);
 		// Dev-only: steps the orbit speed of orbit stops (+1 faster, -1 slower); shown under the stop label.

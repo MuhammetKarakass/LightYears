@@ -41,6 +41,8 @@ namespace ly
 			}
 			catch (const std::exception& error) { mLoadResult.warnings.push_back(std::string{ "Scene settings: " } + error.what()); }
 		}
+		if (!mEditMode && (!mScene.contains("settings") || !mScene["settings"].contains("playerShip")))
+			PlayerManager::GetPlayerManager().SetSelectedShipId(DefaultPlayerShipId);
 		if (!mEditMode) for (const auto& marker : GetActorsByTypeIncludingPending<PlayerStart>())
 		{
 			if (auto start = marker.lock())

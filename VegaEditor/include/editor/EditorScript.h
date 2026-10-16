@@ -20,6 +20,7 @@ namespace vega
 		ExpectConsole, ExpectNoErrors, ClearConsole, Profiler, ExpectProfileScope, CaptureProfile, Diagnostics,
 		CreatePrefab, PlacePrefab, CreateVariant, ApplyPrefabProp, RevertPrefabProp, ExpectPrefab, ExpectOverridden, ReloadPrefabs,
 		OpenPrefab, SavePrefab, ClosePrefab,
+		SetSetting, ExpectSetting, ResetSetting, ExpectBackdrop, ExpectPlayerShip,
 		SetProjectStartup, ExpectProjectStartup,
 		NewScene, OpenScene, SaveScene, Create, CreateMany, Delete, Duplicate, Rename, SelectName,
 		PlayMode, Stop, ExpectMode, ExpectEntityCount, ExpectSceneDirty,

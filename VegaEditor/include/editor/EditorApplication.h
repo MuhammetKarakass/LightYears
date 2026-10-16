@@ -8,6 +8,7 @@
 #include "editor/JsonDocument.h"
 #include "editor/EditorDiagnostics.h"
 #include <map>
+#include <framework/scene/SceneSettings.h>
 #include <framework/ProjectSettings.h>
 #include <gameFramework/GameApplication.h>
 
@@ -33,6 +34,23 @@ namespace vega
 		void DrawWorldOverlays(sf::RenderTexture& texture, ly::World& world);
 		void BuildViewportPanel();
 		void BuildHierarchyPanel();
+		void BuildWorldSettingsPanel();
+		void InstallWorldSettingsLayout();
+		bool mShowWorldSettings = true;
+		bool mSavedWorldSettingsVisible = true;
+		std::optional<std::uint64_t> mSettingsPanelRevision;
+		std::uint64_t mSettingsSchemaRevision = 0;
+		struct SettingRow
+		{
+			ly::SceneSettingField field;
+			nlohmann::json value;
+			std::string preview, warning;
+			std::vector<ly::SceneSettingOption> options;
+			bool authored = false;
+		};
+		std::map<std::string, std::vector<SettingRow>> mSettingsRows;
+		std::vector<std::pair<std::string, std::string>> mOtherSettings;
+		std::uint64_t mSettingMergeGroup = 0;
 		void BuildInspectorPanel();
 		void BuildStatsPanel();
 		void BuildContentPanel();
