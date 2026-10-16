@@ -5,10 +5,12 @@
 
 namespace ly
 {
+	class EngineContext;
 	class AssetManager
 	{
 
 	public:
+		// Deprecated: forwards to EngineContext::Current().Assets().
 		static AssetManager& GetAssetManager();
 		static void ShutdownAssetManager();
 		shared_ptr<sf::Texture> LoadTexture(const std::string& texturePath);
@@ -22,10 +24,11 @@ namespace ly
 		void SetAssetRootDirectory(const std::string& rootDirectory);
 		std::string GetAssetRootDirectory() const { return mAssetRootDirectory; }
 	protected:
-		AssetManager();
+		explicit AssetManager(EngineContext& context);
 
 	private:
-		static unique_ptr<AssetManager> assetManager;
+		friend class EngineContext;
+		EngineContext& mContext;
 		Dictionary<std::string,shared_ptr<sf::Texture>> mLoadedTextureMap;
 		Dictionary<std::string, shared_ptr<sf::Font>> mLoadedFontMap;
 		Dictionary<std::string, shared_ptr<sf::SoundBuffer>> mLoadedSoundBufferMap;

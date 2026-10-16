@@ -5,6 +5,7 @@
 
 namespace ly
 {
+	class EngineContext;
 	class ShaderManager
 	{
 	public:
@@ -17,6 +18,7 @@ namespace ly
 		sf::Shader* GetShader(const std::string& name);
 
 		void LoadDefaultShaders();
+		void LoadDefaultShaders(EngineContext& context);
 
 		void CleanUp();
 

@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "script/ScriptRuntime.h"
 #include <framework/reflection/Reflection.h>
 #include <nlohmann/json.hpp>
@@ -32,7 +33,9 @@ namespace vega::script
 		}
 	}
 
-	bool GenerateLuaTypes(const std::filesystem::path& output, std::string& error) noexcept
+	bool GenerateLuaTypes(const std::filesystem::path& output, std::string& error) noexcept { return GenerateLuaTypes(ly::EngineContext::Current(), output, error); }
+
+	bool GenerateLuaTypes(ly::EngineContext& context, const std::filesystem::path& output, std::string& error) noexcept
 	{
 		try
 		{
@@ -244,7 +247,7 @@ function time() end
 
 )";
 			std::set<std::string> names;
-			for (const auto* type : ly::reflect::TypeRegistry::Get().RegisteredTypes())
+			for (const auto* type : context.Types().RegisteredTypes())
 			{
 				const auto id = Identifier(type->name);
 				const auto properties = type->AllProperties();

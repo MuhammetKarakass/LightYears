@@ -1,4 +1,5 @@
 #include "framework/AssetManager.h"
+#include "framework/EngineContext.h"
 #include "framework/EngineAssets.h"
 #include "framework/scene/PrefabLibrary.h"
 #include "framework/debug/Log.h"
@@ -11,7 +12,7 @@ namespace ly
 	void AssetManager::SetAssetRootDirectory(const std::string& rootDirectory)
 	{
 		mAssetRootDirectory = rootDirectory;
-		PrefabLibrary::Get().SetRoot(rootDirectory);
+		mContext.Prefabs().SetRoot(rootDirectory);
 	}
 	namespace
 	{
@@ -27,39 +28,18 @@ namespace ly
 		}
 	}
 
-	// Singleton deseninin statik (static) örneðini (instance) baþlangýçta null olarak ayarla.
-	// Bu, GetAssetManager ilk çaðrýldýðýnda oluþturulacak.
-	unique_ptr<AssetManager> AssetManager::assetManager = nullptr;
+	AssetManager::AssetManager(EngineContext& context) : mContext{ context } {}
 
-	// AssetManager'ýn kurucu fonksiyonu (constructor).
-	// Baþlangýçta asset'lerin bulunduðu kök dizin boþtur.
-	AssetManager::AssetManager():
-	mAssetRootDirectory{}
-	{
-	}
-
-	// Singleton örneðine eriþim saðlayan statik fonksiyon.
-	AssetManager& AssetManager::GetAssetManager()
-	{
-		// Eðer assetManager daha önce oluþturulmamýþsa...
-		if (!assetManager)
-		{
-			// ...yeni bir AssetManager nesnesi oluþtur ve unique_ptr içine al.
-			// Bu "lazy initialization" (tembel baþlangýç) olarak bilinir.
-			assetManager = unique_ptr<AssetManager>{new AssetManager};
-		}
-		// Oluþturulmuþ olan tekil (singleton) örneði referans olarak döndür.
-		return *assetManager;
-	}
-
+	AssetManager& AssetManager::GetAssetManager() { return EngineContext::Current().Assets(); }
 	void AssetManager::ShutdownAssetManager()
 	{
-		if (assetManager)
-		{
-			assetManager->Shutdown();
-			assetManager.reset();
-		}
+		auto& assets = EngineContext::Current().Assets();
+		assets.Shutdown();
+		// Legacy shutdown discarded the manager, including its root. Keep that
+		// observable behavior while the context retains a stable service address.
+		assets.mAssetRootDirectory.clear();
 	}
+
 	// Verilen yoldan bir texture y?kleyen veya ?nbellekten (cache) getiren fonksiyon.
 	shared_ptr<sf::Texture> AssetManager::LoadTexture(const std::string& texturePath)
 	{
@@ -99,7 +79,7 @@ namespace ly
 
 	shared_ptr<sf::Font> AssetManager::LoadFont(const std::string& requestedPath)
 	{
-		const auto& fontPath = requestedPath.empty() ? EngineAssets::Get().font : requestedPath;
+		const auto& fontPath = requestedPath.empty() ? mContext.Defaults().font : requestedPath;
 		// Empty SFML fonts keep widgets usable without requiring any game font.
 		if (fontPath.empty()) return std::make_shared<sf::Font>();
 

@@ -55,6 +55,7 @@ namespace vega
 		if (auto* setup = QueryCapability<IModuleSetup>(mModule.get())) setup->ConfigureProject(mProject.file);
 		RegisterGameModule(*mModule, true);
 		if (auto* provider = QueryCapability<IEditorProvider>(mModule.get())) provider->RegisterEditorExtensions(mExtensions);
+		mContext.services = mPrefabContext.services = &GetEngineContext();
 		mContext.extensions = mPrefabContext.extensions = &mExtensions;
 		std::snprintf(mExportDirectory, sizeof(mExportDirectory), "%s", mProject.exportDir.string().c_str());
 		if (!ImGui::SFML::Init(GetRenderWindow()))
@@ -109,7 +110,7 @@ namespace vega
 		if (scriptRequested && mDocument.Root() == mProject.sourceAssetRoot)
 			mLuaTypesPath = std::filesystem::path{ VEGA_BUILD_ROOT } / "VegaEditor/.vega/vega.lua";
 		RegenerateLuaTypes();
-		script::SetScriptRoot(mDocument.Root());
+		script::ScriptRuntime::Get(GetEngineContext()).SetRoot(mDocument.Root());
 #ifdef _MSC_VER
 		if (scriptRequested)
 		{
@@ -121,7 +122,7 @@ namespace vega
 			_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
 		}
 #endif
-		ly::PrefabLibrary::Get().SetRoot(mDocument.Root());
+		GetEngineContext().Prefabs().SetRoot(mDocument.Root());
 		if (scriptRequested) mScript = std::make_unique<EditorScript>(scriptPath, mExportLayout, mExtensions.commands);
 		// Source-root automation stays read-only, just like generated Lua tooling.
 		// Disposable project copies get the complete autosave/recovery lifecycle.
@@ -157,14 +158,14 @@ namespace vega
 			// Invalid legacy values stay visible and serializable. Presentation gets
 			// safe effective values so undo and reset can always restore the document.
 			auto effective = authored;
-			for (const auto& field : ly::SceneSettingsSchema::Get().Fields())
+			for (const auto& field : GetEngineContext().SceneSettings().Fields())
 			{
-				const auto value = ly::SceneSettingsSchema::Get().Value(authored, field.key);
+				const auto value = GetEngineContext().SceneSettings().Value(authored, field.key);
 				effective[field.key] = field.Validate(value).empty() ? value : field.defaultValue;
 			}
 			if (mContext.world)
 			{
-				mContext.world->SetSceneBounds(ly::ReadSceneBounds(effective));
+				mContext.world->SetSceneBounds(ly::ReadSceneBounds(effective, GetEngineContext().SceneSettings()));
 				ApplySceneSettings(effective);
 			}
 		};
@@ -223,7 +224,7 @@ namespace vega
 	void EditorApplication::RegenerateLuaTypes()
 	{
 		std::string error;
-		if (!script::GenerateLuaTypes(mLuaTypesPath, error))
+		if (!script::GenerateLuaTypes(GetEngineContext(), mLuaTypesPath, error))
 			ly::debug::Log::Write(ly::debug::LogLevel::Error, ly::debug::LogChannel::Editor, LY_SOURCE_LOCATION, error);
 	}
 

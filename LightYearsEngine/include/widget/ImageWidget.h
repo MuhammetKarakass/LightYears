@@ -8,6 +8,7 @@ namespace ly
 	{
 	public:
 		ImageWidget(const std::string& imagePath);
+		ImageWidget(EngineContext& context, const std::string& imagePath);
 
 		void SetImage(const shared_ptr<sf::Texture>& texture);
 		virtual sf::FloatRect GetBound() const override;

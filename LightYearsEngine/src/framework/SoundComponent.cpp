@@ -5,12 +5,13 @@
 
 namespace ly
 {
-    SoundComponent::SoundComponent(const std::string& path, AudioType type, bool loop) :
+    SoundComponent::SoundComponent(const std::string& path, AudioType type, bool loop, EngineContext& context) :
+		mContext{ context },
   mAudioType{ type },
       mBasePitch{ 1.0f },
         mBoundToAudioManager{ false }
     {
-    mSoundBuffer = AssetManager::GetAssetManager().LoadSoundBuffer(path);
+    mSoundBuffer = mContext.Assets().LoadSoundBuffer(path);
 
         if (mSoundBuffer)
     {
@@ -19,7 +20,7 @@ namespace ly
 
             if (mAudioType == AudioType::SFX_World)
    {
-              mTimeScaleChangedHandle = AudioManager::GetAudioManager()
+              mTimeScaleChangedHandle = mContext.Audio()
                   .onWorldTimeScaleChanged.BindAction(this, &SoundComponent::OnTimeScaleChanged);
               mBoundToAudioManager = mTimeScaleChangedHandle.IsValid();
         }
@@ -28,15 +29,15 @@ namespace ly
 
     SoundComponent::~SoundComponent()
     {
-        // Önce çalan sesi durdur
+        // ï¿½nce ï¿½alan sesi durdur
         if (mSound.has_value() && mSound->getStatus() != sf::Sound::Status::Stopped)
         {
             mSound->stop();
         }
 
-        if (mBoundToAudioManager && AudioManager::IsInitialized())
+        if (mBoundToAudioManager && mContext.HasAudio())
         {
-            AudioManager::GetAudioManager()
+            mContext.Audio()
                 .onWorldTimeScaleChanged.UnbindAction(mTimeScaleChangedHandle);
         }
         mTimeScaleChangedHandle.Reset();
@@ -57,7 +58,7 @@ namespace ly
 
         if (mAudioType == AudioType::SFX_World)
         {
-            float timeScale = AudioManager::GetAudioManager().GetWorldTimeScale();
+            float timeScale = mContext.Audio().GetWorldTimeScale();
              mSound->setPitch(mBasePitch * timeScale);
         }
         else
@@ -92,7 +93,7 @@ namespace ly
 
          if (mAudioType == AudioType::SFX_World)
         {
-               float timeScale = AudioManager::GetAudioManager().GetWorldTimeScale();
+               float timeScale = mContext.Audio().GetWorldTimeScale();
                 mSound->setPitch(mBasePitch * timeScale);
         }
         else

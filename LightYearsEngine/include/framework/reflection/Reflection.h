@@ -6,6 +6,7 @@
 #include "framework/ActorRef.h"
 #include <functional>
 #include <memory>
+#include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -81,8 +82,15 @@ namespace ly::reflect
 	};
 
 	enum class TypeRoot { Actor, Component, Other };
+	struct ConstructorComponentInventory
+	{
+		std::map<std::string, std::size_t> counts;
+		std::vector<std::string> order;
+	};
 	struct TypeInfo
 	{
+		// Cached constructor ownership belongs to this registry generation.
+		mutable std::optional<ConstructorComponentInventory> constructorComponents;
 		std::string name;
 		const TypeInfo* base = nullptr;
 		TypeRoot root = TypeRoot::Other;
@@ -105,6 +113,8 @@ namespace ly::reflect
 	class TypeRegistry
 	{
 	public:
+		TypeRegistry() = default;
+		// Deprecated: use the owning EngineContext::Types().
 		static TypeRegistry& Get();
 		TypeInfo& Register(std::type_index type, const std::string& name, const TypeInfo* base,
 			TypeRoot root, std::function<bool(const void*)> isInstance);
@@ -137,7 +147,8 @@ namespace ly::reflect
 		}
 
 	private:
-		TypeRegistry() = default;
+		friend void RegisterEngineTypes(TypeRegistry& registry);
+		bool mEngineTypesRegistered = false;
 		TypeRegistry(const TypeRegistry&) = delete;
 		TypeRegistry& operator=(const TypeRegistry&) = delete;
 		const TypeInfo* FindMostDerived(const void* object, TypeRoot root) const;
@@ -150,8 +161,8 @@ namespace ly::reflect
 		using Root = std::conditional_t<std::is_base_of_v<Actor, T>, Actor,
 			std::conditional_t<std::is_base_of_v<ActorComponent, T>, ActorComponent, T>>;
 	public:
-		explicit Class(const std::string& name)
-			: mType{ TypeRegistry::Get().Register(typeid(T), name, BaseType(), RootKind(),
+		explicit Class(const std::string& name, TypeRegistry& registry = CurrentTypeRegistry())
+			: mType{ registry.Register(typeid(T), name, BaseType(registry), RootKind(),
 				[](const void* object) { return object && dynamic_cast<const T*>(static_cast<const Root*>(object)); }) }
 		{
 		}
@@ -265,13 +276,13 @@ namespace ly::reflect
 		Class& Flags(EnumLabels labels) { Current().kind = PropertyKind::Flags; Current().enumLabels = std::move(labels); return *this; }
 
 	private:
-		static const TypeInfo* BaseType()
+		static const TypeInfo* BaseType(TypeRegistry& registry)
 		{
 			if constexpr (std::is_void_v<Base>) return nullptr;
 			else
 			{
 				static_assert(std::is_base_of_v<Base, T>, "Reflection base must be a C++ base");
-				const auto* base = TypeRegistry::Get().Find(typeid(Base));
+				const auto* base = registry.Find(typeid(Base));
 				if (!base) throw std::logic_error("Register reflection bases before derived types");
 				return base;
 			}
@@ -301,6 +312,7 @@ namespace ly::reflect
 	};
 
 	void RegisterEngineTypes();
+	void RegisterEngineTypes(TypeRegistry& registry);
 }
 
 #include "framework/reflection/ReflectionMacros.h"

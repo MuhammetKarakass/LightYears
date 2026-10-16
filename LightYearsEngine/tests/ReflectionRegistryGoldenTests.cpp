@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/reflection/Reflection.h"
 #include "reflection/GameReflection.h"
 #include "script/ScriptRuntime.h"
@@ -39,6 +40,8 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	ly::RegisterGameTypes();
 	vega::script::RegisterScriptTypes();
 	const auto actual = DumpRegistry();

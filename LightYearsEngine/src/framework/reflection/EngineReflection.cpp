@@ -9,17 +9,18 @@
 
 namespace ly::reflect
 {
-	void RegisterEngineTypes()
+	void RegisterEngineTypes() { RegisterEngineTypes(CurrentTypeRegistry()); }
+
+	void RegisterEngineTypes(TypeRegistry& registry)
 	{
-		static bool registered = false;
-		if (registered) return;
-		registered = true;
-		VEGA_REGISTER(Actor);
-		VEGA_REGISTER(ActorComponent);
-		VEGA_REGISTER(SpriteComponent);
-		VEGA_REGISTER(SceneEntityComponent);
-		VEGA_REGISTER(LightComponent);
-		VEGA_REGISTER(CollisionComponent);
-		VEGA_REGISTER(SoundComponent);
+		if (registry.mEngineTypesRegistered) return;
+		VEGA_REGISTER_IN(Actor, registry);
+		VEGA_REGISTER_IN(ActorComponent, registry);
+		VEGA_REGISTER_IN(SpriteComponent, registry);
+		VEGA_REGISTER_IN(SceneEntityComponent, registry);
+		VEGA_REGISTER_IN(LightComponent, registry);
+		VEGA_REGISTER_IN(CollisionComponent, registry);
+		VEGA_REGISTER_IN(SoundComponent, registry);
+		registry.mEngineTypesRegistered = true;
 	}
 }

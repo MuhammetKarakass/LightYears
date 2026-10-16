@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "editor/GameExporter.h"
 #include <framework/ProjectSettings.h>
 #include <algorithm>
@@ -106,6 +107,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	const fs::path temp{ VEGA_EXPORT_TEST_TEMP_DIR };
 	fs::remove_all(temp);
 	{

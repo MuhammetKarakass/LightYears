@@ -3,10 +3,17 @@
 
 namespace ly
 {
-	Button::Button(const std::string& textString, const std::string& texturePath, const std::string& fontPath):
-		mButtonTexture{AssetManager::GetAssetManager().LoadTexture(texturePath)},
+	Button::Button(const std::string& textString, const std::string& texturePath, const std::string& fontPath)
+		: Button{ EngineContext::Current(), textString, texturePath, fontPath } {}
+
+	Button::Button(EngineContext& context, const std::string& textString)
+		: Button{ context, textString, context.Defaults().buttonTexture, context.Defaults().font } {}
+
+	Button::Button(EngineContext& context, const std::string& textString, const std::string& texturePath, const std::string& fontPath):
+		Widget{ context },
+		mButtonTexture{GetEngineContext().Assets().LoadTexture(texturePath)},
 		mButtonSprite{*mButtonTexture},
-		mButtonFont{AssetManager::GetAssetManager().LoadFont(fontPath)},
+		mButtonFont{GetEngineContext().Assets().LoadFont(fontPath)},
 		mButtonText{*mButtonFont, textString},
 		mButtonDefaultColor{128,128,128,255},
 		mButtonClickedColor{64,64,64,255},
@@ -110,10 +117,10 @@ namespace ly
 
 	void Button::ButtonClicked()
 	{
-		if (!EngineAssets::Get().buttonSound.empty())
+		if (!GetEngineContext().Defaults().buttonSound.empty())
 		{
-			AudioManager::GetAudioManager().PlaySound(
-				EngineAssets::Get().buttonSound,
+			GetEngineContext().Audio().PlaySound(
+				GetEngineContext().Defaults().buttonSound,
 				AudioType::SFX_UI,
 				60.0f,  // Volume
 				1.5f   // Pitch

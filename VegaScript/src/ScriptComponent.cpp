@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "script/ScriptComponent.h"
 #include "script/ScriptRuntime.h"
 #include <framework/Actor.h>
@@ -135,13 +136,14 @@ namespace vega::script
 		struct SoundHandle
 		{
 			std::uint64_t id = 0;
-			void Stop() const { if (ly::AudioManager::IsInitialized()) ly::AudioManager::GetAudioManager().StopSound(id); }
-			bool Playing() const { return ly::AudioManager::IsInitialized() && ly::AudioManager::GetAudioManager().IsSoundPlaying(id); }
+			ly::EngineContext* context = nullptr;
+			void Stop() const { if (context && context->HasAudio()) context->Audio().StopSound(id); }
+			bool Playing() const { return context && context->HasAudio() && context->Audio().IsSoundPlaying(id); }
 		};
 		bool Matches(const ly::Actor& actor, const std::string& name)
 		{
 			if (name.empty()) return true;
-			for (auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(actor); type; type = type->base)
+			for (auto* type = actor.GetEngineContext().Types().FindMostDerived(actor); type; type = type->base)
 				if (type->name == name) return true;
 			return false;
 		}
@@ -324,7 +326,7 @@ namespace vega::script
 		{
 			const auto actor = handle.Lock();
 			if (!actor || !actor->GetWorld() || !actor->GetWorld()->HasInputFocus()) return false;
-			return ScriptRuntime::Get().ReadKey(name);
+			return ScriptRuntime::Get(actor->GetEngineContext()).ReadKey(name);
 		}
 		bool DeviceKey(const std::string& name)
 		{
@@ -360,13 +362,13 @@ namespace vega::script
 				{
 					const auto actor = handle.owner.Lock();
 					const auto* component = handle.Resolve(actor);
-					return ReadProperty(state, component, component ? ly::reflect::TypeRegistry::Get().FindMostDerived(*component) : nullptr, name);
+					return ReadProperty(state, component, component ? component->GetOwner().GetEngineContext().Types().FindMostDerived(*component) : nullptr, name);
 				},
 				"set", [](const ComponentHandle& handle, const std::string& name, sol::object value)
 				{
 					const auto actor = handle.owner.Lock();
 					auto* component = handle.Resolve(actor);
-					return WriteProperty(component, component ? ly::reflect::TypeRegistry::Get().FindMostDerived(*component) : nullptr, name, value);
+					return WriteProperty(component, component ? component->GetOwner().GetEngineContext().Types().FindMostDerived(*component) : nullptr, name, value);
 				});
 			lua.new_usertype<ActorHandle>("ActorHandle", sol::no_constructor,
 				"parent", [](const ActorHandle& h, sol::this_state s)
@@ -435,7 +437,7 @@ namespace vega::script
 				"type", [](const ActorHandle& h)
 				{
 					const auto a = h.Lock();
-					const auto* type = a ? ly::reflect::TypeRegistry::Get().FindMostDerived(*a) : nullptr;
+					const auto* type = a ? a->GetEngineContext().Types().FindMostDerived(*a) : nullptr;
 					return type ? type->name : std::string{};
 				},
 				"location", [](const ActorHandle& h, sol::this_state s) { const auto a = h.Lock(); return ToLua(sol::state_view{ s }, a ? a->GetActorLocation() : sf::Vector2f{}); },
@@ -455,12 +457,12 @@ namespace vega::script
 				"get", [](const ActorHandle& h, const std::string& name, sol::this_state s)
 				{
 					const auto a = h.Lock();
-					return ReadProperty(s, a.get(), a ? ly::reflect::TypeRegistry::Get().FindMostDerived(*a) : nullptr, name);
+					return ReadProperty(s, a.get(), a ? a->GetEngineContext().Types().FindMostDerived(*a) : nullptr, name);
 				},
 				"set", [](const ActorHandle& h, const std::string& name, sol::object value)
 				{
 					const auto a = h.Lock();
-					return WriteProperty(a.get(), a ? ly::reflect::TypeRegistry::Get().FindMostDerived(*a) : nullptr, name, value);
+					return WriteProperty(a.get(), a ? a->GetEngineContext().Types().FindMostDerived(*a) : nullptr, name, value);
 				},
 				"component", [](const ActorHandle& h, const std::string& name, sol::this_state s)
 				{
@@ -469,7 +471,7 @@ namespace vega::script
 
 					if (a) a->ForEachComponent([&](ly::ActorComponent& component)
 					{
-						for (auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(component); type; type = type->base)
+						for (auto* type = component.GetOwner().GetEngineContext().Types().FindMostDerived(component); type; type = type->base)
 							if (result == sol::nil && type->name == name) result = sol::make_object(s, ComponentHandle{ h, *ly::IdentifyComponent(*a, component) });
 
 					});
@@ -499,7 +501,14 @@ namespace vega::script
 	};
 	ScriptRuntime::ScriptRuntime() : mImpl{ std::make_unique<Impl>() } {}
 	ScriptRuntime::~ScriptRuntime() = default;
-	ScriptRuntime& ScriptRuntime::Get() { static ScriptRuntime runtime; return runtime; }
+	ScriptRuntime& ScriptRuntime::Get() { return Get(ly::EngineContext::Current()); }
+	ScriptRuntime& ScriptRuntime::Get(ly::EngineContext& context)
+	{
+		auto& slot = context.Scripts();
+		if (!slot) slot.reset(new ScriptRuntime);
+		return *slot;
+	}
+	void ScriptRuntime::SetRoot(const std::filesystem::path& root) { mImpl->root = std::filesystem::weakly_canonical(root); }
 	void ScriptRuntime::SetHotReload(bool enabled) { mImpl->hotReload = enabled; }
 	bool ScriptRuntime::HotReload() const { return mImpl->hotReload; }
 	void ScriptRuntime::SetInstructionBudget(std::uint64_t instructions) { mImpl->limits.instructionBudget = std::max<std::uint64_t>(1, instructions); }
@@ -513,11 +522,12 @@ namespace vega::script
 	}
 	void ScriptRuntime::SetKeyReader(KeyReader reader) { mImpl->keyReader = std::move(reader); }
 	bool ScriptRuntime::ReadKey(const std::string& key) const { return mImpl->keyReader ? mImpl->keyReader(key) : DeviceKey(key); }
-	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get().mImpl->root = std::filesystem::weakly_canonical(root); }
+	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get().SetRoot(root); }
 
 	struct ScriptComponent::Impl
 	{
 		ScriptComponent& component;
+		ScriptRuntime& runtime;
 		std::string path;
 		std::string error;
 		ScriptProperties properties, defaults, overrides;
@@ -544,7 +554,7 @@ namespace vega::script
 		bool ended = false;
 		bool endRequested = false;
 		std::uint64_t generation = 0;
-		Impl(ScriptComponent& owner, std::string script) : component{ owner }, path{ std::move(script) } {}
+		Impl(ScriptComponent& owner, std::string script) : component{ owner }, runtime{ ScriptRuntime::Get(owner.GetOwner().GetEngineContext()) }, path{ std::move(script) } {}
 		~Impl() { StopAudio(); }
 		void Fail(const std::string& message)
 		{
@@ -559,7 +569,7 @@ namespace vega::script
 		}
 		std::filesystem::path FullPath() const
 		{
-			const auto& root = ScriptRuntime::Get().Root();
+			const auto& root = runtime.Root();
 			const std::filesystem::path relative{ path };
 			if (relative.empty() || relative.is_absolute() || relative.has_root_name() || relative.extension() != ".lua")
 				throw std::runtime_error("Expected a relative .lua asset path");
@@ -583,9 +593,9 @@ namespace vega::script
 		}
 		void StopAudio()
 		{
-			if (ly::AudioManager::IsInitialized())
+			if (component.GetOwner().GetEngineContext().HasAudio())
 			{
-				auto& audio = ly::AudioManager::GetAudioManager();
+				auto& audio = component.GetOwner().GetEngineContext().Audio();
 				for (const auto id : sounds) audio.StopSound(id);
 				if (musicRevision && audio.MusicRevision() == musicRevision) audio.StopMusic();
 			}
@@ -594,7 +604,7 @@ namespace vega::script
 		std::string AudioPath(const std::string& name) const
 		{
 			if (!running || ended || component.GetOwner().GetIsPendingDestroy()) throw std::runtime_error("Audio playback requires a running script callback");
-			const auto& root = ScriptRuntime::Get().Root();
+			const auto& root = runtime.Root();
 			const auto relative = std::filesystem::u8path(name);
 			if (name.empty() || relative.is_absolute() || relative.has_root_name() || relative.has_root_directory()) throw std::runtime_error("Audio expects an asset-relative path");
 			for (const auto& part : relative) if (part == "..") throw std::runtime_error("Audio path escapes asset root");
@@ -616,13 +626,13 @@ namespace vega::script
 				const auto v = volume.value_or(100.f), p = pitch.value_or(1.f);
 				AudioParameters(v, p);
 				const auto full = AudioPath(path);
-				auto& manager = ly::AudioManager::GetAudioManager();
+				auto& manager = component.GetOwner().GetEngineContext().Audio();
 				sounds.erase(std::remove_if(sounds.begin(), sounds.end(), [&](auto id) { return !manager.IsSoundPlaying(id); }), sounds.end());
 				if (sounds.size() >= 128) throw std::runtime_error("Too many simultaneous script sounds");
 				const auto id = manager.PlaySoundTracked(full, AudioType::SFX_World, v, p);
 				if (!id) throw std::runtime_error("Cannot load audio asset: " + path);
 				sounds.push_back(id);
-				return SoundHandle{ id };
+				return SoundHandle{ id, &component.GetOwner().GetEngineContext() };
 			};
 			environment["audio"] = audio;
 			sol::table music = lua.create_table();
@@ -631,7 +641,7 @@ namespace vega::script
 				const auto v = volume.value_or(100.f), p = pitch.value_or(1.f);
 				AudioParameters(v, p);
 				const auto full = AudioPath(path);
-				auto& manager = ly::AudioManager::GetAudioManager();
+				auto& manager = component.GetOwner().GetEngineContext().Audio();
 				manager.PlayMusic(full, AudioType::Music, v, p);
 				musicRevision = manager.MusicRevision();
 			};
@@ -641,14 +651,14 @@ namespace vega::script
 				AudioParameters(v, p);
 				if (!std::isfinite(seconds) || seconds < 0 || seconds > 86400) throw std::runtime_error("Music fade duration must be 0..86400 seconds");
 				const auto full = AudioPath(path);
-				auto& manager = ly::AudioManager::GetAudioManager();
+				auto& manager = component.GetOwner().GetEngineContext().Audio();
 				manager.FadeToMusic(full, AudioType::Music, v, p, true, static_cast<float>(seconds));
 				musicRevision = manager.MusicRevision();
 			};
 			music["stop"] = [this]()
 			{
-				if (ly::AudioManager::IsInitialized() && musicRevision && ly::AudioManager::GetAudioManager().MusicRevision() == musicRevision)
-					ly::AudioManager::GetAudioManager().StopMusic();
+				if (component.GetOwner().GetEngineContext().HasAudio() && musicRevision && component.GetOwner().GetEngineContext().Audio().MusicRevision() == musicRevision)
+					component.GetOwner().GetEngineContext().Audio().StopMusic();
 				musicRevision = 0;
 			};
 			environment["music"] = music;
@@ -757,7 +767,7 @@ namespace vega::script
 			world["player"] = [owner](sol::this_state state)
 			{
 				const auto actor = owner.Lock();
-				const auto player = actor && actor->GetWorld() ? ScriptRuntime::Get().Player(*actor->GetWorld()) : nullptr;
+				const auto player = actor && actor->GetWorld() ? ScriptRuntime::Get(actor->GetEngineContext()).Player(*actor->GetWorld()) : nullptr;
 				return player ? sol::make_object(state, ActorHandle{ player }) : sol::make_object(state, sol::nil);
 			};
 			world["find_all_by_type"] = [owner](const std::string& type, sol::this_state state)
@@ -796,7 +806,7 @@ namespace vega::script
 				if (prefab)
 				{
 					// Runtime failures must not add unresolved authored instances to the scene.
-					const auto resolved = ly::PrefabLibrary::Get().Resolve(source);
+					const auto resolved = actor->GetEngineContext().Prefabs().Resolve(source);
 					if (!resolved || !resolved.warnings.empty()) throw std::runtime_error(resolved.warnings.empty() ? "Cannot resolve prefab" : resolved.warnings.front());
 				}
 				const auto guid = ly::SceneEntityComponent::GenerateGuid();
@@ -959,8 +969,7 @@ namespace vega::script
 	ScriptComponent::ScriptComponent(ly::Actor& owner, std::string path)
 		: ActorComponent{ owner }, mImpl{ std::make_unique<Impl>(*this, std::move(path)) }
 	{
-		// Construct the singleton before components so it outlives their Lua references.
-		ScriptRuntime::Get();
+		// The context owns the interpreter and outlives its components.
 		mCanEverTick = true;
 	}
 	ScriptComponent::~ScriptComponent() = default;
@@ -971,7 +980,7 @@ namespace vega::script
 	bool ScriptComponent::Prepare() noexcept
 	{
 		if (HasBegunPlay()) return false;
-		try { return mImpl->Load(ScriptRuntime::Get().mImpl->lua, false); }
+		try { return mImpl->Load(mImpl->runtime.mImpl->lua, false); }
 		catch (const std::exception& error) { mImpl->Fail(error.what()); return false; }
 		catch (...) { mImpl->Fail("Unknown script preparation error"); return false; }
 	}
@@ -1000,7 +1009,7 @@ namespace vega::script
 				{
 					const auto override = values.find(entry.first);
 					if (override != values.end()) entry.second = override->second;
-					mImpl->props[entry.first] = ToLua(ScriptRuntime::Get().mImpl->lua, entry.second);
+					mImpl->props[entry.first] = ToLua(mImpl->runtime.mImpl->lua, entry.second);
 				}
 			}
 			return true;
@@ -1009,7 +1018,7 @@ namespace vega::script
 	}
 	bool ScriptComponent::Reload() noexcept
 	{
-		try { return mImpl->Load(ScriptRuntime::Get().mImpl->lua); }
+		try { return mImpl->Load(mImpl->runtime.mImpl->lua); }
 		catch (const std::exception& error) { mImpl->calling = false; mImpl->Fail(error.what()); return false; }
 		catch (...) { mImpl->calling = false; mImpl->Fail("Unknown script error"); return false; }
 	}
@@ -1020,7 +1029,7 @@ namespace vega::script
 		try
 		{
 			if (mImpl->ended) return;
-			if (ScriptRuntime::Get().HotReload() && Clock::now() >= mImpl->nextPoll)
+			if (mImpl->runtime.HotReload() && Clock::now() >= mImpl->nextPoll)
 			{
 				mImpl->nextPoll = Clock::now() + std::chrono::milliseconds(500);
 				std::error_code ec;
@@ -1063,7 +1072,7 @@ namespace vega::script
 			if (entry == mImpl->properties.end() || entry->second.index() != value.index()) return false;
 			if (const auto* number = std::get_if<float>(&value); number && !std::isfinite(*number)) return false;
 			if (const auto* vector = std::get_if<sf::Vector2f>(&value); vector && (!std::isfinite(vector->x) || !std::isfinite(vector->y))) return false;
-			mImpl->props[name] = ToLua(ScriptRuntime::Get().mImpl->lua, value);
+			mImpl->props[name] = ToLua(mImpl->runtime.mImpl->lua, value);
 			entry->second = value;
 			mImpl->overrides[name] = value;
 			return true;
@@ -1085,10 +1094,12 @@ namespace vega::script
 		VEGA_READONLY("Last Error", LastError);
 	}
 
-	void RegisterScriptTypes()
+	void RegisterScriptTypes() { RegisterScriptTypes(ly::EngineContext::Current()); }
+
+	void RegisterScriptTypes(ly::EngineContext& context)
 	{
-		ly::reflect::RegisterEngineTypes();
-		VEGA_REGISTER(ScriptComponent);
+		ly::reflect::RegisterEngineTypes(context.Types());
+		VEGA_REGISTER_IN(ScriptComponent, context.Types());
 		ly::SceneSerializer::RegisterComponentSerializer("ScriptComponent", {
 			"scripts",
 			[](const ly::ActorComponent& base)
@@ -1133,6 +1144,6 @@ namespace vega::script
 					if (!component.SetProperty(entry.first, entry.second))
 						result.warnings.push_back(path + "." + entry.first + ": unknown property or incompatible override");
 			}
-		});
+		}, context);
 	}
 }

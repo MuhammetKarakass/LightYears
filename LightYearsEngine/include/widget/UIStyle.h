@@ -6,6 +6,7 @@
 
 namespace ly
 {
+	class EngineContext;
 	enum class UIFontRole { Body, Title, Count };
 	enum class UIColorRole { Text, TextMuted, Accent, Positive, Warning, Danger, PanelBackground, GaugeBackground, Count };
 	enum class UITextSize { Small, Body, Large, Title, Count };
@@ -20,6 +21,7 @@ namespace ly
 		sf::Color Color(UIColorRole role) const;
 		unsigned int TextSize(UITextSize size) const;
 		static UIStyle MakeDefault();
+		static UIStyle MakeDefault(EngineContext& context);
 		static const UIStyle& Get();
 		static void Set(const UIStyle& style);
 	};

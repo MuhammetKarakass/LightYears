@@ -50,7 +50,7 @@ namespace vega
 						const auto actor = weak.lock();
 						if (!actor || actor->GetIsPendingDestroy()) continue;
 						const auto* data = actor->FindComponent<ly::SceneEntityComponent>();
-						const auto* type = property.requiredType.empty() ? nullptr : ly::reflect::TypeRegistry::Get().Find(property.requiredType);
+						const auto* type = property.requiredType.empty() ? nullptr : context->Engine().Types().Find(property.requiredType);
 						if (!data || (!property.requiredType.empty() && (!type || type->root != ly::reflect::TypeRoot::Actor || !type->isInstance(actor.get()))) || !filter.PassFilter(data->name.c_str())) continue;
 						ImGui::PushID(data->guid.c_str());
 						if (ImGui::Selectable(data->name.c_str(), ref.Guid() == data->guid)) { ref = ly::ActorRef{ *actor }; changed = true; }
@@ -571,7 +571,7 @@ namespace vega
 				if (ImGui::BeginPopup("Add Component"))
 				{
 					componentFilter.Draw("Search");
-					auto types = ly::reflect::TypeRegistry::Get().AddableComponents();
+					auto types = context.Engine().Types().AddableComponents();
 					std::sort(types.begin(), types.end(), [](const auto* a, const auto* b) { return a->name < b->name; });
 					for (const auto* type : types)
 						if (componentFilter.PassFilter(type->name.c_str()) && ImGui::Selectable(type->name.c_str()))
@@ -584,7 +584,7 @@ namespace vega
 				if (ImGui::BeginPopup("Add Script"))
 				{
 					std::error_code error;
-					const auto& root = script::ScriptRuntime::Get().Root();
+					const auto& root = script::ScriptRuntime::Get(GetEngineContext()).Root();
 					std::vector<std::string> paths;
 					for (std::filesystem::recursive_directory_iterator it{ root / "scripts", error }, end; it != end && !error; it.increment(error))
 					{
@@ -613,7 +613,7 @@ namespace vega
 							if (ImGui::MenuItem("Revert all")) ChangePrefabSection(context, history, target, false);
 							if (ImGui::MenuItem("Apply all")) ChangePrefabSection(context, history, target, true);
 						}
-						const auto* actorType = ly::reflect::TypeRegistry::Get().FindMostDerived(*actor);
+						const auto* actorType = context.Engine().Types().FindMostDerived(*actor);
 						const bool required = actorType && actorType->RequiresComponent(target.type->name);
 						const bool removable = target.componentIdentity && target.type->removable && !required;
 						if (ImGui::MenuItem("Remove Component", nullptr, false, removable))
@@ -715,7 +715,7 @@ namespace vega
 				actor->ForEachComponent([&](ly::ActorComponent& component)
 				{
 					if (!dynamic_cast<ly::SceneEntityComponent*>(&component))
-						drawSection({ &component, ly::reflect::TypeRegistry::Get().FindMostDerived(component), ly::IdentifyComponent(*actor, component) });
+						drawSection({ &component, context.Engine().Types().FindMostDerived(component), ly::IdentifyComponent(*actor, component) });
 
 				});
 				if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))

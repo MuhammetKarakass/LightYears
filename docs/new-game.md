@@ -111,11 +111,19 @@ SFML input; link the runtime module to `LightYearsEngine`. The shared editor
 currently includes VegaScript services. See [game modules](game-module.md).
 
 Runtime widgets and point lights accept project-owned defaults through
-`ly::EngineAssets::Get()` (`framework/EngineAssets.h`). Install font, button
+`application.GetEngineContext().Defaults()` (`framework/EngineContext.h`). Install font, button
 texture/sound and shader paths before creating those widgets. Empty defaults
 load no external font or shader; absent button textures use the engine's white
 pixel. LightYears calls `InstallLightYearsEngineAssets` during module startup;
 direct gameplay test hosts call the same function explicitly.
+
+Applications create their own context by default. Headless tests create
+`ly::EngineContext context;` and `ly::World world{ context };`; use a temporary
+`ly::EngineContext::Scope` only when exercising legacy module/setup APIs.
+New actors and components access services through their owner; avoid static
+accessors and process-wide registration guards. See [engine contexts](engine-context.md)
+for explicit reflection, widget and optional scripting setup, lifetime rules,
+and the deprecated compatibility shims.
 
 ## Optional Sky and GAS modules
 

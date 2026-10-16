@@ -12,6 +12,9 @@ namespace ly
 			const sf::Color& foregroundColor = sf::Color{128,255,128,255},
 			const sf::Color& backgroundColor = sf::Color{128,128,128,255});
 
+		ValueGauge(EngineContext& context, const sf::Vector2f& size = { 220.f, 30.f }, float initialPercent = 1.f,
+			const sf::Color& foregroundColor = { 128, 255, 128, 255 }, const sf::Color& backgroundColor = { 128, 128, 128, 255 });
+
 		virtual sf::FloatRect GetBound() const override;
 
 		void UpdateValue(float value,float maxValue);

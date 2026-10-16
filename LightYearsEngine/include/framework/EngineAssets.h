@@ -8,10 +8,7 @@ namespace ly
 	struct EngineAssets
 	{
 		std::string font, buttonTexture, buttonSound, pointLightShader, simpleColorShader;
-		static EngineAssets& Get()
-		{
-			static EngineAssets assets;
-			return assets;
-		}
+		// Deprecated: use the owning EngineContext::Defaults().
+		static EngineAssets& Get();
 	};
 }

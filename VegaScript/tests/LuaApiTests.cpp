@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include <script/ScriptComponent.h>
 #include <script/ScriptRuntime.h>
 #include <framework/Actor.h>
@@ -433,6 +434,8 @@ end
 
 int main(int argc, char** argv)
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	const std::string group = argc > 1 ? argv[1] : "World";
 	root = std::filesystem::path{ VEGA_SCRIPT_TEST_ROOT } / group;
 	std::filesystem::create_directories(root);

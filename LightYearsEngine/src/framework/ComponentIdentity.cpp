@@ -1,4 +1,5 @@
 #include "framework/ComponentIdentity.h"
+#include "framework/EngineContext.h"
 #include "framework/Actor.h"
 #include "framework/reflection/Reflection.h"
 
@@ -6,13 +7,13 @@ namespace ly
 {
 	std::optional<ComponentIdentity> IdentifyComponent(const Actor& actor, const ActorComponent& target)
 	{
-		const auto* type = reflect::TypeRegistry::Get().FindMostDerived(target);
+		const auto* type = actor.GetEngineContext().Types().FindMostDerived(target);
 		if (!type) return {};
 		std::optional<ComponentIdentity> result;
 		std::size_t occurrence = 0;
 		actor.ForEachComponent([&](const ActorComponent& component)
 		{
-			if (reflect::TypeRegistry::Get().FindMostDerived(component) != type) return;
+			if (actor.GetEngineContext().Types().FindMostDerived(component) != type) return;
 			if (&component == &target) result = ComponentIdentity{ type->name, occurrence };
 			++occurrence;
 		});
@@ -25,7 +26,7 @@ namespace ly
 		std::size_t occurrence = 0;
 		actor.ForEachComponent([&](ActorComponent& component)
 		{
-			const auto* type = reflect::TypeRegistry::Get().FindMostDerived(component);
+			const auto* type = actor.GetEngineContext().Types().FindMostDerived(component);
 			if (type && type->name == identity.typeName && occurrence++ == identity.occurrence) result = &component;
 		});
 		return result;

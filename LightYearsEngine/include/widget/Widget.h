@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <utility>
 #include "framework/Object.h"
+#include "framework/EngineContext.h"
 #include "widget/UILayout.h"
 
 namespace ly
@@ -13,6 +14,7 @@ namespace ly
 	class Widget : public Object
 	{
 	public:
+		EngineContext& GetEngineContext() const { return *mContext; }
 		virtual ~Widget();
 		void NativeDraw(sf::RenderTarget& windowRef);
 		void NativeTick(float deltaTime);
@@ -42,6 +44,7 @@ namespace ly
 		template<typename T, typename... Args>
 		weak_ptr<T> AddChild(Args&&... args)
 		{
+			EngineContext::Scope scope{ GetEngineContext() };
 			auto child = std::make_shared<T>(std::forward<Args>(args)...);
 			static_assert(std::is_base_of<Widget, T>::value, "T must derive from Widget");
 			child->mParent = this;
@@ -64,7 +67,7 @@ namespace ly
 		virtual sf::Vector2f GetIntrinsicSize() const;
 
 	protected:
-		Widget();
+		explicit Widget(EngineContext& context = EngineContext::Current());
 		virtual void UpdateOrigin(const sf::Vector2f& origin) = 0;
 		virtual void ApplyAlpha(float alpha);
 		virtual void Tick(float deltaTime);
@@ -79,6 +82,7 @@ namespace ly
 		std::string mTag;
 
 	private:
+		EngineContext* mContext;
 		virtual void Draw(sf::RenderTarget& windowRef);
 		virtual void LocationUpdated(const sf::Vector2f& newLocation);
 		virtual void RotationUpdated(float newRotation);

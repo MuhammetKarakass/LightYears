@@ -1,4 +1,5 @@
 #include "framework/ShaderManager.h"
+#include "framework/EngineContext.h"
 #include "framework/EngineAssets.h"
 
 namespace ly
@@ -68,13 +69,15 @@ namespace ly
 		return nullptr;
 	}
 
-	void ShaderManager::LoadDefaultShaders()
+	void ShaderManager::LoadDefaultShaders() { LoadDefaultShaders(EngineContext::Current()); }
+
+	void ShaderManager::LoadDefaultShaders(EngineContext& context)
 	{
 		if(!sf::Shader::isAvailable())
 			return;
 
-		if (!EngineAssets::Get().simpleColorShader.empty())
-			LoadShader("simple_color", EngineAssets::Get().simpleColorShader);
+		if (!context.Defaults().simpleColorShader.empty())
+			LoadShader("simple_color", context.Defaults().simpleColorShader);
 	}
 
 	void ShaderManager::CleanUp()

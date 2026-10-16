@@ -12,7 +12,7 @@ namespace vega
 		mNextContentPoll = now + std::chrono::milliseconds{ 500 };
 		const auto paths = mContentWatch.Poll();
 		if (paths.empty()) return;
-		ly::PrefabLibrary::Get().Reload();
+		GetEngineContext().Prefabs().Reload();
 		try { if (auto* reload = QueryCapability<IContentReload>(mModule.get())) reload->ReloadContent(paths); }
 		catch (const std::exception& error)
 		{
@@ -98,7 +98,7 @@ namespace vega
 				if (!mDocument.Resolve(staging.lexically_relative(mDocument.Root()), safe) || safe != staging)
 					throw std::runtime_error("Recovery staging directory changed");
 				if (!AtomicWriteText(safe, entry.text, mAutosaveError)) return false;
-				ly::PrefabLibrary::Get().Reload();
+				GetEngineContext().Prefabs().Reload();
 				success = OpenPrefab(staging.lexically_relative(mDocument.Root()));
 				if (success)
 				{

@@ -13,7 +13,7 @@ namespace vega
 {
 	bool EditorApplication::BuildBoundsOverlay()
 	{
-		const auto bounds = ly::ReadSceneBounds(mSceneSettings);
+		const auto bounds = ly::ReadSceneBounds(mSceneSettings, GetEngineContext().SceneSettings());
 		if (!bounds || !mContext.world || mPrefabWorld) { mBoundsCorner = -1; return false; }
 		const auto image = mViewportImageRect;
 		const auto main = ImGui::GetMainViewport()->Pos;
@@ -53,7 +53,7 @@ namespace vega
 			{
 				const auto pixel = MapWindowToTexturePixel({ int(mouse.x - main.x), int(mouse.y - main.y) }, image, mViewport.GetSize());
 				const auto point = mViewport.MapPixelToCoords(pixel, mContext.world->GetWorldView());
-				const auto start = ly::ReadSceneBounds(nlohmann::json{ { "bounds", mBoundsStart } }).value();
+				const auto start = ly::ReadSceneBounds(nlohmann::json{ { "bounds", mBoundsStart } }, GetEngineContext().SceneSettings()).value();
 				const sf::Vector2f opposite = start.position + sf::Vector2f{ (mBoundsCorner & 1) ? 0.f : start.size.x, (mBoundsCorner & 2) ? 0.f : start.size.y };
 				const nlohmann::json value{ std::min(point.x, opposite.x), std::min(point.y, opposite.y), std::max(1.f, std::abs(point.x - opposite.x)), std::max(1.f, std::abs(point.y - opposite.y)) };
 				if (value != mSceneSettings.at("bounds")) mHistory.Execute(std::make_unique<SetSceneSettingCommand>("bounds", value, mBoundsMergeGroup));

@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include <framework/scene/SceneSettings.h>
 #include <framework/scene/Scene.h>
 #include <framework/World.h>
@@ -6,6 +7,8 @@
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	using Json = nlohmann::json;
 	int failures = 0;
 	const auto check = [&](bool value, const char* text) { if (!value) { ++failures; std::cerr << text << '\n'; } };

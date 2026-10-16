@@ -3,8 +3,12 @@
 
 namespace ly
 {
-	ValueGauge::ValueGauge(const sf::Vector2f& size, float initialPercent, const sf::Color& foregroundColor, const sf::Color& backgroundColor) :
-		mBarFont{AssetManager::GetAssetManager().LoadFont(EngineAssets::Get().font),},
+	ValueGauge::ValueGauge(const sf::Vector2f& size, float initialPercent, const sf::Color& foregroundColor, const sf::Color& backgroundColor)
+		: ValueGauge{ EngineContext::Current(), size, initialPercent, foregroundColor, backgroundColor } {}
+
+	ValueGauge::ValueGauge(EngineContext& context, const sf::Vector2f& size, float initialPercent, const sf::Color& foregroundColor, const sf::Color& backgroundColor) :
+		Widget{ context },
+		mBarFont{GetEngineContext().Assets().LoadFont(GetEngineContext().Defaults().font),},
 		mBarText{*mBarFont},
 		mBarFront{ size },
 		mBarBack{ size },
@@ -33,7 +37,7 @@ namespace ly
 		sf::Vector2f barSize = mBarBack.getSize();
 		mBarFront.setSize({ barSize.x * mPercent, barSize.y });
 		
-		CenterText();  // Text güncellendikten sonra yeniden ortala
+		CenterText();  // Text gï¿½ncellendikten sonra yeniden ortala
 	}
 	
 	void ValueGauge::SetForegroundColor(const sf::Color& color)
@@ -81,7 +85,7 @@ namespace ly
 			textBounds.position.y + textBounds.size.y / 2.0f
 		});
 		
-		// Text'i widget merkezine yerleþtir
+		// Text'i widget merkezine yerleï¿½tir
 		mBarText.setPosition(widgetCenter);
 	}
 

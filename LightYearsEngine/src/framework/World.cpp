@@ -62,7 +62,8 @@ namespace ly{
 		};
 	}
 
-	World::World(Application* owningApp):
+	World::World(Application* owningApp, EngineContext* context):
+		mContext{ owningApp ? &owningApp->GetEngineContext() : context ? context : &EngineContext::Current() },
 		mOwningApp{ owningApp },
 		mBeganPlay{ false },   
 		mPhysicsScene{ std::make_unique<PhysicsScene>() },

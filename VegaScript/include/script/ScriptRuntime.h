@@ -7,17 +7,20 @@
 #include <functional>
 #include <string>
 
-namespace ly { class Actor; class World; }
+namespace ly { class Actor; class World; class EngineContext; }
 
 namespace vega::script
 {
 	class ScriptComponent;
-	// One interpreter on the game/editor thread; components own isolated environments.
+	// One interpreter per context on the game/editor thread; components own isolated environments.
 	class ScriptRuntime
 	{
 	public:
+		// Deprecated no-argument shim; new hosts supply their context.
 		static ScriptRuntime& Get();
+		static ScriptRuntime& Get(ly::EngineContext& context);
 		~ScriptRuntime();
+		void SetRoot(const std::filesystem::path& root);
 		void SetHotReload(bool enabled);
 		bool HotReload() const;
 		void SetInstructionBudget(std::uint64_t instructions);
@@ -39,5 +42,7 @@ namespace vega::script
 	};
 	void SetScriptRoot(const std::filesystem::path& root);
 	void RegisterScriptTypes();
+	void RegisterScriptTypes(ly::EngineContext& context);
 	bool GenerateLuaTypes(const std::filesystem::path& output, std::string& error) noexcept;
+	bool GenerateLuaTypes(ly::EngineContext& context, const std::filesystem::path& output, std::string& error) noexcept;
 }

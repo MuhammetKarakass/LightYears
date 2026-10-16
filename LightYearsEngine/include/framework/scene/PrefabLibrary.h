@@ -9,6 +9,7 @@
 
 namespace ly
 {
+	class EngineContext;
 	struct PrefabResult
 	{
 		nlohmann::json entity;
@@ -20,7 +21,9 @@ namespace ly
 	{
 	public:
 		explicit PrefabLibrary(std::filesystem::path root);
-		// The application library follows AssetManager's root unless explicitly set.
+		PrefabLibrary(EngineContext& context, std::filesystem::path root);
+		// Deprecated: forwards to the current EngineContext's library. Its root
+		// follows that context's AssetManager unless explicitly set.
 		static PrefabLibrary& Get();
 		void SetRoot(std::filesystem::path root);
 		const std::filesystem::path& Root() const { return mRoot; }
@@ -34,6 +37,7 @@ namespace ly
 		static nlohmann::json Document(nlohmann::json entity, const std::string& name);
 		static void LocalizeReferences(nlohmann::json& entity);
 	private:
+		EngineContext* mContext;
 		PrefabResult Resolve(const std::string& path, std::set<std::filesystem::path>& chain, std::set<std::filesystem::path>& dependencies);
 		struct Cached
 		{

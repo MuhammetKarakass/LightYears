@@ -1,4 +1,6 @@
 add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
+	include/framework/EngineContext.h
+	src/framework/EngineContext.cpp
 	include/framework/ActorRef.h
 	src/framework/ActorRef.cpp
 	include/framework/ProjectSettings.h
@@ -210,6 +212,10 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+	add_executable(LightYearsEngineContextTests tests/EngineContextTests.cpp)
+	target_link_libraries(LightYearsEngineContextTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(LightYearsEngineContextTests PRIVATE ENGINE_CONTEXT_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/context-test-assets")
+	add_test(NAME LightYearsEngineContext COMMAND LightYearsEngineContextTests)
 	add_executable(LightYearsReflectionMacroTests tests/ReflectionMacroTests.cpp)
 	target_link_libraries(LightYearsReflectionMacroTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)

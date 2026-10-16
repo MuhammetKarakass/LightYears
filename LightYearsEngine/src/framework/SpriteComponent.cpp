@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/SpriteComponent.h"
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
@@ -13,7 +14,7 @@ namespace ly
 	bool SpriteComponent::SetTexture(const std::string& texturePath)
 	{
 		if (texturePath.empty()) return false;
-		auto texture = AssetManager::GetAssetManager().LoadTexture(texturePath);
+		auto texture = GetOwner().GetEngineContext().Assets().LoadTexture(texturePath);
 		if (!texture) return false;
 		mTexture = std::move(texture);
 

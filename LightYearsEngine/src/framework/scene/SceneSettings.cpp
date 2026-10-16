@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/scene/SceneSettings.h"
 #include <cmath>
 #include <limits>
@@ -44,26 +45,25 @@ namespace ly
 		return {};
 	}
 
-	SceneSettingsSchema& SceneSettingsSchema::Get()
+	SceneSettingsSchema& SceneSettingsSchema::Get() { return EngineContext::Current().SceneSettings(); }
+	void SceneSettingsSchema::RegisterEngineSettings()
 	{
-		static SceneSettingsSchema schema = []()
-		{
-			SceneSettingsSchema value;
-			SceneSettingField bounds;
-			bounds.key = "bounds"; bounds.label = "Arena bounds"; bounds.category = "World";
-			bounds.type = SceneSettingType::Rect; bounds.defaultValue = nullptr;
-			bounds.min = -1000000; bounds.max = 1000000;
-			bounds.tooltip = "Optional [x, y, width, height] in world units. Games choose how to enforce it.";
-			value.Register(std::move(bounds));
-			return value;
-		}();
-		return schema;
+		SceneSettingField bounds;
+		bounds.key = "bounds"; bounds.label = "Arena bounds"; bounds.category = "World";
+		bounds.type = SceneSettingType::Rect; bounds.defaultValue = nullptr;
+		bounds.min = -1000000; bounds.max = 1000000;
+		bounds.tooltip = "Optional [x, y, width, height] in world units. Games choose how to enforce it.";
+		Register(std::move(bounds));
 	}
 	std::optional<sf::FloatRect> ReadSceneBounds(const nlohmann::json& settings)
 	{
+		return ReadSceneBounds(settings, EngineContext::Current().SceneSettings());
+	}
+	std::optional<sf::FloatRect> ReadSceneBounds(const nlohmann::json& settings, const SceneSettingsSchema& schema)
+	{
 		if (!settings.is_object() || !settings.contains("bounds") || settings["bounds"].is_null()) return {};
 		const auto& value = settings["bounds"];
-		const auto* field = SceneSettingsSchema::Get().Find("bounds");
+		const auto* field = schema.Find("bounds");
 		if (!field || !field->Validate(value).empty()) return {};
 		return sf::FloatRect{ { value[0].get<float>(), value[1].get<float>() }, { value[2].get<float>(), value[3].get<float>() } };
 	}

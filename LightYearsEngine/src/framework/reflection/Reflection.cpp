@@ -1,5 +1,7 @@
 #include "framework/reflection/Reflection.h"
 #include "framework/Actor.h"
+#include "framework/World.h"
+#include "framework/EngineContext.h"
 #include "framework/ActorComponent.h"
 #include <algorithm>
 #include <cmath>
@@ -55,7 +57,7 @@ namespace ly::reflect
 			const auto accepts = [&](const ly::ActorRef& ref)
 			{
 				const auto actor = ref.Resolve(*const_cast<World*>(ownerWorld));
-				const auto* filter = TypeRegistry::Get().Find(requiredType);
+				const auto* filter = ownerWorld->GetEngineContext().Types().Find(requiredType);
 				return !actor || (filter && filter->root == TypeRoot::Actor && filter->isInstance(actor.get()));
 			};
 			bool accepted = true;
@@ -83,7 +85,7 @@ namespace ly::reflect
 			if (ref.Guid().empty()) return;
 			const auto actor = ref.Resolve(world);
 			if (!actor) { valid = false; if (error) *error = "Dangling actor reference: " + ref.Guid(); return; }
-			const auto* filter = requiredType.empty() ? nullptr : TypeRegistry::Get().Find(requiredType);
+			const auto* filter = requiredType.empty() ? nullptr : world.GetEngineContext().Types().Find(requiredType);
 			if (!requiredType.empty() && (!filter || filter->root != TypeRoot::Actor || !filter->isInstance(actor.get())))
 			{
 				valid = false;
@@ -110,10 +112,11 @@ namespace ly::reflect
 		return base ? base->FindProperty(propertyName) : nullptr;
 	}
 
+	TypeRegistry& CurrentTypeRegistry() { return EngineContext::Current().Types(); }
+
 	TypeRegistry& TypeRegistry::Get()
 	{
-		static TypeRegistry registry;
-		return registry;
+		return CurrentTypeRegistry();
 	}
 
 	TypeInfo& TypeRegistry::Register(std::type_index type, const std::string& name, const TypeInfo* base,

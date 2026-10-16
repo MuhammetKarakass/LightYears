@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/Actor.h"
 #include "framework/reflection/Reflection.h"
 #include "framework/CollisionComponent.h"
@@ -55,9 +56,11 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	using namespace ly::reflect;
-	static_assert(!std::is_default_constructible_v<TypeRegistry> && !std::is_copy_constructible_v<TypeRegistry> &&
-		!std::is_move_constructible_v<TypeRegistry>, "The registry must remain a singleton");
+	static_assert(std::is_default_constructible_v<TypeRegistry> && !std::is_copy_constructible_v<TypeRegistry> &&
+		!std::is_move_constructible_v<TypeRegistry>, "Registries must be independently owned and keep descriptor addresses stable");
 	RegisterEngineTypes();
 	Check(KindOf(PropertyValue{true}) == PropertyKind::Bool && KindOf(PropertyValue{2}) == PropertyKind::Int &&
 		KindOf(PropertyValue{2.f}) == PropertyKind::Float && KindOf(PropertyValue{sf::Vector2f{}}) == PropertyKind::Vector2 &&

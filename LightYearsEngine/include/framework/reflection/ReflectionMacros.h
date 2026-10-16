@@ -19,13 +19,18 @@
 	}; \
 	void VegaReflect(::ly::reflect::TypeTag<Type>) \
 	{ \
-		VegaReflection_##Type::Builder type{ #Type }; \
+		VegaReflect(::ly::reflect::TypeTag<Type>{}, ::ly::reflect::CurrentTypeRegistry()); \
+	} \
+	void VegaReflect(::ly::reflect::TypeTag<Type>, ::ly::reflect::TypeRegistry& registry) \
+	{ \
+		VegaReflection_##Type::Builder type{ #Type, registry }; \
 		VegaReflection_##Type::Describe(type); \
 	} \
 	void VegaReflection_##Type::Describe(Builder& type)
 
 #define VEGA_REFLECT_ROOT(Type) VEGA_REFLECT(Type, void)
 #define VEGA_REGISTER(Type) VegaReflect(::ly::reflect::TypeTag<Type>{})
+#define VEGA_REGISTER_IN(Type, Registry) VegaReflect(::ly::reflect::TypeTag<Type>{}, Registry)
 
 // Calls through lambdas preserve overloaded/default-argument setter semantics.
 #define VEGA_PROPERTY(Name, Getter, Setter) \

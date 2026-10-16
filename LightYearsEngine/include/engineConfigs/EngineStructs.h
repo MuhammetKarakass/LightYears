@@ -3,7 +3,6 @@
 #include <SFML/Graphics.hpp>
 #include "framework/Core.h"
 #include "framework/MathUtility.h"
-#include "framework/EngineAssets.h"
 #include <string>
 
 struct PointLightDefinition
@@ -21,7 +20,7 @@ struct PointLightDefinition
 	float shapeRoundness;
 
 	PointLightDefinition(
-		const std::string& inShaderPath = ly::EngineAssets::Get().pointLightShader,
+		const std::string& inShaderPath = "",
 		const sf::Color& inColor = sf::Color::White,
 		float inIntensity = 1.f,
 		const sf::Vector2f& inSize = { 10, 10.f },

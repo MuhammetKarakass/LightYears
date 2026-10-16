@@ -1,5 +1,6 @@
 #pragma once
 #include "framework/Core.h"
+#include "framework/EngineContext.h"
 #include <SFML/Graphics.hpp>
 #include "framework/TimerManager.h"
 #include "framework/FramePacer.h"
@@ -16,8 +17,11 @@ namespace ly
 	{
 	public:
 
-		Application(sf::Vector2u Position,unsigned int bit, const std::string& Title,uint32_t Style);
+		// Adopt the current services by default so pre-construction setup is preserved.
+		// An explicit context opts into host-owned isolation and must outlive this application.
+		Application(sf::Vector2u Position,unsigned int bit, const std::string& Title,uint32_t Style, EngineContext* context = nullptr);
 		virtual ~Application() = default;
+		EngineContext& GetEngineContext() const { return *mContext; }
 		void Run();
 		// Read after Run so tools can report failure while still using normal shutdown.
 		virtual int GetExitCode() const { return 0; }
@@ -64,6 +68,9 @@ namespace ly
 		virtual void AfterRender();
 
 	private:
+		// The host owns services; retain the binding through world and window teardown.
+		EngineContext* mContext;
+		EngineContext::Scope mContextScope;
 		sf::RenderWindow mWindow;
 		WindowRenderViewport mWindowViewport;
 		WorldRenderPipeline* mRenderPipeline = nullptr;

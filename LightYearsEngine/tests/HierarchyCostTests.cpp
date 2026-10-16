@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include <framework/Actor.h>
 #include <framework/World.h>
 #include <algorithm>
@@ -37,6 +38,8 @@ void Measure(bool hierarchy)
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	Measure(false);
 	Measure(true);
 }

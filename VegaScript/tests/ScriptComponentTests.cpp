@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include <script/ScriptComponent.h>
 #include <script/ScriptRuntime.h>
 #include <framework/Actor.h>
@@ -56,6 +57,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	using namespace vega::script;
 	std::filesystem::create_directories(root);
 	SetScriptRoot(root);

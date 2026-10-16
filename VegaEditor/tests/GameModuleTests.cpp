@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "editor/ScriptExecution.h"
 #include "editor/EditorExtensions.h"
 #include "editor/EditorCommands.h"
@@ -52,6 +53,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	MinimalModule minimal;
 	vega::GameModule* core = &minimal;
 	if (vega::QueryCapability<vega::IModuleSetup>(core) || vega::QueryCapability<vega::IPlayHooks>(core) ||

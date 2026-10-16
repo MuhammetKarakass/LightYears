@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "editor/EditorSelection.h"
 
 #include <framework/Actor.h>
@@ -117,6 +118,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	TestSelection();
 	TestExpiry();
 	TestMultiple();

@@ -1,4 +1,5 @@
 #pragma once
+#include "framework/EngineContext.h"
 
 #include <nlohmann/json.hpp>
 #include <functional>
@@ -39,10 +40,20 @@ namespace ly
 		static void RemapGuids(nlohmann::json& entities);
 		static void RemapReferences(nlohmann::json& data, const std::map<std::string, std::string>& guids);
 		static SceneLoadResult Load(World& world, const nlohmann::json& scene);
-		static void RegisterComponentSerializer(const std::string& type, ComponentSerializer serializer);
+		static void RegisterComponentSerializer(const std::string& type, ComponentSerializer serializer,
+			EngineContext& context = EngineContext::Current());
 		// For actors whose reflected construction-only properties select their
 		// constructor arguments. The type must still opt in through Spawnable.
 		using SpawnFactory = std::function<std::shared_ptr<Actor>(World&, const nlohmann::json&)>;
-		static void RegisterSpawnFactory(const std::string& type, SpawnFactory factory);
+		static void RegisterSpawnFactory(const std::string& type, SpawnFactory factory,
+			EngineContext& context = EngineContext::Current());
+	};
+
+	// Extension hooks must follow their registry, particularly when two games
+	// register different factories under the same persistent type name.
+	struct SceneServices
+	{
+		std::map<std::string, ComponentSerializer> componentSerializers;
+		std::map<std::string, SceneSerializer::SpawnFactory> spawnFactories;
 	};
 }

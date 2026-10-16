@@ -2,8 +2,12 @@
 
 namespace ly
 {
-	TextWidget::TextWidget(const std::string& textStr, const std::string& fontPath, unsigned int characterSize):
-		mFont{AssetManager::GetAssetManager().LoadFont(fontPath)},
+	TextWidget::TextWidget(const std::string& textStr, const std::string& fontPath, unsigned int characterSize)
+		: TextWidget{ EngineContext::Current(), textStr, fontPath, characterSize } {}
+
+	TextWidget::TextWidget(EngineContext& context, const std::string& textStr, const std::string& fontPath, unsigned int characterSize):
+		Widget{ context },
+		mFont{GetEngineContext().Assets().LoadFont(fontPath)},
 		mText{*mFont.get(),textStr,characterSize}
 	{
 	}

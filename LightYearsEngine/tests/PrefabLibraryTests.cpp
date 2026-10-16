@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/scene/PrefabLibrary.h"
 #include "framework/scene/Scene.h"
 #include "framework/scene/SceneEntityComponent.h"
@@ -43,6 +44,8 @@ namespace
 }
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	using namespace ly;
 	using namespace ly::reflect;
 	RegisterEngineTypes();

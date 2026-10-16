@@ -1,6 +1,7 @@
 #pragma once
 
 #include "framework/Core.h"
+#include "framework/EngineContext.h"
 #include "framework/Delegate.h"
 #include <SFML/Audio.hpp>
 
@@ -9,7 +10,7 @@ class SoundComponent : public std::enable_shared_from_this<SoundComponent>
 {
 	VEGA_CLASS(SoundComponent)
 public:
-	SoundComponent(const std::string& path, AudioType type= AudioType::SFX_World, bool loop=false);
+	SoundComponent(const std::string& path, AudioType type= AudioType::SFX_World, bool loop=false, EngineContext& context = EngineContext::Current());
 	~SoundComponent();
 
 	void Play();
@@ -31,6 +32,7 @@ public:
 private:
 	void OnTimeScaleChanged(float newTimeScale);
 
+	EngineContext& mContext;
 	std::optional<sf::Sound> mSound;
 	shared_ptr<sf::SoundBuffer> mSoundBuffer;
 	AudioType mAudioType;

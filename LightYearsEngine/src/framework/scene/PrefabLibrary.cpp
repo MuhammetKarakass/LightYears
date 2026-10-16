@@ -1,9 +1,9 @@
 #include <framework/debug/Log.h>
 #include <framework/debug/Profiler.h>
 #include "framework/scene/PrefabLibrary.h"
+#include "framework/EngineContext.h"
 #include "framework/scene/Scene.h"
 #include "framework/scene/SceneEntityComponent.h"
-#include "framework/AssetManager.h"
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include <fstream>
@@ -26,12 +26,11 @@ namespace ly
 			return entity.contains(key) && entity[key].is_array() ? entity[key] : Json::array();
 		}
 	}
-	PrefabLibrary::PrefabLibrary(std::filesystem::path root) : mRoot{ std::move(root) } {}
+	PrefabLibrary::PrefabLibrary(std::filesystem::path root) : PrefabLibrary{ EngineContext::Current(), std::move(root) } {}
+	PrefabLibrary::PrefabLibrary(EngineContext& context, std::filesystem::path root) : mContext{ &context }, mRoot{ std::move(root) } {}
 	PrefabLibrary& PrefabLibrary::Get()
 	{
-		static PrefabLibrary library{ {} };
-		if (library.mRoot.empty()) library.SetRoot(AssetManager::GetAssetManager().GetAssetRootDirectory());
-		return library;
+		return EngineContext::Current().Prefabs();
 	}
 	void PrefabLibrary::SetRoot(std::filesystem::path root)
 	{
@@ -148,7 +147,7 @@ namespace ly
 			else
 			{
 				// Realize constructor defaults through the scene path, including game factories.
-				World scratch{ nullptr };
+				World scratch{ *mContext };
 				const auto loaded = SceneSerializer::Load(scratch, { { "format", "vega.scene" }, { "version", 1 },
 					{ "settings", Json::object() }, { "entities", Json::array({ base }) } });
 				result.warnings.insert(result.warnings.end(), loaded.warnings.begin(), loaded.warnings.end());
@@ -194,7 +193,7 @@ namespace ly
 			
 			
 			// Normalize setter side effects and canonical composition before diffing.
-			World scratch{ nullptr };
+			World scratch{ *mContext };
 			const auto loaded = SceneSerializer::Load(scratch, { { "format", "vega.scene" }, { "version", 1 },
 				{ "settings", Json::object() }, { "entities", Json::array({ result.entity }) } });
 			for (const auto& warning : loaded.warnings)

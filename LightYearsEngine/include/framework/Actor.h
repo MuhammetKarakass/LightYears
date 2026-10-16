@@ -27,6 +27,7 @@
 		Count
 	};
 
+	class EngineContext;
 	class World;
 	class LightComponent;
 	class SpriteComponent;
@@ -55,6 +56,7 @@
 		virtual void Render(sf::RenderTarget& window);
 
 		World* GetWorld() const { return mOwningWorld; }
+		EngineContext& GetEngineContext() const { return *mContext; }
 		weak_ptr<Actor> GetWeakActor();
 		weak_ptr<const Actor> GetWeakActor() const;
 		void SetSimulationTimeDomain(SimulationTimeDomain domain)
@@ -229,6 +231,7 @@
 		void SyncWorldTransform();
 		void ResolveAttachmentTransform();
 
+		EngineContext* mContext;
 		World* mOwningWorld;
 		SimulationTimeDomain mSimulationTimeDomain = SimulationTimeDomain::RealTime;
 		bool mBeganPlay;

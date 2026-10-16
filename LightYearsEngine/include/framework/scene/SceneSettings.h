@@ -10,10 +10,12 @@
 
 namespace ly
 {
+	class SceneSettingsSchema;
 	enum class SceneSettingType { Bool, Int, Float, String, Enum, CatalogId, Vec2, Color, Rect };
 	// Optional world-space [x, y, width, height]. Invalid authored values are
 	// preserved by serialization but have no runtime bounds.
 	std::optional<sf::FloatRect> ReadSceneBounds(const nlohmann::json& settings);
+	std::optional<sf::FloatRect> ReadSceneBounds(const nlohmann::json& settings, const SceneSettingsSchema& schema);
 	struct SceneSettingOption
 	{
 		nlohmann::json value;
@@ -35,6 +37,8 @@ namespace ly
 	class SceneSettingsSchema
 	{
 	public:
+		SceneSettingsSchema() = default;
+		// Deprecated: use EngineContext::SceneSettings().
 		static SceneSettingsSchema& Get();
 		void Register(SceneSettingField field);
 		const SceneSettingField* Find(const std::string& key) const;
@@ -44,6 +48,9 @@ namespace ly
 		bool Set(nlohmann::json& authored, const std::string& key,
 			const std::optional<nlohmann::json>& value, std::string& error) const;
 	private:
+		friend class EngineContext;
+		// Standalone schemas remain empty; only an application installs core fields.
+		void RegisterEngineSettings();
 		std::vector<SceneSettingField> mFields;
 		std::uint64_t mRevision = 0;
 	};

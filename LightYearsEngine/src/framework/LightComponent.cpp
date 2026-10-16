@@ -1,3 +1,5 @@
+#include "framework/EngineContext.h"
+#include "framework/EngineAssets.h"
 #include "framework/LightComponent.h"
 #include "framework/Actor.h"
 #include "framework/SpriteComponent.h"
@@ -144,8 +146,8 @@ namespace ly
 		lightData.tag = finalTag;
 		lightData.lightSpace = lightSpace;
 		// Definitions may be constructed before a game installs its defaults.
-		const auto& shaderPath = lightPath.empty() ? EngineAssets::Get().pointLightShader : lightPath;
-		if (!shaderPath.empty()) lightData.shader = AssetManager::GetAssetManager().LoadShader(shaderPath);
+		const auto& shaderPath = lightPath.empty() ? GetOwner().GetEngineContext().Defaults().pointLightShader : lightPath;
+		if (!shaderPath.empty()) lightData.shader = GetOwner().GetEngineContext().Assets().LoadShader(shaderPath);
 		lightData.color = color;
 		lightData.intensity = intensity;
 		lightData.size = size;
@@ -305,7 +307,7 @@ namespace ly
 			}
 			else
 			{
-				lightShape.setTexture(AssetManager::GetAssetManager().GetDefaultTexture().get());
+				lightShape.setTexture(GetOwner().GetEngineContext().Assets().GetDefaultTexture().get());
 			}
 
 			// Set shader uniforms

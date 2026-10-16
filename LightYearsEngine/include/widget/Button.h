@@ -10,8 +10,11 @@ namespace ly
 	{
 	public:
 		Button(const std::string& textString = "Button", 
-			const std::string& texturePath = EngineAssets::Get().buttonTexture,
-			const std::string& fontPath = EngineAssets::Get().font);
+			const std::string& texturePath = EngineContext::Current().Defaults().buttonTexture,
+			const std::string& fontPath = EngineContext::Current().Defaults().font);
+
+		Button(EngineContext& context, const std::string& textString = "Button");
+		Button(EngineContext& context, const std::string& textString, const std::string& texturePath, const std::string& fontPath);
 
 		virtual sf::FloatRect GetBound() const override;
 		virtual bool HandleEvent(const sf::Event& event) override;

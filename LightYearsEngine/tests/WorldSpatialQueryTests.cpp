@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/Actor.h"
 #include "framework/CollisionComponent.h"
 #include "framework/PhysicsScene.h"
@@ -172,6 +173,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	{
 		// CollisionComponent: created lazily by the first collision setter, defaults
 		// without it, and layer/mask changes refresh the live Box2D filter while the

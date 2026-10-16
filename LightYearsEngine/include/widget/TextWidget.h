@@ -11,8 +11,10 @@ namespace ly
 		friend struct GameHUDDamageE2ETestAccess;
 
 	public:
-		TextWidget(const std::string& textStr, const std::string& fontPath = EngineAssets::Get().font,
+		TextWidget(const std::string& textStr, const std::string& fontPath = EngineContext::Current().Defaults().font,
 			unsigned int characterSize=10);
+
+		TextWidget(EngineContext& context, const std::string& textStr, const std::string& fontPath = "", unsigned int characterSize = 10);
 
 		void SetString(const std::string& newStr);
 		void SetTextSize(unsigned int newSize);

@@ -32,8 +32,9 @@ namespace ly
 		constexpr float MaxSimulationDeltaSeconds = 0.1f;
 	}
 
-	Application::Application(sf::Vector2u Position, unsigned int bit, const std::string& Title, uint32_t Style)
-		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
+	Application::Application(sf::Vector2u Position, unsigned int bit, const std::string& Title, uint32_t Style, EngineContext* context)
+		: mContext{ context ? context : &EngineContext::Current() }, mContextScope{ *mContext },
+		mWindow{ sf::VideoMode(Position, bit), Title, Style },
 		mWindowViewport{ mWindow },
 		mTargetFrameRate{ 60.f },     
 		mFramePacer{ mTargetFrameRate },
@@ -44,7 +45,7 @@ namespace ly
 		mCleanCycleClock{},    
 		mCleanCycleTime{2.f}          
 	{		
-		reflect::RegisterEngineTypes();
+		reflect::RegisterEngineTypes(GetEngineContext().Types());
 		// The frame rate is held by mFramePacer; SFML's own limiter drifts (see FramePacer.h).
 		mWindow.setVerticalSyncEnabled(false);
 #ifdef _WIN32
@@ -56,6 +57,7 @@ namespace ly
 	
 	void Application::Run()
 	{
+		EngineContext::Scope scope{ GetEngineContext() };
 		mTickClock.restart();
 		// Hitch diagnostics: an empty file named disable_lights.txt next to the exe turns off additive light drawing for A/B testing.
 		if (std::ifstream{ "disable_lights.txt" }.good())
@@ -159,6 +161,7 @@ namespace ly
 
 	void Application::RegisterGameModule(vega::GameModule& module, bool editor)
 	{
+		EngineContext::Scope scope{ GetEngineContext() };
 		mGameModule = &module;
 		module.RegisterTypes();
 		if (auto* setup = vega::QueryCapability<vega::IModuleSetup>(&module)) setup->Initialize(*this, editor);
@@ -170,10 +173,10 @@ namespace ly
 		mPendingWorld.reset();
 		if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(mGameModule); hooks && mCurrentWorld && !mCurrentWorld->IsEditMode()) hooks->EndPlay(*mCurrentWorld);
 		mCurrentWorld.reset();
-		AudioManager::ShutdownAudioManager();
+		GetEngineContext().ShutdownAudio();
 		TimerManager::ShutdownTimerManagers();
 		ShaderManager::ShutdownShaderManager();
-		AssetManager::ShutdownAssetManager();
+		GetEngineContext().Assets().Shutdown();
 		mWindow.close();
 		mQuitRequested = false;
 		mShouldQuit = true;
@@ -213,15 +216,15 @@ namespace ly
 
 		{
 			LY_PROFILE_SCOPE("App.Audio");
-			AudioManager::GetAudioManager().Update(deltaTime);
+			GetEngineContext().Audio().Update(deltaTime);
 		}
 		
 		if (mCleanCycleClock.getElapsedTime().asSeconds() > mCleanCycleTime)
 		{
 			LY_PROFILE_SCOPE("App.CleanCycle");
 			mCleanCycleClock.restart();
-			AssetManager::GetAssetManager().CleanCycle();
-			AudioManager::GetAudioManager().CleanCycle();
+			GetEngineContext().Assets().CleanCycle();
+			GetEngineContext().Audio().CleanCycle();
 			if (mCurrentWorld)
 				mCurrentWorld->CleanCycle();
 		}

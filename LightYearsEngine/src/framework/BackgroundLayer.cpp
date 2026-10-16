@@ -3,6 +3,7 @@
 #include "framework/MathUtility.h"
 #include "framework/World.h"
 #include "framework/BackgroundLayer.h"
+#include "framework/EngineContext.h"
 
 namespace ly
 {
@@ -331,7 +332,7 @@ namespace ly
 			return;
 		}
 
-		element.texture = AssetManager::GetAssetManager().LoadTexture(def->texturePath);
+		element.texture = GetEngineContext().Assets().LoadTexture(def->texturePath);
 		
 		if(element.texture == nullptr)
 		{

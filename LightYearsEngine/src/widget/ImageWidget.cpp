@@ -3,8 +3,11 @@
 
 namespace ly
 {
-	ImageWidget::ImageWidget(const std::string& imagePath):
-		mTexture{AssetManager::GetAssetManager().LoadTexture(imagePath)},
+	ImageWidget::ImageWidget(const std::string& imagePath) : ImageWidget{ EngineContext::Current(), imagePath } {}
+
+	ImageWidget::ImageWidget(EngineContext& context, const std::string& imagePath):
+		Widget{ context },
+		mTexture{GetEngineContext().Assets().LoadTexture(imagePath)},
 		mSprite{*mTexture}
 	{
 	}

@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "editor/ContentWorkspace.h"
 #include <fstream>
 #include <iostream>
@@ -15,6 +16,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	using namespace vega;
 	using namespace ly::content;
 	const auto root = std::filesystem::path{ VEGA_CONTENT_TEST_ROOT };

@@ -2,7 +2,8 @@
 
 namespace ly
 {
-	Widget::Widget():
+	Widget::Widget(EngineContext& context):
+		mContext{ &context },
 		mIsVisible{ true },
 		mAnimState{ AnimState::Idle },
 		mAlpha{ 1.0f },

@@ -7,9 +7,11 @@
 
 namespace ly
 {
+	class EngineContext;
 	class AudioManager
 	{
 	public:
+		// Deprecated compatibility accessors; use EngineContext::Audio()/HasAudio().
 		static AudioManager& GetAudioManager();
 		static bool IsInitialized();
 		static void ShutdownAudioManager();
@@ -50,7 +52,7 @@ namespace ly
 		Delegate<float> onWorldTimeScaleChanged;
 
 	private:
-		AudioManager();
+		explicit AudioManager(EngineContext& context);
 
 		sf::Sound* AcquireSoundFromPool();
 		void ReturnSoundToPool(sf::Sound* sound);
@@ -110,7 +112,8 @@ namespace ly
 		std::string mNextPendingLoopPath;
 		bool mIsPlayingIntro;
 
-		static unique_ptr<AudioManager> audioManager;
+		friend class EngineContext;
+		EngineContext& mContext;
 
 		float CalculateEffectiveVolume(float baseVolume, AudioType type) const;
 		void UpdateAllVolumes();

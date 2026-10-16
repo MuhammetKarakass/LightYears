@@ -178,7 +178,7 @@ namespace vega
 
 	ReflectedTarget ResolvePropertyTarget(ly::Actor& actor, std::optional<ly::ComponentIdentity> componentIdentity)
 	{
-		auto& registry = ly::reflect::TypeRegistry::Get();
+		auto& registry = actor.GetEngineContext().Types();
 		if (!componentIdentity) return { &actor, registry.FindMostDerived(actor), {} };
 		auto* component = ly::FindComponentByTypeOccurrence(actor, *componentIdentity);
 		return component ? ReflectedTarget{ component, registry.FindMostDerived(*component), componentIdentity } : ReflectedTarget{};
@@ -192,7 +192,7 @@ namespace vega
 		
 		actor.ForEachComponent([&](ly::ActorComponent& component)
 		{
-			const auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(component);
+			const auto* type = component.GetOwner().GetEngineContext().Types().FindMostDerived(component);
 			for (const auto* base = type; base; base = base->base)
 			{
 				if (!result.object && base->name == targetName) result = { &component, type, ly::IdentifyComponent(actor, component) };
@@ -535,14 +535,14 @@ namespace vega
 		const auto actor = context.Resolve(mID, mGuid);
 		if (!actor || mGuid.empty()) return false;
 		if (!mAfter.is_null()) return Restore(context, mAfter);
-		const auto* info = ly::reflect::TypeRegistry::Get().Find(mComponent.typeName);
+		const auto* info = context.Engine().Types().Find(mComponent.typeName);
 		if (!info || info->root != ly::reflect::TypeRoot::Component) return false;
 		if (mAdding ? !info->addComponent : !info->removable) return false;
 		mBefore = ly::SceneSerializer::SaveEntity(*actor);
 		if (mBefore.is_null()) return false;
 		// Stage the complete entity before replacing it. Factories and removal policy
 		// run in isolation, and history retains only JSON and the stable GUID.
-		ly::World scratch{ nullptr };
+		ly::World scratch{ context.Engine() };
 		auto stagedBefore = mBefore; stagedBefore.erase("parent");
 		const auto loaded = ly::SceneSerializer::Load(scratch, EntityScene(stagedBefore));
 		if (loaded.spawned < 1 || std::any_of(loaded.warnings.begin(), loaded.warnings.end(), [](const auto& warning)
@@ -582,7 +582,7 @@ namespace vega
 			if (missing != context.world->unresolvedPrefabs.end()) context.world->unresolvedPrefabs.erase(missing);
 		};
 		if (staged.value("_unresolved", false) || (staged.contains("prefab") && !staged.contains("type") &&
-			!ly::PrefabLibrary::Get().Resolve(staged["prefab"].get<std::string>())))
+			!context.Engine().Prefabs().Resolve(staged["prefab"].get<std::string>())))
 		{
 			staged.erase("_unresolved");
 			eraseMissing();
@@ -661,7 +661,7 @@ namespace vega
 			}
 		};
 		auto baseline = savedBaseline;
-		if (!snapshotPrefab.empty()) if (const auto resolved = ly::PrefabLibrary::Get().Resolve(snapshotPrefab)) baseline = resolved.entity;
+		if (!snapshotPrefab.empty()) if (const auto resolved = context.Engine().Prefabs().Resolve(snapshotPrefab)) baseline = resolved.entity;
 		publishTree(publishTree, *replacement, baseline);
 		// Staging changes identities twice. Publish property GUIDs and prefab baselines
 		// together so undo/refresh never retain references to throwaway identities.
@@ -759,7 +759,7 @@ namespace vega
 	bool CreateSceneEntity(EditorContext& context, CommandHistory& history, const std::string& type)
 	{
 		if (!context.world || context.playMode) return false;
-		const auto* info = ly::reflect::TypeRegistry::Get().Find(type);
+		const auto* info = context.Engine().Types().Find(type);
 		if (!info || !info->spawnable || !info->create || info->root != ly::reflect::TypeRoot::Actor) return false;
 		std::unordered_set<std::string_view> names;
 		for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
@@ -992,7 +992,7 @@ namespace vega
 		std::unordered_set<std::string> componentSets;
 		actors.front()->ForEachComponent([&](ly::ActorComponent& component)
 		{
-			const auto* type = ly::reflect::TypeRegistry::Get().FindMostDerived(component);
+			const auto* type = component.GetOwner().GetEngineContext().Types().FindMostDerived(component);
 			// Match occurrences within a reflected component chain. Unrelated sibling
 			// components do not become common merely by inheriting ActorComponent.
 			for (const auto* base = type; base && (base == type || base->name != "ActorComponent"); base = base->base)

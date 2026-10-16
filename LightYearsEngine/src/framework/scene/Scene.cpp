@@ -19,42 +19,35 @@ namespace ly
 	{
 		using Json = nlohmann::json;
 		using namespace reflect;
-		std::map<std::string, ComponentSerializer>& ComponentSerializers()
+		std::map<std::string, ComponentSerializer>& ComponentSerializers(EngineContext& context)
 		{
-			static std::map<std::string, ComponentSerializer> serializers;
-			return serializers;
+			return context.SceneSerialization().componentSerializers;
 		}
-		std::map<std::string, SceneSerializer::SpawnFactory>& SpawnFactories()
+		std::map<std::string, SceneSerializer::SpawnFactory>& SpawnFactories(EngineContext& context)
 		{
-			static std::map<std::string, SceneSerializer::SpawnFactory> factories;
-			return factories;
+			return context.SceneSerialization().spawnFactories;
 		}
 		using ComponentCounts = std::map<std::string, std::size_t>;
-		struct ComponentInventory
+		using ComponentInventory = ConstructorComponentInventory;
+		const ComponentInventory& ConstructorComponents(const TypeInfo& type, EngineContext& context)
 		{
-			ComponentCounts counts;
-			std::vector<std::string> order;
-		};
-		const ComponentInventory& ConstructorComponents(const TypeInfo& type)
-		{
-			static std::map<std::string, ComponentInventory> cache;
-			const auto existing = cache.find(type.name);
-			if (existing != cache.end()) return existing->second;
+			if (type.constructorComponents) return *type.constructorComponents;
 			ComponentInventory inventory;
 			// Never begin or tick the throwaway actor: only constructor ownership matters.
-			World scratch{ nullptr };
+			World scratch{ context };
 			if (type.create)
 				if (const auto actor = type.create(scratch))
 					actor->ForEachComponent([&](const ActorComponent& component)
 					{
-						const auto* info = TypeRegistry::Get().Find(typeid(component));
-						if (info && !dynamic_cast<const SceneEntityComponent*>(&component) && !ComponentSerializers().count(info->name))
+						const auto* info = context.Types().Find(typeid(component));
+						if (info && !dynamic_cast<const SceneEntityComponent*>(&component) && !ComponentSerializers(context).count(info->name))
 						{
 							++inventory.counts[info->name];
 							inventory.order.push_back(info->name);
 						}
 					});
-			return cache.emplace(type.name, std::move(inventory)).first->second;
+			type.constructorComponents = std::move(inventory);
+			return *type.constructorComponents;
 		}
 		Json Encode(const PropertyInfo& property, const PropertyValue& value)
 		{
@@ -206,19 +199,19 @@ namespace ly
 		}
 	}
 
-	void SceneSerializer::RegisterComponentSerializer(const std::string& type, ComponentSerializer serializer)
+	void SceneSerializer::RegisterComponentSerializer(const std::string& type, ComponentSerializer serializer, EngineContext& context)
 	{
-		ComponentSerializers()[type] = std::move(serializer);
+		ComponentSerializers(context)[type] = std::move(serializer);
 	}
-	void SceneSerializer::RegisterSpawnFactory(const std::string& type, SpawnFactory factory)
+	void SceneSerializer::RegisterSpawnFactory(const std::string& type, SpawnFactory factory, EngineContext& context)
 	{
-		SpawnFactories()[type] = std::move(factory);
+		SpawnFactories(context)[type] = std::move(factory);
 	}
 
 	nlohmann::json SceneSerializer::Save(World& world, Json settings)
 	{
 		LY_PROFILE_SCOPE("Scene Save");
-		reflect::RegisterEngineTypes();
+		reflect::RegisterEngineTypes(world.GetEngineContext().Types());
 		Json scene{ { "format", "vega.scene" }, { "version", 1 }, { "settings", std::move(settings) }, { "entities", Json::array() } };
 		// Pending actors are authored state too; no gameplay tick is needed to save.
 		auto actors = world.GetActorsByTypeIncludingPending<Actor>();
@@ -250,9 +243,9 @@ namespace ly
 
 	nlohmann::json SceneSerializer::SaveEntity(Actor& actor, bool expanded)
 	{
-		reflect::RegisterEngineTypes();
+		reflect::RegisterEngineTypes(actor.GetEngineContext().Types());
 		if (actor.GetIsPendingDestroy()) return nullptr;
-		auto& registry = TypeRegistry::Get();
+		auto& registry = actor.GetEngineContext().Types();
 		const auto* identity = actor.FindComponent<SceneEntityComponent>();
 		const auto* type = registry.FindMostDerived(actor);
 		if (!identity || !type) return nullptr;
@@ -265,7 +258,7 @@ namespace ly
 			entity["properties"]["Rotation"] = actor.GetRelativeRotation();
 		}
 		if (!identity->childId.empty()) entity["id"] = identity->childId;
-		const auto& constructor = ConstructorComponents(*type);
+		const auto& constructor = ConstructorComponents(*type, actor.GetEngineContext());
 		ComponentCounts occurrences;
 		std::map<std::string, std::vector<Json>> defaults;
 		Json additions = Json::array();
@@ -275,8 +268,8 @@ namespace ly
 			// Do not mistake an unregistered subclass for the base component.
 			const auto* componentType = registry.Find(typeid(component));
 			if (!componentType) return;
-			const auto hook = ComponentSerializers().find(componentType->name);
-			if (hook != ComponentSerializers().end())
+			const auto hook = ComponentSerializers(actor.GetEngineContext()).find(componentType->name);
+			if (hook != ComponentSerializers(actor.GetEngineContext()).end())
 			{
 				const auto& serializer = hook->second;
 				if (!entity.contains(serializer.array)) entity[serializer.array] = Json::array();
@@ -413,7 +406,7 @@ namespace ly
 	SceneLoadResult SceneSerializer::Load(World& world, const Json& scene)
 	{
 		LY_PROFILE_SCOPE("Scene Load");
-		reflect::RegisterEngineTypes();
+		reflect::RegisterEngineTypes(world.GetEngineContext().Types());
 		SceneLoadResult result;
 		try
 		{
@@ -428,7 +421,7 @@ namespace ly
 				return result;
 			}
 			// Appending a prefab/spawn with empty settings must retain the world's bounds.
-			if (scene["settings"].contains("bounds")) world.SetSceneBounds(ReadSceneBounds(scene["settings"]));
+			if (scene["settings"].contains("bounds")) world.SetSceneBounds(ReadSceneBounds(scene["settings"], world.GetEngineContext().SceneSettings()));
 			std::set<std::string> guids;
 			for (const auto& weak : world.GetActorsByTypeIncludingPending<Actor>())
 				if (auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy())
@@ -444,7 +437,7 @@ namespace ly
 				if (entity.contains("prefab"))
 				{
 					path = entity.at("prefab").get<std::string>();
-					auto resolved = PrefabLibrary::Get().Resolve(path);
+					auto resolved = world.GetEngineContext().Prefabs().Resolve(path);
 					result.warnings.insert(result.warnings.end(), resolved.warnings.begin(), resolved.warnings.end());
 					if (!resolved)
 					{
@@ -517,7 +510,7 @@ namespace ly
 					auto prefabBaseline = entity.at("_baseline");
 					auto prefab = entity.at("_prefab").get<std::string>();
 					const std::string name = entity.at("type").get<std::string>();
-					const auto* type = TypeRegistry::Get().Find(name);
+					const auto* type = world.GetEngineContext().Types().Find(name);
 					if (!type || !type->spawnable || !type->create || type->root != TypeRoot::Actor)
 					{
 						result.warnings.push_back("Unknown or non-spawnable actor type: " + name);
@@ -532,8 +525,8 @@ namespace ly
 						continue;
 					}
 					const auto& properties = entity.contains("properties") ? entity["properties"] : EmptyProperties();
-					const auto factory = SpawnFactories().find(name);
-					const auto actor = factory != SpawnFactories().end() ? factory->second(world, properties) : type->create(world);
+					const auto factory = SpawnFactories(world.GetEngineContext()).find(name);
+					const auto actor = factory != SpawnFactories(world.GetEngineContext()).end() ? factory->second(world, properties) : type->create(world);
 					if (!actor || actor->GetWorld() != &world || actor->GetIsPendingDestroy())
 					{
 						result.warnings.push_back("Factory failed for " + name);
@@ -554,11 +547,11 @@ namespace ly
 						{
 							if (!removed.is_string()) { result.warnings.push_back(name + ": removed type must be a string"); continue; }
 							const auto componentName = removed.get<std::string>();
-							const auto* info = TypeRegistry::Get().Find(componentName);
+							const auto* info = world.GetEngineContext().Types().Find(componentName);
 							ActorComponent* found = nullptr;
 							actor->ForEachComponent([&](ActorComponent& component)
 							{
-								if (!found && info && TypeRegistry::Get().Find(typeid(component)) == info) found = &component;
+								if (!found && info && world.GetEngineContext().Types().Find(typeid(component)) == info) found = &component;
 							});
 							if (!info || !info->removable || type->RequiresComponent(componentName) || !found || !actor->RemoveComponent(*found))
 								result.warnings.push_back(name + ": cannot remove unknown, required or unavailable component " + componentName);
@@ -572,8 +565,8 @@ namespace ly
 							{
 								if (!data.value("added", false)) continue;
 								const auto componentName = data.at("type").get<std::string>();
-								const auto* info = TypeRegistry::Get().Find(componentName);
-								if (!info || !info->addComponent || ComponentSerializers().count(componentName))
+								const auto* info = world.GetEngineContext().Types().Find(componentName);
+								if (!info || !info->addComponent || ComponentSerializers(world.GetEngineContext()).count(componentName))
 									result.warnings.push_back(name + ": unknown or non-addable component " + componentName);
 								else info->addComponent(*actor);
 							}
@@ -589,20 +582,20 @@ namespace ly
 							try
 							{
 								const auto componentName = componentData.at("type").get<std::string>();
-								const auto* componentType = TypeRegistry::Get().Find(componentName);
+								const auto* componentType = world.GetEngineContext().Types().Find(componentName);
 								if (componentData.value("added", false) &&
-									(!componentType || !componentType->addComponent || ComponentSerializers().count(componentName))) continue;
+									(!componentType || !componentType->addComponent || ComponentSerializers(world.GetEngineContext()).count(componentName))) continue;
 								const auto occurrence = occurrences[componentName]++;
 								std::size_t matching = 0;
 								ActorComponent* found = nullptr;
 								actor->ForEachComponent([&](ActorComponent& component)
 								{
-									const auto* info = TypeRegistry::Get().Find(typeid(component));
+									const auto* info = world.GetEngineContext().Types().Find(typeid(component));
 									if (info && info->name == componentName && !dynamic_cast<SceneEntityComponent*>(&component) && matching++ == occurrence) found = &component;
 								});
-								if (!found || ComponentSerializers().count(componentName))
+								if (!found || ComponentSerializers(world.GetEngineContext()).count(componentName))
 									result.warnings.push_back(name + ": unavailable component " + componentName);
-								else ApplyProperties(*TypeRegistry::Get().Find(componentName), found,
+								else ApplyProperties(*world.GetEngineContext().Types().Find(componentName), found,
 									componentData.contains("properties") ? componentData["properties"] : EmptyProperties(), result);
 							}
 							catch (const std::exception& error) { result.warnings.push_back(name + ": component: " + error.what()); }
@@ -610,7 +603,7 @@ namespace ly
 						}
 					}
 					bool scriptsHandled = false;
-					for (const auto& hook : ComponentSerializers())
+					for (const auto& hook : ComponentSerializers(world.GetEngineContext()))
 					{
 						const auto& serializer = hook.second;
 						if (serializer.array == "scripts") scriptsHandled = true;
@@ -647,8 +640,8 @@ namespace ly
 						if (!property->ResolveReferences(object, world, &error)) result.warnings.push_back(type->name + "." + property->name + ": " + error);
 					}
 				};
-				resolve(TypeRegistry::Get().FindMostDerived(*entry.second), entry.second.get());
-				entry.second->ForEachComponent([&](ActorComponent& component) { resolve(TypeRegistry::Get().FindMostDerived(component), &component); });
+				resolve(world.GetEngineContext().Types().FindMostDerived(*entry.second), entry.second.get());
+				entry.second->ForEachComponent([&](ActorComponent& component) { resolve(world.GetEngineContext().Types().FindMostDerived(component), &component); });
 			}
 			for (const auto& link : attachments)
 			{

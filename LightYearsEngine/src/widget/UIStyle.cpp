@@ -1,17 +1,9 @@
 #include "widget/UIStyle.h"
+#include "framework/EngineContext.h"
 #include "framework/EngineAssets.h"
 
 namespace ly
 {
-	namespace
-	{
-		UIStyle& ActiveStyle()
-		{
-			static UIStyle style = UIStyle::MakeDefault();
-			return style;
-		}
-	}
-
 	const std::string& UIStyle::Font(UIFontRole role) const
 	{
 		return fonts[static_cast<std::size_t>(role)];
@@ -27,10 +19,12 @@ namespace ly
 		return textSizes[static_cast<std::size_t>(size)];
 	}
 
-	UIStyle UIStyle::MakeDefault()
+	UIStyle UIStyle::MakeDefault() { return MakeDefault(EngineContext::Current()); }
+
+	UIStyle UIStyle::MakeDefault(EngineContext& context)
 	{
 		UIStyle style;
-		style.fonts = { EngineAssets::Get().font, EngineAssets::Get().font };
+		style.fonts = { context.Defaults().font, context.Defaults().font };
 		style.colors = {
 			sf::Color::White, sf::Color{ 160, 160, 160 }, sf::Color{ 80, 160, 255 },
 			sf::Color{ 0, 255, 0 }, sf::Color{ 255, 255, 0 }, sf::Color{ 255, 0, 0 },
@@ -42,11 +36,11 @@ namespace ly
 
 	const UIStyle& UIStyle::Get()
 	{
-		return ActiveStyle();
+		return EngineContext::Current().Style();
 	}
 
 	void UIStyle::Set(const UIStyle& style)
 	{
-		ActiveStyle() = style;
+		EngineContext::Current().Style() = style;
 	}
 }

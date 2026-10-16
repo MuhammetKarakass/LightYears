@@ -102,7 +102,7 @@ namespace vega
 		mSelectedAsset = AssetMovePlan::Remap(mSelectedAsset, from, to);
 		mScenePath = AssetMovePlan::Remap(mScenePath, root / from, root / to);
 		mProject.file = AssetMovePlan::Remap(mProject.file, root / from, root / to);
-		ly::PrefabLibrary::Get().Reload();
+		GetEngineContext().Prefabs().Reload();
 		if (!document.empty() && !mDocument.Open(document.lexically_relative(root))) mContentError = mDocument.Error();
 		mContentAuthoring.ReloadIfLoaded(root);
 		if (!mScenePath.empty()) OpenScene(mScenePath);

@@ -10,6 +10,11 @@ Each application owns one module. Call
 `application.RegisterGameModule(module, editor)` once before running it. This
 registers types, then initializes services through `IModuleSetup` when present.
 The module must outlive the worlds.
+Each application owns an [EngineContext](engine-context.md). Module registration
+and setup bind it for existing static-accessor calls. New code should get services
+from `application.GetEngineContext()` or `world.GetEngineContext()`, and register
+types with `VEGA_REGISTER_IN(Type, context.Types())`. Registration guards must be
+local to that registry so a second application can register the same module.
 The editor owns the module passed to `vega::CreateEditorApplication` and calls
 `IModuleSetup::ConfigureProject` with the selected project file before registration.
 Hosts query optional capabilities through `QueryCapability<T>(module)`; a missing

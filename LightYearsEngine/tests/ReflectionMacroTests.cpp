@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/Actor.h"
 #include "framework/reflection/Reflection.h"
 #include <algorithm>
@@ -108,6 +109,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	using namespace ly::reflect;
 	RegisterEngineTypes();
 	RegisterExamples();

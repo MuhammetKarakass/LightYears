@@ -22,7 +22,8 @@ namespace ly
 	}
 
 	Actor::Actor(World* OwningWorld, const std::string& TexturePath)
-		: mOwningWorld{ OwningWorld },
+		: mContext{ OwningWorld ? &OwningWorld->GetEngineContext() : &EngineContext::Current() },
+		mOwningWorld{ OwningWorld },
 		mBeganPlay{ false },
 		mActorLocation{ 0.f, 0.f },
 		mActorRotation{ 0.f },
@@ -42,7 +43,7 @@ namespace ly
 		const auto found = std::find_if(mComponents.begin(), mComponents.end(),
 			[&](const auto& owned) { return owned.get() == &component; });
 		if (found == mComponents.end()) return false;
-		const auto& registry = reflect::TypeRegistry::Get();
+		const auto& registry = GetEngineContext().Types();
 		const auto* actorType = registry.FindMostDerived(*this);
 		const auto* componentType = registry.Find(typeid(component));
 		if (componentType && (!componentType->removable || (actorType && actorType->RequiresComponent(componentType->name)))) return false;

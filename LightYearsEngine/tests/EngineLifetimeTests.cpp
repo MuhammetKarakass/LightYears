@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/Delegate.h"
 #include "framework/Actor.h"
 #include "framework/ActorComponent.h"
@@ -248,6 +249,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	// A host without a game has no implicit artwork/font/shader dependency.
 	if (!ly::EngineAssets::Get().font.empty() || !ly::EngineAssets::Get().pointLightShader.empty())
 		return Fail("Engine asset defaults must be empty until a project installs them");

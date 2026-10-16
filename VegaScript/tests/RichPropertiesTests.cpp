@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include <framework/Actor.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
@@ -182,6 +183,8 @@ end
 
 int main(int argc, char** argv)
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 #ifdef _MSC_VER
 	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);

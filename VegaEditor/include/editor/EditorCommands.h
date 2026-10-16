@@ -57,6 +57,9 @@ namespace vega
 		std::optional<unsigned int> prefabOverrideActor;
 		std::uint64_t prefabOverrideRevision = 0;
 		std::unordered_map<const void*, std::unordered_set<std::string>> prefabOverrides;
+		ly::EngineContext& Engine() const { return world ? world->GetEngineContext() : *services; }
+		// Set by the host, also used while scene transitions have no world.
+		ly::EngineContext* services = &ly::EngineContext::Current();
 		void SceneChanged() { ++sceneRevision; selection.Rebind([this](const std::string& guid) { return ResolveGuid(guid); }); }
 		void ResetActorCache() const { cachedWorldID.reset(); }
 		void RefreshActorCache() const;

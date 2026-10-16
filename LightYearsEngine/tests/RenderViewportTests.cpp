@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "framework/RenderViewport.h"
 #include "framework/World.h"
 #include <cmath>
@@ -85,6 +86,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	FakeRenderViewport viewport;
 	ly::World world{ nullptr };
 	const ly::World& constWorld = world;

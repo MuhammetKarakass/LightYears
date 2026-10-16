@@ -1,41 +1,23 @@
 #include "framework/AssetManager.h"
+#include "framework/EngineContext.h"
 #include "framework/AudioManager.h"
 #include <memory>
 #include <filesystem>
 
 namespace ly
 {
-	unique_ptr<AudioManager> AudioManager::audioManager = nullptr;
+
 	static std::uint64_t NextMusicRevision()
 	{
 		static std::uint64_t next = 0;
 		return ++next;
 	}
 
-	AudioManager& AudioManager::GetAudioManager()
-	{
-		if (!audioManager)
-		{
-			audioManager = unique_ptr<AudioManager>{ new AudioManager };
-		}
-		return *audioManager;
-	}
+	AudioManager& AudioManager::GetAudioManager() { return EngineContext::Current().Audio(); }
+	bool AudioManager::IsInitialized() { return EngineContext::Current().HasAudio(); }
+	void AudioManager::ShutdownAudioManager() { EngineContext::Current().ShutdownAudio(); }
 
-	bool AudioManager::IsInitialized()
-	{
-		return audioManager != nullptr;
-	}
-
-	void AudioManager::ShutdownAudioManager()
-	{
-		if (audioManager)
-		{
-			audioManager->Shutdown();
-			audioManager.reset();
-		}
-	}
-
-	AudioManager::AudioManager() :
+	AudioManager::AudioManager(EngineContext& context) : mContext{ context },
 		mCurrentTimeScale{ 1.0f },
 		mMasterVolume{ 100.0f },
 		mMusicVolume{ 100.0f },
@@ -116,7 +98,7 @@ namespace ly
 
 	std::uint64_t AudioManager::PlaySoundTracked(const std::string& path, AudioType type, float volume, float pitch)
 	{
-		shared_ptr<sf::SoundBuffer> buffer = AssetManager::GetAssetManager().LoadSoundBuffer(path);
+		shared_ptr<sf::SoundBuffer> buffer = mContext.Assets().LoadSoundBuffer(path);
 		if (!buffer) return 0;
 
 		sf::Sound* sound = AcquireSoundFromPool();
@@ -179,7 +161,7 @@ namespace ly
 		}
 
 		mMusic = std::make_shared<sf::Music>();
-		const auto fullPath = std::filesystem::path{ AssetManager::GetAssetManager().GetAssetRootDirectory() } / copyOfPath;
+		const auto fullPath = std::filesystem::path{ mContext.Assets().GetAssetRootDirectory() } / copyOfPath;
 		
 		if (mMusic->openFromFile(fullPath))
 		{

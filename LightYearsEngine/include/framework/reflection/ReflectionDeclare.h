@@ -2,6 +2,8 @@
 
 namespace ly::reflect
 {
+	class TypeRegistry;
+	TypeRegistry& CurrentTypeRegistry(); // Legacy registration boundary.
 	// Carries a type through argument-dependent lookup; it is never instantiated with data.
 	template<typename T>
 	struct TypeTag
@@ -14,4 +16,6 @@ namespace ly::reflect
 // VEGA_REGISTER finds through argument-dependent lookup, so the registration list needs no
 // forward declarations and works from any namespace. TypeTag<T> does not convert to a base
 // tag, so forgetting VEGA_CLASS is a compile error instead of silently registering the base.
-#define VEGA_CLASS(Type) friend void VegaReflect(::ly::reflect::TypeTag<Type>);
+#define VEGA_CLASS(Type) \
+	friend void VegaReflect(::ly::reflect::TypeTag<Type>); \
+	friend void VegaReflect(::ly::reflect::TypeTag<Type>, ::ly::reflect::TypeRegistry&);

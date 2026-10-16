@@ -38,7 +38,8 @@ namespace ly::content
 	class ContentSchemaRegistry
 	{
 	public:
-		static ContentSchemaRegistry& Get() { static ContentSchemaRegistry registry; return registry; }
+		// Deprecated: use EngineContext::ContentSchemas().
+		static ContentSchemaRegistry& Get();
 		void Register(ContentTypeSchema schema) { mTypes[schema.type] = std::move(schema); }
 		const std::map<std::string, ContentTypeSchema>& Types() const { return mTypes; }
 		const ContentTypeSchema* Find(const std::string& type) const

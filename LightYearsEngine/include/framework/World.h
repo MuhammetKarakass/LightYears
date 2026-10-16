@@ -1,5 +1,6 @@
 #pragma once
 #include "framework/Core.h"
+#include "framework/EngineContext.h"
 #include <SFML/Graphics.hpp>
 #include "framework/Object.h"
 #include "framework/SimulationTime.h"
@@ -23,7 +24,9 @@ namespace ly
 	{
 	public:
 
-		World(Application* owningApp);
+		World(Application* owningApp, EngineContext* context = nullptr);
+		explicit World(EngineContext& context) : World(nullptr, &context) {}
+		EngineContext& GetEngineContext() const { return *mContext; }
 		const std::optional<sf::FloatRect>& GetSceneBounds() const { return mSceneBounds; }
 		void SetSceneBounds(std::optional<sf::FloatRect> bounds) { mSceneBounds = std::move(bounds); }
 	private:
@@ -248,6 +251,7 @@ namespace ly
 			int maxY = -1;
 		};
 
+		EngineContext* mContext;
 		Application* mOwningApp;
 		RenderViewport* mRenderViewport = nullptr;
 		std::optional<sf::View> mViewOverride;

@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "editor/EditorCommands.h"
 #include <framework/World.h>
 #include <framework/scene/Scene.h>
@@ -594,6 +595,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	TestSceneSettingsCommands();
 	TestScriptProperties();
 	TestReflectedProperties();

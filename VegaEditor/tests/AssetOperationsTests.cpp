@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "editor/AssetOperations.h"
 #include <framework/content/ContentSchema.h>
 #include <fstream>
@@ -21,6 +22,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	using namespace vega;
 	const auto root = std::filesystem::path{ VEGA_ASSET_OPERATIONS_TEST_ROOT };
 	if (!root.is_absolute() || root.filename() != "asset-operations-test") return 1;

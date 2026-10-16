@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include <framework/Actor.h>
 #include <framework/World.h>
 #include <framework/scene/Scene.h>
@@ -46,6 +47,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	ly::reflect::RegisterEngineTypes();
 	ly::reflect::Class<HierarchyActor, ly::Actor>("HierarchyActor").Spawnable();
 	{

@@ -310,7 +310,7 @@ namespace vega
 					if (ImGui::MenuItem(path.c_str())) PlacePrefab(context, history, path, context.world->GetWorldView().getCenter());
 				ImGui::EndMenu();
 			}
-			auto types = ly::reflect::TypeRegistry::Get().SpawnableActors();
+			auto types = GetEngineContext().Types().SpawnableActors();
 			std::sort(types.begin(), types.end(), [](const auto* a, const auto* b) { return a->name < b->name; });
 			for (const auto* type : types)
 				if (ImGui::MenuItem(type->name.c_str())) CreateSceneEntity(context, history, type->name);

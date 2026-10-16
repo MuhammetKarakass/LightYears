@@ -1,3 +1,4 @@
+#include "framework/EngineContext.h"
 #include "editor/EditorCommands.h"
 #include <framework/World.h>
 #include <framework/scene/Scene.h>
@@ -224,6 +225,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	ly::reflect::RegisterEngineTypes();
 	ly::reflect::Class<ly::Actor>("Actor").Spawnable();
 	ly::reflect::Class<MultiActor, ly::Actor>("MultiActor").Spawnable()
