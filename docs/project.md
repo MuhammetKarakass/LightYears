@@ -20,8 +20,8 @@ game keeps its existing window size and default level.
 
 An empty startup scene keeps the default level. A nonempty asset-relative
 `.scene.json` path starts a SceneLevel in play mode; `--scene` or `--editor-scene`
-takes precedence. The editor opens its usual sandbox unless `--editor-scene` is
-supplied. Exports include the project file and name the executable `<Name>.exe`,
+takes precedence. The editor opens the startup scene, or its usual sandbox when
+that setting is empty; `--editor-scene` overrides it. Exports include the project file and name the executable `<Name>.exe`,
 replacing Windows-invalid filename characters and protecting reserved names.
 
 Editor scripts support `set-project-startup <path>` and

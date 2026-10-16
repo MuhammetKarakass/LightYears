@@ -143,7 +143,9 @@ namespace ly
 		LightData lightData;
 		lightData.tag = finalTag;
 		lightData.lightSpace = lightSpace;
-		lightData.shader = AssetManager::GetAssetManager().LoadShader(lightPath);
+		// Definitions may be constructed before a game installs its defaults.
+		const auto& shaderPath = lightPath.empty() ? EngineAssets::Get().pointLightShader : lightPath;
+		if (!shaderPath.empty()) lightData.shader = AssetManager::GetAssetManager().LoadShader(shaderPath);
 		lightData.color = color;
 		lightData.intensity = intensity;
 		lightData.size = size;

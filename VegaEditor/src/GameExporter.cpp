@@ -9,6 +9,7 @@
 #include <cctype>
 #include <fstream>
 #include <iomanip>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -402,6 +403,10 @@ namespace vega
 		{
 			++lineNumber;
 			auto normalized = normalize(line);
+			// Debug logs append their compiled source location. That identifies
+			// diagnostic code, not a resource loaded from the developer's tree.
+			static const std::regex sourceLocation{ R"( \([^()\r\n]+\.(cpp|cc|cxx|h|hpp|inl):[0-9]+\)$)" };
+			normalized = std::regex_replace(normalized, sourceLocation, "");
 			// Integration exports live under build/ inside the repository. Their own copied assets are valid;
 			// only references outside the export to the original source tree indicate a portability leak.
 			for (auto position = normalized.find(exportedRoot); position != std::string::npos;

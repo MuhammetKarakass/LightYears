@@ -1,4 +1,5 @@
 #pragma once
+#ifdef VEGA_EDITOR_WITH_GAS
 #include <AbilitySystemComponent.h>
 #include <imgui.h>
 #include <map>
@@ -40,3 +41,24 @@ namespace vega
 		bool mFocus = false;
 	};
 }
+#else
+#include <string>
+namespace vega
+{
+	struct EditorContext;
+	struct EditorScriptCommand;
+	class EditorGasDebugger
+	{
+	public:
+		bool visible = false;
+		void InstallSettings() {}
+		void Build(EditorContext&) {}
+		void Clear() {}
+		bool Execute(EditorContext&, const EditorScriptCommand&, std::string& detail)
+		{
+			detail = "GAS is not enabled for this editor";
+			return false;
+		}
+	};
+}
+#endif

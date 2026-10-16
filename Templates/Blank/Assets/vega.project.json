@@ -1,0 +1,18 @@
+{
+	"format": "vega.project",
+	"version": 1,
+	"name": "Blank",
+	"startupScene": "scenes/main.scene.json",
+	"window": { "width": 960, "height": 540 },
+	"editor": {
+		"assetRoot": ".",
+		"gameBuildDir": "../../../build/Templates/Blank",
+		"releaseGameBuildDir": "../../../build-release/Templates/Blank",
+		"exportDir": "../../../build/export/Blank"
+	},
+	"runtime": {
+		"executable": "BlankGame.exe",
+		"assetDirectory": "assets",
+		"log": "Blank.log"
+	}
+}

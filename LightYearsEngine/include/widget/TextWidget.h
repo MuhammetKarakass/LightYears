@@ -2,6 +2,7 @@
 
 #include "widget/Widget.h"
 #include "framework/AssetManager.h"
+#include "framework/EngineAssets.h"
 
 namespace ly
 {
@@ -10,7 +11,7 @@ namespace ly
 		friend struct GameHUDDamageE2ETestAccess;
 
 	public:
-		TextWidget(const std::string& textStr, const std::string& fontPath="SpaceShooterRedux/Bonus/kenvector_future.ttf",
+		TextWidget(const std::string& textStr, const std::string& fontPath = EngineAssets::Get().font,
 			unsigned int characterSize=10);
 
 		void SetString(const std::string& newStr);

@@ -285,6 +285,10 @@ int main()
 		Check(!vega::CheckGameLogPortability(log, source).passed, "Empty portability log accepted");
 		WriteFile(log, "Loaded assets/scripts/test.lua\nVisual pipeline assets: visual\n");
 		Check(vega::CheckGameLogPortability(log, source).passed, "Portable relative paths refused");
+		WriteFile(log, "Loaded assets/tile.png (" + source.generic_u8string() + "/Engine/AssetManager.cpp:25)\n");
+		Check(vega::CheckGameLogPortability(log, source).passed, "Diagnostic source location is not a runtime dependency");
+		WriteFile(log, "Loaded " + source.generic_u8string() + "/assets/tile.png (" + source.generic_u8string() + "/Engine/AssetManager.cpp:25)\n");
+		Check(!vega::CheckGameLogPortability(log, source).passed, "Diagnostic suffix must not hide a real source asset path");
 		WriteFile(log, "Loaded C:/portable/assets/test.png\n");
 		Check(vega::CheckGameLogPortability(log, source).passed, "Portable absolute path refused");
 		WriteFile(log, "Loaded " + source.generic_u8string() + "/assets/test.png\n");

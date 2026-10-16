@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef VEGA_EDITOR_WITH_SKY
+
 #include "editor/SkyDocument.h"
 #include "editor/EditorScript.h"
 #include <presentation/visual/GameVisualPipeline.h>
@@ -65,3 +67,29 @@ namespace vega
 		double mApplyMs = 0, mRenderMs = 0, mThumbnailMs = 0;
 	};
 }
+#else
+#include "editor/EditorScript.h"
+#include <framework/WorldRenderPipeline.h>
+namespace vega
+{
+	// Optional tools retain their call surface without importing their module.
+	class EditorSkyEditor
+	{
+	public:
+		bool visible = false;
+		void Bind(ly::WorldRenderPipeline*) {}
+		void Update(EditorContext&, sf::Vector2u, bool) {}
+		void Build(EditorContext&, CommandHistory&) {}
+		void Handles(const sf::FloatRect&, sf::Vector2u, bool) {}
+		bool Execute(const EditorScriptCommand&, EditorContext&, std::string& detail)
+		{
+			detail = "Sky is not enabled for this editor";
+			return false;
+		}
+		bool Active() const { return false; }
+		bool Dirty() const { return false; }
+		CommandHistory* History() { return nullptr; }
+		void RequestExit(std::function<void()> continuation) { continuation(); }
+	};
+}
+#endif

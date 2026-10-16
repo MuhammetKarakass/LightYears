@@ -5,6 +5,7 @@
 #include "widget/UIStyle.h"
 #include "widget/HUD.h"
 #include "framework/SubscriptionSet.h"
+#include "framework/EngineAssets.h"
 #include <cmath>
 #include <iostream>
 
@@ -103,13 +104,17 @@ int main()
 		if (!Check(watcher.Consume(revision) && !watcher.Consume(revision), "Watcher Reset did not force the next consume")) return 1;
 	}
 	{
+		if (!Check(ly::UIStyle::MakeDefault().Font(ly::UIFontRole::Body).empty(), "Engine styles must not require a game's font")) return 1;
+		ly::EngineAssets::Get().font = "fonts/Example.ttf";
 		const ly::UIStyle defaults = ly::UIStyle::MakeDefault();
 		ly::UIStyle custom = defaults;
 		custom.colors[static_cast<std::size_t>(ly::UIColorRole::Accent)] = sf::Color{ 1, 2, 3 };
 		ly::UIStyle::Set(custom);
 		if (!Check(ly::UIStyle::Get().Color(ly::UIColorRole::Accent) == sf::Color{ 1, 2, 3 }, "UIStyle::Set did not update the active style")) return 1;
 		ly::UIStyle::Set(defaults);
-		if (!Check(ly::UIStyle::Get().Font(ly::UIFontRole::Body) == "SpaceShooterRedux/Bonus/kenvector_future.ttf" && ly::UIStyle::Get().TextSize(ly::UITextSize::Title) == 32 && ly::UIStyle::Get().Color(ly::UIColorRole::GaugeBackground) == sf::Color{ 128, 128, 128 }, "UIStyle defaults did not match the foundation contract")) return 1;
+		if (!Check(ly::UIStyle::Get().Font(ly::UIFontRole::Body) == "fonts/Example.ttf" && ly::UIStyle::Get().TextSize(ly::UITextSize::Title) == 32 && ly::UIStyle::Get().Color(ly::UIColorRole::GaugeBackground) == sf::Color{ 128, 128, 128 }, "UIStyle defaults did not use the project's font and foundation contract")) return 1;
+		ly::EngineAssets::Get() = {};
+		ly::UIStyle::Set(ly::UIStyle::MakeDefault());
 	}
 	{
 		auto source = std::make_shared<TestSubscriptionSource>();

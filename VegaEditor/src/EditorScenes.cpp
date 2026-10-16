@@ -158,8 +158,10 @@ namespace vega
 		if (playing) ClosePrefab();
 		if (!mContext.world || mContext.transitioning || playing == mContext.playMode) return false;
 		mGasDebugger.Clear();
+#ifdef VEGA_EDITOR_WITH_GAS
 		if (playing) sas::AbilitySystemDebugView::BeginPlay();
 		else sas::AbilitySystemDebugView::recording = false;
+#endif
 		if (playing)
 		{
 			if (mDiagnostics.clearOnPlay) mDiagnostics.Clear();

@@ -420,16 +420,6 @@ if(WIN32)
 	target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE sfml-main)
 endif()
 
-function(CopyRuntimeLibToTarget LIB_NAME TARGET_NAME)
-	add_custom_command(TARGET ${TARGET_NAME}
-	POST_BUILD
-	COMMAND
-	${CMAKE_COMMAND} -E copy_if_different
-	$<TARGET_FILE:${LIB_NAME}>
-	$<TARGET_FILE_DIR:${TARGET_NAME}>
-	)
-endfunction()
-
 CopyRuntimeLibToTarget(sfml-graphics ${LIGHT_YEARS_GAME_TARGET_NAME})
 CopyRuntimeLibToTarget(sfml-window ${LIGHT_YEARS_GAME_TARGET_NAME})
 CopyRuntimeLibToTarget(sfml-system ${LIGHT_YEARS_GAME_TARGET_NAME})

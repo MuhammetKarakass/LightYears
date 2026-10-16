@@ -1,4 +1,5 @@
 #include "framework/ShaderManager.h"
+#include "framework/EngineAssets.h"
 
 namespace ly
 {
@@ -72,7 +73,8 @@ namespace ly
 		if(!sf::Shader::isAvailable())
 			return;
 
-		LoadShader("simple_color", "SpaceShooterRedux/Shaders/simple_color.frag");
+		if (!EngineAssets::Get().simpleColorShader.empty())
+			LoadShader("simple_color", EngineAssets::Get().simpleColorShader);
 	}
 
 	void ShaderManager::CleanUp()

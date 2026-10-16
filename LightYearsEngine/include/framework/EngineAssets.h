@@ -1,0 +1,17 @@
+#pragma once
+#include <string>
+
+namespace ly
+{
+	// Optional defaults for engine widgets and lights. Games install their own
+	// paths; an empty entry means the resource is not part of this project.
+	struct EngineAssets
+	{
+		std::string font, buttonTexture, buttonSound, pointLightShader, simpleColorShader;
+		static EngineAssets& Get()
+		{
+			static EngineAssets assets;
+			return assets;
+		}
+	};
+}

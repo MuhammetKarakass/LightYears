@@ -17,10 +17,8 @@ set(IMGUI_DIR "${imgui_SOURCE_DIR}")
 set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "Use the existing SFML targets" FORCE)
 FetchContent_MakeAvailable(imgui-sfml)
 
-add_executable(VegaEditor
-	${VEGA_GAME_EDITOR_ENTRY}
+set(VEGA_EDITOR_CORE_SOURCES
 	src/EditorMain.cpp
-	src/EditorProject.cpp
 	src/EditorApplication.cpp
 	src/EditorScenes.cpp
 	src/EditorWorldSettings.cpp
@@ -29,7 +27,6 @@ add_executable(VegaEditor
 	src/EditorIcons.cpp
 	src/EditorChrome.cpp
 	src/EditorDiagnostics.cpp
-	src/EditorGasDebugger.cpp
 	src/EditorGizmos.cpp
 	src/GizmoMath.cpp
 	src/EditorCamera.cpp
@@ -45,10 +42,6 @@ add_executable(VegaEditor
 	src/GameExporter.cpp
 	src/JsonDocument.cpp
 	src/JsonCommands.cpp
-	src/SkyDocument.cpp
-	src/EditorSkyEditor.cpp
-	src/EditorSkyHandles.cpp
-	src/EditorSkyScript.cpp
 	include/editor/GameExporter.h
 	include/editor/JsonDocument.h
 	include/editor/JsonCommands.h
@@ -63,49 +56,32 @@ add_executable(VegaEditor
 	include/editor/EditorViewport.h
 	include/editor/EditorSelection.h
 )
-target_include_directories(VegaEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-# The parent selects one game module target and entry point. Core sources know only the contract.
-add_dependencies(VegaEditor ${VEGA_GAME_RUNTIME_TARGET})
-target_compile_definitions(VegaEditor PRIVATE
-	VEGA_DEFAULT_PROJECT_FILE="${VEGA_DEFAULT_PROJECT_FILE}"
-	VEGA_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
-	VEGA_BUILD_ROOT="${CMAKE_BINARY_DIR}")
-target_link_libraries(VegaEditor PRIVATE ${VEGA_GAME_MODULE_TARGET} ImGui-SFML::ImGui-SFML)
-ly_enable_warnings(VegaEditor)
-
-if(MSVC)
-	target_link_options(VegaEditor PRIVATE /INCREMENTAL:NO)
+# Both assemblies compile the same editor sources. Optional tools are selected
+# here so a project without them has no transitive game or GAS dependency.
+add_library(VegaEditorCore STATIC ${VEGA_EDITOR_CORE_SOURCES})
+set(VEGA_EDITOR_CORES VegaEditorCore)
+if(VEGA_BUILD_LIGHTYEARS)
+add_library(VegaEditorLightYearsCore STATIC ${VEGA_EDITOR_CORE_SOURCES}
+	src/EditorGasDebugger.cpp src/SkyDocument.cpp src/EditorSkyEditor.cpp
+	src/EditorSkyHandles.cpp src/EditorSkyScript.cpp)
+target_compile_definitions(VegaEditorLightYearsCore PUBLIC VEGA_EDITOR_WITH_SKY VEGA_EDITOR_WITH_GAS)
+target_link_libraries(VegaEditorLightYearsCore PUBLIC ${VEGA_GAME_MODULE_TARGET})
+list(APPEND VEGA_EDITOR_CORES VegaEditorLightYearsCore)
 endif()
-if(WIN32)
-	if(CMAKE_BUILD_TYPE STREQUAL "Release")
-		set_target_properties(VegaEditor PROPERTIES WIN32_EXECUTABLE TRUE)
-	endif()
-	target_link_libraries(VegaEditor PRIVATE sfml-main)
-endif()
-
-foreach(editor_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
-	CopyRuntimeLibToTarget(${editor_runtime} VegaEditor)
+foreach(core IN LISTS VEGA_EDITOR_CORES)
+	target_include_directories(${core} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(${core} PUBLIC VegaScript ImGui-SFML::ImGui-SFML)
+	target_compile_definitions(${core} PRIVATE
+		VEGA_SOURCE_ROOT="${CMAKE_SOURCE_DIR}" VEGA_BUILD_ROOT="${CMAKE_BINARY_DIR}")
+	ly_enable_warnings(${core})
 endforeach()
-get_target_property(editor_imgui_type ImGui-SFML TYPE)
-if(editor_imgui_type STREQUAL "SHARED_LIBRARY")
-	CopyRuntimeLibToTarget(ImGui-SFML VegaEditor)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/VegaGameEditor.cmake)
+if(VEGA_BUILD_LIGHTYEARS)
+vega_add_game_editor(VegaEditor MODULE ${VEGA_GAME_MODULE_TARGET}
+	RUNTIME ${VEGA_GAME_RUNTIME_TARGET} PROJECT "${VEGA_DEFAULT_PROJECT_FILE}"
+	ENTRY "${VEGA_GAME_EDITOR_ENTRY}" CORE VegaEditorLightYearsCore)
 endif()
-
-# Run even when only content changes, matching the game's runtime synchronization.
-add_custom_target(VegaEditorAssets ALL
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-		${VEGA_EDITOR_ASSET_ROOT}
-		$<TARGET_FILE_DIR:VegaEditor>/assets
-	COMMENT "Synchronizing editor runtime assets..."
-)
-add_dependencies(VegaEditor VegaEditorAssets)
-add_custom_command(TARGET VegaEditorAssets POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E $<IF:$<CONFIG:Debug>,true,copy_directory>
-		${VEGA_EDITOR_VISUAL_ASSETS}
-		$<TARGET_FILE_DIR:VegaEditor>/visual
-)
-
-if(BUILD_TESTING)
+if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 	set(VEGA_PROJECT_TEST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/project-path-tests")
 	add_executable(VegaEditorProjectTests tests/EditorProjectTests.cpp src/EditorProject.cpp)
 	target_include_directories(VegaEditorProjectTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

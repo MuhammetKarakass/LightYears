@@ -1,6 +1,6 @@
-# Single integration point for the concrete game editor. B3 can make the
-# editor a library without changing its core or the game module contract.
-add_library(LightYearsEditorModule STATIC "${CMAKE_CURRENT_LIST_DIR}/src/editor/LightYearsGameModule.cpp")
+# LightYears selects its module, optional editor tools and integration fixtures.
+# Additional games use vega_add_game_editor with the plain VegaEditorCore.
+add_library(LightYearsEditorModule STATIC "${CMAKE_CURRENT_LIST_DIR}/src/editor/LightYearsEditorModule.cpp")
 target_include_directories(LightYearsEditorModule PRIVATE "${CMAKE_SOURCE_DIR}/VegaEditor/include")
 target_link_libraries(LightYearsEditorModule PUBLIC LightYearsGameApp)
 ly_enable_warnings(LightYearsEditorModule)

@@ -53,7 +53,7 @@ or prefab context; viewport and Hierarchy callbacks receive the scene context.
 Captured state must live as long as the module. Extension arguments use the
 existing tokenizer, including quotes, comments and composite JSON.
 
-`LightYearsGame/src/editor/LightYearsGameModule.cpp` registers
+`LightYearsGame/src/editor/LightYearsEditorModule.cpp` registers
 `expect-player-ship`, retaining its name, argument rules, world check and report
 text. The editor core has no ship-specific script operation.
 
@@ -63,7 +63,7 @@ Implement the runtime contract in the game and an optional editor adapter.
 The concrete entry point can be:
 
 ```cpp
-#include <editor/EditorApplication.h>
+#include <editor/EditorHost.h>
 #include "MyEditorModule.h"
 
 ly::Application* GetApplication()
@@ -72,23 +72,27 @@ ly::Application* GetApplication()
 }
 ```
 
-Select `VEGA_GAME_MODULE_TARGET`, `VEGA_GAME_RUNTIME_TARGET`,
-`VEGA_GAME_EDITOR_ENTRY` and `VEGA_DEFAULT_PROJECT_FILE` before adding
-`VegaEditor`. The current selection is isolated in `LightYearsGame/editor.cmake`,
-included once by the root CMake file, with the concrete entry in
-`VegaEditor/app/LightYearsEditorMain.cpp`. Asset roots, fonts, build directories
-and package names come from the [project file](project.md). Existing directory,
-namespace and executable target names are unchanged.
+After adding `VegaEditor`, call `vega_add_game_editor(Name MODULE Target
+RUNTIME RuntimeTarget PROJECT projectFile ENTRY entrySource)` for each game.
+The helper links the game-independent `VegaEditorCore` and configures the host.
+LightYears retains its integration selection in `LightYearsGame/editor.cmake`
+and opts into an assembly of the same core sources with Sky and GAS enabled.
+The concrete entry is `VegaEditor/app/LightYearsEditorMain.cpp`. See
+[make a new game](new-game.md) and `Templates/Blank` for a complete second host.
+Asset roots, fonts, build directories and package names come from the
+[project file](project.md).
 
 ## Remaining B4 coupling
 
-Sky remains in the editor for this wave. `EditorSkyEditor.h` includes the game's
+Sky remains optional in the LightYears editor assembly. Under
+`VEGA_EDITOR_WITH_SKY`, `EditorSkyEditor.h` includes the game's
 `presentation/visual/GameVisualPipeline.h`; `SkyDocument.h` includes
 `visual/DeepSky.h`. Preview rendering, route thumbnails, handles, schema and
 save/undo state still rely on those implementations. Extracting that stateful
 tool belongs to B4. `Bind` accepts the engine render-pipeline base and leaves
-Sky inactive for a different pipeline. Building without the LightYears
-presentation headers still requires the B4 extraction or a Sky adapter.
+Sky inactive for a different pipeline. `VegaEditorCore` excludes Sky and GAS
+sources and imports; BlankEditor uses this assembly. The Sky document/tool
+implementation still awaits the B4 extraction or a presentation adapter.
 
 `VegaEditorNoGameIncludes` scans every file under `VegaEditor/src` and
 `VegaEditor/include`, rejects game paths and direct game/visual headers, and

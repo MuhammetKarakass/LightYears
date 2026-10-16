@@ -2,6 +2,7 @@
 #include "framework/Actor.h"
 #include "framework/ActorComponent.h"
 #include "framework/AssetManager.h"
+#include "framework/EngineAssets.h"
 #include "framework/LightComponent.h"
 #include "framework/Object.h"
 #include "framework/PhysicsScene.h"
@@ -247,6 +248,11 @@ namespace
 
 int main()
 {
+	// A host without a game has no implicit artwork/font/shader dependency.
+	if (!ly::EngineAssets::Get().font.empty() || !ly::EngineAssets::Get().pointLightShader.empty())
+		return Fail("Engine asset defaults must be empty until a project installs them");
+	if (!ly::AssetManager::GetAssetManager().LoadFont(""))
+		return Fail("An absent optional font must provide an empty SFML font");
 	ly::debug::Log::Initialize();
 	ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Trace);
 	std::vector<ly::debug::LogRecord> logRecords;

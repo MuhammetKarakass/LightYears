@@ -61,7 +61,8 @@ namespace vega
 		// Image clicks select actors; panel dragging belongs on the title/tab bars.
 		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 		GetRenderWindow().setTitle("Vega Editor");
-		std::filesystem::path startupScene{ "scenes/sandbox.scene.json" };
+		std::filesystem::path startupScene = mProject.settings.startupScene.empty()
+			? "scenes/sandbox.scene.json" : mProject.settings.startupScene;
 		std::string scriptPath;
 		bool scriptRequested = false;
 #ifdef _MSC_VER
@@ -170,7 +171,9 @@ namespace vega
 	EditorApplication::~EditorApplication()
 	{
 		UnregisterGameModule();
+#ifdef VEGA_EDITOR_WITH_GAS
 		sas::AbilitySystemDebugView::recording = false;
+#endif
 		// The base application can still own a world when editor members are destroyed.
 		if (ly::World* world = GetCurrentWorld())
 		{
@@ -370,9 +373,13 @@ namespace vega
 				ImGui::MenuItem("Content", nullptr, &mShowContent);
 				ImGui::Separator();
 				ImGui::MenuItem("World Settings", nullptr, &mShowWorldSettings);
+#ifdef VEGA_EDITOR_WITH_SKY
 				if (ImGui::MenuItem("Sky", nullptr, &mSkyEditor.visible) && mSkyEditor.visible) ImGui::SetWindowFocus("Sky###SkyEditor");
+#endif
 				ImGui::MenuItem("Content Authoring", nullptr, &mContentAuthoring.visible);
+#ifdef VEGA_EDITOR_WITH_GAS
 				if (ImGui::MenuItem("Ability System", nullptr, &mGasDebugger.visible)) ImGui::MarkIniSettingsDirty();
+#endif
 				ImGui::MenuItem("Grid overlay", nullptr, &mContext.viewSettings.grid);
 				ImGui::MenuItem("Collider overlay", nullptr, &mContext.viewSettings.colliders);
 				if (ImGui::MenuItem("Data Editor", nullptr, mShowData))
