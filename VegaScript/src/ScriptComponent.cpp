@@ -287,6 +287,25 @@ namespace vega::script
 					return WriteProperty(component, component ? ly::reflect::TypeRegistry::Get().FindMostDerived(*component) : nullptr, name, value);
 				});
 			lua.new_usertype<ActorHandle>("ActorHandle", sol::no_constructor,
+				"parent", [](const ActorHandle& h, sol::this_state s)
+				{
+					const auto actor = h.Lock();
+					return actor && actor->GetParent() ? sol::make_object(s, ActorHandle{ actor->GetParent()->GetWeakActor() }) : sol::make_object(s, sol::nil);
+				},
+				"children", [](const ActorHandle& h, sol::this_state s)
+				{
+					auto result = sol::state_view{ s }.create_table();
+					int index = 1;
+					if (const auto actor = h.Lock()) for (auto* child : actor->GetChildren())
+						if (!child->GetIsPendingDestroy()) result[index++] = ActorHandle{ child->GetWeakActor() };
+					return result;
+				},
+				"attach_to", [](const ActorHandle& h, const ActorHandle& other, sol::optional<bool> keepWorld)
+				{
+					const auto actor = h.Lock(), parent = other.Lock();
+					return actor && parent && actor->AttachTo(parent.get(), keepWorld.value_or(true));
+				},
+				"detach", [](const ActorHandle& h) { if (const auto actor = h.Lock()) actor->Detach(); },
 				"is_alive", [](const ActorHandle& h) { return static_cast<bool>(h.Lock()); },
 				"name", [](const ActorHandle& h)
 				{

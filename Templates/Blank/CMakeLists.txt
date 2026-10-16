@@ -36,6 +36,11 @@ if(BUILD_TESTING)
 		-DRUNTIME=$<TARGET_FILE:BlankGame> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunGame.cmake)
 	set_tests_properties(BlankGameRuns PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:BlankGame> TIMEOUT 60)
 	if(VEGA_BUILD_EDITOR)
+		add_test(NAME VegaEditorHierarchy COMMAND ${CMAKE_COMMAND}
+			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/hierarchy-editor-test
+			-DSCRIPT=${CMAKE_SOURCE_DIR}/VegaEditor/tests/scripts/hierarchy.vegascript
+			-DEDITOR=$<TARGET_FILE:BlankEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunHierarchy.cmake)
+		set_tests_properties(VegaEditorHierarchy PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 180)
 		add_test(NAME BlankEditorScript COMMAND ${CMAKE_COMMAND}
 			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/blank-editor-test
 			-DRUNTIME=$<TARGET_FILE:BlankGame> -DEDITOR=$<TARGET_FILE:BlankEditor>

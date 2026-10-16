@@ -194,6 +194,17 @@
 		void AddActorRotationOffset(float offset);
 		sf::Vector2f GetActorLocation() const;
 		float GetActorRotation() const;
+		// Attachment uses ordinary XY rotation (degrees, clockwise on screen).
+		// World values stay cached; edits synchronously update the complete subtree.
+		Actor* GetParent() const { return mParent; }
+		const std::vector<Actor*>& GetChildren() const { return mChildren; }
+		bool IsDescendantOf(const Actor& ancestor) const;
+		bool AttachTo(Actor* parent, bool keepWorld = true);
+		void Detach();
+		sf::Vector2f GetRelativeLocation() const { return mRelativeLocation; }
+		float GetRelativeRotation() const { return mRelativeRotation; }
+		void SetRelativeLocation(const sf::Vector2f& location);
+		void SetRelativeRotation(float rotation);
 		sf::Vector2f GetActorForwardDirection() const;
 		sf::Vector2f GetActorRightDirection() const;
 		sf::Vector2u GetWindowSize() const;
@@ -215,6 +226,8 @@
 		void CacheComponent(ActorComponent& component);
 		void TickComponents(float deltaTime);
 		void EndPlayComponents();
+		void SyncWorldTransform();
+		void ResolveAttachmentTransform();
 
 		World* mOwningWorld;
 		SimulationTimeDomain mSimulationTimeDomain = SimulationTimeDomain::RealTime;
@@ -225,6 +238,11 @@
 
 		sf::Vector2f mActorLocation{ 0.f, 0.f };
 		float mActorRotation = 0.f;
+		Actor* mParent = nullptr;
+		std::vector<Actor*> mChildren;
+		sf::Vector2f mRelativeLocation{};
+		float mRelativeRotation = 0.f;
+		bool mDestroying = false;
 
 		RenderLayer mRenderLayer = RenderLayer::World;
 		bool mRenderEnabled = true;

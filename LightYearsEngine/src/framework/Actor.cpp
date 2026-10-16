@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <framework/debug/Log.h>
 
 namespace ly
 {
@@ -70,6 +71,9 @@ namespace ly
 	
 	Actor::~Actor()
 	{
+		// World teardown may release actors in any order, including external owners.
+		Detach();
+		while (!mChildren.empty()) mChildren.back()->Detach();
 		EndPlayComponents();
 		UnInitializePhysics();
 	}
@@ -149,11 +153,19 @@ namespace ly
 
 	void Actor::Destroy()
 	{
-		if (GetIsPendingDestroy())
+		if (GetIsPendingDestroy() || mDestroying)
 		{
 			return;
 		}
 
+		mDestroying = true;
+		while (!mChildren.empty())
+		{
+			Actor* child = mChildren.back();
+			child->Detach();
+			child->Destroy();
+		}
+		Detach();
 		if (mOwningWorld)
 		{
 			mOwningWorld->RemoveActorSpatialQuery(*this);
@@ -292,35 +304,88 @@ namespace ly
 	void Actor::SetActorLocation(const sf::Vector2f& newLoc)
 	{
 		mActorLocation = newLoc;
-		if (mSprite)
-		{
-			mSprite->SyncLocation();
-		}
-		if (mCollision)
-		{
-			mCollision->UpdatePhysicsTransform();
-		}
-		if (mOwningWorld)
-		{
-			mOwningWorld->RefreshActorSpatialQuery(*this);
-		}
+		mRelativeLocation = mParent ? (newLoc - mParent->mActorLocation).rotatedBy(sf::degrees(-mParent->mActorRotation)) : newLoc;
+		SyncWorldTransform();
 	}
 	
 	void Actor::SetActorRotation(float newRotation)
 	{
 		mActorRotation = newRotation;
-		if (mSprite)
+		mRelativeRotation = newRotation - (mParent ? mParent->mActorRotation : 0.f);
+		SyncWorldTransform();
+	}
+
+	bool Actor::IsDescendantOf(const Actor& ancestor) const
+	{
+		for (const Actor* parent = mParent; parent; parent = parent->mParent)
+			if (parent == &ancestor) return true;
+		return false;
+	}
+
+	bool Actor::AttachTo(Actor* parent, bool keepWorld)
+	{
+		if (GetIsPendingDestroy() || mDestroying || (parent && (parent == this || parent->IsDescendantOf(*this) ||
+			parent->GetWorld() != GetWorld() || parent->GetIsPendingDestroy() || parent->mDestroying))) return false;
+		if (parent && IsPhysicsEnabled() && GetPhysicsBodyType() == PhysicsBodyType::Dynamic)
 		{
-			mSprite->SyncRotation();
+			debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION,
+				"Cannot attach a dynamic physics actor; disable physics or use a static body first");
+			return false;
 		}
-		if (mCollision)
+		if (parent == mParent) return true;
+		if (mParent)
 		{
-			mCollision->UpdatePhysicsTransform();
+			auto& siblings = mParent->mChildren;
+			siblings.erase(std::find(siblings.begin(), siblings.end(), this));
 		}
-		if (mOwningWorld)
+		mParent = parent;
+		if (parent) parent->mChildren.push_back(this);
+		if (keepWorld)
 		{
-			mOwningWorld->RefreshActorSpatialQuery(*this);
+			mRelativeLocation = parent ? (mActorLocation - parent->mActorLocation).rotatedBy(sf::degrees(-parent->mActorRotation)) : mActorLocation;
+			mRelativeRotation = mActorRotation - (parent ? parent->mActorRotation : 0.f);
 		}
+		if (mCollision) mCollision->SetPhysicsBodyType(GetPhysicsBodyType());
+		ResolveAttachmentTransform();
+		return true;
+	}
+
+	void Actor::Detach()
+	{
+		if (!mParent) return;
+		auto& siblings = mParent->mChildren;
+		siblings.erase(std::find(siblings.begin(), siblings.end(), this));
+		mParent = nullptr;
+		mRelativeLocation = mActorLocation;
+		mRelativeRotation = mActorRotation;
+		if (mCollision) mCollision->SetPhysicsBodyType(GetPhysicsBodyType());
+	}
+
+	void Actor::SetRelativeLocation(const sf::Vector2f& location)
+	{
+		mRelativeLocation = location;
+		ResolveAttachmentTransform();
+	}
+
+	void Actor::SetRelativeRotation(float rotation)
+	{
+		mRelativeRotation = rotation;
+		ResolveAttachmentTransform();
+	}
+
+	void Actor::ResolveAttachmentTransform()
+	{
+		mActorLocation = mParent ? mParent->mActorLocation + mRelativeLocation.rotatedBy(sf::degrees(mParent->mActorRotation)) : mRelativeLocation;
+		mActorRotation = mRelativeRotation + (mParent ? mParent->mActorRotation : 0.f);
+		SyncWorldTransform();
+	}
+
+	void Actor::SyncWorldTransform()
+	{
+		if (mSprite) { mSprite->SyncLocation(); mSprite->SyncRotation(); }
+		if (mCollision) mCollision->UpdatePhysicsTransform();
+		if (mOwningWorld) mOwningWorld->RefreshActorSpatialQuery(*this);
+		for (Actor* child : mChildren) child->ResolveAttachmentTransform();
 	}
 
 	void Actor::AddActorLocationOffset(const sf::Vector2f& offset)

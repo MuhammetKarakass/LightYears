@@ -30,6 +30,8 @@ namespace vega
 		EditorViewSettings viewSettings;
 		bool playMode = false;
 		bool transitioning = false;
+		bool relativeTransforms = false;
+		std::string attachmentRoot;
 		std::function<bool(const std::string&, const std::string&)> sceneAction;
 		std::function<bool(const std::string&, const std::string&)> prefabAction;
 		std::function<bool()> sceneDirty;
@@ -182,7 +184,7 @@ namespace vega
 	{
 	public:
 		SetPropertyCommand(unsigned int id, std::optional<ly::ComponentIdentity> componentIdentity,
-			std::string property, ly::reflect::PropertyValue after, std::uint64_t group = 0);
+			std::string property, ly::reflect::PropertyValue after, std::uint64_t group = 0, bool relative = false);
 		bool Execute(EditorContext&) override;
 		void Undo(EditorContext&) override;
 		std::string Name() const override;
@@ -193,6 +195,7 @@ namespace vega
 		std::optional<ly::ComponentIdentity> mComponentIdentity;
 		std::string mProperty;
 		std::string mActorName;
+		bool mRelative = false;
 		ly::reflect::PropertyValue mBefore;
 		ly::reflect::PropertyValue mAfter;
 		std::uint64_t mMergeGroup;
@@ -209,6 +212,20 @@ namespace vega
 		bool IsUndoable() const override { return false; }
 	private:
 		std::optional<unsigned int> mID;
+	};
+	class ReparentActor final : public EditorCommand
+	{
+	public:
+		ReparentActor(std::string child, std::string parent) : mChild{ std::move(child) }, mParent{ std::move(parent) } {}
+		bool Execute(EditorContext&) override;
+		void Undo(EditorContext&) override;
+		std::string Name() const override { return mParent.empty() ? "Detach" : "Parent"; }
+	private:
+		std::string mChild, mParent, mBeforeParent;
+		nlohmann::json mPrefabStates;
+		sf::Vector2f mBeforeLocation{};
+		float mBeforeRotation = 0.f;
+		bool mExecuted = false;
 	};
 	class SetPaused final : public EditorCommand
 	{

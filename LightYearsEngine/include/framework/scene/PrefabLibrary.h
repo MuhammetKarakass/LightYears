@@ -33,7 +33,7 @@ namespace ly
 		static nlohmann::json Diff(const nlohmann::json& entity, const nlohmann::json& baseline);
 		static nlohmann::json Document(nlohmann::json entity, const std::string& name);
 	private:
-		PrefabResult Resolve(const std::string& path, std::set<std::filesystem::path>& chain);
+		PrefabResult Resolve(const std::string& path, std::set<std::filesystem::path>& chain, std::set<std::filesystem::path>& dependencies);
 		struct Cached
 		{
 			std::filesystem::file_time_type modified;

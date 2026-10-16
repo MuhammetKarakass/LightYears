@@ -10,6 +10,7 @@
 #include <limits>
 #include <map>
 #include <set>
+#include <algorithm>
 
 namespace ly
 {
@@ -201,10 +202,25 @@ namespace ly
 		reflect::RegisterEngineTypes();
 		Json scene{ { "format", "vega.scene" }, { "version", 1 }, { "settings", std::move(settings) }, { "entities", Json::array() } };
 		// Pending actors are authored state too; no gameplay tick is needed to save.
-		for (const auto& weakActor : world.GetActorsByTypeIncludingPending<Actor>())
+		auto actors = world.GetActorsByTypeIncludingPending<Actor>();
+		const auto depth = [](const auto& weak)
+		{
+			int value = 0;
+			if (const auto actor = weak.lock()) for (auto* parent = actor->GetParent(); parent; parent = parent->GetParent()) ++value;
+			return value;
+		};
+		std::stable_sort(actors.begin(), actors.end(), [&](const auto& a, const auto& b) { return depth(a) < depth(b); });
+		for (const auto& weakActor : actors)
 		{
 			if (const auto actor = weakActor.lock())
 			{
+				bool insideInstance = false;
+				for (auto* parent = actor->GetParent(); parent; parent = parent->GetParent())
+				{
+					const auto* owner = parent->FindComponent<SceneEntityComponent>();
+					if (owner && !owner->prefab.empty() && owner->prefabRootGuid.empty()) insideInstance = true;
+				}
+				if (insideInstance) continue;
 				auto entity = SaveEntity(*actor);
 				if (!entity.is_null()) scene["entities"].push_back(std::move(entity));
 			}
@@ -223,6 +239,13 @@ namespace ly
 		if (!identity || !type) return nullptr;
 		Json entity{ { "guid", identity->guid }, { "name", identity->name }, { "type", type->name },
 			{ "properties", SaveProperties(*type, &actor) }, { "components", Json::array() }, { "scripts", Json::array() } };
+		if (const auto* parent = actor.GetParent())
+		{
+			if (const auto* parentIdentity = parent->FindComponent<SceneEntityComponent>()) entity["parent"] = parentIdentity->guid;
+			entity["properties"]["Location"] = { actor.GetRelativeLocation().x, actor.GetRelativeLocation().y };
+			entity["properties"]["Rotation"] = actor.GetRelativeRotation();
+		}
+		if (!identity->childId.empty()) entity["id"] = identity->childId;
 		const auto& constructor = ConstructorComponents(*type);
 		ComponentCounts occurrences;
 		std::map<std::string, std::vector<Json>> defaults;
@@ -267,16 +290,90 @@ namespace ly
 		for (const auto& entry : constructor.counts)
 			for (auto count = occurrences[entry.first]; count < entry.second; ++count) removed.push_back(entry.first);
 		if (!removed.empty()) entity["removed"] = std::move(removed);
-		if (!expanded && !identity->prefab.empty())
+		if (!identity->prefab.empty() && identity->prefabRootGuid.empty())
+		{
+			entity["children"] = Json::array();
+			std::set<std::string> ids;
+			for (Actor* child : actor.GetChildren())
+			{
+				auto data = SaveSubtree(*child, true);
+				if (data.is_null()) continue;
+				if (!data.contains("id")) data["id"] = data["guid"];
+				if (!ids.insert(data["id"].get<std::string>()).second)
+				{
+					auto id = data["guid"].get<std::string>();
+					std::replace(id.begin(), id.end(), '/', '_');
+					while (!ids.insert(id).second) id += '_';
+					data["id"] = id;
+				}
+				entity["children"].push_back(std::move(data));
+			}
+		}
+		if (!expanded && !identity->prefab.empty() && identity->prefabRootGuid.empty())
 		{
 			auto delta = PrefabLibrary::Diff(entity, identity->prefabBaseline);
 			delta["prefab"] = identity->prefab;
 			delta["guid"] = identity->guid;
 			delta["name"] = identity->name;
 			delta["properties"]["Location"] = entity["properties"]["Location"];
+			if (entity.contains("parent")) delta["parent"] = entity["parent"];
 			return delta;
 		}
 		return entity;
+	}
+
+	Json SceneSerializer::SaveSubtree(Actor& root, bool expanded)
+	{
+		auto entity = SaveEntity(root, expanded);
+		if (entity.is_null()) return entity;
+		const auto* identity = root.FindComponent<SceneEntityComponent>();
+		if (!expanded && identity && !identity->prefab.empty() && identity->prefabRootGuid.empty()) return entity;
+		if (!root.GetChildren().empty())
+		{
+			entity["children"] = Json::array();
+			std::set<std::string> ids;
+			for (Actor* child : root.GetChildren())
+			{
+				auto data = SaveSubtree(*child, expanded);
+				if (data.is_null()) continue;
+				if (!data.contains("id")) data["id"] = data["guid"];
+				if (!ids.insert(data["id"].get<std::string>()).second)
+				{
+					auto id = data["guid"].get<std::string>();
+					std::replace(id.begin(), id.end(), '/', '_');
+					while (!ids.insert(id).second) id += '_';
+					data["id"] = id;
+				}
+				entity["children"].push_back(std::move(data));
+			}
+		}
+		return entity;
+	}
+
+	void SceneSerializer::RemapGuids(Json& entities)
+	{
+		std::map<std::string, std::string> remap;
+		const auto visit = [&](auto&& self, Json& nodes, bool assign) -> void
+		{
+			for (auto& node : nodes)
+			{
+				if (assign)
+				{
+					const auto old = node.value("guid", std::string{});
+					const auto guid = SceneEntityComponent::GenerateGuid();
+					if (!old.empty()) remap[old] = guid;
+					node["guid"] = guid;
+				}
+				else if (node.contains("parent"))
+				{
+					const auto found = remap.find(node["parent"].get<std::string>());
+					if (found != remap.end()) node["parent"] = found->second;
+				}
+				if (node.contains("children")) self(self, node["children"], assign);
+			}
+		};
+		visit(visit, entities, true);
+		visit(visit, entities, false);
 	}
 
 	SceneLoadResult SceneSerializer::Load(World& world, const Json& scene)
@@ -302,28 +399,68 @@ namespace ly
 					if (const auto* identity = actor->FindComponent<SceneEntityComponent>()) guids.insert(identity->guid);
 			for (const auto& missing : world.unresolvedPrefabs)
 				if (missing.is_object() && missing.contains("guid") && missing["guid"].is_string()) guids.insert(missing["guid"].get<std::string>());
+			Json flattened = Json::array();
+			const auto expand = [&](auto&& self, Json entity, Json baseline, const std::string& parent,
+				const std::string& prefabPath, const std::string& prefabRoot, unsigned depth) -> void
+			{
+				if (depth > 128) throw std::runtime_error("Hierarchy depth limit");
+				std::string path = prefabPath, root = prefabRoot;
+				if (entity.contains("prefab"))
+				{
+					path = entity.at("prefab").get<std::string>();
+					auto resolved = PrefabLibrary::Get().Resolve(path);
+					result.warnings.insert(result.warnings.end(), resolved.warnings.begin(), resolved.warnings.end());
+					if (!resolved)
+					{
+						const auto guid = entity.value("guid", std::string{});
+						if (!guid.empty() && !guids.insert(guid).second) result.warnings.push_back("Duplicate entity GUID: " + guid);
+						else world.unresolvedPrefabs.push_back(entity);
+						return;
+					}
+					baseline = resolved.entity;
+					entity = PrefabLibrary::Merge(std::move(resolved.entity), entity);
+				}
+				if (!entity.contains("guid")) entity["guid"] = SceneEntityComponent::GenerateGuid();
+				const auto guid = entity.at("guid").get<std::string>();
+				if (!parent.empty()) entity["parent"] = parent;
+				if (!path.empty() && root.empty()) root = guid;
+				const auto children = entity.value("children", Json::array());
+				if (!children.is_array()) throw std::runtime_error("children must be an array");
+				entity.erase("children");
+				entity.erase("prefab");
+				entity["_prefab"] = path;
+				entity["_baseline"] = baseline;
+				entity["_root"] = root == guid ? std::string{} : root;
+				flattened.push_back(std::move(entity));
+				std::set<std::string> ids;
+				for (auto child : children)
+				{
+					const auto id = child.at("id").get<std::string>();
+					if (id.empty() || !ids.insert(id).second) throw std::runtime_error("Duplicate or empty prefab child id");
+					if (!child.contains("guid")) child["guid"] = guid + "/" + id;
+					Json childBaseline = Json::object();
+					if (baseline.is_object() && baseline.contains("children"))
+						for (const auto& candidate : baseline["children"]) if (candidate.at("id") == id) childBaseline = candidate;
+					self(self, std::move(child), childBaseline, guid, path, root, depth + 1);
+				}
+			};
 			for (const auto& authored : scene["entities"])
+			{
+				try { expand(expand, authored, Json::object(), {}, {}, {}, 0); }
+				catch (const std::exception& error) { result.warnings.push_back(std::string{ "Hierarchy: " } + error.what()); }
+			}
+			std::map<std::string, std::shared_ptr<Actor>> actors;
+			for (const auto& weak : world.GetActorsByTypeIncludingPending<Actor>())
+				if (auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy())
+					if (const auto* identity = actor->FindComponent<SceneEntityComponent>()) actors[identity->guid] = actor;
+			struct Attachment { std::shared_ptr<Actor> actor; std::string parent; sf::Vector2f location; float rotation; };
+			std::vector<Attachment> attachments;
+			for (const auto& entity : flattened)
 			{
 				try
 				{
-					auto entity = authored;
-					Json prefabBaseline;
-					std::string prefab;
-					if (entity.contains("prefab"))
-					{
-						prefab = entity.at("prefab").get<std::string>();
-						auto resolved = PrefabLibrary::Get().Resolve(prefab);
-						result.warnings.insert(result.warnings.end(), resolved.warnings.begin(), resolved.warnings.end());
-						if (!resolved)
-						{
-							const auto guid = entity.value("guid", std::string{});
-							if (!guid.empty() && !guids.insert(guid).second) result.warnings.push_back("Duplicate entity GUID: " + guid);
-							else world.unresolvedPrefabs.push_back(authored);
-							continue;
-						}
-						prefabBaseline = resolved.entity;
-						entity = PrefabLibrary::Merge(std::move(resolved.entity), entity);
-					}
+					auto prefabBaseline = entity.at("_baseline");
+					auto prefab = entity.at("_prefab").get<std::string>();
 					const std::string name = entity.at("type").get<std::string>();
 					const auto* type = TypeRegistry::Get().Find(name);
 					if (!type || !type->spawnable || !type->create || type->root != TypeRoot::Actor)
@@ -350,6 +487,9 @@ namespace ly
 					auto& identity = actor->GetOrAddComponent<SceneEntityComponent>();
 					identity.guid = guid;
 					identity.name = entityName;
+					identity.childId = entity.value("id", std::string{});
+					identity.prefabRootGuid = entity.value("_root", std::string{});
+					actors[guid] = actor;
 					guids.insert(guid);
 					++result.spawned;
 					if (entity.contains("removed"))
@@ -430,11 +570,25 @@ namespace ly
 					}
 					if (!scriptsHandled && entity.contains("scripts") && !entity["scripts"].empty())
 						result.warnings.push_back(name + ": no script serializer registered");
-					identity.prefab = std::move(prefab);
+					if (entity.contains("parent")) attachments.push_back({ actor, entity.at("parent").get<std::string>(), actor->GetActorLocation(), actor->GetActorRotation() });
+					// Added instance children have no inherited property address until
+					// the root's structural changes are applied to the prefab asset.
+					identity.prefab = !identity.prefabRootGuid.empty() && !prefabBaseline.contains("type") ? std::string{} : std::move(prefab);
 					identity.prefabBaseline = std::move(prefabBaseline);
 				}
 				catch (const std::exception& error) { result.warnings.push_back(std::string{ "Entity: " } + error.what()); }
 				catch (...) { result.warnings.push_back("Entity load failed"); }
+			}
+			for (const auto& link : attachments)
+			{
+				const auto parent = actors.find(link.parent);
+				if (parent == actors.end() || !link.actor->AttachTo(parent->second.get(), false))
+					result.warnings.push_back("Invalid, missing, cyclic or dynamic parent: " + link.parent);
+				else
+				{
+					link.actor->SetRelativeLocation(link.location);
+					link.actor->SetRelativeRotation(link.rotation);
+				}
 			}
 		}
 		catch (const std::exception& error) { result.warnings.push_back(std::string{ "Scene: " } + error.what()); }

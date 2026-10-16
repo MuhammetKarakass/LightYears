@@ -72,6 +72,39 @@ namespace
 		sf::View GetDefaultView() const override { return sf::View{ { 0, 0 }, { 800, 600 } }; }
 		bool HasInputFocus() const override { return focused; }
 	};
+	void Hierarchy()
+	{
+		ly::World world{ nullptr };
+		auto owner = Named(world, "Director");
+		Write("prefabs/tree.prefab.json", R"({"format":"vega.prefab","version":1,"base":{"type":"LuaActor"},"children":[{"id":"branch","name":"Branch","type":"LuaActor","properties":{"Location":[10,0]}}]})");
+		world.TickInternal(0.f);
+		auto& script = Attach(*owner, "hierarchy", R"(
+function on_start(self)
+ local root = world.spawn('prefabs/tree.prefab.json',100,200)
+ assert(#root:children()==1)
+ local child=root:children()[1]
+ assert(child:parent():id()==root:id())
+ assert(child:location().x==110 and child:location().y==200)
+ root:set_rotation(90)
+ assert(math.abs(child:location().x-100)<0.001 and math.abs(child:location().y-210)<0.001)
+ child:set_location(100,220)
+ child:detach()
+ assert(child:parent()==nil and #root:children()==0)
+ assert(child:attach_to(root) and #root:children()==1)
+ assert(not root:attach_to(child))
+ local foreign=world.spawn('LuaActor',0,0)
+ assert(child:attach_to(foreign,false))
+ assert(math.abs(child:location().x-20)<0.001)
+ assert(child:attach_to(root))
+ root:destroy()
+ assert(not child:is_alive() and child:parent()==nil and #root:children()==0)
+ foreign:destroy()
+ self.actor:set_rotation(123)
+end
+)");
+		Healthy(script);
+		Check(owner->GetActorRotation() == 123.f, "Lua hierarchy assertions did not finish");
+	}
 	void WorldApi()
 	{
 		ly::World world{ nullptr }, foreign{ nullptr };
@@ -356,6 +389,7 @@ int main(int argc, char** argv)
 	ly::reflect::Class<LuaActor, ly::Actor>("LuaActor").Spawnable();
 	ScriptRuntime::Get().SetHotReload(false);
 	if (group == "World") WorldApi();
+	else if (group == "Hierarchy") Hierarchy();
 	else if (group == "Events") Events();
 	else if (group == "Timers") Timers();
 	else if (group == "Messages") Messages();

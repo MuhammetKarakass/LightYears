@@ -94,6 +94,7 @@ namespace ly
 
 	void CollisionComponent::SetEnablePhysics(bool enable)
 	{
+		if (enable && GetOwner().GetParent() && mPhysicsBodyType == PhysicsBodyType::Dynamic) GetOwner().Detach();
 		mPhysicsEnabled = enable;
 
 		if (mPhysicsEnabled)
@@ -157,12 +158,13 @@ namespace ly
 
 	void CollisionComponent::SetPhysicsBodyType(PhysicsBodyType bodyType)
 	{
+		if (bodyType == PhysicsBodyType::Dynamic && mPhysicsEnabled && GetOwner().GetParent()) GetOwner().Detach();
 		mPhysicsBodyType = bodyType;
 		if (mPhysicsBodyId)
 		{
 			b2Body_SetType(
 				*mPhysicsBodyId,
-				bodyType == PhysicsBodyType::Static ? b2_staticBody : b2_dynamicBody
+				GetOwner().GetParent() ? b2_kinematicBody : bodyType == PhysicsBodyType::Static ? b2_staticBody : b2_dynamicBody
 			);
 		}
 	}

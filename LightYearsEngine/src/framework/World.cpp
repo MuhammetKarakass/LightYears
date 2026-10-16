@@ -699,6 +699,8 @@ namespace ly{
 
 	World::~World()
 	{
+		for (const auto& actor : mActors) if (actor) actor->Detach();
+		for (const auto& actor : mPendingActors) if (actor) actor->Detach();
 		// Release actors while the physics scene is still alive. Actors that
 		// outlive the world through external shared_ptrs must not touch the dead
 		// scene later, so detach their bodies first.

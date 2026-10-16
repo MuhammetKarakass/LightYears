@@ -255,7 +255,8 @@ component header for Remove Component; required/non-removable types explain why
 removal is disabled. Both commands are Edit-only, capture entity JSON before and
 after the change, and recreate the same GUID on undo/redo while preserving
 selection. Older property commands continue resolving that GUID. Scripts retain
-their separate Add Script path. Entity-reference remapping remains future work.
+their separate Add Script path. Parent GUID links are remapped with subtree copies;
+general reflected entity-reference properties remain future work.
 
 `VegaEditorComponents` runs a configured build-tree script and saves only to
 `components-temp.scene.json` in the build tree. It verifies added Health properties,
@@ -303,3 +304,10 @@ constructor Sprite removal/undo, and loading the saved scene.
   player, HUD, backdrop, three dummies, and scripted sprite; asteroids are not
   visible in that captured frame. The headless test verifies all seven scene
   entities, including both asteroids, before gameplay ticking.
+
+## Actor attachments
+
+Scenes accept optional `parent` GUIDs. Parented Location/Rotation values are relative;
+loading resolves forward references, and saving orders parents first. Prefab instances
+retain child overrides by stable child ID. Hierarchy authoring, transform/physics rules,
+format examples and verification are described in [actor hierarchy](hierarchy.md).

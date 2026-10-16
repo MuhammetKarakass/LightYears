@@ -117,6 +117,15 @@ function ActorHandle:look_at(x, y) end
 ---@return number
 function ActorHandle:distance_to(other) end
 function ActorHandle:destroy() end
+---@return ActorHandle|nil
+function ActorHandle:parent() end
+---@return ActorHandle[]
+function ActorHandle:children() end
+---@param other ActorHandle
+---@param keep_world? boolean Defaults to true.
+---@return boolean
+function ActorHandle:attach_to(other, keep_world) end
+function ActorHandle:detach() end
 ---@param name VegaProperty
 ---@return any
 function ActorHandle:get(name) end

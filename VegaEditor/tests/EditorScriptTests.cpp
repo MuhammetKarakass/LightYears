@@ -18,6 +18,10 @@ int main()
 {
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
+	for (const char* line : { "parent Child Root", "unparent Child", "expect-parent Child Root", "expect-parent Child none", "expect-world-location Child 10 -20 0.01" })
+		Check(ParseEditorScriptLine(line).command.has_value(), std::string{ "Valid hierarchy command refused: " } + line);
+	for (const char* line : { "parent Child", "parent Child Root extra", "unparent", "unparent Child Root", "expect-parent Child", "expect-world-location Child nan 2", "expect-world-location Child 1 2 -1", "expect-world-location Child 1" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid hierarchy command accepted: " } + line);
 	{
 		const auto extension = ParseEditorScriptLine("inspect-widget \"with spaces\" 12 # comment",
 			[](const std::string& name) { return name == "inspect-widget"; });

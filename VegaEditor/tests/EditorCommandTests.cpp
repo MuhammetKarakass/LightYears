@@ -41,6 +41,11 @@ namespace
 		using Actor::Actor;
 	};
 	int failures = 0;
+	class HierarchyCommandActor : public ly::Actor
+	{
+	public:
+		using Actor::Actor;
+	};
 	void Check(bool condition, const char* message)
 	{
 		if (!condition)
@@ -50,6 +55,44 @@ namespace
 		}
 	}
 
+	void TestHierarchyCommands()
+	{
+		ly::reflect::Class<HierarchyCommandActor, ly::Actor>("HierarchyCommandActor").Spawnable();
+		ly::World world{ nullptr };
+		auto root = world.SpawnActor<HierarchyCommandActor>().lock();
+		auto child = world.SpawnActor<HierarchyCommandActor>().lock();
+		root->AddComponent<ly::SceneEntityComponent>("root", "Root");
+		child->AddComponent<ly::SceneEntityComponent>("child", "Child");
+		root->SetActorLocation({ 100, 100 }); child->SetActorLocation({ 110, 100 });
+		vega::EditorSelection selection;
+		vega::EditorContext context{ &world, selection };
+		vega::CommandHistory history{ context };
+		Check(history.Execute(std::make_unique<vega::ReparentActor>("child", "root")), "Parent command failed");
+		Check(child->GetParent() == root.get() && child->GetRelativeLocation() == sf::Vector2f{ 10, 0 }, "Parent keep-world");
+		Check(history.Undo() && !child->GetParent() && child->GetActorLocation() == sf::Vector2f{ 110, 100 }, "Parent undo");
+		Check(history.Redo() && child->GetParent() == root.get(), "Parent redo");
+		const auto depth = history.UndoCount();
+		Check(!history.Execute(std::make_unique<vega::ReparentActor>("root", "child")) && history.UndoCount() == depth, "Cycle command must not enter history");
+		selection.Add(child); selection.Add(root);
+		const auto starts = vega::CaptureSelectionTransform(selection);
+		Check(starts.size() == 1 && vega::TransformSelection(context, history, starts, { 100, 100 }, { 20, 30 }, 90.f), "Hierarchy transform command");
+		Check((child->GetActorLocation() - sf::Vector2f{ 120, 140 }).length() < .001f, "Parent+child selection double-transformed");
+		Check(history.Undo() && child->GetActorLocation() == sf::Vector2f{ 110, 100 }, "Transform undo must restore subtree");
+		selection.Select(root);
+		Check(history.Execute(std::make_unique<vega::AddComponentCommand>(root->GetUniqueID(), "LightComponent")), "Root component replacement");
+		root = std::dynamic_pointer_cast<HierarchyCommandActor>(context.ResolveGuid("root"));
+		Check(child->GetParent() == root.get() && !child->GetIsPendingDestroy(), "Component edit destroyed children");
+		Check(history.Undo() && child->GetParent() == context.ResolveGuid("root").get(), "Component undo lost children");
+		selection.Select(context.ResolveGuid("child"));
+		Check(history.Execute(std::make_unique<vega::SetPropertyCommand>(child->GetUniqueID(), std::nullopt, "Location", sf::Vector2f{ 30, 0 }, 0, true)), "Relative inspector edit");
+		Check(child->GetActorLocation() == sf::Vector2f{ 130, 100 } && history.Undo() && child->GetActorLocation() == sf::Vector2f{ 110, 100 }, "Relative inspector undo");
+		selection.Select(context.ResolveGuid("root")); selection.Add(child);
+		Check(vega::DeleteSelection(context, history) && !context.ResolveGuid("child"), "Hierarchy delete");
+		Check(history.Undo() && context.ResolveGuid("child") && context.ResolveGuid("child")->GetParent() == context.ResolveGuid("root").get(), "Hierarchy delete undo");
+		Check(vega::DuplicateSceneEntity(context, history), "Subtree duplicate");
+		Check(selection.Count() == 1 && selection.Get()->GetChildren().size() == 1, "Duplicate must select copied root and include child once");
+		Check(history.Undo() && context.ResolveGuid("child"), "Duplicate undo damaged source");
+	}
 	void TestHistory()
 	{
 		ly::World world{ nullptr };
@@ -562,6 +605,7 @@ int main()
 	TestActorCacheAndRevisions();
 	TestComponentCommands();
 	TestPrefabReplacements();
+	TestHierarchyCommands();
 	if (failures) return 1;
 	std::cout << "Editor command tests passed\n";
 	return 0;

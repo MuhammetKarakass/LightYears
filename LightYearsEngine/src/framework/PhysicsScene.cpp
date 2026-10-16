@@ -132,7 +132,7 @@ namespace ly
 		}
 
 		b2BodyDef bodyDef = b2DefaultBodyDef();
-		bodyDef.type = listener->GetPhysicsBodyType() == PhysicsBodyType::Static
+		bodyDef.type = listener->GetParent() ? b2_kinematicBody : listener->GetPhysicsBodyType() == PhysicsBodyType::Static
 			? b2_staticBody
 			: b2_dynamicBody;
 

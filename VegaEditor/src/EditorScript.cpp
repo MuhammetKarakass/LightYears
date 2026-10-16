@@ -198,6 +198,34 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::Parent:
+		case ScriptOperation::Unparent:
+		case ScriptOperation::ExpectParent:
+		case ScriptOperation::ExpectWorldLocation:
+		{
+			const auto find = [&](const std::string& name) -> std::shared_ptr<ly::Actor>
+			{
+				if (const auto target = context.ResolveGuid(name)) return target;
+				for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
+					if (const auto candidate = weak.lock(); candidate && !candidate->GetIsPendingDestroy())
+						if (const auto* identity = candidate->FindComponent<ly::SceneEntityComponent>(); identity && identity->name == name) return candidate;
+				return {};
+			};
+			const auto child = find(command.text), parent = find(command.property);
+			if (!child) break;
+			if (command.operation == ScriptOperation::ExpectWorldLocation)
+			{
+				const auto location = child->GetActorLocation();
+				success = std::abs(location.x - command.location.x) <= command.tolerance && std::abs(location.y - command.location.y) <= command.tolerance;
+				detail = "actual " + std::to_string(location.x) + " " + std::to_string(location.y);
+			}
+			else if (command.operation == ScriptOperation::ExpectParent)
+				success = command.property == "none" ? child->GetParent() == nullptr : parent && child->GetParent() == parent.get();
+			else if (command.operation == ScriptOperation::Unparent || parent)
+				success = history.Execute(std::make_unique<ReparentActor>(child->FindComponent<ly::SceneEntityComponent>()->guid,
+					parent ? parent->FindComponent<ly::SceneEntityComponent>()->guid : std::string{}));
+			break;
+		}
 		case ScriptOperation::SkyOpen:
 		case ScriptOperation::SkySet:
 		case ScriptOperation::SkyDrag:

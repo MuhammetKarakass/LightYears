@@ -290,3 +290,12 @@ Implementation files:
 * Coverage/examples: `VegaScript/tests/LuaApiTests.cpp` and
   `VegaScript/examples/{trigger,spinning-hazard,message-receiver}.lua`.
 * Reference and setup: this document.
+
+## Actor attachment
+
+`:parent()` returns a live parent handle or nil; `:children()` returns an array of
+immediate live child handles. `:attach_to(other[, keep_world])` returns success and
+defaults to keeping world values. `:detach()` preserves world values. World transform
+setters still accept world coordinates. Destroy cascades through descendants, and
+`world.spawn` of a hierarchy prefab creates every child and returns the root.
+Dynamic physical children are refused; see [hierarchy rules](hierarchy.md).

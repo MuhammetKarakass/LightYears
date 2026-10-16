@@ -174,11 +174,14 @@ namespace vega
 	void EditorApplication::BuildHierarchyPanel()
 	{
 		LY_PROFILE_SCOPE("Editor Hierarchy");
+		auto& context = mPrefabWorld ? mPrefabContext : mContext;
+		auto& selection = mPrefabWorld ? mPrefabSelection : mSelection;
+		auto& history = mPrefabWorld ? mPrefabHistory : mHistory;
 		if (ImGui::Begin("Hierarchy", &mShowHierarchy))
 		{
 			if (ImGui::Button("World Settings")) { mShowWorldSettings = true; ImGui::SetWindowFocus("World Settings"); }
 			ImGui::SameLine();
-			ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+			ImGui::BeginDisabled(context.playMode || context.transitioning);
 			if (ImGui::Button("+")) ImGui::OpenPopup("Create entity");
 			if (ImGui::BeginPopup("Create entity"))
 			{
@@ -197,11 +200,12 @@ namespace vega
 					std::shared_ptr<ly::Actor> actor;
 					const ly::SceneEntityComponent* identity;
 					const std::string* type;
+					int depth = 0;
 				};
 				// RTTI names are immutable. Cache once per type, not once per actor/frame.
 				static std::map<std::type_index, std::string> typeNames;
 				std::vector<Row> rows;
-				if (mContext.world) rows.reserve(mContext.world->GetActorCountIncludingPending());
+				if (context.world) rows.reserve(context.world->GetActorCountIncludingPending());
 				const std::string_view filter = mHierarchyFilter;
 				const auto matches = [&](std::string_view name, std::string_view type)
 				{
@@ -217,7 +221,7 @@ namespace vega
 					}
 					return false;
 				};
-				if (mContext.world) for (const auto& weak : mContext.world->GetActorsByTypeIncludingPending<ly::Actor>())
+				if (context.world) for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
 				{
 					const auto actor = weak.lock();
 					if (!actor || actor->GetIsPendingDestroy()) continue;
@@ -232,10 +236,30 @@ namespace vega
 					}
 					rows.push_back({ actor, identity, &type });
 				}
+				static std::unordered_set<unsigned int> collapsed;
+				std::unordered_map<ly::Actor*, std::vector<std::size_t>> descendants;
+				std::unordered_set<ly::Actor*> visible;
+				for (const auto& row : rows) visible.insert(row.actor.get());
+				for (std::size_t i = 0; i < rows.size(); ++i)
+					descendants[visible.count(rows[i].actor->GetParent()) ? rows[i].actor->GetParent() : nullptr].push_back(i);
+				std::vector<Row> ordered;
+				ordered.reserve(rows.size());
+				const auto append = [&](auto&& self, ly::Actor* parent, int depth) -> void
+				{
+					const auto found = descendants.find(parent);
+					if (found == descendants.end()) return;
+					for (auto i : found->second)
+					{
+						auto row = rows[i]; row.depth = depth; ordered.push_back(row);
+						if (!collapsed.count(row.actor->GetUniqueID()) || !filter.empty()) self(self, row.actor.get(), depth + 1);
+					}
+				};
+				append(append, nullptr, 0);
+				rows = std::move(ordered);
 				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::GetIO().WantTextInput && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A, false))
 				{
-					mSelection.Clear();
-					for (const auto& row : rows) mSelection.Add(row.actor);
+					selection.Clear();
+					for (const auto& row : rows) selection.Add(row.actor);
 				}
 				const float rowHeight = 2.f * ImGui::GetTextLineHeightWithSpacing();
 				ImGuiListClipper clipper;
@@ -257,14 +281,15 @@ namespace vega
 					const auto& name = identity ? identity->name : fallback;
 					const float rowStart = ImGui::GetCursorPosY();
 					ImGui::PushID(static_cast<int>(actor->GetUniqueID()));
+					if (row.depth) ImGui::Indent(row.depth * 16.f);
 					if (identity && identity->guid == mRenameGuid)
 					{
 						if (mRenameFocus) { ImGui::SetKeyboardFocusHere(); mRenameFocus = false; }
 						const bool enter = ImGui::InputText("##Rename", mRenameInput, sizeof(mRenameInput), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
 						if (enter || ImGui::IsItemDeactivatedAfterEdit())
 						{
-							mSelection.Select(actor);
-							RenameSceneEntity(mContext, mHistory, mRenameInput);
+							selection.Select(actor);
+							RenameSceneEntity(context, history, mRenameInput);
 							mRenameGuid.clear();
 						}
 						if (ImGui::IsKeyPressed(ImGuiKey_Escape)) mRenameGuid.clear();
@@ -273,32 +298,47 @@ namespace vega
 					{
 						const bool prefab = identity && !identity->prefab.empty();
 						if (prefab) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ .35f, .75f, 1.f, 1.f });
-						if (ImGui::Selectable(name.c_str(), mSelection.Contains(actor), ImGuiSelectableFlags_AllowDoubleClick))
+						ImGui::SetNextItemOpen(!collapsed.count(actor->GetUniqueID()), ImGuiCond_Always);
+						const bool open = ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_OpenOnArrow |
+							ImGuiTreeNodeFlags_SpanAvailWidth | (actor->GetChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0) |
+							(selection.Contains(actor) ? ImGuiTreeNodeFlags_Selected : 0));
+						if (open) collapsed.erase(actor->GetUniqueID()); else collapsed.insert(actor->GetUniqueID());
+						if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 						{
 							const auto& io = ImGui::GetIO();
 							if (io.KeyShift && mHierarchyAnchor)
 							{
 								const auto anchor = std::find_if(rows.begin(), rows.end(), [&](const Row& entry) { return entry.actor->GetUniqueID() == *mHierarchyAnchor; });
-								if (!io.KeyCtrl) mSelection.Clear();
+								if (!io.KeyCtrl) selection.Clear();
 								const int start = anchor == rows.end() ? index : static_cast<int>(anchor - rows.begin());
-								for (int i = std::min(start, index); i <= std::max(start, index); ++i) mSelection.Add(rows[i].actor);
-								mSelection.Add(actor);
+								for (int i = std::min(start, index); i <= std::max(start, index); ++i) selection.Add(rows[i].actor);
+								selection.Add(actor);
 							}
 							else
 							{
-								if (io.KeyCtrl) mSelection.Toggle(actor); else mSelection.Select(actor);
+								if (io.KeyCtrl) selection.Toggle(actor); else selection.Select(actor);
 								mHierarchyAnchor = actor->GetUniqueID();
 							}
-							if (mSelection.Count() == 1 && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) BeginRename();
+							if (selection.Count() == 1 && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) BeginRename();
 						}
 						if (prefab) ImGui::PopStyleColor();
-						if (!mContext.playMode && ImGui::BeginDragDropSource())
+						if (!context.playMode && ImGui::BeginDragDropSource())
 						{
-							if (!mSelection.Contains(actor)) mSelection.Select(actor); else mSelection.Add(actor);
+							if (!selection.Contains(actor)) selection.Select(actor); else selection.Add(actor);
 							const auto id = actor->GetUniqueID();
 							ImGui::SetDragDropPayload("VEGA_ACTOR", &id, sizeof(id));
 							ImGui::TextUnformatted(name.c_str());
 							ImGui::EndDragDropSource();
+						}
+						if (!context.playMode && ImGui::BeginDragDropTarget())
+						{
+							if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_ACTOR"))
+							{
+								if (const auto child = context.Resolve(*static_cast<const unsigned int*>(payload->Data)))
+									if (const auto* childIdentity = child->FindComponent<ly::SceneEntityComponent>(); childIdentity && identity)
+										history.Execute(std::make_unique<ReparentActor>(childIdentity->guid, ImGui::GetIO().KeyAlt ? std::string{} : identity->guid));
+							}
+							ImGui::EndDragDropTarget();
 						}
 						if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 						{
@@ -309,28 +349,31 @@ namespace vega
 					}
 					if (ImGui::BeginPopup("Entity actions"))
 					{
-						if (!mSelection.Contains(actor)) mSelection.Select(actor);
-						ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+						if (!selection.Contains(actor)) selection.Select(actor);
+						ImGui::BeginDisabled(context.playMode || context.transitioning);
 						DrawCreateMenu();
-						if (ImGui::MenuItem("Create Prefab...", nullptr, false, identity != nullptr))
+						if (ImGui::MenuItem("Create Prefab...", nullptr, false, identity != nullptr && !mPrefabWorld))
 						{
 							mVariantParent.clear();
 							std::snprintf(mPrefabName, sizeof(mPrefabName), "%s", identity->name.c_str());
 							mCreatePrefabDialog = true;
 						}
-						if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, identity != nullptr)) DuplicateSceneEntity(mContext, mHistory);
+						if (ImGui::MenuItem("Detach", nullptr, false, identity && actor->GetParent()))
+							history.Execute(std::make_unique<ReparentActor>(identity->guid, std::string{}));
+						if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, identity != nullptr)) DuplicateSceneEntity(context, history);
 						if (ImGui::MenuItem("Rename", "F2", false, identity != nullptr)) BeginRename();
-						if (ImGui::MenuItem("Delete", "Del", false, identity != nullptr)) DeleteSelection(mContext, mHistory);
+						if (ImGui::MenuItem("Delete", "Del", false, identity != nullptr)) DeleteSelection(context, history);
 						ImGui::EndDisabled();
 						ImGui::EndPopup();
 					}
 					if (mHierarchyPopupActor == actor->GetUniqueID() && !ImGui::IsPopupOpen("Entity actions")) mHierarchyPopupActor.reset();
 					ImGui::PopID();
+					if (row.depth) ImGui::Unindent(row.depth * 16.f);
 					ImGui::SetCursorPosY(rowStart + rowHeight);
 				}
 				if (ImGui::BeginPopupContextWindow("Hierarchy actions", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 				{
-					ImGui::BeginDisabled(mContext.playMode || mContext.transitioning);
+					ImGui::BeginDisabled(context.playMode || context.transitioning);
 					DrawCreateMenu();
 					ImGui::EndDisabled();
 					ImGui::EndPopup();
@@ -409,6 +452,9 @@ namespace vega
 						if (ImGui::SmallButton("Apply all")) ChangeAllPrefab(context, history, true);
 					}
 				ImGui::TextWrapped("%s  #%u", ActorTypeName(*actor).c_str(), actor->GetUniqueID());
+				const auto* parentIdentity = actor->GetParent() ? actor->GetParent()->FindComponent<ly::SceneEntityComponent>() : nullptr;
+				ImGui::Text("Parent: %s", parentIdentity ? parentIdentity->name.c_str() : "none");
+				ImGui::Checkbox("Relative Location / Rotation", &context.relativeTransforms);
 				if (ImGui::Button("Focus")) context.FocusSelection();
 				if (context.playMode) ImGui::TextWrapped("Play inspection only. Runtime changes are discarded on Stop.");
 				ImGui::BeginDisabled(context.playMode || context.transitioning);
@@ -530,6 +576,8 @@ namespace vega
 								if (mPrefabWorld && !target.componentIdentity && property->name == "Location") continue;
 								if (scriptComponent && (property->name == "Script" || property->name == "Last Error")) continue;
 								auto value = property->getter(target.object);
+								if (context.relativeTransforms && !target.componentIdentity && property->name == "Location") value = actor->GetRelativeLocation();
+								if (context.relativeTransforms && !target.componentIdentity && property->name == "Rotation") value = actor->GetRelativeRotation();
 								ImGui::BeginDisabled(!property->setter);
 								// Reflected names can be longer than the old fixed labels.
 								const float labelWidth = ImGui::CalcTextSize(property->name.c_str()).x;
@@ -543,7 +591,7 @@ namespace vega
 								if (changed && property->setter)
 								{
 									history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), target.componentIdentity,
-										property->name, std::move(value), (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0));
+										property->name, std::move(value), (ImGui::IsItemActive() || ImGui::IsItemDeactivated()) ? mPropertyMergeGroup : 0, context.relativeTransforms));
 								}
 								ImGui::EndDisabled();
 								PrefabPropertyMenu(*actor, target, property->name);

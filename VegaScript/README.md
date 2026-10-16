@@ -101,3 +101,7 @@ VegaScriptComponent runs headlessly, creates temporary assets in the build tree,
 and covers lifecycle, isolation, properties, hot reload, error recovery, sandbox,
 handles and reflection. Sol2 appears in one `.cpp` only; public headers use pimpl
 and never include sol headers.
+
+Actor handles support `parent()`, `children()`, `attach_to(other[, keep_world])`
+and `detach()`. Prefab spawning includes the hierarchy. See
+[attachment rules](../docs/hierarchy.md). `VegaScriptHierarchy` verifies these APIs.

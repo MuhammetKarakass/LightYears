@@ -460,6 +460,22 @@ namespace vega
 			command.operation = ScriptOperation::WaitSeconds;
 			return { command, {} };
 		}
+		if (verb == "parent" || verb == "unparent" || verb == "expect-parent")
+		{
+			if (tokens.size() != (verb == "unparent" ? 2u : 3u) || tokens[1].empty() || (tokens.size() == 3 && tokens[2].empty())) return bad();
+			command.operation = verb == "parent" ? ScriptOperation::Parent : verb == "unparent" ? ScriptOperation::Unparent : ScriptOperation::ExpectParent;
+			command.text = tokens[1];
+			if (tokens.size() == 3) command.property = tokens[2];
+			return { command, {} };
+		}
+		if (verb == "expect-world-location")
+		{
+			if (tokens.size() < 4 || tokens.size() > 5 || tokens[1].empty() || !real(2, command.location.x) || !real(3, command.location.y) ||
+				(tokens.size() == 5 && (!real(4, command.tolerance) || command.tolerance < 0.f))) return bad();
+			command.operation = ScriptOperation::ExpectWorldLocation;
+			command.text = tokens[1];
+			return { command, {} };
+		}
 		if (verb == "open-json")
 		{
 			if (tokens.size() != 2 || tokens[1].empty()) return bad();

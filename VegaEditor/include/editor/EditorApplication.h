@@ -99,6 +99,7 @@ namespace vega
 		mutable std::uint64_t mPrefabDirtyRevision = 0;
 		mutable bool mPrefabDirty = false;
 		std::filesystem::path mPrefabPath, mPendingPrefab;
+		std::string mPrefabRootGuid;
 		bool mConfirmPrefab = false;
 		bool mPrefabCloseRequested = false;
 		bool mCreatePrefabDialog = false;

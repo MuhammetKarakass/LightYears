@@ -78,7 +78,7 @@ namespace ly
 				debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION, warning);
 			return result;
 		};
-		std::set<std::filesystem::path> chain;
+		std::set<std::filesystem::path> chain, dependencies;
 		try
 		{
 			const auto relative = std::filesystem::u8path(path);
@@ -102,13 +102,13 @@ namespace ly
 					mResolved.erase(found);
 				}
 				++mResolveCount;
-				auto result = Resolve(path, chain);
+				auto result = Resolve(path, chain, dependencies);
 				if (result)
 				{
 					Resolved cached{ result, {} };
 					// Use the stamps of the documents actually loaded, so a concurrent
 					// file change cannot mark an older realization as current.
-					for (const auto& dependency : chain)
+					for (const auto& dependency : dependencies)
 					{
 						const auto& document = mCache.at(dependency);
 						cached.dependencies[dependency] = { document.modified, document.size };
@@ -119,9 +119,9 @@ namespace ly
 			}
 		}
 		catch (const std::filesystem::filesystem_error&) {}
-		return report(Resolve(path, chain));
+		return report(Resolve(path, chain, dependencies));
 	}
-	PrefabResult PrefabLibrary::Resolve(const std::string& path, std::set<std::filesystem::path>& chain)
+	PrefabResult PrefabLibrary::Resolve(const std::string& path, std::set<std::filesystem::path>& chain, std::set<std::filesystem::path>& dependencies)
 	{
 		PrefabResult result;
 		try
@@ -132,13 +132,15 @@ namespace ly
 				result.warnings.push_back("Prefab cycle or depth limit: " + path);
 				return result;
 			}
+			struct Pop { std::set<std::filesystem::path>& chain; std::filesystem::path key; ~Pop() { chain.erase(key); } } pop{ chain, key };
+			dependencies.insert(key);
 			const auto document = Load(path, result.warnings);
 			if (document.is_null()) return result;
 			const auto& base = document.at("base");
 			if (base.contains("type") == base.contains("prefab")) throw std::runtime_error("Base must contain exactly one of type or prefab");
 			if (base.contains("prefab"))
 			{
-				auto parent = Resolve(base.at("prefab").get<std::string>(), chain);
+				auto parent = Resolve(base.at("prefab").get<std::string>(), chain, dependencies);
 				result.warnings.insert(result.warnings.end(), parent.warnings.begin(), parent.warnings.end());
 				if (!parent) return result;
 				result.entity = std::move(parent.entity);
@@ -154,16 +156,46 @@ namespace ly
 				result.entity = SceneSerializer::SaveEntity(*scratch.GetActorsByTypeIncludingPending<Actor>().front().lock(), true);
 			}
 			result.entity = Merge(std::move(result.entity), document);
+			const auto resolveChildren = [&](auto&& self, Json& node, unsigned depth) -> void
+			{
+				if (depth > 128) throw std::runtime_error("Prefab hierarchy depth limit");
+				if (!node.contains("children")) return;
+				if (!node["children"].is_array()) throw std::runtime_error("children must be an array");
+				std::set<std::string> ids;
+				for (auto& child : node["children"])
+				{
+					const auto id = child.at("id").get<std::string>();
+					if (id.empty() || id.find('/') != std::string::npos || !ids.insert(id).second) throw std::runtime_error("Duplicate or invalid prefab child id");
+					if (child.contains("prefab"))
+					{
+						auto nested = Resolve(child["prefab"].get<std::string>(), chain, dependencies);
+						result.warnings.insert(result.warnings.end(), nested.warnings.begin(), nested.warnings.end());
+						if (!nested) throw std::runtime_error("Cannot resolve nested prefab");
+						child = Merge(std::move(nested.entity), child);
+						child.erase("prefab");
+					}
+					self(self, child, depth + 1);
+				}
+			};
+			resolveChildren(resolveChildren, result.entity, 0);
 			result.entity.erase("guid");
 			result.entity.erase("name");
 			result.entity["properties"].erase("Location");
+			
+			
 			// Normalize setter side effects and canonical composition before diffing.
 			World scratch{ nullptr };
 			const auto loaded = SceneSerializer::Load(scratch, { { "format", "vega.scene" }, { "version", 1 },
 				{ "settings", Json::object() }, { "entities", Json::array({ result.entity }) } });
 			result.warnings.insert(result.warnings.end(), loaded.warnings.begin(), loaded.warnings.end());
-			if (loaded.spawned != 1) { result.entity = nullptr; return result; }
-			result.entity = SceneSerializer::SaveEntity(*scratch.GetActorsByTypeIncludingPending<Actor>().front().lock(), true);
+			if (loaded.spawned < 1) { result.entity = nullptr; return result; }
+			result.entity = SceneSerializer::SaveSubtree(*scratch.GetActorsByTypeIncludingPending<Actor>().front().lock(), true);
+			const auto clean = [&](auto&& self, Json& node) -> void
+			{
+				node.erase("guid"); node.erase("parent");
+				if (node.contains("children")) for (auto& child : node["children"]) self(self, child);
+			};
+			clean(clean, result.entity);
 			result.entity.erase("guid");
 			result.entity.erase("name");
 			result.entity["properties"].erase("Location");
@@ -230,12 +262,45 @@ namespace ly
 			}
 			base["scripts"] = std::move(scripts);
 		}
-		for (const char* key : { "guid", "name" }) if (overrides.contains(key)) base[key] = overrides[key];
+		if (overrides.contains("children"))
+		{
+			if (!overrides["children"].is_array()) throw std::runtime_error("children must be an array");
+			auto children = Entries(base, "children");
+			if (overrides.value("replaceChildren", false)) children = Json::array();
+			std::set<std::string> ids;
+			for (const auto& child : overrides["children"])
+			{
+				const auto id = child.at("id").get<std::string>();
+				if (id.empty() || !ids.insert(id).second) throw std::runtime_error("Duplicate or empty prefab child id");
+				auto found = std::find_if(children.begin(), children.end(), [&](const Json& previous) { return previous.at("id") == id; });
+				if (child.value("deleted", false)) { if (found != children.end()) children.erase(found); }
+				else if (found == children.end()) children.push_back(child);
+				else *found = Merge(*found, child);
+			}
+			base["children"] = std::move(children);
+		}
+		for (const char* key : { "guid", "name", "parent", "id", "prefab" }) if (overrides.contains(key)) base[key] = overrides[key];
 		return base;
 	}
 	Json PrefabLibrary::Diff(const Json& entity, const Json& baseline)
 	{
 		Json result = Json::object();
+		Json childChanges = Json::array();
+		const auto children = Entries(entity, "children"), baseChildren = Entries(baseline, "children");
+		for (const auto& child : children)
+		{
+			const auto id = child.at("id");
+			const auto previous = std::find_if(baseChildren.begin(), baseChildren.end(), [&](const Json& item) { return item.at("id") == id; });
+			auto change = previous == baseChildren.end() ? child : Diff(child, *previous);
+			// Instance identity is independent of defaults, and survives refresh/undo.
+			for (const char* key : { "guid", "name" }) if (child.contains(key)) change[key] = child[key];
+			if (!change.empty()) { change["id"] = id; childChanges.push_back(std::move(change)); }
+		}
+		for (const auto& child : baseChildren)
+			if (std::none_of(children.begin(), children.end(), [&](const Json& item) { return item.at("id") == child.at("id"); }))
+				childChanges.push_back({ { "id", child.at("id") }, { "deleted", true } });
+		std::sort(childChanges.begin(), childChanges.end(), [](const Json& a, const Json& b) { return a.at("id") < b.at("id"); });
+		if (!childChanges.empty()) result["children"] = std::move(childChanges);
 		const auto properties = PropertiesDiff(entity.value("properties", Json::object()), baseline.value("properties", Json::object()));
 		if (!properties.empty()) result["properties"] = properties;
 		const auto components = Entries(entity, "components");
@@ -305,6 +370,12 @@ namespace ly
 	}
 	Json PrefabLibrary::Document(Json entity, const std::string& name)
 	{
+		const auto clean = [&](auto&& self, Json& node) -> void
+		{
+			node.erase("guid"); node.erase("parent");
+			if (node.contains("children")) for (auto& child : node["children"]) self(self, child);
+		};
+		clean(clean, entity);
 		entity["base"] = entity.contains("prefab") ? Json{ { "prefab", entity["prefab"] } } : Json{ { "type", entity.at("type") } };
 		for (const char* key : { "guid", "name", "type", "prefab" }) entity.erase(key);
 		if (entity.contains("properties")) entity["properties"].erase("Location");

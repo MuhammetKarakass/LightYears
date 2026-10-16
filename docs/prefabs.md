@@ -17,7 +17,8 @@ attached Lua scripts; prefabs introduce no visual scripting system.
 ```
 
 Prefab documents use the scene entity's properties, components, removed, and
-scripts fields. They have no entity GUID, entity name, or Location. The document
+scripts fields. The root has no entity GUID, entity name, or Location; children
+may have names and relative Location values with stable IDs. The document
 name is an asset display name. A base contains exactly one spawnable type or
 asset-relative prefab path. Paths cannot escape the asset root.
 
@@ -146,3 +147,11 @@ timeout and AbilityBalance sandbox failure. Logs are
 * Automation: `VegaEditor/tests/EditorCommandTests.cpp`, `EditorScriptTests.cpp`,
   `RunPrefabsTest.cmake.in`, `scripts/prefabs.vegascript`, and `scripts/README.md`.
 * Documentation: this file and `docs/scene-authoring.md`.
+
+## Hierarchies and nested instances
+
+A prefab can contain a `children` array with stable sibling `id` values. Each child
+uses entity fields and may reference another prefab. Repeated references are allowed;
+cycles through either bases or children are rejected. Instance child overrides merge
+by ID; child property and section Apply/Revert use that address. Create Prefab captures
+the selected subtree. See [actor hierarchy](hierarchy.md) for the full format and rules.

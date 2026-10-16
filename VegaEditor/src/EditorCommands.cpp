@@ -18,6 +18,83 @@
 
 namespace vega
 {
+	bool ReparentActor::Execute(EditorContext& context)
+	{
+		if (context.playMode || context.transitioning) return false;
+		const auto child = context.ResolveGuid(mChild), parent = context.ResolveGuid(mParent);
+		if (!child || (!mParent.empty() && !parent)) return false;
+		const auto* before = child->GetParent() ? child->GetParent()->FindComponent<ly::SceneEntityComponent>() : nullptr;
+		const auto beforeParent = before ? before->guid : std::string{};
+		const auto location = child->GetRelativeLocation();
+		const auto rotation = child->GetRelativeRotation();
+		auto states = nlohmann::json::array();
+		const auto capture = [&](auto&& self, ly::Actor& actor) -> void
+		{
+			if (const auto* identity = actor.FindComponent<ly::SceneEntityComponent>())
+				states.push_back({ { "guid", identity->guid }, { "prefab", identity->prefab }, { "root", identity->prefabRootGuid },
+					{ "id", identity->childId }, { "baseline", identity->prefabBaseline } });
+			for (auto* descendant : actor.GetChildren()) self(self, *descendant);
+		};
+		capture(capture, *child);
+		if (beforeParent == mParent || !child->AttachTo(parent.get())) return false;
+		// Moving an inherited child changes its prefab address. Preserve it as an
+		// added subtree at the destination; undo restores the inherited identities.
+		if (const auto* identity = child->FindComponent<ly::SceneEntityComponent>(); identity && !identity->prefabRootGuid.empty())
+			for (const auto& state : states)
+				if (const auto actor = context.ResolveGuid(state.at("guid").get<std::string>()))
+				{
+					auto* data = actor->FindComponent<ly::SceneEntityComponent>();
+					data->prefab.clear(); data->prefabRootGuid.clear(); data->prefabBaseline = nullptr;
+					data->childId = data->guid;
+					std::replace(data->childId.begin(), data->childId.end(), '/', '_');
+				}
+		if (!mExecuted)
+		{
+			mBeforeParent = beforeParent; mBeforeLocation = location; mBeforeRotation = rotation;
+			mPrefabStates = std::move(states); mExecuted = true;
+		}
+		return true;
+	}
+
+	void ReparentActor::Undo(EditorContext& context)
+	{
+		const auto child = context.ResolveGuid(mChild), parent = context.ResolveGuid(mBeforeParent);
+		if (!child || !mExecuted || (!mBeforeParent.empty() && !parent) || !child->AttachTo(parent.get())) return;
+		child->SetRelativeLocation(mBeforeLocation);
+		child->SetRelativeRotation(mBeforeRotation);
+		for (const auto& state : mPrefabStates)
+			if (const auto actor = context.ResolveGuid(state.at("guid").get<std::string>()))
+			{
+				auto* data = actor->FindComponent<ly::SceneEntityComponent>();
+				data->prefab = state.at("prefab").get<std::string>(); data->prefabRootGuid = state.at("root").get<std::string>();
+				data->childId = state.at("id").get<std::string>(); data->prefabBaseline = state.at("baseline");
+			}
+	}
+
+	namespace
+	{
+		bool HasSelectedAncestor(const EditorSelection& selection, const ly::Actor& actor)
+		{
+			for (auto* parent = actor.GetParent(); parent; parent = parent->GetParent())
+				if (selection.Contains(parent->GetWeakActor().lock())) return true;
+			return false;
+		}
+		nlohmann::json SelectionSubtrees(EditorContext& context)
+		{
+			auto result = nlohmann::json::array();
+			for (const auto& actor : context.selection.GetAll())
+			{
+				if (HasSelectedAncestor(context.selection, *actor)) continue;
+				auto entity = ly::SceneSerializer::SaveSubtree(*actor);
+				if (entity.is_null()) return nlohmann::json::array();
+				entity.erase("parent");
+				entity["properties"]["Location"] = { actor->GetActorLocation().x, actor->GetActorLocation().y };
+				entity["properties"]["Rotation"] = actor->GetActorRotation();
+				result.push_back(std::move(entity));
+			}
+			return result;
+		}
+	}
 	bool SetSceneSettingCommand::Execute(EditorContext& context)
 	{
 		if (!context.sceneSettings || context.playMode || context.transitioning) return false;
@@ -126,9 +203,9 @@ namespace vega
 	}
 
 	SetPropertyCommand::SetPropertyCommand(unsigned int id, std::optional<ly::ComponentIdentity> componentIdentity,
-		std::string property, ly::reflect::PropertyValue after, std::uint64_t group)
+		std::string property, ly::reflect::PropertyValue after, std::uint64_t group, bool relative)
 		: mID{ id }, mComponentIdentity{ componentIdentity }, mProperty{ std::move(property) },
-		mAfter{ std::move(after) }, mMergeGroup{ group }
+		mAfter{ std::move(after) }, mMergeGroup{ group }, mRelative{ relative }
 	{
 	}
 
@@ -143,8 +220,21 @@ namespace vega
 		const auto target = ResolvePropertyTarget(*actor, mComponentIdentity);
 		const auto* property = target.type ? target.type->FindProperty(mProperty) : nullptr;
 		if (!property) { context.propertyError = "Unknown property"; return false; }
-		const auto before = property->getter(target.object);
-		if (!property->SetValue(target.object, mAfter, &context.propertyError)) return false;
+		const auto before = mRelative && !mComponentIdentity && mProperty == "Location" ? ly::reflect::PropertyValue{ actor->GetRelativeLocation() } :
+			mRelative && !mComponentIdentity && mProperty == "Rotation" ? ly::reflect::PropertyValue{ actor->GetRelativeRotation() } : property->getter(target.object);
+		if (mRelative && !mComponentIdentity && mProperty == "Location")
+		{
+			const auto* value = std::get_if<sf::Vector2f>(&mAfter);
+			if (!value || !std::isfinite(value->x) || !std::isfinite(value->y)) return false;
+			actor->SetRelativeLocation(*value);
+		}
+		else if (mRelative && !mComponentIdentity && mProperty == "Rotation")
+		{
+			const auto* value = std::get_if<float>(&mAfter);
+			if (!value || !std::isfinite(*value)) return false;
+			actor->SetRelativeRotation(*value);
+		}
+		else if (!property->SetValue(target.object, mAfter, &context.propertyError)) return false;
 		if (!mExecuted) { mBefore = before; mActorName = ActorTypeName(*actor); mExecuted = true; }
 		return true;
 	}
@@ -159,7 +249,9 @@ namespace vega
 			context.propertyErrorActor = mID;
 			context.propertyErrorComponent = mComponentIdentity;
 			context.propertyErrorName = mProperty;
-			property->SetValue(target.object, mBefore, &context.propertyError);
+			if (mRelative && !mComponentIdentity && mProperty == "Location") actor->SetRelativeLocation(std::get<sf::Vector2f>(mBefore));
+			else if (mRelative && !mComponentIdentity && mProperty == "Rotation") actor->SetRelativeRotation(std::get<float>(mBefore));
+			else property->SetValue(target.object, mBefore, &context.propertyError);
 		}
 	}
 
@@ -174,7 +266,7 @@ namespace vega
 	bool SetPropertyCommand::MergeWith(const EditorCommand& command)
 	{
 		const auto* next = dynamic_cast<const SetPropertyCommand*>(&command);
-		if (!next || !mMergeGroup || mMergeGroup != next->mMergeGroup || mID != next->mID ||
+		if (!next || !mMergeGroup || mMergeGroup != next->mMergeGroup || mID != next->mID || mRelative != next->mRelative ||
 			mComponentIdentity != next->mComponentIdentity || mProperty != next->mProperty) return false;
 		mAfter = next->mAfter;
 		return true;
@@ -408,7 +500,7 @@ namespace vega
 		if (!actor) return false;
 		if (!mGuid.empty())
 		{
-			mEntity = ly::SceneSerializer::SaveEntity(*actor);
+			mEntity = ly::SceneSerializer::SaveSubtree(*actor);
 			if (mEntity.is_null()) return false;
 		}
 		actor->Destroy();
@@ -428,35 +520,13 @@ namespace vega
 	void DestroyActor::Undo(EditorContext& context)
 	{
 		if (mEntity.is_null() || !context.world) return;
-		if (ly::SceneSerializer::Load(*context.world, EntityScene(mEntity)).spawned == 1)
+		if (ly::SceneSerializer::Load(*context.world, EntityScene(mEntity)).spawned >= 1)
 			context.selection.Select(context.ResolveGuid(mGuid));
 	}
 
 	bool ComponentCommand::Restore(EditorContext& context, const nlohmann::json& entity)
 	{
-		if (!context.world || context.playMode || context.transitioning) return false;
-		const auto actor = context.Resolve(mID, mGuid);
-		if (!actor) return false;
-		// Load with a temporary identity so a failed factory/property cannot destroy
-		// the authored entity. Publish the original GUID only once loading succeeds.
-		auto stagedEntity = entity;
-		const auto temporaryGuid = ly::SceneEntityComponent::GenerateGuid();
-		stagedEntity["guid"] = temporaryGuid;
-		const auto result = ly::SceneSerializer::Load(*context.world, EntityScene(stagedEntity));
-		context.ResetActorCache();
-		const auto replacement = context.ResolveGuid(temporaryGuid);
-		if (result.spawned != 1 || !result.warnings.empty() || !replacement)
-		{
-			if (replacement) replacement->Destroy();
-			context.ResetActorCache();
-			return false;
-		}
-		const bool selected = context.selection.Contains(actor);
-		actor->Destroy();
-		replacement->FindComponent<ly::SceneEntityComponent>()->guid = mGuid;
-		context.ResetActorCache();
-		if (selected) context.selection.Replace(actor, replacement);
-		return true;
+		return RestoreSceneEntity(context, entity);
 	}
 
 	bool ComponentCommand::Execute(EditorContext& context)
@@ -473,8 +543,9 @@ namespace vega
 		// Stage the complete entity before replacing it. Factories and removal policy
 		// run in isolation, and history retains only JSON and the stable GUID.
 		ly::World scratch{ nullptr };
-		const auto loaded = ly::SceneSerializer::Load(scratch, EntityScene(mBefore));
-		if (loaded.spawned != 1 || !loaded.warnings.empty()) return false;
+		auto stagedBefore = mBefore; stagedBefore.erase("parent");
+		const auto loaded = ly::SceneSerializer::Load(scratch, EntityScene(stagedBefore));
+		if (loaded.spawned < 1 || !loaded.warnings.empty()) return false;
 		const auto staged = scratch.GetActorsByTypeIncludingPending<ly::Actor>().front().lock();
 		try
 		{
@@ -485,6 +556,7 @@ namespace vega
 				if (!component || !staged->RemoveComponent(*component)) return false;
 			}
 			mAfter = ly::SceneSerializer::SaveEntity(*staged);
+			if (mBefore.contains("parent")) mAfter["parent"] = mBefore["parent"];
 		}
 		catch (const std::exception&) { return false; }
 		return !mAfter.is_null() && Restore(context, mAfter);
@@ -518,28 +590,76 @@ namespace vega
 			context.ResetActorCache();
 			return true;
 		}
-		// Internal undo snapshots contain the full type and values as well as the
-		// prefab link. Load those values directly, then compare to today's baseline.
 		const auto snapshotPrefab = staged.contains("type") ? staged.value("prefab", std::string{}) : std::string{};
 		const auto savedBaseline = staged.value("_prefabBaseline", nlohmann::json::object());
 		staged.erase("_prefabBaseline");
 		if (!snapshotPrefab.empty()) staged.erase("prefab");
-		const auto temporary = ly::SceneEntityComponent::GenerateGuid();
-		staged["guid"] = temporary;
+		// Stage with fresh identities so the old subtree stays intact until creation succeeds.
+		std::map<std::string, std::string> publish;
+		const auto stage = [&](auto&& self, nlohmann::json& node) -> void
+		{
+			const auto old = node.value("guid", std::string{});
+			const auto temporary = ly::SceneEntityComponent::GenerateGuid();
+			if (!old.empty()) publish[temporary] = old;
+			node["guid"] = temporary;
+			if (node.contains("children")) for (auto& child : node["children"]) self(self, child);
+		};
+		stage(stage, staged);
+		const auto temporary = staged.at("guid").get<std::string>();
 		const auto loaded = ly::SceneSerializer::Load(*context.world, EntityScene(staged));
 		context.ResetActorCache();
 		const auto replacement = context.ResolveGuid(temporary);
-		if (loaded.spawned != 1 || !replacement) return false;
+		if (loaded.spawned < 1 || !replacement) return false;
 		const bool selected = actor && context.selection.Contains(actor);
-		if (actor) actor->Destroy();
-		eraseMissing();
-		replacement->FindComponent<ly::SceneEntityComponent>()->guid = guid;
-		if (!snapshotPrefab.empty())
+		const auto oldIdentity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
+		if (oldIdentity && !oldIdentity->prefabRootGuid.empty())
 		{
 			auto* identity = replacement->FindComponent<ly::SceneEntityComponent>();
-			identity->prefab = snapshotPrefab;
-			const auto resolved = ly::PrefabLibrary::Get().Resolve(snapshotPrefab);
-			identity->prefabBaseline = resolved ? resolved.entity : savedBaseline;
+			identity->prefab = oldIdentity->prefab;
+			identity->prefabRootGuid = oldIdentity->prefabRootGuid;
+			identity->childId = oldIdentity->childId;
+			identity->prefabBaseline = oldIdentity->prefabBaseline;
+		}
+		struct Survivor { ly::Actor* actor; sf::Vector2f location; float rotation; };
+		std::vector<Survivor> survivors;
+		if (actor && !staged.contains("children") && !entity.contains("prefab"))
+			while (!actor->GetChildren().empty())
+			{
+				auto* child = actor->GetChildren().back();
+				survivors.push_back({ child, child->GetRelativeLocation(), child->GetRelativeRotation() });
+				child->Detach();
+			}
+		if (actor) actor->Destroy();
+		eraseMissing();
+		const auto publishTree = [&](auto&& self, ly::Actor& current, const nlohmann::json& baseline) -> void
+		{
+			auto* identity = current.FindComponent<ly::SceneEntityComponent>();
+			const auto found = publish.find(identity->guid);
+			if (found != publish.end()) identity->guid = found->second;
+			else if (identity->guid.compare(0, temporary.size(), temporary) == 0) identity->guid = guid + identity->guid.substr(temporary.size());
+			if (identity->prefabRootGuid == temporary) identity->prefabRootGuid = guid;
+			if (!snapshotPrefab.empty())
+			{
+				identity->prefab = snapshotPrefab;
+				identity->prefabRootGuid = &current == replacement.get() ? std::string{} : guid;
+				identity->prefabBaseline = baseline;
+			}
+			for (auto* child : current.GetChildren())
+			{
+				nlohmann::json childBaseline = nlohmann::json::object();
+				if (baseline.contains("children")) for (const auto& candidate : baseline["children"])
+					if (candidate.at("id") == child->FindComponent<ly::SceneEntityComponent>()->childId) childBaseline = candidate;
+				self(self, *child, childBaseline);
+			}
+		};
+		auto baseline = savedBaseline;
+		if (!snapshotPrefab.empty()) if (const auto resolved = ly::PrefabLibrary::Get().Resolve(snapshotPrefab)) baseline = resolved.entity;
+		publishTree(publishTree, *replacement, baseline);
+		for (const auto& survivor : survivors)
+		{
+			survivor.actor->AttachTo(replacement.get());
+			survivor.actor->SetRelativeLocation(survivor.location);
+			survivor.actor->SetRelativeRotation(survivor.rotation);
 		}
 		context.ResetActorCache();
 		if (selected) context.selection.Replace(actor, replacement);
@@ -567,13 +687,18 @@ namespace vega
 	bool CreateEntity::Execute(EditorContext& context)
 	{
 		if (!context.world || context.playMode) return false;
-		if (ly::SceneSerializer::Load(*context.world, EntityScene(mEntity)).spawned != 1) return false;
+		if (ly::SceneSerializer::Load(*context.world, EntityScene(mEntity)).spawned < 1) return false;
 		const auto guid = mEntity.at("guid").get<std::string>();
 		// Constructors may choose random defaults (asteroid textures). Freeze the
 		// realized serialized data so redo recreates exactly the authored entity.
 		const auto actor = context.ResolveGuid(guid);
 		if (!actor) return false;
-		mEntity = ly::SceneSerializer::SaveEntity(*actor);
+		if (!context.attachmentRoot.empty() && !mEntity.contains("parent"))
+		{
+			const auto parent = context.ResolveGuid(context.attachmentRoot);
+			if (!parent || !actor->AttachTo(parent.get())) { actor->Destroy(); return false; }
+		}
+		mEntity = ly::SceneSerializer::SaveSubtree(*actor);
 		context.selection.Select(actor);
 		return true;
 	}
@@ -609,16 +734,13 @@ namespace vega
 	{
 		if (!context.world || context.playMode || context.transitioning) return false;
 		auto command = std::make_unique<CompoundCommand>("Duplicate selection", 0, true);
-		const auto actors = context.selection.GetAll();
-		if (actors.empty()) return false;
-		for (const auto& actor : actors)
+		auto entities = SelectionSubtrees(context);
+		if (entities.empty()) return false;
+		ly::SceneSerializer::RemapGuids(entities);
+		for (auto& entity : entities)
 		{
-			if (actor->GetWorld() != context.world || !actor->FindComponent<ly::SceneEntityComponent>()) return false;
-			auto entity = ly::SceneSerializer::SaveEntity(*actor);
-			if (entity.is_null()) return false;
-			entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
-			const auto location = actor->GetActorLocation() + sf::Vector2f{ 32.f, 32.f };
-			entity["properties"]["Location"] = { location.x, location.y };
+			auto& location = entity["properties"]["Location"];
+			location = { location[0].get<float>() + 32.f, location[1].get<float>() + 32.f };
 			command->Add(std::make_unique<CreateEntity>(std::move(entity)));
 		}
 		return history.Execute(std::move(command));
@@ -692,6 +814,7 @@ namespace vega
 		auto command = std::make_unique<CompoundCommand>("Delete selection");
 		for (const auto& actor : context.selection.GetAll())
 		{
+			if (HasSelectedAncestor(context.selection, *actor)) continue;
 			if (!actor->FindComponent<ly::SceneEntityComponent>() || actor->GetWorld() != context.world) return false;
 			command->Add(std::make_unique<DestroyActor>(actor->GetUniqueID()));
 		}
@@ -701,7 +824,8 @@ namespace vega
 	std::vector<SelectionTransform> CaptureSelectionTransform(const EditorSelection& selection)
 	{
 		std::vector<SelectionTransform> result;
-		for (const auto& actor : selection.GetAll()) result.push_back({ actor->GetUniqueID(), actor->GetActorLocation(), actor->GetActorRotation() });
+		for (const auto& actor : selection.GetAll())
+			if (!HasSelectedAncestor(selection, *actor)) result.push_back({ actor->GetUniqueID(), actor->GetActorLocation(), actor->GetActorRotation() });
 		return result;
 	}
 
@@ -746,14 +870,7 @@ namespace vega
 
 	bool CopySelection(EditorContext& context)
 	{
-		nlohmann::json entities = nlohmann::json::array();
-		for (const auto& actor : context.selection.GetAll())
-		{
-			if (actor->GetWorld() != context.world) return false;
-			auto entity = ly::SceneSerializer::SaveEntity(*actor);
-			if (entity.is_null()) return false;
-			entities.push_back(std::move(entity));
-		}
+		auto entities = SelectionSubtrees(context);
 		if (entities.empty()) return false;
 		const auto text = nlohmann::json{ { "format", "vega.selection" }, { "version", 1 }, { "entities", entities } }.dump();
 		sf::Clipboard::setString(sf::String::fromUtf8(text.begin(), text.end()));
@@ -780,9 +897,10 @@ namespace vega
 			}
 			pivot /= static_cast<float>(entities.size());
 			auto command = std::make_unique<CompoundCommand>("Paste selection", 0, true);
+			ly::SceneSerializer::RemapGuids(entities);
 			for (auto& entity : entities)
 			{
-				entity["guid"] = ly::SceneEntityComponent::GenerateGuid();
+				
 				auto& location = entity["properties"]["Location"];
 				location = { location[0].get<float>() + centre.x - pivot.x, location[1].get<float>() + centre.y - pivot.y };
 				command->Add(std::make_unique<CreateEntity>(std::move(entity)));

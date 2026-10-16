@@ -288,26 +288,28 @@ namespace vega
 
 	void EditorApplication::DrawCreateMenu()
 	{
+		auto& context = mPrefabWorld ? mPrefabContext : mContext;
+		auto& history = mPrefabWorld ? mPrefabHistory : mHistory;
 		if (ImGui::BeginMenu("Create"))
 		{
 			if (ImGui::BeginMenu("Prefabs"))
 			{
 				for (const auto& path : PrefabPaths(mDocument.Root()))
-					if (ImGui::MenuItem(path.c_str())) PlacePrefab(mContext, mHistory, path, mContext.world->GetWorldView().getCenter());
+					if (ImGui::MenuItem(path.c_str())) PlacePrefab(context, history, path, context.world->GetWorldView().getCenter());
 				ImGui::EndMenu();
 			}
 			auto types = ly::reflect::TypeRegistry::Get().SpawnableActors();
 			std::sort(types.begin(), types.end(), [](const auto* a, const auto* b) { return a->name < b->name; });
 			for (const auto* type : types)
-				if (ImGui::MenuItem(type->name.c_str())) CreateSceneEntity(mContext, mHistory, type->name);
+				if (ImGui::MenuItem(type->name.c_str())) CreateSceneEntity(context, history, type->name);
 			ImGui::EndMenu();
 		}
-		for (const auto& menu : mExtensions.hierarchyMenus) menu(mContext, mHistory);
+		for (const auto& menu : mExtensions.hierarchyMenus) menu(context, history);
 	}
 
 	void EditorApplication::BeginRename()
 	{
-		const auto actor = mSelection.Get();
+		const auto actor = (mPrefabWorld ? mPrefabSelection : mSelection).Get();
 		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
 		if (!identity || mContext.playMode) return;
 		mRenameGuid = identity->guid;

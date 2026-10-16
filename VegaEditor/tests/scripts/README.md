@@ -476,3 +476,11 @@ undo, shared Render Enabled edits, duplicate/copy/paste, group selection/history
 save/reopen, marquee, select-all and group delete undo. VegaEditorMultiSelectionCommands
 covers atomic rollback, merged transforms, pivot rotation, common-base/mixed
 properties, focus bounds, GUID rebinding and component replacement without a UI.
+
+Hierarchy automation: `parent <Child> <Parent>`, `unparent <Child>`,
+`expect-parent <Child> <Parent>|none`, and
+`expect-world-location <Target> x y [tolerance]`. Names with spaces are quoted;
+targets also accept scene GUIDs. Parenting keeps world transforms and is undoable.
+`hierarchy.vegascript` is registered as `VegaEditorHierarchy`, runs with BlankEditor
+and writes only to a build-tree copy of Blank assets. It exercises parenting,
+subtree transforms, child prefab overrides/apply/revert, save/reopen and delete undo.

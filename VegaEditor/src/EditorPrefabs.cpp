@@ -17,7 +17,7 @@ namespace vega
 		{
 			auto full = ly::SceneSerializer::SaveEntity(actor, true);
 			const auto* identity = actor.FindComponent<ly::SceneEntityComponent>();
-			if (identity && !identity->prefab.empty())
+			if (identity && !identity->prefab.empty() && identity->prefabRootGuid.empty())
 			{
 				full["prefab"] = identity->prefab;
 				full["_prefabBaseline"] = identity->prefabBaseline;
@@ -80,7 +80,7 @@ namespace vega
 			before = PrefabJson::array(); after = PrefabJson::array();
 			for (const auto& weak : context.world->GetActorsByTypeIncludingPending<ly::Actor>())
 				if (const auto actor = weak.lock(); actor && !actor->GetIsPendingDestroy())
-					if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>(); identity && !identity->prefab.empty())
+					if (const auto* identity = actor->FindComponent<ly::SceneEntityComponent>(); identity && !identity->prefab.empty() && identity->prefabRootGuid.empty())
 					{
 						before.push_back(Full(*actor));
 						after.push_back(ly::SceneSerializer::SaveEntity(*actor));
@@ -94,6 +94,7 @@ namespace vega
 					after.push_back(missing);
 				}
 		}
+		void PreserveNestedReferences(PrefabJson& realized, const PrefabJson& authored);
 		bool ApplyResolved(EditorContext& context, CommandHistory& history, ly::Actor& actor, const PrefabJson& updated, const PrefabJson& sourceBaseline)
 		{
 			const auto* identity = actor.FindComponent<ly::SceneEntityComponent>();
@@ -101,6 +102,7 @@ namespace vega
 			const auto document = ly::PrefabLibrary::Get().Load(identity->prefab, warnings);
 			if (document.is_null()) return false;
 			PrefabJson authored = updated;
+			if (document["base"].contains("type")) PreserveNestedReferences(authored, document);
 			if (document["base"].contains("prefab"))
 			{
 				const auto parent = ly::PrefabLibrary::Get().Resolve(document["base"]["prefab"].get<std::string>());
@@ -113,6 +115,12 @@ namespace vega
 			authored["version"] = 1;
 			authored["name"] = document.value("name", std::string{});
 			authored["base"] = document["base"];
+			const auto clean = [&](auto&& self, PrefabJson& node) -> void
+			{
+				node.erase("guid"); node.erase("parent");
+				if (node.contains("children")) for (auto& child : node["children"]) self(self, child);
+			};
+			clean(clean, authored);
 			PrefabJson before, after;
 			Snapshots(context, before, after);
 			const auto full = ly::SceneSerializer::SaveEntity(actor, true);
@@ -126,6 +134,140 @@ namespace vega
 				entity["properties"]["Location"] = full["properties"]["Location"];
 			}
 			return Refresh(context, history, std::move(before), std::move(after), "Apply to Prefab");
+		}
+		PrefabJson* ChildNode(PrefabJson& root, const ly::Actor& actor)
+		{
+			std::vector<std::string> ids;
+			for (auto* current = &actor; current; current = current->GetParent())
+			{
+				const auto* identity = current->FindComponent<ly::SceneEntityComponent>();
+				if (!identity || identity->prefabRootGuid.empty()) break;
+				ids.push_back(identity->childId);
+			}
+			auto* node = &root;
+			for (auto it = ids.rbegin(); it != ids.rend(); ++it)
+			{
+				if (!node->contains("children")) return nullptr;
+				auto& children = (*node)["children"];
+				const auto found = std::find_if(children.begin(), children.end(), [&](const PrefabJson& child) { return child.at("id") == *it; });
+				if (found == children.end()) return nullptr;
+				node = &*found;
+			}
+			return node;
+		}
+		bool CopyCanonicalProperty(PrefabJson& destination, PrefabJson source, const ReflectedTarget& target, const std::string& property)
+		{
+			// A reflected setter can also change component state (e.g. Size -> sprite
+			// Scale). Realize that setter so the alias does not undo the requested edit
+			// when scene loading applies component properties after actor properties.
+			ly::World currentWorld{ nullptr }, sourceWorld{ nullptr };
+			auto current = destination;
+			current.erase("parent"); source.erase("parent");
+			const auto load = [](ly::World& world, const PrefabJson& node)
+			{
+				return ly::SceneSerializer::Load(world, { { "format", "vega.scene" }, { "version", 1 },
+					{ "settings", PrefabJson::object() }, { "entities", PrefabJson::array({ node }) } }).spawned > 0;
+			};
+			if (!load(currentWorld, current) || !load(sourceWorld, source)) return false;
+			const auto actor = currentWorld.GetActorsByTypeIncludingPending<ly::Actor>().front().lock();
+			const auto sourceActor = sourceWorld.GetActorsByTypeIncludingPending<ly::Actor>().front().lock();
+			const auto to = ResolvePropertyTarget(*actor, target.componentIdentity), from = ResolvePropertyTarget(*sourceActor, target.componentIdentity);
+			if (!to.object || !from.object) return false;
+			if (target.componentIdentity && dynamic_cast<script::ScriptComponent*>(static_cast<ly::ActorComponent*>(to.object)))
+			{
+				auto& script = *static_cast<script::ScriptComponent*>(to.object);
+				const auto& properties = static_cast<script::ScriptComponent*>(from.object)->Properties();
+				const auto found = properties.find(property);
+				if (found == properties.end()) script.ClearOverride(property);
+				else if (!script.SetProperty(property, found->second)) return false;
+			}
+			else
+			{
+				const auto* toProperty = to.type->FindProperty(property), *fromProperty = from.type->FindProperty(property);
+				if (!toProperty || !fromProperty || !toProperty->SetValue(to.object, fromProperty->getter(from.object))) return false;
+			}
+			auto saved = ly::SceneSerializer::SaveSubtree(*actor, true);
+			if (destination.contains("parent")) saved["parent"] = destination["parent"];
+			destination = std::move(saved);
+			return true;
+		}
+		void PreserveNestedReferences(PrefabJson& realized, const PrefabJson& authored)
+		{
+			if (!authored.contains("children") || !realized.contains("children")) return;
+			for (const auto& original : authored["children"])
+				for (auto& child : realized["children"])
+					if (child.at("id") == original.at("id"))
+					{
+						PreserveNestedReferences(child, original);
+						if (!original.contains("prefab")) continue;
+						const auto path = original.at("prefab").get<std::string>();
+						const auto nested = ly::PrefabLibrary::Get().Resolve(path);
+						if (!nested) continue;
+						auto delta = ly::PrefabLibrary::Diff(child, nested.entity);
+						for (const char* key : { "id", "guid", "name" }) if (child.contains(key)) delta[key] = child[key];
+						delta["prefab"] = path;
+						delta["properties"]["Location"] = child["properties"]["Location"];
+						child = std::move(delta);
+					}
+		}
+		bool ChangeChild(EditorContext& context, CommandHistory& history, ly::Actor& actor,
+			const ReflectedTarget& target, const std::string& property, bool apply, bool whole = false)
+		{
+			const auto* identity = actor.FindComponent<ly::SceneEntityComponent>();
+			const auto root = context.ResolveGuid(identity->prefabRootGuid);
+			if (!root) return false;
+			const auto* rootIdentity = root->FindComponent<ly::SceneEntityComponent>();
+			auto full = ly::SceneSerializer::SaveEntity(*root, true), base = rootIdentity->prefabBaseline;
+			auto* currentNode = ChildNode(full, actor);
+			auto* baseNode = ChildNode(base, actor);
+			if (!currentNode || !baseNode) return false;
+			auto* current = whole ? currentNode : Section(*currentNode, actor, target);
+			auto* baseline = whole ? baseNode : apply ? SectionOrAdd(*baseNode, *currentNode, actor, target) : Section(*baseNode, actor, target);
+			if (!current) return false;
+			if (!baseline)
+				return !apply && target.componentIdentity && history.Execute(std::make_unique<RemoveComponentCommand>(actor.GetUniqueID(), *target.componentIdentity));
+			if (!apply)
+			{
+				if (property.empty())
+				{
+					const auto guid = currentNode->at("guid"), name = currentNode->at("name");
+					*current = *baseline;
+					(*currentNode)["guid"] = guid; (*currentNode)["name"] = name;
+					if (!whole)
+					{
+						const auto desired = *baseline;
+						for (const auto& value : desired.items())
+							if (!CopyCanonicalProperty(*currentNode, *baseNode, target, value.key())) return false;
+					}
+				}
+				else if (baseline->contains(property))
+				{
+					if (!CopyCanonicalProperty(*currentNode, *baseNode, target, property)) return false;
+				}
+				else current->erase(property);
+				auto after = ly::PrefabLibrary::Diff(full, rootIdentity->prefabBaseline);
+				after["guid"] = rootIdentity->guid; after["name"] = rootIdentity->name; after["prefab"] = rootIdentity->prefab;
+				after["properties"]["Location"] = full["properties"]["Location"];
+				if (full.contains("parent")) after["parent"] = full["parent"];
+				return history.Execute(std::make_unique<ReplaceEntities>(PrefabJson::array({ Full(*root) }), PrefabJson::array({ after }), "Revert prefab child"));
+			}
+			auto resolved = ly::PrefabLibrary::Get().Resolve(rootIdentity->prefab);
+			if (!resolved) return false;
+			auto* destinationNode = ChildNode(resolved.entity, actor);
+			auto* destination = whole ? destinationNode : destinationNode ? SectionOrAdd(*destinationNode, *currentNode, actor, target) : nullptr;
+			if (!destination) return false;
+			if (property.empty())
+			{
+				const auto desired = *current;
+				*destination = desired; *baseline = desired;
+				if (!whole) for (const auto& value : desired.items())
+					if (!CopyCanonicalProperty(*destinationNode, *currentNode, target, value.key()) || !CopyCanonicalProperty(*baseNode, *currentNode, target, value.key())) return false;
+			}
+			else
+			{
+				if (!CopyCanonicalProperty(*destinationNode, *currentNode, target, property) || !CopyCanonicalProperty(*baseNode, *currentNode, target, property)) return false;
+			}
+			return ApplyResolved(context, history, *root, resolved.entity, base);
 		}
 	}
 	bool IsPrefabPath(const std::filesystem::path& path)
@@ -160,12 +302,13 @@ namespace vega
 	{
 		const auto actor = context.selection.Get();
 		if (!actor || !actor->FindComponent<ly::SceneEntityComponent>()) return false;
-		const auto before = ly::SceneSerializer::SaveEntity(*actor);
+		const auto before = ly::SceneSerializer::SaveSubtree(*actor);
 		const auto document = ly::PrefabLibrary::Document(before, std::filesystem::path(path).stem().stem().string());
 		if (!WritePrefab(context, path, document, false)) return false;
 		ly::PrefabLibrary::Get().Reload();
 		PrefabJson after{ { "prefab", path }, { "guid", before["guid"] }, { "name", before["name"] },
 			{ "properties", { { "Location", before["properties"]["Location"] } } } };
+		if (before.contains("parent")) after["parent"] = before["parent"];
 		return history.Execute(std::make_unique<ReplaceEntities>(PrefabJson::array({ before }), PrefabJson::array({ after }), "Create Prefab"));
 	}
 	bool CreateVariant(EditorContext& context, const std::string& parent, const std::string& path)
@@ -189,7 +332,7 @@ namespace vega
 	}
 	bool PrefabPropertyOverridden(EditorContext& context, ly::Actor& actor, const ReflectedTarget& target, const std::string& property)
 	{
-		if (!target.object || property == "Location") return false;
+		if (!target.object || (property == "Location" && actor.FindComponent<ly::SceneEntityComponent>() && actor.FindComponent<ly::SceneEntityComponent>()->prefabRootGuid.empty())) return false;
 		const auto* identity = actor.FindComponent<ly::SceneEntityComponent>();
 		if (!identity || identity->prefab.empty()) return false;
 		if (context.prefabOverrideActor != actor.GetUniqueID() || context.prefabOverrideRevision != context.sceneRevision)
@@ -204,7 +347,7 @@ namespace vega
 				const auto* current = Section(full, actor, section);
 				const auto* baseline = Section(base, actor, section);
 				if (current) for (const auto& value : current->items())
-					if (value.key() != "Location" && (!baseline || !baseline->contains(value.key()) || baseline->at(value.key()) != value.value()))
+					if ((value.key() != "Location" || !identity->prefabRootGuid.empty()) && (!baseline || !baseline->contains(value.key()) || baseline->at(value.key()) != value.value()))
 						context.prefabOverrides[section.object].insert(value.key());
 			};
 			collect(ResolvePropertyTarget(actor, {}));
@@ -223,7 +366,9 @@ namespace vega
 	{
 		const auto actor = context.selection.Get();
 		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
-		if (!identity || identity->prefab.empty() || context.playMode || property == "Location") return false;
+		if (!identity || identity->prefab.empty() || context.playMode) return false;
+		if (!identity->prefabRootGuid.empty()) return ChangeChild(context, history, *actor, target, property, apply);
+		if (property == "Location") return false;
 		auto full = ly::SceneSerializer::SaveEntity(*actor, true), base = identity->prefabBaseline;
 		auto* current = Section(full, *actor, target);
 		auto* baseline = apply ? SectionOrAdd(base, full, *actor, target) : Section(base, *actor, target);
@@ -253,6 +398,7 @@ namespace vega
 		const auto actor = context.selection.Get();
 		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
 		if (!identity || identity->prefab.empty() || context.playMode) return false;
+		if (!identity->prefabRootGuid.empty()) return ChangeChild(context, history, *actor, target, {}, apply);
 		auto full = ly::SceneSerializer::SaveEntity(*actor, true), base = identity->prefabBaseline;
 		auto* current = Section(full, *actor, target);
 		auto* baseline = apply ? SectionOrAdd(base, full, *actor, target) : Section(base, *actor, target);
@@ -289,6 +435,7 @@ namespace vega
 		const auto actor = context.selection.Get();
 		const auto* identity = actor ? actor->FindComponent<ly::SceneEntityComponent>() : nullptr;
 		if (!identity || identity->prefab.empty()) return false;
+		if (!identity->prefabRootGuid.empty()) return ChangeChild(context, history, *actor, ResolvePropertyTarget(*actor, {}), {}, apply, true);
 		if (apply)
 		{
 			const auto full = ly::SceneSerializer::SaveEntity(*actor, true);
@@ -301,11 +448,11 @@ namespace vega
 
 	bool EditorApplication::PrefabDirty() const
 	{
-		const auto actor = mPrefabSelection.Get();
-		if (!actor) return false;
+		const auto actor = mPrefabContext.ResolveGuid(mPrefabRootGuid);
+		if (!actor) return !mPrefabRootGuid.empty();
 		if (mPrefabDirtyRevision != mPrefabContext.sceneRevision)
 		{
-			mPrefabDirty = ly::SceneSerializer::SaveEntity(*actor, true) != mPrefabSaved;
+			mPrefabDirty = ly::SceneSerializer::SaveSubtree(*actor, true) != mPrefabSaved;
 			mPrefabDirtyRevision = mPrefabContext.sceneRevision;
 		}
 		return mPrefabDirty;
@@ -318,6 +465,8 @@ namespace vega
 		mPrefabContext.ResetActorCache();
 		mPrefabWorld.reset();
 		mPrefabPath.clear();
+		mPrefabRootGuid.clear();
+		mPrefabContext.attachmentRoot.clear();
 	}
 	bool EditorApplication::OpenPrefab(const std::filesystem::path& path)
 	{
@@ -331,13 +480,15 @@ namespace vega
 		result.entity["name"] = document.value("name", std::string{});
 		const auto loaded = ly::SceneSerializer::Load(*world, { { "format", "vega.scene" }, { "version", 1 },
 			{ "settings", PrefabJson::object() }, { "entities", PrefabJson::array({ result.entity }) } });
-		if (loaded.spawned != 1) return false;
+		if (loaded.spawned < 1) return false;
 		ClosePrefab();
 		mPrefabWorld = std::move(world);
 		mPrefabContext.world = mPrefabWorld.get();
 		mPrefabContext.document = &mDocument;
 		mPrefabSelection.Select(mPrefabWorld->GetActorsByTypeIncludingPending<ly::Actor>().front().lock());
-		mPrefabSaved = ly::SceneSerializer::SaveEntity(*mPrefabSelection.Get(), true);
+		mPrefabRootGuid = mPrefabSelection.Get()->FindComponent<ly::SceneEntityComponent>()->guid;
+		mPrefabContext.attachmentRoot = mPrefabRootGuid;
+		mPrefabSaved = ly::SceneSerializer::SaveSubtree(*mPrefabSelection.Get(), true);
 		mPrefabDirty = false;
 		mPrefabDirtyRevision = mPrefabContext.sceneRevision;
 		mPrefabDocument = std::move(document);
@@ -353,10 +504,12 @@ namespace vega
 	}
 	bool EditorApplication::SavePrefab()
 	{
-		const auto actor = mPrefabSelection.Get();
+		const auto actor = mPrefabContext.ResolveGuid(mPrefabRootGuid);
 		if (!actor) return false;
-		const auto full = ly::SceneSerializer::SaveEntity(*actor, true);
-		auto document = ly::PrefabLibrary::Document(full, full.value("name", std::string{}));
+		const auto full = ly::SceneSerializer::SaveSubtree(*actor, true);
+		auto authored = full;
+		PreserveNestedReferences(authored, mPrefabDocument);
+		auto document = ly::PrefabLibrary::Document(authored, full.value("name", std::string{}));
 		if (mPrefabDocument["base"].contains("prefab"))
 		{
 			const auto parent = ly::PrefabLibrary::Get().Resolve(mPrefabDocument["base"]["prefab"].get<std::string>());
@@ -424,9 +577,10 @@ namespace vega
 	}
 	void EditorApplication::PrefabPropertyMenu(ly::Actor& actor, const ReflectedTarget& target, const std::string& property)
 	{
-		if (mPrefabWorld || mContext.playMode || property == "Location") return;
+		if (mPrefabWorld || mContext.playMode) return;
 		const auto* identity = actor.FindComponent<ly::SceneEntityComponent>();
 		if (!identity || identity->prefab.empty()) return;
+		if (property == "Location" && identity->prefabRootGuid.empty()) return;
 		// Composite/disabled widgets may leave a last item without an ImGui ID.
 		const auto popup = "Prefab property##" + property;
 		if (ImGui::BeginPopupContextItem(popup.c_str()))
