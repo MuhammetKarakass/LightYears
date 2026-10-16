@@ -1,7 +1,7 @@
 # Console and Profiler
 
 Open either dockable panel from **View**. Their visibility, docking and Clear on Play
-option are saved in `vega_editor_layout_v4.ini`. Reset Layout restores docking.
+option are saved in `vega_editor_layout_v5.ini`. Reset Layout restores docking.
 
 The Console keeps the latest 5,000 records, dropping the oldest. Info (including
 Trace/Debug), Warning and Error (including Fatal) filters show raw record counts.

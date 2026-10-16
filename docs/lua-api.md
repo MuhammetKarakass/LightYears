@@ -228,9 +228,9 @@ trusted project code. Hot reload polls at most every 0.5 seconds while ticking.
 
 Run `cmd /c tools\vega-build.cmd`, then
 `ctest --test-dir build -j 8 --timeout 300`. New groups are `VegaScriptWorld`,
-`VegaScriptEvents`, `VegaScriptTimers`, `VegaScriptMessages`,
-`VegaScriptInputVectors`, `VegaScriptLuaTypes`, `VegaScriptExamplesCost` and
-`VegaEditorLuaApi`. Existing `VegaScriptComponent` retains sandbox, memory,
+`VegaScriptHierarchy`, `VegaScriptEvents`, `VegaScriptTimers`,
+`VegaScriptMessages`, `VegaScriptInputVectors`, `VegaScriptAudio`,
+`VegaScriptLuaTypes`, `VegaScriptExamplesCost` and `VegaEditorLuaApi`. Existing `VegaScriptComponent` retains sandbox, memory,
 instruction, hot-reload, error and reflection coverage. The editor test verifies
 three DummyEnemy spawns, message delivery, generated game property annotations
 and Stop restoring the four authored entities and their transforms. All fixture
@@ -283,7 +283,7 @@ Implementation files:
   and `src/framework/PhysicsScene.cpp`.
 * Runtime: `VegaScript/include/script/ScriptComponent.h`, `ScriptRuntime.h`,
   `src/ScriptComponent.cpp`, `src/LuaTypes.cpp`, `CMakeLists.txt` and `README.md`.
-* Game player hook: `LightYearsGame/src/gameFramework/GameApplication.cpp`.
+* Game player hook: `LightYearsGame/src/gameFramework/LightYearsGameModule.cpp`.
 * Editor: `VegaEditor/include/editor/EditorApplication.h`,
   `src/EditorApplication.cpp`, `CMakeLists.txt`, `tests/RunLuaApiTest.cmake.in`
   and `tests/scripts/lua-api.vegascript`.

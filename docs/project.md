@@ -1,6 +1,7 @@
 # Projects and collision flags
 
-`LightYearsGame/assets/vega.project.json` describes a `vega.project`, version 1:
+`LightYearsGame/assets/vega.project.json` starts with a `vega.project`, version 1 header (abbreviated here; the shipped
+file also has the `editor` and `runtime` objects described below):
 
 ```json
 {
@@ -107,7 +108,7 @@ and optionally copies presentation assets to `visualDirectory`. Release uses
 the built presentation copy; Debug uses the configured source. Smoke testing
 passes the configured asset directory with `--asset-root` and checks the
 configured runtime log. See [game modules](game-module.md) for game registration
-and the remaining Sky integration planned for B4.
+and [engine modules](engine-modules.md) for the optional Sky and GAS modules.
 
 Collision layer and mask use reflected **Flags** with eight labels: Player,
 PlayerBullet, Enemy, EnemyBullet, Powerup, Environment, RelayProjectile, and

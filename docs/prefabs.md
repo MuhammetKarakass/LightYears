@@ -129,8 +129,9 @@ component's membership. Reverting it when the prefab has no matching occurrence
 removes the added component. Section operations enter history as a single edit.
 
 External file changes invalidate the document cache on its next access. Use
-`reload-prefabs` in automation to refresh live scene instances. Prefabs have no
-nested entity hierarchy or entity-reference remapping in this version. The
+`reload-prefabs` in automation to refresh live scene instances. Prefabs may contain
+child hierarchies (see below and [actor hierarchy](hierarchy.md)) and remap
+internal actor references through `$prefab:` addresses. The
 Inspector uses the existing scalar/reflection and Lua property editing controls.
 
 ## Verification
