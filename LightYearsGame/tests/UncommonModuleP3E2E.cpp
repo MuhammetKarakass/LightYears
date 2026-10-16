@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
 #include "gameplay/content/ModuleLoader.h"
@@ -369,6 +370,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2 && argc != 3) return 2;
 	const bool killsOnly = argc == 3 && std::string{ argv[2] } == "kills";
 	const bool wardOnly = argc == 3 && std::string{ argv[2] } == "killward";

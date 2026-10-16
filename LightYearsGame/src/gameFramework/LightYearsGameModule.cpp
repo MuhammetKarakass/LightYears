@@ -1,4 +1,5 @@
 #include "gameFramework/LightYearsGameModule.h"
+#include "gameFramework/LightYearsAssets.h"
 #include "level/PlayerStart.h"
 #include <AbilitySystemDebugView.h>
 #include <AbilitySystemInterface.h>
@@ -59,6 +60,7 @@ namespace ly
 
 	void LightYearsGameModule::Initialize(Application& application, bool editor)
 	{
+		InstallLightYearsEngineAssets();
 		mApplication = &application;
 		if (mProjectFile.empty()) mProjectFile = ResourceRoot(!editor) / "vega.project.json";
 		// In the editor --asset-root selects authoring documents; content tests use a partial copy.

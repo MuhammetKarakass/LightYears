@@ -2,7 +2,7 @@
 # Additional games use vega_add_game_editor with the plain VegaEditorCore.
 add_library(LightYearsEditorModule STATIC "${CMAKE_CURRENT_LIST_DIR}/src/editor/LightYearsEditorModule.cpp")
 target_include_directories(LightYearsEditorModule PRIVATE "${CMAKE_SOURCE_DIR}/VegaEditor/include")
-target_link_libraries(LightYearsEditorModule PUBLIC LightYearsGameApp)
+target_link_libraries(LightYearsEditorModule PUBLIC LightYearsGameApp VegaSkyEditor VegaGASEditor)
 ly_enable_warnings(LightYearsEditorModule)
 set(VEGA_GAME_MODULE_TARGET LightYearsEditorModule)
 set(VEGA_GAME_RUNTIME_TARGET LightYearsGame)

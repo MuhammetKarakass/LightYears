@@ -1,7 +1,9 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleE2E.h"
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace uncommon_module_e2e;
 	if (argc != 2)
 	{

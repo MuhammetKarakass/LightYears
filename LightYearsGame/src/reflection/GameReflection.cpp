@@ -14,25 +14,9 @@
 #include "enemy/EnemyActor.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/scene/Scene.h>
-#include <framework/EngineAssets.h>
 
 namespace ly
 {
-	namespace
-	{
-		// Preserve the game's defaults for standalone and direct gameplay test hosts.
-		const bool assetsInstalled = []()
-		{
-			EngineAssets::Get() = {
-				"SpaceShooterRedux/Bonus/kenvector_future.ttf",
-				"SpaceShooterRedux/PNG/UI/buttonBlue.png",
-				"SpaceShooterRedux/Bonus/sfx_zap.ogg",
-				"SpaceShooterRedux/Shaders/point_light.frag",
-				"SpaceShooterRedux/Shaders/simple_color.frag"
-			};
-			return true;
-		}();
-	}
 	void RegisterGameTypes()
 	{
 		reflect::RegisterEngineTypes();

@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/Actor.h"
 #include "gameplay/HealthComponent.h"
 #include "gameplay/ShieldComponent.h"
@@ -341,6 +342,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	if (!TestTemporalRecallOverhealthAndCryostasisRegeneration() ||
 		!TestShieldHealingAndDamage() ||
 		!TestMaximumReductionPreservesAbsoluteExcess() ||

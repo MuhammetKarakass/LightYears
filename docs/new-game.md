@@ -42,8 +42,8 @@ font when the project's `editor.font` is absent.
    links `VegaEditorCore`, compiles the project configuration, adds the runtime
    dependency and copies DLLs and project assets. It builds editors in
    `build/VegaEditor`; each additional editor gets its own synchronized asset
-   folder. The default project points at authoring assets. LightYears selects
-   a separate assembly of the same editor sources with its optional tools.
+   folder. The default project points at authoring assets. LightYears links
+   optional module extensions to this same core.
 6. Build: `cmd /c tools\vega-build.cmd --target MyGame MyEditor`. In this
    repository, unattended editor runs must use an editor script from
    `build\VegaEditor`, for example:
@@ -79,14 +79,14 @@ zero on Stop, round-trips reflected values/components and a prefab instance,
 exports, and runs the package again.
 
 To configure without the current game or its optional libraries, use a separate
-build directory with `-DVEGA_BUILD_LIGHTYEARS=OFF -DVEGA_BUILD_GAS=OFF` and leave
+build directory with `-DVEGA_BUILD_LIGHTYEARS=OFF -DVEGA_BUILD_GAS=OFF
+-DVEGA_BUILD_SKY=OFF` and leave
 `VEGA_BUILD_EDITOR` and `VEGA_BUILD_TEMPLATES` enabled. This excludes the
-LightYears game, visual library and editor assembly entirely. Default repo
+LightYears game and both optional modules entirely. Default repo
 builds retain all existing targets and integration tests.
 
-GAS is optional. Link `SpaceAbilitySystem` only if the game uses it. Sky is an
-optional editor/presentation tool currently supplied by the LightYears editor
-assembly; Blank does not compile it. Lua is optional at the engine level. To
+GAS and Sky are optional runtime/editor modules; Blank links neither. Lua is
+optional at the engine level. To
 remove it from this template, remove the scene's `scripts` entries, script
 registration/root/player setup, and replace `BlankMovement`'s key reader with
 SFML input; link the runtime module to `LightYearsEngine`. The shared editor
@@ -96,4 +96,15 @@ Runtime widgets and point lights accept project-owned defaults through
 `ly::EngineAssets::Get()` (`framework/EngineAssets.h`). Install font, button
 texture/sound and shader paths before creating those widgets. Empty defaults
 load no external font or shader; absent button textures use the engine's white
-pixel. LightYears installs its previous paths in its own reflection module.
+pixel. LightYears calls `InstallLightYearsEngineAssets` during module startup;
+direct gameplay test hosts call the same function explicitly.
+
+## Optional Sky and GAS modules
+
+Blank's default runtime and editor do not link Sky or GAS. Enable modules by
+linking `VegaSky` / `VegaGAS` at runtime and `VegaSkyEditor` /
+`VegaGASEditor` in your editor adapter. Register their editor extensions from
+`RegisterEditorExtensions`; all games share `VegaEditorCore`.
+See [engine modules](engine-modules.md) for the complete setup and individual
+sky asset example. For a minimal build, disable `VEGA_BUILD_LIGHTYEARS`,
+`VEGA_BUILD_SKY` and `VEGA_BUILD_GAS`. Each module may also be enabled alone.

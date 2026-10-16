@@ -1,5 +1,5 @@
 file(READ "${GRAPH}" graph)
-if(graph MATCHES "LightYears(Game|Visual|Gameplay)|SpaceAbilitySystem|VegaEditorLightYearsCore")
+if(graph MATCHES "LightYears(Game|Visual|Gameplay)|SpaceAbilitySystem|VegaSky|VegaGAS|VegaEditorLightYearsCore")
 	message(FATAL_ERROR "Blank target graph contains an optional/game dependency: ${graph}")
 endif()
 file(GLOB_RECURSE sources "${TEMPLATE_ROOT}/Source/*" "${TEMPLATE_ROOT}/Assets/*")

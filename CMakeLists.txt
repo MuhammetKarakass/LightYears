@@ -84,16 +84,23 @@ function(ly_enable_warnings_for_directory dir)
 endfunction()
 
 option(VEGA_BUILD_LIGHTYEARS "Build the LightYears game and its editor integration" ON)
+option(VEGA_BUILD_SKY "Build the optional sky renderer" ON)
 option(VEGA_BUILD_GAS "Build the optional ability system" ON)
 if(VEGA_BUILD_LIGHTYEARS AND NOT VEGA_BUILD_GAS)
 	message(FATAL_ERROR "LightYears requires VEGA_BUILD_GAS")
 endif()
+if(VEGA_BUILD_LIGHTYEARS AND NOT VEGA_BUILD_SKY)
+	message(FATAL_ERROR "LightYears requires VEGA_BUILD_SKY")
+endif()
 add_subdirectory(LightYearsEngine)
+if(VEGA_BUILD_SKY)
+	add_subdirectory(Modules/Sky)
+endif()
 if(VEGA_BUILD_LIGHTYEARS)
 	add_subdirectory(LightYearsVisual)
 endif()
 if(VEGA_BUILD_GAS)
-	add_subdirectory(SpaceAbilitySystem)
+	add_subdirectory(Modules/GAS)
 endif()
 add_subdirectory(VegaScript)
 if(VEGA_BUILD_LIGHTYEARS)
@@ -128,6 +135,8 @@ foreach(ly_warning_dir IN LISTS ly_warning_dirs)
 endforeach()
 
 if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
+	add_test(NAME EngineModulesNoGameDependencies COMMAND ${CMAKE_COMMAND}
+		-DSOURCE_ROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/Modules/tests/NoGameDependencies.cmake)
 	add_test(
 		NAME LightYearsGasLiteCore
 		COMMAND LightYearsGasLiteTests

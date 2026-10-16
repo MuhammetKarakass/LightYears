@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 
 #include "gameplay/MovementComponent.h"
@@ -280,6 +281,7 @@ namespace rare_movement_e2e
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace rare_movement_e2e;
 	if (argc != 2) return 2;
 	Report report;

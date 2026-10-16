@@ -46,7 +46,6 @@ set(VEGA_EDITOR_CORE_SOURCES
 	include/editor/JsonDocument.h
 	include/editor/JsonCommands.h
 	include/editor/EditorApplication.h
-	include/editor/EditorGasDebugger.h
 	include/editor/EditorTheme.h
 	include/editor/EditorIcons.h
 	include/editor/GizmoMath.h
@@ -56,18 +55,8 @@ set(VEGA_EDITOR_CORE_SOURCES
 	include/editor/EditorViewport.h
 	include/editor/EditorSelection.h
 )
-# Both assemblies compile the same editor sources. Optional tools are selected
-# here so a project without them has no transitive game or GAS dependency.
 add_library(VegaEditorCore STATIC ${VEGA_EDITOR_CORE_SOURCES})
 set(VEGA_EDITOR_CORES VegaEditorCore)
-if(VEGA_BUILD_LIGHTYEARS)
-add_library(VegaEditorLightYearsCore STATIC ${VEGA_EDITOR_CORE_SOURCES}
-	src/EditorGasDebugger.cpp src/SkyDocument.cpp src/EditorSkyEditor.cpp
-	src/EditorSkyHandles.cpp src/EditorSkyScript.cpp)
-target_compile_definitions(VegaEditorLightYearsCore PUBLIC VEGA_EDITOR_WITH_SKY VEGA_EDITOR_WITH_GAS)
-target_link_libraries(VegaEditorLightYearsCore PUBLIC ${VEGA_GAME_MODULE_TARGET})
-list(APPEND VEGA_EDITOR_CORES VegaEditorLightYearsCore)
-endif()
 foreach(core IN LISTS VEGA_EDITOR_CORES)
 	target_include_directories(${core} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 	target_link_libraries(${core} PUBLIC VegaScript ImGui-SFML::ImGui-SFML)
@@ -75,11 +64,17 @@ foreach(core IN LISTS VEGA_EDITOR_CORES)
 		VEGA_SOURCE_ROOT="${CMAKE_SOURCE_DIR}" VEGA_BUILD_ROOT="${CMAKE_BINARY_DIR}")
 	ly_enable_warnings(${core})
 endforeach()
+if(VEGA_BUILD_SKY)
+	add_subdirectory(${CMAKE_SOURCE_DIR}/Modules/Sky/editor ${CMAKE_BINARY_DIR}/Modules/Sky/editor)
+endif()
+if(VEGA_BUILD_GAS)
+	add_subdirectory(${CMAKE_SOURCE_DIR}/Modules/GAS/editor ${CMAKE_BINARY_DIR}/Modules/GAS/editor)
+endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/VegaGameEditor.cmake)
 if(VEGA_BUILD_LIGHTYEARS)
 vega_add_game_editor(VegaEditor MODULE ${VEGA_GAME_MODULE_TARGET}
 	RUNTIME ${VEGA_GAME_RUNTIME_TARGET} PROJECT "${VEGA_DEFAULT_PROJECT_FILE}"
-	ENTRY "${VEGA_GAME_EDITOR_ENTRY}" CORE VegaEditorLightYearsCore)
+	ENTRY "${VEGA_GAME_EDITOR_ENTRY}")
 endif()
 if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 	set(VEGA_PROJECT_TEST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/project-path-tests")
@@ -105,10 +100,10 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 	add_test(NAME VegaEditorGameModule COMMAND VegaEditorGameModuleTests)
 	add_test(NAME VegaEditorNoGameIncludes COMMAND ${CMAKE_COMMAND}
 		-DSOURCE_ROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/NoGameIncludes.cmake)
-	add_executable(VegaEditorSkyDocumentTests tests/SkyDocumentTests.cpp src/SkyDocument.cpp src/JsonDocument.cpp src/JsonCommands.cpp
+	add_executable(VegaEditorSkyDocumentTests tests/SkyDocumentTests.cpp ${CMAKE_SOURCE_DIR}/Modules/Sky/editor/src/SkyDocument.cpp src/JsonDocument.cpp src/JsonCommands.cpp
 		src/EditorCommands.cpp src/EditorCamera.cpp src/EditorSelection.cpp)
 	target_include_directories(VegaEditorSkyDocumentTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-	target_link_libraries(VegaEditorSkyDocumentTests PRIVATE VegaScript ${VEGA_EDITOR_VISUAL_TARGET})
+	target_link_libraries(VegaEditorSkyDocumentTests PRIVATE VegaSkyEditor)
 	target_compile_definitions(VegaEditorSkyDocumentTests PRIVATE
 		VEGA_SKY_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/sky-document-test"
 		VEGA_SKY_SOURCE="${VEGA_EDITOR_VISUAL_ASSETS}")

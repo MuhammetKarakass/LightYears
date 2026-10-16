@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/World.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
 #include "gameplay/ability/closedCircuit/ClosedCircuitFieldActor.h"
@@ -360,6 +361,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	if (!TestSweptCircleGeometry() ||
 		!TestInterceptionGuardsAndDurability() ||
 		!TestWorldOwnedRegistryAndReplacement() ||

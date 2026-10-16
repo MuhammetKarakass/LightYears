@@ -25,6 +25,8 @@ namespace ly
 		bool HandleEvent(const sf::Event& event) override;
 		void AfterRender() override;
 		int ExitCode() const override { return mExitCode; }
+	protected:
+		GameVisualPipeline* VisualPipeline() const { return mVisualPipeline.get(); }
 	private:
 		struct DevOptions
 		{

@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 #include "gameplay/module/generated/ModuleAnnularBurstActor.h"
 
@@ -38,6 +39,7 @@ namespace
 }
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	try

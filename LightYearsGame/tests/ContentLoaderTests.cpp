@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "gameplay/content/EffectContentCatalog.h"
 #include "gameplay/content/EffectLoader.h"
 #include "gameplay/content/ShipLoader.h"
@@ -1280,6 +1281,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	// The editor's acceptance test shares the production loaders without touching
 	// source assets or replacing process-global runtime content catalogs.
 	if (argc == 3 && std::string{ argv[1] } == "--content-root")

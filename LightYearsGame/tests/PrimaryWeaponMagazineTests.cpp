@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "attributes/AttributeMath.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/Actor.h"
@@ -112,6 +113,7 @@ namespace ly
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace ly;
 
 	std::cout << "Starting PrimaryWeaponMagazineTests...\n";

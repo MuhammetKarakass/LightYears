@@ -204,7 +204,7 @@ namespace vega
 		case ScriptOperation::SkySave:
 		case ScriptOperation::ExpectSky:
 		case ScriptOperation::CaptureSky:
-			success = context.skyCommand && context.skyCommand(command, detail); break;
+			success = context.extensions && context.extensions->ExecuteParsed(command.extensionName, context, command, detail); break;
 		case ScriptOperation::GasSelectPlayer:
 		case ScriptOperation::ExpectAbility:
 		case ScriptOperation::ExpectEffect:
@@ -216,7 +216,7 @@ namespace vega
 		case ScriptOperation::GasActivate:
 		case ScriptOperation::GasPanel:
 		case ScriptOperation::GasFilter:
-			if (context.gasCommand) success = context.gasCommand(command, detail);
+			success = context.extensions && context.extensions->ExecuteParsed(command.extensionName, context, command, detail);
 			break;
 		case ScriptOperation::ClearConsole:
 			if (context.clearConsole) { context.clearConsole(); success = true; }
@@ -636,8 +636,8 @@ namespace vega
 		case ScriptOperation::Rotate:
 			if (actor) success = history.Execute(std::make_unique<SetPropertyCommand>(actor->GetUniqueID(), std::nullopt, "Rotation", command.degrees));
 			break;
-		case ScriptOperation::Undo: success = context.skyActive && context.skyActive() ? context.skyCommand(command, detail) : history.Undo(); break;
-		case ScriptOperation::Redo: success = context.skyActive && context.skyActive() ? context.skyCommand(command, detail) : history.Redo(); break;
+		case ScriptOperation::Undo: success = context.extensions && context.extensions->History() ? context.extensions->History()->Undo() : history.Undo(); break;
+		case ScriptOperation::Redo: success = context.extensions && context.extensions->History() ? context.extensions->History()->Redo() : history.Redo(); break;
 		case ScriptOperation::ExpectSelected:
 			success = actor && ActorTypeName(*actor) == command.text;
 			detail = "selected " + (actor ? ActorTypeName(*actor) : std::string{ "none" });

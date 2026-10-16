@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 #include "gameplay/MovementComponent.h"
 #include "gameplay/ship/ShipRuntimeModifiers.h"
@@ -7,6 +8,7 @@ using namespace uncommon_p4_e2e;
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	try

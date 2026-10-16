@@ -100,7 +100,7 @@ int main(int argc, char** argv)
 	Check(sky.Value("band.clouds") == 2, "Preset did not resolve");
 	Check(sky.Value("objects[0].kind") == "fog", "Inherited array missing");
 	const auto revision = sky.document.Revision();
-	for (const auto& field : ly::visual::DeepSkyFields()) Check(ly::visual::ValidateSkyField(field, field.defaultValue).empty(), "Invalid schema default: " + field.path);
+	for (const auto& field : vega::sky::DeepSkyFields()) Check(vega::sky::ValidateSkyField(field, field.defaultValue).empty(), "Invalid schema default: " + field.path);
 	Check(sky.Refresh() && sky.document.Revision() == revision, "Cached read mutated sky");
 	Check(!sky.Set("future.keep", 9) && !sky.Set("planet.scale", 8) && !sky.Set("band.view", "bad") && !sky.Set("planet.at", vega::Json{1,2,3}), "Invalid or unknown edits accepted");
 	Check(sky.document.Revision() == revision && !sky.document.Dirty(), "Invalid edits changed revision");
@@ -130,8 +130,23 @@ int main(int argc, char** argv)
 	Check(!loaded.Save() && Read(root / "deepsky.json") == external, "Save overwrote external changes");
 	Write(root / "deepsky.json", original); vega::SkyDocument clean{root};
 	Check(clean.Open() && clean.Select("one") && clean.Set("band.width", .4) && clean.history.Undo() && !clean.document.Dirty() && clean.document.Serialize() == original, "Undo failed byte-exact clean-state restoration");
-	ly::visual::DeepSkyCatalog catalog; std::string error;
+	vega::sky::DeepSkyCatalog catalog; std::string error;
 	Check(catalog.Load(std::filesystem::path{VEGA_SKY_SOURCE} / "deepsky.json", error), "Shipped catalog no longer parses: " + error);
+	for (const bool single : {false, true})
+	{
+		const auto file = single ? "single.sky.json" : "collection.sky.json";
+		const std::string bytes = single
+			? "{\r\n\t\"id\": \"aurora\", \"sky\": {\"band\": {\"width\": 0.2500}, \"future\": 1.2300}\r\n}\r\n"
+			: "{\r\n\t\"skies\": {\"aurora\": {\"band\": {\"width\": 0.2500}}, \"other\": {\"future\": 1.2300}}\r\n}\r\n";
+		Write(root / file, bytes);
+		vega::SkyDocument asset{root, file};
+		Check(asset.Open() && asset.Select("aurora"), "Cannot open independent sky asset");
+		Check(asset.Set("band.width", .4) && asset.history.Undo() && asset.document.Serialize() == bytes, "Sky asset undo changed bytes");
+		Check(asset.Set("band.width", .4) && asset.Save(), "Cannot save independent sky asset");
+		vega::SkyDocument reopened{root, file};
+		Check(reopened.Open() && reopened.Select("aurora") && reopened.Value("band.width") == .4, "Sky asset reopen lost values");
+		Check(Read(root / file).find("1.2300") != std::string::npos, "Sky asset save rewrote opaque bytes");
+	}
 	std::cout << "Sky document failures: " << failures << '\n';
 	return failures ? 1 : 0;
 }

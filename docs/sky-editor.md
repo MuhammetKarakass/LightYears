@@ -1,11 +1,18 @@
 # Sky editor
 
-Open **View > Sky** in scene Edit mode. The panel opens the active visual asset
+Sky authoring is supplied by the optional `VegaSkyEditor` module extension.
+It edits opaque sky IDs, individual `id/sky` assets and `skies` collections;
+the legacy `deepsky.json` / `stops` envelope is preserved. See
+[engine modules](engine-modules.md) for formats and registration. LightYears
+supplies its route-to-sky mapping and preview renderer game-side.
+
+
+In LightYears, open **View > Sky** in scene Edit mode. The panel opens the active visual asset
 root's `deepsky.json`, initially at the scene's `routeStop`. Debug builds normally
 use `LightYearsVisual/assets`; `--visual-assets <directory>` chooses another root.
 `--asset-root` independently chooses the game/scene asset root.
 
-The preview picker and thumbnail strip change the running viewport's stop without
+The Preview sky picker and thumbnail strip change the running viewport's sky without
 changing scene settings. **Use in scene** makes the preview stop the scene's
 `routeStop`, using the existing undoable World Settings command. Changing
 `routeStop` in World Settings also selects that stop in Sky. Play and prefab mode
@@ -16,7 +23,7 @@ the document. Closing Sky restores the scene's stop and the disk catalog.
 
 Expand band, skyPaint, planet, orbit, hostStar, grade, asteroids or Objects.
 Number, integer, boolean, RGB, position and enum controls come from
-`ly::visual::DeepSkyFields()` in `LightYearsVisual/src/DeepSky.cpp`. Object kinds
+`vega::sky::DeepSkyFields()` in `Modules/Sky/src/DeepSky.cpp`. Object kinds
 come from the renderer's existing `kKinds`; planet kinds are checked through
 `ParsePlanetKind`. Numeric parser clamps share the table with the authoring
 validator. Angles and positions that the parser leaves unbounded remain
@@ -103,7 +110,7 @@ An orbit bake can still cause a single long frame after the debounce interval.
 Run only from `build/VegaEditor`, with `--editor-script`:
 
 ```text
-sky-open <route-stop-id>
+sky-open <sky-id>
 sky-set <field.path> <JSON-value>
 sky-drag <handle> <dx> <dy>
 sky-save
@@ -116,7 +123,7 @@ as JSON, for example `sky-set orbit.framing "disk"`. Values can be numbers,
 booleans, strings or arrays. Unknown fields, wrong types, invalid enums and
 out-of-range values fail instead of silently clamping. Expectations compare
 numbers with a 1e-5 tolerance. `undo` and `redo` operate on Sky while it is active.
-Opening another stop preserves dirty edits; `sky-open` on a clean document rereads
+Opening another sky preserves dirty edits; `sky-open` on a clean document rereads
 the file and starts fresh history.
 
 Handle names are `planet`, `planet.scale`, `object.<index>`,

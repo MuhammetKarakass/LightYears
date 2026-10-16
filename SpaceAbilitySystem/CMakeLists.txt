@@ -1,4 +1,5 @@
 add_library(${SPACE_ABILITY_SYSTEM_TARGET_NAME} STATIC
+	${CMAKE_SOURCE_DIR}/Modules/GAS/src/GasContentSchemas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/content/ContentId.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemDebugView.h
@@ -91,3 +92,5 @@ if(BUILD_TESTING)
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 endif()
+
+target_include_directories(${SPACE_ABILITY_SYSTEM_TARGET_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/Modules/GAS/include)

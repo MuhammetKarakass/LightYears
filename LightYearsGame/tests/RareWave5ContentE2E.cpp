@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 
 #include "gameConfigs/combat/DamageTypeConfig.h"
@@ -989,6 +990,7 @@ namespace rare_wave5_content_e2e
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace rare_wave5_content_e2e;
 	if (argc != 2) return 2;
 	Report report;

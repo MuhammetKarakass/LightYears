@@ -86,6 +86,7 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		command.extensionName = verb;
 		if (verb == "sky-open" || verb == "capture-sky" || verb == "sky-save")
 		{
 			if (tokens.size() != (verb == "sky-save" ? 1u : 2u) || (tokens.size() == 2 && tokens[1].empty())) return bad();

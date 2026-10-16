@@ -1,3 +1,4 @@
+#include "presentation/visual/SkyMapping.h"
 #include "presentation/visual/ProceduralBackdrop.h"
 
 #include "framework/World.h"
@@ -365,7 +366,7 @@ namespace ly
 
 	ProceduralBackdrop::SkyGeometry ProceduralBackdrop::EditorGeometry(const visual::VisualAssets& assets, sf::Vector2u output) const
 	{
-		const auto* sky = assets.DeepSky().Find(mStopId);
+		const auto* sky = assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
 		const auto composition = BuildStopComposition(assets.Settings(), mLocationSeed, sky);
 		SkyGeometry result;
 		if (output.x && output.y)
@@ -492,7 +493,7 @@ namespace ly
 		sf::RenderTarget& background = pipeline.Target(Layer::Background);
 		sf::RenderTarget& nebulaTarget = pipeline.Target(Layer::Nebula);
 		const PipelineSettings& settings = assets.Settings();
-		const DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(mStopId);
+		const DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
 		// A stop may raise the background ceiling and strengthen the grade for its own character.
 		VisualPipeline::BackgroundLook look;
 		if (deepSky != nullptr)
@@ -529,8 +530,8 @@ namespace ly
 		// The stop's nebulae and haze are rendered first and added inside the band, so its dust lanes cross them; dark
 		// clouds then dim everything behind them.
 		DeepSkyLayer::Params deepSkyParams;
-		deepSkyParams.stop = deepSky;
-		deepSkyParams.stopId = mStopId;
+		deepSkyParams.sky = deepSky;
+		deepSkyParams.skyId = SkyIdForRouteStop(mStopId);
 		deepSkyParams.catalogVersion = assets.DeepSky().Version();
 		deepSkyParams.maxBrightness = cap;
 		deepSkyParams.mirrored = composition.mirrored;
@@ -721,7 +722,7 @@ namespace ly
 		}
 		const sf::Vector2f output(pipeline.OutputSize());
 		const float unitsToPixels = UnitsToPixels(output.y, viewHeight);
-		const visual::DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(mStopId);
+		const visual::DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
 		if (deepSky != nullptr && deepSky->hostStar.hide)
 		{
 			return;
@@ -922,7 +923,7 @@ namespace ly
 		const sf::Vector2f output(pipeline.OutputSize());
 		const float unitsToPixels = UnitsToPixels(output.y, viewHeight);
 		const sf::Vector2f drift = cameraCenter - mCameraStart;
-		const visual::DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(mStopId);
+		const visual::DeepSkyStop* deepSky = mStopId.empty() ? nullptr : assets.DeepSky().Find(SkyIdForRouteStop(mStopId));
 		const BackdropComposition composition = BuildStopComposition(assets.Settings(), mLocationSeed, deepSky);
 		visual::PlanetParams planet;
 		// A distant background moves continuously against the camera, without the gameplay pixel grid.

@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/Application.h"
 #include "framework/AssetManager.h"
 #include "gameplay/content/GameContentBootstrap.h"
@@ -810,6 +811,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 3 || (std::string{ argv[1] } != "--warning" && std::string{ argv[1] } != "--notification" &&
 		std::string{ argv[1] } != "--encounter" && std::string{ argv[1] } != "--ability" && std::string{ argv[1] } != "--menus"))
 	{

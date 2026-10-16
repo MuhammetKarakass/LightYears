@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP5E2E.h"
 
 #include "gameplay/ShieldComponent.h"
@@ -489,6 +490,7 @@ namespace rare_side_features_e2e
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace rare_side_features_e2e;
 	if (argc != 2) return 2;
 	Report report;

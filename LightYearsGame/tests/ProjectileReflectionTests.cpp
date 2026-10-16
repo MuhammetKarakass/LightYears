@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/Actor.h"
 #include "framework/TimerManager.h"
 #include "framework/World.h"
@@ -214,6 +215,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	auto& timers = ly::TimerManager::GetGameTimerManager();
 	timers.ClearAllTimers();
 

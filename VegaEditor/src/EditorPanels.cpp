@@ -114,7 +114,7 @@ namespace vega
 				ImGui::SetCursorScreenPos({ cursor.x + (available.x - imageSize.x) * 0.5f, cursor.y + (available.y - imageSize.y) * 0.5f });
 				// The RenderTexture overload also flips the UVs to display the image upright.
 				ImGui::Image(mViewport.GetTexture(), imageSize);
-				if (!mContext.playMode && !mSkyEditor.Active() && ImGui::BeginDragDropTarget())
+				if (!mContext.playMode && !mExtensions.Active() && ImGui::BeginDragDropTarget())
 				{
 					if (const auto* payload = ImGui::AcceptDragDropPayload("VEGA_ACTOR"))
 					{
@@ -165,8 +165,7 @@ namespace vega
 				EditorViewportExtensionContext extensionContext{ mContext, mHistory,
 					{ { topLeft.x, topLeft.y }, { bottomRight.x - topLeft.x, bottomRight.y - topLeft.y } }, mViewport.GetSize(), mViewportImageHovered };
 				for (const auto& drawExtension : mExtensions.viewports) drawExtension(extensionContext);
-				if (mSkyEditor.Active()) mSkyEditor.Handles(mViewportImageRect, mViewport.GetSize(), mViewportImageHovered);
-				else BuildGizmo();
+				if (!mExtensions.Active()) BuildGizmo();
 			}
 		}
 		ImGui::End();

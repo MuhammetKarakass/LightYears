@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
 
@@ -271,6 +272,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2) return 2;
 	Report report;
 	report.artifact["test"] = "AbilityMultiChargeE2E";

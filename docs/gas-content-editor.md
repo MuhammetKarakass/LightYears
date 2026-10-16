@@ -122,3 +122,11 @@ continues checking every shipped JSON file's byte-exact round trip.
 The Ability System debugger docks with Inspector on first appearance in older
 layouts. Existing authored dock/floating settings and the layout filename are
 preserved; the default layout builder also reserves its Inspector tab.
+
+## Optional engine module
+
+The debugger is registered by `sas::RegisterEditorExtension` from the optional
+`VegaGASEditor` target. Generic ability/effect field metadata lives in
+`Modules/GAS`; LightYears retains its game schemas, ID vocabulary, templates
+and production validators. `VegaEditorCore` builds without GAS. See
+[engine modules](engine-modules.md) for runtime and editor setup.

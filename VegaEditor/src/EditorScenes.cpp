@@ -157,11 +157,7 @@ namespace vega
 		}
 		if (playing) ClosePrefab();
 		if (!mContext.world || mContext.transitioning || playing == mContext.playMode) return false;
-		mGasDebugger.Clear();
-#ifdef VEGA_EDITOR_WITH_GAS
-		if (playing) sas::AbilitySystemDebugView::BeginPlay();
-		else sas::AbilitySystemDebugView::recording = false;
-#endif
+		for (const auto& tool : mExtensions.tools) tool->PlayChanged(playing);
 		if (playing)
 		{
 			if (mDiagnostics.clearOnPlay) mDiagnostics.Clear();
@@ -178,9 +174,9 @@ namespace vega
 
 	void EditorApplication::RequestScene(const std::string& action, const std::filesystem::path& path)
 	{
-		if (action == "exit" && mSkyEditor.Dirty())
+		if (action == "exit" && mExtensions.Dirty())
 		{
-			mSkyEditor.RequestExit([this]() { RequestScene("exit"); });
+			mExtensions.RequestExit([this]() { RequestScene("exit"); });
 			return;
 		}
 		if (action == "exit" && mContentAuthoring.Dirty())

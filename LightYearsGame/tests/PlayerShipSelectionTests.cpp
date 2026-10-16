@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/Application.h"
 #include "framework/AssetManager.h"
 #include "gameConfigs/ability/AbilityCatalog.h"
@@ -1191,6 +1192,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: PlayerShipSelectionTests <artifact-path>\n";

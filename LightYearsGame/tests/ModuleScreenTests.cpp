@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/Application.h"
 #include "framework/AssetManager.h"
 #include "gameplay/content/GameContentBootstrap.h"
@@ -475,6 +476,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: LightYearsModuleScreenTests <artifact-path>\n";

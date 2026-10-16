@@ -44,3 +44,11 @@ It writes a panel capture and before/after 300-frame profiles under
 `build/VegaEditor/Saved`. Parser coverage is in `VegaEditorScript`;
 `SpaceAbilitySystemDebugView` covers snapshot ownership, event bounds, session
 clearing, counts and state precedence.
+
+## Optional engine module
+
+The debugger is registered by `sas::RegisterEditorExtension` from the optional
+`VegaGASEditor` target. Generic ability/effect field metadata lives in
+`Modules/GAS`; LightYears retains its game schemas, ID vocabulary, templates
+and production validators. `VegaEditorCore` builds without GAS. See
+[engine modules](engine-modules.md) for runtime and editor setup.

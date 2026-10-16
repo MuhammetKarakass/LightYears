@@ -76,31 +76,19 @@ After adding `VegaEditor`, call `vega_add_game_editor(Name MODULE Target
 RUNTIME RuntimeTarget PROJECT projectFile ENTRY entrySource)` for each game.
 The helper links the game-independent `VegaEditorCore` and configures the host.
 LightYears retains its integration selection in `LightYearsGame/editor.cmake`
-and opts into an assembly of the same core sources with Sky and GAS enabled.
+and links the optional Sky and GAS editor extensions to the same core.
 The concrete entry is `VegaEditor/app/LightYearsEditorMain.cpp`. See
 [make a new game](new-game.md) and `Templates/Blank` for a complete second host.
 Asset roots, fonts, build directories and package names come from the
 [project file](project.md).
 
-## Remaining B4 coupling
+## Optional modules
 
-Sky remains optional in the LightYears editor assembly. Under
-`VEGA_EDITOR_WITH_SKY`, `EditorSkyEditor.h` includes the game's
-`presentation/visual/GameVisualPipeline.h`; `SkyDocument.h` includes
-`visual/DeepSky.h`. Preview rendering, route thumbnails, handles, schema and
-save/undo state still rely on those implementations. Extracting that stateful
-tool belongs to B4. `Bind` accepts the engine render-pipeline base and leaves
-Sky inactive for a different pipeline. `VegaEditorCore` excludes Sky and GAS
-sources and imports; BlankEditor uses this assembly. The Sky document/tool
-implementation still awaits the B4 extraction or a presentation adapter.
+Sky and GAS runtime/editor targets are independent optional modules. Sky's
+route mapping and deterministic LightYears preview adapter live game-side;
+the module edits opaque sky asset IDs. The editor core imports no game visual
+headers and its source guard has no exceptions. See
+[engine modules](engine-modules.md) for registration, layout and compatibility.
 
-`VegaEditorNoGameIncludes` scans every file under `VegaEditor/src` and
-`VegaEditor/include`, rejects game paths and direct game/visual headers, and
-allows exactly those two Sky include lines. The concrete entry is outside those
-directories. Game CMake selection, LightYears integration fixtures and Sky
-linkage remain integration inputs; core CMake no longer embeds game asset
-paths or a concrete game-app target.
-
-`VegaEditorGameModule` exercises a synthetic module linked only against
-VegaScript and the engine. Export tests also package another runtime with
-different asset directories and verify that visual assets are optional.
+The game-module and export fixtures still exercise synthetic modules without
+any current-game dependency.

@@ -3,78 +3,13 @@ option(LIGHTYEARS_BUILD_VISUAL_GALLERY "Build the LightYearsVisualGallery viewer
 # Per-frame rendering code: optimized even in Debug builds (see LY_OPTIMIZE_RENDER_IN_DEBUG in the root CMakeLists).
 set(CMAKE_CXX_FLAGS_DEBUG "${LY_DEBUG_FLAGS_RENDER}")
 
-# Pure astrophysics math (blackbody colour, magnitudes, galaxy model). No SFML, so gameplay code and tests can use it.
-add_library(LightYearsAstro STATIC
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/Astro.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/Astro.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/GalaxyModel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/GalaxyModel.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/Relativity.h
-)
-target_include_directories(LightYearsAstro PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-add_library(LightYearsVisual STATIC
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/LuminanceTier.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ReloadReport.h
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ColorRamp.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/ColorRamp.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ColorScript.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/ColorScript.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/PipelineSettings.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/PipelineSettings.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ShaderLibrary.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/ShaderLibrary.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/UniformWriter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/UniformWriter.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/VisualAssets.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/VisualAssets.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ShapeBrush.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/ShapeBrush.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/Backdrop.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/Backdrop.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/Galaxy.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/Galaxy.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/Nebula.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/Nebula.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/Anomalies.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/Anomalies.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/NearField.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/NearField.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/AsteroidField.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/AsteroidField.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/DeepSky.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/DeepSky.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/OrbitSky.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/OrbitSky.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/VisualPipeline.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/VisualPipeline.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ShipVisual.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/ShipVisual.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/visual/ShipRenderer.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/ShipRenderer.cpp
-
-	${CMAKE_CURRENT_SOURCE_DIR}/src/FileUtil.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/FileUtil.cpp
-)
-
+# Legacy game-art target and paths remain available to other worktrees.
+add_library(LightYearsAstro INTERFACE)
+target_include_directories(LightYearsAstro INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(LightYearsAstro INTERFACE VegaSkyAstro)
+add_library(LightYearsVisual STATIC src/ShipVisual.cpp src/ShipRenderer.cpp src/VisualAssets.cpp src/FileUtil.cpp)
 target_include_directories(LightYearsVisual PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-target_link_libraries(LightYearsVisual PUBLIC
-	LightYearsAstro
-	sfml-graphics
-	sfml-window
-	sfml-system
-	nlohmann_json::nlohmann_json
-)
-
+target_link_libraries(LightYearsVisual PUBLIC VegaSky)
 if(LIGHTYEARS_BUILD_VISUAL_GALLERY)
 	add_executable(LightYearsVisualGallery
 		${CMAKE_CURRENT_SOURCE_DIR}/gallery/main.cpp

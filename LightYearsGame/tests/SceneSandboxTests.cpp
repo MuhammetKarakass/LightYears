@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <framework/AssetManager.h>
@@ -40,6 +41,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace ly;
 	using Json = nlohmann::json;
 	const auto root = std::filesystem::path{ LIGHT_YEARS_PROJECT_SOURCE_DIR } / "LightYearsGame/assets";

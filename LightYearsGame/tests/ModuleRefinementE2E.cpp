@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayContracts.h"
@@ -175,6 +176,7 @@ namespace
 }
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2 && !(argc == 3 && std::string{ argv[2] } == "cfg")) return 2;
 	Report report;
 	try

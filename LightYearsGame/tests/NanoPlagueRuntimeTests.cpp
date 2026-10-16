@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/World.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueControllerActor.h"
@@ -255,6 +256,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	if (!TestWorldOwnedRegistryReuseAndIsolation() ||
 		!TestRejectsUnmanagedAndForeignOwners() ||
 		!TestRegistrationReplacementKeepsNewestGeneration() ||

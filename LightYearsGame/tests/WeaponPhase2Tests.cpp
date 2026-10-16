@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/AssetManager.h"
 #include "framework/World.h"
@@ -749,6 +750,7 @@ namespace ly
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace ly;
 #ifdef _WIN32
 	// Report debug-CRT assertions on stderr instead of a dialog that would hang

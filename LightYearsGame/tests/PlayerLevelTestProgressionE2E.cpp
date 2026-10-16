@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/Application.h"
 #include "framework/AssetManager.h"
 #include "gameplay/ability/GameAbility.h"
@@ -260,6 +261,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: LightYearsPlayerLevelTestProgressionE2ETests <artifact-path>\n";
