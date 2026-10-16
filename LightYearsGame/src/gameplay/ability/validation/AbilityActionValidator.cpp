@@ -10,7 +10,8 @@ namespace ly
 	bool AbilityActionValidator::Validate(
 		const List<AbilityActionSpec>& actions,
 		const EffectValidationFunction& validateEffect,
-		std::string* failureReason
+		std::string* failureReason,
+		const EffectLookup& findEffect
 	)
 	{
 		for (const AbilityActionSpec& action : actions)
@@ -57,7 +58,7 @@ namespace ly
 			else if (const auto* applyEffect = std::get_if<ApplyEffectAction>(&action.action))
 			{
 				const sas::GameplayEffectDefinition* definition =
-					EffectData::FindGameplayEffectDefinition(applyEffect->effectId.ToString());
+					(findEffect ? findEffect(applyEffect->effectId.ToString()) : EffectData::FindGameplayEffectDefinition(applyEffect->effectId.ToString()));
 				if (!definition)
 				{
 					if (failureReason)

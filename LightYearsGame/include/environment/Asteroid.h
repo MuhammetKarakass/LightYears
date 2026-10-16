@@ -9,6 +9,7 @@ namespace ly
 {
 	class Asteroid : public Actor
 	{
+		VEGA_CLASS(Asteroid)
 	public:
 		Asteroid(World* owningWorld,const sf::Vector2f& velocity = sf::Vector2f(0.f, 100.f), float health = 50.f, float damage = 20.f);
 
@@ -20,6 +21,7 @@ namespace ly
 		ExplosionType GetExplosionType() const { return mExplosionType; }
 		void SetupCollisionLayers();
 		void SetAsteroidVelocity(const sf::Vector2f& velocity) { mVelocity = velocity; }
+		sf::Vector2f GetAsteroidVelocity() const { return mVelocity; }
 		void SetAsteroidScale(float scale);
 	private:
 		virtual void Tick(float deltaTime) override;

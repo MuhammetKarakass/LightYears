@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "framework/Core.h"
 #include "attributes/AttributeMath.h"
@@ -723,6 +724,7 @@ int RunGameHUDPlayerRestartTests();
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace ly;
 	if (argc == 2 && std::string{ argv[1] } == "--player-lifetime") return RunPlayerShipLifetimeTests();
 	if (argc == 2 && std::string{ argv[1] } == "--chain-lightning-lifetime") return RunChainLightningLifetimeTests();

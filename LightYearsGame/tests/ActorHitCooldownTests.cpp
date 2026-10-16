@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/Actor.h"
 #include "gameplay/targeting/ActorHitCooldowns.h"
 #include <iostream>
@@ -17,6 +18,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	ly::Actor firstTarget{ nullptr, "" };
 	ly::Actor secondTarget{ nullptr, "" };
 	ly::targeting::ActorHitCooldowns cooldowns;

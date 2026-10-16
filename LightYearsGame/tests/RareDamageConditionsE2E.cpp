@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 #include "gameplay/HealthComponent.h"
@@ -311,6 +312,7 @@ namespace rare_damage_conditions_e2e
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace rare_damage_conditions_e2e;
 	if (argc != 2) return 2;
 	Report report;

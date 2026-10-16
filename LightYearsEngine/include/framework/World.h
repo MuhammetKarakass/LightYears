@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <typeindex>
 #include <unordered_map>
+#include <nlohmann/json.hpp>
 
 namespace ly
 {
@@ -17,11 +18,19 @@ namespace ly
 	class Application;
 	class GameStage;
 	class HUD;
+	class RenderViewport;
 	class World: public Object
 	{
 	public:
 
 		World(Application* owningApp);
+		const std::optional<sf::FloatRect>& GetSceneBounds() const { return mSceneBounds; }
+		void SetSceneBounds(std::optional<sf::FloatRect> bounds) { mSceneBounds = std::move(bounds); }
+	private:
+		std::optional<sf::FloatRect> mSceneBounds;
+	public:
+		// Missing prefab references have no actor, but remain authored data.
+		nlohmann::json unresolvedPrefabs = nlohmann::json::array();
 
 		void BeginPlayInternal();
 		void TickInternal(float deltaTime);
@@ -38,7 +47,7 @@ namespace ly
 			SimulationTimeModifierSourceId sourceId
 		);
 		float GetSimulationTimeScale(SimulationTimeDomain domain) const;
-		void Render(sf::RenderWindow& window);
+		void Render(sf::RenderTarget& window);
 		void CleanCycle();
 
 		// Every world owns its own physics scene (mirrors UWorld/FPhysScene).
@@ -50,6 +59,8 @@ namespace ly
 
 		void SetPaused(bool paused);
 		bool IsPaused() const { return mIsPaused; }
+		// Authoring worlds promote and render actors without starting gameplay lifecycles.
+		virtual bool IsEditMode() const { return false; }
 		void RemoveOverlayHUD();
 
 		void SetViewTarget(weak_ptr<Actor> target);
@@ -93,11 +104,17 @@ namespace ly
 			VisitActorsInBounds(bounds, &visitor, invoke);
 		}
 
+		// The viewport owner must outlive this world. Null restores the application window.
+		void SetRenderViewport(RenderViewport* viewport);
+		RenderViewport* GetRenderViewport();
+		const RenderViewport* GetRenderViewport() const;
+
 		sf::Vector2u GetWindowSize();
 		sf::View GetWorldView() const;
+		void SetViewOverride(std::optional<sf::View> view) { mViewOverride = std::move(view); }
+		const std::optional<sf::View>& GetViewOverride() const { return mViewOverride; }
 		sf::Vector2f GetMouseWorldPosition() const;
-		// False for worlds without an application window (headless tests) and
-		// while the window is not focused, so device input is never read then.
+		// False without a viewport or while it lacks focus, so device input is never read then.
 		bool HasInputFocus() const;
 
 		virtual ~World();
@@ -128,6 +145,9 @@ namespace ly
 			return true;
 		}
 		const Application* GetApplicationRef() const { return mOwningApp; }
+		std::size_t GetActorCountIncludingPending() const { return mActors.size() + mPendingActors.size(); }
+		std::uint64_t ActorReferenceRevision() const { return mActorReferenceRevision; }
+		void InvalidateActorReferences() { ++mActorReferenceRevision; }
 
 		template<typename ActorType, typename ...Args>
 		weak_ptr<ActorType> SpawnActor(Args... args);
@@ -229,6 +249,8 @@ namespace ly
 		};
 
 		Application* mOwningApp;
+		RenderViewport* mRenderViewport = nullptr;
+		std::optional<sf::View> mViewOverride;
 		bool mBeganPlay;
 		bool mIsPaused;
 
@@ -257,7 +279,7 @@ namespace ly
 		void NextGameStage();
 		void BeginStages();
 		void UpdateCamera(float deltaTime);
-		void RenderHUD(sf::RenderWindow& window);
+		void RenderHUD(sf::RenderTarget& window);
 		void RegisterActorSpatialQuery(Actor& actor);
 		static bool ShouldUseManualSpatialQuery(const Actor& actor);
 		static sf::FloatRect GetManualSpatialBounds(const Actor& actor);
@@ -270,6 +292,7 @@ namespace ly
 		) const;
 
 		weak_ptr<Actor> mViewTarget;
+		std::uint64_t mActorReferenceRevision = 0;
 		std::unordered_map<std::type_index, weak_ptr<Actor>> mServiceActors;
 		CameraManager mCameraManager;
 	};
@@ -279,6 +302,7 @@ namespace ly
 	{
 		shared_ptr<ActorType> newActor = std::make_shared<ActorType>(this, args...);
 		mPendingActors.push_back(newActor);
+		InvalidateActorReferences();
 		ly::perf::IncActiveActors();
 		return newActor;
 	}

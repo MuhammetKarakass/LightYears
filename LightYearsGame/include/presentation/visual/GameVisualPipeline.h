@@ -40,6 +40,7 @@ namespace ly
 		void SetPlayerHullOverride(std::optional<float> hullFraction) { mShips.SetHullOverride(hullFraction); }
 		// Places the backdrop at a stop of the campaign route (0 = Sol). The index is clamped to the route.
 		void SetRouteStopIndex(std::size_t index);
+		const std::string& BackdropStopId() const { return mBackdrop.StopId(); }
 		// Dev-only: moves to the next (+1) or previous (-1) route stop, wrapping around both ends.
 		void CycleRouteStop(int step);
 		// Dev-only: steps the orbit speed of orbit stops (+1 faster, -1 slower); shown under the stop label.
@@ -47,19 +48,23 @@ namespace ly
 		// Ship speed as a fraction of light speed and its on-screen direction (y down); eased by the backdrop.
 		void SetWarp(float beta, sf::Vector2f direction) { mBackdrop.SetWarp(beta, direction); }
 		bool IsEnabled() const { return mEnabled; }
+		visual::VisualAssets& EditorAssets() { return mAssets; }
+		const GalaxyRoute& Route() const { return mRoute; }
+		ProceduralBackdrop& EditorBackdrop() { return mBackdrop; }
+		void SetSkyAuthoring(bool enabled) { mSkyAuthoring = enabled; }
 
 		bool IsActive() const override { return mEnabled && mReady; }
 		void BeginFrame(const World& world, const sf::View& worldView) override;
 		sf::RenderTarget& GetTarget(RenderLayer layer) override;
 		bool ReplacesLayer(RenderLayer layer) const override;
 		bool HidesActor(const Actor& actor) const override { return mShips.HidesActor(actor); }
-		void Compose(sf::RenderWindow& window) override;
+		void Compose(sf::RenderTarget& window) override;
 
 	private:
 		void LogReport(const visual::ReloadReport& report) const;
 		void LoadRoute();
 		void ApplyRouteStop();
-		void DrawStopLabel(sf::RenderWindow& window);
+		void DrawStopLabel(sf::RenderTarget& window);
 
 		sf::RenderWindow* mWindow = nullptr;
 		visual::VisualAssets mAssets;
@@ -78,5 +83,6 @@ namespace ly
 		bool mReady = false;
 		bool mEnabled = true;
 		float mTime = 0.f;
+		bool mSkyAuthoring = false;
 	};
 }

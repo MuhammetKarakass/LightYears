@@ -1,10 +1,18 @@
 #include "framework/AssetManager.h"
+#include "framework/EngineAssets.h"
+#include "framework/scene/PrefabLibrary.h"
 #include "framework/debug/Log.h"
 
 #include <chrono>
+#include <filesystem>
 
 namespace ly
 {
+	void AssetManager::SetAssetRootDirectory(const std::string& rootDirectory)
+	{
+		mAssetRootDirectory = rootDirectory;
+		PrefabLibrary::Get().SetRoot(rootDirectory);
+	}
 	namespace
 	{
 		// Hitch diagnostics: every cache miss is a synchronous disk read (and, for
@@ -55,6 +63,7 @@ namespace ly
 	// Verilen yoldan bir texture y?kleyen veya ?nbellekten (cache) getiren fonksiyon.
 	shared_ptr<sf::Texture> AssetManager::LoadTexture(const std::string& texturePath)
 	{
+		if (texturePath.empty()) return GetDefaultTexture();
 		// 1. Texture'?n daha ?nce y?klenip y?klenmedi?ini kontrol et.
 		// mLoadedTextureMap, y?klenmi? texture'lar? ve yollar?n? tutan bir haritad?r.
 		auto found = mLoadedTextureMap.find(texturePath);
@@ -88,8 +97,11 @@ namespace ly
 		return shared_ptr<sf::Texture> {nullptr};
 	}
 
-	shared_ptr<sf::Font> AssetManager::LoadFont(const std::string& fontPath)
+	shared_ptr<sf::Font> AssetManager::LoadFont(const std::string& requestedPath)
 	{
+		const auto& fontPath = requestedPath.empty() ? EngineAssets::Get().font : requestedPath;
+		// Empty SFML fonts keep widgets usable without requiring any game font.
+		if (fontPath.empty()) return std::make_shared<sf::Font>();
 
 		auto found = mLoadedFontMap.find(fontPath);
 
@@ -125,7 +137,7 @@ namespace ly
 		const auto missStart = AssetClock::now();
 		shared_ptr<sf::SoundBuffer> newSoundBuffer{ new sf::SoundBuffer };
 
-		const bool soundLoaded = newSoundBuffer->loadFromFile(mAssetRootDirectory + soundPath);
+		const bool soundLoaded = newSoundBuffer->loadFromFile(std::filesystem::path{ mAssetRootDirectory } / soundPath);
 		LogAssetMiss("sound", soundPath, missStart, soundLoaded);
 		if (soundLoaded)
 		{

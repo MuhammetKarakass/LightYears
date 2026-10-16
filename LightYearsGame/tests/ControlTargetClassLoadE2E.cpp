@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameConfigs/ship/ShipConfig.h"
 #include "gameplay/content/ShipLoader.h"
@@ -129,6 +130,7 @@ namespace control_target_class_load_e2e
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace control_target_class_load_e2e;
 	if (argc != 2) return 2;
 	Report report;

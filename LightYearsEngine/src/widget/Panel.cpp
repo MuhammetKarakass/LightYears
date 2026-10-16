@@ -62,7 +62,7 @@ namespace ly
 		return mSize;
 	}
 
-	void Panel::Draw(sf::RenderWindow& windowRef)
+	void Panel::Draw(sf::RenderTarget& windowRef)
 	{
 		if (mBackgroundColor.a > 0) windowRef.draw(mBackground);
 	}

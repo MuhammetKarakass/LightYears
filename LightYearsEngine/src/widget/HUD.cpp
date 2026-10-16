@@ -7,7 +7,7 @@ namespace ly
 	{
 		// World::Render draws the HUD with the window's default view, so anchors must
 		// resolve in that coordinate space rather than in raw window pixels.
-		sf::Vector2u HUDViewSize(const sf::RenderWindow& window)
+		sf::Vector2u HUDViewSize(const sf::RenderTarget& window)
 		{
 			const sf::Vector2f size = window.getDefaultView().getSize();
 			return { static_cast<unsigned int>(size.x), static_cast<unsigned int>(size.y) };
@@ -38,7 +38,7 @@ namespace ly
 			layer->SetLayout(UILayout::Stretch());
 		}
 	}
-	void HUD::NativeInit(sf::RenderWindow& windowRef)
+	void HUD::NativeInit(sf::RenderTarget& windowRef)
 	{
 		if (!mHasInit)
 		{
@@ -118,7 +118,7 @@ namespace ly
 		for (const auto& layer : mLayers) layer->ResolveLayoutTree(viewport, viewportChanged);
 	}
 
-	void HUD::Init(sf::RenderWindow& windowRef)
+	void HUD::Init(sf::RenderTarget& windowRef)
 	{
 		/*for(auto& widget : mWidgets)
 		{
@@ -126,7 +126,7 @@ namespace ly
 		}*/
 	}
 
-	void HUD::Draw(sf::RenderWindow& windowRef)
+	void HUD::Draw(sf::RenderTarget& windowRef)
 	{
 		for (auto& widget : mWidgets)
 		{

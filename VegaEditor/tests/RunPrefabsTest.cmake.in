@@ -1,0 +1,10 @@
+# Only this dedicated build-tree copy is reset; source assets are never authored.
+set(root "@CMAKE_CURRENT_BINARY_DIR@/prefab-test-assets")
+file(REMOVE_RECURSE "${root}")
+file(MAKE_DIRECTORY "${root}")
+file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
+execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+	"@CMAKE_CURRENT_BINARY_DIR@/scripts/prefabs.vegascript" RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+	message(FATAL_ERROR "VegaEditorPrefabs failed: ${result}")
+endif()

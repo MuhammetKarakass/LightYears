@@ -1,0 +1,106 @@
+open-scene scenes/sandbox.scene.json
+wait 2
+select-type Asteroid
+add-script scripts/spin.lua
+set-script-prop speed 45
+set-prop HealthComponent "Max Health" 300
+create-prefab prefabs/BigRock.prefab.json
+expect-prefab prefabs/BigRock.prefab.json
+undo
+expect-prefab none
+redo
+expect-prefab prefabs/BigRock.prefab.json
+place-prefab prefabs/BigRock.prefab.json 800 400
+rename "Rock One"
+place-prefab prefabs/BigRock.prefab.json 800 400
+rename "Rock Two"
+expect-prop HealthComponent "Max Health" 300
+expect-script-prop speed 45
+set-script-prop speed 90
+expect-overridden ScriptComponent speed true
+revert-prefab-prop ScriptComponent speed
+expect-script-prop speed 45
+expect-overridden ScriptComponent speed false
+set-prop Actor "Velocity" 50 60
+expect-overridden Actor "Velocity" true
+revert-prefab-prop Actor "Velocity"
+expect-overridden Actor "Velocity" false
+undo
+expect-overridden Actor "Velocity" true
+redo
+expect-overridden Actor "Velocity" false
+set-prop HealthComponent "Max Health" 500
+apply-prefab-prop HealthComponent "Max Health"
+expect-overridden HealthComponent "Max Health" false
+select-name "Rock One"
+expect-prop HealthComponent "Max Health" 500
+undo
+expect-prop HealthComponent "Max Health" 300
+expect-overridden HealthComponent "Max Health" true
+redo
+expect-prop HealthComponent "Max Health" 500
+expect-overridden HealthComponent "Max Health" false
+select-name "Rock Two"
+add-component LightComponent
+set-prop LightComponent Active false
+expect-overridden LightComponent Active true
+apply-prefab-prop LightComponent Active
+expect-overridden LightComponent Active false
+select-name "Rock One"
+expect-component LightComponent present
+expect-prop LightComponent Active false
+add-component EnergyComponent
+set-prop EnergyComponent "Max Energy" 100
+revert-prefab-prop EnergyComponent "Max Energy"
+expect-component EnergyComponent absent
+undo
+expect-component EnergyComponent present
+redo
+expect-component EnergyComponent absent
+expect-prop HealthComponent "Max Health" 500
+set-prop Actor Velocity 25 35
+expect-prefab prefabs/BigRock.prefab.json
+save-scene @VEGA_PREFABS_SCENE@
+open-scene @VEGA_PREFABS_SCENE@
+wait 2
+select-name "Rock Two"
+expect-prefab prefabs/BigRock.prefab.json
+expect-prop HealthComponent "Max Health" 500
+expect-overridden Actor "Velocity" false
+create-variant prefabs/BigRock.prefab.json prefabs/HugeRock.prefab.json
+place-prefab prefabs/HugeRock.prefab.json 1000 400
+expect-prefab prefabs/HugeRock.prefab.json
+expect-prop HealthComponent "Max Health" 500
+set-prop HealthComponent "Max Health" 700
+apply-prefab-prop HealthComponent "Max Health"
+expect-overridden HealthComponent "Max Health" false
+place-prefab prefabs/HugeRock.prefab.json
+expect-prop HealthComponent "Max Health" 700
+select-name "Rock One"
+expect-prop HealthComponent "Max Health" 500
+reload-prefabs
+expect-prop HealthComponent "Max Health" 500
+save-scene @VEGA_PREFABS_SCENE@
+open-prefab prefabs/BigRock.prefab.json
+set-prop HealthComponent "Max Health" 600
+undo
+expect-prop HealthComponent "Max Health" 500
+redo
+expect-prop HealthComponent "Max Health" 600
+save-prefab
+capture @VEGA_PREFABS_CAPTURE@
+close-prefab
+select-name "Rock One"
+expect-prop HealthComponent "Max Health" 600
+expect-prop Actor Velocity 25 35
+select-name "Rock Two"
+expect-prop HealthComponent "Max Health" 600
+select-name "HugeRock"
+expect-prop HealthComponent "Max Health" 700
+save-scene @VEGA_PREFABS_SCENE@
+open-scene @VEGA_PREFABS_SCENE@
+wait 2
+select-name "Rock One"
+expect-prop HealthComponent "Max Health" 600
+expect-prop Actor Velocity 25 35
+quit

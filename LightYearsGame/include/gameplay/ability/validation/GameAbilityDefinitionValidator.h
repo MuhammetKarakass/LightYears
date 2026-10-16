@@ -15,7 +15,8 @@ namespace ly
 		static bool Validate(
 			const GameAbilityDefinition& definition,
 			const AbilityActionValidator::EffectValidationFunction& validateEffect,
-			std::string* failureReason = nullptr
+			std::string* failureReason = nullptr,
+			const AbilityActionValidator::EffectLookup& findEffect = {}
 		);
 
 		static bool ValidateCatalog(

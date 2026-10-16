@@ -17,6 +17,7 @@ namespace ly
 	// texture load), so callers still check HasSprite()/GetSprite().
 	class SpriteComponent : public ActorComponent
 	{
+		VEGA_CLASS(SpriteComponent)
 	public:
 		explicit SpriteComponent(Actor& owner, const std::string& texturePath = "");
 
@@ -24,6 +25,9 @@ namespace ly
 		// with the full texture rect and a centered pivot. An empty path or a failed
 		// load leaves the current sprite untouched and returns false.
 		bool SetTexture(const std::string& texturePath);
+		const std::string& GetTexturePath() const { return mTexturePath; }
+		sf::Vector2f GetScale() const { return mSprite ? mSprite->getScale() : mScale; }
+		void SetScale(sf::Vector2f scale);
 		void SetTextureRepeated(bool repeated);
 		// Moves the origin to the middle of the sprite's current global bounds.
 		void CenterPivot();
@@ -45,5 +49,7 @@ namespace ly
 	private:
 		shared_ptr<sf::Texture> mTexture;
 		std::optional<sf::Sprite> mSprite;
+		std::string mTexturePath;
+		sf::Vector2f mScale{ 1.f, 1.f };
 	};
 }

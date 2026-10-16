@@ -19,8 +19,8 @@ namespace ly
 	public:
 		static constexpr std::size_t LayerCount = static_cast<std::size_t>(UILayer::Count);
 
-		virtual void Draw(sf::RenderWindow& windowRef);
-		void NativeInit(sf::RenderWindow& windowRef);
+		virtual void Draw(sf::RenderTarget& windowRef);
+		void NativeInit(sf::RenderTarget& windowRef);
 
 		const bool HasInit() const { return mHasInit; }
 		virtual bool HandleEvent(const sf::Event& event);
@@ -55,12 +55,12 @@ namespace ly
 
 	private:
 		bool mHasInit;
-		sf::RenderWindow* mWindowRef{ nullptr };
+		sf::RenderTarget* mWindowRef{ nullptr };
 		sf::Vector2u mViewportSize{};
 		bool mViewportDirty{ true };
 		std::array<shared_ptr<Panel>, LayerCount> mLayers;
 
-		virtual void Init(sf::RenderWindow& windowRef);
+		virtual void Init(sf::RenderTarget& windowRef);
 		bool HasVisibleModalChild() const;
 	};
 }

@@ -12,7 +12,7 @@ namespace ly
 		mAdditive.clear();
 	}
 
-	void HoloCanvas::Draw(sf::RenderWindow& windowRef)
+	void HoloCanvas::Draw(sf::RenderTarget& windowRef)
 	{
 		sf::RenderStates normal;
 		normal.transform.translate(GetResolvedRect().position);

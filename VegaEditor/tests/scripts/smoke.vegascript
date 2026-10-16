@@ -1,0 +1,26 @@
+# One command per frame. Capture paths are relative to the editor working directory.
+pause
+select-type DummyEnemy
+expect-selected DummyEnemy
+set-prop Actor "Rotation" 45
+expect-prop Actor "Rotation" 45
+undo
+redo
+expect-prop Actor "Rotation" 45
+set-prop HealthComponent "Max Health" 200
+expect-prop HealthComponent "Max Health" 200
+undo
+redo
+expect-prop HealthComponent "Max Health" 200
+remember-location
+move 400 300
+expect-location 400 300
+undo
+expect-remembered-location
+redo
+expect-location 400 300
+focus
+expect-camera editor
+expect-visible
+capture smoke.png
+quit

@@ -4,6 +4,8 @@
 #include <box2d/box2d.h>
 #include <cstdint>
 #include <optional>
+#include "framework/Delegate.h"
+#include <unordered_map>
 
 namespace ly
 {
@@ -27,8 +29,11 @@ namespace ly
 	// changes refresh the Box2D filter first and the World spatial index second.
 	class CollisionComponent : public ActorComponent
 	{
+		VEGA_CLASS(CollisionComponent)
 	public:
 		explicit CollisionComponent(Actor& owner);
+		~CollisionComponent() override;
+		void EndPlay() override;
 
 		CollisionLayer GetCollisionLayer() const { return mCollisionLayer; }
 		CollisionLayer GetCollisionMask() const { return mCollisionMask; }
@@ -45,14 +50,26 @@ namespace ly
 		void SetPhysicsBodyType(PhysicsBodyType bodyType);
 		PhysicsBodyType GetPhysicsBodyType() const { return mPhysicsBodyType; }
 		void SetCollisionRadius(float radius);
+		// Contact dispatch is independent of Actor overrides, so components also
+		// receive events when a gameplay override does not call its base method.
+		void NotifyContact(Actor* other, bool begin);
 
 	private:
 		void RefreshFilterAndSpatialQuery();
+		void OtherDestroyed(Actor* other);
+		void ClearContacts();
 
 		bool mPhysicsEnabled = false;
 		std::optional<b2BodyId> mPhysicsBodyId;
 		PhysicsBodyType mPhysicsBodyType = PhysicsBodyType::Dynamic;
 		CollisionLayer mCollisionLayer = CollisionLayer::None;
 		CollisionLayer mCollisionMask = CollisionLayer::None;
+		struct Contact
+		{
+			unsigned int count = 0;
+			weak_ptr<Actor> actor;
+			DelegateHandle destroyed;
+		};
+		std::unordered_map<unsigned int, Contact> mContacts;
 	};
 }

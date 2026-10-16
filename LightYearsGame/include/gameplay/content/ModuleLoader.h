@@ -1,4 +1,5 @@
 #pragma once
+#include <nlohmann/json.hpp>
 
 #include "gameplay/module/ModuleDefinition.h"
 
@@ -22,6 +23,8 @@ namespace ly::content
 				return error.empty();
 			}
 		};
+
+		static Result LoadFromJson(const nlohmann::json& root, const std::string& selectedId = {});
 
 		static Result LoadFromFile(const std::filesystem::path& filePath);
 		static ModuleRulePackage ParseRulePackage(const nlohmann::json& object, const std::string& context, int minimumLevelCount, bool defaultAffectedByZoneBonus, bool sideFeature = false);

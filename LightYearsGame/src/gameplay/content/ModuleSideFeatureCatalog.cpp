@@ -1,4 +1,5 @@
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
+#include "gameplay/content/RetainedContent.h"
 
 #include <utility>
 #include <unordered_map>
@@ -61,9 +62,11 @@ namespace ly::content
 		poolIndex.reserve(pools.size());
 		for (std::size_t i = 0; i < definitions.size(); ++i) index.emplace(definitions[i].sideFeatureId.ToString(), i);
 		for (std::size_t i = 0; i < pools.size(); ++i) poolIndex.emplace(pools[i].poolId.ToString(), i);
+		RetainContent(MutableDefinitions());
 		MutableDefinitions() = std::move(definitions);
 		MutableIndex() = std::move(index);
 		MutablePoolIndex() = std::move(poolIndex);
+		RetainContent(MutablePools());
 		MutablePools() = std::move(pools);
 		GetLoadedState() = true;
 	}

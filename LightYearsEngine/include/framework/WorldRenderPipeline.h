@@ -29,6 +29,6 @@ namespace ly
 		// decision: the actor keeps ticking, colliding and keeping its own render flags.
 		virtual bool HidesActor(const Actor& actor) const { (void)actor; return false; }
 		// After all actors drew. Leaves the window with the composed scene (default view), ready for the HUD.
-		virtual void Compose(sf::RenderWindow& window) = 0;
+		virtual void Compose(sf::RenderTarget& window) = 0;
 	};
 }

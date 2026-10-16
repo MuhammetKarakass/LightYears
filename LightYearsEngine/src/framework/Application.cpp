@@ -1,4 +1,6 @@
 #include "framework/Application.h"
+#include "framework/GameModule.h"
+#include "framework/reflection/Reflection.h"
 #include "framework/Core.h"
 #include "framework/World.h"
 #include "framework/AssetManager.h"
@@ -32,6 +34,7 @@ namespace ly
 
 	Application::Application(sf::Vector2u Position, unsigned int bit, const std::string& Title, uint32_t Style)
 		:mWindow{ sf::VideoMode(Position, bit), Title, Style },
+		mWindowViewport{ mWindow },
 		mTargetFrameRate{ 60.f },     
 		mFramePacer{ mTargetFrameRate },
 		mShouldQuit{ false },
@@ -41,6 +44,7 @@ namespace ly
 		mCleanCycleClock{},    
 		mCleanCycleTime{2.f}          
 	{		
+		reflect::RegisterEngineTypes();
 		// The frame rate is held by mFramePacer; SFML's own limiter drifts (see FramePacer.h).
 		mWindow.setVerticalSyncEnabled(false);
 #ifdef _WIN32
@@ -62,6 +66,7 @@ namespace ly
 		
 		while (mWindow.isOpen() && !mShouldQuit)
 		{
+			debug::ProfileFrameScope profileFrame;
 			LY_PROFILE_FRAME();
 			sf::Time deltaTime = mTickClock.restart();
 			float dt = deltaTime.asSeconds();
@@ -70,7 +75,8 @@ namespace ly
 			{
 				if (event->is<sf::Event::Closed>())
 				{
-					QuitApplication();
+					// An authoring application may defer closing to resolve unsaved changes.
+					if (!HandleApplicationEvent(*event)) QuitApplication();
 				}
 				else 
 				{
@@ -104,6 +110,11 @@ namespace ly
 			const auto hitchRenderStart = std::chrono::steady_clock::now();
 			RenderInternal();
 			const auto hitchEnd = std::chrono::steady_clock::now();
+			LY_PROFILE_COUNTER("Actors", perf::g_activeActors.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Bullets", perf::g_bullets.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Particles", perf::g_particles.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Render submitted", perf::g_renderSubmitted.load(std::memory_order_relaxed));
+			LY_PROFILE_COUNTER("Render culled", perf::g_renderCulled.load(std::memory_order_relaxed));
 			mFramePacer.Wait();
 
 			// Hitch diagnostics: report frames whose own work (not the frame-limiter
@@ -146,10 +157,18 @@ namespace ly
 		mQuitRequested = true;
 	}
 
+	void Application::RegisterGameModule(vega::GameModule& module, bool editor)
+	{
+		mGameModule = &module;
+		module.RegisterTypes();
+		if (auto* setup = vega::QueryCapability<vega::IModuleSetup>(&module)) setup->Initialize(*this, editor);
+	}
+
 	void Application::ShutdownApplication()
 	{
 		LY_PROFILE_FUNCTION();
 		mPendingWorld.reset();
+		if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(mGameModule); hooks && mCurrentWorld && !mCurrentWorld->IsEditMode()) hooks->EndPlay(*mCurrentWorld);
 		mCurrentWorld.reset();
 		AudioManager::ShutdownAudioManager();
 		TimerManager::ShutdownTimerManagers();
@@ -209,6 +228,7 @@ namespace ly
 
 		if(mPendingWorld && mPendingWorld!=mCurrentWorld)
 		{
+			if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(mGameModule); hooks && mCurrentWorld && !mCurrentWorld->IsEditMode()) hooks->EndPlay(*mCurrentWorld);
 			mCurrentWorld = nullptr;
 
 			TimerManager::GetGameTimerManager().ClearAllTimers();
@@ -216,6 +236,7 @@ namespace ly
 
 			mCurrentWorld = mPendingWorld;
 			mCurrentWorld->BeginPlayInternal();
+			if (auto* hooks = vega::QueryCapability<vega::IPlayHooks>(mGameModule); hooks && !mCurrentWorld->IsEditMode()) hooks->BeginPlay(*mCurrentWorld);
 		}
 	}
 	

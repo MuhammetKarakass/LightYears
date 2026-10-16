@@ -1,4 +1,5 @@
 #include "gameplay/content/ModuleContentCatalog.h"
+#include "gameplay/content/RetainedContent.h"
 
 #include "gameplay/content/ModuleLoader.h"
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
@@ -73,6 +74,7 @@ namespace ly::content
 				return false;
 			}
 		auto index = BuildIndex(loaded.definitions);
+		RetainContent(MutableDefinitions());
 		MutableDefinitions() = std::move(loaded.definitions);
 		MutableIndex() = std::move(index);
 		MutableZoneTable() = std::move(loaded.zoneTable);
@@ -195,6 +197,7 @@ namespace ly::content
 		}
 
 		auto index = BuildIndex(modules.definitions);
+		RetainContent(MutableDefinitions());
 		MutableDefinitions() = std::move(modules.definitions);
 		MutableIndex() = std::move(index);
 		MutableZoneTable() = std::move(modules.zoneTable);

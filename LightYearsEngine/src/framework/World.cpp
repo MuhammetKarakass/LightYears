@@ -2,6 +2,7 @@
 #include "framework/Actor.h"
 #include "framework/Application.h"
 #include "framework/WorldRenderPipeline.h"
+#include "framework/RenderViewport.h"
 #include "gameplay/GameStage.h"
 #include "widget/HUD.h"
 #include "framework/PerfMonitor.h"
@@ -137,13 +138,16 @@ namespace ly{
 		{
 			mBeganPlay = true;
 			BeginPlay();  
-			InitGameStages();
-			BeginStages();
+			if (!IsEditMode())
+			{
+				InitGameStages();
+				BeginStages();
+			}
 		}
 	}
 	void World::TickInternal(float deltaTime)
 	{
-		LY_PROFILE_FUNCTION();
+		LY_PROFILE_SCOPE("World Tick");
 		auto promotePendingActors = [this]()
 		{
 			if (mPendingActors.empty())
@@ -164,11 +168,19 @@ namespace ly{
 			{
 				const shared_ptr<Actor>& actor = mActors[index];
 				const SlowActorTrace trace{ *actor };
-				actor->BeginPlayInternal();
+				if (!IsEditMode()) actor->BeginPlayInternal();
 				RegisterActorSpatialQuery(*actor);
-				OnActorSpawned(actor.get());
+				if (!IsEditMode()) OnActorSpawned(actor.get());
 			}
 		};
+
+		if (IsEditMode())
+		{
+			mIsPaused = true;
+			promotePendingActors();
+			CleanCycle();
+			return;
+		}
 
 		if (!mIsPaused) {
 			{
@@ -229,14 +241,18 @@ namespace ly{
 		if(mHUD)
 		{
 			LY_PROFILE_SCOPE("World.HUDTick");
-			if(!mHUD->HasInit())
-				mHUD->NativeInit(mOwningApp->GetRenderWindow());
+			if (RenderViewport* viewport = GetRenderViewport(); viewport && !mHUD->HasInit())
+			{
+				mHUD->NativeInit(viewport->GetRenderTarget());
+			}
 			mHUD->Tick(deltaTime);
 		}
 		if(mOverlayHUD)
 		{
-			if(!mOverlayHUD->HasInit())
-				mOverlayHUD->NativeInit(mOwningApp->GetRenderWindow());
+			if (RenderViewport* viewport = GetRenderViewport(); viewport && !mOverlayHUD->HasInit())
+			{
+				mOverlayHUD->NativeInit(viewport->GetRenderTarget());
+			}
 			mOverlayHUD->Tick(deltaTime);
 		}
 
@@ -431,7 +447,7 @@ namespace ly{
 
 	void World::SetPaused(bool paused)
 	{
-		mIsPaused = paused;
+		mIsPaused = IsEditMode() || paused;
 	}
 
 	void World::RemoveOverlayHUD()
@@ -518,9 +534,9 @@ namespace ly{
 		return weak_ptr<Actor>();
 	}
 
-	void World::Render(sf::RenderWindow& window)
+	void World::Render(sf::RenderTarget& window)
 	{
-		LY_PROFILE_FUNCTION();
+		LY_PROFILE_SCOPE("World Render");
 		sf::View previousView = window.getView();
 		sf::View worldView = GetWorldView();
 		WorldRenderPipeline* pipeline = mOwningApp ? mOwningApp->GetWorldRenderPipeline() : nullptr;
@@ -617,34 +633,53 @@ namespace ly{
 		window.setView(previousView);
 	}
 
+	void World::SetRenderViewport(RenderViewport* viewport)
+	{
+		mRenderViewport = viewport;
+	}
+
+	RenderViewport* World::GetRenderViewport()
+	{
+		return mRenderViewport ? mRenderViewport : (mOwningApp ? &mOwningApp->GetWindowViewport() : nullptr);
+	}
+
+	const RenderViewport* World::GetRenderViewport() const
+	{
+		return mRenderViewport ? mRenderViewport : (mOwningApp ? &mOwningApp->GetWindowViewport() : nullptr);
+	}
+
 	sf::Vector2u World::GetWindowSize()
 	{
-		return mOwningApp->GetWindowSize();
+		const RenderViewport* viewport = GetRenderViewport();
+		return viewport ? viewport->GetSize() : sf::Vector2u{};
 	}
 
 	sf::View World::GetWorldView() const
 	{
-		if (!mOwningApp)
+		if (mViewOverride) return *mViewOverride;
+		const RenderViewport* viewport = GetRenderViewport();
+		if (!viewport)
 		{
 			return mCameraManager.GetView(sf::View{});
 		}
-		return mCameraManager.GetView(mOwningApp->GetRenderWindow().getDefaultView());
+		return mCameraManager.GetView(viewport->GetDefaultView());
 	}
 
 	sf::Vector2f World::GetMouseWorldPosition() const
 	{
-		if (!mOwningApp)
+		const RenderViewport* viewport = GetRenderViewport();
+		if (!viewport)
 		{
-			// No window to read the cursor from; aim at the view center.
+			// No viewport to read the cursor from; aim at the view center.
 			return GetWorldView().getCenter();
 		}
-		const sf::RenderWindow& window = mOwningApp->GetRenderWindow();
-		return window.mapPixelToCoords(sf::Mouse::getPosition(window), GetWorldView());
+		return viewport->MapPixelToCoords(viewport->GetMousePixelPosition(), GetWorldView());
 	}
 
 	bool World::HasInputFocus() const
 	{
-		return mOwningApp && mOwningApp->GetRenderWindow().hasFocus();
+		const RenderViewport* viewport = GetRenderViewport();
+		return viewport && viewport->HasInputFocus();
 	}
 
 
@@ -664,6 +699,8 @@ namespace ly{
 
 	World::~World()
 	{
+		for (const auto& actor : mActors) if (actor) actor->Detach();
+		for (const auto& actor : mPendingActors) if (actor) actor->Detach();
 		// Release actors while the physics scene is still alive. Actors that
 		// outlive the world through external shared_ptrs must not touch the dead
 		// scene later, so detach their bodies first.
@@ -742,9 +779,9 @@ namespace ly{
 	}
 	void World::UpdateCamera(float deltaTime)
 	{
-		if (mOwningApp)
+		if (const RenderViewport* viewport = GetRenderViewport())
 		{
-			mCameraManager.Update(deltaTime, mOwningApp->GetRenderWindow().getDefaultView());
+			mCameraManager.Update(deltaTime, viewport->GetDefaultView());
 		}
 	}
 
@@ -867,7 +904,7 @@ namespace ly{
 			}
 		}
 	}
-	void World::RenderHUD(sf::RenderWindow& window)
+	void World::RenderHUD(sf::RenderTarget& window)
 	{
 		if(mHUD)
 		{

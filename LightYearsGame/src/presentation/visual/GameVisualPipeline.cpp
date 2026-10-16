@@ -1,4 +1,5 @@
 #include "presentation/visual/GameVisualPipeline.h"
+#include "level/GameSceneSettings.h"
 
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
@@ -10,13 +11,6 @@
 
 namespace ly
 {
-	namespace
-	{
-		// Procedural stops after the real hosts, all from one fixed seed so the campaign is the same every run.
-		constexpr int RouteProceduralStopCount = 14;
-		constexpr unsigned RouteProceduralSeed = 7u;
-	}
-
 	bool GameVisualPipeline::Initialize(sf::RenderWindow& window, const std::filesystem::path& assetsDirectory, const std::string& colorScript)
 	{
 		mReady = false;
@@ -188,7 +182,7 @@ namespace ly
 		const sf::View snappedView = mPipeline->SnapWorldView(worldView);
 		{
 			LY_PROFILE_SCOPE("VP.Backdrop");
-			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mTime);
+			mBackdrop.Draw(mAssets, *mPipeline, world, worldView, mSkyAuthoring ? 0.f : mTime);
 		}
 		mPipeline->Target(visual::Layer::Sprites).setView(snappedView);
 		{
@@ -212,13 +206,13 @@ namespace ly
 		return layer == RenderLayer::Background;
 	}
 
-	void GameVisualPipeline::Compose(sf::RenderWindow& window)
+	void GameVisualPipeline::Compose(sf::RenderTarget& window)
 	{
 		mPipeline->Compose(window);
 		DrawStopLabel(window);
 	}
 
-	void GameVisualPipeline::DrawStopLabel(sf::RenderWindow& window)
+	void GameVisualPipeline::DrawStopLabel(sf::RenderTarget& window)
 	{
 		if (!mStopLabel)
 		{

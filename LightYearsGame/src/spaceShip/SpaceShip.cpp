@@ -7,12 +7,21 @@
 #include <framework/World.h>
 #include <framework/MathUtility.h>
 #include <framework/SpriteComponent.h>
+#include <framework/reflection/Reflection.h>
 #include <framework/debug/Profiler.h>
 #include "VFX/Explosion.h" 
 #include <algorithm>
 
 namespace ly
 {
+	VEGA_REFLECT(SpaceShip, Actor)
+	{
+		VEGA_REQUIRES(HealthComponent);
+		VEGA_REQUIRES(ShieldComponent);
+		VEGA_REQUIRES(EnergyComponent);
+		VEGA_REQUIRES(MovementComponent);
+	}
+
 	SpaceShip::SpaceShip(World* owningWorld, const ShipDefinition& shipDef):
 		Actor(owningWorld, shipDef.texturePath),
 		mHealthComponent{ AddComponent<HealthComponent>(shipDef.health, shipDef.health) },

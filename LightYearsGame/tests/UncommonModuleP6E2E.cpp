@@ -1,7 +1,9 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace uncommon_p6_e2e;
 	if (argc != 2 && argc != 3) return 2;
 	const bool ricochetOnly = argc == 3 && std::string{ argv[2] } == "ricochet";

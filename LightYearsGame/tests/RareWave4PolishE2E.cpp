@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 
 #include "gameplay/content/ModuleContentCatalog.h"
@@ -508,6 +509,7 @@ void ReportedLiveLoadoutChecks(uncommon_p4_e2e::Report& report, ly::Application&
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace rare_wave4_polish_e2e;
 	if (argc != 2) return 2;
 	Report report;

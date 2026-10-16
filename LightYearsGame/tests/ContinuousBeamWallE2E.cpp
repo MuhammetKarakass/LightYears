@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "attributes/AttributeMath.h"
 #include "framework/AssetManager.h"
 #include "framework/World.h"
@@ -587,6 +588,7 @@ namespace ly
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace ly;
 	const bool abilityContentRegistrationMode = argc == 3 &&
 		std::string{ argv[1] } == "--ability-content-registration";

@@ -1,4 +1,5 @@
 #include "gameplay/content/GameContentBootstrap.h"
+#include "gameplay/content/GameContentSchemas.h"
 
 #include "effects/GameplayEffectDefinitionValidation.h"
 #include "framework/AssetManager.h"
@@ -98,6 +99,7 @@ namespace ly
 
 	bool GameContentBootstrap::Register()
 	{
+		content::RegisterGameContentSchemas();
 		static const bool registered = []
 		{
 			std::filesystem::path assetRoot =

@@ -34,6 +34,7 @@ namespace ly
 	// (UE tick-prerequisite equivalent), so the owning actor drives it explicitly.
 	class ShieldComponent : public ActorComponent
 	{
+		VEGA_CLASS(ShieldComponent)
 	public:
 		explicit ShieldComponent(Actor& owner, float shield = 0.f, float maxShield = 0.f, float rechargeDelay = 3.f);
 
@@ -42,6 +43,7 @@ namespace ly
 		float GetModuleTemporaryShield() const { return mModuleTemporaryShield; }
 		void GrantModuleTemporaryShield(const std::string& sourceId, float amount, float decaySeconds);
 		void RemoveModuleTemporaryShield(const std::string& sourceId);
+		float GetRechargeDelay() const { return mRechargeDelay; }
 		float GetRechargeDelayRemaining() const { return mRechargeDelayRemaining; }
 		void SetModuleBehavior(const ShieldModuleBehavior& behavior);
 		float GetFrontShield() const;

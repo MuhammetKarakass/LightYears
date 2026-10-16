@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 
 namespace
@@ -82,6 +83,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2)
 	{
 		std::cerr << "Usage: CommonModuleE2ETriggerLifetimeTests <artifact-path>\n";

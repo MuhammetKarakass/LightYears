@@ -51,6 +51,11 @@ namespace ly::content
 			return Result{ {}, documentResult.error };
 		}
 
+		return LoadFromJson(*documentResult.document, fallbackDefinitions, fallbackActorDefinitions);
+	}
+
+	AbilityLoader::Result AbilityLoader::LoadFromJson(const nlohmann::json& root, const List<const GameAbilityDefinition*>& fallbackDefinitions, const List<const AbilityActorDefinition*>& fallbackActorDefinitions, const std::string& selectedId)
+	{
 		try
 		{
 			std::string contractFailure;
@@ -59,7 +64,7 @@ namespace ly::content
 				return Result{ {}, contractFailure };
 			}
 
-			const Json& root = *documentResult.document;
+
 			if (root.at("schemaVersion").get<int>() != 1)
 			{
 				return Result{ {}, "Unsupported ability schema version" };
@@ -151,6 +156,7 @@ namespace ly::content
 			for (const Json& ability : root.at("abilities"))
 			{
 				const std::string abilityId = ability_loader_detail::RequiredString(ability, "id");
+				if (!selectedId.empty() && abilityId != selectedId) continue;
 				materializeAbility(abilityId);
 				LoadedDefinition definition = ability_loader_detail::ParseAbility(
 					materializedAbilities.at(abilityId),
@@ -180,7 +186,7 @@ namespace ly::content
 		{
 			return Result{
 				{},
-				"Failed to load abilities from '" + filePath.string() + "': " + exception.what()
+				"Failed to load abilities from '" + std::string{ "content document" } + "': " + exception.what()
 			};
 		}
 	}

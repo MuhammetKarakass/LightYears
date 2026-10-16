@@ -3,12 +3,24 @@
 #include "framework/MathUtility.h"
 #include "framework/LightComponent.h"
 #include "framework/SpriteComponent.h"
+#include "framework/reflection/Reflection.h"
 
 #include <algorithm>
 #include <cmath>
+#include <framework/debug/Log.h>
 
 namespace ly
 {
+	void Actor::ForEachComponent(const std::function<void(ActorComponent&)>& visitor)
+	{
+		for (const auto& component : mComponents) visitor(*component);
+	}
+
+	void Actor::ForEachComponent(const std::function<void(const ActorComponent&)>& visitor) const
+	{
+		for (const auto& component : mComponents) visitor(*component);
+	}
+
 	Actor::Actor(World* OwningWorld, const std::string& TexturePath)
 		: mOwningWorld{ OwningWorld },
 		mBeganPlay{ false },
@@ -24,6 +36,32 @@ namespace ly
 		}
 	}
 
+	bool Actor::RemoveComponent(ActorComponent& component)
+	{
+		if (GetIsPendingDestroy()) return false;
+		const auto found = std::find_if(mComponents.begin(), mComponents.end(),
+			[&](const auto& owned) { return owned.get() == &component; });
+		if (found == mComponents.end()) return false;
+		const auto& registry = reflect::TypeRegistry::Get();
+		const auto* actorType = registry.FindMostDerived(*this);
+		const auto* componentType = registry.Find(typeid(component));
+		if (componentType && (!componentType->removable || (actorType && actorType->RequiresComponent(componentType->name)))) return false;
+		component.EndPlayInternal();
+		// Physics can be enabled before BeginPlay, including in the edit world.
+		if (auto* collision = dynamic_cast<CollisionComponent*>(&component)) collision->UnInitializePhysics();
+		// EndPlay may append components, invalidating vector iterators.
+		const auto removal = std::find_if(mComponents.begin(), mComponents.end(),
+			[&](const auto& owned) { return owned.get() == &component; });
+		if (removal == mComponents.end()) return false;
+		mComponents.erase(removal);
+		mSprite = nullptr;
+		mCollision = nullptr;
+		mLights = nullptr;
+		for (const auto& remaining : mComponents) CacheComponent(*remaining);
+		if (mOwningWorld) mOwningWorld->RefreshActorSpatialQuery(*this);
+		return true;
+	}
+
 	void Actor::CacheComponent(ActorComponent& component)
 	{
 		if (!mSprite) mSprite = dynamic_cast<SpriteComponent*>(&component);
@@ -33,6 +71,9 @@ namespace ly
 	
 	Actor::~Actor()
 	{
+		// World teardown may release actors in any order, including external owners.
+		Detach();
+		while (!mChildren.empty()) mChildren.back()->Detach();
 		EndPlayComponents();
 		UnInitializePhysics();
 	}
@@ -78,6 +119,14 @@ namespace ly
 			if (component.CanEverTick() && component.IsActive() && component.HasBegunPlay())
 			{
 				component.TickComponent(deltaTime);
+				// A callback may remove an earlier component. Continue after this
+				// component's new position instead of skipping the next survivor.
+				if (index >= mComponents.size() || mComponents[index].get() != &component)
+				{
+					const auto current = std::find_if(mComponents.begin(), mComponents.end(),
+						[&](const auto& owned) { return owned.get() == &component; });
+					index = static_cast<std::size_t>(std::distance(mComponents.begin(), current));
+				}
 			}
 		}
 	}
@@ -104,11 +153,19 @@ namespace ly
 
 	void Actor::Destroy()
 	{
-		if (GetIsPendingDestroy())
+		if (GetIsPendingDestroy() || mDestroying)
 		{
 			return;
 		}
 
+		mDestroying = true;
+		while (!mChildren.empty())
+		{
+			Actor* child = mChildren.back();
+			child->Detach();
+			child->Destroy();
+		}
+		Detach();
 		if (mOwningWorld)
 		{
 			mOwningWorld->RemoveActorSpatialQuery(*this);
@@ -247,35 +304,88 @@ namespace ly
 	void Actor::SetActorLocation(const sf::Vector2f& newLoc)
 	{
 		mActorLocation = newLoc;
-		if (mSprite)
-		{
-			mSprite->SyncLocation();
-		}
-		if (mCollision)
-		{
-			mCollision->UpdatePhysicsTransform();
-		}
-		if (mOwningWorld)
-		{
-			mOwningWorld->RefreshActorSpatialQuery(*this);
-		}
+		mRelativeLocation = mParent ? (newLoc - mParent->mActorLocation).rotatedBy(sf::degrees(-mParent->mActorRotation)) : newLoc;
+		SyncWorldTransform();
 	}
 	
 	void Actor::SetActorRotation(float newRotation)
 	{
 		mActorRotation = newRotation;
-		if (mSprite)
+		mRelativeRotation = newRotation - (mParent ? mParent->mActorRotation : 0.f);
+		SyncWorldTransform();
+	}
+
+	bool Actor::IsDescendantOf(const Actor& ancestor) const
+	{
+		for (const Actor* parent = mParent; parent; parent = parent->mParent)
+			if (parent == &ancestor) return true;
+		return false;
+	}
+
+	bool Actor::AttachTo(Actor* parent, bool keepWorld)
+	{
+		if (GetIsPendingDestroy() || mDestroying || (parent && (parent == this || parent->IsDescendantOf(*this) ||
+			parent->GetWorld() != GetWorld() || parent->GetIsPendingDestroy() || parent->mDestroying))) return false;
+		if (parent && IsPhysicsEnabled() && GetPhysicsBodyType() == PhysicsBodyType::Dynamic)
 		{
-			mSprite->SyncRotation();
+			debug::Log::Write(debug::LogLevel::Warning, debug::LogChannel::Scene, LY_SOURCE_LOCATION,
+				"Cannot attach a dynamic physics actor; disable physics or use a static body first");
+			return false;
 		}
-		if (mCollision)
+		if (parent == mParent) return true;
+		if (mParent)
 		{
-			mCollision->UpdatePhysicsTransform();
+			auto& siblings = mParent->mChildren;
+			siblings.erase(std::find(siblings.begin(), siblings.end(), this));
 		}
-		if (mOwningWorld)
+		mParent = parent;
+		if (parent) parent->mChildren.push_back(this);
+		if (keepWorld)
 		{
-			mOwningWorld->RefreshActorSpatialQuery(*this);
+			mRelativeLocation = parent ? (mActorLocation - parent->mActorLocation).rotatedBy(sf::degrees(-parent->mActorRotation)) : mActorLocation;
+			mRelativeRotation = mActorRotation - (parent ? parent->mActorRotation : 0.f);
 		}
+		if (mCollision) mCollision->SetPhysicsBodyType(GetPhysicsBodyType());
+		ResolveAttachmentTransform();
+		return true;
+	}
+
+	void Actor::Detach()
+	{
+		if (!mParent) return;
+		auto& siblings = mParent->mChildren;
+		siblings.erase(std::find(siblings.begin(), siblings.end(), this));
+		mParent = nullptr;
+		mRelativeLocation = mActorLocation;
+		mRelativeRotation = mActorRotation;
+		if (mCollision) mCollision->SetPhysicsBodyType(GetPhysicsBodyType());
+	}
+
+	void Actor::SetRelativeLocation(const sf::Vector2f& location)
+	{
+		mRelativeLocation = location;
+		ResolveAttachmentTransform();
+	}
+
+	void Actor::SetRelativeRotation(float rotation)
+	{
+		mRelativeRotation = rotation;
+		ResolveAttachmentTransform();
+	}
+
+	void Actor::ResolveAttachmentTransform()
+	{
+		mActorLocation = mParent ? mParent->mActorLocation + mRelativeLocation.rotatedBy(sf::degrees(mParent->mActorRotation)) : mRelativeLocation;
+		mActorRotation = mRelativeRotation + (mParent ? mParent->mActorRotation : 0.f);
+		SyncWorldTransform();
+	}
+
+	void Actor::SyncWorldTransform()
+	{
+		if (mSprite) { mSprite->SyncLocation(); mSprite->SyncRotation(); }
+		if (mCollision) mCollision->UpdatePhysicsTransform();
+		if (mOwningWorld) mOwningWorld->RefreshActorSpatialQuery(*this);
+		for (Actor* child : mChildren) child->ResolveAttachmentTransform();
 	}
 
 	void Actor::AddActorLocationOffset(const sf::Vector2f& offset)
@@ -341,5 +451,19 @@ namespace ly
 	void Actor::SetVelocity(const sf::Vector2f& velocity)
 	{
 		mVelocity = velocity;
+	}
+
+	VEGA_REFLECT_ROOT(Actor)
+	{
+		VEGA_CATEGORY("Transform");
+		VEGA_PROPERTY("Location", GetActorLocation, SetActorLocation).Speed(1.f);
+		VEGA_PROPERTY("Rotation", GetActorRotation, SetActorRotation).Speed(0.5f);
+		VEGA_READONLY("Velocity", GetVelocity);
+		VEGA_CATEGORY("Rendering");
+		VEGA_PROPERTY("RenderLayer", GetRenderLayer, SetRenderLayer)
+			.Labels({ { 0, "Background" }, { 1, "GroundDecal" }, { 2, "World" }, { 3, "Projectile" }, { 4, "WorldVfx" }, { 5, "Foreground" } });
+		VEGA_PROPERTY("Render Enabled", IsRenderEnabled, SetRenderEnabled);
+		VEGA_CATEGORY("Tick");
+		VEGA_PROPERTY("Tick When Paused", GetTickWhenPaused, SetTickWhenPaused);
 	}
 }

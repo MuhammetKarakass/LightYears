@@ -1,4 +1,22 @@
 add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
+	include/framework/ActorRef.h
+	src/framework/ActorRef.cpp
+	include/framework/ProjectSettings.h
+	src/framework/ProjectSettings.cpp
+	include/framework/ComponentIdentity.h
+	src/framework/ComponentIdentity.cpp
+	include/framework/reflection/Reflection.h
+	include/framework/reflection/ReflectionMacros.h
+	src/framework/reflection/Reflection.cpp
+	src/framework/reflection/EngineReflection.cpp
+	include/framework/scene/Scene.h
+	src/framework/scene/Scene.cpp
+	src/framework/scene/SceneSettings.cpp
+	include/framework/scene/SceneSettings.h
+	include/framework/scene/PrefabLibrary.h
+	src/framework/scene/PrefabLibrary.cpp
+	include/framework/scene/SceneEntityComponent.h
+	src/framework/scene/SceneEntityComponent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/Application.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/Application.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/FramePacer.h
@@ -20,7 +38,9 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/World.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/WorldRenderPipeline.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/RenderViewport.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/World.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/framework/RenderViewport.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/framework/SimulationTime.h
 
@@ -127,12 +147,12 @@ target_include_directories(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
 target_link_libraries(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
     nlohmann_json::nlohmann_json)
 
+option(LY_WITH_PROFILING "Compile runtime-toggleable profiling (disable for shipping builds)" ON)
 target_compile_definitions(${LIGHT_YEARS_ENGINE_TARGET_NAME} PUBLIC
     LY_ENABLE_LOGGING=1
     $<$<CONFIG:Debug>:LY_ENABLE_ASSERTS=1>
     $<$<NOT:$<CONFIG:Debug>>:LY_ENABLE_ASSERTS=0>
-    $<$<CONFIG:Debug>:LY_ENABLE_PROFILING=1>
-    $<$<NOT:$<CONFIG:Debug>>:LY_ENABLE_PROFILING=0>
+    LY_ENABLE_PROFILING=$<BOOL:${LY_WITH_PROFILING}>
 )
 
 include(FetchContent)
@@ -180,6 +200,9 @@ function(CopyLibToTarget LIB_NAME TARGET_NAME)
         $<TARGET_FILE_DIR:${TARGET_NAME}>
     )
 endfunction()
+function(CopyRuntimeLibToTarget LIB_NAME TARGET_NAME)
+	CopyLibToTarget(${LIB_NAME} ${TARGET_NAME})
+endfunction()
 CopyLibtoTarget(sfml-graphics ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(sfml-window ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(sfml-system ${LIGHT_YEARS_ENGINE_TARGET_NAME})
@@ -187,6 +210,53 @@ CopyLibtoTarget(sfml-audio ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 CopyLibtoTarget(box2d ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 
 if(BUILD_TESTING)
+	add_executable(LightYearsReflectionMacroTests tests/ReflectionMacroTests.cpp)
+	target_link_libraries(LightYearsReflectionMacroTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${runtime} LightYearsReflectionMacroTests)
+	endforeach()
+	add_test(NAME LightYearsReflectionMacros COMMAND LightYearsReflectionMacroTests)
+	add_executable(LightYearsDiagnosticsTests tests/DiagnosticsTests.cpp)
+	target_link_libraries(LightYearsDiagnosticsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	add_test(NAME LightYearsEngineDiagnostics COMMAND LightYearsDiagnosticsTests)
+	# Compile the diagnostics implementation under NDEBUG too, without rebuilding the game in Release.
+	add_executable(LightYearsDiagnosticsNDebugTests tests/DiagnosticsTests.cpp src/framework/debug/Log.cpp src/framework/debug/Profiler.cpp)
+	target_include_directories(LightYearsDiagnosticsNDebugTests PRIVATE include)
+	target_link_libraries(LightYearsDiagnosticsNDebugTests PRIVATE nlohmann_json::nlohmann_json)
+	target_compile_definitions(LightYearsDiagnosticsNDebugTests PRIVATE NDEBUG LY_ENABLE_PROFILING=1)
+	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/diagnostics-ndebug)
+	add_test(NAME LightYearsEngineDiagnosticsNDebug COMMAND LightYearsDiagnosticsNDebugTests)
+	set_tests_properties(LightYearsEngineDiagnosticsNDebug PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/diagnostics-ndebug)
+	add_executable(LightYearsPrefabLibraryTests tests/PrefabLibraryTests.cpp)
+	target_link_libraries(LightYearsPrefabLibraryTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(LightYearsPrefabLibraryTests PRIVATE PREFAB_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/prefab-test-assets")
+	foreach(prefab_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${prefab_runtime} LightYearsPrefabLibraryTests)
+	endforeach()
+	add_test(NAME LightYearsPrefabLibrary COMMAND LightYearsPrefabLibraryTests)
+	add_executable(LightYearsProjectSettingsTests tests/ProjectSettingsTests.cpp)
+	add_executable(LightYearsSceneBoundsTests tests/SceneBoundsTests.cpp)
+	target_link_libraries(LightYearsSceneBoundsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	add_test(NAME LightYearsSceneBounds COMMAND LightYearsSceneBoundsTests)
+	target_link_libraries(LightYearsProjectSettingsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(LightYearsProjectSettingsTests PRIVATE PROJECT_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/project-test")
+	add_test(NAME LightYearsProjectSettings COMMAND LightYearsProjectSettingsTests)
+	add_executable(LightYearsSceneSerializerTests tests/SceneSerializerTests.cpp)
+	target_link_libraries(LightYearsSceneSerializerTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	foreach(scene_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${scene_runtime} LightYearsSceneSerializerTests)
+	endforeach()
+	add_test(NAME LightYearsSceneSerializer COMMAND LightYearsSceneSerializerTests)
+	add_executable(LightYearsReflectionTests tests/ReflectionTests.cpp)
+	target_link_libraries(LightYearsReflectionTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	if(MSVC)
+		# Reflection template instantiations change COMDATs between builds; avoid stale incremental link state.
+		target_link_options(LightYearsReflectionTests PRIVATE /INCREMENTAL:NO /DEBUG:FASTLINK)
+	endif()
+	foreach(reflection_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${reflection_runtime} LightYearsReflectionTests)
+	endforeach()
+	add_test(NAME LightYearsReflection COMMAND LightYearsReflectionTests)
     add_executable(LightYearsGameplayTagTests
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayTagTests.cpp
     )
@@ -211,6 +281,14 @@ if(BUILD_TESTING)
     )
     add_test(NAME LightYearsWorldSpatialQuery COMMAND LightYearsWorldSpatialQueryTests)
 
+    add_executable(LightYearsRenderViewportTests
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/RenderViewportTests.cpp
+    )
+    target_link_libraries(LightYearsRenderViewportTests PRIVATE
+        ${LIGHT_YEARS_ENGINE_TARGET_NAME}
+    )
+    add_test(NAME LightYearsRenderViewport COMMAND LightYearsRenderViewportTests)
+
     add_executable(LightYearsUIFoundationTests
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/UIFoundationTests.cpp
     )
@@ -218,4 +296,17 @@ if(BUILD_TESTING)
         ${LIGHT_YEARS_ENGINE_TARGET_NAME}
     )
     add_test(NAME LightYearsUIFoundation COMMAND LightYearsUIFoundationTests)
+endif()
+
+if(BUILD_TESTING)
+	add_executable(LightYearsHierarchyCostTests tests/HierarchyCostTests.cpp)
+	target_link_libraries(LightYearsHierarchyCostTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	add_test(NAME LightYearsEngineHierarchyCost COMMAND LightYearsHierarchyCostTests)
+endif()
+
+if(BUILD_TESTING)
+	add_executable(LightYearsHierarchyTests tests/HierarchyTests.cpp)
+	target_link_libraries(LightYearsHierarchyTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(LightYearsHierarchyTests PRIVATE HIERARCHY_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/hierarchy-assets")
+	add_test(NAME LightYearsEngineHierarchy COMMAND LightYearsHierarchyTests)
 endif()

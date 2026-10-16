@@ -1,6 +1,7 @@
 #include "framework/SpriteComponent.h"
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
+#include "framework/reflection/Reflection.h"
 
 namespace ly
 {
@@ -12,10 +13,12 @@ namespace ly
 	bool SpriteComponent::SetTexture(const std::string& texturePath)
 	{
 		if (texturePath.empty()) return false;
-		mTexture = AssetManager::GetAssetManager().LoadTexture(texturePath);
-		if (!mTexture) return false;
+		auto texture = AssetManager::GetAssetManager().LoadTexture(texturePath);
+		if (!texture) return false;
+		mTexture = std::move(texture);
 
 		mSprite.emplace(*mTexture);
+		mTexturePath = texturePath;
 		SyncLocation();
 		SyncRotation();
 
@@ -24,6 +27,7 @@ namespace ly
 		mSprite->setTextureRect(sf::IntRect{ sf::Vector2i{}, sf::Vector2i{width,height} });
 
 		CenterPivot();
+		mSprite->setScale(mScale);
 		return true;
 	}
 
@@ -33,6 +37,12 @@ namespace ly
 		{
 			mTexture->setRepeated(repeated);
 		}
+	}
+
+	void SpriteComponent::SetScale(sf::Vector2f scale)
+	{
+		mScale = scale;
+		if (mSprite) mSprite->setScale(scale);
 	}
 
 	void SpriteComponent::CenterPivot()
@@ -76,5 +86,18 @@ namespace ly
 		{
 			mSprite->setRotation(sf::degrees(GetOwner().GetActorRotation()));
 		}
+	}
+
+	VEGA_REFLECT(SpriteComponent, ActorComponent)
+	{
+		VEGA_ADDABLE();
+		VEGA_CATEGORY("Sprite");
+		VEGA_READONLY("Has Sprite", HasSprite);
+		type.Property("Texture", &SpriteComponent::GetTexturePath,
+			[](SpriteComponent& sprite, const std::string& path)
+			{
+				if (!path.empty() && !sprite.SetTexture(path)) throw std::runtime_error("Cannot load texture: " + path);
+			});
+		VEGA_PROPERTY("Scale", GetScale, SetScale);
 	}
 }

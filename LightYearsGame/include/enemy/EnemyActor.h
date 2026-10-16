@@ -10,6 +10,7 @@ namespace ly
 {
 	class EnemyActor final : public SpaceShip
 	{
+		VEGA_CLASS(EnemyActor)
 	public:
 		EnemyActor(World* owningWorld, const ShipDefinition& shipDefinition, const std::string& enemyId,
 			const EnemyCombatProfile& combatProfile, const EnemyBehaviorProfile& behaviorProfile,

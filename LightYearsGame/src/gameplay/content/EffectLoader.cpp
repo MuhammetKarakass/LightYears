@@ -380,9 +380,14 @@ namespace ly::content
 			return Result{ {}, documentResult.error };
 		}
 
+		return LoadFromJson(*documentResult.document, fallbackDefinitions);
+	}
+
+	EffectLoader::Result EffectLoader::LoadFromJson(const nlohmann::json& root, const List<const sas::GameplayEffectDefinition*>& fallbackDefinitions, const std::string& selectedId)
+	{
 		try
 		{
-			const Json& root = *documentResult.document;
+
 			if (root.at("schemaVersion").get<int>() != 1)
 			{
 				return Result{ {}, "Unsupported gameplay effect schema version" };
@@ -392,6 +397,7 @@ namespace ly::content
 			std::set<std::string> effectIds;
 			for (const Json& effect : root.at("effects"))
 			{
+				if (!selectedId.empty() && effect.value("id", std::string{}) != selectedId) continue;
 				LoadedDefinition loaded = ParseEffect(effect, fallbackDefinitions);
 				if (loaded.id.empty())
 				{
@@ -413,7 +419,7 @@ namespace ly::content
 		{
 			return Result{
 				{},
-				"Failed to load gameplay effects from '" + filePath.string() + "': " + exception.what()
+				"Failed to load gameplay effects from '" + std::string{ "content document" } + "': " + exception.what()
 			};
 		}
 	}

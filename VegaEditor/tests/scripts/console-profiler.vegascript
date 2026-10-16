@@ -1,0 +1,24 @@
+open-scene scenes/sandbox.scene.json
+pause
+diagnostics on
+clear-console
+expect-no-errors
+select-type DummyEnemy
+add-script scripts/console-print.lua
+select-type Asteroid
+add-script scripts/console-error.lua
+profiler on
+play-mode
+wait 20
+expect-console Info "Console Lua hello"
+expect-console Error "Console Lua failure"
+expect-console Error "console-error.lua:2"
+expect-profile-scope "World Tick"
+expect-profile-scope "Lua Script Tick"
+profiler off
+capture-profile "@CMAKE_CURRENT_BINARY_DIR@/Saved/console-profile.json"
+wait 2
+capture "@CMAKE_CURRENT_BINARY_DIR@/Saved/console-profiler.png"
+clear-console
+expect-no-errors
+quit

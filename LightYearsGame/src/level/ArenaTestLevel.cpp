@@ -1,4 +1,5 @@
 #include "level/ArenaTestLevel.h"
+#include "level/ArenaSandboxSetup.h"
 #include "enemy/EnemyActor.h"
 #include "framework/AudioManager.h"
 #include "framework/Actor.h"
@@ -96,33 +97,12 @@ namespace ly
 
 	ArenaDefinition ArenaTestLevel::CreateArenaDefinition() const
 	{
-		ArenaDefinition arenaDefinition;
-		arenaDefinition.size = sf::Vector2f{ 6000.f, 3000.f };
-		arenaDefinition.legalBounds = sf::FloatRect{ sf::Vector2f{ 0.f, 0.f }, arenaDefinition.size };
-		arenaDefinition.outOfBoundsMargin = 20.f;
-		arenaDefinition.outOfBoundsTime = 5.f;
-
-		arenaDefinition.boundaryVisual.enabled = true;
-		arenaDefinition.boundaryVisual.visualType = ArenaBoundaryVisualType::DebugRectangle;
-		arenaDefinition.boundaryVisual.outlineColor = sf::Color{ 90, 230, 255, 180 };
-		arenaDefinition.boundaryVisual.warningColor = sf::Color{ 255, 80, 80, 220 };
-		arenaDefinition.boundaryVisual.outlineThickness = 4.f;
-
-		return arenaDefinition;
+		return CreateSandboxArenaDefinition();
 	}
 
 	PlayerRespawnDefinition ArenaTestLevel::CreatePlayerRespawnDefinition() const
 	{
-		PlayerRespawnDefinition respawnDefinition = ArenaLevel::CreatePlayerRespawnDefinition();
-		respawnDefinition.respawnDelay = 1.f;
-		respawnDefinition.playerIndex = 0;
-		respawnDefinition.createPlayerIfMissing = true;
-		respawnDefinition.useScreenClamp = false;
-		respawnDefinition.respawnWhenDestroyed = true;
-		respawnDefinition.gameOverWhenRespawnFails = true;
-		respawnDefinition.playerShipId = "Default";
-
-		return respawnDefinition;
+		return ConfigureSandboxPlayerRespawn(ArenaLevel::CreatePlayerRespawnDefinition());
 	}
 
 	void ArenaTestLevel::CreateHUDControllers()

@@ -2,12 +2,63 @@
 #include "framework/Actor.h"
 #include "framework/World.h"
 #include "framework/MathUtility.h"
+#include "framework/reflection/Reflection.h"
 #include <framework/PhysicsScene.h>
 
 namespace ly
 {
 	CollisionComponent::CollisionComponent(Actor& owner) : ActorComponent{ owner }
 	{
+	}
+	CollisionComponent::~CollisionComponent() { ClearContacts(); }
+	void CollisionComponent::EndPlay() { ClearContacts(); }
+	void CollisionComponent::ClearContacts()
+	{
+		for (const auto& entry : mContacts)
+			if (auto actor = entry.second.actor.lock()) actor->onActorDestroyed.UnbindAction(entry.second.destroyed);
+		mContacts.clear();
+	}
+	void CollisionComponent::OtherDestroyed(Actor* other)
+	{
+		const auto found = mContacts.find(other->GetUniqueID());
+		if (found == mContacts.end()) return;
+		found->second.count = 1;
+		NotifyContact(other, false);
+	}
+
+	void CollisionComponent::NotifyContact(Actor* other, bool begin)
+	{
+		if (!other || GetOwner().GetIsPendingDestroy()) return;
+		const auto id = other->GetUniqueID();
+		if (begin)
+		{
+			// A compound collider can produce several shape contacts for one actor.
+			auto& contact = mContacts[id];
+			if (++contact.count != 1) return;
+			contact.actor = other->GetWeakActor();
+			contact.destroyed = other->onActorDestroyed.BindAction(this, &CollisionComponent::OtherDestroyed);
+			GetOwner().ForEachComponent([&](ActorComponent& component)
+			{
+				if (component.HasBegunPlay() && component.IsActive() && !GetOwner().GetIsPendingDestroy()) component.OnOverlapBegin(other);
+			});
+			// This engine uses contacts without solver impulses. A hit means the
+			// first physical touch, rather than an impulse-threshold notification.
+			GetOwner().ForEachComponent([&](ActorComponent& component)
+			{
+				if (component.HasBegunPlay() && component.IsActive() && !GetOwner().GetIsPendingDestroy()) component.OnHit(other);
+			});
+		}
+		else
+		{
+			const auto found = mContacts.find(id);
+			if (found == mContacts.end() || --found->second.count != 0) return;
+			other->onActorDestroyed.UnbindAction(found->second.destroyed);
+			mContacts.erase(found);
+			GetOwner().ForEachComponent([&](ActorComponent& component)
+			{
+				if (component.HasBegunPlay() && component.IsActive() && !GetOwner().GetIsPendingDestroy()) component.OnOverlapEnd(other);
+			});
+		}
 	}
 
 	void CollisionComponent::RefreshFilterAndSpatialQuery()
@@ -43,6 +94,7 @@ namespace ly
 
 	void CollisionComponent::SetEnablePhysics(bool enable)
 	{
+		if (enable && GetOwner().GetParent() && mPhysicsBodyType == PhysicsBodyType::Dynamic) GetOwner().Detach();
 		mPhysicsEnabled = enable;
 
 		if (mPhysicsEnabled)
@@ -106,12 +158,13 @@ namespace ly
 
 	void CollisionComponent::SetPhysicsBodyType(PhysicsBodyType bodyType)
 	{
+		if (bodyType == PhysicsBodyType::Dynamic && mPhysicsEnabled && GetOwner().GetParent()) GetOwner().Detach();
 		mPhysicsBodyType = bodyType;
 		if (mPhysicsBodyId)
 		{
 			b2Body_SetType(
 				*mPhysicsBodyId,
-				bodyType == PhysicsBodyType::Static ? b2_staticBody : b2_dynamicBody
+				GetOwner().GetParent() ? b2_kinematicBody : bodyType == PhysicsBodyType::Static ? b2_staticBody : b2_dynamicBody
 			);
 		}
 	}
@@ -121,5 +174,23 @@ namespace ly
 		World* world = GetWorld();
 		if (!mPhysicsBodyId || !world) return;
 		world->GetPhysicsScene().SetCollisionRadius(*mPhysicsBodyId, radius);
+	}
+
+	VEGA_REFLECT(CollisionComponent, ActorComponent)
+	{
+		VEGA_ADDABLE();
+		VEGA_CATEGORY("Physics");
+		VEGA_PROPERTY("Physics Enabled", IsPhysicsEnabled, SetEnablePhysics);
+		VEGA_READONLY("Has Physics Body", HasPhysicsBody);
+		VEGA_PROPERTY("Body Type", GetPhysicsBodyType, SetPhysicsBodyType)
+			.Labels({ { 0, "Dynamic" }, { 1, "Static" } });
+
+		reflect::EnumLabels collisionLabels;
+		const char* bits[]{ "Player", "PlayerBullet", "Enemy", "EnemyBullet", "Powerup", "Environment", "RelayProjectile", "FriendlySummon" };
+		for (int bit = 0; bit < 8; ++bit) collisionLabels.emplace_back(1 << bit, bits[bit]);
+
+		VEGA_CATEGORY("Collision");
+		VEGA_PROPERTY("Collision Layer", GetCollisionLayer, SetCollisionLayer).Flags(collisionLabels);
+		VEGA_PROPERTY("Collision Mask", GetCollisionMask, SetCollisionMask).Flags(collisionLabels);
 	}
 }

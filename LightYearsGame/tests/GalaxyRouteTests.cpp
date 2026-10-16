@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "gameplay/galaxy/GalaxyRoute.h"
 
 #include <cmath>
@@ -59,6 +60,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	const std::filesystem::path root = LIGHT_YEARS_PROJECT_SOURCE_DIR;
 	const std::filesystem::path file = root / "LightYearsGame" / "assets" / "content" / "data" / "galaxy_route.json";
 

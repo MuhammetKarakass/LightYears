@@ -1,6 +1,7 @@
 #include "framework/debug/Log.h"
 
 #include <chrono>
+#include <algorithm>
 #include <condition_variable>
 #include <ctime>
 #include <deque>
@@ -18,6 +19,8 @@ namespace ly::debug
 		std::mutex gLogMutex;
 		std::ofstream gLogFile;
 		Log::Sink gSink;
+		std::vector<std::pair<std::uint64_t, Log::Sink>> gSubscribers;
+		std::uint64_t gNextSink = 0;
 		bool gInitialized = false;
 #if defined(NDEBUG)
 		LogLevel gMinimumLevel = LogLevel::Warning;
@@ -231,6 +234,7 @@ namespace ly::debug
 			gLogFile.close();
 		}
 		gSink = {};
+		gSubscribers.clear();
 		gInitialized = false;
 	}
 
@@ -270,6 +274,21 @@ namespace ly::debug
 		gSink = std::move(sink);
 	}
 
+	std::uint64_t Log::AddSink(Sink sink)
+	{
+		std::lock_guard<std::mutex> lock{ gLogMutex };
+		const auto id = ++gNextSink;
+		gSubscribers.emplace_back(id, std::move(sink));
+		return id;
+	}
+
+	void Log::RemoveSink(std::uint64_t id)
+	{
+		std::lock_guard<std::mutex> lock{ gLogMutex };
+		gSubscribers.erase(std::remove_if(gSubscribers.begin(), gSubscribers.end(),
+			[id](const auto& entry) { return entry.first == id; }), gSubscribers.end());
+	}
+
 	const char* Log::GetLevelName(LogLevel level)
 	{
 		switch (level)
@@ -291,6 +310,9 @@ namespace ly::debug
 		{
 		case LogChannel::Core: return "CORE";
 		case LogChannel::Game: return "GAME";
+		case LogChannel::Lua: return "Lua";
+		case LogChannel::Scene: return "Scene";
+		case LogChannel::Editor: return "Editor";
 		}
 		return "UNKNOWN";
 	}
@@ -310,6 +332,7 @@ namespace ly::debug
 			BuildTimestamp()
 		};
 		Sink sink;
+		std::vector<Sink> subscribers;
 		const bool error = level >= LogLevel::Error;
 		{
 			std::lock_guard<std::mutex> lock{ gLogMutex };
@@ -324,11 +347,17 @@ namespace ly::debug
 			}
 			Console().Push(std::move(line), error);
 			sink = gSink;
+			for (const auto& entry : gSubscribers) subscribers.push_back(entry.second);
 		}
 		if (error)
 		{
 			// Errors reach the console before the caller continues, as before, so a crash right after keeps them.
 			Console().Drain();
+		}
+		// Callbacks run outside the logger lock and may log or unsubscribe.
+		for (const auto& subscriber : subscribers)
+		{
+			if (subscriber) subscriber(record);
 		}
 		if (sink)
 		{

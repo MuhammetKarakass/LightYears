@@ -1,0 +1,109 @@
+# Runs with BlankEditor and a disposable Blank asset root.
+new-scene
+wait 3
+create BlankPlayer
+rename Root
+move 100 100
+create BlankPlayer
+rename Child
+move 110 100
+parent Child Root
+expect-parent Child Root
+select-name Root
+move 200 200
+expect-world-location Child 210 200 0.01
+rotate 90
+expect-world-location Child 200 210 0.01
+select-add Child
+move-selection 10 20
+expect-world-location Root 210 220 0.01
+expect-world-location Child 210 230 0.01
+undo
+expect-world-location Child 200 210 0.01
+select-name Root
+create-prefab prefabs/Hierarchy.prefab.json
+expect-prefab prefabs/Hierarchy.prefab.json
+expect-parent Child Root
+select-name Child
+rename OriginalChild
+place-prefab prefabs/Hierarchy.prefab.json 400 200
+rename RootOne
+select-name Child
+rename ChildOne
+set-prop Actor Size 3
+expect-overridden Actor Size true
+revert-prefab-prop Actor Size
+expect-prop Actor Size 1
+expect-overridden Actor Size false
+undo
+expect-prop Actor Size 3
+redo
+expect-prop Actor Size 1
+place-prefab prefabs/Hierarchy.prefab.json 600 200
+rename RootTwo
+select-name Child
+rename ChildTwo
+set-prop Actor Size 2
+apply-prefab-prop Actor Size
+expect-overridden Actor Size false
+select-name ChildOne
+expect-prop Actor Size 2
+select-name ChildTwo
+set-prop Actor Size 4
+expect-overridden Actor Size true
+save-scene scenes/hierarchy.scene.json
+open-scene scenes/hierarchy.scene.json
+wait 3
+expect-entity-count 6
+expect-parent ChildOne RootOne
+expect-parent ChildTwo RootTwo
+expect-world-location ChildOne 400 210 0.01
+expect-world-location ChildTwo 600 210 0.01
+select-name ChildTwo
+expect-prop Actor Size 4
+revert-prefab-prop Actor Size
+expect-prop Actor Size 2
+select-name RootOne
+delete
+expect-entity-count 4
+undo
+expect-entity-count 6
+expect-parent ChildOne RootOne
+expect-world-location ChildOne 400 210 0.01
+unparent ChildOne
+expect-parent ChildOne none
+expect-world-location ChildOne 400 210 0.01
+undo
+expect-parent ChildOne RootOne
+select-name RootOne
+duplicate
+expect-entity-count 8
+undo
+expect-entity-count 6
+copy
+paste 800 200
+expect-entity-count 8
+undo
+expect-entity-count 6
+open-prefab prefabs/Hierarchy.prefab.json
+select-name Child
+set-prop BlankMovement Speed 360
+save-prefab
+close-prefab
+select-name ChildOne
+expect-prop BlankMovement Speed 360
+parent ChildOne RootTwo
+expect-parent ChildOne RootTwo
+save-scene scenes/reparented.scene.json
+undo
+expect-parent ChildOne RootOne
+expect-overridden Actor Size false
+parent ChildOne RootTwo
+save-scene scenes/reparented.scene.json
+open-scene scenes/reparented.scene.json
+wait 3
+expect-parent ChildOne RootTwo
+expect-parent ChildTwo RootTwo
+expect-entity-count 6
+expect-no-errors
+quit

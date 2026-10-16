@@ -14,7 +14,7 @@ namespace ly
 	{
 	public:
 		virtual ~Widget();
-		void NativeDraw(sf::RenderWindow& windowRef);
+		void NativeDraw(sf::RenderTarget& windowRef);
 		void NativeTick(float deltaTime);
 		virtual bool HandleEvent(const sf::Event& event);
 		bool NativeHandleEvent(const sf::Event& event);
@@ -79,7 +79,7 @@ namespace ly
 		std::string mTag;
 
 	private:
-		virtual void Draw(sf::RenderWindow& windowRef);
+		virtual void Draw(sf::RenderTarget& windowRef);
 		virtual void LocationUpdated(const sf::Vector2f& newLocation);
 		virtual void RotationUpdated(float newRotation);
 		void UpdateAnimation(float deltaTime);

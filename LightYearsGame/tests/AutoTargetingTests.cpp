@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetRelation.h"
 
@@ -33,6 +34,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	ly::World world{ nullptr };
 	const ly::shared_ptr<TestActor> source = world.SpawnActor<TestActor>().lock();
 	const ly::shared_ptr<TestActor> nearest = world.SpawnActor<TestActor>().lock();

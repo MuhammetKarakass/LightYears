@@ -1,0 +1,34 @@
+open-scene scenes/sandbox.scene.json
+expect-mode edit
+expect-entity-count 7
+expect-count PlayerSpaceShip 0
+create Asteroid
+rename Rock A
+move 500 400
+expect-entity-count 8
+expect-scene-dirty true
+save-scene @VEGA_AUTHORING_SCENE@
+expect-scene-dirty false
+play-mode
+expect-mode play
+wait 60
+expect-count PlayerSpaceShip 1
+capture authoring-play.png
+stop
+expect-mode edit
+expect-count PlayerSpaceShip 0
+expect-selected Asteroid
+expect-location 500 400
+select-name Rock A
+expect-location 500 400
+delete
+expect-entity-count 7
+undo
+select-name Rock A
+expect-location 500 400
+# Revisions are monotonic: undo restores the entity, but Save clears dirty.
+expect-scene-dirty true
+save-scene
+expect-scene-dirty false
+capture authoring.png
+quit

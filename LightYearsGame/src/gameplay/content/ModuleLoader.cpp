@@ -1914,9 +1914,14 @@ namespace ly::content
 			return Result{ {}, {}, documentResult.error };
 		}
 
+		return LoadFromJson(*documentResult.document);
+	}
+
+	ModuleLoader::Result ModuleLoader::LoadFromJson(const nlohmann::json& root, const std::string& selectedId)
+	{
 		try
 		{
-			const Json& root = *documentResult.document;
+
 			if (root.at("schemaVersion").get<int>() != 1)
 			{
 				return Result{ {}, {}, "Unsupported module schema version" };
@@ -1927,6 +1932,7 @@ namespace ly::content
 			std::set<std::string> moduleIds;
 			for (const Json& module : root.at("modules"))
 			{
+				if (!selectedId.empty() && module.value("id", std::string{}) != selectedId) continue;
 				ModuleDefinition definition = ParseModule(module, result.zoneTable);
 				if (!moduleIds.insert(definition.moduleId.ToString()).second)
 				{
@@ -1934,6 +1940,7 @@ namespace ly::content
 				}
 				result.definitions.push_back(std::move(definition));
 			}
+			for (const Json& module : root.at("modules")) moduleIds.insert(module.at("id").get<std::string>());
 			for (const ModuleDefinition& definition : result.definitions)
 			{
 				for (const sas::ContentId& conflictId : definition.conflictsWith)
@@ -1949,7 +1956,7 @@ namespace ly::content
 			return Result{
 				{},
 				{},
-				"Failed to load modules from '" + filePath.string() + "': " + exception.what()
+				"Failed to load modules from '" + std::string{ "content document" } + "': " + exception.what()
 			};
 		}
 	}

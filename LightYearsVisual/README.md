@@ -1,6 +1,6 @@
 # LightYearsVisual
 
-Standalone static library (`LightYearsVisual`, namespace `ly::visual`) for procedural, sprite-free visuals drawn with SFML shapes, vertex arrays and GLSL `#version 120` shaders. It depends only on SFML and nlohmann_json, not on `LightYearsEngine` or the game. Status: V1 foundation, first game integration pass, and V3 procedural player ships (see "Ships (V3)", "Game integration" and `docs/VISUAL_LIBRARY_PLAN.md`).
+Game art library (`LightYearsVisual`, namespace `ly::visual`) for procedural, sprite-free visuals drawn with SFML shapes, vertex arrays and GLSL `#version 120` shaders. It depends only on SFML and nlohmann_json, not on `LightYearsEngine` or the game. Status: V1 foundation, first game integration pass, and V3 procedural player ships (see "Ships (V3)", "Game integration" and `docs/VISUAL_LIBRARY_PLAN.md`).
 
 ## Layers
 
@@ -86,3 +86,14 @@ The library stays independent of the engine. `LightYearsEngine` only knows the s
 Keys in the game: `F7` cycles the color script, `F8` toggles the pipeline (starts ON; a failed asset load keeps it OFF with a log line), `F9` forces an asset reload; files are also polled every frame. The game currently reads `assets/` from the source tree (`LY_VISUAL_ASSETS_DIR`); a packaged copy step can replace that later. Dev command line: `LightYearsGame.exe --visual-capture <png> [--capture-frames N] [--visual-off] [--visual-script <name>] [--visual-player-hull <0..1>] [--visual-ship <0..5>] [--galaxy-stop <index>] [--warp <beta>]` (`--galaxy-stop` picks a route stop, 0 is Sol; `--warp` starts an upward warp, clamped to `warp.maxBeta`) (`--visual-player-hull` only changes the hull fraction the procedural ship shows; `--visual-ship` starts with that player ship).
 
 Player ship (V3): `ShipVisualPresenter` reads the current player ship (transform, velocity, health and shield fractions, afterburner, invulnerability, the four ability slots through the same `GetAbility(slot)` read the HUD bar uses) and draws it with `ShipRenderer`. Hits are noticed by watching the health and shield fractions drop, so nothing is bound or written back. The selected ship content id picks the definition through the `bindings` of the ship JSON. While the pipeline is ON the world skips that ship's sprite through `WorldRenderPipeline::HidesActor` (a draw-time decision of the pipeline; the actor's render flags, physics and collision are untouched, and with the pipeline OFF the old path runs unchanged). The visual is fitted to the sprite footprint by area times the definition `scale` (1.25 in the shipped data, an art choice for readability; set it to 1 for the sprite footprint). The old player engine glow in `EnergyLightPresenter` is gone; the ship renderer owns it.
+
+## Optional engine module extraction (B4)
+
+The reusable renderer now lives in `Modules/Sky` as `VegaSky`, namespace
+`vega::sky`. Headers here forward existing callers to it. This target compiles
+only ships and the game asset loader; its `VisualAssets` extends the module
+loader with ship art. Authored palettes, ships and `deepsky.json` retain their
+paths and bytes. Existing shader paths are compatibility copies, verified
+against the module shaders by CTest. The route-to-sky mapping and
+`GameVisualPipeline` / `ProceduralBackdrop` remain game-side. See
+[engine modules](../docs/engine-modules.md).

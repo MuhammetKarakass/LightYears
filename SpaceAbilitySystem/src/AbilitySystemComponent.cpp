@@ -6,6 +6,48 @@
 
 namespace sas
 {
+	namespace
+	{
+		// Instant effects have no active entry. Keep nested application IDs available
+		// to the existing lifecycle callbacks without retaining definition pointers.
+		struct DebugApplication
+		{
+			const AbilitySystemComponent* owner;
+			std::string id;
+			unsigned int instantHandle = 0;
+		};
+		thread_local std::vector<DebugApplication> DebugApplications;
+		struct DebugApplicationScope
+		{
+			bool active = AbilitySystemDebugView::recording;
+			DebugApplicationScope(const AbilitySystemComponent* owner, const std::string& id)
+			{
+				if (active) DebugApplications.push_back({ owner, id });
+			}
+			~DebugApplicationScope() { if (active) DebugApplications.pop_back(); }
+		};
+		std::string DebugApplicationId(const AbilitySystemComponent* owner)
+		{
+			for (auto entry = DebugApplications.rbegin(); entry != DebugApplications.rend(); ++entry)
+				if (entry->owner == owner) return entry->id;
+			return "unknown";
+		}
+		void MarkDebugInstantApplication(const AbilitySystemComponent* owner, GameplayEffectHandle handle)
+		{
+			for (auto entry = DebugApplications.rbegin(); entry != DebugApplications.rend(); ++entry)
+			{
+				if (entry->owner != owner) continue;
+				entry->instantHandle = handle.id;
+				return;
+			}
+		}
+		std::string DebugRemovedEffectId(const AbilitySystemComponent* owner, GameplayEffectHandle handle)
+		{
+			for (auto entry = DebugApplications.rbegin(); entry != DebugApplications.rend(); ++entry)
+				if (entry->owner == owner && entry->instantHandle == handle.id) return entry->id;
+			return std::to_string(handle.id);
+		}
+	}
 	// Keep this translation unit coupled to the effect-runtime layout because
 	// AbilitySystemComponent stores GameplayEffectSystem by value.
 	AbilitySystemComponent::AbilitySystemComponent()
@@ -201,6 +243,11 @@ namespace sas
 			},
 			[this](AbilityHandle handle)
 			{
+				if (AbilitySystemDebugView::recording)
+				{
+					for (const auto& ability : BuildAbilitySnapshots())
+						if (ability.handle == handle) RecordDebugEvent("Activated " + ability.abilityId);
+				}
 				onAbilityActivated.Broadcast(handle);
 				NotifyAbilityChanged(handle);
 			},
@@ -337,6 +384,16 @@ namespace sas
 				{
 					callback(handle);
 				}
+				if (AbilitySystemDebugView::recording)
+				{
+					const auto* effect = FindGameplayEffect(handle);
+					const auto id = effect ? effect->spec.definition.effectId : DebugApplicationId(this);
+					RecordDebugEvent("Effect applied " + id);
+					// Instant removal runs in this application scope, even though no active
+					// entry exists. Its identity must not survive an interrupted callback.
+					if (effect) mDebugEffectIds[handle.id] = id;
+					else MarkDebugInstantApplication(this, handle);
+				}
 				if (!IsClearPending()) onGameplayEffectApplied.Broadcast(handle);
 			};
 
@@ -350,6 +407,13 @@ namespace sas
 				{
 					callback(handle);
 				}
+				if (AbilitySystemDebugView::recording)
+				{
+					const auto found = mDebugEffectIds.find(handle.id);
+					const auto id = found == mDebugEffectIds.end() ? DebugRemovedEffectId(this, handle) : found->second;
+					RecordDebugEvent("Effect removed " + id);
+				}
+				mDebugEffectIds.erase(handle.id);
 				if (!IsClearPending()) onGameplayEffectRemoved.Broadcast(handle);
 			};
 
@@ -376,6 +440,7 @@ namespace sas
 		return RunOperation([&]() -> GameplayEffectHandle
 		{
 			if (IsClearPending()) return {};
+			DebugApplicationScope debugScope{ this, definition.effectId };
 			return mEffects.ApplyEffect(definition, context);
 		});
 	}
@@ -388,6 +453,7 @@ namespace sas
 		return RunOperation([&]() -> GameplayEffectHandle
 		{
 			if (IsClearPending()) return {};
+			DebugApplicationScope debugScope{ this, spec.definition.effectId };
 			return mEffects.ApplyEffect(spec, context);
 		});
 	}
@@ -563,5 +629,43 @@ namespace sas
 			}
 			if (error) std::rethrow_exception(error);
 		});
+	}
+}
+
+namespace sas
+{
+	void AbilitySystemComponent::RecordDebugEvent(const std::string& message)
+	{
+		if (!AbilitySystemDebugView::recording) return;
+		if (mDebugSession != AbilitySystemDebugView::session)
+		{
+			mDebugSession = AbilitySystemDebugView::session;
+			mDebugEvents.clear();
+			// Active effect identities outlive a recording session. Removal retires them,
+			// including when recording is disabled, so they never retain instant effects.
+		}
+		if (mDebugEvents.size() == 100) mDebugEvents.pop_front();
+		mDebugEvents.push_back({ std::chrono::duration<double>(std::chrono::steady_clock::now() - AbilitySystemDebugView::epoch).count(), message });
+	}
+
+	AbilitySystemDebugSnapshot AbilitySystemComponent::BuildDebugSnapshot() const
+	{
+		AbilitySystemDebugSnapshot result;
+		for (const auto& ability : BuildAbilitySnapshots())
+		{
+			AbilityDebugEntry entry;
+			entry.runtime = ability;
+			entry.displayName = ability.abilityId;
+			const auto& passives = GetPassiveAbilities();
+			entry.passive = std::find(passives.begin(), passives.end(), ability.handle) != passives.end();
+			DescribeDebugAbility(entry);
+			result.abilities.push_back(std::move(entry));
+		}
+		result.effects = BuildGameplayEffectSnapshots();
+		result.attributes = mAttributes.BuildSnapshot();
+		result.tags = mOwnedTags.BuildCountSnapshot();
+		std::sort(result.tags.begin(), result.tags.end(), [](const auto& a, const auto& b) { return a.first.name < b.first.name; });
+		if (mDebugSession == AbilitySystemDebugView::session) result.events.assign(mDebugEvents.begin(), mDebugEvents.end());
+		return result;
 	}
 }

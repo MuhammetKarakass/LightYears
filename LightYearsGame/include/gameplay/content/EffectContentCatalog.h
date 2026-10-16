@@ -10,10 +10,12 @@ namespace ly::content
 	class EffectContentCatalog
 	{
 	public:
+		// Live reload preserves the last valid catalog on failure; startup remains fail-closed.
 		static bool LoadFromFile(
 			const std::filesystem::path& filePath,
 			const List<const sas::GameplayEffectDefinition*>& fallbackDefinitions,
-			std::string* failureReason = nullptr
+			std::string* failureReason = nullptr,
+			bool preserveExisting = false
 		);
 
 		static const sas::GameplayEffectDefinition* FindById(

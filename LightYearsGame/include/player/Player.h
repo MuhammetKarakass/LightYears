@@ -23,6 +23,7 @@ namespace ly
 		~Player() override;
 
 		weak_ptr<PlayerSpaceShip> SpawnSpaceShip(World* world);
+		const std::string& GetShipId() const { return mShipId; }
 		const weak_ptr<PlayerSpaceShip> GetCurrentSpaceShip() const { return mCurrentSpaceShip; };
 
 		void AddLifeCount(unsigned int count);

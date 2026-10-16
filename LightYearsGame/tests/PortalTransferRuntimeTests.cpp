@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "framework/World.h"
 #include "gameplay/portal/PortalTransferParticipant.h"
 #include "gameplay/portal/PortalTransferRuntimeActor.h"
@@ -255,6 +256,7 @@ namespace
 
 int main()
 {
+	ly::InstallLightYearsEngineAssets();
 	const bool passed = TestRuntimeActorDeduplicationAndWorldIsolation() &&
 		TestTransferAndReentryTiming() &&
 		TestWorldAddressReuseWithRetainedRuntimeActor();

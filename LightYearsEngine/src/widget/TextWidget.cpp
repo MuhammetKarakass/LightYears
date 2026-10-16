@@ -24,7 +24,7 @@ namespace ly
 		mText.setFillColor(color);
 		ApplyAlpha(GetEffectiveAlpha());
 	}
-	void TextWidget::Draw(sf::RenderWindow& windowRef)
+	void TextWidget::Draw(sf::RenderTarget& windowRef)
 	{
 		windowRef.draw(mText);
 	}

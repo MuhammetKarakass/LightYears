@@ -1,9 +1,10 @@
 #include "widget/ValueGauge.h"
+#include "framework/EngineAssets.h"
 
 namespace ly
 {
 	ValueGauge::ValueGauge(const sf::Vector2f& size, float initialPercent, const sf::Color& foregroundColor, const sf::Color& backgroundColor) :
-		mBarFont{AssetManager::GetAssetManager().LoadFont("SpaceShooterRedux/Bonus/kenvector_future.ttf"),},
+		mBarFont{AssetManager::GetAssetManager().LoadFont(EngineAssets::Get().font),},
 		mBarText{*mBarFont},
 		mBarFront{ size },
 		mBarBack{ size },
@@ -42,7 +43,7 @@ namespace ly
 		ApplyAlpha(GetEffectiveAlpha());
 	}
 	
-	void ValueGauge::Draw(sf::RenderWindow& windowRef)
+	void ValueGauge::Draw(sf::RenderTarget& windowRef)
 	{
 		windowRef.draw(mBarBack);
 		windowRef.draw(mBarFront);

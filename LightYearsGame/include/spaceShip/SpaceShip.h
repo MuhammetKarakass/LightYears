@@ -27,6 +27,7 @@ namespace ly
 		  public DashMovementController,
 		  public PortalTransferParticipant
 	{
+		VEGA_CLASS(SpaceShip)
 	public:
 		virtual void BeginPlay() override;
 

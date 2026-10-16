@@ -1,6 +1,7 @@
 #pragma once
 
 #include "effects/GameplayEffectRuntimeState.h"
+#include "effects/GameplayEffectPolicies.h"
 
 #include <memory>
 #include <utility>
@@ -49,7 +50,13 @@ namespace sas
 
 		GameplayEffectRuntimeSnapshot BuildRuntimeSnapshot() const
 		{
-			return BuildSnapshot(spec.definition.effectId);
+			auto snapshot = BuildSnapshot(spec.definition.effectId);
+			snapshot.handle = handle;
+			snapshot.source = sourceObject ? std::to_string(reinterpret_cast<std::uintptr_t>(sourceObject)) : "unspecified";
+			snapshot.infinite = spec.definition.durationPolicy == GameplayEffectDurationPolicy::Infinite;
+			snapshot.modifiers = spec.modifiers;
+			snapshot.grantedTags = spec.definition.grantedTags;
+			return snapshot;
 		}
 
 		Spec spec;

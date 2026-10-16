@@ -89,6 +89,7 @@ namespace ly
 	class GameAbility: public sas::GameplayAbilityInstance<GameAbilityDefinition,GameAbilityExecution>
 	{
 	public:
+		std::string DebugActivationBlockReason() const;
 		GameAbility(
 			LightYearsAbilitySystemComponent& abilitySystem,
 			sas::AbilityHandle handle,

@@ -27,7 +27,10 @@ namespace ly::debug
 	enum class LogChannel : std::uint8_t
 	{
 		Core,
-		Game
+		Game,
+		Lua,
+		Scene,
+		Editor
 	};
 
 	struct SourceLocation
@@ -60,6 +63,9 @@ namespace ly::debug
 		static bool ShouldLog(LogLevel level);
 
 		static void SetSink(Sink sink);
+		// Subscribers are independent of the legacy callback and file/stdout sinks.
+		static std::uint64_t AddSink(Sink sink);
+		static void RemoveSink(std::uint64_t id);
 		static const char* GetLevelName(LogLevel level);
 		static const char* GetChannelName(LogChannel channel);
 

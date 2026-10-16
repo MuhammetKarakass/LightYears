@@ -1,0 +1,17 @@
+pause
+select-type DummyEnemy
+add-script scripts/spin.lua
+expect-script-prop speed 120
+set-script-prop speed 90
+expect-script-prop speed 90
+undo
+expect-script-prop speed 120
+redo
+expect-script-prop speed 90
+remember-rotation
+play-mode
+wait 30
+pause
+expect-script-error none
+expect-rotation-changed
+quit

@@ -2,6 +2,7 @@
 
 #include "widget/Widget.h"
 #include "framework/AssetManager.h"
+#include "framework/EngineAssets.h"
 
 namespace ly
 {
@@ -10,7 +11,7 @@ namespace ly
 		friend struct GameHUDDamageE2ETestAccess;
 
 	public:
-		TextWidget(const std::string& textStr, const std::string& fontPath="SpaceShooterRedux/Bonus/kenvector_future.ttf",
+		TextWidget(const std::string& textStr, const std::string& fontPath = EngineAssets::Get().font,
 			unsigned int characterSize=10);
 
 		void SetString(const std::string& newStr);
@@ -25,7 +26,7 @@ namespace ly
 
 	private:
 
-		virtual void Draw(sf::RenderWindow& windowRef) override;
+		virtual void Draw(sf::RenderTarget& windowRef) override;
 		virtual void LocationUpdated(const sf::Vector2f& newLocation) override;
 		virtual void RotationUpdated(float newRotation) override;
 

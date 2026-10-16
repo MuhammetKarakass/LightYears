@@ -2,6 +2,7 @@
 
 #include "widget/Widget.h"
 #include "framework/AssetManager.h"
+#include "framework/EngineAssets.h"
 
 namespace ly
 {
@@ -9,8 +10,8 @@ namespace ly
 	{
 	public:
 		Button(const std::string& textString = "Button", 
-			const std::string& texturePath = "SpaceShooterRedux/PNG/UI/buttonBlue.png",
-			const std::string& fontPath="SpaceShooterRedux/Bonus/kenvector_future.ttf");
+			const std::string& texturePath = EngineAssets::Get().buttonTexture,
+			const std::string& fontPath = EngineAssets::Get().font);
 
 		virtual sf::FloatRect GetBound() const override;
 		virtual bool HandleEvent(const sf::Event& event) override;
@@ -24,7 +25,7 @@ namespace ly
 		virtual void UpdateOrigin(const sf::Vector2f& origin) override;
 		
 	private:
-		virtual void Draw(sf::RenderWindow& windowRef) override;
+		virtual void Draw(sf::RenderTarget& windowRef) override;
 		virtual void LocationUpdated(const sf::Vector2f& newLocation) override;
 		virtual void RotationUpdated(float newRotation) override;
 

@@ -6,11 +6,22 @@
 #include "framework/LightComponent.h"
 #include "framework/MathUtility.h"
 #include "framework/World.h"
+#include <framework/reflection/Reflection.h>
 
 #include <algorithm>
 
 namespace ly
 {
+	VEGA_REFLECT(EnemyActor, SpaceShip)
+	{
+		VEGA_CATEGORY("Enemy");
+		VEGA_READONLY("Enemy ID", GetEnemyId);
+		VEGA_READONLY("Combat Profile ID", GetCombatProfileId);
+		VEGA_READONLY("Enemy Level", GetEnemyLevel);
+		VEGA_PROPERTY("Ship XP Reward", GetShipXPReward, SetShipXPReward).Range(0.f, 100000.f);
+		VEGA_READONLY("Collision Damage", GetCollisionDamage);
+	}
+
 	namespace
 	{
 		constexpr sas::AbilitySlot ControlledEnemySlots[]{ sas::AbilitySlot::PrimaryFire, sas::AbilitySlot::Ability1, sas::AbilitySlot::Ability2, sas::AbilitySlot::Ability3, sas::AbilitySlot::Ability4 };

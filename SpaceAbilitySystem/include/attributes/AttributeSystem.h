@@ -123,6 +123,7 @@ namespace sas
 		void RegisterAttribute(const GameplayAttribute& attribute);
 		bool HasAttribute(const AttributeId& id) const;
 		uint64_t GetRevision() const { return mRevision; }
+		GameplayAttributeList BuildSnapshot() const;
 		float GetBaseValue(const AttributeId& id) const;
 		float GetCurrentValue(const AttributeId& id, float fallback = 0.f) const;
 		float GetCurrentValueExcludingModifiers(const AttributeId& id, const ly::List<AttributeModifierHandle>& excludedHandles, float fallback = 0.f) const;

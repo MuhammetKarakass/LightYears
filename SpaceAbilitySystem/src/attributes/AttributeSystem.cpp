@@ -381,3 +381,15 @@ namespace sas
 		}
 	}
 }
+
+namespace sas
+{
+	GameplayAttributeList AttributeSystem::BuildSnapshot() const
+	{
+		GameplayAttributeList result;
+		result.reserve(mAttributes.size());
+		for (const auto& entry : mAttributes) result.push_back(entry.second.attribute);
+		std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) { return a.id.GetName() < b.id.GetName(); });
+		return result;
+	}
+}

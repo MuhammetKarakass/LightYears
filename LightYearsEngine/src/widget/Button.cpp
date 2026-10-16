@@ -83,7 +83,7 @@ namespace ly
 		return handled || Widget::HandleEvent(event);
 	}
 	
-	void Button::Draw(sf::RenderWindow& windowRef)
+	void Button::Draw(sf::RenderTarget& windowRef)
 	{
 		windowRef.draw(mButtonSprite);
 		windowRef.draw(mButtonText);
@@ -110,12 +110,15 @@ namespace ly
 
 	void Button::ButtonClicked()
 	{
-		AudioManager::GetAudioManager().PlaySound(
-			"SpaceShooterRedux/Bonus/sfx_zap.ogg",
-			AudioType::SFX_UI,
-			60.0f,  // Volume
-			1.5f   // Pitch
-		);
+		if (!EngineAssets::Get().buttonSound.empty())
+		{
+			AudioManager::GetAudioManager().PlaySound(
+				EngineAssets::Get().buttonSound,
+				AudioType::SFX_UI,
+				60.0f,  // Volume
+				1.5f   // Pitch
+			);
+		}
 		mButtonClicked = true;
 		mButtonHovered = false;
 		mButtonSprite.setColor(mButtonClickedColor);

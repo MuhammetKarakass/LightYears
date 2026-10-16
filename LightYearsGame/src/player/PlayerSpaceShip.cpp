@@ -6,9 +6,20 @@
 #include <framework/LightComponent.h>
 #include <framework/SpriteComponent.h>
 #include <framework/MathUtility.h>
+#include <framework/reflection/Reflection.h>
 
 namespace ly
 {
+	VEGA_REFLECT(PlayerSpaceShip, SpaceShip)
+	{
+		VEGA_REQUIRES(PlayerMovementComponent);
+		VEGA_CATEGORY("Player");
+		VEGA_PROPERTY("Speed", GetSpeed, SetSpeed).Range(0.f, 100000.f);
+		VEGA_PROPERTY("Use Screen Clamp", GetUseScreenClamp, SetUseScreenClamp);
+		VEGA_READONLY("In Combat", IsInCombat);
+		VEGA_READONLY("Combat Window Remaining", GetCombatWindowRemaining);
+	}
+
 	PlayerSpaceShip::PlayerSpaceShip(World* owningWorld, const ShipDefinition& shipDef)
 		: SpaceShip(owningWorld, shipDef)
 		, mAbilityLoadout(GetAbilitySystemComponent())

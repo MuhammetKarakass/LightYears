@@ -1,0 +1,76 @@
+open-scene scenes/sandbox.scene.json
+expect-entity-count 7
+select-name Asteroid left
+select-add "Asteroid right"
+select-add "Dummy left"
+expect-selection-count 3
+move-selection 40 -20
+expect-location 800 380
+undo
+expect-selection-count 3
+expect-location 760 400
+select-name Asteroid left
+expect-location 660 700
+select-name Asteroid right
+expect-location 1260 700
+select-add "Asteroid left"
+expect-selection-count 2
+set-prop-all "Render Enabled" false
+expect-prop Actor "Render Enabled" false
+undo
+expect-prop Actor "Render Enabled" true
+redo
+duplicate
+expect-selection-count 2
+expect-count Asteroid 4
+expect-entity-count 9
+expect-location 692 732
+undo
+expect-selection-count 2
+expect-count Asteroid 2
+redo
+expect-selection-count 2
+expect-prop Actor "Render Enabled" false
+copy
+paste 900 500
+expect-selection-count 2
+expect-location 600 500
+expect-count Asteroid 6
+expect-entity-count 11
+undo
+expect-selection-count 2
+expect-count Asteroid 4
+redo
+expect-selection-count 2
+expect-count Asteroid 6
+focus
+capture @VEGA_MULTI_CAPTURE@
+save-scene @VEGA_MULTI_SCENE@
+open-scene @VEGA_MULTI_SCENE@
+expect-entity-count 11
+expect-selection-count 2
+expect-location 600 500
+expect-prop Actor "Render Enabled" false
+play-mode
+expect-mode play
+stop
+expect-mode edit
+expect-selection-count 2
+expect-location 600 500
+select-type Asteroid 1
+expect-prop Actor "Render Enabled" false
+select-type Asteroid 0
+expect-prop Actor "Render Enabled" false
+select-rect 2000 2000 2100 2100
+expect-selection-count 0
+select-add "Asteroid left"
+select-remove "Asteroid left"
+expect-selection-count 0
+select-all
+expect-selection-count 11
+delete
+expect-entity-count 0
+undo
+expect-selection-count 11
+expect-entity-count 11
+quit

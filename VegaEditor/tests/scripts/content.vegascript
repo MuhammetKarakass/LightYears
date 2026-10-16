@@ -1,0 +1,21 @@
+expect-mode edit
+open-json content/data/ships.json
+expect-json /ships/0/health 250.0
+expect-json-dirty false
+json-set /ships/0/health 275.0
+expect-json /ships/0/health 275.0
+expect-json-dirty true
+undo
+expect-json /ships/0/health 250.0
+expect-json-dirty false
+redo
+expect-json /ships/0/health 275.0
+undo
+json-set /ships/0/health 280.0
+json-save
+expect-json-dirty false
+json-set /ships/0/health 300.0
+json-revert
+expect-json /ships/0/health 280.0
+expect-json-dirty false
+quit

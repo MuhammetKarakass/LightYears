@@ -366,7 +366,7 @@ namespace ly
 
 	}
 
-	void ShipHologramWidget::Draw(sf::RenderWindow& windowRef)
+	void ShipHologramWidget::Draw(sf::RenderTarget& windowRef)
 	{
 		if (mOutline.empty()) return;
 		const float t = mTime;

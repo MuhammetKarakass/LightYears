@@ -33,7 +33,7 @@ namespace ly
 		column->SetLayout(columnLayout);
 	}
 
-	void MainMenuHUD::Init(sf::RenderWindow& windowRef)
+	void MainMenuHUD::Init(sf::RenderTarget& windowRef)
 	{
 		static_cast<void>(windowRef);
 		if (auto button = mStartButton.lock()) button->onButtonClicked.BindAction(GetWeakPtr(), &MainMenuHUD::StartButtonClicked);

@@ -1,3 +1,4 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameplay/content/ModuleSideFeatureLoader.h"
 #include "player/Player.h"
@@ -222,6 +223,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	if (argc != 2) return 2;
 	Report report; const std::filesystem::path artifact{ argv[1] }; std::filesystem::create_directories(artifact.parent_path());
 	try

@@ -1,0 +1,1195 @@
+[
+  {
+    "addable": false,
+    "base": "",
+    "name": "Actor",
+    "properties": [
+      {
+        "category": "Transform",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Location",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Transform",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Rotation",
+        "requiredType": "",
+        "speed": 0.5,
+        "tooltip": ""
+      },
+      {
+        "category": "Transform",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Velocity",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rendering",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 6,
+        "labels": [
+          [
+            0,
+            "Background"
+          ],
+          [
+            1,
+            "GroundDecal"
+          ],
+          [
+            2,
+            "World"
+          ],
+          [
+            3,
+            "Projectile"
+          ],
+          [
+            4,
+            "WorldVfx"
+          ],
+          [
+            5,
+            "Foreground"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "RenderLayer",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Rendering",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Render Enabled",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Tick",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Tick When Paused",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 0,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "",
+    "name": "ActorComponent",
+    "properties": [
+      {
+        "category": "Lifecycle",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Active",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Lifecycle",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Can Ever Tick",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Lifecycle",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Has Begun Play",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": true,
+    "base": "ActorComponent",
+    "name": "SpriteComponent",
+    "properties": [
+      {
+        "category": "Sprite",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Has Sprite",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Sprite",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Texture",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Sprite",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Scale",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "ActorComponent",
+    "name": "SceneEntityComponent",
+    "properties": [
+      {
+        "category": "Scene",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Name",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Scene",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "GUID",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": true,
+    "base": "ActorComponent",
+    "name": "LightComponent",
+    "properties": [],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": true,
+    "base": "ActorComponent",
+    "name": "CollisionComponent",
+    "properties": [
+      {
+        "category": "Physics",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Physics Enabled",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Physics",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Has Physics Body",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Physics",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 6,
+        "labels": [
+          [
+            0,
+            "Dynamic"
+          ],
+          [
+            1,
+            "Static"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "Body Type",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Collision",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 7,
+        "labels": [
+          [
+            1,
+            "Player"
+          ],
+          [
+            2,
+            "PlayerBullet"
+          ],
+          [
+            4,
+            "Enemy"
+          ],
+          [
+            8,
+            "EnemyBullet"
+          ],
+          [
+            16,
+            "Powerup"
+          ],
+          [
+            32,
+            "Environment"
+          ],
+          [
+            64,
+            "RelayProjectile"
+          ],
+          [
+            128,
+            "FriendlySummon"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "Collision Layer",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Collision",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 7,
+        "labels": [
+          [
+            1,
+            "Player"
+          ],
+          [
+            2,
+            "PlayerBullet"
+          ],
+          [
+            4,
+            "Enemy"
+          ],
+          [
+            8,
+            "EnemyBullet"
+          ],
+          [
+            16,
+            "Powerup"
+          ],
+          [
+            32,
+            "Environment"
+          ],
+          [
+            64,
+            "RelayProjectile"
+          ],
+          [
+            128,
+            "FriendlySummon"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "Collision Mask",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "",
+    "name": "SoundComponent",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Playing",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Stopped",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 2,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "Actor",
+    "name": "SpaceShip",
+    "properties": [],
+    "removable": false,
+    "requiredComponents": [
+      "HealthComponent",
+      "ShieldComponent",
+      "EnergyComponent",
+      "MovementComponent"
+    ],
+    "root": 0,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "Actor",
+    "name": "Asteroid",
+    "properties": [
+      {
+        "category": "Asteroid",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Velocity",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [
+      "HealthComponent"
+    ],
+    "root": 0,
+    "spawnable": true
+  },
+  {
+    "addable": false,
+    "base": "Actor",
+    "name": "PlayerStart",
+    "properties": [
+      {
+        "category": "Player Start",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Ship",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 0,
+    "spawnable": true
+  },
+  {
+    "addable": false,
+    "base": "Actor",
+    "name": "SpriteActor",
+    "properties": [],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 0,
+    "spawnable": true
+  },
+  {
+    "addable": false,
+    "base": "SpaceShip",
+    "name": "DummyEnemy",
+    "properties": [
+      {
+        "category": "Dummy",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Ship",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": "Construction only: reload the scene to apply a changed ship."
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 0,
+    "spawnable": true
+  },
+  {
+    "addable": true,
+    "base": "ActorComponent",
+    "name": "HealthComponent",
+    "properties": [
+      {
+        "category": "Health",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Health",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Health",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 1.0,
+        "name": "Max Health",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": true,
+    "base": "ActorComponent",
+    "name": "ShieldComponent",
+    "properties": [
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Shield",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Max Shield",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1000.0,
+        "min": 0.0,
+        "name": "Recharge Delay",
+        "requiredType": "",
+        "speed": 0.10000000149011612,
+        "tooltip": ""
+      },
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Recharge Delay Remaining",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Module Temporary Shield",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Front Shield",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Rear Shield",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Shield",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Passive Regen Blocked",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": true,
+    "base": "ActorComponent",
+    "name": "EnergyComponent",
+    "properties": [
+      {
+        "category": "Energy",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Energy",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Energy",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Max Energy",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Energy",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 1000.0,
+        "min": 0.0,
+        "name": "Recharge Delay",
+        "requiredType": "",
+        "speed": 0.10000000149011612,
+        "tooltip": ""
+      },
+      {
+        "category": "Energy",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Recharge Delay Remaining",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "ActorComponent",
+    "name": "MovementComponent",
+    "properties": [
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 6,
+        "labels": [
+          [
+            0,
+            "LegacyVelocity"
+          ],
+          [
+            1,
+            "ThrustDrift"
+          ]
+        ],
+        "max": null,
+        "min": null,
+        "name": "Movement Mode",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Legacy Speed",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Current Movement Speed",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Current Movement Distance",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 3,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Current Movement Start Location",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Directional Thrust Sync",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Module Directional Thrust Sync",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Module Thrust Bonus",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Movement Burst Active",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Resolved Movement Burst Distance",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "ActorComponent",
+    "name": "PlayerMovementComponent",
+    "properties": [
+      {
+        "category": "Player Movement",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Speed",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player Movement",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Use Screen Clamp",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Afterburning",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Afterburner Camera Zoom Out",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Speed Cap Multiplier",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Turn Capability Multiplier",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player Movement",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Afterburner Recharge Blocked",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "SpaceShip",
+    "name": "PlayerSpaceShip",
+    "properties": [
+      {
+        "category": "Player",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Speed",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Use Screen Clamp",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 0,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "In Combat",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Player",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Combat Window Remaining",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [
+      "PlayerMovementComponent"
+    ],
+    "root": 0,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "SpaceShip",
+    "name": "EnemyActor",
+    "properties": [
+      {
+        "category": "Enemy",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Enemy ID",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Enemy",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Combat Profile ID",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Enemy",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 1,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Enemy Level",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Enemy",
+        "elementKind": null,
+        "hasSetter": true,
+        "kind": 2,
+        "labels": [],
+        "max": 100000.0,
+        "min": 0.0,
+        "name": "Ship XP Reward",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "Enemy",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 2,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Collision Damage",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": false,
+    "requiredComponents": [],
+    "root": 0,
+    "spawnable": false
+  },
+  {
+    "addable": false,
+    "base": "ActorComponent",
+    "name": "ScriptComponent",
+    "properties": [
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Script",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      },
+      {
+        "category": "",
+        "elementKind": null,
+        "hasSetter": false,
+        "kind": 5,
+        "labels": [],
+        "max": null,
+        "min": null,
+        "name": "Last Error",
+        "requiredType": "",
+        "speed": 1.0,
+        "tooltip": ""
+      }
+    ],
+    "removable": true,
+    "requiredComponents": [],
+    "root": 1,
+    "spawnable": false
+  }
+]

@@ -1,6 +1,8 @@
 add_library(${SPACE_ABILITY_SYSTEM_TARGET_NAME} STATIC
+	${CMAKE_SOURCE_DIR}/Modules/GAS/src/GasContentSchemas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/content/ContentId.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemDebugView.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/ClearResult.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/AbilitySystemInterface.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/abilities/AbilityDefinition.h
@@ -75,6 +77,9 @@ target_link_libraries(${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 )
 
 if(BUILD_TESTING)
+	add_executable(SpaceAbilitySystemDebugViewTests tests/AbilitySystemDebugViewTests.cpp)
+	target_link_libraries(SpaceAbilitySystemDebugViewTests PRIVATE ${SPACE_ABILITY_SYSTEM_TARGET_NAME})
+	add_test(NAME SpaceAbilitySystemDebugView COMMAND SpaceAbilitySystemDebugViewTests)
 	add_executable(SpaceAbilitySystemLifecycleTests
 		${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayEffectLifecycleTests.cpp
 	)
@@ -87,3 +92,5 @@ if(BUILD_TESTING)
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 endif()
+
+target_include_directories(${SPACE_ABILITY_SYSTEM_TARGET_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/Modules/GAS/include)

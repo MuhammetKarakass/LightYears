@@ -1,0 +1,9 @@
+{
+	"id": "aurora",
+	"sky": {
+		"band": { "width": 0.25 },
+		"objects": [
+			{ "kind": "fog", "at": [0.5, 0.5], "size": 0.4, "seed": 17 }
+		]
+	}
+}

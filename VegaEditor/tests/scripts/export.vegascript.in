@@ -1,0 +1,12 @@
+expect-mode edit
+expect-project-startup ""
+new-scene
+wait 2
+create Asteroid
+save-scene scenes/export-startup.scene.json
+set-project-startup scenes/export-startup.scene.json
+expect-project-startup scenes/export-startup.scene.json
+# Export the game and require its smoke test to pass. CMake fills in the export folder (build tree only).
+export "@VEGA_EXPORT_TEST_DIR@" overwrite
+expect-export-ok
+quit

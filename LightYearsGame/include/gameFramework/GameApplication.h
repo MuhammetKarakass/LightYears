@@ -1,53 +1,35 @@
 #pragma once
 
 #include <framework/Application.h>
-
-#include <memory>
-#include <string>
+#include <framework/GameModule.h>
 
 namespace ly
 {
-	class GameVisualPipeline;
-
 	class GameApplication : public Application
 	{
 	public:
-		GameApplication();
+		explicit GameApplication(bool editor = false);
 		~GameApplication() override;
-
-	protected:
-		bool HandleApplicationEvent(const sf::Event& event) override;
-		void AfterRender() override;
-
-	private:
-		virtual void Tick(float deltaTime) override;
-
-		// Dev-only command line: --visual-off, --visual-script <name>, --visual-capture <png> [--capture-frames N],
-		// --visual-player-hull <0..1> (shown hull fraction only), --visual-ship <0..5> (start with that player ship),
-		// --visual-assets <dir> (visual pipeline assets; default: <exe dir>/visual if present, else the source tree),
-		// --galaxy-stop <index> (backdrop at that route stop, 0 = Sol), --warp <beta> (upward warp, clamped to warp.maxBeta).
-		struct DevOptions
+		int GetExitCode() const override
 		{
-			bool visualOff = false;
-			std::string colorScript = "nebula_teal_pink";
-			std::string capturePath;
-			int captureFrames = 180;
-			float playerHull = -1.f;
-			int shipIndex = -1;
-			std::string visualAssets;
-			bool perfAutoPlay = false;
-			int galaxyStop = 0;
-			// Orbit speed steps from x1, as the + / - keys (3 = x8).
-			int orbitSpeedSteps = 0;
-			float warpBeta = 0.f;
-		};
-
-		static DevOptions ParseDevOptions();
-		void InitializeVisualPipeline();
-		void SaveCaptureIfDue();
-
-		DevOptions mDevOptions;
-		std::unique_ptr<GameVisualPipeline> mVisualPipeline;
-		int mRenderedFrames = 0;
+			const auto* hooks = vega::QueryCapability<vega::IAppLoopHooks>(mModule.get());
+			return hooks ? hooks->ExitCode() : 0;
+		}
+	protected:
+		bool HandleApplicationEvent(const sf::Event& event) override
+		{
+			auto* hooks = vega::QueryCapability<vega::IAppLoopHooks>(mModule.get());
+			return hooks && hooks->HandleEvent(event);
+		}
+		void AfterRender() override
+		{
+			if (auto* hooks = vega::QueryCapability<vega::IAppLoopHooks>(mModule.get())) hooks->AfterRender();
+		}
+	private:
+		void Tick(float deltaTime) override
+		{
+			if (auto* hooks = vega::QueryCapability<vega::IAppLoopHooks>(mModule.get())) hooks->Tick(deltaTime);
+		}
+		std::unique_ptr<vega::GameModule> mModule;
 	};
 }

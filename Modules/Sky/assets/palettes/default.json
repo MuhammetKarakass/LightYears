@@ -1,0 +1,18 @@
+{
+	"name": "default",
+	"ramps": {
+		"space": ["#03061A", "#0C1438", "#1E3258", "#42617E"],
+		"cool": ["#071C38", "#15536B", "#48A7B5", "#B5E7DF"],
+		"warm": ["#281038", "#70334E", "#BF765D", "#F2DAB2"]
+	},
+	"roles": {
+		"background": "space",
+		"ambient": "cool",
+		"ambient2": "warm",
+		"planet": "cool",
+		"emissionRed": "warm",
+		"emissionTeal": "cool",
+		"galaxyLight": "cool",
+		"bulgeLight": "warm"
+	}
+}

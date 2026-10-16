@@ -1,0 +1,366 @@
+{
+	"entities": [
+		{
+			"components": [],
+			"guid": "a0000000000000000000000000000001",
+			"name": "Player spawn",
+			"properties": {
+				"Location": [
+					960.0,
+					700.0
+				],
+				"Render Enabled": true,
+				"RenderLayer": "World",
+				"Rotation": 0.0,
+				"Ship": "Ship.Player.Fighter.Basic",
+				"Tick When Paused": false
+			},
+			"scripts": [],
+			"type": "PlayerStart"
+		},
+		{
+			"components": [
+				{
+					"properties": {
+						"Active": true,
+						"Scale": [
+							1.0,
+							1.0
+						],
+						"Texture": "SpaceShooterRedux/PNG/Enemies/enemyBlack4.png"
+					},
+					"type": "SpriteComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Health": 100.0
+					},
+					"type": "HealthComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Shield": 0.0,
+						"Recharge Delay": 3.0
+					},
+					"type": "ShieldComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Energy": 0.0,
+						"Recharge Delay": 2.0
+					},
+					"type": "EnergyComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Legacy Speed": [
+							0.0,
+							0.0
+						],
+						"Movement Mode": "ThrustDrift"
+					},
+					"type": "MovementComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Body Type": "Dynamic",
+						"Collision Layer": [],
+						"Collision Mask": [],
+						"Physics Enabled": false
+					},
+					"type": "CollisionComponent"
+				}
+			],
+			"guid": "a0000000000000000000000000000002",
+			"name": "Dummy left",
+			"properties": {
+				"Location": [
+					760.0,
+					400.0
+				],
+				"Render Enabled": true,
+				"RenderLayer": "World",
+				"Rotation": 0.0,
+				"Ship": "Ship.Enemy.RangeKeeper.Basic",
+				"Tick When Paused": false
+			},
+			"scripts": [],
+			"type": "DummyEnemy"
+		},
+		{
+			"components": [
+				{
+					"properties": {
+						"Active": true,
+						"Scale": [
+							1.0,
+							1.0
+						],
+						"Texture": "SpaceShooterRedux/PNG/Enemies/enemyBlack4.png"
+					},
+					"type": "SpriteComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Health": 100.0
+					},
+					"type": "HealthComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Shield": 0.0,
+						"Recharge Delay": 3.0
+					},
+					"type": "ShieldComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Energy": 0.0,
+						"Recharge Delay": 2.0
+					},
+					"type": "EnergyComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Legacy Speed": [
+							0.0,
+							0.0
+						],
+						"Movement Mode": "ThrustDrift"
+					},
+					"type": "MovementComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Body Type": "Dynamic",
+						"Collision Layer": [],
+						"Collision Mask": [],
+						"Physics Enabled": false
+					},
+					"type": "CollisionComponent"
+				}
+			],
+			"guid": "a0000000000000000000000000000003",
+			"name": "Dummy center",
+			"properties": {
+				"Location": [
+					960.0,
+					350.0
+				],
+				"Render Enabled": true,
+				"RenderLayer": "World",
+				"Rotation": 0.0,
+				"Ship": "Ship.Enemy.RangeKeeper.Basic",
+				"Tick When Paused": false
+			},
+			"scripts": [],
+			"type": "DummyEnemy"
+		},
+		{
+			"components": [
+				{
+					"properties": {
+						"Active": true,
+						"Scale": [
+							1.0,
+							1.0
+						],
+						"Texture": "SpaceShooterRedux/PNG/Enemies/enemyBlack4.png"
+					},
+					"type": "SpriteComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Health": 100.0
+					},
+					"type": "HealthComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Shield": 0.0,
+						"Recharge Delay": 3.0
+					},
+					"type": "ShieldComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Max Energy": 0.0,
+						"Recharge Delay": 2.0
+					},
+					"type": "EnergyComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Legacy Speed": [
+							0.0,
+							0.0
+						],
+						"Movement Mode": "ThrustDrift"
+					},
+					"type": "MovementComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Body Type": "Dynamic",
+						"Collision Layer": [],
+						"Collision Mask": [],
+						"Physics Enabled": false
+					},
+					"type": "CollisionComponent"
+				}
+			],
+			"guid": "a0000000000000000000000000000004",
+			"name": "Dummy right",
+			"properties": {
+				"Location": [
+					1160.0,
+					400.0
+				],
+				"Render Enabled": true,
+				"RenderLayer": "World",
+				"Rotation": 0.0,
+				"Ship": "Ship.Enemy.RangeKeeper.Basic",
+				"Tick When Paused": false
+			},
+			"scripts": [],
+			"type": "DummyEnemy"
+		},
+		{
+			"components": [
+				{
+					"properties": {
+						"Active": true,
+						"Max Health": 50.0
+					},
+					"type": "HealthComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Scale": [
+							0.800000011920929,
+							0.800000011920929
+						],
+						"Texture": "SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png"
+					},
+					"type": "SpriteComponent"
+				}
+			],
+			"guid": "a0000000000000000000000000000005",
+			"name": "Asteroid left",
+			"properties": {
+				"Location": [
+					660.0,
+					700.0
+				],
+				"Render Enabled": true,
+				"RenderLayer": "World",
+				"Rotation": 0.0,
+				"Tick When Paused": false,
+				"Velocity": [
+					0.0,
+					0.0
+				]
+			},
+			"scripts": [],
+			"type": "Asteroid"
+		},
+		{
+			"components": [
+				{
+					"properties": {
+						"Active": true,
+						"Max Health": 50.0
+					},
+					"type": "HealthComponent"
+				},
+				{
+					"properties": {
+						"Active": true,
+						"Scale": [
+							0.6000000238418579,
+							0.6000000238418579
+						],
+						"Texture": "SpaceShooterRedux/PNG/Meteors/meteorBrown_big2.png"
+					},
+					"type": "SpriteComponent"
+				}
+			],
+			"guid": "a0000000000000000000000000000006",
+			"name": "Asteroid right",
+			"properties": {
+				"Location": [
+					1260.0,
+					700.0
+				],
+				"Render Enabled": true,
+				"RenderLayer": "World",
+				"Rotation": 0.0,
+				"Tick When Paused": false,
+				"Velocity": [
+					0.0,
+					0.0
+				]
+			},
+			"scripts": [],
+			"type": "Asteroid"
+		},
+		{
+			"components": [
+				{
+					"properties": {
+						"Active": true,
+						"Scale": [
+							3.0,
+							3.0
+						],
+						"Texture": "SpaceShooterRedux/PNG/Effects/star3.png"
+					},
+					"type": "SpriteComponent"
+				}
+			],
+			"guid": "a0000000000000000000000000000007",
+			"name": "Spinning star",
+			"properties": {
+				"Location": [
+					960.0,
+					950.0
+				],
+				"Render Enabled": true,
+				"RenderLayer": "World",
+				"Rotation": 0.0,
+				"Tick When Paused": false
+			},
+			"scripts": [
+				{
+					"path": "scripts/spin.lua",
+					"properties": {
+						"speed": 45.0
+					}
+				}
+			],
+			"type": "SpriteActor"
+		}
+	],
+	"format": "vega.scene",
+	"settings": {
+		"playerShip": "Ship.Player.Fighter.Basic",
+		"routeStop": 0
+	},
+	"version": 1
+}

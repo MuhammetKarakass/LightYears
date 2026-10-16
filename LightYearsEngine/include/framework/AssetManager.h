@@ -19,7 +19,7 @@ namespace ly
 
 		void CleanCycle();
 		void Shutdown();
-		void SetAssetRootDirectory(const std::string& rootDirectory) { mAssetRootDirectory = rootDirectory; }
+		void SetAssetRootDirectory(const std::string& rootDirectory);
 		std::string GetAssetRootDirectory() const { return mAssetRootDirectory; }
 	protected:
 		AssetManager();

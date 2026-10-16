@@ -1,4 +1,5 @@
 #pragma once
+#include <nlohmann/json.hpp>
 
 #include "gameplay/ability/content/GameAbilityDefinition.h"
 #include "gameConfigs/ability/AbilityActorStructs.h"
@@ -30,6 +31,8 @@ namespace ly::content
 				return error.empty();
 			}
 		};
+
+		static Result LoadFromJson(const nlohmann::json& root, const List<const GameAbilityDefinition*>& fallbackDefinitions, const List<const AbilityActorDefinition*>& fallbackActorDefinitions, const std::string& selectedId = {});
 
 		static Result LoadFromFile(
 			const std::filesystem::path& filePath,

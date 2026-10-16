@@ -30,7 +30,7 @@ namespace ly
 			mParent->InvalidateLayout();
 	}
 
-	void Widget::NativeDraw(sf::RenderWindow& windowRef)
+	void Widget::NativeDraw(sf::RenderTarget& windowRef)
 	{
 		if (mIsVisible)
 		{
@@ -326,7 +326,7 @@ namespace ly
 		RotationUpdated(rotation);
 	}
 
-	void Widget::Draw(sf::RenderWindow& windowRef)
+	void Widget::Draw(sf::RenderTarget& windowRef)
 	{
 	}
 

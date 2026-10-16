@@ -1,19 +1,21 @@
 set(LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME LightYearsGameplayCore)
 set(LIGHT_YEARS_GAME_LIB_TARGET_NAME LightYearsGameLib)
+set(LIGHT_YEARS_GAME_APP_TARGET_NAME LightYearsGameApp)
 
 # Sources are discovered by directory; adding a .cpp/.h under src/ or include/ needs no CMake edit.
 # Every .cpp under src/ is compiled (there are no orphan sources). The sources are split into three
 # groups, each compiled exactly once:
 #   LightYearsGameplayCore - reusable gameplay services that depend only on SpaceAbilitySystem
 #   LightYearsGameLib      - the rest of the game that tests can link without a window or visual pipeline
-#   LightYearsGame         - the executable: app entry (gameFramework/) and the LightYearsVisual presenters
+#   LightYearsGameApp      - reusable game application (gameFramework/) and LightYearsVisual presenters
 file(GLOB_RECURSE LY_GAME_CPP CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+list(FILTER LY_GAME_CPP EXCLUDE REGEX "/src/editor/")
 file(GLOB_RECURSE LY_GAME_HEADERS CONFIGURE_DEPENDS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 
-# Executable-only code: game application entry and the presenters built on LightYearsVisual.
+# Shared application setup and presenters let other executables reuse the game's visual pipeline.
 set(LY_GAME_APP_DIR_REGEX "/(src|include)/(gameFramework|presentation/visual)/")
 set(LY_GAME_APP_CPP ${LY_GAME_CPP})
 list(FILTER LY_GAME_APP_CPP INCLUDE REGEX "${LY_GAME_APP_DIR_REGEX}")
@@ -75,7 +77,11 @@ target_link_libraries(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
 		nlohmann_json::nlohmann_json
 )
 
-add_executable(${LIGHT_YEARS_GAME_TARGET_NAME} ${LY_GAME_APP_CPP} ${LY_GAME_APP_HEADERS})
+add_library(${LIGHT_YEARS_GAME_APP_TARGET_NAME} STATIC ${LY_GAME_APP_CPP} ${LY_GAME_APP_HEADERS})
+
+# Each executable provides its own GetApplication() hook for the engine entry point.
+add_executable(${LIGHT_YEARS_GAME_TARGET_NAME} app/GameMain.cpp)
+target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC ${LIGHT_YEARS_GAME_APP_TARGET_NAME})
 
 if(MSVC)
 	# Incremental relinks have left copied inline tag/attribute identities empty at startup.
@@ -83,23 +89,24 @@ if(MSVC)
 	target_link_options(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE /INCREMENTAL:NO)
 endif()
 
-target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
+target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME}
+target_link_libraries(${LIGHT_YEARS_GAME_APP_TARGET_NAME}
 	PUBLIC
 		${LIGHT_YEARS_ENGINE_TARGET_NAME}
 		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		LightYearsVisual
+		VegaScript
 		nlohmann_json::nlohmann_json
 		$<LINK_LIBRARY:WHOLE_ARCHIVE,${LIGHT_YEARS_GAME_LIB_TARGET_NAME}>
 )
 
-# First integration pass: the game reads the visual assets from the source tree so edits hot-reload (F9 forces it).
-target_compile_definitions(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE
-	LY_VISUAL_ASSETS_DIR="${CMAKE_SOURCE_DIR}/LightYearsVisual/assets"
+# Debug reads the source tree for hot reload; packaged builds must never fall back to that tree.
+target_compile_definitions(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PRIVATE
+	LY_VISUAL_ASSETS_DIR="$<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/LightYearsVisual/assets,visual>"
 )
 
 if(BUILD_TESTING)
@@ -152,7 +159,23 @@ if(BUILD_TESTING)
 	endfunction()
 
 	set(LY_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+	ly_add_game_test(LightYearsReflectionRegistryGoldenTests GAME
+		SOURCES ${PROJECT_SOURCE_DIR}/LightYearsEngine/tests/ReflectionRegistryGoldenTests.cpp LIBS VegaScript)
+	target_compile_definitions(LightYearsReflectionRegistryGoldenTests PRIVATE
+		REFLECTION_GOLDEN_PATH="${PROJECT_SOURCE_DIR}/LightYearsEngine/tests/reflection-registry.golden.json")
+	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${runtime} LightYearsReflectionRegistryGoldenTests)
+	endforeach()
+	ly_add_game_test_case(LightYearsReflectionRegistryGolden LightYearsReflectionRegistryGoldenTests)
 	set(LY_E2E ${LIGHT_YEARS_E2E_ARTIFACT_DIR})
+
+	ly_add_game_test(LightYearsSceneSettingsTests GAME PROJECT_DIR SOURCES ${LY_TESTS_DIR}/SceneSettingsTests.cpp)
+	ly_add_game_test_case(LightYearsSceneSettings LightYearsSceneSettingsTests)
+
+	ly_add_game_test(LightYearsSceneSandboxTests GAME PROJECT_DIR
+		SOURCES ${LY_TESTS_DIR}/SceneSandboxTests.cpp LIBS VegaScript)
+	target_compile_definitions(LightYearsSceneSandboxTests PRIVATE SCENE_TEST_ARTIFACT_DIR="${LIGHT_YEARS_E2E_ARTIFACT_DIR}")
+	ly_add_game_test_case(LightYearsSceneSandbox LightYearsSceneSandboxTests)
 
 	ly_add_game_test(LightYearsContentTests
 		SOURCES ${LY_TESTS_DIR}/ContentLoaderTests.cpp
@@ -160,6 +183,12 @@ if(BUILD_TESTING)
 		LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		GAME PROJECT_DIR)
 	ly_add_game_test_case(LightYearsContent LightYearsContentTests)
+	ly_add_game_test(LightYearsContentReloadTests
+		SOURCES ${LY_TESTS_DIR}/ContentReloadTests.cpp
+		LIBS ${LIGHT_YEARS_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		GAME PROJECT_DIR)
+	target_compile_definitions(LightYearsContentReloadTests PRIVATE CONTENT_RELOAD_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/content-reload-test")
+	ly_add_game_test_case(LightYearsContentReload LightYearsContentReloadTests)
 
 	ly_add_game_test(LightYearsGasLiteTests GAME_WHOLE
 		SOURCES
@@ -397,16 +426,6 @@ if(WIN32)
 	target_link_libraries(${LIGHT_YEARS_GAME_TARGET_NAME} PRIVATE sfml-main)
 endif()
 
-function(CopyRuntimeLibToTarget LIB_NAME TARGET_NAME)
-	add_custom_command(TARGET ${TARGET_NAME}
-	POST_BUILD
-	COMMAND
-	${CMAKE_COMMAND} -E copy_if_different
-	$<TARGET_FILE:${LIB_NAME}>
-	$<TARGET_FILE_DIR:${TARGET_NAME}>
-	)
-endfunction()
-
 CopyRuntimeLibToTarget(sfml-graphics ${LIGHT_YEARS_GAME_TARGET_NAME})
 CopyRuntimeLibToTarget(sfml-window ${LIGHT_YEARS_GAME_TARGET_NAME})
 CopyRuntimeLibToTarget(sfml-system ${LIGHT_YEARS_GAME_TARGET_NAME})
@@ -430,6 +449,20 @@ add_custom_target(${LIGHT_YEARS_GAME_ASSET_TARGET} ALL
 )
 add_dependencies(${LIGHT_YEARS_GAME_TARGET_NAME} ${LIGHT_YEARS_GAME_ASSET_TARGET})
 
+if(MSVC AND CMAKE_BUILD_TYPE STREQUAL "Release")
+	# A distributable must also work without Visual Studio's C++ runtime installed.
+	set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+	include(InstallRequiredSystemLibraries)
+	if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+		add_custom_command(TARGET ${LIGHT_YEARS_GAME_ASSET_TARGET} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+				$<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>
+			COMMAND_EXPAND_LISTS
+		)
+	endif()
+endif()
+
 # Non-Debug builds package the visual pipeline assets next to the executable (<exe dir>/visual); Debug builds keep
 # reading the source tree (LY_VISUAL_ASSETS_DIR) so shader/palette/pipeline.json edits hot-reload.
 add_custom_command(TARGET ${LIGHT_YEARS_GAME_ASSET_TARGET} POST_BUILD
@@ -439,11 +472,20 @@ add_custom_command(TARGET ${LIGHT_YEARS_GAME_ASSET_TARGET} POST_BUILD
 	$<TARGET_FILE_DIR:${LIGHT_YEARS_GAME_TARGET_NAME}>/visual
 )
 
+set(LY_GAME_CONFIG_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+	# Release roots must come from the portable launch folder; Debug keeps source-tree hot reload.
+	set(LY_GAME_CONFIG_TEMPLATE "${CMAKE_SOURCE_DIR}/tools/vega-release-config.h.in")
+endif()
 configure_file(
-	"config.h.in"
+	"${LY_GAME_CONFIG_TEMPLATE}"
 	"${CMAKE_CURRENT_BINARY_DIR}/config.h" ESCAPE_QUOTES
 )
+# Keep runtime-root changes visible to Ninja even when an older MSVC dependency database missed Config.h.
+set_property(SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/LightYearsGameModule.cpp" APPEND PROPERTY
+	OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/config.h")
 
-target_include_directories(${LIGHT_YEARS_GAME_TARGET_NAME} PUBLIC
+# The checked-in include/Config.h otherwise shadows this configuration-specific generated header.
+target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} BEFORE PUBLIC
 	${CMAKE_CURRENT_BINARY_DIR}
 )

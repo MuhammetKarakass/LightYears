@@ -1,0 +1,10 @@
+# Reset the disposable root on every run, including repeated ctest invocations.
+set(root "@CMAKE_CURRENT_BINARY_DIR@/content-test-assets")
+file(MAKE_DIRECTORY "${root}/content/data")
+configure_file("@CMAKE_SOURCE_DIR@/LightYearsGame/assets/content/data/ships.json"
+	"${root}/content/data/ships.json" COPYONLY)
+execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+	"@CMAKE_CURRENT_BINARY_DIR@/scripts/content.vegascript" RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+	message(FATAL_ERROR "VegaEditorContent failed: ${result}")
+endif()

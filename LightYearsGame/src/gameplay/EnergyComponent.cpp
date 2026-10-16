@@ -1,9 +1,21 @@
 #include "gameplay/EnergyComponent.h"
+#include <framework/Actor.h>
+#include <framework/reflection/Reflection.h>
 
 #include <algorithm>
 
 namespace ly
 {
+	VEGA_REFLECT(EnergyComponent, ActorComponent)
+	{
+		VEGA_ADDABLE();
+		VEGA_CATEGORY("Energy");
+		VEGA_READONLY("Energy", GetEnergy);
+		VEGA_PROPERTY("Max Energy", GetMaxEnergy, SetMaxEnergy).Range(0.f, 100000.f);
+		VEGA_PROPERTY("Recharge Delay", GetRechargeDelay, SetRechargeDelay).Range(0.f, 1000.f).Speed(0.1f);
+		VEGA_READONLY("Recharge Delay Remaining", GetRechargeDelayRemaining);
+	}
+
 	EnergyComponent::EnergyComponent(Actor& owner, float energy, float maxEnergy, float rechargeDelay)
 		: ActorComponent{ owner }
 		, mEnergy{ std::clamp(energy, 0.f, std::max(0.f, maxEnergy)) }

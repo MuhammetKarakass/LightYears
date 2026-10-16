@@ -398,9 +398,14 @@ namespace ly::content
 			return Result{ {}, documentResult.error };
 		}
 
+		return LoadFromJson(*documentResult.document);
+	}
+
+	WeaponLoader::Result WeaponLoader::LoadFromJson(const nlohmann::json& root, const std::string& selectedId)
+	{
 		try
 		{
-			const Json& root = *documentResult.document;
+
 			if (root.at("schemaVersion").get<int>() != 1)
 			{
 				return Result{ {}, "Unsupported weapon schema version" };
@@ -410,6 +415,7 @@ namespace ly::content
 			std::set<std::string> weaponIds;
 			for (const Json& weapon : root.at("weapons"))
 			{
+				if (!selectedId.empty() && weapon.value("id", std::string{}) != selectedId) continue;
 				PrimaryWeaponDefinition definition = ParseWeapon(weapon);
 				if (definition.weaponId.empty())
 				{
@@ -430,7 +436,7 @@ namespace ly::content
 			return Result{
 				{},
 				"Failed to load weapons from '" +
-				filePath.string() +
+				std::string{ "content document" } +
 				"': " +
 				exception.what()
 			};

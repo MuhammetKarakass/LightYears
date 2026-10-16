@@ -1,7 +1,9 @@
+#include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP5E2E.h"
 
 int main(int argc, char** argv)
 {
+	ly::InstallLightYearsEngineAssets();
 	using namespace uncommon_p5_e2e;
 	if (argc != 2) return 2;
 	Report report;

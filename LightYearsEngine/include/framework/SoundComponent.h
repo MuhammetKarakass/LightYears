@@ -7,6 +7,7 @@
 namespace ly{
 class SoundComponent : public std::enable_shared_from_this<SoundComponent>
 {
+	VEGA_CLASS(SoundComponent)
 public:
 	SoundComponent(const std::string& path, AudioType type= AudioType::SFX_World, bool loop=false);
 	~SoundComponent();

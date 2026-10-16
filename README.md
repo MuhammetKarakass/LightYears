@@ -12,6 +12,8 @@ A high-performance 2D space shooter built from scratch with a custom engine arch
 
 ## Documentation
 
+- [Console and Profiler](docs/console-profiler.md) — panels, runtime capture and editor script commands.
+
 - [Ability Scaling Catalog](docs/ABILITY_SCALING_CATALOG.md) — the single source of
   truth for every ability's values, formulas, per-level growth and behaviour.
 - [System Reference](docs/PROJECT_DOCUMENTATION.md) — how the runtime systems work

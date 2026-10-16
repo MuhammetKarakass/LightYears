@@ -1,0 +1,41 @@
+open-scene scenes/lua-api-baseline.scene.json
+wait 2
+clear-console
+play-mode
+wait 20
+profiler on
+wait 90
+profiler off
+capture-profile lua-api-without.json
+stop
+wait 2
+open-scene scenes/lua-api.scene.json
+wait 2
+expect-entity-count 4
+expect-count DummyEnemy 0
+clear-console
+play-mode
+wait 20
+expect-count DummyEnemy 3
+expect-entity-count 7
+select-name Receiver
+expect-prop Actor Rotation 3
+expect-console Info "Wave spawned: 3 DummyEnemy"
+expect-console Info "Receiver: wave_started"
+expect-no-errors
+profiler on
+wait 90
+expect-profile-scope "Lua Script Tick"
+profiler off
+capture-profile lua-api-with.json
+stop
+wait 3
+expect-mode edit
+expect-count DummyEnemy 0
+expect-entity-count 4
+select-name Receiver
+expect-prop Actor Rotation 0
+select-name Hazard
+expect-prop Actor Rotation 0
+expect-no-errors
+quit

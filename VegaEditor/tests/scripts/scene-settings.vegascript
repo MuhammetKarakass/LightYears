@@ -1,0 +1,42 @@
+open-scene "@VEGA_SETTINGS_SOURCE@"
+expect-mode edit
+expect-setting "routeStop" 0
+expect-backdrop sol
+capture "@VEGA_SETTINGS_BEFORE@"
+set-setting "routeStop" 1
+expect-scene-dirty true
+expect-setting "routeStop" 1
+expect-backdrop gj-674
+capture "@VEGA_SETTINGS_AFTER@"
+undo
+expect-setting "routeStop" 0
+expect-backdrop sol
+redo
+expect-backdrop gj-674
+reset-setting "routeStop"
+expect-setting "routeStop" 0
+expect-backdrop sol
+undo
+expect-setting "routeStop" 1
+expect-backdrop gj-674
+# PlayerStart intentionally has precedence. Remove it to test the world default.
+select-type PlayerStart
+delete
+set-setting "playerShip" "Ship.Player.Breacher.Basic"
+expect-setting "playerShip" "Ship.Player.Breacher.Basic"
+play-mode
+wait 30
+expect-count PlayerSpaceShip 1
+expect-player-ship "Ship.Player.Breacher.Basic"
+stop
+expect-mode edit
+expect-setting "routeStop" 1
+expect-setting "playerShip" "Ship.Player.Breacher.Basic"
+expect-setting "futureSetting" "preserve me"
+save-scene "@VEGA_SETTINGS_SAVED@"
+open-scene "@VEGA_SETTINGS_SAVED@"
+expect-setting "routeStop" 1
+expect-setting "playerShip" "Ship.Player.Breacher.Basic"
+expect-setting "futureSetting" "preserve me"
+expect-backdrop gj-674
+quit
