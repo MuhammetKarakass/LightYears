@@ -1,0 +1,39 @@
+{
+	"format": "vega.scene",
+	"version": 1,
+	"settings": {},
+	"entities": [
+		{
+			"guid": "hier-pivot",
+			"name": "Pivot",
+			"type": "BlankPlayer",
+			"properties": { "Location": [480, 270], "Size": 1 },
+			"components": [{ "type": "BlankMovement", "properties": { "Speed": 0 } }],
+			"scripts": [{ "path": "scripts/orbit.lua", "properties": { "degrees_per_second": 45 } }]
+		},
+		{
+			"guid": "hier-arm",
+			"name": "Arm",
+			"type": "BlankPlayer",
+			"parent": "hier-pivot",
+			"properties": { "Location": [110, 0], "Size": 0.6 },
+			"components": [{ "type": "BlankMovement", "properties": { "Speed": 0 } }]
+		},
+		{
+			"guid": "hier-tip",
+			"name": "Tip",
+			"type": "BlankPlayer",
+			"parent": "hier-arm",
+			"properties": { "Location": [60, 0], "Size": 0.3 },
+			"components": [{ "type": "BlankMovement", "properties": { "Speed": 0 } }]
+		},
+		{
+			"guid": "hier-counterweight",
+			"name": "Counterweight",
+			"type": "BlankPlayer",
+			"parent": "hier-pivot",
+			"properties": { "Location": [-110, 0], "Size": 0.6 },
+			"components": [{ "type": "BlankMovement", "properties": { "Speed": 0 } }]
+		}
+	]
+}

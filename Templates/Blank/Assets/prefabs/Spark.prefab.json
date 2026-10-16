@@ -1,0 +1,9 @@
+{
+	"format": "vega.prefab",
+	"version": 1,
+	"name": "Spark",
+	"base": { "type": "BlankPlayer" },
+	"properties": { "Size": 0.4 },
+	"components": [{ "type": "BlankMovement", "properties": { "Speed": 0 } }],
+	"scripts": [{ "path": "scripts/timers.lua", "properties": {} }]
+}

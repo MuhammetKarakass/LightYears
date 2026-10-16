@@ -6,6 +6,9 @@ and VegaScript. It does not link the current game, its presentation library,
 GAS or Sky, and it does not load their assets. The editor uses ImGui's built-in
 font when the project's `editor.font` is absent.
 
+The template also ships sample scenes, Lua scripts, a prefab and a sound; see
+`Templates/Blank/README.md` and [Learn from the Blank samples](#learn-from-the-blank-samples).
+
 1. Copy `Templates/Blank` to `Templates/MyGame` (or another folder in this
    repository). Rename the `BlankGameModule`, `BlankPlayer`, `BlankMovement`,
    `BlankGame`, and `BlankEditor` identifiers and the `blank` namespace. Rename
@@ -81,6 +84,23 @@ font when the project's `editor.font` is absent.
    `Blank.exe --visual-capture check.png --capture-frames 12`. The package needs
    neither the source tree nor the editor. For a renamed project use its
    project-named executable.
+
+## Learn from the Blank samples
+
+`Templates/Blank/README.md` lists every sample. Open them in the editor or run them with
+`BlankGame.exe --scene scenes/<name>.scene.json` before you rename the template:
+
+| Sample | What it teaches |
+| --- | --- |
+| `scenes/hierarchy.scene.json` + `scripts/orbit.lua` | `parent` links, relative `Location`, Lua `children()`, `detach()` and `attach_to()`. See [actor hierarchy](hierarchy.md). |
+| `scenes/trigger.scene.json` + `scripts/trigger.lua`, `lamp.lua` | An added `CollisionComponent`, layers and masks, `on_overlap_begin/end`, a `Target` reference, `actor:send` / `on_message`, `world.spawn` of `prefabs/Spark.prefab.json` and `audio.play`. See [Lua API](lua-api.md) and [prefabs](prefabs.md). |
+| `scenes/patrol.scene.json` + `scripts/patrol_loop.lua`, `lap_counter.lua` | A Vec2 list property, a looping patrol and messages to a referenced actor. See [reflection](reflection.md). |
+| `scripts/timers.lua` (used by the Spark prefab) | `timer.after`, `timer.every` and cancelling timers. |
+
+The samples use only `BlankPlayer`, `BlankMovement` and engine components, so they keep working
+after the rename in step 1 as long as the scene `type` names and the script paths are updated.
+Keep, rewrite or delete them for your own game; the CTest drivers in `Tests/` depend only on
+`main.scene.json`, `scripts/spin.lua` and `scripts/patrol.lua`.
 
 The original template's verification is:
 
