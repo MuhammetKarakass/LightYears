@@ -1,0 +1,56 @@
+open-scene scenes/sandbox.scene.json
+play-mode
+wait 15
+# Empty selection inspects the player through the registered fallback.
+select-rect -10000 -10000 -9900 -9900
+expect-selection-count 0
+expect-ability Ability.Utility.CryoBola.Basic ready
+gas-select-player
+# Same live scene, 300-frame profiler window, panel hidden then open.
+gas-panel off
+profiler on
+wait 310
+profiler off
+capture-profile "@CMAKE_CURRENT_BINARY_DIR@/Saved/gas-before.json"
+gas-panel on
+profiler on
+wait 310
+expect-profile-scope "Editor Ability System"
+expect-profile-scope "GAS Snapshot"
+profiler off
+capture-profile "@CMAKE_CURRENT_BINARY_DIR@/Saved/gas-after.json"
+expect-ability Ability.Utility.CryoBola.Basic ready
+gas-activate Ability.Utility.CryoBola.Basic
+wait 2
+expect-ability Ability.Utility.CryoBola.Basic cooldown
+expect-attribute Owner.AttackPower > 0
+# A shipped beneficial effect, plus an attribute modifier with an observable delta.
+gas-apply-effect Effect.Barrier.Basic
+expect-effect Effect.Barrier.Basic true
+expect-tag State.Effect.Defense.Barrier true
+gas-apply-effect Effect.Movement.Slow.Basic
+expect-effect Effect.Movement.Slow.Basic true
+expect-attribute Owner.MovementSlow > 0
+expect-tag State.Effect.Movement.Slow true
+gas-reset-cooldowns
+expect-ability Ability.Utility.CryoBola.Basic ready
+gas-filter abilities CryoBola
+gas-filter effects Movement.Slow
+gas-filter attributes MovementSlow
+gas-filter tags Slow
+gas-filter events Slow
+wait 10
+pause
+capture "@CMAKE_CURRENT_BINARY_DIR@/Saved/gas-debugger.png"
+# Assertions remain available while the panel is frozen in Pause.
+expect-effect Effect.Movement.Slow.Basic true
+play
+gas-remove-effect Effect.Movement.Slow.Basic
+expect-effect Effect.Movement.Slow.Basic false
+expect-tag State.Effect.Movement.Slow false
+expect-attribute Owner.MovementSlow == 0
+gas-remove-effect Effect.Barrier.Basic
+expect-effect Effect.Barrier.Basic false
+stop
+expect-mode edit
+quit

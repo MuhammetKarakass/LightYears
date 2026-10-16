@@ -863,3 +863,25 @@ namespace ly
 		mAbilityUseHistory.Record(std::move(record));
 	}
 }
+
+namespace ly
+{
+	void LightYearsAbilitySystemComponent::DescribeDebugAbility(sas::AbilityDebugEntry& entry) const
+	{
+		const auto* ability = GetAbility(entry.runtime.handle);
+		if (ability)
+		{
+			entry.blockedReason = ability->DebugActivationBlockReason();
+			entry.displayName = ability->GetDefinition().displayName;
+		}
+	}
+
+	bool LightYearsAbilitySystemComponent::DebugActivateAbility(sas::AbilityHandle handle)
+	{
+		return RunOperation([&]
+		{
+			auto* ability = GetAbility(handle);
+			return !IsClearPending() && ability && ability->TryActivate();
+		});
+	}
+}

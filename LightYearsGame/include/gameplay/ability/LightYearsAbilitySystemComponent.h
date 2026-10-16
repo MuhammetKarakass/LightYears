@@ -83,6 +83,7 @@ namespace ly
 		// current WhileHeld fire execution to continue.
 		void AddOwnedTag(const GameplayTag& tag) override;
 		void SetAbilitySlotInput(sas::AbilitySlot slot, bool inputHeld) override;
+		bool DebugActivateAbility(sas::AbilityHandle handle) override;
 		void Tick(float deltaTime) override;
 
 		PrimaryWeaponOverrideHandle PushPrimaryWeaponOverride(
@@ -141,6 +142,7 @@ namespace ly
 		void HandleAbilityLifecycleEvent(const sas::AbilityLifecycleEvent& event);
 
 	private:
+		void DescribeDebugAbility(sas::AbilityDebugEntry& entry) const override;
 		void HandleAbilityActivated(sas::AbilityHandle handle);
 		friend class GameAbility;
 		friend class CombatRuntime;

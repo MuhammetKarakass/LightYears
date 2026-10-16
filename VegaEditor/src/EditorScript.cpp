@@ -199,6 +199,19 @@ namespace vega
 		};
 		switch (command.operation)
 		{
+		case ScriptOperation::GasSelectPlayer:
+		case ScriptOperation::ExpectAbility:
+		case ScriptOperation::ExpectEffect:
+		case ScriptOperation::ExpectAttribute:
+		case ScriptOperation::ExpectTag:
+		case ScriptOperation::GasApplyEffect:
+		case ScriptOperation::GasRemoveEffect:
+		case ScriptOperation::GasResetCooldowns:
+		case ScriptOperation::GasActivate:
+		case ScriptOperation::GasPanel:
+		case ScriptOperation::GasFilter:
+			if (context.gasCommand) success = context.gasCommand(command, detail);
+			break;
 		case ScriptOperation::ClearConsole:
 			if (context.clearConsole) { context.clearConsole(); success = true; }
 			else if (context.console) { context.console->Clear(); success = true; }

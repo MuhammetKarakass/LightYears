@@ -1,5 +1,38 @@
 Run the editor script runner from the editor's executable directory.
 
+Ability System inspection commands (Play and Pause):
+
+```text
+gas-select-player
+expect-ability <id> ready|cooldown|active
+expect-effect <id> true|false
+expect-attribute <id> <op> <finite number>
+expect-tag <tag> true|false
+gas-panel on|off
+gas-filter abilities|effects|attributes|tags|events "search text"
+```
+
+Debug mutations require unpaused Play and use ASC public APIs:
+
+```text
+gas-apply-effect <id>
+gas-remove-effect <id>
+gas-reset-cooldowns
+gas-activate <ability-id>
+```
+
+`gas-select-player` selects the registered player and opens/focuses the panel.
+An empty selection falls back to the player; other selections require an ASC.
+Assertions read fresh snapshots, even while the panel is frozen in Pause.
+Attribute comparisons support `==`, `<`, `>`, `<=`, `>=`; unknown IDs fail.
+`gas-activate` uses the game adapter's normal TryActivate path through the ASC
+debug API, including its usual activation gates and costs.
+Effect apply uses content defaults or the first authored ability effect spec;
+unknown/refused effects fail. Remove removes all active instances with that ID
+and fails if none exist. `VegaEditorGasDebugger` runs the build-tree copy of
+`gas-debugger.vegascript` with build-tree assets. Its capture and 300-frame
+profiles are under `build/VegaEditor/Saved`. See [debugger details](../../../docs/gas-debugger.md).
+
 The editor starts in **Edit** mode with `scenes/sandbox.scene.json`.
 `--editor-scene <path>` selects another startup scene; a missing startup file
 creates an empty scene. Relative scene paths resolve against the editor asset
@@ -355,8 +388,9 @@ clipboard, and Ctrl+V pastes at the viewport mouse or camera centre.
 The multi Inspector shows reflected properties on the common actor base and
 components present in every selected actor. Mixed fields show an em dash and use
 ImGui's mixed-value flag. Edits write every target, preserving individual old
-values for undo. Per-actor prefab override actions/markers are replaced with a
-"multiple prefabs" header. Its descriptors and mixed values are cached by world,
+values for undo. The header shows the number of prefab instances only when the
+selection contains one, with "mixed prefabs" for different prefabs or a mix of
+prefab and plain actors. Its descriptors and mixed values are cached by world,
 scene revision and selection revision; drawing does not serialize actors.
 
 ```text

@@ -216,6 +216,11 @@ namespace ly
 
         void Clear() { mTagCounts.clear(); }
         bool IsEmpty() const { return mTagCounts.empty(); }
+		std::vector<std::pair<GameplayTag, int>> BuildCountSnapshot() const
+		{
+			std::vector<std::pair<GameplayTag, int>> result(mTagCounts.begin(), mTagCounts.end());
+			return result;
+		}
 
     private:
         std::unordered_map<GameplayTag, int, GameplayTagHash> mTagCounts;

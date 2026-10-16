@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ClearResult.h"
+#include "AbilitySystemDebugView.h"
+#include <deque>
 #include "abilities/AbilitySystemRuntime.h"
 #include "abilities/AbilityCooldownTags.h"
 #include "abilities/GameplayAbilityInstance.h"
@@ -9,6 +11,7 @@
 #include "effects/GameplayEffectSystem.h"
 
 #include <memory>
+#include <map>
 #include <optional>
 #include <functional>
 #include <type_traits>
@@ -96,6 +99,8 @@ namespace sas
 		);
 		void ClearAbilitySlot(AbilitySlot slot);
 		virtual void SetAbilitySlotInput(AbilitySlot slot, bool inputHeld);
+		// Games expose their normal activation path without editor knowledge of instance types.
+		virtual bool DebugActivateAbility(AbilityHandle) { return false; }
 		bool SetAbilityLevel(AbilityHandle handle, int level);
 		bool SetAbilityLevel(AbilityHandle handle, int level, AbilityLevelCommitSink commitSink, void* commitContext);
 		bool SetAbilityLevel(AbilitySlot slot, int level);
@@ -177,6 +182,7 @@ namespace sas
 		}
 
 		ly::List<AbilityRuntimeSnapshot> BuildAbilitySnapshots() const;
+		AbilitySystemDebugSnapshot BuildDebugSnapshot() const;
 		const ly::List<AbilityHandle>& GetPassiveAbilities() const;
 		std::size_t GetPassiveAbilityCount() const
 		{
@@ -238,6 +244,7 @@ namespace sas
 			return RunOperation([&]() -> bool
 			{
 				if (IsClearPending()) return false;
+				if (AbilitySystemDebugView::recording) RecordDebugEvent("Event " + event.eventTag.name + " magnitude=" + std::to_string(event.magnitude));
 				onGameplayEvent.Broadcast(event);
 				if (IsClearPending() || !mGameplayEventHandler ||
 					!mGameplayEventType || *mGameplayEventType != typeid(Event)) return false;
@@ -337,6 +344,7 @@ namespace sas
 		virtual ClearResult Clear();
 
 	protected:
+		virtual void DescribeDebugAbility(AbilityDebugEntry&) const {}
 		virtual void ClearAdditionalState() {}
 		virtual void ClearAdditionalState(bool preserveRuntimeDependencies)
 		{
@@ -408,6 +416,10 @@ namespace sas
 		}
 
 	private:
+		void RecordDebugEvent(const std::string& message);
+		std::deque<AbilityDebugEvent> mDebugEvents;
+		std::uint64_t mDebugSession = 0;
+		std::map<unsigned int, std::string> mDebugEffectIds;
 		void ExecuteOperation(const std::function<void()>& operation);
 		void ExecuteInstanceOperation(const std::function<void()>& operation);
 		void RebuildEffectRuntimeCallbacks();

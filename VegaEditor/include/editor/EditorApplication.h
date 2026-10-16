@@ -7,6 +7,7 @@
 #include "editor/GameExporter.h"
 #include "editor/JsonDocument.h"
 #include "editor/EditorDiagnostics.h"
+#include "editor/EditorGasDebugger.h"
 #include <map>
 #include <framework/scene/SceneSettings.h>
 #include <framework/ProjectSettings.h>
@@ -124,6 +125,7 @@ namespace vega
 
 		EditorViewport mViewport;
 		EditorDiagnostics mDiagnostics;
+		EditorGasDebugger mGasDebugger;
 		EditorSelection mSelection;
 		EditorCamera mCamera;
 		JsonDocument mDocument{ VEGA_SOURCE_ASSETS_DIR };

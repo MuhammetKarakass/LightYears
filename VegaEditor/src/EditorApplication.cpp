@@ -35,6 +35,8 @@ namespace vega
 		}
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		mDiagnostics.InstallSettings();
+		mGasDebugger.InstallSettings();
+		mContext.gasCommand = [this](const EditorScriptCommand& command, std::string& detail) { return mGasDebugger.Execute(mContext, command, detail); };
 		InstallWorldSettingsLayout();
 		if (ly::debug::Log::GetMinimumLevel() > ly::debug::LogLevel::Info)
 			ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Info);
@@ -145,6 +147,7 @@ namespace vega
 
 	EditorApplication::~EditorApplication()
 	{
+		sas::AbilitySystemDebugView::recording = false;
 		// The base application can still own a world when editor members are destroyed.
 		if (ly::World* world = GetCurrentWorld())
 		{
@@ -343,6 +346,7 @@ namespace vega
 				ImGui::MenuItem("Content", nullptr, &mShowContent);
 				ImGui::Separator();
 				ImGui::MenuItem("World Settings", nullptr, &mShowWorldSettings);
+				if (ImGui::MenuItem("Ability System", nullptr, &mGasDebugger.visible)) ImGui::MarkIniSettingsDirty();
 				ImGui::MenuItem("Grid overlay", nullptr, &mContext.viewSettings.grid);
 				ImGui::MenuItem("Collider overlay", nullptr, &mContext.viewSettings.colliders);
 				if (ImGui::MenuItem("Data Editor", nullptr, mShowData))
@@ -387,6 +391,7 @@ namespace vega
 			ImGui::DockBuilderDockWindow("Hierarchy", left);
 			ImGui::DockBuilderDockWindow("Inspector", right);
 			ImGui::DockBuilderDockWindow("World Settings", right);
+			ImGui::DockBuilderDockWindow("Ability System", right);
 			ImGui::DockBuilderDockWindow("Stats", stats);
 			ImGui::DockBuilderDockWindow("Content", content);
 			ImGui::DockBuilderDockWindow("Data Editor###DataEditor", content);
@@ -433,6 +438,7 @@ namespace vega
 			BuildInspectorPanel();
 		}
 		if (mShowWorldSettings) BuildWorldSettingsPanel();
+		if (mGasDebugger.visible) mGasDebugger.Build(mContext);
 		if (mShowWorldSettings != mSavedWorldSettingsVisible)
 		{
 			mSavedWorldSettingsVisible = mShowWorldSettings;

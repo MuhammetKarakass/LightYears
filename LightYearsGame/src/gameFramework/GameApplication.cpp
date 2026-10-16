@@ -1,4 +1,10 @@
 #include "gameFramework/GameApplication.h"
+#include <AbilitySystemDebugView.h>
+#include <AbilitySystemInterface.h>
+#include "gameplay/content/EffectContentCatalog.h"
+#include "gameplay/content/AbilityContentCatalog.h"
+#include "gameConfigs/combat/CombatTick.h"
+#include "gameConfigs/combat/DamageTypeConfig.h"
 #include "level/GameSceneSettings.h"
 #include <framework/scene/SceneSettings.h>
 #include "reflection/GameReflection.h"
@@ -55,6 +61,51 @@ namespace ly
 		// In the editor --asset-root selects authoring documents; content tests use a partial copy.
 		AssetManager::GetAssetManager().SetAssetRootDirectory(ResourceRoot(!editor).generic_string() + "/");
 		RegisterGameTypes();
+		sas::AbilitySystemDebugView::effectPeriod = [](const sas::GameplayEffectRuntimeSnapshot& effect)
+		{
+			if (effect.effectId == DamageStatusEffectIds::IgniteEffectId) return CombatTick::Interval;
+			return sas::FindAttributeValue(effect.runtimeAttributes, CommonAttributeIds::Interval, 0.f);
+		};
+		sas::AbilitySystemDebugView::resolve = [](Actor& actor) -> sas::AbilitySystemComponent*
+		{
+			auto* provider = dynamic_cast<sas::AbilitySystemInterface*>(&actor);
+			return provider ? &provider->GetAbilitySystemComponent() : nullptr;
+		};
+		sas::AbilitySystemDebugView::player = [](World& world) -> std::shared_ptr<Actor>
+		{
+			const auto* player = PlayerManager::GetPlayerManager().GetPlayer();
+			auto ship = player ? player->GetCurrentSpaceShip().lock() : nullptr;
+			return ship && ship->GetWorld() == &world ? ship : nullptr;
+		};
+		sas::AbilitySystemDebugView::effectDefinitions = []
+		{
+			List<sas::GameplayEffectSpec> definitions;
+			for (const auto* definition : content::EffectContentCatalog::GetDefinitions())
+			{
+				if (!definition) continue;
+				auto spec = sas::MakeGameplayEffectSpec(*definition);
+				if (definition->sourceParameterized)
+				{
+					bool found = false;
+					for (const auto* ability : content::AbilityContentCatalog::GetDefinitions())
+					{
+						for (const auto& parameters : ability->effectSpecs)
+						{
+							if (parameters.effectId.ToString() != definition->effectId) continue;
+							spec.duration = parameters.duration.value_or(parameters.useAbilityDuration ? ability->duration : definition->duration);
+							spec.maxStacks = parameters.maxStacks.value_or(definition->maxStacks);
+							spec.modifiers = parameters.modifiers;
+							spec.attributes = parameters.attributes;
+							found = true;
+							break;
+						}
+						if (found) break;
+					}
+				}
+				definitions.push_back(std::move(spec));
+			}
+			return definitions;
+		};
 		vega::script::SetScriptRoot(ResourceRoot(!editor));
 		vega::script::RegisterScriptTypes();
 		vega::script::ScriptRuntime::Get().SetPlayerResolver([](World&) -> std::weak_ptr<Actor>

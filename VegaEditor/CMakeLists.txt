@@ -27,6 +27,7 @@ add_executable(VegaEditor
 	src/EditorIcons.cpp
 	src/EditorChrome.cpp
 	src/EditorDiagnostics.cpp
+	src/EditorGasDebugger.cpp
 	src/EditorGizmos.cpp
 	src/GizmoMath.cpp
 	src/EditorCamera.cpp
@@ -44,6 +45,7 @@ add_executable(VegaEditor
 	include/editor/JsonDocument.h
 	include/editor/JsonCommands.h
 	include/editor/EditorApplication.h
+	include/editor/EditorGasDebugger.h
 	include/editor/EditorTheme.h
 	include/editor/EditorIcons.h
 	include/editor/GizmoMath.h
@@ -104,6 +106,9 @@ add_custom_command(TARGET VegaEditorAssets POST_BUILD
 )
 
 if(BUILD_TESTING)
+	configure_file(tests/scripts/gas-debugger.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-debugger.vegascript @ONLY)
+	add_test(NAME VegaEditorGasDebugger COMMAND VegaEditor --asset-root ${CMAKE_CURRENT_BINARY_DIR}/assets --editor-script ${CMAKE_CURRENT_BINARY_DIR}/scripts/gas-debugger.vegascript)
+	set_tests_properties(VegaEditorGasDebugger PROPERTIES WORKING_DIRECTORY $<TARGET_FILE_DIR:VegaEditor> TIMEOUT 90)
 	set(VEGA_MULTI_SCENE "\"${CMAKE_CURRENT_BINARY_DIR}/multi-select-temp.scene.json\"")
 	set(VEGA_MULTI_CAPTURE "\"${CMAKE_CURRENT_BINARY_DIR}/multi-select-inspector.png\"")
 	configure_file(tests/scripts/multi-select.vegascript ${CMAKE_CURRENT_BINARY_DIR}/scripts/multi-select.vegascript @ONLY)

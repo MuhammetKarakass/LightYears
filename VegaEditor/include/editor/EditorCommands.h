@@ -17,6 +17,7 @@
 
 namespace vega
 {
+	struct EditorScriptCommand;
 	class JsonDocument;
 	struct EditorContext
 	{
@@ -40,6 +41,7 @@ namespace vega
 		ly::debug::LogBuffer* console = nullptr;
 		std::function<void()> clearConsole;
 		std::function<void(bool)> diagnosticsVisible;
+		std::function<bool(const EditorScriptCommand&, std::string&)> gasCommand;
 		std::string propertyError;
 		unsigned int propertyErrorActor = 0;
 		std::optional<ly::ComponentIdentity> propertyErrorComponent;

@@ -350,7 +350,21 @@ namespace vega
 			if (selection.Count() > 1)
 			{
 				ImGui::Text("%zu actors selected", selection.Count());
-				ImGui::TextDisabled("multiple prefabs");
+				std::size_t prefabCount = 0;
+				std::string prefab;
+				bool mixed = false;
+				for (const auto& selected : selection.GetAll())
+				{
+					const auto* identity = selected->FindComponent<ly::SceneEntityComponent>();
+					if (!identity || identity->prefab.empty()) continue;
+					if (prefabCount && prefab != identity->prefab) mixed = true;
+					prefab = identity->prefab;
+					++prefabCount;
+				}
+				if (prefabCount)
+				{
+					ImGui::TextDisabled("%zu prefab instances%s", prefabCount, mixed || prefabCount != selection.Count() ? " / mixed prefabs" : "");
+				}
 				if (ImGui::Button("Focus")) context.FocusSelection();
 				ImGui::BeginDisabled(context.playMode || context.transitioning);
 				std::string section;

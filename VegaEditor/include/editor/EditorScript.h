@@ -17,6 +17,8 @@ namespace vega
 
 	enum class ScriptOperation
 	{
+		GasSelectPlayer, ExpectAbility, ExpectEffect, ExpectAttribute, ExpectTag,
+		GasApplyEffect, GasRemoveEffect, GasResetCooldowns, GasActivate, GasPanel, GasFilter,
 		SelectAdd, SelectRemove, SelectAll, SelectRect, ExpectSelectionCount, Copy, Paste, MoveSelection, SetPropAll,
 		ExpectConsole, ExpectNoErrors, ClearConsole, Profiler, ExpectProfileScope, CaptureProfile, Diagnostics,
 		CreatePrefab, PlacePrefab, CreateVariant, ApplyPrefabProp, RevertPrefabProp, ExpectPrefab, ExpectOverridden, ReloadPrefabs,

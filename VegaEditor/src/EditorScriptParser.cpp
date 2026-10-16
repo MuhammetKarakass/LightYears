@@ -62,6 +62,50 @@ namespace vega
 			return (input >> value) && input.eof() && std::isfinite(value);
 		};
 		const std::string& verb = tokens[0];
+		if (verb == "gas-filter")
+		{
+			if (tokens.size() != 3 || (tokens[1] != "abilities" && tokens[1] != "effects" && tokens[1] != "attributes" && tokens[1] != "tags" && tokens[1] != "events")) return bad();
+			command.operation = ScriptOperation::GasFilter;
+			command.text = tokens[1];
+			command.property = tokens[2];
+			return { command, {} };
+		}
+		if (verb == "gas-select-player" || verb == "gas-reset-cooldowns")
+		{
+			if (tokens.size() != 1) return bad();
+			command.operation = verb == "gas-select-player" ? ScriptOperation::GasSelectPlayer : ScriptOperation::GasResetCooldowns;
+			return { command, {} };
+		}
+		if (verb == "gas-apply-effect" || verb == "gas-remove-effect" || verb == "gas-activate" || verb == "gas-panel")
+		{
+			if (tokens.size() != 2 || tokens[1].empty()) return bad();
+			if (verb == "gas-panel" && tokens[1] != "on" && tokens[1] != "off") return bad();
+			command.operation = verb == "gas-apply-effect" ? ScriptOperation::GasApplyEffect : verb == "gas-remove-effect" ? ScriptOperation::GasRemoveEffect : verb == "gas-activate" ? ScriptOperation::GasActivate : ScriptOperation::GasPanel;
+			command.text = tokens[1];
+			return { command, {} };
+		}
+		if (verb == "expect-ability" || verb == "expect-effect" || verb == "expect-tag" || verb == "expect-attribute")
+		{
+			if (tokens.size() != (verb == "expect-attribute" ? 4u : 3u) || tokens[1].empty()) return bad();
+			command.text = tokens[1];
+			command.property = tokens[2];
+			if (verb == "expect-attribute")
+			{
+				if ((tokens[2] != "==" && tokens[2] != "<" && tokens[2] != ">" && tokens[2] != "<=" && tokens[2] != ">=") || !real(3, command.factor)) return bad();
+				command.operation = ScriptOperation::ExpectAttribute;
+			}
+			else if (verb == "expect-ability")
+			{
+				if (tokens[2] != "ready" && tokens[2] != "cooldown" && tokens[2] != "active") return bad();
+				command.operation = ScriptOperation::ExpectAbility;
+			}
+			else
+			{
+				if (tokens[2] != "true" && tokens[2] != "false") return bad();
+				command.operation = verb == "expect-effect" ? ScriptOperation::ExpectEffect : ScriptOperation::ExpectTag;
+			}
+			return { command, {} };
+		}
 		if (verb == "select-add" || verb == "select-remove")
 		{
 			if (tokens.size() != 2 || tokens[1].empty()) return bad();

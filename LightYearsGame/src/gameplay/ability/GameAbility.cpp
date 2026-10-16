@@ -728,3 +728,14 @@ namespace ly
 		}
 	}
 }
+
+namespace ly
+{
+	std::string GameAbility::DebugActivationBlockReason() const
+	{
+		if (mRuntimeState.GetUseIntervalRemaining() > 0.f) return "Charge use interval";
+		if (!mAbilitySystem.HasAllOwnedTags(mDefinition.requiredOwnerTags)) return "Required owner tag missing";
+		if (mAbilitySystem.HasAnyOwnedTags(mDefinition.blockedOwnerTags)) return "Blocked owner tag";
+		return CanActivateContent() ? std::string{} : "Owner action lock, stun, module gate or unavailable behavior";
+	}
+}

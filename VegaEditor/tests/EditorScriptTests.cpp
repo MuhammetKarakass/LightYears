@@ -18,7 +18,27 @@ int main()
 {
 	using vega::ParseEditorScriptLine;
 	using vega::ScriptOperation;
+	for (const char* line : { "gas-filter unknown x", "gas-filter attributes", "gas-filter tags x extra", "gas-select-player extra", "gas-reset-cooldowns extra", "gas-apply-effect", "gas-remove-effect \"\"", "gas-activate", "gas-panel maybe", "expect-ability A blocked", "expect-effect E yes", "expect-tag T 1", "expect-attribute A != 1", "expect-attribute A > nan", "expect-attribute A > inf", "expect-attribute A > 1 extra", "expect-attribute A >" })
+		Check(!ParseEditorScriptLine(line).error.empty(), std::string{ "Invalid GAS command accepted: " } + line);
 	const std::pair<const char*, ScriptOperation> cases[]{
+		{ "gas-select-player", ScriptOperation::GasSelectPlayer },
+		{ "gas-reset-cooldowns", ScriptOperation::GasResetCooldowns },
+		{ "gas-apply-effect Effect.Buff", ScriptOperation::GasApplyEffect },
+		{ "gas-remove-effect Effect.Buff", ScriptOperation::GasRemoveEffect },
+		{ "gas-activate Ability.Test", ScriptOperation::GasActivate },
+		{ "gas-panel on", ScriptOperation::GasPanel },
+		{ "gas-filter attributes MovementSlow", ScriptOperation::GasFilter },
+		{ "gas-filter events \"\"", ScriptOperation::GasFilter },
+		{ "expect-ability Ability.Test ready", ScriptOperation::ExpectAbility },
+		{ "expect-ability Ability.Test cooldown", ScriptOperation::ExpectAbility },
+		{ "expect-ability Ability.Test active", ScriptOperation::ExpectAbility },
+		{ "expect-effect Effect.Buff true", ScriptOperation::ExpectEffect },
+		{ "expect-tag State.Buff false", ScriptOperation::ExpectTag },
+		{ "expect-attribute Owner.Speed == 1", ScriptOperation::ExpectAttribute },
+		{ "expect-attribute Owner.Speed < -1", ScriptOperation::ExpectAttribute },
+		{ "expect-attribute Owner.Speed > 1.25", ScriptOperation::ExpectAttribute },
+		{ "expect-attribute Owner.Speed <= 1", ScriptOperation::ExpectAttribute },
+		{ "expect-attribute Owner.Speed >= 1", ScriptOperation::ExpectAttribute },
 		{ "select-add \"Asteroid left\"", ScriptOperation::SelectAdd },
 		{ "select-remove 42", ScriptOperation::SelectRemove },
 		{ "select-all", ScriptOperation::SelectAll },
