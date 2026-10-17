@@ -120,5 +120,6 @@ namespace vega::script
 	}
 	void ScriptRuntime::SetKeyReader(KeyReader reader) { mImpl->keyReader = std::move(reader); }
 	bool ScriptRuntime::ReadKey(const std::string& key) const { return mImpl->keyReader ? mImpl->keyReader(key) : DeviceKey(key); }
-	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get().SetRoot(root); }
+	// Ownerless game setup remains a compatibility entry boundary.
+	void SetScriptRoot(const std::filesystem::path& root) { ScriptRuntime::Get(ly::EngineContext::Current()).SetRoot(root); }
 }

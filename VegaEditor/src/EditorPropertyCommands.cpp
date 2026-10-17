@@ -18,9 +18,9 @@ namespace vega
 		std::optional<nlohmann::json> before;
 		if (settings.contains(mKey)) before = settings.at(mKey);
 		if (before == mAfter) return false;
-		const auto* field = ly::SceneSettingsSchema::Get().Find(mKey);
+		const auto* field = context.Engine().SceneSettings().Find(mKey);
 		if (!before && mAfter && field && *mAfter == field->defaultValue) return false;
-		if (!ly::SceneSettingsSchema::Get().Set(settings, mKey, mAfter, context.settingError)) return false;
+		if (!context.Engine().SceneSettings().Set(settings, mKey, mAfter, context.settingError)) return false;
 		try
 		{
 			if (context.applySettings) context.applySettings(settings);

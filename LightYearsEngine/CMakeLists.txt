@@ -255,6 +255,8 @@ if(BUILD_TESTING)
 	add_test(NAME VegaCollisionLayers COMMAND VegaCollisionLayersTests)
 	add_test(NAME VegaNoGameCollisionLabels COMMAND ${CMAKE_COMMAND}
 		-DSOURCE_ROOT=${PROJECT_SOURCE_DIR} -P ${PROJECT_SOURCE_DIR}/tools/CheckCollisionLabels.cmake)
+	add_test(NAME VegaNoLegacyContextAccessors COMMAND ${CMAKE_COMMAND}
+		-DSOURCE_ROOT=${PROJECT_SOURCE_DIR} -P ${PROJECT_SOURCE_DIR}/tools/CheckContextAccessors.cmake)
 	add_executable(LightYearsSceneBoundsTests tests/SceneBoundsTests.cpp)
 	target_link_libraries(LightYearsSceneBoundsTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	add_test(NAME LightYearsSceneBounds COMMAND LightYearsSceneBoundsTests)

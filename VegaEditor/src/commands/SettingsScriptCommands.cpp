@@ -51,7 +51,7 @@ namespace vega
 			auto& detail = execution.detail;
 			const auto value = command.operation == "reset-setting" ? std::optional<nlohmann::json>{}
 			                                                        : std::optional<nlohmann::json>{nlohmann::json::parse(command.values[0])};
-			const auto& schema = ly::SceneSettingsSchema::Get();
+			const auto& schema = context.Engine().SceneSettings();
 			const auto* field = schema.Find(command.text);
 			const bool noChange = context.sceneSettings && field &&
 			    (value ? field->Validate(*value).empty() && schema.Value(*context.sceneSettings, command.text) == *value
@@ -67,7 +67,7 @@ namespace vega
 			auto& detail = execution.detail;
 			if (context.sceneSettings)
 			{
-				const auto actual = ly::SceneSettingsSchema::Get().Value(*context.sceneSettings, command.text);
+				const auto actual = context.Engine().SceneSettings().Value(*context.sceneSettings, command.text);
 				success = actual == nlohmann::json::parse(command.values[0]);
 				detail = "Setting " + command.text + " = " + actual.dump();
 			}

@@ -10,9 +10,9 @@ namespace vega
 	namespace
 	{
 		using namespace ly::content;
-		Json* Find(ContentDocuments& documents, const std::string& type, const std::string& id)
+		Json* Find(const ContentSchemaRegistry& registry, ContentDocuments& documents, const std::string& type, const std::string& id)
 		{
-			const auto* schema = ContentSchemaRegistry::Get().Find(type);
+			const auto* schema = registry.Find(type);
 			if (!schema || !documents.count(type)) return nullptr;
 			for (auto& item : documents.at(type).at(schema->collection))
 				if (item.value("id", std::string{}) == id) return &item;
@@ -64,7 +64,7 @@ namespace vega
 	{
 		if (Dirty()) { error = "Save content changes before reloading"; return false; }
 		std::map<std::string, JsonDocument> documents;
-		for (const auto& [type, schema] : ContentSchemaRegistry::Get().Types())
+		for (const auto& [type, schema] : Schemas().Types())
 		{
 			JsonDocument document{ root };
 			std::filesystem::path path;
@@ -125,7 +125,7 @@ namespace vega
 	const Json* ContentWorkspace::Definition(const std::string& type, const std::string& id) const
 	{
 		const auto document = mDocuments.find(type);
-		const auto* schema = ContentSchemaRegistry::Get().Find(type);
+		const auto* schema = Schemas().Find(type);
 		if (document == mDocuments.end() || !schema) return nullptr;
 		for (const auto& item : document->second.Data().at(schema->collection))
 			if (item.value("id", std::string{}) == id) return &item;
@@ -134,7 +134,7 @@ namespace vega
 
 	const ContentField* ContentWorkspace::Field(const std::string& type, const std::string& pattern) const
 	{
-		const auto* schema = ContentSchemaRegistry::Get().Find(type);
+		const auto* schema = Schemas().Find(type);
 		if (schema) for (const auto& field : schema->fields) if (field.path == pattern) return &field;
 		return nullptr;
 	}
@@ -170,7 +170,7 @@ namespace vega
 			const auto pointer = Pointer(fieldPath);
 			if (pointer == "/id") throw std::runtime_error("Use Rename ID to update references");
 			auto documents = Snapshot();
-			auto* item = Find(documents, selectedType, selectedId);
+			auto* item = Find(Schemas(), documents, selectedType, selectedId);
 			if (!item) throw std::runtime_error("Open a definition first");
 			const Json* cursor = item;
 			std::string pattern;
@@ -207,7 +207,7 @@ namespace vega
 
 	bool ContentWorkspace::New(CommandHistory& history, const std::string& type, const std::string& source, const std::string& id)
 	{
-		const auto* schema = ContentSchemaRegistry::Get().Find(type);
+		const auto* schema = Schemas().Find(type);
 		if (!schema || !mDocuments.count(type)) { error = "Unknown content type"; return false; }
 		if (Definition(type, id)) { error = "ID already exists"; return false; }
 		if (schema->validateId && !schema->validateId(id, error)) return false;
@@ -225,14 +225,14 @@ namespace vega
 
 	bool ContentWorkspace::Rename(CommandHistory& history, const std::string& type, const std::string& oldId, const std::string& newId)
 	{
-		const auto* schema = ContentSchemaRegistry::Get().Find(type);
+		const auto* schema = Schemas().Find(type);
 		if (!schema || !Definition(type, oldId)) { error = "Unknown definition"; return false; }
 		if (Definition(type, newId)) { error = "ID already exists"; return false; }
 		if (schema->validateId && !schema->validateId(newId, error)) return false;
 		auto after = Snapshot();
 		for (const auto& ref : References())
-			if (ref.targetType == type && ref.targetId == oldId) (*Find(after, ref.type, ref.id))[Json::json_pointer{ ref.path }] = newId;
-		Find(after, type, oldId)->at("id") = newId;
+			if (ref.targetType == type && ref.targetId == oldId) (*Find(Schemas(), after, ref.type, ref.id))[Json::json_pointer{ ref.path }] = newId;
+		Find(Schemas(), after, type, oldId)->at("id") = newId;
 		if (schema->validate)
 		{
 			const auto failure = schema->validate(after, newId);
@@ -248,7 +248,7 @@ namespace vega
 
 	bool ContentWorkspace::Delete(CommandHistory& history, const std::string& type, const std::string& id)
 	{
-		const auto* schema = ContentSchemaRegistry::Get().Find(type);
+		const auto* schema = Schemas().Find(type);
 		if (!schema || !Definition(type, id)) { error = "Unknown definition"; return false; }
 		for (const auto& ref : References()) if (ref.targetType == type && ref.targetId == id)
 		{ error = "Still referenced by " + ref.type + " " + ref.id + " " + ref.path; return false; }
@@ -263,7 +263,7 @@ namespace vega
 		if (mIndexRevision == mRevision) return;
 		mIndexRevision = mRevision;
 		mEntries.clear(); mReferences.clear();
-		const auto& registry = ContentSchemaRegistry::Get();
+		const auto& registry = Schemas();
 		std::set<std::string> tags(registry.tags.begin(), registry.tags.end()), attributes(registry.attributes.begin(), registry.attributes.end());
 		for (const auto& [type, document] : mDocuments)
 		{
@@ -326,7 +326,7 @@ namespace vega
 		for (const auto& entry : mEntries)
 		{
 			if (!ids.emplace(entry.type, entry.id).second) mIssues.push_back({ entry.type, entry.id, "/id", "Duplicate content ID", false });
-			const auto* schema = ContentSchemaRegistry::Get().Find(entry.type);
+			const auto* schema = Schemas().Find(entry.type);
 			if (schema->validate)
 			{
 				try

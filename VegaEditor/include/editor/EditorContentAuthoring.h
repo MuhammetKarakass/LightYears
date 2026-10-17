@@ -8,6 +8,7 @@ namespace vega
 	class EditorContentAuthoring
 	{
 	public:
+		explicit EditorContentAuthoring(ly::EngineContext& context = ly::EngineContext::Current()) : mWorkspace{ context } {}
 		bool visible = false;
 		void Build(EditorContext&, CommandHistory&, const std::filesystem::path& root);
 		bool Execute(EditorContext&, CommandHistory&, const std::filesystem::path&, const EditorScriptCommand&, std::string& detail);

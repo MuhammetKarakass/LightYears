@@ -56,7 +56,7 @@ namespace vega
 		Json result = field ? field->defaultValue : Json{};
 		if (result.is_object())
 		{
-			const auto* schema = ContentSchemaRegistry::Get().Find(mWorkspace.selectedType);
+			const auto* schema = mWorkspace.Schemas().Find(mWorkspace.selectedType);
 			for (const auto& child : schema->fields)
 			{
 				if (child.path.rfind(pattern + '/', 0) != 0) continue;
@@ -74,7 +74,7 @@ namespace vega
 		mCachedRevision = mWorkspace.Revision(); mCachedSelection = selection;
 		mWorkspace.Entries(); mWorkspace.Validate();
 		mOptions.clear(); mOther.clear();
-		const auto* schema = ContentSchemaRegistry::Get().Find(mWorkspace.selectedType);
+		const auto* schema = mWorkspace.Schemas().Find(mWorkspace.selectedType);
 		if (schema) for (const auto& field : schema->fields) mOptions[field.path] = mWorkspace.Options(field);
 		if (const auto* item = mWorkspace.Selected())
 		{
@@ -94,7 +94,7 @@ namespace vega
 
 	void EditorContentAuthoring::DrawObject(const Json& value, const std::string& path, const std::string& pattern, CommandHistory& history)
 	{
-		const auto* schema = ContentSchemaRegistry::Get().Find(mWorkspace.selectedType);
+		const auto* schema = mWorkspace.Schemas().Find(mWorkspace.selectedType);
 		if (!schema) return;
 		std::map<std::string, std::vector<const ContentField*>> categories;
 		std::vector<const ContentField*> missing;
@@ -264,7 +264,7 @@ namespace vega
 			{
 				if (ImGui::BeginCombo("Type", mWorkspace.selectedType.c_str()))
 				{
-					for (const auto& [type, schema] : ContentSchemaRegistry::Get().Types()) if (ImGui::Selectable(type.c_str(), type == mWorkspace.selectedType)) { mWorkspace.selectedType = type; mWorkspace.selectedId.clear(); }
+					for (const auto& [type, schema] : mWorkspace.Schemas().Types()) if (ImGui::Selectable(type.c_str(), type == mWorkspace.selectedType)) { mWorkspace.selectedType = type; mWorkspace.selectedId.clear(); }
 					ImGui::EndCombo();
 				}
 				const float filterWidth = std::max(80.f, ImGui::GetContentRegionAvail().x - 105.f);
@@ -304,7 +304,7 @@ namespace vega
 					{
 						if (ImGui::BeginCombo("Template", mSource))
 						{
-							const auto* schema = ContentSchemaRegistry::Get().Find(mWorkspace.selectedType);
+							const auto* schema = mWorkspace.Schemas().Find(mWorkspace.selectedType);
 							for (const auto& [name, value] : schema->templates) if (ImGui::Selectable(name.c_str())) std::snprintf(mSource, sizeof(mSource), "%s", name.c_str());
 							for (const auto& entry : mWorkspace.Entries()) if (entry.type == mWorkspace.selectedType && ImGui::Selectable(entry.id.c_str())) std::snprintf(mSource, sizeof(mSource), "%s", entry.id.c_str());
 							ImGui::EndCombo();

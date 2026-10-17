@@ -45,7 +45,9 @@ int main()
 	EditorSelection selection;
 	EditorContext context{ nullptr, selection };
 	CommandHistory history{ context };
-	ContentWorkspace workspace;
+	ContentWorkspace workspace{ context.Engine() };
+	ly::EngineContext otherContext;
+	ly::EngineContext::Scope otherScope{ otherContext };
 	Check(workspace.Load(root), "Workspace load failed");
 	Check(workspace.Open("effect", "old"), "Cannot select effect");
 	Check(workspace.Validate().empty(), "Initial validation failed");

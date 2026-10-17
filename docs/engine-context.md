@@ -161,16 +161,22 @@ their own context where they use these services. Test assets stay in the build t
 
 ## Remaining migration
 
-The four required services have no production static-accessor calls left in
-LightYearsEngine, VegaEditor or VegaScript. Compatibility constructors and
+All eight migrated services have no production legacy static-accessor calls left
+in LightYearsEngine, VegaEditor or VegaScript. The CTest guard
+`VegaNoLegacyContextAccessors` enforces this with an explicit shim-definition
+allow-list. Compatibility constructors and
 registration wrappers still use `Current()` at entry boundaries.
 
-ContentSchemaRegistry and SceneSettingsSchema are context-owned. The content
-workspace/asset planning APIs and a few settings APIs still call their forwarding
-accessors; pass an explicit context through those APIs in the next migration.
+ContentSchemaRegistry and SceneSettingsSchema are context-owned. ContentWorkspace
+retains the host context supplied by the editor authoring panel, and scene
+settings tools and commands use their Application or EditorContext. Ownerless
+workspace/panel construction captures Current() once for compatibility.
 Audio and ScriptRuntime are context-owned too; the engine application loop,
 resource-owning objects and script components already use their owning context.
-Their old setup functions remain wrappers for unchanged modules.
+Their old setup functions remain wrappers for unchanged modules; SetScriptRoot
+explicitly selects Current() only at that ownerless compatibility boundary.
+Sky has no legacy calls to these eight accessors. GAS schema registration still
+has no context parameter and remains downstream migration work.
 
 LightYearsGame and other optional/game modules retain their accessor calls and
 registration guards. In particular LightYears' `RegisterGameTypes` still has a

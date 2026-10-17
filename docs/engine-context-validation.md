@@ -38,28 +38,94 @@ in that order. Context destruction still releases scripts before audio and asset
 
 Counts are textual invocations in first-party production .h/.cpp files,
 excluding accessor definitions, tests and docs. Explicit-context Get(context)
-calls are not legacy singleton calls. The migrated column is the pre-edit audit
-of engine/editor/script call sites changed or eliminated in this step. Remaining
-counts were checked by build/context-audit.cjs and recorded in
-build/context-accessor-audit.json. Constructor/default-registration compatibility
+calls are not legacy singleton calls. The before/after columns below record this wave 7 step 3 follow-up, after the
+source split at 20144ab. Counts were checked by build/context-audit.cjs;
+build/context-followup-before-audit.json preserves the input audit and
+build/context-accessor-audit.json records the result. The earlier content count
+of 15 is now 14 in the current sources. Constructor/default-registration compatibility
 boundaries using Current() remain intentionally and are documented separately.
 
-| Service | Migrated in engine/editor/script | Remaining legacy calls there | Remaining in other production code |
+| Service | Before: engine/editor/script | After: engine/editor/script | Remaining in other production code |
 | --- | ---: | ---: | ---: |
-| TypeRegistry | 37 (19 / 10 / 8) | 0 | 0 |
-| PrefabLibrary | 22 (2 / 19 / 1) | 0 | 0 |
-| AssetManager | 14 (14 / 0 / 0) | 0 | 7 |
-| EngineAssets | 13 (13 / 0 / 0) | 0 | 1 |
-| AudioManager | 15 (7 / 0 / 8) | 0 | 10 |
-| SceneSettingsSchema | 3 (1 / 2 / 0) | 5 (0 / 5 / 0) | 4 |
-| ContentSchemaRegistry | 0 | 15 (0 / 15 / 0) | 4 |
-| ScriptRuntime | 11 (0 / 1 / 10) | 1 (SetScriptRoot compatibility wrapper) | 3 |
+| TypeRegistry | 0 | 0 | 0 |
+| PrefabLibrary | 0 | 0 | 0 |
+| AssetManager | 0 | 0 | 6 |
+| EngineAssets | 0 | 0 | 1 |
+| AudioManager | 0 | 0 | 10 |
+| SceneSettingsSchema | 5 (0 / 5 / 0) | 0 | 4 |
+| ContentSchemaRegistry | 14 (0 / 14 / 0) | 0 | 2 |
+| ScriptRuntime | 1 (SetScriptRoot compatibility wrapper) | 0 | 3 |
 
 Other production code means LightYearsGame, Templates, optional modules and
 LightYearsVisual. Existing tests also intentionally exercise compatibility APIs;
 their counts, including untouched game test hosts, are in the audit JSON.
 
-## Build and tests
+The follow-up passes the host EngineContext into ContentWorkspace and its
+authoring panel. Workspace lookups, reference edits, validation and undo retain
+that context; the workspace test runs under an unrelated ambient context. Scene
+settings commands use EditorContext::Engine(), and the application panel uses
+GetEngineContext(). SetScriptRoot remains an ownerless compatibility boundary
+and explicitly forwards to ScriptRuntime::Get(EngineContext::Current()).
+
+VegaNoLegacyContextAccessors runs tools/CheckContextAccessors.cmake over production
+include/src files in all three roots. Its allow-list removes only the eight shim
+definition signatures at their exact paths; calls in those files are still
+checked. Negative probes for all eight services (including whitespace, comments
+and line breaks), a shim-file call, and an explicit-context control passed; see
+build/context-followup-guard-checks.json.
+
+Modules decision: Sky has no legacy calls to these eight services. GAS retains
+Modules/GAS/src/GasContentSchemas.cpp: RegisterContentSchemas() has no owner or
+context parameter; migrating its callers across downstream game setup is deferred.
+No Modules, LightYearsGame or LightYearsVisual source was edited.
+
+Follow-up file inventory (14):
+
+- LightYearsEngine/CMakeLists.txt
+- tools/CheckContextAccessors.cmake
+- VegaEditor/include/editor/ContentWorkspace.h
+- VegaEditor/include/editor/EditorContentAuthoring.h
+- VegaEditor/src/ContentWorkspace.cpp
+- VegaEditor/src/EditorContentAuthoring.cpp
+- VegaEditor/src/EditorApplication.cpp
+- VegaEditor/src/EditorPropertyCommands.cpp
+- VegaEditor/src/EditorWorldSettings.cpp
+- VegaEditor/src/commands/SettingsScriptCommands.cpp
+- VegaEditor/tests/ContentWorkspaceTests.cpp
+- VegaScript/src/ScriptRuntime.cpp
+- docs/engine-context-validation.md
+- docs/engine-context.md
+
+## Follow-up build and tests
+
+Built with cmd /c tools\vega-build.cmd: exit 0. The existing vswhere.exe warning
+remains harmless; build/context-followup-build.log contains the build output.
+
+Ran ctest --test-dir build -j 8 --timeout 300 for both runs, adding
+--output-on-failure and --output-junit to retain evidence.
+
+| Run | Tests | Passed | Known failures | CTest exit | Wall time |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Follow-up baseline | 169 | 145 | 24 | 8 | 120.06 sec |
+| Follow-up final | 170 | 146 | 24 | 8 | 120.06 sec |
+
+Every existing test retained its exact status, including the same 23 Failed and
+one Timeout results listed below. The only added test is
+VegaNoLegacyContextAccessors: Passed. The workspace isolation regression and
+LightYearsReflectionRegistryGolden both passed. No behavior or file-format
+change was introduced.
+
+Logs and machine-readable results: build/context-followup-{baseline,final}.log,
+build/context-followup-{baseline,final}.xml and
+build/context-followup-test-summary.json.
+
+Source verification found no content or timestamp changes in LightYearsGame or
+LightYearsVisual, including all 357 game asset files. The reflection golden also
+retained its content and timestamp; its current SHA-256 is
+E6DCEBA600C992899EF50B50DD81AB48D199F489EF71C8C58D81BA208A3448BD.
+See build/context-followup-source-verification.json. No git commands were run.
+
+## Original migration build and tests
 
 Built with cmd /c tools\vega-build.cmd, Debug/MSVC/C++17. The existing vcvars
 setup emits a vswhere.exe warning in this environment; the final build's actual
@@ -186,8 +252,9 @@ hashes, exit statuses and elapsed times are in build/context-perf-metadata.json.
 
 ## Remaining work
 
-- Pass contexts through the content workspace/asset planning and remaining scene
-  settings APIs, then retire their forwarding calls.
+- Engine/editor/script production calls to all eight deprecated accessors are
+  eliminated and guarded by VegaNoLegacyContextAccessors. Compatibility entry
+  boundaries and shim APIs remain available to downstream hosts.
 - Migrate game/optional-module setup and game-owned catalogs. LightYears'
   process-wide RegisterGameTypes guard still prevents registering that game
   twice. Its gameplay files were deliberately left untouched.

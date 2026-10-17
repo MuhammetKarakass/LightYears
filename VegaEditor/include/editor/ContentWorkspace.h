@@ -18,6 +18,8 @@ namespace vega
 	class ContentWorkspace
 	{
 	public:
+		explicit ContentWorkspace(ly::EngineContext& context = ly::EngineContext::Current()) : mContext{ context } {}
+		ly::content::ContentSchemaRegistry& Schemas() const { return mContext.ContentSchemas(); }
 		bool Load(const std::filesystem::path& root);
 		bool Loaded() const { return !mDocuments.empty(); }
 		bool Dirty() const;
@@ -44,6 +46,8 @@ namespace vega
 		std::uint64_t Revision() const { return mRevision; }
 		std::string selectedType, selectedId, error;
 	private:
+		// Retain the host so edits and undo use its schemas under any ambient scope.
+		ly::EngineContext& mContext;
 		void Rebuild();
 		bool Commit(CommandHistory&, ly::content::ContentDocuments after, const std::string& name, std::uint64_t group = 0,
 			const std::string& afterType = {}, const std::string& afterId = {});

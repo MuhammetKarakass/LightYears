@@ -30,7 +30,7 @@ namespace vega
 	{
 		if (ImGui::Begin("World Settings", &mShowWorldSettings))
 		{
-			const auto& schema = ly::SceneSettingsSchema::Get();
+			const auto& schema = GetEngineContext().SceneSettings();
 			// JSON previews, validation and catalog enumeration only run after edits
 			// or document/schema replacement, never on every UI frame.
 			if (mSettingsPanelRevision != mContext.sceneRevision || mSettingsSchemaRevision != schema.Revision())
