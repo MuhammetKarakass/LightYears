@@ -2,3 +2,8 @@ add_library(VegaGASEditor STATIC src/GasScriptCommands.cpp src/EditorGasDebugger
 target_include_directories(VegaGASEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(VegaGASEditor PUBLIC VegaEditorCore SpaceAbilitySystem)
 ly_enable_warnings(VegaGASEditor)
+if(BUILD_TESTING)
+	add_executable(VegaGASEditorContextTests tests/GasEditorContextTests.cpp)
+	target_link_libraries(VegaGASEditorContextTests PRIVATE VegaGASEditor)
+	add_test(NAME VegaGASEditorContext COMMAND VegaGASEditorContextTests)
+endif()

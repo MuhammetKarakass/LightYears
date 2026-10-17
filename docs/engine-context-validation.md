@@ -7,6 +7,77 @@ prefab, project or reflection golden format/file was changed.
 
 ## API and changed files
 
+### Wave 9 GAS schema registration
+
+GAS now requires `sas::RegisterContentSchemas(ly::EngineContext&)`, with no
+ownerless overload. Only the destination context's missing ability/effect
+descriptors are installed; game overrides and schema contents are preserved.
+The editor constructs `EditorExtensions{ GetEngineContext() }` and GAS uses its
+`Engine()` reference. The module provider signature and LightYears adapter stay
+unchanged. Standalone extensions now require an explicit context that outlives
+them; Blank's template guidance documents both runtime and editor setup.
+
+The runtime schema test covers registration under an unrelated ambient context,
+independent registration into a second context, and override preservation. The
+module contract test checks explicit host propagation. New `VegaGASEditorContext`
+checks actual GAS editor registration under an unrelated binding, including panel
+and command installation. `VegaNoLegacyContextAccessors` now also scans
+Modules/GAS runtime/editor and SpaceAbilitySystem, with no GAS exceptions.
+Negative probes in all three roots fail as intended; explicit-context controls
+pass (build/wave9-gas-guard-checks.json).
+
+Built with `cmd /c tools\vega-build.cmd` (Debug/MSVC/C++17): final exit 0.
+Full CTest used `ctest --test-dir build -j 8 --timeout 300`, adding
+`--output-on-failure --output-junit` for evidence:
+
+| Run | Tests | Passed | Failed | Timeout | CTest exit |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Wave 9 baseline | 183 | 159 | 23 | 1 | 8 |
+| Wave 9 final | 184 | 160 | 23 | 1 | 8 |
+
+Every existing test retained its exact status. All 24 unsuccessful results match
+the documented list below: 23 Failed (including the documented sandbox-only
+AbilityBalance-second-E2E failure) plus RareZoneRulesE2E's existing 120-second
+Timeout. No unexpected failures occurred. The only new test,
+VegaGASEditorContext, passed; GAS schemas, module contract, legacy accessor guard,
+Blank tests and reflection golden also passed. Final wall time was 120 seconds.
+
+Build attempts are retained in build/wave9-gas-build.log; final build exit is in
+build/wave9-gas-build-exit.txt. The initial editor test wiring caused a linker
+error, and its initial command check named an unsupported command. Both test
+issues were corrected before the final build/run. Initial test evidence is in
+build/wave9-gas-tests-initial.{log,xml}. Final results are in
+build/wave9-gas-tests.{log,xml}; baseline evidence is in
+build/wave9-gas-baseline.{log,xml}. build/wave9-gas-summary.json records the exact
+status comparison and protected-file verification.
+
+All 728 protected files (LightYearsGame/src, all 357 LightYearsGame/assets files,
+and the reflection golden) retained SHA-256 contents and last-write timestamps.
+Only read-only git commands were used. No network installation was performed.
+Separate Release and modules-disabled configurations were not run. GAS runtime
+global catalogs and other previously documented migration work remain unchanged.
+
+Wave 9 file inventory (16):
+
+- LightYearsEngine/include/framework/GameModule.h
+- Modules/GAS/include/gas/GasContentSchemas.h
+- Modules/GAS/src/GasContentSchemas.cpp
+- Modules/GAS/tests/GasContentSchemasTests.cpp
+- Modules/GAS/editor/CMakeLists.txt
+- Modules/GAS/editor/src/GasEditorExtension.cpp
+- Modules/GAS/editor/tests/GasEditorContextTests.cpp
+- VegaEditor/include/editor/EditorExtensions.h
+- VegaEditor/src/EditorApplication.cpp
+- VegaEditor/tests/GameModuleTests.cpp
+- Templates/Blank/README.md
+- tools/CheckContextAccessors.cmake
+- docs/engine-context.md
+- docs/engine-context-validation.md
+- docs/engine-modules.md
+- docs/game-module.md
+
+### Prior migration
+
 See [EngineContext](engine-context.md) for ownership, injection, compatibility
 bindings and lifetime rules. The core API is in
 [EngineContext.h](../LightYearsEngine/include/framework/EngineContext.h).
@@ -74,10 +145,10 @@ checked. Negative probes for all eight services (including whitespace, comments
 and line breaks), a shim-file call, and an explicit-context control passed; see
 build/context-followup-guard-checks.json.
 
-Modules decision: Sky has no legacy calls to these eight services. GAS retains
-Modules/GAS/src/GasContentSchemas.cpp: RegisterContentSchemas() has no owner or
-context parameter; migrating its callers across downstream game setup is deferred.
-No Modules, LightYearsGame or LightYearsVisual source was edited.
+Modules follow-up: Sky has no legacy calls to these eight services. GAS now uses
+`RegisterContentSchemas(EngineContext&)`; its editor adapter gets the explicit
+host from `EditorExtensions::Engine()`. The original follow-up did not edit
+Modules, LightYearsGame or LightYearsVisual; the Wave 9 GAS changes are below.
 
 Follow-up file inventory (14):
 
@@ -259,7 +330,7 @@ hashes, exit statuses and elapsed times are in build/context-perf-metadata.json.
   process-wide RegisterGameTypes guard still prevents registering that game
   twice. Its gameplay files were deliberately left untouched.
 - Give global/game timers explicit owners; isolate ShaderManager's named cache,
-  optional GAS/Sky registries and diagnostics/profiler state separately. This is
+  optional GAS/Sky runtime registries and diagnostics/profiler state separately. This is
   service isolation for the migrated engine layer, not complete isolation of all
   existing LightYears/global infrastructure.
 - Remove deprecated static accessors and ownerless compatibility constructors

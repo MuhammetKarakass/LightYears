@@ -36,7 +36,7 @@ namespace sas
 	}
 	void RegisterEditorExtension(vega::EditorExtensions& extensions)
 	{
-		RegisterContentSchemas();
+		RegisterContentSchemas(extensions.Engine());
 		auto tool = std::make_shared<GasEditorTool>();
 		extensions.AddTool(tool);
 		extensions.inspectorWindows.push_back("Ability System");

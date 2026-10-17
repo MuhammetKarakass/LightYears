@@ -3,6 +3,14 @@
 A small Vega project that does not depend on LightYears, GAS or Sky. It is meant to
 be copied and renamed; see [make a new game](../../docs/new-game.md) for the steps.
 
+When adding optional GAS support, link the runtime/editor module targets as
+described in [engine modules](../../docs/engine-modules.md). In runtime setup use
+`sas::RegisterContentSchemas(application.GetEngineContext())`. An editor adapter's
+`IEditorProvider::RegisterEditorExtensions(vega::EditorExtensions& extensions)`
+can call `sas::RegisterEditorExtension(extensions)`; the editor supplies its host
+context through `extensions.Engine()`. Tool/test hosts construct
+`vega::EditorExtensions{ context }` explicitly and keep that context alive.
+
 ## Layout
 
 | Path | Purpose |

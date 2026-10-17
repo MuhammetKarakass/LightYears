@@ -10,6 +10,8 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 
+namespace ly { class EngineContext; }
+
 namespace vega
 {
 	struct EditorContext;
@@ -32,7 +34,11 @@ namespace vega
 	{
 	public:
 		using UI = std::function<void(EditorContext&, CommandHistory&)>;
-		EditorExtensions() { RegisterCoreScriptCommands(commands); }
+		explicit EditorExtensions(ly::EngineContext& context) : mEngine{ context }
+		{
+			RegisterCoreScriptCommands(commands);
+		}
+		ly::EngineContext& Engine() const { return mEngine; }
 		void AddTool(std::shared_ptr<EditorModuleTool> tool) { tools.push_back(std::move(tool)); }
 		void AddScriptCommand(ScriptCommandDefinition definition) { commands.Add(std::move(definition)); }
 		bool Active() const { for (const auto& tool : tools) if (tool->Active()) return true; return false; }
@@ -52,5 +58,7 @@ namespace vega
 		std::vector<std::string> inspectorWindows;
 		std::vector<std::function<void(EditorViewportExtensionContext&)>> viewports;
 		std::vector<std::shared_ptr<EditorModuleTool>> tools;
+	private:
+		ly::EngineContext& mEngine;
 	};
 }

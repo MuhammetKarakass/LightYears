@@ -106,6 +106,11 @@ Implement `IEditorProvider::RegisterEditorExtensions(vega::EditorExtensions&)` i
 editor adapter. Include `editor/EditorExtensions.h` there; standalone games
 need no editor dependency.
 
+The host constructs `EditorExtensions{ context }` with its `ly::EngineContext`.
+Use `extensions.Engine()` for schema registration; the context must outlive the
+extensions. This keeps registration on the correct host even under another
+ambient compatibility binding. GAS does this in `sas::RegisterEditorExtension`.
+
 - `AddPanel(callback)` draws a panel each frame. The callback owns its ImGui
   window and visibility state.
 - `AddViewport(callback)` supplies the image rectangle in ImGui screen

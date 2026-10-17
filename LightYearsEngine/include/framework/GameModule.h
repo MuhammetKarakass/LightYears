@@ -60,6 +60,8 @@ namespace vega
 	{
 	public:
 		virtual ~IEditorProvider() = default;
+		// Extensions retain the host's EngineContext; use extensions.Engine() for
+		// schema registration so a different ambient binding cannot select the host.
 		virtual void RegisterEditorExtensions(EditorExtensions&) = 0;
 	};
 	class ISceneSettingsHandler

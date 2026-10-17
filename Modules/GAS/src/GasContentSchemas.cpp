@@ -1,4 +1,5 @@
 #include <gas/GasContentSchemas.h>
+#include <framework/EngineContext.h>
 #include <algorithm>
 
 namespace sas
@@ -32,10 +33,10 @@ namespace sas
 		return field;
 	}
 
-	void RegisterContentSchemas()
+	void RegisterContentSchemas(ly::EngineContext& context)
 	{
 		using namespace ly::content;
-		auto& registry = ContentSchemaRegistry::Get();
+		auto& registry = context.ContentSchemas();
 		for (const auto* type : {"ability", "effect"})
 		{
 			if (registry.Find(type)) continue;

@@ -175,8 +175,12 @@ Audio and ScriptRuntime are context-owned too; the engine application loop,
 resource-owning objects and script components already use their owning context.
 Their old setup functions remain wrappers for unchanged modules; SetScriptRoot
 explicitly selects Current() only at that ownerless compatibility boundary.
-Sky has no legacy calls to these eight accessors. GAS schema registration still
-has no context parameter and remains downstream migration work.
+Sky and GAS have no legacy calls to these eight accessors. GAS runtime/tool hosts
+call `sas::RegisterContentSchemas(context)` explicitly. Editor hosts construct
+`EditorExtensions{ context }`; its `Engine()` supplies the same context to GAS
+through the unchanged `IEditorProvider::RegisterEditorExtensions` contract.
+The context must outlive the extensions. Registration still preserves existing
+game descriptors and fills only missing ability/effect schemas per context.
 
 LightYearsGame and other optional/game modules retain their accessor calls and
 registration guards. In particular LightYears' `RegisterGameTypes` still has a
@@ -186,7 +190,7 @@ claim isolation for game-owned globals. New modules should use registry-local
 guards from the start.
 
 TimerManager's global/game timers, ShaderManager's named shader cache,
-diagnostics/profiler state, optional GAS/Sky registries and game catalogs remain
+diagnostics/profiler state, optional GAS/Sky runtime registries and game catalogs remain
 separate migration work. Timers need explicit world/application ownership before
 two live applications can independently tick and shut them down. ShaderManager's
 default-loader accepts an explicit context, but its named cache remains global.

@@ -54,7 +54,12 @@ It registers its panel, View menu, layout settings, Play recording lifecycle and
 script commands. The game installs actor/player/content resolvers through
 `AbilitySystemDebugView`; the module never assumes a player ship or game catalog.
 
-`sas::RegisterContentSchemas()` also works in runtime/tool hosts. It registers
+Editor hosts construct `vega::EditorExtensions{ context }`, where the explicit
+`ly::EngineContext` outlives the extensions. The GAS extension uses
+`extensions.Engine()` to register schemas in that host, independently of the
+ambient compatibility binding.
+
+`sas::RegisterContentSchemas(context)` also works in runtime/tool hosts. It registers
 generic ability/effect forms only when that type has no descriptor. Games supply
 their production-loader validation, templates, ID/tag/attribute vocabulary and
 additional fields. `sas::MakeContentField` supplies common GAS field metadata.

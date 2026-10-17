@@ -44,7 +44,8 @@ namespace vega
 	EditorApplication::EditorApplication(std::unique_ptr<GameModule> module, EditorProject project)
 		: ly::Application{ { project.settings.windowWidth, project.settings.windowHeight }, 64, "Vega Editor", sf::Style::Close | sf::Style::Titlebar },
 		mProject{ std::move(project) },
-		mModule{ std::move(module) }, mViewport{ GetRenderWindow() }, mContentAuthoring{ GetEngineContext() }
+		mModule{ std::move(module) }, mExtensions{ GetEngineContext() },
+		mViewport{ GetRenderWindow() }, mContentAuthoring{ GetEngineContext() }
 	{
 		if (!mModule) throw std::runtime_error("Editor requires a game module");
 		LoadAudioSettings();

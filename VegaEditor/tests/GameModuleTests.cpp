@@ -37,6 +37,7 @@ namespace
 		vega::ActorDisplayInfo DisplayInfo(const ly::Actor&) const override { return { true, "Example spawn" }; }
 		void RegisterEditorExtensions(vega::EditorExtensions& extensions) override
 		{
+			engine = &extensions.Engine();
 			extensions.AddPanel([this](vega::EditorContext&, vega::CommandHistory&) { ++panels; });
 			extensions.AddHierarchyMenu([this](vega::EditorContext&, vega::CommandHistory&) { ++menus; });
 			extensions.AddViewport([this](vega::EditorViewportExtensionContext& viewport) { if (viewport.hovered) ++handles; });
@@ -48,6 +49,7 @@ namespace
 			}));
 		}
 		int panels = 0, menus = 0, handles = 0;
+		ly::EngineContext* engine = nullptr;
 	};
 }
 
@@ -74,8 +76,13 @@ int main()
 	static_assert(std::is_same_v<decltype(loop), const vega::IAppLoopHooks*>);
 	if (!loop || loop->ExitCode() != 7 || hooks.begins != 1 || hooks.ends != 1) return 1;
 	ExampleModule module;
-	vega::EditorExtensions extensions;
-	module.RegisterEditorExtensions(extensions);
+	vega::EditorExtensions extensions{ engineContext };
+	{
+		ly::EngineContext unrelated;
+		ly::EngineContext::Scope unrelatedScope{ unrelated };
+		module.RegisterEditorExtensions(extensions);
+		if (module.engine != &engineContext) return 1;
+	}
 	vega::EditorSelection selection;
 	vega::EditorContext context{ nullptr, selection };
 	vega::CommandHistory history{ context };

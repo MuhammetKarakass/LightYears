@@ -10,7 +10,7 @@ set(shims
 	"VegaScript/src/ScriptRuntime.cpp|ScriptRuntime|Get")
 set(space "[ \t\r\n]*")
 set(accessor "((TypeRegistry|PrefabLibrary|EngineAssets|SceneSettingsSchema|ContentSchemaRegistry|ScriptRuntime)${space}::${space}Get|AssetManager${space}::${space}GetAssetManager|AudioManager${space}::${space}GetAudioManager)${space}\\(${space}\\)")
-foreach(module LightYearsEngine VegaEditor VegaScript)
+foreach(module LightYearsEngine VegaEditor VegaScript Modules/GAS Modules/GAS/editor SpaceAbilitySystem)
 	file(GLOB_RECURSE sources
 		"${SOURCE_ROOT}/${module}/include/*.h" "${SOURCE_ROOT}/${module}/include/*.hpp"
 		"${SOURCE_ROOT}/${module}/src/*.h" "${SOURCE_ROOT}/${module}/src/*.hpp"
