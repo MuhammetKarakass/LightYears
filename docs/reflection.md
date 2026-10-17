@@ -60,6 +60,7 @@ function. Its braces form the body of `Describe(Builder& type)`.
 | `VEGA_FIELD("Name", Member)` | Bind a data member directly; no getter or setter is written. Chain `.Range(...)` to clamp numeric values. |
 | `VEGA_FIELD_NOTIFY("Name", Member, OnChanged)` | As `VEGA_FIELD`, and call the member function `OnChanged` after each stored write. |
 | `VEGA_FIELD_READONLY("Name", Member)` | Bind a data member with no setter. |
+| `VEGA_FUNCTION(Type, Method, "Label")` | Register a zero-argument member function as an editor-callable action (Unreal's `CallInEditor`). The method token names it; `"Label"` is the Inspector button. Chain `.Tooltip(text)` and `.CallableInPlay()`. See [functions](#functions). |
 | `VEGA_CATEGORY("Group")` | Set the default category for subsequent properties, including direct `type.Property` calls. |
 | `VEGA_SPAWNABLE()` | Use the `World*` constructor through `World::SpawnActor<Self>()`. |
 | `VEGA_SPAWNABLE(factory)` | Supply a `shared_ptr<Actor>(World&)` factory for constructor arguments. |
@@ -96,6 +97,60 @@ Range clamps fields: an Int or Float field with `.Range(min, max)` stores the
 clamped value on every write from the Inspector, scene loads and Lua. The bounds
 are read at write time, so `.Range` may follow the field. Vectors and
 `VEGA_PROPERTY` setters are unaffected.
+
+## Functions
+
+A reflected C++ function that takes no arguments and returns `void` can be exposed
+as an editor action, the analogue of Unreal's `UFUNCTION(CallInEditor)`. Register
+it in the `VEGA_REFLECT` block with `VEGA_FUNCTION(Type, Method, "Label")`, which is
+`type.Function(#Method, "Label", &Type::Method)`:
+
+```cpp
+class ExampleBeacon : public Actor
+{
+	VEGA_CLASS(ExampleBeacon)
+public:
+	void Reset();
+	void Randomize();
+};
+```
+
+```cpp
+VEGA_REFLECT(ExampleBeacon, Actor)
+{
+	VEGA_FIELD("Brightness", mBrightness).Range(0.f, 1.f);
+	VEGA_FUNCTION(ExampleBeacon, Reset, "Reset size").Tooltip("Sets the scale back to 1");
+	VEGA_FUNCTION(ExampleBeacon, Randomize, "Randomize").CallableInPlay();
+}
+```
+
+`Method` must be a non-static member with signature `void ()`; `Label` is the
+Inspector button text. `type.Function(name, label, &T::Method)` and the two-argument
+`type.Function("Label", &T::Method)` (name and label the same) are the builder forms.
+The description stores the function's name, label, tooltip, a play-mode flag and an
+invoker in the type's `TypeInfo`. `TypeInfo::FindFunction(name)` and
+`type->AllFunctions()` behave like their property counterparts and include inherited
+functions. The method token is the name scripts use; it is not a scene key, but keep
+it stable so authored scripts keep working.
+
+The Inspector draws one button per function after the properties of each section that
+declares any, with the tooltip and an error line on failure, like a refused property
+write. It also reports the failure on the Console panel. Buttons run in Edit mode by
+default; `.CallableInPlay()` lets a function run while the editor is playing. With
+several actors selected a button appears only for a function present on all of them
+and runs on each.
+
+**Calls are not undoable.** Clicking a function is not an editor command and no
+generic whole-object snapshot command exists, so a change it makes to reflected
+properties cannot be undone. A successful call only marks the scene dirty/Autosave
+aware, exactly as a property edit does, so the result is saved rather than reverted.
+Such a function should keep its effects small or reconstruct the object from the
+scene; prefer reflected properties when the change must be undoable.
+
+**Editor scripts.** `call-function <target> <name>` runs a function on the selected
+actor(s), where `<target>` is a component type name or `Actor` as `set-prop` uses,
+and `<name>` is the function's name. A failed call is readable by
+`expect-prop-error`. See [editor script commands](editor-script-commands.md).
 
 ## Asset paths
 
@@ -402,5 +457,6 @@ inherited requirements. `LightYearsReflectionRegistryGolden` compares the full
 engine, game and scripting descriptors, in registration order, against
 `LightYearsEngine/tests/reflection-registry.golden.json`, captured from the
 fluent registrations before conversion. It includes local property order,
-setter availability and all authoring metadata. Intentional schema changes
-require reviewing the golden change along with asset compatibility.
+setter availability, all authoring metadata, and each type's local `functions`
+(name, label, tooltip, play-mode flag) in declaration order. Intentional schema
+changes require reviewing the golden change along with asset compatibility.

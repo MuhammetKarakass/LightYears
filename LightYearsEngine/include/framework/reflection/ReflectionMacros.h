@@ -47,6 +47,10 @@
 #define VEGA_FIELD(Name, Member) type.Field(Name, &Self::Member)
 #define VEGA_FIELD_NOTIFY(Name, Member, OnChanged) type.Field(Name, &Self::Member, &Self::OnChanged)
 #define VEGA_FIELD_READONLY(Name, Member) type.FieldReadOnly(Name, &Self::Member)
+// Registers a zero-argument member function as an editor-callable action (CallInEditor). The
+// method token names it for scripts and Label is the Inspector button text. Chain .Tooltip(text)
+// and .CallableInPlay() on the result to add a tooltip or allow the call while playing.
+#define VEGA_FUNCTION(Type, Method, Label) type.Function(#Method, Label, &Type::Method)
 #define VEGA_CATEGORY(Name) type.DefaultCategory(Name)
 #define VEGA_SPAWNABLE(...) type.Spawnable(__VA_ARGS__)
 #define VEGA_ADDABLE(...) \

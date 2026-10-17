@@ -30,6 +30,10 @@ Rename an asset and update references. Mode: Edit.
 
 Write a recovery snapshot of the active scene. Mode: Edit.
 
+## `call-function target:text function:text`
+
+Invoke a reflected CallInEditor function on the selected actor(s); edit mode only unless the function opts into play. Mode: Any.
+
 ## `camera camera:editor|game`
 
 Choose the editor or game camera. Mode: Any.

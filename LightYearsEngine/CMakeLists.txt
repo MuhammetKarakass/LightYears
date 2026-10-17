@@ -302,6 +302,12 @@ if(BUILD_TESTING)
 		CopyLibToTarget(${asset_runtime} LightYearsReflectionAssetTests)
 	endforeach()
 	add_test(NAME LightYearsReflectionAssets COMMAND LightYearsReflectionAssetTests)
+	add_executable(LightYearsReflectionFunctionTests tests/ReflectionFunctionTests.cpp)
+	target_link_libraries(LightYearsReflectionFunctionTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	foreach(function_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${function_runtime} LightYearsReflectionFunctionTests)
+	endforeach()
+	add_test(NAME LightYearsReflectionFunctions COMMAND LightYearsReflectionFunctionTests)
     add_executable(LightYearsGameplayTagTests
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayTagTests.cpp
     )

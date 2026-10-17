@@ -242,6 +242,19 @@ namespace ly::reflect
 		return base ? base->FindProperty(propertyName) : nullptr;
 	}
 
+	std::vector<const FunctionInfo*> TypeInfo::AllFunctions() const
+	{
+		std::vector<const FunctionInfo*> result = base ? base->AllFunctions() : std::vector<const FunctionInfo*>{};
+		for (const auto& function : functions) result.push_back(&function);
+		return result;
+	}
+
+	const FunctionInfo* TypeInfo::FindFunction(const std::string& functionName) const
+	{
+		for (const auto& function : functions) if (function.name == functionName) return &function;
+		return base ? base->FindFunction(functionName) : nullptr;
+	}
+
 	TypeRegistry& CurrentTypeRegistry() { return EngineContext::Current().Types(); }
 
 	TypeRegistry& TypeRegistry::Get()

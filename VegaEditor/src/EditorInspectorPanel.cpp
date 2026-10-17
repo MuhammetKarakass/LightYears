@@ -1,5 +1,6 @@
 #include "editor/EditorApplication.h"
 #include "editor/EditorAssetField.h"
+#include "editor/EditorFunctionCommands.h"
 #include "editor/EditorIcons.h"
 #include "editor/PropertyWidgets.h"
 #include "editor/EditorPrefabs.h"
@@ -315,6 +316,85 @@ namespace vega
 			}
 			return changed;
 		}
+
+		// A CallInEditor button. It lives outside the panel-wide disabled block so a function that opted
+		// into play mode stays clickable while playing; every other function is refused in play mode.
+		bool DrawFunctionButton(EditorContext& context, const std::string& label, const std::string& tooltip, bool callableInPlay)
+		{
+			ImGui::BeginDisabled(context.transitioning || (context.playMode && !callableInPlay));
+			const bool clicked = ImGui::Button(label.c_str());
+			ImGui::EndDisabled();
+			if (!tooltip.empty()) ImGui::SetItemTooltip("%s", tooltip.c_str());
+			return clicked;
+		}
+		// A failed call reports like a refused property write; the name matches the function, not a property.
+		void DrawFunctionError(const EditorContext& context, const std::string& functionName)
+		{
+			if (context.propertyError.empty() || context.propertyErrorName != functionName) return;
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.f, 0.3f, 0.3f, 1.f });
+			ImGui::TextWrapped("%s", context.propertyError.c_str());
+			ImGui::PopStyleColor();
+		}
+		// Draws one Actions group per reflected type of the actor that declares functions.
+		void DrawActorFunctions(EditorContext& context, ly::Actor& actor)
+		{
+			struct Group
+			{
+				void* object = nullptr;
+				const ly::reflect::TypeInfo* type = nullptr;
+				std::optional<ly::ComponentIdentity> identity;
+			};
+			std::vector<Group> groups;
+			if (const auto root = ResolvePropertyTarget(actor, {}); root.type) groups.push_back({ root.object, root.type, {} });
+			actor.ForEachComponent([&](ly::ActorComponent& component)
+			{
+				if (dynamic_cast<ly::SceneEntityComponent*>(&component)) return;
+				if (const auto* type = context.Engine().Types().FindMostDerived(component))
+					groups.push_back({ &component, type, ly::IdentifyComponent(actor, component) });
+			});
+			bool any = false;
+			for (const auto& group : groups)
+			{
+				const auto functions = group.type->AllFunctions();
+				if (functions.empty()) continue;
+				if (!any) { ImGui::SeparatorText("Actions"); any = true; }
+				ImGui::PushID(group.object);
+				for (const auto* function : functions)
+				{
+					if (DrawFunctionButton(context, function->label, function->tooltip, function->callableInPlay))
+					{
+						std::string error;
+						// A call is not undoable; a successful call still marks the scene dirty for autosave.
+						if (CallReflectedFunction(context, ReflectedTarget{ group.object, group.type, group.identity },
+								actor.GetUniqueID(), function->name, error))
+						{
+							context.SceneChanged();
+						}
+					}
+					DrawFunctionError(context, function->name);
+				}
+				ImGui::PopID();
+			}
+		}
+		// Functions shared by every selected actor, drawn once and run on all of them.
+		void DrawSelectionFunctions(EditorContext& context)
+		{
+			const auto functions = CommonSelectionFunctions(context);
+			if (functions.empty()) return;
+			ImGui::SeparatorText("Actions");
+			int index = 0;
+			for (const auto& row : functions)
+			{
+				ImGui::PushID(index++);
+				if (DrawFunctionButton(context, row.label, row.tooltip, row.callableInPlay))
+				{
+					std::string error;
+					InvokeSelectionFunction(context, row, error);
+				}
+				DrawFunctionError(context, row.name);
+				ImGui::PopID();
+			}
+		}
 	}
 
 	void EditorApplication::BuildInspectorPanel()
@@ -374,6 +454,8 @@ namespace vega
 				if (!context.propertyError.empty()) ImGui::TextWrapped("%s", context.propertyError.c_str());
 				if (ImGui::Button("Delete selection")) DeleteSelection(context, history);
 				ImGui::EndDisabled();
+				// Actions stay outside the disabled block so play-mode-callable functions remain clickable.
+				DrawSelectionFunctions(context);
 			}
 			else if (const auto actor = selection.Get())
 			{
@@ -583,6 +665,8 @@ namespace vega
 				if (ImGui::Button("Delete entity") && actor->FindComponent<ly::SceneEntityComponent>())
 					history.Execute(std::make_unique<DestroyActor>(actor->GetUniqueID()));
 				ImGui::EndDisabled();
+				// Actions stay outside the disabled block so play-mode-callable functions remain clickable.
+				DrawActorFunctions(context, *actor);
 				// Recreation invalidates the enumerated component pointers; apply after drawing.
 				if (componentEdit) history.Execute(std::move(componentEdit));
 			}

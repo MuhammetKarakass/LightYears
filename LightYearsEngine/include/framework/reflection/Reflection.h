@@ -115,6 +115,20 @@ namespace ly::reflect
 		// inherited properties. This preserves pointer adjustment with multiple inheritance.
 		bool SetValue(void* objectOfRoot, const PropertyValue& value, std::string* error = nullptr) const;
 	};
+
+	// A zero-argument member function an editor may call, the analogue of an Unreal
+	// UFUNCTION(CallInEditor). invoke receives a pointer to the registered root so the
+	// same pointer adjustment as property access applies; it throws whatever the function throws.
+	struct FunctionInfo
+	{
+		// Identifier used by editor scripts and lookups; label is the Inspector button text.
+		std::string name;
+		std::string label;
+		std::string tooltip;
+		// False keeps the function edit-mode only; true lets the Inspector call it while playing.
+		bool callableInPlay = false;
+		std::function<void(void*)> invoke;
+	};
 	// Visits every actor reference in value, including references inside structs and lists, with the
 	// requiredType that applies to it. The visitor may rewrite the reference it receives.
 	void ForEachActorRef(const PropertyInfo& property, PropertyValue& value,
@@ -140,6 +154,8 @@ namespace ly::reflect
 		TypeRoot root = TypeRoot::Other;
 		std::function<bool(const void*)> isInstance;
 		std::vector<PropertyInfo> properties;
+		// Editor-callable actions declared on this type; inherited like properties.
+		std::vector<FunctionInfo> functions;
 		std::function<std::shared_ptr<Actor>(World&)> create;
 		bool spawnable = false;
 		std::function<ActorComponent&(Actor&)> addComponent;
@@ -154,6 +170,9 @@ namespace ly::reflect
 		}
 		std::vector<const PropertyInfo*> AllProperties() const;
 		const PropertyInfo* FindProperty(const std::string& propertyName) const;
+		// Functions follow the same inheritance order as properties: base first, local last.
+		std::vector<const FunctionInfo*> AllFunctions() const;
+		const FunctionInfo* FindFunction(const std::string& functionName) const;
 	};
 
 	class TypeRegistry
@@ -349,6 +368,33 @@ namespace ly::reflect
 			Property(name, [member](const T& instance) -> V { return instance.*member; });
 			return *this;
 		}
+		// Configures the function most recently registered by Function. A nested class so it can
+		// reach the builder's private state without exposing it more broadly.
+		class FunctionBuilder
+		{
+		public:
+			explicit FunctionBuilder(Class& owner) : mOwner{ &owner } {}
+			FunctionBuilder& Tooltip(const std::string& text) { mOwner->LastFunction().tooltip = text; return *this; }
+			FunctionBuilder& CallableInPlay(bool callable = true) { mOwner->LastFunction().callableInPlay = callable; return *this; }
+		private:
+			Class* mOwner = nullptr;
+		};
+		// Registers a zero-argument member function an editor can call. name identifies it for scripts;
+		// label is shown on the Inspector button. Chain Tooltip and CallableInPlay on the result.
+		FunctionBuilder Function(const std::string& name, const std::string& label, void (T::*method)())
+		{
+			FunctionInfo function;
+			function.name = name;
+			function.label = label;
+			function.invoke = [method](void* object) { ((dynamic_cast<T*>(static_cast<Root*>(object)))->*method)(); };
+			mType.functions.push_back(std::move(function));
+			return FunctionBuilder{ *this };
+		}
+		// Convenience overload where the identifier doubles as the button label.
+		FunctionBuilder Function(const std::string& label, void (T::*method)())
+		{
+			return Function(label, label, method);
+		}
 		Class& Range(float min, float max) { Current().min = min; Current().max = max; return *this; }
 		Class& Spawnable(std::function<std::shared_ptr<Actor>(World&)> factory)
 		{
@@ -431,6 +477,7 @@ namespace ly::reflect
 			else { static_assert(std::is_same_v<V, std::string>, "Unsupported reflected value"); return PropertyKind::String; }
 		}
 		PropertyInfo& Current() { return mType.properties.at(mProperty); }
+		FunctionInfo& LastFunction() { return mType.functions.back(); }
 		TypeInfo& mType;
 		// Owner of the types this builder describes; struct lookups use it when values are converted.
 		TypeRegistry* mRegistry = nullptr;

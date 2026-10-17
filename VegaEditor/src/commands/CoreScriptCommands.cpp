@@ -5,6 +5,7 @@ namespace vega
 	void RegisterAssetScriptCommands(ScriptCommandRegistry&);
 	void RegisterAutosaveScriptCommands(ScriptCommandRegistry&);
 	void RegisterPropertyScriptCommands(ScriptCommandRegistry&);
+	void RegisterFunctionScriptCommands(ScriptCommandRegistry&);
 	void RegisterHierarchyScriptCommands(ScriptCommandRegistry&);
 	void RegisterContentScriptCommands(ScriptCommandRegistry&);
 	void RegisterSelectionScriptCommands(ScriptCommandRegistry&);
@@ -25,6 +26,7 @@ namespace vega
 		RegisterAssetScriptCommands(registry);
 		RegisterAutosaveScriptCommands(registry);
 		RegisterPropertyScriptCommands(registry);
+		RegisterFunctionScriptCommands(registry);
 		RegisterHierarchyScriptCommands(registry);
 		RegisterContentScriptCommands(registry);
 		RegisterSelectionScriptCommands(registry);

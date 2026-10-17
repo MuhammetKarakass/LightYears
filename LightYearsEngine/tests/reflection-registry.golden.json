@@ -2,6 +2,7 @@
   {
     "addable": false,
     "base": "",
+    "functions": [],
     "name": "Actor",
     "properties": [
       {
@@ -116,6 +117,7 @@
   {
     "addable": false,
     "base": "",
+    "functions": [],
     "name": "ActorComponent",
     "properties": [
       {
@@ -166,6 +168,7 @@
   {
     "addable": true,
     "base": "ActorComponent",
+    "functions": [],
     "name": "SpriteComponent",
     "properties": [
       {
@@ -217,6 +220,7 @@
   {
     "addable": false,
     "base": "ActorComponent",
+    "functions": [],
     "name": "SceneEntityComponent",
     "properties": [
       {
@@ -254,6 +258,7 @@
   {
     "addable": true,
     "base": "ActorComponent",
+    "functions": [],
     "name": "LightComponent",
     "properties": [],
     "removable": true,
@@ -264,6 +269,7 @@
   {
     "addable": true,
     "base": "ActorComponent",
+    "functions": [],
     "name": "CollisionComponent",
     "properties": [
       {
@@ -415,6 +421,7 @@
   {
     "addable": false,
     "base": "",
+    "functions": [],
     "name": "SoundComponent",
     "properties": [
       {
@@ -452,6 +459,7 @@
   {
     "addable": false,
     "base": "Actor",
+    "functions": [],
     "name": "SpaceShip",
     "properties": [],
     "removable": false,
@@ -467,6 +475,7 @@
   {
     "addable": false,
     "base": "Actor",
+    "functions": [],
     "name": "Asteroid",
     "properties": [
       {
@@ -493,6 +502,7 @@
   {
     "addable": false,
     "base": "Actor",
+    "functions": [],
     "name": "PlayerStart",
     "properties": [
       {
@@ -517,6 +527,7 @@
   {
     "addable": false,
     "base": "Actor",
+    "functions": [],
     "name": "SpriteActor",
     "properties": [],
     "removable": false,
@@ -527,6 +538,7 @@
   {
     "addable": false,
     "base": "SpaceShip",
+    "functions": [],
     "name": "DummyEnemy",
     "properties": [
       {
@@ -551,6 +563,7 @@
   {
     "addable": true,
     "base": "ActorComponent",
+    "functions": [],
     "name": "HealthComponent",
     "properties": [
       {
@@ -588,6 +601,7 @@
   {
     "addable": true,
     "base": "ActorComponent",
+    "functions": [],
     "name": "ShieldComponent",
     "properties": [
       {
@@ -703,6 +717,7 @@
   {
     "addable": true,
     "base": "ActorComponent",
+    "functions": [],
     "name": "EnergyComponent",
     "properties": [
       {
@@ -766,6 +781,7 @@
   {
     "addable": false,
     "base": "ActorComponent",
+    "functions": [],
     "name": "MovementComponent",
     "properties": [
       {
@@ -916,6 +932,7 @@
   {
     "addable": false,
     "base": "ActorComponent",
+    "functions": [],
     "name": "PlayerMovementComponent",
     "properties": [
       {
@@ -1018,6 +1035,7 @@
   {
     "addable": false,
     "base": "SpaceShip",
+    "functions": [],
     "name": "PlayerSpaceShip",
     "properties": [
       {
@@ -1083,6 +1101,7 @@
   {
     "addable": false,
     "base": "SpaceShip",
+    "functions": [],
     "name": "EnemyActor",
     "properties": [
       {
@@ -1159,6 +1178,7 @@
   {
     "addable": false,
     "base": "ActorComponent",
+    "functions": [],
     "name": "ScriptComponent",
     "properties": [
       {

@@ -8,6 +8,15 @@
 
 namespace
 {
+	nlohmann::json Functions(const std::vector<ly::reflect::FunctionInfo>& functions)
+	{
+		nlohmann::json result = nlohmann::json::array();
+		// Invokers are code, not data; the golden records the authoring metadata only.
+		for (const auto& function : functions)
+			result.push_back({ { "name", function.name }, { "label", function.label },
+				{ "tooltip", function.tooltip }, { "callableInPlay", function.callableInPlay } });
+		return result;
+	}
 	nlohmann::json DumpRegistry()
 	{
 		nlohmann::json types = nlohmann::json::array();
@@ -36,7 +45,8 @@ namespace
 				{ "name", type->name }, { "base", type->base ? type->base->name : "" },
 				{ "root", static_cast<int>(type->root) }, { "spawnable", type->spawnable },
 				{ "addable", static_cast<bool>(type->addComponent) }, { "removable", type->removable },
-				{ "requiredComponents", type->requiredComponents }, { "properties", properties }
+				{ "requiredComponents", type->requiredComponents }, { "properties", properties },
+				{ "functions", Functions(type->functions) }
 			});
 		}
 		return types;

@@ -25,6 +25,7 @@ set(VEGA_EDITOR_COMMAND_SOURCES
 	src/EditorComponentCommands.cpp
 	src/EditorPrefabCommands.cpp
 	src/EditorSelectionCommands.cpp
+	src/EditorFunctionCommands.cpp
 )
 
 set(VEGA_EDITOR_CORE_SOURCES
@@ -68,6 +69,7 @@ set(VEGA_EDITOR_CORE_SOURCES
 	src/commands/ProfilerScriptCommands.cpp
 	src/commands/ProjectScriptCommands.cpp
 	src/commands/PropertyScriptCommands.cpp
+	src/commands/FunctionScriptCommands.cpp
 	src/commands/SceneScriptCommands.cpp
 	src/commands/ScriptingScriptCommands.cpp
 	src/commands/ScriptPropertyValues.cpp
@@ -92,6 +94,7 @@ set(VEGA_EDITOR_CORE_SOURCES
 	include/editor/GizmoMath.h
 	include/editor/EditorCamera.h
 	include/editor/EditorCommands.h
+	include/editor/EditorFunctionCommands.h
 	include/editor/EditorScript.h
 	include/editor/EditorViewport.h
 	include/editor/EditorSelection.h
@@ -328,6 +331,23 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 		CopyRuntimeLibToTarget(${editor_command_runtime} VegaEditorCommandTests)
 	endforeach()
 	add_test(NAME VegaEditorCommand COMMAND VegaEditorCommandTests)
+
+	add_executable(VegaEditorFunctionTests
+		tests/EditorFunctionTests.cpp
+		${VEGA_EDITOR_COMMAND_SOURCES}
+		src/commands/FunctionScriptCommands.cpp
+		src/ScriptCommandRegistry.cpp
+		src/EditorScriptParser.cpp
+		src/EditorCamera.cpp
+		src/EditorSelection.cpp
+	)
+	target_include_directories(VegaEditorFunctionTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorFunctionTests PRIVATE VegaScript)
+	ly_enable_warnings(VegaEditorFunctionTests)
+	foreach(editor_function_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${editor_function_runtime} VegaEditorFunctionTests)
+	endforeach()
+	add_test(NAME VegaEditorFunctions COMMAND VegaEditorFunctionTests)
 
 	add_executable(VegaEditorScriptTests tests/EditorScriptTests.cpp
 		../Modules/Sky/editor/src/SkyScriptCommands.cpp ../Modules/GAS/editor/src/GasScriptCommands.cpp)
