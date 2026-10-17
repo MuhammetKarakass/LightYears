@@ -54,3 +54,7 @@ run_stdout.log
 run_stderr.log
 err*.txt
 out*.txt
+
+/split-staging/
+!LightYearsGame/tests/*.cmake
+!LightYearsGame/tests/reflection-registry.golden.json

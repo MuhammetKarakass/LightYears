@@ -1,6 +1,0 @@
-select-name Spinning star
-expect-selected SpriteActor
-set-prop SpriteComponent "Texture" bogus/notfound.png
-expect-prop-error "Cannot load texture: bogus/notfound.png"
-expect-prop SpriteComponent "Texture" SpaceShooterRedux/PNG/Effects/star3.png
-quit

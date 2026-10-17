@@ -1,9 +1,0 @@
-pause
-select-type DummyEnemy
-zoom 2
-pan 500 0
-focus
-expect-visible
-play-mode
-expect-camera game
-quit

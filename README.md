@@ -12,7 +12,7 @@ A high-performance 2D space shooter built from scratch with Vega Engine, featuri
 
 ## Documentation
 
-- [Console and Profiler](docs/console-profiler.md) — panels, runtime capture and editor script commands.
+- [Console and Profiler](../Vega/docs/console-profiler.md) — panels, runtime capture and editor script commands.
 
 - [Ability Scaling Catalog](docs/ABILITY_SCALING_CATALOG.md) — the single source of
   truth for every ability's values, formulas, per-level growth and behaviour.
@@ -92,33 +92,9 @@ You can download the game from this repository (see `LightYears.7z`) or from [it
 
 ## Project Structure
 
-```
-LightYears/
-├── VegaEngine/              # Core engine (reusable framework)
-│   ├── framework/                 # Application, World, Actor, Physics, Audio, Assets
-│   ├── gameplay/                  # Game stage management (wave system)
-│   ├── widget/                    # UI framework (HUD, Buttons, Gauges, Text)
-│   └── VFX/                      # Particle system
-│
-├── LightYearsGame/                # Game-specific logic
-│   ├── player/                    # Player ship, input, rewards, lives, shield, respawn
-│   ├── enemy/                     # Enemy AI, wave stages, boss
-│   ├── weapon/                    # Bullet actor (projectile runtime)
-│   ├── gameplay/                  # Ability, effect, health and attribute runtime (logic layer)
-│   │   └── ability/               # SAS adapter, game actions, behaviors and ability actors
-│   ├── level/                     # Level management, arena, main menu
-│   ├── environment/               # Asteroids
-│   ├── VFX/                       # Explosions
-│   ├── widget/                    # Game HUD, menus
-│   ├── presentation/hud/         # HUD controllers + view models (MVC layer)
-│   ├── gameConfigs/               # C++ content schemas + shipped static config catalog
-│   └── assets/                    # Textures, audio, shaders
-│       └── SpaceShooterRedux/     # Kenney.nl asset pack (CC0)
-│           ├── PNG/               # Ship, laser, planet, meteor textures
-│           ├── Musics/            # 5 OGG music tracks
-│           ├── Shaders/           # 3 GLSL fragment shaders
-│           └── Bonus/             # Fonts and SFX
-```
+LightYearsGame/ owns runtime, content, tests and the LightYearsEditor host.
+LightYearsVisual/ owns game visuals and authored catalogs; tools/ and docs/ are game-owned.
+The sibling Vega checkout owns engine, scripting, GAS, Sky and editor core. See [engine dependency](docs/engine.md).
 
 ### Content data boundary
 
@@ -138,66 +114,27 @@ not as the runtime source.
 
 ## Build Instructions
 
-### Prerequisites
+Use a Visual Studio 2022 developer shell, CMake 3.31.6+ and Ninja. Place Vega
+alongside this checkout (`../Vega`), or select it explicitly:
 
-| Requirement | Version | Notes |
-|------------|---------|-------|
-| **CMake** | 3.31.6+ | Build system |
-| **C++ Compiler** | C++17 | MSVC 2022 / GCC 11+ / Clang 14+ |
-| **Git** | Latest | For dependency fetching |
-| **Windows** | 10/11 | Primary platform |
-
-### Dependencies (Auto-Fetched by CMake)
-
-| Library | Version | Purpose |
-|---------|---------|---------|
-| **SFML** | 3.1.0 | Graphics, Audio, Window, System |
-| **Box2D** | 3.1.1 | Physics Engine |
-| **FreeType** | (via SFML) | Font Rendering |
-| **FLAC/Vorbis/Ogg** | (via SFML) | Audio Codecs |
-
-> **Note:** All dependencies are automatically downloaded and built via CMake `FetchContent`. No manual installation required.
-
-### Build Steps
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/MuhammetKarakass/LightYears.git
-   cd LightYears
-   ```
-
-2. **Configure with CMake:**
-   ```bash
-   cmake -S . -B build -G "Visual Studio 17 2022"
-   ```
-
-3. **Build (Release recommended for performance):**
-   ```bash
-   cmake --build build --config Release
-   ```
-
-4. **Run the game:**
-   ```bash
-   cd build\LightYearsGame\Release
-   .\LightYearsGame.exe
-   ```
-
-### CMake Options
-
-```cmake
-# MSVC Release optimizations (already configured)
-/O2    # Maximize speed
-/Ob2   # Aggressive inline
-/Oi    # Intrinsic functions
-/Ot    # Favor fast code
-/GL    # Whole program optimization
-/LTCG  # Link-time code generation
-
-# GCC/Clang Release optimizations
--O3 -march=native
+```bat
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DVEGA_ENGINE_DIR=D:/Vega-engine-next -DFETCHCONTENT_FULLY_DISCONNECTED=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+build\LightYearsGame\LightYearsGame.exe
+build\VegaEditor\LightYearsEditor.exe
 ```
 
----
+For offline configuration, seed `build/_deps` with the dependency `*-src` trees
+from an existing Vega build. `tools/vega-build.cmd` does this using
+`VEGA_DEPS_SEED` (defaults to `%VEGA_ENGINE_DIR%\build\_deps`) and forwards
+`VEGA_ENGINE_DIR` and `VEGA_CMAKE_ARGS` to CMake. Its arguments go to the build.
+Engine binaries live under this game's `build/engine` directory.
+
+GAS and Sky are required and enabled explicitly. `VEGA_BUILD_EDITOR` and
+`LIGHTYEARS_BUILD_VISUAL_GALLERY` default ON; `VEGA_BUILD_TEMPLATES` defaults OFF.
+Engine tests keep their embedded default OFF. `BUILD_TESTING` controls game tests.
+The [engine contract](../Vega/docs/new-game.md) documents public targets/helpers.
 
 ## Controls
 

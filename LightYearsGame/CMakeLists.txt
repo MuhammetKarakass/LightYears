@@ -54,8 +54,8 @@ target_include_directories(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 )
 target_link_libraries(${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 	PUBLIC
-		${VEGA_ENGINE_TARGET_NAME}
-		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+		VegaEngine
+		VegaGAS
 		nlohmann_json::nlohmann_json
 )
 
@@ -65,13 +65,12 @@ add_library(${LIGHT_YEARS_GAME_LIB_TARGET_NAME} STATIC ${VEGA_GAME_CPP} ${VEGA_G
 target_include_directories(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${PROJECT_SOURCE_DIR}/VegaEngine/include
 )
 # GalaxyRoute uses the pure-math visual/Astro.h and visual/GalaxyModel.h only; no SFML is pulled in.
 target_link_libraries(${LIGHT_YEARS_GAME_LIB_TARGET_NAME}
 	PUBLIC
-		${VEGA_ENGINE_TARGET_NAME}
-		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+		VegaEngine
+		VegaGAS
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		LightYearsAstro
 		nlohmann_json::nlohmann_json
@@ -95,8 +94,8 @@ target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} PUBLIC
 
 target_link_libraries(${LIGHT_YEARS_GAME_APP_TARGET_NAME}
 	PUBLIC
-		${VEGA_ENGINE_TARGET_NAME}
-		${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+		VegaEngine
+		VegaGAS
 		${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		LightYearsVisual
 		VegaScript
@@ -123,7 +122,6 @@ if(BUILD_TESTING)
 		add_executable(${target} ${T_SOURCES})
 		target_include_directories(${target} PRIVATE
 			${CMAKE_CURRENT_SOURCE_DIR}/include
-			${PROJECT_SOURCE_DIR}/VegaEngine/include
 			${T_INCLUDES}
 		)
 		if(T_PROJECT_DIR)
@@ -133,8 +131,8 @@ if(BUILD_TESTING)
 		if(T_GAME_WHOLE)
 			list(APPEND link_libs
 				$<LINK_LIBRARY:WHOLE_ARCHIVE,${LIGHT_YEARS_GAME_LIB_TARGET_NAME}>
-				${VEGA_ENGINE_TARGET_NAME}
-				${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+				VegaEngine
+				VegaGAS
 				${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 				nlohmann_json::nlohmann_json
 			)
@@ -160,11 +158,11 @@ if(BUILD_TESTING)
 
 	set(VEGA_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 	vega_add_game_test(LightYearsReflectionRegistryGoldenTests GAME
-		SOURCES ${PROJECT_SOURCE_DIR}/VegaEngine/tests/ReflectionRegistryGoldenTests.cpp LIBS VegaScript)
+		SOURCES ${VEGA_TESTS_DIR}/ReflectionRegistryGoldenTests.cpp LIBS VegaScript)
 	target_compile_definitions(LightYearsReflectionRegistryGoldenTests PRIVATE
-		REFLECTION_GOLDEN_PATH="${PROJECT_SOURCE_DIR}/VegaEngine/tests/reflection-registry.golden.json")
+		REFLECTION_GOLDEN_PATH="${VEGA_TESTS_DIR}/reflection-registry.golden.json")
 	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
-		CopyLibToTarget(${runtime} LightYearsReflectionRegistryGoldenTests)
+		CopyRuntimeLibToTarget(${runtime} LightYearsReflectionRegistryGoldenTests)
 	endforeach()
 	vega_add_game_test_case(LightYearsReflectionRegistryGolden LightYearsReflectionRegistryGoldenTests)
 	set(VEGA_E2E ${LIGHT_YEARS_E2E_ARTIFACT_DIR})
@@ -186,12 +184,12 @@ if(BUILD_TESTING)
 	vega_add_game_test(LightYearsContentTests
 		SOURCES ${VEGA_TESTS_DIR}/ContentLoaderTests.cpp
 		INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src
-		LIBS ${VEGA_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		LIBS VegaEngine VegaGAS ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		GAME PROJECT_DIR)
 	vega_add_game_test_case(LightYearsContent LightYearsContentTests)
 	vega_add_game_test(LightYearsContentReloadTests
 		SOURCES ${VEGA_TESTS_DIR}/ContentReloadTests.cpp
-		LIBS ${VEGA_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		LIBS VegaEngine VegaGAS ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		GAME PROJECT_DIR)
 	target_compile_definitions(LightYearsContentReloadTests PRIVATE CONTENT_RELOAD_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/content-reload-test")
 	vega_add_game_test_case(LightYearsContentReload LightYearsContentReloadTests)
@@ -212,7 +210,7 @@ if(BUILD_TESTING)
 
 	vega_add_game_test(LightYearsTemporaryOvercapTests
 		SOURCES ${VEGA_TESTS_DIR}/TemporaryOvercapTests.cpp
-		LIBS ${VEGA_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME} ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
+		LIBS VegaEngine VegaGAS ${LIGHT_YEARS_GAMEPLAY_CORE_TARGET_NAME}
 		GAME)
 	vega_add_game_test_case(LightYearsTemporaryOvercap LightYearsTemporaryOvercapTests)
 
@@ -227,7 +225,7 @@ if(BUILD_TESTING)
 
 	vega_add_game_test(LightYearsActorHitCooldownTests
 		SOURCES ${VEGA_TESTS_DIR}/ActorHitCooldownTests.cpp
-		LIBS ${VEGA_ENGINE_TARGET_NAME})
+		LIBS VegaEngine)
 	vega_add_game_test_case(LightYearsActorHitCooldown LightYearsActorHitCooldownTests NO_WORKDIR)
 
 	vega_add_game_test(LightYearsProjectileReflectionTests GAME_WHOLE SOURCES ${VEGA_TESTS_DIR}/ProjectileReflectionTests.cpp)
@@ -402,7 +400,7 @@ if(BUILD_TESTING)
 	if(LIGHT_YEARS_BUILD_SPECIALIZED_TESTS)
 		vega_add_game_test(LightYearsAutoTargetingTests
 			SOURCES ${VEGA_TESTS_DIR}/AutoTargetingTests.cpp
-			LIBS ${VEGA_ENGINE_TARGET_NAME} ${SPACE_ABILITY_SYSTEM_TARGET_NAME}
+			LIBS VegaEngine VegaGAS
 			GAME)
 		vega_add_game_test_case(LightYearsAutoTargeting LightYearsAutoTargetingTests NO_WORKDIR)
 	endif()
@@ -495,3 +493,7 @@ set_property(SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gameFramework/LightYearsGam
 target_include_directories(${LIGHT_YEARS_GAME_APP_TARGET_NAME} BEFORE PUBLIC
 	${CMAKE_CURRENT_BINARY_DIR}
 )
+
+if(VEGA_BUILD_EDITOR)
+    include(editor.cmake)
+endif()

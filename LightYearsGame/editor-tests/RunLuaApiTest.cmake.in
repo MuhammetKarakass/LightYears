@@ -1,0 +1,47 @@
+set(root "@CMAKE_CURRENT_BINARY_DIR@/lua-api-test-assets")
+file(MAKE_DIRECTORY "${root}/scripts" "${root}/scenes")
+file(COPY "@CMAKE_SOURCE_DIR@/LightYearsGame/assets/" DESTINATION "${root}")
+foreach(script IN ITEMS trigger spinning-hazard message-receiver)
+	configure_file("@VEGA_ENGINE_DIR@/VegaScript/examples/${script}.lua" "${root}/scripts/${script}.lua" COPYONLY)
+endforeach()
+file(WRITE "${root}/scenes/lua-api.scene.json" [=[
+{
+	"format":"vega.scene", "version":1, "settings":{}, "entities":[
+		{"type":"PlayerStart","guid":"lua-player","name":"Player spawn","properties":{"Location":[960,700]}},
+		{"type":"SpriteActor","guid":"lua-trigger","name":"Trigger","properties":{"Location":[960,700]},
+		 "components":[
+			{"type":"SpriteComponent","properties":{"Texture":"SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png","Scale":[2,2]}},
+			{"type":"CollisionComponent","added":true,"properties":{"Collision Layer":["Powerup"],"Collision Mask":["Player"],"Physics Enabled":true}}
+		 ],"scripts":[{"path":"scripts/trigger.lua","properties":{}}]},
+		{"type":"SpriteActor","guid":"lua-hazard","name":"Hazard","properties":{"Location":[400,300]},
+		 "components":[{"type":"SpriteComponent","properties":{"Texture":"SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png"}}],
+		 "scripts":[{"path":"scripts/spinning-hazard.lua","properties":{}}]},
+		{"type":"SpriteActor","guid":"lua-receiver","name":"Receiver","properties":{"Location":[600,300]},
+		 "scripts":[{"path":"scripts/message-receiver.lua","properties":{}}]}
+	]
+}
+]=])
+# The comparison scene has the same authored hosts and realized wave, without scripts.
+file(READ "${root}/scenes/lua-api.scene.json" baseline)
+foreach(index RANGE 1 3)
+	string(JSON baseline REMOVE "${baseline}" entities ${index} scripts)
+endforeach()
+foreach(index RANGE 1 3)
+	math(EXPR x "1400 + ${index} * 100")
+	math(EXPR entity "3 + ${index}")
+	string(JSON baseline SET "${baseline}" entities ${entity}
+		"{\"type\":\"DummyEnemy\",\"guid\":\"baseline-${index}\",\"name\":\"DummyEnemy\",\"properties\":{\"Location\":[${x},100]}}")
+endforeach()
+file(WRITE "${root}/scenes/lua-api-baseline.scene.json" "${baseline}")
+execute_process(COMMAND "${VEGA_EDITOR}" --asset-root "${root}" --editor-script
+	"@CMAKE_CURRENT_BINARY_DIR@/scripts/lua-api.vegascript" RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+	message(FATAL_ERROR "VegaEditorLuaApi failed: ${result}")
+endif()
+file(READ "${root}/.vega/vega.lua" types)
+foreach(expected IN ITEMS "Max Health" "world.spawn" "on_message" "TimerHandle")
+	string(FIND "${types}" "${expected}" found)
+	if(found EQUAL -1)
+		message(FATAL_ERROR "Missing Lua annotation: ${expected}")
+	endif()
+endforeach()
