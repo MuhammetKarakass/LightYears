@@ -1,5 +1,7 @@
 #include "editor/EditorApplication.h"
 #include "editor/EditorTheme.h"
+#include <framework/AudioOutput.h>
+#include <fstream>
 
 #include <framework/World.h>
 #include <framework/Actor.h>
@@ -45,6 +47,14 @@ namespace vega
 		mModule{ std::move(module) }, mViewport{ GetRenderWindow() }, mContentAuthoring{ GetEngineContext() }
 	{
 		if (!mModule) throw std::runtime_error("Editor requires a game module");
+		LoadAudioSettings();
+		mContext.audioPreference = mPrefabContext.audioPreference = [this](const std::string& operation, bool muted)
+		{
+			if (operation == "expect-mute-audio") return mMuteAudio == muted;
+			mMuteAudio = muted;
+			ly::AudioOutput::SetMuted(mMuteAudio);
+			return SaveAudioSettings();
+		};
 		bool unattended = false;
 #ifdef _MSC_VER
 		for (int index = 1; index < __argc; ++index) if (std::string{ __argv[index] } == "--editor-script") unattended = true;
@@ -207,6 +217,36 @@ namespace vega
 		for (const auto& tool : mExtensions.tools) tool->Initialize(mContext);
 		OpenScene(startupScene, true);
 		RefreshContent();
+	}
+
+	void EditorApplication::LoadAudioSettings()
+	{
+		// Automation can opt into a disposable file; ordinary script runs never touch user preferences.
+		if (const char* overridePath = std::getenv("VEGA_EDITOR_SETTINGS")) mAudioSettingsPath = overridePath;
+		else if (!ly::AudioOutput::IsForcedMuted())
+		{
+			if (const char* local = std::getenv("LOCALAPPDATA")) mAudioSettingsPath = std::filesystem::path{ local } / "Vega/editor-settings.json";
+			else if (const char* home = std::getenv("HOME")) mAudioSettingsPath = std::filesystem::path{ home } / ".config/Vega/editor-settings.json";
+		}
+		std::ifstream input{ mAudioSettingsPath };
+		if (input)
+		{
+			const auto settings = nlohmann::json::parse(input, nullptr, false);
+			if (settings.is_object() && settings.contains("muteAudio") && settings["muteAudio"].is_boolean())
+				mMuteAudio = settings["muteAudio"].get<bool>();
+		}
+		ly::AudioOutput::SetMuted(mMuteAudio);
+	}
+
+	bool EditorApplication::SaveAudioSettings() const
+	{
+		if (mAudioSettingsPath.empty()) return true;
+		std::error_code error;
+		std::filesystem::create_directories(mAudioSettingsPath.parent_path(), error);
+		if (error) return false;
+		std::ofstream output{ mAudioSettingsPath };
+		output << nlohmann::json{ { "muteAudio", mMuteAudio } }.dump(2) << '\n';
+		return static_cast<bool>(output);
 	}
 
 	EditorApplication::~EditorApplication()
@@ -412,6 +452,11 @@ namespace vega
 			}
 			if (ImGui::BeginMenu("View"))
 			{
+				if (ImGui::MenuItem("Mute audio", nullptr, &mMuteAudio))
+				{
+					ly::AudioOutput::SetMuted(mMuteAudio);
+					if (!SaveAudioSettings()) mContext.sceneError = "Cannot save audio preference";
+				}
 				ImGui::MenuItem("Viewport", nullptr, &mShowViewport);
 				ImGui::MenuItem("Hierarchy", nullptr, &mShowHierarchy);
 				ImGui::MenuItem("Inspector", nullptr, &mShowInspector);

@@ -1,4 +1,6 @@
 add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
+	include/framework/AudioOutput.h
+	src/framework/AudioOutput.cpp
 	include/framework/EngineContext.h
 	src/framework/EngineContext.cpp
 	include/framework/ActorRef.h
@@ -331,4 +333,19 @@ if(BUILD_TESTING)
 	target_link_libraries(LightYearsHierarchyTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
 	target_compile_definitions(LightYearsHierarchyTests PRIVATE HIERARCHY_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/hierarchy-assets")
 	add_test(NAME LightYearsEngineHierarchy COMMAND LightYearsHierarchyTests)
+endif()
+
+if(BUILD_TESTING)
+	add_executable(VegaAudioOutputTests tests/AudioOutputTests.cpp)
+	target_link_libraries(VegaAudioOutputTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	target_compile_definitions(VegaAudioOutputTests PRIVATE AUDIO_OUTPUT_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/audio-output-tests")
+	ly_enable_warnings(VegaAudioOutputTests)
+	foreach(runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${runtime} VegaAudioOutputTests)
+	endforeach()
+	add_test(NAME VegaAudioEnvironment COMMAND VegaAudioOutputTests environment)
+	add_test(NAME VegaAudioFlag COMMAND VegaAudioOutputTests flag --mute)
+	add_test(NAME VegaAudioInteractive COMMAND VegaAudioOutputTests interactive)
+	add_test(NAME VegaAudioEditorScript COMMAND VegaAudioOutputTests editor-script --editor-script unused)
+	add_test(NAME VegaAudioCapture COMMAND VegaAudioOutputTests capture --visual-capture unused)
 endif()

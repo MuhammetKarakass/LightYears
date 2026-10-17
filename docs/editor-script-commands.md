@@ -194,6 +194,10 @@ Assert the selected actor location with optional nonnegative tolerance. Mode: An
 
 Assert whether the editor is in Edit or Play mode. Mode: Any.
 
+## `expect-mute-audio muted:true|false`
+
+Assert the saved editor audio mute preference. Mode: Any.
+
 ## `expect-no-errors`
 
 Assert that Console has no error or fatal messages. Mode: Any.
@@ -361,6 +365,10 @@ Set the selected actor location. Mode: Any.
 ## `move-selection x:real y:real`
 
 Translate the selection by the supplied offset. Mode: Any.
+
+## `mute-audio muted:true|false`
+
+Set and persist the editor audio mute preference. Mode: Any.
 
 ## `new-scene`
 

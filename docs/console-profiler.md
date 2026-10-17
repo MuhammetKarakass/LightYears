@@ -65,3 +65,15 @@ case sensitive. Expect-no-errors checks retained Error/Fatal records since Clear
 Expect-profile-scope searches completed frames in the retained window.
 `VegaEditorConsoleProfiler` copies assets into the build tree, creates Lua fixtures
 there, runs Play, validates JSON and writes `build/VegaEditor/Saved/console-profiler.png`.
+
+## Editor audio
+
+**View > Mute audio** silences play-mode output without stopping playback.
+It defaults off and is saved per user in `%LOCALAPPDATA%/Vega/editor-settings.json`
+(`$HOME/.config/Vega/editor-settings.json` on other platforms), outside project
+files. `mute-audio true|false` sets the same preference in editor scripts;
+`expect-mute-audio true|false` checks it. Scripts normally leave user settings
+alone; `VEGA_EDITOR_SETTINGS` selects a disposable settings file for restart
+tests. An environment, command-line or automation mute takes precedence over
+the preference, so toggling it off cannot make an automated run audible.
+

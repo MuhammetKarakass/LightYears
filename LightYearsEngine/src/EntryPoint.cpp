@@ -1,5 +1,6 @@
 #include "EntryPoint.h"
 #include "framework/Application.h"
+#include "framework/AudioOutput.h"
 #include "framework/ProjectSettings.h"
 #include "framework/debug/Log.h"
 #include "framework/debug/Profiler.h"
@@ -7,7 +8,9 @@
 #include <exception>
 #include <memory>
 
-int main() {
+int main(int argc, char** argv)
+{
+	ly::AudioOutput::Initialize(argc, argv);
 	ly::debug::Profiler::Initialize();
 	try
 	{

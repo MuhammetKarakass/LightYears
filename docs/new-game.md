@@ -162,3 +162,13 @@ linking `VegaSky` / `VegaGAS` at runtime and `VegaSkyEditor` /
 See [engine modules](engine-modules.md) for the complete setup and individual
 sky asset example. For a minimal build, disable `VEGA_BUILD_LIGHTYEARS`,
 `VEGA_BUILD_SKY` and `VEGA_BUILD_GAS`. Each module may also be enabled alone.
+
+## Silent automation
+
+Set `VEGA_MUTE_AUDIO=1` or pass `--mute` to a game runtime (including BlankGame)
+or editor to silence process output. Playback, Lua audio state, timers and fades
+continue normally. `--editor-script`, `--visual-capture`, `--visual-script`,
+`--perf-autoplay` and `--headless` also force mute. Interactive play defaults to
+normal audio. CTest supplies the environment variable to every registered test
+and its child processes, including CMake script runners.
+

@@ -42,6 +42,10 @@ namespace vega
 		std::unique_ptr<GameModule> mModule;
 		EditorExtensions mExtensions;
 		void BuildUI();
+		void LoadAudioSettings();
+		bool SaveAudioSettings() const;
+		bool mMuteAudio = false;
+		std::filesystem::path mAudioSettingsPath;
 		void BuildToolbar();
 		void BuildStatusBar();
 		void BuildGizmo();

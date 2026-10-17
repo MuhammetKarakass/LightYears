@@ -43,6 +43,7 @@ namespace vega
 		std::string settingErrorKey, settingError;
 		ly::debug::LogBuffer* console = nullptr;
 		std::function<void()> clearConsole;
+		std::function<bool(const std::string&, bool)> audioPreference;
 		std::function<void(bool)> diagnosticsVisible;
 		std::function<bool(const EditorScriptCommand&, std::string&)> contentCommand;
 		std::function<bool(const EditorScriptCommand&, std::string&)> autosaveCommand;

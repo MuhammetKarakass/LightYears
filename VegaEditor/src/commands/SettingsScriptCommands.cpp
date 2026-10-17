@@ -87,6 +87,16 @@ namespace vega
 	} // namespace
 	void RegisterSettingsScriptCommands(ScriptCommandRegistry& registry)
 	{
+		for (const char* name : { "mute-audio", "expect-mute-audio" })
+		{
+			registry.Add(TokenScriptCommand(name, Schema("muted:true|false"),
+				std::string{ name } == "mute-audio" ? "Set and persist the editor audio mute preference." : "Assert the saved editor audio mute preference.", ScriptMode::Any,
+				[name](EditorContext& context, CommandHistory&, const std::vector<std::string>& values, std::string& detail)
+				{
+					detail = "Editor audio mute preference";
+					return context.audioPreference && context.audioPreference(name, values[0] == "true");
+				}));
+		}
 		registry.Add({"set-setting", Schema("key:text value:json"), "Set a scene setting to a JSON value; null selects an optional default.", ScriptMode::Edit,
 		    DecodeSetSetting, ExecuteSetSetting});
 		registry.Add({"expect-setting", Schema("key:text value:json"), "Assert an effective scene setting value.", ScriptMode::Any, DecodeSetSetting,

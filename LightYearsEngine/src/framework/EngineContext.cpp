@@ -1,6 +1,7 @@
 #include "framework/EngineContext.h"
 #include "framework/AssetManager.h"
 #include "framework/AudioManager.h"
+#include "framework/AudioOutput.h"
 #include "framework/EngineAssets.h"
 #include "framework/reflection/Reflection.h"
 #include "framework/scene/PrefabLibrary.h"
@@ -24,6 +25,8 @@ namespace ly
 		mSceneServices{ new SceneServices }
 	{
 		mSceneSettings->RegisterEngineSettings();
+		// Custom test hosts bypass EntryPoint, and components can play without an AudioManager.
+		AudioOutput::Initialize();
 		reflect::RegisterEngineTypes(*mTypes);
 	}
 

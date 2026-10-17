@@ -66,6 +66,11 @@ if(BUILD_TESTING)
 			-DSCRIPT=${CMAKE_SOURCE_DIR}/VegaEditor/tests/scripts/hierarchy.vegascript
 			-DEDITOR=$<TARGET_FILE:BlankEditor> -P ${CMAKE_CURRENT_SOURCE_DIR}/Tests/RunHierarchy.cmake)
 		set_tests_properties(VegaEditorHierarchy PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 180)
+		add_test(NAME VegaEditorAudioMute COMMAND ${CMAKE_COMMAND}
+			-DEDITOR=$<TARGET_FILE:BlankEditor> -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/audio-mute-test
+			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
+			-P ${CMAKE_SOURCE_DIR}/VegaEditor/tests/RunAudioMute.cmake)
+		set_tests_properties(VegaEditorAudioMute PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/VegaEditor" TIMEOUT 150)
 		add_test(NAME BlankEditorScript COMMAND ${CMAKE_COMMAND}
 			-DTEMPLATE_ROOT=${CMAKE_CURRENT_SOURCE_DIR} -DTEST_ROOT=${CMAKE_BINARY_DIR}/blank-editor-test
 			-DRUNTIME=$<TARGET_FILE:BlankGame> -DEDITOR=$<TARGET_FILE:BlankEditor>

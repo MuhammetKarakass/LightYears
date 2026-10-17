@@ -143,3 +143,22 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 endif()
+
+# Apply after every directory has registered its tests. CMake script tests pass
+# their environment on to execute_process children, including exported games.
+function(vega_mute_tests directory)
+	get_property(tests DIRECTORY "${directory}" PROPERTY TESTS)
+	foreach(test IN LISTS tests)
+		set_property(TEST "${test}" DIRECTORY "${directory}" APPEND PROPERTY ENVIRONMENT "VEGA_MUTE_AUDIO=1")
+	endforeach()
+	get_property(children DIRECTORY "${directory}" PROPERTY SUBDIRECTORIES)
+	foreach(child IN LISTS children)
+		vega_mute_tests("${child}")
+	endforeach()
+endfunction()
+if(BUILD_TESTING)
+	add_test(NAME VegaTestAudioEnvironment COMMAND ${CMAKE_COMMAND}
+		-DBUILD_ROOT=${CMAKE_BINARY_DIR} -DEXPECT_GAME=${VEGA_BUILD_LIGHTYEARS}
+		-P ${CMAKE_SOURCE_DIR}/tools/CheckTestAudioEnvironment.cmake)
+	vega_mute_tests("${CMAKE_SOURCE_DIR}")
+endif()
