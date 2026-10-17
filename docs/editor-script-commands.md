@@ -118,6 +118,10 @@ Delete the selected entities. Mode: Any.
 
 Show or hide Console and Profiler panels. Mode: Any.
 
+## `drop-asset target:text property:text path:text`
+
+Assign an asset path to an asset property, as an Inspector drop does. Mode: Edit.
+
 ## `duplicate`
 
 Duplicate the selected entity. Mode: Any.

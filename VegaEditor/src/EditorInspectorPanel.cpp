@@ -1,4 +1,5 @@
 #include "editor/EditorApplication.h"
+#include "editor/EditorAssetField.h"
 #include "editor/EditorIcons.h"
 #include "editor/PropertyWidgets.h"
 #include "editor/EditorPrefabs.h"
@@ -22,9 +23,9 @@ namespace vega
 	{
 		struct PropertyGesture { bool activated = false; bool continuous = false; };
 		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed = false,
-			EditorContext* context = nullptr, const std::function<void(int)>& pick = {}, PropertyGesture* gesture = nullptr);
+			EditorContext* context = nullptr, const std::function<void(int)>& pick = {}, PropertyGesture* gesture = nullptr, const std::filesystem::path& assetRoot = {});
 		bool DrawPropertyBody(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
-			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture)
+			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot)
 		{
 			using ly::reflect::PropertyKind;
 			const char* label = property.name.c_str();
@@ -131,6 +132,7 @@ namespace vega
 				return changed;
 			}
 			case PropertyKind::String:
+				if (property.assetKind != ly::reflect::AssetKind::None) return DrawAssetField(property, std::get<std::string>(value), mixed, assetRoot);
 				return InputStringProperty(label, std::get<std::string>(value), mixed);
 			case PropertyKind::Flags:
 			{
@@ -174,9 +176,15 @@ namespace vega
 			return false;
 		}
 		bool DrawProperty(const ly::reflect::PropertyInfo& property, ly::reflect::PropertyValue& value, bool mixed,
-			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture)
+			EditorContext* context, const std::function<void(int)>& pick, PropertyGesture* gesture, const std::filesystem::path& assetRoot)
 		{
-			const bool changed = DrawPropertyBody(property, value, mixed, context, pick, gesture);
+			const bool changed = DrawPropertyBody(property, value, mixed, context, pick, gesture, assetRoot);
+			// Asset edits are discrete: a picker choice or a drop is one undo step, never a merged drag.
+			if (property.assetKind != ly::reflect::AssetKind::None)
+			{
+				if (gesture) *gesture = {};
+				return changed;
+			}
 			if (gesture && property.kind != ly::reflect::PropertyKind::List && (changed || ImGui::IsItemActivated()))
 			{
 				gesture->activated = ImGui::IsItemActivated();
@@ -192,6 +200,7 @@ namespace vega
 		auto& context = mPrefabWorld ? mPrefabContext : mContext;
 		auto& selection = mPrefabWorld ? mPrefabSelection : mSelection;
 		auto& history = mPrefabWorld ? mPrefabHistory : mHistory;
+		const auto assetRoot = context.document ? context.document->Root() : std::filesystem::path{};
 		if (ImGui::Begin("Inspector", &mShowInspector))
 		{
 			if (mPrefabWorld)
@@ -231,7 +240,7 @@ namespace vega
 					ImGui::BeginDisabled(!row.property->setter);
 					ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, row.mixed);
 					PropertyGesture gesture;
-					const bool changed = DrawProperty(*row.property, value, row.mixed, &context, {}, &gesture);
+					const bool changed = DrawProperty(*row.property, value, row.mixed, &context, {}, &gesture, assetRoot);
 					ImGui::PopItemFlag();
 					if (gesture.activated) mPropertyMergeGroup = history.BeginMergeGroup();
 					if (changed) SetCommonProperty(context, history, row, value,
@@ -398,7 +407,7 @@ namespace vega
 								const bool changed = DrawProperty(*property, value, false, &context, [&](int index)
 								{
 									mReferencePick = ReferencePick{ actor->GetUniqueID(), target.componentIdentity, property->name, index };
-								}, &gesture);
+								}, &gesture, assetRoot);
 								if (overridden) ImGui::PopStyleColor();
 								if (gesture.activated) mPropertyMergeGroup = history.BeginMergeGroup();
 								if (changed && property->setter)

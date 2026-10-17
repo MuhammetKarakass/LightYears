@@ -267,6 +267,13 @@ Save / Discard / Cancel, and Content scene double-click opens the authoring scen
 See [editor script commands](../VegaEditor/tests/scripts/README.md) for automation
 and the `VegaEditorAuthoring` build-tree-only save/capture test.
 
+Asset-typed properties (for example a sprite's `Texture`) show an asset picker in the
+Inspector. Choose a file from the list, or drag one from the Content panel onto the field;
+files of another kind are refused with a message. Clear empties the field, and a `Missing asset`
+warning marks a path whose file is not under the asset root. Moving or renaming the file in the
+Content panel updates every scene and prefab reference in one undo step. Scene files still store
+the path as a plain string. See [reflection](reflection.md#asset-paths).
+
 ## Lua scene components
 
 VegaScript's `Overrides()` reads explicit overrides; `SetOverrides()` replaces

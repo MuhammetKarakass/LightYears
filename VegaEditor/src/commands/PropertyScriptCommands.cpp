@@ -1,4 +1,6 @@
 #include "editor/ScriptExecution.h"
+#include "editor/EditorAssetField.h"
+#include "editor/JsonDocument.h"
 #include <framework/World.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <cmath>
@@ -320,6 +322,35 @@ namespace vega
 			};
 			success = expectLocation(command.location);
 		}
+		EditorScriptParseResult DecodeDropAsset(const ScriptArguments& arguments)
+		{
+			const auto& tokens = arguments.tokens;
+			EditorScriptCommand command;
+			command.operation = arguments.tokens[0];
+			const auto bad = []() { return EditorScriptParseResult{{}, "Invalid arguments"}; };
+			if (tokens.size() != 4 || tokens[1].empty() || tokens[2].empty() || tokens[3].empty()) return bad();
+			command.text = tokens[1];
+			command.property = tokens[2];
+			command.values = { tokens[3] };
+			return {command, {}};
+		}
+		// Same validation and undo path as an Inspector drop; a refusal is readable by expect-prop-error.
+		void ExecuteDropAsset(ScriptExecution& execution, const EditorScriptCommand& command)
+		{
+			auto& context = execution.context;
+			auto& success = execution.success;
+			auto& detail = execution.detail;
+			auto actor = execution.context.selection.Get();
+			if (actor && actor->GetWorld() != execution.context.world) actor.reset();
+			const auto target = actor ? FindPropertyTarget(*actor, command.text) : ReflectedTarget{};
+			const auto* property = target.type ? target.type->FindProperty(command.property) : nullptr;
+			if (!property) { detail = "Unknown target or property"; return; }
+			const auto root = context.document ? context.document->Root() : std::filesystem::path{};
+			std::string error;
+			success = AssignAssetProperty(context, execution.history, *actor, target, *property, root, std::filesystem::u8path(command.values[0]), error);
+			detail = success ? "Asset assigned" : error;
+			if (!success) execution.state.mPendingPropertyError = error;
+		}
 		void ExecuteRotate(ScriptExecution& execution, const EditorScriptCommand& command)
 		{
 			auto& history = execution.history;
@@ -361,5 +392,7 @@ namespace vega
 		registry.Add({"expect-location", Schema("x:real y:real [tolerance:real]"), "Assert the selected actor location with optional nonnegative tolerance.",
 		    ScriptMode::Any, DecodeMove, ExecuteExpectLocation});
 		registry.Add({"rotate", Schema("degrees:real"), "Set the selected actor rotation in degrees.", ScriptMode::Any, DecodeRotate, ExecuteRotate});
+		registry.Add({"drop-asset", Schema("target:text property:text path:text"), "Assign an asset path to an asset property, as an Inspector drop does.",
+		    ScriptMode::Edit, DecodeDropAsset, ExecuteDropAsset});
 	}
 } // namespace vega

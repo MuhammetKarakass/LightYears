@@ -66,8 +66,8 @@ function. Its braces form the body of `Describe(Builder& type)`.
 | `VEGA_REQUIRES(ComponentName)` | Declare an inherited actor requirement with the stringified token. |
 
 Property expressions return the builder: append `.Range(min, max)`, `.Speed(v)`,
-`.Tooltip(text)`, `.Labels({ { value, "Label" } })`, `.Flags(labels)`, or
-`.Category(text)`. An explicit category overrides the default for that property
+`.Tooltip(text)`, `.Labels({ { value, "Label" } })`, `.Flags(labels)`, `.Category(text)`,
+ or `.Asset(kind)` for string asset paths (see [asset paths](#asset-paths)). An explicit category overrides the default for that property
 without changing following properties. A new default affects new properties
 only. Use `type.Property(...)` for custom lambdas, such as texture loading with
 error handling, and the fluent builder for policies such as
@@ -94,6 +94,49 @@ Range clamps fields: an Int or Float field with `.Range(min, max)` stores the
 clamped value on every write from the Inspector, scene loads and Lua. The bounds
 are read at write time, so `.Range` may follow the field. Vectors and
 `VEGA_PROPERTY` setters are unaffected.
+
+## Asset paths
+
+A String property that holds an asset-root-relative path declares its kind with
+`.Asset(kind)`. It works after `VEGA_PROPERTY`, `VEGA_FIELD` and `VEGA_READONLY`,
+and after `type.Property` or `type.Field`:
+
+```cpp
+VEGA_FIELD("Icon", mIconPath).Asset(AssetKind::Texture);
+VEGA_PROPERTY("Sound", GetSound, SetSound).Asset(AssetKind::Sound);
+```
+
+`AssetKind` lives in `ly::reflect` (`framework/reflection/AssetKind.h`). The value
+stays a plain `std::string` with `/` separators, so scenes, prefabs, Lua and
+serialization do not change. Kinds and the names they accept (case-insensitive;
+prefab and scene need the compound suffix, so `level.json` is not a scene):
+
+| Kind | Accepts |
+| --- | --- |
+| `Texture` | `.png` `.jpg` `.jpeg` `.bmp` `.tga` |
+| `Sound` | `.wav` `.ogg` `.flac` `.mp3` |
+| `Font` | `.ttf` `.otf` |
+| `Prefab` | `*.prefab.json` |
+| `Scene` | `*.scene.json` |
+| `Script` | `.lua` |
+| `Any` | any file name |
+
+`AcceptsAsset(kind, path)` checks only the name; it does not touch the disk.
+`.Asset()` is checked at registration: it throws `std::logic_error` on a
+non-string property and for `AssetKind::None`. The registry golden records
+`"asset"` only on asset-typed properties.
+
+The editor Inspector draws these as a picker over the accepted files under the
+asset root (searchable), a drop target for Content panel files, a Clear button, and
+a `Missing asset` warning when the file does not exist. Texture values show a small
+thumbnail. Dropping a file of another kind, a folder or a path outside the asset
+root is refused with a message and leaves the value unchanged. Each accepted change
+is one undo step. Read-only asset properties show the path only. Moving or
+renaming an asset in the Content panel rewrites the matching strings in scenes and
+prefabs like any other reference.
+
+Engine properties tagged this way: SpriteComponent `Texture` (`Texture`) and
+ScriptComponent `Script` (`Script`, read-only).
 
 ## Add a new class
 
@@ -260,7 +303,8 @@ structs and nested lists are deferred to keep the variant/persistence schema sma
 ```
 
 The registry golden now records `elementKind` (null on scalar properties) and
-`requiredType` (empty when unrestricted). Existing order, kind IDs, labels and
+`requiredType` (empty when unrestricted). Asset-typed properties also record
+`"asset"` (for example `"Texture"`); other entries have no such key. Existing order, kind IDs, labels and
 other metadata remain identical.
 
 ## Compatibility checks

@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include "framework/World.h"
 #include "framework/ActorRef.h"
+#include "framework/reflection/AssetKind.h"
 #include <functional>
 #include <memory>
 #include <map>
@@ -71,6 +72,8 @@ namespace ly::reflect
 		std::string category;
 		PropertyKind elementKind = PropertyKind::Bool;
 		std::string requiredType;
+		// Editor metadata only: a String property whose value is an asset path of this kind.
+		AssetKind assetKind = AssetKind::None;
 		PropertyInfo Element() const
 		{
 			auto element = *this;
@@ -307,6 +310,15 @@ namespace ly::reflect
 		Class& Labels(EnumLabels labels) { Current().enumLabels = std::move(labels); return *this; }
 		Class& RequiredType(const std::string& name) { Current().requiredType = name; return *this; }
 		Class& Flags(EnumLabels labels) { Current().kind = PropertyKind::Flags; Current().enumLabels = std::move(labels); return *this; }
+		// Marks a String property as an asset path. Throws std::logic_error at registration for any
+		// other kind, so an asset picker can never be attached to a value that is not a path.
+		Class& Asset(AssetKind kind)
+		{
+			if (kind == AssetKind::None) throw std::logic_error("Asset kind must not be None: " + Current().name);
+			if (Current().kind != PropertyKind::String) throw std::logic_error("Asset kind requires a string property: " + Current().name);
+			Current().assetKind = kind;
+			return *this;
+		}
 
 	private:
 		static const TypeInfo* BaseType(TypeRegistry& registry)

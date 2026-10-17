@@ -16,7 +16,7 @@ namespace
 			nlohmann::json properties = nlohmann::json::array();
 			for (const auto& property : type->properties)
 			{
-				properties.push_back({
+				nlohmann::json entry = {
 					{ "name", property.name }, { "kind", static_cast<int>(property.kind) },
 					{ "hasSetter", static_cast<bool>(property.setter) },
 					{ "min", property.min ? nlohmann::json(*property.min) : nlohmann::json(nullptr) },
@@ -25,7 +25,10 @@ namespace
 					{ "category", property.category }, { "labels", property.enumLabels },
 					{ "elementKind", property.kind == ly::reflect::PropertyKind::List ? nlohmann::json(static_cast<int>(property.elementKind)) : nlohmann::json(nullptr) },
 					{ "requiredType", property.requiredType }
-				});
+				};
+				// Only asset-typed properties carry the key, so unrelated golden entries keep their shape.
+				if (property.assetKind != ly::reflect::AssetKind::None) entry["asset"] = ly::reflect::AssetKindName(property.assetKind);
+				properties.push_back(std::move(entry));
 			}
 			types.push_back({
 				{ "name", type->name }, { "base", type->base ? type->base->name : "" },

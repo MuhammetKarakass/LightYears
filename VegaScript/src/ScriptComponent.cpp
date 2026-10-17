@@ -339,7 +339,7 @@ namespace vega::script
 	VEGA_REFLECT(ScriptComponent, ly::ActorComponent)
 	{
 		VEGA_REMOVABLE();
-		VEGA_READONLY("Script", ScriptPath);
+		VEGA_READONLY("Script", ScriptPath).Asset(ly::reflect::AssetKind::Script);
 		VEGA_READONLY("Last Error", LastError);
 	}
 

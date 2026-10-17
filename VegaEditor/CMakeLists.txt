@@ -48,6 +48,7 @@ set(VEGA_EDITOR_CORE_SOURCES
 	src/EditorPanels.cpp
 	src/EditorHierarchyPanel.cpp
 	src/EditorInspectorPanel.cpp
+	src/EditorAssetField.cpp
 	src/EditorViewportPanel.cpp
 	src/EditorExportDialog.cpp
 	${VEGA_EDITOR_COMMAND_SOURCES}
@@ -94,6 +95,7 @@ set(VEGA_EDITOR_CORE_SOURCES
 	include/editor/EditorScript.h
 	include/editor/EditorViewport.h
 	include/editor/EditorSelection.h
+	include/editor/EditorAssetField.h
 )
 add_library(VegaEditorCore STATIC ${VEGA_EDITOR_CORE_SOURCES})
 set(VEGA_EDITOR_CORES VegaEditorCore)
@@ -159,6 +161,15 @@ if(BUILD_TESTING AND VEGA_BUILD_LIGHTYEARS)
 		CopyRuntimeLibToTarget(${module_runtime} VegaEditorGameModuleTests)
 	endforeach()
 	add_test(NAME VegaEditorGameModule COMMAND VegaEditorGameModuleTests)
+	add_executable(VegaEditorAssetFieldTests tests/AssetFieldTests.cpp)
+	target_include_directories(VegaEditorAssetFieldTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+	target_link_libraries(VegaEditorAssetFieldTests PRIVATE VegaEditorCore)
+	target_compile_definitions(VegaEditorAssetFieldTests PRIVATE VEGA_ASSET_FIELD_TEST_ROOT="${CMAKE_CURRENT_BINARY_DIR}/asset-field-test")
+	ly_enable_warnings(VegaEditorAssetFieldTests)
+	foreach(asset_field_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyRuntimeLibToTarget(${asset_field_runtime} VegaEditorAssetFieldTests)
+	endforeach()
+	add_test(NAME VegaEditorAssetField COMMAND VegaEditorAssetFieldTests)
 	add_test(NAME VegaEditorNoGameIncludes COMMAND ${CMAKE_COMMAND}
 		-DSOURCE_ROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/NoGameIncludes.cmake)
 	add_executable(VegaEditorSkyDocumentTests tests/SkyDocumentTests.cpp ${CMAKE_SOURCE_DIR}/Modules/Sky/editor/src/SkyDocument.cpp src/JsonDocument.cpp src/JsonCommands.cpp

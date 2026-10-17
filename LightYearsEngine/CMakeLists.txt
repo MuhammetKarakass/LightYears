@@ -11,6 +11,8 @@ add_library(${LIGHT_YEARS_ENGINE_TARGET_NAME} STATIC
 	src/framework/ComponentIdentity.cpp
 	include/framework/reflection/Reflection.h
 	include/framework/reflection/ReflectionMacros.h
+	include/framework/reflection/AssetKind.h
+	src/framework/reflection/AssetKind.cpp
 	src/framework/reflection/Reflection.cpp
 	src/framework/reflection/EngineReflection.cpp
 	include/framework/scene/Scene.h
@@ -287,6 +289,12 @@ if(BUILD_TESTING)
 		CopyLibToTarget(${field_runtime} LightYearsReflectionFieldTests)
 	endforeach()
 	add_test(NAME LightYearsReflectionFields COMMAND LightYearsReflectionFieldTests)
+	add_executable(LightYearsReflectionAssetTests tests/ReflectionAssetTests.cpp)
+	target_link_libraries(LightYearsReflectionAssetTests PRIVATE ${LIGHT_YEARS_ENGINE_TARGET_NAME})
+	foreach(asset_runtime IN ITEMS sfml-graphics sfml-window sfml-system sfml-audio box2d)
+		CopyLibToTarget(${asset_runtime} LightYearsReflectionAssetTests)
+	endforeach()
+	add_test(NAME LightYearsReflectionAssets COMMAND LightYearsReflectionAssetTests)
     add_executable(LightYearsGameplayTagTests
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/GameplayTagTests.cpp
     )

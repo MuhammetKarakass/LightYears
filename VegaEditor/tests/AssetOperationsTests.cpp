@@ -72,6 +72,19 @@ int main()
 	if (lock != INVALID_HANDLE_VALUE) CloseHandle(lock);
 	Check(std::filesystem::exists(root / "scripts/start.lua") && !std::filesystem::exists(root / "destination/code") && Read(root / "a.json") == original, "Failed move did not roll back the rename and earlier reference edits");
 #endif
+	{
+		// An asset-typed property is a plain scene string, so a Content move rewrites it like any other reference.
+		const auto scene = root / "level.scene.json";
+		std::filesystem::create_directories(root / "textures/ui");
+		Write(root / "textures/hero.png", "image");
+		Write(scene, Json{ { "format", "vega.scene" }, { "version", 1 }, { "entities", Json::array({ Json{ { "type", "Ship" }, { "properties", Json{ { "Icon", "textures/hero.png" } } } } }) } }.dump(2));
+		AssetMovePlan textureMove;
+		Check(textureMove.Prepare(root, "textures/hero.png", "textures/ui/hero.png") && textureMove.References().size() == 1, "Texture move must preview the asset-typed scene reference");
+		Check(textureMove.Apply() && Json::parse(Read(scene))["entities"][0]["properties"]["Icon"] == "textures/ui/hero.png", "Texture move must update the asset-typed property");
+		Check(textureMove.Apply(false) && Json::parse(Read(scene))["entities"][0]["properties"]["Icon"] == "textures/hero.png", "Texture move undo must restore the asset-typed property");
+		std::filesystem::remove(scene);
+		std::filesystem::remove_all(root / "textures");
+	}
 	const auto project = root.parent_path() / "external.project.json";
 	Write(project, "{\"startupScene\":\"scripts/main.scene.json\"}");
 	Check(stale.Prepare(root, "scripts", "destination/code", project), "External project preview failed");

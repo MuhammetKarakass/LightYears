@@ -98,7 +98,7 @@ namespace ly
 			[](SpriteComponent& sprite, const std::string& path)
 			{
 				if (!path.empty() && !sprite.SetTexture(path)) throw std::runtime_error("Cannot load texture: " + path);
-			});
+			}).Asset(ly::reflect::AssetKind::Texture);
 		VEGA_PROPERTY("Scale", GetScale, SetScale);
 	}
 }
