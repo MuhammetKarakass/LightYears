@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/chainLightning/ChainLightningAbility.h"
 
 #include "gameConfigs/combat/DamageTypeConfig.h"
@@ -120,9 +121,9 @@ namespace ly
 				query.source = &owner;
 				query.origin = origin;
 				query.range = mTraversal.bounceRange;
-				query.requiredTargetLayers = owner.GetCollisionLayer() == CollisionLayer::Player
-					? CollisionLayer::Enemy
-					: CollisionLayer::Player;
+				query.requiredTargetLayers = owner.GetCollisionLayer() == GameCollision::Player
+					? GameCollision::Enemy
+					: GameCollision::Player;
 				query.requireCollisionCompatibility = true;
 				query.excludeSource = true;
 				query.filter = [this, previouslyStruck](
@@ -535,10 +536,10 @@ namespace ly
 		);
 
 		const CollisionLayer opposingLayer =
-			context.owner.GetCollisionLayer() == CollisionLayer::Player
-			? CollisionLayer::Enemy
-			: context.owner.GetCollisionLayer() == CollisionLayer::Enemy
-				? CollisionLayer::Player
+			context.owner.GetCollisionLayer() == GameCollision::Player
+			? GameCollision::Enemy
+			: context.owner.GetCollisionLayer() == GameCollision::Enemy
+				? GameCollision::Player
 				: CollisionLayer::None;
 		if (opposingLayer == CollisionLayer::None || initialRange <= 0.f || bounceRange <= 0.f)
 		{

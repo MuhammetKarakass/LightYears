@@ -1,11 +1,69 @@
 #include "framework/ProjectSettings.h"
+#include "framework/EngineContext.h"
+#include "framework/reflection/Reflection.h"
+#include "framework/debug/Log.h"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
 #include <stdexcept>
+#include <set>
 
 namespace ly
 {
+	namespace
+	{
+		void ValidateCollisionLayers(const std::vector<CollisionLayerSetting>& layers)
+		{
+			std::set<int> bits;
+			std::set<std::string> names;
+			const auto addName = [&](const std::string& name)
+			{
+				if (name.empty() || name == "None" || name.find('|') != std::string::npos ||
+					name.find_first_of("\t\r\n") != std::string::npos || name.front() == ' ' || name.back() == ' ' ||
+					std::all_of(name.begin(), name.end(), [](unsigned char c) { return std::isdigit(c); }) || !names.insert(name).second)
+					throw std::runtime_error("names and aliases must be unique, nonempty labels (not None, numbers or pipe combinations)");
+			};
+			for (const auto& layer : layers)
+			{
+				if (layer.bit < 0 || layer.bit >= 8 || !bits.insert(layer.bit).second)
+					throw std::runtime_error("bits must be unique integers from 0 to 7");
+				addName(layer.name);
+				for (const auto& alias : layer.aliases) addName(alias);
+			}
+			// Neutral spellings always identify their original bit, including unnamed channels.
+			for (int bit = 0; bit < 8; ++bit)
+			{
+				const auto neutral = "Layer " + std::to_string(bit);
+				for (const auto& layer : layers)
+					if (layer.bit != bit && (layer.name == neutral || std::find(layer.aliases.begin(), layer.aliases.end(), neutral) != layer.aliases.end()))
+						throw std::runtime_error("neutral labels cannot identify a different bit");
+			}
+		}
+		void WarnCollisionLayers(const std::exception& error)
+		{
+			LY_CORE_WARN("Project collisionLayers: %s; using neutral defaults", error.what());
+		}
+	}
+
+	void ProjectSettings::ApplyCollisionLayers(EngineContext& context) const
+	{
+		reflect::EnumLabels labels, aliases;
+		for (int bit = 0; bit < 8; ++bit) labels.emplace_back(1 << bit, "Layer " + std::to_string(bit));
+		try
+		{
+			ValidateCollisionLayers(collisionLayers);
+			for (const auto& layer : collisionLayers)
+			{
+				if (layer.name != labels[layer.bit].second) aliases.push_back(labels[layer.bit]);
+				labels[layer.bit].second = layer.name;
+				for (const auto& alias : layer.aliases) aliases.emplace_back(1 << layer.bit, alias);
+			}
+		}
+		catch (const std::exception& error) { WarnCollisionLayers(error); }
+		reflect::RegisterEngineTypes(context.Types());
+		context.Types().SetCollisionLabels(labels, aliases);
+	}
+
 	ProjectSettings ProjectSettings::Load(const std::filesystem::path& path)
 	{
 		std::ifstream input{ path };
@@ -21,6 +79,31 @@ namespace ly
 			!document.contains("version") || !document["version"].is_number_integer() || document["version"] != 1)
 			throw std::runtime_error("Expected vega.project version 1");
 		ProjectSettings settings;
+		if (document.contains("collisionLayers"))
+		{
+			try
+			{
+				const auto& layers = document.at("collisionLayers");
+				if (!layers.is_array()) throw std::runtime_error("expected a list");
+				for (const auto& layer : layers)
+				{
+					if (!layer.is_object() || !layer.contains("bit") || !layer["bit"].is_number_integer() ||
+						layer["bit"].get<double>() < 0 || layer["bit"].get<double>() > 7)
+						throw std::runtime_error("expected an object with bit from 0 to 7");
+					CollisionLayerSetting entry;
+					entry.bit = layer.at("bit").get<int>();
+					entry.name = layer.at("name").get<std::string>();
+					entry.aliases = layer.value("aliases", std::vector<std::string>{});
+					settings.collisionLayers.push_back(std::move(entry));
+				}
+				ValidateCollisionLayers(settings.collisionLayers);
+			}
+			catch (const std::exception& error)
+			{
+				settings.collisionLayers.clear();
+				WarnCollisionLayers(error);
+			}
+		}
 		settings.name = document.at("name").get<std::string>();
 		if (settings.name.find_first_not_of(" \t\r\n") == std::string::npos)
 			throw std::runtime_error("Project name must not be empty");
@@ -82,10 +165,21 @@ namespace ly
 
 	nlohmann::json ProjectSettings::ToJson() const
 	{
-		return { { "format", "vega.project" }, { "version", 1 }, { "name", name }, { "startupScene", startupScene },
+		nlohmann::json result = { { "format", "vega.project" }, { "version", 1 }, { "name", name }, { "startupScene", startupScene },
 			{ "window", { { "width", windowWidth }, { "height", windowHeight } } }, { "editor", editor },
 			{ "runtime", { { "executable", runtimeExecutable }, { "assetDirectory", runtimeAssetDirectory },
 				{ "visualDirectory", runtimeVisualDirectory }, { "log", runtimeLog } } } };
+		if (!collisionLayers.empty())
+		{
+			result["collisionLayers"] = nlohmann::json::array();
+			for (const auto& layer : collisionLayers)
+			{
+				nlohmann::json entry = { { "bit", layer.bit }, { "name", layer.name } };
+				if (!layer.aliases.empty()) entry["aliases"] = layer.aliases;
+				result["collisionLayers"].push_back(std::move(entry));
+			}
+		}
+		return result;
 	}
 
 	std::string ProjectSettings::ExecutableName() const

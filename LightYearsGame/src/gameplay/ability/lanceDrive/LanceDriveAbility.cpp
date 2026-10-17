@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/lanceDrive/LanceDriveAbility.h"
 
 #include "attributes/AttributeSystem.h"
@@ -213,7 +214,7 @@ namespace ly
 				return !lance || !lance->ConsumesFrontalContact(source, target);
 			}
 		);
-		const std::uint8_t enemyLayer = static_cast<std::uint8_t>(CollisionLayer::Enemy);
+		const std::uint8_t enemyLayer = static_cast<std::uint8_t>(GameCollision::Enemy);
 		const std::uint8_t currentCollisionMask =
 			static_cast<std::uint8_t>(ship->GetCollisionMask());
 		mCollisionMaskSnapshotHasEnemyLayer =
@@ -273,7 +274,7 @@ namespace ly
 		{
 			if (mHasCollisionMaskSnapshot)
 			{
-				const std::uint8_t enemyLayer = static_cast<std::uint8_t>(CollisionLayer::Enemy);
+				const std::uint8_t enemyLayer = static_cast<std::uint8_t>(GameCollision::Enemy);
 				std::uint8_t collisionMask =
 					static_cast<std::uint8_t>(ship->GetCollisionMask());
 				if (mCollisionMaskSnapshotHasEnemyLayer)

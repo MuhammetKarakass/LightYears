@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/reclaimerProtocol/ReclaimerRepairKitActor.h"
 
 #include "attributes/AttributeSystem.h"
@@ -120,16 +121,16 @@ namespace ly
 	{
 		SetRenderLayer(RenderLayer::WorldVfx);
 		SetEnablePhysics(true);
-		SetCollisionLayer(CollisionLayer::Powerup);
-		SetCollisionMask(CollisionLayer::Player);
+		SetCollisionLayer(GameCollision::Powerup);
+		SetCollisionMask(GameCollision::Player);
 	}
 
 	void ReclaimerRepairKitActor::BeginPlay()
 	{
 		AbilityWorldActor::BeginPlay();
 		SetEnablePhysics(true);
-		SetCollisionLayer(CollisionLayer::Powerup);
-		SetCollisionMask(CollisionLayer::Player);
+		SetCollisionLayer(GameCollision::Powerup);
+		SetCollisionMask(GameCollision::Player);
 		SetVelocity({});
 	}
 
@@ -144,8 +145,8 @@ namespace ly
 			mResolvedHealRatio
 		));
 		SetVelocity({});
-		SetCollisionLayer(CollisionLayer::Powerup);
-		SetCollisionMask(CollisionLayer::Player);
+		SetCollisionLayer(GameCollision::Powerup);
+		SetCollisionMask(GameCollision::Player);
 	}
 
 	void ReclaimerRepairKitActor::Tick(float deltaTime)

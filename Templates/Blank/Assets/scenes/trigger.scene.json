@@ -11,7 +11,7 @@
 			"components": [{
 				"type": "CollisionComponent",
 				"added": true,
-				"properties": { "Collision Layer": ["Player"], "Collision Mask": ["Powerup"], "Physics Enabled": true }
+				"properties": { "Collision Layer": ["Player"], "Collision Mask": ["Pickup"], "Physics Enabled": true }
 			}]
 		},
 		{
@@ -24,7 +24,7 @@
 				{
 					"type": "CollisionComponent",
 					"added": true,
-					"properties": { "Collision Layer": ["Powerup"], "Collision Mask": ["Player"], "Physics Enabled": true }
+					"properties": { "Collision Layer": ["Pickup"], "Collision Mask": ["Player"], "Physics Enabled": true }
 				}
 			],
 			"scripts": [{ "path": "scripts/trigger.lua", "properties": {} }]

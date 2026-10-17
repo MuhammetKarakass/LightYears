@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/combat/CombatRuntime.h"
@@ -544,7 +545,7 @@ namespace ly
 		// destroy the owning ship. Kill-driven abilities consume this snapshot
 		// instead of dereferencing a possibly invalid event target pointer.
 		context.targetWasEnemyCombatant =
-			mOwner.GetCollisionLayer() == CollisionLayer::Enemy &&
+			mOwner.GetCollisionLayer() == GameCollision::Enemy &&
 			dynamic_cast<Combatant*>(&mOwner) != nullptr;
 		const sf::Vector2f targetLocation = mOwner.GetActorLocation();
 		context.targetLocationAtResolution.x = targetLocation.x;

@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 
@@ -363,8 +364,8 @@ namespace rare_sustained_speed_e2e
 
 			const auto target = f.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			f.level->TickInternal(0.f);
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 			target->GetShieldComponent().ChangeShield(-10000.f);
 			target->GetAbilitySystemComponent().GetAttributes().SetBaseValue(OwnerAttributeIds::Armor, 0.f);
 			target->GetHealthComponent().SetMaxHealth(5000.f, true);

@@ -1,4 +1,6 @@
 #pragma once
+
+#include "gameConfigs/CollisionLayers.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
 #include "gameplay/content/ModuleLoader.h"
@@ -57,7 +59,7 @@ namespace uncommon_p4_e2e
 			const auto enemy = level->SpawnActor<SpaceShip>(definition).lock();
 			report.Check(enemy != nullptr, "P4 creates a real enemy combatant");
 			level->TickInternal(0.f);
-			enemy->SetCollisionLayer(CollisionLayer::Enemy);
+			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
 			DamagePayload payload;
 			payload.criticalPolicy = DamageCriticalPolicy::Disabled;
@@ -74,7 +76,7 @@ namespace uncommon_p4_e2e
 	{
 		const auto enemy = f.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 		f.level->TickInternal(0.f);
-		enemy->SetCollisionLayer(CollisionLayer::Enemy);
+		enemy->SetCollisionLayer(ly::GameCollision::Enemy);
 		enemy->SetCollisionMask(CollisionLayer::None);
 		enemy->SetEnablePhysics(false);
 		enemy->SetActorLocation(f.ship->GetActorLocation() + sf::Vector2f{ distance, 0.f });

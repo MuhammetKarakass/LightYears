@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "EnemyCombatFoundationTests.h"
 #include "gameplay/enemy/EnemyRuntime.h"
 #include "gameplay/enemy/EnemyCombatProfile.h"
@@ -423,14 +424,14 @@ namespace ly
 
 			World targetWorld{ nullptr };
 			const shared_ptr<TestCombatant> source = targetWorld.SpawnActor<TestCombatant>().lock();
-			source->SetCollisionLayer(CollisionLayer::Enemy);
-			source->SetCollisionMask(CollisionLayer::Player);
+			source->SetCollisionLayer(ly::GameCollision::Enemy);
+			source->SetCollisionMask(ly::GameCollision::Player);
 			EnemyBehaviorRuntime behaviorRuntime;
 			if (!behaviorRuntime.Initialize(approach)) return Fail("Failed to initialize target cadence behavior runtime") ? 0 : 1;
 			if (behaviorRuntime.Tick(*source, 0.f).HasTarget()) return Fail("Behavior runtime found a target in an empty world") ? 0 : 1;
 			const shared_ptr<TestCombatant> target = targetWorld.SpawnActor<TestCombatant>().lock();
-			target->SetCollisionLayer(CollisionLayer::Player);
-			target->SetCollisionMask(CollisionLayer::Enemy);
+			target->SetCollisionLayer(ly::GameCollision::Player);
+			target->SetCollisionMask(ly::GameCollision::Enemy);
 			target->SetActorLocation({ 300.f, 0.f });
 			targetWorld.TickInternal(0.f);
 			if (behaviorRuntime.Tick(*source, 0.1f).HasTarget()) return Fail("Behavior runtime refreshed a missing target before its refresh interval") ? 0 : 1;
@@ -445,8 +446,8 @@ namespace ly
 			if (!behaviorRuntime.Initialize(pulseProfile)) return Fail("Failed to initialize pulse behavior runtime") ? 0 : 1;
 			World world{ nullptr };
 			const shared_ptr<TestCombatant> source = world.SpawnActor<TestCombatant>().lock();
-			source->SetCollisionLayer(CollisionLayer::Enemy);
-			source->SetCollisionMask(CollisionLayer::Player);
+			source->SetCollisionLayer(ly::GameCollision::Enemy);
+			source->SetCollisionMask(ly::GameCollision::Player);
 			auto inputFor = [](const EnemyBehaviorIntent& intent, sas::AbilitySlot slot)
 			{
 				for (const EnemySlotCommand& command : intent.slotCommands)
@@ -482,8 +483,8 @@ namespace ly
 				!inputFor(behaviorRuntime.Tick(*source, 0.f), sas::AbilitySlot::Ability1))
 				return Fail("Dynamic priority setup did not select the initially eligible hold rule") ? 0 : 1;
 			const shared_ptr<TestCombatant> target = world.SpawnActor<TestCombatant>().lock();
-			target->SetCollisionLayer(CollisionLayer::Player);
-			target->SetCollisionMask(CollisionLayer::Enemy);
+			target->SetCollisionLayer(ly::GameCollision::Player);
+			target->SetCollisionMask(ly::GameCollision::Enemy);
 			target->SetActorLocation({ 100.f, 0.f });
 			world.TickInternal(0.f);
 			const EnemyBehaviorIntent promotedIntent = behaviorRuntime.Tick(*source, 0.01f);
@@ -1789,8 +1790,8 @@ namespace ly
 					world, enemyIds[index], { 1000.f, 1000.f }).lock();
 				const std::shared_ptr<TestCombatant> target = world.SpawnActor<TestCombatant>().lock();
 				if (!enemy || !target) return Fail("Enemy factory failed to spawn a test encounter") ? 0 : 1;
-				target->SetCollisionLayer(CollisionLayer::Player);
-				target->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet);
+				target->SetCollisionLayer(ly::GameCollision::Player);
+				target->SetCollisionMask(ly::GameCollision::Enemy | ly::GameCollision::EnemyBullet);
 				target->InitializeTestHealth(100000.f);
 				const sf::Vector2f initialForward = enemy->GetActorForwardDirection();
 				constexpr float TargetAngleRadians = 0.5235987756f;
@@ -2156,7 +2157,7 @@ namespace ly
 
 			// Overlap with player should not deal contact damage
 			DummyEnemy playerShip{ &world, *ship };
-			playerShip.SetCollisionLayer(CollisionLayer::Player);
+			playerShip.SetCollisionLayer(ly::GameCollision::Player);
 			const float healthBefore = playerShip.GetHealthComponent().GetHealth();
 
 			static_cast<Actor*>(failedEnemy.get())->OnActorBeginOverlap(&playerShip);

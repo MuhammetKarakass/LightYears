@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 #include "gameplay/ability/infernoSpray/InfernoSprayActor.h"
@@ -102,7 +103,7 @@ namespace
 	{
 		Fixture f{ report, application }; const auto enemy = Enemy(f);
 		const auto* authored = content::AbilityContentCatalog::FindById("Ability.Offense.InfernoSpray.Basic");
-		enemy->SetCollisionMask(CollisionLayer::PlayerBullet);
+		enemy->SetCollisionMask(ly::GameCollision::PlayerBullet);
 		auto definition = *authored; definition.slot = sas::AbilitySlot::Ability3;
 		auto& asc = f.ship->GetAbilitySystemComponent();
 		report.Check(asc.RemoveAbility(asc.GetAbility(sas::AbilitySlot::Ability3)->GetHandle()) && asc.GrantAbility(definition).IsValid(), "remaining ability is shipped Inferno Spray");

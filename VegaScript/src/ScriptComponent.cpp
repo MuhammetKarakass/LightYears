@@ -303,6 +303,14 @@ namespace vega::script
 				}
 				return sf::Color{ static_cast<std::uint8_t>(channels[0]), static_cast<std::uint8_t>(channels[1]), static_cast<std::uint8_t>(channels[2]), static_cast<std::uint8_t>(channels[3]) };
 			}
+			if (property.kind == PropertyKind::Flags && input.get_type() == sol::type::string)
+			{
+				int bits = 0;
+				bool legacy = false;
+				if (!property.ParseFlags(input.as<std::string>(), bits, &legacy)) return {};
+				if (legacy) LY_CORE_WARN("Lua %s: legacy flags label accepted; use project labels", property.name.c_str());
+				return bits;
+			}
 			auto value = FromLua(input);
 			if (property.kind == PropertyKind::Int || property.kind == PropertyKind::Enum || property.kind == PropertyKind::Flags)
 			{

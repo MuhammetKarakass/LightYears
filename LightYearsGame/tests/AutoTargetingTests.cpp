@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "gameplay/targeting/AutoTargeting.h"
 #include "gameplay/targeting/TargetRelation.h"
@@ -47,20 +48,20 @@ int main()
 	}
 
 	source->SetActorLocation({ 0.f, 0.f });
-	source->SetCollisionLayer(CollisionLayer::Player);
+	source->SetCollisionLayer(ly::GameCollision::Player);
 	nearest->SetActorLocation({ 100.f, 0.f });
-	nearest->SetCollisionLayer(CollisionLayer::Enemy);
-	nearest->SetCollisionMask(CollisionLayer::PlayerBullet);
+	nearest->SetCollisionLayer(ly::GameCollision::Enemy);
+	nearest->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	farthest->SetActorLocation({ 200.f, 0.f });
-	farthest->SetCollisionLayer(CollisionLayer::Enemy);
-	farthest->SetCollisionMask(CollisionLayer::PlayerBullet);
+	farthest->SetCollisionLayer(ly::GameCollision::Enemy);
+	farthest->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	outside->SetActorLocation({ 500.f, 0.f });
-	outside->SetCollisionLayer(CollisionLayer::Enemy);
-	outside->SetCollisionMask(CollisionLayer::PlayerBullet);
+	outside->SetCollisionLayer(ly::GameCollision::Enemy);
+	outside->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	rectangleSide->SetActorLocation({ 50.f, 60.f });
 	// Keep the geometry-only fixture out of the earlier radius/cone assertions.
 	rectangleSide->SetCollisionLayer(CollisionLayer::None);
-	rectangleSide->SetCollisionMask(CollisionLayer::PlayerBullet);
+	rectangleSide->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	world.TickInternal(0.f);
 	if (!ly::targeting::IsOpposingTarget(*source, *nearest) ||
 		ly::targeting::IsOpposingTarget(*source, *source))
@@ -73,8 +74,8 @@ int main()
 	nearestQuery.origin = source->GetActorLocation();
 	nearestQuery.range = 250.f;
 	nearestQuery.maxTargets = 1;
-	nearestQuery.requiredTargetLayers = CollisionLayer::Enemy;
-	nearestQuery.requiredCandidateCollisionMask = CollisionLayer::PlayerBullet;
+	nearestQuery.requiredTargetLayers = ly::GameCollision::Enemy;
+	nearestQuery.requiredCandidateCollisionMask = ly::GameCollision::PlayerBullet;
 	const ly::shared_ptr<ly::Actor> nearestTarget =
 		ly::targeting::AutoTargeting::FindTarget(world, nearestQuery).lock();
 	if (nearestTarget.get() != nearest.get())
@@ -105,8 +106,8 @@ int main()
 		return Fail("AutoTargeting cone test actor could not be created");
 	}
 	outsideCone->SetActorLocation({ 100.f, 100.f });
-	outsideCone->SetCollisionLayer(CollisionLayer::Enemy);
-	outsideCone->SetCollisionMask(CollisionLayer::PlayerBullet);
+	outsideCone->SetCollisionLayer(ly::GameCollision::Enemy);
+	outsideCone->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	world.TickInternal(0.f);
 	const ly::List<ly::targeting::TargetingCandidate> coneTargets =
 		ly::targeting::AutoTargeting::FindTargets(world, coneQuery);
@@ -116,7 +117,7 @@ int main()
 	}
 
 	ly::targeting::TargetingQuery rectangleQuery = nearestQuery;
-	rectangleSide->SetCollisionLayer(CollisionLayer::Enemy);
+	rectangleSide->SetCollisionLayer(ly::GameCollision::Enemy);
 	world.TickInternal(0.f);
 	rectangleQuery.shape = ly::targeting::TargetingShape::Rectangle;
 	rectangleQuery.direction = { 1.f, 0.f };

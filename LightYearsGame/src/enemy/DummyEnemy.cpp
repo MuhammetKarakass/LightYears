@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "enemy/DummyEnemy.h"
 #include "gameplay/content/ShipContentCatalog.h"
 #include <framework/World.h>
@@ -59,13 +60,13 @@ namespace ly
 
 	void DummyEnemy::SetupCollisionLayers()
 	{
-		SetCollisionLayer(CollisionLayer::Enemy);
+		SetCollisionLayer(GameCollision::Enemy);
 		SetCollisionMask(
-			CollisionLayer::Player |
-			CollisionLayer::FriendlySummon |
-			CollisionLayer::PlayerBullet |
-			CollisionLayer::RelayProjectile |
-			CollisionLayer::Environment
+			GameCollision::Player |
+			GameCollision::FriendlySummon |
+			GameCollision::PlayerBullet |
+			GameCollision::RelayProjectile |
+			GameCollision::Environment
 		);
 	}
 

@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/debug/Profiler.h"
 #include "gameplay/attributes/AttributeIds.h"
@@ -336,8 +337,8 @@ namespace ly
 		mAllowFriendlyFire = allowFriendlyFire;
 		if (mAllowFriendlyFire)
 		{
-			SetCollisionLayer(CollisionLayer::RelayProjectile);
-			SetCollisionMask(CollisionLayer::AllRelayTargets);
+			SetCollisionLayer(GameCollision::RelayProjectile);
+			SetCollisionMask(GameCollision::AllRelayTargets);
 		}
 		else
 		{
@@ -446,22 +447,22 @@ namespace ly
 
 		switch (ownerActor->GetCollisionLayer())
 		{
-		case CollisionLayer::Player:
-		case CollisionLayer::FriendlySummon:
-			SetCollisionLayer(CollisionLayer::PlayerBullet);
+		case GameCollision::Player:
+		case GameCollision::FriendlySummon:
+			SetCollisionLayer(GameCollision::PlayerBullet);
 			// Opposing projectiles are never valid targets and must pass through each other.
 			SetCollisionMask(
-				CollisionLayer::Enemy |
-				CollisionLayer::Environment
+				GameCollision::Enemy |
+				GameCollision::Environment
 			);
 			break;
-		case CollisionLayer::Enemy:
-			SetCollisionLayer(CollisionLayer::EnemyBullet);
+		case GameCollision::Enemy:
+			SetCollisionLayer(GameCollision::EnemyBullet);
 			// Opposing projectiles are never valid targets and must pass through each other.
 			SetCollisionMask(
-				CollisionLayer::Player |
-				CollisionLayer::FriendlySummon |
-				CollisionLayer::Environment
+				GameCollision::Player |
+				GameCollision::FriendlySummon |
+				GameCollision::Environment
 			);
 			break;
 		default:

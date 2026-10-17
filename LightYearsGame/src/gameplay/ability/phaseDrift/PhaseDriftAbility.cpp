@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/phaseDrift/PhaseDriftAbility.h"
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -185,7 +186,7 @@ namespace ly
 		mCollisionSnapshotValid = true;
 		// Keep Powerup in the mask so pickup collection remains available while
 		// enemy ships and enemy projectiles no longer generate collision events.
-		ship->SetCollisionMask(CollisionLayer::Powerup);
+		ship->SetCollisionMask(GameCollision::Powerup);
 		context.abilitySystem.AddOwnedTag(AbilityData::PhaseDrift::State::Active);
 
 		if (World* world = context.owner.GetWorld())
@@ -229,7 +230,7 @@ namespace ly
 				// legitimately replace collision policy while Phase is active; in that
 				// case its newer values must survive Phase cleanup.
 				if (ship->GetCollisionLayer() == mOriginalCollisionLayer &&
-					ship->GetCollisionMask() == CollisionLayer::Powerup)
+					ship->GetCollisionMask() == GameCollision::Powerup)
 				{
 					ship->SetCollisionMask(mOriginalCollisionMask);
 				}

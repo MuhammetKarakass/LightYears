@@ -22,6 +22,7 @@ namespace
 			: Application{ { project.windowWidth, project.windowHeight }, 32, project.name, sf::Style::Default }
 		{
 			ly::debug::Log::SetMinimumLevel(ly::debug::LogLevel::Info);
+			project.ApplyCollisionLayers(GetEngineContext());
 			mModule.ConfigureProject(root / "vega.project.json");
 			RegisterGameModule(mModule, false);
 			const auto scene = Option("--scene", project.startupScene);

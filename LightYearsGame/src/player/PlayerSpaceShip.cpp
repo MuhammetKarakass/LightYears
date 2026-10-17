@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "player/PlayerSpaceShip.h"
 
 #include "gameplay/ability/loadout/DefaultAbilityLoadout.h"
@@ -57,12 +58,12 @@ namespace ly
 
 	void PlayerSpaceShip::SetupCollisionLayers()
 	{
-		SetCollisionLayer(CollisionLayer::Player);
+		SetCollisionLayer(GameCollision::Player);
 		SetCollisionMask(
-			CollisionLayer::Enemy |
-			CollisionLayer::EnemyBullet |
-			CollisionLayer::Powerup |
-			CollisionLayer::RelayProjectile
+			GameCollision::Enemy |
+			GameCollision::EnemyBullet |
+			GameCollision::Powerup |
+			GameCollision::RelayProjectile
 		);
 	}
 

@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "framework/World.h"
 #include "environment/AsteroidSpawner.h"
 #include "environment/Asteroid.h"
@@ -81,7 +82,7 @@ namespace ly
 
 			if (mTargetActor.expired() && RandRange(0.0f, 1.0f) < ratio)
 			{
-				mTargetActor = mWorld->GetActorByLayer(CollisionLayer::Player);
+				mTargetActor = mWorld->GetActorByLayer(GameCollision::Player);
 			}
 
 			if (auto targetActor = mTargetActor.lock())

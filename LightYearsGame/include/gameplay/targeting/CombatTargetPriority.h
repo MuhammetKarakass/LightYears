@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gameConfigs/CollisionLayers.h"
+
 #include "framework/Actor.h"
 #include "gameplay/targeting/TargetingTypes.h"
 
@@ -13,13 +15,13 @@ namespace ly::targeting
 		const Actor& candidate
 	)
 	{
-		if (sourceLayer == CollisionLayer::Enemy)
+		if (sourceLayer == GameCollision::Enemy)
 		{
-			if (HasCollisionLayer(candidate.GetCollisionLayer(), CollisionLayer::Player))
+			if (HasCollisionLayer(candidate.GetCollisionLayer(), GameCollision::Player))
 			{
 				return 0;
 			}
-			if (HasCollisionLayer(candidate.GetCollisionLayer(), CollisionLayer::FriendlySummon))
+			if (HasCollisionLayer(candidate.GetCollisionLayer(), GameCollision::FriendlySummon))
 			{
 				return 1;
 			}

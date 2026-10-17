@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "framework/World.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueContracts.h"
@@ -151,14 +152,14 @@ namespace
 		const shared_ptr<TestCombatant> infectedTarget = world.SpawnActor<TestCombatant>().lock();
 		const shared_ptr<TestCombatant> spreadTarget = world.SpawnActor<TestCombatant>().lock();
 		if (!Expect(owner && infectedTarget && spreadTarget, "Could not spawn infection test combatants")) return false;
-		owner->SetCollisionLayer(CollisionLayer::Player);
-		owner->SetCollisionMask(CollisionLayer::Enemy);
+		owner->SetCollisionLayer(ly::GameCollision::Player);
+		owner->SetCollisionMask(ly::GameCollision::Enemy);
 		owner->SetActorLocation({ 0.f, 0.f });
-		infectedTarget->SetCollisionLayer(CollisionLayer::Enemy);
-		infectedTarget->SetCollisionMask(CollisionLayer::Player);
+		infectedTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+		infectedTarget->SetCollisionMask(ly::GameCollision::Player);
 		infectedTarget->SetActorLocation({ 100.f, 0.f });
-		spreadTarget->SetCollisionLayer(CollisionLayer::Enemy);
-		spreadTarget->SetCollisionMask(CollisionLayer::Player);
+		spreadTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+		spreadTarget->SetCollisionMask(ly::GameCollision::Player);
 		spreadTarget->SetActorLocation({ 120.f, 0.f });
 
 		const shared_ptr<NanoPlagueControllerActor> controller =

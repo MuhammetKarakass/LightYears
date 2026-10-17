@@ -1,6 +1,11 @@
+#include <framework/ProjectSettings.h>
+#include <framework/EngineContext.h>
+#include <framework/CollisionComponent.h>
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
+#include <framework/scene/PrefabLibrary.h>
 #include <framework/AssetManager.h>
 #include <framework/SpriteComponent.h>
 #include <framework/reflection/Reflection.h>
@@ -41,6 +46,8 @@ namespace
 
 int main()
 {
+	ly::EngineContext engineContext;
+	ly::EngineContext::Scope contextScope{ engineContext };
 	ly::InstallLightYearsEngineAssets();
 	using namespace ly;
 	using Json = nlohmann::json;
@@ -50,6 +57,7 @@ int main()
 	vega::script::RegisterScriptTypes();
 	RegisterGameTypes();
 	Check(GameContentBootstrap::Register(), "Game content bootstrap failed");
+	ProjectSettings::Load(root / "vega.project.json").ApplyCollisionLayers(engineContext);
 	std::ifstream input{ root / "scenes/sandbox.scene.json" };
 	Json scene;
 	input >> scene;
@@ -69,6 +77,48 @@ int main()
 	Check(saved == scene, "Shipped sandbox must satisfy Save(Load(scene)) == scene");
 	std::ofstream canonical{ std::filesystem::path{ SCENE_TEST_ARTIFACT_DIR } / "sandbox.scene.json" };
 	canonical << saved.dump(1, '\t') << '\n';
+	canonical.flush();
+	std::ifstream originalBytes{ root / "scenes/sandbox.scene.json", std::ios::binary };
+	const std::string authored{ std::istreambuf_iterator<char>{ originalBytes }, std::istreambuf_iterator<char>{} };
+	std::ifstream savedBytes{ std::filesystem::path{ SCENE_TEST_ARTIFACT_DIR } / "sandbox.scene.json", std::ios::binary };
+	const std::string roundTripBytes{ std::istreambuf_iterator<char>{ savedBytes }, std::istreambuf_iterator<char>{} };
+	Check(roundTripBytes == authored, "Unchanged LightYears sandbox bytes differ from the authored scene");
+	{
+		World labelled{ engineContext };
+		auto fixture = labelled.SpawnActor<SpriteActor>().lock();
+		fixture->AddComponent<SceneEntityComponent>("labels", "Labels");
+		auto& collision = fixture->AddComponent<CollisionComponent>();
+		collision.SetCollisionLayer(ly::GameCollision::Player);
+		collision.SetCollisionMask(static_cast<CollisionLayer>(255));
+		const auto encoded = SceneSerializer::Save(labelled);
+		bool found = false;
+		for (const auto& component : encoded["entities"][0]["components"])
+			if (component["type"] == "CollisionComponent")
+			{
+				found = true;
+				Check(component["properties"]["Collision Mask"] == Json::array({ "Player", "PlayerBullet", "Enemy", "EnemyBullet",
+					"Powerup", "Environment", "RelayProjectile", "FriendlySummon" }), "LightYears changed legacy channel labels or bit order");
+			}
+		Check(found, "LightYears collision fixture was not saved");
+		World restored{ engineContext };
+		Check(SceneSerializer::Load(restored, encoded).warnings.empty() && SceneSerializer::Save(restored).dump() == encoded.dump(),
+			"LightYears nonzero flags did not round-trip byte-identically");
+		// No prefab files ship with LightYears yet; exercise its full channel set
+		// through the same document/realization path used by the prefab editor.
+		const auto prefab = PrefabLibrary::Document(SceneSerializer::SaveSubtree(*fixture, true), "CollisionLabels");
+		const auto prefabRoot = std::filesystem::path{ SCENE_TEST_ARTIFACT_DIR };
+		std::ofstream{ prefabRoot / "CollisionLabels.prefab.json", std::ios::binary } << prefab.dump(1, '\t') << '\n';
+		engineContext.Prefabs().SetRoot(prefabRoot);
+		const auto resolved = engineContext.Prefabs().Resolve("CollisionLabels.prefab.json");
+		Check(resolved && resolved.warnings.empty(), "LightYears collision prefab failed to resolve");
+		if (resolved)
+		{
+			const auto reopened = PrefabLibrary::Document(resolved.entity, "CollisionLabels");
+			std::ifstream prefabBytes{ prefabRoot / "CollisionLabels.prefab.json", std::ios::binary };
+			const std::string original{ std::istreambuf_iterator<char>{ prefabBytes }, std::istreambuf_iterator<char>{} };
+			Check(reopened.dump(1, '\t') + '\n' == original, "LightYears collision prefab bytes changed on round trip");
+		}
+	}
 	World roundTrip{ nullptr };
 	Check(SceneSerializer::Load(roundTrip, saved).warnings.empty() && SceneSerializer::Save(roundTrip, scene["settings"]) == saved, "Game scene round trip changed supported data");
 	const auto copiedSprite = roundTrip.GetActorsByTypeIncludingPending<SpriteActor>()[0].lock();

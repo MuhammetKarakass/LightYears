@@ -3,6 +3,16 @@
 	"version": 1,
 	"name": "LightYears",
 	"startupScene": "",
+	"collisionLayers": [
+		{ "bit": 0, "name": "Player" },
+		{ "bit": 1, "name": "PlayerBullet" },
+		{ "bit": 2, "name": "Enemy" },
+		{ "bit": 3, "name": "EnemyBullet" },
+		{ "bit": 4, "name": "Powerup" },
+		{ "bit": 5, "name": "Environment" },
+		{ "bit": 6, "name": "RelayProjectile" },
+		{ "bit": 7, "name": "FriendlySummon" }
+	],
 	"window": { "width": 1920, "height": 1080 },
 	"editor": {
 		"assetRoot": ".",

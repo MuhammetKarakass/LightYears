@@ -31,39 +31,14 @@ enum class CollisionLayer : uint8_t
 {
     None = 0,  // 0000 0000
 
-    // PLAYER FACTION
-    Player = 1 << 0,     // 0000 0001 - Player ship
-    PlayerBullet = 1 << 1,// 0000 0010 - Player bullets
-
-    // ENEMY FACTION
-    Enemy = 1 << 2,      // 0000 0100 - Enemy ships
-    EnemyBullet = 1 << 3,// 0000 1000 - Enemy bullets
-
-    // NEUTRAL OBJECTS
-    Powerup = 1 << 4,    // 0001 0000 - Power-ups
-    Environment = 1 << 5,// 0010 0000 - Obstacles
-
-    // RELAY PROJECTILES
-    // Relay clones use a separate layer so only transformed projectiles can
-    // damage their owner/friendly ships. Normal bullets keep their existing
-    // faction-only collision rules.
-    RelayProjectile = 1 << 6,
-
-    // PLAYER-OWNED COMBAT ACTORS
-    // Summons use their own layer so they can receive hostile damage without
-    // being mistaken for the player by collision or target-priority rules.
-    FriendlySummon = 1 << 7,
-
-    // COMBINATIONS (Bit masks)
-    AllPlayers = static_cast<uint8_t>(Player) | static_cast<uint8_t>(PlayerBullet),
-    AllEnemies = static_cast<uint8_t>(Enemy) | static_cast<uint8_t>(EnemyBullet),
-    AllBullets = static_cast<uint8_t>(PlayerBullet) | static_cast<uint8_t>(EnemyBullet),
-    AllShips   = static_cast<uint8_t>(Player) | static_cast<uint8_t>(Enemy) |
-        static_cast<uint8_t>(FriendlySummon),
-    AllFriendlyCombatants = static_cast<uint8_t>(Player) |
-        static_cast<uint8_t>(FriendlySummon),
-    AllRelayTargets = static_cast<uint8_t>(Player) | static_cast<uint8_t>(Enemy) |
-        static_cast<uint8_t>(FriendlySummon)
+	Layer0 = 1 << 0,
+	Layer1 = 1 << 1,
+	Layer2 = 1 << 2,
+	Layer3 = 1 << 3,
+	Layer4 = 1 << 4,
+	Layer5 = 1 << 5,
+	Layer6 = 1 << 6,
+	Layer7 = 1 << 7,
 };
 
 namespace ly

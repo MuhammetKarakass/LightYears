@@ -68,6 +68,8 @@ namespace ly
 		InstallLightYearsEngineAssets();
 		mApplication = &application;
 		if (mProjectFile.empty()) mProjectFile = ResourceRoot(!editor) / "vega.project.json";
+		if (!editor && std::filesystem::exists(mProjectFile))
+			ProjectSettings::Load(mProjectFile).ApplyCollisionLayers(application.GetEngineContext());
 		// In the editor --asset-root selects authoring documents; content tests use a partial copy.
 		auto runtimeRoot = ResourceRoot(!editor);
 		if (editor && std::filesystem::exists(mProjectFile))

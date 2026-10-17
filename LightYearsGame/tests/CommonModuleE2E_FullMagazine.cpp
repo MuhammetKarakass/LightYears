@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "CommonModuleE2ETestSupport.h"
 
 namespace common_module_e2e
@@ -21,8 +22,8 @@ namespace common_module_e2e
 		target->SetActorLocation({ -40000.f, -50000.f });
 		source->SetInvulnerability(false);
 		target->SetInvulnerability(false);
-		target->SetCollisionLayer(CollisionLayer::Enemy);
-		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target->SetCollisionLayer(ly::GameCollision::Enemy);
+		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 		target->GetHealthComponent().SetMaxHealth(5000.f, true);
 
 		ModuleLoadout loadout;

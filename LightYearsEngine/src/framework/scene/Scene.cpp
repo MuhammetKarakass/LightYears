@@ -114,7 +114,7 @@ namespace ly
 			if (value < min || value > max) throw std::runtime_error("Integer out of range");
 			return static_cast<int>(value);
 		}
-		PropertyValue Decode(const PropertyInfo& property, const Json& value)
+		PropertyValue Decode(const PropertyInfo& property, const Json& value, std::vector<std::string>& warnings)
 		{
 			switch (property.kind)
 			{
@@ -125,7 +125,7 @@ namespace ly
 			{
 				if (!value.is_array() || value.size() > 4096) throw std::runtime_error("Expected array with at most 4096 elements");
 				PropertyList list;
-				for (const auto& item : value) list.push_back(ToScalar(Decode(property.Element(), item)));
+				for (const auto& item : value) list.push_back(ToScalar(Decode(property.Element(), item, warnings)));
 				return list;
 			}
 			case PropertyKind::Bool: return value.get<bool>();
@@ -135,32 +135,17 @@ namespace ly
 			case PropertyKind::Flags:
 			{
 				if (value.is_number_integer()) return Integer(value, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
-				Json labels = value;
-				// Older scenes stored pipe-separated combinations in a single enum label.
-				if (value.is_string())
-				{
-					labels = Json::array();
-					const auto text = value.get<std::string>();
-					if (text == "None") return 0;
-					std::size_t begin = 0;
-					do
-					{
-						const auto end = text.find('|', begin);
-						const auto part = text.substr(begin, end == std::string::npos ? end : end - begin);
-						const auto first = part.find_first_not_of(" \t");
-						labels.push_back(first == std::string::npos ? "" : part.substr(first, part.find_last_not_of(" \t") - first + 1));
-						if (end == std::string::npos) break;
-						begin = end + 1;
-					} while (true);
-				}
+				Json labels = value.is_string() ? Json::array({ value }) : value;
 				if (!labels.is_array()) throw std::runtime_error("Expected flags label array or integer");
 				int bits = 0;
 				for (const auto& item : labels)
 				{
-					bool found = false;
-					for (const auto& label : property.enumLabels)
-						if (item.is_string() && label.second == item.get<std::string>()) { bits |= label.first; found = true; break; }
-					if (!found) throw std::runtime_error("Unknown flags label");
+					int parsed = 0;
+					bool legacy = false;
+					if (!item.is_string() || !property.ParseFlags(item.get<std::string>(), parsed, &legacy))
+						throw std::runtime_error("Unknown flags label; provide a project collisionLayers alias or numeric bit mask");
+					bits |= parsed;
+					if (legacy) warnings.push_back(property.name + ": legacy flags label '" + item.get<std::string>() + "' accepted; save uses project labels");
 				}
 				return bits;
 			}
@@ -203,7 +188,7 @@ namespace ly
 				{
 					if (!property || !property->setter) throw std::runtime_error("Unknown or read-only property");
 					std::string error;
-					if (!property->SetValue(object, Decode(*property, entry.value()), &error)) throw std::runtime_error(error);
+					if (!property->SetValue(object, Decode(*property, entry.value(), result.warnings), &error)) throw std::runtime_error(error);
 				}
 				catch (const std::exception& error)
 				{

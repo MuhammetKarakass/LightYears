@@ -189,34 +189,34 @@ int main()
 		{
 			return FailExit("An actor that never touched collision did not report the collision defaults");
 		}
-		untouched->SetCollisionLayer(CollisionLayer::Enemy);
+		untouched->SetCollisionLayer(CollisionLayer::Layer2);
 		ly::CollisionComponent* untouchedCollision = untouched->FindComponent<ly::CollisionComponent>();
-		if (!untouchedCollision || untouched->GetCollisionLayer() != CollisionLayer::Enemy ||
-			untouchedCollision->GetCollisionLayer() != CollisionLayer::Enemy)
+		if (!untouchedCollision || untouched->GetCollisionLayer() != CollisionLayer::Layer2 ||
+			untouchedCollision->GetCollisionLayer() != CollisionLayer::Layer2)
 		{
 			return FailExit("SetCollisionLayer did not create the CollisionComponent");
 		}
 
 		const auto probe = world.SpawnActor<OverlapProbeActor>(
-			sf::Vector2f{ 100.f, 100.f }, CollisionLayer::Player, CollisionLayer::Enemy
+			sf::Vector2f{ 100.f, 100.f }, CollisionLayer::Layer0, CollisionLayer::Layer2
 		).lock();
 		world.TickInternal(0.f);
 		ly::CollisionComponent* collision = probe->FindComponent<ly::CollisionComponent>();
 		BodyFilterQuery filter = GetBodyFilter(physics, probe.get());
 		if (!collision || !collision->HasPhysicsBody() || !probe->HasPhysicsBody() || !probe->IsPhysicsEnabled() ||
-			!filter.found || filter.filter.categoryBits != static_cast<uint64_t>(CollisionLayer::Player) ||
-			filter.filter.maskBits != static_cast<uint64_t>(CollisionLayer::Enemy))
+			!filter.found || filter.filter.categoryBits != static_cast<uint64_t>(CollisionLayer::Layer0) ||
+			filter.filter.maskBits != static_cast<uint64_t>(CollisionLayer::Layer2))
 		{
 			return FailExit("Physics body did not start with the actor collision layer and mask");
 		}
 
-		probe->SetCollisionLayer(CollisionLayer::PlayerBullet);
-		probe->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Environment);
+		probe->SetCollisionLayer(CollisionLayer::Layer1);
+		probe->SetCollisionMask(CollisionLayer::Layer2 | CollisionLayer::Layer5);
 		filter = GetBodyFilter(physics, probe.get());
-		if (!filter.found || filter.filter.categoryBits != static_cast<uint64_t>(CollisionLayer::PlayerBullet) ||
-			filter.filter.maskBits != static_cast<uint64_t>(CollisionLayer::Enemy | CollisionLayer::Environment) ||
-			probe->GetCollisionLayer() != CollisionLayer::PlayerBullet ||
-			probe->GetCollisionMask() != (CollisionLayer::Enemy | CollisionLayer::Environment))
+		if (!filter.found || filter.filter.categoryBits != static_cast<uint64_t>(CollisionLayer::Layer1) ||
+			filter.filter.maskBits != static_cast<uint64_t>(CollisionLayer::Layer2 | CollisionLayer::Layer5) ||
+			probe->GetCollisionLayer() != CollisionLayer::Layer1 ||
+			probe->GetCollisionMask() != (CollisionLayer::Layer2 | CollisionLayer::Layer5))
 		{
 			return FailExit("Changing collision layer/mask did not refresh the Box2D filter");
 		}
@@ -261,10 +261,10 @@ int main()
 		ly::World world{ nullptr };
 		ly::PhysicsScene& physics = world.GetPhysicsScene();
 		const auto first = world.SpawnActor<OverlapProbeActor>(
-			sf::Vector2f{ 100.f, 100.f }, CollisionLayer::Player, CollisionLayer::Enemy
+			sf::Vector2f{ 100.f, 100.f }, CollisionLayer::Layer0, CollisionLayer::Layer2
 		).lock();
 		const auto second = world.SpawnActor<OverlapProbeActor>(
-			sf::Vector2f{ 110.f, 100.f }, CollisionLayer::Enemy, CollisionLayer::Player
+			sf::Vector2f{ 110.f, 100.f }, CollisionLayer::Layer2, CollisionLayer::Layer0
 		).lock();
 		world.TickInternal(0.f);
 		for (int frame = 0; frame < 10; ++frame)

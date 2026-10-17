@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/combat/summon/SummonedCombatantActor.h"
 
 #include "attributes/AttributeMath.h"
@@ -130,8 +131,8 @@ namespace ly
 
 	void SummonedCombatantActor::ConfigureFriendlySummonCollision()
 	{
-		SetCollisionLayer(CollisionLayer::FriendlySummon);
-		SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet);
+		SetCollisionLayer(GameCollision::FriendlySummon);
+		SetCollisionMask(GameCollision::Enemy | GameCollision::EnemyBullet);
 	}
 
 	void SummonedCombatantActor::SynchronizeDynamicOwnerCombatAttributes()

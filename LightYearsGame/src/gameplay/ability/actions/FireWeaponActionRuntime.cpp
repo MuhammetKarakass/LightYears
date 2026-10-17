@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/actions/FireWeaponActionRuntime.h"
 
 #include "gameplay/ability/actions/AbilityActionAttributeResolver.h"
@@ -114,7 +115,7 @@ namespace ly
 		// shooters and windowless worlds (tools, tests) fire without one.
 		std::optional<sf::Vector2f> ResolveAimWorldPosition(const Actor& owner)
 		{
-			if (owner.GetCollisionLayer() != CollisionLayer::Player)
+			if (owner.GetCollisionLayer() != GameCollision::Player)
 			{
 				return std::nullopt;
 			}

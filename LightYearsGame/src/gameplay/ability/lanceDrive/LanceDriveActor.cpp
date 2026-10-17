@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/lanceDrive/LanceDriveActor.h"
 
 #include "attributes/AttributeSystem.h"
@@ -139,8 +140,8 @@ namespace ly
 		// when this owner-following wall moves into a stationary ship.
 		SetPhysicsBodyType(PhysicsBodyType::Static);
 		SetAbilityPhysicsEnabled(true);
-		SetCollisionLayer(CollisionLayer::Environment);
-		SetCollisionMask(CollisionLayer::Enemy);
+		SetCollisionLayer(GameCollision::Environment);
+		SetCollisionMask(GameCollision::Enemy);
 		SetDamageTags({ DamageTypeSchema::Kinetic });
 		UpdateGeometry();
 	}

@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/closedCircuit/ClosedCircuitFieldActor.h"
 
 #include "framework/MathUtility.h"
@@ -124,7 +125,7 @@ namespace ly
 		if (GetIsPendingDestroy() || projectile.GetIsPendingDestroy() ||
 			projectile.GetWorld() != GetWorld() || mPhase != Phase::Active ||
 			mRemainingHealth <= 0.f ||
-			projectile.GetCollisionLayer() != CollisionLayer::EnemyBullet)
+			projectile.GetCollisionLayer() != GameCollision::EnemyBullet)
 		{
 			return false;
 		}

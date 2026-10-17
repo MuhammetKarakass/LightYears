@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "attributes/AttributeSystem.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "gameplay/weapon/PrimaryWeaponHandler.h"
@@ -46,13 +47,13 @@ namespace ly
 				CollisionLayer virtualProjectileLayer = CollisionLayer::None;
 				switch (context.owner.GetCollisionLayer())
 				{
-				case CollisionLayer::Player:
-					expectedTargetLayer = CollisionLayer::Enemy;
-					virtualProjectileLayer = CollisionLayer::PlayerBullet;
+				case GameCollision::Player:
+					expectedTargetLayer = GameCollision::Enemy;
+					virtualProjectileLayer = GameCollision::PlayerBullet;
 					break;
-				case CollisionLayer::Enemy:
-					expectedTargetLayer = CollisionLayer::Player | CollisionLayer::FriendlySummon;
-					virtualProjectileLayer = CollisionLayer::EnemyBullet;
+				case GameCollision::Enemy:
+					expectedTargetLayer = GameCollision::Player | GameCollision::FriendlySummon;
+					virtualProjectileLayer = GameCollision::EnemyBullet;
 					break;
 				default:
 					break;

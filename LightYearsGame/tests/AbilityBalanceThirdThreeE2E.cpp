@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "attributes/AttributeSystem.h"
 #include "effects/GameplayEffectSpec.h"
 #include "framework/World.h"
@@ -109,10 +110,10 @@ namespace ly
 
 		void ConfigureCombatLayers(SpaceShip& owner, SpaceShip& target)
 		{
-			owner.SetCollisionLayer(CollisionLayer::Player);
-			owner.SetCollisionMask(CollisionLayer::Enemy);
-			target.SetCollisionLayer(CollisionLayer::Enemy);
-			target.SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
+			owner.SetCollisionLayer(ly::GameCollision::Player);
+			owner.SetCollisionMask(ly::GameCollision::Enemy);
+			target.SetCollisionLayer(ly::GameCollision::Enemy);
+			target.SetCollisionMask(ly::GameCollision::Player | ly::GameCollision::PlayerBullet);
 		}
 
 		std::vector<shared_ptr<AbilityWorldActor>> CollectAbilityActors(World& world)

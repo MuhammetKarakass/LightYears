@@ -1,4 +1,4 @@
--- Overlap events: this actor needs a CollisionComponent with physics enabled, the Powerup layer
+-- Overlap events: this actor needs a CollisionComponent with physics enabled, the Pickup layer
 -- and a mask that accepts Player (see scenes/trigger.scene.json). Move the Player with WASD.
 -- It reads the reflected Target reference and sends the lamp a message.
 properties = { cooldown = 1.5, sound = "audio/beep.wav", volume = 40 }

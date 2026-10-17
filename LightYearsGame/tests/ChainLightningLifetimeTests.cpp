@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "framework/Application.h"
 #include "framework/Actor.h"
 #include "framework/AssetManager.h"
@@ -67,16 +68,16 @@ namespace
 			for (int index = 0; index < ownerCount; ++index)
 			{
 				auto ownerActor = world->SpawnActor<ChainLightningTestCombatant>().lock();
-				ownerActor->SetCollisionLayer(CollisionLayer::Player);
-				ownerActor->SetCollisionMask(CollisionLayer::Enemy);
+				ownerActor->SetCollisionLayer(ly::GameCollision::Player);
+				ownerActor->SetCollisionMask(ly::GameCollision::Enemy);
 				ownerActor->SetActorLocation(sf::Vector2f{ 100.f + 32.f * index, 128.f });
 				ownerActor->mCombatRuntime.InitializeOwnerAttributes(100.f);
 				if (index == 0) owner = std::move(ownerActor);
 			}
 
 			target = world->SpawnActor<ChainLightningTestCombatant>().lock();
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::Player);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::Player);
 			target->SetActorLocation(sf::Vector2f{ 160.f, 128.f });
 			target->mCombatRuntime.InitializeOwnerAttributes(100.f);
 			world->TickInternal(0.f);
@@ -157,8 +158,8 @@ int RunChainLightningLifetimeTests()
 		WorldFixture fixture;
 		fixture.Create(application);
 		auto secondOwner = fixture.world->SpawnActor<ChainLightningTestCombatant>().lock();
-		secondOwner->SetCollisionLayer(CollisionLayer::Player);
-		secondOwner->SetCollisionMask(CollisionLayer::Enemy);
+		secondOwner->SetCollisionLayer(ly::GameCollision::Player);
+		secondOwner->SetCollisionMask(ly::GameCollision::Enemy);
 		secondOwner->SetActorLocation(sf::Vector2f{ 196.f, 128.f });
 		secondOwner->mCombatRuntime.InitializeOwnerAttributes(100.f);
 		fixture.world->TickInternal(0.f);
@@ -189,8 +190,8 @@ int RunChainLightningLifetimeTests()
 		fixture.owner->SetActorLocation(initialTargetPosition - sf::Vector2f{ 60.f, 0.f });
 		fixture.target->SetActorLocation(initialTargetPosition);
 		auto secondTarget = fixture.world->SpawnActor<ChainLightningTestCombatant>().lock();
-		secondTarget->SetCollisionLayer(CollisionLayer::Enemy);
-		secondTarget->SetCollisionMask(CollisionLayer::Player);
+		secondTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+		secondTarget->SetCollisionMask(ly::GameCollision::Player);
 		secondTarget->SetActorLocation(initialTargetPosition + sf::Vector2f{ 60.f, 0.f });
 		secondTarget->mCombatRuntime.InitializeOwnerAttributes(100.f);
 		fixture.world->TickInternal(0.f);

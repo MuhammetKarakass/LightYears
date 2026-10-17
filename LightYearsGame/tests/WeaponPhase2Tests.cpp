@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/AssetManager.h"
@@ -407,12 +408,12 @@ namespace ly
 			bool Setup(float attackPower, float energyPower)
 			{
 				if (!rig.Setup(CopyWeapon("Weapon.Arc.ElectricLauncher.Basic"), attackPower, energyPower)) return false;
-				rig.ship->SetCollisionLayer(CollisionLayer::Player);
+				rig.ship->SetCollisionLayer(ly::GameCollision::Player);
 				target = rig.world.SpawnActor<WeaponTestShip>().lock();
 				if (!target) return false;
 				target->SetActorLocation({ 0.f, -300.f });
-				target->SetCollisionLayer(CollisionLayer::Enemy);
-				target->SetCollisionMask(CollisionLayer::PlayerBullet);
+				target->SetCollisionLayer(ly::GameCollision::Enemy);
+				target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 				rig.world.TickInternal(0.f);
 				return true;
 			}
@@ -482,13 +483,13 @@ namespace ly
 				"cone: rig with the shipped Rapid Shotgun");
 			if (!rig.ship) return;
 			rig.Abilities().GetAttributes().SetBaseValue(OwnerAttributeIds::MaxHealth, 290.f);
-			rig.ship->SetCollisionLayer(CollisionLayer::Player);
+			rig.ship->SetCollisionLayer(ly::GameCollision::Player);
 			const auto spawnTarget = [&](sf::Vector2f location)
 			{
 				const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
 				target->SetActorLocation(location);
-				target->SetCollisionLayer(CollisionLayer::Enemy);
-				target->SetCollisionMask(CollisionLayer::PlayerBullet);
+				target->SetCollisionLayer(ly::GameCollision::Enemy);
+				target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 				return target;
 			};
 			// The ship faces up; the muzzle sits 50 units ahead.
@@ -529,11 +530,11 @@ namespace ly
 			{
 				WeaponRig rig;
 				if (!rig.Setup(CopyWeapon("Weapon.Beam.ContinuousHeatLaser.Basic"), 0.f, 43.f)) return -1.f;
-				rig.ship->SetCollisionLayer(CollisionLayer::Player);
+				rig.ship->SetCollisionLayer(ly::GameCollision::Player);
 				const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
 				target->SetActorLocation({ 0.f, -300.f });
-				target->SetCollisionLayer(CollisionLayer::Enemy);
-				target->SetCollisionMask(CollisionLayer::PlayerBullet);
+				target->SetCollisionLayer(ly::GameCollision::Enemy);
+				target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 				rig.world.TickInternal(0.f);
 				rig.Hold(true);
 				rig.world.TickInternal(0.f);
@@ -574,13 +575,13 @@ namespace ly
 			bool Setup()
 			{
 				if (!rig.Setup(CopyWeapon("Weapon.Wave.CryoProjector.Basic"), 27.f, 40.f)) return false;
-				rig.ship->SetCollisionLayer(CollisionLayer::Player);
+				rig.ship->SetCollisionLayer(ly::GameCollision::Player);
 				const auto spawn = [&](sf::Vector2f location)
 				{
 					const shared_ptr<WeaponTestShip> target = rig.world.SpawnActor<WeaponTestShip>().lock();
 					target->SetActorLocation(location);
-					target->SetCollisionLayer(CollisionLayer::Enemy);
-					target->SetCollisionMask(CollisionLayer::PlayerBullet);
+					target->SetCollisionLayer(ly::GameCollision::Enemy);
+					target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 					return target;
 				};
 				left = spawn({ -30.f, -300.f });

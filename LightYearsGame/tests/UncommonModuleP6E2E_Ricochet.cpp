@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "UncommonModuleP6E2E.h"
 #include "framework/MathUtility.h"
 
@@ -187,7 +188,7 @@ namespace uncommon_p6_e2e
 		{
 			Fixture f{ report, application }; f.Install("Module.Primary.RicochetTip.Uncommon");
 			const auto first = Enemy(f, 150.f); const auto second = Enemy(f, 350.f);
-			first->SetCollisionMask(CollisionLayer::PlayerBullet); first->SetEnablePhysics(true);
+			first->SetCollisionMask(ly::GameCollision::PlayerBullet); first->SetEnablePhysics(true);
 			const auto* authored = content::WeaponContentCatalog::FindById("Weapon.Beam.ContinuousHeatLaser.Basic");
 			report.Check(authored != nullptr, "P6 uses a real continuous beam weapon");
 			const auto definition = *authored;

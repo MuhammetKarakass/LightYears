@@ -219,8 +219,7 @@ namespace ly
 			.Labels({ { 0, "Dynamic" }, { 1, "Static" } });
 
 		reflect::EnumLabels collisionLabels;
-		const char* bits[]{ "Player", "PlayerBullet", "Enemy", "EnemyBullet", "Powerup", "Environment", "RelayProjectile", "FriendlySummon" };
-		for (int bit = 0; bit < 8; ++bit) collisionLabels.emplace_back(1 << bit, bits[bit]);
+		for (int bit = 0; bit < 8; ++bit) collisionLabels.emplace_back(1 << bit, "Layer " + std::to_string(bit));
 
 		VEGA_CATEGORY("Collision");
 		VEGA_PROPERTY("Collision Layer", GetCollisionLayer, SetCollisionLayer).Flags(collisionLabels);

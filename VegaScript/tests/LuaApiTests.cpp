@@ -52,8 +52,8 @@ namespace
 	public:
 		explicit TestBody(ly::World* world) : Actor{ world }
 		{
-			SetCollisionLayer(CollisionLayer::Player);
-			SetCollisionMask(CollisionLayer::Player);
+			SetCollisionLayer(CollisionLayer::Layer0);
+			SetCollisionMask(CollisionLayer::Layer0);
 			SetEnablePhysics(true);
 		}
 		float GetPhysicsCollisionRadius() const override { return 20.f; }
@@ -192,7 +192,7 @@ return {
 			other->SetActorLocation({ 300, 0 });
 			for (int i = 0; i < 3; ++i) world.StepPhysics(1.f/60.f);
 			if (disable) other->SetEnablePhysics(true);
-			else other->SetCollisionMask(CollisionLayer::Player);
+			else other->SetCollisionMask(CollisionLayer::Layer0);
 			other->SetActorLocation({ 5, 0 });
 			for (int i = 0; i < 3; ++i) world.StepPhysics(1.f/60.f);
 			Check(actor->GetActorRotation() == begins + 12.f, "Restored filter/body must fire begin/hit again");

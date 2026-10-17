@@ -110,13 +110,37 @@ passes the configured asset directory with `--asset-root` and checks the
 configured runtime log. See [game modules](game-module.md) for game registration
 and [engine modules](engine-modules.md) for the optional Sky and GAS modules.
 
-Collision layer and mask use reflected **Flags** with eight labels: Player,
-PlayerBullet, Enemy, EnemyBullet, Powerup, Environment, RelayProjectile, and
-FriendlySummon. The Inspector popup has one checkbox per bit. Scenes save flags
-as label arrays, for example `"Collision Mask": ["Player", "Enemy"]`; `[]` means
-none. Loading also accepts integer masks and older strings such as
-`"Player | Enemy"` or `"None"`. Unknown labels and undeclared bits are rejected.
-Editor `set-prop` commands and Lua reflected setters accept integer masks.
+Collision layer and mask use eight numeric channels (bits 0 through 7). The
+optional top-level `collisionLayers` list names them for this project:
+
+```json
+"collisionLayers": [
+	{ "bit": 0, "name": "Solid", "aliases": ["OldSolid"] },
+	{ "bit": 7, "name": "Sensor" }
+]
+```
+
+Unspecified channels retain `Layer 0` through `Layer 7`. Bits, names and aliases
+must be unique; bits must be integers from 0 to 7. Labels must be nonempty,
+without surrounding whitespace or pipes; `None` and numeric labels are reserved.
+Malformed lists warn and use all eight neutral defaults. Edit this list in JSON
+and restart the host. Project Settings and startup-scene edits preserve it.
+
+Hosts call `ProjectSettings::ApplyCollisionLayers(application.GetEngineContext())`
+before loading scenes or prefabs. Descriptors belong to that context, so the
+Inspector checkboxes, serializer and Lua setters agree without affecting other
+applications. Exports copy the same project settings. LightYears declares its
+eight existing names; Blank declares its own generic channels.
+
+Scenes save flags as label arrays; `[]` means none. Loading also accepts integer
+masks, pipe-separated labels and `None`. Keep old names in `aliases` when renaming
+a channel. Aliases, neutral channel spellings and numeric strings (e.g. `"129"`)
+are accepted with a warning and saved using current labels. Unknown names cannot
+be mapped to bits automatically: add an alias or replace them with a numeric mask;
+the loader warns and retains the property's existing value. Undeclared bits are
+rejected. Existing canonical LightYears scenes retain their serialized bytes.
+Lua reflected flag setters accept project names (e.g. `"Solid | Sensor"`) and
+integer masks; editor `set-prop` commands accept integer masks.
 
 Component references in editor history and Lua handles resolve by reflected
 type name and occurrence within that type. Adding components of other types

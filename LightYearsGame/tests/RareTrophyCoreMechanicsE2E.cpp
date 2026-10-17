@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 
@@ -478,7 +479,7 @@ namespace rare_trophy_core_e2e
 
 			const auto target = level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			level->TickInternal(0.f);
-			target->SetCollisionLayer(CollisionLayer::Enemy);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
 			target->SetCollisionMask(CollisionLayer::None);
 			target->SetEnablePhysics(false);
 			target->SetActorLocation(ship->GetActorLocation() + sf::Vector2f{ 50.f, 0.f });

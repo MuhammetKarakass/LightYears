@@ -4,6 +4,8 @@
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
 #include <framework/SpriteComponent.h>
+#include <framework/CollisionComponent.h>
+#include <framework/ProjectSettings.h>
 #include <iostream>
 #include <cmath>
 
@@ -161,6 +163,44 @@ namespace
 		SelectRectangle(context, { -1.f, -1.f }, { 1.f, 1.f }, true);
 		Check(selection.Count() == 3 && selection.Get() == context.ResolveGuid(guidA), "Shift marquee must add hits and update primary");
 	}
+
+	void TestCollisionInspector()
+	{
+		ly::EngineContext first, second;
+		ly::ProjectSettings project;
+		project.collisionLayers = { { 0, "Solid", {} }, { 7, "Sensor", {} } };
+		project.ApplyCollisionLayers(first);
+		project.collisionLayers = { { 0, "Other", {} } };
+		project.ApplyCollisionLayers(second);
+		for (auto* services : { &first, &second })
+		{
+			ly::World world{ *services };
+			vega::EditorSelection selection;
+			vega::EditorContext context{ &world, selection };
+			context.services = services;
+			vega::CommandHistory history{ context };
+			for (int index = 0; index < 2; ++index)
+			{
+				auto actor = world.SpawnActor<ly::Actor>().lock();
+				actor->AddComponent<ly::SceneEntityComponent>();
+				actor->AddComponent<ly::CollisionComponent>();
+				selection.Add(actor);
+			}
+			vega::MultiInspectorCache cache;
+			bool found = false;
+			for (const auto& property : cache.Get(context))
+				if (property.property->name == "Collision Mask")
+				{
+					found = true;
+					Check(property.property->enumLabels[0].second == (services == &first ? "Solid" : "Other"),
+						"Inspector received another context's collision labels");
+					Check(vega::SetCommonProperty(context, history, property, 129), "Inspector flag edit failed");
+					for (const auto& actor : selection.GetAll())
+						Check(static_cast<int>(actor->GetCollisionMask()) == 129, "Inspector changed the wrong collision bits");
+				}
+			Check(found, "Inspector omitted collision flags");
+		}
+	}
 	void TestSelectionInvalidation()
 	{
 		ly::World world{ nullptr };
@@ -243,6 +283,7 @@ int main()
 	ly::reflect::Class<FirstComponent, SharedComponent>("FirstComponent").Addable();
 	ly::reflect::Class<SecondComponent, SharedComponent>("SecondComponent").Addable();
 	TestMultiCommands();
+	TestCollisionInspector();
 	TestSelectionInvalidation();
 	TestRichProperties();
 	return failures ? 1 : 0;

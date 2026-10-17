@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/stormMark/StormMarkAbility.h"
 
 #include "attributes/AttributeSystem.h"
@@ -56,13 +57,13 @@ namespace ly
 
 		CollisionLayer GetOpposingLayer(const Actor& owner)
 		{
-			if (owner.GetCollisionLayer() == CollisionLayer::Player)
+			if (owner.GetCollisionLayer() == GameCollision::Player)
 			{
-				return CollisionLayer::Enemy;
+				return GameCollision::Enemy;
 			}
-			if (owner.GetCollisionLayer() == CollisionLayer::Enemy)
+			if (owner.GetCollisionLayer() == GameCollision::Enemy)
 			{
-				return CollisionLayer::Player;
+				return GameCollision::Player;
 			}
 			return CollisionLayer::None;
 		}

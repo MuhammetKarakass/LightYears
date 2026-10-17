@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "framework/World.h"
 #include "framework/SpriteComponent.h"
 #include "framework/Core.h"
@@ -259,10 +260,10 @@ namespace ly
 					? owner->GetActorLocation() + owner->GetActorForwardDirection() * targetDistance
 					: sf::Vector2f{ 0.f, 0.f };
 			target->SetActorLocation(targetLocation);
-			owner->SetCollisionLayer(CollisionLayer::Player);
-			owner->SetCollisionMask(CollisionLayer::Enemy);
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
+			owner->SetCollisionLayer(ly::GameCollision::Player);
+			owner->SetCollisionMask(ly::GameCollision::Enemy);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::Player | ly::GameCollision::PlayerBullet);
 			sas::AttributeSystem& ownerAttributes =
 				owner->GetCombatRuntime().GetAbilitySystemComponent().GetAttributes();
 			ownerAttributes.SetBaseValue(OwnerAttributeIds::AttackPower, TestPower);

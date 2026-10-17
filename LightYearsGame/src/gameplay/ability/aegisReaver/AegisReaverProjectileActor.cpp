@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/aegisReaver/AegisReaverProjectileActor.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
 
@@ -508,7 +509,7 @@ namespace ly
 				mOutboundTravelDistance += travelledDistance * contact.fraction;
 				return false;
 			}
-			if (contact.actor->GetCollisionLayer() == CollisionLayer::Environment)
+			if (contact.actor->GetCollisionLayer() == GameCollision::Environment)
 			{
 				BeginReturning();
 				return false;

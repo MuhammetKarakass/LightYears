@@ -3,6 +3,13 @@
 	"version": 1,
 	"name": "Blank",
 	"startupScene": "scenes/main.scene.json",
+	"collisionLayers": [
+		{ "bit": 0, "name": "Player" },
+		{ "bit": 1, "name": "Default" },
+		{ "bit": 2, "name": "Enemy" },
+		{ "bit": 4, "name": "Pickup", "aliases": ["Powerup"] },
+		{ "bit": 5, "name": "World" }
+	],
 	"window": { "width": 960, "height": 540 },
 	"editor": {
 		"assetRoot": ".",

@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/energySpear/EnergySpearTraversalActor.h"
 
 #include "framework/MathUtility.h"
@@ -191,7 +192,7 @@ namespace ly
 		{
 			const shared_ptr<Actor> target = actorWeak.lock();
 			if (!target || target.get() == owner.get() || target->GetIsPendingDestroy() ||
-				!HasCollisionLayer(target->GetCollisionLayer(), CollisionLayer::Enemy) ||
+				!HasCollisionLayer(target->GetCollisionLayer(), GameCollision::Enemy) ||
 				!dynamic_cast<Combatant*>(target.get()) ||
 				mHitTargets.find(target->GetUniqueID()) != mHitTargets.end() ||
 				!targeting::swept::SegmentIntersectsExpandedBounds(

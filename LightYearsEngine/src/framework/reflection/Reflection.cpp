@@ -5,9 +5,65 @@
 #include "framework/ActorComponent.h"
 #include <algorithm>
 #include <cmath>
+#include <charconv>
 
 namespace ly::reflect
 {
+	void TypeRegistry::SetCollisionLabels(const EnumLabels& labels, const EnumLabels& aliases)
+	{
+		for (auto& entry : mTypes)
+			if (entry.second->name == "CollisionComponent")
+				for (auto& property : entry.second->properties)
+					if (property.name == "Collision Layer" || property.name == "Collision Mask")
+					{
+						property.enumLabels = labels;
+						property.flagAliases = aliases;
+					}
+	}
+
+	bool PropertyInfo::ParseFlags(const std::string& text, int& bits, bool* legacy) const
+	{
+		if (legacy) *legacy = false;
+		if (kind != PropertyKind::Flags) return false;
+		int result = 0;
+		std::size_t begin = 0;
+		do
+		{
+			const auto end = text.find('|', begin);
+			const auto part = text.substr(begin, end == std::string::npos ? end : end - begin);
+			const auto first = part.find_first_not_of(" \t");
+			if (first == std::string::npos) return false;
+			const auto labelName = part.substr(first, part.find_last_not_of(" \t") - first + 1);
+			bool found = labelName == "None";
+			for (const auto& label : enumLabels)
+				if (label.second == labelName) { result |= label.first; found = true; break; }
+			if (!found)
+			{
+				for (const auto& alias : flagAliases)
+					if (alias.second == labelName)
+					{
+						result |= alias.first;
+						found = true;
+						if (legacy) *legacy = true;
+						break;
+					}
+			}
+			if (!found)
+			{
+				int numeric = 0;
+				const auto parsed = std::from_chars(labelName.data(), labelName.data() + labelName.size(), numeric);
+				if (parsed.ec != std::errc{} || parsed.ptr != labelName.data() + labelName.size() || !ValidateValue(numeric)) return false;
+				result |= numeric;
+				if (legacy) *legacy = true;
+			}
+			if (end == std::string::npos) break;
+			begin = end + 1;
+		} while (true);
+		if (!ValidateValue(result)) return false;
+		bits = result;
+		return true;
+	}
+
 	bool PropertyInfo::ValidateValue(const PropertyValue& value, std::string* error) const
 	{
 		if (error) error->clear();

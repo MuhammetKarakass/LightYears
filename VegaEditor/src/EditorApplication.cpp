@@ -52,6 +52,7 @@ namespace vega
 		const bool sourceReadOnly = unattended && Within(mDocument.Root(), VEGA_SOURCE_ROOT) && !Within(mDocument.Root(), VEGA_BUILD_ROOT);
 		if (!sourceReadOnly && AssetMovePlan::RecoverPending(mDocument.Root(), mProject.file, mAssetRecoveryError) && std::filesystem::exists(mProject.file))
 			mProject.settings = ly::ProjectSettings::Load(mProject.file);
+		mProject.settings.ApplyCollisionLayers(GetEngineContext());
 		if (auto* setup = QueryCapability<IModuleSetup>(mModule.get())) setup->ConfigureProject(mProject.file);
 		RegisterGameModule(*mModule, true);
 		if (auto* provider = QueryCapability<IEditorProvider>(mModule.get())) provider->RegisterEditorExtensions(mExtensions);

@@ -321,35 +321,35 @@
         "labels": [
           [
             1,
-            "Player"
+            "Layer 0"
           ],
           [
             2,
-            "PlayerBullet"
+            "Layer 1"
           ],
           [
             4,
-            "Enemy"
+            "Layer 2"
           ],
           [
             8,
-            "EnemyBullet"
+            "Layer 3"
           ],
           [
             16,
-            "Powerup"
+            "Layer 4"
           ],
           [
             32,
-            "Environment"
+            "Layer 5"
           ],
           [
             64,
-            "RelayProjectile"
+            "Layer 6"
           ],
           [
             128,
-            "FriendlySummon"
+            "Layer 7"
           ]
         ],
         "max": null,
@@ -367,35 +367,35 @@
         "labels": [
           [
             1,
-            "Player"
+            "Layer 0"
           ],
           [
             2,
-            "PlayerBullet"
+            "Layer 1"
           ],
           [
             4,
-            "Enemy"
+            "Layer 2"
           ],
           [
             8,
-            "EnemyBullet"
+            "Layer 3"
           ],
           [
             16,
-            "Powerup"
+            "Layer 4"
           ],
           [
             32,
-            "Environment"
+            "Layer 5"
           ],
           [
             64,
-            "RelayProjectile"
+            "Layer 6"
           ],
           [
             128,
-            "FriendlySummon"
+            "Layer 7"
           ]
         ],
         "max": null,

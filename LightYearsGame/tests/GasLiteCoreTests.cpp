@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "gameplay/attributes/AttributeIds.h"
 #include "framework/Core.h"
@@ -474,7 +475,7 @@ namespace
 		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 			sas::AttributeModifier{ ly::OwnerAttributeIds::Luck, luckRating }
 		);
-		owner->SetCollisionLayer(CollisionLayer::Player);
+		owner->SetCollisionLayer(ly::GameCollision::Player);
 
 		ly::List<ly::shared_ptr<TestCombatant>> targets;
 		for (int targetIndex = 0; targetIndex < targetCount; ++targetIndex)
@@ -485,8 +486,8 @@ namespace
 			{
 				return false;
 			}
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 			target->SetActorLocation({ static_cast<float>(targetIndex) * 100.f, 100.f });
 			targets.push_back(target);
 		}
@@ -533,7 +534,7 @@ namespace
 		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 			sas::AttributeModifier{ ly::OwnerAttributeIds::Luck, 100000.f }
 		);
-		owner->SetCollisionLayer(CollisionLayer::Player);
+		owner->SetCollisionLayer(ly::GameCollision::Player);
 
 		ly::List<ly::shared_ptr<TestCombatant>> targets;
 		for (int targetIndex = 0; targetIndex < 5; ++targetIndex)
@@ -544,8 +545,8 @@ namespace
 			{
 				return -1.f;
 			}
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 			target->SetActorLocation({ static_cast<float>(targetIndex) * 100.f, 100.f });
 			targets.push_back(target);
 		}
@@ -669,10 +670,10 @@ namespace
 		owner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 			sas::AttributeModifier{ ly::OwnerAttributeIds::AttackSpeed, attackSpeed }
 		);
-		owner->SetCollisionLayer(CollisionLayer::Player);
+		owner->SetCollisionLayer(ly::GameCollision::Player);
 		owner->SetActorRotation(90.f);
-		target->SetCollisionLayer(CollisionLayer::Enemy);
-		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target->SetCollisionLayer(ly::GameCollision::Enemy);
+		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 		target->SetActorLocation({ 400.f, 0.f });
 		world.TickInternal(0.f);
 
@@ -1409,12 +1410,12 @@ int main(int argc, char** argv)
 	nullPulseOwner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 		sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, 100.f }
 	);
-	nullPulseOwner->SetCollisionLayer(CollisionLayer::Player);
-	nullPulseOwner->SetCollisionMask(CollisionLayer::Enemy);
-	nullPulseTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	nullPulseTarget->SetCollisionMask(CollisionLayer::Player);
-	nullPulseOutsideTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	nullPulseOutsideTarget->SetCollisionMask(CollisionLayer::Player);
+	nullPulseOwner->SetCollisionLayer(ly::GameCollision::Player);
+	nullPulseOwner->SetCollisionMask(ly::GameCollision::Enemy);
+	nullPulseTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	nullPulseTarget->SetCollisionMask(ly::GameCollision::Player);
+	nullPulseOutsideTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	nullPulseOutsideTarget->SetCollisionMask(ly::GameCollision::Player);
 	nullPulseTarget->SetActorLocation({ 120.f, 0.f });
 	// Keep this assertion target outside the updated 500 radius.
 	nullPulseOutsideTarget->SetActorLocation({ 700.f, 0.f });
@@ -1688,12 +1689,12 @@ int main(int argc, char** argv)
 		return Fail("Directional Barrier projectile interception test actor could not spawn");
 	}
 	directionalBarrierWorld.TickInternal(0.f);
-	directionalBarrierOwner->SetCollisionLayer(CollisionLayer::Player);
+	directionalBarrierOwner->SetCollisionLayer(ly::GameCollision::Player);
 	directionalBarrierOwner->SetCollisionMask(
-		CollisionLayer::Enemy | CollisionLayer::EnemyBullet
+		ly::GameCollision::Enemy | ly::GameCollision::EnemyBullet
 	);
-	incomingBarrierProjectile->SetCollisionLayer(CollisionLayer::EnemyBullet);
-	incomingBarrierProjectile->SetCollisionMask(CollisionLayer::Player);
+	incomingBarrierProjectile->SetCollisionLayer(ly::GameCollision::EnemyBullet);
+	incomingBarrierProjectile->SetCollisionMask(ly::GameCollision::Player);
 	incomingBarrierProjectile->SetAbilityCollisionRadius(5.f);
 	incomingBarrierProjectile->SetActorLocation({ 0.f, -90.f });
 	incomingBarrierProjectile->SetVelocity({ 0.f, 200.f });
@@ -1813,7 +1814,7 @@ int main(int argc, char** argv)
 	{
 		return Fail("Orbital Drones runtime owner could not be spawned");
 	}
-	orbitalDronesOwner->SetCollisionLayer(CollisionLayer::Player);
+	orbitalDronesOwner->SetCollisionLayer(ly::GameCollision::Player);
 	orbitalDronesOwner->SetActorLocation({ 100.f, 200.f });
 	for (std::size_t droneIndex = 0; droneIndex < 4; ++droneIndex)
 	{
@@ -3136,10 +3137,10 @@ int main(int argc, char** argv)
 	{
 		return Fail("Continuous beam damage test actors could not be spawned");
 	}
-	continuousBeamSource->SetCollisionLayer(CollisionLayer::Player);
+	continuousBeamSource->SetCollisionLayer(ly::GameCollision::Player);
 	continuousBeamSource->SetActorRotation(90.f);
-	continuousBeamTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	continuousBeamTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+	continuousBeamTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	continuousBeamTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	continuousBeamTarget->SetActorLocation({ 400.f, 0.f });
 	continuousBeamDamageWorld.TickInternal(0.f);
 
@@ -3619,7 +3620,7 @@ int main(int argc, char** argv)
 
 	World timingWorld{ nullptr };
 	Actor timingOwner{ &timingWorld };
-	timingOwner.SetCollisionLayer(CollisionLayer::Player);
+	timingOwner.SetCollisionLayer(ly::GameCollision::Player);
 	weak_ptr<TestCombatant> timingTargetWeak = timingWorld.SpawnActor<TestCombatant>();
 	shared_ptr<TestCombatant> timingTarget = timingTargetWeak.lock();
 	if (!timingTarget)
@@ -3627,8 +3628,8 @@ int main(int argc, char** argv)
 		return Fail("Sun Beam timing target failed to spawn");
 	}
 	timingTarget->SetActorLocation({ 100.f, 100.f });
-	timingTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	timingTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+	timingTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	timingTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 	sas::GameplayAttributeList timingAttributes =
 		LoadedAbilityActor("Actor.Ability.SunBeam.Strike.Basic").attributes;
@@ -3690,7 +3691,7 @@ int main(int argc, char** argv)
 
 	World stressWorld{ nullptr };
 	Actor stressOwner{ &stressWorld };
-	stressOwner.SetCollisionLayer(CollisionLayer::Player);
+	stressOwner.SetCollisionLayer(ly::GameCollision::Player);
 	List<weak_ptr<AbilityWorldActor>> stressBeams;
 	for (int beamIndex = 0; beamIndex < 32; ++beamIndex)
 	{
@@ -4165,7 +4166,7 @@ int main(int argc, char** argv)
 
 	World sweptProjectileWorld{ nullptr };
 	Actor sweptProjectileOwner{ &sweptProjectileWorld };
-	sweptProjectileOwner.SetCollisionLayer(CollisionLayer::Player);
+	sweptProjectileOwner.SetCollisionLayer(ly::GameCollision::Player);
 	const shared_ptr<TestCombatant> sweptProjectileTarget =
 		sweptProjectileWorld.SpawnActor<TestCombatant>().lock();
 	if (!sweptProjectileTarget)
@@ -4173,8 +4174,8 @@ int main(int argc, char** argv)
 		return Fail("Swept projectile target could not spawn");
 	}
 	sweptProjectileTarget->SetActorLocation({ 100.f, 0.f });
-	sweptProjectileTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	sweptProjectileTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+	sweptProjectileTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	sweptProjectileTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	const sas::GameplayAttributeList sweptProjectileAttributes{
 		sas::GameplayAttribute{ CommonAttributeIds::Damage, 10.f, 0.f },
 		sas::GameplayAttribute{ PrimaryWeaponSchema::Projectile::Delivery::Speed, 1000.f, 0.f },
@@ -4215,11 +4216,11 @@ int main(int argc, char** argv)
 		World wallWorld{ nullptr };
 		auto owner = wallWorld.SpawnActor<TestCombatant>().lock();
 		auto target = wallWorld.SpawnActor<DummyEnemy>(ShipData::Ship_Enemy_Hexagon).lock();
-		owner->SetCollisionLayer(CollisionLayer::Player);
+		owner->SetCollisionLayer(ly::GameCollision::Player);
 		owner->GetAbilitySystemComponent().AddOwnedTag(AbilityData::LanceDrive::State::Active);
 		owner->SetActorLocation({ 1000.f, 1000.f });
 		owner->SetActorRotation(0.f);
-		target->SetCollisionLayer(CollisionLayer::Enemy);
+		target->SetCollisionLayer(ly::GameCollision::Enemy);
 		// The target begins outside the wall and enters its right arm only after
 		// the owner-following wall advances by 40 units.
 		target->SetActorLocation({ 1055.f, 850.f });
@@ -4241,7 +4242,7 @@ int main(int argc, char** argv)
 		}
 	}
 	Actor crystalReflectionOwner{ &crystalReflectionWorld };
-	crystalReflectionOwner.SetCollisionLayer(CollisionLayer::Player);
+	crystalReflectionOwner.SetCollisionLayer(ly::GameCollision::Player);
 	const shared_ptr<CrystalBarricadeActor> crystalWall =
 		crystalReflectionWorld.SpawnActor<CrystalBarricadeActor>(
 			&crystalReflectionOwner,
@@ -4284,10 +4285,10 @@ int main(int argc, char** argv)
 	{
 		return Fail("Return Protocol test combatants could not spawn");
 	}
-	returnProtocolDefender->SetCollisionLayer(CollisionLayer::Player);
-	returnProtocolDefender->SetCollisionMask(CollisionLayer::EnemyBullet);
-	returnProtocolAttacker->SetCollisionLayer(CollisionLayer::Enemy);
-	returnProtocolAttacker->SetCollisionMask(CollisionLayer::PlayerBullet);
+	returnProtocolDefender->SetCollisionLayer(ly::GameCollision::Player);
+	returnProtocolDefender->SetCollisionMask(ly::GameCollision::EnemyBullet);
+	returnProtocolAttacker->SetCollisionLayer(ly::GameCollision::Enemy);
+	returnProtocolAttacker->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	returnProtocolAttacker->SetActorLocation({ -100.f, 0.f });
 	const GameAbilityDefinition* returnProtocolDefinition =
 		AbilityData::FindShippedAbilityDefinition(AbilityData::ReturnProtocol::AbilityId::Basic);
@@ -4373,7 +4374,7 @@ int main(int argc, char** argv)
 
 	World electricArcWorld{ nullptr };
 	Actor electricArcOwner{ &electricArcWorld };
-	electricArcOwner.SetCollisionLayer(CollisionLayer::Player);
+	electricArcOwner.SetCollisionLayer(ly::GameCollision::Player);
 	LightYearsAbilitySystemComponent electricArcAbilities{
 		electricArcOwner
 	};
@@ -4386,8 +4387,8 @@ int main(int argc, char** argv)
 	}
 	for (const shared_ptr<TestCombatant>& target : { firstArcTarget, secondArcTarget, thirdArcTarget })
 	{
-		target->SetCollisionLayer(CollisionLayer::Enemy);
-		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target->SetCollisionLayer(ly::GameCollision::Enemy);
+		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	}
 	firstArcTarget->SetActorLocation({ 0.f, 100.f });
 	secondArcTarget->SetActorLocation({ 100.f, 100.f });
@@ -4456,7 +4457,7 @@ int main(int argc, char** argv)
 
 	World emptyArcWorld{ nullptr };
 	Actor emptyArcOwner{ &emptyArcWorld };
-	emptyArcOwner.SetCollisionLayer(CollisionLayer::Player);
+	emptyArcOwner.SetCollisionLayer(ly::GameCollision::Player);
 	PrimaryWeaponRuntimeState emptyArcRuntime;
 	if (!PrimaryWeaponExecutionSystem::InitializeRuntime(
 		LoadedWeapon("Weapon.Arc.ElectricLauncher.Basic"),
@@ -4485,7 +4486,7 @@ int main(int argc, char** argv)
 
 	World cryoWaveWorld{ nullptr };
 	Actor cryoWaveOwner{ &cryoWaveWorld };
-	cryoWaveOwner.SetCollisionLayer(CollisionLayer::Player);
+	cryoWaveOwner.SetCollisionLayer(ly::GameCollision::Player);
 	const shared_ptr<TestCombatant> leftCryoWaveTarget =
 		cryoWaveWorld.SpawnActor<TestCombatant>().lock();
 	const shared_ptr<TestCombatant> rightCryoWaveTarget =
@@ -4497,8 +4498,8 @@ int main(int argc, char** argv)
 	for (const shared_ptr<TestCombatant>& target :
 		{ leftCryoWaveTarget, rightCryoWaveTarget })
 	{
-		target->SetCollisionLayer(CollisionLayer::Enemy);
-		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target->SetCollisionLayer(ly::GameCollision::Enemy);
+		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	}
 	leftCryoWaveTarget->SetActorLocation({ -35.f, -120.f });
 	rightCryoWaveTarget->SetActorLocation({ 35.f, -120.f });
@@ -5003,7 +5004,7 @@ int main(int argc, char** argv)
 		owner.GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 			sas::AttributeModifier{ OwnerAttributeIds::EnergyPower, energyPower }
 		);
-		owner.SetCollisionLayer(CollisionLayer::Player);
+		owner.SetCollisionLayer(ly::GameCollision::Player);
 		owner.SetActorRotation(90.f);
 
 		LightYearsAbilitySystemComponent& abilities = owner.GetCombatRuntime().GetAbilitySystemComponent();
@@ -5062,7 +5063,7 @@ int main(int argc, char** argv)
 
 	World cursorTargetRocketWorld{ nullptr };
 	TestCombatant cursorTargetRocketOwner{ &cursorTargetRocketWorld, 1000.f };
-	cursorTargetRocketOwner.SetCollisionLayer(CollisionLayer::Player);
+	cursorTargetRocketOwner.SetCollisionLayer(ly::GameCollision::Player);
 	cursorTargetRocketOwner.SetActorLocation({ 0.f, 0.f });
 	cursorTargetRocketOwner.SetActorRotation(90.f);
 	const sf::Vector2f cursorTargetLocation{ 342.f, 0.f };
@@ -5208,8 +5209,8 @@ int main(int argc, char** argv)
 	}
 	for (const shared_ptr<TestCombatant>& target : { directTarget, areaTarget, outsideTarget })
 	{
-		target->SetCollisionLayer(CollisionLayer::Enemy);
-		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target->SetCollisionLayer(ly::GameCollision::Enemy);
+		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	}
 	directTarget->SetActorLocation({ 42.f, 0.f });
 	areaTarget->SetActorLocation({ 92.f, 0.f });
@@ -5260,8 +5261,8 @@ int main(int argc, char** argv)
 	{
 		return Fail("Basic Rocket range-impact target could not spawn");
 	}
-	rangeTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	rangeTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+	rangeTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	rangeTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	rangeTarget->SetActorLocation({
 		rocketSettings->spawnDistance + rocketSettings->range,
 		0.f
@@ -5318,7 +5319,7 @@ int main(int argc, char** argv)
 	auto SpawnRailBurst = [&](World& world, TestCombatant& owner)
 	{
 		owner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-		owner.SetCollisionLayer(CollisionLayer::Player);
+		owner.SetCollisionLayer(ly::GameCollision::Player);
 		owner.SetActorRotation(90.f);
 		LightYearsAbilitySystemComponent& abilities =
 			owner.GetCombatRuntime().GetAbilitySystemComponent();
@@ -5355,8 +5356,8 @@ int main(int argc, char** argv)
 		thirdRailTarget
 	})
 	{
-		target->SetCollisionLayer(CollisionLayer::Enemy);
-		target->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target->SetCollisionLayer(ly::GameCollision::Enemy);
+		target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	}
 	firstRailTarget->SetActorLocation({ railBurstSettings.spawnDistance + 80.f, 0.f });
 	secondRailTarget->SetActorLocation({ railBurstSettings.spawnDistance + 160.f, 0.f });
@@ -5419,7 +5420,7 @@ int main(int argc, char** argv)
 	World astralSurgeWorld{ nullptr };
 	TestCombatant astralSurgeOwner{ &astralSurgeWorld, 1000.f };
 	astralSurgeOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-	astralSurgeOwner.SetCollisionLayer(CollisionLayer::Player);
+	astralSurgeOwner.SetCollisionLayer(ly::GameCollision::Player);
 	astralSurgeOwner.SetActorRotation(90.f);
 	LightYearsAbilitySystemComponent& astralSurgeAbilities =
 		astralSurgeOwner.GetCombatRuntime().GetAbilitySystemComponent();
@@ -5485,9 +5486,9 @@ int main(int argc, char** argv)
 			return Fail("Energy Spear test actors could not spawn");
 		}
 
-		energySpearOwner->SetCollisionLayer(CollisionLayer::Player);
-		energySpearTarget->SetCollisionLayer(CollisionLayer::Enemy);
-		energySpearTarget->SetCollisionMask(CollisionLayer::Player);
+		energySpearOwner->SetCollisionLayer(ly::GameCollision::Player);
+		energySpearTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+		energySpearTarget->SetCollisionMask(ly::GameCollision::Player);
 		const sf::Vector2f spearDirection{ 0.f, -1.f };
 		energySpearTarget->SetActorLocation(
 			energySpearOwner->GetActorLocation() + spearDirection * 100.f
@@ -5641,10 +5642,10 @@ int main(int argc, char** argv)
 	{
 		return Fail("Crescent Reaver input-path test actors could not spawn");
 	}
-	crescentReaverOwner->SetCollisionLayer(CollisionLayer::Player);
-	crescentReaverOwner->SetCollisionMask(CollisionLayer::Enemy);
-	crescentReaverTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	crescentReaverTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+	crescentReaverOwner->SetCollisionLayer(ly::GameCollision::Player);
+	crescentReaverOwner->SetCollisionMask(ly::GameCollision::Enemy);
+	crescentReaverTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	crescentReaverTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 	crescentReaverTarget->SetActorLocation({ 0.f, -210.f });
 	crescentReaverWorld.TickInternal(0.f);
 	const sas::AbilityHandle crescentReaverHandle =
@@ -5788,11 +5789,11 @@ int main(int argc, char** argv)
 	overdriveOwner->GetAbilitySystemComponent().GetAttributes().ApplyBaseModifier(
 		sas::AttributeModifier{ OwnerAttributeIds::CriticalChance, 0.2f }
 	);
-	overdriveOwner->SetCollisionLayer(CollisionLayer::Player);
-	overdriveOwner->SetCollisionMask(CollisionLayer::Enemy);
+	overdriveOwner->SetCollisionLayer(ly::GameCollision::Player);
+	overdriveOwner->SetCollisionMask(ly::GameCollision::Enemy);
 	overdriveOwner->SetActorLocation({ 0.f, 0.f });
-	overdriveTarget->SetCollisionLayer(CollisionLayer::Enemy);
-	overdriveTarget->SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
+	overdriveTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+	overdriveTarget->SetCollisionMask(ly::GameCollision::Player | ly::GameCollision::PlayerBullet);
 	overdriveTarget->SetActorLocation({ 300.f, 0.f });
 	overdriveWorld.TickInternal(0.f);
 	const float overdriveHealthBefore = overdriveTarget->GetHealth();
@@ -5982,7 +5983,7 @@ int main(int argc, char** argv)
 		owner.GetCombatRuntime().InitializeOwnerAttributes(resolvedMaxHealth);
 		owner.SetActorLocation({ 0.f, 0.f });
 		owner.SetActorRotation(90.f);
-		owner.SetCollisionLayer(CollisionLayer::Player);
+		owner.SetCollisionLayer(ly::GameCollision::Player);
 		const sas::AbilityHandle handle = owner.GetAbilitySystemComponent().GrantAbility(*gravityDefinition);
 		if (!handle.IsValid() ||
 			(level > 1 && !owner.GetCombatRuntime().GetAbilitySystemComponent().SetAbilityLevel(handle, level)))
@@ -6088,16 +6089,16 @@ int main(int argc, char** argv)
 	{
 		return Fail("Gravity Anomaly field test actors could not spawn");
 	}
-	gravityCaster->SetCollisionLayer(CollisionLayer::Player);
-	gravityPlayerTarget->SetCollisionLayer(CollisionLayer::Player);
-	gravityEnemyTarget->SetCollisionLayer(CollisionLayer::Enemy);
+	gravityCaster->SetCollisionLayer(ly::GameCollision::Player);
+	gravityPlayerTarget->SetCollisionLayer(ly::GameCollision::Player);
+	gravityEnemyTarget->SetCollisionLayer(ly::GameCollision::Enemy);
 	gravityCaster->SetActorLocation({ 20.f, 0.f });
 	gravityPlayerTarget->SetActorLocation({ -30.f, 0.f });
 	gravityEnemyTarget->SetActorLocation({ 40.f, 0.f });
-	gravityProjectileTarget->SetCollisionLayer(CollisionLayer::PlayerBullet);
+	gravityProjectileTarget->SetCollisionLayer(ly::GameCollision::PlayerBullet);
 	gravityProjectileTarget->SetActorLocation({ 10.f, 0.f });
 	gravityProjectileTarget->SetVelocity({ 7.f, 0.f });
-	gravityPickupTarget->SetCollisionLayer(CollisionLayer::Powerup);
+	gravityPickupTarget->SetCollisionLayer(ly::GameCollision::Powerup);
 	gravityPickupTarget->SetActorLocation({ -10.f, 0.f });
 	gravityPickupTarget->SetVelocity({ 3.f, 0.f });
 	const shared_ptr<GravityAnomalyFieldActor> gravityField = SpawnGravityField(
@@ -6252,8 +6253,8 @@ int main(int argc, char** argv)
 
 	SpaceShip playerSlowMovement{ nullptr, ShipData::Ship_Player_Fighter };
 	SpaceShip enemySlowMovement{ nullptr, ShipData::Ship_Player_Fighter };
-	playerSlowMovement.SetCollisionLayer(CollisionLayer::Player);
-	enemySlowMovement.SetCollisionLayer(CollisionLayer::Enemy);
+	playerSlowMovement.SetCollisionLayer(ly::GameCollision::Player);
+	enemySlowMovement.SetCollisionLayer(ly::GameCollision::Enemy);
 	playerSlowMovement.SetVelocity({ 100.f, 0.f });
 	enemySlowMovement.SetVelocity({ 100.f, 0.f });
 	const sas::GameplayEffectHandle playerSlowHandle = playerSlowMovement.GetAbilitySystemComponent().ApplyGameplayEffect(
@@ -7176,7 +7177,7 @@ int main(int argc, char** argv)
 		TestCombatant echoGravityOwner{ &echoGravityWorld, 1000.f };
 		echoGravityOwner.GetCombatRuntime().InitializeOwnerAttributes(1000.f);
 		echoGravityOwner.SetActorRotation(90.f);
-		echoGravityOwner.SetCollisionLayer(CollisionLayer::Player);
+		echoGravityOwner.SetCollisionLayer(ly::GameCollision::Player);
 		LightYearsAbilitySystemComponent& echoGravityAbilities =
 			echoGravityOwner.GetAbilitySystemComponent();
 		GameAbilityDefinition echoGravitySourceDefinition = *gravityDefinition;
@@ -7338,19 +7339,19 @@ int main(int argc, char** argv)
 
 		shooter->SetActorLocation({ 0.f, 0.f });
 		shooter->SetActorRotation(0.f); // Forward vector is { 0.f, -1.f }
-		shooter->SetCollisionLayer(CollisionLayer::Player);
+		shooter->SetCollisionLayer(ly::GameCollision::Player);
 
 		targetInCone->SetActorLocation({ 0.f, -200.f }); // Directly in front (dist=200 < 520, angle=0)
-		targetInCone->SetCollisionLayer(CollisionLayer::Enemy);
-		targetInCone->SetCollisionMask(CollisionLayer::PlayerBullet);
+		targetInCone->SetCollisionLayer(ly::GameCollision::Enemy);
+		targetInCone->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 		targetOutsideAngle->SetActorLocation({ 200.f, 0.f }); // 90 degrees to the right (angle=90 > 18)
-		targetOutsideAngle->SetCollisionLayer(CollisionLayer::Enemy);
-		targetOutsideAngle->SetCollisionMask(CollisionLayer::PlayerBullet);
+		targetOutsideAngle->SetCollisionLayer(ly::GameCollision::Enemy);
+		targetOutsideAngle->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 		targetOutsideRange->SetActorLocation({ 0.f, -600.f }); // Directly in front but out of range (dist=600 > 520)
-		targetOutsideRange->SetCollisionLayer(CollisionLayer::Enemy);
-		targetOutsideRange->SetCollisionMask(CollisionLayer::PlayerBullet);
+		targetOutsideRange->SetCollisionLayer(ly::GameCollision::Enemy);
+		targetOutsideRange->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 		world.TickInternal(0.f);
 
@@ -7495,8 +7496,8 @@ int main(int argc, char** argv)
 			return Fail("Relay Prism test owner could not spawn");
 		}
 		relayOwner->GetCombatRuntime().InitializeOwnerAttributes(1000.f);
-		relayOwner->SetCollisionLayer(CollisionLayer::Player);
-		relayOwner->SetCollisionMask(CollisionLayer::RelayProjectile);
+		relayOwner->SetCollisionLayer(ly::GameCollision::Player);
+		relayOwner->SetCollisionMask(ly::GameCollision::RelayProjectile);
 		relayOwner->SetActorLocation({ 500.f, 0.f });
 
 		RelayPrismPresentationProfile relayPresentation;
@@ -7575,8 +7576,8 @@ int main(int argc, char** argv)
 				!NearlyEqual(clone->GetLifeTime(), 3.75f) ||
 				clone->GetProjectileRelayLineage().generation != 1 ||
 				!clone->GetProjectileRelayLineage().HasVisited(relay->GetCaptureVolumeId()) ||
-				clone->GetCollisionLayer() != CollisionLayer::RelayProjectile ||
-				clone->GetCollisionMask() != CollisionLayer::AllRelayTargets ||
+				clone->GetCollisionLayer() != ly::GameCollision::RelayProjectile ||
+				clone->GetCollisionMask() != ly::GameCollision::AllRelayTargets ||
 				clone->GetDamageTags().size() != 1 ||
 				clone->GetDamageTags().front() != DamageTypeSchema::Kinetic)
 			{
@@ -8068,11 +8069,11 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(CollisionLayer::Player);
+			owner->SetCollisionLayer(ly::GameCollision::Player);
 
 			target->SetActorLocation({ 500.f, 0.f }); // within search 750
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 			world.TickInternal(0.f);
 
@@ -8136,12 +8137,12 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(CollisionLayer::Player);
+			owner->SetCollisionLayer(ly::GameCollision::Player);
 
 			// Place target at { 80.f, 0.f } (close to owner so drones arrive rapidly)
 			target->SetActorLocation({ 80.f, 0.f });
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 			world.TickInternal(0.f);
 
@@ -8207,17 +8208,17 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(CollisionLayer::Player);
+			owner->SetCollisionLayer(ly::GameCollision::Player);
 
 			// Target A (capped, 4 stacks) is closer to owner (150)
 			targetCapped->SetActorLocation({ 150.f, 0.f });
-			targetCapped->SetCollisionLayer(CollisionLayer::Enemy);
-			targetCapped->SetCollisionMask(CollisionLayer::PlayerBullet);
+			targetCapped->SetCollisionLayer(ly::GameCollision::Enemy);
+			targetCapped->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 			// Target B (under-cap, 0 stacks) is further (250)
 			targetUnderCap->SetActorLocation({ 250.f, 0.f });
-			targetUnderCap->SetCollisionLayer(CollisionLayer::Enemy);
-			targetUnderCap->SetCollisionMask(CollisionLayer::PlayerBullet);
+			targetUnderCap->SetCollisionLayer(ly::GameCollision::Enemy);
+			targetUnderCap->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 			// Apply 4 stacks of Ignite to Target A
 			DamagePayload fourStackPayload;
@@ -8271,11 +8272,11 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(CollisionLayer::Player);
+			owner->SetCollisionLayer(ly::GameCollision::Player);
 
 			soleTarget->SetActorLocation({ 200.f, 0.f });
-			soleTarget->SetCollisionLayer(CollisionLayer::Enemy);
-			soleTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+			soleTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+			soleTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 			// Pre-apply 4 stacks of Ignite to sole target
 			DamagePayload fourStackPayload;
@@ -8333,11 +8334,11 @@ int main(int argc, char** argv)
 			}
 
 			owner->SetActorLocation({ 0.f, 0.f });
-			owner->SetCollisionLayer(CollisionLayer::Player);
+			owner->SetCollisionLayer(ly::GameCollision::Player);
 
 			target->SetActorLocation({ 200.f, 0.f });
-			target->SetCollisionLayer(CollisionLayer::Enemy);
-			target->SetCollisionMask(CollisionLayer::PlayerBullet);
+			target->SetCollisionLayer(ly::GameCollision::Enemy);
+			target->SetCollisionMask(ly::GameCollision::PlayerBullet);
 
 			world.TickInternal(0.f);
 
@@ -9010,10 +9011,10 @@ int main(int argc, char** argv)
 				return Fail("Could not spawn player or enemy for player-owned source test");
 			}
 			player->SetActorLocation({ 0.f, 0.f });
-			player->SetCollisionLayer(CollisionLayer::Player);
+			player->SetCollisionLayer(ly::GameCollision::Player);
 			enemy->SetActorLocation({ 200.f, 0.f });
-			enemy->SetCollisionLayer(CollisionLayer::Enemy);
-			enemy->SetCollisionMask(CollisionLayer::PlayerBullet);
+			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
+			enemy->SetCollisionMask(ly::GameCollision::PlayerBullet);
 			world.TickInternal(0.f);
 
 			player->GetAbilitySystemComponent().ClearAbilitySlot(sas::AbilitySlot::Ability4);

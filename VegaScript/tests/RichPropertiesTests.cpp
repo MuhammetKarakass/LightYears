@@ -1,4 +1,6 @@
 #include "framework/EngineContext.h"
+#include <framework/ProjectSettings.h>
+#include <framework/CollisionComponent.h>
 #include <framework/Actor.h>
 #include <framework/scene/Scene.h>
 #include <framework/scene/SceneEntityComponent.h>
@@ -145,10 +147,21 @@ namespace
 	void Lua(const std::filesystem::path& root)
 	{
 		World world{ nullptr };
+		ProjectSettings project;
+		project.collisionLayers = { { 0, "Solid", {} }, { 7, "Sensor", {} } };
+		project.ApplyCollisionLayers(world.GetEngineContext());
 		Check(SceneSerializer::Load(world, Scene({Entity("a"), Entity("b")})).warnings.empty(), "Lua fixture scene must load");
+		Find(world, "a")->AddComponent<CollisionComponent>();
 		std::ofstream{ root / "rich.lua" } << R"(
 function on_start(self)
 	local a, b = self.actor, world.find('b')
+	local collision = a:component('CollisionComponent')
+	assert(collision:set('Collision Mask', 'Solid | Sensor'))
+	assert(collision:get('Collision Mask') == 129)
+	assert(collision:set('Collision Layer', 'Sensor'))
+	assert(collision:get('Collision Layer') == 128)
+	assert(not collision:set('Collision Mask', 'Unknown'))
+	assert(collision:get('Collision Mask') == 129)
 	assert(a:get('Target') == nil)
 	assert(a:set('Target', b))
 	assert(a:get('Target'):id() == b:id())

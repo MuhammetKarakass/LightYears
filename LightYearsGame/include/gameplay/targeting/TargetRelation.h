@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gameConfigs/CollisionLayers.h"
+
 #include "framework/Actor.h"
 
 namespace ly::targeting
@@ -11,11 +13,11 @@ namespace ly::targeting
 	{
 		switch (source.GetCollisionLayer())
 		{
-		case CollisionLayer::Player:
-		case CollisionLayer::FriendlySummon:
-			return CollisionLayer::Enemy;
-		case CollisionLayer::Enemy:
-			return CollisionLayer::Player | CollisionLayer::FriendlySummon;
+		case GameCollision::Player:
+		case GameCollision::FriendlySummon:
+			return GameCollision::Enemy;
+		case GameCollision::Enemy:
+			return GameCollision::Player | GameCollision::FriendlySummon;
 		default:
 			return CollisionLayer::None;
 		}

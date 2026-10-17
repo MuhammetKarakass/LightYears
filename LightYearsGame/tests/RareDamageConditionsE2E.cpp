@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameConfigs/combat/DamageTypeConfig.h"
@@ -132,7 +133,7 @@ namespace rare_damage_conditions_e2e
 		{
 			const auto enemy = harness.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			harness.level->TickInternal(0.f);
-			enemy->SetCollisionLayer(CollisionLayer::Enemy);
+			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
 			enemy->SetCollisionMask(CollisionLayer::None);
 			enemy->SetEnablePhysics(false);
 			enemy->SetActorLocation({ 20000.f, 20000.f });

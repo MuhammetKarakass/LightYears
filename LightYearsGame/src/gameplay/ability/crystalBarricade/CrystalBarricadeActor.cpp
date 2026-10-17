@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/crystalBarricade/CrystalBarricadeActor.h"
 
 #include "attributes/AttributeSystem.h"
@@ -114,13 +115,13 @@ namespace ly
 
 	void CrystalBarricadeActor::BeginPlay()
 	{
-		SetCollisionLayer(CollisionLayer::Environment);
+		SetCollisionLayer(GameCollision::Environment);
 		SetCollisionMask(
-			CollisionLayer::Player |
-			CollisionLayer::Enemy |
-			CollisionLayer::FriendlySummon |
-			CollisionLayer::PlayerBullet |
-			CollisionLayer::EnemyBullet
+			GameCollision::Player |
+			GameCollision::Enemy |
+			GameCollision::FriendlySummon |
+			GameCollision::PlayerBullet |
+			GameCollision::EnemyBullet
 		);
 		AbilityWorldActor::BeginPlay();
 	}
@@ -290,7 +291,7 @@ namespace ly
 
 	bool CrystalBarricadeActor::CanDamageContactTarget(const Actor& actor) const
 	{
-		return actor.GetCollisionLayer() == CollisionLayer::Enemy &&
+		return actor.GetCollisionLayer() == GameCollision::Enemy &&
 			dynamic_cast<const Combatant*>(&actor) != nullptr &&
 			!actor.GetIsPendingDestroy();
 	}

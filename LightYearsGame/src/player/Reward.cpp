@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "player/Reward.h"
 #include "player/PlayerSpaceShip.h"
 #include <framework/World.h>
@@ -31,8 +32,8 @@ namespace ly
 	}
 	void Reward::SetupCollisionProperties()
 	{
-		SetCollisionLayer(CollisionLayer::Powerup);
-		SetCollisionMask(CollisionLayer::Player);
+		SetCollisionLayer(GameCollision::Powerup);
+		SetCollisionMask(GameCollision::Player);
 	}
 
 	void Reward::OnActorBeginOverlap(Actor* other)

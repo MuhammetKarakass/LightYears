@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP4E2E.h"
 
@@ -165,7 +166,7 @@ namespace rare_ratio_rules_e2e
 		{
 			const auto enemy = f.level->SpawnActor<SpaceShip>(content::ShipContentCatalog::GetPlayerFighterDefinition()).lock();
 			f.level->TickInternal(0.f);
-			enemy->SetCollisionLayer(CollisionLayer::Enemy);
+			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
 			enemy->SetCollisionMask(CollisionLayer::None);
 			enemy->SetEnablePhysics(false);
 			enemy->SetActorLocation({ 20000.f, 20000.f });

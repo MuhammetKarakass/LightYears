@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "attributes/AttributeSystem.h"
 #include "framework/TimerManager.h"
@@ -81,17 +82,17 @@ int main()
 	{
 		return Fail("Storm Mark timing fixture failed to spawn combatants");
 	}
-	owner->SetCollisionLayer(CollisionLayer::Player);
-	owner->SetCollisionMask(CollisionLayer::Enemy);
+	owner->SetCollisionLayer(ly::GameCollision::Player);
+	owner->SetCollisionMask(ly::GameCollision::Enemy);
 	owner->SetActorLocation({ 0.f, 0.f });
-	first->SetCollisionLayer(CollisionLayer::Enemy);
-	first->SetCollisionMask(CollisionLayer::Player);
+	first->SetCollisionLayer(ly::GameCollision::Enemy);
+	first->SetCollisionMask(ly::GameCollision::Player);
 	first->SetActorLocation({ 20.f, 0.f });
-	second->SetCollisionLayer(CollisionLayer::Enemy);
-	second->SetCollisionMask(CollisionLayer::Player);
+	second->SetCollisionLayer(ly::GameCollision::Enemy);
+	second->SetCollisionMask(ly::GameCollision::Player);
 	second->SetActorLocation({ 40.f, 0.f });
-	third->SetCollisionLayer(CollisionLayer::Enemy);
-	third->SetCollisionMask(CollisionLayer::Player);
+	third->SetCollisionLayer(ly::GameCollision::Enemy);
+	third->SetCollisionMask(ly::GameCollision::Player);
 	third->SetActorLocation({ 60.f, 0.f });
 	world.TickInternal(0.f);
 

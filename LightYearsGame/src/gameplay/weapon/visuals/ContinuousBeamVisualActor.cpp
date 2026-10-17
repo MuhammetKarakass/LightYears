@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/weapon/visuals/ContinuousBeamVisualActor.h"
 
 #include "framework/MathUtility.h"
@@ -18,13 +19,13 @@ namespace ly
 
 		switch (mOwner->GetCollisionLayer())
 		{
-		case CollisionLayer::Player:
-			SetCollisionLayer(CollisionLayer::PlayerBullet);
-			SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::EnemyBullet);
+		case GameCollision::Player:
+			SetCollisionLayer(GameCollision::PlayerBullet);
+			SetCollisionMask(GameCollision::Enemy | GameCollision::EnemyBullet);
 			break;
-		case CollisionLayer::Enemy:
-			SetCollisionLayer(CollisionLayer::EnemyBullet);
-			SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet);
+		case GameCollision::Enemy:
+			SetCollisionLayer(GameCollision::EnemyBullet);
+			SetCollisionMask(GameCollision::Player | GameCollision::PlayerBullet);
 			break;
 		default:
 			break;

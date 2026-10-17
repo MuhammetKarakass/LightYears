@@ -1,6 +1,7 @@
 #include "framework/EngineContext.h"
 #include "editor/GameExporter.h"
 #include <framework/ProjectSettings.h>
+#include <framework/reflection/Reflection.h>
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -145,6 +146,7 @@ int main()
 		layout.assetRoot = f.root / "authoring-assets";
 		ly::ProjectSettings project;
 		project.name = "My/Game";
+		project.collisionLayers = { { 0, "Solid", { "OldSolid" } }, { 7, "Sensor", {} } };
 		project.startupScene = "scenes/custom.scene.json";
 		WriteFile(layout.assetRoot / "vega.project.json", project.ToJson().dump());
 		WriteFile(layout.assetRoot / "scenes/custom.scene.json", "{}");
@@ -153,6 +155,10 @@ int main()
 		Check(ReadFile(out / "My_Game.exe") == kExe && !Exists(out / "Game.exe"), "Project executable was not sanitized and renamed");
 		Check(ReadFile(out / "assets/vega.project.json") == project.ToJson().dump() && Exists(out / "assets/scenes/custom.scene.json"),
 			"Export did not copy the authoring project's assets");
+		ly::EngineContext exportedContext;
+		ly::ProjectSettings::Load(out / "assets/vega.project.json").ApplyCollisionLayers(exportedContext);
+		Check(exportedContext.Types().Find("CollisionComponent")->FindProperty("Collision Mask")->enumLabels[7].second == "Sensor",
+			"Exported project lost collision labels");
 		Check(!Exists(f.layout.gameBuildDir / "assets/vega.project.json"), "Override export changed the built project");
 		project.name = "Other";
 		WriteFile(layout.assetRoot / "vega.project.json", project.ToJson().dump());

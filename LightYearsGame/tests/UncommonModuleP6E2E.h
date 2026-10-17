@@ -1,4 +1,6 @@
 #pragma once
+
+#include "gameConfigs/CollisionLayers.h"
 #include "UncommonModuleP5E2E.h"
 #include "gameplay/content/AbilityContentCatalog.h"
 #include "gameplay/content/ModuleSideFeatureLoader.h"
@@ -47,8 +49,8 @@ namespace uncommon_p6_e2e
 		projectile->SetDamageTags({});
 		projectile->SetDamagePayload(Plain());
 		projectile->SetShotMetadata(metadata);
-		target.SetCollisionMask(CollisionLayer::PlayerBullet);
-		for (const auto& enemy : Actors<SpaceShip>(f)) if (enemy->GetCollisionLayer() == CollisionLayer::Enemy) enemy->SetCollisionMask(CollisionLayer::PlayerBullet);
+		target.SetCollisionMask(ly::GameCollision::PlayerBullet);
+		for (const auto& enemy : Actors<SpaceShip>(f)) if (enemy->GetCollisionLayer() == ly::GameCollision::Enemy) enemy->SetCollisionMask(ly::GameCollision::PlayerBullet);
 		projectile->OnActorBeginOverlap(&target);
 		if (finishRicochets)
 			for (int step = 0; step < 200; ++step)

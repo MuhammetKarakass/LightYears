@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "environment/Asteroid.h"
 #include "gameplay/combat/Combatant.h"
 #include <framework/SpriteComponent.h>
@@ -58,8 +59,8 @@ namespace ly
 	}
 	void Asteroid::SetupCollisionLayers()
 	{
-		SetCollisionLayer(CollisionLayer::Enemy);
-		SetCollisionMask(CollisionLayer::PlayerBullet | CollisionLayer::Player);
+		SetCollisionLayer(GameCollision::Enemy);
+		SetCollisionMask(GameCollision::PlayerBullet | GameCollision::Player);
 	}
 	void Asteroid::SetAsteroidScale(float scale)
 	{
@@ -89,7 +90,7 @@ namespace ly
 	{
 		Actor::OnActorBeginOverlap(otherActor);
 		if (!otherActor) return;
-		if (otherActor->GetCollisionLayer() == CollisionLayer::Player &&
+		if (otherActor->GetCollisionLayer() == GameCollision::Player &&
 			CanApplyContactDamage(*this, *otherActor))
 		{
 			ApplyCombatDamage(*otherActor, mDamage, this);

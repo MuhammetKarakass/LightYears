@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "presentation/visual/EnergyLightPresenter.h"
 
 #include "framework/Actor.h"
@@ -94,11 +95,11 @@ namespace ly
 			}
 			const CollisionLayer layer = actor.GetCollisionLayer();
 			// The player ship's engine and port lights belong to ShipVisualPresenter, not to this scan.
-			if (layer == CollisionLayer::Player)
+			if (layer == GameCollision::Player)
 			{
 				return;
 			}
-			if ((layer != CollisionLayer::PlayerBullet && layer != CollisionLayer::EnemyBullet) || projectileGlows >= MaxProjectileGlows)
+			if ((layer != GameCollision::PlayerBullet && layer != GameCollision::EnemyBullet) || projectileGlows >= MaxProjectileGlows)
 			{
 				return;
 			}
@@ -110,7 +111,7 @@ namespace ly
 			++projectileGlows;
 			// Player shots stay in the Player tier so the player always reads their own fire; a lower intensity
 			// keeps them dimmer than the engine, the hottest light on screen. Enemy shots are capped one tier below.
-			if (layer == CollisionLayer::PlayerBullet)
+			if (layer == GameCollision::PlayerBullet)
 			{
 				SubmitProjectile(frame, actor, playerShot, 0.7f, LuminanceTier::Player, pipeline);
 			}

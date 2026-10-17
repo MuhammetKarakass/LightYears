@@ -6,6 +6,14 @@ and VegaScript. It does not link the current game, its presentation library,
 GAS or Sky, and it does not load their assets. The editor uses ImGui's built-in
 font when the project's `editor.font` is absent.
 
+Name your collision channels in the project's optional `collisionLayers` list
+(see [project settings](project.md)). Bits remain engine channels `Layer0` through
+`Layer7`; keep game meanings in your module. Apply the settings to the application's
+EngineContext before any scene or prefab loads, as BlankMain does. Preserve old
+names as aliases when renaming channels used by existing scenes.
+Blank retains the original Player/Pickup bit assignments (0/4) and accepts its
+older `Powerup` spelling as a Pickup alias.
+
 The template also ships sample scenes, Lua scripts, a prefab and a sound; see
 `Templates/Blank/README.md` and [Learn from the Blank samples](#learn-from-the-blank-samples).
 

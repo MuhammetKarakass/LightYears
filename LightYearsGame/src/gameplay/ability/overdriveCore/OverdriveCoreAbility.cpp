@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/overdriveCore/OverdriveCoreAbility.h"
 
 #include "attributes/AttributeSystem.h"
@@ -93,13 +94,13 @@ namespace ly
 
 		CollisionLayer ResolveTargetLayer(const Actor& owner)
 		{
-			if (owner.GetCollisionLayer() == CollisionLayer::Player)
+			if (owner.GetCollisionLayer() == GameCollision::Player)
 			{
-				return CollisionLayer::Enemy;
+				return GameCollision::Enemy;
 			}
-			if (owner.GetCollisionLayer() == CollisionLayer::Enemy)
+			if (owner.GetCollisionLayer() == GameCollision::Enemy)
 			{
-				return CollisionLayer::Player;
+				return GameCollision::Player;
 			}
 			return CollisionLayer::None;
 		}

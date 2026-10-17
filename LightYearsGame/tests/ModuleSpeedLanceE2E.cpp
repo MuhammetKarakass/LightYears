@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "UncommonModuleP6E2E.h"
 #include "gameplay/module/generated/ModuleSpeedLanceActor.h"
@@ -5,7 +6,7 @@
 namespace
 {
 	using namespace uncommon_p6_e2e;
-	shared_ptr<SpaceShip> Target(Fixture& f, float distance = 50.f) { const auto enemy = Enemy(f, distance); enemy->SetCollisionMask(CollisionLayer::PlayerBullet); return enemy; }
+	shared_ptr<SpaceShip> Target(Fixture& f, float distance = 50.f) { const auto enemy = Enemy(f, distance); enemy->SetCollisionMask(ly::GameCollision::PlayerBullet); return enemy; }
 	void Sample(Fixture& f)
 	{
 		Move(f, 25.f, .25f); Move(f, 125.f, .25f); Move(f, 50.f, .25f); Move(f, 0.f, .25f);

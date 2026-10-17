@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "CommonModuleE2ETestSupport.h"
 #include "gameplay/content/ModuleSideFeatureCatalog.h"
@@ -56,7 +57,7 @@ namespace
 			const auto enemy = level->SpawnActor<SpaceShip>(definition).lock();
 			report.Check(enemy != nullptr, "charge test creates a real enemy combatant");
 			level->TickInternal(0.f);
-			enemy->SetCollisionLayer(CollisionLayer::Enemy);
+			enemy->SetCollisionLayer(ly::GameCollision::Enemy);
 			enemy->SetActorLocation({ 20000.f, 20000.f });
 			DamagePayload payload;
 			payload.criticalPolicy = DamageCriticalPolicy::Disabled;

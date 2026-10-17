@@ -329,10 +329,10 @@ int main()
 		ly::PhysicsScene& physicsScene = physicsWorld.GetPhysicsScene();
 		PhysicsProbeActor probe{ &physicsWorld };
 		PhysicsProbeActor otherProbe{ &physicsWorld };
-		probe.SetCollisionLayer(CollisionLayer::Player);
-		probe.SetCollisionMask(CollisionLayer::Enemy);
-		otherProbe.SetCollisionLayer(CollisionLayer::PlayerBullet);
-		otherProbe.SetCollisionMask(CollisionLayer::Enemy);
+		probe.SetCollisionLayer(CollisionLayer::Layer0);
+		probe.SetCollisionMask(CollisionLayer::Layer2);
+		otherProbe.SetCollisionLayer(CollisionLayer::Layer1);
+		otherProbe.SetCollisionMask(CollisionLayer::Layer2);
 		probe.SetEnablePhysics(true);
 		otherProbe.SetEnablePhysics(true);
 		if (!probe.HasPhysicsBody())
@@ -356,8 +356,8 @@ int main()
 			return Fail("Physics emitted an overlap outside the gameplay collision masks");
 		}
 
-		otherProbe.SetCollisionLayer(CollisionLayer::Enemy);
-		otherProbe.SetCollisionMask(CollisionLayer::Player);
+		otherProbe.SetCollisionLayer(CollisionLayer::Layer2);
+		otherProbe.SetCollisionMask(CollisionLayer::Layer0);
 		physicsScene.Step(1.f / 60.f);
 		if (probe.overlapCount != 1 || otherProbe.overlapCount != 1)
 		{
@@ -649,10 +649,10 @@ int main()
 		if (removable.GetActorGlobalBounds() != sf::FloatRect{ { 30.f, 40.f }, { 0.f, 0.f } } || removable.GetRenderBounds())
 			return Fail("Sprite-less actor must report point bounds and no render bounds after removal");
 		auto& collision = removable.AddComponent<ly::CollisionComponent>();
-		collision.SetCollisionLayer(CollisionLayer::Enemy);
+		collision.SetCollisionLayer(CollisionLayer::Layer2);
 		auto& nextCollision = removable.AddComponent<ly::CollisionComponent>();
-		nextCollision.SetCollisionLayer(CollisionLayer::Player);
-		if (!removable.RemoveComponent(collision) || removable.GetCollisionLayer() != CollisionLayer::Player)
+		nextCollision.SetCollisionLayer(CollisionLayer::Layer0);
+		if (!removable.RemoveComponent(collision) || removable.GetCollisionLayer() != CollisionLayer::Layer0)
 			return Fail("Collision cache must select the remaining component");
 		if (!removable.RemoveComponent(nextCollision) || removable.GetCollisionLayer() != CollisionLayer::None || removable.HasPhysicsBody())
 			return Fail("Collision removal must clear cached physics accessors");

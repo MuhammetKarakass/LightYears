@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "framework/World.h"
 #include "gameplay/ability/actors/AbilityWorldActor.h"
@@ -59,7 +60,7 @@ namespace
 		ClosedCircuitFieldActor field{ &world, nullptr, profile };
 		ConfigureField(field, barrierRadius, 1000.f);
 		AbilityWorldActor projectile{ &world, nullptr };
-		projectile.SetCollisionLayer(CollisionLayer::EnemyBullet);
+		projectile.SetCollisionLayer(ly::GameCollision::EnemyBullet);
 		projectile.SetAbilityCollisionRadius(projectileRadius);
 		projectile.SetDamage(10.f);
 		projectile.SetActorLocation(end);
@@ -123,7 +124,7 @@ namespace
 		World otherWorld{ nullptr };
 		ClosedCircuitPresentationProfile profile{};
 		AbilityWorldActor projectile{ &world, nullptr };
-		projectile.SetCollisionLayer(CollisionLayer::EnemyBullet);
+		projectile.SetCollisionLayer(ly::GameCollision::EnemyBullet);
 		projectile.SetAbilityCollisionRadius(5.f);
 		projectile.SetDamage(10.f);
 		projectile.SetActorLocation({ 0.f, 0.f });
@@ -156,7 +157,7 @@ namespace
 		ClosedCircuitFieldActor wrongWorldField{ &world, nullptr, profile };
 		ConfigureField(wrongWorldField, 100.f, 100.f);
 		AbilityWorldActor foreignProjectile{ &otherWorld, nullptr };
-		foreignProjectile.SetCollisionLayer(CollisionLayer::EnemyBullet);
+		foreignProjectile.SetCollisionLayer(ly::GameCollision::EnemyBullet);
 		foreignProjectile.SetAbilityCollisionRadius(5.f);
 		foreignProjectile.SetActorLocation({ 0.f, 0.f });
 		if (!Expect(!wrongWorldField.TryInterceptProjectile(foreignProjectile, { -150.f, 0.f }),
@@ -167,7 +168,7 @@ namespace
 
 		ClosedCircuitFieldActor wrongLayerField{ &world, nullptr, profile };
 		ConfigureField(wrongLayerField, 100.f, 100.f);
-		projectile.SetCollisionLayer(CollisionLayer::PlayerBullet);
+		projectile.SetCollisionLayer(ly::GameCollision::PlayerBullet);
 		if (!Expect(!wrongLayerField.TryInterceptProjectile(projectile, { -150.f, 0.f }),
 			"Field intercepted a non-enemy projectile"))
 		{
@@ -176,7 +177,7 @@ namespace
 
 		ClosedCircuitFieldActor durableField{ &world, nullptr, profile };
 		ConfigureField(durableField, 100.f, 5.f);
-		projectile.SetCollisionLayer(CollisionLayer::EnemyBullet);
+		projectile.SetCollisionLayer(ly::GameCollision::EnemyBullet);
 		if (!Expect(durableField.TryInterceptProjectile(projectile, { -150.f, 0.f }) &&
 				durableField.GetIsPendingDestroy(),
 			"A lethal intercepted projectile did not break the barrier"))
@@ -193,7 +194,7 @@ namespace
 		TestEnemyProjectile(World* world, Actor* owner = nullptr)
 			: AbilityWorldActor(world, owner)
 		{
-			SetCollisionLayer(CollisionLayer::EnemyBullet);
+			SetCollisionLayer(ly::GameCollision::EnemyBullet);
 			SetAbilityCollisionRadius(5.f);
 			SetDamage(10.f);
 		}

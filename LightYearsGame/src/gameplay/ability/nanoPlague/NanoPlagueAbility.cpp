@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/nanoPlague/NanoPlagueAbility.h"
 
 #include "gameConfigs/combat/DamageTypeConfig.h"
@@ -104,8 +105,8 @@ namespace ly
 		query.source = &context.owner;
 		query.origin = world->GetMouseWorldPosition();
 		query.range = targetRange;
-		query.requiredTargetLayers = context.owner.GetCollisionLayer() == CollisionLayer::Player
-			? CollisionLayer::Enemy : CollisionLayer::Player;
+		query.requiredTargetLayers = context.owner.GetCollisionLayer() == GameCollision::Player
+			? GameCollision::Enemy : GameCollision::Player;
 		query.requireCollisionCompatibility = true;
 		query.filter = [](const Actor*, const Actor& candidate, const targeting::TargetingCandidate&)
 		{

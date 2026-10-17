@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "enemy/EnemyActor.h"
 #include "framework/debug/Profiler.h"
 
@@ -167,13 +168,13 @@ namespace ly
 
 	void EnemyActor::SetupCollisionLayers()
 	{
-		SetCollisionLayer(CollisionLayer::Enemy);
+		SetCollisionLayer(GameCollision::Enemy);
 		SetCollisionMask(
-			CollisionLayer::Player |
-			CollisionLayer::FriendlySummon |
-			CollisionLayer::PlayerBullet |
-			CollisionLayer::RelayProjectile |
-			CollisionLayer::Environment
+			GameCollision::Player |
+			GameCollision::FriendlySummon |
+			GameCollision::PlayerBullet |
+			GameCollision::RelayProjectile |
+			GameCollision::Environment
 		);
 	}
 
@@ -181,7 +182,7 @@ namespace ly
 	{
 		SpaceShip::OnActorBeginOverlap(otherActor);
 		if (!otherActor || !mEnemyRuntime.IsReady() ||
-			otherActor->GetCollisionLayer() != CollisionLayer::Player ||
+			otherActor->GetCollisionLayer() != GameCollision::Player ||
 			!CanApplyContactDamage(*this, *otherActor)) return;
 		ApplyCombatDamage(*otherActor, mCollisionDamage, this);
 	}

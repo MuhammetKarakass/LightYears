@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/combatSentry/CombatSentryActor.h"
 
 #include "attributes/AttributeSystem.h"
@@ -197,7 +198,7 @@ namespace ly
 		query.origin = GetActorLocation();
 		query.range = mTargetingRange;
 		query.maxTargets = 1;
-		query.requiredTargetLayers = CollisionLayer::Enemy;
+		query.requiredTargetLayers = GameCollision::Enemy;
 		query.requireCollisionCompatibility = true;
 		query.filter = [](const Actor*, const Actor& candidate, const targeting::TargetingCandidate&)
 		{

@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameFramework/LightYearsAssets.h"
 #include "attributes/AttributeMath.h"
 #include "framework/AssetManager.h"
@@ -97,7 +98,7 @@ namespace ly
 				: Actor{ world }
 			{
 				SetPhysicsBodyType(PhysicsBodyType::Static);
-				SetCollisionLayer(CollisionLayer::Environment);
+				SetCollisionLayer(ly::GameCollision::Environment);
 				SetCollisionMask(CollisionLayer::None);
 			}
 
@@ -202,19 +203,19 @@ namespace ly
 			};
 			owner->SetActorLocation(OwnerLocation);
 			owner->SetActorRotation(0.f);
-			owner->SetCollisionLayer(CollisionLayer::Player);
+			owner->SetCollisionLayer(ly::GameCollision::Player);
 			centerPivot(*frontTarget);
 			frontTarget->SetActorLocation(FrontTargetLocation);
-			frontTarget->SetCollisionLayer(CollisionLayer::Enemy);
-			frontTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+			frontTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+			frontTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 			centerPivot(*betweenWallsTarget);
 			betweenWallsTarget->SetActorLocation(BetweenWallsTargetLocation);
-			betweenWallsTarget->SetCollisionLayer(CollisionLayer::Enemy);
-			betweenWallsTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+			betweenWallsTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+			betweenWallsTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 			centerPivot(*rearTarget);
 			rearTarget->SetActorLocation(RearTargetLocation);
-			rearTarget->SetCollisionLayer(CollisionLayer::Enemy);
-			rearTarget->SetCollisionMask(CollisionLayer::PlayerBullet);
+			rearTarget->SetCollisionLayer(ly::GameCollision::Enemy);
+			rearTarget->SetCollisionMask(ly::GameCollision::PlayerBullet);
 			if (endpointContact)
 			{
 				const float range = sas::FindAttributeValue(weapon.attributes, PrimaryWeaponSchema::Beam::Delivery::Range, 0.f);

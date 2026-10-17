@@ -1,3 +1,4 @@
+#include "gameConfigs/CollisionLayers.h"
 #include "gameplay/ability/crescentReaver/CrescentReaverProjectileActor.h"
 
 #include "gameplay/ability/GameAbility.h"
@@ -488,9 +489,9 @@ namespace ly
 				continue;
 			}
 
-			const bool isEnemy = candidate->GetCollisionLayer() == CollisionLayer::Enemy &&
+			const bool isEnemy = candidate->GetCollisionLayer() == GameCollision::Enemy &&
 				IsValidAbilityTarget(candidate.get());
-			const bool isSurface = candidate->GetCollisionLayer() == CollisionLayer::Environment;
+			const bool isSurface = candidate->GetCollisionLayer() == GameCollision::Environment;
 			if (!isEnemy && !isSurface)
 			{
 				continue;

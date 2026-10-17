@@ -63,6 +63,9 @@ namespace ly::reflect
 		float speed = 1.f;
 		std::string tooltip;
 		EnumLabels enumLabels;
+		// Read-only compatibility spellings never appear in Inspector choices or saves.
+		EnumLabels flagAliases;
+		bool ParseFlags(const std::string& text, int& bits, bool* legacy = nullptr) const;
 		std::string category;
 		PropertyKind elementKind = PropertyKind::Bool;
 		std::string requiredType;
@@ -114,6 +117,7 @@ namespace ly::reflect
 	{
 	public:
 		TypeRegistry() = default;
+		void SetCollisionLabels(const EnumLabels& labels, const EnumLabels& aliases);
 		// Deprecated: use the owning EngineContext::Types().
 		static TypeRegistry& Get();
 		TypeInfo& Register(std::type_index type, const std::string& name, const TypeInfo* base,
